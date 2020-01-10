@@ -2354,8 +2354,8 @@ bool js::intrinsic_ArrayNativeSort(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  while (len > n) {
-    if (!CheckForInterrupt(cx) || !DeletePropertyOrThrow(cx, obj, --len)) {
+  for (uint32_t i = n; i < len; i++) {
+    if (!CheckForInterrupt(cx) || !DeletePropertyOrThrow(cx, obj, i)) {
       return false;
     }
   }
