@@ -1596,15 +1596,6 @@ var gProtectionsHandler = {
       anyBlocking = anyBlocking || blocker.activated;
     }
 
-    this._categoryItemOrderInvalidated = true;
-    if (["showing", "open"].includes(this._protectionsPopup.state)) {
-      this.reorderCategoryItems();
-    }
-
-    if (anyDetected) {
-      this.noTrackersDetectedDescription.hidden = true;
-    }
-
     
     let hasException = ContentBlockingAllowList.includes(
       gBrowser.selectedBrowser
@@ -1628,6 +1619,30 @@ var gProtectionsHandler = {
     this._protectionsPopup.toggleAttribute("detected", anyDetected);
     this._protectionsPopup.toggleAttribute("blocking", anyBlocking);
     this._protectionsPopup.toggleAttribute("hasException", hasException);
+
+    this._categoryItemOrderInvalidated = true;
+
+    if (anyDetected) {
+      this.noTrackersDetectedDescription.hidden = true;
+
+      if (["showing", "open"].includes(this._protectionsPopup.state)) {
+        this.reorderCategoryItems();
+
+        if (!this._descriptionHeightWorkaroundCalled) {
+          
+          
+          
+          
+          
+          
+          
+          PanelMultiView.forNode(
+            this._protectionsPopupMainView
+          ).descriptionHeightWorkaround();
+          this._descriptionHeightWorkaroundCalled = true;
+        }
+      }
+    }
 
     this.iconBox.toggleAttribute("active", anyBlocking);
     this.iconBox.toggleAttribute("hasException", hasException);
