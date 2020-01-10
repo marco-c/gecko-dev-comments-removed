@@ -41,6 +41,10 @@
 #include <functional>
 #include <stdint.h>
 
+namespace mozilla {
+struct SymbolTable;
+}
+
 extern mozilla::LazyLogModule gProfilerLog;
 
 
@@ -108,5 +112,15 @@ mozilla::Vector<nsCString> profiler_move_exit_profiles();
 
 mozilla::UniquePtr<ProfilerCodeAddressService>
 profiler_code_address_service_for_presymbolication();
+
+extern "C" {
+
+
+
+bool profiler_get_symbol_table(const char* debug_path, const char* breakpad_id,
+                               mozilla::SymbolTable* symbol_table);
+
+bool profiler_demangle_rust(const char* mangled, char* buffer, size_t len);
+}
 
 #endif 

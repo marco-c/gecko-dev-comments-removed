@@ -9,7 +9,43 @@
 
 #include "CodeAddressService.h"
 
+namespace mozilla {
 
-class ProfilerCodeAddressService : public mozilla::CodeAddressService<> {};
+
+
+
+
+struct SymbolTable {
+  SymbolTable() = default;
+  SymbolTable(SymbolTable&& aOther) = default;
+
+  nsTArray<uint32_t> mAddrs;
+  nsTArray<uint32_t> mIndex;
+  nsTArray<uint8_t> mBuffer;
+};
+
+}  
+
+
+
+
+
+
+
+
+class ProfilerCodeAddressService : public mozilla::CodeAddressService<> {
+ public:
+  
+  bool GetFunction(const void* aPc, nsACString& aResult);
+
+ private:
+#ifdef XP_LINUX
+  
+  
+  mozilla::HashMap<const char*, mozilla::SymbolTable,
+                   mozilla::DefaultHasher<const char*>, AllocPolicy>
+      mSymbolTables;
+#endif
+};
 
 #endif  

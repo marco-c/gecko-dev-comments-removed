@@ -41,14 +41,6 @@ using dom::AutoJSAPI;
 using dom::Promise;
 using std::string;
 
-extern "C" {
-
-
-
-bool profiler_get_symbol_table(const char* debug_path, const char* breakpad_id,
-                               nsProfiler::SymbolTable* symbol_table);
-}
-
 NS_IMPL_ISUPPORTS(nsProfiler, nsIProfiler, nsIObserver)
 
 nsProfiler::nsProfiler()

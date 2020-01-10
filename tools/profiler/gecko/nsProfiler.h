@@ -16,6 +16,7 @@
 #include "mozilla/Vector.h"
 #include "nsServiceManagerUtils.h"
 #include "ProfileJSONWriter.h"
+#include "ProfilerCodeAddressService.h"
 
 class nsProfiler final : public nsIProfiler, public nsIObserver {
  public:
@@ -35,24 +36,12 @@ class nsProfiler final : public nsIProfiler, public nsIObserver {
 
   void GatheredOOPProfile(const nsACString& aProfile);
 
-  
-  
-  
-  
-  struct SymbolTable {
-    SymbolTable() = default;
-    SymbolTable(SymbolTable&& aOther) = default;
-
-    nsTArray<uint32_t> mAddrs;
-    nsTArray<uint32_t> mIndex;
-    nsTArray<uint8_t> mBuffer;
-  };
-
  private:
   ~nsProfiler();
 
   typedef mozilla::MozPromise<nsCString, nsresult, false> GatheringPromise;
-  typedef mozilla::MozPromise<SymbolTable, nsresult, true> SymbolTablePromise;
+  typedef mozilla::MozPromise<mozilla::SymbolTable, nsresult, true>
+      SymbolTablePromise;
 
   RefPtr<GatheringPromise> StartGathering(double aSinceTime);
   void FinishGathering();

@@ -958,23 +958,19 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
         void* pc = e.Get().GetPtr();
         e.Next();
 
-        static const uint32_t BUF_SIZE = 256;
-        char buf[BUF_SIZE];
+        nsCString buf;
 
-        if (aUniqueStacks.mCodeAddressService) {
-          
-          
-          
-          
-          aUniqueStacks.mCodeAddressService->GetLocation(0, pc, buf, BUF_SIZE);
-        } else {
+        if (!aUniqueStacks.mCodeAddressService ||
+            !aUniqueStacks.mCodeAddressService->GetFunction(pc, buf) ||
+            buf.IsEmpty()) {
           
           
           unsigned long long pcULL = (unsigned long long)(uintptr_t)pc;
-          SprintfLiteral(buf, "%#llx", pcULL);
+          buf.AppendPrintf("0x%llx", pcULL);
         }
 
-        stack = aUniqueStacks.AppendFrame(stack, UniqueStacks::FrameKey(buf));
+        stack =
+            aUniqueStacks.AppendFrame(stack, UniqueStacks::FrameKey(buf.get()));
 
       } else if (e.Get().IsLabel()) {
         numFrames++;

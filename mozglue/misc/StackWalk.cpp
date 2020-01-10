@@ -672,6 +672,8 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
 #    include <cxxabi.h>
 #  endif  
 
+namespace mozilla {
+
 void DemangleSymbol(const char* aSymbol, char* aBuffer, int aBufLen) {
   aBuffer[0] = '\0';
 
@@ -686,6 +688,8 @@ void DemangleSymbol(const char* aSymbol, char* aBuffer, int aBufLen) {
   }
 #  endif  
 }
+
+}  
 
 
 #  if ((defined(__i386) || defined(PPC) || defined(__ppc__)) && \
