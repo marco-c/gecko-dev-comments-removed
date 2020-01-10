@@ -83,13 +83,18 @@
 use std::error::Error as StdError;
 use std::fmt;
 use std::net::SocketAddr;
+#[cfg(feature = "websocket")]
 use std::thread;
 
 use bytes::Bytes;
 use futures::{
     future,
+    Future, Stream,
+};
+#[cfg(feature = "websocket")]
+use futures::{
     sync::{mpsc, oneshot},
-    Future, Sink, Stream,
+    Sink,
 };
 use http::{
     header::{HeaderName, HeaderValue},
@@ -116,6 +121,7 @@ pub fn request() -> RequestBuilder {
 }
 
 
+#[cfg(feature = "websocket")]
 pub fn ws() -> WsBuilder {
     WsBuilder { req: request() }
 }
@@ -133,6 +139,7 @@ pub struct RequestBuilder {
 
 
 
+#[cfg(feature = "websocket")]
 #[must_use = "WsBuilder does nothing on its own"]
 #[derive(Debug)]
 pub struct WsBuilder {
@@ -140,6 +147,7 @@ pub struct WsBuilder {
 }
 
 
+#[cfg(feature = "websocket")]
 pub struct WsClient {
     tx: mpsc::UnboundedSender<::ws::Message>,
     rx: ::futures::stream::Wait<mpsc::UnboundedReceiver<Result<::ws::Message, ::Error>>>,
@@ -358,6 +366,7 @@ impl RequestBuilder {
     }
 }
 
+#[cfg(feature = "websocket")]
 impl WsBuilder {
     
     
@@ -516,6 +525,7 @@ impl WsBuilder {
     }
 }
 
+#[cfg(feature = "websocket")]
 impl WsClient {
     
     pub fn send_text(&mut self, text: impl Into<String>) {
@@ -564,6 +574,7 @@ impl WsClient {
     }
 }
 
+#[cfg(feature = "websocket")]
 impl fmt::Debug for WsClient {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("WsClient").finish()
@@ -572,6 +583,7 @@ impl fmt::Debug for WsClient {
 
 
 
+#[cfg(feature = "websocket")]
 impl WsError {
     fn new<E: Into<Box<dyn StdError + Send + Sync>>>(cause: E) -> Self {
         WsError {
@@ -594,8 +606,10 @@ impl StdError for WsError {
 
 
 
+#[cfg(feature = "websocket")]
 struct AddrConnect(SocketAddr);
 
+#[cfg(feature = "websocket")]
 impl ::hyper::client::connect::Connect for AddrConnect {
     type Transport = ::tokio::net::tcp::TcpStream;
     type Error = ::std::io::Error;

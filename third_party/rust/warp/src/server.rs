@@ -60,10 +60,7 @@ macro_rules! into_service {
 
 macro_rules! addr_incoming {
     ($addr:expr) => {{
-        let addr = $addr.into();
-        let mut incoming = AddrIncoming::bind(&addr).unwrap_or_else(|e| {
-            panic!("error binding to {}: {}", addr, e);
-        });
+        let mut incoming = AddrIncoming::bind($addr)?;
         incoming.set_nodelay(true);
         let addr = incoming.local_addr();
         (addr, incoming)
@@ -77,7 +74,7 @@ macro_rules! bind_inner {
         let srv = HyperServer::builder(incoming)
             .http1_pipeline_flush($this.pipeline)
             .serve(service);
-        (addr, srv)
+        Ok::<_, hyper::error::Error>((addr, srv))
     }};
 
     (tls: $this:ident, $addr:expr) => {{
@@ -91,7 +88,33 @@ macro_rules! bind_inner {
         let srv = HyperServer::builder(incoming)
             .http1_pipeline_flush($this.server.pipeline)
             .serve(service);
-        (addr, srv)
+        Ok::<_, hyper::error::Error>((addr, srv))
+    }};
+}
+
+macro_rules! bind {
+    ($this:ident, $addr:expr) => {{
+        let addr = $addr.into();
+        (|addr| bind_inner!($this, addr))(&addr).unwrap_or_else(|e| {
+            panic!("error binding to {}: {}", addr, e);
+        })
+    }};
+
+    (tls: $this:ident, $addr:expr) => {{
+        let addr = $addr.into();
+        (|addr| bind_inner!(tls: $this, addr))(&addr).unwrap_or_else(|e| {
+            panic!("error binding to {}: {}", addr, e);
+        })
+    }};
+}
+
+macro_rules! try_bind {
+    ($this:ident, $addr:expr) => {{
+        (|addr| bind_inner!($this, addr))($addr)
+    }};
+
+    (tls: $this:ident, $addr:expr) => {{
+        (|addr| bind_inner!(tls: $this, addr))($addr)
     }};
 }
 
@@ -140,6 +163,10 @@ where
 
     
     
+    
+    
+    
+    
     pub fn bind(
         self,
         addr: impl Into<SocketAddr> + 'static,
@@ -152,12 +179,48 @@ where
     
     
     
+    
+    pub fn try_bind(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+    ) -> impl Future<Item = (), Error = ()> + 'static {
+        let addr = addr.into();
+        let result = try_bind!(self, &addr).map_err(|e| error!("error binding to {}: {}", addr, e));
+        futures::future::result(result).and_then(|(_, srv)| {
+            srv.map_err(|e| error!("server error: {}", e))
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn bind_ephemeral(
         self,
         addr: impl Into<SocketAddr> + 'static,
     ) -> (SocketAddr, impl Future<Item = (), Error = ()> + 'static) {
-        let (addr, srv) = bind_inner!(self, addr);
+        let (addr, srv) = bind!(self, addr);
         (addr, srv.map_err(|e| error!("server error: {}", e)))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_bind_ephemeral(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+    ) -> Result<(SocketAddr, impl Future<Item = (), Error = ()> + 'static), hyper::error::Error> {
+        let addr = addr.into();
+        let (addr, srv) = try_bind!(self, &addr)?;
+        Ok((addr, srv.map_err(|e| error!("server error: {}", e))))
     }
 
     
@@ -198,7 +261,7 @@ where
         addr: impl Into<SocketAddr> + 'static,
         signal: impl Future<Item = ()> + Send + 'static,
     ) -> (SocketAddr, impl Future<Item = (), Error = ()> + 'static) {
-        let (addr, srv) = bind_inner!(self, addr);
+        let (addr, srv) = bind!(self, addr);
         let fut = srv
             .with_graceful_shutdown(signal)
             .map_err(|e| error!("server error: {}", e));
@@ -295,7 +358,7 @@ where
         self,
         addr: impl Into<SocketAddr> + 'static,
     ) -> (SocketAddr, impl Future<Item = (), Error = ()> + 'static) {
-        let (addr, srv) = bind_inner!(tls: self, addr);
+        let (addr, srv) = bind!(tls: self, addr);
         (addr, srv.map_err(|e| error!("server error: {}", e)))
     }
 
@@ -310,7 +373,8 @@ where
         addr: impl Into<SocketAddr> + 'static,
         signal: impl Future<Item = ()> + Send + 'static,
     ) -> (SocketAddr, impl Future<Item = (), Error = ()> + 'static) {
-        let (addr, srv) = bind_inner!(tls: self, addr);
+        let (addr, srv) = bind!(tls: self, addr);
+
         let fut = srv
             .with_graceful_shutdown(signal)
             .map_err(|e| error!("server error: {}", e));

@@ -15,7 +15,7 @@ use warp::{http::StatusCode, Filter};
 
 type Db = Arc<Mutex<Vec<Todo>>>;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 struct Todo {
     id: u64,
     text: String,
@@ -62,10 +62,14 @@ fn main() {
     let json_body = warp::body::content_length_limit(1024 * 16).and(warp::body::json());
 
     
+    let list_options = warp::query::<ListOptions>();
+
+    
 
     
     let list = warp::get2()
         .and(todos_index)
+        .and(list_options)
         .and(db.clone())
         .map(list_todos);
 
@@ -105,9 +109,23 @@ fn main() {
 
 
 
-fn list_todos(db: Db) -> impl warp::Reply {
+#[derive(Debug, Deserialize)]
+struct ListOptions {
+    offset: Option<usize>,
+    limit: Option<usize>,
+}
+
+
+fn list_todos(opts: ListOptions, db: Db) -> impl warp::Reply {
     
-    warp::reply::json(&*db.lock().unwrap())
+    let todos = db.lock().unwrap();
+    let todos: Vec<Todo> = todos
+        .clone()
+        .into_iter()
+        .skip(opts.offset.unwrap_or(0))
+        .take(opts.limit.unwrap_or(std::usize::MAX))
+        .collect();
+    warp::reply::json(&todos)
 }
 
 

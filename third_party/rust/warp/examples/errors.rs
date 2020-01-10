@@ -65,6 +65,15 @@ fn customize_error(err: Rejection) -> Result<impl Reply, Rejection> {
             message: msg,
         });
         Ok(warp::reply::with_status(json, code))
+    } else if let Some(_) = err.find_cause::<warp::reject::MethodNotAllowed>() {
+        
+        
+        let code = StatusCode::METHOD_NOT_ALLOWED;
+        let json = warp::reply::json(&ErrorMessage {
+            code: code.as_u16(),
+            message: "oops, you aren't allowed to use this method.".into(),
+        });
+        Ok(warp::reply::with_status(json, code))
     } else {
         
         

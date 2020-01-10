@@ -13,9 +13,8 @@
 
 
 
-use std::u32;
 use std::char;
-use std::ascii::AsciiExt;
+use std::u32;
 
 
 static BASE: u32 = 36;
@@ -26,7 +25,6 @@ static DAMP: u32 = 700;
 static INITIAL_BIAS: u32 = 72;
 static INITIAL_N: u32 = 0x80;
 static DELIMITER: char = '-';
-
 
 #[inline]
 fn adapt(mut delta: u32, num_points: u32, first_time: bool) -> u32 {
@@ -43,12 +41,10 @@ fn adapt(mut delta: u32, num_points: u32, first_time: bool) -> u32 {
 
 
 
-
 #[inline]
 pub fn decode_to_string(input: &str) -> Option<String> {
     decode(input).map(|chars| chars.into_iter().collect())
 }
-
 
 
 
@@ -62,8 +58,12 @@ pub fn decode(input: &str) -> Option<Vec<char>> {
         None => (Vec::new(), input),
         Some(position) => (
             input[..position].chars().collect(),
-            if position > 0 { &input[position + 1..] } else { input }
-        )
+            if position > 0 {
+                &input[position + 1..]
+            } else {
+                input
+            },
+        ),
     };
     let mut code_point = INITIAL_N;
     let mut bias = INITIAL_BIAS;
@@ -81,35 +81,39 @@ pub fn decode(input: &str) -> Option<Vec<char>> {
         
         loop {
             let digit = match byte {
-                byte @ b'0' ... b'9' => byte - b'0' + 26,
-                byte @ b'A' ... b'Z' => byte - b'A',
-                byte @ b'a' ... b'z' => byte - b'a',
-                _ => return None
+                byte @ b'0'..=b'9' => byte - b'0' + 26,
+                byte @ b'A'..=b'Z' => byte - b'A',
+                byte @ b'a'..=b'z' => byte - b'a',
+                _ => return None,
             } as u32;
             if digit > (u32::MAX - i) / weight {
-                return None  
+                return None; 
             }
             i += digit * weight;
-            let t = if k <= bias { T_MIN }
-                    else if k >= bias + T_MAX { T_MAX }
-                    else { k - bias };
+            let t = if k <= bias {
+                T_MIN
+            } else if k >= bias + T_MAX {
+                T_MAX
+            } else {
+                k - bias
+            };
             if digit < t {
-                break
+                break;
             }
             if weight > u32::MAX / (BASE - t) {
-                return None  
+                return None; 
             }
             weight *= BASE - t;
             k += BASE;
             byte = match iter.next() {
-                None => return None,  
+                None => return None, 
                 Some(byte) => byte,
             };
         }
         let length = output.len() as u32;
         bias = adapt(i - previous_i, length + 1, previous_i == 0);
         if i / (length + 1) > u32::MAX - code_point {
-            return None  
+            return None; 
         }
         
         
@@ -117,14 +121,13 @@ pub fn decode(input: &str) -> Option<Vec<char>> {
         i %= length + 1;
         let c = match char::from_u32(code_point) {
             Some(c) => c,
-            None => return None
+            None => return None,
         };
         output.insert(i as usize, c);
         i += 1;
     }
     Some(output)
 }
-
 
 
 
@@ -138,12 +141,12 @@ pub fn encode_str(input: &str) -> Option<String> {
 
 
 
-
 pub fn encode(input: &[char]) -> Option<String> {
     
-    let output_bytes = input.iter().filter_map(|&c|
-        if c.is_ascii() { Some(c as u8) } else { None }
-    ).collect();
+    let output_bytes = input
+        .iter()
+        .filter_map(|&c| if c.is_ascii() { Some(c as u8) } else { None })
+        .collect();
     let mut output = unsafe { String::from_utf8_unchecked(output_bytes) };
     let basic_length = output.len() as u32;
     if basic_length > 0 {
@@ -157,10 +160,14 @@ pub fn encode(input: &[char]) -> Option<String> {
     while processed < input_length {
         
         
-        let min_code_point = input.iter().map(|&c| c as u32)
-                                  .filter(|&c| c >= code_point).min().unwrap();
+        let min_code_point = input
+            .iter()
+            .map(|&c| c as u32)
+            .filter(|&c| c >= code_point)
+            .min()
+            .unwrap();
         if min_code_point - code_point > (u32::MAX - delta) / (processed + 1) {
-            return None  
+            return None; 
         }
         
         delta += (min_code_point - code_point) * (processed + 1);
@@ -170,7 +177,7 @@ pub fn encode(input: &[char]) -> Option<String> {
             if c < code_point {
                 delta += 1;
                 if delta == 0 {
-                    return None  
+                    return None; 
                 }
             }
             if c == code_point {
@@ -178,11 +185,15 @@ pub fn encode(input: &[char]) -> Option<String> {
                 let mut q = delta;
                 let mut k = BASE;
                 loop {
-                    let t = if k <= bias { T_MIN }
-                            else if k >= bias + T_MAX { T_MAX }
-                            else { k - bias };
+                    let t = if k <= bias {
+                        T_MIN
+                    } else if k >= bias + T_MAX {
+                        T_MAX
+                    } else {
+                        k - bias
+                    };
                     if q < t {
-                        break
+                        break;
                     }
                     let value = t + ((q - t) % (BASE - t));
                     output.push(value_to_digit(value));
@@ -201,12 +212,11 @@ pub fn encode(input: &[char]) -> Option<String> {
     Some(output)
 }
 
-
 #[inline]
 fn value_to_digit(value: u32) -> char {
     match value {
-        0 ... 25 => (value as u8 + 'a' as u8) as char,  
-        26 ... 35 => (value as u8 - 26 + '0' as u8) as char,  
-        _ => panic!()
+        0..=25 => (value as u8 + 'a' as u8) as char, 
+        26..=35 => (value as u8 - 26 + '0' as u8) as char, 
+        _ => panic!(),
     }
 }

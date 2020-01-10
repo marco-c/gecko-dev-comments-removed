@@ -32,12 +32,15 @@
 
 
 
-#[macro_use] extern crate matches;
+#[macro_use]
+extern crate matches;
 extern crate unicode_bidi;
 extern crate unicode_normalization;
 
 pub mod punycode;
-pub mod uts46;
+mod uts46;
+
+pub use uts46::{Config, Errors};
 
 
 
@@ -47,11 +50,16 @@ pub mod uts46;
 
 
 pub fn domain_to_ascii(domain: &str) -> Result<String, uts46::Errors> {
-    uts46::to_ascii(domain, uts46::Flags {
-        use_std3_ascii_rules: false,
-        transitional_processing: true, 
-        verify_dns_length: false,
-    })
+    Config::default().to_ascii(domain)
+}
+
+
+
+pub fn domain_to_ascii_strict(domain: &str) -> Result<String, uts46::Errors> {
+    Config::default()
+        .use_std3_ascii_rules(true)
+        .verify_dns_length(true)
+        .to_ascii(domain)
 }
 
 
@@ -63,11 +71,5 @@ pub fn domain_to_ascii(domain: &str) -> Result<String, uts46::Errors> {
 
 
 pub fn domain_to_unicode(domain: &str) -> (String, Result<(), uts46::Errors>) {
-    uts46::to_unicode(domain, uts46::Flags {
-        use_std3_ascii_rules: false,
-
-        
-        transitional_processing: true,
-        verify_dns_length: false,
-    })
+    Config::default().to_unicode(domain)
 }

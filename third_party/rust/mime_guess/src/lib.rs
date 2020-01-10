@@ -10,38 +10,270 @@
 
 
 
-#![cfg_attr(feature = "bench", feature(test))]
 
-extern crate mime;
-extern crate phf;
+
+
+
+
+
+
+
+
+pub extern crate mime;
 extern crate unicase;
 
 pub use mime::Mime;
-use unicase::UniCase;
 
 use std::ffi::OsStr;
+use std::iter::FusedIterator;
 use std::path::Path;
+use std::{iter, slice};
 
-include!(concat!(env!("OUT_DIR"), "/mime_types_generated.rs"));
+#[cfg(feature = "phf")]
+#[path = "impl_phf.rs"]
+mod impl_;
 
-struct TopLevelExts {
-    start: usize,
-    end: usize,
-    subs: phf::Map<UniCase<&'static str>, (usize, usize)>,
-}
+#[cfg(not(feature = "phf"))]
+#[path = "impl_bin_search.rs"]
+mod impl_;
 
-macro_rules! try_opt (
-    ($expr:expr) => (
-        match $expr {
-            Some(val) => val,
-            None => return None,
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+
+pub struct MimeGuess(&'static [&'static str]);
+
+impl MimeGuess {
+    
+    
+    
+    
+    
+    
+    pub fn from_ext(ext: &str) -> MimeGuess {
+        if ext.is_empty() {
+            return MimeGuess(&[]);
         }
-    )
-);
 
-#[cfg(test)]
-#[path = "mime_types.rs"]
-mod mime_types_src;
+        impl_::get_mime_types(ext).map_or(MimeGuess(&[]), |v| MimeGuess(v))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_path<P: AsRef<Path>>(path: P) -> MimeGuess {
+        path.as_ref()
+            .extension()
+            .and_then(OsStr::to_str)
+            .map_or(MimeGuess(&[]), Self::from_ext)
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    
+    pub fn count(&self) -> usize {
+        self.0.len()
+    }
+
+    
+    
+    
+    pub fn first(&self) -> Option<Mime> {
+        self.first_raw().map(expect_mime)
+    }
+
+    
+    
+    
+    pub fn first_raw(&self) -> Option<&'static str> {
+        self.0.get(0).cloned()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn first_or_octet_stream(&self) -> Mime {
+        self.first_or(mime::APPLICATION_OCTET_STREAM)
+    }
+
+    
+    
+    
+    
+    pub fn first_or_text_plain(&self) -> Mime {
+        self.first_or(mime::TEXT_PLAIN)
+    }
+
+    
+    
+    
+    pub fn first_or(&self, default: Mime) -> Mime {
+        self.first().unwrap_or(default)
+    }
+
+    
+    
+    
+    
+    pub fn first_or_else<F>(&self, default_fn: F) -> Mime
+    where
+        F: FnOnce() -> Mime,
+    {
+        self.first().unwrap_or_else(default_fn)
+    }
+
+    
+    
+    
+    pub fn iter(&self) -> Iter {
+        Iter(self.iter_raw().map(expect_mime))
+    }
+
+    
+    
+    
+    pub fn iter_raw(&self) -> IterRaw {
+        IterRaw(self.0.iter().cloned())
+    }
+}
+
+impl IntoIterator for MimeGuess {
+    type Item = Mime;
+    type IntoIter = Iter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a MimeGuess {
+    type Item = Mime;
+    type IntoIter = Iter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct Iter(iter::Map<IterRaw, fn(&'static str) -> Mime>);
+
+impl Iterator for Iter {
+    type Item = Mime;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+}
+
+impl DoubleEndedIterator for Iter {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.next_back()
+    }
+}
+
+impl FusedIterator for Iter {}
+
+impl ExactSizeIterator for Iter {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct IterRaw(iter::Cloned<slice::Iter<'static, &'static str>>);
+
+impl Iterator for IterRaw {
+    type Item = &'static str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+}
+
+impl DoubleEndedIterator for IterRaw {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.next_back()
+    }
+}
+
+impl FusedIterator for IterRaw {}
+
+impl ExactSizeIterator for IterRaw {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+fn expect_mime(s: &str) -> Mime {
+    
+    s.parse()
+        .unwrap_or_else(|e| panic!("failed to parse media-type {:?}: {}", s, e))
+}
+
+
+pub fn from_ext(ext: &str) -> MimeGuess {
+    MimeGuess::from_ext(ext)
+}
+
+
+pub fn from_path<P: AsRef<Path>>(path: P) -> MimeGuess {
+    MimeGuess::from_path(path)
+}
 
 
 
@@ -53,9 +285,17 @@ mod mime_types_src;
 
 
 
+
+
+
+
+
+#[deprecated(
+    since = "2.0.0",
+    note = "Use `from_path(path).first_or_octet_stream()` instead"
+)]
 pub fn guess_mime_type<P: AsRef<Path>>(path: P) -> Mime {
-    guess_mime_type_opt(path)
-        .unwrap_or_else(octet_stream)
+    from_path(path).first_or_octet_stream()
 }
 
 
@@ -63,33 +303,51 @@ pub fn guess_mime_type<P: AsRef<Path>>(path: P) -> Mime {
 
 
 
-
-
-
-
-
+#[deprecated(since = "2.0.0", note = "Use `from_path(path).first()` instead")]
 pub fn guess_mime_type_opt<P: AsRef<Path>>(path: P) -> Option<Mime> {
-    let ext = path.as_ref().extension().and_then(OsStr::to_str).unwrap_or("");
-
-    get_mime_type_opt(ext)
+    from_path(path).first()
 }
 
 
 
 
 
+
+
+
+
+
+
+#[deprecated(since = "2.0.0", note = "Use `from_path(path).first_raw()` instead")]
+pub fn mime_str_for_path_ext<P: AsRef<Path>>(path: P) -> Option<&'static str> {
+    from_path(path).first_raw()
+}
+
+
+
+
+
+
+
+
+
+
+
+#[deprecated(
+    since = "2.0.0",
+    note = "use `from_ext(search_ext).first_or_octet_stream()` instead"
+)]
 pub fn get_mime_type(search_ext: &str) -> Mime {
-    get_mime_type_opt(search_ext)
-        .unwrap_or_else(octet_stream)
+    from_ext(search_ext).first_or_octet_stream()
 }
 
 
 
 
 
+#[deprecated(since = "2.0.0", note = "use `from_ext(search_ext).first()` instead")]
 pub fn get_mime_type_opt(search_ext: &str) -> Option<Mime> {
-    get_mime_type_str(search_ext)
-        .map(|mime| mime.parse::<Mime>().unwrap())
+    from_ext(search_ext).first()
 }
 
 
@@ -98,10 +356,12 @@ pub fn get_mime_type_opt(search_ext: &str) -> Option<Mime> {
 
 
 
+#[deprecated(
+    since = "2.0.0",
+    note = "use `from_ext(search_ext).first_raw()` instead"
+)]
 pub fn get_mime_type_str(search_ext: &str) -> Option<&'static str> {
-    if search_ext.is_empty() { return None; }
-
-    map_lookup(&MIME_TYPES, search_ext).cloned()
+    from_ext(search_ext).first_raw()
 }
 
 
@@ -114,6 +374,7 @@ pub fn get_mime_type_str(search_ext: &str) -> Option<&'static str> {
 
 
 
+#[cfg(feature = "rev-mappings")]
 pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
     get_extensions(mime.type_().as_ref(), mime.subtype().as_ref())
 }
@@ -131,6 +392,7 @@ pub fn get_mime_extensions(mime: &Mime) -> Option<&'static [&'static str]> {
 
 
 
+#[cfg(feature = "rev-mappings")]
 pub fn get_mime_extensions_str(mut mime_str: &str) -> Option<&'static [&'static str]> {
     mime_str = mime_str.trim();
 
@@ -140,7 +402,7 @@ pub fn get_mime_extensions_str(mut mime_str: &str) -> Option<&'static [&'static 
 
     let (top, sub) = {
         let split_idx = mime_str.find('/').unwrap();
-        (&mime_str[..split_idx], &mime_str[split_idx + 1 ..])
+        (&mime_str[..split_idx], &mime_str[split_idx + 1..])
     };
 
     get_extensions(top, sub)
@@ -155,121 +417,110 @@ pub fn get_mime_extensions_str(mut mime_str: &str) -> Option<&'static [&'static 
 
 
 
+#[cfg(feature = "rev-mappings")]
 pub fn get_extensions(toplevel: &str, sublevel: &str) -> Option<&'static [&'static str]> {
-    if toplevel == "*" {
-        return Some(EXTS);
-    }
-
-    let top = try_opt!(map_lookup(&REV_MAPPINGS, toplevel));
-
-    if sublevel == "*" {
-        return Some(&EXTS[top.start .. top.end]);
-    }
-
-    let sub = try_opt!(map_lookup(&top.subs, sublevel));
-    Some(&EXTS[sub.0 .. sub.1])
+    impl_::get_extensions(toplevel, sublevel)
 }
 
 
+#[deprecated(since = "2.0.0", note = "use `mime::APPLICATION_OCTET_STREAM` instead")]
 pub fn octet_stream() -> Mime {
     "application/octet-stream".parse().unwrap()
 }
 
-fn map_lookup<'map, V>(map: &'map phf::Map<UniCase<&'static str>, V>, key: &str) -> Option<&'map V> {
-    
-    
-    
-    
-    
-    let key = unsafe { ::std::mem::transmute::<_, &'static str>(key) };
-    map.get(&UniCase(key))
-}
-
 #[cfg(test)]
 mod tests {
-    use mime::Mime;
+    include!("mime_types.rs");
+
+    use super::{from_ext, from_path, expect_mime};
+    #[allow(deprecated, unused_imports)]
     use std::ascii::AsciiExt;
+
+    use std::fmt::Debug;
     use std::path::Path;
-    use super::{get_mime_type, guess_mime_type, MIME_TYPES};
-    use super::{get_mime_type_opt, guess_mime_type_opt};
+
+
+    #[test]
+    fn check_type_bounds() {
+        fn assert_type_bounds<T: Clone + Debug + Send + Sync + 'static>() {}
+
+        assert_type_bounds::<super::MimeGuess>();
+        assert_type_bounds::<super::Iter>();
+        assert_type_bounds::<super::IterRaw>();
+    }
 
     #[test]
     fn test_mime_type_guessing() {
-        assert_eq!(get_mime_type("gif").to_string(), "image/gif".to_string());
-        assert_eq!(get_mime_type("TXT").to_string(), "text/plain".to_string());
-        assert_eq!(get_mime_type("blahblah").to_string(), "application/octet-stream".to_string());
+        assert_eq!(
+            from_ext("gif").first_or_octet_stream().to_string(),
+            "image/gif".to_string()
+        );
+        assert_eq!(
+            from_ext("TXT").first_or_octet_stream().to_string(),
+            "text/plain".to_string()
+        );
+        assert_eq!(
+            from_ext("blahblah").first_or_octet_stream().to_string(),
+            "application/octet-stream".to_string()
+        );
 
-        assert_eq!(guess_mime_type(Path::new("/path/to/file.gif")).to_string(), "image/gif".to_string());
-        assert_eq!(guess_mime_type("/path/to/file.gif").to_string(), "image/gif".to_string());
+        assert_eq!(
+            from_path(Path::new("/path/to/file.gif"))
+                .first_or_octet_stream()
+                .to_string(),
+            "image/gif".to_string()
+        );
+        assert_eq!(
+            from_path("/path/to/file.gif").first_or_octet_stream().to_string(),
+            "image/gif".to_string()
+        );
     }
 
     #[test]
     fn test_mime_type_guessing_opt() {
-        assert_eq!(get_mime_type_opt("gif").unwrap().to_string(), "image/gif".to_string());
-        assert_eq!(get_mime_type_opt("TXT").unwrap().to_string(), "text/plain".to_string());
-        assert_eq!(get_mime_type_opt("blahblah"), None);
+        assert_eq!(
+            from_ext("gif").first().unwrap().to_string(),
+            "image/gif".to_string()
+        );
+        assert_eq!(
+            from_ext("TXT").first().unwrap().to_string(),
+            "text/plain".to_string()
+        );
+        assert_eq!(from_ext("blahblah").first(), None);
 
-        assert_eq!(guess_mime_type_opt("/path/to/file.gif").unwrap().to_string(), "image/gif".to_string());
-        assert_eq!(guess_mime_type_opt("/path/to/file"), None);
+        assert_eq!(
+            from_path("/path/to/file.gif").first().unwrap().to_string(),
+            "image/gif".to_string()
+        );
+        assert_eq!(from_path("/path/to/file").first(), None);
     }
 
     #[test]
     fn test_are_mime_types_parseable() {
-        for (_, mime) in &MIME_TYPES {
-            mime.parse::<Mime>().unwrap();
+        for (_, mimes) in MIME_TYPES {
+            mimes.iter().for_each(|s| { expect_mime(s); });
         }
     }
 
     
     #[test]
     fn test_are_extensions_ascii() {
-        for (ext, _) in &MIME_TYPES {
+        for (ext, _) in MIME_TYPES {
             assert!(ext.is_ascii(), "Extension not ASCII: {:?}", ext);
         }
     }
 
     #[test]
     fn test_are_extensions_sorted() {
-        use mime_types_src::MIME_TYPES;
-
+        
         for (&(ext, _), &(n_ext, _)) in MIME_TYPES.iter().zip(MIME_TYPES.iter().skip(1)) {
             assert!(
                 ext <= n_ext,
-                "Extensions in src/mime_types should be sorted alphabetically
+                "Extensions in src/mime_types should be sorted lexicographically
                 in ascending order. Failed assert: {:?} <= {:?}",
-                ext, n_ext
+                ext,
+                n_ext
             );
-        }
-    }
-
-}
-
-#[cfg(feature = "bench")]
-mod bench {
-    extern crate test;
-
-    use self::test::Bencher;
-
-    use super::{get_mime_type_str, MIME_TYPES};
-
-    
-    #[bench]
-    fn bench_mime_str(b: &mut Bencher) {
-        for (mime_ext, _) in &MIME_TYPES {
-            b.iter(|| {
-                get_mime_type_str(mime_ext).expect(mime_ext);
-            });
-        }
-    }
-
-    #[bench]
-    fn bench_mime_str_uppercase(b: &mut Bencher) {
-        let uppercased : Vec<_> = MIME_TYPES.into_iter().map(|(s, _)| s.to_uppercase()).collect();
-
-        for mime_ext in &uppercased {
-            b.iter(|| {
-                get_mime_type_str(mime_ext).expect(mime_ext);
-            });
         }
     }
 }

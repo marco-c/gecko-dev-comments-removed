@@ -32,7 +32,11 @@
 
 
 
-use std::ascii::AsciiExt;
+
+
+
+
+
 use std::borrow::Cow;
 use std::fmt;
 use std::slice;
@@ -51,10 +55,40 @@ use std::str;
 
 
 
-pub trait EncodeSet: Clone {
+pub struct AsciiSet {
+    mask: [Chunk; ASCII_RANGE_LEN / BITS_PER_CHUNK],
+}
+
+type Chunk = u32;
+
+const ASCII_RANGE_LEN: usize = 0x80;
+
+const BITS_PER_CHUNK: usize = 8 * std::mem::size_of::<Chunk>();
+
+impl AsciiSet {
     
     
-    fn contains(&self, byte: u8) -> bool;
+    const fn contains(&self, byte: u8) -> bool {
+        let chunk = self.mask[byte as usize / BITS_PER_CHUNK];
+        let mask = 1 << (byte as usize % BITS_PER_CHUNK);
+        (chunk & mask) != 0
+    }
+
+    fn should_percent_encode(&self, byte: u8) -> bool {
+        !byte.is_ascii() || self.contains(byte)
+    }
+
+    pub const fn add(&self, byte: u8) -> Self {
+        let mut mask = self.mask;
+        mask[byte as usize / BITS_PER_CHUNK] |= 1 << (byte as usize % BITS_PER_CHUNK);
+        AsciiSet { mask }
+    }
+
+    pub const fn remove(&self, byte: u8) -> Self {
+        let mut mask = self.mask;
+        mask[byte as usize / BITS_PER_CHUNK] &= !(1 << (byte as usize % BITS_PER_CHUNK));
+        AsciiSet { mask }
+    }
 }
 
 
@@ -62,99 +96,70 @@ pub trait EncodeSet: Clone {
 
 
 
+pub const CONTROLS: &AsciiSet = &AsciiSet {
+    mask: [
+        !0_u32, 
+        0,
+        0,
+        1 << (0x7F_u32 % 32), 
+    ],
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[macro_export]
-macro_rules! define_encode_set {
-    ($(#[$attr: meta])* pub $name: ident = [$base_set: expr] | {$($ch: pat),*}) => {
-        $(#[$attr])*
-        #[derive(Copy, Clone, Debug)]
-        #[allow(non_camel_case_types)]
-        pub struct $name;
-
-        impl $crate::EncodeSet for $name {
-            #[inline]
-            fn contains(&self, byte: u8) -> bool {
-                match byte as char {
-                    $(
-                        $ch => true,
-                    )*
-                    _ => $base_set.contains(byte)
-                }
-            }
+macro_rules! static_assert {
+    ($( $bool: expr, )+) => {
+        fn _static_assert() {
+            $(
+                let _ = std::mem::transmute::<[u8; $bool as usize], u8>;
+            )+
         }
     }
 }
 
-
-
-
-
-#[derive(Copy, Clone, Debug)]
-#[allow(non_camel_case_types)]
-pub struct SIMPLE_ENCODE_SET;
-
-impl EncodeSet for SIMPLE_ENCODE_SET {
-    #[inline]
-    fn contains(&self, byte: u8) -> bool {
-        byte < 0x20 || byte > 0x7E
-    }
+static_assert! {
+    CONTROLS.contains(0x00),
+    CONTROLS.contains(0x1F),
+    !CONTROLS.contains(0x20),
+    !CONTROLS.contains(0x7E),
+    CONTROLS.contains(0x7F),
 }
 
-define_encode_set! {
-    /// This encode set is used in the URL parser for query strings.
-    ///
-    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
-    /// space, double quote ("), hash (#), and inequality qualifiers (<), (>) are encoded.
-    pub QUERY_ENCODE_SET = [SIMPLE_ENCODE_SET] | {' ', '"', '#', '<', '>'}
-}
 
-define_encode_set! {
-    /// This encode set is used for path components.
-    ///
-    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
-    /// space, double quote ("), hash (#), inequality qualifiers (<), (>), backtick (`),
-    /// question mark (?), and curly brackets ({), (}) are encoded.
-    pub DEFAULT_ENCODE_SET = [QUERY_ENCODE_SET] | {'`', '?', '{', '}'}
-}
 
-define_encode_set! {
-    /// This encode set is used for on '/'-separated path segment
-    ///
-    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
-    /// space, double quote ("), hash (#), inequality qualifiers (<), (>), backtick (`),
-    /// question mark (?), and curly brackets ({), (}), percent sign (%), forward slash (/) are
-    /// encoded.
-    pub PATH_SEGMENT_ENCODE_SET = [DEFAULT_ENCODE_SET] | {'%', '/'}
-}
 
-define_encode_set! {
-    /// This encode set is used for username and password.
-    ///
-    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
-    /// space, double quote ("), hash (#), inequality qualifiers (<), (>), backtick (`),
-    /// question mark (?), and curly brackets ({), (}), forward slash (/), colon (:), semi-colon (;),
-    /// equality (=), at (@), backslash (\\), square brackets ([), (]), caret (\^), and pipe (|) are
-    /// encoded.
-    pub USERINFO_ENCODE_SET = [DEFAULT_ENCODE_SET] | {
-        '/', ':', ';', '=', '@', '[', '\\', ']', '^', '|'
-    }
-}
+pub const NON_ALPHANUMERIC: &AsciiSet = &CONTROLS
+    .add(b' ')
+    .add(b'!')
+    .add(b'"')
+    .add(b'#')
+    .add(b'$')
+    .add(b'%')
+    .add(b'&')
+    .add(b'\'')
+    .add(b'(')
+    .add(b')')
+    .add(b'*')
+    .add(b'+')
+    .add(b',')
+    .add(b'-')
+    .add(b'.')
+    .add(b'/')
+    .add(b':')
+    .add(b';')
+    .add(b'<')
+    .add(b'=')
+    .add(b'>')
+    .add(b'?')
+    .add(b'@')
+    .add(b'[')
+    .add(b'\\')
+    .add(b']')
+    .add(b'^')
+    .add(b'_')
+    .add(b'`')
+    .add(b'{')
+    .add(b'|')
+    .add(b'}')
+    .add(b'~');
 
 
 
@@ -171,23 +176,23 @@ define_encode_set! {
 pub fn percent_encode_byte(byte: u8) -> &'static str {
     let index = usize::from(byte) * 3;
     &"\
-        %00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F\
-        %10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F\
-        %20%21%22%23%24%25%26%27%28%29%2A%2B%2C%2D%2E%2F\
-        %30%31%32%33%34%35%36%37%38%39%3A%3B%3C%3D%3E%3F\
-        %40%41%42%43%44%45%46%47%48%49%4A%4B%4C%4D%4E%4F\
-        %50%51%52%53%54%55%56%57%58%59%5A%5B%5C%5D%5E%5F\
-        %60%61%62%63%64%65%66%67%68%69%6A%6B%6C%6D%6E%6F\
-        %70%71%72%73%74%75%76%77%78%79%7A%7B%7C%7D%7E%7F\
-        %80%81%82%83%84%85%86%87%88%89%8A%8B%8C%8D%8E%8F\
-        %90%91%92%93%94%95%96%97%98%99%9A%9B%9C%9D%9E%9F\
-        %A0%A1%A2%A3%A4%A5%A6%A7%A8%A9%AA%AB%AC%AD%AE%AF\
-        %B0%B1%B2%B3%B4%B5%B6%B7%B8%B9%BA%BB%BC%BD%BE%BF\
-        %C0%C1%C2%C3%C4%C5%C6%C7%C8%C9%CA%CB%CC%CD%CE%CF\
-        %D0%D1%D2%D3%D4%D5%D6%D7%D8%D9%DA%DB%DC%DD%DE%DF\
-        %E0%E1%E2%E3%E4%E5%E6%E7%E8%E9%EA%EB%EC%ED%EE%EF\
-        %F0%F1%F2%F3%F4%F5%F6%F7%F8%F9%FA%FB%FC%FD%FE%FF\
-    "[index..index + 3]
+      %00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F\
+      %10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F\
+      %20%21%22%23%24%25%26%27%28%29%2A%2B%2C%2D%2E%2F\
+      %30%31%32%33%34%35%36%37%38%39%3A%3B%3C%3D%3E%3F\
+      %40%41%42%43%44%45%46%47%48%49%4A%4B%4C%4D%4E%4F\
+      %50%51%52%53%54%55%56%57%58%59%5A%5B%5C%5D%5E%5F\
+      %60%61%62%63%64%65%66%67%68%69%6A%6B%6C%6D%6E%6F\
+      %70%71%72%73%74%75%76%77%78%79%7A%7B%7C%7D%7E%7F\
+      %80%81%82%83%84%85%86%87%88%89%8A%8B%8C%8D%8E%8F\
+      %90%91%92%93%94%95%96%97%98%99%9A%9B%9C%9D%9E%9F\
+      %A0%A1%A2%A3%A4%A5%A6%A7%A8%A9%AA%AB%AC%AD%AE%AF\
+      %B0%B1%B2%B3%B4%B5%B6%B7%B8%B9%BA%BB%BC%BD%BE%BF\
+      %C0%C1%C2%C3%C4%C5%C6%C7%C8%C9%CA%CB%CC%CD%CE%CF\
+      %D0%D1%D2%D3%D4%D5%D6%D7%D8%D9%DA%DB%DC%DD%DE%DF\
+      %E0%E1%E2%E3%E4%E5%E6%E7%E8%E9%EA%EB%EC%ED%EE%EF\
+      %F0%F1%F2%F3%F4%F5%F6%F7%F8%F9%FA%FB%FC%FD%FE%FF\
+      "[index..index + 3]
 }
 
 
@@ -207,13 +212,11 @@ pub fn percent_encode_byte(byte: u8) -> &'static str {
 
 
 
-
-
 #[inline]
-pub fn percent_encode<E: EncodeSet>(input: &[u8], encode_set: E) -> PercentEncode<E> {
+pub fn percent_encode<'a>(input: &'a [u8], ascii_set: &'static AsciiSet) -> PercentEncode<'a> {
     PercentEncode {
         bytes: input,
-        encode_set: encode_set,
+        ascii_set,
     }
 }
 
@@ -229,35 +232,32 @@ pub fn percent_encode<E: EncodeSet>(input: &[u8], encode_set: E) -> PercentEncod
 
 
 #[inline]
-pub fn utf8_percent_encode<E: EncodeSet>(input: &str, encode_set: E) -> PercentEncode<E> {
-    percent_encode(input.as_bytes(), encode_set)
+pub fn utf8_percent_encode<'a>(input: &'a str, ascii_set: &'static AsciiSet) -> PercentEncode<'a> {
+    percent_encode(input.as_bytes(), ascii_set)
 }
 
 
-#[derive(Clone, Debug)]
-pub struct PercentEncode<'a, E: EncodeSet> {
+#[derive(Clone)]
+pub struct PercentEncode<'a> {
     bytes: &'a [u8],
-    encode_set: E,
+    ascii_set: &'static AsciiSet,
 }
 
-impl<'a, E: EncodeSet> Iterator for PercentEncode<'a, E> {
+impl<'a> Iterator for PercentEncode<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
         if let Some((&first_byte, remaining)) = self.bytes.split_first() {
-            if self.encode_set.contains(first_byte) {
+            if self.ascii_set.should_percent_encode(first_byte) {
                 self.bytes = remaining;
                 Some(percent_encode_byte(first_byte))
             } else {
-                assert!(first_byte.is_ascii());
                 for (i, &byte) in remaining.iter().enumerate() {
-                    if self.encode_set.contains(byte) {
+                    if self.ascii_set.should_percent_encode(byte) {
                         
                         let (unchanged_slice, remaining) = self.bytes.split_at(1 + i);
                         self.bytes = remaining;
-                        return Some(unsafe { str::from_utf8_unchecked(unchanged_slice) })
-                    } else {
-                        assert!(byte.is_ascii());
+                        return Some(unsafe { str::from_utf8_unchecked(unchanged_slice) });
                     }
                 }
                 let unchanged_slice = self.bytes;
@@ -278,7 +278,7 @@ impl<'a, E: EncodeSet> Iterator for PercentEncode<'a, E> {
     }
 }
 
-impl<'a, E: EncodeSet> fmt::Display for PercentEncode<'a, E> {
+impl<'a> fmt::Display for PercentEncode<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         for c in (*self).clone() {
             formatter.write_str(c)?
@@ -287,24 +287,36 @@ impl<'a, E: EncodeSet> fmt::Display for PercentEncode<'a, E> {
     }
 }
 
-impl<'a, E: EncodeSet> From<PercentEncode<'a, E>> for Cow<'a, str> {
-    fn from(mut iter: PercentEncode<'a, E>) -> Self {
+impl<'a> From<PercentEncode<'a>> for Cow<'a, str> {
+    fn from(mut iter: PercentEncode<'a>) -> Self {
         match iter.next() {
             None => "".into(),
-            Some(first) => {
-                match iter.next() {
-                    None => first.into(),
-                    Some(second) => {
-                        let mut string = first.to_owned();
-                        string.push_str(second);
-                        string.extend(iter);
-                        string.into()
-                    }
+            Some(first) => match iter.next() {
+                None => first.into(),
+                Some(second) => {
+                    let mut string = first.to_owned();
+                    string.push_str(second);
+                    string.extend(iter);
+                    string.into()
                 }
-            }
+            },
         }
     }
 }
+
+
+
+
+
+
+#[inline]
+pub fn percent_decode_str(input: &str) -> PercentDecode {
+    percent_decode(input.as_bytes())
+}
+
+
+
+
 
 
 
@@ -323,7 +335,7 @@ impl<'a, E: EncodeSet> From<PercentEncode<'a, E>> for Cow<'a, str> {
 #[inline]
 pub fn percent_decode(input: &[u8]) -> PercentDecode {
     PercentDecode {
-        bytes: input.iter()
+        bytes: input.iter(),
     }
 }
 
@@ -334,15 +346,11 @@ pub struct PercentDecode<'a> {
 }
 
 fn after_percent_sign(iter: &mut slice::Iter<u8>) -> Option<u8> {
-    let initial_iter = iter.clone();
-    let h = iter.next().and_then(|&b| (b as char).to_digit(16));
-    let l = iter.next().and_then(|&b| (b as char).to_digit(16));
-    if let (Some(h), Some(l)) = (h, l) {
-        Some(h as u8 * 0x10 + l as u8)
-    } else {
-        *iter = initial_iter;
-        None
-    }
+    let mut cloned_iter = iter.clone();
+    let h = char::from(*cloned_iter.next()?).to_digit(16)?;
+    let l = char::from(*cloned_iter.next()?).to_digit(16)?;
+    *iter = cloned_iter;
+    Some(h as u8 * 0x10 + l as u8)
 }
 
 impl<'a> Iterator for PercentDecode<'a> {
@@ -375,7 +383,7 @@ impl<'a> From<PercentDecode<'a>> for Cow<'a, [u8]> {
 
 impl<'a> PercentDecode<'a> {
     
-    pub fn if_any(&self) -> Option<Vec<u8>> {
+    fn if_any(&self) -> Option<Vec<u8>> {
         let mut bytes_iter = self.bytes.clone();
         while bytes_iter.any(|&b| b == b'%') {
             if let Some(decoded_byte) = after_percent_sign(&mut bytes_iter) {
@@ -383,10 +391,8 @@ impl<'a> PercentDecode<'a> {
                 let unchanged_bytes_len = initial_bytes.len() - bytes_iter.len() - 3;
                 let mut decoded = initial_bytes[..unchanged_bytes_len].to_owned();
                 decoded.push(decoded_byte);
-                decoded.extend(PercentDecode {
-                    bytes: bytes_iter
-                });
-                return Some(decoded)
+                decoded.extend(PercentDecode { bytes: bytes_iter });
+                return Some(decoded);
             }
         }
         
@@ -398,18 +404,14 @@ impl<'a> PercentDecode<'a> {
     
     pub fn decode_utf8(self) -> Result<Cow<'a, str>, str::Utf8Error> {
         match self.clone().into() {
-            Cow::Borrowed(bytes) => {
-                match str::from_utf8(bytes) {
-                    Ok(s) => Ok(s.into()),
-                    Err(e) => Err(e),
-                }
-            }
-            Cow::Owned(bytes) => {
-                match String::from_utf8(bytes) {
-                    Ok(s) => Ok(s.into()),
-                    Err(e) => Err(e.utf8_error()),
-                }
-            }
+            Cow::Borrowed(bytes) => match str::from_utf8(bytes) {
+                Ok(s) => Ok(s.into()),
+                Err(e) => Err(e),
+            },
+            Cow::Owned(bytes) => match String::from_utf8(bytes) {
+                Ok(s) => Ok(s.into()),
+                Err(e) => Err(e.utf8_error()),
+            },
         }
     }
 
@@ -438,5 +440,3 @@ fn decode_utf8_lossy(input: Cow<[u8]>) -> Cow<str> {
         }
     }
 }
-
-

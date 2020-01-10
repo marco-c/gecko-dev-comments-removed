@@ -11,8 +11,8 @@
 
 
 
-use {Url, Position, Host, ParseError, idna};
-use parser::{Parser, SchemeType, default_port, Context, Input};
+use parser::{default_port, Context, Input, Parser, SchemeType};
+use {idna, Host, ParseError, Position, Url};
 
 
 pub fn domain_to_ascii(domain: &str) -> String {
@@ -84,7 +84,11 @@ pub fn password(url: &Url) -> &str {
 
 
 pub fn set_password(url: &mut Url, new_password: &str) -> Result<(), ()> {
-    url.set_password(if new_password.is_empty() { None } else { Some(new_password) })
+    url.set_password(if new_password.is_empty() {
+        None
+    } else {
+        Some(new_password)
+    })
 }
 
 
@@ -96,7 +100,7 @@ pub fn host(url: &Url) -> &str {
 
 pub fn set_host(url: &mut Url, new_host: &str) -> Result<(), ()> {
     if url.cannot_be_a_base() {
-        return Err(())
+        return Err(());
     }
     let host;
     let opt_port;
@@ -108,12 +112,13 @@ pub fn set_host(url: &mut Url, new_host: &str) -> Result<(), ()> {
                 host = h;
                 opt_port = if let Some(remaining) = remaining.split_prefix(':') {
                     Parser::parse_port(remaining, || default_port(scheme), Context::Setter)
-                    .ok().map(|(port, _remaining)| port)
+                        .ok()
+                        .map(|(port, _remaining)| port)
                 } else {
                     None
                 };
             }
-            Err(_) => return Err(())
+            Err(_) => return Err(()),
         }
     }
     url.set_host_internal(host, opt_port);
@@ -129,7 +134,7 @@ pub fn hostname(url: &Url) -> &str {
 
 pub fn set_hostname(url: &mut Url, new_hostname: &str) -> Result<(), ()> {
     if url.cannot_be_a_base() {
-        return Err(())
+        return Err(());
     }
     let result = Parser::parse_host(Input::new(new_hostname), SchemeType::from(url.scheme()));
     if let Ok((host, _remaining)) = result {
@@ -153,9 +158,13 @@ pub fn set_port(url: &mut Url, new_port: &str) -> Result<(), ()> {
         
         let scheme = url.scheme();
         if !url.has_host() || url.host() == Some(Host::Domain("")) || scheme == "file" {
-            return Err(())
+            return Err(());
         }
-        result = Parser::parse_port(Input::new(new_port), || default_port(scheme), Context::Setter)
+        result = Parser::parse_port(
+            Input::new(new_port),
+            || default_port(scheme),
+            Context::Setter,
+        )
     }
     if let Ok((new_port, _remaining)) = result {
         url.set_port_internal(new_port);
@@ -168,7 +177,7 @@ pub fn set_port(url: &mut Url, new_port: &str) -> Result<(), ()> {
 
 #[inline]
 pub fn pathname(url: &Url) -> &str {
-     url.path()
+    url.path()
 }
 
 
