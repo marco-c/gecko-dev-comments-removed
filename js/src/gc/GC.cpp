@@ -7720,6 +7720,13 @@ bool GCRuntime::gcIfRequested() {
 }
 
 void js::gc::FinishGC(JSContext* cx, JS::GCReason reason) {
+  
+  MOZ_ASSERT(!cx->suppressGC);
+
+  
+  
+  MOZ_ASSERT(cx->isNurseryAllocAllowed());
+
   if (JS::IsIncrementalGCInProgress(cx)) {
     JS::PrepareForIncrementalGC(cx);
     JS::FinishIncrementalGC(cx, reason);
