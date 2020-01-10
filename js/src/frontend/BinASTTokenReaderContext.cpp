@@ -235,7 +235,7 @@ class HuffmanPreludeReader {
 
   
   struct MaybeInterface : EntryIndexed {
-    using SymbolType = Nullable;
+    using SymbolType = BinASTKind;
     using Table = HuffmanTableIndexedSymbolsMaybeInterface;
     
     const BinASTKind kind;
@@ -1221,6 +1221,55 @@ struct ExtractBinASTInterfaceAndFieldMatcher {
   }
 };
 
+struct TagReader {
+  using Context = BinASTTokenReaderBase::Context;
+  using BitBuffer = BinASTTokenReaderContext::BitBuffer;
+
+  const Context& context;
+  const HuffmanLookup bits;
+  BitBuffer& bitBuffer;
+  BinASTTokenReaderContext& owner;
+  TagReader(const Context& context, const HuffmanLookup bits,
+            BitBuffer& bitBuffer, BinASTTokenReaderContext& owner)
+      : context(context), bits(bits), bitBuffer(bitBuffer), owner(owner) {}
+  JS::Result<BinASTKind> operator()(
+      const HuffmanTableIndexedSymbolsSum& specialized) {
+    
+    const auto lookup = specialized.impl.lookup(bits);
+    bitBuffer.advanceBitBuffer<Compression::No>(lookup.key.bitLength);
+    if (!lookup.value) {
+      return owner.raiseInvalidValue(context);
+    }
+    return *lookup.value;
+  }
+  JS::Result<BinASTKind> operator()(
+      const HuffmanTableIndexedSymbolsMaybeInterface& specialized) {
+    
+    const auto lookup = specialized.impl.lookup(bits);
+    bitBuffer.advanceBitBuffer<Compression::No>(lookup.key.bitLength);
+    if (!lookup.value) {
+      return owner.raiseInvalidValue(context);
+    }
+    return *lookup.value;
+  }
+  template <typename Table>
+  JS::Result<BinASTKind> operator()(const Table&) {
+    MOZ_CRASH("Unreachable");
+  }
+};
+
+JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
+    const Context& context) {
+  
+  BinASTInterfaceAndField identity =
+      context.match(ExtractBinASTInterfaceAndFieldMatcher());
+  const auto& table =
+      dictionary.tableForField(NormalizedInterfaceAndField(identity));
+  BINJS_MOZ_TRY_DECL(bits,
+                     (bitBuffer.getHuffmanLookup<Compression::No>(*this)));
+  return table.match(TagReader(context, bits, bitBuffer, *this));
+}
+
 template <typename Table>
 JS::Result<typename Table::Contents>
 BinASTTokenReaderContext::readFieldFromTable(const Context& context) {
@@ -1304,15 +1353,15 @@ JS::Result<Ok> BinASTTokenReaderContext::enterTaggedTuple(
       },
       [this, context,
        &tag](const BinASTTokenReaderBase::ListContext&) -> JS::Result<Ok> {
-        MOZ_TRY_VAR(
-            tag, (readFieldFromTable<HuffmanTableIndexedSymbolsSum>(context)));
+        
+        MOZ_TRY_VAR(tag, readTagFromTable(context));
         return Ok();
       },
       [this, context,
        &tag](const BinASTTokenReaderBase::FieldContext& asFieldContext)
           -> JS::Result<Ok> {
-        MOZ_TRY_VAR(
-            tag, (readFieldFromTable<HuffmanTableIndexedSymbolsSum>(context)));
+        
+        MOZ_TRY_VAR(tag, readTagFromTable(context));
         return Ok();
       });
 }
@@ -1611,10 +1660,10 @@ MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
 
 
 template <>
-MOZ_MUST_USE JS::Result<Nullable> HuffmanPreludeReader::readSymbol(
-    const MaybeInterface&, size_t index) {
+MOZ_MUST_USE JS::Result<BinASTKind> HuffmanPreludeReader::readSymbol(
+    const MaybeInterface& entry, size_t index) {
   MOZ_ASSERT(index < 2);
-  return index == 0 ? Nullable::Null : Nullable::NonNull;
+  return index == 0 ? BinASTKind::_Null : entry.kind;
 }
 
 
@@ -1629,7 +1678,7 @@ HuffmanPreludeReader::readSingleValueTable<MaybeInterface>(
   }
 
   MOZ_TRY(table.impl.initWithSingleValue(
-      cx_, indexByte == 0 ? Nullable::Null : Nullable::NonNull));
+      cx_, indexByte == 0 ? BinASTKind::_Null : entry.kind));
   return Ok();
 }
 

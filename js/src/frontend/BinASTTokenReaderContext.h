@@ -242,9 +242,11 @@ struct HuffmanTableIndexedSymbolsBool {
   explicit HuffmanTableIndexedSymbolsBool(JSContext* cx) : impl(cx) {}
 };
 
+
+
 struct HuffmanTableIndexedSymbolsMaybeInterface {
-  using Contents = Nullable;
-  HuffmanTableImpl<Nullable, 2> impl;
+  using Contents = BinASTKind;
+  HuffmanTableImpl<BinASTKind, 2> impl;
   explicit HuffmanTableIndexedSymbolsMaybeInterface(JSContext* cx) : impl(cx) {}
 
   
@@ -257,7 +259,7 @@ struct HuffmanTableIndexedSymbolsMaybeInterface {
       return false;
     }
     
-    return impl.begin()->value == Nullable::Null;
+    return impl.begin()->value == BinASTKind::_Null;
   }
 };
 
@@ -400,7 +402,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     BestEffort
   };
 
- private:
+ protected:
   
   
   
@@ -604,6 +606,8 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   MOZ_MUST_USE JS::Result<uint32_t> readUnpackedLong();
 
  private:
+  MOZ_MUST_USE JS::Result<BinASTKind> readTagFromTable(const Context&);
+
   template <typename Table>
   MOZ_MUST_USE JS::Result<typename Table::Contents> readFieldFromTable(
       const Context&);
@@ -659,6 +663,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
  protected:
   friend class HuffmanPreludeReader;
+  friend struct TagReader;
 
  public:
   
