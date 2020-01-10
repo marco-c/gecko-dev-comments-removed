@@ -74,6 +74,8 @@ class nsClipboard : public nsIClipboard, public nsIObserver {
                            const char* aClipboardData,
                            uint32_t aClipboardDataLength);
 
+  void ClearTransferable(int32_t aWhichClipboard);
+
   
   
   nsCOMPtr<nsIClipboardOwner> mSelectionOwner;
