@@ -334,7 +334,8 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   using VarNamesSet =
-      JS::GCHashSet<JSAtom*, js::DefaultHasher<JSAtom*>, js::ZoneAllocPolicy>;
+      GCHashSet<js::HeapPtr<JSAtom*>, js::DefaultHasher<JSAtom*>,
+                js::ZoneAllocPolicy>;
   VarNamesSet varNames_;
 
   friend class js::AutoSetNewObjectMetadata;

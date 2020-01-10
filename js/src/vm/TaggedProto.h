@@ -51,8 +51,10 @@ class TaggedProto {
   HashNumber hashCode() const;
 
   void trace(JSTracer* trc) {
+    
+    
     if (isObject()) {
-      TraceManuallyBarrieredEdge(trc, &proto, "TaggedProto");
+      TraceRoot(trc, &proto, "TaggedProto");
     }
   }
 

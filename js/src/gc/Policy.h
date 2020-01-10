@@ -44,9 +44,10 @@ struct InternalGCPointerPolicy : public JS::GCPointerPolicy<T> {
     }
   }
   static void trace(JSTracer* trc, T* vp, const char* name) {
-    if (*vp) {
-      TraceManuallyBarrieredEdge(trc, vp, name);
-    }
+    
+    
+    
+    TraceNullableRoot(trc, vp, name);
   }
 };
 
