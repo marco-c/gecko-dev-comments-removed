@@ -15,11 +15,10 @@ use crate::image::{self, Repetition};
 use crate::intern;
 use crate::prim_store::{ClipData, ImageMaskData, SpaceMapper, VisibleMaskImageTile};
 use crate::prim_store::{PointKey, SizeKey, RectangleKey};
-use crate::render_backend::DataStores;
 use crate::render_task::to_cache_size;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use std::{cmp, ops, u32};
-use crate::util::{extract_inner_rect_safe, project_rect, ScaleOffset, MaxRect};
+use crate::util::{extract_inner_rect_safe, project_rect, ScaleOffset};
 
 
 
@@ -103,7 +102,19 @@ use crate::util::{extract_inner_rect_safe, project_rect, ScaleOffset, MaxRect};
 
 
 pub type ClipDataStore = intern::DataStore<ClipIntern>;
-type ClipDataHandle = intern::Handle<ClipIntern>;
+pub type ClipDataHandle = intern::Handle<ClipIntern>;
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Copy, Clone, MallocSizeOf)]
+pub enum ClipNodeKind {
+    
+    Rectangle,
+    
+    Complex,
+}
 
 
 #[derive(Debug)]
@@ -209,7 +220,6 @@ impl ClipChainId {
 pub struct ClipChainNode {
     pub handle: ClipDataHandle,
     pub parent_clip_chain_id: ClipChainId,
-    pub has_complex_clip: bool,
 }
 
 
@@ -545,22 +555,25 @@ impl ClipChainInstance {
 }
 
 
+#[derive(Debug)]
 pub struct ClipChainLevel {
     clips: Vec<ClipChainId>,
     clip_counts: Vec<usize>,
-    viewport: WorldRect,
+    
+    
+    shared_clips: Vec<ClipDataHandle>,
 }
 
 impl ClipChainLevel {
     
     
     fn new(
-        viewport: WorldRect,
+        shared_clips: Vec<ClipDataHandle>,
     ) -> Self {
         ClipChainLevel {
             clips: Vec::new(),
             clip_counts: Vec::new(),
-            viewport,
+            shared_clips,
         }
     }
 }
@@ -580,7 +593,7 @@ pub struct ClipChainStack {
 impl ClipChainStack {
     pub fn new() -> Self {
         ClipChainStack {
-            stack: vec![ClipChainLevel::new(WorldRect::max_rect())],
+            stack: vec![ClipChainLevel::new(Vec::new())],
         }
     }
 
@@ -589,72 +602,37 @@ impl ClipChainStack {
         &mut self,
         clip_chain_id: ClipChainId,
         clip_store: &ClipStore,
-        data_stores: &DataStores,
-        clip_scroll_tree: &ClipScrollTree,
-        global_screen_world_rect: WorldRect,
     ) {
-        let level = self.stack.last_mut().unwrap();
         let mut clip_count = 0;
 
         let mut current_clip_chain_id = clip_chain_id;
         while current_clip_chain_id != ClipChainId::NONE {
             let clip_chain_node = &clip_store.clip_chain_nodes[current_clip_chain_id.0 as usize];
+            let clip_uid = clip_chain_node.handle.uid();
 
-            let clip_node = &data_stores.clip[clip_chain_node.handle];
-
             
             
             
             
-            
-            
-            
-            
-            let valid_clip = match clip_node.item.kind {
-                ClipItemKind::Rectangle { rect, mode: ClipMode::Clip } => {
-                    let scroll_root = clip_scroll_tree.find_scroll_root(
-                        clip_node.item.spatial_node_index,
-                    );
-
-                    let mut is_required = true;
-
-                    if scroll_root == ROOT_SPATIAL_NODE_INDEX {
-                        let map_local_to_world = SpaceMapper::new_with_target(
-                            ROOT_SPATIAL_NODE_INDEX,
-                            clip_node.item.spatial_node_index,
-                            global_screen_world_rect,
-                            clip_scroll_tree,
-                        );
-
-                        
-                        
-                        
-                        
-                        
-                        
-                        if let Some(clip_world_rect) = map_local_to_world.map(&rect) {
-                            if clip_world_rect.contains_rect(&level.viewport) {
-                                is_required = false;
-                            }
-                        }
-                    }
-
-                    is_required
+            let mut valid_clip = true;
+            for level in &self.stack {
+                if level.shared_clips.iter().any(|handle| {
+                    handle.uid() == clip_uid
+                }) {
+                    valid_clip = false;
+                    break;
                 }
-                _ => {
-                    true
-                }
-            };
+            }
 
             if valid_clip {
-                level.clips.push(current_clip_chain_id);
+                self.stack.last_mut().unwrap().clips.push(current_clip_chain_id);
                 clip_count += 1;
             }
 
             current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
 
-        level.clip_counts.push(clip_count);
+        self.stack.last_mut().unwrap().clip_counts.push(clip_count);
     }
 
     
@@ -670,24 +648,9 @@ impl ClipChainStack {
     
     pub fn push_surface(
         &mut self,
-        viewport: WorldRect,
+        shared_clips: &[ClipDataHandle],
     ) {
-        
-        
-        
-        
-        let viewport = match self.stack.last() {
-            Some(parent_level) => {
-                parent_level.viewport
-                    .intersection(&viewport)
-                    .unwrap_or(WorldRect::zero())
-            }
-            None => {
-                viewport
-            }
-        };
-
-        let level = ClipChainLevel::new(viewport);
+        let level = ClipChainLevel::new(shared_clips.to_vec());
         self.stack.push(level);
     }
 
@@ -722,13 +685,11 @@ impl ClipStore {
         &mut self,
         handle: ClipDataHandle,
         parent_clip_chain_id: ClipChainId,
-        has_complex_clip: bool,
     ) -> ClipChainId {
         let id = ClipChainId(self.clip_chain_nodes.len() as u32);
         self.clip_chain_nodes.push(ClipChainNode {
             handle,
             parent_clip_chain_id,
-            has_complex_clip,
         });
         id
     }
@@ -1072,14 +1033,14 @@ impl ClipItemKeyKind {
         )
     }
 
-    pub fn has_complex_clip(&self) -> bool {
+    pub fn node_kind(&self) -> ClipNodeKind {
         match *self {
-            ClipItemKeyKind::Rectangle(_, ClipMode::Clip) => false,
+            ClipItemKeyKind::Rectangle(_, ClipMode::Clip) => ClipNodeKind::Rectangle,
 
             ClipItemKeyKind::Rectangle(_, ClipMode::ClipOut) |
             ClipItemKeyKind::RoundedRectangle(..) |
             ClipItemKeyKind::ImageMask(..) |
-            ClipItemKeyKind::BoxShadow(..) => true,
+            ClipItemKeyKind::BoxShadow(..) => ClipNodeKind::Complex,
         }
     }
 }
@@ -1097,7 +1058,7 @@ impl intern::InternDebug for ClipItemKey {}
 impl intern::Internable for ClipIntern {
     type Key = ClipItemKey;
     type StoreData = ClipNode;
-    type InternData = ();
+    type InternData = ClipNodeKind;
 }
 
 #[derive(Debug, MallocSizeOf)]

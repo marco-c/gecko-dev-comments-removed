@@ -7,7 +7,7 @@ use api::{PropertyBinding, PropertyBindingId, FilterPrimitive, FontRenderMode};
 use api::{DebugFlags, RasterSpace, ImageKey, ColorF};
 use api::units::*;
 use crate::box_shadow::{BLUR_SAMPLE_SCALE};
-use crate::clip::{ClipStore, ClipDataStore, ClipChainInstance};
+use crate::clip::{ClipStore, ClipDataStore, ClipChainInstance, ClipDataHandle};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX,
     ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, CoordinateSystemId
 };
@@ -34,7 +34,6 @@ use crate::render_task::{RenderTask, RenderTaskLocation, BlurTaskCache, ClearMod
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
 use crate::scene_builder::Interners;
-use crate::spatial_node::SpatialNodeType;
 use smallvec::SmallVec;
 use std::{mem, u16};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -1083,13 +1082,7 @@ pub struct TileCacheInstance {
     
     pub local_rect: PictureRect,
     
-    pub local_clip_rect: PictureRect,
-    
     pub tiles_to_draw: Vec<TileOffset>,
-    
-    
-    
-    pub world_viewport_rect: WorldRect,
     
     surface_index: SurfaceIndex,
     
@@ -1104,6 +1097,11 @@ pub struct TileCacheInstance {
     
     
     fract_offset: PictureVector2D,
+    
+    
+    
+    
+    pub shared_clips: Vec<ClipDataHandle>,
 }
 
 impl TileCacheInstance {
@@ -1111,6 +1109,7 @@ impl TileCacheInstance {
         slice: usize,
         spatial_node_index: SpatialNodeIndex,
         background_color: Option<ColorF>,
+        shared_clips: Vec<ClipDataHandle>,
     ) -> Self {
         TileCacheInstance {
             slice,
@@ -1129,14 +1128,13 @@ impl TileCacheInstance {
             tile_bounds_p0: TileOffset::zero(),
             tile_bounds_p1: TileOffset::zero(),
             local_rect: PictureRect::zero(),
-            local_clip_rect: PictureRect::zero(),
             tiles_to_draw: Vec::new(),
-            world_viewport_rect: WorldRect::zero(),
             surface_index: SurfaceIndex(0),
             background_color,
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
             fract_offset: PictureVector2D::zero(),
+            shared_clips,
         }
     }
 
@@ -1253,49 +1251,7 @@ impl TileCacheInstance {
             self.fract_offset = fract_offset;
         }
 
-        let spatial_node = &frame_context
-            .clip_scroll_tree
-            .spatial_nodes[self.spatial_node_index.0 as usize];
-        let (viewport_rect, viewport_spatial_node_index) = match spatial_node.node_type {
-            SpatialNodeType::ScrollFrame(ref info) => {
-                (info.viewport_rect, spatial_node.parent.unwrap())
-            }
-            SpatialNodeType::StickyFrame(..) => {
-                unreachable!();
-            }
-            SpatialNodeType::ReferenceFrame(..) => {
-                assert_eq!(self.spatial_node_index, ROOT_SPATIAL_NODE_INDEX);
-                (LayoutRect::max_rect(), ROOT_SPATIAL_NODE_INDEX)
-            }
-        };
-
-        let viewport_to_world_mapper = SpaceMapper::new_with_target(
-            ROOT_SPATIAL_NODE_INDEX,
-            viewport_spatial_node_index,
-            frame_context.global_screen_world_rect,
-            frame_context.clip_scroll_tree,
-        );
-        self.world_viewport_rect = viewport_to_world_mapper
-            .map(&viewport_rect)
-            .expect("bug: unable to map viewport to world space");
-
-        
-        
-        
-        
-        
-        
-        self.map_local_to_surface.set_target_spatial_node(
-            viewport_spatial_node_index,
-            frame_context.clip_scroll_tree,
-        );
-        let local_viewport_rect = self
-            .map_local_to_surface
-            .map(&viewport_rect)
-            .expect("bug: unable to map to local viewport rect");
-
         self.local_rect = pic_rect;
-        self.local_clip_rect = local_viewport_rect;
 
         
         
@@ -1330,15 +1286,11 @@ impl TileCacheInstance {
             .unmap(&frame_context.global_screen_world_rect)
             .expect("unable to unmap screen rect");
 
-        let visible_rect_in_pic_space = screen_rect_in_pic_space
-            .intersection(&self.local_clip_rect)
-            .unwrap_or(PictureRect::zero());
-
         
         
         
         
-        let desired_rect_in_pic_space = visible_rect_in_pic_space
+        let desired_rect_in_pic_space = screen_rect_in_pic_space
             .inflate(0.0, 3.0 * self.tile_size.height);
 
         let needed_rect_in_pic_space = desired_rect_in_pic_space

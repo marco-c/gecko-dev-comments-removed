@@ -12,7 +12,7 @@ use api::{PropertyBinding, ReferenceFrame, ReferenceFrameKind, ScrollFrameDispla
 use api::{Shadow, SpaceAndClipInfo, SpatialId, StackingContext, StickyFrameDisplayItem};
 use api::{ClipMode, PrimitiveKeyKind, TransformStyle, YuvColorSpace, ColorRange, YuvData, TempFilterData};
 use api::units::*;
-use crate::clip::{ClipChainId, ClipRegion, ClipItemKey, ClipStore, ClipItemKeyKind};
+use crate::clip::{ClipChainId, ClipRegion, ClipItemKey, ClipStore, ClipItemKeyKind, ClipDataHandle, ClipNodeKind};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
 use crate::frame_builder::{ChasePrimitive, FrameBuilder, FrameBuilderConfig};
 use crate::glyph_rasterizer::FontInstance;
@@ -467,6 +467,31 @@ impl<'a> DisplayListFlattener<'a> {
         let mut clip_chain_instance_stack = Vec::new();
 
         
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        let mut shared_clips = Vec::new();
+        
+        
+        let mut prim_clips = Vec::new();
+        
+        let mut update_shared_clips = true;
+        
+        let mut last_prim_clip_chain_id = ClipChainId::NONE;
+
+        
         #[derive(Debug)]
         struct ClipChainPairInfo {
             push_index: usize,
@@ -475,11 +500,25 @@ impl<'a> DisplayListFlattener<'a> {
             clip_chain_id: ClipChainId,
         }
 
-        for (i, instance) in primitives.iter().enumerate() {
-            let scroll_root = self.clip_scroll_tree.find_scroll_root(
-                instance.spatial_node_index,
-            );
+        
+        fn add_clips(
+            clip_chain_id: ClipChainId,
+            prim_clips: &mut Vec<ClipDataHandle>,
+            clip_store: &ClipStore,
+        ) {
+            let mut current_clip_chain_id = clip_chain_id;
 
+            while current_clip_chain_id != ClipChainId::NONE {
+                let clip_chain_node = &clip_store
+                    .clip_chain_nodes[current_clip_chain_id.0 as usize];
+
+                prim_clips.push(clip_chain_node.handle);
+
+                current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+            }
+        }
+
+        for (i, instance) in primitives.iter().enumerate() {
             
             
             match instance.kind {
@@ -491,6 +530,9 @@ impl<'a> DisplayListFlattener<'a> {
                         spatial_node_index: instance.spatial_node_index,
                         clip_chain_id: instance.clip_chain_id,
                     });
+                    
+                    update_shared_clips = true;
+                    continue;
                 }
                 PrimitiveInstanceKind::PopClipChain => {
                     let index = clip_chain_instance_stack.pop().unwrap();
@@ -505,9 +547,53 @@ impl<'a> DisplayListFlattener<'a> {
                         instance.spatial_node_index,
                     );
                     clip_chain_instance.pop_index = i;
+                    
+                    update_shared_clips = true;
+                    continue;
                 }
                 _ => {}
             }
+
+            
+            update_shared_clips |= last_prim_clip_chain_id != instance.clip_chain_id;
+            last_prim_clip_chain_id = instance.clip_chain_id;
+
+            if update_shared_clips {
+                prim_clips.clear();
+                
+                for clip_instance_index in &clip_chain_instance_stack {
+                    let clip_instance = &clip_chain_instances[*clip_instance_index];
+                    add_clips(
+                        clip_instance.clip_chain_id,
+                        &mut prim_clips,
+                        &self.clip_store,
+                    );
+                }
+                
+                add_clips(
+                    instance.clip_chain_id,
+                    &mut prim_clips,
+                    &self.clip_store,
+                );
+
+                
+                
+                
+                
+                
+                shared_clips.retain(|h1: &ClipDataHandle| {
+                    let uid = h1.uid();
+                    prim_clips.iter().any(|h2| {
+                        uid == h2.uid()
+                    })
+                });
+
+                update_shared_clips = false;
+            }
+
+            let scroll_root = self.clip_scroll_tree.find_scroll_root(
+                instance.spatial_node_index,
+            );
 
             if scroll_root != ROOT_SPATIAL_NODE_INDEX {
                 
@@ -527,6 +613,9 @@ impl<'a> DisplayListFlattener<'a> {
                 }
 
                 if first_index.is_none() {
+                    
+                    
+                    shared_clips = prim_clips.clone();
                     first_index = Some(i);
                 }
             }
@@ -547,34 +636,20 @@ impl<'a> DisplayListFlattener<'a> {
 
         let mut preceding_prims;
         let mut remaining_prims;
-        let mut trailing_prims;
 
         match first_index {
             Some(first_index) => {
                 
                 remaining_prims = old_prim_list.split_off(first_index);
-
-                
-                let last_index = remaining_prims.iter().rposition(|instance| {
-                    let scroll_root = self.clip_scroll_tree.find_scroll_root(
-                        instance.spatial_node_index,
-                    );
-
-                    scroll_root != ROOT_SPATIAL_NODE_INDEX
-                }).unwrap_or(remaining_prims.len() - 1);
-
                 preceding_prims = old_prim_list;
-                trailing_prims = remaining_prims.split_off(last_index + 1);
             }
             None => {
                 preceding_prims = Vec::new();
                 remaining_prims = old_prim_list;
-                trailing_prims = Vec::new();
             }
         }
 
         let mid_index = preceding_prims.len();
-        let post_index = mid_index + remaining_prims.len();
 
         
         for clip_chain_instance in clip_chain_instances {
@@ -588,25 +663,6 @@ impl<'a> DisplayListFlattener<'a> {
                 );
 
                 remaining_prims.insert(
-                    0,
-                    create_clip_prim_instance(
-                        clip_chain_instance.spatial_node_index,
-                        clip_chain_instance.clip_chain_id,
-                        PrimitiveInstanceKind::PushClipChain,
-                    )
-                );
-            }
-
-            if clip_chain_instance.push_index < post_index && clip_chain_instance.pop_index >= post_index {
-                remaining_prims.push(
-                    create_clip_prim_instance(
-                        clip_chain_instance.spatial_node_index,
-                        clip_chain_instance.clip_chain_id,
-                        PrimitiveInstanceKind::PopClipChain,
-                    )
-                );
-
-                trailing_prims.insert(
                     0,
                     create_clip_prim_instance(
                         clip_chain_instance.spatial_node_index,
@@ -642,10 +698,25 @@ impl<'a> DisplayListFlattener<'a> {
             }
             );
 
+        
+        
+        
+        
+        
+        
+        let mut parent_clip_chain_id = ClipChainId::NONE;
+        for clip_handle in &shared_clips {
+            parent_clip_chain_id = self.clip_store.add_clip_chain_node(
+                *clip_handle,
+                parent_clip_chain_id,
+            );
+        }
+
         let tile_cache = Box::new(TileCacheInstance::new(
             0,
             main_scroll_root,
             self.config.background_color,
+            shared_clips,
         ));
 
         let pic_index = self.prim_store.pictures.alloc().init(PicturePrimitive::new_image(
@@ -669,16 +740,15 @@ impl<'a> DisplayListFlattener<'a> {
                 pic_index: PictureIndex(pic_index),
                 segment_instance_index: SegmentInstanceIndex::INVALID,
             },
-            ClipChainId::NONE,
+            parent_clip_chain_id,
             main_scroll_root,
         );
 
         
         
-        primitives.reserve(preceding_prims.len() + trailing_prims.len() + 1);
+        primitives.reserve(preceding_prims.len() + 1);
         primitives.extend(preceding_prims);
         primitives.push(instance);
-        primitives.extend(trailing_prims);
     }
 
     fn flatten_items(
@@ -1297,17 +1367,14 @@ impl<'a> DisplayListFlattener<'a> {
 
                     for _ in 0 .. item_clip_node.count {
                         
-                        let (handle, has_complex_clip) = {
+                        let handle = {
                             let clip_chain = self
                                 .clip_store
                                 .get_clip_chain(clip_node_clip_chain_id);
 
                             clip_node_clip_chain_id = clip_chain.parent_clip_chain_id;
 
-                            (
-                                clip_chain.handle,
-                                clip_chain.has_complex_clip,
-                            )
+                            clip_chain.handle
                         };
 
                         
@@ -1317,7 +1384,6 @@ impl<'a> DisplayListFlattener<'a> {
                             .add_clip_chain_node(
                                 handle,
                                 clip_chain_id,
-                                has_complex_clip,
                             );
                     }
                 }
@@ -1405,15 +1471,13 @@ impl<'a> DisplayListFlattener<'a> {
             for item in clip_items {
                 
                 
-                let has_complex_clip = item.kind.has_complex_clip();
                 let handle = self.interners
                     .clip
-                    .intern(&item, || ());
+                    .intern(&item, || item.kind.node_kind());
 
                 clip_chain_id = self.clip_store.add_clip_chain_node(
                     handle,
                     clip_chain_id,
-                    has_complex_clip,
                 );
             }
 
@@ -1709,7 +1773,9 @@ impl<'a> DisplayListFlattener<'a> {
                 .clip_store
                 .clip_chain_nodes[current_clip_chain_id.0 as usize];
 
-            if clip_chain_node.has_complex_clip {
+            let clip_kind = self.interners.clip[clip_chain_node.handle];
+
+            if let ClipNodeKind::Complex = clip_kind {
                 blit_reason = BlitReason::CLIP;
                 break;
             }
@@ -1853,10 +1919,17 @@ impl<'a> DisplayListFlattener<'a> {
                 }
                 );
 
+            
+            
+            
+            
+            
+            
             let tile_cache = TileCacheInstance::new(
                 0,
                 ROOT_SPATIAL_NODE_INDEX,
                 self.config.background_color,
+                Vec::new(),
             );
 
             let pic_index = self.prim_store.pictures.alloc().init(PicturePrimitive::new_image(
@@ -2163,14 +2236,13 @@ impl<'a> DisplayListFlattener<'a> {
         let handle = self
             .interners
             .clip
-            .intern(&item, || ());
+            .intern(&item, || ClipNodeKind::Rectangle);
 
         parent_clip_chain_index = self
             .clip_store
             .add_clip_chain_node(
                 handle,
                 parent_clip_chain_index,
-                false,
             );
         clip_count += 1;
 
@@ -2183,14 +2255,13 @@ impl<'a> DisplayListFlattener<'a> {
             let handle = self
                 .interners
                 .clip
-                .intern(&item, || ());
+                .intern(&item, || ClipNodeKind::Complex);
 
             parent_clip_chain_index = self
                 .clip_store
                 .add_clip_chain_node(
                     handle,
                     parent_clip_chain_index,
-                    true,
                 );
             clip_count += 1;
         }
@@ -2208,14 +2279,13 @@ impl<'a> DisplayListFlattener<'a> {
             let handle = self
                 .interners
                 .clip
-                .intern(&item, || ());
+                .intern(&item, || ClipNodeKind::Complex);
 
             parent_clip_chain_index = self
                 .clip_store
                 .add_clip_chain_node(
                     handle,
                     parent_clip_chain_index,
-                    true,
                 );
             clip_count += 1;
         }
