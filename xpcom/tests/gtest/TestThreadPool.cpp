@@ -135,7 +135,7 @@ TEST(ThreadPool, ShutdownWithTimeout)
   }
 
   
-  pool->ShutdownWithTimeout(300);
+  pool->ShutdownWithTimeout(350);
   EXPECT_EQ(allThreadsCount, 4);
 
   Atomic<int> infiniteLoopCount(0);
@@ -197,7 +197,7 @@ TEST(ThreadPool, ShutdownWithTimeoutThenSleep)
 
   
   
-  pool->ShutdownWithTimeout(300);
+  pool->ShutdownWithTimeout(350);
   
   
   EXPECT_GE(count, 3);
