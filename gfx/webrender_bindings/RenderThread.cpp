@@ -117,6 +117,9 @@ void RenderThread::ShutDownTask(layers::SynchronousTask* aTask) {
   MOZ_ASSERT(IsInRenderThread());
 
   
+  mThreadPool.Release();
+
+  
   
   layers::SharedSurfacesParent::Shutdown();
 
@@ -883,8 +886,16 @@ WebRenderThreadPool::WebRenderThreadPool() {
 }
 
 WebRenderThreadPool::~WebRenderThreadPool() {
-  wr_thread_pool_delete(mThreadPool);
+  Release();
 }
+
+void WebRenderThreadPool::Release() {
+  if (mThreadPool) {
+    wr_thread_pool_delete(mThreadPool);
+    mThreadPool = nullptr;
+  }
+}
+
 
 WebRenderProgramCache::WebRenderProgramCache(wr::WrThreadPool* aThreadPool) {
   MOZ_ASSERT(aThreadPool);
