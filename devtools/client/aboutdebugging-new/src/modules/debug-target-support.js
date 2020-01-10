@@ -28,6 +28,17 @@ function isLocalTabDebuggingSupported() {
 
 
 
+function isLocalProcessDebuggingSupported() {
+  return Services.prefs.getBoolPref(
+    "devtools.aboutdebugging.test-local-process-debugging",
+    false
+  );
+}
+
+
+
+
+
 function isTemporaryExtensionSupported() {
   return Services.prefs.getBoolPref(PREFERENCES.XPINSTALL_ENABLED, true);
 }
@@ -53,7 +64,9 @@ const THIS_FIREFOX_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES
   
   
   
-  .filter(p => p !== DEBUG_TARGET_PANE.PROCESSES)
+  .filter(
+    p => p !== DEBUG_TARGET_PANE.PROCESSES || isLocalProcessDebuggingSupported()
+  )
   
   .filter(p => p !== DEBUG_TARGET_PANE.TAB || isLocalTabDebuggingSupported());
 

@@ -63,6 +63,8 @@ add_task(async function() {
   mocks.emitUSBUpdate();
   await waitUntilUsbDeviceIsUnplugged(RUNTIME_DEVICE_NAME, document);
 
+  
+  
   await removeTab(devtoolsTab);
   await waitUntil(() => !findDebugTargetByText("Toolbox - ", document));
   await removeTab(tab);
