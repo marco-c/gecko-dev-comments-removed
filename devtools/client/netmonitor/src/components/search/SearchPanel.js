@@ -18,8 +18,17 @@ const {
 } = require("devtools/client/shared/redux/visibility-handler-connect");
 const TreeViewClass = require("devtools/client/shared/components/tree/TreeView");
 const TreeView = createFactory(TreeViewClass);
+const LabelCell = createFactory(
+  require("devtools/client/shared/components/tree/LabelCell")
+);
 const { SearchProvider } = require("./search-provider");
 const Toolbar = createFactory(require("./Toolbar"));
+
+
+
+
+const RESOURCE_LEVEL = 0;
+const SEARCH_RESULT_LEVEL = 1;
 
 
 
@@ -41,23 +50,49 @@ class SearchPanel extends Component {
 
   constructor(props) {
     super(props);
+
     this.searchboxRef = createRef();
     this.renderValue = this.renderValue.bind(this);
+    this.renderLabel = this.renderLabel.bind(this);
+
+    this.provider = SearchProvider;
+  }
+
+  
+
+
+
+
+  renderLabel(props) {
+    const member = props.member;
+    const level = member.level || 0;
+    const className = level == RESOURCE_LEVEL ? "resourceCell" : "resultCell";
+
+    
+    const renderSuffix = () => {
+      return dom.span(
+        {
+          className,
+        },
+        " ",
+        this.renderValue(props)
+      );
+    };
+
+    return LabelCell({
+      ...props,
+      renderSuffix,
+    });
   }
 
   renderTree() {
     const { results } = this.props;
     return TreeView({
       object: results,
-      provider: SearchProvider,
+      provider: this.provider,
       expandableStrings: false,
-      renderValue: this.renderValue,
-      columns: [
-        {
-          id: "value",
-          width: "100%",
-        },
-      ],
+      renderLabelCell: this.renderLabel,
+      columns: [],
     });
   }
 
@@ -65,30 +100,30 @@ class SearchPanel extends Component {
 
 
 
+
   renderValue(props) {
     const member = props.member;
+
     
-
-
-
-
-
-
-
-    if (member.level === 1) {
+    
+    
+    
+    
+    if (member.level === SEARCH_RESULT_LEVEL) {
       const { query } = this.props;
-      const indexStart = props.object.indexOf(query);
+      const value = member.object.value;
+      const indexStart = value.indexOf(query);
       const indexEnd = indexStart + query.length;
 
       return span(
         {},
-        span({}, props.object.substring(0, indexStart)),
+        span({}, value.substring(0, indexStart)),
         span({ className: "query-match" }, query),
-        span({}, props.object.substring(indexEnd, props.object.length))
+        span({}, value.substring(indexEnd, value.length))
       );
     }
 
-    return props.object;
+    return this.provider.getValue(member.object);
   }
 
   render() {
