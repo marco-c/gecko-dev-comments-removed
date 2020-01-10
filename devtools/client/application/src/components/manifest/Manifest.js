@@ -20,10 +20,13 @@ const FluentReact = require("devtools/client/shared/vendor/fluent-react");
 const Localized = createFactory(FluentReact.Localized);
 const { l10n } = require("../../modules/l10n");
 
+const ManifestColorItem = createFactory(require("./ManifestColorItem"));
 const ManifestItem = createFactory(require("./ManifestItem"));
 const ManifestIssueList = createFactory(require("./ManifestIssueList"));
 const ManifestSection = createFactory(require("./ManifestSection"));
 const ManifestJsonLink = createFactory(require("./ManifestJsonLink"));
+
+const { MANIFEST_MEMBER_VALUE_TYPES } = require("../../constants");
 
 
 
@@ -56,6 +59,16 @@ class Manifest extends PureComponent {
       : null;
   }
 
+  renderMember({ key, value, type }) {
+    switch (type) {
+      case MANIFEST_MEMBER_VALUE_TYPES.COLOR:
+        return ManifestColorItem({ label: key, key, value });
+      case MANIFEST_MEMBER_VALUE_TYPES.STRING:
+      default:
+        return ManifestItem({ label: key, key }, value);
+    }
+  }
+
   renderItemSections() {
     const { identity, icons, presentation } = this.props;
 
@@ -74,18 +87,7 @@ class Manifest extends PureComponent {
         
         
         
-        table(
-          {},
-          tbody(
-            {},
-            
-            
-            items.map(item => {
-              const { key, value } = item;
-              return ManifestItem({ label: key, key: key }, value);
-            })
-          )
-        )
+        table({}, tbody({}, items.map(this.renderMember)))
       );
     });
   }
