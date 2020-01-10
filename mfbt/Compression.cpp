@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "lz4.h"
+#include "lz4/lz4.h"
 
 using namespace mozilla::Compression;
 
