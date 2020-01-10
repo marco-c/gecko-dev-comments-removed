@@ -53,8 +53,6 @@ class CollatorObject : public NativeObject {
   static void finalize(JSFreeOp* fop, JSObject* obj);
 };
 
-extern bool CreateCollator(JSContext* cx, JS::Handle<JSObject*> Intl);
-
 
 
 

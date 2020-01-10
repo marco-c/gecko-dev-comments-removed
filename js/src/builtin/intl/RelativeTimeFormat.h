@@ -51,8 +51,6 @@ class RelativeTimeFormatObject : public NativeObject {
   static void finalize(JSFreeOp* fop, JSObject* obj);
 };
 
-extern bool CreateRelativeTimeFormat(JSContext* cx, JS::Handle<JSObject*> Intl);
-
 
 
 

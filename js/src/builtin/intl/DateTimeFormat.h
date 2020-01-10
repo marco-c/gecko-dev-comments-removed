@@ -51,8 +51,6 @@ class DateTimeFormatObject : public NativeObject {
   static void finalize(JSFreeOp* fop, JSObject* obj);
 };
 
-extern bool CreateDateTimeFormat(JSContext* cx, JS::Handle<JSObject*> Intl);
-
 
 
 
