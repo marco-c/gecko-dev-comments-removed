@@ -8,6 +8,7 @@
 #define mozilla_dom_EventTarget_h_
 
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/DebuggerNotificationBinding.h"
 #include "mozilla/dom/Nullable.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
@@ -194,6 +195,11 @@ class EventTarget : public nsISupports, public nsWrapperCache {
 
 
   virtual EventListenerManager* GetExistingListenerManager() const = 0;
+
+  virtual Maybe<EventCallbackDebuggerNotificationType>
+  GetDebuggerNotificationType() const {
+    return Nothing();
+  }
 
   
   virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) {}
