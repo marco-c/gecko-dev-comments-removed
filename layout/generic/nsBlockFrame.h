@@ -118,6 +118,8 @@ class nsBlockFrame : public nsContainerFrame {
                     const nsLineList::iterator* aPrevFrameLine,
                     nsFrameList& aFrameList) override;
   void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
+  nsContainerFrame* GetContentInsertionFrame() override;
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
   const nsFrameList& GetChildList(ChildListID aListID) const override;
   void GetChildLists(nsTArray<ChildList>* aLists) const override;
   nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const override;
@@ -484,6 +486,10 @@ class nsBlockFrame : public nsContainerFrame {
 
   void AddFrames(nsFrameList& aFrameList, nsIFrame* aPrevSibling,
                  const nsLineList::iterator* aPrevSiblingLine);
+
+  
+  
+  nsContainerFrame* GetRubyContentPseudoFrame();
 
   
 
