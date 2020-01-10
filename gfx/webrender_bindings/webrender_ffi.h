@@ -90,29 +90,7 @@ void apz_sample_transforms(mozilla::wr::WrWindowId aWindowId,
 void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
 }  
 
-
-
-
-
-
-
-
-#ifdef MOZ_BUILD_WEBRENDER
-#  define WR_INLINE
-#  define WR_FUNC
-#  define WR_DESTRUCTOR_SAFE_FUNC
-#else
-#  define WR_INLINE inline
-#  define WR_FUNC \
-    { MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("WebRender disabled"); }
-#  define WR_DESTRUCTOR_SAFE_FUNC \
-    {}
-#endif
-
 #include "webrender_ffi_generated.h"
-
-#undef WR_FUNC
-#undef WR_DESTRUCTOR_SAFE_FUNC
 
 
 
