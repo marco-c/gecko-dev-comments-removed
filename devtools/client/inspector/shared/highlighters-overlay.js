@@ -1275,7 +1275,7 @@ class HighlightersOverlay {
       }
 
       
-      if (display !== "subgrid" && this.gridHighlighters.has(node)) {
+      if (display !== "subgrid" && this.subgridToParentMap.has(node)) {
         await this.hideGridHighlighter(node);
         return;
       }
