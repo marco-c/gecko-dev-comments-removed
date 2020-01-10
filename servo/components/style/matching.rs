@@ -503,31 +503,34 @@ trait PrivateMatchMethods: TElement {
         let old_display = old_values.get_box().clone_display();
         let new_display = new_values.get_box().clone_display();
 
-        
-        
-        
-        
-        
-        
-        if old_display == Display::None && old_display != new_display {
-            return ChildCascadeRequirement::MustCascadeChildren;
-        }
-
-        
-        
-        
-        if old_display.is_item_container() != new_display.is_item_container() {
-            return ChildCascadeRequirement::MustCascadeChildren;
-        }
-
-        
-        
-        #[cfg(feature = "gecko")]
-        {
-            if old_display.is_ruby_type() != new_display.is_ruby_type() {
+        if old_display != new_display {
+            
+            
+            if old_display == Display::None {
                 return ChildCascadeRequirement::MustCascadeChildren;
             }
+            
+            
+            
+            if old_display.is_item_container() != new_display.is_item_container() {
+                return ChildCascadeRequirement::MustCascadeChildren;
+            }
+            
+            
+            
+            if old_display.is_contents() || new_display.is_contents() {
+                return ChildCascadeRequirement::MustCascadeChildren;
+            }
+            
+            
+            #[cfg(feature = "gecko")]
+            {
+                if old_display.is_ruby_type() != new_display.is_ruby_type() {
+                    return ChildCascadeRequirement::MustCascadeChildren;
+                }
+            }
         }
+
 
         
         
