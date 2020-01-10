@@ -227,6 +227,13 @@ class WritingMode {
   
 
 
+  bool IsPhysicalRTL() const {
+    return IsVertical() ? IsVerticalRL() : IsBidiRTL();
+  }
+
+  
+
+
   bool IsVerticalLR() const { return eBlockLR == GetBlockDir(); }
 
   

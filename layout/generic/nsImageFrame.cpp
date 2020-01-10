@@ -1398,7 +1398,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
     }
 
     WritingMode wm = GetWritingMode();
-    bool flushRight = !wm.IsPhysicalLTR();
+    bool flushRight = wm.IsPhysicalRTL();
 
     
     uint32_t imageStatus = 0;
@@ -1580,7 +1580,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
     }
 
     WritingMode wm = GetWritingMode();
-    const bool flushRight = !wm.IsPhysicalLTR();
+    const bool flushRight = wm.IsPhysicalRTL();
 
     
     uint32_t imageStatus = 0;
