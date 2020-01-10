@@ -87,8 +87,8 @@ VariablesViewController.prototype = {
     if (aOptions.getObjectFront) {
       this._getObjectFront = aOptions.getObjectFront;
     }
-    if (aOptions.getLongStringClient) {
-      this._getLongStringClient = aOptions.getLongStringClient;
+    if (aOptions.getLongStringFront) {
+      this._getLongStringFront = aOptions.getLongStringFront;
     }
     if (aOptions.getEnvironmentFront) {
       this._getEnvironmentFront = aOptions.getEnvironmentFront;
@@ -129,25 +129,18 @@ VariablesViewController.prototype = {
 
 
 
-  _populateFromLongString: function(aTarget, aGrip) {
-    const deferred = defer();
-
+  _populateFromLongString: async function(aTarget, aGrip) {
     const from = aGrip.initial.length;
     const to = Math.min(aGrip.length, MAX_LONG_STRING_LENGTH);
 
-    this._getLongStringClient(aGrip).substring(from, to, aResponse => {
-      
-      this.releaseActor(aGrip);
+    const response = await this._getLongStringFront(aGrip).substring(from, to);
+    
+    this.releaseActor(aGrip);
 
-      
-      aTarget.onexpand = null;
-      aTarget.setGrip(aGrip.initial + aResponse.substring);
-      aTarget.hideArrow();
-
-      deferred.resolve();
-    });
-
-    return deferred.promise;
+    
+    aTarget.onexpand = null;
+    aTarget.setGrip(aGrip.initial + response);
+    aTarget.hideArrow();
   },
 
   

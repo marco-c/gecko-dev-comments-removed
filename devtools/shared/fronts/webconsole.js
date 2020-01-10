@@ -5,7 +5,7 @@
 "use strict";
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const LongStringClient = require("devtools/shared/client/long-string-client");
+const { LongStringFront } = require("devtools/shared/fronts/string");
 const {
   FrontClassWithSpec,
   registerFront,
@@ -452,15 +452,58 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-
   longString(grip) {
     if (grip.actor in this._longStrings) {
       return this._longStrings[grip.actor];
     }
 
-    const client = new LongStringClient(this._client, grip);
-    this._longStrings[grip.actor] = client;
-    return client;
+    const front = new LongStringFront(this._client, this.targetFront, this);
+    front.form(grip);
+    this.manage(front);
+    this._longStrings[grip.actor] = front;
+    return front;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async getString(stringGrip) {
+    
+    if (typeof stringGrip !== "object" || stringGrip.type !== "longString") {
+      
+      return stringGrip;
+    }
+
+    
+    if (stringGrip._fullText) {
+      return stringGrip._fullText;
+    }
+
+    const { initial, length } = stringGrip;
+    const longStringFront = this.longString(stringGrip);
+
+    try {
+      const response = await longStringFront.substring(initial.length, length);
+      return initial + response;
+    } catch (e) {
+      DevToolsUtils.reportException("getString", e.message);
+      throw e;
+    }
+  }
+
+  clearNetworkRequests() {
+    
+    if (this._networkRequests) {
+      this._networkRequests.clear();
+    }
   }
 
   
@@ -481,53 +524,6 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
     this.clearNetworkRequests();
     this._networkRequests = null;
     return super.destroy();
-  }
-
-  clearNetworkRequests() {
-    
-    if (this._networkRequests) {
-      this._networkRequests.clear();
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  getString(stringGrip) {
-    
-    if (typeof stringGrip !== "object" || stringGrip.type !== "longString") {
-      
-      return Promise.resolve(stringGrip);
-    }
-
-    
-    if (stringGrip._fullText) {
-      return stringGrip._fullText;
-    }
-
-    return new Promise((resolve, reject) => {
-      const { initial, length } = stringGrip;
-      const longStringClient = this.longString(stringGrip);
-
-      longStringClient.substring(initial.length, length, response => {
-        if (response.error) {
-          DevToolsUtils.reportException(
-            "getString",
-            response.error + ": " + response.message
-          );
-          reject(response);
-        }
-        resolve(initial + response.substring);
-      });
-    });
   }
 }
 

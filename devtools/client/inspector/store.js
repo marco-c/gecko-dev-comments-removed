@@ -15,7 +15,7 @@ module.exports = services =>
       
       client: {
         createObjectFront: services && services.createObjectFront,
-        createLongStringClient: services && services.createLongStringClient,
+        createLongStringFront: services && services.createLongStringFront,
         releaseActor: services && services.releaseActor,
       },
     },

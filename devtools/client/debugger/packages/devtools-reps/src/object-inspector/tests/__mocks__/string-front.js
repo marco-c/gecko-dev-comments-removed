@@ -1,0 +1,13 @@
+
+
+
+
+function LongStringFront(grip, overrides) {
+  return {
+    grip,
+    substring: async () => "",
+    ...overrides,
+  };
+}
+
+module.exports = { LongStringFront };
