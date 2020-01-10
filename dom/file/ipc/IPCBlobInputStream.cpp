@@ -738,18 +738,34 @@ nsresult IPCBlobInputStream::EnsureAsyncRemoteStream(
     return NS_ERROR_FAILURE;
   }
 
+  nsCOMPtr<nsIInputStream> stream = mRemoteStream;
+  
+  
+  
+  
+  if (!NS_InputStreamIsBuffered(stream)) {
+    nsCOMPtr<nsIInputStream> bufferedStream;
+    nsresult rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
+                                            stream.forget(), 4096);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    stream = bufferedStream;
+  }
+
   
   bool nonBlocking = false;
-  nsresult rv = mRemoteStream->IsNonBlocking(&nonBlocking);
+  nsresult rv = stream->IsNonBlocking(&nonBlocking);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(mRemoteStream);
+  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(stream);
 
   
   if (nonBlocking && !asyncStream) {
-    rv = NonBlockingAsyncInputStream::Create(mRemoteStream.forget(),
+    rv = NonBlockingAsyncInputStream::Create(stream.forget(),
                                              getter_AddRefs(asyncStream));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -774,8 +790,7 @@ nsresult IPCBlobInputStream::EnsureAsyncRemoteStream(
       return NS_ERROR_FAILURE;
     }
 
-    rv = NS_AsyncCopy(mRemoteStream, pipeOut, thread,
-                      NS_ASYNCCOPY_VIA_WRITESEGMENTS);
+    rv = NS_AsyncCopy(stream, pipeOut, thread, NS_ASYNCCOPY_VIA_WRITESEGMENTS);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
