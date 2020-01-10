@@ -629,12 +629,21 @@ class EditorBase : public nsIEditor,
     
     bool mDidDeleteEmptyParentBlocks;
 
+    
+    
+    
+    
+    
+    
+    bool mRestoreContentEditableCount;
+
    private:
     void Clear() {
       mDidDeleteSelection = false;
       mDidExplicitlySetInterLine = false;
       mDidDeleteNonCollapsedRange = false;
       mDidDeleteEmptyParentBlocks = false;
+      mRestoreContentEditableCount = false;
     }
 
     TopLevelEditSubActionData() = default;
