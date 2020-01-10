@@ -313,18 +313,7 @@ class Tabbar extends Component {
     });
 
     
-    
-    
-    
-    
-    const rect = target.getBoundingClientRect();
-    const screenX = target.ownerDocument.defaultView.mozInnerScreenX;
-    const screenY = target.ownerDocument.defaultView.mozInnerScreenY;
-    menu.popupWithZoom(
-      rect.left + screenX,
-      rect.bottom + screenY,
-      this.props.menuDocument
-    );
+    menu.popupAtTarget(target, this.props.menuDocument);
 
     return menu;
   }

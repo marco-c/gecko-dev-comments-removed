@@ -60,10 +60,14 @@ Menu.prototype.insert = function(pos, menuItem) {
 
 
 
-
-
-Menu.prototype.popupWithZoom = function(x, y, doc) {
+Menu.prototype.popupAtTarget = function(target, doc) {
   const zoom = getCurrentZoom(doc);
+
+  const rect = target.getBoundingClientRect();
+  const defaultView = target.ownerDocument.defaultView;
+  const x = rect.left + defaultView.mozInnerScreenX;
+  const y = rect.bottom + defaultView.mozInnerScreenY;
+
   this.popup(x * zoom, y * zoom, doc);
 };
 
