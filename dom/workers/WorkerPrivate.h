@@ -7,18 +7,23 @@
 #ifndef mozilla_dom_workers_workerprivate_h__
 #define mozilla_dom_workers_workerprivate_h__
 
+#include "MainThreadUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerStatus.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RelativeTimeline.h"
+#include "mozilla/Result.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsContentUtils.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIEventTarget.h"
+#include "nsILoadInfo.h"
 #include "nsTObserverArray.h"
 
 #include "js/ContextOptions.h"
@@ -712,7 +717,7 @@ class WorkerPrivate : public RelativeTimeline {
     return mLoadInfo.mChannel.forget();
   }
 
-  nsPIDOMWindowInner* GetWindow() {
+  nsPIDOMWindowInner* GetWindow() const {
     AssertIsOnMainThread();
     return mLoadInfo.mWindow;
   }
@@ -902,6 +907,34 @@ class WorkerPrivate : public RelativeTimeline {
     return mAgentClusterOpenerPolicy;
   }
 
+  
+
+
+
+
+
+
+
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetEmbedderPolicy() const;
+
+  
+  
+  mozilla::Result<Ok, nsresult> SetEmbedderPolicy(
+      nsILoadInfo::CrossOriginEmbedderPolicy aPolicy);
+
+  
+  
+  
+  
+  
+  
+  
+  void InheritOwnerEmbedderPolicyOrNull(nsIRequest* aRequest);
+
+  
+  bool MatchEmbedderPolicy(
+      nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) const;
+
  private:
   WorkerPrivate(
       WorkerPrivate* aParent, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -997,6 +1030,8 @@ class WorkerPrivate : public RelativeTimeline {
   
   void DispatchCancelingRunnable();
 
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetOwnerEmbedderPolicy() const;
+
   class EventTarget;
   friend class EventTarget;
   friend class AutoSyncLoopHolder;
@@ -1011,9 +1046,9 @@ class WorkerPrivate : public RelativeTimeline {
   SharedMutex mMutex;
   mozilla::CondVar mCondVar;
 
-  WorkerPrivate* mParent;
+  WorkerPrivate* const mParent;
 
-  nsString mScriptURL;
+  const nsString mScriptURL;
 
   
   nsString mWorkerName;
@@ -1220,6 +1255,14 @@ class WorkerPrivate : public RelativeTimeline {
   
   
   const nsILoadInfo::CrossOriginOpenerPolicy mAgentClusterOpenerPolicy;
+
+  
+  
+  
+  
+  
+  
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicy;
 };
 
 class AutoSyncLoopHolder {
