@@ -79,10 +79,7 @@ struct DebugModeOSREntry {
   }
 
   bool needsRecompileInfo() const {
-    return frameKind == RetAddrEntry::Kind::CallVM ||
-           frameKind == RetAddrEntry::Kind::WarmupCounter ||
-           frameKind == RetAddrEntry::Kind::StackCheck ||
-           frameKind == RetAddrEntry::Kind::DebugTrap ||
+    return frameKind == RetAddrEntry::Kind::DebugTrap ||
            frameKind == RetAddrEntry::Kind::DebugPrologue ||
            frameKind == RetAddrEntry::Kind::DebugAfterYield ||
            frameKind == RetAddrEntry::Kind::DebugEpilogue;
@@ -391,15 +388,32 @@ static void PatchBaselineFramesForDebugMode(
         BaselineScript* bl = script->baselineScript();
         RetAddrEntry::Kind kind = entry.frameKind;
 
-        if (kind == RetAddrEntry::Kind::IC) {
+        if (kind == RetAddrEntry::Kind::IC ||
+            kind == RetAddrEntry::Kind::CallVM ||
+            kind == RetAddrEntry::Kind::WarmupCounter ||
+            kind == RetAddrEntry::Kind::StackCheck) {
           
           
           
           
           
-          RetAddrEntry& retAddrEntry =
-              bl->retAddrEntryFromPCOffset(pcOffset, kind);
-          uint8_t* retAddr = bl->returnAddressForEntry(retAddrEntry);
+          
+          
+          
+          RetAddrEntry* retAddrEntry = nullptr;
+          switch (kind) {
+            case RetAddrEntry::Kind::IC:
+            case RetAddrEntry::Kind::CallVM:
+              retAddrEntry = &bl->retAddrEntryFromPCOffset(pcOffset, kind);
+              break;
+            case RetAddrEntry::Kind::WarmupCounter:
+            case RetAddrEntry::Kind::StackCheck:
+              retAddrEntry = &bl->prologueRetAddrEntry(kind);
+              break;
+            default:
+              MOZ_CRASH("Unexpected kind");
+          }
+          uint8_t* retAddr = bl->returnAddressForEntry(*retAddrEntry);
           SpewPatchBaselineFrame(prev->returnAddress(), retAddr, script, kind,
                                  pc);
           DebugModeOSRVolatileJitFrameIter::forwardLiveIterators(
@@ -451,10 +465,7 @@ static void PatchBaselineFramesForDebugMode(
         if (info) {
           MOZ_ASSERT(info->pc == pc);
           MOZ_ASSERT(info->frameKind == kind);
-          MOZ_ASSERT(kind == RetAddrEntry::Kind::CallVM ||
-                     kind == RetAddrEntry::Kind::WarmupCounter ||
-                     kind == RetAddrEntry::Kind::StackCheck ||
-                     kind == RetAddrEntry::Kind::DebugTrap ||
+          MOZ_ASSERT(kind == RetAddrEntry::Kind::DebugTrap ||
                      kind == RetAddrEntry::Kind::DebugPrologue ||
                      kind == RetAddrEntry::Kind::DebugAfterYield ||
                      kind == RetAddrEntry::Kind::DebugEpilogue);
@@ -470,36 +481,6 @@ static void PatchBaselineFramesForDebugMode(
 
         bool popFrameReg;
         switch (kind) {
-          case RetAddrEntry::Kind::CallVM: {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            RetAddrEntry& retAddrEntry =
-                bl->retAddrEntryFromPCOffset(pcOffset, kind);
-            recompInfo->resumeAddr = bl->returnAddressForEntry(retAddrEntry);
-            popFrameReg = false;
-            break;
-          }
-
-          case RetAddrEntry::Kind::WarmupCounter:
-          case RetAddrEntry::Kind::StackCheck: {
-            
-            
-            
-            
-            
-            RetAddrEntry& entry = bl->prologueRetAddrEntry(kind);
-            recompInfo->resumeAddr = bl->returnAddressForEntry(entry);
-            popFrameReg = false;
-            break;
-          }
-
           case RetAddrEntry::Kind::DebugTrap:
             
             
@@ -800,33 +781,6 @@ static inline bool HasForcedReturn(BaselineDebugModeOSRInfo* info, bool rv) {
   return false;
 }
 
-static inline bool IsReturningFromCallVM(BaselineDebugModeOSRInfo* info) {
-  
-  
-  
-  
-  return info->frameKind == RetAddrEntry::Kind::CallVM ||
-         info->frameKind == RetAddrEntry::Kind::WarmupCounter ||
-         info->frameKind == RetAddrEntry::Kind::StackCheck;
-}
-
-static void EmitBranchRetAddrEntryKind(MacroAssembler& masm, Register entry,
-                                       RetAddrEntry::Kind kind, Label* label) {
-  masm.branch32(MacroAssembler::Equal,
-                Address(entry, offsetof(BaselineDebugModeOSRInfo, frameKind)),
-                Imm32(uint32_t(kind)), label);
-}
-
-static void EmitBranchIsReturningFromCallVM(MacroAssembler& masm,
-                                            Register entry, Label* label) {
-  
-  EmitBranchRetAddrEntryKind(masm, entry, RetAddrEntry::Kind::CallVM, label);
-  EmitBranchRetAddrEntryKind(masm, entry, RetAddrEntry::Kind::WarmupCounter,
-                             label);
-  EmitBranchRetAddrEntryKind(masm, entry, RetAddrEntry::Kind::StackCheck,
-                             label);
-}
-
 static void SyncBaselineDebugModeOSRInfo(BaselineFrame* frame, Value* vp,
                                          bool rv) {
   AutoUnsafeCallWithABI unsafe;
@@ -846,19 +800,13 @@ static void SyncBaselineDebugModeOSRInfo(BaselineFrame* frame, Value* vp,
   }
 
   
-  
-  
-  
-  
-  if (!IsReturningFromCallVM(info)) {
-    unsigned numUnsynced = info->slotInfo.numUnsynced();
-    MOZ_ASSERT(numUnsynced <= 2);
-    if (numUnsynced > 0) {
-      info->popValueInto(info->slotInfo.topSlotLocation(), vp);
-    }
-    if (numUnsynced > 1) {
-      info->popValueInto(info->slotInfo.nextSlotLocation(), vp);
-    }
+  unsigned numUnsynced = info->slotInfo.numUnsynced();
+  MOZ_ASSERT(numUnsynced <= 2);
+  if (numUnsynced > 0) {
+    info->popValueInto(info->slotInfo.topSlotLocation(), vp);
+  }
+  if (numUnsynced > 1) {
+    info->popValueInto(info->slotInfo.nextSlotLocation(), vp);
   }
 
   
@@ -921,20 +869,10 @@ static void TakeCallVMOutputRegisters(AllocatableGeneralRegisterSet& regs) {
 }
 
 static void EmitBaselineDebugModeOSRHandlerTail(MacroAssembler& masm,
-                                                Register temp,
-                                                bool returnFromCallVM) {
+                                                Register temp) {
   
-  
-  
-  
-  
-  
-  if (returnFromCallVM) {
-    PushCallVMOutputRegisters(masm);
-  } else {
-    masm.pushValue(Address(temp, offsetof(BaselineDebugModeOSRInfo, valueR0)));
-    masm.pushValue(Address(temp, offsetof(BaselineDebugModeOSRInfo, valueR1)));
-  }
+  masm.pushValue(Address(temp, offsetof(BaselineDebugModeOSRInfo, valueR0)));
+  masm.pushValue(Address(temp, offsetof(BaselineDebugModeOSRInfo, valueR1)));
   masm.push(BaselineFrameReg);
   masm.push(Address(temp, offsetof(BaselineDebugModeOSRInfo, resumeAddr)));
 
@@ -946,23 +884,16 @@ static void EmitBaselineDebugModeOSRHandlerTail(MacroAssembler& masm,
 
   
   AllocatableGeneralRegisterSet jumpRegs(GeneralRegisterSet::All());
-  if (returnFromCallVM) {
-    TakeCallVMOutputRegisters(jumpRegs);
-  } else {
-    jumpRegs.take(R0);
-    jumpRegs.take(R1);
-  }
+  jumpRegs.take(R0);
+  jumpRegs.take(R1);
   jumpRegs.take(BaselineFrameReg);
   Register target = jumpRegs.takeAny();
 
   masm.pop(target);
   masm.pop(BaselineFrameReg);
-  if (returnFromCallVM) {
-    PopCallVMOutputRegisters(masm);
-  } else {
-    masm.popValue(R1);
-    masm.popValue(R0);
-  }
+
+  masm.popValue(R1);
+  masm.popValue(R0);
 
   masm.jump(target);
 }
@@ -1009,18 +940,7 @@ JitCode* JitRuntime::generateBaselineDebugModeOSRHandler(
   masm.addToStackPtr(
       Address(temp, offsetof(BaselineDebugModeOSRInfo, stackAdjust)));
 
-  
-  
-  Label returnFromCallVM, end;
-  EmitBranchIsReturningFromCallVM(masm, temp, &returnFromCallVM);
-
-  EmitBaselineDebugModeOSRHandlerTail(masm, temp,
-                                       false);
-  masm.jump(&end);
-  masm.bind(&returnFromCallVM);
-  EmitBaselineDebugModeOSRHandlerTail(masm, temp,
-                                       true);
-  masm.bind(&end);
+  EmitBaselineDebugModeOSRHandlerTail(masm, temp);
 
   Linker linker(masm, "BaselineDebugModeOSRHandler");
   JitCode* code = linker.newCode(cx, CodeKind::Other);
