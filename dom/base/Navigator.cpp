@@ -833,6 +833,7 @@ void Navigator::RegisterContentHandler(const nsAString& aMIMEType,
 
 
 
+
 static const char* const kSafeSchemes[] = {
     "bitcoin", "geo",  "im",   "irc",         "ircs", "magnet", "mailto",
     "mms",     "news", "nntp", "openpgp4fpr", "sip",  "sms",    "smsto",

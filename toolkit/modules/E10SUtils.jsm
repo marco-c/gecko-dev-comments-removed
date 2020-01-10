@@ -67,6 +67,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/network/serialization-helper;1",
   "nsISerializationHelper"
 );
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "extProtService",
+  "@mozilla.org/uriloader/external-protocol-service;1",
+  "nsIExternalProtocolService"
+);
 
 function debug(msg) {
   Cu.reportError(new Error("E10SUtils: " + msg));
@@ -99,6 +105,46 @@ const PRIVILEGEDMOZILLA_REMOTE_TYPE = "privilegedmozilla";
 const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
+
+
+const kSafeSchemes = [
+  "bitcoin",
+  "geo",
+  "im",
+  "irc",
+  "ircs",
+  "magnet",
+  "mailto",
+  "mms",
+  "news",
+  "nntp",
+  "openpgp4fpr",
+  "sip",
+  "sms",
+  "smsto",
+  "ssh",
+  "tel",
+  "urn",
+  "webcal",
+  "wtai",
+  "xmpp",
+];
+
+
+
+
+function hasPotentiallyWebHandledScheme({ scheme }) {
+  
+  if (kSafeSchemes.includes(scheme)) {
+    return true;
+  }
+  if (!scheme.startsWith("web+") || scheme.length < 5) {
+    return false;
+  }
+  
+  return /^[a-z]+$/.test(scheme.substr("web+".length));
+}
+
 function validatedWebRemoteType(
   aPreferredRemoteType,
   aTargetUri,
@@ -118,6 +164,39 @@ function validatedWebRemoteType(
     })
   ) {
     return PRIVILEGEDMOZILLA_REMOTE_TYPE;
+  }
+
+  
+  
+  if (aRemoteSubframes && hasPotentiallyWebHandledScheme(aTargetUri)) {
+    if (
+      Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT &&
+      Services.appinfo.remoteType.startsWith(FISSION_WEB_REMOTE_TYPE_PREFIX)
+    ) {
+      
+      
+      
+      return Services.appinfo.remoteType;
+    }
+    
+    
+    
+    
+    
+    
+    let handlerInfo = extProtService.getProtocolHandlerInfo(aTargetUri.scheme);
+    try {
+      if (!handlerInfo.alwaysAskBeforeHandling) {
+        let app = handlerInfo.preferredApplicationHandler;
+        app.QueryInterface(Ci.nsIWebHandlerApp);
+        
+        
+        let uriStr = app.uriTemplate.replace(/%s/, aTargetUri.spec);
+        aTargetUri = Services.io.newURI(uriStr);
+      }
+    } catch (ex) {
+      
+    }
   }
 
   
