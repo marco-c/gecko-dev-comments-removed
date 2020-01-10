@@ -137,10 +137,20 @@ class Clobberer(object):
         deleted.
         """
         
+        RUST_TARGET_VARS = ('RUST_HOST_TARGET', 'RUST_TARGET')
+        rust_targets = set([self.substs[x] for x in RUST_TARGET_VARS if x in self.substs])
+        rust_build_kind = 'release'
+        if self.substs.get('MOZ_DEBUG_RUST'):
+            rust_build_kind = 'debug'
+
+        
         no_clobber = {
             '.mozbuild',
             'msvc',
         }
+
+        
+        no_clobber |= rust_targets
 
         if full:
             
@@ -149,6 +159,13 @@ class Clobberer(object):
             paths = self.collect_subdirs(self.topobjdir, no_clobber)
 
         self.delete_dirs(self.topobjdir, paths)
+
+        
+        
+        for target in rust_targets:
+            cargo_path = os.path.join(self.topobjdir, target, rust_build_kind)
+            paths = self.collect_subdirs(cargo_path, {'incremental', })
+            self.delete_dirs(cargo_path, paths)
 
     def ensure_objdir_state(self):
         """Ensure the CLOBBER file in the objdir exists.
