@@ -1250,9 +1250,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
       
       
       
-      if (!groupData->mFollowingGroup.mVisibleRect.IsEqualEdges(currentGroup->mVisibleRect) ||
-          !groupData->mFollowingGroup.mGroupBounds.IsEqualEdges(currentGroup->mGroupBounds) ||
-          groupData->mFollowingGroup.mScale != currentGroup->mScale ||
+      if (groupData->mFollowingGroup.mScale != currentGroup->mScale ||
           groupData->mFollowingGroup.mAppUnitsPerDevPixel !=
               currentGroup->mAppUnitsPerDevPixel ||
           groupData->mFollowingGroup.mResidualOffset !=
@@ -1490,9 +1488,7 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   GP("Inherrited scale %f %f\n", scale.width, scale.height);
   GP("Bounds: %d %d %d %d vs %d %d %d %d\n", p.x, p.y, p.width, p.height, q.x,
      q.y, q.width, q.height);
-  if (!group.mVisibleRect.IsEqualEdges(visibleRect) ||
-      !group.mGroupBounds.IsEqualEdges(groupBounds) ||
-      group.mAppUnitsPerDevPixel != appUnitsPerDevPixel ||
+  if (group.mAppUnitsPerDevPixel != appUnitsPerDevPixel ||
       group.mScale != scale || group.mResidualOffset != residualOffset) {
     GP("Property change. Deleting blob\n");
 
