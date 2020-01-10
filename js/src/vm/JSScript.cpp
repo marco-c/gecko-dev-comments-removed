@@ -1018,9 +1018,8 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   
   
   
-  if (xdr->hasOptions()
-      ? !!xdr->options().instrumentationKinds
-      : !!cx->global()->getInstrumentationHolder()) {
+  if (xdr->hasOptions() ? !!xdr->options().instrumentationKinds
+                        : !!cx->global()->getInstrumentationHolder()) {
     return xdr->fail(JS::TranscodeResult_Failure);
   }
 
@@ -3717,6 +3716,10 @@ size_t PrivateScriptData::AllocationSize(uint32_t ngcthings) {
   return size;
 }
 
+inline size_t PrivateScriptData::allocationSize() const {
+  return AllocationSize(ngcthings);
+}
+
 
 
 template <typename T>
@@ -3749,20 +3752,12 @@ PrivateScriptData::PrivateScriptData(uint32_t ngcthings)
 }
 
 
-PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t ngcthings,
-                                           uint32_t* dataSize) {
+PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t ngcthings) {
   
-  size_t size = AllocationSize(ngcthings);
-
-  
-  void* raw = cx->pod_malloc<uint8_t>(size);
+  void* raw = cx->pod_malloc<uint8_t>(AllocationSize(ngcthings));
   MOZ_ASSERT(uintptr_t(raw) % alignof(PrivateScriptData) == 0);
   if (!raw) {
     return nullptr;
-  }
-
-  if (dataSize) {
-    *dataSize = size;
   }
 
   
@@ -3958,16 +3953,13 @@ bool JSScript::createPrivateScriptData(JSContext* cx, HandleScript script,
   cx->check(script);
   MOZ_ASSERT(!script->data_);
 
-  uint32_t dataSize;
-
-  PrivateScriptData* data = PrivateScriptData::new_(cx, ngcthings, &dataSize);
+  PrivateScriptData* data = PrivateScriptData::new_(cx, ngcthings);
   if (!data) {
     return false;
   }
 
   script->data_ = data;
-  script->dataSize_ = dataSize;
-  AddCellMemory(script, dataSize, MemoryUse::ScriptPrivateData);
+  AddCellMemory(script, data->allocationSize(), MemoryUse::ScriptPrivateData);
 
   return true;
 }
@@ -4178,7 +4170,7 @@ void JSScript::assertValidJumpTargets() const {
 }
 #endif
 
-size_t JSScript::computedSizeOfData() const { return dataSize(); }
+size_t JSScript::computedSizeOfData() const { return data_->allocationSize(); }
 
 size_t JSScript::sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const {
   return mallocSizeOf(data_);
@@ -4496,9 +4488,8 @@ static JSObject* CloneInnerInterpretedFunction(
     cx->markAtom(atom);
   }
   RootedFunction clone(
-      cx, NewFunctionWithProto(cx, nullptr, srcFun->nargs(),
-                               flags, nullptr, atom, cloneProto,
-                               allocKind, TenuredObject));
+      cx, NewFunctionWithProto(cx, nullptr, srcFun->nargs(), flags, nullptr,
+                               atom, cloneProto, allocKind, TenuredObject));
   if (!clone) {
     return nullptr;
   }
@@ -5339,8 +5330,8 @@ LazyScript* LazyScript::CreateForXDR(
     uint32_t toStringEnd, uint32_t lineno, uint32_t column) {
   LazyScript* res = LazyScript::CreateRaw(
       cx, numClosedOverBindings, numInnerFunctions, fun, sourceObject,
-      immutableFlags, sourceStart, sourceEnd, toStringStart, toStringEnd, lineno,
-      column);
+      immutableFlags, sourceStart, sourceEnd, toStringStart, toStringEnd,
+      lineno, column);
   if (!res) {
     return nullptr;
   }

@@ -1724,9 +1724,7 @@ class alignas(uintptr_t) PrivateScriptData final {
   const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
 
   
-  
-  static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings,
-                                 uint32_t* dataSize);
+  static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings);
 
   template <XDRMode mode>
   static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
@@ -1743,6 +1741,8 @@ class alignas(uintptr_t) PrivateScriptData final {
                               js::frontend::BytecodeEmitter* bce);
 
   void trace(JSTracer* trc);
+
+  size_t allocationSize() const;
 
   
   PrivateScriptData(const PrivateScriptData&) = delete;
@@ -2167,9 +2167,6 @@ class JSScript : public js::BaseScript {
   js::LazyScript* lazyScript = nullptr;
 
   
-
-  
-  uint32_t dataSize_ = 0;
 
   
   
@@ -2899,8 +2896,6 @@ class JSScript : public js::BaseScript {
   void addSizeOfJitScript(mozilla::MallocSizeOf mallocSizeOf,
                           size_t* sizeOfJitScript,
                           size_t* sizeOfBaselineFallbackStubs) const;
-
-  size_t dataSize() const { return dataSize_; }
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
     return data_->gcthings();
