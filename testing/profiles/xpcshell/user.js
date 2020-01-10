@@ -23,3 +23,6 @@ user_pref("dom.ipc.processPriorityManager.enabled", false);
 
 
 user_pref("idle.lastDailyNotification", -1);
+
+
+user_pref("toolkit.telemetry.eventping.enabled", true);
