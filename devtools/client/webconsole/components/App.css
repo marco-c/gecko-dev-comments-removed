@@ -233,7 +233,18 @@ body {
   display: grid;
   align-items: center;
   
-  grid-template-columns: auto 1fr auto auto auto;
+
+
+
+
+
+
+
+
+
+
+
+  grid-template-columns: auto 1fr auto auto auto auto auto;
   height: unset;
 }
 
@@ -251,10 +262,18 @@ body {
 }
 
 .jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-history-prevExpressionButton {
-  grid-column: -3 / -4;
+  grid-column: -5 / -6;
 }
 
 .jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-history-nextExpressionButton {
+  grid-column: -4 / -5;
+}
+
+.jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-reverseSearchButton {
+  grid-column: -3 / -4;
+}
+
+.jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-historyNavSeparator {
   grid-column: -2 / -3;
 }
 
@@ -263,17 +282,22 @@ body {
 }
 
 .jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-history-prevExpressionButton::before {
-  background-image: url("chrome://devtools/skin/images/arrowhead-up.svg");
+  background-image: url(chrome://devtools/skin/images/arrowhead-up.svg);
   background-size: 16px;
 }
 
 .jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-history-nextExpressionButton::before {
-  background-image: url("chrome://devtools/skin/images/arrowhead-down.svg");
+  background-image: url(chrome://devtools/skin/images/arrowhead-down.svg);
   background-size: 16px;
 }
 
+.jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-reverseSearchButton::before {
+  background-image: url(chrome://devtools/skin/images/webconsole/reverse-search.svg);
+  background-size: 14px;
+}
+
 .jsterm-editor .webconsole-editor-toolbar .webconsole-editor-toolbar-closeButton::before {
-  background-image: url("chrome://devtools/skin/images/close.svg");
+  background-image: url(chrome://devtools/skin/images/close.svg);
 }
 
 .jsterm-editor .webconsole-input-openEditorButton {
