@@ -266,12 +266,17 @@ function checkPayloadInfo(data, reason) {
     Date.parse(data.subsessionStartDate) >= Date.parse(data.sessionStartDate)
   );
   Assert.ok(data.profileSubsessionCounter >= data.subsessionCounter);
+
+  
+  
+  
+  
   Assert.ok(
     data.timezoneOffset >= -12 * 60,
     "The timezone must be in a valid range."
   );
   Assert.ok(
-    data.timezoneOffset <= 12 * 60,
+    data.timezoneOffset <= 14 * 60,
     "The timezone must be in a valid range."
   );
 }
