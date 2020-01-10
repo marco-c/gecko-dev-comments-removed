@@ -1530,12 +1530,13 @@ this.LoginManagerContent = {
 
   _maybeStopTreatingAsGeneratedPasswordField(event) {
     let passwordField = event.target;
+    let { value } = passwordField;
 
     
-    if (passwordField.value) {
-      return;
+    
+    if (!value || (event.data && event.data == value)) {
+      this._stopTreatingAsGeneratedPasswordField(passwordField);
     }
-    this._stopTreatingAsGeneratedPasswordField(passwordField);
   },
 
   _stopTreatingAsGeneratedPasswordField(passwordField) {
