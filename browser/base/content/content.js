@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ContentMetaHandler: "resource:///modules/ContentMetaHandler.jsm",
   LoginFormFactory: "resource://gre/modules/LoginFormFactory.jsm",
   InsecurePasswordUtils: "resource://gre/modules/InsecurePasswordUtils.jsm",
+  ContextMenuChild: "resource:///actors/ContextMenuChild.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "LoginManagerContent", () => {
@@ -30,6 +31,7 @@ XPCOMUtils.defineLazyGetter(this, "LoginManagerContent", () => {
 
 addMessageListener("PasswordManager:fillForm", function(message) {
   
+  message.objects.inputElement = ContextMenuChild.getTarget(global, message, "inputElement");
   LoginManagerContent.receiveMessage(message, content);
 });
 

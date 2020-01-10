@@ -161,8 +161,10 @@ PageMenu.prototype = {
       } else if (this._browser) {
         let win = target.ownerGlobal;
         let windowUtils = win.windowUtils;
-        win.gContextMenu.doCustomCommand(target.getAttribute(this.GENERATEDITEMID_ATTR),
-                                         windowUtils.isHandlingUserInput);
+        this._browser.messageManager.sendAsyncMessage("ContextMenu:DoCustomCommand", {
+          generatedItemId: target.getAttribute(this.GENERATEDITEMID_ATTR),
+          handlingUserInput: windowUtils.isHandlingUserInput,
+        });
       }
     } else if (type == "popuphidden" && this._popup == target) {
       this.removeGeneratedContent(this._popup);
@@ -242,7 +244,25 @@ function PageMenuParent() {
 
 PageMenuParent.prototype = {
   __proto__: PageMenu.prototype,
+
   
+
+
+
+
+
+
+  buildAndAddToPopup(aTarget, aPopup) {
+    let menuObject = this.maybeBuild(aTarget);
+    if (!menuObject) {
+      return false;
+    }
+
+    return this.buildAndAttachMenuWithObject(menuObject, null, aPopup);
+  },
+
+  
+
 
 
 

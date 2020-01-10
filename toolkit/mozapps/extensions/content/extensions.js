@@ -3331,6 +3331,13 @@ var gDetailView = {
         document.getElementById("contentAreaContextMenu").openPopupAtScreen = (...args) => {
           return parentContextMenuPopup.openPopupAtScreen(...args);
         };
+
+        
+        
+        
+        
+        browser.messageManager.addMessageListener(
+          "contextmenu", message => parentChromeWindow.openContextMenu(message));
       });
     } else {
       readyPromise = promiseEvent("load", browser, true);
