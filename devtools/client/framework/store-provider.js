@@ -1,0 +1,8 @@
+
+
+
+"use strict";
+
+const { createProvider } = require("devtools/client/shared/vendor/react-redux");
+
+module.exports = createProvider("toolbox-store");

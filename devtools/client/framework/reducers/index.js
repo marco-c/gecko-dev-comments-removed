@@ -1,0 +1,8 @@
+
+
+
+"use strict";
+
+module.exports = {
+  domMutationBreakpoints: require("./dom-mutation-breakpoints").reducer,
+};

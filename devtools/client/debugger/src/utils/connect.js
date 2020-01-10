@@ -8,10 +8,15 @@ import * as React from "react";
 
 export function connect<Config, RSP: {}, MDP: {}>(
   mapStateToProps: (state: any, props: any) => RSP,
-  mapDispatchToProps?: (Function => MDP) | MDP
+  mapDispatchToProps?: (Function => MDP) | MDP,
+  mergeProps?: void,
+  opts?: ?{|
+    storeKey?: string,
+  |}
 ): (
   Component: React.AbstractComponent<Config>
 ) => React.AbstractComponent<$Diff<Config, RSP & MDP>> {
   
-  return reduxConnect(mapStateToProps, mapDispatchToProps);
+  
+  return reduxConnect(mapStateToProps, mapDispatchToProps, null, opts);
 }

@@ -1,0 +1,9 @@
+
+
+
+
+
+
+declare module "devtools/client/framework/store-provider" {
+  declare module.exports: any;
+}
