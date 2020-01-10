@@ -3181,6 +3181,9 @@ EditActionResult HTMLEditRules::HandleDeleteNonCollapsedSelection(
       HTMLEditor::GetBlock(*firstRangeStart.GetContainer());
   RefPtr<Element> rightBlock =
       HTMLEditor::GetBlock(*firstRangeEnd.GetContainer());
+  if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
+    return EditActionHandled(NS_ERROR_FAILURE);  
+  }
 
   
   
@@ -3205,64 +3208,56 @@ EditActionResult HTMLEditRules::HandleDeleteNonCollapsedSelection(
     return EditActionHandled(rv);
   }
 
+  
+
+  
+  
+  
+  if (leftBlock->GetParentNode() == rightBlock->GetParentNode() &&
+      HTMLEditorRef().AreNodesSameType(*leftBlock, *rightBlock) &&
+      
+      (leftBlock->IsHTMLElement(nsGkAtoms::p) ||
+       HTMLEditUtils::IsListItem(leftBlock) ||
+       HTMLEditUtils::IsHeader(*leftBlock))) {
+    
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .DeleteSelectionWithTransaction(aDirectionAndAmount,
+                                                      aStripWrappers);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditActionHandled(rv);
+    }
+    
+    EditorDOMPoint atFirstChildOfTheLastRightNode =
+        MOZ_KnownLive(HTMLEditorRef())
+            .JoinNodesDeepWithTransaction(*leftBlock, *rightBlock);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(!atFirstChildOfTheLastRightNode.IsSet())) {
+      return EditActionHandled(NS_ERROR_FAILURE);
+    }
+    
+    ErrorResult error;
+    SelectionRefPtr()->Collapse(atFirstChildOfTheLastRightNode, error);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      error.SuppressException();
+      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+    return EditActionHandled(error.StealNSResult());
+  }
+
+  
   EditActionResult result(NS_OK);
   result.MarkAsHandled();
   {
-    
-    
-    
-    
     AutoTrackDOMPoint startTracker(HTMLEditorRef().RangeUpdaterRef(),
                                    &firstRangeStart);
     AutoTrackDOMPoint endTracker(HTMLEditorRef().RangeUpdaterRef(),
                                  &firstRangeEnd);
-
-    
-    if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
-      return result.SetResult(NS_ERROR_FAILURE);
-    }
-
-    
-    nsCOMPtr<nsINode> leftBlockParent = leftBlock->GetParentNode();
-    nsCOMPtr<nsINode> rightBlockParent = rightBlock->GetParentNode();
-
-    
-    if (leftBlockParent == rightBlockParent &&
-        HTMLEditorRef().AreNodesSameType(*leftBlock, *rightBlock) &&
-        
-        (leftBlock->IsHTMLElement(nsGkAtoms::p) ||
-         HTMLEditUtils::IsListItem(leftBlock) ||
-         HTMLEditUtils::IsHeader(*leftBlock))) {
-      
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .DeleteSelectionWithTransaction(aDirectionAndAmount,
-                                                        aStripWrappers);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return result.SetResult(rv);
-      }
-      
-      EditorDOMPoint atFirstChildOfTheLastRightNode =
-          MOZ_KnownLive(HTMLEditorRef())
-              .JoinNodesDeepWithTransaction(*leftBlock, *rightBlock);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      if (NS_WARN_IF(!atFirstChildOfTheLastRightNode.IsSet())) {
-        return result.SetResult(NS_ERROR_FAILURE);
-      }
-      
-      ErrorResult error;
-      SelectionRefPtr()->Collapse(atFirstChildOfTheLastRightNode, error);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        error.SuppressException();
-        return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
-      return result.SetResult(error.StealNSResult());
-    }
 
     
     
