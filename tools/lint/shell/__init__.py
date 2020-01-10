@@ -2,17 +2,10 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import os
 import json
 import signal
-
-
-try:
-    from json.decoder import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
+from json.decoder import JSONDecodeError
 
 import mozpack.path as mozpath
 from mozfile import which

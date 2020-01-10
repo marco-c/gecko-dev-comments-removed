@@ -2,13 +2,11 @@
 
 
 
-from __future__ import absolute_import, print_function
-from collections import namedtuple
-
 import os
 import signal
 import re
 import subprocess
+from collections import namedtuple
 
 from mozfile import which
 from mozlint import result
