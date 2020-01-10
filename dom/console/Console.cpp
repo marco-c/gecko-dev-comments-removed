@@ -40,7 +40,6 @@
 #include "mozilla/TimestampTimelineMarker.h"
 
 #include "nsIConsoleAPIStorage.h"
-#include "nsIDOMWindowUtils.h"
 #include "nsIException.h"  
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsILoadContext.h"

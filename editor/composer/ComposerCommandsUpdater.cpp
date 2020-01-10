@@ -15,7 +15,6 @@
 #include "nsDebug.h"                     
 #include "nsError.h"                     
 #include "nsID.h"                        
-#include "nsIDOMWindow.h"                
 #include "nsIDocShell.h"                 
 #include "nsIInterfaceRequestorUtils.h"  
 #include "nsITransactionManager.h"       

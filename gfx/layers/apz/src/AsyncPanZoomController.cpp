@@ -78,7 +78,6 @@
 #include "nsAlgorithm.h"                              
 #include "nsCOMPtr.h"                                 
 #include "nsDebug.h"                                  
-#include "nsIDOMWindowUtils.h"                        
 #include "nsMathUtils.h"                              
 #include "nsPoint.h"                                  
 #include "nsStyleConsts.h"

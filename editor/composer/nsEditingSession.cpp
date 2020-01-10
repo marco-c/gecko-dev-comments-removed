@@ -25,7 +25,6 @@
 #include "nsIControllers.h"        
 #include "nsID.h"                  
 #include "nsHTMLDocument.h"        
-#include "nsIDOMWindow.h"          
 #include "nsIDocShell.h"           
 #include "mozilla/dom/Document.h"  
 #include "nsIDocumentStateListener.h"
