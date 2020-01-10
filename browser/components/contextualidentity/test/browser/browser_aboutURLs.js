@@ -29,6 +29,9 @@ add_task(async function() {
     
     "debugging",
     "debugging-new",
+    
+    
+    "protections",
   ];
 
   for (let cid in Cc) {
