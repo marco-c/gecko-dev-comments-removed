@@ -35,7 +35,6 @@ UNSUPPORTED_FEATURES = set([
     "Intl.DateTimeFormat-datetimestyle",
     "Intl.DateTimeFormat-dayPeriod",
     "Intl.DateTimeFormat-formatRange",
-    "Intl.ListFormat",
     "Intl.Segmenter",
     "WeakRef",
     "FinalizationGroup",
