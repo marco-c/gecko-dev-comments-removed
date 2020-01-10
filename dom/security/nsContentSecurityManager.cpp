@@ -44,7 +44,23 @@ static nsLiteralCString evalAllowlist[] = {
     NS_LITERAL_CSTRING("resource://testing-common/ajv-4.1.1.js"),
     
     NS_LITERAL_CSTRING("resource://testing-common/content-task.js"),
+
+    
+    NS_LITERAL_CSTRING("debugger"),
+
+    
+    
+
+    
+    NS_LITERAL_CSTRING("chrome://global/content/bindings/autocomplete.xml"),
 };
+
+
+
+
+static NS_NAMED_LITERAL_STRING(sAllowedEval1, "this");
+static NS_NAMED_LITERAL_STRING(sAllowedEval2,
+                               "function anonymous(\n) {\nreturn this\n}");
 
 
 bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
@@ -172,13 +188,38 @@ bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
 
 
 void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
-    nsIPrincipal* subjectPrincipal, JSContext* cx) {
-  if (!subjectPrincipal->IsSystemPrincipal()) {
+    JSContext* cx, nsIPrincipal* aSubjectPrincipal, const nsAString& aScript) {
+  if (!aSubjectPrincipal->IsSystemPrincipal()) {
     return;
   }
 
   
   if (StaticPrefs::security_allow_eval_with_system_principal()) {
+    MOZ_LOG(sCSMLog, LogLevel::Debug,
+            ("Allowing eval() with SystemPrincipal because allowing pref is "
+             "enabled"));
+    return;
+  }
+
+  
+  
+  
+  
+  nsAutoString configPref;
+  Preferences::GetString("general.config.filename", configPref);
+  if (!configPref.IsEmpty()) {
+    MOZ_LOG(sCSMLog, LogLevel::Debug,
+            ("Allowing eval() with SystemPrincipal because of "
+             "general.config.filename"));
+    return;
+  }
+
+  
+  if (!aScript.IsEmpty() &&
+      (aScript == sAllowedEval1 || aScript == sAllowedEval2)) {
+    MOZ_LOG(sCSMLog, LogLevel::Debug,
+            ("Allowing eval() with SystemPrincipal because a key string is "
+             "provided"));
     return;
   }
 
@@ -204,8 +245,20 @@ void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
     fileName = fileName_;
   }
 
-  MOZ_CRASH_UNSAFE_PRINTF("do not use eval with system privileges: %s",
-                          fileName.get());
+#ifdef DEBUG
+  MOZ_CRASH_UNSAFE_PRINTF(
+      "Blocking eval() with SystemPrincipal from file %s and script provided "
+      "%s",
+      fileName.get(), NS_ConvertUTF16toUTF8(aScript).get());
+#else
+  MOZ_LOG(sCSMLog, LogLevel::Debug,
+          ("Blocking eval() with SystemPrincipal from file %s and script "
+           "provided %s",
+           fileName.get(), NS_ConvertUTF16toUTF8(aScript).get()));
+#endif
+
+  
+  
 }
 
 
