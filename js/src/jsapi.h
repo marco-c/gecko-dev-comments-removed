@@ -338,7 +338,7 @@ extern JS_PUBLIC_API bool JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 extern JS_PUBLIC_API JSContext* JS_NewContext(
-    uint32_t maxbytes, uint32_t maxNurseryBytes = JS::DefaultNurseryBytes,
+    uint32_t maxbytes, uint32_t maxNurseryMaxBytes = JS::DefaultNurseryMaxBytes,
     JSRuntime* parentRuntime = nullptr);
 
 
