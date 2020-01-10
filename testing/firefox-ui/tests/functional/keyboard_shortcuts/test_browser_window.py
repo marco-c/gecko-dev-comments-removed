@@ -24,6 +24,9 @@ class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
         
         
         
+        
+        
+        
 
         
         self.browser.tabbar.tabs[1].switch_to()
