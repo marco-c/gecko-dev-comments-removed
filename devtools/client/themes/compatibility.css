@@ -2,6 +2,20 @@
 
 
 
+:root {
+  --compatibility-base-unit: 4px;
+  --compatibility-cause-color: var(--theme-text-color-alt);
+}
+
+.compatibility-issue-item {
+  display: flex;
+  gap: var(--compatibility-base-unit);
+}
+
+.compatibility-issue-item__causes {
+  color: var(--compatibility-cause-color);
+}
+
 .compatibility-issue-item__mdn-link {
   color: var(--theme-highlight-blue);
   text-decoration: none;
