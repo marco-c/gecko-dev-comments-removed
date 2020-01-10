@@ -130,11 +130,26 @@ impl SecurityState {
         
         
         
-        let env = make_env(store_path.as_path()).or_else(|_| {
+        let mut env = make_env(store_path.as_path()).or_else(|_| {
             remove_db(store_path.as_path())?;
             make_env(store_path.as_path())
         })?;
-        let store = env.open_single("cert_storage", StoreOptions::create())?;
+
+        
+        
+        
+        
+        
+        let store = match env.open_single("cert_storage", StoreOptions::default()) {
+            Ok(store) => Ok(store),
+            Err(StoreError::LmdbError(lmdb::Error::NotFound)) => {
+                env.open_single("cert_storage", StoreOptions::create())?;
+                drop(env);
+                env = make_env(store_path.as_path())?;
+                env.open_single("cert_storage", StoreOptions::default())
+            }
+            Err(err) => Err(err),
+        }?;
 
         
         let mut revocations_path = self.profile_path.clone();
@@ -227,7 +242,7 @@ impl SecurityState {
         drop(self.env_and_store.take());
 
         let env = make_env(store_path.as_path())?;
-        let store = env.open_single("cert_storage", StoreOptions::create())?;
+        let store = env.open_single("cert_storage", StoreOptions::default())?;
         self.env_and_store.replace(EnvAndStore { env, store });
         Ok(())
     }
