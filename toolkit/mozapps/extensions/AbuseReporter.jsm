@@ -488,7 +488,7 @@ const AbuseReporter = {
       
       
       
-      "dialog,centerscreen,alwaysOnTop,height=700",
+      "dialog,centerscreen,height=700",
       params
     );
 
