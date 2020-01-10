@@ -43,7 +43,11 @@ add_task(async function() {
   EventUtils.synthesizeKey("KEY_Enter");
 
   
-  await waitForDOM(document, ".search-panel-content .treeRow.resourceRow", 2);
+  await waitForDOMIfNeeded(
+    document,
+    ".search-panel-content .treeRow.resourceRow",
+    2
+  );
 
   
   EventUtils.sendMouseEvent(
