@@ -2183,6 +2183,10 @@ WebRenderCommandBuilder::GenerateFallbackData(
   
   aImageRect = visibleRect / layerScale;
 
+  
+  
+  visibleRect -= dtRect.TopLeft();
+
   nsDisplayItemGeometry* geometry = fallbackData->mGeometry;
 
   bool needPaint = true;
@@ -2261,11 +2265,9 @@ WebRenderCommandBuilder::GenerateFallbackData(
         fallbackData->mBasicLayerManager =
             new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
       }
-      
-      
       bool isInvalidated = PaintItemByDrawTarget(
-          aItem, dt, LayoutDevicePoint(0, 0),
-           visibleRect.ToUnknownRect(), aDisplayListBuilder,
+          aItem, dt, (dtRect/layerScale).TopLeft(),
+           dt->GetRect(), aDisplayListBuilder,
           fallbackData->mBasicLayerManager, scale, highlight);
       if (!isInvalidated) {
         if (!aItem->GetBuildingRect().IsEqualInterior(
@@ -2275,7 +2277,10 @@ WebRenderCommandBuilder::GenerateFallbackData(
           isInvalidated = true;
         }
       }
-      recorder->FlushItem(visibleRect.ToUnknownRect());
+
+      
+      
+      recorder->FlushItem((dtRect - dtRect.TopLeft()).ToUnknownRect());
       recorder->Finish();
 
       if (!validFonts) {
@@ -2334,8 +2339,6 @@ WebRenderCommandBuilder::GenerateFallbackData(
             fallbackData->mBasicLayerManager =
                 new BasicLayerManager(mManager->GetWidget());
           }
-          
-          
           isInvalidated = PaintItemByDrawTarget(
               aItem, dt,
                aImageRect.TopLeft(),
