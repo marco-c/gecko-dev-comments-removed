@@ -138,7 +138,15 @@ MediaResult RemoteAudioDecoderParent::ProcessDecodedData(
     array.AppendElement(output);
   }
 
-  aDecodedData = std::move(array);
+  
+  
+  
+  if (aDecodedData.type() == DecodedOutputIPDL::TArrayOfRemoteAudioDataIPDL) {
+    aDecodedData.get_ArrayOfRemoteAudioDataIPDL().AppendElements(
+        std::move(array));
+  } else {
+    aDecodedData = std::move(array);
+  }
 
   return NS_OK;
 }
