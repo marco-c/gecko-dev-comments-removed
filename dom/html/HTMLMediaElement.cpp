@@ -5106,11 +5106,14 @@ void HTMLMediaElement::PlaybackEnded() {
         ("%p, got duration by reaching the end of the resource", this));
     mSrcStreamPlaybackEnded = true;
     DispatchAsyncEvent(NS_LITERAL_STRING("durationchange"));
-  }
-
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
-    SetCurrentTime(0);
-    return;
+  } else {
+    
+    
+    
+    if (HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
+      SetCurrentTime(0);
+      return;
+    }
   }
 
   FireTimeUpdate(false);
