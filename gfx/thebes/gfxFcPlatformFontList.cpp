@@ -1389,11 +1389,11 @@ gfxFcPlatformFontList::gfxFcPlatformFontList()
       mFcSubstituteCache(64),
       mLastConfig(nullptr),
       mAlwaysUseFontconfigGenerics(true) {
+  mLastConfig = FcConfigGetCurrent();
   if (XRE_IsParentProcess()) {
     
     int rescanInterval = FcConfigGetRescanInterval(nullptr);
     if (rescanInterval) {
-      mLastConfig = FcConfigGetCurrent();
       NS_NewTimerWithFuncCallback(
           getter_AddRefs(mCheckFontUpdatesTimer), CheckFontUpdates, this,
           (rescanInterval + 1) * 1000, nsITimer::TYPE_REPEATING_SLACK,
@@ -1537,6 +1537,8 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
   mAlwaysUseFontconfigGenerics = PrefFontListsUseOnlyGenerics();
   mOtherFamilyNamesInitialized = true;
 
+  mLastConfig = FcConfigGetCurrent();
+
   if (XRE_IsContentProcess()) {
     
     
@@ -1598,8 +1600,6 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
 
     return NS_OK;
   }
-
-  mLastConfig = FcConfigGetCurrent();
 
   UniquePtr<SandboxPolicy> policy;
 
@@ -1667,6 +1667,8 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
   mAlwaysUseFontconfigGenerics = PrefFontListsUseOnlyGenerics();
   mOtherFamilyNamesInitialized = true;
 
+  mLastConfig = FcConfigGetCurrent();
+
   if (!XRE_IsParentProcess()) {
     
     
@@ -1677,8 +1679,6 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 #ifdef MOZ_BUNDLED_FONTS
   ActivateBundledFonts();
 #endif
-
-  mLastConfig = FcConfigGetCurrent();
 
   UniquePtr<SandboxPolicy> policy;
 
