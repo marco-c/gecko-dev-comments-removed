@@ -103,27 +103,6 @@ function waitForDispatch(dbg, actionType, eventRepeat = 1) {
 
 
 
-function waitForThreadEvents(dbg, eventName) {
-  info(`Waiting for thread event '${eventName}' to fire.`);
-  const thread = dbg.toolbox.threadClient;
-
-  return new Promise(function(resolve, reject) {
-    thread.once(function onEvent(...args) {
-      info(`Thread event '${eventName}' fired.`);
-      resolve.apply(resolve, args);
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-
 function waitForState(dbg, predicate, msg) {
   return new Promise(resolve => {
     info(`Waiting for state change: ${msg || ""}`);
