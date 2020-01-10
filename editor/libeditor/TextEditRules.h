@@ -21,7 +21,6 @@
 
 namespace mozilla {
 
-class EditSubActionInfo;
 class HTMLEditor;
 class HTMLEditRules;
 namespace dom {
@@ -79,16 +78,6 @@ class TextEditRules {
   virtual nsresult DetachEditor();
   virtual nsresult BeforeEdit();
   MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit();
-  
-  
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual nsresult WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
-                                bool* aHandled);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual nsresult DidDoAction(EditSubActionInfo& aInfo, nsresult aResult);
 
   
 
@@ -96,8 +85,6 @@ class TextEditRules {
 
 
   virtual bool DocumentIsEmpty() const;
-
-  bool DontEchoPassword() const;
 
  protected:
   virtual ~TextEditRules() = default;
@@ -115,26 +102,14 @@ class TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  CreatePaddingBRElementForEmptyEditorIfNeeded();
-
-  
-
-
-
 
 
 
 
   MOZ_MUST_USE nsresult CollapseSelectionToTrailingBRIfNeeded();
 
-  bool IsPasswordEditor() const;
-  bool IsMaskingPassword() const;
   bool IsSingleLineEditor() const;
   bool IsPlaintextEditor() const;
-  bool IsReadonly() const;
-  bool IsDisabled() const;
-  bool IsMailEditor() const;
 
  private:
   TextEditor* MOZ_NON_OWNING_REF mTextEditor;
@@ -217,54 +192,6 @@ class TextEditRules {
 #endif  
 
   bool mIsHTMLEditRules;
-};
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS EditSubActionInfo final {
- public:
-  explicit EditSubActionInfo(EditSubAction aEditSubAction)
-      : mEditSubAction(aEditSubAction),
-        inString(nullptr),
-        outString(nullptr),
-        outputFormat(nullptr),
-        maxLength(-1),
-        flags(0),
-        collapsedAction(nsIEditor::eNext),
-        stripWrappers(nsIEditor::eStrip),
-        entireList(false),
-        bulletType(nullptr),
-        alignType(nullptr),
-        blockType(nullptr) {}
-
-  EditSubAction mEditSubAction;
-
-  
-  const nsAString* inString;
-  nsAString* outString;
-  const nsAString* outputFormat;
-  int32_t maxLength;
-
-  
-  uint32_t flags;
-
-  
-  nsIEditor::EDirection collapsedAction;
-  nsIEditor::EStripWrappers stripWrappers;
-
-  
-  bool entireList;
-  const nsAString* bulletType;
-
-  
-  const nsAString* alignType;
-
-  
-  const nsAString* blockType;
 };
 
 }  

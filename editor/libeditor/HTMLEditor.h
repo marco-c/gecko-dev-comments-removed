@@ -3201,6 +3201,16 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual nsresult
+  InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) final;
+
+  
+
+
+
+
+
+
 
 
 
