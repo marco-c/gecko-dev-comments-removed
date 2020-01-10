@@ -899,10 +899,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
   mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
 
   
@@ -4259,11 +4255,6 @@ class nsIFrame : public nsQueryFrame {
   mozilla::gfx::CompositorHitTestInfo GetCompositorHitTestInfo(
       nsDisplayListBuilder* aBuilder);
 
-  
-
-
-  inline void PropagateWritingModeToSelfAndAncestors(mozilla::WritingMode aWM);
-
  protected:
   static void DestroyAnonymousContent(nsPresContext* aPresContext,
                                       already_AddRefed<nsIContent>&& aContent);
@@ -4318,6 +4309,11 @@ class nsIFrame : public nsQueryFrame {
   }
 
  protected:
+  
+
+
+  inline void PropagateRootElementWritingMode(mozilla::WritingMode aRootElemWM);
+
   void MarkInReflow() {
 #ifdef DEBUG_dbaron_off
     
