@@ -92,11 +92,11 @@ class CompositorD3D11 : public Compositor {
   
 
 
-  void BeginFrame(const nsIntRegion& aInvalidRegion,
-                  const Maybe<gfx::IntRect>& aClipRect,
-                  const gfx::IntRect& aRenderBounds,
-                  const nsIntRegion& aOpaqueRegion, NativeLayer* aNativeLayer,
-                  gfx::IntRect* aRenderBoundsOut = nullptr) override;
+  Maybe<gfx::IntRect> BeginFrame(const nsIntRegion& aInvalidRegion,
+                                 const Maybe<gfx::IntRect>& aClipRect,
+                                 const gfx::IntRect& aRenderBounds,
+                                 const nsIntRegion& aOpaqueRegion,
+                                 NativeLayer* aNativeLayer) override;
 
   void NormalDrawingDone() override;
 

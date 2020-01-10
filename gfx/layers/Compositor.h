@@ -411,13 +411,11 @@ class Compositor : public TextureSourceProvider {
 
 
 
-
-  virtual void BeginFrame(const nsIntRegion& aInvalidRegion,
-                          const Maybe<gfx::IntRect>& aClipRect,
-                          const gfx::IntRect& aRenderBounds,
-                          const nsIntRegion& aOpaqueRegion,
-                          NativeLayer* aNativeLayer,
-                          gfx::IntRect* aRenderBoundsOut = nullptr) = 0;
+  virtual Maybe<gfx::IntRect> BeginFrame(const nsIntRegion& aInvalidRegion,
+                                         const Maybe<gfx::IntRect>& aClipRect,
+                                         const gfx::IntRect& aRenderBounds,
+                                         const nsIntRegion& aOpaqueRegion,
+                                         NativeLayer* aNativeLayer) = 0;
 
   
 
