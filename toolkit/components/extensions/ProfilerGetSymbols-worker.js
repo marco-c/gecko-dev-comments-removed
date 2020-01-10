@@ -20,6 +20,12 @@ importScripts(
 
 
 
+const {
+  CompactSymbolTable,
+  WasmMemBuffer,
+  get_compact_symbol_table,
+} = wasm_bindgen;
+
 
 function readFileInto(file, dataBuf) {
   
@@ -53,82 +59,40 @@ onmessage = async e => {
     
     await wasm_bindgen(module);
 
-    const { CompactSymbolTable, wasm } = wasm_bindgen;
-
-    const binaryFile = OS.File.open(binaryPath, { read: true });
-    const binaryDataBufLen = binaryFile.stat().size;
-
     
-    const binaryDataBufPtr = wasm.__wbindgen_malloc(binaryDataBufLen);
-    const binaryDataBuf = new Uint8Array(
-      wasm.memory.buffer,
-      binaryDataBufPtr,
-      binaryDataBufLen
-    );
-    readFileInto(binaryFile, binaryDataBuf);
+    const binaryFile = OS.File.open(binaryPath, { read: true });
+    const binaryData = new WasmMemBuffer(binaryFile.stat().size, array => {
+      readFileInto(binaryFile, array);
+    });
     binaryFile.close();
 
     
     
-    let debugDataBufLen = binaryDataBufLen;
-    let debugDataBufPtr = binaryDataBufPtr;
+    let debugData = binaryData;
     if (debugPath && debugPath !== binaryPath) {
       const debugFile = OS.File.open(debugPath, { read: true });
-      debugDataBufLen = debugFile.stat().size;
-      debugDataBufPtr = wasm.__wbindgen_malloc(debugDataBufLen);
-      const debugDataBuf = new Uint8Array(
-        wasm.memory.buffer,
-        debugDataBufPtr,
-        debugDataBufLen
-      );
-      readFileInto(debugFile, debugDataBuf);
+      debugData = new WasmMemBuffer(debugFile.stat().size, array => {
+        readFileInto(debugFile, array);
+      });
       debugFile.close();
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    const breakpadIdBuf = new TextEncoder("utf-8").encode(breakpadId);
-    const breakpadIdLen = breakpadIdBuf.length;
-    const breakpadIdPtr = wasm.__wbindgen_malloc(breakpadIdLen);
-    new Uint8Array(wasm.memory.buffer).set(breakpadIdBuf, breakpadIdPtr);
 
     const output = new CompactSymbolTable();
     let succeeded;
     try {
-      succeeded =
-        wasm.get_compact_symbol_table(
-          binaryDataBufPtr,
-          binaryDataBufLen,
-          debugDataBufPtr,
-          debugDataBufLen,
-          breakpadIdPtr,
-          breakpadIdLen,
-          output.ptr
-        ) !== 0;
+      succeeded = get_compact_symbol_table(
+        binaryData,
+        debugData,
+        breakpadId,
+        output
+      );
     } catch (e) {
       succeeded = false;
     }
 
-    wasm.__wbindgen_free(breakpadIdPtr, breakpadIdLen);
-    wasm.__wbindgen_free(binaryDataBufPtr, binaryDataBufLen);
-    if (debugDataBufPtr != binaryDataBufPtr) {
-      wasm.__wbindgen_free(debugDataBufPtr, debugDataBufLen);
+    binaryData.free();
+    if (debugData != binaryData) {
+      debugData.free();
     }
 
     if (!succeeded) {
