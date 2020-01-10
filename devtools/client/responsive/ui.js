@@ -207,6 +207,10 @@ class ResponsiveUI {
     
     await this.restoreState();
 
+    if (this.isBrowserUIEnabled) {
+      await this.emulationFront.setDocumentInRDMPane(true);
+    }
+
     if (!this.isBrowserUIEnabled) {
       
       
@@ -300,6 +304,10 @@ class ResponsiveUI {
     
     if (!isTabContentDestroying) {
       await this.inited;
+    }
+
+    if (this.isBrowserUIEnabled) {
+      await this.emulationFront.setDocumentInRDMPane(false);
     }
 
     this.tab.removeEventListener("TabClose", this);
