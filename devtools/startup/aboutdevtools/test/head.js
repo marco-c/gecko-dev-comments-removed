@@ -104,6 +104,10 @@ function synthesizeToggleToolboxKey() {
 
 function isAboutDevtoolsTab(tab) {
   const browser = tab.linkedBrowser;
-  const location = browser.documentURI.spec;
-  return location.startsWith("about:devtools");
+  
+  if (browser && browser.documentURI) {
+    const location = browser.documentURI.spec;
+    return location.startsWith("about:devtools");
+  }
+  return false;
 }
