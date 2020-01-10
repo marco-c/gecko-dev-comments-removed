@@ -161,7 +161,6 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
   nsCOMPtr<nsINode> mSourceNode;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
 
   
   
