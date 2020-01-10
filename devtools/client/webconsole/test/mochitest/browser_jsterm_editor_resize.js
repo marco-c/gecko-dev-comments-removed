@@ -13,15 +13,6 @@ add_task(async function() {
   await pushPref("devtools.webconsole.input.editor", true);
 
   
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
-  
   await pushPref("devtools.webconsole.input.editorWidth", null);
 
   let hud = await openNewTabAndConsole(TEST_URI);
@@ -60,7 +51,7 @@ async function performTests() {
     `${newWidth}px`,
     "The width is applied again when switching back to editor"
   );
-}
+});
 
 async function resize(resizer, clientX) {
   const doc = resizer.ownerDocument;

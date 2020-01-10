@@ -286,9 +286,6 @@ pref("devtools.webconsole.sidebarToggle", false);
 #endif
 
 
-pref("devtools.webconsole.jsterm.codeMirror", true);
-
-
 #if defined(NIGHTLY_BUILD)
 pref("devtools.webconsole.features.editor", true);
 #else

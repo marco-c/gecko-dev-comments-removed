@@ -21,15 +21,6 @@ const {
 } = require("devtools/client/webconsole/selectors/history");
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
   const { jsterm, ui } = hud;
 
@@ -74,4 +65,4 @@ async function performTests() {
 
   info("Wait for the execution value to appear");
   await onMessage;
-}
+});

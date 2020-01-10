@@ -19,15 +19,6 @@ const TEST_URI = `data:text/html;charset=utf-8,
 </body>`;
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const toolbox = await openNewTabAndToolbox(TEST_URI, "inspector");
   await registerTestActor(toolbox.target.client);
   const testActor = await getTestActor(toolbox);
@@ -56,7 +47,7 @@ async function performTests() {
     true,
     "autocomplete popup has expected items"
   );
-}
+});
 
 function getAutocompletePopupLabels(autocompletePopup) {
   return autocompletePopup.items.map(i => i.label);

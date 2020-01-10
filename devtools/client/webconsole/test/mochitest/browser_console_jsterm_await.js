@@ -13,15 +13,6 @@ add_task(async function() {
   
   await pushPref("devtools.debugger.features.map-await-expression", true);
 
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   await addTab(TEST_URI);
   const hud = await HUDService.toggleBrowserConsole();
 
@@ -50,4 +41,4 @@ async function performTests() {
 
   info("Close the Browser console");
   await HUDService.toggleBrowserConsole();
-}
+});

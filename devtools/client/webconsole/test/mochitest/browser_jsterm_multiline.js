@@ -78,15 +78,6 @@ const DATA = [
 
 add_task(async function() {
   
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
-  
   Services.telemetry.clearEvents();
 
   
@@ -121,7 +112,7 @@ async function performTests() {
   );
 
   checkEventTelemetry();
-}
+});
 
 function checkEventTelemetry() {
   const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);

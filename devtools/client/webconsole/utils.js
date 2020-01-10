@@ -35,23 +35,6 @@ var WebConsoleUtils = {
 
 
 
-
-
-  copyTextStyles: function(from, to) {
-    const win = from.ownerDocument.defaultView;
-    const style = win.getComputedStyle(from);
-    to.style.fontFamily = style.fontFamily;
-    to.style.fontSize = style.fontSize;
-    to.style.fontWeight = style.fontWeight;
-    to.style.fontStyle = style.fontStyle;
-  },
-
-  
-
-
-
-
-
   _usageCount: 0,
   get usageCount() {
     if (WebConsoleUtils._usageCount < CONSOLE_ENTRY_THRESHOLD) {

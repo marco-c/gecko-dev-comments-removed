@@ -16,15 +16,6 @@ const TEST_URI = `data:text/html,
 `;
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   let message = await executeAndWaitForMessage(
@@ -115,4 +106,4 @@ async function performTests() {
     message,
     "$x works as expected with XPathResult.ORDERED_NODE_SNAPSHOT_TYPE"
   );
-}
+});

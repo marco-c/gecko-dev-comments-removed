@@ -8,15 +8,6 @@
 "use strict";
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole("about:config");
   ok(hud, "we have a console");
   ok(hud.iframeWindow, "we have the console UI window");
@@ -27,5 +18,5 @@ async function performTests() {
 
   
   await setInputValueForAutocompletion(hud, "docu");
-  checkInputCompletionValue(hud, "    ment", "'docu' completion");
-}
+  checkInputCompletionValue(hud, "ment", "'docu' completion");
+});

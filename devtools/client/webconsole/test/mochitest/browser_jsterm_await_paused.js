@@ -12,15 +12,6 @@ add_task(async function() {
   await pushPref("devtools.debugger.features.map-await-expression", true);
 
   
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
-  
   await pushPref("devtools.toolbox.splitconsoleEnabled", false);
   const hud = await openNewTabAndConsole(TEST_URI);
 
@@ -81,4 +72,4 @@ async function performTests() {
     JSON.stringify(expectedMessages, null, 2),
     "The output contains the the expected messages, in the expected order"
   );
-}
+});

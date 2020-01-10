@@ -12,19 +12,7 @@ const EDITOR_PREF = "devtools.webconsole.input.editor";
 
 add_task(async function() {
   await pushPref("devtools.webconsole.features.editor", true);
-  await pushPref("devtools.webconsole.input.editor", true);
-  
-  info("Test legacy JsTerm");
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTest();
 
-  
-  info("Test codeMirror JsTerm");
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTest();
-});
-
-async function performTest() {
   
   await pushPref(EDITOR_PREF, false);
   let hud = await openNewTabAndConsole(TEST_URI);
@@ -56,4 +44,4 @@ async function performTest() {
   is(getInputValue(hud), INPUT_VALUE, "The input value wasn't cleared");
 
   Services.prefs.clearUserPref(EDITOR_PREF);
-}
+});

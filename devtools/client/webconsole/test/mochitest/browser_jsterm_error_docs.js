@@ -6,15 +6,6 @@
 const TEST_URI = "data:text/html,Test error documentation";
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
@@ -55,4 +46,4 @@ async function performTests() {
       `The link has the expected "${errorUrl}" href value`
     );
   }
-}
+});

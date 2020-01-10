@@ -11,16 +11,6 @@ const TEST_URI =
 add_task(async function() {
   
   await pushPref("devtools.debugger.features.map-await-expression", true);
-
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   info("Check that declaring a let variable does not create a global property");
@@ -80,7 +70,7 @@ async function performTests() {
   await checkVariable(hud, "bazI");
   await checkVariable(hud, "bazJ");
   await checkVariable(hud, "bazK");
-}
+});
 
 async function checkVariable(hud, varName) {
   await executeAndWaitForMessage(

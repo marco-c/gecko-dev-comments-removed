@@ -16,15 +16,6 @@ const TEST_URI =
 requestLongerTimeout(20);
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
   const { jsterm } = hud;
   const { autocompletePopup: popup } = jsterm;
@@ -56,7 +47,7 @@ async function performTests() {
 
   
   await jstermComplete("foo1Obj.");
-  checkInputCompletionValue(hud, "        prop1", "foo1Obj completion");
+  checkInputCompletionValue(hud, "prop1", "foo1Obj completion");
   is(
     getPopupLabels(popup).join("-"),
     "prop1-prop2",
@@ -125,7 +116,7 @@ async function performTests() {
   
   await jstermComplete("foo2Obj[0].");
   is(getPopupLabels(popup).length, 0, "no items for foo2Obj[0]");
-}
+});
 
 function getPopupLabels(popup) {
   return popup.getItems().map(item => item.label);

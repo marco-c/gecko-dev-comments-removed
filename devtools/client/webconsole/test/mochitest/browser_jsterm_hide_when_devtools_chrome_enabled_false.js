@@ -26,15 +26,6 @@
 requestLongerTimeout(2);
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   let browserConsole, webConsole, objInspector;
 
   
@@ -68,7 +59,7 @@ async function performTests() {
   info("Close webconsole and browser console");
   await closeConsole(browserTab);
   await HUDService.toggleBrowserConsole();
-}
+});
 
 async function logObject(hud) {
   const prop = "browser_console_hide_jsterm_test";

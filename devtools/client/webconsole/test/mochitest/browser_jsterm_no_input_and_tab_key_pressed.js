@@ -14,15 +14,7 @@ add_task(async function() {
   
   
   await pushPref("devtools.webconsole.features.editor", false);
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests(true);
-});
 
-async function performTests(codeMirror) {
   const hud = await openNewTabAndConsole(TEST_URI);
   const jsterm = hud.jsterm;
 
@@ -62,17 +54,14 @@ async function performTests(codeMirror) {
   );
   ok(isInputFocused(hud), "input is still focused");
 
-  
-  if (codeMirror) {
-    info(
-      "Check that hitting Shift+Tab when input is not empty removed leading tabs"
-    );
-    EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
-    checkInputValueAndCursorPosition(
-      hud,
-      `|${testString}`,
-      "The tab char at the the start of the input was removed after hitting Shift+Tab"
-    );
-    ok(isInputFocused(hud), "input is still focused");
-  }
-}
+  info(
+    "Check that hitting Shift+Tab when input is not empty removed leading tabs"
+  );
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  checkInputValueAndCursorPosition(
+    hud,
+    `|${testString}`,
+    "The tab char at the the start of the input was removed after hitting Shift+Tab"
+  );
+  ok(isInputFocused(hud), "input is still focused");
+});

@@ -21,15 +21,6 @@ const TEST_URI = `data:text/html;charset=utf-8,
 <body>bug 585991 - autocomplete popup ctrl+space usage test</body>`;
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
   info("web console opened");
 
@@ -65,4 +56,4 @@ async function performTests() {
 
   ok(popup.isOpen, "popup opens on Ctrl+Space");
   is(popup.itemCount, itemCount, "popup has the expected items");
-}
+});

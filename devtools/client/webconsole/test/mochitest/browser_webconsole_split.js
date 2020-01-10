@@ -15,15 +15,6 @@ const L10N = new LocalizationHelper(
 requestLongerTimeout(4);
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   let toolbox;
   await addTab(TEST_URI);
   await testConsoleLoadOnDifferentPanel();
@@ -359,4 +350,4 @@ async function performTests() {
     const pref = Services.prefs.getCharPref("devtools.toolbox.host");
     is(pref, hostType, "host pref is " + hostType);
   }
-}
+});

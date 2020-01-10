@@ -29,15 +29,6 @@ const TEST_URI = `data:text/html;charset=utf-8,
 </body>`;
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
   const random = Math.random();
   const string = "Text: " + random;
@@ -55,7 +46,7 @@ async function performTests() {
     }
   );
   await testCopy(hud, `$("#${id}")`, outerHTML);
-}
+});
 
 function testCopy(hud, stringToCopy, expectedResult) {
   return waitForClipboardPromise(() => {

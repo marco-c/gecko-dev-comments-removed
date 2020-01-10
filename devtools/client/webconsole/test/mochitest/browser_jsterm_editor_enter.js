@@ -13,21 +13,11 @@ const TEST_URI =
 add_task(async function() {
   await pushPref("devtools.webconsole.features.editor", true);
   await pushPref("devtools.webconsole.input.editor", true);
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performEditorEnabledTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
   await performEditorEnabledTests();
 });
 
 add_task(async function() {
   await pushPref("devtools.webconsole.input.editor", false);
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performEditorDisabledTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
   await performEditorDisabledTests();
 });
 

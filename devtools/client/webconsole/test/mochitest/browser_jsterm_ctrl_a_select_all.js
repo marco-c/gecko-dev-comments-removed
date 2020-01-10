@@ -11,15 +11,6 @@ const TEST_URI = "data:text/html;charset=utf-8,Test console select all";
 
 add_task(async function() {
   
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
-  
   
   gBrowser.selectedTab.focus();
   const hud = await openNewTabAndConsole(TEST_URI);
@@ -45,37 +36,18 @@ async function performTests() {
       "control|cmd + e does not move to end of input"
     );
   }
-}
+});
 
 function getSelectionTextLength(jsterm) {
-  if (jsterm.inputNode) {
-    return jsterm.inputNode.selectionEnd - jsterm.inputNode.selectionStart;
-  }
-
-  if (jsterm.editor) {
-    return jsterm.editor.getSelection().length;
-  }
-
-  return null;
+  return jsterm.editor.getSelection().length;
 }
 
 function setCursorAtStart(jsterm) {
-  if (jsterm.inputNode) {
-    jsterm.inputNode.selectionStart = 0;
-  }
-
-  if (jsterm.editor) {
-    jsterm.editor.setCursor({ line: 0, ch: 0 });
-  }
+  jsterm.editor.setCursor({ line: 0, ch: 0 });
 }
 
 function checkSelectionStart(jsterm, expectedCursorIndex, assertionInfo) {
-  if (jsterm.inputNode) {
-    const { selectionStart } = jsterm.inputNode;
-    is(selectionStart, expectedCursorIndex, assertionInfo);
-  } else {
-    const [selection] = jsterm.editor.codeMirror.listSelections();
-    const { head } = selection;
-    is(head.ch, expectedCursorIndex, assertionInfo);
-  }
+  const [selection] = jsterm.editor.codeMirror.listSelections();
+  const { head } = selection;
+  is(head.ch, expectedCursorIndex, assertionInfo);
 }

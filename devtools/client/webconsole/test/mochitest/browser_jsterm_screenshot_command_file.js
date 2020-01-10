@@ -17,22 +17,13 @@ const { FileUtils } = ChromeUtils.import(
 const dpr = "--dpr 1";
 
 add_task(async function() {
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
-  
-  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
-  await performTests();
-});
-
-async function performTests() {
   await addTab(TEST_URI);
 
   const hud = await openConsole();
   ok(hud, "web console opened");
 
   await testFile(hud);
-}
+});
 
 async function testFile(hud) {
   
