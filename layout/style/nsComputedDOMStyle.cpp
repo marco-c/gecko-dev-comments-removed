@@ -798,8 +798,10 @@ static nsIFrame* StyleFrame(nsIFrame* aOuterFrame) {
 }
 
 static bool IsNonReplacedInline(nsIFrame* aFrame) {
-  return aFrame->StyleDisplay()->mDisplay == StyleDisplay::Inline &&
-         !aFrame->IsFrameOfType(nsIFrame::eReplaced);
+  
+  
+  return aFrame->StyleDisplay()->DisplayInside() == StyleDisplayInside::Inline &&
+    !aFrame->IsFrameOfType(nsIFrame::eReplaced);
 }
 
 static Side SideForPaddingOrMarginOrInsetProperty(nsCSSPropertyID aPropID) {
