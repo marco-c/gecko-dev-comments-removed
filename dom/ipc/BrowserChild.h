@@ -549,7 +549,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   ScreenIntSize GetInnerSize();
 
-  nsRect GetVisibleRect();
+  LayoutDeviceIntRect GetVisibleRect();
 
   
   void DoFakeShow(const ShowInfo& aShowInfo);
