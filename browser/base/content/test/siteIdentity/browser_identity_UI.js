@@ -104,14 +104,7 @@ async function runTest(i, forward) {
     "location matches for test " + testDesc
   );
   
-  if (currentTest.effectiveHost === null) {
-    let identityBox = document.getElementById("identity-box");
-    ok(
-      identityBox.className == "unknownIdentity" ||
-        identityBox.className == "chromeUI",
-      "mode matched"
-    );
-  } else {
+  if (currentTest.effectiveHost !== null) {
     is(
       gIdentityHandler.getEffectiveHost(),
       currentTest.effectiveHost,
