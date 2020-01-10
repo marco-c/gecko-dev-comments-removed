@@ -190,7 +190,10 @@
 
       obj = {
         role: ROLE_PARAGRAPH,
-        children: [ { role: ROLE_WHITESPACE } ],
+        children: [
+          { role: ROLE_WHITESPACE },
+          { role: ROLE_WHITESPACE } 
+        ]
       };
       testElm("br_container", obj);
 

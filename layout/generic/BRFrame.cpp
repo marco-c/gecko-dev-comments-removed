@@ -249,16 +249,10 @@ nsIFrame::FrameSearchResult BRFrame::PeekOffsetWord(
 #ifdef ACCESSIBILITY
 a11y::AccType BRFrame::AccessibleType() {
   dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(mContent);
-  if (brElement->IsPaddingForEmptyEditor()) {
+  if (brElement->IsPaddingForEmptyEditor() ||
+      brElement->IsPaddingForEmptyLastLine()) {
     
     
-    return a11y::eNoType;
-  }
-
-  
-  
-  
-  if (!mContent->GetNextSibling() && !GetNextSibling()) {
     return a11y::eNoType;
   }
 
