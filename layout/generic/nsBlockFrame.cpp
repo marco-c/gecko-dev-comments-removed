@@ -1779,7 +1779,7 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     finalSize.BSize(wm) =
         ComputeFinalBSize(aReflowInput, aState.mReflowStatus,
                           aState.mBCoord + nonCarriedOutBDirMargin,
-                          borderPadding, aState.ConsumedBSize());
+                          borderPadding, aState.mConsumedBSize);
 
     
     aMetrics.mCarriedOutBEndMargin.Zero();

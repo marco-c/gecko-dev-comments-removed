@@ -200,12 +200,6 @@ class BlockReflowInput {
   const mozilla::LogicalMargin& BorderPadding() const { return mBorderPadding; }
 
   
-
-
-
-  nscoord ConsumedBSize();
-
-  
   void ReconstructMarginBefore(nsLineList::iterator aLine);
 
   
@@ -386,7 +380,7 @@ class BlockReflowInput {
 
   
   
-  nscoord mConsumedBSize;
+  const nscoord mConsumedBSize;
 
   
   

@@ -85,6 +85,8 @@ class nsSplittableFrame : public nsFrame {
 
 
 
+
+
   nscoord ConsumedBSize(mozilla::WritingMode aWM) const;
 
   
