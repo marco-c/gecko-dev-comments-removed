@@ -221,11 +221,25 @@ void ChannelMediaDecoder::Shutdown() {
   mResourceCallback->Disconnect();
   MediaDecoder::Shutdown();
 
-  
-  
   if (mResource) {
-    mResource->Close();
+    
+    
+    mResourceClosePromise = mResource->Close();
   }
+}
+
+void ChannelMediaDecoder::ShutdownInternal() {
+  if (!mResourceClosePromise) {
+    MediaShutdownManager::Instance().Unregister(this);
+    return;
+  }
+
+  mResourceClosePromise->Then(
+      AbstractMainThread(), __func__,
+      [self = RefPtr<ChannelMediaDecoder>(this)] {
+        MediaShutdownManager::Instance().Unregister(self);
+      });
+  return;
 }
 
 nsresult ChannelMediaDecoder::Load(nsIChannel* aChannel,

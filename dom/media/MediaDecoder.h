@@ -403,6 +403,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   void SetStateMachineParameters();
 
+  
+  
+  
+  virtual void ShutdownInternal();
+
   bool IsShutdown() const;
 
   

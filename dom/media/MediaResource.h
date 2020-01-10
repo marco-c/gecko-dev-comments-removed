@@ -61,7 +61,10 @@ class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
   
   
   
-  virtual nsresult Close() { return NS_OK; }
+  
+  virtual RefPtr<GenericPromise> Close() {
+    return GenericPromise::CreateAndResolve(true, __func__);
+  }
 
   
   
