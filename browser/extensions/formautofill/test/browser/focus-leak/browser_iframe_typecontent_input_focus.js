@@ -50,6 +50,6 @@ add_task(async function() {
     "The .focusme input is the active element"
   );
 
-  
-  
+  info("Remove the focused input");
+  focusMeInput.remove();
 });
