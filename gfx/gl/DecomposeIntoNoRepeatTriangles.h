@@ -33,9 +33,9 @@ class RectTriangles {
 
 
 
-  InfallibleTArray<coord>& vertCoords() { return mVertexCoords; }
+  nsTArray<coord>& vertCoords() { return mVertexCoords; }
 
-  InfallibleTArray<coord>& texCoords() { return mTexCoords; }
+  nsTArray<coord>& texCoords() { return mTexCoords; }
 
   unsigned int elements() { return mVertexCoords.Length(); }
 
@@ -44,7 +44,7 @@ class RectTriangles {
   AutoTArray<coord, 6> mVertexCoords;
   AutoTArray<coord, 6> mTexCoords;
 
-  static void AppendRectToCoordArray(InfallibleTArray<coord>& array, GLfloat x0,
+  static void AppendRectToCoordArray(nsTArray<coord>& array, GLfloat x0,
                                      GLfloat y0, GLfloat x1, GLfloat y1);
 };
 
