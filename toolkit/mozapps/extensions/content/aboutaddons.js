@@ -1640,6 +1640,10 @@ class AddonCard extends HTMLElement {
     }
 
     
+    card.querySelector(".addon-badge-recommended")
+      .hidden = !addon.isRecommended;
+
+    
     card.querySelector(".addon-description").textContent = addon.description;
 
     
