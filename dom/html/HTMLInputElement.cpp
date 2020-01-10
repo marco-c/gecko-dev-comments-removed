@@ -1329,6 +1329,25 @@ nsresult HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       mAutocompleteAttrState = nsContentUtils::eAutocompleteAttrState_Unknown;
       mAutocompleteInfoState = nsContentUtils::eAutocompleteAttrState_Unknown;
     }
+
+    if ((mType == NS_FORM_INPUT_TIME || mType == NS_FORM_INPUT_DATE) &&
+        !IsExperimentalMobileType(mType)) {
+      if (aName == nsGkAtoms::value || aName == nsGkAtoms::readonly ||
+          aName == nsGkAtoms::tabindex || aName == nsGkAtoms::required ||
+          aName == nsGkAtoms::disabled) {
+        
+        
+        if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
+          AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
+              dateTimeBoxElement,
+              aName == nsGkAtoms::value
+                ? NS_LITERAL_STRING("MozDateTimeValueChanged")
+                : NS_LITERAL_STRING("MozDateTimeAttributeChanged"),
+              CanBubble::eNo, ChromeOnlyDispatch::eNo);
+          dispatcher->RunDOMEventWhenSafe();
+        }
+      }
+    }
   }
 
   return nsGenericHTMLFormElementWithState::AfterSetAttr(
@@ -3365,6 +3384,8 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     }
   }
 
+  
+  
   
   
   
