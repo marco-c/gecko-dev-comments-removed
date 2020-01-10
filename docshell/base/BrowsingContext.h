@@ -280,6 +280,11 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   void NotifyResetUserGestureActivation();
 
   
+  
+  
+  bool HasValidTransientUserGestureActivation();
+
+  
   inline JSObject* GetWindowProxy() const { return mWindowProxy; }
   
   void SetWindowProxy(JS::Handle<JSObject*> aWindowProxy) {
@@ -551,6 +556,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   bool mDanglingRemoteOuterProxies : 1;
+
+  
+  
+  TimeStamp mUserGestureStart;
 };
 
 
