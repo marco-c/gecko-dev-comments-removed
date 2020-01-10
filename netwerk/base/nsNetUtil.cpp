@@ -25,6 +25,7 @@
 #include "nsFileStreams.h"
 #include "nsHashKeys.h"
 #include "nsHttp.h"
+#include "nsMimeTypes.h"
 #include "nsIAsyncStreamCopier.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
@@ -2715,6 +2716,26 @@ void NS_SniffContent(const char* aSnifferType, nsIRequest* aRequest,
     return;
   }
 
+  
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+  if (channel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    nsAutoCString currentContentType;
+    channel->GetContentType(currentContentType);
+    
+
+
+
+
+
+    if (loadInfo->GetSkipContentSniffing() &&
+        !currentContentType.Equals(APPLICATION_JSON) &&
+        !currentContentType.Equals(APPLICATION_WEB_MANIFEST) &&
+        !currentContentType.Equals(TEXT_JSON)) {
+      aSniffedType.Truncate();
+      return;
+    }
+  }
   nsCOMArray<nsIContentSniffer> sniffers;
   cache->GetEntries(sniffers);
   for (int32_t i = 0; i < sniffers.Count(); ++i) {
@@ -2730,24 +2751,24 @@ void NS_SniffContent(const char* aSnifferType, nsIRequest* aRequest,
   
   
   
-  nsCOMPtr<nsIHttpChannel> channel = do_QueryInterface(aRequest);
-  if (channel) {
-    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
+  if (httpChannel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
 
     if (loadInfo->GetSkipContentSniffing()) {
       nsAutoCString type;
-      channel->GetContentType(type);
+      httpChannel->GetContentType(type);
 
       if (type.Equals(nsCString("application/x-unknown-content-type"))) {
         nsCOMPtr<nsIURI> requestUri;
-        channel->GetURI(getter_AddRefs(requestUri));
+        httpChannel->GetURI(getter_AddRefs(requestUri));
         nsAutoCString spec;
         requestUri->GetSpec(spec);
         if (spec.Length() > 50) {
           spec.Truncate(50);
           spec.AppendLiteral("...");
         }
-        channel->LogMimeTypeMismatch(
+        httpChannel->LogMimeTypeMismatch(
             nsCString("XTCOWithMIMEValueMissing"), false,
             NS_ConvertUTF8toUTF16(spec),
             
