@@ -286,6 +286,8 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
   template <typename BoxT, typename ArgT>
   BoxT* newTraceListNode(ArgT* arg);
 
+  void cleanupTraceList();
+
  public:
   
   ObjectBox* newObjectBox(JSObject* obj);

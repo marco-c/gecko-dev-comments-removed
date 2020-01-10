@@ -525,6 +525,10 @@ class FunctionBox : public ObjectBox, public SharedContext {
   void setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope);
   void finish();
 
+  
+  
+  void cleanupMemory() { lazyScriptData().reset(); }
+
   JSFunction* function() const { return &object()->as<JSFunction>(); }
 
   

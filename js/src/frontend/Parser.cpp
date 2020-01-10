@@ -164,7 +164,28 @@ ParserSharedBase::ParserSharedBase(JSContext* cx, ParseInfo& parserInfo,
   cx->frontendCollectionPool().addActiveCompilation();
 }
 
+
+
+void ParserSharedBase::cleanupTraceList() {
+  TraceListNode* elem = traceListHead_;
+  while (elem) {
+    if (elem->isObjectBox()) {
+      ObjectBox* objBox = elem->asObjectBox();
+
+      
+      
+      
+      
+      if (objBox->isFunctionBox()) {
+        objBox->asFunctionBox()->cleanupMemory();
+      }
+    }
+    elem = elem->traceLink;
+  }
+}
+
 ParserSharedBase::~ParserSharedBase() {
+  cleanupTraceList();
   cx_->frontendCollectionPool().removeActiveCompilation();
 }
 
