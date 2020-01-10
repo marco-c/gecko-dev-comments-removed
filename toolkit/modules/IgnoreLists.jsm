@@ -69,11 +69,10 @@ class IgnoreListsManager {
 
 
 
-
-
   async _getIgnoreListSettings(firstTime = true) {
+    let result = [];
     try {
-      return this._ignoreListSettings.get({
+      result = await this._ignoreListSettings.get({
         verifySignature: true,
       });
     } catch (ex) {
@@ -86,13 +85,13 @@ class IgnoreListsManager {
         await collection.clear();
         await collection.db.close();
         
-        return this._getIgnoreListSettings(this._ignoreListSettings, false);
+        return this._getIgnoreListSettings(false);
       }
       
       
       Cu.reportError(ex);
     }
-    return [];
+    return result;
   }
 }
 
