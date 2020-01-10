@@ -56,13 +56,6 @@ class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteR
       this.updateHeader();
     });
 
-    this.addEventListener("popuphiding", (event) => {
-      this._isHiding = true;
-      Services.tm.dispatchToMainThread(() => {
-        this._isHiding = false;
-      });
-    });
-
     
 
 
@@ -79,14 +72,6 @@ class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteR
       }
       this.oneOffButtons.handleSearchCommand(event, engine);
     });
-
-    
-
-
-
-
-
-    this._isHiding = false;
 
     this._bundle = null;
   }
