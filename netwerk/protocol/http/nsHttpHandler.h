@@ -376,6 +376,11 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   }
 
   
+  void OnUserAgentRequest(nsIHttpChannel* chan) {
+    NotifyObservers(chan, NS_HTTP_ON_USERAGENT_REQUEST_TOPIC);
+  }
+
+  
   void OnBeforeConnect(nsIHttpChannel* chan) {
     NotifyObservers(chan, NS_HTTP_ON_BEFORE_CONNECT_TOPIC);
   }
@@ -481,6 +486,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   void NotifyObservers(nsIChannel* chan, const char* event);
 
   void SetFastOpenOSSupport();
+
+  void EnsureUAOverridesInit();
 
   
   
