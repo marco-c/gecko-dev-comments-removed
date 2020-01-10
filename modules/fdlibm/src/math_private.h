@@ -48,47 +48,6 @@
 
 
 
-#if MOZ_BIG_ENDIAN
-
-typedef union
-{
-  long double value;
-  struct {
-    u_int32_t mswhi;
-    u_int32_t mswlo;
-    u_int32_t lswhi;
-    u_int32_t lswlo;
-  } parts32;
-  struct {
-    u_int64_t msw;
-    u_int64_t lsw;
-  } parts64;
-} ieee_quad_shape_type;
-
-#endif
-
-#if MOZ_LITTLE_ENDIAN
-
-typedef union
-{
-  long double value;
-  struct {
-    u_int32_t lswlo;
-    u_int32_t lswhi;
-    u_int32_t mswlo;
-    u_int32_t mswhi;
-  } parts32;
-  struct {
-    u_int64_t lsw;
-    u_int64_t msw;
-  } parts64;
-} ieee_quad_shape_type;
-
-#endif
-
-
-
-
 
 
 #if MOZ_BIG_ENDIAN
@@ -348,9 +307,8 @@ do {								\
 
 
 #if defined(__i386__) && !defined(NO_FPSETPREC)
-#define	ENTERI() ENTERIT(long double)
-#define	ENTERIT(returntype)			\
-	returntype __retval;			\
+#define	ENTERI()				\
+	long double __retval;			\
 	fp_prec_t __oprec;			\
 						\
 	if ((__oprec = fpgetprec()) != FP_PE)	\
@@ -373,7 +331,6 @@ do {								\
 } while (0)
 #else
 #define	ENTERI()
-#define	ENTERIT(x)
 #define	RETURNI(x)	RETURNF(x)
 #define	ENTERV()
 #define	RETURNV()	return
@@ -491,31 +448,6 @@ do {								\
 
 void _scan_nan(uint32_t *__words, int __num_words, const char *__s);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define	nan_mix(x, y)		(nan_mix_op((x), (y), +))
-#define	nan_mix_op(x, y, op)	(((x) + 0.0L) op ((y) + 0))
-
 #ifdef _COMPLEX_H
 
 
@@ -591,6 +523,48 @@ CMPLXL(long double x, long double y)
 
 #endif 
  
+#ifdef __GNUCLIKE_ASM
+
+
+
+#ifdef __amd64__
+static __inline int
+irint(double x)
+{
+	int n;
+
+	asm("cvtsd2si %1,%0" : "=r" (n) : "x" (x));
+	return (n);
+}
+#define	HAVE_EFFICIENT_IRINT
+#endif
+
+#ifdef __i386__
+static __inline int
+irint(double x)
+{
+	int n;
+
+	asm("fistl %0" : "=m" (n) : "t" (x));
+	return (n);
+}
+#define	HAVE_EFFICIENT_IRINT
+#endif
+
+#if defined(__amd64__) || defined(__i386__)
+static __inline int
+irintl(long double x)
+{
+	int n;
+
+	asm("fistl %0" : "=m" (n) : "t" (x));
+	return (n);
+}
+#define	HAVE_EFFICIENT_IRINTL
+#endif
+
+#endif 
+
 #ifdef DEBUG
 #if defined(__amd64__) || defined(__i386__)
 #define	breakpoint()	asm("int $3")
