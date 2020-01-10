@@ -8,12 +8,6 @@ const { Utils: WebConsoleUtils } = require("devtools/client/webconsole/utils");
 const Services = require("Services");
 const { debounce } = require("devtools/shared/debounce");
 
-loader.lazyServiceGetter(
-  this,
-  "clipboardHelper",
-  "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
-);
 loader.lazyRequireGetter(this, "Debugger", "Debugger");
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(
@@ -37,22 +31,12 @@ loader.lazyRequireGetter(
   "Editor",
   "devtools/client/shared/sourceeditor/editor"
 );
-loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
-loader.lazyRequireGetter(
-  this,
-  "saveScreenshot",
-  "devtools/shared/screenshot/save"
-);
 loader.lazyRequireGetter(
   this,
   "focusableSelector",
   "devtools/client/shared/focus",
   true
 );
-
-const l10n = require("devtools/client/webconsole/utils/l10n");
-
-const HELP_URL = "https://developer.mozilla.org/docs/Tools/Web_Console/Helpers";
 
 
 const { Component } = require("devtools/client/shared/vendor/react");
@@ -67,8 +51,7 @@ const {
 const {
   getAutocompleteState,
 } = require("devtools/client/webconsole/selectors/autocomplete");
-const historyActions = require("devtools/client/webconsole/actions/history");
-const autocompleteActions = require("devtools/client/webconsole/actions/autocomplete");
+const actions = require("devtools/client/webconsole/actions/index");
 
 
 const {
@@ -100,6 +83,8 @@ class JSTerm extends Component {
       
       onPaste: PropTypes.func,
       codeMirrorEnabled: PropTypes.bool,
+      
+      evaluateExpression: PropTypes.func.isRequired,
       
       updateHistoryPosition: PropTypes.func.isRequired,
       
@@ -141,8 +126,6 @@ class JSTerm extends Component {
     this.autocompletePopup = null;
     this.inputNode = null;
     this.completeNode = null;
-
-    this._telemetry = new Telemetry();
 
     EventEmitter.decorate(this);
     webConsoleUI.jsterm = this;
@@ -603,197 +586,19 @@ class JSTerm extends Component {
 
 
 
-  
-  async _executeResultCallback(response) {
-    if (!this.webConsoleUI) {
-      return null;
-    }
-
-    if (response.error) {
-      console.error(
-        "Evaluation error " + response.error + ": " + response.message
-      );
-      return null;
-    }
-
-    
-    
-    if (response.topLevelAwaitRejected === true) {
-      return null;
-    }
-
-    let errorMessage = response.exceptionMessage;
-
-    
-    if (typeof response.exception === "string") {
-      errorMessage = new Error(errorMessage).toString();
-    }
-    const result = response.result;
-    const helperResult = response.helperResult;
-    const helperHasRawOutput = !!(helperResult || {}).rawOutput;
-
-    if (helperResult && helperResult.type) {
-      switch (helperResult.type) {
-        case "clearOutput":
-          this.webConsoleUI.clearOutput();
-          break;
-        case "clearHistory":
-          this.props.clearHistory();
-          break;
-        case "inspectObject":
-          this.webConsoleUI.inspectObjectActor(helperResult.object);
-          break;
-        case "error":
-          try {
-            errorMessage = l10n.getStr(helperResult.message);
-          } catch (ex) {
-            errorMessage = helperResult.message;
-          }
-          break;
-        case "help":
-          this.webConsoleUI.hud.openLink(HELP_URL);
-          break;
-        case "copyValueToClipboard":
-          clipboardHelper.copyString(helperResult.value);
-          break;
-        case "screenshotOutput":
-          const { args, value } = helperResult;
-          const results = await saveScreenshot(
-            this.webConsoleUI.window,
-            args,
-            value
-          );
-          this.screenshotNotify(results);
-          
-          return null;
-      }
-    }
-
-    
-    if (
-      !errorMessage &&
-      result &&
-      typeof result == "object" &&
-      result.type == "undefined" &&
-      helperResult &&
-      !helperHasRawOutput
-    ) {
-      return null;
-    }
-
-    if (this.webConsoleUI.wrapper) {
-      return this.webConsoleUI.wrapper.dispatchMessageAdd(response, true);
-    }
-
-    return null;
-  }
-  
-
-  screenshotNotify(results) {
-    const wrappedResults = results.map(message => ({
-      message,
-      type: "logMessage",
-    }));
-    this.webConsoleUI.wrapper.dispatchMessagesAdd(wrappedResults);
-  }
-
-  
-
-
-
-
-
-
-
-
-  async execute(executeString) {
+  execute(executeString) {
     
     executeString = executeString || this._getValue();
     if (!executeString) {
-      return null;
+      return;
     }
-
-    
-    this.props.appendToHistory(executeString);
-
-    WebConsoleUtils.usageCount++;
 
     if (!this.props.editorMode) {
       this._setValue("");
     }
-
     this.clearCompletion();
 
-    let selectedNodeActor = null;
-    const inspectorSelection = this.webConsoleUI.hud.getInspectorSelection();
-    if (inspectorSelection && inspectorSelection.nodeFront) {
-      selectedNodeActor = inspectorSelection.nodeFront.actorID;
-    }
-
-    const { ConsoleCommand } = require("devtools/client/webconsole/types");
-    const cmdMessage = new ConsoleCommand({
-      messageText: executeString,
-      timeStamp: Date.now(),
-    });
-    this.webConsoleUI.proxy.dispatchMessageAdd(cmdMessage);
-
-    let mappedExpressionRes = null;
-    try {
-      mappedExpressionRes = await this.webConsoleUI.hud.getMappedExpression(
-        executeString
-      );
-    } catch (e) {
-      console.warn("Error when calling getMappedExpression", e);
-    }
-
-    executeString = mappedExpressionRes
-      ? mappedExpressionRes.expression
-      : executeString;
-
-    const options = {
-      selectedNodeActor,
-      mapped: mappedExpressionRes ? mappedExpressionRes.mapped : null,
-    };
-
-    
-    
-    const onEvaluated = this.requestEvaluation(executeString, options).then(
-      res => res,
-      res => res
-    );
-    const response = await onEvaluated;
-    return this._executeResultCallback(response);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  requestEvaluation(str, options = {}) {
-    
-    
-    this.props.serviceContainer.recordTelemetryEvent("execute_js", {
-      lines: str.split(/\n/).length,
-    });
-
-    const { frameActor, client } = this.props.serviceContainer.getFrameActor();
-
-    return client.evaluateJSAsync(str, {
-      frameActor,
-      ...options,
-    });
+    this.props.evaluateExpression(executeString);
   }
 
   
@@ -1800,13 +1605,15 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
-    appendToHistory: expr => dispatch(historyActions.appendToHistory(expr)),
-    clearHistory: () => dispatch(historyActions.clearHistory()),
+    appendToHistory: expr => dispatch(actions.appendToHistory(expr)),
+    clearHistory: () => dispatch(actions.clearHistory()),
     updateHistoryPosition: (direction, expression) =>
-      dispatch(historyActions.updateHistoryPosition(direction, expression)),
+      dispatch(actions.updateHistoryPosition(direction, expression)),
     autocompleteUpdate: (force, getterPath) =>
-      dispatch(autocompleteActions.autocompleteUpdate(force, getterPath)),
-    autocompleteClear: () => dispatch(autocompleteActions.autocompleteClear()),
+      dispatch(actions.autocompleteUpdate(force, getterPath)),
+    autocompleteClear: () => dispatch(actions.autocompleteClear()),
+    evaluateExpression: expression =>
+      dispatch(actions.evaluateExpression(expression)),
   };
 }
 
