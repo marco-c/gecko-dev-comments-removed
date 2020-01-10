@@ -38,7 +38,7 @@ test(function(){
 
 
 
-test(function() { var tmp = null; tmp(); }, 35)
+test(function() { var tmp = null; tmp(); }, 38)
 test(function() { var tmp = null;  tmp.foo; }, 36)
 
 

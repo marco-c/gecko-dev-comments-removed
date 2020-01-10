@@ -541,7 +541,7 @@ bool BytecodeEmitter::updateLineNumberNotes(uint32_t offset) {
 
 
 
-    bytecodeSection().setCurrentLine(line);
+    bytecodeSection().setCurrentLine(line, offset);
     if (delta >= LengthOfSetLine(line)) {
       if (!newSrcNote2(SRC_SETLINE, ptrdiff_t(line))) {
         return false;
@@ -585,7 +585,7 @@ bool BytecodeEmitter::updateSourceCoordNotes(uint32_t offset) {
     if (!newSrcNote2(SRC_COLSPAN, SN_COLSPAN_TO_OFFSET(colspan))) {
       return false;
     }
-    bytecodeSection().setLastColumn(columnIndex);
+    bytecodeSection().setLastColumn(columnIndex, offset);
     bytecodeSection().updateSeparatorPositionIfPresent();
   }
   return true;
@@ -7486,10 +7486,19 @@ bool BytecodeEmitter::emitCallOrNew(
         
         coordNode = &calleeNode->as<PropertyAccess>().key();
         break;
-      case ParseNodeKind::Name:
+      case ParseNodeKind::Name: {
         
-        coordNode = calleeNode;
+        
+        
+        
+        
+        if (!bytecodeSection().atSeparator(calleeNode->pn_pos.begin)) {
+          
+          coordNode = calleeNode;
+        }
         break;
+      }
+
       default:
         break;
     }
