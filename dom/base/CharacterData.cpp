@@ -453,11 +453,6 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
 
     if (aParent.IsInUncomposedDoc()) {
       SetIsInDocument();
-      
-      
-      if (mText.IsBidi()) {
-        aContext.OwnerDoc().SetBidiEnabled();
-      }
     } else {
       SetFlags(NODE_IS_IN_SHADOW_TREE);
       MOZ_ASSERT(aParent.IsContent() &&
@@ -465,6 +460,11 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
       ExtendedContentSlots()->mContainingShadow =
           aParent.AsContent()->GetContainingShadow();
     }
+
+    if (IsInComposedDoc() && mText.IsBidi()) {
+      aContext.OwnerDoc().SetBidiEnabled();
+    }
+
     
     UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else {
