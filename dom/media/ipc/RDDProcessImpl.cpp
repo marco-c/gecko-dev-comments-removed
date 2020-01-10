@@ -24,6 +24,10 @@ RDDProcessImpl::~RDDProcessImpl() {}
 
 bool RDDProcessImpl::Init(int aArgc, char* aArgv[]) {
 #if defined(MOZ_SANDBOX) && defined(OS_WIN)
+  
+  
+  LoadLibraryW(L"mozavcodec.dll");
+  LoadLibraryW(L"mozavutil.dll");
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #endif
   char* parentBuildID = nullptr;
