@@ -112,16 +112,20 @@ class UrlbarInput {
     this._enableAutofillPlaceholder = true;
 
     
-    const METHODS = [
-      "addEventListener",
-      "removeEventListener",
+    const CONTAINER_METHODS = [
       "getAttribute",
       "hasAttribute",
+      "querySelector",
       "setAttribute",
       "removeAttribute",
       "toggleAttribute",
     ];
-    const READ_ONLY_PROPERTIES = ["inputField", "editor"];
+    const INPUT_METHODS = [
+      "addEventListener",
+      "blur",
+      "focus",
+      "removeEventListener",
+    ];
     const READ_WRITE_PROPERTIES = [
       "placeholder",
       "readOnly",
@@ -129,32 +133,32 @@ class UrlbarInput {
       "selectionEnd",
     ];
 
-    for (let method of METHODS) {
+    for (let method of CONTAINER_METHODS) {
       this[method] = (...args) => {
         return this.textbox[method](...args);
       };
     }
 
-    for (let property of READ_ONLY_PROPERTIES) {
-      Object.defineProperty(this, property, {
-        enumerable: true,
-        get() {
-          return this.textbox && this.textbox[property];
-        },
-      });
+    for (let method of INPUT_METHODS) {
+      this[method] = (...args) => {
+        return this.inputField[method](...args);
+      };
     }
 
     for (let property of READ_WRITE_PROPERTIES) {
       Object.defineProperty(this, property, {
         enumerable: true,
         get() {
-          return this.textbox && this.textbox[property];
+          return this.inputField[property];
         },
         set(val) {
-          return (this.textbox[property] = val);
+          return (this.inputField[property] = val);
         },
       });
     }
+
+    this.inputField = this.querySelector(".urlbar-input");
+    this.dropmarker = this.querySelector(".urlbar-history-dropmarker");
 
     XPCOMUtils.defineLazyGetter(this, "valueFormatter", () => {
       return new UrlbarValueFormatter(this);
@@ -163,7 +167,7 @@ class UrlbarInput {
     
     
     
-    if (!this.window.toolbar.visible || this.hasAttribute("readonly")) {
+    if (!this.window.toolbar.visible || this.readOnly) {
       return;
     }
 
@@ -195,12 +199,10 @@ class UrlbarInput {
       "select",
     ];
     for (let name of this._inputFieldEvents) {
-      this.inputField.addEventListener(name, this);
+      this.addEventListener(name, this);
     }
 
-    
-    
-    this.addEventListener("mousedown", this);
+    this.dropmarker.addEventListener("mousedown", this);
 
     this.view.panel.addEventListener("popupshowing", this);
     this.view.panel.addEventListener("popuphidden", this);
@@ -227,9 +229,9 @@ class UrlbarInput {
   uninit() {
     this.window.removeEventListener("unload", this);
     for (let name of this._inputFieldEvents) {
-      this.inputField.removeEventListener(name, this);
+      this.removeEventListener(name, this);
     }
-    this.removeEventListener("mousedown", this);
+    this.dropmarker.removeEventListener("mousedown", this);
 
     this.view.panel.remove();
 
@@ -264,6 +266,7 @@ class UrlbarInput {
     delete this.view;
     delete this.controller;
     delete this.textbox;
+    delete this.inputField;
   }
 
   
@@ -299,14 +302,6 @@ class UrlbarInput {
     if (this.editor) {
       this.valueFormatter.update();
     }
-  }
-
-  focus() {
-    this.inputField.focus();
-  }
-
-  blur() {
-    this.inputField.blur();
   }
 
   select() {
@@ -785,16 +780,16 @@ class UrlbarInput {
 
   
 
+  get editor() {
+    return this.inputField.editor;
+  }
+
   get focused() {
-    return this.textbox.getAttribute("focused") == "true";
+    return this.getAttribute("focused") == "true";
   }
 
   get goButton() {
-    return this.document.getAnonymousElementByAttribute(
-      this.textbox,
-      "anonid",
-      "urlbar-go-button"
-    );
+    return this.querySelector(".urlbar-go-button");
   }
 
   get textValue() {
@@ -822,7 +817,7 @@ class UrlbarInput {
     this._openViewOnFocus = Services.prefs.getBoolPref(
       "browser.urlbar.openViewOnFocus"
     );
-    this.toggleAttribute("hidedropmarker", this._openViewOnFocus);
+    this.dropmarker.hidden = this._openViewOnFocus;
   }
 
   _setValue(val, allowTrim) {
@@ -1322,13 +1317,7 @@ class UrlbarInput {
   }
 
   _initPasteAndGo() {
-    let inputBox = this.document.getAnonymousElementByAttribute(
-      this.textbox,
-      "anonid",
-      "moz-input-box"
-    );
-    
-    this.window.customElements.upgrade(inputBox);
+    let inputBox = this.querySelector("moz-input-box");
     let contextMenu = inputBox.menupopup;
     let insertLocation = contextMenu.firstElementChild;
     while (
@@ -1405,11 +1394,14 @@ class UrlbarInput {
   
 
   _on_blur(event) {
+    this.removeAttribute("focused");
+    this.formatValue();
+    this._resetSearchState();
+
     
     
     
     this._clearActionOverride();
-    this.formatValue();
 
     
     
@@ -1422,11 +1414,11 @@ class UrlbarInput {
     if (!UrlbarPrefs.get("ui.popup.disable_autohide")) {
       this.view.close();
     }
+
     
     if (this.getAttribute("pageproxystate") != "valid") {
       this.window.UpdatePopupNotificationsVisibility();
     }
-    this._resetSearchState();
   }
 
   _on_click(event) {
@@ -1450,6 +1442,7 @@ class UrlbarInput {
   }
 
   _on_focus(event) {
+    this.setAttribute("focused", "true");
     this._updateUrlTooltip();
     this.formatValue();
 
@@ -1483,10 +1476,7 @@ class UrlbarInput {
       return;
     }
 
-    if (
-      event.originalTarget.classList.contains("urlbar-history-dropmarker") &&
-      event.button == 0
-    ) {
+    if (event.currentTarget == this.dropmarker && event.button == 0) {
       if (this.view.isOpen) {
         this.view.close();
       } else {
@@ -1711,11 +1701,11 @@ class UrlbarInput {
   }
 
   _on_popupshowing() {
-    this.setAttribute("open", "true");
+    this.dropmarker.setAttribute("open", "true");
   }
 
   _on_popuphidden() {
-    this.removeAttribute("open");
+    this.dropmarker.removeAttribute("open");
   }
 
   _on_dragstart(event) {
@@ -1724,7 +1714,7 @@ class UrlbarInput {
       event.originalTarget
     );
     if (
-      this.inputField != event.originalTarget &&
+      event.target != this.inputField &&
       !(nodePosition & Node.DOCUMENT_POSITION_CONTAINED_BY)
     ) {
       return;
