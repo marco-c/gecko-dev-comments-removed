@@ -8,6 +8,8 @@
 
 #include "mozilla/MaybeOneOf.h"
 
+#include <algorithm>
+
 #include "builtin/BigInt.h"
 #include "builtin/Eval.h"
 #include "builtin/SelfHostingDefines.h"
@@ -1405,7 +1407,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
     
     
-    Reverse(properties.begin() + elements, properties.end());
+    std::reverse(properties.begin() + elements, properties.end());
   } else {
     MOZ_ASSERT(kind == EnumerableOwnPropertiesKind::Values ||
                kind == EnumerableOwnPropertiesKind::KeysAndValues);
