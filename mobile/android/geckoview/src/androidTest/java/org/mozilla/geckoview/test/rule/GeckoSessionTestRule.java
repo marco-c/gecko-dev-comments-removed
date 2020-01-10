@@ -1056,31 +1056,7 @@ public class GeckoSessionTestRule implements TestRule {
                     mCurrentMethodCall = null;
                 }
 
-                if (call == null || returnValue == null || !sOnNewSession.equals(method)) {
-                    return returnValue;
-                }
-
-                
-                
-                final GeckoSession oldSession = (GeckoSession) args[0];
-
-                @SuppressWarnings("unchecked")
-                final GeckoResult<GeckoSession> result = (GeckoResult<GeckoSession>)returnValue;
-                final GeckoResult<GeckoSession> tmpResult = new GeckoResult<>();
-                result.accept(session -> {
-                    tmpResult.complete(session);
-
-                    
-                    
-                    
-                    tmpResult.accept(newSession -> {
-                        if (oldSession.isOpen() && newSession != null) {
-                            GeckoSessionTestRule.this.waitForOpenSession(newSession);
-                        }
-                    });
-                });
-
-                return tmpResult;
+                return returnValue;
             }
         };
 

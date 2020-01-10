@@ -163,12 +163,14 @@ var IdentityHandler = {
 
 class GeckoViewProgress extends GeckoViewModule {
   onInit() {
+    debug`onInit`;
     this._hostChanged = false;
   }
 
   onEnable() {
     debug`onEnable`;
 
+    this._initialAboutBlank = true;
     const flags =
       Ci.nsIWebProgress.NOTIFY_STATE_NETWORK |
       Ci.nsIWebProgress.NOTIFY_SECURITY |
@@ -180,6 +182,10 @@ class GeckoViewProgress extends GeckoViewModule {
     this.browser.addProgressListener(this.progressFilter, flags);
     Services.obs.addObserver(this, "oop-frameloader-crashed");
     this.registerListener("GeckoView:FlushSessionState");
+    this.messageManager.addMessageListener(
+      "GeckoView:ContentModuleLoaded",
+      this
+    );
   }
 
   onDisable() {
@@ -204,6 +210,21 @@ class GeckoViewProgress extends GeckoViewModule {
     }
   }
 
+  receiveMessage(aMsg) {
+    debug`receiveMessage ${aMsg.name} ${aMsg.data}`;
+    switch (aMsg.name) {
+      case "GeckoView:ContentModuleLoaded": {
+        if (
+          this._initialAboutBlank &&
+          aMsg.data.module === "GeckoViewProgress"
+        ) {
+          this._fireInitialLoad();
+        }
+        break;
+      }
+    }
+  }
+
   onSettingsUpdate() {
     const settings = this.settings;
     debug`onSettingsUpdate: ${settings}`;
@@ -218,19 +239,25 @@ class GeckoViewProgress extends GeckoViewModule {
       return;
     }
 
-    const uriSpec = aRequest.QueryInterface(Ci.nsIChannel).URI.displaySpec;
+    const { displaySpec, spec } = aRequest.QueryInterface(Ci.nsIChannel).URI;
     const isSuccess = aStatus == Cr.NS_OK;
     const isStart = (aStateFlags & Ci.nsIWebProgressListener.STATE_START) != 0;
     const isStop = (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) != 0;
 
-    debug`onStateChange: uri=${uriSpec} isSuccess=${isSuccess}
+    debug`onStateChange: uri=${spec} isSuccess=${isSuccess}
            isStart=${isStart} isStop=${isStop}`;
+
+    
+    
+    
+    
+    this._initialAboutBlank = false;
 
     if (isStart) {
       this._inProgress = true;
       const message = {
         type: "GeckoView:PageStart",
-        uri: uriSpec,
+        uri: displaySpec,
       };
 
       this.eventDispatcher.sendRequest(message);
@@ -246,11 +273,39 @@ class GeckoViewProgress extends GeckoViewModule {
     }
   }
 
+  
+  
+  
+  
+  
+  _fireInitialLoad() {
+    this.eventDispatcher.sendRequest({
+      type: "GeckoView:PageStart",
+      uri: "about:blank",
+    });
+    this.eventDispatcher.sendRequest({
+      type: "GeckoView:LocationChange",
+      uri: "about:blank",
+      canGoBack: false,
+      canGoForward: false,
+      isTopLevel: true,
+    });
+    this.eventDispatcher.sendRequest({
+      type: "GeckoView:PageStop",
+      success: true,
+    });
+  }
+
   onSecurityChange(aWebProgress, aRequest, aState) {
     debug`onSecurityChange`;
 
     
     if (this._state === aState && !this._hostChanged) {
+      return;
+    }
+
+    
+    if (this._initialAboutBlank) {
       return;
     }
 

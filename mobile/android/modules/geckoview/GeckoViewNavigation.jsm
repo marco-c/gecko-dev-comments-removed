@@ -68,6 +68,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     ]);
 
     this.messageManager.addMessageListener("Browser:LoadURI", this);
+    this._initialAboutBlank = true;
   }
 
   
@@ -466,6 +467,15 @@ class GeckoViewNavigation extends GeckoViewModule {
     try {
       fixedURI = Services.uriFixup.createExposableURI(aLocationURI);
     } catch (ex) {}
+
+    
+    
+    const ignore = this._initialAboutBlank && fixedURI.spec === "about:blank";
+    this._initialAboutBlank = false;
+
+    if (ignore) {
+      return;
+    }
 
     const message = {
       type: "GeckoView:LocationChange",

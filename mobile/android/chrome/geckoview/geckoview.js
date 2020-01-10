@@ -423,6 +423,7 @@ function createBrowser() {
   
   browser.permanentKey = {};
 
+  browser.setAttribute("nodefaultsrc", "true");
   browser.setAttribute("type", "content");
   browser.setAttribute("primary", "true");
   browser.setAttribute("flex", "1");
