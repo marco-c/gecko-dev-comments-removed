@@ -324,8 +324,8 @@ class AudioNodeEngine {
 
 
   virtual void ProcessBlocksOnPorts(AudioNodeStream* aStream,
-                                    const OutputChunks& aInput,
-                                    OutputChunks& aOutput, bool* aFinished);
+                                    Span<const AudioBlock> aInput,
+                                    Span<AudioBlock> aOutput, bool* aFinished);
 
   
   
