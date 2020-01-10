@@ -2032,11 +2032,17 @@ impl CascadeData {
                         
                         
                         
-                        if let Some(part) = selector.part() {
+                        if let Some(parts) = selector.parts() {
+                            
+                            
+                            
+                            
+                            
+                            
                             self.part_rules
                                 .get_or_insert_with(|| Box::new(Default::default()))
                                 .for_insertion(pseudo_element)
-                                .try_entry(part.clone())?
+                                .try_entry(parts.last().unwrap().clone())?
                                 .or_insert_with(SmallVec::new)
                                 .try_push(rule)?;
                         } else {

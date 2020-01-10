@@ -667,7 +667,7 @@ where
 
     match *selector {
         Component::Combinator(_) => unreachable!(),
-        Component::Part(ref part) => element.is_part(part),
+        Component::Part(ref parts) => parts.iter().all(|part| element.is_part(part)),
         Component::Slotted(ref selector) => {
             
             !element.is_html_slot_element() &&
