@@ -1325,6 +1325,11 @@ impl Device {
         
         let supports_gles_bgra = supports_extension(&extensions, "GL_EXT_texture_format_BGRA8888");
 
+        
+        
+        let is_emulator = renderer_name.starts_with("Android Emulator");
+        let avoid_tex_image = is_emulator;
+
         let (color_formats, bgra_formats, bgra8_sampling_swizzle, texture_storage_usage) = match gl.get_type() {
             
             gl::GlType::Gl if
@@ -1355,7 +1360,7 @@ impl Device {
             
             
             
-            gl::GlType::Gles if supports_gles_bgra => (
+            gl::GlType::Gles if supports_gles_bgra && !avoid_tex_image => (
                 TextureFormatPair::from(ImageFormat::RGBA8),
                 TextureFormatPair::from(gl::BGRA_EXT),
                 Swizzle::Rgba, 
