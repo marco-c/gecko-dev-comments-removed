@@ -4,11 +4,6 @@
 
 "use strict";
 
-
-
-
-
-
 const Services = require("Services");
 
 const variableFileContents = require("theme-loader!devtools/client/themes/variables.css");
