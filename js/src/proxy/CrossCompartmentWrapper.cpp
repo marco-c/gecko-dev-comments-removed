@@ -593,8 +593,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
 
   
   
-  if (!wcompartment->putWrapper(cx, CrossCompartmentKey(newTarget),
-                                ObjectValue(*wobj))) {
+  if (!wcompartment->putWrapper(cx, newTarget, ObjectValue(*wobj))) {
     oomUnsafe.crash("js::RemapWrapper");
   }
 }

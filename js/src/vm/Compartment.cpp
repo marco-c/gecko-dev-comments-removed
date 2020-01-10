@@ -161,7 +161,6 @@ bool Compartment::wrap(JSContext* cx, MutableHandleString strp) {
   }
 
   
-  RootedValue key(cx, StringValue(str));
   if (WrapperMap::Ptr p = lookupWrapper(str)) {
     strp.set(p->value().get().toString());
     return true;
@@ -172,7 +171,7 @@ bool Compartment::wrap(JSContext* cx, MutableHandleString strp) {
   if (!copy) {
     return false;
   }
-  if (!putWrapper(cx, CrossCompartmentKey(key), StringValue(copy))) {
+  if (!putWrapper(cx, strp, StringValue(copy))) {
     return false;
   }
 
@@ -287,7 +286,6 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
 bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
                                      MutableHandleObject obj) {
   
-  RootedValue key(cx, ObjectValue(*obj));
   if (WrapperMap::Ptr p = lookupWrapper(obj)) {
     obj.set(&p->value().get().toObject());
     MOZ_ASSERT(obj->is<CrossCompartmentWrapperObject>());
@@ -307,9 +305,9 @@ bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
 
   
   
-  MOZ_ASSERT(Wrapper::wrappedObject(wrapper) == &key.get().toObject());
+  MOZ_ASSERT(Wrapper::wrappedObject(wrapper) == obj);
 
-  if (!putWrapper(cx, CrossCompartmentKey(key), ObjectValue(*wrapper))) {
+  if (!putWrapper(cx, obj, ObjectValue(*wrapper))) {
     
     
     
