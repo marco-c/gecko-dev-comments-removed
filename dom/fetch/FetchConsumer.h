@@ -21,13 +21,9 @@ namespace dom {
 class Promise;
 class ThreadSafeWorkerRef;
 
-template <class Derived>
-class FetchBody;
 
 
 
-
-template <class Derived>
 class FetchBodyConsumer final : public nsIObserver,
                                 public nsSupportsWeakReference,
                                 public AbortFollower {
@@ -37,8 +33,11 @@ class FetchBodyConsumer final : public nsIObserver,
 
   static already_AddRefed<Promise> Create(
       nsIGlobalObject* aGlobal, nsIEventTarget* aMainThreadEventTarget,
-      FetchBody<Derived>* aBody, nsIInputStream* aBodyStream,
-      AbortSignalImpl* aSignalImpl, FetchConsumeType aType, ErrorResult& aRv);
+      nsIInputStream* aBodyStream, AbortSignalImpl* aSignalImpl,
+      FetchConsumeType aType, const nsACString& aBodyBlobURISpec,
+      const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
+      MutableBlobStorage::MutableBlobStorageType aBlobStorageType,
+      ErrorResult& aRv);
 
   void ReleaseObject();
 
@@ -65,10 +64,12 @@ class FetchBodyConsumer final : public nsIObserver,
   void Abort() override;
 
  private:
-  FetchBodyConsumer(nsIEventTarget* aMainThreadEventTarget,
-                    nsIGlobalObject* aGlobalObject, FetchBody<Derived>* aBody,
-                    nsIInputStream* aBodyStream, Promise* aPromise,
-                    FetchConsumeType aType);
+  FetchBodyConsumer(
+      nsIEventTarget* aMainThreadEventTarget, nsIGlobalObject* aGlobalObject,
+      nsIInputStream* aBodyStream, Promise* aPromise, FetchConsumeType aType,
+      const nsACString& aBodyBlobURISpec, const nsAString& aBodyLocalPath,
+      const nsACString& aBodyMimeType,
+      MutableBlobStorage::MutableBlobStorageType aBlobStorageType);
 
   ~FetchBodyConsumer();
 
@@ -78,11 +79,6 @@ class FetchBodyConsumer final : public nsIObserver,
 
   nsCOMPtr<nsIThread> mTargetThread;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
-
-#ifdef DEBUG
-  
-  RefPtr<FetchBody<Derived>> mBody;
-#endif
 
   
   nsCOMPtr<nsIInputStream> mBodyStream;
