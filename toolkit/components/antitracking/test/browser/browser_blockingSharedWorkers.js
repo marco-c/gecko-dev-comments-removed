@@ -1,6 +1,6 @@
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 AntiTracking.runTestInNormalAndPrivateMode(
   "SharedWorkers",
