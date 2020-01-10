@@ -371,6 +371,11 @@ nsresult PaymentRequestManager::SendRequestPayment(
     PaymentRequest* aRequest, const IPCPaymentActionRequest& aAction,
     bool aResponseExpected) {
   PaymentRequestChild* requestChild = GetPaymentChild(aRequest);
+  
+  
+  if (NS_WARN_IF(!requestChild)) {
+    return NS_ERROR_FAILURE;
+  }
   nsresult rv = requestChild->RequestPayment(aAction);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
