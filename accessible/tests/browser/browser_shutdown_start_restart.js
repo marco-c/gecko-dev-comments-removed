@@ -7,7 +7,9 @@
 add_task(async function() {
   info("Creating a service");
   
-  let a11yInit = initPromise();
+  let [a11yInitObserver, a11yInit] = initAccService();
+  await a11yInitObserver;
+
   let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService
   );
@@ -16,7 +18,9 @@ add_task(async function() {
 
   info("Removing a service");
   
-  let a11yShutdown = shutdownPromise();
+  let [a11yShutdownObserver, a11yShutdown] = shutdownAccService();
+  await a11yShutdownObserver;
+
   accService = null;
   ok(!accService, "Service is removed");
   
@@ -25,7 +29,9 @@ add_task(async function() {
 
   info("Recreating a service");
   
-  a11yInit = initPromise();
+  [a11yInitObserver, a11yInit] = initAccService();
+  await a11yInitObserver;
+
   accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService
   );
@@ -34,7 +40,9 @@ add_task(async function() {
 
   info("Removing a service again");
   
-  a11yShutdown = shutdownPromise();
+  [a11yShutdownObserver, a11yShutdown] = shutdownAccService();
+  await a11yShutdownObserver;
+
   accService = null;
   ok(!accService, "Service is removed again");
   

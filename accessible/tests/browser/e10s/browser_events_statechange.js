@@ -47,7 +47,7 @@ addAccessibleTask(
     
     let onStateChange = waitForEvent(EVENT_STATE_CHANGE, "checkbox");
     
-    await ContentTask.spawn(browser, {}, () => {
+    await SpecialPowers.spawn(browser, [], () => {
       content.document.getElementById("checkbox").checked = true;
     });
     let event = await onStateChange;
@@ -58,7 +58,7 @@ addAccessibleTask(
     
     onStateChange = waitForEvent(EVENT_STATE_CHANGE, "iframe");
     
-    await ContentTask.spawn(browser, {}, () => {
+    await SpecialPowers.spawn(browser, [], () => {
       content.document.getElementById("iframe").contentDocument.designMode =
         "on";
     });

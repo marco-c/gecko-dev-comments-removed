@@ -15,7 +15,7 @@ addAccessibleTask('<select id="select"></select>', async function(
 
   let onEvent = waitForEvent(EVENT_REORDER, "select");
   
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let doc = content.document;
     let contentSelect = doc.getElementById("select");
     let optGroup = doc.createElement("optgroup");
@@ -62,7 +62,7 @@ addAccessibleTask('<select id="select"></select>', async function(
 
   onEvent = waitForEvent(EVENT_REORDER, "select");
   
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let contentSelect = content.document.getElementById("select");
     contentSelect.firstChild.remove();
   });
@@ -80,7 +80,7 @@ addAccessibleTask('<select id="select"></select>', async function(
 
   onEvent = waitForEvent(EVENT_REORDER, "select");
   
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let contentSelect = content.document.getElementById("select");
     while (contentSelect.length) {
       contentSelect.remove(0);

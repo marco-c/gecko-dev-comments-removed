@@ -26,9 +26,9 @@ loadScripts(
 
 
 async function getContentDPR(browser) {
-  return ContentTask.spawn(
+  return SpecialPowers.spawn(
     browser,
-    null,
+    [],
     () => content.window.devicePixelRatio
   );
 }

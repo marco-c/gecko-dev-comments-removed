@@ -21,20 +21,28 @@ add_task(async function() {
       </html>`,
     },
     async function(browser) {
-      await loadContentScripts(browser, "Common.jsm");
       info(
         "Creating a service in parent and waiting for service to be created " +
           "in content"
       );
+      await loadContentScripts(browser, "Common.jsm");
       
       
-      let parentA11yInit = initPromise();
-      let contentA11yInit = initPromise(browser);
-      let contentConsumersChanged = ContentTask.spawn(
-        browser,
-        {},
-        a11yConsumersChangedPromise
+      const [parentA11yInitObserver, parentA11yInit] = initAccService();
+      const [contentA11yInitObserver, contentA11yInit] = initAccService(
+        browser
       );
+      let [
+        contentConsumersChangedObserver,
+        contentConsumersChanged,
+      ] = accConsumersChanged(browser);
+
+      await Promise.all([
+        parentA11yInitObserver,
+        contentA11yInitObserver,
+        contentConsumersChangedObserver,
+      ]);
+
       let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
         Ci.nsIAccessibilityService
       );
@@ -56,13 +64,13 @@ add_task(async function() {
         "Adding additional reference to accessibility service in content " +
           "process"
       );
-      contentConsumersChanged = ContentTask.spawn(
-        browser,
-        {},
-        a11yConsumersChangedPromise
-      );
+      [
+        contentConsumersChangedObserver,
+        contentConsumersChanged,
+      ] = accConsumersChanged(browser);
+      await contentConsumersChangedObserver;
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         content.CommonUtils.accService;
       });
       await contentConsumersChanged.then(data =>
@@ -77,7 +85,7 @@ add_task(async function() {
         )
       );
 
-      const contentConsumers = await ContentTask.spawn(browser, {}, () =>
+      const contentConsumers = await SpecialPowers.spawn(browser, [], () =>
         content.CommonUtils.accService.getConsumers()
       );
       Assert.deepEqual(
@@ -95,22 +103,34 @@ add_task(async function() {
           "content stays alive"
       );
       let contentCanShutdown = false;
-      let parentA11yShutdown = shutdownPromise();
-      contentConsumersChanged = ContentTask.spawn(
-        browser,
-        {},
-        a11yConsumersChangedPromise
-      );
+      const [
+        parentA11yShutdownObserver,
+        parentA11yShutdown,
+      ] = shutdownAccService();
+      [
+        contentConsumersChangedObserver,
+        contentConsumersChanged,
+      ] = accConsumersChanged(browser);
       
       
       
-      let contentA11yShutdown = new Promise((resolve, reject) =>
-        shutdownPromise(browser).then(flag =>
+      const [
+        contentA11yShutdownObserver,
+        contentA11yShutdownPromise,
+      ] = shutdownAccService(browser);
+      const contentA11yShutdown = new Promise((resolve, reject) =>
+        contentA11yShutdownPromise.then(flag =>
           contentCanShutdown
             ? resolve()
             : reject("Accessible service was shut down incorrectly")
         )
       );
+
+      await Promise.all([
+        parentA11yShutdownObserver,
+        contentA11yShutdownObserver,
+        contentConsumersChangedObserver,
+      ]);
       
       
       
@@ -141,14 +161,14 @@ add_task(async function() {
       info("Removing a service in content");
       
       contentCanShutdown = true;
-      contentConsumersChanged = ContentTask.spawn(
-        browser,
-        {},
-        a11yConsumersChangedPromise
-      );
+      [
+        contentConsumersChangedObserver,
+        contentConsumersChanged,
+      ] = accConsumersChanged(browser);
+      await contentConsumersChangedObserver;
       
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         content.CommonUtils.clearAccService();
       });
       await contentA11yShutdown;

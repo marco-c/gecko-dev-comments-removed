@@ -19,7 +19,7 @@ async function testImageMap(browser, accDoc) {
 
   
   let onReorder = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let areaElm = content.document.createElement("area");
     let mapNode = content.document.getElementById("map");
     areaElm.setAttribute(
@@ -43,7 +43,7 @@ async function testImageMap(browser, accDoc) {
 
   
   onReorder = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let areaElm = content.document.createElement("area");
     let mapNode = content.document.getElementById("map");
     areaElm.setAttribute(
@@ -68,7 +68,7 @@ async function testImageMap(browser, accDoc) {
 
   
   onReorder = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let mapNode = content.document.getElementById("map");
     mapNode.removeChild(mapNode.firstElementChild);
   });
@@ -120,7 +120,7 @@ async function testContainer(browser) {
 
   
   onReorder = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, {}, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     let mapNode = content.document.getElementById("map");
     mapNode.remove();
   });
@@ -133,7 +133,7 @@ async function testContainer(browser) {
 
   
   onReorder = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
+  await SpecialPowers.spawn(browser, [id], contentId => {
     let map = content.document.createElement("map");
     let area = content.document.createElement("area");
 
