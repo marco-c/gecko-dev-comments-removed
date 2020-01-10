@@ -9,49 +9,50 @@
 
 
 add_task(
-  threadFrontTest(({ threadFront, client, debuggee }) => {
-    return new Promise(resolve => {
-      threadFront.once("paused", async function(packet) {
-        const source = await getSourceById(
-          threadFront,
-          packet.frame.where.actor
-        );
-        const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
+  threadFrontTest(async ({ threadFront, client, debuggee }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
+    const source = await getSourceById(threadFront, packet.frame.where.actor);
+    const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
 
-        threadFront.setBreakpoint(location, {});
-        await client.waitForRequestsToSettle();
+    
+    Assert.equal(packet.frame.where.line, debuggee.line0 + 5);
+    Assert.equal(packet.why.type, "debuggerStatement");
 
-        threadFront.once("paused", async function(packet) {
-          
-          Assert.equal(packet.frame.where.actor, source.actor);
-          Assert.equal(packet.frame.where.line, location.line);
-          Assert.equal(packet.why.type, "breakpoint");
-          
-          Assert.equal(debuggee.a, 1);
-          Assert.equal(debuggee.b, undefined);
+    threadFront.setBreakpoint(location, {});
+    await client.waitForRequestsToSettle();
+    await resume(threadFront);
 
-          
-          threadFront.removeBreakpoint(location);
-          await client.waitForRequestsToSettle();
-          threadFront.resume().then(resolve);
-        });
+    const packet2 = await waitForPause(threadFront);
+    
+    Assert.equal(packet2.frame.where.actor, source.actor);
+    Assert.equal(packet2.frame.where.line, location.line);
+    Assert.equal(packet2.why.type, "breakpoint");
+    
+    Assert.equal(debuggee.a, 1);
+    Assert.equal(debuggee.b, undefined);
 
-        
-        await threadFront.resume();
-      });
+    
+    threadFront.removeBreakpoint(location);
+    await client.waitForRequestsToSettle();
 
-      
-      Cu.evalInSandbox(
-        "var line0 = Error().lineNumber;\n" +
-        "function foo() {\n" + 
-        "  this.a = 1;\n" +    
-        "  this.b = 2;\n" +    
-        "}\n" +                
-        "debugger;\n" +        
-        "foo();\n",            
-        debuggee
-      );
-      
-    });
+    await resume(threadFront);
   })
 );
+
+function evaluateTestCode(debuggee) {
+  
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "function foo() {\n" + 
+    "  this.a = 1;\n" +    
+    "  this.b = 2;\n" +    
+    "}\n" +                
+    "debugger;\n" +        
+    "foo();\n",            
+    debuggee
+  );
+  
+}

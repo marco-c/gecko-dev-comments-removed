@@ -8,46 +8,54 @@
 
 
 
+let done = false;
+
 add_task(
-  threadFrontTest(({ threadFront, client, debuggee }) => {
-    return new Promise(resolve => {
-      let done = false;
-      threadFront.once("paused", async function(packet) {
-        const source = await getSourceById(
-          threadFront,
-          packet.frame.where.actor
-        );
-        const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
+  threadFrontTest(async ({ threadFront, client, debuggee }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
 
-        threadFront.setBreakpoint(location, {});
-        await client.waitForRequestsToSettle();
-        threadFront.once("paused", async function(packet) {
-          
-          Assert.equal(packet.frame.where.actor, source.actorID);
-          Assert.equal(packet.frame.where.line, location.line);
-          Assert.equal(packet.why.type, "breakpoint");
-          
-          Assert.equal(debuggee.a, undefined);
+    const source = await getSourceById(threadFront, packet.frame.where.actor);
+    const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
 
-          
-          threadFront.removeBreakpoint(location);
-          await client.waitForRequestsToSettle();
-          done = true;
-          threadFront.once("paused", function(packet) {
-            
-            threadFront.resume().then(function() {
-              Assert.ok(false);
-            });
-          });
-          await threadFront.resume();
-          resolve();
-        });
+    
+    Assert.equal(packet.frame.where.line, debuggee.line0 + 7);
+    Assert.equal(packet.why.type, "debuggerStatement");
 
-        
-        await threadFront.resume();
-      });
+    threadFront.setBreakpoint(location, {});
+    await client.waitForRequestsToSettle();
 
+    await resume(threadFront);
+
+    const packet2 = await waitForPause(threadFront);
+
+    
+    Assert.equal(packet2.frame.where.actor, source.actorID);
+    Assert.equal(packet2.frame.where.line, location.line);
+    Assert.equal(packet2.why.type, "breakpoint");
+    
+    Assert.equal(debuggee.a, undefined);
+
+    
+    threadFront.removeBreakpoint(location);
+    await client.waitForRequestsToSettle();
+
+    done = true;
+    threadFront.once("paused", function(packet) {
       
+      threadFront.resume().then(function() {
+        Assert.ok(false);
+      });
+    });
+
+    await resume(threadFront);
+  })
+);
+
+function evaluateTestCode(debuggee) {
+  
       Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
                        "function foo(stop) {\n" + 
                        "  this.a = 1;\n" +        
@@ -59,9 +67,7 @@ add_task(
                        "foo();\n",                
                        debuggee);
       
-      if (!done) {
-        Assert.ok(false);
-      }
-    });
-  })
-);
+  if (!done) {
+    Assert.ok(false);
+  }
+}

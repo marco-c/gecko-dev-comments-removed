@@ -10,66 +10,70 @@
 
 
 add_task(
-  threadFrontTest(({ threadFront, debuggee }) => {
-    return new Promise(resolve => {
-      threadFront.once("paused", async function(packet) {
-        const source = await getSourceById(
-          threadFront,
-          packet.frame.where.actor
-        );
-        const location = {
-          sourceUrl: source.url,
-          line: debuggee.line0 + 2,
-          column: 8,
-        };
+  threadFrontTest(async ({ threadFront, client, debuggee }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
+    const source = await getSourceById(threadFront, packet.frame.where.actor);
+    const location = {
+      sourceUrl: source.url,
+      line: debuggee.line0 + 2,
+      column: 8,
+    };
 
-        threadFront.setBreakpoint(location, {});
+    
+    Assert.equal(packet.frame.where.line, debuggee.line0 + 1);
+    Assert.equal(packet.why.type, "debuggerStatement");
 
-        threadFront.once("paused", function(packet) {
-          
-          Assert.equal(packet.why.type, "breakpoint");
-          
-          Assert.equal(debuggee.a, undefined);
+    threadFront.setBreakpoint(location, {});
+    await resume(threadFront);
 
-          
-          threadFront.removeBreakpoint(location);
+    const packet2 = await waitForPause(threadFront);
 
-          const location2 = {
-            sourceUrl: source.url,
-            line: debuggee.line0 + 2,
-            column: 32,
-          };
+    
+    Assert.equal(packet2.why.type, "breakpoint");
+    
+    Assert.equal(debuggee.a, undefined);
+    
+    Assert.equal(packet2.frame.where.line, debuggee.line0 + 2);
+    Assert.equal(packet2.frame.where.column, 8);
 
-          threadFront.setBreakpoint(location2, {});
+    
+    threadFront.removeBreakpoint(location);
 
-          threadFront.once("paused", function(packet) {
-            
-            Assert.equal(packet.why.type, "breakpoint");
-            
-            Assert.equal(debuggee.a.b, 1);
-            Assert.equal(debuggee.res, undefined);
+    const location2 = {
+      sourceUrl: source.url,
+      line: debuggee.line0 + 2,
+      column: 32,
+    };
+    threadFront.setBreakpoint(location2, {});
 
-            
-            threadFront.removeBreakpoint(location2);
+    await resume(threadFront);
+    const packet3 = await waitForPause(threadFront);
 
-            threadFront.resume().then(resolve);
-          });
+    
+    Assert.equal(packet3.why.type, "breakpoint");
+    
+    Assert.equal(debuggee.a.b, 1);
+    Assert.equal(debuggee.res, undefined);
+    
+    Assert.equal(packet3.frame.where.line, debuggee.line0 + 2);
+    Assert.equal(packet3.frame.where.column, 32);
 
-          
-          threadFront.resume();
-        });
+    
+    threadFront.removeBreakpoint(location2);
 
-        
-        threadFront.resume();
-      });
+    await resume(threadFront);
+  })
+);
 
-      
+function evaluateTestCode(debuggee) {
+  
       Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
                        "debugger;\n" +                      
                        "var a = { b: 1, f: function() { return 2; } };\n" + 
                        "var res = a.f();\n",               
                        debuggee);
       
-    });
-  })
-);
+}

@@ -10,68 +10,75 @@
 
 
 add_task(
-  threadFrontTest(({ threadFront, debuggee }) => {
-    return new Promise(resolve => {
-      threadFront.once("paused", async function(packet) {
-        const source = await getSourceById(
-          threadFront,
-          packet.frame.where.actor
-        );
-        const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
+  threadFrontTest(async ({ threadFront, client, debuggee }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
+    const source = await getSourceById(threadFront, packet.frame.where.actor);
+    const location = {
+      sourceUrl: source.url,
+      line: debuggee.line0 + 2,
+    };
 
-        threadFront.setBreakpoint(location, {});
-        const testCallbacks = [
-          function(packet) {
-            
-            Assert.equal(packet.frame.where.line, debuggee.line0 + 5);
-            Assert.equal(packet.why.type, "resumeLimit");
-          },
-          function(packet) {
-            
-            Assert.equal(packet.frame.where.line, location.line);
-            Assert.equal(packet.why.type, "breakpoint");
-            Assert.notEqual(packet.why.type, "resumeLimit");
-          },
-          function(packet) {
-            
-            Assert.equal(packet.frame.where.line, debuggee.line0 + 3);
-            Assert.notEqual(packet.why.type, "breakpoint");
-            Assert.equal(packet.why.type, "resumeLimit");
-            Assert.equal(packet.why.frameFinished.return.type, "undefined");
-          },
-          function(packet) {
-            
-            Assert.equal(debuggee.a, 1);
-            Assert.equal(debuggee.b, undefined);
-            Assert.equal(packet.frame.where.line, debuggee.line0 + 6);
-            Assert.notEqual(packet.why.type, "debuggerStatement");
-            Assert.equal(packet.why.type, "resumeLimit");
-            Assert.equal(packet.poppedFrames.length, 1);
-          },
-          function(packet) {
-            
-            Assert.equal(packet.frame.where.line, debuggee.line0 + 7);
-            Assert.notEqual(packet.why.type, "debuggerStatement");
-            Assert.equal(packet.why.type, "resumeLimit");
-          },
-        ];
+    
+    Assert.equal(packet.frame.where.line, debuggee.line0 + 4);
+    Assert.equal(packet.why.type, "debuggerStatement");
 
-        for (const callback of testCallbacks) {
-          const waiter = waitForPause(threadFront);
-          threadFront.stepOver();
-          const packet = await waiter;
-          callback(packet);
-        }
+    threadFront.setBreakpoint(location, {});
 
+    const testCallbacks = [
+      function(packet) {
         
-        const waiter = waitForPause(threadFront);
-        threadFront.stepOver();
-        await waiter;
-        threadFront.removeBreakpoint(location);
-        threadFront.resume().then(resolve);
-      });
+        Assert.equal(packet.frame.where.line, debuggee.line0 + 5);
+        Assert.equal(packet.why.type, "resumeLimit");
+      },
+      function(packet) {
+        
+        Assert.equal(packet.frame.where.line, location.line);
+        Assert.equal(packet.why.type, "breakpoint");
+        Assert.notEqual(packet.why.type, "resumeLimit");
+      },
+      function(packet) {
+        
+        Assert.equal(packet.frame.where.line, debuggee.line0 + 3);
+        Assert.notEqual(packet.why.type, "breakpoint");
+        Assert.equal(packet.why.type, "resumeLimit");
+        Assert.equal(packet.why.frameFinished.return.type, "undefined");
+      },
+      function(packet) {
+        
+        Assert.equal(debuggee.a, 1);
+        Assert.equal(debuggee.b, undefined);
+        Assert.equal(packet.frame.where.line, debuggee.line0 + 6);
+        Assert.notEqual(packet.why.type, "debuggerStatement");
+        Assert.equal(packet.why.type, "resumeLimit");
+        Assert.equal(packet.poppedFrames.length, 1);
+      },
+      function(packet) {
+        
+        Assert.equal(packet.frame.where.line, debuggee.line0 + 7);
+        Assert.notEqual(packet.why.type, "debuggerStatement");
+        Assert.equal(packet.why.type, "resumeLimit");
+      },
+    ];
 
-      
+    for (const callback of testCallbacks) {
+      const waiter = waitForPause(threadFront);
+      threadFront.stepOver();
+      const packet = await waiter;
+      callback(packet);
+    }
+
+    
+    threadFront.removeBreakpoint(location);
+
+    await threadFront.resume();
+  })
+);
+
+function evaluateTestCode(debuggee) {
+  
       Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
                        "function foo() {\n" + 
                        "  this.a = 1;\n" +    
@@ -82,6 +89,4 @@ add_task(
                        "var b = 2;\n",        
                        debuggee);
       
-    });
-  })
-);
+}
