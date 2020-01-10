@@ -29,6 +29,7 @@ const STATE_NORMAL = Symbol("STATE_NORMAL");
 const STATE_QUOTE = Symbol("STATE_QUOTE");
 const STATE_DQUOTE = Symbol("STATE_DQUOTE");
 const STATE_TEMPLATE_LITERAL = Symbol("STATE_TEMPLATE_LITERAL");
+const STATE_ESCAPE = Symbol("STATE_ESCAPE");
 
 const OPEN_BODY = "{[(".split("");
 const CLOSE_BODY = "}])".split("");
@@ -68,36 +69,18 @@ function hasArrayIndex(str) {
 
 
 function analyzeInputString(str) {
-  const bodyStack = [];
-
-  let state = STATE_NORMAL;
-  let start = 0;
-  let c;
-
   
-  const characters = Array.from(str);
-
-  const buildReturnObject = () => {
-    let isElementAccess = false;
-    if (bodyStack.length === 1 && bodyStack[0].token === "[") {
-      start = bodyStack[0].start;
-      isElementAccess = true;
-      if ([STATE_DQUOTE, STATE_QUOTE, STATE_TEMPLATE_LITERAL].includes(state)) {
-        state = STATE_NORMAL;
-      }
-    }
-
-    return {
-      state,
-      lastStatement: characters.slice(start).join(""),
-      isElementAccess,
-    };
-  };
+  const bodyStack = [];
+  let state = STATE_NORMAL;
+  let previousNonWhitespaceChar;
+  let lastStatement = "";
+  let pendingWhitespaceChars = "";
 
   const TIMEOUT = 2500;
   const startingTime = Date.now();
 
-  for (let i = 0; i < characters.length; i++) {
+  
+  for (const c of str) {
     
     
     
@@ -108,10 +91,24 @@ function analyzeInputString(str) {
       };
     }
 
-    c = characters[i];
+    let resetLastStatement = false;
+    const isWhitespaceChar = c.trim() === "";
+
     switch (state) {
       
       case STATE_NORMAL:
+        
+        if (pendingWhitespaceChars && !isWhitespaceChar) {
+          
+          if (c === "[" || c === ".") {
+            lastStatement = lastStatement + pendingWhitespaceChars;
+          } else {
+            
+            lastStatement = "";
+          }
+          pendingWhitespaceChars = "";
+        }
+
         if (c == '"') {
           state = STATE_DQUOTE;
         } else if (c == "'") {
@@ -120,48 +117,28 @@ function analyzeInputString(str) {
           state = STATE_TEMPLATE_LITERAL;
         } else if (OPERATOR_CHARS_SET.has(c)) {
           
-          start = i + 1;
-        } else if (c == " ") {
-          const currentLastStatement = characters.slice(start, i).join("");
-          const before = characters.slice(0, i);
-          const after = characters.slice(i + 1);
-          const trimmedBefore = Array.from(before.join("").trimRight());
-          const trimmedAfter = Array.from(after.join("").trimLeft());
-
-          const nextNonSpaceChar = trimmedAfter[0];
-          const nextNonSpaceCharIndex = after.indexOf(nextNonSpaceChar);
-          const previousNonSpaceChar = trimmedBefore[trimmedBefore.length - 1];
-
+          resetLastStatement = true;
+        } else if (isWhitespaceChar) {
           
           
           
           if (
-            previousNonSpaceChar !== "." &&
-            nextNonSpaceChar !== "." &&
-            previousNonSpaceChar !== "[" &&
-            nextNonSpaceChar !== "[" &&
-            !NO_AUTOCOMPLETE_PREFIXES.includes(currentLastStatement)
+            previousNonWhitespaceChar !== "." &&
+            previousNonWhitespaceChar !== "[" &&
+            !NO_AUTOCOMPLETE_PREFIXES.includes(lastStatement)
           ) {
-            start =
-              i +
-              (nextNonSpaceCharIndex >= 0
-                ? nextNonSpaceCharIndex
-                : after.length + 1);
+            pendingWhitespaceChars += c;
+            continue;
           }
-
-          
-          if (!nextNonSpaceChar) {
-            return buildReturnObject();
-          }
-
-          
-          i = i + nextNonSpaceCharIndex;
         } else if (OPEN_BODY.includes(c)) {
+          
+          
           bodyStack.push({
             token: c,
-            start,
+            lastStatement,
           });
-          start = i + 1;
+          
+          resetLastStatement = true;
         } else if (CLOSE_BODY.includes(c)) {
           const last = bodyStack.pop();
           if (!last || OPEN_CLOSE_BODY[last.token] != c) {
@@ -170,17 +147,22 @@ function analyzeInputString(str) {
             };
           }
           if (c == "}") {
-            start = i + 1;
+            resetLastStatement = true;
           } else {
-            start = last.start;
+            lastStatement = last.lastStatement;
           }
         }
         break;
 
       
+      case STATE_ESCAPE:
+        state = STATE_NORMAL;
+        break;
+
+      
       case STATE_DQUOTE:
         if (c == "\\") {
-          i++;
+          state = STATE_ESCAPE;
         } else if (c == "\n") {
           return {
             err: "unterminated string literal",
@@ -193,7 +175,7 @@ function analyzeInputString(str) {
       
       case STATE_TEMPLATE_LITERAL:
         if (c == "\\") {
-          i++;
+          state = STATE_ESCAPE;
         } else if (c == "`") {
           state = STATE_NORMAL;
         }
@@ -202,7 +184,7 @@ function analyzeInputString(str) {
       
       case STATE_QUOTE:
         if (c == "\\") {
-          i++;
+          state = STATE_ESCAPE;
         } else if (c == "\n") {
           return {
             err: "unterminated string literal",
@@ -212,9 +194,46 @@ function analyzeInputString(str) {
         }
         break;
     }
+
+    if (!isWhitespaceChar) {
+      previousNonWhitespaceChar = c;
+    }
+
+    if (resetLastStatement) {
+      lastStatement = "";
+    } else {
+      lastStatement = lastStatement + c;
+    }
+
+    
+    bodyStack.forEach(stack => {
+      if (stack.token !== "}") {
+        stack.lastStatement = stack.lastStatement + c;
+      }
+    });
   }
 
-  return buildReturnObject();
+  let isElementAccess = false;
+  if (bodyStack.length === 1 && bodyStack[0].token === "[") {
+    lastStatement = bodyStack[0].lastStatement;
+    isElementAccess = true;
+    if (
+      state === STATE_DQUOTE ||
+      state === STATE_QUOTE ||
+      state === STATE_TEMPLATE_LITERAL ||
+      state === STATE_ESCAPE
+    ) {
+      state = STATE_NORMAL;
+    }
+  } else if (pendingWhitespaceChars) {
+    lastStatement = "";
+  }
+
+  return {
+    state,
+    lastStatement,
+    isElementAccess,
+  };
 }
 
 
