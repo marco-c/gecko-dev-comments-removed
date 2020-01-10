@@ -489,7 +489,7 @@ class HuffmanPreludeReader {
 
     
     for (size_t i = 0; i < numberOfSymbols; ++i) {
-      BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::Yes>());
+      BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::No>());
       if (bitLength == 0) {
         
         return raiseInvalidTableData(entry.identity);
@@ -545,7 +545,7 @@ class HuffmanPreludeReader {
     }
 
     uint8_t headerByte;
-    MOZ_TRY_VAR(headerByte, reader.readByte<Compression::Yes>());
+    MOZ_TRY_VAR(headerByte, reader.readByte<Compression::No>());
     switch (headerByte) {
       case TableHeader::SingleValue: {
         
@@ -763,15 +763,21 @@ BinASTTokenReaderContext::~BinASTTokenReaderContext() {
   if (metadata_ && metadataOwned_ == MetadataOwnership::Owned) {
     UniqueBinASTSourceMetadataPtr ptr(metadata_);
   }
-  if (decoder_) {
-    BrotliDecoderDestroyInstance(decoder_);
-  }
 }
 
 template <>
 JS::Result<Ok>
 BinASTTokenReaderContext::readBuf<Compression::No, EndOfFilePolicy::RaiseError>(
     uint8_t* bytes, uint32_t& len) {
+  return Base::readBuf(bytes, len);
+}
+
+template <>
+JS::Result<Ok>
+BinASTTokenReaderContext::readBuf<Compression::No, EndOfFilePolicy::BestEffort>(
+    uint8_t* bytes, uint32_t& len) {
+  len = std::min((uint32_t)(stop_ - current_), len);
+
   return Base::readBuf(bytes, len);
 }
 
@@ -787,94 +793,9 @@ BinASTTokenReaderContext::handleEndOfStream<EndOfFilePolicy::BestEffort>() {
   return Ok();
 }
 
-template <EndOfFilePolicy policy>
-JS::Result<Ok> BinASTTokenReaderContext::readBufCompressedAux(uint8_t* bytes,
-                                                              uint32_t& len) {
-  uint32_t remaining = len;
-  len = 0;
-  while (availableDecodedLength() < remaining) {
-    if (availableDecodedLength()) {
-      memmove(bytes, decodedBufferBegin(), availableDecodedLength());
-      bytes += availableDecodedLength();
-      remaining -= availableDecodedLength();
-      len += availableDecodedLength();
-    }
-
-    BINJS_MOZ_TRY_DECL(fillResult, fillDecodedBuf());
-    if (fillResult == FillResult::EndOfStream) {
-      MOZ_TRY(handleEndOfStream<policy>());
-      if (availableDecodedLength() == 0) {
-        break;
-      }
-    }
-  }
-
-  memmove(bytes, decodedBufferBegin(), remaining);
-  advanceDecodedBuffer(remaining);
-  return Ok();
-}
-
-template <>
-JS::Result<Ok> BinASTTokenReaderContext::readBuf<
-    Compression::Yes, EndOfFilePolicy::RaiseError>(uint8_t* bytes,
-                                                   uint32_t& len) {
-  return readBufCompressedAux<EndOfFilePolicy::RaiseError>(bytes, len);
-}
-
-template <>
-JS::Result<Ok> BinASTTokenReaderContext::readBuf<
-    Compression::Yes, EndOfFilePolicy::BestEffort>(uint8_t* bytes,
-                                                   uint32_t& len) {
-  return readBufCompressedAux<EndOfFilePolicy::BestEffort>(bytes, len);
-}
-
-JS::Result<BinASTTokenReaderContext::FillResult>
-BinASTTokenReaderContext::fillDecodedBuf() {
-  if (isEOF()) {
-    return BinASTTokenReaderContext::FillResult::EndOfStream;
-  }
-
-  MOZ_ASSERT(!availableDecodedLength());
-
-  decodedBegin_ = 0;
-
-  size_t inSize = stop_ - current_;
-  size_t outSize = DECODED_BUFFER_SIZE;
-  uint8_t* out = decodedBuffer_;
-
-  BrotliDecoderResult result;
-  result = BrotliDecoderDecompressStream(decoder_, &inSize, &current_, &outSize,
-                                         &out,
-                                          nullptr);
-  if (result == BROTLI_DECODER_RESULT_ERROR) {
-    return raiseError("Failed to decompress brotli stream");
-  }
-
-  decodedEnd_ = out - decodedBuffer_;
-
-  return BinASTTokenReaderContext::FillResult::Filled;
-}
-
-void BinASTTokenReaderContext::advanceDecodedBuffer(uint32_t count) {
-  MOZ_ASSERT(decodedBegin_ + count <= decodedEnd_);
-  decodedBegin_ += count;
-}
-
-bool BinASTTokenReaderContext::isEOF() const {
-  return BrotliDecoderIsFinished(decoder_);
-}
-
 template <>
 JS::Result<uint8_t> BinASTTokenReaderContext::readByte<Compression::No>() {
   return Base::readByte();
-}
-
-template <>
-JS::Result<uint8_t> BinASTTokenReaderContext::readByte<Compression::Yes>() {
-  uint8_t buf;
-  uint32_t len = 1;
-  MOZ_TRY((readBuf<Compression::Yes, EndOfFilePolicy::RaiseError>(&buf, len)));
-  return buf;
 }
 
 BinASTSourceMetadata* BinASTTokenReaderContext::takeMetadata() {
@@ -903,13 +824,6 @@ JS::Result<Ok> BinASTTokenReaderContext::readHeader() {
     return raiseError("Format version not implemented");
   }
 
-  decoder_ = BrotliDecoderCreateInstance( nullptr,
-                                          nullptr,
-                                          nullptr);
-  if (!decoder_) {
-    return raiseError("Failed to create brotli decoder");
-  }
-
   MOZ_TRY(readStringPrelude());
   MOZ_TRY(readHuffmanPrelude());
 
@@ -917,7 +831,7 @@ JS::Result<Ok> BinASTTokenReaderContext::readHeader() {
 }
 
 JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
-  BINJS_MOZ_TRY_DECL(stringsNumberOfEntries, readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(stringsNumberOfEntries, readVarU32<Compression::No>());
 
   const uint32_t MAX_NUMBER_OF_STRINGS = 32768;
 
@@ -953,44 +867,20 @@ JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
 
   for (uint32_t stringIndex = 0; stringIndex < stringsNumberOfEntries;
        stringIndex++) {
-    size_t len;
-    while (true) {
-      if (availableDecodedLength() == 0) {
-        MOZ_TRY(fillDecodedBuf());
-      }
+    if (current_ >= stop_) {
+      return raiseError("End of file reached while reading strings table");
+    }
 
-      MOZ_ASSERT(availableDecodedLength() > 0);
-
-      const uint8_t* end = static_cast<const uint8_t*>(
-          memchr(decodedBufferBegin(), '\0', availableDecodedLength()));
-      if (end) {
-        
-        len = end - decodedBufferBegin();
-        break;
-      }
-
-      BINJS_TRY(buf.append(decodedBufferBegin(), availableDecodedLength()));
-      advanceDecodedBuffer(availableDecodedLength());
+    const uint8_t* end =
+        static_cast<const uint8_t*>(memchr(current_, '\0', stop_ - current_));
+    if (!end) {
+      return raiseError("Invalid string, missing NUL");
     }
 
     
 
-    if (!buf.length()) {
-      
-      const char* begin = reinterpret_cast<const char*>(decodedBufferBegin());
-      BINJS_TRY_VAR(atom, AtomizeWTF8Chars(cx_, begin, len));
-    } else {
-      BINJS_TRY(
-          buf.append(reinterpret_cast<const char*>(decodedBufferBegin()), len));
-
-      const char* begin = reinterpret_cast<const char*>(buf.rawLatin1Begin());
-      len = buf.length();
-
-      
-      BINJS_TRY_VAR(atom, AtomizeWTF8Chars(cx_, begin, len));
-
-      buf.clear();
-    }
+    const char* start = reinterpret_cast<const char*>(current_);
+    BINJS_TRY_VAR(atom, AtomizeWTF8Chars(cx_, start, end - current_));
 
     
     
@@ -998,7 +888,7 @@ JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
     metadata->getAtom(stringIndex) = atom;
 
     
-    advanceDecodedBuffer(len + 1);
+    current_ = end + 1;
   }
 
   
@@ -1032,9 +922,9 @@ HuffmanLookup BinASTTokenReaderContext::BitBuffer::getHuffmanLookup() {
   return HuffmanLookup(bitsPrefix, bitLength);
 }
 
-template <Compression C>
+template <>
 MOZ_MUST_USE JS::Result<Ok>
-BinASTTokenReaderContext::BitBuffer::advanceBitBuffer(
+BinASTTokenReaderContext::BitBuffer::advanceBitBuffer<Compression::No>(
     BinASTTokenReaderContext& owner, const uint8_t bitLength) {
   
   
@@ -1065,7 +955,8 @@ BinASTTokenReaderContext::BitBuffer::advanceBitBuffer(
       
       uint8_t byte;
       uint32_t readLen = 1;
-      MOZ_TRY((owner.readBuf<C, EndOfFilePolicy::BestEffort>(&byte, readLen)));
+      MOZ_TRY((owner.readBuf<Compression::No, EndOfFilePolicy::BestEffort>(
+          &byte, readLen)));
       if (readLen < 1) {
         
         break;
@@ -1133,9 +1024,9 @@ BinASTTokenReaderContext::readFieldFromTable(const Context& context) {
   const auto& table =
       dictionary.tableForField(NormalizedInterfaceAndField(identity));
   const auto lookup = table.as<Table>().impl.lookup(
-      bitBuffer.getHuffmanLookup<Compression::Yes>());
-  MOZ_TRY(bitBuffer.advanceBitBuffer<Compression::Yes>(*this,
-                                                       lookup.key.bitLength));
+      bitBuffer.getHuffmanLookup<Compression::No>());
+  MOZ_TRY(
+      bitBuffer.advanceBitBuffer<Compression::No>(*this, lookup.key.bitLength));
   if (!lookup.value) {
     return raiseInvalidValue(context);
   }
@@ -1211,9 +1102,9 @@ JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
   const auto& table = dictionary.tableForListLength(identity);
   const auto lookup =
       table.as<HuffmanTableExplicitSymbolsListLength>().impl.lookup(
-          bitBuffer.getHuffmanLookup<Compression::Yes>());
-  MOZ_TRY(bitBuffer.advanceBitBuffer<Compression::Yes>(*this,
-                                                       lookup.key.bitLength));
+          bitBuffer.getHuffmanLookup<Compression::No>());
+  MOZ_TRY(
+      bitBuffer.advanceBitBuffer<Compression::No>(*this, lookup.key.bitLength));
   if (!lookup.value) {
     return raiseInvalidValue(context);
   }
@@ -1281,7 +1172,7 @@ JS::Result<uint32_t> BinASTTokenReaderContext::readVarU32() {
 
 JS::Result<uint32_t> BinASTTokenReaderContext::readUnsignedLong(
     const Context&) {
-  return readVarU32<Compression::Yes>();
+  return readVarU32<Compression::No>();
 }
 
 BinASTTokenReaderContext::AutoTaggedTuple::AutoTaggedTuple(
@@ -1453,7 +1344,7 @@ template <>
 MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::readSingleValueTable<Boolean>(
     Boolean::Table& table, const Boolean& entry) {
   uint8_t indexByte;
-  MOZ_TRY_VAR(indexByte, reader.readByte<Compression::Yes>());
+  MOZ_TRY_VAR(indexByte, reader.readByte<Compression::No>());
   if (indexByte >= 2) {
     return raiseInvalidTableData(entry.identity);
   }
@@ -1488,7 +1379,7 @@ MOZ_MUST_USE JS::Result<Ok>
 HuffmanPreludeReader::readSingleValueTable<MaybeInterface>(
     MaybeInterface::Table& table, const MaybeInterface& entry) {
   uint8_t indexByte;
-  MOZ_TRY_VAR(indexByte, reader.readByte<Compression::Yes>());
+  MOZ_TRY_VAR(indexByte, reader.readByte<Compression::No>());
   if (indexByte >= 2) {
     return raiseInvalidTableData(entry.identity);
   }
@@ -1521,7 +1412,7 @@ MOZ_MUST_USE JS::Result<BinASTKind> HuffmanPreludeReader::readSymbol(
 template <>
 MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::readSingleValueTable<Sum>(
     HuffmanTableIndexedSymbolsSum& table, const Sum& sum) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index >= sum.maxNumberOfSymbols()) {
     return raiseInvalidTableData(sum.identity);
   }
@@ -1555,7 +1446,7 @@ template <>
 MOZ_MUST_USE JS::Result<Ok>
 HuffmanPreludeReader::readSingleValueTable<MaybeSum>(
     HuffmanTableIndexedSymbolsSum& table, const MaybeSum& sum) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index >= sum.maxNumberOfSymbols()) {
     return raiseInvalidTableData(sum.identity);
   }
@@ -1571,7 +1462,7 @@ HuffmanPreludeReader::readSingleValueTable<MaybeSum>(
 template <>
 MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
     const Number& number) {
-  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::No>());
   if (length > MAX_NUMBER_OF_SYMBOLS) {
     return raiseInvalidTableData(number.identity);
   }
@@ -1586,7 +1477,7 @@ MOZ_MUST_USE JS::Result<double> HuffmanPreludeReader::readSymbol(
   MOZ_ASSERT(sizeof(bytes) == sizeof(double));
 
   uint32_t len = mozilla::ArrayLength(bytes);
-  MOZ_TRY((reader.readBuf<Compression::Yes, EndOfFilePolicy::RaiseError>(
+  MOZ_TRY((reader.readBuf<Compression::No, EndOfFilePolicy::RaiseError>(
       reinterpret_cast<uint8_t*>(bytes), len)));
 
   
@@ -1624,7 +1515,7 @@ MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
 template <>
 MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readSymbol(
     const List& list, size_t) {
-  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::No>());
   if (length > MAX_LIST_LENGTH) {
     return raiseInvalidTableData(list.identity);
   }
@@ -1635,7 +1526,7 @@ MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readSymbol(
 template <>
 MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::readSingleValueTable<List>(
     HuffmanTableExplicitSymbolsListLength& table, const List& list) {
-  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::No>());
   if (length > MAX_LIST_LENGTH) {
     return raiseInvalidTableData(list.identity);
   }
@@ -1657,7 +1548,7 @@ MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
 template <>
 MOZ_MUST_USE JS::Result<JSAtom*> HuffmanPreludeReader::readSymbol(
     const String& entry, size_t) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index > reader.metadata_->numStrings()) {
     return raiseInvalidTableData(entry.identity);
   }
@@ -1668,7 +1559,7 @@ MOZ_MUST_USE JS::Result<JSAtom*> HuffmanPreludeReader::readSymbol(
 template <>
 MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::readSingleValueTable<String>(
     HuffmanTableIndexedSymbolsLiteralString& table, const String& entry) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index > reader.metadata_->numStrings()) {
     return raiseInvalidTableData(entry.identity);
   }
@@ -1696,7 +1587,7 @@ MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
 template <>
 MOZ_MUST_USE JS::Result<JSAtom*> HuffmanPreludeReader::readSymbol(
     const MaybeString& entry, size_t) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index == 0) {
     return nullptr;
   } else if (index > reader.metadata_->numStrings() + 1) {
@@ -1712,7 +1603,7 @@ MOZ_MUST_USE JS::Result<Ok>
 HuffmanPreludeReader::readSingleValueTable<MaybeString>(
     HuffmanTableIndexedSymbolsOptionalLiteralString& table,
     const MaybeString& entry) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index > reader.metadata_->numStrings() + 1) {
     return raiseInvalidTableData(entry.identity);
   }
@@ -1747,7 +1638,7 @@ template <>
 MOZ_MUST_USE JS::Result<Ok>
 HuffmanPreludeReader::readSingleValueTable<StringEnum>(
     HuffmanTableIndexedSymbolsStringEnum& table, const StringEnum& entry) {
-  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::Yes>());
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32<Compression::No>());
   if (index > entry.maxNumberOfSymbols()) {
     return raiseInvalidTableData(entry.identity);
   }

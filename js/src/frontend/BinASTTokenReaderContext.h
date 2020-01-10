@@ -12,8 +12,6 @@
 
 #include "mozilla/Maybe.h"  
 
-#include <brotli/decode.h>  
-
 #include <stddef.h>  
 #include <stdint.h>  
 
@@ -390,13 +388,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
  private:
   
   
-  static const size_t DECODED_BUFFER_SIZE = 128;
-  uint8_t decodedBuffer_[DECODED_BUFFER_SIZE];
-  size_t decodedBegin_ = 0;
-  size_t decodedEnd_ = 0;
-
-  
-  
   
   
   
@@ -445,14 +436,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   } bitBuffer;
 
   
-  size_t availableDecodedLength() const { return decodedEnd_ - decodedBegin_; }
-
-  
-  const uint8_t* decodedBufferBegin() const {
-    return decodedBuffer_ + decodedBegin_;
-  }
-
-  
   bool isEOF() const;
 
   
@@ -473,16 +456,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   MOZ_MUST_USE JS::Result<Ok> readBuf(uint8_t* bytes, uint32_t& len);
 
   enum class FillResult { EndOfStream, Filled };
-
-  
-
-
-
-
-
-  MOZ_MUST_USE JS::Result<FillResult> fillDecodedBuf();
-
-  void advanceDecodedBuffer(uint32_t count);
 
  public:
   
@@ -649,8 +622,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   class HuffmanDictionary dictionary;
 
   const uint8_t* posBeforeTree_;
-
-  BrotliDecoderState* decoder_ = nullptr;
 
  public:
   BinASTTokenReaderContext(const BinASTTokenReaderContext&) = delete;
