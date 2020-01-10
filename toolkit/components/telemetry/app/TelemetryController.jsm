@@ -666,7 +666,7 @@ var Impl = {
       try {
         
         this._initialized = true;
-        TelemetryEnvironment.delayedInit();
+        await TelemetryEnvironment.delayedInit();
 
         
         this._clientID = await ClientID.getClientID();

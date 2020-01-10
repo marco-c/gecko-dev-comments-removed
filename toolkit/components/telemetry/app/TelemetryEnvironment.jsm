@@ -911,7 +911,6 @@ function EnvironmentCache() {
   this._log.trace("constructor");
 
   this._shutdown = false;
-  this._delayedInitFinished = false;
   
   
   this._canQuerySearch = false;
@@ -999,8 +998,24 @@ EnvironmentCache.prototype = {
   
 
 
-  delayedInit() {
-    this._delayedInitFinished = true;
+  async delayedInit() {
+    if (AppConstants.platform == "win") {
+      this._hddData = await Services.sysinfo.diskInfo;
+      let oldEnv = null;
+      if (!this._initTask) {
+        
+        
+        
+        
+        
+        
+        oldEnv = this.currentEnvironment;
+      }
+      this._currentEnvironment.system.hdd = this._getHDDData();
+      if (!this._initTask) {
+        this._onEnvironmentChange("hdd-info", oldEnv);
+      }
+    }
   },
 
   
@@ -1704,28 +1719,17 @@ EnvironmentCache.prototype = {
     return data;
   },
 
+  _hddData: null,
   
 
 
 
   _getHDDData() {
-    return {
-      profile: { 
-        model: getSysinfoProperty("profileHDDModel", null),
-        revision: getSysinfoProperty("profileHDDRevision", null),
-        type: getSysinfoProperty("profileHDDType", null),
-      },
-      binary:  { 
-        model: getSysinfoProperty("binHDDModel", null),
-        revision: getSysinfoProperty("binHDDRevision", null),
-        type: getSysinfoProperty("binHDDType", null),
-      },
-      system:  { 
-        model: getSysinfoProperty("winHDDModel", null),
-        revision: getSysinfoProperty("winHDDRevision", null),
-        type: getSysinfoProperty("winHDDType", null),
-      },
-    };
+    if (this._hddData) {
+      return this._hddData;
+    }
+    let nullData = {model: null, revision: null, type: null};
+    return {profile: nullData, binary: nullData, system: nullData};
   },
 
   
@@ -1871,6 +1875,5 @@ EnvironmentCache.prototype = {
 
   reset() {
     this._shutdown = false;
-    this._delayedInitFinished = false;
   },
 };
