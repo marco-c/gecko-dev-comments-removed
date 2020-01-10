@@ -6607,7 +6607,10 @@ nsresult HTMLEditRules::AlignInnerBlocks(nsINode& aNode,
 
   
   for (auto& node : nodeArray) {
-    nsresult rv = AlignBlockContents(*node, aAlignType);
+    MOZ_ASSERT(node->IsElement());
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .AlignBlockContentsWithDivElement(
+                          MOZ_KnownLive(*node->AsElement()), aAlignType);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -6616,67 +6619,68 @@ nsresult HTMLEditRules::AlignInnerBlocks(nsINode& aNode,
   return NS_OK;
 }
 
-nsresult HTMLEditRules::AlignBlockContents(nsINode& aNode,
-                                           const nsAString& aAlignType) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::AlignBlockContentsWithDivElement(
+    Element& aBlockElement, const nsAString& aAlignType) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsCOMPtr<nsIContent> firstChild =
-      HTMLEditorRef().GetFirstEditableChild(aNode);
-  if (!firstChild) {
+  
+  
+  nsCOMPtr<nsIContent> firstEditableContent =
+      GetFirstEditableChild(aBlockElement);
+  if (!firstEditableContent) {
     
     return NS_OK;
   }
 
-  nsCOMPtr<nsIContent> lastChild = HTMLEditorRef().GetLastEditableChild(aNode);
-  if (firstChild == lastChild && firstChild->IsHTMLElement(nsGkAtoms::div)) {
-    
-    
-    nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .SetAttributeOrEquivalent(MOZ_KnownLive(firstChild->AsElement()),
-                                      nsGkAtoms::align, aAlignType, false);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+  
+  
+  nsCOMPtr<nsIContent> lastEditableContent =
+      GetLastEditableChild(aBlockElement);
+  if (firstEditableContent == lastEditableContent &&
+      firstEditableContent->IsHTMLElement(nsGkAtoms::div)) {
+    nsresult rv = SetAttributeOrEquivalent(
+        MOZ_KnownLive(firstEditableContent->AsElement()), nsGkAtoms::align,
+        aAlignType, false);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetAttributeOrEquivalent() failed");
+    return rv;
   }
 
   
   
-  RefPtr<Element> divElem = MOZ_KnownLive(HTMLEditorRef())
-                                .CreateNodeWithTransaction(
-                                    *nsGkAtoms::div, EditorDOMPoint(&aNode, 0));
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  
+  RefPtr<Element> divElement = CreateNodeWithTransaction(
+      *nsGkAtoms::div, EditorDOMPoint(&aBlockElement, 0));
+  if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (NS_WARN_IF(!divElem)) {
+  if (NS_WARN_IF(!divElement)) {
     return NS_ERROR_FAILURE;
   }
-  
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                    .SetAttributeOrEquivalent(divElem, nsGkAtoms::align,
-                                              aAlignType, false);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  nsresult rv =
+      SetAttributeOrEquivalent(divElement, nsGkAtoms::align, aAlignType, false);
+  if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   
-  while (lastChild && (lastChild != divElem)) {
-    nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .MoveNodeWithTransaction(*lastChild, EditorDOMPoint(divElem, 0));
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+  
+  
+  
+  while (lastEditableContent && (lastEditableContent != divElement)) {
+    nsresult rv = MoveNodeWithTransaction(*lastEditableContent,
+                                          EditorDOMPoint(divElement, 0));
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    lastChild = HTMLEditorRef().GetLastEditableChild(aNode);
+    lastEditableContent = GetLastEditableChild(aBlockElement);
   }
   return NS_OK;
 }

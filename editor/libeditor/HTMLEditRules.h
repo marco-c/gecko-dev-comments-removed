@@ -227,21 +227,6 @@ class HTMLEditRules : public TextEditRules {
 
 
   MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult AlignBlockContents(nsINode& aNode,
-                                           const nsAString& aAlignType);
-
-  
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult AlignContentsAtSelection(const nsAString& aAlignType);
 
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
