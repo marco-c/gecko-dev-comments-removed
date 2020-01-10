@@ -765,7 +765,7 @@ class RefTest(object):
             'processOutputLine': [self.outputHandler],
         }
 
-        if mozinfo.isWin or mozinfo.isMac:
+        if mozinfo.isWin:
             
             
             kp_kwargs['processStderrLine'] = [self.outputHandler]
