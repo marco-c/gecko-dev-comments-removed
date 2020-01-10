@@ -1,7 +1,6 @@
 
 
 
-
 test(() => {
   assert_throws('SyntaxError', () => { new EventSource("http://this is invalid/"); });
 });
