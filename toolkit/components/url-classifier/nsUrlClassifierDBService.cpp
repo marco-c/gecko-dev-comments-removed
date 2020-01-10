@@ -374,11 +374,8 @@ nsresult nsUrlClassifierDBServiceWorker::DoLookup(
     const nsACString& spec,
     nsUrlClassifierDBService::FeatureHolder* aFeatureHolder,
     nsIUrlClassifierLookupCallback* c) {
-  
-  
-  auto scopeExit = MakeScopeExit([c]() { c->LookupComplete(nullptr); });
-
   if (gShuttingDownThread) {
+    c->LookupComplete(nullptr);
     return NS_ERROR_NOT_INITIALIZED;
   }
 
@@ -388,9 +385,7 @@ nsresult nsUrlClassifierDBServiceWorker::DoLookup(
   }
 
   nsresult rv = aFeatureHolder->DoLocalLookup(spec, this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   if (LOG_ENABLED()) {
     PRIntervalTime clockEnd = PR_IntervalNow();
@@ -400,6 +395,7 @@ nsresult nsUrlClassifierDBServiceWorker::DoLookup(
 
   UniquePtr<LookupResultArray> results = aFeatureHolder->GetTableResults();
   if (NS_WARN_IF(!results)) {
+    c->LookupComplete(nullptr);
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -418,7 +414,6 @@ nsresult nsUrlClassifierDBServiceWorker::DoLookup(
   }
 
   
-  scopeExit.release();
   c->LookupComplete(std::move(results));
 
   return NS_OK;
