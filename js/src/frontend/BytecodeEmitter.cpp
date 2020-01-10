@@ -1827,8 +1827,6 @@ bool BytecodeEmitter::emitPropLHS(PropertyAccess* prop) {
 
   while (true) {
     
-
-    
     if (!emitAtomOp(pndot->key().atom(), JSOP_GETPROP)) {
       return false;
     }
@@ -1847,7 +1845,6 @@ bool BytecodeEmitter::emitPropLHS(PropertyAccess* prop) {
 
 bool BytecodeEmitter::emitPropIncDec(UnaryNode* incDec) {
   PropertyAccess* prop = &incDec->kid()->as<PropertyAccess>();
-  
   bool isSuper = prop->isSuper();
   ParseNodeKind kind = incDec->getKind();
   PropOpEmitter poe(
@@ -2739,7 +2736,6 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
         
         
         PropertyAccess* prop = &target->as<PropertyAccess>();
-        
         bool isSuper = prop->isSuper();
         PropOpEmitter poe(this, PropOpEmitter::Kind::SimpleAssignment,
                           isSuper ? PropOpEmitter::ObjKind::Super
@@ -4270,7 +4266,6 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
     switch (lhs->getKind()) {
       case ParseNodeKind::DotExpr: {
         PropertyAccess* prop = &lhs->as<PropertyAccess>();
-        
         if (!poe->emitGet(prop->key().atom())) {
           
           
@@ -4371,7 +4366,6 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   switch (lhs->getKind()) {
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &lhs->as<PropertyAccess>();
-      
       if (!poe->emitAssignment(prop->key().atom())) {
         
         return false;
@@ -6837,7 +6831,6 @@ bool BytecodeEmitter::emitDeleteProperty(UnaryNode* deleteNode) {
   MOZ_ASSERT(deleteNode->isKind(ParseNodeKind::DeletePropExpr));
 
   PropertyAccess* propExpr = &deleteNode->kid()->as<PropertyAccess>();
-  
   PropOpEmitter poe(this, PropOpEmitter::Kind::Delete,
                     propExpr->as<PropertyAccess>().isSuper()
                         ? PropOpEmitter::ObjKind::Super
@@ -7229,7 +7222,6 @@ bool BytecodeEmitter::emitCalleeAndThis(ParseNode* callee, ParseNode* call,
     case ParseNodeKind::DotExpr: {
       MOZ_ASSERT(emitterMode != BytecodeEmitter::SelfHosting);
       PropertyAccess* prop = &callee->as<PropertyAccess>();
-      
       bool isSuper = prop->isSuper();
 
       PropOpEmitter& poe = cone.prepareForPropCallee(isSuper);
@@ -9192,7 +9184,6 @@ bool BytecodeEmitter::emitTree(
 
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &pn->as<PropertyAccess>();
-      
       bool isSuper = prop->isSuper();
       PropOpEmitter poe(this, PropOpEmitter::Kind::Get,
                         isSuper ? PropOpEmitter::ObjKind::Super
