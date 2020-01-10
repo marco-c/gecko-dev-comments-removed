@@ -153,14 +153,6 @@ class WebConsole {
 
 
 
-  setFilterState() {
-    this.ui && this.ui.setFilterState.apply(this.ui, arguments);
-  }
-
-  
-
-
-
 
 
   openLink(link, e = {}) {
