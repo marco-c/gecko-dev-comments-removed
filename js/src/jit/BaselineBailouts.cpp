@@ -703,6 +703,8 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     flags |= BaselineFrame::DEBUGGEE;
   }
 
+  const bool isPrologueBailout = IsPrologueBailout(iter, excInfo);
+
   
   JSObject* envChain = nullptr;
   Value returnValue;
@@ -713,10 +715,10 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     
     
     
-    
     JitSpew(JitSpew_BaselineBailouts,
-            "      Bailout_ArgumentCheck! (no valid envChain)");
+            "      Bailout_ArgumentCheck! (using function's environment)");
     iter.skip();
+    envChain = fun->environment();
 
     
     iter.skip();
@@ -763,12 +765,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
       
       if (fun) {
-        
-        
-        
-        if (!IsPrologueBailout(iter, excInfo)) {
-          envChain = fun->environment();
-        }
+        envChain = fun->environment();
       } else if (script->module()) {
         envChain = script->module()->environment();
       } else {
@@ -786,7 +783,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         
         
         
-        if (IsPrologueBailout(iter, excInfo)) {
+        if (isPrologueBailout) {
           builder.setCheckGlobalDeclarationConflicts();
         }
       }
@@ -807,6 +804,9 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       }
     }
   }
+
+  MOZ_ASSERT(envChain);
+
   JitSpew(JitSpew_BaselineBailouts, "      EnvChain=%p", envChain);
   blFrame->setEnvironmentChain(envChain);
   JitSpew(JitSpew_BaselineBailouts, "      ReturnValue=%016" PRIx64,
@@ -1196,14 +1196,8 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     JitSpew(JitSpew_BaselineBailouts, "      Adjusted framesize -= %d: %d",
             int(sizeof(Value) * numUnsynced), int(frameSize));
 
-    
-    
-    
     uint8_t* opReturnAddr;
-    if (envChain == nullptr) {
-      
-      
-      MOZ_ASSERT(fun);
+    if (isPrologueBailout) {
       MOZ_ASSERT(numUnsynced == 0);
       opReturnAddr = baselineScript->bailoutPrologueEntryAddr();
       JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
@@ -1943,13 +1937,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   
   js_free(bailoutInfo);
   bailoutInfo = nullptr;
-
-  
-  
-  
-  if (!topFrame->environmentChain()) {
-    topFrame->setEnvironmentChain(topFrame->callee()->environment());
-  }
 
   
   if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
