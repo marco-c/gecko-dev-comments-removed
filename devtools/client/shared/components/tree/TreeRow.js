@@ -21,7 +21,10 @@ define(function(require, exports, module) {
   const TreeCell = createFactory(require("./TreeCell"));
   const LabelCell = createFactory(require("./LabelCell"));
 
-  const { focusableSelector } = require("devtools/client/shared/focus");
+  const {
+    wrapMoveFocus,
+    getFocusableElements,
+  } = require("devtools/client/shared/focus");
 
   const UPDATE_ON_PROPS = [
     "name",
@@ -133,7 +136,7 @@ define(function(require, exports, module) {
 
 
     _setTabbableState() {
-      const elms = this.getFocusableElements();
+      const elms = getFocusableElements(this.treeRowRef.current);
       if (elms.length === 0) {
         return;
       }
@@ -149,46 +152,6 @@ define(function(require, exports, module) {
       }
     }
 
-    
-
-
-
-    getFocusableElements() {
-      return Array.from(
-        this.treeRowRef.current.querySelectorAll(focusableSelector)
-      );
-    }
-
-    
-
-
-
-
-
-
-
-
-    _wrapMoveFocus(current, back) {
-      const elms = this.getFocusableElements();
-      let next;
-
-      if (elms.length === 0) {
-        return false;
-      }
-
-      if (back) {
-        if (elms.indexOf(current) === 0) {
-          next = elms[elms.length - 1];
-          next.focus();
-        }
-      } else if (elms.indexOf(current) === elms.length - 1) {
-        next = elms[0];
-        next.focus();
-      }
-
-      return !!next;
-    }
-
     _onKeyDown(e) {
       const { target, key, shiftKey } = e;
 
@@ -196,7 +159,11 @@ define(function(require, exports, module) {
         return;
       }
 
-      const focusMoved = this._wrapMoveFocus(target, shiftKey);
+      const focusMoved = !!wrapMoveFocus(
+        getFocusableElements(this.treeRowRef.current),
+        target,
+        shiftKey
+      );
       if (focusMoved) {
         
         
