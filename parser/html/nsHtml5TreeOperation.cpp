@@ -27,7 +27,6 @@
 #include "nsHtml5TreeBuilder.h"
 #include "nsIDTD.h"
 #include "nsIFormControl.h"
-#include "nsIFormProcessor.h"
 #include "nsIMutationObserver.h"
 #include "nsINode.h"
 #include "nsIObserverService.h"
@@ -44,8 +43,6 @@
 
 using namespace mozilla;
 using mozilla::dom::Document;
-
-static NS_DEFINE_CID(kFormProcessorCID, NS_FORMPROCESSOR_CID);
 
 
 
@@ -329,12 +326,6 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     mozilla::dom::FromParser aFromParser, nsNodeInfoManager* aNodeInfoManager,
     nsHtml5DocumentBuilder* aBuilder,
     mozilla::dom::HTMLContentCreatorFunction aCreator) {
-  bool isKeygen = (aName == nsGkAtoms::keygen);
-  if (MOZ_UNLIKELY(isKeygen)) {
-    aName = nsGkAtoms::select;
-    aCreator = NS_NewHTMLSelectElement;
-  }
-
   RefPtr<dom::NodeInfo> nodeInfo = aNodeInfoManager->GetNodeInfo(
       aName, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
   NS_ASSERTION(nodeInfo, "Got null nodeinfo.");
@@ -421,38 +412,6 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
         ssle->InitStyleLinkElement(false);
         ssle->SetEnableUpdates(false);
       }
-    } else if (MOZ_UNLIKELY(isKeygen)) {
-      
-      nsresult rv;
-      nsCOMPtr<nsIFormProcessor> theFormProcessor =
-          do_GetService(kFormProcessorCID, &rv);
-      if (NS_FAILED(rv)) {
-        return newContent;
-      }
-
-      nsTArray<nsString> theContent;
-      nsAutoString theAttribute;
-
-      (void)theFormProcessor->ProvideContent(NS_LITERAL_STRING("select"),
-                                             theContent, theAttribute);
-
-      newContent->SetAttr(kNameSpaceID_None, nsGkAtoms::moztype, nullptr,
-                          theAttribute, false);
-
-      RefPtr<dom::NodeInfo> optionNodeInfo = aNodeInfoManager->GetNodeInfo(
-          nsGkAtoms::option, nullptr, kNameSpaceID_XHTML,
-          nsINode::ELEMENT_NODE);
-
-      for (uint32_t i = 0; i < theContent.Length(); ++i) {
-        RefPtr<dom::NodeInfo> ni = optionNodeInfo;
-        nsCOMPtr<dom::Element> optionElt =
-            NS_NewHTMLOptionElement(ni.forget(), aFromParser);
-        RefPtr<nsTextNode> optionText = new nsTextNode(aNodeInfoManager);
-        (void)optionText->SetText(theContent[i], false);
-        optionElt->AppendChildTo(optionText, false);
-        newContent->AppendChildTo(optionElt, false);
-      }
-      newContent->DoneAddingChildren(false);
     }
 
     if (!aAttributes) {
