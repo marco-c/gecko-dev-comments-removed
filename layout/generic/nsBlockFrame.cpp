@@ -6843,17 +6843,10 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  
-  
-  
-  
   const bool shouldDrawBackplate =
       StaticPrefs::browser_display_permit_backplate() &&
-      (((PresContext()->PrefSheetPrefs().mUseAccessibilityTheme &&
-         StaticPrefs::browser_display_document_color_use() == 0) ||
-        (StaticPrefs::browser_display_document_color_use() == 2 &&
-         !PresContext()->IsChrome())) &&
-       !IsComboboxControlFrame());
+      !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
+      !IsComboboxControlFrame();
 
   
   
