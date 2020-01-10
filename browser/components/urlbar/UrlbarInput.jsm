@@ -1840,6 +1840,10 @@ class UrlbarInput {
     this.valueIsTyped = true;
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;
+    
+    
+    
+    this.controller.userSelectionBehavior = "none";
 
     let compositionState = this._compositionState;
     let compositionClosedPopup = this._compositionClosedPopup;
