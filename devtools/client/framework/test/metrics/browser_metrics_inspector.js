@@ -18,6 +18,10 @@ add_task(async function() {
   
   const loaders = [loader.loader];
 
+  
+  
+  runDuplicatedModulesTest(loaders, []);
+
   runMetricsTest({
     filterString: "devtools/client/inspector",
     loaders,
