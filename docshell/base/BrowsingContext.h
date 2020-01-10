@@ -500,12 +500,7 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
 
 
-
-
-
-
 extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
-                                      JS::Handle<JSObject*> aTransplantTo,
                                       JS::MutableHandle<JSObject*> aRetVal);
 
 typedef BrowsingContext::Transaction BrowsingContextTransaction;

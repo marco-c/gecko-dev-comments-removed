@@ -68,9 +68,6 @@ bool Compartment::putWrapper(JSContext* cx, const CrossCompartmentKey& wrapped,
                              const js::Value& wrapper) {
   MOZ_ASSERT(wrapped.is<JSString*>() == wrapper.isString());
   MOZ_ASSERT_IF(!wrapped.is<JSString*>(), wrapper.isObject());
-  MOZ_ASSERT(!wrapper.isObject() || !js::IsProxy(&wrapper.toObject()) ||
-             js::GetProxyHandler(&wrapper.toObject())->family() !=
-                 js::GetDOMRemoteProxyHandlerFamily());
 
   if (!crossCompartmentWrappers.put(wrapped, wrapper)) {
     ReportOutOfMemory(cx);
@@ -188,7 +185,7 @@ bool Compartment::wrap(JSContext* cx, MutableHandleBigInt bi) {
 }
 
 bool Compartment::getNonWrapperObjectForCurrentCompartment(
-    JSContext* cx, HandleObject origObj, MutableHandleObject obj) {
+    JSContext* cx, MutableHandleObject obj) {
   
   MOZ_ASSERT(cx->global());
 
@@ -266,7 +263,7 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
     return false;
   }
   if (preWrap) {
-    preWrap(cx, cx->global(), origObj, obj, objectPassedToWrap, obj);
+    preWrap(cx, cx->global(), obj, objectPassedToWrap, obj);
     if (!obj) {
       return false;
     }
@@ -333,8 +330,7 @@ bool Compartment::wrap(JSContext* cx, MutableHandleObject obj) {
 
   
   
-  if (!getNonWrapperObjectForCurrentCompartment(cx,  nullptr,
-                                                obj)) {
+  if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
     return false;
   }
 
@@ -373,10 +369,7 @@ bool Compartment::rewrap(JSContext* cx, MutableHandleObject obj,
 
   
   
-  
-  
-  
-  if (!getNonWrapperObjectForCurrentCompartment(cx, existingArg, obj)) {
+  if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
     return false;
   }
 

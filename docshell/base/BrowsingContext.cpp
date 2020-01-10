@@ -339,18 +339,12 @@ void BrowsingContext::PrepareForProcessChange() {
 
   
   
+  mWindowProxy = nullptr;
+
+  
+  
   
   mDocShell = nullptr;
-
-  if (!mWindowProxy) {
-    return;
-  }
-
-  
-  
-  
-  nsGlobalWindowOuter::PrepareForProcessChange(mWindowProxy);
-  MOZ_ASSERT(!mWindowProxy);
 }
 
 void BrowsingContext::CacheChildren(bool aFromIPC) {
@@ -679,8 +673,7 @@ void BrowsingContext::Location(JSContext* aCx,
                                JS::MutableHandle<JSObject*> aLocation,
                                ErrorResult& aError) {
   aError.MightThrowJSException();
-  sSingleton.GetProxyObject(aCx, &mLocation,  nullptr,
-                            aLocation);
+  sSingleton.GetProxyObject(aCx, &mLocation, aLocation);
   if (!aLocation) {
     aError.StealExceptionFromJSContext(aCx);
   }
