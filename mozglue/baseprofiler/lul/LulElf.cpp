@@ -45,37 +45,41 @@
 
 
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <arpa/inet.h>
+#include "BaseProfiler.h"
 
-#include <set>
-#include <string>
-#include <vector>
+#ifdef MOZ_BASE_PROFILER
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Sprintf.h"
+#  include <errno.h>
+#  include <fcntl.h>
+#  include <stdio.h>
+#  include <string.h>
+#  include <sys/mman.h>
+#  include <sys/stat.h>
+#  include <unistd.h>
+#  include <arpa/inet.h>
 
-#include "PlatformMacros.h"
-#include "LulCommonExt.h"
-#include "LulDwarfExt.h"
-#include "LulElfInt.h"
-#include "LulMainInt.h"
+#  include <set>
+#  include <string>
+#  include <vector>
 
-#if defined(GP_PLAT_arm_android) && !defined(SHT_ARM_EXIDX)
+#  include "mozilla/Assertions.h"
+#  include "mozilla/Sprintf.h"
 
-#  define SHT_ARM_EXIDX (SHT_LOPROC + 1)
-#endif
+#  include "PlatformMacros.h"
+#  include "LulCommonExt.h"
+#  include "LulDwarfExt.h"
+#  include "LulElfInt.h"
+#  include "LulMainInt.h"
+
+#  if defined(GP_PLAT_arm_android) && !defined(SHT_ARM_EXIDX)
+
+#    define SHT_ARM_EXIDX (SHT_LOPROC + 1)
+#  endif
 
 
-#ifndef EM_AARCH64
-#  define EM_AARCH64 183
-#endif
+#  ifndef EM_AARCH64
+#    define EM_AARCH64 183
+#  endif
 
 
 namespace {
@@ -744,7 +748,7 @@ bool FindElfSegment(const void* elf_mapped_base, uint32_t segment_type,
 
 
 
-#define NOTE_PADDING(a) ((a + 3) & ~3)
+#  define NOTE_PADDING(a) ((a + 3) & ~3)
 
 
 
@@ -869,3 +873,5 @@ void FileID::ConvertIdentifierToString(const uint8_t identifier[kMDGUIDSize],
 }
 
 }  
+
+#endif  

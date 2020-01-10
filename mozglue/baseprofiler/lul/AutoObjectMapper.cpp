@@ -4,21 +4,25 @@
 
 
 
-#include <sys/mman.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "BaseProfiler.h"
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Sprintf.h"
+#ifdef MOZ_BASE_PROFILER
 
-#include "PlatformMacros.h"
-#include "AutoObjectMapper.h"
+#  include <sys/mman.h>
+#  include <unistd.h>
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <fcntl.h>
 
-#if defined(GP_OS_android)
-#  include <dlfcn.h>
-#  include "mozilla/Types.h"
+#  include "mozilla/Assertions.h"
+#  include "mozilla/Sprintf.h"
+
+#  include "PlatformMacros.h"
+#  include "AutoObjectMapper.h"
+
+#  if defined(GP_OS_android)
+#    include <dlfcn.h>
+#    include "mozilla/Types.h"
 
 
 
@@ -28,10 +32,10 @@ MFBT_API void* __dl_mmap(void* handle, void* addr, size_t length, off_t offset);
 MFBT_API void __dl_munmap(void* handle, void* addr, size_t length);
 }
 
-#  include "nsString.h"
-#  include "nsDirectoryServiceUtils.h"
-#  include "nsDirectoryServiceDefs.h"
-#endif
+#    include "nsString.h"
+#    include "nsDirectoryServiceUtils.h"
+#    include "nsDirectoryServiceDefs.h"
+#  endif
 
 
 
@@ -95,7 +99,7 @@ bool AutoObjectMapperPOSIX::Map( void** start,  size_t* length,
   return true;
 }
 
-#if defined(GP_OS_android)
+#  if defined(GP_OS_android)
 
 
 
@@ -184,5 +188,7 @@ bool AutoObjectMapperFaultyLib::Map( void** start,
     return true;
   }
 }
+
+#  endif  
 
 #endif  

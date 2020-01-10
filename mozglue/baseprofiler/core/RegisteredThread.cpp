@@ -4,7 +4,11 @@
 
 
 
-#include "RegisteredThread.h"
+#include "BaseProfiler.h"
+
+#ifdef MOZ_BASE_PROFILER
+
+#  include "RegisteredThread.h"
 
 RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread,
                                    void* aStackTop)
@@ -19,10 +23,10 @@ RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread,
   MOZ_COUNT_CTOR(RegisteredThread);
 
   
-#if defined(GP_OS_darwin)
+#  if defined(GP_OS_darwin)
   pthread_t self = pthread_self();
   mStackTop = pthread_get_stackaddr_np(self);
-#endif
+#  endif
 }
 
 RegisteredThread::~RegisteredThread() { MOZ_COUNT_DTOR(RegisteredThread); }
@@ -41,3 +45,5 @@ size_t RegisteredThread::SizeOfIncludingThis(
 
   return n;
 }
+
+#endif  

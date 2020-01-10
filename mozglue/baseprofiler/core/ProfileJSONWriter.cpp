@@ -3,9 +3,13 @@
 
 
 
-#include "BaseProfileJSONWriter.h"
+#include "BaseProfiler.h"
 
-#include "mozilla/HashFunctions.h"
+#ifdef MOZ_BASE_PROFILER
+
+#  include "BaseProfileJSONWriter.h"
+
+#  include "mozilla/HashFunctions.h"
 
 void ChunkedJSONWriteFunc::Write(const char* aStr) {
   MOZ_ASSERT(mChunkPtr >= mChunkList.back().get() && mChunkPtr <= mChunkEnd);
@@ -112,3 +116,5 @@ void SpliceableChunkedJSONWriter::TakeAndSplice(ChunkedJSONWriteFunc* aFunc) {
   WriteFunc()->Take(std::move(*aFunc));
   mNeedComma[mDepth] = true;
 }
+
+#endif  

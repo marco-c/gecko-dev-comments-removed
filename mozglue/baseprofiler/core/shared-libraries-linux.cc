@@ -4,40 +4,44 @@
 
 
 
-#include "BaseProfilerSharedLibraries.h"
+#include "BaseProfiler.h"
 
-#define PATH_MAX_TOSTRING(x) #x
-#define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <unistd.h>
-#include <fstream>
-#include "platform.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/Unused.h"
-#include "nsDebug.h"
-#include "nsNativeCharsetUtils.h"
-#include <nsTArray.h>
+#ifdef MOZ_BASE_PROFILER
 
-#include "common/linux/file_id.h"
-#include <algorithm>
-#include <dlfcn.h>
-#include <features.h>
-#include <sys/types.h>
+#  include "BaseProfilerSharedLibraries.h"
 
-#if defined(GP_OS_linux)
-#  include <link.h>  
-#elif defined(GP_OS_android)
-#  include "AutoObjectMapper.h"
-#  include "ElfLoader.h"  
+#  define PATH_MAX_TOSTRING(x) #  x
+#  define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
+#  include <stdlib.h>
+#  include <stdio.h>
+#  include <string.h>
+#  include <limits.h>
+#  include <unistd.h>
+#  include <fstream>
+#  include "platform.h"
+#  include "mozilla/Sprintf.h"
+#  include "mozilla/Unused.h"
+#  include "nsDebug.h"
+#  include "nsNativeCharsetUtils.h"
+#  include <nsTArray.h>
+
+#  include "common/linux/file_id.h"
+#  include <algorithm>
+#  include <dlfcn.h>
+#  include <features.h>
+#  include <sys/types.h>
+
+#  if defined(GP_OS_linux)
+#    include <link.h>  
+#  elif defined(GP_OS_android)
+#    include "AutoObjectMapper.h"
+#    include "ElfLoader.h"  
 extern "C" MOZ_EXPORT __attribute__((weak)) int dl_iterate_phdr(
     int (*callback)(struct dl_phdr_info* info, size_t size, void* data),
     void* data);
-#else
-#  error "Unexpected configuration"
-#endif
+#  else
+#    error "Unexpected configuration"
+#  endif
 
 struct LoadedLibraryInfo {
   LoadedLibraryInfo(const char* aName, unsigned long aBaseAddress,
@@ -54,9 +58,9 @@ struct LoadedLibraryInfo {
   unsigned long mLastMappingEnd;
 };
 
-#if defined(GP_OS_android)
+#  if defined(GP_OS_android)
 static void outputMapperLog(const char* aBuf) { LOG("%s", aBuf); }
-#endif
+#  endif
 
 static nsCString IDtoUUIDString(
     const google_breakpad::wasteful_vector<uint8_t>& aIdentifier) {
@@ -77,7 +81,7 @@ static nsCString getId(const char* bin_name) {
   PageAllocator allocator;
   auto_wasteful_vector<uint8_t, kDefaultBuildIdSize> identifier(&allocator);
 
-#if defined(GP_OS_android)
+#  if defined(GP_OS_android)
   if (nsDependentCString(bin_name).Find("!/") != kNotFound) {
     AutoObjectMapperFaultyLib mapper(outputMapperLog);
     void* image = nullptr;
@@ -88,7 +92,7 @@ static nsCString getId(const char* bin_name) {
       }
     }
   }
-#endif
+#  endif
 
   FileID file_id(bin_name);
   if (file_id.ElfFileIdentifier(identifier)) {
@@ -149,7 +153,7 @@ static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo info;
 
-#if defined(GP_OS_linux)
+#  if defined(GP_OS_linux)
   
   
   char exeName[PATH_MAX];
@@ -168,9 +172,9 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   }
 
   unsigned long exeExeAddr = 0;
-#endif
+#  endif
 
-#if defined(GP_OS_android)
+#  if defined(GP_OS_android)
   
   if (!dl_iterate_phdr) {
     
@@ -179,7 +183,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     
     return info;
   }
-#endif
+#  endif
 
   
   pid_t pid = profiler_current_process_id();
@@ -207,12 +211,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       continue;
     }
 
-#if defined(GP_OS_linux)
+#  if defined(GP_OS_linux)
     
     if (exeNameLen > 0 && strcmp(modulePath, exeName) == 0) {
       exeExeAddr = start;
     }
-#elif defined(GP_OS_android)
+#  elif defined(GP_OS_android)
     
     
     if (0 == strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
@@ -224,7 +228,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
         break;
       }
     }
-#endif
+#  endif
   }
 
   nsTArray<LoadedLibraryInfo> libInfoList;
@@ -239,7 +243,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                             libInfo.mFirstMappingStart - libInfo.mBaseAddress));
   }
 
-#if defined(GP_OS_linux)
+#  if defined(GP_OS_linux)
   
   
   
@@ -254,10 +258,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       break;
     }
   }
-#endif
+#  endif
 
   return info;
 }
 
 void SharedLibraryInfo::Initialize() { 
 }
+
+#endif  

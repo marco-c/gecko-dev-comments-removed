@@ -4,12 +4,16 @@
 
 
 
-#include "ProfilerBacktrace.h"
+#include "BaseProfiler.h"
 
-#include "ProfileBuffer.h"
-#include "ProfiledThreadData.h"
-#include "BaseProfileJSONWriter.h"
-#include "ThreadInfo.h"
+#ifdef MOZ_BASE_PROFILER
+
+#  include "ProfilerBacktrace.h"
+
+#  include "ProfileBuffer.h"
+#  include "ProfiledThreadData.h"
+#  include "BaseProfileJSONWriter.h"
+#  include "ThreadInfo.h"
 
 ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
                                      mozilla::UniquePtr<ProfileBuffer> aBuffer)
@@ -32,3 +36,5 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
                            mozilla::TimeStamp(),
                            0, aUniqueStacks);
 }
+
+#endif  

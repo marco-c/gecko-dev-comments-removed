@@ -4,9 +4,13 @@
 
 
 
-#include "PageInformation.h"
+#include "BaseProfiler.h"
 
-#include "BaseProfileJSONWriter.h"
+#ifdef MOZ_BASE_PROFILER
+
+#  include "PageInformation.h"
+
+#  include "BaseProfileJSONWriter.h"
 
 PageInformation::PageInformation(const nsID& aDocShellId,
                                  uint32_t aDocShellHistoryId,
@@ -35,3 +39,5 @@ size_t PageInformation::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this);
 }
+
+#endif  

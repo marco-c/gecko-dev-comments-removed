@@ -4,14 +4,18 @@
 
 
 
-#ifdef XP_WIN
-#  undef UNICODE
-#  undef _UNICODE
-#endif
+#include "BaseProfiler.h"
 
-#include "VTuneProfiler.h"
-#include "mozilla/Bootstrap.h"
-#include <memory>
+#ifdef MOZ_BASE_PROFILER
+
+#  ifdef XP_WIN
+#    undef UNICODE
+#    undef _UNICODE
+#  endif
+
+#  include "VTuneProfiler.h"
+#  include "mozilla/Bootstrap.h"
+#  include <memory>
 
 using namespace std;
 
@@ -80,3 +84,5 @@ void VTuneProfiler::RegisterThreadInternal(const char* aName) {
   }
   __itt_thread_set_name(aName);
 }
+
+#endif  

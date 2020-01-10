@@ -37,15 +37,19 @@
 
 
 
+#include "BaseProfiler.h"
+
+#ifdef MOZ_BASE_PROFILER
 
 
-#include "LulCommonExt.h"
 
-#include <stdlib.h>
-#include <string.h>
+#  include "LulCommonExt.h"
 
-#include <string>
-#include <map>
+#  include <stdlib.h>
+#  include <string.h>
+
+#  include <string>
+#  include <map>
 
 namespace lul {
 
@@ -98,3 +102,5 @@ const UniqueString* UniqueStringUniverse::ToUniqueString(string str) {
 }
 
 }  
+
+#endif  
