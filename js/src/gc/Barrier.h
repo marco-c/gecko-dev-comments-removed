@@ -7,14 +7,6 @@
 #ifndef gc_Barrier_h
 #define gc_Barrier_h
 
-#if (__GNUC__ && __linux__ && __PPC64__ && _LITTLE_ENDIAN)
-
-
-
-#pragma GCC push_options
-#pragma GCC optimize ("no-inline-functions")
-#endif
-
 #include "NamespaceImports.h"
 
 #include "gc/Cell.h"
@@ -1095,9 +1087,5 @@ struct DefineComparisonOps<HeapSlot> : mozilla::TrueType {
 } 
 
 } 
-
-#if (__GNUC__ && __linux__ && __PPC64__ && _LITTLE_ENDIAN)
-#pragma GCC pop_options
-#endif
 
 #endif 
