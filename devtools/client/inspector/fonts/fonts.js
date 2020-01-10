@@ -287,7 +287,6 @@ class FontInspector {
     
     return Math.round(out);
   }
-  
 
   
 

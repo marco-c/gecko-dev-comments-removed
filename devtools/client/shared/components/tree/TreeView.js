@@ -384,7 +384,6 @@ define(function(require, exports, module) {
       this.treeRef.current.focus();
       event.preventDefault();
     }
-    
 
     onClickRow(nodePath, event) {
       const onClickRow = this.props.onClickRow;

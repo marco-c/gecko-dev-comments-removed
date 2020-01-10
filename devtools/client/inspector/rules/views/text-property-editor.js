@@ -711,7 +711,6 @@ TextPropertyEditor.prototype = {
       }
     }
   },
-  
 
   _onStartEditing: function() {
     this.element.classList.remove("ruleview-overridden");

@@ -410,7 +410,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
     this.emit("mutations", emitMutations);
   }
-  
 
   
 

@@ -331,7 +331,6 @@ class SplitBox extends Component {
         : null
     );
   }
-  
 }
 
 module.exports = SplitBox;

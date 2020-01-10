@@ -490,7 +490,6 @@ class Message extends Component {
       attachment ? null : dom.br()
     );
   }
-  
 }
 
 module.exports = Message;

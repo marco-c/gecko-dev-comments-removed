@@ -994,7 +994,6 @@ var cookieHelpers = {
       cookie.sameSite
     );
   },
-  
 
   _removeCookies(host, opts = {}) {
     
@@ -3522,7 +3521,6 @@ const StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
 
     return null;
   },
-  
 
   
 

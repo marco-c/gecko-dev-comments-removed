@@ -501,7 +501,6 @@ class JQueryEventCollector extends MainEventCollector {
     }
     return handlers;
   }
-  
 }
 
 
@@ -601,7 +600,6 @@ class JQueryLiveEventCollector extends MainEventCollector {
     }
     return handlers;
   }
-  
 
   normalizeListener(handlerDO) {
     function isFunctionInProxy(funcDO) {
@@ -1067,7 +1065,6 @@ class EventCollector {
       }
     }
   }
-  
 }
 
 exports.EventCollector = EventCollector;

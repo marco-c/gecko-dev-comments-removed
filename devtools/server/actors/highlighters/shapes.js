@@ -621,7 +621,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         break;
     }
   }
-  
 
   
 
@@ -2049,7 +2048,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
     return "";
   }
-  
 
   
 

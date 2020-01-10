@@ -280,7 +280,6 @@ function getCleanedPacket(key, packet) {
   return res;
 }
 
-
 function formatPacket(key, packet) {
   const stringifiedPacket = JSON.stringify(
     getCleanedPacket(key, packet),

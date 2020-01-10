@@ -826,7 +826,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       traits: this.traits,
     };
   },
-  
 
   
 
@@ -1323,7 +1322,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       notes: errorNotes,
     };
   },
-  
 
   
 

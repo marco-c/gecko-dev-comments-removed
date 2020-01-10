@@ -531,7 +531,6 @@ function GenericObject(
 }
 
 
-
 previewers.Object = [
   function TypedArray({ obj, hooks }, grip) {
     if (!ObjectUtils.isTypedArray(obj)) {
@@ -864,7 +863,6 @@ previewers.Object = [
 
     return true;
   },
-  
 
   function DOMException({ obj, hooks }, grip, rawObj) {
     if (isWorker || !rawObj || obj.class !== "DOMException") {

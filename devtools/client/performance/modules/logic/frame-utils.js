@@ -204,7 +204,6 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
 
 
 
-
 function computeIsContentAndCategory(frame) {
   const location = frame.location;
 

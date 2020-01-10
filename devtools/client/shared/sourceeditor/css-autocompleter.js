@@ -4,7 +4,6 @@
 
 "use strict";
 
-
 const {
   cssTokenizer,
   cssTokenizerWithLineColumn,
@@ -166,6 +165,7 @@ CSSCompleter.prototype = {
 
 
 
+  
   resolveState: function(source, { line, ch }) {
     
     const peek = arr => arr[arr.length - 1];

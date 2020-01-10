@@ -800,7 +800,6 @@ function getChartsFromToolId(id) {
 
 
 
-
 function getCaller() {
   return getNthPathExcluding(0, "/telemetry.js");
 }

@@ -581,7 +581,6 @@ CssRuleView.prototype = {
       value,
     };
   },
-  
 
   
 
@@ -1386,7 +1385,6 @@ CssRuleView.prototype = {
 
     return promise.all(editorReadyPromises);
   },
-  
 
   
 

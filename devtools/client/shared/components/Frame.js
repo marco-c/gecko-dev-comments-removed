@@ -306,7 +306,6 @@ class Frame extends Component {
 
     return dom.span(attributes, ...elements);
   }
-  
 }
 
 module.exports = Frame;

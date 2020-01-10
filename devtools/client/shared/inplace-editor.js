@@ -1309,7 +1309,6 @@ InplaceEditor.prototype = {
       event.preventDefault();
     }
   },
-  
 
   _onContextMenu: function(event) {
     if (this.contextMenu) {
@@ -1646,7 +1645,6 @@ InplaceEditor.prototype = {
       this.emit("after-suggest");
       this._doValidation();
     }, 0);
-    
   },
 
   

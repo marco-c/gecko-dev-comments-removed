@@ -755,7 +755,6 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
     this.ctx.restore();
   }
-  
 
   
 
@@ -1032,6 +1031,5 @@ function compareFlexData(oldFlexData, newFlexData) {
 
   return false;
 }
-
 
 exports.FlexboxHighlighter = FlexboxHighlighter;

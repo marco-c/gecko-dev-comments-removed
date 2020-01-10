@@ -349,7 +349,6 @@ function JSPropertyProvider({
   return prepareReturnedObject(getMatchedPropsInDbgObject(obj, search));
 }
 
-
 function hasArrayIndex(str) {
   return /\[\d+\]$/.test(str);
 }
@@ -598,7 +597,6 @@ function analyzeInputString(str) {
     isElementAccess,
   };
 }
-
 
 
 

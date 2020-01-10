@@ -263,8 +263,6 @@ function extractSymbol(path: SimplePath, symbols, state) {
   }
 }
 
-
-
 function extractSymbols(sourceId): SymbolDeclarations {
   const symbols = {
     functions: [],

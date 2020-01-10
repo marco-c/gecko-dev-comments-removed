@@ -234,7 +234,6 @@ BreakpointActor.prototype = {
 
     return this.threadActor._pauseAndRespond(frame, reason);
   },
-  
 
   delete: function() {
     

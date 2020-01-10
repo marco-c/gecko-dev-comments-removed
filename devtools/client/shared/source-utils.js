@@ -309,7 +309,6 @@ function isChromeScheme(location, i = 0) {
   }
 }
 
-
 function isWASM(location, i = 0) {
   return (
     

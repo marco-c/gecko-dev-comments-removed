@@ -327,22 +327,22 @@ OutputParser.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   _doParse: function(text, options, tokenStream, stopAtCloseParen) {
     let parenDepth = stopAtCloseParen ? 1 : 0;
     let outerMostFunctionTakesColor = false;
@@ -594,7 +594,6 @@ OutputParser.prototype = {
 
     return result;
   },
-  
 
   
 
@@ -914,7 +913,6 @@ OutputParser.prototype = {
     }
     return container;
   },
-  
 
   
 
@@ -1076,7 +1074,6 @@ OutputParser.prototype = {
     }
     return container;
   },
-  
 
   
 
@@ -1248,7 +1245,6 @@ OutputParser.prototype = {
     }
     return container;
   },
-  
 
   
 
@@ -1394,7 +1390,6 @@ OutputParser.prototype = {
 
     return container;
   },
-  
 
   
 

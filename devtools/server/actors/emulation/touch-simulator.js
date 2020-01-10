@@ -282,7 +282,6 @@ TouchSimulator.prototype = {
       evt.stopImmediatePropagation();
     }
   },
-  
 
   fireMouseEvent(type, evt) {
     const content = this.getContent(evt.target);

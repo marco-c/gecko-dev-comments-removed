@@ -1270,7 +1270,6 @@ NetworkObserver.prototype = {
       offsets: ot.offsets,
     };
   },
-  
 
   _extractServerTimings: function(channel) {
     if (!channel || !channel.serverTiming) {

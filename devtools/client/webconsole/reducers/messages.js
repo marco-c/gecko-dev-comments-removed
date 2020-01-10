@@ -356,7 +356,6 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 }
 
 
-
 function messages(
   state = MessageState(),
   action,
@@ -692,7 +691,6 @@ function messages(
 
   return state;
 }
-
 
 function setVisibleMessages({
   messagesState,
@@ -1177,7 +1175,6 @@ function getMessageVisibility(
     visible: true,
   };
 }
-
 
 function isUnfilterable(message) {
   return [

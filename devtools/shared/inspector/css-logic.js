@@ -476,7 +476,6 @@ function prettifyCSS(text, ruleCount) {
   return { result, mappings };
 }
 
-
 exports.prettifyCSS = prettifyCSS;
 
 

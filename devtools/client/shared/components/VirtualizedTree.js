@@ -653,7 +653,6 @@ class Tree extends Component {
         break;
     }
   }
-  
 
   get activeElement() {
     return this.refs.tree.ownerDocument.activeElement;

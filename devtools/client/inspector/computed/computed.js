@@ -500,7 +500,6 @@ CssComputedView.prototype = {
       value,
     };
   },
-  
 
   _createPropertyViews: function() {
     if (this._createViewsPromise) {

@@ -543,7 +543,6 @@ function parseDeclarationsInternal(
 
 
 
-
 function parseDeclarations(
   isCssPropertyKnown,
   inputString,
@@ -678,7 +677,6 @@ function parsePseudoClassesAndAttributes(value) {
 
   return result;
 }
-
 
 
 

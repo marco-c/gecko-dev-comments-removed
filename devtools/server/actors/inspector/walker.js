@@ -1109,7 +1109,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     return { hasFirst, hasLast, nodes };
   },
-  
 
   getNativeAnonymousChildren: function(rawNode) {
     
@@ -1444,7 +1443,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       suggestions: result,
     };
   },
-  
 
   
 

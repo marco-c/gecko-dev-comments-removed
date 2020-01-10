@@ -689,7 +689,6 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
       return { value: evalResult };
     },
-    
   }
 );
 

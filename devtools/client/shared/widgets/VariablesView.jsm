@@ -919,7 +919,6 @@ VariablesView.prototype = {
         item._onAddProperty(e);
     }
   },
-  
 
   
 
@@ -3021,7 +3020,6 @@ Variable.prototype = extend(Scope.prototype, {
       target.setAttribute("pseudo-item", "");
     }
   },
-  
 
   
 

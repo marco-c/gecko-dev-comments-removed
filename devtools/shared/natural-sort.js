@@ -118,4 +118,3 @@ function naturalSort(a, b, insensitive) {
   }
   return null;
 }
-

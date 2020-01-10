@@ -599,7 +599,6 @@ const proto = {
 
     return safeGetterValues;
   },
-  
 
   
 

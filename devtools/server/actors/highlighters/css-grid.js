@@ -1489,7 +1489,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     this.ctx.fillText(numberText, x, y);
     this.ctx.restore();
   }
-  
 
   
 

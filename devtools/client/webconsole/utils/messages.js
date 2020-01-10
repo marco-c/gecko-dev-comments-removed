@@ -266,7 +266,6 @@ function transformConsoleAPICallPacket(packet) {
   });
 }
 
-
 function transformNavigationMessagePacket(packet) {
   const { url } = packet;
   return new ConsoleMessage({
