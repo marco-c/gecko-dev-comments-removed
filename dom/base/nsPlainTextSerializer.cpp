@@ -1285,7 +1285,6 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
   }
 
   const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
-  int32_t linelength = mCurrentLine.mContent.Length();
 
   
   uint32_t currentLineContentWidth =
@@ -1301,6 +1300,7 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
     const int32_t goodSpace = mCurrentLine.FindWrapIndexForContent(
         mWrapColumn, currentLineContentWidth, mLineBreaker);
 
+    const int32_t linelength = mCurrentLine.mContent.Length();
     if ((goodSpace < linelength) && (goodSpace > 0)) {
       
 
@@ -1330,7 +1330,6 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
       }
       mCurrentLine.mContent.Append(restOfLine);
       currentLineContentWidth = GetUnicharStringWidth(mCurrentLine.mContent);
-      linelength = mCurrentLine.mContent.Length();
       mEmptyLines = -1;
     } else {
       
