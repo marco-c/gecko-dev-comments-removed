@@ -5969,6 +5969,11 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   
   
   
+  
+  
+  
+  
+
   if (IsEqualityOp(op_)) {
     TRY_ATTACH(tryAttachObject(lhsId, rhsId));
     TRY_ATTACH(tryAttachSymbol(lhsId, rhsId));
