@@ -1636,9 +1636,8 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
   return rootFrameToSelect;
 }
 
-nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
-                                    nsIFrame* aFrame,
-                                    SelectionIntoView aSelectionIntoView) {
+void nsFrameSelection::CommonPageMove(bool aForward, bool aExtend,
+                                      nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
 
   
@@ -1651,21 +1650,21 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
   nsIFrame* scrolledFrame =
       scrollableFrame ? scrollableFrame->GetScrolledFrame() : aFrame;
   if (!scrolledFrame) {
-    return NS_OK;
+    return;
   }
 
   
   
   
-  RefPtr<Selection> selection = GetSelection(SelectionType::eNormal);
-  if (!selection) {
-    return NS_OK;
+  Selection* domSel = GetSelection(SelectionType::eNormal);
+  if (!domSel) {
+    return;
   }
 
   nsRect caretPos;
-  nsIFrame* caretFrame = nsCaret::GetGeometry(selection, &caretPos);
+  nsIFrame* caretFrame = nsCaret::GetGeometry(domSel, &caretPos);
   if (!caretFrame) {
-    return NS_OK;
+    return;
   }
 
   
@@ -1674,16 +1673,11 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
   if (!IsValidSelectionPoint(this, scrolledFrame->GetContent())) {
     frameToClick = GetFrameToPageSelect();
     if (NS_WARN_IF(!frameToClick)) {
-      return NS_OK;
+      return;
     }
   }
 
-  if (scrollableFrame) {
-    
-    
-    
-    
-    
+  if (scrollableFrame && scrolledFrame == frameToClick) {
     
     
     if (aForward) {
@@ -1710,55 +1704,18 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
       frameToClick->GetContentOffsetsFromPoint(desiredPoint);
 
   if (!offsets.content) {
-    
-    return NS_OK;
+    return;
   }
-
-  
-  bool selectionChanged;
-  {
-    
-    
-    SelectionBatcher ensureNoSelectionChangeNotifications(selection);
-
-    RangeBoundary oldAnchor = selection->AnchorRef();
-    RangeBoundary oldFocus = selection->FocusRef();
-
-    HandleClick(offsets.content, offsets.offset, offsets.offset, aExtend, false,
-                CARET_ASSOCIATE_AFTER);
-
-    selectionChanged = selection->AnchorRef() != oldAnchor ||
-                       selection->FocusRef() != oldFocus;
-  }
-
-  bool doScrollSelectionIntoView = !(
-      aSelectionIntoView == SelectionIntoView::IfChanged && !selectionChanged);
 
   
   if (scrollableFrame) {
-    
-    
-    
-    
-    
-    
-    
-    ScrollMode scrollMode = doScrollSelectionIntoView && !selectionChanged &&
-                                    scrolledFrame != frameToClick
-                                ? ScrollMode::Instant
-                                : ScrollMode::Smooth;
     scrollableFrame->ScrollBy(nsIntPoint(0, aForward ? 1 : -1),
-                              nsIScrollableFrame::PAGES, scrollMode);
+                              nsIScrollableFrame::PAGES, ScrollMode::Smooth);
   }
 
   
-  if (!doScrollSelectionIntoView) {
-    return NS_OK;
-  }
-  return ScrollSelectionIntoView(
-      SelectionType::eNormal, nsISelectionController::SELECTION_FOCUS_REGION,
-      nsISelectionController::SCROLL_SYNCHRONOUS |
-          nsISelectionController::SCROLL_FOR_CARET_MOVE);
+  HandleClick(offsets.content, offsets.offset, offsets.offset, aExtend, false,
+              CARET_ASSOCIATE_AFTER);
 }
 
 nsresult nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,

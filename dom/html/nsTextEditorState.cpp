@@ -634,16 +634,8 @@ nsTextInputSelectionImpl::PageMove(bool aForward, bool aExtend) {
   if (mScrollFrame) {
     RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
     nsIFrame* scrollFrame = do_QueryFrame(mScrollFrame);
-    
-    
-    
-    
-    
-    
-    return frameSelection->PageMove(aForward, aExtend, scrollFrame,
-                                    nsFrameSelection::SelectionIntoView::Yes);
+    frameSelection->CommonPageMove(aForward, aExtend, scrollFrame);
   }
-  
   
   
   return ScrollSelectionIntoView(

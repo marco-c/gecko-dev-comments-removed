@@ -485,12 +485,8 @@ class nsFrameSelection final {
 
 
 
-
-
-  enum class SelectionIntoView { IfChanged, Yes };
-  MOZ_CAN_RUN_SCRIPT nsresult PageMove(bool aForward, bool aExtend,
-                                       nsIFrame* aFrame,
-                                       SelectionIntoView aSelectionIntoView);
+  MOZ_CAN_RUN_SCRIPT
+  void CommonPageMove(bool aForward, bool aExtend, nsIFrame* aFrame);
 
   void SetHint(CaretAssociateHint aHintRight) { mHint = aHintRight; }
   CaretAssociateHint GetHint() const { return mHint; }
