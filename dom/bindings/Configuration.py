@@ -72,25 +72,34 @@ class Configuration(DescriptorProvider):
 
             assert not thing.isType()
 
-            if not thing.isInterface() and not thing.isNamespace():
+            if (not thing.isInterface() and not thing.isNamespace() and
+                not thing.isInterfaceMixin()):
                 continue
-            iface = thing
             
             
             
             
             
-            if not iface.isExternal():
-                for partialIface in iface.getPartials():
-                    if partialIface.filename() != iface.filename():
+            
+            if not thing.isExternal():
+                for partial in thing.getPartials():
+                    if partial.filename() != thing.filename():
                         raise TypeError(
                             "The binding build system doesn't really support "
-                            "partial interfaces which don't appear in the "
-                            "file in which the interface they are extending is "
+                            "partial interfaces/namespaces/mixins which don't "
+                            "appear in the file in which the "
+                            "interface/namespace/mixin they are extending is "
                             "defined.  Don't do this.\n"
                             "%s\n"
                             "%s" %
-                            (partialIface.location, iface.location))
+                            (partial.location, thing.location))
+
+            
+            if thing.isInterfaceMixin():
+                continue
+
+            iface = thing
+            if not iface.isExternal():
                 if not (iface.getExtendedAttribute("ChromeOnly") or
                         iface.getExtendedAttribute("Func") == ["IsChromeOrXBL"] or
                         iface.getExtendedAttribute("Func") == ["nsContentUtils::IsCallerChromeOrFuzzingEnabled"] or
@@ -103,6 +112,7 @@ class Configuration(DescriptorProvider):
                         "if you do not want it exposed to the web.\n"
                         "%s" %
                         (webRoots, iface.location))
+
             self.interfaces[iface.identifier.name] = iface
 
             entry = config.get(iface.identifier.name, {})
