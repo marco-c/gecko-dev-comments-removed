@@ -869,21 +869,10 @@ struct HuffmanTableInitializing {};
 
 
 
-struct HuffmanTableExplicitSymbolsF64 : GenericHuffmanTable {
-  HuffmanTableExplicitSymbolsF64() : GenericHuffmanTable() {}
-};
-
-struct HuffmanTableExplicitSymbolsU32 : GenericHuffmanTable {
-  HuffmanTableExplicitSymbolsU32() : GenericHuffmanTable() {}
-};
-
-struct HuffmanTableIndexedSymbolsSum : GenericHuffmanTable {
-  HuffmanTableIndexedSymbolsSum() : GenericHuffmanTable() {}
-};
-
-struct HuffmanTableIndexedSymbolsBool : GenericHuffmanTable {
-  HuffmanTableIndexedSymbolsBool() : GenericHuffmanTable() {}
-};
+using HuffmanTableExplicitSymbolsF64 = GenericHuffmanTable;
+using HuffmanTableExplicitSymbolsU32 = GenericHuffmanTable;
+using HuffmanTableIndexedSymbolsSum = GenericHuffmanTable;
+using HuffmanTableIndexedSymbolsBool = GenericHuffmanTable;
 
 
 
@@ -905,27 +894,15 @@ struct HuffmanTableIndexedSymbolsMaybeInterface : GenericHuffmanTable {
   }
 };
 
-struct HuffmanTableIndexedSymbolsStringEnum : GenericHuffmanTable {
-  HuffmanTableIndexedSymbolsStringEnum() : GenericHuffmanTable() {}
-};
-
-struct HuffmanTableIndexedSymbolsLiteralString : GenericHuffmanTable {
-  HuffmanTableIndexedSymbolsLiteralString() : GenericHuffmanTable() {}
-};
-
-struct HuffmanTableIndexedSymbolsOptionalLiteralString : GenericHuffmanTable {
-  HuffmanTableIndexedSymbolsOptionalLiteralString() : GenericHuffmanTable() {}
-};
+using HuffmanTableIndexedSymbolsStringEnum = GenericHuffmanTable;
+using HuffmanTableIndexedSymbolsLiteralString = GenericHuffmanTable;
+using HuffmanTableIndexedSymbolsOptionalLiteralString = GenericHuffmanTable;
 
 
-using HuffmanTableValue = mozilla::Variant<
-    HuffmanTableUnreachable,  
-    HuffmanTableInitializing, HuffmanTableExplicitSymbolsF64,
-    HuffmanTableExplicitSymbolsU32, HuffmanTableIndexedSymbolsSum,
-    HuffmanTableIndexedSymbolsMaybeInterface, HuffmanTableIndexedSymbolsBool,
-    HuffmanTableIndexedSymbolsStringEnum,
-    HuffmanTableIndexedSymbolsLiteralString,
-    HuffmanTableIndexedSymbolsOptionalLiteralString>;
+using HuffmanTableValue =
+    mozilla::Variant<HuffmanTableUnreachable,  
+                     HuffmanTableInitializing, GenericHuffmanTable,
+                     HuffmanTableIndexedSymbolsMaybeInterface>;
 
 struct HuffmanTableExplicitSymbolsListLength : GenericHuffmanTable {
   HuffmanTableExplicitSymbolsListLength() : GenericHuffmanTable() {}
