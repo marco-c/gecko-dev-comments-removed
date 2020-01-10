@@ -193,18 +193,18 @@ class HuffmanTableImplementationNaive {
 
   
   
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
+  
+  
+  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
+                           uint8_t maxBitLength);
+
+  JS::Result<Ok> initComplete();
 
   
   JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
 
   HuffmanTableImplementationNaive() = delete;
   HuffmanTableImplementationNaive(HuffmanTableImplementationNaive&) = delete;
-
-#ifdef DEBUG
-  void selfCheck();
-#endif  
 
   
   
@@ -260,15 +260,15 @@ class HuffmanTableImplementationMap {
 
   
   
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
+  
+  
+  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
+                           uint8_t maxBitLength);
 
   
   JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
 
-#ifdef DEBUG
-  void selfCheck();
-#endif  
+  JS::Result<Ok> initComplete();
 
   HuffmanTableImplementationMap() = delete;
   HuffmanTableImplementationMap(HuffmanTableImplementationMap&) = delete;
@@ -410,12 +410,12 @@ class HuffmanTableImplementationSaturated {
 
   
   
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
+  
+  
+  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
+                           uint8_t maxBitLength);
 
-#ifdef DEBUG
-  void selfCheck();
-#endif  
+  JS::Result<Ok> initComplete();
 
   
   JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
@@ -502,15 +502,15 @@ struct HuffmanTableImplementationGeneric {
 
   
   
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
-
-#ifdef DEBUG
-  void selfCheck();
-#endif  
+  
+  
+  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
+                           uint8_t maxBitLength);
 
   
   JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+
+  JS::Result<Ok> initComplete();
 
   
   size_t length() const;
