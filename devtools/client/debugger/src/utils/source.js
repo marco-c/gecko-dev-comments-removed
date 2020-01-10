@@ -403,7 +403,7 @@ export function getTextAtPosition(
   return lineText.slice(column, column + 100).trim();
 }
 
-export function getSourceClassnames(source: Object, symbols?: Symbols) {
+export function getSourceClassnames(source: ?Object, symbols: ?Symbols) {
   
   const defaultClassName = "file";
 
