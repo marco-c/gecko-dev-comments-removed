@@ -1,0 +1,20 @@
+
+
+
+
+
+#![cfg(windows)]
+extern crate winapi;
+
+
+pub mod com;
+
+pub mod error;
+
+
+
+
+
+pub mod wide;
+
+pub use error::{Error, Result};

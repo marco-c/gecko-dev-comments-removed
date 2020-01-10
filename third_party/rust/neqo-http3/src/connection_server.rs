@@ -5,20 +5,18 @@
 
 
 use crate::connection::{Http3Connection, Http3ServerHandler, Http3State};
-use crate::server_events::Http3ServerEvents;
-use crate::transaction_server::{RequestHandler, TransactionServer};
-use neqo_common::{qdebug, qtrace, Datagram};
+use crate::server_events::{Http3ServerEvent, Http3ServerEvents};
+use crate::transaction_server::TransactionServer;
+use crate::{Error, Header, Res};
+use neqo_common::{qdebug, qinfo, qtrace, Datagram};
 use neqo_crypto::AntiReplay;
 use neqo_transport::{AppError, Connection, ConnectionIdManager, Output, Role};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Instant;
 
-use crate::{Error, Res};
-
 pub struct Http3Server {
     base_handler: Http3Connection<Http3ServerEvents, TransactionServer, Http3ServerHandler>,
-    handler: Option<RequestHandler>,
 }
 
 impl ::std::fmt::Display for Http3Server {
@@ -35,7 +33,6 @@ impl Http3Server {
         cid_manager: Rc<RefCell<dyn ConnectionIdManager>>,
         max_table_size: u32,
         max_blocked_streams: u16,
-        handler: Option<RequestHandler>,
     ) -> Res<Http3Server> {
         Ok(Http3Server {
             base_handler: Http3Connection::new_server(
@@ -46,7 +43,6 @@ impl Http3Server {
                 max_table_size,
                 max_blocked_streams,
             )?,
-            handler,
         })
     }
 
@@ -76,7 +72,6 @@ impl Http3Server {
     pub fn process_http3(&mut self, now: Instant) {
         qtrace!([self] "Process http3 internal.");
         self.base_handler.process_http3(now);
-        self.handle_done_reading_request();
     }
 
     pub fn process_output(&mut self, now: Instant) -> Output {
@@ -85,7 +80,7 @@ impl Http3Server {
     }
 
     pub fn close(&mut self, now: Instant, error: AppError, msg: &str) {
-        qdebug!([self] "Closed.");
+        qinfo!([self] "Close connection.");
         self.base_handler.close(now, error, msg);
     }
 
@@ -94,48 +89,43 @@ impl Http3Server {
     }
 
     
-    fn handle_done_reading_request(&mut self) {
-        let mut to_remove: Vec<u64> = Vec::new();
-        for (stream_id, t) in self.base_handler.transactions.iter_mut() {
-            if t.done_reading_request() {
-                if let Some(ref mut cb) = self.handler {
-                    let (headers, data, close_error) = (cb)(t.get_request_headers(), false);
-                    qdebug!(
-                        "Sending response: {:?} {:?} {:?}",
-                        headers,
-                        data,
-                        close_error
-                    );
-                    match close_error {
-                        Some(e) => {
-                            let _ = self
-                                .base_handler
-                                .conn
-                                .stream_stop_sending(*stream_id, e.code());
-                            if e != Error::HttpEarlyResponse {
-                                to_remove.push(*stream_id);
-                                let _ = self
-                                    .base_handler
-                                    .conn
-                                    .stream_reset_send(*stream_id, e.code());
-                            } else {
-                                t.set_response(
-                                    &headers,
-                                    data,
-                                    &mut self.base_handler.qpack_encoder,
-                                );
-                            }
-                        }
-                        None => {
-                            t.set_response(&headers, data, &mut self.base_handler.qpack_encoder)
-                        }
-                    };
-                }
-            }
-        }
-        for stream_id in to_remove.iter() {
-            self.base_handler.transactions.remove(&stream_id);
-        }
+    
+    pub fn events(&mut self) -> impl Iterator<Item = Http3ServerEvent> {
+        self.base_handler.events.events()
+    }
+
+    
+    pub fn has_events(&self) -> bool {
+        self.base_handler.events.has_events()
+    }
+
+    
+    
+    
+    pub fn next_event(&mut self) -> Option<Http3ServerEvent> {
+        self.base_handler.events.next_event()
+    }
+
+    pub fn set_response(&mut self, stream_id: u64, headers: &[Header], data: Vec<u8>) -> Res<()> {
+        qinfo!([self] "Set new respons for stream {}.", stream_id);
+        self.base_handler
+            .transactions
+            .get_mut(&stream_id)
+            .ok_or(Error::InvalidStreamId)?
+            .set_response(headers, data, &mut self.base_handler.qpack_encoder);
+        self.base_handler
+            .insert_streams_have_data_to_send(stream_id);
+        Ok(())
+    }
+
+    pub fn stream_stop_sending(&mut self, stream_id: u64, app_error: AppError) -> Res<()> {
+        qdebug!([self] "stop sending stream_id:{} error:{}.", stream_id, app_error);
+        self.base_handler.stream_stop_sending(stream_id, app_error)
+    }
+
+    pub fn stream_reset(&mut self, stream_id: u64, app_error: AppError) -> Res<()> {
+        qdebug!([self] "reset stream_id:{} error:{}.", stream_id, app_error);
+        self.base_handler.stream_reset(stream_id, app_error)
     }
 }
 
@@ -160,7 +150,6 @@ mod tests {
             Rc::new(RefCell::new(FixedConnectionIdManager::new(5))),
             100,
             100,
-            None,
         )
         .expect("create a default server")
     }
@@ -200,9 +189,8 @@ mod tests {
         assert_eq!(hconn.state(), Http3State::Connected);
         neqo_trans_conn.process(out.dgram(), now());
 
-        let events = neqo_trans_conn.events();
         let mut connected = false;
-        for e in events {
+        while let Some(e) = neqo_trans_conn.next_event() {
             match e {
                 ConnectionEvent::NewStream {
                     stream_id,
@@ -358,25 +346,25 @@ mod tests {
 
     
     #[test]
-    fn test_data_frame_on_control_stream() {
+    fn test_server_data_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0x0, 0x2, 0x1, 0x2]);
     }
 
     
     #[test]
-    fn test_headers_frame_on_control_stream() {
+    fn test_server_headers_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0x1, 0x2, 0x1, 0x2]);
     }
 
     
     #[test]
-    fn test_push_promise_frame_on_control_stream() {
+    fn test_server_push_promise_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0x5, 0x2, 0x1, 0x2]);
     }
 
     
     #[test]
-    fn test_duplicate_push_frame_on_control_stream() {
+    fn test_server_duplicate_push_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0xe, 0x2, 0x1, 0x2]);
     }
 
@@ -396,9 +384,8 @@ mod tests {
         peer_conn.conn.process(out.dgram(), now());
 
         
-        let events = peer_conn.conn.events();
         let mut stop_sending_event_found = false;
-        for e in events {
+        while let Some(e) = peer_conn.conn.next_event() {
             if let ConnectionEvent::SendStreamStopSending {
                 stream_id,
                 app_error,
@@ -425,5 +412,326 @@ mod tests {
         let out = hconn.process(out.dgram(), now());
         peer_conn.conn.process(out.dgram(), now());
         assert_closed(&hconn, Error::HttpStreamCreationError);
+    }
+
+    
+    #[test]
+    fn test_server_frame_reading() {
+        let (mut hconn, mut peer_conn) = connect_and_receive_settings();
+
+        
+        let control_stream = peer_conn.stream_create(StreamType::UniDi).unwrap();
+
+        
+        let mut sent = peer_conn.stream_send(control_stream, &[0x0]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        
+        sent = peer_conn.stream_send(control_stream, &[0x4]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x4]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x6]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x0]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x8]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x0]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        assert_eq!(hconn.state(), Http3State::Connected);
+
+        
+        sent = peer_conn.stream_send(control_stream, &[0x5]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x5]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        sent = peer_conn.stream_send(control_stream, &[0x4]);
+        assert_eq!(sent, Ok(1));
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        
+        assert_closed(&hconn, Error::HttpFrameUnexpected);
+    }
+
+    
+    fn test_incomplet_frame(res: &[u8]) {
+        let (mut hconn, mut peer_conn) = connect_and_receive_settings();
+
+        
+        let stream_id = peer_conn.stream_create(StreamType::BiDi).unwrap();
+        peer_conn.stream_send(stream_id, res).unwrap();
+        peer_conn.stream_close_send(stream_id).unwrap();
+
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        assert_closed(&hconn, Error::HttpFrameError);
+    }
+
+    const REQUEST_WITH_BODY: &[u8] = &[
+        
+        0x01, 0x10, 0x00, 0x00, 0xd1, 0xd7, 0x50, 0x89, 0x41, 0xe9, 0x2a, 0x67, 0x35, 0x53, 0x2e,
+        0x43, 0xd3, 0xc1, 
+        0x0, 0x3, 0x61, 0x62, 0x63, 
+        0x0, 0x3, 0x64, 0x65, 0x66,
+    ];
+
+    
+    #[test]
+    fn test_server_incomplet_data_frame() {
+        test_incomplet_frame(&REQUEST_WITH_BODY[..22]);
+    }
+
+    
+    #[test]
+    fn test_server_incomplet_headers_frame() {
+        test_incomplet_frame(&REQUEST_WITH_BODY[..10]);
+    }
+
+    #[test]
+    fn test_server_incomplet_unknown_frame() {
+        test_incomplet_frame(&[0x21]);
+    }
+
+    #[test]
+    fn test_server_request_with_body() {
+        let (mut hconn, mut peer_conn) = connect();
+
+        let stream_id = peer_conn.conn.stream_create(StreamType::BiDi).unwrap();
+        peer_conn
+            .conn
+            .stream_send(stream_id, REQUEST_WITH_BODY)
+            .unwrap();
+        peer_conn.conn.stream_close_send(stream_id).unwrap();
+
+        let out = peer_conn.conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        
+        let mut headers_frames = 0;
+        let mut data_frames = 0;
+        while let Some(event) = hconn.next_event() {
+            match event {
+                Http3ServerEvent::Headers { headers, fin, .. } => {
+                    assert_eq!(
+                        headers,
+                        vec![
+                            (String::from(":method"), String::from("GET")),
+                            (String::from(":scheme"), String::from("https")),
+                            (String::from(":authority"), String::from("something.com")),
+                            (String::from(":path"), String::from("/"))
+                        ]
+                    );
+                    assert_eq!(fin, false);
+                    headers_frames += 1;
+                }
+                Http3ServerEvent::Data {
+                    stream_id,
+                    data,
+                    fin,
+                } => {
+                    if data_frames == 0 {
+                        assert_eq!(data, &REQUEST_WITH_BODY[20..23]);
+                    } else {
+                        assert_eq!(data, &REQUEST_WITH_BODY[25..]);
+                        assert_eq!(fin, true);
+                        hconn
+                            .set_response(
+                                stream_id,
+                                &[
+                                    (String::from(":status"), String::from("200")),
+                                    (String::from("content-length"), String::from("3")),
+                                ],
+                                vec![0x67, 0x68, 0x69],
+                            )
+                            .unwrap();
+                    }
+                    data_frames += 1;
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(headers_frames, 1);
+        assert_eq!(data_frames, 2);
+    }
+
+    #[test]
+    fn test_server_request_with_body_send_stop_sending() {
+        let (mut hconn, mut peer_conn) = connect();
+
+        let stream_id = peer_conn.conn.stream_create(StreamType::BiDi).unwrap();
+        
+        peer_conn
+            .conn
+            .stream_send(stream_id, &REQUEST_WITH_BODY[..20])
+            .unwrap();
+
+        let out = peer_conn.conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        
+        let mut headers_frames = 0;
+        while let Some(event) = hconn.next_event() {
+            match event {
+                Http3ServerEvent::Headers {
+                    stream_id,
+                    headers,
+                    fin,
+                } => {
+                    assert_eq!(
+                        headers,
+                        vec![
+                            (String::from(":method"), String::from("GET")),
+                            (String::from(":scheme"), String::from("https")),
+                            (String::from(":authority"), String::from("something.com")),
+                            (String::from(":path"), String::from("/"))
+                        ]
+                    );
+                    assert_eq!(fin, false);
+                    headers_frames += 1;
+                    hconn
+                        .stream_stop_sending(stream_id, Error::HttpEarlyResponse.code())
+                        .unwrap();
+                    hconn
+                        .set_response(
+                            stream_id,
+                            &[
+                                (String::from(":status"), String::from("200")),
+                                (String::from("content-length"), String::from("3")),
+                            ],
+                            vec![0x67, 0x68, 0x69],
+                        )
+                        .unwrap();
+                }
+                Http3ServerEvent::Data { .. } => {
+                    panic!("We should not have a Data event");
+                }
+                _ => {}
+            }
+        }
+        let out = hconn.process(None, now());
+
+        
+        peer_conn
+            .conn
+            .stream_send(stream_id, &REQUEST_WITH_BODY[20..])
+            .unwrap();
+        peer_conn.conn.stream_close_send(stream_id).unwrap();
+
+        let out = peer_conn.conn.process(out.dgram(), now());
+        hconn.process(out.dgram(), now());
+
+        while let Some(event) = hconn.next_event() {
+            match event {
+                Http3ServerEvent::Headers { .. } => {
+                    panic!("We should not have a Data event");
+                }
+                Http3ServerEvent::Data { .. } => {
+                    panic!("We should not have a Data event");
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(headers_frames, 1);
+    }
+
+    #[test]
+    fn test_server_request_with_body_server_reset() {
+        let (mut hconn, mut peer_conn) = connect();
+
+        let request_stream_id = peer_conn.conn.stream_create(StreamType::BiDi).unwrap();
+        
+        peer_conn
+            .conn
+            .stream_send(request_stream_id, &REQUEST_WITH_BODY[..20])
+            .unwrap();
+
+        let out = peer_conn.conn.process(None, now());
+        hconn.process(out.dgram(), now());
+
+        
+        
+        let mut headers_frames = 0;
+        while let Some(event) = hconn.next_event() {
+            match event {
+                Http3ServerEvent::Headers {
+                    stream_id,
+                    headers,
+                    fin,
+                } => {
+                    assert_eq!(request_stream_id, stream_id);
+                    assert_eq!(
+                        headers,
+                        vec![
+                            (String::from(":method"), String::from("GET")),
+                            (String::from(":scheme"), String::from("https")),
+                            (String::from(":authority"), String::from("something.com")),
+                            (String::from(":path"), String::from("/"))
+                        ]
+                    );
+                    assert_eq!(fin, false);
+                    headers_frames += 1;
+                    hconn
+                        .stream_reset(stream_id, Error::HttpRequestRejected.code())
+                        .unwrap();
+                }
+                Http3ServerEvent::Data { .. } => {
+                    panic!("We should not have a Data event");
+                }
+                _ => {}
+            }
+        }
+        let out = hconn.process(None, now());
+
+        let out = peer_conn.conn.process(out.dgram(), now());
+        hconn.process(out.dgram(), now());
+
+        
+        let mut reset = 0;
+        let mut stop_sending = 0;
+        while let Some(event) = peer_conn.conn.next_event() {
+            match event {
+                ConnectionEvent::RecvStreamReset { stream_id, .. } => {
+                    assert_eq!(request_stream_id, stream_id);
+                    reset += 1;
+                }
+                ConnectionEvent::SendStreamStopSending { stream_id, .. } => {
+                    assert_eq!(request_stream_id, stream_id);
+                    stop_sending += 1;
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(headers_frames, 1);
+        assert_eq!(reset, 1);
+        assert_eq!(stop_sending, 1);
     }
 }

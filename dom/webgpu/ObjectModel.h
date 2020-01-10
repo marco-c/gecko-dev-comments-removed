@@ -19,8 +19,8 @@ class ChildOf {
  public:
   const RefPtr<T> mParent;
 
-  explicit ChildOf(
-      T* parent = nullptr);  
+  explicit ChildOf(T* const parent);
+
  protected:
   virtual ~ChildOf();
 

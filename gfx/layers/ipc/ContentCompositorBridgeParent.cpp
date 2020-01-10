@@ -31,6 +31,7 @@
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
+#include "mozilla/webgpu/WebGPUParent.h"
 #include "mozilla/mozalloc.h"  
 #include "nsDebug.h"           
 #include "nsTArray.h"          
@@ -267,6 +268,19 @@ bool ContentCompositorBridgeParent::DeallocPWebRenderBridgeParent(
     PWebRenderBridgeParent* aActor) {
   WebRenderBridgeParent* parent = static_cast<WebRenderBridgeParent*>(aActor);
   EraseLayerState(wr::AsLayersId(parent->PipelineId()));
+  parent->Release();  
+  return true;
+}
+
+webgpu::PWebGPUParent* ContentCompositorBridgeParent::AllocPWebGPUParent() {
+  webgpu::WebGPUParent* parent = new webgpu::WebGPUParent();
+  parent->AddRef();  
+  return parent;
+}
+
+bool ContentCompositorBridgeParent::DeallocPWebGPUParent(
+    webgpu::PWebGPUParent* aActor) {
+  webgpu::WebGPUParent* parent = static_cast<webgpu::WebGPUParent*>(aActor);
   parent->Release();  
   return true;
 }
