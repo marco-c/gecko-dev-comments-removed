@@ -468,11 +468,11 @@ class ActivePS {
         mDuration(aDuration),
         mInterval(aInterval),
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
-        mBuffer(MakeUnique<ProfileBuffer>(aCapacity))
+        
+        mBuffer(MakeUnique<ProfileBuffer>(PowerOfTwo32(aCapacity.Value() * 8))),
         
         
         
-        ,
         mSamplerThread(NewSamplerThread(aLock, mGeneration, aInterval))
 #  undef HAS_FEATURE
         ,
@@ -1737,7 +1737,7 @@ static void PrintUsageThenExit(int aExitCode) {
       "  first started.\n"
       "  If unset, the platform default is used:\n"
       "  %u entries per process, or %u when MOZ_BASE_PROFILER_STARTUP is set.\n"
-      "  (%zu bytes per entry -> %zu or %zu total bytes per process)\n"
+      "  (8 bytes per entry -> %u or %u total bytes per process)\n"
       "\n"
       "  MOZ_BASE_PROFILER_STARTUP_DURATION=<1..>\n"
       "  If MOZ_BASE_PROFILER_STARTUP is set, specifies the maximum life time\n"
@@ -1768,10 +1768,8 @@ static void PrintUsageThenExit(int aExitCode) {
       "default/unavailable)\n",
       unsigned(BASE_PROFILER_DEFAULT_ENTRIES.Value()),
       unsigned(BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value()),
-      sizeof(ProfileBufferEntry),
-      sizeof(ProfileBufferEntry) * BASE_PROFILER_DEFAULT_ENTRIES.Value(),
-      sizeof(ProfileBufferEntry) *
-          BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value());
+      unsigned(BASE_PROFILER_DEFAULT_ENTRIES.Value() * 8),
+      unsigned(BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value() * 8));
 
 #  define PRINT_FEATURE(n_, str_, Name_, desc_)                             \
     printf("    %c %5u: \"%s\" (%s)\n",                                     \
@@ -2669,6 +2667,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   InitializeWin64ProfilerHooks();
 #  endif
 
+  
   
   
   

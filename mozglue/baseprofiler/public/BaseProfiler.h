@@ -238,7 +238,7 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     MakePowerOfTwo32<1u << 20>();  
 #  else
-    MakePowerOfTwo32<1u << 17>();  // 131'072
+    MakePowerOfTwo32<1u << 17>();  // 131'072 entries = 1MB
 #  endif
 
 
@@ -247,7 +247,7 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     MakePowerOfTwo32<1u << 22>();  
 #  else
-    MakePowerOfTwo32<1u << 17>();  // 131'072
+    MakePowerOfTwo32<1u << 17>();  // 131'072 = 1MB
 #  endif
 
 #  define BASE_PROFILER_DEFAULT_DURATION 20

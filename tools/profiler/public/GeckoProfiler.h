@@ -252,7 +252,7 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     mozilla::MakePowerOfTwo32<1u << 20>();  
 #  else
-    mozilla::MakePowerOfTwo32<1u << 17>();  // 131'072
+    mozilla::MakePowerOfTwo32<1u << 17>();  // 131'072 entries = 1MB
 #  endif
 
 
