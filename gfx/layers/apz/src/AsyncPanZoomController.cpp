@@ -2572,9 +2572,9 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
   
   
   
-  mX.UpdateWithTouchAtDevicePoint(mX.GetPos() + logicalPanDisplacement.x,
+  mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - logicalPanDisplacement.x,
                                   aEvent.mTime);
-  mY.UpdateWithTouchAtDevicePoint(mY.GetPos() + logicalPanDisplacement.y,
+  mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - logicalPanDisplacement.y,
                                   aEvent.mTime);
 
   HandlePanningUpdate(physicalPanDisplacement);
