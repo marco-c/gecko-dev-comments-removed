@@ -13,6 +13,7 @@ const {
   CLOSE_SEARCH,
   UPDATE_SEARCH_STATUS,
   SEARCH_STATUS,
+  SET_TARGET_SEARCH_RESULT,
 } = require("../constants");
 
 const {
@@ -22,8 +23,9 @@ const {
   getRequestById,
 } = require("../selectors/index");
 
+const { selectRequest } = require("./selection");
+const { selectDetailsPanelTab } = require("./ui");
 const { fetchNetworkUpdatePacket } = require("../utils/request-utils");
-
 const { searchInResource } = require("../workers/search/index");
 
 
@@ -210,6 +212,34 @@ function stopOngoingSearch() {
   };
 }
 
+
+
+
+
+
+
+function navigate(searchResult) {
+  return (dispatch, getState) => {
+    
+    
+    dispatch(setTargetSearchResult(searchResult));
+
+    
+    dispatch(selectDetailsPanelTab(searchResult.panel));
+
+    
+    
+    dispatch(selectRequest(searchResult.parentResource.id));
+  };
+}
+
+function setTargetSearchResult(searchResult) {
+  return {
+    type: SET_TARGET_SEARCH_RESULT,
+    searchResult,
+  };
+}
+
 module.exports = {
   search,
   closeSearch,
@@ -217,4 +247,6 @@ module.exports = {
   clearSearchResults,
   addSearchQuery,
   toggleSearchPanel,
+  navigate,
+  setTargetSearchResult,
 };

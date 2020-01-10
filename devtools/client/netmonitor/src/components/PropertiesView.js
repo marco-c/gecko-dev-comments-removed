@@ -13,7 +13,12 @@ const {
 } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-
+const {
+  connect,
+} = require("devtools/client/shared/redux/visibility-handler-connect");
+const {
+  setTargetSearchResult,
+} = require("devtools/client/netmonitor/src/actions/search");
 const { FILTER_SEARCH_DELAY } = require("../constants");
 
 
@@ -38,9 +43,13 @@ loader.lazyGetter(this, "HTMLPreview", function() {
   return createFactory(require("./HtmlPreview"));
 });
 
+
+const {
+  AUTO_EXPAND_MAX_LEVEL,
+  AUTO_EXPAND_MAX_NODES,
+} = require("../constants");
+
 const { div, tr, td, pre } = dom;
-const AUTO_EXPAND_MAX_LEVEL = 7;
-const AUTO_EXPAND_MAX_NODES = 50;
 const EDITOR_CONFIG_ID = "EDITOR_CONFIG";
 const HTML_PREVIEW_ID = "HTML_PREVIEW";
 
@@ -62,10 +71,13 @@ class PropertiesView extends Component {
       provider: PropTypes.object,
       enableInput: PropTypes.bool,
       expandableStrings: PropTypes.bool,
+      expandedNodes: PropTypes.object,
       filterPlaceHolder: PropTypes.string,
       sectionNames: PropTypes.array,
       openLink: PropTypes.func,
       cropLimit: PropTypes.number,
+      targetSearchResult: PropTypes.object,
+      resetTargetSearchResult: PropTypes.func,
     };
   }
 
@@ -94,6 +106,21 @@ class PropertiesView extends Component {
     this.updateFilterText = this.updateFilterText.bind(this);
   }
 
+  
+
+
+
+
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return (
+      this.state !== nextState ||
+      this.props.object !== nextProps.object ||
+      (this.props.targetSearchResult !== nextProps.targetSearchResult &&
+        nextProps.targetSearchResult !== null)
+    );
+  }
+
   getRowClass(object, sectionNames) {
     return sectionNames.includes(object.name) ? "tree-section" : "";
   }
@@ -114,30 +141,20 @@ class PropertiesView extends Component {
     const { level, name, value, path } = props.member;
 
     
-    
-    let responseTextComponent = SourceEditor(value);
-    const limit = Services.prefs.getIntPref(
-      "devtools.netmonitor.response.ui.limit"
-    );
-    if (value && value.text && value.text.length > limit) {
-      responseTextComponent = div(
-        { className: "responseTextContainer" },
-        pre({}, value.text)
-      );
-    }
-
-    
     if (level === 1 && name === EDITOR_CONFIG_ID) {
       return tr(
         { key: EDITOR_CONFIG_ID, className: "editor-row-container" },
-        td({ colSpan: 2 }, responseTextComponent)
+        td({ colSpan: 2 }, this.renderResponseText(props))
       );
     }
 
     
     if (level === 1 && name === HTML_PREVIEW_ID) {
       return tr(
-        { key: HTML_PREVIEW_ID, className: "response-preview-container" },
+        {
+          key: HTML_PREVIEW_ID,
+          className: "response-preview-container",
+        },
         td({ colSpan: 2 }, HTMLPreview(value))
       );
     }
@@ -151,6 +168,52 @@ class PropertiesView extends Component {
     }
 
     return TreeRow(props);
+  }
+
+  renderResponseText(props) {
+    const { value } = props.member;
+    let responseTextComponent = SourceEditor(value);
+
+    
+    
+    const limit = Services.prefs.getIntPref(
+      "devtools.netmonitor.response.ui.limit"
+    );
+
+    
+    const scrollToLine = element => {
+      const { targetSearchResult, resetTargetSearchResult } = this.props;
+
+      
+      
+      
+      
+      
+      if (element && targetSearchResult && targetSearchResult.line) {
+        const child = element.children[targetSearchResult.line - 1];
+        if (child) {
+          const range = document.createRange();
+          range.selectNode(child);
+          document.getSelection().addRange(range);
+          child.scrollIntoView({ block: "center" });
+        }
+        resetTargetSearchResult();
+      }
+    };
+
+    if (value && value.text && value.text.length > limit) {
+      responseTextComponent = div(
+        { className: "responseTextContainer" },
+        pre(
+          { ref: element => scrollToLine(element) },
+          value.text.split(/\r\n|\r|\n/).map((line, index) => {
+            return div({ key: index }, line);
+          })
+        )
+      );
+    }
+
+    return responseTextComponent;
   }
 
   onContextMenuRow(member, evt) {
@@ -197,6 +260,7 @@ class PropertiesView extends Component {
       decorator,
       enableInput,
       expandableStrings,
+      expandedNodes,
       filterPlaceHolder,
       object,
       renderRow,
@@ -204,6 +268,7 @@ class PropertiesView extends Component {
       sectionNames,
       openLink,
       provider,
+      selected,
     } = this.props;
 
     return div(
@@ -233,18 +298,26 @@ class PropertiesView extends Component {
         enableInput,
         expandableStrings,
         useQuotes: false,
-        expandedNodes: TreeViewClass.getExpandedNodes(object, {
-          maxLevel: AUTO_EXPAND_MAX_LEVEL,
-          maxNodes: AUTO_EXPAND_MAX_NODES,
-        }),
+        expandedNodes:
+          expandedNodes ||
+          TreeViewClass.getExpandedNodes(object, {
+            maxLevel: AUTO_EXPAND_MAX_LEVEL,
+            maxNodes: AUTO_EXPAND_MAX_NODES,
+          }),
         onFilter: props => this.onFilter(props, sectionNames),
         renderRow: renderRow || this.renderRowWithExtras,
         renderValue,
         openLink,
         onContextMenuRow: this.onContextMenuRow,
+        selected,
       })
     );
   }
 }
 
-module.exports = PropertiesView;
+module.exports = connect(
+  null,
+  dispatch => ({
+    resetTargetSearchResult: () => dispatch(setTargetSearchResult(null)),
+  })
+)(PropertiesView);
