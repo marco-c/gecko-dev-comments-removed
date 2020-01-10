@@ -4,6 +4,12 @@ const { UrlbarTestUtils } = ChromeUtils.import(
   "resource://testing-common/UrlbarTestUtils.jsm"
 );
 
+const {
+  Management: {
+    global: { windowTracker },
+  },
+} = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
+
 
 
 
@@ -371,4 +377,103 @@ add_task(async function contextual_tip_removed_onShutdown() {
   Assert.ok(!win.document.getElementById("urlbar-contextual-tip"));
 
   await BrowserTestUtils.closeWindow(win);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function add_onclick_to_element(elementType, shouldAddListenerBeforeTip) {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  const windowId = windowTracker.getId(win);
+
+  let ext = ExtensionTestUtils.loadExtension({
+    isPrivileged: true,
+    manifest: {
+      permissions: ["urlbar"],
+    },
+    background() {
+      browser.test.onMessage.addListener(
+        (msg, elementType, shouldAddListenerBeforeTip) => {
+          if (msg == "elementType") {
+            const capitalizedElementType =
+              elementType[0].toUpperCase() + elementType.substring(1);
+
+            const addListener = () => {
+              browser.urlbar.contextualTip[
+                `on${capitalizedElementType}Clicked`
+              ].addListener(windowId => {
+                browser.test.sendMessage(`on-${elementType}-clicked`, windowId);
+              });
+            };
+
+            if (shouldAddListenerBeforeTip) {
+              addListener();
+            }
+
+            browser.urlbar.contextualTip.set({
+              title: "Title",
+              [`${elementType}Title`]: "Click Me!",
+            });
+
+            if (!shouldAddListenerBeforeTip) {
+              addListener();
+            }
+
+            browser.test.sendMessage("next-test");
+          }
+        }
+      );
+    },
+  });
+
+  await ext.startup();
+
+  ext.sendMessage("elementType", elementType, shouldAddListenerBeforeTip);
+  await ext.awaitMessage("next-test");
+
+  await BrowserTestUtils.waitForCondition(
+    () => !!win.gURLBar.view.contextualTip._elements
+  );
+
+  win.gURLBar.view.contextualTip._elements[elementType].click();
+  const windowIdFromExtension = await ext.awaitMessage(
+    `on-${elementType}-clicked`
+  );
+
+  Assert.equal(windowId, windowIdFromExtension);
+
+  await ext.unload();
+  await BrowserTestUtils.closeWindow(win);
+}
+
+
+
+
+
+add_task(async () => {
+  await add_onclick_to_element("button");
+});
+add_task(async () => {
+  await add_onclick_to_element("link");
+});
+
+
+
+
+
+
+add_task(async () => {
+  await add_onclick_to_element("button", true);
+});
+add_task(async () => {
+  await add_onclick_to_element("link", true);
 });

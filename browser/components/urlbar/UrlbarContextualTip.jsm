@@ -8,6 +8,23 @@ var EXPORTED_SYMBOLS = ["UrlbarContextualTip"];
 
 
 
+let clickListeners = new Map([["button", new Set()], ["link", new Set()]]);
+
+
+
+
+
+
+
+
+function callClickListeners(element, window) {
+  for (let clickListener of clickListeners.get(element)) {
+    clickListener(window);
+  }
+}
+
+
+
 
 class UrlbarContextualTip {
   
@@ -50,6 +67,14 @@ class UrlbarContextualTip {
 
     fragment.appendChild(this._elements.container);
     this.view.panel.prepend(fragment);
+
+    this._elements.button.addEventListener("click", () => {
+      callClickListeners("button", this.document.ownerGlobal);
+    });
+
+    this._elements.link.addEventListener("click", () => {
+      callClickListeners("link", this.document.ownerGlobal);
+    });
   }
 
   
@@ -96,5 +121,33 @@ class UrlbarContextualTip {
     if (!this._elements.container.classList.contains("hidden")) {
       this._elements.container.classList.add("hidden");
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static addClickListener(element, clickListener) {
+    clickListeners.get(element).add(clickListener);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static removeClickListener(element, clickListener) {
+    clickListeners.get(element).delete(clickListener);
   }
 }

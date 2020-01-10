@@ -5,6 +5,7 @@
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarContextualTip: "resource:///modules/UrlbarContextualTip.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProviderExtension: "resource:///modules/UrlbarProviderExtension.jsm",
 });
@@ -59,6 +60,35 @@ this.urlbar = class extends ExtensionAPI {
           "another extension is already using the contextual tip API."
       );
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _registerClickListener(type) {
+    return fire => {
+      this._registerExtensionToUseContextualTip();
+
+      const listener = window => {
+        const windowId = this.extension.windowManager.wrapWindow(window).id;
+        fire.async(windowId);
+      };
+
+      UrlbarContextualTip.addClickListener(type, listener);
+
+      return () => {
+        UrlbarContextualTip.removeClickListener(type, listener);
+      };
+    };
   }
 
   getAPI(context) {
@@ -160,6 +190,28 @@ this.urlbar = class extends ExtensionAPI {
             const mostRecentWindow = windowTracker.getTopNormalWindow(context);
             mostRecentWindow.gURLBar.view.hideContextualTip();
           },
+
+          
+
+
+
+
+          onButtonClicked: new EventManager({
+            context,
+            name: "urlbar.contextualTip.onButtonClicked",
+            register: this._registerClickListener("button"),
+          }).api(),
+
+          
+
+
+
+
+          onLinkClicked: new EventManager({
+            context,
+            name: "urlbar.contextualTip.onLinkClicked",
+            register: this._registerClickListener("link"),
+          }).api(),
         },
       },
     };
