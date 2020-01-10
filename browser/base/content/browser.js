@@ -1844,13 +1844,14 @@ var gBrowserInit = {
             replace: true,
             
             userContextId: window.arguments[5],
-            triggeringPrincipal: window.arguments[7] || Services.scriptSecurityManager.getSystemPrincipal(),
-            allowInheritPrincipal: window.arguments[8],
-            csp: window.arguments[9],
+            triggeringPrincipal: window.arguments[8] || Services.scriptSecurityManager.getSystemPrincipal(),
+            allowInheritPrincipal: window.arguments[9],
+            csp: window.arguments[10],
             fromExternal: true,
           });
         } catch (e) {}
       } else if (window.arguments.length >= 3) {
+        
         
         
         
@@ -1866,10 +1867,11 @@ var gBrowserInit = {
                 window.arguments[4] || false, userContextId,
                 
                 
-                window.arguments[6], !!window.arguments[6], window.arguments[7],
+                window.arguments[6], window.arguments[7], !!window.arguments[6],
+                window.arguments[8],
                 
                 
-                window.arguments[8] !== false, window.arguments[9]);
+                window.arguments[9] !== false, window.arguments[10]);
         window.focus();
       } else {
         
@@ -2577,8 +2579,9 @@ function BrowserTryToCloseWindow() {
 }
 
 function loadURI(uri, referrerInfo, postData, allowThirdPartyFixup,
-                 userContextId, originPrincipal, forceAboutBlankViewerInCurrent,
-                 triggeringPrincipal, allowInheritPrincipal = false, csp = null) {
+                 userContextId, originPrincipal, originStoragePrincipal,
+                 forceAboutBlankViewerInCurrent, triggeringPrincipal,
+                 allowInheritPrincipal = false, csp = null) {
   if (!triggeringPrincipal) {
     throw new Error("Must load with a triggering Principal");
   }
@@ -2590,6 +2593,7 @@ function loadURI(uri, referrerInfo, postData, allowThirdPartyFixup,
                  allowThirdPartyFixup,
                  userContextId,
                  originPrincipal,
+                 originStoragePrincipal,
                  triggeringPrincipal,
                  csp,
                  forceAboutBlankViewerInCurrent,
@@ -5815,7 +5819,7 @@ nsBrowserAccess.prototype = {
         try {
           newWindow = openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", features,
                       
-                      url, null, null, null, null, null, null, aTriggeringPrincipal,
+                      url, null, null, null, null, null, null, null, aTriggeringPrincipal,
                       null, aCsp);
         } catch (ex) {
           Cu.reportError(ex);
@@ -6453,6 +6457,7 @@ function handleLinkClick(event, href, linkNode) {
     allowMixedContent: persistAllowMixedContentInChildTab,
     referrerInfo,
     originPrincipal: doc.nodePrincipal,
+    originStoragePrincipal: doc.effectiveStoragePrincipal,
     triggeringPrincipal: doc.nodePrincipal,
     csp: doc.csp,
     frameOuterWindowID,

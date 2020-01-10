@@ -587,6 +587,8 @@ class ContextMenuChild extends JSWindowActorChild {
     
     data.principal = E10SUtils.serializePrincipal(doc.nodePrincipal);
     data.context.principal = E10SUtils.serializePrincipal(context.principal);
+    data.storagePrincipal = E10SUtils.serializePrincipal(doc.effectiveStoragePrincipal);
+    data.context.storagePrincipal = E10SUtils.serializePrincipal(context.storagePrincipal);
 
     
     
@@ -759,6 +761,7 @@ class ContextMenuChild extends JSWindowActorChild {
     context.targetIdentifier = ContentDOMReference.get(node);
 
     context.principal = context.target.ownerDocument.nodePrincipal;
+    context.storagePrincipal = context.target.ownerDocument.effectiveStoragePrincipal;
     context.csp = E10SUtils.serializeCSP(context.target.ownerDocument.csp);
 
     context.frameOuterWindowID = WebNavigationFrames.getFrameId(context.target.ownerGlobal);

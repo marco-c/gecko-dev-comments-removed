@@ -251,6 +251,7 @@ function openBrowserWindow(cmdLine, triggeringPrincipal, urlOrUrlList, postData 
                          
               undefined, 
               null, 
+              null, 
               triggeringPrincipal];
     }
   }
