@@ -794,9 +794,15 @@ class Schedules(object):
     """
     __slots__ = ('_exclusive', '_inclusive')
 
-    def __init__(self):
-        self._inclusive = TypedList(Enum(*schedules.INCLUSIVE_COMPONENTS))()
-        self._exclusive = ImmutableStrictOrderingOnAppendList(schedules.EXCLUSIVE_COMPONENTS)
+    def __init__(self, inclusive=None, exclusive=None):
+        if inclusive is None:
+            self._inclusive = TypedList(Enum(*schedules.INCLUSIVE_COMPONENTS))()
+        else:
+            self._inclusive = inclusive
+        if exclusive is None:
+            self._exclusive = ImmutableStrictOrderingOnAppendList(schedules.EXCLUSIVE_COMPONENTS)
+        else:
+            self._exclusive = exclusive
 
     
     @property
@@ -833,19 +839,18 @@ class Schedules(object):
     
     
     def __or__(self, other):
-        rv = Schedules()
-        rv._inclusive = self._inclusive + other._inclusive
+        inclusive = self._inclusive + other._inclusive
         if other._exclusive == self._exclusive:
-            rv._exclusive = self._exclusive
+            exclusive = self._exclusive
         elif self._exclusive == schedules.EXCLUSIVE_COMPONENTS:
-            rv._exclusive = other._exclusive
+            exclusive = other._exclusive
         elif other._exclusive == schedules.EXCLUSIVE_COMPONENTS:
-            rv._exclusive = self._exclusive
+            exclusive = self._exclusive
         else:
             
             
-            rv._exclusive = other._exclusive
-        return rv
+            exclusive = other._exclusive
+        return Schedules(inclusive=inclusive, exclusive=exclusive)
 
 
 @memoize
