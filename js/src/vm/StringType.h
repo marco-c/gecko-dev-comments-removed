@@ -165,7 +165,9 @@ static const size_t UINT32_CHAR_BUFFER_LENGTH = sizeof("4294967295") - 1;
 
 
 
-class JSString : public js::gc::Cell {
+class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
+  using Base = js::gc::CellWithLengthAndFlags<js::gc::Cell>;
+
  protected:
   static const size_t NUM_INLINE_CHARS_LATIN1 =
       2 * sizeof(void*) / sizeof(JS::Latin1Char);
@@ -176,19 +178,7 @@ class JSString : public js::gc::Cell {
   struct Data {
     
     
-    
-    
-    
-    
-    
-    
-    
-    uintptr_t flags_; 
 
-#if JS_BITS_PER_WORD == 32
-    
-    uint32_t length_; 
-#endif
     union {
       union {
         
@@ -282,7 +272,7 @@ class JSString : public js::gc::Cell {
 
 
   
-  static_assert(js::gc::Cell::ReservedBits <= 3,
+  static_assert(Base::NumFlagBitsReservedForGC <= 3,
                 "JSString::flags must reserve enough bits for Cell");
 
   static const uint32_t NON_ATOM_BIT = js::gc::Cell::JSSTRING_BIT;
@@ -345,10 +335,10 @@ class JSString : public js::gc::Cell {
 
     
     using JS::shadow::String;
-    static_assert(offsetof(JSString, d.flags_) == offsetof(String, flags_),
+    static_assert(JSString::offsetOfFlags() == offsetof(String, flags_),
                   "shadow::String flags offset must match JSString");
 #if JS_BITS_PER_WORD == 32
-    static_assert(offsetof(JSString, d.length_) == offsetof(String, length_),
+    static_assert(JSString::offsetOfLength() == offsetof(String, length_),
                   "shadow::String length offset must match JSString");
 #endif
     static_assert(offsetof(JSString, d.s.u2.nonInlineCharsLatin1) ==
@@ -396,7 +386,7 @@ class JSString : public js::gc::Cell {
   MOZ_ALWAYS_INLINE void setNonInlineChars(const CharT* chars);
 
   MOZ_ALWAYS_INLINE
-  uint32_t flags() const { return uint32_t(d.flags_); }
+  uint32_t flags() const { return flagsField(); }
 
   template <typename CharT>
   static MOZ_ALWAYS_INLINE void checkStringCharsArena(const CharT* chars) {
@@ -407,44 +397,13 @@ class JSString : public js::gc::Cell {
 
  public:
   MOZ_ALWAYS_INLINE
-  size_t length() const {
-#if JS_BITS_PER_WORD == 32
-    return d.length_;
-#else
-    return uint32_t(d.flags_ >> 32);
-#endif
-  }
+  size_t length() const { return lengthField(); }
 
  protected:
-  MOZ_ALWAYS_INLINE
-  void setFlagBit(uint32_t flags) { d.flags_ |= uintptr_t(flags); }
+  void setFlattenData(uintptr_t data) { setTemporaryGCUnsafeData(data); }
 
-  MOZ_ALWAYS_INLINE
-  void clearFlagBit(uint32_t flags) { d.flags_ &= ~uintptr_t(flags); }
-
-  MOZ_ALWAYS_INLINE
-  void setLengthAndFlags(uint32_t len, uint32_t flags) {
-#if JS_BITS_PER_WORD == 32
-    d.flags_ = flags;
-    d.length_ = len;
-#else
-    d.flags_ = uint64_t(len) << 32 | uint64_t(flags);
-#endif
-  }
-
-  
-  
-  
-  MOZ_ALWAYS_INLINE
-  void setFlattenData(uintptr_t data) { d.flags_ = data; }
-
-  
-  
-  MOZ_ALWAYS_INLINE
   uintptr_t unsetFlattenData(uint32_t len, uint32_t flags) {
-    uintptr_t data = d.flags_;
-    setLengthAndFlags(len, flags);
-    return data;
+    return unsetTemporaryGCUnsafeData(len, flags);
   }
 
   
@@ -595,29 +554,8 @@ class JSString : public js::gc::Cell {
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   
-  
-#if JS_BITS_PER_WORD == 32
-  static constexpr size_t offsetOfFlags() {
-    return offsetof(JSString, d.flags_);
-  }
-  static constexpr size_t offsetOfLength() {
-    return offsetof(JSString, d.length_);
-  }
-#elif MOZ_LITTLE_ENDIAN
-  static constexpr size_t offsetOfFlags() {
-    return offsetof(JSString, d.flags_);
-  }
-  static constexpr size_t offsetOfLength() {
-    return offsetof(JSString, d.flags_) + sizeof(uint32_t);
-  }
-#else
-  static constexpr size_t offsetOfFlags() {
-    return offsetof(JSString, d.flags_) + sizeof(uint32_t);
-  }
-  static constexpr size_t offsetOfLength() {
-    return offsetof(JSString, d.flags_);
-  }
-#endif
+  using Base::offsetOfFlags;
+  using Base::offsetOfLength;
 
  private:
   
