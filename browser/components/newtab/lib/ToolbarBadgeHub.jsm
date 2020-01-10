@@ -220,10 +220,6 @@ class _ToolbarBadgeHub {
     toolbarButton
       .querySelector(".toolbarbutton-badge")
       .classList.remove("feature-callout");
-    
-    toolbarButton
-      .querySelector(".toolbarbutton-icon")
-      .classList.remove("feature-callout");
     toolbarButton.removeAttribute("badged");
   }
 
@@ -237,11 +233,6 @@ class _ToolbarBadgeHub {
       toolbarbutton.setAttribute("badged", true);
       toolbarbutton
         .querySelector(".toolbarbutton-badge")
-        .classList.add("feature-callout");
-      
-      
-      toolbarbutton
-        .querySelector(".toolbarbutton-icon")
         .classList.add("feature-callout");
 
       
