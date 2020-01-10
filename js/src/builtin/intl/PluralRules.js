@@ -161,7 +161,7 @@ function InitializePluralRules(pluralRules, locales, options) {
     lazyPluralRulesData.type = type;
 
     
-    SetNumberFormatDigitOptions(lazyPluralRulesData, options, 0, 3);
+    SetNumberFormatDigitOptions(lazyPluralRulesData, options, 0, 3, "standard");
 
     
     

@@ -207,6 +207,21 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
   MOZ_MUST_USE bool useGrouping(bool on);
 
+  enum class Notation {
+    Standard,
+    Scientific,
+    Engineering,
+    CompactShort,
+    CompactLong
+  };
+
+  
+
+
+
+
+  MOZ_MUST_USE bool notation(Notation style);
+
   enum class SignDisplay { Auto, Never, Always, ExceptZero };
 
   

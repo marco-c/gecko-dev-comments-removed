@@ -63,6 +63,10 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     }
 
     
+    var notation = lazyNumberFormatData.notation;
+    internalProps.notation = notation;
+
+    
     internalProps.minimumIntegerDigits = lazyNumberFormatData.minimumIntegerDigits;
 
     if ("minimumFractionDigits" in lazyNumberFormatData) {
@@ -80,6 +84,10 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
         internalProps.minimumSignificantDigits = lazyNumberFormatData.minimumSignificantDigits;
         internalProps.maximumSignificantDigits = lazyNumberFormatData.maximumSignificantDigits;
     }
+
+    
+    if (notation === "compact")
+        internalProps.compactDisplay = lazyNumberFormatData.compactDisplay;
 
     
     internalProps.useGrouping = lazyNumberFormatData.useGrouping;
@@ -133,7 +141,7 @@ function UnwrapNumberFormat(nf) {
 
 
 
-function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault) {
+function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault, notation) {
     
 
     
@@ -141,6 +149,7 @@ function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault
     assert(typeof mnfdDefault === "number", "SetNumberFormatDigitOptions");
     assert(typeof mxfdDefault === "number", "SetNumberFormatDigitOptions");
     assert(mnfdDefault <= mxfdDefault, "SetNumberFormatDigitOptions");
+    assert(typeof notation === "string", "SetNumberFormatDigitOptions");
 
     
     const mnid = GetNumberOption(options, "minimumIntegerDigits", 1, 21, 1);
@@ -190,6 +199,9 @@ function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault
     }
 
     
+    else if (notation === "compact") {
+        
+    }
 
     
     else {
@@ -283,6 +295,11 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     
     
+    
+    
+    
+    
+    
     var lazyNumberFormatData = std_Object_create(null);
 
     
@@ -343,7 +360,20 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
         mnfdDefault = 0;
         mxfdDefault = style === "percent" ? 0 : 3;
     }
-    SetNumberFormatDigitOptions(lazyNumberFormatData, options, mnfdDefault, mxfdDefault);
+
+    
+    var notation = GetOption(options, "notation", "string",
+                             ["standard", "scientific", "engineering", "compact"], "standard");
+    lazyNumberFormatData.notation = notation;
+
+    
+    SetNumberFormatDigitOptions(lazyNumberFormatData, options, mnfdDefault, mxfdDefault, notation);
+
+    
+    var compactDisplay = GetOption(options, "compactDisplay", "string",
+                                   ["short", "long"], "short");
+    if (notation === "compact")
+        lazyNumberFormatData.compactDisplay = compactDisplay;
 
     
     var useGrouping = GetOption(options, "useGrouping", "boolean", undefined, true);
@@ -583,6 +613,12 @@ function Intl_NumberFormat_resolvedOptions() {
     }
 
     _DefineDataProperty(result, "useGrouping", internals.useGrouping);
+
+    var notation = internals.notation;
+    _DefineDataProperty(result, "notation", notation);
+
+    if (notation === "compact")
+        _DefineDataProperty(result, "compactDisplay", internals.compactDisplay);
 
     _DefineDataProperty(result, "signDisplay", internals.signDisplay);
 
