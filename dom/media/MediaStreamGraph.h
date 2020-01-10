@@ -828,6 +828,25 @@ class SourceMediaStream : public MediaStream {
 
 
 
+
+
+
+
+
+struct SharedDummyStream {
+  NS_INLINE_DECL_REFCOUNTING(SharedDummyStream)
+  explicit SharedDummyStream(MediaStream* aStream) : mStream(aStream) {
+    mStream->Suspend();
+  }
+  const RefPtr<MediaStream> mStream;
+
+ private:
+  ~SharedDummyStream() { mStream->Destroy(); }
+};
+
+
+
+
 enum class BlockingMode {
   
 

@@ -188,7 +188,7 @@ class MediaDecoderStateMachine
 
   void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
   
-  void EnsureOutputStreamManager(MediaStreamGraph* aGraph);
+  void EnsureOutputStreamManager(SharedDummyStream* aDummyStream);
   
   
   void EnsureOutputStreamManagerHasTracks(const MediaInfo& aLoadedInfo);

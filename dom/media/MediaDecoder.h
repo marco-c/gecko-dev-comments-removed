@@ -48,7 +48,7 @@ class VideoFrameContainer;
 class MediaFormatReader;
 class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
-class MediaStreamGraph;
+struct SharedDummyStream;
 
 enum class Visibility : uint8_t;
 
@@ -176,7 +176,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
-  void AddOutputStream(DOMMediaStream* aStream, MediaStreamGraph* aGraph);
+  void AddOutputStream(DOMMediaStream* aStream,
+                       SharedDummyStream* aDummyStream);
   
   void RemoveOutputStream(DOMMediaStream* aStream);
 
