@@ -30,16 +30,42 @@ class _ToolbarPanelHub {
     this._hideToolbarButton = this._hideToolbarButton.bind(this);
   }
 
-  init({ getMessages }) {
+  async init(waitForInitialized, { getMessages }) {
     this._getMessages = getMessages;
+    
+    
+    await waitForInitialized;
     if (this.whatsNewPanelEnabled) {
+      
+      
       this.enableAppmenuButton();
     }
+    
+    Services.prefs.addObserver(WHATSNEW_ENABLED_PREF, this);
   }
 
   uninit() {
     EveryWindow.unregisterCallback(TOOLBAR_BUTTON_ID);
     EveryWindow.unregisterCallback(APPMENU_BUTTON_ID);
+    Services.prefs.removeObserver(WHATSNEW_ENABLED_PREF, this);
+  }
+
+  observe(aSubject, aTopic, aPrefName) {
+    switch (aPrefName) {
+      case WHATSNEW_ENABLED_PREF:
+        if (!this.whatsNewPanelEnabled) {
+          this.uninit();
+        }
+        break;
+    }
+  }
+
+  get messages() {
+    return this._getMessages({
+      template: "whatsnew_panel_message",
+      triggerId: "whatsNewPanelOpened",
+      returnAll: true,
+    });
   }
 
   get whatsNewPanelEnabled() {
@@ -51,21 +77,25 @@ class _ToolbarPanelHub {
   }
 
   
-  enableAppmenuButton() {
-    EveryWindow.registerCallback(
-      APPMENU_BUTTON_ID,
-      this._showAppmenuButton,
-      this._hideAppmenuButton
-    );
+  async enableAppmenuButton() {
+    if ((await this.messages).length) {
+      EveryWindow.registerCallback(
+        APPMENU_BUTTON_ID,
+        this._showAppmenuButton,
+        this._hideAppmenuButton
+      );
+    }
   }
 
   
-  enableToolbarButton() {
-    EveryWindow.registerCallback(
-      TOOLBAR_BUTTON_ID,
-      this._showToolbarButton,
-      this._hideToolbarButton
-    );
+  async enableToolbarButton() {
+    if ((await this.messages).length) {
+      EveryWindow.registerCallback(
+        TOOLBAR_BUTTON_ID,
+        this._showToolbarButton,
+        this._hideToolbarButton
+      );
+    }
   }
 
   
@@ -88,11 +118,7 @@ class _ToolbarPanelHub {
 
   
   async renderMessages(win, doc, containerId) {
-    const messages = (await this._getMessages({
-      template: "whatsnew_panel_message",
-      triggerId: "whatsNewPanelOpened",
-      returnAll: true,
-    })).sort((m1, m2) => {
+    const messages = (await this.messages).sort((m1, m2) => {
       
       if (m1.content.published_date === m2.content.published_date) {
         return 0;
