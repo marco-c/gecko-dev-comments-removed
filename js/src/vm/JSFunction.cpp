@@ -765,7 +765,7 @@ inline void JSFunction::trace(JSTracer* trc) {
     
     if (hasScript() && !hasUncompletedScript()) {
       TraceManuallyBarrieredEdge(trc, &u.scripted.s.script_, "script");
-    } else if (hasLazyScript() && u.scripted.s.lazy_) {
+    } else if (hasLazyScript()) {
       TraceManuallyBarrieredEdge(trc, &u.scripted.s.lazy_, "lazyScript");
     }
     
@@ -2108,19 +2108,17 @@ JSFunction* js::NewFunctionWithProto(
   }
 
   
+  MOZ_ASSERT(!flags.isInterpretedLazy());
+  MOZ_ASSERT(!flags.isWasmWithJitEntry());
+
+  
   fun->setArgCount(uint16_t(nargs));
   fun->setFlags(flags);
   if (fun->isInterpreted()) {
-    MOZ_ASSERT(!native);
-    if (fun->isInterpretedLazy()) {
-      fun->initLazyScript(nullptr);
-    } else {
-      fun->initScript(nullptr);
-    }
+    fun->initScript(nullptr);
     fun->initEnvironment(enclosingEnv);
   } else {
     MOZ_ASSERT(fun->isNative());
-    MOZ_ASSERT(native);
     fun->initNative(native, nullptr);
   }
   if (allocKind == gc::AllocKind::FUNCTION_EXTENDED) {
