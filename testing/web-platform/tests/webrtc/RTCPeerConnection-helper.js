@@ -183,6 +183,46 @@ function exchangeIceCandidates(pc1, pc2) {
 
 
 
+class CandidateChannel {
+  constructor(source, dest, name) {
+    source.addEventListener('icecandidate', event => {
+      const { candidate } = event;
+      if (candidate && this.activated
+          && this.destination.signalingState !== 'closed') {
+        this.destination.addIceCandidate(candidate);
+      } else if (candidate) {
+        this.queue.push(candidate);
+      }
+    });
+    dest.addEventListener('signalingstatechange', event => {
+      if (this.destination.signalingState == 'stable' && !this.activated) {
+        this.activate();
+      }
+    });
+    this.name = name;
+    this.destination = dest;
+    this.activated = false;
+    this.queue = [];
+  }
+  activate() {
+    this.activated = true;
+    for (const candidate of this.queue) {
+      this.destination.addIceCandidate(candidate);
+    }
+  }
+}
+
+
+
+
+function coupleIceCandidates(pc1, pc2) {
+  const ch1 = new CandidateChannel(pc1, pc2, 'forward');
+  const ch2 = new CandidateChannel(pc2, pc1, 'back');
+  return [ch1, ch2];
+}
+
+
+
 async function doSignalingHandshake(localPc, remotePc, options={}) {
   let offer = await localPc.createOffer();
   
@@ -201,8 +241,8 @@ async function doSignalingHandshake(localPc, remotePc, options={}) {
   }
 
   
-  await remotePc.setLocalDescription(answer);
   await localPc.setRemoteDescription(answer);
+  await remotePc.setLocalDescription(answer);
 }
 
 
