@@ -2552,7 +2552,7 @@ bool nsPIDOMWindowInner::IsCurrentInnerWindow() const {
   auto* bc = GetBrowsingContext();
   MOZ_ASSERT(bc);
 
-  nsCOMPtr<nsPIDOMWindowOuter> outer;
+  nsPIDOMWindowOuter* outer;
   
   
   
