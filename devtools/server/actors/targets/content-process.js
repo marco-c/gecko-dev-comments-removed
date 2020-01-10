@@ -37,12 +37,6 @@ loader.lazyRequireGetter(
   "devtools/server/actors/memory",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "PromisesActor",
-  "devtools/server/actors/promises",
-  true
-);
 
 const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
   initialize: function(connection) {
@@ -132,19 +126,12 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
       this.memoryActor = new MemoryActor(this.conn, this);
       this.manage(this.memoryActor);
     }
-    
-    
-    if (!this._promisesActor) {
-      this._promisesActor = new PromisesActor(this.conn, this);
-      this.manage(this._promisesActor);
-    }
 
     return {
       actor: this.actorID,
       consoleActor: this._consoleActor.actorID,
       threadActor: this.threadActor.actorID,
       memoryActor: this.memoryActor.actorID,
-      promisesActor: this._promisesActor.actorID,
 
       traits: {
         networkMonitor: false,
