@@ -34,11 +34,11 @@ module.exports.TYPE = TYPE;
 
 const ARROW_WIDTH = {
   "normal": 0,
-  "arrow": 30,
+  "arrow": 32,
   
   
   
-  "doorhanger": 21,
+  "doorhanger": 24,
 };
 
 const ARROW_OFFSET = {
@@ -60,7 +60,7 @@ const EXTRA_HEIGHT = {
 
 const EXTRA_BORDER = {
   "normal": 0,
-  "arrow": -0.5,
+  "arrow": 3,
   "doorhanger": 0,
 };
 
@@ -124,7 +124,7 @@ const calculateVerticalPosition = (
   let top = pos === TOP ? anchorTop - height - offset : anchorTop + anchorHeight + offset;
 
   
-  top += viewportRect.top + 1;
+  top += viewportRect.top;
 
   return {top, height, computedPosition: pos};
 };
