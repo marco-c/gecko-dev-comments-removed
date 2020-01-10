@@ -67,7 +67,7 @@ class TaskQueue : public AbstractThread {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     {
       MonitorAutoLock mon(mQueueMonitor);
-      return DispatchLocked( r, aReason);
+      return DispatchLocked( r, NS_DISPATCH_NORMAL, aReason);
     }
     
     
@@ -111,7 +111,7 @@ class TaskQueue : public AbstractThread {
   
   void AwaitIdleLocked();
 
-  nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
+  nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable, uint32_t aFlags,
                           DispatchReason aReason = NormalDispatch);
 
   void MaybeResolveShutdown() {
