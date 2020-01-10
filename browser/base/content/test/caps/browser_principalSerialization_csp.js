@@ -54,6 +54,7 @@ add_task(async function test_deserialize_principal_with_csp() {
           inIsolatedMozBrowser: false,
           privateBrowsingId: 0,
           userContextId: 0,
+          geckoViewSessionContextId: "",
         },
       },
     },
@@ -67,6 +68,7 @@ add_task(async function test_deserialize_principal_with_csp() {
           inIsolatedMozBrowser: false,
           privateBrowsingId: 0,
           userContextId: 0,
+          geckoViewSessionContextId: "",
         },
         
         
