@@ -943,14 +943,6 @@ class nsDocShell final : public nsDocLoader,
   void MaybeResetInitTiming(bool aReset);
 
   
-  
-  nsresult DoFindItemWithName(const nsAString& aName,
-                              nsIDocShellTreeItem* aRequestor,
-                              nsIDocShellTreeItem* aOriginalRequestor,
-                              bool aSkipTabGroup,
-                              nsIDocShellTreeItem** aResult);
-
-  
   already_AddRefed<nsDocShell> GetInProcessParentDocshell();
 
   

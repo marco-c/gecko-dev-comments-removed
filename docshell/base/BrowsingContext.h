@@ -259,8 +259,7 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   
-  BrowsingContext* FindWithName(const nsAString& aName,
-                                BrowsingContext& aRequestingContext);
+  BrowsingContext* FindWithName(const nsAString& aName);
 
   
   
