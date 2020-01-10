@@ -1072,6 +1072,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   nsStyleCoord mGridAutoColumnsMax;  
   nsStyleCoord mGridAutoRowsMin;     
   nsStyleCoord mGridAutoRowsMax;     
+  float mAspectRatio;
   uint8_t mGridAutoFlow;             
   mozilla::StyleBoxSizing mBoxSizing;
 

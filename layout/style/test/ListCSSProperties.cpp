@@ -90,6 +90,7 @@ const char* gInaccessibleProperties[] = {
     "-x-lang",
     "-x-span",
     "-x-text-zoom",
+    "aspect-ratio",  
     "-moz-context-properties",
     "-moz-control-character-visibility",
     "-moz-list-reversed",  
