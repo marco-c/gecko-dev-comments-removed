@@ -272,6 +272,19 @@ WorkerRunnable::Run() {
     globalObject = mWorkerPrivate->GetCurrentEventLoopGlobal();
     if (!globalObject) {
       globalObject = DefaultGlobalObject();
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (NS_WARN_IF(!globalObject && !GetCurrentWorkerThreadJSContext())) {
+        return NS_ERROR_FAILURE;
+      }
     }
 
     
