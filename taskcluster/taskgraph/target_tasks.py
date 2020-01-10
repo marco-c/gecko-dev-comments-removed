@@ -474,7 +474,10 @@ def target_tasks_nightly_geckoview(full_task_graph, parameters, graph_config):
     def filter(task):
         
         
-        return task.kind in ('beetmover-geckoview', 'upload-symbols')
+        return (
+            task.attributes.get('shipping_product') == 'fennec' and
+            task.kind in ('beetmover-geckoview', 'upload-symbols')
+        )
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
 
