@@ -627,7 +627,7 @@ bool HttpChannelParent::DoAsyncOpen(
       NS_GetOriginAttributes(httpChannel, attrs);
 
       nsCOMPtr<nsIPrincipal> principal =
-          BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+          BasePrincipal::CreateContentPrincipal(uri, attrs);
 
       bool chooseAppCache = false;
       

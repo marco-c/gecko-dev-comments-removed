@@ -224,7 +224,7 @@ function testAuthJarNoInterfere(e) {
   
   
   var attrs = { userContextId: 1 };
-  var principal = secMan.createCodebasePrincipal(uri, attrs);
+  var principal = secMan.createContentPrincipal(uri, attrs);
   authMgr.setAuthIdentity(
     "http",
     "test",
@@ -239,7 +239,7 @@ function testAuthJarNoInterfere(e) {
     principal
   );
   attrs = { userContextId: 1, inIsolatedMozBrowser: true };
-  principal = secMan.createCodebasePrincipal(uri, attrs);
+  principal = secMan.createContentPrincipal(uri, attrs);
   authMgr.setAuthIdentity(
     "http",
     "test",
@@ -253,7 +253,7 @@ function testAuthJarNoInterfere(e) {
     false,
     principal
   );
-  principal = secMan.createCodebasePrincipal(uri, {});
+  principal = secMan.createContentPrincipal(uri, {});
   authMgr.setAuthIdentity(
     "http",
     "test",
@@ -301,7 +301,7 @@ function testAuthJarInterfere(e) {
   );
 
   
-  var principal = secMan.createCodebasePrincipal(uri, {
+  var principal = secMan.createContentPrincipal(uri, {
     inIsolatedMozBrowser: true,
   });
   authMgr.setAuthIdentity(

@@ -1239,14 +1239,14 @@ nsXPCComponents_utils_Sandbox::Construct(nsIXPConnectWrappedNative* wrapper,
 
 
 
-bool ParsePrincipal(JSContext* cx, HandleString codebase,
+bool ParsePrincipal(JSContext* cx, HandleString contentUrl,
                     const OriginAttributes& aAttrs, nsIPrincipal** principal) {
   MOZ_ASSERT(principal);
-  MOZ_ASSERT(codebase);
+  MOZ_ASSERT(contentUrl);
   nsCOMPtr<nsIURI> uri;
-  nsAutoJSString codebaseStr;
-  NS_ENSURE_TRUE(codebaseStr.init(cx, codebase), false);
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), codebaseStr);
+  nsAutoJSString contentStr;
+  NS_ENSURE_TRUE(contentStr.init(cx, contentUrl), false);
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), contentStr);
   if (NS_FAILED(rv)) {
     JS_ReportErrorASCII(cx, "Creating URI from string failed");
     return false;
@@ -1256,7 +1256,7 @@ bool ParsePrincipal(JSContext* cx, HandleString codebase,
   
   
   nsCOMPtr<nsIPrincipal> prin =
-      BasePrincipal::CreateCodebasePrincipal(uri, aAttrs);
+      BasePrincipal::CreateContentPrincipal(uri, aAttrs);
   prin.forget(principal);
 
   if (!*principal) {

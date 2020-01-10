@@ -227,8 +227,8 @@ add_task(async function test_aboutURL() {
         "The about page should have firstPartyDomain set"
       );
       Assert.ok(
-        content.document.nodePrincipal.isCodebasePrincipal,
-        "The principal should be a codebase principal."
+        content.document.nodePrincipal.isContentPrincipal,
+        "The principal should be a content principal."
       );
     });
 

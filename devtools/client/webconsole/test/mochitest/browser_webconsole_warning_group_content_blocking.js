@@ -139,7 +139,7 @@ add_task(async function testCookieBlockedByPermissionMessage() {
   info("Test cookie blocked by permission message");
   
   await pushPref("privacy.trackingprotection.enabled", false);
-  const p = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+  const p = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
     "http://tracking.example.org/"
   );
   Services.perms.addFromPrincipal(

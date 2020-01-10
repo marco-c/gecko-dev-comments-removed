@@ -390,7 +390,7 @@ bool WebExtensionPolicy::IsRestrictedDoc(const DocInfo& aDoc) {
   
   
   
-  if (aDoc.Principal() && !aDoc.Principal()->GetIsCodebasePrincipal()) {
+  if (aDoc.Principal() && !aDoc.Principal()->GetIsContentPrincipal()) {
     return true;
   }
 
@@ -830,7 +830,7 @@ nsIPrincipal* DocInfo::Principal() const {
 }
 
 const URLInfo& DocInfo::PrincipalURL() const {
-  if (!(Principal() && Principal()->GetIsCodebasePrincipal())) {
+  if (!(Principal() && Principal()->GetIsContentPrincipal())) {
     return URL();
   }
 

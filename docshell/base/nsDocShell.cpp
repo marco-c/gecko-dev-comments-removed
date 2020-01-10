@@ -6584,8 +6584,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
 
       if (secMan) {
         nsCOMPtr<nsIPrincipal> principal;
-        secMan->GetDocShellCodebasePrincipal(newURI, this,
-                                             getter_AddRefs(principal));
+        secMan->GetDocShellContentPrincipal(newURI, this,
+                                            getter_AddRefs(principal));
         appCacheChannel->SetChooseApplicationCache(
             NS_ShouldCheckAppCache(principal));
       }
@@ -9766,7 +9766,7 @@ static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
     return true;
   }
 
-  if (!aResultPrincipal->GetIsCodebasePrincipal()) {
+  if (!aResultPrincipal->GetIsContentPrincipal()) {
     return false;
   }
 
@@ -9793,7 +9793,7 @@ static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
       BasePrincipal::Cast(aResultPrincipal)->OriginAttributesRef();
 
   nsCOMPtr<nsIPrincipal> tmpResultPrincipal =
-      BasePrincipal::CreateCodebasePrincipal(tmpResultURI, tmpOA);
+      BasePrincipal::CreateContentPrincipal(tmpResultURI, tmpOA);
 
   return aTriggeringPrincipal->Equals(tmpResultPrincipal);
 }
@@ -10172,8 +10172,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
 
       if (secMan) {
         nsCOMPtr<nsIPrincipal> principal;
-        secMan->GetDocShellCodebasePrincipal(aLoadState->URI(), this,
-                                             getter_AddRefs(principal));
+        secMan->GetDocShellContentPrincipal(aLoadState->URI(), this,
+                                            getter_AddRefs(principal));
         appCacheChannel->SetChooseApplicationCache(
             NS_ShouldCheckAppCache(principal));
       }

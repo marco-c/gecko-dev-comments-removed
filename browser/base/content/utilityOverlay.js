@@ -446,7 +446,7 @@ function openLinkIn(url, where, params) {
   
   
   function useOAForPrincipal(principal) {
-    if (principal && principal.isCodebasePrincipal) {
+    if (principal && principal.isContentPrincipal) {
       let attrs = {
         userContextId: aUserContextId,
         privateBrowsingId:

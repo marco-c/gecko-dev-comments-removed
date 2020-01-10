@@ -780,7 +780,7 @@ class PrincipalsCollector {
 
         let list = [];
         for (let item of request.result) {
-          let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
             item.origin
           );
           let uri = principal.URI;
@@ -824,7 +824,7 @@ class PrincipalsCollector {
       
       
       principals.push(
-        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+        Services.scriptSecurityManager.createContentPrincipalFromOrigin(
           "https://" + host
         )
       );

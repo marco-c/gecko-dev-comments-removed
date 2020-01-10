@@ -125,7 +125,7 @@ add_test(function test_update() {
 
 add_test(function test_url_not_whitelisted() {
   let uri = Services.io.newURI("http://example.com");
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
     uri,
     {}
   );
@@ -144,7 +144,7 @@ add_test(function test_url_whitelisted() {
   
   
   let uri = Services.io.newURI("http://whitelisted.com");
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
     uri,
     {}
   );

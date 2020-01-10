@@ -10,7 +10,7 @@
 
 add_task(async function test_removing_storage_permission() {
   const uri = Services.io.newURI("https://example.net");
-  const principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  const principal = Services.scriptSecurityManager.createContentPrincipal(
     uri,
     {}
   );
@@ -70,13 +70,13 @@ add_task(async function test_removing_storage_permission() {
 
 add_task(async function test_removing_storage_permission_from_principal() {
   const uri = Services.io.newURI("https://example.net");
-  const principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  const principal = Services.scriptSecurityManager.createContentPrincipal(
     uri,
     {}
   );
 
   const anotherUri = Services.io.newURI("https://example.com");
-  const anotherPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(
+  const anotherPrincipal = Services.scriptSecurityManager.createContentPrincipal(
     anotherUri,
     {}
   );

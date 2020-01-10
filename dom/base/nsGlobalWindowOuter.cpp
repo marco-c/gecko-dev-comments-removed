@@ -1683,7 +1683,7 @@ bool nsGlobalWindowOuter::ComputeIsSecureContext(Document* aDocument,
     const OriginAttributes& attrs = principal->OriginAttributesRef();
     
     
-    principal = BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+    principal = BasePrincipal::CreateContentPrincipal(uri, attrs);
     if (NS_WARN_IF(!principal)) {
       return false;
     }
@@ -5973,7 +5973,7 @@ bool nsGlobalWindowOuter::GetPrincipalForPostMessage(
     
     
     providedPrincipal =
-        BasePrincipal::CreateCodebasePrincipal(aTargetOriginURI, attrs);
+        BasePrincipal::CreateContentPrincipal(aTargetOriginURI, attrs);
     if (NS_WARN_IF(!providedPrincipal)) {
       return false;
     }
@@ -7291,7 +7291,7 @@ void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
   if (!doc) {
     return;
   }
-  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateCodebasePrincipal(
+  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
       aURI, doc->NodePrincipal()->OriginAttributesRef());
 
   

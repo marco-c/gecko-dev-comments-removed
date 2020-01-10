@@ -763,7 +763,7 @@ class ContentScriptContextChild extends BaseContext {
     
     
     let attrs = contentPrincipal.originAttributes;
-    let extensionPrincipal = ssm.createCodebasePrincipal(
+    let extensionPrincipal = ssm.createContentPrincipal(
       this.extension.baseURI,
       attrs
     );

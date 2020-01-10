@@ -9,7 +9,7 @@ const URL =
 registerCleanupFunction(function() {
   
   let uri = Services.io.newURI(URL);
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
     uri,
     {}
   );

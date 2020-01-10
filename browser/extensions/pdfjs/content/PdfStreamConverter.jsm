@@ -1129,7 +1129,7 @@ PdfStreamConverter.prototype = {
     
     
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE);
-    var resourcePrincipal = Services.scriptSecurityManager.createCodebasePrincipal(
+    var resourcePrincipal = Services.scriptSecurityManager.createContentPrincipal(
       uri,
       aRequest.loadInfo.originAttributes
     );

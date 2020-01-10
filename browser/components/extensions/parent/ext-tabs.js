@@ -675,7 +675,7 @@ this.tabs = class extends ExtensionAPI {
               
               options.allowInheritPrincipal = false;
               
-              principal = Services.scriptSecurityManager.createCodebasePrincipal(
+              principal = Services.scriptSecurityManager.createContentPrincipal(
                 Services.io.newURI(url),
                 {
                   userContextId: options.userContextId,

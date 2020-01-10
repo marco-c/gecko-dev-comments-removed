@@ -23,13 +23,13 @@ function* do_run_test() {
   
   
   let permURI1 = NetUtil.newURI("http://example.com");
-  let principal1 = Services.scriptSecurityManager.createCodebasePrincipal(
+  let principal1 = Services.scriptSecurityManager.createContentPrincipal(
     permURI1,
     {}
   );
 
   let permURI2 = NetUtil.newURI("http://example.org");
-  let principal2 = Services.scriptSecurityManager.createCodebasePrincipal(
+  let principal2 = Services.scriptSecurityManager.createContentPrincipal(
     permURI2,
     {}
   );

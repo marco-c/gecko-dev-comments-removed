@@ -79,7 +79,7 @@ function waitForDBInit(callback) {
   
   
   
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
     Services.io.newURI(PHISH_URL),
     {}
   );

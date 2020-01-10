@@ -32,7 +32,7 @@ add_task(async function test_plugin_accessible_in_subframe() {
   
   
   let ssm = Services.scriptSecurityManager;
-  let principal = ssm.createCodebasePrincipalFromOrigin(DOMAIN_1);
+  let principal = ssm.createContentPrincipalFromOrigin(DOMAIN_1);
   let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(
     Ci.nsIPluginHost
   );

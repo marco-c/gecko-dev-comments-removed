@@ -2259,7 +2259,7 @@ SearchEngine.prototype = {
       attrs = options.window.docShell.getOriginAttributes();
     }
 
-    let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    let principal = Services.scriptSecurityManager.createContentPrincipal(
       searchURI,
       attrs
     );

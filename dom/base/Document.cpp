@@ -2424,7 +2424,7 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
                  "must have a load context or pass in an explicit principal");
 
       nsCOMPtr<nsIPrincipal> principal;
-      nsresult rv = securityManager->GetLoadContextCodebasePrincipal(
+      nsresult rv = securityManager->GetLoadContextContentPrincipal(
           mDocumentURI, loadContext, getter_AddRefs(principal));
       if (NS_SUCCEEDED(rv)) {
         SetPrincipals(principal, principal);
@@ -5430,10 +5430,10 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
   if (service) {
     
     
-    nsCOMPtr<nsIURI> codebaseURI;
-    NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
+    nsCOMPtr<nsIURI> principalURI;
+    NodePrincipal()->GetURI(getter_AddRefs(principalURI));
 
-    if (!codebaseURI) {
+    if (!principalURI) {
       
       
 
@@ -5442,14 +5442,14 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
 
     nsCOMPtr<nsIChannel> channel(mChannel);
     if (!channel) {
-      channel = CreateDummyChannelForCookies(codebaseURI);
+      channel = CreateDummyChannelForCookies(principalURI);
       if (!channel) {
         return;
       }
     }
 
     nsAutoCString cookie;
-    service->GetCookieString(codebaseURI, channel, cookie);
+    service->GetCookieString(principalURI, channel, cookie);
     
     
     UTF_8_ENCODING->DecodeWithoutBOMHandling(cookie, aCookie);
@@ -5488,10 +5488,10 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
       do_GetService(NS_COOKIESERVICE_CONTRACTID);
   if (service && mDocumentURI) {
     
-    nsCOMPtr<nsIURI> codebaseURI;
-    NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
+    nsCOMPtr<nsIURI> principalURI;
+    NodePrincipal()->GetURI(getter_AddRefs(principalURI));
 
-    if (!codebaseURI) {
+    if (!principalURI) {
       
       
 
@@ -5500,19 +5500,19 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
 
     nsCOMPtr<nsIChannel> channel(mChannel);
     if (!channel) {
-      channel = CreateDummyChannelForCookies(codebaseURI);
+      channel = CreateDummyChannelForCookies(principalURI);
       if (!channel) {
         return;
       }
     }
 
     NS_ConvertUTF16toUTF8 cookie(aCookie);
-    service->SetCookieString(codebaseURI, nullptr, cookie, channel);
+    service->SetCookieString(principalURI, nullptr, cookie, channel);
   }
 }
 
 already_AddRefed<nsIChannel> Document::CreateDummyChannelForCookies(
-    nsIURI* aCodebaseURI) {
+    nsIURI* aContentURI) {
   
   
   
@@ -5524,7 +5524,7 @@ already_AddRefed<nsIChannel> Document::CreateDummyChannelForCookies(
   
   
   nsCOMPtr<nsIChannel> channel;
-  NS_NewChannel(getter_AddRefs(channel), aCodebaseURI, this,
+  NS_NewChannel(getter_AddRefs(channel), aContentURI, this,
                 nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
                 nsIContentPolicy::TYPE_INVALID);
   nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(channel);

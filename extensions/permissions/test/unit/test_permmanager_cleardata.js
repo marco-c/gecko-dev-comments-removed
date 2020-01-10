@@ -5,7 +5,7 @@ var pm;
 
 
 function createPrincipal(aOrigin, aOriginAttributes) {
-  return Services.scriptSecurityManager.createCodebasePrincipal(
+  return Services.scriptSecurityManager.createContentPrincipal(
     NetUtil.newURI(aOrigin),
     aOriginAttributes
   );

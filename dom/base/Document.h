@@ -2691,15 +2691,15 @@ class Document : public nsINode,
 
     
     
-    nsCOMPtr<nsIURI> codebaseURI;
-    NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
+    nsCOMPtr<nsIURI> contentURI;
+    NodePrincipal()->GetURI(getter_AddRefs(contentURI));
 
-    if (!codebaseURI) {
+    if (!contentURI) {
       return true;
     }
 
     nsAutoCString scheme;
-    codebaseURI->GetScheme(scheme);
+    contentURI->GetScheme(scheme);
     return !scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("https") &&
            !scheme.EqualsLiteral("ftp") && !scheme.EqualsLiteral("file");
   }
@@ -4367,7 +4367,7 @@ class Document : public nsINode,
 
   
   already_AddRefed<nsIChannel> CreateDummyChannelForCookies(
-      nsIURI* aCodebaseURI);
+      nsIURI* aContentURI);
 
   nsCOMPtr<nsIReferrerInfo> mPreloadReferrerInfo;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;

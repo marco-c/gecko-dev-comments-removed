@@ -142,7 +142,7 @@ var SiteDataManager = {
               
               continue;
             }
-            let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+            let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
               item.origin
             );
             let uri = principal.URI;
@@ -212,7 +212,7 @@ var SiteDataManager = {
         
         continue;
       }
-      let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
         group
       );
       let uri = principal.URI;
@@ -309,7 +309,7 @@ var SiteDataManager = {
         new Promise(resolve => {
           
           
-          principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+          principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
             originNoSuffix
           );
           let request = this._qms.clearStoragesForPrincipal(

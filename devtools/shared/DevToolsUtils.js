@@ -713,7 +713,7 @@ function newChannelForURL(
     
     let prin = principal;
     if (!prin) {
-      prin = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+      prin = Services.scriptSecurityManager.createContentPrincipal(uri, {});
     }
 
     channelOptions.loadingPrincipal = prin;

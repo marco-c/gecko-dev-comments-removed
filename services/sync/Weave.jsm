@@ -169,7 +169,7 @@ AboutWeaveLog.prototype = {
     
     
     
-    let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    let principal = Services.scriptSecurityManager.createContentPrincipal(
       uri,
       aLoadInfo.originAttributes
     );

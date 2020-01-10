@@ -438,7 +438,7 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetURL(
   if (!aDoCheckLoadURIChecks) {
     mozilla::OriginAttributes attrs =
         BasePrincipal::Cast(content->NodePrincipal())->OriginAttributesRef();
-    triggeringPrincipal = BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+    triggeringPrincipal = BasePrincipal::CreateContentPrincipal(uri, attrs);
   } else {
     triggeringPrincipal =
         NullPrincipal::CreateWithInheritedAttributes(content->NodePrincipal());

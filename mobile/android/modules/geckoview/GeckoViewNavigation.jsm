@@ -126,7 +126,7 @@ class GeckoViewNavigation extends GeckoViewModule {
             parsedUri.schemeIs("moz-extension")
           ) {
             
-            triggeringPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(
+            triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
               parsedUri,
               {}
             );

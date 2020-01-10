@@ -118,8 +118,8 @@ var BrowserUtils = {
     }
 
     let secMan = Services.scriptSecurityManager;
-    if (principal.isCodebasePrincipal) {
-      return secMan.createCodebasePrincipal(
+    if (principal.isContentPrincipal) {
+      return secMan.createContentPrincipal(
         principal.URI,
         existingPrincipal.originAttributes
       );

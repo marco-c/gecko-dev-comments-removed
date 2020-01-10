@@ -123,7 +123,7 @@ function validatedWebRemoteType(
   
   
   if (aRemoteSubframes) {
-    let targetPrincipal = sm.createCodebasePrincipal(aTargetUri, {});
+    let targetPrincipal = sm.createContentPrincipal(aTargetUri, {});
     return "webIsolated=" + targetPrincipal.siteOrigin;
   }
 
@@ -438,7 +438,7 @@ var E10SUtils = {
     
     
     let currentURI =
-      aCurrentPrincipal && aCurrentPrincipal.isCodebasePrincipal
+      aCurrentPrincipal && aCurrentPrincipal.isContentPrincipal
         ? aCurrentPrincipal.URI
         : null;
     return E10SUtils.getRemoteTypeForURIObject(

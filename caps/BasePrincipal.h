@@ -74,7 +74,7 @@ class BasePrincipal : public nsJSPrincipals {
   
   enum PrincipalKind {
     eNullPrincipal = 0,
-    eCodebasePrincipal,
+    eContentPrincipal,
     eExpandedPrincipal,
     eSystemPrincipal,
     eKindMax = eSystemPrincipal
@@ -113,7 +113,7 @@ class BasePrincipal : public nsJSPrincipals {
                           bool allowIfInheritsPrincipal) final;
   NS_IMETHOD GetAddonPolicy(nsISupports** aResult) final;
   NS_IMETHOD GetIsNullPrincipal(bool* aResult) override;
-  NS_IMETHOD GetIsCodebasePrincipal(bool* aResult) override;
+  NS_IMETHOD GetIsContentPrincipal(bool* aResult) override;
   NS_IMETHOD GetIsExpandedPrincipal(bool* aResult) override;
   NS_IMETHOD GetIsSystemPrincipal(bool* aResult) override;
   NS_IMETHOD GetIsAddonOrExpandedAddonPrincipal(bool* aResult) override;
@@ -134,7 +134,7 @@ class BasePrincipal : public nsJSPrincipals {
 
   virtual bool AddonHasPermission(const nsAtom* aPerm);
 
-  virtual bool IsCodebasePrincipal() const { return false; };
+  virtual bool IsContentPrincipal() const { return false; };
 
   static BasePrincipal* Cast(nsIPrincipal* aPrin) {
     return static_cast<BasePrincipal*>(aPrin);
@@ -144,14 +144,14 @@ class BasePrincipal : public nsJSPrincipals {
     return static_cast<const BasePrincipal*>(aPrin);
   }
 
-  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(
+  static already_AddRefed<BasePrincipal> CreateContentPrincipal(
       const nsACString& aOrigin);
 
   
   
   
 
-  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(
+  static already_AddRefed<BasePrincipal> CreateContentPrincipal(
       nsIURI* aURI, const OriginAttributes& aAttrs);
 
   const OriginAttributes& OriginAttributesRef() final {
@@ -246,7 +246,7 @@ class BasePrincipal : public nsJSPrincipals {
                   const OriginAttributes& aOriginAttributes);
 
  private:
-  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(
+  static already_AddRefed<BasePrincipal> CreateContentPrincipal(
       nsIURI* aURI, const OriginAttributes& aAttrs,
       const nsACString& aOriginNoSuffix);
 
@@ -276,7 +276,7 @@ inline bool BasePrincipal::FastEquals(nsIPrincipal* aOther) {
     return this == other;
   }
 
-  if (Kind() == eCodebasePrincipal || Kind() == eNullPrincipal) {
+  if (Kind() == eContentPrincipal || Kind() == eNullPrincipal) {
     return mOriginNoSuffix == other->mOriginNoSuffix &&
            mOriginSuffix == other->mOriginSuffix;
   }
@@ -320,7 +320,7 @@ inline bool BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther) {
 
 inline bool BasePrincipal::FastSubsumesIgnoringFPD(
     nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) {
-  if (Kind() == eCodebasePrincipal &&
+  if (Kind() == eContentPrincipal &&
       !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
           mOriginAttributes, Cast(aOther)->mOriginAttributes)) {
     return false;

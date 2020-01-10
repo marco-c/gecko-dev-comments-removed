@@ -36,7 +36,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateCodebasePrincipal(
+  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
       aURI, loadInfo->GetOriginAttributes());
 
   

@@ -1113,7 +1113,7 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(
     return NS_OK;
   }
 
-  MOZ_ASSERT(aPrincipal->GetIsCodebasePrincipal(),
+  MOZ_ASSERT(aPrincipal->GetIsContentPrincipal(),
              "Nobody is expected to call us with an nsIExpandedPrincipal");
 
   nsCOMPtr<nsIURI> uri;

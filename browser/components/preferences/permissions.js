@@ -211,7 +211,7 @@ var gPermissionManager = {
   },
 
   _addNewPrincipalToList(list, uri) {
-    list.push(Services.scriptSecurityManager.createCodebasePrincipal(uri, {}));
+    list.push(Services.scriptSecurityManager.createContentPrincipal(uri, {}));
     
     list[list.length - 1].origin;
   },
@@ -230,7 +230,7 @@ var gPermissionManager = {
       
       try {
         let uri = Services.io.newURI(input_url);
-        let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+        let principal = Services.scriptSecurityManager.createContentPrincipal(
           uri,
           {}
         );

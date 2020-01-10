@@ -33,14 +33,14 @@ class ContentPrincipal final : public BasePrincipal {
   NS_IMETHOD GetBaseDomain(nsACString& aBaseDomain) override;
   NS_IMETHOD GetAddonId(nsAString& aAddonId) override;
   NS_IMETHOD GetSiteOrigin(nsACString& aSiteOrigin) override;
-  bool IsCodebasePrincipal() const override { return true; }
+  bool IsContentPrincipal() const override { return true; }
 
   ContentPrincipal();
 
-  static PrincipalKind Kind() { return eCodebasePrincipal; }
+  static PrincipalKind Kind() { return eContentPrincipal; }
 
   
-  nsresult Init(nsIURI* aCodebase, const OriginAttributes& aOriginAttributes,
+  nsresult Init(nsIURI* aURI, const OriginAttributes& aOriginAttributes,
                 const nsACString& aOriginNoSuffix);
   nsresult Init(ContentPrincipal* aOther,
                 const OriginAttributes& aOriginAttributes);
@@ -55,11 +55,11 @@ class ContentPrincipal final : public BasePrincipal {
   extensions::WebExtensionPolicy* AddonPolicy();
 
   nsCOMPtr<nsIURI> mDomain;
-  nsCOMPtr<nsIURI> mCodebase;
+  nsCOMPtr<nsIURI> mURI;
 
   virtual nsresult PopulateJSONObject(Json::Value& aObject) override;
   
-  enum SerializableKeys { eCodebase = 0, eDomain, eSuffix, eMax = eSuffix };
+  enum SerializableKeys { eURI = 0, eDomain, eSuffix, eMax = eSuffix };
   
   
   

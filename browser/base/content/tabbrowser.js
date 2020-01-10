@@ -6422,8 +6422,8 @@ var TabContextMenu = {
         triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
           { userContextId }
         );
-      } else if (triggeringPrincipal.isCodebasePrincipal) {
-        triggeringPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(
+      } else if (triggeringPrincipal.isContentPrincipal) {
+        triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
           triggeringPrincipal.URI,
           { userContextId }
         );

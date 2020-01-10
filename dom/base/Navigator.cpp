@@ -498,10 +498,10 @@ bool Navigator::CookieEnabled() {
     return cookieEnabled;
   }
 
-  nsCOMPtr<nsIURI> codebaseURI;
-  doc->NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
+  nsCOMPtr<nsIURI> contentURI;
+  doc->NodePrincipal()->GetURI(getter_AddRefs(contentURI));
 
-  if (!codebaseURI) {
+  if (!contentURI) {
     
     
     return cookieEnabled;
@@ -509,7 +509,7 @@ bool Navigator::CookieEnabled() {
 
   uint32_t rejectedReason = 0;
   bool granted = AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-      mWindow, codebaseURI, &rejectedReason);
+      mWindow, contentURI, &rejectedReason);
 
   AntiTrackingCommon::NotifyBlockingDecision(
       mWindow,
