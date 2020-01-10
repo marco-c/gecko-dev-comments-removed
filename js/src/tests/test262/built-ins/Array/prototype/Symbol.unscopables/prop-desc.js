@@ -11,6 +11,7 @@
 
 
 
+
 verifyNotEnumerable(Array.prototype, Symbol.unscopables);
 verifyNotWritable(Array.prototype, Symbol.unscopables);
 verifyConfigurable(Array.prototype, Symbol.unscopables);

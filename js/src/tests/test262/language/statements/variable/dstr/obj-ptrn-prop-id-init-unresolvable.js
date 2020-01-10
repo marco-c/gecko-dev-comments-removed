@@ -33,6 +33,7 @@
 
 
 
+
 assert.throws(ReferenceError, function() {
   var { x: y = unresolvableReference } = {};
 });

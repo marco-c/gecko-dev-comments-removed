@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(typeof Symbol.keyFor, 'function');
 
 assert.throws(TypeError, function() {

@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(
   Object.getPrototypeOf(WeakSet.prototype),
   Object.prototype,

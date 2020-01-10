@@ -21,6 +21,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Promise.prototype.then.call(Promise.prototype, function() {}, function() {});
 });

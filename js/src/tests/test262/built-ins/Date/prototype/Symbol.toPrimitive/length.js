@@ -20,6 +20,7 @@
 
 
 
+
 assert.sameValue(Date.prototype[Symbol.toPrimitive].length, 1);
 
 verifyNotEnumerable(Date.prototype[Symbol.toPrimitive], 'length');

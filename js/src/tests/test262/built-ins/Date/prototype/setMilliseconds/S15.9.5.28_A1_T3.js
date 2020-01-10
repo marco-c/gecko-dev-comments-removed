@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.propertyIsEnumerable('setMilliseconds')) {
   $ERROR('#1: The Date.prototype.setMilliseconds property has the attribute DontEnum');
 }

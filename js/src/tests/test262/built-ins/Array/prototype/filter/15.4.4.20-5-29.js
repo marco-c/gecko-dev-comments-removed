@@ -6,6 +6,7 @@
 
 
 
+
 var newArr = [11].filter(function() {});
 
 assert.sameValue(newArr.length, 0, 'newArr.length');

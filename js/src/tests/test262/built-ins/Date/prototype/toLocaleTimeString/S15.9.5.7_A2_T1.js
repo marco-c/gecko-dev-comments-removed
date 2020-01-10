@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.toLocaleTimeString.hasOwnProperty("length") !== true) {
   $ERROR('#1: The toLocaleTimeString has a "length" property');
 }

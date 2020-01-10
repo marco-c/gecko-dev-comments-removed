@@ -9,6 +9,7 @@
 
 
 
+
 function callbackfn(val, idx, obj) {
   return idx === 0 && val === 11;
 }

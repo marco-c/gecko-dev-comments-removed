@@ -20,6 +20,7 @@
 
 
 
+
 var foo = {};
 var map = new WeakMap();
 

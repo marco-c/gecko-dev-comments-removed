@@ -19,6 +19,7 @@
 
 
 
+
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
 
 verifyProperty(get, 'name', {

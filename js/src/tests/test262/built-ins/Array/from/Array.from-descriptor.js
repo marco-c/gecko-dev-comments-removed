@@ -8,6 +8,7 @@
 
 
 
+
 verifyWritable(Array, "from");
 verifyNotEnumerable(Array, "from");
 verifyConfigurable(Array, "from");

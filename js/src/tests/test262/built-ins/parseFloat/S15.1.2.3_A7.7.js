@@ -11,6 +11,8 @@
 
 
 
+
+
 try {
   new parseFloat();
   $ERROR('#1.1: new parseFloat() throw TypeError. Actual: ' + (new parseFloat()));

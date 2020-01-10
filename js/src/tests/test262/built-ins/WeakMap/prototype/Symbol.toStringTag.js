@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(WeakMap.prototype[Symbol.toStringTag], 'WeakMap');
 
 verifyNotEnumerable(WeakMap.prototype, Symbol.toStringTag);

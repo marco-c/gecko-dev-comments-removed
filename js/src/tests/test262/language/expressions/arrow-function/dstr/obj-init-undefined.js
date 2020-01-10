@@ -43,6 +43,7 @@
 
 
 
+
 var f = ({}) => {};
 
 assert.throws(TypeError, function() {

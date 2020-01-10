@@ -6,6 +6,7 @@
 
 
 
+
 var arr = new Array(10);
 assert.throws(TypeError, function() {
   arr.reduce(null);

@@ -9,6 +9,7 @@
 
 
 
+
 Object.prototype[0] = false;
 
 assert.sameValue(Array.prototype.lastIndexOf.call({

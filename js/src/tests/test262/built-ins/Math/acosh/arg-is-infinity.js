@@ -11,6 +11,7 @@
 
 
 
+
 assert.sameValue(Math.acosh(Infinity), Infinity);
 
 reportCompare(0, 0);

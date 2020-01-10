@@ -8,6 +8,7 @@
 
 
 
+
 var accessed = true;
 var obj = {};
 obj[0] = 12;

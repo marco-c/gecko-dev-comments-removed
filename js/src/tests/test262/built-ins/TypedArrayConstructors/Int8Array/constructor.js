@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(typeof Int8Array, 'function', 'typeof Int8Array is "function"');
 
 reportCompare(0, 0);

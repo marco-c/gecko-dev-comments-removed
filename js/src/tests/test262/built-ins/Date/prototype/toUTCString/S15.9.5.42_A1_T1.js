@@ -7,6 +7,7 @@
 
 
 
+
 var x = Date.prototype.toUTCString;
 if (x === 1)
   Date.prototype.toUTCString = 2;

@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue((123.456).toExponential(0), "1e+2");
 assert.sameValue((123.456).toExponential(1), "1.2e+2");
 assert.sameValue((123.456).toExponential(2), "1.23e+2");

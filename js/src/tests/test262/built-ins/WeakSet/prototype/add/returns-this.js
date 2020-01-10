@@ -12,6 +12,7 @@
 
 
 
+
 var s = new WeakSet();
 
 assert.sameValue(s.add({}), s, '`s.add({})` returns `s`');

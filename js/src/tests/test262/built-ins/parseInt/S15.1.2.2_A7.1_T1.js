@@ -8,6 +8,8 @@
 
 
 
+
+
 for (var i = 2; i <= 36; i++) {
   assert.sameValue(parseInt("$string", i), NaN);
 }

@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(parseFloat("str"), NaN, "str");
 assert.sameValue(parseFloat("s1"), NaN, "s1");
 assert.sameValue(parseFloat(""), NaN, "");

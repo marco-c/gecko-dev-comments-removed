@@ -14,6 +14,7 @@
 
 
 
+
 var constructed = Symbol('Symbol.iterator');
 assert.sameValue(Symbol.keyFor(constructed), undefined, 'constructed symbol');
 

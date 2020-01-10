@@ -14,6 +14,7 @@
 
 
 
+
 var d = new Date();
 
 assert.sameValue(typeof d[Symbol.toPrimitive], 'function');

@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Date.now.name, "now");
 
 verifyNotEnumerable(Date.now, "name");

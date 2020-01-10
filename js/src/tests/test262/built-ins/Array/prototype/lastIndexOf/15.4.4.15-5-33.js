@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue([0, 1, 2, 3, 4].lastIndexOf(0, 0), 0, '[0, 1, 2, 3, 4].lastIndexOf(0, 0)');
 assert.sameValue([0, 1, 2, 3, 4].lastIndexOf(0, 2), 0, '[0, 1, 2, 3, 4].lastIndexOf(0, 2)');
 assert.sameValue([0, 1, 2, 3, 4].lastIndexOf(2, 2), 2, '[0, 1, 2, 3, 4].lastIndexOf(2, 2)');

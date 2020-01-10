@@ -10,6 +10,7 @@
 
 
 
+
 if (typeof new Boolean() !== "object") {
   $ERROR("#1: typeof new Boolean() === 'object'");
 }

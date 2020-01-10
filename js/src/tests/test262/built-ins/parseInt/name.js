@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(parseInt.name, "parseInt");
 
 verifyNotEnumerable(parseInt, "name");

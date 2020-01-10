@@ -8,6 +8,7 @@
 
 
 
+
 verifyNotEnumerable(this, "isNaN");
 verifyWritable(this, "isNaN");
 verifyConfigurable(this, "isNaN");

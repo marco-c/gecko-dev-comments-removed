@@ -14,6 +14,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   WeakMap.prototype.has.call(new Map(), {}, 1);
 });

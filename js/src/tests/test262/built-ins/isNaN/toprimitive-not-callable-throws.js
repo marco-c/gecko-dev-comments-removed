@@ -24,6 +24,7 @@
 
 
 
+
 var obj = {};
 
 obj[Symbol.toPrimitive] = 42;

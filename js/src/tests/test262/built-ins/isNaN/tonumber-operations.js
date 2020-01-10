@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(isNaN("0"), false, "'0'");
 assert.sameValue(isNaN(""), false, "the empty string");
 assert.sameValue(isNaN("Infinity"), false, "'Infinity'");

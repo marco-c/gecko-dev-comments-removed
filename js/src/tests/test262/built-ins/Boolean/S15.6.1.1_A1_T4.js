@@ -10,6 +10,7 @@
 
 
 
+
 if (typeof Boolean(undefined) !== "boolean") {
   $ERROR('#1.1: typeof Boolean(undefined) should be "boolean", actual is "' + typeof Boolean(undefined) + '"');
 }

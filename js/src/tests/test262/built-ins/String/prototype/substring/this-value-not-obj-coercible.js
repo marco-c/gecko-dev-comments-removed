@@ -7,6 +7,7 @@
 
 
 
+
 var substring = String.prototype.substring;
 
 assert.sameValue(typeof substring, 'function');

@@ -22,6 +22,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(DataView.prototype, "buffer");
 
 assert.sameValue(desc.get.length, 0);

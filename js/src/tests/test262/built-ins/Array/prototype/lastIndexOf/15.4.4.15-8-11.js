@@ -8,6 +8,7 @@
 
 
 
+
 var arr = [20];
 
 Object.defineProperty(arr, "0", {

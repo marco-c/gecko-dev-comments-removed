@@ -15,6 +15,7 @@
 
 
 
+
 verifyNotEnumerable(ArrayBuffer.prototype, "slice");
 verifyWritable(ArrayBuffer.prototype, "slice");
 verifyConfigurable(ArrayBuffer.prototype, "slice");

@@ -23,6 +23,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   try {
     throw { w: null };

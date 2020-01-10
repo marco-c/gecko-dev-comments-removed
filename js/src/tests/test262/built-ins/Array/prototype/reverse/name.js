@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Array.prototype.reverse.name, "reverse");
 
 verifyNotEnumerable(Array.prototype.reverse, "name");

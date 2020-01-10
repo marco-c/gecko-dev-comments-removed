@@ -65,6 +65,7 @@
 
 
 
+
 class C {
   *method({} = null) {}
 };

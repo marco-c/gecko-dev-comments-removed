@@ -15,6 +15,7 @@
 
 
 
+
 var ab = new ArrayBuffer(42);
 
 assert.throws(RangeError, function() {

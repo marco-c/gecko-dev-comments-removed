@@ -8,6 +8,8 @@
 
 
 
+
+
 var object = {
   valueOf: function() {
     return 1

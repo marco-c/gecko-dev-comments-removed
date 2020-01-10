@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(Uint16Array.prototype, Object.getPrototypeOf(new Uint16Array(0)));
 
 verifyNotEnumerable(Uint16Array, "prototype");

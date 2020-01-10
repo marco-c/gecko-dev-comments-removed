@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(DataView.prototype.getInt32.name, "getInt32");
 
 verifyNotEnumerable(DataView.prototype.getInt32, "name");

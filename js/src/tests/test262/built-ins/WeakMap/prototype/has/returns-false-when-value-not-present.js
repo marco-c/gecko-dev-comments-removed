@@ -12,6 +12,7 @@
 
 
 
+
 var foo = {};
 var bar = {};
 var map = new WeakMap();

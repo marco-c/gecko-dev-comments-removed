@@ -14,6 +14,7 @@
 
 
 
+
 verifyNotEnumerable(Number, "isNaN");
 verifyWritable(Number, "isNaN");
 verifyConfigurable(Number, "isNaN");

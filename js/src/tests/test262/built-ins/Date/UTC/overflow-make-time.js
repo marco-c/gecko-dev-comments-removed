@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue(Date.UTC(2016, 6, 5, -1), 1467673200000, 'hour: -1');
 assert.sameValue(Date.UTC(2016, 6, 5, 24), 1467763200000, 'hour: 24');
 assert.sameValue(Date.UTC(2016, 6, 5, 0, -1), 1467676740000, 'minute: -1');

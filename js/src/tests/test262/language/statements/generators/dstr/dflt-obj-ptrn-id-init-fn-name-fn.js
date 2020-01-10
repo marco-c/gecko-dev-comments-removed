@@ -51,6 +51,7 @@
 
 
 
+
 var callCount = 0;
 function* f({ fn = function () {}, xFn = function x() {} } = {}) {
   assert.sameValue(fn.name, 'fn');

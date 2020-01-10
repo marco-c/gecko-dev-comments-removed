@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.getTime.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getTime has a "length" property');
 }

@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(parseFloat("e1"), NaN, "e1");
 assert.sameValue(parseFloat("e-1"), NaN, "e-1");
 assert.sameValue(parseFloat("E+1"), NaN, "E+1");

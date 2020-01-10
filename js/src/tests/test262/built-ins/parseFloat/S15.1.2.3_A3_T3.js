@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(parseFloat(".x"), NaN, ".x");
 assert.sameValue(parseFloat("+x"), NaN, "+x");
 assert.sameValue(parseFloat("infinity"), NaN, "infinity");

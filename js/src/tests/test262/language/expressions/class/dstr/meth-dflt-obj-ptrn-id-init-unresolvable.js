@@ -75,6 +75,7 @@
 
 
 
+
 var C = class {
   method({ x = unresolvableReference } = {}) {}
 };

@@ -76,6 +76,7 @@
 
 
 
+
 class C {
   method([{ x }] = [null]) {}
 };

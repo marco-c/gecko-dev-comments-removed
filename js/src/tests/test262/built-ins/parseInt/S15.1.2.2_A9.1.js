@@ -8,6 +8,8 @@
 
 
 
+
+
 if (parseInt.propertyIsEnumerable('length') !== false) {
   $ERROR('#1: parseInt.propertyIsEnumerable(\'length\') === false. Actual: ' + (parseInt.propertyIsEnumerable('length')));
 }

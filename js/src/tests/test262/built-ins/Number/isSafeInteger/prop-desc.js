@@ -14,6 +14,7 @@
 
 
 
+
 verifyNotEnumerable(Number, "isSafeInteger");
 verifyWritable(Number, "isSafeInteger");
 verifyConfigurable(Number, "isSafeInteger");

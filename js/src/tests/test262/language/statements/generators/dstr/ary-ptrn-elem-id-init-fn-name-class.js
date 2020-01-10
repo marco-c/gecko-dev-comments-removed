@@ -52,6 +52,7 @@
 
 
 
+
 var callCount = 0;
 function* f([cls = class {}, xCls = class X {}, xCls2 = class { static name() {} }]) {
   assert.sameValue(cls.name, 'cls');

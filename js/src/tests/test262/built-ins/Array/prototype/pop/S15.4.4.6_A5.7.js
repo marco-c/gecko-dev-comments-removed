@@ -11,6 +11,7 @@
 
 
 
+
 try {
   new Array.prototype.pop();
   $ERROR('#1.1: new Array.prototype.pop() throw TypeError. Actual: ' + (new Array.prototype.pop()));

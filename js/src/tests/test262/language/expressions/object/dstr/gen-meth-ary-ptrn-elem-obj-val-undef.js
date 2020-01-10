@@ -62,6 +62,7 @@
 
 
 
+
 var obj = {
   *method([{ x }]) {}
 };

@@ -50,6 +50,7 @@
 
 
 
+
 var callCount = 0;
 function f([, , ...x] = [1, 2]) {
   assert(Array.isArray(x));

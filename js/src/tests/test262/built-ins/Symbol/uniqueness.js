@@ -12,6 +12,7 @@
 
 
 
+
 assert.notSameValue(Symbol(''), Symbol(''), 'empty string');
 assert.notSameValue(Symbol(), Symbol(), 'undefined');
 assert.notSameValue(Symbol(null), Symbol(null), 'null value');

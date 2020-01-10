@@ -17,12 +17,8 @@
 
 
 
-
-
 var compareFn = new Intl.Collator().compare;
 
-verifyProperty(compareFn, "name", {
-  value: "", writable: false, enumerable: false, configurable: true
-});
+assert.sameValue(Object.prototype.hasOwnProperty.call(compareFn, "name"), false);
 
 reportCompare(0, 0);

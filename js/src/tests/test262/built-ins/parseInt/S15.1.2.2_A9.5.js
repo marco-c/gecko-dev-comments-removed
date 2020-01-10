@@ -8,6 +8,8 @@
 
 
 
+
+
 if (this.propertyIsEnumerable('parseInt') !== false) {
   $ERROR('#1: this.propertyIsEnumerable(\'parseInt\') === false. Actual: ' + (this.propertyIsEnumerable('parseInt')));
 }

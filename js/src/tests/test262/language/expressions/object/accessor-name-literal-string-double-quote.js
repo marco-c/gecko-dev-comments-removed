@@ -25,6 +25,7 @@
 
 
 
+
 var stringSet;
 var obj = {
   get ["doubleQuote"]() { return 'get string'; },

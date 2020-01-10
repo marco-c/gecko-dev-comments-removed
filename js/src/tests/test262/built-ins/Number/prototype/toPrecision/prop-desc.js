@@ -12,6 +12,7 @@
 
 
 
+
 verifyNotEnumerable(Number.prototype, "toPrecision");
 verifyWritable(Number.prototype, "toPrecision");
 verifyConfigurable(Number.prototype, "toPrecision");

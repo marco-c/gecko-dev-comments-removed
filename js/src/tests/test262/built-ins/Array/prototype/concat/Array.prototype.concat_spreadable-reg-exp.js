@@ -9,6 +9,7 @@
 
 
 
+
 var re = /abc/;
 
 assert(compareArray([].concat(re), [re]));

@@ -7,6 +7,7 @@
 
 
 
+
 if (delete Date.prototype.toLocaleString === false) {
   $ERROR('#1: The Date.prototype.toLocaleString property has not the attributes DontDelete');
 }

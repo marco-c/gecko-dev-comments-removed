@@ -16,6 +16,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(DataView.prototype, "byteLength");
 
 assert.sameValue(desc.set, undefined);

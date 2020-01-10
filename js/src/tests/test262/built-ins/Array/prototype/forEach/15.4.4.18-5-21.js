@@ -6,6 +6,7 @@
 
 
 
+
 var global = this;
 var result = false;
 

@@ -10,6 +10,7 @@
 
 
 
+
 verifyNotConfigurable(Date, "prototype");
 
 try {

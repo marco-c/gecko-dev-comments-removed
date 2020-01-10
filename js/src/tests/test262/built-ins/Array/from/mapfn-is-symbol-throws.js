@@ -15,6 +15,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Array.from([], Symbol('1'));
 });

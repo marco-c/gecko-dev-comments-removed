@@ -10,6 +10,7 @@
 
 
 
+
 var x = Date.prototype.toLocaleTimeString.length;
 verifyNotWritable(Date.prototype.toLocaleTimeString, "length", null, 1);
 if (Date.prototype.toLocaleTimeString.length !== x) {

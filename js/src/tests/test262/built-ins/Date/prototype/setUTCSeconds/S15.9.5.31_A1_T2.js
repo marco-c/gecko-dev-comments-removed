@@ -7,6 +7,7 @@
 
 
 
+
 if (delete Date.prototype.setUTCSeconds === false) {
   $ERROR('#1: The Date.prototype.setUTCSeconds property has not the attributes DontDelete');
 }

@@ -22,6 +22,7 @@
 
 
 
+
 Object.defineProperty(fnGlobalObject(), 'f', {
   value: function() { return 'Another function'; },
   enumerable: true,

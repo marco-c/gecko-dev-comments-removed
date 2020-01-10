@@ -10,6 +10,7 @@
 
 
 
+
 function callbackfn(prevVal, curVal, idx, obj) {
   arr[5] = 6;
   arr[2] = 3;

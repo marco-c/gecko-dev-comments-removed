@@ -6,6 +6,7 @@
 
 
 
+
 assert.sameValue([+NaN, NaN, -NaN].indexOf(NaN), -1, '[+NaN, NaN, -NaN].indexOf(NaN)');
 
 reportCompare(0, 0);

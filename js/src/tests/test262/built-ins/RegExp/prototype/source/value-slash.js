@@ -19,6 +19,7 @@
 
 
 
+
 var re = eval('/' + new RegExp('/').source + '/');
 
 assert(re.test('/'), 'input: "/"');

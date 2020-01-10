@@ -11,6 +11,8 @@
 
 
 
+
+
 try {
   new parseInt();
   $ERROR('#1.1: new parseInt() throw TypeError. Actual: ' + (new parseInt()));

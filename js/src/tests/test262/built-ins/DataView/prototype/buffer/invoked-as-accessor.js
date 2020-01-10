@@ -15,6 +15,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   DataView.prototype.buffer;
 });

@@ -13,6 +13,7 @@
 
 
 
+
 if (Boolean(Number.POSITIVE_INFINITY) !== true) {
   $ERROR('#1: Boolean(+Infinity) === true. Actual: ' + (Boolean(+Infinity)));
 }

@@ -67,6 +67,7 @@
 
 
 
+
 var C = class {
   *method({}) {}
 };

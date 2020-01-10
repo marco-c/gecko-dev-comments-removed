@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(isFinite.name, "isFinite");
 
 verifyNotEnumerable(isFinite, "name");

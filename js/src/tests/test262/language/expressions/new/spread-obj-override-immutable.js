@@ -20,6 +20,7 @@
 
 
 
+
 let o = {b: 2};
 Object.defineProperty(o, "a", {value: 1, enumerable: true, writable: false, configurable: true});
 

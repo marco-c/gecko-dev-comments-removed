@@ -9,6 +9,7 @@
 
 
 
+
 if (Date.prototype.getUTCMonth.propertyIsEnumerable('length')) {
   $ERROR('#1: The Date.prototype.getUTCMonth.length property has the attribute DontEnum');
 }

@@ -24,6 +24,7 @@
 
 
 
+
 assert.throws(ReferenceError, function() {
   class C {
     static get [test262unresolvable]() {}

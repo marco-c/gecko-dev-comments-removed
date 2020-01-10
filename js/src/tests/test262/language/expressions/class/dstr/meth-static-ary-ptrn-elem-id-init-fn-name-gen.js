@@ -73,6 +73,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   static method([gen = function* () {}, xGen = function* x() {}]) {

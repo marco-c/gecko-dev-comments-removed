@@ -9,6 +9,7 @@
 
 
 
+
 if (Date.prototype.getTimezoneOffset.propertyIsEnumerable('length')) {
   $ERROR('#1: The Date.prototype.getTimezoneOffset.length property has the attribute DontEnum');
 }

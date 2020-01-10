@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Array.prototype.keys.length, 0,
   'The value of `Array.prototype.keys.length` is `0`'

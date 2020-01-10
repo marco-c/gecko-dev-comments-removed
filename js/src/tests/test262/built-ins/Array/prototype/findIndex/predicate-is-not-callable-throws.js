@@ -12,6 +12,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   [].findIndex({});
 });

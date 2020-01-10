@@ -15,6 +15,7 @@
 
 
 
+
 const rest = null;
 
 assert.throws(TypeError, function() {

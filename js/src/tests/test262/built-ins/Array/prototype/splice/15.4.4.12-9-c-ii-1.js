@@ -9,6 +9,7 @@
 
 
 
+
 var arr = ["a", "b", "c"];
 Array.prototype[0] = "test";
 var newArr = arr.splice(2, 1, "d");

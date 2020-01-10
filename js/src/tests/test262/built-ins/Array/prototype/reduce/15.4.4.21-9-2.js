@@ -8,6 +8,7 @@
 
 
 
+
 function callbackfn(prevVal, curVal, idx, obj)
 {
   arr[3] = -2;

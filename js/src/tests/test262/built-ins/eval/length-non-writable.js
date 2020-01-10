@@ -9,6 +9,8 @@
 
 
 
+
+
 var x = eval.length;
 verifyNotWritable(eval, "length", null, Infinity);
 if (eval.length !== x) {

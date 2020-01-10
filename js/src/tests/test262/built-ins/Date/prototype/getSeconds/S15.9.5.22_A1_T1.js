@@ -7,6 +7,7 @@
 
 
 
+
 var x = Date.prototype.getSeconds;
 if (x === 1)
   Date.prototype.getSeconds = 2;

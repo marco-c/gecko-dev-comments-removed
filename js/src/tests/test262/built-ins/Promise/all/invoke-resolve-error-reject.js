@@ -24,6 +24,7 @@
 
 
 
+
 var thrown = new Test262Error();
 Promise.resolve = function() {
   throw thrown;

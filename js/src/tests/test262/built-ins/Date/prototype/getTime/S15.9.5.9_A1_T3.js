@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.propertyIsEnumerable('getTime')) {
   $ERROR('#1: The Date.prototype.getTime property has the attribute DontEnum');
 }

@@ -13,6 +13,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   WeakMap.prototype.get.call(false, {});
 });

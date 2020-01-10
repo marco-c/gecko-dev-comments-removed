@@ -6,6 +6,7 @@
 
 
 
+
 var i = [].indexOf(42);
 
 assert.sameValue(i, -1, 'i');

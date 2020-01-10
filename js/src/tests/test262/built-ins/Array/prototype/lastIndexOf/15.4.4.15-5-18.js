@@ -8,6 +8,7 @@
 
 
 
+
 var targetObj = {};
 
 assert.sameValue([0, NaN, targetObj, 3, false].lastIndexOf(targetObj, "2E0"), 2, '[0, NaN, targetObj, 3, false].lastIndexOf(targetObj, "2E0")');

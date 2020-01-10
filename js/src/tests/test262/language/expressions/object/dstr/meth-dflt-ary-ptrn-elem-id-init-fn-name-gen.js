@@ -55,6 +55,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   method([gen = function* () {}, xGen = function* x() {}] = []) {

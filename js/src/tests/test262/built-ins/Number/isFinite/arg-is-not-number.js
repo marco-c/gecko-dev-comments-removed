@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(Number.isFinite("1"), false, "string");
 assert.sameValue(Number.isFinite([1]), false, "[1]");
 assert.sameValue(Number.isFinite(new Number(42)), false, "Number object");

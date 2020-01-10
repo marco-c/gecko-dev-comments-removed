@@ -11,6 +11,7 @@
 
 
 
+
 try {
   var s1 = new Date();
   s1.valueOf = Boolean.prototype.valueOf;

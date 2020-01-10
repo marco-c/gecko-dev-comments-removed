@@ -7,6 +7,7 @@
 
 
 
+
 var x = Date.prototype.getUTCSeconds;
 if (x === 1)
   Date.prototype.getUTCSeconds = 2;

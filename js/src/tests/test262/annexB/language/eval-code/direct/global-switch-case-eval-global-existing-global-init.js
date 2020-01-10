@@ -15,6 +15,7 @@
 
 
 
+
 Object.defineProperty(fnGlobalObject(), 'f', {
   value: 'x',
   enumerable: true,

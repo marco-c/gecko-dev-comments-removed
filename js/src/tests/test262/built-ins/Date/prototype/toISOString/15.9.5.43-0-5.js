@@ -8,6 +8,7 @@
 
 
 
+
 var dateStr = (new Date()).toISOString();
 
 assert.sameValue(dateStr[dateStr.length - 1], "Z", 'dateStr[dateStr.length - 1]');

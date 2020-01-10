@@ -11,6 +11,7 @@
 
 
 
+
 try {
   new Array.prototype.slice();
   $ERROR('#1.1: new Array.prototype.slice() throw TypeError. Actual: ' + (new Array.prototype.slice()));

@@ -12,6 +12,7 @@
 
 
 
+
 var array = ['a', 'b', 'c'];
 var iterator = array.keys();
 var result;

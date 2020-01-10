@@ -8,6 +8,8 @@
 
 
 
+
+
 if (decodeURIComponent("http://unipro.ru/%0Aabout") !== "http://unipro.ru/\nabout") {
   $ERROR('#1: http://unipro.ru/%A0about');
 }

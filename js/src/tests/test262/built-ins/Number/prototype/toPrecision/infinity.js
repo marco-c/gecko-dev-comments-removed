@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue((+Infinity).toPrecision(1000), "Infinity", "Infinity value");
 var n = new Number(+Infinity);
 assert.sameValue(n.toPrecision(1000), "Infinity", "Number Infinity");

@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(Number.isInteger(1), true, "1");
 assert.sameValue(Number.isInteger(-0), true, "-0");
 assert.sameValue(Number.isInteger(0), true, "0");

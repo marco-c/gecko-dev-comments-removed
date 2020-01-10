@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(isNaN.length, 1, "The value of `isNaN.length` is `1`");
 
 verifyNotEnumerable(isNaN, "length");

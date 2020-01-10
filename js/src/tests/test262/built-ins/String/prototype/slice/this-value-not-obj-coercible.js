@@ -7,6 +7,7 @@
 
 
 
+
 var slice = String.prototype.slice;
 
 assert.sameValue(typeof slice, 'function');

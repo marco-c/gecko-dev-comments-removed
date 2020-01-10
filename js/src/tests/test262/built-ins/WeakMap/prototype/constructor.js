@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(WeakMap.prototype.constructor, WeakMap);
 assert.sameValue((new WeakMap()).constructor, WeakMap);
 

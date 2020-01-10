@@ -9,6 +9,7 @@
 
 
 
+
 verifyNotConfigurable(Boolean, "prototype");
 
 try {

@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(["true"].indexOf(true), -1, '["true"].indexOf(true)');
 assert.sameValue(["0"].indexOf(0), -1, '["0"].indexOf(0)');
 assert.sameValue([false].indexOf(0), -1, '[false].indexOf(0)');

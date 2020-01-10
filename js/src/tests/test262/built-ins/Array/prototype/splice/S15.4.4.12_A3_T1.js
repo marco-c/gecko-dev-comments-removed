@@ -7,6 +7,7 @@
 
 
 
+
 var obj = {};
 obj.splice = Array.prototype.splice;
 obj[0] = "x";

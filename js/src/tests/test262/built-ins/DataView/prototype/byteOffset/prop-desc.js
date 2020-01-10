@@ -14,6 +14,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(DataView.prototype, "byteOffset");
 
 assert.sameValue(desc.set, undefined);

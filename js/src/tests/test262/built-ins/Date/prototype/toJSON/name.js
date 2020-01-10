@@ -19,6 +19,7 @@
 
 
 
+
 verifyProperty(Date.prototype.toJSON, 'name', {
   value: 'toJSON',
   writable: false,

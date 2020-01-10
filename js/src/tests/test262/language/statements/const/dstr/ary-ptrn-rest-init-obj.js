@@ -26,6 +26,7 @@
 
 
 
+
 $DONOTEVALUATE();
 
 const [...{ x } = []] = [];

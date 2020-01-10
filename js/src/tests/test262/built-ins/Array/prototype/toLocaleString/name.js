@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Array.prototype.toLocaleString.name, "toLocaleString");
 
 verifyNotEnumerable(Array.prototype.toLocaleString, "name");

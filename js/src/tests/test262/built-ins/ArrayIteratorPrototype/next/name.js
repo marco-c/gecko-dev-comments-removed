@@ -20,6 +20,7 @@
 
 
 
+
 var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
 
 assert.sameValue(ArrayIteratorProto.next.name, "next");

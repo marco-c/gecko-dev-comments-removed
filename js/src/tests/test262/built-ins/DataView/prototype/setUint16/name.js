@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(DataView.prototype.setUint16.name, "setUint16");
 
 verifyNotEnumerable(DataView.prototype.setUint16, "name");

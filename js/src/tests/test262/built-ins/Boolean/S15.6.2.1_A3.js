@@ -10,6 +10,7 @@
 
 
 
+
 var x1 = new Boolean(1);
 if (x1.valueOf() !== true) {
   $ERROR('#1: var x1 = new Boolean(1); x1.valueOf() === true');

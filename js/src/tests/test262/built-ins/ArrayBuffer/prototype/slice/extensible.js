@@ -13,6 +13,7 @@
 
 
 
+
 assert(Object.isExtensible(ArrayBuffer.prototype.slice));
 
 reportCompare(0, 0);

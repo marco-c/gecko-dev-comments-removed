@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   WeakMap.prototype.has.name, 'has',
   'The value of WeakMap.prototype.has.name is "has"'

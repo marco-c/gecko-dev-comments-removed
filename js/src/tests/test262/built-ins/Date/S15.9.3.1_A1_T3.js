@@ -9,6 +9,7 @@
 
 
 
+
 if (typeof new Date(1899, 11, 31, 23) !== "object") {
   $ERROR("#1.1: typeof new Date(1899, 11, 31, 23) should be 'object'");
 }

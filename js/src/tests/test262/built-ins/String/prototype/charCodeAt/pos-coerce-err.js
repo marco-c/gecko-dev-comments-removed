@@ -13,6 +13,7 @@
 
 
 
+
 var noCoerce = Object.create(null);
 
 assert.throws(TypeError, function() {

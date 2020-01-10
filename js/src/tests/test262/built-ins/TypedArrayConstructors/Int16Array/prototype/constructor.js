@@ -17,6 +17,7 @@
 
 
 
+
 assert.sameValue(Int16Array.prototype.constructor, Int16Array);
 
 verifyNotEnumerable(Int16Array.prototype, "constructor");

@@ -46,6 +46,7 @@
 
 
 
+
 var obj = {
   method({} = undefined) {}
 };

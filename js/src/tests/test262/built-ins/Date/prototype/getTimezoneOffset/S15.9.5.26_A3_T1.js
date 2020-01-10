@@ -10,6 +10,7 @@
 
 
 
+
 var x = Date.prototype.getTimezoneOffset.length;
 verifyNotWritable(Date.prototype.getTimezoneOffset, "length", null, 1);
 if (Date.prototype.getTimezoneOffset.length !== x) {

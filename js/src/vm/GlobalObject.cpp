@@ -502,6 +502,8 @@ JSObject* GlobalObject::getOrCreateThrowTypeError(
 
   
   
+  
+  
   RootedId nameId(cx, NameToId(cx->names().name));
   ObjectOpResult nameResult;
   if (!NativeDefineProperty(cx, throwTypeError, nameId, nonConfigurableDesc,

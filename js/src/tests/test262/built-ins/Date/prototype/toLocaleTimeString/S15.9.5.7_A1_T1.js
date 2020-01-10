@@ -9,6 +9,7 @@
 
 
 
+
 var x = Date.prototype.toLocaleTimeString;
 if (x === 1)
   Date.prototype.toLocaleTimeString = 2;

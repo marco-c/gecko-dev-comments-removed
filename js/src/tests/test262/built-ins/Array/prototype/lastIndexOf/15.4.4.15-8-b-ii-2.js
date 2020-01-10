@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue([undefined].lastIndexOf(), 0, '[undefined].lastIndexOf()');
 assert.sameValue([undefined].lastIndexOf(undefined), 0, '[undefined].lastIndexOf(undefined)');
 

@@ -8,6 +8,7 @@
 
 
 
+
 if (Boolean(new Object()) !== true) {
   $ERROR('#1: Boolean(new Object()) === true. Actual: ' + (Boolean(new Object())));
 }

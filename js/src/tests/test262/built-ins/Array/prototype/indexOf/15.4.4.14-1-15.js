@@ -6,6 +6,7 @@
 
 
 
+
 function fun() {
   return arguments;
 }

@@ -51,6 +51,7 @@
 
 
 
+
 var callCount = 0;
 function* f([...{ length }]) {
   assert.sameValue(length, 3);

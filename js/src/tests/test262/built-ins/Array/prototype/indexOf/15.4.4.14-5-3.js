@@ -6,6 +6,7 @@
 
 
 
+
 var a = [1, 2, 3];
 
 assert.sameValue(a.indexOf(1, true), -1, 'true resolves to 1');

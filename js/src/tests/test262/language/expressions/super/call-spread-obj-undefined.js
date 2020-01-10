@@ -28,6 +28,7 @@
 
 
 
+
 var callCount = 0;
 
 class Test262ParentClass {

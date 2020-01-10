@@ -65,6 +65,7 @@
 
 
 
+
 class C {
   method({ w: { x, y, z } = undefined } = { }) {}
 };

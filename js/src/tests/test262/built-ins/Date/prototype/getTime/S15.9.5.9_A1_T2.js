@@ -7,6 +7,7 @@
 
 
 
+
 if (delete Date.prototype.getTime === false) {
   $ERROR('#1: The Date.prototype.getTime property has not the attributes DontDelete');
 }

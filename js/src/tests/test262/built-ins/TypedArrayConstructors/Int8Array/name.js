@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue(Int8Array.name, "Int8Array");
 
 verifyNotEnumerable(Int8Array, "name");

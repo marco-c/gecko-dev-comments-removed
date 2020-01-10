@@ -25,6 +25,7 @@
 
 
 
+
 var stringSet;
 var obj = {
   get [0o10]() { return 'get string'; },

@@ -9,6 +9,7 @@
 
 
 
+
 verifyNotEnumerable(Promise, 'prototype');
 verifyNotWritable(Promise, 'prototype');
 verifyNotConfigurable(Promise, 'prototype');

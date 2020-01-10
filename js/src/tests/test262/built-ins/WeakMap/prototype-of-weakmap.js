@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   Object.getPrototypeOf(WeakMap),
   Function.prototype,

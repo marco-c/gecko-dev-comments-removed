@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(WeakMap.length, 0, 'The value of `WeakMap.length` is `0`');
 
 verifyNotEnumerable(WeakMap, 'length');

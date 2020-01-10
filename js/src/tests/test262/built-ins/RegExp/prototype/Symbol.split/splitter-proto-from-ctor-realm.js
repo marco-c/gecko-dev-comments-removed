@@ -17,6 +17,7 @@
 
 
 
+
 var other = $262.createRealm().global;
 other.shared = null;
 var C = new other.Function('shared = this; return /./;');

@@ -8,6 +8,7 @@
 
 
 
+
 var obj = {
   4: -Infinity,
   5: Infinity,

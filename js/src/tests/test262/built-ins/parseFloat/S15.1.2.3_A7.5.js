@@ -8,6 +8,8 @@
 
 
 
+
+
 if (this.propertyIsEnumerable('parseFloat') !== false) {
   $ERROR('#1:this.propertyIsEnumerable(\'parseFloat\') === false. Actual: ' + (this.propertyIsEnumerable('parseFloat')));
 }

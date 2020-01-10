@@ -11,6 +11,7 @@
 
 
 
+
 var s = new WeakSet();
 
 assert.sameValue(s.delete(1), false);

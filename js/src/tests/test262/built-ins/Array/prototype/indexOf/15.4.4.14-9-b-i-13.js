@@ -8,6 +8,7 @@
 
 
 
+
 var arr = [];
 
 Object.defineProperty(Array.prototype, "0", {

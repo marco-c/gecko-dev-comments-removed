@@ -9,6 +9,7 @@
 
 
 
+
 var fn = function(a, b, c) {}
 
 assert(compareArray([fn], [].concat(fn)));

@@ -22,6 +22,7 @@
 
 
 
+
 let o = {};
 Object.defineProperty(o, "b", {value: 3, enumerable: false});
 

@@ -7,6 +7,7 @@
 
 
 
+
 var x = Date.prototype.constructor;
 if (x === 1)
   Date.prototype.constructor = 2;

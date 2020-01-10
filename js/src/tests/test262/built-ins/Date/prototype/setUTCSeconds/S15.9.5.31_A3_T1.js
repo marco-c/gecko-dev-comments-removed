@@ -10,6 +10,7 @@
 
 
 
+
 var x = Date.prototype.setUTCSeconds.length;
 verifyNotWritable(Date.prototype.setUTCSeconds, "length", null, 1);
 if (Date.prototype.setUTCSeconds.length !== x) {

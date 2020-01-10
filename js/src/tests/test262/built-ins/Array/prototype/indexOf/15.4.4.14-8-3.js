@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue([1, 2, 3, 4].indexOf(1, -3), -1, '[1, 2, 3, 4].indexOf(1, -3)');
 
 reportCompare(0, 0);

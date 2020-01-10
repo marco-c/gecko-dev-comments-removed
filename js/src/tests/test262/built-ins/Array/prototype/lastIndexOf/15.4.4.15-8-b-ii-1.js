@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(["true"].lastIndexOf(true), -1, '["true"].lastIndexOf(true)');
 assert.sameValue(["0"].lastIndexOf(0), -1, '["0"].lastIndexOf(0)');
 assert.sameValue([false].lastIndexOf(0), -1, '[false].lastIndexOf(0)');

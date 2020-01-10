@@ -8,6 +8,8 @@
 
 
 
+
+
 for (var prop in this) {
   if (prop === "undefined") {
     $ERROR('#1: The undefined is DontEnum');

@@ -9,6 +9,8 @@
 
 
 
+
+
 var d = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source');
 
 assert.sameValue(typeof d.get, 'function', 'typeof d.get');

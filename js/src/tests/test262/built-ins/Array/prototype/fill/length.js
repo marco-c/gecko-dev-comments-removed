@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(
   Array.prototype.fill.length, 1,
   'The value of `Array.prototype.fill.length` is `1`'

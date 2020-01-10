@@ -45,6 +45,7 @@
 
 
 
+
 var callCount = 0;
 function* f({ x: [y], }) {
   assert.sameValue(y,45);

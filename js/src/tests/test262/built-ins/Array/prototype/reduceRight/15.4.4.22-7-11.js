@@ -6,6 +6,7 @@
 
 
 
+
 var str = "initialValue is not present";
 
 assert.sameValue([str].reduceRight(function() {}), str, '[str].reduceRight(function () { })');

@@ -9,6 +9,7 @@
 
 
 
+
 var x = [0, 1];
 var arr = x.splice(-1, -1, 2, 3);
 

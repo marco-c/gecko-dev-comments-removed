@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Array.of.name, 'of',
   'The value of `Array.of.name` is `"of"`'

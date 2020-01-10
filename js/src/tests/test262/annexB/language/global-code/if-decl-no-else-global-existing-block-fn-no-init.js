@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(f, undefined);
 
 {

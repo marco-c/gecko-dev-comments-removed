@@ -19,6 +19,7 @@
 
 
 
+
 var re;
 
 re = eval('/' + /\ud834\udf06/u.source + '/u');

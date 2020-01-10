@@ -8,6 +8,7 @@
 
 
 
+
 function MyError() {}
 var obj = {};
 Object.defineProperty(obj, Symbol.isConcatSpreadable, {

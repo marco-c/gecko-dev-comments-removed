@@ -21,6 +21,7 @@
 
 
 
+
 var Ctor = function() {
   throw new Test262Error();
 };

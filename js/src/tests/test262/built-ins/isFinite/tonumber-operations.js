@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(isFinite("0"), true, "'0'");
 assert.sameValue(isFinite(""), true, "the empty string");
 assert.sameValue(isFinite("Infinity"), false, "'Infinity'");

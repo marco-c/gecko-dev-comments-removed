@@ -14,6 +14,7 @@
 
 
 
+
 verifyNotEnumerable(this, "Number");
 verifyWritable(this, "Number");
 verifyConfigurable(this, "Number");

@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(Object.isExtensible(DataView), true);
 
 reportCompare(0, 0);

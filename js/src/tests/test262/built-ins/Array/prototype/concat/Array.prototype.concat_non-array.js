@@ -12,6 +12,7 @@
 
 
 
+
 class NonArray {
   constructor() {
     Array.apply(this, arguments);

@@ -7,6 +7,7 @@
 
 
 
+
 var x = Date.prototype.toTimeString;
 if (x === 1)
   Date.prototype.toTimeString = 2;

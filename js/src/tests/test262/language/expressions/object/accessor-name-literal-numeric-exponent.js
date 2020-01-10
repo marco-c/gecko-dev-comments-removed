@@ -25,6 +25,7 @@
 
 
 
+
 var stringSet;
 var obj = {
   get [1E+9]() { return 'get string'; },

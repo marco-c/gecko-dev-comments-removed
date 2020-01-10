@@ -40,6 +40,7 @@
 
 
 
+
 var callCount = 0;
 function f({a, b, ...rest}) {
   assert.sameValue(rest.a, undefined);

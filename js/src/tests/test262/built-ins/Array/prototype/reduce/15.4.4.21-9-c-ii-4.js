@@ -8,6 +8,7 @@
 
 
 
+
 var arr = [0, 1, 2];
 var lastIdx = 0;
 var result = true;

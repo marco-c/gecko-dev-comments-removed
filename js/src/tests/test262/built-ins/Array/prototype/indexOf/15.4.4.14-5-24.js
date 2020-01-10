@@ -9,6 +9,7 @@
 
 
 
+
 var toStringAccessed = false;
 var valueOfAccessed = false;
 var fromIndex = {

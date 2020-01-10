@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.constructor.hasOwnProperty("length") !== true) {
   $ERROR('#1: The constructor has a "length" property');
 }

@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.propertyIsEnumerable('setUTCSeconds')) {
   $ERROR('#1: The Date.prototype.setUTCSeconds property has the attribute DontEnum');
 }

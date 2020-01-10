@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Date.prototype.getTimezoneOffset.name, "getTimezoneOffset");
 
 verifyNotEnumerable(Date.prototype.getTimezoneOffset, "name");

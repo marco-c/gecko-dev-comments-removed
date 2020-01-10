@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.propertyIsEnumerable('setFullYear')) {
   $ERROR('#1: The Date.prototype.setFullYear property has the attribute DontEnum');
 }

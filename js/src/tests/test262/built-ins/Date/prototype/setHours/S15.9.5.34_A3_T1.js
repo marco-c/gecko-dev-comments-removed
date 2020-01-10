@@ -10,6 +10,7 @@
 
 
 
+
 var x = Date.prototype.setHours.length;
 verifyNotWritable(Date.prototype.setHours, "length", null, 1);
 if (Date.prototype.setHours.length !== x) {

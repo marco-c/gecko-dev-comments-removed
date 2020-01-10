@@ -10,6 +10,7 @@
 
 
 
+
 var x = Date.prototype.getDate.length;
 verifyNotWritable(Date.prototype.getDate, "length", null, 1);
 if (Date.prototype.getDate.length !== x) {

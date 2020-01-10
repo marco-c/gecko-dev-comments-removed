@@ -11,6 +11,7 @@
 
 
 
+
 var x = [];
 if (x.length !== 0) {
   $ERROR('#1: x = []; x.length === 0. Actual: ' + (x.length));

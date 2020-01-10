@@ -7,6 +7,7 @@
 
 
 
+
 var charAt = String.prototype.charAt;
 
 assert.sameValue(typeof charAt, 'function');

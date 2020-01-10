@@ -11,6 +11,7 @@
 
 
 
+
 var map = new WeakMap();
 
 assert.sameValue(map.has(1), false);

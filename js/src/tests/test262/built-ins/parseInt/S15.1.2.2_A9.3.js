@@ -9,6 +9,8 @@
 
 
 
+
+
 var x = parseInt.length;
 verifyNotWritable(parseInt, "length", null, Infinity);
 if (parseInt.length !== x) {

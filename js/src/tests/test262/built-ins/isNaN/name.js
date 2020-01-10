@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(isNaN.name, "isNaN");
 
 verifyNotEnumerable(isNaN, "name");

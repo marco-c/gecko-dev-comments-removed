@@ -9,6 +9,7 @@
 
 
 
+
 assert.sameValue([0, true].lastIndexOf(true, NaN), -1, '[0, true].lastIndexOf(true, NaN)');
 assert.sameValue([true, 0].lastIndexOf(true, NaN), 0, '[true, 0].lastIndexOf(true, NaN)');
 assert.sameValue([0, true].lastIndexOf(true, -NaN), -1, '[0, true].lastIndexOf(true, -NaN)');

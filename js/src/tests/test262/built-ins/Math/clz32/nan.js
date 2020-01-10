@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Math.clz32(NaN), 32);
 
 reportCompare(0, 0);

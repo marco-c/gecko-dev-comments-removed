@@ -9,6 +9,7 @@
 
 
 
+
 if (Date.prototype.setHours.propertyIsEnumerable('length')) {
   $ERROR('#1: The Date.prototype.setHours.length property has the attribute DontEnum');
 }

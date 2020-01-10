@@ -27,6 +27,7 @@
 
 
 
+
 let symbol = Symbol('foo');
 let o = {};
 o[symbol] = 1;

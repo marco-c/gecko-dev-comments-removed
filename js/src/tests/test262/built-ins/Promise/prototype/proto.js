@@ -11,6 +11,7 @@
 
 
 
+
 assert.sameValue(Object.getPrototypeOf(Promise.prototype), Object.prototype);
 
 reportCompare(0, 0);

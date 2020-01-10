@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.getUTCDay.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getUTCDay has a "length" property');
 }

@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(Math.clz32(4294967295), 0, "2**32-1");
 assert.sameValue(Math.clz32(4294967296), 32, "2**32");
 assert.sameValue(Math.clz32(4294967297), 31, "2**32+1");

@@ -28,6 +28,7 @@
 
 
 
+
 var toExponential = Number.prototype.toExponential;
 
 assert.throws(TypeError, function() {

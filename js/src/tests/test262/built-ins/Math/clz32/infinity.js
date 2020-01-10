@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Math.clz32(Infinity), 32, "Infinity");
 assert.sameValue(Math.clz32(-Infinity), 32, "-Infinity");
 

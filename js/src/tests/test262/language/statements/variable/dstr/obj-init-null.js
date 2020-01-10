@@ -22,6 +22,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   var {} = null;
 });

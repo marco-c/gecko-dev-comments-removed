@@ -21,6 +21,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Promise.prototype.catch.call(undefined);
 }, 'undefined');

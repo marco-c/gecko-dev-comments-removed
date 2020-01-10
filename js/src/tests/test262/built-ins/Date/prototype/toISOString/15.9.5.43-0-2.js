@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(Date.prototype.toISOString.length, 0, 'Date.prototype.toISOString.length');
 
 reportCompare(0, 0);

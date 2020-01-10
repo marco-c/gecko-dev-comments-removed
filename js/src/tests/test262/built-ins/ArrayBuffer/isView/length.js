@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(ArrayBuffer.isView.length, 1);
 
 verifyNotEnumerable(ArrayBuffer.isView, "length");

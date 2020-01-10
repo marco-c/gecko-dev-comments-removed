@@ -11,6 +11,7 @@
 
 
 
+
 try {
   new Array.prototype.reverse();
   $ERROR('#1.1: new Array.prototype.reverse() throw TypeError. Actual: ' + (new Array.prototype.reverse()));

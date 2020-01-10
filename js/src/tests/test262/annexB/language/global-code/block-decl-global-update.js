@@ -21,6 +21,7 @@
 
 
 
+
 {
   function f() { return 'declaration'; }
 }

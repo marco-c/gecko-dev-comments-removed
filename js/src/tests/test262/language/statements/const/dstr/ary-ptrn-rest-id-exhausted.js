@@ -28,6 +28,7 @@
 
 
 
+
 const [, , ...x] = [1, 2];
 
 assert(Array.isArray(x));

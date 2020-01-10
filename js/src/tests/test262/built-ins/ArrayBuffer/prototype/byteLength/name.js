@@ -13,6 +13,7 @@
 
 
 
+
 var descriptor = Object.getOwnPropertyDescriptor(
   ArrayBuffer.prototype, 'byteLength'
 );

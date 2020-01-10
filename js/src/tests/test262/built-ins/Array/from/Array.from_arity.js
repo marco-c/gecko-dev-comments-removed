@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(Array.from.length, 1);
 
 verifyNotEnumerable(Array.from, 'length');

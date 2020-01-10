@@ -16,6 +16,7 @@
 
 
 
+
 var functionProxy = new Proxy(function() {}, {});
 var functionProxyProxy = new Proxy(functionProxy, {});
 

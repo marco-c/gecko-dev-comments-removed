@@ -10,6 +10,7 @@
 
 
 
+
 var str = new String('');
 
 verifyNotEnumerable(str, 'length');

@@ -22,6 +22,7 @@
 
 
 
+
 var poisonedThen = Object.defineProperty({}, 'then', {
   get: function() {
     throw new Test262Error();

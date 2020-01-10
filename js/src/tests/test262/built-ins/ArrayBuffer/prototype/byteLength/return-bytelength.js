@@ -11,6 +11,7 @@
 
 
 
+
 var ab1 = new ArrayBuffer(0);
 assert.sameValue(ab1.byteLength, 0);
 

@@ -8,6 +8,8 @@
 
 
 
+
+
 if ((encodeURI("http://ru.wikipedia.org/wiki/Юникод") !== "http://ru.wikipedia.org/wiki/%D0%AE%D0%BD%D0%B8%D0%BA%D0%BE%D0%B4") && (encodeURI("http://ru.wikipedia.org/wiki/Юникод") !== "http://ru.wikipedia.org/wiki/" + "%D0%AE%D0%BD%D0%B8%D0%BA%D0%BE%D0%B4".toLowerCase())) {
   $ERROR('#1: http://ru.wikipedia.org/wiki/Юникод');
 }

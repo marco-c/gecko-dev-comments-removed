@@ -24,6 +24,7 @@
 
 
 
+
 let { x: y } = { x: 23 };
 
 assert.sameValue(y, 23);

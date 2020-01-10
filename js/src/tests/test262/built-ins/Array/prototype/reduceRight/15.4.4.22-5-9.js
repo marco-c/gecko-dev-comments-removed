@@ -8,6 +8,7 @@
 
 
 
+
 var initialValue = 10;
 
 assert.sameValue([].reduceRight(function() {}, initialValue), initialValue, '[].reduceRight(function () { }, initialValue)');

@@ -10,6 +10,7 @@
 
 
 
+
 var x11 = new Date(1899, 11, 31, 23);
 if (typeof x11.constructor.prototype !== "object") {
   $ERROR("#1.1: typeof x11.constructor.prototype === 'object'");

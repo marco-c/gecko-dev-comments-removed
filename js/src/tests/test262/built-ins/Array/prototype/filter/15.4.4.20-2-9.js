@@ -9,6 +9,7 @@
 
 
 
+
 function callbackfn(val, idx, obj) {
   return obj.length === 2;
 }

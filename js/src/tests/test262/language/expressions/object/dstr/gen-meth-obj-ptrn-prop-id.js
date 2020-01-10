@@ -50,6 +50,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   *method({ x: y }) {

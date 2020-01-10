@@ -14,6 +14,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   ArrayBuffer.prototype.slice.call(undefined);
 }, "`this` value is undefined");

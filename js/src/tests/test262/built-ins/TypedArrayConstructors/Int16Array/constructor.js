@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(typeof Int16Array, 'function', 'typeof Int16Array is "function"');
 
 reportCompare(0, 0);

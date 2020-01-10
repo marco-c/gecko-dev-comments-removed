@@ -6,6 +6,7 @@
 
 
 
+
 assert.sameValue(Array.prototype.lastIndexOf.call("abc", "c"), 2, 'Array.prototype.lastIndexOf.call("abc", "c")');
 
 reportCompare(0, 0);

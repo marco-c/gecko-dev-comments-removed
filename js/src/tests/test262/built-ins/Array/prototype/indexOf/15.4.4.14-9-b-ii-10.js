@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue([false, true].indexOf(true), 1, '[false, true].indexOf(true)');
 
 reportCompare(0, 0);

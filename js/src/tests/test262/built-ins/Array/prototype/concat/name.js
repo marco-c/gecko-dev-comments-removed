@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Array.prototype.concat.name, "concat");
 
 verifyNotEnumerable(Array.prototype.concat, "name");

@@ -21,6 +21,7 @@
 
 
 
+
 var array = ["first", "second"];
 
 Object.defineProperty(array, 0, {

@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.propertyIsEnumerable('toDateString')) {
   $ERROR('#1: The Date.prototype.toDateString property has the attribute DontEnum');
 }

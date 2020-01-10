@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Date.UTC.name, "UTC");
 
 verifyNotEnumerable(Date.UTC, "name");

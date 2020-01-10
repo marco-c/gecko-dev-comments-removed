@@ -31,6 +31,7 @@
 
 
 
+
 let o = {
     get a() {
         return 42;

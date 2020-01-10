@@ -18,6 +18,7 @@
 
 
 
+
 assert(
   compareArray([0, 0].fill(1, undefined), [1, 1]),
   '`undefined` start coerced to 0'

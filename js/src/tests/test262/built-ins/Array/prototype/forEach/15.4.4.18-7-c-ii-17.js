@@ -8,6 +8,7 @@
 
 
 
+
 var result = false;
 
 function callbackfn(val, idx, o) {

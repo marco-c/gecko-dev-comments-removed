@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   WeakSet.prototype.delete.call('', {});
 });

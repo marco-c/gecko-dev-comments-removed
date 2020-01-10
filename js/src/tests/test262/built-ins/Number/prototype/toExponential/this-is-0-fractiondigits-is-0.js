@@ -25,6 +25,7 @@
 
 
 
+
 assert.sameValue(Number.prototype.toExponential(0), "0e+0", "Number.prototype");
 
 assert.sameValue((0).toExponential(0), "0e+0", "(0).toExponential(0)");

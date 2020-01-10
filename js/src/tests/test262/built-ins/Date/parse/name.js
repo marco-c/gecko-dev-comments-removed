@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Date.parse.name, "parse");
 
 verifyNotEnumerable(Date.parse, "name");

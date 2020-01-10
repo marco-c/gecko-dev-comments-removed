@@ -7,6 +7,7 @@
 
 
 
+
 var split = String.prototype.split;
 
 assert.sameValue(typeof split, 'function');

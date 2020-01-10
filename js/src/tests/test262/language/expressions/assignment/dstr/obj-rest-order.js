@@ -16,6 +16,7 @@
 
 
 
+
 var rest;
 var calls = [];
 var o = { get z() { calls.push('z') }, get a() { calls.push('a') } };

@@ -8,6 +8,7 @@
 
 
 
+
 var a = [1, 2, 3];
 
 assert.sameValue(a.indexOf(1, 5), -1, 'a.indexOf(1,5)');

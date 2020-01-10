@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   WeakMap.prototype.get.length, 1,
   'The value of `WeakMap.prototype.get.length` is `1`'

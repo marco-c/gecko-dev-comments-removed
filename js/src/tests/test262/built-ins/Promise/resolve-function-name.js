@@ -13,18 +13,12 @@
 
 
 
-
-
-
-
-
 var resolveFunction;
 new Promise(function(resolve, reject) {
   resolveFunction = resolve;
 });
 
-verifyProperty(resolveFunction, "name", {
-  value: "", writable: false, enumerable: false, configurable: true
-});
+assert.sameValue(Object.prototype.hasOwnProperty.call(resolveFunction, "name"), false);
+assert.sameValue(resolveFunction.name, "");
 
 reportCompare(0, 0);

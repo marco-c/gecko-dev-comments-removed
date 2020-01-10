@@ -8,6 +8,7 @@
 
 
 
+
 Array.prototype[0] = Object;
 
 assert.sameValue([Object.prototype].lastIndexOf(Object.prototype), 0, '[Object.prototype].lastIndexOf(Object.prototype)');

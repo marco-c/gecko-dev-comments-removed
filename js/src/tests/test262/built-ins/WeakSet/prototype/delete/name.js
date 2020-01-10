@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   WeakSet.prototype.delete.name, 'delete',
   'The value of WeakSet.prototype.delete.name is "delete"'

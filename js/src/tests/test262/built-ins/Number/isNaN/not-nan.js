@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(Number.isNaN(0), false, "0");
 assert.sameValue(Number.isNaN(-0), false, "-0");
 assert.sameValue(Number.isNaN(1), false, "1");

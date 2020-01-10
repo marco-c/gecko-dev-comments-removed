@@ -17,6 +17,7 @@
 
 
 
+
 var obj = Object.defineProperty({}, Symbol.toPrimitive, {
   get: function() {
     throw new Test262Error();

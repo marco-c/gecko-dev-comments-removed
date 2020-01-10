@@ -7,6 +7,7 @@
 
 
 
+
 if (delete Date.prototype.getMonth === false) {
   $ERROR('#1: The Date.prototype.getMonth property has not the attributes DontDelete');
 }

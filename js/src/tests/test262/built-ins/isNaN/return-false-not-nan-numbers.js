@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(isNaN(0), false, "0");
 assert.sameValue(isNaN(-0), false, "-0");
 assert.sameValue(isNaN(Math.pow(2, 53)), false, "Math.pow(2, 53)");

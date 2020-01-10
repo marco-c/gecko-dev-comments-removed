@@ -7,6 +7,7 @@
 
 
 
+
 var obj = {};
 obj.join = Array.prototype.join;
 obj[0] = "x";

@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.propertyIsEnumerable('constructor')) {
   $ERROR('#1: The Date.prototype.constructor property has the attribute DontEnum');
 }

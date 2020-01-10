@@ -14,6 +14,7 @@
 
 
 
+
 verifyNotEnumerable(Number.prototype, "toFixed");
 verifyWritable(Number.prototype, "toFixed");
 verifyConfigurable(Number.prototype, "toFixed");

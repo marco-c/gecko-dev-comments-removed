@@ -16,6 +16,7 @@
 
 
 
+
 assert.sameValue(Date.UTC(), NaN, 'missing non-optional year argument');
 
 reportCompare(0, 0);

@@ -8,6 +8,7 @@
 
 
 
+
 var arr = [1, 2];
 
 Object.defineProperty(arr, "1", {

@@ -1,0 +1,9 @@
+
+
+
+
+export var x = 42;
+
+throw 'foo';
+
+export var y = 1612;

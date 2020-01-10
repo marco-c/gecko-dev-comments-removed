@@ -11,6 +11,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(Number, 'MAX_SAFE_INTEGER');
 
 assert.sameValue(desc.set, undefined, 'Does not define a `get` accessor');

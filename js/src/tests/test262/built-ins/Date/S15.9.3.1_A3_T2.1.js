@@ -11,6 +11,7 @@
 
 
 
+
 var x1 = new Date(1899, 11, 31);
 if (Object.prototype.toString.call(x1) !== "[object Date]") {
   $ERROR("#1: The [[Class]] property of the newly constructed object is set to 'Date'");

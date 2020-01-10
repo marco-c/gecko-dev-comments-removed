@@ -15,6 +15,7 @@
 
 
 
+
 var value = [];
 var iterationResult, iter, x;
 iter = (function*() {

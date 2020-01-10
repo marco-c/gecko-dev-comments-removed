@@ -21,6 +21,7 @@
 
 
 
+
 var getFloat64 = DataView.prototype.getFloat64;
 
 assert.throws(TypeError, function() {

@@ -7,6 +7,7 @@
 
 
 
+
 var localeCompare = String.prototype.localeCompare;
 
 assert.sameValue(typeof localeCompare, 'function');

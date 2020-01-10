@@ -22,6 +22,7 @@
 
 
 
+
 eval(
   'var f = 123;\
   assert.sameValue(f, 123);if (false) function _f() {} else function f() {  }'

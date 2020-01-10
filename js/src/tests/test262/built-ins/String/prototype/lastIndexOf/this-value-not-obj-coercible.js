@@ -7,6 +7,7 @@
 
 
 
+
 var lastIndexOf = String.prototype.lastIndexOf;
 
 assert.sameValue(typeof lastIndexOf, 'function');

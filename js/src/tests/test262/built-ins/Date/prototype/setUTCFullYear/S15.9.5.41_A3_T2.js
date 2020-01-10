@@ -9,6 +9,7 @@
 
 
 
+
 if (delete Date.prototype.setUTCFullYear.length !== true) {
   $ERROR('#1: The Date.prototype.setUTCFullYear.length property does not have the attributes DontDelete');
 }

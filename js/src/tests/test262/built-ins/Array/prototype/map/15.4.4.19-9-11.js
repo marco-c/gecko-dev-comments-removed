@@ -9,6 +9,7 @@
 
 
 
+
 function Foo() {}
 Foo.prototype = [1, 2, 3];
 

@@ -18,6 +18,7 @@
 
 
 
+
 var result = Array.of();
 assert(result instanceof Array, 'Array.of() returns a new Array');
 

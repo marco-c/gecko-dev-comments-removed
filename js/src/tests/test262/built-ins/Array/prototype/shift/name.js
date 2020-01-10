@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(Array.prototype.shift.name, "shift");
 
 verifyNotEnumerable(Array.prototype.shift, "name");

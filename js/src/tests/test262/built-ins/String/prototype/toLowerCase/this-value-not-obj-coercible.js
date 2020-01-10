@@ -7,6 +7,7 @@
 
 
 
+
 var toLowerCase = String.prototype.toLowerCase;
 
 assert.sameValue(typeof toLowerCase, 'function');

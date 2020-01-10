@@ -8,6 +8,7 @@
 
 
 
+
 var testResult = false;
 
 function callbackfn(preVal, curVal, idx, obj) {

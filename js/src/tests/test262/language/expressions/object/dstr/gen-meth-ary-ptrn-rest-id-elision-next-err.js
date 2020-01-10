@@ -53,6 +53,7 @@
 
 
 
+
 var iter = (function*() { throw new Test262Error(); })();
 
 var obj = {

@@ -9,6 +9,7 @@
 
 
 
+
 var OSymbol = $262.createRealm().global.Symbol;
 
 assert.sameValue(Symbol.search, OSymbol.search);

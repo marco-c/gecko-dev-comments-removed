@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   WeakSet.prototype.constructor,
   WeakSet,

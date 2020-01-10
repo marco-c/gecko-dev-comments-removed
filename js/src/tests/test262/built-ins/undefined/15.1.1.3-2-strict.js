@@ -8,6 +8,8 @@
 
 
 
+
+
 var global = this;
 
 assert.throws(TypeError, function() {

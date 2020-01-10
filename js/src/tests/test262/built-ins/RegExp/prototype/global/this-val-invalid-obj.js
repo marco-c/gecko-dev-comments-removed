@@ -11,6 +11,7 @@
 
 
 
+
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'global').get;
 
 assert.throws(TypeError, function() {

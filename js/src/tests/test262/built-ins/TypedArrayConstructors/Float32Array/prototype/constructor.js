@@ -17,6 +17,7 @@
 
 
 
+
 assert.sameValue(Float32Array.prototype.constructor, Float32Array);
 
 verifyNotEnumerable(Float32Array.prototype, "constructor");

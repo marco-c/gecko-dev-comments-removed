@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(new Date(0).getTime(), 0, '+0');
 assert.sameValue(new Date(-0).getTime(), 0, '-0');
 assert.sameValue(new Date(-1).getTime(), -1);

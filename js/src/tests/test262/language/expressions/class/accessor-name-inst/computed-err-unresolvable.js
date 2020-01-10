@@ -22,6 +22,7 @@
 
 
 
+
 assert.throws(ReferenceError, function() {
   0, class {
     get [test262unresolvable]() {}

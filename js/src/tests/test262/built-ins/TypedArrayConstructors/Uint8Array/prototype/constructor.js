@@ -17,6 +17,7 @@
 
 
 
+
 assert.sameValue(Uint8Array.prototype.constructor, Uint8Array);
 
 verifyNotEnumerable(Uint8Array.prototype, "constructor");

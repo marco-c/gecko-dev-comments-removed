@@ -77,6 +77,7 @@
 
 
 
+
 var C = class {
   method([[x]]) {}
 };

@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(DataView.prototype.getInt8.length, 1);
 
 verifyNotEnumerable(DataView.prototype.getInt8, "length");

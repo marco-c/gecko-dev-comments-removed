@@ -8,6 +8,7 @@
 
 
 
+
 function callbackfn(prevVal, curVal, idx, obj)
 {
   if (idx > 0 && obj[idx] === curVal && obj[idx - 1] === prevVal)

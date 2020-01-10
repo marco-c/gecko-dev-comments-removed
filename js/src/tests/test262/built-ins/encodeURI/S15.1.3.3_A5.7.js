@@ -11,6 +11,8 @@
 
 
 
+
+
 try {
   new encodeURI();
   $ERROR('#1.1: new encodeURI() throw TypeError. Actual: ' + (new encodeURI()));

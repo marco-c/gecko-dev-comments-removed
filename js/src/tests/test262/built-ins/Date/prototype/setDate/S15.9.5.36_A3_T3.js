@@ -9,6 +9,7 @@
 
 
 
+
 if (Date.prototype.setDate.propertyIsEnumerable('length')) {
   $ERROR('#1: The Date.prototype.setDate.length property has the attribute DontEnum');
 }

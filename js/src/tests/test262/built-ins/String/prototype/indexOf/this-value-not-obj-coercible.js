@@ -7,6 +7,7 @@
 
 
 
+
 var indexOf = String.prototype.indexOf;
 
 assert.sameValue(typeof indexOf, 'function');

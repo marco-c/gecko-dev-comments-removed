@@ -8,6 +8,7 @@
 
 
 
+
 if (!Boolean.hasOwnProperty("length")) {
   $ERROR('#1: Boolean constructor has length property');
 }

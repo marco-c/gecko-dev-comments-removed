@@ -27,6 +27,7 @@
 
 
 
+
 var error = new Test262Error();
 Object.defineProperty(Promise, 'resolve', {
   get: function() {

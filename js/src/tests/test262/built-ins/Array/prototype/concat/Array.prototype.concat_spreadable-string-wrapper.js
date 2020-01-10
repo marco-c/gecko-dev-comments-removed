@@ -9,6 +9,7 @@
 
 
 
+
 var str1 = new String("yuck\uD83D\uDCA9")
 
 assert(compareArray([str1], [].concat(str1)));

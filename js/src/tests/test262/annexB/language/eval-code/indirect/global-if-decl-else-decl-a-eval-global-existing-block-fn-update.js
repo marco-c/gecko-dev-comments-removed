@@ -29,6 +29,7 @@
 
 
 
+
 {
   function f() {
     return 'first declaration';

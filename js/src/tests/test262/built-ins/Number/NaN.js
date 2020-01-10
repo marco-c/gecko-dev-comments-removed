@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(Number.NaN, NaN);
 
 verifyNotEnumerable(Number, "NaN");

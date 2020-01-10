@@ -8,6 +8,7 @@
 
 
 
+
 var arr = [0, 1, 2, "last", 4];
 
 Object.defineProperty(arr, "4", {

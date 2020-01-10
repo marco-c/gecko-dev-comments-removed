@@ -16,6 +16,7 @@
 
 
 
+
 var closeCount = 0;
 var mapFn = function() {
   throw new Test262Error();

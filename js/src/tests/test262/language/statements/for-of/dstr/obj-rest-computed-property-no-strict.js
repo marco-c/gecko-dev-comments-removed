@@ -25,6 +25,7 @@
 
 
 
+
 var a = "foo";
 
 var counter = 0;

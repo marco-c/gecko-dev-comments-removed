@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(ArrayBuffer.prototype.slice.name, "slice");
 
 verifyNotEnumerable(ArrayBuffer.prototype.slice, "name");

@@ -13,6 +13,7 @@
 
 
 
+
 var newTarget;
 function A() {
   newTarget = new.target;

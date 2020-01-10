@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(DataView.prototype.getUint8.name, "getUint8");
 
 verifyNotEnumerable(DataView.prototype.getUint8, "name");

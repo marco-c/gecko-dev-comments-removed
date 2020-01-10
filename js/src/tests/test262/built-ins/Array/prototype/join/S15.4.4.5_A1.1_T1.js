@@ -8,6 +8,7 @@
 
 
 
+
 var x = new Array();
 if (x.join() !== "") {
   $ERROR('#1: x = new Array(); x.join() === "". Actual: ' + (x.join()));

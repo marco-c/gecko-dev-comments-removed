@@ -9,6 +9,7 @@
 
 
 
+
 var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 assert.sameValue(GeneratorFunction.length, 1);

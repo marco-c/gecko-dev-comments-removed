@@ -8,6 +8,7 @@
 
 
 
+
 var storeProtoLength;
 
 function callbackfn(prevVal, curVal, idx, obj) {

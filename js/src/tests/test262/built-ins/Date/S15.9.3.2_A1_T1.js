@@ -10,6 +10,7 @@
 
 
 
+
 if (typeof new Date(date_1899_end) !== "object") {
   $ERROR("#1.1: typeof new Date(date_1899_end) === 'object'");
 }

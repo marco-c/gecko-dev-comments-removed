@@ -9,6 +9,7 @@
 
 
 
+
 var bool = new Boolean(true)
 
 assert(compareArray([bool], [].concat(bool)));

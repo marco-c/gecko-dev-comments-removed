@@ -9,6 +9,7 @@
 
 
 
+
 var num = new Number(true)
 
 assert(compareArray([num], [].concat(num)));

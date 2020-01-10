@@ -18,6 +18,7 @@
 
 
 
+
 var proxy, called, value;
 var target = new Proxy({}, {
   setPrototypeOf: function(t, v) {

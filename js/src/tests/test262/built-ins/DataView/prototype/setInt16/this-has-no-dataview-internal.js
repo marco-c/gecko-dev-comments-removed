@@ -21,6 +21,7 @@
 
 
 
+
 var setInt16 = DataView.prototype.setInt16;
 
 assert.throws(TypeError, function() {

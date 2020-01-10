@@ -30,6 +30,7 @@
 
 
 
+
 eval(
   'if (false) ; else function f() { return "function declaration"; }'
 );

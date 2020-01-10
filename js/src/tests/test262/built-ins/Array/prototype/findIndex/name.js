@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Array.prototype.findIndex.name, 'findIndex',
   'The value of `Array.prototype.findIndex.name` is `"findIndex"`'

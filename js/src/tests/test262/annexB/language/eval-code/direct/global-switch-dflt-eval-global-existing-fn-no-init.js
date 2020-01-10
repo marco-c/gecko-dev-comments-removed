@@ -13,6 +13,7 @@
 
 
 
+
 eval(
   'assert.sameValue(f(), "outer declaration");switch (1) {' +
   '  default:' +

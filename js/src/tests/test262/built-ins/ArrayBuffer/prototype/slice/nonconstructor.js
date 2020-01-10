@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(Object.prototype.hasOwnProperty.call(ArrayBuffer.prototype.slice, "prototype"), false);
 
 var arrayBuffer = new ArrayBuffer(8);

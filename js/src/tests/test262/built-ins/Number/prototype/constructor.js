@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(Number.prototype.constructor, Number);
 
 verifyNotEnumerable(Number.prototype, "constructor");

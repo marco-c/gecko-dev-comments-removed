@@ -7,6 +7,7 @@
 
 
 
+
 if (Date.prototype.toUTCString.hasOwnProperty("length") !== true) {
   $ERROR('#1: The toUTCString has a "length" property');
 }

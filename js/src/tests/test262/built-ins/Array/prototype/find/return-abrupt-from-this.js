@@ -12,6 +12,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Array.prototype.find.call(undefined, function() {});
 });

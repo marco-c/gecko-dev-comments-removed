@@ -7,6 +7,7 @@
 
 
 
+
 verifyNotEnumerable(WeakMap, 'prototype');
 verifyNotWritable(WeakMap, 'prototype');
 verifyNotConfigurable(WeakMap, 'prototype');

@@ -49,6 +49,7 @@
 
 
 
+
 var obj = {
   *method({} = undefined) {}
 };

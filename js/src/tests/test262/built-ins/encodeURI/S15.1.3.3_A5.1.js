@@ -8,6 +8,8 @@
 
 
 
+
+
 if (encodeURI.propertyIsEnumerable('length') !== false) {
   $ERROR('#1: encodeURI.propertyIsEnumerable(\'length\') === false. Actual: ' + (encodeURI.propertyIsEnumerable('length')));
 }

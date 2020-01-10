@@ -9,6 +9,7 @@
 
 
 
+
 var func = function(a, b) {
   assert.sameValue(Array.prototype.lastIndexOf.call(arguments, arguments[0]), 2);
   assert.sameValue(Array.prototype.lastIndexOf.call(arguments, arguments[3]), 3);

@@ -8,6 +8,7 @@
 
 
 
+
 function callbackfn(prevVal, curVal, idx, obj)
 {
   arr.length = 2;

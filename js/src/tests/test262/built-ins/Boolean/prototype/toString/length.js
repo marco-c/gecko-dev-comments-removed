@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(Boolean.prototype.toString.length, 0);
 
 verifyNotEnumerable(Boolean.prototype.toString, "length");

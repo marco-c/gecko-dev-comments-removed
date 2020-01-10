@@ -8,6 +8,7 @@
 
 
 
+
 var originalArray = [0, 1, -2, 4, -8, 16];
 var array = [0, 1, -2, 4, -8, 16];
 var a = [];

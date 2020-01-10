@@ -10,6 +10,7 @@
 
 
 
+
 var canonical = Symbol.for('s');
 
 assert.sameValue(Symbol.keyFor(canonical), 's');

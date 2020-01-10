@@ -8,6 +8,7 @@
 
 
 
+
 var arr = new Array(10);
 assert.throws(ReferenceError, function() {
   arr.reduce(foo);

@@ -8,6 +8,7 @@
 
 
 
+
 for (x in Boolean) {
   if (x === "prototype") {
     $ERROR('#1: Boolean.prototype has the attribute DontEnum');

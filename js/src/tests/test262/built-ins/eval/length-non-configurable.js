@@ -8,6 +8,8 @@
 
 
 
+
+
 if (eval.hasOwnProperty('length') !== true) {
   $ERROR('#1: eval.hasOwnProperty(\'length\') === true. Actual: ' + (eval.hasOwnProperty('length')));
 }

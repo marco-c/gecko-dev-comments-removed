@@ -11,6 +11,7 @@
 
 
 
+
 assert.sameValue(
   Array.of.length, 0,
   'The value of `Array.of.length` is `0`'

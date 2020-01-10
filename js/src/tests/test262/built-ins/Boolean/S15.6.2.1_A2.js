@@ -11,6 +11,7 @@
 
 
 
+
 var x1 = new Boolean(1);
 if (typeof x1.constructor.prototype !== "object") {
   $ERROR('#1: typeof x1.constructor.prototype === "object"');

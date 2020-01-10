@@ -8,6 +8,7 @@
 
 
 
+
 var newArr = [11].map(function() {});
 
 assert(Array.isArray(newArr), 'Array.isArray(newArr) !== true');

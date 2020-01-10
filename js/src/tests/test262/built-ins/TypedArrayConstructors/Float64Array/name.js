@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue(Float64Array.name, "Float64Array");
 
 verifyNotEnumerable(Float64Array, "name");

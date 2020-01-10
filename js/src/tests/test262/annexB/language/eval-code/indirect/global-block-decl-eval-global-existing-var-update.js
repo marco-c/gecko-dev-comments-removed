@@ -21,6 +21,7 @@
 
 
 
+
 (0,eval)(
   '{ function f() { return "function declaration"; } }'
 );

@@ -8,6 +8,7 @@
 
 
 
+
 var obj = {
   1: "accumulator",
   2: "another"

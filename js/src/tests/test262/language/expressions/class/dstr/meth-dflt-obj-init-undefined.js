@@ -64,6 +64,7 @@
 
 
 
+
 var C = class {
   method({} = undefined) {}
 };

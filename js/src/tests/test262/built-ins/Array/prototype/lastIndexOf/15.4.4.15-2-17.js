@@ -8,6 +8,7 @@
 
 
 
+
 var targetObj = function() {};
 var func = function(a, b) {
   arguments[2] = function() {};

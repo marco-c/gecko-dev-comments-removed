@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   WeakSet.prototype.has.name, 'has',
   'The value of WeakSet.prototype.has.name is "has"'

@@ -30,6 +30,7 @@
 
 
 
+
 var p = Symbol("1");
 
 assert.throws(TypeError, function() {

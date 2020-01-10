@@ -20,6 +20,7 @@
 
 
 
+
 var mongolianVowelSeparator = "\u180E";
 
 assert.sameValue(parseFloat(mongolianVowelSeparator + "1.1"), NaN, "Single leading U+180E");

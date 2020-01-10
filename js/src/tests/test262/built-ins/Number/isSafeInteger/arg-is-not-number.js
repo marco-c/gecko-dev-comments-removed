@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(Number.isSafeInteger("1"), false, "string");
 assert.sameValue(Number.isSafeInteger([1]), false, "[1]");
 assert.sameValue(Number.isSafeInteger(new Number(42)), false, "Number object");

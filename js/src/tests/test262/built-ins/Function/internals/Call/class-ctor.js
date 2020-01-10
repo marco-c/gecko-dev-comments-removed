@@ -10,6 +10,7 @@
 
 
 
+
 class C {}
 
 assert.throws(TypeError, function() {
