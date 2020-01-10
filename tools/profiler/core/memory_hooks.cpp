@@ -270,6 +270,12 @@ class ThreadIntercept {
                          mozilla::recordreplay::Behavior::DontPreserve>
       sAllocationsFeatureEnabled;
 
+  
+  
+  static mozilla::Atomic<int, mozilla::Relaxed,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      sMainThreadId;
+
   ThreadIntercept() = default;
 
   
@@ -316,15 +322,25 @@ class ThreadIntercept {
 
   bool IsBlocked() const { return ThreadIntercept::IsBlocked_(); }
 
-  static void EnableAllocationFeature() { sAllocationsFeatureEnabled = true; }
+  static void EnableAllocationFeature(int aMainThreadId) {
+    sAllocationsFeatureEnabled = true;
+    sMainThreadId = aMainThreadId;
+  }
 
   static void DisableAllocationFeature() { sAllocationsFeatureEnabled = false; }
+
+  static int MainThreadId() { return sMainThreadId; }
 };
 
 PROFILER_THREAD_LOCAL(bool) ThreadIntercept::tlsIsBlocked;
+
 mozilla::Atomic<bool, mozilla::Relaxed,
                 mozilla::recordreplay::Behavior::DontPreserve>
     ThreadIntercept::sAllocationsFeatureEnabled(false);
+
+mozilla::Atomic<int, mozilla::Relaxed,
+                mozilla::recordreplay::Behavior::DontPreserve>
+    ThreadIntercept::sMainThreadId(0);
 
 
 
@@ -382,7 +398,8 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
       
       gBernoulli->trial(actualSize) &&
       
-      profiler_add_native_allocation_marker(static_cast<int64_t>(actualSize))) {
+      profiler_add_native_allocation_marker(ThreadIntercept::MainThreadId(),
+                                            static_cast<int64_t>(actualSize))) {
     MOZ_ASSERT(gAllocationTracker,
                "gAllocationTracker must be properly installed for the memory "
                "hooks.");
@@ -424,7 +441,8 @@ static void FreeCallback(void* aPtr) {
       "gAllocationTracker must be properly installed for the memory hooks.");
   if (gAllocationTracker->RemoveMemoryAddressIfFound(aPtr)) {
     
-    profiler_add_native_allocation_marker(signedSize);
+    profiler_add_native_allocation_marker(ThreadIntercept::MainThreadId(),
+                                          signedSize);
   }
 }
 
@@ -559,7 +577,7 @@ void install_memory_hooks() {
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
-void enable_native_allocations() {
+void enable_native_allocations(int aMainThreadId) {
   
   
   
@@ -585,7 +603,7 @@ void enable_native_allocations() {
   if (!PR_GetEnv("XPCOM_MEM_BLOAT_LOG")) {
     EnsureBernoulliIsInstalled();
     EnsureAllocationTrackerIsInstalled();
-    ThreadIntercept::EnableAllocationFeature();
+    ThreadIntercept::EnableAllocationFeature(aMainThreadId);
   }
 }
 
