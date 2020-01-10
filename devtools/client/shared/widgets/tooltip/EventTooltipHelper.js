@@ -127,12 +127,13 @@ EventTooltip.prototype = {
           sourceMapService.subscribe(
             location.url,
             location.line,
-            null,
+            location.column,
             callback
           );
           this._subscriptions.push({
             url: location.url,
             line: location.line,
+            column: location.column,
             callback,
           });
         }
@@ -285,7 +286,6 @@ EventTooltip.prototype = {
     const content = header.nextElementSibling;
 
     const { sourceActor, uri } = this._eventEditors.get(content);
-
     const location = this._parseLocation(uri);
     if (location) {
       
@@ -309,15 +309,22 @@ EventTooltip.prototype = {
     if (uri && uri !== "?") {
       uri = uri.replace(/"/g, "");
 
-      const matches = uri.match(/(.*):(\d+$)/);
+      let matches = uri.match(/(.*):(\d+):(\d+$)/);
 
       if (matches) {
         return {
           url: matches[1],
           line: parseInt(matches[2], 10),
+          column: parseInt(matches[3], 10),
+        };
+      } else if ((matches = uri.match(/(.*):(\d+$)/))) {
+        return {
+          url: matches[1],
+          line: parseInt(matches[2], 10),
+          column: null,
         };
       }
-      return { url: uri, line: 1 };
+      return { url: uri, line: 1, column: null };
     }
     return null;
   },
@@ -357,7 +364,7 @@ EventTooltip.prototype = {
       sourceMapService.unsubscribe(
         subscription.url,
         subscription.line,
-        null,
+        subscription.column,
         subscription.callback
       );
     }
