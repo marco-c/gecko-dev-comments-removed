@@ -223,6 +223,11 @@ exports.unwrap = function unwrap(obj) {
 
 
 exports.isSafeDebuggerObject = function(obj) {
+  
+  if (exports.isCPOW(obj)) {
+    return false;
+  }
+
   const unwrapped = exports.unwrap(obj);
 
   

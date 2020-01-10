@@ -113,28 +113,28 @@ const proto = {
     const g = {
       type: "object",
       actor: this.actorID,
-      class: this.obj.class,
     };
 
-    const unwrapped = DevToolsUtils.unwrap(this.obj);
-
     
-    if (!DevToolsUtils.isSafeDebuggerObject(this.obj)) {
-      if (DevToolsUtils.isCPOW(this.obj)) {
-        
-        g.class = "CPOW: " + g.class;
-      } else if (unwrapped === undefined) {
-        
-        
-        g.class = "InvisibleToDebugger: " + g.class;
-      } else if (unwrapped.isProxy) {
-        
-        
-        g.class = "Proxy";
-        this.hooks.incrementGripDepth();
-        previewers.Proxy[0](this, g, null);
-        this.hooks.decrementGripDepth();
-      }
+    if (DevToolsUtils.isCPOW(this.obj)) {
+      
+      g.class = "CPOW";
+      return g;
+    }
+    const unwrapped = DevToolsUtils.unwrap(this.obj);
+    if (unwrapped === undefined) {
+      
+      
+      g.class = "InvisibleToDebugger: " + this.obj.class;
+      return g;
+    }
+    if (unwrapped && unwrapped.isProxy) {
+      
+      
+      g.class = "Proxy";
+      this.hooks.incrementGripDepth();
+      previewers.Proxy[0](this, g, null);
+      this.hooks.decrementGripDepth();
       return g;
     }
 
@@ -143,6 +143,8 @@ const proto = {
     
     if (unwrapped === null) {
       g.class = "Restricted";
+    } else {
+      g.class = this.obj.class;
     }
 
     this.hooks.incrementGripDepth();
