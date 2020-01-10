@@ -101,6 +101,10 @@ class nsAttrValue {
     eAtomArray,
     eDoubleValue,
     eIntMarginValue,
+    
+    
+    
+    eShadowParts,
     eSVGIntegerPair,
     eSVGTypesBegin = eSVGIntegerPair,
     eSVGOrient,
@@ -255,6 +259,13 @@ class nsAttrValue {
   void ParseAtom(const nsAString& aValue);
   void ParseAtomArray(const nsAString& aValue);
   void ParseStringOrAtom(const nsAString& aValue);
+
+  
+
+
+
+
+  void ParsePartMapping(const nsAString&);
 
   
 

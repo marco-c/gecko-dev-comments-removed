@@ -424,7 +424,7 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   
   
   
-  size_t pageSize = ipc::SharedMemory::SystemPageSize();
+  size_t pageSize = mozilla::ipc::SharedMemory::SystemPageSize();
   mUsedSharedMemory =
       (Servo_SharedMemoryBuilder_GetLength(builder.get()) + pageSize - 1) &
       ~(pageSize - 1);
