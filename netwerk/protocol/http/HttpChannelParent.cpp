@@ -1803,10 +1803,18 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvOpenAltDataCacheInputStream(
 NS_IMETHODIMP
 HttpChannelParent::OnProgress(nsIRequest* aRequest, nsISupports* aContext,
                               int64_t aProgress, int64_t aProgressMax) {
-  LOG(("HttpChannelParent::OnStatus [this=%p progress=%" PRId64 "max=%" PRId64
+  LOG(("HttpChannelParent::OnProgress [this=%p progress=%" PRId64 "max=%" PRId64
        "]\n",
        this, aProgress, aProgressMax));
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
+
+  
+  if (mIPCClosed || !mBgParent) {
+    return NS_OK;
+  }
 
   
   
@@ -1817,13 +1825,8 @@ HttpChannelParent::OnProgress(nsIRequest* aRequest, nsISupports* aContext,
 
   
   
-  MOZ_ASSERT(mIPCClosed || mBgParent);
-
   
-  
-  
-  if (mIPCClosed || !mBgParent ||
-      !mBgParent->OnProgress(aProgress, aProgressMax)) {
+  if (!mBgParent->OnProgress(aProgress, aProgressMax)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1836,6 +1839,14 @@ HttpChannelParent::OnStatus(nsIRequest* aRequest, nsISupports* aContext,
   LOG(("HttpChannelParent::OnStatus [this=%p status=%" PRIx32 "]\n", this,
        static_cast<uint32_t>(aStatus)));
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
+
+  
+  if (mIPCClosed || !mBgParent) {
+    return NS_OK;
+  }
 
   
   if (aStatus == NS_NET_STATUS_RECEIVING_FROM ||
@@ -1848,11 +1859,7 @@ HttpChannelParent::OnStatus(nsIRequest* aRequest, nsISupports* aContext,
   }
 
   
-  
-  MOZ_ASSERT(mIPCClosed || mBgParent);
-
-  
-  if (mIPCClosed || !mBgParent || !mBgParent->OnStatus(aStatus)) {
+  if (!mBgParent->OnStatus(aStatus)) {
     return NS_ERROR_UNEXPECTED;
   }
 
