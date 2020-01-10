@@ -2997,7 +2997,15 @@ class Document : public nsINode,
                : mAllowXULXBL == eTriFalse ? false : InternalAllowXULXBL();
   }
 
+  
+
+
+
+  bool SkipDTDSecurityChecks() { return mSkipDTDSecurityChecks; }
+
   void ForceEnableXULXBL() { mAllowXULXBL = eTriTrue; }
+
+  void ForceSkipDTDSecurityChecks() { mSkipDTDSecurityChecks = true; }
 
   
 
@@ -4810,6 +4818,8 @@ class Document : public nsINode,
   enum Tri { eTriUnset = 0, eTriFalse, eTriTrue };
 
   Tri mAllowXULXBL;
+
+  bool mSkipDTDSecurityChecks;
 
   
   

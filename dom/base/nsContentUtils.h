@@ -1980,6 +1980,13 @@ class nsContentUtils {
 
 
 
+
+  static bool PrincipalAllowsL10n(nsIPrincipal* aPrincipal);
+
+  
+
+
+
   static bool MaybeAllowOfflineAppByDefault(nsIPrincipal* aPrincipal);
 
   

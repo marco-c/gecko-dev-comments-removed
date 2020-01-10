@@ -329,7 +329,19 @@ static bool IsImageLoadInEditorAppType(nsILoadInfo* aLoadInfo) {
 
 static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
-  if (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DTD) {
+  
+  if (aLoadInfo->InternalContentPolicyType() ==
+      nsIContentPolicy::TYPE_INTERNAL_DTD) {
+    return nsContentUtils::PrincipalAllowsL10n(aLoadInfo->TriggeringPrincipal())
+               ? NS_OK
+               : NS_ERROR_DOM_BAD_URI;
+  }
+
+  
+  
+  
+  if (aLoadInfo->InternalContentPolicyType() ==
+      nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD) {
     return NS_OK;
   }
 

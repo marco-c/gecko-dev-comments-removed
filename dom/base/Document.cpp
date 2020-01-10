@@ -1300,6 +1300,7 @@ Document::Document(const char* aContentType)
       mType(eUnknown),
       mDefaultElementType(0),
       mAllowXULXBL(eTriUnset),
+      mSkipDTDSecurityChecks(false),
       mBidiOptions(IBMBIDI_DEFAULT_BIDI_OPTIONS),
       mSandboxFlags(0),
       mPartID(0),
@@ -2285,38 +2286,6 @@ void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
   }
 
   mChannel = aChannel;
-}
-
-
-
-
-
-
-bool PrincipalAllowsL10n(nsIPrincipal* principal) {
-  
-  if (nsContentUtils::IsSystemPrincipal(principal)) {
-    return true;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = principal->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS(rv, false);
-
-  bool hasFlags;
-
-  
-  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_DANGEROUS_TO_LOAD,
-                           &hasFlags);
-  NS_ENSURE_SUCCESS(rv, false);
-  if (hasFlags) {
-    return true;
-  }
-
-  
-  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                           &hasFlags);
-  NS_ENSURE_SUCCESS(rv, false);
-  return hasFlags;
 }
 
 void Document::DisconnectNodeTree() {
@@ -3652,11 +3621,11 @@ DocumentL10n* Document::GetL10n() { return mDocumentL10n; }
 bool Document::DocumentSupportsL10n(JSContext* aCx, JSObject* aObject) {
   nsCOMPtr<nsIPrincipal> callerPrincipal =
       nsContentUtils::SubjectPrincipal(aCx);
-  return PrincipalAllowsL10n(callerPrincipal);
+  return nsContentUtils::PrincipalAllowsL10n(callerPrincipal);
 }
 
 void Document::LocalizationLinkAdded(Element* aLinkElement) {
-  if (!PrincipalAllowsL10n(NodePrincipal())) {
+  if (!nsContentUtils::PrincipalAllowsL10n(NodePrincipal())) {
     return;
   }
 
@@ -3694,7 +3663,7 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
 }
 
 void Document::LocalizationLinkRemoved(Element* aLinkElement) {
-  if (!PrincipalAllowsL10n(NodePrincipal())) {
+  if (!nsContentUtils::PrincipalAllowsL10n(NodePrincipal())) {
     return;
   }
 

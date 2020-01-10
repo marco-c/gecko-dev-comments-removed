@@ -2546,6 +2546,7 @@ this.VideoControlsImplWidget = class {
 
 
     const parser = new this.window.DOMParser();
+    parser.forceEnableDTD();
     let parserDoc = parser.parseFromString(
       `<!DOCTYPE bindings [
       <!ENTITY % videocontrolsDTD SYSTEM "chrome://global/locale/videocontrols.dtd">
@@ -2793,6 +2794,7 @@ this.NoControlsMobileImplWidget = class {
 
 
     const parser = new this.window.DOMParser();
+    parser.forceEnableDTD();
     let parserDoc = parser.parseFromString(
       `<!DOCTYPE bindings [
       <!ENTITY % videocontrolsDTD SYSTEM "chrome://global/locale/videocontrols.dtd">
@@ -2843,6 +2845,7 @@ this.NoControlsPictureInPictureImplWidget = class {
 
 
     const parser = new this.window.DOMParser();
+    parser.forceEnableDTD();
     let parserDoc = parser.parseFromString(
       `<!DOCTYPE bindings [
       <!ENTITY % videocontrolsDTD SYSTEM "chrome://global/locale/videocontrols.dtd">
@@ -2980,6 +2983,7 @@ this.NoControlsDesktopImplWidget = class {
 
 
     const parser = new this.window.DOMParser();
+    parser.forceEnableDTD();
     let parserDoc = parser.parseFromString(
       `<!DOCTYPE bindings [
       <!ENTITY % videocontrolsDTD SYSTEM "chrome://global/locale/videocontrols.dtd">

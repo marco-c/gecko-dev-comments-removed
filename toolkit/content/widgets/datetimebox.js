@@ -143,6 +143,7 @@ this.DateTimeInputBaseImplWidget = class {
 
 
     const parser = new this.window.DOMParser();
+    parser.forceEnableDTD();
     let parserDoc = parser.parseFromString(
       `<!DOCTYPE bindings [
       <!ENTITY % datetimeboxDTD SYSTEM "chrome://global/locale/datetimebox.dtd">

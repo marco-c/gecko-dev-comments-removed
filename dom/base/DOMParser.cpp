@@ -33,7 +33,8 @@ DOMParser::DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal,
       mPrincipal(aDocPrincipal),
       mDocumentURI(aDocumentURI),
       mBaseURI(aBaseURI),
-      mForceEnableXULXBL(false) {
+      mForceEnableXULXBL(false),
+      mForceEnableDTD(false) {
   MOZ_ASSERT(aDocPrincipal);
   MOZ_ASSERT(aDocumentURI);
 }
@@ -67,6 +68,10 @@ already_AddRefed<Document> DOMParser::ParseFromString(const nsAString& aStr,
     
     if (mForceEnableXULXBL) {
       document->ForceEnableXULXBL();
+    }
+
+    if (mForceEnableDTD) {
+      document->ForceSkipDTDSecurityChecks();
     }
 
     nsresult rv = nsContentUtils::ParseDocumentHTML(aStr, document, false);
@@ -181,6 +186,10 @@ already_AddRefed<Document> DOMParser::ParseFromStream(nsIInputStream* aStream,
   
   if (mForceEnableXULXBL) {
     document->ForceEnableXULXBL();
+  }
+
+  if (mForceEnableDTD) {
+    document->ForceSkipDTDSecurityChecks();
   }
 
   

@@ -1685,6 +1685,34 @@ bool nsContentUtils::OfflineAppAllowed(nsIPrincipal* aPrincipal) {
   return NS_SUCCEEDED(rv) && allowed;
 }
 
+
+bool nsContentUtils::PrincipalAllowsL10n(nsIPrincipal* aPrincipal) {
+  
+  if (IsSystemPrincipal(aPrincipal)) {
+    return true;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  bool hasFlags;
+
+  
+  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_DANGEROUS_TO_LOAD,
+                           &hasFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (hasFlags) {
+    return true;
+  }
+
+  
+  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                           &hasFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+  return hasFlags;
+}
+
 bool nsContentUtils::MaybeAllowOfflineAppByDefault(nsIPrincipal* aPrincipal) {
   if (!Preferences::GetRootBranch()) return false;
 
