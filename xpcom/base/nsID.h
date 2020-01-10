@@ -46,10 +46,20 @@ struct nsID {
 
   inline bool Equals(const nsID& aOther) const {
     
+    
+    
+    
+    
+#if defined(__x86_64__) || defined(__i386__)
+    return !memcmp(this, &aOther, sizeof *this);
+#else
+    
+    
     return (((uint32_t*)&m0)[0] == ((uint32_t*)&aOther.m0)[0]) &&
            (((uint32_t*)&m0)[1] == ((uint32_t*)&aOther.m0)[1]) &&
            (((uint32_t*)&m0)[2] == ((uint32_t*)&aOther.m0)[2]) &&
            (((uint32_t*)&m0)[3] == ((uint32_t*)&aOther.m0)[3]);
+#endif
   }
 
   inline bool operator==(const nsID& aOther) const { return Equals(aOther); }
