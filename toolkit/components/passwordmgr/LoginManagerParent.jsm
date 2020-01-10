@@ -564,6 +564,13 @@ this.LoginManagerParent = {
     if (!usernameField && oldPasswordField && logins.length > 0) {
       let prompter = this._getPrompter(browser, openerTopWindowID);
 
+      let { browsingContext } = browser;
+      let framePrincipalOrigin =
+        browsingContext.currentWindowGlobal.documentPrincipal.origin;
+      let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
+        framePrincipalOrigin
+      );
+
       if (logins.length == 1) {
         let oldLogin = logins[0];
 
@@ -580,15 +587,14 @@ this.LoginManagerParent = {
         formLogin.usernameField = oldLogin.usernameField;
 
         prompter.promptToChangePassword(oldLogin, formLogin, dismissedPrompt);
-      } else {
+        return;
+      } else if (!generatedPW || generatedPW.value != newPasswordField.value) {
         
         
         
-
         prompter.promptToChangePasswordWithUsernames(logins, formLogin);
+        return;
       }
-
-      return;
     }
 
     let existingLogin = null;
