@@ -448,37 +448,6 @@ TEST_F(TelemetryGeckoViewFixture, PersistHistograms) {
   RemovePersistenceFile();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 TEST_F(TelemetryGeckoViewFixture, EmptyPendingOperations) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
