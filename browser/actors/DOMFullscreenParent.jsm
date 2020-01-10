@@ -22,7 +22,7 @@ class DOMFullscreenParent extends JSWindowActorParent {
       }
       case "DOMFullscreen:NewOrigin": {
         
-        if (window.fullscreen) {
+        if (window.document.fullscreen) {
           window.PointerlockFsWarning.showFullScreen(
             aMessage.data.originNoSuffix
           );
