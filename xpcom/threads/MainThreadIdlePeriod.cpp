@@ -20,8 +20,8 @@ static const double kLongIdlePeriodMS = 50.0;
 
 
 
-static const double kMinIdlePeriodMS = 3.0;
-static const double kMinIdlePeriodDuringLoadMS = 12.0;
+
+
 
 static const uint32_t kMaxTimerThreadBound = 5;        
 static const uint32_t kMaxTimerThreadBoundClamp = 15;  
@@ -43,7 +43,8 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
 
   
   
-  TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(kMinIdlePeriodMS);
+  TimeDuration minIdlePeriod =
+      TimeDuration::FromMilliseconds(StaticPrefs::idle_period_min());
   bool busySoon = currentGuess.IsNull() ||
                   (now >= (currentGuess - minIdlePeriod)) ||
                   currentGuess < mLastIdleDeadline;
@@ -51,8 +52,8 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
   
   if (!busySoon && XRE_IsContentProcess() &&
       mozilla::dom::Document::HasRecentlyStartedForegroundLoads()) {
-    TimeDuration minIdlePeriod =
-        TimeDuration::FromMilliseconds(kMinIdlePeriodDuringLoadMS);
+    TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(
+        StaticPrefs::idle_period_during_page_load_min());
     busySoon = (now >= (currentGuess - minIdlePeriod));
   }
 
