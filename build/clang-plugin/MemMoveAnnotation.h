@@ -27,6 +27,7 @@ protected:
       if (Name == "pair" || Name == "atomic" ||
           
           Name == "__atomic_base" || Name == "atomic_bool" ||
+          Name == "__cxx_atomic_impl" || Name == "__cxx_atomic_base_impl" ||
           Name == "__pair_base" ||
           
           Name == "_Atomic_impl" || Name == "_Atomic_base" ||
