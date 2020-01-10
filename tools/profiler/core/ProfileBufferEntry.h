@@ -38,7 +38,6 @@ class ProfilerCodeAddressService;
   MACRO(ColumnNumber, int, sizeof(int))                              \
   MACRO(NativeLeafAddr, void*, sizeof(void*))                        \
   MACRO(Pause, double, sizeof(double))                               \
-  MACRO(Responsiveness, double, sizeof(double))                      \
   MACRO(Resume, double, sizeof(double))                              \
   MACRO(ThreadId, int, sizeof(int))                                  \
   MACRO(Time, double, sizeof(double))                                \
@@ -78,6 +77,9 @@ class ProfileBufferEntry {
 
     
     MarkerData = LEGACY_LIMIT,
+
+    
+    UnresponsiveDurationMs,
 
     
     

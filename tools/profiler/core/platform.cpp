@@ -1905,22 +1905,16 @@ static void DoSyncSample(PSLockRef aLock, RegisteredThread& aRegisteredThread,
 
 
 
-static void DoPeriodicSample(PSLockRef aLock,
-                             RegisteredThread& aRegisteredThread,
-                             ProfiledThreadData& aProfiledThreadData,
-                             const TimeStamp& aNow, const Registers& aRegs,
-                             uint64_t aSamplePos, ProfileBuffer& aBuffer) {
+static inline void DoPeriodicSample(PSLockRef aLock,
+                                    RegisteredThread& aRegisteredThread,
+                                    ProfiledThreadData& aProfiledThreadData,
+                                    const TimeStamp& aNow,
+                                    const Registers& aRegs, uint64_t aSamplePos,
+                                    ProfileBuffer& aBuffer) {
   
 
   DoSharedSample(aLock,  false, aRegisteredThread, aRegs,
                  aSamplePos, aBuffer);
-
-  ThreadResponsiveness* resp = aProfiledThreadData.GetThreadResponsiveness();
-  if (resp && resp->HasData()) {
-    double delta = resp->GetUnresponsiveDuration(
-        (aNow - CorePS::ProcessStartTime()).ToMilliseconds());
-    aBuffer.AddEntry(ProfileBufferEntry::Responsiveness(delta));
-  }
 }
 
 
@@ -2874,13 +2868,31 @@ void SamplerThread::Run() {
             buffer.AddEntry(ProfileBufferEntry::TimeBeforeCompactStack(
                 delta.ToMilliseconds()));
 
+            Maybe<double> unresponsiveDuration_ms;
+
             
             
             mSampler.SuspendAndSampleAndResumeThread(
                 lock, *registeredThread, [&](const Registers& aRegs) {
                   DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
                                    now, aRegs, samplePos, localProfileBuffer);
+
+                  if (resp && resp->HasData()) {
+                    unresponsiveDuration_ms =
+                        Some(resp->GetUnresponsiveDuration(
+                            (now - CorePS::ProcessStartTime())
+                                .ToMilliseconds()));
+                  }
                 });
+
+            
+            
+            
+            if (unresponsiveDuration_ms.isSome()) {
+              CorePS::CoreBlocksRingBuffer().PutObjects(
+                  ProfileBufferEntry::Kind::UnresponsiveDurationMs,
+                  *unresponsiveDuration_ms);
+            }
 
             
             
