@@ -21,8 +21,11 @@ Debugger.Object.prototype.getProperty = function(name) {
     return undefined;
   }
   if (!desc.value) {
-    throw Error("Debugger.Object.prototype.getProperty: " +
-                "not a value property: " + name);
+    throw Error(
+      "Debugger.Object.prototype.getProperty: " +
+        "not a value property: " +
+        name
+    );
   }
   return desc.value;
 };
@@ -36,15 +39,13 @@ function run_test() {
   
   
   const mainObj = { name: "mainObj" };
-  Cu.evalInSandbox('var contentObj = { name: "contentObj" };',
-                   contentBox);
-  Cu.evalInSandbox('var chromeObj = { name: "chromeObj" };',
-                   chromeBox);
+  Cu.evalInSandbox('var contentObj = { name: "contentObj" };', contentBox);
+  Cu.evalInSandbox('var chromeObj = { name: "chromeObj" };', chromeBox);
 
   
   contentBox.mainObj = chromeBox.mainObj = mainObj;
-  const contentObj = chromeBox.contentObj = contentBox.contentObj;
-  const chromeObj = contentBox.chromeObj = chromeBox.chromeObj;
+  const contentObj = (chromeBox.contentObj = contentBox.contentObj);
+  const chromeObj = (contentBox.chromeObj = chromeBox.chromeObj);
 
   
   
@@ -52,18 +53,14 @@ function run_test() {
 
   
   
-  Assert.ok(Cu.evalInSandbox("mainObj", contentBox)
-            === contentBox.mainObj);
-  Assert.ok(Cu.evalInSandbox("contentObj", contentBox)
-            === contentBox.contentObj);
-  Assert.ok(Cu.evalInSandbox("chromeObj", contentBox)
-            === contentBox.chromeObj);
-  Assert.ok(Cu.evalInSandbox("mainObj", chromeBox)
-            === chromeBox.mainObj);
-  Assert.ok(Cu.evalInSandbox("contentObj", chromeBox)
-            === chromeBox.contentObj);
-  Assert.ok(Cu.evalInSandbox("chromeObj", chromeBox)
-            === chromeBox.chromeObj);
+  Assert.ok(Cu.evalInSandbox("mainObj", contentBox) === contentBox.mainObj);
+  Assert.ok(
+    Cu.evalInSandbox("contentObj", contentBox) === contentBox.contentObj
+  );
+  Assert.ok(Cu.evalInSandbox("chromeObj", contentBox) === contentBox.chromeObj);
+  Assert.ok(Cu.evalInSandbox("mainObj", chromeBox) === chromeBox.mainObj);
+  Assert.ok(Cu.evalInSandbox("contentObj", chromeBox) === chromeBox.contentObj);
+  Assert.ok(Cu.evalInSandbox("chromeObj", chromeBox) === chromeBox.chromeObj);
 
   
   Assert.ok(contentBox.mainObj.name === "mainObj");
@@ -71,22 +68,16 @@ function run_test() {
   Assert.ok(contentBox.chromeObj.name === "chromeObj");
 
   
-  Assert.equal(Cu.evalInSandbox("mainObj.name", chromeBox),
-               "mainObj");
-  Assert.equal(Cu.evalInSandbox("contentObj.name", chromeBox),
-               "contentObj");
-  Assert.equal(Cu.evalInSandbox("chromeObj.name", chromeBox),
-               "chromeObj");
+  Assert.equal(Cu.evalInSandbox("mainObj.name", chromeBox), "mainObj");
+  Assert.equal(Cu.evalInSandbox("contentObj.name", chromeBox), "contentObj");
+  Assert.equal(Cu.evalInSandbox("chromeObj.name", chromeBox), "chromeObj");
 
   
   
   
-  Assert.equal(Cu.evalInSandbox("mainObj.name", contentBox),
-               undefined);
-  Assert.equal(Cu.evalInSandbox("contentObj.name", contentBox),
-               "contentObj");
-  Assert.equal(Cu.evalInSandbox("chromeObj.name", contentBox),
-               undefined);
+  Assert.equal(Cu.evalInSandbox("mainObj.name", contentBox), undefined);
+  Assert.equal(Cu.evalInSandbox("contentObj.name", contentBox), "contentObj");
+  Assert.equal(Cu.evalInSandbox("chromeObj.name", contentBox), undefined);
 
   
   
@@ -109,7 +100,10 @@ function run_test() {
   Assert.equal(mainFromContentDO.unsafeDereference(), mainObj);
 
   const contentFromContentDO = contentBoxDO.getProperty("contentObj");
-  Assert.equal(contentFromContentDO, contentBoxDO.makeDebuggeeValue(contentObj));
+  Assert.equal(
+    contentFromContentDO,
+    contentBoxDO.makeDebuggeeValue(contentObj)
+  );
   Assert.equal(contentFromContentDO.getProperty("name"), "contentObj");
   Assert.equal(contentFromContentDO.unsafeDereference(), contentObj);
 

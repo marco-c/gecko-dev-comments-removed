@@ -6,8 +6,11 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "E10SUtils",
-                               "resource://gre/modules/E10SUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm"
+);
 
 
 
@@ -33,11 +36,16 @@ const MSG_MGR_CONSOLE_INFO_MAX = 1024;
 function ContentProcessForward() {
   Services.obs.addObserver(this, "console-api-log-event");
   Services.obs.addObserver(this, "xpcom-shutdown");
-  Services.cpmm.addMessageListener("DevTools:StopForwardingContentProcessMessage", this);
+  Services.cpmm.addMessageListener(
+    "DevTools:StopForwardingContentProcessMessage",
+    this
+  );
 }
 ContentProcessForward.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 
   receiveMessage(message) {
     if (message.name == "DevTools:StopForwardingContentProcessMessage") {
@@ -54,7 +62,8 @@ ContentProcessForward.prototype = {
           ...consoleMsg,
           arguments: [],
           filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
-          functionName: consoleMsg.functionName &&
+          functionName:
+            consoleMsg.functionName &&
             consoleMsg.functionName.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
           
           wrappedJSObject: null,
@@ -71,9 +80,13 @@ ContentProcessForward.prototype = {
 
         
         for (let arg of consoleMsg.arguments) {
-          if ((typeof arg == "object" || typeof arg == "function") &&
-              arg !== null) {
-            if (Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE) {
+          if (
+            (typeof arg == "object" || typeof arg == "function") &&
+            arg !== null
+          ) {
+            if (
+              Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE
+            ) {
               
               
               
@@ -116,8 +129,10 @@ ContentProcessForward.prototype = {
   uninit() {
     Services.obs.removeObserver(this, "console-api-log-event");
     Services.obs.removeObserver(this, "xpcom-shutdown");
-    Services.cpmm.removeMessageListener("DevTools:StopForwardingContentProcessMessage",
-                                        this);
+    Services.cpmm.removeMessageListener(
+      "DevTools:StopForwardingContentProcessMessage",
+      this
+    );
   },
 };
 
@@ -126,4 +141,3 @@ ContentProcessForward.prototype = {
 if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
   new ContentProcessForward();
 }
-

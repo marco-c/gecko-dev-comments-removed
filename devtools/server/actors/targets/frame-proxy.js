@@ -13,7 +13,11 @@
 
 
 const { DebuggerServer } = require("devtools/server/main");
-loader.lazyImporter(this, "PlacesUtils", "resource://gre/modules/PlacesUtils.jsm");
+loader.lazyImporter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
 
 
 
@@ -46,7 +50,8 @@ FrameTargetActorProxy.prototype = {
         
         this._deferredUpdate.reject({
           error: "tabDestroyed",
-          message: "Tab destroyed while performing a FrameTargetActorProxy update",
+          message:
+            "Tab destroyed while performing a FrameTargetActorProxy update",
         });
       }
       this.exit();
@@ -54,7 +59,11 @@ FrameTargetActorProxy.prototype = {
 
     await this._unzombifyIfNeeded();
 
-    const connect = DebuggerServer.connectToFrame(this._conn, this._browser, onDestroy);
+    const connect = DebuggerServer.connectToFrame(
+      this._conn,
+      this._browser,
+      onDestroy
+    );
     const form = await connect;
 
     this._form = form;
@@ -75,8 +84,9 @@ FrameTargetActorProxy.prototype = {
   get _mm() {
     
     
-    return this._browser.messageManager ||
-           this._browser.frameLoader.messageManager;
+    return (
+      this._browser.messageManager || this._browser.frameLoader.messageManager
+    );
   },
 
   async getFaviconData() {
@@ -191,13 +201,17 @@ FrameTargetActorProxy.prototype = {
     }
 
     
-    const browserApp = this._browser ? this._browser.ownerGlobal.BrowserApp : null;
+    const browserApp = this._browser
+      ? this._browser.ownerGlobal.BrowserApp
+      : null;
     if (browserApp) {
       
       
       const waitForUnzombify = new Promise(resolve => {
-        this._browser.addEventListener("DOMContentLoaded", resolve,
-                                       { capture: true, once: true });
+        this._browser.addEventListener("DOMContentLoaded", resolve, {
+          capture: true,
+          once: true,
+        });
       });
 
       const tab = browserApp.getTabForBrowser(this._browser);

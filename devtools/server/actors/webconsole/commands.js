@@ -34,7 +34,10 @@ function formatCommand(string) {
   if (!isCommand(string)) {
     throw Error("formatCommand was called without `:`");
   }
-  const tokens = string.trim().split(/\s+/).map(createToken);
+  const tokens = string
+    .trim()
+    .split(/\s+/)
+    .map(createToken);
   const { command, args } = parseCommand(tokens);
   const argsString = formatArgs(args);
   return `${command}(${argsString})`;
@@ -50,9 +53,7 @@ function formatCommand(string) {
 
 
 function formatArgs(args) {
-  return Object.keys(args).length ?
-    JSON.stringify(args) :
-    "";
+  return Object.keys(args).length ? JSON.stringify(args) : "";
 }
 
 
@@ -113,7 +114,11 @@ function parseCommand(tokens) {
       const nextToken = tokens[nextTokenIndex];
       let values = args[token.value] || DEFAULT_VALUE;
       if (nextToken && nextToken.type === ARG) {
-        const { value, offset } = collectString(nextToken, tokens, nextTokenIndex);
+        const { value, offset } = collectString(
+          nextToken,
+          tokens,
+          nextTokenIndex
+        );
         
         
         
@@ -148,7 +153,7 @@ function parseCommand(tokens) {
   return { command, args };
 }
 
-const stringChars = ["\"", "'", "`"];
+const stringChars = ['"', "'", "`"];
 function isStringChar(testChar) {
   return stringChars.includes(testChar);
 }

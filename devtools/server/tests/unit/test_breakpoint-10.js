@@ -9,51 +9,56 @@
 
 
 
-add_task(threadClientTest(({ threadClient, client, debuggee }) => {
-  return new Promise(resolve => {
-    threadClient.once("paused", async function(packet) {
-      const source = await getSourceById(
-        threadClient,
-        packet.frame.where.actor
-      );
-      const location = {
-        sourceUrl: source.url,
-        line: debuggee.line0 + 3,
-        column: 5,
-      };
-
-      threadClient.setBreakpoint(location, {});
-      await client.waitForRequestsToSettle();
-
+add_task(
+  threadClientTest(({ threadClient, client, debuggee }) => {
+    return new Promise(resolve => {
       threadClient.once("paused", async function(packet) {
-        
-        Assert.equal(packet.why.type, "breakpoint");
-        
-        Assert.equal(debuggee.i, 0);
-
-        
-        threadClient.removeBreakpoint(location);
-        await client.waitForRequestsToSettle();
-
-        const location2 = {
+        const source = await getSourceById(
+          threadClient,
+          packet.frame.where.actor
+        );
+        const location = {
           sourceUrl: source.url,
           line: debuggee.line0 + 3,
-          column: 12,
+          column: 5,
         };
-        threadClient.setBreakpoint(location2, {});
+
+        threadClient.setBreakpoint(location, {});
         await client.waitForRequestsToSettle();
 
         threadClient.once("paused", async function(packet) {
           
           Assert.equal(packet.why.type, "breakpoint");
           
-          Assert.equal(debuggee.i, 1);
+          Assert.equal(debuggee.i, 0);
 
           
-          threadClient.removeBreakpoint(location2);
+          threadClient.removeBreakpoint(location);
           await client.waitForRequestsToSettle();
 
-          threadClient.resume().then(resolve);
+          const location2 = {
+            sourceUrl: source.url,
+            line: debuggee.line0 + 3,
+            column: 12,
+          };
+          threadClient.setBreakpoint(location2, {});
+          await client.waitForRequestsToSettle();
+
+          threadClient.once("paused", async function(packet) {
+            
+            Assert.equal(packet.why.type, "breakpoint");
+            
+            Assert.equal(debuggee.i, 1);
+
+            
+            threadClient.removeBreakpoint(location2);
+            await client.waitForRequestsToSettle();
+
+            threadClient.resume().then(resolve);
+          });
+
+          
+          await threadClient.resume();
         });
 
         
@@ -61,10 +66,6 @@ add_task(threadClientTest(({ threadClient, client, debuggee }) => {
       });
 
       
-      await threadClient.resume();
-    });
-
-    
     Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
                      "debugger;\n" +                      
                      "var a, i = 0;\n" +                  
@@ -73,5 +74,6 @@ add_task(threadClientTest(({ threadClient, client, debuggee }) => {
                      "}\n",                               
                      debuggee);
     
-  });
-}));
+    });
+  })
+);

@@ -5,11 +5,15 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/server/tests/browser/inspector-helpers.js", this);
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/server/tests/browser/inspector-helpers.js",
+  this
+);
 
 add_task(async function loadNewChild() {
-  const { target, walker } =
-    await initInspectorFront(MAIN_DOMAIN + "inspector-traversal-data.html");
+  const { target, walker } = await initInspectorFront(
+    MAIN_DOMAIN + "inspector-traversal-data.html"
+  );
 
   let originalOwnershipSize = 0;
   let longlist = null;
@@ -41,8 +45,11 @@ add_task(async function loadNewChild() {
   
   
   const newOwnershipSize = await assertOwnershipTrees(walker);
-  is(newOwnershipSize, originalOwnershipSize - 53,
-    "Ownership tree should be lower");
+  is(
+    newOwnershipSize,
+    originalOwnershipSize - 53,
+    "Ownership tree should be lower"
+  );
   
   await checkMissing(target, longlist);
   await checkMissing(target, firstChild);

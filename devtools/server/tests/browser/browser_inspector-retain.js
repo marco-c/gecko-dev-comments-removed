@@ -5,7 +5,10 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/server/tests/browser/inspector-helpers.js", this);
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/server/tests/browser/inspector-helpers.js",
+  this
+);
 
 
 
@@ -15,8 +18,9 @@ Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtool
 
 
 add_task(async function testRetain() {
-  const { walker } =
-    await initInspectorFront(MAIN_DOMAIN + "inspector-traversal-data.html");
+  const { walker } = await initInspectorFront(
+    MAIN_DOMAIN + "inspector-traversal-data.html"
+  );
 
   
   const bodyFront = await walker.querySelector(walker.rootNode, "body");
@@ -35,20 +39,35 @@ add_task(async function testRetain() {
 
   
   
-  is(ownershipTreeSize(clientTree.root) + ownershipTreeSize(clientTree.retained[0]) + 1,
-     originalOwnershipSize,
-     "Should have only lost one item overall.");
+  is(
+    ownershipTreeSize(clientTree.root) +
+      ownershipTreeSize(clientTree.retained[0]) +
+      1,
+    originalOwnershipSize,
+    "Should have only lost one item overall."
+  );
   is(walker._retainedOrphans.size, 1, "Should have retained one orphan");
-  ok(walker._retainedOrphans.has(bodyFront),
-     "Should have retained the expected node.");
+  ok(
+    walker._retainedOrphans.has(bodyFront),
+    "Should have retained the expected node."
+  );
   
   await walker.unretainNode(bodyFront);
   await assertOwnershipTrees(walker);
 
-  is(walker._retainedOrphans.size, 1, "Should still only have one retained orphan.");
-  ok(!walker._retainedOrphans.has(bodyFront), "Should have dropped the body node.");
-  ok(walker._retainedOrphans.has(childListFront),
-     "Should have retained the child node.");
+  is(
+    walker._retainedOrphans.size,
+    1,
+    "Should still only have one retained orphan."
+  );
+  ok(
+    !walker._retainedOrphans.has(bodyFront),
+    "Should have dropped the body node."
+  );
+  ok(
+    walker._retainedOrphans.has(childListFront),
+    "Should have retained the child node."
+  );
 
   
   const onMutations = waitForMutation(walker, isUnretained);
@@ -66,8 +85,9 @@ add_task(async function testRetain() {
 
 
 add_task(async function testWinRace() {
-  const { walker } =
-    await initInspectorFront(MAIN_DOMAIN + "inspector-traversal-data.html");
+  const { walker } = await initInspectorFront(
+    MAIN_DOMAIN + "inspector-traversal-data.html"
+  );
 
   const front = await walker.querySelector(walker.rootNode, "#a");
   const onMutation = waitForMutation(walker, isChildList);
@@ -81,7 +101,10 @@ add_task(async function testWinRace() {
 
   await assertOwnershipTrees(walker);
   is(walker._retainedOrphans.size, 1, "Should have a retained orphan.");
-  ok(walker._retainedOrphans.has(front), "Should have retained our expected node.");
+  ok(
+    walker._retainedOrphans.has(front),
+    "Should have retained our expected node."
+  );
   await walker.unretainNode(front);
 
   
@@ -92,8 +115,9 @@ add_task(async function testWinRace() {
 
 
 add_task(async function testLoseRace() {
-  const { walker } =
-    await initInspectorFront(MAIN_DOMAIN + "inspector-traversal-data.html");
+  const { walker } = await initInspectorFront(
+    MAIN_DOMAIN + "inspector-traversal-data.html"
+  );
 
   const front = await walker.querySelector(walker.rootNode, "#z");
   const onMutation = walker.once("new-mutations");
@@ -119,7 +143,11 @@ add_task(async function testLoseRace() {
     
     
     
-    is(walker._retainedOrphans.size, 0, "Should have no more retained orphans.");
+    is(
+      walker._retainedOrphans.size,
+      0,
+      "Should have no more retained orphans."
+    );
     
   }
 });

@@ -21,11 +21,36 @@ const {
   makeEventBreakpointMessage,
 } = require("devtools/server/actors/utils/event-breakpoints");
 
-loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
-loader.lazyRequireGetter(this, "BreakpointActorMap", "devtools/server/actors/utils/breakpoint-actor-map", true);
-loader.lazyRequireGetter(this, "PauseScopedObjectActor", "devtools/server/actors/pause-scoped", true);
-loader.lazyRequireGetter(this, "EventLoopStack", "devtools/server/actors/utils/event-loop", true);
-loader.lazyRequireGetter(this, "FrameActor", "devtools/server/actors/frame", true);
+loader.lazyRequireGetter(
+  this,
+  "EnvironmentActor",
+  "devtools/server/actors/environment",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "BreakpointActorMap",
+  "devtools/server/actors/utils/breakpoint-actor-map",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "PauseScopedObjectActor",
+  "devtools/server/actors/pause-scoped",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "EventLoopStack",
+  "devtools/server/actors/utils/event-loop",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "FrameActor",
+  "devtools/server/actors/frame",
+  true
+);
 loader.lazyRequireGetter(this, "throttle", "devtools/shared/throttle", true);
 
 
@@ -122,15 +147,23 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._dbg.onNewScript = this.onNewScript;
       this._dbg.onNewDebuggee = this._onNewDebuggee;
       if (this._dbg.replaying) {
-        this._dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(this);
+        this._dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(
+          this
+        );
         const sendProgress = throttle((recording, executionPoint) => {
           if (this.attached) {
-            this.conn.send({ type: "progress", from: this.actorID,
-                             recording, executionPoint });
+            this.conn.send({
+              type: "progress",
+              from: this.actorID,
+              recording,
+              executionPoint,
+            });
           }
         }, 100);
-        this._dbg.replayingOnPositionChange =
-          this.replayingOnPositionChange.bind(this, sendProgress);
+        this._dbg.replayingOnPositionChange = this.replayingOnPositionChange.bind(
+          this,
+          sendProgress
+        );
       }
       
       this._dbg.enabled = this._state != "detached";
@@ -150,9 +183,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   get attached() {
-    return this.state == "attached" ||
-           this.state == "running" ||
-           this.state == "paused";
+    return (
+      this.state == "attached" ||
+      this.state == "running" ||
+      this.state == "paused"
+    );
   },
 
   get threadLifetimePool() {
@@ -234,12 +269,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this._activeEventBreakpoints = new Set();
     this._debuggerNotificationObserver.removeListener(
-      this._eventBreakpointListener);
+      this._eventBreakpointListener
+    );
 
     for (const global of this.dbg.getDebuggees()) {
       try {
         this._debuggerNotificationObserver.disconnect(global);
-      } catch (e) { }
+      } catch (e) {}
     }
 
     this.sources.off("newSource", this.onNewSourceEvent);
@@ -271,7 +307,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   
-  onAttach: function({options}) {
+  onAttach: function({ options }) {
     if (this.state === "exited") {
       return {
         error: "exited",
@@ -336,7 +372,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
-      this.conn.send({from: this.actorID});
+      this.conn.send({ from: this.actorID });
       this.conn.sendActorEvent(this.actorID, "paused", packet);
 
       
@@ -373,7 +409,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   _findXHRBreakpointIndex(p, m) {
     return this._xhrBreakpoints.findIndex(
-      ({ path, method }) => path === p && method === m);
+      ({ path, method }) => path === p && method === m
+    );
   },
 
   setBreakpoint(location, options) {
@@ -383,7 +420,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (location.sourceUrl) {
       
       
-      const sourceActors = this.sources.getSourceActorsByURL(location.sourceUrl);
+      const sourceActors = this.sources.getSourceActorsByURL(
+        location.sourceUrl
+      );
       sourceActors.map(sourceActor => sourceActor.applyBreakpoint(actor));
     } else {
       const sourceActor = this.sources.getSourceActorById(location.sourceId);
@@ -429,17 +468,19 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     if (this._activeEventBreakpoints.size === 0) {
       this._debuggerNotificationObserver.removeListener(
-        this._eventBreakpointListener);
+        this._eventBreakpointListener
+      );
     } else {
       this._debuggerNotificationObserver.addListener(
-        this._eventBreakpointListener);
+        this._eventBreakpointListener
+      );
     }
   },
 
   _onNewDebuggee(global) {
     try {
       this._debuggerNotificationObserver.connect(global);
-    } catch (e) { }
+    } catch (e) {}
   },
 
   _updateNetworkObserver() {
@@ -453,10 +494,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     if (this._xhrBreakpoints.length > 0 && !this._observingNetwork) {
       this._observingNetwork = true;
-      Services.obs.addObserver(this._onOpeningRequest, "http-on-opening-request");
+      Services.obs.addObserver(
+        this._onOpeningRequest,
+        "http-on-opening-request"
+      );
     } else if (this._xhrBreakpoints.length === 0 && this._observingNetwork) {
       this._observingNetwork = false;
-      Services.obs.removeObserver(this._onOpeningRequest, "http-on-opening-request");
+      Services.obs.removeObserver(
+        this._onOpeningRequest,
+        "http-on-opening-request"
+      );
     }
 
     return true;
@@ -476,10 +523,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       causeType = channel.loadInfo.externalContentPolicyType;
     }
 
-    const isXHR = (
+    const isXHR =
       causeType === Ci.nsIContentPolicy.TYPE_XMLHTTPREQUEST ||
-      causeType === Ci.nsIContentPolicy.TYPE_FETCH
-    );
+      causeType === Ci.nsIContentPolicy.TYPE_FETCH;
 
     if (!isXHR) {
       
@@ -554,8 +600,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return;
     }
 
-    const eventBreakpoint =
-      eventBreakpointForNotification(this.dbg, notification);
+    const eventBreakpoint = eventBreakpointForNotification(
+      this.dbg,
+      notification
+    );
 
     if (!this._activeEventBreakpoints.has(eventBreakpoint)) {
       return;
@@ -564,8 +612,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (notification.phase === "pre" && !this._activeEventPause) {
       this._activeEventPause = this._captureDebuggerHooks();
 
-      this.dbg.onEnterFrame =
-        this._makeEventBreakpointEnterFrame(eventBreakpoint);
+      this.dbg.onEnterFrame = this._makeEventBreakpointEnterFrame(
+        eventBreakpoint
+      );
     } else if (notification.phase === "post" && this._activeEventPause) {
       this._restoreDebuggerHooks(this._activeEventPause);
       this._activeEventPause = null;
@@ -644,11 +693,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
       packet.why = reason;
 
-      const {
-        sourceActor,
-        line,
-        column,
-      } = this.sources.getFrameLocation(frame);
+      const { sourceActor, line, column } = this.sources.getFrameLocation(
+        frame
+      );
 
       if (!sourceActor) {
         
@@ -702,13 +749,18 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       
       const { onStep, onPop } = this._makeSteppingHooks(
-        null, "next", false, null
+        null,
+        "next",
+        false,
+        null
       );
 
       if (this.dbg.replaying) {
-        const offsets =
-          this._findReplayingStepOffsets(null, frame,
-                                            false);
+        const offsets = this._findReplayingStepOffsets(
+          null,
+          frame,
+           false
+        );
         frame.setReplayingOnStep(onStep, offsets);
       } else {
         frame.onStep = onStep;
@@ -743,13 +795,18 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           
           const ncompletion = thread.dbg.replaying ? null : completion;
           const { onStep, onPop } = thread._makeSteppingHooks(
-            location, "next", false, ncompletion
+            location,
+            "next",
+            false,
+            ncompletion
           );
           if (thread.dbg.replaying) {
             const parentLocation = thread.sources.getFrameLocation(parentFrame);
-            const offsets =
-              thread._findReplayingStepOffsets(parentLocation, parentFrame,
-                                                false);
+            const offsets = thread._findReplayingStepOffsets(
+              parentLocation,
+              parentFrame,
+               false
+            );
             parentFrame.setReplayingOnStep(onStep, offsets);
           } else {
             parentFrame.onStep = onStep;
@@ -802,8 +859,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     const { line, column } = this._priorPause.frame.where;
-    return line !== newLocation.line
-      || column !== newLocation.column;
+    return line !== newLocation.line || column !== newLocation.column;
   },
 
   
@@ -830,8 +886,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     const pausePoints = location.sourceActor.pausePoints;
-    const pausePoint = pausePoints &&
-      findPausePointForLocation(pausePoints, location);
+    const pausePoint =
+      pausePoints && findPausePointForLocation(pausePoints, location);
 
     if (pausePoint) {
       return pausePoint.step;
@@ -840,8 +896,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return script.getOffsetMetadata(offset).isStepStart;
   },
 
-  _makeOnStep: function({ pauseAndRespond, startFrame,
-                          startLocation, steppingType, completion, rewinding }) {
+  _makeOnStep: function({
+    pauseAndRespond,
+    startFrame,
+    startLocation,
+    steppingType,
+    completion,
+    rewinding,
+  }) {
     const thread = this;
     return function() {
       
@@ -853,8 +915,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
-      if (location.url == null
-          || thread.sources.isBlackBoxed(location.url)) {
+      if (location.url == null || thread.sources.isBlackBoxed(location.url)) {
         return undefined;
       }
 
@@ -864,11 +925,15 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
 
       
-      if (thread._intraFrameLocationIsStepTarget(startLocation,
-                                                 this.script, this.offset)) {
-        return pauseAndRespond(
-          this,
-          packet => thread.createCompletionGrip(packet, completion)
+      if (
+        thread._intraFrameLocationIsStepTarget(
+          startLocation,
+          this.script,
+          this.offset
+        )
+      ) {
+        return pauseAndRespond(this, packet =>
+          thread.createCompletionGrip(packet, completion)
         );
       }
 
@@ -883,7 +948,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return packet;
     }
 
-    const createGrip = value => createValueGrip(value, this._pausePool, this.objectGrip);
+    const createGrip = value =>
+      createValueGrip(value, this._pausePool, this.objectGrip);
     packet.why.frameFinished = {};
 
     if (completion.hasOwnProperty("return")) {
@@ -904,21 +970,29 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _findReplayingStepOffsets: function(startLocation, frame, rewinding) {
-    const worklist = [frame.offset], seen = [], result = [];
+    const worklist = [frame.offset],
+      seen = [],
+      result = [];
     while (worklist.length) {
       const offset = worklist.pop();
       if (seen.includes(offset)) {
         continue;
       }
       seen.push(offset);
-      if (this._intraFrameLocationIsStepTarget(startLocation, frame.script, offset)) {
+      if (
+        this._intraFrameLocationIsStepTarget(
+          startLocation,
+          frame.script,
+          offset
+        )
+      ) {
         if (!result.includes(offset)) {
           result.push(offset);
         }
       } else {
         const neighbors = rewinding
-            ? frame.script.getPredecessorOffsets(offset)
-            : frame.script.getSuccessorOffsets(offset);
+          ? frame.script.getPredecessorOffsets(offset)
+          : frame.script.getSuccessorOffsets(offset);
         for (const n of neighbors) {
           worklist.push(n);
         }
@@ -930,17 +1004,19 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  _makeSteppingHooks: function(startLocation, steppingType, rewinding, completion) {
+  _makeSteppingHooks: function(
+    startLocation,
+    steppingType,
+    rewinding,
+    completion
+  ) {
     
     
     
     
     const steppingHookState = {
-      pauseAndRespond: (frame, onPacket = k=>k) => this._pauseAndRespond(
-        frame,
-        { type: "resumeLimit" },
-        onPacket
-      ),
+      pauseAndRespond: (frame, onPacket = k => k) =>
+        this._pauseAndRespond(frame, { type: "resumeLimit" }, onPacket),
       startFrame: this.youngestFrame,
       startLocation: startLocation,
       steppingType: steppingType,
@@ -964,7 +1040,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  _handleResumeLimit: async function({rewind, resumeLimit}) {
+  _handleResumeLimit: async function({ rewind, resumeLimit }) {
     let steppingType = resumeLimit.type;
     const rewinding = rewind;
     if (!["break", "step", "next", "finish", "warp"].includes(steppingType)) {
@@ -998,21 +1074,27 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (stepFrame) {
       switch (steppingType) {
         case "step":
-          assert(!rewinding, "'step' resume limit cannot be used while rewinding");
+          assert(
+            !rewinding,
+            "'step' resume limit cannot be used while rewinding"
+          );
           this.dbg.onEnterFrame = onEnterFrame;
-          
+        
         case "break":
         case "next":
           if (stepFrame.script) {
             if (this.dbg.replaying) {
-              const offsets =
-                this._findReplayingStepOffsets(location, stepFrame, rewinding);
+              const offsets = this._findReplayingStepOffsets(
+                location,
+                stepFrame,
+                rewinding
+              );
               stepFrame.setReplayingOnStep(onStep, offsets);
             } else {
               stepFrame.onStep = onStep;
             }
           }
-          
+        
         case "finish":
           if (rewinding) {
             let olderFrame = stepFrame.older;
@@ -1023,7 +1105,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
               
               
               
-              const offsets = this._findReplayingStepOffsets({}, olderFrame, true);
+              const offsets = this._findReplayingStepOffsets(
+                {},
+                olderFrame,
+                true
+              );
               olderFrame.setReplayingOnStep(onStep, offsets);
             }
           } else {
@@ -1057,12 +1143,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onResume: async function({resumeLimit, rewind}) {
+  onResume: async function({ resumeLimit, rewind }) {
     if (this._state !== "paused") {
       return {
         error: "wrongState",
-        message: "Can't resume when debuggee isn't paused. Current state is '"
-          + this._state + "'",
+        message:
+          "Can't resume when debuggee isn't paused. Current state is '" +
+          this._state +
+          "'",
         state: this._state,
       };
     }
@@ -1070,9 +1158,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
-    if (this._nestedEventLoops.size && this._nestedEventLoops.lastPausedUrl
-        && (this._nestedEventLoops.lastPausedUrl !== this._parent.url
-            || this._nestedEventLoops.lastConnection !== this.conn)) {
+    if (
+      this._nestedEventLoops.size &&
+      this._nestedEventLoops.lastPausedUrl &&
+      (this._nestedEventLoops.lastPausedUrl !== this._parent.url ||
+        this._nestedEventLoops.lastConnection !== this.conn)
+    ) {
       return {
         error: "wrongOrder",
         message: "trying to resume in the wrong order.",
@@ -1089,7 +1180,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     try {
       if (resumeLimit) {
-        await this._handleResumeLimit({resumeLimit, rewind});
+        await this._handleResumeLimit({ resumeLimit, rewind });
       } else {
         this._clearSteppingHooks();
       }
@@ -1100,10 +1191,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return error instanceof Error
         ? {
             error: "unknownError",
-            message: DevToolsUtils.safeErrorString(error) }
-        
-        
-        : error;
+            message: DevToolsUtils.safeErrorString(error),
+          }
+        : 
+          
+          error;
     }
   },
 
@@ -1159,18 +1251,18 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     let eventLoop;
     let returnVal;
 
-    p.then((resolvedVal) => {
+    p.then(resolvedVal => {
       needNest = false;
       returnVal = resolvedVal;
     })
-    .catch((error) => {
-      reportError(error, "Error inside unsafeSynchronize:");
-    })
-    .then(() => {
-      if (eventLoop) {
-        eventLoop.resolve();
-      }
-    });
+      .catch(error => {
+        reportError(error, "Error inside unsafeSynchronize:");
+      })
+      .then(() => {
+        if (eventLoop) {
+          eventLoop.resolve();
+        }
+      });
 
     if (needNest) {
       eventLoop = this._nestedEventLoops.push();
@@ -1195,8 +1287,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _getNextStepFrame: function(frame, rewinding) {
-    const endOfFrame =
-      rewinding ? (frame.offset == frame.script.mainOffset) : frame.reportedPop;
+    const endOfFrame = rewinding
+      ? frame.offset == frame.script.mainOffset
+      : frame.reportedPop;
     const stepFrame = endOfFrame ? frame.older : frame;
     if (!stepFrame || !stepFrame.script) {
       return null;
@@ -1206,8 +1299,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   onFrames: function(request) {
     if (this.state !== "paused") {
-      return { error: "wrongState",
-               message: "Stack frames are only available while the debuggee is paused."};
+      return {
+        error: "wrongState",
+        message:
+          "Stack frames are only available while the debuggee is paused.",
+      };
     }
 
     const start = request.start ? request.start : 0;
@@ -1216,7 +1312,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     let frame = this.youngestFrame;
     let i = 0;
-    while (frame && (i < start)) {
+    while (frame && i < start) {
       frame = frame.older;
       i++;
     }
@@ -1224,13 +1320,15 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     const frames = [];
-    for (; frame && (!count || i < (start + count)); i++, frame = frame.older) {
+    for (; frame && (!count || i < start + count); i++, frame = frame.older) {
       const form = this._createFrameActor(frame).form();
       form.depth = i;
 
       let frameItem = null;
 
-      const frameSourceActor = this.sources.createSourceActor(frame.script.source);
+      const frameSourceActor = this.sources.createSourceActor(
+        frame.script.source
+      );
       if (frameSourceActor) {
         form.where = {
           actor: frameSourceActor.actorID,
@@ -1277,23 +1375,26 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onInterrupt: function({when}) {
+  onInterrupt: function({ when }) {
     if (this.state == "exited") {
       return { type: "exited" };
     } else if (this.state == "paused") {
       
-      this.conn.sendActorEvent(this.actorID, "paused", { why: { type: "alreadyPaused" }});
+      this.conn.sendActorEvent(this.actorID, "paused", {
+        why: { type: "alreadyPaused" },
+      });
       return {};
     } else if (this.state != "running") {
-      return { error: "wrongState",
-               message: "Received interrupt request in " + this.state +
-                        " state." };
+      return {
+        error: "wrongState",
+        message: "Received interrupt request in " + this.state + " state.",
+      };
     }
     try {
       
       
       if (when == "onNext" && !this.dbg.replaying) {
-        const onEnterFrame = (frame) => {
+        const onEnterFrame = frame => {
           this._pauseAndRespond(frame, { type: "interrupted", onNext: true });
         };
         this.dbg.onEnterFrame = onEnterFrame;
@@ -1319,7 +1420,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
-      this.conn.send({from: this.actorID, type: "interrupt"});
+      this.conn.send({ from: this.actorID, type: "interrupt" });
       this.conn.sendActorEvent(this.actorID, "paused", packet);
 
       
@@ -1387,9 +1488,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const poppedFrames = this._updateFrames();
 
     
-    const packet = { from: this.actorID,
-                     type: "paused",
-                     actor: this._pauseActor.actorID };
+    const packet = {
+      from: this.actorID,
+      type: "paused",
+      actor: this._pauseActor.actorID,
+    };
     if (frame) {
       packet.frame = this._createFrameActor(frame).form();
     }
@@ -1530,23 +1633,28 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return this.threadLifetimePool.objectActors.get(value).form();
     }
 
-    const actor = new PauseScopedObjectActor(value, {
-      getGripDepth: () => this._gripDepth,
-      incrementGripDepth: () => this._gripDepth++,
-      decrementGripDepth: () => this._gripDepth--,
-      createValueGrip: v => {
-        if (this._pausePool) {
-          return createValueGrip(v, this._pausePool, this.pauseObjectGrip);
-        }
+    const actor = new PauseScopedObjectActor(
+      value,
+      {
+        getGripDepth: () => this._gripDepth,
+        incrementGripDepth: () => this._gripDepth++,
+        decrementGripDepth: () => this._gripDepth--,
+        createValueGrip: v => {
+          if (this._pausePool) {
+            return createValueGrip(v, this._pausePool, this.pauseObjectGrip);
+          }
 
-        return createValueGrip(v, this.threadLifetimePool, this.objectGrip);
+          return createValueGrip(v, this.threadLifetimePool, this.objectGrip);
+        },
+        sources: () => this.sources,
+        createEnvironmentActor: (e, p) => this.createEnvironmentActor(e, p),
+        promote: () => this.threadObjectGrip(actor),
+        isThreadLifetimePool: () =>
+          actor.registeredPool !== this.threadLifetimePool,
+        getGlobalDebugObject: () => this.globalDebugObject,
       },
-      sources: () => this.sources,
-      createEnvironmentActor: (e, p) => this.createEnvironmentActor(e, p),
-      promote: () => this.threadObjectGrip(actor),
-      isThreadLifetimePool: () => actor.registeredPool !== this.threadLifetimePool,
-      getGlobalDebugObject: () => this.globalDebugObject,
-    }, this.conn);
+      this.conn
+    );
     pool.addActor(actor);
     pool.objectActors.set(value, actor);
     return actor.form();
@@ -1593,8 +1701,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     if (!request.actors) {
-      return { error: "missingParameter",
-               message: "no actors were specified" };
+      return { error: "missingParameter", message: "no actors were specified" };
     }
 
     for (const actorID of request.actors) {
@@ -1622,11 +1729,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   pauseForMutationBreakpoint: function(mutationType) {
     if (
-      ![
-        "subtreeModified",
-        "nodeRemoved",
-        "attributeModified",
-      ].includes(mutationType)
+      !["subtreeModified", "nodeRemoved", "attributeModified"].includes(
+        mutationType
+      )
     ) {
       throw new Error("Unexpected mutation breakpoint type");
     }
@@ -1660,9 +1765,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
-    if (!this.hasMoved(location, "debuggerStatement")
-        || this.skipBreakpoints
-        || this.sources.isBlackBoxed(url)) {
+    if (
+      !this.hasMoved(location, "debuggerStatement") ||
+      this.skipBreakpoints ||
+      this.sources.isBlackBoxed(url)
+    ) {
       return undefined;
     }
 
@@ -1674,7 +1781,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return { skip };
   },
 
-  onPauseOnExceptions: function({pauseOnExceptions, ignoreCaughtExceptions}) {
+  onPauseOnExceptions: function({ pauseOnExceptions, ignoreCaughtExceptions }) {
     Object.assign(this._options, { pauseOnExceptions, ignoreCaughtExceptions });
     this.maybePauseOnExceptions();
     return {};
@@ -1736,8 +1843,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return undefined;
     }
 
-    if (this._handledFrameExceptions.has(youngestFrame) &&
-        this._handledFrameExceptions.get(youngestFrame) === value) {
+    if (
+      this._handledFrameExceptions.has(youngestFrame) &&
+      this._handledFrameExceptions.get(youngestFrame) === value
+    ) {
       return undefined;
     }
 
@@ -1773,9 +1882,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         return undefined;
       }
 
-      packet.why = { type: "exception",
-                     exception: createValueGrip(value, this._pausePool,
-                                                this.objectGrip),
+      packet.why = {
+        type: "exception",
+        exception: createValueGrip(value, this._pausePool, this.objectGrip),
       };
       this.conn.send(packet);
 
@@ -1837,7 +1946,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     let sourceActor;
-    if (this._debuggerSourcesSeen.has(source) && this.sources.hasSourceActor(source)) {
+    if (
+      this._debuggerSourcesSeen.has(source) &&
+      this.sources.hasSourceActor(source)
+    ) {
       sourceActor = this.sources.getSourceActor(source);
     } else {
       sourceActor = this.sources.createSourceActor(source);
@@ -1848,10 +1960,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this.setBreakpoint({ sourceUrl, line: 1 }, {});
     }
 
-    const bpActors = this.breakpointActorMap.findActors()
-    .filter((actor) =>
-      actor.location.sourceUrl && actor.location.sourceUrl == sourceUrl
-    );
+    const bpActors = this.breakpointActorMap
+      .findActors()
+      .filter(
+        actor =>
+          actor.location.sourceUrl && actor.location.sourceUrl == sourceUrl
+      );
 
     for (const actor of bpActors) {
       sourceActor.applyBreakpoint(actor);
@@ -1872,17 +1986,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 });
 
 Object.assign(ThreadActor.prototype.requestTypes, {
-  "attach": ThreadActor.prototype.onAttach,
-  "detach": ThreadActor.prototype.onDetach,
-  "reconfigure": ThreadActor.prototype.onReconfigure,
-  "resume": ThreadActor.prototype.onResume,
-  "frames": ThreadActor.prototype.onFrames,
-  "interrupt": ThreadActor.prototype.onInterrupt,
-  "sources": ThreadActor.prototype.onSources,
-  "threadGrips": ThreadActor.prototype.onThreadGrips,
-  "skipBreakpoints": ThreadActor.prototype.onSkipBreakpoints,
-  "pauseOnExceptions": ThreadActor.prototype.onPauseOnExceptions,
-  "dumpThread": ThreadActor.prototype.onDump,
+  attach: ThreadActor.prototype.onAttach,
+  detach: ThreadActor.prototype.onDetach,
+  reconfigure: ThreadActor.prototype.onReconfigure,
+  resume: ThreadActor.prototype.onResume,
+  frames: ThreadActor.prototype.onFrames,
+  interrupt: ThreadActor.prototype.onInterrupt,
+  sources: ThreadActor.prototype.onSources,
+  threadGrips: ThreadActor.prototype.onThreadGrips,
+  skipBreakpoints: ThreadActor.prototype.onSkipBreakpoints,
+  pauseOnExceptions: ThreadActor.prototype.onPauseOnExceptions,
+  dumpThread: ThreadActor.prototype.onDump,
 });
 
 exports.ThreadActor = ThreadActor;

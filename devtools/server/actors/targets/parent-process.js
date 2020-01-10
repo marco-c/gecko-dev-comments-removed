@@ -25,7 +25,9 @@ const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 
 const { extend } = require("devtools/shared/extend");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { parentProcessTargetSpec } = require("devtools/shared/specs/targets/parent-process");
+const {
+  parentProcessTargetSpec,
+} = require("devtools/shared/specs/targets/parent-process");
 
 
 
@@ -92,7 +94,7 @@ Object.defineProperty(parentProcessTargetPrototype, "docShells", {
   get: function() {
     
     let docShells = [];
-    for (const {docShell} of Services.ww.getWindowEnumerator()) {
+    for (const { docShell } of Services.ww.getWindowEnumerator()) {
       docShells = docShells.concat(getChildDocShells(docShell));
     }
 
@@ -127,7 +129,7 @@ parentProcessTargetPrototype._attach = function() {
   Services.obs.addObserver(this, "chrome-webnavigation-destroy");
 
   
-  for (const {docShell} of Services.ww.getWindowEnumerator()) {
+  for (const { docShell } of Services.ww.getWindowEnumerator()) {
     if (docShell == this.docShell) {
       continue;
     }
@@ -145,7 +147,7 @@ parentProcessTargetPrototype._detach = function() {
   Services.obs.removeObserver(this, "chrome-webnavigation-destroy");
 
   
-  for (const {docShell} of Services.ww.getWindowEnumerator()) {
+  for (const { docShell } of Services.ww.getWindowEnumerator()) {
     if (docShell == this.docShell) {
       continue;
     }
@@ -162,7 +164,7 @@ parentProcessTargetPrototype._detach = function() {
 
 parentProcessTargetPrototype.preNest = function() {
   
-  for (const {windowUtils} of Services.wm.getEnumerator(null)) {
+  for (const { windowUtils } of Services.wm.getEnumerator(null)) {
     windowUtils.suppressEventHandling(true);
     windowUtils.suspendTimeouts();
   }
@@ -173,12 +175,14 @@ parentProcessTargetPrototype.preNest = function() {
 
 parentProcessTargetPrototype.postNest = function(nestData) {
   
-  for (const {windowUtils} of Services.wm.getEnumerator(null)) {
+  for (const { windowUtils } of Services.wm.getEnumerator(null)) {
     windowUtils.resumeTimeouts();
     windowUtils.suppressEventHandling(false);
   }
 };
 
 exports.parentProcessTargetPrototype = parentProcessTargetPrototype;
-exports.ParentProcessTargetActor =
-  ActorClassWithSpec(parentProcessTargetSpec, parentProcessTargetPrototype);
+exports.ParentProcessTargetActor = ActorClassWithSpec(
+  parentProcessTargetSpec,
+  parentProcessTargetPrototype
+);

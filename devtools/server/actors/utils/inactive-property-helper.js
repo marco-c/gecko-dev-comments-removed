@@ -52,11 +52,7 @@ class InactivePropertyHelper {
     return [
       
       {
-        invalidProperties: [
-          "flex-direction",
-          "flex-flow",
-          "flex-wrap",
-        ],
+        invalidProperties: ["flex-direction", "flex-flow", "flex-wrap"],
         when: () => !this.flexContainer,
         fixId: "inactive-css-not-flex-container-fix",
         msgId: "inactive-css-not-flex-container",
@@ -110,10 +106,7 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: [
-          "align-self",
-          "place-self",
-        ],
+        invalidProperties: ["align-self", "place-self"],
         when: () => !this.gridItem && !this.flexItem,
         fixId: "inactive-css-not-grid-or-flex-item-fix",
         msgId: "inactive-css-not-grid-or-flex-item",
@@ -136,25 +129,24 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: [
-          "column-gap",
-          "gap",
-        ],
-        when: () => !this.gridContainer && !this.flexContainer && !this.multiColContainer,
-        fixId: "inactive-css-not-grid-or-flex-container-or-multicol-container-fix",
+        invalidProperties: ["column-gap", "gap"],
+        when: () =>
+          !this.gridContainer && !this.flexContainer && !this.multiColContainer,
+        fixId:
+          "inactive-css-not-grid-or-flex-container-or-multicol-container-fix",
         msgId: "inactive-css-not-grid-or-flex-container-or-multicol-container",
         numFixProps: 3,
       },
       
       {
-        invalidProperties: [
-          "vertical-align",
-        ],
+        invalidProperties: ["vertical-align"],
         when: () => {
           const { selectorText } = this.cssRule;
 
-          const isFirstLetter = selectorText && selectorText.includes("::first-letter");
-          const isFirstLine = selectorText && selectorText.includes("::first-line");
+          const isFirstLetter =
+            selectorText && selectorText.includes("::first-letter");
+          const isFirstLine =
+            selectorText && selectorText.includes("::first-line");
 
           return !this.isInlineLevel() && !isFirstLetter && !isFirstLine;
         },
@@ -164,29 +156,19 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: [
-          "max-width",
-          "min-width",
-          "width",
-        ],
-        when: () => this.nonReplacedInlineBox
-          || this.tableRow
-          || this.rowGroup,
+        invalidProperties: ["max-width", "min-width", "width"],
+        when: () => this.nonReplacedInlineBox || this.tableRow || this.rowGroup,
         fixId: "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix",
         msgId: "inactive-css-property-because-of-display",
         numFixProps: 2,
       },
       
       {
-        invalidProperties: [
-          "max-height",
-          "min-height",
-          "height",
-        ],
-        when: () => this.nonReplacedInlineBox
-          || this.tableColumn
-          || this.columnGroup,
-        fixId: "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix",
+        invalidProperties: ["max-height", "min-height", "height"],
+        when: () =>
+          this.nonReplacedInlineBox || this.tableColumn || this.columnGroup,
+        fixId:
+          "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix",
         msgId: "inactive-css-property-because-of-display",
         numFixProps: 1,
       },
@@ -195,7 +177,10 @@ class InactivePropertyHelper {
 
   get unusedCssEnabled() {
     if (!this._unusedCssEnabled) {
-      this._unusedCssEnabled = Services.prefs.getBoolPref(PREF_UNUSED_CSS_ENABLED, false);
+      this._unusedCssEnabled = Services.prefs.getBoolPref(
+        PREF_UNUSED_CSS_ENABLED,
+        false
+      );
     }
     return this._unusedCssEnabled;
   }
@@ -230,7 +215,7 @@ class InactivePropertyHelper {
 
   isPropertyUsed(el, elStyle, cssRule, property) {
     if (!this.unusedCssEnabled) {
-      return {used: true};
+      return { used: true };
     }
 
     let fixId = "";
@@ -243,8 +228,9 @@ class InactivePropertyHelper {
       let isRuleConcerned = false;
 
       if (validator.invalidProperties) {
-        isRuleConcerned = validator.invalidProperties === "*" ||
-                          validator.invalidProperties.includes(property);
+        isRuleConcerned =
+          validator.invalidProperties === "*" ||
+          validator.invalidProperties.includes(property);
       } else if (validator.validProperties) {
         isRuleConcerned = !validator.validProperties.includes(property);
       }
@@ -433,10 +419,11 @@ class InactivePropertyHelper {
 
 
   get rowGroup() {
-    return this.style && (
-      this.style.display === "table-row-group" ||
-      this.style.display === "table-header-group" ||
-      this.style.display === "table-footer-group"
+    return (
+      this.style &&
+      (this.style.display === "table-row-group" ||
+        this.style.display === "table-header-group" ||
+        this.style.display === "table-footer-group")
     );
   }
 
@@ -477,10 +464,21 @@ class InactivePropertyHelper {
   get replaced() {
     
     
-    if (this.nodeNameOneOf([
-      "br", "button", "canvas", "embed", "hr", "iframe", "math",
-      "object", "picture", "svg", "video",
-    ])) {
+    if (
+      this.nodeNameOneOf([
+        "br",
+        "button",
+        "canvas",
+        "embed",
+        "hr",
+        "iframe",
+        "math",
+        "object",
+        "picture",
+        "svg",
+        "video",
+      ])
+    ) {
       return true;
     }
 
@@ -568,9 +566,11 @@ class InactivePropertyHelper {
       }
       const position = this.style ? this.style.position : null;
       const cssFloat = this.style ? this.style.cssFloat : null;
-      if (position === "absolute" ||
-          position === "fixed" ||
-          cssFloat !== "none") {
+      if (
+        position === "absolute" ||
+        position === "fixed" ||
+        cssFloat !== "none"
+      ) {
         
         return null;
       }
@@ -578,7 +578,11 @@ class InactivePropertyHelper {
       return null;
     }
 
-    for (let p = node.flattenedTreeParentNode; p; p = p.flattenedTreeParentNode) {
+    for (
+      let p = node.flattenedTreeParentNode;
+      p;
+      p = p.flattenedTreeParentNode
+    ) {
       const style = node.ownerGlobal.getComputedStyle(p);
       const display = style.display;
 

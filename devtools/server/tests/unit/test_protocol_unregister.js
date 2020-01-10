@@ -1,11 +1,11 @@
 "use strict";
 
-const {types} = require("devtools/shared/protocol");
+const { types } = require("devtools/shared/protocol");
 
 function run_test() {
   types.addType("test", {
-    read: (v) => "successful read: " + v,
-    write: (v) => "successful write: " + v,
+    read: v => "successful read: " + v,
+    write: v => "successful write: " + v,
   });
 
   
@@ -39,4 +39,3 @@ function run_test() {
     Assert.equal(ex.toString(), "Error: Using defunct type: test");
   }
 }
-

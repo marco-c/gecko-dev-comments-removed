@@ -11,8 +11,9 @@
 
 
 
-const swm = Cc["@mozilla.org/serviceworkers/manager;1"]
-  .getService(Ci.nsIServiceWorkerManager);
+const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+  Ci.nsIServiceWorkerManager
+);
 
 addMessageListener("serviceWorkerRegistration:start", message => {
   const { data } = message;
@@ -20,8 +21,10 @@ addMessageListener("serviceWorkerRegistration:start", message => {
 
   
   for (let i = 0; i < array.length; i++) {
-    const registration =
-      array.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+    const registration = array.queryElementAt(
+      i,
+      Ci.nsIServiceWorkerRegistrationInfo
+    );
     
     
     

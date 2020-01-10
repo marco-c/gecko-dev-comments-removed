@@ -8,45 +8,46 @@
 
 
 
-add_task(threadClientTest(({ threadClient, client, debuggee }) => {
-  return new Promise(resolve => {
-    let done = false;
-    threadClient.once("paused", async function(packet) {
-      const source = await getSourceById(
-        threadClient,
-        packet.frame.where.actor
-      );
-      const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
-
-      threadClient.setBreakpoint(location, {});
-      await client.waitForRequestsToSettle();
+add_task(
+  threadClientTest(({ threadClient, client, debuggee }) => {
+    return new Promise(resolve => {
+      let done = false;
       threadClient.once("paused", async function(packet) {
-        
-        Assert.equal(packet.frame.where.actor, source.actorID);
-        Assert.equal(packet.frame.where.line, location.line);
-        Assert.equal(packet.why.type, "breakpoint");
-        
-        Assert.equal(debuggee.a, undefined);
+        const source = await getSourceById(
+          threadClient,
+          packet.frame.where.actor
+        );
+        const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
+
+        threadClient.setBreakpoint(location, {});
+        await client.waitForRequestsToSettle();
+        threadClient.once("paused", async function(packet) {
+          
+          Assert.equal(packet.frame.where.actor, source.actorID);
+          Assert.equal(packet.frame.where.line, location.line);
+          Assert.equal(packet.why.type, "breakpoint");
+          
+          Assert.equal(debuggee.a, undefined);
+
+          
+          threadClient.removeBreakpoint(location);
+          await client.waitForRequestsToSettle();
+          done = true;
+          threadClient.once("paused", function(packet) {
+            
+            threadClient.resume().then(function() {
+              Assert.ok(false);
+            });
+          });
+          await threadClient.resume();
+          resolve();
+        });
 
         
-        threadClient.removeBreakpoint(location);
-        await client.waitForRequestsToSettle();
-        done = true;
-        threadClient.once("paused", function(packet) {
-          
-          threadClient.resume().then(function() {
-            Assert.ok(false);
-          });
-        });
         await threadClient.resume();
-        resolve();
       });
 
       
-      await threadClient.resume();
-    });
-
-    
     Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
                      "function foo(stop) {\n" + 
                      "  this.a = 1;\n" +        
@@ -58,8 +59,9 @@ add_task(threadClientTest(({ threadClient, client, debuggee }) => {
                      "foo();\n",                
                      debuggee);
     
-    if (!done) {
-      Assert.ok(false);
-    }
-  });
-}));
+      if (!done) {
+        Assert.ok(false);
+      }
+    });
+  })
+);

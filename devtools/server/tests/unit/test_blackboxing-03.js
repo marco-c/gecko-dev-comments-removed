@@ -17,11 +17,14 @@ function run_test() {
   gDebuggee = addTestGlobal("test-black-box");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function() {
-    attachTestTabAndResume(gClient, "test-black-box",
-                           function(response, targetFront, threadClient) {
-                             gThreadClient = threadClient;
-                             test_black_box();
-                           });
+    attachTestTabAndResume(gClient, "test-black-box", function(
+      response,
+      targetFront,
+      threadClient
+    ) {
+      gThreadClient = threadClient;
+      test_black_box();
+    });
   });
   do_test_pending();
 }
@@ -39,10 +42,12 @@ function test_black_box() {
 
   
   Cu.evalInSandbox(
-    "" + function doStuff(k) { 
-      debugger;                
-      k(100);                  
-    },                         
+    "" +
+      function doStuff(k) {
+        
+        debugger; 
+        k(100); 
+      }, 
     gDebuggee,
     "1.8",
     BLACK_BOXED_URL,
@@ -50,14 +55,18 @@ function test_black_box() {
   );
 
   Cu.evalInSandbox(
-    "" + function runTest() { 
-      doStuff(                
-        function(n) {        
-          Math.abs(n);        
-        }                     
-      );                      
-    }                         
-    + "\n debugger;",         
+    "" +
+    function runTest() {
+      
+      doStuff(
+        
+        function(n) {
+          
+          Math.abs(n); 
+        } 
+      ); 
+    } + 
+      "\n debugger;", 
     gDebuggee,
     "1.8",
     SOURCE_URL,
@@ -73,8 +82,11 @@ async function test_black_box_dbg_statement() {
   await blackBox(sourceFront);
 
   gThreadClient.once("paused", async function(packet) {
-    Assert.equal(packet.why.type, "breakpoint",
-                 "We should pass over the debugger statement.");
+    Assert.equal(
+      packet.why.type,
+      "breakpoint",
+      "We should pass over the debugger statement."
+    );
 
     const source = await getSourceById(gThreadClient, packet.frame.where.actor);
     gThreadClient.removeBreakpoint({ sourceUrl: source.url, line: 4 }, {});
@@ -89,8 +101,11 @@ async function test_unblack_box_dbg_statement(sourceFront) {
   await unBlackBox(sourceFront);
 
   gThreadClient.once("paused", async function(packet) {
-    Assert.equal(packet.why.type, "debuggerStatement",
-                 "We should stop at the debugger statement again");
+    Assert.equal(
+      packet.why.type,
+      "debuggerStatement",
+      "We should stop at the debugger statement again"
+    );
     await gThreadClient.resume();
     finishClient(gClient);
   });

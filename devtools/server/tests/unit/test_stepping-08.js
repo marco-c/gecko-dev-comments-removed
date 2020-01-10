@@ -7,32 +7,37 @@
 
 
 
-add_task(threadClientTest(async ({ threadClient, debuggee }) => {
-  dumpn("Evaluating test code and waiting for first debugger statement");
-  const dbgStmt = await executeOnNextTickAndWaitForPause(
-    () => evaluateTestCode(debuggee), threadClient);
-  equal(dbgStmt.frame.where.line, 3, "Should be at debugger statement on line 3");
+add_task(
+  threadClientTest(async ({ threadClient, debuggee }) => {
+    dumpn("Evaluating test code and waiting for first debugger statement");
+    const dbgStmt = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadClient
+    );
+    equal(
+      dbgStmt.frame.where.line,
+      3,
+      "Should be at debugger statement on line 3"
+    );
 
-  dumpn("Setting breakpoint in innerFunction");
-  const source = await getSourceById(
-    threadClient,
-    dbgStmt.frame.where.actor
-  );
-  await threadClient.setBreakpoint({ sourceUrl: source.url, line: 7 }, {});
+    dumpn("Setting breakpoint in innerFunction");
+    const source = await getSourceById(threadClient, dbgStmt.frame.where.actor);
+    await threadClient.setBreakpoint({ sourceUrl: source.url, line: 7 }, {});
 
-  dumpn("Step in to innerFunction");
-  const step1 = await stepOver(threadClient);
-  equal(step1.frame.where.line, 3);
+    dumpn("Step in to innerFunction");
+    const step1 = await stepOver(threadClient);
+    equal(step1.frame.where.line, 3);
 
-  dumpn("Step in to innerFunction");
-  const step2 = await stepIn(threadClient);
-  equal(step2.frame.where.line, 7);
+    dumpn("Step in to innerFunction");
+    const step2 = await stepIn(threadClient);
+    equal(step2.frame.where.line, 7);
 
-  dumpn("Step out of innerFunction");
-  const step3 = await stepOut(threadClient);
-  
-  equal(step3.frame.where.line, 4);
-}));
+    dumpn("Step out of innerFunction");
+    const step3 = await stepOut(threadClient);
+    
+    equal(step3.frame.where.line, 4);
+  })
+);
 
 function evaluateTestCode(debuggee) {
   

@@ -8,9 +8,9 @@
 
 
 var protocol = require("devtools/shared/protocol");
-var {RetVal, Arg} = protocol;
+var { RetVal, Arg } = protocol;
 var EventEmitter = require("devtools/shared/event-emitter");
-var {LongStringActor} = require("devtools/server/actors/string");
+var { LongStringActor } = require("devtools/server/actors/string");
 
 
 require("devtools/shared/fronts/string");
@@ -23,9 +23,7 @@ function simpleHello() {
   };
 }
 
-DebuggerServer.LONG_STRING_LENGTH =
-  DebuggerServer.LONG_STRING_INITIAL_LENGTH =
-  DebuggerServer.LONG_STRING_READ_LENGTH = 5;
+DebuggerServer.LONG_STRING_LENGTH = DebuggerServer.LONG_STRING_INITIAL_LENGTH = DebuggerServer.LONG_STRING_READ_LENGTH = 5;
 
 var SHORT_STR = "abc";
 var LONG_STR = "abcdefghijklmnop";
@@ -77,11 +75,19 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
   },
 
   emitShortString: function() {
-    EventEmitter.emit(this, "string-event", new LongStringActor(this.conn, SHORT_STR));
+    EventEmitter.emit(
+      this,
+      "string-event",
+      new LongStringActor(this.conn, SHORT_STR)
+    );
   },
 
   emitLongString: function() {
-    EventEmitter.emit(this, "string-event", new LongStringActor(this.conn, LONG_STR));
+    EventEmitter.emit(
+      this,
+      "string-event",
+      new LongStringActor(this.conn, LONG_STR)
+    );
   },
 });
 
@@ -96,9 +102,9 @@ class RootFront extends protocol.FrontClassWithSpec(rootSpec) {
 }
 
 function run_test() {
-  DebuggerServer.createRootActor = (conn => {
+  DebuggerServer.createRootActor = conn => {
     return RootActor(conn);
-  });
+  };
 
   DebuggerServer.init();
   const trace = connectPipeTracing();
@@ -118,127 +124,181 @@ function run_test() {
     
     expectRootChildren(0);
 
-    trace.expectReceive({"from": "<actorid>",
-                         "applicationType": "xpcshell-tests",
-                         "traits": []});
+    trace.expectReceive({
+      from: "<actorid>",
+      applicationType: "xpcshell-tests",
+      traits: [],
+    });
     Assert.equal(applicationType, "xpcshell-tests");
-    rootFront.shortString().then(ret => {
-      trace.expectSend({"type": "shortString", "to": "<actorid>"});
-      trace.expectReceive({"value": "abc", "from": "<actorid>"});
+    rootFront
+      .shortString()
+      .then(ret => {
+        trace.expectSend({ type: "shortString", to: "<actorid>" });
+        trace.expectReceive({ value: "abc", from: "<actorid>" });
 
-      
-      expectRootChildren(0);
-      strfront = ret;
-    }).then(() => {
-      return strfront.string();
-    }).then(ret => {
-      Assert.equal(ret, SHORT_STR);
-    }).then(() => {
-      return rootFront.longString();
-    }).then(ret => {
-      trace.expectSend({"type": "longString", "to": "<actorid>"});
-      trace.expectReceive({"value": {"type": "longString",
-                                     "actor": "<actorid>",
-                                     "length": 16,
-                                     "initial": "abcde"},
-                           "from": "<actorid>"});
-
-      strfront = ret;
-      
-      expectRootChildren(1);
-    }).then(() => {
-      return strfront.string();
-    }).then(ret => {
-      trace.expectSend({"type": "substring", "start": 5, "end": 10, "to": "<actorid>"});
-      trace.expectReceive({"substring": "fghij", "from": "<actorid>"});
-      trace.expectSend({"type": "substring", "start": 10, "end": 15, "to": "<actorid>"});
-      trace.expectReceive({"substring": "klmno", "from": "<actorid>"});
-      trace.expectSend({"type": "substring", "start": 15, "end": 20, "to": "<actorid>"});
-      trace.expectReceive({"substring": "p", "from": "<actorid>"});
-
-      Assert.equal(ret, LONG_STR);
-    }).then(() => {
-      return strfront.release();
-    }).then(() => {
-      trace.expectSend({"type": "release", "to": "<actorid>"});
-      trace.expectReceive({"from": "<actorid>"});
-
-      
-      expectRootChildren(0);
-    }).then(() => {
-      const deferred = defer();
-      rootFront.once("string-event", (str) => {
-        trace.expectSend({"type": "emitShortString", "to": "<actorid>"});
-        trace.expectReceive({"type": "string-event", "str": "abc", "from": "<actorid>"});
-
-        Assert.ok(!!str);
-        strfront = str;
         
         expectRootChildren(0);
-        
-        strfront.string().then((value) => {
-          deferred.resolve(value);
+        strfront = ret;
+      })
+      .then(() => {
+        return strfront.string();
+      })
+      .then(ret => {
+        Assert.equal(ret, SHORT_STR);
+      })
+      .then(() => {
+        return rootFront.longString();
+      })
+      .then(ret => {
+        trace.expectSend({ type: "longString", to: "<actorid>" });
+        trace.expectReceive({
+          value: {
+            type: "longString",
+            actor: "<actorid>",
+            length: 16,
+            initial: "abcde",
+          },
+          from: "<actorid>",
         });
-      });
-      rootFront.emitShortString();
-      return deferred.promise;
-    }).then(value => {
-      Assert.equal(value, SHORT_STR);
-    }).then(() => {
-      
-      return strfront.release();
-    }).then(() => {
-      const deferred = defer();
-      rootFront.once("string-event", (str) => {
-        trace.expectSend({"type": "emitLongString", "to": "<actorid>"});
-        trace.expectReceive({"type": "string-event",
-                             "str": {"type": "longString",
-                                     "actor": "<actorid>",
-                                     "length": 16,
-                                     "initial": "abcde"},
-                             "from": "<actorid>"});
 
-        Assert.ok(!!str);
+        strfront = ret;
         
         expectRootChildren(1);
-        strfront = str;
-        strfront.string().then((value) => {
-          trace.expectSend({"type": "substring",
-                            "start": 5,
-                            "end": 10,
-                            "to": "<actorid>"});
-          trace.expectReceive({"substring": "fghij", "from": "<actorid>"});
-          trace.expectSend({"type": "substring",
-                            "start": 10,
-                            "end": 15,
-                            "to": "<actorid>"});
-          trace.expectReceive({"substring": "klmno", "from": "<actorid>"});
-          trace.expectSend({"type": "substring",
-                            "start": 15,
-                            "end": 20,
-                            "to": "<actorid>"});
-          trace.expectReceive({"substring": "p", "from": "<actorid>"});
-
-          deferred.resolve(value);
+      })
+      .then(() => {
+        return strfront.string();
+      })
+      .then(ret => {
+        trace.expectSend({
+          type: "substring",
+          start: 5,
+          end: 10,
+          to: "<actorid>",
         });
+        trace.expectReceive({ substring: "fghij", from: "<actorid>" });
+        trace.expectSend({
+          type: "substring",
+          start: 10,
+          end: 15,
+          to: "<actorid>",
+        });
+        trace.expectReceive({ substring: "klmno", from: "<actorid>" });
+        trace.expectSend({
+          type: "substring",
+          start: 15,
+          end: 20,
+          to: "<actorid>",
+        });
+        trace.expectReceive({ substring: "p", from: "<actorid>" });
+
+        Assert.equal(ret, LONG_STR);
+      })
+      .then(() => {
+        return strfront.release();
+      })
+      .then(() => {
+        trace.expectSend({ type: "release", to: "<actorid>" });
+        trace.expectReceive({ from: "<actorid>" });
+
+        
+        expectRootChildren(0);
+      })
+      .then(() => {
+        const deferred = defer();
+        rootFront.once("string-event", str => {
+          trace.expectSend({ type: "emitShortString", to: "<actorid>" });
+          trace.expectReceive({
+            type: "string-event",
+            str: "abc",
+            from: "<actorid>",
+          });
+
+          Assert.ok(!!str);
+          strfront = str;
+          
+          expectRootChildren(0);
+          
+          strfront.string().then(value => {
+            deferred.resolve(value);
+          });
+        });
+        rootFront.emitShortString();
+        return deferred.promise;
+      })
+      .then(value => {
+        Assert.equal(value, SHORT_STR);
+      })
+      .then(() => {
+        
+        return strfront.release();
+      })
+      .then(() => {
+        const deferred = defer();
+        rootFront.once("string-event", str => {
+          trace.expectSend({ type: "emitLongString", to: "<actorid>" });
+          trace.expectReceive({
+            type: "string-event",
+            str: {
+              type: "longString",
+              actor: "<actorid>",
+              length: 16,
+              initial: "abcde",
+            },
+            from: "<actorid>",
+          });
+
+          Assert.ok(!!str);
+          
+          expectRootChildren(1);
+          strfront = str;
+          strfront.string().then(value => {
+            trace.expectSend({
+              type: "substring",
+              start: 5,
+              end: 10,
+              to: "<actorid>",
+            });
+            trace.expectReceive({ substring: "fghij", from: "<actorid>" });
+            trace.expectSend({
+              type: "substring",
+              start: 10,
+              end: 15,
+              to: "<actorid>",
+            });
+            trace.expectReceive({ substring: "klmno", from: "<actorid>" });
+            trace.expectSend({
+              type: "substring",
+              start: 15,
+              end: 20,
+              to: "<actorid>",
+            });
+            trace.expectReceive({ substring: "p", from: "<actorid>" });
+
+            deferred.resolve(value);
+          });
+        });
+        rootFront.emitLongString();
+        return deferred.promise;
+      })
+      .then(value => {
+        Assert.equal(value, LONG_STR);
+      })
+      .then(() => {
+        return strfront.release();
+      })
+      .then(() => {
+        trace.expectSend({ type: "release", to: "<actorid>" });
+        trace.expectReceive({ from: "<actorid>" });
+        expectRootChildren(0);
+      })
+      .then(() => {
+        client.close().then(() => {
+          do_test_finished();
+        });
+      })
+      .catch(err => {
+        do_report_unexpected_exception(err, "Failure executing test");
       });
-      rootFront.emitLongString();
-      return deferred.promise;
-    }).then(value => {
-      Assert.equal(value, LONG_STR);
-    }).then(() => {
-      return strfront.release();
-    }).then(() => {
-      trace.expectSend({"type": "release", "to": "<actorid>"});
-      trace.expectReceive({"from": "<actorid>"});
-      expectRootChildren(0);
-    }).then(() => {
-      client.close().then(() => {
-        do_test_finished();
-      });
-    }).catch(err => {
-      do_report_unexpected_exception(err, "Failure executing test");
-    });
   });
   do_test_pending();
 }

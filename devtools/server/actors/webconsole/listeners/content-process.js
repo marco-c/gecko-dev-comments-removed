@@ -7,7 +7,8 @@
 const Services = require("Services");
 
 
-const CONTENT_PROCESS_SCRIPT = "resource://devtools/server/actors/webconsole/content-process-forward.js";
+const CONTENT_PROCESS_SCRIPT =
+  "resource://devtools/server/actors/webconsole/content-process-forward.js";
 
 
 
@@ -36,7 +37,9 @@ ContentProcessListener.prototype = {
 
   destroy() {
     
-    Services.ppmm.broadcastAsyncMessage("DevTools:StopForwardingContentProcessMessage");
+    Services.ppmm.broadcastAsyncMessage(
+      "DevTools:StopForwardingContentProcessMessage"
+    );
 
     Services.ppmm.removeMessageListener("Console:Log", this);
     Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);

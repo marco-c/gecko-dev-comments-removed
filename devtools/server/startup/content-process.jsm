@@ -25,8 +25,9 @@ function setupServer(mm) {
   }
 
   
-  const { DevToolsLoader } =
-    ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+  const { DevToolsLoader } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
 
   
   
@@ -66,8 +67,9 @@ function init(msg) {
   const conn = DebuggerServer.connectToParent(prefix, mm);
   conn.parentMessageManager = mm;
 
-  const { ContentProcessTargetActor } =
-      loader.require("devtools/server/actors/targets/content-process");
+  const { ContentProcessTargetActor } = loader.require(
+    "devtools/server/actors/targets/content-process"
+  );
   const { ActorPool } = loader.require("devtools/server/actors/common");
   const actor = new ContentProcessTargetActor(conn);
   const actorPool = new ActorPool(conn);

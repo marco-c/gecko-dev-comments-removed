@@ -7,15 +7,20 @@
 
 
 add_task(async function() {
-  const {front, client} = await initPerfFront();
+  const { front, client } = await initPerfFront();
 
   
-  is(await front.isSupportedPlatform(), true,
-    "This test only runs on supported platforms.");
-  is(await front.isLockedForPrivateBrowsing(), false,
-    "The browser is not in private browsing mode.");
-  is(await front.isActive(), false,
-    "The profiler is not active yet.");
+  is(
+    await front.isSupportedPlatform(),
+    true,
+    "This test only runs on supported platforms."
+  );
+  is(
+    await front.isLockedForPrivateBrowsing(),
+    false,
+    "The browser is not in private browsing mode."
+  );
+  is(await front.isActive(), false, "The profiler is not active yet.");
 
   
   const profilerStarted = once(front, "profiler-started");
@@ -38,8 +43,11 @@ add_task(async function() {
   const profilerStopped2 = once(front, "profiler-stopped");
   await front.stopProfilerAndDiscardProfile();
   await profilerStopped2;
-  is(await front.isActive(), false,
-    "The profiler was stopped and the profile discarded.");
+  is(
+    await front.isActive(),
+    false,
+    "The profiler was stopped and the profile discarded."
+  );
 
   
   await front.destroy();

@@ -14,42 +14,155 @@ const { DebuggerServer } = require("devtools/server/main");
 const { ActorPool } = require("devtools/server/actors/common");
 const { ThreadActor } = require("devtools/server/actors/thread");
 const { ObjectActor } = require("devtools/server/actors/object");
-const { LongStringActor } = require("devtools/server/actors/object/long-string");
-const { createValueGrip, stringIsLong } = require("devtools/server/actors/object/utils");
+const {
+  LongStringActor,
+} = require("devtools/server/actors/object/long-string");
+const {
+  createValueGrip,
+  stringIsLong,
+} = require("devtools/server/actors/object/utils");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const ErrorDocs = require("devtools/server/actors/errordocs");
 
-loader.lazyRequireGetter(this, "evalWithDebugger", "devtools/server/actors/webconsole/eval-with-debugger", true);
-loader.lazyRequireGetter(this, "NetworkMonitorActor", "devtools/server/actors/network-monitor", true);
-loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/server/actors/webconsole/listeners/console-progress", true);
-loader.lazyRequireGetter(this, "StackTraceCollector", "devtools/server/actors/network-monitor/stack-trace-collector", true);
-loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole/js-property-provider", true);
-loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
-loader.lazyRequireGetter(this, "addWebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
-loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
-loader.lazyRequireGetter(this, "validCommands", "devtools/server/actors/webconsole/commands", true);
-loader.lazyRequireGetter(this, "createMessageManagerMocks", "devtools/server/actors/webconsole/message-manager-mock", true);
-loader.lazyRequireGetter(this, "CONSOLE_WORKER_IDS", "devtools/server/actors/webconsole/utils", true);
-loader.lazyRequireGetter(this, "WebConsoleUtils", "devtools/server/actors/webconsole/utils", true);
-loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
+loader.lazyRequireGetter(
+  this,
+  "evalWithDebugger",
+  "devtools/server/actors/webconsole/eval-with-debugger",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "NetworkMonitorActor",
+  "devtools/server/actors/network-monitor",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "ConsoleProgressListener",
+  "devtools/server/actors/webconsole/listeners/console-progress",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "StackTraceCollector",
+  "devtools/server/actors/network-monitor/stack-trace-collector",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "JSPropertyProvider",
+  "devtools/shared/webconsole/js-property-provider",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "NetUtil",
+  "resource://gre/modules/NetUtil.jsm",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "addWebConsoleCommands",
+  "devtools/server/actors/webconsole/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "isCommand",
+  "devtools/server/actors/webconsole/commands",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "validCommands",
+  "devtools/server/actors/webconsole/commands",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "createMessageManagerMocks",
+  "devtools/server/actors/webconsole/message-manager-mock",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "CONSOLE_WORKER_IDS",
+  "devtools/server/actors/webconsole/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "WebConsoleUtils",
+  "devtools/server/actors/webconsole/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "EnvironmentActor",
+  "devtools/server/actors/environment",
+  true
+);
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
-loader.lazyRequireGetter(this, "stringToCauseType",
-    "devtools/server/actors/network-monitor/network-observer", true);
+loader.lazyRequireGetter(
+  this,
+  "stringToCauseType",
+  "devtools/server/actors/network-monitor/network-observer",
+  true
+);
 
 
-loader.lazyRequireGetter(this, "RESERVED_JS_KEYWORDS", "devtools/shared/webconsole/reserved-js-words");
+loader.lazyRequireGetter(
+  this,
+  "RESERVED_JS_KEYWORDS",
+  "devtools/shared/webconsole/reserved-js-words"
+);
 
 
 
 if (isWorker) {
-  loader.lazyRequireGetter(this, "ConsoleAPIListener", "devtools/server/actors/webconsole/worker-listeners", true);
-  loader.lazyRequireGetter(this, "ConsoleServiceListener", "devtools/server/actors/webconsole/worker-listeners", true);
+  loader.lazyRequireGetter(
+    this,
+    "ConsoleAPIListener",
+    "devtools/server/actors/webconsole/worker-listeners",
+    true
+  );
+  loader.lazyRequireGetter(
+    this,
+    "ConsoleServiceListener",
+    "devtools/server/actors/webconsole/worker-listeners",
+    true
+  );
 } else {
-  loader.lazyRequireGetter(this, "ConsoleAPIListener", "devtools/server/actors/webconsole/listeners/console-api", true);
-  loader.lazyRequireGetter(this, "ConsoleServiceListener", "devtools/server/actors/webconsole/listeners/console-service", true);
-  loader.lazyRequireGetter(this, "ConsoleReflowListener", "devtools/server/actors/webconsole/listeners/console-reflow", true);
-  loader.lazyRequireGetter(this, "ContentProcessListener", "devtools/server/actors/webconsole/listeners/content-process", true);
-  loader.lazyRequireGetter(this, "DocumentEventsListener", "devtools/server/actors/webconsole/listeners/document-events", true);
+  loader.lazyRequireGetter(
+    this,
+    "ConsoleAPIListener",
+    "devtools/server/actors/webconsole/listeners/console-api",
+    true
+  );
+  loader.lazyRequireGetter(
+    this,
+    "ConsoleServiceListener",
+    "devtools/server/actors/webconsole/listeners/console-service",
+    true
+  );
+  loader.lazyRequireGetter(
+    this,
+    "ConsoleReflowListener",
+    "devtools/server/actors/webconsole/listeners/console-reflow",
+    true
+  );
+  loader.lazyRequireGetter(
+    this,
+    "ContentProcessListener",
+    "devtools/server/actors/webconsole/listeners/content-process",
+    true
+  );
+  loader.lazyRequireGetter(
+    this,
+    "DocumentEventsListener",
+    "devtools/server/actors/webconsole/listeners/document-events",
+    true
+  );
 }
 
 function isObject(value) {
@@ -84,12 +197,17 @@ function WebConsoleActor(connection, parentActor) {
   this.objectGrip = this.objectGrip.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
   this._onChangedToplevelDocument = this._onChangedToplevelDocument.bind(this);
-  EventEmitter.on(this.parentActor, "changed-toplevel-document",
-            this._onChangedToplevelDocument);
+  EventEmitter.on(
+    this.parentActor,
+    "changed-toplevel-document",
+    this._onChangedToplevelDocument
+  );
   this._onObserverNotification = this._onObserverNotification.bind(this);
   if (this.parentActor.isRootActor) {
-    Services.obs.addObserver(this._onObserverNotification,
-                             "last-pb-context-exited");
+    Services.obs.addObserver(
+      this._onObserverNotification,
+      "last-pb-context-exited"
+    );
   }
 
   this.traits = {
@@ -103,8 +221,7 @@ function WebConsoleActor(connection, parentActor) {
   }
 }
 
-WebConsoleActor.prototype =
-{
+WebConsoleActor.prototype = {
   
 
 
@@ -328,14 +445,19 @@ WebConsoleActor.prototype =
 
 
   destroy() {
-    EventEmitter.off(this.parentActor, "changed-toplevel-document",
-               this._onChangedToplevelDocument);
+    EventEmitter.off(
+      this.parentActor,
+      "changed-toplevel-document",
+      this._onChangedToplevelDocument
+    );
 
     this.conn.removeActorPool(this._actorPool);
 
     if (this.parentActor.isRootActor) {
-      Services.obs.removeObserver(this._onObserverNotification,
-                                  "last-pb-context-exited");
+      Services.obs.removeObserver(
+        this._onObserverNotification,
+        "last-pb-context-exited"
+      );
     }
 
     if (this.dbg.replaying && !isWorker) {
@@ -431,16 +553,23 @@ WebConsoleActor.prototype =
 
 
   objectGrip: function(object, pool) {
-    const actor = new ObjectActor(object, {
-      getGripDepth: () => this._gripDepth,
-      incrementGripDepth: () => this._gripDepth++,
-      decrementGripDepth: () => this._gripDepth--,
-      createValueGrip: v => this.createValueGrip(v),
-      sources: () => DevToolsUtils.reportException("WebConsoleActor",
-        Error("sources not yet implemented")),
-      createEnvironmentActor: (env) => this.createEnvironmentActor(env),
-      getGlobalDebugObject: () => this.globalDebugObject,
-    }, this.conn);
+    const actor = new ObjectActor(
+      object,
+      {
+        getGripDepth: () => this._gripDepth,
+        incrementGripDepth: () => this._gripDepth++,
+        decrementGripDepth: () => this._gripDepth--,
+        createValueGrip: v => this.createValueGrip(v),
+        sources: () =>
+          DevToolsUtils.reportException(
+            "WebConsoleActor",
+            Error("sources not yet implemented")
+          ),
+        createEnvironmentActor: env => this.createEnvironmentActor(env),
+        getGlobalDebugObject: () => this.globalDebugObject,
+      },
+      this.conn
+    );
     pool.addActor(actor);
     return actor.form();
   },
@@ -548,8 +677,10 @@ WebConsoleActor.prototype =
             break;
           }
           if (!this.consoleServiceListener) {
-            this.consoleServiceListener =
-              new ConsoleServiceListener(window, this);
+            this.consoleServiceListener = new ConsoleServiceListener(
+              window,
+              this
+            );
             this.consoleServiceListener.init();
           }
           startedListeners.push(listener);
@@ -559,7 +690,10 @@ WebConsoleActor.prototype =
             
             
             this.consoleAPIListener = new ConsoleAPIListener(
-              window, this, this.parentActor.consoleAPIListenerOptions);
+              window,
+              this,
+              this.parentActor.consoleAPIListenerOptions
+            );
             this.consoleAPIListener.init();
           }
           startedListeners.push(listener);
@@ -577,7 +711,7 @@ WebConsoleActor.prototype =
             
             
             
-            const [ mmMockParent, mmMockChild ] = createMessageManagerMocks();
+            const [mmMockParent, mmMockChild] = createMessageManagerMocks();
 
             
             
@@ -589,21 +723,21 @@ WebConsoleActor.prototype =
 
             
             const isInContentProcess =
-              Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT &&
+              Services.appinfo.processType !=
+                Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT &&
               this.parentActor.messageManager;
             if (isInContentProcess) {
               
               
               
-              await this.conn.spawnActorInParentProcess(
-                this.actorID, {
-                  module: "devtools/server/actors/network-monitor",
-                  constructor: "NetworkMonitorActor",
-                  args: [
-                    { outerWindowID: this.parentActor.outerWindowID },
-                    this.actorID,
-                  ],
-                });
+              await this.conn.spawnActorInParentProcess(this.actorID, {
+                module: "devtools/server/actors/network-monitor",
+                constructor: "NetworkMonitorActor",
+                args: [
+                  { outerWindowID: this.parentActor.outerWindowID },
+                  this.actorID,
+                ],
+              });
               this.netmonitors.push({
                 messageManager: this.parentActor.messageManager,
                 parentProcess: true,
@@ -615,10 +749,12 @@ WebConsoleActor.prototype =
             
             
             
-            new NetworkMonitorActor(this.conn,
+            new NetworkMonitorActor(
+              this.conn,
               { window },
               this.actorID,
-              mmMockParent);
+              mmMockParent
+            );
 
             this.netmonitors.push({
               messageManager: mmMockChild,
@@ -629,8 +765,10 @@ WebConsoleActor.prototype =
             
             
             
-            this.stackTraceCollector = new StackTraceCollector({ window },
-              this.netmonitors);
+            this.stackTraceCollector = new StackTraceCollector(
+              { window },
+              this.netmonitors
+            );
             this.stackTraceCollector.init();
           }
           startedListeners.push(listener);
@@ -642,11 +780,14 @@ WebConsoleActor.prototype =
           }
           if (this.window instanceof Ci.nsIDOMWindow) {
             if (!this.consoleProgressListener) {
-              this.consoleProgressListener =
-                new ConsoleProgressListener(this.window, this);
+              this.consoleProgressListener = new ConsoleProgressListener(
+                this.window,
+                this
+              );
             }
-            this.consoleProgressListener.startMonitor(this.consoleProgressListener
-                                                      .MONITOR_FILE_ACTIVITY);
+            this.consoleProgressListener.startMonitor(
+              this.consoleProgressListener.MONITOR_FILE_ACTIVITY
+            );
             startedListeners.push(listener);
           }
           break;
@@ -656,8 +797,10 @@ WebConsoleActor.prototype =
             break;
           }
           if (!this.consoleReflowListener) {
-            this.consoleReflowListener =
-              new ConsoleReflowListener(this.window, this);
+            this.consoleReflowListener = new ConsoleReflowListener(
+              this.window,
+              this
+            );
           }
           startedListeners.push(listener);
           break;
@@ -709,9 +852,15 @@ WebConsoleActor.prototype =
 
     
     
-    const toDetach = request.listeners ||
-      ["PageError", "ConsoleAPI", "NetworkActivity", "FileActivity",
-       "ReflowActivity", "ContentProcessMessages", "DocumentEvents"];
+    const toDetach = request.listeners || [
+      "PageError",
+      "ConsoleAPI",
+      "NetworkActivity",
+      "FileActivity",
+      "ReflowActivity",
+      "ContentProcessMessages",
+      "DocumentEvents",
+    ];
 
     while (toDetach.length > 0) {
       const listener = toDetach.shift();
@@ -747,8 +896,9 @@ WebConsoleActor.prototype =
           break;
         case "FileActivity":
           if (this.consoleProgressListener) {
-            this.consoleProgressListener.stopMonitor(this.consoleProgressListener
-                                                     .MONITOR_FILE_ACTIVITY);
+            this.consoleProgressListener.stopMonitor(
+              this.consoleProgressListener.MONITOR_FILE_ACTIVITY
+            );
             this.consoleProgressListener = null;
           }
           stoppedListeners.push(listener);
@@ -813,7 +963,7 @@ WebConsoleActor.prototype =
       const type = types.shift();
       switch (type) {
         case "ConsoleAPI": {
-          replayingMessages.forEach((msg) => {
+          replayingMessages.forEach(msg => {
             if (msg.messageType == "ConsoleAPI") {
               const message = this.prepareConsoleMessageForRemote(msg);
               message._type = type;
@@ -826,16 +976,21 @@ WebConsoleActor.prototype =
           }
 
           
-          const winStartTime = this.window && this.window.performance ?
-            this.window.performance.timing.navigationStart : 0;
+          const winStartTime =
+            this.window && this.window.performance
+              ? this.window.performance.timing.navigationStart
+              : 0;
 
-          const cache = this.consoleAPIListener
-                      .getCachedMessages(!this.parentActor.isRootActor);
-          cache.forEach((cachedMessage) => {
+          const cache = this.consoleAPIListener.getCachedMessages(
+            !this.parentActor.isRootActor
+          );
+          cache.forEach(cachedMessage => {
             
             
-            if (cachedMessage.innerID === "ServiceWorker" &&
-                winStartTime > cachedMessage.timeStamp) {
+            if (
+              cachedMessage.innerID === "ServiceWorker" &&
+              winStartTime > cachedMessage.timeStamp
+            ) {
               return;
             }
 
@@ -846,7 +1001,7 @@ WebConsoleActor.prototype =
           break;
         }
         case "PageError": {
-          replayingMessages.forEach((msg) => {
+          replayingMessages.forEach(msg => {
             if (msg.messageType == "PageError") {
               const message = this.preparePageErrorForRemote(msg);
               message._type = type;
@@ -857,9 +1012,10 @@ WebConsoleActor.prototype =
           if (!this.consoleServiceListener) {
             break;
           }
-          const cache = this.consoleServiceListener
-                      .getCachedMessages(!this.parentActor.isRootActor);
-          cache.forEach((cachedMessage) => {
+          const cache = this.consoleServiceListener.getCachedMessages(
+            !this.parentActor.isRootActor
+          );
+          cache.forEach(cachedMessage => {
             let message = null;
             if (cachedMessage instanceof Ci.nsIScriptError) {
               message = this.preparePageErrorForRemote(cachedMessage);
@@ -945,8 +1101,10 @@ WebConsoleActor.prototype =
     }
 
     const thenable = obj => obj && typeof obj.then === "function";
-    const waitForHelperResult = response.helperResult && thenable(response.helperResult);
-    const waitForAwaitResult = response.awaitResult && thenable(response.awaitResult);
+    const waitForHelperResult =
+      response.helperResult && thenable(response.helperResult);
+    const waitForAwaitResult =
+      response.awaitResult && thenable(response.awaitResult);
 
     if (!waitForAwaitResult && !waitForHelperResult) {
       return response;
@@ -1002,7 +1160,7 @@ WebConsoleActor.prototype =
       selectedNodeActor: request.selectedNodeActor,
       selectedObjectActor: request.selectedObjectActor,
     };
-    const {mapped} = request;
+    const { mapped } = request;
 
     
     
@@ -1015,8 +1173,15 @@ WebConsoleActor.prototype =
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
 
-    let result, errorDocURL, errorMessage, errorNotes = null, errorGrip = null,
-      frame = null, awaitResult, errorMessageName, exceptionStack;
+    let result,
+      errorDocURL,
+      errorMessage,
+      errorNotes = null,
+      errorGrip = null,
+      frame = null,
+      awaitResult,
+      errorMessageName,
+      exceptionStack;
     if (evalResult) {
       if ("return" in evalResult) {
         result = evalResult.return;
@@ -1047,13 +1212,18 @@ WebConsoleActor.prototype =
           } = exceptionStack[0];
           frame = { source, sourceId, line, column };
 
-          exceptionStack = WebConsoleUtils.removeFramesAboveDebuggerEval(exceptionStack);
+          exceptionStack = WebConsoleUtils.removeFramesAboveDebuggerEval(
+            exceptionStack
+          );
         }
 
         errorMessage = String(error);
         if (typeof error === "object" && error !== null) {
           try {
-            errorMessage = DevToolsUtils.callPropertyOnObject(error, "toString");
+            errorMessage = DevToolsUtils.callPropertyOnObject(
+              error,
+              "toString"
+            );
           } catch (e) {
             
             
@@ -1185,8 +1355,10 @@ WebConsoleActor.prototype =
       const commandsCache = this._getWebConsoleCommandsCache();
       matchProp = reqText;
       matches = validCommands
-        .filter(c => `:${c}`.startsWith(reqText)
-          && commandsCache.find(n => `:${n}`.startsWith(reqText))
+        .filter(
+          c =>
+            `:${c}`.startsWith(reqText) &&
+            commandsCache.find(n => `:${n}`.startsWith(reqText))
         )
         .map(c => `:${c}`);
     } else {
@@ -1199,8 +1371,10 @@ WebConsoleActor.prototype =
           const frame = frameActor.frame;
           environment = frame.environment;
         } catch (e) {
-          DevToolsUtils.reportException("autocomplete",
-            Error("The frame actor was not found: " + frameActorId));
+          DevToolsUtils.reportException(
+            "autocomplete",
+            Error("The frame actor was not found: " + frameActorId)
+          );
         }
       } else {
         
@@ -1270,8 +1444,10 @@ WebConsoleActor.prototype =
       matches = Array.from(matches).sort((a, b) => {
         const aFirstMeaningfulChar = a[firstMeaningfulCharIndex];
         const bFirstMeaningfulChar = b[firstMeaningfulCharIndex];
-        const lA = aFirstMeaningfulChar.toLocaleLowerCase() === aFirstMeaningfulChar;
-        const lB = bFirstMeaningfulChar.toLocaleLowerCase() === bFirstMeaningfulChar;
+        const lA =
+          aFirstMeaningfulChar.toLocaleLowerCase() === aFirstMeaningfulChar;
+        const lB =
+          bFirstMeaningfulChar.toLocaleLowerCase() === bFirstMeaningfulChar;
         if (lA === lB) {
           if (a === matchProp) {
             return -1;
@@ -1300,11 +1476,12 @@ WebConsoleActor.prototype =
     const windowId = !this.parentActor.isRootActor
       ? WebConsoleUtils.getInnerWindowId(this.window)
       : null;
-    const ConsoleAPIStorage =
-      Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
+    const ConsoleAPIStorage = Cc[
+      "@mozilla.org/consoleAPI-storage;1"
+    ].getService(Ci.nsIConsoleAPIStorage);
     ConsoleAPIStorage.clearEvents(windowId);
 
-    CONSOLE_WORKER_IDS.forEach((id) => {
+    CONSOLE_WORKER_IDS.forEach(id => {
       ConsoleAPIStorage.clearEvents(id);
     });
 
@@ -1404,8 +1581,9 @@ WebConsoleActor.prototype =
       
       
       
-      obj[name] =
-        Cu.exportFunction(obj[name], evalWindow, { allowCrossOriginArguments: true });
+      obj[name] = Cu.exportFunction(obj[name], evalWindow, {
+        allowCrossOriginArguments: true,
+      });
     }
     for (const name in helpers.sandbox) {
       const desc = Object.getOwnPropertyDescriptor(helpers.sandbox, name);
@@ -1431,7 +1609,9 @@ WebConsoleActor.prototype =
         sandbox: Object.create(null),
       };
       addWebConsoleCommands(helpers);
-      this._webConsoleCommandsCache = Object.getOwnPropertyNames(helpers.sandbox);
+      this._webConsoleCommandsCache = Object.getOwnPropertyNames(
+        helpers.sandbox
+      );
     }
     return this._webConsoleCommandsCache;
   },
@@ -1529,7 +1709,10 @@ WebConsoleActor.prototype =
   preparePageErrorForRemote: function(pageError) {
     const stack = this.prepareStackForRemote(pageError.stack);
     let lineText = pageError.sourceLine;
-    if (lineText && lineText.length > DebuggerServer.LONG_STRING_INITIAL_LENGTH) {
+    if (
+      lineText &&
+      lineText.length > DebuggerServer.LONG_STRING_INITIAL_LENGTH
+    ) {
       lineText = lineText.substr(0, DebuggerServer.LONG_STRING_INITIAL_LENGTH);
     }
 
@@ -1553,12 +1736,7 @@ WebConsoleActor.prototype =
 
     
     
-    let {
-      sourceName,
-      sourceId,
-      lineNumber,
-      columnNumber,
-    } = pageError;
+    let { sourceName, sourceId, lineNumber, columnNumber } = pageError;
     if (!sourceName && !sourceId && !lineNumber && !columnNumber && stack) {
       sourceName = stack[0].filename;
       sourceId = stack[0].sourceId;
@@ -1634,15 +1812,22 @@ WebConsoleActor.prototype =
         
         if (data.content || messagesReceived == this.netmonitors.length) {
           for (const { messageManager } of this.netmonitors) {
-            messageManager.removeMessageListener("debug:request-content:response",
-              onMessage);
+            messageManager.removeMessageListener(
+              "debug:request-content:response",
+              onMessage
+            );
           }
           resolve(data.content);
         }
       };
       for (const { messageManager } of this.netmonitors) {
-        messageManager.addMessageListener("debug:request-content:response", onMessage);
-        messageManager.sendAsyncMessage("debug:request-content:request", { url });
+        messageManager.addMessageListener(
+          "debug:request-content:response",
+          onMessage
+        );
+        messageManager.sendAsyncMessage("debug:request-content:request", {
+          url,
+        });
       }
     });
   },
@@ -1663,29 +1848,31 @@ WebConsoleActor.prototype =
       uri: NetUtil.newURI(url),
       loadingNode: doc,
       securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-      contentPolicyType: stringToCauseType(cause.type)
-      || Ci.nsIContentPolicy.TYPE_OTHER,
+      contentPolicyType:
+        stringToCauseType(cause.type) || Ci.nsIContentPolicy.TYPE_OTHER,
     });
 
     channel.QueryInterface(Ci.nsIHttpChannel);
 
     channel.loadGroup = doc.documentLoadGroup;
-    channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE |
-                         Ci.nsIRequest.INHIBIT_CACHING |
-                         Ci.nsIRequest.LOAD_ANONYMOUS;
+    channel.loadFlags |=
+      Ci.nsIRequest.LOAD_BYPASS_CACHE |
+      Ci.nsIRequest.INHIBIT_CACHING |
+      Ci.nsIRequest.LOAD_ANONYMOUS;
 
     channel.requestMethod = method;
 
     if (headers) {
-      for (const {name, value} of headers) {
+      for (const { name, value } of headers) {
         channel.setRequestHeader(name, value, false);
       }
     }
 
     if (body) {
       channel.QueryInterface(Ci.nsIUploadChannel2);
-      const bodyStream = Cc["@mozilla.org/io/string-input-stream;1"]
-        .createInstance(Ci.nsIStringInputStream);
+      const bodyStream = Cc[
+        "@mozilla.org/io/string-input-stream;1"
+      ].createInstance(Ci.nsIStringInputStream);
       bodyStream.setData(body, body.length);
       channel.explicitSetUploadStream(bodyStream, null, -1, method, false);
     }
@@ -1699,22 +1886,29 @@ WebConsoleActor.prototype =
     
     
     
-    const netmonitor = this.netmonitors.filter(({ parentProcess }) => parentProcess)[0];
+    const netmonitor = this.netmonitors.filter(
+      ({ parentProcess }) => parentProcess
+    )[0];
     const { messageManager } = netmonitor;
     return new Promise(resolve => {
       const onMessage = ({ data }) => {
         if (data.channelId == channelId) {
-          messageManager.removeMessageListener("debug:get-network-event-actor:response",
-            onMessage);
+          messageManager.removeMessageListener(
+            "debug:get-network-event-actor:response",
+            onMessage
+          );
           resolve({
             eventActor: data.actor,
           });
         }
       };
-      messageManager.addMessageListener("debug:get-network-event-actor:response",
-        onMessage);
-      messageManager.sendAsyncMessage("debug:get-network-event-actor:request",
-        { channelId });
+      messageManager.addMessageListener(
+        "debug:get-network-event-actor:response",
+        onMessage
+      );
+      messageManager.sendAsyncMessage("debug:get-network-event-actor:request", {
+        channelId,
+      });
     });
   },
 
@@ -1890,19 +2084,18 @@ WebConsoleActor.prototype =
 
     
     
-    this.stopListeners({listeners: listeners.slice()});
+    this.stopListeners({ listeners: listeners.slice() });
 
     
     
-    this.startListeners({listeners: listeners});
+    this.startListeners({ listeners: listeners });
 
     
     this._lastChromeWindow = null;
   },
 };
 
-WebConsoleActor.prototype.requestTypes =
-{
+WebConsoleActor.prototype.requestTypes = {
   startListeners: WebConsoleActor.prototype.startListeners,
   stopListeners: WebConsoleActor.prototype.stopListeners,
   getCachedMessages: WebConsoleActor.prototype.getCachedMessages,

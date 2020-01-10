@@ -24,9 +24,24 @@ const { Ci, Cu } = require("chrome");
 
 
 
-loader.lazyRequireGetter(this, "Memory", "devtools/server/performance/memory", true);
-loader.lazyRequireGetter(this, "Framerate", "devtools/server/performance/framerate", true);
-loader.lazyRequireGetter(this, "StackFrameCache", "devtools/server/actors/utils/stack", true);
+loader.lazyRequireGetter(
+  this,
+  "Memory",
+  "devtools/server/performance/memory",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "Framerate",
+  "devtools/server/performance/framerate",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "StackFrameCache",
+  "devtools/server/actors/utils/stack",
+  true
+);
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
@@ -121,7 +136,9 @@ Timeline.prototype = {
           
           if (this._withFrames) {
             if (marker.stack) {
-              marker.stack = this._stackFrames.addFrame(Cu.waiveXrays(marker.stack));
+              marker.stack = this._stackFrames.addFrame(
+                Cu.waiveXrays(marker.stack)
+              );
             }
             if (marker.endStack) {
               marker.endStack = this._stackFrames.addFrame(
@@ -132,8 +149,10 @@ Timeline.prototype = {
 
           
           if (this._withDocLoadingEvents) {
-            if (marker.name == "document::DOMContentLoaded" ||
-                marker.name == "document::Load") {
+            if (
+              marker.name == "document::DOMContentLoaded" ||
+              marker.name == "document::Load"
+            ) {
               this.emit("doc-loading", marker, endTime);
             }
           }
@@ -210,7 +229,7 @@ Timeline.prototype = {
     if (!docShells.length) {
       return -1;
     }
-    const startTime = this._startTime = docShells[0].now();
+    const startTime = (this._startTime = docShells[0].now());
     if (this._isRecording) {
       return startTime;
     }
@@ -260,7 +279,7 @@ Timeline.prototype = {
     if (!docShells.length) {
       return -1;
     }
-    const endTime = this._startTime = docShells[0].now();
+    const endTime = (this._startTime = docShells[0].now());
     if (!this._isRecording) {
       return endTime;
     }
@@ -324,7 +343,10 @@ Timeline.prototype = {
 
 
   _onGarbageCollection: function({
-    collections, gcCycleNumber, reason, nonincrementalReason,
+    collections,
+    gcCycleNumber,
+    reason,
+    nonincrementalReason,
   }) {
     const docShells = this.docShells;
     if (!this._isRecording || !docShells.length) {
@@ -333,18 +355,20 @@ Timeline.prototype = {
 
     const endTime = docShells[0].now();
 
-    this.emit("markers", collections.map(({
-      startTimestamp: start, endTimestamp: end,
-    }) => {
-      return {
-        name: "GarbageCollection",
-        causeName: reason,
-        nonincrementalReason: nonincrementalReason,
-        cycle: gcCycleNumber,
-        start,
-        end,
-      };
-    }), endTime);
+    this.emit(
+      "markers",
+      collections.map(({ startTimestamp: start, endTimestamp: end }) => {
+        return {
+          name: "GarbageCollection",
+          causeName: reason,
+          nonincrementalReason: nonincrementalReason,
+          cycle: gcCycleNumber,
+          start,
+          end,
+        };
+      }),
+      endTime
+    );
   },
 };
 

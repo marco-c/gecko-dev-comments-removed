@@ -5,22 +5,30 @@
 
 "use strict";
 
-const {Ci, Cu} = require("chrome");
+const { Ci, Cu } = require("chrome");
 
 
 if (!isWorker) {
-  loader.lazyImporter(this, "VariablesView", "resource://devtools/client/shared/widgets/VariablesView.jsm");
-  loader.lazyRequireGetter(this, "captureScreenshot", "devtools/shared/screenshot/capture", true);
+  loader.lazyImporter(
+    this,
+    "VariablesView",
+    "resource://devtools/client/shared/widgets/VariablesView.jsm"
+  );
+  loader.lazyRequireGetter(
+    this,
+    "captureScreenshot",
+    "devtools/shared/screenshot/capture",
+    true
+  );
 }
 
-const CONSOLE_WORKER_IDS = exports.CONSOLE_WORKER_IDS = [
+const CONSOLE_WORKER_IDS = (exports.CONSOLE_WORKER_IDS = [
   "SharedWorker",
   "ServiceWorker",
   "Worker",
-];
+]);
 
 var WebConsoleUtils = {
-
   
 
 
@@ -66,8 +74,10 @@ var WebConsoleUtils = {
       temp = {};
       for (const key in object) {
         const value = object[key];
-        if (object.hasOwnProperty(key) &&
-            (!filter || filter(key, value, object))) {
+        if (
+          object.hasOwnProperty(key) &&
+          (!filter || filter(key, value, object))
+        ) {
           temp[key] = recursive ? WebConsoleUtils.cloneObject(value) : value;
         }
       }
@@ -129,9 +139,11 @@ var WebConsoleUtils = {
       } catch (ex) {
         
         
-        if (ex.name != "NS_ERROR_XPC_BAD_CONVERT_JS" &&
-            ex.name != "NS_ERROR_XPC_BAD_OP_ON_WN_PROTO" &&
-            ex.name != "TypeError") {
+        if (
+          ex.name != "NS_ERROR_XPC_BAD_CONVERT_JS" &&
+          ex.name != "NS_ERROR_XPC_BAD_OP_ON_WN_PROTO" &&
+          ex.name != "TypeError"
+        ) {
           throw ex;
         }
       }
@@ -184,12 +196,13 @@ var WebConsoleUtils = {
         if (value === null) {
           return { type: "null" };
         }
-        
+      
       case "function":
         return objectWrapper(value);
       default:
-        console.error("Failed to provide a grip for value of " + typeof value
-                      + ": " + value);
+        console.error(
+          "Failed to provide a grip for value of " + typeof value + ": " + value
+        );
         return null;
     }
   },
@@ -212,8 +225,10 @@ var WebConsoleUtils = {
     
     const evalIndex = stack.findIndex(({ filename }, idx, arr) => {
       const nextFrame = arr[idx + 1];
-      return filename == debuggerEvalFilename
-        && (!nextFrame || nextFrame.filename !== debuggerEvalFilename);
+      return (
+        filename == debuggerEvalFilename &&
+        (!nextFrame || nextFrame.filename !== debuggerEvalFilename)
+      );
     });
     if (evalIndex != -1) {
       return stack.slice(0, evalIndex + 1);
@@ -222,8 +237,11 @@ var WebConsoleUtils = {
     
     
     
-    if (stack.some(({ filename }) =>
-      filename && filename.startsWith("resource://devtools/"))
+    if (
+      stack.some(
+        ({ filename }) =>
+          filename && filename.startsWith("resource://devtools/")
+      )
     ) {
       return null;
     }
@@ -403,7 +421,8 @@ WebConsoleCommands._registerOriginal("$x", function(
   owner,
   xPath,
   context,
-  resultType = owner.window.XPathResult.ANY_TYPE) {
+  resultType = owner.window.XPathResult.ANY_TYPE
+) {
   const nodes = new owner.window.Array();
 
   
@@ -411,8 +430,7 @@ WebConsoleCommands._registerOriginal("$x", function(
   const doc = owner.window.document;
   context = context || doc;
 
-  const results = doc.evaluate(xPath, context, null,
-                             resultType, null);
+  const results = doc.evaluate(xPath, context, null, resultType, null);
   if (results.resultType === owner.window.XPathResult.NUMBER_TYPE) {
     return results.numberValue;
   }
@@ -422,15 +440,17 @@ WebConsoleCommands._registerOriginal("$x", function(
   if (results.resultType === owner.window.XPathResult.BOOLEAN_TYPE) {
     return results.booleanValue;
   }
-  if
-  (results.resultType === owner.window.XPathResult.ANY_UNORDERED_NODE_TYPE ||
-    results.resultType === owner.window.XPathResult.FIRST_ORDERED_NODE_TYPE) {
+  if (
+    results.resultType === owner.window.XPathResult.ANY_UNORDERED_NODE_TYPE ||
+    results.resultType === owner.window.XPathResult.FIRST_ORDERED_NODE_TYPE
+  ) {
     return results.singleNodeValue;
   }
-  if
-  (results.resultType === owner.window.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE ||
+  if (
+    results.resultType ===
+      owner.window.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE ||
     results.resultType === owner.window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE
-) {
+  ) {
     for (let i = 0; i < results.snapshotLength; i++) {
       nodes.push(results.snapshotItem(i));
     }
@@ -574,8 +594,12 @@ WebConsoleCommands._registerOriginal("inspect", function(owner, object) {
 
 
 WebConsoleCommands._registerOriginal("pprint", function(owner, object) {
-  if (object === null || object === undefined || object === true ||
-      object === false) {
+  if (
+    object === null ||
+    object === undefined ||
+    object === true ||
+    object === false
+  ) {
     owner.helperResult = {
       type: "error",
       message: "helperFuncUnsupportedTypeError",

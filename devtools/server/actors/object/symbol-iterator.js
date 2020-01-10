@@ -16,7 +16,7 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
-const SymbolIteratorActor  = protocol.ActorClassWithSpec(symbolIteratorSpec, {
+const SymbolIteratorActor = protocol.ActorClassWithSpec(symbolIteratorSpec, {
   initialize(objectActor, conn) {
     protocol.Actor.prototype.initialize.call(this, conn);
 

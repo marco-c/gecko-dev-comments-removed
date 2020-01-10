@@ -9,13 +9,31 @@ const { reportException } = require("devtools/shared/DevToolsUtils");
 const { expectState } = require("devtools/server/actors/common");
 
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
-loader.lazyRequireGetter(this, "DeferredTask",
-  "resource://gre/modules/DeferredTask.jsm", true);
-loader.lazyRequireGetter(this, "StackFrameCache",
-  "devtools/server/actors/utils/stack", true);
+loader.lazyRequireGetter(
+  this,
+  "DeferredTask",
+  "resource://gre/modules/DeferredTask.jsm",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "StackFrameCache",
+  "devtools/server/actors/utils/stack",
+  true
+);
 loader.lazyRequireGetter(this, "ChromeUtils");
-loader.lazyRequireGetter(this, "ParentProcessTargetActor", "devtools/server/actors/targets/parent-process", true);
-loader.lazyRequireGetter(this, "ContentProcessTargetActor", "devtools/server/actors/targets/content-process", true);
+loader.lazyRequireGetter(
+  this,
+  "ParentProcessTargetActor",
+  "devtools/server/actors/targets/parent-process",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "ContentProcessTargetActor",
+  "devtools/server/actors/targets/content-process",
+  true
+);
 
 
 
@@ -31,8 +49,9 @@ function Memory(parent, frameCache = new StackFrameCache()) {
   EventEmitter.decorate(this);
 
   this.parent = parent;
-  this._mgr = Cc["@mozilla.org/memory-reporter-manager;1"]
-                .getService(Ci.nsIMemoryReporterManager);
+  this._mgr = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
+    Ci.nsIMemoryReporterManager
+  );
   this.state = "detached";
   this._dbg = null;
   this._frameCache = frameCache;
@@ -68,23 +87,33 @@ Memory.prototype = {
 
 
 
-  attach: expectState("detached", function() {
-    this.dbg.addDebuggees();
-    this.dbg.memory.onGarbageCollection = this._onGarbageCollection.bind(this);
-    this.state = "attached";
-    return this.state;
-  }, "attaching to the debugger"),
+  attach: expectState(
+    "detached",
+    function() {
+      this.dbg.addDebuggees();
+      this.dbg.memory.onGarbageCollection = this._onGarbageCollection.bind(
+        this
+      );
+      this.state = "attached";
+      return this.state;
+    },
+    "attaching to the debugger"
+  ),
 
   
 
 
-  detach: expectState("attached", function() {
-    this._clearDebuggees();
-    this.dbg.enabled = false;
-    this._dbg = null;
-    this.state = "detached";
-    return this.state;
-  }, "detaching from the debugger"),
+  detach: expectState(
+    "attached",
+    function() {
+      this._clearDebuggees();
+      this.dbg.enabled = false;
+      this._dbg = null;
+      this.state = "detached";
+      return this.state;
+    },
+    "detaching from the debugger"
+  ),
 
   
 
@@ -138,27 +167,37 @@ Memory.prototype = {
 
 
 
-  saveHeapSnapshot: expectState("attached", function(boundaries = null) {
-    
-    
-    if (!boundaries) {
-      if (this.parent instanceof ParentProcessTargetActor ||
-          this.parent instanceof ContentProcessTargetActor) {
-        boundaries = { runtime: true };
-      } else {
-        boundaries = { debugger: this.dbg };
+  saveHeapSnapshot: expectState(
+    "attached",
+    function(boundaries = null) {
+      
+      
+      if (!boundaries) {
+        if (
+          this.parent instanceof ParentProcessTargetActor ||
+          this.parent instanceof ContentProcessTargetActor
+        ) {
+          boundaries = { runtime: true };
+        } else {
+          boundaries = { debugger: this.dbg };
+        }
       }
-    }
-    return ChromeUtils.saveHeapSnapshotGetId(boundaries);
-  }, "saveHeapSnapshot"),
+      return ChromeUtils.saveHeapSnapshotGetId(boundaries);
+    },
+    "saveHeapSnapshot"
+  ),
 
   
 
 
 
-  takeCensus: expectState("attached", function() {
-    return this.dbg.memory.takeCensus();
-  }, "taking census"),
+  takeCensus: expectState(
+    "attached",
+    function() {
+      return this.dbg.memory.takeCensus();
+    },
+    "taking census"
+  ),
 
   
 
@@ -175,64 +214,78 @@ Memory.prototype = {
 
 
 
-  startRecordingAllocations: expectState("attached", function(options = {}) {
-    if (this.isRecordingAllocations()) {
+  startRecordingAllocations: expectState(
+    "attached",
+    function(options = {}) {
+      if (this.isRecordingAllocations()) {
+        return this._getCurrentTime();
+      }
+
+      this._frameCache.initFrames();
+
+      this.dbg.memory.allocationSamplingProbability =
+        options.probability != null ? options.probability : 1.0;
+
+      this.drainAllocationsTimeoutTimer = options.drainAllocationsTimeout;
+
+      if (this.drainAllocationsTimeoutTimer != null) {
+        if (this._poller) {
+          this._poller.disarm();
+        }
+        this._poller = new DeferredTask(
+          this._emitAllocations,
+          this.drainAllocationsTimeoutTimer,
+          0
+        );
+        this._poller.arm();
+      }
+
+      if (options.maxLogLength != null) {
+        this.dbg.memory.maxAllocationsLogLength = options.maxLogLength;
+      }
+      this.dbg.memory.trackingAllocationSites = true;
+
       return this._getCurrentTime();
-    }
+    },
+    "starting recording allocations"
+  ),
 
-    this._frameCache.initFrames();
+  
 
-    this.dbg.memory.allocationSamplingProbability = options.probability != null
-      ? options.probability
-      : 1.0;
 
-    this.drainAllocationsTimeoutTimer = options.drainAllocationsTimeout;
+  stopRecordingAllocations: expectState(
+    "attached",
+    function() {
+      if (!this.isRecordingAllocations()) {
+        return this._getCurrentTime();
+      }
+      this.dbg.memory.trackingAllocationSites = false;
+      this._clearFrames();
 
-    if (this.drainAllocationsTimeoutTimer != null) {
       if (this._poller) {
         this._poller.disarm();
+        this._poller = null;
       }
-      this._poller = new DeferredTask(this._emitAllocations,
-                                      this.drainAllocationsTimeoutTimer, 0);
-      this._poller.arm();
-    }
 
-    if (options.maxLogLength != null) {
-      this.dbg.memory.maxAllocationsLogLength = options.maxLogLength;
-    }
-    this.dbg.memory.trackingAllocationSites = true;
-
-    return this._getCurrentTime();
-  }, "starting recording allocations"),
-
-  
-
-
-  stopRecordingAllocations: expectState("attached", function() {
-    if (!this.isRecordingAllocations()) {
       return this._getCurrentTime();
-    }
-    this.dbg.memory.trackingAllocationSites = false;
-    this._clearFrames();
-
-    if (this._poller) {
-      this._poller.disarm();
-      this._poller = null;
-    }
-
-    return this._getCurrentTime();
-  }, "stopping recording allocations"),
+    },
+    "stopping recording allocations"
+  ),
 
   
 
 
 
-  getAllocationsSettings: expectState("attached", function() {
-    return {
-      maxLogLength: this.dbg.memory.maxAllocationsLogLength,
-      probability: this.dbg.memory.allocationSamplingProbability,
-    };
-  }, "getting allocations settings"),
+  getAllocationsSettings: expectState(
+    "attached",
+    function() {
+      return {
+        maxLogLength: this.dbg.memory.maxAllocationsLogLength,
+        probability: this.dbg.memory.allocationSamplingProbability,
+      };
+    },
+    "getting allocations settings"
+  ),
 
   
 
@@ -290,43 +343,49 @@ Memory.prototype = {
 
 
 
-  getAllocations: expectState("attached", function() {
-    if (this.dbg.memory.allocationsLogOverflowed) {
-      
-      
-      
-      
-      reportException("MemoryBridge.prototype.getAllocations",
-                      "Warning: allocations log overflowed and lost some data.");
-    }
-
-    const allocations = this.dbg.memory.drainAllocationsLog();
-    const packet = {
-      allocations: [],
-      allocationsTimestamps: [],
-      allocationSizes: [],
-    };
-    for (const { frame: stack, timestamp, size } of allocations) {
-      if (stack && Cu.isDeadWrapper(stack)) {
-        continue;
+  getAllocations: expectState(
+    "attached",
+    function() {
+      if (this.dbg.memory.allocationsLogOverflowed) {
+        
+        
+        
+        
+        reportException(
+          "MemoryBridge.prototype.getAllocations",
+          "Warning: allocations log overflowed and lost some data."
+        );
       }
 
-      
-      const waived = Cu.waiveXrays(stack);
+      const allocations = this.dbg.memory.drainAllocationsLog();
+      const packet = {
+        allocations: [],
+        allocationsTimestamps: [],
+        allocationSizes: [],
+      };
+      for (const { frame: stack, timestamp, size } of allocations) {
+        if (stack && Cu.isDeadWrapper(stack)) {
+          continue;
+        }
 
-      
-      
-      
-      
-      const index = this._frameCache.addFrame(waived);
+        
+        const waived = Cu.waiveXrays(stack);
 
-      packet.allocations.push(index);
-      packet.allocationsTimestamps.push(timestamp);
-      packet.allocationSizes.push(size);
-    }
+        
+        
+        
+        
+        const index = this._frameCache.addFrame(waived);
 
-    return this._frameCache.updateFramePacket(packet);
-  }, "getting allocations"),
+        packet.allocations.push(index);
+        packet.allocationsTimestamps.push(timestamp);
+        packet.allocationSizes.push(size);
+      }
+
+      return this._frameCache.updateFramePacket(packet);
+    },
+    "getting allocations"
+  ),
 
   
 
@@ -366,9 +425,18 @@ Memory.prototype = {
     const nonJSMilliseconds = {};
 
     try {
-      this._mgr.sizeOfTab(this.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
-                          domSize, styleSize, otherSize, totalSize, jsMilliseconds,
-                          nonJSMilliseconds);
+      this._mgr.sizeOfTab(
+        this.parent.window,
+        jsObjectsSize,
+        jsStringsSize,
+        jsOtherSize,
+        domSize,
+        styleSize,
+        otherSize,
+        totalSize,
+        jsMilliseconds,
+        nonJSMilliseconds
+      );
       result.total = totalSize.value;
       result.domSize = domSize.value;
       result.styleSize = styleSize.value;
@@ -418,8 +486,9 @@ Memory.prototype = {
 
 
   _getCurrentTime: function() {
-    const docShell = this.parent.isRootActor ? this.parent.docShell :
-                     this.parent.originalDocShell;
+    const docShell = this.parent.isRootActor
+      ? this.parent.docShell
+      : this.parent.originalDocShell;
     if (docShell) {
       return docShell.now();
     }

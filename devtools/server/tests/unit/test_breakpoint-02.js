@@ -8,29 +8,30 @@
 
 
 
-add_task(threadClientTest(({ threadClient, client, debuggee }) => {
-  return new Promise((resolve) => {
-    threadClient.once("paused", async function(packet) {
-      const source = await getSourceById(
-        threadClient,
-        packet.frame.where.actor
-      );
-      const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
+add_task(
+  threadClientTest(({ threadClient, client, debuggee }) => {
+    return new Promise(resolve => {
+      threadClient.once("paused", async function(packet) {
+        const source = await getSourceById(
+          threadClient,
+          packet.frame.where.actor
+        );
+        const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
 
-      await threadClient.resume();
+        await threadClient.resume();
 
-      
-      threadClient.once("paused", function(packet) {
-        Assert.equal(packet.type, "paused");
-        Assert.equal(packet.why.type, "interrupted");
+        
+        threadClient.once("paused", function(packet) {
+          Assert.equal(packet.type, "paused");
+          Assert.equal(packet.why.type, "interrupted");
+        });
+
+        threadClient.setBreakpoint(location, {});
+        await client.waitForRequestsToSettle();
+        executeSoon(resolve);
       });
 
-      threadClient.setBreakpoint(location, {});
-      await client.waitForRequestsToSettle();
-      executeSoon(resolve);
-    });
-
-    
+      
     Cu.evalInSandbox(
       "var line0 = Error().lineNumber;\n" +
       "debugger;\n" +
@@ -39,5 +40,6 @@ add_task(threadClientTest(({ threadClient, client, debuggee }) => {
       debuggee
     );
     
-  });
-}));
+    });
+  })
+);

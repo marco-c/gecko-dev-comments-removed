@@ -3,34 +3,41 @@
 
 "use strict";
 
-const xpcInspector = Cc["@mozilla.org/jsinspector;1"].getService(Ci.nsIJSInspector);
+const xpcInspector = Cc["@mozilla.org/jsinspector;1"].getService(
+  Ci.nsIJSInspector
+);
 
-add_task(threadClientTest(async ({ threadClient, debuggee, targetFront }) => {
-  Assert.equal(xpcInspector.eventLoopNestLevel, 0);
+add_task(
+  threadClientTest(async ({ threadClient, debuggee, targetFront }) => {
+    Assert.equal(xpcInspector.eventLoopNestLevel, 0);
 
-  await new Promise(resolve => {
-    threadClient.on("paused", function(packet) {
-      Assert.equal(false, "error" in packet);
-      Assert.ok("actor" in packet);
-      Assert.ok("why" in packet);
-      Assert.equal(packet.why.type, "debuggerStatement");
+    await new Promise(resolve => {
+      threadClient.on("paused", function(packet) {
+        Assert.equal(false, "error" in packet);
+        Assert.ok("actor" in packet);
+        Assert.ok("why" in packet);
+        Assert.equal(packet.why.type, "debuggerStatement");
+
+        
+        
+        Assert.ok(debuggee.a);
+        Assert.ok(!debuggee.b);
+
+        Assert.equal(xpcInspector.eventLoopNestLevel, 1);
+
+        
+        threadClient.resume().then(resolve);
+      });
 
       
+      Cu.evalInSandbox(
+        "var a = true; var b = false; debugger; var b = true;",
+        debuggee
+      );
       
-      Assert.ok(debuggee.a);
-      Assert.ok(!debuggee.b);
-
-      Assert.equal(xpcInspector.eventLoopNestLevel, 1);
-
-      
-      threadClient.resume().then(resolve);
+      Assert.ok(debuggee.b);
     });
 
-    
-    Cu.evalInSandbox("var a = true; var b = false; debugger; var b = true;", debuggee);
-    
-    Assert.ok(debuggee.b);
-  });
-
-  Assert.equal(xpcInspector.eventLoopNestLevel, 0);
-}));
+    Assert.equal(xpcInspector.eventLoopNestLevel, 0);
+  })
+);

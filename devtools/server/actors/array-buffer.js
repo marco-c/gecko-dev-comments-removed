@@ -7,7 +7,7 @@
 "use strict";
 
 var protocol = require("devtools/shared/protocol");
-const {arrayBufferSpec} = require("devtools/shared/specs/array-buffer");
+const { arrayBufferSpec } = require("devtools/shared/specs/array-buffer");
 
 
 
@@ -42,14 +42,22 @@ const ArrayBufferActor = protocol.ActorClassWithSpec(arrayBufferSpec, {
     let offset = 0;
     const PortionSize = 0x6000; 
     while (offset + PortionSize < count) {
-      parts.push(btoa(
-        String.fromCharCode.apply(null, slice.subarray(offset, offset + PortionSize))));
+      parts.push(
+        btoa(
+          String.fromCharCode.apply(
+            null,
+            slice.subarray(offset, offset + PortionSize)
+          )
+        )
+      );
       offset += PortionSize;
     }
-    parts.push(btoa(String.fromCharCode.apply(null, slice.subarray(offset, count))));
+    parts.push(
+      btoa(String.fromCharCode.apply(null, slice.subarray(offset, count)))
+    );
     return {
-      "from": this.actorID,
-      "encoded": parts.join(""),
+      from: this.actorID,
+      encoded: parts.join(""),
     };
   },
 });

@@ -1,7 +1,7 @@
 
 "use strict";
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const {TargetFactory} = require("devtools/client/framework/target");
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const { TargetFactory } = require("devtools/client/framework/target");
 const Services = require("Services");
 
 
@@ -19,7 +19,7 @@ SimpleTest.waitForExplicitFinish();
 
 function getTargetForSelectedTab() {
   
-  const {gBrowser} = Services.wm.getMostRecentWindow("navigator:browser");
+  const { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
   return TargetFactory.forTab(gBrowser.selectedTab);
 }
 

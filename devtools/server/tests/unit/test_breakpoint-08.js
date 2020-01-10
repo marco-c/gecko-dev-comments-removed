@@ -9,42 +9,45 @@
 
 
 
-add_task(threadClientTest(({ threadClient, debuggee }) => {
-  return new Promise(resolve => {
-    threadClient.once("paused", async function(packet) {
-      const line = debuggee.line0 + 3;
-      const source = await getSourceById(
-        threadClient,
-        packet.frame.where.actor
-      );
-
-      
-      const response = await threadClient
-        .setBreakpoint({ sourceUrl: source.url, line: line }, {});
-      
-      assert.equal(response.actuallocation.source.actor, source.actor);
-      Assert.equal(response.actualLocation.line, location.line + 1);
-
-      threadClient.once("paused", function(packet) {
-        
-        Assert.equal(packet.type, "paused");
-        Assert.equal(packet.frame.where.actor, source.actor);
-        Assert.equal(packet.frame.where.line, location.line + 1);
-        Assert.equal(packet.why.type, "breakpoint");
-        Assert.equal(packet.why.actors[0], response.bpClient.actor);
-        
-        Assert.equal(debuggee.a, 1);
-        Assert.equal(debuggee.b, undefined);
+add_task(
+  threadClientTest(({ threadClient, debuggee }) => {
+    return new Promise(resolve => {
+      threadClient.once("paused", async function(packet) {
+        const line = debuggee.line0 + 3;
+        const source = await getSourceById(
+          threadClient,
+          packet.frame.where.actor
+        );
 
         
-        response.bpClient.remove(function(response) {
-          threadClient.resume().then(resolve);
+        const response = await threadClient.setBreakpoint(
+          { sourceUrl: source.url, line: line },
+          {}
+        );
+        
+        assert.equal(response.actuallocation.source.actor, source.actor);
+        Assert.equal(response.actualLocation.line, location.line + 1);
+
+        threadClient.once("paused", function(packet) {
+          
+          Assert.equal(packet.type, "paused");
+          Assert.equal(packet.frame.where.actor, source.actor);
+          Assert.equal(packet.frame.where.line, location.line + 1);
+          Assert.equal(packet.why.type, "breakpoint");
+          Assert.equal(packet.why.actors[0], response.bpClient.actor);
+          
+          Assert.equal(debuggee.a, 1);
+          Assert.equal(debuggee.b, undefined);
+
+          
+          response.bpClient.remove(function(response) {
+            threadClient.resume().then(resolve);
+          });
         });
-      });
 
-      
-      threadClient.resume();
-    });
+        
+        threadClient.resume();
+      });
 
     
     Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
@@ -64,5 +67,6 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
                      "1.7",
                      "script2.js");
     
-  });
-}));
+    });
+  })
+);

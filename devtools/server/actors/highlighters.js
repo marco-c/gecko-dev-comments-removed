@@ -11,12 +11,35 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const protocol = require("devtools/shared/protocol");
 const Services = require("Services");
 const ReplayInspector = require("devtools/server/actors/replay/inspector");
-const { highlighterSpec, customHighlighterSpec } = require("devtools/shared/specs/highlighters");
+const {
+  highlighterSpec,
+  customHighlighterSpec,
+} = require("devtools/shared/specs/highlighters");
 
-loader.lazyRequireGetter(this, "isWindowIncluded", "devtools/shared/layout/utils", true);
-loader.lazyRequireGetter(this, "isXUL", "devtools/server/actors/highlighters/utils/markup", true);
-loader.lazyRequireGetter(this, "SimpleOutlineHighlighter", "devtools/server/actors/highlighters/simple-outline", true);
-loader.lazyRequireGetter(this, "BoxModelHighlighter", "devtools/server/actors/highlighters/box-model", true);
+loader.lazyRequireGetter(
+  this,
+  "isWindowIncluded",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "isXUL",
+  "devtools/server/actors/highlighters/utils/markup",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "SimpleOutlineHighlighter",
+  "devtools/server/actors/highlighters/simple-outline",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "BoxModelHighlighter",
+  "devtools/server/actors/highlighters/box-model",
+  true
+);
 
 const HIGHLIGHTER_PICKED_TIMER = 1000;
 const IS_OSX = Services.appinfo.OS === "Darwin";
@@ -36,7 +59,7 @@ const highlighterTypes = new Map();
 
 
 
-const isTypeRegistered = (typeName) => highlighterTypes.has(typeName);
+const isTypeRegistered = typeName => highlighterTypes.has(typeName);
 exports.isTypeRegistered = isTypeRegistered;
 
 
@@ -121,8 +144,10 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     this._isPreviousWindowXUL = isXUL(this._targetActor.window);
 
     if (!this._isPreviousWindowXUL) {
-      this._highlighter = new BoxModelHighlighter(this._highlighterEnv,
-                                                  this._inspector);
+      this._highlighter = new BoxModelHighlighter(
+        this._highlighterEnv,
+        this._inspector
+      );
       this._highlighter.on("ready", this._highlighterReady);
       this._highlighter.on("hide", this._highlighterHidden);
     } else {
@@ -141,7 +166,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     }
   },
 
-  _onNavigate: function({isTopLevel}) {
+  _onNavigate: function({ isTopLevel }) {
     
     
     if (!isTopLevel || !this._targetActor.window.document.documentElement) {
@@ -209,11 +234,12 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
 
 
-  _isEventAllowed: function({view}) {
+  _isEventAllowed: function({ view }) {
     const { window } = this._highlighterEnv;
 
-    return window instanceof Ci.nsIDOMChromeWindow ||
-          isWindowIncluded(window, view);
+    return (
+      window instanceof Ci.nsIDOMChromeWindow || isWindowIncluded(window, view)
+    );
   },
 
   
@@ -251,8 +277,10 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
       
       
       if (event.shiftKey) {
-        this._walker.emit("picker-node-previewed",
-          this._findAndAttachElement(event));
+        this._walker.emit(
+          "picker-node-previewed",
+          this._findAndAttachElement(event)
+        );
         return;
       }
 
@@ -344,13 +372,16 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
           this._walker.emit("picker-node-canceled");
           return;
         case event.DOM_VK_C:
-          if ((IS_OSX && event.metaKey && event.altKey) ||
-            (!IS_OSX && event.ctrlKey && event.shiftKey)) {
+          if (
+            (IS_OSX && event.metaKey && event.altKey) ||
+            (!IS_OSX && event.ctrlKey && event.shiftKey)
+          ) {
             this.cancelPick();
             this._walker.emit("picker-node-canceled");
           }
           return;
-        default: return;
+        default:
+          return;
       }
 
       
@@ -380,7 +411,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     
     const node = isReplaying
       ? ReplayInspector.findEventTarget(event)
-      : (event.originalTarget || event.target);
+      : event.originalTarget || event.target;
     return this._walker.attachElement(node);
   },
 
@@ -408,7 +439,9 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     const document = this._targetActor.window.document;
 
     
-    document.setSuppressedEventListener(callback ? { handleEvent: callback } : null);
+    document.setSuppressedEventListener(
+      callback ? { handleEvent: callback } : null
+    );
   },
 
   _startPickerListeners: function() {
@@ -464,123 +497,135 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
 
 
 
-exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSpec, {
-  
-
-
-
-
-  initialize: function(parent, typeName) {
-    protocol.Actor.prototype.initialize.call(this, null);
-
-    this._parent = parent;
-
-    const modulePath = highlighterTypes.get(typeName);
-    if (!modulePath) {
-      const list = [...highlighterTypes.keys()];
-
-      throw new Error(`${typeName} isn't a valid highlighter class (${list})`);
-    }
-
-    const constructor = require("./highlighters/" + modulePath)[typeName];
+exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
+  customHighlighterSpec,
+  {
     
-    
-    
-    
-    if (!isXUL(this._parent.targetActor.window) || constructor.XULSupported) {
-      this._highlighterEnv = new HighlighterEnvironment();
-      this._highlighterEnv.initFromTargetActor(parent.targetActor);
-      this._highlighter = new constructor(this._highlighterEnv);
-      if (this._highlighter.on) {
-        this._highlighter.on("highlighter-event", this._onHighlighterEvent.bind(this));
+
+
+
+
+    initialize: function(parent, typeName) {
+      protocol.Actor.prototype.initialize.call(this, null);
+
+      this._parent = parent;
+
+      const modulePath = highlighterTypes.get(typeName);
+      if (!modulePath) {
+        const list = [...highlighterTypes.keys()];
+
+        throw new Error(
+          `${typeName} isn't a valid highlighter class (${list})`
+        );
       }
-    } else {
-      throw new Error("Custom " + typeName +
-        "highlighter cannot be created in a XUL window");
-    }
-  },
 
-  get conn() {
-    return this._parent && this._parent.conn;
-  },
-
-  destroy: function() {
-    protocol.Actor.prototype.destroy.call(this);
-    this.finalize();
-    this._parent = null;
-  },
-
-  release: function() {},
-
-  
-
-
-  get instance() {
-    return this._highlighter;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  show: function(node, options) {
-    if (!this._highlighter) {
-      return null;
-    }
-
-    const rawNode = node && node.rawNode;
-
-    return this._highlighter.show(rawNode, options);
-  },
-
-  
-
-
-  hide: function() {
-    if (this._highlighter) {
-      this._highlighter.hide();
-    }
-  },
-
-  
-
-
-  _onHighlighterEvent: function(data) {
-    this.emit("highlighter-event", data);
-  },
-
-  
-
-
-
-  finalize: function() {
-    if (this._highlighter) {
-      if (this._highlighter.off) {
-        this._highlighter.off("highlighter-event", this._onHighlighterEvent.bind(this));
+      const constructor = require("./highlighters/" + modulePath)[typeName];
+      
+      
+      
+      
+      if (!isXUL(this._parent.targetActor.window) || constructor.XULSupported) {
+        this._highlighterEnv = new HighlighterEnvironment();
+        this._highlighterEnv.initFromTargetActor(parent.targetActor);
+        this._highlighter = new constructor(this._highlighterEnv);
+        if (this._highlighter.on) {
+          this._highlighter.on(
+            "highlighter-event",
+            this._onHighlighterEvent.bind(this)
+          );
+        }
+      } else {
+        throw new Error(
+          "Custom " + typeName + "highlighter cannot be created in a XUL window"
+        );
       }
-      this._highlighter.destroy();
-      this._highlighter = null;
-    }
+    },
 
-    if (this._highlighterEnv) {
-      this._highlighterEnv.destroy();
-      this._highlighterEnv = null;
-    }
-  },
-});
+    get conn() {
+      return this._parent && this._parent.conn;
+    },
+
+    destroy: function() {
+      protocol.Actor.prototype.destroy.call(this);
+      this.finalize();
+      this._parent = null;
+    },
+
+    release: function() {},
+
+    
+
+
+    get instance() {
+      return this._highlighter;
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    show: function(node, options) {
+      if (!this._highlighter) {
+        return null;
+      }
+
+      const rawNode = node && node.rawNode;
+
+      return this._highlighter.show(rawNode, options);
+    },
+
+    
+
+
+    hide: function() {
+      if (this._highlighter) {
+        this._highlighter.hide();
+      }
+    },
+
+    
+
+
+    _onHighlighterEvent: function(data) {
+      this.emit("highlighter-event", data);
+    },
+
+    
+
+
+
+    finalize: function() {
+      if (this._highlighter) {
+        if (this._highlighter.off) {
+          this._highlighter.off(
+            "highlighter-event",
+            this._onHighlighterEvent.bind(this)
+          );
+        }
+        this._highlighter.destroy();
+        this._highlighter = null;
+      }
+
+      if (this._highlighterEnv) {
+        this._highlighterEnv.destroy();
+        this._highlighterEnv = null;
+      }
+    },
+  }
+);
 
 
 
@@ -595,9 +640,13 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
 
 
 function HighlighterEnvironment() {
-  this.relayTargetActorWindowReady = this.relayTargetActorWindowReady.bind(this);
+  this.relayTargetActorWindowReady = this.relayTargetActorWindowReady.bind(
+    this
+  );
   this.relayTargetActorNavigate = this.relayTargetActorNavigate.bind(this);
-  this.relayTargetActorWillNavigate = this.relayTargetActorWillNavigate.bind(this);
+  this.relayTargetActorWillNavigate = this.relayTargetActorWillNavigate.bind(
+    this
+  );
 
   EventEmitter.decorate(this);
 }
@@ -651,9 +700,11 @@ HighlighterEnvironment.prototype = {
       },
     };
 
-    this.webProgress.addProgressListener(this.listener,
+    this.webProgress.addProgressListener(
+      this.listener,
       Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-      Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+    );
   },
 
   get isInitialized() {
@@ -666,8 +717,10 @@ HighlighterEnvironment.prototype = {
 
   get window() {
     if (!this.isInitialized) {
-      throw new Error("Initialize HighlighterEnvironment with a targetActor " +
-        "or window first");
+      throw new Error(
+        "Initialize HighlighterEnvironment with a targetActor " +
+          "or window first"
+      );
     }
     const win = this._targetActor ? this._targetActor.window : this._win;
 
@@ -679,14 +732,16 @@ HighlighterEnvironment.prototype = {
   },
 
   get docShell() {
-    return this.window &&
-           this.window.docShell;
+    return this.window && this.window.docShell;
   },
 
   get webProgress() {
-    return this.docShell &&
-           this.docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                        .getInterface(Ci.nsIWebProgress);
+    return (
+      this.docShell &&
+      this.docShell
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIWebProgress)
+    );
   },
 
   

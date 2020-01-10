@@ -4,7 +4,10 @@
 
 "use strict";
 
-const { CanvasFrameAnonymousContentHelper, createNode } = require("./utils/markup");
+const {
+  CanvasFrameAnonymousContentHelper,
+  createNode,
+} = require("./utils/markup");
 
 
 
@@ -15,8 +18,10 @@ const { CanvasFrameAnonymousContentHelper, createNode } = require("./utils/marku
 
 function PausedDebuggerOverlay(highlighterEnv) {
   this.env = highlighterEnv;
-  this.markup = new CanvasFrameAnonymousContentHelper(highlighterEnv,
-    this._buildMarkup.bind(this));
+  this.markup = new CanvasFrameAnonymousContentHelper(
+    highlighterEnv,
+    this._buildMarkup.bind(this)
+  );
 }
 
 PausedDebuggerOverlay.prototype = {
@@ -29,17 +34,17 @@ PausedDebuggerOverlay.prototype = {
     const prefix = this.ID_CLASS_PREFIX;
 
     const container = createNode(window, {
-      attributes: {"class": "highlighter-container"},
+      attributes: { class: "highlighter-container" },
     });
 
     
     const wrapper = createNode(window, {
       parent: container,
       attributes: {
-        "id": "root",
-        "class": "root",
-        "hidden": "true",
-        "overlay": "true",
+        id: "root",
+        class: "root",
+        hidden: "true",
+        overlay: "true",
       },
       prefix,
     });
@@ -47,8 +52,8 @@ PausedDebuggerOverlay.prototype = {
     const toolbar = createNode(window, {
       parent: wrapper,
       attributes: {
-        "id": "toolbar",
-        "class": "toolbar",
+        id: "toolbar",
+        class: "toolbar",
       },
       prefix,
     });
@@ -57,8 +62,8 @@ PausedDebuggerOverlay.prototype = {
       nodeType: "span",
       parent: toolbar,
       attributes: {
-        "id": "reason",
-        "class": "reason",
+        id: "reason",
+        class: "reason",
       },
       prefix,
     });

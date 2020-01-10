@@ -8,38 +8,39 @@
 
 
 
-add_task(threadClientTest(({ threadClient, client, debuggee }) => {
-  return new Promise(resolve => {
-    threadClient.once("paused", async function(packet) {
-      const source = await getSourceById(
-        threadClient,
-        packet.frame.where.actor
-      );
-      const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
-
-      threadClient.setBreakpoint(location, {});
-      await client.waitForRequestsToSettle();
-
+add_task(
+  threadClientTest(({ threadClient, client, debuggee }) => {
+    return new Promise(resolve => {
       threadClient.once("paused", async function(packet) {
-        
-        Assert.equal(packet.frame.where.actor, source.actor);
-        Assert.equal(packet.frame.where.line, location.line);
-        Assert.equal(packet.why.type, "breakpoint");
-        
-        Assert.equal(debuggee.a, 1);
-        Assert.equal(debuggee.b, undefined);
+        const source = await getSourceById(
+          threadClient,
+          packet.frame.where.actor
+        );
+        const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
+
+        threadClient.setBreakpoint(location, {});
+        await client.waitForRequestsToSettle();
+
+        threadClient.once("paused", async function(packet) {
+          
+          Assert.equal(packet.frame.where.actor, source.actor);
+          Assert.equal(packet.frame.where.line, location.line);
+          Assert.equal(packet.why.type, "breakpoint");
+          
+          Assert.equal(debuggee.a, 1);
+          Assert.equal(debuggee.b, undefined);
+
+          
+          threadClient.removeBreakpoint(location);
+          await client.waitForRequestsToSettle();
+          threadClient.resume().then(resolve);
+        });
 
         
-        threadClient.removeBreakpoint(location);
-        await client.waitForRequestsToSettle();
-        threadClient.resume().then(resolve);
+        await threadClient.resume();
       });
 
       
-      await threadClient.resume();
-    });
-
-    
     Cu.evalInSandbox(
       "var line0 = Error().lineNumber;\n" +
       "function foo() {\n" + 
@@ -50,6 +51,7 @@ add_task(threadClientTest(({ threadClient, client, debuggee }) => {
       "foo();\n",            
       debuggee
     );
-    
-  });
-}));
+      
+    });
+  })
+);

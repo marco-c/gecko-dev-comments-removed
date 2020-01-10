@@ -10,7 +10,7 @@
 
 
 var protocol = require("devtools/shared/protocol");
-var {Arg, RetVal} = protocol;
+var { Arg, RetVal } = protocol;
 
 function simpleHello() {
   return {
@@ -63,7 +63,7 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     
     const check = () => {
-      if ((this.sequence - sequence) < toWait) {
+      if (this.sequence - sequence < toWait) {
         executeSoon(check);
         return;
       }
@@ -115,78 +115,100 @@ function run_test() {
 
     
     
-    calls.push(rootFront.promiseReturn(2).then(ret => {
-      
-      Assert.equal(sequence, 0);
-      
-      Assert.equal(ret, sequence++);
-    }));
+    calls.push(
+      rootFront.promiseReturn(2).then(ret => {
+        
+        Assert.equal(sequence, 0);
+        
+        Assert.equal(ret, sequence++);
+      })
+    );
 
     
 
-    calls.push(rootFront.simpleReturn().then(ret => {
-      
-      Assert.equal(sequence, 1);
-      
-      Assert.equal(ret, sequence++);
-    }));
+    calls.push(
+      rootFront.simpleReturn().then(ret => {
+        
+        Assert.equal(sequence, 1);
+        
+        Assert.equal(ret, sequence++);
+      })
+    );
 
-    calls.push(rootFront.simpleReturn().then(ret => {
-      
-      Assert.equal(sequence, 2);
-      
-      Assert.equal(ret, sequence++);
-    }));
+    calls.push(
+      rootFront.simpleReturn().then(ret => {
+        
+        Assert.equal(sequence, 2);
+        
+        Assert.equal(ret, sequence++);
+      })
+    );
 
-    calls.push(rootFront.simpleThrow().then(() => {
-      Assert.ok(false, "simpleThrow shouldn't succeed!");
-    }, error => {
-      
-      Assert.equal(sequence++, 3);
-    }));
+    calls.push(
+      rootFront.simpleThrow().then(
+        () => {
+          Assert.ok(false, "simpleThrow shouldn't succeed!");
+        },
+        error => {
+          
+          Assert.equal(sequence++, 3);
+        }
+      )
+    );
 
     
     
     
     const deferAfterRejection = defer();
 
-    calls.push(rootFront.promiseThrow().then(() => {
-      Assert.ok(false, "promiseThrow shouldn't succeed!");
-    }, error => {
-      
-      Assert.equal(sequence++, 4);
-      Assert.ok(true, "simple throw should throw");
-      deferAfterRejection.resolve();
-    }));
+    calls.push(
+      rootFront.promiseThrow().then(
+        () => {
+          Assert.ok(false, "promiseThrow shouldn't succeed!");
+        },
+        error => {
+          
+          Assert.equal(sequence++, 4);
+          Assert.ok(true, "simple throw should throw");
+          deferAfterRejection.resolve();
+        }
+      )
+    );
 
-    calls.push(rootFront.simpleReturn().then(ret => {
-      return deferAfterRejection.promise.then(function() {
-        
-        Assert.equal(sequence, 5);
-        
-        Assert.equal(ret, sequence++);
-      });
-    }));
+    calls.push(
+      rootFront.simpleReturn().then(ret => {
+        return deferAfterRejection.promise.then(function() {
+          
+          Assert.equal(sequence, 5);
+          
+          Assert.equal(ret, sequence++);
+        });
+      })
+    );
 
     
     
-    calls.push(rootFront.promiseReturn(1).then(ret => {
-      return deferAfterRejection.promise.then(function() {
-        
-        Assert.equal(sequence, 6);
-        
-        Assert.equal(ret, sequence++);
-      });
-    }));
+    calls.push(
+      rootFront.promiseReturn(1).then(ret => {
+        return deferAfterRejection.promise.then(function() {
+          
+          Assert.equal(sequence, 6);
+          
+          Assert.equal(ret, sequence++);
+        });
+      })
+    );
 
-    calls.push(rootFront.simpleReturn().then(ret => {
-      return deferAfterRejection.promise.then(function() {
-        
-        Assert.equal(sequence, 7);
-        
-        Assert.equal(ret, sequence++);
-      });
-    }));
+    calls.push(
+      rootFront.simpleReturn().then(ret => {
+        return deferAfterRejection.promise.then(function() {
+          
+          Assert.equal(sequence, 7);
+          
+          Assert.equal(ret, sequence++);
+        });
+      })
+    );
 
     Promise.all(calls).then(() => {
       client.close().then(() => {

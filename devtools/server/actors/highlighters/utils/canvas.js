@@ -14,7 +14,10 @@ const {
   scale,
   translate,
 } = require("devtools/shared/layout/dom-matrix-2d");
-const { getCurrentZoom, getViewportDimensions } = require("devtools/shared/layout/utils");
+const {
+  getCurrentZoom,
+  getViewportDimensions,
+} = require("devtools/shared/layout/utils");
 const { getComputedStyle } = require("./markup");
 
 
@@ -110,7 +113,17 @@ function clearRect(ctx, x1, y1, x2, y2, matrix = identity()) {
 
 
 
-function drawBubbleRect(ctx, x, y, width, height, radius, margin, arrowSize, alignment) {
+function drawBubbleRect(
+  ctx,
+  x,
+  y,
+  width,
+  height,
+  radius,
+  margin,
+  arrowSize,
+  alignment
+) {
   let angle = 0;
 
   if (alignment === "bottom") {
@@ -196,9 +209,9 @@ function drawLine(ctx, x1, y1, x2, y2, options) {
       x2 = options.extendToBoundaries[2];
     } else {
       y1 = options.extendToBoundaries[1];
-      x1 = (p2[0] - p1[0]) * (y1 - p1[1]) / (p2[1] - p1[1]) + p1[0];
+      x1 = ((p2[0] - p1[0]) * (y1 - p1[1])) / (p2[1] - p1[1]) + p1[0];
       y2 = options.extendToBoundaries[3];
-      x2 = (p2[0] - p1[0]) * (y2 - p1[1]) / (p2[1] - p1[1]) + p1[0];
+      x2 = ((p2[0] - p1[0]) * (y2 - p1[1])) / (p2[1] - p1[1]) + p1[0];
     }
   }
 
@@ -319,7 +332,11 @@ function getBoundsFromPoints(points) {
 
 
 
-function getCurrentMatrix(element, window, { ignoreWritingModeAndTextDirection } = {}) {
+function getCurrentMatrix(
+  element,
+  window,
+  { ignoreWritingModeAndTextDirection } = {}
+) {
   const computedStyle = getComputedStyle(element);
 
   const paddingTop = parseFloat(computedStyle.paddingTop);
@@ -331,8 +348,10 @@ function getCurrentMatrix(element, window, { ignoreWritingModeAndTextDirection }
   const borderBottom = parseFloat(computedStyle.borderBottomWidth);
   const borderLeft = parseFloat(computedStyle.borderLeftWidth);
 
-  const nodeMatrix =
-    getNodeTransformationMatrix(element, window.document.documentElement);
+  const nodeMatrix = getNodeTransformationMatrix(
+    element,
+    window.document.documentElement
+  );
 
   let currentMatrix = identity();
   let hasNodeTransformations = false;
@@ -350,13 +369,25 @@ function getCurrentMatrix(element, window, { ignoreWritingModeAndTextDirection }
   }
 
   
-  currentMatrix = multiply(currentMatrix,
-    translate(paddingLeft + borderLeft, paddingTop + borderTop));
+  currentMatrix = multiply(
+    currentMatrix,
+    translate(paddingLeft + borderLeft, paddingTop + borderTop)
+  );
 
   
   const size = {
-    width: element.offsetWidth - borderLeft - borderRight - paddingLeft - paddingRight,
-    height: element.offsetHeight - borderTop - borderBottom - paddingTop - paddingBottom,
+    width:
+      element.offsetWidth -
+      borderLeft -
+      borderRight -
+      paddingLeft -
+      paddingRight,
+    height:
+      element.offsetHeight -
+      borderTop -
+      borderBottom -
+      paddingTop -
+      paddingBottom,
   };
 
   if (!ignoreWritingModeAndTextDirection) {
@@ -377,10 +408,27 @@ function getCurrentMatrix(element, window, { ignoreWritingModeAndTextDirection }
 
 
 function getPathDescriptionFromPoints(points) {
-  return "M" + points[0].x + "," + points[0].y + " " +
-         "L" + points[1].x + "," + points[1].y + " " +
-         "L" + points[2].x + "," + points[2].y + " " +
-         "L" + points[3].x + "," + points[3].y;
+  return (
+    "M" +
+    points[0].x +
+    "," +
+    points[0].y +
+    " " +
+    "L" +
+    points[1].x +
+    "," +
+    points[1].y +
+    " " +
+    "L" +
+    points[2].x +
+    "," +
+    points[2].y +
+    " " +
+    "L" +
+    points[3].x +
+    "," +
+    points[3].y
+  );
 }
 
 
@@ -402,12 +450,7 @@ function getPathDescriptionFromPoints(points) {
 
 
 function getPointsFromDiagonal(x1, y1, x2, y2, matrix = identity()) {
-  return [
-    [x1, y1],
-    [x2, y1],
-    [x2, y2],
-    [x1, y2],
-  ].map(point => {
+  return [[x1, y1], [x2, y1], [x2, y2], [x1, y2]].map(point => {
     const transformedPoint = apply(matrix, point);
 
     return { x: transformedPoint[0], y: transformedPoint[1] };
@@ -431,7 +474,11 @@ function getPointsFromDiagonal(x1, y1, x2, y2, matrix = identity()) {
 
 
 function updateCanvasElement(
-    canvas, canvasPosition, devicePixelRatio, { zoomWindow } = {}) {
+  canvas,
+  canvasPosition,
+  devicePixelRatio,
+  { zoomWindow } = {}
+) {
   let { x, y } = canvasPosition;
   const size = CANVAS_SIZE / devicePixelRatio;
 
@@ -443,8 +490,10 @@ function updateCanvasElement(
 
   
   
-  canvas.setAttribute("style",
-    `width: ${size}px; height: ${size}px; transform: translate(${x}px, ${y}px);`);
+  canvas.setAttribute(
+    "style",
+    `width: ${size}px; height: ${size}px; transform: translate(${x}px, ${y}px);`
+  );
   canvas.getCanvasContext("2d").clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 }
 
@@ -465,7 +514,12 @@ function updateCanvasElement(
 
 
 
-function updateCanvasPosition(canvasPosition, scrollPosition, window, windowDimensions) {
+function updateCanvasPosition(
+  canvasPosition,
+  scrollPosition,
+  window,
+  windowDimensions
+) {
   let { x: canvasX, y: canvasY } = canvasPosition;
   const { x: scrollX, y: scrollY } = scrollPosition;
   const cssCanvasSize = CANVAS_SIZE / window.devicePixelRatio;
@@ -492,9 +546,11 @@ function updateCanvasPosition(canvasPosition, scrollPosition, window, windowDime
 
   
   const leftThreshold = scrollX - bufferSizeX;
-  const rightThreshold = scrollX - canvasWidth + viewportSize.width + bufferSizeX;
+  const rightThreshold =
+    scrollX - canvasWidth + viewportSize.width + bufferSizeX;
   const topThreshold = scrollY - bufferSizeY;
-  const bottomThreshold = scrollY - canvasHeight + viewportSize.height + bufferSizeY;
+  const bottomThreshold =
+    scrollY - canvasHeight + viewportSize.height + bufferSizeY;
 
   if (canvasX < rightBoundary && canvasX < rightThreshold) {
     canvasX = Math.min(leftThreshold, rightBoundary);

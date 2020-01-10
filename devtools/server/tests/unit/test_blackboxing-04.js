@@ -17,11 +17,14 @@ function run_test() {
   gDebuggee = addTestGlobal("test-black-box");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function() {
-    attachTestTabAndResume(gClient, "test-black-box",
-                           function(response, targetFront, threadClient) {
-                             gThreadClient = threadClient;
-                             test_black_box();
-                           });
+    attachTestTabAndResume(gClient, "test-black-box", function(
+      response,
+      targetFront,
+      threadClient
+    ) {
+      gThreadClient = threadClient;
+      test_black_box();
+    });
   });
   do_test_pending();
 }
@@ -37,10 +40,12 @@ function test_black_box() {
 
   
   Cu.evalInSandbox(
-    "" + function doStuff(k) { 
-      debugger;                
-      k(100);                  
-    },                         
+    "" +
+      function doStuff(k) {
+        
+        debugger; 
+        k(100); 
+      }, 
     gDebuggee,
     "1.8",
     BLACK_BOXED_URL,
@@ -48,14 +53,18 @@ function test_black_box() {
   );
 
   Cu.evalInSandbox(
-    "" + function runTest() { 
-      doStuff(                
-        function(n) {        
-          return n;           
-        }                     
-      );                      
-    }                         
-    + "\n runTest();",        
+    "" +
+    function runTest() {
+      
+      doStuff(
+        
+        function(n) {
+          
+          return n; 
+        } 
+      ); 
+    } + 
+      "\n runTest();", 
     gDebuggee,
     "1.8",
     SOURCE_URL,
@@ -65,15 +74,17 @@ function test_black_box() {
 }
 
 function test_black_box_paused() {
-  gThreadClient.getSources().then(async function({error, sources}) {
+  gThreadClient.getSources().then(async function({ error, sources }) {
     Assert.ok(!error, "Should not get an error: " + error);
     const sourceFront = gThreadClient.source(
       sources.filter(s => s.url == BLACK_BOXED_URL)[0]
     );
 
     const pausedInSource = await blackBox(sourceFront);
-    Assert.ok(pausedInSource,
-      "We should be notified that we are currently paused in this source");
+    Assert.ok(
+      pausedInSource,
+      "We should be notified that we are currently paused in this source"
+    );
     await gThreadClient.resume();
     finishClient(gClient);
   });

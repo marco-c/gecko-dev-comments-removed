@@ -12,15 +12,17 @@
 
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const CC = Components.Constructor;
 
 
-const sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
+const sandbox = Cu.Sandbox(
+  CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")()
+);
 Cu.evalInSandbox(
   "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
-  "addDebuggerToGlobal(this);",
+    "addDebuggerToGlobal(this);",
   sandbox
 );
 
@@ -28,7 +30,9 @@ Cu.evalInSandbox(
 
 function setupContents(window) {
   
-  const canvas = window.middlemanCanvas = window.document.createElement("canvas");
+  const canvas = (window.middlemanCanvas = window.document.createElement(
+    "canvas"
+  ));
   canvas.style.position = "absolute";
   window.document.body.style.margin = "0px";
   window.document.body.prepend(canvas);
@@ -53,8 +57,8 @@ function updateWindowCanvas(window, buffer, width, height, hadFailure) {
   
   const scale = window.devicePixelRatio;
   if (scale != 1) {
-    canvas.style.transform =
-      `scale(${ 1 / scale }) translate(-${ width / scale }px, -${ height / scale }px)`;
+    canvas.style.transform = `scale(${1 / scale}) translate(-${width /
+      scale}px, -${height / scale}px)`;
   }
 
   const cx = canvas.getContext("2d");
@@ -88,6 +92,4 @@ function UpdateCanvas(buffer, width, height, hadFailure) {
 }
 
 
-var EXPORTED_SYMBOLS = [
-  "UpdateCanvas",
-];
+var EXPORTED_SYMBOLS = ["UpdateCanvas"];

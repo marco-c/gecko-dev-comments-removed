@@ -9,18 +9,20 @@
 
 
 
-add_task(threadClientTest(async ({ threadClient, client, debuggee }) => {
-  let onResume = null;
-  let packet = null;
+add_task(
+  threadClientTest(
+    async ({ threadClient, client, debuggee }) => {
+      let onResume = null;
+      let packet = null;
 
-  threadClient.once("paused", function(pkt) {
-    packet = pkt;
-    onResume = threadClient.resume();
-  });
+      threadClient.once("paused", function(pkt) {
+        packet = pkt;
+        onResume = threadClient.resume();
+      });
 
-  await threadClient.pauseOnExceptions(true, true);
-  try {
-    
+      await threadClient.pauseOnExceptions(true, true);
+      try {
+        
     Cu.evalInSandbox(
       `                                   // 1
       function stopMe() {                 // 2
@@ -33,24 +35,24 @@ add_task(threadClientTest(async ({ threadClient, client, debuggee }) => {
       "test_pause_exceptions-04.js",
       1
     );
-    
-  } catch (e) {}
+        
+      } catch (e) {}
 
-  await onResume;
+      await onResume;
 
-  Assert.equal(!!packet, true);
-  Assert.equal(packet.why.type, "exception");
-  Assert.equal(packet.why.exception, "42");
-  packet = null;
+      Assert.equal(!!packet, true);
+      Assert.equal(packet.why.type, "exception");
+      Assert.equal(packet.why.exception, "42");
+      packet = null;
 
-  threadClient.once("paused", function(pkt) {
-    packet = pkt;
-    onResume = threadClient.resume();
-  });
+      threadClient.once("paused", function(pkt) {
+        packet = pkt;
+        onResume = threadClient.resume();
+      });
 
-  await threadClient.pauseOnExceptions(false, true);
-  try {
-    
+      await threadClient.pauseOnExceptions(false, true);
+      try {
+        
     Cu.evalInSandbox(
       `                                   // 1
       function dontStopMe() {             // 2
@@ -63,16 +65,16 @@ add_task(threadClientTest(async ({ threadClient, client, debuggee }) => {
       "test_pause_exceptions-04.js",
       1
     );
-    
-  } catch (e) {}
+        
+      } catch (e) {}
 
-  
-  
-  Assert.equal(!!packet, false);
+      
+      
+      Assert.equal(!!packet, false);
 
-  await threadClient.pauseOnExceptions(true, true);
-  try {
-    
+      await threadClient.pauseOnExceptions(true, true);
+      try {
+        
     Cu.evalInSandbox(
       `                                   // 1
       function stopMeAgain() {            // 2
@@ -86,16 +88,19 @@ add_task(threadClientTest(async ({ threadClient, client, debuggee }) => {
       1
     );
     
-  } catch (e) {}
+      } catch (e) {}
 
-  await onResume;
+      await onResume;
 
-  
-  
-  Assert.equal(!!packet, true);
-  Assert.equal(packet.why.type, "exception");
-  Assert.equal(packet.why.exception, "44");
-}, {
-  
-  doNotRunWorker: true,
-}));
+      
+      
+      Assert.equal(!!packet, true);
+      Assert.equal(packet.why.type, "exception");
+      Assert.equal(packet.why.exception, "44");
+    },
+    {
+      
+      doNotRunWorker: true,
+    }
+  )
+);

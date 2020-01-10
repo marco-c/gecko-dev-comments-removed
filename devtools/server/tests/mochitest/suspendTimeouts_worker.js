@@ -2,7 +2,7 @@
 
 
 
-onmessage = ({ data: { mochitestPort }}) => {
+onmessage = ({ data: { mochitestPort } }) => {
   onmessage = ({ data }) => {
     
     

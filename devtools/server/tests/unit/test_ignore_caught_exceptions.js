@@ -9,20 +9,28 @@
 
 
 
-add_task(threadClientTest(async ({ threadClient, debuggee }) => {
-  await executeOnNextTickAndWaitForPause(() => evaluateTestCode(debuggee), threadClient);
+add_task(
+  threadClientTest(
+    async ({ threadClient, debuggee }) => {
+      await executeOnNextTickAndWaitForPause(
+        () => evaluateTestCode(debuggee),
+        threadClient
+      );
 
-  threadClient.pauseOnExceptions(true, true);
-  await resume(threadClient);
-  const paused = await waitForPause(threadClient);
-  Assert.equal(paused.why.type, "exception");
-  equal(paused.frame.where.line, 6, "paused at throw");
+      threadClient.pauseOnExceptions(true, true);
+      await resume(threadClient);
+      const paused = await waitForPause(threadClient);
+      Assert.equal(paused.why.type, "exception");
+      equal(paused.frame.where.line, 6, "paused at throw");
 
-  await resume(threadClient);
-}, {
-  
-  doNotRunWorker: true,
-}));
+      await resume(threadClient);
+    },
+    {
+      
+      doNotRunWorker: true,
+    }
+  )
+);
 
 function evaluateTestCode(debuggee) {
   

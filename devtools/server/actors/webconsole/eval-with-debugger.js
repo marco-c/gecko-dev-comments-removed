@@ -8,10 +8,30 @@
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { Cu } = require("chrome");
-loader.lazyRequireGetter(this, "Parser", "resource://devtools/shared/Parser.jsm", true);
-loader.lazyRequireGetter(this, "formatCommand", "devtools/server/actors/webconsole/commands", true);
-loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
-loader.lazyRequireGetter(this, "WebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
+loader.lazyRequireGetter(
+  this,
+  "Parser",
+  "resource://devtools/shared/Parser.jsm",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "formatCommand",
+  "devtools/server/actors/webconsole/commands",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "isCommand",
+  "devtools/server/actors/webconsole/commands",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "WebConsoleCommands",
+  "devtools/server/actors/webconsole/utils",
+  true
+);
 
 function isObject(value) {
   return Object(value) === value;
@@ -98,7 +118,8 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
 
   
   helpers.evalInput = string;
-  const evalOptions = typeof options.url === "string" ? { url: options.url } : null;
+  const evalOptions =
+    typeof options.url === "string" ? { url: options.url } : null;
 
   updateConsoleInputEvaluation(dbg, dbgWindow, webConsole);
 
@@ -131,7 +152,11 @@ function getEvalResult(string, evalOptions, bindings, frame, dbgWindow) {
   if (frame) {
     return frame.evalWithBindings(string, bindings, evalOptions);
   }
-  const result = dbgWindow.executeInGlobalWithBindings(string, bindings, evalOptions);
+  const result = dbgWindow.executeInGlobalWithBindings(
+    string,
+    bindings,
+    evalOptions
+  );
   
   
   
@@ -231,8 +256,11 @@ function getEvalInput(string) {
   }
 
   
-  if (trimmedString == "console.mihai()" || trimmedString == "console.mihai();") {
-    return "\"http://incompleteness.me/blog/2015/02/09/console-dot-mihai/\"";
+  if (
+    trimmedString == "console.mihai()" ||
+    trimmedString == "console.mihai();"
+  ) {
+    return '"http://incompleteness.me/blog/2015/02/09/console-dot-mihai/"';
   }
   return string;
 }
@@ -244,16 +272,18 @@ function getFrameDbg(options, webConsole) {
   
   const frameActor = webConsole.conn.getActor(options.frameActor);
   if (frameActor) {
-     
-     
-     
-     
-     
-     
+    
+    
+    
+    
+    
+    
     return { frame: frameActor.frame, dbg: frameActor.threadActor.dbg };
   }
-  return DevToolsUtils.reportException("evalWithDebugger",
-    Error("The frame actor was not found: " + options.frameActor));
+  return DevToolsUtils.reportException(
+    "evalWithDebugger",
+    Error("The frame actor was not found: " + options.frameActor)
+  );
 }
 
 function evalReplay(frame, dbg, string) {
@@ -264,10 +294,10 @@ function evalReplay(frame, dbg, string) {
     try {
       result = frame.eval(string);
     } catch (e) {
-      result = { "throw": e };
+      result = { throw: e };
     }
   } else {
-    result = { "throw": "Cannot evaluate while replaying without a frame" };
+    result = { throw: "Cannot evaluate while replaying without a frame" };
   }
   return {
     result: result,
@@ -351,8 +381,9 @@ function bindCommands(isCmd, dbgWindow, bindSelf, frame, helpers) {
   
   
   
-  const availableHelpers = [...WebConsoleCommands._originalCommands.keys()]
-    .filter(h => h !== "print");
+  const availableHelpers = [
+    ...WebConsoleCommands._originalCommands.keys(),
+  ].filter(h => h !== "print");
 
   let helpersToDisable = [];
   const helperCache = {};
@@ -366,8 +397,9 @@ function bindCommands(isCmd, dbgWindow, bindSelf, frame, helpers) {
         helpersToDisable = availableHelpers.filter(name => !!env.find(name));
       }
     } else {
-      helpersToDisable = availableHelpers.filter(name =>
-        !!dbgWindow.getOwnPropertyDescriptor(name));
+      helpersToDisable = availableHelpers.filter(
+        name => !!dbgWindow.getOwnPropertyDescriptor(name)
+      );
     }
     
     helpersToDisable.push("screenshot");

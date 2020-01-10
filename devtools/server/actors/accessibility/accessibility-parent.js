@@ -21,7 +21,9 @@ class AccessibilityParent {
     this.onAccessibilityMessage = this.onAccessibilityMessage.bind(this);
     this.setMessageManager(mm);
 
-    this.userPref = Services.prefs.getIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED);
+    this.userPref = Services.prefs.getIntPref(
+      PREF_ACCESSIBILITY_FORCE_DISABLED
+    );
     Services.obs.addObserver(this, "a11y-consumers-changed");
     Services.prefs.addObserver(PREF_ACCESSIBILITY_FORCE_DISABLED, this);
 
@@ -30,7 +32,8 @@ class AccessibilityParent {
       
       
       this.accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-        Ci.nsIAccessibilityService);
+        Ci.nsIAccessibilityService
+      );
     }
 
     this.messageManager.sendAsyncMessage(`${this._msgName}:event`, {
@@ -105,8 +108,11 @@ class AccessibilityParent {
         topic: "can-be-disabled-change",
         data: !PlatformAPI,
       });
-    } else if (!this.disabling && topic === "nsPref:changed" &&
-               data === PREF_ACCESSIBILITY_FORCE_DISABLED) {
+    } else if (
+      !this.disabling &&
+      topic === "nsPref:changed" &&
+      data === PREF_ACCESSIBILITY_FORCE_DISABLED
+    ) {
       
       
       
@@ -138,7 +144,8 @@ class AccessibilityParent {
   get canBeDisabled() {
     if (this.enabled) {
       const a11yService = Cc["@mozilla.org/accessibilityService;1"].getService(
-        Ci.nsIAccessibilityService);
+        Ci.nsIAccessibilityService
+      );
       const { PlatformAPI } = JSON.parse(a11yService.getConsumers());
       return !PlatformAPI;
     }
@@ -165,7 +172,8 @@ class AccessibilityParent {
     }
 
     this.accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-      Ci.nsIAccessibilityService);
+      Ci.nsIAccessibilityService
+    );
   }
 
   

@@ -12,15 +12,52 @@ var { DebuggerServer } = require("devtools/server/main");
 var { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
-loader.lazyRequireGetter(this, "RootActor", "devtools/server/actors/root", true);
-loader.lazyRequireGetter(this, "FrameTargetActorProxy", "devtools/server/actors/targets/frame-proxy", true);
-loader.lazyRequireGetter(this, "WebExtensionActor", "devtools/server/actors/addon/webextension", true);
-loader.lazyRequireGetter(this, "WorkerTargetActorList", "devtools/server/actors/worker/worker-target-actor-list", true);
-loader.lazyRequireGetter(this, "ServiceWorkerRegistrationActorList",
-  "devtools/server/actors/worker/service-worker-registration-list", true);
-loader.lazyRequireGetter(this, "ProcessActorList", "devtools/server/actors/process", true);
-loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
-loader.lazyImporter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
+loader.lazyRequireGetter(
+  this,
+  "RootActor",
+  "devtools/server/actors/root",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "FrameTargetActorProxy",
+  "devtools/server/actors/targets/frame-proxy",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "WebExtensionActor",
+  "devtools/server/actors/addon/webextension",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "WorkerTargetActorList",
+  "devtools/server/actors/worker/worker-target-actor-list",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "ServiceWorkerRegistrationActorList",
+  "devtools/server/actors/worker/service-worker-registration-list",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "ProcessActorList",
+  "devtools/server/actors/process",
+  true
+);
+loader.lazyImporter(
+  this,
+  "AddonManager",
+  "resource://gre/modules/AddonManager.jsm"
+);
+loader.lazyImporter(
+  this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 
 
@@ -38,7 +75,9 @@ function appShellDOMWindowType(window) {
 
 
 function sendShutdownEvent() {
-  for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
+  for (const win of Services.wm.getEnumerator(
+    DebuggerServer.chromeWindowType
+  )) {
     const evt = win.document.createEvent("Event");
     evt.initEvent("Debugger:Shutdown", true, false);
     win.document.documentElement.dispatchEvent(evt);
@@ -63,8 +102,9 @@ exports.createRootActor = function createRootActor(connection) {
     tabList: new BrowserTabList(connection),
     addonList: new BrowserAddonList(connection),
     workerList: new WorkerTargetActorList(connection, {}),
-    serviceWorkerRegistrationList:
-      new ServiceWorkerRegistrationActorList(connection),
+    serviceWorkerRegistrationList: new ServiceWorkerRegistrationActorList(
+      connection
+    ),
     processList: new ProcessActorList(),
     globalActorFactories: ActorRegistry.globalActorFactories,
     onShutdown: sendShutdownEvent,
@@ -221,9 +261,11 @@ BrowserTabList.prototype._getSelectedBrowser = function(window) {
 
 
 
-BrowserTabList.prototype._getBrowsers = function* () {
+BrowserTabList.prototype._getBrowsers = function*() {
   
-  for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
+  for (const win of Services.wm.getEnumerator(
+    DebuggerServer.chromeWindowType
+  )) {
     
     
     for (const browser of this._getChildren(win)) {
@@ -250,7 +292,8 @@ BrowserTabList.prototype._getChildren = function(window) {
 
 BrowserTabList.prototype.getList = function(browserActorOptions) {
   const topXULWindow = Services.wm.getMostRecentWindow(
-    DebuggerServer.chromeWindowType);
+    DebuggerServer.chromeWindowType
+  );
   let selectedBrowser = null;
   if (topXULWindow) {
     selectedBrowser = this._getSelectedBrowser(topXULWindow);
@@ -271,20 +314,22 @@ BrowserTabList.prototype.getList = function(browserActorOptions) {
   for (const browser of this._getBrowsers()) {
     const selected = browser === selectedBrowser;
     actorPromises.push(
-      this._getActorForBrowser(browser, browserActorOptions)
-          .then(actor => {
+      this._getActorForBrowser(browser, browserActorOptions).then(
+        actor => {
+          
+          actor.selected = selected;
+          return actor;
+        },
+        e => {
+          if (e.error === "tabDestroyed") {
             
-            actor.selected = selected;
-            return actor;
-          }, e => {
-            if (e.error === "tabDestroyed") {
-              
-              return null;
-            }
+            return null;
+          }
 
-            
-            throw e;
-          })
+          
+          throw e;
+        }
+      )
     );
   }
 
@@ -304,7 +349,10 @@ BrowserTabList.prototype.getList = function(browserActorOptions) {
 
 
 
-BrowserTabList.prototype._getActorForBrowser = function(browser, browserActorOptions) {
+BrowserTabList.prototype._getActorForBrowser = function(
+  browser,
+  browserActorOptions
+) {
   
   let actor = this._actorByBrowser.get(browser);
   if (actor) {
@@ -312,14 +360,20 @@ BrowserTabList.prototype._getActorForBrowser = function(browser, browserActorOpt
     return actor.update(browserActorOptions);
   }
 
-  actor = new FrameTargetActorProxy(this._connection, browser, browserActorOptions);
+  actor = new FrameTargetActorProxy(
+    this._connection,
+    browser,
+    browserActorOptions
+  );
   this._actorByBrowser.set(browser, actor);
   this._checkListening();
   return actor.connect();
 };
 
-BrowserTabList.prototype.getTab = function({ outerWindowID, tabId },
-                                           browserActorOptions) {
+BrowserTabList.prototype.getTab = function(
+  { outerWindowID, tabId },
+  browserActorOptions
+) {
   if (typeof outerWindowID == "number") {
     
     const window = Services.wm.getOuterWindowWithId(outerWindowID);
@@ -350,9 +404,11 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId },
   } else if (typeof tabId == "number") {
     
     for (const browser of this._getBrowsers()) {
-      if (browser.frameLoader &&
-          browser.frameLoader.remoteTab &&
-          browser.frameLoader.remoteTab.tabId === tabId) {
+      if (
+        browser.frameLoader &&
+        browser.frameLoader.remoteTab &&
+        browser.frameLoader.remoteTab.tabId === tabId
+      ) {
         return this._getActorForBrowser(browser, browserActorOptions);
       }
     }
@@ -363,7 +419,8 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId },
   }
 
   const topXULWindow = Services.wm.getMostRecentWindow(
-    DebuggerServer.chromeWindowType);
+    DebuggerServer.chromeWindowType
+  );
   if (topXULWindow) {
     const selectedBrowser = this._getSelectedBrowser(topXULWindow);
     return this._getActorForBrowser(selectedBrowser, browserActorOptions);
@@ -383,7 +440,8 @@ Object.defineProperty(BrowserTabList.prototype, "onListChanged", {
   set(v) {
     if (v !== null && typeof v !== "function") {
       throw new Error(
-        "onListChanged property may only be set to 'null' or a function");
+        "onListChanged property may only be set to 'null' or a function"
+      );
     }
     this._onListChanged = v;
     this._checkListening();
@@ -411,7 +469,9 @@ BrowserTabList.prototype._notifyListChanged = function() {
 BrowserTabList.prototype._handleActorClose = function(actor, browser) {
   if (this._testing) {
     if (this._actorByBrowser.get(browser) !== actor) {
-      throw new Error("FrameTargetActorProxy not stored in map under given browser");
+      throw new Error(
+        "FrameTargetActorProxy not stored in map under given browser"
+      );
     }
     if (actor.browser !== browser) {
       throw new Error("actor's browser and map key don't match");
@@ -443,32 +503,39 @@ BrowserTabList.prototype._checkListening = function() {
 
 
 
-  this._listenForEventsIf(this._onListChanged && this._mustNotify,
-                          "_listeningForTabOpen",
-                          ["TabOpen", "TabSelect", "TabAttrModified"]);
+  this._listenForEventsIf(
+    this._onListChanged && this._mustNotify,
+    "_listeningForTabOpen",
+    ["TabOpen", "TabSelect", "TabAttrModified"]
+  );
 
   
-  this._listenForEventsIf(this._actorByBrowser.size > 0,
-                          "_listeningForTabClose",
-                          ["TabClose", "TabRemotenessChange"]);
-
-  
-
-
-
-
-  this._listenToMediatorIf((this._onListChanged && this._mustNotify) ||
-                           (this._actorByBrowser.size > 0));
+  this._listenForEventsIf(
+    this._actorByBrowser.size > 0,
+    "_listeningForTabClose",
+    ["TabClose", "TabRemotenessChange"]
+  );
 
   
 
 
 
 
+  this._listenToMediatorIf(
+    (this._onListChanged && this._mustNotify) || this._actorByBrowser.size > 0
+  );
 
-  this._listenForMessagesIf(this._onListChanged && this._mustNotify,
-                            "_listeningForTitleChange",
-                            ["DOMTitleChanged"]);
+  
+
+
+
+
+
+  this._listenForMessagesIf(
+    this._onListChanged && this._mustNotify,
+    "_listeningForTitleChange",
+    ["DOMTitleChanged"]
+  );
 
   
 
@@ -479,10 +546,12 @@ BrowserTabList.prototype._checkListening = function() {
 
 
   if (AppConstants.platform === "android") {
-    this._listenForEventsIf(this._onListChanged && this._mustNotify,
-                            "_listeningForAndroidDocument",
-                            ["DOMTitleChanged"],
-                            this._onAndroidDocumentEvent);
+    this._listenForEventsIf(
+      this._onListChanged && this._mustNotify,
+      "_listeningForAndroidDocument",
+      ["DOMTitleChanged"],
+      this._onAndroidDocumentEvent
+    );
   }
 };
 
@@ -497,18 +566,24 @@ BrowserTabList.prototype._checkListening = function() {
 
 
 
-BrowserTabList.prototype._listenForEventsIf =
-  function(shouldListen, guard, eventNames, listener = this) {
-    if (!shouldListen !== !this[guard]) {
-      const op = shouldListen ? "addEventListener" : "removeEventListener";
-      for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
-        for (const name of eventNames) {
-          win[op](name, listener, false);
-        }
+BrowserTabList.prototype._listenForEventsIf = function(
+  shouldListen,
+  guard,
+  eventNames,
+  listener = this
+) {
+  if (!shouldListen !== !this[guard]) {
+    const op = shouldListen ? "addEventListener" : "removeEventListener";
+    for (const win of Services.wm.getEnumerator(
+      DebuggerServer.chromeWindowType
+    )) {
+      for (const name of eventNames) {
+        win[op](name, listener, false);
       }
-      this[guard] = shouldListen;
     }
-  };
+    this[guard] = shouldListen;
+  }
+};
 
 
 
@@ -521,18 +596,23 @@ BrowserTabList.prototype._listenForEventsIf =
 
 
 
-BrowserTabList.prototype._listenForMessagesIf =
-  function(shouldListen, guard, messageNames) {
-    if (!shouldListen !== !this[guard]) {
-      const op = shouldListen ? "addMessageListener" : "removeMessageListener";
-      for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
-        for (const name of messageNames) {
-          win.messageManager[op](name, this);
-        }
+BrowserTabList.prototype._listenForMessagesIf = function(
+  shouldListen,
+  guard,
+  messageNames
+) {
+  if (!shouldListen !== !this[guard]) {
+    const op = shouldListen ? "addMessageListener" : "removeMessageListener";
+    for (const win of Services.wm.getEnumerator(
+      DebuggerServer.chromeWindowType
+    )) {
+      for (const name of messageNames) {
+        win.messageManager[op](name, this);
       }
-      this[guard] = shouldListen;
     }
-  };
+    this[guard] = shouldListen;
+  }
+};
 
 
 
@@ -551,16 +631,17 @@ BrowserTabList.prototype._onAndroidDocumentEvent = function(event) {
 
 
 
-BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(
-  function(message) {
-    const browser = message.target;
-    switch (message.name) {
-      case "DOMTitleChanged": {
-        this._onDOMTitleChanged(browser);
-        break;
-      }
+BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(function(
+  message
+) {
+  const browser = message.target;
+  switch (message.name) {
+    case "DOMTitleChanged": {
+      this._onDOMTitleChanged(browser);
+      break;
     }
-  });
+  }
+});
 
 
 
@@ -572,13 +653,15 @@ BrowserTabList.prototype._onDOMTitleChanged = DevToolsUtils.makeInfallible(
       this._notifyListChanged();
       this._checkListening();
     }
-  });
+  }
+);
 
 
 
 
-BrowserTabList.prototype.handleEvent =
-DevToolsUtils.makeInfallible(function(event) {
+BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(
+  event
+) {
   
   
   
@@ -628,7 +711,8 @@ DevToolsUtils.makeInfallible(function(event) {
       break;
     }
   }
-}, "BrowserTabList.prototype.handleEvent");
+},
+"BrowserTabList.prototype.handleEvent");
 
 
 
@@ -651,8 +735,9 @@ BrowserTabList.prototype._listenToMediatorIf = function(shouldListen) {
 
 
 
-BrowserTabList.prototype.onOpenWindow =
-DevToolsUtils.makeInfallible(function(window) {
+BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(
+  window
+) {
   const handleLoad = DevToolsUtils.makeInfallible(() => {
     
     window.removeEventListener("load", handleLoad);
@@ -687,14 +772,17 @@ DevToolsUtils.makeInfallible(function(window) {
 
 
 
-  window = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                 .getInterface(Ci.nsIDOMWindow);
+  window = window
+    .QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIDOMWindow);
 
   window.addEventListener("load", handleLoad);
-}, "BrowserTabList.prototype.onOpenWindow");
+},
+"BrowserTabList.prototype.onOpenWindow");
 
-BrowserTabList.prototype.onCloseWindow =
-DevToolsUtils.makeInfallible(function(window) {
+BrowserTabList.prototype.onCloseWindow = DevToolsUtils.makeInfallible(function(
+  window
+) {
   if (window instanceof Ci.nsIXULWindow) {
     window = window.docShell.domWindow;
   }
@@ -708,19 +796,22 @@ DevToolsUtils.makeInfallible(function(window) {
 
 
 
-  Services.tm.dispatchToMainThread(DevToolsUtils.makeInfallible(() => {
-    
-
-
-
-    for (const [browser, actor] of this._actorByBrowser) {
+  Services.tm.dispatchToMainThread(
+    DevToolsUtils.makeInfallible(() => {
       
-      if (!browser.ownerGlobal) {
-        this._handleActorClose(actor, browser);
+
+
+
+      for (const [browser, actor] of this._actorByBrowser) {
+        
+        if (!browser.ownerGlobal) {
+          this._handleActorClose(actor, browser);
+        }
       }
-    }
-  }, "BrowserTabList.prototype.onCloseWindow's delayed body"));
-}, "BrowserTabList.prototype.onCloseWindow");
+    }, "BrowserTabList.prototype.onCloseWindow's delayed body")
+  );
+},
+"BrowserTabList.prototype.onCloseWindow");
 
 exports.BrowserTabList = BrowserTabList;
 
@@ -752,7 +843,8 @@ Object.defineProperty(BrowserAddonList.prototype, "onListChanged", {
   set(v) {
     if (v !== null && typeof v != "function") {
       throw new Error(
-        "onListChanged property may only be set to 'null' or a function");
+        "onListChanged property may only be set to 'null' or a function"
+      );
     }
     this._onListChanged = v;
     this._adjustListener();
