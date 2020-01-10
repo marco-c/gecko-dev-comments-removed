@@ -9,9 +9,6 @@ var EXPORTED_SYMBOLS = ["PictureInPictureChild", "PictureInPictureToggleChild"];
 const { ActorChild } = ChromeUtils.import(
   "resource://gre/modules/ActorChild.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -23,8 +20,6 @@ ChromeUtils.defineModuleGetter(
   "Services",
   "resource://gre/modules/Services.jsm"
 );
-
-XPCOMUtils.defineLazyGlobalGetters(this, ["InspectorUtils"]);
 
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
@@ -148,6 +143,10 @@ class PictureInPictureToggleChild extends ActorChild {
         if (this.toggleEnabled) {
           this.checkContextMenu(event);
         }
+        break;
+      }
+      case "mouseout": {
+        this.onMouseOut(event);
         break;
       }
       case "mousedown":
@@ -281,6 +280,9 @@ class PictureInPictureToggleChild extends ActorChild {
       capture: true,
     });
     this.content.windowRoot.addEventListener("click", this, { capture: true });
+    this.content.windowRoot.addEventListener("mouseout", this, {
+      capture: true,
+    });
   }
 
   removeMouseButtonListeners() {
@@ -297,6 +299,9 @@ class PictureInPictureToggleChild extends ActorChild {
       capture: true,
     });
     this.content.windowRoot.removeEventListener("click", this, {
+      capture: true,
+    });
+    this.content.windowRoot.removeEventListener("mouseout", this, {
       capture: true,
     });
   }
@@ -469,6 +474,28 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
 
+  onMouseOut(event) {
+    if (!event.relatedTarget) {
+      
+      
+      
+      let state = this.docState;
+
+      let video = state.weakOverVideo && state.weakOverVideo.get();
+      if (!video) {
+        return;
+      }
+
+      this.onMouseLeaveVideo(video);
+    }
+  }
+
+  
+
+
+
+
+
   onMouseMove(event) {
     let state = this.docState;
 
@@ -578,7 +605,7 @@ class PictureInPictureToggleChild extends ActorChild {
     }
 
     state.weakOverVideo = Cu.getWeakReference(video);
-    InspectorUtils.addPseudoClassLock(controlsOverlay, ":hover");
+    controlsOverlay.classList.add("hovering");
 
     
     
@@ -594,11 +621,7 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
   checkHoverToggle(toggle, event) {
-    if (this.isMouseOverToggle(toggle, event)) {
-      InspectorUtils.addPseudoClassLock(toggle, ":hover");
-    } else {
-      InspectorUtils.removePseudoClassLock(toggle, ":hover");
-    }
+    toggle.classList.toggle("hovering", this.isMouseOverToggle(toggle, event));
   }
 
   
@@ -614,14 +637,15 @@ class PictureInPictureToggleChild extends ActorChild {
     if (shadowRoot) {
       let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
       let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
-      InspectorUtils.removePseudoClassLock(controlsOverlay, ":hover");
-      InspectorUtils.removePseudoClassLock(toggle, ":hover");
+      controlsOverlay.classList.remove("hovering");
+      toggle.classList.remove("hovering");
     }
 
     state.weakOverVideo = null;
 
     if (!this.toggleTesting) {
       state.hideToggleDeferredTask.disarm();
+      state.mousemoveDeferredTask.disarm();
     }
 
     state.hideToggleDeferredTask = null;
