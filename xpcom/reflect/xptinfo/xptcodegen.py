@@ -252,7 +252,11 @@ def link_to_cpp(interfaces, fd):
         idx = type_cache.get(key)
         if idx is None:
             idx = type_cache[key] = len(types)
-            types.append(lower_type(type))
+            
+            
+            types.append(None)
+            realtype = lower_type(type)
+            types[idx] = realtype
         return idx
 
     def describe_type(type):  
