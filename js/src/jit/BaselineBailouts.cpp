@@ -2026,25 +2026,26 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   js_free(bailoutInfo);
   bailoutInfo = nullptr;
 
-  if (topFrame->environmentChain()) {
-    
-    
-    
-    if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
-      return false;
-    }
+  
+  
+  
+  if (!topFrame->environmentChain()) {
+    topFrame->setEnvironmentChain(topFrame->callee()->environment());
+  }
 
-    
-    
-    
-    if (checkGlobalDeclarationConflicts) {
-      Rooted<LexicalEnvironmentObject*> lexicalEnv(
-          cx, &cx->global()->lexicalEnvironment());
-      RootedScript script(cx, topFrame->script());
-      if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv,
-                                           cx->global())) {
-        return false;
-      }
+  
+  if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
+    return false;
+  }
+
+  
+  if (checkGlobalDeclarationConflicts) {
+    Rooted<LexicalEnvironmentObject*> lexicalEnv(
+        cx, &cx->global()->lexicalEnvironment());
+    RootedScript script(cx, topFrame->script());
+    if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv,
+                                         cx->global())) {
+      return false;
     }
   }
 
@@ -2111,14 +2112,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
     ++iter;
   }
 
-  
-  
-  
-  
-  if (!topFrame->environmentChain()) {
-    topFrame->setEnvironmentChain(topFrame->callee()->environment());
-  }
-
   MOZ_ASSERT(innerScript);
   MOZ_ASSERT(outerScript);
   MOZ_ASSERT(outerFp);
@@ -2160,6 +2153,14 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   if (cx->isExceptionPending() && faultPC) {
     EnvironmentIter ei(cx, topFrame, faultPC);
     UnwindEnvironment(cx, ei, tryPC);
+  }
+
+  
+  
+  if (!cx->isExceptionPending()) {
+    if (!CheckForInterrupt(cx)) {
+      return false;
+    }
   }
 
   JitSpew(JitSpew_BaselineBailouts,

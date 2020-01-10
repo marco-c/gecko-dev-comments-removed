@@ -363,14 +363,14 @@ class BaselineCodeGen {
                                        const Address& frameSizeAddr,
                                        Register scratch1, Register scratch2);
 
-  enum CallVMPhase { POST_INITIALIZE, CHECK_OVER_RECURSED };
+  enum class CallVMPhase { BeforePushingLocals, AfterPushingLocals };
   bool callVMInternal(VMFunctionId id, CallVMPhase phase);
 
   template <typename Fn, Fn fn>
-  bool callVM(CallVMPhase phase = POST_INITIALIZE);
+  bool callVM(CallVMPhase phase = CallVMPhase::AfterPushingLocals);
 
   template <typename Fn, Fn fn>
-  bool callVMNonOp(CallVMPhase phase = POST_INITIALIZE) {
+  bool callVMNonOp(CallVMPhase phase = CallVMPhase::AfterPushingLocals) {
     if (!callVM<Fn, fn>(phase)) {
       return false;
     }
@@ -599,9 +599,9 @@ class BaselineCompilerHandler {
 
   
   
-  bool needsEarlyStackCheck() const {
-    static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
-    return script()->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
+  bool mustIncludeSlotsInStackCheck() const {
+    static constexpr size_t NumSlotsLimit = 128;
+    return script()->nslots() > NumSlotsLimit;
   }
 
   JSObject* maybeNoCloneSingletonObject();
@@ -727,7 +727,7 @@ class BaselineInterpreterHandler {
 
   
   
-  bool needsEarlyStackCheck() const { return true; }
+  bool mustIncludeSlotsInStackCheck() const { return true; }
 
   JSObject* maybeNoCloneSingletonObject() { return nullptr; }
 };

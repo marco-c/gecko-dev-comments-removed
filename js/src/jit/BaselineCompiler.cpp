@@ -713,30 +713,16 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
                            BaselineFrame::reverseOffsetOfFrameSize());
   uint32_t frameBaseSize =
       BaselineFrame::FramePointerOffset + BaselineFrame::Size();
-  if (phase == POST_INITIALIZE) {
+  if (phase == CallVMPhase::AfterPushingLocals) {
     storeFrameSizeAndPushDescriptor(frameBaseSize, argSize, frameSizeAddress,
                                     R0.scratchReg(), R1.scratchReg());
   } else {
-    MOZ_ASSERT(phase == CHECK_OVER_RECURSED);
-    Label done, pushedFrameLocals;
-
-    
-    masm.branchTest32(Assembler::Zero, frame.addressOfFlags(),
-                      Imm32(BaselineFrame::OVER_RECURSED), &pushedFrameLocals);
-    {
-      masm.store32(Imm32(frameBaseSize), frameSizeAddress);
-      uint32_t descriptor =
-          MakeFrameDescriptor(frameBaseSize + argSize, FrameType::BaselineJS,
-                              ExitFrameLayout::Size());
-      masm.push(Imm32(descriptor));
-      masm.jump(&done);
-    }
-    masm.bind(&pushedFrameLocals);
-    {
-      storeFrameSizeAndPushDescriptor(frameBaseSize, argSize, frameSizeAddress,
-                                      R0.scratchReg(), R1.scratchReg());
-    }
-    masm.bind(&done);
+    MOZ_ASSERT(phase == CallVMPhase::BeforePushingLocals);
+    masm.store32(Imm32(frameBaseSize), frameSizeAddress);
+    uint32_t descriptor =
+        MakeFrameDescriptor(frameBaseSize + argSize, FrameType::BaselineJS,
+                            ExitFrameLayout::Size());
+    masm.push(Imm32(descriptor));
   }
   MOZ_ASSERT(fun.expectTailCall == NonTailCall);
   
@@ -773,36 +759,26 @@ bool BaselineCodeGen<Handler>::callVM(CallVMPhase phase) {
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emitStackCheck() {
-  
-  
-  
-  
-  
-  
-  
-  Label forceCall;
-  if (handler.needsEarlyStackCheck()) {
-    masm.branchTest32(Assembler::NonZero, frame.addressOfFlags(),
-                      Imm32(BaselineFrame::OVER_RECURSED), &forceCall);
-  }
-
   Label skipCall;
-  masm.branchStackPtrRhs(Assembler::BelowOrEqual,
-                         AbsoluteAddress(cx->addressOfJitStackLimit()),
-                         &skipCall);
-
-  if (handler.needsEarlyStackCheck()) {
-    masm.bind(&forceCall);
+  if (handler.mustIncludeSlotsInStackCheck()) {
+    
+    Register scratch = R1.scratchReg();
+    masm.moveStackPtrTo(scratch);
+    subtractScriptSlotsSize(scratch, R2.scratchReg());
+    masm.branchPtr(Assembler::BelowOrEqual,
+                   AbsoluteAddress(cx->addressOfJitStackLimit()), scratch,
+                   &skipCall);
+  } else {
+    masm.branchStackPtrRhs(Assembler::BelowOrEqual,
+                           AbsoluteAddress(cx->addressOfJitStackLimit()),
+                           &skipCall);
   }
 
   prepareVMCall();
   masm.loadBaselineFramePtr(BaselineFrameReg, R1.scratchReg());
   pushArg(R1.scratchReg());
 
-  CallVMPhase phase = POST_INITIALIZE;
-  if (handler.needsEarlyStackCheck()) {
-    phase = CHECK_OVER_RECURSED;
-  }
+  const CallVMPhase phase = CallVMPhase::BeforePushingLocals;
 
   using Fn = bool (*)(JSContext*, BaselineFrame*);
   if (!callVMNonOp<Fn, CheckOverRecursedBaseline>(phase)) {
@@ -1287,18 +1263,15 @@ bool BaselineInterpreterCodeGen::initEnvironmentChainHelper(
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::initEnvironmentChain() {
-  CallVMPhase phase = POST_INITIALIZE;
-  if (handler.needsEarlyStackCheck()) {
-    phase = CHECK_OVER_RECURSED;
-  }
-
-  auto initFunctionEnv = [this, phase]() {
-    auto initEnv = [this, phase]() {
+  auto initFunctionEnv = [this]() {
+    auto initEnv = [this]() {
       
       prepareVMCall();
 
       masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
       pushArg(R0.scratchReg());
+
+      const CallVMPhase phase = CallVMPhase::BeforePushingLocals;
 
       using Fn = bool (*)(JSContext*, BaselineFrame*);
       return callVMNonOp<Fn, jit::InitFunctionEnvironmentObjects>(phase);
@@ -1308,7 +1281,7 @@ bool BaselineCodeGen<Handler>::initEnvironmentChain() {
         initEnv, R2.scratchReg());
   };
 
-  auto initGlobalOrEvalEnv = [this, phase]() {
+  auto initGlobalOrEvalEnv = [this]() {
     
     
     
@@ -1318,6 +1291,8 @@ bool BaselineCodeGen<Handler>::initEnvironmentChain() {
     pushScriptArg();
     masm.loadPtr(frame.addressOfEnvironmentChain(), R0.scratchReg());
     pushArg(R0.scratchReg());
+
+    const CallVMPhase phase = CallVMPhase::BeforePushingLocals;
 
     using Fn = bool (*)(JSContext*, HandleObject, HandleScript);
     return callVMNonOp<Fn, js::CheckGlobalOrEvalDeclarationConflicts>(phase);
@@ -6721,57 +6696,6 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Label earlyStackCheckFailed;
-  if (handler.needsEarlyStackCheck()) {
-    
-    Register scratch = R1.scratchReg();
-    masm.moveStackPtrTo(scratch);
-    subtractScriptSlotsSize(scratch, R2.scratchReg());
-
-    
-    
-    
-    
-    Label stackCheckOk;
-    masm.branchPtr(Assembler::BelowOrEqual,
-                   AbsoluteAddress(cx->addressOfJitStackLimitNoInterrupt()),
-                   scratch, &stackCheckOk);
-    {
-      masm.or32(Imm32(BaselineFrame::OVER_RECURSED), frame.addressOfFlags());
-      masm.jump(&earlyStackCheckFailed);
-    }
-    masm.bind(&stackCheckOk);
-  }
-
-  emitInitializeLocals();
-
-  if (handler.needsEarlyStackCheck()) {
-    masm.bind(&earlyStackCheckFailed);
-  }
-
-#ifdef JS_TRACE_LOGGING
-  if (JS::TraceLoggerSupported() && !emitTraceLoggerEnter()) {
-    return false;
-  }
-#endif
-
-  
-  
-  bailoutPrologueOffset_ = CodeOffset(masm.currentOffset());
-
-  
-  
   if (!emitIsDebuggeeCheck()) {
     return false;
   }
@@ -6782,14 +6706,26 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
     return false;
   }
 
+  
+  if (!emitStackCheck()) {
+    return false;
+  }
+
+  emitInitializeLocals();
+
+#ifdef JS_TRACE_LOGGING
+  if (JS::TraceLoggerSupported() && !emitTraceLoggerEnter()) {
+    return false;
+  }
+#endif
+
+  
+  bailoutPrologueOffset_ = CodeOffset(masm.currentOffset());
+
   frame.assertSyncedStack();
 
   if (JSScript* script = handler.maybeScript()) {
     masm.debugAssertContextRealm(script->realm(), R1.scratchReg());
-  }
-
-  if (!emitStackCheck()) {
-    return false;
   }
 
   if (!emitDebugPrologue()) {

@@ -52,13 +52,8 @@ class BaselineFrame {
     DEBUGGEE = 1 << 6,
 
     
-
     
-    OVER_RECURSED = 1 << 9,
-
-    
-    
-    HAS_DEBUG_MODE_OSR_INFO = 1 << 10,
+    HAS_DEBUG_MODE_OSR_INFO = 1 << 7,
 
     
     
@@ -72,12 +67,12 @@ class BaselineFrame {
     
     
     
-    HAS_OVERRIDE_PC = 1 << 11,
+    HAS_OVERRIDE_PC = 1 << 8,
 
     
     
     
-    HANDLING_EXCEPTION = 1 << 12,
+    HANDLING_EXCEPTION = 1 << 9,
   };
 
  protected:  
@@ -314,10 +309,6 @@ class BaselineFrame {
   bool isHandlingException() const { return flags_ & HANDLING_EXCEPTION; }
   void setIsHandlingException() { flags_ |= HANDLING_EXCEPTION; }
   void unsetIsHandlingException() { flags_ &= ~HANDLING_EXCEPTION; }
-
-  bool overRecursed() const { return flags_ & OVER_RECURSED; }
-
-  void setOverRecursed() { flags_ |= OVER_RECURSED; }
 
   BaselineDebugModeOSRInfo* debugModeOSRInfo() {
     MOZ_ASSERT(flags_ & HAS_DEBUG_MODE_OSR_INFO);
