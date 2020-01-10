@@ -53,14 +53,6 @@ module.exports = {
     {
       
       
-      files: "**/*.xml",
-      rules: {
-        "mozilla/use-services": "off",
-      },
-    },
-    {
-      
-      
       env: {
         browser: false,
         "mozilla/jsm": true,
