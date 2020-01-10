@@ -169,6 +169,7 @@ BreakpointActor.prototype = {
 
 
 
+  
   hit: function(frame) {
     
     
@@ -214,13 +215,19 @@ BreakpointActor.prototype = {
     if (condition) {
       const { result, message } = this.checkCondition(frame, condition);
 
-      if (result) {
-        if (message) {
-          reason.type = "breakpointConditionThrown";
-          reason.message = message;
-        }
-      } else {
+      
+      if (!result) {
         return undefined;
+      }
+
+      if (message) {
+        
+        if (!this.threadActor._options.pauseOnExceptions) {
+          return undefined;
+        }
+
+        reason.type = "breakpointConditionThrown";
+        reason.message = message;
       }
     }
 
@@ -259,6 +266,7 @@ BreakpointActor.prototype = {
 
     return this.threadActor._pauseAndRespond(frame, reason);
   },
+  
 
   delete: function() {
     

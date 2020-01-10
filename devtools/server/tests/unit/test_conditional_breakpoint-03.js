@@ -8,6 +8,7 @@
 
 
 
+
 var gDebuggee;
 var gClient;
 var gThreadClient;
@@ -32,9 +33,19 @@ function test_simple_breakpoint() {
       gThreadClient,
       packet.frame.where.actor
     );
+
+    gThreadClient.pauseOnExceptions(true, false);
     const location = { sourceUrl: source.url, line: 3 };
     gThreadClient.setBreakpoint(location, { condition: "throw new Error()" });
-    gThreadClient.once("paused", function(packet) {
+    gThreadClient.once("paused", async function(packet) {
+      
+      Assert.equal(packet.why.type, "exception");
+      Assert.equal(packet.frame.where.line, 1);
+
+      
+      await stepOver(gThreadClient);
+      packet = await stepOver(gThreadClient);
+
       
       Assert.equal(packet.why.type, "breakpointConditionThrown");
       Assert.equal(packet.frame.where.line, 3);
