@@ -15,7 +15,6 @@ enum {
   kCharsetFromCache,
   kCharsetFromParentFrame,
   kCharsetFromAutoDetection,
-  kCharsetFromHintPrevDoc,
   kCharsetFromMetaPrescan,  
   kCharsetFromMetaTag,      
   kCharsetFromIrreversibleAutoDetection,
