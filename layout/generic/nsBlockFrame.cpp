@@ -1840,24 +1840,6 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     ComputeFinalBSize(aReflowInput, &aState.mReflowStatus,
                       aState.mBCoord + nonCarriedOutBDirMargin, borderPadding,
                       finalSize, aState.mConsumedBSize);
-    if (!aState.mReflowStatus.IsComplete()) {
-      
-      
-      
-      
-      finalSize.BSize(wm) = std::max(aReflowInput.AvailableBSize(),
-                                     aState.mBCoord + nonCarriedOutBDirMargin);
-      
-      nscoord effectiveComputedBSize =
-          GetEffectiveComputedBSize(aReflowInput, aState.ConsumedBSize());
-      finalSize.BSize(wm) =
-          std::min(finalSize.BSize(wm),
-                   borderPadding.BStart(wm) + effectiveComputedBSize);
-      
-      
-      
-      
-    }
 
     
     aMetrics.mCarriedOutBEndMargin.Zero();
@@ -7467,6 +7449,25 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
       aStatus->SetIncomplete();
       if (!GetNextInFlow()) aStatus->SetNextInFlowNeedsReflow();
     }
+  }
+
+  if (aStatus->IsIncomplete()) {
+    
+    
+    
+    
+    aFinalSize.BSize(wm) =
+        std::max(aReflowInput.AvailableBSize(), aContentBSize);
+    
+    nscoord effectiveComputedBSize =
+        GetEffectiveComputedBSize(aReflowInput, aState.ConsumedBSize());
+    aFinalSize.BSize(wm) =
+        std::min(aFinalSize.BSize(wm),
+                 aBorderPadding.BStart(wm) + effectiveComputedBSize);
+    
+    
+    
+    
   }
 }
 
