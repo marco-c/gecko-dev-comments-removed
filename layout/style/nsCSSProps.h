@@ -287,28 +287,13 @@ class nsCSSProps {
     if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState)es_))
 
   
-  
-  
-  static const KTableEntry kShapeRadiusKTable[];
-  static const KTableEntry kBoxShadowTypeKTable[];
   static const KTableEntry kCursorKTable[];
   
   
   static KTableEntry kDisplayKTable[];
-  
-  
-  static const KTableEntry kAutoCompletionAlignJustifySelf[];
-  static const KTableEntry kAutoCompletionAlignItems[];
-  static const KTableEntry kAutoCompletionAlignJustifyContent[];
-  
-  
   static const KTableEntry kFontSmoothingKTable[];
-  static const KTableEntry kGridAutoFlowKTable[];
-  static const KTableEntry kGridTrackBreadthKTable[];
-  static const KTableEntry kLineHeightKTable[];
   static const KTableEntry kTextAlignKTable[];
   static const KTableEntry kTextDecorationStyleKTable[];
-  static const KTableEntry kTextEmphasisStyleShapeKTable[];
 };
 
 
