@@ -1355,7 +1355,6 @@ class HTMLEditRules : public TextEditRules {
   RefPtr<nsRange> mUtilRange;
   
   uint32_t mJoinOffset;
-  RefPtr<RangeItem> mRangeItem;
 
   
   

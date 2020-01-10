@@ -2543,9 +2543,28 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnModifyDocumentInternal();
 
+  
+
+
+
+
+
+
+
+  already_AddRefed<RangeItem> GetSelectedRangeItemForTopLevelEditSubAction()
+      const {
+    if (!mSelectedRangeForTopLevelEditSubAction) {
+      mSelectedRangeForTopLevelEditSubAction = new RangeItem();
+    }
+    return do_AddRef(mSelectedRangeForTopLevelEditSubAction);
+  }
+
  protected:
   RefPtr<TypeInState> mTypeInState;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
+
+  
+  mutable RefPtr<RangeItem> mSelectedRangeForTopLevelEditSubAction;
 
   bool mCRInParagraphCreatesParagraph;
 

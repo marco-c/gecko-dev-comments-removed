@@ -616,6 +616,10 @@ class EditorBase : public nsIEditor,
     RefPtr<Element> mNewBlockElement;
 
     
+    
+    RefPtr<RangeItem> mSelectedRange;
+
+    
     bool mDidDeleteSelection;
 
     
@@ -642,9 +646,16 @@ class EditorBase : public nsIEditor,
 
    private:
     void Clear() {
-      mNewBlockElement = nullptr;
-      mDidDeleteSelection = false;
       mDidExplicitlySetInterLine = false;
+      
+      
+      
+      if (!mSelectedRange) {
+        return;
+      }
+      mNewBlockElement = nullptr;
+      mSelectedRange->Clear();
+      mDidDeleteSelection = false;
       mDidDeleteNonCollapsedRange = false;
       mDidDeleteEmptyParentBlocks = false;
       mRestoreContentEditableCount = false;
