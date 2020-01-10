@@ -1249,14 +1249,6 @@ static void FinalizeFamilyMemberList(nsCStringHashKey::KeyType aKey,
 }
 
 void gfxFT2FontList::FindFonts() {
-  gfxFontCache* fc = gfxFontCache::GetCache();
-  if (fc) fc->AgeAllGenerations();
-  ClearLangGroupPrefFonts();
-  mCodepointsWithNoFonts.reset();
-
-  mCodepointsWithNoFonts.SetRange(0, 0x1f);     
-  mCodepointsWithNoFonts.SetRange(0x7f, 0x9f);  
-
   if (!XRE_IsParentProcess()) {
     
     nsTArray<FontListEntry> fonts;
