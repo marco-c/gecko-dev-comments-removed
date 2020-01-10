@@ -5,6 +5,7 @@
 
 
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var RefreshBlocker = {
   PREF: "accessibility.blockautorefresh",
@@ -92,7 +93,12 @@ var RefreshBlocker = {
   },
 
   send(data) {
-    sendAsyncMessage("RefreshBlocker:Blocked", data);
+    
+    
+    
+    
+    
+    setTimeout(() => sendAsyncMessage("RefreshBlocker:Blocked", data), 0);
   },
 
   
