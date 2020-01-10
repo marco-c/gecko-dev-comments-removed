@@ -96,9 +96,12 @@ class UrlbarView {
       this.contextualTip.hide();
 
       
-      if (this.visibleItemCount == 0) {
-        this.close();
-      }
+      
+      this.input.lastQueryContextPromise.then(() => {
+        if (this.visibleItemCount == 0) {
+          this.close();
+        }
+      });
     }
   }
 

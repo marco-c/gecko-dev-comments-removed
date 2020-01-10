@@ -267,6 +267,7 @@ class Query {
 
     
     let providers = this.providers.filter(p => p.isActive(this.context));
+
     
     let restrictProviders = providers.filter(p =>
       p.isRestricting(this.context)
