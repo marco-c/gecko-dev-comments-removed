@@ -305,6 +305,14 @@ class WebRenderBridgeParent final
   void RequestScreenPixels(UiCompositorControllerParent* aController);
   void MaybeCaptureScreenPixels();
 #endif
+  
+
+
+
+
+
+
+  RefPtr<wr::WebRenderAPI::GetCollectedFramesPromise> GetCollectedFrames();
 
  private:
   class ScheduleSharedSurfaceRelease;
