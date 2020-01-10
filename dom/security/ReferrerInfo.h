@@ -30,6 +30,8 @@ class nsINode;
 class nsIPrincipal;
 
 namespace mozilla {
+class StyleSheet;
+
 namespace net {
 class HttpBaseChannel;
 class nsHttpChannel;
@@ -85,8 +87,51 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
+
+
+  static already_AddRefed<nsIReferrerInfo> CreateFromDocumentAndPolicyOverride(
+      Document* aDoc, uint32_t aPolicyOverride);
+
+  
+
+
+
+
+
   static already_AddRefed<nsIReferrerInfo> CreateForFetch(
       nsIPrincipal* aPrincipal, Document* aDoc);
+
+  
+
+
+
+
+
+
+
+  static already_AddRefed<nsIReferrerInfo> CreateForExternalCSSResources(
+      StyleSheet* aExternalSheet, uint32_t aPolicy = mozilla::net::RP_Unset);
+
+  
+
+
+
+
+
+
+
+  static already_AddRefed<nsIReferrerInfo> CreateForInternalCSSResources(
+      Document* aDocument);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<nsIReferrerInfo> CreateForSVGResources(
+      Document* aDocument);
 
   
 
