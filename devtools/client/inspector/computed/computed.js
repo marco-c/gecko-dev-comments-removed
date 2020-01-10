@@ -1475,9 +1475,7 @@ SelectorView.prototype = {
 
 
 
-
-
-  _updateLocation: function(enabled, url, line, column, sourceId) {
+  _updateLocation: function(enabled, url, line, column) {
     if (!this.tree.element) {
       return;
     }
@@ -1485,7 +1483,7 @@ SelectorView.prototype = {
     
     
     if (enabled) {
-      this.currentLocation = { href: url, line, column, sourceId };
+      this.currentLocation = { href: url, line, column };
     } else {
       this.currentLocation = this.generatedLocation;
     }

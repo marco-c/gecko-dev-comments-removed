@@ -101,7 +101,7 @@ EventTooltip.prototype = {
       } else {
         const location = this._parseLocation(text);
         if (location) {
-          const callback = (enabled, url, line, column, sourceId) => {
+          const callback = (enabled, url, line, column) => {
             
             
             if (this._tooltip) {
