@@ -969,6 +969,13 @@ class MOZ_NON_TEMPORARY_CLASS LifoAllocScope {
   ~LifoAllocScope() {
     if (shouldRelease) {
       lifoAlloc->release(mark);
+
+      
+
+
+
+
+      lifoAlloc->freeAllIfHugeAndUnused();
     }
   }
 

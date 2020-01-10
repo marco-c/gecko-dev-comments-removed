@@ -16,6 +16,7 @@
 #include <stdint.h>  
 
 #include "frontend/ParseContext.h"  
+#include "frontend/ParseInfo.h"
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
@@ -54,7 +55,7 @@ class MOZ_STACK_CLASS BytecodeCompiler {
   JS::Rooted<ScriptSourceObject*> sourceObject;
   ScriptSource* scriptSource = nullptr;
 
-  mozilla::Maybe<UsedNameTracker> usedNames;
+  mozilla::Maybe<ParseInfo> parseInfo;
 
   Directives directives;
 
@@ -86,7 +87,9 @@ class MOZ_STACK_CLASS BytecodeCompiler {
   MOZ_MUST_USE bool createScriptSource(
       const mozilla::Maybe<uint32_t>& parameterListEnd);
 
-  void createUsedNames() { usedNames.emplace(cx); }
+  void createParseInfo(LifoAllocScope& allocScope) {
+    parseInfo.emplace(cx, allocScope);
+  }
 
   
   
