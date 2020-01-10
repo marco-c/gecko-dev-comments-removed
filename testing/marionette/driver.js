@@ -151,7 +151,7 @@ this.GeckoDriver = function(server) {
 
   
   this.dialog = null;
-  this.dialogHandler = this.modalDialogHandler.bind(this);
+  this.dialogObserver = null;
 };
 
 Object.defineProperty(GeckoDriver.prototype, "a11yChecks", {
@@ -304,16 +304,16 @@ GeckoDriver.prototype.uninit = function() {
 
 
 
-GeckoDriver.prototype.modalDialogHandler = function(subject, topic) {
-  logger.trace(`Received observer notification ${topic}`);
+GeckoDriver.prototype.handleModalDialog = function(action, dialog, win) {
+  
+  if (win !== this.curBrowser.window) {
+    return;
+  }
 
-  switch (topic) {
-    case modal.COMMON_DIALOG_LOADED:
-    case modal.TABMODAL_DIALOG_LOADED:
-      
-      let winRef = Cu.getWeakReference(subject);
-      this.dialog = new modal.Dialog(() => this.curBrowser, winRef);
-      break;
+  if (action === modal.ACTION_OPENED) {
+    this.dialog = new modal.Dialog(() => this.curBrowser, dialog);
+  } else if (action === modal.ACTION_CLOSED) {
+    this.dialog = null;
   }
 };
 
@@ -798,8 +798,10 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   }
 
   
+  this.dialogObserver = new modal.DialogObserver(this);
+  this.dialogObserver.add(this.handleModalDialog.bind(this));
+
   
-  modal.addHandler(this.dialogHandler);
   this.dialog = modal.findModalDialogs(this.curBrowser);
 
   return {
@@ -2886,7 +2888,10 @@ GeckoDriver.prototype.deleteSession = function() {
     this.observing = null;
   }
 
-  modal.removeHandler(this.dialogHandler);
+  if (this.dialogObserver) {
+    this.dialogObserver.cleanup();
+    this.dialogObserver = null;
+  }
 
   this.sandboxes.clear();
   CertificateOverrideManager.uninstall();
@@ -3178,8 +3183,7 @@ GeckoDriver.prototype.dismissDialog = async function() {
   (button1 ? button1 : button0).click();
 
   await dialogClosed;
-
-  this.dialog = null;
+  await new IdlePromise(win);
 };
 
 
@@ -3196,8 +3200,7 @@ GeckoDriver.prototype.acceptDialog = async function() {
   button0.click();
 
   await dialogClosed;
-
-  this.dialog = null;
+  await new IdlePromise(win);
 };
 
 

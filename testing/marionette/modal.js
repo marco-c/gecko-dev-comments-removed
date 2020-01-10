@@ -5,6 +5,11 @@
 "use strict";
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+const {Log} = ChromeUtils.import("chrome://marionette/content/log.js");
+
+XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 
 this.EXPORTED_SYMBOLS = ["modal"];
 
@@ -15,38 +20,8 @@ const isFirefox = () =>
 
 
 this.modal = {
-  COMMON_DIALOG_LOADED: "common-dialog-loaded",
-  TABMODAL_DIALOG_LOADED: "tabmodal-dialog-loaded",
-  handlers: {
-    "common-dialog-loaded": new Set(),
-    "tabmodal-dialog-loaded": new Set(),
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-modal.addHandler = function(handler) {
-  if (!isFirefox()) {
-    return;
-  }
-
-  Object.keys(this.handlers).map(topic => {
-    this.handlers[topic].add(handler);
-    Services.obs.addObserver(handler, topic);
-  });
+  ACTION_CLOSED: "closed",
+  ACTION_OPENED: "opened",
 };
 
 
@@ -94,22 +69,99 @@ modal.findModalDialogs = function(context) {
 
 
 
-
-
-
-modal.removeHandler = function(toRemove) {
-  if (!isFirefox()) {
-    return;
+modal.DialogObserver = class {
+  constructor() {
+    this.callbacks = new Set();
+    this.register();
   }
 
-  for (let topic of Object.keys(this.handlers)) {
-    let handlers = this.handlers[topic];
-    for (let handler of handlers) {
-      if (handler == toRemove) {
-        Services.obs.removeObserver(handler, topic);
-        handlers.delete(handler);
-      }
+  register() {
+    Services.obs.addObserver(this, "common-dialog-loaded");
+    Services.obs.addObserver(this, "tabmodal-dialog-loaded");
+    Services.obs.addObserver(this, "toplevel-window-ready");
+
+    
+    for (let win of Services.wm.getEnumerator(null)) {
+      win.addEventListener("DOMModalDialogClosed", this);
     }
+  }
+
+  unregister() {
+    Services.obs.removeObserver(this, "common-dialog-loaded");
+    Services.obs.removeObserver(this, "tabmodal-dialog-loaded");
+    Services.obs.removeObserver(this, "toplevel-window-ready");
+
+    
+    for (let win of Services.wm.getEnumerator(null)) {
+      win.removeEventListener("DOMModalDialogClosed", this);
+    }
+  }
+
+  cleanup() {
+    this.callbacks.clear();
+    this.unregister();
+  }
+
+  handleEvent(event) {
+    logger.trace(`Received event ${event.type}`);
+
+    let chromeWin = event.target.opener ? event.target.opener.ownerGlobal :
+        event.target.ownerGlobal;
+
+    let targetRef = Cu.getWeakReference(event.target);
+
+    this.callbacks.forEach(callback => {
+      callback(modal.ACTION_CLOSED, targetRef, chromeWin);
+    });
+  }
+
+  observe(subject, topic) {
+    logger.trace(`Received observer notification ${topic}`);
+
+    switch (topic) {
+      case "common-dialog-loaded":
+      case "tabmodal-dialog-loaded":
+        let chromeWin = subject.opener ? subject.opener.ownerGlobal :
+            subject.ownerGlobal;
+
+        
+        let targetRef = Cu.getWeakReference(subject);
+
+        this.callbacks.forEach(callback => {
+          callback(modal.ACTION_OPENED, targetRef, chromeWin);
+        });
+        break;
+
+      case "toplevel-window-ready":
+        subject.addEventListener("DOMModalDialogClosed", this);
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+  add(callback) {
+    if (this.callbacks.has(callback)) {
+      return;
+    }
+    this.callbacks.add(callback);
+  }
+
+  
+
+
+
+
+
+  remove(callback) {
+    if (!this.callbacks.has(callback)) {
+      return;
+    }
+    this.callbacks.delete(callback);
   }
 };
 
