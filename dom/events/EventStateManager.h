@@ -46,6 +46,8 @@ class Document;
 class Element;
 class Selection;
 class BrowserParent;
+class RemoteDragStartData;
+
 }  
 
 class OverOutElementsWrapper final : public nsISupports {
@@ -1050,7 +1052,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   LayoutDeviceIntPoint GetEventRefPoint(WidgetEvent* aEvent) const;
 
   friend class mozilla::dom::BrowserParent;
-  void BeginTrackingRemoteDragGesture(nsIContent* aContent);
+  void BeginTrackingRemoteDragGesture(nsIContent* aContent,
+                                      dom::RemoteDragStartData* aDragStartData);
   void StopTrackingDragGesture();
   MOZ_CAN_RUN_SCRIPT
   void GenerateDragGesture(nsPresContext* aPresContext,
@@ -1075,14 +1078,14 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  void DetermineDragTargetAndDefaultData(nsPIDOMWindowOuter* aWindow,
-                                         nsIContent* aSelectionTarget,
-                                         dom::DataTransfer* aDataTransfer,
-                                         dom::Selection** aSelection,
-                                         nsIContent** aTargetNode,
-                                         nsIPrincipal** aPrincipal);
+  void DetermineDragTargetAndDefaultData(
+      nsPIDOMWindowOuter* aWindow, nsIContent* aSelectionTarget,
+      dom::DataTransfer* aDataTransfer, dom::Selection** aSelection,
+      dom::RemoteDragStartData** aRemoteDragStartData, nsIContent** aTargetNode,
+      nsIPrincipal** aPrincipal);
 
   
+
 
 
 
@@ -1099,6 +1102,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
                           WidgetDragEvent* aDragEvent,
                           dom::DataTransfer* aDataTransfer,
                           nsIContent* aDragTarget, dom::Selection* aSelection,
+                          dom::RemoteDragStartData* aDragStartData,
                           nsIPrincipal* aPrincipal);
 
   bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
@@ -1215,6 +1219,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   nsCOMPtr<nsIContent> mGestureDownFrameOwner;
+  
+  RefPtr<dom::RemoteDragStartData> mGestureDownDragStartData;
   
   Modifiers mGestureModifiers;
   uint16_t mGestureDownButtons;

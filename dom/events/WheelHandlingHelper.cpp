@@ -387,7 +387,7 @@ double WheelTransaction::ComputeAcceleratedWheelDelta(double aDelta,
 DeltaValues WheelTransaction::OverrideSystemScrollSpeed(
     WidgetWheelEvent* aEvent) {
   MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
-  MOZ_ASSERT(aEvent->mDeltaMode == WheelEvent_Binding::DOM_DELTA_LINE);
+  MOZ_ASSERT(aEvent->mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_LINE);
 
   
   
@@ -677,7 +677,7 @@ ESMAutoDirWheelDeltaAdjuster::ESMAutoDirWheelDeltaAdjuster(
     
     
     
-    Document* document = aScrollFrame.PresShell()->GetDocument();
+    dom::Document* document = aScrollFrame.PresShell()->GetDocument();
     if (document) {
       Element* bodyElement = document->GetBodyElement();
       if (bodyElement) {

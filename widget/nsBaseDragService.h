@@ -16,6 +16,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/RemoteDragStartData.h"
 #include "nsTArray.h"
 #include "nsRegion.h"
 #include "Units.h"
@@ -178,6 +179,9 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
   
   RefPtr<mozilla::dom::Selection> mSelection;
+
+  
+  RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
 
   
   

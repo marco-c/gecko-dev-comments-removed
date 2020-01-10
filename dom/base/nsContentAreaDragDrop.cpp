@@ -548,18 +548,9 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
 
   
   if (isChromeShell && !editingElement) {
-    RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(mTarget);
-    if (flo) {
-      RefPtr<nsFrameLoader> fl = flo->GetFrameLoader();
-      if (fl) {
-        BrowserParent* bp = fl->GetBrowserParent();
-        if (bp) {
-          
-          
-          bp->AddInitialDnDDataTo(aDataTransfer, aPrincipal);
-        }
-      }
-    }
+    
+    
+    MOZ_ASSERT_UNREACHABLE("Shouldn't be generating drag data for chrome");
     return NS_OK;
   }
 

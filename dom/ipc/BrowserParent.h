@@ -843,13 +843,6 @@ class BrowserParent final : public PBrowserParent,
   LayoutDeviceIntPoint mClientOffset;
   LayoutDeviceIntPoint mChromeOffset;
 
-  nsTArray<nsTArray<IPCDataTransferItem>> mInitialDataTransferItems;
-
-  RefPtr<gfx::DataSourceSurface> mDnDVisualization;
-  bool mDragValid;
-  LayoutDeviceIntRect mDragRect;
-  nsCOMPtr<nsIPrincipal> mDragPrincipal;
-
   
   
   

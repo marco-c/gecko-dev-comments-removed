@@ -34,6 +34,7 @@
 #include "ContentEventHandler.h"
 #include "IMEContentObserver.h"
 #include "WheelHandlingHelper.h"
+#include "RemoteDragStartData.h"
 
 #include "nsCommandParams.h"
 #include "nsCOMPtr.h"
@@ -1635,9 +1636,11 @@ LayoutDeviceIntPoint EventStateManager::GetEventRefPoint(
              : aEvent->mRefPoint;
 }
 
-void EventStateManager::BeginTrackingRemoteDragGesture(nsIContent* aContent) {
+void EventStateManager::BeginTrackingRemoteDragGesture(
+    nsIContent* aContent, RemoteDragStartData* aDragStartData) {
   mGestureDownContent = aContent;
   mGestureDownFrameOwner = aContent;
+  mGestureDownDragStartData = aDragStartData;
 }
 
 
@@ -1649,6 +1652,7 @@ void EventStateManager::BeginTrackingRemoteDragGesture(nsIContent* aContent) {
 void EventStateManager::StopTrackingDragGesture() {
   mGestureDownContent = nullptr;
   mGestureDownFrameOwner = nullptr;
+  mGestureDownDragStartData = nullptr;
 }
 
 void EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent) {
@@ -1784,13 +1788,15 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       });
 
       RefPtr<Selection> selection;
+      RefPtr<RemoteDragStartData> remoteDragStartData;
       nsCOMPtr<nsIContent> eventContent, targetContent;
       nsCOMPtr<nsIPrincipal> principal;
       mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(eventContent));
       if (eventContent)
         DetermineDragTargetAndDefaultData(
             window, eventContent, dataTransfer, getter_AddRefs(selection),
-            getter_AddRefs(targetContent), getter_AddRefs(principal));
+            getter_AddRefs(remoteDragStartData), getter_AddRefs(targetContent),
+            getter_AddRefs(principal));
 
       
       
@@ -1853,7 +1859,7 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       if (status != nsEventStatus_eConsumeNoDefault) {
         bool dragStarted =
             DoDefaultDragStart(aPresContext, event, dataTransfer, targetContent,
-                               selection, principal);
+                               selection, remoteDragStartData, principal);
         if (dragStarted) {
           sActiveESM = nullptr;
           MaybeFirePointerCancel(aEvent);
@@ -1874,21 +1880,43 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
 void EventStateManager::DetermineDragTargetAndDefaultData(
     nsPIDOMWindowOuter* aWindow, nsIContent* aSelectionTarget,
     DataTransfer* aDataTransfer, Selection** aSelection,
-    nsIContent** aTargetNode, nsIPrincipal** aPrincipal) {
+    RemoteDragStartData** aRemoteDragStartData, nsIContent** aTargetNode,
+    nsIPrincipal** aPrincipal) {
   *aTargetNode = nullptr;
 
-  
-  
-  
-  
-  
-  bool canDrag;
   nsCOMPtr<nsIContent> dragDataNode;
-  bool wasAlt = (mGestureModifiers & MODIFIER_ALT) != 0;
-  nsresult rv = nsContentAreaDragDrop::GetDragData(
-      aWindow, mGestureDownContent, aSelectionTarget, wasAlt, aDataTransfer,
-      &canDrag, aSelection, getter_AddRefs(dragDataNode), aPrincipal);
-  if (NS_FAILED(rv) || !canDrag) return;
+
+  nsIContent* editingElement = aSelectionTarget->IsEditable()
+                                   ? aSelectionTarget->GetEditingHost()
+                                   : nullptr;
+
+  
+  bool isChromeContext = !aWindow->GetBrowsingContext()->IsContent();
+  if (isChromeContext && !editingElement) {
+    if (mGestureDownDragStartData) {
+      
+      
+      mGestureDownDragStartData->AddInitialDnDDataTo(aDataTransfer, aPrincipal);
+      mGestureDownDragStartData.forget(aRemoteDragStartData);
+    }
+  } else {
+    mGestureDownDragStartData = nullptr;
+
+    
+    
+    
+    
+    
+    
+    bool canDrag;
+    bool wasAlt = (mGestureModifiers & MODIFIER_ALT) != 0;
+    nsresult rv = nsContentAreaDragDrop::GetDragData(
+        aWindow, mGestureDownContent, aSelectionTarget, wasAlt, aDataTransfer,
+        &canDrag, aSelection, getter_AddRefs(dragDataNode), aPrincipal);
+    if (NS_FAILED(rv) || !canDrag) {
+      return;
+    }
+  }
 
   
   
@@ -1943,12 +1971,10 @@ void EventStateManager::DetermineDragTargetAndDefaultData(
   }
 }
 
-bool EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
-                                           WidgetDragEvent* aDragEvent,
-                                           DataTransfer* aDataTransfer,
-                                           nsIContent* aDragTarget,
-                                           Selection* aSelection,
-                                           nsIPrincipal* aPrincipal) {
+bool EventStateManager::DoDefaultDragStart(
+    nsPresContext* aPresContext, WidgetDragEvent* aDragEvent,
+    DataTransfer* aDataTransfer, nsIContent* aDragTarget, Selection* aSelection,
+    RemoteDragStartData* aDragStartData, nsIPrincipal* aPrincipal) {
   nsCOMPtr<nsIDragService> dragService =
       do_GetService("@mozilla.org/widget/dragservice;1");
   if (!dragService) return false;
@@ -2022,6 +2048,11 @@ bool EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
   if (!dragImage && aSelection) {
     dragService->InvokeDragSessionWithSelection(
         aSelection, aPrincipal, transArray, action, event, dataTransfer);
+  } else if (aDragStartData) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    dragService->InvokeDragSessionWithRemoteImage(
+        dragTarget, aPrincipal, transArray, action, aDragStartData, event,
+        dataTransfer);
   } else {
     dragService->InvokeDragSessionWithImage(dragTarget, aPrincipal, transArray,
                                             action, dragImage, imageX, imageY,
