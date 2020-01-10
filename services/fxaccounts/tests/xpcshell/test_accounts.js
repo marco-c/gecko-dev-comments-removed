@@ -130,6 +130,13 @@ function MockFxAccountsClient() {
     return !!uid && !this._deletedOnServer;
   };
 
+  this.sessionStatus = async function() {
+    
+    
+    
+    return !this._deletedOnServer;
+  };
+
   this.accountKeys = function(keyFetchToken) {
     return new Promise(resolve => {
       do_timeout(50, () => {
@@ -865,6 +872,7 @@ add_task(async function test_getKeys_nonexistent_account() {
 
   let client = fxa._internal.fxAccountsClient;
   client.accountStatus = () => Promise.resolve(false);
+  client.sessionStatus = () => Promise.resolve(false);
   client.accountKeys = () => {
     return Promise.reject({
       code: 401,
@@ -896,7 +904,8 @@ add_task(async function test_getKeys_invalid_token() {
   let yusuf = getTestUser("yusuf");
 
   let client = fxa._internal.fxAccountsClient;
-  client.accountStatus = () => Promise.resolve(true);
+  client.accountStatus = () => Promise.resolve(true); 
+  client.sessionStatus = () => Promise.resolve(false); 
   client.accountKeys = () => {
     return Promise.reject({
       code: 401,
@@ -1070,6 +1079,7 @@ add_task(async function test_getAssertion_invalid_token() {
 
   let client = fxa._internal.fxAccountsClient;
   client.accountStatus = () => Promise.resolve(true);
+  client.sessionStatus = () => Promise.resolve(false);
 
   let creds = {
     sessionToken: "sessionToken",
@@ -1237,30 +1247,23 @@ add_task(async function test_resend_email_not_signed_in() {
   do_throw("Should not be able to resend email when nobody is signed in");
 });
 
-add_test(function test_accountStatus() {
+add_task(async function test_accountStatus() {
   let fxa = new MockFxAccounts();
   let alice = getTestUser("alice");
 
   
-  fxa
-    .accountStatus()
-    .then(result => {
-      Assert.ok(!result);
-    })
-    .then(() => {
-      fxa.setSignedInUser(alice).then(() => {
-        fxa.accountStatus().then(result => {
-          
-          Assert.ok(result);
-          fxa._internal.fxAccountsClient._deletedOnServer = true;
-          fxa.accountStatus().then(result2 => {
-            Assert.ok(!result2);
-            fxa._internal.fxAccountsClient._deletedOnServer = false;
-            fxa.signOut().then(run_next_test);
-          });
-        });
-      });
-    });
+  let result = await fxa.checkAccountStatus();
+  Assert.ok(!result);
+  
+  await fxa.setSignedInUser(alice);
+  result = await fxa.checkAccountStatus();
+  Assert.ok(result);
+  
+  fxa._internal.fxAccountsClient._deletedOnServer = true;
+  result = await fxa.checkAccountStatus();
+  Assert.ok(!result);
+  fxa._internal.fxAccountsClient._deletedOnServer = false;
+  await fxa.signOut();
 });
 
 add_task(async function test_resend_email_invalid_token() {
@@ -1275,7 +1278,15 @@ add_task(async function test_resend_email_invalid_token() {
       errno: ERRNO_INVALID_AUTH_TOKEN,
     });
   };
-  client.accountStatus = () => Promise.resolve(true);
+  
+  client.accountStatus = uid => {
+    Assert.ok(uid, "got a uid to check");
+    return Promise.resolve(true);
+  };
+  client.sessionStatus = token => {
+    Assert.ok(token, "got a token to check");
+    return Promise.resolve(false);
+  };
 
   await fxa.setSignedInUser(sophia);
   let user = await fxa._internal.getUserAccountData();
@@ -1676,6 +1687,7 @@ add_task(async function test_checkVerificationStatusFailed() {
     });
   };
   client.accountStatus = () => Promise.resolve(true);
+  client.sessionStatus = () => Promise.resolve(false);
 
   await fxa.setSignedInUser(alice);
   let user = await fxa._internal.getUserAccountData();

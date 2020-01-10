@@ -612,21 +612,32 @@ class FxAccounts {
   
 
 
-  
-  
-  
-  accountStatus() {
-    return this._withCurrentAccountState(async state => {
-      let data = await state.getUserAccountData();
-      if (!data) {
-        return false;
-      }
-      return this._internal.fxAccountsClient.accountStatus(data.uid);
-    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  checkAccountStatus() {
+    
+    
+    
+    let state = this._internal.currentAccountState;
+    return this._internal.checkAccountStatus(state);
   }
 
   
-
 
 
 
@@ -644,23 +655,6 @@ class FxAccounts {
     return this._withCurrentAccountState(async state => {
       let data = await state.getUserAccountData(["sessionToken"]);
       return !!(data && data.sessionToken);
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  sessionStatus() {
-    return this._withCurrentAccountState(async currentState => {
-      return this._internal.sessionStatus(currentState);
     });
   }
 
@@ -919,14 +913,6 @@ FxAccountsInternal.prototype = {
     return this.fxAccountsClient.localtimeOffsetMsec;
   },
 
-  async sessionStatus(currentState) {
-    let data = await currentState.getUserAccountData();
-    if (!data.sessionToken) {
-      throw new Error("sessionStatus called without a session token");
-    }
-    return this.fxAccountsClient.sessionStatus(data.sessionToken);
-  },
-
   
 
 
@@ -1111,15 +1097,6 @@ FxAccountsInternal.prototype = {
     
     
     return this.currentAccountState.abort();
-  },
-
-  accountStatus: function accountStatus() {
-    return this.currentAccountState.getUserAccountData().then(data => {
-      if (!data) {
-        return false;
-      }
-      return this.fxAccountsClient.accountStatus(data.uid);
-    });
   },
 
   async checkVerificationStatus() {
@@ -1796,23 +1773,50 @@ FxAccountsInternal.prototype = {
     return state.updateUserAccountData(updateData);
   },
 
+  async checkAccountStatus(state) {
+    log.info("checking account status...");
+    let data = await state.getUserAccountData(["uid", "sessionToken"]);
+    if (!data) {
+      log.info("account status: no user");
+      return false;
+    }
+    
+    
+    if (data.sessionToken) {
+      if (await this.fxAccountsClient.sessionStatus(data.sessionToken)) {
+        log.info("account status: ok");
+        return true;
+      }
+    }
+    let exists = await this.fxAccountsClient.accountStatus(data.uid);
+    if (!exists) {
+      
+      
+      log.info("account status: deleted");
+      await this._handleAccountDestroyed(data.uid);
+    } else {
+      
+      
+      
+      log.info("account status: needs reauthentication");
+      await this.dropCredentials(this.currentAccountState);
+      
+      await this.notifyObservers(ON_ACCOUNT_STATE_CHANGE_NOTIFICATION);
+    }
+    return false;
+  },
+
   async _handleTokenError(err) {
     if (!err || err.code != 401 || err.errno != ERRNO_INVALID_AUTH_TOKEN) {
       throw err;
     }
     log.warn("handling invalid token error", err);
-    let exists = await this.accountStatus();
-    if (!exists) {
-      
-      
-      log.info("token invalidated because the account no longer exists");
-      await this.signOut(true);
-    } else {
-      
-      log.info("clearing credentials to handle invalid token error");
-      await this.dropCredentials(this.currentAccountState);
-      
-      await this.notifyObservers(ON_ACCOUNT_STATE_CHANGE_NOTIFICATION);
+    
+    
+    let state = this.currentAccountState;
+    let ok = await this.checkAccountStatus(state);
+    if (ok) {
+      log.warn("invalid token error, but account state appears ok?");
     }
     
     throw err;
