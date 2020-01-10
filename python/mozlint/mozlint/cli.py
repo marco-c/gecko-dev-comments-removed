@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
 from argparse import REMAINDER, ArgumentParser
@@ -213,11 +211,6 @@ def run(paths, linters, formats, outgoing, workdir, edit,
         formatter = formatters.get(formatter_name)
 
         out = formatter(result)
-        if sys.version_info[0] == 2:
-            
-            
-            out = formatter(result).encode(sys.stdout.encoding or 'ascii', 'replace')
-
         if out:
             output_file = open(path, 'w') if path else sys.stdout
             print(out, file=output_file)

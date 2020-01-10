@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from collections import defaultdict
 from json import dumps, JSONEncoder
 import os

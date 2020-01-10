@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
 

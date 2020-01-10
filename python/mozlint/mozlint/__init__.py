@@ -3,7 +3,5 @@
 
 
 
-from __future__ import absolute_import
-
 from .roller import LintRoller
 from .result import Issue

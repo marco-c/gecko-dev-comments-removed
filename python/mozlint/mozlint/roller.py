@@ -1,8 +1,8 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
+import atexit
 import copy
 import logging
 import os
@@ -11,16 +11,12 @@ import sys
 import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import _python_exit as futures_atexit
 from itertools import chain
 from math import ceil
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, get_context
 from multiprocessing.queues import Queue
 from subprocess import CalledProcessError
-
-try:
-    from multiprocessing import get_context
-except ImportError:
-    get_context = None
 
 import mozpack.path as mozpath
 from mozversioncontrol import get_repository_object, MissingUpstreamRepo, InvalidRepoPath
@@ -89,8 +85,7 @@ class InterruptableQueue(Queue):
     blocking on ProcessPoolExecutor's call queue.
     """
     def __init__(self, *args, **kwargs):
-        if get_context:
-            kwargs['ctx'] = get_context()
+        kwargs['ctx'] = get_context()
         super(InterruptableQueue, self).__init__(*args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -109,6 +104,24 @@ def _worker_sigint_handler(signum, frame):
     global SHUTDOWN
     SHUTDOWN = True
     orig_sigint(signum, frame)
+
+
+def wrap_futures_atexit():
+    """Sometimes futures' atexit handler can spew tracebacks. This wrapper
+    suppresses them."""
+    try:
+        futures_atexit()
+    except Exception:
+        
+        
+        
+        
+        
+        pass
+
+
+atexit.unregister(futures_atexit)
+atexit.register(wrap_futures_atexit)
 
 
 class LintRoller(object):

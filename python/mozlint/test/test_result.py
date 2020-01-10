@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import mozunit
 
 from mozlint.result import Issue
