@@ -497,17 +497,6 @@ nsresult CryptoKey::PublicKeyToSpki(SECKEYPublicKey* aPubKey,
     return NS_ERROR_DOM_OPERATION_ERR;
   }
 
-  
-  
-  
-  if (aPubKey->keyType == ecKey) {
-    SECStatus rv = SECITEM_CopyItem(spki->arena, &spki->algorithm.algorithm,
-                                    &SEC_OID_DATA_EC_DH);
-    if (rv != SECSuccess) {
-      return NS_ERROR_DOM_OPERATION_ERR;
-    }
-  }
-
   const SEC_ASN1Template* tpl = SEC_ASN1_GET(CERT_SubjectPublicKeyInfoTemplate);
   UniqueSECItem spkiItem(SEC_ASN1EncodeItem(nullptr, nullptr, spki.get(), tpl));
 
