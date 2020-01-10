@@ -32,6 +32,7 @@ const {
   pointToString,
   findClosestPoint,
   pointArrayIncludes,
+  pointPrecedes,
   positionEquals,
   positionSubsumes,
   setInterval,
@@ -126,6 +127,9 @@ function ChildProcess(id, recording) {
   this.scannedCheckpoints = new Set();
 
   
+  this.snapshots = [];
+
+  
   this.divergedFromRecording = false;
 
   
@@ -140,6 +144,8 @@ function ChildProcess(id, recording) {
         Services.tm.dispatchToMainThread(
           recording ? maybeResumeRecording : setMainChild
         );
+      } else {
+        this.snapshots.push(checkpointExecutionPoint(FirstCheckpointId));
       }
     },
   };
@@ -253,20 +259,18 @@ ChildProcess.prototype = {
   },
 
   
-  getCheckpointsToSave(endpoint) {
-    assert(endpoint >= this.pausePoint().checkpoint);
+  
+  getSnapshotsForSavedCheckpoints(endpoint) {
+    assert(pointPrecedes(this.pausePoint(), endpoint));
     return this.savedCheckpointsInRange(
       this.pausePoint().checkpoint + 1,
-      endpoint
-    );
+      endpoint.checkpoint
+    ).map(checkpointExecutionPoint);
   },
 
   
-  lastSavedCheckpoint(checkpoint) {
-    while (!this.savedCheckpoints.has(checkpoint)) {
-      checkpoint--;
-    }
-    return checkpoint;
+  lastSnapshot() {
+    return this.snapshots[this.snapshots.length - 1];
   },
 
   
@@ -288,14 +292,11 @@ ChildProcess.prototype = {
         startPoint = this.manifest.destination;
       }
     }
-    let startCheckpoint = startPoint.checkpoint;
-    
-    if (startPoint.position) {
-      startCheckpoint = this.lastSavedCheckpoint(startCheckpoint);
+    let snapshotIndex = this.snapshots.length - 1;
+    while (pointPrecedes(point, this.snapshots[snapshotIndex])) {
+      snapshotIndex--;
     }
-    if (point.checkpoint < startCheckpoint) {
-      startCheckpoint = this.lastSavedCheckpoint(point.checkpoint);
-    }
+    const startCheckpoint = this.snapshots[snapshotIndex].checkpoint;
     return (
       startDelay + checkpointRangeDuration(startCheckpoint, point.checkpoint)
     );
@@ -349,6 +350,9 @@ const gAsyncManifestsLowPriority = new Set();
 function asyncManifestWorklist(lowPriority) {
   return lowPriority ? gAsyncManifestsLowPriority : gAsyncManifests;
 }
+
+
+
 
 
 
@@ -455,7 +459,10 @@ function processAsyncManifest(child) {
 
   child.asyncManifest = manifest;
 
-  if (manifest.point && maybeReachPoint(child, manifest.point)) {
+  if (
+    manifest.point &&
+    maybeReachPoint(child, manifest.point, manifest.snapshot)
+  ) {
     
     return true;
   }
@@ -567,7 +574,8 @@ function addCheckpoint(checkpoint, duration) {
 
 
 
-function maybeReachPoint(child, endpoint) {
+
+function maybeReachPoint(child, endpoint, snapshot) {
   if (
     pointEquals(child.pausePoint(), endpoint) &&
     !child.divergedFromRecording
@@ -575,23 +583,30 @@ function maybeReachPoint(child, endpoint) {
     return false;
   }
 
-  if (child.divergedFromRecording || child.pausePoint().position) {
-    restoreCheckpointPriorTo(child.pausePoint().checkpoint);
+  if (pointPrecedes(endpoint, child.pausePoint())) {
+    restoreSnapshotPriorTo(endpoint);
     return true;
   }
 
-  if (endpoint.checkpoint < child.pauseCheckpoint()) {
-    restoreCheckpointPriorTo(endpoint.checkpoint);
+  if (child.divergedFromRecording) {
+    restoreSnapshotPriorTo(child.pausePoint());
     return true;
+  }
+
+  const snapshotPoints = child.getSnapshotsForSavedCheckpoints(endpoint);
+  if (
+    snapshot &&
+    pointPrecedes(child.pausePoint(), snapshot) &&
+    !pointArrayIncludes(snapshotPoints, snapshot)
+  ) {
+    snapshotPoints.push(snapshot);
   }
 
   child.sendManifest({
-    contents: {
-      kind: "runToPoint",
-      endpoint,
-      saveCheckpoints: child.getCheckpointsToSave(endpoint.checkpoint),
+    contents: { kind: "runToPoint", endpoint, snapshotPoints },
+    onFinished() {
+      child.snapshots.push(...snapshotPoints);
     },
-    onFinished() {},
     destination: endpoint,
     expectedDuration: checkpointRangeDuration(
       child.pausePoint().checkpoint,
@@ -602,20 +617,19 @@ function maybeReachPoint(child, endpoint) {
   return true;
 
   
-  function restoreCheckpointPriorTo(target) {
-    
-    const savedCheckpoints = child.savedCheckpointsInRange(
-      target + 1,
-      child.pausePoint().checkpoint
-    );
-    const numSnapshots = savedCheckpoints.length;
+  function restoreSnapshotPriorTo(target) {
+    let numSnapshots = 0;
+    while (pointPrecedes(target, child.lastSnapshot())) {
+      numSnapshots++;
+      child.snapshots.pop();
+    }
     child.sendManifest({
       contents: { kind: "restoreSnapshot", numSnapshots },
-      onFinished({ restoredCheckpoint }) {
-        assert(restoredCheckpoint);
+      onFinished({ restoredSnapshot }) {
+        assert(restoredSnapshot);
         child.divergedFromRecording = false;
       },
-      destination: checkpointExecutionPoint(target),
+      destination: child.lastSnapshot(),
     });
   }
 }
@@ -729,18 +743,21 @@ async function scanRecording(checkpoint) {
     return;
   }
 
-  const endpoint = nextSavedCheckpoint(checkpoint);
+  const endpoint = checkpointExecutionPoint(nextSavedCheckpoint(checkpoint));
+  let snapshotPoints = null;
   await sendAsyncManifest({
     shouldSkip: () => !!findScanChild(checkpoint),
     contents(child) {
       child.scannedCheckpoints.add(checkpoint);
+      snapshotPoints = child.getSnapshotsForSavedCheckpoints(endpoint);
       return {
         kind: "scanRecording",
         endpoint,
-        saveCheckpoints: child.getCheckpointsToSave(endpoint),
+        snapshotPoints,
       };
     },
     onFinished(child, { duration }) {
+      child.snapshots.push(...snapshotPoints);
       const info = getCheckpointInfo(checkpoint);
       if (!info.scanTime) {
         info.scanTime = Date.now();
@@ -751,7 +768,7 @@ async function scanRecording(checkpoint) {
       }
     },
     point: checkpointExecutionPoint(checkpoint),
-    destination: checkpointExecutionPoint(endpoint),
+    destination: endpoint,
     expectedDuration: checkpointRangeDuration(checkpoint, endpoint) * 5,
   });
 
@@ -943,12 +960,23 @@ async function findFrameSteps(point) {
 
 
 const gPauseData = new Map();
+const gQueuedPauseData = new Set();
 
 
 
 const gCachedPoints = new Map();
 
-async function queuePauseData(point, trackCached, shouldSkipCallback) {
+async function queuePauseData({
+  point,
+  snapshot,
+  trackCached,
+  shouldSkip: shouldSkipCallback,
+}) {
+  if (gQueuedPauseData.has(pointToString(point))) {
+    return;
+  }
+  gQueuedPauseData.add(pointToString(point));
+
   await waitForFlushed(point.checkpoint);
 
   sendAsyncManifest({
@@ -975,12 +1003,13 @@ async function queuePauseData(point, trackCached, shouldSkipCallback) {
       return { kind: "getPauseData" };
     },
     onFinished(child, data) {
-      if (!data.restoredCheckpoint) {
+      if (!data.restoredSnapshot) {
         addPauseData(point, data, trackCached);
         child.divergedFromRecording = true;
       }
     },
     point,
+    snapshot,
     expectedDuration: 250,
     lowPriority: true,
   });
@@ -1093,13 +1122,17 @@ function sendActiveChildToPausePoint() {
 
         
         if (gDebuggerRequests.length) {
-          gActiveChild.sendManifest({
+          const child = gActiveChild;
+          child.sendManifest({
             contents: {
               kind: "batchDebuggerRequest",
               requests: gDebuggerRequests.map(r => r.request),
             },
             onFinished(finishData) {
-              assert(!finishData || !finishData.restoredCheckpoint);
+              assert(!finishData.restoredSnapshot);
+              if (finishData.divergedFromRecording) {
+                child.divergedFromRecording = true;
+              }
             },
           });
         }
@@ -1343,10 +1376,7 @@ const NumNearbySteps = 12;
 function nextKnownBreakpointHit(point, forward) {
   let checkpoint = getSavedCheckpoint(point.checkpoint);
   for (; ; forward ? checkpoint++ : checkpoint--) {
-    if (
-      checkpoint == gLastFlushCheckpoint ||
-      checkpoint == InvalidCheckpointId
-    ) {
+    if (checkpoint == (forward ? gLastFlushCheckpoint : InvalidCheckpointId)) {
       return null;
     }
 
@@ -1383,7 +1413,7 @@ function nextKnownBreakpointHits(point, forward, count) {
   for (let i = 0; i < count; i++) {
     const next = nextKnownBreakpointHit(point, forward);
     if (next) {
-      rv.push(next);
+      rv.push({ point: next, snapshot: null });
       point = next;
     } else {
       break;
@@ -1405,19 +1435,20 @@ function updateNearbyPoints() {
     
     const index = steps.findIndex(point => pointEquals(point, gPausePoint));
     const start = Math.max(index - NumNearbySteps, 1);
-    nearby.push(...steps.slice(start, index + NumNearbySteps - start));
-  }
-
-  
-  for (const point of nearby) {
-    if (!pointArrayIncludes(gNearbyPoints, point)) {
-      queuePauseData(point,  false, () => {
-        return !pointArrayIncludes(gNearbyPoints, point);
-      });
-    }
+    const nearbySteps = steps.slice(start, index + NumNearbySteps - start);
+    nearby.push(...nearbySteps.map(point => ({ point, snapshot: steps[0] })));
   }
 
   gNearbyPoints = nearby;
+
+  
+  for (const { point, snapshot } of nearby) {
+    queuePauseData({
+      point,
+      snapshot,
+      shouldSkip: () => !pointArrayIncludes(gNearbyPoints, point),
+    });
+  }
 }
 
 
@@ -1488,7 +1519,7 @@ function handleResumeManifestResponse({
 
   consoleMessages.forEach(msg => {
     if (msg.executionPoint) {
-      queuePauseData(msg.executionPoint,  true);
+      queuePauseData({ point: msg.executionPoint, trackCached: true });
     }
   });
 
@@ -1502,7 +1533,7 @@ function handleResumeManifestResponse({
   
   
   if (RecordReplayControl.inRepaintStressMode()) {
-    queuePauseData(point);
+    queuePauseData({ point });
   }
 }
 
@@ -1829,7 +1860,7 @@ const gControl = {
     });
     gActiveChild.waitUntilPaused();
 
-    if (data.restoredCheckpoint) {
+    if (data.restoredSnapshot) {
       
       
       
@@ -1859,7 +1890,7 @@ const gControl = {
       },
     });
     gMainChild.waitUntilPaused();
-    assert(!data.restoredCheckpoint && !data.divergedFromRecording);
+    assert(!data.restoredSnapshot && !data.divergedFromRecording);
     return data.response;
   },
 
