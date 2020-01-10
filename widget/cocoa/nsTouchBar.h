@@ -25,10 +25,10 @@ using namespace mozilla::dom;
   NSString* mType;
   NSColor* mColor;
   BOOL mDisabled;
-  NSTouchBarItemIdentifier mNativeIdentifier;
   nsCOMPtr<nsITouchBarInputCallback> mCallback;
   RefPtr<Document> mDocument;
   BOOL mIsIconPositionSet;
+  NSMutableArray<TouchBarInput*>* mChildren;
 }
 
 - (NSString*)key;
@@ -42,6 +42,7 @@ using namespace mozilla::dom;
 - (nsCOMPtr<nsITouchBarInputCallback>)callback;
 - (RefPtr<Document>)document;
 - (BOOL)isIconPositionSet;
+- (NSMutableArray<TouchBarInput*>*)children;
 - (void)setKey:(NSString*)aKey;
 - (void)setTitle:(NSString*)aTitle;
 - (void)setImageURI:(nsCOMPtr<nsIURI>)aImageURI;
@@ -49,10 +50,10 @@ using namespace mozilla::dom;
 - (void)setType:(NSString*)aType;
 - (void)setColor:(NSColor*)aColor;
 - (void)setDisabled:(BOOL)aDisabled;
-- (void)setNativeIdentifier:(NSString*)aNativeIdentifier;
 - (void)setCallback:(nsCOMPtr<nsITouchBarInputCallback>)aCallback;
 - (void)setDocument:(RefPtr<Document>)aDocument;
 - (void)setIconPositionSet:(BOOL)aIsIconPositionSet;
+- (void)setChildren:(NSMutableArray<TouchBarInput*>*)aChildren;
 
 - (id)initWithKey:(NSString*)aKey
             title:(NSString*)aTitle
@@ -61,11 +62,21 @@ using namespace mozilla::dom;
          callback:(nsCOMPtr<nsITouchBarInputCallback>)aCallback
             color:(uint32_t)aColor
          disabled:(BOOL)aDisabled
-         document:(RefPtr<Document>)aDocument;
+         document:(RefPtr<Document>)aDocument
+         children:(nsCOMPtr<nsIArray>)aChildren;
 
 - (TouchBarInput*)initWithXPCOM:(nsCOMPtr<nsITouchBarInput>)aInput;
 
+- (void)releaseJSObjects;
+
 - (void)dealloc;
+
+
+
+
+
+
++ (NSTouchBarItemIdentifier)nativeIdentifierWithType:(NSString*)aType withKey:(NSString*)aKey;
 
 @end
 
@@ -97,6 +108,13 @@ using namespace mozilla::dom;
 
 
 - (instancetype)init;
+
+
+
+
+
+
+- (instancetype)initWithInputs:(NSMutableArray<TouchBarInput*>*)aInputs;
 
 - (void)dealloc;
 
