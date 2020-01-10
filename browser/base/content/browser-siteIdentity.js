@@ -123,6 +123,14 @@ var gIdentityHandler = {
     return this._state & Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
   },
 
+  get _isAboutCertErrorPage() {
+    return (
+      gBrowser.selectedBrowser.documentURI &&
+      gBrowser.selectedBrowser.documentURI.scheme == "about" &&
+      gBrowser.selectedBrowser.documentURI.pathQueryRef.startsWith("certerror")
+    );
+  },
+
   get _hasInsecureLoginForms() {
     
     
@@ -785,6 +793,9 @@ var gIdentityHandler = {
       } else {
         this._identityBox.classList.add("weakCipher");
       }
+    } else if (this._isAboutCertErrorPage) {
+      
+      this._identityBox.className = "certErrorPage";
     } else if (
       this._isSecureContext ||
       (gBrowser.selectedBrowser.documentURI &&
