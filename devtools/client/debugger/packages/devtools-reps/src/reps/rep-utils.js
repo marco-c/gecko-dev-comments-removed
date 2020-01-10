@@ -53,7 +53,7 @@ const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 
 
 
-const urlRegex = /(^|[\s(,;'"`“])((?:https?:\/\/|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
+const urlRegex = /(^|[\s(,;'"`“])((?:https?:\/(\/)?|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
 
 
 
