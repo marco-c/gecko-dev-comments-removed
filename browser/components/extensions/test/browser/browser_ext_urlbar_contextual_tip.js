@@ -485,7 +485,8 @@ add_task(async () => {
 
 
 
-add_task(async function test_set_icon_given_path() {
+
+add_task(async function test_set_icon_given_favicon() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   let ext = ExtensionTestUtils.loadExtension({
@@ -493,8 +494,45 @@ add_task(async function test_set_icon_given_path() {
     manifest: {
       permissions: ["urlbar"],
     },
-    files: {
-      "icons/icon.png": imageBuffer,
+    background() {
+      browser.urlbar.contextualTip.set({
+        icon: { defaultIcon: "data:image/png;base64,SFRUUCBpY29uIGRhdGE=" },
+        title: "the title is required",
+      });
+      browser.test.sendMessage(
+        "ready",
+        browser.runtime.getURL("data:image/png;base64,SFRUUCBpY29uIGRhdGE=")
+      );
+    },
+  });
+
+  await ext.startup();
+  await BrowserTestUtils.waitForCondition(() =>
+    UrlbarTestUtils.isPopupOpen(win)
+  );
+  const iconURL = await ext.awaitMessage("ready");
+  const backgroundImageProperty = `url("${iconURL}")`;
+  const iconElement = win.gURLBar.view.contextualTip._elements.icon;
+  Assert.equal(
+    backgroundImageProperty,
+    win.getComputedStyle(iconElement).backgroundImage
+  );
+
+  await ext.unload();
+  await BrowserTestUtils.closeWindow(win);
+});
+
+
+
+
+
+add_task(async function test_set_icon_given_path() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+
+  let ext = ExtensionTestUtils.loadExtension({
+    isPrivileged: true,
+    manifest: {
+      permissions: ["urlbar"],
     },
     background() {
       browser.urlbar.contextualTip.set({
@@ -541,9 +579,6 @@ add_task(async function test_set_icon_given_path() {
         "19": "extension_icon.png",
       },
     },
-    files: {
-      "extension_icon.png": imageBuffer,
-    },
     background() {
       browser.urlbar.contextualTip.set({
         title: "the title is required",
@@ -583,11 +618,6 @@ add_task(async function test_themeIcons() {
     isPrivileged: true,
     manifest: {
       permissions: ["urlbar"],
-    },
-    files: {
-      "icons/default.png": imageBuffer,
-      "icons/light.png": imageBuffer,
-      "icons/dark.png": imageBuffer,
     },
     background() {
       browser.urlbar.contextualTip.set({
@@ -690,13 +720,6 @@ add_task(async function test_themeIcons_size_16() {
     isPrivileged: true,
     manifest: {
       permissions: ["urlbar"],
-    },
-    files: {
-      "icons/default.png": imageBuffer,
-      "icons/light-16.png": imageBuffer,
-      "icons/dark-16.png": imageBuffer,
-      "icons/light-32.png": imageBuffer,
-      "icons/dark-32.png": imageBuffer,
     },
     background() {
       browser.urlbar.contextualTip.set({
@@ -807,13 +830,6 @@ add_task(async function test_themeIcons_size_32() {
     isPrivileged: true,
     manifest: {
       permissions: ["urlbar"],
-    },
-    files: {
-      "icons/default.png": imageBuffer,
-      "icons/light-16.png": imageBuffer,
-      "icons/dark-16.png": imageBuffer,
-      "icons/light-32.png": imageBuffer,
-      "icons/dark-32.png": imageBuffer,
     },
     background() {
       browser.urlbar.contextualTip.set({
