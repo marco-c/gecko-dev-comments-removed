@@ -49,14 +49,16 @@ class nsContentAreaDragDrop {
 
 
 
+
+
   static nsresult GetDragData(nsPIDOMWindowOuter* aWindow, nsIContent* aTarget,
                               nsIContent* aSelectionTargetNode,
                               bool aIsAltKeyPressed,
                               mozilla::dom::DataTransfer* aDataTransfer,
                               bool* aCanDrag,
                               mozilla::dom::Selection** aSelection,
-                              nsIContent** aDragNode,
-                              nsIPrincipal** aPrincipal);
+                              nsIContent** aDragNode, nsIPrincipal** aPrincipal,
+                              nsIContentSecurityPolicy** aCsp);
 };
 
 

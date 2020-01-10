@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsDragServiceProxy.h"
 #include "mozilla/dom/Document.h"
@@ -41,6 +41,11 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
     principal = mSourceNode->NodePrincipal();
   }
 
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  if (mSourceDocument) {
+    csp = mSourceDocument->GetCsp();
+  }
+
   LayoutDeviceIntRect dragRect;
   if (mHasImage || mSelection) {
     nsPresContext* pc;
@@ -60,7 +65,7 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
 
         auto surfaceData = maybeShm.value();
 
-        // Save the surface data to shared memory.
+        
         if (!surfaceData.IsReadable() || !surfaceData.get<char>()) {
           NS_WARNING("Failed to create shared memory for drag session.");
           return NS_ERROR_FAILURE;
@@ -68,7 +73,7 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
 
         mozilla::Unused << child->SendInvokeDragSession(
             dataTransfers, aActionType, Some(std::move(surfaceData)), stride,
-            dataSurface->GetFormat(), dragRect, IPC::Principal(principal));
+            dataSurface->GetFormat(), dragRect, IPC::Principal(principal), csp);
         StartDragSession();
         return NS_OK;
       }
@@ -77,7 +82,7 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
 
   mozilla::Unused << child->SendInvokeDragSession(
       dataTransfers, aActionType, Nothing(), 0, static_cast<SurfaceFormat>(0),
-      dragRect, IPC::Principal(principal));
+      dragRect, IPC::Principal(principal), csp);
   StartDragSession();
   return NS_OK;
 }
