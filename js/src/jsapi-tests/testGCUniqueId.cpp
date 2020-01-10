@@ -5,7 +5,6 @@
 
 
 
-#include "gc/GCInternals.h"
 #include "js/GCVector.h"
 
 #include "jsapi-tests/tests.h"

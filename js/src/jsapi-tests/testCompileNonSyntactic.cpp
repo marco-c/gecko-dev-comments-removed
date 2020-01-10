@@ -4,7 +4,6 @@
 
 #include "mozilla/Utf8.h"  
 
-#include "gc/GCInternals.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
