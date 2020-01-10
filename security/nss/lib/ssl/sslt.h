@@ -300,6 +300,12 @@ typedef struct SSLChannelInfoStr {
     PRUint16 cipherSuite;
 
     
+
+
+
+
+
+
     PRUint32 authKeyBits;
 
     

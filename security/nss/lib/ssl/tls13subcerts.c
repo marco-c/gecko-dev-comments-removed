@@ -350,6 +350,7 @@ tls13_VerifyCredentialSignature(sslSocket *ss, sslDelegatedCredential *dc)
     SSL3Hashes hash;
     sslBuffer dcBuf = SSL_BUFFER_EMPTY;
     CERTCertificate *cert = ss->sec.peerCert;
+    SECKEYPublicKey *pubKey = NULL;
 
     
     rv = tls13_AppendCredentialParams(&dcBuf, dc);
@@ -364,18 +365,26 @@ tls13_VerifyCredentialSignature(sslSocket *ss, sslDelegatedCredential *dc)
         goto loser;
     }
 
+    pubKey = SECKEY_ExtractPublicKey(&cert->subjectPublicKeyInfo);
+    if (pubKey == NULL) {
+        FATAL_ERROR(ss, SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE, internal_error);
+        goto loser;
+    }
+
     
-    rv = ssl3_VerifySignedHashesWithSpki(
-        ss, &cert->subjectPublicKeyInfo, dc->alg, &hash, &dc->signature);
+    rv = ssl_VerifySignedHashesWithPubKey(ss, pubKey, dc->alg,
+                                          &hash, &dc->signature);
     if (rv != SECSuccess) {
         FATAL_ERROR(ss, SSL_ERROR_DC_BAD_SIGNATURE, illegal_parameter);
         goto loser;
     }
 
+    SECKEY_DestroyPublicKey(pubKey);
     sslBuffer_Clear(&dcBuf);
     return SECSuccess;
 
 loser:
+    SECKEY_DestroyPublicKey(pubKey);
     sslBuffer_Clear(&dcBuf);
     return SECFailure;
 }
@@ -484,6 +493,148 @@ tls13_VerifyDelegatedCredential(sslSocket *ss,
     return rv;
 }
 
+static CERTSubjectPublicKeyInfo *
+tls13_MakePssSpki(const SECKEYPublicKey *pub, SECOidTag hashOid)
+{
+    SECStatus rv;
+    PLArenaPool *arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+    if (!arena) {
+        goto loser; 
+    }
+    CERTSubjectPublicKeyInfo *spki = PORT_ArenaZNew(arena, CERTSubjectPublicKeyInfo);
+    if (!spki) {
+        goto loser; 
+    }
+    spki->arena = arena;
+
+    SECKEYRSAPSSParams params = { 0 };
+    params.hashAlg = PORT_ArenaZNew(arena, SECAlgorithmID);
+    rv = SECOID_SetAlgorithmID(arena, params.hashAlg, hashOid, NULL);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    
+
+    SECAlgorithmID maskHashAlg;
+    memset(&maskHashAlg, 0, sizeof(maskHashAlg));
+    rv = SECOID_SetAlgorithmID(arena, &maskHashAlg, hashOid, NULL);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+    SECItem *maskHashAlgItem =
+        SEC_ASN1EncodeItem(arena, NULL, &maskHashAlg,
+                           SEC_ASN1_GET(SECOID_AlgorithmIDTemplate));
+    if (!maskHashAlgItem) {
+        
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        goto loser;
+    }
+
+    params.maskAlg = PORT_ArenaZNew(arena, SECAlgorithmID);
+    rv = SECOID_SetAlgorithmID(arena, params.maskAlg, SEC_OID_PKCS1_MGF1,
+                               maskHashAlgItem);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    SECItem *algorithmItem =
+        SEC_ASN1EncodeItem(arena, NULL, &params,
+                           SEC_ASN1_GET(SECKEY_RSAPSSParamsTemplate));
+    if (!algorithmItem) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        goto loser; 
+    }
+    rv = SECOID_SetAlgorithmID(arena, &spki->algorithm,
+                               SEC_OID_PKCS1_RSA_PSS_SIGNATURE, algorithmItem);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    PORT_Assert(pub->u.rsa.modulus.type == siUnsignedInteger);
+    PORT_Assert(pub->u.rsa.publicExponent.type == siUnsignedInteger);
+    SECItem *pubItem = SEC_ASN1EncodeItem(arena, &spki->subjectPublicKey, pub,
+                                          SEC_ASN1_GET(SECKEY_RSAPublicKeyTemplate));
+    if (!pubItem) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        goto loser;
+    }
+    spki->subjectPublicKey.len *= 8; 
+    return spki;
+
+loser:
+    PORT_FreeArena(arena, PR_FALSE);
+    return NULL;
+}
+
+static CERTSubjectPublicKeyInfo *
+tls13_MakeDcSpki(const SECKEYPublicKey *dcPub, SSLSignatureScheme dcCertVerifyAlg)
+{
+    switch (SECKEY_GetPublicKeyType(dcPub)) {
+        case rsaKey: {
+            SECOidTag hashOid;
+            switch (dcCertVerifyAlg) {
+                
+
+
+
+                case ssl_sig_rsa_pss_rsae_sha256:
+                case ssl_sig_rsa_pss_rsae_sha384:
+                case ssl_sig_rsa_pss_rsae_sha512:
+                    return SECKEY_CreateSubjectPublicKeyInfo(dcPub);
+
+                case ssl_sig_rsa_pss_pss_sha256:
+                    hashOid = SEC_OID_SHA256;
+                    break;
+                case ssl_sig_rsa_pss_pss_sha384:
+                    hashOid = SEC_OID_SHA384;
+                    break;
+                case ssl_sig_rsa_pss_pss_sha512:
+                    hashOid = SEC_OID_SHA512;
+                    break;
+
+                default:
+                    PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                    return NULL;
+            }
+            return tls13_MakePssSpki(dcPub, hashOid);
+        }
+
+        case ecKey: {
+            const sslNamedGroupDef *group = ssl_ECPubKey2NamedGroup(dcPub);
+            if (!group) {
+                PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                return NULL;
+            }
+            SSLSignatureScheme keyScheme;
+            switch (group->name) {
+                case ssl_grp_ec_secp256r1:
+                    keyScheme = ssl_sig_ecdsa_secp256r1_sha256;
+                    break;
+                case ssl_grp_ec_secp384r1:
+                    keyScheme = ssl_sig_ecdsa_secp384r1_sha384;
+                    break;
+                case ssl_grp_ec_secp521r1:
+                    keyScheme = ssl_sig_ecdsa_secp521r1_sha512;
+                    break;
+                default:
+                    PORT_SetError(SEC_ERROR_INVALID_KEY);
+                    return NULL;
+            }
+            if (keyScheme != dcCertVerifyAlg) {
+                PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                return NULL;
+            }
+            return SECKEY_CreateSubjectPublicKeyInfo(dcPub);
+        }
+
+        default:
+            break;
+    }
+
+    PORT_SetError(SEC_ERROR_INVALID_KEY);
+    return NULL;
+}
 
 
 
@@ -509,7 +660,7 @@ SSLExp_DelegateCredential(const CERTCertificate *cert,
 {
     SECStatus rv;
     SSL3Hashes hash;
-    SECItem *tmp = NULL;
+    CERTSubjectPublicKeyInfo *spki = NULL;
     SECKEYPrivateKey *tmpPriv = NULL;
     sslDelegatedCredential *dc = NULL;
     sslBuffer dcBuf = SSL_BUFFER_EMPTY;
@@ -527,17 +678,20 @@ SSLExp_DelegateCredential(const CERTCertificate *cert,
         goto loser;
     }
     dc->validTime = ((now - start) / PR_USEC_PER_SEC) + dcValidFor;
-    dc->expectedCertVerifyAlg = dcCertVerifyAlg;
 
-    tmp = SECKEY_EncodeDERSubjectPublicKeyInfo(dcPub);
-    if (!tmp) {
+    
+    spki = tls13_MakeDcSpki(dcPub, dcCertVerifyAlg);
+    if (!spki) {
         goto loser;
     }
-    
-    dc->derSpki.type = tmp->type;
-    dc->derSpki.data = tmp->data;
-    dc->derSpki.len = tmp->len;
-    PORT_Free(tmp);
+    dc->expectedCertVerifyAlg = dcCertVerifyAlg;
+
+    SECItem *spkiDer =
+        SEC_ASN1EncodeItem(NULL , &dc->derSpki, spki,
+                           SEC_ASN1_GET(CERT_SubjectPublicKeyInfoTemplate));
+    if (!spkiDer) {
+        goto loser;
+    }
 
     rv = ssl_SignatureSchemeFromSpki(&cert->subjectPublicKeyInfo,
                                      PR_TRUE , &dc->alg);
@@ -581,12 +735,14 @@ SSLExp_DelegateCredential(const CERTCertificate *cert,
         goto loser;
     }
 
+    SECKEY_DestroySubjectPublicKeyInfo(spki);
     SECKEY_DestroyPrivateKey(tmpPriv);
     tls13_DestroyDelegatedCredential(dc);
     sslBuffer_Clear(&dcBuf);
     return SECSuccess;
 
 loser:
+    SECKEY_DestroySubjectPublicKeyInfo(spki);
     SECKEY_DestroyPrivateKey(tmpPriv);
     tls13_DestroyDelegatedCredential(dc);
     sslBuffer_Clear(&dcBuf);
