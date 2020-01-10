@@ -2348,18 +2348,9 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       isChrome ||
       Preferences::GetBool("media.navigator.permission.disabled", false);
   bool isSecure = aWindow->IsSecureContext();
-  
-  
-  bool isHTTPS = false;
   bool isHandlingUserInput = EventStateManager::IsHandlingUserInput();
-  docURI->SchemeIs("https", &isHTTPS);
   nsCString host;
   nsresult rv = docURI->GetHost(host);
-  
-  bool isFile;
-  docURI->SchemeIs("file", &isFile);
-  bool isApp;
-  docURI->SchemeIs("app", &isApp);
 
   nsCOMPtr<nsIPrincipal> principal =
       nsGlobalWindowInner::Cast(aWindow)->GetPrincipal();
