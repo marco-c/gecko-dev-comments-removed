@@ -5973,6 +5973,14 @@ VARCACHE_PREF(
   bool, true
 )
 
+
+VARCACHE_PREF(
+  Live,
+  "media.webvtt.testing.events",
+  media_webvtt_testing_events,
+  bool, true
+)
+
 VARCACHE_PREF(
   Live,
   "media.webspeech.synth.force_global_queue",
