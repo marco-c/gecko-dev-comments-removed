@@ -9,11 +9,6 @@
 #include "AccessibleWrap.h"
 
 namespace mozilla {
-
-namespace dom {
-class BrowserBridgeChild;
-}
-
 namespace a11y {
 class DocAccessibleParent;
 
@@ -36,16 +31,6 @@ class OuterDocAccessible final : public AccessibleWrap {
 #if defined(XP_WIN)
   Accessible* RemoteChildDocAccessible() const;
 #endif
-
-  
-
-
-
-
-
-
-
-  void SendEmbedderAccessible(dom::BrowserBridgeChild* aBridge);
 
   
   virtual void Shutdown() override;

@@ -38,7 +38,13 @@ OuterDocAccessible::OuterDocAccessible(nsIContent* aContent,
     auto bridge = dom::BrowserBridgeChild::GetFrom(aContent);
     if (bridge) {
       
-      SendEmbedderAccessible(bridge);
+      
+      
+      DocAccessibleChild* ipcDoc = aDoc->IPCDoc();
+      if (ipcDoc) {
+        uint64_t id = reinterpret_cast<uintptr_t>(UniqueID());
+        bridge->SendSetEmbedderAccessible(ipcDoc, id);
+      }
     }
   }
 
@@ -52,16 +58,6 @@ OuterDocAccessible::OuterDocAccessible(nsIContent* aContent,
 }
 
 OuterDocAccessible::~OuterDocAccessible() {}
-
-void OuterDocAccessible::SendEmbedderAccessible(
-    dom::BrowserBridgeChild* aBridge) {
-  MOZ_ASSERT(mDoc);
-  DocAccessibleChild* ipcDoc = mDoc->IPCDoc();
-  if (ipcDoc) {
-    uint64_t id = reinterpret_cast<uintptr_t>(UniqueID());
-    aBridge->SendSetEmbedderAccessible(ipcDoc, id);
-  }
-}
 
 
 
