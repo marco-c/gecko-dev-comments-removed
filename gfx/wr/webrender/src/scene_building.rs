@@ -353,8 +353,7 @@ pub struct SceneBuilder<'a> {
     external_scroll_mapper: ScrollOffsetMapper,
 
     
-    
-    found_explicit_tile_cache: bool,
+    picture_caching_initialized: bool,
 
     
     
@@ -407,7 +406,7 @@ impl<'a> SceneBuilder<'a> {
             root_pic_index: PictureIndex(0),
             rf_mapper: ReferenceFrameMapper::new(),
             external_scroll_mapper: ScrollOffsetMapper::new(),
-            found_explicit_tile_cache: false,
+            picture_caching_initialized: false,
             iframe_depth: 0,
             content_slice_count: 0,
             picture_cache_spatial_nodes: FastHashSet::default(),
@@ -502,6 +501,9 @@ impl<'a> SceneBuilder<'a> {
         if !self.config.global_enable_picture_caching {
             return;
         }
+
+        
+        debug_assert!(self.picture_caching_initialized);
 
         
         
@@ -1883,7 +1885,7 @@ impl<'a> SceneBuilder<'a> {
                             self.content_slice_count = stacking_context.init_picture_caching(&self.clip_scroll_tree);
 
                             
-                            self.found_explicit_tile_cache = true;
+                            self.picture_caching_initialized = true;
                         }
 
                         
@@ -1904,6 +1906,14 @@ impl<'a> SceneBuilder<'a> {
         };
 
         if self.sc_stack.is_empty() {
+            
+            
+            
+            if !self.picture_caching_initialized {
+                self.content_slice_count = stacking_context.init_picture_caching(&self.clip_scroll_tree);
+                self.picture_caching_initialized = true;
+            }
+
             self.setup_picture_caching(
                 &mut stacking_context.prim_list,
             );
