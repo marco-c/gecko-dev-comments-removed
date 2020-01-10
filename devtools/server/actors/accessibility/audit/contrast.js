@@ -129,6 +129,40 @@ function getImageCtx(win, bounds, zoom, scale, node) {
 
 
 
+
+function getTransformedRGBA(rgba, colorMatrix) {
+  const transformedRGBA = [0, 0, 0, 0];
+
+  
+  
+  
+  
+  for (let i = 0; i < 16; i++) {
+    const row = i % 4;
+    const col = Math.floor(i / 4);
+    transformedRGBA[row] += colorMatrix[i] * rgba[col];
+  }
+
+  return transformedRGBA;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getBackgroundFor(node, { win, bounds, size, isBoldText }) {
   const zoom = 1 / getCurrentZoom(win);
   
@@ -194,6 +228,9 @@ function getBackgroundFor(node, { win, bounds, size, isBoldText }) {
 
 
 
+
+
+
 async function getContrastRatioFor(node, options = {}) {
   const computedStyle = CssLogic.getComputedStyle(node);
   const props = computedStyle ? getTextProperties(computedStyle) : null;
@@ -204,9 +241,12 @@ async function getContrastRatioFor(node, options = {}) {
     };
   }
 
-  const { color, isLargeText, isBoldText, size, opacity } = props;
-
-  const rgba = await getBackgroundFor(node, {
+  const { isLargeText, isBoldText, size, opacity } = props;
+  const { appliedColorMatrix } = options;
+  const color = appliedColorMatrix
+    ? getTransformedRGBA(props.color, appliedColorMatrix)
+    : props.color;
+  let rgba = await getBackgroundFor(node, {
     ...options,
     isBoldText,
     size,
@@ -235,13 +275,26 @@ async function getContrastRatioFor(node, options = {}) {
 
     return getContrastRatioAgainstBackground(
       {
-        value: [r, g, b, a],
+        value: appliedColorMatrix
+          ? getTransformedRGBA([r, g, b, a], appliedColorMatrix)
+          : [r, g, b, a],
       },
       {
         color,
         isLargeText,
       }
     );
+  }
+
+  if (appliedColorMatrix) {
+    rgba = rgba.value
+      ? {
+          value: getTransformedRGBA(rgba.value, appliedColorMatrix),
+        }
+      : {
+          min: getTransformedRGBA(rgba.min, appliedColorMatrix),
+          max: getTransformedRGBA(rgba.max, appliedColorMatrix),
+        };
   }
 
   return getContrastRatioAgainstBackground(rgba, {
