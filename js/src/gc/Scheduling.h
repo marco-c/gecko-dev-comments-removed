@@ -714,12 +714,12 @@ class ZoneHeapThreshold : public ZoneThreshold {
 
 class ZoneMallocThreshold : public ZoneThreshold {
  public:
-  void updateAfterGC(size_t lastBytes, const GCSchedulingTunables& tunables,
-                     const GCSchedulingState& state, const AutoLockGC& lock);
+  void updateAfterGC(size_t lastBytes, size_t baseBytes,
+                     const AutoLockGC& lock);
 
  private:
   static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
-                                        const GCSchedulingTunables& tunables,
+                                        size_t baseBytes,
                                         const AutoLockGC& lock);
 };
 
