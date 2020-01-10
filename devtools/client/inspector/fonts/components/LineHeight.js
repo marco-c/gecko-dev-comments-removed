@@ -27,7 +27,13 @@ class LineHeight extends PureComponent {
   }
 
   render() {
-    const value = parseFloat(this.props.value);
+    
+    
+    
+    
+    const isKeywordValue = this.props.value === "normal";
+    const value = isKeywordValue ? 1.2 : parseFloat(this.props.value);
+
     
     
     const unit = getUnitFromValue(this.props.value) || "";
@@ -70,9 +76,14 @@ class LineHeight extends PureComponent {
       name: "line-height",
       onChange: this.props.onChange,
       step: getStepForUnit(unit),
+      
+      showInput: !isKeywordValue,
+      showUnit: !isKeywordValue,
       unit,
       unitOptions: ["", "em", "%", "px"],
       value,
+      
+      valueLabel: isKeywordValue ? this.props.value : null,
     });
   }
 }

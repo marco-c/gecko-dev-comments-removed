@@ -62,8 +62,6 @@ class FontInspector {
     this.document = window.document;
     this.inspector = inspector;
     
-    this.keywordValues = new Set(this.getFontPropertyValueKeywords());
-    
     
     this.node = null;
     this.nodeComputedStyle = {};
@@ -91,6 +89,35 @@ class FontInspector {
     this.updateFontVariationSettings = this.updateFontVariationSettings.bind(this);
 
     this.init();
+  }
+
+  
+
+
+
+
+
+
+  get skipValuesMap() {
+    if (!this._skipValuesMap) {
+      this._skipValuesMap = new Map();
+
+      for (const property of FONT_PROPERTIES) {
+        const values = this.cssProperties.getValues(property);
+
+        switch (property) {
+          case "line-height":
+          case "letter-spacing":
+            
+            this.skipValuesMap.set(property, values.filter(value => value !== "normal"));
+            break;
+          default:
+            this.skipValuesMap.set(property, values);
+        }
+      }
+    }
+
+    return this._skipValuesMap;
   }
 
   init() {
@@ -311,14 +338,6 @@ class FontInspector {
     }
 
     
-    
-    
-
-    properties["line-height"] =
-      await this.convertUnits("line-height", parseFloat(properties["line-height"]),
-                              "px", "");
-
-    
     for (const rule of this.ruleView.rules) {
       if (rule.inherited) {
         continue;
@@ -326,7 +345,7 @@ class FontInspector {
 
       for (const textProp of rule.textProps) {
         if (FONT_PROPERTIES.includes(textProp.name) &&
-            !this.keywordValues.has(textProp.value) &&
+            !this.skipValuesMap.get(textProp.name).includes(textProp.value) &&
             !textProp.value.includes("calc(") &&
             !textProp.value.includes("var(") &&
             !textProp.overridden &&
@@ -337,31 +356,6 @@ class FontInspector {
     }
 
     return properties;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getFontPropertyValueKeywords() {
-    return [
-      "font-size",
-      "font-weight",
-      "font-stretch",
-      "letter-spacing",
-      "line-height",
-    ].reduce((acc, property) => {
-      return acc.concat(this.cssProperties.getValues(property));
-    }, []);
   }
 
   async getFontsForNode(node, options) {
