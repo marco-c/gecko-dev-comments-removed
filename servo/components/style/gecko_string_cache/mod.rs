@@ -202,8 +202,7 @@ impl WeakAtom {
     where
         F: FnOnce(&str) -> Output,
     {
-        let mut buffer = mem::MaybeUninit::<[u8; 64]>::uninit();
-        let buffer = unsafe { &mut *buffer.as_mut_ptr() };
+        let mut buffer: [u8; 64] = unsafe { mem::uninitialized() };
 
         
         
@@ -272,8 +271,7 @@ impl WeakAtom {
         }
 
         let slice = self.as_slice();
-        let mut buffer = mem::MaybeUninit::<[u16; 64]>::uninit();
-        let buffer = unsafe { &mut *buffer.as_mut_ptr() };
+        let mut buffer: [u16; 64] = unsafe { mem::uninitialized() };
         let mut vec;
         let mutable_slice = if let Some(buffer_prefix) = buffer.get_mut(..slice.len()) {
             buffer_prefix.copy_from_slice(slice);
