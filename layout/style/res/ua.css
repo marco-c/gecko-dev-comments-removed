@@ -344,6 +344,14 @@
   transform: none !important;
 }
 
+xul|*:fullscreen:not(:root):not([hidden="true"]) {
+  
+
+
+
+  display: block;
+}
+
 
 
 *|*:fullscreen:not(:root):not(:-moz-browser-frame) {
