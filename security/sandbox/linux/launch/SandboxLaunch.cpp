@@ -104,10 +104,24 @@ static bool IsDisplayLocal() {
     
     
     
-    if (access("/tmp/.X11-unix", X_OK) != 0) {
-      NS_ERROR(
-          "/tmp/.X11-unix is inaccessible; can't isolate network"
-          " namespace in content processes");
+    
+    
+    const char* const displayStr = PR_GetEnv("DISPLAY");
+    nsAutoCString socketPath("/tmp/.X11-unix");
+    int accessFlags = X_OK;
+    int displayNum;
+    
+    
+    if (displayStr && (sscanf(displayStr, ":%d", &displayNum) == 1 ||
+                       sscanf(displayStr, "unix:%d", &displayNum) == 1)) {
+      socketPath.AppendPrintf("/X%d", displayNum);
+      accessFlags = R_OK | W_OK;
+    }
+    if (access(socketPath.get(), accessFlags) != 0) {
+      SANDBOX_LOG_ERROR(
+          "%s is inaccessible (%s); can't isolate network namespace in"
+          " content processes",
+          socketPath.get(), strerror(errno));
       return false;
     }
   }
