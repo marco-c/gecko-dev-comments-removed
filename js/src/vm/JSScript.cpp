@@ -5682,9 +5682,9 @@ void JSScript::resetWarmUpCounterToDelayIonCompilation() {
   
   
 
-  if (warmUpCount > jit::JitOptions.baselineWarmUpThreshold) {
+  if (warmUpCount > jit::JitOptions.baselineJitWarmUpThreshold) {
     incWarmUpResetCounter();
-    warmUpCount = jit::JitOptions.baselineWarmUpThreshold;
+    warmUpCount = jit::JitOptions.baselineJitWarmUpThreshold;
   }
 }
 

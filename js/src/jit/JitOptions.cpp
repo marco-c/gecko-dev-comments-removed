@@ -160,7 +160,7 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
-  SET_DEFAULT(baselineWarmUpThreshold, 50);
+  SET_DEFAULT(baselineJitWarmUpThreshold, 50);
 
   
   
@@ -289,7 +289,7 @@ void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
 
 void DefaultJitOptions::setEagerBaselineCompilation() {
   baselineInterpreterWarmUpThreshold = 0;
-  baselineWarmUpThreshold = 0;
+  baselineJitWarmUpThreshold = 0;
 }
 
 void DefaultJitOptions::setEagerIonCompilation() {
