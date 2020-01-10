@@ -32,6 +32,9 @@ const TEST_URI = `data:text/html,<meta charset=utf8>console API calls<script>
 
 add_task(async function() {
   
+  await pushPref("devtools.browserconsole.filterContentMessages", true);
+
+  
   await pushPref("devtools.browserconsole.contentMessages", true);
 
   const hud = await HUDService.toggleBrowserConsole();
