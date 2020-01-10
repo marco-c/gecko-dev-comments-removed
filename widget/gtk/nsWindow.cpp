@@ -3714,6 +3714,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       
       
+      if (mWindowType == eWindowType_toplevel &&
+          (mHasAlphaVisual || mTransparencyBitmapForTitlebar)) {
+        mIsTransparent = true;
+      }
+
+      
+      
+      
       NativeResize();
 
       if (mWindowType == eWindowType_dialog) {
@@ -4444,12 +4452,7 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
 
   if (mIsTransparent == isTransparent) {
     return;
-  }
-  if (mWindowType != eWindowType_popup && !mHasAlphaVisual &&
-      !mTransparencyBitmapForTitlebar) {
-    
-    
-    
+  } else if (mWindowType != eWindowType_popup) {
     NS_WARNING("Cannot set transparency mode on non-popup windows.");
     return;
   }
@@ -4461,12 +4464,9 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
 
   mIsTransparent = isTransparent;
 
-  if (!mHasAlphaVisual && !mTransparencyBitmapForTitlebar) {
-    
-    
-    
-    CleanLayerManagerRecursive();
-  }
+  
+  
+  CleanLayerManagerRecursive();
 }
 
 nsTransparencyMode nsWindow::GetTransparencyMode() {
