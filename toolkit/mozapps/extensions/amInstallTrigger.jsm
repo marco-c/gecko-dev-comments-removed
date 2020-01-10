@@ -71,33 +71,9 @@ RemoteMediator.prototype = {
     install.mimetype = XPINSTALL_MIMETYPE;
     install.triggeringPrincipal = principal;
     install.callbackID = callbackID;
+    install.browsingContext = BrowsingContext.getFromWindow(window);
 
-    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-      
-      
-      
-      let element = window.frameElement;
-      while (
-        element &&
-        !element.ownerDocument.nodePrincipal.isSystemPrincipal
-      ) {
-        element = element.ownerGlobal.frameElement;
-      }
-
-      if (element) {
-        let listener = Cc["@mozilla.org/addons/integration;1"].getService();
-        return listener.wrappedJSObject.receiveMessage({
-          name: MSG_INSTALL_ADDON,
-          target: element,
-          data: install,
-        });
-      }
-    }
-
-    
-    let messageManager = window.docShell.messageManager;
-
-    return messageManager.sendSyncMessage(MSG_INSTALL_ADDON, install)[0];
+    return Services.cpmm.sendSyncMessage(MSG_INSTALL_ADDON, install)[0];
   },
 
   _addCallback(callback) {

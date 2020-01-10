@@ -2333,7 +2333,18 @@ var AddonManagerInternal = {
       } else if (
         aInstallingPrincipal.isNullPrincipal ||
         !aBrowser.contentPrincipal ||
-        !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal) ||
+        
+        
+        
+        
+        
+        
+        
+        
+        !(
+          aBrowser.contentPrincipal.isNullPrincipal ||
+          aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)
+        ) ||
         !this.isInstallAllowedByPolicy(
           aInstallingPrincipal,
           aInstall,
