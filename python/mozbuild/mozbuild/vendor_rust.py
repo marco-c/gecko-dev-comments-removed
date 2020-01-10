@@ -152,13 +152,13 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         'MIT',
         'MPL-2.0',
         'Unlicense',
+        'Zlib',
     ]
 
     
     
     BUILDTIME_LICENSE_WHITELIST = {
         'BSD-3-Clause': [
-            'adler32',
             'bindgen',
             'fuchsia-zircon',
             'fuchsia-zircon-sys',
