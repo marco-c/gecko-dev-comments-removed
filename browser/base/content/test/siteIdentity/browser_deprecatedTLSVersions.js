@@ -21,7 +21,17 @@ function getConnectionState() {
   return document.getElementById("identity-popup").getAttribute("connection");
 }
 
+registerCleanupFunction(function() {
+  
+  Services.prefs.clearUserPref("security.tls.version.min");
+  Services.prefs.clearUserPref("security.tls.version.max");
+});
+
 add_task(async function() {
+  
+  Services.prefs.setIntPref("security.tls.version.min", 1);
+  Services.prefs.setIntPref("security.tls.version.max", 4);
+
   await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
     
     await BrowserTestUtils.loadURI(browser, HTTPS_TLS1_0);
