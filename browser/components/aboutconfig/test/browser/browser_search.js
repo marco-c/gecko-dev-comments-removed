@@ -54,6 +54,10 @@ add_task(async function test_search() {
     
     this.search("aJunkValueasdf");
     Assert.equal(this.rows.length, 1);
+    
+    Assert.ok(!this.prefsTable.hasAttribute("has-visible-prefs"));
+    let addRow = this.getRow("aJunkValueasdf");
+    Assert.equal(getComputedStyle(addRow.valueCell)["border-top-width"], "0px");
 
     
     EventUtils.sendKey("escape");
@@ -68,10 +72,15 @@ add_task(async function test_search() {
     
     this.search("TEST.aboutconfig.a");
     Assert.equal(this.rows.length, 3);
+    
+    Assert.ok(this.prefsTable.hasAttribute("has-visible-prefs"));
+    addRow = this.getRow("TEST.aboutconfig.a");
+    Assert.equal(getComputedStyle(addRow.valueCell)["border-top-width"], "1px");
 
     
     this.search("");
     Assert.equal(this.rows.length, 0);
+    Assert.ok(!this.prefsTable.hasAttribute("has-visible-prefs"));
   });
 });
 
