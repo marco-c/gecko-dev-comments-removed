@@ -2601,7 +2601,8 @@ var SessionStoreInternal = {
       );
     }
 
-    return aBrowsingContext.changeFrameRemoteness(aRemoteType, aSwitchId);
+    let wg = aBrowsingContext.embedderWindowGlobal;
+    return wg.changeFrameRemoteness(aBrowsingContext, aRemoteType, aSwitchId);
   },
 
   
