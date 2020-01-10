@@ -65,6 +65,15 @@ class BrowserAppShim {
     return this.selectedBrowser;
   }
 
+  
+  
+  get deck() {
+    return {
+      addEventListener() {},
+      removeEventListener() {},
+    };
+  }
+
   static getBrowserApp(window) {
     let { BrowserApp } = window;
 
