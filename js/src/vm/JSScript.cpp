@@ -53,6 +53,7 @@
 #include "vm/BytecodeUtil.h"
 #include "vm/Compression.h"
 #include "vm/Debugger.h"
+#include "vm/HelperThreads.h"  
 #include "vm/JSAtom.h"
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
@@ -2216,6 +2217,11 @@ const uint8_t* ScriptSource::binASTSource() {
 #endif 
 
 bool ScriptSource::tryCompressOffThread(JSContext* cx) {
+  
+  
+  
+  
+
   if (!hasUncompressedSource()) {
     
     return true;
@@ -2491,6 +2497,71 @@ void SourceCompressionTask::complete() {
     ScriptSource* source = sourceHolder_.get();
     source->triggerConvertToCompressedSourceFromTask(std::move(*resultString_));
   }
+}
+
+bool js::SynchronouslyCompressSource(JSContext* cx,
+                                     JS::Handle<JSScript*> script) {
+  MOZ_ASSERT(!cx->isHelperThreadContext(),
+             "should only sync-compress on the main thread");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RunPendingSourceCompressions(cx->runtime());
+
+  ScriptSource* ss = script->scriptSource();
+  MOZ_ASSERT(!ss->pinnedUnitsStack_,
+             "can't synchronously compress while source units are in use");
+
+  
+  
+  if (ss->hasCompressedSource()) {
+    return true;
+  }
+
+  MOZ_ASSERT(ss->hasUncompressedSource(),
+             "shouldn't be compressing uncompressible source");
+
+  
+  {
+#ifdef DEBUG
+    uint32_t sourceRefs = ss->refs;
+#endif
+    MOZ_ASSERT(sourceRefs > 0, "at least |script| here should have a ref");
+
+    
+    
+    
+    
+    auto task = MakeUnique<SourceCompressionTask>(cx->runtime(), ss);
+    if (!task) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+
+    MOZ_ASSERT(ss->refs > sourceRefs, "must have at least two refs now");
+
+    
+    
+    MOZ_ASSERT(!cx->isExceptionPending());
+    task->runTask();
+    MOZ_ASSERT(!cx->isExceptionPending());
+
+    
+    task->complete();
+
+    MOZ_ASSERT(!cx->isExceptionPending());
+  }
+
+  
+  return ss->hasCompressedSource();
 }
 
 void ScriptSource::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,

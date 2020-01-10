@@ -489,6 +489,10 @@ struct SourceTypeTraits<char16_t> {
   }
 };
 
+
+extern MOZ_MUST_USE bool SynchronouslyCompressSource(
+    JSContext* cx, JS::Handle<JSScript*> script);
+
 class ScriptSourceHolder;
 
 
@@ -626,6 +630,9 @@ class ScriptSource {
                        Retrievable<mozilla::Utf8Unit>, Retrievable<char16_t>,
                        Missing, BinAST>;
   SourceType data;
+
+  friend bool SynchronouslyCompressSource(JSContext* cx,
+                                          JS::Handle<JSScript*> script);
 
   
   
