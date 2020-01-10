@@ -22,6 +22,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
 const TELEMETRY_6_FIRST_RESULTS = "PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS";
+const NOTIFICATIONS = {
+  QUERY_STARTED: "onQueryStarted",
+  QUERY_RESULTS: "onQueryResults",
+  QUERY_RESULT_REMOVED: "onQueryResultRemoved",
+  QUERY_CANCELLED: "onQueryCancelled",
+  QUERY_FINISHED: "onQueryFinished",
+  VIEW_OPEN: "onViewOpen",
+  VIEW_CLOSE: "onViewClose",
+};
+
+
 
 
 
@@ -69,6 +80,10 @@ class UrlbarController {
     this.engagementEvent = new TelemetryEvent(options.eventTelemetryCategory);
   }
 
+  get NOTIFICATIONS() {
+    return NOTIFICATIONS;
+  }
+
   
 
 
@@ -113,7 +128,7 @@ class UrlbarController {
     
     
     
-    this._notify("onQueryStarted", queryContext);
+    this.notify(NOTIFICATIONS.QUERY_STARTED, queryContext);
     await this.manager.startQuery(queryContext, this);
     
     
@@ -124,7 +139,7 @@ class UrlbarController {
       contextWrapper.done = true;
       
       this.manager.cancelQuery(queryContext);
-      this._notify("onQueryFinished", queryContext);
+      this.notify(NOTIFICATIONS.QUERY_FINISHED, queryContext);
     }
     return queryContext;
   }
@@ -145,8 +160,8 @@ class UrlbarController {
     TelemetryStopwatch.cancel(TELEMETRY_1ST_RESULT, queryContext);
     TelemetryStopwatch.cancel(TELEMETRY_6_FIRST_RESULTS, queryContext);
     this.manager.cancelQuery(queryContext);
-    this._notify("onQueryCancelled", queryContext);
-    this._notify("onQueryFinished", queryContext);
+    this.notify(NOTIFICATIONS.QUERY_CANCELLED, queryContext);
+    this.notify(NOTIFICATIONS.QUERY_FINISHED, queryContext);
   }
 
   
@@ -175,7 +190,7 @@ class UrlbarController {
       );
     }
 
-    this._notify("onQueryResults", queryContext);
+    this.notify(NOTIFICATIONS.QUERY_RESULTS, queryContext);
     
     queryContext.lastResultCount = queryContext.results.length;
   }
@@ -210,7 +225,6 @@ class UrlbarController {
 
   viewContextChanged() {
     this.cancelQuery();
-    this._notify("onViewContextChanged");
   }
 
   
@@ -561,7 +575,7 @@ class UrlbarController {
     }
 
     queryContext.results.splice(index, 1);
-    this._notify("onQueryResultRemoved", index);
+    this.notify(NOTIFICATIONS.QUERY_RESULT_REMOVED, index);
 
     PlacesUtils.history
       .remove(selectedResult.payload.url)
@@ -575,7 +589,7 @@ class UrlbarController {
 
 
 
-  _notify(name, ...params) {
+  notify(name, ...params) {
     for (let listener of this._listeners) {
       
       if (typeof listener[name] != "undefined") {
