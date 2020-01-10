@@ -43,7 +43,9 @@ class ContainerWriter {
 
 
 
-  virtual nsresult SetMetadata(TrackMetadataBase* aMetadata) = 0;
+
+  virtual nsresult SetMetadata(
+      const nsTArray<RefPtr<TrackMetadataBase>>& aMetadata) = 0;
 
   
 

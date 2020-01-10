@@ -32,7 +32,8 @@ class OggWriter : public ContainerWriter {
                             uint32_t aFlags = 0) override;
 
   
-  nsresult SetMetadata(TrackMetadataBase* aMetadata) override;
+  nsresult SetMetadata(
+      const nsTArray<RefPtr<TrackMetadataBase>>& aMetadata) override;
 
  private:
   nsresult Init();
