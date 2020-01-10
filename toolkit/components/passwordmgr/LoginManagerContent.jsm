@@ -210,6 +210,12 @@ const observer = {
         break;
       }
 
+      
+      case "input": {
+        LoginManagerContent._maybeStopTreatingAsGeneratedPasswordField(aEvent);
+        break;
+      }
+
       case "keydown": {
         if (
           aEvent.keyCode == aEvent.DOM_VK_TAB ||
@@ -1522,6 +1528,27 @@ this.LoginManagerContent = {
     });
   },
 
+  _maybeStopTreatingAsGeneratedPasswordField(event) {
+    let passwordField = event.target;
+
+    
+    if (passwordField.value) {
+      return;
+    }
+
+    log("_maybeStopTreatingAsGeneratedPasswordField: Stopping");
+    
+    for (let eventType of ["blur", "change", "focus", "input"]) {
+      passwordField.removeEventListener(eventType, observer, {
+        capture: true,
+        mozSystemGroup: true,
+      });
+    }
+
+    
+    this._togglePasswordFieldMasking(passwordField, false);
+  },
+
   
 
 
@@ -1540,23 +1567,16 @@ this.LoginManagerContent = {
 
     this._highlightFilledField(passwordField);
 
-    passwordField.addEventListener("blur", observer, {
-      capture: true,
-      mozSystemGroup: true,
-    });
-    passwordField.addEventListener("focus", observer, {
-      capture: true,
-      mozSystemGroup: true,
-    });
-
+    
+    
+    for (let eventType of ["blur", "change", "focus", "input"]) {
+      passwordField.addEventListener(eventType, observer, {
+        capture: true,
+        mozSystemGroup: true,
+      });
+    }
     
     this._togglePasswordFieldMasking(passwordField, true);
-
-    
-    passwordField.addEventListener("change", observer, {
-      capture: true,
-      mozSystemGroup: true,
-    });
 
     if (PrivateBrowsingUtils.isContentWindowPrivate(win)) {
       log(
