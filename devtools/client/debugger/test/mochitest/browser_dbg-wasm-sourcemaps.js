@@ -7,26 +7,25 @@
 
 add_task(async function() {
   const dbg = await initDebugger("doc-wasm-sourcemaps.html");
-
-  
-  
-  await waitForSource(dbg, "doc-wasm-sourcemaps");
-
-  await waitForLoadedSources(dbg);
   await reload(dbg);
+
+  
+  
   await waitForPaused(dbg);
+  await resume(dbg);
 
-  await waitForLoadedSource(dbg, "doc-wasm-sourcemaps");
-  assertPausedLocation(dbg);
+  await waitForSources(dbg, "doc-wasm-sourcemaps.html", "fib.c");
 
-  await waitForSource(dbg, "fib.c");
-
+  
   ok(true, "Original sources exist");
-  const mainSrc = findSource(dbg, "fib.c");
-
-  await selectSource(dbg, mainSrc);
+  await selectSource(dbg, "fib.c");
   await addBreakpoint(dbg, "fib.c", 10);
+  reload(dbg);
 
+  
+  
+  await waitForPaused(dbg);
+  await selectSource(dbg, "fib.c");
   resume(dbg);
 
   await waitForPaused(dbg, "fib.c");
@@ -38,6 +37,6 @@ add_task(async function() {
   is(
     firstFrameLocation.includes("fib.c"),
     true,
-    "It shall be to fib.c source"
+    "It shall be fib.c source"
   );
 });
