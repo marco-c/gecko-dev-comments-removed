@@ -184,6 +184,8 @@ class BasicCompositor : public Compositor {
 
   bool ShouldRecordFrames() const;
 
+  bool NeedToRecreateFullWindowRenderTarget() const;
+
   
   RefPtr<gfx::DrawTarget> mDrawTarget;
   
