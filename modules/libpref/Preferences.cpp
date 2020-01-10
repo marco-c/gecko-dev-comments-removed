@@ -5371,34 +5371,24 @@ static void InitPref(const char* aName, float aDefaultValue) {
 }
 
 template <typename T>
-static void InitVarCachePref(StaticPrefs::UpdatePolicy aPolicy,
+static void InitMirroredPref(StaticPrefs::MirrorKind aPolicy,
                              const nsACString& aName, T* aCache,
                              StripAtomic<T> aDefaultValue, bool aIsStartup,
                              bool aIsParent) {
   
   
-
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   if (aIsParent) {
     InitPref(PromiseFlatCString(aName).get(), aDefaultValue);
-    if (MOZ_LIKELY(aPolicy == StaticPrefs::UpdatePolicy::Live)) {
+    if (MOZ_LIKELY(aPolicy == StaticPrefs::MirrorKind::Always)) {
       *aCache = aDefaultValue;
     }
   }
 
-  if (MOZ_LIKELY(aPolicy == StaticPrefs::UpdatePolicy::Live) &&
+  
+  if (MOZ_LIKELY(aPolicy == StaticPrefs::MirrorKind::Always) &&
       MOZ_LIKELY(aIsStartup)) {
     AddVarCacheNoAssignment(aCache, aName, aDefaultValue);
   }
@@ -5411,6 +5401,7 @@ namespace StaticPrefs {
 
 void MaybeInitOncePrefs() {
   if (MOZ_LIKELY(sOncePrefRead)) {
+    
     
     return;
   }
@@ -5436,7 +5427,7 @@ void MaybeInitOncePrefs() {
 
 
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, default_value) \
+#define VARCACHE_PREF(mirror, name, base_id, full_id, cpp_type, default_value) \
   cpp_type sVarCache_##full_id(default_value);
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF
@@ -5471,8 +5462,8 @@ static void InitAll(bool aIsStartup) {
   if (isParent) {                     \
     InitPref_##cpp_type(name, value); \
   }
-#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
-  InitVarCachePref(UpdatePolicy::policy, NS_LITERAL_CSTRING(name),     \
+#define VARCACHE_PREF(mirror, name, base_id, full_id, cpp_type, value) \
+  InitMirroredPref(MirrorKind::mirror, NS_LITERAL_CSTRING(name),       \
                    &sVarCache_##full_id, value, aIsStartup, isParent);
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF
@@ -5498,10 +5489,11 @@ static void InitOncePrefs() {
   
   
   
+  
 #define PREF(name, cpp_type, value)
 #ifdef DEBUG
-#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)       \
-    if (UpdatePolicy::policy == UpdatePolicy::Once) {                          \
+#  define VARCACHE_PREF(mirror, name, base_id, full_id, cpp_type, value)       \
+    if (MirrorKind::mirror == MirrorKind::Once) {                              \
       MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);                                 \
       sVarCache_##full_id =                                                    \
           Internals::GetPref(name, StripAtomic<cpp_type>(value));              \
@@ -5521,8 +5513,8 @@ static void InitOncePrefs() {
                                                       std::move(checkPref)));  \
     }
 #else
-#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
-    if (UpdatePolicy::policy == UpdatePolicy::Once) {                    \
+#  define VARCACHE_PREF(mirror, name, base_id, full_id, cpp_type, value) \
+    if (MirrorKind::mirror == MirrorKind::Once) {                        \
       sVarCache_##full_id =                                              \
           Internals::GetPref(name, StripAtomic<cpp_type>(value));        \
     }
@@ -5611,9 +5603,10 @@ static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder) {
   
   
   
+  
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)   \
-  if (UpdatePolicy::policy == UpdatePolicy::Once) {                      \
+#define VARCACHE_PREF(mirror, name, base_id, full_id, cpp_type, value)   \
+  if (MirrorKind::mirror == MirrorKind::Once) {                          \
     SaveOncePrefToSharedMap(aBuilder, ONCE_PREF_NAME(name),              \
                             StripAtomic<cpp_type>(sVarCache_##full_id)); \
   }
@@ -5642,22 +5635,16 @@ static void InitStaticPrefsFromShared() {
   
   
   
-  
-  
-  
-  
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
-  {                                                                    \
-    StripAtomic<cpp_type> val;                                         \
-    nsresult rv;                                                       \
-    if (UpdatePolicy::policy == UpdatePolicy::Once) {                  \
-      rv = Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val);  \
-    } else {                                                           \
-      rv = Internals::GetSharedPrefValue(name, &val);                  \
-    }                                                                  \
-    MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));                      \
-    StaticPrefs::sVarCache_##full_id = val;                            \
+#define VARCACHE_PREF(mirror, name, base_id, full_id, cpp_type, value)  \
+  {                                                                     \
+    StripAtomic<cpp_type> val;                                          \
+    nsresult rv =                                                       \
+        (MirrorKind::mirror == MirrorKind::Once)                        \
+            ? Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val) \
+            : Internals::GetSharedPrefValue(name, &val);                \
+    MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));                       \
+    StaticPrefs::sVarCache_##full_id = val;                             \
   }
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF

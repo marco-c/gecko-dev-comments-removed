@@ -65,9 +65,16 @@ struct IsAtomic<std::atomic<T>> : TrueType {};
 namespace StaticPrefs {
 
 
-enum class UpdatePolicy {
-  Once,  
-  Live   
+#undef Always
+
+
+enum class MirrorKind {
+  
+  Once,
+
+  
+  
+  Always
 };
 
 void MaybeInitOncePrefs();

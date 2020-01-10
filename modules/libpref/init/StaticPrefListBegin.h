@@ -39,7 +39,7 @@ namespace StaticPrefs {
 #define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, default_value) \
   extern cpp_type sVarCache_##full_id;                                         \
   inline StripAtomic<cpp_type> full_id() {                                     \
-    if (UpdatePolicy::policy != UpdatePolicy::Once) {                          \
+    if (MirrorKind::policy != MirrorKind::Once) {                              \
       MOZ_DIAGNOSTIC_ASSERT(                                                   \
           IsAtomic<cpp_type>::value || NS_IsMainThread(),                      \
           "Non-atomic static pref '" name                                      \
