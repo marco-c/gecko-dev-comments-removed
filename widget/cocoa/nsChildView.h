@@ -705,6 +705,9 @@ class nsChildView final : public nsBaseWidget {
   
   RefPtr<mozilla::layers::NativeLayerCA> mContentLayer;
 
+  
+  LayoutDeviceIntRegion mContentLayerInvalidRegion;
+
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
