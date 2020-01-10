@@ -36,10 +36,8 @@ async function checkPopulateMatrix(t, sensorType) {
   
   assert_throws({ name: 'NotReadableError' }, () => sensor.populateMatrix(new Float32Array(16)));
 
-  if (window.SharedArrayBuffer) {
-    
-    assert_throws({ name: 'TypeError' }, () => sensor.populateMatrix(new Float32Array(new SharedArrayBuffer(16))));
-  }
+  
+  assert_throws({ name: 'TypeError' }, () => sensor.populateMatrix(new Float32Array(new SharedArrayBuffer(16))));
 
   sensor.start();
   await eventWatcher.wait_for("reading");
