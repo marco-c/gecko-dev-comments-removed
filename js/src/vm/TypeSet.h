@@ -27,6 +27,7 @@
 #include "js/Utility.h"      
 #include "js/Value.h"        
 #include "js/Vector.h"       
+#include "util/DiagnosticAssertions.h"
 #include "vm/TaggedProto.h"  
 
 struct JS_PUBLIC_API JSContext;
