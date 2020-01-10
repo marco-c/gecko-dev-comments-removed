@@ -808,8 +808,8 @@ class HuffmanPreludeReader {
   
   
   template <typename Entry>
-  MOZ_MUST_USE JS::Result<typename Entry::SymbolType> readSymbol(
-      const Entry& type, size_t index);
+  MOZ_MUST_USE JS::Result<typename Entry::SymbolType> readSymbol(const Entry&,
+                                                                 size_t index);
 
   
   
@@ -1012,9 +1012,10 @@ class HuffmanPreludeReader {
 
   
   template <>
-  MOZ_MUST_USE JS::Result<BinASTKind> readSymbol(const Sum& sum, size_t index) {
-    MOZ_ASSERT(index < sum.numberOfSymbols());
-    return sum.interfaceAt(index);
+  MOZ_MUST_USE JS::Result<BinASTKind> readSymbol(const Sum& entry,
+                                                 size_t index) {
+    MOZ_ASSERT(index < entry.numberOfSymbols());
+    return entry.interfaceAt(index);
   }
 
   
@@ -1102,8 +1103,9 @@ class HuffmanPreludeReader {
     BINJS_MOZ_TRY_DECL(value, readSymbol(number, 0 ));
     
     
-    
-    MOZ_TRY(table.impl.initWithSingleValue(cx_, std::move(value)));
+    MOZ_TRY(table.impl.initWithSingleValue(
+        cx_,
+         std::move(value)));
     return Ok();
   }
 
@@ -1173,9 +1175,10 @@ class HuffmanPreludeReader {
     }
     
     
-    
+    JSAtom* value = reader.metadata_->getAtom(index);
     MOZ_TRY(table.impl.initWithSingleValue(
-        cx_, std::move(reader.metadata_->getAtom(index))));
+        cx_,
+         std::move(value)));
     return Ok();
   }
 
@@ -1218,8 +1221,9 @@ class HuffmanPreludeReader {
         index == 0 ? nullptr : reader.metadata_->getAtom(index - 1);
     
     
-    
-    MOZ_TRY(table.impl.initWithSingleValue(cx_, std::move(symbol)));
+    MOZ_TRY(table.impl.initWithSingleValue(
+        cx_,
+         std::move(symbol)));
     return Ok();
   }
 
@@ -1253,8 +1257,9 @@ class HuffmanPreludeReader {
     BinASTVariant symbol = entry.variantAt(index);
     
     
-    
-    MOZ_TRY(table.impl.initWithSingleValue(cx_, std::move(symbol)));
+    MOZ_TRY(table.impl.initWithSingleValue(
+        cx_,
+         std::move(symbol)));
     return Ok();
   }
 
