@@ -1941,7 +1941,9 @@ wr::Epoch WebRenderBridgeParent::UpdateWebRender(
 }
 
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvScheduleComposite() {
-  ScheduleGenerateFrameAllRenderRoots();
+  
+  
+  ScheduleForcedGenerateFrame();
   return IPC_OK();
 }
 
