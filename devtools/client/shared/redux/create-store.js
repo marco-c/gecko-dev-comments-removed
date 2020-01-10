@@ -43,7 +43,7 @@ loader.lazyRequireGetter(
 
 const createStoreWithMiddleware = (opts = {}) => {
   const middleware = [];
-  if (!opts.disableTask) {
+  if (opts.enableTaskMiddleware) {
     middleware.push(task);
   }
   middleware.push(
@@ -79,7 +79,7 @@ module.exports = (
     shouldLog = false,
     initialState = undefined,
     thunkOptions,
-    disableTask = false,
+    enableTaskMiddleware = false,
   } = {}
 ) => {
   const reducer =
@@ -94,7 +94,7 @@ module.exports = (
   }
 
   const store = createStoreWithMiddleware({
-    disableTask,
+    enableTaskMiddleware,
     log: flags.testing && shouldLog,
     history: historyEntries,
     thunkOptions,

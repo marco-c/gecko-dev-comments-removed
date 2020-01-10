@@ -64,8 +64,8 @@ async function waitFor(
     interval,
     maxTries
   );
-   return condition();
- }
+  return condition();
+}
 
 
 
@@ -202,8 +202,27 @@ async function waitForElement(dbg, name, ...args) {
   return findElement(dbg, name, ...args);
 }
 
-async function waitForAllElements(dbg, name, count = 1) {
-  await waitUntil(() => findAllElements(dbg, name).length >= count);
+
+
+
+
+
+
+
+
+
+
+
+async function waitForAllElements(
+  dbg,
+  name,
+  count = 1,
+  countStrictlyEqual = false
+) {
+  await waitUntil(() => {
+    const elsCount = findAllElements(dbg, name).length;
+    return countStrictlyEqual ? elsCount === count : elsCount >= count;
+  });
   return findAllElements(dbg, name);
 }
 
@@ -419,7 +438,10 @@ function assertPausedAtSourceAndLine(dbg, expectedSourceId, expectedLine) {
   ok(frames.length >= 1, "Got at least one frame");
   const { sourceId, line } = frames[0].location;
   ok(sourceId == expectedSourceId, "Frame has correct source");
-  ok(line == expectedLine, `Frame paused at ${line}, but expected ${expectedLine}`);
+  ok(
+    line == expectedLine,
+    `Frame paused at ${line}, but expected ${expectedLine}`
+  );
 }
 
 
@@ -866,7 +888,10 @@ function findBreakpoint(dbg, url, line) {
 
 function findColumnBreakpoint(dbg, url, line, column) {
   const source = findSource(dbg, url);
-  const lineBreakpoints = dbg.selectors.getBreakpointsForSource(source.id, line);
+  const lineBreakpoints = dbg.selectors.getBreakpointsForSource(
+    source.id,
+    line
+  );
   return lineBreakpoints.find(bp => {
     return bp.generatedLocation.column === column;
   });
@@ -1046,12 +1071,11 @@ function invokeInTab(fnc, ...args) {
   });
 }
 
-
 function clickElementInTab(selector) {
   info(`click element ${selector} in tab`);
 
   return ContentTask.spawn(gBrowser.selectedBrowser, { selector }, function*({
-    selector
+    selector,
   }) {
     content.wrappedJSObject.document.querySelector(selector).click();
   });
@@ -1827,7 +1851,7 @@ async function checkEvaluateInTopFrame(dbg, text, expected) {
   ok(rval == expected, `Eval returned ${expected}`);
 }
 
-async function findConsoleMessage({toolbox}, query) {
+async function findConsoleMessage({ toolbox }, query) {
   const [message] = await findConsoleMessages(toolbox, query);
   const value = message.querySelector(".message-body").innerText;
   const link = message.querySelector(".frame-link-source-inner").innerText;
@@ -1843,7 +1867,7 @@ async function findConsoleMessages(toolbox, query) {
   );
 }
 
-async function hasConsoleMessage({toolbox}, msg) {
+async function hasConsoleMessage({ toolbox }, msg) {
   return waitFor(async () => {
     const messages = await findConsoleMessages(toolbox, msg);
     return messages.length > 0;

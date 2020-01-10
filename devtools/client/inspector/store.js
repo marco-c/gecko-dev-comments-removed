@@ -9,7 +9,6 @@ const reducers = require("devtools/client/inspector/reducers");
 
 module.exports = services =>
   createStore(reducers, {
-    disableTask: true,
     
     shouldLog: true,
     thunkOptions: {

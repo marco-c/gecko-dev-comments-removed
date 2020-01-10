@@ -9,6 +9,7 @@ const reducers = require("./reducers");
 
 module.exports = () =>
   createStore(reducers, {
+    enableTaskMiddleware: true,
     
     
   });
