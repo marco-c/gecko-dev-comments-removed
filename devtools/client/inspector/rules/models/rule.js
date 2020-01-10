@@ -75,8 +75,11 @@ class Rule {
     this.textProps = this.textProps.concat(this._getDisabledProperties());
 
     this.getUniqueSelector = this.getUniqueSelector.bind(this);
+    this.onDeclarationsUpdated = this.onDeclarationsUpdated.bind(this);
     this.onLocationChanged = this.onLocationChanged.bind(this);
     this.updateSourceLocation = this.updateSourceLocation.bind(this);
+
+    this.domRule.on("declarations-updated", this.onDeclarationsUpdated);
   }
 
   destroy() {
@@ -84,6 +87,7 @@ class Rule {
       this.unsubscribeSourceMap();
     }
 
+    this.domRule.off("declarations-updated", this.onDeclarationsUpdated);
     this.domRule.off("location-changed", this.onLocationChanged);
   }
 
@@ -849,6 +853,37 @@ class Rule {
       }
     }
     return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  onDeclarationsUpdated(declarations) {
+    this.textProps.forEach((textProp, index) => {
+      const isUsedPrevious = textProp.isUsed().used;
+      const isUsedCurrent = declarations[index].isUsed.used;
+
+      
+      if (isUsedPrevious === isUsedCurrent) {
+        return;
+      }
+
+      
+      
+      
+      textProp.isUsed = () => declarations[index].isUsed;
+
+      
+      textProp.editor.updatePropertyUsedIndicator();
+    });
   }
 
   

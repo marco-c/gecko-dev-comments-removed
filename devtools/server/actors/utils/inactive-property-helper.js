@@ -6,10 +6,16 @@
 
 const Services = require("Services");
 
-const PREF_UNUSED_CSS_ENABLED = "devtools.inspector.inactive.css.enabled";
+const INACTIVE_CSS_ENABLED = Services.prefs.getBoolPref(
+  "devtools.inspector.inactive.css.enabled",
+  false
+);
 
 class InactivePropertyHelper {
   
+
+
+
 
 
 
@@ -173,14 +179,20 @@ class InactivePropertyHelper {
     ];
   }
 
-  get unusedCssEnabled() {
-    if (!this._unusedCssEnabled) {
-      this._unusedCssEnabled = Services.prefs.getBoolPref(
-        PREF_UNUSED_CSS_ENABLED,
-        false
-      );
+  
+
+
+
+
+
+
+  get invalidProperties() {
+    if (!this._invalidProperties) {
+      const allProps = this.VALIDATORS.map(v => v.invalidProperties).flat();
+      this._invalidProperties = new Set(allProps);
     }
-    return this._unusedCssEnabled;
+
+    return this._invalidProperties;
   }
 
   
@@ -212,7 +224,10 @@ class InactivePropertyHelper {
 
 
   isPropertyUsed(el, elStyle, cssRule, property) {
-    if (!this.unusedCssEnabled) {
+    
+    
+    
+    if (!INACTIVE_CSS_ENABLED || !this.invalidProperties.has(property)) {
       return { used: true };
     }
 
