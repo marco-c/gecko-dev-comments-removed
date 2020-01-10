@@ -1606,7 +1606,8 @@ void KeyframeEffect::CalculateCumulativeChangeHint(
   mNeedsStyleData = false;
 
   nsPresContext* presContext =
-      nsContentUtils::GetContextForContent(mTarget->mElement);
+      mTarget ? nsContentUtils::GetContextForContent(mTarget->mElement)
+              : nullptr;
   if (!presContext) {
     
     
