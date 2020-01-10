@@ -14,13 +14,6 @@ from mozrunner.errors import RunnerNotStartedError
 
 
 here = os.path.abspath(os.path.dirname(__file__))
-if os.environ.get('SCRIPTSPATH', None) is not None:
-    
-    mozharness_dir = os.environ['SCRIPTSPATH']
-else:
-    
-    mozharness_dir = os.path.join(here, '../../mozharness')
-sys.path.insert(0, mozharness_dir)
 
 from raptor.raptor import RaptorDesktopFirefox, RaptorDesktopChrome, RaptorAndroid
 

@@ -28,12 +28,6 @@ from mozrunner import runners
 
 here = os.path.abspath(os.path.dirname(__file__))
 paths = [here]
-if os.environ.get('SCRIPTSPATH') is not None:
-    
-    paths.append(os.environ['SCRIPTSPATH'])
-else:
-    
-    paths.append(os.path.join(here, '..', '..', 'mozharness'))
 
 webext_dir = os.path.join(here, '..', 'webext')
 paths.append(webext_dir)
