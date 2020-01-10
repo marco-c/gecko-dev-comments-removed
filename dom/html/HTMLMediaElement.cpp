@@ -456,15 +456,6 @@ class HTMLMediaElement::StreamCaptureTrackSource
     return MediaSourceEnum::Other;
   }
 
-  CORSMode GetCORSMode() const override {
-    if (!mCapturedTrackSource) {
-      
-      return CORS_NONE;
-    }
-
-    return mCapturedTrackSource->GetCORSMode();
-  }
-
   void Stop() override {
     if (mElement && mElement->mSrcStream) {
       
@@ -4527,9 +4518,6 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder) {
 #endif
   }
 
-  
-  mDecoder->SetOutputStreamCORSMode(mCORSMode);
-
   if (!mOutputStreams.IsEmpty()) {
     mDecoder->SetNextOutputStreamTrackID(
         mNextAvailableMediaDecoderOutputTrackID);
@@ -5912,8 +5900,10 @@ already_AddRefed<nsIPrincipal> HTMLMediaElement::GetCurrentVideoPrincipal() {
 
 void HTMLMediaElement::NotifyDecoderPrincipalChanged() {
   RefPtr<nsIPrincipal> principal = GetCurrentPrincipal();
-
-  mDecoder->UpdateSameOriginStatus(!principal || IsCORSSameOrigin());
+  bool isSameOrigin = !principal || IsCORSSameOrigin();
+  mDecoder->UpdateSameOriginStatus(isSameOrigin);
+  mDecoder->SetOutputStreamPrincipal(isSameOrigin ? NodePrincipal()
+                                                  : principal.get());
 }
 
 void HTMLMediaElement::Invalidate(bool aImageSizeChanged,

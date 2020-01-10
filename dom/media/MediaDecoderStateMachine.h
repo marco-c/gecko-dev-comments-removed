@@ -186,8 +186,7 @@ class MediaDecoderStateMachine
   RefPtr<GenericPromise> RequestDebugInfo(
       dom::MediaDecoderStateMachineDebugInfo& aInfo);
 
-  void SetOutputStreamPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal);
-  void SetOutputStreamCORSMode(CORSMode aCORSMode);
+  void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
   
   void EnsureOutputStreamManager(MediaStreamGraph* aGraph);
   
@@ -687,9 +686,6 @@ class MediaDecoderStateMachine
   nsCOMPtr<nsIPrincipal> mOutputStreamPrincipal;
 
   
-  CORSMode mOutputStreamCORSMode = CORS_NONE;
-
-  
   
   TrackID mNextOutputStreamTrackID = 1;
 
@@ -746,10 +742,6 @@ class MediaDecoderStateMachine
   
   
   Mirror<bool> mLooping;
-
-  
-  
-  Mirror<bool> mSameOriginMedia;
 
   
   

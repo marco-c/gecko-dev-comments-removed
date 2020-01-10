@@ -7,7 +7,6 @@
 #ifndef OutputStreamManager_h
 #define OutputStreamManager_h
 
-#include "mozilla/CORSMode.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StateMirroring.h"
 #include "nsTArray.h"
@@ -40,8 +39,7 @@ class OutputStreamData {
   
   
   void AddTrack(TrackID aTrackID, MediaSegment::Type aType,
-                nsIPrincipal* aPrincipal, CORSMode aCORSMode,
-                bool aAsyncAddTrack);
+                nsIPrincipal* aPrincipal, bool aAsyncAddTrack);
   
   
   void RemoveTrack(TrackID aTrackID);
@@ -70,7 +68,6 @@ class OutputStreamManager {
  public:
   explicit OutputStreamManager(SourceMediaStream* aSourceStream,
                                TrackID aNextTrackID, nsIPrincipal* aPrincipal,
-                               CORSMode aCORSMode,
                                AbstractThread* aAbstractMainThread);
   
   void Add(DOMMediaStream* aDOMStream);
@@ -93,11 +90,6 @@ class OutputStreamManager {
   AbstractCanonical<PrincipalHandle>* CanonicalPrincipalHandle();
   
   void SetPrincipal(nsIPrincipal* aPrincipal);
-  
-  AbstractCanonical<CORSMode>* CanonicalCORSMode();
-  
-  
-  void SetCORSMode(CORSMode aCORSMode);
   
   TrackID NextTrackID() const;
   
@@ -155,7 +147,6 @@ class OutputStreamManager {
   nsTArray<Pair<TrackID, MediaSegment::Type>> mLiveTracks;
   Canonical<PrincipalHandle> mPrincipalHandle;
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  const CORSMode mCORSMode;
   TrackID mNextTrackID;
   bool mPlaying;
 };

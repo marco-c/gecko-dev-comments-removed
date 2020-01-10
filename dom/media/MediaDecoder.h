@@ -173,9 +173,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
 
   
-  void SetOutputStreamCORSMode(CORSMode aCORSMode);
-
-  
   
   
   void AddOutputStream(DOMMediaStream* aStream);
@@ -188,6 +185,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   TrackID GetNextOutputStreamTrackID();
+
+  
+  void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
 
   
   virtual double GetDuration();
@@ -628,7 +628,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  Canonical<bool> mSameOriginMedia;
+  bool mSameOriginMedia;
 
   
   
@@ -646,9 +646,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   }
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
-  AbstractCanonical<bool>* CanonicalSameOriginMedia() {
-    return &mSameOriginMedia;
-  }
 
  private:
   
