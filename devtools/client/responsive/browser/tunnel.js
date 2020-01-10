@@ -451,11 +451,8 @@ MessageManagerTunnel.prototype = {
     "Browser:Reload",
     "PageStyle:Disable",
     "PageStyle:Switch",
-    
-    "Forms:DismissedDropDown",
     "Forms:MouseOut",
     "Forms:MouseOver",
-    "Forms:SelectDropDownItem",
     
     "SessionStore:flush",
     "SessionStore:restoreHistory",
@@ -477,14 +474,10 @@ MessageManagerTunnel.prototype = {
     
     "DOMTitleChanged",
     "ImageDocumentLoaded",
-    "Forms:ShowDropDown",
-    "Forms:HideDropDown",
     "InPermitUnload",
     "PermitUnload",
     
     "contextmenu",
-    
-    "Forms:UpdateDropDown",
     
     "SessionStore:update",
     
