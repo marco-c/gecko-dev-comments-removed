@@ -484,7 +484,6 @@ class HTMLMediaElement::MediaStreamRenderer
 
     mWatchManager.Unwatch(mGraphTimeDummy->mStream->Graph()->CurrentTime(),
                           &MediaStreamRenderer::UpdateGraphTime);
-    mGraphTimeOffset = Nothing();
 
     for (const auto& t : mAudioTracks) {
       if (t) {
@@ -636,7 +635,6 @@ class HTMLMediaElement::MediaStreamRenderer
   
   Watchable<GraphTime> mGraphTime = {0, "MediaStreamRenderer::mGraphTime"};
 
-  
   
   
   Maybe<GraphTime> mGraphTimeOffset;
