@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_mediahardwarekeysobservice_h__
-#define mozilla_dom_mediahardwarekeysobservice_h__
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSMANAGER_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSMANAGER_H_
 
 #include "MediaControlKeysEvent.h"
 

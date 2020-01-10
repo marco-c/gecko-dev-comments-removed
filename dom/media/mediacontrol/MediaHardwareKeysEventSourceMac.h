@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_mediahardwarekeyseventmac_h__
-#define mozilla_dom_mediahardwarekeyseventmac_h__
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIAHARDWAREKEYSEVENTSOURCEMAC_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIAHARDWAREKEYSEVENTSOURCEMAC_H_
 
 #import <ApplicationServices/ApplicationServices.h>
 #import <CoreFoundation/CoreFoundation.h>

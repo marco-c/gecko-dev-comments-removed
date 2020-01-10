@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_audiofocusmanager_h__
-#define mozilla_dom_audiofocusmanager_h__
+#ifndef DOM_MEDIA_MEDIACONTROL_AUDIOFOCUSMANAGER_H_
+#define DOM_MEDIA_MEDIACONTROL_AUDIOFOCUSMANAGER_H_
 
 #include "base/basictypes.h"
 #include "nsTArray.h"

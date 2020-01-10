@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_MediaControlUtils_h
-#define mozilla_dom_MediaControlUtils_h
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLUTILS_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLUTILS_H_
 
 #include "MediaController.h"
 #include "MediaControlService.h"

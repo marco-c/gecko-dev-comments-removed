@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_mediacontroller_h__
-#define mozilla_dom_mediacontroller_h__
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
 #include "nsDataHashtable.h"
 #include "nsISupportsImpl.h"

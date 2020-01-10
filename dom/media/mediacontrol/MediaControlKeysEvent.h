@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_mediahardwarekeysevent_h__
-#define mozilla_dom_mediahardwarekeysevent_h__
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSEVENT_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSEVENT_H_
 
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"

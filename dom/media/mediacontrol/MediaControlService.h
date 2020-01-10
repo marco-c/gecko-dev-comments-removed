@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_mediacontrolservice_h__
-#define mozilla_dom_mediacontrolservice_h__
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLSERVICE_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLSERVICE_H_
 
 #include "mozilla/AlreadyAddRefed.h"
 
