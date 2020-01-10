@@ -32,6 +32,7 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/StorageAccess.h"
+#include "mozilla/TextEditor.h"
 #include "mozilla/URLExtraData.h"
 #include <algorithm>
 
@@ -44,9 +45,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsILoadContext.h"
-#include "nsIEditor.h"
-#include "nsIEditorStyleSheets.h"
-#include "nsIPlaintextEditor.h"
 #include "nsITextControlFrame.h"
 #include "nsCommandManager.h"
 #include "nsCommandParams.h"
@@ -4306,93 +4304,173 @@ bool Document::ExecCommand(const nsAString& commandID, bool doShowUI,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<TextEditor> maybeHTMLEditor;
   if (commandData.IsCutOrCopyCommand()) {
     
     
     
     
     
+    maybeHTMLEditor = nsContentUtils::GetActiveEditor(GetPresContext());
+  } else {
+    maybeHTMLEditor = nsContentUtils::GetHTMLEditor(GetPresContext());
+    if (!maybeHTMLEditor) {
+      maybeHTMLEditor = nsContentUtils::GetActiveEditor(GetPresContext());
+    }
+  }
+
+  
+  
+  RefPtr<EditorCommand> editorCommand;
+  if (!maybeHTMLEditor) {
+    
+    
+    if (commandData.IsAvailableOnlyWhenEditable()) {
+      return false;
+    }
+  } else {
+    
+    
+    editorCommand = commandData.mGetEditorCommandFunc();
+    if (NS_WARN_IF(!editorCommand)) {
+      rv.Throw(NS_ERROR_FAILURE);
+      return false;
+    }
+
+    if (!editorCommand->IsCommandEnabled(commandData.mCommand,
+                                         maybeHTMLEditor)) {
+      
+      
+      if (commandData.IsAvailableOnlyWhenEditable()) {
+        
+        return false;
+      }
+      
+      editorCommand = nullptr;
+    }
+  }
+
+  
+  
+  if (!editorCommand) {
+    MOZ_ASSERT(!commandData.IsAvailableOnlyWhenEditable());
+
     
     
     
-    nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
-    if (docShell) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (commandData.IsCutOrCopyCommand()) {
+      nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
+      if (!docShell) {
+        return false;
+      }
       nsresult res = docShell->DoCommand(commandData.mXULCommandName);
       if (res == NS_SUCCESS_DOM_NO_OPERATION) {
         return false;
       }
       return NS_SUCCEEDED(res);
     }
-    return false;
-  }
 
-  
-  RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
-  if (!commandManager) {
-    rv.Throw(NS_ERROR_FAILURE);
-    return false;
-  }
+    
+    
+    
+    
+    
+    
+    RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
+    if (!commandManager) {
+      rv.Throw(NS_ERROR_FAILURE);
+      return false;
+    }
 
-  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
-  if (!window) {
-    rv.Throw(NS_ERROR_FAILURE);
-    return false;
-  }
+    nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
+    if (!window) {
+      rv.Throw(NS_ERROR_FAILURE);
+      return false;
+    }
 
-  
-  if (!commandManager->IsCommandEnabled(
-          nsDependentCString(commandData.mXULCommandName), window)) {
-    return false;
-  }
+    
+    if (!commandManager->IsCommandEnabled(
+            nsDependentCString(commandData.mXULCommandName), window)) {
+      return false;
+    }
 
-  EditorCommandParamType expectedParamType =
-      EditorCommand::GetParamType(commandData.mCommand);
-  if (adjustedValue.IsEmpty() ||
-      expectedParamType == EditorCommandParamType::None) {
-    MOZ_ASSERT(!(EditorCommand::GetParamType(commandData.mCommand) &
-                 EditorCommandParamType::Bool));
+    MOZ_ASSERT(commandData.IsPasteCommand());
     rv =
         commandManager->DoCommand(commandData.mXULCommandName, nullptr, window);
-    return !rv.Failed();
+    return !rv.ErrorCodeIs(NS_SUCCESS_DOM_NO_OPERATION) && !rv.Failed();
   }
 
   
-  RefPtr<nsCommandParams> params = new nsCommandParams();
-  if (!!(expectedParamType & EditorCommandParamType::Bool)) {
-    MOZ_ASSERT(!!(expectedParamType & EditorCommandParamType::StateAttribute));
+  
+  MOZ_ASSERT(maybeHTMLEditor);
+
+  EditorCommandParamType paramType =
+      EditorCommand::GetParamType(commandData.mCommand);
+
+  
+  
+  if (adjustedValue.IsEmpty() || paramType == EditorCommandParamType::None) {
+    MOZ_ASSERT(!(paramType & EditorCommandParamType::Bool));
+    rv = editorCommand->DoCommand(commandData.mCommand, *maybeHTMLEditor);
+    return !rv.ErrorCodeIs(NS_SUCCESS_DOM_NO_OPERATION) && !rv.Failed();
+  }
+
+  
+  
+  
+  if (!!(paramType & EditorCommandParamType::Bool)) {
     MOZ_ASSERT(adjustedValue.EqualsLiteral("true") ||
                adjustedValue.EqualsLiteral("false"));
-    rv =
-        params->SetBool("state_attribute", adjustedValue.EqualsLiteral("true"));
-    if (rv.Failed()) {
-      return false;
-    }
-  } else if (!!(expectedParamType & EditorCommandParamType::String)) {
-    if (!!(expectedParamType & EditorCommandParamType::StateAttribute)) {
-      rv = params->SetString("state_attribute", adjustedValue);
-      if (rv.Failed()) {
-        return false;
-      }
-    } else {
-      MOZ_ASSERT(!!(expectedParamType & EditorCommandParamType::StateData));
-      rv = params->SetString("state_data", adjustedValue);
-      if (rv.Failed()) {
-        return false;
-      }
-    }
-  } else if (!!(expectedParamType & EditorCommandParamType::CString)) {
-    MOZ_ASSERT(!!(expectedParamType & EditorCommandParamType::StateAttribute));
-    NS_ConvertUTF16toUTF8 utf8Value(adjustedValue);
-    rv = params->SetCString("state_attribute", utf8Value);
-    if (rv.Failed()) {
-      return false;
-    }
-  } else {
-    MOZ_ASSERT_UNREACHABLE(
-        "Not yet implemented to handle new EditorCommandParamType");
+    rv = editorCommand->DoCommandParam(
+        commandData.mCommand, Some(adjustedValue.EqualsLiteral("true")),
+        *maybeHTMLEditor);
+    return !rv.ErrorCodeIs(NS_SUCCESS_DOM_NO_OPERATION) && !rv.Failed();
   }
-  rv = commandManager->DoCommand(commandData.mXULCommandName, params, window);
-  return !rv.Failed();
+
+  
+  
+  
+  
+  
+  if (!!(paramType & EditorCommandParamType::String)) {
+    MOZ_ASSERT(!adjustedValue.IsVoid());
+    rv = editorCommand->DoCommandParam(commandData.mCommand, adjustedValue,
+                                       *maybeHTMLEditor);
+    return !rv.ErrorCodeIs(NS_SUCCESS_DOM_NO_OPERATION) && !rv.Failed();
+  }
+
+  
+  
+  if (!!(paramType & EditorCommandParamType::CString)) {
+    NS_ConvertUTF16toUTF8 utf8Value(adjustedValue);
+    MOZ_ASSERT(!utf8Value.IsVoid());
+    rv = editorCommand->DoCommandParam(commandData.mCommand, utf8Value,
+                                       *maybeHTMLEditor);
+    return !rv.ErrorCodeIs(NS_SUCCESS_DOM_NO_OPERATION) && !rv.Failed();
+  }
+
+  MOZ_ASSERT_UNREACHABLE(
+      "Not yet implemented to handle new EditorCommandParamType");
+  return false;
 }
 
 bool Document::QueryCommandEnabled(const nsAString& commandID,

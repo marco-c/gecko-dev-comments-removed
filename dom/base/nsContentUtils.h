@@ -2655,6 +2655,16 @@ class nsContentUtils {
 
 
 
+
+
+
+  static mozilla::TextEditor* GetActiveEditor(nsPresContext* aPresContext);
+
+  
+
+
+
+
   static mozilla::LogModule* DOMDumpLog();
 
   
