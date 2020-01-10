@@ -875,12 +875,6 @@ nsresult nsDocumentViewer::InitInternal(
     nsIWidget* aParentWidget, nsISupports* aState, WindowGlobalChild* aActor,
     const nsIntRect& aBounds, bool aDoCreation, bool aNeedMakeCX ,
     bool aForceSetNewDocument ) {
-  if (mIsPageMode) {
-    
-    
-    aForceSetNewDocument = false;
-  }
-
   
   
   
@@ -4119,9 +4113,9 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     nsresult rv = mPresContext->Init(mDeviceContext);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-  NS_ENSURE_SUCCESS(
-      InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, false),
-      NS_ERROR_FAILURE);
+  NS_ENSURE_SUCCESS(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true,
+                                 false, false),
+                    NS_ERROR_FAILURE);
 
   Show();
   return NS_OK;
