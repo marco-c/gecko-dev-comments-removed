@@ -132,6 +132,18 @@ async function initToolbox(url, host) {
         target = await targetFromURL(url);
       }
     }
+
+    
+    const onTargetDestroyed = function() {
+      target.off("close", onTargetDestroyed);
+      
+      if (host.contentDocument) {
+        const error = new Error("Debug target was disconnected");
+        showErrorPage(host.contentDocument, `${error}`);
+      }
+    };
+    target.on("close", onTargetDestroyed);
+
     const options = { customIframe: host };
     await gDevTools.showToolbox(target, tool, Toolbox.HostType.PAGE, options);
   } catch (error) {
@@ -143,14 +155,7 @@ async function initToolbox(url, host) {
 
 
 if (url.search.length > 1) {
-  
-  if (url.searchParams.has("disconnected")) {
-    const error = new Error("Debug target was disconnected");
-    showErrorPage(host.contentDocument, `${error}`);
-    
-  } else {
-    initToolbox(url, host);
-  }
+  initToolbox(url, host);
 }
 
 

@@ -474,9 +474,25 @@ function TargetMixin(parentClass) {
     
 
 
-    handleEvent(event) {
+    async handleEvent(event) {
       switch (event.type) {
         case "TabClose":
+          
+          
+          
+          
+          const toolbox = gDevTools.getToolbox(this);
+          
+          
+          
+          
+          if (toolbox) {
+            
+            await toolbox.destroy();
+          } else {
+            this.destroy();
+          }
+          break;
         case "unload":
           this.destroy();
           break;
@@ -491,7 +507,7 @@ function TargetMixin(parentClass) {
 
 
 
-    onRemotenessChange() {
+    async onRemotenessChange() {
       
       
       
@@ -501,17 +517,15 @@ function TargetMixin(parentClass) {
 
       
       const tab = this._tab;
-      const onToolboxDestroyed = async target => {
-        if (target != this) {
-          return;
-        }
-        gDevTools.off("toolbox-destroyed", target);
+      const toolbox = gDevTools.getToolbox(this);
 
-        
-        const newTarget = await TargetFactory.forTab(tab);
-        gDevTools.showToolbox(newTarget);
-      };
-      gDevTools.on("toolbox-destroyed", onToolboxDestroyed);
+      
+      
+      await toolbox.destroy();
+
+      
+      const newTarget = await TargetFactory.forTab(tab);
+      gDevTools.showToolbox(newTarget);
     }
 
     
