@@ -1916,11 +1916,18 @@ SearchService.prototype = {
       var prefName;
 
       
-      if (this.originalDefaultEngine) {
-        this.__sortedEngines.push(this.originalDefaultEngine);
-        addedEngines[
-          this.originalDefaultEngine.name
-        ] = this.originalDefaultEngine;
+      const originalDefault = this.originalDefaultEngine;
+      if (originalDefault) {
+        this.__sortedEngines.push(originalDefault);
+        addedEngines[originalDefault.name] = originalDefault;
+      }
+
+      
+      
+      const originalPrivateDefault = this.originalPrivateDefaultEngine;
+      if (originalPrivateDefault && originalPrivateDefault != originalDefault) {
+        this.__sortedEngines.push(originalPrivateDefault);
+        addedEngines[originalPrivateDefault.name] = originalPrivateDefault;
       }
 
       if (distroID) {
