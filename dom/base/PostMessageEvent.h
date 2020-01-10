@@ -38,11 +38,10 @@ class PostMessageEvent final : public Runnable {
   PostMessageEvent(BrowsingContext* aSource, const nsAString& aCallerOrigin,
                    nsGlobalWindowOuter* aTargetWindow,
                    nsIPrincipal* aProvidedPrincipal, uint64_t aCallerWindowID,
-                   nsIURI* aCallerDocumentURI,
-                   const Maybe<nsID>& aCallerAgentClusterId)
+                   nsIURI* aCallerDocumentURI)
       : PostMessageEvent(aSource, aCallerOrigin, aTargetWindow,
                          aProvidedPrincipal, Some(aCallerWindowID),
-                         aCallerDocumentURI, false, aCallerAgentClusterId) {}
+                         aCallerDocumentURI, false) {}
 
   
   
@@ -52,7 +51,7 @@ class PostMessageEvent final : public Runnable {
                    bool aIsFromPrivateWindow)
       : PostMessageEvent(aSource, aCallerOrigin, aTargetWindow,
                          aProvidedPrincipal, Nothing(), aCallerDocumentURI,
-                         aIsFromPrivateWindow, Nothing()) {}
+                         aIsFromPrivateWindow) {}
 
   void Write(JSContext* aCx, JS::Handle<JS::Value> aMessage,
              JS::Handle<JS::Value> aTransfer, JS::CloneDataPolicy aClonePolicy,
@@ -77,8 +76,7 @@ class PostMessageEvent final : public Runnable {
                    nsGlobalWindowOuter* aTargetWindow,
                    nsIPrincipal* aProvidedPrincipal,
                    const Maybe<uint64_t>& aCallerWindowID,
-                   nsIURI* aCallerDocumentURI, bool aIsFromPrivateWindow,
-                   const Maybe<nsID>& aCallerAgentClusterId);
+                   nsIURI* aCallerDocumentURI, bool aIsFromPrivateWindow);
   ~PostMessageEvent();
 
   void Dispatch(nsGlobalWindowInner* aTargetWindow, Event* aEvent);
@@ -95,7 +93,6 @@ class PostMessageEvent final : public Runnable {
   
   MaybeOneOf<StructuredCloneHolder, ipc::StructuredCloneData> mHolder;
   Maybe<uint64_t> mCallerWindowID;
-  const Maybe<nsID> mCallerAgentClusterId;
   nsCOMPtr<nsIURI> mCallerDocumentURI;
   
   
