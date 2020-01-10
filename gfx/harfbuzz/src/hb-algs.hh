@@ -42,6 +42,11 @@
 #define HB_CODEPOINT_DECODE3_3(v) ((hb_codepoint_t) (v) & 0x1FFFFFu)
 
 
+#define HB_CODEPOINT_ENCODE3_11_7_14(x,y,z) (((uint32_t) ((x) & 0x07FFu) << 21) | (((uint32_t) (y) & 0x007Fu) << 14) | (uint32_t) ((z) & 0x3FFFu))
+#define HB_CODEPOINT_DECODE3_11_7_14_1(v) ((hb_codepoint_t) ((v) >> 21))
+#define HB_CODEPOINT_DECODE3_11_7_14_2(v) ((hb_codepoint_t) (((v) >> 14) & 0x007Fu) | 0x0300)
+#define HB_CODEPOINT_DECODE3_11_7_14_3(v) ((hb_codepoint_t) (v) & 0x3FFFu)
+
 struct
 {
   
@@ -167,19 +172,37 @@ template <unsigned Pos=1, typename Appl, typename V>
 auto hb_partial (Appl&& a, V&& v) HB_AUTO_RETURN
 (( hb_partial_t<Pos, Appl, V> (a, v) ))
 
- \
- \
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef _MSC_VER
+ \
 #define HB_PARTIALIZE(Pos) \
   template <typename _T> \
   decltype(auto) operator () (_T&& _v) const \
   { return hb_partial<Pos> (this, hb_forward<_T> (_v)); } \
   static_assert (true, "")
 #else
+
 #define HB_PARTIALIZE(Pos) \
   template <typename _T> \
   auto operator () (_T&& _v) const HB_AUTO_RETURN \
-  (hb_partial<Pos> (this, hb_forward<_T> (_v))) \
+  (hb_partial<Pos> (+this, hb_forward<_T> (_v))) \
   static_assert (true, "")
 #endif
 
@@ -400,7 +423,7 @@ hb_bit_storage (T v)
     return sizeof (unsigned long long) * 8 - __builtin_clzll (v);
 #endif
 
-#if (defined(_MSC_VER) && _MSC_VER >= 1500) || defined(__MINGW32__)
+#if (defined(_MSC_VER) && _MSC_VER >= 1500) || (defined(__MINGW32__) && (__GNUC__ < 4))
   if (sizeof (T) <= sizeof (unsigned int))
   {
     unsigned long where;
@@ -474,7 +497,7 @@ hb_ctz (T v)
     return __builtin_ctzll (v);
 #endif
 
-#if (defined(_MSC_VER) && _MSC_VER >= 1500) || defined(__MINGW32__)
+#if (defined(_MSC_VER) && _MSC_VER >= 1500) || (defined(__MINGW32__) && (__GNUC__ < 4))
   if (sizeof (T) <= sizeof (unsigned int))
   {
     unsigned long where;
@@ -603,40 +626,19 @@ hb_in_ranges (T u, T lo1, T hi1, T lo2, T hi2, T lo3, T hi3)
 
 
 
-
+template <typename ...Ts>
 static inline void *
 hb_bsearch (const void *key, const void *base,
 	    size_t nmemb, size_t size,
-	    int (*compar)(const void *_key, const void *_item))
-{
-  int min = 0, max = (int) nmemb - 1;
-  while (min <= max)
-  {
-    int mid = (min + max) / 2;
-    const void *p = (const void *) (((const char *) base) + (mid * size));
-    int c = compar (key, p);
-    if (c < 0)
-      max = mid - 1;
-    else if (c > 0)
-      min = mid + 1;
-    else
-      return (void *) p;
-  }
-  return nullptr;
-}
-
-static inline void *
-hb_bsearch_r (const void *key, const void *base,
-	      size_t nmemb, size_t size,
-	      int (*compar)(const void *_key, const void *_item, void *_arg),
-	      void *arg)
+	    int (*compar)(const void *_key, const void *_item, Ts... _ds),
+	    Ts... ds)
 {
   int min = 0, max = (int) nmemb - 1;
   while (min <= max)
   {
     int mid = ((unsigned int) min + (unsigned int) max) / 2;
     const void *p = (const void *) (((const char *) base) + (mid * size));
-    int c = compar (key, p, arg);
+    int c = compar (key, p, ds...);
     if (c < 0)
       max = mid - 1;
     else if (c > 0)
@@ -668,96 +670,194 @@ hb_bsearch_r (const void *key, const void *base,
 
 
 
+#define SORT_R_SWAP(a,b,tmp) ((tmp) = (a), (a) = (b), (b) = (tmp))
 
 
 
-
-
-
-
-
-static int sort_r_cmpswap(char *__restrict a, char *__restrict b, size_t w,
-			  int (*compar)(const void *_a, const void *_b,
-					void *_arg),
-			  void *arg)
+static inline void sort_r_swap(char *__restrict a, char *__restrict b,
+                               size_t w)
 {
   char tmp, *end = a+w;
-  if(compar(a, b, arg) > 0) {
-    for(; a < end; a++, b++) { tmp = *a; *a = *b; *b = tmp; }
+  for(; a < end; a++, b++) { SORT_R_SWAP(*a, *b, tmp); }
+}
+
+
+
+
+template <typename ...Ts>
+static inline int sort_r_cmpswap(char *__restrict a,
+                                 char *__restrict b, size_t w,
+                                 int (*compar)(const void *_a,
+                                               const void *_b,
+                                               Ts... _ds),
+                                 Ts... ds)
+{
+  if(compar(a, b, ds...) > 0) {
+    sort_r_swap(a, b, w);
     return 1;
   }
   return 0;
 }
 
 
+
+
+
+
+
+
+
+static inline void sort_r_swap_blocks(char *ptr, size_t na, size_t nb)
+{
+  if(na > 0 && nb > 0) {
+    if(na > nb) { sort_r_swap(ptr, ptr+na, nb); }
+    else { sort_r_swap(ptr, ptr+nb, na); }
+  }
+}
+
+
+
+template <typename ...Ts>
 static inline void sort_r_simple(void *base, size_t nel, size_t w,
-				 int (*compar)(const void *_a, const void *_b,
-					       void *_arg),
-				 void *arg)
+                                 int (*compar)(const void *_a,
+                                               const void *_b,
+                                               Ts... _ds),
+                                 Ts... ds)
 {
   char *b = (char *)base, *end = b + nel*w;
-  if(nel < 7) {
+
+  
+
+
+  if(nel < 10) {
     
     char *pi, *pj;
     for(pi = b+w; pi < end; pi += w) {
-      for(pj = pi; pj > b && sort_r_cmpswap(pj-w,pj,w,compar,arg); pj -= w) {}
+      for(pj = pi; pj > b && sort_r_cmpswap(pj-w,pj,w,compar,ds...); pj -= w) {}
     }
   }
   else
   {
     
 
-    
-    char *x, *y, *xend, ch;
-    char *pl, *pm, *pr;
+    int cmp;
+    char *pl, *ple, *pr, *pre, *pivot;
     char *last = b+w*(nel-1), *tmp;
-    char *l[3];
-    l[0] = b;
-    l[1] = b+w*(nel/2);
-    l[2] = last;
 
-    if(compar(l[0],l[1],arg) > 0) { tmp=l[0]; l[0]=l[1]; l[1]=tmp; }
-    if(compar(l[1],l[2],arg) > 0) {
-      tmp=l[1]; l[1]=l[2]; l[2]=tmp; 
-      if(compar(l[0],l[1],arg) > 0) { tmp=l[0]; l[0]=l[1]; l[1]=tmp; }
+    
+
+
+
+    char *l[3];
+    l[0] = b + w;
+    l[1] = b+w*(nel/2);
+    l[2] = last - w;
+
+    
+
+    if(compar(l[0],l[1],ds...) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
+    if(compar(l[1],l[2],ds...) > 0) {
+      SORT_R_SWAP(l[1], l[2], tmp);
+      if(compar(l[0],l[1],ds...) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
     }
 
     
-    for(x = l[1], y = last, xend = x+w; x<xend; x++, y++) {
-      ch = *x; *x = *y; *y = ch;
-    }
+    if(l[1] != last) { sort_r_swap(l[1], last, w); }
 
-    pl = b;
-    pr = last;
+    
+
+
+
+
+
+
+
+
+
+
+    pivot = last;
+    ple = pl = b;
+    pre = pr = last;
+
+    
+
+
+
+
+
+
+
 
     while(pl < pr) {
-      pm = pl+((pr-pl+1)>>1);
-      for(; pl < pm; pl += w) {
-        if(sort_r_cmpswap(pl, pr, w, compar, arg)) {
-          pr -= w; 
-          break;
+      
+
+      for(; pl < pr; pl += w) {
+        cmp = compar(pl, pivot, ds...);
+        if(cmp > 0) { break; }
+        else if(cmp == 0) {
+          if(ple < pl) { sort_r_swap(ple, pl, w); }
+          ple += w;
         }
       }
-      pm = pl+((pr-pl)>>1);
-      for(; pm < pr; pr -= w) {
-        if(sort_r_cmpswap(pl, pr, w, compar, arg)) {
-          pl += w; 
+      
+      if(pl >= pr) { break; }
+      
+
+      for(; pl < pr; ) {
+        pr -= w; 
+        cmp = compar(pr, pivot, ds...);
+        if(cmp == 0) {
+          pre -= w;
+          if(pr < pre) { sort_r_swap(pr, pre, w); }
+        }
+        else if(cmp < 0) {
+          if(pl < pr) { sort_r_swap(pl, pr, w); }
+          pl += w;
           break;
         }
       }
     }
 
-    sort_r_simple(b, (pl-b)/w, w, compar, arg);
-    sort_r_simple(pl+w, (end-(pl+w))/w, w, compar, arg);
+    pl = pr; 
+
+    
+
+
+
+
+
+    sort_r_swap_blocks(b, ple-b, pl-ple);
+    sort_r_swap_blocks(pr, pre-pr, end-pre);
+
+    
+
+
+    sort_r_simple(b, (pl-ple)/w, w, compar, ds...);
+    sort_r_simple(end-(pre-pr), (pre-pr)/w, w, compar, ds...);
   }
 }
 
 static inline void
-hb_sort_r (void *base, size_t nel, size_t width,
-	   int (*compar)(const void *_a, const void *_b, void *_arg),
-	   void *arg)
+hb_qsort (void *base, size_t nel, size_t width,
+	  int (*compar)(const void *_a, const void *_b))
 {
-    sort_r_simple(base, nel, width, compar, arg);
+#if defined(__OPTIMIZE_SIZE__) && !defined(HB_USE_INTERNAL_QSORT)
+  qsort (base, nel, width, compar);
+#else
+  sort_r_simple (base, nel, width, compar);
+#endif
+}
+
+static inline void
+hb_qsort (void *base, size_t nel, size_t width,
+	  int (*compar)(const void *_a, const void *_b, void *_arg),
+	  void *arg)
+{
+#ifdef HAVE_GNU_QSORT_R
+  qsort_r (base, nel, width, compar, arg);
+#else
+  sort_r_simple (base, nel, width, compar, arg);
+#endif
 }
 
 
@@ -845,6 +945,12 @@ struct hb_bitwise_sub
   operator () (const T &a, const T &b) const HB_AUTO_RETURN (a & ~b)
 }
 HB_FUNCOBJ (hb_bitwise_sub);
+struct
+{
+  template <typename T> auto
+  operator () (const T &a) const HB_AUTO_RETURN (~a)
+}
+HB_FUNCOBJ (hb_bitwise_neg);
 
 struct
 { HB_PARTIALIZE(2);
@@ -894,27 +1000,28 @@ HB_FUNCOBJ (hb_neg);
 
 
 
-
 template <typename elt_t, unsigned int byte_size>
 struct hb_vector_size_t
 {
-  elt_t& operator [] (unsigned int i) { return u.v[i]; }
-  const elt_t& operator [] (unsigned int i) const { return u.v[i]; }
+  elt_t& operator [] (unsigned int i) { return v[i]; }
+  const elt_t& operator [] (unsigned int i) const { return v[i]; }
 
   void clear (unsigned char v = 0) { memset (this, v, sizeof (*this)); }
 
   template <typename Op>
+  hb_vector_size_t process (const Op& op) const
+  {
+    hb_vector_size_t r;
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      r.v[i] = op (v[i]);
+    return r;
+  }
+  template <typename Op>
   hb_vector_size_t process (const Op& op, const hb_vector_size_t &o) const
   {
     hb_vector_size_t r;
-#if HB_VECTOR_SIZE
-    if (HB_VECTOR_SIZE && 0 == (byte_size * 8) % HB_VECTOR_SIZE)
-      for (unsigned int i = 0; i < ARRAY_LENGTH (u.vec); i++)
-	r.u.vec[i] = op (u.vec[i], o.u.vec[i]);
-    else
-#endif
-      for (unsigned int i = 0; i < ARRAY_LENGTH (u.v); i++)
-	r.u.v[i] = op (u.v[i], o.u.v[i]);
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      r.v[i] = op (v[i], o.v[i]);
     return r;
   }
   hb_vector_size_t operator | (const hb_vector_size_t &o) const
@@ -924,27 +1031,11 @@ struct hb_vector_size_t
   hb_vector_size_t operator ^ (const hb_vector_size_t &o) const
   { return process (hb_bitwise_xor, o); }
   hb_vector_size_t operator ~ () const
-  {
-    hb_vector_size_t r;
-#if HB_VECTOR_SIZE && 0
-    if (HB_VECTOR_SIZE && 0 == (byte_size * 8) % HB_VECTOR_SIZE)
-      for (unsigned int i = 0; i < ARRAY_LENGTH (u.vec); i++)
-	r.u.vec[i] = ~u.vec[i];
-    else
-#endif
-    for (unsigned int i = 0; i < ARRAY_LENGTH (u.v); i++)
-      r.u.v[i] = ~u.v[i];
-    return r;
-  }
+  { return process (hb_bitwise_neg); }
 
   private:
-  static_assert (byte_size / sizeof (elt_t) * sizeof (elt_t) == byte_size, "");
-  union {
-    elt_t v[byte_size / sizeof (elt_t)];
-#if HB_VECTOR_SIZE
-    hb_vector_size_impl_t vec[byte_size / sizeof (hb_vector_size_impl_t)];
-#endif
-  } u;
+  static_assert (0 == byte_size % sizeof (elt_t), "");
+  elt_t v[byte_size / sizeof (elt_t)];
 };
 
 

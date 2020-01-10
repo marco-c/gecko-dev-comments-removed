@@ -487,6 +487,7 @@ hb_blob_t::try_make_writable ()
 
 
 
+#ifndef HB_NO_OPEN
 #ifdef HAVE_MMAP
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -676,3 +677,4 @@ fread_fail_without_close:
   free (data);
   return hb_blob_get_empty ();
 }
+#endif 

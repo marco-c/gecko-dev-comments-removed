@@ -74,7 +74,7 @@ using hb_static_size = _hb_static_size<T, void>;
 
 
 extern HB_INTERNAL
-hb_vector_size_impl_t const _hb_NullPool[(HB_NULL_POOL_SIZE + sizeof (hb_vector_size_impl_t) - 1) / sizeof (hb_vector_size_impl_t)];
+uint64_t const _hb_NullPool[(HB_NULL_POOL_SIZE + sizeof (uint64_t) - 1) / sizeof (uint64_t)];
 
 
 template <typename Type>
@@ -128,7 +128,7 @@ struct NullHelper
 
 
 extern HB_INTERNAL
- hb_vector_size_impl_t _hb_CrapPool[(HB_NULL_POOL_SIZE + sizeof (hb_vector_size_impl_t) - 1) / sizeof (hb_vector_size_impl_t)];
+ uint64_t _hb_CrapPool[(HB_NULL_POOL_SIZE + sizeof (uint64_t) - 1) / sizeof (uint64_t)];
 
 
 template <typename Type>

@@ -1993,6 +1993,7 @@ hb_buffer_diff (hb_buffer_t *buffer,
 
 
 
+#ifndef HB_NO_BUFFER_MESSAGE
 
 
 
@@ -2022,11 +2023,11 @@ hb_buffer_set_message_func (hb_buffer_t *buffer,
     buffer->message_destroy = nullptr;
   }
 }
-
 bool
 hb_buffer_t::message_impl (hb_font_t *font, const char *fmt, va_list ap)
 {
   char buf[100];
-  vsnprintf (buf, sizeof (buf),  fmt, ap);
+  vsnprintf (buf, sizeof (buf), fmt, ap);
   return (bool) this->message_func (this, font, buf, this->message_data);
 }
+#endif
