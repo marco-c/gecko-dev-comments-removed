@@ -64,6 +64,12 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     }
 
     
+    if (style === "unit") {
+        internalProps.unit = lazyNumberFormatData.unit;
+        internalProps.unitDisplay = lazyNumberFormatData.unitDisplay;
+    }
+
+    
     var notation = lazyNumberFormatData.notation;
     internalProps.notation = notation;
 
@@ -257,12 +263,116 @@ function IsWellFormedCurrencyCode(currency) {
 
 
 
+function IsWellFormedUnitIdentifier(unitIdentifier) {
+    assert(typeof unitIdentifier === "string", "unitIdentifier is a string value");
+
+    
+    if (IsSanctionedSimpleUnitIdentifier(unitIdentifier))
+        return true;
+
+    
+    var pos = callFunction(std_String_indexOf, unitIdentifier, "-per-");
+    if (pos < 0)
+        return false;
+
+    var next = pos + "-per-".length;
+
+    
+    var numerator = Substring(unitIdentifier, 0, pos);
+    var denominator = Substring(unitIdentifier, next, unitIdentifier.length - next);
+
+    
+    return IsSanctionedSimpleUnitIdentifier(numerator) &&
+           IsSanctionedSimpleUnitIdentifier(denominator);
+}
+
+
+
+
+
+
+
+
+function IsSanctionedSimpleUnitIdentifier(unitIdentifier) {
+    assert(typeof unitIdentifier === "string", "unitIdentifier is a string value");
+
+    return hasOwn(unitIdentifier, sanctionedSimpleUnitIdentifiers);
+}
+
+
+
+
+
+
+
+
+
+
+var sanctionedSimpleUnitIdentifiers = {
+    "acre": true,
+    "bit": true,
+    "byte": true,
+    "celsius": true,
+    "centimeter": true,
+    "day": true,
+    "degree": true,
+    "fahrenheit": true,
+    "fluid-ounce": true,
+    "foot": true,
+    "gallon": true,
+    "gigabit": true,
+    "gigabyte": true,
+    "gram": true,
+    "hectare": true,
+    "hour": true,
+    "inch": true,
+    "kilobit": true,
+    "kilobyte": true,
+    "kilogram": true,
+    "kilometer": true,
+    "liter": true,
+    "megabit": true,
+    "megabyte": true,
+    "meter": true,
+    "mile": true,
+    "mile-scandinavian": true,
+    "milliliter": true,
+    "millimeter": true,
+    "millisecond": true,
+    "minute": true,
+    "month": true,
+    "ounce": true,
+    "percent": true,
+    "petabyte": true,
+    "pound": true,
+    "second": true,
+    "stone": true,
+    "terabit": true,
+    "terabyte": true,
+    "week": true,
+    "yard": true,
+    "year": true,
+};
+
+
+
+
+
+
+
+
+
+
 
 
 function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     assert(IsObject(numberFormat), "InitializeNumberFormat called with non-object");
     assert(GuardToNumberFormat(numberFormat) !== null, "InitializeNumberFormat called with non-NumberFormat");
 
+    
+    
+    
+    
     
     
     
@@ -329,7 +439,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
 
     
     
-    var style = GetOption(options, "style", "string", ["decimal", "percent", "currency"], "decimal");
+    var style = GetOption(options, "style", "string",
+                          ["decimal", "percent", "currency", "unit"], "decimal");
     lazyNumberFormatData.style = style;
 
     
@@ -365,6 +476,24 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
                                  ["standard", "accounting"], "standard");
     if (style === "currency")
         lazyNumberFormatData.currencySign = currencySign;
+
+    
+    var unit = GetOption(options, "unit", "string", undefined, undefined);
+
+    
+    if (unit !== undefined && !IsWellFormedUnitIdentifier(unit))
+        ThrowRangeError(JSMSG_INVALID_UNIT_IDENTIFIER, unit);
+
+    var unitDisplay = GetOption(options, "unitDisplay", "string",
+                                ["short", "narrow", "long"], "short");
+
+    if (style === "unit") {
+        if (unit === undefined)
+            ThrowTypeError(JSMSG_UNDEFINED_UNIT);
+
+        lazyNumberFormatData.unit = unit;
+        lazyNumberFormatData.unitDisplay = unitDisplay;
+    }
 
     
     var mnfdDefault, mxfdDefault;
@@ -605,6 +734,17 @@ function Intl_NumberFormat_resolvedOptions() {
         _DefineDataProperty(result, "currency", internals.currency);
         _DefineDataProperty(result, "currencyDisplay", internals.currencyDisplay);
         _DefineDataProperty(result, "currencySign", internals.currencySign);
+    }
+
+    
+    assert(hasOwn("unit", internals) === (internals.style === "unit"),
+           "unit is present iff style is 'unit'");
+    assert(hasOwn("unitDisplay", internals) === (internals.style === "unit"),
+           "unitDisplay is present iff style is 'unit'");
+
+    if (hasOwn("unit", internals)) {
+        _DefineDataProperty(result, "unit", internals.unit);
+        _DefineDataProperty(result, "unitDisplay", internals.unitDisplay);
     }
 
     _DefineDataProperty(result, "minimumIntegerDigits", internals.minimumIntegerDigits);

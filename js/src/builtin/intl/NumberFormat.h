@@ -150,6 +150,10 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
     return append(token) && append(' ');
   }
 
+  bool append(const char* chars, size_t length) {
+    return vector_.append(chars, length);
+  }
+
  public:
   explicit NumberFormatterSkeleton(JSContext* cx) : vector_(cx) {}
 
@@ -167,6 +171,24 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
   MOZ_MUST_USE bool currency(CurrencyDisplay display, JSLinearString* currency);
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE bool unit(JSLinearString* unit);
+
+  enum class UnitDisplay { Short, Narrow, Long };
+
+  
+
+
+
+
+  MOZ_MUST_USE bool unitDisplay(UnitDisplay display);
 
   
 
