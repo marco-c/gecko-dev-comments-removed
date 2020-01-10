@@ -54,12 +54,6 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                      const nsHttpHeaderArray& aResponseTrailers);
 
   
-  bool OnProgress(const int64_t& aProgress, const int64_t& aProgressMax);
-
-  
-  bool OnStatus(const nsresult& aStatus);
-
-  
   
   bool OnDiversion();
 
