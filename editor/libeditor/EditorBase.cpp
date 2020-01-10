@@ -389,7 +389,18 @@ nsresult EditorBase::InstallEventListeners() {
   nsresult rv = mEventListener->Connect(this);
   if (mComposition) {
     
-    mComposition->StartHandlingComposition(this);
+    
+    
+    if (mComposition->Destroyed()) {
+      
+      
+      
+      mComposition = nullptr;
+    }
+    
+    else {
+      mComposition->StartHandlingComposition(this);
+    }
   }
   return rv;
 }
