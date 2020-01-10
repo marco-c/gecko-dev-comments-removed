@@ -1514,6 +1514,61 @@ class alignas(uintptr_t) PrivateScriptData final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class alignas(uintptr_t) SharedScriptData final {
   
   
@@ -1524,11 +1579,7 @@ class alignas(uintptr_t) SharedScriptData final {
 
   uint32_t codeOffset_ = 0;  
   uint32_t codeLength_ = 0;
-  uint32_t resumeOffsetsOffset_ = 0;
-  uint32_t scopeNotesOffset_ = 0;
-  uint32_t tryNotesOffset_ = 0;
-  uint32_t padding_ = 0;
-  uint32_t tailOffset_ = 0;
+  uint32_t optArrayOffset_ = 0;
 
   
   uint32_t mainOffset = 0;
@@ -1555,7 +1606,10 @@ class alignas(uintptr_t) SharedScriptData final {
   
 
   struct Flags {
-    uint8_t _unused : 8;
+    uint8_t resumeOffsetsEndIndex : 2;
+    uint8_t scopeNotesEndIndex : 2;
+    uint8_t tryNotesEndIndex : 2;
+    uint8_t _unused : 2;
   };
   static_assert(sizeof(Flags) == sizeof(uint8_t),
                 "Structure packing is broken");
@@ -1570,10 +1624,32 @@ class alignas(uintptr_t) SharedScriptData final {
   size_t flagOffset() const { return codeOffset_ - sizeof(Flags); }
   size_t codeOffset() const { return codeOffset_; }
   size_t noteOffset() const { return codeOffset_ + codeLength_; }
-  size_t resumeOffsetsOffset() const { return resumeOffsetsOffset_; }
-  size_t scopeNotesOffset() const { return scopeNotesOffset_; }
-  size_t tryNotesOffset() const { return tryNotesOffset_; }
-  size_t endOffset() const { return tailOffset_; }
+  size_t optionalOffsetsOffset() const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsigned numOffsets = flags().tryNotesEndIndex;
+    MOZ_ASSERT(numOffsets >= flags().scopeNotesEndIndex);
+    MOZ_ASSERT(numOffsets >= flags().resumeOffsetsEndIndex);
+
+    return optArrayOffset_ - (numOffsets * sizeof(uint32_t));
+  }
+  size_t resumeOffsetsOffset() const { return optArrayOffset_; }
+  size_t scopeNotesOffset() const {
+    return getOptionalOffset(flags().resumeOffsetsEndIndex);
+  }
+  size_t tryNotesOffset() const {
+    return getOptionalOffset(flags().scopeNotesEndIndex);
+  }
+  size_t endOffset() const {
+    return getOptionalOffset(flags().tryNotesEndIndex);
+  }
 
   
   static size_t AllocationSize(uint32_t codeLength, uint32_t noteLength,
@@ -1590,10 +1666,29 @@ class alignas(uintptr_t) SharedScriptData final {
   template <typename T>
   void initElements(size_t offset, size_t length);
 
+  void initOptionalArrays(size_t* cursor, Flags* flags,
+                          uint32_t numResumeOffsets, uint32_t numScopeNotes,
+                          uint32_t numTryNotes);
+
   
   SharedScriptData(uint32_t codeLength, uint32_t noteLength, uint32_t natoms,
                    uint32_t numResumeOffsets, uint32_t numScopeNotes,
                    uint32_t numTryNotes);
+
+  void setOptionalOffset(int index, uint32_t offset) {
+    MOZ_ASSERT((index > 0) && (offset != optArrayOffset_),
+               "Implicit offset should not be stored");
+    offsetToPointer<uint32_t>(optArrayOffset_)[-index] = offset;
+  }
+  uint32_t getOptionalOffset(int index) const {
+    
+    if (index == 0) {
+      return optArrayOffset_;
+    }
+
+    SharedScriptData* this_ = const_cast<SharedScriptData*>(this);
+    return this_->offsetToPointer<uint32_t>(optArrayOffset_)[-index];
+  }
 
  public:
   static SharedScriptData* new_(JSContext* cx, uint32_t codeLength,
@@ -1630,7 +1725,7 @@ class alignas(uintptr_t) SharedScriptData final {
 
   
   mozilla::Span<const uint8_t> allocSpan() const {
-    size_t allocSize = tailOffset_;
+    size_t allocSize = endOffset();
     return mozilla::MakeSpan(reinterpret_cast<const uint8_t*>(this), allocSize);
   }
 
@@ -1657,11 +1752,14 @@ class alignas(uintptr_t) SharedScriptData final {
   GCPtrAtom* atoms() { return offsetToPointer<GCPtrAtom>(atomOffset()); }
 
   Flags& flagsRef() { return *offsetToPointer<Flags>(flagOffset()); }
+  const Flags& flags() const {
+    return const_cast<SharedScriptData*>(this)->flagsRef();
+  }
 
   uint32_t codeLength() const { return codeLength_; }
-  jsbytecode* code() { return offsetToPointer<jsbytecode>(codeOffset_); }
+  jsbytecode* code() { return offsetToPointer<jsbytecode>(codeOffset()); }
 
-  uint32_t noteLength() const { return resumeOffsetsOffset() - noteOffset(); }
+  uint32_t noteLength() const { return optionalOffsetsOffset() - noteOffset(); }
   jssrcnote* notes() { return offsetToPointer<jssrcnote>(noteOffset()); }
 
   mozilla::Span<uint32_t> resumeOffsets() {
