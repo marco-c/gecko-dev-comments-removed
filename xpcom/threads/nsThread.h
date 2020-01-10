@@ -227,11 +227,7 @@ class nsThread : public nsIThreadInternal,
 
   int8_t mPriority;
 
-  uint8_t mIsMainThread;
-
-  bool IsMainThread() const {
-    return MainThreadFlag(mIsMainThread) == MAIN_THREAD;
-  }
+  bool mIsMainThread;
 
   
   bool mCanInvokeJS;
