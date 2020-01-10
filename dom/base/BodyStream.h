@@ -32,6 +32,8 @@ class BodyStreamHolder : public nsISupports {
 
   virtual void MarkAsRead() = 0;
 
+  virtual void SetReadableStreamBody(JSObject* aBody) = 0;
+
   virtual JSObject* GetReadableStreamBody() = 0;
 
  protected:
@@ -49,17 +51,9 @@ class BodyStream final : public nsIInputStreamCallback,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   static void Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
                      nsIGlobalObject* aGlobal, nsIInputStream* aInputStream,
-                     JS::MutableHandle<JSObject*> aStream, ErrorResult& aRv);
+                     ErrorResult& aRv);
 
   void Close();
 
