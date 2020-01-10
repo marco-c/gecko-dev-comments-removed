@@ -72,11 +72,15 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   
   
   
-  nsCOMPtr<nsIHttpChannelInternal> chan =
-      do_QueryInterface(aWindow->GetDocument()->GetChannel());
+  nsCOMPtr<nsIChannel> chan = aWindow->GetDocument()->GetChannel();
+  nsCOMPtr<nsILoadInfo> loadInfo = chan ? chan->LoadInfo() : nullptr;
+  nsCOMPtr<nsIHttpChannelInternal> httpChan = do_QueryInterface(chan);
   nsILoadInfo::CrossOriginOpenerPolicy policy;
-  if (chan && NS_SUCCEEDED(chan->GetCrossOriginOpenerPolicy(
-                  nsILoadInfo::OPENER_POLICY_NULL, &policy))) {
+  if (httpChan &&
+      loadInfo->GetExternalContentPolicyType() ==
+          nsIContentPolicy::TYPE_DOCUMENT &&
+      NS_SUCCEEDED(httpChan->GetCrossOriginOpenerPolicy(
+          nsILoadInfo::OPENER_POLICY_NULL, &policy))) {
     bc->SetOpenerPolicy(policy);
   }
 

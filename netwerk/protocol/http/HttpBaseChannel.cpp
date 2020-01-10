@@ -4474,7 +4474,7 @@ NS_IMETHODIMP HttpBaseChannel::GetCrossOriginOpenerPolicy(
   }
 
   
-  if (!mURI->SchemeIs("https")) {
+  if (!nsContentUtils::ComputeIsSecureContext(this)) {
     return NS_OK;
   }
 

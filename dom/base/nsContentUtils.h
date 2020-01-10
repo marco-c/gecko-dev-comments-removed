@@ -2902,6 +2902,13 @@ class nsContentUtils {
 
 
 
+
+  static bool ComputeIsSecureContext(nsIChannel* aChannel);
+
+  
+
+
+
   static void TryToUpgradeElement(Element* aElement);
 
   
