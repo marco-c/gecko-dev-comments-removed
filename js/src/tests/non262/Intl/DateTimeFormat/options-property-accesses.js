@@ -23,6 +23,7 @@ var proxy = new Proxy({
 }));
 
 var fractionalSecondDigits = isNightly ? ["fractionalSecondDigits"] : [];
+var calendarAndNumberingSystem = isNightly ? ["calendar", "numberingSystem"] : [];
 
 var constructorAccesses = [
     
@@ -30,7 +31,7 @@ var constructorAccesses = [
     "hour", "minute", "second", ...fractionalSecondDigits,
 
     
-    "localeMatcher", "hour12", "hourCycle", "timeZone",
+    "localeMatcher", ...calendarAndNumberingSystem, "hour12", "hourCycle", "timeZone",
 
     
     "weekday", "era", "year", "month", "day", "hour", "minute", "second", "timeZoneName",

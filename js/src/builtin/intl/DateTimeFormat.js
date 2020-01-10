@@ -50,6 +50,10 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     
+    
+    
+    
+    
 
     var internalProps = std_Object_create(null);
 
@@ -327,6 +331,11 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
     
     
+    
+    
+    
+    
+    
     var lazyDateTimeFormatData = std_Object_create(null);
 
     
@@ -346,6 +355,26 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
         GetOption(options, "localeMatcher", "string", ["lookup", "best fit"],
                   "best fit");
     localeOpt.localeMatcher = localeMatcher;
+
+    
+#ifdef NIGHTLY_BUILD
+    var calendar = GetOption(options, "calendar", "string", undefined, undefined);
+
+    if (calendar !== undefined) {
+        calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(calendar, "calendar");
+    }
+
+    localeOpt.ca = calendar;
+
+    var numberingSystem = GetOption(options, "numberingSystem", "string", undefined, undefined);
+
+    if (numberingSystem !== undefined) {
+        numberingSystem = intl_ValidateAndCanonicalizeUnicodeExtensionType(numberingSystem,
+                                                                           "numberingSystem");
+    }
+
+    localeOpt.nu = numberingSystem;
+#endif
 
     
     var hr12  = GetOption(options, "hour12", "boolean", undefined, undefined);

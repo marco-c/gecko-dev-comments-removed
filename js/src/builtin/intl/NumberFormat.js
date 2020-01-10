@@ -431,6 +431,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     
     
+    
+    
     var lazyNumberFormatData = std_Object_create(null);
 
     
@@ -455,6 +457,18 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
     opt.localeMatcher = matcher;
+
+
+#ifdef NIGHTLY_BUILD
+    var numberingSystem = GetOption(options, "numberingSystem", "string", undefined, undefined);
+
+    if (numberingSystem !== undefined) {
+        numberingSystem = intl_ValidateAndCanonicalizeUnicodeExtensionType(numberingSystem,
+                                                                           "numberingSystem");
+    }
+
+    opt.nu = numberingSystem;
+#endif
 
     
     
