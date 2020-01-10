@@ -23,3 +23,9 @@ exports.CSS_TYPES = {
  "gradient": 4,
  "timing-function": 10,
 };
+
+
+
+
+
+exports.PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];

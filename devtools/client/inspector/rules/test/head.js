@@ -846,3 +846,17 @@ async function runInactiveCSSTests(view, inspector, tests) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+function getPseudoClassCheckbox(view, pseudo) {
+  return view.pseudoClassCheckboxes.filter(checkbox => checkbox.value === pseudo)[0];
+}
