@@ -547,39 +547,91 @@ add_task(async function test_preference_manager_set_when_disabled() {
 
   await extension.startup();
 
+  
+  
+  
+  Services.prefs.setBoolPref("bar", true);
+
+  function isUndefinedPref(pref) {
+    try {
+      Services.prefs.getStringPref(pref);
+      return false;
+    } catch (e) {
+      return true;
+    }
+  }
+  ok(isUndefinedPref("foo"), "test pref is not set");
+
   await ExtensionSettingsStore.initialize();
   ExtensionPreferencesManager.addSetting("some-pref", {
-    pref_names: ["foo"],
+    prefNames: ["foo", "bar"],
     setCallback(value) {
-      return { foo: value };
+      return { [this.prefNames[0]]: value, [this.prefNames[1]]: false };
     },
   });
 
-  
-  
-  
-  await ExtensionSettingsStore.addSetting(
-    id,
-    "prefs",
-    "some-pref",
-    "my value",
-    () => "default"
-  );
+  await ExtensionPreferencesManager.setSetting(id, "some-pref", "my value");
 
   let item = ExtensionSettingsStore.getSetting("prefs", "some-pref");
-  equal(item.value, "my value", "The value is set");
+  equal(item.value, "my value", "The value has been set");
+  equal(
+    Services.prefs.getStringPref("foo"),
+    "my value",
+    "The user pref has been set"
+  );
+  equal(
+    Services.prefs.getBoolPref("bar"),
+    false,
+    "The default pref has been set"
+  );
 
-  ExtensionSettingsStore.disable(id, "prefs", "some-pref");
+  await ExtensionPreferencesManager.disableSetting(id, "some-pref");
 
+  
+  
   item = ExtensionSettingsStore.getSetting("prefs", "some-pref");
-  equal(item.initialValue, "default", "The value is back to default");
+  equal(item.value, undefined, "The value is back to default");
+  equal(item.initialValue.foo, undefined, "The initialValue is correct");
+  ok(isUndefinedPref("foo"), "user pref is not set");
+  equal(
+    Services.prefs.getBoolPref("bar"),
+    true,
+    "The default pref has been restored to the default"
+  );
 
+  
   await ExtensionPreferencesManager.setSetting(id, "some-pref", "new value");
 
   item = ExtensionSettingsStore.getSetting("prefs", "some-pref");
   equal(item.value, "new value", "The value is set again");
+  equal(
+    Services.prefs.getStringPref("foo"),
+    "new value",
+    "The user pref is set again"
+  );
+  equal(
+    Services.prefs.getBoolPref("bar"),
+    false,
+    "The default pref has been set again"
+  );
 
+  
+  
+  await ExtensionSettingsStore._reloadFile(true);
+
+  
   await extension.unload();
+
+  
+  item = await ExtensionPreferencesManager.getSetting("prefs", "some-pref");
+  equal(item, null, "The value has been reset");
+  ok(isUndefinedPref("foo"), "user pref is not set");
+  equal(
+    Services.prefs.getBoolPref("bar"),
+    true,
+    "The default pref has been restored to the default"
+  );
+  Services.prefs.clearUserPref("bar");
 
   await promiseShutdownManager();
 });
