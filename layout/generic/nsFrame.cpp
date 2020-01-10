@@ -759,7 +759,9 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   
-  if (!IsPlaceholderFrame()) {
+  
+  
+  if (!IsPlaceholderFrame() && !aPrevInFlow) {
     UpdateVisibleDescendantsState();
   }
 }

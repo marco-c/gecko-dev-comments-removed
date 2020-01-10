@@ -4099,6 +4099,8 @@ class nsIFrame : public nsQueryFrame {
   void SetMayHaveOpacityAnimation() { mMayHaveOpacityAnimation = true; }
 
   
+  
+  
   bool IsVisibleOrMayHaveVisibleDescendants() const {
     return !mAllDescendantsAreInvisible || StyleVisibility()->IsVisible();
   }
