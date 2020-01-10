@@ -6,16 +6,22 @@
 
 
 
-const URL = "http://mochi.test:8888/browser/browser/base/content/test/general/offlineQuotaNotification.html";
+const URL =
+  "http://mochi.test:8888/browser/browser/base/content/test/general/offlineQuotaNotification.html";
 
 registerCleanupFunction(function() {
   
   let uri = Services.io.newURI(URL);
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    uri,
+    {}
+  );
   Services.perms.removeFromPrincipal(principal, "offline-app");
   Services.prefs.clearUserPref("offline-apps.quota.warn");
   Services.prefs.clearUserPref("offline-apps.allow_by_default");
-  let {OfflineAppCacheHelper} = ChromeUtils.import("resource://gre/modules/offlineAppCache.jsm");
+  let { OfflineAppCacheHelper } = ChromeUtils.import(
+    "resource://gre/modules/offlineAppCache.jsm"
+  );
   OfflineAppCacheHelper.clear();
 });
 
@@ -23,7 +29,11 @@ registerCleanupFunction(function() {
 function checkInContentPreferences(win) {
   let doc = win.document;
   let sel = doc.getElementById("categories").selectedItems[0].id;
-  is(gBrowser.currentURI.spec, "about:preferences#privacy", "about:preferences loaded");
+  is(
+    gBrowser.currentURI.spec,
+    "about:preferences#privacy",
+    "about:preferences loaded"
+  );
   is(sel, "category-privacy", "Privacy pane was selected");
   
   win.close();
@@ -39,7 +49,6 @@ function test() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL);
   registerCleanupFunction(() => gBrowser.removeCurrentTab());
 
-
   Promise.all([
     
     promiseNotification(),
@@ -49,28 +58,41 @@ function test() {
     info("Loaded page, adding onCached handler");
     
     let mm = gBrowser.selectedBrowser.messageManager;
-    let onCachedAttached = BrowserTestUtils.waitForMessage(mm, "Test:OnCachedAttached");
-    let gotCached = ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
-      return new Promise(resolve => {
-        content.window.applicationCache.oncached = function() {
-          setTimeout(resolve, 0);
-        };
-        sendAsyncMessage("Test:OnCachedAttached");
-      });
-    });
+    let onCachedAttached = BrowserTestUtils.waitForMessage(
+      mm,
+      "Test:OnCachedAttached"
+    );
+    let gotCached = ContentTask.spawn(
+      gBrowser.selectedBrowser,
+      null,
+      async function() {
+        return new Promise(resolve => {
+          content.window.applicationCache.oncached = function() {
+            setTimeout(resolve, 0);
+          };
+          sendAsyncMessage("Test:OnCachedAttached");
+        });
+      }
+    );
     gotCached.then(function() {
       
-      let notification = PopupNotifications.getNotification("offline-app-usage");
+      let notification = PopupNotifications.getNotification(
+        "offline-app-usage"
+      );
       ok(notification, "have offline-app-usage notification");
       
       
       PopupNotifications.panel.firstElementChild.button.click();
       let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-      newTabBrowser.addEventListener("Initialized", function() {
-        executeSoon(function() {
-          checkInContentPreferences(newTabBrowser.contentWindow);
-        });
-      }, {capture: true, once: true});
+      newTabBrowser.addEventListener(
+        "Initialized",
+        function() {
+          executeSoon(function() {
+            checkInContentPreferences(newTabBrowser.contentWindow);
+          });
+        },
+        { capture: true, once: true }
+      );
     });
     onCachedAttached.then(function() {
       Services.prefs.setIntPref("offline-apps.quota.warn", 1);
@@ -84,8 +106,12 @@ function test() {
 
 function promiseNotification() {
   return new Promise(resolve => {
-    PopupNotifications.panel.addEventListener("popupshown", function() {
-      resolve();
-    }, {once: true});
+    PopupNotifications.panel.addEventListener(
+      "popupshown",
+      function() {
+        resolve();
+      },
+      { once: true }
+    );
   });
 }

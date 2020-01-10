@@ -1,7 +1,14 @@
 
 
 
-function makeTest(name, startURL, startProcessIsRemote, endURL, endProcessIsRemote, transitionTask) {
+function makeTest(
+  name,
+  startURL,
+  startProcessIsRemote,
+  endURL,
+  endProcessIsRemote,
+  transitionTask
+) {
   return async function() {
     info("Running test " + name + ", " + transitionTask.name);
     let browser = gBrowser.selectedBrowser;
@@ -18,28 +25,48 @@ function makeTest(name, startURL, startProcessIsRemote, endURL, endProcessIsRemo
     await BrowserTestUtils.browserLoaded(browser, false, startURL);
 
     is(browser.currentURI.spec, startURL, "Shouldn't have been redirected");
-    is(browser.isRemoteBrowser, startProcessIsRemote, "Should be displayed in the right process");
+    is(
+      browser.isRemoteBrowser,
+      startProcessIsRemote,
+      "Should be displayed in the right process"
+    );
 
-    let docLoadedPromise = BrowserTestUtils.browserLoaded(browser, false, endURL);
+    let docLoadedPromise = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      endURL
+    );
     let expectSyncChange = await transitionTask(browser, endURL);
     if (expectSyncChange) {
-      is(browser.isRemoteBrowser, endProcessIsRemote, "Should have switched to the right process synchronously");
+      is(
+        browser.isRemoteBrowser,
+        endProcessIsRemote,
+        "Should have switched to the right process synchronously"
+      );
     }
     await docLoadedPromise;
 
     is(browser.currentURI.spec, endURL, "Should have made it to the final URL");
-    is(browser.isRemoteBrowser, endProcessIsRemote, "Should be displayed in the right process");
+    is(
+      browser.isRemoteBrowser,
+      endProcessIsRemote,
+      "Should be displayed in the right process"
+    );
   };
 }
 
-const PATH = (getRootDirectory(gTestPath) + "test_process_flags_chrome.html").replace("chrome://mochitests", "");
+const PATH = (
+  getRootDirectory(gTestPath) + "test_process_flags_chrome.html"
+).replace("chrome://mochitests", "");
 
 const CHROME = "chrome://mochitests" + PATH;
 const CANREMOTE = "chrome://mochitests-any" + PATH;
 const MUSTREMOTE = "chrome://mochitests-content" + PATH;
 
 add_task(async function init() {
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {forceNotRemote: true});
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+    forceNotRemote: true,
+  });
 });
 
 registerCleanupFunction(() => {
@@ -60,59 +87,35 @@ add_task(async function test_remote() {
 
 
 var TESTS = [
-  [
-    "chrome -> chrome",
-    CHROME, false,
-    CHROME, false,
-  ],
-  [
-    "chrome -> canremote",
-    CHROME, false,
-    CANREMOTE, false,
-  ],
-  [
-    "chrome -> mustremote",
-    CHROME, false,
-    MUSTREMOTE, true,
-  ],
-  [
-    "remote -> chrome",
-    MUSTREMOTE, true,
-    CHROME, false,
-  ],
-  [
-    "remote -> canremote",
-    MUSTREMOTE, true,
-    CANREMOTE, true,
-  ],
-  [
-    "remote -> mustremote",
-    MUSTREMOTE, true,
-    MUSTREMOTE, true,
-  ],
+  ["chrome -> chrome", CHROME, false, CHROME, false],
+  ["chrome -> canremote", CHROME, false, CANREMOTE, false],
+  ["chrome -> mustremote", CHROME, false, MUSTREMOTE, true],
+  ["remote -> chrome", MUSTREMOTE, true, CHROME, false],
+  ["remote -> canremote", MUSTREMOTE, true, CANREMOTE, true],
+  ["remote -> mustremote", MUSTREMOTE, true, MUSTREMOTE, true],
 ];
 
 
 var TRANSITIONS = [
+  
+  async function loadURI(browser, uri) {
+    info("Calling browser.loadURI");
+    await BrowserTestUtils.loadURI(browser, uri);
+    return true;
+  },
 
-async function loadURI(browser, uri) {
-  info("Calling browser.loadURI");
-  await BrowserTestUtils.loadURI(browser, uri);
-  return true;
-},
+  
+  
+  function clickLink(browser, uri) {
+    info("Clicking link");
 
+    ContentTask.spawn(browser, uri, function frame_script(frameUri) {
+      let link = content.document.querySelector("a[href='" + frameUri + "']");
+      link.click();
+    });
 
-
-function clickLink(browser, uri) {
-  info("Clicking link");
-
-  ContentTask.spawn(browser, uri, function frame_script(frameUri) {
-    let link = content.document.querySelector("a[href='" + frameUri + "']");
-    link.click();
-  });
-
-  return false;
-},
+    return false;
+  },
 ];
 
 

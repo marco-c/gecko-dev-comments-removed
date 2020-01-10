@@ -19,10 +19,12 @@ requestLongerTimeout(5);
 
 
 const EXPECTED_REFLOWS_FIRST_OPEN = [];
-if (AppConstants.platform == "linux" ||
-    AppConstants.platform == "win" ||
-    
-    AppConstants.isPlatformAndVersionAtLeast("macosx", "18")) {
+if (
+  AppConstants.platform == "linux" ||
+  AppConstants.platform == "win" ||
+  
+  AppConstants.isPlatformAndVersionAtLeast("macosx", "18")
+) {
   EXPECTED_REFLOWS_FIRST_OPEN.push({
     stack: [
       "__rebuild@chrome://browser/content/search/search-one-offs.js",
@@ -79,32 +81,34 @@ EXPECTED_REFLOWS_FIRST_OPEN.push(
 
 
 if (AppConstants.RELEASE_OR_BETA) {
-  EXPECTED_REFLOWS_FIRST_OPEN.push({
-    stack: [
-      "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
-      "_onUnderflow@chrome://global/content/elements/autocomplete-richlistitem.js",
-      "MozAutocompleteRichlistitem/<@chrome://global/content/elements/autocomplete-richlistitem.js",
-    ],
-    maxCount: 6,
-  },
-  {
-    stack: [
-      "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
-      "_onOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
-      "MozAutocompleteRichlistitem/<@chrome://global/content/elements/autocomplete-richlistitem.js",
-    ],
-    maxCount: 6,
-  },
-  {
-    stack: [
-      "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
-      "_adjustAcItem@chrome://global/content/elements/autocomplete-richlistitem.js",
-      "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
-      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
-      "invalidate@chrome://global/content/bindings/autocomplete.xml",
-    ],
-    maxCount: 12,
-  });
+  EXPECTED_REFLOWS_FIRST_OPEN.push(
+    {
+      stack: [
+        "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+        "_onUnderflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+        "MozAutocompleteRichlistitem/<@chrome://global/content/elements/autocomplete-richlistitem.js",
+      ],
+      maxCount: 6,
+    },
+    {
+      stack: [
+        "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+        "_onOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+        "MozAutocompleteRichlistitem/<@chrome://global/content/elements/autocomplete-richlistitem.js",
+      ],
+      maxCount: 6,
+    },
+    {
+      stack: [
+        "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+        "_adjustAcItem@chrome://global/content/elements/autocomplete-richlistitem.js",
+        "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
+        "_invalidate@chrome://global/content/bindings/autocomplete.xml",
+        "invalidate@chrome://global/content/bindings/autocomplete.xml",
+      ],
+      maxCount: 12,
+    }
+  );
 }
 
 add_task(async function awesomebar() {

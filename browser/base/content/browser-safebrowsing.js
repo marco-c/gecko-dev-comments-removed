@@ -6,7 +6,6 @@
 
 
 var gSafeBrowsing = {
-
   setReportPhishingMenu() {
     
     
@@ -18,9 +17,13 @@ var gSafeBrowsing = {
       docURI && docURI.spec.startsWith("about:blocked?e=deceptiveBlocked");
 
     
-    const reportMenu = document.getElementById("menu_HelpPopup_reportPhishingtoolmenu");
+    const reportMenu = document.getElementById(
+      "menu_HelpPopup_reportPhishingtoolmenu"
+    );
     reportMenu.hidden = isPhishingPage;
-    const reportErrorMenu = document.getElementById("menu_HelpPopup_reportPhishingErrortoolmenu");
+    const reportErrorMenu = document.getElementById(
+      "menu_HelpPopup_reportPhishingErrortoolmenu"
+    );
     reportErrorMenu.hidden = !isPhishingPage;
     if (isPhishingPage && !reportErrorMenu.hasAttribute("data-l10n-id")) {
       MozXULElement.insertFTLIfNeeded("browser/safebrowsing/blockedSite.ftl");
@@ -30,7 +33,8 @@ var gSafeBrowsing = {
     
     
     const uri = gBrowser.currentURI;
-    const isReportablePage = uri && (uri.schemeIs("http") || uri.schemeIs("https"));
+    const isReportablePage =
+      uri && (uri.schemeIs("http") || uri.schemeIs("https"));
 
     const disabledByPolicy = !Services.policies.isAllowed("feedbackCommands");
 
@@ -65,9 +69,10 @@ var gSafeBrowsing = {
 
       
       if (pageUri instanceof Ci.nsIURL) {
-        pageUri = pageUri.mutate()
-                         .setQuery("")
-                         .finalize();
+        pageUri = pageUri
+          .mutate()
+          .setQuery("")
+          .finalize();
       }
 
       reportInfo = { uri: pageUri.asciiSpec };

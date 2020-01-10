@@ -26,8 +26,11 @@ add_task(async function() {
   
   
   
-  Assert.equal(EXPECTED_REFLOWS.length, 0,
-    "We shouldn't have added any new expected reflows.");
+  Assert.equal(
+    EXPECTED_REFLOWS.length,
+    0,
+    "We shouldn't have added any new expected reflows."
+  );
 
   
   
@@ -41,26 +44,38 @@ add_task(async function() {
 
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
 
-  await withPerfObserver(async function() {
-    let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
-    let tab = gBrowser.tabs[gBrowser.tabs.length - 1];
-    gBrowser.removeTab(tab, { animate: true, byMouse: true });
-    await BrowserTestUtils.waitForEvent(tab, "TabAnimationEnd");
-    await switchDone;
-  }, {expectedReflows: EXPECTED_REFLOWS,
+  await withPerfObserver(
+    async function() {
+      let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
+      let tab = gBrowser.tabs[gBrowser.tabs.length - 1];
+      gBrowser.removeTab(tab, { animate: true, byMouse: true });
+      await BrowserTestUtils.waitForEvent(tab, "TabAnimationEnd");
+      await switchDone;
+    },
+    {
+      expectedReflows: EXPECTED_REFLOWS,
       frames: {
-        filter: rects => rects.filter(r => !(
-          
-          r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
-          r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right &&
-          
-          
-          
-          
-          r.w <= (gBrowser.tabs.length - 1) * Math.ceil(tabStripRect.width / gBrowser.tabs.length)
-        )),
+        filter: rects =>
+          rects.filter(
+            r =>
+              !
+              (
+                r.y1 >= tabStripRect.top &&
+                r.y2 <= tabStripRect.bottom &&
+                r.x1 >= tabStripRect.left &&
+                r.x2 <= tabStripRect.right &&
+                
+                
+                
+                
+                r.w <=
+                  (gBrowser.tabs.length - 1) *
+                    Math.ceil(tabStripRect.width / gBrowser.tabs.length)
+              )
+          ),
       },
-     });
+    }
+  );
 
   await removeAllButFirstTab();
 });

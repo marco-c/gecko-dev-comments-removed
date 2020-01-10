@@ -1,6 +1,7 @@
 "use strict";
 
-const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
+const PAGE =
+  "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 const EMAIL = "foo@privacy.com";
 
 add_task(async function setup() {
@@ -18,48 +19,53 @@ add_task(async function setup() {
 
 
 add_task(async function test_clear_email() {
-  return BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    let prefs = TabCrashHandler.prefs;
-    let originalSendReport = prefs.getBoolPref("sendReport");
-    let originalEmailMe = prefs.getBoolPref("emailMe");
-    let originalIncludeURL = prefs.getBoolPref("includeURL");
-    let originalEmail = prefs.getCharPref("email");
+  return BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      let prefs = TabCrashHandler.prefs;
+      let originalSendReport = prefs.getBoolPref("sendReport");
+      let originalEmailMe = prefs.getBoolPref("emailMe");
+      let originalIncludeURL = prefs.getBoolPref("includeURL");
+      let originalEmail = prefs.getCharPref("email");
 
-    
-    
-    prefs.setCharPref("email", EMAIL);
-    prefs.setBoolPref("emailMe", true);
+      
+      
+      prefs.setCharPref("email", EMAIL);
+      prefs.setBoolPref("emailMe", true);
 
-    let tab = gBrowser.getTabForBrowser(browser);
-    await BrowserTestUtils.crashBrowser(browser,
-                                         true,
-                                         false);
-    let doc = browser.contentDocument;
+      let tab = gBrowser.getTabForBrowser(browser);
+      await BrowserTestUtils.crashBrowser(
+        browser,
+         true,
+         false
+      );
+      let doc = browser.contentDocument;
 
-    
-    
-    let emailMe = doc.getElementById("emailMe");
-    emailMe.checked = false;
+      
+      
+      let emailMe = doc.getElementById("emailMe");
+      emailMe.checked = false;
 
-    let crashReport = promiseCrashReport({
-      Email: "",
-    });
+      let crashReport = promiseCrashReport({
+        Email: "",
+      });
 
-    let restoreTab = browser.contentDocument.getElementById("restoreTab");
-    restoreTab.click();
-    await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
-    await crashReport;
+      let restoreTab = browser.contentDocument.getElementById("restoreTab");
+      restoreTab.click();
+      await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
+      await crashReport;
 
-    is(prefs.getCharPref("email"), "", "No email address should be stored");
+      is(prefs.getCharPref("email"), "", "No email address should be stored");
 
-    
-    
-    prefs.setBoolPref("sendReport", originalSendReport);
-    prefs.setBoolPref("emailMe", originalEmailMe);
-    prefs.setBoolPref("includeURL", originalIncludeURL);
-    prefs.setCharPref("email", originalEmail);
-  });
+      
+      
+      prefs.setBoolPref("sendReport", originalSendReport);
+      prefs.setBoolPref("emailMe", originalEmailMe);
+      prefs.setBoolPref("includeURL", originalIncludeURL);
+      prefs.setCharPref("email", originalEmail);
+    }
+  );
 });

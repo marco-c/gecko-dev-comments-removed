@@ -5,150 +5,167 @@
 "use strict";
 
 {
-function _isTextColorDark(r, g, b) {
-  return (0.2125 * r + 0.7154 * g + 0.0721 * b) <= 110;
-}
+  function _isTextColorDark(r, g, b) {
+    return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 110;
+  }
 
-const inContentVariableMap = [
-  ["--newtab-background-color", {
-    lwtProperty: "ntp_background",
-  }],
-  ["--newtab-text-primary-color", {
-    lwtProperty: "ntp_text",
-    processColor(rgbaChannels, element) {
-      if (!rgbaChannels) {
-        element.removeAttribute("lwt-newtab");
-        element.removeAttribute("lwt-newtab-brighttext");
-        return null;
+  const inContentVariableMap = [
+    [
+      "--newtab-background-color",
+      {
+        lwtProperty: "ntp_background",
+      },
+    ],
+    [
+      "--newtab-text-primary-color",
+      {
+        lwtProperty: "ntp_text",
+        processColor(rgbaChannels, element) {
+          if (!rgbaChannels) {
+            element.removeAttribute("lwt-newtab");
+            element.removeAttribute("lwt-newtab-brighttext");
+            return null;
+          }
+
+          element.setAttribute("lwt-newtab", "true");
+          const { r, g, b, a } = rgbaChannels;
+          if (!_isTextColorDark(r, g, b)) {
+            element.setAttribute("lwt-newtab-brighttext", "true");
+          } else {
+            element.removeAttribute("lwt-newtab-brighttext");
+          }
+
+          return `rgba(${r}, ${g}, ${b}, ${a})`;
+        },
+      },
+    ],
+    [
+      "--lwt-sidebar-background-color",
+      {
+        lwtProperty: "sidebar",
+        processColor(rgbaChannels) {
+          if (!rgbaChannels) {
+            return null;
+          }
+          const { r, g, b } = rgbaChannels;
+          
+          return `rgb(${r}, ${g}, ${b})`;
+        },
+      },
+    ],
+    [
+      "--lwt-sidebar-text-color",
+      {
+        lwtProperty: "sidebar_text",
+        processColor(rgbaChannels, element) {
+          if (!rgbaChannels) {
+            element.removeAttribute("lwt-sidebar");
+            element.removeAttribute("lwt-sidebar-brighttext");
+            return null;
+          }
+
+          element.setAttribute("lwt-sidebar", "true");
+          const { r, g, b, a } = rgbaChannels;
+          if (!_isTextColorDark(r, g, b)) {
+            element.setAttribute("lwt-sidebar-brighttext", "true");
+          } else {
+            element.removeAttribute("lwt-sidebar-brighttext");
+          }
+
+          return `rgba(${r}, ${g}, ${b}, ${a})`;
+        },
+      },
+    ],
+    [
+      "--lwt-sidebar-highlight-background-color",
+      {
+        lwtProperty: "sidebar_highlight",
+      },
+    ],
+    [
+      "--lwt-sidebar-highlight-text-color",
+      {
+        lwtProperty: "sidebar_highlight_text",
+        processColor(rgbaChannels, element) {
+          if (!rgbaChannels) {
+            element.removeAttribute("lwt-sidebar-highlight");
+            return null;
+          }
+          element.setAttribute("lwt-sidebar-highlight", "true");
+
+          const { r, g, b, a } = rgbaChannels;
+          return `rgba(${r}, ${g}, ${b}, ${a})`;
+        },
+      },
+    ],
+  ];
+
+  
+
+
+
+
+  const ContentThemeController = {
+    
+
+
+
+    init() {
+      addEventListener("LightweightTheme:Set", this);
+    },
+
+    
+
+
+
+    handleEvent({ type, detail }) {
+      if (type == "LightweightTheme:Set") {
+        let { data } = detail;
+        if (!data) {
+          data = {};
+        }
+        
+        const element = document.body
+          ? document.body
+          : document.documentElement;
+        this._setProperties(element, data);
       }
+    },
 
-      element.setAttribute("lwt-newtab", "true");
-      const {r, g, b, a} = rgbaChannels;
-      if (!_isTextColorDark(r, g, b)) {
-        element.setAttribute("lwt-newtab-brighttext", "true");
+    
+
+
+
+
+
+    _setProperty(elem, variableName, value) {
+      if (value) {
+        elem.style.setProperty(variableName, value);
       } else {
-        element.removeAttribute("lwt-newtab-brighttext");
+        elem.style.removeProperty(variableName);
       }
-
-      return `rgba(${r}, ${g}, ${b}, ${a})`;
     },
-  }],
-  ["--lwt-sidebar-background-color", {
-    lwtProperty: "sidebar",
-    processColor(rgbaChannels) {
-      if (!rgbaChannels) {
-        return null;
+
+    
+
+
+
+
+    _setProperties(elem, themeData) {
+      for (let [cssVarName, definition] of inContentVariableMap) {
+        const { lwtProperty, processColor } = definition;
+        let value = themeData[lwtProperty];
+
+        if (processColor) {
+          value = processColor(value, elem);
+        } else if (value) {
+          const { r, g, b, a } = value;
+          value = `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        this._setProperty(elem, cssVarName, value);
       }
-      const {r, g, b} = rgbaChannels;
-      
-      return `rgb(${r}, ${g}, ${b})`;
     },
-  }],
-  ["--lwt-sidebar-text-color", {
-    lwtProperty: "sidebar_text",
-    processColor(rgbaChannels, element) {
-      if (!rgbaChannels) {
-        element.removeAttribute("lwt-sidebar");
-        element.removeAttribute("lwt-sidebar-brighttext");
-        return null;
-      }
-
-      element.setAttribute("lwt-sidebar", "true");
-      const {r, g, b, a} = rgbaChannels;
-      if (!_isTextColorDark(r, g, b)) {
-        element.setAttribute("lwt-sidebar-brighttext", "true");
-      } else {
-        element.removeAttribute("lwt-sidebar-brighttext");
-      }
-
-      return `rgba(${r}, ${g}, ${b}, ${a})`;
-    },
-  }],
-  ["--lwt-sidebar-highlight-background-color", {
-    lwtProperty: "sidebar_highlight",
-  }],
-  ["--lwt-sidebar-highlight-text-color", {
-    lwtProperty: "sidebar_highlight_text",
-    processColor(rgbaChannels, element) {
-      if (!rgbaChannels) {
-        element.removeAttribute("lwt-sidebar-highlight");
-        return null;
-      }
-      element.setAttribute("lwt-sidebar-highlight", "true");
-
-      const {r, g, b, a} = rgbaChannels;
-      return `rgba(${r}, ${g}, ${b}, ${a})`;
-    },
-  }],
-];
-
-
-
-
-
-
-const ContentThemeController = {
-  
-
-
-
-  init() {
-    addEventListener("LightweightTheme:Set", this);
-  },
-
-  
-
-
-
-  handleEvent({ type, detail }) {
-    if (type == "LightweightTheme:Set") {
-      let {data} = detail;
-      if (!data) {
-        data = {};
-      }
-      
-      const element = document.body ? document.body : document.documentElement;
-      this._setProperties(element, data);
-    }
-  },
-
-  
-
-
-
-
-
-  _setProperty(elem, variableName, value) {
-    if (value) {
-      elem.style.setProperty(variableName, value);
-    } else {
-      elem.style.removeProperty(variableName);
-    }
-  },
-
-  
-
-
-
-
-  _setProperties(elem, themeData) {
-    for (let [cssVarName, definition] of inContentVariableMap) {
-      const {
-        lwtProperty,
-        processColor,
-      } = definition;
-      let value = themeData[lwtProperty];
-
-      if (processColor) {
-        value = processColor(value, elem);
-      } else if (value) {
-        const {r, g, b, a} = value;
-        value = `rgba(${r}, ${g}, ${b}, ${a})`;
-      }
-
-      this._setProperty(elem, cssVarName, value);
-    }
-  },
-};
-ContentThemeController.init();
+  };
+  ContentThemeController.init();
 }

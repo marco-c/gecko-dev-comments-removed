@@ -1,23 +1,28 @@
 
-
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.install.requireBuiltInCerts", false],
-    ["extensions.update.requireBuiltInCerts", false],
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["extensions.install.requireBuiltInCerts", false],
+      ["extensions.update.requireBuiltInCerts", false],
 
-    
-    ["xpinstall.signatures.required", false],
+      
+      ["xpinstall.signatures.required", false],
 
-    
-    ["extensions.update.url", `${BASE}/browser_webext_update.json`],
-  ]});
+      
+      ["extensions.update.url", `${BASE}/browser_webext_update.json`],
+    ],
+  });
 });
 
 
 
-async function testUpdateNoPrompt(filename, id,
-                                  initialVersion = "1.0", updateVersion = "2.0") {
+async function testUpdateNoPrompt(
+  filename,
+  id,
+  initialVersion = "1.0",
+  updateVersion = "2.0"
+) {
   
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:robots");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
@@ -53,10 +58,18 @@ async function testUpdateNoPrompt(filename, id,
 
 
 
-add_task(() => testUpdateNoPrompt("browser_webext_update_perms1.xpi",
-                                  "update_perms@tests.mozilla.org"));
+add_task(() =>
+  testUpdateNoPrompt(
+    "browser_webext_update_perms1.xpi",
+    "update_perms@tests.mozilla.org"
+  )
+);
 
 
 
-add_task(() => testUpdateNoPrompt("browser_webext_update_origins1.xpi",
-                                  "update_origins@tests.mozilla.org"));
+add_task(() =>
+  testUpdateNoPrompt(
+    "browser_webext_update_origins1.xpi",
+    "update_origins@tests.mozilla.org"
+  )
+);

@@ -10,20 +10,20 @@ _referrerTests = [
     fromScheme: "http://",
     toScheme: "http://",
     cross: true,
-    result: "http://test1.example.com/browser",  
+    result: "http://test1.example.com/browser", 
   },
   {
     fromScheme: "https://",
     toScheme: "http://",
     cross: true,
-    result: "",  
+    result: "", 
   },
   {
     fromScheme: "https://",
     toScheme: "http://",
     policy: "origin",
     cross: true,
-    result: "https://test1.example.com/",  
+    result: "https://test1.example.com/", 
   },
   {
     fromScheme: "https://",
@@ -31,33 +31,39 @@ _referrerTests = [
     policy: "origin",
     rel: "noreferrer",
     cross: true,
-    result: "",  
+    result: "", 
   },
   {
     fromScheme: "https://",
     toScheme: "https://",
     policy: "no-referrer",
     cross: true,
-    result: "",  
+    result: "", 
   },
   {
     fromScheme: "http://",
     toScheme: "https://",
     policy: "no-referrer",
     cross: true,
-    result: "",  
+    result: "", 
   },
 ];
 
 async function startClickPinnedTabTestCase(aTestNumber) {
-  info("browser_referrer_click_pinned_tab: " +
-       getReferrerTestDescription(aTestNumber));
+  info(
+    "browser_referrer_click_pinned_tab: " +
+      getReferrerTestDescription(aTestNumber)
+  );
   let browser = gTestWindow.gBrowser;
 
   browser.pinTab(browser.selectedTab);
   someTabLoaded(gTestWindow).then(function(aNewTab) {
-    checkReferrerAndStartNextTest(aTestNumber, null, aNewTab,
-                                  startClickPinnedTabTestCase);
+    checkReferrerAndStartNextTest(
+      aTestNumber,
+      null,
+      aNewTab,
+      startClickPinnedTabTestCase
+    );
   });
 
   clickTheLink(gTestWindow, "testlink", {});

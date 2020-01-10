@@ -9,43 +9,67 @@
 
 
 
-const kSecureURI = getRootDirectory(gTestPath).replace("chrome://mochitests/content",
-                                                       "https://example.com") + "dummy_page.html";
+const kSecureURI =
+  getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    "https://example.com"
+  ) + "dummy_page.html";
 add_task(async function() {
-  await BrowserTestUtils.withNewTab(kSecureURI, async (browser) => {
+  await BrowserTestUtils.withNewTab(kSecureURI, async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
     is(identityMode, "verifiedDomain", "identity should be secure before");
 
     const TLS_HANDSHAKE_FAILURE_URI = "https://ssl3.example.com/";
     
     BrowserTestUtils.loadURI(browser, TLS_HANDSHAKE_FAILURE_URI);
-    await BrowserTestUtils.browserLoaded(browser, false, TLS_HANDSHAKE_FAILURE_URI, true);
+    await BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      TLS_HANDSHAKE_FAILURE_URI,
+      true
+    );
 
-    let newIdentityMode = window.document.getElementById("identity-box").className;
-    is(newIdentityMode, "unknownIdentity", "identity should be unknown (not secure) after");
+    let newIdentityMode = window.document.getElementById("identity-box")
+      .className;
+    is(
+      newIdentityMode,
+      "unknownIdentity",
+      "identity should be unknown (not secure) after"
+    );
   });
 });
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab(kSecureURI, async (browser) => {
+  await BrowserTestUtils.withNewTab(kSecureURI, async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
     is(identityMode, "verifiedDomain", "identity should be secure before");
 
     const BAD_ABOUT_PAGE_URI = "about:somethingthatdoesnotexist";
     
     BrowserTestUtils.loadURI(browser, BAD_ABOUT_PAGE_URI);
-    await BrowserTestUtils.browserLoaded(browser, false, BAD_ABOUT_PAGE_URI, true);
+    await BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      BAD_ABOUT_PAGE_URI,
+      true
+    );
 
-    let newIdentityMode = window.document.getElementById("identity-box").className;
-    is(newIdentityMode, "unknownIdentity", "identity should be unknown (not secure) after");
+    let newIdentityMode = window.document.getElementById("identity-box")
+      .className;
+    is(
+      newIdentityMode,
+      "unknownIdentity",
+      "identity should be unknown (not secure) after"
+    );
   });
 });
 
 
 
 function startServer(cert) {
-  let tlsServer = Cc["@mozilla.org/network/tls-server-socket;1"]
-                    .createInstance(Ci.nsITLSServerSocket);
+  let tlsServer = Cc["@mozilla.org/network/tls-server-socket;1"].createInstance(
+    Ci.nsITLSServerSocket
+  );
   tlsServer.init(-1, true, -1);
   tlsServer.serverCert = cert;
 
@@ -53,28 +77,33 @@ function startServer(cert) {
 
   let listener = {
     onSocketAccepted(socket, transport) {
-      let connectionInfo = transport.securityInfo
-                           .QueryInterface(Ci.nsITLSServerConnectionInfo);
+      let connectionInfo = transport.securityInfo.QueryInterface(
+        Ci.nsITLSServerConnectionInfo
+      );
       connectionInfo.setSecurityObserver(listener);
       input = transport.openInputStream(0, 0, 0);
       output = transport.openOutputStream(0, 0, 0);
     },
 
     onHandshakeDone(socket, status) {
-      input.asyncWait({
-        onInputStreamReady(readyInput) {
-          try {
-            input.close();
-            output.close();
-          } catch (e) {
-            info(e);
-          }
+      input.asyncWait(
+        {
+          onInputStreamReady(readyInput) {
+            try {
+              input.close();
+              output.close();
+            } catch (e) {
+              info(e);
+            }
+          },
         },
-      }, 0, 0, Services.tm.currentThread);
+        0,
+        0,
+        Services.tm.currentThread
+      );
     },
 
-    onStopListening() {
-    },
+    onStopListening() {},
   };
 
   tlsServer.setSessionTickets(false);
@@ -92,10 +121,12 @@ add_task(async function() {
     
     set: [["network.dns.disableIPv6", true]],
   });
-  let certService = Cc["@mozilla.org/security/local-cert-service;1"]
-                      .getService(Ci.nsILocalCertService);
-  let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
-                              .getService(Ci.nsICertOverrideService);
+  let certService = Cc["@mozilla.org/security/local-cert-service;1"].getService(
+    Ci.nsILocalCertService
+  );
+  let certOverrideService = Cc[
+    "@mozilla.org/security/certoverride;1"
+  ].getService(Ci.nsICertOverrideService);
 
   let cert = await new Promise((resolve, reject) => {
     certService.getOrCreateCert("broken-tls-server", {
@@ -110,10 +141,16 @@ add_task(async function() {
   });
   
   let server = startServer(cert);
-  let overrideBits = Ci.nsICertOverrideService.ERROR_UNTRUSTED |
-                     Ci.nsICertOverrideService.ERROR_MISMATCH;
-  certOverrideService.rememberValidityOverride("localhost", server.port, cert,
-                                               overrideBits, true);
+  let overrideBits =
+    Ci.nsICertOverrideService.ERROR_UNTRUSTED |
+    Ci.nsICertOverrideService.ERROR_MISMATCH;
+  certOverrideService.rememberValidityOverride(
+    "localhost",
+    server.port,
+    cert,
+    overrideBits,
+    true
+  );
 
   
   registerCleanupFunction(() => {
@@ -122,12 +159,17 @@ add_task(async function() {
   });
 
   
-  await BrowserTestUtils.withNewTab("about:blank", async (browser) => {
+  await BrowserTestUtils.withNewTab("about:blank", async browser => {
     const TLS_HANDSHAKE_FAILURE_URI = `https:
     
     
     BrowserTestUtils.loadURI(browser, TLS_HANDSHAKE_FAILURE_URI);
-    await BrowserTestUtils.browserLoaded(browser, false, TLS_HANDSHAKE_FAILURE_URI, true);
+    await BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      TLS_HANDSHAKE_FAILURE_URI,
+      true
+    );
 
     let identityMode = window.document.getElementById("identity-box").className;
     is(identityMode, "unknownIdentity", "identity should be 'unknown'");

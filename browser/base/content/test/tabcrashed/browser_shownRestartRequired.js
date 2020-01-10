@@ -14,29 +14,32 @@ const PAGE =
 
 
 function crashTabTestHelper() {
-  return BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    
-    TabCrashHandler.testBuildIDMismatch = true;
+  return BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      
+      TabCrashHandler.testBuildIDMismatch = true;
 
-    await BrowserTestUtils.crashBrowser(browser, false);
-    let doc = browser.contentDocument;
+      await BrowserTestUtils.crashBrowser(browser, false);
+      let doc = browser.contentDocument;
 
-    
-    
-    let title = doc.getElementById("title");
-    let description = doc.getElementById("errorLongContent");
-    let restartButton = doc.getElementById("restart");
+      
+      
+      let title = doc.getElementById("title");
+      let description = doc.getElementById("errorLongContent");
+      let restartButton = doc.getElementById("restart");
 
-    ok(title, "Title element exists.");
-    ok(description, "Description element exists.");
-    ok(restartButton, "Restart button exists.");
+      ok(title, "Title element exists.");
+      ok(description, "Description element exists.");
+      ok(restartButton, "Restart button exists.");
 
-    
-    TabCrashHandler.testBuildIDMismatch = false;
-  });
+      
+      TabCrashHandler.testBuildIDMismatch = false;
+    }
+  );
 }
 
 

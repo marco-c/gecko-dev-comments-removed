@@ -10,8 +10,11 @@ function test() {
   gBrowser.pinTab(newTab1);
 
   
-  is(gBrowser.getTabsToTheEndFrom(originalTab).length, 1,
-    "One unpinned tab to the right");
+  is(
+    gBrowser.getTabsToTheEndFrom(originalTab).length,
+    1,
+    "One unpinned tab to the right"
+  );
 
   
   gBrowser.removeTabsToTheEndFrom(originalTab);

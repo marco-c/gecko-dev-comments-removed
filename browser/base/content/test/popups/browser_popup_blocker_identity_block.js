@@ -4,28 +4,43 @@
 
 
 
-const {SitePermissions} = ChromeUtils.import("resource:///modules/SitePermissions.jsm");
+const { SitePermissions } = ChromeUtils.import(
+  "resource:///modules/SitePermissions.jsm"
+);
 
-const baseURL = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+const baseURL = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 const URL = baseURL + "popup_blocker2.html";
 const URI = Services.io.newURI(URL);
 
 function openIdentityPopup() {
-  let promise = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
+  let promise = BrowserTestUtils.waitForEvent(
+    gIdentityHandler._identityPopup,
+    "popupshown"
+  );
   gIdentityHandler._identityBox.click();
   return promise;
 }
 
 function closeIdentityPopup() {
-  let promise = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popuphidden");
+  let promise = BrowserTestUtils.waitForEvent(
+    gIdentityHandler._identityPopup,
+    "popuphidden"
+  );
   gIdentityHandler._identityPopup.hidePopup();
   return promise;
 }
 
 add_task(async function enable_popup_blocker() {
   
-  await SpecialPowers.pushPrefEnv({set: [["dom.disable_open_during_load", true]]});
-  await SpecialPowers.pushPrefEnv({set: [["dom.disable_open_click_delay", 0]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.disable_open_during_load", true]],
+  });
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.disable_open_click_delay", 0]],
+  });
 });
 
 add_task(async function check_blocked_popup_indicator() {
@@ -37,8 +52,9 @@ add_task(async function check_blocked_popup_indicator() {
   await closeIdentityPopup();
 
   
-  let icon = gIdentityHandler._identityBox
-      .querySelector(".blocked-permission-icon[data-permission-id='popup']");
+  let icon = gIdentityHandler._identityBox.querySelector(
+    ".blocked-permission-icon[data-permission-id='popup']"
+  );
   Assert.equal(icon.hasAttribute("showing"), false);
 
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
@@ -48,12 +64,15 @@ add_task(async function check_blocked_popup_indicator() {
 
   
   await BrowserTestUtils.waitForCondition(() =>
-    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
+    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
+  );
 
   
   document.getElementById("identity-icon").click();
   await openIdentityPopup();
-  await BrowserTestUtils.waitForCondition(() => document.getElementById("blocked-popup-indicator-item") !== null);
+  await BrowserTestUtils.waitForCondition(
+    () => document.getElementById("blocked-popup-indicator-item") !== null
+  );
 
   
   let menulist = document.getElementById("identity-popup-popup-menulist");
@@ -79,7 +98,8 @@ add_task(async function check_popup_showing() {
 
   
   await BrowserTestUtils.waitForCondition(() =>
-    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
+    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
+  );
 
   
   let popup;
@@ -95,12 +115,16 @@ add_task(async function check_popup_showing() {
   text.click();
 
   await BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
-  await BrowserTestUtils.waitForCondition(() =>
-    popup.linkedBrowser.currentURI.spec != "about:blank");
+  await BrowserTestUtils.waitForCondition(
+    () => popup.linkedBrowser.currentURI.spec != "about:blank"
+  );
 
   gBrowser.tabContainer.removeEventListener("TabOpen", onTabOpen);
 
-  ok(popup.linkedBrowser.currentURI.spec.endsWith("popup_blocker_a.html"), "Popup a");
+  ok(
+    popup.linkedBrowser.currentURI.spec.endsWith("popup_blocker_a.html"),
+    "Popup a"
+  );
 
   gBrowser.removeTab(popup);
   gBrowser.removeTab(tab);
@@ -121,7 +145,8 @@ add_task(async function check_permission_state_change() {
 
   
   await BrowserTestUtils.waitForCondition(() =>
-    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
+    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
+  );
 
   
   await openIdentityPopup();
@@ -148,12 +173,16 @@ add_task(async function check_permission_state_change() {
   });
 
   await BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
-  await BrowserTestUtils.waitForCondition(() =>
-    popup.linkedBrowser.currentURI.spec != "about:blank");
+  await BrowserTestUtils.waitForCondition(
+    () => popup.linkedBrowser.currentURI.spec != "about:blank"
+  );
 
   gBrowser.tabContainer.removeEventListener("TabOpen", onTabOpen);
 
-  ok(popup.linkedBrowser.currentURI.spec.endsWith("popup_blocker_a.html"), "Popup a");
+  ok(
+    popup.linkedBrowser.currentURI.spec.endsWith("popup_blocker_a.html"),
+    "Popup a"
+  );
 
   gBrowser.removeTab(popup);
 

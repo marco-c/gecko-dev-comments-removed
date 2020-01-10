@@ -1,6 +1,11 @@
-const {AddonManagerPrivate} = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+const { AddonManagerPrivate } = ChromeUtils.import(
+  "resource://gre/modules/AddonManager.jsm"
+);
 
-const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", {});
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm",
+  {}
+);
 
 AddonTestUtils.initMochitest(this);
 
@@ -17,13 +22,15 @@ function getBadgeStatus() {
 
 
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.install.requireBuiltInCerts", false],
-    ["extensions.update.requireBuiltInCerts", false],
-    
-    ["xpinstall.signatures.required", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["extensions.install.requireBuiltInCerts", false],
+      ["extensions.update.requireBuiltInCerts", false],
+      
+      ["xpinstall.signatures.required", false],
+    ],
+  });
 
   
   
@@ -39,13 +46,18 @@ add_task(async function setup() {
 
 
 async function testNoPrompt(origUrl, id) {
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.update.enabled", true],
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["extensions.update.enabled", true],
 
-    
-    ["extensions.update.background.url", `${BASE}/browser_webext_update.json`],
-  ]});
+      
+      [
+        "extensions.update.background.url",
+        `${BASE}/browser_webext_update.json`,
+      ],
+    ],
+  });
 
   
   let addon = await promiseInstallAddon(origUrl);
@@ -53,9 +65,11 @@ async function testNoPrompt(origUrl, id) {
   ok(addon, "Addon was installed");
 
   let sawPopup = false;
-  PopupNotifications.panel.addEventListener("popupshown",
-                                            () => sawPopup = true,
-                                            {once: true});
+  PopupNotifications.panel.addEventListener(
+    "popupshown",
+    () => (sawPopup = true),
+    { once: true }
+  );
 
   
   let updatePromise = waitForUpdate(addon);
@@ -81,24 +95,30 @@ async function testNoPrompt(origUrl, id) {
   
   
   const amEvents = AddonTestUtils.getAMTelemetryEvents();
-  const updateEventsSteps = amEvents.filter(evt => {
-    return evt.method === "update" && evt.extra && evt.extra.addon_id == id;
-  }).map(evt => {
-    return evt.extra.step;
-  });
+  const updateEventsSteps = amEvents
+    .filter(evt => {
+      return evt.method === "update" && evt.extra && evt.extra.addon_id == id;
+    })
+    .map(evt => {
+      return evt.extra.step;
+    });
 
   
-  Assert.deepEqual(updateEventsSteps, [
-    "started", "download_started", "download_completed", "completed",
-  ], "Got the steps from the collected telemetry events");
+  Assert.deepEqual(
+    updateEventsSteps,
+    ["started", "download_started", "download_completed", "completed"],
+    "Got the steps from the collected telemetry events"
+  );
 }
 
 
 
-add_task(() => testNoPrompt(`${BASE}/browser_webext_update_perms1.xpi`,
-                            ID_PERMS));
+add_task(() =>
+  testNoPrompt(`${BASE}/browser_webext_update_perms1.xpi`, ID_PERMS)
+);
 
 
 
-add_task(() => testNoPrompt(`${BASE}/browser_webext_update_origins1.xpi`,
-                            ID_ORIGINS));
+add_task(() =>
+  testNoPrompt(`${BASE}/browser_webext_update_origins1.xpi`, ID_ORIGINS)
+);

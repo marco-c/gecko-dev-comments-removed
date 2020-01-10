@@ -54,7 +54,8 @@ async function testProbe(aProbe) {
 
   
   
-  delayTime += gBrowser.selectedTab.linkedBrowser.getTabBrowser()._getSwitcher().TAB_SWITCH_TIMEOUT;
+  delayTime += gBrowser.selectedTab.linkedBrowser.getTabBrowser()._getSwitcher()
+    .TAB_SWITCH_TIMEOUT;
 
   
   let origTab = gBrowser.selectedTab;
@@ -75,8 +76,10 @@ async function testProbe(aProbe) {
   
   let snapshot = histogram.snapshot();
   BrowserTestUtils.removeTab(hangTab);
-  ok(sum(Object.values(snapshot.values)) > 0,
-   `Spinner probe should now have a value in some bucket`);
+  ok(
+    sum(Object.values(snapshot.values)) > 0,
+    `Spinner probe should now have a value in some bucket`
+  );
 }
 
 add_task(async function setup() {

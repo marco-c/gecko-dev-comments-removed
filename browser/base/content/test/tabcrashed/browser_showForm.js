@@ -1,6 +1,7 @@
 "use strict";
 
-const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
+const PAGE =
+  "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 
 
 
@@ -12,29 +13,32 @@ requestLongerTimeout(2);
 
 
 add_task(async function test_show_form() {
-  return BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    
-    
-    let pref = TabCrashHandler.prefs.root + "sendReport";
-    await SpecialPowers.pushPrefEnv({
-      set: [[pref, true]],
-    });
+  return BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      
+      
+      let pref = TabCrashHandler.prefs.root + "sendReport";
+      await SpecialPowers.pushPrefEnv({
+        set: [[pref, true]],
+      });
 
-    
-    await BrowserTestUtils.crashBrowser(browser);
+      
+      await BrowserTestUtils.crashBrowser(browser);
 
-    let doc = browser.contentDocument;
+      let doc = browser.contentDocument;
 
-    
-    
-    let checkbox = doc.getElementById("sendReport");
-    ok(checkbox.checked, "Send report checkbox is checked.");
+      
+      
+      let checkbox = doc.getElementById("sendReport");
+      ok(checkbox.checked, "Send report checkbox is checked.");
 
-    
-    let options = doc.getElementById("options");
-    ok(!options.hidden, "Showing the crash report options form.");
-  });
+      
+      let options = doc.getElementById("options");
+      ok(!options.hidden, "Showing the crash report options form.");
+    }
+  );
 });

@@ -11,18 +11,21 @@ add_task(async function none() {
 
     
     let actions = PageActions.actionsInPanel(window);
-    Assert.ok(!actions.some(a => a.id == "addSearchEngine"),
-              "Action should not be present in panel");
-    let button =
-      BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
+    Assert.ok(
+      !actions.some(a => a.id == "addSearchEngine"),
+      "Action should not be present in panel"
+    );
+    let button = BrowserPageActions.panelButtonNodeForActionID(
+      "addSearchEngine"
+    );
     Assert.ok(!button, "Action button should not be in panel");
   });
 });
 
 
-
 add_task(async function one() {
-  let url = getRootDirectory(gTestPath) + "page_action_menu_add_search_engine_one.html";
+  let url =
+    getRootDirectory(gTestPath) + "page_action_menu_add_search_engine_one.html";
   await BrowserTestUtils.withNewTab(url, async () => {
     
     await promisePageActionPanelOpen();
@@ -33,16 +36,22 @@ add_task(async function one() {
     Assert.ok(action, "Action should be present in panel");
     let expectedTitle = "Add Search Engine";
     Assert.equal(action.getTitle(window), expectedTitle, "Action title");
-    let button =
-      BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
+    let button = BrowserPageActions.panelButtonNodeForActionID(
+      "addSearchEngine"
+    );
     Assert.ok(button, "Button should be in panel");
     Assert.equal(button.label, expectedTitle, "Button label");
-    Assert.equal(button.classList.contains("subviewbutton-nav"), false,
-                 "Button should not expand into a subview");
+    Assert.equal(
+      button.classList.contains("subviewbutton-nav"),
+      false,
+      "Button should not expand into a subview"
+    );
 
     
-    let enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_0");
+    let enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_0"
+    );
     let hiddenPromise = promisePageActionPanelHidden();
     let feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(button, {});
@@ -64,8 +73,10 @@ add_task(async function one() {
     Assert.ok(!button, "Action button should not be in panel");
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_0"
+    );
     await Services.search.removeEngine(engine);
     await enginePromise;
 
@@ -82,15 +93,19 @@ add_task(async function one() {
     button = BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
     Assert.ok(button, "Action button should be in panel");
     Assert.equal(button.label, expectedTitle, "Button label");
-    Assert.equal(button.classList.contains("subviewbutton-nav"), false,
-                 "Button should not expand into a subview");
+    Assert.equal(
+      button.classList.contains("subviewbutton-nav"),
+      false,
+      "Button should not expand into a subview"
+    );
   });
 });
 
 
-
 add_task(async function many() {
-  let url = getRootDirectory(gTestPath) + "page_action_menu_add_search_engine_many.html";
+  let url =
+    getRootDirectory(gTestPath) +
+    "page_action_menu_add_search_engine_many.html";
   await BrowserTestUtils.withNewTab(url, async () => {
     
     await promisePageActionPanelOpen();
@@ -101,19 +116,25 @@ add_task(async function many() {
     Assert.ok(action, "Action should be present in panel");
     let expectedTitle = "Add Search Engine";
     Assert.equal(action.getTitle(window), expectedTitle, "Action title");
-    let button =
-      BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
+    let button = BrowserPageActions.panelButtonNodeForActionID(
+      "addSearchEngine"
+    );
     Assert.ok(button, "Action button should be in panel");
     Assert.equal(button.label, expectedTitle, "Button label");
-    Assert.equal(button.classList.contains("subviewbutton-nav"), true,
-                 "Button should expand into a subview");
+    Assert.equal(
+      button.classList.contains("subviewbutton-nav"),
+      true,
+      "Button should expand into a subview"
+    );
 
     
     let viewPromise = promisePageActionViewShown();
     EventUtils.synthesizeMouseAtCenter(button, {});
     let view = await viewPromise;
-    let viewID =
-       BrowserPageActions._panelViewNodeIDForActionID("addSearchEngine", false);
+    let viewID = BrowserPageActions._panelViewNodeIDForActionID(
+      "addSearchEngine",
+      false
+    );
     Assert.equal(view.id, viewID, "View ID");
     let bodyID = viewID + "-body";
     let body = document.getElementById(bodyID);
@@ -128,8 +149,10 @@ add_task(async function many() {
     );
 
     
-    let enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_0");
+    let enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_0"
+    );
     let hiddenPromise = promisePageActionPanelHidden();
     let feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(body.children[0], {});
@@ -156,8 +179,10 @@ add_task(async function many() {
     );
 
     
-    enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_1");
+    enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_1"
+    );
     hiddenPromise = promisePageActionPanelHidden();
     feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(body.children[0], {});
@@ -178,12 +203,17 @@ add_task(async function many() {
     button = BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
     Assert.ok(button, "Button should be present in panel");
     Assert.equal(button.label, expectedTitle, "Button label");
-    Assert.equal(button.classList.contains("subviewbutton-nav"), false,
-                 "Button should not expand into a subview");
+    Assert.equal(
+      button.classList.contains("subviewbutton-nav"),
+      false,
+      "Button should not expand into a subview"
+    );
 
     
-    enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_2");
+    enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_2"
+    );
     hiddenPromise = promisePageActionPanelHidden();
     feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(button, {});
@@ -205,8 +235,10 @@ add_task(async function many() {
     Assert.ok(!button, "Button should not be in panel");
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_0"
+    );
     await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
@@ -223,12 +255,17 @@ add_task(async function many() {
     button = BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
     Assert.ok(button, "Button should be present in panel");
     Assert.equal(button.label, expectedTitle, "Button label");
-    Assert.equal(button.classList.contains("subviewbutton-nav"), false,
-                 "Button should not expand into a subview");
+    Assert.equal(
+      button.classList.contains("subviewbutton-nav"),
+      false,
+      "Button should not expand into a subview"
+    );
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_1");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_1"
+    );
     await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
@@ -243,8 +280,11 @@ add_task(async function many() {
     button = BrowserPageActions.panelButtonNodeForActionID("addSearchEngine");
     Assert.ok(button, "Button should be in panel");
     Assert.equal(button.label, expectedTitle, "Button label");
-    Assert.equal(button.classList.contains("subviewbutton-nav"), true,
-                 "Button should expand into a subview");
+    Assert.equal(
+      button.classList.contains("subviewbutton-nav"),
+      true,
+      "Button should expand into a subview"
+    );
     viewPromise = promisePageActionViewShown();
     EventUtils.synthesizeMouseAtCenter(button, {});
     await viewPromise;
@@ -261,8 +301,10 @@ add_task(async function many() {
     await promisePageActionPanelHidden();
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_2");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_2"
+    );
     await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
@@ -286,9 +328,9 @@ add_task(async function many() {
 });
 
 
-
 add_task(async function urlbarOne() {
-  let url = getRootDirectory(gTestPath) + "page_action_menu_add_search_engine_one.html";
+  let url =
+    getRootDirectory(gTestPath) + "page_action_menu_add_search_engine_one.html";
   await BrowserTestUtils.withNewTab(url, async () => {
     await promiseNodeVisible(BrowserPageActions.mainButtonNode);
 
@@ -304,8 +346,10 @@ add_task(async function urlbarOne() {
     Assert.ok(button, "Action button should be in urlbar");
 
     
-    let enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_0");
+    let enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_0"
+    );
     let feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(button, {});
     let engine = await enginePromise;
@@ -320,8 +364,10 @@ add_task(async function urlbarOne() {
     Assert.ok(!button, "Action button should not be in urlbar");
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_0"
+    );
     placedPromise = promisePlacedInUrlbar();
     await Services.search.removeEngine(engine);
     await enginePromise;
@@ -342,9 +388,10 @@ add_task(async function urlbarOne() {
 });
 
 
-
 add_task(async function urlbarMany() {
-  let url = getRootDirectory(gTestPath) + "page_action_menu_add_search_engine_many.html";
+  let url =
+    getRootDirectory(gTestPath) +
+    "page_action_menu_add_search_engine_many.html";
   await BrowserTestUtils.withNewTab(url, async () => {
     await promiseNodeVisible(BrowserPageActions.mainButtonNode);
 
@@ -363,8 +410,10 @@ add_task(async function urlbarMany() {
     
     EventUtils.synthesizeMouseAtCenter(button, {});
     let view = await waitForActivatedActionPanel();
-    let viewID =
-       BrowserPageActions._panelViewNodeIDForActionID("addSearchEngine", true);
+    let viewID = BrowserPageActions._panelViewNodeIDForActionID(
+      "addSearchEngine",
+      true
+    );
     Assert.equal(view.id, viewID, "View ID");
     let body = view.firstElementChild;
     Assert.deepEqual(
@@ -378,10 +427,13 @@ add_task(async function urlbarMany() {
     );
 
     
-    let enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_0");
-    let hiddenPromise =
-      promisePanelHidden(BrowserPageActions.activatedActionPanelNode);
+    let enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_0"
+    );
+    let hiddenPromise = promisePanelHidden(
+      BrowserPageActions.activatedActionPanelNode
+    );
     let feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(body.children[0], {});
     await hiddenPromise;
@@ -405,10 +457,13 @@ add_task(async function urlbarMany() {
     );
 
     
-    enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_1");
-    hiddenPromise =
-      promisePanelHidden(BrowserPageActions.activatedActionPanelNode);
+    enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_1"
+    );
+    hiddenPromise = promisePanelHidden(
+      BrowserPageActions.activatedActionPanelNode
+    );
     feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(body.children[0], {});
     await hiddenPromise;
@@ -419,8 +474,10 @@ add_task(async function urlbarMany() {
 
     
     
-    enginePromise =
-      promiseEngine("engine-added", "page_action_menu_add_search_engine_2");
+    enginePromise = promiseEngine(
+      "engine-added",
+      "page_action_menu_add_search_engine_2"
+    );
     feedbackPromise = promiseFeedbackPanelShownAndHidden();
     EventUtils.synthesizeMouseAtCenter(button, {});
     engine = await enginePromise;
@@ -436,8 +493,10 @@ add_task(async function urlbarMany() {
     Assert.ok(!button, "Button should not be in urlbar");
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_0"
+    );
     placedPromise = promisePlacedInUrlbar();
     await Services.search.removeEngine(engines.shift());
     await enginePromise;
@@ -450,8 +509,10 @@ add_task(async function urlbarMany() {
     Assert.ok(button, "Button should be in urlbar");
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_1");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_1"
+    );
     await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
@@ -470,14 +531,17 @@ add_task(async function urlbarMany() {
     );
 
     
-    hiddenPromise =
-      promisePanelHidden(BrowserPageActions.activatedActionPanelNode);
+    hiddenPromise = promisePanelHidden(
+      BrowserPageActions.activatedActionPanelNode
+    );
     EventUtils.synthesizeMouseAtCenter(button, {});
     await hiddenPromise;
 
     
-    enginePromise =
-      promiseEngine("engine-removed", "page_action_menu_add_search_engine_2");
+    enginePromise = promiseEngine(
+      "engine-removed",
+      "page_action_menu_add_search_engine_2"
+    );
     await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
@@ -496,8 +560,9 @@ add_task(async function urlbarMany() {
     );
 
     
-    hiddenPromise =
-      promisePanelHidden(BrowserPageActions.activatedActionPanelNode);
+    hiddenPromise = promisePanelHidden(
+      BrowserPageActions.activatedActionPanelNode
+    );
     EventUtils.synthesizeMouseAtCenter(button, {});
     await hiddenPromise;
 
@@ -509,22 +574,31 @@ add_task(async function urlbarMany() {
   });
 });
 
-
 function promiseEngine(expectedData, expectedEngineName) {
   info(`Waiting for engine ${expectedData}`);
-  return TestUtils.topicObserved("browser-search-engine-modified", (engine, data) => {
-    info(`Got engine ${engine.wrappedJSObject.name} ${data}`);
-    return expectedData == data &&
-           expectedEngineName == engine.wrappedJSObject.name;
-  }).then(([engine, data]) => engine);
+  return TestUtils.topicObserved(
+    "browser-search-engine-modified",
+    (engine, data) => {
+      info(`Got engine ${engine.wrappedJSObject.name} ${data}`);
+      return (
+        expectedData == data &&
+        expectedEngineName == engine.wrappedJSObject.name
+      );
+    }
+  ).then(([engine, data]) => engine);
 }
 
 function promiseFeedbackPanelShownAndHidden() {
   info("Waiting for feedback panel popupshown");
-  return BrowserTestUtils.waitForEvent(ConfirmationHint._panel, "popupshown").then(() => {
+  return BrowserTestUtils.waitForEvent(
+    ConfirmationHint._panel,
+    "popupshown"
+  ).then(() => {
     info("Got feedback panel popupshown. Now waiting for popuphidden");
-    return BrowserTestUtils.waitForEvent(ConfirmationHint._panel, "popuphidden")
-          .then(() => ConfirmationHint._message.textContent);
+    return BrowserTestUtils.waitForEvent(
+      ConfirmationHint._panel,
+      "popuphidden"
+    ).then(() => ConfirmationHint._message.textContent);
   });
 }
 

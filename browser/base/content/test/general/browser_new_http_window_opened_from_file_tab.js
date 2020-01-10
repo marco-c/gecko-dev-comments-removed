@@ -24,7 +24,7 @@ add_task(async function() {
 
   
   
-  let promiseNewWindow = BrowserTestUtils.waitForNewWindow({url: TEST_HTTP});
+  let promiseNewWindow = BrowserTestUtils.waitForNewWindow({ url: TEST_HTTP });
   await ContentTask.spawn(browser, TEST_HTTP, uri => {
     content.open(uri, "_blank");
   });
@@ -33,22 +33,30 @@ add_task(async function() {
     await BrowserTestUtils.closeWindow(win);
   });
   ok(win, "Check that an http window loaded when using window.open.");
-  ok(win.menubar.visible,
-     "Check that the menu bar on the new window is visible.");
-  ok(win.toolbar.visible,
-     "Check that the tool bar on the new window is visible.");
+  ok(
+    win.menubar.visible,
+    "Check that the menu bar on the new window is visible."
+  );
+  ok(
+    win.toolbar.visible,
+    "Check that the tool bar on the new window is visible."
+  );
 
   
   
-  promiseNewWindow = BrowserTestUtils.waitForNewWindow({url: TEST_HTTP});
+  promiseNewWindow = BrowserTestUtils.waitForNewWindow({ url: TEST_HTTP });
   await BrowserTestUtils.synthesizeMouseAtCenter("#linkToExample", {}, browser);
   let win2 = await promiseNewWindow;
   registerCleanupFunction(async function() {
     await BrowserTestUtils.closeWindow(win2);
   });
   ok(win2, "Check that an http window loaded when using link.");
-  ok(win2.menubar.visible,
-     "Check that the menu bar on the new window is visible.");
-  ok(win2.toolbar.visible,
-     "Check that the tool bar on the new window is visible.");
+  ok(
+    win2.menubar.visible,
+    "Check that the menu bar on the new window is visible."
+  );
+  ok(
+    win2.toolbar.visible,
+    "Check that the tool bar on the new window is visible."
+  );
 });

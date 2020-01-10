@@ -2,7 +2,7 @@
 
 
 
-const remoteClientsFixture = [ { id: 1, name: "Foo"}, { id: 2, name: "Bar"} ];
+const remoteClientsFixture = [{ id: 1, name: "Foo" }, { id: 2, name: "Bar" }];
 
 add_task(async function test() {
   
@@ -13,7 +13,11 @@ add_task(async function test() {
 
   
   updateTabContextMenu(origTab);
-  is(document.getElementById("context_closeTab").disabled, false, "Close Tab is enabled");
+  is(
+    document.getElementById("context_closeTab").disabled,
+    false,
+    "Close Tab is enabled"
+  );
 
   
   gBrowser.selectedTab = testTab;
@@ -22,7 +26,11 @@ add_task(async function test() {
 
   
   updateTabContextMenu(testTab);
-  is(document.getElementById("context_closeTab").disabled, false, "Close Tab is enabled when more than one tab exists");
+  is(
+    document.getElementById("context_closeTab").disabled,
+    false,
+    "Close Tab is enabled when more than one tab exists"
+  );
 
   
   
@@ -32,13 +40,25 @@ add_task(async function test() {
 
   
   updateTabContextMenu(pinned);
-  ok(!document.getElementById("context_closeOtherTabs").disabled, "Close Other Tabs is enabled on pinned tab");
-  ok(!document.getElementById("context_closeTabsToTheEnd").disabled, "Close Tabs To The End is enabled on pinned tab");
+  ok(
+    !document.getElementById("context_closeOtherTabs").disabled,
+    "Close Other Tabs is enabled on pinned tab"
+  );
+  ok(
+    !document.getElementById("context_closeTabsToTheEnd").disabled,
+    "Close Tabs To The End is enabled on pinned tab"
+  );
 
   
   updateTabContextMenu(testTab);
-  ok(document.getElementById("context_closeOtherTabs").disabled, "Close Other Tabs is disabled on single unpinned tab");
-  ok(document.getElementById("context_closeTabsToTheEnd").disabled, "Close Tabs To The End is disabled on single unpinned tab");
+  ok(
+    document.getElementById("context_closeOtherTabs").disabled,
+    "Close Other Tabs is disabled on single unpinned tab"
+  );
+  ok(
+    document.getElementById("context_closeTabsToTheEnd").disabled,
+    "Close Tabs To The End is disabled on single unpinned tab"
+  );
 
   
   let allTabs = Array.from(gBrowser.tabs);
@@ -46,17 +66,23 @@ add_task(async function test() {
 
   
   updateTabContextMenu(testTab);
-  ok(!document.getElementById("context_closeOtherTabs").disabled,
-     "Close Other Tabs is enabled on unpinned tab when there's another unpinned tab");
-  ok(document.getElementById("context_closeTabsToTheEnd").disabled, "Close Tabs To The End is disabled on last unpinned tab");
+  ok(
+    !document.getElementById("context_closeOtherTabs").disabled,
+    "Close Other Tabs is enabled on unpinned tab when there's another unpinned tab"
+  );
+  ok(
+    document.getElementById("context_closeTabsToTheEnd").disabled,
+    "Close Tabs To The End is disabled on last unpinned tab"
+  );
 
   
   
   updateTabContextMenu(origTab);
-  ok(!document.getElementById("context_closeTabsToTheEnd").disabled,
-     "Close Tabs To The End is enabled on unpinned tab when followed by another");
+  ok(
+    !document.getElementById("context_closeTabsToTheEnd").disabled,
+    "Close Tabs To The End is enabled on unpinned tab when followed by another"
+  );
 
   gBrowser.removeTab(testTab);
   gBrowser.removeTab(pinned);
 });
-

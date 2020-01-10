@@ -3,8 +3,10 @@
 
 "use strict";
 
-const TRACKING_PAGE = "http://tracking.example.org/browser/browser/base/content/test/trackingUI/trackingPage.html";
-const BENIGN_PAGE = "http://tracking.example.org/browser/browser/base/content/test/trackingUI/benignPage.html";
+const TRACKING_PAGE =
+  "http://tracking.example.org/browser/browser/base/content/test/trackingUI/trackingPage.html";
+const BENIGN_PAGE =
+  "http://tracking.example.org/browser/browser/base/content/test/trackingUI/benignPage.html";
 const TP_PREF = "privacy.trackingprotection.enabled";
 const COOKIE_PREF = "network.cookie.cookieBehavior";
 const ANIMATIONS_PREF = "toolkit.cosmeticAnimations.enabled";
@@ -13,14 +15,16 @@ const DTSCBN_PREF = "dom.testing.sync-content-blocking-notifications";
 
 
 add_task(async function testContentBlockingAllDisabled() {
-  await SpecialPowers.pushPrefEnv({set: [
-    [TP_PREF, false],
-    [COOKIE_PREF, Ci.nsICookieService.BEHAVIOR_ACCEPT],
-    [DTSCBN_PREF, true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [TP_PREF, false],
+      [COOKIE_PREF, Ci.nsICookieService.BEHAVIOR_ACCEPT],
+      [DTSCBN_PREF, true],
+    ],
+  });
   await UrlClassifierTestUtils.addTestTrackers();
 
-  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
   Services.prefs.setBoolPref(ANIMATIONS_PREF, true);
 
   registerCleanupFunction(function() {
@@ -29,11 +33,15 @@ add_task(async function testContentBlockingAllDisabled() {
     UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
-  let animationIcon = document.getElementById("tracking-protection-icon-animatable-image");
+  let animationIcon = document.getElementById(
+    "tracking-protection-icon-animatable-image"
+  );
   let noAnimationIcon = document.getElementById("tracking-protection-icon");
 
-  await Promise.all([promiseTabLoadEvent(tab, TRACKING_PAGE),
-                     waitForContentBlockingEvent(2, tab.ownerGlobal)]);
+  await Promise.all([
+    promiseTabLoadEvent(tab, TRACKING_PAGE),
+    waitForContentBlockingEvent(2, tab.ownerGlobal),
+  ]);
   ok(BrowserTestUtils.is_hidden(noAnimationIcon), "the default icon is hidden");
   ok(BrowserTestUtils.is_hidden(animationIcon), "the animated icon is hidden");
 
@@ -47,10 +55,10 @@ add_task(async function testContentBlockingAllDisabled() {
   ok(BrowserTestUtils.is_hidden(noAnimationIcon), "the default icon is hidden");
 
   
-  await SpecialPowers.pushPrefEnv({set: [
-    [TP_PREF, true],
-  ]});
-  await Promise.all([promiseTabLoadEvent(tab, TRACKING_PAGE),
-                     waitForContentBlockingEvent(2, tab.ownerGlobal)]);
+  await SpecialPowers.pushPrefEnv({ set: [[TP_PREF, true]] });
+  await Promise.all([
+    promiseTabLoadEvent(tab, TRACKING_PAGE),
+    waitForContentBlockingEvent(2, tab.ownerGlobal),
+  ]);
   ok(BrowserTestUtils.is_visible(noAnimationIcon), "the default icon is shown");
 });

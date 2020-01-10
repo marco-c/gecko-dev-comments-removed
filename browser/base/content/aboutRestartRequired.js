@@ -3,7 +3,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var AboutRestartRequired = {
   
@@ -22,8 +22,9 @@ var AboutRestartRequired = {
     }
   },
   restart() {
-    Services.startup.quit(Ci.nsIAppStartup.eRestart |
-                          Ci.nsIAppStartup.eAttemptQuit);
+    Services.startup.quit(
+      Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit
+    );
   },
   init() {
     this.addAutofocus();

@@ -3,7 +3,12 @@
 
 var invalidPage = "http://127.0.0.1:55555/";
 var validPage = "http://example.com/";
-var testPage = 'data:text/html,<frameset cols="400,400"><frame src="' + validPage + '"><frame src="' + invalidPage + '"></frameset>';
+var testPage =
+  'data:text/html,<frameset cols="400,400"><frame src="' +
+  validPage +
+  '"><frame src="' +
+  invalidPage +
+  '"></frameset>';
 
 
 var test2tab;
@@ -21,17 +26,19 @@ function test() {
 }
 
 function test1Setup() {
-  if (content.frames.length < 2 ||
-      content.frames[1].location != invalidPage)
+  if (content.frames.length < 2 || content.frames[1].location != invalidPage) {
     
     return;
+  }
 
   gBrowser.selectedBrowser.removeEventListener("load", test1Setup, true);
 
   var badFrame = content.frames[1];
   document.popupNode = badFrame.document.firstElementChild;
 
-  var contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
+  var contentAreaContextMenu = document.getElementById(
+    "contentAreaContextMenu"
+  );
   var contextMenu = new nsContextMenu(contentAreaContextMenu);
 
   
@@ -40,15 +47,20 @@ function test1Setup() {
 }
 
 function testShowOnlyThisFrame() {
-  if (content.location.href == testPage)
+  if (content.location.href == testPage) {
     
     return;
+  }
 
   
   
   clearInterval(intervalID);
 
-  is(content.location.href, invalidPage, "Should navigate to page url, not about:neterror");
+  is(
+    content.location.href,
+    invalidPage,
+    "Should navigate to page url, not about:neterror"
+  );
 
   
   gBrowser.addEventListener("load", test2Setup, true);
@@ -56,10 +68,10 @@ function testShowOnlyThisFrame() {
 }
 
 function test2Setup() {
-  if (content.frames.length < 2 ||
-      content.frames[1].location != invalidPage)
+  if (content.frames.length < 2 || content.frames[1].location != invalidPage) {
     
     return;
+  }
 
   gBrowser.removeEventListener("load", test2Setup, true);
 
@@ -68,7 +80,9 @@ function test2Setup() {
 
   document.popupNode = badFrame.document.firstElementChild;
 
-  var contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
+  var contentAreaContextMenu = document.getElementById(
+    "contentAreaContextMenu"
+  );
   var contextMenu = new nsContextMenu(contentAreaContextMenu);
 
   gBrowser.tabContainer.addEventListener("TabOpen", function listener(event) {
@@ -84,14 +98,19 @@ function test2Setup() {
 }
 
 function testOpenFrameInTab() {
-  if (gBrowser.contentDocument.location.href == "about:blank")
+  if (gBrowser.contentDocument.location.href == "about:blank") {
     
     return;
+  }
 
   clearInterval(intervalID);
 
   
-  is(gBrowser.contentDocument.location.href, invalidPage, "New tab should have page url, not about:neterror");
+  is(
+    gBrowser.contentDocument.location.href,
+    invalidPage,
+    "New tab should have page url, not about:neterror"
+  );
 
   
   gBrowser.removeCurrentTab();
@@ -104,12 +123,19 @@ function test3Setup() {
   var badFrame = content.frames[1];
   document.popupNode = badFrame.document.firstElementChild;
 
-  var contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
+  var contentAreaContextMenu = document.getElementById(
+    "contentAreaContextMenu"
+  );
   var contextMenu = new nsContextMenu(contentAreaContextMenu);
 
-  Services.ww.registerNotification(function notification(aSubject, aTopic, aData) {
-    if (aTopic == "domwindowopened")
+  Services.ww.registerNotification(function notification(
+    aSubject,
+    aTopic,
+    aData
+  ) {
+    if (aTopic == "domwindowopened") {
       test3window = aSubject;
+    }
     Services.ww.unregisterNotification(notification);
   });
 
@@ -126,7 +152,11 @@ function testOpenFrame() {
 
   clearInterval(intervalID);
 
-  is(test3window.content.location.href, invalidPage, "New window should have page url, not about:neterror");
+  is(
+    test3window.content.location.href,
+    invalidPage,
+    "New window should have page url, not about:neterror"
+  );
 
   test3window.close();
   cleanup();

@@ -9,7 +9,8 @@
 
 
 
-const PERMISSIONS_PAGE = "https://example.com/browser/browser/base/content/test/permissions/permissions.html";
+const PERMISSIONS_PAGE =
+  "https://example.com/browser/browser/base/content/test/permissions/permissions.html";
 
 
 
@@ -18,8 +19,12 @@ function resetToolbarWithoutDevEditionButtons() {
   CustomizableUI.removeWidgetFromArea("developer-button");
 }
 
-async function expectFocusAfterKey(aKey, aFocus, aAncestorOk = false,
-                                   aWindow = window) {
+async function expectFocusAfterKey(
+  aKey,
+  aFocus,
+  aAncestorOk = false,
+  aWindow = window
+) {
   let res = aKey.match(/^(Shift\+)?(?:(.)|(.+))$/);
   let shift = Boolean(res[1]);
   let key;
@@ -43,16 +48,22 @@ async function expectFocusAfterKey(aKey, aFocus, aAncestorOk = false,
   }
   info("Listening on item " + (expected.id || expected.className));
   let focused = BrowserTestUtils.waitForEvent(expected, "focus", aAncestorOk);
-  EventUtils.synthesizeKey(key, {shiftKey: shift}, aWindow);
+  EventUtils.synthesizeKey(key, { shiftKey: shift }, aWindow);
   let receivedEvent = await focused;
-  info("Got focus on item: " + (receivedEvent.target.id || receivedEvent.target.className));
+  info(
+    "Got focus on item: " +
+      (receivedEvent.target.id || receivedEvent.target.className)
+  );
   ok(true, friendlyExpected + " focused after " + aKey + " pressed");
 }
 
 function startFromUrlBar(aWindow = window) {
   aWindow.gURLBar.focus();
-  is(aWindow.document.activeElement, aWindow.gURLBar.inputField,
-     "URL bar focused for start of test");
+  is(
+    aWindow.document.activeElement,
+    aWindow.gURLBar.inputField,
+    "URL bar focused for start of test"
+  );
 }
 
 
@@ -90,7 +101,7 @@ add_task(async function setup() {
   
   let bookmarks = new Array(BOOKMARKS_COUNT);
   for (let i = 0; i < BOOKMARKS_COUNT; ++i) {
-    bookmarks[i] = {url: `http://test.places.${i}/`};
+    bookmarks[i] = { url: `http://test.places.${i}/` };
   }
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.toolbarGuid,
@@ -132,7 +143,10 @@ add_task(async function testTabStopsPageLoaded() {
 
 add_task(async function testTabStopsWithNotification() {
   await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(aBrowser) {
-    let popupShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popupShown = BrowserTestUtils.waitForEvent(
+      PopupNotifications.panel,
+      "popupshown"
+    );
     
     BrowserTestUtils.synthesizeMouseAtCenter("#geo", {}, aBrowser);
     await popupShown;
@@ -185,16 +199,22 @@ add_task(async function testArrowsToolbarbuttons() {
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "library-button");
     EventUtils.synthesizeKey("KEY_ArrowLeft");
-    is(document.activeElement.id, "library-button",
-       "ArrowLeft at end of button group does nothing");
+    is(
+      document.activeElement.id,
+      "library-button",
+      "ArrowLeft at end of button group does nothing"
+    );
     await expectFocusAfterKey("ArrowRight", "sidebar-button");
     await expectFocusAfterKey("ArrowRight", "fxa-toolbar-menu-button");
     
     
     await expectFocusAfterKey("ArrowRight", "PanelUI-menu-button");
     EventUtils.synthesizeKey("KEY_ArrowRight");
-    is(document.activeElement.id, "PanelUI-menu-button",
-       "ArrowRight at end of button group does nothing");
+    is(
+      document.activeElement.id,
+      "PanelUI-menu-button",
+      "ArrowRight at end of button group does nothing"
+    );
     await expectFocusAfterKey("ArrowLeft", "fxa-toolbar-menu-button");
     await expectFocusAfterKey("ArrowLeft", "sidebar-button");
     await expectFocusAfterKey("ArrowLeft", "library-button");
@@ -216,15 +236,20 @@ add_task(async function testArrowsRoleButton() {
 
 
 add_task(async function testArrowsDisabledButtons() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(aBrowser) {
+  await BrowserTestUtils.withNewTab("https://example.com", async function(
+    aBrowser
+  ) {
     await waitUntilReloadEnabled();
     startFromUrlBar();
     await expectFocusAfterKey("Shift+Tab", "identity-box");
     
     await expectFocusAfterKey("Shift+Tab", "reload-button");
     EventUtils.synthesizeKey("KEY_ArrowLeft");
-    is(document.activeElement.id, "reload-button",
-       "ArrowLeft on Reload button when prior buttons disabled does nothing");
+    is(
+      document.activeElement.id,
+      "reload-button",
+      "ArrowLeft on Reload button when prior buttons disabled does nothing"
+    );
 
     BrowserTestUtils.loadURI(aBrowser, "https://example.com/2");
     await BrowserTestUtils.browserLoaded(aBrowser);
@@ -241,7 +266,10 @@ add_task(async function testArrowsDisabledButtons() {
 add_task(async function testArrowsOverflowButton() {
   await BrowserTestUtils.withNewTab("about:blank", async function() {
     
-    CustomizableUI.addWidgetToArea("home-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+    CustomizableUI.addWidgetToArea(
+      "home-button",
+      CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+    );
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "library-button");
     await expectFocusAfterKey("ArrowRight", "sidebar-button");
@@ -269,8 +297,11 @@ add_task(async function testArrowsInPanelMultiView() {
   let focusEvt = await focused;
   ok(true, "Focus inside Library menu after toolbar button pressed");
   EventUtils.synthesizeKey("KEY_ArrowLeft");
-  is(document.activeElement, focusEvt.target,
-     "ArrowLeft inside panel does nothing");
+  is(
+    document.activeElement,
+    focusEvt.target,
+    "ArrowLeft inside panel does nothing"
+  );
   let hidden = BrowserTestUtils.waitForEvent(document, "popuphidden", true);
   view.closest("panel").hidePopup();
   await hidden;
@@ -278,15 +309,18 @@ add_task(async function testArrowsInPanelMultiView() {
 
 
 add_task(async function testArrowsRtl() {
-  await SpecialPowers.pushPrefEnv({set: [["intl.uidirection", 1]]});
+  await SpecialPowers.pushPrefEnv({ set: [["intl.uidirection", 1]] });
   
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
   startFromUrlBar(win);
   await expectFocusAfterKey("Tab", "library-button", false, win);
   EventUtils.synthesizeKey("KEY_ArrowRight", {}, win);
-  is(win.document.activeElement.id, "library-button",
-     "ArrowRight at end of button group does nothing");
+  is(
+    win.document.activeElement.id,
+    "library-button",
+    "ArrowRight at end of button group does nothing"
+  );
   await expectFocusAfterKey("ArrowLeft", "sidebar-button", false, win);
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
@@ -332,7 +366,10 @@ add_task(async function testPanelCloseRestoresFocus() {
     let hidden = BrowserTestUtils.waitForEvent(document, "popuphidden", true);
     view.closest("panel").hidePopup();
     await hidden;
-    is(document.activeElement.id, "library-button",
-     "Focus restored to Library button after panel closed");
+    is(
+      document.activeElement.id,
+      "library-button",
+      "Focus restored to Library button after panel closed"
+    );
   });
 });

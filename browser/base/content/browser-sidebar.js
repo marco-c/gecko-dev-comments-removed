@@ -10,39 +10,52 @@ var SidebarUI = {
     if (this._sidebars) {
       return this._sidebars;
     }
-    return this._sidebars = new Map([
-      ["viewBookmarksSidebar", {
-        title: document.getElementById("sidebar-switcher-bookmarks")
-                       .getAttribute("label"),
-        url: "chrome://browser/content/places/bookmarksSidebar.xul",
-        menuId: "menu_bookmarksSidebar",
-        buttonId: "sidebar-switcher-bookmarks",
-      }],
-      ["viewHistorySidebar", {
-        title: document.getElementById("sidebar-switcher-history")
-                       .getAttribute("label"),
-        url: "chrome://browser/content/places/historySidebar.xul",
-        menuId: "menu_historySidebar",
-        buttonId: "sidebar-switcher-history",
-        triggerButtonId: "appMenuViewHistorySidebar",
-      }],
-      ["viewTabsSidebar", {
-        title: document.getElementById("sidebar-switcher-tabs")
-                       .getAttribute("label"),
-        url: "chrome://browser/content/syncedtabs/sidebar.xhtml",
-        menuId: "menu_tabsSidebar",
-        buttonId: "sidebar-switcher-tabs",
-        triggerButtonId: "PanelUI-remotetabs-view-sidebar",
-      }],
-    ]);
+    return (this._sidebars = new Map([
+      [
+        "viewBookmarksSidebar",
+        {
+          title: document
+            .getElementById("sidebar-switcher-bookmarks")
+            .getAttribute("label"),
+          url: "chrome://browser/content/places/bookmarksSidebar.xul",
+          menuId: "menu_bookmarksSidebar",
+          buttonId: "sidebar-switcher-bookmarks",
+        },
+      ],
+      [
+        "viewHistorySidebar",
+        {
+          title: document
+            .getElementById("sidebar-switcher-history")
+            .getAttribute("label"),
+          url: "chrome://browser/content/places/historySidebar.xul",
+          menuId: "menu_historySidebar",
+          buttonId: "sidebar-switcher-history",
+          triggerButtonId: "appMenuViewHistorySidebar",
+        },
+      ],
+      [
+        "viewTabsSidebar",
+        {
+          title: document
+            .getElementById("sidebar-switcher-tabs")
+            .getAttribute("label"),
+          url: "chrome://browser/content/syncedtabs/sidebar.xhtml",
+          menuId: "menu_tabsSidebar",
+          buttonId: "sidebar-switcher-tabs",
+          triggerButtonId: "PanelUI-remotetabs-view-sidebar",
+        },
+      ],
+    ]));
   },
 
   
   
   get browser() {
-    if (this._browser)
+    if (this._browser) {
       return this._browser;
-    return this._browser = document.getElementById("sidebar");
+    }
+    return (this._browser = document.getElementById("sidebar"));
   },
   POSITION_START_PREF: "sidebar.position_start",
   DEFAULT_SIDEBAR_ID: "viewBookmarksSidebar",
@@ -55,9 +68,10 @@ var SidebarUI = {
   
   
   get _title() {
-    if (this.__title)
+    if (this.__title) {
       return this.__title;
-    return this.__title = document.getElementById("sidebar-title");
+    }
+    return (this.__title = document.getElementById("sidebar-title"));
   },
   _splitter: null,
   _icon: null,
@@ -81,7 +95,9 @@ var SidebarUI = {
     this._box = document.getElementById("sidebar-box");
     this._splitter = document.getElementById("sidebar-splitter");
     this._icon = document.getElementById("sidebar-icon");
-    this._reversePositionButton = document.getElementById("sidebar-reverse-position");
+    this._reversePositionButton = document.getElementById(
+      "sidebar-reverse-position"
+    );
     this._switcherPanel = document.getElementById("sidebarMenu-popup");
     this._switcherTarget = document.getElementById("sidebar-switcher-target");
     this._switcherArrow = document.getElementById("sidebar-switcher-arrow");
@@ -106,7 +122,11 @@ var SidebarUI = {
       if (this._box.hasAttribute("positionend")) {
         xulStore.persist(this._box, "positionend");
       } else {
-        xulStore.removeValue(document.documentURI, "sidebar-box", "positionend");
+        xulStore.removeValue(
+          document.documentURI,
+          "sidebar-box",
+          "positionend"
+        );
       }
       if (this._box.hasAttribute("checked")) {
         xulStore.persist(this._box, "checked");
@@ -123,7 +143,10 @@ var SidebarUI = {
 
 
   toggleSwitcherPanel() {
-    if (this._switcherPanel.state == "open" || this._switcherPanel.state == "showing") {
+    if (
+      this._switcherPanel.state == "open" ||
+      this._switcherPanel.state == "showing"
+    ) {
       this.hideSwitcherPanel();
     } else if (this._switcherPanel.state == "closed") {
       this.showSwitcherPanel();
@@ -136,14 +159,19 @@ var SidebarUI = {
 
   showSwitcherPanel() {
     this._ensureShortcutsShown();
-    this._switcherPanel.addEventListener("popuphiding", () => {
-      this._switcherTarget.classList.remove("active");
-    }, {once: true});
+    this._switcherPanel.addEventListener(
+      "popuphiding",
+      () => {
+        this._switcherTarget.classList.remove("active");
+      },
+      { once: true }
+    );
 
     
-    let label = this._positionStart == RTL_UI ?
-                  gNavigatorBundle.getString("sidebar.moveToLeft") :
-                  gNavigatorBundle.getString("sidebar.moveToRight");
+    let label =
+      this._positionStart == RTL_UI
+        ? gNavigatorBundle.getString("sidebar.moveToLeft")
+        : gNavigatorBundle.getString("sidebar.moveToRight");
     this._reversePositionButton.setAttribute("label", label);
 
     this._switcherPanel.hidden = false;
@@ -151,7 +179,7 @@ var SidebarUI = {
     this._switcherTarget.classList.add("active");
   },
 
-  updateShortcut({button, key}) {
+  updateShortcut({ button, key }) {
     
     
     if (!this._addedShortcuts) {
@@ -176,8 +204,10 @@ var SidebarUI = {
       return;
     }
     this._addedShortcuts = true;
-    for (let button of this._switcherPanel.querySelectorAll("toolbarbutton[key]")) {
-      this.updateShortcut({button});
+    for (let button of this._switcherPanel.querySelectorAll(
+      "toolbarbutton[key]"
+    )) {
+      this.updateShortcut({ button });
     }
   },
 
@@ -255,14 +285,20 @@ var SidebarUI = {
       return true;
     }
 
-    this._box.setAttribute("width", sourceUI._box.getBoundingClientRect().width);
+    this._box.setAttribute(
+      "width",
+      sourceUI._box.getBoundingClientRect().width
+    );
     this.showInitially(commandID);
 
     return true;
   },
 
   windowPrivacyMatches(w1, w2) {
-    return PrivateBrowsingUtils.isWindowPrivate(w1) === PrivateBrowsingUtils.isWindowPrivate(w2);
+    return (
+      PrivateBrowsingUtils.isWindowPrivate(w1) ===
+      PrivateBrowsingUtils.isWindowPrivate(w2)
+    );
   },
 
   
@@ -274,8 +310,11 @@ var SidebarUI = {
     
     
     if (sourceWindow) {
-      if (sourceWindow.closed || sourceWindow.location.protocol != "chrome:" ||
-        !this.windowPrivacyMatches(sourceWindow, window)) {
+      if (
+        sourceWindow.closed ||
+        sourceWindow.location.protocol != "chrome:" ||
+        !this.windowPrivacyMatches(sourceWindow, window)
+      ) {
         return;
       }
       
@@ -316,7 +355,7 @@ var SidebarUI = {
 
 
   _fireShowEvent() {
-    let event = new CustomEvent("SidebarShown", {bubbles: true});
+    let event = new CustomEvent("SidebarShown", { bubbles: true });
     this._switcherTarget.dispatchEvent(event);
   },
 
@@ -327,7 +366,7 @@ var SidebarUI = {
 
 
   _fireFocusedEvent() {
-    let event = new CustomEvent("SidebarFocused", {bubbles: true});
+    let event = new CustomEvent("SidebarFocused", { bubbles: true });
     this.browser.contentWindow.dispatchEvent(event);
   },
 
@@ -384,10 +423,13 @@ var SidebarUI = {
 
   _loadSidebarExtension(commandID) {
     let sidebar = this.sidebars.get(commandID);
-    let {extensionId} = sidebar;
+    let { extensionId } = sidebar;
     if (extensionId) {
-      SidebarUI.browser.contentWindow.loadPanel(extensionId, sidebar.panel,
-                                                sidebar.browserStyle);
+      SidebarUI.browser.contentWindow.loadPanel(
+        extensionId,
+        sidebar.panel,
+        sidebar.browserStyle
+      );
     }
   },
 
@@ -459,21 +501,25 @@ var SidebarUI = {
       this._box.setAttribute("sidebarcommand", commandID);
       this.lastOpenedId = commandID;
 
-      let {url, title} = this.sidebars.get(commandID);
+      let { url, title } = this.sidebars.get(commandID);
       this.title = title;
       this.browser.setAttribute("src", url); 
 
       if (this.browser.contentDocument.location.href != url) {
-        this.browser.addEventListener("load", event => {
-          
-          
-          setTimeout(() => {
-            resolve();
-
+        this.browser.addEventListener(
+          "load",
+          event => {
             
-            this._fireShowEvent();
-          }, 0);
-        }, {capture: true, once: true});
+            
+            setTimeout(() => {
+              resolve();
+
+              
+              this._fireShowEvent();
+            }, 0);
+          },
+          { capture: true, once: true }
+        );
       } else {
         resolve();
 
@@ -482,9 +528,10 @@ var SidebarUI = {
       }
 
       let selBrowser = gBrowser.selectedBrowser;
-      selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange",
-        {commandID, isOpen: true}
-      );
+      selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange", {
+        commandID,
+        isOpen: true,
+      });
     });
   },
 
@@ -517,9 +564,10 @@ var SidebarUI = {
 
     let selBrowser = gBrowser.selectedBrowser;
     selBrowser.focus();
-    selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange",
-      {commandID, isOpen: false}
-    );
+    selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange", {
+      commandID,
+      isOpen: false,
+    });
     if (triggerNode) {
       updateToggleControlLabel(triggerNode);
     }
@@ -530,10 +578,11 @@ var SidebarUI = {
 
 
   selectMenuItem(commandID) {
-    for (let [id, {menuId, buttonId, triggerButtonId}] of this.sidebars) {
+    for (let [id, { menuId, buttonId, triggerButtonId }] of this.sidebars) {
       let menu = document.getElementById(menuId);
       let button = document.getElementById(buttonId);
-      let triggerbutton = triggerButtonId && document.getElementById(triggerButtonId);
+      let triggerbutton =
+        triggerButtonId && document.getElementById(triggerButtonId);
       if (id == commandID) {
         menu.setAttribute("checked", "true");
         button.setAttribute("checked", "true");
@@ -555,5 +604,10 @@ var SidebarUI = {
 
 
 
-XPCOMUtils.defineLazyPreferenceGetter(SidebarUI, "_positionStart",
-  SidebarUI.POSITION_START_PREF, true, SidebarUI.setPosition.bind(SidebarUI));
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarUI,
+  "_positionStart",
+  SidebarUI.POSITION_START_PREF,
+  true,
+  SidebarUI.setPosition.bind(SidebarUI)
+);

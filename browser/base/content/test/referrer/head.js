@@ -1,15 +1,25 @@
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "BrowserTestUtils",
-  "resource://testing-common/BrowserTestUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "ContentTask",
-  "resource://testing-common/ContentTask.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserTestUtils",
+  "resource://testing-common/BrowserTestUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ContentTask",
+  "resource://testing-common/ContentTask.jsm"
+);
 
 const REFERRER_URL_BASE = "/browser/browser/base/content/test/referrer/";
 const REFERRER_POLICYSERVER_URL =
   "test1.example.com" + REFERRER_URL_BASE + "file_referrer_policyserver.sjs";
 const REFERRER_POLICYSERVER_URL_ATTRIBUTE =
-  "test1.example.com" + REFERRER_URL_BASE + "file_referrer_policyserver_attr.sjs";
+  "test1.example.com" +
+  REFERRER_URL_BASE +
+  "file_referrer_policyserver_attr.sjs";
 
 var gTestWindow = null;
 var rounds = 0;
@@ -28,12 +38,12 @@ var _referrerTests = [
   {
     fromScheme: "http://",
     toScheme: "http://",
-    result: "http://test1.example.com/browser",  
+    result: "http://test1.example.com/browser", 
   },
   {
     fromScheme: "https://",
     toScheme: "http://",
-    result: "",  
+    result: "", 
   },
   
   
@@ -41,14 +51,14 @@ var _referrerTests = [
     fromScheme: "https://",
     toScheme: "http://",
     policy: "origin",
-    result: "https://test1.example.com/",  
+    result: "https://test1.example.com/", 
   },
   {
     fromScheme: "https://",
     toScheme: "http://",
     policy: "origin",
     rel: "noreferrer",
-    result: "",  
+    result: "", 
   },
   
   
@@ -58,13 +68,13 @@ var _referrerTests = [
     fromScheme: "https://",
     toScheme: "https://",
     policy: "no-referrer",
-    result: "",  
+    result: "", 
   },
   {
     fromScheme: "http://",
     toScheme: "https://",
     policy: "no-referrer",
-    result: "",  
+    result: "", 
   },
 ];
 
@@ -101,9 +111,17 @@ function getRemovedReferrerTest(aTestNumber) {
 
 function getReferrerTestDescription(aTestNumber) {
   let test = getReferrerTest(aTestNumber);
-  return "policy=[" + test.policy + "] " +
-         "rel=[" + test.rel + "] " +
-         test.fromScheme + " -> " + test.toScheme;
+  return (
+    "policy=[" +
+    test.policy +
+    "] " +
+    "rel=[" +
+    test.rel +
+    "] " +
+    test.fromScheme +
+    " -> " +
+    test.toScheme
+  );
 }
 
 
@@ -114,7 +132,10 @@ function getReferrerTestDescription(aTestNumber) {
 
 function clickTheLink(aWindow, aLinkId, aOptions) {
   return BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + aLinkId, aOptions, aWindow.gBrowser.selectedBrowser);
+    "#" + aLinkId,
+    aOptions,
+    aWindow.gBrowser.selectedBrowser
+  );
 }
 
 
@@ -162,8 +183,9 @@ function someTabLoaded(aWindow) {
 
 
 function newWindowOpened() {
-  return TestUtils.topicObserved("browser-delayed-startup-finished")
-                  .then(([win]) => win);
+  return TestUtils.topicObserved("browser-delayed-startup-finished").then(
+    ([win]) => win
+  );
 }
 
 
@@ -174,8 +196,10 @@ function newWindowOpened() {
 
 
 function contextMenuOpened(aWindow, aLinkId) {
-  let popupShownPromise = BrowserTestUtils.waitForEvent(aWindow.document,
-                                                        "popupshown");
+  let popupShownPromise = BrowserTestUtils.waitForEvent(
+    aWindow.document,
+    "popupshown"
+  );
   
   clickTheLink(aWindow, aLinkId, { type: "contextmenu", button: 2 });
   return popupShownPromise.then(e => e.target);
@@ -201,17 +225,30 @@ function doContextMenuCommand(aWindow, aMenu, aItemId) {
 
 function referrerTestCaseLoaded(aTestNumber, aParams) {
   let test = getReferrerTest(aTestNumber);
-  let server = rounds == 0 ? REFERRER_POLICYSERVER_URL :
-                             REFERRER_POLICYSERVER_URL_ATTRIBUTE;
-  let url = test.fromScheme + server +
-            "?scheme=" + escape(test.toScheme) +
-            "&policy=" + escape(test.policy || "") +
-            "&rel=" + escape(test.rel || "") +
-            "&cross=" + escape(test.cross || "");
+  let server =
+    rounds == 0
+      ? REFERRER_POLICYSERVER_URL
+      : REFERRER_POLICYSERVER_URL_ATTRIBUTE;
+  let url =
+    test.fromScheme +
+    server +
+    "?scheme=" +
+    escape(test.toScheme) +
+    "&policy=" +
+    escape(test.policy || "") +
+    "&rel=" +
+    escape(test.rel || "") +
+    "&cross=" +
+    escape(test.cross || "");
   let browser = gTestWindow.gBrowser;
-  return BrowserTestUtils.openNewForegroundTab(browser, () => {
-    browser.selectedTab = BrowserTestUtils.addTab(browser, url, aParams);
-  }, false, true);
+  return BrowserTestUtils.openNewForegroundTab(
+    browser,
+    () => {
+      browser.selectedTab = BrowserTestUtils.addTab(browser, url, aParams);
+    },
+    false,
+    true
+  );
 }
 
 
@@ -221,8 +258,13 @@ function referrerTestCaseLoaded(aTestNumber, aParams) {
 
 
 
-function checkReferrerAndStartNextTest(aTestNumber, aNewWindow, aNewTab,
-                                       aStartTestCase, aParams = {}) {
+function checkReferrerAndStartNextTest(
+  aTestNumber,
+  aNewWindow,
+  aNewTab,
+  aStartTestCase,
+  aParams = {}
+) {
   referrerResultExtracted(aNewWindow || gTestWindow).then(function(result) {
     
     let test = getReferrerTest(aTestNumber);

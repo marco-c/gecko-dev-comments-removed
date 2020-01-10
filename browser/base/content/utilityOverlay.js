@@ -4,42 +4,65 @@
 
 
 
-var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-  ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
+  ContextualIdentityService:
+    "resource://gre/modules/ContextualIdentityService.jsm",
   ExtensionSettingsStore: "resource://gre/modules/ExtensionSettingsStore.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ShellService: "resource:///modules/ShellService.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
-                                   "@mozilla.org/browser/aboutnewtab-service;1",
-                                   "nsIAboutNewTabService");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "aboutNewTabService",
+  "@mozilla.org/browser/aboutnewtab-service;1",
+  "nsIAboutNewTabService"
+);
 
 XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
-  Components.Constructor("@mozilla.org/referrer-info;1",
-                         "nsIReferrerInfo",
-                         "init"));
+  Components.Constructor(
+    "@mozilla.org/referrer-info;1",
+    "nsIReferrerInfo",
+    "init"
+  )
+);
 
 Object.defineProperty(this, "BROWSER_NEW_TAB_URL", {
   enumerable: true,
   get() {
     if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-      if (!PrivateBrowsingUtils.permanentPrivateBrowsing &&
-          !aboutNewTabService.overridden) {
+      if (
+        !PrivateBrowsingUtils.permanentPrivateBrowsing &&
+        !aboutNewTabService.overridden
+      ) {
         return "about:privatebrowsing";
       }
       
       
-      let extensionControlled = Services.prefs.getBoolPref("browser.newtab.extensionControlled", false);
-      let privateAllowed = Services.prefs.getBoolPref("browser.newtab.privateAllowed", false);
+      let extensionControlled = Services.prefs.getBoolPref(
+        "browser.newtab.extensionControlled",
+        false
+      );
+      let privateAllowed = Services.prefs.getBoolPref(
+        "browser.newtab.privateAllowed",
+        false
+      );
       
       
-      if (!privateAllowed && (extensionControlled || aboutNewTabService.newTabURL.startsWith("moz-extension://"))) {
+      if (
+        !privateAllowed &&
+        (extensionControlled ||
+          aboutNewTabService.newTabURL.startsWith("moz-extension://"))
+      ) {
         return "about:privatebrowsing";
       }
     }
@@ -55,19 +78,25 @@ var gBidiUI = false;
 
 
 function isBlankPageURL(aURL) {
-  return aURL == "about:blank" ||
-         aURL == "about:home" ||
-         aURL == "about:welcome" ||
-         aURL == BROWSER_NEW_TAB_URL;
+  return (
+    aURL == "about:blank" ||
+    aURL == "about:home" ||
+    aURL == "about:welcome" ||
+    aURL == BROWSER_NEW_TAB_URL
+  );
 }
 
 function getTopWin(skipPopups) {
   
   
   
-  if (top.document.documentElement.getAttribute("windowtype") == "navigator:browser" &&
-      (!skipPopups || top.toolbar.visible))
+  if (
+    top.document.documentElement.getAttribute("windowtype") ==
+      "navigator:browser" &&
+    (!skipPopups || top.toolbar.visible)
+  ) {
     return top;
+  }
 
   return BrowserWindowTracker.getTopWindow({
     private: PrivateBrowsingUtils.isWindowPrivate(window),
@@ -78,9 +107,11 @@ function getTopWin(skipPopups) {
 function doGetProtocolFlags(aURI) {
   let handler = Services.io.getProtocolHandler(aURI.scheme);
   
-  return handler instanceof Ci.nsIProtocolHandlerWithDynamicFlags ?
-         handler.QueryInterface(Ci.nsIProtocolHandlerWithDynamicFlags).getFlagsForURI(aURI) :
-         handler.protocolFlags;
+  return handler instanceof Ci.nsIProtocolHandlerWithDynamicFlags
+    ? handler
+        .QueryInterface(Ci.nsIProtocolHandlerWithDynamicFlags)
+        .getFlagsForURI(aURI)
+    : handler.protocolFlags;
 }
 
 
@@ -98,8 +129,15 @@ function doGetProtocolFlags(aURI) {
 
 
 
-function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup,
-                    aPostData, aReferrerInfo) {
+function openUILink(
+  url,
+  event,
+  aIgnoreButton,
+  aIgnoreAlt,
+  aAllowThirdPartyFixup,
+  aPostData,
+  aReferrerInfo
+) {
   event = getRootEvent(event);
   let params;
 
@@ -121,13 +159,14 @@ function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup
   }
 
   if (!params.triggeringPrincipal) {
-    throw new Error("Required argument triggeringPrincipal missing within openUILink");
+    throw new Error(
+      "Required argument triggeringPrincipal missing within openUILink"
+    );
   }
 
   let where = whereToOpenLink(event, aIgnoreButton, aIgnoreAlt);
   openUILinkIn(url, where, params);
 }
-
 
 
 
@@ -178,31 +217,38 @@ function whereToOpenLink(e, ignoreButton, ignoreAlt) {
   
   
   
-  if (!e)
+  if (!e) {
     return "current";
+  }
 
   e = getRootEvent(e);
 
   var shift = e.shiftKey;
-  var ctrl =  e.ctrlKey;
-  var meta =  e.metaKey;
-  var alt  =  e.altKey && !ignoreAlt;
+  var ctrl = e.ctrlKey;
+  var meta = e.metaKey;
+  var alt = e.altKey && !ignoreAlt;
 
   
   var middle = !ignoreButton && e.button == 1;
-  var middleUsesTabs = Services.prefs.getBoolPref("browser.tabs.opentabfor.middleclick", true);
+  var middleUsesTabs = Services.prefs.getBoolPref(
+    "browser.tabs.opentabfor.middleclick",
+    true
+  );
 
   
 
   var metaKey = AppConstants.platform == "macosx" ? meta : ctrl;
-  if (metaKey || (middle && middleUsesTabs))
+  if (metaKey || (middle && middleUsesTabs)) {
     return shift ? "tabshifted" : "tab";
+  }
 
-  if (alt && Services.prefs.getBoolPref("browser.altClickSave", false))
+  if (alt && Services.prefs.getBoolPref("browser.altClickSave", false)) {
     return "save";
+  }
 
-  if (shift || (middle && !middleUsesTabs))
+  if (shift || (middle && !middleUsesTabs)) {
     return "window";
+  }
 
   return "current";
 }
@@ -237,10 +283,14 @@ function openWebLinkIn(url, where, params) {
   }
 
   if (!params.triggeringPrincipal) {
-    params.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({});
+    params.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
+      {}
+    );
   }
   if (params.triggeringPrincipal.isSystemPrincipal) {
-    throw new Error("System principal should never be passed into openWebLinkIn()");
+    throw new Error(
+      "System principal should never be passed into openWebLinkIn()"
+    );
   }
 
   openUILinkIn(url, where, params);
@@ -281,14 +331,22 @@ function openWebLinkIn(url, where, params) {
 
 
 
-function openUILinkIn(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
+function openUILinkIn(
+  url,
+  where,
+  aAllowThirdPartyFixup,
+  aPostData,
+  aReferrerInfo
+) {
   var params;
 
   if (arguments.length == 3 && typeof arguments[2] == "object") {
     params = aAllowThirdPartyFixup;
   }
   if (!params || !params.triggeringPrincipal) {
-    throw new Error("Required argument triggeringPrincipal missing within openUILinkIn");
+    throw new Error(
+      "Required argument triggeringPrincipal missing within openUILinkIn"
+    );
   }
 
   params.fromChrome = true;
@@ -298,33 +356,34 @@ function openUILinkIn(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInf
 
 
 function openLinkIn(url, where, params) {
-  if (!where || !url)
+  if (!where || !url) {
     return;
+  }
 
-  var aFromChrome           = params.fromChrome;
+  var aFromChrome = params.fromChrome;
   var aAllowThirdPartyFixup = params.allowThirdPartyFixup;
-  var aPostData             = params.postData;
-  var aCharset              = params.charset;
-  var aReferrerInfo       = params.referrerInfo ? params.referrerInfo
+  var aPostData = params.postData;
+  var aCharset = params.charset;
+  var aReferrerInfo = params.referrerInfo
+    ? params.referrerInfo
     : new ReferrerInfo(Ci.nsIHttpChannel.REFERRER_POLICY_UNSET, true, null);
-  var aRelatedToCurrent     = params.relatedToCurrent;
+  var aRelatedToCurrent = params.relatedToCurrent;
   var aAllowInheritPrincipal = !!params.allowInheritPrincipal;
-  var aAllowMixedContent    = params.allowMixedContent;
-  var aForceAllowDataURI    = params.forceAllowDataURI;
-  var aInBackground         = params.inBackground;
-  var aInitiatingDoc        = params.initiatingDoc;
-  var aIsPrivate            = params.private;
-  var aSkipTabAnimation     = params.skipTabAnimation;
+  var aAllowMixedContent = params.allowMixedContent;
+  var aForceAllowDataURI = params.forceAllowDataURI;
+  var aInBackground = params.inBackground;
+  var aInitiatingDoc = params.initiatingDoc;
+  var aIsPrivate = params.private;
+  var aSkipTabAnimation = params.skipTabAnimation;
   var aAllowPinnedTabHostChange = !!params.allowPinnedTabHostChange;
-  var aAllowPopups          = !!params.allowPopups;
-  var aUserContextId        = params.userContextId;
+  var aAllowPopups = !!params.allowPopups;
+  var aUserContextId = params.userContextId;
   var aIndicateErrorPageLoad = params.indicateErrorPageLoad;
-  var aPrincipal            = params.originPrincipal;
-  var aStoragePrincipal     = params.originStoragePrincipal;
-  var aTriggeringPrincipal  = params.triggeringPrincipal;
-  var aCsp                  = params.csp;
-  var aForceAboutBlankViewerInCurrent =
-      params.forceAboutBlankViewerInCurrent;
+  var aPrincipal = params.originPrincipal;
+  var aStoragePrincipal = params.originStoragePrincipal;
+  var aTriggeringPrincipal = params.triggeringPrincipal;
+  var aCsp = params.csp;
+  var aForceAboutBlankViewerInCurrent = params.forceAboutBlankViewerInCurrent;
   var aResolveOnNewTabCreated = params.resolveOnNewTabCreated;
 
   if (!aTriggeringPrincipal) {
@@ -335,15 +394,34 @@ function openLinkIn(url, where, params) {
     
     
     if ("isContentWindowPrivate" in params) {
-      saveURL(url, null, null, true, true, aReferrerInfo.sendReferrer ? aReferrerInfo.originalReferrer : null,
-              null, params.isContentWindowPrivate, aPrincipal);
+      saveURL(
+        url,
+        null,
+        null,
+        true,
+        true,
+        aReferrerInfo.sendReferrer ? aReferrerInfo.originalReferrer : null,
+        null,
+        params.isContentWindowPrivate,
+        aPrincipal
+      );
     } else {
       if (!aInitiatingDoc) {
-        Cu.reportError("openUILink/openLinkIn was called with " +
-          "where == 'save' but without initiatingDoc.  See bug 814264.");
+        Cu.reportError(
+          "openUILink/openLinkIn was called with " +
+            "where == 'save' but without initiatingDoc.  See bug 814264."
+        );
         return;
       }
-      saveURL(url, null, null, true, true, aReferrerInfo.sendReferrer ? aReferrerInfo.originalReferrer : null, aInitiatingDoc);
+      saveURL(
+        url,
+        null,
+        null,
+        true,
+        true,
+        aReferrerInfo.sendReferrer ? aReferrerInfo.originalReferrer : null,
+        aInitiatingDoc
+      );
     }
     return;
   }
@@ -357,8 +435,7 @@ function openLinkIn(url, where, params) {
   }
   
   
-  if ((where == "tab" || where == "tabshifted") &&
-      w && !w.toolbar.visible) {
+  if ((where == "tab" || where == "tabshifted") && w && !w.toolbar.visible) {
     w = getTopWin(true);
     aRelatedToCurrent = false;
   }
@@ -372,7 +449,8 @@ function openLinkIn(url, where, params) {
     if (principal && principal.isCodebasePrincipal) {
       let attrs = {
         userContextId: aUserContextId,
-        privateBrowsingId: aIsPrivate || (w && PrivateBrowsingUtils.isWindowPrivate(w)),
+        privateBrowsingId:
+          aIsPrivate || (w && PrivateBrowsingUtils.isWindowPrivate(w)),
         firstPartyDomain: principal.originAttributes.firstPartyDomain,
       };
       return Services.scriptSecurityManager.principalWithOA(principal, attrs);
@@ -389,31 +467,37 @@ function openLinkIn(url, where, params) {
       features += ",private";
       
       
-      aReferrerInfo = new ReferrerInfo(aReferrerInfo.referrerPolicy, false,
-        aReferrerInfo.originalReferrer);
+      aReferrerInfo = new ReferrerInfo(
+        aReferrerInfo.referrerPolicy,
+        false,
+        aReferrerInfo.originalReferrer
+      );
     }
 
     
-    var sa = Cc["@mozilla.org/array;1"].
-             createInstance(Ci.nsIMutableArray);
+    var sa = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
 
-    var wuri = Cc["@mozilla.org/supports-string;1"].
-               createInstance(Ci.nsISupportsString);
+    var wuri = Cc["@mozilla.org/supports-string;1"].createInstance(
+      Ci.nsISupportsString
+    );
     wuri.data = url;
 
     let charset = null;
     if (aCharset) {
-      charset = Cc["@mozilla.org/supports-string;1"]
-                  .createInstance(Ci.nsISupportsString);
+      charset = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
       charset.data = "charset=" + aCharset;
     }
 
-    var allowThirdPartyFixupSupports = Cc["@mozilla.org/supports-PRBool;1"].
-                                       createInstance(Ci.nsISupportsPRBool);
+    var allowThirdPartyFixupSupports = Cc[
+      "@mozilla.org/supports-PRBool;1"
+    ].createInstance(Ci.nsISupportsPRBool);
     allowThirdPartyFixupSupports.data = aAllowThirdPartyFixup;
 
-    var userContextIdSupports = Cc["@mozilla.org/supports-PRUint32;1"].
-                                 createInstance(Ci.nsISupportsPRUint32);
+    var userContextIdSupports = Cc[
+      "@mozilla.org/supports-PRUint32;1"
+    ].createInstance(Ci.nsISupportsPRUint32);
     userContextIdSupports.data = aUserContextId;
 
     sa.appendElement(wuri);
@@ -428,7 +512,7 @@ function openLinkIn(url, where, params) {
     sa.appendElement(null); 
     sa.appendElement(aCsp);
 
-    const sourceWindow = (w || window);
+    const sourceWindow = w || window;
     let win;
     if (params.frameOuterWindowID != undefined && sourceWindow) {
       
@@ -438,20 +522,35 @@ function openLinkIn(url, where, params) {
       const sourceTabBrowser = sourceWindow.gBrowser.selectedBrowser;
       let delayedStartupObserver = aSubject => {
         if (aSubject == win) {
-          Services.obs.removeObserver(delayedStartupObserver, "browser-delayed-startup-finished");
-          Services.obs.notifyObservers({
-            wrappedJSObject: {
-              url,
-              createdTabBrowser: win.gBrowser.selectedBrowser,
-              sourceTabBrowser,
-              sourceFrameOuterWindowID: params.frameOuterWindowID,
+          Services.obs.removeObserver(
+            delayedStartupObserver,
+            "browser-delayed-startup-finished"
+          );
+          Services.obs.notifyObservers(
+            {
+              wrappedJSObject: {
+                url,
+                createdTabBrowser: win.gBrowser.selectedBrowser,
+                sourceTabBrowser,
+                sourceFrameOuterWindowID: params.frameOuterWindowID,
+              },
             },
-          }, "webNavigation-createdNavigationTarget");
+            "webNavigation-createdNavigationTarget"
+          );
         }
       };
-      Services.obs.addObserver(delayedStartupObserver, "browser-delayed-startup-finished");
+      Services.obs.addObserver(
+        delayedStartupObserver,
+        "browser-delayed-startup-finished"
+      );
     }
-    win = Services.ww.openWindow(sourceWindow, AppConstants.BROWSER_CHROME_URL, null, features, sa);
+    win = Services.ww.openWindow(
+      sourceWindow,
+      AppConstants.BROWSER_CHROME_URL,
+      null,
+      features,
+      sa
+    );
     return;
   }
 
@@ -473,12 +572,17 @@ function openLinkIn(url, where, params) {
       uriObj = Services.io.newURI(url);
     } catch (e) {}
 
-    if (w.gBrowser.getTabForBrowser(targetBrowser).pinned &&
-        !aAllowPinnedTabHostChange) {
+    if (
+      w.gBrowser.getTabForBrowser(targetBrowser).pinned &&
+      !aAllowPinnedTabHostChange
+    ) {
       try {
         
-        if (!uriObj || (!uriObj.schemeIs("javascript") &&
-                        targetBrowser.currentURI.host != uriObj.host)) {
+        if (
+          !uriObj ||
+          (!uriObj.schemeIs("javascript") &&
+            targetBrowser.currentURI.host != uriObj.host)
+        ) {
           where = "tab";
           loadInBackground = false;
         }
@@ -491,115 +595,130 @@ function openLinkIn(url, where, params) {
     
     loadInBackground = aInBackground;
     if (loadInBackground == null) {
-      loadInBackground =
-        aFromChrome ? false : Services.prefs.getBoolPref("browser.tabs.loadInBackground");
+      loadInBackground = aFromChrome
+        ? false
+        : Services.prefs.getBoolPref("browser.tabs.loadInBackground");
     }
   }
 
   let focusUrlBar = false;
 
   switch (where) {
-  case "current":
-    let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+    case "current":
+      let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
 
-    if (aAllowThirdPartyFixup) {
-      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
-    }
-    
-    
-    
-    if (!aAllowInheritPrincipal) {
-      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
-    }
-
-    if (aAllowPopups) {
-      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_POPUPS;
-    }
-    if (aIndicateErrorPageLoad) {
-      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ERROR_LOAD_CHANGES_RV;
-    }
-    if (aForceAllowDataURI) {
-      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
-    }
-
-    let {URI_INHERITS_SECURITY_CONTEXT} = Ci.nsIProtocolHandler;
-    if (aForceAboutBlankViewerInCurrent &&
-        (!uriObj ||
-         (doGetProtocolFlags(uriObj) & URI_INHERITS_SECURITY_CONTEXT))) {
-      
-      
-      targetBrowser.createAboutBlankContentViewer(aPrincipal, aStoragePrincipal);
-    }
-
-    
-    
-    if (targetBrowser.hasAttribute("recordExecution") &&
-        targetBrowser.currentURI.spec != "about:blank") {
-      w.gBrowser.updateBrowserRemoteness(targetBrowser,
-                                         { recordExecution: "*", newFrameloader: true,
-                                           remoteType: E10SUtils.DEFAULT_REMOTE_TYPE });
-    }
-
-    targetBrowser.loadURI(url, {
-      triggeringPrincipal: aTriggeringPrincipal,
-      csp: aCsp,
-      flags,
-      referrerInfo: aReferrerInfo,
-      postData: aPostData,
-      userContextId: aUserContextId,
-    });
-
-    
-    
-    focusUrlBar = w.document.activeElement == w.gURLBar.inputField &&
-                  w.isBlankPageURL(url);
-    break;
-  case "tabshifted":
-    loadInBackground = !loadInBackground;
-    
-  case "tab":
-    focusUrlBar = !loadInBackground && w.isBlankPageURL(url)
-      && !aboutNewTabService.willNotifyUser;
-
-    let tabUsedForLoad = w.gBrowser.loadOneTab(url, {
-      referrerInfo: aReferrerInfo,
-      charset: aCharset,
-      postData: aPostData,
-      inBackground: loadInBackground,
-      allowThirdPartyFixup: aAllowThirdPartyFixup,
-      relatedToCurrent: aRelatedToCurrent,
-      skipAnimation: aSkipTabAnimation,
-      allowMixedContent: aAllowMixedContent,
-      userContextId: aUserContextId,
-      originPrincipal: aPrincipal,
-      originStoragePrincipal: aStoragePrincipal,
-      triggeringPrincipal: aTriggeringPrincipal,
-      allowInheritPrincipal: aAllowInheritPrincipal,
-      csp: aCsp,
-      focusUrlBar,
-    });
-    targetBrowser = tabUsedForLoad.linkedBrowser;
-
-    if (aResolveOnNewTabCreated) {
-      aResolveOnNewTabCreated(targetBrowser);
-    }
-
-    if (params.frameOuterWindowID != undefined && w) {
+      if (aAllowThirdPartyFixup) {
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
+      }
       
       
       
+      if (!aAllowInheritPrincipal) {
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+      }
+
+      if (aAllowPopups) {
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_POPUPS;
+      }
+      if (aIndicateErrorPageLoad) {
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ERROR_LOAD_CHANGES_RV;
+      }
+      if (aForceAllowDataURI) {
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
+      }
+
+      let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
+      if (
+        aForceAboutBlankViewerInCurrent &&
+        (!uriObj || doGetProtocolFlags(uriObj) & URI_INHERITS_SECURITY_CONTEXT)
+      ) {
+        
+        
+        targetBrowser.createAboutBlankContentViewer(
+          aPrincipal,
+          aStoragePrincipal
+        );
+      }
+
       
-      Services.obs.notifyObservers({
-        wrappedJSObject: {
-          url,
-          createdTabBrowser: targetBrowser,
-          sourceTabBrowser: w.gBrowser.selectedBrowser,
-          sourceFrameOuterWindowID: params.frameOuterWindowID,
-        },
-      }, "webNavigation-createdNavigationTarget");
-    }
-    break;
+      
+      if (
+        targetBrowser.hasAttribute("recordExecution") &&
+        targetBrowser.currentURI.spec != "about:blank"
+      ) {
+        w.gBrowser.updateBrowserRemoteness(targetBrowser, {
+          recordExecution: "*",
+          newFrameloader: true,
+          remoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
+        });
+      }
+
+      targetBrowser.loadURI(url, {
+        triggeringPrincipal: aTriggeringPrincipal,
+        csp: aCsp,
+        flags,
+        referrerInfo: aReferrerInfo,
+        postData: aPostData,
+        userContextId: aUserContextId,
+      });
+
+      
+      
+      focusUrlBar =
+        w.document.activeElement == w.gURLBar.inputField &&
+        w.isBlankPageURL(url);
+      break;
+    case "tabshifted":
+      loadInBackground = !loadInBackground;
+    
+    case "tab":
+      focusUrlBar =
+        !loadInBackground &&
+        w.isBlankPageURL(url) &&
+        !aboutNewTabService.willNotifyUser;
+
+      let tabUsedForLoad = w.gBrowser.loadOneTab(url, {
+        referrerInfo: aReferrerInfo,
+        charset: aCharset,
+        postData: aPostData,
+        inBackground: loadInBackground,
+        allowThirdPartyFixup: aAllowThirdPartyFixup,
+        relatedToCurrent: aRelatedToCurrent,
+        skipAnimation: aSkipTabAnimation,
+        allowMixedContent: aAllowMixedContent,
+        userContextId: aUserContextId,
+        originPrincipal: aPrincipal,
+        originStoragePrincipal: aStoragePrincipal,
+        triggeringPrincipal: aTriggeringPrincipal,
+        allowInheritPrincipal: aAllowInheritPrincipal,
+        csp: aCsp,
+        focusUrlBar,
+      });
+      targetBrowser = tabUsedForLoad.linkedBrowser;
+
+      if (aResolveOnNewTabCreated) {
+        aResolveOnNewTabCreated(targetBrowser);
+      }
+
+      if (params.frameOuterWindowID != undefined && w) {
+        
+        
+        
+        
+        Services.obs.notifyObservers(
+          {
+            wrappedJSObject: {
+              url,
+              createdTabBrowser: targetBrowser,
+              sourceTabBrowser: w.gBrowser.selectedBrowser,
+              sourceFrameOuterWindowID: params.frameOuterWindowID,
+            },
+          },
+          "webNavigation-createdNavigationTarget"
+        );
+      }
+      break;
   }
 
   if (!focusUrlBar && targetBrowser == w.gBrowser.selectedBrowser) {
@@ -614,17 +733,28 @@ function checkForMiddleClick(node, event) {
   
   
   
-  if (node.getAttribute("disabled") == "true")
-    return; 
+  if (node.getAttribute("disabled") == "true") {
+    return;
+  } 
 
   if (event.button == 1) {
     
 
 
     let cmdEvent = document.createEvent("xulcommandevent");
-    cmdEvent.initCommandEvent("command", true, true, window, 0,
-                         event.ctrlKey, event.altKey, event.shiftKey,
-                         event.metaKey, event, event.mozInputSource);
+    cmdEvent.initCommandEvent(
+      "command",
+      true,
+      true,
+      window,
+      0,
+      event.ctrlKey,
+      event.altKey,
+      event.shiftKey,
+      event.metaKey,
+      event,
+      event.mozInputSource
+    );
     node.dispatchEvent(cmdEvent);
 
     
@@ -635,25 +765,36 @@ function checkForMiddleClick(node, event) {
 
 
 
-function createUserContextMenu(event, {
-                                        isContextMenu = false,
-                                        excludeUserContextId = 0,
-                                        showDefaultTab = false,
-                                        useAccessKeys = true,
-                                      } = {}) {
+function createUserContextMenu(
+  event,
+  {
+    isContextMenu = false,
+    excludeUserContextId = 0,
+    showDefaultTab = false,
+    useAccessKeys = true,
+  } = {}
+) {
   while (event.target.hasChildNodes()) {
     event.target.firstChild.remove();
   }
 
-  let bundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
+  let bundle = Services.strings.createBundle(
+    "chrome://browser/locale/browser.properties"
+  );
   let docfrag = document.createDocumentFragment();
 
   
   if (excludeUserContextId || showDefaultTab) {
     let menuitem = document.createXULElement("menuitem");
     menuitem.setAttribute("data-usercontextid", "0");
-    menuitem.setAttribute("label", bundle.GetStringFromName("userContextNone.label"));
-    menuitem.setAttribute("accesskey", bundle.GetStringFromName("userContextNone.accesskey"));
+    menuitem.setAttribute(
+      "label",
+      bundle.GetStringFromName("userContextNone.label")
+    );
+    menuitem.setAttribute(
+      "accesskey",
+      bundle.GetStringFromName("userContextNone.accesskey")
+    );
 
     
     
@@ -672,10 +813,16 @@ function createUserContextMenu(event, {
 
     let menuitem = document.createXULElement("menuitem");
     menuitem.setAttribute("data-usercontextid", identity.userContextId);
-    menuitem.setAttribute("label", ContextualIdentityService.getUserContextLabel(identity.userContextId));
+    menuitem.setAttribute(
+      "label",
+      ContextualIdentityService.getUserContextLabel(identity.userContextId)
+    );
 
     if (identity.accessKey && useAccessKeys) {
-      menuitem.setAttribute("accesskey", bundle.GetStringFromName(identity.accessKey));
+      menuitem.setAttribute(
+        "accesskey",
+        bundle.GetStringFromName(identity.accessKey)
+      );
     }
 
     menuitem.classList.add("menuitem-iconic");
@@ -694,11 +841,15 @@ function createUserContextMenu(event, {
     docfrag.appendChild(document.createXULElement("menuseparator"));
 
     let menuitem = document.createXULElement("menuitem");
-    menuitem.setAttribute("label",
-                          bundle.GetStringFromName("userContext.aboutPage.label"));
+    menuitem.setAttribute(
+      "label",
+      bundle.GetStringFromName("userContext.aboutPage.label")
+    );
     if (useAccessKeys) {
-      menuitem.setAttribute("accesskey",
-                            bundle.GetStringFromName("userContext.aboutPage.accesskey"));
+      menuitem.setAttribute(
+        "accesskey",
+        bundle.GetStringFromName("userContext.aboutPage.accesskey")
+      );
     }
     menuitem.setAttribute("command", "Browser:OpenAboutContainers");
     docfrag.appendChild(menuitem);
@@ -711,9 +862,13 @@ function createUserContextMenu(event, {
 
 function closeMenus(node) {
   if ("tagName" in node) {
-    if (node.namespaceURI == "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-    && (node.tagName == "menupopup" || node.tagName == "popup"))
+    if (
+      node.namespaceURI ==
+        "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" &&
+      (node.tagName == "menupopup" || node.tagName == "popup")
+    ) {
       node.hidePopup();
+    }
 
     closeMenus(node.parentNode);
   }
@@ -737,10 +892,12 @@ function eventMatchesKey(aEvent, aKey) {
   if (aEvent.key != keyPressed) {
     return false;
   }
-  let eventModifiers = modifiers.filter(modifier => aEvent.getModifierState(modifier));
+  let eventModifiers = modifiers.filter(modifier =>
+    aEvent.getModifierState(modifier)
+  );
   
   if (eventModifiers.length > 0 && keyModifiers.length == 0) {
-     return false;
+    return false;
   }
   
   if (keyModifiers) {
@@ -748,12 +905,16 @@ function eventMatchesKey(aEvent, aKey) {
     
     keyModifiers.forEach(function(modifier, index) {
       if (modifier == "accel") {
-        keyModifiers[index] = AppConstants.platform == "macosx" ? "Meta" : "Control";
+        keyModifiers[index] =
+          AppConstants.platform == "macosx" ? "Meta" : "Control";
       } else {
         keyModifiers[index] = modifier[0].toUpperCase() + modifier.slice(1);
       }
     });
-    return modifiers.every(modifier => keyModifiers.includes(modifier) == aEvent.getModifierState(modifier));
+    return modifiers.every(
+      modifier =>
+        keyModifiers.includes(modifier) == aEvent.getModifierState(modifier)
+    );
   }
   return true;
 }
@@ -763,31 +924,31 @@ function gatherTextUnder(root) {
   var text = "";
   var node = root.firstChild;
   var depth = 1;
-  while ( node && depth > 0 ) {
+  while (node && depth > 0) {
     
-    if ( node.nodeType == Node.TEXT_NODE ) {
+    if (node.nodeType == Node.TEXT_NODE) {
       
       text += " " + node.data;
-    } else if ( node instanceof HTMLImageElement) {
+    } else if (node instanceof HTMLImageElement) {
       
-      var altText = node.getAttribute( "alt" );
-      if ( altText && altText != "" ) {
+      var altText = node.getAttribute("alt");
+      if (altText && altText != "") {
         text += " " + altText;
       }
     }
     
     
-    if ( node.hasChildNodes() ) {
+    if (node.hasChildNodes()) {
       
       node = node.firstChild;
       depth++;
     } else {
       
-      while ( depth > 0 && !node.nextSibling ) {
+      while (depth > 0 && !node.nextSibling) {
         node = node.parentNode;
         depth--;
       }
-      if ( node.nextSibling ) {
+      if (node.nextSibling) {
         node = node.nextSibling;
       }
     }
@@ -795,7 +956,7 @@ function gatherTextUnder(root) {
   
   text = text.trim();
   
-  text = text.replace( /\s+/g, " " );
+  text = text.replace(/\s+/g, " ");
   return text;
 }
 
@@ -806,8 +967,9 @@ function getShellService() {
 
 function isBidiEnabled() {
   
-  if (Services.prefs.getBoolPref("bidi.browser.ui", false))
+  if (Services.prefs.getBoolPref("bidi.browser.ui", false)) {
     return true;
+  }
 
   
   const isRTL = Services.locale.isAppLocaleRTL;
@@ -843,7 +1005,9 @@ function openAboutDialog() {
 function openPreferences(paneID, extraArgs) {
   
   function internalPrefCategoryNameToFriendlyName(aName) {
-    return (aName || "").replace(/^pane./, function(toReplace) { return toReplace[4].toLowerCase(); });
+    return (aName || "").replace(/^pane./, function(toReplace) {
+      return toReplace[4].toLowerCase();
+    });
   }
 
   let win = Services.wm.getMostRecentWindow("navigator:browser");
@@ -858,22 +1022,33 @@ function openPreferences(paneID, extraArgs) {
       }
     }
   }
-  let preferencesURL = "about:preferences" + (params ? "?" + params : "") +
+  let preferencesURL =
+    "about:preferences" +
+    (params ? "?" + params : "") +
     (friendlyCategoryName ? "#" + friendlyCategoryName : "");
   let newLoad = true;
   let browser = null;
   if (!win) {
-    let windowArguments = Cc["@mozilla.org/array;1"]
-      .createInstance(Ci.nsIMutableArray);
-    let supportsStringPrefURL = Cc["@mozilla.org/supports-string;1"]
-      .createInstance(Ci.nsISupportsString);
+    let windowArguments = Cc["@mozilla.org/array;1"].createInstance(
+      Ci.nsIMutableArray
+    );
+    let supportsStringPrefURL = Cc[
+      "@mozilla.org/supports-string;1"
+    ].createInstance(Ci.nsISupportsString);
     supportsStringPrefURL.data = preferencesURL;
     windowArguments.appendElement(supportsStringPrefURL);
 
-    win = Services.ww.openWindow(null, AppConstants.BROWSER_CHROME_URL,
-      "_blank", "chrome,dialog=no,all", windowArguments);
+    win = Services.ww.openWindow(
+      null,
+      AppConstants.BROWSER_CHROME_URL,
+      "_blank",
+      "chrome,dialog=no,all",
+      windowArguments
+    );
   } else {
-    let shouldReplaceFragment = friendlyCategoryName ? "whenComparingAndReplace" : "whenComparing";
+    let shouldReplaceFragment = friendlyCategoryName
+      ? "whenComparingAndReplace"
+      : "whenComparing";
     newLoad = !win.switchToTabHavingURI(preferencesURL, true, {
       ignoreFragment: shouldReplaceFragment,
       replaceQueryString: true,
@@ -920,11 +1095,13 @@ function openTourPage() {
 }
 
 function buildHelpMenu() {
-  document.getElementById("feedbackPage")
-          .disabled = !Services.policies.isAllowed("feedbackCommands");
+  document.getElementById(
+    "feedbackPage"
+  ).disabled = !Services.policies.isAllowed("feedbackCommands");
 
-  document.getElementById("helpSafeMode")
-          .disabled = !Services.policies.isAllowed("safeMode");
+  document.getElementById(
+    "helpSafeMode"
+  ).disabled = !Services.policies.isAllowed("safeMode");
 
   let supportMenu = Services.policies.getSupportMenu();
   if (supportMenu) {
@@ -944,13 +1121,14 @@ function buildHelpMenu() {
 }
 
 function isElementVisible(aElement) {
-  if (!aElement)
+  if (!aElement) {
     return false;
+  }
 
   
   
   var rect = aElement.getBoundingClientRect();
-  return (rect.height > 0 && rect.width > 0);
+  return rect.height > 0 && rect.width > 0;
 }
 
 function makeURLAbsolute(aBase, aUrl) {
@@ -972,8 +1150,11 @@ function makeURLAbsolute(aBase, aUrl) {
 function openNewTabWith(aURL, aShiftKey, aParams = {}) {
   
   
-  if (document.documentElement.getAttribute("windowtype") == "navigator:browser")
+  if (
+    document.documentElement.getAttribute("windowtype") == "navigator:browser"
+  ) {
     aParams.charset = gBrowser.selectedBrowser.characterSet;
+  }
 
   openLinkIn(aURL, aShiftKey ? "tabshifted" : "tab", aParams);
 }
@@ -985,8 +1166,11 @@ function openNewTabWith(aURL, aShiftKey, aParams = {}) {
 function openNewWindowWith(aURL, aParams = {}) {
   
   
-  if (document.documentElement.getAttribute("windowtype") == "navigator:browser")
+  if (
+    document.documentElement.getAttribute("windowtype") == "navigator:browser"
+  ) {
     aParams.charset = gBrowser.selectedBrowser.characterSet;
+  }
 
   openLinkIn(aURL, "window", aParams);
 }
@@ -1000,8 +1184,9 @@ function getHelpLinkURL(aHelpTopic) {
 function openHelpLink(aHelpTopic, aCalledFromModal, aWhere) {
   var url = getHelpLinkURL(aHelpTopic);
   var where = aWhere;
-  if (!aWhere)
+  if (!aWhere) {
     where = aCalledFromModal ? "window" : "tab";
+  }
 
   openTrustedLinkIn(url, where);
 }

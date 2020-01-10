@@ -56,8 +56,8 @@ function retryThis(buttonEl) {
 function toggleDisplay(node) {
   const toggle = {
     "": "block",
-    "none": "block",
-    "block": "none",
+    none: "block",
+    block: "none",
   };
   return (node.style.display = toggle[node.style.display]);
 }
@@ -71,10 +71,14 @@ function showPrefChangeContainer() {
   const panel = document.getElementById("prefChangeContainer");
   panel.style.display = "block";
   document.getElementById("netErrorButtonContainer").style.display = "none";
-  document.getElementById("prefResetButton").addEventListener("click", function resetPreferences(e) {
-    const event = new CustomEvent("AboutNetErrorResetPreferences", {bubbles: true});
-    document.dispatchEvent(event);
-  });
+  document
+    .getElementById("prefResetButton")
+    .addEventListener("click", function resetPreferences(e) {
+      const event = new CustomEvent("AboutNetErrorResetPreferences", {
+        bubbles: true,
+      });
+      document.dispatchEvent(event);
+    });
   addAutofocus("#prefResetButton", "beforeend");
 }
 
@@ -86,7 +90,9 @@ function setupAdvancedButton() {
   }
 
   
-  document.getElementById("advancedButton").addEventListener("click", togglePanelVisibility);
+  document
+    .getElementById("advancedButton")
+    .addEventListener("click", togglePanelVisibility);
 
   function togglePanelVisibility() {
     toggleDisplay(panel);
@@ -100,7 +106,7 @@ function setupAdvancedButton() {
 
     if (panel.style.display == "block") {
       
-      var event = new CustomEvent("AboutNetErrorUIExpanded", {bubbles: true});
+      var event = new CustomEvent("AboutNetErrorUIExpanded", { bubbles: true });
       document.dispatchEvent(event);
     }
   }
@@ -127,19 +133,27 @@ function disallowCertOverridesIfNeeded() {
   
   
   if (cssClass == "badStsCert" || window != top) {
-    document.getElementById("exceptionDialogButton").setAttribute("hidden", "true");
+    document
+      .getElementById("exceptionDialogButton")
+      .setAttribute("hidden", "true");
   }
   if (cssClass == "badStsCert") {
     document.getElementById("badStsCertExplanation").removeAttribute("hidden");
 
-    let stsReturnButtonText = document.getElementById("stsReturnButtonText").textContent;
+    let stsReturnButtonText = document.getElementById("stsReturnButtonText")
+      .textContent;
     document.getElementById("returnButton").textContent = stsReturnButtonText;
-    document.getElementById("advancedPanelReturnButton").textContent = stsReturnButtonText;
+    document.getElementById(
+      "advancedPanelReturnButton"
+    ).textContent = stsReturnButtonText;
 
-    let stsMitmWhatCanYouDoAboutIt3 =
-      document.getElementById("stsMitmWhatCanYouDoAboutIt3").innerHTML;
+    let stsMitmWhatCanYouDoAboutIt3 = document.getElementById(
+      "stsMitmWhatCanYouDoAboutIt3"
+    ).innerHTML;
     
-    document.getElementById("mitmWhatCanYouDoAboutIt3").innerHTML = stsMitmWhatCanYouDoAboutIt3;
+    document.getElementById(
+      "mitmWhatCanYouDoAboutIt3"
+    ).innerHTML = stsMitmWhatCanYouDoAboutIt3;
   }
 }
 
@@ -147,8 +161,13 @@ function initPage() {
   var err = getErrorCode();
   
   let illustratedErrors = [
-    "malformedURI", "dnsNotFound", "connectionFailure", "netInterrupt",
-    "netTimeout", "netReset", "netOffline",
+    "malformedURI",
+    "dnsNotFound",
+    "connectionFailure",
+    "netInterrupt",
+    "netTimeout",
+    "netReset",
+    "netOffline",
   ];
   if (illustratedErrors.includes(err)) {
     document.body.classList.add("illustrated", err);
@@ -157,7 +176,7 @@ function initPage() {
     document.body.classList.add("blocked");
   }
 
-  gIsCertError = (err == "nssBadCert");
+  gIsCertError = err == "nssBadCert";
   
   let showCaptivePortalUI = isCaptive() && gIsCertError;
   if (showCaptivePortalUI) {
@@ -182,10 +201,10 @@ function initPage() {
   
   
   var errTitle = document.getElementById("et_" + l10nErrId);
-  var errDesc  = document.getElementById("ed_" + l10nErrId);
+  var errDesc = document.getElementById("ed_" + l10nErrId);
   if (!errTitle || !errDesc) {
     errTitle = document.getElementById("et_generic");
-    errDesc  = document.getElementById("ed_generic");
+    errDesc = document.getElementById("ed_generic");
   }
 
   
@@ -240,45 +259,57 @@ function initPage() {
     document.getElementById("netErrorButtonContainer").style.display = "none";
   }
 
-  window.addEventListener("AboutNetErrorOptions", function(evt) {
-    
-    if (getErrorCode() == "nssFailure2") {
-      let shortDesc = document.getElementById("errorShortDescText").textContent;
-      document.getElementById("learnMoreContainer").style.display = "block";
-      var options = JSON.parse(evt.detail);
-      if (options && options.enabled) {
-        var checkbox = document.getElementById("automaticallyReportInFuture");
-        showCertificateErrorReporting();
-        if (options.automatic) {
-          
-          checkbox.checked = true;
-        }
+  window.addEventListener(
+    "AboutNetErrorOptions",
+    function(evt) {
+      
+      if (getErrorCode() == "nssFailure2") {
+        let shortDesc = document.getElementById("errorShortDescText")
+          .textContent;
+        document.getElementById("learnMoreContainer").style.display = "block";
+        var options = JSON.parse(evt.detail);
+        if (options && options.enabled) {
+          var checkbox = document.getElementById("automaticallyReportInFuture");
+          showCertificateErrorReporting();
+          if (options.automatic) {
+            
+            checkbox.checked = true;
+          }
 
-        checkbox.addEventListener("change", function(changeEvt) {
-            var event = new CustomEvent("AboutNetErrorSetAutomatic",
-              {bubbles: true,
-               detail: changeEvt.target.checked});
+          checkbox.addEventListener("change", function(changeEvt) {
+            var event = new CustomEvent("AboutNetErrorSetAutomatic", {
+              bubbles: true,
+              detail: changeEvt.target.checked,
+            });
             document.dispatchEvent(event);
           });
+        }
+        const hasPrefStyleError = [
+          "interrupted", 
+          "SSL_ERROR_PROTOCOL_VERSION_ALERT",
+          "SSL_ERROR_UNSUPPORTED_VERSION",
+          "SSL_ERROR_NO_CYPHER_OVERLAP",
+          "SSL_ERROR_NO_CIPHERS_SUPPORTED",
+        ].some(substring => shortDesc.includes(substring));
+        
+        if (
+          getErrorCode() == "nssFailure2" &&
+          hasPrefStyleError &&
+          options &&
+          options.changedCertPrefs
+        ) {
+          showPrefChangeContainer();
+        }
       }
-      const hasPrefStyleError = [
-        "interrupted", 
-        "SSL_ERROR_PROTOCOL_VERSION_ALERT",
-        "SSL_ERROR_UNSUPPORTED_VERSION",
-        "SSL_ERROR_NO_CYPHER_OVERLAP",
-        "SSL_ERROR_NO_CIPHERS_SUPPORTED",
-      ].some((substring) => shortDesc.includes(substring));
-      
-      if (getErrorCode() == "nssFailure2" && hasPrefStyleError && options && options.changedCertPrefs) {
-        showPrefChangeContainer();
+      if (getErrorCode() == "sslv3Used") {
+        document.getElementById("advancedButton").style.display = "none";
       }
-    }
-    if (getErrorCode() == "sslv3Used") {
-      document.getElementById("advancedButton").style.display = "none";
-    }
-  }, true, true);
+    },
+    true,
+    true
+  );
 
-  var event = new CustomEvent("AboutNetErrorLoad", {bubbles: true});
+  var event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
   document.dispatchEvent(event);
 
   if (err == "inadequateSecurityError" || err == "blockedByPolicy") {
@@ -304,9 +335,12 @@ function updateContainerPosition() {
   
   
   if (window.parent == window) {
-    textContainer.style.marginTop = `calc(50vh - ${textContainer.clientHeight / 2}px)`;
+    textContainer.style.marginTop = `calc(50vh - ${textContainer.clientHeight /
+      2}px)`;
   } else {
-    let offset = (document.documentElement.clientHeight / 2) - (textContainer.clientHeight / 2);
+    let offset =
+      document.documentElement.clientHeight / 2 -
+      textContainer.clientHeight / 2;
     if (offset > 0) {
       textContainer.style.marginTop = `${offset}px`;
     }
@@ -315,10 +349,11 @@ function updateContainerPosition() {
 
 function initPageCaptivePortal() {
   document.body.className = "captiveportal";
-  document.getElementById("openPortalLoginPageButton")
-          .addEventListener("click", () => {
-    RPMSendAsyncMessage("Browser:OpenCaptivePortalPage");
-  });
+  document
+    .getElementById("openPortalLoginPageButton")
+    .addEventListener("click", () => {
+      RPMSendAsyncMessage("Browser:OpenCaptivePortalPage");
+    });
 
   addAutofocus("#openPortalLoginPageButton");
   setupAdvancedButton();
@@ -342,20 +377,29 @@ function initPageCertError() {
   document.getElementById("learnMoreContainer").style.display = "block";
 
   let checkbox = document.getElementById("automaticallyReportInFuture");
-  checkbox.addEventListener("change", function({target: {checked}}) {
-    document.dispatchEvent(new CustomEvent("AboutNetErrorSetAutomatic", {
-      detail: checked,
-      bubbles: true,
-    }));
+  checkbox.addEventListener("change", function({ target: { checked } }) {
+    document.dispatchEvent(
+      new CustomEvent("AboutNetErrorSetAutomatic", {
+        detail: checked,
+        bubbles: true,
+      })
+    );
   });
 
-  let errorReportingEnabled = RPMGetBoolPref("security.ssl.errorReporting.enabled");
+  let errorReportingEnabled = RPMGetBoolPref(
+    "security.ssl.errorReporting.enabled"
+  );
   if (errorReportingEnabled) {
-    document.getElementById("certificateErrorReporting").style.display = "block";
-    let errorReportingAutomatic = RPMGetBoolPref("security.ssl.errorReporting.automatic");
+    document.getElementById("certificateErrorReporting").style.display =
+      "block";
+    let errorReportingAutomatic = RPMGetBoolPref(
+      "security.ssl.errorReporting.automatic"
+    );
     checkbox.checked = !!errorReportingAutomatic;
   }
-  let hideAddExceptionButton = RPMGetBoolPref("security.certerror.hideAddException");
+  let hideAddExceptionButton = RPMGetBoolPref(
+    "security.certerror.hideAddException"
+  );
   if (hideAddExceptionButton) {
     document.querySelector(".exceptionDialogButtonContainer").hidden = true;
   }
@@ -365,7 +409,7 @@ function initPageCertError() {
     
     errorCode: failedCertInfo.errorCodeString.substring(0, 40),
     has_sts: getCSSClass() == "badStsCert",
-    is_frame:  window.parent != window,
+    is_frame: window.parent != window,
   });
 
   let certErrorButtons = ["advancedButton", "copyToClipboard"];
@@ -378,7 +422,7 @@ function initPageCertError() {
   setTechnicalDetailsOnCertError();
 
   
-  let event = new CustomEvent("AboutNetErrorLoad", {bubbles: true});
+  let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
   document.dispatchEvent(event);
 }
 
@@ -400,23 +444,38 @@ async function getCertErrorInfo() {
   let errorMessage = failedCertInfo.errorMessage;
   let hasHSTS = failedCertInfo.hasHSTS.toString();
   let hasHPKP = failedCertInfo.hasHPKP.toString();
-  let [hstsLabel] =
-    await document.l10n.formatValues([{id: "cert-error-details-hsts-label", args: { hasHSTS }}]);
-  let [hpkpLabel] =
-    await document.l10n.formatValues([{id: "cert-error-details-key-pinning-label", args: { hasHPKP }}]);
+  let [hstsLabel] = await document.l10n.formatValues([
+    { id: "cert-error-details-hsts-label", args: { hasHSTS } },
+  ]);
+  let [hpkpLabel] = await document.l10n.formatValues([
+    { id: "cert-error-details-key-pinning-label", args: { hasHPKP } },
+  ]);
 
   let certStrings = failedCertInfo.certChainStrings;
   let failedChainCertificates = "";
   for (let der64 of certStrings) {
     let wrapped = der64.replace(/(\S{64}(?!$))/g, "$1\r\n");
-    failedChainCertificates += "-----BEGIN CERTIFICATE-----\r\n"
-      + wrapped
-      + "\r\n-----END CERTIFICATE-----\r\n";
+    failedChainCertificates +=
+      "-----BEGIN CERTIFICATE-----\r\n" +
+      wrapped +
+      "\r\n-----END CERTIFICATE-----\r\n";
   }
-  let [failedChainLabel] = await document.l10n.formatValues([{id: "cert-error-details-cert-chain-label"}]);
+  let [failedChainLabel] = await document.l10n.formatValues([
+    { id: "cert-error-details-cert-chain-label" },
+  ]);
 
-  let details = location + "\r\n\r\n" + errorMessage + "\r\n\r\n" + hstsLabel + "\r\n" + hpkpLabel +
-    "\r\n\r\n" + failedChainLabel + "\r\n\r\n" + failedChainCertificates;
+  let details =
+    location +
+    "\r\n\r\n" +
+    errorMessage +
+    "\r\n\r\n" +
+    hstsLabel +
+    "\r\n" +
+    hpkpLabel +
+    "\r\n\r\n" +
+    failedChainLabel +
+    "\r\n\r\n" +
+    failedChainCertificates;
   return details;
 }
 
@@ -425,11 +484,15 @@ async function setCertErrorDetails(event) {
   
   
   let failedCertInfo = document.getFailedCertSecurityInfo();
-  let mitmPrimingEnabled = RPMGetBoolPref("security.certerrors.mitm.priming.enabled");
-  if (mitmPrimingEnabled &&
-      failedCertInfo.errorCodeString == "SEC_ERROR_UNKNOWN_ISSUER" &&
-      
-      window.parent == window) {
+  let mitmPrimingEnabled = RPMGetBoolPref(
+    "security.certerrors.mitm.priming.enabled"
+  );
+  if (
+    mitmPrimingEnabled &&
+    failedCertInfo.errorCodeString == "SEC_ERROR_UNKNOWN_ISSUER" &&
+    
+    window.parent == window
+  ) {
     RPMSendAsyncMessage("Browser:PrimeMitm");
   }
 
@@ -438,7 +501,9 @@ async function setCertErrorDetails(event) {
   let learnMoreLink = document.getElementById("learnMoreLink");
   let baseURL = RPMGetFormatURLPref("app.support.baseURL");
   learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
-  let errWhatToDo = document.getElementById("es_nssBadCert_" + failedCertInfo.errorCodeString);
+  let errWhatToDo = document.getElementById(
+    "es_nssBadCert_" + failedCertInfo.errorCodeString
+  );
   let es = document.getElementById("errorWhatToDoText");
   let errWhatToDoTitle = document.getElementById("edd_nssBadCert");
   let est = document.getElementById("errorWhatToDoTitleText");
@@ -453,7 +518,10 @@ async function setCertErrorDetails(event) {
     
     
     if (shortDesc.includes("MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE")) {
-      learnMoreLink.setAttribute("href", baseURL + "certificate-pinning-reports");
+      learnMoreLink.setAttribute(
+        "href",
+        baseURL + "certificate-pinning-reports"
+      );
     }
   }
 
@@ -485,19 +553,28 @@ async function setCertErrorDetails(event) {
     case "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED":
       desc = document.getElementById("errorShortDescText2");
       let hostname = document.location.hostname;
-      document.l10n.setAttributes(desc, "cert-error-symantec-distrust-description", {
-        hostname,
-      });
+      document.l10n.setAttributes(
+        desc,
+        "cert-error-symantec-distrust-description",
+        {
+          hostname,
+        }
+      );
 
       let adminDesc = document.createElement("p");
-      document.l10n.setAttributes(adminDesc, "cert-error-symantec-distrust-admin");
+      document.l10n.setAttributes(
+        adminDesc,
+        "cert-error-symantec-distrust-admin"
+      );
 
       learnMoreLink.href = baseURL + "symantec-warning";
       updateContainerPosition();
       break;
 
     case "MOZILLA_PKIX_ERROR_MITM_DETECTED":
-      let autoEnabledEnterpriseRoots = RPMGetBoolPref("security.enterprise_roots.auto-enabled");
+      let autoEnabledEnterpriseRoots = RPMGetBoolPref(
+        "security.enterprise_roots.auto-enabled"
+      );
       if (mitmPrimingEnabled && autoEnabledEnterpriseRoots) {
         RPMSendAsyncMessage("Browser:ResetEnterpriseRootsPref");
       }
@@ -543,7 +620,8 @@ async function setCertErrorDetails(event) {
       
       
       let difference = RPMGetIntPref("services.settings.clock_skew_seconds");
-      let lastFetched = RPMGetIntPref("services.settings.last_update_seconds") * 1000;
+      let lastFetched =
+        RPMGetIntPref("services.settings.last_update_seconds") * 1000;
 
       let now = Date.now();
       let certRange = {
@@ -553,11 +631,15 @@ async function setCertErrorDetails(event) {
       let approximateDate = now - difference * 1000;
       
       
-      if (Math.abs(difference) > 60 * 60 * 24 && (now - lastFetched) <= 60 * 60 * 24 * 5 &&
-          certRange.notBefore < approximateDate && certRange.notAfter > approximateDate) {
+      if (
+        Math.abs(difference) > 60 * 60 * 24 &&
+        now - lastFetched <= 60 * 60 * 24 * 5 &&
+        certRange.notBefore < approximateDate &&
+        certRange.notAfter > approximateDate
+      ) {
         clockSkew = true;
-      
-      
+        
+        
       } else {
         let appBuildID = RPMGetAppBuildID();
         let year = parseInt(appBuildID.substr(0, 4), 10);
@@ -571,36 +653,48 @@ async function setCertErrorDetails(event) {
         
         
         
-        if (buildDate > systemDate && new Date(certRange.notAfter) > buildDate) {
+        if (
+          buildDate > systemDate &&
+          new Date(certRange.notAfter) > buildDate
+        ) {
           clockSkew = true;
         }
       }
 
       let systemDate = formatter.format(new Date());
-      document.getElementById("wrongSystemTime_systemDate1").textContent = systemDate;
+      document.getElementById(
+        "wrongSystemTime_systemDate1"
+      ).textContent = systemDate;
       if (clockSkew) {
         document.body.classList.add("illustrated", "clockSkewError");
         let clockErrTitle = document.getElementById("et_clockSkewError");
         let clockErrDesc = document.getElementById("ed_clockSkewError");
         
-        document.querySelector(".title-text").textContent = clockErrTitle.textContent;
+        document.querySelector(".title-text").textContent =
+          clockErrTitle.textContent;
         desc = document.getElementById("errorShortDescText");
         document.getElementById("errorShortDesc").style.display = "block";
-        document.getElementById("certificateErrorReporting").style.display = "none";
+        document.getElementById("certificateErrorReporting").style.display =
+          "none";
         if (desc) {
           
           desc.innerHTML = clockErrDesc.innerHTML;
         }
         let errorPageContainer = document.getElementById("errorPageContainer");
         let textContainer = document.getElementById("text-container");
-        errorPageContainer.style.backgroundPosition = `left top calc(50vh - ${textContainer.clientHeight / 2}px)`;
+        errorPageContainer.style.backgroundPosition = `left top calc(50vh - ${textContainer.clientHeight /
+          2}px)`;
       } else {
-        let targetElems = document.querySelectorAll("#wrongSystemTime_systemDate2");
+        let targetElems = document.querySelectorAll(
+          "#wrongSystemTime_systemDate2"
+        );
         for (let elem of targetElems) {
           elem.textContent = systemDate;
         }
 
-        let errDesc = document.getElementById("ed_nssBadCert_SEC_ERROR_EXPIRED_CERTIFICATE");
+        let errDesc = document.getElementById(
+          "ed_nssBadCert_SEC_ERROR_EXPIRED_CERTIFICATE"
+        );
         let sd = document.getElementById("errorShortDescText");
         
         sd.innerHTML = errDesc.innerHTML;
@@ -615,7 +709,8 @@ async function setCertErrorDetails(event) {
           let cssClass = getCSSClass();
           let stsSuffix = cssClass == "badStsCert" ? "_sts" : "";
           let errDesc2 = document.getElementById(
-            `ed2_nssBadCert_SEC_ERROR_EXPIRED_CERTIFICATE${stsSuffix}`);
+            `ed2_nssBadCert_SEC_ERROR_EXPIRED_CERTIFICATE${stsSuffix}`
+          );
           let sd2 = document.getElementById("errorShortDescText2");
           
           sd2.innerHTML = errDesc2.innerHTML;
@@ -627,8 +722,8 @@ async function setCertErrorDetails(event) {
         }
         if (est) {
           
-           est.textContent = errWhatToDoTitle.textContent;
-           est.style.fontWeight = "bold";
+          est.textContent = errWhatToDoTitle.textContent;
+          est.style.fontWeight = "bold";
         }
         updateContainerPosition();
       }
@@ -639,13 +734,16 @@ async function setCertErrorDetails(event) {
   
   let cssClass = getCSSClass();
   
-  if (cssClass != "badStsCert" &&
-      
-      window.parent == window &&
-      
-      !clockSkew &&
-      
-      failedCertInfo.erroCodeString != "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED") {
+  if (
+    cssClass != "badStsCert" &&
+    
+    window.parent == window &&
+    
+    !clockSkew &&
+    
+    failedCertInfo.erroCodeString !=
+      "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED"
+  ) {
     document.body.classList.add("caution");
   }
 }
@@ -679,7 +777,7 @@ function setTechnicalDetailsOnCertError() {
   }
 
   let cssClass = getCSSClass();
-  let error =  getErrorCode();
+  let error = getErrorCode();
 
   let hostString = document.location.hostname;
   let port = document.location.port;
@@ -713,7 +811,12 @@ function setTechnicalDetailsOnCertError() {
         break;
       case "SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED":
         setL10NLabel("cert-error-intro", args);
-        setL10NLabel("cert-error-trust-signature-algorithm-disabled", {}, {}, false);
+        setL10NLabel(
+          "cert-error-trust-signature-algorithm-disabled",
+          {},
+          {},
+          false
+        );
         break;
       case "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE":
         setL10NLabel("cert-error-intro", args);
@@ -765,41 +868,44 @@ function setTechnicalDetailsOnCertError() {
 
 
 
-         if (okHost.endsWith("." + thisHost)) {
-           href = proto + okHost;
-         }
-         
+        if (okHost.endsWith("." + thisHost)) {
+          href = proto + okHost;
+        }
+        
 
 
 
 
-         if (thisHost.endsWith("." + okHost)) {
-           href = proto + okHost;
-         }
+        if (thisHost.endsWith("." + okHost)) {
+          href = proto + okHost;
+        }
 
-         
-         
-         if (href && cssClass != "expertBadCert") {
-           document.getElementById("badCertAdvancedPanel").style.display = "block";
-           if (error == "nssBadCert") {
-             
-             
-             
-             let div = document.getElementById("certificateErrorDebugInformation");
-             div.style.display = "none";
-           }
-         }
+        
+        
+        if (href && cssClass != "expertBadCert") {
+          document.getElementById("badCertAdvancedPanel").style.display =
+            "block";
+          if (error == "nssBadCert") {
+            
+            
+            
+            let div = document.getElementById(
+              "certificateErrorDebugInformation"
+            );
+            div.style.display = "none";
+          }
+        }
 
-         
-         if (href) {
-           setL10NLabel("cert-error-domain-mismatch-single", args, {
-             "href": href,
-             "data-l10n-name": "domain-mismatch-link",
-             "id": "cert_domain_link",
-           });
-         } else {
-           setL10NLabel("cert-error-domain-mismatch-single-nolink", args);
-         }
+        
+        if (href) {
+          setL10NLabel("cert-error-domain-mismatch-single", args, {
+            href,
+            "data-l10n-name": "domain-mismatch-link",
+            id: "cert_domain_link",
+          });
+        } else {
+          setL10NLabel("cert-error-domain-mismatch-single-nolink", args);
+        }
       } else {
         let names = subjectAltNames.join(", ");
         args["subject-alt-names"] = names;
@@ -816,7 +922,7 @@ function setTechnicalDetailsOnCertError() {
     args = {
       hostname: hostString,
     };
-    if (notBefore && (Date.now() < notAfter)) {
+    if (notBefore && Date.now() < notAfter) {
       let notBeforeLocalTime = formatter.format(new Date(notBefore));
       l10nId = "cert-error-not-yet-valid-now";
       args["not-before-local-time"] = notBeforeLocalTime;
@@ -828,12 +934,17 @@ function setTechnicalDetailsOnCertError() {
     setL10NLabel(l10nId, args);
   }
 
-  setL10NLabel("cert-error-code-prefix-link", { error: failedCertInfo.errorCodeString }, {
-    "title": failedCertInfo.errorCodeString,
-    "id": "errorCode",
-    "data-l10n-name": "error-code-link",
-    "data-telemetry-id": "error_code_link",
-  }, false);
+  setL10NLabel(
+    "cert-error-code-prefix-link",
+    { error: failedCertInfo.errorCodeString },
+    {
+      title: failedCertInfo.errorCodeString,
+      id: "errorCode",
+      "data-l10n-name": "error-code-link",
+      "data-telemetry-id": "error_code_link",
+    },
+    false
+  );
   let errorCodeLink = document.getElementById("errorCode");
   if (errorCodeLink) {
     
@@ -850,7 +961,7 @@ function handleErrorCodeClick(event) {
 
   let debugInfo = document.getElementById("certificateErrorDebugInformation");
   debugInfo.style.display = "block";
-  debugInfo.scrollIntoView({block: "start", behavior: "smooth"});
+  debugInfo.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
 
@@ -861,11 +972,11 @@ function handleErrorCodeClick(event) {
 
 function addAutofocus(selector, position = "afterbegin") {
   if (window.top == window) {
-      var button = document.querySelector(selector);
-      var parent = button.parentNode;
-      button.remove();
-      button.setAttribute("autofocus", "true");
-      parent.insertAdjacentElement(position, button);
+    var button = document.querySelector(selector);
+    var parent = button.parentNode;
+    button.remove();
+    button.setAttribute("autofocus", "true");
+    parent.insertAdjacentElement(position, button);
   }
 }
 

@@ -4,8 +4,16 @@ const WEB_CONTENT_PROCESS = E10SUtils.WEB_REMOTE_TYPE;
 add_task(async function() {
   let url = "javascript:dosomething()";
 
-  ok(E10SUtils.canLoadURIInRemoteType(url,  false, CHROME_PROCESS),
-     "Check URL in chrome process.");
-  ok(E10SUtils.canLoadURIInRemoteType(url,  false, WEB_CONTENT_PROCESS),
-     "Check URL in web content process.");
+  ok(
+    E10SUtils.canLoadURIInRemoteType(url,  false, CHROME_PROCESS),
+    "Check URL in chrome process."
+  );
+  ok(
+    E10SUtils.canLoadURIInRemoteType(
+      url,
+       false,
+      WEB_CONTENT_PROCESS
+    ),
+    "Check URL in web content process."
+  );
 });

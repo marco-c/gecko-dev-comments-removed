@@ -2,7 +2,7 @@
 
 
 function test() {
-  let tab = gBrowser.addTrustedTab("about:blank", {index: 10});
+  let tab = gBrowser.addTrustedTab("about:blank", { index: 10 });
   is(tab._tPos, 1, "added tab index should be 1");
   gBrowser.removeTab(tab);
 }

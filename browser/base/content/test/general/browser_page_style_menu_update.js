@@ -1,13 +1,18 @@
 "use strict";
 
-const PAGE = "http://example.com/browser/browser/base/content/test/general/page_style_sample.html";
+const PAGE =
+  "http://example.com/browser/browser/base/content/test/general/page_style_sample.html";
 
 
 
 
 
 add_task(async function() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank", false);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank",
+    false
+  );
   let browser = tab.linkedBrowser;
 
   await BrowserTestUtils.loadURI(browser, PAGE);
@@ -19,7 +24,11 @@ add_task(async function() {
   
   
   let selected = menupopup.querySelector("menuitem[checked='true']");
-  is(selected.getAttribute("label"), "6", "Should have '6' stylesheet selected by default");
+  is(
+    selected.getAttribute("label"),
+    "6",
+    "Should have '6' stylesheet selected by default"
+  );
 
   
   let target = menupopup.querySelector("menuitem[label='1']");
@@ -33,7 +42,11 @@ add_task(async function() {
   
   
   selected = menupopup.querySelector("menuitem[checked='true']");
-  is(selected.getAttribute("label"), "1", "Should now have stylesheet 1 selected");
+  is(
+    selected.getAttribute("label"),
+    "1",
+    "Should now have stylesheet 1 selected"
+  );
 
   BrowserTestUtils.removeTab(tab);
 });

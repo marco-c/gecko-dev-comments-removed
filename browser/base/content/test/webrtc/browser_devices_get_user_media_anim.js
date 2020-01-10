@@ -2,73 +2,98 @@
 
 
 var gTests = [
+  {
+    desc: "device sharing animation on background tabs",
+    run: async function checkAudioVideo() {
+      async function getStreamAndCheckBackgroundAnim(aAudio, aVideo, aSharing) {
+        
+        let popupPromise = promisePopupNotificationShown("webRTC-shareDevices");
+        await promiseRequestDevice(aAudio, aVideo);
+        await popupPromise;
+        await expectObserverCalled("getUserMedia:request");
 
-{
-  desc: "device sharing animation on background tabs",
-  run: async function checkAudioVideo() {
-    async function getStreamAndCheckBackgroundAnim(aAudio, aVideo, aSharing) {
-      
-      let popupPromise = promisePopupNotificationShown("webRTC-shareDevices");
-      await promiseRequestDevice(aAudio, aVideo);
-      await popupPromise;
-      await expectObserverCalled("getUserMedia:request");
+        await promiseMessage("ok", () => {
+          PopupNotifications.panel.firstElementChild.button.click();
+        });
+        await expectObserverCalled("getUserMedia:response:allow");
+        await expectObserverCalled("recording-device-events");
+        let expected = {};
+        if (aVideo) {
+          expected.video = true;
+        }
+        if (aAudio) {
+          expected.audio = true;
+        }
+        Assert.deepEqual(
+          await getMediaCaptureState(),
+          expected,
+          "expected " + Object.keys(expected).join(" and ") + " to be shared"
+        );
 
-      await promiseMessage("ok", () => {
-        PopupNotifications.panel.firstElementChild.button.click();
-      });
-      await expectObserverCalled("getUserMedia:response:allow");
-      await expectObserverCalled("recording-device-events");
-      let expected = {};
-      if (aVideo)
-        expected.video = true;
-      if (aAudio)
-        expected.audio = true;
-      Assert.deepEqual((await getMediaCaptureState()), expected,
-                       "expected " + Object.keys(expected).join(" and ") +
-                       " to be shared");
+        
+        
+        let tab = gBrowser.selectedTab;
+        is(
+          tab.getAttribute("sharing"),
+          aSharing,
+          "the tab has the attribute to show the " + aSharing + " icon"
+        );
+        let icon = tab.sharingIcon;
+        is(
+          window.getComputedStyle(icon).display,
+          "none",
+          "the animated sharing icon of the tab is hidden"
+        );
 
+        
+        
+        await BrowserTestUtils.switchTab(
+          gBrowser,
+          BrowserTestUtils.addTab(gBrowser)
+        );
+        is(
+          gBrowser.selectedTab.getAttribute("sharing"),
+          "",
+          "the new tab doesn't have the 'sharing' attribute"
+        );
+        is(
+          tab.getAttribute("sharing"),
+          aSharing,
+          "the tab still has the 'sharing' attribute"
+        );
+        isnot(
+          window.getComputedStyle(icon).display,
+          "none",
+          "the animated sharing icon of the tab is now visible"
+        );
 
-      
-      
-      let tab = gBrowser.selectedTab;
-      is(tab.getAttribute("sharing"), aSharing,
-         "the tab has the attribute to show the " + aSharing + " icon");
-      let icon = tab.sharingIcon;
-      is(window.getComputedStyle(icon).display, "none",
-         "the animated sharing icon of the tab is hidden");
+        
+        BrowserTestUtils.removeTab(gBrowser.selectedTab);
+        ok(tab.selected, "the tab with ongoing sharing is selected again");
+        is(
+          window.getComputedStyle(icon).display,
+          "none",
+          "the animated sharing icon is gone after selecting the tab again"
+        );
 
-      
-      
-      await BrowserTestUtils.switchTab(gBrowser, BrowserTestUtils.addTab(gBrowser));
-      is(gBrowser.selectedTab.getAttribute("sharing"), "",
-         "the new tab doesn't have the 'sharing' attribute");
-      is(tab.getAttribute("sharing"), aSharing,
-         "the tab still has the 'sharing' attribute");
-      isnot(window.getComputedStyle(icon).display, "none",
-            "the animated sharing icon of the tab is now visible");
+        
+        await closeStream();
 
-      
-      BrowserTestUtils.removeTab(gBrowser.selectedTab);
-      ok(tab.selected, "the tab with ongoing sharing is selected again");
-      is(window.getComputedStyle(icon).display, "none",
-         "the animated sharing icon is gone after selecting the tab again");
+        
+        
+        await TestUtils.waitForCondition(() => !tab.getAttribute("sharing"));
+        is(
+          tab.getAttribute("sharing"),
+          "",
+          "the tab no longer has the 'sharing' attribute after closing the stream"
+        );
+      }
 
-      
-      await closeStream();
-
-      
-      
-      await TestUtils.waitForCondition(() => !tab.getAttribute("sharing"));
-      is(tab.getAttribute("sharing"), "",
-         "the tab no longer has the 'sharing' attribute after closing the stream");
-    }
-
-    await getStreamAndCheckBackgroundAnim(true, true, "camera");
-    await getStreamAndCheckBackgroundAnim(false, true, "camera");
-    await getStreamAndCheckBackgroundAnim(true, false, "microphone");
+      await getStreamAndCheckBackgroundAnim(true, true, "camera");
+      await getStreamAndCheckBackgroundAnim(false, true, "camera");
+      await getStreamAndCheckBackgroundAnim(true, false, "microphone");
+    },
   },
-},
-
 ];
 
 add_task(async function test() {

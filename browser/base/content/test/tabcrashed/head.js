@@ -23,10 +23,12 @@
 function promiseCrashReport(expectedExtra = {}) {
   return (async function() {
     info("Starting wait on crash-report-status");
-    let [subject ] =
-      await TestUtils.topicObserved("crash-report-status", (unused, data) => {
+    let [subject] = await TestUtils.topicObserved(
+      "crash-report-status",
+      (unused, data) => {
         return data == "success";
-      });
+      }
+    );
     info("Topic observed!");
 
     if (!(subject instanceof Ci.nsIPropertyBag2)) {
@@ -38,8 +40,7 @@ function promiseCrashReport(expectedExtra = {}) {
       throw new Error("Report should have a server ID");
     }
 
-    let file = Cc["@mozilla.org/file/local;1"]
-                 .createInstance(Ci.nsIFile);
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
     file.initWithPath(Services.crashmanager._submittedDumpsDir);
     file.append(remoteID + ".txt");
     if (!file.exists()) {
@@ -54,20 +55,22 @@ function promiseCrashReport(expectedExtra = {}) {
     }
 
     info("Iterating crash report extra keys");
-    for (let {name: key} of extra.enumerator) {
+    for (let { name: key } of extra.enumerator) {
       let value = extra.getPropertyAsAString(key);
       if (key in expectedExtra) {
         if (expectedExtra[key] == null) {
           ok(false, `Got unexpected key ${key} with value ${value}`);
         } else {
-          is(value, expectedExtra[key],
-             `Crash report had the right extra value for ${key}`);
+          is(
+            value,
+            expectedExtra[key],
+            `Crash report had the right extra value for ${key}`
+          );
         }
       }
     }
   })();
 }
-
 
 
 
@@ -100,15 +103,17 @@ function getPropertyBagValue(bag, key) {
 
 
 async function setupLocalCrashReportServer() {
-  const SERVER_URL = "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
+  const SERVER_URL =
+    "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
 
   
   
   
   
   
-  let env = Cc["@mozilla.org/process/environment;1"]
-              .getService(Ci.nsIEnvironment);
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   let noReport = env.get("MOZ_CRASHREPORTER_NO_REPORT");
   let serverUrl = env.get("MOZ_CRASHREPORTER_URL");
   env.set("MOZ_CRASHREPORTER_NO_REPORT", "");
@@ -126,7 +131,9 @@ async function setupLocalCrashReportServer() {
 
 function prepareNoDump() {
   let originalGetDumpID = TabCrashHandler.getDumpID;
-  TabCrashHandler.getDumpID = function(browser) { return null; };
+  TabCrashHandler.getDumpID = function(browser) {
+    return null;
+  };
   registerCleanupFunction(() => {
     TabCrashHandler.getDumpID = originalGetDumpID;
   });

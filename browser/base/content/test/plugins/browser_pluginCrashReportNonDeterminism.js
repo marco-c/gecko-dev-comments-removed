@@ -1,7 +1,9 @@
 
 
 
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 
 
@@ -20,7 +22,8 @@ const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.j
 
 
 
-const CRASH_URL = "http://example.com/browser/browser/base/content/test/plugins/plugin_crashCommentAndURL.html";
+const CRASH_URL =
+  "http://example.com/browser/browser/base/content/test/plugins/plugin_crashCommentAndURL.html";
 const CRASHED_MESSAGE = "BrowserPlugins:NPAPIPluginProcessCrashed";
 
 
@@ -51,7 +54,9 @@ const CRASHED_MESSAGE = "BrowserPlugins:NPAPIPluginProcessCrashed";
 
 
 function preparePlugin(browser, pluginFallbackState) {
-  return ContentTask.spawn(browser, pluginFallbackState, async function(contentPluginFallbackState) {
+  return ContentTask.spawn(browser, pluginFallbackState, async function(
+    contentPluginFallbackState
+  ) {
     let plugin = content.document.getElementById("plugin");
     plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     
@@ -74,8 +79,10 @@ function preparePlugin(browser, pluginFallbackState) {
       },
     });
     return plugin.runID;
-  }).then((runID) => {
-    browser.messageManager.sendAsyncMessage("BrowserPlugins:Test:ClearCrashData");
+  }).then(runID => {
+    browser.messageManager.sendAsyncMessage(
+      "BrowserPlugins:Test:ClearCrashData"
+    );
     return runID;
   });
 }
@@ -132,7 +139,7 @@ add_task(async function testChromeHearsPluginCrashFirst() {
 
   
   
-  let win = await BrowserTestUtils.openNewBrowserWindow({remote: true});
+  let win = await BrowserTestUtils.openNewBrowserWindow({ remote: true });
   let browser = win.gBrowser.selectedBrowser;
 
   BrowserTestUtils.loadURI(browser, CRASH_URL);
@@ -142,14 +149,19 @@ add_task(async function testChromeHearsPluginCrashFirst() {
   
   
   
-  let runID = await preparePlugin(browser,
-                                  Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE);
+  let runID = await preparePlugin(
+    browser,
+    Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE
+  );
 
   
   
   let mm = browser.messageManager;
-  mm.sendAsyncMessage(CRASHED_MESSAGE,
-                      { pluginName: "", runID, state: "please" });
+  mm.sendAsyncMessage(CRASHED_MESSAGE, {
+    pluginName: "",
+    runID,
+    state: "please",
+  });
 
   await ContentTask.spawn(browser, null, async function() {
     
@@ -157,7 +169,9 @@ add_task(async function testChromeHearsPluginCrashFirst() {
     
     let plugin = content.document.getElementById("plugin");
     plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-    let statusDiv = plugin.openOrClosedShadowRoot.getElementById("submitStatus");
+    let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
+      "submitStatus"
+    );
 
     if (statusDiv.getAttribute("status") == "please") {
       Assert.ok(false, "Did not expect plugin to be in crash report mode yet.");
@@ -183,8 +197,11 @@ add_task(async function testChromeHearsPluginCrashFirst() {
     });
 
     plugin.dispatchEvent(event);
-    Assert.equal(statusDiv.getAttribute("status"), "please",
-      "Should have been showing crash report UI");
+    Assert.equal(
+      statusDiv.getAttribute("status"),
+      "please",
+      "Should have been showing crash report UI"
+    );
   });
   await BrowserTestUtils.closeWindow(win);
   await crashDeferred.promise;
@@ -199,7 +216,7 @@ add_task(async function testContentHearsCrashFirst() {
 
   
   
-  let win = await BrowserTestUtils.openNewBrowserWindow({remote: true});
+  let win = await BrowserTestUtils.openNewBrowserWindow({ remote: true });
   let browser = win.gBrowser.selectedBrowser;
 
   BrowserTestUtils.loadURI(browser, CRASH_URL);
@@ -208,8 +225,10 @@ add_task(async function testContentHearsCrashFirst() {
   
   
   
-  let runID = await preparePlugin(browser,
-                                  Ci.nsIObjectLoadingContent.PLUGIN_CRASHED);
+  let runID = await preparePlugin(
+    browser,
+    Ci.nsIObjectLoadingContent.PLUGIN_CRASHED
+  );
 
   await ContentTask.spawn(browser, null, async function() {
     
@@ -217,7 +236,9 @@ add_task(async function testContentHearsCrashFirst() {
     
     let plugin = content.document.getElementById("plugin");
     plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-    let statusDiv = plugin.openOrClosedShadowRoot.getElementById("submitStatus");
+    let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
+      "submitStatus"
+    );
 
     if (statusDiv.getAttribute("status") == "please") {
       Assert.ok(false, "Did not expect plugin to be in crash report mode yet.");
@@ -234,15 +255,21 @@ add_task(async function testContentHearsCrashFirst() {
 
     plugin.dispatchEvent(event);
 
-    Assert.notEqual(statusDiv.getAttribute("status"), "please",
-      "Should not yet be showing crash report UI");
+    Assert.notEqual(
+      statusDiv.getAttribute("status"),
+      "please",
+      "Should not yet be showing crash report UI"
+    );
   });
 
   
   
   let mm = browser.messageManager;
-  mm.sendAsyncMessage(CRASHED_MESSAGE,
-                      { pluginName: "", runID, state: "please"});
+  mm.sendAsyncMessage(CRASHED_MESSAGE, {
+    pluginName: "",
+    runID,
+    state: "please",
+  });
 
   await ContentTask.spawn(browser, null, async function() {
     
@@ -250,10 +277,15 @@ add_task(async function testContentHearsCrashFirst() {
     
     let plugin = content.document.getElementById("plugin");
     plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-    let statusDiv = plugin.openOrClosedShadowRoot.getElementById("submitStatus");
+    let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
+      "submitStatus"
+    );
 
-    Assert.equal(statusDiv.getAttribute("status"), "please",
-      "Should have been showing crash report UI");
+    Assert.equal(
+      statusDiv.getAttribute("status"),
+      "please",
+      "Should have been showing crash report UI"
+    );
   });
 
   await BrowserTestUtils.closeWindow(win);

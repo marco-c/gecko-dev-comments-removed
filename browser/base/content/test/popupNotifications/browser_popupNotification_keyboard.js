@@ -9,7 +9,9 @@ function test() {
   ok(PopupNotifications.panel, "PopupNotifications panel exists");
 
   
-  SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]}).then(setup);
+  SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] }).then(
+    setup
+  );
 }
 
 
@@ -27,7 +29,8 @@ function focusNotificationAnchor(anchor) {
 var tests = [
   
   
-  { id: "Test#1",
+  {
+    id: "Test#1",
     run() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.options.persistent = true;
@@ -40,14 +43,26 @@ var tests = [
     onHidden(popup) {
       ok(!this.notifyObj.mainActionClicked, "mainAction was not clicked");
       ok(this.notifyObj.secondaryActionClicked, "secondaryAction was clicked");
-      ok(!this.notifyObj.dismissalCallbackTriggered, "dismissal callback wasn't triggered");
+      ok(
+        !this.notifyObj.dismissalCallbackTriggered,
+        "dismissal callback wasn't triggered"
+      );
       ok(this.notifyObj.removedCallbackTriggered, "removed callback triggered");
-      is(this.notifyObj.mainActionSource, undefined, "shouldn't have a main action source.");
-      is(this.notifyObj.secondaryActionSource, "esc-press", "secondary action should be from ESC key press");
+      is(
+        this.notifyObj.mainActionSource,
+        undefined,
+        "shouldn't have a main action source."
+      );
+      is(
+        this.notifyObj.secondaryActionSource,
+        "esc-press",
+        "secondary action should be from ESC key press"
+      );
     },
   },
   
-  { id: "Test#2",
+  {
+    id: "Test#2",
     async run() {
       await waitForWindowReadyForPopupNotifications(window);
       this.notifyObj = new BasicNotification(this.id);
@@ -59,16 +74,34 @@ var tests = [
     },
     onHidden(popup) {
       ok(!this.notifyObj.mainActionClicked, "mainAction was not clicked");
-      ok(!this.notifyObj.secondaryActionClicked, "secondaryAction was not clicked");
-      ok(this.notifyObj.dismissalCallbackTriggered, "dismissal callback triggered");
-      ok(!this.notifyObj.removedCallbackTriggered, "removed callback was not triggered");
-      is(this.notifyObj.mainActionSource, undefined, "shouldn't have a main action source.");
-      is(this.notifyObj.secondaryActionSource, undefined, "shouldn't have a secondary action source.");
+      ok(
+        !this.notifyObj.secondaryActionClicked,
+        "secondaryAction was not clicked"
+      );
+      ok(
+        this.notifyObj.dismissalCallbackTriggered,
+        "dismissal callback triggered"
+      );
+      ok(
+        !this.notifyObj.removedCallbackTriggered,
+        "removed callback was not triggered"
+      );
+      is(
+        this.notifyObj.mainActionSource,
+        undefined,
+        "shouldn't have a main action source."
+      );
+      is(
+        this.notifyObj.secondaryActionSource,
+        undefined,
+        "shouldn't have a secondary action source."
+      );
       this.notification.remove();
     },
   },
   
-  { id: "Test#3",
+  {
+    id: "Test#3",
     run() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.anchorID = "geo-notification-icon";
@@ -85,11 +118,12 @@ var tests = [
       is(document.activeElement, popup.children[0].closebutton);
       this.notification.remove();
     },
-    onHidden(popup) { },
+    onHidden(popup) {},
   },
   
   
-  { id: "Test#4",
+  {
+    id: "Test#4",
     async run() {
       let notifyObj1 = new BasicNotification(this.id);
       notifyObj1.id += "_1";
@@ -146,7 +180,8 @@ var tests = [
     },
   },
   
-  { id: "Test#5",
+  {
+    id: "Test#5",
     run() {
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.anchorID = "geo-notification-icon";
@@ -188,35 +223,45 @@ var tests = [
     },
   },
   
-  { id: "Test#6",
+  {
+    id: "Test#6",
     async run() {
       let id = this.id;
-      await BrowserTestUtils.withNewTab("data:text/html,<input id='test-input'/>", async function(browser) {
-        let notifyObj = new BasicNotification(id);
-        await ContentTask.spawn(browser, {}, function() {
-          content.document.getElementById("test-input").focus();
-        });
+      await BrowserTestUtils.withNewTab(
+        "data:text/html,<input id='test-input'/>",
+        async function(browser) {
+          let notifyObj = new BasicNotification(id);
+          await ContentTask.spawn(browser, {}, function() {
+            content.document.getElementById("test-input").focus();
+          });
 
-        let opened = waitForNotificationPanel();
-        let notification = showNotification(notifyObj);
-        await opened;
+          let opened = waitForNotificationPanel();
+          let notification = showNotification(notifyObj);
+          await opened;
 
-        
-        
-        
-        if (gMultiProcessBrowser) {
-          is(Services.focus.focusedElement, browser);
-        } else {
-          is(Services.focus.focusedElement, browser.contentDocument.getElementById("test-input"));
+          
+          
+          
+          if (gMultiProcessBrowser) {
+            is(Services.focus.focusedElement, browser);
+          } else {
+            is(
+              Services.focus.focusedElement,
+              browser.contentDocument.getElementById("test-input")
+            );
+          }
+
+          
+          await ContentTask.spawn(browser, {}, function() {
+            is(
+              content.document.activeElement,
+              content.document.getElementById("test-input")
+            );
+          });
+
+          notification.remove();
         }
-
-        
-        await ContentTask.spawn(browser, {}, function() {
-          is(content.document.activeElement, content.document.getElementById("test-input"));
-        });
-
-        notification.remove();
-      });
+      );
       goNext();
     },
   },

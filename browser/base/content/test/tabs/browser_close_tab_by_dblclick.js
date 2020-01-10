@@ -2,7 +2,6 @@
 
 
 
-
 const PREF_CLOSE_TAB_BY_DBLCLICK = "browser.tabs.closeTabByDblclick";
 
 function triggerDblclickOn(target) {
@@ -19,9 +18,9 @@ add_task(async function dblclick() {
 });
 
 add_task(async function dblclickWithPrefSet() {
-  await SpecialPowers.pushPrefEnv({set: [
-    [PREF_CLOSE_TAB_BY_DBLCLICK, true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_CLOSE_TAB_BY_DBLCLICK, true]],
+  });
 
   let tab = BrowserTestUtils.addTab(gBrowser, "about:mozilla", {
     skipAnimation: true,

@@ -1,15 +1,18 @@
 
 
 
-const VIDEO_URL = "http://mochi.test:8888/browser/browser/base/content/test/general/web_video.html";
+const VIDEO_URL =
+  "http://mochi.test:8888/browser/browser/base/content/test/general/web_video.html";
 
 
 
 
 
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
-                 this);
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
+  this
+);
 
 
 
@@ -20,8 +23,9 @@ Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/toolkit
 function createTemporarySaveDirectory() {
   let saveDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
   saveDir.append("testsavedir");
-  if (!saveDir.exists())
+  if (!saveDir.exists()) {
     saveDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+  }
   return saveDir;
 }
 
@@ -30,7 +34,7 @@ function createTemporarySaveDirectory() {
 
 
 function waitForTransferComplete() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     mockTransferCallback = () => {
       ok(true, "Transfer completed");
       resolve();
@@ -51,13 +55,17 @@ function rightClickVideo(browser) {
     let rect = video.getBoundingClientRect();
 
     
-    let left = rect.left + (rect.width / 2);
-    let top = rect.top + (rect.height / 2);
+    let left = rect.left + rect.width / 2;
+    let top = rect.top + rect.height / 2;
 
-    utils.sendMouseEvent("contextmenu", left, top,
-                         2, 
-                         1, 
-                         0 );
+    utils.sendMouseEvent(
+      "contextmenu",
+      left,
+      top,
+      2 ,
+      1 ,
+      0 
+    );
   };
   let mm = browser.messageManager;
   mm.loadFrameScript("data:,(" + frame_script.toString() + ")();", true);

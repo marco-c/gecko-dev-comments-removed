@@ -2,64 +2,104 @@
 
 
 
-const baseURL = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+const baseURL = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 
 add_task(async function test_opening_blocked_popups() {
   
-  await SpecialPowers.pushPrefEnv({set: [["dom.disable_open_during_load", true]]});
-
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "data:text/html,Hello");
-
-  await ContentTask.spawn(tab.linkedBrowser, baseURL + "popup_blocker.html", uri => {
-    let iframe = content.document.createElement("iframe");
-    iframe.id = "popupframe";
-    iframe.src = uri;
-    content.document.body.appendChild(iframe);
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.disable_open_during_load", true]],
   });
 
   
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,Hello"
+  );
+
+  await ContentTask.spawn(
+    tab.linkedBrowser,
+    baseURL + "popup_blocker.html",
+    uri => {
+      let iframe = content.document.createElement("iframe");
+      iframe.id = "popupframe";
+      iframe.src = uri;
+      content.document.body.appendChild(iframe);
+    }
+  );
+
+  
   let notification;
-  await BrowserTestUtils.waitForCondition(() =>
-    notification = gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      (notification = gBrowser
+        .getNotificationBox()
+        .getNotificationWithValue("popup-blocked"))
+  );
 
   ok(notification, "Should have notification.");
 
   await ContentTask.spawn(tab.linkedBrowser, baseURL, async function(uri) {
     let iframe = content.document.createElement("iframe");
-    let pageHideHappened = ContentTaskUtils.waitForEvent(this, "pagehide", true);
+    let pageHideHappened = ContentTaskUtils.waitForEvent(
+      this,
+      "pagehide",
+      true
+    );
     content.document.body.appendChild(iframe);
     iframe.src = uri;
     await pageHideHappened;
   });
 
-  notification = gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked");
+  notification = gBrowser
+    .getNotificationBox()
+    .getNotificationWithValue("popup-blocked");
   ok(notification, "Should still have notification");
 
   
   await ContentTask.spawn(tab.linkedBrowser, null, async function() {
-    let pageHideHappened = ContentTaskUtils.waitForEvent(this, "pagehide", true);
-    content.document.getElementById("popupframe").contentDocument.location.href = "about:blank";
+    let pageHideHappened = ContentTaskUtils.waitForEvent(
+      this,
+      "pagehide",
+      true
+    );
+    content.document.getElementById(
+      "popupframe"
+    ).contentDocument.location.href = "about:blank";
     await pageHideHappened;
   });
 
-  await BrowserTestUtils.waitForCondition(() =>
-    !gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
-  ok(!gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"),
-     "Should no longer have notification");
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      !gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
+  );
+  ok(
+    !gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"),
+    "Should no longer have notification"
+  );
 
   
-  await ContentTask.spawn(tab.linkedBrowser, baseURL + "popup_blocker.html", uri => {
-    content.document.getElementById("popupframe").remove();
-    let iframe = content.document.createElement("iframe");
-    iframe.id = "popupframe";
-    iframe.src = uri;
-    content.document.body.appendChild(iframe);
-  });
+  await ContentTask.spawn(
+    tab.linkedBrowser,
+    baseURL + "popup_blocker.html",
+    uri => {
+      content.document.getElementById("popupframe").remove();
+      let iframe = content.document.createElement("iframe");
+      iframe.id = "popupframe";
+      iframe.src = uri;
+      content.document.body.appendChild(iframe);
+    }
+  );
 
   
-  await BrowserTestUtils.waitForCondition(() =>
-    notification = gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      (notification = gBrowser
+        .getNotificationBox()
+        .getNotificationWithValue("popup-blocked"))
+  );
 
   ok(notification, "Should have notification.");
 
@@ -67,11 +107,14 @@ add_task(async function test_opening_blocked_popups() {
     content.document.getElementById("popupframe").remove();
   });
 
-  await BrowserTestUtils.waitForCondition(() =>
-    !gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
-  ok(!gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"),
-     "Should no longer have notification");
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      !gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
+  );
+  ok(
+    !gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"),
+    "Should no longer have notification"
+  );
 
   BrowserTestUtils.removeTab(tab);
 });
-

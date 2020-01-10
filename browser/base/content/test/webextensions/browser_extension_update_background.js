@@ -1,6 +1,10 @@
-const {AddonManagerPrivate} = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+const { AddonManagerPrivate } = ChromeUtils.import(
+  "resource://gre/modules/AddonManager.jsm"
+);
 
-const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
 
 AddonTestUtils.initMochitest(this);
 
@@ -14,9 +18,12 @@ requestLongerTimeout(2);
 
 function promiseViewLoaded(tab, viewid) {
   let win = tab.linkedBrowser.contentWindow;
-  if (win.gViewController && !win.gViewController.isLoading &&
-      win.gViewController.currentViewId == viewid) {
-     return Promise.resolve();
+  if (
+    win.gViewController &&
+    !win.gViewController.isLoading &&
+    win.gViewController.currentViewId == viewid
+  ) {
+    return Promise.resolve();
   }
 
   return new Promise(resolve => {
@@ -38,11 +45,13 @@ function getBadgeStatus() {
 
 
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.install.requireBuiltInCerts", false],
-    ["extensions.update.requireBuiltInCerts", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["extensions.install.requireBuiltInCerts", false],
+      ["extensions.update.requireBuiltInCerts", false],
+    ],
+  });
 
   
   
@@ -61,16 +70,23 @@ AddonTestUtils.hookAMTelemetryEvents();
 
 
 async function backgroundUpdateTest(url, id, checkIconFn) {
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.update.enabled", true],
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["extensions.update.enabled", true],
 
-    
-    ["extensions.update.background.url", `${BASE}/browser_webext_update.json`],
-  ]});
+      
+      [
+        "extensions.update.background.url",
+        `${BASE}/browser_webext_update.json`,
+      ],
+    ],
+  });
 
   
-  let addon = await promiseInstallAddon(url, {source: FAKE_INSTALL_TELEMETRY_SOURCE});
+  let addon = await promiseInstallAddon(url, {
+    source: FAKE_INSTALL_TELEMETRY_SOURCE,
+  });
   let addonId = addon.id;
 
   ok(addon, "Addon was installed");
@@ -101,13 +117,21 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
 
   
   let tab = await tabPromise;
-  is(tab.linkedBrowser.currentURI.spec, "about:addons", "Browser is at about:addons");
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:addons",
+    "Browser is at about:addons"
+  );
 
   const VIEW = "addons://list/extension";
   await promiseViewLoaded(tab, VIEW);
   let win = tab.linkedBrowser.contentWindow;
   ok(!win.gViewController.isLoading, "about:addons view is fully loaded");
-  is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
+  is(
+    win.gViewController.currentViewId,
+    VIEW,
+    "about:addons is at extensions list"
+  );
 
   
   let panel = await popupPromise;
@@ -161,7 +185,11 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   await promiseViewLoaded(tab, VIEW);
   win = tab.linkedBrowser.contentWindow;
   ok(!win.gViewController.isLoading, "about:addons view is fully loaded");
-  is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
+  is(
+    win.gViewController.currentViewId,
+    VIEW,
+    "about:addons is at extensions list"
+  );
 
   
   updatePromise = waitForUpdate(addon);
@@ -184,17 +212,31 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   
   
   const amEvents = AddonTestUtils.getAMTelemetryEvents();
-  const updateEvents = amEvents.filter(evt => evt.method === "update").map(evt => {
-    delete evt.value;
-    return evt;
-  });
+  const updateEvents = amEvents
+    .filter(evt => evt.method === "update")
+    .map(evt => {
+      delete evt.value;
+      return evt;
+    });
 
-  Assert.deepEqual(updateEvents.map(evt => evt.extra && evt.extra.step), [
-    
-    "started", "download_started", "download_completed", "permissions_prompt", "cancelled",
-    
-    "started", "download_started", "download_completed", "permissions_prompt", "completed",
-  ], "Got the steps from the collected telemetry events");
+  Assert.deepEqual(
+    updateEvents.map(evt => evt.extra && evt.extra.step),
+    [
+      
+      "started",
+      "download_started",
+      "download_completed",
+      "permissions_prompt",
+      "cancelled",
+      
+      "started",
+      "download_started",
+      "download_completed",
+      "permissions_prompt",
+      "completed",
+    ],
+    "Got the steps from the collected telemetry events"
+  );
 
   const method = "update";
   const object = "extension";
@@ -207,19 +249,33 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
 
   
   
-  Assert.deepEqual(updateEvents.filter(evt => evt.extra && evt.extra.step === "permissions_prompt"), [
-    {method, object, extra: {...baseExtra, num_strings: "1"}},
-    {method, object, extra: {...baseExtra, num_strings: "1"}},
-  ], "Got the expected permission_prompts events");
+  Assert.deepEqual(
+    updateEvents.filter(
+      evt => evt.extra && evt.extra.step === "permissions_prompt"
+    ),
+    [
+      { method, object, extra: { ...baseExtra, num_strings: "1" } },
+      { method, object, extra: { ...baseExtra, num_strings: "1" } },
+    ],
+    "Got the expected permission_prompts events"
+  );
 }
 
 function checkDefaultIcon(icon) {
-  is(icon, "chrome://mozapps/skin/extensions/extensionGeneric.svg",
-     "Popup has the default extension icon");
+  is(
+    icon,
+    "chrome://mozapps/skin/extensions/extensionGeneric.svg",
+    "Popup has the default extension icon"
+  );
 }
 
-add_task(() => backgroundUpdateTest(`${BASE}/browser_webext_update1.xpi`,
-                                    ID, checkDefaultIcon));
+add_task(() =>
+  backgroundUpdateTest(
+    `${BASE}/browser_webext_update1.xpi`,
+    ID,
+    checkDefaultIcon
+  )
+);
 function checkNonDefaultIcon(icon) {
   
   
@@ -228,5 +284,10 @@ function checkNonDefaultIcon(icon) {
   ok(icon.endsWith("/icon.png"), "Icon is icon.png inside a jar");
 }
 
-add_task(() => backgroundUpdateTest(`${BASE}/browser_webext_update_icon1.xpi`,
-                                    ID_ICON, checkNonDefaultIcon));
+add_task(() =>
+  backgroundUpdateTest(
+    `${BASE}/browser_webext_update_icon1.xpi`,
+    ID_ICON,
+    checkNonDefaultIcon
+  )
+);

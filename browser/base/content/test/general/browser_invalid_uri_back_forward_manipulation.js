@@ -6,15 +6,20 @@
 
 
 
-
 add_task(async function checkBackFromInvalidURI() {
   await pushPrefs(["keyword.enabled", false]);
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:robots", true);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:robots",
+    true
+  );
   info("Loaded about:robots");
 
   gURLBar.value = "::2600";
 
-  let promiseErrorPageLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
+  let promiseErrorPageLoaded = BrowserTestUtils.waitForErrorPage(
+    tab.linkedBrowser
+  );
   gURLBar.handleCommand();
   await promiseErrorPageLoaded;
 
@@ -22,14 +27,22 @@ add_task(async function checkBackFromInvalidURI() {
   if (gBrowser.webNavigation.canGoBack) {
     
     
-    let promiseOtherPageLoaded = BrowserTestUtils.waitForEvent(tab.linkedBrowser, "pageshow", false,
+    let promiseOtherPageLoaded = BrowserTestUtils.waitForEvent(
+      tab.linkedBrowser,
+      "pageshow",
+      false,
       
       
-      function(e) { return gBrowser.currentURI.spec == "about:robots"; }
+      function(e) {
+        return gBrowser.currentURI.spec == "about:robots";
+      }
     );
     gBrowser.goBack();
     await promiseOtherPageLoaded;
-    ok(gBrowser.webNavigation.canGoForward, "Should be able to go forward from previous page.");
+    ok(
+      gBrowser.webNavigation.canGoForward,
+      "Should be able to go forward from previous page."
+    );
   }
   BrowserTestUtils.removeTab(tab);
 });

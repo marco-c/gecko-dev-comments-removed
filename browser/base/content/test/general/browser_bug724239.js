@@ -2,40 +2,50 @@
 
 
 add_task(async function test_blank() {
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
-                                    async function(browser) {
-    BrowserTestUtils.loadURI(browser, "http://example.com");
-    await BrowserTestUtils.browserLoaded(browser);
-    ok(!gBrowser.canGoBack, "about:blank wasn't added to session history");
-  });
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function(browser) {
+      BrowserTestUtils.loadURI(browser, "http://example.com");
+      await BrowserTestUtils.browserLoaded(browser);
+      ok(!gBrowser.canGoBack, "about:blank wasn't added to session history");
+    }
+  );
 });
 
 add_task(async function test_newtab() {
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
-                                    async function(browser) {
-    let tab = gBrowser.getTabForBrowser(browser);
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function(browser) {
+      let tab = gBrowser.getTabForBrowser(browser);
 
-    
-    BrowserTestUtils.loadURI(browser, "about:newtab");
-    
-    
-    await BrowserTestUtils.browserStopped(browser, "about:newtab");
-
-    let { mustChangeProcess } =
-      E10SUtils.shouldLoadURIInBrowser(browser, "http://example.com");
-
-    BrowserTestUtils.loadURI(browser, "http://example.com");
-
-    let stopped = BrowserTestUtils.browserStopped(browser);
-
-    if (mustChangeProcess) {
+      
+      BrowserTestUtils.loadURI(browser, "about:newtab");
       
       
-      await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
+      await BrowserTestUtils.browserStopped(browser, "about:newtab");
+
+      let { mustChangeProcess } = E10SUtils.shouldLoadURIInBrowser(
+        browser,
+        "http://example.com"
+      );
+
+      BrowserTestUtils.loadURI(browser, "http://example.com");
+
+      let stopped = BrowserTestUtils.browserStopped(browser);
+
+      if (mustChangeProcess) {
+        
+        
+        await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
+      }
+
+      await stopped;
+
+      is(
+        gBrowser.canGoBack,
+        true,
+        "about:newtab was added to the session history when AS was enabled."
+      );
     }
-
-    await stopped;
-
-    is(gBrowser.canGoBack, true, "about:newtab was added to the session history when AS was enabled.");
-  });
+  );
 });

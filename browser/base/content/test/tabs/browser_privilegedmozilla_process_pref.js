@@ -52,8 +52,11 @@ add_task(async function webpages_in_privileged_content_process() {
       `${TEST_HIGH2}?q=foo`,
     ]) {
       await BrowserTestUtils.withNewTab(url, async function(browser2) {
-        is(browser2.frameLoader.remoteTab.osPid, privilegedPid,
-          "Check that privileged pages are in the same privileged mozilla content process.");
+        is(
+          browser2.frameLoader.remoteTab.osPid,
+          privilegedPid,
+          "Check that privileged pages are in the same privileged mozilla content process."
+        );
       });
     }
   });
@@ -116,7 +119,11 @@ add_task(async function process_switching_through_navigation_features() {
     let privilegedPid = browser.frameLoader.remoteTab.osPid;
 
     
-    let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, TEST_HIGH1, true);
+    let promiseTabOpened = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      TEST_HIGH1,
+      true
+    );
     await ContentTask.spawn(browser, TEST_HIGH1, uri => {
       content.open(uri, "_blank");
     });
@@ -125,14 +132,20 @@ add_task(async function process_switching_through_navigation_features() {
       BrowserTestUtils.removeTab(newTab);
     });
     browser = newTab.linkedBrowser;
-    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
-      "Check that new tab opened from privileged page is loaded in privileged mozilla content process.");
+    is(
+      browser.frameLoader.remoteTab.osPid,
+      privilegedPid,
+      "Check that new tab opened from privileged page is loaded in privileged mozilla content process."
+    );
 
     
     BrowserReload();
     await BrowserTestUtils.browserLoaded(browser, false, TEST_HIGH1);
-    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
-      "Check that privileged page is still in privileged mozilla content process after reload.");
+    is(
+      browser.frameLoader.remoteTab.osPid,
+      privilegedPid,
+      "Check that privileged page is still in privileged mozilla content process after reload."
+    );
 
     
     BrowserTestUtils.loadURI(browser, TEST_LOW1);
@@ -140,31 +153,49 @@ add_task(async function process_switching_through_navigation_features() {
     checkBrowserRemoteType(browser, E10SUtils.WEB_REMOTE_TYPE);
 
     
-    let promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, TEST_HIGH1);
+    let promiseLocation = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      TEST_HIGH1
+    );
     browser.goBack();
     await promiseLocation;
     
     
     await BrowserTestUtils.waitForEvent(newTab, "SSTabRestored");
-    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
-      "Check that privileged page is still in privileged mozilla content process after history goBack.");
+    is(
+      browser.frameLoader.remoteTab.osPid,
+      privilegedPid,
+      "Check that privileged page is still in privileged mozilla content process after history goBack."
+    );
 
     
-    promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, TEST_LOW1);
+    promiseLocation = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      TEST_LOW1
+    );
     browser.goForward();
     await promiseLocation;
     
     
     await BrowserTestUtils.waitForEvent(newTab, "SSTabRestored");
-    checkBrowserRemoteType(browser, E10SUtils.WEB_REMOTE_TYPE,
-      "Check that tab runs in the web content process after using history goForward.");
+    checkBrowserRemoteType(
+      browser,
+      E10SUtils.WEB_REMOTE_TYPE,
+      "Check that tab runs in the web content process after using history goForward."
+    );
 
     
-    promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, TEST_HIGH1);
+    promiseLocation = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      TEST_HIGH1
+    );
     browser.gotoIndex(0);
     await promiseLocation;
-    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
-      "Check that privileged page is in privileged mozilla content process after history gotoIndex.");
+    is(
+      browser.frameLoader.remoteTab.osPid,
+      privilegedPid,
+      "Check that privileged page is in privileged mozilla content process after history gotoIndex."
+    );
 
     BrowserTestUtils.loadURI(browser, TEST_LOW2);
     await BrowserTestUtils.browserLoaded(browser, false, TEST_LOW2);
@@ -175,8 +206,11 @@ add_task(async function process_switching_through_navigation_features() {
       content.location = uri;
     });
     await BrowserTestUtils.browserLoaded(browser, false, TEST_HIGH1);
-    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
-      "Check that privileged page is in privileged mozilla content process after location change.");
+    is(
+      browser.frameLoader.remoteTab.osPid,
+      privilegedPid,
+      "Check that privileged page is in privileged mozilla content process after location change."
+    );
   });
 
   Services.ppmm.releaseCachedProcesses();

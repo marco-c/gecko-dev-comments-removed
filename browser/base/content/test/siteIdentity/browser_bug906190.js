@@ -10,67 +10,91 @@ requestLongerTimeout(2);
 
 
 
-const HTTPS_TEST_ROOT_1 = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://test1.example.com");
-const HTTPS_TEST_ROOT_2 = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://test2.example.com");
+const HTTPS_TEST_ROOT_1 = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://test1.example.com"
+);
+const HTTPS_TEST_ROOT_2 = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://test2.example.com"
+);
 
 
 
 
 
 
-async function doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefresh) {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: parentTabSpec,
-  }, async function(browser) {
-    
-    await assertMixedContentBlockingState(gBrowser, {
-      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
-    });
+async function doTest(
+  parentTabSpec,
+  childTabSpec,
+  testTaskFn,
+  waitForMetaRefresh
+) {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: parentTabSpec,
+    },
+    async function(browser) {
+      
+      await assertMixedContentBlockingState(gBrowser, {
+        activeLoaded: false,
+        activeBlocked: true,
+        passiveLoaded: false,
+      });
 
-    
-    let promiseReloaded = BrowserTestUtils.browserLoaded(browser);
-    gIdentityHandler.disableMixedContentProtection();
-    await promiseReloaded;
+      
+      let promiseReloaded = BrowserTestUtils.browserLoaded(browser);
+      gIdentityHandler.disableMixedContentProtection();
+      await promiseReloaded;
 
-    
-    await ContentTask.spawn(browser, childTabSpec, async (childTabSpecContent) => {
-      let testDiv = content.document.getElementById("mctestdiv");
-      await ContentTaskUtils.waitForCondition(() =>
-        testDiv.innerHTML == "Mixed Content Blocker disabled"
+      
+      await ContentTask.spawn(
+        browser,
+        childTabSpec,
+        async childTabSpecContent => {
+          let testDiv = content.document.getElementById("mctestdiv");
+          await ContentTaskUtils.waitForCondition(
+            () => testDiv.innerHTML == "Mixed Content Blocker disabled"
+          );
+
+          
+          let mainDiv = content.document.createElement("div");
+
+          
+          mainDiv.innerHTML =
+            '<p><a id="linkToOpenInNewTab" href="' +
+            childTabSpecContent +
+            '">Link</a></p>';
+          content.document.body.appendChild(mainDiv);
+        }
       );
 
       
-      let mainDiv = content.document.createElement("div");
+      for (let openFn of [simulateCtrlClick, simulateContextMenuOpenInTab]) {
+        let promiseTabLoaded = waitForSomeTabToLoad();
+        openFn(browser);
+        await promiseTabLoaded;
+        gBrowser.selectTabAtIndex(2);
 
-      
-      mainDiv.innerHTML =
-        '<p><a id="linkToOpenInNewTab" href="' + childTabSpecContent + '">Link</a></p>';
-      content.document.body.appendChild(mainDiv);
-    });
+        if (waitForMetaRefresh) {
+          await waitForSomeTabToLoad();
+        }
 
-    
-    for (let openFn of [simulateCtrlClick, simulateContextMenuOpenInTab]) {
-      let promiseTabLoaded = waitForSomeTabToLoad();
-      openFn(browser);
-      await promiseTabLoaded;
-      gBrowser.selectTabAtIndex(2);
+        await testTaskFn();
 
-      if (waitForMetaRefresh) {
-        await waitForSomeTabToLoad();
+        gBrowser.removeCurrentTab();
       }
-
-      await testTaskFn();
-
-      gBrowser.removeCurrentTab();
     }
-  });
+  );
 }
 
 function simulateCtrlClick(browser) {
-  BrowserTestUtils.synthesizeMouseAtCenter("#linkToOpenInNewTab",
-                                           { ctrlKey: true, metaKey: true },
-                                           browser);
+  BrowserTestUtils.synthesizeMouseAtCenter(
+    "#linkToOpenInNewTab",
+    { ctrlKey: true, metaKey: true },
+    browser
+  );
 }
 
 function simulateContextMenuOpenInTab(browser) {
@@ -80,16 +104,18 @@ function simulateContextMenuOpenInTab(browser) {
     event.target.hidePopup();
     return true;
   });
-  BrowserTestUtils.synthesizeMouseAtCenter("#linkToOpenInNewTab",
-                                           { type: "contextmenu", button: 2 },
-                                           browser);
+  BrowserTestUtils.synthesizeMouseAtCenter(
+    "#linkToOpenInNewTab",
+    { type: "contextmenu", button: 2 },
+    browser
+  );
 }
 
 
 
 
 function waitForSomeTabToLoad() {
-  return BrowserTestUtils.firstBrowserLoaded(window, true, (browser) => {
+  return BrowserTestUtils.firstBrowserLoaded(window, true, browser => {
     let tab = gBrowser.getTabForBrowser(browser);
     return !!tab;
   });
@@ -100,7 +126,7 @@ function waitForSomeTabToLoad() {
 
 add_task(async function test_initialize() {
   await SpecialPowers.pushPrefEnv({
-    "set": [["security.mixed_content.block_active_content", true]],
+    set: [["security.mixed_content.block_active_content", true]],
   });
 });
 
@@ -111,21 +137,28 @@ add_task(async function test_initialize() {
 
 
 add_task(async function test_same_origin() {
-  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_1 + "file_bug906190_2.html", async function() {
-    
-    
-    
-    await assertMixedContentBlockingState(gBrowser, {
-      activeLoaded: true, activeBlocked: false, passiveLoaded: false,
-    });
+  await doTest(
+    HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
+    HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
+    async function() {
+      
+      
+      
+      await assertMixedContentBlockingState(gBrowser, {
+        activeLoaded: true,
+        activeBlocked: false,
+        passiveLoaded: false,
+      });
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      Assert.equal(content.document.getElementById("mctestdiv").innerHTML,
-                   "Mixed Content Blocker disabled",
-                   "OK: Executed mixed script");
-    });
-  });
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        Assert.equal(
+          content.document.getElementById("mctestdiv").innerHTML,
+          "Mixed Content Blocker disabled",
+          "OK: Executed mixed script"
+        );
+      });
+    }
+  );
 });
 
 
@@ -135,21 +168,28 @@ add_task(async function test_same_origin() {
 
 
 add_task(async function test_different_origin() {
-  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
-               HTTPS_TEST_ROOT_2 + "file_bug906190_2.html", async function() {
-    
-    
-    
-    await assertMixedContentBlockingState(gBrowser, {
-      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
-    });
+  await doTest(
+    HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
+    HTTPS_TEST_ROOT_2 + "file_bug906190_2.html",
+    async function() {
+      
+      
+      
+      await assertMixedContentBlockingState(gBrowser, {
+        activeLoaded: false,
+        activeBlocked: true,
+        passiveLoaded: false,
+      });
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      Assert.equal(content.document.getElementById("mctestdiv").innerHTML,
-                   "Mixed Content Blocker enabled",
-                   "OK: Blocked mixed script");
-    });
-  });
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        Assert.equal(
+          content.document.getElementById("mctestdiv").innerHTML,
+          "Mixed Content Blocker enabled",
+          "OK: Blocked mixed script"
+        );
+      });
+    }
+  );
 });
 
 
@@ -161,19 +201,27 @@ add_task(async function test_different_origin() {
 
 add_task(async function test_same_origin_metarefresh_same_origin() {
   
-  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_1 + "file_bug906190_3_4.html", async function() {
-    
-    await assertMixedContentBlockingState(gBrowser, {
-      activeLoaded: true, activeBlocked: false, passiveLoaded: false,
-    });
+  await doTest(
+    HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
+    HTTPS_TEST_ROOT_1 + "file_bug906190_3_4.html",
+    async function() {
+      
+      await assertMixedContentBlockingState(gBrowser, {
+        activeLoaded: true,
+        activeBlocked: false,
+        passiveLoaded: false,
+      });
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      Assert.equal(content.document.getElementById("mctestdiv").innerHTML,
-                   "Mixed Content Blocker disabled",
-                   "OK: Executed mixed script");
-    });
-  }, true);
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        Assert.equal(
+          content.document.getElementById("mctestdiv").innerHTML,
+          "Mixed Content Blocker disabled",
+          "OK: Executed mixed script"
+        );
+      });
+    },
+    true
+  );
 });
 
 
@@ -184,19 +232,27 @@ add_task(async function test_same_origin_metarefresh_same_origin() {
 
 
 add_task(async function test_same_origin_metarefresh_different_origin() {
-  await doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_2 + "file_bug906190_3_4.html", async function() {
-    
-    await assertMixedContentBlockingState(gBrowser, {
-      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
-    });
+  await doTest(
+    HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
+    HTTPS_TEST_ROOT_2 + "file_bug906190_3_4.html",
+    async function() {
+      
+      await assertMixedContentBlockingState(gBrowser, {
+        activeLoaded: false,
+        activeBlocked: true,
+        passiveLoaded: false,
+      });
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      Assert.equal(content.document.getElementById("mctestdiv").innerHTML,
-                   "Mixed Content Blocker enabled",
-                   "OK: Blocked mixed script");
-    });
-  }, true);
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        Assert.equal(
+          content.document.getElementById("mctestdiv").innerHTML,
+          "Mixed Content Blocker enabled",
+          "OK: Blocked mixed script"
+        );
+      });
+    },
+    true
+  );
 });
 
 
@@ -207,19 +263,26 @@ add_task(async function test_same_origin_metarefresh_different_origin() {
 
 add_task(async function test_same_origin_302redirect_same_origin() {
   
-  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_1 + "file_bug906190.sjs", async function() {
-    
-    
-    ok(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
-       "OK: Mixed Content is NOT being blocked");
+  await doTest(
+    HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
+    HTTPS_TEST_ROOT_1 + "file_bug906190.sjs",
+    async function() {
+      
+      
+      ok(
+        !gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
+        "OK: Mixed Content is NOT being blocked"
+      );
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      Assert.equal(content.document.getElementById("mctestdiv").innerHTML,
-                   "Mixed Content Blocker disabled",
-                   "OK: Executed mixed script");
-    });
-  });
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        Assert.equal(
+          content.document.getElementById("mctestdiv").innerHTML,
+          "Mixed Content Blocker disabled",
+          "OK: Executed mixed script"
+        );
+      });
+    }
+  );
 });
 
 
@@ -230,19 +293,26 @@ add_task(async function test_same_origin_302redirect_same_origin() {
 
 add_task(async function test_same_origin_302redirect_different_origin() {
   
-  await doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_2 + "file_bug906190.sjs", async function() {
-    
-    await assertMixedContentBlockingState(gBrowser, {
-      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
-    });
+  await doTest(
+    HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
+    HTTPS_TEST_ROOT_2 + "file_bug906190.sjs",
+    async function() {
+      
+      await assertMixedContentBlockingState(gBrowser, {
+        activeLoaded: false,
+        activeBlocked: true,
+        passiveLoaded: false,
+      });
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      Assert.equal(content.document.getElementById("mctestdiv").innerHTML,
-                   "Mixed Content Blocker enabled",
-                   "OK: Blocked mixed script");
-    });
-  });
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        Assert.equal(
+          content.document.getElementById("mctestdiv").innerHTML,
+          "Mixed Content Blocker enabled",
+          "OK: Blocked mixed script"
+        );
+      });
+    }
+  );
 });
 
 
@@ -250,9 +320,12 @@ add_task(async function test_same_origin_302redirect_different_origin() {
 
 add_task(async function test_bad_redirection() {
   
-  await doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_2 + "file_bug906190.sjs?bad-redirection=1", function() {
-    
-    ok(true, "Nothing to do");
-  });
+  await doTest(
+    HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
+    HTTPS_TEST_ROOT_2 + "file_bug906190.sjs?bad-redirection=1",
+    function() {
+      
+      ok(true, "Nothing to do");
+    }
+  );
 });

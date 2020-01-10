@@ -26,53 +26,69 @@ add_task(async function() {
   await BrowserTestUtils.waitForCondition(() => tab._fullyOpen);
 
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
-  let newTabButtonRect = gBrowser.tabContainer.newTabButton
-                                 .getBoundingClientRect();
+  let newTabButtonRect = gBrowser.tabContainer.newTabButton.getBoundingClientRect();
   let inRange = (val, min, max) => min <= val && val <= max;
 
   
-  await withPerfObserver(async function() {
-    let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
-    gBrowser.removeTab(tab, { animate: true });
-    await BrowserTestUtils.waitForEvent(tab, "TabAnimationEnd");
-    await switchDone;
-  }, {expectedReflows: EXPECTED_REFLOWS,
+  await withPerfObserver(
+    async function() {
+      let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
+      gBrowser.removeTab(tab, { animate: true });
+      await BrowserTestUtils.waitForEvent(tab, "TabAnimationEnd");
+      await switchDone;
+    },
+    {
+      expectedReflows: EXPECTED_REFLOWS,
       frames: {
-        filter: rects => rects.filter(r => !(
-          
-          r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
-          r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right && (
-          
-          
-          
-          
-          (r.w > gBrowser.selectedTab.clientWidth &&
-           r.x2 <= newTabButtonRect.right) ||
-          
-          
-          
-          (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
-          
-          (r.h == 2 && r.w == 2)
-        ))),
+        filter: rects =>
+          rects.filter(
+            r =>
+              !
+              (
+                r.y1 >= tabStripRect.top &&
+                r.y2 <= tabStripRect.bottom &&
+                r.x1 >= tabStripRect.left &&
+                r.x2 <= tabStripRect.right &&
+                
+                
+                
+                
+                ((r.w > gBrowser.selectedTab.clientWidth &&
+                  r.x2 <= newTabButtonRect.right) ||
+                  
+                  
+                  
+                  (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
+                  
+                  (r.h == 2 && r.w == 2))
+              )
+          ),
         exceptions: [
-          {name: "bug 1444886 - the next tab should be selected at the same time" +
-                 " as the closed one disappears",
-           condition: r =>
-             
-             r.y1 >= tabStripRect.top && r.y2 <= tabStripRect.bottom &&
-             r.x1 >= tabStripRect.left && r.x2 <= tabStripRect.right &&
-             
-             inRange(gBrowser.selectedTab.clientWidth - r.w, 0, 2),
+          {
+            name:
+              "bug 1444886 - the next tab should be selected at the same time" +
+              " as the closed one disappears",
+            condition: r =>
+              
+              r.y1 >= tabStripRect.top &&
+              r.y2 <= tabStripRect.bottom &&
+              r.x1 >= tabStripRect.left &&
+              r.x2 <= tabStripRect.right &&
+              
+              inRange(gBrowser.selectedTab.clientWidth - r.w, 0, 2),
           },
-          {name: "bug 1446449 - spurious tab switch spinner",
-           condition: r =>
-             AppConstants.DEBUG &&
-             
-             r.y1 >= document.getElementById("appcontent").getBoundingClientRect().top,
+          {
+            name: "bug 1446449 - spurious tab switch spinner",
+            condition: r =>
+              AppConstants.DEBUG &&
+              
+              r.y1 >=
+                document.getElementById("appcontent").getBoundingClientRect()
+                  .top,
           },
         ],
       },
-     });
+    }
+  );
   is(EXPECTED_REFLOWS.length, 0, "No reflows are expected when closing a tab");
 });

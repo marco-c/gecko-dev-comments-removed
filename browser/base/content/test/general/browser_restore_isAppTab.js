@@ -3,9 +3,12 @@
 
 
 
-const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
+const { TabStateFlusher } = ChromeUtils.import(
+  "resource:///modules/sessionstore/TabStateFlusher.jsm"
+);
 
-const DUMMY = "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
+const DUMMY =
+  "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
 
 function frameScript() {
   addMessageListener("Test:GetIsAppTab", function() {
@@ -14,7 +17,10 @@ function frameScript() {
 }
 
 function loadFrameScript(browser) {
-  browser.messageManager.loadFrameScript("data:,(" + frameScript.toString() + ")();", true);
+  browser.messageManager.loadFrameScript(
+    "data:,(" + frameScript.toString() + ")();",
+    true
+  );
 }
 
 function isBrowserAppTab(browser) {
@@ -35,8 +41,9 @@ function isBrowserAppTab(browser) {
 
 var restart = async function(browser) {
   
-  if (!browser.isRemoteBrowser)
+  if (!browser.isRemoteBrowser) {
     return;
+  }
 
   
   await TabStateFlusher.flush(browser);

@@ -1,10 +1,11 @@
 
 
 
-var testPage = "<body style='margin: 0'>" +
-               "  <img id='img' tabindex='1' src='http://example.org/browser/browser/base/content/test/general/moz.png'>" +
-               "  <div id='main' contenteditable='true'>Test <b>Bold</b> After Text</div>" +
-               "</body>";
+var testPage =
+  "<body style='margin: 0'>" +
+  "  <img id='img' tabindex='1' src='http://example.org/browser/browser/base/content/test/general/moz.png'>" +
+  "  <div id='main' contenteditable='true'>Test <b>Bold</b> After Text</div>" +
+  "</body>";
 
 add_task(async function() {
   let tab = BrowserTestUtils.addTab(gBrowser);
@@ -15,108 +16,191 @@ add_task(async function() {
   await promiseTabLoadEvent(tab, "data:text/html," + escape(testPage));
   await SimpleTest.promiseFocus(browser);
 
-  const modifier = (navigator.platform.includes("Mac")) ?
-                   Ci.nsIDOMWindowUtils.MODIFIER_META :
-                   Ci.nsIDOMWindowUtils.MODIFIER_CONTROL;
+  const modifier = navigator.platform.includes("Mac")
+    ? Ci.nsIDOMWindowUtils.MODIFIER_META
+    : Ci.nsIDOMWindowUtils.MODIFIER_CONTROL;
 
   function sendKey(message) {
-    BrowserTestUtils.synthesizeKey(message.data.key,
-                                   {code: message.data.code, accelKey: true},
-                                   browser);
+    BrowserTestUtils.synthesizeKey(
+      message.data.key,
+      { code: message.data.code, accelKey: true },
+      browser
+    );
   }
 
   browser.messageManager.addMessageListener("Test:SendKey", sendKey);
 
   
   
-  const htmlPrefix = (navigator.platform.includes("Win")) ? "<html><body>\n<!--StartFragment-->" : "";
-  const htmlPostfix = (navigator.platform.includes("Win")) ? "<!--EndFragment-->\n</body>\n</html>" : "";
+  const htmlPrefix = navigator.platform.includes("Win")
+    ? "<html><body>\n<!--StartFragment-->"
+    : "";
+  const htmlPostfix = navigator.platform.includes("Win")
+    ? "<!--EndFragment-->\n</body>\n</html>"
+    : "";
 
-  await ContentTask.spawn(browser, { modifier, htmlPrefix, htmlPostfix }, async function(arg) {
-    var doc = content.document;
-    var main = doc.getElementById("main");
-    main.focus();
+  await ContentTask.spawn(
+    browser,
+    { modifier, htmlPrefix, htmlPostfix },
+    async function(arg) {
+      var doc = content.document;
+      var main = doc.getElementById("main");
+      main.focus();
 
-    
-    let selection = doc.getSelection();
-    selection.modify("move", "left", "line");
-    selection.modify("move", "right", "character");
-    selection.modify("move", "right", "character");
-    selection.modify("move", "right", "character");
-    selection.modify("extend", "right", "word");
-    selection.modify("extend", "right", "word");
+      
+      let selection = doc.getSelection();
+      selection.modify("move", "left", "line");
+      selection.modify("move", "right", "character");
+      selection.modify("move", "right", "character");
+      selection.modify("move", "right", "character");
+      selection.modify("extend", "right", "word");
+      selection.modify("extend", "right", "word");
 
-    await new Promise((resolve, reject) => {
-      addEventListener("copy", function copyEvent(event) {
-        removeEventListener("copy", copyEvent, true);
-        
-        Assert.equal(event.clipboardData.mozItemCount, 0, "Zero items on clipboard");
-        resolve();
-      }, true);
+      await new Promise((resolve, reject) => {
+        addEventListener(
+          "copy",
+          function copyEvent(event) {
+            removeEventListener("copy", copyEvent, true);
+            
+            Assert.equal(
+              event.clipboardData.mozItemCount,
+              0,
+              "Zero items on clipboard"
+            );
+            resolve();
+          },
+          true
+        );
 
-      sendAsyncMessage("Test:SendKey", {key: "c"});
-    });
+        sendAsyncMessage("Test:SendKey", { key: "c" });
+      });
 
-    selection.modify("move", "right", "line");
+      selection.modify("move", "right", "line");
 
-    await new Promise((resolve, reject) => {
-      addEventListener("paste", function copyEvent(event) {
-        removeEventListener("paste", copyEvent, true);
-        let clipboardData = event.clipboardData;
-        Assert.equal(clipboardData.mozItemCount, 1, "One item on clipboard");
-        Assert.equal(clipboardData.types.length, 2, "Two types on clipboard");
-        Assert.equal(clipboardData.types[0], "text/html", "text/html on clipboard");
-        Assert.equal(clipboardData.types[1], "text/plain", "text/plain on clipboard");
-        Assert.equal(clipboardData.getData("text/html"), arg.htmlPrefix +
-          "t <b>Bold</b>" + arg.htmlPostfix, "text/html value");
-        Assert.equal(clipboardData.getData("text/plain"), "t Bold", "text/plain value");
-        resolve();
-      }, true);
+      await new Promise((resolve, reject) => {
+        addEventListener(
+          "paste",
+          function copyEvent(event) {
+            removeEventListener("paste", copyEvent, true);
+            let clipboardData = event.clipboardData;
+            Assert.equal(
+              clipboardData.mozItemCount,
+              1,
+              "One item on clipboard"
+            );
+            Assert.equal(
+              clipboardData.types.length,
+              2,
+              "Two types on clipboard"
+            );
+            Assert.equal(
+              clipboardData.types[0],
+              "text/html",
+              "text/html on clipboard"
+            );
+            Assert.equal(
+              clipboardData.types[1],
+              "text/plain",
+              "text/plain on clipboard"
+            );
+            Assert.equal(
+              clipboardData.getData("text/html"),
+              arg.htmlPrefix + "t <b>Bold</b>" + arg.htmlPostfix,
+              "text/html value"
+            );
+            Assert.equal(
+              clipboardData.getData("text/plain"),
+              "t Bold",
+              "text/plain value"
+            );
+            resolve();
+          },
+          true
+        );
 
-      sendAsyncMessage("Test:SendKey", {key: "v"});
-    });
+        sendAsyncMessage("Test:SendKey", { key: "v" });
+      });
 
-    Assert.equal(main.innerHTML, "Test <b>Bold</b> After Textt <b>Bold</b>", "Copy and paste html");
+      Assert.equal(
+        main.innerHTML,
+        "Test <b>Bold</b> After Textt <b>Bold</b>",
+        "Copy and paste html"
+      );
 
-    selection.modify("extend", "left", "word");
-    selection.modify("extend", "left", "word");
-    selection.modify("extend", "left", "character");
+      selection.modify("extend", "left", "word");
+      selection.modify("extend", "left", "word");
+      selection.modify("extend", "left", "character");
 
-    await new Promise((resolve, reject) => {
-      addEventListener("cut", function copyEvent(event) {
-        removeEventListener("cut", copyEvent, true);
-        event.clipboardData.setData("text/plain", "Some text");
-        event.clipboardData.setData("text/html", "<i>Italic</i> ");
-        selection.deleteFromDocument();
-        event.preventDefault();
-        resolve();
-      }, true);
+      await new Promise((resolve, reject) => {
+        addEventListener(
+          "cut",
+          function copyEvent(event) {
+            removeEventListener("cut", copyEvent, true);
+            event.clipboardData.setData("text/plain", "Some text");
+            event.clipboardData.setData("text/html", "<i>Italic</i> ");
+            selection.deleteFromDocument();
+            event.preventDefault();
+            resolve();
+          },
+          true
+        );
 
-      sendAsyncMessage("Test:SendKey", {key: "x"});
-    });
+        sendAsyncMessage("Test:SendKey", { key: "x" });
+      });
 
-    selection.modify("move", "left", "line");
+      selection.modify("move", "left", "line");
 
-    await new Promise((resolve, reject) => {
-      addEventListener("paste", function copyEvent(event) {
-        removeEventListener("paste", copyEvent, true);
-        let clipboardData = event.clipboardData;
-        Assert.equal(clipboardData.mozItemCount, 1, "One item on clipboard 2");
-        Assert.equal(clipboardData.types.length, 2, "Two types on clipboard 2");
-        Assert.equal(clipboardData.types[0], "text/html", "text/html on clipboard 2");
-        Assert.equal(clipboardData.types[1], "text/plain", "text/plain on clipboard 2");
-        Assert.equal(clipboardData.getData("text/html"), arg.htmlPrefix +
-          "<i>Italic</i> " + arg.htmlPostfix, "text/html value 2");
-        Assert.equal(clipboardData.getData("text/plain"), "Some text", "text/plain value 2");
-        resolve();
-      }, true);
+      await new Promise((resolve, reject) => {
+        addEventListener(
+          "paste",
+          function copyEvent(event) {
+            removeEventListener("paste", copyEvent, true);
+            let clipboardData = event.clipboardData;
+            Assert.equal(
+              clipboardData.mozItemCount,
+              1,
+              "One item on clipboard 2"
+            );
+            Assert.equal(
+              clipboardData.types.length,
+              2,
+              "Two types on clipboard 2"
+            );
+            Assert.equal(
+              clipboardData.types[0],
+              "text/html",
+              "text/html on clipboard 2"
+            );
+            Assert.equal(
+              clipboardData.types[1],
+              "text/plain",
+              "text/plain on clipboard 2"
+            );
+            Assert.equal(
+              clipboardData.getData("text/html"),
+              arg.htmlPrefix + "<i>Italic</i> " + arg.htmlPostfix,
+              "text/html value 2"
+            );
+            Assert.equal(
+              clipboardData.getData("text/plain"),
+              "Some text",
+              "text/plain value 2"
+            );
+            resolve();
+          },
+          true
+        );
 
-      sendAsyncMessage("Test:SendKey", {key: "v"});
-    });
+        sendAsyncMessage("Test:SendKey", { key: "v" });
+      });
 
-    Assert.equal(main.innerHTML, "<i>Italic</i> Test <b>Bold</b> After<b></b>",
-      "Copy and paste html 2");
-  });
+      Assert.equal(
+        main.innerHTML,
+        "<i>Italic</i> Test <b>Bold</b> After<b></b>",
+        "Copy and paste html 2"
+      );
+    }
+  );
 
   
 
@@ -124,7 +208,11 @@ add_task(async function() {
   
   let contextMenu = document.getElementById("contentAreaContextMenu");
   let contextMenuShown = promisePopupShown(contextMenu);
-  BrowserTestUtils.synthesizeMouseAtCenter("#img", { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
+  BrowserTestUtils.synthesizeMouseAtCenter(
+    "#img",
+    { type: "contextmenu", button: 2 },
+    gBrowser.selectedBrowser
+  );
   await contextMenuShown;
 
   document.getElementById("context-copyimage-contents").doCommand();
@@ -135,37 +223,54 @@ add_task(async function() {
   
   await SimpleTest.promiseFocus(browser);
 
-  await ContentTask.spawn(browser, { modifier, htmlPrefix, htmlPostfix }, async function(arg) {
-    var doc = content.document;
-    var main = doc.getElementById("main");
-    main.focus();
+  await ContentTask.spawn(
+    browser,
+    { modifier, htmlPrefix, htmlPostfix },
+    async function(arg) {
+      var doc = content.document;
+      var main = doc.getElementById("main");
+      main.focus();
 
-    await new Promise((resolve, reject) => {
-      addEventListener("paste", function copyEvent(event) {
-        removeEventListener("paste", copyEvent, true);
-        let clipboardData = event.clipboardData;
+      await new Promise((resolve, reject) => {
+        addEventListener(
+          "paste",
+          function copyEvent(event) {
+            removeEventListener("paste", copyEvent, true);
+            let clipboardData = event.clipboardData;
 
-        
-        
-        if (clipboardData.getData("text/html") !== arg.htmlPrefix +
-            '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
-            arg.htmlPostfix) {
-          reject("Clipboard Data did not contain an image, was " + clipboardData.getData("text/html"));
-        }
-        resolve();
-      }, true);
+            
+            
+            if (
+              clipboardData.getData("text/html") !==
+              arg.htmlPrefix +
+                '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+                arg.htmlPostfix
+            ) {
+              reject(
+                "Clipboard Data did not contain an image, was " +
+                  clipboardData.getData("text/html")
+              );
+            }
+            resolve();
+          },
+          true
+        );
 
-      sendAsyncMessage("Test:SendKey", {key: "v"});
-    });
+        sendAsyncMessage("Test:SendKey", { key: "v" });
+      });
 
-    
-    Assert.equal(main.innerHTML, '<i>Italic</i> <img id="img" tabindex="1" ' +
-      'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
-      "Test <b>Bold</b> After<b></b>", "Paste after copy image");
-  });
+      
+      Assert.equal(
+        main.innerHTML,
+        '<i>Italic</i> <img id="img" tabindex="1" ' +
+          'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+          "Test <b>Bold</b> After<b></b>",
+        "Paste after copy image"
+      );
+    }
+  );
 
   browser.messageManager.removeMessageListener("Test:SendKey", sendKey);
 
   gBrowser.removeCurrentTab();
 });
-

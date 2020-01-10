@@ -8,54 +8,67 @@ add_task(async function() {
   
   info("Search suggestion smoke test");
 
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:home" }, async function(browser) {
-    
-    let currEngine = await Services.search.getDefault();
-    let engine = await promiseNewEngine("searchSuggestionEngine.xml");
-    await Promise.all([promiseContentSearchChange(browser, engine.name),
-      Services.search.setDefault(engine)]);
-
-    await ContentTask.spawn(browser, null, async function() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:home" },
+    async function(browser) {
       
-      let input = content.document.querySelector(["#searchText", "#newtab-search-text"]);
-      input.focus();
-    });
+      let currEngine = await Services.search.getDefault();
+      let engine = await promiseNewEngine("searchSuggestionEngine.xml");
+      await Promise.all([
+        promiseContentSearchChange(browser, engine.name),
+        Services.search.setDefault(engine),
+      ]);
 
-    await BrowserTestUtils.synthesizeKey("x", {}, browser);
+      await ContentTask.spawn(browser, null, async function() {
+        
+        let input = content.document.querySelector([
+          "#searchText",
+          "#newtab-search-text",
+        ]);
+        input.focus();
+      });
 
-    await ContentTask.spawn(browser, null, async function() {
-      
-      let table = content.document.getElementById("searchSuggestionTable");
-      let input = content.document.querySelector(["#searchText", "#newtab-search-text"]);
+      await BrowserTestUtils.synthesizeKey("x", {}, browser);
 
-      await new Promise(resolve => {
-        let observer = new content.MutationObserver(() => {
-          if (input.getAttribute("aria-expanded") == "true") {
-            observer.disconnect();
-            ok(!table.hidden, "Search suggestion table unhidden");
-            resolve();
-          }
-        });
-        observer.observe(input, {
-          attributes: true,
-          attributeFilter: ["aria-expanded"],
+      await ContentTask.spawn(browser, null, async function() {
+        
+        let table = content.document.getElementById("searchSuggestionTable");
+        let input = content.document.querySelector([
+          "#searchText",
+          "#newtab-search-text",
+        ]);
+
+        await new Promise(resolve => {
+          let observer = new content.MutationObserver(() => {
+            if (input.getAttribute("aria-expanded") == "true") {
+              observer.disconnect();
+              ok(!table.hidden, "Search suggestion table unhidden");
+              resolve();
+            }
+          });
+          observer.observe(input, {
+            attributes: true,
+            attributeFilter: ["aria-expanded"],
+          });
         });
       });
-    });
 
-    
-    await BrowserTestUtils.synthesizeKey("a", { accelKey: true }, browser);
-    await BrowserTestUtils.synthesizeKey("VK_DELETE", {}, browser);
+      
+      await BrowserTestUtils.synthesizeKey("a", { accelKey: true }, browser);
+      await BrowserTestUtils.synthesizeKey("VK_DELETE", {}, browser);
 
-    await ContentTask.spawn(browser, null, async function() {
-      let table = content.document.getElementById("searchSuggestionTable");
-      await ContentTaskUtils.waitForCondition(() => table.hidden,
-        "Search suggestion table hidden");
-    });
+      await ContentTask.spawn(browser, null, async function() {
+        let table = content.document.getElementById("searchSuggestionTable");
+        await ContentTaskUtils.waitForCondition(
+          () => table.hidden,
+          "Search suggestion table hidden"
+        );
+      });
 
-    await Services.search.setDefault(currEngine);
-    try {
-      await Services.search.removeEngine(engine);
-    } catch (ex) { }
-  });
+      await Services.search.setDefault(currEngine);
+      try {
+        await Services.search.removeEngine(engine);
+      } catch (ex) {}
+    }
+  );
 });

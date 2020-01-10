@@ -3,12 +3,16 @@
 
 
 
-const URL = "http://mochi.test:8888/browser/browser/base/content/test/general/test_offline_gzip.html";
+const URL =
+  "http://mochi.test:8888/browser/browser/base/content/test/general/test_offline_gzip.html";
 
 registerCleanupFunction(function() {
   
   let uri = Services.io.newURI(URL);
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    uri,
+    {}
+  );
   Services.perms.removeFromPrincipal(principal, "offline-app");
   Services.prefs.clearUserPref("offline-apps.allow_by_default");
 });
@@ -18,10 +22,14 @@ registerCleanupFunction(function() {
 
 
 function contentTask() {
-  const {clearInterval, setInterval} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+  const { clearInterval, setInterval } = ChromeUtils.import(
+    "resource://gre/modules/Timer.jsm"
+  );
 
   let resolve;
-  let promise = new Promise(r => { resolve = r; });
+  let promise = new Promise(r => {
+    resolve = r;
+  });
 
   var cacheCount = 0;
   var intervalID = 0;
@@ -29,42 +37,42 @@ function contentTask() {
   function handleMessageEvents(event) {
     cacheCount++;
     switch (cacheCount) {
-    case 1:
-      
-      is(event.data, "oncache", "Child was successfully cached.");
-      
-      
-      event.source.location.reload();
-      
-      
-      
-      
-      
-      intervalID = setInterval(function() {
+      case 1:
+        
+        is(event.data, "oncache", "Child was successfully cached.");
         
         
-        try {
-          var bodyInnerHTML = event.source.document.body.innerHTML;
-        } catch (e) {
-          bodyInnerHTML = "";
-        }
-        if (cacheCount == 2 || bodyInnerHTML.includes("error")) {
-          clearInterval(intervalID);
-          is(cacheCount, 2, "frame not reloaded successfully");
-          if (cacheCount != 2) {
-            finish();
+        event.source.location.reload();
+        
+        
+        
+        
+        
+        intervalID = setInterval(function() {
+          
+          
+          try {
+            var bodyInnerHTML = event.source.document.body.innerHTML;
+          } catch (e) {
+            bodyInnerHTML = "";
           }
-        }
-      }, 100);
-      break;
-    case 2:
-      is(event.data, "onupdate", "Child was successfully updated.");
-      clearInterval(intervalID);
-      resolve();
-      break;
-    default:
-      
-      ok(false, "cacheCount not 1 or 2");
+          if (cacheCount == 2 || bodyInnerHTML.includes("error")) {
+            clearInterval(intervalID);
+            is(cacheCount, 2, "frame not reloaded successfully");
+            if (cacheCount != 2) {
+              finish();
+            }
+          }
+        }, 100);
+        break;
+      case 2:
+        is(event.data, "onupdate", "Child was successfully updated.");
+        clearInterval(intervalID);
+        resolve();
+        break;
+      default:
+        
+        ok(false, "cacheCount not 1 or 2");
     }
   }
 

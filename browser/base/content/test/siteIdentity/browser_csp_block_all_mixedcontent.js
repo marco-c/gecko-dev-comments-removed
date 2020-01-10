@@ -6,7 +6,10 @@
 
 
 
-const PRE_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://example.com");
+const PRE_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
 var gTestBrowser = null;
 
 
@@ -19,13 +22,11 @@ function cleanUpAfterTests() {
 
 async function verifyUInotDegraded() {
   
-  await assertMixedContentBlockingState(
-    gTestBrowser,
-    { activeLoaded: false,
-      activeBlocked: false,
-      passiveLoaded: false,
-    }
-  );
+  await assertMixedContentBlockingState(gTestBrowser, {
+    activeLoaded: false,
+    activeBlocked: false,
+    passiveLoaded: false,
+  });
   
   cleanUpAfterTests();
 }
@@ -39,7 +40,9 @@ function runTests() {
 
   
   var url = PRE_PATH + "file_csp_block_all_mixedcontent.html";
-  BrowserTestUtils.browserLoaded(gTestBrowser, false, url).then(verifyUInotDegraded);
+  BrowserTestUtils.browserLoaded(gTestBrowser, false, url).then(
+    verifyUInotDegraded
+  );
   BrowserTestUtils.loadURI(gTestBrowser, url);
 }
 
@@ -49,7 +52,9 @@ function test() {
   waitForExplicitFinish();
 
   SpecialPowers.pushPrefEnv(
-    { "set": [["security.mixed_content.block_active_content", true]] },
-    function() { runTests(); }
+    { set: [["security.mixed_content.block_active_content", true]] },
+    function() {
+      runTests();
+    }
   );
 }

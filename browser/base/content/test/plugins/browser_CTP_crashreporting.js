@@ -1,6 +1,10 @@
 var rootDir = getRootDirectory(gTestPath);
-const gTestRoot = rootDir.replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
-const SERVER_URL = "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
+const gTestRoot = rootDir.replace(
+  "chrome://mochitests/content/",
+  "http://127.0.0.1:8888/"
+);
+const SERVER_URL =
+  "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
 const PLUGIN_PAGE = gTestRoot + "plugin_big.html";
 const PLUGIN_SMALL_PAGE = gTestRoot + "plugin_small.html";
 
@@ -34,8 +38,9 @@ add_task(async function setup() {
   
   
   
-  let env = Cc["@mozilla.org/process/environment;1"].
-            getService(Ci.nsIEnvironment);
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   let noReport = env.get("MOZ_CRASHREPORTER_NO_REPORT");
   let serverURL = env.get("MOZ_CRASHREPORTER_URL");
   env.set("MOZ_CRASHREPORTER_NO_REPORT", "");
@@ -58,105 +63,125 @@ add_task(async function setup() {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PLUGIN_PAGE,
-  }, async function(browser) {
-    
-    await promiseUpdatePluginBindings(browser);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PLUGIN_PAGE,
+    },
+    async function(browser) {
+      
+      await promiseUpdatePluginBindings(browser);
 
-    let pluginInfo = await promiseForPluginInfo("test", browser);
-    ok(!pluginInfo.activated, "Plugin should not be activated");
+      let pluginInfo = await promiseForPluginInfo("test", browser);
+      ok(!pluginInfo.activated, "Plugin should not be activated");
 
-    
-    let notification = PopupNotifications.getNotification("click-to-play-plugins", browser);
-    await promiseForNotificationShown(notification, browser);
-    PopupNotifications.panel.firstElementChild.button.click();
+      
+      let notification = PopupNotifications.getNotification(
+        "click-to-play-plugins",
+        browser
+      );
+      await promiseForNotificationShown(notification, browser);
+      PopupNotifications.panel.firstElementChild.button.click();
 
-    
-    
-    let crashReportChecker = (subject, data) => {
-      return (data == "success");
-    };
-    let crashReportPromise = TestUtils.topicObserved("crash-report-status",
-                                                     crashReportChecker);
-
-    await ContentTask.spawn(browser, null, async function() {
-      let plugin = content.document.getElementById("test");
-      plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-
-      await ContentTaskUtils.waitForCondition(() => {
-        return plugin.activated;
-      }, "Waited too long for plugin to activate.");
-
-      try {
-        Cu.waiveXrays(plugin).crash();
-      } catch (e) {
-      }
-
-      let getUI = (id) => {
-        return plugin.openOrClosedShadowRoot.getElementById(id);
+      
+      
+      let crashReportChecker = (subject, data) => {
+        return data == "success";
       };
+      let crashReportPromise = TestUtils.topicObserved(
+        "crash-report-status",
+        crashReportChecker
+      );
+
+      await ContentTask.spawn(browser, null, async function() {
+        let plugin = content.document.getElementById("test");
+        plugin.QueryInterface(Ci.nsIObjectLoadingContent);
+
+        await ContentTaskUtils.waitForCondition(() => {
+          return plugin.activated;
+        }, "Waited too long for plugin to activate.");
+
+        try {
+          Cu.waiveXrays(plugin).crash();
+        } catch (e) {}
+
+        let getUI = id => {
+          return plugin.openOrClosedShadowRoot.getElementById(id);
+        };
+
+        
+        
+        let statusDiv;
+
+        await ContentTaskUtils.waitForCondition(() => {
+          statusDiv = getUI("submitStatus");
+          return statusDiv.getAttribute("status") == "please";
+        }, "Waited too long for plugin to show crash report UI");
+
+        
+        let style = content.getComputedStyle(getUI("pleaseSubmit"));
+        if (style.display != "block") {
+          throw new Error(
+            `Submission UI visibility is not correct. ` +
+              `Expected block style, got ${style.display}.`
+          );
+        }
+
+        
+        
+        getUI("submitComment").value = "a test comment";
+        let optIn = getUI("submitURLOptIn");
+        if (!optIn.checked) {
+          throw new Error("URL opt-in should default to true.");
+        }
+
+        
+        optIn.click();
+        getUI("submitButton").click();
+
+        
+        
+        await ContentTaskUtils.waitForCondition(
+          () => {
+            return statusDiv.getAttribute("status") == "success";
+          },
+          "Timed out waiting for plugin binding to be in success state",
+          100,
+          200
+        );
+      });
+
+      let [subject] = await crashReportPromise;
+
+      ok(
+        subject instanceof Ci.nsIPropertyBag,
+        "The crash report subject should be an nsIPropertyBag."
+      );
+
+      let crashData = convertPropertyBag(subject);
+      ok(crashData.serverCrashID, "Should have a serverCrashID set.");
 
       
-      
-      let statusDiv;
+      let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+      file.initWithPath(Services.crashmanager._submittedDumpsDir);
+      file.append(crashData.serverCrashID + ".txt");
+      ok(file.exists(), "Submitted report file should exist");
+      file.remove(false);
 
-      await ContentTaskUtils.waitForCondition(() => {
-        statusDiv = getUI("submitStatus");
-        return statusDiv.getAttribute("status") == "please";
-      }, "Waited too long for plugin to show crash report UI");
+      ok(crashData.extra, "Extra data should exist");
+      is(
+        crashData.extra.PluginUserComment,
+        "a test comment",
+        "Comment in extra data should match comment in textbox"
+      );
 
-      
-      let style = content.getComputedStyle(getUI("pleaseSubmit"));
-      if (style.display != "block") {
-        throw new Error(`Submission UI visibility is not correct. ` +
-                        `Expected block style, got ${style.display}.`);
-      }
-
-      
-      
-      getUI("submitComment").value = "a test comment";
-      let optIn = getUI("submitURLOptIn");
-      if (!optIn.checked) {
-        throw new Error("URL opt-in should default to true.");
-      }
-
-      
-      optIn.click();
-      getUI("submitButton").click();
-
-      
-      
-      await ContentTaskUtils.waitForCondition(() => {
-        return statusDiv.getAttribute("status") == "success";
-      }, "Timed out waiting for plugin binding to be in success state",
-      100, 200);
-    });
-
-    let [subject ] = await crashReportPromise;
-
-    ok(subject instanceof Ci.nsIPropertyBag,
-       "The crash report subject should be an nsIPropertyBag.");
-
-    let crashData = convertPropertyBag(subject);
-    ok(crashData.serverCrashID, "Should have a serverCrashID set.");
-
-    
-    let file = Cc["@mozilla.org/file/local;1"]
-                 .createInstance(Ci.nsIFile);
-    file.initWithPath(Services.crashmanager._submittedDumpsDir);
-    file.append(crashData.serverCrashID + ".txt");
-    ok(file.exists(), "Submitted report file should exist");
-    file.remove(false);
-
-    ok(crashData.extra, "Extra data should exist");
-    is(crashData.extra.PluginUserComment, "a test comment",
-       "Comment in extra data should match comment in textbox");
-
-    is(crashData.extra.PluginContentURL, undefined,
-       "URL should be absent from extra data when opt-in not checked");
-  });
+      is(
+        crashData.extra.PluginContentURL,
+        undefined,
+        "URL should be absent from extra data when opt-in not checked"
+      );
+    }
+  );
 });
 
 
@@ -164,65 +189,77 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PLUGIN_SMALL_PAGE,
-  }, async function(browser) {
-    
-    await promiseUpdatePluginBindings(browser);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PLUGIN_SMALL_PAGE,
+    },
+    async function(browser) {
+      
+      await promiseUpdatePluginBindings(browser);
 
-    let pluginInfo = await promiseForPluginInfo("test", browser);
-    ok(pluginInfo.activated, "Plugin should be activated from previous test");
+      let pluginInfo = await promiseForPluginInfo("test", browser);
+      ok(pluginInfo.activated, "Plugin should be activated from previous test");
 
-    
-    
-    let crashReportChecker = (subject, data) => {
-      return (data == "success");
-    };
-    let crashReportPromise = TestUtils.topicObserved("crash-report-status",
-                                                     crashReportChecker);
+      
+      
+      let crashReportChecker = (subject, data) => {
+        return data == "success";
+      };
+      let crashReportPromise = TestUtils.topicObserved(
+        "crash-report-status",
+        crashReportChecker
+      );
 
-    await ContentTask.spawn(browser, null, async function() {
-      let plugin = content.document.getElementById("test");
-      plugin.QueryInterface(Ci.nsIObjectLoadingContent);
+      await ContentTask.spawn(browser, null, async function() {
+        let plugin = content.document.getElementById("test");
+        plugin.QueryInterface(Ci.nsIObjectLoadingContent);
 
-      await ContentTaskUtils.waitForCondition(() => {
-        return plugin.activated;
-      }, "Waited too long for plugin to activate.");
+        await ContentTaskUtils.waitForCondition(() => {
+          return plugin.activated;
+        }, "Waited too long for plugin to activate.");
 
-      try {
-        Cu.waiveXrays(plugin).crash();
-      } catch (e) {}
-    });
+        try {
+          Cu.waiveXrays(plugin).crash();
+        } catch (e) {}
+      });
 
-    
-    let notification = await waitForNotificationBar("plugin-crashed", browser);
+      
+      let notification = await waitForNotificationBar(
+        "plugin-crashed",
+        browser
+      );
 
-    
-    let buttons = notification.querySelectorAll(".notification-button");
-    is(buttons.length, 2, "Should have two buttons.");
+      
+      let buttons = notification.querySelectorAll(".notification-button");
+      is(buttons.length, 2, "Should have two buttons.");
 
-    
-    let submitButton = buttons[1];
-    submitButton.click();
+      
+      let submitButton = buttons[1];
+      submitButton.click();
 
-    let [subject ] = await crashReportPromise;
+      let [subject] = await crashReportPromise;
 
-    ok(subject instanceof Ci.nsIPropertyBag,
-       "The crash report subject should be an nsIPropertyBag.");
+      ok(
+        subject instanceof Ci.nsIPropertyBag,
+        "The crash report subject should be an nsIPropertyBag."
+      );
 
-    let crashData = convertPropertyBag(subject);
-    ok(crashData.serverCrashID, "Should have a serverCrashID set.");
+      let crashData = convertPropertyBag(subject);
+      ok(crashData.serverCrashID, "Should have a serverCrashID set.");
 
-    
-    let file = Cc["@mozilla.org/file/local;1"]
-                 .createInstance(Ci.nsIFile);
-    file.initWithPath(Services.crashmanager._submittedDumpsDir);
-    file.append(crashData.serverCrashID + ".txt");
-    ok(file.exists(), "Submitted report file should exist");
-    file.remove(false);
+      
+      let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+      file.initWithPath(Services.crashmanager._submittedDumpsDir);
+      file.append(crashData.serverCrashID + ".txt");
+      ok(file.exists(), "Submitted report file should exist");
+      file.remove(false);
 
-    is(crashData.extra.PluginContentURL, undefined,
-       "URL should be absent from extra data when opt-in not checked");
-  });
+      is(
+        crashData.extra.PluginContentURL,
+        undefined,
+        "URL should be absent from extra data when opt-in not checked"
+      );
+    }
+  );
 });

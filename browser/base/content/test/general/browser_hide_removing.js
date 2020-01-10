@@ -6,7 +6,9 @@
 
 add_task(async function() {
   
-  let testTab = BrowserTestUtils.addTab(gBrowser, "about:blank", { skipAnimation: true });
+  let testTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+    skipAnimation: true,
+  });
   is(gBrowser.visibleTabs.length, 2, "just added a tab, so 2 tabs");
   await BrowserTestUtils.switchTab(gBrowser, testTab);
 

@@ -1,16 +1,30 @@
-ChromeUtils.defineModuleGetter(this, "AddonTestUtils", "resource://testing-common/AddonTestUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "AddonTestUtils",
+  "resource://testing-common/AddonTestUtils.jsm"
+);
 
-const BASE = getRootDirectory(gTestPath)
-  .replace("chrome://mochitests/content/", "https://example.com/");
+const BASE = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content/",
+  "https://example.com/"
+);
 
-var {ExtensionsUI} = ChromeUtils.import("resource:///modules/ExtensionsUI.jsm");
+var { ExtensionsUI } = ChromeUtils.import(
+  "resource:///modules/ExtensionsUI.jsm"
+);
 XPCOMUtils.defineLazyGetter(this, "Management", () => {
   
-  const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
+  const { Management } = ChromeUtils.import(
+    "resource://gre/modules/Extension.jsm",
+    null
+  );
   return Management;
 });
 
-ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this);
+ChromeUtils.import(
+  "resource://testing-common/CustomizableUITestUtils.jsm",
+  this
+);
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
 
@@ -26,7 +40,9 @@ function promisePopupNotificationShown(name) {
   return new Promise(resolve => {
     function popupshown() {
       let notification = PopupNotifications.getNotification(name);
-      if (!notification) { return; }
+      if (!notification) {
+        return;
+      }
 
       ok(notification, `${name} notification shown`);
       ok(PopupNotifications.isPanelOpen, "notification panel open");
@@ -40,11 +56,15 @@ function promisePopupNotificationShown(name) {
 }
 
 function promiseAppMenuNotificationShown(id) {
-  const {AppMenuNotifications} = ChromeUtils.import("resource://gre/modules/AppMenuNotifications.jsm");
+  const { AppMenuNotifications } = ChromeUtils.import(
+    "resource://gre/modules/AppMenuNotifications.jsm"
+  );
   return new Promise(resolve => {
     function popupshown() {
       let notification = AppMenuNotifications.activeNotification;
-      if (!notification) { return; }
+      if (!notification) {
+        return;
+      }
 
       is(notification.id, id, `${id} notification shown`);
       ok(PanelUI.isNotificationPanelOpen, "notification panel open");
@@ -98,7 +118,7 @@ function promiseInstallEvent(addon, event) {
 
 
 async function promiseInstallAddon(url, telemetryInfo) {
-  let install = await AddonManager.getInstallForURL(url, {telemetryInfo});
+  let install = await AddonManager.getInstallForURL(url, { telemetryInfo });
   install.install();
 
   let addon = await new Promise(resolve => {
@@ -147,7 +167,7 @@ async function waitForUpdate(addon) {
     Management.on("ready", listener);
   });
 
-  let [newAddon ] = await Promise.all([installPromise, readyPromise]);
+  let [newAddon] = await Promise.all([installPromise, readyPromise]);
   return newAddon;
 }
 
@@ -155,8 +175,10 @@ function isDefaultIcon(icon) {
   
   
   
-  return (icon == "chrome://browser/content/extension.svg" ||
-          icon == "chrome://mozapps/skin/extensions/extensionGeneric.svg");
+  return (
+    icon == "chrome://browser/content/extension.svg" ||
+    icon == "chrome://mozapps/skin/extensions/extensionGeneric.svg"
+  );
 }
 
 
@@ -175,9 +197,9 @@ function isDefaultIcon(icon) {
 
 
 function checkPermissionString(string, key, param, msg) {
-  let localizedString = param ?
-                        gBrowserBundle.formatStringFromName(key, [param]) :
-                        gBrowserBundle.GetStringFromName(key);
+  let localizedString = param
+    ? gBrowserBundle.formatStringFromName(key, [param])
+    : gBrowserBundle.GetStringFromName(key);
 
   
   
@@ -214,26 +236,45 @@ function checkNotification(panel, checkIcon, permissions) {
   let learnMoreLink = document.getElementById("addon-webext-perm-info");
 
   if (checkIcon instanceof RegExp) {
-    ok(checkIcon.test(icon), `Notification icon is correct ${JSON.stringify(icon)} ~= ${checkIcon}`);
+    ok(
+      checkIcon.test(icon),
+      `Notification icon is correct ${JSON.stringify(icon)} ~= ${checkIcon}`
+    );
   } else if (typeof checkIcon == "function") {
     ok(checkIcon(icon), "Notification icon is correct");
   } else {
     is(icon, checkIcon, "Notification icon is correct");
   }
 
-  is(ul.childElementCount, permissions.length, `Permissions list has ${permissions.length} entries`);
+  is(
+    ul.childElementCount,
+    permissions.length,
+    `Permissions list has ${permissions.length} entries`
+  );
   if (permissions.length == 0) {
     is(header.getAttribute("hidden"), "true", "Permissions header is hidden");
-    is(learnMoreLink.getAttribute("hidden"), "true", "Permissions learn more is hidden");
+    is(
+      learnMoreLink.getAttribute("hidden"),
+      "true",
+      "Permissions learn more is hidden"
+    );
   } else {
     is(header.getAttribute("hidden"), "", "Permissions header is visible");
-    is(learnMoreLink.getAttribute("hidden"), "", "Permissions learn more is visible");
+    is(
+      learnMoreLink.getAttribute("hidden"),
+      "",
+      "Permissions learn more is visible"
+    );
   }
 
   for (let i in permissions) {
     let [key, param] = permissions[i];
-    checkPermissionString(ul.children[i].textContent, key, param,
-                          `Permission number ${i + 1} is correct`);
+    checkPermissionString(
+      ul.children[i].textContent,
+      key,
+      param,
+      `Permission number ${i + 1} is correct`
+    );
   }
 }
 
@@ -256,10 +297,12 @@ async function testInstallMethod(installFn, telemetryBase) {
   const NO_PERMS_XPI = "browser_webext_nopermissions.xpi";
   const ID = "permissions@test.mozilla.org";
 
-  await SpecialPowers.pushPrefEnv({set: [
-    ["extensions.webapi.testing", true],
-    ["extensions.install.requireBuiltInCerts", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.webapi.testing", true],
+      ["extensions.install.requireBuiltInCerts", false],
+    ],
+  });
 
   if (telemetryBase !== undefined) {
     hookExtensionsTelemetry();
@@ -329,7 +372,9 @@ async function testInstallMethod(installFn, telemetryBase) {
       } catch (err) {}
     } else {
       
-      let postInstallPromise = promiseAppMenuNotificationShown("addon-installed");
+      let postInstallPromise = promiseAppMenuNotificationShown(
+        "addon-installed"
+      );
       panel.button.click();
 
       
@@ -369,7 +414,11 @@ async function testInstallMethod(installFn, telemetryBase) {
   if (telemetryBase !== undefined) {
     
     
-    expectTelemetry([`${telemetryBase}Rejected`, `${telemetryBase}Rejected`, `${telemetryBase}Accepted`]);
+    expectTelemetry([
+      `${telemetryBase}Rejected`,
+      `${telemetryBase}Rejected`,
+      `${telemetryBase}Accepted`,
+    ]);
   }
 
   await SpecialPowers.popPrefEnv();
@@ -385,16 +434,18 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
   const ID = "update2@tests.mozilla.org";
   const FAKE_INSTALL_SOURCE = "fake-install-source";
 
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.install.requireBuiltInCerts", false],
-    ["extensions.update.requireBuiltInCerts", false],
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["extensions.install.requireBuiltInCerts", false],
+      ["extensions.update.requireBuiltInCerts", false],
 
-    ["extensions.update.autoUpdateDefault", autoUpdate],
+      ["extensions.update.autoUpdateDefault", autoUpdate],
 
-    
-    ["extensions.update.url", `${BASE}/browser_webext_update.json`],
-  ]});
+      
+      ["extensions.update.url", `${BASE}/browser_webext_update.json`],
+    ],
+  });
 
   AddonTestUtils.hookAMTelemetryEvents();
 
@@ -421,13 +472,17 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
 
       if (win.useHtmlViews) {
         
-        const availableUpdates = win.document.getElementById("updates-manualUpdatesFound-btn");
+        const availableUpdates = win.document.getElementById(
+          "updates-manualUpdatesFound-btn"
+        );
         availableUpdates.click();
         let doc = win.getHtmlBrowser().contentDocument;
         let card = await BrowserTestUtils.waitForCondition(() => {
-         return doc.querySelector(`addon-card[addon-id="${ID}"]`);
+          return doc.querySelector(`addon-card[addon-id="${ID}"]`);
         }, `Wait addon card for "${ID}"`);
-        let updateBtn = card.querySelector('panel-item[action="install-update"]');
+        let updateBtn = card.querySelector(
+          'panel-item[action="install-update"]'
+        );
         ok(updateBtn, `Found update button for "${ID}"`);
         updateBtn.click();
       } else {
@@ -440,7 +495,7 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
       }
     }
 
-    return {promise};
+    return { promise };
   }
 
   
@@ -459,7 +514,7 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
 
   
   let popupPromise = promisePopupNotificationShown("addon-webext-permissions");
-  let {promise: checkPromise} = await triggerUpdate(win, addon);
+  let { promise: checkPromise } = await triggerUpdate(win, addon);
   let panel = await popupPromise;
 
   
@@ -491,44 +546,74 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
   await addon.uninstall();
   await SpecialPowers.popPrefEnv();
 
-  const collectedUpdateEvents = AddonTestUtils.getAMTelemetryEvents().filter(evt => {
-    return evt.method === "update";
-  });
+  const collectedUpdateEvents = AddonTestUtils.getAMTelemetryEvents().filter(
+    evt => {
+      return evt.method === "update";
+    }
+  );
 
-  Assert.deepEqual(collectedUpdateEvents.map(evt => evt.extra.step), [
-    
-    "started", "download_started", "download_completed", "permissions_prompt", "cancelled",
-    
-    "started", "download_started", "download_completed", "permissions_prompt", "completed",
-  ], "Got the expected sequence on update telemetry events");
+  Assert.deepEqual(
+    collectedUpdateEvents.map(evt => evt.extra.step),
+    [
+      
+      "started",
+      "download_started",
+      "download_completed",
+      "permissions_prompt",
+      "cancelled",
+      
+      "started",
+      "download_started",
+      "download_completed",
+      "permissions_prompt",
+      "completed",
+    ],
+    "Got the expected sequence on update telemetry events"
+  );
 
-  ok(collectedUpdateEvents.every(evt => evt.extra.addon_id === ID),
-     "Every update telemetry event should have the expected addon_id extra var");
+  ok(
+    collectedUpdateEvents.every(evt => evt.extra.addon_id === ID),
+    "Every update telemetry event should have the expected addon_id extra var"
+  );
 
-  ok(collectedUpdateEvents.every(evt => evt.extra.source === FAKE_INSTALL_SOURCE),
-     "Every update telemetry event should have the expected source extra var");
+  ok(
+    collectedUpdateEvents.every(
+      evt => evt.extra.source === FAKE_INSTALL_SOURCE
+    ),
+    "Every update telemetry event should have the expected source extra var"
+  );
 
-  ok(collectedUpdateEvents.every(evt => evt.extra.updated_from === "user"),
-     "Every update telemetry event should have the update_from extra var 'user'");
+  ok(
+    collectedUpdateEvents.every(evt => evt.extra.updated_from === "user"),
+    "Every update telemetry event should have the update_from extra var 'user'"
+  );
 
-  let hasPermissionsExtras = collectedUpdateEvents.filter(evt => {
-    return evt.extra.step === "permissions_prompt";
-  }).every(evt => {
-    return Number.isInteger(parseInt(evt.extra.num_strings, 10));
-  });
+  let hasPermissionsExtras = collectedUpdateEvents
+    .filter(evt => {
+      return evt.extra.step === "permissions_prompt";
+    })
+    .every(evt => {
+      return Number.isInteger(parseInt(evt.extra.num_strings, 10));
+    });
 
-  ok(hasPermissionsExtras,
-     "Every 'permissions_prompt' update telemetry event should have the permissions extra vars");
+  ok(
+    hasPermissionsExtras,
+    "Every 'permissions_prompt' update telemetry event should have the permissions extra vars"
+  );
 
-  let hasDownloadTimeExtras = collectedUpdateEvents.filter(evt => {
-    return evt.extra.step === "download_completed";
-  }).every(evt => {
-    const download_time = parseInt(evt.extra.download_time, 10);
-    return !isNaN(download_time) && download_time > 0;
-  });
+  let hasDownloadTimeExtras = collectedUpdateEvents
+    .filter(evt => {
+      return evt.extra.step === "download_completed";
+    })
+    .every(evt => {
+      const download_time = parseInt(evt.extra.download_time, 10);
+      return !isNaN(download_time) && download_time > 0;
+    });
 
-  ok(hasDownloadTimeExtras,
-     "Every 'download_completed' update telemetry event should have a download_time extra vars");
+  ok(
+    hasDownloadTimeExtras,
+    "Every 'download_completed' update telemetry event should have a download_time extra vars"
+  );
 }
 
 
@@ -554,9 +639,14 @@ add_task(async function() {
     for (let addon of await AddonManager.getAllAddons()) {
       
       
-      if (!existingAddons.has(addon.id) &&
-          !(addon.isBuiltin && addon.id.endsWith("@search.mozilla.org"))) {
-        ok(false, `Addon ${addon.id} was left installed at the end of the test`);
+      if (
+        !existingAddons.has(addon.id) &&
+        !(addon.isBuiltin && addon.id.endsWith("@search.mozilla.org"))
+      ) {
+        ok(
+          false,
+          `Addon ${addon.id} was left installed at the end of the test`
+        );
         await addon.uninstall();
       }
     }
@@ -567,10 +657,16 @@ let collectedTelemetry = [];
 function hookExtensionsTelemetry() {
   let originalHistogram = ExtensionsUI.histogram;
   ExtensionsUI.histogram = {
-    add(value) { collectedTelemetry.push(value); },
+    add(value) {
+      collectedTelemetry.push(value);
+    },
   };
   registerCleanupFunction(() => {
-    is(collectedTelemetry.length, 0, "No unexamined telemetry after test is finished");
+    is(
+      collectedTelemetry.length,
+      0,
+      "No unexamined telemetry after test is finished"
+    );
     ExtensionsUI.histogram = originalHistogram;
   });
 }

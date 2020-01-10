@@ -8,8 +8,11 @@
 
 requestLongerTimeout(5);
 
-ChromeUtils.defineModuleGetter(this, "ActorManagerParent",
-                               "resource://gre/modules/ActorManagerParent.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "ActorManagerParent",
+  "resource://gre/modules/ActorManagerParent.jsm"
+);
 
 var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
 
@@ -58,129 +61,183 @@ if (AppConstants.platform == "macosx") {
 
 var whitelist = [
   
-  {file: "chrome://pdf.js/locale/chrome.properties"},
-  {file: "chrome://pdf.js/locale/viewer.properties"},
+  { file: "chrome://pdf.js/locale/chrome.properties" },
+  { file: "chrome://pdf.js/locale/viewer.properties" },
 
   
-  {file: "chrome://pippki/content/load_device.xul"},
-
-  
-  
-  {file: "chrome://global/locale/fallbackMenubar.properties",
-   platforms: ["linux", "win"]},
-  {file: "resource://gre/localization/en-US/toolkit/printing/printDialogs.ftl",
-   platforms: ["macosx"]},
-
-  
-  {file: "chrome://global/skin/aboutRights.css", skipUnofficial: true},
-
-  
-  {file: "chrome://devtools/content/inspector/markup/markup.xhtml",
-   isFromDevTools: true},
-
-  
-  {file: "resource://gre/modules/reflect.jsm"},
-
-  
-  {file: "resource://gre/defaults/autoconfig/prefcalls.js"},
-
-  
-  {file: "resource://gre/greprefs.js"},
-
-  
-  {file: "resource://pdf.js/build/pdf.worker.js"},
-
-  
-  {file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties"},
-  {file: "resource://gre/res/fonts/mathfontUnicode.properties"},
-
-  
-  {file: "chrome://global/content/win.xul"},
-
-  
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
-   platforms: ["linux", "win"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/intl.properties",
-   platforms: ["linux", "win"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/platformKeys.properties",
-   platforms: ["linux", "win"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/accessible.properties",
-   platforms: ["macosx", "win"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/intl.properties",
-   platforms: ["macosx", "win"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/platformKeys.properties",
-   platforms: ["macosx", "win"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/accessible.properties",
-   platforms: ["linux", "macosx"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/intl.properties",
-   platforms: ["linux", "macosx"]},
-  {file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/platformKeys.properties",
-   platforms: ["linux", "macosx"]},
-
-  
-  {file: "resource://pdf.js/web/debugger.js"},
-
-  
-  {file: "resource://app/modules/translation/BingTranslator.jsm"},
-  {file: "resource://app/modules/translation/GoogleTranslator.jsm"},
-  {file: "resource://app/modules/translation/YandexTranslator.jsm"},
+  { file: "chrome://pippki/content/load_device.xul" },
 
   
   
-  {file: "chrome://browser/locale/taskbar.properties",
-   platforms: ["linux", "macosx"]},
-  
-  {file: "chrome://global/skin/icons/error-16.png"},
-  
-  {file: "chrome://marionette/content/test_anonymous_content.xul"},
-  {file: "chrome://marionette/content/test_dialog.properties"},
-  {file: "chrome://marionette/content/test_dialog.xul"},
-  
-  {file: "chrome://mozapps/skin/downloads/buttons.png", platforms: ["macosx"]},
-  {file: "chrome://mozapps/skin/downloads/downloadButtons.png", platforms: ["linux", "win"]},
-  
-  {file: "chrome://pippki/content/resetpassword.xul"},
-  
-  {file: "resource://gre/modules/Manifest.jsm"},
-  
-  {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
-  
-  {file: "chrome://global/content/test-ipc.xul"},
-  
-  {file: "resource://gre/modules/Promise.jsm"},
-  
-  {file: "resource://gre/modules/ZipUtils.jsm"},
-  
-  
-  
-  {file: "chrome://devtools/skin/images/aboutdebugging-firefox-aurora.svg",
-   isFromDevTools: true},
-  {file: "chrome://devtools/skin/images/aboutdebugging-firefox-beta.svg",
-   isFromDevTools: true},
-  {file: "chrome://devtools/skin/images/aboutdebugging-firefox-release.svg",
-   isFromDevTools: true},
-  {file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true},
-  
-  {file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
-   platforms: ["linux", "win"]},
-  
-  {file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl"},
+  {
+    file: "chrome://global/locale/fallbackMenubar.properties",
+    platforms: ["linux", "win"],
+  },
+  {
+    file: "resource://gre/localization/en-US/toolkit/printing/printDialogs.ftl",
+    platforms: ["macosx"],
+  },
 
   
-  {file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js"},
+  { file: "chrome://global/skin/aboutRights.css", skipUnofficial: true },
+
+  
+  {
+    file: "chrome://devtools/content/inspector/markup/markup.xhtml",
+    isFromDevTools: true,
+  },
+
+  
+  { file: "resource://gre/modules/reflect.jsm" },
+
+  
+  { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
+
+  
+  { file: "resource://gre/greprefs.js" },
+
+  
+  { file: "resource://pdf.js/build/pdf.worker.js" },
+
+  
+  { file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties" },
+  { file: "resource://gre/res/fonts/mathfontUnicode.properties" },
+
+  
+  { file: "chrome://global/content/win.xul" },
+
+  
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
+    platforms: ["linux", "win"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/intl.properties",
+    platforms: ["linux", "win"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/platformKeys.properties",
+    platforms: ["linux", "win"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/accessible.properties",
+    platforms: ["macosx", "win"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/intl.properties",
+    platforms: ["macosx", "win"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/platformKeys.properties",
+    platforms: ["macosx", "win"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/win/accessible.properties",
+    platforms: ["linux", "macosx"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/win/intl.properties",
+    platforms: ["linux", "macosx"],
+  },
+  {
+    file:
+      "resource://gre/chrome/en-US/locale/en-US/global-platform/win/platformKeys.properties",
+    platforms: ["linux", "macosx"],
+  },
+
+  
+  { file: "resource://pdf.js/web/debugger.js" },
+
+  
+  { file: "resource://app/modules/translation/BingTranslator.jsm" },
+  { file: "resource://app/modules/translation/GoogleTranslator.jsm" },
+  { file: "resource://app/modules/translation/YandexTranslator.jsm" },
+
+  
+  
+  {
+    file: "chrome://browser/locale/taskbar.properties",
+    platforms: ["linux", "macosx"],
+  },
+  
+  { file: "chrome://global/skin/icons/error-16.png" },
+  
+  { file: "chrome://marionette/content/test_anonymous_content.xul" },
+  { file: "chrome://marionette/content/test_dialog.properties" },
+  { file: "chrome://marionette/content/test_dialog.xul" },
+  
+  {
+    file: "chrome://mozapps/skin/downloads/buttons.png",
+    platforms: ["macosx"],
+  },
+  {
+    file: "chrome://mozapps/skin/downloads/downloadButtons.png",
+    platforms: ["linux", "win"],
+  },
+  
+  { file: "chrome://pippki/content/resetpassword.xul" },
+  
+  { file: "resource://gre/modules/Manifest.jsm" },
+  
+  { file: "resource://gre/modules/accessibility/AccessFu.jsm" },
+  
+  { file: "chrome://global/content/test-ipc.xul" },
+  
+  { file: "resource://gre/modules/Promise.jsm" },
+  
+  { file: "resource://gre/modules/ZipUtils.jsm" },
+  
+  
+  
+  {
+    file: "chrome://devtools/skin/images/aboutdebugging-firefox-aurora.svg",
+    isFromDevTools: true,
+  },
+  {
+    file: "chrome://devtools/skin/images/aboutdebugging-firefox-beta.svg",
+    isFromDevTools: true,
+  },
+  {
+    file: "chrome://devtools/skin/images/aboutdebugging-firefox-release.svg",
+    isFromDevTools: true,
+  },
+  { file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true },
+  
+  {
+    file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
+    platforms: ["linux", "win"],
+  },
+  
+  { file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl" },
+
+  
+  { file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js" },
 ];
 
 if (!AppConstants.MOZ_NEW_NOTIFICATION_STORE) {
   
   
-  whitelist.push({file: "resource://gre/modules/kvstore.jsm"});
+  whitelist.push({ file: "resource://gre/modules/kvstore.jsm" });
 }
 
-whitelist = new Set(whitelist.filter(item =>
-  ("isFromDevTools" in item) == isDevtools &&
-  (!item.skipUnofficial || !AppConstants.MOZILLA_OFFICIAL) &&
-  (!item.platforms || item.platforms.includes(AppConstants.platform))
-).map(item => item.file));
+whitelist = new Set(
+  whitelist
+    .filter(
+      item =>
+        "isFromDevTools" in item == isDevtools &&
+        (!item.skipUnofficial || !AppConstants.MOZILLA_OFFICIAL) &&
+        (!item.platforms || item.platforms.includes(AppConstants.platform))
+    )
+    .map(item => item.file)
+);
 
 const ignorableWhitelist = new Set([
   
@@ -206,9 +263,16 @@ if (!isDevtools) {
   
   whitelist.add("resource://services-sync/service.js");
   
-  for (let module of ["addons.js", "bookmarks.js", "forms.js", "history.js",
-                      "passwords.js", "prefs.js", "tabs.js",
-                      "extension-storage.js"]) {
+  for (let module of [
+    "addons.js",
+    "bookmarks.js",
+    "forms.js",
+    "history.js",
+    "passwords.js",
+    "prefs.js",
+    "tabs.js",
+    "extension-storage.js",
+  ]) {
     whitelist.add("resource://services-sync/engines/" + module);
   }
 }
@@ -218,13 +282,19 @@ if (AppConstants.MOZ_CODE_COVERAGE) {
 }
 
 const gInterestingCategories = new Set([
-  "agent-style-sheets", "addon-provider-module", "webextension-modules",
-  "webextension-scripts", "webextension-schemas", "webextension-scripts-addon",
-  "webextension-scripts-content", "webextension-scripts-devtools",
+  "agent-style-sheets",
+  "addon-provider-module",
+  "webextension-modules",
+  "webextension-scripts",
+  "webextension-schemas",
+  "webextension-scripts-addon",
+  "webextension-scripts-content",
+  "webextension-scripts-devtools",
 ]);
 
-var gChromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"]
-                 .getService(Ci.nsIChromeRegistry);
+var gChromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+  Ci.nsIChromeRegistry
+);
 var gChromeMap = new Map();
 var gOverrideMap = new Map();
 var gComponentsSet = new Set();
@@ -238,8 +308,9 @@ var gComponentsSet = new Set();
 
 var gReferencesFromCode = new Map();
 
-var resHandler = Services.io.getProtocolHandler("resource")
-                         .QueryInterface(Ci.nsIResProtocolHandler);
+var resHandler = Services.io
+  .getProtocolHandler("resource")
+  .QueryInterface(Ci.nsIResProtocolHandler);
 var gResourceMap = [];
 function trackResourcePrefix(prefix) {
   let uri = Services.io.newURI("resource://" + prefix + "/");
@@ -288,8 +359,10 @@ function parseManifest(manifestUri) {
         
         let os = "os=" + Services.appinfo.OS;
         if (!argv.some(s => s.startsWith("os=") && s != os)) {
-          gOverrideMap.set(Services.io.newURI(argv[1]).specIgnoringRef,
-                           Services.io.newURI(argv[0]).specIgnoringRef);
+          gOverrideMap.set(
+            Services.io.newURI(argv[1]).specIgnoringRef,
+            Services.io.newURI(argv[0]).specIgnoringRef
+          );
         }
       } else if (type == "category" && gInterestingCategories.has(argv[0])) {
         gReferencesFromCode.set(argv[2], null);
@@ -348,14 +421,16 @@ function addCodeReference(url, fromURI) {
   let from = convertToCodeURI(fromURI.spec);
 
   
-  if (url == from)
+  if (url == from) {
     return;
+  }
 
   let ref;
   if (gReferencesFromCode.has(url)) {
     ref = gReferencesFromCode.get(url);
-    if (ref === null)
+    if (ref === null) {
       return;
+    }
   } else {
     ref = new Set();
     gReferencesFromCode.set(url, ref);
@@ -389,11 +464,13 @@ function parseCSSFile(fileUri) {
 
       for (let url of urls) {
         
-        url = url.replace(/url\(([^)]*)\)/, "$1")
-                 .replace(/^"(.*)"$/, "$1")
-                 .replace(/^'(.*)'$/, "$1");
-        if (url.startsWith("data:"))
+        url = url
+          .replace(/url\(([^)]*)\)/, "$1")
+          .replace(/^"(.*)"$/, "$1")
+          .replace(/^'(.*)'$/, "$1");
+        if (url.startsWith("data:")) {
           continue;
+        }
 
         try {
           url = Services.io.newURI(url, null, fileUri).specIgnoringRef;
@@ -410,13 +487,17 @@ function parseCodeFile(fileUri) {
   return fetchFile(fileUri.spec).then(data => {
     let baseUri;
     for (let line of data.split("\n")) {
-      let urls =
-        line.match(/["'`]chrome:\/\/[a-zA-Z0-9-]+\/(content|skin|locale)\/[^"'` ]*["'`]/g);
+      let urls = line.match(
+        /["'`]chrome:\/\/[a-zA-Z0-9-]+\/(content|skin|locale)\/[^"'` ]*["'`]/g
+      );
 
       if (!urls) {
         urls = line.match(/["']resource:\/\/[^"']+["']/g);
-        if (urls && isDevtools &&
-            /baseURI: "resource:\/\/devtools\//.test(line)) {
+        if (
+          urls &&
+          isDevtools &&
+          /baseURI: "resource:\/\/devtools\//.test(line)
+        ) {
           baseUri = Services.io.newURI(urls[0].slice(1, -1));
           continue;
         }
@@ -426,8 +507,12 @@ function parseCodeFile(fileUri) {
         urls = line.match(/[a-z0-9_\/-]+\.ftl/i);
         if (urls) {
           urls = urls[0];
-          let grePrefix = Services.io.newURI("resource://gre/localization/en-US/");
-          let appPrefix = Services.io.newURI("resource://app/localization/en-US/");
+          let grePrefix = Services.io.newURI(
+            "resource://gre/localization/en-US/"
+          );
+          let appPrefix = Services.io.newURI(
+            "resource://app/localization/en-US/"
+          );
 
           let grePrefixUrl = Services.io.newURI(urls, null, grePrefix).spec;
           let appPrefixUrl = Services.io.newURI(urls, null, appPrefix).spec;
@@ -451,7 +536,10 @@ function parseCodeFile(fileUri) {
           let rules = [
             ["devtools/client/locales", "chrome://devtools/locale"],
             ["devtools/shared/locales", "chrome://devtools-shared/locale"],
-            ["devtools/shared/platform", "resource://devtools/shared/platform/chrome"],
+            [
+              "devtools/shared/platform",
+              "resource://devtools/shared/platform/chrome",
+            ],
             ["devtools", "resource://devtools"],
           ];
 
@@ -461,8 +549,9 @@ function parseCodeFile(fileUri) {
             for (let rule of rules) {
               if (path.startsWith(rule[0] + "/")) {
                 path = path.replace(rule[0], rule[1]);
-                if (!/\.(properties|js|jsm|json|css)$/.test(path))
+                if (!/\.(properties|js|jsm|json|css)$/.test(path)) {
                   path += ".js";
+                }
                 addCodeReference(path, fileUri);
                 break;
               }
@@ -474,8 +563,9 @@ function parseCodeFile(fileUri) {
             let url = match[1];
             url = Services.io.newURI(url, null, baseUri || fileUri).spec;
             url = convertToCodeURI(url);
-            if (!/\.(properties|js|jsm|json|css)$/.test(url))
+            if (!/\.(properties|js|jsm|json|css)$/.test(url)) {
               url += ".js";
+            }
             if (url.startsWith("resource://")) {
               addCodeReference(url, fileUri);
             } else {
@@ -509,9 +599,13 @@ function parseCodeFile(fileUri) {
           continue;
         }
 
-        if (isDevtools && line.includes("require(") &&
-            !/\.(properties|js|jsm|json|css)$/.test(url))
+        if (
+          isDevtools &&
+          line.includes("require(") &&
+          !/\.(properties|js|jsm|json|css)$/.test(url)
+        ) {
           url += ".js";
+        }
 
         addCodeReference(url, fileUri);
       }
@@ -527,32 +621,40 @@ function convertToCodeURI(fileUri) {
     if (slashPos <= 0) {
       
       for (let res of gResourceMap) {
-        if (fileUri.startsWith(res[1]))
+        if (fileUri.startsWith(res[1])) {
           return fileUri.replace(res[1], "resource://" + res[0] + "/");
+        }
       }
       
       return fileUri;
     }
     path = baseUri.slice(slashPos + 1) + path;
     baseUri = baseUri.slice(0, slashPos + 1);
-    if (gChromeMap.has(baseUri))
+    if (gChromeMap.has(baseUri)) {
       return gChromeMap.get(baseUri) + path;
+    }
   }
 }
 
 function chromeFileExists(aURI) {
   let available = 0;
   try {
-    let channel = NetUtil.newChannel({uri: aURI, loadUsingSystemPrincipal: true});
+    let channel = NetUtil.newChannel({
+      uri: aURI,
+      loadUsingSystemPrincipal: true,
+    });
     let stream = channel.open();
-    let sstream = Cc["@mozilla.org/scriptableinputstream;1"]
-                    .createInstance(Ci.nsIScriptableInputStream);
+    let sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
+      Ci.nsIScriptableInputStream
+    );
     sstream.init(stream);
     available = sstream.available();
     sstream.close();
   } catch (e) {
-    if (e.result != Cr.NS_ERROR_FILE_NOT_FOUND &&
-        e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+    if (
+      e.result != Cr.NS_ERROR_FILE_NOT_FOUND &&
+      e.result != Cr.NS_ERROR_NOT_AVAILABLE
+    ) {
       todo(false, "Failed to check if " + aURI + "exists: " + e);
     }
   }
@@ -561,9 +663,11 @@ function chromeFileExists(aURI) {
 
 function findChromeUrlsFromArray(array, prefix) {
   
-  for (let index = 0;
-       (index = array.indexOf(prefix.charCodeAt(0), index)) != -1;
-       ++index) {
+  for (
+    let index = 0;
+    (index = array.indexOf(prefix.charCodeAt(0), index)) != -1;
+    ++index
+  ) {
     
     let found = true;
     for (let i = 1; i < prefix.length; ++i) {
@@ -572,34 +676,42 @@ function findChromeUrlsFromArray(array, prefix) {
         break;
       }
     }
-    if (!found)
+    if (!found) {
       continue;
+    }
 
     
     
     
-    let end = Math.min(array.indexOf(0, index),
-                       array.indexOf('"'.charCodeAt(0), index),
-                       array.indexOf(")".charCodeAt(0), index),
-                       array.indexOf("#".charCodeAt(0), index));
+    let end = Math.min(
+      array.indexOf(0, index),
+      array.indexOf('"'.charCodeAt(0), index),
+      array.indexOf(")".charCodeAt(0), index),
+      array.indexOf("#".charCodeAt(0), index)
+    );
     let string = "";
-    for ( ; index < end; ++index) {
+    for (; index < end; ++index) {
       string += String.fromCharCode(array[index]);
     }
 
     
-    if (/chrome:\/\/[a-zA-Z09-]+\/(content|skin|locale)\//.test(string) ||
-        /resource:\/\/[a-zA-Z09-]*\/.*\.[a-z]+/.test(string))
+    if (
+      /chrome:\/\/[a-zA-Z09-]+\/(content|skin|locale)\//.test(string) ||
+      /resource:\/\/[a-zA-Z09-]*\/.*\.[a-z]+/.test(string)
+    ) {
       gReferencesFromCode.set(string, null);
+    }
   }
 }
 
 function addActorModules() {
-  let groups = [...ActorManagerParent.parentGroups.values(),
-                ...ActorManagerParent.childGroups.values(),
-                ...ActorManagerParent.singletons.values()];
+  let groups = [
+    ...ActorManagerParent.parentGroups.values(),
+    ...ActorManagerParent.childGroups.values(),
+    ...ActorManagerParent.singletons.values(),
+  ];
   for (let group of groups) {
-    for (let {module} of group.actors.values()) {
+    for (let { module } of group.actors.values()) {
       gReferencesFromCode.set(module, null);
     }
   }
@@ -607,8 +719,9 @@ function addActorModules() {
 
 add_task(async function checkAllTheFiles() {
   let libxulPath = OS.Constants.Path.libxul;
-  if (AppConstants.platform != "macosx")
+  if (AppConstants.platform != "macosx") {
     libxulPath = OS.Constants.Path.libDir + "/" + libxulPath;
+  }
   let libxul = await OS.File.read(libxulPath);
   findChromeUrlsFromArray(libxul, "chrome://");
   findChromeUrlsFromArray(libxul, "resource://");
@@ -617,14 +730,35 @@ add_task(async function checkAllTheFiles() {
   findChromeUrlsFromArray(uint16, "chrome://");
   findChromeUrlsFromArray(uint16, "resource://");
 
-  const kCodeExtensions = [".xul", ".xml", ".xsl", ".js", ".jsm", ".json", ".html", ".xhtml"];
+  const kCodeExtensions = [
+    ".xul",
+    ".xml",
+    ".xsl",
+    ".js",
+    ".jsm",
+    ".json",
+    ".html",
+    ".xhtml",
+  ];
 
   let appDir = Services.dirsvc.get("GreD", Ci.nsIFile);
   
   
   
-  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest", ".jpg", ".png", ".gif", ".svg",
-                                                    ".ftl", ".dtd", ".properties"].concat(kCodeExtensions));
+  let uris = await generateURIsFromDirTree(
+    appDir,
+    [
+      ".css",
+      ".manifest",
+      ".jpg",
+      ".png",
+      ".gif",
+      ".svg",
+      ".ftl",
+      ".dtd",
+      ".properties",
+    ].concat(kCodeExtensions)
+  );
 
   
   
@@ -656,8 +790,9 @@ add_task(async function checkAllTheFiles() {
   
   
   
-  let nonWebextManifests = (await Promise.all(jsonManifests.map(parseJsonManifest)))
-                                         .filter(uri => !!uri);
+  let nonWebextManifests = (await Promise.all(
+    jsonManifests.map(parseJsonManifest)
+  )).filter(uri => !!uri);
   uris.push(...nonWebextManifests);
 
   addActorModules();
@@ -668,10 +803,11 @@ add_task(async function checkAllTheFiles() {
 
   for (let uri of uris) {
     let path = uri.pathQueryRef;
-    if (path.endsWith(".css"))
+    if (path.endsWith(".css")) {
       allPromises.push([parseCSSFile, uri]);
-    else if (kCodeExtensions.some(ext => path.endsWith(ext)))
+    } else if (kCodeExtensions.some(ext => path.endsWith(ext))) {
       allPromises.push([parseCodeFile, uri]);
+    }
   }
 
   
@@ -679,23 +815,28 @@ add_task(async function checkAllTheFiles() {
 
   
   
-  let devtoolsPrefixes = ["chrome://webide/",
-                          "chrome://devtools",
-                          "resource://devtools/",
-                          "resource://devtools-client-jsonview/",
-                          "resource://devtools-client-shared/",
-                          "resource://app/modules/devtools",
-                          "resource://gre/modules/devtools",
-                          "resource://app/localization/en-US/startup/aboutDevTools.ftl",
-                          "resource://app/localization/en-US/devtools/"];
-  let hasDevtoolsPrefix =
-    uri => devtoolsPrefixes.some(prefix => uri.startsWith(prefix));
+  let devtoolsPrefixes = [
+    "chrome://webide/",
+    "chrome://devtools",
+    "resource://devtools/",
+    "resource://devtools-client-jsonview/",
+    "resource://devtools-client-shared/",
+    "resource://app/modules/devtools",
+    "resource://gre/modules/devtools",
+    "resource://app/localization/en-US/startup/aboutDevTools.ftl",
+    "resource://app/localization/en-US/devtools/",
+  ];
+  let hasDevtoolsPrefix = uri =>
+    devtoolsPrefixes.some(prefix => uri.startsWith(prefix));
   let chromeFiles = [];
   for (let uri of uris) {
     uri = convertToCodeURI(uri.spec);
-    if ((uri.startsWith("chrome://") || uri.startsWith("resource://")) &&
-        isDevtools == hasDevtoolsPrefix(uri))
+    if (
+      (uri.startsWith("chrome://") || uri.startsWith("resource://")) &&
+      isDevtools == hasDevtoolsPrefix(uri)
+    ) {
       chromeFiles.push(uri);
+    }
   }
 
   if (isDevtools) {
@@ -706,24 +847,33 @@ add_task(async function checkAllTheFiles() {
   }
 
   let isUnreferenced = file => {
-    if (gExceptionPaths.some(e => file.startsWith(e)))
+    if (gExceptionPaths.some(e => file.startsWith(e))) {
       return false;
+    }
     if (gReferencesFromCode.has(file)) {
       let refs = gReferencesFromCode.get(file);
-      if (refs === null)
+      if (refs === null) {
         return false;
+      }
       for (let ref of refs) {
         if (isDevtools) {
-          if (ref.startsWith("resource://app/components/") ||
-              (file.startsWith("chrome://") && ref.startsWith("resource://")))
+          if (
+            ref.startsWith("resource://app/components/") ||
+            (file.startsWith("chrome://") && ref.startsWith("resource://"))
+          ) {
             return false;
+          }
         }
 
         if (gReferencesFromCode.has(ref)) {
           let refType = gReferencesFromCode.get(ref);
-          if (refType === null || 
-              refType == "whitelist" || refType == "whitelist-direct")
+          if (
+            refType === null || 
+            refType == "whitelist" ||
+            refType == "whitelist-direct"
+          ) {
             return false;
+          }
         }
       }
     }
@@ -736,15 +886,21 @@ add_task(async function checkAllTheFiles() {
     let foundReference = false;
     unreferencedFiles = unreferencedFiles.filter(f => {
       let rv = isUnreferenced(f);
-      if (rv && f.startsWith("resource://app/"))
+      if (rv && f.startsWith("resource://app/")) {
         rv = isUnreferenced(f.replace("resource://app/", "resource:///"));
-      if (rv && /^resource:\/\/(?:app|gre)\/components\/[^/]+\.js$/.test(f))
+      }
+      if (rv && /^resource:\/\/(?:app|gre)\/components\/[^/]+\.js$/.test(f)) {
         rv = !gComponentsSet.has(f.replace(/.*\//, ""));
+      }
       if (!rv) {
         foundReference = true;
         if (useWhitelist) {
-          info("indirectly whitelisted file: " + f + " used from " +
-               listCodeReferences(gReferencesFromCode.get(f)));
+          info(
+            "indirectly whitelisted file: " +
+              f +
+              " used from " +
+              listCodeReferences(gReferencesFromCode.get(f))
+          );
         }
         gReferencesFromCode.set(f, useWhitelist ? "whitelist" : null);
       }
@@ -793,38 +949,47 @@ add_task(async function checkAllTheFiles() {
     } else {
       let refList = listCodeReferences(refs);
       let msg = "file only referenced from unreferenced files: " + file;
-      if (refList)
+      if (refList) {
         msg += " referenced from " + refList;
+      }
       ok(false, msg);
     }
   }
 
   for (let file of whitelist) {
-    if (ignorableWhitelist.has(file))
+    if (ignorableWhitelist.has(file)) {
       info("ignored unused whitelist entry: " + file);
-    else
+    } else {
       ok(false, "unused whitelist entry: " + file);
+    }
   }
 
   for (let [file, refs] of gReferencesFromCode) {
-    if (isDevtools != devtoolsPrefixes.some(prefix => file.startsWith(prefix)))
+    if (
+      isDevtools != devtoolsPrefixes.some(prefix => file.startsWith(prefix))
+    ) {
       continue;
+    }
 
-    if ((file.startsWith("chrome://") || file.startsWith("resource://")) &&
-        !chromeFileExists(file)) {
+    if (
+      (file.startsWith("chrome://") || file.startsWith("resource://")) &&
+      !chromeFileExists(file)
+    ) {
       
       let pathParts =
-        file.match("chrome://([^/]+)/content/([^/.]+)\.xul") ||
-        file.match("chrome://([^/]+)/skin/([^/.]+)\.css");
-      if (pathParts && pathParts[1] == pathParts[2])
+        file.match("chrome://([^/]+)/content/([^/.]+).xul") ||
+        file.match("chrome://([^/]+)/skin/([^/.]+).css");
+      if (pathParts && pathParts[1] == pathParts[2]) {
         continue;
+      }
 
       
       
       let refList = listCodeReferences(refs);
       let msg = "missing file: " + file;
-      if (refList)
+      if (refList) {
         msg += " referenced from " + refList;
+      }
       info(msg);
     }
   }

@@ -11,7 +11,13 @@ add_task(async function testTempPermissionOnReload() {
   await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
     let reloadButton = document.getElementById("reload-button");
 
-    SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
+    SitePermissions.set(
+      uri,
+      id,
+      SitePermissions.BLOCK,
+      SitePermissions.SCOPE_TEMPORARY,
+      browser
+    );
 
     let reloaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
 
@@ -21,7 +27,9 @@ add_task(async function testTempPermissionOnReload() {
     });
 
     
-    await ContentTask.spawn(browser, {}, () => content.document.location.reload());
+    await ContentTask.spawn(browser, {}, () =>
+      content.document.location.reload()
+    );
 
     await reloaded;
     await BrowserTestUtils.waitForCondition(() => {
@@ -46,15 +54,27 @@ add_task(async function testTempPermissionOnReload() {
     });
 
     
-    SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
+    SitePermissions.set(
+      uri,
+      id,
+      SitePermissions.BLOCK,
+      SitePermissions.SCOPE_TEMPORARY,
+      browser
+    );
 
     
     let contextMenu = document.getElementById("tabContextMenu");
     
     
     gBrowser.selectedTab.focus();
-    let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
-    EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
+    let popupShownPromise = BrowserTestUtils.waitForEvent(
+      contextMenu,
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {
+      type: "contextmenu",
+      button: 2,
+    });
     await popupShownPromise;
 
     let reloadMenuItem = document.getElementById("context_reloadTab");
@@ -81,7 +101,13 @@ add_task(async function testTempPermissionOnReloadAllTabs() {
   let id = "geo";
 
   await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
-    SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
+    SitePermissions.set(
+      uri,
+      id,
+      SitePermissions.BLOCK,
+      SitePermissions.SCOPE_TEMPORARY,
+      browser
+    );
 
     
     gBrowser.selectAllTabs();
@@ -91,14 +117,23 @@ add_task(async function testTempPermissionOnReloadAllTabs() {
     
     
     gBrowser.selectedTab.focus();
-    let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
-    EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
+    let popupShownPromise = BrowserTestUtils.waitForEvent(
+      contextMenu,
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {
+      type: "contextmenu",
+      button: 2,
+    });
     await popupShownPromise;
 
     let reloadMenuItem = document.getElementById("context_reloadSelectedTabs");
 
-    let reloaded = Promise.all(gBrowser.visibleTabs.map(
-      tab => BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab))));
+    let reloaded = Promise.all(
+      gBrowser.visibleTabs.map(tab =>
+        BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab))
+      )
+    );
     EventUtils.synthesizeMouseAtCenter(reloadMenuItem, {});
     await reloaded;
 
@@ -117,17 +152,31 @@ add_task(async function testTempPermissionOnNavigation() {
   let id = "geo";
 
   await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
-    SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
+    SitePermissions.set(
+      uri,
+      id,
+      SitePermissions.BLOCK,
+      SitePermissions.SCOPE_TEMPORARY,
+      browser
+    );
 
     Assert.deepEqual(SitePermissions.get(uri, id, browser), {
       state: SitePermissions.BLOCK,
       scope: SitePermissions.SCOPE_TEMPORARY,
     });
 
-    let loaded = BrowserTestUtils.browserLoaded(browser, false, "https://example.org/");
+    let loaded = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      "https://example.org/"
+    );
 
     
-    await ContentTask.spawn(browser, {}, () => content.document.location = "https://example.org/");
+    await ContentTask.spawn(
+      browser,
+      {},
+      () => (content.document.location = "https://example.org/")
+    );
 
     await loaded;
 
@@ -140,7 +189,11 @@ add_task(async function testTempPermissionOnNavigation() {
     loaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
 
     
-    await ContentTask.spawn(browser, {}, () => content.document.location = "https://example.com/");
+    await ContentTask.spawn(
+      browser,
+      {},
+      () => (content.document.location = "https://example.com/")
+    );
 
     await loaded;
 
@@ -153,4 +206,3 @@ add_task(async function testTempPermissionOnNavigation() {
     SitePermissions.remove(uri, id, browser);
   });
 });
-

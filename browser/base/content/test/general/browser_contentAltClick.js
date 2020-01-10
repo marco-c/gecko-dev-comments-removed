@@ -12,8 +12,11 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "Downloads",
-                               "resource://gre/modules/Downloads.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Downloads",
+  "resource://gre/modules/Downloads.jsm"
+);
 
 function setup() {
   Services.prefs.setBoolPref("browser.altClickSave", true);
@@ -50,7 +53,7 @@ add_task(async function test_alt_click() {
   let downloads = [];
   let downloadView;
   
-  let finishedAllDownloads = new Promise( (resolve) => {
+  let finishedAllDownloads = new Promise(resolve => {
     downloadView = {
       onDownloadAdded(aDownload) {
         downloads.push(aDownload);
@@ -59,14 +62,22 @@ add_task(async function test_alt_click() {
     };
   });
   await downloadList.addView(downloadView);
-  await BrowserTestUtils.synthesizeMouseAtCenter("#commonlink", {altKey: true}, gBrowser.selectedBrowser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#commonlink",
+    { altKey: true },
+    gBrowser.selectedBrowser
+  );
 
   
   await finishedAllDownloads;
   await downloadList.removeView(downloadView);
 
   is(downloads.length, 1, "1 downloads");
-  is(downloads[0].source.url, "http://mochi.test/moz/", "Downloaded #commonlink element");
+  is(
+    downloads[0].source.url,
+    "http://mochi.test/moz/",
+    "Downloaded #commonlink element"
+  );
 
   await clean_up();
 });
@@ -78,7 +89,7 @@ add_task(async function test_alt_click_shadow_dom() {
   let downloads = [];
   let downloadView;
   
-  let finishedAllDownloads = new Promise( (resolve) => {
+  let finishedAllDownloads = new Promise(resolve => {
     downloadView = {
       onDownloadAdded(aDownload) {
         downloads.push(aDownload);
@@ -87,14 +98,22 @@ add_task(async function test_alt_click_shadow_dom() {
     };
   });
   await downloadList.addView(downloadView);
-  await BrowserTestUtils.synthesizeMouseAtCenter("#host", {altKey: true}, gBrowser.selectedBrowser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#host",
+    { altKey: true },
+    gBrowser.selectedBrowser
+  );
 
   
   await finishedAllDownloads;
   await downloadList.removeView(downloadView);
 
   is(downloads.length, 1, "1 downloads");
-  is(downloads[0].source.url, "http://mochi.test/moz/", "Downloaded #commonlink element in shadow DOM.");
+  is(
+    downloads[0].source.url,
+    "http://mochi.test/moz/",
+    "Downloaded #commonlink element in shadow DOM."
+  );
 
   await clean_up();
 });
@@ -106,7 +125,7 @@ add_task(async function test_alt_click_on_xlinks() {
   let downloads = [];
   let downloadView;
   
-  let finishedAllDownloads = new Promise( (resolve) => {
+  let finishedAllDownloads = new Promise(resolve => {
     downloadView = {
       onDownloadAdded(aDownload) {
         downloads.push(aDownload);
@@ -117,16 +136,32 @@ add_task(async function test_alt_click_on_xlinks() {
     };
   });
   await downloadList.addView(downloadView);
-  await BrowserTestUtils.synthesizeMouseAtCenter("#mathxlink", {altKey: true}, gBrowser.selectedBrowser);
-  await BrowserTestUtils.synthesizeMouseAtCenter("#svgxlink", {altKey: true}, gBrowser.selectedBrowser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#mathxlink",
+    { altKey: true },
+    gBrowser.selectedBrowser
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#svgxlink",
+    { altKey: true },
+    gBrowser.selectedBrowser
+  );
 
   
   await finishedAllDownloads;
   await downloadList.removeView(downloadView);
 
   is(downloads.length, 2, "2 downloads");
-  is(downloads[0].source.url, "http://mochi.test/moz/", "Downloaded #mathxlink element");
-  is(downloads[1].source.url, "http://mochi.test/moz/", "Downloaded #svgxlink element");
+  is(
+    downloads[0].source.url,
+    "http://mochi.test/moz/",
+    "Downloaded #mathxlink element"
+  );
+  is(
+    downloads[1].source.url,
+    "http://mochi.test/moz/",
+    "Downloaded #svgxlink element"
+  );
 
   await clean_up();
 });

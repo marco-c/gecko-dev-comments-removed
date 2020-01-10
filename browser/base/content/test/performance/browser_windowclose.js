@@ -37,24 +37,45 @@ add_task(async function() {
   
   
   
-  Assert.equal(EXPECTED_REFLOWS.length, 0,
-    "We shouldn't have added any new expected reflows for window close.");
+  Assert.equal(
+    EXPECTED_REFLOWS.length,
+    0,
+    "We shouldn't have added any new expected reflows for window close."
+  );
 
-  let dropmarkerRect = document.getAnonymousElementByAttribute(gURLBar.textbox,
-    "anonid", "historydropmarker").getBoundingClientRect();
+  let dropmarkerRect = document
+    .getAnonymousElementByAttribute(
+      gURLBar.textbox,
+      "anonid",
+      "historydropmarker"
+    )
+    .getBoundingClientRect();
 
-  await withPerfObserver(async function() {
-    let promiseOrigBrowserFocused = BrowserTestUtils.waitForCondition(() => {
-      return Services.focus.activeWindow == window;
-    });
-    await BrowserTestUtils.closeWindow(win);
-    await promiseOrigBrowserFocused;
-  }, {expectedReflows: EXPECTED_REFLOWS, frames: {
-    filter: rects => rects.filter(r => !(
-      
-      
-      (r.x1 >= dropmarkerRect.left - 1 && r.x2 <= dropmarkerRect.right + 1 &&
-       r.y1 >= dropmarkerRect.top && r.y2 <= dropmarkerRect.bottom)
-    )),
-  }}, win);
+  await withPerfObserver(
+    async function() {
+      let promiseOrigBrowserFocused = BrowserTestUtils.waitForCondition(() => {
+        return Services.focus.activeWindow == window;
+      });
+      await BrowserTestUtils.closeWindow(win);
+      await promiseOrigBrowserFocused;
+    },
+    {
+      expectedReflows: EXPECTED_REFLOWS,
+      frames: {
+        filter: rects =>
+          rects.filter(
+            r =>
+              !
+              
+              (
+                r.x1 >= dropmarkerRect.left - 1 &&
+                r.x2 <= dropmarkerRect.right + 1 &&
+                r.y1 >= dropmarkerRect.top &&
+                r.y2 <= dropmarkerRect.bottom
+              )
+          ),
+      },
+    },
+    win
+  );
 });

@@ -1,8 +1,9 @@
 "use strict";
 
 async function installFile(filename) {
-  const ChromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"]
-                                     .getService(Ci.nsIChromeRegistry);
+  const ChromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+    Ci.nsIChromeRegistry
+  );
   let chromeUrl = Services.io.newURI(gTestPath);
   let fileUrl = ChromeRegistry.convertChromeURL(chromeUrl);
   let file = fileUrl.QueryInterface(Ci.nsIFileURL).file;
@@ -37,25 +38,47 @@ add_task(async function test_install_extension_from_local_file() {
   await testInstallMethod(installFile, "installLocal");
 
   
-  ok(firstInstallId != null && !isNaN(firstInstallId), "There was an installId found");
+  ok(
+    firstInstallId != null && !isNaN(firstInstallId),
+    "There was an installId found"
+  );
 
   
   let snapshot = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS, true);
+    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
+    true
+  );
 
   
-  ok(snapshot.parent && snapshot.parent.length > 0, "Got parent telemetry events in the snapshot");
+  ok(
+    snapshot.parent && snapshot.parent.length > 0,
+    "Got parent telemetry events in the snapshot"
+  );
 
   
   let relatedEvents = snapshot.parent
-    .filter(([timestamp, category, method, object]) =>
-      category == "addonsManager" && method == "action" && object == "aboutAddons")
+    .filter(
+      ([timestamp, category, method, object]) =>
+        category == "addonsManager" &&
+        method == "action" &&
+        object == "aboutAddons"
+    )
     .map(relatedEvent => relatedEvent.slice(4, 6));
 
   
-  Assert.deepEqual(relatedEvents, [
-    [firstInstallId.toString(), {action: "installFromFile", view: "list"}],
-    [(++firstInstallId).toString(), {action: "installFromFile", view: "list"}],
-    [(++firstInstallId).toString(), {action: "installFromFile", view: "list"}],
-  ], "The telemetry is recorded correctly");
+  Assert.deepEqual(
+    relatedEvents,
+    [
+      [firstInstallId.toString(), { action: "installFromFile", view: "list" }],
+      [
+        (++firstInstallId).toString(),
+        { action: "installFromFile", view: "list" },
+      ],
+      [
+        (++firstInstallId).toString(),
+        { action: "installFromFile", view: "list" },
+      ],
+    ],
+    "The telemetry is recorded correctly"
+  );
 });

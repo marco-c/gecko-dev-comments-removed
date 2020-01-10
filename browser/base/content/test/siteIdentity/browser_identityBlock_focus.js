@@ -2,7 +2,10 @@
 
 
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
 const PERMISSIONS_PAGE = TEST_PATH + "permissions.html";
 
 
@@ -22,52 +25,83 @@ function synthesizeKeyAndWaitForFocus(element, keyCode, options) {
 
 
 add_task(async function testWithoutNotifications() {
-  await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
+  await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
-    await synthesizeKeyAndWaitForFocus(gURLBar, "l", {accelKey: true});
+    await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
-    await synthesizeKeyAndWaitForFocus(gIdentityHandler._identityBox, "VK_TAB", {shiftKey: true});
-    is(document.activeElement, gIdentityHandler._identityBox,
-       "identity block should be focused");
+    await synthesizeKeyAndWaitForFocus(
+      gIdentityHandler._identityBox,
+      "VK_TAB",
+      { shiftKey: true }
+    );
+    is(
+      document.activeElement,
+      gIdentityHandler._identityBox,
+      "identity block should be focused"
+    );
   });
 });
 
 
 
 add_task(async function testWithoutNotifications() {
-  await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
+  await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(browser) {
-    let popupshown = BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popupshown = BrowserTestUtils.waitForEvent(
+      PopupNotifications.panel,
+      "popupshown"
+    );
     
     BrowserTestUtils.synthesizeMouseAtCenter("#geo", {}, browser);
     await popupshown;
 
-    await synthesizeKeyAndWaitForFocus(gURLBar, "l", {accelKey: true});
+    await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
-    await synthesizeKeyAndWaitForFocus(gIdentityHandler._identityBox, "VK_TAB", {shiftKey: true});
-    is(document.activeElement, gIdentityHandler._identityBox,
-      "identity block should be focused");
+    await synthesizeKeyAndWaitForFocus(
+      gIdentityHandler._identityBox,
+      "VK_TAB",
+      { shiftKey: true }
+    );
+    is(
+      document.activeElement,
+      gIdentityHandler._identityBox,
+      "identity block should be focused"
+    );
     let geoIcon = document.getElementById("geo-notification-icon");
     await synthesizeKeyAndWaitForFocus(geoIcon, "ArrowRight");
-    is(document.activeElement, geoIcon, "notification anchor should be focused");
+    is(
+      document.activeElement,
+      geoIcon,
+      "notification anchor should be focused"
+    );
   });
 });
 
 
 add_task(async function testInvalidPageProxyState() {
-  await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
+  await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
     
     
     if (document.activeElement != gURLBar.inputField) {
-      await synthesizeKeyAndWaitForFocus(gURLBar, "l", {accelKey: true});
+      await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
     }
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
-    await synthesizeKeyAndWaitForFocus(document.getElementById("home-button"),
-      "VK_TAB", {shiftKey: true});
-    await synthesizeKeyAndWaitForFocus(gBrowser.getTabForBrowser(browser), "VK_TAB", {shiftKey: true});
-    isnot(document.activeElement, gIdentityHandler._identityBox,
-          "identity block should not be focused");
+    await synthesizeKeyAndWaitForFocus(
+      document.getElementById("home-button"),
+      "VK_TAB",
+      { shiftKey: true }
+    );
+    await synthesizeKeyAndWaitForFocus(
+      gBrowser.getTabForBrowser(browser),
+      "VK_TAB",
+      { shiftKey: true }
+    );
+    isnot(
+      document.activeElement,
+      gIdentityHandler._identityBox,
+      "identity block should not be focused"
+    );
     
     gURLBar.focus();
   });

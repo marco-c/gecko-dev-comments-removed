@@ -7,7 +7,6 @@
 
 
 var PointerlockFsWarning = {
-
   _element: null,
   _origin: null,
 
@@ -43,7 +42,9 @@ var PointerlockFsWarning = {
 
   showPointerLock(aOrigin) {
     if (!document.fullscreen) {
-      let timeout = Services.prefs.getIntPref("pointer-lock-api.warning.timeout");
+      let timeout = Services.prefs.getIntPref(
+        "pointer-lock-api.warning.timeout"
+      );
       this.show(aOrigin, "pointerlock-warning", timeout, 0);
     }
   },
@@ -81,13 +82,17 @@ var PointerlockFsWarning = {
     let host = null;
     try {
       host = uri.host;
-    } catch (e) { }
-    let textElem = this._element.querySelector(".pointerlockfswarning-domain-text");
+    } catch (e) {}
+    let textElem = this._element.querySelector(
+      ".pointerlockfswarning-domain-text"
+    );
     if (!host) {
       textElem.setAttribute("hidden", true);
     } else {
       textElem.removeAttribute("hidden");
-      let hostElem = this._element.querySelector(".pointerlockfswarning-domain");
+      let hostElem = this._element.querySelector(
+        ".pointerlockfswarning-domain"
+      );
       
       let utils = {};
       ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm", utils);
@@ -181,56 +186,56 @@ var PointerlockFsWarning = {
 
   handleEvent(event) {
     switch (event.type) {
-    case "mousemove": {
-      let state = this._state;
-      if (state == "hidden") {
-        
-        
-        if (event.clientY != 0) {
-          this._timeoutShow.cancel();
-        } else if (this._timeoutShow.delay >= 0) {
-          this._timeoutShow.start();
-        }
-      } else {
-        let elemRect = this._element.getBoundingClientRect();
-        if (state == "hiding" && this._lastState != "hidden") {
+      case "mousemove": {
+        let state = this._state;
+        if (state == "hidden") {
           
           
-          if (event.clientY <= elemRect.bottom + 50) {
-            this._state = this._lastState;
-            this._timeoutHide.start();
+          if (event.clientY != 0) {
+            this._timeoutShow.cancel();
+          } else if (this._timeoutShow.delay >= 0) {
+            this._timeoutShow.start();
           }
-        } else if (state == "ontop" || this._lastState != "hidden") {
-          
-          
-          
-          
-          if (event.clientY > elemRect.bottom + 50) {
-            this._state = "hidden";
-            this._timeoutHide.cancel();
+        } else {
+          let elemRect = this._element.getBoundingClientRect();
+          if (state == "hiding" && this._lastState != "hidden") {
+            
+            
+            if (event.clientY <= elemRect.bottom + 50) {
+              this._state = this._lastState;
+              this._timeoutHide.start();
+            }
+          } else if (state == "ontop" || this._lastState != "hidden") {
+            
+            
+            
+            
+            if (event.clientY > elemRect.bottom + 50) {
+              this._state = "hidden";
+              this._timeoutHide.cancel();
+            }
           }
         }
+        break;
       }
-      break;
-    }
-    case "transitionend": {
-      if (this._state == "hiding") {
-        this._element.setAttribute("hidden", true);
+      case "transitionend": {
+        if (this._state == "hiding") {
+          this._element.setAttribute("hidden", true);
+        }
+        break;
       }
-      break;
-    }
     }
   },
 };
 
 var PointerLock = {
- entered(originNoSuffix) {
-   PointerlockFsWarning.showPointerLock(originNoSuffix);
- },
+  entered(originNoSuffix) {
+    PointerlockFsWarning.showPointerLock(originNoSuffix);
+  },
 
- exited() {
-  PointerlockFsWarning.close();
- },
+  exited() {
+    PointerlockFsWarning.close();
+  },
 };
 
 var FullScreen = {
@@ -246,18 +251,25 @@ var FullScreen = {
     window.addEventListener("fullscreen", this, true);
     window.addEventListener("willenterfullscreen", this, true);
     window.addEventListener("willexitfullscreen", this, true);
-    window.addEventListener("MozDOMFullscreen:Entered", this,
-                             true,
-                             false);
-    window.addEventListener("MozDOMFullscreen:Exited", this,
-                             true,
-                             false);
+    window.addEventListener(
+      "MozDOMFullscreen:Entered",
+      this,
+       true,
+       false
+    );
+    window.addEventListener(
+      "MozDOMFullscreen:Exited",
+      this,
+       true,
+       false
+    );
     for (let type of this._MESSAGES) {
       window.messageManager.addMessageListener(type, this);
     }
 
-    if (window.fullScreen)
+    if (window.fullScreen) {
       this.toggle();
+    }
   },
 
   uninit() {
@@ -297,30 +309,35 @@ var FullScreen = {
       this._fullScrToggler = document.getElementById("fullscr-toggler");
       this._fullScrToggler.addEventListener("mouseover", this._expandCallback);
       this._fullScrToggler.addEventListener("dragenter", this._expandCallback);
-      this._fullScrToggler.addEventListener("touchmove", this._expandCallback, {passive: true});
+      this._fullScrToggler.addEventListener("touchmove", this._expandCallback, {
+        passive: true,
+      });
     }
 
     if (enterFS) {
       gNavToolbox.setAttribute("inFullscreen", true);
       document.documentElement.setAttribute("inFullscreen", true);
-      if (!document.fullscreenElement && this.useLionFullScreen)
+      if (!document.fullscreenElement && this.useLionFullScreen) {
         document.documentElement.setAttribute("OSXLionFullscreen", true);
+      }
     } else {
       gNavToolbox.removeAttribute("inFullscreen");
       document.documentElement.removeAttribute("inFullscreen");
       document.documentElement.removeAttribute("OSXLionFullscreen");
     }
 
-    if (!document.fullscreenElement)
+    if (!document.fullscreenElement) {
       this._updateToolbars(enterFS);
+    }
 
     if (enterFS) {
       document.addEventListener("keypress", this._keyToggleCallback);
       document.addEventListener("popupshown", this._setPopupOpen);
       document.addEventListener("popuphidden", this._setPopupOpen);
       
-      if (!document.fullscreenElement)
+      if (!document.fullscreenElement) {
         this.hideNavToolbox(true);
+      }
     } else {
       this.showNavToolbox(false);
       
@@ -329,8 +346,7 @@ var FullScreen = {
     }
 
     if (enterFS && !document.fullscreenElement) {
-      Services.telemetry.getHistogramById("FX_BROWSER_FULLSCREEN_USED")
-                        .add(1);
+      Services.telemetry.getHistogramById("FX_BROWSER_FULLSCREEN_USED").add(1);
     }
   },
 
@@ -430,10 +446,13 @@ var FullScreen = {
     
     
     
-    if (!aBrowser || gBrowser.selectedBrowser != aBrowser ||
-        
-        
-        Services.focus.activeWindow != window) {
+    if (
+      !aBrowser ||
+      gBrowser.selectedBrowser != aBrowser ||
+      
+      
+      Services.focus.activeWindow != window
+    ) {
       
       
       setTimeout(() => document.exitFullscreen(), 0);
@@ -465,11 +484,13 @@ var FullScreen = {
   },
 
   cleanupDomFullscreen() {
-    window.messageManager
-          .broadcastAsyncMessage("DOMFullscreen:CleanUp");
+    window.messageManager.broadcastAsyncMessage("DOMFullscreen:CleanUp");
 
     PointerlockFsWarning.close();
-    gBrowser.tabContainer.removeEventListener("TabSelect", this.exitDomFullScreen);
+    gBrowser.tabContainer.removeEventListener(
+      "TabSelect",
+      this.exitDomFullScreen
+    );
     window.removeEventListener("activate", this);
 
     document.documentElement.removeAttribute("inDOMFullscreen");
@@ -510,12 +531,19 @@ var FullScreen = {
     
     
     
-    if (aEvent.type == "popupshown" && !FullScreen._isChromeCollapsed &&
-        aEvent.target.localName != "tooltip" && aEvent.target.localName != "window" &&
-        aEvent.target.getAttribute("nopreventnavboxhide") != "true") {
+    if (
+      aEvent.type == "popupshown" &&
+      !FullScreen._isChromeCollapsed &&
+      aEvent.target.localName != "tooltip" &&
+      aEvent.target.localName != "window" &&
+      aEvent.target.getAttribute("nopreventnavboxhide") != "true"
+    ) {
       FullScreen._isPopupOpen = true;
-    } else if (aEvent.type == "popuphidden" && aEvent.target.localName != "tooltip" &&
-             aEvent.target.localName != "window") {
+    } else if (
+      aEvent.type == "popuphidden" &&
+      aEvent.target.localName != "tooltip" &&
+      aEvent.target.localName != "window"
+    ) {
       FullScreen._isPopupOpen = false;
       
       FullScreen.hideNavToolbox(true);
@@ -528,10 +556,16 @@ var FullScreen = {
 
   
   getAutohide(aItem) {
-    aItem.setAttribute("checked", Services.prefs.getBoolPref("browser.fullscreen.autohide"));
+    aItem.setAttribute(
+      "checked",
+      Services.prefs.getBoolPref("browser.fullscreen.autohide")
+    );
   },
   setAutohide() {
-    Services.prefs.setBoolPref("browser.fullscreen.autohide", !Services.prefs.getBoolPref("browser.fullscreen.autohide"));
+    Services.prefs.setBoolPref(
+      "browser.fullscreen.autohide",
+      !Services.prefs.getBoolPref("browser.fullscreen.autohide")
+    );
     
     FullScreen.hideNavToolbox(true);
   },
@@ -579,8 +613,11 @@ var FullScreen = {
 
     
     let focused = document.commandDispatcher.focusedElement;
-    if (focused && focused.ownerDocument == document &&
-        focused.localName == "input") {
+    if (
+      focused &&
+      focused.ownerDocument == document &&
+      focused.localName == "input"
+    ) {
       
       
       
@@ -608,13 +645,17 @@ var FullScreen = {
 
     this._fullScrToggler.hidden = false;
 
-    if (aAnimate && Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")) {
+    if (
+      aAnimate &&
+      Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")
+    ) {
       gNavToolbox.setAttribute("fullscreenShouldAnimate", true);
       
       let listener = () => {
         gNavToolbox.removeEventListener("transitionend", listener, true);
-        if (this._isChromeCollapsed)
+        if (this._isChromeCollapsed) {
           this._fullScrToggler.hidden = false;
+        }
       };
       gNavToolbox.addEventListener("transitionend", listener, true);
       this._fullScrToggler.hidden = true;
@@ -629,15 +670,18 @@ var FullScreen = {
   },
 
   _updateToolbars(aEnterFS) {
-    for (let el of document.querySelectorAll("toolbar[fullscreentoolbar=true]")) {
+    for (let el of document.querySelectorAll(
+      "toolbar[fullscreentoolbar=true]"
+    )) {
       if (aEnterFS) {
         
         
         el.setAttribute("saved-context", el.getAttribute("context"));
-        if (el.id == "nav-bar" || el.id == "TabsToolbar")
+        if (el.id == "nav-bar" || el.id == "TabsToolbar") {
           el.setAttribute("context", "autohide-context");
-        else
+        } else {
           el.removeAttribute("context");
+        }
 
         
         
@@ -652,7 +696,6 @@ var FullScreen = {
     }
 
     ToolbarIconColor.inferFromText("fullscreen", aEnterFS);
-
 
     
     
@@ -680,6 +723,8 @@ XPCOMUtils.defineLazyGetter(FullScreen, "useLionFullScreen", function() {
   
   
   
-  return AppConstants.isPlatformAndVersionAtLeast("macosx", 11) &&
-         document.documentElement.getAttribute("fullscreenbutton") == "true";
+  return (
+    AppConstants.isPlatformAndVersionAtLeast("macosx", 11) &&
+    document.documentElement.getAttribute("fullscreenbutton") == "true"
+  );
 });

@@ -1,11 +1,15 @@
 
 "use strict";
-const TEST_PAGE = "http://mochi.test:8888/browser/browser/base/content/test/general/file_double_close_tab.html";
+const TEST_PAGE =
+  "http://mochi.test:8888/browser/browser/base/content/test/general/file_double_close_tab.html";
 var testTab;
 
 function waitForDialog(callback) {
   function onTabModalDialogLoaded(node) {
-    Services.obs.removeObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded");
+    Services.obs.removeObserver(
+      onTabModalDialogLoaded,
+      "tabmodal-dialog-loaded"
+    );
     
     Promise.resolve().then(() => callback(node));
   }
@@ -22,7 +26,7 @@ function waitForDialogDestroyed(node, callback) {
       done();
     }
   });
-  observer.observe(node.parentNode, {childList: true});
+  observer.observe(node.parentNode, { childList: true });
   let failureTimeout = setTimeout(function() {
     ok(false, "Dialog should have been destroyed");
     done();
@@ -37,7 +41,9 @@ function waitForDialogDestroyed(node, callback) {
 }
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunload", false]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.require_user_interaction_for_beforeunload", false]],
+  });
 
   testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
   

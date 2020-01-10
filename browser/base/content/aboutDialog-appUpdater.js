@@ -7,46 +7,64 @@
 
 
 
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "DownloadUtils",
-                               "resource://gre/modules/DownloadUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "UpdateUtils",
-                               "resource://gre/modules/UpdateUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "DownloadUtils",
+  "resource://gre/modules/DownloadUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "UpdateUtils",
+  "resource://gre/modules/UpdateUtils.jsm"
+);
 
 const PREF_APP_UPDATE_CANCELATIONS_OSX = "app.update.cancelations.osx";
-const PREF_APP_UPDATE_ELEVATE_NEVER    = "app.update.elevate.never";
+const PREF_APP_UPDATE_ELEVATE_NEVER = "app.update.elevate.never";
 
 var gAppUpdater;
 
 function onUnload(aEvent) {
   if (gAppUpdater) {
-    if (gAppUpdater.isChecking)
+    if (gAppUpdater.isChecking) {
       gAppUpdater.checker.stopCurrentCheck();
+    }
     
     gAppUpdater.removeDownloadListener();
     gAppUpdater = null;
   }
 }
 
-
 function appUpdater(options = {}) {
-  XPCOMUtils.defineLazyServiceGetter(this, "aus",
-                                     "@mozilla.org/updates/update-service;1",
-                                     "nsIApplicationUpdateService");
-  XPCOMUtils.defineLazyServiceGetter(this, "checker",
-                                     "@mozilla.org/updates/update-checker;1",
-                                     "nsIUpdateChecker");
-  XPCOMUtils.defineLazyServiceGetter(this, "um",
-                                     "@mozilla.org/updates/update-manager;1",
-                                     "nsIUpdateManager");
+  XPCOMUtils.defineLazyServiceGetter(
+    this,
+    "aus",
+    "@mozilla.org/updates/update-service;1",
+    "nsIApplicationUpdateService"
+  );
+  XPCOMUtils.defineLazyServiceGetter(
+    this,
+    "checker",
+    "@mozilla.org/updates/update-checker;1",
+    "nsIUpdateChecker"
+  );
+  XPCOMUtils.defineLazyServiceGetter(
+    this,
+    "um",
+    "@mozilla.org/updates/update-manager;1",
+    "nsIUpdateManager"
+  );
 
   this.options = options;
   this.updateDeck = document.getElementById("updateDeck");
   this.promiseAutoUpdateSetting = null;
 
-  this.bundle = Services.strings.
-                createBundle("chrome://browser/locale/browser.properties");
+  this.bundle = Services.strings.createBundle(
+    "chrome://browser/locale/browser.properties"
+  );
 
   let manualURL = Services.urlFormatter.formatURLPref("app.update.url.manual");
   let manualLink = document.getElementById("manualLink");
@@ -92,32 +110,39 @@ function appUpdater(options = {}) {
   this.checkForUpdates();
 }
 
-appUpdater.prototype =
-{
+appUpdater.prototype = {
   
   isChecking: false,
 
   
   get isPending() {
     if (this.update) {
-      return this.update.state == "pending" ||
-             this.update.state == "pending-service" ||
-             this.update.state == "pending-elevate";
+      return (
+        this.update.state == "pending" ||
+        this.update.state == "pending-service" ||
+        this.update.state == "pending-elevate"
+      );
     }
-    return this.um.activeUpdate &&
-           (this.um.activeUpdate.state == "pending" ||
-            this.um.activeUpdate.state == "pending-service" ||
-            this.um.activeUpdate.state == "pending-elevate");
+    return (
+      this.um.activeUpdate &&
+      (this.um.activeUpdate.state == "pending" ||
+        this.um.activeUpdate.state == "pending-service" ||
+        this.um.activeUpdate.state == "pending-elevate")
+    );
   },
 
   
   get isApplied() {
-    if (this.update)
-      return this.update.state == "applied" ||
-             this.update.state == "applied-service";
-    return this.um.activeUpdate &&
-           (this.um.activeUpdate.state == "applied" ||
-            this.um.activeUpdate.state == "applied-service");
+    if (this.update) {
+      return (
+        this.update.state == "applied" || this.update.state == "applied-service"
+      );
+    }
+    return (
+      this.um.activeUpdate &&
+      (this.um.activeUpdate.state == "applied" ||
+        this.um.activeUpdate.state == "applied-service")
+    );
   },
 
   get isStaging() {
@@ -154,10 +179,10 @@ appUpdater.prototype =
 
   
   get isDownloading() {
-    if (this.update)
+    if (this.update) {
       return this.update.state == "downloading";
-    return this.um.activeUpdate &&
-           this.um.activeUpdate.state == "downloading";
+    }
+    return this.um.activeUpdate && this.um.activeUpdate.state == "downloading";
   },
 
   
@@ -167,8 +192,7 @@ appUpdater.prototype =
 
   
   get updateStagingEnabled() {
-    return !this.updateDisabledByPolicy &&
-           this.aus.canStageUpdates;
+    return !this.updateDisabledByPolicy && this.aus.canStageUpdates;
   },
 
   
@@ -192,13 +216,21 @@ appUpdater.prototype =
           let day = buildID.slice(6, 8);
           updateVersion += ` (${year}-${month}-${day})`;
         }
-        button.label = this.bundle.formatStringFromName("update.downloadAndInstallButton.label", [updateVersion]);
-        button.accessKey = this.bundle.GetStringFromName("update.downloadAndInstallButton.accesskey");
+        button.label = this.bundle.formatStringFromName(
+          "update.downloadAndInstallButton.label",
+          [updateVersion]
+        );
+        button.accessKey = this.bundle.GetStringFromName(
+          "update.downloadAndInstallButton.accesskey"
+        );
       }
       this.updateDeck.selectedPanel = panel;
-      if (this.options.buttonAutoFocus &&
-          (!document.commandDispatcher.focusedElement || 
-           document.commandDispatcher.focusedElement.localName == "button")) { 
+      if (
+        this.options.buttonAutoFocus &&
+        (!document.commandDispatcher.focusedElement || 
+          document.commandDispatcher.focusedElement.localName == "button")
+      ) {
+        
         button.focus();
       }
     } else {
@@ -235,9 +267,14 @@ appUpdater.prototype =
     gAppUpdater.selectPanel("restarting");
 
     
-    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].
-                     createInstance(Ci.nsISupportsPRBool);
-    Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
+    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+      Ci.nsISupportsPRBool
+    );
+    Services.obs.notifyObservers(
+      cancelQuit,
+      "quit-application-requested",
+      "restart"
+    );
 
     
     if (cancelQuit.data) {
@@ -251,8 +288,9 @@ appUpdater.prototype =
       return;
     }
 
-    Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit |
-                          Ci.nsIAppStartup.eRestart);
+    Services.startup.quit(
+      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
+    );
   },
 
   
@@ -266,8 +304,7 @@ appUpdater.prototype =
 
     onCheckComplete(aRequest, aUpdates) {
       gAppUpdater.isChecking = false;
-      gAppUpdater.update = gAppUpdater.aus.
-                           selectUpdate(aUpdates);
+      gAppUpdater.update = gAppUpdater.aus.selectUpdate(aUpdates);
       if (!gAppUpdater.update) {
         gAppUpdater.selectPanel("noUpdatesFound");
         return;
@@ -291,9 +328,11 @@ appUpdater.prototype =
         gAppUpdater.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
       }
       gAppUpdater.promiseAutoUpdateSetting.then(updateAuto => {
-        if (updateAuto) { 
+        if (updateAuto) {
+          
           gAppUpdater.startDownload();
-        } else { 
+        } else {
+          
           gAppUpdater.selectPanel("downloadAndInstall");
         }
       });
@@ -320,8 +359,9 @@ appUpdater.prototype =
 
 
   waitForUpdateToStage() {
-    if (!this.update)
+    if (!this.update) {
       this.update = this.um.activeUpdate;
+    }
     this.update.QueryInterface(Ci.nsIWritablePropertyBag);
     this.update.setProperty("foregroundDownload", "true");
     this.selectPanel("applying");
@@ -332,8 +372,9 @@ appUpdater.prototype =
 
 
   startDownload() {
-    if (!this.update)
+    if (!this.update) {
       this.update = this.um.activeUpdate;
+    }
     this.update.QueryInterface(Ci.nsIWritablePropertyBag);
     this.update.setProperty("foregroundDownload", "true");
 
@@ -351,8 +392,10 @@ appUpdater.prototype =
 
   setupDownloadingUI() {
     this.downloadStatus = document.getElementById("downloadStatus");
-    this.downloadStatus.textContent =
-      DownloadUtils.getTransferTotal(0, this.update.selectedPatch.size);
+    this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
+      0,
+      this.update.selectedPatch.size
+    );
     this.selectPanel("downloading");
     this.aus.addDownloadListener(this);
   },
@@ -366,57 +409,59 @@ appUpdater.prototype =
   
 
 
-  onStartRequest(aRequest) {
-  },
+  onStartRequest(aRequest) {},
 
   
 
 
   onStopRequest(aRequest, aStatusCode) {
     switch (aStatusCode) {
-    case Cr.NS_ERROR_UNEXPECTED:
-      if (this.update.selectedPatch.state == "download-failed" &&
-          (this.update.isCompleteUpdate || this.update.patchCount != 2)) {
+      case Cr.NS_ERROR_UNEXPECTED:
+        if (
+          this.update.selectedPatch.state == "download-failed" &&
+          (this.update.isCompleteUpdate || this.update.patchCount != 2)
+        ) {
+          
+          
+          this.removeDownloadListener();
+          this.selectPanel("downloadFailed");
+          break;
+        }
         
         
+        break;
+      case Cr.NS_BINDING_ABORTED:
+        
+        break;
+      case Cr.NS_OK:
+        this.removeDownloadListener();
+        if (this.updateStagingEnabled) {
+          this.selectPanel("applying");
+          this.updateUIWhenStagingComplete();
+        } else {
+          this.selectPanel("apply");
+        }
+        break;
+      default:
         this.removeDownloadListener();
         this.selectPanel("downloadFailed");
         break;
-      }
-      
-      
-      break;
-    case Cr.NS_BINDING_ABORTED:
-      
-      break;
-    case Cr.NS_OK:
-      this.removeDownloadListener();
-      if (this.updateStagingEnabled) {
-        this.selectPanel("applying");
-        this.updateUIWhenStagingComplete();
-      } else {
-        this.selectPanel("apply");
-      }
-      break;
-    default:
-      this.removeDownloadListener();
-      this.selectPanel("downloadFailed");
-      break;
     }
   },
 
   
 
 
-  onStatus(aRequest, aContext, aStatus, aStatusArg) {
-  },
+  onStatus(aRequest, aContext, aStatus, aStatusArg) {},
 
   
 
 
   onProgress(aRequest, aContext, aProgress, aProgressMax) {
-    this.downloadStatus.textContent =
-      DownloadUtils.getTransferTotal(aProgress, aProgressMax);
+    this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
+      aProgress,
+      aProgressMax
+    );
   },
 
   
@@ -430,9 +475,13 @@ appUpdater.prototype =
     let observer = (aSubject, aTopic, aData) => {
       
       let status = aData;
-      if (status == "applied" || status == "applied-service" ||
-          status == "pending" || status == "pending-service" ||
-          status == "pending-elevate") {
+      if (
+        status == "applied" ||
+        status == "applied-service" ||
+        status == "pending" ||
+        status == "pending-service" ||
+        status == "pending-elevate"
+      ) {
         
         
         
@@ -456,5 +505,8 @@ appUpdater.prototype =
   
 
 
-  QueryInterface: ChromeUtils.generateQI(["nsIProgressEventSink", "nsIRequestObserver"]),
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIProgressEventSink",
+    "nsIRequestObserver",
+  ]),
 };

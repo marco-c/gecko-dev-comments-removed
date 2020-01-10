@@ -7,93 +7,119 @@ ignoreAllUncaughtExceptions();
 add_task(async function() {
   info("Clicking suggestion list while composing");
 
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:home" }, async function(browser) {
-    
-    let currEngine = await Services.search.getDefault();
-    let engine = await promiseNewEngine("searchSuggestionEngine.xml");
-    let p = promiseContentSearchChange(browser, engine.name);
-    await Services.search.setDefault(engine);
-    await p;
-
-    
-    await new Promise((resolve, reject) => {
-      FormHistory.update({op: "remove"}, {
-        handleError(error) {
-          reject(error);
-        },
-        handleCompletion(reason) {
-          if (!reason) {
-            resolve();
-          } else {
-            reject();
-          }
-        },
-      });
-    });
-
-    await ContentTask.spawn(browser, null, async function() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:home" },
+    async function(browser) {
       
-      let input = content.document.querySelector(["#searchText", "#newtab-search-text"]);
-      input.focus();
-    });
-
-    info("Setting up the mutation observer before synthesizing composition");
-    let mutationPromise = ContentTask.spawn(browser, null, async function() {
-      let searchController = content.wrappedJSObject.gContentSearchController;
+      let currEngine = await Services.search.getDefault();
+      let engine = await promiseNewEngine("searchSuggestionEngine.xml");
+      let p = promiseContentSearchChange(browser, engine.name);
+      await Services.search.setDefault(engine);
+      await p;
 
       
-      let table = searchController._suggestionsList;
-      let input = content.document.querySelector(["#searchText", "#newtab-search-text"]);
-
-      await new Promise(resolve => {
-        let observer = new content.MutationObserver(() => {
-          if (input.getAttribute("aria-expanded") == "true") {
-            observer.disconnect();
-            ok(!table.hidden, "Search suggestion table unhidden");
-            resolve();
+      await new Promise((resolve, reject) => {
+        FormHistory.update(
+          { op: "remove" },
+          {
+            handleError(error) {
+              reject(error);
+            },
+            handleCompletion(reason) {
+              if (!reason) {
+                resolve();
+              } else {
+                reject();
+              }
+            },
           }
-        });
-        observer.observe(input, {
-          attributes: true,
-          attributeFilter: ["aria-expanded"],
-        });
+        );
       });
 
-      let row = table.children[1];
-      row.setAttribute("id", "TEMPID");
+      await ContentTask.spawn(browser, null, async function() {
+        
+        let input = content.document.querySelector([
+          "#searchText",
+          "#newtab-search-text",
+        ]);
+        input.focus();
+      });
+
+      info("Setting up the mutation observer before synthesizing composition");
+      let mutationPromise = ContentTask.spawn(browser, null, async function() {
+        let searchController = content.wrappedJSObject.gContentSearchController;
+
+        
+        let table = searchController._suggestionsList;
+        let input = content.document.querySelector([
+          "#searchText",
+          "#newtab-search-text",
+        ]);
+
+        await new Promise(resolve => {
+          let observer = new content.MutationObserver(() => {
+            if (input.getAttribute("aria-expanded") == "true") {
+              observer.disconnect();
+              ok(!table.hidden, "Search suggestion table unhidden");
+              resolve();
+            }
+          });
+          observer.observe(input, {
+            attributes: true,
+            attributeFilter: ["aria-expanded"],
+          });
+        });
+
+        let row = table.children[1];
+        row.setAttribute("id", "TEMPID");
+
+        
+        
+        
+        
+        searchController.selectedIndex = 1;
+      });
 
       
+      await BrowserTestUtils.synthesizeCompositionChange(
+        {
+          composition: {
+            string: "x",
+            clauses: [
+              { length: 1, attr: Ci.nsITextInputProcessor.ATTR_RAW_CLAUSE },
+            ],
+          },
+          caret: { start: 1, length: 0 },
+        },
+        browser
+      );
+
+      info("Waiting for search suggestion table unhidden");
+      await mutationPromise;
+
       
-      
-      
-      searchController.selectedIndex = 1;
-    });
+      let expectedURL = (await Services.search.getDefault()).getSubmission(
+        "xbar",
+        null,
+        "homepage"
+      ).uri.spec;
+      let loadPromise = BrowserTestUtils.waitForDocLoadAndStopIt(
+        expectedURL,
+        gBrowser.selectedBrowser
+      );
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#TEMPID",
+        {
+          button: 0,
+        },
+        browser
+      );
+      await loadPromise;
 
-    
-    await BrowserTestUtils.synthesizeCompositionChange({
-      composition: {
-        string: "x",
-        clauses: [
-          { length: 1, attr: Ci.nsITextInputProcessor.ATTR_RAW_CLAUSE },
-        ],
-      },
-      caret: { start: 1, length: 0 },
-    }, browser);
-
-    info("Waiting for search suggestion table unhidden");
-    await mutationPromise;
-
-    
-    let expectedURL = (await Services.search.getDefault()).getSubmission("xbar", null, "homepage").uri.spec;
-    let loadPromise = BrowserTestUtils.waitForDocLoadAndStopIt(expectedURL, gBrowser.selectedBrowser);
-    await BrowserTestUtils.synthesizeMouseAtCenter("#TEMPID", {
-      button: 0,
-    }, browser);
-    await loadPromise;
-
-    Services.search.setDefault(currEngine);
-    try {
-      await Services.search.removeEngine(engine);
-    } catch (ex) { }
-  });
+      Services.search.setDefault(currEngine);
+      try {
+        await Services.search.removeEngine(engine);
+      } catch (ex) {}
+    }
+  );
 });

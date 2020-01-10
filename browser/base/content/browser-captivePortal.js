@@ -24,7 +24,8 @@ var CaptivePortalWatcher = {
 
   get _captivePortalNotification() {
     return gHighPriorityNotificationBox.getNotificationWithValue(
-                                           this.PORTAL_NOTIFICATION_VALUE);
+      this.PORTAL_NOTIFICATION_VALUE
+    );
   },
 
   get canonicalURL() {
@@ -33,8 +34,9 @@ var CaptivePortalWatcher = {
 
   get _browserBundle() {
     delete this._browserBundle;
-    return this._browserBundle =
-      Services.strings.createBundle("chrome://browser/locale/browser.properties");
+    return (this._browserBundle = Services.strings.createBundle(
+      "chrome://browser/locale/browser.properties"
+    ));
   },
 
   init() {
@@ -43,8 +45,9 @@ var CaptivePortalWatcher = {
     Services.obs.addObserver(this, "captive-portal-login-abort");
     Services.obs.addObserver(this, "captive-portal-login-success");
 
-    this._cps = Cc["@mozilla.org/network/captive-portal-service;1"]
-                  .getService(Ci.nsICaptivePortalService);
+    this._cps = Cc["@mozilla.org/network/captive-portal-service;1"].getService(
+      Ci.nsICaptivePortalService
+    );
 
     if (this._cps.state == this._cps.LOCKED_PORTAL) {
       
@@ -63,8 +66,12 @@ var CaptivePortalWatcher = {
     
     
     
-    XPCOMUtils.defineLazyPreferenceGetter(this, "PORTAL_RECHECK_DELAY_MS",
-                                          "captivedetect.portalRecheckDelayMS", 500);
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "PORTAL_RECHECK_DELAY_MS",
+      "captivedetect.portalRecheckDelayMS",
+      500
+    );
   },
 
   uninit() {
@@ -217,7 +224,9 @@ var CaptivePortalWatcher = {
 
     let buttons = [
       {
-        label: this._browserBundle.GetStringFromName("captivePortal.showLoginPage2"),
+        label: this._browserBundle.GetStringFromName(
+          "captivePortal.showLoginPage2"
+        ),
         callback: () => {
           this.ensureCaptivePortalTab();
 
@@ -227,9 +236,11 @@ var CaptivePortalWatcher = {
       },
     ];
 
-    let message = this._browserBundle.GetStringFromName("captivePortal.infoMessage3");
+    let message = this._browserBundle.GetStringFromName(
+      "captivePortal.infoMessage3"
+    );
 
-    let closeHandler = (aEventName) => {
+    let closeHandler = aEventName => {
       if (aEventName != "removed") {
         return;
       }
@@ -237,8 +248,13 @@ var CaptivePortalWatcher = {
     };
 
     gHighPriorityNotificationBox.appendNotification(
-      message, this.PORTAL_NOTIFICATION_VALUE, "",
-      gHighPriorityNotificationBox.PRIORITY_INFO_MEDIUM, buttons, closeHandler);
+      message,
+      this.PORTAL_NOTIFICATION_VALUE,
+      "",
+      gHighPriorityNotificationBox.PRIORITY_INFO_MEDIUM,
+      buttons,
+      closeHandler
+    );
 
     gBrowser.tabContainer.addEventListener("TabSelect", this);
   },
@@ -261,9 +277,11 @@ var CaptivePortalWatcher = {
     if (!tab || tab.closing || !tab.parentNode) {
       tab = gBrowser.addWebTab(this.canonicalURL, {
         ownerTab: gBrowser.selectedTab,
-        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
-          userContextId: gBrowser.contentPrincipal.userContextId,
-        }),
+        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+          {
+            userContextId: gBrowser.contentPrincipal.userContextId,
+          }
+        ),
       });
       this._captivePortalTab = Cu.getWeakReference(tab);
     }
@@ -276,8 +294,13 @@ var CaptivePortalWatcher = {
     let tabCloser = () => {
       Services.obs.removeObserver(tabCloser, "captive-portal-login-abort");
       Services.obs.removeObserver(tabCloser, "captive-portal-login-success");
-      if (!tab || tab.closing || !tab.parentNode || !tab.linkedBrowser ||
-          !tab.linkedBrowser.currentURI.equalsExceptRef(canonicalURI)) {
+      if (
+        !tab ||
+        tab.closing ||
+        !tab.parentNode ||
+        !tab.linkedBrowser ||
+        !tab.linkedBrowser.currentURI.equalsExceptRef(canonicalURI)
+      ) {
         return;
       }
       gBrowser.removeTab(tab);

@@ -1,6 +1,9 @@
 "use strict";
 
-const ROOT = getRootDirectory(gTestPath).replace("chrome://mochitests/content/", "http://example.com/");
+const ROOT = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content/",
+  "http://example.com/"
+);
 let pageWithAlert = ROOT + "openPromptOffTimeout.html";
 
 registerCleanupFunction(function() {
@@ -17,28 +20,46 @@ registerCleanupFunction(function() {
 add_task(async function() {
   let firstTab = gBrowser.selectedTab;
   
-  let openedTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, pageWithAlert, true);
-  let openedTabGotAttentionPromise = BrowserTestUtils.waitForAttribute("attention", openedTab, "true");
+  let openedTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    pageWithAlert,
+    true
+  );
+  let openedTabGotAttentionPromise = BrowserTestUtils.waitForAttribute(
+    "attention",
+    openedTab,
+    "true"
+  );
   
   await BrowserTestUtils.switchTab(gBrowser, firstTab);
   
   await openedTabGotAttentionPromise;
   
-  is(openedTab.getAttribute("attention"), "true", "Tab with alert should have 'attention' attribute.");
+  is(
+    openedTab.getAttribute("attention"),
+    "true",
+    "Tab with alert should have 'attention' attribute."
+  );
   ok(!openedTab.selected, "Tab with alert should not be selected");
 
   
   await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
-  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
+  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll(
+    "tabmodalprompt"
+  );
   is(promptElements.length, 1, "There should be 1 prompt");
   let ourPromptElement = promptElements[0];
-  let checkbox = ourPromptElement.querySelector("checkbox[label*='example.com']");
+  let checkbox = ourPromptElement.querySelector(
+    "checkbox[label*='example.com']"
+  );
   ok(checkbox, "The checkbox should be there");
   ok(!checkbox.checked, "Checkbox shouldn't be checked");
   
   checkbox.checked = true;
-  let ourPrompt = openedTab.linkedBrowser.tabModalPromptBox.prompts.get(ourPromptElement);
+  let ourPrompt = openedTab.linkedBrowser.tabModalPromptBox.prompts.get(
+    ourPromptElement
+  );
   ourPrompt.onButtonClick(0);
   
   await new Promise(function(resolve) {
@@ -46,24 +67,38 @@ add_task(async function() {
   });
   
   let ps = Services.perms;
-  is(ps.ALLOW_ACTION, ps.testPermission(makeURI(pageWithAlert), "focus-tab-by-prompt"),
-     "Tab switching should now be allowed");
+  is(
+    ps.ALLOW_ACTION,
+    ps.testPermission(makeURI(pageWithAlert), "focus-tab-by-prompt"),
+    "Tab switching should now be allowed"
+  );
 
   
-  let shown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
+  let shown = BrowserTestUtils.waitForEvent(
+    gIdentityHandler._identityPopup,
+    "popupshown"
+  );
   gIdentityHandler._identityBox.click();
   await shown;
   let labelText = SitePermissions.getPermissionLabel("focus-tab-by-prompt");
-  let permissionsList = document.getElementById("identity-popup-permission-list");
+  let permissionsList = document.getElementById(
+    "identity-popup-permission-list"
+  );
   let label = permissionsList.querySelector(".identity-popup-permission-label");
   is(label.textContent, labelText);
   gIdentityHandler._identityPopup.hidePopup();
 
   
-  ok(gIdentityHandler._identityBox.classList.contains("grantedPermissions"),
-    "identity-box signals granted permissions");
+  ok(
+    gIdentityHandler._identityBox.classList.contains("grantedPermissions"),
+    "identity-box signals granted permissions"
+  );
 
-  let openedTabSelectedPromise = BrowserTestUtils.waitForAttribute("selected", openedTab, "true");
+  let openedTabSelectedPromise = BrowserTestUtils.waitForAttribute(
+    "selected",
+    openedTab,
+    "true"
+  );
   
   await BrowserTestUtils.switchTab(gBrowser, firstTab);
 

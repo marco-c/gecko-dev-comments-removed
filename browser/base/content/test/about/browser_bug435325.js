@@ -10,11 +10,13 @@ add_task(async function checkSwitchPageToOnlineMode() {
   
   
   let proxyPrefValue = SpecialPowers.getIntPref("network.proxy.type");
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["network.proxy.type", 0],
-    ["browser.cache.disk.enable", false],
-    ["browser.cache.memory.enable", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.proxy.type", 0],
+      ["browser.cache.disk.enable", false],
+      ["browser.cache.memory.enable", false],
+    ],
+  });
 
   await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
     let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
@@ -24,17 +26,29 @@ add_task(async function checkSwitchPageToOnlineMode() {
 
     
     
-    await SpecialPowers.pushPrefEnv({"set": [["network.proxy.type", proxyPrefValue]]});
-    let changeObserved = TestUtils.topicObserved("network:offline-status-changed");
+    await SpecialPowers.pushPrefEnv({
+      set: [["network.proxy.type", proxyPrefValue]],
+    });
+    let changeObserved = TestUtils.topicObserved(
+      "network:offline-status-changed"
+    );
 
     
     await ContentTask.spawn(browser, null, async function() {
-      ok(content.document.documentURI.startsWith("about:neterror?e=netOffline"), "Should be showing error page");
-      content.document.querySelector("#netErrorButtonContainer > .try-again").click();
+      ok(
+        content.document.documentURI.startsWith("about:neterror?e=netOffline"),
+        "Should be showing error page"
+      );
+      content.document
+        .querySelector("#netErrorButtonContainer > .try-again")
+        .click();
     });
 
     await changeObserved;
-    ok(!Services.io.offline, "After clicking the 'Try Again' button, we're back online.");
+    ok(
+      !Services.io.offline,
+      "After clicking the 'Try Again' button, we're back online."
+    );
   });
 });
 

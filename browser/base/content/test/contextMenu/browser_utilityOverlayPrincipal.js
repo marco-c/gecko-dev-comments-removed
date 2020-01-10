@@ -2,9 +2,7 @@
 
 
 
-const gTests = [
-  test_openUILink_checkPrincipal,
-];
+const gTests = [test_openUILink_checkPrincipal];
 
 function test() {
   waitForExplicitFinish();
@@ -22,9 +20,16 @@ function runNextTest() {
 }
 
 function test_openUILink_checkPrincipal() {
-  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "http://example.com/"); 
+  let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(
+    gBrowser,
+    "http://example.com/"
+  )); 
   BrowserTestUtils.browserLoaded(tab.linkedBrowser).then(async function() {
-    is(tab.linkedBrowser.currentURI.spec, "http://example.com/", "example.com loaded");
+    is(
+      tab.linkedBrowser.currentURI.spec,
+      "http://example.com/",
+      "example.com loaded"
+    );
 
     await ContentTask.spawn(tab.linkedBrowser, null, function() {
       let channel = content.docShell.currentDocumentChannel;
@@ -32,14 +37,24 @@ function test_openUILink_checkPrincipal() {
       const loadingPrincipal = channel.loadInfo.loadingPrincipal;
       is(loadingPrincipal, null, "sanity: correct loadingPrincipal");
       const triggeringPrincipal = channel.loadInfo.triggeringPrincipal;
-      ok(triggeringPrincipal.isSystemPrincipal,
-        "sanity: correct triggeringPrincipal");
+      ok(
+        triggeringPrincipal.isSystemPrincipal,
+        "sanity: correct triggeringPrincipal"
+      );
       const principalToInherit = channel.loadInfo.principalToInherit;
-      ok(principalToInherit.isNullPrincipal, "sanity: correct principalToInherit");
-      ok(content.document.nodePrincipal.isCodebasePrincipal,
-        "sanity: correct doc.nodePrincipal");
-      is(content.document.nodePrincipal.URI.asciiSpec, "http://example.com/",
-       "sanity: correct doc.nodePrincipal URL");
+      ok(
+        principalToInherit.isNullPrincipal,
+        "sanity: correct principalToInherit"
+      );
+      ok(
+        content.document.nodePrincipal.isCodebasePrincipal,
+        "sanity: correct doc.nodePrincipal"
+      );
+      is(
+        content.document.nodePrincipal.URI.asciiSpec,
+        "http://example.com/",
+        "sanity: correct doc.nodePrincipal URL"
+      );
     });
 
     gBrowser.removeCurrentTab();

@@ -21,14 +21,16 @@ function getURL() {
 
   
   
-  if (!match)
+  if (!match) {
     return "";
+  }
 
   url = decodeURIComponent(match[1]);
 
   
-  if (url.startsWith("view-source:"))
+  if (url.startsWith("view-source:")) {
     url = url.slice(12);
+  }
   return url;
 }
 
@@ -67,16 +69,16 @@ function onClickSeeDetails() {
 function initPage() {
   var error = "";
   switch (getErrorCode()) {
-    case "malwareBlocked" :
+    case "malwareBlocked":
       error = "malware";
       break;
-    case "deceptiveBlocked" :
+    case "deceptiveBlocked":
       error = "phishing";
       break;
-    case "unwantedBlocked" :
+    case "unwantedBlocked":
       error = "unwanted";
       break;
-    case "harmfulBlocked" :
+    case "harmfulBlocked":
       error = "harmful";
       break;
     default:
@@ -86,9 +88,15 @@ function initPage() {
   
   
   let titleText = document.getElementById("errorTitleText");
-  document.l10n.setAttributes(titleText, "safeb-blocked-" + error + "-page-title");
+  document.l10n.setAttributes(
+    titleText,
+    "safeb-blocked-" + error + "-page-title"
+  );
   let shortDesc = document.getElementById("errorShortDescText");
-  document.l10n.setAttributes(shortDesc, "safeb-blocked-" + error + "-page-short-desc");
+  document.l10n.setAttributes(
+    shortDesc,
+    "safeb-blocked-" + error + "-page-short-desc"
+  );
 
   
   let innerDesc = document.getElementById("errorInnerDescription");
@@ -103,29 +111,36 @@ function initPage() {
     document.getElementById("report_detection").remove();
   }
 
-  document.l10n.setAttributes(innerDesc, innerDescL10nID, {sitename: getHostString()});
+  document.l10n.setAttributes(innerDesc, innerDescL10nID, {
+    sitename: getHostString(),
+  });
 
   
   let learnMore = document.getElementById("learn_more");
-  document.l10n.setAttributes(learnMore, "safeb-blocked-" + error + "-page-learn-more");
+  document.l10n.setAttributes(
+    learnMore,
+    "safeb-blocked-" + error + "-page-learn-more"
+  );
 
   
   let errorSitename = document.getElementById("error_desc_sitename");
   errorSitename.setAttribute("class", "sitename");
 
   let titleEl = document.createElement("title");
-  document.l10n.setAttributes(titleEl, "safeb-blocked-" + error + "-page-title");
+  document.l10n.setAttributes(
+    titleEl,
+    "safeb-blocked-" + error + "-page-title"
+  );
   document.head.appendChild(titleEl);
 
   
-  var event = new CustomEvent("AboutBlockedLoaded",
-    {
-      bubbles: true,
-      detail: {
-        url: this.getURL(),
-        err: error,
-      },
-    });
+  var event = new CustomEvent("AboutBlockedLoaded", {
+    bubbles: true,
+    detail: {
+      url: this.getURL(),
+      err: error,
+    },
+  });
   document.dispatchEvent(event);
 }
 

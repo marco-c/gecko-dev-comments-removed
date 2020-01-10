@@ -23,16 +23,20 @@ function test() {
   
   
   
-  SpecialPowers.pushPrefEnv({"set": [["privacy.reduceTimerPrecision", false]]},
+  SpecialPowers.pushPrefEnv(
+    { set: [["privacy.reduceTimerPrecision", false]] },
     function() {
       originalTab = gBrowser.selectedTab;
       nextStep(step2);
-    });
+    }
+  );
 }
 
 function step2() {
   isCurrent(originalTab, "selected tab has the current timestamp");
-  newTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {skipAnimation: true});
+  newTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+    skipAnimation: true,
+  });
   nextStep(step3);
 }
 
@@ -44,9 +48,14 @@ function step3() {
 }
 
 function step4() {
-  ok(originalTab.lastAccessed < Date.now(),
-     "original tab has old timestamp after being deselected");
-  isCurrent(newTab, "new tab has the current timestamp since it's still selected");
+  ok(
+    originalTab.lastAccessed < Date.now(),
+    "original tab has old timestamp after being deselected"
+  );
+  isCurrent(
+    newTab,
+    "new tab has the current timestamp since it's still selected"
+  );
 
   gBrowser.removeTab(newTab);
   finish();

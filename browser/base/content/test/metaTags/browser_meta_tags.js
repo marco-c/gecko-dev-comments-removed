@@ -2,7 +2,11 @@
 
 
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://example.com") + "meta_tags.html";
+const TEST_PATH =
+  getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    "https://example.com"
+  ) + "meta_tags.html";
 
 
 
@@ -16,7 +20,11 @@ add_task(async function test_metadata() {
   
   const pageInfo = await waitForPageInfo(TEST_PATH);
   is(pageInfo.description, "og:description", "got the correct description");
-  is(pageInfo.previewImageURL.href, "https://test.com/og-image-secure-url.jpg", "got the correct preview image");
+  is(
+    pageInfo.previewImageURL.href,
+    "https://test.com/og-image-secure-url.jpg",
+    "got the correct preview image"
+  );
 
   BrowserTestUtils.removeTab(tab);
   await PlacesUtils.history.clear();
@@ -37,7 +45,11 @@ add_task(async function multiple_tabs() {
   
   const pageInfo = await waitForPageInfo(TEST_PATH);
   is(pageInfo.description, "og:description", "got the correct description");
-  is(pageInfo.previewImageURL.href, "https://test.com/og-image-secure-url.jpg", "got the correct preview image");
+  is(
+    pageInfo.previewImageURL.href,
+    "https://test.com/og-image-secure-url.jpg",
+    "got the correct preview image"
+  );
 
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

@@ -9,47 +9,76 @@ let delayedStartupTimeoutId = null;
 
 function OpenBrowserWindowFromDockMenu(options) {
   let win = OpenBrowserWindow(options);
-  win.addEventListener("load", function() {
-    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
-      .getService(Ci.nsIMacDockSupport);
-    dockSupport.activateApplication(true);
-  }, { once: true });
+  win.addEventListener(
+    "load",
+    function() {
+      let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(
+        Ci.nsIMacDockSupport
+      );
+      dockSupport.activateApplication(true);
+    },
+    { once: true }
+  );
 
   return win;
 }
 
 function nonBrowserWindowStartup() {
   
-  var disabledItems = ["Browser:SavePage",
-                       "Browser:SendLink", "cmd_pageSetup", "cmd_print", "cmd_find", "cmd_findAgain",
-                       "viewToolbarsMenu", "viewSidebarMenuMenu", "Browser:Reload",
-                       "viewFullZoomMenu", "pageStyleMenu", "charsetMenu", "View:PageSource", "View:FullScreen",
-                       "viewHistorySidebar", "Browser:AddBookmarkAs", "Browser:BookmarkAllTabs",
-                       "View:PageInfo", "History:UndoCloseTab"];
+  var disabledItems = [
+    "Browser:SavePage",
+    "Browser:SendLink",
+    "cmd_pageSetup",
+    "cmd_print",
+    "cmd_find",
+    "cmd_findAgain",
+    "viewToolbarsMenu",
+    "viewSidebarMenuMenu",
+    "Browser:Reload",
+    "viewFullZoomMenu",
+    "pageStyleMenu",
+    "charsetMenu",
+    "View:PageSource",
+    "View:FullScreen",
+    "viewHistorySidebar",
+    "Browser:AddBookmarkAs",
+    "Browser:BookmarkAllTabs",
+    "View:PageInfo",
+    "History:UndoCloseTab",
+  ];
   var element;
 
   for (let disabledItem of disabledItems) {
     element = document.getElementById(disabledItem);
-    if (element)
+    if (element) {
       element.setAttribute("disabled", "true");
+    }
   }
 
   
   let shownItems = ["menu_openLocation"];
   for (let shownItem of shownItems) {
     element = document.getElementById(shownItem);
-    if (element)
+    if (element) {
       element.removeAttribute("hidden");
+    }
   }
 
   
   
-  if (window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml") {
-    var hiddenWindowDisabledItems = ["cmd_close", "minimizeWindow", "zoomWindow"];
+  if (
+    window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml"
+  ) {
+    var hiddenWindowDisabledItems = [
+      "cmd_close",
+      "minimizeWindow",
+      "zoomWindow",
+    ];
     for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
       element = document.getElementById(hiddenWindowDisabledItem);
-      if (element)
+      if (element) {
         element.setAttribute("disabled", "true");
+      }
     }
 
     
@@ -59,17 +88,18 @@ function nonBrowserWindowStartup() {
     
     let dockMenuElement = document.getElementById("menu_mac_dockmenu");
     if (dockMenuElement != null) {
-      let nativeMenu = Cc["@mozilla.org/widget/standalonenativemenu;1"]
-                       .createInstance(Ci.nsIStandaloneNativeMenu);
+      let nativeMenu = Cc[
+        "@mozilla.org/widget/standalonenativemenu;1"
+      ].createInstance(Ci.nsIStandaloneNativeMenu);
 
       try {
         nativeMenu.init(dockMenuElement);
 
-        let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
-                          .getService(Ci.nsIMacDockSupport);
+        let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(
+          Ci.nsIMacDockSupport
+        );
         dockSupport.dockMenu = nativeMenu;
-      } catch (e) {
-      }
+      } catch (e) {}
     }
   }
 
@@ -96,9 +126,12 @@ function nonBrowserWindowDelayedStartup() {
 function nonBrowserWindowShutdown() {
   
   
-  if (window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml") {
-    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
-                      .getService(Ci.nsIMacDockSupport);
+  if (
+    window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml"
+  ) {
+    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(
+      Ci.nsIMacDockSupport
+    );
     dockSupport.dockMenu = null;
   }
 

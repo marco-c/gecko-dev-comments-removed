@@ -1,10 +1,12 @@
 "use strict";
 
-const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
+const PAGE =
+  "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 const AUTOSUBMIT_PREF = "browser.crashReports.unsubmittedCheck.autoSubmit2";
 
-const {TabStateFlusher} =
-  ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
+const { TabStateFlusher } = ChromeUtils.import(
+  "resource:///modules/sessionstore/TabStateFlusher.jsm"
+);
 
 
 
@@ -21,42 +23,51 @@ add_task(async function test_show_form() {
     set: [[AUTOSUBMIT_PREF, false]],
   });
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    
-    
-    await TabStateFlusher.flush(browser);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      
+      
+      await TabStateFlusher.flush(browser);
 
-    
-    await BrowserTestUtils.crashBrowser(browser);
+      
+      await BrowserTestUtils.crashBrowser(browser);
 
-    let doc = browser.contentDocument;
+      let doc = browser.contentDocument;
 
-    
-    
-    let requestAutoSubmit = doc.getElementById("requestAutoSubmit");
-    Assert.ok(!requestAutoSubmit.hidden,
-              "Request for autosubmission is visible.");
+      
+      
+      let requestAutoSubmit = doc.getElementById("requestAutoSubmit");
+      Assert.ok(
+        !requestAutoSubmit.hidden,
+        "Request for autosubmission is visible."
+      );
 
-    
-    
-    let autoSubmit = doc.getElementById("autoSubmit");
-    Assert.ok(!autoSubmit.checked,
-              "Checkbox for autosubmission is not checked.");
+      
+      
+      let autoSubmit = doc.getElementById("autoSubmit");
+      Assert.ok(
+        !autoSubmit.checked,
+        "Checkbox for autosubmission is not checked."
+      );
 
-    
-    autoSubmit.checked = true;
-    let restoreButton = doc.getElementById("restoreTab");
-    restoreButton.click();
+      
+      autoSubmit.checked = true;
+      let restoreButton = doc.getElementById("restoreTab");
+      restoreButton.click();
 
-    await BrowserTestUtils.browserLoaded(browser, false, PAGE);
+      await BrowserTestUtils.browserLoaded(browser, false, PAGE);
 
-    
-    Assert.ok(Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
-              "Autosubmission pref should have been set.");
-  });
+      
+      Assert.ok(
+        Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
+        "Autosubmission pref should have been set."
+      );
+    }
+  );
 });
 
 
@@ -68,32 +79,39 @@ add_task(async function test_show_form() {
     set: [[AUTOSUBMIT_PREF, true]],
   });
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    await TabStateFlusher.flush(browser);
-    
-    await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      await TabStateFlusher.flush(browser);
+      
+      await BrowserTestUtils.crashBrowser(browser);
 
-    let doc = browser.contentDocument;
+      let doc = browser.contentDocument;
 
-    
-    
-    let requestAutoSubmit = doc.getElementById("requestAutoSubmit");
-    Assert.ok(requestAutoSubmit.hidden,
-              "Request for autosubmission is not visible.");
+      
+      
+      let requestAutoSubmit = doc.getElementById("requestAutoSubmit");
+      Assert.ok(
+        requestAutoSubmit.hidden,
+        "Request for autosubmission is not visible."
+      );
 
-    
-    let restoreButton = doc.getElementById("restoreTab");
-    restoreButton.click();
+      
+      let restoreButton = doc.getElementById("restoreTab");
+      restoreButton.click();
 
-    await BrowserTestUtils.browserLoaded(browser, false, PAGE);
+      await BrowserTestUtils.browserLoaded(browser, false, PAGE);
 
-    
-    Assert.ok(Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
-              "Autosubmission pref should have been set.");
-  });
+      
+      Assert.ok(
+        Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
+        "Autosubmission pref should have been set."
+      );
+    }
+  );
 });
 
 
@@ -108,43 +126,57 @@ add_task(async function test_no_offer() {
     set: [[AUTOSUBMIT_PREF, false]],
   });
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    await TabStateFlusher.flush(browser);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      await TabStateFlusher.flush(browser);
 
-    
-    prepareNoDump();
+      
+      prepareNoDump();
 
-    
-    await BrowserTestUtils.crashBrowser(browser);
+      
+      await BrowserTestUtils.crashBrowser(browser);
 
-    let doc = browser.contentDocument;
+      let doc = browser.contentDocument;
 
-    
-    let requestRect = doc.getElementById("requestAutoSubmit")
-                         .getBoundingClientRect();
-    Assert.equal(0, requestRect.height,
-                 "Request for autosubmission has no height");
-    Assert.equal(0, requestRect.width,
-                 "Request for autosubmission has no width");
+      
+      let requestRect = doc
+        .getElementById("requestAutoSubmit")
+        .getBoundingClientRect();
+      Assert.equal(
+        0,
+        requestRect.height,
+        "Request for autosubmission has no height"
+      );
+      Assert.equal(
+        0,
+        requestRect.width,
+        "Request for autosubmission has no width"
+      );
 
-    
-    
-    let autoSubmit = doc.getElementById("autoSubmit");
-    Assert.ok(!autoSubmit.checked,
-              "Checkbox for autosubmission is not checked.");
+      
+      
+      let autoSubmit = doc.getElementById("autoSubmit");
+      Assert.ok(
+        !autoSubmit.checked,
+        "Checkbox for autosubmission is not checked."
+      );
 
-    let restoreButton = doc.getElementById("restoreTab");
-    restoreButton.click();
+      let restoreButton = doc.getElementById("restoreTab");
+      restoreButton.click();
 
-    await BrowserTestUtils.browserLoaded(browser, false, PAGE);
+      await BrowserTestUtils.browserLoaded(browser, false, PAGE);
 
-    
-    Assert.ok(!Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
-              "Autosubmission pref should not have changed.");
-  });
+      
+      Assert.ok(
+        !Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
+        "Autosubmission pref should not have changed."
+      );
+    }
+  );
 
   
   Assert.ok(TabCrashHandler.prefs.getBoolPref("sendReport"));

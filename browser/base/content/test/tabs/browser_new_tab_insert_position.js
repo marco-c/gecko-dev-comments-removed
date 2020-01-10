@@ -2,12 +2,21 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "SessionStore",
-   "resource:///modules/sessionstore/SessionStore.jsm");
-ChromeUtils.defineModuleGetter(this, "TabStateFlusher",
-   "resource:///modules/sessionstore/TabStateFlusher.jsm");
-ChromeUtils.defineModuleGetter(this, "E10SUtils",
-  "resource://gre/modules/E10SUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "SessionStore",
+  "resource:///modules/sessionstore/SessionStore.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TabStateFlusher",
+  "resource:///modules/sessionstore/TabStateFlusher.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm"
+);
 
 const triggeringPrincipal_base64 = E10SUtils.SERIALIZED_SYSTEMPRINCIPAL;
 
@@ -41,96 +50,177 @@ function promiseRemoveThenUndoCloseTab(tab) {
 function verifyTabState(state) {
   let newStateTabs = JSON.parse(state).windows[0].tabs;
   for (let i = 0; i < gBrowser.tabs.length; i++) {
-    is(gBrowser.tabs[i].linkedBrowser.currentURI.spec, newStateTabs[i].entries[0].url, `tab pos ${i} matched ${gBrowser.tabs[i].linkedBrowser.currentURI.spec}`);
+    is(
+      gBrowser.tabs[i].linkedBrowser.currentURI.spec,
+      newStateTabs[i].entries[0].url,
+      `tab pos ${i} matched ${gBrowser.tabs[i].linkedBrowser.currentURI.spec}`
+    );
   }
 }
 
-const bulkLoad = ["http://mochi.test:8888/#5", "http://mochi.test:8888/#6",
-                "http://mochi.test:8888/#7", "http://mochi.test:8888/#8"];
+const bulkLoad = [
+  "http://mochi.test:8888/#5",
+  "http://mochi.test:8888/#6",
+  "http://mochi.test:8888/#7",
+  "http://mochi.test:8888/#8",
+];
 
 const sessData = {
-  windows: [{
-    tabs: [
-      {entries: [{url: "http://mochi.test:8888/#0", triggeringPrincipal_base64}]},
-      {entries: [{url: "http://mochi.test:8888/#1", triggeringPrincipal_base64}]},
-      {entries: [{url: "http://mochi.test:8888/#3", triggeringPrincipal_base64}]},
-      {entries: [{url: "http://mochi.test:8888/#4", triggeringPrincipal_base64}]},
-    ],
-  }],
+  windows: [
+    {
+      tabs: [
+        {
+          entries: [
+            { url: "http://mochi.test:8888/#0", triggeringPrincipal_base64 },
+          ],
+        },
+        {
+          entries: [
+            { url: "http://mochi.test:8888/#1", triggeringPrincipal_base64 },
+          ],
+        },
+        {
+          entries: [
+            { url: "http://mochi.test:8888/#3", triggeringPrincipal_base64 },
+          ],
+        },
+        {
+          entries: [
+            { url: "http://mochi.test:8888/#4", triggeringPrincipal_base64 },
+          ],
+        },
+      ],
+    },
+  ],
 };
 const urlbarURL = "http://example.com/#urlbar";
 
 async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
-  const kDescription = "(aInsertRelatedAfterCurrent=" + aInsertRelatedAfterCurrent +
-                       ", aInsertAfterCurrent=" + aInsertAfterCurrent + "): ";
+  const kDescription =
+    "(aInsertRelatedAfterCurrent=" +
+    aInsertRelatedAfterCurrent +
+    ", aInsertAfterCurrent=" +
+    aInsertAfterCurrent +
+    "): ";
 
-  await SpecialPowers.pushPrefEnv({set: [
-    ["browser.tabs.opentabfor.middleclick", true],
-    ["browser.tabs.loadBookmarksInBackground", false],
-    ["browser.tabs.insertRelatedAfterCurrent", aInsertRelatedAfterCurrent],
-    ["browser.tabs.insertAfterCurrent", aInsertAfterCurrent],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.tabs.opentabfor.middleclick", true],
+      ["browser.tabs.loadBookmarksInBackground", false],
+      ["browser.tabs.insertRelatedAfterCurrent", aInsertRelatedAfterCurrent],
+      ["browser.tabs.insertAfterCurrent", aInsertAfterCurrent],
+    ],
+  });
 
   let oldState = SessionStore.getBrowserState();
 
   await promiseBrowserStateRestored(sessData);
 
   
-  let pageURL = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+  let pageURL = getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    "http://example.com"
+  );
   pageURL = `${pageURL}file_new_tab_page.html`;
-  let openerTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, pageURL);
+  let openerTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    pageURL
+  );
   const openerTabIndex = 1;
   gBrowser.moveTabTo(openerTab, openerTabIndex);
 
   
-  let openTabIndex = aInsertRelatedAfterCurrent || aInsertAfterCurrent ?
-    openerTabIndex + 1 : gBrowser.tabs.length;
-  let openTabDescription = aInsertRelatedAfterCurrent || aInsertAfterCurrent ?
-    "immediately to the right" : "at rightmost";
+  let openTabIndex =
+    aInsertRelatedAfterCurrent || aInsertAfterCurrent
+      ? openerTabIndex + 1
+      : gBrowser.tabs.length;
+  let openTabDescription =
+    aInsertRelatedAfterCurrent || aInsertAfterCurrent
+      ? "immediately to the right"
+      : "at rightmost";
 
-  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, "http://example.com/#linkclick", true);
-  await BrowserTestUtils.synthesizeMouseAtCenter("#link_to_example_com",
-                                                 {button: 1}, gBrowser.selectedBrowser);
+  let newTabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "http://example.com/#linkclick",
+    true
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#link_to_example_com",
+    { button: 1 },
+    gBrowser.selectedBrowser
+  );
   let openTab = await newTabPromise;
-  is(openTab.linkedBrowser.currentURI.spec, "http://example.com/#linkclick",
-     "Middle click should open site to correct url.");
-  is(openTab._tPos, openTabIndex,
-     kDescription + "Middle click should open site in a new tab " + openTabDescription);
+  is(
+    openTab.linkedBrowser.currentURI.spec,
+    "http://example.com/#linkclick",
+    "Middle click should open site to correct url."
+  );
+  is(
+    openTab._tPos,
+    openTabIndex,
+    kDescription +
+      "Middle click should open site in a new tab " +
+      openTabDescription
+  );
   if (aInsertRelatedAfterCurrent || aInsertAfterCurrent) {
     is(openTab.owner, openerTab, "tab owner is set correctly");
   }
   is(openTab.openerTab, openerTab, "opener tab is set");
 
   
-  openTabIndex = aInsertAfterCurrent ? openerTabIndex + 1 : gBrowser.tabs.length;
-  openTabDescription = aInsertAfterCurrent ? "immediately to the right" : "at rightmost";
+  openTabIndex = aInsertAfterCurrent
+    ? openerTabIndex + 1
+    : gBrowser.tabs.length;
+  openTabDescription = aInsertAfterCurrent
+    ? "immediately to the right"
+    : "at rightmost";
 
   gURLBar.focus();
   gURLBar.select();
   newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, urlbarURL, true);
   EventUtils.sendString(urlbarURL);
-  EventUtils.synthesizeKey("KEY_Alt", { altKey: true, code: "AltLeft", type: "keydown" });
+  EventUtils.synthesizeKey("KEY_Alt", {
+    altKey: true,
+    code: "AltLeft",
+    type: "keydown",
+  });
   EventUtils.synthesizeKey("KEY_Enter", { altKey: true, code: "Enter" });
-  EventUtils.synthesizeKey("KEY_Alt", { altKey: false, code: "AltLeft", type: "keyup" });
+  EventUtils.synthesizeKey("KEY_Alt", {
+    altKey: false,
+    code: "AltLeft",
+    type: "keyup",
+  });
   let unrelatedTab = await newTabPromise;
 
-  is(gBrowser.selectedBrowser.currentURI.spec, unrelatedTab.linkedBrowser.currentURI.spec,
-     `${kDescription} ${urlbarURL} should be loaded in the current tab.`);
-  is(unrelatedTab._tPos, openTabIndex,
-     `${kDescription} Alt+Enter in the URL bar should open page in a new tab ${openTabDescription}`);
+  is(
+    gBrowser.selectedBrowser.currentURI.spec,
+    unrelatedTab.linkedBrowser.currentURI.spec,
+    `${kDescription} ${urlbarURL} should be loaded in the current tab.`
+  );
+  is(
+    unrelatedTab._tPos,
+    openTabIndex,
+    `${kDescription} Alt+Enter in the URL bar should open page in a new tab ${openTabDescription}`
+  );
   is(unrelatedTab.owner, openerTab, "owner tab is set correctly");
   ok(!unrelatedTab.openerTab, "no opener tab is set");
 
   
   
   BrowserTestUtils.removeTab(unrelatedTab);
-  is(gBrowser.selectedTab, openerTab,
-    kDescription + `openerTab should be selected after closing unrelated tab`);
+  is(
+    gBrowser.selectedTab,
+    openerTab,
+    kDescription + `openerTab should be selected after closing unrelated tab`
+  );
 
   
   BrowserTestUtils.removeTab(openTab);
-  is(gBrowser.selectedTab, openerTab,
-     kDescription + "openerTab should be selected after closing related tab");
+  is(
+    gBrowser.selectedTab,
+    openerTab,
+    kDescription + "openerTab should be selected after closing related tab"
+  );
 
   
   for (let tab of gBrowser.tabs) {
@@ -151,9 +241,15 @@ async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
 
   
 
-  let loadPromises = Promise.all(bulkLoad.map(url => BrowserTestUtils.waitForNewTab(gBrowser, url, false, true)));
+  let loadPromises = Promise.all(
+    bulkLoad.map(url =>
+      BrowserTestUtils.waitForNewTab(gBrowser, url, false, true)
+    )
+  );
   
-  let nextTab = aInsertAfterCurrent ? gBrowser.selectedTab._tPos + 1 : gBrowser.tabs.length;
+  let nextTab = aInsertAfterCurrent
+    ? gBrowser.selectedTab._tPos + 1
+    : gBrowser.tabs.length;
 
   gBrowser.loadTabs(bulkLoad, {
     inBackground: true,
@@ -161,7 +257,11 @@ async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
   });
   await loadPromises;
   for (let i = nextTab, j = 0; j < bulkLoad.length; i++, j++) {
-    is(gBrowser.tabs[i].linkedBrowser.currentURI.spec, bulkLoad[j], `bulkLoad tab pos ${i} matched`);
+    is(
+      gBrowser.tabs[i].linkedBrowser.currentURI.spec,
+      bulkLoad[j],
+      `bulkLoad tab pos ${i} matched`
+    );
   }
 
   
@@ -191,5 +291,5 @@ add_task(async function test_settings_always_insertAfter() {
 });
 
 add_task(async function test_settings_always_insertAtEnd() {
-    await doTest(false, false);
+  await doTest(false, false);
 });

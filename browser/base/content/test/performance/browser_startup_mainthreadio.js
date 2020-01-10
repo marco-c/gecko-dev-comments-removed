@@ -21,7 +21,9 @@
 
 "use strict";
 
-const { AddonManager } = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+const { AddonManager } = ChromeUtils.import(
+  "resource://gre/modules/AddonManager.jsm"
+);
 
 
 const kDumpAllStacks = false;
@@ -74,7 +76,8 @@ const startupPhases = {
   
   
   "before profile selection": [
-    { 
+    {
+      
       path: "UAppData:Crash Reports/InstallTime20*",
       condition: AppConstants.MOZ_CRASHREPORTER,
       stat: 1, 
@@ -82,27 +85,31 @@ const startupPhases = {
       write: 2,
       close: 1,
     },
-    { 
+    {
+      
       path: "UAppData:Crash Reports/LastCrash",
       condition: WIN && AppConstants.MOZ_CRASHREPORTER,
       stat: 1, 
       read: 1,
     },
-    { 
+    {
+      
       path: "UAppData:Crash Reports/LastCrash",
       condition: !WIN && AppConstants.MOZ_CRASHREPORTER,
       ignoreIfUnused: true, 
       read: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "UAppData:profiles.ini",
       condition: MAC,
       stat: 1,
       read: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "UAppData:installs.ini",
       condition: WIN || MAC,
       ignoreIfUnused: true, 
@@ -110,14 +117,16 @@ const startupPhases = {
       stat: 2,
       close: 1,
     },
-    { 
+    {
+      
       path: "UAppData:profiles.ini",
       condition: WIN,
       ignoreIfUnused: true, 
       read: 1,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:",
       condition: WIN,
       stat: 1,
@@ -127,7 +136,8 @@ const startupPhases = {
       condition: !WIN, 
       close: 1,
     },
-    { 
+    {
+      
       path: "ProfLD:compatibility.ini",
       condition: !WIN, 
       write: 18,
@@ -138,7 +148,8 @@ const startupPhases = {
       condition: !WIN, 
       stat: 1,
     },
-    { 
+    {
+      
       path: "XCurProcD:omni.ja",
       condition: !WIN, 
       stat: 1,
@@ -148,49 +159,58 @@ const startupPhases = {
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:minidumps",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "XCurProcD:defaults/preferences",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfLDS:startupCache/scriptCache-child-current.bin",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfLDS:startupCache/scriptCache-child.bin",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfLDS:startupCache/scriptCache-current.bin",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfLDS:startupCache/scriptCache.bin",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "PrfDef:channel-prefs.js",
       stat: 1,
       read: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "PrefD:prefs.js",
       stat: 1,
       read: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "PrefD:user.js",
       stat: 1,
       read: 1,
@@ -203,7 +223,8 @@ const startupPhases = {
       read: 22,
       close: 11,
     },
-    { 
+    {
+      
       path: "ProfD:xulstore/data.mdb",
       condition: WIN,
       write: 1,
@@ -212,7 +233,8 @@ const startupPhases = {
   ],
 
   "before opening first browser window": [
-    { 
+    {
+      
       path: "ProfD:",
       condition: WIN,
       stat: 1,
@@ -222,25 +244,29 @@ const startupPhases = {
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:cookies.sqlite-journal",
       condition: !LINUX,
       stat: 3,
       write: 4,
     },
-    { 
+    {
+      
       path: "ProfD:cookies.sqlite",
       condition: !LINUX,
       stat: 2,
       read: 2,
       write: 1,
     },
-    { 
+    {
+      
       path: "ProfD:cookies.sqlite-wal",
       condition: WIN,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:permissions.sqlite",
       condition: WIN || MAC,
       fsync: 7,
@@ -248,19 +274,22 @@ const startupPhases = {
       stat: 1,
       write: 10,
     },
-    { 
+    {
+      
       path: "ProfD:permissions.sqlite-journal",
       condition: WIN || MAC,
       fsync: 7,
       stat: 26,
       write: 38,
     },
-    { 
+    {
+      
       path: "ProfD:permissions.sqlite-wal",
       condition: WIN,
       stat: 20,
     },
-    { 
+    {
+      
       path: "*.savedState/restorecount.plist",
       condition: MAC,
       ignoreIfUnused: true,
@@ -273,30 +302,35 @@ const startupPhases = {
       read: 22,
       close: 11,
     },
-    { 
+    {
+      
       path: "/etc/mime.types",
       condition: LINUX,
       read: 3,
       close: 3,
     },
-    { 
+    {
+      
       path: "ProfD:extensions",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "XCurProcD:extensions",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "UAppData:",
       ignoreIfUnused: true, 
-                            
+      
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:xulstore/data.mdb",
       condition: WIN,
       read: 1,
@@ -306,68 +340,81 @@ const startupPhases = {
   
   
   "before first paint": [
-    { 
+    {
+      
       path: "ProfD:",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "OldUpdRootD:",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "UpdRootD:updates/0/update.status",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:pluginreg.dat",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:pluginreg.dat.tmp",
       stat: 1,
       write: 64,
       close: 1,
     },
-    { 
+    {
+      
       path: "ProfD:plugins",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "APlugns:",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "UserPlugins.parent:",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "UserPlugins:",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:plugins/nptest.dll",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:plugins/npsecondtest.dll",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:plugins/npthirdtest.dll",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:plugins/npswftest.dll",
       condition: WIN,
       stat: 1,
@@ -378,13 +425,15 @@ const startupPhases = {
       stat: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "/etc/mime.types",
       condition: LINUX,
       read: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "XREAppDist:distribution.ini",
       condition: WIN,
       stat: 1,
@@ -395,40 +444,47 @@ const startupPhases = {
       ignoreIfUnused: true,
       stat: 3,
     },
-    { 
+    {
+      
       path: "*Fonts/StaticCache.dat",
       condition: WIN,
       ignoreIfUnused: true, 
       read: 1,
     },
-    { 
+    {
+      
       path: "UAppData:",
       ignoreIfUnused: true, 
-                            
+      
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "GreD:ScalarArtifactDefinitions.json",
       condition: WIN && !AppConstants.MOZILLA_OFFICIAL,
       stat: 1,
     },
-    { 
+    {
+      
       path: "GreD:EventArtifactDefinitions.json",
       condition: WIN && !AppConstants.MOZILLA_OFFICIAL,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:xulstore/data.mdb",
       condition: MAC,
       write: 3,
     },
-    { 
+    {
+      
       path: "GreD:omni.ja",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "XCurProcD:omni.ja",
       condition: WIN,
       stat: 2,
@@ -445,56 +501,65 @@ const startupPhases = {
       condition: LINUX,
       close: 1,
     },
-    { 
+    {
+      
       path: "ProfD:cert9.db",
       condition: WIN,
       read: 2,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:cert9.db",
       condition: WIN,
       ignoreIfUnused: true, 
       canonicalize: true,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:cert9.db-journal",
       condition: WIN,
       canonicalize: true,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:cert9.db-wal",
       condition: WIN,
       canonicalize: true,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:pkcs11.txt",
       condition: WIN,
       read: 2,
     },
-    { 
+    {
+      
       path: "ProfD:key4.db",
       condition: WIN,
       read: 2,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:key4.db",
       condition: WIN,
       ignoreIfUnused: true, 
       canonicalize: true,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:key4.db-journal",
       condition: WIN,
       canonicalize: true,
       stat: 5,
     },
-    { 
+    {
+      
       path: "ProfD:key4.db-wal",
       condition: WIN,
       canonicalize: true,
@@ -507,7 +572,8 @@ const startupPhases = {
       stat: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "XREAppDist:searchplugins",
       condition: WIN,
       ignoreIfUnused: true, 
@@ -518,12 +584,14 @@ const startupPhases = {
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "GreD:omni.ja",
       condition: WIN,
       stat: 1,
     },
-    { 
+    {
+      
       path: "XCurProcD:omni.ja",
       condition: WIN,
       stat: 2,
@@ -545,27 +613,31 @@ const startupPhases = {
       stat: 1,
       close: 1,
     },
-    { 
+    {
+      
       path: "ProfD:places.sqlite-journal",
       ignoreIfUnused: true,
       fsync: 1,
       stat: 4,
       write: 2,
     },
-    { 
+    {
+      
       path: "ProfD:places.sqlite-wal",
       ignoreIfUnused: true,
       stat: 4,
       fsync: 3,
       write: 148,
     },
-    { 
+    {
+      
       path: "ProfD:places.sqlite-shm",
       condition: WIN,
       ignoreIfUnused: true,
       stat: 1,
     },
-    { 
+    {
+      
       path: "ProfD:places.sqlite",
       ignoreIfUnused: true,
       fsync: 2,
@@ -573,27 +645,31 @@ const startupPhases = {
       stat: 3,
       write: 1310,
     },
-    { 
+    {
+      
       path: "ProfD:favicons.sqlite-journal",
       ignoreIfUnused: true,
       fsync: 2,
       stat: 7,
       write: 7,
     },
-    { 
+    {
+      
       path: "ProfD:favicons.sqlite-wal",
       ignoreIfUnused: true,
       fsync: 2,
       stat: 7,
       write: 15,
     },
-    { 
+    {
+      
       path: "ProfD:favicons.sqlite-shm",
       condition: WIN,
       ignoreIfUnused: true,
       stat: 2,
     },
-    { 
+    {
+      
       path: "ProfD:favicons.sqlite",
       ignoreIfUnused: true,
       fsync: 3,
@@ -619,12 +695,14 @@ const startupPhases = {
       ignoreIfUnused: true,
       stat: 3,
     },
-    { 
+    {
+      
       path: "XCurProcD:omni.ja",
       condition: WIN,
       stat: 7,
     },
-    { 
+    {
+      
       path: "XREAppDist:searchplugins",
       condition: WIN,
       ignoreIfUnused: true, 
@@ -633,7 +711,13 @@ const startupPhases = {
   ],
 };
 
-for (let name of ["d3d11layers", "d3d9video", "glcontext", "d3d11video", "wmfvpxvideo"]) {
+for (let name of [
+  "d3d11layers",
+  "d3d9video",
+  "glcontext",
+  "d3d11video",
+  "wmfvpxvideo",
+]) {
   startupPhases["before first paint"].push({
     path: `ProfD:${name}.guard`,
     ignoreIfUnused: true,
@@ -695,21 +779,30 @@ function getStackFromProfile(profile, stack) {
 
 function pathMatches(path, filename) {
   path = path.toLowerCase();
-  return path == filename || 
+  return (
+    path == filename || 
     
-    (path.startsWith("*") && path.endsWith("*") &&
-     filename.includes(path.slice(1, -1))) ||
+    (path.startsWith("*") &&
+      path.endsWith("*") &&
+      filename.includes(path.slice(1, -1))) ||
     
     (path.endsWith("*") && filename.startsWith(path.slice(0, -1))) ||
     
-    (path.startsWith("*") && filename.endsWith(path.slice(1)));
+    (path.startsWith("*") && filename.endsWith(path.slice(1)))
+  );
 }
 
 add_task(async function() {
-  if (!AppConstants.NIGHTLY_BUILD && !AppConstants.MOZ_DEV_EDITION && !AppConstants.DEBUG) {
-    ok(!("@mozilla.org/test/startuprecorder;1" in Cc),
-       "the startup recorder component shouldn't exist in this non-nightly/non-devedition/" +
-       "non-debug build.");
+  if (
+    !AppConstants.NIGHTLY_BUILD &&
+    !AppConstants.MOZ_DEV_EDITION &&
+    !AppConstants.DEBUG
+  ) {
+    ok(
+      !("@mozilla.org/test/startuprecorder;1" in Cc),
+      "the startup recorder component shouldn't exist in this non-nightly/non-devedition/" +
+        "non-debug build."
+    );
     return;
   }
 
@@ -717,13 +810,17 @@ add_task(async function() {
     let omniJa = Services.dirsvc.get("XCurProcD", Ci.nsIFile);
     omniJa.append("omni.ja");
     if (!omniJa.exists()) {
-      ok(false, "This test requires a packaged build, " +
-                "run 'mach package' and then use --appname=dist");
+      ok(
+        false,
+        "This test requires a packaged build, " +
+          "run 'mach package' and then use --appname=dist"
+      );
       return;
     }
   }
 
-  let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject;
+  let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
+    .wrappedJSObject;
   await startupRecorder.done;
 
   
@@ -760,13 +857,16 @@ add_task(async function() {
     for (let m of profile.markers.data) {
       let markerName = profile.stringTable[m[nameCol]];
       if (markerName.startsWith("startupRecorder:")) {
-        phases[markerName.split("startupRecorder:")[1]] = markersForCurrentPhase;
+        phases[
+          markerName.split("startupRecorder:")[1]
+        ] = markersForCurrentPhase;
         markersForCurrentPhase = [];
         continue;
       }
 
-      if (markerName != "FileIO")
+      if (markerName != "FileIO") {
         continue;
+      }
 
       let markerData = m[dataCol];
       if (markerData.source == "sqlite-mainthread") {
@@ -775,18 +875,23 @@ add_task(async function() {
 
       let samples = markerData.stack.samples;
       let stack = samples.data[0][samples.schema.stack];
-      markersForCurrentPhase.push({operation: markerData.operation,
-                                   filename: markerData.filename,
-                                   source: markerData.source,
-                                   stackId: stack});
+      markersForCurrentPhase.push({
+        operation: markerData.operation,
+        filename: markerData.filename,
+        source: markerData.source,
+        stackId: stack,
+      });
       foundIOMarkers = true;
     }
 
     
     
     
-    is(foundIOMarkers, !AppConstants.RELEASE_OR_BETA,
-       "The IO interposer should be enabled in builds that are not RELEASE_OR_BETA");
+    is(
+      foundIOMarkers,
+      !AppConstants.RELEASE_OR_BETA,
+      "The IO interposer should be enabled in builds that are not RELEASE_OR_BETA"
+    );
     if (!foundIOMarkers) {
       
       
@@ -795,8 +900,9 @@ add_task(async function() {
   }
 
   for (let phase in startupPhases) {
-    startupPhases[phase] =
-      startupPhases[phase].filter(entry => !("condition" in entry) || entry.condition);
+    startupPhases[phase] = startupPhases[phase].filter(
+      entry => !("condition" in entry) || entry.condition
+    );
     startupPhases[phase].forEach(entry => {
       entry.path = expandWhitelistPath(entry.path, entry.canonicalize);
     });
@@ -806,12 +912,17 @@ add_task(async function() {
   let shouldPass = true;
   for (let phase in phases) {
     let whitelist = startupPhases[phase];
-    info(`whitelisted paths ${phase}:\n` +
-         whitelist.map(e => {
-           let operations = Object.keys(e).filter(k => k != "path")
-                                  .map(k => `${k}: ${e[k]}`);
-           return `  ${e.path} - ${operations.join(", ")}`;
-         }).join("\n"));
+    info(
+      `whitelisted paths ${phase}:\n` +
+        whitelist
+          .map(e => {
+            let operations = Object.keys(e)
+              .filter(k => k != "path")
+              .map(k => `${k}: ${e[k]}`);
+            return `  ${e.path} - ${operations.join(", ")}`;
+          })
+          .join("\n")
+    );
 
     let markers = phases[phase];
     for (let marker of markers) {
@@ -853,22 +964,35 @@ add_task(async function() {
         }
       }
       if (!expected) {
-        record(false,
-               `unexpected ${marker.operation} on ${marker.filename} ${phase}`,
-               undefined,
-               "  " + getStackFromProfile(profile, marker.stackId).join("\n  "));
+        record(
+          false,
+          `unexpected ${marker.operation} on ${marker.filename} ${phase}`,
+          undefined,
+          "  " + getStackFromProfile(profile, marker.stackId).join("\n  ")
+        );
         shouldPass = false;
       }
       info(`(${marker.source}) ${marker.operation} - ${marker.filename}`);
       if (kDumpAllStacks) {
-        info(getStackFromProfile(profile, marker.stackId).map(f => "  " + f)
-                                                         .join("\n"));
+        info(
+          getStackFromProfile(profile, marker.stackId)
+            .map(f => "  " + f)
+            .join("\n")
+        );
       }
     }
 
     for (let entry of whitelist) {
       for (let op in entry) {
-        if (["path", "condition", "canonicalize", "ignoreIfUnused", "_used"].includes(op)) {
+        if (
+          [
+            "path",
+            "condition",
+            "canonicalize",
+            "ignoreIfUnused",
+            "_used",
+          ].includes(op)
+        ) {
           continue;
         }
         let message = `${op} on ${entry.path} `;
@@ -893,14 +1017,18 @@ add_task(async function() {
   } else {
     const filename = "profile_startup_mainthreadio.json";
     let path = Cc["@mozilla.org/process/environment;1"]
-                 .getService(Ci.nsIEnvironment)
-                 .get("MOZ_UPLOAD_DIR");
+      .getService(Ci.nsIEnvironment)
+      .get("MOZ_UPLOAD_DIR");
     let encoder = new TextEncoder();
     let profilePath = OS.Path.join(path, filename);
-    await OS.File.writeAtomic(profilePath,
-                              encoder.encode(JSON.stringify(startupRecorder.data.profile)));
-    ok(false,
-       "Unexpected main thread I/O behavior during startup; open the " +
-       `${filename} artifact in the Firefox Profiler to see what happened`);
+    await OS.File.writeAtomic(
+      profilePath,
+      encoder.encode(JSON.stringify(startupRecorder.data.profile))
+    );
+    ok(
+      false,
+      "Unexpected main thread I/O behavior during startup; open the " +
+        `${filename} artifact in the Firefox Profiler to see what happened`
+    );
   }
 });

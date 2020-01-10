@@ -3,7 +3,8 @@
 requestLongerTimeout(2);
 
 
-var idnDomain = "\u03C0\u03B1\u03C1\u03AC\u03B4\u03B5\u03B9\u03B3\u03BC\u03B1.\u03B4\u03BF\u03BA\u03B9\u03BC\u03AE";
+var idnDomain =
+  "\u03C0\u03B1\u03C1\u03AC\u03B4\u03B5\u03B9\u03B3\u03BC\u03B1.\u03B4\u03BF\u03BA\u03B9\u03BC\u03AE";
 var tests = [
   {
     name: "normal domain",
@@ -77,43 +78,83 @@ async function runTest(i, forward) {
 
   let popupHidden = null;
   if ((forward && i > 0) || (!forward && i < tests.length - 1)) {
-    popupHidden = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popuphidden");
+    popupHidden = BrowserTestUtils.waitForEvent(
+      gIdentityHandler._identityPopup,
+      "popuphidden"
+    );
   }
 
-  let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, false, currentTest.location);
+  let loaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    currentTest.location
+  );
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, currentTest.location);
   await loaded;
   await popupHidden;
-  ok(BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup), "Control Center is hidden");
+  ok(
+    BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup),
+    "Control Center is hidden"
+  );
 
   
-  is(gIdentityHandler._uri.spec, currentTest.location, "location matches for test " + testDesc);
+  is(
+    gIdentityHandler._uri.spec,
+    currentTest.location,
+    "location matches for test " + testDesc
+  );
   
   if (currentTest.effectiveHost === null) {
     let identityBox = document.getElementById("identity-box");
-    ok(identityBox.className == "unknownIdentity" ||
-       identityBox.className == "chromeUI", "mode matched");
+    ok(
+      identityBox.className == "unknownIdentity" ||
+        identityBox.className == "chromeUI",
+      "mode matched"
+    );
   } else {
-    is(gIdentityHandler.getEffectiveHost(), currentTest.effectiveHost, "effectiveHost matches for test " + testDesc);
+    is(
+      gIdentityHandler.getEffectiveHost(),
+      currentTest.effectiveHost,
+      "effectiveHost matches for test " + testDesc
+    );
   }
 
   
-  let popupShown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
+  let popupShown = BrowserTestUtils.waitForEvent(
+    gIdentityHandler._identityPopup,
+    "popupshown"
+  );
   gIdentityHandler._identityBox.click();
   info("Waiting for the Control Center to be shown");
   await popupShown;
-  ok(!BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup), "Control Center is visible");
+  ok(
+    !BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup),
+    "Control Center is visible"
+  );
   let displayedHost = currentTest.effectiveHost || currentTest.location;
-  ok(gIdentityHandler._identityPopupMainViewHeaderLabel.textContent.includes(displayedHost),
-     "identity UI header shows the host for test " + testDesc);
+  ok(
+    gIdentityHandler._identityPopupMainViewHeaderLabel.textContent.includes(
+      displayedHost
+    ),
+    "identity UI header shows the host for test " + testDesc
+  );
 
   
   
-  let promiseViewShown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "ViewShown");
-  gBrowser.ownerDocument.querySelector("#identity-popup-security-expander").click();
+  let promiseViewShown = BrowserTestUtils.waitForEvent(
+    gIdentityHandler._identityPopup,
+    "ViewShown"
+  );
+  gBrowser.ownerDocument
+    .querySelector("#identity-popup-security-expander")
+    .click();
   await promiseViewShown;
 
   displayedHost = currentTest.effectiveHost || currentTest.location;
-  ok(gIdentityHandler._identityPopupContentHost.textContent.includes(displayedHost),
-     "security subview header shows the host for test " + testDesc);
+  ok(
+    gIdentityHandler._identityPopupContentHost.textContent.includes(
+      displayedHost
+    ),
+    "security subview header shows the host for test " + testDesc
+  );
 }
