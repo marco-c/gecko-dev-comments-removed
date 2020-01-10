@@ -166,7 +166,7 @@ void TypedArrayObject::finalize(FreeOp* fop, JSObject* obj) {
 
   
   if (!curObj->hasInlineElements()) {
-    js_free(curObj->elements());
+    fop->free_(curObj->elements());
   }
 }
 
