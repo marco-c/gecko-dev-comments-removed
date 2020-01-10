@@ -16,13 +16,12 @@
 #include "frontend/BytecodeOffset.h"  
 #include "frontend/EmitterScope.h"    
 #include "frontend/NameOpEmitter.h"   
-#include "frontend/ObjLiteral.h"     
-#include "frontend/TDZCheckCache.h"  
-#include "js/RootingAPI.h"           
-#include "vm/BytecodeUtil.h"         
-#include "vm/JSAtom.h"               
-#include "vm/NativeObject.h"         
-#include "vm/Scope.h"                
+#include "frontend/TDZCheckCache.h"   
+#include "js/RootingAPI.h"            
+#include "vm/BytecodeUtil.h"          
+#include "vm/JSAtom.h"                
+#include "vm/NativeObject.h"          
+#include "vm/Scope.h"                 
 
 namespace js {
 
@@ -55,6 +54,13 @@ class MOZ_STACK_CLASS PropertyEmitter {
 
   
   bool isIndexOrComputed_ = false;
+
+  
+  
+  
+  
+  
+  JS::Rooted<PlainObject*> obj_;
 
 #ifdef DEBUG
   
@@ -377,6 +383,10 @@ class MOZ_STACK_CLASS PropertyEmitter {
 
 class MOZ_STACK_CLASS ObjectEmitter : public PropertyEmitter {
  private:
+  
+  
+  BytecodeOffset top_;
+
 #ifdef DEBUG
   
   
@@ -406,9 +416,6 @@ class MOZ_STACK_CLASS ObjectEmitter : public PropertyEmitter {
   explicit ObjectEmitter(BytecodeEmitter* bce);
 
   MOZ_MUST_USE bool emitObject(size_t propertyCount);
-  
-  
-  MOZ_MUST_USE bool emitObjectWithTemplateOnStack();
   MOZ_MUST_USE bool emitEnd();
 };
 

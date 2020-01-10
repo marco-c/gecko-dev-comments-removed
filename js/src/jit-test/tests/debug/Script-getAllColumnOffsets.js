@@ -22,8 +22,7 @@ assertOffsetColumns(
 
 assertOffsetColumns(
   
-  
-  "function f(n){var o={a:1,b:2,c:n}}",
+  "function f(n){var o={a:1,b:2,c:3}}",
   "                    ^^   ^   ^   ^"
 );
 
