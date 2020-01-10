@@ -4182,9 +4182,9 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
     extra = std::max(extra, lineThickness);
     
     
-    gfxFloat decorationWidthOffset =
+    gfxFloat decorationThicknessOffset =
         (lineThickness - defaultLineThickness) / 2.0;
-    offset = aParams.offset - lineThickness + extra + decorationWidthOffset;
+    offset = aParams.offset - lineThickness + extra + decorationThicknessOffset;
   } else {
     MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
   }
