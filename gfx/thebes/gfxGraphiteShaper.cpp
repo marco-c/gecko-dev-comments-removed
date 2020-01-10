@@ -10,6 +10,7 @@
 #include "gfxTextRun.h"
 
 #include "graphite2/Font.h"
+#include "graphite2/GraphiteExtra.h"
 #include "graphite2/Segment.h"
 
 #include "harfbuzz/hb.h"
@@ -191,18 +192,6 @@ bool gfxGraphiteShaper::ShapeText(DrawTarget* aDrawTarget,
   return NS_SUCCEEDED(rv);
 }
 
-#define SMALL_GLYPH_RUN \
-  256  // avoid heap allocation of per-glyph data arrays
-       
-
-struct Cluster {
-  uint32_t baseChar;  
-  uint32_t baseGlyph;
-  uint32_t nChars;  
-  uint32_t nGlyphs;
-  Cluster() : baseChar(0), baseGlyph(0), nChars(0), nGlyphs(0) {}
-};
-
 nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
     gfxShapedText* aShapedText, uint32_t aOffset, uint32_t aLength,
     const char16_t* aText, gr_segment* aSegment, RoundingFlags aRounding) {
@@ -211,70 +200,19 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
   int32_t dev2appUnits = aShapedText->GetAppUnitsPerDevUnit();
   bool rtl = aShapedText->IsRightToLeft();
 
-  uint32_t glyphCount = gr_seg_n_slots(aSegment);
-
   
-  AutoTArray<Cluster, SMALL_GLYPH_RUN> clusters;
-  AutoTArray<uint16_t, SMALL_GLYPH_RUN> gids;
-  AutoTArray<float, SMALL_GLYPH_RUN> xLocs;
-  AutoTArray<float, SMALL_GLYPH_RUN> yLocs;
+  gr_glyph_to_char_association* data =
+      gr_get_glyph_to_char_association(aSegment, aLength, aText);
 
-  if (!clusters.SetLength(aLength, fallible) ||
-      !gids.SetLength(glyphCount, fallible) ||
-      !xLocs.SetLength(glyphCount, fallible) ||
-      !yLocs.SetLength(glyphCount, fallible)) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  if (!data) {
+    return NS_ERROR_FAILURE;
   }
 
-  
-  
-  uint32_t gIndex = 0;  
-  uint32_t cIndex = 0;  
-  for (const gr_slot* slot = gr_seg_first_slot(aSegment); slot != nullptr;
-       slot = gr_slot_next_in_segment(slot), gIndex++) {
-    uint32_t before =
-        gr_cinfo_base(gr_seg_cinfo(aSegment, gr_slot_before(slot)));
-    uint32_t after = gr_cinfo_base(gr_seg_cinfo(aSegment, gr_slot_after(slot)));
-    gids[gIndex] = gr_slot_gid(slot);
-    xLocs[gIndex] = gr_slot_origin_X(slot);
-    yLocs[gIndex] = gr_slot_origin_Y(slot);
-
-    
-    
-    
-    while (before < clusters[cIndex].baseChar && cIndex > 0) {
-      clusters[cIndex - 1].nChars += clusters[cIndex].nChars;
-      clusters[cIndex - 1].nGlyphs += clusters[cIndex].nGlyphs;
-      --cIndex;
-    }
-
-    
-    
-    if (gr_slot_can_insert_before(slot) && clusters[cIndex].nChars &&
-        before >= clusters[cIndex].baseChar + clusters[cIndex].nChars) {
-      NS_ASSERTION(cIndex < aLength - 1, "cIndex at end of word");
-      Cluster& c = clusters[cIndex + 1];
-      c.baseChar = clusters[cIndex].baseChar + clusters[cIndex].nChars;
-      c.nChars = before - c.baseChar;
-      c.baseGlyph = gIndex;
-      c.nGlyphs = 0;
-      ++cIndex;
-    }
-
-    
-    NS_ASSERTION(cIndex < aLength, "cIndex beyond word length");
-    ++clusters[cIndex].nGlyphs;
-
-    
-    if (NS_IS_HIGH_SURROGATE(aText[after]) && after < aLength - 1 &&
-        NS_IS_LOW_SURROGATE(aText[after + 1])) {
-      after++;
-    }
-    
-    if (clusters[cIndex].baseChar + clusters[cIndex].nChars < after + 1) {
-      clusters[cIndex].nChars = after + 1 - clusters[cIndex].baseChar;
-    }
-  }
+  uint32_t cIndex = data->cIndex;
+  gr_glyph_to_char_cluster* clusters = data->clusters;
+  uint16_t* gids = data->gids;
+  float* xLocs = data->xLocs;
+  float* yLocs = data->yLocs;
 
   CompressedGlyph* charGlyphs = aShapedText->GetCharacterGlyphs() + aOffset;
 
@@ -283,7 +221,7 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
 
   
   for (uint32_t i = 0; i <= cIndex; ++i) {
-    const Cluster& c = clusters[i];
+    const gr_glyph_to_char_cluster& c = clusters[i];
 
     float adv;  
     if (rtl) {
@@ -350,10 +288,9 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
     }
   }
 
+  gr_free_char_association(data);
   return NS_OK;
 }
-
-#undef SMALL_GLYPH_RUN
 
 
 #include "gfxLanguageTagList.cpp"
