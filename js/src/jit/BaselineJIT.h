@@ -444,6 +444,10 @@ struct alignas(uintptr_t) BaselineBailoutInfo {
 
   
   
+  uint32_t frameSizeOfInnerMostFrame = 0;
+
+  
+  
   
   
   bool checkGlobalDeclarationConflicts = false;
