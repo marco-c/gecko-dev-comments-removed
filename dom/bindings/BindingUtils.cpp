@@ -54,6 +54,7 @@
 #include "mozilla/dom/HTMLEmbedElement.h"
 #include "mozilla/dom/HTMLElementBinding.h"
 #include "mozilla/dom/HTMLEmbedElementBinding.h"
+#include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/XULElementBinding.h"
 #include "mozilla/dom/XULFrameElementBinding.h"
@@ -2916,14 +2917,7 @@ struct MaybeGlobalThisPolicy : public NormalThisPolicy {
 };
 
 
-
-struct LenientThisPolicy : public MaybeGlobalThisPolicy {
-  
-
-  
-
-  
-
+struct LenientThisPolicyMixin {
   static bool HandleInvalidThis(JSContext* aCx, const JS::CallArgs& aArgs,
                                 bool aSecurityError, prototypes::ID aProtoId) {
     MOZ_ASSERT(!JS_IsExceptionPending(aCx));
@@ -2933,6 +2927,20 @@ struct LenientThisPolicy : public MaybeGlobalThisPolicy {
     aArgs.rval().set(JS::UndefinedValue());
     return true;
   }
+};
+
+
+
+struct LenientThisPolicy : public MaybeGlobalThisPolicy,
+                           public LenientThisPolicyMixin {
+  
+
+  
+
+  
+
+  
+  using LenientThisPolicyMixin::HandleInvalidThis;
 };
 
 
@@ -2996,6 +3004,57 @@ struct CrossOriginThisPolicy : public MaybeGlobalThisPolicy {
   }
 
   
+};
+
+
+
+struct MaybeCrossOriginObjectThisPolicy : public MaybeGlobalThisPolicy {
+  
+
+  
+
+  
+
+  static MOZ_ALWAYS_INLINE nsresult UnwrapThisObject(
+      JS::MutableHandle<JSObject*> aObj, JSContext* aCx, void*& aSelf,
+      prototypes::ID aProtoID, uint32_t aProtoDepth) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!js::IsCrossCompartmentWrapper(aObj) &&
+        xpc::IsCrossOriginAccessibleObject(aObj) &&
+        !MaybeCrossOriginObjectMixins::IsPlatformObjectSameOrigin(aCx, aObj)) {
+      return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
+    }
+
+    return MaybeGlobalThisPolicy::UnwrapThisObject(aObj, aCx, aSelf, aProtoID,
+                                                   aProtoDepth);
+  }
+
+  
+};
+
+
+
+struct MaybeCrossOriginObjectLenientThisPolicy
+    : public MaybeCrossOriginObjectThisPolicy,
+      public LenientThisPolicyMixin {
+  
+  
+  
+  using LenientThisPolicyMixin::HandleInvalidThis;
 };
 
 
@@ -3089,6 +3148,15 @@ template bool GenericGetter<CrossOriginThisPolicy, ThrowExceptions>(
     JSContext* cx, unsigned argc, JS::Value* vp);
 
 
+template bool GenericGetter<MaybeCrossOriginObjectThisPolicy, ThrowExceptions>(
+    JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+template bool GenericGetter<MaybeCrossOriginObjectLenientThisPolicy,
+                            ThrowExceptions>(JSContext* cx, unsigned argc,
+                                             JS::Value* vp);
+
+
 
 template <typename ThisPolicy>
 bool GenericSetter(JSContext* cx, unsigned argc, JS::Value* vp) {
@@ -3137,6 +3205,11 @@ template bool GenericSetter<LenientThisPolicy>(JSContext* cx, unsigned argc,
                                                JS::Value* vp);
 template bool GenericSetter<CrossOriginThisPolicy>(JSContext* cx, unsigned argc,
                                                    JS::Value* vp);
+template bool GenericSetter<MaybeCrossOriginObjectThisPolicy>(JSContext* cx,
+                                                              unsigned argc,
+                                                              JS::Value* vp);
+template bool GenericSetter<MaybeCrossOriginObjectLenientThisPolicy>(
+    JSContext* cx, unsigned argc, JS::Value* vp);
 
 template <typename ThisPolicy, typename ExceptionPolicy>
 bool GenericMethod(JSContext* cx, unsigned argc, JS::Value* vp) {
@@ -3188,6 +3261,12 @@ template bool GenericMethod<CrossOriginThisPolicy, ThrowExceptions>(
     JSContext* cx, unsigned argc, JS::Value* vp);
 
 
+template bool GenericMethod<MaybeCrossOriginObjectThisPolicy, ThrowExceptions>(
+    JSContext* cx, unsigned argc, JS::Value* vp);
+template bool GenericMethod<MaybeCrossOriginObjectThisPolicy,
+                            ConvertExceptionsToPromises>(JSContext* cx,
+                                                         unsigned argc,
+                                                         JS::Value* vp);
 
 }  
 

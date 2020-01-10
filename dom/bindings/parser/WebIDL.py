@@ -896,6 +896,10 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         
         
         self.iterableInterface = None
+        
+        self.hasCrossOriginMembers = False
+        
+        self.hasDescendantWithCrossOriginMembers = False
 
         self.toStringTag = toStringTag
 
@@ -1198,6 +1202,21 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                 member.isUnforgeable() and
                 not hasattr(member, "originatingInterface")):
                 member.originatingInterface = self
+
+        for member in self.members:
+            if ((member.isMethod() and
+                 member.getExtendedAttribute("CrossOriginCallable")) or
+                (member.isAttr() and
+                 (member.getExtendedAttribute("CrossOriginReadable") or
+                  member.getExtendedAttribute("CrossOriginWritable")))):
+                self.hasCrossOriginMembers = True
+                break
+
+        if self.hasCrossOriginMembers:
+            parent = self
+            while parent:
+                parent.hasDescendantWithCrossOriginMembers = True
+                parent = parent.parent
 
         
         

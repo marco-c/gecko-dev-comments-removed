@@ -441,7 +441,6 @@ class Descriptor(DescriptorProvider):
 
         if self.concrete:
             self.proxy = False
-            self.hasCrossOriginMembers = False
             iface = self.interface
             for m in iface.members:
                 
@@ -456,16 +455,8 @@ class Descriptor(DescriptorProvider):
                     addOperation('LegacyCaller', m)
             while iface:
                 for m in iface.members:
-                    if (m.isAttr() and
-                        (m.getExtendedAttribute("CrossOriginReadable") or
-                         m.getExtendedAttribute("CrossOriginWritable"))):
-                        self.hasCrossOriginMembers = True
-
                     if not m.isMethod():
                         continue
-
-                    if m.getExtendedAttribute("CrossOriginCallable"):
-                        self.hasCrossOriginMembers = True
 
                     def addIndexedOrNamedOperation(operation, m):
                         if m.isIndexed():
@@ -725,7 +716,7 @@ class Descriptor(DescriptorProvider):
     def isMaybeCrossOriginObject(self):
         
         
-        return self.concrete and self.hasCrossOriginMembers and not self.isGlobal()
+        return self.concrete and self.interface.hasCrossOriginMembers and not self.isGlobal()
 
     def needsHeaderInclude(self):
         """

@@ -2970,6 +2970,15 @@ struct LenientThisPolicy;
 struct CrossOriginThisPolicy;
 
 
+
+
+struct MaybeCrossOriginObjectThisPolicy;
+
+
+
+struct MaybeCrossOriginObjectLenientThisPolicy;
+
+
 struct ThrowExceptions;
 
 
