@@ -1504,14 +1504,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 #endif   
 
   
-  
-  
-  
-  
-  static const FrameConstructionData* FindXULDisplayData(const nsStyleDisplay&,
-                                                         const Element&);
-
-  
 
 
 
