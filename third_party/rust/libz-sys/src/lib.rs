@@ -1,4 +1,4 @@
-#![doc(html_root_url = "http://alexcrichton.com/libz-sys")]
+#![doc(html_root_url = "https://docs.rs/libz-sys/1.0")]
 #![allow(non_camel_case_types)]
 
 extern crate libc;
@@ -66,12 +66,7 @@ pub type z_streamp = *mut z_stream;
 macro_rules! fns {
     ($($arg:tt)*) => {
         item! {
-            #[cfg(all(target_env = "msvc", target_pointer_width = "32"))]
             extern { $($arg)* }
-        }
-        item! {
-            #[cfg(not(all(target_env = "msvc", target_pointer_width = "32")))]
-            extern "system" { $($arg)* }
         }
     }
 }
