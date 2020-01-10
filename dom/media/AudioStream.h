@@ -201,6 +201,8 @@ class AudioStream final
     virtual bool Ended() const = 0;
     
     virtual void Drained() = 0;
+    
+    virtual void Errored() = 0;
 
    protected:
     virtual ~DataSource() = default;
