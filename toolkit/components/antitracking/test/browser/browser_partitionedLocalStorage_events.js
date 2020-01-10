@@ -176,6 +176,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
 
     BrowserTestUtils.removeTab(trackerTab);
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   
@@ -296,6 +298,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
     );
 
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   
@@ -404,6 +408,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
     );
 
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   
@@ -498,6 +504,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
     );
 
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   
@@ -586,6 +594,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
     );
 
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   
@@ -681,6 +691,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
     );
 
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   
@@ -769,6 +781,8 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
     );
 
     BrowserTestUtils.removeTab(normalTab);
+
+    UrlClassifierTestUtils.cleanupTestTrackers();
   });
 
   

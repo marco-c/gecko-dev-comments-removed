@@ -271,6 +271,15 @@ nsScriptSecurityManager::GetChannelResultPrincipals(
     return rv;
   }
 
+  if (!(*aPrincipal)->GetIsContentPrincipal()) {
+    
+    
+    
+    nsCOMPtr<nsIPrincipal> copy = *aPrincipal;
+    copy.forget(aStoragePrincipal);
+    return NS_OK;
+  }
+
   return StoragePrincipalHelper::Create(aChannel, *aPrincipal,
                                         aStoragePrincipal);
 }
