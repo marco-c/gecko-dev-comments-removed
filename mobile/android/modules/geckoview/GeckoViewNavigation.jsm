@@ -101,7 +101,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         this.browser.gotoIndex(aData.index);
         break;
       case "GeckoView:LoadUri":
-        const { uri, referrerUri, referrerSessionId, flags } = aData;
+        const { uri, referrerUri, referrerSessionId, flags, headers } = aData;
 
         let navFlags = 0;
 
@@ -183,6 +183,31 @@ class GeckoViewNavigation extends GeckoViewModule {
           );
         }
 
+        let additionalHeaders = null;
+        if (headers) {
+          
+          
+          
+          
+          const badHeaders = ["connection", "host"];
+          additionalHeaders = "";
+          headers.forEach(entry => {
+            const key = entry
+              .split(/:/)[0]
+              .toLowerCase()
+              .trim();
+
+            if (!badHeaders.includes(key)) {
+              additionalHeaders += entry + "\r\n";
+            }
+          });
+          if (additionalHeaders != "") {
+            additionalHeaders = E10SUtils.makeInputStream(additionalHeaders);
+          } else {
+            additionalHeaders = null;
+          }
+        }
+
         
         
         
@@ -203,6 +228,7 @@ class GeckoViewNavigation extends GeckoViewModule {
           flags: navFlags,
           referrerInfo,
           triggeringPrincipal,
+          headers: additionalHeaders,
           csp,
         });
         break;

@@ -10,10 +10,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.AbstractSequentialList;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -1590,9 +1592,41 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+    private ArrayList<String> additionalHeadersToStringArray(final @NonNull Map<String, String> additionalHeaders) {
+        ArrayList<String> headers = new ArrayList<String>();
+        for (String key : additionalHeaders.keySet()) {
+            
+            if (key == null)
+                continue;
+
+            String value = additionalHeaders.get(key);
+
+            
+            if (value != null && !value.equals("")) {
+                headers.add( String.format("%s:%s", key, additionalHeaders.get(key)) );
+            }
+        }
+        return headers;
+    }
+
+    
+
+
+
     @AnyThread
     public void loadUri(final @NonNull String uri) {
-        loadUri(uri, (GeckoSession)null, LOAD_FLAGS_NONE);
+        loadUri(uri, (GeckoSession)null, LOAD_FLAGS_NONE, (Map<String, String>) null);
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public void loadUri(final @NonNull String uri, final @Nullable Map<String, String> additionalHeaders) {
+        loadUri(uri, (GeckoSession)null, LOAD_FLAGS_NONE, additionalHeaders);
     }
 
     
@@ -1603,7 +1637,7 @@ public class GeckoSession implements Parcelable {
 
     @AnyThread
     public void loadUri(final @NonNull String uri, final @LoadFlags int flags) {
-        loadUri(uri, (GeckoSession)null, flags);
+        loadUri(uri, (GeckoSession)null, flags, (Map<String, String>) null);
     }
 
     
@@ -1616,12 +1650,30 @@ public class GeckoSession implements Parcelable {
     @AnyThread
     public void loadUri(final @NonNull String uri, final @Nullable String referrer,
                         final @LoadFlags int flags) {
+        loadUri(uri, referrer, flags, (Map<String, String>) null);
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public void loadUri(final @NonNull String uri, final @Nullable String referrer,
+                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
         final GeckoBundle msg = new GeckoBundle();
         msg.putString("uri", uri);
         msg.putInt("flags", flags);
 
         if (referrer != null) {
             msg.putString("referrerUri", referrer);
+        }
+
+        if (additionalHeaders != null) {
+            msg.putStringArray("headers", additionalHeadersToStringArray(additionalHeaders));
         }
         mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
     }
@@ -1638,12 +1690,32 @@ public class GeckoSession implements Parcelable {
     @AnyThread
     public void loadUri(final @NonNull String uri, final @Nullable GeckoSession referrer,
                         final @LoadFlags int flags) {
+        loadUri(uri, referrer, flags, (Map<String, String>) null);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void loadUri(final @NonNull String uri, final @Nullable GeckoSession referrer,
+                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
         final GeckoBundle msg = new GeckoBundle();
         msg.putString("uri", uri);
         msg.putInt("flags", flags);
 
         if (referrer != null) {
             msg.putString("referrerSessionId", referrer.mId);
+        }
+
+        if (additionalHeaders != null) {
+            msg.putStringArray("headers", additionalHeadersToStringArray(additionalHeaders));
         }
         mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
     }
@@ -1654,7 +1726,17 @@ public class GeckoSession implements Parcelable {
 
     @AnyThread
     public void loadUri(final @NonNull Uri uri) {
-        loadUri(uri, null, LOAD_FLAGS_NONE);
+        loadUri(uri.toString(), (GeckoSession)null, LOAD_FLAGS_NONE, (Map<String, String>) null);
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public void loadUri(final @NonNull Uri uri, final @Nullable Map<String, String> additionalHeaders) {
+        loadUri(uri.toString(), (GeckoSession)null, LOAD_FLAGS_NONE, additionalHeaders);
     }
 
     
@@ -1664,7 +1746,7 @@ public class GeckoSession implements Parcelable {
 
     @AnyThread
     public void loadUri(final @NonNull Uri uri, final @LoadFlags int flags) {
-        loadUri(uri.toString(), (GeckoSession)null, flags);
+        loadUri(uri.toString(), (GeckoSession)null, flags, (Map<String, String>) null);
     }
 
     
@@ -1676,7 +1758,20 @@ public class GeckoSession implements Parcelable {
     @AnyThread
     public void loadUri(final @NonNull Uri uri, final @Nullable Uri referrer,
                         final @LoadFlags int flags) {
-        loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags);
+        loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags, (Map<String, String>) null);
+    }
+
+    
+
+
+
+
+
+
+    @AnyThread
+    public void loadUri(final @NonNull Uri uri, final @Nullable Uri referrer,
+                        final @LoadFlags int flags, final @Nullable Map<String, String> additionalHeaders) {
+        loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags, additionalHeaders);
     }
 
     
