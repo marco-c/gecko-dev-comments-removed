@@ -51,8 +51,11 @@ add_task(async function setup() {
     },
   };
   extension = ExtensionTestUtils.loadExtension(extensionData);
+  
+  ExtensionTestUtils.failOnSchemaWarnings(false);
   await extension.startup();
   await extension.awaitMessage("ready");
+  ExtensionTestUtils.failOnSchemaWarnings(true);
 });
 
 async function setupProxyScript(proxy) {

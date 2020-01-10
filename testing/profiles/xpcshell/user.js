@@ -6,6 +6,8 @@ user_pref("browser.safebrowsing.downloads.remote.url", "https://%(server)s/safeb
 user_pref("browser.search.geoip.url", "https://%(server)s/geoip-dummy");
 user_pref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
 
+user_pref("extensions.webextensions.warnings-as-errors", true);
+
 
 user_pref("geo.provider.testing", true);
 user_pref("media.gmp-manager.updateEnabled", false);
