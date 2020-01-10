@@ -57,7 +57,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   typedef unsigned Flags;
   enum : Flags {
     NO_STREAM_FLAGS = 0U,
-    NEED_MAIN_THREAD_FINISHED = 1U << 0,
+    NEED_MAIN_THREAD_ENDED = 1U << 0,
     NEED_MAIN_THREAD_CURRENT_TIME = 1U << 1,
     
     
@@ -147,7 +147,7 @@ class AudioNodeStream : public ProcessedMediaStream {
 
   const OutputChunks& LastChunks() const { return mLastChunks; }
   bool MainThreadNeedsUpdates() const override {
-    return ((mFlags & NEED_MAIN_THREAD_FINISHED) && mFinished) ||
+    return ((mFlags & NEED_MAIN_THREAD_ENDED) && mEnded) ||
            (mFlags & NEED_MAIN_THREAD_CURRENT_TIME);
   }
 
@@ -214,8 +214,6 @@ class AudioNodeStream : public ProcessedMediaStream {
   
   OutputChunks mLastChunks;
   
-  const TrackRate mSampleRate;
-  
   const Flags mFlags;
   
   uint32_t mActiveInputCount = 0;
@@ -229,7 +227,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   bool mIsActive;
   
   
-  bool mMarkAsFinishedAfterThisBlock;
+  bool mMarkAsEndedAfterThisBlock;
   
   bool mAudioParamStream;
   

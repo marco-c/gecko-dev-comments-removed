@@ -113,6 +113,11 @@ class MediaSegment {
   
 
 
+  virtual bool IsEmpty() const = 0;
+
+  
+
+
   virtual MediaSegment* CreateEmptyClone() const = 0;
   
 
@@ -199,6 +204,7 @@ class MediaSegmentBase : public MediaSegment {
     }
     return true;
   }
+  bool IsEmpty() const override { return mChunks.IsEmpty(); }
   MediaSegment* CreateEmptyClone() const override { return new C(); }
   void AppendFrom(MediaSegment* aSource) override {
     NS_ASSERTION(aSource->GetType() == C::StaticType(), "Wrong type");

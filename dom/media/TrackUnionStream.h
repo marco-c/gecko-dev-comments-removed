@@ -17,79 +17,42 @@ namespace mozilla {
 
 class TrackUnionStream : public ProcessedMediaStream {
  public:
-  explicit TrackUnionStream();
+  TrackUnionStream(TrackRate aSampleRate, MediaSegment::Type aType);
 
   virtual TrackUnionStream* AsTrackUnionStream() override { return this; }
   friend class DOMMediaStream;
 
+  void AddInput(MediaInputPort* aPort) override;
   void RemoveInput(MediaInputPort* aPort) override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
-  void SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode) override;
-
-  MediaStream* GetInputStreamFor(TrackID aTrackID) override;
-  TrackID GetInputTrackIDFor(TrackID aTrackID) override;
+  void SetEnabledImpl(DisabledTrackMode aMode) override;
 
   friend class MediaStreamGraphImpl;
 
  protected:
   
-  struct TrackMapEntry {
-    
-    
-    StreamTime mEndOfConsumedInputTicks;
-    
-    
-    
-    StreamTime mEndOfLastInputIntervalInInputStream;
-    
-    
-    
-    StreamTime mEndOfLastInputIntervalInOutputStream;
-    MediaInputPort* mInputPort;
-    
-    
-    
-    
-    
-    TrackID mInputTrackID;
-    TrackID mOutputTrackID;
-    nsAutoPtr<MediaSegment> mSegment;
-    
-    
-    
-    nsTArray<RefPtr<DirectMediaStreamTrackListener>> mOwnedDirectListeners;
-  };
+  void SetInput(MediaInputPort* aPort);
 
   
-  
-  uint32_t AddTrack(MediaInputPort* aPort, StreamTracks::Track* aTrack,
-                    GraphTime aFrom);
-  void EndTrack(uint32_t aIndex);
-  void CopyTrackData(StreamTracks::Track* aInputTrack, uint32_t aMapIndex,
-                     GraphTime aFrom, GraphTime aTo,
-                     bool* aOutputTrackFinished);
+  void ProcessInputImpl(MediaStream* aSource, MediaSegment* aSegment,
+                        GraphTime aFrom, GraphTime aTo, uint32_t aFlags);
 
-  void AddDirectTrackListenerImpl(
-      already_AddRefed<DirectMediaStreamTrackListener> aListener,
-      TrackID aTrackID) override;
-  void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
-                                     TrackID aTrackID) override;
+  void AddDirectListenerImpl(
+      already_AddRefed<DirectMediaStreamTrackListener> aListener) override;
+  void RemoveDirectListenerImpl(
+      DirectMediaStreamTrackListener* aListener) override;
   void RemoveAllDirectListenersImpl() override;
 
-  nsTArray<TrackMapEntry> mTrackMap;
+  
+  
+  
+  
+  nsTArray<RefPtr<DirectMediaStreamTrackListener>> mOwnedDirectListeners;
 
   
   
-  TrackID mNextAvailableTrackID;
-
-  
-  nsTArray<TrackID> mUsedTracks;
-
-  
-  
-  nsTArray<TrackBound<DirectMediaStreamTrackListener>>
-      mPendingDirectTrackListeners;
+  MediaInputPort* mInputPort = nullptr;
 };
 
 }  
