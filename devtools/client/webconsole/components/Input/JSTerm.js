@@ -905,10 +905,22 @@ class JSTerm extends Component {
 
 
 
-  _onBeforeChange() {
+  _onBeforeChange(cm, change) {
     
     
-    this.setAutoCompletionText("");
+    
+    const { from, to, origin, text } = change;
+    const completionText = this.getAutoCompletionText();
+
+    const addedCharacterMatchCompletion =
+      from.line === to.line &&
+      from.ch === to.ch &&
+      origin === "+input" &&
+      completionText.startsWith(text.join(""));
+
+    if (!completionText || change.canceled || !addedCharacterMatchCompletion) {
+      this.setAutoCompletionText("");
+    }
   }
 
   
