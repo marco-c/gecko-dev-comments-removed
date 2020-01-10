@@ -383,6 +383,11 @@ class nsPresContext : public nsISupports,
   
 
 
+  void SetDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight);
+
+  
+
+
 
   bool IsPaginated() const { return mPaginated; }
 
@@ -1168,6 +1173,8 @@ class nsPresContext : public nsISupports,
   mozilla::UniquePtr<gfxMissingFontRecorder> mMissingFonts;
 
   nsRect mVisibleArea;
+  
+  mozilla::ScreenIntCoord mDynamicToolbarMaxHeight;
   nsSize mPageSize;
   float mPageScale;
   float mPPScale;

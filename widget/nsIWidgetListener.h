@@ -85,6 +85,10 @@ class nsIWidgetListener {
 
   virtual void UIResolutionChanged();
 
+#if defined(MOZ_WIDGET_ANDROID)
+  virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight);
+#endif
+
   
 
 

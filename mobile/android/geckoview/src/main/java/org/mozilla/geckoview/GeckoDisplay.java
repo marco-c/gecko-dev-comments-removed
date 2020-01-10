@@ -119,6 +119,24 @@ public class GeckoDisplay {
 
 
     @UiThread
+    public void setDynamicToolbarMaxHeight(final int height) {
+        ThreadUtils.assertOnUiThread();
+
+        if (mSession != null) {
+            mSession.setDynamicToolbarMaxHeight(height);
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
     public void setVerticalClipping(final int clippingHeight) {
         ThreadUtils.assertOnUiThread();
 
