@@ -2266,6 +2266,19 @@ VARCACHE_PREF(
 
 
 
+
+
+VARCACHE_PREF(
+  Live,
+  "fission.preserve_browsing_contexts",
+  fission_preserve_browsing_contexts,
+  bool, false
+)
+
+
+
+
+
 VARCACHE_PREF(
   Live,
   "full-screen-api.enabled",

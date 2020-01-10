@@ -14,6 +14,9 @@
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 
+using namespace mozilla;
+using namespace mozilla::dom;
+
 already_AddRefed<nsFrameLoader> nsFrameLoaderOwner::GetFrameLoader() {
   return do_AddRef(mFrameLoader);
 }
@@ -30,6 +33,35 @@ nsFrameLoaderOwner::GetBrowsingContext() {
   return nullptr;
 }
 
+bool nsFrameLoaderOwner::UseRemoteSubframes() {
+  RefPtr<Element> owner = do_QueryObject(this);
+  MOZ_ASSERT(this);
+
+  nsILoadContext* loadContext = owner->OwnerDoc()->GetLoadContext();
+  MOZ_DIAGNOSTIC_ASSERT(loadContext);
+
+  return loadContext->UseRemoteSubframes();
+}
+
+bool nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
+    const mozilla::dom::RemotenessOptions& aOptions) {
+  if (aOptions.mReplaceBrowsingContext) {
+    return false;
+  }
+
+  
+  
+  if (XRE_IsParentProcess() && (!aOptions.mRemoteType.WasPassed() ||
+                                aOptions.mRemoteType.Value().IsVoid())) {
+    return false;
+  }
+
+  
+  
+  return UseRemoteSubframes() ||
+         StaticPrefs::fission_preserve_browsing_contexts();
+}
+
 void nsFrameLoaderOwner::ChangeRemoteness(
     const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
   RefPtr<mozilla::dom::BrowsingContext> bc;
@@ -37,18 +69,7 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   
   if (mFrameLoader) {
-    
-    
-    bool isChromeRemoteToLocal =
-        XRE_IsParentProcess() && (!aOptions.mRemoteType.WasPassed() ||
-                                  aOptions.mRemoteType.Value().IsVoid());
-
-    
-    
-    
-    if (!aOptions.mReplaceBrowsingContext && !isChromeRemoteToLocal &&
-        mozilla::Preferences::GetBool("fission.preserve_browsing_contexts",
-                                      false)) {
+    if (ShouldPreserveBrowsingContext(aOptions)) {
       bc = mFrameLoader->GetBrowsingContext();
       mFrameLoader->SkipBrowsingContextDetach();
     }
