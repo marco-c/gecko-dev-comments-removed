@@ -33,6 +33,16 @@ pub fn define() -> Vec<OperandKind> {
     
     
     
+    let uimm128 = Builder::new_imm("uimm128")
+        .doc("A 128-bit immediate unsigned integer.")
+        .rust_type("ir::Constant")
+        .build();
+    kinds.push(uimm128);
+
+    
+    
+    
+    
     let offset32 = Builder::new_imm("offset32")
         .doc("A 32-bit immediate signed offset.")
         .default_member("offset")

@@ -105,6 +105,24 @@ impl GlobalValue {
 }
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct Constant(u32);
+entity_impl!(Constant, "const");
+
+impl Constant {
+    
+    
+    
+    pub fn with_number(n: u32) -> Option<Self> {
+        if n < u32::MAX {
+            Some(Constant(n))
+        } else {
+            None
+        }
+    }
+}
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct JumpTable(u32);
@@ -330,5 +348,11 @@ mod tests {
             mem::size_of::<Value>(),
             mem::size_of::<PackedOption<Value>>()
         );
+    }
+
+    #[test]
+    fn constant_with_number() {
+        assert_eq!(Constant::with_number(0).unwrap().to_string(), "const0");
+        assert_eq!(Constant::with_number(1).unwrap().to_string(), "const1");
     }
 }
