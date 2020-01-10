@@ -802,7 +802,7 @@ class UrlbarView {
       this.oneOffSearchButtons.style.display = "";
       
       
-      this.oneOffSearchButtons.textbox = this.input.textbox;
+      this.oneOffSearchButtons.textbox = this.input.inputField;
       this.oneOffSearchButtons.view = this;
     } else {
       this.oneOffSearchButtons.telemetryOrigin = null;
