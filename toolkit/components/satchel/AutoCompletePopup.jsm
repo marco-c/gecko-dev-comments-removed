@@ -173,11 +173,12 @@ this.AutoCompletePopup = {
       return;
     }
 
-    let firstResultStyle = results[0].style;
+    
+    let resultStyles = new Set(results.map(r => r.style).filter(r => !!r));
     this.weakBrowser = Cu.getWeakReference(browser);
     this.openedPopup = browser.autoCompletePopup;
     
-    this.openedPopup.setAttribute("firstresultstyle", firstResultStyle);
+    this.openedPopup.setAttribute("resultstyles", [...resultStyles].join(" "));
     this.openedPopup.hidden = false;
     
     this.openedPopup.setAttribute("width", Math.max(100, rect.width));
@@ -192,7 +193,11 @@ this.AutoCompletePopup = {
       this.openedPopup.mInput = AutoCompleteResultView;
       
       
-      if (firstResultStyle == "autofill-profile") {
+      if (
+        resultStyles.size &&
+        (resultStyles.has("autofill-profile") ||
+          resultStyles.has("loginsFooter"))
+      ) {
         this.openedPopup._normalMaxRows = this.openedPopup.maxRows;
         this.openedPopup.mInput.maxRows = 100;
       }
