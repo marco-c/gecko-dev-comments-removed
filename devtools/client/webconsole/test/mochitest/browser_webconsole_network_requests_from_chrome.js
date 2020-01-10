@@ -28,7 +28,7 @@ add_task(async function() {
   Services.console.registerListener(listener);
 
   
-  HUDService;
+  BrowserConsoleManager;
 
   await sendRequestFromChrome();
 

@@ -22,21 +22,20 @@ loader.lazyRequireGetter(
 const BC_WINDOW_FEATURES =
   "chrome,titlebar,toolbar,centerscreen,resizable,dialog=no";
 
-function HUDService() {}
-
-HUDService.prototype = {
-  _browserConsole: null,
-  _browserConsoleInitializing: null,
-
-  _browerConsoleSessionState: false,
+class BrowserConsoleManager {
+  constructor() {
+    this._browserConsole = null;
+    this._browserConsoleInitializing = null;
+    this._browerConsoleSessionState = false;
+  }
 
   storeBrowserConsoleSessionState() {
     this._browerConsoleSessionState = !!this.getBrowserConsole();
-  },
+  }
 
   getBrowserConsoleSessionState() {
     return this._browerConsoleSessionState;
-  },
+  }
 
   
 
@@ -52,14 +51,14 @@ HUDService.prototype = {
 
 
   async openBrowserConsole(target, win, fissionSupport = false) {
-    const hud = new BrowserConsole(target, win, win, this, fissionSupport);
+    const hud = new BrowserConsole(target, win, win, fissionSupport);
     this._browserConsole = hud;
     hud.once("destroyed", () => {
       this._browserConsole = null;
     });
     await hud.init();
     return hud;
-  },
+  }
 
   
 
@@ -147,7 +146,7 @@ HUDService.prototype = {
     const browserConsole = await this._browserConsoleInitializing;
     this._browserConsoleInitializing = null;
     return browserConsole;
-  },
+  }
 
   
 
@@ -160,7 +159,7 @@ HUDService.prototype = {
     }
 
     return this.toggleBrowserConsole();
-  },
+  }
 
   
 
@@ -171,7 +170,7 @@ HUDService.prototype = {
 
   getBrowserConsole() {
     return this._browserConsole;
-  },
-};
+  }
+}
 
-exports.HUDService = new HUDService();
+exports.BrowserConsoleManager = new BrowserConsoleManager();
