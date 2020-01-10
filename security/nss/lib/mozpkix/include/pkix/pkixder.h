@@ -116,17 +116,6 @@ inline Result ExpectTagAndSkipValue(Reader& input, uint8_t tag) {
 
 
 
-
-inline Result SkipOptionalImplicitPrimitiveTag(Reader& input,
-                                               uint8_t numberInClass) {
-  if (input.Peek(CONTEXT_SPECIFIC | numberInClass)) {
-    return ExpectTagAndSkipValue(input, CONTEXT_SPECIFIC | numberInClass);
-  }
-  return Success;
-}
-
-
-
 inline Result ExpectTagAndGetTLV(Reader& input, uint8_t tag,
                                   Input& tlv) {
   Reader::Mark mark(input.GetMark());

@@ -35,7 +35,6 @@ typedef struct CERTCertListStr CERTCertList;
 typedef struct CERTCertListNodeStr CERTCertListNode;
 typedef struct CERTCertNicknamesStr CERTCertNicknames;
 typedef struct CERTCertTrustStr CERTCertTrust;
-typedef struct CERTCertDistrustStr CERTCertDistrust;
 typedef struct CERTCertificateStr CERTCertificate;
 typedef struct CERTCertificateListStr CERTCertificateList;
 typedef struct CERTCertificateRequestStr CERTCertificateRequest;
@@ -139,18 +138,6 @@ struct CERTCertTrustStr {
     unsigned int sslFlags;
     unsigned int emailFlags;
     unsigned int objectSigningFlags;
-};
-
-
-
-
-
-
-
-
-struct CERTCertDistrustStr {
-    SECItem serverDistrustAfter;
-    SECItem emailDistrustAfter;
 };
 
 
@@ -292,8 +279,6 @@ struct CERTCertificateStr {
     PK11SlotInfo *slot;        
     CK_OBJECT_HANDLE pkcs11ID; 
     PRBool ownSlot;            
-    
-    CERTCertDistrust *distrust;
 };
 #define SEC_CERTIFICATE_VERSION_1 0 /* default created */
 #define SEC_CERTIFICATE_VERSION_2 1 /* v2 */
