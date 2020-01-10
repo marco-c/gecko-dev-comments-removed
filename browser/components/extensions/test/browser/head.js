@@ -69,6 +69,20 @@ function loadTestSubscript(filePath) {
 }
 
 
+
+
+
+let remote = gTestPath.includes("test-oop-extensions");
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.webextensions.remote", remote]],
+});
+if (remote) {
+  
+  
+  SpecialPowers.setIntPref("dom.ipc.keepProcessesAlive.extension", 1);
+}
+
+
 Services.prefs
   .getDefaultBranch("browser.newtabpage.activity-stream.")
   .setBoolPref("feeds.topsites", false);

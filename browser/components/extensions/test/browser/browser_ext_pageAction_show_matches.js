@@ -2,8 +2,6 @@
 
 "use strict";
 
-PromiseTestUtils.whitelistRejectionsGlobally(/packaging errors/);
-
 function getExtension(page_action) {
   return ExtensionTestUtils.loadExtension({
     manifest: {
