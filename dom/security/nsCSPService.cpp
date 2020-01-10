@@ -251,9 +251,6 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsILoadInfo> loadInfo = oldChannel->LoadInfo();
-  nsCOMPtr<nsICSPEventListener> cspEventListener;
-  rv = loadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -281,10 +278,31 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
     return rv;
   }
 
-  nsAutoString cspNonce;
-  rv = loadInfo->GetCspNonce(cspNonce);
+  int16_t decision = nsIContentPolicy::ACCEPT;
+  rv = ConsultCSPForRedirect(originalUri, newUri, loadInfo, &decision);
+  if (NS_CP_REJECTED(decision)) {
+    autoCallback.DontCallback();
+    oldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+    return NS_BINDING_FAILED;
+  }
+
+  return rv;
+}
+
+nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
+                                           nsIURI* aNewURI,
+                                           nsILoadInfo* aLoadInfo,
+                                           int16_t* aDecision) {
+  nsCOMPtr<nsICSPEventListener> cspEventListener;
+  nsresult rv =
+      aLoadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsAutoString cspNonce;
+  rv = aLoadInfo->GetCspNonce(cspNonce);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
   bool isPreload = nsContentUtils::IsPreloadType(policyType);
 
   
@@ -294,56 +312,47 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   policyType =
       nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
-  int16_t aDecision = nsIContentPolicy::ACCEPT;
-  nsCOMPtr<nsISupports> requestContext = loadInfo->GetLoadingContext();
+  nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
   
   if (isPreload) {
-    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp = loadInfo->GetPreloadCsp();
+    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp = aLoadInfo->GetPreloadCsp();
     if (preloadCsp) {
       
       preloadCsp->ShouldLoad(
           policyType,  
           cspEventListener,
-          newUri,          
+          aNewURI,         
           nullptr,         
           requestContext,  
           EmptyCString(),  
-          originalUri,     
+          aOriginalURI,    
           true,            
           cspNonce,        
-          &aDecision);
+          aDecision);
 
       
       
-      if (NS_CP_REJECTED(aDecision)) {
-        autoCallback.DontCallback();
-        oldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
-        return NS_BINDING_FAILED;
+      if (NS_CP_REJECTED(*aDecision)) {
+        return NS_OK;
       }
     }
   }
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCsp();
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadInfo->GetCsp();
   if (csp) {
     
     csp->ShouldLoad(policyType,  
                     cspEventListener,
-                    newUri,          
+                    aNewURI,         
                     nullptr,         
                     requestContext,  
                     EmptyCString(),  
-                    originalUri,     
+                    aOriginalURI,    
                     true,            
                     cspNonce,        
-                    &aDecision);
+                    aDecision);
   }
 
-  
-  if (!NS_CP_ACCEPTED(aDecision)) {
-    autoCallback.DontCallback();
-    oldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
-    return NS_BINDING_FAILED;
-  }
   return NS_OK;
 }
