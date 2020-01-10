@@ -320,6 +320,11 @@ bool OpenVRSession::Initialize(mozilla::gfx::VRSystemState& aSystemState) {
 }
 
 bool OpenVRSession::SetupContollerActions() {
+  if (!vr::VRInput()) {
+    NS_WARNING("OpenVR - vr::VRInput() is null.");
+    return false;
+  }
+
   
   
   nsCString controllerAction;
@@ -817,7 +822,11 @@ bool OpenVRSession::SetupContollerActions() {
     }
   }
 
-  vr::VRInput()->SetActionManifestPath(controllerAction.BeginReading());
+  vr::EVRInputError err = vr::VRInput()->SetActionManifestPath(controllerAction.BeginReading());
+  if (err != vr::VRInputError_None) {
+    NS_WARNING("OpenVR - SetActionManifestPath failed.");
+    return false;
+  }
   
 
   
