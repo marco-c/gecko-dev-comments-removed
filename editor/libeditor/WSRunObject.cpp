@@ -102,37 +102,33 @@ WSRunObject::WSRunObject(HTMLEditor* aHTMLEditor,
     : WSRunScanner(aHTMLEditor, aScanStartPoint, aScanEndPoint),
       mHTMLEditor(aHTMLEditor) {}
 
-nsresult WSRunObject::ScrubBlockBoundary(HTMLEditor* aHTMLEditor,
-                                         BlockBoundary aBoundary,
-                                         nsINode* aBlock, int32_t aOffset) {
-  NS_ENSURE_TRUE(aHTMLEditor && aBlock, NS_ERROR_NULL_POINTER);
 
-  int32_t offset;
-  if (aBoundary == kBlockStart) {
-    offset = 0;
-  } else if (aBoundary == kBlockEnd) {
-    offset = aBlock->Length();
-  } else {
-    
-    
-    NS_ENSURE_STATE(aOffset >= 0);
-    offset = aOffset;
+nsresult WSRunObject::Scrub(HTMLEditor& aHTMLEditor,
+                            const EditorDOMPoint& aPoint) {
+  MOZ_ASSERT(aPoint.IsSet());
+
+  WSRunObject wsRunObject(&aHTMLEditor, aPoint);
+  nsresult rv = wsRunObject.Scrub();
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
   }
-
-  WSRunObject theWSObj(aHTMLEditor, aBlock, offset);
-  return theWSObj.Scrub();
+  return rv;
 }
 
-nsresult WSRunObject::PrepareToJoinBlocks(HTMLEditor* aHTMLEditor,
-                                          Element* aLeftBlock,
-                                          Element* aRightBlock) {
-  NS_ENSURE_TRUE(aLeftBlock && aRightBlock && aHTMLEditor,
-                 NS_ERROR_NULL_POINTER);
 
-  WSRunObject leftWSObj(aHTMLEditor, aLeftBlock, aLeftBlock->Length());
-  WSRunObject rightWSObj(aHTMLEditor, aRightBlock, 0);
+nsresult WSRunObject::PrepareToJoinBlocks(HTMLEditor& aHTMLEditor,
+                                          Element& aLeftBlockElement,
+                                          Element& aRightBlockElement) {
+  WSRunObject leftWSObj(&aHTMLEditor,
+                        EditorRawDOMPoint::AtEndOf(aLeftBlockElement));
+  WSRunObject rightWSObj(&aHTMLEditor,
+                         EditorRawDOMPoint(&aRightBlockElement, 0));
 
-  return leftWSObj.PrepareToDeleteRangePriv(&rightWSObj);
+  nsresult rv = leftWSObj.PrepareToDeleteRangePriv(&rightWSObj);
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  return rv;
 }
 
 nsresult WSRunObject::PrepareToDeleteRange(HTMLEditor* aHTMLEditor,

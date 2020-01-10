@@ -412,19 +412,19 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
 
   
-  
-  MOZ_CAN_RUN_SCRIPT
-  static nsresult ScrubBlockBoundary(HTMLEditor* aHTMLEditor,
-                                     BlockBoundary aBoundary, nsINode* aBlock,
-                                     int32_t aOffset = -1);
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE static nsresult Scrub(
+      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint);
 
   
-  
-  
-  MOZ_CAN_RUN_SCRIPT
-  static nsresult PrepareToJoinBlocks(HTMLEditor* aHTMLEditor,
-                                      dom::Element* aLeftBlock,
-                                      dom::Element* aRightBlock);
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE static nsresult PrepareToJoinBlocks(
+      HTMLEditor& aHTMLEditor, dom::Element& aLeftBlockElement,
+      dom::Element& aRightBlockElement);
 
   
   

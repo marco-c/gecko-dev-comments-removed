@@ -2038,6 +2038,27 @@ class HTMLEditor final : public TextEditor,
       const EditorDOMPoint& aPointToInsert,
       MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  TryToJoinBlocksWithTransaction(nsIContent& aLeftContentInBlock,
+                                 nsIContent& aRightContentInBlock);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

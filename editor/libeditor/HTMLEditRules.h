@@ -163,28 +163,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult
-  TryToJoinBlocksWithTransaction(nsIContent& aLeftNode, nsIContent& aRightNode);
-
-  
-
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   DeleteElementsExceptTableRelatedElements(nsINode& aNode);
 
