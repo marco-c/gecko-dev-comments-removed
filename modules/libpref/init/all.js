@@ -2635,13 +2635,6 @@ pref("services.blocklist.gfx.signer", "remote-settings.content-signature.mozilla
 
 pref("ui.key.accelKey", 17);
 pref("ui.key.menuAccessKey", 18);
-pref("ui.key.generalAccessKey", -1);
-
-
-
-
-pref("ui.key.chromeAccess", 4);
-pref("ui.key.contentAccess", 5);
 
 pref("ui.key.menuAccessKeyFocuses", false); 
 
@@ -3923,17 +3916,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   pref("ui.key.menuAccessKey", 0);
   pref("ui.key.accelKey", 224);
-  
-  
-  
-  
-  pref("ui.key.generalAccessKey", -1);
-
-  
-  
-  
-  pref("ui.key.chromeAccess", 2);
-  pref("ui.key.contentAccess", 6);
 
   
   pref("ui.panel.default_level_parent", false);
