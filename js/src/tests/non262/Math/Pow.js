@@ -49,7 +49,7 @@ a = c = e = 2;
 assertEq(a**c**e, 16);
 
 
-assertThrows(function() { return Reflect.parse("2 * * 3"); }, SyntaxError);
+assertThrowsInstanceOf(function() { return Reflect.parse("2 * * 3"); }, SyntaxError);
 
 
 for (let unaryOp of ["delete", "typeof", "void", "+", "-", "!", "~"]) {

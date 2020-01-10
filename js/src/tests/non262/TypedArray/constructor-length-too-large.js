@@ -8,8 +8,8 @@ const INT32_MAX = 2**31 - 1;
 
 
 for (let TA of typedArrayConstructors) {
-    assertThrows(() => new TA(INT32_MAX), RangeError);
-    assertThrows(() => new TA(INT32_MAX >> Math.log2(TA.BYTES_PER_ELEMENT)), RangeError);
+    assertThrowsInstanceOf(() => new TA(INT32_MAX), RangeError);
+    assertThrowsInstanceOf(() => new TA(INT32_MAX >> Math.log2(TA.BYTES_PER_ELEMENT)), RangeError);
 }
 
 
@@ -22,8 +22,8 @@ for (let TA of typedArrayConstructors) {
 
 
 for (let TA of typedArrayConstructors) {
-    assertThrows(() => new TA({length: INT32_MAX}), RangeError);
-    assertThrows(() => new TA({length: INT32_MAX >> Math.log2(TA.BYTES_PER_ELEMENT)}), RangeError);
+    assertThrowsInstanceOf(() => new TA({length: INT32_MAX}), RangeError);
+    assertThrowsInstanceOf(() => new TA({length: INT32_MAX >> Math.log2(TA.BYTES_PER_ELEMENT)}), RangeError);
 }
 
 if (typeof reportCompare === "function")

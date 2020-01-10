@@ -5,13 +5,13 @@ print(BUGNUMBER + ": " + summary);
 
 if (hasPipeline()) {
     
-    assertThrows(() => Function("2 | > parseInt"), SyntaxError);
-    assertThrows(() => Function("2 ||> parseInt"), SyntaxError);
-    assertThrows(() => Function("2 |>> parseInt"), SyntaxError);
-    assertThrows(() => Function("2 <| parseInt"), SyntaxError);
+    assertThrowsInstanceOf(() => Function("2 | > parseInt"), SyntaxError);
+    assertThrowsInstanceOf(() => Function("2 ||> parseInt"), SyntaxError);
+    assertThrowsInstanceOf(() => Function("2 |>> parseInt"), SyntaxError);
+    assertThrowsInstanceOf(() => Function("2 <| parseInt"), SyntaxError);
     
-    assertThrows(() => Function("2 |>"), SyntaxError);
-    assertThrows(() => Function("|> parseInt"), SyntaxError);
+    assertThrowsInstanceOf(() => Function("2 |>"), SyntaxError);
+    assertThrowsInstanceOf(() => Function("|> parseInt"), SyntaxError);
 }
 
 if (typeof reportCompare === "function")

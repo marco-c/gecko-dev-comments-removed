@@ -19,30 +19,30 @@ if (typeof Reflect !== "undefined" && Reflect.parse) {
 
     
     assertEq(Reflect.parse("async function await() {}").body[0].id.name, "await");
-    assertThrows(() => Reflect.parse("async function f() { async function await() {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function f() { async function await() {} }"), SyntaxError);
 
     
-    assertThrows(() => Reflect.parse("(async function await() {})"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("(async function await() {})"), SyntaxError);
 
     
-    assertThrows(() => Reflect.parse("await 4;"), SyntaxError);
-    assertThrows(() => Reflect.parse("function a() { await 4; }"), SyntaxError);
-    assertThrows(() => Reflect.parse("function* a() { await 4; }"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function k() { function a() { await 4; } }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("await 4;"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("function a() { await 4; }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("function* a() { await 4; }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function k() { function a() { await 4; } }"), SyntaxError);
 
     
-    assertThrows(() => Reflect.parse("async function a(k = await 3) {}"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function a() { async function b(k = await 3) {} }"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function a() { async function b(k = [await 3]) {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a(k = await 3) {}"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { async function b(k = await 3) {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { async function b(k = [await 3]) {} }"), SyntaxError);
 
-    assertThrows(() => Reflect.parse("async function a() { async function b([k = await 3]) {} }"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function a() { async function b([k = [await 3]]) {} }"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function a() { async function b({k = await 3}) {} }"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function a() { async function b({k = [await 3]}) {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { async function b([k = await 3]) {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { async function b([k = [await 3]]) {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { async function b({k = await 3}) {} }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { async function b({k = [await 3]}) {} }"), SyntaxError);
 
     
-    assertThrows(() => Reflect.parse("async function a() { var await = 4; }"), SyntaxError);
-    assertThrows(() => Reflect.parse("async function a() { return await; }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { var await = 4; }"), SyntaxError);
+    assertThrowsInstanceOf(() => Reflect.parse("async function a() { return await; }"), SyntaxError);
 
     
     Reflect.parse("function a() { 'use strict'; var await = 3; }");

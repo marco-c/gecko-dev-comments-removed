@@ -49,14 +49,14 @@ function* g() {
     yield *
     foo
 }
-assertThrows(() => Function("function* g() { yield\n* foo }"), SyntaxError);
+assertThrowsInstanceOf(() => Function("function* g() { yield\n* foo }"), SyntaxError);
 assertIteratorNext(function*(){
                        yield
                        3
                    }(), undefined)
 
 
-assertThrows(() => Function("function* g() { yield ? yield : yield }"), SyntaxError);
+assertThrowsInstanceOf(() => Function("function* g() { yield ? yield : yield }"), SyntaxError);
 
 
 function* g() { "use strict"; yield 3; yield 4; }
