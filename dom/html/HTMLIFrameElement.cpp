@@ -57,6 +57,7 @@ HTMLIFrameElement::HTMLIFrameElement(
     : nsGenericHTMLFrameElement(std::move(aNodeInfo), aFromParser) {
   
   mFeaturePolicy = new mozilla::dom::FeaturePolicy(this);
+
   nsCOMPtr<nsIPrincipal> origin = GetFeaturePolicyDefaultOrigin();
   MOZ_ASSERT(origin);
   mFeaturePolicy->SetDefaultOrigin(origin);
@@ -229,42 +230,6 @@ mozilla::dom::FeaturePolicy* HTMLIFrameElement::FeaturePolicy() const {
   return mFeaturePolicy;
 }
 
-void HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() {
-  if (!mFrameLoader) {
-    return;
-  }
-
-  
-  
-  if (!mFrameLoader->IsRemoteFrame() && !mFrameLoader->GetExistingDocShell()) {
-    return;
-  }
-
-  RefPtr<BrowsingContext> browsingContext = mFrameLoader->GetBrowsingContext();
-
-  if (!browsingContext || !browsingContext->IsContentSubframe()) {
-    return;
-  }
-
-  
-  
-  nsPIDOMWindowOuter* topWindow = browsingContext->Top()->GetDOMWindow();
-  if (NS_WARN_IF(!topWindow)) {
-    return;
-  }
-
-  Document* topLevelDocument = topWindow->GetExtantDoc();
-  if (NS_WARN_IF(!topLevelDocument)) {
-    return;
-  }
-
-  if (!NS_SUCCEEDED(nsContentUtils::CheckSameOrigin(topLevelDocument, this))) {
-    return;
-  }
-
-  browsingContext->SetFeaturePolicy(mFeaturePolicy);
-}
-
 already_AddRefed<nsIPrincipal>
 HTMLIFrameElement::GetFeaturePolicyDefaultOrigin() const {
   nsCOMPtr<nsIPrincipal> principal;
@@ -317,8 +282,6 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
   if (AllowFullscreen()) {
     mFeaturePolicy->MaybeSetAllowedPolicy(NS_LITERAL_STRING("fullscreen"));
   }
-
-  MaybeStoreCrossOriginFeaturePolicy();
 }
 
 }  
