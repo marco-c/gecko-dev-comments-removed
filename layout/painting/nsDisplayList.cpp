@@ -862,6 +862,13 @@ static void AddNonAnimatingTransformLikePropertiesStyles(
   };
 
   const nsStyleDisplay* display = aFrame->StyleDisplay();
+  
+  
+  
+  bool hasMotion =
+      !display->mOffsetPath.IsNone() ||
+      !aNonAnimatingProperties.HasProperty(eCSSProperty_offset_path);
+
   for (nsCSSPropertyID id : aNonAnimatingProperties) {
     switch (id) {
       case eCSSProperty_transform:
@@ -895,20 +902,20 @@ static void AddNonAnimatingTransformLikePropertiesStyles(
         }
         break;
       case eCSSProperty_offset_distance:
-        if (!display->mOffsetDistance.IsDefinitelyZero()) {
+        if (hasMotion && !display->mOffsetDistance.IsDefinitelyZero()) {
           appendFakeAnimation(id, display->mOffsetDistance);
         }
         break;
       case eCSSProperty_offset_rotate:
-        if (!display->mOffsetRotate.auto_ ||
-            display->mOffsetRotate.angle.ToDegrees() != 0.0) {
+        if (hasMotion && (!display->mOffsetRotate.auto_ ||
+                          display->mOffsetRotate.angle.ToDegrees() != 0.0)) {
           const StyleOffsetRotate& rotate = display->mOffsetRotate;
           appendFakeAnimation(
               id, OffsetRotate(MakeCSSAngle(rotate.angle), rotate.auto_));
         }
         break;
       case eCSSProperty_offset_anchor:
-        if (!display->mOffsetAnchor.IsAuto()) {
+        if (hasMotion && !display->mOffsetAnchor.IsAuto()) {
           const StylePosition& position = display->mOffsetAnchor.AsPosition();
           appendFakeAnimation(id, OffsetAnchor(AnchorPosition(
                                       position.horizontal, position.vertical)));
@@ -979,6 +986,12 @@ static void AddAnimationsForDisplayItem(nsIFrame* aFrame,
   nsCSSPropertyIDSet nonAnimatingProperties =
       nsCSSPropertyIDSet::TransformLikeProperties();
   for (auto iter = compositorAnimations.iter(); !iter.done(); iter.next()) {
+    
+    
+    
+    
+    
+    
     bool added =
         AddAnimationsForProperty(aFrame, effects, iter.get().value(), data,
                                  iter.get().key(), aSendFlag, aAnimationInfo);
