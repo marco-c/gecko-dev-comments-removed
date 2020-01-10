@@ -63,6 +63,7 @@ const whitelist = {
   frameScripts: new Set([
     
     "chrome://mochikit/content/shutdown-leaks-collector.js",
+    "chrome://mochikit/content/tests/BrowserTestUtils/content-utils.js",
 
     
     "chrome://global/content/browser-content.js",
@@ -96,9 +97,6 @@ const intermittently_loaded_whitelist = {
     
     
     "resource://webcompat/AboutCompat.jsm",
-
-    
-    "resource://testing-common/BrowserTestUtilsChild.jsm",
   ]),
   frameScripts: new Set([]),
   processScripts: new Set([

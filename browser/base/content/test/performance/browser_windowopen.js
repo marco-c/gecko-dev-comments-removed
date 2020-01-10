@@ -132,15 +132,11 @@ add_task(async function() {
         subject => subject == win
       );
 
-      let promises = [
-        BrowserTestUtils.firstBrowserLoaded(win, false),
-        BrowserTestUtils.browserStopped(
-          win.gBrowser.selectedBrowser,
-          "about:home"
-        ),
-      ];
-
-      await Promise.all(promises);
+      await BrowserTestUtils.firstBrowserLoaded(win, false);
+      await BrowserTestUtils.browserStopped(
+        win.gBrowser.selectedBrowser,
+        "about:home"
+      );
 
       await new Promise(resolve => {
         
