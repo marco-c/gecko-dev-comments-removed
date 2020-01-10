@@ -123,9 +123,3 @@
 :root:not([subdialog]) #country-warning-message {
   display: none;
 }
-
-
-#form textarea,
-#form input {
-  margin: 0;
-}
