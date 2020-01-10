@@ -745,6 +745,23 @@ public class Tokenizer implements Locator {
     
 
     
+
+    
+
+
+
+
+
+
+
+    public void setState(int specialTokenizerState) {
+        this.stateSave = specialTokenizerState;
+        this.endTagExpectation = null;
+        this.endTagExpectationAsArray = null;
+    }
+
+    
+
     
 
 
@@ -767,6 +784,8 @@ public class Tokenizer implements Locator {
         assert this.endTagExpectation != null;
         endTagExpectationToArray();
     }
+
+    
 
     
 
@@ -3861,8 +3880,14 @@ public class Tokenizer implements Locator {
 
 
 
-
-                        if (index < endTagExpectationAsArray.length) {
+                        if (endTagExpectationAsArray == null) {
+                            tokenHandler.characters(Tokenizer.LT_SOLIDUS,
+                                    0, 2);
+                            cstart = pos;
+                            reconsume = true;
+                            state = transition(state, returnState, reconsume, pos);
+                            continue stateloop;
+                        } else if (index < endTagExpectationAsArray.length) {
                             char e = endTagExpectationAsArray[index];
                             char folded = c;
                             if (c >= 'A' && c <= 'Z') {
