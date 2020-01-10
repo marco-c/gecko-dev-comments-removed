@@ -337,9 +337,7 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    let alias = UrlbarPrefs.get("quantumbar")
-      ? this._getSearchAlias()
-      : this._getSearchAliasAwesomebar();
+    let alias = this._getSearchAlias();
     if (!alias) {
       return false;
     }
@@ -413,42 +411,6 @@ class UrlbarValueFormatter {
       return this._selectedResult.payload.keyword || null;
     }
     return null;
-  }
-
-  _getSearchAliasAwesomebar() {
-    let popup = this.urlbarInput.popup;
-
-    
-    
-    
-    
-    
-    
-    
-    let itemIndex =
-      popup.selectedIndex < 0
-        ? popup._previousSelectedIndex
-        : popup.selectedIndex;
-    if (itemIndex < 0) {
-      return null;
-    }
-    let item = popup.richlistbox.children[itemIndex] || null;
-
-    
-    
-    
-    
-    
-    if (!item || item.getAttribute("actiontype") != "searchengine") {
-      return null;
-    }
-
-    let url = item.getAttribute("url");
-    let action = this.urlbarInput._parseActionUrl(url);
-    if (!action) {
-      return null;
-    }
-    return action.params.alias || null;
   }
 
   
