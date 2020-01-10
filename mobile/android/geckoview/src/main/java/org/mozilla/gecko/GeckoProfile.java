@@ -238,6 +238,9 @@ public final class GeckoProfile {
 
         
         final boolean init = profileDir != null && profileDir.mkdirs();
+        if (init) {
+            Log.d(LOGTAG, "Creating profile directory: " + profileDir);
+        }
 
         
         GeckoProfile profile = sProfileCache.get(resolvedProfileName);
@@ -245,6 +248,7 @@ public final class GeckoProfile {
 
         if (profile == null) {
             try {
+                Log.d(LOGTAG, "Loading profile at: " + profileDir + " name: " + resolvedProfileName);
                 newProfile = new GeckoProfile(context, resolvedProfileName, profileDir);
             } catch (NoMozillaDirectoryException e) {
                 
@@ -467,10 +471,11 @@ public final class GeckoProfile {
             
             try {
                 mProfileDir = findProfileDir();
-                Log.d(LOGTAG, "Found profile dir.");
+                Log.d(LOGTAG, "Found profile dir: " + mProfileDir);
             } catch (NoSuchProfileException noSuchProfile) {
                 
                 mProfileDir = createProfileDir();
+                Log.d(LOGTAG, "Creating profile dir: " + mProfileDir);
             }
         } catch (IOException ioe) {
             Log.e(LOGTAG, "Error getting profile dir", ioe);
