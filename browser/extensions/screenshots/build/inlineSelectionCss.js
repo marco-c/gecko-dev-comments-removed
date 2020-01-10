@@ -1,8 +1,4 @@
 
-
-
-
-
 window.inlineSelectionCss = `
 .button, .highlight-button-cancel, .highlight-button-download, .highlight-button-copy {
   display: flex;

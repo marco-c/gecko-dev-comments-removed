@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 var USERSCRIPT_PREFNAME = "extensions.webextensions.userScripts.enabled";

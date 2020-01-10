@@ -1,7 +1,3 @@
-
-
-
-
 ChromeUtils.defineModuleGetter(
   this,
   "IndexedDB",

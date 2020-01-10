@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 export function isEmailOrPhoneNumber(val, content) {
   const { locale } = content;
   

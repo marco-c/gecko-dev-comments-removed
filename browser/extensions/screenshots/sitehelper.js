@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 this.sitehelper = (function() {

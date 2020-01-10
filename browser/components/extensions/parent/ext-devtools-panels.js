@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 var { ExtensionParent } = ChromeUtils.import(

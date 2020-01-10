@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 this.tabs = class extends ExtensionAPI {

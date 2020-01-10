@@ -1,7 +1,3 @@
-
-
-
-
 "use strict";
 
 extensions.registerModules({

@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 this.callBackground = function callBackground(funcName, ...args) {

@@ -1,7 +1,3 @@
-
-
-
-
 var buttonClicked = false;
 var button = document.getElementById("errorTryAgain");
 button.onclick = function() {

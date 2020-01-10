@@ -1,7 +1,3 @@
-
-
-
-
 this.thumbnailGenerator = (function () {let exports={}; 
 
 

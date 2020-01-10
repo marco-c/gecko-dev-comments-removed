@@ -1,7 +1,3 @@
-
-
-
-
 const path = require("path");
 const config = require("./webpack.system-addon.config.js");
 const absolute = relPath => path.join(__dirname, relPath);

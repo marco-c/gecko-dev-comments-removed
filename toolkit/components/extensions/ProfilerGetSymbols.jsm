@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 const EXPORTED_SYMBOLS = ["ProfilerGetSymbols"];

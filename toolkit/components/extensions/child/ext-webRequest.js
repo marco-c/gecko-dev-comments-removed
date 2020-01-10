@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 this.webRequest = class extends ExtensionAPI {

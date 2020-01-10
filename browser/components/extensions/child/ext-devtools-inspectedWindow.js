@@ -1,9 +1,5 @@
 
 
-
-
-
-
 "use strict";
 
 this.devtools_inspectedWindow = class extends ExtensionAPI {

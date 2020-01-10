@@ -1,7 +1,3 @@
-
-
-
-
 import { actionCreators as ac, actionTypes as at } from "common/Actions.jsm";
 
 const _OpenInPrivateWindow = site => ({

@@ -1,7 +1,3 @@
-
-
-
-
 export const IS_NEWTAB =
   global.document && global.document.documentURI === "about:newtab";
 export const NEWTAB_DARK_THEME = {

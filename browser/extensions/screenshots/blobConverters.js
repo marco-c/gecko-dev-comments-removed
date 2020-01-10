@@ -1,7 +1,3 @@
-
-
-
-
 this.blobConverters = (function() {
   const exports = {};
 

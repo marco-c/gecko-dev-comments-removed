@@ -1,7 +1,3 @@
-
-
-
-
 "use strict";
 
 this.documentMetadata = (function() {

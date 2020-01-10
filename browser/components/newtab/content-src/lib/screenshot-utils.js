@@ -10,10 +10,6 @@
 
 
 
-
-
-
-
 export const ScreenshotUtils = {
   isBlob(isLocal, image) {
     return !!(

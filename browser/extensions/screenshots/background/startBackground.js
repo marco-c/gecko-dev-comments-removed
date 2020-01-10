@@ -6,10 +6,6 @@
 
 
 
-
-
-
-
 const startTime = Date.now();
 
 this.startBackground = (function() {

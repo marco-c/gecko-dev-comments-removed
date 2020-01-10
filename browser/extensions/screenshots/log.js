@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 this.log = (function() {

@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 const loaderUtils = require("loader-utils");
 const QUOTE_REGEX_STRING = "['|\"]{1}";
 

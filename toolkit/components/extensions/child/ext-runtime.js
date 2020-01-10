@@ -1,7 +1,3 @@
-
-
-
-
 "use strict";
 
 this.runtime = class extends ExtensionAPI {
