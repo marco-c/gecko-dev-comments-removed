@@ -43,7 +43,14 @@ function setIsPlayingState(isPlaying) {
 
 
 let Player = {
-  WINDOW_EVENTS: ["click", "keydown", "mouseout", "resize", "unload"],
+  WINDOW_EVENTS: [
+    "click",
+    "contextmenu",
+    "keydown",
+    "mouseout",
+    "resize",
+    "unload",
+  ],
   mm: null,
   
 
@@ -131,6 +138,11 @@ let Player = {
       case "click": {
         this.onClick(event);
         this.controls.removeAttribute("keying");
+        break;
+      }
+
+      case "contextmenu": {
+        event.preventDefault();
         break;
       }
 
