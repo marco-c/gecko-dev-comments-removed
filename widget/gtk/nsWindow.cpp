@@ -3280,7 +3280,18 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
 
   
   
-  if ((aEvent->changed_mask &
+  
+  
+  
+  
+  
+  
+  bool waylandWasIconified =
+      (!mIsX11Display && aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED &&
+       aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED &&
+       mSizeState == nsSizeMode_Minimized);
+  if (!waylandWasIconified &&
+      (aEvent->changed_mask &
        (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED |
         GDK_WINDOW_STATE_FULLSCREEN)) == 0) {
     return;
