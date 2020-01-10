@@ -1013,6 +1013,12 @@ static void AccumulateCipherSuite(Telemetry::HistogramID probe,
   Telemetry::Accumulate(probe, value);
 }
 
+void RebuildVerifiedCertificateInformationResults(
+    nsNSSSocketInfo* aInfoObject, const UniqueCERTCertificate& aCert,
+    UniqueCERTCertList& aBuiltChain,
+    const CertificateTransparencyInfo& aCertificateTransparencyInfo,
+    SECOidTag aEvOidPolicy, bool aSucceeded);
+
 
 
 
@@ -1079,26 +1085,36 @@ static void RebuildVerifiedCertificateInformation(PRFileDesc* fd,
       nullptr,  
       &certificateTransparencyInfo);
 
-  if (rv != Success) {
+  RebuildVerifiedCertificateInformationResults(infoObject, cert, builtChain,
+                                               certificateTransparencyInfo,
+                                               evOidPolicy, rv == Success);
+}
+
+void RebuildVerifiedCertificateInformationResults(
+    nsNSSSocketInfo* aInfoObject, const UniqueCERTCertificate& aCert,
+    UniqueCERTCertList& aBuiltChain,
+    const CertificateTransparencyInfo& aCertificateTransparencyInfo,
+    SECOidTag aEvOidPolicy, bool aSucceeded) {
+  if (!aSucceeded) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback: couldn't rebuild verified certificate info"));
   }
 
-  RefPtr<nsNSSCertificate> nssc(nsNSSCertificate::Create(cert.get()));
-  if (rv == Success && evOidPolicy != SEC_OID_UNKNOWN) {
-    infoObject->SetCertificateTransparencyInfo(certificateTransparencyInfo);
+  RefPtr<nsNSSCertificate> nssc(nsNSSCertificate::Create(aCert.get()));
+  if (aSucceeded && aEvOidPolicy != SEC_OID_UNKNOWN) {
+    aInfoObject->SetCertificateTransparencyInfo(aCertificateTransparencyInfo);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback using NEW cert %p (is EV)", nssc.get()));
-    infoObject->SetServerCert(nssc, EVStatus::EV);
+    aInfoObject->SetServerCert(nssc, EVStatus::EV);
   } else {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback using NEW cert %p (is not EV)", nssc.get()));
-    infoObject->SetServerCert(nssc, EVStatus::NotEV);
+    aInfoObject->SetServerCert(nssc, EVStatus::NotEV);
   }
 
-  if (rv == Success) {
-    infoObject->SetCertificateTransparencyInfo(certificateTransparencyInfo);
-    infoObject->SetSucceededCertChain(std::move(builtChain));
+  if (aSucceeded) {
+    aInfoObject->SetCertificateTransparencyInfo(aCertificateTransparencyInfo);
+    aInfoObject->SetSucceededCertChain(std::move(aBuiltChain));
   }
 }
 
@@ -1153,6 +1169,10 @@ static nsresult IsCertificateDistrustImminent(nsIX509CertList* aCertList,
   }
   return NS_OK;
 }
+
+void CallAfterRebuildVerifiedCertificateInformation(
+    nsNSSSocketInfo* aInfoObject, uint32_t aCumulativeSecurityState,
+    PRBool aSiteSupportsSafeRenego);
 
 void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   SECStatus rv;
@@ -1294,48 +1314,42 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     RebuildVerifiedCertificateInformation(fd, infoObject);
   }
 
+  CallAfterRebuildVerifiedCertificateInformation(infoObject, state,
+                                                 siteSupportsSafeRenego);
+}
+
+void CallAfterRebuildVerifiedCertificateInformation(
+    nsNSSSocketInfo* aInfoObject, uint32_t aCumulativeSecurityState,
+    PRBool aSiteSupportsSafeRenego) {
+
   nsCOMPtr<nsIX509CertList> succeededCertChain;
   
   
   
-  Unused << infoObject->GetSucceededCertChain(
+  Unused << aInfoObject->GetSucceededCertChain(
       getter_AddRefs(succeededCertChain));
   bool distrustImminent;
   nsresult srv =
       IsCertificateDistrustImminent(succeededCertChain, distrustImminent);
   if (NS_SUCCEEDED(srv) && distrustImminent) {
-    state |= nsIWebProgressListener::STATE_CERT_DISTRUST_IMMINENT;
+    aCumulativeSecurityState |= nsIWebProgressListener::STATE_CERT_DISTRUST_IMMINENT;
   }
 
   bool domainMismatch;
   bool untrusted;
   bool notValidAtThisTime;
   
-  Unused << infoObject->GetIsDomainMismatch(&domainMismatch);
-  Unused << infoObject->GetIsUntrusted(&untrusted);
-  Unused << infoObject->GetIsNotValidAtThisTime(&notValidAtThisTime);
+  Unused << aInfoObject->GetIsDomainMismatch(&domainMismatch);
+  Unused << aInfoObject->GetIsUntrusted(&untrusted);
+  Unused << aInfoObject->GetIsNotValidAtThisTime(&notValidAtThisTime);
   
   
   if (domainMismatch || untrusted || notValidAtThisTime) {
-    state |= nsIWebProgressListener::STATE_CERT_USER_OVERRIDDEN;
+    aCumulativeSecurityState |= nsIWebProgressListener::STATE_CERT_USER_OVERRIDDEN;
   }
 
-  infoObject->SetSecurityState(state);
+  aInfoObject->SetSecurityState(aCumulativeSecurityState);
 
-  
-  
-  
-  
-  
-  if (!siteSupportsSafeRenego) {
-    NS_ConvertASCIItoUTF16 msg(infoObject->GetHostName());
-    msg.AppendLiteral(" : server does not support RFC 5746, see CVE-2009-3555");
-
-    nsContentUtils::LogSimpleConsoleError(
-        msg, "SSL", !!infoObject->GetOriginAttributes().mPrivateBrowsingId,
-        true );
-  }
-
-  infoObject->NoteTimeUntilReady();
-  infoObject->SetHandshakeCompleted();
+  aInfoObject->NoteTimeUntilReady();
+  aInfoObject->SetHandshakeCompleted();
 }
