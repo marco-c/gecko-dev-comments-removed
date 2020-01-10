@@ -105,6 +105,9 @@ class ZoneAllocator : public JS::shadow::Zone,
   void unregisterPolicy(js::ZoneAllocPolicy* policy) {
     return gcMallocTracker.unregisterPolicy(policy);
   }
+  void movePolicy(js::ZoneAllocPolicy* dst, js::ZoneAllocPolicy* src) {
+    return gcMallocTracker.movePolicy(dst, src);
+  }
 #endif
 
   void incPolicyMemory(js::ZoneAllocPolicy* policy, size_t nbytes) {
@@ -215,13 +218,37 @@ class ZoneAllocPolicy : public MallocProvider<ZoneAllocPolicy> {
 #endif
   }
   ZoneAllocPolicy(ZoneAllocPolicy& other) : ZoneAllocPolicy(other.zone_) {}
-  ZoneAllocPolicy(ZoneAllocPolicy&& other) : ZoneAllocPolicy(other.zone_) {}
+  ZoneAllocPolicy(ZoneAllocPolicy&& other) : zone_(other.zone_) {
+#ifdef DEBUG
+    zone()->movePolicy(this, &other);
+#endif
+    other.zone_ = nullptr;
+  }
   ~ZoneAllocPolicy() {
 #ifdef DEBUG
     if (zone_) {
       zone_->unregisterPolicy(this);
     }
 #endif
+  }
+
+  ZoneAllocPolicy& operator=(const ZoneAllocPolicy& other) {
+#ifdef DEBUG
+    zone()->unregisterPolicy(this);
+#endif
+    zone_ = other.zone();
+#ifdef DEBUG
+    zone()->registerPolicy(this);
+#endif
+    return *this;
+  }
+  ZoneAllocPolicy& operator=(ZoneAllocPolicy&& other) {
+#ifdef DEBUG
+    zone()->unregisterPolicy(this);
+    zone()->movePolicy(this, &other);
+#endif
+    other.zone_ = nullptr;
+    return *this;
   }
 
   
