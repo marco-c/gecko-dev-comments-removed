@@ -2454,6 +2454,7 @@ void SourceMediaStream::DestroyImpl() {
   
   
   MutexAutoLock lock(mMutex);
+  mUpdateTracks.Clear();
   MediaStream::DestroyImpl();
 }
 
