@@ -104,6 +104,71 @@ async function handleInitialHomepagePopup(extensionId, homepageUrl) {
 
 
 
+
+
+
+async function handleHomepageUrl(extension, homepageUrl) {
+  let inControl;
+  if (
+    extension.startupReason == "ADDON_INSTALL" ||
+    extension.startupReason == "ADDON_ENABLE"
+  ) {
+    inControl = await ExtensionPreferencesManager.setSetting(
+      extension.id,
+      "homepage_override",
+      homepageUrl
+    );
+  } else {
+    let item = await ExtensionPreferencesManager.getSetting(
+      "homepage_override"
+    );
+    inControl = item && item.id == extension.id;
+  }
+
+  if (inControl) {
+    Services.prefs.setBoolPref(
+      HOMEPAGE_PRIVATE_ALLOWED,
+      extension.privateBrowsingAllowed
+    );
+    
+    Services.prefs.setBoolPref(HOMEPAGE_EXTENSION_CONTROLLED, true);
+    if (extension.startupReason == "APP_STARTUP") {
+      handleInitialHomepagePopup(extension.id, homepageUrl);
+    } else {
+      homepagePopup.addObserver(extension.id);
+    }
+  }
+
+  
+  
+  extension.on("add-permissions", async (ignoreEvent, permissions) => {
+    if (permissions.permissions.includes("internal:privateBrowsingAllowed")) {
+      let item = await ExtensionPreferencesManager.getSetting(
+        "homepage_override"
+      );
+      if (item && item.id == extension.id) {
+        Services.prefs.setBoolPref(HOMEPAGE_PRIVATE_ALLOWED, true);
+      }
+    }
+  });
+  
+  extension.on("remove-permissions", async (ignoreEvent, permissions) => {
+    if (permissions.permissions.includes("internal:privateBrowsingAllowed")) {
+      let item = await ExtensionPreferencesManager.getSetting(
+        "homepage_override"
+      );
+      if (item && item.id == extension.id) {
+        Services.prefs.setBoolPref(HOMEPAGE_PRIVATE_ALLOWED, false);
+      }
+    }
+  });
+}
+
+
+
+
+
+
 var pendingSearchSetupTasks = new Map();
 
 this.chrome_settings_overrides = class extends ExtensionAPI {
@@ -231,69 +296,24 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
     await ExtensionSettingsStore.initialize();
 
     let homepageUrl = manifest.chrome_settings_overrides.homepage;
-    const ignoreHomePageUrl =
-      homepageUrl && (await HomePage.shouldIgnore(homepageUrl));
 
     
-    if (homepageUrl && !ignoreHomePageUrl) {
-      let inControl;
-      if (
-        extension.startupReason == "ADDON_INSTALL" ||
-        extension.startupReason == "ADDON_ENABLE"
-      ) {
-        inControl = await ExtensionPreferencesManager.setSetting(
-          extension.id,
-          "homepage_override",
-          homepageUrl
+    if (homepageUrl) {
+      const ignoreHomePageUrl = await HomePage.shouldIgnore(homepageUrl);
+
+      if (ignoreHomePageUrl) {
+        Services.telemetry.recordEvent(
+          "homepage",
+          "preference",
+          "ignore",
+          "set_blocked_extension",
+          {
+            webExtensionId: extension.id,
+          }
         );
       } else {
-        let item = await ExtensionPreferencesManager.getSetting(
-          "homepage_override"
-        );
-        inControl = item && item.id == extension.id;
+        await handleHomepageUrl(extension, homepageUrl);
       }
-
-      if (inControl) {
-        Services.prefs.setBoolPref(
-          HOMEPAGE_PRIVATE_ALLOWED,
-          extension.privateBrowsingAllowed
-        );
-        
-        Services.prefs.setBoolPref(HOMEPAGE_EXTENSION_CONTROLLED, true);
-        if (extension.startupReason == "APP_STARTUP") {
-          handleInitialHomepagePopup(extension.id, homepageUrl);
-        } else {
-          homepagePopup.addObserver(extension.id);
-        }
-      }
-
-      
-      
-      extension.on("add-permissions", async (ignoreEvent, permissions) => {
-        if (
-          permissions.permissions.includes("internal:privateBrowsingAllowed")
-        ) {
-          let item = await ExtensionPreferencesManager.getSetting(
-            "homepage_override"
-          );
-          if (item && item.id == extension.id) {
-            Services.prefs.setBoolPref(HOMEPAGE_PRIVATE_ALLOWED, true);
-          }
-        }
-      });
-      
-      extension.on("remove-permissions", async (ignoreEvent, permissions) => {
-        if (
-          permissions.permissions.includes("internal:privateBrowsingAllowed")
-        ) {
-          let item = await ExtensionPreferencesManager.getSetting(
-            "homepage_override"
-          );
-          if (item && item.id == extension.id) {
-            Services.prefs.setBoolPref(HOMEPAGE_PRIVATE_ALLOWED, false);
-          }
-        }
-      });
     }
     if (manifest.chrome_settings_overrides.search_provider) {
       
