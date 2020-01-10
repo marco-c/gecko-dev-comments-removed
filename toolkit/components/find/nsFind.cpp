@@ -174,10 +174,16 @@ static bool SkipNode(const nsIContent* aContent) {
       }
     }
 
-    
-    if (content->IsInNativeAnonymousSubtree() &&
-        !IsTextFormControl(AnonymousSubtreeRootParent(*content))) {
-      return true;
+    if (content->IsInNativeAnonymousSubtree()) {
+      
+      
+      
+      if (!content->IsEditable() ||
+          !IsTextFormControl(AnonymousSubtreeRootParent(*content))) {
+        DEBUG_FIND_PRINTF("Skipping node: ");
+        DumpNode(content);
+        return true;
+      }
     }
 
     
