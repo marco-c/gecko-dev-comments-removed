@@ -298,6 +298,11 @@ void MobileViewportManager::UpdateResolution(
         
         
         
+        
+
+        
+        
+        
 
         
         
@@ -329,7 +334,6 @@ void MobileViewportManager::UpdateResolution(
         
         
         
-        
 
         
         
@@ -344,16 +348,14 @@ void MobileViewportManager::UpdateResolution(
         
         
         
-        
 
         
-        
-        float numerator = clamped(d, a, b);
         float denominator = clamped(c, a, b);
 
-        float adjustedRatio = numerator / denominator;
-        newZoom = Some(ScaleZoomWithDisplayWidth(
-            zoom, adjustedRatio, viewportSize, mMobileViewportSize));
+        float adjustedRatio = d / denominator;
+        CSSToScreenScale adjustedZoom = ScaleZoomWithDisplayWidth(
+            zoom, adjustedRatio, viewportSize, mMobileViewportSize);
+        newZoom = Some(ClampZoom(adjustedZoom, aViewportInfo));
       }
     }
   } else {  
