@@ -204,22 +204,20 @@ this.LoginManagerParent = {
 
   
   observe(subject, topic, data) {
-    if (topic == "passwordmgr-autosaved-login-merged") {
-      
-      
-      let { origin } = subject;
-      if (this._generatedPasswordsByPrincipalOrigin.has(origin)) {
-        log("Removing generated-password cache entry for origin:", origin);
-        this._generatedPasswordsByPrincipalOrigin.delete(origin);
-      }
-    } else if (
-      topic == "passwordmgr-storage-changed" &&
-      data == "removeLogin"
+    if (
+      topic == "passwordmgr-autosaved-login-merged" ||
+      (topic == "passwordmgr-storage-changed" && data == "removeLogin")
     ) {
-      
-      let { origin } = subject;
+      let { origin, guid } = subject;
       let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(origin);
-      if (generatedPW) {
+
+      
+      
+      if (
+        generatedPW &&
+        (guid == generatedPW.storageGUID ||
+          topic == "passwordmgr-autosaved-login-merged")
+      ) {
         log(
           "Removing storageGUID for generated-password cache entry on origin:",
           origin

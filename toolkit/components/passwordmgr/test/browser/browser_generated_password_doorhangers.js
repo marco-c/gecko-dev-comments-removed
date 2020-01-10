@@ -1122,11 +1122,12 @@ add_task(
         );
 
         
-        ok(
-          !LoginManagerParent._generatedPasswordsByPrincipalOrigin.has(
+        is(
+          autoSavedLogin.password,
+          LoginManagerParent._generatedPasswordsByPrincipalOrigin.get(
             "https://example.com"
-          ),
-          "Generated password cache entry has been removed"
+          ).value,
+          "Generated password cache entry has the expected password value"
         );
       }
     );
@@ -1316,11 +1317,12 @@ add_task(async function autosaved_login_updated_to_existing_login_onsubmit() {
       );
 
       
-      ok(
-        !LoginManagerParent._generatedPasswordsByPrincipalOrigin.has(
+      is(
+        autoSavedLogin.password,
+        LoginManagerParent._generatedPasswordsByPrincipalOrigin.get(
           "https://example.com"
-        ),
-        "Generated password cache entry has been removed"
+        ).value,
+        "Generated password cache entry has the expected password value"
       );
     }
   );
