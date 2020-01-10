@@ -712,6 +712,13 @@ VARCACHE_PREF(
   bool, true
 )
 
+VARCACHE_PREF(
+  Live,
+  "browser.cache.disk.enable",
+   browser_cache_disk_enable,
+  RelaxedAtomicBool, true
+)
+
 
 VARCACHE_PREF(
   Live,
