@@ -349,8 +349,6 @@ class nsXULElement : public nsStyledElement {
                                 bool aIsTrustedEvent) override;
   void ClickWithInputSource(uint16_t aInputSource, bool aIsTrustedEvent);
 
-  Element* GetBindingParent() const final { return mBindingParent; }
-
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
   virtual bool IsFocusableInternal(int32_t* aTabIndex,
                                    bool aWithMouse) override;
@@ -363,13 +361,6 @@ class nsXULElement : public nsStyledElement {
                          nsINode** aResult) const override;
 
   virtual void RecompileScriptEventListeners() override;
-
-  
-  
-  
-  void SetXULBindingParent(Element* aBindingParent) {
-    mBindingParent = aBindingParent;
-  }
 
   virtual bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
@@ -531,12 +522,6 @@ class nsXULElement : public nsStyledElement {
   nsresult EnsureContentsGenerated(void) const;
 
   nsresult AddPopupListener(nsAtom* aName);
-
-  
-
-
-
-  RefPtr<Element> mBindingParent;
 
   
 

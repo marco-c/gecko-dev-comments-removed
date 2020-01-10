@@ -389,7 +389,7 @@ class nsIContent : public nsINode {
 
 
 
-  virtual mozilla::dom::Element* GetBindingParent() const {
+  mozilla::dom::Element* GetBindingParent() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mBindingParent.get() : nullptr;
   }
