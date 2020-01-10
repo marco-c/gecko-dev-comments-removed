@@ -13,8 +13,10 @@ namespace widget {
 #define GBMLIB_NAME "libgbm.so.1"
 #define DRMLIB_NAME "libdrm.so.2"
 
-bool nsWaylandDisplay::mIsDMABufEnabled;
-bool nsWaylandDisplay::mIsDMABufPrefLoaded;
+bool nsWaylandDisplay::mIsDMABufEnabled = false;
+
+int nsWaylandDisplay::mIsDMABufPrefState = -1;
+bool nsWaylandDisplay::mIsDMABufConfigured = false;
 
 wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
   if (!aGdkDisplay) {
@@ -301,9 +303,12 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   wl_registry_add_listener(mRegistry, &registry_listener, this);
 
   if (NS_IsMainThread()) {
-    if (!mIsDMABufPrefLoaded) {
-      mIsDMABufPrefLoaded = true;
-      mIsDMABufEnabled =
+    
+    
+    
+    
+    if (mIsDMABufPrefState == -1) {
+      mIsDMABufPrefState =
           Preferences::GetBool("widget.wayland_dmabuf_backend.enabled", false);
     }
     
@@ -332,6 +337,41 @@ nsWaylandDisplay::~nsWaylandDisplay() {
     wl_event_queue_destroy(mEventQueue);
     mEventQueue = nullptr;
   }
+}
+
+bool nsWaylandDisplay::IsDMABufEnabled() {
+  if (mIsDMABufConfigured) {
+    return mIsDMABufEnabled;
+  }
+
+  
+  nsWaylandDisplay* display = WaylandDisplayGet();
+  if (nsWaylandDisplay::mIsDMABufPrefState == -1) {
+    MOZ_ASSERT(false,
+               "We're missing nsWaylandDisplay preference configuration!");
+    return false;
+  }
+
+  mIsDMABufConfigured = true;
+  if (!nsWaylandDisplay::mIsDMABufPrefState) {
+    
+    return false;
+  }
+
+  if (!display->ConfigureGbm()) {
+    NS_WARNING("Failed to create GbmDevice, DMABUF/DRM won't be available!");
+    return false;
+  }
+
+  if (!display->GetGbmFormat( false) ||
+      !display->GetGbmFormat( true)) {
+    NS_WARNING(
+        "Failed to create obtain pixel format, DMABUF/DRM won't be available!");
+    return false;
+  }
+
+  mIsDMABufEnabled = true;
+  return true;
 }
 
 void* nsGbmLib::sGbmLibHandle = nullptr;
