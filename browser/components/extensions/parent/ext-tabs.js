@@ -214,14 +214,6 @@ class TabsUpdateFilterEventManager extends EventManager {
         
         needsModified = filter.properties.some(p => allAttrs.has(p));
         filter.properties = new Set(filter.properties);
-        
-        if (filter.properties.has("isarticle")) {
-          extension.logger.warn(
-            "The isarticle filter name is deprecated, use isArticle."
-          );
-          filter.properties.delete("isarticle");
-          filter.properties.add("isArticle");
-        }
       } else {
         filter.properties = allProperties;
       }
