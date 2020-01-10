@@ -49,9 +49,6 @@ const MessageState = overrides => Object.freeze(Object.assign({
   messagesUiById: [],
   
   
-  messagesTableDataById: new Map(),
-  
-  
   
   groupsById: new Map(),
   
@@ -82,7 +79,6 @@ function cloneState(state) {
     filteredMessagesCount: {...state.filteredMessagesCount},
     messagesUiById: [...state.messagesUiById],
     messagesPayloadById: new Map(state.messagesPayloadById),
-    messagesTableDataById: new Map(state.messagesTableDataById),
     groupsById: new Map(state.groupsById),
     currentGroup: state.currentGroup,
     removedActors: [...state.removedActors],
@@ -287,7 +283,6 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
     messagesById,
     messagesPayloadById,
     messagesUiById,
-    messagesTableDataById,
     networkMessagesUpdateById,
     groupsById,
     visibleMessages,
@@ -463,14 +458,6 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
           visibleMessages.filter(id => !groupMessages.includes(id));
       }
       return closeState;
-
-    case constants.MESSAGE_TABLE_RECEIVE:
-      const {id, data} = action;
-
-      return {
-        ...state,
-        messagesTableDataById: (new Map(messagesTableDataById)).set(id, data),
-      };
 
     case constants.MESSAGE_UPDATE_PAYLOAD:
       return {
@@ -783,8 +770,8 @@ function removeMessagesFromState(state, removedMessagesIds) {
       getNewCurrentGroup(state.currentGroup, state.groupsById, removedMessagesIds);
   }
 
-  if (mapHasRemovedIdKey(state.messagesTableDataById)) {
-    state.messagesTableDataById = cleanUpMap(state.messagesTableDataById);
+  if (mapHasRemovedIdKey(state.messagesPayloadById)) {
+    state.messagesPayloadById = cleanUpMap(state.messagesPayloadById);
   }
   if (mapHasRemovedIdKey(state.groupsById)) {
     state.groupsById = cleanUpMap(state.groupsById);
