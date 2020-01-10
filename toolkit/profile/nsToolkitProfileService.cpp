@@ -1310,11 +1310,16 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
     mStartupReason = NS_LITERAL_STRING("argument-profile");
 
-    
-    
-    GetProfileByDir(lf, lf, getter_AddRefs(mCurrent));
+    GetProfileByDir(lf, nullptr, getter_AddRefs(mCurrent));
     NS_ADDREF(*aRootDir = lf);
-    lf.forget(aLocalDir);
+    
+    
+    if (mCurrent) {
+      mCurrent->GetLocalDir(aLocalDir);
+    } else {
+      lf.forget(aLocalDir);
+    }
+
     NS_IF_ADDREF(*aProfile = mCurrent);
     return NS_OK;
   }
@@ -1659,9 +1664,16 @@ void nsToolkitProfileService::GetProfileByDir(nsIFile* aRootDir,
     bool equal;
     nsresult rv = profile->mRootDir->Equals(aRootDir, &equal);
     if (NS_SUCCEEDED(rv) && equal) {
+      if (!aLocalDir) {
+        
+        
+        profile.forget(aResult);
+        return;
+      }
+
       rv = profile->mLocalDir->Equals(aLocalDir, &equal);
       if (NS_SUCCEEDED(rv) && equal) {
-        NS_ADDREF(*aResult = profile);
+        profile.forget(aResult);
         return;
       }
     }
