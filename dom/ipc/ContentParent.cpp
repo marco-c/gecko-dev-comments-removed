@@ -4711,13 +4711,10 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   if (thisBrowserHost) {
     nsCOMPtr<nsILoadContext> context = thisBrowserHost->GetLoadContext();
 
-    
-    
-    
-    if (((aChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW) &&
-         !context->UseRemoteTabs()) ||
-        ((aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW) &&
-         !context->UseRemoteSubframes())) {
+    if ((!!(aChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW) !=
+         context->UseRemoteTabs()) ||
+        (!!(aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW) !=
+         context->UseRemoteSubframes())) {
       return IPC_FAIL(this, "Unexpected aChromeFlags passed");
     }
   }
