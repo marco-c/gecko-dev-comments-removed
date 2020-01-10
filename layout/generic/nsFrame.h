@@ -615,7 +615,6 @@ class nsFrame : public nsBox {
 
   static bool ShouldApplyOverflowClipping(const nsIFrame* aFrame,
                                           const nsStyleDisplay* aDisp) {
-    MOZ_ASSERT(aDisp == aFrame->StyleDisplay(), "Wong display struct");
     
     
     if (MOZ_UNLIKELY(aDisp->mOverflowX ==
@@ -629,8 +628,7 @@ class nsFrame : public nsBox {
     
     
     
-    if (aDisp->IsContainPaint() && !aFrame->IsScrollFrame() &&
-        aFrame->IsFrameOfType(eSupportsContainLayoutAndPaint)) {
+    if (aDisp->IsContainPaint() && !aFrame->IsScrollFrame()) {
       return true;
     }
 
