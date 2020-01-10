@@ -1,21 +1,41 @@
-pub mod integer;
-pub mod integermulti;
-pub mod multi;
+
+
+
+
+
+
+
+
+
+
+pub mod keys;
 pub mod single;
 
-use lmdb::DatabaseFlags;
+#[cfg(feature = "db-dup-sort")]
+pub mod multi;
+
+#[cfg(feature = "db-int-key")]
+pub mod integer;
+
+#[cfg(all(feature = "db-dup-sort", feature = "db-int-key"))]
+pub mod integermulti;
+
+use crate::backend::BackendDatabaseFlags;
 
 #[derive(Default, Debug, Copy, Clone)]
-pub struct Options {
+pub struct Options<F> {
     pub create: bool,
-    pub flags: DatabaseFlags,
+    pub flags: F,
 }
 
-impl Options {
-    pub fn create() -> Options {
+impl<F> Options<F>
+where
+    F: BackendDatabaseFlags,
+{
+    pub fn create() -> Options<F> {
         Options {
             create: true,
-            flags: DatabaseFlags::empty(),
+            flags: F::empty(),
         }
     }
 }

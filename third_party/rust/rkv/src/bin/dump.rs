@@ -8,17 +8,12 @@
 
 
 
-extern crate rkv;
+use std::env::args;
+use std::io;
+use std::path::Path;
 
-use rkv::{
-    error::MigrateError,
-    migrate::Migrator,
-};
-use std::{
-    env::args,
-    io,
-    path::Path,
-};
+use rkv::migrate::Migrator;
+use rkv::MigrateError;
 
 fn main() -> Result<(), MigrateError> {
     let mut cli_args = args();

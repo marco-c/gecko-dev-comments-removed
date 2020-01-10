@@ -7,29 +7,48 @@
 
 
 
+#![cfg(feature = "db-dup-sort")]
 
+use std::fs;
 
+use tempfile::Builder;
 
-
+use rkv::backend::{
+    Lmdb,
+    LmdbDatabase,
+    LmdbRoCursor,
+    LmdbRwTransaction,
+};
 use rkv::{
-    MultiStore,
     Readable,
     Rkv,
-    SingleStore,
     StoreOptions,
     Value,
     Writer,
 };
 
-use tempfile::Builder;
 
-use std::fs;
+
+
+
+
+
+
+
+
+
+
+
+
+
+type SingleStore = rkv::SingleStore<LmdbDatabase>;
+type MultiStore = rkv::MultiStore<LmdbDatabase>;
 
 #[test]
 fn read_many() {
     let root = Builder::new().prefix("test_txns").tempdir().expect("tempdir");
     fs::create_dir_all(root.path()).expect("dir created");
-    let k = Rkv::new(root.path()).expect("new succeeded");
+    let k = Rkv::new::<Lmdb>(root.path()).expect("new succeeded");
     let samplestore = k.open_single("s", StoreOptions::create()).expect("open");
     let datestore = k.open_multi("m", StoreOptions::create()).expect("open");
     let valuestore = k.open_multi("m", StoreOptions::create()).expect("open");
@@ -71,7 +90,10 @@ fn read_many() {
     }
 }
 
-fn get_ids_by_field<Txn: Readable>(txn: &Txn, store: MultiStore, field: &str) -> Vec<u64> {
+fn get_ids_by_field<'env, T>(txn: &'env T, store: MultiStore, field: &str) -> Vec<u64>
+where
+    T: Readable<'env, Database = LmdbDatabase, RoCursor = LmdbRoCursor<'env>>,
+{
     store
         .get(txn, field)
         .expect("get iterator")
@@ -82,7 +104,10 @@ fn get_ids_by_field<Txn: Readable>(txn: &Txn, store: MultiStore, field: &str) ->
         .collect::<Vec<u64>>()
 }
 
-fn get_samples<Txn: Readable>(txn: &Txn, samplestore: SingleStore, ids: &[u64]) -> Vec<String> {
+fn get_samples<'env, T>(txn: &'env T, samplestore: SingleStore, ids: &[u64]) -> Vec<String>
+where
+    T: Readable<'env, Database = LmdbDatabase, RoCursor = LmdbRoCursor<'env>>,
+{
     ids.iter()
         .map(|id| {
             let bytes = id.to_be_bytes();
@@ -95,11 +120,11 @@ fn get_samples<Txn: Readable>(txn: &Txn, samplestore: SingleStore, ids: &[u64]) 
         .collect::<Vec<String>>()
 }
 
-fn put_sample(txn: &mut Writer, samplestore: SingleStore, id: u64, value: &str) {
+fn put_sample(txn: &mut Writer<LmdbRwTransaction>, samplestore: SingleStore, id: u64, value: &str) {
     let idbytes = id.to_be_bytes();
     samplestore.put(txn, &idbytes, &Value::Str(value)).expect("put id");
 }
 
-fn put_id_field(txn: &mut Writer, store: MultiStore, field: &str, id: u64) {
+fn put_id_field(txn: &mut Writer<LmdbRwTransaction>, store: MultiStore, field: &str, id: u64) {
     store.put(txn, field, &Value::U64(id)).expect("put id");
 }

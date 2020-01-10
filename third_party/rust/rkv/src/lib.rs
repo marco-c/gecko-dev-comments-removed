@@ -197,64 +197,51 @@
 
 
 
-#![allow(dead_code)]
 
-pub use lmdb::{
-    DatabaseFlags,
-    EnvironmentBuilder,
-    EnvironmentFlags,
-    WriteFlags,
-};
 
 mod env;
-pub mod error;
+mod error;
+mod helpers;
 mod manager;
-pub mod migrate;
 mod readwrite;
+
+pub mod backend;
+pub mod migrate;
 pub mod store;
 pub mod value;
 
-pub use lmdb::{
-    Cursor,
-    Database,
-    Info,
-    Iter as LmdbIter,
-    RoCursor,
-    Stat,
+pub use backend::{
+    DatabaseFlags,
+    EnvironmentFlags,
+    WriteFlags,
 };
-
-pub use self::readwrite::{
+pub use env::Rkv;
+pub use error::{
+    DataError,
+    MigrateError,
+    StoreError,
+};
+pub use manager::Manager;
+pub use readwrite::{
     Readable,
     Reader,
     Writer,
 };
-pub use self::store::integer::{
-    IntegerStore,
-    PrimitiveInt,
-};
-pub use self::store::integermulti::MultiIntegerStore;
-pub use self::store::multi::MultiStore;
-pub use self::store::single::SingleStore;
-pub use self::store::Options as StoreOptions;
-
-pub use self::env::Rkv;
-
-pub use self::error::{
-    DataError,
-    StoreError,
-};
-
-pub use self::manager::Manager;
-
-pub use self::value::{
+pub use store::keys::EncodableKey;
+pub use store::single::SingleStore;
+pub use store::Options as StoreOptions;
+pub use value::{
     OwnedValue,
     Value,
 };
 
-fn read_transform(val: Result<&[u8], lmdb::Error>) -> Result<Option<Value>, StoreError> {
-    match val {
-        Ok(bytes) => Value::from_tagged_slice(bytes).map(Some).map_err(StoreError::DataError),
-        Err(lmdb::Error::NotFound) => Ok(None),
-        Err(e) => Err(StoreError::LmdbError(e)),
-    }
-}
+#[cfg(feature = "db-dup-sort")]
+pub use store::multi::MultiStore;
+
+#[cfg(feature = "db-int-key")]
+pub use store::integer::IntegerStore;
+#[cfg(feature = "db-int-key")]
+pub use store::keys::PrimitiveInt;
+
+#[cfg(all(feature = "db-dup-sort", feature = "db-int-key"))]
+pub use store::integermulti::MultiIntegerStore;
