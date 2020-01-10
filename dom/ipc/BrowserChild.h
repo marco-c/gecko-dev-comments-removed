@@ -239,6 +239,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
     return mBrowserChildMessageManager;
   }
 
+  bool IsTopLevel() const { return mIsTopLevel; }
+
   
 
 
@@ -549,7 +551,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   ScreenIntSize GetInnerSize();
 
-  LayoutDeviceIntRect GetVisibleRect();
+  Maybe<LayoutDeviceIntRect> GetVisibleRect() const;
 
   
   void DoFakeShow(const ShowInfo& aShowInfo);

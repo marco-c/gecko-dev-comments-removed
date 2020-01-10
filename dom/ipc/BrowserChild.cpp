@@ -3332,16 +3332,16 @@ ScreenIntSize BrowserChild::GetInnerSize() {
       innerSize, PixelCastJustification::LayoutDeviceIsScreenForTabDims);
 };
 
-LayoutDeviceIntRect BrowserChild::GetVisibleRect() {
-  CSSRect visibleRect;
+Maybe<LayoutDeviceIntRect> BrowserChild::GetVisibleRect() const {
   if (mIsTopLevel) {
     
     
-    visibleRect = CSSRect(CSSPoint(), mUnscaledInnerSize);
-  } else {
-    visibleRect = CSSPixel::FromAppUnits(mEffectsInfo.mVisibleRect);
+    return Nothing();
   }
-  return RoundedToInt(visibleRect * mPuppetWidget->GetDefaultScale());
+  CSSRect visibleRectCSS = CSSPixel::FromAppUnits(mEffectsInfo.mVisibleRect);
+  LayoutDeviceIntRect visibleRectLD =
+      RoundedToInt(visibleRectCSS * mPuppetWidget->GetDefaultScale());
+  return Some(visibleRectLD);
 }
 
 ScreenIntRect BrowserChild::GetOuterRect() {
