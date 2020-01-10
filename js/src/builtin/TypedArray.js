@@ -1237,7 +1237,7 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
     
     
     
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
     var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
 #else
     var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
@@ -1263,7 +1263,7 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
         
 
         
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
         R = ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
 #else
         R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));

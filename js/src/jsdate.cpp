@@ -2887,7 +2887,7 @@ static bool FormatDate(JSContext* cx, double utcTime, FormatSpec format,
   return true;
 }
 
-#if !EXPOSE_INTL_API
+#if !ENABLE_INTL_API
 static bool ToLocaleFormatHelper(JSContext* cx, HandleObject obj,
                                  const char* format, MutableHandleValue rval) {
   double utcTime = obj->as<DateObject>().UTCTime().toNumber();
@@ -3134,7 +3134,7 @@ static const JSFunctionSpec date_methods[] = {
     JS_FN("setMilliseconds", date_setMilliseconds, 1, 0),
     JS_FN("setUTCMilliseconds", date_setUTCMilliseconds, 1, 0),
     JS_FN("toUTCString", date_toGMTString, 0, 0),
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
     JS_SELF_HOSTED_FN(js_toLocaleString_str, "Date_toLocaleString", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleDateString", "Date_toLocaleDateString", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleTimeString", "Date_toLocaleTimeString", 0, 0),

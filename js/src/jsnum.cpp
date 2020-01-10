@@ -28,7 +28,7 @@
 #include "double-conversion/double-conversion.h"
 #include "js/CharacterEncoding.h"
 #include "js/Conversions.h"
-#if !EXPOSE_INTL_API
+#if !ENABLE_INTL_API
 #  include "js/LocaleSensitive.h"
 #endif
 #include "js/PropertySpec.h"
@@ -889,7 +889,7 @@ bool js::num_toString(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsNumber, num_toString_impl>(cx, args);
 }
 
-#if !EXPOSE_INTL_API
+#if !ENABLE_INTL_API
 MOZ_ALWAYS_INLINE bool num_toLocaleString_impl(JSContext* cx,
                                                const CallArgs& args) {
   MOZ_ASSERT(IsNumber(args.thisv()));
@@ -1244,7 +1244,7 @@ static bool num_toPrecision(JSContext* cx, unsigned argc, Value* vp) {
 static const JSFunctionSpec number_methods[] = {
     JS_FN(js_toSource_str, num_toSource, 0, 0),
     JS_FN(js_toString_str, num_toString, 1, 0),
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
     JS_SELF_HOSTED_FN(js_toLocaleString_str, "Number_toLocaleString", 0, 0),
 #else
     JS_FN(js_toLocaleString_str, num_toLocaleString, 0, 0),
@@ -1271,7 +1271,7 @@ bool js::InitRuntimeNumberState(JSRuntime* rt) {
   
   
   
-#if !EXPOSE_INTL_API
+#if !ENABLE_INTL_API
   
   const char* thousandsSeparator;
   const char* decimalPoint;
@@ -1324,7 +1324,7 @@ bool js::InitRuntimeNumberState(JSRuntime* rt) {
   return true;
 }
 
-#if !EXPOSE_INTL_API
+#if !ENABLE_INTL_API
 void js::FinishRuntimeNumberState(JSRuntime* rt) {
   
 

@@ -31,7 +31,7 @@
 #include "builtin/RegExp.h"
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"
-#if !EXPOSE_INTL_API
+#if !ENABLE_INTL_API
 #  include "js/LocaleSensitive.h"
 #endif
 #include "js/PropertySpec.h"
@@ -973,7 +973,7 @@ bool js::intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -1390,7 +1390,7 @@ bool js::intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -1438,7 +1438,7 @@ static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -1483,7 +1483,7 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -3377,7 +3377,7 @@ static const JSFunctionSpec string_methods[] = {
     JS_FN("endsWith", str_endsWith, 1, 0), JS_FN("trim", str_trim, 0, 0),
     JS_FN("trimStart", str_trimStart, 0, 0),
     JS_FN("trimEnd", str_trimEnd, 0, 0),
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
     JS_SELF_HOSTED_FN("toLocaleLowerCase", "String_toLocaleLowerCase", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleUpperCase", "String_toLocaleUpperCase", 0, 0),
     JS_SELF_HOSTED_FN("localeCompare", "String_localeCompare", 1, 0),
@@ -3387,7 +3387,7 @@ static const JSFunctionSpec string_methods[] = {
     JS_FN("localeCompare", str_localeCompare, 1, 0),
 #endif
     JS_SELF_HOSTED_FN("repeat", "String_repeat", 1, 0),
-#if EXPOSE_INTL_API
+#if ENABLE_INTL_API
     JS_FN("normalize", str_normalize, 0, 0),
 #endif
 
