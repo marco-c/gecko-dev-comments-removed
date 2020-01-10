@@ -28,7 +28,6 @@
 #include "mozilla/dom/Attr.h"
 #include "nsCExternalHandlerService.h"
 #include "nsMimeTypes.h"
-#include "mozilla/EventListenerManager.h"
 #include "nsContentUtils.h"
 #include "nsThreadUtils.h"
 #include "nsJSUtils.h"
@@ -224,17 +223,10 @@ namespace dom {
 XMLDocument::XMLDocument(const char* aContentType)
     : Document(aContentType),
       mChannelIsPending(false),
-      mAsync(true),
-      mLoopingForSyncLoad(false),
       mIsPlainDocument(false),
       mSuppressParserErrorElement(false),
       mSuppressParserErrorConsoleMessages(false) {
   mType = eGenericXML;
-}
-
-XMLDocument::~XMLDocument() {
-  
-  mLoopingForSyncLoad = false;
 }
 
 nsresult XMLDocument::Init() {
@@ -258,199 +250,6 @@ void XMLDocument::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   }
 
   Document::ResetToURI(aURI, aLoadGroup, aPrincipal, aStoragePrincipal);
-}
-
-bool XMLDocument::Load(const nsAString& aUrl, CallerType aCallerType,
-                       ErrorResult& aRv) {
-  bool hasHadScriptObject = true;
-  nsIScriptGlobalObject* scriptObject =
-      GetScriptHandlingObject(hasHadScriptObject);
-  if (!scriptObject && hasHadScriptObject) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return false;
-  }
-
-  nsCOMPtr<Document> callingDoc = GetEntryDocument();
-  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-  nsCOMPtr<nsIPrincipal> storagePrincipal = EffectiveStoragePrincipal();
-
-  
-  if (callingDoc && (callingDoc->NodePrincipal() != principal)) {
-    nsContentUtils::ReportToConsole(
-        nsIScriptError::errorFlag, NS_LITERAL_CSTRING("DOM"), callingDoc,
-        nsContentUtils::eDOM_PROPERTIES, "XMLDocumentLoadPrincipalMismatch");
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  Document* docForWarning = callingDoc ? callingDoc.get() : this;
-  if (aCallerType == CallerType::System) {
-    docForWarning->WarnOnceAbout(Document::eChromeUseOfDOM3LoadMethod);
-  } else {
-    docForWarning->WarnOnceAbout(Document::eUseOfDOM3LoadMethod);
-  }
-
-  nsIURI* baseURI = mDocumentURI;
-  nsAutoCString charset;
-
-  if (callingDoc) {
-    baseURI = callingDoc->GetDocBaseURI();
-    callingDoc->GetDocumentCharacterSet()->Name(charset);
-  }
-
-  
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aUrl, charset.get(), baseURI);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-    return false;
-  }
-
-  if (nsContentUtils::IsSystemPrincipal(principal)) {
-    
-    
-
-    if (!uri->SchemeIs("chrome")) {
-      nsAutoString error;
-      error.AssignLiteral(
-          "Cross site loading using document.load is no "
-          "longer supported. Use XMLHttpRequest instead.");
-      nsCOMPtr<nsIScriptError> errorObject =
-          do_CreateInstance(NS_SCRIPTERROR_CONTRACTID, &rv);
-      if (NS_FAILED(rv)) {
-        aRv.Throw(rv);
-        return false;
-      }
-
-      rv = errorObject->InitWithSourceURI(
-          error, mDocumentURI, EmptyString(), 0, 0, nsIScriptError::warningFlag,
-          "DOM",
-          callingDoc ? callingDoc->InnerWindowID() : this->InnerWindowID());
-
-      if (NS_FAILED(rv)) {
-        aRv.Throw(rv);
-        return false;
-      }
-
-      nsCOMPtr<nsIConsoleService> consoleService =
-          do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-      if (consoleService) {
-        consoleService->LogMessage(errorObject);
-      }
-
-      aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-      return false;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<EventListenerManager> elm(mListenerManager);
-  mListenerManager = nullptr;
-
-  
-  
-  
-
-  nsCOMPtr<nsILoadGroup> loadGroup;
-  if (callingDoc) {
-    loadGroup = callingDoc->GetDocumentLoadGroup();
-  }
-
-  ResetToURI(uri, loadGroup, principal, storagePrincipal);
-
-  mListenerManager = elm;
-
-  
-  nsCOMPtr<nsIInterfaceRequestor> req = nsContentUtils::SameOriginChecker();
-
-  nsCOMPtr<nsIChannel> channel;
-  
-  
-  rv = NS_NewChannel(
-      getter_AddRefs(channel), uri,
-      callingDoc ? callingDoc.get() : static_cast<Document*>(this),
-      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-      nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-      nullptr,  
-      loadGroup, req, nsIRequest::LOAD_BACKGROUND);
-
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-    return false;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(channel);
-  if (httpChannel) {
-    rv =
-        httpChannel->SetCorsMode(nsIHttpChannelInternal::CORS_MODE_SAME_ORIGIN);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-
-  
-  
-  
-  
-  MOZ_ASSERT(GetReadyStateEnum() == Document::READYSTATE_COMPLETE,
-             "Bad readyState");
-  SetReadyStateInternal(Document::READYSTATE_UNINITIALIZED);
-
-  
-  nsCOMPtr<nsIStreamListener> listener;
-  if (NS_FAILED(rv = StartDocumentLoad(kLoadAsData, channel, loadGroup, nullptr,
-                                       getter_AddRefs(listener), false))) {
-    NS_ERROR("XMLDocument::Load: Failed to start the document load.");
-    aRv.Throw(rv);
-    return false;
-  }
-
-  
-  
-
-  
-  rv = channel->AsyncOpen(listener);
-  if (NS_FAILED(rv)) {
-    mChannelIsPending = false;
-    aRv.Throw(rv);
-    return false;
-  }
-
-  if (!mAsync) {
-    nsAutoSyncOperation sync(this);
-    mLoopingForSyncLoad = true;
-    SpinEventLoopUntil([&]() { return !mLoopingForSyncLoad; });
-
-    
-    Element* rootElement = GetRootElement();
-    if (!rootElement) {
-      return false;
-    }
-
-    if (rootElement->LocalName().EqualsLiteral("parsererror")) {
-      nsAutoString ns;
-      rootElement->GetNamespaceURI(ns);
-      if (ns.EqualsLiteral(
-              "http://www.mozilla.org/newlayout/xml/parsererror.xml")) {
-        return false;
-      }
-    }
-  }
-
-  return true;
 }
 
 void XMLDocument::SetSuppressParserErrorElement(bool aSuppress) {
@@ -530,7 +329,6 @@ nsresult XMLDocument::StartDocumentLoad(const char* aCommand,
 
 void XMLDocument::EndLoad() {
   mChannelIsPending = false;
-  mLoopingForSyncLoad = false;
 
   mSynchronousDOMContentLoaded = (mLoadedAsData || mLoadedAsInteractiveData);
   Document::EndLoad();
@@ -561,7 +359,6 @@ nsresult XMLDocument::Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  clone->mAsync = mAsync;
   clone->mIsPlainDocument = mIsPlainDocument;
 
   clone.forget(aResult);

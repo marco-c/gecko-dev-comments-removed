@@ -53,16 +53,11 @@ class XMLDocument : public Document {
   
 
   
-  bool Load(const nsAString& aUrl, CallerType aCallerType, ErrorResult& aRv);
-  bool Async() const { return mAsync; }
-  void SetAsync(bool aAsync) { mAsync = aAsync; }
-
-  
   
   using Document::GetLocation;
 
  protected:
-  virtual ~XMLDocument();
+  virtual ~XMLDocument() = default;
 
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
@@ -74,10 +69,7 @@ class XMLDocument : public Document {
   
   
   
-  
   bool mChannelIsPending;
-  bool mAsync;
-  bool mLoopingForSyncLoad;
 
   
   bool mIsPlainDocument;
