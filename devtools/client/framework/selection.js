@@ -6,8 +6,13 @@
 
 "use strict";
 
-const nodeConstants = require("devtools/shared/dom-node-constants");
-var EventEmitter = require("devtools/shared/event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
+
+loader.lazyRequireGetter(
+  this,
+  "nodeConstants",
+  "devtools/shared/dom-node-constants"
+);
 
 
 
@@ -52,10 +57,11 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-
-function Selection(walker) {
+function Selection() {
   EventEmitter.decorate(this);
 
+  
+  this._walker = null;
   
   
   
@@ -63,14 +69,9 @@ function Selection(walker) {
 
   this._onMutations = this._onMutations.bind(this);
   this.setNodeFront = this.setNodeFront.bind(this);
-  this.setWalker(walker);
 }
 
-exports.Selection = Selection;
-
 Selection.prototype = {
-  _walker: null,
-
   _onMutations: function(mutations) {
     let attributeChange = false;
     let pseudoChange = false;
@@ -107,10 +108,10 @@ Selection.prototype = {
   },
 
   destroy: function() {
-    this.setWalker(null);
+    this.setWalker();
   },
 
-  setWalker: function(walker) {
+  setWalker: function(walker = null) {
     if (this._walker) {
       this._walker.off("mutations", this._onMutations);
     }
@@ -153,11 +154,13 @@ Selection.prototype = {
     this._isSlotted = isSlotted;
     this._nodeFront = nodeFront;
 
-    this.emit("new-node-front", nodeFront, this.reason);
-  },
+    if (nodeFront) {
+      this.setWalker(nodeFront.walkerFront);
+    } else {
+      this.setWalker();
+    }
 
-  get documentFront() {
-    return this._walker.document(this._nodeFront);
+    this.emit("new-node-front", nodeFront, this.reason);
   },
 
   get nodeFront() {
@@ -310,3 +313,5 @@ Selection.prototype = {
     return this.isNode() && this.nodeFront.isShadowRoot;
   },
 };
+
+module.exports = Selection;

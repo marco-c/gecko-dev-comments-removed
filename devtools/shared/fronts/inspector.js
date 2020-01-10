@@ -23,12 +23,6 @@ loader.lazyRequireGetter(
   "nodeConstants",
   "devtools/shared/dom-node-constants"
 );
-loader.lazyRequireGetter(
-  this,
-  "Selection",
-  "devtools/client/framework/selection",
-  true
-);
 loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
 
 const TELEMETRY_EYEDROPPER_OPENED = "DEVTOOLS_EYEDROPPER_OPENED_COUNT";
@@ -496,13 +490,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   
   async initialize() {
     await Promise.all([this._getWalker(), this._getHighlighter()]);
-
-    this.selection = new Selection(this.walker);
-    this.nodePicker = new NodePicker(
-      this.highlighter,
-      this.walker,
-      this.selection
-    );
+    this.nodePicker = new NodePicker(this.highlighter, this.walker);
   }
 
   async _getWalker() {
@@ -528,9 +516,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   }
 
   destroy() {
-    
-    
-    this.selection.destroy();
     
     
     

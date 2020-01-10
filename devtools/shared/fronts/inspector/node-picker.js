@@ -21,13 +21,11 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
-
 class NodePicker extends EventEmitter {
-  constructor(highlighter, walker, selection) {
+  constructor(highlighter, walker) {
     super();
     this.highlighter = highlighter;
     this.walker = walker;
-    this.selection = selection;
 
     this.cancel = this.cancel.bind(this);
     this.start = this.start.bind(this);
@@ -118,7 +116,7 @@ class NodePicker extends EventEmitter {
 
 
   _onPicked(data) {
-    this.selection.setNodeFront(data.node, { reason: "picker-node-picked" });
+    this.emit("picker-node-picked", data.node);
     return this.stop();
   }
 
@@ -128,7 +126,7 @@ class NodePicker extends EventEmitter {
 
 
   _onPreviewed(data) {
-    this.selection.setNodeFront(data.node, { reason: "picker-node-previewed" });
+    this.emit("picker-node-previewed", data.node);
   }
 
   

@@ -399,6 +399,10 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return true;
   }
 
+  get walkerFront() {
+    return this.parentFront;
+  }
+
   getNodeValue() {
     
     

@@ -154,6 +154,11 @@ class ShapesInContextEditor {
       
     }
 
+    
+    if (this.destroyed) {
+      return;
+    }
+
     if (this.swatch) {
       this.swatch.classList.remove("active");
     }
@@ -334,6 +339,8 @@ class ShapesInContextEditor {
     this.highlighter.off("highlighter-event", this.onHighlighterEvent);
     this.ruleView.off("ruleview-changed", this.onRuleViewChanged);
     this.highligherEventHandlers = {};
+
+    this.destroyed = true;
   }
 }
 
