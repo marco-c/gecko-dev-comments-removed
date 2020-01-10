@@ -1187,6 +1187,12 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
   if (loadContext && loadContext->UsePrivateBrowsing()) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
   }
+  if (loadContext && loadContext->UseRemoteTabs()) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
+  }
+  if (loadContext && loadContext->UseRemoteSubframes()) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
+  }
   if (docShell->GetAffectPrivateSessionLifetime()) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
   }
@@ -3338,11 +3344,11 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
     if (!loadContext) {
       return IPC_FAIL(this, "Missing Opener LoadContext");
     }
-
-    bool isPrivate;
-    loadContext->GetUsePrivateBrowsing(&isPrivate);
-    if (isPrivate) {
+    if (loadContext->UsePrivateBrowsing()) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+    }
+    if (loadContext->UseRemoteSubframes()) {
+      chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
     }
   }
 
@@ -4699,8 +4705,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   const uint32_t badFlags = nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW |
                             nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW |
-                            nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME |
-                            nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
+                            nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
   if (!!(aChromeFlags & badFlags)) {
     return IPC_FAIL(this, "Forbidden aChromeFlags passed");
   }
@@ -4709,6 +4714,23 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   BrowserHost* thisBrowserHost =
       thisBrowserParent ? thisBrowserParent->GetBrowserHost() : nullptr;
   MOZ_ASSERT(!thisBrowserParent == !thisBrowserHost);
+
+  
+  
+  if (thisBrowserHost) {
+    nsCOMPtr<nsILoadContext> context = thisBrowserHost->GetLoadContext();
+
+    
+    
+    
+    if (((aChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW) &&
+         !context->UseRemoteTabs()) ||
+        ((aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW) &&
+         !context->UseRemoteSubframes())) {
+      return IPC_FAIL(this, "Unexpected aChromeFlags passed");
+    }
+  }
+
   nsCOMPtr<nsIContent> frame;
   if (thisBrowserParent) {
     frame = thisBrowserParent->GetOwnerElement();
