@@ -3,23 +3,23 @@ use syn::Ident;
 
 use internals::ast::{Container, Data, Field, Style};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Suppress dead_code warnings that would otherwise appear when using a remote
+// derive. Other than this pretend code, a struct annotated with remote derive
+// never has its fields referenced and an enum annotated with remote derive
+// never has its variants constructed.
+//
+//     warning: field is never used: `i`
+//      --> src/main.rs:4:20
+//       |
+//     4 | struct StructDef { i: i32 }
+//       |                    ^^^^^^
+//
+//     warning: variant is never constructed: `V`
+//      --> src/main.rs:8:16
+//       |
+//     8 | enum EnumDef { V }
+//       |                ^
+//
 pub fn pretend_used(cont: &Container) -> TokenStream {
     let pretend_fields = pretend_fields_used(cont);
     let pretend_variants = pretend_variants_used(cont);
@@ -30,30 +30,30 @@ pub fn pretend_used(cont: &Container) -> TokenStream {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// For structs with named fields, expands to:
+//
+//     match None::<T> {
+//         Some(T { a: ref __v0, b: ref __v1 }) => {}
+//         _ => {}
+//     }
+//
+// For enums, expands to the following but only including struct variants:
+//
+//     match None::<T> {
+//         Some(T::A { a: ref __v0 }) => {}
+//         Some(T::B { b: ref __v0 }) => {}
+//         _ => {}
+//     }
+//
+// The `ref` is important in case the user has written a Drop impl on their
+// type. Rust does not allow destructuring a struct or enum that has a Drop
+// impl.
 fn pretend_fields_used(cont: &Container) -> TokenStream {
     let type_ident = &cont.ident;
     let (_, ty_generics, _) = cont.generics.split_for_impl();
 
     let patterns = match cont.data {
-        Data::Enum(ref variants) => variants
+        Data::Enum(_, ref variants) => variants
             .iter()
             .filter_map(|variant| match variant.style {
                 Style::Struct => {
@@ -83,18 +83,18 @@ fn pretend_fields_used(cont: &Container) -> TokenStream {
     }
 }
 
-
-
-
-
-
-
-
-
-
+// Expands to one of these per enum variant:
+//
+//     match None {
+//         Some((__v0, __v1,)) => {
+//             let _ = E::V { a: __v0, b: __v1 };
+//         }
+//         _ => {}
+//     }
+//
 fn pretend_variants_used(cont: &Container) -> TokenStream {
     let variants = match cont.data {
-        Data::Enum(ref variants) => variants,
+        Data::Enum(_, ref variants) => variants,
         Data::Struct(_, _) => {
             return quote!();
         }
