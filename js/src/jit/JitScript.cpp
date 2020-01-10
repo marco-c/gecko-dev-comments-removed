@@ -56,6 +56,9 @@ JitScript::JitScript(JSScript* script, uint32_t typeSetOffset,
   DefaultInitializeElements<StackTypeSet>(base + typeSetOffset, numTypeSets());
 
   
+  warmUpCount_ = script->getWarmUpCount();
+
+  
   
   if (!script->canBaselineCompile()) {
     setBaselineScriptImpl(script, BaselineDisabledScriptPtr);
@@ -142,7 +145,7 @@ bool JSScript::createJitScript(JSContext* cx) {
 
   MOZ_ASSERT(!hasJitScript());
   prepareForDestruction.release();
-  jitScript_ = jitScript.release();
+  warmUpData_.setJitScript(jitScript.release());
   AddCellMemory(this, allocSize.value(), MemoryUse::JitScript);
 
   
@@ -191,7 +194,7 @@ void JSScript::releaseJitScript(JSFreeOp* fop) {
   fop->removeCellMemory(this, jitScript()->allocBytes(), MemoryUse::JitScript);
 
   JitScript::Destroy(zone(), jitScript());
-  jitScript_ = nullptr;
+  warmUpData_.clearJitScript();
   updateJitCodeRaw(fop->runtime());
 }
 

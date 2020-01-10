@@ -2328,6 +2328,73 @@ using RuntimeScriptDataTable =
 
 extern void SweepScriptData(JSRuntime* rt);
 
+
+
+
+
+
+
+
+
+
+
+
+class ScriptWarmUpData {
+  static constexpr uintptr_t NumTagBits = 2;
+  static constexpr uint32_t MaxWarmUpCount = UINT32_MAX >> NumTagBits;
+
+ public:
+  
+  static constexpr uintptr_t TagMask = (1 << NumTagBits) - 1;
+  static constexpr uintptr_t JitScriptTag = 0;
+  static constexpr uintptr_t WarmUpCountTag = 1;
+
+ private:
+  uintptr_t data_ = 0 | WarmUpCountTag;
+
+  void setWarmUpCount(uint32_t count) {
+    count = std::min(count, MaxWarmUpCount);
+    data_ = (uintptr_t(count) << NumTagBits) | WarmUpCountTag;
+  }
+
+ public:
+  void trace(JSTracer* trc);
+
+  bool isWarmUpCount() const { return (data_ & TagMask) == WarmUpCountTag; }
+  bool isJitScript() const { return (data_ & TagMask) == JitScriptTag; }
+
+  uint32_t toWarmUpCount() const {
+    MOZ_ASSERT(isWarmUpCount());
+    return data_ >> NumTagBits;
+  }
+  void resetWarmUpCount(uint32_t count) {
+    MOZ_ASSERT(isWarmUpCount());
+    setWarmUpCount(count);
+  }
+  void incWarmUpCount(uint32_t amount) {
+    MOZ_ASSERT(isWarmUpCount());
+    data_ += uintptr_t(amount) << NumTagBits;
+  }
+
+  jit::JitScript* toJitScript() const {
+    MOZ_ASSERT(isJitScript());
+    static_assert(JitScriptTag == 0, "Code depends on JitScriptTag being zero");
+    return reinterpret_cast<jit::JitScript*>(data_);
+  }
+  void setJitScript(jit::JitScript* jitScript) {
+    MOZ_ASSERT(isWarmUpCount());
+    MOZ_ASSERT((uintptr_t(jitScript) & TagMask) == 0);
+    data_ = uintptr_t(jitScript) | JitScriptTag;
+  }
+  void clearJitScript() {
+    MOZ_ASSERT(isJitScript());
+    setWarmUpCount(0);
+  }
+};
+
+static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
+              "JIT code depends on ScriptWarmUpData being pointer-sized");
+
 } 
 
 namespace JS {
@@ -2349,20 +2416,10 @@ class JSScript : public js::BaseScript {
   js::PrivateScriptData* data_ = nullptr;
 
  private:
-  
-  js::jit::JitScript* jitScript_ = nullptr;
+  js::ScriptWarmUpData warmUpData_ = {};
 
   
   js::LazyScript* lazyScript = nullptr;
-
-  
-
-  
-  
-  
-  mozilla::Atomic<uint32_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      warmUpCount = {};
 
   
   
@@ -2649,8 +2706,8 @@ class JSScript : public js::BaseScript {
   static constexpr size_t offsetOfPrivateScriptData() {
     return offsetof(JSScript, data_);
   }
-  static constexpr size_t offsetOfJitScript() {
-    return offsetof(JSScript, jitScript_);
+  static constexpr size_t offsetOfWarmUpData() {
+    return offsetof(JSScript, warmUpData_);
   }
 
   void updateJitCodeRaw(JSRuntime* rt);
@@ -2758,11 +2815,11 @@ class JSScript : public js::BaseScript {
   
   inline bool ensureHasJitScript(JSContext* cx, js::jit::AutoKeepJitScripts&);
 
-  bool hasJitScript() const { return jitScript_ != nullptr; }
+  bool hasJitScript() const { return warmUpData_.isJitScript(); }
 
   js::jit::JitScript* jitScript() const {
     MOZ_ASSERT(hasJitScript());
-    return jitScript_;
+    return warmUpData_.toJitScript();
   }
   js::jit::JitScript* maybeJitScript() const {
     return hasJitScript() ? jitScript() : nullptr;
@@ -2850,20 +2907,9 @@ class JSScript : public js::BaseScript {
   void freeScriptData();
 
  public:
-  uint32_t getWarmUpCount() const { return warmUpCount; }
-  uint32_t incWarmUpCounter(uint32_t amount = 1) {
-    return warmUpCount += amount;
-  }
-  uint32_t* addressOfWarmUpCounter() {
-    return reinterpret_cast<uint32_t*>(&warmUpCount);
-  }
-  static size_t offsetOfWarmUpCounter() {
-    return offsetof(JSScript, warmUpCount);
-  }
-  void resetWarmUpCounterForGC() {
-    incWarmUpResetCounter();
-    warmUpCount = 0;
-  }
+  inline uint32_t getWarmUpCount() const;
+  inline void incWarmUpCounter(uint32_t amount = 1);
+  inline void resetWarmUpCounterForGC();
 
   void resetWarmUpCounterToDelayIonCompilation();
 
