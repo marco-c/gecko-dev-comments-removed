@@ -6,11 +6,7 @@
 
 
 add_task(async function() {
-  const recordingTab = BrowserTestUtils.addTab(gBrowser, null, {
-    recordExecution: "*",
-  });
-  gBrowser.selectedTab = recordingTab;
-  openTrustedLinkIn(EXAMPLE_URL + "doc_rr_basic.html", "current");
+  const recordingTab = await openRecordingTab("doc_rr_basic.html");
   await once(Services.ppmm, "RecordingFinished");
 
   await gBrowser.removeTab(recordingTab);

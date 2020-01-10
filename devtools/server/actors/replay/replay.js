@@ -82,6 +82,18 @@ dbg.onNewGlobalObject = function(global) {
 
 
 
+Services.obs.addObserver(
+  {
+    observe(subject, topic, data) {
+      assert(topic == "content-document-global-created");
+      Services.cpmm.sendAsyncMessage("RecordingInitialized");
+    },
+  },
+  "content-document-global-created"
+);
+
+
+
 
 
 const dump = str => {
