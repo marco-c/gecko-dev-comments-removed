@@ -644,7 +644,7 @@ static bool XPC_WN_NoHelper_Resolve(JSContext* cx, HandleObject obj,
       resolvedp);
 }
 
-static const js::ClassOps XPC_WN_NoHelper_JSClassOps = {
+static const JSClassOps XPC_WN_NoHelper_JSClassOps = {
     XPC_WN_OnlyIWrite_AddPropertyStub,  
     XPC_WN_CannotDeletePropertyStub,    
     XPC_WN_Shared_Enumerate,            
@@ -1086,7 +1086,7 @@ static bool XPC_WN_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id,
       JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE, resolvedp);
 }
 
-static const js::ClassOps XPC_WN_Proto_JSClassOps = {
+static const JSClassOps XPC_WN_Proto_JSClassOps = {
     XPC_WN_OnlyIWrite_Proto_AddPropertyStub,  
     XPC_WN_CannotDeletePropertyStub,          
     XPC_WN_Proto_Enumerate,                   
@@ -1175,7 +1175,7 @@ static_assert(((XPC_WRAPPER_FLAGS >> JSCLASS_RESERVED_SLOTS_SHIFT) &
                JSCLASS_RESERVED_SLOTS_MASK) == 0,
               "XPC_WRAPPER_FLAGS should not include any reserved slots");
 
-static const js::ClassOps XPC_WN_Tearoff_JSClassOps = {
+static const JSClassOps XPC_WN_Tearoff_JSClassOps = {
     XPC_WN_OnlyIWrite_AddPropertyStub,  
     XPC_WN_CannotDeletePropertyStub,    
     XPC_WN_TearOff_Enumerate,           
