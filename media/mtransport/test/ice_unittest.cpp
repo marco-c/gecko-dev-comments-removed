@@ -3201,8 +3201,8 @@ TEST_F(WebRtcIceConnectTest, TestConsentDelayed) {
   
 
 
-  p1_->SetStunResponseDelay(300);
-  p2_->SetStunResponseDelay(300);
+  p1_->SetStunResponseDelay(200);
+  p2_->SetStunResponseDelay(200);
   PR_Sleep(1000);
   AssertConsentRefresh();
   SendReceive();
