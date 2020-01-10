@@ -5596,6 +5596,10 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
   
   gcstats::AutoPhase ap(stats(), phase);
 
+#ifdef DEBUG
+  AutoSetThreadIsMarking threadIsMarking;
+#endif  
+
   if (marker.processMarkQueue() == GCMarker::QueueYielded) {
     return NotFinished;
   }

@@ -549,6 +549,10 @@ struct JSContext : public JS::RootingContext,
   js::ContextData<JS::Zone*> gcSweepingZone;
 
   
+  
+  js::ContextData<bool> gcMarking;
+
+  
   js::ContextData<size_t> isTouchingGrayThings;
 
   js::ContextData<size_t> noNurseryAllocationCheck;
@@ -1347,6 +1351,21 @@ class MOZ_RAII AutoSuppressNurseryCellAlloc {
   }
   ~AutoSuppressNurseryCellAlloc() { cx_->nurserySuppressions_--; }
 };
+
+#ifdef DEBUG
+
+struct MOZ_RAII AutoSetThreadIsMarking {
+  AutoSetThreadIsMarking() : cx(TlsContext.get()), prevState(cx->gcMarking) {
+    cx->gcMarking = true;
+  }
+
+  ~AutoSetThreadIsMarking() { cx->gcMarking = prevState; }
+
+ private:
+  JSContext* cx;
+  bool prevState;
+};
+#endif  
 
 }  
 
