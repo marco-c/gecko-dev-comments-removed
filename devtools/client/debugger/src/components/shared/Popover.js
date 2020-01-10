@@ -7,7 +7,6 @@ import React, { Component } from "react";
 import classNames from "classnames";
 import BracketArrow from "./BracketArrow";
 import SmartGap from "./SmartGap";
-import { isTesting } from "devtools-environment";
 
 import "./Popover.css";
 
@@ -98,13 +97,7 @@ class Popover extends Component<Props, State> {
 
     
     
-    
-    if (
-      isTesting() ||
-      isHoveredOnPopover ||
-      isHoveredOnTooltip ||
-      isHoveredOnTarget
-    ) {
+    if (isHoveredOnPopover || isHoveredOnTooltip || isHoveredOnTarget) {
       this.wasOnGap = false;
       this.timerId = setTimeout(this.onTimeout, 0);
       return;
