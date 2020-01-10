@@ -245,6 +245,13 @@ nsresult MemoryTelemetry::GatherReports(
   
   RECORD(GHOST_WINDOWS, GhostWindows, UNITS_COUNT);
 
+  
+  
+  if (XRE_IsParentProcess() && !mTotalMemoryGatherer) {
+    mTotalMemoryGatherer = new TotalMemoryGatherer();
+    mTotalMemoryGatherer->Begin(mThreadPool);
+  }
+
   if (!Telemetry::CanRecordReleaseData()) {
     return NS_OK;
   }
@@ -321,13 +328,6 @@ nsresult MemoryTelemetry::GatherReports(
   nsresult rv = mThreadPool->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
   if (!NS_WARN_IF(NS_FAILED(rv))) {
     cleanup.release();
-  }
-
-  
-  
-  if (XRE_IsParentProcess() && !mTotalMemoryGatherer) {
-    mTotalMemoryGatherer = new TotalMemoryGatherer();
-    mTotalMemoryGatherer->Begin(mThreadPool);
   }
 
   return NS_OK;
