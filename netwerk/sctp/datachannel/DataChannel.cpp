@@ -567,6 +567,11 @@ bool DataChannelConnection::Init(const uint16_t aLocalPort,
     }
   }
 
+  
+  mStreams.AppendElements(aNumStreams);
+  for (uint32_t i = 0; i < aNumStreams; ++i) {
+    mStreams[i] = nullptr;
+  }
   memset(&initmsg, 0, sizeof(initmsg));
   len = sizeof(initmsg);
   if (usrsctp_getsockopt(mMasterSocket, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
@@ -662,27 +667,20 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
   mLocalPort = localport;
   mRemotePort = remoteport;
   mState = CONNECTING;
-  mAllocateEven = Some(aClient);
 
-  
-  while (auto channel = mChannels.Get(INVALID_STREAM)) {
-    mChannels.Remove(channel);
-    channel->mStream = FindFreeStream();
-    if (channel->mStream != INVALID_STREAM) {
-      mChannels.Insert(channel);
-    }
-  }
-
-  RUN_ON_THREAD(mSTS,
-                WrapRunnable(RefPtr<DataChannelConnection>(this),
-                             &DataChannelConnection::SetSignals, aTransportId),
-                NS_DISPATCH_NORMAL);
+  RUN_ON_THREAD(
+      mSTS,
+      WrapRunnable(RefPtr<DataChannelConnection>(this),
+                   &DataChannelConnection::SetSignals, aTransportId, aClient),
+      NS_DISPATCH_NORMAL);
   return true;
 }
 
-void DataChannelConnection::SetSignals(const std::string& aTransportId) {
+void DataChannelConnection::SetSignals(const std::string& aTransportId,
+                                       bool aClient) {
   ASSERT_WEBRTC(IsSTSThread());
   mTransportId = aTransportId;
+  mAllocateEven = aClient;
   mTransportHandler->SignalPacketReceived.connect(
       this, &DataChannelConnection::SctpDtlsInput);
   
@@ -1027,47 +1025,48 @@ bool DataChannelConnection::Connect(const char* addr, unsigned short port) {
 #endif
 
 DataChannel* DataChannelConnection::FindChannelByStream(uint16_t stream) {
-  return mChannels.Get(stream).get();
+  return mStreams.SafeElementAt(stream);
 }
 
 uint16_t DataChannelConnection::FindFreeStream() {
-  ASSERT_WEBRTC(NS_IsMainThread());
-  uint16_t i, limit;
+  uint32_t i, j, limit;
 
-  limit = MAX_NUM_STREAMS;
+  limit = mStreams.Length();
+  if (limit > MAX_NUM_STREAMS) limit = MAX_NUM_STREAMS;
 
-  MOZ_ASSERT(mAllocateEven.isSome());
-  for (i = (*mAllocateEven ? 0 : 1); i < limit; i += 2) {
-    if (mChannels.Get(i)) {
-      continue;
-    }
-
-    
-    size_t j;
-    for (j = 0; j < mStreamsResetting.Length(); ++j) {
-      if (mStreamsResetting[j] == i) {
-        break;
+  for (i = (mAllocateEven ? 0 : 1); i < limit; i += 2) {
+    if (!mStreams[i]) {
+      
+      for (j = 0; j < mStreamsResetting.Length(); ++j) {
+        if (mStreamsResetting[j] == i) {
+          break;
+        }
       }
-    }
-
-    if (j == mStreamsResetting.Length()) {
-      return i;
+      if (j == mStreamsResetting.Length()) break;
     }
   }
-  return INVALID_STREAM;
+  if (i >= limit) {
+    return INVALID_STREAM;
+  }
+  return i;
 }
 
 uint32_t DataChannelConnection::UpdateCurrentStreamIndex() {
-  RefPtr<DataChannel> channel = mChannels.GetNextChannel(mCurrentStream);
-  if (!channel) {
+  if (mCurrentStream == mStreams.Length() - 1) {
     mCurrentStream = 0;
   } else {
-    mCurrentStream = channel->mStream;
+    ++mCurrentStream;
   }
+
   return mCurrentStream;
 }
 
 uint32_t DataChannelConnection::GetCurrentStreamIndex() {
+  
+  if (mCurrentStream >= mStreams.Length()) {
+    mCurrentStream = 0;
+  }
+
   return mCurrentStream;
 }
 
@@ -1077,8 +1076,8 @@ bool DataChannelConnection::RequestMoreStreams(int32_t aNeeded) {
   uint32_t outStreamsNeeded;
   socklen_t len;
 
-  if (aNeeded + mNegotiatedIdLimit > MAX_NUM_STREAMS) {
-    aNeeded = MAX_NUM_STREAMS - mNegotiatedIdLimit;
+  if (aNeeded + mStreams.Length() > MAX_NUM_STREAMS) {
+    aNeeded = MAX_NUM_STREAMS - mStreams.Length();
   }
   if (aNeeded <= 0) {
     return false;
@@ -1218,7 +1217,6 @@ bool DataChannelConnection::SendDeferredMessages() {
 
   
   
-  ASSERT_WEBRTC(!NS_IsMainThread());
   mLock.AssertCurrentThreadOwns();
 
   LOG(("SendDeferredMessages called, pending type: %d", mPendingType));
@@ -1244,7 +1242,7 @@ bool DataChannelConnection::SendDeferredMessages() {
   uint32_t i = GetCurrentStreamIndex();
   uint32_t end = i;
   do {
-    channel = mChannels.Get(i);
+    channel = mStreams[i];
     
     if (!channel || channel->mBufferedData.IsEmpty()) {
       i = UpdateCurrentStreamIndex();
@@ -1321,7 +1319,6 @@ void DataChannelConnection::HandleOpenRequestMessage(
   uint32_t prValue;
   uint16_t prPolicy;
 
-  ASSERT_WEBRTC(!NS_IsMainThread());
   mLock.AssertCurrentThreadOwns();
 
   const size_t requiredLength = (sizeof(*req) - 1) + ntohs(req->label_length) +
@@ -1357,7 +1354,7 @@ void DataChannelConnection::HandleOpenRequestMessage(
   bool ordered = !(req->channel_type & 0x80);
 
   if ((channel = FindChannelByStream(stream))) {
-    if (!channel->mNegotiated) {
+    if (!(channel->mFlags & DATA_CHANNEL_FLAGS_EXTERNAL_NEGOTIATED)) {
       LOG(
           ("ERROR: HandleOpenRequestMessage: channel for pre-existing stream "
            "%u that was not externally negotiated. JS is lying to us, or "
@@ -1378,9 +1375,9 @@ void DataChannelConnection::HandleOpenRequestMessage(
     }
     return;
   }
-  if (stream >= mNegotiatedIdLimit) {
+  if (stream >= mStreams.Length()) {
     LOG(("%s: stream %u out of bounds (%zu)", __FUNCTION__, stream,
-         mNegotiatedIdLimit));
+         mStreams.Length()));
     return;
   }
 
@@ -1392,7 +1389,7 @@ void DataChannelConnection::HandleOpenRequestMessage(
   channel =
       new DataChannel(this, stream, DataChannel::OPEN, label, protocol,
                       prPolicy, prValue, ordered, false, nullptr, nullptr);
-  mChannels.Insert(channel);
+  mStreams[stream] = channel;
 
   LOG(("%s: sending ON_CHANNEL_CREATED for %s/%s: %u", __FUNCTION__,
        channel->mLabel.get(), channel->mProtocol.get(), stream));
@@ -1564,7 +1561,8 @@ void DataChannelConnection::HandleDataMessage(const void* data, size_t length,
          "closing",
          data_length));
     
-    if (!channel->mOrdered && (flags & MSG_EOR)) {
+    if ((channel->mFlags & DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED) &&
+        (flags & MSG_EOR)) {
       channel->mFlags &= ~DATA_CHANNEL_FLAGS_CLOSING_TOO_LARGE;
     }
   }
@@ -1991,9 +1989,7 @@ void DataChannelConnection::ClearResets() {
     if (channel) {
       LOG(("Forgetting channel %u (%p) with pending reset", channel->mStream,
            channel.get()));
-      
-      
-      mChannels.Remove(channel);
+      mStreams[channel->mStream] = nullptr;
     }
   }
   mStreamsResetting.Clear();
@@ -2075,10 +2071,11 @@ void DataChannelConnection::HandleStreamResetEvent(
           
 
           LOG(("Incoming: Channel %u  closed", channel->mStream));
-          if (mChannels.Remove(channel)) {
+          if (mStreams[channel->mStream]) {
             
             ResetOutgoingStream(channel->mStream);
           }
+          mStreams[channel->mStream] = nullptr;
 
           LOG(("Disconnected DataChannel %p from connection %p",
                (void*)channel.get(), (void*)channel->mConnection.get()));
@@ -2099,43 +2096,48 @@ void DataChannelConnection::HandleStreamResetEvent(
 
 void DataChannelConnection::HandleStreamChangeEvent(
     const struct sctp_stream_change_event* strchg) {
-  ASSERT_WEBRTC(!NS_IsMainThread());
+  uint16_t stream;
+  RefPtr<DataChannel> channel;
+
   if (strchg->strchange_flags == SCTP_STREAM_CHANGE_DENIED) {
     LOG(("*** Failed increasing number of streams from %zu (%u/%u)",
-         mNegotiatedIdLimit, strchg->strchange_instrms,
+         mStreams.Length(), strchg->strchange_instrms,
          strchg->strchange_outstrms));
     
     return;
   }
-  if (strchg->strchange_instrms > mNegotiatedIdLimit) {
-    LOG(("Other side increased streams from %zu to %u", mNegotiatedIdLimit,
+  if (strchg->strchange_instrms > mStreams.Length()) {
+    LOG(("Other side increased streams from %zu to %u", mStreams.Length(),
          strchg->strchange_instrms));
   }
-  uint16_t old_limit = mNegotiatedIdLimit;
-  uint16_t new_limit =
-      std::max(strchg->strchange_outstrms, strchg->strchange_instrms);
-  if (new_limit > mNegotiatedIdLimit) {
+  if (strchg->strchange_outstrms > mStreams.Length() ||
+      strchg->strchange_instrms > mStreams.Length()) {
+    uint16_t old_len = mStreams.Length();
+    uint16_t new_len =
+        std::max(strchg->strchange_outstrms, strchg->strchange_instrms);
     LOG(("Increasing number of streams from %u to %u - adding %u (in: %u)",
-         old_limit, new_limit, new_limit - old_limit,
-         strchg->strchange_instrms));
+         old_len, new_len, new_len - old_len, strchg->strchange_instrms));
     
-    mNegotiatedIdLimit = new_limit;
-    LOG(("New length = %zu (was %d)", mNegotiatedIdLimit, old_limit));
+    mStreams.AppendElements(new_len - old_len);
+    LOG(("New length = %zu (was %d)", mStreams.Length(), old_len));
+    for (size_t i = old_len; i < mStreams.Length(); ++i) {
+      mStreams[i] = nullptr;
+    }
     
     
     
 
     
     
-    auto channels = mChannels.GetAll();
-    size_t num_needed =
-        channels.Length() ? (channels.LastElement()->mStream + 1) : 0;
-    MOZ_ASSERT(num_needed != INVALID_STREAM);
-    if (num_needed > new_limit) {
-      int32_t more_needed = num_needed - ((int32_t)mNegotiatedIdLimit) + 16;
-      LOG(("Not enough new streams, asking for %d more", more_needed));
+    size_t num_needed = mPending.GetSize();
+    LOG(("%zu of %d new streams already needed", num_needed,
+         new_len - old_len));
+    num_needed -= (new_len - old_len);  
+    if (num_needed > 0) {
+      if (num_needed < 16) num_needed = 16;
+      LOG(("Not enough new streams, asking for %zu more", num_needed));
       
-      RequestMoreStreams(more_needed);
+      RequestMoreStreams(num_needed);
     } else if (strchg->strchange_outstrms < strchg->strchange_instrms) {
       LOG(("Requesting %d output streams to match partner",
            strchg->strchange_instrms - strchg->strchange_outstrms));
@@ -2147,14 +2149,41 @@ void DataChannelConnection::HandleStreamChangeEvent(
   }
   
 
-  if ((strchg->strchange_flags & SCTP_STREAM_CHANGE_DENIED) ||
-      (strchg->strchange_flags & SCTP_STREAM_CHANGE_FAILED)) {
-    
-    for (auto& channel : mChannels.GetAll()) {
-      if (channel->mStream >= mNegotiatedIdLimit) {
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+    channel = mStreams[i];
+    if (!channel) continue;
+
+    if (channel->mStream == INVALID_STREAM) {
+      if ((strchg->strchange_flags & SCTP_STREAM_CHANGE_DENIED) ||
+          (strchg->strchange_flags & SCTP_STREAM_CHANGE_FAILED)) {
         
         channel->AnnounceClosed();
         
+      } else {
+        stream = FindFreeStream();
+        if (stream != INVALID_STREAM) {
+          channel->mStream = stream;
+          mStreams[stream] = channel;
+
+          
+          int error = SendOpenRequestMessage(
+              channel->mLabel, channel->mProtocol, channel->mStream,
+              !!(channel->mFlags & DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED),
+              channel->mPrPolicy, channel->mPrValue);
+          if (error) {
+            LOG(("SendOpenRequest failed, error = %d", error));
+            
+            mStreams[channel->mStream] = nullptr;
+            channel->AnnounceClosed();
+            
+          } else {
+            channel->mFlags |= DATA_CHANNEL_FLAGS_READY;
+            channel->AnnounceOpen();
+          }
+        } else {
+          
+          break;
+        }
       }
     }
   }
@@ -2250,18 +2279,9 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
     const nsACString& label, const nsACString& protocol, Type type,
     bool inOrder, uint32_t prValue, DataChannelListener* aListener,
     nsISupports* aContext, bool aExternalNegotiated, uint16_t aStream) {
-  ASSERT_WEBRTC(NS_IsMainThread());
   if (!aExternalNegotiated) {
-    if (mAllocateEven.isSome()) {
-      aStream = FindFreeStream();
-      if (aStream == INVALID_STREAM) {
-        return nullptr;
-      }
-    } else {
-      
-      
-      aStream = INVALID_STREAM;
-    }
+    
+    aStream = INVALID_STREAM;
   }
   uint16_t prPolicy = SCTP_PR_SCTP_NONE;
 
@@ -2290,7 +2310,9 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
     return nullptr;
   }
 
-  if (aStream != INVALID_STREAM && mChannels.Get(aStream)) {
+  
+  if (aStream != INVALID_STREAM && aStream < mStreams.Length() &&
+      mStreams[aStream]) {
     LOG(("ERROR: external negotiation of already-open channel %u", aStream));
     
     
@@ -2300,7 +2322,6 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
   RefPtr<DataChannel> channel(new DataChannel(
       this, aStream, DataChannel::CONNECTING, label, protocol, prPolicy,
       prValue, inOrder, aExternalNegotiated, aListener, aContext));
-  mChannels.Insert(channel);
 
   MutexAutoLock lock(mLock);  
   return OpenFinish(channel.forget());
@@ -2312,7 +2333,7 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
   RefPtr<DataChannel> channel(aChannel);  
   
   
-  const uint16_t stream = channel->mStream;
+  uint16_t stream = channel->mStream;
   bool queue = false;
 
   mLock.AssertCurrentThreadOwns();
@@ -2342,12 +2363,16 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
   
 
   if (mState == OPEN) {
-    MOZ_ASSERT(stream != INVALID_STREAM);
-    if (stream >= mNegotiatedIdLimit) {
+    if (stream == INVALID_STREAM) {
+      stream = FindFreeStream();  
+    }
+    if (stream == INVALID_STREAM || stream >= mStreams.Length()) {
       
       
       
-      int32_t more_needed = stream - ((int32_t)mNegotiatedIdLimit) + 16;
+      int32_t more_needed = (stream == INVALID_STREAM)
+                                ? 16
+                                : (stream - ((int32_t)mStreams.Length())) + 16;
       if (!RequestMoreStreams(more_needed)) {
         
         goto request_error_cleanup;
@@ -2356,13 +2381,12 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
     }
   } else {
     
-    if (stream != INVALID_STREAM && stream >= mNegotiatedIdLimit &&
+    if (stream != INVALID_STREAM && stream >= mStreams.Length() &&
         mState == CLOSED) {
       
       struct sctp_initmsg initmsg;
       socklen_t len = sizeof(initmsg);
-      uint16_t total_needed =
-          (stream < UINT16_MAX - 16) ? stream + 16 : UINT16_MAX;
+      int32_t total_needed = stream + 16;
 
       memset(&initmsg, 0, sizeof(initmsg));
       if (usrsctp_getsockopt(mMasterSocket, IPPROTO_SCTP, SCTP_INITMSG,
@@ -2378,6 +2402,12 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
                              &initmsg, (socklen_t)sizeof(initmsg)) < 0) {
         LOG(("*** failed setsockopt SCTP_INITMSG, errno %d", errno));
         goto request_error_cleanup;
+      }
+
+      int32_t old_len = mStreams.Length();
+      mStreams.AppendElements(total_needed - old_len);
+      for (int32_t i = old_len; i < total_needed; ++i) {
+        mStreams[i] = nullptr;
       }
     }
     
@@ -2396,24 +2426,28 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
   }
 
   MOZ_ASSERT(stream != INVALID_STREAM);
-  MOZ_ASSERT(stream < mNegotiatedIdLimit);
+  
+  mStreams[stream] = channel;  
+  channel->mStream = stream;
 
 #ifdef TEST_QUEUED_DATA
   
   channel->AnnounceOpen();
+  channel->mFlags |= DATA_CHANNEL_FLAGS_READY;
   SendDataMsgInternalOrBuffer(channel, "Help me!", 8,
                               DATA_CHANNEL_PPID_DOMSTRING);
 #endif
 
-  if (!channel->mOrdered) {
+  if (channel->mFlags & DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED) {
     
     channel->mFlags |= DATA_CHANNEL_FLAGS_WAITING_ACK;
   }
 
-  if (!channel->mNegotiated) {
-    int error = SendOpenRequestMessage(channel->mLabel, channel->mProtocol,
-                                       stream, !channel->mOrdered,
-                                       channel->mPrPolicy, channel->mPrValue);
+  if (!(channel->mFlags & DATA_CHANNEL_FLAGS_EXTERNAL_NEGOTIATED)) {
+    int error = SendOpenRequestMessage(
+        channel->mLabel, channel->mProtocol, stream,
+        !!(channel->mFlags & DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED),
+        channel->mPrPolicy, channel->mPrValue);
     if (error) {
       LOG(("SendOpenRequest failed, error = %d", error));
       if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
@@ -2423,7 +2457,8 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
       }
       
       
-      mChannels.Remove(channel);
+      mStreams[stream] = nullptr;
+      channel->mStream = INVALID_STREAM;
       
       return nullptr;
       
@@ -2431,6 +2466,7 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
   }
 
   
+  channel->mFlags |= DATA_CHANNEL_FLAGS_READY;
   
   channel->AnnounceOpen();
 
@@ -2614,12 +2650,12 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
   info.sendv_sndinfo.snd_flags = SCTP_EOR;
   info.sendv_sndinfo.snd_ppid = htonl(ppid);
 
-  MutexAutoLock lock(mLock);  
   
   
   
   
-  if (!channel.mOrdered && !(channel.mFlags & DATA_CHANNEL_FLAGS_WAITING_ACK)) {
+  if ((channel.mFlags & DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED) &&
+      !(channel.mFlags & DATA_CHANNEL_FLAGS_WAITING_ACK)) {
     info.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
   }
 
@@ -2632,6 +2668,7 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
 
   
   OutgoingMsg msg(info, data, len);
+  MutexAutoLock lock(mLock);
   bool buffered;
   size_t written = 0;
   mDeferSend = true;
@@ -2706,7 +2743,7 @@ class ReadBlobRunnable : public Runnable {
 
 
 int DataChannelConnection::SendBlob(uint16_t stream, nsIInputStream* aBlob) {
-  RefPtr<DataChannel> channel = mChannels.Get(stream);
+  DataChannel* channel = mStreams[stream];
   if (NS_WARN_IF(!channel)) {
     return EINVAL;  
   }
@@ -2792,6 +2829,15 @@ void DataChannelConnection::ReadBlob(
   Dispatch(runnable.forget());
 }
 
+void DataChannelConnection::GetStreamIds(std::vector<uint16_t>* aStreamList) {
+  ASSERT_WEBRTC(NS_IsMainThread());
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+    if (mStreams[i]) {
+      aStreamList->push_back(mStreams[i]->mStream);
+    }
+  }
+}
+
 
 int DataChannelConnection::SendDataMsgCommon(uint16_t stream,
                                              const nsACString& aMsg,
@@ -2808,11 +2854,12 @@ int DataChannelConnection::SendDataMsgCommon(uint16_t stream,
     return EMSGSIZE;
   }
 #endif
+  DataChannel* channelPtr;
 
   LOG(("Sending %sto stream %u: %u bytes", isBinary ? "binary " : "", stream,
        len));
   
-  RefPtr<DataChannel> channelPtr = mChannels.Get(stream);
+  channelPtr = mStreams[stream];
   if (NS_WARN_IF(!channelPtr)) {
     return EINVAL;  
   }
@@ -2847,24 +2894,24 @@ void DataChannelConnection::CloseInt(DataChannel* aChannel) {
   mLock.AssertCurrentThreadOwns();
   LOG(("Connection %p/Channel %p: Closing stream %u",
        channel->mConnection.get(), channel.get(), channel->mStream));
-
-  aChannel->mBufferedData.Clear();
-  if (mState == CLOSED) {
-    
-    
-    mChannels.Remove(channel);
-  }
-
   
   if (aChannel->mReadyState == CLOSED || aChannel->mReadyState == CLOSING) {
     LOG(("Channel already closing/closed (%u)", aChannel->mReadyState));
+    if (mState == CLOSED && channel->mStream != INVALID_STREAM) {
+      
+      
+      mStreams[channel->mStream] = nullptr;
+    }
     return;
   }
-
+  aChannel->mBufferedData.Clear();
   if (channel->mStream != INVALID_STREAM) {
     ResetOutgoingStream(channel->mStream);
-    if (mState != CLOSED) {
+    if (mState == CLOSED) {  
       
+      
+      mStreams[channel->mStream] = nullptr;
+    } else {
       SendOutgoingStreamReset();
     }
   }
@@ -2890,8 +2937,12 @@ void DataChannelConnection::CloseAll() {
   
   
   
-  for (auto& channel : mChannels.GetAll()) {
-    channel->Close();
+  bool closed_some = false;
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+    if (mStreams[i]) {
+      mStreams[i]->Close();
+      closed_some = true;
+    }
   }
 
   
@@ -2901,78 +2952,14 @@ void DataChannelConnection::CloseAll() {
     LOG(("closing pending channel %p, stream %u", channel.get(),
          channel->mStream));
     channel->Close();  
+    closed_some = true;
   }
   
   
-  MutexAutoLock lock(mLock);
-  SendOutgoingStreamReset();
-}
-
-bool DataChannelConnection::Channels::IdComparator::Equals(
-    const RefPtr<DataChannel>& aChannel, uint16_t aId) const {
-  return aChannel->mStream == aId;
-}
-
-bool DataChannelConnection::Channels::IdComparator::LessThan(
-    const RefPtr<DataChannel>& aChannel, uint16_t aId) const {
-  return aChannel->mStream < aId;
-}
-
-bool DataChannelConnection::Channels::IdComparator::Equals(
-    const RefPtr<DataChannel>& a1, const RefPtr<DataChannel>& a2) const {
-  return Equals(a1, a2->mStream);
-}
-
-bool DataChannelConnection::Channels::IdComparator::LessThan(
-    const RefPtr<DataChannel>& a1, const RefPtr<DataChannel>& a2) const {
-  return LessThan(a1, a2->mStream);
-}
-
-void DataChannelConnection::Channels::Insert(
-    const RefPtr<DataChannel>& aChannel) {
-  LOG(("Inserting channel %u : %p", aChannel->mStream, aChannel.get()));
-  MutexAutoLock lock(mMutex);
-  if (aChannel->mStream != INVALID_STREAM) {
-    MOZ_ASSERT(!mChannels.ContainsSorted(aChannel, IdComparator()));
+  if (closed_some) {
+    MutexAutoLock lock(mLock);
+    SendOutgoingStreamReset();
   }
-
-  MOZ_ASSERT(!mChannels.Contains(aChannel));
-
-  mChannels.InsertElementSorted(aChannel, IdComparator());
-}
-
-bool DataChannelConnection::Channels::Remove(
-    const RefPtr<DataChannel>& aChannel) {
-  LOG(("Removing channel %u : %p", aChannel->mStream, aChannel.get()));
-  MutexAutoLock lock(mMutex);
-  if (aChannel->mStream == INVALID_STREAM) {
-    return mChannels.RemoveElement(aChannel);
-  }
-
-  return mChannels.RemoveElementSorted(aChannel, IdComparator());
-}
-
-RefPtr<DataChannel> DataChannelConnection::Channels::Get(uint16_t aId) const {
-  MutexAutoLock lock(mMutex);
-  auto index = mChannels.BinaryIndexOf(aId, IdComparator());
-  if (index == ChannelArray::NoIndex) {
-    return nullptr;
-  }
-  return mChannels[index];
-}
-
-RefPtr<DataChannel> DataChannelConnection::Channels::GetNextChannel(
-    uint16_t aCurrentId) const {
-  MutexAutoLock lock(mMutex);
-  if (mChannels.IsEmpty()) {
-    return nullptr;
-  }
-
-  auto index = mChannels.IndexOfFirstElementGt(aCurrentId, IdComparator());
-  if (index == mChannels.Length()) {
-    index = 0;
-  }
-  return mChannels[index];
 }
 
 DataChannel::~DataChannel() {
@@ -2999,6 +2986,8 @@ void DataChannel::StreamClosedLocked() {
   LOG(("Destroying Data channel %u", mStream));
   MOZ_ASSERT_IF(mStream != INVALID_STREAM,
                 !mConnection->FindChannelByStream(mStream));
+  
+  mStream = INVALID_STREAM;
   AnnounceClosed();
   
 }

@@ -164,7 +164,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   void TransportStateChange(const std::string& aTransportId,
                             TransportLayer::State aState);
   void CompleteConnect();
-  void SetSignals(const std::string& aTransportId);
+  void SetSignals(const std::string& aTransportId, bool aClient);
 #endif
 
   typedef enum {
@@ -215,6 +215,8 @@ class DataChannelConnection final : public net::NeckoTargetHolder
 
   void ReadBlob(already_AddRefed<DataChannelConnection> aThis, uint16_t aStream,
                 nsIInputStream* aBlob);
+
+  void GetStreamIds(std::vector<uint16_t>* aStreamList);
 
   bool SendDeferredMessages();
 
@@ -308,47 +310,16 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   }
 #endif
 
-  class Channels {
-   public:
-    Channels() : mMutex("DataChannelConnection::Channels::mMutex") {}
-    void Insert(const RefPtr<DataChannel>& aChannel);
-    bool Remove(const RefPtr<DataChannel>& aChannel);
-    RefPtr<DataChannel> Get(uint16_t aId) const;
-    typedef AutoTArray<RefPtr<DataChannel>, 16> ChannelArray;
-    ChannelArray GetAll() const {
-      MutexAutoLock lock(mMutex);
-      return mChannels;
-    }
-    RefPtr<DataChannel> GetNextChannel(uint16_t aCurrentId) const;
-
-   private:
-    struct IdComparator {
-      bool Equals(const RefPtr<DataChannel>& aChannel, uint16_t aId) const;
-      bool LessThan(const RefPtr<DataChannel>& aChannel, uint16_t aId) const;
-      bool Equals(const RefPtr<DataChannel>& a1,
-                  const RefPtr<DataChannel>& a2) const;
-      bool LessThan(const RefPtr<DataChannel>& a1,
-                    const RefPtr<DataChannel>& a2) const;
-    };
-    mutable Mutex mMutex;
-    ChannelArray mChannels;
-  };
-
   bool mSendInterleaved = false;
   bool mMaxMessageSizeSet = false;
   uint64_t mMaxMessageSize = 0;
-  
-  Maybe<bool> mAllocateEven;
-  
+  bool mAllocateEven = false;
   
   
   
-  Channels mChannels;
-  
+  AutoTArray<RefPtr<DataChannel>, 16> mStreams;
   uint32_t mCurrentStream = 0;
   nsDeque mPending;  
-  
-  size_t mNegotiatedIdLimit = 0;  
   uint8_t mPendingType = PENDING_NONE;
   
   nsTArray<nsAutoPtr<QueuedDataMessage>> mQueuedData;
@@ -357,7 +328,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
       mBufferedControl;  
 
   
-  AutoTArray<uint16_t, 4> mStreamsResetting;  
+  AutoTArray<uint16_t, 4> mStreamsResetting;
   
   struct socket* mMasterSocket = nullptr;
   
@@ -414,10 +385,17 @@ class DataChannel {
         mNegotiated(negotiated),
         mOrdered(ordered),
         mFlags(0),
+        mId(0),
         mIsRecvBinary(false),
         mBufferedThreshold(0),  
         mBufferedAmount(0),
         mMainThreadEventTarget(connection->GetNeckoTarget()) {
+    if (!ordered) {
+      mFlags |= DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED;
+    }
+    if (negotiated) {
+      mFlags |= DATA_CHANNEL_FLAGS_EXTERNAL_NEGOTIATED;
+    }
     NS_ASSERTION(mConnection, "NULL connection");
   }
 
@@ -515,10 +493,10 @@ class DataChannel {
   uint16_t mStream;
   uint16_t mPrPolicy;
   uint32_t mPrValue;
-  
   const bool mNegotiated;
   const bool mOrdered;
   uint32_t mFlags;
+  uint32_t mId;
   bool mIsRecvBinary;
   size_t mBufferedThreshold;
   
