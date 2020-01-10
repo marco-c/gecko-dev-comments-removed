@@ -69,12 +69,17 @@ document.addEventListener("DOMContentLoaded", e => {
   document.sendTelemetryEvent("show", "protection_report");
 
   let createGraph = data => {
-    let earliestDate = data.earliestDate || Date.now();
+    
+    
+    let hoursInMS12 = 12 * 60 * 60 * 1000;
+    let dateInMS = data.earliestDate
+      ? new Date(data.earliestDate).getTime() + hoursInMS12
+      : Date.now();
 
     let summary = document.getElementById("graph-total-summary");
     summary.setAttribute(
       "data-l10n-args",
-      JSON.stringify({ count: data.sumEvents, earliestDate })
+      JSON.stringify({ count: data.sumEvents, earliestDate: dateInMS })
     );
     summary.setAttribute("data-l10n-id", "graph-total-tracker-summary");
 
