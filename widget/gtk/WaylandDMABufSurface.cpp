@@ -34,16 +34,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #if defined(__cplusplus)
 #  define EGL_CAST(type, value) (static_cast<type>(value))
 #else
