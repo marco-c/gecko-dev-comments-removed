@@ -464,11 +464,13 @@ ${helpers.two_properties_shorthand(
         };
 
         // Make sure that the initial value matches the values for the
-        // longhands, just for general sanity.
-        //
-        // FIXME: Should we just do this for the "normal" case? Seems weird
+        // longhands, just for general sanity.  `zoom: 1` and `zoom: 0` are
+        // ignored, see [1][2]. They are just hack for the "has layout" mode on
         
-        Ok(if zoom.get() == 1.0 {
+        
+        
+        
+        Ok(if zoom.get() == 1.0 || zoom.get() == 0.0 {
             expanded! {
                 transform: Transform::none(),
                 transform_origin: TransformOrigin::initial_value(),
