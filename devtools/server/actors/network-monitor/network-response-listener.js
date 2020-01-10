@@ -324,6 +324,9 @@ NetworkResponseListener.prototype = {
     
     
     const secinfo = this.httpActivity.channel.securityInfo;
+    if (secinfo) {
+      secinfo.QueryInterface(Ci.nsITransportSecurityInfo);
+    }
     const info = NetworkHelper.parseSecurityInfo(secinfo, this.httpActivity);
 
     let isRacing = false;
