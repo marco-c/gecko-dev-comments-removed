@@ -42,6 +42,14 @@ class WebVTTListener final : public nsIWebVTTListener,
 
   nsresult LoadResource();
 
+  
+
+
+
+
+  bool IsCanceled() const;
+  void Cancel();
+
  private:
   ~WebVTTListener();
 
@@ -54,6 +62,7 @@ class WebVTTListener final : public nsIWebVTTListener,
   RefPtr<HTMLTrackElement> mElement;
   nsCOMPtr<nsIWebVTTParserWrapper> mParserWrapper;
   nsresult mParserWrapperError;
+  bool mCancel = false;
 };
 
 }  
