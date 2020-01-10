@@ -12,6 +12,7 @@ use api::units::*;
 use crate::device::{Device, PBO, DrawTarget, ReadTarget, Texture, TextureFilter};
 use crate::internal_types::RenderTargetInfo;
 use crate::renderer::Renderer;
+use crate::util::round_up_to_multiple;
 
 
 #[repr(C)]
@@ -29,6 +30,8 @@ struct AsyncScreenshot {
     pbo: PBO,
     
     screenshot_size: DeviceIntSize,
+    
+    buffer_stride: usize,
     
     image_format: ImageFormat,
 }
@@ -123,27 +126,47 @@ impl AsyncScreenshotGrabber {
             }
         };
 
-        let required_size = buffer_size.area() as usize * image_format.bytes_per_pixel() as usize;
-
         assert!(screenshot_size.width <= buffer_size.width);
         assert!(screenshot_size.height <= buffer_size.height);
 
-        let pbo = match self.mode {
-            AsyncScreenshotGrabberMode::ProfilerScreenshots => match self.available_pbos.pop() {
-                Some(pbo) => {
-                    assert_eq!(pbo.get_reserved_size(), required_size);
-                    pbo
-                }
+        
+        
+        
+        
+        
+        
+        
+        
+        let read_size = match self.mode {
+            AsyncScreenshotGrabberMode::ProfilerScreenshots => {
+                let stride = (screenshot_size.width * image_format.bytes_per_pixel()) as usize;
+                let rounded = round_up_to_multiple(stride, device.get_optimal_pbo_stride());
+                let optimal_width = rounded as i32 / image_format.bytes_per_pixel();
 
-                None => device.create_pbo_with_size(required_size),
-            },
-
-            
-            
-            AsyncScreenshotGrabberMode::CompositionRecorder => {
-                device.create_pbo_with_size(required_size)
+                DeviceIntSize::new(
+                    optimal_width,
+                    screenshot_size.height,
+                )
             }
+            AsyncScreenshotGrabberMode::CompositionRecorder => buffer_size,
         };
+        let required_size = read_size.area() as usize * image_format.bytes_per_pixel() as usize;
+
+        
+        let pbo = {
+            let mut reusable_pbo = None;
+            while let Some(pbo) = self.available_pbos.pop() {
+                if pbo.get_reserved_size() != required_size {
+                    device.delete_pbo(pbo);
+                } else {
+                    reusable_pbo = Some(pbo);
+                    break;
+                }
+            };
+
+            reusable_pbo.unwrap_or_else(|| device.create_pbo_with_size(required_size))
+        };
+        assert_eq!(pbo.get_reserved_size(), required_size);
 
         let read_target = match self.mode {
             AsyncScreenshotGrabberMode::ProfilerScreenshots => {
@@ -152,6 +175,7 @@ impl AsyncScreenshotGrabber {
                     ReadTarget::Default,
                     window_rect,
                     buffer_size,
+                    read_size,
                     screenshot_size,
                     image_format,
                     0,
@@ -165,7 +189,7 @@ impl AsyncScreenshotGrabber {
 
         device.read_pixels_into_pbo(
             read_target,
-            DeviceIntRect::new(DeviceIntPoint::new(0, 0), screenshot_size),
+            DeviceIntRect::new(DeviceIntPoint::new(0, 0), read_size),
             image_format,
             &pbo,
         );
@@ -178,6 +202,7 @@ impl AsyncScreenshotGrabber {
             AsyncScreenshot {
                 pbo,
                 screenshot_size,
+                buffer_stride: (read_size.width * image_format.bytes_per_pixel()) as usize,
                 image_format,
             },
         );
@@ -194,20 +219,33 @@ impl AsyncScreenshotGrabber {
     
     
     
+    
+    
+    
     fn scale_screenshot(
         &mut self,
         device: &mut Device,
         read_target: ReadTarget,
         read_target_rect: DeviceIntRect,
         buffer_size: DeviceIntSize,
+        min_texture_size: DeviceIntSize,
         dest_size: DeviceIntSize,
         image_format: ImageFormat,
         level: usize,
     ) {
         assert_eq!(self.mode, AsyncScreenshotGrabberMode::ProfilerScreenshots);
 
-        let texture_size = buffer_size * (1 << level);
-        if level == self.scaling_textures.len() {
+        let texture_size = {
+            let size = buffer_size * (1 << level);
+            DeviceIntSize::new(
+                size.width.max(min_texture_size.width),
+                size.height.max(min_texture_size.height),
+            )
+        };
+
+        
+        
+        if level == self.scaling_textures.len() || self.scaling_textures[level].get_dimensions() != texture_size {
             let texture = device.create_texture(
                 TextureTarget::Default,
                 image_format,
@@ -217,12 +255,14 @@ impl AsyncScreenshotGrabber {
                 Some(RenderTargetInfo { has_depth: false }),
                 1,
             );
-            self.scaling_textures.push(texture);
-        } else {
-            let current_texture_size = self.scaling_textures[level].get_dimensions();
-            assert_eq!(current_texture_size.width, texture_size.width);
-            assert_eq!(current_texture_size.height, texture_size.height);
+            if level == self.scaling_textures.len() {
+                self.scaling_textures.push(texture);
+            } else {
+                let old_texture = std::mem::replace(&mut self.scaling_textures[level], texture);
+                device.delete_texture(old_texture);
+            }
         }
+        assert_eq!(self.scaling_textures[level].get_dimensions(), texture_size);
 
         let (read_target, read_target_rect) = if read_target_rect.size.width > 2 * dest_size.width {
             self.scale_screenshot(
@@ -230,6 +270,7 @@ impl AsyncScreenshotGrabber {
                 read_target,
                 read_target_rect,
                 buffer_size,
+                min_texture_size,
                 dest_size * 2,
                 image_format,
                 level + 1,
@@ -280,6 +321,7 @@ impl AsyncScreenshotGrabber {
         let AsyncScreenshot {
             pbo,
             screenshot_size,
+            buffer_stride,
             image_format,
         } = match self.awaiting_readback.remove(&handle) {
             Some(screenshot) => screenshot,
@@ -288,7 +330,8 @@ impl AsyncScreenshotGrabber {
 
         let success = if let Some(bound_pbo) = device.map_pbo_for_readback(&pbo) {
             let src_buffer = &bound_pbo.data;
-            let src_stride =
+            let src_stride = buffer_stride;
+            let src_width =
                 screenshot_size.width as usize * image_format.bytes_per_pixel() as usize;
 
             for (src_slice, dst_slice) in src_buffer
@@ -296,7 +339,7 @@ impl AsyncScreenshotGrabber {
                 .zip(dst_buffer.chunks_mut(dst_stride))
                 .take(screenshot_size.height as usize)
             {
-                dst_slice[.. src_stride].copy_from_slice(src_slice);
+                dst_slice[.. src_width].copy_from_slice(&src_slice[.. src_width]);
             }
 
             true
