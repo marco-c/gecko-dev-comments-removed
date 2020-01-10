@@ -11,6 +11,11 @@ const kBaseURI = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
+const kBaseURILocalhost = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://127.0.0.1"
+);
+
 const TEST_CASES = [
   {
     type: "http",
@@ -54,9 +59,42 @@ const TEST_CASES = [
     
     img_url: `url("chrome://browser/skin/identity-icon.svg")`,
   },
+  {
+    type: "localhost",
+    testURL: "http://127.0.0.1",
+    img_url: `url("chrome://browser/skin/identity-icon.svg")`,
+  },
+  {
+    type: "localhost + http frame",
+    testURL: kBaseURILocalhost + "file_csp_block_all_mixedcontent.html",
+    img_url: `url("chrome://browser/skin/identity-icon.svg")`,
+  },
+  {
+    type: "data URI",
+    testURL: "data:text/html,<div>",
+    img_url: `url("chrome://browser/skin/connection-mixed-active-loaded.svg")`,
+  },
+  {
+    type: "view-source HTTP",
+    testURL: "view-source:http://example.com/",
+    img_url: `url("chrome://browser/skin/connection-mixed-active-loaded.svg")`,
+  },
+  {
+    type: "view-source HTTPS",
+    testURL: "view-source:https://example.com/",
+    
+    img_url: `url("chrome://browser/skin/identity-icon.svg")`,
+  },
 ];
 
 add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["network.proxy.allow_hijacking_localhost", true],
+    ],
+  });
+
   for (let testData of TEST_CASES) {
     info(`Testing for ${testData.type}`);
     
