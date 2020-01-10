@@ -31,6 +31,11 @@ namespace dom {
 class BrowserChild;
 }  
 
+namespace webgpu {
+class PWebGPUChild;
+class WebGPUChild;
+}  
+
 namespace widget {
 class CompositorWidget;
 }  
@@ -127,6 +132,8 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   void EndCanvasTransaction();
 
+  RefPtr<webgpu::WebGPUChild> GetWebGPUChild();
+
   
 
 
@@ -220,6 +227,9 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   PWebRenderBridgeChild* AllocPWebRenderBridgeChild(
       const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize&);
   bool DeallocPWebRenderBridgeChild(PWebRenderBridgeChild* aActor);
+
+  webgpu::PWebGPUChild* AllocPWebGPUChild();
+  bool DeallocPWebGPUChild(webgpu::PWebGPUChild* aActor);
 
   wr::MaybeExternalImageId GetNextExternalImageId() override;
 
@@ -399,6 +409,8 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   uintptr_t mTotalFlushCount;
 
   RefPtr<CanvasChild> mCanvasChild;
+
+  RefPtr<webgpu::WebGPUChild> mWebGPUChild;
 };
 
 }  

@@ -1,0 +1,13 @@
+
+
+
+
+use ::xlib::XID;
+
+
+
+
+
+
+
+pub type PointerBarrier = XID;
