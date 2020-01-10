@@ -110,6 +110,9 @@ fn make_shared_flags(env_flags: &Option<EnvVariableFlags>) -> settings::SetResul
     sb.set("baldrdash_prologue_words", "3")?;
 
     
+    sb.set("libcall_call_conv", "baldrdash")?;
+
+    
     
     sb.enable("allones_funcaddrs")?;
 
