@@ -28,6 +28,7 @@ namespace mozilla {
 class EventChainPreVisitor;
 struct URLExtraData;
 namespace dom {
+struct BindContext;
 class ShadowRoot;
 class HTMLSlotElement;
 }  
@@ -57,7 +58,9 @@ enum nsLinkState {
 
 class nsIContent : public nsINode {
  public:
-  typedef mozilla::widget::IMEState IMEState;
+  using IMEState = mozilla::widget::IMEState;
+  using BindContext = mozilla::dom::BindContext;
+
 
   void ConstructUbiNode(void* storage) override;
 
@@ -98,18 +101,7 @@ class nsIContent : public nsINode {
 
 
 
-
-
-
-
-
-
-
-
-
-
-  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
-                              nsIContent* aBindingParent) = 0;
+  virtual nsresult BindToTree(BindContext&, nsINode& aParent) = 0;
 
   
 

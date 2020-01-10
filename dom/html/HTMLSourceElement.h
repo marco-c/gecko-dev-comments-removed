@@ -34,8 +34,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
 
   
   
-  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
-                              nsIContent* aBindingParent) override;
+  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
 
   
   

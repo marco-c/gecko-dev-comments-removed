@@ -7,6 +7,7 @@
 #include "mozilla/dom/SVGSVGElement.h"
 
 #include "mozilla/ContentEvents.h"
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/SVGSVGElementBinding.h"
 #include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/SVGRect.h"
@@ -366,15 +367,15 @@ SMILTimeContainer* SVGSVGElement::GetTimedDocumentRoot() {
 }
 
 
-nsresult SVGSVGElement::BindToTree(Document* aDocument, nsIContent* aParent,
-                                   nsIContent* aBindingParent) {
+nsresult SVGSVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   SMILAnimationController* smilController = nullptr;
 
-  if (aDocument) {
-    smilController = aDocument->GetAnimationController();
-    if (smilController) {
+  
+  
+  if (aParent.IsInUncomposedDoc()) {
+    if ((smilController = OwnerDoc()->GetAnimationController())) {
       
-      if (WillBeOutermostSVG(aParent, aBindingParent)) {
+      if (WillBeOutermostSVG(aParent, aContext.GetBindingParent())) {
         
         if (!mTimedDocumentRoot) {
           mTimedDocumentRoot = new SMILTimeContainer();
@@ -389,8 +390,7 @@ nsresult SVGSVGElement::BindToTree(Document* aDocument, nsIContent* aParent,
     }
   }
 
-  nsresult rv =
-      SVGGraphicsElement::BindToTree(aDocument, aParent, aBindingParent);
+  nsresult rv = SVGGraphicsElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mTimedDocumentRoot && smilController) {
@@ -485,9 +485,9 @@ void SVGSVGElement::FlushImageTransformInvalidation() {
 
 
 
-bool SVGSVGElement::WillBeOutermostSVG(nsIContent* aParent,
-                                       nsIContent* aBindingParent) const {
-  nsIContent* parent = aBindingParent ? aBindingParent : aParent;
+bool SVGSVGElement::WillBeOutermostSVG(nsINode& aParent,
+                                       Element* aBindingParent) const {
+  nsINode* parent = aBindingParent ? aBindingParent : &aParent;
 
   while (parent && parent->IsSVGElement()) {
     if (parent->IsSVGElement(nsGkAtoms::foreignObject)) {

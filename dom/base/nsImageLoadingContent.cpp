@@ -1610,8 +1610,8 @@ void nsImageLoadingContent::NotifyOwnerDocumentActivityChanged() {
   }
 }
 
-void nsImageLoadingContent::BindToTree(Document* aDocument, nsIContent* aParent,
-                                       nsIContent* aBindingParent) {
+void nsImageLoadingContent::BindToTree(BindContext& aContext,
+                                       nsINode& aParent) {
   
   if (GetOurCurrentDoc()) {
     TrackImage(mCurrentRequest);

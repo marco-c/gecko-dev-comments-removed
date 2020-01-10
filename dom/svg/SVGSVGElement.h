@@ -147,8 +147,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
 
-  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
-                              nsIContent* aBindingParent) override;
+  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
   virtual void UnbindFromTree(bool aNullParent) override;
   virtual SVGAnimatedTransformList* GetAnimatedTransformList(
       uint32_t aFlags = 0) override;
@@ -197,8 +196,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
 
 
-  bool WillBeOutermostSVG(nsIContent* aParent,
-                          nsIContent* aBindingParent) const;
+  bool WillBeOutermostSVG(nsINode& aParent, Element* aBindingParent) const;
 
   
   void InvalidateTransformNotifyFrame();

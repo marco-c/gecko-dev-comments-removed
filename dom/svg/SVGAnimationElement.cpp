@@ -131,19 +131,16 @@ float SVGAnimationElement::GetSimpleDuration(ErrorResult& rv) {
 
 
 
-nsresult SVGAnimationElement::BindToTree(Document* aDocument,
-                                         nsIContent* aParent,
-                                         nsIContent* aBindingParent) {
+nsresult SVGAnimationElement::BindToTree(BindContext& aContext,
+                                         nsINode& aParent) {
   MOZ_ASSERT(!mHrefTarget.get(),
              "Shouldn't have href-target yet (or it should've been cleared)");
-  nsresult rv =
-      SVGAnimationElementBase::BindToTree(aDocument, aParent, aBindingParent);
+  nsresult rv = SVGAnimationElementBase::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (Document* doc = GetComposedDoc()) {
-    SMILAnimationController* controller = doc->GetAnimationController();
-    if (controller) {
+    if (SMILAnimationController* controller = doc->GetAnimationController()) {
       controller->RegisterAnimationElement(this);
     }
     const nsAttrValue* href =
