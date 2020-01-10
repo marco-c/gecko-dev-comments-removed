@@ -2094,7 +2094,6 @@ void FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
   
   
   
-  
   const auto& mainMinSize = aAxisTracker.IsRowOriented()
                                 ? pos->MinISize(aAxisTracker.GetWritingMode())
                                 : pos->MinBSize(aAxisTracker.GetWritingMode());
@@ -2105,7 +2104,7 @@ void FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
   
   mNeedsMinSizeAutoResolution =
       IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
-      !disp->IsScrollableOverflow();
+      disp->mOverflowX == StyleOverflow::Visible;
 }
 
 nscoord FlexItem::GetBaselineOffsetFromOuterCrossEdge(
