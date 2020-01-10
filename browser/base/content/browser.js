@@ -5417,23 +5417,12 @@ var XULBrowserWindow = {
     elt.label = tooltip;
     elt.style.direction = direction;
 
-    let screenX;
-    let screenY;
-
-    if (browser instanceof XULElement) {
-      
-      
-      screenX = browser.screenX;
-      screenY = browser.screenY;
-    } else {
-      
-      
-      const componentBounds = browser.getBoundingClientRect();
-      screenX = window.screenX + componentBounds.x;
-      screenY = window.screenY + componentBounds.y;
-    }
-
-    elt.openPopupAtScreen(screenX + x, screenY + y, false, null);
+    elt.openPopupAtScreen(
+      browser.screenX + x,
+      browser.screenY + y,
+      false,
+      null
+    );
   },
 
   hideTooltip() {
