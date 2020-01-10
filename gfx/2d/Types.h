@@ -9,6 +9,7 @@
 
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MacroArgs.h"  
+#include "mozilla/TypedEnumBits.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -474,6 +475,14 @@ enum SideBits {
   eSideBitsLeftRight = eSideBitsLeft | eSideBitsRight,
   eSideBitsAll = eSideBitsTopBottom | eSideBitsLeftRight
 };
+
+
+
+
+
+
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SideBits)
 
 
 
