@@ -3906,16 +3906,13 @@ void LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins) {
   
   
   LDefinition tempD = LDefinition::BogusTemp();
-  LDefinition tempF32 = LDefinition::BogusTemp();
   if (IsElemPC(ins->resumePoint()->pc())) {
-    tempD = tempDouble();
-    tempF32 = hasUnaliasedDouble() ? tempFloat32() : LDefinition::BogusTemp();
+    tempD = tempFixed(FloatReg0);
   }
 
   LInstruction* lir = new (alloc()) LSetPropertyCache(
       useRegister(ins->object()), useBoxOrTypedOrConstant(id, useConstId),
-      useBoxOrTypedOrConstant(ins->value(), useConstValue), temp(), tempD,
-      tempF32);
+      useBoxOrTypedOrConstant(ins->value(), useConstValue), temp(), tempD);
   add(lir, ins);
   assignSafepoint(lir, ins);
 }
