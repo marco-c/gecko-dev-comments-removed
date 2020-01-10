@@ -15,6 +15,10 @@ docShell.QueryInterface(Ci.nsIInterfaceRequestor)
   .getInterface(Ci.nsIBrowserChild)
   .beginSendingWebProgressEventsToParent();
 
+
+
+sendAsyncMessage("Content:BrowserChildReady", { time: Services.telemetry.msSystemNow() });
+
 addEventListener("DOMTitleChanged", function(aEvent) {
   if (!aEvent.isTrusted || aEvent.target.defaultView != content)
     return;
