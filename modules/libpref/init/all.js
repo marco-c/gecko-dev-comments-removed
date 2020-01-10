@@ -2518,9 +2518,6 @@ pref("middlemouse.contentLoadURL", false);
 pref("middlemouse.scrollbarPosition", false);
 
 
-pref("clipboard.autocopy", false);
-
-
 pref("clipboard.plainTextOnly", false);
 
 #ifdef XP_WIN
@@ -3851,9 +3848,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   pref("middlemouse.paste", true);
   pref("middlemouse.openNewWindow", true);
   pref("middlemouse.scrollbarPosition", true);
-
-  
-  pref("clipboard.autocopy", true);
 
   pref("browser.urlbar.clickSelectsAll", false);
 
@@ -5268,10 +5262,6 @@ pref("fission.rebuild_frameloaders_on_remoteness_change", false);
 
 
 
-pref("fission.preserve_browsing_contexts", false);
-
-
-
 
 
 pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
@@ -5468,11 +5458,6 @@ pref("devtools.jsonview.enabled", true);
 
 
 pref("devtools.policy.disabled", false);
-
-
-
-
-pref("devtools.enabled", true);
 
 
 pref("devtools.errorconsole.deprecation_warnings", true);
