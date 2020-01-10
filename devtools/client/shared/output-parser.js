@@ -84,14 +84,18 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
+
+
+
+
+
 function OutputParser(
   document,
-  { supportsType, isValidOnClient, supportsCssColor4ColorFunction }
+  { supportsType, supportsCssColor4ColorFunction }
 ) {
   this.parsed = [];
   this.doc = document;
   this.supportsType = supportsType;
-  this.isValidOnClient = isValidOnClient;
   this.colorSwatches = new WeakMap();
   this.angleSwatches = new WeakMap();
   this._onColorSwatchMouseDown = this._onColorSwatchMouseDown.bind(this);
@@ -1444,7 +1448,9 @@ OutputParser.prototype = {
 
 
   _cssPropertySupportsValue: function(name, value) {
-    return this.isValidOnClient(name, value, this.doc);
+    
+    const declaration = `${name}:${value}`;
+    return this.doc.defaultView.CSS.supports(declaration);
   },
 
   

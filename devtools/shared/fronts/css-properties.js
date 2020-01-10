@@ -55,17 +55,6 @@ function isCssVariable(input) {
   return !!input.match(IS_VARIABLE_TOKEN);
 }
 
-
-
-
-
-
-
-
-function isIdentifier(input) {
-  return input === CSS.escape(input);
-}
-
 var cachedCssProperties = new WeakMap();
 
 
@@ -122,13 +111,9 @@ function CssProperties(db) {
   this.isKnown = this.isKnown.bind(this);
   this.isInherited = this.isInherited.bind(this);
   this.supportsType = this.supportsType.bind(this);
-  this.isValidOnClient = this.isValidOnClient.bind(this);
   this.supportsCssColor4ColorFunction = this.supportsCssColor4ColorFunction.bind(
     this
   );
-
-  
-  this._dummyElements = new WeakMap();
 }
 
 CssProperties.prototype = {
@@ -143,50 +128,6 @@ CssProperties.prototype = {
     
     property = property.startsWith("--") ? property : property.toLowerCase();
     return !!this.properties[property] || isCssVariable(property);
-  },
-
-  
-
-
-
-
-
-
-
-  isValidOnClient(name, value, doc) {
-    
-    if (!isIdentifier(name)) {
-      return false;
-    }
-
-    let dummyElement = this._dummyElements.get(doc);
-    if (!dummyElement) {
-      dummyElement = doc.createElementNS("http://www.w3.org/1999/xhtml", "div");
-      this._dummyElements.set(doc, dummyElement);
-    }
-
-    
-    
-    const sanitizedValue = ("" + value).replace(/!\s*important\s*$/, "");
-
-    
-    dummyElement.style[name] = sanitizedValue;
-    const isValid = !!dummyElement.style[name];
-
-    
-    dummyElement.style[name] = "";
-    return isValid;
-  },
-
-  
-
-
-
-
-
-
-  getValidityChecker(doc) {
-    return (name, value) => this.isValidOnClient(name, value, doc);
   },
 
   

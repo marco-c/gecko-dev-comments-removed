@@ -24,13 +24,9 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-
-
-
 class SwatchFilterTooltip extends SwatchBasedEditorTooltip {
-  constructor(document, cssIsValid) {
+  constructor(document) {
     super(document);
-    this._cssIsValid = cssIsValid;
 
     
     this.widget = this.setFilterContent("none");
@@ -53,7 +49,7 @@ class SwatchFilterTooltip extends SwatchBasedEditorTooltip {
     this.tooltip.panel.appendChild(container);
     this.tooltip.setContentSize({ width: 510, height: 200 });
 
-    return new CSSFilterEditorWidget(container, filter, this._cssIsValid);
+    return new CSSFilterEditorWidget(container, filter);
   }
 
   async show() {
