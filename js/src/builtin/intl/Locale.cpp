@@ -360,17 +360,12 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
 
 
 
-static bool ApplyUnicodeExtensionToTag(JSContext* cx, LanguageTag& tag,
-                                       HandleLinearString calendar,
-                                       HandleLinearString collation,
-                                       HandleLinearString hourCycle,
-                                       HandleLinearString caseFirst,
-                                       HandleLinearString numeric,
-                                       HandleLinearString numberingSystem) {
+bool js::intl::ApplyUnicodeExtensionToTag(
+    JSContext* cx, LanguageTag& tag,
+    JS::HandleVector<intl::UnicodeExtensionKeyword> keywords) {
   
   
-  if (!calendar && !collation && !caseFirst && !hourCycle && !numeric &&
-      !numberingSystem) {
+  if (keywords.length() == 0) {
     return true;
   }
 
@@ -400,53 +395,32 @@ static bool ApplyUnicodeExtensionToTag(JSContext* cx, LanguageTag& tag,
     }
   }
 
-  using UnicodeKeyWithSeparator = const char(&)[UnicodeKeyLength + 3];
+  
+  
+  
 
-  auto appendKeyword = [&newExtension](UnicodeKeyWithSeparator key,
-                                       JSLinearString* value) {
-    if (!newExtension.append(key, UnicodeKeyLength + 2)) {
+  for (const auto& keyword : keywords) {
+    UnicodeExtensionKeyword::UnicodeKeySpan key = keyword.key();
+    if (!newExtension.append('-')) {
+      return false;
+    }
+    if (!newExtension.append(key.data(), key.size())) {
+      return false;
+    }
+    if (!newExtension.append('-')) {
       return false;
     }
 
     JS::AutoCheckCannotGC nogc;
-    return value->hasLatin1Chars()
-               ? newExtension.append(value->latin1Chars(nogc), value->length())
-               : newExtension.append(value->twoByteChars(nogc),
-                                     value->length());
-  };
-
-  
-  
-  
-
-  if (calendar) {
-    if (!appendKeyword("-ca-", calendar)) {
-      return false;
-    }
-  }
-  if (collation) {
-    if (!appendKeyword("-co-", collation)) {
-      return false;
-    }
-  }
-  if (hourCycle) {
-    if (!appendKeyword("-hc-", hourCycle)) {
-      return false;
-    }
-  }
-  if (caseFirst) {
-    if (!appendKeyword("-kf-", caseFirst)) {
-      return false;
-    }
-  }
-  if (numeric) {
-    if (!appendKeyword("-kn-", numeric)) {
-      return false;
-    }
-  }
-  if (numberingSystem) {
-    if (!appendKeyword("-nu-", numberingSystem)) {
-      return false;
+    JSLinearString* type = keyword.type();
+    if (type->hasLatin1Chars()) {
+      if (!newExtension.append(type->latin1Chars(nogc), type->length())) {
+        return false;
+      }
+    } else {
+      if (!newExtension.append(type->twoByteChars(nogc), type->length())) {
+        return false;
+      }
     }
   }
 
@@ -559,6 +533,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
+    JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
 
     
     RootedLinearString calendar(cx);
@@ -574,6 +549,10 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
                                     JSMSG_INVALID_OPTION_VALUE, "calendar",
                                     str.get());
         }
+        return false;
+      }
+
+      if (!keywords.emplaceBack("ca", calendar)) {
         return false;
       }
     }
@@ -594,6 +573,10 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
         }
         return false;
       }
+
+      if (!keywords.emplaceBack("co", collation)) {
+        return false;
+      }
     }
 
     
@@ -602,6 +585,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
+    
     if (hourCycle) {
       if (!StringEqualsLiteral(hourCycle, "h11") &&
           !StringEqualsLiteral(hourCycle, "h12") &&
@@ -614,6 +598,10 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
         }
         return false;
       }
+
+      if (!keywords.emplaceBack("hc", hourCycle)) {
+        return false;
+      }
     }
 
     
@@ -622,6 +610,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
+    
     if (caseFirst) {
       if (!StringEqualsLiteral(caseFirst, "upper") &&
           !StringEqualsLiteral(caseFirst, "lower") &&
@@ -633,12 +622,23 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
         }
         return false;
       }
+
+      if (!keywords.emplaceBack("kf", caseFirst)) {
+        return false;
+      }
     }
 
     
     RootedLinearString numeric(cx);
     if (!GetBooleanOption(cx, options, cx->names().numeric, &numeric)) {
       return false;
+    }
+
+    
+    if (numeric) {
+      if (!keywords.emplaceBack("kn", numeric)) {
+        return false;
+      }
     }
 
     
@@ -658,11 +658,14 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
         }
         return false;
       }
+
+      if (!keywords.emplaceBack("nu", numberingSystem)) {
+        return false;
+      }
     }
 
     
-    if (!ApplyUnicodeExtensionToTag(cx, tag, calendar, collation, hourCycle,
-                                    caseFirst, numeric, numberingSystem)) {
+    if (!ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
       return false;
     }
   }
