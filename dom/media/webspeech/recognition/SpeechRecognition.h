@@ -32,6 +32,10 @@
 
 namespace mozilla {
 
+namespace media {
+class ShutdownBlocker;
+}
+
 namespace dom {
 
 #define SPEECH_RECOGNITION_TEST_EVENT_REQUEST_TOPIC \
@@ -40,7 +44,6 @@ namespace dom {
 
 class GlobalObject;
 class AudioStreamTrack;
-class SpeechRecognitionShutdownBlocker;
 class SpeechEvent;
 class SpeechTrackListener;
 
@@ -62,8 +65,6 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   NS_DECL_NSIOBSERVER
 
-  nsISupports* GetParentObject() const;
-
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -71,6 +72,11 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   static already_AddRefed<SpeechRecognition> Constructor(
       const GlobalObject& aGlobal, ErrorResult& aRv);
+
+  static already_AddRefed<SpeechRecognition> WebkitSpeechRecognition(
+      const GlobalObject& aGlobal, ErrorResult& aRv) {
+    return Constructor(aGlobal, aRv);
+  }
 
   already_AddRefed<SpeechGrammarList> Grammars() const;
 
@@ -89,6 +95,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   void SetInterimResults(bool aArg);
 
   uint32_t MaxAlternatives() const;
+
+  TaskQueue* GetTaskQueueForEncoding() const;
 
   void SetMaxAlternatives(uint32_t aArg);
 
@@ -153,6 +161,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
     STATE_WAITING_FOR_SPEECH,
     STATE_RECOGNIZING,
     STATE_WAITING_FOR_RESULT,
+    STATE_ABORTING,
     STATE_COUNT
   };
 
@@ -163,7 +172,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   bool ValidateAndSetGrammarList(ErrorResult& aRv);
 
   NS_IMETHOD StartRecording(RefPtr<AudioStreamTrack>& aDOMStream);
-  NS_IMETHOD StopRecording();
+  RefPtr<GenericNonExclusivePromise> StopRecording();
 
   uint32_t ProcessAudioSegment(AudioSegment* aSegment, TrackRate aTrackRate);
   void NotifyError(SpeechEvent* aEvent);
@@ -186,9 +195,19 @@ class SpeechRecognition final : public DOMEventTargetHelper,
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
+  bool mTrackIsOwned = false;
+  RefPtr<GenericNonExclusivePromise> mStopRecordingPromise;
   RefPtr<SpeechTrackListener> mSpeechListener;
-  RefPtr<SpeechRecognitionShutdownBlocker> mShutdownBlocker;
   nsCOMPtr<nsISpeechRecognitionService> mRecognitionService;
+  RefPtr<media::ShutdownBlocker> mShutdownBlocker;
+  
+  
+  RefPtr<TaskQueue> mEncodeTaskQueue;
+
+  
+  
+  
+  uint8_t mStreamGeneration = 0;
 
   FSMState mCurrentState;
 
@@ -196,6 +215,10 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   uint32_t mEstimationSamples;
 
   uint32_t mAudioSamplesPerChunk;
+
+  
+  
+  uint32_t mSpeechDetectionTimeoutMs;
 
   
   
@@ -208,6 +231,10 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   nsString mLang;
 
   RefPtr<SpeechGrammarList> mSpeechGrammarList;
+
+  
+  
+  bool mContinuous;
 
   
   
