@@ -36,6 +36,8 @@ const {
 
 Services.prefs.setBoolPref("devtools.accessibility.enabled", true);
 
+const SIMULATION_MENU_BUTTON_ID = "#simulation-menu-button";
+
 
 
 
@@ -476,6 +478,42 @@ async function checkToolbarState(doc, activeToolbarFilters) {
 
 
 
+async function checkSimulationState(doc, expected) {
+  const { buttonActive, checkedOptionIndices } = expected;
+  const simulationMenuOptions = doc
+    .querySelector(SIMULATION_MENU_BUTTON_ID + "-menu")
+    .querySelectorAll(".menuitem");
+
+  
+  is(
+    doc.querySelector(SIMULATION_MENU_BUTTON_ID).className,
+    `devtools-button toolbar-menu-button simulation${
+      buttonActive ? " active" : ""
+    }`,
+    `Simulation menu button contains ${buttonActive ? "active" : "base"} class.`
+  );
+
+  
+  if (checkedOptionIndices) {
+    simulationMenuOptions.forEach((menuListItem, index) => {
+      const isChecked = checkedOptionIndices.includes(index);
+      const button = menuListItem.firstChild;
+
+      is(
+        button.getAttribute("aria-checked"),
+        isChecked ? "true" : null,
+        `Simulation option ${index} is ${isChecked ? "" : "not "}selected.`
+      );
+    });
+  }
+}
+
+
+
+
+
+
+
 
 async function focusAccessibleProperties(doc) {
   const tree = doc.querySelector(".tree");
@@ -590,6 +628,25 @@ async function toggleMenuItem(doc, menuButtonIndex, menuItemIndex) {
   );
 }
 
+async function openSimulationMenu(doc) {
+  doc.querySelector(SIMULATION_MENU_BUTTON_ID).click();
+
+  await BrowserTestUtils.waitForCondition(() =>
+    doc
+      .querySelector(SIMULATION_MENU_BUTTON_ID + "-menu")
+      .classList.contains("tooltip-visible")
+  );
+}
+
+async function toggleSimulationOption(doc, optionIndex) {
+  const simulationMenu = doc.querySelector(SIMULATION_MENU_BUTTON_ID + "-menu");
+  simulationMenu.querySelectorAll(".menuitem")[optionIndex].firstChild.click();
+
+  await BrowserTestUtils.waitForCondition(
+    () => !simulationMenu.classList.contains("tooltip-visible")
+  );
+}
+
 async function findAccessibleFor(
   { toolbox: { target }, panel: { walker: accessibilityWalker } },
   selector
@@ -648,6 +705,7 @@ async function runA11yPanelTests(tests, env) {
       audit,
       toolbarPrefValues,
       activeToolbarFilters,
+      simulation,
     } = expected;
     if (tree) {
       await checkTreeState(env.doc, tree);
@@ -667,6 +725,10 @@ async function runA11yPanelTests(tests, env) {
 
     if (typeof audit !== "undefined") {
       await checkAuditState(env.store, audit);
+    }
+
+    if (simulation) {
+      await checkSimulationState(env.doc, simulation);
     }
   }
 }

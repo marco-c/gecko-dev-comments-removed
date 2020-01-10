@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+const { SIMULATE } = require("devtools/client/accessibility/constants");
+
+exports.simulate = (simulator, simTypes = []) => dispatch =>
+  simulator
+    .simulate({ types: simTypes })
+    .then(success => dispatch({ error: !success, simTypes, type: SIMULATE }))
+    .catch(error => dispatch({ error, type: SIMULATE }));

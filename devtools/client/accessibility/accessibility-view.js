@@ -57,9 +57,18 @@ AccessibilityView.prototype = {
 
 
 
-  async initialize(accessibility, walker, supports, fluentBundles) {
+
+
+
+
+
+
+
+
+
+  async initialize({ front, walker, supports, fluentBundles, simulator }) {
     
-    await this.store.dispatch(reset(accessibility, supports));
+    await this.store.dispatch(reset(front, supports));
     const container = document.getElementById("content");
 
     if (!supports.enableDisable) {
@@ -68,9 +77,10 @@ AccessibilityView.prototype = {
     }
 
     const mainFrame = MainFrame({
-      accessibility,
+      accessibility: front,
       accessibilityWalker: walker,
       fluentBundles,
+      simulator,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
