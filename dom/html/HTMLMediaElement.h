@@ -271,7 +271,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void DispatchAsyncEvent(const nsAString& aName) final;
 
   
-  void UpdateReadyState() override { UpdateReadyStateInternal(); }
+  void UpdateReadyState() override {
+    mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
+  }
 
   
   nsresult DispatchPendingMediaEvents();
@@ -1561,7 +1563,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  Watchable<bool> mPaused;
+  Watchable<bool> mPaused = {true, "HTMLMediaElement::mPaused"};
 
   
   
@@ -1680,7 +1682,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   EncryptionInfo mPendingEncryptedInitData;
 
   
-  bool mDownloadSuspendedByCache = false;
+  Watchable<bool> mDownloadSuspendedByCache = {
+      false, "HTMLMediaElement::mDownloadSuspendedByCache"};
 
   
   
@@ -1818,7 +1821,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mIsBlessed = false;
 
   
-  bool mFirstFrameLoaded = false;
+  Watchable<bool> mFirstFrameLoaded = {false,
+                                       "HTMLMediaElement::mFirstFrameLoaded"};
 
   
   
