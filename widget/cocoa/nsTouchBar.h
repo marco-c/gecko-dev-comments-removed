@@ -25,10 +25,10 @@ using namespace mozilla::dom;
   NSString* mType;
   NSColor* mColor;
   BOOL mDisabled;
+  NSTouchBarItemIdentifier mNativeIdentifier;
   nsCOMPtr<nsITouchBarInputCallback> mCallback;
   RefPtr<Document> mDocument;
   BOOL mIsIconPositionSet;
-  NSMutableArray<TouchBarInput*>* mChildren;
 }
 
 - (NSString*)key;
@@ -42,7 +42,6 @@ using namespace mozilla::dom;
 - (nsCOMPtr<nsITouchBarInputCallback>)callback;
 - (RefPtr<Document>)document;
 - (BOOL)isIconPositionSet;
-- (NSMutableArray<TouchBarInput*>*)children;
 - (void)setKey:(NSString*)aKey;
 - (void)setTitle:(NSString*)aTitle;
 - (void)setImageURI:(nsCOMPtr<nsIURI>)aImageURI;
@@ -50,10 +49,10 @@ using namespace mozilla::dom;
 - (void)setType:(NSString*)aType;
 - (void)setColor:(NSColor*)aColor;
 - (void)setDisabled:(BOOL)aDisabled;
+- (void)setNativeIdentifier:(NSString*)aNativeIdentifier;
 - (void)setCallback:(nsCOMPtr<nsITouchBarInputCallback>)aCallback;
 - (void)setDocument:(RefPtr<Document>)aDocument;
 - (void)setIconPositionSet:(BOOL)aIsIconPositionSet;
-- (void)setChildren:(NSMutableArray<TouchBarInput*>*)aChildren;
 
 - (id)initWithKey:(NSString*)aKey
             title:(NSString*)aTitle
@@ -62,21 +61,11 @@ using namespace mozilla::dom;
          callback:(nsCOMPtr<nsITouchBarInputCallback>)aCallback
             color:(uint32_t)aColor
          disabled:(BOOL)aDisabled
-         document:(RefPtr<Document>)aDocument
-         children:(nsCOMPtr<nsIArray>)aChildren;
+         document:(RefPtr<Document>)aDocument;
 
 - (TouchBarInput*)initWithXPCOM:(nsCOMPtr<nsITouchBarInput>)aInput;
 
-- (void)releaseJSObjects;
-
 - (void)dealloc;
-
-
-
-
-
-
-+ (NSTouchBarItemIdentifier)nativeIdentifierWithType:(NSString*)aType withKey:(NSString*)aKey;
 
 @end
 
@@ -107,21 +96,7 @@ using namespace mozilla::dom;
 
 
 
-
-@property(strong) NSMutableDictionary<NSTouchBarItemIdentifier, NSButton*>* scrollViewButtons;
-
-
-
-
-
 - (instancetype)init;
-
-
-
-
-
-
-- (instancetype)initWithInputs:(NSMutableArray<TouchBarInput*>*)aInputs;
 
 - (void)dealloc;
 
@@ -138,41 +113,14 @@ using namespace mozilla::dom;
 
 
 
-
-- (bool)updateItem:(TouchBarInput*)aInput;
-
+- (void)updateItem:(TouchBarInput*)aInput;
 
 
 
 
-- (bool)maybeUpdatePopoverChild:(TouchBarInput*)aInput;
-
-
-
-
-
-- (bool)maybeUpdateScrollViewChild:(TouchBarInput*)aInput;
-
-
-
-
-
-- (void)replaceMappedLayoutItem:(TouchBarInput*)aItem;
-
-
-
-
-- (void)updateButton:(NSButton*)aButton input:(TouchBarInput*)aInput;
-- (void)updateMainButton:(NSButton*)aMainButton input:(TouchBarInput*)aInput;
-- (void)updatePopover:(NSPopoverTouchBarItem*)aPopoverItem input:(TouchBarInput*)aInput;
-- (void)updateScrollView:(NSCustomTouchBarItem*)aScrollViewItem input:(TouchBarInput*)aInput;
-- (void)updateLabel:(NSTextField*)aLabel input:(TouchBarInput*)aInput;
+- (NSTouchBarItem*)updateButton:(NSCustomTouchBarItem*)aButton input:(TouchBarInput*)aInput;
+- (NSTouchBarItem*)updateMainButton:(NSCustomTouchBarItem*)aMainButton input:(TouchBarInput*)aInput;
 - (NSTouchBarItem*)makeShareScrubberForIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
-
-
-
-
-- (void)showPopover:(TouchBarInput*)aPopover showing:(bool)aShowing;
 
 
 
