@@ -229,6 +229,9 @@ pref("browser.cache.frecency_half_life_hours", 6);
 pref("browser.cache.offline.insecure.enable",  false);
 
 
+pref("offline-apps.allow_by_default",          true);
+
+
 pref("browser.cache.offline.capacity",         512000);
 
 

@@ -1961,6 +1961,12 @@ class nsContentUtils {
 
 
 
+  static bool MaybeAllowOfflineAppByDefault(nsIPrincipal* aPrincipal);
+
+  
+
+
+
 
   static void AddScriptBlocker();
 

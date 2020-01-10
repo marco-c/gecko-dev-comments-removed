@@ -952,6 +952,10 @@ pref("places.frecency.unvisitedTypedBonus", 200);
 pref("browser.ssl_override_behavior", 2);
 
 
+
+pref("browser.offline-apps.notify", true);
+
+
 pref("browser.zoom.full", true);
 
 
