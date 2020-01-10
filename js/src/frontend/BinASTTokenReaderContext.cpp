@@ -686,11 +686,13 @@ class HuffmanPreludeReader {
       if (bitLength > largestBitLength) {
         largestBitLength = bitLength;
       }
-      BINJS_TRY(auxStorageLength_.append(BitLengthAndIndex(bitLength, i)));
+      
+      auxStorageLength_.infallibleAppend(BitLengthAndIndex(bitLength, i));
     }
     
-    BINJS_TRY(auxStorageLength_.append(
-        BitLengthAndIndex(MAX_CODE_BIT_LENGTH, numberOfSymbols)));
+    
+    auxStorageLength_.infallibleAppend(
+        BitLengthAndIndex(MAX_CODE_BIT_LENGTH, numberOfSymbols));
 
     
     uint32_t code = 0;
@@ -750,7 +752,8 @@ class HuffmanPreludeReader {
         MOZ_CRASH("FIXME: Implement error");
       }
       if (bitLength > 0) {
-        BINJS_TRY(auxStorageLength_.append(BitLengthAndIndex(bitLength, i)));
+        
+        auxStorageLength_.infallibleAppend(BitLengthAndIndex(bitLength, i));
         if (bitLength > largestBitLength) {
           largestBitLength = bitLength;
         }
@@ -783,8 +786,8 @@ class HuffmanPreludeReader {
               });
 
     
-    BINJS_TRY(
-        auxStorageLength_.emplaceBack(MAX_CODE_BIT_LENGTH, numberOfSymbols));
+    
+    auxStorageLength_.infallibleEmplaceBack(MAX_CODE_BIT_LENGTH, numberOfSymbols);
 
     
     uint32_t code = 0;
