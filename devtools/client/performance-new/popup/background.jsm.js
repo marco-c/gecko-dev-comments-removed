@@ -252,15 +252,16 @@ function _getArrayOfStringsHostPref(prefName, defaultValue) {
 
 
 
-let _defaultSettings;
+let _defaultPrefs;
 
 
 
 
 
-function getDefaultRecordingSettings() {
-  if (!_defaultSettings) {
-    _defaultSettings = {
+
+function getDefaultRecordingPreferences() {
+  if (!_defaultPrefs) {
+    _defaultPrefs = {
       entries: 10000000, 
       
       duration: 0,
@@ -272,39 +273,33 @@ function getDefaultRecordingSettings() {
 
     if (AppConstants.platform === "android") {
       
-      _defaultSettings.features.push("java");
+      _defaultPrefs.features.push("java");
     }
   }
 
-  return _defaultSettings;
+  return _defaultPrefs;
 }
 
 
 
 
 function getRecordingPreferencesFromBrowser() {
-  const defaultSettings = getDefaultRecordingSettings();
+  const defaultPrefs = getDefaultRecordingPreferences();
 
-  const entries = Services.prefs.getIntPref(
-    ENTRIES_PREF,
-    defaultSettings.entries
-  );
+  const entries = Services.prefs.getIntPref(ENTRIES_PREF, defaultPrefs.entries);
   const interval = Services.prefs.getIntPref(
     INTERVAL_PREF,
-    defaultSettings.interval
+    defaultPrefs.interval
   );
-  const features = _getArrayOfStringsPref(
-    FEATURES_PREF,
-    defaultSettings.features
-  );
-  const threads = _getArrayOfStringsPref(THREADS_PREF, defaultSettings.threads);
+  const features = _getArrayOfStringsPref(FEATURES_PREF, defaultPrefs.features);
+  const threads = _getArrayOfStringsPref(THREADS_PREF, defaultPrefs.threads);
   const objdirs = _getArrayOfStringsHostPref(
     OBJDIRS_PREF,
-    defaultSettings.objdirs
+    defaultPrefs.objdirs
   );
   const duration = Services.prefs.getIntPref(
     DURATION_PREF,
-    defaultSettings.duration
+    defaultPrefs.duration
   );
 
   const supportedFeatures = new Set(Services.profiler.GetFeatures());
@@ -339,7 +334,7 @@ const platform = AppConstants.platform;
 
 
 function revertRecordingPreferences() {
-  setRecordingPreferencesOnBrowser(getDefaultRecordingSettings());
+  setRecordingPreferencesOnBrowser(getDefaultRecordingPreferences());
 }
 
 var EXPORTED_SYMBOLS = [
@@ -350,7 +345,7 @@ var EXPORTED_SYMBOLS = [
   "toggleProfiler",
   "platform",
   "getSymbolsFromThisBrowser",
-  "getDefaultRecordingSettings",
+  "getDefaultRecordingPreferences",
   "getRecordingPreferencesFromBrowser",
   "setRecordingPreferencesOnBrowser",
   "revertRecordingPreferences",
