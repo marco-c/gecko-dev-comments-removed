@@ -51,34 +51,6 @@ class nsAutoRefTraits<FcConfig> : public nsPointerRefTraits<FcConfig> {
 
 
 
-
-
-
-class FTUserFontData final {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FTUserFontData)
-
-  explicit FTUserFontData(FT_Face aFace, const uint8_t* aData)
-      : mFace(aFace), mFontData(aData) {}
-
-  const uint8_t* FontData() const { return mFontData; }
-
- private:
-  ~FTUserFontData() {
-    mozilla::gfx::Factory::ReleaseFTFace(mFace);
-    if (mFontData) {
-      free((void*)mFontData);
-    }
-  }
-
-  FT_Face mFace;
-  const uint8_t* mFontData;
-};
-
-
-
-
-
 class gfxFontconfigFontEntry : public gfxFontEntry {
  public:
   
@@ -90,8 +62,8 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
   
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
                                   WeightRange aWeight, StretchRange aStretch,
-                                  SlantStyleRange aStyle, const uint8_t* aData,
-                                  uint32_t aLength, FT_Face aFace);
+                                  SlantStyleRange aStyle,
+                                  RefPtr<mozilla::gfx::SharedFTFace>&& aFace);
 
   
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
@@ -106,7 +78,8 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
   bool TestCharacterMap(uint32_t aCh) override;
 
-  FT_Face GetFTFace();
+  const RefPtr<mozilla::gfx::SharedFTFace>& GetFTFace();
+  FTUserFontData* GetUserFontData();
 
   FT_MM_Var* GetMMVar() override;
 
@@ -128,26 +101,19 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
   
-  cairo_scaled_font_t* CreateScaledFont(FcPattern* aRenderPattern,
-                                        gfxFloat aAdjustedSize,
-                                        const gfxFontStyle* aStyle,
-                                        FT_Face aFTFace);
+  cairo_scaled_font_t* CreateScaledFont(
+      FcPattern* aRenderPattern, gfxFloat aAdjustedSize,
+      const gfxFontStyle* aStyle, RefPtr<mozilla::gfx::SharedFTFace> aFTFace);
 
   
   virtual nsresult CopyFontTable(uint32_t aTableTag,
                                  nsTArray<uint8_t>& aBuffer) override;
 
   
-  void MaybeReleaseFTFace();
-
-  
   nsCountedRef<FcPattern> mFontPattern;
 
   
-  RefPtr<FTUserFontData> mUserFontData;
-
-  
-  FT_Face mFTFace;
+  RefPtr<mozilla::gfx::SharedFTFace> mFTFace;
   bool mFTFaceInitialized;
 
   
@@ -166,14 +132,10 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
 
   double mAspect;
 
-  
-  const uint8_t* mFontData;
-  uint32_t mLength;
-
   class UnscaledFontCache {
    public:
     already_AddRefed<mozilla::gfx::UnscaledFontFontconfig> Lookup(
-        const char* aFile, uint32_t aIndex);
+        const std::string& aFile, uint32_t aIndex);
 
     void Add(
         const RefPtr<mozilla::gfx::UnscaledFontFontconfig>& aUnscaledFont) {
@@ -244,7 +206,8 @@ class gfxFontconfigFont : public gfxFT2FontBase {
  public:
   gfxFontconfigFont(
       const RefPtr<mozilla::gfx::UnscaledFontFontconfig>& aUnscaledFont,
-      cairo_scaled_font_t* aScaledFont, FcPattern* aPattern,
+      cairo_scaled_font_t* aScaledFont,
+      RefPtr<mozilla::gfx::SharedFTFace>&& aFTFace, FcPattern* aPattern,
       gfxFloat aAdjustedSize, gfxFontEntry* aFontEntry,
       const gfxFontStyle* aFontStyle);
 
@@ -257,6 +220,7 @@ class gfxFontconfigFont : public gfxFT2FontBase {
  private:
   virtual ~gfxFontconfigFont();
 
+  RefPtr<mozilla::gfx::SharedFTFace> mFTFace;
   nsCountedRef<FcPattern> mPattern;
 };
 
