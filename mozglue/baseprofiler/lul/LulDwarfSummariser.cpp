@@ -4,15 +4,19 @@
 
 
 
-#include "LulDwarfSummariser.h"
+#include "BaseProfiler.h"
 
-#include "LulDwarfExt.h"
+#ifdef MOZ_BASE_PROFILER
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Sprintf.h"
+#  include "LulDwarfSummariser.h"
+
+#  include "LulDwarfExt.h"
+
+#  include "mozilla/Assertions.h"
+#  include "mozilla/Sprintf.h"
 
 
-#define DEBUG_SUMMARISER 0
+#  define DEBUG_SUMMARISER 0
 
 namespace lul {
 
@@ -124,7 +128,7 @@ void Summariser::Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
 
   
 
-#if defined(GP_ARCH_arm)
+#  if defined(GP_ARCH_arm)
 
   
 
@@ -246,7 +250,7 @@ void Summariser::Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
     mCurrRules.mR15expr = LExpr(NODEREF, DW_REG_ARM_R14, 0);
   }
 
-#elif defined(GP_ARCH_arm64)
+#  elif defined(GP_ARCH_arm64)
 
   
 
@@ -327,7 +331,7 @@ void Summariser::Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
   if (mCurrRules.mSPexpr.mHow == UNKNOWN) {
     mCurrRules.mSPexpr = LExpr(NODEREF, DW_REG_CFA, 0);
   }
-#elif defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
+#  elif defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
 
   
 
@@ -427,7 +431,7 @@ void Summariser::Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
     mCurrRules.mXbpExpr = LExpr(NODEREF, DW_REG_INTEL_XBP, 0);
   }
 
-#elif defined(GP_ARCH_mips64)
+#  elif defined(GP_ARCH_mips64)
   
   
   
@@ -509,10 +513,10 @@ void Summariser::Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
     mCurrRules.mFPexpr = LExpr(NODEREF, DW_REG_MIPS_FP, 0);
   }
 
-#else
+#  else
 
-#  error "Unsupported arch"
-#endif
+#    error "Unsupported arch"
+#  endif
 
   return;
 
@@ -551,3 +555,5 @@ void Summariser::End() {
 }
 
 }  
+
+#endif  

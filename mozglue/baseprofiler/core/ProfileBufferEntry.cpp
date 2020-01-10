@@ -4,21 +4,25 @@
 
 
 
-#include "ProfileBufferEntry.h"
+#include "BaseProfiler.h"
 
-#include "platform.h"
-#include "ProfileBuffer.h"
+#ifdef MOZ_BASE_PROFILER
 
-#include "js/TrackedOptimizationInfo.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/StackWalk.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
+#  include "ProfileBufferEntry.h"
 
-#include <ostream>
+#  include "platform.h"
+#  include "ProfileBuffer.h"
+
+#  include "js/TrackedOptimizationInfo.h"
+#  include "jsapi.h"
+#  include "jsfriendapi.h"
+#  include "mozilla/Logging.h"
+#  include "mozilla/Sprintf.h"
+#  include "mozilla/StackWalk.h"
+#  include "nsThreadUtils.h"
+#  include "nsXULAppAPI.h"
+
+#  include <ostream>
 
 using namespace mozilla;
 
@@ -887,12 +891,12 @@ class EntryGetter {
 
 
 
-#define ERROR_AND_CONTINUE(msg)                            \
-  {                                                        \
-    fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
-    MOZ_ASSERT(false, msg);                                \
-    continue;                                              \
-  }
+#  define ERROR_AND_CONTINUE(msg)                            \
+    {                                                        \
+      fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
+      MOZ_ASSERT(false, msg);                                \
+      continue;                                              \
+    }
 
 void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
                                         int aThreadId, double aSinceTime,
@@ -1317,17 +1321,17 @@ void ProfileBuffer::StreamProfilerOverheadToJSON(
     aWriter.DoubleProperty("overheadDurations", overheads.sum);
     aWriter.DoubleProperty("overheadPercentage",
                            overheads.sum / (lastTime - firstTime));
-#define PROFILER_STATS(name, var)                           \
-  aWriter.DoubleProperty("mean" name, (var).sum / (var).n); \
-  aWriter.DoubleProperty("min" name, (var).min);            \
-  aWriter.DoubleProperty("max" name, (var).max);
+#  define PROFILER_STATS(name, var)                           \
+    aWriter.DoubleProperty("mean" name, (var).sum / (var).n); \
+    aWriter.DoubleProperty("min" name, (var).min);            \
+    aWriter.DoubleProperty("max" name, (var).max);
     PROFILER_STATS("Interval", intervals);
     PROFILER_STATS("Overhead", overheads);
     PROFILER_STATS("Lockings", lockings);
     PROFILER_STATS("Cleaning", cleanings);
     PROFILER_STATS("Counter", counters);
     PROFILER_STATS("Thread", threads);
-#undef PROFILER_STATS
+#  undef PROFILER_STATS
     aWriter.EndObject();  
   }
   aWriter.EndObject();  
@@ -1572,7 +1576,7 @@ void ProfileBuffer::StreamMemoryToJSON(SpliceableJSONWriter& aWriter,
   aWriter.EndObject();  
   aWriter.EndObject();  
 }
-#undef ERROR_AND_CONTINUE
+#  undef ERROR_AND_CONTINUE
 
 static void AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
                            const Maybe<double>& aStartTime,
@@ -1772,3 +1776,5 @@ void ProfileBuffer::DiscardSamplesBeforeTime(double aTime) {
 
 
 
+
+#endif  
