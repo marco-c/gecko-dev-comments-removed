@@ -163,16 +163,7 @@ class HTMLEditRules : public TextEditRules {
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode) {
-    return InsertBRIfNeededInternal(aNode, false);
-  }
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  InsertPaddingBRElementForEmptyLastLineIfNeeded(nsINode& aNode) {
-    return InsertBRIfNeededInternal(aNode, true);
+    return InsertBRIfNeededInternal(aNode);
   }
 
   
@@ -188,7 +179,7 @@ class HTMLEditRules : public TextEditRules {
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  InsertBRIfNeededInternal(nsINode& aNode, bool aForPadding);
+  InsertBRIfNeededInternal(nsINode& aNode);
 
   
 
