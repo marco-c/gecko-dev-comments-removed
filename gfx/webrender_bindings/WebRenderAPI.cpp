@@ -1138,10 +1138,9 @@ void DisplayListBuilder::PushBorderGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
     bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
     const int32_t aWidth, const int32_t aHeight, bool aFill,
-    const wr::DeviceIntSideOffsets& aSlice,
-    const wr::LayoutPoint& aStartPoint, const wr::LayoutPoint& aEndPoint,
-    const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode,
-    const wr::LayoutSideOffsets& aOutset) {
+    const wr::DeviceIntSideOffsets& aSlice, const wr::LayoutPoint& aStartPoint,
+    const wr::LayoutPoint& aEndPoint, const nsTArray<wr::GradientStop>& aStops,
+    wr::ExtendMode aExtendMode, const wr::LayoutSideOffsets& aOutset) {
   wr_dp_push_border_gradient(mWrState, aBounds, MergeClipLeaf(aClip),
                              aIsBackfaceVisible, &mCurrentSpaceAndClipChain,
                              aWidths, aWidth, aHeight, aFill, aSlice,

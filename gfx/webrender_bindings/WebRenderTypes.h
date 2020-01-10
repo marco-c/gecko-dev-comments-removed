@@ -628,9 +628,9 @@ static inline wr::LayoutSideOffsets ToBorderWidths(float top, float right,
 }
 
 static inline wr::DeviceIntSideOffsets ToDeviceIntSideOffsets(int32_t top,
-                                                                int32_t right,
-                                                                int32_t bottom,
-                                                                int32_t left) {
+                                                              int32_t right,
+                                                              int32_t bottom,
+                                                              int32_t left) {
   wr::DeviceIntSideOffsets offset;
   offset.top = top;
   offset.right = right;
@@ -639,8 +639,7 @@ static inline wr::DeviceIntSideOffsets ToDeviceIntSideOffsets(int32_t top,
   return offset;
 }
 
-static inline wr::LayoutSideOffsets ToLayoutSideOffsets(float top,
-                                                        float right,
+static inline wr::LayoutSideOffsets ToLayoutSideOffsets(float top, float right,
                                                         float bottom,
                                                         float left) {
   wr::LayoutSideOffsets offset;
