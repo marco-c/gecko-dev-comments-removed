@@ -104,7 +104,18 @@ class Front extends Pool {
     this._frontListeners.emit(front.typeName, front);
   }
 
+  async unmanage(front) {
+    super.unmanage(front);
+
+    
+    
+    this._frontListeners.emit(front.typeName + ":destroyed", front);
+  }
+
   
+
+
+
 
 
 
@@ -134,6 +145,32 @@ class Front extends Pool {
 
   offFront(typeName, callback) {
     this._frontListeners.off(typeName, callback);
+  }
+
+  
+
+
+
+
+
+
+
+
+  onFrontDestroyed(typeName, callback) {
+    
+    this.onFront(typeName + ":destroyed", callback);
+  }
+
+  
+
+
+
+
+
+
+
+  offFrontDestroyed(typeName, callback) {
+    this.offFront(typeName + ":destroyed", callback);
   }
 
   
