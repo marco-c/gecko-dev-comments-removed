@@ -28,7 +28,39 @@ ExtensionPreferencesManager.addSetting("engagementTelemetry", {
   },
 });
 
+
+
+
+let idOfExtUsingContextualTip = null;
+
 this.urlbar = class extends ExtensionAPI {
+  onShutdown() {
+    if (idOfExtUsingContextualTip === this.extension.id) {
+      for (let w of windowTracker.browserWindows()) {
+        w.gURLBar.view.removeContextualTip();
+      }
+      idOfExtUsingContextualTip = null;
+    }
+  }
+
+  
+
+
+
+
+  _registerExtensionToUseContextualTip() {
+    if (idOfExtUsingContextualTip == null) {
+      idOfExtUsingContextualTip = this.extension.id;
+    }
+
+    if (idOfExtUsingContextualTip !== this.extension.id) {
+      throw new Error(
+        "There was an attempt to use the contextual tip API but " +
+          "another extension is already using the contextual tip API."
+      );
+    }
+  }
+
   getAPI(context) {
     return {
       urlbar: {
@@ -100,6 +132,35 @@ this.urlbar = class extends ExtensionAPI {
           "engagementTelemetry",
           () => UrlbarPrefs.get("eventTelemetry.enabled")
         ),
+
+        contextualTip: {
+          
+
+
+
+
+
+
+
+
+
+
+
+          set: details => {
+            this._registerExtensionToUseContextualTip();
+            const mostRecentWindow = windowTracker.getTopNormalWindow(context);
+            mostRecentWindow.gURLBar.view.setContextualTip(details);
+          },
+
+          
+
+
+          remove: () => {
+            this._registerExtensionToUseContextualTip();
+            const mostRecentWindow = windowTracker.getTopNormalWindow(context);
+            mostRecentWindow.gURLBar.view.hideContextualTip();
+          },
+        },
       },
     };
   }

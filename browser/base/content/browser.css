@@ -361,6 +361,14 @@ toolbarpaletteitem {
 
 
 
+#urlbar-contextual-tip.hidden,
+#urlbar-contextual-tip-button.hidden,
+#urlbar-contextual-tip-link.hidden {
+  display: none;
+}
+
+
+
 .webextension-browser-action > .toolbarbutton-badge-stack > .toolbarbutton-icon {
   height: 16px;
   width: 16px;

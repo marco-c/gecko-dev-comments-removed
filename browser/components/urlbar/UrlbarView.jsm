@@ -10,6 +10,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarContextualTip: "resource:///modules/UrlbarContextualTip.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
@@ -47,6 +48,62 @@ class UrlbarView {
 
     this.controller.setView(this);
     this.controller.addQueryListener(this);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  setContextualTip(details) {
+    if (!this.contextualTip) {
+      this.contextualTip = new UrlbarContextualTip(this);
+    }
+    this.contextualTip.set(details);
+
+    
+    
+    if (this.visibleItemCount == 0) {
+      this._enableOrDisableOneOffSearches(false);
+    }
+
+    this._openPanel();
+    this.input.focus();
+  }
+
+  
+
+
+  hideContextualTip() {
+    if (this.contextualTip) {
+      this.contextualTip.hide();
+
+      
+      if (this.visibleItemCount == 0) {
+        this.close();
+      }
+    }
+  }
+
+  
+
+
+  removeContextualTip() {
+    if (!this.contextualTip) {
+      return;
+    }
+    this.contextualTip.remove();
+    this.contextualTip = null;
   }
 
   get oneOffSearchButtons() {
@@ -220,6 +277,9 @@ class UrlbarView {
     this.input.textbox.removeEventListener("mousedown", this);
 
     this.controller.notify(this.controller.NOTIFICATIONS.VIEW_CLOSE);
+    if (this.contextualTip) {
+      this.contextualTip.hide();
+    }
   }
 
   
