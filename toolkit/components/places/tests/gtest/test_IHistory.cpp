@@ -166,6 +166,10 @@ void test_visited_notifies() {
 void test_unvisited_does_not_notify_part2() {
   using namespace test_unvisited_does_not_notify;
 
+  if (StaticPrefs::layout_css_notify_of_unvisited()) {
+    SpinEventLoopUntil([&]() { return testLink->GotNotified(); });
+  }
+
   
   
   
@@ -204,7 +208,7 @@ void test_unregistered_visited_does_not_notify() {
   
 
   nsCOMPtr<nsIURI> testURI = new_test_uri();
-  RefPtr<Link> link = new mock_Link(expect_no_visit);
+  RefPtr<Link> link = new mock_Link(expect_no_visit, false);
   nsCOMPtr<IHistory> history(do_get_IHistory());
   nsresult rv = history->RegisterVisitedCallback(testURI, link);
   do_check_success(rv);
@@ -238,7 +242,9 @@ void test_new_visit_notifies_waiting_Link() {
   nsresult rv = history->RegisterVisitedCallback(testURI, link);
   do_check_success(rv);
 
-  SpinEventLoopUntil([&]() { return link->GotNotified(); });
+  if (StaticPrefs::layout_css_notify_of_unvisited()) {
+    SpinEventLoopUntil([&]() { return link->GotNotified(); });
+  }
 
   link->AwaitNewNotification(expect_visit);
 
@@ -254,7 +260,7 @@ void test_RegisterVisitedCallback_returns_before_notifying() {
   addURI(testURI);
 
   
-  RefPtr<Link> link = new mock_Link(expect_no_visit);
+  RefPtr<Link> link = new mock_Link(expect_no_visit, false);
 
   
   nsCOMPtr<IHistory> history = do_get_IHistory();
@@ -342,8 +348,8 @@ void test_observer_topic_dispatched() {
 
   
   RefPtr<Link> visitedLink = new mock_Link(expect_visit, false);
+  RefPtr<Link> notVisitedLink = new mock_Link(expect_no_visit, false);
   RefPtr<Link> visitedLinkCopy = visitedLink;
-  RefPtr<Link> notVisitedLink = new mock_Link(expect_no_visit);
 
   
   bool visitedNotified = false;
