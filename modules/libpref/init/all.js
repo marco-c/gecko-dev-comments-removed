@@ -494,6 +494,10 @@ pref("media.videocontrols.picture-in-picture.video-toggle.always-show", false);
   pref("media.peerconnection.turn.disable", false);
 
   
+  pref("media.peerconnection.dtls.version.min", 770);
+  pref("media.peerconnection.dtls.version.max", 771);
+
+  
   
   #if defined(MOZ_WEBRTC_HARDWARE_AEC_NS)
     pref("media.getusermedia.aec_enabled", false);
