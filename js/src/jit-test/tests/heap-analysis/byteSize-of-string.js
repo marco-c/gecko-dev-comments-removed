@@ -89,6 +89,7 @@ const FN = m32 ? 32 : 32;
 const XN = m32 ? 16 : 24; 
 const RN = m32 ? 16 : 24; 
 const DN = m32 ? 16 : 24; 
+const EN = m32 ? 16 : 24; 
 
 
 
@@ -226,3 +227,26 @@ assertEq(byteSize(rope16a),                                             s(Nurser
 rope16a.match(/x/, function() { assertEq(true, false); });
 assertEq(byteSize(rope16a),                                             s(Nursery(XN) + 131072, Nursery(XN) + 131072));
 assertEq(byteSize(rope16),                                              s(Nursery(XN), Nursery(XN)));
+
+
+
+
+
+
+
+if (config['windows']) {
+  assertEq(byteSize(newExternalString("")),                             s(EN+8, EN+16));
+  assertEq(byteSize(newExternalString("1")),                            s(EN+8, EN+16));
+  assertEq(byteSize(newExternalString("12")),                           s(EN+8, EN+16));
+  assertEq(byteSize(newExternalString("123")),                          s(EN+8, EN+16));
+  assertEq(byteSize(newExternalString("1234")),                         s(EN+8, EN+16));
+} else {
+  assertEq(byteSize(newExternalString("")),                             s(EN+4, EN+8));
+  assertEq(byteSize(newExternalString("1")),                            s(EN+4, EN+8));
+  assertEq(byteSize(newExternalString("12")),                           s(EN+4, EN+8));
+  assertEq(byteSize(newExternalString("123")),                          s(EN+8, EN+8));
+  assertEq(byteSize(newExternalString("1234")),                         s(EN+8, EN+8));
+}
+assertEq(byteSize(newExternalString("12345")),                          s(EN+16, EN+16));
+assertEq(byteSize(newExternalString("123456789.123456789.1234")),       s(EN+48, EN+48));
+assertEq(byteSize(newExternalString("123456789.123456789.12345")),      s(EN+64, EN+64));
