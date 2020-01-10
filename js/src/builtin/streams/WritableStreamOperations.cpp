@@ -13,6 +13,7 @@
 
 #include "jsapi.h"  
 
+#include "builtin/Promise.h"                 
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "js/Promise.h"      
@@ -30,6 +31,7 @@
 #include "vm/List-inl.h"         
 #include "vm/Realm-inl.h"        
 
+using js::PromiseObject;
 using js::WritableStream;
 
 using JS::Handle;
@@ -103,6 +105,34 @@ void WritableStream::clearInFlightWriteRequest(JSContext* cx) {
 }
 
 
+
+
+
+
+
+MOZ_MUST_USE PromiseObject* js::WritableStreamAddWriteRequest(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream) {
+  
+  MOZ_ASSERT(unwrappedStream->isLocked());
+
+  
+  MOZ_ASSERT(unwrappedStream->writable());
+
+  
+  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
+  if (!promise) {
+    return nullptr;
+  }
+
+  
+  if (!AppendToListInFixedSlot(cx, unwrappedStream,
+                               WritableStream::Slot_WriteRequests, promise)) {
+    return nullptr;
+  }
+
+  
+  return promise;
+}
 
 
 
