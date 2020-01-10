@@ -2958,6 +2958,10 @@ class JSScript : public js::BaseScript {
     return js::BytecodeLocation(this, codeEnd());
   }
 
+  js::BytecodeLocation offsetToLocation(uint32_t offset) const {
+    return js::BytecodeLocation(this, offsetToPC(offset));
+  }
+
   
 
 
