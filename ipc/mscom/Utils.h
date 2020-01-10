@@ -51,6 +51,29 @@ uint32_t CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
 uint32_t CopySerializedProxy(IStream* aInStream, IStream** aOutStream);
 
 #if defined(MOZILLA_INTERNAL_API)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsClassThreadAwareInprocServer(REFCLSID aClsid);
+
 void GUIDToString(REFGUID aGuid, nsAString& aOutString);
 #endif  
 
