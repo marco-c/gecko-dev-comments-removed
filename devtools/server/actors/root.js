@@ -131,23 +131,8 @@ RootActor.prototype = {
     
     storageInspector: true,
     
-    storageInspectorReadOnly: true,
-    
     wasmBinarySource: true,
     bulk: true,
-    
-    directorScripts: true,
-    
-    
-    noBlackBoxing: false,
-    
-    noPrettyPrinting: true,
-    
-    
-    breakpointWhileRunning: true,
-    
-    
-    memoryActorAllocations: true,
     
     
     webConsoleCommands: true,
@@ -165,22 +150,13 @@ RootActor.prototype = {
     },
     
     
-    profilerDataFilterable: true,
-    
-    
     heapSnapshots: true,
-    
-    
-    documentLoadingMarkers: true,
     
     
     
     
     
     perfActorVersion: 1,
-    
-    
-    nativeLogpoints: true,
     
     watchpoints: true,
   },
