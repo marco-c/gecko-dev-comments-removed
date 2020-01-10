@@ -3946,7 +3946,16 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         if self.sendsMessage(md):
             isasync = decltype.isAsync()
 
-            if isctor:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if isctor and not md.decl.type.constructedType().isRefcounted():
                 self.cls.addstmts([self.genHelperCtor(md), Whitespace.NL])
 
             if isctor and isasync:
