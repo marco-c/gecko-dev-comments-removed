@@ -181,7 +181,7 @@ pub struct SharedStyleContext<'a> {
 
     
     #[cfg(feature = "servo")]
-    pub registered_speculative_painters: &'a RegisteredSpeculativePainters,
+    pub registered_speculative_painters: &'a dyn RegisteredSpeculativePainters,
 
     
     #[cfg(feature = "servo")]
@@ -826,5 +826,5 @@ pub trait RegisteredSpeculativePainter: SpeculativePainter {
 #[cfg(feature = "servo")]
 pub trait RegisteredSpeculativePainters: Sync {
     
-    fn get(&self, name: &Atom) -> Option<&RegisteredSpeculativePainter>;
+    fn get(&self, name: &Atom) -> Option<&dyn RegisteredSpeculativePainter>;
 }
