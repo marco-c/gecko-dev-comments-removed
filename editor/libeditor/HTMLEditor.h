@@ -1616,6 +1616,18 @@ class HTMLEditor final : public TextEditor,
   MaybeSplitAncestorsForInsertWithTransaction(
       nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode);
 
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MoveNodesIntoNewBlockquoteElement(
+      nsTArray<OwningNonNull<nsINode>>& aNodeArray);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
