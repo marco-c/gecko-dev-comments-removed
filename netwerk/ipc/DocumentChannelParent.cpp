@@ -802,6 +802,17 @@ DocumentChannelParent::AsyncOnChannelRedirect(
 
   
   
+  
+  nsCOMPtr<nsHttpChannel> httpChannel = do_QueryInterface(aOldChannel);
+  if (httpChannel) {
+    bool mismatch = false;
+    MOZ_ALWAYS_SUCCEEDS(
+        httpChannel->HasCrossOriginOpenerPolicyMismatch(&mismatch));
+    mHasCrossOriginOpenerPolicyMismatch |= mismatch;
+  }
+
+  
+  
   if (aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
     aCallback->OnRedirectVerifyCallback(NS_OK);
     return NS_OK;
@@ -892,6 +903,13 @@ DocumentChannelParent::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
 
   if (!aMismatch) {
     return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  
+  if (mHasCrossOriginOpenerPolicyMismatch) {
+    *aMismatch = true;
+    return NS_OK;
   }
 
   nsCOMPtr<nsHttpChannel> channel = do_QueryInterface(mChannel);

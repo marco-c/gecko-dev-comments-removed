@@ -207,6 +207,9 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
   
   
   bool mOldApplyConversion = false;
+  
+  
+  bool mHasCrossOriginOpenerPolicyMismatch = false;
 
   typedef MozPromise<uint64_t, nsresult, true >
       ContentProcessIdPromise;
