@@ -20,6 +20,11 @@ ChromeUtils.defineModuleGetter(
   "fxAccounts",
   "resource://gre/modules/FxAccounts.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "LoginHelper",
+  "resource://gre/modules/LoginHelper.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -173,8 +178,10 @@ var AboutProtectionsHandler = {
 
 
 
+
   async getMonitorData() {
     let monitorData = {};
+    let potentiallyBreachedLogins = 0;
     const hasFxa = await fxAccounts.accountStatus();
 
     if (hasFxa) {
@@ -201,6 +208,12 @@ var AboutProtectionsHandler = {
           monitorData.errorMessage = e.message;
         }
       }
+
+      
+      const logins = await LoginHelper.getAllUserFacingLogins();
+      potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
+        logins
+      );
     } else {
       
       monitorData = {
@@ -210,6 +223,7 @@ var AboutProtectionsHandler = {
 
     return {
       ...monitorData,
+      potentiallyBreachedLogins: potentiallyBreachedLogins.size,
       error: !!monitorData.errorMessage,
     };
   },
