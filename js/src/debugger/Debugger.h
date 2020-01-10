@@ -1298,8 +1298,24 @@ class Breakpoint {
   Breakpoint(Debugger* debugger, BreakpointSite* site, JSObject* handler);
 
   enum MayDestroySite { False, True };
-  void destroy(JSFreeOp* fop,
-               MayDestroySite mayDestroySite = MayDestroySite::True);
+
+  
+
+
+
+
+
+
+
+
+  void delete_(JSFreeOp* fop);
+
+  
+
+
+
+
+  void remove(JSFreeOp* fop);
 
   Breakpoint* nextInDebugger();
   Breakpoint* nextInSite();
