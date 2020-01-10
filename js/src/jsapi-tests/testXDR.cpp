@@ -9,7 +9,6 @@
 
 #include "jsfriendapi.h"
 
-#include "builtin/String.h"
 #include "js/BuildId.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                
