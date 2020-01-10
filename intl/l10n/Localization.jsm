@@ -526,12 +526,12 @@ Localization.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 
+function valueFromBundle(bundle, errors, message, args) {
+  if (message.value) {
+    return bundle.formatPattern(message.value, args, errors);
+  }
 
-
-
-function valueFromBundle(bundle, errors, id, args) {
-  const msg = bundle.getMessage(id);
-  return bundle.format(msg, args, errors);
+  return null;
 }
 
 
@@ -550,27 +550,22 @@ function valueFromBundle(bundle, errors, id, args) {
 
 
 
-
-
-
-
-
-
-function messageFromBundle(bundle, errors, id, args) {
-  const msg = bundle.getMessage(id);
-
+function messageFromBundle(bundle, errors, message, args) {
   const formatted = {
-    value: bundle.format(msg, args, errors),
+    value: null,
     attributes: null,
   };
 
-  if (msg.attrs) {
-    formatted.attributes = [];
-    for (const [name, attr] of Object.entries(msg.attrs)) {
-      const value = bundle.format(attr, args, errors);
-      if (value !== null) {
-        formatted.attributes.push({name, value});
-      }
+  if (message.value) {
+    formatted.value = bundle.formatPattern(message.value, args, errors);
+  }
+
+  let attrNames = Object.keys(message.attributes);
+  if (attrNames.length > 0) {
+    formatted.attributes = new Array(attrNames.length);
+    for (let [i, name] of attrNames.entries()) {
+      let value = bundle.formatPattern(message.attributes[name], args, errors);
+      formatted.attributes[i] = {name, value};
     }
   }
 
@@ -618,9 +613,10 @@ function keysFromBundle(method, bundle, keys, translations) {
       return;
     }
 
-    if (bundle.hasMessage(id)) {
+    let message = bundle.getMessage(id);
+    if (message) {
       messageErrors.length = 0;
-      translations[i] = method(bundle, messageErrors, id, args);
+      translations[i] = method(bundle, messageErrors, message, args);
       if (messageErrors.length > 0) {
         const locale = bundle.locales[0];
         const errors = messageErrors.join(", ");

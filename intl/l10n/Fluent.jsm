@@ -34,10 +34,9 @@ class FluentType {
 
 
 
-
-  constructor(value, opts) {
+  constructor(value) {
+    
     this.value = value;
-    this.opts = opts;
   }
 
   
@@ -59,49 +58,96 @@ class FluentType {
 
 
 
-  toString() {
+
+  toString(scope) { 
     throw new Error("Subclasses of FluentType must implement toString.");
   }
 }
 
+
+
+
 class FluentNone extends FluentType {
+  
+
+
+
+
+  constructor(value = "???") {
+    super(value);
+  }
+
+  
+
+
+
   toString() {
-    return this.value || "???";
+    return `{${this.value}}`;
   }
 }
+
+
+
 
 class FluentNumber extends FluentType {
+  
+
+
+
+
+
+
   constructor(value, opts) {
-    super(parseFloat(value), opts);
+    super(value);
+    
+    this.opts = opts;
   }
 
-  toString(bundle) {
+  
+
+
+
+
+  toString(scope) {
     try {
-      const nf = bundle._memoizeIntlObject(
-        Intl.NumberFormat, this.opts
-      );
+      const nf = scope.memoizeIntlObject(Intl.NumberFormat, this.opts);
       return nf.format(this.value);
-    } catch (e) {
-      
-      return this.value;
+    } catch (err) {
+      scope.reportError(err);
+      return this.value.toString(10);
     }
   }
 }
+
+
+
 
 class FluentDateTime extends FluentType {
+  
+
+
+
+
+
+
   constructor(value, opts) {
-    super(new Date(value), opts);
+    super(value);
+    
+    this.opts = opts;
   }
 
-  toString(bundle) {
+  
+
+
+
+
+  toString(scope) {
     try {
-      const dtf = bundle._memoizeIntlObject(
-        Intl.DateTimeFormat, this.opts
-      );
+      const dtf = scope.memoizeIntlObject(Intl.DateTimeFormat, this.opts);
       return dtf.format(this.value);
-    } catch (e) {
-      
-      return this.value;
+    } catch (err) {
+      scope.reportError(err);
+      return (new Date(this.value)).toISOString();
     }
   }
 }
@@ -118,13 +164,6 @@ class FluentDateTime extends FluentType {
 
 
 
-
-const builtins = {
-  "NUMBER": ([arg], opts) =>
-    new FluentNumber(arg.valueOf(), merge(arg.opts, opts)),
-  "DATETIME": ([arg], opts) =>
-    new FluentDateTime(arg.valueOf(), merge(arg.opts, opts)),
-};
 
 function merge(argopts, opts) {
   return Object.assign({}, argopts, values(opts));
@@ -138,6 +177,37 @@ function values(opts) {
   return unwrapped;
 }
 
+function NUMBER([arg], opts) {
+  if (arg instanceof FluentNone) {
+    return new FluentNone(`NUMBER(${arg.valueOf()})`);
+  }
+
+  let value = Number(arg.valueOf());
+  if (Number.isNaN(value)) {
+    throw new TypeError("Invalid argument to NUMBER");
+  }
+
+  return new FluentNumber(value, merge(arg.opts, opts));
+}
+
+function DATETIME([arg], opts) {
+  if (arg instanceof FluentNone) {
+    return new FluentNone(`DATETIME(${arg.valueOf()})`);
+  }
+
+  let value = Number(arg.valueOf());
+  if (Number.isNaN(value)) {
+    throw new TypeError("Invalid argument to DATETIME");
+  }
+
+  return new FluentDateTime(value, merge(arg.opts, opts));
+}
+
+const builtins = Object.freeze({
+  NUMBER: NUMBER,
+  DATETIME: DATETIME
+});
+
 
 
 
@@ -149,7 +219,7 @@ const PDI = "\u2069";
 
 
 
-function match(bundle, selector, key) {
+function match(scope, selector, key) {
   if (key === selector) {
     
     return true;
@@ -163,8 +233,8 @@ function match(bundle, selector, key) {
   }
 
   if (selector instanceof FluentNumber && typeof key === "string") {
-    let category = bundle
-      ._memoizeIntlObject(Intl.PluralRules, selector.opts)
+    let category = scope
+      .memoizeIntlObject(Intl.PluralRules, selector.opts)
       .select(selector.value);
     if (key === category) {
       return true;
@@ -177,10 +247,10 @@ function match(bundle, selector, key) {
 
 function getDefault(scope, variants, star) {
   if (variants[star]) {
-    return Type(scope, variants[star]);
+    return resolvePattern(scope, variants[star].value);
   }
 
-  scope.errors.push(new RangeError("No default"));
+  scope.reportError(new RangeError("No default"));
   return new FluentNone();
 }
 
@@ -191,9 +261,9 @@ function getArguments(scope, args) {
 
   for (const arg of args) {
     if (arg.type === "narg") {
-      named[arg.name] = Type(scope, arg.value);
+      named[arg.name] = resolveExpression(scope, arg.value);
     } else {
-      positional.push(Type(scope, arg));
+      positional.push(resolveExpression(scope, arg));
     }
   }
 
@@ -201,25 +271,7 @@ function getArguments(scope, args) {
 }
 
 
-function Type(scope, expr) {
-  
-  
-  
-  if (typeof expr === "string") {
-    return scope.bundle._transform(expr);
-  }
-
-  
-  if (expr instanceof FluentNone) {
-    return expr;
-  }
-
-  
-  
-  if (Array.isArray(expr)) {
-    return Pattern(scope, expr);
-  }
-
+function resolveExpression(scope, expr) {
   switch (expr.type) {
     case "str":
       return expr.value;
@@ -237,15 +289,6 @@ function Type(scope, expr) {
       return FunctionReference(scope, expr);
     case "select":
       return SelectExpression(scope, expr);
-    case undefined: {
-      
-      if (expr.value !== null && expr.value !== undefined) {
-        return Type(scope, expr.value);
-      }
-
-      scope.errors.push(new RangeError("No value"));
-      return new FluentNone();
-    }
     default:
       return new FluentNone();
   }
@@ -255,7 +298,7 @@ function Type(scope, expr) {
 function VariableReference(scope, {name}) {
   if (!scope.args || !scope.args.hasOwnProperty(name)) {
     if (scope.insideTermReference === false) {
-      scope.errors.push(new ReferenceError(`Unknown variable: ${name}`));
+      scope.reportError(new ReferenceError(`Unknown variable: $${name}`));
     }
     return new FluentNone(`$${name}`);
   }
@@ -275,11 +318,11 @@ function VariableReference(scope, {name}) {
       return new FluentNumber(arg);
     case "object":
       if (arg instanceof Date) {
-        return new FluentDateTime(arg);
+        return new FluentDateTime(arg.getTime());
       }
     default:
-      scope.errors.push(
-        new TypeError(`Unsupported variable type: ${name}, ${typeof arg}`)
+      scope.reportError(
+        new TypeError(`Variable type not supported: $${name}, ${typeof arg}`)
       );
       return new FluentNone(`$${name}`);
   }
@@ -289,21 +332,25 @@ function VariableReference(scope, {name}) {
 function MessageReference(scope, {name, attr}) {
   const message = scope.bundle._messages.get(name);
   if (!message) {
-    const err = new ReferenceError(`Unknown message: ${name}`);
-    scope.errors.push(err);
+    scope.reportError(new ReferenceError(`Unknown message: ${name}`));
     return new FluentNone(name);
   }
 
   if (attr) {
-    const attribute = message.attrs && message.attrs[attr];
+    const attribute = message.attributes[attr];
     if (attribute) {
-      return Type(scope, attribute);
+      return resolvePattern(scope, attribute);
     }
-    scope.errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
-    return Type(scope, message);
+    scope.reportError(new ReferenceError(`Unknown attribute: ${attr}`));
+    return new FluentNone(`${name}.${attr}`);
   }
 
-  return Type(scope, message);
+  if (message.value) {
+    return resolvePattern(scope, message.value);
+  }
+
+  scope.reportError(new ReferenceError(`No value: ${name}`));
+  return new FluentNone(name);
 }
 
 
@@ -311,25 +358,24 @@ function TermReference(scope, {name, attr, args}) {
   const id = `-${name}`;
   const term = scope.bundle._terms.get(id);
   if (!term) {
-    const err = new ReferenceError(`Unknown term: ${id}`);
-    scope.errors.push(err);
+    scope.reportError(new ReferenceError(`Unknown term: ${id}`));
     return new FluentNone(id);
   }
 
   
-  const [, keyargs] = getArguments(scope, args);
-  const local = {...scope, args: keyargs, insideTermReference: true};
+  const [, params] = getArguments(scope, args);
+  const local = scope.cloneForTermReference(params);
 
   if (attr) {
-    const attribute = term.attrs && term.attrs[attr];
+    const attribute = term.attributes[attr];
     if (attribute) {
-      return Type(local, attribute);
+      return resolvePattern(local, attribute);
     }
-    scope.errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
-    return Type(local, term);
+    scope.reportError(new ReferenceError(`Unknown attribute: ${attr}`));
+    return new FluentNone(`${id}.${attr}`);
   }
 
-  return Type(local, term);
+  return resolvePattern(local, term.value);
 }
 
 
@@ -338,47 +384,45 @@ function FunctionReference(scope, {name, args}) {
   
   const func = scope.bundle._functions[name] || builtins[name];
   if (!func) {
-    scope.errors.push(new ReferenceError(`Unknown function: ${name}()`));
+    scope.reportError(new ReferenceError(`Unknown function: ${name}()`));
     return new FluentNone(`${name}()`);
   }
 
   if (typeof func !== "function") {
-    scope.errors.push(new TypeError(`Function ${name}() is not callable`));
+    scope.reportError(new TypeError(`Function ${name}() is not callable`));
     return new FluentNone(`${name}()`);
   }
 
   try {
     return func(...getArguments(scope, args));
-  } catch (e) {
-    
-    return new FluentNone();
+  } catch (err) {
+    scope.reportError(err);
+    return new FluentNone(`${name}()`);
   }
 }
 
 
 function SelectExpression(scope, {selector, variants, star}) {
-  let sel = Type(scope, selector);
+  let sel = resolveExpression(scope, selector);
   if (sel instanceof FluentNone) {
-    const variant = getDefault(scope, variants, star);
-    return Type(scope, variant);
+    return getDefault(scope, variants, star);
   }
 
   
   for (const variant of variants) {
-    const key = Type(scope, variant.key);
-    if (match(scope.bundle, sel, key)) {
-      return Type(scope, variant);
+    const key = resolveExpression(scope, variant.key);
+    if (match(scope, sel, key)) {
+      return resolvePattern(scope, variant.value);
     }
   }
 
-  const variant = getDefault(scope, variants, star);
-  return Type(scope, variant);
+  return getDefault(scope, variants, star);
 }
 
 
-function Pattern(scope, ptn) {
+function resolveComplexPattern(scope, ptn) {
   if (scope.dirty.has(ptn)) {
-    scope.errors.push(new RangeError("Cyclic reference"));
+    scope.reportError(new RangeError("Cyclic reference"));
     return new FluentNone();
   }
 
@@ -396,23 +440,25 @@ function Pattern(scope, ptn) {
       continue;
     }
 
-    const part = Type(scope, elem).toString(scope.bundle);
+    const part = resolveExpression(scope, elem).toString(scope);
 
     if (useIsolating) {
       result.push(FSI);
     }
 
     if (part.length > MAX_PLACEABLE_LENGTH) {
-      scope.errors.push(
-        new RangeError(
-          "Too many characters in placeable " +
-          `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`
-        )
+      scope.dirty.delete(ptn);
+      
+      
+      
+      
+      throw new RangeError(
+        "Too many characters in placeable " +
+        `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`
       );
-      result.push(part.slice(MAX_PLACEABLE_LENGTH));
-    } else {
-      result.push(part);
     }
+
+    result.push(part);
 
     if (useIsolating) {
       result.push(PDI);
@@ -425,26 +471,242 @@ function Pattern(scope, ptn) {
 
 
 
+function resolvePattern(scope, node) {
+  
+  if (typeof node === "string") {
+    return scope.bundle._transform(node);
+  }
 
+  return resolveComplexPattern(scope, node);
+}
 
-
-
-
-
-
-
-
-
-
-
-
-function resolve(bundle, args, message, errors = []) {
-  const scope = {
-    bundle, args, errors, dirty: new WeakSet(),
+class Scope {
+  constructor(
+    bundle,
+    errors,
+    args,
+    insideTermReference = false,
+    dirty = new WeakSet()
+  ) {
     
-    insideTermReference: false,
-  };
-  return Type(scope, message).toString(bundle);
+    this.bundle = bundle;
+    
+    this.errors = errors;
+    
+    this.args = args;
+
+    
+    this.insideTermReference = insideTermReference;
+    
+
+    this.dirty = dirty;
+  }
+
+  cloneForTermReference(args) {
+    return new Scope(this.bundle, this.errors, args, true, this.dirty);
+  }
+
+  reportError(error) {
+    if (!this.errors) {
+      throw error;
+    }
+    this.errors.push(error);
+  }
+
+  memoizeIntlObject(ctor, opts) {
+    let cache = this.bundle._intls.get(ctor);
+    if (!cache) {
+      cache = {};
+      this.bundle._intls.set(ctor, cache);
+    }
+    let id = JSON.stringify(opts);
+    if (!cache[id]) {
+      cache[id] = new ctor(this.bundle.locales, opts);
+    }
+    return cache[id];
+  }
+}
+
+
+
+
+
+class FluentBundle {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(locales, {
+    functions = {},
+    useIsolating = true,
+    transform = v => v,
+  } = {}) {
+    this.locales = Array.isArray(locales) ? locales : [locales];
+
+    this._terms = new Map();
+    this._messages = new Map();
+    this._functions = functions;
+    this._useIsolating = useIsolating;
+    this._transform = transform;
+    this._intls = new WeakMap();
+  }
+
+  
+
+
+
+
+
+  hasMessage(id) {
+    return this._messages.has(id);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getMessage(id) {
+    return this._messages.get(id);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addResource(res, {
+    allowOverrides = false,
+  } = {}) {
+    const errors = [];
+
+    for (let i = 0; i < res.body.length; i++) {
+      let entry = res.body[i];
+      if (entry.id.startsWith("-")) {
+        
+        
+        if (allowOverrides === false && this._terms.has(entry.id)) {
+          errors.push(`Attempt to override an existing term: "${entry.id}"`);
+          continue;
+        }
+        this._terms.set(entry.id, entry);
+      } else {
+        if (allowOverrides === false && this._messages.has(entry.id)) {
+          errors.push(`Attempt to override an existing message: "${entry.id}"`);
+          continue;
+        }
+        this._messages.set(entry.id, entry);
+      }
+    }
+
+    return errors;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  formatPattern(pattern, args, errors) {
+    
+    
+    if (typeof pattern === "string") {
+      return this._transform(pattern);
+    }
+
+    
+    let scope = new Scope(this, errors, args);
+    try {
+      let value = resolveComplexPattern(scope, pattern);
+      return value.toString(scope);
+    } catch (err) {
+      if (scope.errors) {
+        scope.errors.push(err);
+        return new FluentNone().toString(scope);
+      }
+      throw err;
+    }
+  }
 }
 
 class FluentError extends Error {}
@@ -504,14 +766,15 @@ const MAX_PLACEABLES = 100;
 
 
 
-class FluentResource extends Map {
-  
+class FluentResource {
+  constructor(source) {
+    this.body = this._parse(source);
+  }
 
-
-  static fromString(source) {
+  _parse(source) {
     RE_MESSAGE_START.lastIndex = 0;
 
-    let resource = new this();
+    let resource = [];
     let cursor = 0;
 
     
@@ -524,7 +787,7 @@ class FluentResource extends Map {
 
       cursor = RE_MESSAGE_START.lastIndex;
       try {
-        resource.set(next[1], parseMessage());
+        resource.push(parseMessage(next[1]));
       } catch (err) {
         if (err instanceof FluentError) {
           
@@ -537,6 +800,7 @@ class FluentResource extends Map {
 
     return resource;
 
+    
     
 
     
@@ -599,22 +863,19 @@ class FluentResource extends Map {
       return match(re)[1];
     }
 
-    function parseMessage() {
+    function parseMessage(id) {
       let value = parsePattern();
-      let attrs = parseAttributes();
+      let attributes = parseAttributes();
 
-      if (attrs === null) {
-        if (value === null) {
-          throw new FluentError("Expected message value or attributes");
-        }
-        return value;
+      if (value === null && Object.keys(attributes).length === 0) {
+        throw new FluentError("Expected message value or attributes");
       }
 
-      return {value, attrs};
+      return {id, value, attributes};
     }
 
     function parseAttributes() {
-      let attrs = {};
+      let attrs = Object.create(null);
 
       while (test(RE_ATTRIBUTE_START)) {
         let name = match1(RE_ATTRIBUTE_START);
@@ -625,7 +886,7 @@ class FluentResource extends Map {
         attrs[name] = value;
       }
 
-      return Object.keys(attrs).length > 0 ? attrs : null;
+      return attrs;
     }
 
     function parsePattern() {
@@ -707,9 +968,6 @@ class FluentResource extends Map {
         if (element.type === "indent") {
           
           element = element.value.slice(0, element.value.length - commonIndent);
-        } else if (element.type === "str") {
-          
-          element = element.value;
         }
         if (element) {
           baked.push(element);
@@ -839,7 +1097,7 @@ class FluentResource extends Map {
       consumeToken(TOKEN_BRACKET_OPEN, FluentError);
       let key = test(RE_NUMBER_LITERAL)
         ? parseNumberLiteral()
-        : match1(RE_IDENTIFIER);
+        : {type: "str", value: match1(RE_IDENTIFIER)};
       consumeToken(TOKEN_BRACKET_CLOSE, FluentError);
       return key;
     }
@@ -948,258 +1206,6 @@ class FluentResource extends Map {
       let length = RE_INDENT.exec(blank)[1].length;
       return {type: "indent", value, length};
     }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class FluentBundle {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(locales, {
-    functions = {},
-    useIsolating = true,
-    transform = v => v,
-  } = {}) {
-    this.locales = Array.isArray(locales) ? locales : [locales];
-
-    this._terms = new Map();
-    this._messages = new Map();
-    this._functions = functions;
-    this._useIsolating = useIsolating;
-    this._transform = transform;
-    this._intls = new WeakMap();
-  }
-
-  
-
-
-
-
-  get messages() {
-    return this._messages[Symbol.iterator]();
-  }
-
-  
-
-
-
-
-
-  hasMessage(id) {
-    return this._messages.has(id);
-  }
-
-  
-
-
-
-
-
-
-
-
-  getMessage(id) {
-    return this._messages.get(id);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addMessages(source, options) {
-    const res = FluentResource.fromString(source);
-    return this.addResource(res, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addResource(res, {
-    allowOverrides = false,
-  } = {}) {
-    const errors = [];
-
-    for (const [id, value] of res) {
-      if (id.startsWith("-")) {
-        
-        
-        if (allowOverrides === false && this._terms.has(id)) {
-          errors.push(`Attempt to override an existing term: "${id}"`);
-          continue;
-        }
-        this._terms.set(id, value);
-      } else {
-        if (allowOverrides === false && this._messages.has(id)) {
-          errors.push(`Attempt to override an existing message: "${id}"`);
-          continue;
-        }
-        this._messages.set(id, value);
-      }
-    }
-
-    return errors;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  format(message, args, errors) {
-    
-    if (typeof message === "string") {
-      return this._transform(message);
-    }
-
-    
-    if (message === null || message.value === null) {
-      return null;
-    }
-
-    
-    if (typeof message.value === "string") {
-      return this._transform(message.value);
-    }
-
-    return resolve(this, args, message, errors);
-  }
-
-  _memoizeIntlObject(ctor, opts) {
-    const cache = this._intls.get(ctor) || {};
-    const id = JSON.stringify(opts);
-
-    if (!cache[id]) {
-      cache[id] = new ctor(this.locales, opts);
-      this._intls.set(ctor, cache);
-    }
-
-    return cache[id];
   }
 }
 
