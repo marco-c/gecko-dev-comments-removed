@@ -56,7 +56,7 @@ class IHistory : public nsISupports {
 
 
 
-  NS_IMETHOD RegisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
+  virtual nsresult RegisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
 
   
 
@@ -70,7 +70,15 @@ class IHistory : public nsISupports {
 
 
 
-  NS_IMETHOD UnregisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
+  virtual void UnregisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
+
+  
+
+
+
+
+
+  virtual void NotifyVisited(nsIURI* aURI) = 0;
 
   enum VisitFlags {
     
@@ -130,14 +138,6 @@ class IHistory : public nsISupports {
 
 
   NS_IMETHOD SetURITitle(nsIURI* aURI, const nsAString& aTitle) = 0;
-
-  
-
-
-
-
-
-  NS_IMETHOD NotifyVisited(nsIURI* aURI) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(IHistory, IHISTORY_IID)

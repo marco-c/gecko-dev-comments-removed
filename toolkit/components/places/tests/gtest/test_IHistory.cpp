@@ -168,8 +168,7 @@ void test_unvisited_does_not_notify_part2() {
   
   
   nsCOMPtr<IHistory> history = do_get_IHistory();
-  nsresult rv = history->UnregisterVisitedCallback(testURI, testLink);
-  do_check_success(rv);
+  history->UnregisterVisitedCallback(testURI, testLink);
 
   
   testURI = nullptr;
@@ -214,8 +213,7 @@ void test_unregistered_visited_does_not_notify() {
   do_check_success(rv);
 
   
-  rv = history->UnregisterVisitedCallback(testURI, link);
-  do_check_success(rv);
+  history->UnregisterVisitedCallback(testURI, link);
 
   
   addURI(testURI);
@@ -261,8 +259,7 @@ void test_RegisterVisitedCallback_returns_before_notifying() {
 
   
   
-  rv = history->UnregisterVisitedCallback(testURI, link);
-  do_check_success(rv);
+  history->UnregisterVisitedCallback(testURI, link);
 
   run_next_test();
 }
@@ -363,8 +360,7 @@ void test_observer_topic_dispatched() {
   SpinEventLoopUntil([&]() { return visitedNotified && notVisitedNotified; });
 
   
-  rv = history->UnregisterVisitedCallback(notVisitedURI, notVisitedLink);
-  do_check_success(rv);
+  history->UnregisterVisitedCallback(notVisitedURI, notVisitedLink);
 
   run_next_test();
 }

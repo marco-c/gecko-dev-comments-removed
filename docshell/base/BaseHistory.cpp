@@ -65,8 +65,7 @@ void BaseHistory::NotifyVisitedForDocument(nsIURI* aURI, dom::Document* aDoc) {
   }
 }
 
-NS_IMETHODIMP
-BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
+nsresult BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aURI, "Must pass a non-null URI!");
   if (XRE_IsContentProcess()) {
@@ -121,8 +120,7 @@ BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
+void BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aURI, "Must pass a non-null URI!");
   MOZ_ASSERT(aLink, "Must pass a non-null Link object!");
@@ -132,10 +130,13 @@ BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   if (!entry) {
     
     
+    
+    
+    
 #ifndef MOZ_WIDGET_ANDROID
     MOZ_ASSERT_UNREACHABLE("Trying to unregister URI that wasn't registered!");
 #endif
-    return NS_ERROR_UNEXPECTED;
+    return;
   }
 
   ObserverArray& observers = entry.Data().mLinks;
@@ -143,7 +144,7 @@ BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
 #ifndef MOZ_WIDGET_ANDROID
     MOZ_ASSERT_UNREACHABLE("Trying to unregister node that wasn't registered!");
 #endif
-    return NS_ERROR_UNEXPECTED;
+    return;
   }
 
   
@@ -151,14 +152,13 @@ BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
     entry.Remove();
     CancelVisitedQueryIfPossible(aURI);
   }
-
-  return NS_OK;
 }
 
-NS_IMETHODIMP
-BaseHistory::NotifyVisited(nsIURI* aURI) {
+void BaseHistory::NotifyVisited(nsIURI* aURI) {
   MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aURI);
+  if (NS_WARN_IF(!aURI)) {
+    return;
+  }
 
   
   
@@ -167,7 +167,7 @@ BaseHistory::NotifyVisited(nsIURI* aURI) {
   auto entry = mTrackedURIs.Lookup(aURI);
   if (!entry) {
     
-    return NS_OK;
+    return;
   }
 
   ObservingLinks& links = entry.Data();
@@ -191,8 +191,6 @@ BaseHistory::NotifyVisited(nsIURI* aURI) {
     seen.AppendElement(doc);
     DispatchNotifyVisited(aURI, doc);
   }
-
-  return NS_OK;
 }
 
 }  
