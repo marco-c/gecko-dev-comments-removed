@@ -56,7 +56,8 @@ nsThreadPool::nsThreadPool()
       mIdleCount(0),
       mStackSize(nsIThreadManager::DEFAULT_STACK_SIZE),
       mShutdown(false),
-      mRegressiveMaxIdleTime(false) {
+      mRegressiveMaxIdleTime(false),
+      mIsAPoolThreadFree(true) {
   static std::once_flag flag;
   std::call_once(flag, [] { gCurrentThreadPool.infallibleInit(); });
 
@@ -128,7 +129,11 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
       killThread = true;
     } else if (mThreads.Count() < (int32_t)mThreadLimit) {
       mThreads.AppendObject(thread);
+      if (mThreads.Count() >= (int32_t)mThreadLimit) {
+        mIsAPoolThreadFree = false;
+      }
     } else {
+      
       killThread = true;  
     }
   }
@@ -162,6 +167,35 @@ void nsThreadPool::ShutdownThread(nsIThread* aThread) {
                                           &nsIThread::AsyncShutdown));
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 NS_IMETHODIMP
 nsThreadPool::Run() {
   LOG(("THRD-P(%p) enter %s\n", this, mName.BeginReading()));
@@ -173,6 +207,10 @@ nsThreadPool::Run() {
   bool exitThread = false;
   bool wasIdle = false;
   TimeStamp idleSince;
+
+  
+  static_cast<nsThread*>(current.get())
+      ->SetPoolThreadFreePtr(&mIsAPoolThreadFree);
 
   nsCOMPtr<nsIThreadPoolListener> listener;
   {
@@ -189,10 +227,11 @@ nsThreadPool::Run() {
 
   do {
     nsCOMPtr<nsIRunnable> event;
+    TimeDuration delay;
     {
       MutexAutoLock lock(mMutex);
 
-      event = mEvents.GetEvent(nullptr, lock);
+      event = mEvents.GetEvent(nullptr, lock, &delay);
       if (!event) {
         TimeStamp now = TimeStamp::Now();
         uint32_t idleTimeoutDivider =
@@ -228,7 +267,12 @@ nsThreadPool::Run() {
             --mIdleCount;
           }
           shutdownThreadOnExit = mThreads.RemoveObject(current);
+
+          
+          mIsAPoolThreadFree = (mThreads.Count() < (int32_t)mThreadLimit);
         } else {
+          current->SetRunningEventDelay(TimeDuration(), TimeStamp());
+
           AUTO_PROFILER_LABEL("nsThreadPool::Run::Wait", IDLE);
 
           TimeDuration delta = timeout - (now - idleSince);
@@ -252,6 +296,10 @@ nsThreadPool::Run() {
       
       
       DelayForChaosMode(ChaosFeature::TaskRunning, 1000);
+
+      
+      
+      current->SetRunningEventDelay(delay, TimeStamp::Now());
 
       event->Run();
     }
