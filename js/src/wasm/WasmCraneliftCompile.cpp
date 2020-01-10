@@ -233,6 +233,9 @@ class AutoCranelift {
       
       
       staticEnv_.staticMemoryBound = HugeIndexRange;
+      staticEnv_.memoryGuardSize = HugeOffsetGuardLimit;
+    } else {
+      staticEnv_.memoryGuardSize = OffsetGuardLimit;
     }
 #endif
     
@@ -289,7 +292,7 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
       platformIsWindows(false),
 #endif
       staticMemoryBound(0),
-      memoryGuardSize(OffsetGuardLimit),
+      memoryGuardSize(0),
       instanceTlsOffset(offsetof(TlsData, instance)),
       interruptTlsOffset(offsetof(TlsData, interrupt)),
       cxTlsOffset(offsetof(TlsData, cx)),

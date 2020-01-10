@@ -35,7 +35,6 @@ void* MapBufferMemory(size_t mappedSize, size_t initialCommittedSize);
 
 bool CommitBufferMemory(void* dataEnd, uint32_t delta);
 
-#ifndef WASM_HUGE_MEMORY
 
 
 
@@ -43,7 +42,6 @@ bool CommitBufferMemory(void* dataEnd, uint32_t delta);
 
 bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
                          size_t newMappedSize);
-#endif
 
 
 
@@ -122,7 +120,6 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
     return WasmArrayBufferMaxSize(this);
   }
   size_t wasmMappedSize() const { return WasmArrayBufferMappedSize(this); }
-  uint32_t wasmBoundsCheckLimit() const;
 
   inline bool isPreparedForAsmJS() const;
   inline bool isWasm() const;
@@ -420,12 +417,9 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static MOZ_MUST_USE bool wasmGrowToSizeInPlace(
       uint32_t newSize, Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
-#ifndef WASM_HUGE_MEMORY
   static MOZ_MUST_USE bool wasmMovingGrowToSize(
       uint32_t newSize, Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
-#endif
-  uint32_t wasmBoundsCheckLimit() const;
 
   static void finalize(JSFreeOp* fop, JSObject* obj);
 

@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2015 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/WasmTypes.h"
 
@@ -34,7 +34,7 @@ using namespace js::wasm;
 using mozilla::IsPowerOfTwo;
 using mozilla::MakeEnumeratedRange;
 
-
+// We have only tested huge memory on x64 and arm64.
 
 #if defined(WASM_SUPPORTS_HUGE_MEMORY)
 #  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64))
@@ -42,19 +42,24 @@ using mozilla::MakeEnumeratedRange;
 #  endif
 #endif
 
-
+// More sanity checks.
 
 static_assert(MaxMemoryInitialPages <=
                   ArrayBufferObject::MaxBufferByteLength / PageSize,
               "Memory sizing constraint");
 
-
-
-
+// All plausible targets must be able to do at least IEEE754 double
+// loads/stores, hence the lower limit of 8.  Some Intel processors support
+// AVX-512 loads/stores, hence the upper limit of 64.
 static_assert(MaxMemoryAccessSize >= 8, "MaxMemoryAccessSize too low");
 static_assert(MaxMemoryAccessSize <= 64, "MaxMemoryAccessSize too high");
 static_assert((MaxMemoryAccessSize & (MaxMemoryAccessSize - 1)) == 0,
               "MaxMemoryAccessSize is not a power of two");
+
+#if defined(WASM_SUPPORTS_HUGE_MEMORY)
+static_assert(HugeMappedSize > ArrayBufferObject::MaxBufferByteLength,
+              "Normal array buffer could be confused with huge memory");
+#endif
 
 Val::Val(const LitVal& val) {
   type_ = val.type();
@@ -84,8 +89,8 @@ Val::Val(const LitVal& val) {
 
 void Val::trace(JSTracer* trc) {
   if (type_.isValid() && type_.isReference() && !u.ref_.isNull()) {
-    
-    
+    // TODO/AnyRef-boxing: With boxed immediates and strings, the write
+    // barrier is going to have to be more complicated.
     ASSERT_ANYREF_IS_JSOBJECT;
     TraceManuallyBarrieredEdge(trc, u.ref_.asJSObjectAddress(),
                                "wasm reference-typed global");
@@ -143,8 +148,8 @@ bool wasm::BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef addr) {
 }
 
 Value wasm::UnboxAnyRef(AnyRef val) {
-  
-  
+  // If UnboxAnyRef needs to allocate then we need a more complicated API, and
+  // we need to root the value in the callers, see comments in callExport().
   JSObject* obj = val.asJSObject();
   Value result;
   if (obj == nullptr) {
@@ -225,7 +230,7 @@ uint8_t* FuncType::serialize(uint8_t* cursor) const {
 namespace js {
 namespace wasm {
 
-
+// ExprType is not POD while ReadScalar requires POD, so specialize.
 template <>
 inline const uint8_t* ReadScalar<ExprType>(const uint8_t* src, ExprType* dst) {
   static_assert(sizeof(PackedTypeCode) == sizeof(ExprType),
@@ -234,8 +239,8 @@ inline const uint8_t* ReadScalar<ExprType>(const uint8_t* src, ExprType* dst) {
   return src + sizeof(*dst);
 }
 
-}  
-}  
+}  // namespace wasm
+}  // namespace js
 
 const uint8_t* FuncType::deserialize(const uint8_t* cursor) {
   (cursor = ReadScalar<ExprType>(cursor, &ret_)) &&
@@ -247,7 +252,7 @@ size_t FuncType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   return args_.sizeOfExcludingThis(mallocSizeOf);
 }
 
-typedef uint32_t ImmediateType;  
+typedef uint32_t ImmediateType;  // for 32/64 consistency
 static const unsigned sTotalBits = sizeof(ImmediateType) * 8;
 static const unsigned sTagBits = 1;
 static const unsigned sReturnBit = 1;
@@ -294,7 +299,7 @@ static unsigned EncodeImmediateType(ValType vt) {
   MOZ_CRASH("bad ValType");
 }
 
-
+/* static */
 bool FuncTypeIdDesc::isGlobal(const FuncType& funcType) {
   unsigned numTypes =
       (funcType.ret() == ExprType::Void ? 0 : 1) + (funcType.args().length());
@@ -316,7 +321,7 @@ bool FuncTypeIdDesc::isGlobal(const FuncType& funcType) {
   return false;
 }
 
-
+/* static */
 FuncTypeIdDesc FuncTypeIdDesc::global(const FuncType& funcType,
                                       uint32_t globalDataOffset) {
   MOZ_ASSERT(isGlobal(funcType));
@@ -329,7 +334,7 @@ static ImmediateType LengthToBits(uint32_t length) {
   return length;
 }
 
-
+/* static */
 FuncTypeIdDesc FuncTypeIdDesc::immediate(const FuncType& funcType) {
   ImmediateType immediate = ImmediateBit;
   uint32_t shift = sTagBits;
@@ -376,7 +381,7 @@ size_t FuncTypeWithId::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   return FuncType::sizeOfExcludingThis(mallocSizeOf);
 }
 
-
+// A simple notion of prefix: types and mutability must match exactly.
 
 bool StructType::hasPrefix(const StructType& other) const {
   if (fields_.length() < other.fields_.length()) {
@@ -558,11 +563,11 @@ size_t CustomSection::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
          payload->sizeOfExcludingThis(mallocSizeOf);
 }
 
-
-
-
-
-
+//  Heap length on ARM should fit in an ARM immediate. We approximate the set
+//  of valid ARM immediates with the predicate:
+//    2^n for n in [16, 24)
+//  or
+//    2^24 * n for n >= 1.
 bool wasm::IsValidARMImmediate(uint32_t i) {
   bool valid = (IsPowerOfTwo(i) || (i & 0x00ffffff) == 0);
 
@@ -585,28 +590,26 @@ uint32_t wasm::RoundUpToNextValidARMImmediate(uint32_t i) {
   return i;
 }
 
-#ifndef WASM_HUGE_MEMORY
-
 bool wasm::IsValidBoundsCheckImmediate(uint32_t i) {
-#  ifdef JS_CODEGEN_ARM
+#ifdef JS_CODEGEN_ARM
   return IsValidARMImmediate(i);
-#  else
+#else
   return true;
-#  endif
+#endif
 }
 
 size_t wasm::ComputeMappedSize(uint32_t maxSize) {
   MOZ_ASSERT(maxSize % PageSize == 0);
 
-  
-  
-  
+  // It is the bounds-check limit, not the mapped size, that gets baked into
+  // code. Thus round up the maxSize to the next valid immediate value
+  // *before* adding in the guard page.
 
-#  ifdef JS_CODEGEN_ARM
+#ifdef JS_CODEGEN_ARM
   uint32_t boundsCheckLimit = RoundUpToNextValidARMImmediate(maxSize);
-#  else
+#else
   uint32_t boundsCheckLimit = maxSize;
-#  endif
+#endif
   MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
 
   MOZ_ASSERT(boundsCheckLimit % gc::SystemPageSize() == 0);
@@ -614,9 +617,7 @@ size_t wasm::ComputeMappedSize(uint32_t maxSize) {
   return boundsCheckLimit + GuardSize;
 }
 
-#endif  
-
-
+/* static */
 DebugFrame* DebugFrame::from(Frame* fp) {
   MOZ_ASSERT(fp->tls->instance->code().metadata().debugEnabled);
   auto* df =
@@ -626,18 +627,18 @@ DebugFrame* DebugFrame::from(Frame* fp) {
 }
 
 void DebugFrame::alignmentStaticAsserts() {
-  
-  
-  
+  // VS2017 doesn't consider offsetOfFrame() to be a constexpr, so we have
+  // to use offsetof directly. These asserts can't be at class-level
+  // because the type is incomplete.
 
   static_assert(WasmStackAlignment >= Alignment,
                 "Aligned by ABI before pushing DebugFrame");
   static_assert((offsetof(DebugFrame, frame_) + sizeof(Frame)) % Alignment == 0,
                 "Aligned after pushing DebugFrame");
 #ifdef JS_CODEGEN_ARM64
-  
-  
-  
+  // This constraint may or may not be necessary.  If you hit this because
+  // you've changed the frame size then feel free to remove it, but be extra
+  // aware of possible problems.
   static_assert(sizeof(DebugFrame) % 16 == 0, "ARM64 SP alignment");
 #endif
 }
@@ -662,7 +663,7 @@ bool DebugFrame::getLocal(uint32_t localIndex, MutableHandleValue vp) {
     return false;
   }
 
-  BaseLocalIter iter(locals, argsLength,  true);
+  BaseLocalIter iter(locals, argsLength, /* debugEnabled = */ true);
   while (!iter.done() && iter.index() < localIndex) {
     iter++;
   }
@@ -675,7 +676,7 @@ bool DebugFrame::getLocal(uint32_t localIndex, MutableHandleValue vp) {
       vp.set(Int32Value(*static_cast<int32_t*>(dataPtr)));
       break;
     case jit::MIRType::Int64:
-      
+      // Just display as a Number; it's ok if we lose some precision
       vp.set(NumberValue((double)*static_cast<int64_t*>(dataPtr)));
       break;
     case jit::MIRType::Float32:
@@ -704,7 +705,7 @@ void DebugFrame::updateReturnJSValue() {
       cachedReturnJSValue_.setInt32(resultI32_);
       break;
     case ExprType::I64:
-      
+      // Just display as a Number; it's ok if we lose some precision
       cachedReturnJSValue_.setDouble((double)resultI64_);
       break;
     case ExprType::F32:
@@ -738,7 +739,7 @@ void DebugFrame::clearReturnJSValue() {
 void DebugFrame::observe(JSContext* cx) {
   if (!observing_) {
     instance()->debug().adjustEnterAndLeaveFrameTrapsState(
-        cx,  true);
+        cx, /* enabled = */ true);
     observing_ = true;
   }
 }
@@ -746,7 +747,7 @@ void DebugFrame::observe(JSContext* cx) {
 void DebugFrame::leave(JSContext* cx) {
   if (observing_) {
     instance()->debug().adjustEnterAndLeaveFrameTrapsState(
-        cx,  false);
+        cx, /* enabled = */ false);
     observing_ = false;
   }
 }
