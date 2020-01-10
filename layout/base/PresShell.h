@@ -23,6 +23,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Saturate.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoStyleConsts.h"
@@ -2787,6 +2788,16 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* mDrawEventTargetFrame = nullptr;
 #endif  
 
+  enum class FlushKind : uint8_t { Style, Layout, Count };
+
+  
+  
+  void PingReqsPerFlushTelemetry(FlushKind aFlushKind);
+
+  
+  
+  void PingFlushPerTickTelemetry(FlushType aFlushType);
+
  private:
   
   
@@ -3149,6 +3160,9 @@ class PresShell final : public nsStubDocumentObserver,
   static bool sDisableNonTestMouseEvents;
 
   static bool sProcessInteractable;
+
+  EnumeratedArray<FlushKind, FlushKind::Count, SaturateUint8> mReqsPerFlush;
+  EnumeratedArray<FlushKind, FlushKind::Count, SaturateUint8> mFlushesPerTick;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(PresShell, NS_PRESSHELL_IID)

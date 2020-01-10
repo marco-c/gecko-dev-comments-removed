@@ -1995,6 +1995,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
           
           presShell->NotifyFontFaceSetOnRefresh();
           mNeedToRecomputeVisibility = true;
+
+          
+          
+          presShell->PingFlushPerTickTelemetry(FlushType::Style);
         }
       }
     } else if (i == 2) {
@@ -2020,6 +2024,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
         
         presShell->NotifyFontFaceSetOnRefresh();
         mNeedToRecomputeVisibility = true;
+
+        
+        
+        presShell->PingFlushPerTickTelemetry(FlushType::Layout);
       }
     }
 
