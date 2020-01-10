@@ -166,6 +166,7 @@ var publicProperties = [
 
 var AccountState = (this.AccountState = function(storageManager) {
   this.storageManager = storageManager;
+  this.inFlightTokenRequests = new Map();
   this.promiseInitialized = this.storageManager
     .getAccountData()
     .then(data => {
@@ -200,6 +201,7 @@ AccountState.prototype = {
       );
       this.whenKeysReadyDeferred = null;
     }
+    this.inFlightTokenRequests.clear();
     return this.signOut();
   },
 
@@ -208,6 +210,7 @@ AccountState.prototype = {
     this.cert = null;
     this.keyPair = null;
     this.oauthTokens = null;
+    this.inFlightTokenRequests.clear();
 
     
     
@@ -1732,30 +1735,54 @@ FxAccountsInternal.prototype = {
     }
 
     
-    let scopeString = scope.join(" ");
+    
+    let scopeString = scope.sort().join(" ");
     let client = options.client || this.oauthClient;
     let oAuthURL = client.serverURL.href;
 
+    
+    
+    let maybeInFlight = currentState.inFlightTokenRequests.get(scopeString);
+    if (maybeInFlight) {
+      log.debug("getOAuthToken has an in-flight request for this scope");
+      return maybeInFlight;
+    }
+
+    
+    
+    let promise = this._doTokenFetch(client, scopeString)
+      .then(token => {
+        
+        
+        
+        if (currentState.getCachedToken(scope)) {
+          log.error(`detected a race for oauth token with scope ${scope}`);
+        }
+        
+        if (token) {
+          let entry = { token, server: oAuthURL };
+          currentState.setCachedToken(scope, entry);
+        }
+        return token;
+      })
+      .finally(() => {
+        
+        
+        
+        currentState.inFlightTokenRequests.delete(scopeString);
+      });
+
+    currentState.inFlightTokenRequests.set(scopeString, promise);
+    return promise;
+  },
+
+  async _doTokenFetch(client, scopeString) {
+    let oAuthURL = client.serverURL.href;
     try {
       log.debug("getOAuthToken fetching new token from", oAuthURL);
       let assertion = await this.getAssertion(oAuthURL);
       let result = await client.getTokenFromAssertion(assertion, scopeString);
       let token = result.access_token;
-      
-      if (token) {
-        let entry = { token, server: oAuthURL };
-        
-        
-        
-        
-        let cached = currentState.getCachedToken(scope);
-        if (cached) {
-          log.debug("Detected a race for this token - revoking the new one.");
-          this._destroyOAuthToken(entry);
-          return cached.token;
-        }
-        currentState.setCachedToken(scope, entry);
-      }
       return token;
     } catch (err) {
       throw this._errorToErrorClass(err);

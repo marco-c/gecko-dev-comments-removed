@@ -227,12 +227,6 @@ add_task(async function testTokenRaces() {
   let client = new MockFxAccountsOAuthGrantClient();
   let fxa = await createMockFxA(client);
 
-  
-  
-  let notifications = Promise.all([
-    promiseNotification("testhelper-fxa-revoke-complete"),
-    promiseNotification("testhelper-fxa-revoke-complete"),
-  ]);
   let results = await Promise.all([
     fxa.getOAuthToken({ scope: "test-scope", client }),
     fxa.getOAuthToken({ scope: "test-scope", client }),
@@ -240,9 +234,7 @@ add_task(async function testTokenRaces() {
     fxa.getOAuthToken({ scope: "test-scope-2", client }),
   ]);
 
-  equal(client.numTokenFetches, 4, "should have fetched 4 tokens.");
-  
-  await notifications;
+  equal(client.numTokenFetches, 2, "should have fetched 2 tokens.");
 
   
   results.sort();
@@ -251,7 +243,7 @@ add_task(async function testTokenRaces() {
   
   equal(client.activeTokens.size, 2);
   
-  notifications = Promise.all([
+  let notifications = Promise.all([
     promiseNotification("testhelper-fxa-revoke-complete"),
     promiseNotification("testhelper-fxa-revoke-complete"),
   ]);
@@ -260,4 +252,30 @@ add_task(async function testTokenRaces() {
   await fxa.removeCachedOAuthToken({ token: results[2] });
   equal(client.activeTokens.size, 0);
   await notifications;
+});
+
+add_task(async function testSignOutDuringFetch() {
+  let client = new MockFxAccountsOAuthGrantClient();
+  let fxa = await createMockFxA(client);
+
+  
+  let resolveSignedOut;
+  let promiseSignedOut = new Promise(resolve => {
+    resolveSignedOut = resolve;
+  });
+  let resolveInGetTokenFromAssertion;
+  let promiseInGetTokenFromAssertion = new Promise(resolve => {
+    resolveInGetTokenFromAssertion = resolve;
+  });
+  client.getTokenFromAssertion = async function(assertion, scope) {
+    resolveInGetTokenFromAssertion();
+    await promiseSignedOut;
+    return { access_token: "token" };
+  };
+
+  let getTokenPromise = fxa.getOAuthToken({ scope: "test-scope", client });
+  await promiseInGetTokenFromAssertion;
+  await fxa.signOut();
+  resolveSignedOut();
+  await Assert.rejects(getTokenPromise, /Another user has signed in/);
 });
