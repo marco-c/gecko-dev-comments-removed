@@ -3019,7 +3019,7 @@ TriggerResult GCRuntime::checkHeapThreshold(const HeapSize& heapSize,
   }
 
   size_t niThreshold = thresholdBytes * tunables.nonIncrementalFactor();
-  if (usedBytes >= thresholdBytes * niThreshold) {
+  if (usedBytes >= niThreshold) {
     
     
     return TriggerResult{TriggerKind::NonIncremental, usedBytes, niThreshold};
