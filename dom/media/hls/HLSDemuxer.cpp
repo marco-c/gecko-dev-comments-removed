@@ -255,15 +255,10 @@ RefPtr<HLSTrackDemuxer::SeekPromise> HLSTrackDemuxer::DoSeek(
   MOZ_ASSERT(mParent, "Called after BreackCycle()");
   MOZ_ASSERT(mParent->OnTaskQueue());
   mQueuedSample = nullptr;
-  
-  
-  
-  
-  
-  int64_t seekTimeUs = (aTime - TimeUnit::FromSeconds(2.0)).ToMicroseconds();
+  int64_t seekTimeUs = aTime.ToMicroseconds();
   bool result = mParent->mHLSDemuxerWrapper->Seek(seekTimeUs);
   if (!result) {
-    return SeekPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
+    return SeekPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA,
                                         __func__);
   }
   TimeUnit seekTime = TimeUnit::FromMicroseconds(seekTimeUs);
