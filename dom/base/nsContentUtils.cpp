@@ -8670,7 +8670,7 @@ bool nsContentUtils::SerializeNodeToMarkup(nsINode* aRoot,
           current->NodeType() == nsINode::DOCUMENT_FRAGMENT_NODE) {
         DocumentFragment* frag = static_cast<DocumentFragment*>(current);
         nsIContent* fragHost = frag->GetHost();
-        if (fragHost && nsNodeUtils::IsTemplateElement(fragHost)) {
+        if (fragHost && fragHost->IsTemplateElement()) {
           current = fragHost;
         }
       }
@@ -9807,8 +9807,7 @@ static constexpr uint64_t kIdTotalBits = 53;
 static constexpr uint64_t kIdProcessBits = 22;
 static constexpr uint64_t kIdBits = kIdTotalBits - kIdProcessBits;
 
-
-uint64_t nsContentUtils::GenerateProcessSpecificId(uint64_t aId) {
+ uint64_t GenerateProcessSpecificId(uint64_t aId) {
   uint64_t processId = 0;
   if (XRE_IsContentProcess()) {
     ContentChild* cc = ContentChild::GetSingleton();

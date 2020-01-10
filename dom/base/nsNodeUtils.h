@@ -251,13 +251,6 @@ class nsNodeUtils {
 
 
 
-  static bool IsTemplateElement(const nsINode* aNode);
-
-  
-
-
-
-
 
 
   static nsIContent* GetFirstChildOfTemplateOrNode(nsINode* aNode);

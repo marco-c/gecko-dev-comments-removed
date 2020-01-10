@@ -392,6 +392,11 @@ class nsINode : public mozilla::dom::EventTarget {
     return IsElement() || IsDocument() || IsDocumentFragment();
   }
 
+  
+
+
+  bool IsTemplateElement() const { return IsHTMLElement(nsGkAtoms::_template); }
+
   bool IsSlotable() const { return IsElement() || IsText(); }
 
   

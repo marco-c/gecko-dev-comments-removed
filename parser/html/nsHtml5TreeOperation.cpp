@@ -295,7 +295,7 @@ static bool IsElementOrTemplateContent(nsINode* aNode) {
     if (aNode->IsDocumentFragment()) {
       
       nsIContent* fragHost = aNode->AsDocumentFragment()->GetHost();
-      if (fragHost && nsNodeUtils::IsTemplateElement(fragHost)) {
+      if (fragHost && fragHost->IsTemplateElement()) {
         return true;
       }
     }
