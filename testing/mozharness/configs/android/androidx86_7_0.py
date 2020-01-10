@@ -29,7 +29,7 @@ config = {
         
     },
     "marionette_extra": "--emulator",
-    "bogomips_minimum": 4000,
+    "bogomips_minimum": 3000,
     
     "android_version": 24,
     "is_fennec": False,
