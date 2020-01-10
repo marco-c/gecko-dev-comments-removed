@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { getSourceHash, getRuleHash } = require("../utils/changes-utils");
-
 const { RESET_CHANGES, TRACK_CHANGE } = require("../actions/index");
 
 
@@ -80,9 +78,7 @@ function createRule(ruleData, rules) {
           ];
         }
 
-        
-        
-        return rule.id || getRuleHash(rule);
+        return rule.id;
       })
       
       .map((ruleId, index, array) => {
@@ -216,11 +212,8 @@ const reducers = {
     state = cloneState(state);
 
     const { selector, ancestors, ruleIndex } = change;
-    
-    
-    const sourceId = change.source.id || getSourceHash(change.source);
-    const ruleId =
-      change.id || getRuleHash({ selectors: [selector], ancestors, ruleIndex });
+    const sourceId = change.source.id;
+    const ruleId = change.id;
 
     
     const source = Object.assign({}, state[sourceId], change.source);

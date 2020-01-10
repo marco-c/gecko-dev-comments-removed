@@ -19,58 +19,6 @@ const { getFormatStr, getStr } = require("./l10n");
 
 
 
-
-
-
-
-
-function getSourceHash(source) {
-  const { type, index, href } = source;
-
-  return `${type}${index}${href}`;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getRuleHash(ruleData) {
-  const { selectors = [], ancestors = [], ruleIndex } = ruleData;
-  const atRules = ancestors.reduce((acc, rule) => {
-    acc += `${rule.typeName} ${rule.conditionText ||
-      rule.name ||
-      rule.keyText}`;
-    return acc;
-  }, "");
-
-  return `${atRules}${selectors}${ruleIndex}`;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function getSourceForDisplay(source) {
   let href;
 
@@ -91,5 +39,3 @@ function getSourceForDisplay(source) {
 }
 
 module.exports.getSourceForDisplay = getSourceForDisplay;
-module.exports.getSourceHash = getSourceHash;
-module.exports.getRuleHash = getRuleHash;
