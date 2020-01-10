@@ -14,7 +14,6 @@ nsHtml5OplessBuilder* mBuilder;
 
 
 nsHtml5Highlighter* mViewSource;
-mozilla::ImportScanner mImportScanner;
 nsTArray<nsHtml5TreeOperation> mOpQueue;
 nsTArray<nsHtml5SpeculativeLoad> mSpeculativeLoadQueue;
 nsAHtml5TreeOpSink* mOpSink;
