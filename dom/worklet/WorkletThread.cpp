@@ -29,6 +29,9 @@ namespace {
 const uint32_t kWorkletStackSize = 256 * sizeof(size_t) * 1024;
 
 
+#define WORKLET_CONTEXT_NATIVE_STACK_LIMIT 128 * sizeof(size_t) * 1024
+
+
 
 bool PreserveWrapper(JSContext* aCx, JS::HandleObject aObj) {
   MOZ_ASSERT(aCx);
@@ -294,7 +297,9 @@ void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   
   
   
-  
+
+  JS_SetNativeStackQuota(context->Context(),
+                         WORKLET_CONTEXT_NATIVE_STACK_LIMIT);
 
   if (!JS::InitSelfHostedCode(context->Context())) {
     
