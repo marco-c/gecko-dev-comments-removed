@@ -781,54 +781,21 @@ jsbytecode* BaselineScript::approximatePcForNativeAddress(
 
   
   
-  if (nativeOffset < pcMappingIndexEntry(0).nativeOffset) {
-    return script->code();
-  }
+  
+  
 
-  
-  
-  
-  uint32_t i = 0;
-  for (; (i + 1) < numPCMappingIndexEntries(); i++) {
-    uint32_t endOffset = pcMappingIndexEntry(i + 1).nativeOffset;
-    if (nativeOffset < endOffset) {
-      break;
+  for (const RetAddrEntry& entry : retAddrEntries()) {
+    uint32_t retOffset = entry.returnOffset().offset();
+    if (retOffset >= nativeOffset) {
+      return script->offsetToPC(entry.pcOffset());
     }
   }
 
-  PCMappingIndexEntry& entry = pcMappingIndexEntry(i);
-  MOZ_ASSERT(nativeOffset >= entry.nativeOffset);
-
-  CompactBufferReader reader(pcMappingReader(i));
-  MOZ_ASSERT(reader.more());
-
-  jsbytecode* curPC = script->offsetToPC(entry.pcOffset);
-  uint32_t curNativeOffset = entry.nativeOffset;
-  MOZ_ASSERT(script->containsPC(curPC));
-
-  jsbytecode* lastPC = curPC;
-  while (reader.more()) {
-    
-    
-    uint8_t b = reader.readByte();
-    if (b & 0x80) {
-      curNativeOffset += reader.readUnsigned();
-    }
-
-    
-    
-    
-    
-    if (curNativeOffset > nativeOffset) {
-      return lastPC;
-    }
-
-    lastPC = curPC;
-    curPC += GetBytecodeLength(curPC);
-  }
-
   
-  return lastPC;
+  
+  MOZ_ASSERT(retAddrEntries().size() > 0);
+  const RetAddrEntry& lastEntry = retAddrEntries()[retAddrEntries().size() - 1];
+  return script->offsetToPC(lastEntry.pcOffset());
 }
 
 void BaselineScript::toggleDebugTraps(JSScript* script, jsbytecode* pc) {
