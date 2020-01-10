@@ -10420,7 +10420,6 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
       MotionPathData{point - anchorPoint.ToUnknownPoint(), angle, shift});
 }
 
-
 static Maybe<ScreenRect> GetFrameVisibleRectOnScreen(const nsIFrame* aFrame) {
   
   nsPresContext* topContextInProcess =
@@ -10444,7 +10443,7 @@ static Maybe<ScreenRect> GetFrameVisibleRectOnScreen(const nsIFrame* aFrame) {
 
   if (!browserChild->GetEffectsInfo().IsVisible()) {
     
-    return Some(ScreenRect());
+    return Nothing();
   }
 
   nsIFrame* rootFrame = topContextInProcess->PresShell()->GetRootFrame();
