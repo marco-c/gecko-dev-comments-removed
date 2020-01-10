@@ -1092,10 +1092,19 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
         mTextCtrlElement(aTextControlState.mTextCtrlElement),
+        mTextInputListener(aTextControlState.mTextListener),
         mTextControlAction(aTextControlAction) {
     MOZ_ASSERT(aTextControlAction != TextControlAction::SetValue,
                "Use specific constructor");
     mTextControlState.mHandlingState = this;
+    if (Is(TextControlAction::CommitComposition)) {
+      MOZ_ASSERT(mParent);
+      MOZ_ASSERT(mParent->Is(TextControlAction::SetValue));
+      
+      
+      
+      mParent->InvalidateOldValue();
+    }
   }
 
   
@@ -1105,23 +1114,31 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
 
   AutoTextControlHandlingState(TextControlState& aTextControlState,
                                TextControlAction aTextControlAction,
-                               const nsAString& aSettingValue, ErrorResult& aRv)
+                               const nsAString& aSettingValue,
+                               const nsAString* aOldValue, uint32_t aFlags,
+                               ErrorResult& aRv)
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
         mTextCtrlElement(aTextControlState.mTextCtrlElement),
+        mTextInputListener(aTextControlState.mTextListener),
+        mSettingValue(aSettingValue),
+        mOldValue(aOldValue),
+        mSetValueFlags(aFlags),
         mTextControlAction(aTextControlAction) {
     MOZ_ASSERT(aTextControlAction == TextControlAction::SetValue,
                "Use generic constructor");
     mTextControlState.mHandlingState = this;
-    
-    nsString settingValue(aSettingValue);
-    if (!nsContentUtils::PlatformToDOMLineBreaks(settingValue, fallible)) {
+    if (!nsContentUtils::PlatformToDOMLineBreaks(mSettingValue, fallible)) {
       aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
       return;
     }
     
     
-    UpdateSettingValue(settingValue);
+    if (mParent) {
+      
+      
+      mParent->UpdateSettingValueAndInvalidateOldValue(mSettingValue);
+    }
   }
 
   ~AutoTextControlHandlingState() {
@@ -1141,11 +1158,26 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   bool IsTextControlStateDestroyed() const {
     return mTextControlStateDestroyed;
   }
+  bool Is(TextControlAction aTextControlAction) const {
+    return mTextControlAction == aTextControlAction;
+  }
   bool IsHandling(TextControlAction aTextControlAction) const {
     if (mTextControlAction == aTextControlAction) {
       return true;
     }
     return mParent ? mParent->IsHandling(aTextControlAction) : false;
+  }
+  nsITextControlElement* GetTextControlElement() const {
+    return mTextCtrlElement;
+  }
+  TextInputListener* GetTextInputListener() const { return mTextInputListener; }
+  uint32_t GetSetValueFlags() const {
+    MOZ_ASSERT(Is(TextControlAction::SetValue));
+    return mSetValueFlags;
+  }
+  const nsAString* GetOldValue() const {
+    MOZ_ASSERT(Is(TextControlAction::SetValue));
+    return mOldValue;
   }
   const nsString& GetSettingValue() const {
     MOZ_ASSERT(IsHandling(TextControlAction::SetValue));
@@ -1156,23 +1188,35 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   }
 
  private:
-  void UpdateSettingValue(const nsString& aSettingValue) {
+  void UpdateSettingValueAndInvalidateOldValue(const nsString& aSettingValue) {
     if (mTextControlAction == TextControlAction::SetValue) {
       mSettingValue = aSettingValue;
     }
+    mOldValue = nullptr;
     if (mParent) {
-      mParent->UpdateSettingValue(aSettingValue);
+      mParent->UpdateSettingValueAndInvalidateOldValue(aSettingValue);
+    }
+  }
+  void InvalidateOldValue() {
+    mOldValue = nullptr;
+    if (mParent) {
+      mParent->InvalidateOldValue();
     }
   }
 
-  AutoTextControlHandlingState* mParent;
+  AutoTextControlHandlingState* const mParent;
   TextControlState& mTextControlState;
   
   
   
-  nsCOMPtr<nsITextControlElement> mTextCtrlElement;
+  nsCOMPtr<nsITextControlElement> const mTextCtrlElement;
+  
+  
+  RefPtr<TextInputListener> const mTextInputListener;
   nsString mSettingValue;
-  TextControlAction mTextControlAction;
+  const nsAString* mOldValue = nullptr;
+  uint32_t mSetValueFlags = 0;
+  TextControlAction const mTextControlAction;
   bool mTextControlStateDestroyed = false;
 };
 
@@ -2387,19 +2431,20 @@ bool AreFlagsNotDemandingContradictingMovements(uint32_t aFlags) {
 
 bool TextControlState::SetValue(const nsAString& aValue,
                                 const nsAString* aOldValue, uint32_t aFlags) {
+  if (mHandlingState &&
+      mHandlingState->IsHandling(TextControlAction::CommitComposition)) {
+    
+    
+    aOldValue = nullptr;
+  }
+
   ErrorResult error;
   AutoTextControlHandlingState handlingSetValue(
-      *this, TextControlAction::SetValue, aValue, error);
+      *this, TextControlAction::SetValue, aValue, aOldValue, aFlags, error);
   if (error.Failed()) {
     MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
     error.SuppressException();
     return false;
-  }
-
-  if (handlingSetValue.IsHandling(TextControlAction::CommitComposition)) {
-    
-    
-    aOldValue = nullptr;
   }
 
   
@@ -2408,8 +2453,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
   if (aFlags & (eSetValue_BySetUserInput | eSetValue_ByContent)) {
     if (EditorHasComposition()) {
       
-      if (NS_WARN_IF(handlingSetValue.IsHandling(
-              TextControlAction::CommitComposition))) {
+      if (handlingSetValue.IsHandling(TextControlAction::CommitComposition)) {
         
         
         
@@ -2437,9 +2481,6 @@ bool TextControlState::SetValue(const nsAString& aValue,
           
           return true;
         }
-        
-        
-        aOldValue = nullptr;
       }
       
       
@@ -2448,12 +2489,12 @@ bool TextControlState::SetValue(const nsAString& aValue,
       
       
       
+      AutoTextControlHandlingState handlingCommitComposition(
+          *this, TextControlAction::CommitComposition);
       if (nsContentUtils::IsSafeToRunScript()) {
         
         
         
-        AutoTextControlHandlingState handlingCommitComposition(
-            *this, TextControlAction::CommitComposition);
         RefPtr<TextEditor> textEditor = mTextEditor;
         nsresult rv = textEditor->CommitComposition();
         if (handlingCommitComposition.IsTextControlStateDestroyed()) {
@@ -2474,10 +2515,6 @@ bool TextControlState::SetValue(const nsAString& aValue,
     }
   }
 
-  
-  
-  nsCOMPtr<nsITextControlElement> textControlElement(mTextCtrlElement);
-
   if (mTextEditor && mBoundFrame) {
     
     
@@ -2486,256 +2523,43 @@ bool TextControlState::SetValue(const nsAString& aValue,
     
     nsAutoScriptBlocker scriptBlocker;
 
-#ifdef DEBUG
-    if (IsSingleLineTextControl()) {
-      NS_ASSERTION(mEditorInitialized || handlingSetValue.IsHandling(
-                                             TextControlAction::PrepareEditor),
-                   "We should never try to use the editor if we're not "
-                   "initialized unless we're being initialized");
-    }
-#endif
-
-    nsAutoString currentValue;
-    if (aOldValue) {
-#ifdef DEBUG
-      mBoundFrame->GetText(currentValue);
-      MOZ_ASSERT(currentValue.Equals(*aOldValue));
-#endif
-      currentValue.Assign(*aOldValue);
-    } else {
-      mBoundFrame->GetText(currentValue);
-    }
-
     AutoWeakFrame weakFrame(mBoundFrame);
 
-    
-    if (currentValue != handlingSetValue.GetSettingValue()) {
-      RefPtr<TextEditor> textEditor = mTextEditor;
+    SetValueWithTextEditor(handlingSetValue);
 
-      nsCOMPtr<Document> document = textEditor->GetDocument();
-      if (NS_WARN_IF(!document)) {
+    if (!weakFrame.IsAlive()) {
+      
+      
+      
+      
+      
+      if (mBoundFrame) {
         return true;
       }
-
       
       
       
-      {
-        AutoNoJSAPI nojsapi;
-
-        
-        
-        Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
-        SelectionBatcher selectionBatcher(selection);
-
-        if (NS_WARN_IF(!weakFrame.IsAlive())) {
-          return true;
-        }
-
-        
-        
-        {
-          AutoRestoreEditorState restoreState(textEditor);
-
-          if (aFlags & eSetValue_BySetUserInput) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(
-                handlingSetValue.GetSettingValue(), nullptr, nullptr);
-            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                 "Failed to set the new value");
-          } else {
-            
-            
-            
-            
-            
-            mTextListener->SettingValue(true);
-            bool notifyValueChanged = !!(aFlags & eSetValue_Notify);
-            mTextListener->SetValueChanged(notifyValueChanged);
-
-            AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
-
-            if (aFlags & eSetValue_ForXUL) {
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
-              uint32_t currentLength = currentValue.Length();
-              uint32_t newlength = handlingSetValue.GetSettingValue().Length();
-              if (!currentLength ||
-                  !StringBeginsWith(handlingSetValue.GetSettingValue(),
-                                    currentValue)) {
-                
-                currentLength = 0;
-                kungFuDeathGrip->SelectAll();
-              } else {
-                
-                mBoundFrame->SelectAllOrCollapseToEndOfText(false);
-              }
-              const nsAString& insertValue =
-                  StringTail(handlingSetValue.GetSettingValue(),
-                             newlength - currentLength);
-
-              if (insertValue.IsEmpty()) {
-                
-                
-                
-                DebugOnly<nsresult> rv = textEditor->DeleteSelectionAsAction(
-                    nsIEditor::eNone, nsIEditor::eStrip, nullptr);
-                NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                     "Failed to remove the text");
-              } else {
-                
-                
-                
-                DebugOnly<nsresult> rv =
-                    textEditor->InsertTextAsAction(insertValue, nullptr);
-                NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                     "Failed to insert the new value");
-              }
-            } else {
-              
-              
-              
-              AutoDisableUndo disableUndo(textEditor);
-              if (selection) {
-                
-                
-                
-                
-                
-                selection->RemoveAllRangesTemporarily();
-              }
-
-              
-              
-              textEditor->SetTextAsAction(handlingSetValue.GetSettingValue(),
-                                          nullptr);
-
-              
-              
-              
-              
-              mTextListener->HandleValueChanged();
-            }
-
-            mTextListener->SetValueChanged(true);
-            mTextListener->SettingValue(false);
-            if (!notifyValueChanged) {
-              
-              
-              ValueWasChanged(true);
-            }
-          }
-        }
-
-        if (!weakFrame.IsAlive()) {
-          
-          
-          
-          
-          
-          if (!mBoundFrame) {
-            return SetValue(handlingSetValue.GetSettingValue(),
-                            aFlags & eSetValue_Notify);
-          }
-          return true;
-        }
-
-        
-        
-        if (!mBoundFrame->CacheValue(handlingSetValue.GetSettingValue(),
-                                     fallible)) {
-          return false;
-        }
-      }
-    }
-  } else {
-    if (!mValue) {
-      mValue.emplace();
-    }
-
-    
-    
-    if (!mValue->Equals(handlingSetValue.GetSettingValue()) ||
-        !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
-      if (!mValue->Assign(handlingSetValue.GetSettingValue(), fallible)) {
+      ErrorResult error;
+      AutoTextControlHandlingState handlingSetValueWithoutEditor(
+          *this, TextControlAction::SetValue,
+          handlingSetValue.GetSettingValue(), handlingSetValue.GetOldValue(),
+          handlingSetValue.GetSetValueFlags() & eSetValue_Notify, error);
+      if (error.Failed()) {
+        MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
+        error.SuppressException();
         return false;
       }
-
-      
-      if (IsSelectionCached()) {
-        MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(aFlags));
-
-        SelectionProperties& props = GetSelectionProperties();
-        if (aFlags & eSetValue_MoveCursorToEndIfValueChanged) {
-          props.SetStart(handlingSetValue.GetSettingValue().Length());
-          props.SetEnd(handlingSetValue.GetSettingValue().Length());
-          props.SetDirection(nsITextControlFrame::eForward);
-        } else if (aFlags &
-                   eSetValue_MoveCursorToBeginSetSelectionDirectionForward) {
-          props.SetStart(0);
-          props.SetEnd(0);
-          props.SetDirection(nsITextControlFrame::eForward);
-        } else {
-          
-          
-          props.SetStart(std::min(props.GetStart(),
-                                  handlingSetValue.GetSettingValue().Length()));
-          props.SetEnd(std::min(props.GetEnd(),
-                                handlingSetValue.GetSettingValue().Length()));
-        }
-      }
-
-      
-      if (mBoundFrame) {
-        mBoundFrame->UpdateValueDisplay(true);
-      }
-
-      
-      
-      
-      
-      if (aFlags & eSetValue_BySetUserInput) {
-        nsCOMPtr<Element> element = do_QueryInterface(textControlElement);
-        MOZ_ASSERT(element);
-        MOZ_ASSERT(!handlingSetValue.GetSettingValue().IsVoid());
-        DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
-            element, EditorInputType::eInsertReplacementText, nullptr,
-            nsContentUtils::InputEventOptions(
-                handlingSetValue.GetSettingValue()));
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                             "Failed to dispatch input event");
-      }
-    } else {
-      
-      
-      
-      
-      if (IsSelectionCached()) {
-        SelectionProperties& props = GetSelectionProperties();
-        props.SetIsDirty();
-      }
+      return SetValueWithoutTextEditor(handlingSetValueWithoutEditor);
     }
 
     
     
-    ValueWasChanged(!!mBoundFrame);
+    if (!mBoundFrame->CacheValue(handlingSetValue.GetSettingValue(),
+                                 fallible)) {
+      return false;
+    }
+  } else if (!SetValueWithoutTextEditor(handlingSetValue)) {
+    return false;
   }
 
   
@@ -2745,7 +2569,256 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
   
   
-  textControlElement->OnValueChanged( !!mBoundFrame, changeKind);
+  handlingSetValue.GetTextControlElement()->OnValueChanged(
+       !!mBoundFrame, changeKind);
+  return true;
+}
+
+void TextControlState::SetValueWithTextEditor(
+    AutoTextControlHandlingState& aHandlingSetValue) {
+  MOZ_ASSERT(aHandlingSetValue.Is(TextControlAction::SetValue));
+  MOZ_ASSERT(mTextEditor);
+  MOZ_ASSERT(mBoundFrame);
+  NS_WARNING_ASSERTION(!EditorHasComposition(),
+                       "Failed to commit composition before setting value.  "
+                       "Investigate the cause!");
+
+#ifdef DEBUG
+  if (IsSingleLineTextControl()) {
+    NS_ASSERTION(mEditorInitialized || aHandlingSetValue.IsHandling(
+                                           TextControlAction::PrepareEditor),
+                 "We should never try to use the editor if we're not "
+                 "initialized unless we're being initialized");
+  }
+#endif
+
+  nsAutoString currentValue;
+  if (aHandlingSetValue.GetOldValue()) {
+#ifdef DEBUG
+    mBoundFrame->GetText(currentValue);
+    MOZ_ASSERT(currentValue.Equals(*aHandlingSetValue.GetOldValue()));
+#endif
+    currentValue.Assign(*aHandlingSetValue.GetOldValue());
+  } else {
+    mBoundFrame->GetText(currentValue);
+  }
+
+  AutoWeakFrame weakFrame(mBoundFrame);
+
+  
+  if (currentValue == aHandlingSetValue.GetSettingValue()) {
+    return;
+  }
+
+  RefPtr<TextEditor> textEditor = mTextEditor;
+
+  nsCOMPtr<Document> document = textEditor->GetDocument();
+  if (NS_WARN_IF(!document)) {
+    return;
+  }
+
+  
+  
+  
+  AutoNoJSAPI nojsapi;
+
+  
+  
+  Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
+  SelectionBatcher selectionBatcher(selection);
+
+  if (NS_WARN_IF(!weakFrame.IsAlive())) {
+    return;
+  }
+
+  
+  
+  AutoRestoreEditorState restoreState(textEditor);
+
+  if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(
+        aHandlingSetValue.GetSettingValue(), nullptr, nullptr);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to set the new value");
+    return;
+  }
+
+  
+  
+  
+  
+  
+  mTextListener->SettingValue(true);
+  bool notifyValueChanged =
+      !!(aHandlingSetValue.GetSetValueFlags() & eSetValue_Notify);
+  mTextListener->SetValueChanged(notifyValueChanged);
+
+  AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
+
+  if (aHandlingSetValue.GetSetValueFlags() & eSetValue_ForXUL) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
+    uint32_t currentLength = currentValue.Length();
+    uint32_t newlength = aHandlingSetValue.GetSettingValue().Length();
+    if (!currentLength ||
+        !StringBeginsWith(aHandlingSetValue.GetSettingValue(), currentValue)) {
+      
+      currentLength = 0;
+      kungFuDeathGrip->SelectAll();
+    } else {
+      
+      mBoundFrame->SelectAllOrCollapseToEndOfText(false);
+    }
+    const nsAString& insertValue = StringTail(
+        aHandlingSetValue.GetSettingValue(), newlength - currentLength);
+
+    if (insertValue.IsEmpty()) {
+      
+      
+      
+      DebugOnly<nsresult> rv = textEditor->DeleteSelectionAsAction(
+          nsIEditor::eNone, nsIEditor::eStrip, nullptr);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove the text");
+    } else {
+      
+      
+      
+      DebugOnly<nsresult> rv =
+          textEditor->InsertTextAsAction(insertValue, nullptr);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the new value");
+    }
+  } else {
+    
+    
+    
+    AutoDisableUndo disableUndo(textEditor);
+    if (selection) {
+      
+      
+      
+      
+      
+      selection->RemoveAllRangesTemporarily();
+    }
+
+    
+    
+    textEditor->SetTextAsAction(aHandlingSetValue.GetSettingValue(), nullptr);
+
+    
+    
+    
+    
+    aHandlingSetValue.GetTextInputListener()->HandleValueChanged();
+  }
+
+  aHandlingSetValue.GetTextInputListener()->SetValueChanged(true);
+  aHandlingSetValue.GetTextInputListener()->SettingValue(false);
+  if (!notifyValueChanged) {
+    
+    
+    ValueWasChanged(true);
+  }
+}
+
+bool TextControlState::SetValueWithoutTextEditor(
+    AutoTextControlHandlingState& aHandlingSetValue) {
+  MOZ_ASSERT(aHandlingSetValue.Is(TextControlAction::SetValue));
+  MOZ_ASSERT(!mTextEditor || !mBoundFrame);
+  NS_WARNING_ASSERTION(!EditorHasComposition(),
+                       "Failed to commit composition before setting value.  "
+                       "Investigate the cause!");
+
+  if (!mValue) {
+    mValue.emplace();
+  }
+
+  
+  
+  if (!mValue->Equals(aHandlingSetValue.GetSettingValue()) ||
+      !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
+    if (!mValue->Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
+      return false;
+    }
+
+    
+    if (IsSelectionCached()) {
+      MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(
+          aHandlingSetValue.GetSetValueFlags()));
+
+      SelectionProperties& props = GetSelectionProperties();
+      if (aHandlingSetValue.GetSetValueFlags() &
+          eSetValue_MoveCursorToEndIfValueChanged) {
+        props.SetStart(aHandlingSetValue.GetSettingValue().Length());
+        props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
+        props.SetDirection(nsITextControlFrame::eForward);
+      } else if (aHandlingSetValue.GetSetValueFlags() &
+                 eSetValue_MoveCursorToBeginSetSelectionDirectionForward) {
+        props.SetStart(0);
+        props.SetEnd(0);
+        props.SetDirection(nsITextControlFrame::eForward);
+      } else {
+        
+        
+        props.SetStart(std::min(props.GetStart(),
+                                aHandlingSetValue.GetSettingValue().Length()));
+        props.SetEnd(std::min(props.GetEnd(),
+                              aHandlingSetValue.GetSettingValue().Length()));
+      }
+    }
+
+    
+    if (mBoundFrame) {
+      mBoundFrame->UpdateValueDisplay(true);
+    }
+
+    
+    
+    
+    
+    if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
+      nsCOMPtr<Element> element =
+          do_QueryInterface(aHandlingSetValue.GetTextControlElement());
+      MOZ_ASSERT(element);
+      MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
+      DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
+          element, EditorInputType::eInsertReplacementText, nullptr,
+          nsContentUtils::InputEventOptions(
+              aHandlingSetValue.GetSettingValue()));
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "Failed to dispatch input event");
+    }
+  } else {
+    
+    
+    
+    
+    if (IsSelectionCached()) {
+      SelectionProperties& props = GetSelectionProperties();
+      props.SetIsDirty();
+    }
+  }
+
+  
+  
+  ValueWasChanged(!!mBoundFrame);
   return true;
 }
 

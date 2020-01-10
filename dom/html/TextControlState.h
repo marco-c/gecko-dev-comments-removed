@@ -406,6 +406,29 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   bool EditorHasComposition();
 
   
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void SetValueWithTextEditor(
+      AutoTextControlHandlingState& aHandlingState);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool SetValueWithoutTextEditor(
+      AutoTextControlHandlingState& aHandlingState);
+
+  
   
   
   AutoTextControlHandlingState* mHandlingState = nullptr;
