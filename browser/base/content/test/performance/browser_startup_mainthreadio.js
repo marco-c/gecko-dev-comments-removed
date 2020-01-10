@@ -933,10 +933,7 @@ add_task(async function() {
       
       
       
-      
-      
-      if (MAC && (filename.startsWith(tmpPath + "/org.chromium.") ||
-                  filename.startsWith(tmpPath + "/org.mozilla.ipc."))) {
+      if (MAC && filename.startsWith(tmpPath + "/org.mozilla.ipc.")) {
         continue;
       }
 
