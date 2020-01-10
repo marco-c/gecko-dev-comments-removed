@@ -28,7 +28,39 @@ var A11yUtils = {
 
 
 
-  announce(aMessage, aSource = document) {
+
+
+
+
+
+
+  async announce({ id = null, args = {}, raw = null, source = document } = {}) {
+    if ((!id && !raw) || (id && raw)) {
+      throw new Error("One of raw or id must be specified.");
+    }
+
+    
+    if (this._cancelAnnounce) {
+      this._cancelAnnounce();
+      this._cancelAnnounce = null;
+    }
+
+    let message;
+    if (id) {
+      let cancel = false;
+      this._cancelAnnounce = () => (cancel = true);
+      message = await document.l10n.formatValue(id, args);
+      if (cancel) {
+        
+        return;
+      }
+      
+      this._cancelAnnounce = null;
+    } else {
+      
+      message = raw;
+    }
+
     
     
     
@@ -42,7 +74,7 @@ var A11yUtils = {
       live.firstChild.remove();
     }
     let label = document.createElement("label");
-    label.setAttribute("aria-label", aMessage);
+    label.setAttribute("aria-label", message);
     live.appendChild(label);
   },
 };

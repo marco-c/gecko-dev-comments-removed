@@ -12,7 +12,7 @@ loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 async function runTests() {
   const alert = document.getElementById("a11y-announcement");
   let alerted = waitForEvent(EVENT_ALERT, alert);
-  A11yUtils.announce("first");
+  A11yUtils.announce({ raw: "first" });
   let event = await alerted;
   const alertAcc = event.accessible;
   is(alertAcc.role, ROLE_ALERT);
@@ -21,11 +21,37 @@ async function runTests() {
   is(alertAcc.firstChild.name, "first");
 
   alerted = waitForEvent(EVENT_ALERT, alertAcc);
-  A11yUtils.announce("second");
+  A11yUtils.announce({ raw: "second" });
   event = await alerted;
   ok(!alertAcc.name);
   is(alertAcc.childCount, 1);
   is(alertAcc.firstChild.name, "second");
+
+  info("Testing Fluent message");
+  
+  const fluentId = "search-one-offs-with-title";
+  const fluentMessage = await document.l10n.formatValue(fluentId);
+  alerted = waitForEvent(EVENT_ALERT, alertAcc);
+  A11yUtils.announce({ id: fluentId });
+  event = await alerted;
+  ok(!alertAcc.name);
+  is(alertAcc.childCount, 1);
+  is(alertAcc.firstChild.name, fluentMessage);
+
+  info("Ensuring Fluent message is cancelled if announce is re-entered");
+  alerted = waitForEvent(EVENT_ALERT, alertAcc);
+  
+  let asyncAnnounce = A11yUtils.announce({ id: fluentId });
+  
+  A11yUtils.announce({ raw: "third" });
+  
+  await asyncAnnounce;
+  event = await alerted;
+  ok(!alertAcc.name);
+  is(alertAcc.childCount, 1);
+  
+  
+  is(alertAcc.firstChild.name, "third");
 }
 
 addAccessibleTask(``, runTests);
