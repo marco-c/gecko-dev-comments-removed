@@ -164,7 +164,8 @@ RESTRequest.prototype = {
 
 
 
-  timeout: null,
+
+  timeout: 300,
 
   
 
