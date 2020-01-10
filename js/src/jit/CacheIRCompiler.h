@@ -605,7 +605,8 @@ class MOZ_RAII CacheRegisterAllocator {
   
   
   
-  void ensureDoubleRegister(MacroAssembler&, ValOperandId, FloatRegister);
+  void ensureDoubleRegister(MacroAssembler& masm, NumberOperandId op,
+                            FloatRegister dest);
 
   
   JSValueType knownType(ValOperandId val) const;
