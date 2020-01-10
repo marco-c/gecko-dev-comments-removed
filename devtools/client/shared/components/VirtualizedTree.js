@@ -17,7 +17,13 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "focusableSelector",
+  "wrapMoveFocus",
+  "devtools/client/shared/focus",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getFocusableElements",
   "devtools/client/shared/focus",
   true
 );
@@ -943,7 +949,7 @@ class TreeNodeClass extends Component {
     
     
     
-    const elms = this.getFocusableElements();
+    const elms = getFocusableElements(this.refs.treenode);
     if (elms.length === 0) {
       return;
     }
@@ -958,43 +964,6 @@ class TreeNodeClass extends Component {
     }
   }
 
-  
-
-
-  getFocusableElements() {
-    return Array.from(this.refs.treenode.querySelectorAll(focusableSelector));
-  }
-
-  
-
-
-
-
-
-
-
-
-  _wrapMoveFocus(current, back) {
-    const elms = this.getFocusableElements();
-    let next;
-
-    if (elms.length === 0) {
-      return false;
-    }
-
-    if (back) {
-      if (elms.indexOf(current) === 0) {
-        next = elms[elms.length - 1];
-        next.focus();
-      }
-    } else if (elms.indexOf(current) === elms.length - 1) {
-      next = elms[0];
-      next.focus();
-    }
-
-    return !!next;
-  }
-
   _onKeyDown(e) {
     const { target, key, shiftKey } = e;
 
@@ -1002,7 +971,11 @@ class TreeNodeClass extends Component {
       return;
     }
 
-    const focusMoved = this._wrapMoveFocus(target, shiftKey);
+    const focusMoved = !!wrapMoveFocus(
+      getFocusableElements(this.refs.treenode),
+      target,
+      shiftKey
+    );
     if (focusMoved) {
       
       
