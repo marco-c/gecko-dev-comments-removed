@@ -608,6 +608,9 @@ class Nursery {
 
   void doCollection(JS::GCReason reason, gc::TenureCountCache& tenureCounts);
 
+  float doPretenuring(JSRuntime* rt, JS::GCReason reason,
+                      gc::TenureCountCache& tenureCounts);
+
   
 
 
