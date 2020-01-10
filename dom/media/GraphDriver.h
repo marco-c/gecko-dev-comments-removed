@@ -534,6 +534,12 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   bool mFromFallback;
+#ifdef XP_MACOSX
+  
+
+
+  bool mNeedsPanning;
+#endif
 };
 
 class AsyncCubebTask : public Runnable {

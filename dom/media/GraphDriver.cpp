@@ -898,6 +898,18 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   GraphImpl()->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
                                 mSampleRate, mOutputChannels);
 
+#ifdef XP_MACOSX
+  
+  
+  if (mNeedsPanning && mOutputChannels == 2) {
+    
+    for (uint32_t i = 0; i < aFrames * 2; i += 2) {
+      aOutputBuffer[i + 1] += aOutputBuffer[i];
+      aOutputBuffer[i] = 0.0;
+    }
+  }
+#endif
+
   if (!stillProcessing) {
     
     
@@ -1013,19 +1025,12 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive) {
       
       if (!strcmp(out->output_name, "ispk")) {
         
-        if (aMicrophoneActive) {
-          if (cubeb_stream_set_panning(mAudioStream, 1.0) != CUBEB_OK) {
-            NS_WARNING("Could not pan audio output to the right.");
-          }
-        } else {
-          if (cubeb_stream_set_panning(mAudioStream, 0.0) != CUBEB_OK) {
-            NS_WARNING("Could not pan audio output to the center.");
-          }
-        }
+        LOG(LogLevel::Debug, ("Using the built-in speakers, with%s audio input",
+                              aMicrophoneActive ? "" : "out"));
+        mNeedsPanning = aMicrophoneActive;
       } else {
-        if (cubeb_stream_set_panning(mAudioStream, 0.0) != CUBEB_OK) {
-          NS_WARNING("Could not pan audio output to the center.");
-        }
+        LOG(LogLevel::Debug, ("Using an external output device"));
+        mNeedsPanning = false;
       }
       cubeb_stream_device_destroy(mAudioStream, out);
     }
