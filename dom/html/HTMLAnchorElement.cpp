@@ -142,9 +142,13 @@ bool HTMLAnchorElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   }
 
   
-  if (!OwnerDoc()->LinkHandlingEnabled()) {
-    *aIsFocusable = false;
-    return false;
+  Document* doc = GetComposedDoc();
+  if (doc) {
+    nsPresContext* presContext = doc->GetPresContext();
+    if (presContext && !presContext->GetLinkHandler()) {
+      *aIsFocusable = false;
+      return false;
+    }
   }
 
   

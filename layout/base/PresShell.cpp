@@ -1379,6 +1379,9 @@ void PresShell::Destroy() {
     
     
     mPresContext->DetachPresShell();
+
+    
+    mPresContext->SetLinkHandler(nullptr);
   }
 
   mHaveShutDown = true;

@@ -214,8 +214,13 @@ bool SVGAElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
     return isFocusable;
   }
 
-  if (!OwnerDoc()->LinkHandlingEnabled()) {
-    return false;
+  
+  Document* doc = GetComposedDoc();
+  if (doc) {
+    nsPresContext* presContext = doc->GetPresContext();
+    if (presContext && !presContext->GetLinkHandler()) {
+      return false;
+    }
   }
 
   

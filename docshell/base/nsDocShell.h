@@ -29,6 +29,7 @@
 #include "nsIDocShellTreeItem.h"
 #include "nsIDOMStorageManager.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsILinkHandler.h"
 #include "nsILoadContext.h"
 #include "nsILoadURIDelegate.h"
 #include "nsINetworkInterceptController.h"
@@ -119,6 +120,7 @@ class nsDocShell final : public nsDocLoader,
                          public nsIWebPageDescriptor,
                          public nsIAuthPromptProvider,
                          public nsILoadContext,
+                         public nsILinkHandler,
                          public nsIDOMStorageManager,
                          public nsINetworkInterceptController,
                          public nsIDeprecationWarner,
@@ -210,79 +212,25 @@ class nsDocShell final : public nsDocLoader,
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult OnLinkClick(nsIContent* aContent, nsIURI* aURI,
-                       const nsAString& aTargetSpec, const nsAString& aFileName,
-                       nsIInputStream* aPostDataStream,
-                       nsIInputStream* aHeadersDataStream,
-                       bool aIsUserTriggered, bool aIsTrusted,
-                       nsIPrincipal* aTriggeringPrincipal,
-                       nsIContentSecurityPolicy* aCsp);
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult OnLinkClickSync(
+  NS_IMETHOD OnLinkClick(nsIContent* aContent, nsIURI* aURI,
+                         const nsAString& aTargetSpec,
+                         const nsAString& aFileName,
+                         nsIInputStream* aPostDataStream,
+                         nsIInputStream* aHeadersDataStream,
+                         bool aIsUserTriggered, bool aIsTrusted,
+                         nsIPrincipal* aTriggeringPrincipal,
+                         nsIContentSecurityPolicy* aCsp) override;
+  NS_IMETHOD OnLinkClickSync(
       nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
-      const nsAString& aFileName, nsIInputStream* aPostDataStream = nullptr,
-      nsIInputStream* aHeadersDataStream = nullptr,
-      bool aNoOpenerImplied = false, nsIDocShell** aDocShell = nullptr,
-      nsIRequest** aRequest = nullptr, bool aIsUserTriggered = false,
+      const nsAString& aFileName, nsIInputStream* aPostDataStream = 0,
+      nsIInputStream* aHeadersDataStream = 0, bool aNoOpenerImplied = false,
+      nsIDocShell** aDocShell = 0, nsIRequest** aRequest = 0,
+      bool aIsUserTriggered = false,
       nsIPrincipal* aTriggeringPrincipal = nullptr,
-      nsIContentSecurityPolicy* aCsp = nullptr);
-  
-
-
-
-
-
-
-
-  nsresult OnOverLink(nsIContent* aContent, nsIURI* aURI,
-                      const nsAString& aTargetSpec);
-  
-
-
-  nsresult OnLeaveLink();
+      nsIContentSecurityPolicy* aCsp = nullptr) override;
+  NS_IMETHOD OnOverLink(nsIContent* aContent, nsIURI* aURI,
+                        const nsAString& aTargetSpec) override;
+  NS_IMETHOD OnLeaveLink() override;
 
   
   

@@ -1903,9 +1903,10 @@ class nsContentUtils {
 
 
 
-  static void TriggerLink(nsIContent* aContent, nsIURI* aLinkURI,
-                          const nsString& aTargetSpec, bool aClick,
-                          bool aIsTrusted);
+
+  static void TriggerLink(nsIContent* aContent, nsPresContext* aPresContext,
+                          nsIURI* aLinkURI, const nsString& aTargetSpec,
+                          bool aClick, bool aIsTrusted);
 
   
 

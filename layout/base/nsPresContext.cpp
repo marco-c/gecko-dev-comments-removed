@@ -145,6 +145,7 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mDocument(aDocument),
       mMedium(aType == eContext_Galley ? nsGkAtoms::screen : nsGkAtoms::print),
       mMediaEmulated(mMedium),
+      mLinkHandler(nullptr),
       mInflationDisabledForShrinkWrap(false),
       mSystemFontScale(1.0),
       mTextZoom(1.0),
@@ -1130,6 +1131,9 @@ nsISupports* nsPresContext::GetContainerWeak() const { return GetDocShell(); }
 nsIDocShell* nsPresContext::GetDocShell() const {
   return mDocument->GetDocShell();
 }
+
+
+void nsPresContext::Detach() { SetLinkHandler(nullptr); }
 
 bool nsPresContext::BidiEnabled() const { return Document()->GetBidiEnabled(); }
 
@@ -2464,6 +2468,12 @@ nsRootPresContext::~nsRootPresContext() {
   NS_ASSERTION(mRegisteredPlugins.Count() == 0,
                "All plugins should have been unregistered");
   CancelApplyPluginGeometryTimer();
+}
+
+
+void nsRootPresContext::Detach() {
+  
+  nsPresContext::Detach();
 }
 
 void nsRootPresContext::RegisterPluginForGeometryUpdates(nsIContent* aPlugin) {
