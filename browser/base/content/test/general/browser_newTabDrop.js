@@ -210,8 +210,9 @@ async function drop(dragData, expectedURLs) {
   );
 
   
-  let dragSrcElement = document.getElementById("downloads-button");
-  ok(dragSrcElement, "Downloads button exists");
+  
+  let dragSrcElement = document.getElementById("sidebar-button");
+  ok(dragSrcElement, "Sidebar button exists");
   let newTabButton = document.getElementById("new-tab-button");
   ok(newTabButton, "New Tab button exists");
 
