@@ -37,6 +37,9 @@ class PresShell;
 
 
 
+
+
+
 class nsMathMLmsqrtFrame final : public nsMathMLmencloseFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmsqrtFrame)
