@@ -159,6 +159,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   class Settings {
    public:
+    enum class HeaderStrategy {
+      kNoIndentation,
+      kIndentIncreasedWithHeaderLevel,
+      kNumberHeadingsAndIndentSlightly
+    };
+
     
     
     
@@ -168,7 +174,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     bool GetStructs() const { return mStructs; }
 
     
-    int32_t GetHeaderStrategy() const { return mHeaderStrategy; }
+    HeaderStrategy GetHeaderStrategy() const { return mHeaderStrategy; }
 
     
     int32_t GetFlags() const { return mFlags; }
@@ -182,14 +188,14 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
    private:
     
+    static HeaderStrategy Convert(int32_t aPrefHeaderStrategy);
+
+    
     bool mStructs = true;
 
     
-    int32_t mHeaderStrategy = 1; 
-
-
-
-
+    HeaderStrategy mHeaderStrategy =
+        HeaderStrategy::kIndentIncreasedWithHeaderLevel;
 
     
     int32_t mFlags = 0;
