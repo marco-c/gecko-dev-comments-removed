@@ -865,6 +865,7 @@ class UrlbarView {
 
   _on_popupshowing() {
     this.window.addEventListener("resize", this);
+    this._windowOuterWidth = this.window.outerWidth;
   }
 
   _on_popupshown() {
@@ -880,6 +881,14 @@ class UrlbarView {
   }
 
   _on_resize() {
+    if (this._windowOuterWidth == this.window.outerWidth) {
+      
+      
+      
+      
+      return;
+    }
+
     
     
     this.close();
