@@ -43,7 +43,7 @@ class MediaTransportHandlerIPC : public MediaTransportHandler {
   
   
   
-  void StartIceGathering(bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
+  void StartIceGathering(bool aDefaultRouteOnly,
                          
                          
                          const nsTArray<NrIceStunAddr>& aStunAddrs) override;

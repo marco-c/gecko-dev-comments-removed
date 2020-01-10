@@ -947,14 +947,8 @@ int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int ma
     assert(!strcmp(nr_ice_candidate_type_names[HOST], "host"));
     assert(!strcmp(nr_ice_candidate_type_names[RELAYED], "relay"));
 
-    if (cand->mdns_addr) {
-      
-
-      strncpy(addr, cand->mdns_addr, sizeof(addr) - 1);
-    } else {
-      if(r=nr_transport_addr_get_addrstring(&cand->addr,addr,sizeof(addr)))
-        ABORT(r);
-    }
+    if(r=nr_transport_addr_get_addrstring(&cand->addr,addr,sizeof(addr)))
+      ABORT(r);
     if(r=nr_transport_addr_get_port(&cand->addr,&port))
       ABORT(r);
     

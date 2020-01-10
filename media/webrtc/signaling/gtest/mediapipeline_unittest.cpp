@@ -167,7 +167,7 @@ class LoopbackTransport : public MediaTransportHandler {
   
   
   
-  void StartIceGathering(bool aDefaultRouteOnly, bool aObfuscateAddresses,
+  void StartIceGathering(bool aDefaultRouteOnly,
                          
                          
                          const nsTArray<NrIceStunAddr>& aStunAddrs) override {}

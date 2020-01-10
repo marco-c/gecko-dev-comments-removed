@@ -86,7 +86,6 @@ class MediaTransportHandler {
   
   
   virtual void StartIceGathering(bool aDefaultRouteOnly,
-                                 bool aObfuscateHostAddresses,
                                  
                                  
                                  const nsTArray<NrIceStunAddr>& aStunAddrs) = 0;
