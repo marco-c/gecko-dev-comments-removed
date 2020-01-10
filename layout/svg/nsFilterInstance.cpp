@@ -600,7 +600,7 @@ nsresult nsFilterInstance::BuildPrimitivesForFilter(
   
   
   nscolor shadowFallbackColor =
-      mTargetFrame ? mTargetFrame->StyleColor()->mColor.ToColor()
+      mTargetFrame ? mTargetFrame->StyleText()->mColor.ToColor()
                    : NS_RGB(0, 0, 0);
 
   nsCSSFilterInstance cssFilterInstance(

@@ -82,7 +82,7 @@ nscolor StyleColor::CalcColor(const ComputedStyle& aStyle) const {
   if (IsNumeric()) {
     return AsNumeric().ToColor();
   }
-  return CalcColor(aStyle.StyleColor()->mColor);
+  return CalcColor(aStyle.StyleText()->mColor);
 }
 
 template <>

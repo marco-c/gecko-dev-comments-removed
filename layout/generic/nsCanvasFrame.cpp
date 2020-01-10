@@ -634,9 +634,9 @@ void nsCanvasFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
   
   
   nsIFrame* root = mFrames.FirstChild();
-  const nsStyleColor* color = root ? root->StyleColor() : StyleColor();
+  const auto* text = root ? root->StyleText() : StyleText();
   nsCSSRendering::PaintFocus(PresContext(), aDrawTarget, focusRect,
-                             color->mColor.ToColor());
+                             text->mColor.ToColor());
 }
 
 

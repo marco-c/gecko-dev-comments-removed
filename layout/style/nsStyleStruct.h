@@ -437,22 +437,6 @@ struct nsStyleImage {
   mozilla::UniquePtr<nsStyleSides> mCropRect;
 };
 
-struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColor {
-  explicit nsStyleColor(const mozilla::dom::Document&);
-  nsStyleColor(const nsStyleColor& aOther);
-  ~nsStyleColor() { MOZ_COUNT_DTOR(nsStyleColor); }
-  void TriggerImageLoads(mozilla::dom::Document&, const nsStyleColor*) {}
-  const static bool kHasTriggerImageLoads = false;
-
-  nsChangeHint CalcDifference(const nsStyleColor& aNewData) const;
-
-  
-  
-  
-  
-  mozilla::StyleRGBA mColor;
-};
-
 struct nsStyleImageLayers {
   
   enum {
@@ -1283,6 +1267,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
 
   nsChangeHint CalcDifference(const nsStyleText& aNewData) const;
 
+  mozilla::StyleRGBA mColor;
   mozilla::StyleTextTransform mTextTransform;
   uint8_t mTextAlign;      
   uint8_t mTextAlignLast;  

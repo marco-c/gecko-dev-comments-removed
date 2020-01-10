@@ -20,7 +20,6 @@
 
 
 
-STYLE_STRUCT(Color, (mColor))
 STYLE_STRUCT(Background, (mBackgroundColor))
 STYLE_STRUCT(Border, (mBorderTopColor,
                       mBorderRightColor,
@@ -28,6 +27,7 @@ STYLE_STRUCT(Border, (mBorderTopColor,
                       mBorderLeftColor))
 STYLE_STRUCT(Outline, (mOutlineColor))
 STYLE_STRUCT(Column, (mColumnRuleColor))
+STYLE_STRUCT(Text, (mColor))
 STYLE_STRUCT(Text, (mTextEmphasisColor,
                     mWebkitTextFillColor,
                     mWebkitTextStrokeColor))
