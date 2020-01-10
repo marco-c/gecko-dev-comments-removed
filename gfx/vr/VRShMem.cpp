@@ -308,14 +308,7 @@ void VRShMem::CloseShMem() {
 
 bool VRShMem::JoinShMem() {
 #if defined(XP_WIN)
-  
-  
-  
   if (!mMutex && mRequiresMutex) {
-#  ifdef MOZILLA_INTERNAL_API
-    MOZ_ASSERT(!XRE_IsParentProcess());
-#  endif
-
     
     MOZ_ASSERT(GetLastError() == 0);
 
