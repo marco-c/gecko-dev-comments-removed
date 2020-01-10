@@ -968,9 +968,11 @@ function getSubresourceOrigin(originType) {
 
   
   const httpPort = getNormalizedPort(parseInt("{{ports[http][0]}}", 10));
-  const httpsPort = getNormalizedPort(parseInt("{{ports[https][0]}}", 10));
+  const httpsRawPort = parseInt("{{ports[https][0]}}", 10);
+  const httpsPort = getNormalizedPort(httpsRawPort);
   const wsPort = getNormalizedPort(parseInt("{{ports[ws][0]}}", 10));
-  const wssPort = getNormalizedPort(parseInt("{{ports[wss][0]}}", 10));
+  const wssRawPort = parseInt("{{ports[wss][0]}}", 10);
+  const wssPort = getNormalizedPort(wssRawPort);
 
   
 
@@ -992,6 +994,22 @@ function getSubresourceOrigin(originType) {
     "same-ws": wsProtocol + "://" + sameOriginHost + wsPort,
     "cross-wss": wssProtocol + "://" + crossOriginHost + wssPort,
     "cross-ws": wsProtocol + "://" + crossOriginHost + wsPort,
+
+    
+    
+    
+    
+    
+    
+    
+    "same-http-downgrade":
+        httpProtocol + "://" + sameOriginHost + ":" + httpsRawPort,
+    "cross-http-downgrade":
+        httpProtocol + "://" + crossOriginHost + ":" + httpsRawPort,
+    "same-ws-downgrade":
+        wsProtocol + "://" + sameOriginHost + ":" + wssRawPort,
+    "cross-ws-downgrade":
+        wsProtocol + "://" + crossOriginHost + ":" + wssRawPort,
   };
 
   return originMap[originType];

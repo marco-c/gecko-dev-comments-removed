@@ -213,9 +213,12 @@ def validate(spec_json, details):
     ])
     for subresource in leaf_values(test_expansion_schema['subresource']):
         assert subresource in valid_subresource_names, "Invalid subresource %s" % subresource
+    
+    
     assert_atom_or_list_items_from(test_expansion_schema, 'origin', [
         'same-http', 'same-https', 'same-ws', 'same-wss', 'cross-http',
-        'cross-https', 'cross-ws', 'cross-wss'
+        'cross-https', 'cross-ws', 'cross-wss', 'same-http-downgrade',
+        'cross-http-downgrade', 'same-ws-downgrade', 'cross-ws-downgrade'
     ])
 
     
