@@ -121,7 +121,7 @@ bool nsInlineFrame::IsSelfEmpty() {
         StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Slice) {
       
       
-      if (!wm.IsBidiLTR()) {
+      if (wm.IsBidiRTL()) {
         Swap(haveStart, haveEnd);
       }
       

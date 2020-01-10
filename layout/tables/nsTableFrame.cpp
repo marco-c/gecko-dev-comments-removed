@@ -7181,7 +7181,7 @@ Maybe<BCBorderParameters> BCInlineDirSeg::BuildBorderParameters(
   
   
   
-  if (!aIter.mTableWM.IsBidiLTR()) {
+  if (aIter.mTableWM.IsBidiRTL()) {
     Swap(result.mStartBevelSide, result.mEndBevelSide);
     Swap(result.mStartBevelOffset, result.mEndBevelOffset);
   }

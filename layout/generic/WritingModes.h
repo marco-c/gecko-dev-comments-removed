@@ -215,6 +215,11 @@ class WritingMode {
   
 
 
+  bool IsBidiRTL() const { return eBidiRTL == GetBidiDir(); }
+
+  
+
+
   bool IsPhysicalLTR() const {
     return IsVertical() ? IsVerticalLR() : IsBidiLTR();
   }

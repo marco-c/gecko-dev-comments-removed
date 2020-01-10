@@ -3715,7 +3715,7 @@ void FlexboxAxisTracker::InitAxesFromLegacyProps(
   
   
   
-  if (!mWM.IsBidiLTR()) {
+  if (mWM.IsBidiRTL()) {
     AxisOrientationType& axisToFlip = mIsRowOriented ? mMainAxis : mCrossAxis;
     axisToFlip = GetReverseAxis(axisToFlip);
   }

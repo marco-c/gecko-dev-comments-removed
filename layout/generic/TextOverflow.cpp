@@ -308,7 +308,7 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
       
       
       
-      mAdjustForPixelSnapping = !mBlockWM.IsBidiLTR();
+      mAdjustForPixelSnapping = mBlockWM.IsBidiRTL();
     }
   }
 #endif
