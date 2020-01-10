@@ -35,6 +35,12 @@ class PluralRulesObject : public NativeObject {
                 "INTERNALS_SLOT must match self-hosting define for internals "
                 "object slot");
 
+  
+  static constexpr size_t UNumberFormatterEstimatedMemoryUse = 750;
+
+  
+  static constexpr size_t UPluralRulesEstimatedMemoryUse = 2976;
+
   UPluralRules* getPluralRules() const {
     const auto& slot = getFixedSlot(UPLURAL_RULES_SLOT);
     if (slot.isUndefined()) {
