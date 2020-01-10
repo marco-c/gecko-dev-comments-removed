@@ -5111,11 +5111,16 @@ void PresShell::UpdateCanvasBackground() {
     
     
     
-    bool drawBackgroundImage;
-    bool drawBackgroundColor;
-    mCanvasBackgroundColor = nsCSSRendering::DetermineBackgroundColor(
-        mPresContext, bgStyle, rootStyleFrame, drawBackgroundImage,
-        drawBackgroundColor);
+    bool drawBackgroundImage = false;
+    bool drawBackgroundColor = false;
+    if (rootStyleFrame->IsThemed()) {
+      
+      mCanvasBackgroundColor = NS_RGBA(0, 0, 0, 0);
+    } else {
+      mCanvasBackgroundColor = nsCSSRendering::DetermineBackgroundColor(
+          mPresContext, bgStyle, rootStyleFrame, drawBackgroundImage,
+          drawBackgroundColor);
+    }
     mHasCSSBackgroundColor = drawBackgroundColor;
     if (mPresContext->IsRootContentDocumentCrossProcess() &&
         !IsTransparentContainerElement(mPresContext)) {
