@@ -1806,6 +1806,8 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
     return nullptr;
   }
 
+  friend Scope* js::GetEnvironmentScope(const JSObject& env);
+
   
 
 
@@ -2379,6 +2381,10 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
 };
 
 } 
+
+Scope* js::GetEnvironmentScope(const JSObject& env) {
+  return DebugEnvironmentProxyHandler::getEnvironmentScope(env);
+}
 
 template <>
 bool JSObject::is<js::DebugEnvironmentProxy>() const {
