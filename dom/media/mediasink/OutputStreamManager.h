@@ -52,7 +52,7 @@ class OutputStreamData {
   const RefPtr<OutputStreamManager> mManager;
   const RefPtr<AbstractThread> mAbstractMainThread;
   
-  const RefPtr<DOMMediaStream> mDOMStream;
+  const WeakPtr<DOMMediaStream> mDOMStream;
   
   const RefPtr<ProcessedMediaStream> mInputStream;
 
@@ -61,7 +61,7 @@ class OutputStreamData {
   const RefPtr<MediaInputPort> mPort;
 
   
-  nsTArray<RefPtr<dom::MediaStreamTrack>> mTracks;
+  nsTArray<WeakPtr<dom::MediaStreamTrack>> mTracks;
 };
 
 class OutputStreamManager {
@@ -144,6 +144,9 @@ class OutputStreamManager {
              aLiveTrack.second() == aOther.second();
     }
   };
+
+  
+  void AutoRemoveDestroyedStreams();
 
   
   void RemoveTrack(TrackID aTrackID);
