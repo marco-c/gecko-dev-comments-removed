@@ -2955,11 +2955,8 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   
   
   
-  
-  if (CSP_ShouldResponseInheritCSP(aChannel)) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    mCSP = loadInfo->GetCspToInherit();
-  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  mCSP = static_cast<net::LoadInfo*>(loadInfo.get())->GetCSPToInherit();
 
   
   

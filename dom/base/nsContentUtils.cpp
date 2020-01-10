@@ -9505,7 +9505,7 @@ bool nsContentUtils::AttemptLargeAllocationLoad(nsIHttpChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = loadInfo->TriggeringPrincipal();
-  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCsp();
 
   
   

@@ -237,8 +237,6 @@ nsresult WorkerLoadInfo::SetPrincipalsAndCSPFromChannel(nsIChannel* aChannel) {
       getter_AddRefs(loadGroup));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   if (CSP_ShouldResponseInheritCSP(aChannel)) {
     nsCOMPtr<nsILoadInfo> loadinfo = aChannel->LoadInfo();

@@ -1702,8 +1702,27 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
     return rv;
   }
 
-  info.mPrincipal = mInfo->Principal();
+  nsCOMPtr<nsIURI> uri;
+  rv = mInfo->Principal()->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (NS_WARN_IF(!uri)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  info.mPrincipal =
+      BasePrincipal::CreateCodebasePrincipal(uri, mInfo->GetOriginAttributes());
+  if (NS_WARN_IF(!info.mPrincipal)) {
+    return NS_ERROR_FAILURE;
+  }
   info.mLoadingPrincipal = info.mPrincipal;
+
   
   
   info.mStoragePrincipal = info.mPrincipal;
