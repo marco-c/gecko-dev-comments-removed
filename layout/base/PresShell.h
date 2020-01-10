@@ -351,6 +351,15 @@ class PresShell final : public nsStubDocumentObserver,
       nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight,
       ResizeReflowOptions aOptions = ResizeReflowOptions::NoOption);
 
+ private:
+  
+
+
+
+  void SimpleResizeReflow(nscoord aWidth, nscoord aHeight, nscoord aOldWidth,
+                          nscoord aOldHeight);
+
+ public:
   
 
 
