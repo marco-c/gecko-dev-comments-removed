@@ -263,7 +263,6 @@ KTableEntry nsCSSProps::kDisplayKTable[] = {
     {eCSSKeyword_ruby_text_container, StyleDisplay::RubyTextContainer},
     {eCSSKeyword_grid, StyleDisplay::Grid},
     {eCSSKeyword_inline_grid, StyleDisplay::InlineGrid},
-    
     {eCSSKeyword__webkit_box, StyleDisplay::WebkitBox},
     {eCSSKeyword__webkit_inline_box, StyleDisplay::WebkitInlineBox},
     {eCSSKeyword__webkit_flex, StyleDisplay::Flex},

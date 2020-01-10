@@ -4328,20 +4328,10 @@ VARCACHE_PREF(
 )
 
 
-
-
 VARCACHE_PREF(
   Live,
   "layout.css.prefixes.device-pixel-ratio-webkit",
   layout_css_prefixes_device_pixel_ratio_webkit,
-  bool, true
-)
-
-
-VARCACHE_PREF(
-  Live,
-  "layout.css.prefixes.webkit",
-  layout_css_prefixes_webkit,
   bool, true
 )
 
