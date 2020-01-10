@@ -26,7 +26,7 @@
 
 #![allow(non_snake_case)]
 
-use std::{error, fmt, ops::Deref, result};
+use std::{borrow::Cow, error, fmt, ops::Deref, result};
 
 use nserror::{nsresult, NS_ERROR_NO_INTERFACE};
 use nsstring::nsCString;
@@ -82,7 +82,7 @@ impl Conn {
     
     
     pub fn prepare<Q: AsRef<str>>(&self, query: Q) -> Result<Statement> {
-        let statement = self.call_and_wrap_error(|| {
+        let statement = self.call_and_wrap_error(DatabaseOp::Prepare, || {
             getter_addrefs(|p| unsafe {
                 self.handle
                     .CreateStatement(&*nsCString::from(query.as_ref()), p)
@@ -97,7 +97,7 @@ impl Conn {
     
     
     pub fn exec<Q: AsRef<str>>(&self, query: Q) -> Result<()> {
-        self.call_and_wrap_error(|| {
+        self.call_and_wrap_error(DatabaseOp::Exec, || {
             unsafe {
                 self.handle
                     .ExecuteSimpleSQL(&*nsCString::from(query.as_ref()))
@@ -148,6 +148,7 @@ impl Conn {
     
     fn call_and_wrap_error<T>(
         &self,
+        op: DatabaseOp,
         func: impl FnOnce() -> result::Result<T, nsresult>,
     ) -> Result<T> {
         func().or_else(|rv| -> Result<T> {
@@ -156,7 +157,12 @@ impl Conn {
             Err(if code != SQLITE_OK {
                 let mut message = nsCString::new();
                 unsafe { self.handle.GetLastErrorString(&mut *message) }.to_result()?;
-                Error::Database(rv, code, String::from_utf8_lossy(&message).into_owned())
+                Error::Database {
+                    rv,
+                    op,
+                    code,
+                    message,
+                }
             } else {
                 rv.into()
             })
@@ -235,23 +241,32 @@ impl<'c> Statement<'c> {
         let variant = value.into_variant();
         unsafe { self.handle.BindByIndex(index as u32, variant.coerce()) }
             .to_result()
-            .map_err(|rv| Error::BindByIndex(rv, index))
+            .map_err(|rv| Error::BindByIndex {
+                rv,
+                data_type: V::type_name(),
+                index,
+            })
     }
 
     
     pub fn bind_by_name<N: AsRef<str>, V: VariantType>(&mut self, name: N, value: V) -> Result<()> {
+        let name = name.as_ref();
         let variant = value.into_variant();
         unsafe {
             self.handle
-                .BindByName(&*nsCString::from(name.as_ref()), variant.coerce())
+                .BindByName(&*nsCString::from(name), variant.coerce())
         }
         .to_result()
-        .map_err(|rv| Error::BindByName(rv, name.as_ref().into()))
+        .map_err(|rv| Error::BindByName {
+            rv,
+            data_type: V::type_name(),
+            name: name.into(),
+        })
     }
 
     
     pub fn step<'s>(&'s mut self) -> Result<Option<Step<'c, 's>>> {
-        let has_more = self.conn.call_and_wrap_error(|| {
+        let has_more = self.conn.call_and_wrap_error(DatabaseOp::Step, || {
             let mut has_more = false;
             unsafe { self.handle.ExecuteStep(&mut has_more) }.to_result()?;
             Ok(has_more)
@@ -262,8 +277,9 @@ impl<'c> Statement<'c> {
     
     
     pub fn execute(&mut self) -> Result<()> {
-        self.conn
-            .call_and_wrap_error(|| unsafe { self.handle.Execute() }.to_result())
+        self.conn.call_and_wrap_error(DatabaseOp::Execute, || {
+            unsafe { self.handle.Execute() }.to_result()
+        })
     }
 
     
@@ -273,20 +289,23 @@ impl<'c> Statement<'c> {
         Ok(())
     }
 
-    fn get_column_index<N: AsRef<str>>(&self, name: N) -> Result<u32> {
+    fn get_column_index(&self, name: &str) -> Result<u32> {
         let mut index = 0u32;
         let rv = unsafe {
             self.handle
-                .GetColumnIndex(&*nsCString::from(name.as_ref()), &mut index)
+                .GetColumnIndex(&*nsCString::from(name), &mut index)
         };
         if rv.succeeded() {
             Ok(index)
         } else {
-            Err(Error::InvalidColumn(rv, name.as_ref().into()))
+            Err(Error::InvalidColumn {
+                rv,
+                name: name.into(),
+            })
         }
     }
 
-    fn get_column_value<T: VariantType>(&self, index: u32) -> Result<T> {
+    fn get_column_value<T: VariantType>(&self, index: u32) -> result::Result<T, nsresult> {
         let variant = getter_addrefs(|p| unsafe { self.handle.GetVariant(index, p) })?;
         let value = T::from_variant(variant.coerce())?;
         Ok(value)
@@ -305,7 +324,13 @@ pub struct Step<'c, 's>(&'s mut Statement<'c>);
 impl<'c, 's> Step<'c, 's> {
     
     pub fn get_by_index<T: VariantType>(&self, index: u32) -> Result<T> {
-        self.0.get_column_value(index)
+        self.0
+            .get_column_value(index)
+            .map_err(|rv| Error::GetByIndex {
+                rv,
+                data_type: T::type_name(),
+                index,
+            })
     }
 
     
@@ -316,14 +341,42 @@ impl<'c, 's> Step<'c, 's> {
 
     
     pub fn get_by_name<N: AsRef<str>, T: VariantType>(&self, name: N) -> Result<T> {
+        let name = name.as_ref();
         let index = self.0.get_column_index(name)?;
-        self.0.get_column_value(index)
+        self.0
+            .get_column_value(index)
+            .map_err(|rv| Error::GetByName {
+                rv,
+                data_type: T::type_name(),
+                name: name.into(),
+            })
     }
 
     
     
     pub fn get_by_name_or_default<N: AsRef<str>, T: VariantType + Default>(&self, name: N) -> T {
         self.get_by_name(name).unwrap_or_default()
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DatabaseOp {
+    Exec,
+    Prepare,
+    Step,
+    Execute,
+}
+
+impl DatabaseOp {
+    
+    pub fn what(&self) -> &'static str {
+        match self {
+            DatabaseOp::Exec => "execute SQL string",
+            DatabaseOp::Prepare => "prepare statement",
+            DatabaseOp::Step => "step statement",
+            DatabaseOp::Execute => "execute statement",
+        }
     }
 }
 
@@ -336,18 +389,49 @@ pub enum Error {
 
     
     
-    Database(nsresult, i32, String),
+    Database {
+        rv: nsresult,
+        op: DatabaseOp,
+        code: i32,
+        message: nsCString,
+    },
 
     
     
-    BindByIndex(nsresult, u32),
+    BindByIndex {
+        rv: nsresult,
+        data_type: Cow<'static, str>,
+        index: u32,
+    },
 
     
     
-    BindByName(nsresult, String),
+    
+    BindByName {
+        rv: nsresult,
+        data_type: Cow<'static, str>,
+        name: String,
+    },
 
     
-    InvalidColumn(nsresult, String),
+    InvalidColumn { rv: nsresult, name: String },
+
+    
+    
+    
+    GetByIndex {
+        rv: nsresult,
+        data_type: Cow<'static, str>,
+        index: u32,
+    },
+
+    
+    
+    GetByName {
+        rv: nsresult,
+        data_type: Cow<'static, str>,
+        name: String,
+    },
 
     
     Other(nsresult),
@@ -369,10 +453,12 @@ impl From<Error> for nsresult {
     fn from(err: Error) -> nsresult {
         match err {
             Error::NoThread => NS_ERROR_NO_INTERFACE,
-            Error::Database(rv, _, _)
-            | Error::BindByIndex(rv, _)
-            | Error::BindByName(rv, _)
-            | Error::InvalidColumn(rv, _)
+            Error::Database { rv, .. }
+            | Error::BindByIndex { rv, .. }
+            | Error::BindByName { rv, .. }
+            | Error::InvalidColumn { rv, .. }
+            | Error::GetByIndex { rv, .. }
+            | Error::GetByName { rv, .. }
             | Error::Other(rv) => rv,
         }
     }
@@ -382,20 +468,34 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::NoThread => f.write_str("Async thread unavailable for storage connection"),
-            Error::Database(_, code, message) => {
+            Error::Database {
+                op, code, message, ..
+            } => {
                 if message.is_empty() {
-                    write!(f, "Database operation failed with code {}", code)
+                    write!(f, "Failed to {} with code {}", op.what(), code)
                 } else {
                     write!(
                         f,
-                        "Database operation failed with code {} ({})",
-                        code, message
+                        "Failed to {} with code {} ({})",
+                        op.what(),
+                        code,
+                        message
                     )
                 }
             }
-            Error::BindByIndex(_, index) => write!(f, "Can't bind parameter at {}", index),
-            Error::BindByName(_, name) => write!(f, "Can't bind named parameter {}", name),
-            Error::InvalidColumn(_, name) => write!(f, "Column {} doesn't exist", name),
+            Error::BindByIndex {
+                data_type, index, ..
+            } => write!(f, "Can't bind {} at {}", data_type, index),
+            Error::BindByName {
+                data_type, name, ..
+            } => write!(f, "Can't bind {} to named parameter {}", data_type, name),
+            Error::InvalidColumn { name, .. } => write!(f, "Column {} doesn't exist", name),
+            Error::GetByIndex {
+                data_type, index, ..
+            } => write!(f, "Can't get {} at {}", data_type, index),
+            Error::GetByName {
+                data_type, name, ..
+            } => write!(f, "Can't get {} for column {}", data_type, name),
             Error::Other(rv) => write!(f, "Storage operation failed with {}", rv.error_name()),
         }
     }
