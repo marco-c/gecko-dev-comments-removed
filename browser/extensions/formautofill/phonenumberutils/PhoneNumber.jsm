@@ -9,10 +9,16 @@
 
 var EXPORTED_SYMBOLS = ["PhoneNumber"];
 
-ChromeUtils.defineModuleGetter(this, "PHONE_NUMBER_META_DATA",
-                               "resource://formautofill/phonenumberutils/PhoneNumberMetaData.jsm");
-ChromeUtils.defineModuleGetter(this, "PhoneNumberNormalizer",
-                               "resource://formautofill/phonenumberutils/PhoneNumberNormalizer.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PHONE_NUMBER_META_DATA",
+  "resource://formautofill/phonenumberutils/PhoneNumberMetaData.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PhoneNumberNormalizer",
+  "resource://formautofill/phonenumberutils/PhoneNumberNormalizer.jsm"
+);
 var PhoneNumber = (function(dataBase) {
   const MAX_PHONE_NUMBER_LENGTH = 50;
   const NON_ALPHA_CHARS = /[^a-zA-Z]/g;
@@ -68,9 +74,7 @@ var PhoneNumber = (function(dataBase) {
   
   function ParseMetaData(countryCode, md) {
     let array = JSON.parse(md);
-    md = ParseArray(array,
-                    META_DATA_ENCODING,
-                    {countryCode});
+    md = ParseArray(array, META_DATA_ENCODING, { countryCode });
     regionCache[md.region] = md;
     return md;
   }
@@ -83,13 +87,11 @@ var PhoneNumber = (function(dataBase) {
       return;
     }
     
-    if (!(Array.isArray(formats[0]))) {
+    if (!Array.isArray(formats[0])) {
       return;
     }
     for (let n = 0; n < formats.length; ++n) {
-      formats[n] = ParseArray(formats[n],
-                              FORMAT_ENCODING,
-                              {});
+      formats[n] = ParseArray(formats[n], FORMAT_ENCODING, {});
     }
   }
 
@@ -177,13 +179,17 @@ var PhoneNumber = (function(dataBase) {
           return null;
         }
         
-        number = "+" + regionMetaData.countryCode + " " +
-                 number.replace(format.pattern, internationalFormat);
+        number =
+          "+" +
+          regionMetaData.countryCode +
+          " " +
+          number.replace(format.pattern, internationalFormat);
       } else {
         number = number.replace(format.pattern, format.nationalFormat);
         
         
-        let nationalPrefixFormattingRule = regionMetaData.nationalPrefixFormattingRule;
+        let nationalPrefixFormattingRule =
+          regionMetaData.nationalPrefixFormattingRule;
         if (format.nationalPrefixFormattingRule) {
           nationalPrefixFormattingRule = format.nationalPrefixFormattingRule;
         }
@@ -202,7 +208,7 @@ var PhoneNumber = (function(dataBase) {
           }
         }
       }
-      return (number == "NA") ? null : number;
+      return number == "NA" ? null : number;
     }
     return null;
   }
@@ -221,39 +227,55 @@ var PhoneNumber = (function(dataBase) {
     
     get internationalFormat() {
       let value = FormatNumber(this.regionMetaData, this.number, true);
-      Object.defineProperty(this, "internationalFormat", {value, enumerable: true});
+      Object.defineProperty(this, "internationalFormat", {
+        value,
+        enumerable: true,
+      });
       return value;
     },
     
     get nationalFormat() {
       let value = FormatNumber(this.regionMetaData, this.number, false);
-      Object.defineProperty(this, "nationalFormat", {value, enumerable: true});
+      Object.defineProperty(this, "nationalFormat", {
+        value,
+        enumerable: true,
+      });
       return value;
     },
     
     get internationalNumber() {
-      let value = this.internationalFormat ? this.internationalFormat.replace(NON_DIALABLE_CHARS, "")
-                                           : null;
-      Object.defineProperty(this, "internationalNumber", {value, enumerable: true});
+      let value = this.internationalFormat
+        ? this.internationalFormat.replace(NON_DIALABLE_CHARS, "")
+        : null;
+      Object.defineProperty(this, "internationalNumber", {
+        value,
+        enumerable: true,
+      });
       return value;
     },
     
     get nationalNumber() {
-      let value = this.nationalFormat ? this.nationalFormat.replace(NON_DIALABLE_CHARS, "")
-                                      : null;
-      Object.defineProperty(this, "nationalNumber", {value, enumerable: true});
+      let value = this.nationalFormat
+        ? this.nationalFormat.replace(NON_DIALABLE_CHARS, "")
+        : null;
+      Object.defineProperty(this, "nationalNumber", {
+        value,
+        enumerable: true,
+      });
       return value;
     },
     
     get countryName() {
       let value = this.region ? this.region : null;
-      Object.defineProperty(this, "countryName", {value, enumerable: true});
+      Object.defineProperty(this, "countryName", { value, enumerable: true });
       return value;
     },
     
     get countryCode() {
-      let value = this.regionMetaData.countryCode ? "+" + this.regionMetaData.countryCode : null;
-      Object.defineProperty(this, "countryCode", {value, enumerable: true});
+      let value = this.regionMetaData.countryCode
+        ? "+" + this.regionMetaData.countryCode
+        : null;
+      Object.defineProperty(this, "countryCode", { value, enumerable: true });
       return value;
     },
   };
@@ -285,8 +307,7 @@ var PhoneNumber = (function(dataBase) {
   
   
   function ParseNationalNumber(number, md) {
-    if (!md.possiblePattern.test(number) ||
-        !md.nationalPattern.test(number)) {
+    if (!md.possiblePattern.test(number) || !md.nationalPattern.test(number)) {
       return null;
     }
     
@@ -301,8 +322,10 @@ var PhoneNumber = (function(dataBase) {
     
     if (md.nationalPrefixForParsing) {
       
-      let withoutPrefix = number.replace(md.nationalPrefixForParsing,
-                                         md.nationalPrefixTransformRule || "");
+      let withoutPrefix = number.replace(
+        md.nationalPrefixForParsing,
+        md.nationalPrefixTransformRule || ""
+      );
       ret = ParseNationalNumber(withoutPrefix, md);
       if (ret) {
         return ret;
@@ -311,8 +334,11 @@ var PhoneNumber = (function(dataBase) {
       
       
       let nationalPrefix = md.nationalPrefix;
-      if (nationalPrefix && number.indexOf(nationalPrefix) == 0 &&
-          (ret = ParseNationalNumber(number.substr(nationalPrefix.length), md))) {
+      if (
+        nationalPrefix &&
+        number.indexOf(nationalPrefix) == 0 &&
+        (ret = ParseNationalNumber(number.substr(nationalPrefix.length), md))
+      ) {
         return ret;
       }
     }
@@ -378,7 +404,9 @@ var PhoneNumber = (function(dataBase) {
 
     
     if (number[0] === "+") {
-      return ParseInternationalNumber(number.replace(LEADING_PLUS_CHARS_PATTERN, ""));
+      return ParseInternationalNumber(
+        number.replace(LEADING_PLUS_CHARS_PATTERN, "")
+      );
     }
 
     
@@ -438,8 +466,8 @@ var PhoneNumber = (function(dataBase) {
     }
 
     let length = number.length;
-    let isTooLong = (length > MAX_PHONE_NUMBER_LENGTH);
-    let isEmpty = (length === 0);
+    let isTooLong = length > MAX_PHONE_NUMBER_LENGTH;
+    let isEmpty = length === 0;
     return !(isTooLong || isEmpty || NON_DIALABLE_CHARS_ONCE.test(number));
   }
 

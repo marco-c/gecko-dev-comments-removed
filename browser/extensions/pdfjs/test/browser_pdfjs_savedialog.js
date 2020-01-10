@@ -9,7 +9,10 @@ function test() {
   var tab = BrowserTestUtils.addTab(gBrowser, TESTROOT + "file_pdfjs_test.pdf");
   
   
-  addWindowListener("chrome://mozapps/content/downloads/unknownContentType.xul", finish);
+  addWindowListener(
+    "chrome://mozapps/content/downloads/unknownContentType.xul",
+    finish
+  );
 
   waitForExplicitFinish();
   registerCleanupFunction(function() {
@@ -19,10 +22,18 @@ function test() {
 }
 
 function changeMimeHandler(preferredAction, alwaysAskBeforeHandling) {
-  let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
+  let handlerService = Cc[
+    "@mozilla.org/uriloader/handler-service;1"
+  ].getService(Ci.nsIHandlerService);
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  let handlerInfo = mimeService.getFromTypeAndExtension("application/pdf", "pdf");
-  var oldAction = [handlerInfo.preferredAction, handlerInfo.alwaysAskBeforeHandling];
+  let handlerInfo = mimeService.getFromTypeAndExtension(
+    "application/pdf",
+    "pdf"
+  );
+  var oldAction = [
+    handlerInfo.preferredAction,
+    handlerInfo.alwaysAskBeforeHandling,
+  ];
 
   
   handlerInfo.alwaysAskBeforeHandling = alwaysAskBeforeHandling;
@@ -36,8 +47,16 @@ function changeMimeHandler(preferredAction, alwaysAskBeforeHandling) {
   handlerInfo = mimeService.getFromTypeAndExtension("application/pdf", "pdf");
 
   
-  is(handlerInfo.alwaysAskBeforeHandling, alwaysAskBeforeHandling, "always-ask prompt change successful");
-  is(handlerInfo.preferredAction, preferredAction, "mime handler change successful");
+  is(
+    handlerInfo.alwaysAskBeforeHandling,
+    alwaysAskBeforeHandling,
+    "always-ask prompt change successful"
+  );
+  is(
+    handlerInfo.preferredAction,
+    preferredAction,
+    "mime handler change successful"
+  );
 
   return oldAction;
 }
@@ -50,11 +69,15 @@ function addWindowListener(aURL, aCallback) {
 
       var domwindow = aXULWindow.docShell.domWindow;
       waitForFocus(function() {
-        is(domwindow.document.location.href, aURL, "should have seen the right window open");
+        is(
+          domwindow.document.location.href,
+          aURL,
+          "should have seen the right window open"
+        );
         domwindow.close();
         aCallback();
       }, domwindow);
     },
-    onCloseWindow(aXULWindow) { },
+    onCloseWindow(aXULWindow) {},
   });
 }

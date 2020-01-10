@@ -31,15 +31,20 @@
 
 var EXPORTED_SYMBOLS = ["formAutofillParent"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-const {FormAutofill} = ChromeUtils.import("resource://formautofill/FormAutofill.jsm");
+const { FormAutofill } = ChromeUtils.import(
+  "resource://formautofill/FormAutofill.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   CreditCard: "resource://gre/modules/CreditCard.jsm",
-  FormAutofillPreferences: "resource://formautofill/FormAutofillPreferences.jsm",
+  FormAutofillPreferences:
+    "resource://formautofill/FormAutofillPreferences.jsm",
   FormAutofillDoorhanger: "resource://formautofill/FormAutofillDoorhanger.jsm",
   FormAutofillUtils: "resource://formautofill/FormAutofillUtils.jsm",
   OSKeyStore: "resource://formautofill/OSKeyStore.jsm",
@@ -62,7 +67,9 @@ function FormAutofillParent() {
   
   
   XPCOMUtils.defineLazyGetter(this, "formAutofillStorage", () => {
-    let {formAutofillStorage} = ChromeUtils.import("resource://formautofill/FormAutofillStorage.jsm");
+    let { formAutofillStorage } = ChromeUtils.import(
+      "resource://formautofill/FormAutofillStorage.jsm"
+    );
     log.debug("Loading formAutofillStorage");
 
     formAutofillStorage.initialize().then(() => {
@@ -133,17 +140,26 @@ FormAutofillParent.prototype = {
   },
 
   injectElements(doc) {
-    Services.scriptloader.loadSubScript("chrome://formautofill/content/customElements.js",
-                                        doc.ownerGlobal);
+    Services.scriptloader.loadSubScript(
+      "chrome://formautofill/content/customElements.js",
+      doc.ownerGlobal
+    );
   },
 
   onOpenWindow(xulWindow) {
     const win = xulWindow.docShell.domWindow;
-    win.addEventListener("load", () => {
-      if (win.document.documentElement.getAttribute("windowtype") == "navigator:browser") {
-        this.injectElements(win.document);
-      }
-    }, {once: true});
+    win.addEventListener(
+      "load",
+      () => {
+        if (
+          win.document.documentElement.getAttribute("windowtype") ==
+          "navigator:browser"
+        ) {
+          this.injectElements(win.document);
+        }
+      },
+      { once: true }
+    );
   },
 
   onCloseWindow() {},
@@ -155,7 +171,9 @@ FormAutofillParent.prototype = {
         let formAutofillPreferences = new FormAutofillPreferences();
         let document = subject.document;
         let prefFragment = formAutofillPreferences.init(document);
-        let formAutofillGroupBox = document.getElementById("formAutofillGroupBox");
+        let formAutofillGroupBox = document.getElementById(
+          "formAutofillGroupBox"
+        );
         formAutofillGroupBox.appendChild(prefFragment);
         break;
       }
@@ -177,7 +195,9 @@ FormAutofillParent.prototype = {
       }
 
       default: {
-        throw new Error(`FormAutofillParent: Unexpected topic observed: ${topic}`);
+        throw new Error(
+          `FormAutofillParent: Unexpected topic observed: ${topic}`
+        );
       }
     }
   },
@@ -200,12 +220,16 @@ FormAutofillParent.prototype = {
 
 
   _computeStatus() {
-    const savedFieldNames = Services.ppmm.sharedData.get("FormAutofill:savedFieldNames");
+    const savedFieldNames = Services.ppmm.sharedData.get(
+      "FormAutofill:savedFieldNames"
+    );
 
-    return (Services.prefs.getBoolPref(ENABLED_AUTOFILL_ADDRESSES_PREF) ||
-           Services.prefs.getBoolPref(ENABLED_AUTOFILL_CREDITCARDS_PREF)) &&
-           savedFieldNames &&
-           savedFieldNames.size > 0;
+    return (
+      (Services.prefs.getBoolPref(ENABLED_AUTOFILL_ADDRESSES_PREF) ||
+        Services.prefs.getBoolPref(ENABLED_AUTOFILL_CREDITCARDS_PREF)) &&
+      savedFieldNames &&
+      savedFieldNames.size > 0
+    );
   },
 
   
@@ -227,7 +251,7 @@ FormAutofillParent.prototype = {
 
 
 
-  async receiveMessage({name, data, target}) {
+  async receiveMessage({ name, data, target }) {
     switch (name) {
       case "FormAutofill:InitStorage": {
         await this.formAutofillStorage.initialize();
@@ -239,14 +263,17 @@ FormAutofillParent.prototype = {
       }
       case "FormAutofill:SaveAddress": {
         if (data.guid) {
-          await this.formAutofillStorage.addresses.update(data.guid, data.address);
+          await this.formAutofillStorage.addresses.update(
+            data.guid,
+            data.address
+          );
         } else {
           await this.formAutofillStorage.addresses.add(data.address);
         }
         break;
       }
       case "FormAutofill:SaveCreditCard": {
-        if (!await OSKeyStore.ensureLoggedIn()) {
+        if (!(await OSKeyStore.ensureLoggedIn())) {
           log.warn("User canceled encryption login");
           return;
         }
@@ -254,11 +281,15 @@ FormAutofillParent.prototype = {
         break;
       }
       case "FormAutofill:RemoveAddresses": {
-        data.guids.forEach(guid => this.formAutofillStorage.addresses.remove(guid));
+        data.guids.forEach(guid =>
+          this.formAutofillStorage.addresses.remove(guid)
+        );
         break;
       }
       case "FormAutofill:RemoveCreditCards": {
-        data.guids.forEach(guid => this.formAutofillStorage.creditCards.remove(guid));
+        data.guids.forEach(guid =>
+          this.formAutofillStorage.creditCards.remove(guid)
+        );
         break;
       }
       case "FormAutofill:OnFormSubmit": {
@@ -271,7 +302,7 @@ FormAutofillParent.prototype = {
         break;
       }
       case "FormAutofill:GetDecryptedString": {
-        let {cipherText, reauth} = data;
+        let { cipherText, reauth } = data;
         let string;
         try {
           string = await OSKeyStore.decrypt(cipherText, reauth);
@@ -305,8 +336,14 @@ FormAutofillParent.prototype = {
 
     if (FormAutofill.isAutofillCreditCardsAvailable) {
       Services.ppmm.removeMessageListener("FormAutofill:SaveCreditCard", this);
-      Services.ppmm.removeMessageListener("FormAutofill:RemoveCreditCards", this);
-      Services.ppmm.removeMessageListener("FormAutofill:GetDecryptedString", this);
+      Services.ppmm.removeMessageListener(
+        "FormAutofill:RemoveCreditCards",
+        this
+      );
+      Services.ppmm.removeMessageListener(
+        "FormAutofill:GetDecryptedString",
+        this
+      );
       Services.prefs.removeObserver(ENABLED_AUTOFILL_CREDITCARDS_PREF, this);
     }
   },
@@ -326,7 +363,7 @@ FormAutofillParent.prototype = {
 
 
 
-  async _getRecords({collectionName, searchString, info}, target) {
+  async _getRecords({ collectionName, searchString, info }, target) {
     let collection = this.formAutofillStorage[collectionName];
     if (!collection) {
       target.sendAsyncMessage("FormAutofill:Records", []);
@@ -342,7 +379,9 @@ FormAutofillParent.prototype = {
     let isCC = collectionName == CREDITCARDS_COLLECTION_NAME;
     
     if (isCC && info.fieldName == "cc-number") {
-      recordsInCollection = recordsInCollection.filter(record => !!record["cc-number"]);
+      recordsInCollection = recordsInCollection.filter(
+        record => !!record["cc-number"]
+      );
       target.sendAsyncMessage("FormAutofill:Records", recordsInCollection);
       return;
     }
@@ -356,14 +395,22 @@ FormAutofillParent.prototype = {
         continue;
       }
 
-      if (collectionName == ADDRESSES_COLLECTION_NAME && record.country
-          && !FormAutofill.supportedCountries.includes(record.country)) {
+      if (
+        collectionName == ADDRESSES_COLLECTION_NAME &&
+        record.country &&
+        !FormAutofill.supportedCountries.includes(record.country)
+      ) {
         
         
         continue;
       }
 
-      if (lcSearchString && !String(fieldValue).toLowerCase().startsWith(lcSearchString)) {
+      if (
+        lcSearchString &&
+        !String(fieldValue)
+          .toLowerCase()
+          .startsWith(lcSearchString)
+      ) {
         continue;
       }
       records.push(record);
@@ -386,7 +433,10 @@ FormAutofillParent.prototype = {
       savedFieldNames = this.formAutofillStorage.addresses.getSavedFieldNames();
     }
 
-    Services.ppmm.sharedData.set("FormAutofill:savedFieldNames", savedFieldNames);
+    Services.ppmm.sharedData.set(
+      "FormAutofill:savedFieldNames",
+      savedFieldNames
+    );
     Services.ppmm.sharedData.flush();
 
     this._updateStatus();
@@ -396,59 +446,109 @@ FormAutofillParent.prototype = {
     let showDoorhanger = null;
     if (address.guid) {
       
-      let originalAddress = await this.formAutofillStorage.addresses.get(address.guid);
+      let originalAddress = await this.formAutofillStorage.addresses.get(
+        address.guid
+      );
       for (let field in address.record) {
         if (address.untouchedFields.includes(field) && originalAddress[field]) {
           address.record[field] = originalAddress[field];
         }
       }
 
-      if (!await this.formAutofillStorage.addresses.mergeIfPossible(address.guid, address.record, true)) {
-        this._recordFormFillingTime("address", "autofill-update", timeStartedFillingMS);
+      if (
+        !(await this.formAutofillStorage.addresses.mergeIfPossible(
+          address.guid,
+          address.record,
+          true
+        ))
+      ) {
+        this._recordFormFillingTime(
+          "address",
+          "autofill-update",
+          timeStartedFillingMS
+        );
 
         showDoorhanger = async () => {
           const description = FormAutofillUtils.getAddressLabel(address.record);
-          const state = await FormAutofillDoorhanger.show(target, "updateAddress", description);
-          let changedGUIDs = await this.formAutofillStorage.addresses.mergeToStorage(address.record, true);
+          const state = await FormAutofillDoorhanger.show(
+            target,
+            "updateAddress",
+            description
+          );
+          let changedGUIDs = await this.formAutofillStorage.addresses.mergeToStorage(
+            address.record,
+            true
+          );
           switch (state) {
             case "create":
               if (!changedGUIDs.length) {
-                changedGUIDs.push(await this.formAutofillStorage.addresses.add(address.record));
+                changedGUIDs.push(
+                  await this.formAutofillStorage.addresses.add(address.record)
+                );
               }
               break;
             case "update":
               if (!changedGUIDs.length) {
-                await this.formAutofillStorage.addresses.update(address.guid, address.record, true);
+                await this.formAutofillStorage.addresses.update(
+                  address.guid,
+                  address.record,
+                  true
+                );
                 changedGUIDs.push(address.guid);
               } else {
                 this.formAutofillStorage.addresses.remove(address.guid);
               }
               break;
           }
-          changedGUIDs.forEach(guid => this.formAutofillStorage.addresses.notifyUsed(guid));
+          changedGUIDs.forEach(guid =>
+            this.formAutofillStorage.addresses.notifyUsed(guid)
+          );
         };
         
-        Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill_update", 1);
+        Services.telemetry.scalarAdd(
+          "formautofill.addresses.fill_type_autofill_update",
+          1
+        );
       } else {
-        this._recordFormFillingTime("address", "autofill", timeStartedFillingMS);
+        this._recordFormFillingTime(
+          "address",
+          "autofill",
+          timeStartedFillingMS
+        );
         this.formAutofillStorage.addresses.notifyUsed(address.guid);
         
-        Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill", 1);
+        Services.telemetry.scalarAdd(
+          "formautofill.addresses.fill_type_autofill",
+          1
+        );
       }
     } else {
-      let changedGUIDs = await this.formAutofillStorage.addresses.mergeToStorage(address.record);
+      let changedGUIDs = await this.formAutofillStorage.addresses.mergeToStorage(
+        address.record
+      );
       if (!changedGUIDs.length) {
-        changedGUIDs.push(await this.formAutofillStorage.addresses.add(address.record));
+        changedGUIDs.push(
+          await this.formAutofillStorage.addresses.add(address.record)
+        );
       }
-      changedGUIDs.forEach(guid => this.formAutofillStorage.addresses.notifyUsed(guid));
+      changedGUIDs.forEach(guid =>
+        this.formAutofillStorage.addresses.notifyUsed(guid)
+      );
       this._recordFormFillingTime("address", "manual", timeStartedFillingMS);
 
       
       if (FormAutofill.isAutofillAddressesFirstTimeUse) {
-        Services.prefs.setBoolPref(FormAutofill.ADDRESSES_FIRST_TIME_USE_PREF, false);
+        Services.prefs.setBoolPref(
+          FormAutofill.ADDRESSES_FIRST_TIME_USE_PREF,
+          false
+        );
         showDoorhanger = async () => {
           const description = FormAutofillUtils.getAddressLabel(address.record);
-          const state = await FormAutofillDoorhanger.show(target, "firstTimeUse", description);
+          const state = await FormAutofillDoorhanger.show(
+            target,
+            "firstTimeUse",
+            description
+          );
           if (state !== "open-pref") {
             return;
           }
@@ -457,7 +557,10 @@ FormAutofillParent.prototype = {
         };
       } else {
         
-        Services.telemetry.scalarAdd("formautofill.addresses.fill_type_manual", 1);
+        Services.telemetry.scalarAdd(
+          "formautofill.addresses.fill_type_manual",
+          1
+        );
       }
     }
     return showDoorhanger;
@@ -468,12 +571,18 @@ FormAutofillParent.prototype = {
     
     let setUsedStatus = status => {
       if (FormAutofill.AutofillCreditCardsUsedStatus < status) {
-        Services.prefs.setIntPref(FormAutofill.CREDITCARDS_USED_STATUS_PREF, status);
+        Services.prefs.setIntPref(
+          FormAutofill.CREDITCARDS_USED_STATUS_PREF,
+          status
+        );
       }
     };
 
     
-    if (creditCard.record["cc-type"] && !CreditCard.isValidNetwork(creditCard.record["cc-type"])) {
+    if (
+      creditCard.record["cc-type"] &&
+      !CreditCard.isValidNetwork(creditCard.record["cc-type"])
+    ) {
       delete creditCard.record["cc-type"];
     }
 
@@ -484,7 +593,9 @@ FormAutofillParent.prototype = {
       
       setUsedStatus(3);
 
-      let originalCCData = await this.formAutofillStorage.creditCards.get(creditCard.guid);
+      let originalCCData = await this.formAutofillStorage.creditCards.get(
+        creditCard.guid
+      );
       let recordUnchanged = true;
       for (let field in creditCard.record) {
         if (creditCard.record[field] === "" && !originalCCData[field]) {
@@ -503,13 +614,27 @@ FormAutofillParent.prototype = {
       if (recordUnchanged) {
         this.formAutofillStorage.creditCards.notifyUsed(creditCard.guid);
         
-        Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill", 1);
-        this._recordFormFillingTime("creditCard", "autofill", timeStartedFillingMS);
+        Services.telemetry.scalarAdd(
+          "formautofill.creditCards.fill_type_autofill",
+          1
+        );
+        this._recordFormFillingTime(
+          "creditCard",
+          "autofill",
+          timeStartedFillingMS
+        );
         return false;
       }
       
-      Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill_modified", 1);
-      this._recordFormFillingTime("creditCard", "autofill-update", timeStartedFillingMS);
+      Services.telemetry.scalarAdd(
+        "formautofill.creditCards.fill_type_autofill_modified",
+        1
+      );
+      this._recordFormFillingTime(
+        "creditCard",
+        "autofill-update",
+        timeStartedFillingMS
+      );
     } else {
       
       
@@ -517,12 +642,17 @@ FormAutofillParent.prototype = {
       setUsedStatus(1);
 
       
-      Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_manual", 1);
+      Services.telemetry.scalarAdd(
+        "formautofill.creditCards.fill_type_manual",
+        1
+      );
       this._recordFormFillingTime("creditCard", "manual", timeStartedFillingMS);
     }
 
     
-    let dupGuid = await this.formAutofillStorage.creditCards.getDuplicateGuid(creditCard.record);
+    let dupGuid = await this.formAutofillStorage.creditCards.getDuplicateGuid(
+      creditCard.record
+    );
     if (dupGuid) {
       this.formAutofillStorage.creditCards.notifyUsed(dupGuid);
       return false;
@@ -537,22 +667,29 @@ FormAutofillParent.prototype = {
         return;
       }
 
-      let number = creditCard.record["cc-number"] || creditCard.record["cc-number-decrypted"];
+      let number =
+        creditCard.record["cc-number"] ||
+        creditCard.record["cc-number-decrypted"];
       let name = creditCard.record["cc-name"];
-      const description = await CreditCard.getLabel({name, number});
-      const state = await FormAutofillDoorhanger.show(target,
-                                                      creditCard.guid ? "updateCreditCard" : "addCreditCard",
-                                                      description);
+      const description = await CreditCard.getLabel({ name, number });
+      const state = await FormAutofillDoorhanger.show(
+        target,
+        creditCard.guid ? "updateCreditCard" : "addCreditCard",
+        description
+      );
       if (state == "cancel") {
         return;
       }
 
       if (state == "disable") {
-        Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
+        Services.prefs.setBoolPref(
+          "extensions.formautofill.creditCards.enabled",
+          false
+        );
         return;
       }
 
-      if (!await OSKeyStore.ensureLoggedIn()) {
+      if (!(await OSKeyStore.ensureLoggedIn())) {
         log.warn("User canceled encryption login");
         return;
       }
@@ -560,23 +697,40 @@ FormAutofillParent.prototype = {
       let changedGUIDs = [];
       if (creditCard.guid) {
         if (state == "update") {
-          await this.formAutofillStorage.creditCards.update(creditCard.guid, creditCard.record, true);
+          await this.formAutofillStorage.creditCards.update(
+            creditCard.guid,
+            creditCard.record,
+            true
+          );
           changedGUIDs.push(creditCard.guid);
         } else if ("create") {
-          changedGUIDs.push(await this.formAutofillStorage.creditCards.add(creditCard.record));
+          changedGUIDs.push(
+            await this.formAutofillStorage.creditCards.add(creditCard.record)
+          );
         }
       } else {
-        changedGUIDs.push(...await this.formAutofillStorage.creditCards.mergeToStorage(creditCard.record));
+        changedGUIDs.push(
+          ...(await this.formAutofillStorage.creditCards.mergeToStorage(
+            creditCard.record
+          ))
+        );
         if (!changedGUIDs.length) {
-          changedGUIDs.push(await this.formAutofillStorage.creditCards.add(creditCard.record));
+          changedGUIDs.push(
+            await this.formAutofillStorage.creditCards.add(creditCard.record)
+          );
         }
       }
-      changedGUIDs.forEach(guid => this.formAutofillStorage.creditCards.notifyUsed(guid));
+      changedGUIDs.forEach(guid =>
+        this.formAutofillStorage.creditCards.notifyUsed(guid)
+      );
     };
   },
 
   async _onFormSubmit(data, target) {
-    let {profile: {address, creditCard}, timeStartedFillingMS} = data;
+    let {
+      profile: { address, creditCard },
+      timeStartedFillingMS,
+    } = data;
 
     
     
@@ -589,18 +743,35 @@ FormAutofillParent.prototype = {
 
     
     
-    await Promise.all([
-      await Promise.all(address.map(addrRecord => this._onAddressSubmit(addrRecord, target, timeStartedFillingMS))),
-      await Promise.all(creditCard.map(ccRecord => this._onCreditCardSubmit(ccRecord, target, timeStartedFillingMS))),
-    ].map(pendingDoorhangers => {
-      return pendingDoorhangers.filter(pendingDoorhanger => !!pendingDoorhanger &&
-                                                            typeof pendingDoorhanger == "function");
-    }).map(pendingDoorhangers => new Promise(async resolve => {
-      for (const showDoorhanger of pendingDoorhangers) {
-        await showDoorhanger();
-      }
-      resolve();
-    })));
+    await Promise.all(
+      [
+        await Promise.all(
+          address.map(addrRecord =>
+            this._onAddressSubmit(addrRecord, target, timeStartedFillingMS)
+          )
+        ),
+        await Promise.all(
+          creditCard.map(ccRecord =>
+            this._onCreditCardSubmit(ccRecord, target, timeStartedFillingMS)
+          )
+        ),
+      ]
+        .map(pendingDoorhangers => {
+          return pendingDoorhangers.filter(
+            pendingDoorhanger =>
+              !!pendingDoorhanger && typeof pendingDoorhanger == "function"
+          );
+        })
+        .map(
+          pendingDoorhangers =>
+            new Promise(async resolve => {
+              for (const showDoorhanger of pendingDoorhangers) {
+                await showDoorhanger();
+              }
+              resolve();
+            })
+        )
+    );
   },
   
 
@@ -617,7 +788,9 @@ FormAutofillParent.prototype = {
     if (!startedFillingMS) {
       return;
     }
-    let histogram = Services.telemetry.getKeyedHistogramById("FORM_FILLING_REQUIRED_TIME_MS");
+    let histogram = Services.telemetry.getKeyedHistogramById(
+      "FORM_FILLING_REQUIRED_TIME_MS"
+    );
     histogram.add(`${formType}-${fillingType}`, Date.now() - startedFillingMS);
   },
 };

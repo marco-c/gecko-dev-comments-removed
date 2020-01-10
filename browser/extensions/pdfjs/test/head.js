@@ -1,18 +1,21 @@
 async function waitForPdfJS(browser, url) {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["pdfjs.eventBusDispatchToDOM", true],
-    ],
+    set: [["pdfjs.eventBusDispatchToDOM", true]],
   });
   
   return ContentTask.spawn(browser, url, async function(contentUrl) {
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       
       
-      addEventListener("documentloaded", function listener() {
-        removeEventListener("documentloaded", listener, false);
-        resolve();
-      }, false, true);
+      addEventListener(
+        "documentloaded",
+        function listener() {
+          removeEventListener("documentloaded", listener, false);
+          resolve();
+        },
+        false,
+        true
+      );
 
       content.location = contentUrl;
     });

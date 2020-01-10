@@ -6,32 +6,53 @@ const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 add_task(async function test() {
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  let handlerInfo = mimeService.getFromTypeAndExtension("application/pdf", "pdf");
+  let handlerInfo = mimeService.getFromTypeAndExtension(
+    "application/pdf",
+    "pdf"
+  );
 
   
-  is(handlerInfo.alwaysAskBeforeHandling, false, "pdf handler defaults to always-ask is false");
-  is(handlerInfo.preferredAction, Ci.nsIHandlerInfo.handleInternally, "pdf handler defaults to internal");
+  is(
+    handlerInfo.alwaysAskBeforeHandling,
+    false,
+    "pdf handler defaults to always-ask is false"
+  );
+  is(
+    handlerInfo.preferredAction,
+    Ci.nsIHandlerInfo.handleInternally,
+    "pdf handler defaults to internal"
+  );
 
   info("Pref action: " + handlerInfo.preferredAction);
 
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
     async function(newTabBrowser) {
       await waitForPdfJS(newTabBrowser, TESTROOT + "file_pdfjs_test.pdf");
 
       await ContentTask.spawn(newTabBrowser, null, async function() {
         
-        Assert.ok(content.document.querySelector("div#viewer"), "document content has viewer UI");
+        Assert.ok(
+          content.document.querySelector("div#viewer"),
+          "document content has viewer UI"
+        );
 
         
         var sidebar = content.document.querySelector("button#sidebarToggle"),
-            outerContainer = content.document.querySelector("div#outerContainer");
+          outerContainer = content.document.querySelector("div#outerContainer");
 
         sidebar.click();
-        Assert.ok(outerContainer.classList.contains("sidebarOpen"), "sidebar opens on click");
+        Assert.ok(
+          outerContainer.classList.contains("sidebarOpen"),
+          "sidebar opens on click"
+        );
 
         
         sidebar.click();
-        Assert.ok(!outerContainer.classList.contains("sidebarOpen"), "sidebar closes on click");
+        Assert.ok(
+          !outerContainer.classList.contains("sidebarOpen"),
+          "sidebar closes on click"
+        );
 
         
         var pgNumber = content.document.querySelector("input#pageNumber").value;
@@ -46,5 +67,6 @@ add_task(async function test() {
         var viewer = content.wrappedJSObject.PDFViewerApplication;
         await viewer.close();
       });
-    });
+    }
+  );
 });
