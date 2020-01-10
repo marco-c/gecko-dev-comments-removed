@@ -1358,6 +1358,22 @@ SearchService.prototype = {
         }
 
         await this._loadEngines(cache);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (Services.startup.shuttingDown) {
+          SearchUtils.log("_reInit: abandoning reInit due to shutting down");
+          this._initObservers.reject();
+          return;
+        }
+
         
         await this._buildCache();
 
@@ -3184,11 +3200,21 @@ SearchService.prototype = {
       case TOPIC_LOCALES_CHANGE:
         
         
+
         
         
-        if (!Services.startup.shuttingDown) {
-          this._reInit(verb);
-        }
+        
+        
+        
+        
+        
+        Services.tm.dispatchToMainThread(() => {
+          
+          
+          if (!Services.startup.shuttingDown) {
+            this._reInit(verb);
+          }
+        });
         break;
     }
   },
@@ -3269,6 +3295,21 @@ SearchService.prototype = {
       "Search service: shutting down",
       () =>
         (async () => {
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!gInitialized || gReinitializing) {
+            SearchUtils.log(
+              "not saving cache on shutdown due to initializing."
+            );
+            return;
+          }
+
           if (this._batchTask) {
             shutdownState.step = "Finalizing batched task";
             try {
