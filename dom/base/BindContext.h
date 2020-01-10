@@ -9,8 +9,10 @@
 #ifndef mozilla_dom_BindContext_h__
 #define mozilla_dom_BindContext_h__
 
-#include "mozilla/Attributes.h"
 #include "nsXBLBinding.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ShadowRoot.h"
 
@@ -18,6 +20,9 @@ namespace mozilla {
 namespace dom {
 
 struct MOZ_STACK_CLASS BindContext final {
+  struct NestingLevel;
+  friend struct NestingLevel;
+
   
   
   
@@ -49,14 +54,17 @@ struct MOZ_STACK_CLASS BindContext final {
   Element* GetBindingParent() const { return mBindingParent; }
 
   
-  explicit BindContext(nsINode& aParentNode)
-      : mDoc(*aParentNode.OwnerDoc()),
-        mBindingParent(aParentNode.IsContent()
-                           ? aParentNode.AsContent()->GetBindingParent()
+  explicit BindContext(nsINode& aParent)
+      : mDoc(*aParent.OwnerDoc()),
+        mBindingParent(aParent.IsContent()
+                           ? aParent.AsContent()->GetBindingParent()
                            : nullptr),
-        mInComposedDoc(aParentNode.IsInComposedDoc()),
-        mInUncomposedDoc(aParentNode.IsInUncomposedDoc()),
-        mSubtreeRootChanges(true) {}
+        mInComposedDoc(aParent.IsInComposedDoc()),
+        mInUncomposedDoc(aParent.IsInUncomposedDoc()),
+        mSubtreeRootChanges(true),
+        mCollectingDisplayedNodeDataDuringLoad(
+            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
+                                                     aParent)) {}
 
   
   
@@ -69,7 +77,10 @@ struct MOZ_STACK_CLASS BindContext final {
         mBindingParent(aShadowRoot.Host()),
         mInComposedDoc(aShadowRoot.IsInComposedDoc()),
         mInUncomposedDoc(false),
-        mSubtreeRootChanges(false) {}
+        mSubtreeRootChanges(false),
+        mCollectingDisplayedNodeDataDuringLoad(
+            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
+                                                     aShadowRoot)) {}
 
   
   
@@ -79,7 +90,10 @@ struct MOZ_STACK_CLASS BindContext final {
         mBindingParent(&aParentElement),
         mInComposedDoc(aParentElement.IsInComposedDoc()),
         mInUncomposedDoc(aParentElement.IsInUncomposedDoc()),
-        mSubtreeRootChanges(true) {
+        mSubtreeRootChanges(true),
+        mCollectingDisplayedNodeDataDuringLoad(
+            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
+                                                     aParentElement)) {
     MOZ_ASSERT(mInComposedDoc, "Binding NAC in a disconnected subtree?");
   }
 
@@ -89,9 +103,28 @@ struct MOZ_STACK_CLASS BindContext final {
         mBindingParent(aBinding.GetBoundElement()),
         mInComposedDoc(aParentElement.IsInComposedDoc()),
         mInUncomposedDoc(aParentElement.IsInUncomposedDoc()),
-        mSubtreeRootChanges(true) {}
+        mSubtreeRootChanges(true),
+        mCollectingDisplayedNodeDataDuringLoad(
+            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
+                                                     aParentElement)) {}
+
+  bool CollectingDisplayedNodeDataDuringLoad() const {
+    return mCollectingDisplayedNodeDataDuringLoad;
+  }
 
  private:
+
+  static bool IsLikelyUndisplayed(const nsINode& aParent) {
+    return aParent.IsAnyOfHTMLElements(nsGkAtoms::style, nsGkAtoms::script);
+  }
+
+  static bool ShouldCollectDisplayedNodeDataDuringLoad(bool aConnected,
+                                                       Document& aDoc,
+                                                       nsINode& aParent) {
+    return aDoc.GetReadyStateEnum() == Document::READYSTATE_LOADING &&
+           aConnected && !IsLikelyUndisplayed(aParent);
+  }
+
   Document& mDoc;
 
   Element* const mBindingParent;
@@ -102,6 +135,27 @@ struct MOZ_STACK_CLASS BindContext final {
   
   
   const bool mSubtreeRootChanges;
+
+  
+  
+  
+  
+  
+  
+  bool mCollectingDisplayedNodeDataDuringLoad;
+};
+
+struct MOZ_STACK_CLASS BindContext::NestingLevel {
+  explicit NestingLevel(BindContext& aContext, const Element& aParent)
+      : mRestoreCollecting(aContext.mCollectingDisplayedNodeDataDuringLoad) {
+    if (aContext.mCollectingDisplayedNodeDataDuringLoad) {
+      aContext.mCollectingDisplayedNodeDataDuringLoad =
+          BindContext::IsLikelyUndisplayed(aParent);
+    }
+  }
+
+ private:
+  AutoRestore<bool> mRestoreCollecting;
 };
 
 }  

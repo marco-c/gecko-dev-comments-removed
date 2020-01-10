@@ -3699,6 +3699,16 @@ class Document : public nsINode,
 
   void PropagateUseCounters(Document* aParentDocument);
 
+  void AddToVisibleContentHeuristic(size_t aNumber) {
+    if (MOZ_UNLIKELY(SIZE_MAX - mVisibleContentHeuristic < aNumber)) {
+      mVisibleContentHeuristic = SIZE_MAX;
+    } else {
+      mVisibleContentHeuristic += aNumber;
+    }
+  }
+
+  size_t GetVisibleContentHeuristic() const { return mVisibleContentHeuristic; }
+
   
   
   void SetUserHasInteracted();
@@ -4894,6 +4904,16 @@ class Document : public nsINode,
 
   
   UniquePtr<StyleUseCounters> mStyleUseCounters;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t mVisibleContentHeuristic = 0;
 
   
   bool mUserHasInteracted;
