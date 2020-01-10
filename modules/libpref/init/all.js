@@ -411,6 +411,21 @@ pref("media.webvtt.pseudo.enabled", true);
 
 pref("media.webvtt.debug.logging", false);
 
+
+pref("media.mediasource.enabled", true);
+
+pref("media.mediasource.mp4.enabled", true);
+
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_ANDROID)
+pref("media.mediasource.webm.enabled", false);
+#else
+pref("media.mediasource.webm.enabled", true);
+#endif
+pref("media.mediasource.webm.audio.enabled", true);
+
+
+pref("media.mediasource.experimental.enabled", false);
+
 pref("media.benchmark.vp9.threshold", 150);
 pref("media.benchmark.frames", 300);
 pref("media.benchmark.timeout", 1000);
