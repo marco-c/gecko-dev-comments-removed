@@ -184,6 +184,14 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void ReuseConnectionOnRestartOK(bool) {}
 
   
+  
+  
+  
+  
+  
+  virtual void DoNotRemoveAltSvc() {}
+
+  
   virtual MOZ_MUST_USE bool CanDo0RTT() { return false; }
   
   
