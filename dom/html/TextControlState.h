@@ -141,8 +141,9 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(TextControlState)
 
-  static TextControlState* Construct(nsITextControlElement* aOwningElement,
-                                     TextControlState** aReusedState = nullptr);
+  static TextControlState* Construct(nsITextControlElement* aOwningElement);
+
+  static void Shutdown();
 
   
 
@@ -160,13 +161,6 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Unlink();
 
   bool IsBusy() const { return !!mHandlingState || mValueTransferInProgress; }
-
-  void PrepareForReuse() {
-    MOZ_ASSERT(!IsBusy());
-    Unlink();
-    mValue.reset();
-    mTextCtrlElement = nullptr;
-  }
 
   TextEditor* GetTextEditor();
   TextEditor* GetTextEditorWithoutCreation();
@@ -386,6 +380,18 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   explicit TextControlState(nsITextControlElement* aOwningElement);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY ~TextControlState();
 
+  
+
+
+  void DeleteOrCacheForReuse();
+
+  void PrepareForReuse() {
+    MOZ_ASSERT(!IsBusy());
+    Unlink();
+    mValue.reset();
+    mTextCtrlElement = nullptr;
+  }
+
   void ValueWasChanged(bool aNotify);
 
   MOZ_CAN_RUN_SCRIPT void DestroyEditor();
@@ -424,6 +430,16 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
                                             
   bool mPlaceholderVisibility;
   bool mPreviewVisibility;
+
+  
+
+
+
+
+
+
+  static TextControlState* sReleasedInstance;
+  static bool sHasShutDown;
 
   friend class AutoTextControlHandlingState;
   friend class PrepareEditorEvent;
