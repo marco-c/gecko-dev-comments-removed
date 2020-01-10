@@ -24,6 +24,10 @@ GPUVideoTextureHost::~GPUVideoTextureHost() {
 
 GPUVideoTextureHost* GPUVideoTextureHost::CreateFromDescriptor(
     TextureFlags aFlags, const SurfaceDescriptorGPUVideo& aDescriptor) {
+  
+  
+  
+  
   TextureHost* wrappedTextureHost =
       VideoBridgeParent::GetSingleton()->LookupTexture(aDescriptor.handle());
   if (!wrappedTextureHost) {
