@@ -4,6 +4,9 @@
 
 
 
+import { updateSelectedItem } from "chrome://global/content/certviewer/certviewer.js";
+import { certArray } from "chrome://global/content/certviewer/components/dummy-info.js";
+
 class CertificateSection extends HTMLElement {
   constructor() {
     super();
