@@ -537,13 +537,17 @@ struct JSContext : public JS::RootingContext,
 
   js::ContextData<int32_t> suppressGC;
 
+#ifdef DEBUG
   
   
   
   
   js::ContextData<bool> gcSweeping;
 
-#ifdef DEBUG
+  
+  
+  js::ContextData<JS::Zone*> gcSweepingZone;
+
   
   js::ContextData<size_t> isTouchingGrayThings;
 
@@ -1308,15 +1312,28 @@ class MOZ_RAII AutoSetThreadIsPerformingGC {
 
 
 struct MOZ_RAII AutoSetThreadIsSweeping {
-  AutoSetThreadIsSweeping() : cx(TlsContext.get()), prevState(cx->gcSweeping) {
+#ifndef DEBUG
+  explicit AutoSetThreadIsSweeping(Zone* zone = nullptr) {}
+#else
+  explicit AutoSetThreadIsSweeping(Zone* zone = nullptr)
+      : cx(TlsContext.get()),
+        prevState(cx->gcSweeping),
+        prevZone(cx->gcSweepingZone) {
     cx->gcSweeping = true;
+    cx->gcSweepingZone = zone;
   }
 
-  ~AutoSetThreadIsSweeping() { cx->gcSweeping = prevState; }
+  ~AutoSetThreadIsSweeping() {
+    cx->gcSweeping = prevState;
+    cx->gcSweepingZone = prevZone;
+    MOZ_ASSERT_IF(!cx->gcSweeping, !cx->gcSweepingZone);
+  }
 
  private:
   JSContext* cx;
   bool prevState;
+  JS::Zone* prevZone;
+#endif
 };
 
 }  
