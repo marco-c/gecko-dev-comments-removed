@@ -117,7 +117,7 @@ function run_test() {
   });
 
   
-  add_tls_server_setup("BadCertServer", "bad_certs");
+  add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
 
   
   addCertFromFile(certdb, "bad_certs/other-test-ca.pem", "CTu,u,u");

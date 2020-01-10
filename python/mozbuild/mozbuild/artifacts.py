@@ -113,7 +113,7 @@ class ArtifactJob(object):
     
     
     test_artifact_patterns = {
-        ('bin/BadCertServer', ('bin', 'bin')),
+        ('bin/BadCertAndPinningServer', ('bin', 'bin')),
         ('bin/GenerateOCSPResponse', ('bin', 'bin')),
         ('bin/OCSPStaplingServer', ('bin', 'bin')),
         ('bin/SymantecSanctionsServer', ('bin', 'bin')),
@@ -554,7 +554,7 @@ class WinArtifactJob(ArtifactJob):
 
     
     test_artifact_patterns = {
-        ('bin/BadCertServer.exe', ('bin', 'bin')),
+        ('bin/BadCertAndPinningServer.exe', ('bin', 'bin')),
         ('bin/GenerateOCSPResponse.exe', ('bin', 'bin')),
         ('bin/OCSPStaplingServer.exe', ('bin', 'bin')),
         ('bin/SymantecSanctionsServer.exe', ('bin', 'bin')),

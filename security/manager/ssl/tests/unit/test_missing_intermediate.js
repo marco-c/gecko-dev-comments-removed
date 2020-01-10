@@ -44,7 +44,7 @@ registerCleanupFunction(() => {
 });
 
 function run_test() {
-  add_tls_server_setup("BadCertServer", "bad_certs");
+  add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
   
   add_connection_test(
     "ee-from-missing-intermediate.example.com",

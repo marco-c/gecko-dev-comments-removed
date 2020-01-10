@@ -382,7 +382,7 @@ function test_security_info_serialization(securityInfo, expectedErrorCode) {
 
 function run_test() {
   do_get_profile();
-  add_tls_server_setup("BadCertServer", "bad_certs");
+  add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
 
   
   add_test(function() {

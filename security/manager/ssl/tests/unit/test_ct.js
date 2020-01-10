@@ -28,7 +28,7 @@ registerCleanupFunction(() => {
 
 function run_test() {
   Services.prefs.setIntPref("security.pki.certificate_transparency.mode", 1);
-  add_tls_server_setup("BadCertServer", "test_ct");
+  add_tls_server_setup("BadCertAndPinningServer", "test_ct");
   
   
   
