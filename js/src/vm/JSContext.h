@@ -176,12 +176,18 @@ struct JSContext : public JS::RootingContext,
 
   js::ContextData<js::FreeOp> defaultFreeOp_;
 
+  
+  js::Thread::Id currentThread_;
+
   js::ParseTask* parseTask_;
 
  public:
   
   
   void setRuntime(JSRuntime* rt);
+
+  void setThread();
+  void clearThread();
 
   bool isMainThreadContext() const {
     return kind_ == js::ContextKind::MainThread;
@@ -470,7 +476,7 @@ struct JSContext : public JS::RootingContext,
   }
 
   
-  const uintptr_t nativeStackBase;
+  uintptr_t nativeStackBase;
 
  public:
   
