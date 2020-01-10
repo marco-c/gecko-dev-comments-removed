@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var hint = JSON.parse({
+  toString: function() {
+    return '"string"';
+  },
+  valueOf: function() {
+    return '"default_or_number"';
+  },
+});
+
+assert.sameValue(hint, 'string');
+
+reportCompare(0, 0);

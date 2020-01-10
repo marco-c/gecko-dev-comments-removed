@@ -19,10 +19,12 @@
 
 
 
-assert.sameValue(JSON.parse.name, "parse");
 
-verifyNotEnumerable(JSON.parse, "name");
-verifyNotWritable(JSON.parse, "name");
-verifyConfigurable(JSON.parse, "name");
+verifyProperty(JSON.parse, 'name', {
+  value: 'parse',
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

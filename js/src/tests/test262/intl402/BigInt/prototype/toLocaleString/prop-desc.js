@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof BigInt.prototype.toLocaleString,
+  "function",
+  "typeof BigInt.prototype.toLocaleString is function"
+);
+
+verifyProperty(BigInt.prototype, "toLocaleString", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

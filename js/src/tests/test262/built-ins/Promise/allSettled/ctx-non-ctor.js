@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Promise.allSettled.call(eval);
+});
+
+reportCompare(0, 0);

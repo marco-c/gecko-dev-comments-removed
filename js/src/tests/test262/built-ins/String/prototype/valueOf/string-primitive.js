@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var valueOf = String.prototype.valueOf;
+
+assert.sameValue('str'.valueOf(), 'str');
+assert.sameValue(valueOf.call(''), '');
+
+reportCompare(0, 0);

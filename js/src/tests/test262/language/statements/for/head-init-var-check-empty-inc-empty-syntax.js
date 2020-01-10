@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var supreme=5;
+
+for(var count=0;;) {if (count===supreme)break;else count++; }
+
+reportCompare(0, 0);

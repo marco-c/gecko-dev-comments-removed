@@ -7,10 +7,10 @@
 
 
 
-var target = function(a, b) {
-  return a + b;
-};
-var p = new Proxy(target, {
+
+var p = new Proxy(function() {
+  throw 'not the Test262Error you are looking for';
+}, {
   apply: function(t, c, args) {
     throw new Test262Error();
   }

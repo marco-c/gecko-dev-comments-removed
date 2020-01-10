@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var P = new Proxy(function() {
+  throw new Test262Error('target should not be called');
+}, {
+  construct: function() {
+    return null;
+  },
+});
+
+assert.throws(TypeError, function() {
+  new P();
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var date = new Date();
+assert.sameValue(date.toJSON(), date.toISOString());
+
+var result = {};
+assert.sameValue(
+  Date.prototype.toJSON.call({
+    toISOString: function() { return result; },  
+  }),
+  result
+);
+
+reportCompare(0, 0);

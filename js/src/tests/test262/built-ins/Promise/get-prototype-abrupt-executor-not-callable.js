@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var bound = (function() {}).bind();
+Object.defineProperty(bound, 'prototype', {
+  get: function() {
+    throw new Test262Error();
+  },
+});
+
+assert.throws(TypeError, function() {
+  Reflect.construct(Promise, [], bound);
+});
+
+reportCompare(0, 0);

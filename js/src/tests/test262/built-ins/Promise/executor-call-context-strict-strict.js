@@ -1,0 +1,25 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var _this;
+
+new Promise(function() {
+  _this = this;
+});
+
+assert.sameValue(_this, undefined);
+
+reportCompare(0, 0);

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+function foo() {
+  function f() {
+    'use strict';
+    var o = {};
+    with (o) {};
+  }
+}

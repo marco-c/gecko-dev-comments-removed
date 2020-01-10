@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var resolveElementFunction;
+var thenable = {
+  then(fulfill) {
+    resolveElementFunction = fulfill;
+  }
+};
+
+function NotPromise(executor) {
+  executor(function() {}, function() {});
+}
+NotPromise.resolve = function(v) {
+  return v;
+};
+Promise.allSettled.call(NotPromise, [thenable]);
+
+assert(Object.isExtensible(resolveElementFunction));
+
+reportCompare(0, 0);

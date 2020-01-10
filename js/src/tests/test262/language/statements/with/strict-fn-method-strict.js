@@ -1,0 +1,19 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+var obj = { get(a) { with(a){} } };

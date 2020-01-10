@@ -11,16 +11,15 @@
 
 
 
-var target = function(a, b) {
-  return a + b;
-};
+
 var result = {};
-var handler = {
+var p = new Proxy(function() {
+  throw new Test262Error('target should not be called');
+}, {
   apply: function(t, c, args) {
     return result;
-  }
-};
-var p = new Proxy(target, handler);
+  },
+});
 
 assert.sameValue(p.call(), result);
 

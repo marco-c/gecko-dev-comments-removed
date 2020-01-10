@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var toString = String.prototype.toString;
+
+assert.sameValue(''.toString(), '');
+assert.sameValue(toString.call('str'), 'str');
+
+reportCompare(0, 0);

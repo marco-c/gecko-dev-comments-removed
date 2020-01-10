@@ -2,18 +2,21 @@
 
 
 
-export { x as y } from './instn-iee-bndng-var.js';
+export { A as B } from './instn-iee-bndng-var.js';
 
 
 
-assert.throws(ReferenceError, function() {
-  x;
-});
-assert.sameValue(typeof x, 'undefined');
+export const results = [];
+try {
+  A;
+} catch (error) {
+  results.push(error.name, typeof A);
+}
 
 
 
-assert.throws(ReferenceError, function() {
-  y;
-});
-assert.sameValue(typeof y, 'undefined');
+try {
+  B;
+} catch (error) {
+  results.push(error.name, typeof B);
+}
