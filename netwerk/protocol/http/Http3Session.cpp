@@ -232,6 +232,11 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         if (!stream) {
           
           
+          
+          LOG(("Http3Session::ProcessEvents - stream not found "
+               "stream_id=0x%" PRIx64 " [this=%p].",
+               id, this));
+          event = mHttp3Connection->GetEvent();
           continue;
         }
 
@@ -269,7 +274,7 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
 
         if (stream->Done()) {
           LOG3(("Http3Session::ProcessEvents session=%p stream=%p 0x%" PRIx64
-                "cleanup stream.\n",
+                " cleanup stream.\n",
                 this, stream.get(), stream->StreamId()));
           CloseStream(stream, NS_OK);
         }
