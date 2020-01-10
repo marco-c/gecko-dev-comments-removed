@@ -1118,11 +1118,6 @@ pref("dom.use_components_shim", true);
 #endif // NIGHTLY_BUILD
 
 
-#ifndef XP_WIN
-pref("content.sink.pending_event_mode", 0);
-#endif
-
-
 
 
 
