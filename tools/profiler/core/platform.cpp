@@ -1843,13 +1843,34 @@ static void StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter) {
 
 static void StreamCategories(SpliceableJSONWriter& aWriter) {
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 #define CATEGORY_JSON_BEGIN_CATEGORY(name, labelAsString, color) \
   aWriter.Start();                                               \
   aWriter.StringProperty("name", labelAsString);                 \
-  aWriter.StringProperty("color", color);
-#define CATEGORY_JSON_SUBCATEGORY(category, name, labelAsString)
-#define CATEGORY_JSON_END_CATEGORY aWriter.EndObject();
+  aWriter.StringProperty("color", color);                        \
+  aWriter.StartArrayProperty("subcategories");
+#define CATEGORY_JSON_SUBCATEGORY(supercategory, name, labelAsString) \
+  aWriter.StringElement(labelAsString);
+#define CATEGORY_JSON_END_CATEGORY \
+  aWriter.EndArray();              \
+  aWriter.EndObject();
 
   PROFILING_CATEGORY_LIST(CATEGORY_JSON_BEGIN_CATEGORY,
                           CATEGORY_JSON_SUBCATEGORY, CATEGORY_JSON_END_CATEGORY)
@@ -1864,7 +1885,7 @@ static void StreamMetaJSCustomObject(PSLockRef aLock,
                                      bool aIsShuttingDown) {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 15);
+  aWriter.IntProperty("version", 16);
 
   
   
