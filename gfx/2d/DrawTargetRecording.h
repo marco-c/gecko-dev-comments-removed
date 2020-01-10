@@ -37,11 +37,7 @@ class DrawTargetRecording : public DrawTarget {
 
   virtual IntSize GetSize() const override { return mSize; }
 
-  
-
-
-
-  virtual void Flush() override { mFinalDT->Flush(); }
+  virtual void Flush() override;
 
   virtual void FlushItem(const IntRect& aBounds) override;
 
