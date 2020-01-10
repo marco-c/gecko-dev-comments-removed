@@ -224,10 +224,15 @@ class TargetList {
   
   async _onTargetAvailable(targetFront) {
     if (this._targets.has(targetFront)) {
-      console.error(
-        "Target is already registered in the TargetList",
-        targetFront
-      );
+      
+      
+      
+      if (targetFront != this.targetFront) {
+        console.error(
+          "Target is already registered in the TargetList",
+          targetFront
+        );
+      }
       return;
     }
 
