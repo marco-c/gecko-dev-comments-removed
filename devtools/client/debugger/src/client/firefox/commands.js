@@ -23,8 +23,6 @@ import type {
   SourceId,
   SourceActor,
   Range,
-  Thread,
-  ThreadType,
   ExecutionPoint,
 } from "../../types";
 
@@ -42,7 +40,7 @@ import type {
   EventListenerActiveList,
 } from "../../actions/types";
 
-let targets: { [ThreadType]: { [string]: Target } };
+let targets: { [string]: Target };
 let currentThreadFront: ThreadFront;
 let currentTarget: Target;
 let debuggerClient: DebuggerClient;
@@ -102,7 +100,7 @@ function sendPacket(packet: Object) {
 
 
 function getTargetsMap(): { string: Target } {
-  return Object.assign({}, ...Object.values(targets));
+  return Object.assign({}, targets);
 }
 
 function lookupTarget(thread: string) {
@@ -432,10 +430,8 @@ async function toggleEventLogging(logEventBreakpoints: boolean) {
 
 function getAllThreadFronts() {
   const fronts = [currentThreadFront];
-  for (const targetsForType of (Object.values(targets): any)) {
-    for (const { threadFront } of (Object.values(targetsForType): any)) {
-      fronts.push(threadFront);
-    }
+  for (const { threadFront } of (Object.values(targets): any)) {
+    fronts.push(threadFront);
   }
   return fronts;
 }
@@ -474,31 +470,22 @@ function getSourceForActor(actor: ActorId) {
   return sourceActors[actor];
 }
 
-async function fetchThreads(type: ?ThreadType): Promise<Thread[]> {
-  if (!type) {
-    const workers = await updateThreads("worker");
-    const processes = await updateThreads("contentProcess");
-    return [...workers, ...processes];
-  }
-
-  return updateThreads(type);
-}
-
-async function updateThreads(type: ThreadType) {
+async function fetchThreads() {
   const options = {
     breakpoints,
     eventBreakpoints,
     observeAsmJS: true,
   };
 
-  await updateTargets(type, {
+  await updateTargets({
     currentTarget,
     debuggerClient,
     targets,
     options,
   });
 
-  return Object.entries(targets[type]).map(([actor, target]) =>
+  
+  return (Object.entries(targets).map: any)(([actor, target]) =>
     createThread((actor: any), (target: any))
   );
 }
