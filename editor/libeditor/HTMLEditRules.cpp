@@ -7507,7 +7507,7 @@ nsresult HTMLEditRules::BustUpInlinesAtRangeEndpoints(
                      aRangeItem.mStartOffset == aRangeItem.mEndOffset;
 
   nsCOMPtr<nsIContent> endInline =
-      GetHighestInlineParent(*aRangeItem.mEndContainer);
+      HTMLEditorRef().GetMostAncestorInlineElement(*aRangeItem.mEndContainer);
 
   
   
@@ -7533,7 +7533,7 @@ nsresult HTMLEditRules::BustUpInlinesAtRangeEndpoints(
   }
 
   nsCOMPtr<nsIContent> startInline =
-      GetHighestInlineParent(*aRangeItem.mStartContainer);
+      HTMLEditorRef().GetMostAncestorInlineElement(*aRangeItem.mStartContainer);
 
   if (startInline) {
     SplitNodeResult splitStartInlineResult =
@@ -7629,14 +7629,14 @@ nsresult HTMLEditRules::BustUpInlinesAtBRs(
   return NS_OK;
 }
 
-nsIContent* HTMLEditRules::GetHighestInlineParent(nsINode& aNode) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsIContent* HTMLEditor::GetMostAncestorInlineElement(nsINode& aNode) const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!aNode.IsContent() || HTMLEditor::NodeIsBlockStatic(aNode)) {
     return nullptr;
   }
 
-  Element* host = HTMLEditorRef().GetActiveEditingHost();
+  Element* host = GetActiveEditingHost();
   if (NS_WARN_IF(!host)) {
     return nullptr;
   }

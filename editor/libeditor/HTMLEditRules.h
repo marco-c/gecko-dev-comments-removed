@@ -908,13 +908,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  nsIContent* GetHighestInlineParent(nsINode& aNode) const;
-
-  
-
-
-
-
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
 

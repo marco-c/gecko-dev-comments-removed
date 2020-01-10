@@ -1207,6 +1207,13 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   InsertBRElement(const EditorDOMPoint& aInsertToBreak);
 
+  
+
+
+
+
+  nsIContent* GetMostAncestorInlineElement(nsINode& aNode) const;
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
