@@ -385,11 +385,22 @@ class UrlbarView {
         
         endOffset = startOffset;
       }
-      let identityIcon = this.document.getElementById("identity-icon");
-      let identityRect = this._getBoundsWithoutFlushing(identityIcon);
+
+      
+      
+      
+      let alignIcon;
+      if (this.input.getAttribute("pageproxystate") === "valid") {
+        alignIcon = this.document.getElementById(
+          "tracking-protection-icon-box"
+        );
+      } else {
+        alignIcon = this.document.getElementById("identity-icon");
+      }
+      let alignRect = this._getBoundsWithoutFlushing(alignIcon);
       let start = this.window.RTL_UI
-        ? documentRect.right - identityRect.right
-        : identityRect.left;
+        ? documentRect.right - alignRect.right
+        : alignRect.left;
 
       this.panel.style.setProperty("--item-padding-start", px(start));
       this.panel.style.setProperty("--item-padding-end", px(endOffset));
