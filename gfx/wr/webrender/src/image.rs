@@ -186,12 +186,16 @@ impl Iterator for TileIterator {
     type Item = Tile;
 
     fn next(&mut self) -> Option<Self::Item> {
+        
         if self.current_tile.x >= self.x.tile_range.end {
             self.current_tile.y += 1;
-            if self.current_tile.y >= self.y.tile_range.end {
-                return None;
-            }
             self.current_tile.x = self.x.tile_range.start;
+        }
+
+        
+        
+        if self.current_tile.x >= self.x.tile_range.end || self.current_tile.y >= self.y.tile_range.end {
+            return None;
         }
 
         let tile_offset = self.current_tile;
@@ -371,8 +375,11 @@ fn tiles_1d(
     let visible_tiles_end = f32::ceil((layout_visible_range.end - layout_tiling_origin) / layout_tile_size) as i32;
 
     
-    let tiles_start = i32::max(image_tiles.start, visible_tiles_start);
+    let mut tiles_start = i32::max(image_tiles.start, visible_tiles_start);
     let tiles_end = i32::min(image_tiles.end, visible_tiles_end);
+    if tiles_start > tiles_end {
+        tiles_start = tiles_end;
+    }
 
     
     let first_tile_layout_size = if tiles_start == image_tiles.start {
