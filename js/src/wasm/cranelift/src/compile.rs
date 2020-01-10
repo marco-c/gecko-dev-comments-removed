@@ -283,7 +283,10 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
 
                     
                     
-                    ir::Opcode::Spill | ir::Opcode::Fill | ir::Opcode::JumpTableEntry => {}
+                    ir::Opcode::Spill
+                    | ir::Opcode::Fill
+                    | ir::Opcode::FillNop
+                    | ir::Opcode::JumpTableEntry => {}
 
                     _ if BatchCompiler::platform_specific_ignores_metadata(opcode) => {}
 
