@@ -4496,11 +4496,15 @@ void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
       mFullscreen = false;
       mFullscreenMode = false;
     } else {
+#ifndef XP_MACOSX
       MOZ_ASSERT_UNREACHABLE("Failed to exit fullscreen?");
+#endif
       mFullscreen = true;
       
       
-      mFullscreenMode = false;
+      
+      
+      mFullscreenMode = true;
     }
     return;
   }
