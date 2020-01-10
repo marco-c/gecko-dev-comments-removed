@@ -31,7 +31,7 @@ use crate::timing;
 use core::mem;
 
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct BasicBlock {
     
     pub ebb: Ebb,

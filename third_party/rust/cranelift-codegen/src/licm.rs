@@ -88,7 +88,7 @@ fn create_pre_header(
     {
         
         if !domtree.dominates(header, last_inst, &func.layout) {
-            change_branch_jump_destination(last_inst, pre_header, func);
+            func.change_branch_destination(last_inst, pre_header);
         }
     }
     {
@@ -134,15 +134,6 @@ fn has_pre_header(
         }
     }
     result
-}
-
-
-
-fn change_branch_jump_destination(inst: Inst, new_ebb: Ebb, func: &mut Function) {
-    match func.dfg[inst].branch_destination_mut() {
-        None => (),
-        Some(instruction_dest) => *instruction_dest = new_ebb,
-    }
 }
 
 

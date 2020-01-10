@@ -329,7 +329,7 @@ impl Context {
     
     
     pub fn relax_branches(&mut self, isa: &dyn TargetIsa) -> CodegenResult<CodeInfo> {
-        let info = relax_branches(&mut self.func, isa)?;
+        let info = relax_branches(&mut self.func, &mut self.cfg, &mut self.domtree, isa)?;
         self.verify_if(isa)?;
         self.verify_locations_if(isa)?;
         Ok(info)
