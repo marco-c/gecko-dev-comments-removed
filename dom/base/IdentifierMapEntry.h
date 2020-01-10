@@ -155,6 +155,11 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
   void RemoveContentChangeCallback(IDTargetObserver aCallback, void* aData,
                                    bool aForImage);
 
+  
+
+
+  void ClearAndNotify();
+
   void Traverse(nsCycleCollectionTraversalCallback* aCallback);
 
   struct ChangeCallback {
