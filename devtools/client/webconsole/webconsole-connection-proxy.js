@@ -84,12 +84,6 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  isAttached: null,
-
-  
-
-
-
 
   _connectTimer: null,
 
@@ -132,7 +126,7 @@ WebConsoleConnectionProxy.prototype = {
     if (this.target.isBrowsingContext) {
       this.webConsoleUI.onLocationChange(this.target.url, this.target.title);
     }
-    this.isAttached = this._attachConsole();
+    this._attachConsole();
 
     return connPromise;
   },
@@ -431,20 +425,9 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  disconnect: async function() {
-    if (this._disconnecter) {
-      return this._disconnecter.promise;
-    }
-
-    this._disconnecter = defer();
-
-    
-    if (this.isAttached) {
-      await this.isAttached;
-    }
+  disconnect: function() {
     if (!this.client) {
-      this._disconnecter.resolve(null);
-      return this._disconnecter.promise;
+      return;
     }
 
     this.webConsoleClient.off("logMessage", this._onLogMessage);
@@ -468,9 +451,6 @@ WebConsoleConnectionProxy.prototype = {
     this.target = null;
     this.connected = false;
     this.webConsoleUI = null;
-    this._disconnecter.resolve(null);
-
-    return this._disconnecter.promise;
   },
 };
 
