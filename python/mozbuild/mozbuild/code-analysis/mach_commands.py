@@ -1345,8 +1345,13 @@ class StaticAnalysis(MachCommandBase):
 
         
         
+        assume_dir = os.path.dirname(os.path.join(self.topsrcdir, assume_filename[0]))
+        assume_filename = assume_filename[0] if os.path.isdir(assume_dir) else path
+
         
-        args = [binary, prettier, '--stdin-filepath', assume_filename[0]]
+        
+        
+        args = [binary, prettier, '--stdin-filepath', assume_filename]
 
         process = subprocess.Popen(args, stdin=subprocess.PIPE)
         with open(path, 'r') as fin:
