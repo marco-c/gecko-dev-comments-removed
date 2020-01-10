@@ -86,7 +86,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
  private:
   ~nsPlainTextSerializer();
 
-  nsresult GetAttributeValue(nsAtom* aName, nsString& aValueRet) const;
+  nsresult GetAttributeValue(const nsAtom* aName, nsString& aValueRet) const;
   void AddToLine(const char16_t* aStringToAdd, int32_t aLength);
 
   void MaybeWrapAndOutputCompleteLines();
@@ -114,9 +114,10 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
 
   static nsAtom* GetIdForContent(nsIContent* aContent);
-  nsresult DoOpenContainer(nsAtom* aTag);
-  nsresult DoCloseContainer(nsAtom* aTag);
-  nsresult DoAddLeaf(nsAtom* aTag);
+  nsresult DoOpenContainer(const nsAtom* aTag);
+  void OpenContainerForOutputFormatted(const nsAtom* aTag);
+  nsresult DoCloseContainer(const nsAtom* aTag);
+  nsresult DoAddLeaf(const nsAtom* aTag);
 
   void DoAddText();
   
@@ -144,7 +145,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   void PushBool(nsTArray<bool>& aStack, bool aValue);
   bool PopBool(nsTArray<bool>& aStack);
 
-  bool IsIgnorableRubyAnnotation(nsAtom* aTag) const;
+  bool IsIgnorableRubyAnnotation(const nsAtom* aTag) const;
 
   
   
@@ -349,7 +350,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  nsAtom** mTagStack;
+  const nsAtom** mTagStack;
   uint32_t mTagStackIndex;
 
   
