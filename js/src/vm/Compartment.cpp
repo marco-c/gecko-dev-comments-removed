@@ -12,7 +12,6 @@
 
 #include "jsfriendapi.h"
 
-#include "dbg/Debugger.h"
 #include "gc/Policy.h"
 #include "gc/PublicIterators.h"
 #include "js/Date.h"
@@ -21,6 +20,7 @@
 #include "js/StableStringChars.h"
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
+#include "vm/Debugger.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/WrapperObject.h"
@@ -41,7 +41,8 @@ Compartment::Compartment(Zone* zone, bool invisibleToDebugger)
     : zone_(zone),
       runtime_(zone->runtimeFromAnyThread()),
       invisibleToDebugger_(invisibleToDebugger),
-      crossCompartmentWrappers(0) {}
+      crossCompartmentWrappers(zone, 0),
+      realms_(zone) {}
 
 #ifdef JSGC_HASH_TABLE_CHECKS
 

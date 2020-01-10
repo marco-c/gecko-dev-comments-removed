@@ -10,6 +10,7 @@
 #include "mozilla/Maybe.h"
 
 #include "builtin/TypedObjectConstants.h"
+#include "gc/ZoneAllocator.h"
 #include "js/ArrayBuffer.h"
 #include "js/GCHashTable.h"
 #include "vm/JSObject.h"
@@ -606,7 +607,7 @@ inline constexpr bool TypeIsUnsigned<uint32_t>() {
 
 class InnerViewTable {
  public:
-  typedef Vector<JSObject*, 1, SystemAllocPolicy> ViewVector;
+  typedef Vector<JSObject*, 1, ZoneAllocPolicy> ViewVector;
 
   friend class ArrayBufferObject;
 
@@ -625,9 +626,8 @@ class InnerViewTable {
   
   
   
-  typedef GCHashMap<JSObject*, ViewVector, MovableCellHasher<JSObject*>,
-                    SystemAllocPolicy, MapGCPolicy>
-      Map;
+  using Map = GCHashMap<JSObject*, ViewVector, MovableCellHasher<JSObject*>,
+                        ZoneAllocPolicy, MapGCPolicy>;
 
   
   
@@ -651,7 +651,7 @@ class InnerViewTable {
   void removeViews(ArrayBufferObject* obj);
 
  public:
-  InnerViewTable() : nurseryKeysValid(true) {}
+  explicit InnerViewTable(Zone* zone) : map(zone), nurseryKeysValid(true) {}
 
   
   
