@@ -6732,11 +6732,10 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
           }
 
           if (doCreateAlternate) {
+            nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
             
             
-            nsLoadFlags loadFlags = 0;
-            if (NS_FAILED(aChannel->GetLoadFlags(&loadFlags)) ||
-                (loadFlags & nsIChannel::LOAD_REPLACE)) {
+            if (!info->RedirectChain().IsEmpty()) {
               doCreateAlternate = false;
             }
           }
