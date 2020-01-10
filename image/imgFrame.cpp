@@ -158,7 +158,7 @@ static bool ClearSurface(DataSourceSurface* aSurface, const IntSize& aSize,
   uint8_t* data = aSurface->GetData();
   MOZ_ASSERT(data);
 
-  if (aFormat == SurfaceFormat::OS_RGBX) {
+  if (aFormat == SurfaceFormat::B8G8R8X8) {
     
     
     
@@ -230,7 +230,7 @@ nsresult imgFrame::InitForDecoder(const nsIntSize& aImageSize,
     
     
     MOZ_ASSERT(aAnimParams);
-    mFormat = SurfaceFormat::OS_RGBA;
+    mFormat = SurfaceFormat::B8G8R8A8;
   } else {
     mFormat = aFormat;
   }
@@ -554,7 +554,7 @@ imgFrame::SurfaceWithFormat imgFrame::SurfaceForDrawing(
     
     RefPtr<DrawTarget> target =
         gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-            mImageSize, SurfaceFormat::OS_RGBA);
+            mImageSize, SurfaceFormat::B8G8R8A8);
     if (!target) {
       return SurfaceWithFormat();
     }

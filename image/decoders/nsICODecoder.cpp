@@ -585,8 +585,8 @@ LexerTransition<ICOState> nsICODecoder::FinishMask() {
     DebugOnly<bool> ret =
         
         
-        PremultiplyData(imageData, stride, SurfaceFormat::OS_RGBA, imageData,
-                        stride, SurfaceFormat::OS_RGBA,
+        PremultiplyData(imageData, stride, SurfaceFormat::B8G8R8A8, imageData,
+                        stride, SurfaceFormat::B8G8R8A8,
                         mDownscaler->TargetSize());
     MOZ_ASSERT(ret);
   }

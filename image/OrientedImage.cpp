@@ -93,9 +93,9 @@ OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
   
   gfx::SurfaceFormat surfaceFormat;
   if (InnerImage()->WillDrawOpaqueNow()) {
-    surfaceFormat = gfx::SurfaceFormat::OS_RGBX;
+    surfaceFormat = gfx::SurfaceFormat::B8G8R8X8;
   } else {
-    surfaceFormat = gfx::SurfaceFormat::OS_RGBA;
+    surfaceFormat = gfx::SurfaceFormat::B8G8R8A8;
   }
 
   
