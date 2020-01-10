@@ -275,7 +275,12 @@ nsresult WSRunObject::InsertText(Document& aDocument,
   }
 
   WSFragment* beforeRun = FindNearestRun(mScanStartPoint, false);
-  WSFragment* afterRun = FindNearestRun(mScanEndPoint, true);
+  
+  
+  
+  
+  WSRunObject afterRunObject(mHTMLEditor, mScanEndPoint);
+  WSFragment* afterRun = afterRunObject.FindNearestRun(mScanEndPoint, true);
 
   EditorDOMPoint pointToInsert(mScanStartPoint);
   nsAutoString theString(aStringToInsert);
@@ -668,7 +673,7 @@ nsresult WSRunScanner::GetWSNodes() {
   
   
   
-  EditorDOMPoint start(mScanStartPoint), end(mScanEndPoint);
+  EditorDOMPoint start(mScanStartPoint), end(mScanStartPoint);
   nsCOMPtr<nsINode> wsBoundingParent = GetWSBoundingParent();
 
   
@@ -777,12 +782,11 @@ nsresult WSRunScanner::GetWSNodes() {
   }
 
   
-  if (Text* textNode = mScanEndPoint.GetContainerAsText()) {
+  if (Text* textNode = end.GetContainerAsText()) {
     
     const nsTextFragment* textFrag = &textNode->TextFragment();
-    if (!mScanEndPoint.IsEndOfContainer()) {
-      for (uint32_t i = mScanEndPoint.Offset(); i < textNode->TextLength();
-           i++) {
+    if (!end.IsEndOfContainer()) {
+      for (uint32_t i = end.Offset(); i < textNode->TextLength(); i++) {
         
         if (i >= textFrag->GetLength()) {
           MOZ_ASSERT_UNREACHABLE("looking beyond end of text fragment");

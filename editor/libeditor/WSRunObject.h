@@ -142,6 +142,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
+
+
+
+
   template <typename PT, typename CT>
   WSRunScanner(const HTMLEditor* aHTMLEditor,
                const EditorDOMPointBase<PT, CT>& aScanStartPoint,
