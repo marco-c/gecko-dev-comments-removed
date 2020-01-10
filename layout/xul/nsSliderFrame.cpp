@@ -42,7 +42,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/layers/InputAPZContext.h"
@@ -927,19 +926,6 @@ class AsyncScrollbarDragStarter final : public nsAPostRefreshObserver {
   AsyncDragMetrics mDragMetrics;
 };
 
-static bool UsesSVGEffectsNotSupportedInCompositor(nsIFrame* aFrame) {
-  
-  
-  if (aFrame->StyleEffects()->HasFilters()) {
-    return !gfx::gfxVars::UseWebRender() ||
-           !nsSVGIntegrationUtils::CanCreateWebRenderFiltersForFrame(aFrame);
-  }
-  if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(aFrame)) {
-    return !gfx::gfxVars::UseWebRender();
-  }
-  return false;
-}
-
 static bool ScrollFrameWillBuildScrollInfoLayer(nsIFrame* aScrollFrame) {
   
 
@@ -948,7 +934,8 @@ static bool ScrollFrameWillBuildScrollInfoLayer(nsIFrame* aScrollFrame) {
 
   nsIFrame* current = aScrollFrame;
   while (current) {
-    if (UsesSVGEffectsNotSupportedInCompositor(current)) {
+    if (nsSVGIntegrationUtils::UsesSVGEffectsNotSupportedInCompositor(
+            current)) {
       return true;
     }
     current = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(current);

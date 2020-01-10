@@ -230,6 +230,12 @@ class nsSVGIntegrationUtils final {
 
 
 
+  static bool UsesSVGEffectsNotSupportedInCompositor(nsIFrame* aFrame);
+
+  
+
+
+
 
 
 
