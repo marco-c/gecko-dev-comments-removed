@@ -404,6 +404,12 @@ class nsCocoaUtils {
 
 
 
+  static nsresult GetScreenCapturePermissionState(uint16_t& aPermissionState);
+
+  
+
+
+
 
   static nsresult RequestVideoCapturePermission(RefPtr<Promise>& aPromise);
 
