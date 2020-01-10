@@ -2611,44 +2611,55 @@ static bool CalculateWrQualifiedPrefValue() {
   return Preferences::GetBool(WR_ROLLOUT_PREF, WR_ROLLOUT_PREF_DEFAULTVALUE);
 }
 
+static void HardwareTooOldForWR(FeatureState& aFeature) {
+  aFeature.Disable(
+      FeatureStatus::BlockedDeviceTooOld, "Device too old",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
+}
+
 static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
     int32_t aDeviceId) {
-  if (aDeviceId < 0x6c0) {
-    
-    
-    
-    aFeature.Disable(
-        FeatureStatus::BlockedDeviceTooOld, "Device too old",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
+  
+  
+  
+  bool supported = aDeviceId >= 0x6c0;
+
+  if (!supported) {
+    HardwareTooOldForWR(aFeature);
+    return;
   }
+
+  
 }
 
 static void UpdateWRQualificationForAMD(FeatureState& aFeature,
     int32_t aDeviceId) {
   
   
-  if ((aDeviceId >= 0x6600 && aDeviceId < 0x66b0) ||
+  bool supported =
+      (aDeviceId >= 0x6600 && aDeviceId < 0x66b0) ||
       (aDeviceId >= 0x6700 && aDeviceId < 0x6720) ||
       (aDeviceId >= 0x6780 && aDeviceId < 0x6840) ||
       (aDeviceId >= 0x6860 && aDeviceId < 0x6880) ||
       (aDeviceId >= 0x6900 && aDeviceId < 0x6a00) ||
       (aDeviceId == 0x7300) ||
       (aDeviceId >= 0x9830 && aDeviceId < 0x9870) ||
-      (aDeviceId >= 0x9900 && aDeviceId < 0x9a00)) {
-    
-    
-    
-#if !defined(XP_WIN) && !defined(NIGHTLY_BUILD)
-    aFeature.Disable(
-        FeatureStatus::BlockedReleaseChannelAMD,
-        "Release channel and AMD",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_AMD"));
-#endif  
-  } else {
-    aFeature.Disable(
-        FeatureStatus::BlockedDeviceTooOld, "Device too old",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
+      (aDeviceId >= 0x9900 && aDeviceId < 0x9a00);
+
+  if (!supported) {
+    HardwareTooOldForWR(aFeature);
+    return;
   }
+
+  
+  
+  
+#if !defined(XP_WIN) && !defined(NIGHTLY_BUILD)
+  aFeature.Disable(
+      FeatureStatus::BlockedReleaseChannelAMD,
+      "Release channel and AMD",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_AMD"));
+#endif  
 }
 
 static void UpdateWRQualificationForIntel(FeatureState& aFeature,
@@ -2743,35 +2754,34 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
       break;
     }
   }
-  if (supported) {
+  if (!supported) {
+    HardwareTooOldForWR(aFeature);
+    return;
+  }
+
 #ifdef MOZ_WIDGET_GTK
-    
-    
-    const int32_t kMaxPixelsLinux = 3440 * 1440;  
-    if (aScreenPixels > kMaxPixelsLinux) {
-      aFeature.Disable(
-          FeatureStatus::BlockedScreenTooLarge, "Screen size too large",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_TOO_LARGE"));
-    } else if (aScreenPixels <= 0) {
-      aFeature.Disable(
-          FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
-    } else {
+  
+  
+  const int32_t kMaxPixelsLinux = 3440 * 1440;  
+  if (aScreenPixels > kMaxPixelsLinux) {
+    aFeature.Disable(
+        FeatureStatus::BlockedScreenTooLarge, "Screen size too large",
+        NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_TOO_LARGE"));
+  } else if (aScreenPixels <= 0) {
+    aFeature.Disable(
+        FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
+        NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
+  } else {
 #endif
 #ifndef NIGHTLY_BUILD
-      aFeature.Disable(
-          FeatureStatus::BlockedReleaseChannelIntel,
-          "Release channel and Intel",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_INTEL"));
+    aFeature.Disable(
+        FeatureStatus::BlockedReleaseChannelIntel,
+        "Release channel and Intel",
+        NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_INTEL"));
 #endif  
 #ifdef MOZ_WIDGET_GTK
-    }
-#endif  
-  } else {
-    aFeature.Disable(
-        FeatureStatus::BlockedDeviceTooOld, "Device too old",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
   }
+#endif  
 }
 
 static FeatureState& WebRenderHardwareQualificationStatus(
@@ -2834,9 +2844,14 @@ static FeatureState& WebRenderHardwareQualificationStatus(
         NS_LITERAL_CSTRING("FEATURE_FAILURE_UNSUPPORTED_VENDOR"));
   }
 
+  if (!featureWebRenderQualified.IsEnabled()) {
+    
+    return featureWebRenderQualified;
+  }
+
   
   
-  if (featureWebRenderQualified.IsEnabled() && aHasBattery) {
+  if (aHasBattery) {
     
     
     
