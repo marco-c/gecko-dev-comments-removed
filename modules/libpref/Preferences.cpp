@@ -1494,28 +1494,32 @@ static Pref* pref_HashTableLookup(const char* aPrefName) {
 
 static const PrefWrapper* gCallbackPref;
 
+Maybe<PrefWrapper> pref_SharedLookup(const char* aPrefName) {
+  MOZ_DIAGNOSTIC_ASSERT(gSharedMap, "gSharedMap must be initialized");
+  if (Maybe<SharedPrefMap::Pref> pref = gSharedMap->Get(aPrefName)) {
+    return Some(*pref);
+  }
+  return Nothing();
+}
+
 Maybe<PrefWrapper> pref_Lookup(const char* aPrefName,
                                bool aIncludeTypeNone = false) {
-  Maybe<PrefWrapper> result;
-
   MOZ_ASSERT(NS_IsMainThread() || mozilla::ServoStyleSet::IsInServoTraversal());
 
   AddAccessCount(aPrefName);
 
   if (gCallbackPref && strcmp(aPrefName, gCallbackPref->Name()) == 0) {
-    result.emplace(*gCallbackPref);
-  } else if (Pref* pref = pref_HashTableLookup(aPrefName)) {
+    return Some(*gCallbackPref);
+  }
+  if (Pref* pref = pref_HashTableLookup(aPrefName)) {
     if (aIncludeTypeNone || !pref->IsTypeNone()) {
-      result.emplace(pref);
+      return Some(pref);
     }
   } else if (gSharedMap) {
-    Maybe<SharedPrefMap::Pref> pref = gSharedMap->Get(aPrefName);
-    if (pref.isSome()) {
-      result.emplace(*pref);
-    }
+    return pref_SharedLookup(aPrefName);
   }
 
-  return result;
+  return Nothing();
 }
 
 static Result<Pref*, nsresult> pref_LookupForModify(
@@ -3653,6 +3657,10 @@ FileDescriptor Preferences::EnsureSnapshot(size_t* aSize) {
       iter.get()->AddToMap(builder);
     }
 
+    
+    
+    StaticPrefs::RegisterOncePrefs(builder);
+
     gSharedMap = new SharedPrefMap(std::move(builder));
 
     
@@ -4360,12 +4368,53 @@ int32_t MOZ_MAYBE_UNUSED GetPref(const char* aName, int32_t aDefaultValue) {
 
 template <>
 uint32_t MOZ_MAYBE_UNUSED GetPref(const char* aName, uint32_t aDefaultValue) {
-  return Preferences::GetInt(aName, aDefaultValue);
+  return Preferences::GetUint(aName, aDefaultValue);
 }
 
 template <>
 float MOZ_MAYBE_UNUSED GetPref(const char* aName, float aDefaultValue) {
   return Preferences::GetFloat(aName, aDefaultValue);
+}
+
+template <typename T>
+static nsresult GetSharedPref(const char* aName, T* aResult);
+
+template <>
+nsresult MOZ_MAYBE_UNUSED GetSharedPref(const char* aName, bool* aResult) {
+  MOZ_ASSERT(aResult);
+
+  Maybe<PrefWrapper> pref = pref_SharedLookup(aName);
+  return pref ? pref->GetBoolValue(PrefValueKind::User, aResult)
+              : NS_ERROR_UNEXPECTED;
+}
+
+template <>
+nsresult MOZ_MAYBE_UNUSED GetSharedPref(const char* aName, int32_t* aResult) {
+  MOZ_ASSERT(aResult);
+
+  Maybe<PrefWrapper> pref = pref_SharedLookup(aName);
+  return pref ? pref->GetIntValue(PrefValueKind::User, aResult)
+              : NS_ERROR_UNEXPECTED;
+}
+
+template <>
+nsresult MOZ_MAYBE_UNUSED GetSharedPref(const char* aName, uint32_t* aResult) {
+  return GetSharedPref(aName, reinterpret_cast<int32_t*>(aResult));
+}
+
+template <>
+nsresult MOZ_MAYBE_UNUSED GetSharedPref(const char* aName, float* aResult) {
+  MOZ_ASSERT(aResult);
+
+  Maybe<PrefWrapper> pref = pref_SharedLookup(aName);
+  if (!pref) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  nsAutoCString result;
+  nsresult rv = pref->GetCStringValue(PrefValueKind::User, result);
+  
+  *aResult = result.ToFloat(&rv);
+  return rv;
 }
 
 static nsresult pref_ReadDefaultPrefs(const RefPtr<nsZipArchive> jarReader,
@@ -4419,7 +4468,7 @@ static nsresult pref_ReadDefaultPrefs(const RefPtr<nsZipArchive> jarReader,
     }
 
     if (aIsStartup) {
-      StaticPrefs::InitOncePrefs();
+      StaticPrefs::InitOncePrefsFromShared();
     }
 
 #ifdef DEBUG
@@ -5416,6 +5465,123 @@ void StaticPrefs::InitOncePrefs() {
 #define VARCACHE_PREF(policy, name, id, cpp_type, value)                       \
   if (UpdatePolicy::policy == UpdatePolicy::Once) {                            \
     StaticPrefs::sVarCache_##id = GetPref(name, StripAtomic<cpp_type>(value)); \
+  }
+#include "mozilla/StaticPrefList.h"
+#undef PREF
+#undef VARCACHE_PREF
+}
+
+static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+    SharedPrefMapBuilder& aBuilder, const char* aName, bool aValue) {
+  auto oncePref = MakeUnique<Pref>(aName);
+  oncePref->SetType(PrefType::Bool);
+  oncePref->SetIsSkippedByIteration(true);
+  bool valueChanged = false;
+  MOZ_ALWAYS_SUCCEEDS(
+      oncePref->SetDefaultValue(PrefType::Bool, PrefValue(aValue),
+                                 true,
+                                 true, &valueChanged));
+  oncePref->AddToMap(aBuilder);
+}
+
+static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+    SharedPrefMapBuilder& aBuilder, const char* aName, int32_t aValue) {
+  auto oncePref = MakeUnique<Pref>(aName);
+  oncePref->SetType(PrefType::Int);
+  oncePref->SetIsSkippedByIteration(true);
+  bool valueChanged = false;
+  MOZ_ALWAYS_SUCCEEDS(
+      oncePref->SetDefaultValue(PrefType::Int, PrefValue(aValue),
+                                 true,
+                                 true, &valueChanged));
+  oncePref->AddToMap(aBuilder);
+}
+
+static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+    SharedPrefMapBuilder& aBuilder, const char* aName, uint32_t aValue) {
+  SaveOncePrefToSharedMap(aBuilder, aName, int32_t(aValue));
+}
+
+static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+    SharedPrefMapBuilder& aBuilder, const char* aName, float aValue) {
+  auto oncePref = MakeUnique<Pref>(aName);
+  oncePref->SetType(PrefType::String);
+  oncePref->SetIsSkippedByIteration(true);
+  nsAutoCString value;
+  value.AppendFloat(aValue);
+  bool valueChanged = false;
+  
+  
+  const nsCString& flat = PromiseFlatCString(value);
+  MOZ_ALWAYS_SUCCEEDS(
+      oncePref->SetDefaultValue(PrefType::String, PrefValue(flat.get()),
+                                 true,
+                                 true, &valueChanged));
+  oncePref->AddToMap(aBuilder);
+}
+
+#define ONCE_PREF_NAME(name) ("$$$" name "$$$")
+
+
+void StaticPrefs::RegisterOncePrefs(SharedPrefMapBuilder& aBuilder) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_DIAGNOSTIC_ASSERT(!gSharedMap,
+                        "Must be called before gSharedMap has been created");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+#define PREF(name, cpp_type, value)
+#define VARCACHE_PREF(policy, name, id, cpp_type, value)            \
+  if (UpdatePolicy::policy == UpdatePolicy::Once) {                 \
+    SaveOncePrefToSharedMap(aBuilder, ONCE_PREF_NAME(name),         \
+                            StripAtomic<cpp_type>(sVarCache_##id)); \
+  }
+#include "mozilla/StaticPrefList.h"
+#undef PREF
+#undef VARCACHE_PREF
+}
+
+
+void StaticPrefs::InitOncePrefsFromShared() {
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  MOZ_DIAGNOSTIC_ASSERT(gSharedMap,
+                        "Must be called once gSharedMap has been created");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+#define PREF(name, cpp_type, value)
+#define VARCACHE_PREF(policy, name, id, cpp_type, value)          \
+  if (UpdatePolicy::policy == UpdatePolicy::Once) {               \
+    StripAtomic<cpp_type> val;                                    \
+    MOZ_DIAGNOSTIC_ALWAYS_TRUE(                                   \
+        NS_SUCCEEDED(GetSharedPref(ONCE_PREF_NAME(name), &val))); \
+    StaticPrefs::sVarCache_##id = val;                            \
   }
 #include "mozilla/StaticPrefList.h"
 #undef PREF
