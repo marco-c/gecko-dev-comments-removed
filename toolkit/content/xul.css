@@ -541,8 +541,8 @@ dialog:root  {
 
 
 
-wizard {
-  -moz-box-flex: 1;
+wizard,
+wizard:root  {
   -moz-box-orient: vertical;
   width: 40em;
   height: 30em;
