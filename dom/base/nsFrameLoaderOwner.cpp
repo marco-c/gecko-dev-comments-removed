@@ -90,42 +90,34 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   doc->BlockOnload();
   auto cleanup = MakeScopeExit([&]() { doc->UnblockOnload(false); });
 
-  {
-    
-    
-    
-    
-    nsAutoScriptBlocker sb;
-
-    
-    
-    if (mFrameLoader) {
-      if (aPreserveContext) {
-        bc = mFrameLoader->GetBrowsingContext();
-        mFrameLoader->SkipBrowsingContextDetach();
-      }
-
-      
-      
-      networkCreated = mFrameLoader->IsNetworkCreated();
-      mFrameLoader->Destroy();
-      mFrameLoader = nullptr;
-    }
-
-    mFrameLoader =
-        nsFrameLoader::Recreate(owner, bc, aRemoteType, networkCreated);
-    if (NS_WARN_IF(!mFrameLoader)) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return;
+  
+  
+  if (mFrameLoader) {
+    if (aPreserveContext) {
+      bc = mFrameLoader->GetBrowsingContext();
+      mFrameLoader->SkipBrowsingContextDetach();
     }
 
     
     
-    
-    aFrameLoaderInit();
-    if (NS_WARN_IF(aRv.Failed())) {
-      return;
-    }
+    networkCreated = mFrameLoader->IsNetworkCreated();
+    mFrameLoader->Destroy();
+    mFrameLoader = nullptr;
+  }
+
+  mFrameLoader =
+      nsFrameLoader::Recreate(owner, bc, aRemoteType, networkCreated);
+  if (NS_WARN_IF(!mFrameLoader)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  
+  
+  
+  aFrameLoaderInit();
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
   }
 
   
@@ -190,8 +182,9 @@ void nsFrameLoaderOwner::ChangeRemoteness(
                          aOptions.mRemoteType, frameLoaderInit, rv);
 }
 
-void nsFrameLoaderOwner::ChangeRemotenessWithBridge(BrowserBridgeChild* aBridge,
-                                                    mozilla::ErrorResult& rv) {
+void nsFrameLoaderOwner::ChangeRemotenessWithBridge(
+    mozilla::ipc::ManagedEndpoint<mozilla::dom::PBrowserBridgeChild> aEndpoint,
+    uint64_t aTabId, mozilla::ErrorResult& rv) {
   MOZ_ASSERT(XRE_IsContentProcess());
   if (NS_WARN_IF(!mFrameLoader)) {
     rv.Throw(NS_ERROR_UNEXPECTED);
@@ -199,9 +192,24 @@ void nsFrameLoaderOwner::ChangeRemotenessWithBridge(BrowserBridgeChild* aBridge,
   }
 
   std::function<void()> frameLoaderInit = [&] {
-    RefPtr<BrowserBridgeHost> host = aBridge->FinishInit(mFrameLoader);
-    mFrameLoader->mBrowsingContext->SetEmbedderElement(
-        mFrameLoader->GetOwnerContent());
+    RefPtr<BrowsingContext> browsingContext = mFrameLoader->mBrowsingContext;
+    RefPtr<BrowserBridgeChild> bridge =
+        new BrowserBridgeChild(mFrameLoader, browsingContext, TabId(aTabId));
+    Document* ownerDoc = mFrameLoader->GetOwnerDoc();
+    if (NS_WARN_IF(!ownerDoc)) {
+      rv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+    }
+
+    RefPtr<BrowserChild> browser =
+        BrowserChild::GetFrom(ownerDoc->GetDocShell());
+    if (!browser->BindPBrowserBridgeEndpoint(std::move(aEndpoint), bridge)) {
+      rv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+    }
+
+    RefPtr<BrowserBridgeHost> host = bridge->FinishInit();
+    browsingContext->SetEmbedderElement(mFrameLoader->GetOwnerContent());
     mFrameLoader->mRemoteBrowser = host;
   };
 

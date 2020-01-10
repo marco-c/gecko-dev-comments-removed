@@ -1905,7 +1905,6 @@ void nsFrameLoader::DestroyDocShell() {
   }
 
   mBrowsingContext = nullptr;
-  mDocShell = nullptr;
 
   if (mChildMessageManager) {
     
@@ -2015,7 +2014,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   RefPtr<nsDocShell> docShell = nsDocShell::Create(mBrowsingContext);
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
-  mDocShell = docShell;
 
   mBrowsingContext->SetEmbedderElement(mOwnerContent);
 
