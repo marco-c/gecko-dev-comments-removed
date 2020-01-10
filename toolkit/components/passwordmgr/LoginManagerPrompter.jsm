@@ -929,11 +929,17 @@ LoginManagerPrompter.prototype = {
     this.log("promptToSavePassword");
     var notifyObj = this._getPopupNote();
     if (notifyObj) {
-      this._showLoginCaptureDoorhanger(aLogin, "password-save", {
-        dismissed: this._inPrivateBrowsing || dismissed,
-        notifySaved,
-        extraAttr: notifySaved ? "attention" : "",
-      });
+      this._showLoginCaptureDoorhanger(
+        aLogin,
+        "password-save",
+        {
+          dismissed: this._inPrivateBrowsing || dismissed,
+          extraAttr: notifySaved ? "attention" : "",
+        },
+        {
+          notifySaved,
+        }
+      );
       Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save");
     } else {
       this._showSaveLoginDialog(aLogin);
@@ -950,7 +956,16 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _showLoginCaptureDoorhanger(login, type, options = {}) {
+
+
+
+
+  _showLoginCaptureDoorhanger(
+    login,
+    type,
+    showOptions = {},
+    { notifySaved = false } = {}
+  ) {
     let { browser } = this._getNotifyWindow();
     if (!browser) {
       return;
@@ -1293,11 +1308,11 @@ LoginManagerPrompter.prototype = {
             return false;
           },
         },
-        options
+        showOptions
       )
     );
 
-    if (options.notifySaved) {
+    if (notifySaved) {
       let notification = popupNote.getNotification(notificationID);
       let anchor = notification.anchorElement;
       anchor.ownerGlobal.ConfirmationHint.show(anchor, "passwordSaved");
@@ -1437,11 +1452,17 @@ LoginManagerPrompter.prototype = {
     login.formActionOrigin = aNewLogin.formActionOrigin;
     login.password = aNewLogin.password;
     login.username = aNewLogin.username;
-    this._showLoginCaptureDoorhanger(login, "password-change", {
-      dismissed,
-      notifySaved,
-      extraAttr: notifySaved ? "attention" : "",
-    });
+    this._showLoginCaptureDoorhanger(
+      login,
+      "password-change",
+      {
+        dismissed,
+        extraAttr: notifySaved ? "attention" : "",
+      },
+      {
+        notifySaved,
+      }
+    );
 
     let oldGUID = aOldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid;
     Services.obs.notifyObservers(
