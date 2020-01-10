@@ -4,7 +4,7 @@
 
 
 :root {
-  --console-output-line-height: 14px;
+  --console-output-line-height: calc(14 / 11);
   --console-output-vertical-padding: 3px;
   
   --console-inline-start-gutter: 32px;
