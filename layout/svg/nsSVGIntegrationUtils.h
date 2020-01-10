@@ -208,6 +208,13 @@ class nsSVGIntegrationUtils final {
   
 
 
+  static bool CreateWebRenderCSSFilters(
+      mozilla::Span<const mozilla::StyleFilter> aFilters, nsIFrame* aFrame,
+      WrFiltersHolder& aWrFilters);
+
+  
+
+
 
   static bool BuildWebRenderFilters(
       nsIFrame* aFilteredFrame,
