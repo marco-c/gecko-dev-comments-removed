@@ -90,10 +90,9 @@ class PeerConnectionCtx {
   nsCOMPtr<nsITimer> mTelemetryTimer;
 
  private:
-  void DeliverStats(RTCStatsQuery& aQuery);
+  void DeliverStats(UniquePtr<dom::RTCStatsReportInternal>&& aReport);
 
-  std::map<nsString, std::unique_ptr<mozilla::dom::RTCStatsReportInternal>>
-      mLastReports;
+  std::map<nsString, UniquePtr<dom::RTCStatsReportInternal>> mLastReports;
   
   
   

@@ -717,7 +717,18 @@ MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTCPPacket(const void* data,
     CSFLogError(LOGTAG, "%s RTCP Processing Failed", __FUNCTION__);
     return kMediaConduitRTPProcessingFailed;
   }
+
+  
+  
+  mLastRtcpReceived = Some(GetNow());
   return kMediaConduitNoError;
+}
+
+
+
+Maybe<DOMHighResTimeStamp> WebrtcAudioConduit::LastRtcpReceived() const {
+  ASSERT_ON_THREAD(mStsThread);
+  return mLastRtcpReceived;
 }
 
 MediaConduitErrorCode WebrtcAudioConduit::StopTransmitting() {

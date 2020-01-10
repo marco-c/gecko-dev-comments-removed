@@ -105,6 +105,8 @@ class WebrtcVideoConduit
 
 
   MediaConduitErrorCode ReceivedRTCPPacket(const void* data, int len) override;
+  Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
+  DOMHighResTimeStamp GetNow() const override { return mCall->GetNow(); }
 
   MediaConduitErrorCode StopTransmitting() override;
   MediaConduitErrorCode StartTransmitting() override;
@@ -628,6 +630,9 @@ class WebrtcVideoConduit
 
   
   std::string mPCHandle;
+
+  
+  Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
 };
 }  
 

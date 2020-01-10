@@ -52,6 +52,8 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
 
   MediaConduitErrorCode ReceivedRTCPPacket(const void* data, int len) override;
+  Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
+  DOMHighResTimeStamp GetNow() const override { return mCall->GetNow(); }
 
   MediaConduitErrorCode StopTransmitting() override;
   MediaConduitErrorCode StartTransmitting() override;
@@ -357,6 +359,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   Maybe<DOMHighResTimeStamp> mRttSec;
+
+  
+  Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
 };
 
 }  

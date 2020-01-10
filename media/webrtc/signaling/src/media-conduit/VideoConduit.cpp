@@ -2044,7 +2044,17 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTCPPacket(const void* data,
     return kMediaConduitRTPProcessingFailed;
   }
 
+  
+  
+  mLastRtcpReceived = Some(GetNow());
   return kMediaConduitNoError;
+}
+
+
+
+Maybe<DOMHighResTimeStamp> WebrtcVideoConduit::LastRtcpReceived() const {
+  ASSERT_ON_THREAD(mStsThread);
+  return mLastRtcpReceived;
 }
 
 MediaConduitErrorCode WebrtcVideoConduit::StopTransmitting() {

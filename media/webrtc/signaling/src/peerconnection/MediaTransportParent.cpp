@@ -213,26 +213,21 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvUpdateNetworkState(
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceStats(
     const string& transportId, const double& now,
-    const RTCStatsReportInternal& reportIn, GetIceStatsResolver&& aResolve) {
-  
-  
-  
-  std::unique_ptr<dom::RTCStatsReportInternal> report(
-      new dom::RTCStatsReportInternal(reportIn));
-
-  mImpl->mHandler->GetIceStats(transportId, now, std::move(report))
+    GetIceStatsResolver&& aResolve) {
+  mImpl->mHandler->GetIceStats(transportId, now)
       ->Then(
           GetCurrentThreadSerialEventTarget(), __func__,
           
           
-          [aResolve = std::move(aResolve),
-           reportIn](MediaTransportHandler::StatsPromise::ResolveOrRejectValue&&
-                         aResult) {
+          [aResolve = std::move(aResolve)](
+              dom::RTCStatsPromise::ResolveOrRejectValue&& aResult) {
             if (aResult.IsResolve()) {
-              MovableRTCStatsReportInternal copy(*aResult.ResolveValue());
-              aResolve(copy);
+              aResolve(
+                  dom::NotReallyMovableButLetsPretendItIsRTCStatsCollection(
+                      *aResult.ResolveValue()));
             } else {
-              aResolve(MovableRTCStatsReportInternal(reportIn));
+              dom::NotReallyMovableButLetsPretendItIsRTCStatsCollection empty;
+              aResolve(empty);
             }
           });
 
