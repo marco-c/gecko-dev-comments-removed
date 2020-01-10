@@ -277,11 +277,12 @@ static void IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame,
   }
 
   
+  
+  
   nsStyleTransformMatrix::TransformReferenceBox refBox(aFrame);
   Matrix4x4 transform = nsStyleTransformMatrix::ReadTransforms(
-      display->mTranslate, display->mRotate, display->mScale,
-      MotionPathUtils::ResolveMotionPath(aFrame), display->mTransform, refBox,
-      AppUnitsPerCSSPixel());
+      display->mTranslate, display->mRotate, display->mScale, Nothing(),
+      display->mTransform, refBox, AppUnitsPerCSSPixel());
   Matrix transform2D;
   if (!transform.Is2D(&transform2D)) {
     

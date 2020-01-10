@@ -2924,32 +2924,6 @@ nsresult SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
   return NS_OK;
 }
 
-void SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
-  if (mState & NS_FRAME_IS_NONDISPLAY) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ScheduleReflowSVGNonDisplayText(IntrinsicDirty::StyleChange);
-  }
-}
-
 void SVGTextFrame::ReflowSVGNonDisplayText() {
   MOZ_ASSERT(nsSVGUtils::AnyOuterSVGIsCallingReflowSVG(this),
              "only call ReflowSVGNonDisplayText when an outer SVG frame is "
