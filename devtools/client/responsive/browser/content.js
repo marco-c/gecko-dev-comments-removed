@@ -218,7 +218,7 @@ var global = this;
 
   function setDocumentInRDMPane(inRDMPane) {
     
-    docShell.contentViewer.DOMDocument.inRDMPane = inRDMPane;
+    docShell.browsingContext.inRDMPane = inRDMPane;
   }
 
   function flushStyle() {
@@ -262,7 +262,6 @@ var global = this;
       if (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
         return;
       }
-      setDocumentInRDMPane(true);
       
       
       
