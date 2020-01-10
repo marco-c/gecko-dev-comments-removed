@@ -19,9 +19,8 @@ enum class MediaControlKeysEvent { ePlayPause, ePrev, eNext, eNone };
 
 
 
-class MediaControlKeysEventListener {
+class MediaControlKeysEventListener : public nsISupports {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaControlKeysEventListener);
   MediaControlKeysEventListener() = default;
 
   virtual void OnKeyPressed(MediaControlKeysEvent aKeyEvent) = 0;
@@ -36,7 +35,12 @@ class MediaControlKeysEventListener {
 
 class MediaControlKeysHandler final : public MediaControlKeysEventListener {
  public:
+  NS_DECL_ISUPPORTS
+
   void OnKeyPressed(MediaControlKeysEvent aKeyEvent) override;
+
+ private:
+  virtual ~MediaControlKeysHandler() = default;
 };
 
 
@@ -44,9 +48,10 @@ class MediaControlKeysHandler final : public MediaControlKeysEventListener {
 
 
 
-class MediaControlKeysEventSource {
+class MediaControlKeysEventSource : public nsISupports {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaControlKeysEventSource);
+  NS_DECL_ISUPPORTS
+
   MediaControlKeysEventSource() = default;
 
   virtual void AddListener(MediaControlKeysEventListener* aListener);
