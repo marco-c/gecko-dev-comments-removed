@@ -45,13 +45,20 @@ function setupServer(mm) {
   DebuggerServer.registerActors({ root: true, target: true });
 
   
-  mm.addMessageListener("debug:content-process-destroy", function onDestroy() {
-    mm.removeMessageListener("debug:content-process-destroy", onDestroy);
+  
+  function destroyServer() {
+    
+    
+    if (DebuggerServer.hasConnection()) {
+      return;
+    }
+    DebuggerServer.off("connectionchange", destroyServer);
 
     DebuggerServer.destroy();
     gLoader.destroy();
     gLoader = null;
-  });
+  }
+  DebuggerServer.on("connectionchange", destroyServer);
 
   return gLoader;
 }
@@ -80,4 +87,22 @@ function init(msg) {
 
   const response = { actor: actor.form() };
   mm.sendAsyncMessage("debug:content-process-actor", response);
+
+  
+  mm.addMessageListener("debug:content-process-disconnect", function onDestroy(
+    message
+  ) {
+    if (message.data.prefix != prefix) {
+      
+      
+      
+      return;
+    }
+    mm.removeMessageListener("debug:content-process-disconnect", onDestroy);
+
+    
+    
+    
+    conn.close();
+  });
 }

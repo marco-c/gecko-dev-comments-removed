@@ -84,7 +84,7 @@ function connectToContentProcess(connection, mm, onDestroy) {
 
         
         try {
-          mm.sendAsyncMessage("debug:content-process-destroy");
+          mm.sendAsyncMessage("debug:content-process-disconnect", { prefix });
         } catch (e) {
           
         }
