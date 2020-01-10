@@ -181,10 +181,11 @@ static bool WritableStream_abort(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
+  
   Rooted<WritableStream*> unwrappedStream(
       cx, UnwrapAndTypeCheckThis<WritableStream>(cx, args, "abort"));
   if (!unwrappedStream) {
-    return false;
+    return ReturnPromiseRejectedWithPendingError(cx, args);
   }
 
   
