@@ -528,6 +528,11 @@ class CellWithLengthAndFlags : public BaseCell {
   }
 
   
+  static constexpr size_t offsetOfRawFlagsField() {
+    return offsetof(CellWithLengthAndFlags, flags_);
+  }
+
+  
   
 #if JS_BITS_PER_WORD == 32
   static constexpr size_t offsetOfFlags() {
