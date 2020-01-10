@@ -1106,28 +1106,17 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   
   if (!iter.moreFrames() || catchingException) {
-    bool propagatingIonExceptionForDebugMode =
-        (excInfo && excInfo->propagatingIonExceptionForDebugMode());
-
-    
-    
-    
-    
-    
-    if (resumeAfter && (CodeSpec[op].format & JOF_TYPESET) &&
-        !propagatingIonExceptionForDebugMode) {
-      builder.setMonitorPC(pc);
-    }
-
     builder.setResumeFramePtr(prevFramePtr);
 
+    
+    
     uint8_t* resumeAddr;
     if (isPrologueBailout) {
       JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
       MOZ_ASSERT(pc == script->code());
       blFrame->setInterpreterFieldsForPrologueBailout(script);
       resumeAddr = baselineInterp.bailoutPrologueEntryAddr();
-    } else if (propagatingIonExceptionForDebugMode) {
+    } else if (excInfo && excInfo->propagatingIonExceptionForDebugMode()) {
       
       
       
@@ -1136,6 +1125,11 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       blFrame->setInterpreterFields(script, throwPC);
       resumeAddr = baselineInterp.interpretOpAddr().value;
     } else {
+      
+      
+      if (resumeAfter && (CodeSpec[op].format & JOF_TYPESET)) {
+        builder.setMonitorPC(pc);
+      }
       jsbytecode* resumePC = GetResumePC(script, pc, resumeAfter);
       blFrame->setInterpreterFields(script, resumePC);
       resumeAddr = baselineInterp.interpretOpAddr().value;
