@@ -200,6 +200,12 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
 
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName, bool aNotify);
 
+  
+
+
+
+  void MaybeStoreCrossOriginFeaturePolicy();
+
   RefPtr<dom::FeaturePolicy> mFeaturePolicy;
   RefPtr<nsDOMTokenList> mSandbox;
 };

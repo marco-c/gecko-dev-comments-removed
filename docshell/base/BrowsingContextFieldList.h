@@ -36,4 +36,5 @@ MOZ_BC_FIELD(UserActivationState, UserActivation::State)
 
 MOZ_BC_FIELD(Muted, bool)
 
+MOZ_BC_FIELD(FeaturePolicy, RefPtr<mozilla::dom::FeaturePolicy>)
 #undef MOZ_BC_FIELD
