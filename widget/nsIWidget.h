@@ -1713,6 +1713,15 @@ class nsIWidget : public nsISupports {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
+  
+  
+  
+#ifdef MOZ_WAYLAND
+  virtual nsresult GetScreenRect(LayoutDeviceIntRect* aRect) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+#endif
+
  private:
   class LongTapInfo {
    public:
