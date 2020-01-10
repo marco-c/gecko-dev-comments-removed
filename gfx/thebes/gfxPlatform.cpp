@@ -2906,18 +2906,19 @@ static FeatureState& WebRenderHardwareQualificationStatus(
   
   
   if (aHasBattery) {
+#ifndef XP_WIN
+    
+    
+    MOZ_ASSERT(false);
+#endif
     
     
     
     *aOutGuardedByQualifiedPref = true;
 
     
-    
-    
-    
     const int32_t kMaxPixelsBattery = 1920 * 1200;  
-    if ((adapterVendorID == u"0x8086" || adapterVendorID == u"0x1002") &&
-        screenPixels > 0 && screenPixels <= kMaxPixelsBattery) {
+    if (screenPixels > 0 && screenPixels <= kMaxPixelsBattery) {
 #ifndef NIGHTLY_BUILD
       featureWebRenderQualified.Disable(
           FeatureStatus::BlockedReleaseChannelBattery,
