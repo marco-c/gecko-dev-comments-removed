@@ -24,10 +24,19 @@ class MediaControlKeysEventListener {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaControlKeysEventListener);
   MediaControlKeysEventListener() = default;
 
-  virtual void OnKeyPressed(MediaControlKeysEvent aKeyEvent);
+  virtual void OnKeyPressed(MediaControlKeysEvent aKeyEvent) = 0;
 
  protected:
   virtual ~MediaControlKeysEventListener() = default;
+};
+
+
+
+
+
+class MediaControlKeysHandler final : public MediaControlKeysEventListener {
+ public:
+  void OnKeyPressed(MediaControlKeysEvent aKeyEvent) override;
 };
 
 
