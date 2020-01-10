@@ -45,6 +45,8 @@ function Notification(context, notificationsMap, id, options) {
     );
   } catch (e) {
     
+
+    this.observe(null, "alertfinished", id);
   }
 }
 
