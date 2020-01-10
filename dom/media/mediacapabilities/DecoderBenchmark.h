@@ -33,6 +33,12 @@ class DecoderBenchmark final {
   static RefPtr<BenchmarkScorePromise> Get(
       const DecoderBenchmarkInfo& aBenchInfo);
 
+  
+
+
+
+  static void CheckVersion(const nsACString& aDecoderName);
+
  private:
   void StoreScore(const nsACString& aDecoderName, const nsACString& aKey,
                   RefPtr<FrameStatistics> aStats);
