@@ -494,13 +494,16 @@ DevTools.prototype = {
 
 
 
+
+
   async showToolbox(
     target,
     toolId,
     hostType,
     hostOptions,
     startTime,
-    reason = "toolbox_show"
+    reason = "toolbox_show",
+    shouldRaiseToolbox = true
   ) {
     let toolbox = this._toolboxes.get(target);
 
@@ -515,7 +518,9 @@ DevTools.prototype = {
         await toolbox.selectTool(toolId, reason);
       }
 
-      toolbox.raise();
+      if (shouldRaiseToolbox) {
+        toolbox.raise();
+      }
     } else {
       
       
