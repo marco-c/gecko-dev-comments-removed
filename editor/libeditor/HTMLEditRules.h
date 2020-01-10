@@ -801,16 +801,6 @@ class HTMLEditRules : public TextEditRules {
                     nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                     TouchContent aTouchContent) const;
 
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult
-  GetNodesFromSelection(EditSubAction aEditSubAction,
-                        nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
-                        TouchContent aTouchContent) const;
-
   enum class EntireList { no, yes };
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
