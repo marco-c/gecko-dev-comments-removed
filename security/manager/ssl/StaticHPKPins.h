@@ -757,7 +757,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "firefox.com", true, true, true, 15, &kPinset_mozilla_services },
   { "fj.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
   { "fr.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
-  { "g.co", true, false, false, -1, &kPinset_google_root_pems },
+  { "g.co", false, false, false, -1, &kPinset_google_root_pems },
   { "g4w.co", true, false, false, -1, &kPinset_google_root_pems },
   { "ggpht.com", true, false, false, -1, &kPinset_google_root_pems },
   { "gl.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
@@ -1133,6 +1133,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "withyoutube.com", true, false, false, -1, &kPinset_google_root_pems },
   { "www.dropbox.com", true, false, false, -1, &kPinset_dropbox },
   { "www.facebook.com", true, false, false, -1, &kPinset_facebook },
+  { "www.g.co", false, false, false, -1, &kPinset_google_root_pems },
   { "www.gmail.com", false, false, false, -1, &kPinset_google_root_pems },
   { "www.googlegroups.com", true, false, false, -1, &kPinset_google_root_pems },
   { "www.googlemail.com", false, false, false, -1, &kPinset_google_root_pems },
@@ -1155,4 +1156,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1574346843950000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1574686834053000);
