@@ -157,6 +157,8 @@ class EventListenerManagerBase {
   uint16_t mMayHaveSelectionChangeEventListener : 1;
   uint16_t mClearingListeners : 1;
   uint16_t mIsMainThreadELM : 1;
+  uint16_t mHasNonPrivilegedClickListeners : 1;
+  uint16_t mUnknownNonPrivilegedClickListeners : 1;
   
 };
 
@@ -426,6 +428,8 @@ class EventListenerManager final : public EventListenerManagerBase {
     return mMayHaveSelectionChangeEventListener;
   }
 
+  bool HasNonPrivilegedClickListeners();
+
   
 
 
@@ -458,6 +462,8 @@ class EventListenerManager final : public EventListenerManagerBase {
   bool IsApzAwareListener(Listener* aListener);
   bool IsApzAwareEvent(nsAtom* aEvent);
 
+  
+  bool IsNonChromeClickListener(Listener* aListener);
   
 
 

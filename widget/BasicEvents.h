@@ -176,6 +176,10 @@ struct BaseEventFlags {
   bool mPostedToRemoteProcess : 1;
 
   
+  
+  bool mHadNonPrivilegedClickListeners : 1;
+
+  
   inline bool InTargetPhase() const {
     return (mInBubblingPhase && mInCapturePhase);
   }
@@ -365,7 +369,7 @@ struct BaseEventFlags {
   }
 
  private:
-  typedef uint32_t RawFlags;
+  typedef uint64_t RawFlags;
 
   inline void SetRawFlags(RawFlags aRawFlags) {
     static_assert(sizeof(BaseEventFlags) <= sizeof(RawFlags),
