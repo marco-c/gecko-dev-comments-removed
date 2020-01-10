@@ -608,8 +608,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       
       
       this.applyStyles({
-        "white-space": "pre-line",
-        "font": this.fontSize + " sans-serif",
         "background-color": "rgba(0, 0, 0, 0.8)",
         "display": "inline",
       }, this.cueDiv);
