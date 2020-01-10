@@ -614,7 +614,10 @@ void MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
     return;
   }
 
-  if (!mContext->AllowZoomingForDocument()) {
+  if (!mContext->AllowZoomingForDocument() || mContext->IsInReaderMode()) {
+    
+    
+    
     
     
     
