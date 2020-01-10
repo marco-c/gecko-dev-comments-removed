@@ -1053,13 +1053,15 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   
   
-  uint32_t frameSize = builder.framePushed();
-  blFrame->setFrameSize(frameSize);
+  const uint32_t frameSize = builder.framePushed();
+#ifdef DEBUG
+  blFrame->setDebugFrameSize(frameSize);
+#endif
   JitSpew(JitSpew_BaselineBailouts, "      FrameSize=%u", frameSize);
 
   
-  MOZ_ASSERT(blFrame->numValueSlots() >= script->nfixed());
-  MOZ_ASSERT(blFrame->numValueSlots() <= script->nslots());
+  MOZ_ASSERT(blFrame->debugNumValueSlots() >= script->nfixed());
+  MOZ_ASSERT(blFrame->debugNumValueSlots() <= script->nslots());
 
   const uint32_t pcOff = script->pcToOffset(pc);
   JitScript* jitScript = script->jitScript();
@@ -1285,7 +1287,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     }
 
     
-    size_t valueSlot = blFrame->numValueSlots() - 1;
+    size_t valueSlot = blFrame->numValueSlots(frameSize) - 1;
     size_t calleeSlot = valueSlot - actualArgc - 1 - pushedNewTarget;
 
     for (size_t i = valueSlot; i > calleeSlot; i--) {
@@ -1888,7 +1890,8 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     
     if (fallbackStub->isMonitoredFallback()) {
       ICMonitoredFallbackStub* stub = fallbackStub->toMonitoredFallbackStub();
-      RootedValue val(cx, topFrame->topStackValue());
+      uint32_t frameSize = bailoutInfo->frameSizeOfInnerMostFrame;
+      RootedValue val(cx, topFrame->topStackValue(frameSize));
       if (!TypeMonitorResult(cx, stub, topFrame, script, monitorPC, val)) {
         return false;
       }

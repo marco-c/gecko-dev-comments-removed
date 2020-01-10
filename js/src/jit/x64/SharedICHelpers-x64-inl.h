@@ -23,11 +23,14 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   masm.addq(Imm32(BaselineFrame::FramePointerOffset), scratch);
   masm.subq(BaselineStackReg, scratch);
 
+#ifdef DEBUG
   
   masm.movq(scratch, rdx);
   masm.subq(Imm32(argSize), rdx);
-  masm.store32(rdx, Address(BaselineFrameReg,
-                            BaselineFrame::reverseOffsetOfFrameSize()));
+  Address frameSizeAddr(BaselineFrameReg,
+                        BaselineFrame::reverseOffsetOfDebugFrameSize());
+  masm.store32(rdx, frameSizeAddr);
+#endif
 
   
   masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
@@ -81,8 +84,11 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register) {
   masm.movq(BaselineFrameReg, scratch);
   masm.subq(BaselineStackReg, scratch);
 
-  masm.store32(scratch, Address(BaselineFrameReg,
-                                BaselineFrame::reverseOffsetOfFrameSize()));
+#ifdef DEBUG
+  Address frameSizeAddr(BaselineFrameReg,
+                        BaselineFrame::reverseOffsetOfDebugFrameSize());
+  masm.store32(scratch, frameSizeAddr);
+#endif
 
   
   
