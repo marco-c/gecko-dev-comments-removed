@@ -40,7 +40,7 @@ enum class GamepadCapabilityFlags : uint16_t;
 #endif  
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 8;
+static const int32_t kVRExternalVersion = 9;
 
 
 
@@ -118,6 +118,8 @@ enum class ControllerCapabilityFlags : uint16_t {
 
 #endif  
 
+enum class VRDisplayBlendMode : uint8_t { Opaque, Additive, AlphaBlend };
+
 enum class VRDisplayCapabilityFlags : uint16_t {
   Cap_None = 0,
   
@@ -174,11 +176,29 @@ enum class VRDisplayCapabilityFlags : uint16_t {
   
 
 
-  Cap_All = (1 << 10) - 1
+
+  Cap_Inline = 1 << 10,
+  
+
+
+
+
+  Cap_ImmersiveVR = 1 << 11,
+  
+
+
+
+
+  Cap_ImmersiveAR = 1 << 12,
+  
+
+
+  Cap_All = (1 << 13) - 1
 };
 
 #ifdef MOZILLA_INTERNAL_API
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(VRDisplayCapabilityFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(VRDisplayBlendMode)
 #endif  
 
 struct VRPose {
@@ -275,6 +295,7 @@ struct VRDisplayState {
   
   uint64_t eightCC;
   VRDisplayCapabilityFlags capabilityFlags;
+  VRDisplayBlendMode blendMode;
   VRFieldOfView eyeFOV[VRDisplayState::NumEyes];
   Point3D_POD eyeTranslation[VRDisplayState::NumEyes];
   IntSize_POD eyeResolution;
