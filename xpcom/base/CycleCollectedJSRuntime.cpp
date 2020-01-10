@@ -1215,6 +1215,8 @@ void CycleCollectedJSRuntime::NurseryWrapperPreserved(JSObject* aWrapper) {
 void CycleCollectedJSRuntime::DeferredFinalize(
     DeferredFinalizeAppendFunction aAppendFunc, DeferredFinalizeFunction aFunc,
     void* aThing) {
+  
+  JS::AutoSuppressGCAnalysis suppress;
   if (auto entry = mDeferredFinalizerTable.LookupForAdd(aFunc)) {
     aAppendFunc(entry.Data(), aThing);
   } else {

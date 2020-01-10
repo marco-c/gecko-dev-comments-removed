@@ -71,6 +71,12 @@ function indirectCallCannotGC(fullCaller, fullVariable)
     if (name == "f" && caller.includes("js::MathCache::lookup"))
         return true;
 
+    
+    
+    
+    if (name == "func" && caller == "PR_CallOnce")
+        return true;
+
     return false;
 }
 
@@ -85,6 +91,8 @@ var ignoreClasses = {
     "_MD_IOVector" : true,
     "malloc_table_t": true, 
     "malloc_hook_table_t": true, 
+    "mozilla::MallocSizeOf": true,
+    "MozMallocSizeOf": true,
 };
 
 
@@ -99,6 +107,7 @@ var ignoreCallees = {
     "mozilla::CycleCollectedJSRuntime.DescribeCustomObjects" : true, 
     "mozilla::CycleCollectedJSRuntime.NoteCustomGCThingXPCOMChildren" : true, 
     "PLDHashTableOps.hashKey" : true,
+    "PLDHashTableOps.clearEntry" : true,
     "z_stream_s.zfree" : true,
     "z_stream_s.zalloc" : true,
     "GrGLInterface.fCallback" : true,
@@ -106,6 +115,7 @@ var ignoreCallees = {
     "std::strstreambuf._M_free_fun" : true,
     "struct js::gc::Callback<void (*)(JSContext*, void*)>.op" : true,
     "mozilla::ThreadSharedFloatArrayBufferList::Storage.mFree" : true,
+    "mozilla::SizeOfState.mMallocSizeOf": true,
 };
 
 function fieldCallCannotGC(csu, fullfield)
@@ -252,6 +262,9 @@ var ignoreFunctions = {
     "PR_GetCurrentThread" : true,
     "calloc" : true,
 
+    
+    "_PR_UnixInit" : true,
+
     "uint8 nsContentUtils::IsExpandedPrincipal(nsIPrincipal*)" : true,
 
     "void mozilla::AutoProfilerLabel::~AutoProfilerLabel(int32)" : true,
@@ -259,6 +272,26 @@ var ignoreFunctions = {
     
     
     "void mozilla::ProfilerLabelEnd(mozilla::Tuple<void*, unsigned int>*)" : true,
+
+    
+    
+    "mozilla::LogModule* mozilla::LogModule::Get(int8*)": true,
+
+    
+    
+    "nsCycleCollector.cpp:nsISupports* CanonicalizeXPCOMParticipant(nsISupports*)": true,
+
+    
+    "void mozilla::DeadlockDetector<T>::Add(const T*) [with T = mozilla::BlockingResourceBase]": true,
+
+    
+    "void mozilla::detail::log_print(mozilla::LogModule*, int32, int8*)": true,
+
+    
+    "uint8 XPCJSRuntime::DescribeCustomObjects(JSObject*, JSClass*, int8[72]*)[72]) const": true,
+
+    
+    "uint64 nsCycleCollectingAutoRefCnt::incr(void*, nsCycleCollectionParticipant*) [with void (* suspect)(void*, nsCycleCollectionParticipant*, nsCycleCollectingAutoRefCnt*, bool*) = NS_CycleCollectorSuspect3; uintptr_t = long unsigned int]": true,
 };
 
 function extraGCFunctions() {
@@ -315,13 +348,18 @@ function ignoreGCFunction(mangled)
         return true;
 
     
+    
+    if (fun.includes("UnwrapObjectInternal") && fun.includes("mayBeWrapper = false"))
+        return true;
+
+    
     if (fun.includes("js::WeakMap<Key, Value, HashPolicy>::getDelegate("))
         return true;
 
     
     
     
-    if (/refillFreeList|tryNew/.test(fun) && /\(js::AllowGC\)0u/.test(fun))
+    if (/refillFreeList|tryNew/.test(fun) && /\(js::AllowGC\)0/.test(fun))
         return true;
 
     return false;
@@ -426,6 +464,27 @@ function isOverridableField(staticCSU, csu, field)
         return false;
     if (field == "ConstructUbiNode")
         return false;
+
+    
+    if (field == "GetSiteOrigin")
+        return false;
+    if (field == "GetDomain")
+        return false;
+    if (field == "GetBaseDomain")
+        return false;
+    if (field == "GetOriginNoSuffix")
+        return false;
+
+    
+    if (field == "GetScheme")
+        return false;
+    if (field == "GetAsciiHostPort")
+        return false;
+    if (field == "GetAsciiSpec")
+        return false;
+    if (field == "SchemeIs")
+        return false;
+
     if (staticCSU == 'nsIXPCScriptable' && field == "GetScriptableFlags")
         return false;
     if (staticCSU == 'nsIXPConnectJSObjectHolder' && field == 'GetJSObject')
