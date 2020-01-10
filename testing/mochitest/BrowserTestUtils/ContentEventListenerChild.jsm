@@ -143,12 +143,16 @@ class ContentEventListenerChild extends JSWindowActorChild {
       
       
       if (!this._chromeEventHandler) {
-        if (!this.docShell) {
-          throw new Error(
-            "Trying to add a new event listener for waitForContentEvent without a docshell"
-          );
+        try {
+          this._chromeEventHandler = this.docShell.chromeEventHandler;
+        } catch (error) {
+          if (error.name === "InvalidStateError") {
+            
+            
+            continue;
+          }
+          throw error;
         }
-        this._chromeEventHandler = this.docShell.chromeEventHandler;
       }
 
       
