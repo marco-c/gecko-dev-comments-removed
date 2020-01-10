@@ -157,6 +157,11 @@ class StaticAnalysis(MachCommandBase):
     def static_analysis(self):
         
         mach = Mach(os.getcwd())
+
+        def populate_context(context, key=None):
+            context.topdir = self.topsrcdir
+
+        mach.populate_context_handler = populate_context
         mach.run(['static-analysis', '--help'])
 
     @StaticAnalysisSubCommand('static-analysis', 'check',
