@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 
 def test(mod, path, entity=None):
     import re
