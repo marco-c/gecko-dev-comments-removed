@@ -5,6 +5,9 @@ var exceptionsDialog;
 
 add_task(async function openLoginExceptionsSubDialog() {
   
+  ok(!Services.prefs.getBoolPref("signon.rememberSignons"), "Check initial value of signon.rememberSignons pref");
+
+  
   registerCleanupFunction(async function() {
     await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
       let doc = content.document;

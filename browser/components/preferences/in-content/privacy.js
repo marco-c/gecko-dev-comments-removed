@@ -32,6 +32,8 @@ const PREF_NORMANDY_ENABLED = "app.normandy.enabled";
 
 const PREF_ADDON_RECOMMENDATIONS_ENABLED = "browser.discovery.enabled";
 
+const PREF_PASSWORD_GENERATION_AVAILABLE = "signon.generation.available";
+
 XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
   try {
     let alertsService = Cc["@mozilla.org/alerts-service;1"]
@@ -95,6 +97,7 @@ Preferences.addAll([
   { id: "dom.disable_open_during_load", type: "bool" },
   
   { id: "signon.rememberSignons", type: "bool" },
+  { id: "signon.generation.enabled", type: "bool" },
 
   
   { id: "pref.privacy.disable_button.view_passwords", type: "bool" },
@@ -354,7 +357,10 @@ var gPrivacyPane = {
       gPrivacyPane.showSecurityDevices);
 
     this._pane = document.getElementById("panePrivacy");
+
+    this._initPasswordGenerationUI();
     this._initMasterPasswordUI();
+
     this._initSafeBrowsing();
 
     setEventListener("autoplaySettingsButton", "command",
@@ -1422,6 +1428,16 @@ var gPrivacyPane = {
 
 
 
+  _initPasswordGenerationUI() {
+    
+    let prefValue = Services.prefs.getBoolPref(PREF_PASSWORD_GENERATION_AVAILABLE, false);
+    document.getElementById("generatePasswordsBox").hidden = !prefValue;
+  },
+
+  
+
+
+
   showPasswords() {
     if (LoginHelper.managementURI) {
       window.docShell.messageManager.sendAsyncMessage("PasswordManager:OpenPreferences", {
@@ -1438,16 +1454,22 @@ var gPrivacyPane = {
 
 
 
+
+
   readSavePasswords() {
     var pref = Preferences.get("signon.rememberSignons");
     var excepts = document.getElementById("passwordExceptions");
+    var generatePasswords = document.getElementById("generatePasswords");
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
       document.getElementById("savePasswords").disabled = true;
       excepts.disabled = true;
+      generatePasswords.disabled = true;
       return false;
     }
     excepts.disabled = !pref.value;
+    generatePasswords.disabled = !pref.value;
+
     
     return undefined;
   },
