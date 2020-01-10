@@ -22,6 +22,7 @@
 #include "mozilla/RemoteDecoderManagerChild.h"
 #include "mozilla/RemoteDecoderManagerParent.h"
 #include "mozilla/dom/MemoryReportRequest.h"
+#include "mozilla/webgpu/WebGPUThreading.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/image/ImageMemoryReporter.h"
@@ -179,6 +180,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   gfxConfig::Inherit(Feature::OPENGL_COMPOSITING, devicePrefs.oglCompositing());
   gfxConfig::Inherit(Feature::ADVANCED_LAYERS, devicePrefs.advancedLayers());
   gfxConfig::Inherit(Feature::DIRECT2D, devicePrefs.useD2D1());
+  gfxConfig::Inherit(Feature::WEBGPU, devicePrefs.webGPU());
 
   {  
     
@@ -264,6 +266,10 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
     }
   }
 #endif
+
+  if (gfxConfig::IsEnabled(Feature::WEBGPU)) {
+    webgpu::WebGPUThreading::Start();
+  }
 
   VRManager::ManagerInit();
   
@@ -530,6 +536,10 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
 #endif
 
   image::ImageMemoryReporter::ShutdownForWebRender();
+
+  if (gfxConfig::IsEnabled(Feature::WEBGPU)) {
+    webgpu::WebGPUThreading::ShutDown();
+  }
 
   
   gl::GLContextProvider::Shutdown();
