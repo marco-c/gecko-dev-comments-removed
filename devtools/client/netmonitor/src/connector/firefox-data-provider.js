@@ -93,7 +93,7 @@ class FirefoxDataProvider {
         id,
         {
           
-          startedMillis: Date.parse(startedDateTime),
+          startedMs: Date.parse(startedDateTime),
           method,
           url,
           isXHR,

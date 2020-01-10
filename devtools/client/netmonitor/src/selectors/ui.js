@@ -14,19 +14,16 @@ const getWaterfallScale = createSelector(
   state => state.timingMarkers,
   state => state.ui,
   (requests, timingMarkers, ui) => {
-    if (
-      requests.firstStartedMillis === +Infinity ||
-      ui.waterfallWidth === null
-    ) {
+    if (requests.firstStartedMs === +Infinity || ui.waterfallWidth === null) {
       return null;
     }
 
-    const lastEventMillis = Math.max(
-      requests.lastEndedMillis,
+    const lastEventMs = Math.max(
+      requests.lastEndedMs,
       timingMarkers.firstDocumentDOMContentLoadedTimestamp,
       timingMarkers.firstDocumentLoadTimestamp
     );
-    const longestWidth = lastEventMillis - requests.firstStartedMillis;
+    const longestWidth = lastEventMs - requests.firstStartedMs;
 
     
     return Math.min(

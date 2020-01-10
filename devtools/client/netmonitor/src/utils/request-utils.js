@@ -415,8 +415,8 @@ function propertiesEqual(props, item1, item2) {
 
 
 
-function getStartTime(item, firstRequestStartedMillis = 0) {
-  return item.startedMillis - firstRequestStartedMillis;
+function getStartTime(item, firstRequestStartedMs = 0) {
+  return item.startedMs - firstRequestStartedMs;
 }
 
 
@@ -427,9 +427,9 @@ function getStartTime(item, firstRequestStartedMillis = 0) {
 
 
 
-function getEndTime(item, firstRequestStartedMillis = 0) {
-  const { startedMillis, totalTime } = item;
-  return startedMillis + totalTime - firstRequestStartedMillis;
+function getEndTime(item, firstRequestStartedMs = 0) {
+  const { startedMs, totalTime } = item;
+  return startedMs + totalTime - firstRequestStartedMs;
 }
 
 
@@ -440,13 +440,10 @@ function getEndTime(item, firstRequestStartedMillis = 0) {
 
 
 
-function getResponseTime(item, firstRequestStartedMillis = 0) {
-  const { startedMillis, totalTime, eventTimings = { timings: {} } } = item;
+function getResponseTime(item, firstRequestStartedMs = 0) {
+  const { startedMs, totalTime, eventTimings = { timings: {} } } = item;
   return (
-    startedMillis +
-    totalTime -
-    firstRequestStartedMillis -
-    eventTimings.timings.receive
+    startedMs + totalTime - firstRequestStartedMs - eventTimings.timings.receive
   );
 }
 
