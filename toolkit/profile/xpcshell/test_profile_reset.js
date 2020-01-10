@@ -20,7 +20,11 @@ add_task(async () => {
   Assert.ok(profileData.options.startWithLastProfile, "Should be set to start with the last profile.");
   Assert.equal(profileData.profiles.length, 2, "Should have the right number of profiles, ours and the old-style default.");
 
-  let profile = profileData.profiles[AppConstants.MOZ_DEV_EDITION ? 0 : 1];
+  let profile = profileData.profiles[0];
+  Assert.equal(profile.name, "default", "Should have the right name.");
+  Assert.ok(profile.default, "Should be marked as the old-style default.");
+
+  profile = profileData.profiles[1];
   Assert.equal(profile.name, DEDICATED_NAME, "Should have the right name.");
   Assert.ok(!profile.default, "Should not be marked as the old-style default.");
 
