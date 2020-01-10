@@ -18,7 +18,6 @@
 #include "mozilla/ipc/PParentToChildStreamParent.h"
 #include "mozilla/ipc/PChildToParentStreamParent.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/DataMutex.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/LinkedList.h"
@@ -115,7 +114,6 @@ class MemoryReport;
 class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
-class RemoteWorkerManager;
 struct CancelContentJSOptions;
 
 #define NS_CONTENTPARENT_IID                         \
@@ -147,7 +145,6 @@ class ContentParent final : public PContentParent,
 
   friend class mozilla::PreallocatedProcessManagerImpl;
   friend class PContentParent;
-  friend class mozilla::dom::RemoteWorkerManager;
 #ifdef FUZZING
   friend class mozilla::ipc::ProtocolFuzzerHelper;
 #endif
@@ -751,7 +748,7 @@ class ContentParent final : public PContentParent,
 
 
 
-  bool ShouldKeepProcessAlive();
+  bool ShouldKeepProcessAlive() const;
 
   
 
@@ -776,8 +773,6 @@ class ContentParent final : public PContentParent,
     
     CLOSE_CHANNEL_WITH_ERROR,
   };
-
-  void MaybeAsyncSendShutDownMessage();
 
   
 
@@ -1249,20 +1244,7 @@ class ContentParent final : public PContentParent,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  struct RemoteWorkerActorData {
-    uint32_t mCount = 0;
-    bool mShutdownStarted = false;
-  };
-
-  DataMutex<RemoteWorkerActorData> mRemoteWorkerActorData;
+  Atomic<uint32_t> mRemoteWorkerActors;
 
   
   

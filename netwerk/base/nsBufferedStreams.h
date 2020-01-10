@@ -92,22 +92,6 @@ class nsBufferedInputStream final : public nsBufferedStream,
 
   nsIInputStream* Source() { return (nsIInputStream*)mStream.get(); }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<nsIInputStream> GetInputStream();
-
  protected:
   virtual ~nsBufferedInputStream() = default;
 
