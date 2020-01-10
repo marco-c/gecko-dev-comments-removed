@@ -1352,9 +1352,6 @@ pref("network.http.referer.XOriginTrimmingPolicy", 0);
 pref("network.http.referer.XOriginPolicy", 0);
 
 
-pref("network.http.referer.referrerLengthLimit", 4096);
-
-
 
 pref("network.http.sendOriginHeader", 2);
 
