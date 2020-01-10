@@ -1630,9 +1630,6 @@ struct StackShape {
   }
 
   
-  static void trace(StackShape* stackShape, JSTracer* trc) {
-    stackShape->trace(trc);
-  }
   void trace(JSTracer* trc);
 };
 
