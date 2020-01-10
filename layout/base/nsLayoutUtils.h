@@ -2445,14 +2445,6 @@ class nsLayoutUtils {
 
   static bool FontSizeInflationEnabled(nsPresContext* aPresContext);
 
-  
-
-
-
-  static uint32_t FontSizeInflationLineThreshold() {
-    return sFontSizeInflationLineThreshold;
-  }
-
   static bool FontSizeInflationForceEnabled() {
     return sFontSizeInflationForceEnabled;
   }
@@ -3025,7 +3017,6 @@ class nsLayoutUtils {
       const nsIFrame* aFrame);
 
  private:
-  static uint32_t sFontSizeInflationLineThreshold;
   static bool sFontSizeInflationForceEnabled;
   static bool sFontSizeInflationDisabledInMasterProcess;
   static uint32_t sSystemFontScale;

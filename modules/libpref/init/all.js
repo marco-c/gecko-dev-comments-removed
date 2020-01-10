@@ -3388,28 +3388,6 @@ pref("font.size.inflation.disabledInMasterProcess", false);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-pref("font.size.inflation.lineThreshold", 400);
-
-
-
-
-
-
-
-
-
-
 pref("font.size.systemFontScale", 100);
 
 
