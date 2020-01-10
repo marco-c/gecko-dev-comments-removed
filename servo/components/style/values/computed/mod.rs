@@ -230,7 +230,7 @@ impl<'a> Context<'a> {
 
     
     #[cfg(feature = "gecko")]
-    pub fn maybe_zoom_text(&self, size: NonNegativeLength) -> NonNegativeLength {
+    pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         
         
         
@@ -243,7 +243,7 @@ impl<'a> Context<'a> {
 
     
     #[cfg(feature = "servo")]
-    pub fn maybe_zoom_text(&self, size: NonNegativeLength) -> NonNegativeLength {
+    pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         size
     }
 }

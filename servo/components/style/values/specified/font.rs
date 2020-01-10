@@ -11,9 +11,9 @@ use crate::properties::longhands::system_font::SystemFont;
 use crate::values::computed::font::{FamilyName, FontFamilyList, FontStyleAngle, SingleFontFamily};
 use crate::values::computed::{font as computed, Length, NonNegativeLength};
 use crate::values::computed::{Angle as ComputedAngle, Percentage as ComputedPercentage};
-use crate::values::computed::{Context, ToComputedValue};
+use crate::values::computed::{CSSPixelLength, Context, ToComputedValue};
 use crate::values::generics::font::{self as generics, FeatureTagValue, FontSettings, FontTag};
-use crate::values::generics::font::{KeywordSize, VariationValue};
+use crate::values::generics::font::VariationValue;
 use crate::values::generics::NonNegative;
 use crate::values::specified::length::{FontBaseSize, AU_PER_PT, AU_PER_PX};
 use crate::values::specified::{AllowQuirks, Angle, Integer, LengthPercentage};
@@ -481,6 +481,115 @@ impl ToComputedValue for FontStretch {
     }
 }
 
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+    ToShmem,
+)]
+#[allow(missing_docs)]
+pub enum KeywordSize {
+    #[css(keyword = "xx-small")]
+    XXSmall,
+    XSmall,
+    Small,
+    Medium,
+    Large,
+    XLarge,
+    #[css(keyword = "xx-large")]
+    XXLarge,
+    #[css(keyword = "xxx-large")]
+    XXXLarge,
+}
+
+impl KeywordSize {
+    
+    #[inline]
+    pub fn html_size(self) -> u8 {
+        self as u8
+    }
+}
+
+impl Default for KeywordSize {
+    fn default() -> Self {
+        KeywordSize::Medium
+    }
+}
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+    ToShmem,
+)]
+
+pub struct KeywordInfo {
+    
+    pub kw: KeywordSize,
+    
+    #[css(skip)]
+    pub factor: f32,
+    
+    
+    #[css(skip)]
+    pub offset: CSSPixelLength,
+}
+
+impl KeywordInfo {
+    
+    pub fn medium() -> Self {
+        Self::new(KeywordSize::Medium)
+    }
+
+    fn new(kw: KeywordSize) -> Self {
+        KeywordInfo {
+            kw,
+            factor: 1.,
+            offset: CSSPixelLength::new(0.),
+        }
+    }
+
+    
+    
+    fn to_computed_value(&self, context: &Context) -> CSSPixelLength {
+        let base = context.maybe_zoom_text(self.kw.to_computed_value(context).0);
+        base * self.factor + context.maybe_zoom_text(self.offset)
+    }
+
+    
+    
+    pub fn compose(self, factor: f32, offset: CSSPixelLength) -> Self {
+        KeywordInfo {
+            kw: self.kw,
+            factor: self.factor * factor,
+            offset: self.offset * factor + offset,
+        }
+    }
+}
+
+impl SpecifiedValueInfo for KeywordInfo {
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
+        <KeywordSize as SpecifiedValueInfo>::collect_completion_keywords(f);
+    }
+}
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum FontSize {
@@ -653,27 +762,6 @@ impl ToComputedValue for FontSizeAdjust {
 }
 
 
-pub type KeywordInfo = generics::KeywordInfo<NonNegativeLength>;
-
-impl KeywordInfo {
-    
-    
-    pub fn to_computed_value(&self, context: &Context) -> NonNegativeLength {
-        let base = context.maybe_zoom_text(self.kw.to_computed_value(context));
-        base.scale_by(self.factor) + context.maybe_zoom_text(self.offset)
-    }
-
-    
-    pub fn compose(self, factor: f32, offset: NonNegativeLength) -> Self {
-        KeywordInfo {
-            kw: self.kw,
-            factor: self.factor * factor,
-            offset: self.offset.scale_by(factor) + offset,
-        }
-    }
-}
-
-
 
 const LARGER_FONT_SIZE_RATIO: f32 = 1.2;
 
@@ -790,7 +878,7 @@ impl FontSize {
     
     pub fn from_html_size(size: u8) -> Self {
         FontSize::Keyword(
-            match size {
+            KeywordInfo::new(match size {
                 
                 0 | 1 => KeywordSize::XSmall,
                 2 => KeywordSize::Small,
@@ -800,8 +888,7 @@ impl FontSize {
                 6 => KeywordSize::XXLarge,
                 
                 _ => KeywordSize::XXXLarge,
-            }
-            .into(),
+            })
         )
     }
 
@@ -819,7 +906,7 @@ impl FontSize {
                 .get_parent_font()
                 .clone_font_size()
                 .keyword_info
-                .map(|i| i.compose(factor, Au(0).into()))
+                .map(|i| i.compose(factor, CSSPixelLength::new(0.)))
         };
         let mut info = None;
         let size = match *self {
@@ -829,16 +916,16 @@ impl FontSize {
                     
                     info = compose_keyword(em);
                 }
-                value.to_computed_value(context, base_size).into()
+                value.to_computed_value(context, base_size)
             },
             FontSize::Length(LengthPercentage::Length(NoCalcLength::ServoCharacterWidth(
                 value,
-            ))) => value.to_computed_value(base_size.resolve(context)).into(),
+            ))) => value.to_computed_value(base_size.resolve(context)),
             FontSize::Length(LengthPercentage::Length(NoCalcLength::Absolute(ref l))) => {
-                context.maybe_zoom_text(l.to_computed_value(context).into())
+                context.maybe_zoom_text(l.to_computed_value(context))
             },
             FontSize::Length(LengthPercentage::Length(ref l)) => {
-                l.to_computed_value(context).into()
+                l.to_computed_value(context)
             },
             FontSize::Length(LengthPercentage::Percentage(pc)) => {
                 
@@ -871,29 +958,33 @@ impl FontSize {
                             context,
                             FontBaseSize::InheritedStyleButStripEmUnits,
                         )
-                        .length_component();
+                        .unclamped_length();
 
-                    info = parent.keyword_info.map(|i| i.compose(ratio, abs.into()));
+                    info = parent.keyword_info.map(|i| i.compose(ratio, abs));
                 }
                 let calc = calc.to_computed_value_zoomed(context, base_size);
-                calc.to_used_value(base_size.resolve(context)).into()
+                
+                
+                
+                
+                
+                CSSPixelLength::from(calc.to_used_value(base_size.resolve(context)))
+                    .clamp_to_non_negative()
             },
             FontSize::Keyword(i) => {
                 
                 info = Some(i);
-                i.to_computed_value(context)
+                i.to_computed_value(context).clamp_to_non_negative()
             },
             FontSize::Smaller => {
                 info = compose_keyword(1. / LARGER_FONT_SIZE_RATIO);
                 FontRelativeLength::Em(1. / LARGER_FONT_SIZE_RATIO)
                     .to_computed_value(context, base_size)
-                    .into()
             },
             FontSize::Larger => {
                 info = compose_keyword(LARGER_FONT_SIZE_RATIO);
                 FontRelativeLength::Em(LARGER_FONT_SIZE_RATIO)
                     .to_computed_value(context, base_size)
-                    .into()
             },
 
             FontSize::System(_) => {
@@ -903,12 +994,12 @@ impl FontSize {
                 }
                 #[cfg(feature = "gecko")]
                 {
-                    context.cached_system_font.as_ref().unwrap().font_size.size
+                    context.cached_system_font.as_ref().unwrap().font_size.size.0
                 }
             },
         };
         computed::FontSize {
-            size: size,
+            size: NonNegative(size),
             keyword_info: info,
         }
     }
@@ -952,7 +1043,7 @@ impl FontSize {
         }
 
         if let Ok(kw) = input.try(KeywordSize::parse) {
-            return Ok(FontSize::Keyword(kw.into()));
+            return Ok(FontSize::Keyword(KeywordInfo::new(kw)));
         }
 
         try_match_ident_ignore_ascii_case! { input,

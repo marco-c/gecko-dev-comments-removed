@@ -5,14 +5,13 @@
 
 
 use crate::parser::{Parse, ParserContext};
-use app_units::Au;
 use byteorder::{BigEndian, ReadBytesExt};
 use cssparser::Parser;
 use num_traits::One;
 use std::fmt::{self, Write};
 use std::io::Cursor;
-use style_traits::{CssWriter, KeywordsCollectFn, ParseError};
-use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError};
+use style_traits::{StyleParseErrorKind, ToCss};
 
 
 #[derive(
@@ -172,104 +171,6 @@ impl Parse for FontTag {
     }
 }
 
-#[derive(
-    Animate,
-    Clone,
-    ComputeSquaredDistance,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToCss,
-    ToShmem,
-)]
-
-pub struct KeywordInfo<Length> {
-    
-    pub kw: KeywordSize,
-    
-    #[css(skip)]
-    pub factor: f32,
-    
-    #[css(skip)]
-    pub offset: Length,
-}
-
-impl<L> KeywordInfo<L>
-where
-    Au: Into<L>,
-{
-    
-    pub fn medium() -> Self {
-        KeywordSize::Medium.into()
-    }
-}
-
-impl<L> From<KeywordSize> for KeywordInfo<L>
-where
-    Au: Into<L>,
-{
-    fn from(x: KeywordSize) -> Self {
-        KeywordInfo {
-            kw: x,
-            factor: 1.,
-            offset: Au(0).into(),
-        }
-    }
-}
-
-impl<L> SpecifiedValueInfo for KeywordInfo<L> {
-    fn collect_completion_keywords(f: KeywordsCollectFn) {
-        <KeywordSize as SpecifiedValueInfo>::collect_completion_keywords(f);
-    }
-}
-
-
-#[derive(
-    Animate,
-    Clone,
-    ComputeSquaredDistance,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToCss,
-    ToShmem,
-)]
-#[allow(missing_docs)]
-pub enum KeywordSize {
-    #[css(keyword = "xx-small")]
-    XXSmall,
-    XSmall,
-    Small,
-    Medium,
-    Large,
-    XLarge,
-    #[css(keyword = "xx-large")]
-    XXLarge,
-    #[css(keyword = "xxx-large")]
-    XXXLarge,
-}
-
-impl KeywordSize {
-    
-    #[inline]
-    pub fn html_size(self) -> u8 {
-        self as u8
-    }
-}
-
-impl Default for KeywordSize {
-    fn default() -> Self {
-        KeywordSize::Medium
-    }
-}
 
 
 
