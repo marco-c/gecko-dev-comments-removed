@@ -59,16 +59,103 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Location, mInnerWindow)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Location)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Location)
 
-BrowsingContext* Location::GetBrowsingContext() {
-  if (nsCOMPtr<nsIDocShell> docShell = GetDocShell()) {
-    return docShell->GetBrowsingContext();
+already_AddRefed<nsDocShellLoadState> Location::CheckURL(
+    nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) {
+  nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
+  if (NS_WARN_IF(!docShell)) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
   }
-  return nullptr;
-}
 
-already_AddRefed<nsIDocShell> Location::GetDocShell() {
-  nsCOMPtr<nsIDocShell> docShell = do_QueryReferent(mDocShell);
-  return docShell.forget();
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+  nsCOMPtr<nsIURI> sourceURI;
+  ReferrerPolicy referrerPolicy = ReferrerPolicy::_empty;
+
+  
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  if (NS_WARN_IF(!ssm)) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+
+  
+  nsresult rv = ssm->CheckLoadURIWithPrincipal(
+      &aSubjectPrincipal, aURI, nsIScriptSecurityManager::STANDARD);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    nsAutoCString spec;
+    aURI->GetSpec(spec);
+    aRv.ThrowTypeError<MSG_URL_NOT_LOADABLE>(NS_ConvertUTF8toUTF16(spec));
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsCOMPtr<nsPIDOMWindowInner> incumbent =
+      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+  nsCOMPtr<Document> doc = incumbent ? incumbent->GetDoc() : nullptr;
+
+  if (doc) {
+    nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
+    docOriginalURI = doc->GetOriginalURI();
+    docCurrentURI = doc->GetDocumentURI();
+    rv = doc->NodePrincipal()->GetURI(getter_AddRefs(principalURI));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return nullptr;
+    }
+
+    triggeringPrincipal = doc->NodePrincipal();
+    referrerPolicy = doc->GetReferrerPolicy();
+
+    bool urisEqual = false;
+    if (docOriginalURI && docCurrentURI && principalURI) {
+      principalURI->Equals(docOriginalURI, &urisEqual);
+    }
+    if (urisEqual) {
+      sourceURI = docCurrentURI;
+    } else {
+      
+      
+      
+      
+      
+      if (principalURI && !principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME)) {
+        sourceURI = principalURI;
+      }
+    }
+  } else {
+    
+    triggeringPrincipal = &aSubjectPrincipal;
+  }
+
+  
+  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
+
+  loadState->SetTriggeringPrincipal(triggeringPrincipal);
+  if (doc) {
+    loadState->SetCsp(doc->GetCsp());
+  }
+
+  if (sourceURI) {
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        new ReferrerInfo(sourceURI, referrerPolicy);
+    loadState->SetReferrerInfo(referrerInfo);
+  }
+
+  return loadState.forget();
 }
 
 nsresult Location::GetURI(nsIURI** aURI, bool aGetInnermostURI) {
@@ -108,6 +195,39 @@ nsresult Location::GetURI(nsIURI** aURI, bool aGetInnermostURI) {
   nsCOMPtr<nsIURIFixup> urifixup(components::URIFixup::Service());
 
   return urifixup->CreateExposableURI(uri, aURI);
+}
+
+void Location::SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
+                      ErrorResult& aRv, bool aReplace) {
+  nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
+  if (docShell) {
+    RefPtr<nsDocShellLoadState> loadState =
+        CheckURL(aURI, aSubjectPrincipal, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+
+    if (aReplace) {
+      loadState->SetLoadType(LOAD_STOP_CONTENT_AND_REPLACE);
+    } else {
+      loadState->SetLoadType(LOAD_STOP_CONTENT);
+    }
+
+    
+    nsCOMPtr<nsPIDOMWindowInner> sourceWindow =
+        do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+    if (sourceWindow) {
+      loadState->SetSourceDocShell(sourceWindow->GetDocShell());
+    }
+
+    loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
+    loadState->SetFirstParty(true);
+
+    nsresult rv = docShell->LoadURI(loadState);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+    }
+  }
 }
 
 void Location::GetHash(nsAString& aHash, nsIPrincipal& aSubjectPrincipal,
@@ -276,6 +396,69 @@ nsresult Location::GetHref(nsAString& aHref) {
 
   AppendUTF8toUTF16(uriString, aHref);
   return NS_OK;
+}
+
+void Location::SetHref(const nsAString& aHref, nsIPrincipal& aSubjectPrincipal,
+                       ErrorResult& aRv) {
+  DoSetHref(aHref, aSubjectPrincipal, false, aRv);
+}
+
+void Location::DoSetHref(const nsAString& aHref,
+                         nsIPrincipal& aSubjectPrincipal, bool aReplace,
+                         ErrorResult& aRv) {
+  
+  nsCOMPtr<nsIURI> base = GetSourceBaseURL();
+  SetHrefWithBase(aHref, base, aSubjectPrincipal, aReplace, aRv);
+}
+
+void Location::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
+                               nsIPrincipal& aSubjectPrincipal, bool aReplace,
+                               ErrorResult& aRv) {
+  nsresult result;
+  nsCOMPtr<nsIURI> newUri;
+
+  nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
+
+  if (Document* doc = GetEntryDocument()) {
+    result = NS_NewURI(getter_AddRefs(newUri), aHref,
+                       doc->GetDocumentCharacterSet(), aBase);
+  } else {
+    result = NS_NewURI(getter_AddRefs(newUri), aHref, nullptr, aBase);
+  }
+
+  if (newUri) {
+    
+
+
+
+
+
+
+
+
+    bool inScriptTag = false;
+    nsIScriptContext* scriptContext = nullptr;
+    nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(GetEntryGlobal());
+    if (win) {
+      scriptContext = nsGlobalWindowInner::Cast(win)->GetContextInternal();
+    }
+
+    if (scriptContext) {
+      if (scriptContext->GetProcessingScriptTag()) {
+        
+        
+        
+        nsCOMPtr<nsIScriptGlobalObject> ourGlobal =
+            docShell ? docShell->GetScriptGlobalObject() : nullptr;
+        inScriptTag = (ourGlobal == scriptContext->GetGlobalObject());
+      }
+    }
+
+    SetURI(newUri, aSubjectPrincipal, aRv, aReplace || inScriptTag);
+    return;
+  }
+
+  aRv.Throw(result);
 }
 
 void Location::GetOrigin(nsAString& aOrigin, nsIPrincipal& aSubjectPrincipal,
@@ -590,6 +773,11 @@ void Location::Reload(bool aForceget, ErrorResult& aRv) {
   }
 }
 
+void Location::Replace(const nsAString& aUrl, nsIPrincipal& aSubjectPrincipal,
+                       ErrorResult& aRv) {
+  DoSetHref(aUrl, aSubjectPrincipal, true, aRv);
+}
+
 void Location::Assign(const nsAString& aUrl, nsIPrincipal& aSubjectPrincipal,
                       ErrorResult& aRv) {
   if (!CallerSubsumes(&aSubjectPrincipal)) {
@@ -598,6 +786,26 @@ void Location::Assign(const nsAString& aUrl, nsIPrincipal& aSubjectPrincipal,
   }
 
   DoSetHref(aUrl, aSubjectPrincipal, false, aRv);
+}
+
+nsIURI* Location::GetSourceBaseURL() {
+  Document* doc = GetEntryDocument();
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
+  if (!doc && docShell) {
+    nsCOMPtr<nsPIDOMWindowOuter> docShellWin =
+        do_QueryInterface(docShell->GetScriptGlobalObject());
+    if (docShellWin) {
+      doc = docShellWin->GetDoc();
+    }
+  }
+  NS_ENSURE_TRUE(doc, nullptr);
+  return doc->GetBaseURI();
 }
 
 bool Location::CallerSubsumes(nsIPrincipal* aSubjectPrincipal) {
