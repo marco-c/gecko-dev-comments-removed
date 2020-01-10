@@ -539,7 +539,9 @@ class BackgroundClipRenderingObserver : public SVGRenderingObserver {
   NS_DECL_ISUPPORTS
 
  private:
-  virtual ~BackgroundClipRenderingObserver() { StopObserving(); }
+  
+  
+  virtual ~BackgroundClipRenderingObserver() = default;
 
   Element* GetReferencedElementWithoutObserving() final {
     return mFrame->GetContent()->AsElement();
