@@ -78,6 +78,7 @@ class RenderCompositorANGLE : public RenderCompositor {
                   wr::DeviceIntRect aClipRect) override;
 
   
+  bool UsePartialPresent() override;
   bool RequestFullRender() override;
   uint32_t GetMaxPartialPresentRects() override;
 
