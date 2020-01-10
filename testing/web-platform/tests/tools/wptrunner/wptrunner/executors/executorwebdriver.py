@@ -356,6 +356,20 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
         while True:
             result = protocol.base.execute_script(
                 self.script_resume % format_map, async=True)
+
+            
+            
+            
+            
+            if not isinstance(result, list) or len(result) != 2:
+                try:
+                    is_alive = self.is_alive()
+                except client.WebDriverException:
+                    is_alive = False
+
+                if not is_alive:
+                    raise Exception("Browser crashed during script execution.")
+
             done, rv = handler(result)
             if done:
                 break
