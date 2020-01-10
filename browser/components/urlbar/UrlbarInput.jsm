@@ -1438,7 +1438,7 @@ class UrlbarInput {
     url,
     openUILinkWhere,
     params,
-    result = {},
+    resultDetails = null,
     browser = this.window.gBrowser.selectedBrowser
   ) {
     
@@ -1494,7 +1494,7 @@ class UrlbarInput {
     }
 
     
-    this._notifyStartNavigation(result);
+    this._notifyStartNavigation(resultDetails);
 
     try {
       this.window.openTrustedLinkIn(url, openUILinkWhere, params);
