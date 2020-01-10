@@ -1256,6 +1256,12 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
       GdkWindow*, const GdkRectangle*, GdkGravity, GdkGravity, GdkAnchorHints,
       gint, gint))dlsym(RTLD_DEFAULT, "gdk_window_move_to_rect");
 
+  
+  
+  if (!AreBoundsSane()) {
+    return;
+  }
+
   if (aSize) {
     gtk_window_resize(GTK_WINDOW(mShell), aSize->width, aSize->height);
   }
@@ -1265,8 +1271,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
   
   
   
-  
-  if (!sGdkWindowMoveToRect || !gdkWindow || !AreBoundsSane()) {
+  if (!sGdkWindowMoveToRect || !gdkWindow) {
     gtk_window_move(GTK_WINDOW(mShell), aPosition->x, aPosition->y);
     return;
   }
