@@ -9027,6 +9027,15 @@ DebuggerFrame* DebuggerFrame::create(JSContext* cx, HandleObject proto,
 
 
 
+
+
+
+
+
+
+
+
+
 class DebuggerFrame::GeneratorInfo {
   
   
@@ -9087,9 +9096,6 @@ bool DebuggerFrame::setGenerator(JSContext* cx,
   
   
   
-  
-  
-  
   RootedScript script(cx, genObj->callee().nonLazyScript());
   auto* info = cx->new_<GeneratorInfo>(genObj, script);
   if (!info) {
@@ -9109,17 +9115,14 @@ bool DebuggerFrame::setGenerator(JSContext* cx,
   Rooted<CrossCompartmentKey> generatorKey(
       cx, CrossCompartmentKey::DebuggeeFrameGenerator(owner()->toJSObject(),
                                                       genObj));
-  Rooted<CrossCompartmentKey> scriptKey(
-      cx, CrossCompartmentKey::DebuggeeFrameGeneratorScript(
-              owner()->toJSObject(), script));
-  auto crossCompartmentKeysGuard = MakeScopeExit([&] {
-    compartment()->removeWrapper(generatorKey);
-    compartment()->removeWrapper(scriptKey);
-  });
-  if (!compartment()->putWrapper(cx, generatorKey, ObjectValue(*this)) ||
-      !compartment()->putWrapper(cx, scriptKey, ObjectValue(*this))) {
+  if (!compartment()->putWrapper(cx, generatorKey, ObjectValue(*this))) {
     return false;
   }
+  auto crossCompartmentKeysGuard = MakeScopeExit([&] {
+    WrapperMap::Ptr generatorPtr = compartment()->lookupWrapper(generatorKey);
+    MOZ_ASSERT(generatorPtr);
+    compartment()->removeWrapper(generatorPtr);
+  });
 
   {
     AutoRealm ar(cx, script);
@@ -9178,18 +9181,12 @@ void DebuggerFrame::clearGenerator(
   
   
   
-  
-  
-  
   GeneratorInfo* info = generatorInfo();
-  HeapPtr<JSScript*>& generatorScript = info->generatorScript();
   CrossCompartmentKey generatorKey(CrossCompartmentKey::DebuggeeFrameGenerator(
       owner->object, &info->unwrappedGenerator()));
-  CrossCompartmentKey scriptKey(
-      CrossCompartmentKey::DebuggeeFrameGeneratorScript(owner->object,
-                                                        generatorScript));
-  compartment()->removeWrapper(generatorKey);
-  compartment()->removeWrapper(scriptKey);
+  auto generatorPtr = compartment()->lookupWrapper(generatorKey);
+  MOZ_ASSERT(generatorPtr);
+  compartment()->removeWrapper(generatorPtr);
 
   
   
