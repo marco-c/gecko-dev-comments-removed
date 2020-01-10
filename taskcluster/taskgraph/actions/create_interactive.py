@@ -54,8 +54,10 @@ SCOPE_WHITELIST = [
     re.compile(r'^secrets:get:project/taskcluster/gecko/(hgfingerprint|hgmointernal)$'),
     
     re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.public$'),
+    re.compile(r'^project:releng:services/tooltool/api/download/public$'),
     
     re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.internal$'),
+    re.compile(r'^project:releng:services/tooltool/api/download/internal$'),
     
     
     
