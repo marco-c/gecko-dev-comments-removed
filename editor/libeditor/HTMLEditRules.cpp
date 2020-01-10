@@ -6337,12 +6337,12 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
       
       
       
-      rv = AlignBlock(MOZ_KnownLive(*node->AsElement()), aAlignType,
-                      ResetAlignOf::OnlyDescendants);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      return NS_OK;
+      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                        .SetBlockElementAlign(
+                            MOZ_KnownLive(*node->AsElement()), aAlignType,
+                            HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetBlockElementAlign() failed");
+      return rv;
     }
 
     if (TextEditUtils::IsBreak(node)) {
@@ -6429,7 +6429,10 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     
     HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = div;
     
-    rv = AlignBlock(*div, aAlignType, ResetAlignOf::OnlyDescendants);
+    rv = MOZ_KnownLive(HTMLEditorRef())
+             .SetBlockElementAlign(
+                 *div, aAlignType,
+                 HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -6482,8 +6485,11 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     
     
     if (HTMLEditUtils::SupportsAlignAttr(*curNode)) {
-      rv = AlignBlock(MOZ_KnownLive(*curNode->AsElement()), aAlignType,
-                      ResetAlignOf::ElementAndDescendants);
+      nsresult rv =
+          MOZ_KnownLive(HTMLEditorRef())
+              .SetBlockElementAlign(
+                  MOZ_KnownLive(*curNode->AsElement()), aAlignType,
+                  HTMLEditor::EditTarget::NodeAndDescendantsExceptTable);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -6579,11 +6585,15 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
       
       HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = curDiv;
       
-      rv = AlignBlock(*curDiv, aAlignType, ResetAlignOf::OnlyDescendants);
+      rv = MOZ_KnownLive(HTMLEditorRef())
+               .SetBlockElementAlign(
+                   *curDiv, aAlignType,
+                   HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to align the <div>");
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "SetBlockElementAlign() failed, but ignored");
     }
 
     
@@ -10772,61 +10782,31 @@ nsresult HTMLEditor::EnsureHardLineEndsWithLastChildOf(
   return NS_OK;
 }
 
-nsresult HTMLEditRules::AlignBlock(Element& aElement,
-                                   const nsAString& aAlignType,
-                                   ResetAlignOf aResetAlignOf) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::SetBlockElementAlign(Element& aBlockOrHRElement,
+                                          const nsAString& aAlignType,
+                                          EditTarget aEditTarget) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(HTMLEditor::NodeIsBlockStatic(aBlockOrHRElement) ||
+             aBlockOrHRElement.IsHTMLElement(nsGkAtoms::hr));
+  MOZ_ASSERT(IsCSSEnabled() ||
+             HTMLEditUtils::SupportsAlignAttr(aBlockOrHRElement));
 
-  if (!HTMLEditor::NodeIsBlockStatic(aElement) &&
-      !aElement.IsHTMLElement(nsGkAtoms::hr)) {
-    
-    return NS_OK;
-  }
-
-  if (!aElement.IsHTMLElement(nsGkAtoms::table)) {
+  if (!aBlockOrHRElement.IsHTMLElement(nsGkAtoms::table)) {
     nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .RemoveAlignFromDescendants(
-                aElement, aAlignType,
-                aResetAlignOf == ResetAlignOf::OnlyDescendants
-                    ? HTMLEditor::EditTarget::OnlyDescendantsExceptTable
-                    : HTMLEditor::EditTarget::NodeAndDescendantsExceptTable);
+        RemoveAlignFromDescendants(aBlockOrHRElement, aAlignType, aEditTarget);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
-  if (HTMLEditorRef().IsCSSEnabled()) {
-    
-    
-    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .SetAttributeOrEquivalent(&aElement, nsGkAtoms::align,
-                                                aAlignType, false);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    return NS_OK;
-  }
-
-  
-  
-  if (NS_WARN_IF(!HTMLEditUtils::SupportsAlignAttr(aElement))) {
-    
-    return NS_OK;
-  }
-
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                    .SetAttributeOrEquivalent(&aElement, nsGkAtoms::align,
-                                              aAlignType, false);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  nsresult rv = SetAttributeOrEquivalent(&aBlockOrHRElement, nsGkAtoms::align,
+                                         aAlignType, false);
+  if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "SetAttributeOrEquivalent() failed to set `align` attribute or property");
+  return rv;
 }
 
 nsresult HTMLEditor::ChangeMarginStart(Element& aElement,

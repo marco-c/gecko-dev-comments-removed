@@ -293,22 +293,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-
-
-
-  enum class ResetAlignOf { ElementAndDescendants, OnlyDescendants };
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult AlignBlock(Element& aElement,
-                                   const nsAString& aAlignType,
-                                   ResetAlignOf aResetAlignOf);
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT void DocumentModifiedWorker();
 
  protected:
