@@ -18,8 +18,7 @@ RemoteDecoderParent::RemoteDecoderParent(RemoteDecoderManagerParent* aParent,
                                          TaskQueue* aDecodeTaskQueue)
     : mParent(aParent),
       mManagerTaskQueue(aManagerTaskQueue),
-      mDecodeTaskQueue(aDecodeTaskQueue),
-      mDecodedFramePool(4) {
+      mDecodeTaskQueue(aDecodeTaskQueue) {
   MOZ_COUNT_CTOR(RemoteDecoderParent);
   MOZ_ASSERT(OnManagerThread());
   
@@ -69,11 +68,8 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvInput(
   MOZ_ASSERT(OnManagerThread());
   
   
-  
-  
-  RefPtr<MediaRawData> data = new MediaRawData(
-      aData.buffer().get<uint8_t>(), std::min((unsigned long)aData.bufferSize(),
-                                              aData.buffer().Size<uint8_t>()));
+  RefPtr<MediaRawData> data = new MediaRawData(aData.buffer().get<uint8_t>(),
+                                               aData.buffer().Size<uint8_t>());
   if (aData.buffer().Size<uint8_t>() && !data->Data()) {
     
     Error(NS_ERROR_OUT_OF_MEMORY);
@@ -87,8 +83,7 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvInput(
   data->mEOS = aData.eos();
   data->mDiscardPadding = aData.discardPadding();
 
-  
-  Unused << SendDoneWithInput(std::move(aData.buffer()));
+  DeallocShmem(aData.buffer());
 
   RefPtr<RemoteDecoderParent> self = this;
   mDecoder->Decode(data)->Then(
@@ -170,12 +165,6 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvSetSeekThreshold(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult RemoteDecoderParent::RecvDoneWithOutput(
-    Shmem&& aOutputShmem) {
-  mDecodedFramePool.Put(ShmemBuffer(aOutputShmem));
-  return IPC_OK();
-}
-
 void RemoteDecoderParent::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_ASSERT(!mDestroyed);
   MOZ_ASSERT(OnManagerThread());
@@ -183,7 +172,6 @@ void RemoteDecoderParent::ActorDestroy(ActorDestroyReason aWhy) {
     mDecoder->Shutdown();
     mDecoder = nullptr;
   }
-  mDecodedFramePool.Cleanup(this);
 }
 
 void RemoteDecoderParent::Error(const MediaResult& aError) {
