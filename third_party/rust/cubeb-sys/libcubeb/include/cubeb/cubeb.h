@@ -120,6 +120,8 @@ extern "C" {
 
 
 
+
+
 typedef struct cubeb cubeb;               
 typedef struct cubeb_stream cubeb_stream; 
 
@@ -221,7 +223,16 @@ enum {
 
 typedef enum {
   CUBEB_STREAM_PREF_NONE     = 0x00, 
-  CUBEB_STREAM_PREF_LOOPBACK = 0x01 
+  CUBEB_STREAM_PREF_LOOPBACK = 0x01, 
+
+
+
+  CUBEB_STREAM_PREF_DISABLE_DEVICE_SWITCHING = 0x02, 
+
+
+  CUBEB_STREAM_PREF_VOICE = 0x04  
+
+
 
 
 
@@ -624,6 +635,10 @@ CUBEB_EXPORT int cubeb_enumerate_devices(cubeb * context,
 
 CUBEB_EXPORT int cubeb_device_collection_destroy(cubeb * context,
                                                  cubeb_device_collection * collection);
+
+
+
+
 
 
 

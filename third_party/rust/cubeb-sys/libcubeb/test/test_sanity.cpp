@@ -13,6 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
+
+
 #include "common.h"
 
 #define STREAM_RATE 44100
@@ -397,6 +400,7 @@ TEST(cubeb, basic_stream_operations)
   cubeb_stream * stream;
   cubeb_stream_params params;
   uint64_t position;
+  uint32_t latency;
 
   r = common_init(&ctx, "test_sanity");
   ASSERT_EQ(r, CUBEB_OK);
@@ -418,6 +422,9 @@ TEST(cubeb, basic_stream_operations)
   ASSERT_EQ(r, CUBEB_OK);
   ASSERT_EQ(position, 0u);
 
+  r = cubeb_stream_get_latency(stream, &latency);
+  ASSERT_EQ(r, CUBEB_OK);
+
   r = cubeb_stream_start(stream);
   ASSERT_EQ(r, CUBEB_OK);
 
@@ -425,11 +432,17 @@ TEST(cubeb, basic_stream_operations)
   r = cubeb_stream_get_position(stream, &position);
   ASSERT_EQ(r, CUBEB_OK);
 
+  r = cubeb_stream_get_latency(stream, &latency);
+  ASSERT_EQ(r, CUBEB_OK);
+
   r = cubeb_stream_stop(stream);
   ASSERT_EQ(r, CUBEB_OK);
 
   
   r = cubeb_stream_get_position(stream, &position);
+  ASSERT_EQ(r, CUBEB_OK);
+
+  r = cubeb_stream_get_latency(stream, &latency);
   ASSERT_EQ(r, CUBEB_OK);
 
   cubeb_stream_destroy(stream);

@@ -16,8 +16,12 @@
 #include <memory>
 #include <limits.h>
 #include "cubeb/cubeb.h"
-#include "common.h"
 #include <atomic>
+
+
+
+#include "common.h"
+
 
 #define SAMPLE_FREQUENCY 48000
 #define STREAM_FORMAT CUBEB_SAMPLE_S16LE
