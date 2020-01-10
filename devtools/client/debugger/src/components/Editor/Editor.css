@@ -97,6 +97,30 @@ html[dir="rtl"] .editor-mount {
 }
 
 
+.editor-wrapper:not(.skip-pausing)
+  .breakpoint-disabled
+  .CodeMirror-gutter-wrapper
+  .CodeMirror-linenumber {
+  color: var(--breakpoint-stroke);
+}
+
+
+.editor-wrapper:not(.skip-pausing)
+  .breakpoint-disabled.has-condition
+  .CodeMirror-gutter-wrapper
+  .CodeMirror-linenumber {
+  color: var(--breakpoint-condition-stroke);
+}
+
+
+.editor-wrapper:not(.skip-pausing)
+  .breakpoint-disabled.has-log
+  .CodeMirror-gutter-wrapper
+  .CodeMirror-linenumber {
+  color: var(--logpoint-stroke);
+}
+
+
 .new-breakpoint .CodeMirror-gutter-elt:nth-child(2) {
   z-index: 0;
 }
