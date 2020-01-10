@@ -1954,18 +1954,16 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
       rv = NS_ERROR_CONNECTION_REFUSED;
       break;
     case 403:  
+    case 407:  
     case 501:  
       
       rv = NS_ERROR_PROXY_CONNECTION_REFUSED;
       break;
-    case 407:  
-      rv = NS_ERROR_PROXY_AUTHENTICATION_FAILED;
-      break;
-      
+    
     case 404:  
-               
-               
-               
+    
+    
+    
     case 400:  
     case 500:  
       
@@ -1974,10 +1972,8 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
       rv = NS_ERROR_UNKNOWN_HOST;
       break;
     case 502:  
-      rv = NS_ERROR_PROXY_BAD_GATEWAY;
-      break;
+    
     case 503:  
-      
       
 
 
@@ -1990,7 +1986,7 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
     case 504:  
       
       
-      rv = NS_ERROR_PROXY_GATEWAY_TIMEOUT;
+      rv = NS_ERROR_NET_TIMEOUT;
       break;
     
     default:
@@ -5243,44 +5239,6 @@ nsresult nsHttpChannel::ReadFromCache(bool alreadyMarkedValid) {
   }
 
   nsresult rv;
-
-  
-  gHttpHandler->OnMayChangeProcess(this);
-
-  if (mRedirectContentProcessIdPromise) {
-    PushRedirectAsyncFunc(&nsHttpChannel::ContinueReadFromCache);
-    rv = StartCrossProcessRedirect();
-    if (NS_SUCCEEDED(rv)) {
-      return NS_OK;
-    }
-    PopRedirectAsyncFunc(&nsHttpChannel::ContinueReadFromCache);
-  }
-
-  return ContinueReadFromCache(NS_OK);
-}
-
-nsresult nsHttpChannel::ContinueReadFromCache(nsresult rv) {
-  LOG(("nsHttpChannel::ContinueReadFromCache [this=%p] spec: %s\n", this,
-       mSpec.get()));
-
-  
-  
-  
-  
-  
-  if (NS_FAILED(rv)) {
-    
-    
-    MOZ_ASSERT(!mDidReval, "Should not be a 304 response");
-    
-    MOZ_ASSERT(!mCachedContentIsPartial, "Unexpected partially cached page?");
-
-    MOZ_ASSERT(!mCachePump);
-
-    CloseCacheEntry(false);
-    DoAsyncAbort(NS_FAILED(mStatus) ? mStatus : rv);
-    return rv;
-  }
 
   
   
