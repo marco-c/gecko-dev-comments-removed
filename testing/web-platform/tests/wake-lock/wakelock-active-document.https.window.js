@@ -3,8 +3,8 @@ function getWakeLockObject(iframe, url) {
     iframe.addEventListener(
       "load",
       () => {
-        const { WakeLock } = iframe.contentWindow;
-        resolve(WakeLock);
+        const { wakeLock } = iframe.contentWindow.navigator;
+        resolve(wakeLock);
       },
       { once: true }
     );
@@ -35,7 +35,7 @@ promise_test(async t => {
   );
   
   iframe.remove();
-}, "WakeLock.request() aborts if the document is not active.");
+}, "navigator.wakeLock.request() aborts if the document is not active.");
 
 promise_test(async t => {
   
@@ -78,4 +78,4 @@ promise_test(async t => {
   );
   
   outerIframe.remove();
-}, "WakeLock.request() aborts if the document is active, but not fully active.");
+}, "navigator.wakeLock.request() aborts if the document is active, but not fully active.");
