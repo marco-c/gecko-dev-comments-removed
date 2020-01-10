@@ -62,6 +62,19 @@ static void CheckMessageParameterCounts() {
 }
 #endif 
 
+static void CheckCanonicalNaN() {
+  
+  
+  
+  
+  
+  double infinity = mozilla::PositiveInfinity<double>();
+  double hardwareNaN = infinity - infinity;
+  uint64_t bits = mozilla::BitwiseCast<uint64_t>(hardwareNaN);
+  bits &= ~mozilla::FloatingPoint<double>::kSignBit;
+  MOZ_RELEASE_ASSERT(bits == JS::detail::CanonicalizedNaNBits);
+}
+
 #define RETURN_IF_FAIL(code)           \
   do {                                 \
     if (!code) return #code " failed"; \
@@ -97,6 +110,7 @@ JS_PUBLIC_API const char* JS::detail::InitWithFailureDiagnostic(
 #ifdef DEBUG
   CheckMessageParameterCounts();
 #endif
+  CheckCanonicalNaN();
 
   RETURN_IF_FAIL(js::TlsContext.init());
 
