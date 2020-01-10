@@ -1006,13 +1006,43 @@ XDRResult XDRObjectLiteral(XDRState<mode>* xdr, MutableHandleObject obj);
 
 
 
-extern void ReportNotObject(JSContext* cx, HandleValue v);
+extern void ReportNotObject(JSContext* cx, const Value& v);
 
 inline JSObject* NonNullObject(JSContext* cx, HandleValue v) {
   if (v.isObject()) {
     return &v.toObject();
   }
   ReportNotObject(cx, v);
+  return nullptr;
+}
+
+
+
+
+
+
+
+
+
+extern void ReportNotObject(JSContext* cx, JSErrNum err, int spindex,
+                            HandleValue v);
+
+inline JSObject* NonNullObject(JSContext* cx, JSErrNum err, int spindex,
+                               HandleValue v) {
+  if (v.isObject()) {
+    return &v.toObject();
+  }
+  ReportNotObject(cx, err, spindex, v);
+  return nullptr;
+}
+
+extern void ReportNotObject(JSContext* cx, JSErrNum err, HandleValue v);
+
+inline JSObject* NonNullObject(JSContext* cx, JSErrNum err, HandleValue v) {
+  if (v.isObject()) {
+    return &v.toObject();
+  }
+  ReportNotObject(cx, err, v);
   return nullptr;
 }
 
@@ -1029,22 +1059,6 @@ inline JSObject* NonNullObjectArg(JSContext* cx, const char* nth,
     return &v.toObject();
   }
   ReportNotObjectArg(cx, nth, fun, v);
-  return nullptr;
-}
-
-
-
-
-
-extern void ReportNotObjectWithName(JSContext* cx, const char* name,
-                                    HandleValue v);
-
-inline JSObject* NonNullObjectWithName(JSContext* cx, const char* name,
-                                       HandleValue v) {
-  if (v.isObject()) {
-    return &v.toObject();
-  }
-  ReportNotObjectWithName(cx, name, v);
   return nullptr;
 }
 
