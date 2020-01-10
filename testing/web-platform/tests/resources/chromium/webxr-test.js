@@ -187,6 +187,15 @@ class MockVRService {
 
 
 class MockRuntime {
+  
+  
+  static featureToMojoMap = {
+    "viewer": device.mojom.XRSessionFeature.REF_SPACE_VIEWER,
+    "local": device.mojom.XRSessionFeature.REF_SPACE_LOCAL,
+    "local-floor": device.mojom.XRSessionFeature.REF_SPACE_LOCAL_FLOOR,
+    "bounded-floor": device.mojom.XRSessionFeature.REF_SPACE_BOUNDED_FLOOR,
+    "unbounded": device.mojom.XRSessionFeature.REF_SPACE_UNBOUNDED };
+
   constructor(fakeDeviceInit, service) {
     this.sessionClient_ = new device.mojom.XRSessionClientPtr();
     this.presentation_provider_ = new MockXRPresentationProvider();
@@ -456,19 +465,10 @@ class MockRuntime {
 
   setFeatures(supportedFeatures) {
     function convertFeatureToMojom(feature) {
-      switch (feature) {
-        case "viewer":
-          return device.mojom.XRSessionFeature.REF_SPACE_VIEWER;
-        case "local":
-          return device.mojom.XRSessionFeature.REF_SPACE_LOCAL;
-        case "local-floor":
-          return device.mojom.XRSessionFeature.REF_SPACE_LOCAL_FLOOR;
-        case "bounded-floor":
-          return device.mojom.XRSessionFeature.REF_SPACE_BOUNDED_FLOOR;
-        case "unbounded":
-          return device.mojom.XRSessionFeature.REF_SPACE_UNBOUNDED;
-        default:
-          return device.mojom.XRSessionFeature.INVALID;
+      if (feature in MockRuntime.featureToMojoMap) {
+        return MockRuntime.featureToMojoMap[feature];
+      } else {
+        return device.mojom.XRSessionFeature.INVALID;
       }
     }
 
