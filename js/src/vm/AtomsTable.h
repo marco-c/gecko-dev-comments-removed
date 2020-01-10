@@ -188,12 +188,13 @@ class AtomsTable {
   void tracePinnedAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
 
   
-  void sweepAll(JSRuntime* rt);
+  void traceWeak(JSTracer* trc);
 
   bool startIncrementalSweep();
 
   
-  bool sweepIncrementally(SweepIterator& atomsToSweep, SliceBudget& budget);
+  bool traceWeakIncrementally(JSTracer* trc, SweepIterator& atomsToSweep,
+                              SliceBudget& budget);
 
 #ifdef DEBUG
   bool mainThreadHasAllLocks() const { return allPartitionsLocked; }

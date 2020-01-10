@@ -193,6 +193,14 @@ inline void TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp,
 
 
 
+
+template <typename T>
+inline bool TraceWeakEdge(JSTracer* trc, T* thingp, const char* name) {
+  return gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
+}
+
+
+
 template <typename T>
 void TraceRange(JSTracer* trc, size_t len, WriteBarriered<T>* vec,
                 const char* name) {
