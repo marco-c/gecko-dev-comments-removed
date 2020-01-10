@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -12,26 +12,27 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
-
-
-
-
+/**
+ * Applies URL highlighting and other styling to the text in the urlbar input,
+ * depending on the text.
+ */
 class UrlbarValueFormatter {
-  
-
-
+  /**
+   * @param {UrlbarInput} urlbarInput
+   */
   constructor(urlbarInput) {
     this.urlbarInput = urlbarInput;
     this.window = this.urlbarInput.window;
     this.document = this.window.document;
 
-    
-    
+    // This is used only as an optimization to avoid removing formatting in
+    // the _remove* format methods when no formatting is actually applied.
     this._formattingApplied = false;
 
     this.window.addEventListener("resize", this);
@@ -54,34 +55,34 @@ class UrlbarValueFormatter {
       return;
     }
 
-    
+    // Remove the current formatting.
     this._removeURLFormat();
     this._removeSearchAliasFormat();
 
-    
-    
-    
+    // Apply new formatting.  Formatter methods should return true if they
+    // successfully formatted the value and false if not.  We apply only
+    // one formatter at a time, so we stop at the first successful one.
     this._formattingApplied = this._formatURL() || this._formatSearchAlias();
   }
 
   _ensureFormattedHostVisible(urlMetaData) {
-    
+    // Used to avoid re-entrance in the requestAnimationFrame callback.
     let instance = (this._formatURLInstance = {});
 
-    
-    
-    
-    
+    // Make sure the host is always visible. Since it is aligned on
+    // the first strong directional character, we set scrollLeft
+    // appropriately to ensure the domain stays visible in case of an
+    // overflow.
     this.window.requestAnimationFrame(() => {
-      
-      
+      // Check for re-entrance. On focus change this formatting code is
+      // invoked regardless, thus this should be enough.
       if (this._formatURLInstance != instance) {
         return;
       }
 
-      
-      
-      
+      // In the future, for example in bug 525831, we may add a forceRTL
+      // char just after the domain, and in such a case we should not
+      // scroll to the left.
       urlMetaData = urlMetaData || this._getUrlMetaData();
       if (!urlMetaData) {
         return;
@@ -107,16 +108,19 @@ class UrlbarValueFormatter {
 
     let url = this.inputField.value;
 
-    
+    // Get the URL from the fixup service:
     let flags =
       Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
       Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+    if (PrivateBrowsingUtils.isWindowPrivate(this.window)) {
+      flags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+    }
     let uriInfo;
     try {
       uriInfo = Services.uriFixup.getFixupURIInfo(url, flags);
     } catch (ex) {}
-    
-    
+    // Ignore if we couldn't make a URI out of this, the URI resulted in a search,
+    // or the URI has a non-http(s)/ftp protocol.
     if (
       !uriInfo ||
       !uriInfo.fixedURI ||
@@ -126,20 +130,20 @@ class UrlbarValueFormatter {
       return null;
     }
 
-    
-    
-    
-    
-    
+    // If we trimmed off the http scheme, ensure we stick it back on before
+    // trying to figure out what domain we're accessing, so we don't get
+    // confused by user:pass@host http URLs. We later use
+    // trimmedLength to ensure we don't count the length of a trimmed protocol
+    // when determining which parts of the URL to highlight as "preDomain".
     let trimmedLength = 0;
     if (uriInfo.fixedURI.scheme == "http" && !url.startsWith("http://")) {
       url = "http://" + url;
       trimmedLength = "http://".length;
     }
 
-    
-    
-    
+    // This RegExp is not a perfect match, and for specially crafted URLs it may
+    // get the host wrong; for safety reasons we will later compare the found
+    // host with the one that will actually be loaded.
     let matchedURL = url.match(
       /^(([a-z]+:\/\/)(?:[^\/#?]+@)?)(\S+?)(?::\d+)?\s*(?:[\/#?]|$)/
     );
@@ -148,9 +152,9 @@ class UrlbarValueFormatter {
     }
     let [, preDomain, schemeWSlashes, domain] = matchedURL;
 
-    
-    
-    
+    // If the found host differs from the fixed URI one, we can't properly
+    // highlight it. To stay on the safe side, we clobber user's input with
+    // the fixed URI and apply highlight to that one instead.
     let replaceUrl = false;
     try {
       replaceUrl =
@@ -161,7 +165,7 @@ class UrlbarValueFormatter {
     }
     if (replaceUrl) {
       if (this._inGetUrlMetaData) {
-        
+        // Protect from infinite recursion.
         return null;
       }
       try {
@@ -192,15 +196,15 @@ class UrlbarValueFormatter {
     this.inputField.style.setProperty("--urlbar-scheme-size", "0px");
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * If the input value is a URL and the input is not focused, this
+   * formatter method highlights the domain, and if mixed content is present,
+   * it crosses out the https scheme.  It also ensures that the host is
+   * visible (not scrolled out of sight).
+   *
+   * @returns {boolean}
+   *   True if formatting was applied and false if not.
+   */
   _formatURL() {
     let urlMetaData = this._getUrlMetaData();
     if (!urlMetaData) {
@@ -215,7 +219,7 @@ class UrlbarValueFormatter {
       domain,
       trimmedLength,
     } = urlMetaData;
-    
+    // We strip http, so we should not show the scheme box for it.
     if (!UrlbarPrefs.get("trimURLs") || schemeWSlashes != "http://") {
       this.scheme.value = schemeWSlashes;
       this.inputField.style.setProperty(
@@ -237,7 +241,7 @@ class UrlbarValueFormatter {
 
     let textNode = editor.rootElement.firstChild;
 
-    
+    // Strike out the "https" part if mixed active content is loaded.
     if (
       this.urlbarInput.getAttribute("pageproxystate") == "valid" &&
       url.startsWith("https:") &&
@@ -259,7 +263,7 @@ class UrlbarValueFormatter {
     try {
       baseDomain = Services.eTLD.getBaseDomainFromHost(uriInfo.fixedURI.host);
       if (!domain.endsWith(baseDomain)) {
-        
+        // getBaseDomainFromHost converts its resultant to ACE.
         let IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(
           Ci.nsIIDNService
         );
@@ -316,12 +320,12 @@ class UrlbarValueFormatter {
     selection.removeAllRanges();
   }
 
-  
-
-
-
-
-
+  /**
+   * If the input value starts with an @engine search alias, this highlights it.
+   *
+   * @returns {boolean}
+   *   True if formatting was applied and false if not.
+   */
   _formatSearchAlias() {
     if (!UrlbarPrefs.get("formatting.enabled")) {
       return false;
@@ -345,11 +349,11 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    
-    
-    
-    
-    
+    // Make sure the current input starts with the alias because it can change
+    // without the popup results changing.  Most notably that happens when the
+    // user performs a search using an alias: The popup closes (preserving its
+    // results), the search results page loads, and the input value is set to
+    // the URL of the page.
     if (trimmedValue != alias && !trimmedValue.startsWith(alias + " ")) {
       return false;
     }
@@ -359,8 +363,8 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    
-    
+    // We abuse the SELECTION_FIND selection type to do our highlighting.
+    // It's the only type that works with Selection.setColors().
     let selection = editor.selectionController.getSelection(
       Ci.nsISelectionController.SELECTION_FIND
     );
@@ -373,26 +377,26 @@ class UrlbarValueFormatter {
     let fg = "#2362d7";
     let bg = "#d2e6fd";
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Selection.setColors() will swap the given foreground and background
+    // colors if it detects that the contrast between the background
+    // color and the frame color is too low.  Normally we don't want that
+    // to happen; we want it to use our colors as given (even if setColors
+    // thinks the contrast is too low).  But it's a nice feature for non-
+    // default themes, where the contrast between our background color and
+    // the input's frame color might actually be too low.  We can
+    // (hackily) force setColors to use our colors as given by passing
+    // them as the alternate colors.  Otherwise, allow setColors to swap
+    // them, which we can do by passing "currentColor".  See
+    // nsTextPaintStyle::GetHighlightColors for details.
     if (
       this.document.documentElement.querySelector(":-moz-lwtheme") ||
       (AppConstants.platform == "win" &&
         this.window.matchMedia("(-moz-windows-default-theme: 0)").matches)
     ) {
-      
+      // non-default theme(s)
       selection.setColors(fg, bg, "currentColor", "currentColor");
     } else {
-      
+      // default themes
       selection.setColors(fg, bg, fg, bg);
     }
 
@@ -400,11 +404,11 @@ class UrlbarValueFormatter {
   }
 
   _getSearchAlias() {
-    
-    
-    
-    
-    
+    // To determine whether the input contains a valid alias, check the value of
+    // the selected result -- whether it's a search result with an alias.  The
+    // selected result is null when the popup is closed, but we want to continue
+    // highlighting the alias when the popup is closed, and that's why we keep
+    // around the previously selected result in _selectedResult.
     this._selectedResult =
       this.urlbarInput.view.selectedResult || this._selectedResult;
     if (
@@ -416,11 +420,11 @@ class UrlbarValueFormatter {
     return null;
   }
 
-  
-
-
-
-
+  /**
+   * Passes DOM events to the _on_<event type> methods.
+   * @param {Event} event
+   *   DOM event.
+   */
   handleEvent(event) {
     let methodName = "_on_" + event.type;
     if (methodName in this) {
@@ -434,9 +438,9 @@ class UrlbarValueFormatter {
     if (event.target != this.window) {
       return;
     }
-    
-    
-    
+    // Make sure the host remains visible in the input field when the window is
+    // resized.  We don't want to hurt resize performance though, so do this
+    // only after resize events have stopped and a small timeout has elapsed.
     if (this._resizeThrottleTimeout) {
       this.window.clearTimeout(this._resizeThrottleTimeout);
     }

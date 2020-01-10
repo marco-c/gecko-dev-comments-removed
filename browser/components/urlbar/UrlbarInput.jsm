@@ -632,6 +632,9 @@ class UrlbarInput {
           let flags =
             Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
             Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+          if (PrivateBrowsingUtils.isWindowPrivate(this.window)) {
+            flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+          }
           
           try {
             let fixupInfo = Services.uriFixup.getFixupURIInfo(

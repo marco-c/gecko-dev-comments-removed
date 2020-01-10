@@ -798,6 +798,12 @@ var BrowserUtils = {
     }
     let urlWithoutProtocol = url.substring(7);
 
+    
+    
+    
+    
+    
+    
     let flags =
       Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP |
       Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;

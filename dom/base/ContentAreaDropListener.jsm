@@ -72,6 +72,9 @@ ContentAreaDropListener.prototype = {
           
           
           let hasURI = false;
+          
+          
+          
           let flags =
             Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
             Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
@@ -126,6 +129,9 @@ ContentAreaDropListener.prototype = {
     
     uriString = uriString.replace(/^\s*|\s*$/g, "");
 
+    
+    
+    
     
     
     
