@@ -79,8 +79,11 @@ async function withNewSearchEngine(taskFn) {
 
 add_task(async function setup() {
   
-  await Services.search.addEngineWithDetails("MozSearch", "", "mozalias", "", "GET",
-                                             "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch", {
+    alias: "mozalias",
+    method: "GET",
+    template: "http://example.com/?q={searchTerms}",
+  });
 
   
   let engine = Services.search.getEngineByName("MozSearch");

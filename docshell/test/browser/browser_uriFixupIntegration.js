@@ -8,7 +8,8 @@ const kSearchEngineURL = "http://example.com/?search={searchTerms}";
 
 add_task(async function setup() {
   
-  await Services.search.addEngineWithDetails(kSearchEngineID, "", "", "", "get", kSearchEngineURL);
+  await Services.search.addEngineWithDetails(kSearchEngineID,
+    {method: "get", template: kSearchEngineURL});
 
   let oldDefaultEngine = await Services.search.getDefault();
   await Services.search.setDefault(Services.search.getEngineByName(kSearchEngineID));

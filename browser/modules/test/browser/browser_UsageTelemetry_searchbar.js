@@ -61,11 +61,17 @@ add_task(async function setup() {
   
   
   
-  await Services.search.addEngineWithDetails("MozSearch", "", "mozalias", "", "GET",
-                                             "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch", {
+    alias: "mozalias",
+    method: "GET",
+    template: "http://example.com/?q={searchTerms}",
+  });
 
-  await Services.search.addEngineWithDetails("MozSearch2", "", "mozalias2", "", "GET",
-                                             "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch2", {
+    alias: "mozalias2",
+    method: "GET",
+    template: "http://example.com/?q={searchTerms}",
+  });
 
   
   let engineDefault = Services.search.getEngineByName("MozSearch");

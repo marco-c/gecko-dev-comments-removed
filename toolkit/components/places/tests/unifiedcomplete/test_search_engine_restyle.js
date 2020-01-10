@@ -3,8 +3,8 @@
 
 
 add_task(async function test_searchEngine() {
-  await Services.search.addEngineWithDetails("SearchEngine", "", "", "",
-                                             "GET", "http://s.example.com/search");
+  await Services.search.addEngineWithDetails("SearchEngine",
+    {method: "GET", template: "http://s.example.com/search"});
   let engine = Services.search.getEngineByName("SearchEngine");
   engine.addParam("q", "{searchTerms}", null);
   registerCleanupFunction(async () => Services.search.removeEngine(engine));
