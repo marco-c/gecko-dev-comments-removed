@@ -50,6 +50,10 @@ struct Width {
   constexpr static auto CtxDirection = SVGContentUtils::X;
   constexpr static auto Getter = &nsStylePosition::mWidth;
   constexpr static auto SizeGetter = &gfx::Size::width;
+  static AspectRatio AspectRatioRelative(AspectRatio aAspectRatio) {
+    return aAspectRatio.Inverted();
+  }
+  constexpr static uint32_t DefaultObjectSize = 300;
   using CounterPart = Height;
 };
 struct Height {
@@ -57,6 +61,10 @@ struct Height {
   constexpr static auto CtxDirection = SVGContentUtils::Y;
   constexpr static auto Getter = &nsStylePosition::mHeight;
   constexpr static auto SizeGetter = &gfx::Size::height;
+  static AspectRatio AspectRatioRelative(AspectRatio aAspectRatio) {
+    return aAspectRatio;
+  }
+  constexpr static uint32_t DefaultObjectSize = 150;
   using CounterPart = Width;
 };
 
@@ -114,6 +122,9 @@ float ResolveImpl(ComputedStyle const& aStyle, SVGElement* aElement,
     
     
     
+    
+    
+    
 
     auto* f = aElement->GetPrimaryFrame();
     MOZ_ASSERT(f && f->IsSVGImageFrame());
@@ -123,30 +134,59 @@ float ResolveImpl(ComputedStyle const& aStyle, SVGElement* aElement,
     auto const& valueOther = aStyle.StylePosition()->*Other::Getter;
 
     gfx::Size intrinsicImageSize;
-    if (!imgf->GetIntrinsicImageSize(intrinsicImageSize)) {
+    AspectRatio aspectRatio;
+    if (!imgf->GetIntrinsicImageDimensions(intrinsicImageSize, aspectRatio)) {
       
       return 0.f;
     }
 
     if (valueOther.IsLengthPercentage()) {
       
-      
+      float lengthOther = ResolvePureLengthPercentage<Other::CtxDirection>(
+          aElement, valueOther.AsLengthPercentage());
 
-      float intrinsicLengthOther = intrinsicImageSize.*Other::SizeGetter;
-      if (!intrinsicLengthOther) {
+      if (aspectRatio) {
         
-        return 0.f;
+        return Other::AspectRatioRelative(aspectRatio).ApplyTo(lengthOther);
       }
 
-      float intrinsicLength = intrinsicImageSize.*Tag::SizeGetter,
-            lengthOther = ResolvePureLengthPercentage<Other::CtxDirection>(
-                aElement, valueOther.AsLengthPercentage());
+      float intrinsicLength = intrinsicImageSize.*Tag::SizeGetter;
+      if (intrinsicLength >= 0) {
+        
+        return intrinsicLength;
+      }
 
-      return intrinsicLength * lengthOther / intrinsicLengthOther;
+      
+      
+      return Tag::DefaultObjectSize;
     }
 
     
-    return intrinsicImageSize.*Tag::SizeGetter;
+    if (intrinsicImageSize.*Tag::SizeGetter >= 0) {
+      return intrinsicImageSize.*Tag::SizeGetter;
+    }
+
+    if (intrinsicImageSize.*Other::SizeGetter >= 0 && aspectRatio) {
+      return Other::AspectRatioRelative(aspectRatio)
+          .ApplyTo(intrinsicImageSize.*Other::SizeGetter);
+    }
+
+    if (aspectRatio) {
+      
+      auto defaultAspectRatioRelative =
+          AspectRatio{float(Other::DefaultObjectSize) / Tag::DefaultObjectSize};
+      auto aspectRatioRelative = Tag::AspectRatioRelative(aspectRatio);
+
+      if (defaultAspectRatioRelative < aspectRatioRelative) {
+        
+        
+        return aspectRatioRelative.Inverted().ApplyTo(Other::DefaultObjectSize);
+      }
+
+      return Tag::DefaultObjectSize;
+    }
+
+    return Tag::DefaultObjectSize;
   }
 
   
