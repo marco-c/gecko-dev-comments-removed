@@ -15,7 +15,13 @@ export function scrollList(resultList: Element[], index: number): void {
 
   const scroll = () => {
     if (isFirefox()) {
-      resultEl.scrollIntoView({ block: "nearest", behavior: "auto" });
+      
+      
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          resultEl.scrollIntoView({ block: "nearest", behavior: "auto" });
+        });
+      });
     } else {
       chromeScrollList(resultEl, index);
     }
