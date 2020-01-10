@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layout_RenderFrame_h
-#define mozilla_layout_RenderFrame_h
+#ifndef mozilla_layout_RemoteLayerTreeOwner_h
+#define mozilla_layout_RemoteLayerTreeOwner_h
 
 #include "base/process.h"
 
@@ -35,15 +35,15 @@ namespace layout {
 
 
 
-class RenderFrame final {
+class RemoteLayerTreeOwner final {
   typedef mozilla::layers::CompositorOptions CompositorOptions;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::LayersId LayersId;
   typedef mozilla::layers::TextureFactoryIdentifier TextureFactoryIdentifier;
 
  public:
-  RenderFrame();
-  virtual ~RenderFrame();
+  RemoteLayerTreeOwner();
+  virtual ~RemoteLayerTreeOwner();
 
   bool Initialize(dom::BrowserParent* aBrowserParent);
   void Destroy();
