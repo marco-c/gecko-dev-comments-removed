@@ -137,6 +137,7 @@ add_task(async function checkTelemetryClickEvents() {
     }
 
     const syncLink = await ContentTaskUtils.waitForCondition(() => {
+      
       return content.document.getElementById("turn-on-sync");
     }, "syncLink exists");
 
@@ -154,6 +155,7 @@ add_task(async function checkTelemetryClickEvents() {
 
   await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
     const openAboutLogins = await ContentTaskUtils.waitForCondition(() => {
+      
       return content.document.getElementById("open-about-logins-button");
     }, "openAboutLogins exists");
 
@@ -208,6 +210,7 @@ add_task(async function checkTelemetryClickEvents() {
 
   await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
     let openLockwise = await ContentTaskUtils.waitForCondition(() => {
+      
       return content.document.getElementById("lockwise-link");
     }, "openLockwise exists");
 
@@ -280,6 +283,10 @@ add_task(async function checkTelemetryClickEvents() {
 
   await BrowserTestUtils.removeTab(tab);
   
+  
+  
+  
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

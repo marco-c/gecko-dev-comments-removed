@@ -153,9 +153,14 @@ document.addEventListener("DOMContentLoaded", e => {
       date.setDate(date.getDate() - 1);
     }
     
+    
     for (let type of dataTypes) {
       document.querySelector(`label[data-type=${type}]`).textContent =
         weekTypeCounts[type];
+      const learnMoreLink = document.getElementById(`${type}-link`);
+      learnMoreLink.href = RPMGetFormatURLPref(
+        `browser.contentblocking.report.${type}.url`
+      );
     }
 
     
