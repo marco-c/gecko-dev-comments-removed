@@ -186,6 +186,16 @@ const featureCheckboxes = [
     value: "preferencereads",
     title: "Track Preference Reads",
   },
+  {
+    name: "JS Allocations",
+    value: "jsallocations",
+    title: "Track JavaScript allocations (Experimental.)",
+  },
+  {
+    name: "Native Allocations",
+    value: "nativeallocations",
+    title: "Track native allocations (Experimental.)",
+  },
 ];
 
 
@@ -357,6 +367,7 @@ class Settings extends PureComponent {
       
       div(
         { className: "perf-settings-details-contents" },
+        
         
         div(
           { className: "perf-settings-details-contents-slider" },
