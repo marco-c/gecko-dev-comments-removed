@@ -139,15 +139,22 @@ class ScopedCertStore final {
 
 
 
+
+
+
 static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
                                              Vector<EnterpriseCert>& certs) {
   MOZ_ASSERT(locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY ||
-                 locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+                 locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE ||
+                 locationFlag == CERT_SYSTEM_STORE_CURRENT_USER ||
+                 locationFlag == CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
              "unexpected locationFlag for GatherEnterpriseRootsForLocation");
   if (!(locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE ||
         locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY ||
-        locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE)) {
+        locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE ||
+        locationFlag == CERT_SYSTEM_STORE_CURRENT_USER ||
+        locationFlag == CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY)) {
     return;
   }
 
@@ -201,6 +208,9 @@ static void GatherEnterpriseCertsWindows(Vector<EnterpriseCert>& certs) {
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
                                    certs);
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+                                   certs);
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_CURRENT_USER, certs);
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
                                    certs);
 }
 #endif  
