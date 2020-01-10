@@ -25,6 +25,7 @@ namespace gc {
 
 
 class RelocationOverlay : public Cell {
+ protected:
   
   
   
@@ -63,6 +64,92 @@ class RelocationOverlay : public Cell {
     return next_;
   }
 };
+
+
+
+
+
+
+
+
+class StringRelocationOverlay : public RelocationOverlay {
+  union {
+    
+    const JS::Latin1Char* nurseryCharsLatin1;
+    const char16_t* nurseryCharsTwoByte;
+
+    
+    
+    JSLinearString* nurseryBaseOrRelocOverlay;
+  };
+
+ public:
+  static const StringRelocationOverlay* fromCell(const Cell* cell) {
+    return static_cast<const StringRelocationOverlay*>(cell);
+  }
+
+  static StringRelocationOverlay* fromCell(Cell* cell) {
+    return static_cast<StringRelocationOverlay*>(cell);
+  }
+
+  StringRelocationOverlay*& nextRef() {
+    MOZ_ASSERT(isForwarded());
+    return (StringRelocationOverlay*&)next_;
+  }
+
+  StringRelocationOverlay* next() const {
+    MOZ_ASSERT(isForwarded());
+    return (StringRelocationOverlay*)next_;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void saveCharsOrBase(JSString* src) {
+    JS::AutoCheckCannotGC nogc;
+    if (src->hasBase()) {
+      nurseryBaseOrRelocOverlay = src->nurseryBaseOrRelocOverlay();
+    } else if (src->canBeRootBase()) {
+      if (src->hasTwoByteChars()) {
+        nurseryCharsTwoByte = src->asLinear().twoByteChars(nogc);
+      } else {
+        nurseryCharsLatin1 = src->asLinear().latin1Chars(nogc);
+      }
+    }
+  }
+
+  template <typename CharT>
+  MOZ_ALWAYS_INLINE const CharT* savedNurseryChars() const;
+
+  const MOZ_ALWAYS_INLINE JS::Latin1Char* savedNurseryCharsLatin1() const {
+    return nurseryCharsLatin1;
+  }
+
+  const MOZ_ALWAYS_INLINE char16_t* savedNurseryCharsTwoByte() const {
+    return nurseryCharsTwoByte;
+  }
+
+  JSLinearString* savedNurseryBaseOrRelocOverlay() const {
+    return nurseryBaseOrRelocOverlay;
+  }
+};
+
+template <>
+MOZ_ALWAYS_INLINE const JS::Latin1Char*
+StringRelocationOverlay::savedNurseryChars() const {
+  return savedNurseryCharsLatin1();
+}
+
+template <>
+MOZ_ALWAYS_INLINE const char16_t* StringRelocationOverlay::savedNurseryChars()
+    const {
+  return savedNurseryCharsTwoByte();
+}
 
 }  
 }  

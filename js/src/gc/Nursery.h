@@ -18,6 +18,7 @@
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
 #include "js/Vector.h"
+#include "util/Text.h"
 
 #define FOR_EACH_NURSERY_PROFILE_TIME(_)
  \
@@ -43,6 +44,7 @@
 
 template <typename T>
 class SharedMem;
+class JSDependentString;
 
 namespace js {
 
@@ -64,6 +66,7 @@ struct Cell;
 class GCSchedulingTunables;
 class MinorCollectionTracer;
 class RelocationOverlay;
+class StringRelocationOverlay;
 struct TenureCountCache;
 enum class AllocKind : uint8_t;
 class TenuredCell;
@@ -112,8 +115,8 @@ class TenuringTracer : public JSTracer {
   
   gc::RelocationOverlay* objHead;
   gc::RelocationOverlay** objTail;
-  gc::RelocationOverlay* stringHead;
-  gc::RelocationOverlay** stringTail;
+  gc::StringRelocationOverlay* stringHead;
+  gc::StringRelocationOverlay** stringTail;
 
   TenuringTracer(JSRuntime* rt, Nursery* nursery);
 
@@ -133,10 +136,12 @@ class TenuringTracer : public JSTracer {
 
  private:
   inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
-  inline void insertIntoStringFixupList(gc::RelocationOverlay* entry);
+  inline void insertIntoStringFixupList(gc::StringRelocationOverlay* entry);
 
   template <typename T>
   inline T* allocTenured(JS::Zone* zone, gc::AllocKind kind);
+  JSString* allocTenuredString(JSString* src, JS::Zone* zone,
+                               gc::AllocKind dstKind);
 
   inline JSObject* movePlainObjectToTenured(PlainObject* src);
   JSObject* moveToTenuredSlow(JSObject* src);
@@ -529,6 +534,72 @@ class Nursery {
   using NativeObjectVector = Vector<NativeObject*, 0, SystemAllocPolicy>;
   NativeObjectVector dictionaryModeObjects_;
 
+  template <typename Key>
+  struct DeduplicationStringHasher {
+    using Lookup = Key;
+
+    static inline HashNumber hash(const Lookup& aLookup) {
+      JS::AutoCheckCannotGC nogc;
+
+      if (aLookup->asLinear().hasLatin1Chars()) {
+        HashNumber strHash = mozilla::HashString(
+            aLookup->asLinear().latin1Chars(nogc), aLookup->length());
+
+        
+        
+        
+        
+        
+        
+        
+
+        return mozilla::HashGeneric(strHash, aLookup->zone(), aLookup->flags());
+      } else {
+        MOZ_ASSERT(aLookup->asLinear().hasTwoByteChars());
+        HashNumber strHash = mozilla::HashString(
+            aLookup->asLinear().twoByteChars(nogc), aLookup->length());
+        return mozilla::HashGeneric(strHash, aLookup->zone(), aLookup->flags());
+      }
+    }
+
+    static MOZ_ALWAYS_INLINE bool match(const Key& aKey,
+                                        const Lookup& aLookup) {
+      if (aKey->length() != aLookup->length()) {
+        return false;
+      }
+
+      MOZ_ASSERT(aKey->zone() == aLookup->zone());
+      MOZ_ASSERT(aKey->flags() == aLookup->flags());
+      MOZ_ASSERT(aKey->asTenured().getAllocKind() == aLookup->getAllocKind());
+
+      JS::AutoCheckCannotGC nogc;
+
+      if (aKey->asLinear().hasLatin1Chars() &&
+          aLookup->asLinear().hasLatin1Chars()) {
+        return mozilla::ArrayEqual(aKey->asLinear().latin1Chars(nogc),
+                                   aLookup->asLinear().latin1Chars(nogc),
+                                   aLookup->length());
+      } else if (aKey->asLinear().hasTwoByteChars() &&
+                 aLookup->asLinear().hasTwoByteChars()) {
+        return EqualChars(aKey->asLinear().twoByteChars(nogc),
+                          aLookup->asLinear().twoByteChars(nogc),
+                          aLookup->length());
+      } else {
+        return false;
+      }
+    }
+  };
+
+  using StringDeDupSet =
+      HashSet<JSString*, DeduplicationStringHasher<JSString*>,
+              SystemAllocPolicy>;
+
+  
+  
+  
+  
+  mozilla::Maybe<StringDeDupSet> stringDeDupSet;
+
   
   
   Vector<MapObject*, 0, SystemAllocPolicy> mapsWithNurseryMemory_;
@@ -585,6 +656,15 @@ class Nursery {
   
   void collectToFixedPoint(TenuringTracer& trc,
                            gc::TenureCountCache& tenureCounts);
+
+  
+  
+  template <typename CharT>
+  void relocateDependentStringChars(JSDependentString* tenuredDependentStr,
+                                    JSLinearString* baseOrRelocOverlay,
+                                    size_t* offset,
+                                    bool* rootBaseWasNotForwarded,
+                                    JSLinearString** rootBase);
 
   
   inline void setForwardingPointer(void* oldData, void* newData, bool direct);
