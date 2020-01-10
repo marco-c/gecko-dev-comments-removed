@@ -1173,7 +1173,7 @@ template <typename T>
   
   RootedObject proto(cx);
 
-  JSFunction* arrayBufferCtor =
+  JSObject* arrayBufferCtor =
       GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global());
   if (!arrayBufferCtor) {
     return false;
