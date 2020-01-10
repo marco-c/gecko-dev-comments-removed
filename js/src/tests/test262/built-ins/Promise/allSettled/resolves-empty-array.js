@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arg = [];
+
+Promise.allSettled(arg).then(function(result) {
+  checkSettledPromises(result, []);
+}).then($DONE, $DONE);

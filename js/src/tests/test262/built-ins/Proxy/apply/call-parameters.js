@@ -12,9 +12,10 @@
 
 
 
+
 var _target, _args, _handler, _context;
-var target = function(a, b) {
-  return a + b;
+var target = function() {
+  throw new Test262Error('target should not be called');
 };
 var handler = {
   apply: function(t, c, args) {

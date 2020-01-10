@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Promise('not callable');
+});
+
+assert.throws(TypeError, function() {
+  new Promise(1);
+});
+
+assert.throws(TypeError, function() {
+  new Promise(null);
+});
+
+assert.throws(TypeError, function() {
+  new Promise({});
+});
+
+reportCompare(0, 0);

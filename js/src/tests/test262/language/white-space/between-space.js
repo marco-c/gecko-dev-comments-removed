@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+ var x = 2 ;
+
+assert.sameValue(x, 2);
+
+reportCompare(0, 0);

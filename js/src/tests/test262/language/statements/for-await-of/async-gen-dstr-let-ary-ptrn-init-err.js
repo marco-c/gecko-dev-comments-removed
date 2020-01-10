@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+async function fn() {
+  for await (let [x] = 1 of []) {}
+}

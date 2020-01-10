@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+async function fn() {
+  for await (const [x] = 1 of []) {}
+}

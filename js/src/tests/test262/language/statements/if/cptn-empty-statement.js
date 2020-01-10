@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var __evaluated = eval("if(1);");
+
+assert.sameValue(__evaluated, undefined, '#1: __evaluated === undefined. Actual:  __evaluated ==='+ __evaluated);
+
+reportCompare(0, 0);

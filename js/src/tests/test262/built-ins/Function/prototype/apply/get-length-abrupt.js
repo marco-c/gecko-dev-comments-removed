@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayLike = {
+  get length() {
+    throw new Test262Error();
+  },
+};
+
+assert.throws(Test262Error, function() {
+  (function() {}).apply(null, arrayLike);
+});
+
+reportCompare(0, 0);

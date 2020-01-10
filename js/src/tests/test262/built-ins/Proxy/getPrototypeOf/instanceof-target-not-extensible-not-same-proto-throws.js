@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Custom() {}
+
+var target = {};
+
+var p = new Proxy(target, {
+  getPrototypeOf() {
+    return Custom.prototype;
+  }
+});
+
+Object.preventExtensions(target);
+
+assert.throws(TypeError, () => {
+  p instanceof Custom
+});
+
+reportCompare(0, 0);

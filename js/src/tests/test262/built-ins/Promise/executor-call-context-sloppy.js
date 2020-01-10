@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var _this;
+
+new Promise(function() {
+  _this = this;
+});
+
+assert.sameValue(_this, this);
+
+reportCompare(0, 0);

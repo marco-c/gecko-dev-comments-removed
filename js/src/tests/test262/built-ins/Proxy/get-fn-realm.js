@@ -21,10 +21,8 @@
 
 var other = $262.createRealm().global;
 var C = new other.Function();
-
-var P = new Proxy(C, {
-  get: function() {}
-});
+C.prototype = null;
+var P = new Proxy(C, {});
 
 assert.sameValue(Object.getPrototypeOf(new P()), other.Object.prototype);
 

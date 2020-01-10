@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+  JSON.parse({
+    toString: null,
+    get valueOf() {
+      throw new Test262Error();
+    },
+  });
+});
+
+assert.throws(Test262Error, function() {
+  JSON.parse({
+    toString: function() {
+      throw new Test262Error();
+    },
+  });
+});
+
+reportCompare(0, 0);

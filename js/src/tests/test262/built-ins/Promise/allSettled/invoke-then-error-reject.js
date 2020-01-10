@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var promise = new Promise(function() {});
+var error = new Test262Error();
+
+promise.then = function() {
+  throw error;
+};
+
+Promise.allSettled([promise]).then(function() {
+  throw new Test262Error('The promise should be rejected');
+}, function(reason) {
+  assert.sameValue(reason, error);
+}).then($DONE, $DONE);

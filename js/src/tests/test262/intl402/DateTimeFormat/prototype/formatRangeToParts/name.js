@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+verifyProperty(Intl.DateTimeFormat.prototype.formatRangeToParts, 'name', {
+  value: 'formatRangeToParts',
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

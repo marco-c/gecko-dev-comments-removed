@@ -6,14 +6,17 @@ export { A as B } from './instn-iee-bndng-cls.js';
 
 
 
-assert.throws(ReferenceError, function() {
+export const results = [];
+try {
   A;
-});
-assert.sameValue(typeof A, 'undefined');
+} catch (error) {
+  results.push(error.name, typeof A);
+}
 
 
 
-assert.throws(ReferenceError, function() {
+try {
   B;
-});
-assert.sameValue(typeof B, 'undefined');
+} catch (error) {
+  results.push(error.name, typeof B);
+}

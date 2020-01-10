@@ -11,13 +11,11 @@
 
 
 
-function Target() {
-  this.attr = "done";
-};
-var P = new Proxy(Target, {
-  construct: function() {
-    return undefined;
-  }
+
+var P = new Proxy(function() {
+  throw new Test262Error('target should not be called');
+}, {
+  construct: function() {}
 });
 
 assert.throws(TypeError, function() {
