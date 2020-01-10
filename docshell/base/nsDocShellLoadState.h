@@ -41,6 +41,11 @@ class nsDocShellLoadState final {
   static nsresult CreateFromPendingChannel(nsIChildChannel* aPendingChannel,
                                            nsDocShellLoadState** aResult);
 
+  static nsresult CreateFromLoadURIOptions(
+      nsISupports* aConsumer, nsIURIFixup* aURIFixup, const nsAString& aURI,
+      const mozilla::dom::LoadURIOptions& aLoadURIOptions,
+      nsDocShellLoadState** aResult);
+
   
 
   nsIReferrerInfo* GetReferrerInfo() const;
