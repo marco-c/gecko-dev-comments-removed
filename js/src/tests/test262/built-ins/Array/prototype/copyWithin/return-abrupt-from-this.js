@@ -11,7 +11,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Array.prototype.copyWithin.call(undefined, 0, 0);
 });

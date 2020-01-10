@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+class C {}
+
+assert.throws(TypeError, function() {
+  C();
+});
+
+reportCompare(0, 0);

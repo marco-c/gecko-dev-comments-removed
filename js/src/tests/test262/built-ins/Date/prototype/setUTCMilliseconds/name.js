@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.setUTCMilliseconds.name, "setUTCMilliseconds");
 
 verifyNotEnumerable(Date.prototype.setUTCMilliseconds, "name");

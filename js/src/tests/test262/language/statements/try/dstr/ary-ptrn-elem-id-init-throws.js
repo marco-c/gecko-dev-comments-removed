@@ -25,7 +25,6 @@
 
 
 
-
 assert.throws(Test262Error, function() {
   try {
     throw [undefined];

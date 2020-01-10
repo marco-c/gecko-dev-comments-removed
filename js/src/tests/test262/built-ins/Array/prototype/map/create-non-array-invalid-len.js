@@ -20,7 +20,6 @@
 
 
 
-
 var callCount = 0;
 var obj = {
   length: Math.pow(2, 32)

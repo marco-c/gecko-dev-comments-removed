@@ -25,11 +25,14 @@
 
 
 
-assert.sameValue(Object.hasOwnProperty.call(function() {}, 'name'), false);
 
-assert.sameValue(function func() {}.name, 'func');
-verifyNotEnumerable(function func() {}, 'name');
-verifyNotWritable(function func() {}, 'name');
-verifyConfigurable(function func() {}, 'name');
+
+verifyProperty(function() {}, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
+
+verifyProperty(function func() {}, "name", {
+  value: "func", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

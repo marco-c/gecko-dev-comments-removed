@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseFloat("Infinity") !== Number.POSITIVE_INFINITY) {
   $ERROR('#1: parseFloat("Infinity") === Number.POSITIVE_INFINITY. Actual: ' + (parseFloat("Infinity")));
 }

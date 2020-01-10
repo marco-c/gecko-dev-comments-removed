@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   return parseInt(val, 10) > 1;
 }

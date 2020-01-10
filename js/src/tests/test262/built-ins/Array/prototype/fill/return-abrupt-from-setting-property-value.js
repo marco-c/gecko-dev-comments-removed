@@ -15,7 +15,6 @@
 
 
 
-
 var a1 = [];
 Object.freeze(a1);
 

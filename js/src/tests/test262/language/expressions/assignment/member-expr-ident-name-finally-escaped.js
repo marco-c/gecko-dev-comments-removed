@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.\u0066inally = 42;
+
+assert.sameValue(obj['finally'], 42, 'property exists');
+
+reportCompare(0, 0);

@@ -9,7 +9,6 @@
 
 
 
-
 var result = false;
 
 function callbackfn(val, idx, obj) {

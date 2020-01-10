@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.getMinutes.name, "getMinutes");
 
 verifyNotEnumerable(Date.prototype.getMinutes, "name");

@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(typeof Array.prototype.values, 'function');
 
 verifyNotEnumerable(Array.prototype, 'values');

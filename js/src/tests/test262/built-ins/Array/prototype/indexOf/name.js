@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.indexOf.name, "indexOf");
 
 verifyNotEnumerable(Array.prototype.indexOf, "name");

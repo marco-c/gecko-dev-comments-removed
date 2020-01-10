@@ -30,7 +30,6 @@
 
 
 
-
 if (true) function f() { return 'inner declaration'; } else ;
 
 assert.sameValue(typeof f, 'function');

@@ -9,7 +9,6 @@
 
 
 
-
 if (Date.prototype.setUTCMinutes.propertyIsEnumerable('length')) {
   $ERROR('#1: The Date.prototype.setUTCMinutes.length property has the attribute DontEnum');
 }

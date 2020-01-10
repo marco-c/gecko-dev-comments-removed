@@ -34,7 +34,6 @@
 
 
 
-
 var xCls, cls, xCls2;
 
 var counter = 0;

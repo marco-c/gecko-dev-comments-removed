@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue([1, 2, 3, 4].lastIndexOf(4, -1), 3, '[1, 2, 3, 4].lastIndexOf(4, -1)');
 
 reportCompare(0, 0);

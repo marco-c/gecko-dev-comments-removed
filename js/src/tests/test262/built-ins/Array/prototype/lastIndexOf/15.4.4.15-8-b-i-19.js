@@ -9,7 +9,6 @@
 
 
 
-
 var obj = {
   length: 1
 };

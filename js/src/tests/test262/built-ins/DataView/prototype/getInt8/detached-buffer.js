@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(1);
+var sample = new DataView(buffer, 0);
+
+$DETACHBUFFER(buffer);
+assert.throws(TypeError, function() {
+  sample.getInt8(0);
+});
+
+reportCompare(0, 0);

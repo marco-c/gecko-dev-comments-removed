@@ -11,7 +11,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   WeakSet.prototype.add.call(undefined, {});
 });

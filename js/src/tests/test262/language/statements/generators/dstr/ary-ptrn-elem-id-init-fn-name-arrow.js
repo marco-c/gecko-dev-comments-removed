@@ -52,7 +52,6 @@
 
 
 
-
 var callCount = 0;
 function* f([arrow = () => {}]) {
   assert.sameValue(arrow.name, 'arrow');

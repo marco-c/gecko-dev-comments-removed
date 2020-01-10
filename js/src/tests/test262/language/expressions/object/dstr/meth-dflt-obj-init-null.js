@@ -1,0 +1,57 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  method({} = null) {}
+};
+
+assert.throws(TypeError, function() {
+  obj.method();
+});
+
+reportCompare(0, 0);

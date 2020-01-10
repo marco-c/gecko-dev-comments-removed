@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(isFinite.length, 1, "The value of `isFinite.length` is `1`");
 
 verifyNotEnumerable(isFinite, "length");

@@ -27,7 +27,6 @@
 
 
 
-
 var initCount = 0;
 
 var ranCatch = false;

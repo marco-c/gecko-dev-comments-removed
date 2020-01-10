@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Float64Array.prototype, Object.getPrototypeOf(new Float64Array(0)));
 
 verifyNotEnumerable(Float64Array, "prototype");

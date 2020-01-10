@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var date = new Date(NaN);
+var result;
+
+result = date.setMilliseconds(0);
+
+assert.sameValue(result, NaN, 'return value');
+assert.sameValue(date.getTime(), NaN, '[[DateValue]] internal slot');
+
+reportCompare(0, 0);

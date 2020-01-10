@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(Int8Array.BYTES_PER_ELEMENT, 1);
 
 verifyNotEnumerable(Int8Array, "BYTES_PER_ELEMENT");

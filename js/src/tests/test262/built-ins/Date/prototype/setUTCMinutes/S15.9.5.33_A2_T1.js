@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.setUTCMinutes.hasOwnProperty("length") !== true) {
   $ERROR('#1: The setUTCMinutes has a "length" property');
 }

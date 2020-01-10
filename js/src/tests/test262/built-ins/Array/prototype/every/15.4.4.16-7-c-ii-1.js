@@ -6,7 +6,6 @@
 
 
 
-
 function callbackfn(val, Idx, obj)
 {
   if (obj[Idx] === val)

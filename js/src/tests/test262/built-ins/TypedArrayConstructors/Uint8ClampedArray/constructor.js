@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Uint8ClampedArray, 'function', 'typeof Uint8ClampedArray is "function"');
 
 reportCompare(0, 0);

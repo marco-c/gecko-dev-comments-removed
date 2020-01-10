@@ -11,7 +11,6 @@
 
 
 
-
 var obj = {};
 obj.slice = Array.prototype.slice;
 obj[0] = 0;

@@ -8,8 +8,6 @@
 
 
 
-
-
 if (decodeURI("http://unipro.ru/0123456789") !== "http://unipro.ru/0123456789") {
   $ERROR('#1: http://unipro.ru/0123456789');
 }

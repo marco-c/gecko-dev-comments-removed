@@ -8,7 +8,6 @@
 
 
 
-
 var arr = [2, 1, , 1, 2];
 var elementFirstAccessed = false;
 var elementThirdAccessed = false;

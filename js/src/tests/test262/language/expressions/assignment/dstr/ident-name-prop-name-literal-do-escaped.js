@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { \u0064o: x } = { do: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['do'], 42, 'assignment successful');
+
+reportCompare(0, 0);

@@ -18,7 +18,6 @@
 
 
 
-
 function T() {
   throw new Test262Error();
 }

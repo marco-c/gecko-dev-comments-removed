@@ -6,7 +6,6 @@
 
 
 
-
 var result = false;
 var objBoolean = new Boolean();
 

@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(ArrayBuffer.prototype.constructor, ArrayBuffer);
 
 verifyNotEnumerable(ArrayBuffer.prototype, "constructor");

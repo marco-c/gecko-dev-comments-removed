@@ -10,8 +10,6 @@
 
 
 
-
-
 if (parseFloat("+.1string") !== 0.1) {
   $ERROR('#1: parseFloat("+.1string") === 0.1. Actual: ' + (parseFloat("+.1string")));
 }

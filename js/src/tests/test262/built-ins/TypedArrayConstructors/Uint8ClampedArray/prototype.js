@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Uint8ClampedArray.prototype, Object.getPrototypeOf(new Uint8ClampedArray(0)));
 
 verifyNotEnumerable(Uint8ClampedArray, "prototype");

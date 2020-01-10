@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fd = Symbol("1");
+
+assert.throws(TypeError, function() {
+  NaN.toExponential(fd);
+});
+
+reportCompare(0, 0);

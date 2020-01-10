@@ -8,7 +8,6 @@
 
 
 
-
 var result = true;
 var kIndex = [];
 var called = 0;

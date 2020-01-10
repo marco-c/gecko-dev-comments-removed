@@ -8,7 +8,6 @@
 
 
 
-
 var targetObj = {};
 
 assert.sameValue([0, 1, targetObj, 3, 4].indexOf(targetObj, "3E0"), -1, '[0, 1, targetObj, 3, 4].indexOf(targetObj, "3E0")');

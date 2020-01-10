@@ -8,7 +8,6 @@
 
 
 
-
 function MyError() {}
 var args = (function(a) {
   return arguments;

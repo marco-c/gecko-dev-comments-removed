@@ -14,7 +14,6 @@
 
 
 
-
 var setTime = Date.prototype.setTime;
 var callCount = 0;
 var arg = {

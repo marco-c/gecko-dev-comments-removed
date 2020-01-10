@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { c\u0061se: x } = { case: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['case'], 42, 'assignment successful');
+
+reportCompare(0, 0);

@@ -25,7 +25,6 @@
 
 
 
-
 function T1() {
   Object.preventExtensions(this);
 }

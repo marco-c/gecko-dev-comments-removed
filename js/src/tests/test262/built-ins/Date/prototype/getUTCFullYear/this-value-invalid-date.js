@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(new Date(NaN).getUTCFullYear(), NaN);
+
+reportCompare(0, 0);

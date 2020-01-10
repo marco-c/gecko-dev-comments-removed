@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   WeakSet.prototype.add.length, 1,
   'The value of `WeakSet.prototype.add.length` is `1`'

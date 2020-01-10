@@ -11,7 +11,6 @@
 
 
 
-
 var obj = {};
 obj.push = Array.prototype.push;
 

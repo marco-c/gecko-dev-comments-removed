@@ -8,7 +8,6 @@
 
 
 
-
 Array.prototype[0] = false;
 
 assert.sameValue([true].indexOf(true), 0, '[true].indexOf(true)');

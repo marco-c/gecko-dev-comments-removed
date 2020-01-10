@@ -24,7 +24,6 @@
 
 
 
-
 var x = {
   set y(val) {
     throw new Test262Error();

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.def\u0061ult = 42;
+
+assert.sameValue(obj['default'], 42, 'property exists');
+
+reportCompare(0, 0);

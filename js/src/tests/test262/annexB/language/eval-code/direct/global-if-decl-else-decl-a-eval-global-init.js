@@ -25,7 +25,6 @@
 
 
 
-
 eval(
   'var global = fnGlobalObject();\
   assert.sameValue(f, undefined, "binding is initialized to `undefined`");\

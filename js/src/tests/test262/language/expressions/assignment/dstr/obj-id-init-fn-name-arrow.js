@@ -25,7 +25,6 @@
 
 
 
-
 var arrow;
 
 var result;

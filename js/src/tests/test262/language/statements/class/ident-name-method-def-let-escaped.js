@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  l\u0065t() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['let'](), 42, 'property exists');
+
+reportCompare(0, 0);

@@ -14,7 +14,6 @@
 
 
 
-
 verifyNotEnumerable(Number.prototype, "valueOf");
 verifyWritable(Number.prototype, "valueOf");
 verifyConfigurable(Number.prototype, "valueOf");

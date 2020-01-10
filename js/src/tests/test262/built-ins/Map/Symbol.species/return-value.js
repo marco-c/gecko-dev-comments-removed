@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var thisVal = {};
+var accessor = Object.getOwnPropertyDescriptor(Map, Symbol.species).get;
+
+assert.sameValue(accessor.call(thisVal), thisVal);
+
+reportCompare(0, 0);

@@ -17,8 +17,12 @@
 
 
 
+
+
 var formatFn = new Intl.DateTimeFormat().format;
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(formatFn, "name"), false);
+verifyProperty(formatFn, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(prevVal, curVal, idx, obj)
 {
   return 1;

@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.toLocaleDateString.name, "toLocaleDateString");
 
 verifyNotEnumerable(Date.prototype.toLocaleDateString, "name");

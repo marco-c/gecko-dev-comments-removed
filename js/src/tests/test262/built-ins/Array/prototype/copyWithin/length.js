@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.copyWithin.length, 2,
   'The value of `Array.prototype.copyWithin.length` is `2`'

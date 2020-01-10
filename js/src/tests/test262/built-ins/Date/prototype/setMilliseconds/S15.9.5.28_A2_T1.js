@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.setMilliseconds.hasOwnProperty("length") !== true) {
   $ERROR('#1: The setMilliseconds has a "length" property');
 }

@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  \u0063onst() { return 42; }
+};
+
+assert.sameValue(obj['const'](), 42, 'property exists');
+
+reportCompare(0, 0);

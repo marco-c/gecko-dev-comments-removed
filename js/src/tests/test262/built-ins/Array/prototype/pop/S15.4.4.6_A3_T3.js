@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {};
 obj.pop = Array.prototype.pop;
 obj[4294967294] = "x";

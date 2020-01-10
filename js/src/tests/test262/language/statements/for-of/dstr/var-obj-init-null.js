@@ -39,7 +39,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   for (var {} of [null]) {
     return;

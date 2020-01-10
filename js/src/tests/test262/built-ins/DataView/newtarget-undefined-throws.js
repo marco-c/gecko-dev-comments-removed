@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  valueOf: function() {
+    throw new Test262Error("NewTarget should be verified before byteOffset");
+  }
+};
+
+var buffer = new ArrayBuffer(1);
+
+assert.throws(TypeError, function() {
+  DataView(buffer, obj);
+});
+
+reportCompare(0, 0);

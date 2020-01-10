@@ -24,7 +24,6 @@
 
 
 
-
 var promise = new Promise(function() {});
 var returnCount = 0;
 var iter = {};

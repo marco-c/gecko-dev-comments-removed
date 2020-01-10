@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var handle = Proxy.revocable([], {});
+
+handle.revoke();
+
+assert.throws(TypeError, function() {
+  [].concat(handle.proxy);
+});
+
+reportCompare(0, 0);

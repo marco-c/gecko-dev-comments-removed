@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.prototype.getUTCDay;
 if (x === 1)
   Date.prototype.getUTCDay = 2;

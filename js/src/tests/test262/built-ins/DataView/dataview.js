@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "DataView");
+verifyWritable(this, "DataView");
+verifyConfigurable(this, "DataView");
+
+reportCompare(0, 0);

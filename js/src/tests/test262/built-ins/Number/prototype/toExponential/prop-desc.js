@@ -12,7 +12,6 @@
 
 
 
-
 verifyNotEnumerable(Number.prototype, "toExponential");
 verifyWritable(Number.prototype, "toExponential");
 verifyConfigurable(Number.prototype, "toExponential");

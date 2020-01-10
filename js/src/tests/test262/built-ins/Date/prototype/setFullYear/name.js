@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.setFullYear.name, "setFullYear");
 
 verifyNotEnumerable(Date.prototype.setFullYear, "name");

@@ -11,8 +11,6 @@
 
 
 
-
-
 try {
   new eval();
   $ERROR('#1.1: new eval() throw TypeError. Actual: ' + (new eval()));

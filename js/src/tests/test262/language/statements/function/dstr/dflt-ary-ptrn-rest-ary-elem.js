@@ -72,7 +72,6 @@
 
 
 
-
 var callCount = 0;
 function f([...[x, y, z]] = [3, 4, 5]) {
   assert.sameValue(x, 3);

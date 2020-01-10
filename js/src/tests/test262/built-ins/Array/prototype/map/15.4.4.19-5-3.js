@@ -6,7 +6,6 @@
 
 
 
-
 var res = false;
 var a = new Array();
 a.res = true;

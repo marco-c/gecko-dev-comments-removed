@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.filter.name, "filter");
 
 verifyNotEnumerable(Array.prototype.filter, "name");

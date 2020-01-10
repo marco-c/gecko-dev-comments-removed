@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(ArrayBuffer.prototype[Symbol.toStringTag], 'ArrayBuffer');
 
 verifyNotEnumerable(ArrayBuffer.prototype, Symbol.toStringTag);

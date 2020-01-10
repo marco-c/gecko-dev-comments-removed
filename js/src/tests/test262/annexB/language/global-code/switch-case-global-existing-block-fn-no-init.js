@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(f, undefined);
 
 {

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var noCoerce = Object.create(null);
+
+assert.throws(TypeError, function() {
+  ''.charAt(noCoerce);
+});
+
+reportCompare(0, 0);

@@ -6,7 +6,6 @@
 
 
 
-
 var objArray = new Array(10);
 
 var accessed = false;

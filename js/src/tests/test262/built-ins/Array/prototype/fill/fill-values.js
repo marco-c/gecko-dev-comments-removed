@@ -24,7 +24,6 @@
 
 
 
-
 assert(compareArray([].fill(8), []));
 
 assert(compareArray(

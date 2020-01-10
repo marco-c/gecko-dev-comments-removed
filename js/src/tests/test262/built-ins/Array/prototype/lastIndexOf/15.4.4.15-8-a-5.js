@@ -8,7 +8,6 @@
 
 
 
-
 var arr = {
   10: false,
   length: 30

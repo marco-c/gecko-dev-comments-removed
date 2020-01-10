@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(
   Array.from.name,
   'from',

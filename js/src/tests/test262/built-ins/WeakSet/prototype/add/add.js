@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   typeof WeakSet.prototype.add,
   'function',

@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var after;
+
+(function() {
+  eval(
+    'if (true) function f() { return "declaration"; }after = f;'
+  );
+}());
+
+assert.sameValue(typeof after, 'function');
+assert.sameValue(after(), 'declaration');
+
+reportCompare(0, 0);

@@ -24,7 +24,6 @@
 
 
 
-
 var iterDoneSpy = {};
 var callCount = 0;
 iterDoneSpy[Symbol.iterator] = function() {

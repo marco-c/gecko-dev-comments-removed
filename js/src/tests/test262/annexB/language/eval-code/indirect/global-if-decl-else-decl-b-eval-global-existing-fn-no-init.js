@@ -22,7 +22,6 @@
 
 
 
-
 (0,eval)(
   'assert.sameValue(f(), "outer declaration");if (false) function _f() {} else function f() { return "inner declaration"; }function f() {\
     return "outer declaration";\

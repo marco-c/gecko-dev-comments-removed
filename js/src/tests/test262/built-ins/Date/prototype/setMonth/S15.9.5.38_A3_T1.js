@@ -10,7 +10,6 @@
 
 
 
-
 var x = Date.prototype.setMonth.length;
 verifyNotWritable(Date.prototype.setMonth, "length", null, 1);
 if (Date.prototype.setMonth.length !== x) {

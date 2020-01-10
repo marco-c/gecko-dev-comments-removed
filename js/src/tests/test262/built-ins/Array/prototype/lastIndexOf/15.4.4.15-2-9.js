@@ -9,7 +9,6 @@
 
 
 
-
 var proto = {};
 Object.defineProperty(proto, "length", {
   get: function() {

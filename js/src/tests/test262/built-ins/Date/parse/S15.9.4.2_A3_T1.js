@@ -10,7 +10,6 @@
 
 
 
-
 var x = Date.parse.length;
 verifyNotWritable(Date.parse, "length", null, 1);
 if (Date.parse.length !== x) {

@@ -15,7 +15,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var of = TA.of;
 

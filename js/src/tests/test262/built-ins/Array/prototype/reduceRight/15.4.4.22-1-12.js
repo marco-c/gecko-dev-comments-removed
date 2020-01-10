@@ -6,7 +6,6 @@
 
 
 
-
 var obj = new RegExp();
 obj.length = 1;
 obj[0] = 1;

@@ -9,7 +9,6 @@
 
 
 
-
 if (delete Date.prototype.toUTCString.length !== true) {
   $ERROR('#1: The Date.prototype.toUTCString.length property does not have the attributes DontDelete');
 }

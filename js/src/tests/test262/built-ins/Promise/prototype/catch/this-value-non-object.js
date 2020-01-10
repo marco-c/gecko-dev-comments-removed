@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Promise.prototype.catch.call(undefined);
+}, 'undefined');
+
+assert.throws(TypeError, function() {
+  Promise.prototype.catch.call(null);
+}, 'null');
+
+reportCompare(0, 0);

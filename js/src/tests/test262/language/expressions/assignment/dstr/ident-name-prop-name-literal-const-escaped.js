@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { \u0063onst: x } = { const: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['const'], 42, 'assignment successful');
+
+reportCompare(0, 0);

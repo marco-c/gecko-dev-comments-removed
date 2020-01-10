@@ -22,7 +22,6 @@
 
 
 
-
 var speciesConstructor = {};
 speciesConstructor[Symbol.species] = undefined;
 

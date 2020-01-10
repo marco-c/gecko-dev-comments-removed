@@ -9,7 +9,6 @@
 
 
 
-
 var arr = [11, 12, 13];
 var testResult = false;
 

@@ -11,7 +11,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Set, Symbol.species);
 
 assert.sameValue(desc.set, undefined);

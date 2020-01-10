@@ -22,7 +22,6 @@
 
 
 
-
 assert.sameValue(Number.prototype.toFixed.length, 1);
 
 verifyNotEnumerable(Number.prototype.toFixed, "length");

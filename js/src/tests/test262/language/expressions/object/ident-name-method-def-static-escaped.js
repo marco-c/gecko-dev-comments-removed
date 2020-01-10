@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  st\u0061tic() { return 42; }
+};
+
+assert.sameValue(obj['static'](), 42, 'property exists');
+
+reportCompare(0, 0);

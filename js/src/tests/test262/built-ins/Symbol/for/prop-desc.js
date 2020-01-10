@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof Symbol.for, 'function');
 
 verifyNotEnumerable(Symbol, 'for');

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.\u0069nstanceof = 42;
+
+assert.sameValue(obj['instanceof'], 42, 'property exists');
+
+reportCompare(0, 0);

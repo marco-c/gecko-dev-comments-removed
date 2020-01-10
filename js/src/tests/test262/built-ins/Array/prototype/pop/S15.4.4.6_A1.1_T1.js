@@ -10,7 +10,6 @@
 
 
 
-
 var x = new Array();
 var pop = x.pop();
 if (pop !== undefined) {

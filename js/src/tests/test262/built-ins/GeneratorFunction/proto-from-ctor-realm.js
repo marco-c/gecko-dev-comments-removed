@@ -28,7 +28,6 @@
 
 
 
-
 var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 var other = $262.createRealm().global;
 var OtherGeneratorFunction = Object.getPrototypeOf(

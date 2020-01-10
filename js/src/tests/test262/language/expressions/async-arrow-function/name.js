@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(async x => {}, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
+
+verifyProperty(async () => {}, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(new Date(NaN).getTime(), NaN);
+
+reportCompare(0, 0);

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol('66');
+
+assert.throws(TypeError, function() {
+  new String(s);
+});
+
+reportCompare(0, 0);

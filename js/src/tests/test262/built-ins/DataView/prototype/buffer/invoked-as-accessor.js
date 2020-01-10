@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  DataView.prototype.buffer;
+});
+
+reportCompare(0, 0);

@@ -8,8 +8,6 @@
 
 
 
-
-
 if (decodeURIComponent("http://ru.wikipedia.org/wiki/%d0%ae%D0%bd%D0%B8%D0%BA%D0%BE%D0%B4") !== "http://ru.wikipedia.org/wiki/Юникод") {
   $ERROR('#1: http://ru.wikipedia.org/wiki/Юникод');
 }

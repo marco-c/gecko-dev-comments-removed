@@ -6,7 +6,6 @@
 
 
 
-
 function callbackfn(prevVal, curVal, idx, obj) {
   return ('[object Arguments]' === Object.prototype.toString.call(obj));
 }

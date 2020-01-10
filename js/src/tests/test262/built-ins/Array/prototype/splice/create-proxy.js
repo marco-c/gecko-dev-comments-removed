@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var array = [];
+var proxy = new Proxy(new Proxy(array, {}), {});
+var Ctor = function() {};
+var result;
+
+array.constructor = function() {};
+array.constructor[Symbol.species] = Ctor;
+
+result = Array.prototype.splice.call(proxy);
+
+assert.sameValue(Object.getPrototypeOf(result), Ctor.prototype);
+
+reportCompare(0, 0);

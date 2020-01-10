@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseFloat(new String("-1.1")) !== parseFloat("-1.1")) {
   $ERROR('#1: parseFloat(new String("-1.1")) === parseFloat("-1.1"). Actual: ' + (parseFloat(new String("-1.1"))));
 }

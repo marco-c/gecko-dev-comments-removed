@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var badToPrimitive = {};
+badToPrimitive[Symbol.toPrimitive] = function() {
+  throw new Test262Error();
+};
+
+assert.throws(Test262Error, function() {
+  new Date(badToPrimitive);
+});
+
+reportCompare(0, 0);

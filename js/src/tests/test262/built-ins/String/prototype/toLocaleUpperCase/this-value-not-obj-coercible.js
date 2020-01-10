@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var toLocaleUpperCase = String.prototype.toLocaleUpperCase;
+
+assert.sameValue(typeof toLocaleUpperCase, 'function');
+
+assert.throws(TypeError, function() {
+  toLocaleUpperCase.call(undefined);
+}, 'undefined');
+
+assert.throws(TypeError, function() {
+  toLocaleUpperCase.call(null);
+}, 'null');
+
+reportCompare(0, 0);

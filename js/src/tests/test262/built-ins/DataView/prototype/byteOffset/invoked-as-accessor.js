@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  DataView.prototype.byteOffset;
+});
+
+reportCompare(0, 0);

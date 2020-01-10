@@ -21,7 +21,6 @@
 
 
 
-
 const minDateStr = "-271821-04-20T00:00:00.000Z";
 const minDate = new Date(-8640000000000000);
 

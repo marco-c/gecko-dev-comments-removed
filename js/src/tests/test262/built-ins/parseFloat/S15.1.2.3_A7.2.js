@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseFloat.hasOwnProperty('length') !== true) {
   $ERROR('#1: parseFloat.hasOwnProperty(\'length\') === true. Actual: ' + (parseFloat.hasOwnProperty('length')));
 }

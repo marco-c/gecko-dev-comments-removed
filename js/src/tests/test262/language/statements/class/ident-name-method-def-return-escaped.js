@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  r\u0065turn() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['return'](), 42, 'property exists');
+
+reportCompare(0, 0);

@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {};
 obj.reverse = Array.prototype.reverse;
 obj[0] = "x";

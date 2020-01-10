@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(Date.UTC(1970), 0, '1970');
 
 assert.sameValue(Date.UTC(1970, 0), 0, '1970, 0');

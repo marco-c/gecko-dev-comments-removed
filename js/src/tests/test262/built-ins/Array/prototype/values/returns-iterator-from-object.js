@@ -13,7 +13,6 @@
 
 
 
-
 var obj = {
   length: 2
 };

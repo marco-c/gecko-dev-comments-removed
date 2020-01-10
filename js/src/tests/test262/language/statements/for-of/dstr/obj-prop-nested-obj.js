@@ -24,7 +24,6 @@
 
 
 
-
 var result, y;
 
 var counter = 0;

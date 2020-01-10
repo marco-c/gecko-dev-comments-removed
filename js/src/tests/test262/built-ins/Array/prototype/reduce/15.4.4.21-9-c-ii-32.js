@@ -6,7 +6,6 @@
 
 
 
-
 var objRegExp = new RegExp();
 
 var accessed = false;

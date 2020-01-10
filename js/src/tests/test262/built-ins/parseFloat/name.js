@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(parseFloat.name, "parseFloat");
 
 verifyNotEnumerable(parseFloat, "name");

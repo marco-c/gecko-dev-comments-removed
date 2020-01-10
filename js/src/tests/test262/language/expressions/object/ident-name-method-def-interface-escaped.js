@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  interf\u0061ce() { return 42; }
+};
+
+assert.sameValue(obj['interface'](), 42, 'property exists');
+
+reportCompare(0, 0);

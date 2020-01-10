@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   WeakMap.prototype.set.name, 'set',
   'The value of WeakMap.prototype.set.name is "set"'

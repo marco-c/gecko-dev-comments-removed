@@ -13,7 +13,6 @@
 
 
 
-
 verifyNotEnumerable(Number, "prototype");
 verifyNotWritable(Number, "prototype");
 verifyNotConfigurable(Number, "prototype");

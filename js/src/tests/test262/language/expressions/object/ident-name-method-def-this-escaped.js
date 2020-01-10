@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  th\u0069s() { return 42; }
+};
+
+assert.sameValue(obj['this'](), 42, 'property exists');
+
+reportCompare(0, 0);

@@ -16,7 +16,6 @@
 
 
 
-
 var obj = {
   valueOf: function() {
     throw new Test262Error();

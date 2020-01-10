@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseInt("11", undefined) !== parseInt("11", 10)) {
   $ERROR('#1: parseInt("11", undefined) === parseInt("11", 10). Actual: ' + (parseInt("11", undefined)));
 }

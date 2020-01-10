@@ -55,7 +55,6 @@
 
 
 
-
 var callCount = 0;
 function f([x]) {
   assert.sameValue(x, undefined);

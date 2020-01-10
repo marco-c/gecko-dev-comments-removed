@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.lastIndexOf.name, "lastIndexOf");
 
 verifyNotEnumerable(Array.prototype.lastIndexOf, "name");

@@ -6,7 +6,6 @@
 
 
 
-
 var objBoolean = new Boolean();
 
 var accessed = false;

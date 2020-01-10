@@ -8,7 +8,6 @@
 
 
 
-
 var calledForThree = false;
 
 function callbackfn(val, idx, obj)

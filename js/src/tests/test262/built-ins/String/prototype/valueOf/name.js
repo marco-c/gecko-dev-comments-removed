@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(String.prototype.valueOf, 'name', {
   value: 'valueOf',
   writable: false,

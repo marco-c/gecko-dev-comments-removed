@@ -1,0 +1,26 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+var x = {};
+
+0, [...x[yield]] = [];

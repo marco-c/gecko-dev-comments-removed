@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  voi\u0064() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['void'](), 42, 'property exists');
+
+reportCompare(0, 0);

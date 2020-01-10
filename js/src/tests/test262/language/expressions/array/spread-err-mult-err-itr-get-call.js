@@ -36,7 +36,6 @@
 
 
 
-
 var iter = {};
 iter[Symbol.iterator] = function() {
   throw new Test262Error();

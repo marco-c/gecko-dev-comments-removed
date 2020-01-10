@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {};
 obj.shift = Array.prototype.shift;
 obj[0] = "x";

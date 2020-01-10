@@ -14,7 +14,6 @@
 
 
 
-
 var setMilliseconds = Date.prototype.setMilliseconds;
 var callCount = 0;
 var arg = {

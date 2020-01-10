@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(Int32Array.prototype.BYTES_PER_ELEMENT, 4);
 
 verifyNotEnumerable(Int32Array.prototype, "BYTES_PER_ELEMENT");

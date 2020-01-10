@@ -17,7 +17,6 @@
 
 
 
-
 Reflect.defineProperty(RegExp, '$1', {
   writable: false,
   configurable: false

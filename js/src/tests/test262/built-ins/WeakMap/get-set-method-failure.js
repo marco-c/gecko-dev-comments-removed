@@ -16,7 +16,6 @@
 
 
 
-
 Object.defineProperty(WeakMap.prototype, 'set', {
   get: function() {
     throw new Test262Error();

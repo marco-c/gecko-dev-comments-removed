@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  \u0063ontinue() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['continue'](), 42, 'property exists');
+
+reportCompare(0, 0);

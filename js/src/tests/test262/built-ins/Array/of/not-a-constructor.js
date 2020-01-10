@@ -6,7 +6,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   new Array.of();
 });

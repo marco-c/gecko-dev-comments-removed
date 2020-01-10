@@ -12,8 +12,6 @@
 
 
 
-
-
 if (parseInt("1", 2) !== 1) {
   $ERROR('#1: parseInt("1", 2) === 1. Actual: ' + (parseInt("1", 2)));
 }

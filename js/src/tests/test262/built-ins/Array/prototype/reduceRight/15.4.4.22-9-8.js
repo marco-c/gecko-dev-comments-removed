@@ -8,7 +8,6 @@
 
 
 
-
 var accessed = false;
 
 function callbackfn() {

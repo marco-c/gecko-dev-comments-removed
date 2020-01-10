@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(
   Date.prototype[Symbol.toPrimitive].name, '[Symbol.toPrimitive]'
 );

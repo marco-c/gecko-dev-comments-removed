@@ -8,7 +8,6 @@
 
 
 
-
 var called = 0;
 
 function callbackfn(preVal, val, idx, obj) {

@@ -7,8 +7,6 @@
 
 
 
-
-
 undefined = 5;
 assert.sameValue(typeof undefined, "undefined", 'typeof undefined');
 

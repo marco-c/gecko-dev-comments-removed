@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {
   "length": {
     valueOf: null,

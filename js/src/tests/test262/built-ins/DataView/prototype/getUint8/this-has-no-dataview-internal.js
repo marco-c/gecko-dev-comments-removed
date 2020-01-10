@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var getUint8 = DataView.prototype.getUint8;
+
+assert.throws(TypeError, function() {
+  getUint8.call({});
+}, "{}");
+
+assert.throws(TypeError, function() {
+  getUint8.call([]);
+}, "[]");
+
+var ab = new ArrayBuffer(1);
+assert.throws(TypeError, function() {
+  getUint8.call(ab);
+}, "ArrayBuffer");
+
+var ta = new Int8Array();
+assert.throws(TypeError, function() {
+  getUint8.call(ta);
+}, "TypedArray");
+
+reportCompare(0, 0);

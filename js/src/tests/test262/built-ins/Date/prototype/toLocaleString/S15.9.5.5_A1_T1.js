@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.prototype.toLocaleString;
 if (x === 1)
   Date.prototype.toLocaleString = 2;

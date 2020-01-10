@@ -6,7 +6,6 @@
 
 
 
-
 var targetObj = {};
 
 Boolean.prototype[1] = targetObj;

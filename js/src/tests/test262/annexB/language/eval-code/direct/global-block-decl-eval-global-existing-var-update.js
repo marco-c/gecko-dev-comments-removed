@@ -21,7 +21,6 @@
 
 
 
-
 eval(
   '{ function f() { return "function declaration"; } }'
 );

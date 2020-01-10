@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.parse;
 if (x === 1)
   Date.parse = 2;

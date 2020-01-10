@@ -9,7 +9,6 @@
 
 
 
-
 var obj = {};
 obj.join = Array.prototype.join;
 

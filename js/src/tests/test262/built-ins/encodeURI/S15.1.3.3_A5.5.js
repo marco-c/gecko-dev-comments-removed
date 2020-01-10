@@ -8,8 +8,6 @@
 
 
 
-
-
 if (this.propertyIsEnumerable('encodeURI') !== false) {
   $ERROR('#1: this.propertyIsEnumerable(\'encodeURI\') === false. Actual: ' + (this.propertyIsEnumerable('encodeURI')));
 }

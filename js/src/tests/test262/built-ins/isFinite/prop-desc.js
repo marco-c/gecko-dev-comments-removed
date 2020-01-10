@@ -8,7 +8,6 @@
 
 
 
-
 verifyNotEnumerable(this, "isFinite");
 verifyWritable(this, "isFinite");
 verifyConfigurable(this, "isFinite");

@@ -19,7 +19,6 @@
 
 
 
-
 var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 assert.sameValue(GeneratorFunction.name, 'GeneratorFunction');

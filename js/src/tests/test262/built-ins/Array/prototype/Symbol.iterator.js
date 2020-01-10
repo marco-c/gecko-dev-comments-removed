@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(Array.prototype[Symbol.iterator], Array.prototype.values);
 verifyNotEnumerable(Array.prototype, Symbol.iterator);
 verifyWritable(Array.prototype, Symbol.iterator);

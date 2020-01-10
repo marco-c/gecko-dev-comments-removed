@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  p\u0061ckage() { return 42; }
+};
+
+assert.sameValue(obj['package'](), 42, 'property exists');
+
+reportCompare(0, 0);

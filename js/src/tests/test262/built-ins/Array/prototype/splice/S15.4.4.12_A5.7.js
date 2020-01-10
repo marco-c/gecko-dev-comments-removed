@@ -11,7 +11,6 @@
 
 
 
-
 try {
   new Array.prototype.splice();
   $ERROR('#1.1: new Array.prototype.splice() throw TypeError. Actual: ' + (new Array.prototype.splice()));

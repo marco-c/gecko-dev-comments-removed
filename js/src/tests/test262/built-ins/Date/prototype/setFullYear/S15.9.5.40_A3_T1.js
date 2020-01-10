@@ -10,7 +10,6 @@
 
 
 
-
 var x = Date.prototype.setFullYear.length;
 verifyNotWritable(Date.prototype.setFullYear, "length", null, 1);
 if (Date.prototype.setFullYear.length !== x) {

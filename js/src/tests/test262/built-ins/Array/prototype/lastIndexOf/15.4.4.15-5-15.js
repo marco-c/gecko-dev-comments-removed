@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue([0, "-2", 2].lastIndexOf("-2", "-2"), 1, '[0, "-2", 2].lastIndexOf("-2", "-2")');
 assert.sameValue([0, 2, "-2"].lastIndexOf("-2", "-2"), -1, '[0, 2, "-2"].lastIndexOf("-2", "-2")');
 

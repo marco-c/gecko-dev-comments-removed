@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  RegExp.prototype.exec('');
+});
+
+reportCompare(0, 0);

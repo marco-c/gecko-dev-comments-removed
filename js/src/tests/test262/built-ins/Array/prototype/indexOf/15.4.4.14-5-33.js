@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue([0, 1, 2, 3, 4].indexOf(0, 0), 0, '[0, 1, 2, 3, 4].indexOf(0, 0)');
 assert.sameValue([0, 1, 2, 3, 4].indexOf(2, 1), 2, '[0, 1, 2, 3, 4].indexOf(2, 1)');
 assert.sameValue([0, 1, 2, 3, 4].indexOf(2, 2), 2, '[0, 1, 2, 3, 4].indexOf(2, 2)');

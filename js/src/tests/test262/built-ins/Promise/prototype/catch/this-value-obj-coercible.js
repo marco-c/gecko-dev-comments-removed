@@ -22,7 +22,6 @@
 
 
 
-
 var booleanCount = 0;
 Boolean.prototype.then = function() {
   booleanCount += 1;

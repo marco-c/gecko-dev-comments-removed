@@ -12,7 +12,6 @@
 
 
 
-
 verifyNotEnumerable(WeakSet.prototype, 'constructor');
 verifyWritable(WeakSet.prototype, 'constructor');
 verifyConfigurable(WeakSet.prototype, 'constructor');

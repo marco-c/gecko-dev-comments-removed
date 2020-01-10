@@ -15,6 +15,11 @@
 
 
 
+
+
+
+
+
 var resolveElementFunction;
 var thenable = {
   then(fulfill) {
@@ -30,10 +35,8 @@ NotPromise.resolve = function(v) {
 };
 Promise.allSettled.call(NotPromise, [thenable]);
 
-assert.sameValue(
-  Object.prototype.hasOwnProperty.call(resolveElementFunction, 'name'),
-  false
-);
-assert.sameValue(resolveElementFunction.name, '');
+verifyProperty(resolveElementFunction, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

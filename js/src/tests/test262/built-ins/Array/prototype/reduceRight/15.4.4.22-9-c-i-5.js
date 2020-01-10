@@ -9,7 +9,6 @@
 
 
 
-
 var testResult = false;
 
 function callbackfn(prevVal, curVal, idx, obj) {

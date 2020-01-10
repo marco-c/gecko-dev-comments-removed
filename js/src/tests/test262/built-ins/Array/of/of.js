@@ -12,7 +12,6 @@
 
 
 
-
 verifyNotEnumerable(Array, 'of');
 verifyWritable(Array, 'of');
 verifyConfigurable(Array, 'of');

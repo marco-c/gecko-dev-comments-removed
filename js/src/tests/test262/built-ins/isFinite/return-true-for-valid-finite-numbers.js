@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(isFinite(0), true, "0");
 assert.sameValue(isFinite(-0), true, "-0");
 assert.sameValue(isFinite(Math.pow(2, 53)), true, "Math.pow(2, 53)");

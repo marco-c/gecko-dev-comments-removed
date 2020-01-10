@@ -9,7 +9,6 @@
 
 
 
-
 var x = Boolean.prototype;
 verifyNotWritable(Boolean, "prototype", null, 1);
 if (Boolean.prototype !== x) {

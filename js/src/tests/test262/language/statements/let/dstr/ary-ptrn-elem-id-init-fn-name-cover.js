@@ -31,7 +31,6 @@
 
 
 
-
 let [cover = (function () {}), xCover = (0, function() {})] = [];
 
 assert.sameValue(cover.name, 'cover');

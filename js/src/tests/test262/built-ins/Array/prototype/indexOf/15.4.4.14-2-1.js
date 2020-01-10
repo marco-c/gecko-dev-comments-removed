@@ -8,7 +8,6 @@
 
 
 
-
 var objOne = {
   1: true,
   length: 2

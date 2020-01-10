@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+class C {
+  #f /* a */ ( /* b */ ) /* c */ { /* d */ }/* after */
+  assert(expected) {
+    assertToStringOrNativeFunction(this.#f, expected);
+  }
+}
+
+let c = new C();
+c.assert("#f /* a */ ( /* b */ ) /* c */ { /* d */ }");
+
+reportCompare(0, 0);

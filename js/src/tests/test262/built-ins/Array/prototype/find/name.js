@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.find.name, 'find',
   'The value of `Array.prototype.find.name` is `"find"`'

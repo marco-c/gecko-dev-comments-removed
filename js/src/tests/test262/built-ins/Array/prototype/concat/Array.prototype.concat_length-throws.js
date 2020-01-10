@@ -8,7 +8,6 @@
 
 
 
-
 function MyError() {}
 var obj = {};
 obj[Symbol.isConcatSpreadable] = true;

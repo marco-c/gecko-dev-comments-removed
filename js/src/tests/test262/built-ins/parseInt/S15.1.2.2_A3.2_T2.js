@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseInt("11", 2.1) !== parseInt("11", 2)) {
   $ERROR('#1: parseInt("11", 2.1) === parseInt("11", 2). Actual: ' + (parseInt("11", 2.1)));
 }

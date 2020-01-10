@@ -11,7 +11,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   WeakMap.prototype.has.call(false, {});
 });

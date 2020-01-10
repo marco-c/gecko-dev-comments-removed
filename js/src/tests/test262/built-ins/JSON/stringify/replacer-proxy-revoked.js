@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var handle = Proxy.revocable([], {});
+
+handle.revoke();
+
+assert.throws(TypeError, function() {
+  JSON.stringify({}, handle.proxy);
+});
+
+reportCompare(0, 0);

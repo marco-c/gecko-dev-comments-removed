@@ -8,7 +8,6 @@
 
 
 
-
 if (typeof Boolean() !== "boolean") {
   $ERROR('#1: typeof Boolean() should be "boolean", actual is "' + typeof Boolean() + '"');
 }

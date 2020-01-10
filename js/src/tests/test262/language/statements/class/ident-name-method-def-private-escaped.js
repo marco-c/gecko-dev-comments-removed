@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  privat\u0065() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['private'](), 42, 'property exists');
+
+reportCompare(0, 0);

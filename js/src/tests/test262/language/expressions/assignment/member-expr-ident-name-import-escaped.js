@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.\u0069mport = 42;
+
+assert.sameValue(obj['import'], 42, 'property exists');
+
+reportCompare(0, 0);

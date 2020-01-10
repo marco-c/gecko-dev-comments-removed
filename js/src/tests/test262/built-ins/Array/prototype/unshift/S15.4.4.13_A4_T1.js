@@ -9,7 +9,6 @@
 
 
 
-
 Array.prototype[0] = -1;
 var x = [1];
 x.length = 1;

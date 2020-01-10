@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C extends Object {
+  constructor() {
+    return null;
+  }
+}
+
+assert.throws(TypeError, function() {
+  new C();
+});
+
+reportCompare(0, 0);

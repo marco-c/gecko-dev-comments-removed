@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var toLocaleLowerCase = String.prototype.toLocaleLowerCase;
+
+assert.sameValue(typeof toLocaleLowerCase, 'function');
+
+assert.throws(TypeError, function() {
+  toLocaleLowerCase.call(undefined);
+}, 'undefined');
+
+assert.throws(TypeError, function() {
+  toLocaleLowerCase.call(null);
+}, 'null');
+
+reportCompare(0, 0);

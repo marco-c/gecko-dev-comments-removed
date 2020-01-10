@@ -11,7 +11,6 @@
 
 
 
-
 var valueOf = Symbol.prototype.valueOf;
 
 assert.throws(TypeError, function() {

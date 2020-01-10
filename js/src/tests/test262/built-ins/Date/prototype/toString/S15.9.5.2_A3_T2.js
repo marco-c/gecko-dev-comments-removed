@@ -9,7 +9,6 @@
 
 
 
-
 if (delete Date.prototype.toString.length !== true) {
   $ERROR('#1: The Date.prototype.toString.length property does not have the attributes DontDelete');
 }

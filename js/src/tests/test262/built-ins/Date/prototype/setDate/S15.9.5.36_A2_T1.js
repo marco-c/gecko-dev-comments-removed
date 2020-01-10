@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.setDate.hasOwnProperty("length") !== true) {
   $ERROR('#1: The setDate has a "length" property');
 }

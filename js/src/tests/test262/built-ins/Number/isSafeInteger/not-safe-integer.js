@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number.isSafeInteger(9007199254740992), false, "2**53");
+assert.sameValue(Number.isSafeInteger(-9007199254740992), false, "-(2**53)");
+
+reportCompare(0, 0);

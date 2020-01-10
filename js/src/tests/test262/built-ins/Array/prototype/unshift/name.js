@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.unshift.name, "unshift");
 
 verifyNotEnumerable(Array.prototype.unshift, "name");

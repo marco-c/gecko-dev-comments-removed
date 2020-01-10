@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  bre\u0061k: 42
+};
+
+assert.sameValue(obj['break'], 42, 'property exists');
+
+reportCompare(0, 0);

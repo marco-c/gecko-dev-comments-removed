@@ -11,7 +11,6 @@
 
 
 
-
 try {
   new Array.prototype.join();
   $ERROR('#1.1: new Array.prototype.join() throw TypeError. Actual: ' + (new Array.prototype.join()));

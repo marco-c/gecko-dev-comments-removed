@@ -12,7 +12,6 @@
 
 
 
-
 var s = Symbol('1');
 
 assert.throws(TypeError, function() {

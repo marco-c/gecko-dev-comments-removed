@@ -8,7 +8,6 @@
 
 
 
-
 var subject = {
   toString: function() {
     throw new Test262Error();

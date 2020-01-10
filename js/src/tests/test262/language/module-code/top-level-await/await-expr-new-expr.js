@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = await new Promise(function(res, rej) {
+  res(42);
+});
+
+assert.sameValue(value, 42);
+
+$DONE();

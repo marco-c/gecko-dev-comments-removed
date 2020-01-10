@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   typeof Array.prototype.entries,
   'function',

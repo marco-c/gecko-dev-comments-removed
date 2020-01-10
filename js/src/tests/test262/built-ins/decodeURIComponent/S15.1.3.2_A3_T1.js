@@ -10,8 +10,6 @@
 
 
 
-
-
 if (decodeURIComponent("%3B") !== ";") {
   $ERROR('#1: decodeURIComponent("%3B") equal ";", not "%3B"');
 }

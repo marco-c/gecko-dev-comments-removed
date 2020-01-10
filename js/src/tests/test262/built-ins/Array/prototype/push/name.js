@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.push.name, "push");
 
 verifyNotEnumerable(Array.prototype.push, "name");

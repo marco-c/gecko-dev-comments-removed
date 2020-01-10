@@ -24,7 +24,6 @@
 
 
 
-
 var o = {
   '0': true,
   length: 43

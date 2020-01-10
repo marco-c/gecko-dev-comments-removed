@@ -7,8 +7,6 @@
 
 
 
-
-
 var result = true;
 
 

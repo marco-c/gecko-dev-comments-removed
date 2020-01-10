@@ -1,0 +1,77 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  method({}) {}
+};
+
+var c = new C();
+
+assert.throws(TypeError, function() {
+  c.method(null);
+});
+
+reportCompare(0, 0);

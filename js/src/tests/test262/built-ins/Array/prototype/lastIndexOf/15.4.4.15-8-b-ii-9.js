@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(["abc", "ab", "bca", ""].lastIndexOf("abc"), 0, '["abc", "ab", "bca", ""].lastIndexOf("abc")');
 
 reportCompare(0, 0);

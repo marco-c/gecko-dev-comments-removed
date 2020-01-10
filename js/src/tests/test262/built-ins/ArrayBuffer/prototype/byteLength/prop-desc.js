@@ -13,7 +13,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength");
 
 assert.sameValue(desc.set, undefined);

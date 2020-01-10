@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   WeakMap.prototype.delete.length, 1,
   'The value of WeakMap.prototype.delete.length is 1'

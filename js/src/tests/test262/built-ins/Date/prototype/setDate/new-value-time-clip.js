@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var date = new Date(8.64e15);
+var returnValue;
+
+assert.notSameValue(date.getTime(), NaN);
+
+returnValue = date.setDate(28);
+
+assert.sameValue(returnValue, NaN);
+
+reportCompare(0, 0);

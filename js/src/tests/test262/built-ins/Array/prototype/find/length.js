@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.find.length, 1,
   'The value of `Array.prototype.find.length` is `1`'

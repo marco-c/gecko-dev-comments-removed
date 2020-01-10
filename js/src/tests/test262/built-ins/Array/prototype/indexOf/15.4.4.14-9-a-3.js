@@ -8,7 +8,6 @@
 
 
 
-
 var arr = [];
 arr.length = 30;
 var targetObj = function() {};

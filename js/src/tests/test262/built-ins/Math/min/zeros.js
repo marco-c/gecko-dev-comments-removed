@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.min(0, 0), 0, "(0, 0)");
+assert.sameValue(Math.min(-0, -0), -0, "(-0, -0)");
+assert.sameValue(Math.min(0, -0), -0, "(0, -0)");
+assert.sameValue(Math.min(-0, 0), -0, "(-0, 0)");
+assert.sameValue(Math.min(0, 0, -0), -0, "(0, 0, -0)");
+
+reportCompare(0, 0);

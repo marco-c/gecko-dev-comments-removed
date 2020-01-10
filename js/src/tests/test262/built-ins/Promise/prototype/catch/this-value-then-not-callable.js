@@ -30,7 +30,6 @@
 
 
 
-
 var symbol = Symbol();
 
 assert.throws(TypeError, function() {

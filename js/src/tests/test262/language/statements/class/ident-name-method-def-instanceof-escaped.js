@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  \u0069nstanceof() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['instanceof'](), 42, 'property exists');
+
+reportCompare(0, 0);

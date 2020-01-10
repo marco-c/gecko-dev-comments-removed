@@ -8,7 +8,6 @@
 
 
 
-
 var global = this;
 [2, 3].sort(function(x, y) {
   "use strict";

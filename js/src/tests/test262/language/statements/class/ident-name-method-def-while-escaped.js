@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  whil\u0065() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['while'](), 42, 'property exists');
+
+reportCompare(0, 0);

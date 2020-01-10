@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.forEach.name, "forEach");
 
 verifyNotEnumerable(Array.prototype.forEach, "name");

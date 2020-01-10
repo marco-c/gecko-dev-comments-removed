@@ -7,8 +7,6 @@
 
 
 
-
-
 assert.sameValue(parseInt(true), NaN, "true");
 assert.sameValue(parseInt(false), NaN, "false");
 

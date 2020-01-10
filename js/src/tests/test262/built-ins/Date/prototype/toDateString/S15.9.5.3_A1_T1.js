@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.prototype.toDateString;
 if (x === 1)
   Date.prototype.toDateString = 2;

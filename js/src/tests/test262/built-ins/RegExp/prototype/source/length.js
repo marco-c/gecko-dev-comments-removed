@@ -22,7 +22,6 @@
 
 
 
-
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source').get;
 
 verifyProperty(get, 'length', {

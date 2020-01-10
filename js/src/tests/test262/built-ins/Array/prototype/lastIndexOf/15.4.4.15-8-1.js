@@ -6,7 +6,6 @@
 
 
 
-
 var obj = {
   toString: function() {
     return true

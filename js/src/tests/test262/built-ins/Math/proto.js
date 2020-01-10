@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var proto = Object.getPrototypeOf(Math);
+
+assert.sameValue(proto, Object.prototype);
+
+reportCompare(0, 0);

@@ -1,0 +1,74 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static #method() {
+    return 'Test262';
+  };
+
+  static getPrivateMethod() {
+    return this.#method;
+  }
+
+}
+
+assert.sameValue(C.getPrivateMethod().name, "#method");
+
+reportCompare(0, 0);

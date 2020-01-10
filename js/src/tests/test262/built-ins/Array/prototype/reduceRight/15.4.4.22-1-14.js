@@ -6,7 +6,6 @@
 
 
 
-
 var obj = new Error();
 obj.length = 1;
 obj[0] = 1;

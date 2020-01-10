@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  DataView.prototype.byteLength;
+});
+
+reportCompare(0, 0);

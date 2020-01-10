@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(new Date(NaN).getUTCMilliseconds(), NaN);
+
+reportCompare(0, 0);

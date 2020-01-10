@@ -8,7 +8,6 @@
 
 
 
-
 var arr = [];
 arr[10] = "10";
 arr.length = 20;

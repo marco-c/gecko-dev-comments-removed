@@ -16,7 +16,6 @@
 
 
 
-
 var a = "foo";
 var b, rest;
 

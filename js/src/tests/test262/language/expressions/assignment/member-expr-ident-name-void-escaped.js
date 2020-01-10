@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.voi\u0064 = 42;
+
+assert.sameValue(obj['void'], 42, 'property exists');
+
+reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 var stepTwoOccurs = false;
 var stepFiveOccurs = false;
 

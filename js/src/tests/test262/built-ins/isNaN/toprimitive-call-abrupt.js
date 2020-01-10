@@ -19,7 +19,6 @@
 
 
 
-
 var obj = {};
 obj[Symbol.toPrimitive] = function() {
   throw new Test262Error();

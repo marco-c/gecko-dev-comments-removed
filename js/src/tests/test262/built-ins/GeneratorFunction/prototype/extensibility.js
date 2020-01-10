@@ -9,7 +9,6 @@
 
 
 
-
 var GeneratorFunction = Object.getPrototypeOf(function*() {}).constructor;
 
 assert(Object.isExtensible(GeneratorFunction.prototype));

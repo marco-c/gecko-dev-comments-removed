@@ -14,7 +14,6 @@
 
 
 
-
 var global = fnGlobalObject();
 Object.defineProperty(global, 'f', {
   value: 'x',

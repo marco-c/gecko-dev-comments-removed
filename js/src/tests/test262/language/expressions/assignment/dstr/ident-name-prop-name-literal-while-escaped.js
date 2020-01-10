@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { whil\u0065: x } = { while: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['while'], 42, 'assignment successful');
+
+reportCompare(0, 0);

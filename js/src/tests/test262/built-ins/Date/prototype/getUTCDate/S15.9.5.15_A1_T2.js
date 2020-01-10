@@ -7,7 +7,6 @@
 
 
 
-
 if (delete Date.prototype.getUTCDate === false) {
   $ERROR('#1: The Date.prototype.getUTCDate property has not the attributes DontDelete');
 }

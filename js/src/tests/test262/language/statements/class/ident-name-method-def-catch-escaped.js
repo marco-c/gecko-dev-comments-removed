@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  c\u0061tch() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['catch'](), 42, 'property exists');
+
+reportCompare(0, 0);

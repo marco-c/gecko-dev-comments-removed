@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(12);
+var sample = new DataView(buffer, 0);
+
+assert.throws(RangeError, function() {
+  sample.getFloat64(-1);
+}, "-1");
+
+assert.throws(RangeError, function() {
+  sample.getFloat64(-Infinity);
+}, "-Infinity");
+
+reportCompare(0, 0);

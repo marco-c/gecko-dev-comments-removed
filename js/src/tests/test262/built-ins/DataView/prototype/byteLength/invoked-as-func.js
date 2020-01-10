@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var getter = Object.getOwnPropertyDescriptor(
+  DataView.prototype, 'byteLength'
+).get;
+
+assert.throws(TypeError, function() {
+  getter();
+});
+
+reportCompare(0, 0);

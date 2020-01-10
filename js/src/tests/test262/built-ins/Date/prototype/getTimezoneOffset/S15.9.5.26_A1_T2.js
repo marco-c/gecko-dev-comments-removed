@@ -9,7 +9,6 @@
 
 
 
-
 if (delete Date.prototype.getTimezoneOffset === false) {
   $ERROR('#1: The Date.prototype.getTimezoneOffset property has not the attributes DontDelete');
 }

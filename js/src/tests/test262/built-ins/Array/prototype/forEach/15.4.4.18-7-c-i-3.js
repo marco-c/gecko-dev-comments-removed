@@ -8,7 +8,6 @@
 
 
 
-
 var kValue = "abc";
 var testResult = false;
 

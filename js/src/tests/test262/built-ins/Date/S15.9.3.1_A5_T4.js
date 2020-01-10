@@ -16,7 +16,6 @@
 
 
 
-
 assertRelativeDateMs(new Date(1899, 11, 31, 23, 59), -2208988860000);
 
 assertRelativeDateMs(new Date(1899, 12, 1, 0, 0), -2208988800000);

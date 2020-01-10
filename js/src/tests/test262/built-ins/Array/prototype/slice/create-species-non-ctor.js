@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var a = [];
+
+a.constructor = {};
+a.constructor[Symbol.species] = parseInt;
+
+assert.throws(TypeError, function() {
+  a.slice();
+});
+
+reportCompare(0, 0);

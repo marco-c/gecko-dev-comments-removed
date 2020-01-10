@@ -10,7 +10,6 @@
 
 
 
-
 var s = new WeakSet();
 
 assert.throws(TypeError, function() {

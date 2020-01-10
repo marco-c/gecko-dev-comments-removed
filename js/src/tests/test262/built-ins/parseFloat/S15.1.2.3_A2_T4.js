@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseFloat("\u000C1.1") !== parseFloat("1.1")) {
   $ERROR('#1: parseFloat("\\u000C1.1") === parseFloat("1.1"). Actual: ' + (parseFloat("\u000C1.1")));
 }

@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   typeof WeakMap.prototype.delete,
   'function',

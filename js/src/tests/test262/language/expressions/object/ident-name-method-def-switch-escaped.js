@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  sw\u0069tch() { return 42; }
+};
+
+assert.sameValue(obj['switch'](), 42, 'property exists');
+
+reportCompare(0, 0);

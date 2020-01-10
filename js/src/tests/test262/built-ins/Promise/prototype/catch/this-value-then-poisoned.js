@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var poisonedThen = Object.defineProperty({}, 'then', {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Promise.prototype.catch.call(poisonedThen);
+});
+
+reportCompare(0, 0);

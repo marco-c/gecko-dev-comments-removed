@@ -16,7 +16,6 @@
 
 
 
-
 var C = $262.createRealm().global.eval(
   '0, class extends Object {' +
   '  constructor() {' +

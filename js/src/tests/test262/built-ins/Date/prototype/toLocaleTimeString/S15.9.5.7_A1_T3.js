@@ -9,7 +9,6 @@
 
 
 
-
 if (Date.prototype.propertyIsEnumerable('toLocaleTimeString')) {
   $ERROR('#1: The Date.prototype.toLocaleTimeString property has the attribute DontEnum');
 }

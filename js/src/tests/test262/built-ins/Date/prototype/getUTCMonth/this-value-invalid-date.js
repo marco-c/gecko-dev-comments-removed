@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(new Date(NaN).getUTCMonth(), NaN);
+
+reportCompare(0, 0);

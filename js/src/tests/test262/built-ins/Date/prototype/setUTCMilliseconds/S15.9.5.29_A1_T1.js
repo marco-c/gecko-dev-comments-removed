@@ -9,7 +9,6 @@
 
 
 
-
 var x = Date.prototype.setUTCMilliseconds;
 if (x === 1)
   Date.prototype.setUTCMilliseconds = 2;

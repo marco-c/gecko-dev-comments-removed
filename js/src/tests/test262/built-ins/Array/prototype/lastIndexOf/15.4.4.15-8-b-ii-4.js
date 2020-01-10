@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue([+NaN, NaN, -NaN].lastIndexOf(NaN), -1, '[+NaN, NaN, -NaN].lastIndexOf(NaN)');
 
 reportCompare(0, 0);

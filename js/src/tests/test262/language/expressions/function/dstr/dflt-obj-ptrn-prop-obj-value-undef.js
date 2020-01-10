@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var f = function({ w: { x, y, z } = undefined } = { }) {};
+
+assert.throws(TypeError, function() {
+  f();
+});
+
+reportCompare(0, 0);

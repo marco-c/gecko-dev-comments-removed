@@ -10,8 +10,6 @@
 
 
 
-
-
 if (parseInt("0x0", 0) !== parseInt("0", 16)) {
   $ERROR('#0: parseInt("0x0", 0) === parseInt("0", 16). Actual: ' + (parseInt("0x0", 0)));
 }

@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(Int16Array.name, "Int16Array");
 
 verifyNotEnumerable(Int16Array, "name");

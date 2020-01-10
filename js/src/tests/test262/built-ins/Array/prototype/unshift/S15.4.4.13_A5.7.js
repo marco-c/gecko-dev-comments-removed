@@ -11,7 +11,6 @@
 
 
 
-
 try {
   new Array.prototype.unshift();
   $ERROR('#1.1: new Array.prototype.unshift() throw TypeError. Actual: ' + (new Array.prototype.unshift()));

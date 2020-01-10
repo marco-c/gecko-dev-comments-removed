@@ -18,12 +18,12 @@
 
 
 
-
-
 var o = {};
 
 o.attr = function() {};
 
-assert.sameValue(Object.hasOwnProperty.call(o.attr, 'name'), false);
+verifyProperty(o.attr, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

@@ -14,7 +14,6 @@
 
 
 
-
 assert(
   compareArray(
     [0, 1, 2, 3].copyWithin(0, 1, undefined), [1, 2, 3, 3]

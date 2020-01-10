@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.pop.name, "pop");
 
 verifyNotEnumerable(Array.prototype.pop, "name");

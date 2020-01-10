@@ -6,7 +6,6 @@
 
 
 
-
 var array = [127, 4, 8, 16, 32, 64, 128];
 var arrayIndex = -1;
 

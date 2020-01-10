@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(
   WeakMap.name, 'WeakMap',
   'The value of `WeakMap.name` is "WeakMap"'

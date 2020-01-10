@@ -8,7 +8,6 @@
 
 
 
-
 var i = [].lastIndexOf(42);
 
 assert.sameValue(i, -1, 'i');

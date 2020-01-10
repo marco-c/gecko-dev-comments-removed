@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(Uint32Array.name, "Uint32Array");
 
 verifyNotEnumerable(Uint32Array, "name");

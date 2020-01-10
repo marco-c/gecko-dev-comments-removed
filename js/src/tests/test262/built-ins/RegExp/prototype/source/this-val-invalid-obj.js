@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source').get;
+
+assert.throws(TypeError, function() {
+  get.call({});
+}, 'ordinary object');
+
+assert.throws(TypeError, function() {
+  get.call([]);
+}, 'array exotic object');
+
+assert.throws(TypeError, function() {
+  get.call(arguments);
+}, 'arguments object');
+
+reportCompare(0, 0);

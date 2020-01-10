@@ -6,7 +6,6 @@
 
 
 
-
 var obj = new Boolean(true);
 obj.length = 2;
 obj[0] = 11;

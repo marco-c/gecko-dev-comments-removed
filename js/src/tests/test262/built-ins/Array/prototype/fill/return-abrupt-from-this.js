@@ -11,7 +11,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Array.prototype.fill.call(undefined, 1);
 });

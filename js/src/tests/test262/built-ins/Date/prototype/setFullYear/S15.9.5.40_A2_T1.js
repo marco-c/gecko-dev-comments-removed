@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.setFullYear.hasOwnProperty("length") !== true) {
   $ERROR('#1: The setFullYear has a "length" property');
 }

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result;
+var vals = [];
+
+result = [] = vals;
+
+
+
+assert.sameValue(result, vals);
+
+reportCompare(0, 0);

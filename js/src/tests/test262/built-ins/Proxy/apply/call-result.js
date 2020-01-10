@@ -11,7 +11,6 @@
 
 
 
-
 var result = {};
 var p = new Proxy(function() {
   throw new Test262Error('target should not be called');

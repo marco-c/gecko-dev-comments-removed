@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue([true].lastIndexOf(true, -Infinity), -1, '[true].lastIndexOf(true, -Infinity)');
 
 reportCompare(0, 0);

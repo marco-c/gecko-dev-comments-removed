@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(
   typeof Array.prototype.copyWithin,
   'function',

@@ -10,7 +10,6 @@
 
 
 
-
 var x = new Array();
 var shift = x.shift();
 if (shift !== undefined) {

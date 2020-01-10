@@ -9,7 +9,6 @@
 
 
 
-
 var args = (function(a, b, c) {
   return arguments;
 })(1, 2, 3);

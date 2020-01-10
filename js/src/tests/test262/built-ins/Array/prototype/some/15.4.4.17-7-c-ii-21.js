@@ -8,7 +8,6 @@
 
 
 
-
 var firstIndex = false;
 var secondIndex = false;
 

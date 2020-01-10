@@ -24,7 +24,6 @@
 
 
 
-
 var value = [[22]];
 var x = {};
 var iterationResult, iter;

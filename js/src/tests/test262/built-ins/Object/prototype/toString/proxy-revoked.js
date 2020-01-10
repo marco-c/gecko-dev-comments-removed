@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var handle = Proxy.revocable([], {});
+
+handle.revoke();
+
+assert.throws(TypeError, function() {
+  Object.prototype.toString.call(handle.proxy);
+});
+
+reportCompare(0, 0);

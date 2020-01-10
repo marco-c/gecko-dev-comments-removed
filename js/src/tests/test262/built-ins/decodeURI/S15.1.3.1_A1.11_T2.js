@@ -13,8 +13,6 @@
 
 
 
-
-
 var result = true;
 var interval = [
   [0x00, 0x2F],

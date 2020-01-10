@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+  JSON.parse('0', function() {
+    throw new Test262Error();
+  });
+});
+
+reportCompare(0, 0);

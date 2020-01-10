@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Array.prototype.reduce.call(undefined);
 });

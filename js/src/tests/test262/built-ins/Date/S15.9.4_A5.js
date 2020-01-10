@@ -8,7 +8,6 @@
 
 
 
-
 if (!Date.hasOwnProperty("length")) {
   $ERROR('#1: Date constructor has length property');
 }

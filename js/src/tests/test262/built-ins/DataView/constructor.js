@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof DataView, "function", "`typeof DataView` is `'function'`");
+
+reportCompare(0, 0);

@@ -7,7 +7,6 @@
 
 
 
-
 var array = new Float32Array([3, 1, 2]);
 var iterator = array[Symbol.iterator]();
 var result;

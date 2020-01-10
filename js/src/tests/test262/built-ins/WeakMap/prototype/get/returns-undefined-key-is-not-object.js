@@ -15,7 +15,6 @@
 
 
 
-
 var map = new WeakMap();
 
 assert.sameValue(map.get(null), undefined, 'Returns undefined if key is null');

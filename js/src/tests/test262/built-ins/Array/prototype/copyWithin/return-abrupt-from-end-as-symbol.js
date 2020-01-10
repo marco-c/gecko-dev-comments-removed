@@ -15,7 +15,6 @@
 
 
 
-
 var s = Symbol(1);
 assert.throws(TypeError, function() {
   [].copyWithin(0, 0, s);

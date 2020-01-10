@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(NaN.toExponential(Infinity), "NaN", "NaN value");
+
+var n = new Number(NaN);
+assert.sameValue(n.toExponential(NaN), "NaN", "NaN obj");
+
+reportCompare(0, 0);

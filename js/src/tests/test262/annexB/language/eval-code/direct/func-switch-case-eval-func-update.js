@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var after;
+
+(function() {
+  eval(
+    'switch (1) {' +
+    '  case 1:' +
+    '    function f() { return "declaration"; }' +
+    '}\
+    after = f;'
+  );
+}());
+
+assert.sameValue(typeof after, 'function');
+assert.sameValue(after(), 'declaration');
+
+reportCompare(0, 0);

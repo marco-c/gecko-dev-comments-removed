@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.getTimezoneOffset.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getTimezoneOffset has a "length" property');
 }

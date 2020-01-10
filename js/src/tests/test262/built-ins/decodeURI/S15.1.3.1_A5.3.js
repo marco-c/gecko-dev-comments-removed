@@ -9,8 +9,6 @@
 
 
 
-
-
 var x = decodeURI.length;
 verifyNotWritable(decodeURI, "length", null, Infinity);
 if (decodeURI.length !== x) {

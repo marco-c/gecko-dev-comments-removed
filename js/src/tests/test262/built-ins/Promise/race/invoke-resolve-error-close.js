@@ -23,7 +23,6 @@
 
 
 
-
 var iterDoneSpy = {};
 var returnCount = 0;
 iterDoneSpy[Symbol.iterator] = function() {

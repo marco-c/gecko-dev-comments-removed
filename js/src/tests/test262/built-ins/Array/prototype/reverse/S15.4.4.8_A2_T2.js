@@ -12,7 +12,6 @@
 
 
 
-
 var obj = {};
 obj.length = 10.5;
 obj.reverse = Array.prototype.reverse;

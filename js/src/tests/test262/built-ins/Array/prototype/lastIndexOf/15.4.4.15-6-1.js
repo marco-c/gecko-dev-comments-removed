@@ -8,7 +8,6 @@
 
 
 
-
 var a = new Array(1, 2, 3);
 
 assert.sameValue(a.lastIndexOf(3, 5.4), 2, 'a.lastIndexOf(3,5.4)');

@@ -18,7 +18,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.values.length, 0);
 
 verifyNotEnumerable(Array.prototype.values, 'length');
