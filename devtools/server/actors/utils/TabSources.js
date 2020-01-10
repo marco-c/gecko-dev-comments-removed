@@ -245,6 +245,22 @@ TabSources.prototype = {
   
 
 
+  isInlineScript(source) {
+    
+    
+    try {
+      const e = source.element ? source.element.unsafeDereference() : null;
+      return e && e.tagName === "SCRIPT" && !e.hasAttribute("src");
+    } catch (e) {
+      
+      DevToolsUtils.reportException("TabSources.isInlineScript", e);
+      return false;
+    }
+  },
+
+  
+
+
 
 
 
@@ -266,14 +282,7 @@ TabSources.prototype = {
     
     
 
-    
-    
-    const element = source.element ? source.element.unsafeDereference() : null;
-    if (
-      element &&
-      element.tagName === "SCRIPT" &&
-      !element.hasAttribute("src")
-    ) {
+    if (this.isInlineScript(source)) {
       if (source.introductionScript) {
         
         

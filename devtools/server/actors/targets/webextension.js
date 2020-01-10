@@ -25,6 +25,7 @@ const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const {
   webExtensionTargetSpec,
 } = require("devtools/shared/specs/targets/webextension");
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(
   this,
@@ -318,11 +319,17 @@ webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
 webExtensionTargetPrototype._allowSource = function(source) {
   
   if (source.element) {
-    const domEl = unwrapDebuggerObjectGlobal(source.element);
-    return (
-      this.isExtensionWindow(domEl.ownerGlobal) ||
-      this.isExtensionWindowDescendent(domEl.ownerGlobal)
-    );
+    try {
+      const domEl = unwrapDebuggerObjectGlobal(source.element);
+      return (
+        this.isExtensionWindow(domEl.ownerGlobal) ||
+        this.isExtensionWindowDescendent(domEl.ownerGlobal)
+      );
+    } catch (e) {
+      
+      DevToolsUtils.reportException("WebExtensionTarget.allowSource", e);
+      return false;
+    }
   }
 
   
