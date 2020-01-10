@@ -568,15 +568,10 @@ class WebConsoleWrapper {
     
     
     
-    
-    
     const NUMBER_OF_NETWORK_UPDATE = 8;
 
     let expectedLength = NUMBER_OF_NETWORK_UPDATE;
-    if (
-      this.webConsoleUI.webConsoleClient.traits.fetchCacheDescriptor &&
-      res.networkInfo.updates.includes("responseCache")
-    ) {
+    if (res.networkInfo.updates.includes("responseCache")) {
       expectedLength++;
     }
     if (res.networkInfo.updates.includes("requestPostData")) {
