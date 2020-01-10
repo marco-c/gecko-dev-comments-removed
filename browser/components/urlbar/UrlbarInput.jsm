@@ -50,9 +50,6 @@ class UrlbarInput {
 
 
 
-
-
-
   constructor(options = {}) {
     this.textbox = options.textbox;
 
@@ -89,12 +86,10 @@ class UrlbarInput {
       this.textbox.parentNode.classList.add("megabar");
     }
 
-    this.controller =
-      options.controller ||
-      new UrlbarController({
-        browserWindow: this.window,
-        eventTelemetryCategory: options.eventTelemetryCategory,
-      });
+    this.controller = new UrlbarController({
+      browserWindow: this.window,
+      eventTelemetryCategory: options.eventTelemetryCategory,
+    });
     this.controller.setInput(this);
     this.view = new UrlbarView(this);
     this.valueIsTyped = false;
