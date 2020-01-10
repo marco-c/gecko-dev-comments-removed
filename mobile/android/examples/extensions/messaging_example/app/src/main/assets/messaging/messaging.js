@@ -1,0 +1,14 @@
+
+
+
+
+let manifest = document.querySelector("head > link[rel=manifest]");
+let browser = window.docShell.chromeEventHandler;
+if (manifest) {
+  fetch(manifest.href)
+    .then(response => response.json())
+    .then(json => {
+      let message = { type: "WPAManifest", manifest: json };
+      browser.runtime.sendNativeMessage("browser", message);
+    });
+}
