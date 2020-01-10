@@ -4724,7 +4724,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     mCompositedLayoutViewport = Metrics().GetLayoutViewport();
     mCompositedScrollOffset = Metrics().GetScrollOffset();
     mExpectedGeckoMetrics = aLayerMetrics;
-    if (!mAnimation || !mAnimation->HandleScrollOffsetUpdate(Nothing())) {
+    if (ShouldCancelAnimationForScrollUpdate(Nothing())) {
       CancelAnimation();
     }
     
