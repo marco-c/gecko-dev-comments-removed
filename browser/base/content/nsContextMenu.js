@@ -525,6 +525,13 @@ nsContextMenu.prototype = {
                   this.onTextInput && this.onKeywordField);
     this.showItem("frame", this.inFrame);
 
+    if (this.inFrame) {
+      
+      
+      let frameOsPid = this.actor.manager.browsingContext.currentWindowGlobal.osPid;
+      this.setItemAttr("context-frameOsPid", "label", "PID: " + frameOsPid);
+    }
+
     let showSearchSelect = !this.inAboutDevtoolsToolbox &&
                            (this.isTextSelected || this.onLink) && !this.onImage;
     this.showItem("context-searchselect", showSearchSelect);
