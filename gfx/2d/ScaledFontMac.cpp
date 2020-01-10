@@ -194,7 +194,7 @@ void ScaledFontMac::SetupSkFontDrawOptions(SkFont& aFont) {
   
   
   if (aFont.getEdging() == SkFont::Edging::kAntiAlias && !mUseFontSmoothing) {
-    aFont.setHinting(kNo_SkFontHinting);
+    aFont.setHinting(SkFontHinting::kNone);
   }
 }
 #endif
