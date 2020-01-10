@@ -21,9 +21,7 @@
 var EXPORTED_SYMBOLS = ["TestUtils"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { clearInterval, setInterval } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
-);
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var TestUtils = {
   executeSoon(callbackFn) {
@@ -164,12 +162,14 @@ var TestUtils = {
 
 
 
+
+
+
   waitForCondition(condition, msg, interval = 100, maxTries = 50) {
     return new Promise((resolve, reject) => {
       let tries = 0;
-      let intervalID = setInterval(async function() {
+      async function tryOnce() {
         if (tries >= maxTries) {
-          clearInterval(intervalID);
           msg += ` - timed out after ${maxTries} tries.`;
           reject(msg);
           return;
@@ -180,17 +180,20 @@ var TestUtils = {
           conditionPassed = await condition();
         } catch (e) {
           msg += ` - threw exception: ${e}`;
-          clearInterval(intervalID);
           reject(msg);
           return;
         }
 
         if (conditionPassed) {
-          clearInterval(intervalID);
           resolve(conditionPassed);
+          return;
         }
         tries++;
-      }, interval);
+        setTimeout(tryOnce, interval);
+      }
+
+      
+      setTimeout(tryOnce, interval);
     });
   },
 
