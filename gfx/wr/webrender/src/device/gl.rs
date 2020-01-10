@@ -3493,7 +3493,10 @@ impl<'a, T> TextureUploader<'a, T> {
         
         
         let dst_stride = round_up_to_multiple(src_stride, self.target.optimal_pbo_stride);
-        let dst_size = (rect.size.height as usize - 1) * dst_stride + width_bytes;
+        
+        
+        
+        let dst_size = rect.size.height as usize * dst_stride;
 
         match self.buffer {
             Some(ref mut buffer) => {
