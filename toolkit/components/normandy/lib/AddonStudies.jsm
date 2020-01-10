@@ -32,10 +32,6 @@
 
 
 
-
-
-
-
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(this, "IndexedDB", "resource://gre/modules/IndexedDB.jsm");
@@ -44,18 +40,14 @@ ChromeUtils.defineModuleGetter(
   this, "CleanupManager", "resource://normandy/lib/CleanupManager.jsm"
 );
 ChromeUtils.defineModuleGetter(this, "LogManager", "resource://normandy/lib/LogManager.jsm");
-ChromeUtils.defineModuleGetter(
-  this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm"
-);
 ChromeUtils.defineModuleGetter(this, "TelemetryEvents", "resource://normandy/lib/TelemetryEvents.jsm");
 
 var EXPORTED_SYMBOLS = ["AddonStudies"];
 
 const DB_NAME = "shield";
 const STORE_NAME = "addon-studies";
-const VERSION_STORE_NAME = "addon-studies-version";
 const DB_OPTIONS = {
-  version: 2,
+  version: 1,
 };
 const STUDY_ENDED_TOPIC = "shield-study-ended";
 const log = LogManager.getLogger("addon-studies");
@@ -64,16 +56,10 @@ const log = LogManager.getLogger("addon-studies");
 
 
 function openDatabase() {
-  return IndexedDB.open(DB_NAME, DB_OPTIONS, async (db, event) => {
-    if (event.oldVersion < 1) {
-      db.createObjectStore(STORE_NAME, {
-        keyPath: "recipeId",
-      });
-    }
-
-    if (event.oldVersion < 2) {
-      db.createObjectStore(VERSION_STORE_NAME);
-    }
+  return IndexedDB.open(DB_NAME, DB_OPTIONS, db => {
+    db.createObjectStore(STORE_NAME, {
+      keyPath: "recipeId",
+    });
   });
 }
 
@@ -140,8 +126,6 @@ var AddonStudies = {
   },
 
   async init() {
-    await this.migrations();
-
     
     
     const activeStudies = (await this.getAll()).filter(study => study.active);
@@ -157,48 +141,6 @@ var AddonStudies = {
     CleanupManager.addCleanupHandler(() => {
       AddonManager.removeAddonListener(this);
     });
-  },
-
-  async migrations() {
-    const db = await getDatabase();
-    const oldVersion = await db.objectStore(VERSION_STORE_NAME, "readonly").get("version") || 0;
-
-    if (oldVersion < 2) {
-      log.debug(`Running data migrations from ${oldVersion} to 2`);
-      
-      const studies = await db.objectStore(STORE_NAME, "readonly").getAll();
-
-      const writePromises = [];
-      const objectStore = db.objectStore(STORE_NAME, "readwrite");
-
-      for (const study of studies) {
-        
-        if (!study.slug) {
-          study.slug = study.name;
-        }
-
-        
-        if (study.name && !study.userFacingName) {
-          study.userFacingName = study.name;
-          delete study.name;
-        }
-        if (study.description && !study.userFacingDescription) {
-          study.userFacingDescription = study.description;
-          delete study.description;
-        }
-
-        
-        if (!study.branch) {
-          study.branch = AddonStudies.NO_BRANCHES_MARKER;
-        }
-
-        writePromises.push(objectStore.put(study));
-      }
-
-      await Promise.all(writePromises);
-    }
-
-    await db.objectStore(VERSION_STORE_NAME, "readwrite").put("version", 2);
   },
 
   
@@ -242,32 +184,13 @@ var AddonStudies = {
     return getStore(db, "readonly").get(recipeId);
   },
 
-  FILTER_BRANCHED_ONLY: Symbol("FILTER_BRANCHED_ONLY"),
-  FILTER_NOT_BRANCHED: Symbol("FILTER_NOT_BRANCHED"),
-  FILTER_ALL: Symbol("FILTER_ALL"),
-
   
 
 
 
-  async getAll({ branched = AddonStudies.FILTER_ALL } = {}) {
+  async getAll() {
     const db = await getDatabase();
-    let results = await getStore(db, "readonly").getAll();
-
-    if (branched == AddonStudies.FILTER_BRANCHED_ONLY) {
-      results = results.filter(study => study.branch != AddonStudies.NO_BRANCHES_MARKER);
-    } else if (branched == AddonStudies.FILTER_NOT_BRANCHED) {
-      results = results.filter(study => study.branch == AddonStudies.NO_BRANCHES_MARKER);
-    }
-    return results;
-  },
-
-  
-
-
-
-  async getAllActive(options) {
-    return (await this.getAll(options)).filter(study => study.active);
+    return getStore(db, "readonly").getAll();
   },
 
   
@@ -304,9 +227,9 @@ var AddonStudies = {
 
 
 
-  async markAsEnded(study, reason = "unknown") {
+  async markAsEnded(study, reason) {
     if (reason === "unknown") {
-      log.warn(`Study ${study.slug} ending for unknown reason.`);
+      log.warn(`Study ${study.name} ending for unknown reason.`);
     }
 
     study.active = false;
@@ -315,13 +238,11 @@ var AddonStudies = {
     await getStore(db, "readwrite").put(study);
 
     Services.obs.notifyObservers(study, STUDY_ENDED_TOPIC, `${study.recipeId}`);
-    TelemetryEvents.sendEvent("unenroll", "addon_study", study.slug, {
-      addonId: study.addonId || AddonStudies.NO_ADDON_MARKER,
-      addonVersion: study.addonVersion || AddonStudies.NO_ADDON_MARKER,
+    TelemetryEvents.sendEvent("unenroll", "addon_study", study.name, {
+      addonId: study.addonId,
+      addonVersion: study.addonVersion,
       reason,
-      branch: study.branch,
     });
-    TelemetryEnvironment.setExperimentInactive(study.slug);
 
     await this.onUnenroll(study.addonId, reason);
   },
@@ -363,6 +284,3 @@ var AddonStudies = {
     return Promise.all(promises);
   },
 };
-
-AddonStudies.NO_BRANCHES_MARKER = "__NO_BRANCHES__";
-AddonStudies.NO_ADDON_MARKER = "__NO_ADDON__";
