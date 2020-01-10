@@ -6,18 +6,13 @@
 
 import type { ThunkArgs } from "../actions/types";
 
-export type MemoizedAction<
-  Args,
-  Result
-> = Args => ThunkArgs => Promise<?Result>;
+export type MemoizedAction<Args, Result> = Args => ThunkArgs => Promise<Result>;
 type MemoizableActionParams<Args, Result> = {
-  exitEarly?: (args: Args, thunkArgs: ThunkArgs) => boolean,
   hasValue: (args: Args, thunkArgs: ThunkArgs) => boolean,
   getValue: (args: Args, thunkArgs: ThunkArgs) => Result,
   createKey: (args: Args, thunkArgs: ThunkArgs) => string,
   action: (args: Args, thunkArgs: ThunkArgs) => Promise<Result>,
 };
-
 
 
 
@@ -49,15 +44,10 @@ export function memoizeableAction<Args, Result>(
     getValue,
     createKey,
     action,
-    exitEarly,
   }: MemoizableActionParams<Args, Result>
 ): MemoizedAction<Args, Result> {
   const requests = new Map();
   return args => async (thunkArgs: ThunkArgs) => {
-    if (exitEarly && exitEarly(args, thunkArgs)) {
-      return;
-    }
-
     if (hasValue(args, thunkArgs)) {
       return getValue(args, thunkArgs);
     }
