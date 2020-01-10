@@ -8,7 +8,7 @@
 #  include "mozilla/UniquePtr.h"
 
 #  include "ICUUtils.h"
-#  include "mozilla/Preferences.h"
+#  include "mozilla/StaticPrefs_dom.h"
 #  include "mozilla/intl/LocaleService.h"
 #  include "nsIContent.h"
 #  include "mozilla/dom/Document.h"
@@ -29,28 +29,6 @@ class NumberFormatDeleter {
 };
 
 using UniqueUNumberFormat = UniquePtr<UNumberFormat, NumberFormatDeleter>;
-
-
-
-
-
-
-static bool gLocaleNumberGroupingEnabled;
-static const char LOCALE_NUMBER_GROUPING_PREF_STR[] =
-    "dom.forms.number.grouping";
-
-static bool LocaleNumberGroupingIsEnabled() {
-  static bool sInitialized = false;
-
-  if (!sInitialized) {
-    
-    Preferences::AddBoolVarCache(&gLocaleNumberGroupingEnabled,
-                                 LOCALE_NUMBER_GROUPING_PREF_STR, false);
-    sInitialized = true;
-  }
-
-  return gLocaleNumberGroupingEnabled;
-}
 
 void ICUUtils::LanguageTagIterForContent::GetNext(nsACString& aBCP47LangTag) {
   if (mCurrentFallbackIndex < 0) {
@@ -115,7 +93,7 @@ bool ICUUtils::LocalizeNumber(double aValue,
       continue;
     }
     unum_setAttribute(format.get(), UNUM_GROUPING_USED,
-                      LocaleNumberGroupingIsEnabled());
+                      StaticPrefs::dom_forms_number_grouping());
     
     
     
@@ -151,7 +129,7 @@ double ICUUtils::ParseNumber(nsAString& aValue,
     UErrorCode status = U_ZERO_ERROR;
     UniqueUNumberFormat format(
         unum_open(UNUM_DECIMAL, nullptr, 0, langTag.get(), nullptr, &status));
-    if (!LocaleNumberGroupingIsEnabled()) {
+    if (!StaticPrefs::dom_forms_number_grouping()) {
       unum_setAttribute(format.get(), UNUM_GROUPING_USED, UBool(0));
     }
     int32_t parsePos = 0;
