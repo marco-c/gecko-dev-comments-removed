@@ -529,6 +529,8 @@ PopupNotifications.prototype = {
 
 
 
+
+
   show: function PopupNotifications_show(
     browser,
     id,
@@ -1138,7 +1140,8 @@ PopupNotifications.prototype = {
         }
       } else {
         popupnotification.checkboxState = null;
-        popupnotification.setAttribute("warninghidden", "true");
+        
+        this._setNotificationUIState(popupnotification);
       }
 
       this.panel.appendChild(popupnotification);
@@ -1153,7 +1156,9 @@ PopupNotifications.prototype = {
   },
 
   _setNotificationUIState(notification, state = {}) {
+    let mainAction = notification.notification.mainAction;
     if (
+      (mainAction && mainAction.disabled) ||
       state.disableMainAction ||
       notification.hasAttribute("invalidselection")
     ) {
