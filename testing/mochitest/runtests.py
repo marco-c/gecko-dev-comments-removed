@@ -1941,6 +1941,10 @@ toolbar#nav-bar {
             "marionette.log.level": "Trace",
         }
 
+        
+        if options.flavor == 'a11y':
+            prefs["plugin.load_flash_only"] = False
+
         if options.flavor == 'browser' and options.timeout:
             prefs["testing.browserTestHarness.timeout"] = options.timeout
 
