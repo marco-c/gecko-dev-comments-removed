@@ -3920,10 +3920,11 @@ void AsyncPanZoomController::RequestContentRepaint(
   
   
   controller->DispatchToRepaintThread(
-      NewRunnableMethod(
+      NewRunnableMethod<AsyncPanZoomController*>(
           "layers::APZCTreeManager::CollectTransformsForChromeMainThread",
           GetApzcTreeManager(),
-          &APZCTreeManager::CollectTransformsForChromeMainThread));
+          &APZCTreeManager::CollectTransformsForChromeMainThread,
+          this));
 }
 
 bool AsyncPanZoomController::UpdateAnimation(
