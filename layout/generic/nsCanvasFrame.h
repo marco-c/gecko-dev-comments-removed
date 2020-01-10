@@ -119,10 +119,6 @@ class nsCanvasFrame final : public nsContainerFrame,
 
  protected:
   
-  
-  void MaybePropagateRootElementWritingMode();
-
-  
   bool mDoPaintFocus;
   bool mAddedScrollPositionListener;
 

@@ -2314,6 +2314,33 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     return nullptr;
   }
 
+  if (aDocElement->IsHTMLElement() &&
+      mDocElementContainingBlock->IsCanvasFrame()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!mRootElementFrame,
+               "We need to copy <body>'s principal writing-mode before "
+               "constructing mRootElementFrame.");
+
+    Element* body = mDocument->GetBodyElement();
+    if (body) {
+      RefPtr<ComputedStyle> bodyStyle = ResolveComputedStyle(body);
+      mDocElementContainingBlock->PropagateWritingModeToSelfAndAncestors(
+          WritingMode(bodyStyle));
+    } else {
+      mDocElementContainingBlock->PropagateWritingModeToSelfAndAncestors(
+          mDocElementContainingBlock->GetWritingMode());
+    }
+  }
+
   nsFrameConstructorSaveState docElementContainingBlockAbsoluteSaveState;
   if (mHasRootAbsPosContainingBlock) {
     
@@ -6813,7 +6840,7 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeInsertionParent(parentFrame)) {
+  if (WipeInsertionParent(parentFrame, aFirstNewContent, nullptr)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7214,7 +7241,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeInsertionParent(insertion.mParentFrame)) {
+  if (WipeInsertionParent(insertion.mParentFrame, aStartChild, aEndChild)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8413,6 +8440,17 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
   MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
              "placeholder for primary frame has previous continuations?");
   nsIFrame* parent = inFlowFrame->GetParent();
+
+  if (aFrame->GetContent() == mDocument->GetBodyElement()) {
+    
+    
+    
+    
+    
+    TRACE("Root");
+    RecreateFramesForContent(mDocument->GetRootElement(), InsertionKind::Async);
+    return true;
+  }
 
   if (inFlowFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
     nsIFrame* grandparent = parent->GetParent();
@@ -11344,12 +11382,33 @@ static bool IsSafeToAppendToIBSplitInline(nsIFrame* aParentFrame,
   return true;
 }
 
-bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
+bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame,
+                                                nsIContent* aStartChild,
+                                                nsIContent* aEndChild) {
 #define TRACE(reason)                                                \
   PROFILER_TRACING("Layout", "WipeInsertionParent: " reason, LAYOUT, \
                    TRACING_EVENT)
 
+  MOZ_ASSERT(aStartChild, "Must always pass aStartChild!");
+
   const LayoutFrameType frameType = aFrame->Type();
+
+  if (aFrame->GetContent() == mDocument->GetRootElement()) {
+    
+    
+    
+    
+    nsIContent* bodyElement = mDocument->GetBodyElement();
+    for (nsIContent* child = aStartChild; child != aEndChild;
+         child = child->GetNextSibling()) {
+      if (child == bodyElement) {
+        TRACE("Root");
+        RecreateFramesForContent(mDocument->GetRootElement(),
+                                 InsertionKind::Async);
+        return true;
+      }
+    }
+  }
 
   
   

@@ -1913,7 +1913,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  bool WipeInsertionParent(nsContainerFrame* aFrame);
+  
+  
+  
+  
+  bool WipeInsertionParent(nsContainerFrame* aFrame, nsIContent* aStartChild,
+                           nsIContent* aEndChild);
 
   
   
