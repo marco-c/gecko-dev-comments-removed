@@ -3,13 +3,11 @@
 
 
 
-async function testSteps() {
-  const principal = getPrincipal("http://example.com^123");
+"use strict";
 
-  try {
+async function testSteps() {
+  Assert.throws(() => {
+    const principal = getPrincipal("http://example.com^123");
     getSimpleDatabase(principal);
-    ok(false, "Should have thrown");
-  } catch (ex) {
-    ok(true, "Did throw");
-  }
+  }, /NS_ERROR_MALFORMED_URI/, "^ is not allowed in the hostname");
 }

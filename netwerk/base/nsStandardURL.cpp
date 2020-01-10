@@ -69,6 +69,7 @@ constexpr bool TestForInvalidHostCharacters(char c) {
   return (c > 0 && c < 32) ||  
          c == ' ' || c == '#' || c == '/' || c == ':' || c == '?' || c == '@' ||
          c == '[' || c == '\\' || c == ']' || c == '*' || c == '<' ||
+         c == '^' ||
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
          
          c == '>' || c == '|' || c == '"';
