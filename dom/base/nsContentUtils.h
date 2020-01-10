@@ -239,6 +239,9 @@ class nsContentUtils {
     return ThreadsafeIsSystemCaller(aCx) || IsFuzzingEnabled();
   }
 
+  static bool IsCallerChromeOrElementTransformGettersEnabled(JSContext* aCx,
+                                                             JSObject*);
+
   
   
   
