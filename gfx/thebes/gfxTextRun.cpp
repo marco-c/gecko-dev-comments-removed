@@ -2887,54 +2887,55 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
       continue;
     }
 
-    
     gfxFont* font = ff.Font();
     if (font) {
+      
       if (font->HasCharacter(aCh)) {
         *aMatchType = {FontMatchType::Kind::kFontGroup, ff.Generic()};
         return font;
       }
-      continue;
-    }
-
-    
-    gfxFontEntry* fe = ff.FontEntry();
-    if (fe->mIsUserFontContainer) {
+    } else {
       
-      
-      gfxUserFontEntry* ufe = static_cast<gfxUserFontEntry*>(fe);
+      gfxFontEntry* fe = ff.FontEntry();
+      if (fe->mIsUserFontContainer) {
+        
+        
+        gfxUserFontEntry* ufe = static_cast<gfxUserFontEntry*>(fe);
 
-      
-      if (!ufe->CharacterInUnicodeRange(aCh)) {
-        continue;
-      }
+        
+        if (!ufe->CharacterInUnicodeRange(aCh)) {
+          continue;
+        }
 
-      
-      
-      if (!loading && ufe->LoadState() == gfxUserFontEntry::STATUS_NOT_LOADED) {
-        ufe->Load();
-        ff.CheckState(mSkipDrawing);
-      }
+        
+        
+        if (!loading &&
+            ufe->LoadState() == gfxUserFontEntry::STATUS_NOT_LOADED) {
+          ufe->Load();
+          ff.CheckState(mSkipDrawing);
+        }
 
-      if (ff.IsLoading()) {
-        loading = true;
-      }
+        if (ff.IsLoading()) {
+          loading = true;
+        }
 
-      gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
-      if (pfe && pfe->HasCharacter(aCh)) {
+        gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
+        if (pfe && pfe->HasCharacter(aCh)) {
+          font = GetFontAt(i, aCh, &loading);
+          if (font) {
+            *aMatchType = {FontMatchType::Kind::kFontGroup,
+                           mFonts[i].Generic()};
+            return font;
+          }
+        }
+      } else if (fe->HasCharacter(aCh)) {
+        
+        
         font = GetFontAt(i, aCh, &loading);
         if (font) {
           *aMatchType = {FontMatchType::Kind::kFontGroup, mFonts[i].Generic()};
           return font;
         }
-      }
-    } else if (fe->HasCharacter(aCh)) {
-      
-      
-      font = GetFontAt(i, aCh, &loading);
-      if (font) {
-        *aMatchType = {FontMatchType::Kind::kFontGroup, mFonts[i].Generic()};
-        return font;
       }
     }
 
@@ -2963,7 +2964,7 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
       
       
       
-      fe = ff.FontEntry();
+      gfxFontEntry* fe = ff.FontEntry();
       if (!fe->mIsUserFontContainer && !fe->IsUserFont()) {
         font = FindFallbackFaceForChar(ff, aCh);
         if (font) {
