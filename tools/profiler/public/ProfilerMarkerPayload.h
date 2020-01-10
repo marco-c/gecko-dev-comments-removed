@@ -429,8 +429,6 @@ class JsAllocationMarkerPayload : public ProfilerMarkerPayload {
         mDescriptiveTypeName(aInfo.descriptiveTypeName
                                  ? NS_xstrdup(aInfo.descriptiveTypeName)
                                  : nullptr),
-        mScriptFilename(aInfo.scriptFilename ? strdup(aInfo.scriptFilename)
-                                             : nullptr),
         
         
         mCoarseType(aInfo.coarseType),
@@ -443,7 +441,6 @@ class JsAllocationMarkerPayload : public ProfilerMarkerPayload {
   mozilla::UniqueFreePtr<const char16_t> mTypeName;
   mozilla::UniqueFreePtr<const char> mClassName;
   mozilla::UniqueFreePtr<const char16_t> mDescriptiveTypeName;
-  mozilla::UniqueFreePtr<const char> mScriptFilename;
   
   const char* mCoarseType;
 

@@ -1885,7 +1885,7 @@ JSObject* SavedStacks::MetadataBuilder::build(
     
     recordAllocationCallback(JS::RecordAllocationInfo{
         node.typeName(), node.jsObjectClassName(), node.descriptiveTypeName(),
-        node.scriptFilename(), JS::ubi::CoarseTypeToString(node.coarseType()),
+        JS::ubi::CoarseTypeToString(node.coarseType()),
         node.size(cx->runtime()->debuggerMallocSizeOf),
         gc::IsInsideNursery(obj)});
   }
