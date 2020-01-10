@@ -71,6 +71,8 @@ static const nsLiteralCString kTypeString[] = {
     NS_LITERAL_CSTRING("speculative"),
     NS_LITERAL_CSTRING(""),  
     NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
 };
 
 #define NUMBER_OF_TYPES MOZ_ARRAY_LENGTH(kTypeString)
