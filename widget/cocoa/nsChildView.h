@@ -621,6 +621,8 @@ class nsChildView final : public nsBaseWidget {
   void UpdateVibrancy(const nsTArray<ThemeGeometry>& aThemeGeometries);
   mozilla::VibrancyManager& EnsureVibrancyManager();
 
+  void UpdateInternalOpaqueRegion();
+
   nsIWidget* GetWidgetForListenerEvents();
 
   struct SwipeInfo {
@@ -735,6 +737,9 @@ class nsChildView final : public nsBaseWidget {
   mozilla::DataMutex<WidgetCompositingState> mCompositingState;
 
   RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
+
+  
+  mozilla::DataMutex<mozilla::LayoutDeviceIntRegion> mOpaqueRegion;
 
   
   

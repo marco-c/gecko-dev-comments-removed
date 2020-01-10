@@ -73,6 +73,8 @@ class VibrancyManager {
 
   bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
 
+  LayoutDeviceIntRegion GetUnionOfVibrantRegions() const;
+
   
 
 
