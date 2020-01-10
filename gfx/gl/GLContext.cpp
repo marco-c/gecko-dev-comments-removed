@@ -275,7 +275,7 @@ GLContext::GLContext(CreateContextFlags flags, const SurfaceCaps& caps,
       mDebugFlags(ChooseDebugFlags(flags)),
       mSharedContext(sharedContext),
       mCaps(caps),
-      mWorkAroundDriverBugs(StaticPrefs::WorkAroundDriverBugs()) {
+      mWorkAroundDriverBugs(StaticPrefs::gfx_work_around_driver_bugs()) {
   mOwningThreadId = PlatformThread::CurrentId();
   MOZ_ALWAYS_TRUE(sCurrentContext.init());
   sCurrentContext.set(0);
@@ -838,35 +838,37 @@ bool GLContext::InitImpl() {
   raw_fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, mMaxViewportDims);
 
   if (mWorkAroundDriverBugs) {
-    int maxTexSize = INT32_MAX;
-    int maxCubeSize = INT32_MAX;
 #ifdef XP_MACOSX
     if (!nsCocoaFeatures::IsAtLeastVersion(10, 12)) {
       if (mVendor == GLVendor::Intel) {
         
-        maxTexSize = 4096;
-        maxCubeSize = 512;
+        mMaxTextureSize = std::min(mMaxTextureSize, 4096);
+        mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 512);
+        
+        
+        mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 4096);
+        mNeedsTextureSizeChecks = true;
       } else if (mVendor == GLVendor::NVIDIA) {
         
-        maxTexSize = 8191;
+        mMaxTextureSize = std::min(mMaxTextureSize, 8191);
+        mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 8191);
+
+        
+        mNeedsTextureSizeChecks = true;
       }
-    } else {
-      
-      
-      
-      
-      
-      maxTexSize = 8192;
     }
 #endif
 #ifdef MOZ_X11
     if (mVendor == GLVendor::Nouveau) {
       
-      maxCubeSize = 2048;
+      mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 2048);
+      mNeedsTextureSizeChecks = true;
     } else if (mVendor == GLVendor::Intel) {
       
       
-      maxTexSize = mMaxTextureSize / 2;
+      mMaxTextureSize /= 2;
+      mMaxRenderbufferSize /= 2;
+      mNeedsTextureSizeChecks = true;
     }
     
     
@@ -900,21 +902,6 @@ bool GLContext::InitImpl() {
       mNeedsCheckAfterAttachTextureToFb = true;
     }
 #endif
-
-    
-
-    const auto fnLimit = [&](int* const driver, const int limit) {
-      if (*driver > limit) {
-        *driver = limit;
-        mNeedsTextureSizeChecks = true;
-      }
-    };
-
-    fnLimit(&mMaxTextureSize, maxTexSize);
-    fnLimit(&mMaxRenderbufferSize, maxTexSize);
-
-    maxCubeSize = std::min(maxCubeSize, maxTexSize);
-    fnLimit(&mMaxCubeMapTextureSize, maxCubeSize);
   }
 
   if (IsSupported(GLFeature::framebuffer_multisample)) {

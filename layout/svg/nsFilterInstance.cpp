@@ -146,7 +146,7 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
   
   
   if (instance.mFilterDescription.mPrimitives.Length() >
-      StaticPrefs::WebRenderMaxFilterOpsPerChain()) {
+      StaticPrefs::gfx_webrender_max_filter_ops_per_chain()) {
     return true;
   }
 

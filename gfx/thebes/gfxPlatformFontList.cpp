@@ -418,7 +418,7 @@ nsresult gfxPlatformFontList::InitFontList() {
 
   
   
-  if (StaticPrefs::SharedFontList() && !gfxPlatform::InSafeMode()) {
+  if (StaticPrefs::gfx_e10s_font_list_shared() && !gfxPlatform::InSafeMode()) {
     for (auto i = mFontEntries.Iter(); !i.Done(); i.Next()) {
       i.Data()->mShmemCharacterMap = nullptr;
       i.Data()->mShmemFace = nullptr;

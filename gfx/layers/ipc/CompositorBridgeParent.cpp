@@ -1553,7 +1553,7 @@ PLayerTransactionParent* CompositorBridgeParent::AllocPLayerTransactionParent(
 #ifdef XP_WIN
   
   
-  if (StaticPrefs::Direct3D11UseDoubleBuffering() && IsWin10OrLater() &&
+  if (StaticPrefs::gfx_direct3d11_use_double_buffering() && IsWin10OrLater() &&
       XRE_IsGPUProcess()) {
     mWidget->AsWindows()->EnsureCompositorWindow();
   }
@@ -1792,7 +1792,7 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
     return mWrBridge;
   }
 
-  if (StaticPrefs::WebRenderSplitRenderRoots()) {
+  if (StaticPrefs::gfx_webrender_split_render_roots()) {
     apis.AppendElement(
         apis[0]->CreateDocument(aSize, 1, wr::RenderRoot::Content));
   }

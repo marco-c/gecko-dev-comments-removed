@@ -199,7 +199,7 @@ bool gfxMacFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
   
   auto macFontEntry = static_cast<MacOSFontEntry*>(GetFontEntry());
   if (macFontEntry->RequiresAATLayout() && !aVertical &&
-      StaticPrefs::CoreTextEnabled()) {
+      StaticPrefs::gfx_font_rendering_coretext_enabled()) {
     if (!mCoreTextShaper) {
       mCoreTextShaper = MakeUnique<gfxCoreTextShaper>(this);
     }

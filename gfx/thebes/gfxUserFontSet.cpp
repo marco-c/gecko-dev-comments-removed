@@ -185,11 +185,13 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
  public:
   gfxOTSContext() {
     
-    mCheckOTLTables = StaticPrefs::ValidateOTLTables();
+    mCheckOTLTables = StaticPrefs::gfx_downloadable_fonts_otl_validation();
     
-    mCheckVariationTables = StaticPrefs::ValidateVariationTables();
+    mCheckVariationTables =
+        StaticPrefs::gfx_downloadable_fonts_validate_variation_tables();
     
-    mKeepColorBitmaps = StaticPrefs::KeepColorBitmaps();
+    mKeepColorBitmaps =
+        StaticPrefs::gfx_downloadable_fonts_keep_color_bitmaps();
   }
 
   virtual ~gfxOTSContext() {

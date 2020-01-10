@@ -77,7 +77,7 @@ void ConvertYCbCrToRGB32(const uint8* y_buf, const uint8* u_buf,
   
   
   
-  bool use_deprecated = StaticPrefs::YCbCrAccurateConversion() ||
+  bool use_deprecated = StaticPrefs::gfx_ycbcr_accurate_conversion() ||
                         (supports_mmx() && supports_sse() && !supports_sse3() &&
                          yuv_color_space == YUVColorSpace::BT601);
   
@@ -293,7 +293,7 @@ void ScaleYCbCrToRGB32(const uint8* y_buf,
                        ScaleFilter filter) {
 
   bool use_deprecated =
-      StaticPrefs::YCbCrAccurateConversion() ||
+      StaticPrefs::gfx_ycbcr_accurate_conversion() ||
 #if defined(XP_WIN) && defined(_M_X64)
                         
                         supports_sse3() ||
