@@ -232,7 +232,9 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
   MOZ_ASSERT(zone->runtimeFromAnyThread() == trc->runtime());
 
   
-  MOZ_ASSERT(!zone->usedByHelperThread());
+  
+  MOZ_ASSERT_IF(!IsTracerKind(trc, JS::CallbackTracer::TracerKind::ClearEdges),
+                !zone->usedByHelperThread());
 
   MOZ_ASSERT(thing->isAligned());
   MOZ_ASSERT(
