@@ -64,6 +64,17 @@ ProcessId GetProcId(ProcessHandle process) { return process; }
 
 
 bool KillProcess(ProcessHandle process_id, int exit_code, bool wait) {
+  
+  
+  
+  
+  
+  if (process_id <= 0) {
+    CHROMIUM_LOG(WARNING) << "base::KillProcess refusing to kill pid "
+                          << process_id;
+    return false;
+  }
+
   bool result = kill(process_id, SIGTERM) == 0;
 
   if (!result && (errno == ESRCH)) {

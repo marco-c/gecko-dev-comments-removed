@@ -386,6 +386,16 @@ bool LaunchApp(const CommandLine& cl, const LaunchOptions& options,
 }
 
 bool KillProcess(ProcessHandle process, int exit_code, bool wait) {
+  
+  
+  
+  
+  
+  if (!process || process == INVALID_HANDLE_VALUE) {
+    CHROMIUM_LOG(WARNING)
+        << "base::KillProcess refusing to terminate process handle " << process;
+    return false;
+  }
   bool result = (TerminateProcess(process, exit_code) != FALSE);
   if (result && wait) {
     
