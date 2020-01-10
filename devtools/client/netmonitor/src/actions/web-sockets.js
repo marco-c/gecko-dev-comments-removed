@@ -4,7 +4,11 @@
 
 "use strict";
 
-const { WS_ADD_FRAME } = require("../constants");
+const {
+  WS_ADD_FRAME,
+  WS_SELECT_FRAME,
+  WS_OPEN_FRAME_DETAILS,
+} = require("../constants");
 
 function addFrame(httpChannelId, data) {
   return {
@@ -14,6 +18,31 @@ function addFrame(httpChannelId, data) {
   };
 }
 
+
+
+
+function selectFrame(frame) {
+  return {
+    type: WS_SELECT_FRAME,
+    open: true,
+    frame,
+  };
+}
+
+
+
+
+
+
+function openFrameDetails(open) {
+  return {
+    type: WS_OPEN_FRAME_DETAILS,
+    open,
+  };
+}
+
 module.exports = {
   addFrame,
+  selectFrame,
+  openFrameDetails,
 };

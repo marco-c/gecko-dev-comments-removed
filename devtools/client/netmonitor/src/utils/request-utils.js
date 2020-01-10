@@ -524,6 +524,15 @@ async function updateFormDataSections(props) {
 
 
 
+async function getFramePayload(payload, getLongString) {
+  const result = await getLongString(payload);
+  return result;
+}
+
+
+
+
+
 
 function processNetworkUpdates(update, request) {
   const result = {};
@@ -561,6 +570,7 @@ module.exports = {
   getFileName,
   getEndTime,
   getFormattedProtocol,
+  getFramePayload,
   getResponseHeader,
   getResponseTime,
   getStartTime,

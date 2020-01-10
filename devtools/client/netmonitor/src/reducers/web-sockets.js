@@ -6,6 +6,8 @@
 
 const {
   WS_ADD_FRAME,
+  WS_SELECT_FRAME,
+  WS_OPEN_FRAME_DETAILS,
 } = require("../constants");
 
 
@@ -16,32 +18,39 @@ function WebSockets() {
   return {
     
     frames: new Map(),
+    selectedFrame: null,
+    frameDetailsOpen: false,
   };
 }
 
 
+function addFrame(state, action) {
+  const nextState = { ...state };
+
+  const newFrame = {
+    httpChannelId: action.httpChannelId,
+    ...action.data,
+  };
+
+  nextState.frames = mapSet(state.frames, newFrame.httpChannelId, newFrame);
+
+  return nextState;
+}
 
 
+function selectFrame(state, action) {
+  return {
+    ...state,
+    selectedFrame: action.frame,
+    frameDetailsOpen: action.open,
+  };
+}
 
-function webSocketsReducer(state = WebSockets(), action) {
-  switch (action.type) {
-    
-    case WS_ADD_FRAME: {
-      const nextState = { ...state };
-
-      const newFrame = {
-        httpChannelId: action.httpChannelId,
-        ...action.data,
-      };
-
-      nextState.frames = mapSet(state.frames, newFrame.httpChannelId, newFrame);
-
-      return nextState;
-    }
-
-    default:
-      return state;
-  }
+function openFrameDetails(state, action) {
+  return {
+    ...state,
+    frameDetailsOpen: action.open,
+  };
 }
 
 
@@ -58,7 +67,24 @@ function mapSet(map, key, value) {
   return newMap.set(key, [value]);
 }
 
+
+
+
+
+function webSockets(state = WebSockets(), action) {
+  switch (action.type) {
+    case WS_ADD_FRAME:
+      return addFrame(state, action);
+    case WS_SELECT_FRAME:
+      return selectFrame(state, action);
+    case WS_OPEN_FRAME_DETAILS:
+      return openFrameDetails(state, action);
+    default:
+      return state;
+  }
+}
+
 module.exports = {
   WebSockets,
-  webSocketsReducer,
+  webSockets,
 };
