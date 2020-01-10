@@ -5226,7 +5226,7 @@ static void InitPref(const char* aName, float aDefaultValue) {
 }
 
 template <typename T>
-static void InitAlwaysPref(const nsACString& aName, T* aCache,
+static void InitAlwaysPref(const nsCString& aName, T* aCache,
                            StripAtomic<T> aDefaultValue, bool aIsStartup,
                            bool aIsParent) {
   
@@ -5235,7 +5235,7 @@ static void InitAlwaysPref(const nsACString& aName, T* aCache,
   
   
   if (aIsParent) {
-    InitPref(PromiseFlatCString(aName).get(), aDefaultValue);
+    InitPref(aName.get(), aDefaultValue);
     *aCache = aDefaultValue;
   }
 
