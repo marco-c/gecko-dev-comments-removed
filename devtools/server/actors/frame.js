@@ -30,10 +30,9 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
 
 
-  initialize: function(frame, threadActor, depth) {
+  initialize: function(frame, threadActor) {
     this.frame = frame;
     this.threadActor = threadActor;
-    this.depth = depth;
   },
 
   
@@ -82,14 +81,7 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
   form: function() {
     const threadActor = this.threadActor;
-    const form = {
-      actor: this.actorID,
-      type: this.frame.type,
-    };
-
-    if (this.depth) {
-      form.depth = this.depth;
-    }
+    const form = { actor: this.actorID, type: this.frame.type };
 
     
     
@@ -110,7 +102,6 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
     form.displayName = formatDisplayName(this.frame);
     form.arguments = this._args();
-
     if (this.frame.script) {
       const location = this.threadActor.sources.getFrameLocation(this.frame);
       form.where = {
