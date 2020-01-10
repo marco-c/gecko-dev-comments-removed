@@ -181,6 +181,8 @@ $(function() {
     },
     function(resp) {
       window.pocketStrings = resp.strings;
+      
+      document.documentElement.setAttribute("dir", resp.dir);
       window.thePKT_SIGNUP.create();
     }
   );
