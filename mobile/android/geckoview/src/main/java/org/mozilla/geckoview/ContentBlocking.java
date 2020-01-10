@@ -85,19 +85,6 @@ public class ContentBlocking {
                 getSettings().setCookieLifetime(lifetime);
                 return this;
             }
-
-            
-
-
-
-
-
-
-
-            public @NonNull Builder enhancedTrackingProtectionLevel(final @CBEtpLevel int level) {
-                getSettings().setEnhancedTrackingProtectionLevel(level);
-                return this;
-            }
         }
 
          final Pref<String> mAt = new Pref<String>(
@@ -129,11 +116,6 @@ public class ContentBlocking {
             "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_NON_TRACKERS);
          final Pref<Integer> mCookieLifetime = new Pref<Integer>(
             "network.cookie.lifetimePolicy", CookieLifetime.NORMAL);
-
-         final Pref<Boolean> mEtpEnabled = new Pref<Boolean>(
-            "privacy.trackingprotection.annotate_channels", false);
-         final Pref<Boolean> mEtpStrict = new Pref<Boolean>(
-            "privacy.annotate_channels.strict_list.enabled", false);
 
         
 
@@ -202,21 +184,6 @@ public class ContentBlocking {
 
 
 
-        public @NonNull Settings setEnhancedTrackingProtectionLevel(final @CBEtpLevel int level) {
-            mEtpEnabled.commit(level == ContentBlocking.EtpLevel.DEFAULT || level == ContentBlocking.EtpLevel.STRICT);
-            mEtpStrict.commit(level == ContentBlocking.EtpLevel.STRICT);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
 
         public @NonNull Settings setStrictSocialTrackingProtection(final boolean enabled) {
             mStStrict.commit(enabled);
@@ -247,20 +214,6 @@ public class ContentBlocking {
                    ContentBlocking.cmListToAtCat(mCmList.get()) |
                    ContentBlocking.fpListToAtCat(mFpList.get()) |
                    ContentBlocking.stListToAtCat(mStList.get());
-        }
-
-        
-
-
-
-
-        public @CBEtpLevel int getEnhancedTrackingProtectionLevel() {
-            if (mEtpStrict.get()) {
-                return ContentBlocking.EtpLevel.STRICT;
-            } else if (mEtpEnabled.get()) {
-                return ContentBlocking.EtpLevel.DEFAULT;
-            }
-            return ContentBlocking.EtpLevel.NONE;
         }
 
         
@@ -507,31 +460,6 @@ public class ContentBlocking {
     @IntDef({ CookieLifetime.NORMAL, CookieLifetime.RUNTIME,
               CookieLifetime.DAYS })
      @interface CBCookieLifetime {}
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ EtpLevel.NONE, EtpLevel.DEFAULT, EtpLevel.STRICT })
-     @interface CBEtpLevel {}
-
-    
-
-
-    public static class EtpLevel {
-        
-
-
-        public static final int NONE = 0;
-
-        
-
-
-        public static final int DEFAULT = 1;
-
-        
-
-
-
-        public static final int STRICT = 2;
-    }
 
     
 
