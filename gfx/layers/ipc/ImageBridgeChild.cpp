@@ -634,6 +634,17 @@ void ImageBridgeChild::UpdateTextureFactoryIdentifier(
   bool disablingWebRender =
       GetCompositorBackendType() == LayersBackend::LAYERS_WR &&
       aIdentifier.mParentBackend != LayersBackend::LAYERS_WR;
+
+  
+  
+  
+  
+  
+  
+  if (disablingWebRender && gfxVars::UseWebRender()) {
+    return;
+  }
+
   
   
 
