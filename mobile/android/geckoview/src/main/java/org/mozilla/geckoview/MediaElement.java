@@ -470,6 +470,7 @@ public class MediaElement {
 
     
 
+    @UiThread
      void notifyPlaybackStateChange(final String event) {
         @MediaStateFlags int state;
         switch (event.toLowerCase()) {
@@ -515,48 +516,56 @@ public class MediaElement {
         }
     }
 
+    @UiThread
      void notifyReadyStateChange(final int readyState) {
         if (mDelegate != null) {
             mDelegate.onReadyStateChange(this, readyState);
         }
     }
 
+    @UiThread
      void notifyLoadProgress(final GeckoBundle message) {
         if (mDelegate != null) {
             mDelegate.onLoadProgress(this, new LoadProgressInfo(message));
         }
     }
 
+    @UiThread
      void notifyTimeChange(final double currentTime) {
         if (mDelegate != null) {
             mDelegate.onTimeChange(this, currentTime);
         }
     }
 
+    @UiThread
      void notifyVolumeChange(final double volume, final boolean muted) {
         if (mDelegate != null) {
             mDelegate.onVolumeChange(this, volume, muted);
         }
     }
 
+    @UiThread
      void notifyPlaybackRateChange(final double rate) {
         if (mDelegate != null) {
             mDelegate.onPlaybackRateChange(this, rate);
         }
     }
 
+    @UiThread
      void notifyMetadataChange(final GeckoBundle message) {
         if (mDelegate != null) {
             mDelegate.onMetadataChange(this, new Metadata(message));
         }
     }
 
+    @UiThread
      void notifyFullscreenChange(final boolean fullscreen) {
         if (mDelegate != null) {
             mDelegate.onFullscreenChange(this, fullscreen);
         }
     }
 
+    @UiThread
      void notifyError(final int aCode) {
         if (mDelegate != null) {
             mDelegate.onError(this, aCode);

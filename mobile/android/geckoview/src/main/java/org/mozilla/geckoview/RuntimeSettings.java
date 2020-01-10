@@ -28,7 +28,6 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 public abstract class RuntimeSettings implements Parcelable {
-    private static final String LOGTAG = "RuntimeSettings";
     
 
 
