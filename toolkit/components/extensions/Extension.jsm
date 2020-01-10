@@ -2204,6 +2204,18 @@ class Extension extends ExtensionData {
             "storageIDBPrincipal",
             ExtensionStorageIDB.getStoragePrincipal(this)
           );
+        } else if (
+          this.startupReason === "ADDON_INSTALL" &&
+          !Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)
+        ) {
+          
+          
+          ExtensionStorageIDB.setMigratedExtensionPref(this, true);
+          this.setSharedData("storageIDBBackend", true);
+          this.setSharedData(
+            "storageIDBPrincipal",
+            ExtensionStorageIDB.getStoragePrincipal(this)
+          );
         }
       }
 

@@ -144,6 +144,103 @@ add_task(async function setup() {
 
 
 
+add_task(async function test_no_migration_for_newly_installed_extensions() {
+  const EXTENSION_ID = "test-no-data-migration@mochi.test";
+
+  await createExtensionJSONFileWithData(EXTENSION_ID, {
+    test_old_data: "test_old_value",
+  });
+
+  const extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
+    manifest: {
+      permissions: ["storage"],
+      applications: { gecko: { id: EXTENSION_ID } },
+    },
+    async background() {
+      const data = await browser.storage.local.get();
+      browser.test.assertEq(
+        Object.keys(data).length,
+        0,
+        "Expect the storage.local store to be empty"
+      );
+      browser.test.sendMessage("test-stored-data:done");
+    },
+  });
+
+  await extension.startup();
+  equal(
+    ExtensionStorageIDB.isMigratedExtension(extension),
+    true,
+    "The newly installed test extension is marked as migrated"
+  );
+  await extension.awaitMessage("test-stored-data:done");
+  await extension.unload();
+
+  
+  
+  await TelemetryTestUtils.assertEvents([], TELEMETRY_EVENTS_FILTER);
+});
+
+
+
+add_task(async function test_data_migration_on_keep_storage_on_uninstall() {
+  Services.prefs.setBoolPref(LEAVE_STORAGE_PREF, true);
+
+  
+  const EXTENSION_ID = "new-extension-on-keep-storage-on-uninstall@mochi.test";
+  await createExtensionJSONFileWithData(EXTENSION_ID, {
+    test_key_string: "test_value",
+  });
+
+  const extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
+    manifest: {
+      permissions: ["storage"],
+      applications: { gecko: { id: EXTENSION_ID } },
+    },
+    async background() {
+      const storedData = await browser.storage.local.get();
+      browser.test.assertEq(
+        "test_value",
+        storedData.test_key_string,
+        "Got the expected data after the storage.local data migration"
+      );
+      browser.test.sendMessage("storage-local-data-migrated");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("storage-local-data-migrated");
+  equal(
+    ExtensionStorageIDB.isMigratedExtension(extension),
+    true,
+    "The newly installed test extension is marked as migrated"
+  );
+  await extension.unload();
+
+  
+  await TelemetryTestUtils.assertEvents(
+    [
+      {
+        method: "migrateResult",
+        value: EXTENSION_ID,
+        extra: {
+          backend: "IndexedDB",
+          data_migrated: "y",
+          has_jsonfile: "y",
+          has_olddata: "y",
+        },
+      },
+    ],
+    TELEMETRY_EVENTS_FILTER
+  );
+
+  Services.prefs.clearUserPref(LEAVE_STORAGE_PREF);
+});
+
+
+
 add_task(async function test_storage_local_data_migration() {
   const EXTENSION_ID = "extension-to-be-migrated@mozilla.org";
 
@@ -200,14 +297,32 @@ add_task(async function test_storage_local_data_migration() {
         },
       },
     },
-    background,
   };
 
   let extension = ExtensionTestUtils.loadExtension(extensionDefinition);
 
+  
+  Services.prefs.setBoolPref(ExtensionStorageIDB.BACKEND_ENABLED_PREF, false);
   await extension.startup();
 
+  ok(
+    !ExtensionStorageIDB.isMigratedExtension(extension),
+    "The test extension should be using the JSONFile backend"
+  );
+
+  
+  Services.prefs.setBoolPref(ExtensionStorageIDB.BACKEND_ENABLED_PREF, true);
+  await extension.upgrade({
+    ...extensionDefinition,
+    background,
+  });
+
   await extension.awaitMessage("storage-local-data-migrated");
+
+  ok(
+    ExtensionStorageIDB.isMigratedExtension(extension),
+    "The test extension should be using the IndexedDB backend"
+  );
 
   const storagePrincipal = ExtensionStorageIDB.getStoragePrincipal(
     extension.extension
@@ -257,8 +372,6 @@ add_task(async function test_storage_local_data_migration() {
     },
   ]);
 
-  await extension.unload();
-
   equal(
     Services.prefs.getBoolPref(
       `${IDB_MIGRATED_PREF_BRANCH}.${EXTENSION_ID}`,
@@ -270,9 +383,10 @@ add_task(async function test_storage_local_data_migration() {
 
   
   
-  extension = ExtensionTestUtils.loadExtension(extensionDefinition);
-
-  await extension.startup();
+  await extension.upgrade({
+    ...extensionDefinition,
+    background,
+  });
 
   await extension.awaitMessage("storage-local-data-migrated");
 
