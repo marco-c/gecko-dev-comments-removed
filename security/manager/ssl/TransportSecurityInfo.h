@@ -113,6 +113,7 @@ class TransportSecurityInfo : public nsITransportSecurityInfo,
 
  protected:
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
+  nsCOMPtr<nsIX509CertList> mSucceededCertChain;
 
  private:
   uint32_t mSecurityState;
@@ -124,7 +125,6 @@ class TransportSecurityInfo : public nsITransportSecurityInfo,
   OriginAttributes mOriginAttributes;
 
   nsCOMPtr<nsIX509Cert> mServerCert;
-  nsCOMPtr<nsIX509CertList> mSucceededCertChain;
 
   
   nsCOMPtr<nsIX509CertList> mFailedCertChain;
