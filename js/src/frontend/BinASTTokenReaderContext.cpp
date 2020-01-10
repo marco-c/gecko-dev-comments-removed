@@ -186,7 +186,6 @@ class HuffmanPreludeReader {
   
   
   struct String : EntryExplicit {
-    using Table = GenericHuffmanTable;
     explicit String(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
   };
@@ -196,7 +195,6 @@ class HuffmanPreludeReader {
   
   
   struct MaybeString : EntryExplicit {
-    using Table = GenericHuffmanTable;
     explicit MaybeString(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
   };
@@ -205,22 +203,18 @@ class HuffmanPreludeReader {
 
   
   struct Number : EntryExplicit {
-    using Table = GenericHuffmanTable;
     explicit Number(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
   };
 
   
   struct UnsignedLong : EntryExplicit {
-    using Table = GenericHuffmanTable;
     explicit UnsignedLong(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
   };
 
   
   struct Boolean : EntryIndexed {
-    using Table = GenericHuffmanTable;
-
     explicit Boolean(const NormalizedInterfaceAndField identity)
         : EntryIndexed(identity) {}
 
@@ -260,7 +254,6 @@ class HuffmanPreludeReader {
 
   
   struct MaybeInterface : EntryIndexed {
-    using Table = GenericHuffmanTable;
     
     const BinASTKind kind_;
 
@@ -297,9 +290,6 @@ class HuffmanPreludeReader {
   
   struct List : EntryExplicit {
     
-    using Table = GenericHuffmanTable;
-
-    
     
     const BinASTList contents_;
 
@@ -325,9 +315,6 @@ class HuffmanPreludeReader {
 
   
   struct Sum : EntryIndexed {
-    
-    using Table = GenericHuffmanTable;
-
     
     const BinASTSum contents_;
 
@@ -367,10 +354,6 @@ class HuffmanPreludeReader {
   struct MaybeSum : EntryIndexed {
     
     
-    using Table = GenericHuffmanTable;
-
-    
-    
     const BinASTSum contents_;
 
     inline bool lessThan(uint32_t aIndex, uint32_t bIndex) {
@@ -406,8 +389,6 @@ class HuffmanPreludeReader {
 
   
   struct StringEnum : EntryIndexed {
-    using Table = GenericHuffmanTable;
-
     
     inline bool lessThan(uint32_t aIndex, uint32_t bIndex) {
       MOZ_ASSERT(aIndex <= maxNumberOfSymbols());
@@ -630,7 +611,7 @@ class HuffmanPreludeReader {
 
   
   template <typename Entry>
-  MOZ_MUST_USE JS::Result<Ok> readSingleValueTable(typename Entry::Table&,
+  MOZ_MUST_USE JS::Result<Ok> readSingleValueTable(GenericHuffmanTable&,
                                                    const Entry&);
 
   
@@ -640,7 +621,7 @@ class HuffmanPreludeReader {
   
   template <typename Entry>
   MOZ_MUST_USE JS::Result<Ok> readMultipleValuesTable(
-      typename Entry::Table& table, Entry entry) {
+      GenericHuffmanTable& table, Entry entry) {
     
     
     BINJS_MOZ_TRY_DECL(numberOfSymbols, readNumberOfSymbols<Entry>(entry));
@@ -675,8 +656,8 @@ class HuffmanPreludeReader {
 
   template <typename Entry>
   MOZ_MUST_USE JS::Result<typename Entry::Explicit>
-  readMultipleValuesTableAndAssignCode(typename Entry::Table& table,
-                                       Entry entry, uint32_t numberOfSymbols) {
+  readMultipleValuesTableAndAssignCode(GenericHuffmanTable& table, Entry entry,
+                                       uint32_t numberOfSymbols) {
     
     
     
@@ -739,8 +720,8 @@ class HuffmanPreludeReader {
 
   template <typename Entry>
   MOZ_MUST_USE JS::Result<typename Entry::Indexed>
-  readMultipleValuesTableAndAssignCode(typename Entry::Table& table,
-                                       Entry entry, uint32_t numberOfSymbols) {
+  readMultipleValuesTableAndAssignCode(GenericHuffmanTable& table, Entry entry,
+                                       uint32_t numberOfSymbols) {
     
     
 
@@ -854,8 +835,8 @@ class HuffmanPreludeReader {
     switch (headerByte) {
       case TableHeader::SingleValue: {
         
-        table = {mozilla::VariantType<typename Entry::Table>{}};
-        auto& tableRef = table.template as<typename Entry::Table>();
+        table = {mozilla::VariantType<GenericHuffmanTable>{}};
+        auto& tableRef = table.template as<GenericHuffmanTable>();
 
         
         MOZ_TRY((readSingleValueTable<Entry>(tableRef, entry)));
@@ -864,8 +845,8 @@ class HuffmanPreludeReader {
       case TableHeader::MultipleValues: {
         
         
-        table = {mozilla::VariantType<typename Entry::Table>{}};
-        auto& tableRef = table.template as<typename Entry::Table>();
+        table = {mozilla::VariantType<GenericHuffmanTable>{}};
+        auto& tableRef = table.template as<GenericHuffmanTable>();
 
         MOZ_TRY((readMultipleValuesTable<Entry>(tableRef, entry)));
         return Ok();
@@ -2461,7 +2442,7 @@ MOZ_MUST_USE JS::Result<BinASTSymbol> HuffmanPreludeReader::readSymbol(
 
 template <>
 MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::readSingleValueTable<Boolean>(
-    Boolean::Table& table, const Boolean& entry) {
+    GenericHuffmanTable& table, const Boolean& entry) {
   uint8_t indexByte;
   MOZ_TRY_VAR(indexByte, reader_.readByte<Compression::No>());
   if (MOZ_UNLIKELY(indexByte >= 2)) {
@@ -2497,7 +2478,7 @@ MOZ_MUST_USE JS::Result<BinASTSymbol> HuffmanPreludeReader::readSymbol(
 template <>
 MOZ_MUST_USE JS::Result<Ok>
 HuffmanPreludeReader::readSingleValueTable<MaybeInterface>(
-    MaybeInterface::Table& table, const MaybeInterface& entry) {
+    GenericHuffmanTable& table, const MaybeInterface& entry) {
   uint8_t indexByte;
   MOZ_TRY_VAR(indexByte, reader_.readByte<Compression::No>());
   if (MOZ_UNLIKELY(indexByte >= 2)) {
