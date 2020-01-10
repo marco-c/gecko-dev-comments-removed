@@ -279,7 +279,7 @@ void Sampler::Disable(PSLockRef aLock) {
 template <typename Func>
 void Sampler::SuspendAndSampleAndResumeThread(
     PSLockRef aLock, const RegisteredThread& aRegisteredThread,
-    const Func& aProcessRegs) {
+    const TimeStamp& aNow, const Func& aProcessRegs) {
   
   
   MOZ_ASSERT(!sSigHandlerCoordinator);
@@ -334,7 +334,7 @@ void Sampler::SuspendAndSampleAndResumeThread(
   
   Registers regs;
   PopulateRegsFromContext(regs, &sSigHandlerCoordinator->mUContext);
-  aProcessRegs(regs);
+  aProcessRegs(regs, aNow);
 
   
   

@@ -160,7 +160,8 @@ class RegisteredThread final {
   
   
   
-  void GetRunningEventDelay(TimeDuration& aDelay, TimeDuration& aRunning);
+  void GetRunningEventDelay(const TimeStamp& aNow, TimeDuration& aDelay,
+                            TimeDuration& aRunning);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

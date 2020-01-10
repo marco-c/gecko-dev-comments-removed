@@ -45,13 +45,17 @@ size_t RegisteredThread::SizeOfIncludingThis(
   return n;
 }
 
-void RegisteredThread::GetRunningEventDelay(TimeDuration& aDelay,
+void RegisteredThread::GetRunningEventDelay(const TimeStamp& aNow,
+                                            TimeDuration& aDelay,
                                             TimeDuration& aRunning) {
   if (mThread) {  
     TimeStamp start;
     mThread->GetRunningEventDelay(&aDelay, &start);
     if (!start.IsNull()) {
-      aRunning = TimeStamp::Now() - start;
+      
+      
+      
+      aRunning = aNow - start;
       return;
     }
   }
