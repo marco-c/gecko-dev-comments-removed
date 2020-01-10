@@ -34,6 +34,17 @@ class MozFramebuffer;
 
 namespace layers {
 
+class IOSurfaceRegistry {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IOSurfaceRegistry)
+
+  virtual void RegisterSurface(CFTypeRefPtr<IOSurfaceRef> aSurface) = 0;
+  virtual void UnregisterSurface(CFTypeRefPtr<IOSurfaceRef> aSurface) = 0;
+
+ protected:
+  virtual ~IOSurfaceRegistry() {}
+};
+
 
 
 
@@ -52,8 +63,7 @@ class NativeLayerRootCA : public NativeLayerRoot {
   void SetBackingScale(float aBackingScale);
 
   
-  already_AddRefed<NativeLayer> CreateLayer(const gfx::IntSize& aSize,
-                                            bool aIsOpaque) override;
+  already_AddRefed<NativeLayer> CreateLayer() override;
   void AppendLayer(NativeLayer* aLayer) override;
   void RemoveLayer(NativeLayer* aLayer) override;
   void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) override;
@@ -80,34 +90,58 @@ class NativeLayerRootCA : public NativeLayerRoot {
 
 
 
+
+
+
+
+
+
+
 class NativeLayerCA : public NativeLayer {
  public:
   virtual NativeLayerCA* AsNativeLayerCA() override { return this; }
 
   
-  gfx::IntSize GetSize() override;
-  void SetPosition(const gfx::IntPoint& aPosition) override;
-  gfx::IntPoint GetPosition() override;
+  void SetRect(const gfx::IntRect& aRect) override;
   gfx::IntRect GetRect() override;
+  void InvalidateRegionThroughoutSwapchain(
+      const gfx::IntRegion& aRegion) override;
   RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
-      const gfx::IntRegion& aUpdateRegion,
       gfx::BackendType aBackendType) override;
   void SetGLContext(gl::GLContext* aGLContext) override;
   gl::GLContext* GetGLContext() override;
-  Maybe<GLuint> NextSurfaceAsFramebuffer(const gfx::IntRegion& aUpdateRegion,
-                                         bool aNeedsDepth) override;
+  Maybe<GLuint> NextSurfaceAsFramebuffer(bool aNeedsDepth) override;
   gfx::IntRegion CurrentSurfaceInvalidRegion() override;
   void NotifySurfaceReady() override;
+  void SetIsOpaque(bool aIsOpaque) override;
   bool IsOpaque() override;
   void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) override;
   Maybe<gfx::IntRect> ClipRect() override;
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetSurfaceRegistry(RefPtr<IOSurfaceRegistry> aSurfaceRegistry);
+  RefPtr<IOSurfaceRegistry> GetSurfaceRegistry();
+
  protected:
   friend class NativeLayerRootCA;
 
-  NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque);
+  NativeLayerCA();
   ~NativeLayerCA() override;
 
   
@@ -125,11 +159,6 @@ class NativeLayerCA : public NativeLayer {
   void ApplyChanges();
   void SetBackingScale(float aBackingScale);
 
-  
-  
-  void InvalidateRegionThroughoutSwapchain(const MutexAutoLock&,
-                                           const gfx::IntRegion& aRegion);
-
   GLuint GetOrCreateFramebufferForSurface(const MutexAutoLock&,
                                           CFTypeRefPtr<IOSurfaceRef> aSurface,
                                           bool aNeedsDepth);
@@ -137,6 +166,7 @@ class NativeLayerCA : public NativeLayer {
   struct SurfaceWithInvalidRegion {
     CFTypeRefPtr<IOSurfaceRef> mSurface;
     gfx::IntRegion mInvalidRegion;
+    gfx::IntSize mSize;
   };
 
   std::vector<SurfaceWithInvalidRegion> RemoveExcessUnusedSurfaces(
@@ -145,6 +175,10 @@ class NativeLayerCA : public NativeLayer {
   
   Mutex mMutex;
 
+  RefPtr<IOSurfaceRegistry> mSurfaceRegistry;  
+
+  
+  
   
   
   
@@ -217,7 +251,7 @@ class NativeLayerCA : public NativeLayer {
       mFramebuffers;
 
   gfx::IntPoint mPosition;
-  const gfx::IntSize mSize;
+  gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
 
   
@@ -229,10 +263,10 @@ class NativeLayerCA : public NativeLayer {
 
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
-  const bool mIsOpaque = false;
-  bool mMutatedBackingScale = false;
-  bool mMutatedSurfaceIsFlipped = false;
+  bool mIsOpaque = false;
   bool mMutatedPosition = false;
+  bool mMutatedSize = false;
+  bool mMutatedIsOpaque = false;
   bool mMutatedClipRect = false;
 };
 

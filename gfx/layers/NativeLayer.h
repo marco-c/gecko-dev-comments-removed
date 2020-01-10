@@ -33,8 +33,7 @@ class NativeLayerRoot {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeLayerRoot)
 
-  virtual already_AddRefed<NativeLayer> CreateLayer(const gfx::IntSize& aSize,
-                                                    bool aIsOpaque) = 0;
+  virtual already_AddRefed<NativeLayer> CreateLayer() = 0;
   virtual void AppendLayer(NativeLayer* aLayer) = 0;
   virtual void RemoveLayer(NativeLayer* aLayer) = 0;
   virtual void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) = 0;
@@ -69,14 +68,13 @@ class NativeLayer {
 
   
   
-  virtual gfx::IntSize GetSize() = 0;
-  virtual bool IsOpaque() = 0;
+  
+  virtual void SetRect(const gfx::IntRect& aRect) = 0;
+  virtual gfx::IntRect GetRect() = 0;
 
   
-  virtual void SetPosition(const gfx::IntPoint& aPosition) = 0;
-  virtual gfx::IntPoint GetPosition() = 0;
-
-  virtual gfx::IntRect GetRect() = 0;
+  virtual void SetIsOpaque(bool aIsOpaque) = 0;
+  virtual bool IsOpaque() = 0;
 
   
   
@@ -90,6 +88,11 @@ class NativeLayer {
 
   
   
+  virtual void InvalidateRegionThroughoutSwapchain(
+      const gfx::IntRegion& aRegion) = 0;
+
+  
+  
   
   
   
@@ -99,7 +102,7 @@ class NativeLayer {
   
   
   virtual RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
-      const gfx::IntRegion& aUpdateRegion, gfx::BackendType aBackendType) = 0;
+      gfx::BackendType aBackendType) = 0;
 
   
   
@@ -127,9 +130,7 @@ class NativeLayer {
   
   
   
-  
-  virtual Maybe<GLuint> NextSurfaceAsFramebuffer(
-      const gfx::IntRegion& aUpdateRegion, bool aNeedsDepth) = 0;
+  virtual Maybe<GLuint> NextSurfaceAsFramebuffer(bool aNeedsDepth) = 0;
 
   
   
