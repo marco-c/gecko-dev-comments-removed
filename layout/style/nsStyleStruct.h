@@ -130,46 +130,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   RefPtr<nsAtom> mLanguage;
 };
 
-class nsStyleGradient final {
- public:
-  nsStyleGradient();
-  uint8_t mShape;  
-  uint8_t mSize;   
-                   
-  bool mRepeating;
-  bool mLegacySyntax;  
-  
-  bool mMozLegacySyntax;  
-                          
-                          
-
-  nsStyleCoord mBgPosX;  
-  nsStyleCoord mBgPosY;  
-  nsStyleCoord mAngle;   
-
-  nsStyleCoord mRadiusX;  
-  nsStyleCoord mRadiusY;  
-
-  
-  nsTArray<mozilla::StyleGradientItem> mStops;
-
-  bool operator==(const nsStyleGradient& aOther) const;
-  bool operator!=(const nsStyleGradient& aOther) const {
-    return !(*this == aOther);
-  }
-
-  bool IsOpaque();
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsStyleGradient)
-
- private:
-  
-  ~nsStyleGradient() {}
-
-  nsStyleGradient(const nsStyleGradient& aOther) = delete;
-  nsStyleGradient& operator=(const nsStyleGradient& aOther) = delete;
-};
-
 
 
 
@@ -304,7 +264,7 @@ struct nsStyleImage {
 
   void SetNull();
   void SetImageRequest(already_AddRefed<nsStyleImageRequest> aImage);
-  void SetGradientData(nsStyleGradient* aGradient);
+  void SetGradientData(mozilla::UniquePtr<mozilla::StyleGradient>);
   void SetElementId(already_AddRefed<nsAtom> aElementId);
   void SetCropRect(mozilla::UniquePtr<nsStyleSides> aCropRect);
 
@@ -327,9 +287,9 @@ struct nsStyleImage {
     return mImage;
   }
   imgRequestProxy* GetImageData() const { return ImageRequest()->get(); }
-  nsStyleGradient* GetGradientData() const {
+  const mozilla::StyleGradient& GetGradient() const {
     NS_ASSERTION(mType == eStyleImageType_Gradient, "Data is not a gradient!");
-    return mGradient;
+    return *mGradient;
   }
   bool IsResolved() const {
     return mType != eStyleImageType_Image || ImageRequest()->IsResolved();
@@ -429,7 +389,7 @@ struct nsStyleImage {
   nsStyleImageType mType;
   union {
     nsStyleImageRequest* mImage;
-    nsStyleGradient* mGradient;
+    mozilla::StyleGradient* mGradient;
     nsAtom* mElementId;
   };
 

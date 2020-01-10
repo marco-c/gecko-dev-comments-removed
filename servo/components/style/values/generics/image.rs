@@ -14,12 +14,34 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
 
+#[derive(
+    Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+)]
+pub enum GenericImageLayer<Image> {
+    
+    None,
+    
+    Image(Image),
+}
+
+pub use self::GenericImageLayer as ImageLayer;
+
+impl<I> ImageLayer<I> {
+    
+    #[inline]
+    pub fn none() -> Self {
+        ImageLayer::None
+    }
+}
+
+
 
 
 #[derive(
     Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
 )]
-pub enum Image<Gradient, MozImageRect, ImageUrl> {
+#[repr(C, u8)]
+pub enum GenericImage<Gradient, MozImageRect, ImageUrl> {
     
     Url(ImageUrl),
     
@@ -36,23 +58,29 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
     PaintWorklet(PaintWorklet),
 }
 
+pub use self::GenericImage as Image;
+
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
-pub struct Gradient<LineDirection, Length, LengthPercentage, Position, Color> {
+#[repr(C)]
+pub struct GenericGradient<LineDirection, Length, LengthPercentage, Position, Color> {
     
-    pub kind: GradientKind<LineDirection, Length, LengthPercentage, Position>,
+    pub kind: GenericGradientKind<LineDirection, Length, LengthPercentage, Position>,
     
-    pub items: Vec<GradientItem<Color, LengthPercentage>>,
+    pub items: crate::OwnedSlice<GenericGradientItem<Color, LengthPercentage>>,
     
     pub repeating: bool,
     
-    pub compat_mode: CompatMode,
+    pub compat_mode: GradientCompatMode,
 }
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+pub use self::GenericGradient as Gradient;
 
-pub enum CompatMode {
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[repr(u8)]
+
+pub enum GradientCompatMode {
     
     Modern,
     
@@ -63,43 +91,55 @@ pub enum CompatMode {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
-pub enum GradientKind<LineDirection, Length, LengthPercentage, Position> {
+#[repr(C, u8)]
+pub enum GenericGradientKind<LineDirection, Length, LengthPercentage, Position> {
     
     Linear(LineDirection),
     
-    Radial(EndingShape<Length, LengthPercentage>, Position),
+    Radial(GenericEndingShape<Length, LengthPercentage>, Position),
 }
+
+pub use self::GenericGradientKind as GradientKind;
 
 
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
 )]
-pub enum EndingShape<Length, LengthPercentage> {
+#[repr(C, u8)]
+pub enum GenericEndingShape<Length, LengthPercentage> {
     
-    Circle(Circle<Length>),
+    Circle(GenericCircle<Length>),
     
-    Ellipse(Ellipse<LengthPercentage>),
+    Ellipse(GenericEllipse<LengthPercentage>),
 }
+
+pub use self::GenericEndingShape as EndingShape;
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
-pub enum Circle<Length> {
+#[repr(C, u8)]
+pub enum GenericCircle<Length> {
     
     Radius(Length),
     
     Extent(ShapeExtent),
 }
 
+pub use self::GenericCircle as Circle;
+
 
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
 )]
-pub enum Ellipse<LengthPercentage> {
+#[repr(C, u8)]
+pub enum GenericEllipse<LengthPercentage> {
     
     Radii(LengthPercentage, LengthPercentage),
     
     Extent(ShapeExtent),
 }
+
+pub use self::GenericEllipse as Ellipse;
 
 
 #[allow(missing_docs)]
@@ -117,6 +157,7 @@ pub enum Ellipse<LengthPercentage> {
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(u8)]
 pub enum ShapeExtent {
     ClosestSide,
     FarthestSide,
@@ -277,8 +318,8 @@ where
         W: Write,
     {
         match self.compat_mode {
-            CompatMode::WebKit => dest.write_str("-webkit-")?,
-            CompatMode::Moz => dest.write_str("-moz-")?,
+            GradientCompatMode::WebKit => dest.write_str("-webkit-")?,
+            GradientCompatMode::Moz => dest.write_str("-moz-")?,
             _ => {},
         }
 
@@ -301,7 +342,7 @@ where
                     EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::FarthestCorner)) => true,
                     _ => false,
                 };
-                if self.compat_mode == CompatMode::Modern {
+                if self.compat_mode == GradientCompatMode::Modern {
                     if !omit_shape {
                         shape.to_css(dest)?;
                         dest.write_str(" ")?;
@@ -318,7 +359,7 @@ where
                 false
             },
         };
-        for item in &self.items {
+        for item in &*self.items {
             if !skip_comma {
                 dest.write_str(", ")?;
             }
@@ -341,10 +382,10 @@ impl<D, L, LoP, P> GradientKind<D, L, LoP, P> {
 
 pub trait LineDirection {
     
-    fn points_downwards(&self, compat_mode: CompatMode) -> bool;
+    fn points_downwards(&self, compat_mode: GradientCompatMode) -> bool;
 
     
-    fn to_css<W>(&self, dest: &mut CssWriter<W>, compat_mode: CompatMode) -> fmt::Result
+    fn to_css<W>(&self, dest: &mut CssWriter<W>, compat_mode: GradientCompatMode) -> fmt::Result
     where
         W: Write;
 }
