@@ -8213,26 +8213,8 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
   }
 
   
-  if (aFrame->GetStateBits() & NS_FRAME_GENERATED_CONTENT) {
-    newFrame->AddStateBits(NS_FRAME_GENERATED_CONTENT);
-  }
-
   
   
-  if (aFrame->GetStateBits() & NS_FRAME_ANONYMOUSCONTENTCREATOR_CONTENT) {
-    newFrame->AddStateBits(NS_FRAME_ANONYMOUSCONTENTCREATOR_CONTENT);
-  }
-
-  
-  if (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
-    newFrame->AddStateBits(NS_FRAME_OUT_OF_FLOW);
-  }
-
-  
-  
-  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
-    newFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
-  }
 
   if (nextInFlow) {
     nextInFlow->SetPrevInFlow(newFrame);

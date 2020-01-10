@@ -616,23 +616,36 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     mWritingMode = aPrevInFlow->GetWritingMode();
 
     
-    nsFrameState state = aPrevInFlow->GetStateBits();
+    
+    
 
     
-    AddStateBits(state &
-                 (NS_FRAME_INDEPENDENT_SELECTION | NS_FRAME_PART_OF_IBSPLIT |
+    AddStateBits(aPrevInFlow->GetStateBits() &
+                 (NS_FRAME_ANONYMOUSCONTENTCREATOR_CONTENT |
+                  NS_FRAME_GENERATED_CONTENT |
+                  NS_FRAME_OUT_OF_FLOW |
+                  NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN |
+                  NS_FRAME_INDEPENDENT_SELECTION |
+                  NS_FRAME_PART_OF_IBSPLIT |
                   NS_FRAME_MAY_BE_TRANSFORMED |
-                  NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN));
+                  NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
+    
   } else {
     PresContext()->ConstructedFrame();
   }
   if (GetParent()) {
-    nsFrameState state = GetParent()->GetStateBits();
+    
+    
+    
 
     
-    AddStateBits(state & (NS_FRAME_INDEPENDENT_SELECTION |
-                          NS_FRAME_GENERATED_CONTENT | NS_FRAME_IS_SVG_TEXT |
-                          NS_FRAME_IN_POPUP | NS_FRAME_IS_NONDISPLAY));
+    AddStateBits(GetParent()->GetStateBits() &
+                 (NS_FRAME_GENERATED_CONTENT |
+                  NS_FRAME_INDEPENDENT_SELECTION |
+                  NS_FRAME_IS_SVG_TEXT |
+                  NS_FRAME_IN_POPUP |
+                  NS_FRAME_IS_NONDISPLAY));
+    
 
     if (HasAnyStateBits(NS_FRAME_IN_POPUP) && TrackingVisibility()) {
       
@@ -642,7 +655,6 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   if (aPrevInFlow) {
     mMayHaveOpacityAnimation = aPrevInFlow->MayHaveOpacityAnimation();
     mMayHaveTransformAnimation = aPrevInFlow->MayHaveTransformAnimation();
-    mState |= aPrevInFlow->mState & NS_FRAME_MAY_BE_TRANSFORMED;
   } else if (mContent) {
     
     
