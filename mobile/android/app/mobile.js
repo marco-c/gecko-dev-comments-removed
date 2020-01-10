@@ -477,7 +477,6 @@ pref("layers.async-video.enabled", true);
 
 
 
-pref("apz.allow_immediate_handoff", false);
 pref("apz.axis_lock.breakout_angle", "0.7853982");    
 pref("apz.axis_lock.mode", 1); 
 pref("apz.content_response_timeout", 600);
