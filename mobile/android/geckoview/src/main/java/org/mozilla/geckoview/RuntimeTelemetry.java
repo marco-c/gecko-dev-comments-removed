@@ -98,6 +98,28 @@ public final class RuntimeTelemetry {
     
 
 
+    public static class Histogram extends Metric<long[]> {
+        
+
+
+        public final boolean isCategorical;
+
+         Histogram(final boolean isCategorical, final String name,
+                                final long[] value) {
+            super(name, value);
+            this.isCategorical = isCategorical;
+        }
+
+        
+        protected Histogram() {
+            super(null, null);
+            isCategorical = false;
+        }
+    }
+
+    
+
+
 
 
     public interface Delegate {
@@ -107,7 +129,7 @@ public final class RuntimeTelemetry {
 
 
         @AnyThread
-        default void onHistogram(final @NonNull Metric<long[]> metric) {}
+        default void onHistogram(final @NonNull Histogram metric) {}
 
         
 
@@ -168,12 +190,12 @@ public final class RuntimeTelemetry {
 
         @WrapForJNI(calledFrom = "gecko")
          void dispatchHistogram(
-                final String name, final long[] values) {
+                final boolean isCategorical, final String name, final long[] values) {
             if (mDelegate == null) {
                 
                 return;
             }
-            mDelegate.onHistogram(new Metric<>(name, values));
+            mDelegate.onHistogram(new Histogram(isCategorical, name, values));
         }
 
         @WrapForJNI(calledFrom = "gecko")
