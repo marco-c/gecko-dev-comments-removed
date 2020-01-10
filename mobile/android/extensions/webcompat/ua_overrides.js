@@ -31,24 +31,6 @@ for (const override of [
 
 
 
-    id: "bug1464106",
-    platform: "desktop",
-    domain: "directvnow.com",
-    bug: "1464106",
-    config: {
-      matches: ["*://*.directvnow.com/*"],
-      uaTransformer: (originalUA) => {
-        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
 
     id: "bug1480710",
     platform: "android",
@@ -68,24 +50,6 @@ for (const override of [
 
 
 
-    id: "bug755590",
-    platform: "android",
-    domain: "sites.google.com",
-    bug: "755590",
-    config: {
-      matches: ["*://sites.google.com/*"],
-      uaTransformer: (originalUA) => {
-        return originalUA + " Chrome/68.0.3440.85 Mobile Safari/537.366";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
 
     id: "bug945963",
     platform: "android",
@@ -95,50 +59,6 @@ for (const override of [
       matches: ["*://tieba.baidu.com/*", "*://tiebac.baidu.com/*"],
       uaTransformer: (originalUA) => {
         return originalUA + " AppleWebKit/537.36 (KHTML, like Gecko)";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
-
-
-
-
-
-    id: "bug1518625",
-    platform: "android",
-    domain: "rottentomatoes.com",
-    bug: "1518625",
-    config: {
-      matches: [
-        "*://*.rottentomatoes.com/*",
-        "*://player.theplatform.com/*",
-      ],
-      uaTransformer: (_) => {
-        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
-    id: "bug1177298-1",
-    platform: "android",
-    domain: "weather.yahoo.co.jp",
-    bug: "1177298",
-    config: {
-      matches: ["*://weather.yahoo.co.jp/*"],
-      uaTransformer: (_) => {
-        return "Mozilla/5.0 (Linux; Android 5.0.2; Galaxy Nexus Build/IMM76B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36";
       },
     },
   }, {
@@ -175,24 +95,6 @@ for (const override of [
       matches: ["*://*.nhk.or.jp/*"],
       uaTransformer: (originalUA) => {
         return originalUA + " AppleWebKit";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
-    id: "bug1177298-4",
-    platform: "android",
-    domain: "uniqlo.com",
-    bug: "1177298",
-    config: {
-      matches: ["*://*.uniqlo.com/*"],
-      uaTransformer: (originalUA) => {
-        return originalUA + " Mobile Safari";
       },
     },
   }, {
@@ -255,51 +157,12 @@ for (const override of [
 
 
 
-    id: "bug1476436",
-    platform: "android",
-    domain: "mobile.bet365.com",
-    bug: "1476436",
-    config: {
-      matches: ["*://mobile.bet365.com/*"],
-      uaTransformer: (_) => {
-        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
-
     id: "bug1509831",
     platform: "android",
     domain: "cc.com",
     bug: "1509831",
     config: {
       matches: ["*://*.cc.com/*"],
-      uaTransformer: (_) => {
-        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
-      },
-    },
-  }, {
-    
-
-
-
-
-
-
-
-
-    id: "bug1508564",
-    platform: "android",
-    domain: "cnbc.com",
-    bug: "1508564",
-    config: {
-      matches: ["*://*.cnbc.com/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
