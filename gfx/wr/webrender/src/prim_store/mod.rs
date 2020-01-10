@@ -2043,6 +2043,7 @@ impl PrimitiveStore {
                 let inflation_factor = surface.inflation_factor;
                 let local_rect = prim_local_rect
                     .inflate(inflation_factor, inflation_factor)
+                    .union(&prim_shadow_rect)
                     .intersection(&prim_instance.local_clip_rect);
                 let local_rect = match local_rect {
                     Some(local_rect) => local_rect,
