@@ -50,16 +50,44 @@ extern mozilla::LazyLogModule gProfilerLog;
 
 
 #define LOG_TEST MOZ_LOG_TEST(gProfilerLog, mozilla::LogLevel::Info)
-#define LOG(arg, ...)                            \
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Info, \
-          ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__))
+
+#define LOG(arg, ...)                                                     \
+  do {                                                                    \
+    gPSMutex.AssertCurrentThreadDoesNotOwn(); /* See LOG_LOCKED() */      \
+    MOZ_LOG(gProfilerLog, mozilla::LogLevel::Info,                        \
+            ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__)); \
+  } while (false)
+
+
+
+#define LOG_LOCKED(lock, arg, ...)                                          \
+  do {                                                                      \
+    if (!(ActivePS::Exists(lock) && ActivePS::InterposeObserver(lock))) {   \
+      MOZ_LOG(gProfilerLog, mozilla::LogLevel::Info,                        \
+              ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__)); \
+    }                                                                       \
+  } while (false)
 
 
 
 #define DEBUG_LOG_TEST MOZ_LOG_TEST(gProfilerLog, mozilla::LogLevel::Debug)
-#define DEBUG_LOG(arg, ...)                       \
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Debug, \
-          ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__))
+
+#define DEBUG_LOG(arg, ...)                                                \
+  do {                                                                     \
+    gPSMutex.AssertCurrentThreadDoesNotOwn(); /* See DEBUG_LOG_LOCKED() */ \
+    MOZ_LOG(gProfilerLog, mozilla::LogLevel::Debug,                        \
+            ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__));  \
+  } while (false)
+
+
+
+#define DEBUG_LOG_LOCKED(lock, arg, ...)                                    \
+  do {                                                                      \
+    if (!(ActivePS::Exists(lock) && ActivePS::InterposeObserver(lock))) {   \
+      MOZ_LOG(gProfilerLog, mozilla::LogLevel::Debug,                       \
+              ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__)); \
+    }                                                                       \
+  } while (false)
 
 typedef uint8_t* Address;
 
