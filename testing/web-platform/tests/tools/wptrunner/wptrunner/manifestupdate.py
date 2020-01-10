@@ -403,7 +403,7 @@ class PropertyUpdate(object):
         as `expected` in the test metadata.
 
         When `remove_intermittent` is True, old intermittent statuses will be removed
-        if no longer intermittent. This is only relevant if `update_intermittent` is 
+        if no longer intermittent. This is only relevant if `update_intermittent` is
         also True, because if False, the metadata will simply update one `expected`
         status.
         """
