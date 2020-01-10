@@ -873,8 +873,7 @@ bool InitializeJittedAtomics() {
   memset(code + codeLength, 0, roundedCodeLength - codeLength);
 
   
-  
-  masm.executableCopy(code,  false);
+  masm.executableCopy(code);
 
   
   if (!ExecutableAllocator::makeExecutableAndFlushICache(code,

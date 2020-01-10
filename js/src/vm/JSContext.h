@@ -523,14 +523,7 @@ struct JSContext : public JS::RootingContext,
   js::UnprotectedData<js::TraceLoggerThread*> traceLogger;
 #endif
 
- private:
-  
-  js::ContextData<js::jit::AutoFlushICache*> autoFlushICache_;
-
  public:
-  js::jit::AutoFlushICache* autoFlushICache() const;
-  void setAutoFlushICache(js::jit::AutoFlushICache* afc);
-
   
   js::ContextData<DtoaState*> dtoaState;
 
@@ -1252,6 +1245,7 @@ class MOZ_RAII AutoKeepAtoms {
 class MOZ_RAII AutoNoteDebuggerEvaluationWithOnNativeCallHook {
   JSContext* cx;
   Debugger* oldValue;
+
  public:
   AutoNoteDebuggerEvaluationWithOnNativeCallHook(JSContext* cx, Debugger* dbg)
       : cx(cx), oldValue(cx->insideDebuggerEvaluationWithOnNativeCallHook) {

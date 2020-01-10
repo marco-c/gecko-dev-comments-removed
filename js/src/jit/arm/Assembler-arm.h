@@ -1697,7 +1697,7 @@ class Assembler : public AssemblerShared {
 
   
   
-  void executableCopy(uint8_t* buffer, bool flushICache = true);
+  void executableCopy(uint8_t* buffer);
 
   
 
