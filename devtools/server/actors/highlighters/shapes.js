@@ -2197,9 +2197,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     if (!this.origCoordUnits) {
       this.origCoordUnits = this.coordUnits;
     }
-    
-    const values = definition.split(" at ");
-    let radius = values[0];
+
+    const values = definition.split("at");
+    let radius = values[0] ? values[0].trim() : "closest-side";
     const { width, height } = this.currentDimensions;
     const center = splitCoords(values[1]).map(
       this.convertCoordsToPercent.bind(this)
@@ -2286,19 +2286,14 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     if (!this.origCoordUnits) {
       this.origCoordUnits = this.coordUnits;
     }
-    let values = definition.split(" at ");
 
-    
-    
-    if (values[0] === definition) {
-      values = `closest-side closest-side ${definition}`.split(" at ");
-    }
-
+    const values = definition.split("at");
     const center = splitCoords(values[1]).map(
       this.convertCoordsToPercent.bind(this)
     );
 
-    const radii = splitCoords(values[0]).map((radius, i) => {
+    let radii = values[0] ? values[0].trim() : "closest-side closest-side";
+    radii = splitCoords(values[0]).map((radius, i) => {
       if (radius === "closest-side") {
         
         return i % 2 === 0
