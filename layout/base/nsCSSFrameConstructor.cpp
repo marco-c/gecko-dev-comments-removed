@@ -2183,9 +2183,9 @@ static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
   
   
   
-  if ((aParentFrame &&
-       (!aParentFrame->IsFrameOfType(nsIFrame::eExcludesIgnorableWhitespace) ||
-        aParentFrame->IsGeneratedContentFrame())) ||
+  if (!aParentFrame ||
+      !aParentFrame->IsFrameOfType(nsIFrame::eExcludesIgnorableWhitespace) ||
+      aParentFrame->IsGeneratedContentFrame() ||
       !aChildContent->IsText()) {
     return true;
   }
@@ -11349,7 +11349,7 @@ void nsCSSFrameConstructor::BuildInlineChildItems(
                                aParentItem.mChildItems);
   }
 
-  uint32_t flags = ITEM_ALLOW_XBL_BASE | ITEM_ALLOW_PAGE_BREAK;
+  uint32_t flags = 0;
   if (aItemIsWithinSVGText) {
     flags |= ITEM_IS_WITHIN_SVG_TEXT;
   }
@@ -11361,18 +11361,8 @@ void nsCSSFrameConstructor::BuildInlineChildItems(
   FlattenedChildIterator iter(parentContent);
   for (nsIContent* content = iter.GetNextChild(); content;
        content = iter.GetNextChild()) {
-    
-    
-    
-    content->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-    if (content->IsComment() || content->IsProcessingInstruction()) {
-      continue;
-    }
-
-    RefPtr<ComputedStyle> childContext = ResolveComputedStyle(content);
-    AddFrameConstructionItemsInternal(aState, content, nullptr,
-                                      iter.XBLInvolved(), childContext, flags,
-                                      aParentItem.mChildItems);
+    AddFrameConstructionItems(aState, content, iter.XBLInvolved(),
+                              InsertionPoint(), aParentItem.mChildItems, flags);
   }
 
   if (!aItemIsWithinSVGText) {
