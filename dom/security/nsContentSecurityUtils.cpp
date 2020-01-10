@@ -417,6 +417,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   
   
+  
 
   
   if (Preferences::GetBool("csp.skip_about_page_has_csp_assert")) {
@@ -431,6 +432,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 
   nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
   bool foundDefaultSrc = false;
+  bool foundObjectSrc = false;
   if (csp) {
     uint32_t policyCount = 0;
     csp->GetPolicyCount(&policyCount);
@@ -439,7 +441,9 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       csp->GetPolicyString(i, parsedPolicyStr);
       if (parsedPolicyStr.Find("default-src") >= 0) {
         foundDefaultSrc = true;
-        break;
+      }
+      if (parsedPolicyStr.Find("object-src 'none'") >= 0) {
+        foundObjectSrc = true;
       }
     }
   }
@@ -482,5 +486,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 
   MOZ_ASSERT(foundDefaultSrc,
              "about: page must contain a CSP including default-src");
+  MOZ_ASSERT(foundObjectSrc,
+             "about: page must contain a CSP denying object-src");
 }
 #endif
