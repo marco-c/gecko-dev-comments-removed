@@ -10,6 +10,7 @@
 
 
 
+
 #ifndef nsPlainTextSerializer_h__
 #define nsPlainTextSerializer_h__
 
@@ -44,37 +45,38 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   NS_IMETHOD Init(uint32_t flags, uint32_t aWrapColumn,
                   const mozilla::Encoding* aEncoding, bool aIsCopying,
-                  bool aIsWholeDocument,
-                  bool* aNeedsPreformatScanning) override;
+                  bool aIsWholeDocument, bool* aNeedsPreformatScanning,
+                  nsAString& aOutput) override;
 
   NS_IMETHOD AppendText(nsIContent* aText, int32_t aStartOffset,
-                        int32_t aEndOffset, nsAString& aStr) override;
+                        int32_t aEndOffset) override;
   NS_IMETHOD AppendCDATASection(nsIContent* aCDATASection, int32_t aStartOffset,
-                                int32_t aEndOffset, nsAString& aStr) override;
+                                int32_t aEndOffset) override;
   NS_IMETHOD AppendProcessingInstruction(
       mozilla::dom::ProcessingInstruction* aPI, int32_t aStartOffset,
-      int32_t aEndOffset, nsAString& aStr) override {
+      int32_t aEndOffset) override {
     return NS_OK;
   }
   NS_IMETHOD AppendComment(mozilla::dom::Comment* aComment,
-                           int32_t aStartOffset, int32_t aEndOffset,
-                           nsAString& aStr) override {
+                           int32_t aStartOffset, int32_t aEndOffset) override {
     return NS_OK;
   }
-  NS_IMETHOD AppendDoctype(mozilla::dom::DocumentType* aDoctype,
-                           nsAString& aStr) override {
+  NS_IMETHOD AppendDoctype(mozilla::dom::DocumentType* aDoctype) override {
     return NS_OK;
   }
-  NS_IMETHOD AppendElementStart(mozilla::dom::Element* aElement,
-                                mozilla::dom::Element* aOriginalElement,
-                                nsAString& aStr) override;
+  NS_IMETHOD AppendElementStart(
+      mozilla::dom::Element* aElement,
+      mozilla::dom::Element* aOriginalElement) override;
   NS_IMETHOD AppendElementEnd(mozilla::dom::Element* aElement,
-                              mozilla::dom::Element* aOriginalElement,
-                              nsAString& aStr) override;
-  NS_IMETHOD Flush(nsAString& aStr) override;
+                              mozilla::dom::Element* aOriginalElement) override;
 
-  NS_IMETHOD AppendDocumentStart(mozilla::dom::Document* aDocument,
-                                 nsAString& aStr) override;
+  NS_IMETHOD FlushAndFinish() override;
+
+  NS_IMETHOD Finish() override;
+
+  NS_IMETHOD GetOutputLength(uint32_t& aLength) const override;
+
+  NS_IMETHOD AppendDocumentStart(mozilla::dom::Document* aDocument) override;
 
   NS_IMETHOD ScanElementForPreformat(mozilla::dom::Element* aElement) override;
   NS_IMETHOD ForgetElementForPreformat(
@@ -270,7 +272,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   AutoTArray<bool, 8> mIsInCiteBlockquote;
 
   
-  nsAString* mOutputString;
+  nsAString* mOutput;
 
   
   

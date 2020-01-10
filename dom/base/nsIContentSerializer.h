@@ -34,44 +34,51 @@ class nsIContentSerializer : public nsISupports {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICONTENTSERIALIZER_IID)
 
+  
+
+
+
   NS_IMETHOD Init(uint32_t flags, uint32_t aWrapColumn,
                   const mozilla::Encoding* aEncoding, bool aIsCopying,
-                  bool aIsWholeDocument, bool* aNeedsPerformatScanning) = 0;
+                  bool aIsWholeDocument, bool* aNeedsPerformatScanning,
+                  nsAString& aOutput) = 0;
 
   NS_IMETHOD AppendText(nsIContent* aText, int32_t aStartOffset,
-                        int32_t aEndOffset, nsAString& aStr) = 0;
+                        int32_t aEndOffset) = 0;
 
   NS_IMETHOD AppendCDATASection(nsIContent* aCDATASection, int32_t aStartOffset,
-                                int32_t aEndOffset, nsAString& aStr) = 0;
+                                int32_t aEndOffset) = 0;
 
   NS_IMETHOD AppendProcessingInstruction(
       mozilla::dom::ProcessingInstruction* aPI, int32_t aStartOffset,
-      int32_t aEndOffset, nsAString& aStr) = 0;
+      int32_t aEndOffset) = 0;
 
   NS_IMETHOD AppendComment(mozilla::dom::Comment* aComment,
-                           int32_t aStartOffset, int32_t aEndOffset,
-                           nsAString& aStr) = 0;
+                           int32_t aStartOffset, int32_t aEndOffset) = 0;
 
-  NS_IMETHOD AppendDoctype(mozilla::dom::DocumentType* aDoctype,
-                           nsAString& aStr) = 0;
+  NS_IMETHOD AppendDoctype(mozilla::dom::DocumentType* aDoctype) = 0;
 
   NS_IMETHOD AppendElementStart(mozilla::dom::Element* aElement,
-                                mozilla::dom::Element* aOriginalElement,
-                                nsAString& aStr) = 0;
+                                mozilla::dom::Element* aOriginalElement) = 0;
 
   NS_IMETHOD AppendElementEnd(mozilla::dom::Element* aElement,
-                              mozilla::dom::Element* aOriginalElement,
-                              nsAString& aStr) = 0;
+                              mozilla::dom::Element* aOriginalElement) = 0;
 
-  NS_IMETHOD Flush(nsAString& aStr) = 0;
+  NS_IMETHOD FlushAndFinish() = 0;
+
+  
+
+
+  NS_IMETHOD Finish() = 0;
+
+  NS_IMETHOD GetOutputLength(uint32_t& aLength) const = 0;
 
   
 
 
 
 
-  NS_IMETHOD AppendDocumentStart(mozilla::dom::Document* aDocument,
-                                 nsAString& aStr) = 0;
+  NS_IMETHOD AppendDocumentStart(mozilla::dom::Document* aDocument) = 0;
 
   
   
