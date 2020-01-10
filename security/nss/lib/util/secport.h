@@ -124,11 +124,6 @@ SEC_END_PROTOS
 
 
 
-#define PORT_AssertArg PR_ASSERT_ARG
-
-
-
-
 
 
 

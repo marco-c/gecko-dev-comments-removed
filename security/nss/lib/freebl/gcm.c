@@ -36,7 +36,7 @@ SECStatus gcm_HashMult_sftw32(gcmHashContext *ghash, const unsigned char *buf,
 
 
 
-#if !defined(NSS_X86_OR_X64) && !defined(USE_ARM_GCM) && !defined(USE_PPC_CRYPTO)
+#if !defined(NSS_X86_OR_X64) && !defined(USE_ARM_GCM)
 SECStatus
 gcm_HashWrite_hw(gcmHashContext *ghash, unsigned char *outbuf)
 {
@@ -94,8 +94,6 @@ gcmHash_InitContext(gcmHashContext *ghash, const unsigned char *H, PRBool sw)
     ghash->h_high = get64(H);
 #ifdef USE_ARM_GCM
     if (arm_pmull_support() && !sw) {
-#elif defined(USE_PPC_CRYPTO)
-    if (ppc_crypto_support() && !sw) {
 #else
     if (clmul_support() && !sw) {
 #endif
