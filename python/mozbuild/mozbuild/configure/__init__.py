@@ -888,12 +888,19 @@ class ConfigureSandbox(dict):
                 
                 
                 
+                
                 env = {}
                 for k, v in six.iteritems(kwargs['env']):
-                    if isinstance(k, six.text_type):
-                        k = k.encode(system_encoding)
-                    if isinstance(v, six.text_type):
-                        v = v.encode(system_encoding)
+                    if sys.version_info[0] < 3:
+                        if isinstance(k, six.text_type):
+                            k = k.encode(system_encoding)
+                        if isinstance(v, six.text_type):
+                            v = v.encode(system_encoding)
+                    else:
+                        if isinstance(k, six.binary_type):
+                            k = k.decode(system_encoding)
+                        if isinstance(v, six.binary_type):
+                            v = v.decode(system_encoding)
                     env[k] = v
                 kwargs['env'] = env
                 return function(*args, **kwargs)
