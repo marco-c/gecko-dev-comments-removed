@@ -99,6 +99,10 @@ class nsDocShellLoadState final {
 
   void SetOriginalFrameSrc(bool aOriginalFrameSrc);
 
+  bool IsFormSubmission() const;
+
+  void SetIsFormSubmission(bool aIsFormSubmission);
+
   uint32_t LoadType() const;
 
   void SetLoadType(uint32_t aLoadType);
@@ -277,6 +281,11 @@ class nsDocShellLoadState final {
   
   
   bool mOriginalFrameSrc;
+
+  
+  
+  
+  bool mIsFormSubmission;
 
   
   
