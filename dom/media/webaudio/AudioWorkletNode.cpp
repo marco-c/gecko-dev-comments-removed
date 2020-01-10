@@ -43,10 +43,32 @@ class WorkletNodeEngine final : public AudioNodeEngine {
 
   void NotifyForcedShutdown() override { ReleaseJSResources(); }
 
+  
+  
+  
+  
+  
+  
+  struct Channels {
+    Vector<JS::PersistentRooted<JSObject*>, GUESS_AUDIO_CHANNELS>
+        mFloat32Arrays;
+    JS::PersistentRooted<JSObject*> mJSArray;
+    
+    operator JS::Handle<JSObject*>() const { return mJSArray; }
+  };
+  struct Ports {
+    Vector<Channels, 1> mPorts;
+    JS::PersistentRooted<JSObject*> mJSArray;
+  };
+
  private:
   void SendProcessorError();
 
   void ReleaseJSResources() {
+    mInputs.mPorts.clearAndFree();
+    mOutputs.mPorts.clearAndFree();
+    mInputs.mJSArray.reset();
+    mOutputs.mJSArray.reset();
     mGlobal = nullptr;
     mProcessor.reset();
   }
@@ -60,6 +82,16 @@ class WorkletNodeEngine final : public AudioNodeEngine {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  Ports mInputs;
+  Ports mOutputs;
+
   RefPtr<AudioWorkletGlobalScope> mGlobal;
   JS::PersistentRooted<JSObject*> mProcessor;
 };
@@ -82,15 +114,127 @@ void WorkletNodeEngine::SendProcessorError() {
 void WorkletNodeEngine::ConstructProcessor(
     AudioWorkletImpl* aWorkletImpl, const nsAString& aName,
     NotNull<StructuredCloneHolder*> aOptionsSerialization) {
+  MOZ_ASSERT(mInputs.mPorts.empty() && mOutputs.mPorts.empty());
   RefPtr<AudioWorkletGlobalScope> global = aWorkletImpl->GetGlobalScope();
   MOZ_ASSERT(global);  
   JS::RootingContext* cx = RootingCx();
   mProcessor.init(cx);
-  if (!global->ConstructProcessor(aName, aOptionsSerialization, &mProcessor)) {
+  if (!global->ConstructProcessor(aName, aOptionsSerialization, &mProcessor) ||
+      
+      
+      NS_WARN_IF(!mInputs.mPorts.growBy(InputCount())) ||
+      NS_WARN_IF(!mOutputs.mPorts.growBy(OutputCount()))) {
     SendProcessorError();
     return;
   }
   mGlobal = std::move(global);
+  mInputs.mJSArray.init(cx);
+  mOutputs.mJSArray.init(cx);
+  for (auto& port : mInputs.mPorts) {
+    port.mJSArray.init(cx);
+  }
+  for (auto& port : mOutputs.mPorts) {
+    port.mJSArray.init(cx);
+  }
+}
+
+
+
+template <typename T>
+static bool SetArrayElements(JSContext* aCx, const T& aElements,
+                             JS::Handle<JSObject*> aArray) {
+  for (size_t i = 0; i < aElements.length(); ++i) {
+    if (!JS_DefineElement(aCx, aArray, i, aElements[i], JSPROP_ENUMERATE)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+template <typename T>
+static bool PrepareArray(JSContext* aCx, const T& aElements,
+                         JS::MutableHandle<JSObject*> aArray) {
+  size_t length = aElements.length();
+  if (aArray) {
+    
+    uint32_t oldLength;
+    if (JS_GetArrayLength(aCx, aArray, &oldLength) &&
+        (oldLength == length || JS_SetArrayLength(aCx, aArray, length)) &&
+        SetArrayElements(aCx, aElements, aArray)) {
+      return true;
+    }
+    
+    JS_ClearPendingException(aCx);
+  }
+  JSObject* array = JS_NewArrayObject(aCx, length);
+  if (NS_WARN_IF(!array)) {
+    return false;
+  }
+  aArray.set(array);
+  return SetArrayElements(aCx, aElements, aArray);
+}
+
+enum class ArrayElementInit { None, Zero };
+
+
+
+
+
+
+static bool PrepareBufferArrays(JSContext* aCx, Span<const AudioBlock> aBlocks,
+                                WorkletNodeEngine::Ports* aPorts,
+                                ArrayElementInit aInit) {
+  for (size_t i = 0; i < aBlocks.Length(); ++i) {
+    size_t channelCount = aBlocks[i].ChannelCount();
+    WorkletNodeEngine::Channels& portRef = aPorts->mPorts[i];
+
+    auto& float32ArraysRef = portRef.mFloat32Arrays;
+    for (auto& channelRef : float32ArraysRef) {
+      uint32_t length = JS_GetTypedArrayLength(channelRef);
+      if (length != WEBAUDIO_BLOCK_SIZE) {
+        
+        JSObject* array = JS_NewFloat32Array(aCx, WEBAUDIO_BLOCK_SIZE);
+        if (NS_WARN_IF(!array)) {
+          return false;
+        }
+        channelRef = array;
+      } else if (aInit == ArrayElementInit::Zero) {
+        
+        JS::AutoCheckCannotGC nogc;
+        bool isShared;
+        float* elementData =
+            JS_GetFloat32ArrayData(channelRef, &isShared, nogc);
+        MOZ_ASSERT(!isShared);  
+        std::fill_n(elementData, WEBAUDIO_BLOCK_SIZE, 0.0f);
+      }
+    }
+    
+    if (NS_WARN_IF(!float32ArraysRef.reserve(channelCount))) {
+      return false;
+    }
+    while (float32ArraysRef.length() < channelCount) {
+      JSObject* array = JS_NewFloat32Array(aCx, WEBAUDIO_BLOCK_SIZE);
+      if (NS_WARN_IF(!array)) {
+        return false;
+      }
+      float32ArraysRef.infallibleEmplaceBack(aCx, array);
+    }
+    
+    float32ArraysRef.shrinkTo(channelCount);
+
+    if (NS_WARN_IF(!PrepareArray(aCx, float32ArraysRef, &portRef.mJSArray))) {
+      return false;
+    }
+  }
+
+  return !(NS_WARN_IF(!PrepareArray(aCx, aPorts->mPorts, &aPorts->mJSArray)));
+}
+
+static void ProduceSilence(Span<AudioBlock> aOutput) {
+  for (AudioBlock& output : aOutput) {
+    output.SetNull(WEBAUDIO_BLOCK_SIZE);
+  }
 }
 
 void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeStream* aStream,
@@ -98,9 +242,7 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeStream* aStream,
                                              Span<AudioBlock> aOutput,
                                              bool* aFinished) {
   if (!mProcessor) {
-    for (AudioBlock& output : aOutput) {
-      output.SetNull(WEBAUDIO_BLOCK_SIZE);
-    }
+    ProduceSilence(aOutput);
     return;
   }
 
@@ -115,6 +257,17 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeStream* aStream,
     for (AudioBlock& output : aOutput) {
       output.AllocateChannels(1);
     }
+  }
+
+  AutoEntryScript aes(mGlobal, "Worklet Process");
+  JSContext* cx = aes.cx();
+
+  if (!PrepareBufferArrays(cx, aInput, &mInputs, ArrayElementInit::None) ||
+      !PrepareBufferArrays(cx, aOutput, &mOutputs, ArrayElementInit::Zero)) {
+    
+    SendProcessorError();
+    ProduceSilence(aOutput);
+    return;
   }
 }
 
