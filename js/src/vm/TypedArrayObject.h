@@ -8,10 +8,12 @@
 #define vm_TypedArrayObject_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 
 #include "gc/Barrier.h"
 #include "js/Class.h"
+#include "js/Result.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/JSObject.h"
@@ -240,8 +242,12 @@ inline size_t TypedArrayObject::bytesPerElement() const {
 
 
 
+
+
+
 template <typename CharT>
-bool StringIsTypedArrayIndex(mozilla::Range<const CharT> s, uint64_t* indexp);
+JS::Result<mozilla::Maybe<uint64_t>> StringIsTypedArrayIndex(
+    JSContext* cx, mozilla::Range<const CharT> s);
 
 
 
@@ -252,37 +258,39 @@ inline bool CanStartTypedArrayIndex(CharT ch) {
   return mozilla::IsAsciiDigit(ch) || ch == '-' || ch == 'N' || ch == 'I';
 }
 
-inline bool IsTypedArrayIndex(jsid id, uint64_t* indexp) {
+inline JS::Result<mozilla::Maybe<uint64_t>> IsTypedArrayIndex(JSContext* cx,
+                                                              jsid id) {
+  using ResultType = decltype(IsTypedArrayIndex(cx, id));
+
   if (JSID_IS_INT(id)) {
     int32_t i = JSID_TO_INT(id);
     MOZ_ASSERT(i >= 0);
-    *indexp = static_cast<uint64_t>(i);
-    return true;
+    return mozilla::Some(static_cast<uint64_t>(i));
   }
 
   if (MOZ_UNLIKELY(!JSID_IS_STRING(id))) {
-    return false;
+    return ResultType(mozilla::Nothing());
   }
 
   JS::AutoCheckCannotGC nogc;
   JSAtom* atom = JSID_TO_ATOM(id);
   if (atom->length() == 0) {
-    return false;
+    return ResultType(mozilla::Nothing());
   }
 
   if (atom->hasLatin1Chars()) {
     mozilla::Range<const Latin1Char> chars = atom->latin1Range(nogc);
     if (!CanStartTypedArrayIndex(chars[0])) {
-      return false;
+      return ResultType(mozilla::Nothing());
     }
-    return StringIsTypedArrayIndex(chars, indexp);
+    return StringIsTypedArrayIndex(cx, chars);
   }
 
   mozilla::Range<const char16_t> chars = atom->twoByteRange(nogc);
   if (!CanStartTypedArrayIndex(chars[0])) {
-    return false;
+    return ResultType(mozilla::Nothing());
   }
-  return StringIsTypedArrayIndex(chars, indexp);
+  return StringIsTypedArrayIndex(cx, chars);
 }
 
 bool SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,

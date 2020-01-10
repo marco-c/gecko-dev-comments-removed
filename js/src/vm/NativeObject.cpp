@@ -10,11 +10,13 @@
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 
 #include "debugger/DebugAPI.h"
 #include "gc/Marking.h"
 #include "jit/BaselineIC.h"
 #include "js/CharacterEncoding.h"
+#include "js/Result.h"
 #include "js/Value.h"
 #include "vm/EqualityOperations.h"  
 #include "vm/TypedArrayObject.h"
@@ -1701,10 +1703,12 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     }
   } else if (obj->is<TypedArrayObject>()) {
     
-    uint64_t index;
-    if (IsTypedArrayIndex(id, &index)) {
+    mozilla::Maybe<uint64_t> index;
+    JS_TRY_VAR_OR_RETURN_FALSE(cx, index, IsTypedArrayIndex(cx, id));
+
+    if (index) {
       MOZ_ASSERT(!cx->isHelperThreadContext());
-      return DefineTypedArrayElement(cx, obj, index, desc_, result);
+      return DefineTypedArrayElement(cx, obj, index.value(), desc_, result);
     }
   } else if (obj->is<ArgumentsObject>()) {
     Rooted<ArgumentsObject*> argsobj(cx, &obj->as<ArgumentsObject>());
@@ -1740,7 +1744,9 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     
     
     
-    NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop);
+    if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop)) {
+      return false;
+    }
   } else {
     if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
       return false;
@@ -2022,11 +2028,13 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
     }
   } else if (obj->is<TypedArrayObject>()) {
     
-    uint64_t index;
-    if (IsTypedArrayIndex(id, &index)) {
+    mozilla::Maybe<uint64_t> index;
+    JS_TRY_VAR_OR_RETURN_FALSE(cx, index, IsTypedArrayIndex(cx, id));
+
+    if (index) {
       
       
-      MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
+      MOZ_ASSERT(index.value() >= obj->as<TypedArrayObject>().length());
 
       
 
@@ -2065,7 +2073,9 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
 
 #ifdef DEBUG
   Rooted<PropertyResult> prop(cx);
-  NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop);
+  if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop)) {
+    return false;
+  }
   MOZ_ASSERT(!prop, "didn't expect to find an existing property");
 #endif
 
