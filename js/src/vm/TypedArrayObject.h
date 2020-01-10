@@ -313,19 +313,6 @@ static inline unsigned TypedArrayElemSize(Scalar::Type viewType) {
   return 1u << TypedArrayShift(viewType);
 }
 
-
-
-
-
-
-
-
-
-
-extern void SetDisjointTypedElements(
-    TypedArrayObject* target, uint32_t targetOffset,
-    TypedArrayObject* unsafeSrcCrossCompartment);
-
 }  
 
 template <>
