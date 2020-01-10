@@ -114,10 +114,6 @@ class PictureInPictureToggleChild extends ActorChild {
         
         
         hideToggleDeferredTask: null,
-        
-        
-        
-        isTrackingVideos: false,
       };
       this.weakDocStates.set(this.content.document, state);
     }
@@ -166,14 +162,6 @@ class PictureInPictureToggleChild extends ActorChild {
       }
       case "mousemove": {
         this.onMouseMove(event);
-        break;
-      }
-      case "pageshow": {
-        this.onPageShow(event);
-        break;
-      }
-      case "pagehide": {
-        this.onPageHide(event);
         break;
       }
     }
@@ -342,14 +330,7 @@ class PictureInPictureToggleChild extends ActorChild {
       mozSystemGroup: true,
       capture: true,
     });
-    this.content.addEventListener("pageshow", this, {
-      mozSystemGroup: true,
-    });
-    this.content.addEventListener("pagehide", this, {
-      mozSystemGroup: true,
-    });
     this.addMouseButtonListeners();
-    state.isTrackingVideos = true;
   }
 
   
@@ -364,49 +345,10 @@ class PictureInPictureToggleChild extends ActorChild {
       mozSystemGroup: true,
       capture: true,
     });
-    this.content.removeEventListener("pageshow", this, {
-      mozSystemGroup: true,
-    });
-    this.content.removeEventListener("pagehide", this, {
-      mozSystemGroup: true,
-    });
     this.removeMouseButtonListeners();
     let oldOverVideo = state.weakOverVideo && state.weakOverVideo.get();
     if (oldOverVideo) {
       this.onMouseLeaveVideo(oldOverVideo);
-    }
-    state.isTrackingVideos = false;
-  }
-
-  
-
-
-
-
-
-
-
-
-  onPageShow(event) {
-    let state = this.docState;
-    if (state.isTrackingVideos) {
-      this.addMouseButtonListeners();
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  onPageHide(event) {
-    let state = this.docState;
-    if (state.isTrackingVideos) {
-      this.removeMouseButtonListeners();
     }
   }
 

@@ -285,151 +285,142 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
         await SimpleTest.promiseFocus(browser);
         info(`Testing video with id: ${videoID}`);
 
-        await testToggleHelper(browser, videoID, canToggle);
+        let { toggleClientRect, controls } = await prepareForToggleClick(
+          browser,
+          videoID
+        );
+
+        
+        await BrowserTestUtils.synthesizeMouseAtCenter(
+          `#${videoID}`,
+          {
+            type: "mousemove",
+          },
+          browser
+        );
+        await BrowserTestUtils.synthesizeMouseAtCenter(
+          `#${videoID}`,
+          {
+            type: "mouseover",
+          },
+          browser
+        );
+
+        info("Waiting for toggle to become visible");
+        await toggleOpacityReachesThreshold(
+          browser,
+          videoID,
+          HOVER_VIDEO_OPACITY
+        );
+
+        info("Hovering the toggle rect now.");
+        
+        
+        
+        let toggleLeft = toggleClientRect.left + 2;
+        let toggleTop = toggleClientRect.top + 2;
+        await BrowserTestUtils.synthesizeMouseAtPoint(
+          toggleLeft,
+          toggleTop,
+          {
+            type: "mousemove",
+          },
+          browser
+        );
+        await BrowserTestUtils.synthesizeMouseAtPoint(
+          toggleLeft,
+          toggleTop,
+          {
+            type: "mouseover",
+          },
+          browser
+        );
+
+        await toggleOpacityReachesThreshold(
+          browser,
+          videoID,
+          HOVER_TOGGLE_OPACITY
+        );
+
+        
+        info("Right-clicking on toggle.");
+
+        await BrowserTestUtils.synthesizeMouseAtPoint(
+          toggleLeft,
+          toggleTop,
+          { button: 1 },
+          browser
+        );
+
+        
+        
+        await assertSawMouseEvents(browser, !controls, false);
+
+        
+        
+        
+        for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
+          if (!win.closed) {
+            ok(false, "Found a Picture-in-Picture window unexpectedly.");
+            return;
+          }
+        }
+
+        ok(true, "No Picture-in-Picture window found.");
+
+        
+
+        if (canToggle) {
+          info(
+            "Clicking on toggle, and expecting a Picture-in-Picture window to open"
+          );
+          let domWindowOpened = BrowserTestUtils.domWindowOpened(null);
+          await BrowserTestUtils.synthesizeMouseAtPoint(
+            toggleLeft,
+            toggleTop,
+            {},
+            browser
+          );
+          let win = await domWindowOpened;
+          ok(win, "A Picture-in-Picture window opened.");
+          await BrowserTestUtils.closeWindow(win);
+
+          
+          
+          await assertSawMouseEvents(browser, false);
+        } else {
+          info(
+            "Clicking on toggle, and expecting no Picture-in-Picture window opens"
+          );
+          await BrowserTestUtils.synthesizeMouseAtPoint(
+            toggleLeft,
+            toggleTop,
+            {},
+            browser
+          );
+
+          
+          
+          await assertSawMouseEvents(browser, !controls);
+
+          
+          
+          
+          for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
+            if (!win.closed) {
+              ok(false, "Found a Picture-in-Picture window unexpectedly.");
+              return;
+            }
+          }
+
+          ok(true, "No Picture-in-Picture window found.");
+        }
+
+        
+        
+        await BrowserTestUtils.synthesizeMouseAtPoint(1, 1, {}, browser);
+        assertSawMouseEvents(browser, true);
       }
     }
   );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function testToggleHelper(browser, videoID, canToggle) {
-  let { toggleClientRect, controls } = await prepareForToggleClick(
-    browser,
-    videoID
-  );
-
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    `#${videoID}`,
-    {
-      type: "mousemove",
-    },
-    browser
-  );
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    `#${videoID}`,
-    {
-      type: "mouseover",
-    },
-    browser
-  );
-
-  info("Waiting for toggle to become visible");
-  await toggleOpacityReachesThreshold(browser, videoID, HOVER_VIDEO_OPACITY);
-
-  info("Hovering the toggle rect now.");
-  
-  
-  
-  let toggleLeft = toggleClientRect.left + 2;
-  let toggleTop = toggleClientRect.top + 2;
-  await BrowserTestUtils.synthesizeMouseAtPoint(
-    toggleLeft,
-    toggleTop,
-    {
-      type: "mousemove",
-    },
-    browser
-  );
-  await BrowserTestUtils.synthesizeMouseAtPoint(
-    toggleLeft,
-    toggleTop,
-    {
-      type: "mouseover",
-    },
-    browser
-  );
-
-  await toggleOpacityReachesThreshold(browser, videoID, HOVER_TOGGLE_OPACITY);
-
-  
-  info("Right-clicking on toggle.");
-
-  await BrowserTestUtils.synthesizeMouseAtPoint(
-    toggleLeft,
-    toggleTop,
-    { button: 2 },
-    browser
-  );
-
-  
-  
-  await assertSawMouseEvents(browser, !controls, false);
-
-  
-  
-  
-  for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
-    if (!win.closed) {
-      ok(false, "Found a Picture-in-Picture window unexpectedly.");
-      return;
-    }
-  }
-
-  ok(true, "No Picture-in-Picture window found.");
-
-  
-
-  if (canToggle) {
-    info(
-      "Clicking on toggle, and expecting a Picture-in-Picture window to open"
-    );
-    let domWindowOpened = BrowserTestUtils.domWindowOpened(null);
-    await BrowserTestUtils.synthesizeMouseAtPoint(
-      toggleLeft,
-      toggleTop,
-      {},
-      browser
-    );
-    let win = await domWindowOpened;
-    ok(win, "A Picture-in-Picture window opened.");
-    await BrowserTestUtils.closeWindow(win);
-
-    
-    
-    await assertSawMouseEvents(browser, false);
-  } else {
-    info(
-      "Clicking on toggle, and expecting no Picture-in-Picture window opens"
-    );
-    await BrowserTestUtils.synthesizeMouseAtPoint(
-      toggleLeft,
-      toggleTop,
-      {},
-      browser
-    );
-
-    
-    
-    await assertSawMouseEvents(browser, !controls);
-
-    
-    
-    
-    for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
-      if (!win.closed) {
-        ok(false, "Found a Picture-in-Picture window unexpectedly.");
-        return;
-      }
-    }
-
-    ok(true, "No Picture-in-Picture window found.");
-  }
-
-  
-  
-  await BrowserTestUtils.synthesizeMouseAtPoint(1, 1, {}, browser);
-  assertSawMouseEvents(browser, true);
 }
