@@ -2704,7 +2704,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 86;
+    const UI_VERSION = 87;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -3085,16 +3085,11 @@ BrowserGlue.prototype = {
       flashPermissions.forEach(p => Services.perms.removePermission(p));
     }
 
-    if (currentUIVersion < 85) {
-      const TRACKING_TABLE_PREF = "urlclassifier.trackingTable";
-      const CUSTOM_BLOCKING_PREF =
-        "browser.contentblocking.customBlockList.preferences.ui.enabled";
-      
-      
-      if (Services.prefs.prefHasUserValue(TRACKING_TABLE_PREF)) {
-        Services.prefs.setBoolPref(CUSTOM_BLOCKING_PREF, true);
-      }
-    }
+    
+    
+    
+    
+    
 
     if (currentUIVersion < 86) {
       
@@ -3112,6 +3107,17 @@ BrowserGlue.prototype = {
         );
       }
       Services.prefs.clearUserPref("media.autoplay.allow-muted");
+    }
+
+    if (currentUIVersion < 87) {
+      const TRACKING_TABLE_PREF = "urlclassifier.trackingTable";
+      const CUSTOM_BLOCKING_PREF =
+        "browser.contentblocking.customBlockList.preferences.ui.enabled";
+      
+      
+      if (Services.prefs.prefHasUserValue(TRACKING_TABLE_PREF)) {
+        Services.prefs.setBoolPref(CUSTOM_BLOCKING_PREF, true);
+      }
     }
 
     
