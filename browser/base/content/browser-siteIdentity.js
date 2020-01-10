@@ -626,6 +626,14 @@ var gIdentityHandler = {
       
     }
 
+    if (this._uri.schemeIs("about")) {
+      
+      
+      
+      
+      host = "about:" + this._uri.filePath;
+    }
+
     let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(
       this._uri.displaySpec
     );

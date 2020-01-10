@@ -9,42 +9,53 @@ var tests = [
   {
     name: "normal domain",
     location: "http://test1.example.org/",
-    effectiveHost: "test1.example.org",
+    hostForDisplay: "test1.example.org",
   },
   {
     name: "view-source",
     location: "view-source:http://example.com/",
-    effectiveHost: null,
+    hostForDisplay: null,
   },
   {
     name: "normal HTTPS",
     location: "https://example.com/",
-    effectiveHost: "example.com",
+    hostForDisplay: "example.com",
   },
   {
     name: "IDN subdomain",
     location: "http://sub1.xn--hxajbheg2az3al.xn--jxalpdlp/",
-    effectiveHost: "sub1." + idnDomain,
+    hostForDisplay: "sub1." + idnDomain,
   },
   {
     name: "subdomain with port",
     location: "http://sub1.test1.example.org:8000/",
-    effectiveHost: "sub1.test1.example.org",
+    hostForDisplay: "sub1.test1.example.org",
   },
   {
     name: "subdomain HTTPS",
     location: "https://test1.example.com/",
-    effectiveHost: "test1.example.com",
+    hostForDisplay: "test1.example.com",
   },
   {
     name: "view-source HTTPS",
     location: "view-source:https://example.com/",
-    effectiveHost: null,
+    hostForDisplay: null,
   },
   {
     name: "IP address",
     location: "http://127.0.0.1:8888/",
-    effectiveHost: "127.0.0.1",
+    hostForDisplay: "127.0.0.1",
+  },
+  {
+    name: "about:certificate",
+    location:
+      "about:certificate?cert=MIIHQjCCBiqgAwIBAgIQCgYwQn9bvO&cert=1pVzllk7ZFHzANBgkqhkiG9w0BAQ",
+    hostForDisplay: "about:certificate",
+  },
+  {
+    name: "about:reader",
+    location: "about:reader?url=http://example.com",
+    hostForDisplay: "example.com",
   },
 ];
 
@@ -104,11 +115,11 @@ async function runTest(i, forward) {
     "location matches for test " + testDesc
   );
   
-  if (currentTest.effectiveHost !== null) {
+  if (currentTest.hostForDisplay !== null) {
     is(
-      gIdentityHandler.getEffectiveHost(),
-      currentTest.effectiveHost,
-      "effectiveHost matches for test " + testDesc
+      gIdentityHandler.getHostForDisplay(),
+      currentTest.hostForDisplay,
+      "hostForDisplay matches for test " + testDesc
     );
   }
 
@@ -124,7 +135,7 @@ async function runTest(i, forward) {
     !BrowserTestUtils.is_hidden(gIdentityHandler._identityPopup),
     "Control Center is visible"
   );
-  let displayedHost = currentTest.effectiveHost || currentTest.location;
+  let displayedHost = currentTest.hostForDisplay || currentTest.location;
   ok(
     gIdentityHandler._identityPopupMainViewHeaderLabel.textContent.includes(
       displayedHost
