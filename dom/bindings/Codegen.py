@@ -13494,18 +13494,23 @@ class CGDictionary(CGThing):
 
         
         
+        
         for member in dictionary.members:
             type = member.type.unroll()
-            if type.isUnion():
+            if (type.isUnion() and
+                CGHeaders.getUnionDeclarationFilename(descriptorProvider.getConfig(),
+                                                      type) !=
+                CGHeaders.getDeclarationFilename(dictionary)):
                 for t in type.flatMemberTypes:
                     if (t.isDictionary() and
                         CGHeaders.getDeclarationFilename(t.inner) ==
                         CGHeaders.getDeclarationFilename(dictionary)):
                         raise TypeError(
-                            "Dictionary contains a union that contains a "
-                            "dictionary in the same WebIDL file.  This won't "
-                            "compile.  Move the inner dictionary to a "
-                            "different file.\n%s\n%s" %
+                            "Dictionary contains a union that will live in a different "
+                            "header that contains a dictionary from the same header as "
+                            "the original dictionary.  This won't compile.  Move the "
+                            "inner dictionary to a different Web IDL file to move it "
+                            "to a different header.\n%s\n%s" %
                             (t.location, t.inner.location))
         self.structs = self.getStructs()
 
