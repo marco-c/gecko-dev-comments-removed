@@ -231,13 +231,14 @@ TEST_P(TlsConnectTls13, RecordSizePlaintextExceed) {
 
 
 
+
 TEST_P(TlsConnectTls13, RecordSizeCiphertextExceed) {
   EnsureTlsSetup();
 
   client_->SetOption(SSL_RECORD_SIZE_LIMIT, 64);
   Connect();
 
-  auto server_expand = MakeTlsFilter<TlsRecordExpander>(server_, 320);
+  auto server_expand = MakeTlsFilter<TlsRecordExpander>(server_, 336);
   server_->SendData(100);
 
   client_->ExpectReadWriteError();

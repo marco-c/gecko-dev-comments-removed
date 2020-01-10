@@ -788,6 +788,45 @@ typedef PRTime(PR_CALLBACK *SSLTimeFunc)(void *arg);
                           now, out))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_CipherSuiteOrderGet(fd, cipherOrder, numCiphers)         \
+    SSL_EXPERIMENTAL_API("SSL_CipherSuiteOrderGet",                  \
+                         (PRFileDesc * _fd, PRUint16 * _cipherOrder, \
+                          unsigned int *_numCiphers),                \
+                         (fd, cipherOrder, numCiphers))
+
+#define SSL_CipherSuiteOrderSet(fd, cipherOrder, numCiphers)              \
+    SSL_EXPERIMENTAL_API("SSL_CipherSuiteOrderSet",                       \
+                         (PRFileDesc * _fd, const PRUint16 *_cipherOrder, \
+                          PRUint16 _numCiphers),                          \
+                         (fd, cipherOrder, numCiphers))
+
+
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_InitAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
