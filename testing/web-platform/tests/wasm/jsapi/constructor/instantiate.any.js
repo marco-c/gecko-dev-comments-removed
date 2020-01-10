@@ -3,7 +3,6 @@
 
 
 
-
 let emptyModuleBinary;
 setup(() => {
   emptyModuleBinary = new WasmModuleBuilder().toBuffer();
@@ -145,7 +144,7 @@ promise_test(t => {
 }, "Invalid code");
 
 promise_test(() => {
-  const buffer = new Uint8Array(new WasmModuleBuilder().toBuffer());
+  const buffer = new WasmModuleBuilder().toBuffer();
   assert_equals(buffer[0], 0);
   const promise = WebAssembly.instantiate(buffer);
   buffer[0] = 1;

@@ -2,7 +2,6 @@
 
 
 
-
 let functions = {};
 setup(() => {
   const builder = new WasmModuleBuilder();

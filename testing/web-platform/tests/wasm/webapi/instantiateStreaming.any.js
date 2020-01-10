@@ -3,7 +3,6 @@
 
 
 
-
 let emptyModuleBinary;
 setup(() => {
   emptyModuleBinary = new WasmModuleBuilder().toBuffer();

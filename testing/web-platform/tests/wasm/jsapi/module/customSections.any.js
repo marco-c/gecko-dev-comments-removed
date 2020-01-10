@@ -1,7 +1,6 @@
 
 
 
-
 function assert_ArrayBuffer(buffer, expected) {
   assert_equals(Object.getPrototypeOf(buffer), ArrayBuffer.prototype, "Prototype");
   assert_true(Object.isExtensible(buffer), "isExtensible");
@@ -97,7 +96,7 @@ test(() => {
   });
 
   const builder = new WasmModuleBuilder();
-  builder.addExplicitSection(binary);
+  builder.addExplicitSection(binary.trunc_buffer());
   const buffer = builder.toBuffer()
   const module = new WebAssembly.Module(buffer);
 
@@ -127,7 +126,7 @@ test(() => {
   });
 
   const builder = new WasmModuleBuilder();
-  builder.addExplicitSection(binary);
+  builder.addExplicitSection(binary.trunc_buffer());
   const buffer = builder.toBuffer();
   const module = new WebAssembly.Module(buffer);
 
@@ -148,7 +147,7 @@ test(() => {
   });
 
   const builder = new WasmModuleBuilder();
-  builder.addExplicitSection(binary);
+  builder.addExplicitSection(binary.trunc_buffer());
   const buffer = builder.toBuffer();
   const module = new WebAssembly.Module(buffer);
 

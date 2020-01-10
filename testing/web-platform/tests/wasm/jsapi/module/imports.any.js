@@ -1,7 +1,6 @@
 
 
 
-
 function assert_ModuleImportDescriptor(import_, expected) {
   assert_equals(Object.getPrototypeOf(import_), Object.prototype, "Prototype");
   assert_true(Object.isExtensible(import_), "isExtensible");

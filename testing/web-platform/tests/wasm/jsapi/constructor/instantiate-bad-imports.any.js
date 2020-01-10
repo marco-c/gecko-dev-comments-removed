@@ -2,7 +2,6 @@
 
 
 
-
 test_bad_imports((name, error, build, ...arguments) => {
   promise_test(t => {
     const builder = new WasmModuleBuilder();

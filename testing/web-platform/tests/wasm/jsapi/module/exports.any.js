@@ -1,7 +1,6 @@
 
 
 
-
 let emptyModuleBinary;
 setup(() => {
   emptyModuleBinary = new WasmModuleBuilder().toBuffer();
@@ -99,7 +98,7 @@ test(() => {
     .addBody([])
     .exportFunc();
 
-  builder.setTableLength(1);
+  builder.setTableBounds(1);
   builder.addExportOfKind("table", kExternalTable, 0);
 
   builder.addGlobal(kWasmI32, true)

@@ -1,7 +1,6 @@
 
 
 
-
 test(() => {
   const emptyModuleBinary = new WasmModuleBuilder().toBuffer();
   const module = new WebAssembly.Module(emptyModuleBinary);
