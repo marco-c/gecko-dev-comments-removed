@@ -72,13 +72,13 @@ const HTML_VOID_ELEMENTS = [
 
 
 const DISPLAY_TYPES = {
-  flex: INSPECTOR_L10N.getStr("markupView.display.flex.tooltiptext"),
+  flex: INSPECTOR_L10N.getStr("markupView.display.flex.tooltiptext2"),
   "inline-flex": INSPECTOR_L10N.getStr(
-    "markupView.display.inlineFlex.tooltiptext"
+    "markupView.display.inlineFlex.tooltiptext2"
   ),
-  grid: INSPECTOR_L10N.getStr("markupView.display.grid.tooltiptext"),
+  grid: INSPECTOR_L10N.getStr("markupView.display.grid.tooltiptext2"),
   "inline-grid": INSPECTOR_L10N.getStr(
-    "markupView.display.inlineGrid.tooltiptext"
+    "markupView.display.inlineGrid.tooltiptext2"
   ),
   subgrid: INSPECTOR_L10N.getStr("markupView.display.subgrid.tooltiptiptext"),
   "flow-root": INSPECTOR_L10N.getStr("markupView.display.flowRoot.tooltiptext"),
