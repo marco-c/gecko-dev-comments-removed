@@ -1551,6 +1551,7 @@ class BaseScript : public gc::TenuredCell {
     ShouldDeclareArguments = 1 << 25,
 
     
+    IsFunction = 1 << 26,
 
     
     HasDirectEval = 1 << 27,
@@ -1769,6 +1770,7 @@ setterLevel:                                                                  \
                                NeedsFunctionEnvironmentObjects)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(shouldDeclareArguments,
                                       ShouldDeclareArguments)
+  IMMUTABLE_FLAG_GETTER(isFunction, IsFunction)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(hasDirectEval, HasDirectEval)
 
   MUTABLE_FLAG_GETTER_SETTER(warnedAboutUndefinedProp, WarnedAboutUndefinedProp)
@@ -2754,16 +2756,12 @@ class JSScript : public js::BaseScript {
     return hasFlag(ImmutableFlags::IsModule);
   }
   js::ModuleObject* module() const {
-    if (isModule()) {
+    if (bodyScope()->is<js::ModuleScope>()) {
       return bodyScope()->as<js::ModuleScope>().module();
     }
     return nullptr;
   }
 
-  bool isGlobalOrEvalCode() const {
-    return bodyScope()->is<js::GlobalScope>() ||
-           bodyScope()->is<js::EvalScope>();
-  }
   bool isGlobalCode() const { return bodyScope()->is<js::GlobalScope>(); }
 
   
@@ -2788,9 +2786,9 @@ class JSScript : public js::BaseScript {
  public:
   
   bool isForEval() const {
-    bool forEval = hasFlag(ImmutableFlags::IsForEval);
-    MOZ_ASSERT_IF(forEval, bodyScope()->is<js::EvalScope>());
-    return forEval;
+    MOZ_ASSERT(hasFlag(ImmutableFlags::IsForEval) ==
+               bodyScope()->is<js::EvalScope>());
+    return hasFlag(ImmutableFlags::IsForEval);
   }
 
   
@@ -2811,7 +2809,7 @@ class JSScript : public js::BaseScript {
 
 
 
-  bool isTopLevel() { return code() && !function(); }
+  bool isTopLevel() { return code() && !isFunction(); }
 
   
   inline bool ensureHasJitScript(JSContext* cx, js::jit::AutoKeepJitScripts&);
