@@ -803,6 +803,27 @@ VARCACHE_PREF(
 )
 
 
+
+
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "browser.cache.disk.max_chunks_memory_usage",
+   browser_cache_disk_max_chunks_memory_usage,
+  RelaxedAtomicUint32, 40 * 1024
+)
+VARCACHE_PREF(
+  Live,
+  "browser.cache.disk.max_priority_chunks_memory_usage",
+   browser_cache_disk_max_priority_chunks_memory_usage,
+  RelaxedAtomicUint32, 40 * 1024
+)
+
+
 VARCACHE_PREF(
   Live,
   "browser.contentblocking.allowlist.storage.enabled",

@@ -31,16 +31,6 @@ pref("browser.bookmarks.max_backups",       5);
 
 pref("browser.cache.disk.capacity",         256000);
 
-
-
-
-
-
-
-
-pref("browser.cache.disk.max_chunks_memory_usage", 40960);
-pref("browser.cache.disk.max_priority_chunks_memory_usage", 40960);
-
 pref("browser.cache.disk_cache_ssl",        true);
 
 pref("browser.cache.check_doc_frequency",   3);
