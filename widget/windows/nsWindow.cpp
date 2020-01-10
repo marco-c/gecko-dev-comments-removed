@@ -6724,7 +6724,14 @@ bool TouchDeviceNeedsPanGestureConversion(PTOUCHINPUT aOSEvent,
   }
   
   
-  if (deviceName != "\\\\?\\VIRTUAL_DIGITIZER") {
+  std::string expectedDeviceName = "\\\\?\\VIRTUAL_DIGITIZER";
+  
+  
+  
+  
+  
+  
+  if (deviceName.substr(0, expectedDeviceName.length()) != expectedDeviceName) {
     return false;
   }
 
