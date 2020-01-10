@@ -257,12 +257,12 @@ function waitForFrame() {
 
 
 
-function waitForNextFrame() {
-  const timeAtStart = document.timeline.currentTime;
+function waitForNextFrame(aWindow = window) {
+  const timeAtStart = aWindow.document.timeline.currentTime;
   return new Promise(resolve => {
-    window.requestAnimationFrame(() => {
-      if (timeAtStart === document.timeline.currentTime) {
-        window.requestAnimationFrame(resolve);
+    aWindow.requestAnimationFrame(() => {
+      if (timeAtStart === aWindow.document.timeline.currentTime) {
+        aWindow.requestAnimationFrame(resolve);
       } else {
         resolve();
       }
@@ -277,20 +277,24 @@ function waitForNextFrame() {
 
 
 
-function waitForAnimationFrames(frameCount, onFrame) {
-  const timeAtStart = document.timeline.currentTime;
+
+function waitForAnimationFrames(aFrameCount, aOnFrame, aWindow = window) {
+  const timeAtStart = aWindow.document.timeline.currentTime;
   return new Promise(function(resolve, reject) {
     function handleFrame() {
-      if (onFrame && typeof onFrame === "function") {
-        onFrame();
+      if (aOnFrame && typeof aOnFrame === "function") {
+        aOnFrame();
       }
-      if (timeAtStart != document.timeline.currentTime && --frameCount <= 0) {
+      if (
+        timeAtStart != aWindow.document.timeline.currentTime &&
+        --aFrameCount <= 0
+      ) {
         resolve();
       } else {
-        window.requestAnimationFrame(handleFrame); 
+        aWindow.requestAnimationFrame(handleFrame); 
       }
     }
-    window.requestAnimationFrame(handleFrame);
+    aWindow.requestAnimationFrame(handleFrame);
   });
 }
 
@@ -485,6 +489,6 @@ async function waitForAnimationReadyToRestyle(aAnimation) {
   
   
   if (animationStartsRightNow(aAnimation)) {
-    await waitForNextFrame();
+    await waitForNextFrame(aAnimation.ownerGlobal);
   }
 }
