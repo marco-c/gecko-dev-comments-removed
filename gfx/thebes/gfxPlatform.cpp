@@ -2759,29 +2759,40 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
     return;
   }
 
-#ifdef MOZ_WIDGET_GTK
   
   
-  const int32_t kMaxPixelsLinux = 3440 * 1440;  
-  if (aScreenPixels > kMaxPixelsLinux) {
+  
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+  
+#else
+  
+  
+  const int32_t kMaxPixels = 3440 * 1440;  
+  if (aScreenPixels > kMaxPixels) {
     aFeature.Disable(
         FeatureStatus::BlockedScreenTooLarge, "Screen size too large",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_TOO_LARGE"));
-  } else if (aScreenPixels <= 0) {
+    return;
+  }
+  if (aScreenPixels <= 0) {
     aFeature.Disable(
         FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
-  } else {
-#endif
-#ifndef NIGHTLY_BUILD
-    aFeature.Disable(
-        FeatureStatus::BlockedReleaseChannelIntel,
-        "Release channel and Intel",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_INTEL"));
-#endif  
-#ifdef MOZ_WIDGET_GTK
+    return;
   }
-#endif  
+#endif
+
+#if ((defined(XP_WIN) && defined(EARLY_BETA_OR_EARLIER)) || \
+     (defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)))
+  
+  
+#else
+  
+  aFeature.Disable(
+      FeatureStatus::BlockedReleaseChannelIntel,
+      "Release channel and Intel",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_INTEL"));
+#endif
 }
 
 static FeatureState& WebRenderHardwareQualificationStatus(
