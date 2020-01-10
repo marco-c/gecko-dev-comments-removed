@@ -160,7 +160,7 @@ std::string DynamicHLSL::generateVertexShaderForInputLayout(
     
     bool usesPointSize = sourceShader.find("GL_USES_POINT_SIZE") != std::string::npos;
     bool useInstancedPointSpriteEmulation =
-        usesPointSize && mRenderer->getWorkarounds().useInstancedPointSpriteEmulation;
+        usesPointSize && mRenderer->getFeatures().useInstancedPointSpriteEmulation.enabled;
 
     
     
@@ -243,6 +243,12 @@ std::string DynamicHLSL::generateVertexShaderForInputLayout(
             else
             {
                 initStream << "input." << DecorateVariable(shaderAttribute.name);
+            }
+
+            if (shaderAttribute.name == "gl_VertexID")
+            {
+                
+                initStream << " + dx_VertexID";
             }
 
             initStream << ";\n";
@@ -479,7 +485,7 @@ void DynamicHLSL::generateShaderLinkHLSL(const gl::Caps &caps,
 
     bool useInstancedPointSpriteEmulation =
         programMetadata.usesPointSize() &&
-        mRenderer->getWorkarounds().useInstancedPointSpriteEmulation;
+        mRenderer->getFeatures().useInstancedPointSpriteEmulation.enabled;
 
     
     ASSERT(!fragmentShader->usesFragColor() || !fragmentShader->usesFragData());

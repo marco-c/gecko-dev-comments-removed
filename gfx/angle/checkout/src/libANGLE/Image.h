@@ -24,6 +24,10 @@ namespace rx
 class EGLImplFactory;
 class ImageImpl;
 class ExternalImageSiblingImpl;
+
+
+constexpr size_t kTextureImageImplObserverMessageIndex = 0;
+constexpr size_t kTextureImageSiblingMessageIndex      = 1;
 }  
 
 namespace egl
@@ -34,7 +38,7 @@ class Display;
 
 
 
-class ImageSibling : public gl::FramebufferAttachmentObject
+class ImageSibling : public gl::FramebufferAttachmentObject, public angle::ObserverInterface
 {
   public:
     ImageSibling();
@@ -48,12 +52,20 @@ class ImageSibling : public gl::FramebufferAttachmentObject
                       GLenum binding,
                       const gl::ImageIndex &imageIndex) const override;
 
+    
+    void onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message) override
+    {
+        
+    }
+
   protected:
     
     void setTargetImage(const gl::Context *context, egl::Image *imageTarget);
 
     
     angle::Result orphanImages(const gl::Context *context);
+
+    void notifySiblings(angle::SubjectMessage message);
 
   private:
     friend class Image;
@@ -165,6 +177,8 @@ class Image final : public RefCountObject, public LabeledObject
     
     
     angle::Result orphanSibling(const gl::Context *context, ImageSibling *sibling);
+
+    void notifySiblings(const ImageSibling *notifier, angle::SubjectMessage message);
 
     ImageState mState;
     rx::ImageImpl *mImplementation;

@@ -46,7 +46,12 @@ struct Rectangle
     bool isReversedY() const { return height < 0; }
 
     
+    Rectangle flip(bool flipX, bool flipY) const;
+
+    
     Rectangle removeReversal() const;
+
+    bool encloses(const gl::Rectangle &inside) const;
 
     int x;
     int y;
@@ -145,6 +150,8 @@ struct BlendState final
     
     BlendState();
     BlendState(const BlendState &other);
+
+    bool allChannelsMasked() const;
 
     bool blend;
     GLenum sourceBlendRGB;
@@ -426,6 +433,23 @@ ANGLE_INLINE void SetComponentTypeMask(ComponentType type, size_t index, Compone
     *mask |= kComponentMasks[type] << index;
 }
 
+ANGLE_INLINE ComponentType GetComponentTypeMask(const ComponentTypeMask &mask, size_t index)
+{
+    ASSERT(index <= kMaxComponentTypeMaskIndex);
+    uint32_t mask_bits = static_cast<uint32_t>((mask.to_ulong() >> index) & 0x10001);
+    switch (mask_bits)
+    {
+        case 0x10001:
+            return ComponentType::Float;
+        case 0x00001:
+            return ComponentType::Int;
+        case 0x10000:
+            return ComponentType::UnsignedInt;
+        default:
+            return ComponentType::InvalidEnum;
+    }
+}
+
 bool ValidateComponentTypeMasks(unsigned long outputTypes,
                                 unsigned long inputTypes,
                                 unsigned long outputMask,
@@ -436,6 +460,11 @@ using ContextID = uintptr_t;
 constexpr size_t kCubeFaceCount = 6;
 
 using TextureMap = angle::PackedEnumMap<TextureType, BindingPointer<Texture>>;
+
+
+
+template <typename T>
+using ShaderVector = angle::FixedVector<T, static_cast<size_t>(ShaderType::EnumCount)>;
 
 template <typename T>
 using AttachmentArray = std::array<T, IMPLEMENTATION_MAX_FRAMEBUFFER_ATTACHMENTS>;
@@ -457,7 +486,30 @@ using ActiveTextureArray = std::array<T, IMPLEMENTATION_MAX_ACTIVE_TEXTURES>;
 using ActiveTexturePointerArray = ActiveTextureArray<Texture *>;
 using ActiveTextureTypeArray    = ActiveTextureArray<TextureType>;
 
+template <typename T>
+using UniformBuffersArray = std::array<T, IMPLEMENTATION_MAX_UNIFORM_BUFFER_BINDINGS>;
+template <typename T>
+using StorageBuffersArray = std::array<T, IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS>;
+template <typename T>
+using AtomicCounterBuffersArray = std::array<T, IMPLEMENTATION_MAX_ATOMIC_COUNTER_BUFFERS>;
+
 using ImageUnitMask = angle::BitSet<IMPLEMENTATION_MAX_IMAGE_UNITS>;
+
+using SupportedSampleSet = std::set<GLuint>;
+
+template <typename T>
+using TransformFeedbackBuffersArray =
+    std::array<T, gl::IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_BUFFERS>;
+
+constexpr size_t kBarrierVectorDefaultSize = 16;
+using BufferBarrierVector                  = angle::FastVector<Buffer *, kBarrierVectorDefaultSize>;
+
+struct TextureAndLayout
+{
+    Texture *texture;
+    GLenum layout;
+};
+using TextureBarrierVector = angle::FastVector<TextureAndLayout, kBarrierVectorDefaultSize>;
 
 
 
@@ -518,7 +570,7 @@ inline DestT *SafeGetImplAs(SrcT *src)
 
 }  
 
-#include "angletypes.inl"
+#include "angletypes.inc"
 
 namespace angle
 {

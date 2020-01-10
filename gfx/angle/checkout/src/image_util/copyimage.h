@@ -34,6 +34,6 @@ void CopyBGRA8ToRGBA8(const uint8_t *source, uint8_t *dest);
 
 }  
 
-#include "copyimage.inl"
+#include "copyimage.inc"
 
 #endif  

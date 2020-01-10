@@ -29,6 +29,6 @@ inline void GenerateMip(size_t sourceWidth,
 
 }  
 
-#include "generatemip.inl"
+#include "generatemip.inc"
 
 #endif  

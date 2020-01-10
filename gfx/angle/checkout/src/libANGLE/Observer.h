@@ -16,11 +16,6 @@
 #include "common/FastVector.h"
 #include "common/angleutils.h"
 
-namespace gl
-{
-class Context;
-}  
-
 namespace angle
 {
 template <typename HaystackT, typename NeedleT>
@@ -31,14 +26,31 @@ bool IsInContainer(const HaystackT &haystack, const NeedleT &needle)
 
 using SubjectIndex = size_t;
 
+
+
+
+
 enum class SubjectMessage
 {
-    CONTENTS_CHANGED,
-    STORAGE_CHANGED,
-    BINDING_CHANGED,
-    DEPENDENT_DIRTY_BITS,
-    RESOURCE_MAPPED,
-    RESOURCE_UNMAPPED,
+    
+    
+    BindingChanged,
+
+    
+    
+    ContentsChanged,
+
+    
+    
+    DirtyBitsFlagged,
+
+    
+    SubjectChanged,
+
+    
+    
+    SubjectMapped,
+    SubjectUnmapped,
 };
 
 
@@ -46,9 +58,7 @@ class ObserverInterface
 {
   public:
     virtual ~ObserverInterface();
-    virtual void onSubjectStateChange(const gl::Context *context,
-                                      SubjectIndex index,
-                                      SubjectMessage message) = 0;
+    virtual void onSubjectStateChange(SubjectIndex index, SubjectMessage message) = 0;
 };
 
 class ObserverBindingBase
@@ -76,7 +86,7 @@ class Subject : NonCopyable
     Subject();
     virtual ~Subject();
 
-    void onStateChange(const gl::Context *context, SubjectMessage message) const;
+    void onStateChange(SubjectMessage message) const;
     bool hasObservers() const;
     void resetObservers();
 
@@ -112,7 +122,7 @@ class ObserverBinding final : public ObserverBindingBase
 
     ANGLE_INLINE void reset() { bind(nullptr); }
 
-    void onStateChange(const gl::Context *context, SubjectMessage message) const;
+    void onStateChange(SubjectMessage message) const;
     void onSubjectReset() override;
 
     ANGLE_INLINE const Subject *getSubject() const { return mSubject; }

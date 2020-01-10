@@ -46,6 +46,13 @@ ANGLE_EXPORT EGLSurface EGLAPIENTRY EGL_CreatePlatformPixmapSurfaceEXT(EGLDispla
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_QueryDisplayAttribEXT(EGLDisplay dpy,
                                                               EGLint attribute,
                                                               EGLAttrib *value);
+
+
+ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_QueryDisplayAttribANGLE(EGLDisplay dpy,
+                                                                EGLint attribute,
+                                                                EGLAttrib *value);
+
+
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_QueryDeviceAttribEXT(EGLDeviceEXT device,
                                                              EGLint attribute,
                                                              EGLAttrib *value);
@@ -197,6 +204,18 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetFrameTimestampsANDROID(EGLDisplay dpy
                                                                   EGLint numTimestamps,
                                                                   const EGLint *timestamps,
                                                                   EGLnsecsANDROID *values);
+
+
+ANGLE_EXPORT const char *EGLAPIENTRY EGL_QueryStringiANGLE(EGLDisplay dpy,
+                                                           EGLint name,
+                                                           EGLint index);
+
+
+ANGLE_EXPORT EGLClientBuffer EGLAPIENTRY
+EGL_GetNativeClientBufferANDROID(const struct AHardwareBuffer *buffer);
+
+
+ANGLE_EXPORT EGLint EGLAPIENTRY EGL_DupNativeFenceFDANDROID(EGLDisplay dpy, EGLSyncKHR sync);
 
 }  
 

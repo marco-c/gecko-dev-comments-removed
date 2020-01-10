@@ -35,6 +35,11 @@ namespace
 {
 static TLSIndex threadTLS = TLS_INVALID_INDEX;
 Debug *g_Debug            = nullptr;
+std::atomic<std::mutex *> g_Mutex;
+static_assert(std::is_trivially_constructible<decltype(g_Mutex)>::value,
+              "global mutex is not trivially constructible");
+static_assert(std::is_trivially_destructible<decltype(g_Mutex)>::value,
+              "global mutex is not trivially destructible");
 
 Thread *AllocateCurrentThread()
 {
@@ -63,7 +68,26 @@ void AllocateDebug()
     }
 }
 
+void AllocateMutex()
+{
+    if (g_Mutex == nullptr)
+    {
+        std::unique_ptr<std::mutex> newMutex(new std::mutex());
+        std::mutex *expected = nullptr;
+        if (g_Mutex.compare_exchange_strong(expected, newMutex.get()))
+        {
+            newMutex.release();
+        }
+    }
+}
+
 }  
+
+std::mutex &GetGlobalMutex()
+{
+    AllocateMutex();
+    return *g_Mutex;
+}
 
 Thread *GetCurrentThread()
 {
@@ -109,21 +133,6 @@ void SetContextCurrent(Thread *thread, gl::Context *context)
 }
 }  
 
-#if ANGLE_FORCE_THREAD_SAFETY == ANGLE_ENABLED
-namespace angle
-{
-namespace
-{
-std::mutex g_Mutex;
-}  
-
-std::mutex &GetGlobalMutex()
-{
-    return g_Mutex;
-}
-}  
-#endif
-
 #ifdef ANGLE_PLATFORM_WINDOWS
 namespace egl
 {
@@ -138,15 +147,27 @@ bool DeallocateCurrentThread()
     return SetTLSValue(threadTLS, nullptr);
 }
 
-void DealocateDebug()
+void DeallocateDebug()
 {
     SafeDelete(g_Debug);
+}
+
+void DeallocateMutex()
+{
+    std::mutex *mutex = g_Mutex.exchange(nullptr);
+    {
+        
+        std::lock_guard<std::mutex> lock(*mutex);
+    }
+    SafeDelete(mutex);
 }
 
 bool InitializeProcess()
 {
     ASSERT(g_Debug == nullptr);
     AllocateDebug();
+
+    AllocateMutex();
 
     threadTLS = CreateTLSIndex();
     if (threadTLS == TLS_INVALID_INDEX)
@@ -159,7 +180,9 @@ bool InitializeProcess()
 
 bool TerminateProcess()
 {
-    DealocateDebug();
+    DeallocateDebug();
+
+    DeallocateMutex();
 
     if (!DeallocateCurrentThread())
     {

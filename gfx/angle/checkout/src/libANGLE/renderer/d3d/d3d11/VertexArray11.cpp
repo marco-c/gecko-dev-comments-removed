@@ -334,6 +334,9 @@ void VertexArray11::markAllAttributeDivisorsForAdjustment(int numViews)
     {
         mAppliedNumViewsToDivisor = numViews;
         mAttribsToTranslate.set();
+        
+        
+        mAttribsToTranslate = mAttribsToTranslate ^ mDynamicAttribsMask;
     }
 }
 

@@ -31,7 +31,7 @@ bool CMDeviceIDToDeviceAndVendorID(const std::string &id, uint32_t *vendorId, ui
 
 
 
-void FindPrimaryGPU(SystemInfo *info);
+void FindActiveGPU(SystemInfo *info);
 
 }  
 

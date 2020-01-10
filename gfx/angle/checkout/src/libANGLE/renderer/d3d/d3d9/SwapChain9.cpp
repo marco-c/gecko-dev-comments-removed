@@ -360,7 +360,7 @@ EGLint SwapChain9::swapRect(DisplayD3D *displayD3D, EGLint x, EGLint y, EGLint w
     
     
     
-    if (result == static_cast<HRESULT>(0x88760873))
+    if (result == static_cast<HRESULT>(0x88760873) || result == static_cast<HRESULT>(0x88760872))
     {
         return EGL_BAD_MATCH;
     }

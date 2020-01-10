@@ -23,8 +23,6 @@ namespace gl
 
 struct Extensions;
 
-typedef std::set<GLuint> SupportedSampleSet;
-
 struct TextureCaps
 {
     TextureCaps();
@@ -32,16 +30,16 @@ struct TextureCaps
     ~TextureCaps();
 
     
-    bool texturable;
+    bool texturable = false;
 
     
-    bool filterable;
+    bool filterable = false;
 
     
-    bool textureAttachment;
+    bool textureAttachment = false;
 
     
-    bool renderbuffer;
+    bool renderbuffer = false;
 
     
     SupportedSampleSet sampleCounts;
@@ -115,371 +113,416 @@ struct Extensions
     
     
     
+    
+    
     void setTextureExtensionSupport(const TextureCapsMap &textureCaps);
 
     
+    bool depthTextureAny() const { return (depthTextureANGLE || depthTextureOES); }
 
     
-    bool elementIndexUint;
 
     
-    bool packedDepthStencil;
+    bool elementIndexUint = false;
 
     
-    bool getProgramBinary;
+    bool packedDepthStencil = false;
 
     
-    
-    bool rgb8rgba8;
-
-    
-    
-    bool textureFormatBGRA8888;
-
-    
-    bool readFormatBGRA;
-
-    
-    bool pixelBufferObject;
-
-    
-    bool mapBuffer;
-    bool mapBufferRange;
+    bool getProgramBinary = false;
 
     
     
-    
-    bool colorBufferHalfFloat;
+    bool rgb8rgba8 = false;
 
     
     
+    bool textureFormatBGRA8888 = false;
+
     
-    bool textureHalfFloat;
-    bool textureHalfFloatLinear;
+    bool readFormatBGRA = false;
+
+    
+    bool pixelBufferObject = false;
+
+    
+    bool mapBuffer      = false;
+    bool mapBufferRange = false;
 
     
     
     
-    bool textureFloat;
-    bool textureFloatLinear;
+    bool colorBufferHalfFloat = false;
 
     
     
     
-    bool textureRG;
+    bool textureHalfFloat       = false;
+    bool textureHalfFloatLinear = false;
 
     
     
     
+    bool textureFloat       = false;
+    bool textureFloatLinear = false;
+
     
-    bool textureCompressionDXT1;
-    bool textureCompressionDXT3;
-    bool textureCompressionDXT5;
+    
+    
+    bool textureRG = false;
 
     
     
     
     
-    bool textureCompressionS3TCsRGB;
-
-    
-    bool textureCompressionASTCHDR;
-
-    
-    bool textureCompressionASTCLDR;
-
-    
-    bool textureCompressionBPTC;
-
-    
-    
-    bool compressedETC1RGB8Texture;
-
-    
-    bool compressedETC2RGB8Texture;
-
-    
-    bool compressedETC2sRGB8Texture;
-
-    
-    bool compressedETC2PunchthroughARGB8Texture;
-
-    
-    bool compressedETC2PunchthroughAsRGB8AlphaTexture;
-
-    
-    bool compressedETC2RGBA8Texture;
-
-    
-    bool compressedETC2sRGB8Alpha8Texture;
-
-    
-    bool compressedEACR11UnsignedTexture;
-
-    
-    bool compressedEACR11SignedTexture;
-
-    
-    bool compressedEACRG11UnsignedTexture;
-
-    
-    bool compressedEACRG11SignedTexture;
+    bool textureCompressionDXT1 = false;
+    bool textureCompressionDXT3 = false;
+    bool textureCompressionDXT5 = false;
 
     
     
     
     
+    bool textureCompressionS3TCsRGB = false;
+
     
-    bool compressedTextureETC;
+    bool textureCompressionASTCLDRKHR = false;
+
+    
+    bool textureCompressionASTCHDRKHR = false;
+
+    
+    bool textureCompressionASTCOES = false;
+
+    
+    bool textureCompressionBPTC = false;
+
+    
+    
+    bool compressedETC1RGB8Texture = false;
+
+    
+    bool compressedETC2RGB8Texture = false;
+
+    
+    bool compressedETC2sRGB8Texture = false;
+
+    
+    bool compressedETC2PunchthroughARGB8Texture = false;
+
+    
+    bool compressedETC2PunchthroughAsRGB8AlphaTexture = false;
+
+    
+    bool compressedETC2RGBA8Texture = false;
+
+    
+    bool compressedETC2sRGB8Alpha8Texture = false;
+
+    
+    bool compressedEACR11UnsignedTexture = false;
+
+    
+    bool compressedEACR11SignedTexture = false;
+
+    
+    bool compressedEACRG11UnsignedTexture = false;
+
+    
+    bool compressedEACRG11SignedTexture = false;
 
     
     
     
-    bool sRGB;
+    
+    
+    bool compressedTextureETC = false;
 
     
-    bool depthTextures;
+    
+    
+    bool sRGB = false;
+
+    
+    bool depthTextureANGLE = false;
+
+    
+    bool depthTextureOES = false;
 
     
     
-    bool depth32;
+    bool depth24OES = false;
 
     
-    bool textureStorage;
+    
+    bool depth32 = false;
 
     
-    bool textureNPOT;
+    bool texture3DOES = false;
 
     
-    bool drawBuffers;
+    bool textureStorage = false;
 
     
-    bool textureFilterAnisotropic;
-    GLfloat maxTextureAnisotropy;
+    bool textureNPOT = false;
 
     
-    bool occlusionQueryBoolean;
+    bool drawBuffers = false;
 
     
-    bool fence;
+    bool textureFilterAnisotropic = false;
+    GLfloat maxTextureAnisotropy  = 0.0f;
 
     
-    bool disjointTimerQuery;
-    GLuint queryCounterBitsTimeElapsed;
-    GLuint queryCounterBitsTimestamp;
+    bool occlusionQueryBoolean = false;
 
     
-    bool robustness;
+    bool fence = false;
 
     
-    bool robustBufferAccessBehavior;
+    bool disjointTimerQuery            = false;
+    GLuint queryCounterBitsTimeElapsed = 0;
+    GLuint queryCounterBitsTimestamp   = 0;
 
     
-    bool blendMinMax;
+    bool robustness = false;
 
     
-    bool framebufferBlit;
+    bool robustBufferAccessBehavior = false;
 
     
-    bool framebufferMultisample;
+    bool blendMinMax = false;
 
     
-    bool instancedArraysANGLE;
+    bool framebufferBlit = false;
+
     
-    bool instancedArraysEXT;
+    bool framebufferMultisample = false;
+
+    
+    bool instancedArraysANGLE = false;
+    
+    bool instancedArraysEXT = false;
     
     bool instancedArraysAny() const { return (instancedArraysANGLE || instancedArraysEXT); }
 
     
-    bool packReverseRowOrder;
+    bool packReverseRowOrder = false;
 
     
-    bool standardDerivatives;
+    bool standardDerivatives = false;
 
     
-    bool shaderTextureLOD;
+    bool shaderTextureLOD = false;
 
     
-    bool fragDepth;
+    bool fragDepth = false;
 
     
-    bool multiview2;
-    GLuint maxViews;
+    bool multiview  = false;
+    GLuint maxViews = 1;
 
     
-    bool textureUsage;
+    bool multiview2 = false;
 
     
-    bool translatedShaderSource;
+    bool textureUsage = false;
 
     
-    bool fboRenderMipmap;
+    bool translatedShaderSource = false;
 
     
-    bool discardFramebuffer;
+    bool fboRenderMipmap = false;
 
     
-    bool debugMarker;
+    bool discardFramebuffer = false;
 
     
-    bool eglImage;
+    bool debugMarker = false;
 
     
-    bool eglImageExternal;
+    bool eglImage = false;
 
     
-    bool eglImageExternalEssl3;
+    bool eglImageExternal = false;
 
     
-    bool eglSync;
+    bool eglImageExternalEssl3 = false;
 
     
-    bool eglStreamConsumerExternal;
+    bool eglSync = false;
 
     
-    bool unpackSubimage;
+    bool memoryObject = false;
 
     
-    bool packSubimage;
+    bool memoryObjectFd = false;
 
     
-    bool vertexArrayObject;
+    bool semaphore = false;
 
     
-    bool debug;
-    GLuint maxDebugMessageLength;
-    GLuint maxDebugLoggedMessages;
-    GLuint maxDebugGroupStackDepth;
-    GLuint maxLabelLength;
+    bool semaphoreFd = false;
 
     
-    bool noError;
+    bool eglStreamConsumerExternal = false;
 
     
-    bool lossyETCDecode;
+    bool unpackSubimage = false;
 
     
-    bool bindUniformLocation;
+    bool packSubimage = false;
 
     
-    bool syncQuery;
+    bool vertexArrayObject = false;
 
     
-    bool copyTexture;
+    bool debug                     = false;
+    GLuint maxDebugMessageLength   = 0;
+    GLuint maxDebugLoggedMessages  = 0;
+    GLuint maxDebugGroupStackDepth = 0;
+    GLuint maxLabelLength          = 0;
 
     
-    bool copyCompressedTexture;
+    bool noError = false;
 
     
-    bool copyTexture3d;
+    bool lossyETCDecode = false;
 
     
-    bool webglCompatibility;
+    bool bindUniformLocation = false;
 
     
-    bool requestExtension;
+    bool syncQuery = false;
 
     
-    bool bindGeneratesResource;
+    bool copyTexture = false;
 
     
-    bool robustClientMemory;
+    bool copyCompressedTexture = false;
 
     
-    bool textureBorderClamp;
+    bool copyTexture3d = false;
 
     
-    bool textureSRGBDecode;
+    bool webglCompatibility = false;
 
     
-    bool sRGBWriteControl;
+    bool requestExtension = false;
 
     
-    bool colorBufferFloatRGB;
+    bool bindGeneratesResource = false;
 
     
-    bool colorBufferFloatRGBA;
+    bool robustClientMemory = false;
+
+    
+    bool textureBorderClamp = false;
+
+    
+    bool textureSRGBDecode = false;
+
+    
+    bool sRGBWriteControl = false;
+
+    
+    bool colorBufferFloatRGB = false;
+
+    
+    bool colorBufferFloatRGBA = false;
 
     
 
     
-    bool colorBufferFloat;
-
-    
-    
-    bool multisampleCompatibility;
-
-    
-    bool framebufferMixedSamples;
-
-    
-    
-    bool textureNorm16;
-
-    
-    bool pathRendering;
-
-    
-    bool surfacelessContext;
-
-    
-    bool clientArrays;
-
-    
-    bool robustResourceInitialization;
-
-    
-    bool programCacheControl;
-
-    
-    bool textureRectangle;
-
-    
-    bool geometryShader;
+    bool colorBufferFloat = false;
 
     
     
-    bool pointSizeArray;
+    bool multisampleCompatibility = false;
+
     
-    bool textureCubeMap;
-    
-    bool pointSprite;
-    
-    bool drawTexture;
+    bool framebufferMixedSamples = false;
 
     
     
-    bool explicitContextGles1;
-    
-    bool explicitContext;
+    bool textureNorm16 = false;
 
     
-    bool parallelShaderCompile;
+    bool pathRendering = false;
 
     
-    bool textureStorageMultisample2DArray;
+    bool surfacelessContext = false;
 
     
-    bool multiviewMultisample;
+    bool clientArrays = false;
 
     
-    bool blendFuncExtended;
-    GLuint maxDualSourceDrawBuffers;
+    bool robustResourceInitialization = false;
 
     
-    bool floatBlend;
+    bool programCacheControl = false;
 
     
-    bool memorySize;
+    bool textureRectangle = false;
 
     
-    bool textureMultisample;
+    bool geometryShader = false;
 
     
-    bool multiDraw;
+    
+    bool pointSizeArray = false;
+
+    
+    bool textureCubeMap = false;
+
+    
+    bool pointSprite = false;
+
+    
+    bool drawTexture = false;
+
+    
+    
+    bool explicitContextGles1 = false;
+    
+    bool explicitContext = false;
+
+    
+    bool parallelShaderCompile = false;
+
+    
+    bool textureStorageMultisample2DArray = false;
+
+    
+    bool multiviewMultisample = false;
+
+    
+    bool blendFuncExtended          = false;
+    GLuint maxDualSourceDrawBuffers = 0;
+
+    
+    bool floatBlend = false;
+
+    
+    bool memorySize = false;
+
+    
+    bool textureMultisample = false;
+
+    
+    bool multiDraw = false;
 
     
     bool provokingVertex = false;
+
+    
+    bool loseContextCHROMIUM = false;
+
+    
+    bool textureExternalUpdateANGLE = false;
+
+    
+    bool baseVertexBaseInstance = false;
 };
 
 struct ExtensionInfo
@@ -500,29 +543,32 @@ struct Limitations
     Limitations();
 
     
-    bool noFrontFacingSupport;
+    bool noFrontFacingSupport = false;
 
     
-    bool noSampleAlphaToCoverageSupport;
+    bool noSampleAlphaToCoverageSupport = false;
 
     
-    bool attributeZeroRequiresZeroDivisorInEXT;
+    bool attributeZeroRequiresZeroDivisorInEXT = false;
 
     
-    bool noSeparateStencilRefsAndMasks;
+    bool noSeparateStencilRefsAndMasks = false;
 
     
-    bool shadersRequireIndexedLoopValidation;
+    bool shadersRequireIndexedLoopValidation = false;
 
     
     
-    bool noSimultaneousConstantColorAndAlphaBlendFunc;
+    bool noSimultaneousConstantColorAndAlphaBlendFunc = false;
 
     
-    bool noFlexibleVaryingPacking;
+    bool noFlexibleVaryingPacking = false;
 
     
-    bool noDoubleBoundTransformFeedbackBuffers;
+    bool noDoubleBoundTransformFeedbackBuffers = false;
+
+    
+    bool noVertexAttributeAliasing = false;
 };
 
 struct TypePrecision
@@ -537,8 +583,8 @@ struct TypePrecision
 
     void get(GLint *returnRange, GLint *returnPrecision) const;
 
-    std::array<GLint, 2> range;
-    GLint precision;
+    std::array<GLint, 2> range = {0, 0};
+    GLint precision            = 0;
 };
 
 struct Caps
@@ -548,39 +594,39 @@ struct Caps
     ~Caps();
 
     
-    GLuint64 maxElementIndex;
-    GLuint max3DTextureSize;
-    GLuint max2DTextureSize;
-    GLuint maxRectangleTextureSize;
-    GLuint maxArrayTextureLayers;
-    GLfloat maxLODBias;
-    GLuint maxCubeMapTextureSize;
-    GLuint maxRenderbufferSize;
-    GLfloat minAliasedPointSize;
-    GLfloat maxAliasedPointSize;
-    GLfloat minAliasedLineWidth;
-    GLfloat maxAliasedLineWidth;
+    GLuint64 maxElementIndex       = 0;
+    GLuint max3DTextureSize        = 0;
+    GLuint max2DTextureSize        = 0;
+    GLuint maxRectangleTextureSize = 0;
+    GLuint maxArrayTextureLayers   = 0;
+    GLfloat maxLODBias             = 0.0f;
+    GLuint maxCubeMapTextureSize   = 0;
+    GLuint maxRenderbufferSize     = 0;
+    GLfloat minAliasedPointSize    = 1.0f;
+    GLfloat maxAliasedPointSize    = 1.0f;
+    GLfloat minAliasedLineWidth    = 0.0f;
+    GLfloat maxAliasedLineWidth    = 0.0f;
 
     
-    GLuint maxDrawBuffers;
-    GLuint maxFramebufferWidth;
-    GLuint maxFramebufferHeight;
-    GLuint maxFramebufferSamples;
-    GLuint maxColorAttachments;
-    GLuint maxViewportWidth;
-    GLuint maxViewportHeight;
-    GLuint maxSampleMaskWords;
-    GLuint maxColorTextureSamples;
-    GLuint maxDepthTextureSamples;
-    GLuint maxIntegerSamples;
-    GLuint64 maxServerWaitTimeout;
+    GLuint maxDrawBuffers         = 0;
+    GLuint maxFramebufferWidth    = 0;
+    GLuint maxFramebufferHeight   = 0;
+    GLuint maxFramebufferSamples  = 0;
+    GLuint maxColorAttachments    = 0;
+    GLuint maxViewportWidth       = 0;
+    GLuint maxViewportHeight      = 0;
+    GLuint maxSampleMaskWords     = 0;
+    GLuint maxColorTextureSamples = 0;
+    GLuint maxDepthTextureSamples = 0;
+    GLuint maxIntegerSamples      = 0;
+    GLuint64 maxServerWaitTimeout = 0;
 
     
-    GLint maxVertexAttribRelativeOffset;
-    GLuint maxVertexAttribBindings;
-    GLint maxVertexAttribStride;
-    GLuint maxElementsIndices;
-    GLuint maxElementsVertices;
+    GLint maxVertexAttribRelativeOffset = 0;
+    GLuint maxVertexAttribBindings      = 0;
+    GLint maxVertexAttribStride         = 0;
+    GLuint maxElementsIndices           = 0;
+    GLuint maxElementsVertices          = 0;
     std::vector<GLenum> compressedTextureFormats;
     std::vector<GLenum> programBinaryFormats;
     std::vector<GLenum> shaderBinaryFormats;
@@ -606,93 +652,95 @@ struct Caps
     
     
     
-    ShaderMap<GLuint> maxShaderUniformBlocks;
-    ShaderMap<GLuint> maxShaderTextureImageUnits;
-    ShaderMap<GLuint> maxShaderStorageBlocks;
-    ShaderMap<GLuint> maxShaderUniformComponents;
-    ShaderMap<GLuint> maxShaderAtomicCounterBuffers;
-    ShaderMap<GLuint> maxShaderAtomicCounters;
-    ShaderMap<GLuint> maxShaderImageUniforms;
+    ShaderMap<GLuint> maxShaderUniformBlocks        = {};
+    ShaderMap<GLuint> maxShaderTextureImageUnits    = {};
+    ShaderMap<GLuint> maxShaderStorageBlocks        = {};
+    ShaderMap<GLuint> maxShaderUniformComponents    = {};
+    ShaderMap<GLuint> maxShaderAtomicCounterBuffers = {};
+    ShaderMap<GLuint> maxShaderAtomicCounters       = {};
+    ShaderMap<GLuint> maxShaderImageUniforms        = {};
     
     
     
     
-    ShaderMap<GLuint64> maxCombinedShaderUniformComponents;
+    ShaderMap<GLuint64> maxCombinedShaderUniformComponents = {};
 
     
-    GLuint maxVertexAttributes;
-    GLuint maxVertexUniformVectors;
-    GLuint maxVertexOutputComponents;
+    GLuint maxVertexAttributes       = 0;
+    GLuint maxVertexUniformVectors   = 0;
+    GLuint maxVertexOutputComponents = 0;
 
     
-    GLuint maxFragmentUniformVectors;
-    GLuint maxFragmentInputComponents;
-    GLint minProgramTextureGatherOffset;
-    GLuint maxProgramTextureGatherOffset;
-    GLint minProgramTexelOffset;
-    GLint maxProgramTexelOffset;
+    GLuint maxFragmentUniformVectors     = 0;
+    GLuint maxFragmentInputComponents    = 0;
+    GLint minProgramTextureGatherOffset  = 0;
+    GLuint maxProgramTextureGatherOffset = 0;
+    GLint minProgramTexelOffset          = 0;
+    GLint maxProgramTexelOffset          = 0;
 
     
-    std::array<GLuint, 3> maxComputeWorkGroupCount;
-    std::array<GLuint, 3> maxComputeWorkGroupSize;
-    GLuint maxComputeWorkGroupInvocations;
-    GLuint maxComputeSharedMemorySize;
+    std::array<GLuint, 3> maxComputeWorkGroupCount = {0, 0, 0};
+    std::array<GLuint, 3> maxComputeWorkGroupSize  = {0, 0, 0};
+    GLuint maxComputeWorkGroupInvocations          = 0;
+    GLuint maxComputeSharedMemorySize              = 0;
 
     
-    GLuint maxUniformBufferBindings;
-    GLuint64 maxUniformBlockSize;
-    GLuint uniformBufferOffsetAlignment;
-    GLuint maxCombinedUniformBlocks;
-    GLuint maxVaryingComponents;
-    GLuint maxVaryingVectors;
-    GLuint maxCombinedTextureImageUnits;
-    GLuint maxCombinedShaderOutputResources;
+    GLuint maxUniformBufferBindings         = 0;
+    GLuint64 maxUniformBlockSize            = 0;
+    GLuint uniformBufferOffsetAlignment     = 0;
+    GLuint maxCombinedUniformBlocks         = 0;
+    GLuint maxVaryingComponents             = 0;
+    GLuint maxVaryingVectors                = 0;
+    GLuint maxCombinedTextureImageUnits     = 0;
+    GLuint maxCombinedShaderOutputResources = 0;
 
     
-    GLuint maxUniformLocations;
-    GLuint maxAtomicCounterBufferBindings;
-    GLuint maxAtomicCounterBufferSize;
-    GLuint maxCombinedAtomicCounterBuffers;
-    GLuint maxCombinedAtomicCounters;
-    GLuint maxImageUnits;
-    GLuint maxCombinedImageUniforms;
-    GLuint maxShaderStorageBufferBindings;
-    GLuint64 maxShaderStorageBlockSize;
-    GLuint maxCombinedShaderStorageBlocks;
-    GLuint shaderStorageBufferOffsetAlignment;
+    GLuint maxUniformLocations                = 0;
+    GLuint maxAtomicCounterBufferBindings     = 0;
+    GLuint maxAtomicCounterBufferSize         = 0;
+    GLuint maxCombinedAtomicCounterBuffers    = 0;
+    GLuint maxCombinedAtomicCounters          = 0;
+    GLuint maxImageUnits                      = 0;
+    GLuint maxCombinedImageUniforms           = 0;
+    GLuint maxShaderStorageBufferBindings     = 0;
+    GLuint64 maxShaderStorageBlockSize        = 0;
+    GLuint maxCombinedShaderStorageBlocks     = 0;
+    GLuint shaderStorageBufferOffsetAlignment = 0;
 
     
-    GLuint maxTransformFeedbackInterleavedComponents;
-    GLuint maxTransformFeedbackSeparateAttributes;
-    GLuint maxTransformFeedbackSeparateComponents;
+    GLuint maxTransformFeedbackInterleavedComponents = 0;
+    GLuint maxTransformFeedbackSeparateAttributes    = 0;
+    GLuint maxTransformFeedbackSeparateComponents    = 0;
 
     
-    GLuint maxSamples;
+    GLuint maxSamples = 0;
 
     
-    GLuint maxFramebufferLayers;
-    GLuint layerProvokingVertex;
+    GLuint maxFramebufferLayers = 0;
+    GLuint layerProvokingVertex = 0;
 
     
     
-    GLuint maxGeometryInputComponents;
-    GLuint maxGeometryOutputComponents;
-    GLuint maxGeometryOutputVertices;
-    GLuint maxGeometryTotalOutputComponents;
-    GLuint maxGeometryShaderInvocations;
+    GLuint maxGeometryInputComponents       = 0;
+    GLuint maxGeometryOutputComponents      = 0;
+    GLuint maxGeometryOutputVertices        = 0;
+    GLuint maxGeometryTotalOutputComponents = 0;
+    GLuint maxGeometryShaderInvocations     = 0;
+
+    GLuint subPixelBits = 4;
 
     
-    GLuint maxMultitextureUnits;
-    GLuint maxClipPlanes;
-    GLuint maxLights;
+    GLuint maxMultitextureUnits                 = 0;
+    GLuint maxClipPlanes                        = 0;
+    GLuint maxLights                            = 0;
     static constexpr int GlobalMatrixStackDepth = 16;
-    GLuint maxModelviewMatrixStackDepth;
-    GLuint maxProjectionMatrixStackDepth;
-    GLuint maxTextureMatrixStackDepth;
-    GLfloat minSmoothPointSize;
-    GLfloat maxSmoothPointSize;
-    GLfloat minSmoothLineWidth;
-    GLfloat maxSmoothLineWidth;
+    GLuint maxModelviewMatrixStackDepth         = 0;
+    GLuint maxProjectionMatrixStackDepth        = 0;
+    GLuint maxTextureMatrixStackDepth           = 0;
+    GLfloat minSmoothPointSize                  = 0.0f;
+    GLfloat maxSmoothPointSize                  = 0.0f;
+    GLfloat minSmoothLineWidth                  = 0.0f;
+    GLfloat maxSmoothLineWidth                  = 0.0f;
 };
 
 Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensions);
@@ -717,142 +765,157 @@ struct DisplayExtensions
     std::vector<std::string> getStrings() const;
 
     
-    bool createContextRobustness;
+    bool createContextRobustness = false;
 
     
-    bool d3dShareHandleClientBuffer;
+    bool d3dShareHandleClientBuffer = false;
 
     
-    bool d3dTextureClientBuffer;
+    bool d3dTextureClientBuffer = false;
 
     
-    bool surfaceD3DTexture2DShareHandle;
+    bool surfaceD3DTexture2DShareHandle = false;
 
     
-    bool querySurfacePointer;
+    bool querySurfacePointer = false;
 
     
-    bool windowFixedSize;
+    bool windowFixedSize = false;
 
     
-    bool keyedMutex;
+    bool keyedMutex = false;
 
     
-    bool surfaceOrientation;
+    bool surfaceOrientation = false;
 
     
-    bool postSubBuffer;
+    bool postSubBuffer = false;
 
     
-    bool createContext;
+    bool createContext = false;
 
     
-    bool deviceQuery;
+    bool deviceQuery = false;
 
     
-    bool image;
+    bool image = false;
 
     
-    bool imageBase;
+    bool imageBase = false;
 
     
-    bool imagePixmap;
+    bool imagePixmap = false;
 
     
-    bool glTexture2DImage;
+    bool glTexture2DImage = false;
 
     
-    bool glTextureCubemapImage;
+    bool glTextureCubemapImage = false;
 
     
-    bool glTexture3DImage;
+    bool glTexture3DImage = false;
 
     
-    bool glRenderbufferImage;
+    bool glRenderbufferImage = false;
 
     
-    bool getAllProcAddresses;
+    bool getAllProcAddresses = false;
 
     
-    bool flexibleSurfaceCompatibility;
+    bool flexibleSurfaceCompatibility = false;
 
     
-    bool directComposition;
+    bool directComposition = false;
 
     
-    bool windowsUIComposition;
+    bool windowsUIComposition = false;
 
     
-    bool createContextNoError;
+    bool createContextNoError = false;
 
     
-    bool stream;
+    bool stream = false;
 
     
-    bool streamConsumerGLTexture;
+    bool streamConsumerGLTexture = false;
 
     
-    bool streamConsumerGLTextureYUV;
+    bool streamConsumerGLTextureYUV = false;
 
     
-    bool streamProducerD3DTexture;
+    bool streamProducerD3DTexture = false;
 
     
-    bool fenceSync;
+    bool fenceSync = false;
 
     
-    bool waitSync;
+    bool waitSync = false;
 
     
-    bool createContextWebGLCompatibility;
+    bool createContextWebGLCompatibility = false;
 
     
-    bool createContextBindGeneratesResource;
+    bool createContextBindGeneratesResource = false;
 
     
-    bool getSyncValues;
+    bool getSyncValues = false;
 
     
-    bool swapBuffersWithDamage;
+    bool swapBuffersWithDamage = false;
 
     
-    bool pixelFormatFloat;
+    bool pixelFormatFloat = false;
 
     
-    bool surfacelessContext;
+    bool surfacelessContext = false;
 
     
-    bool displayTextureShareGroup;
+    bool displayTextureShareGroup = false;
 
     
-    bool createContextClientArrays;
+    bool createContextClientArrays = false;
 
     
-    bool programCacheControl;
+    bool programCacheControl = false;
 
     
-    bool robustResourceInitialization;
+    bool robustResourceInitialization = false;
 
     
-    bool iosurfaceClientBuffer;
+    bool iosurfaceClientBuffer = false;
 
     
-    bool createContextExtensionsEnabled;
+    bool createContextExtensionsEnabled = false;
 
     
-    bool presentationTime;
+    bool presentationTime = false;
 
     
-    bool blobCache;
+    bool blobCache = false;
 
     
-    bool imageNativeBuffer;
+    bool imageNativeBuffer = false;
 
     
-    bool getFrameTimestamps;
+    bool getFrameTimestamps = false;
 
     
-    bool recordable;
+    bool recordable = false;
+
+    
+    bool powerPreference = false;
+
+    
+    bool imageD3D11Texture = false;
+
+    
+    bool getNativeClientBufferANDROID = false;
+
+    
+    bool nativeFenceSyncANDROID = false;
+
+    
+    bool createContextBackwardsCompatible = false;
 };
 
 struct DeviceExtensions
@@ -863,7 +926,7 @@ struct DeviceExtensions
     std::vector<std::string> getStrings() const;
 
     
-    bool deviceD3D;
+    bool deviceD3D = false;
 };
 
 struct ClientExtensions
@@ -875,52 +938,55 @@ struct ClientExtensions
     std::vector<std::string> getStrings() const;
 
     
-    bool clientExtensions;
+    bool clientExtensions = false;
 
     
-    bool platformBase;
+    bool platformBase = false;
 
     
-    bool platformDevice;
+    bool platformDevice = false;
 
     
-    bool platformANGLE;
+    bool platformANGLE = false;
 
     
-    bool platformANGLED3D;
+    bool platformANGLED3D = false;
 
     
-    bool platformANGLEOpenGL;
+    bool platformANGLEOpenGL = false;
 
     
-    bool platformANGLENULL;
+    bool platformANGLENULL = false;
 
     
-    bool platformANGLEVulkan;
+    bool platformANGLEVulkan = false;
 
     
-    bool platformANGLEContextVirtualization;
+    bool platformANGLEContextVirtualization = false;
 
     
-    bool deviceCreation;
+    bool deviceCreation = false;
 
     
-    bool deviceCreationD3D11;
+    bool deviceCreationD3D11 = false;
 
     
-    bool x11Visual;
+    bool x11Visual = false;
 
     
-    bool experimentalPresentPath;
+    bool experimentalPresentPath = false;
 
     
-    bool clientGetAllProcAddresses;
+    bool clientGetAllProcAddresses = false;
 
     
-    bool debug;
+    bool debug = false;
 
     
-    bool explicitContext;
+    bool explicitContext = false;
+
+    
+    bool featureControlANGLE = false;
 };
 
 }  
