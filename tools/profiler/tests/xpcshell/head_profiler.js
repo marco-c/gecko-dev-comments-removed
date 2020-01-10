@@ -41,6 +41,7 @@ function getAllPayloadsOfType(profile, type, payloadTarget = []) {
 
 
 
+
 function wait(time) {
   return new Promise(resolve => {
     
@@ -87,20 +88,24 @@ function getInflatedStackLocations(thread, sample) {
 
 
 
-async function doAtLeastOnePeriodicSample() {
-  async function getProfileSampleCount() {
-    const profile = await Services.profiler.getProfileDataAsync();
+function doAtLeastOnePeriodicSample() {
+  function getProfileSampleCount() {
+    const profile = Services.profiler.getProfileData();
     return profile.threads[0].samples.data.length;
   }
 
-  const sampleCount = await getProfileSampleCount();
+  const sampleCount = getProfileSampleCount();
   
   while (true) {
-    if (sampleCount < (await getProfileSampleCount())) {
+    if (sampleCount < getProfileSampleCount()) {
       return sampleCount;
     }
   }
 }
+
+
+
+
 
 
 
