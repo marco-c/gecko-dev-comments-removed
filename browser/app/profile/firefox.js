@@ -989,9 +989,6 @@ pref("security.certerrors.mitm.auto_enable_enterprise_roots", true);
 pref("browser.privatebrowsing.autostart", false);
 
 
-pref("browser.privatebrowsing.searchUI", true);
-
-
 pref("browser.bookmarks.editDialog.showForNewBookmarks", true);
 
 

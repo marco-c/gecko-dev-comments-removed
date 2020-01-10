@@ -27,12 +27,7 @@ let RPMAccessManager = {
   accessMap: {
     "about:privatebrowsing": {
       
-      
-      
-      "getBoolPref": ["privacy.trackingprotection.pbmode.enabled",
-                      "browser.privatebrowsing.searchUI"],
-      "getFormatURLPref": ["privacy.trackingprotection.introURL",
-                           "app.support.baseURL"],
+      "getFormatURLPref": ["app.support.baseURL"],
       "isWindowPrivate": ["yes"],
     },
     "about:newinstall": {
