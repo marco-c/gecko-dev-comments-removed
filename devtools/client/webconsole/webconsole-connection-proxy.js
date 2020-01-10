@@ -22,10 +22,21 @@ const PREF_CONNECTION_TIMEOUT = "devtools.debugger.remote-timeout";
 
 
 
-function WebConsoleConnectionProxy(webConsoleUI, target) {
+
+
+
+
+function WebConsoleConnectionProxy(
+  webConsoleUI,
+  target,
+  isBrowserConsole,
+  fissionSupport
+) {
   this.webConsoleUI = webConsoleUI;
   this.target = target;
   this.webConsoleClient = target.activeConsole;
+  this.isBrowserConsole = isBrowserConsole;
+  this.fissionSupport = fissionSupport;
 
   this._onPageError = this._onPageError.bind(this);
   this._onLogMessage = this._onLogMessage.bind(this);

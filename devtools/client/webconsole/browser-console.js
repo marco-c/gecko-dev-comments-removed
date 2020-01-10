@@ -32,8 +32,15 @@ class BrowserConsole extends WebConsole {
 
 
 
-  constructor(target, iframeWindow, chromeWindow, hudService) {
-    super(target, iframeWindow, chromeWindow, hudService, true);
+
+  constructor(
+    target,
+    iframeWindow,
+    chromeWindow,
+    hudService,
+    fissionSupport = false
+  ) {
+    super(target, iframeWindow, chromeWindow, hudService, true, fissionSupport);
 
     this._telemetry = new Telemetry();
     this._bcInitializer = null;
