@@ -37,7 +37,7 @@ TextureHost* GPUVideoTextureHost::EnsureWrappedTextureHost() {
   
   
   mWrappedTextureHost =
-      VideoBridgeParent::GetSingleton()->LookupTexture(mDescriptor.handle());
+      VideoBridgeParent::GetSingleton(mDescriptor.source())->LookupTexture(mDescriptor.handle());
   return mWrappedTextureHost;
 }
 
