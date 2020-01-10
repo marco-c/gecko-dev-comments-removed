@@ -258,50 +258,9 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
-
-
-
-  nsresult GetOriginFromReferrerURI(nsIURI* aReferrer,
-                                    nsACString& aResult) const;
-
-  
-
-
-  nsresult TrimReferrerWithPolicy(nsIURI* aReferrer,
+  nsresult TrimReferrerWithPolicy(nsCOMPtr<nsIURI>& aReferrer,
                                   TrimmingPolicy aTrimmingPolicy,
                                   nsACString& aResult) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult LimitReferrerLength(nsIHttpChannel* aChannel, nsIURI* aReferrer,
-                               TrimmingPolicy aTrimmingPolicy,
-                               nsACString& aInAndOutTrimmedReferrer) const;
-
-  
-
-
-  void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg,
-                           const nsTArray<nsString>& aParams) const;
 
   nsCOMPtr<nsIURI> mOriginalReferrer;
 
