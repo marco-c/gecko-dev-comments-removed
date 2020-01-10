@@ -14,6 +14,7 @@
 #ifdef XP_WIN
 #  include <windows.h>
 #  include <shlobj.h>
+#  include "mozilla/PolicyChecks.h"
 #endif
 #ifdef XP_UNIX
 #  include <unistd.h>
@@ -1798,8 +1799,11 @@ bool nsToolkitProfileService::IsSnapEnvironment() {
 
 
 
+
+
 bool nsToolkitProfileService::UseLegacyProfiles() {
-  return !!PR_GetEnv("MOZ_LEGACY_PROFILES");
+  return !!PR_GetEnv("MOZ_LEGACY_PROFILES") ||
+         PolicyCheckBoolean(L"LegacyProfiles");
 }
 
 struct FindInstallsClosure {
