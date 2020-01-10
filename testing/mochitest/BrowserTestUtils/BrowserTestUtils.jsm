@@ -79,8 +79,9 @@ const kAboutPageRegistrationContentScript =
 
 
 
-function registerActor() {
-  let actorOptions = {
+
+function registerActors() {
+  ChromeUtils.registerWindowActor("BrowserTestUtils", {
     parent: {
       moduleURI: "resource://testing-common/BrowserTestUtilsParent.jsm",
     },
@@ -93,16 +94,12 @@ function registerActor() {
     },
     allFrames: true,
     includeChrome: true,
-  };
-  ChromeUtils.registerWindowActor("BrowserTestUtils", actorOptions);
-}
+  });
 
-function registerContentEventListenerActor() {
-  let actorOptions = {
+  ChromeUtils.registerWindowActor("ContentEventListener", {
     parent: {
       moduleURI: "resource://testing-common/ContentEventListenerParent.jsm",
     },
-
     child: {
       moduleURI: "resource://testing-common/ContentEventListenerChild.jsm",
       events: {
@@ -112,11 +109,10 @@ function registerContentEventListenerActor() {
       },
     },
     allFrames: true,
-  };
-  ChromeUtils.registerWindowActor("ContentEventListener", actorOptions);
+  });
 }
 
-registerActor();
+registerActors();
 
 var BrowserTestUtils = {
   
@@ -526,8 +522,6 @@ var BrowserTestUtils = {
   _contentEventListenerSharedState: new Map(),
 
   _contentEventListeners: new Map(),
-
-  _contentEventListenerActorRegistered: false,
 
   
 
@@ -1258,10 +1252,6 @@ var BrowserTestUtils = {
 
 
 
-
-
-
-
   addContentEventListener(
     browser,
     eventName,
@@ -1285,35 +1275,6 @@ var BrowserTestUtils = {
       eventListenerState
     );
     Services.ppmm.sharedData.flush();
-
-    if (!this._contentEventListenerActorRegistered) {
-      this._contentEventListenerActorRegistered = true;
-      registerContentEventListenerActor();
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      let contextsToVisit = [browser.browsingContext];
-      while (contextsToVisit.length) {
-        let currentContext = contextsToVisit.pop();
-        let global = currentContext.currentWindowGlobal;
-        if (!global) {
-          continue;
-        }
-        let actor = browser.browsingContext.currentWindowGlobal.getActor(
-          "ContentEventListener"
-        );
-        actor.sendAsyncMessage("ContentEventListener:LateCreate");
-        contextsToVisit.push(...currentContext.getChildren());
-      }
-    }
 
     let unregisterFunction = function() {
       if (!eventListenerState.has(id)) {
