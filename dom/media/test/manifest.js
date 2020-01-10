@@ -57,17 +57,10 @@ var gFrameCountTests = [
   { name:"av1.mp4", type:"video/mp4", totalFrameCount:24},
 ];
 
-if (SpecialPowers.Services.appinfo.name != "B2G") {
-  
-  
-  
-  
-
-  gSmallTests = gSmallTests.concat([
-    { name:"sample.3gp", type:"video/3gpp", duration:4.933 },
-    { name:"sample.3g2", type:"video/3gpp2", duration:4.933 }
-  ]);
-}
+gSmallTests = gSmallTests.concat([
+  { name:"sample.3gp", type:"video/3gpp", duration:4.933 },
+  { name:"sample.3g2", type:"video/3gpp2", duration:4.933 }
+]);
 
 
 var gVideoTests = [
@@ -490,7 +483,7 @@ function makeAbsolutePathConverter() {
 
       resolve((path, mustExist) => {
 	
-	if (manifestNavigator().appVersion.includes("Android") || SpecialPowers.Services.appinfo.name == "B2G")
+	if (manifestNavigator().appVersion.includes("Android"))
 	  return path;
 
 	const { Ci, Cc } = SpecialPowers;
@@ -639,13 +632,9 @@ var gUnseekableTests = [
 var androidVersion = -1; 
 if (manifestNavigator().userAgent.includes("Mobile") ||
     manifestNavigator().userAgent.includes("Tablet")) {
-  
-  
-  var versionString = manifestNavigator().userAgent.includes("Android") ?
-                      'version' : 'sdk_version';
   androidVersion = SpecialPowers.Cc['@mozilla.org/system-info;1']
                                 .getService(SpecialPowers.Ci.nsIPropertyBag2)
-                                .getProperty(versionString);
+                                .getProperty('version');
 }
 
 function getAndroidVersion() {
