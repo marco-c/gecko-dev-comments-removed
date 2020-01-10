@@ -198,6 +198,13 @@ function isLayerized(elementId) {
   return false;
 }
 
+
+function waitForFrame() {
+  return new Promise(resolve => {
+    window.requestAnimationFrame(resolve);
+  });
+}
+
 function promiseApzRepaintsFlushed(aWindow = window) {
   return new Promise(function(resolve, reject) {
     var repaintDone = function() {
