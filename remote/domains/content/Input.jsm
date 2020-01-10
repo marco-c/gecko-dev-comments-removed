@@ -10,4 +10,47 @@ const { ContentProcessDomain } = ChromeUtils.import(
   "chrome://remote/content/domains/ContentProcessDomain.jsm"
 );
 
-class Input extends ContentProcessDomain {}
+class Input extends ContentProcessDomain {
+  constructor(session) {
+    super(session);
+
+    
+    this._eventPromises = new Map();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  addContentEventListener(eventName) {
+    const eventPromise = new Promise(r => {
+      this.chromeEventHandler.addEventListener(eventName, r, {
+        mozSystemGroup: true,
+        once: true,
+      });
+    });
+    this._eventPromises.set(eventName, eventPromise);
+  }
+
+  
+
+
+
+
+  async waitForContentEvent(eventName) {
+    const eventPromise = this._eventPromises.get(eventName);
+    if (!eventPromise) {
+      throw new Error("No event promise available for " + eventName);
+    }
+    await eventPromise;
+    this._eventPromises.delete(eventName);
+  }
+}
