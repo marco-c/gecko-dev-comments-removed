@@ -1559,7 +1559,14 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
 
       
       
-      MOZ_ASSERT(!isMarkStackEmpty());
+      if (isMarkStackEmpty()) {
+        MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
+        
+        
+        AutoEnterOOMUnsafeRegion oomUnsafe;
+        oomUnsafe.crash("Overflowed stack while marking test queue");
+      }
+
       SliceBudget unlimited = SliceBudget::unlimited();
       processMarkStackTop(unlimited);
     } else if (val.isString()) {
