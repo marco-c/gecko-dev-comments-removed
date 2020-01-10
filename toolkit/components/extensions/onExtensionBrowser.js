@@ -1,0 +1,8 @@
+
+
+
+
+
+"use strict";
+
+Services.obs.notifyObservers(this, "tab-content-frameloader-created");
