@@ -650,6 +650,16 @@ class TextEditor : public EditorBase,
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                         nsIEditor::EStripWrappers aStripWrappers);
 
+  
+
+
+
+
+
+
+  EditActionResult ComputeValueFromTextNodeAndPaddingBRElement(
+      nsAString& aValue) const;
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
@@ -821,7 +831,7 @@ class TextEditor : public EditorBase,
 
 
   nsresult SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
-                              nsAString& aResult);
+                              nsAString& aResult) const;
 
   
 

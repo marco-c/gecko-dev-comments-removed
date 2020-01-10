@@ -125,17 +125,6 @@ class TextEditRules {
   
 
 
-
-
-
-
-
-  nsresult WillOutputText(const nsAString* aInFormat, nsAString* aOutText,
-                          uint32_t aFlags, bool* aOutCancel, bool* aHandled);
-
-  
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CreateTrailingBRIfNeeded();
 
   

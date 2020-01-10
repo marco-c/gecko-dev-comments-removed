@@ -205,9 +205,6 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
     case EditSubAction::eSetText:
       TextEditorRef().UndefineCaretBidiLevel();
       return WillSetText(aCancel, aHandled, aInfo.inString, aInfo.maxLength);
-    case EditSubAction::eComputeTextToOutput:
-      return WillOutputText(aInfo.outputFormat, aInfo.outString, aInfo.flags,
-                            aCancel, aHandled);
     case EditSubAction::eInsertQuotedText: {
       CANCEL_OPERATION_IF_READONLY_OR_DISABLED
 
@@ -221,6 +218,7 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
                            "Failed to remove padding <br> element");
       return rv;
     }
+    case EditSubAction::eComputeTextToOutput:
     case EditSubAction::eDeleteSelectedContent:
     case EditSubAction::eInsertElement:
     case EditSubAction::eInsertLineBreak:
@@ -242,6 +240,7 @@ nsresult TextEditRules::DidDoAction(EditSubActionInfo& aInfo,
   }
 
   switch (aInfo.mEditSubAction) {
+    case EditSubAction::eComputeTextToOutput:
     case EditSubAction::eDeleteSelectedContent:
     case EditSubAction::eInsertElement:
     case EditSubAction::eInsertLineBreak:
@@ -900,61 +899,35 @@ EditActionResult TextEditor::HandleDeleteSelectionInternal(
   return EditActionHandled(rv);
 }
 
-nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
-                                       nsAString* aOutString, uint32_t aFlags,
-                                       bool* aCancel, bool* aHandled) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  if (NS_WARN_IF(!aOutString) || NS_WARN_IF(!aOutputFormat) ||
-      NS_WARN_IF(!aCancel) || NS_WARN_IF(!aHandled)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  
-  *aCancel = false;
-  *aHandled = false;
-
-  if (!aOutputFormat->LowerCaseEqualsLiteral("text/plain")) {
-    return NS_OK;
-  }
+EditActionResult TextEditor::ComputeValueFromTextNodeAndPaddingBRElement(
+    nsAString& aValue) const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   
   
-  if (TextEditorRef().HasPaddingBRElementForEmptyEditor()) {
-    aOutString->Truncate();
-    *aHandled = true;
-    return NS_OK;
+  if (HasPaddingBRElementForEmptyEditor()) {
+    aValue.Truncate();
+    return EditActionHandled();
   }
 
   
   
   
-  
-  if (aFlags & nsIDocumentEncoder::OutputSelectionOnly ||
-      aFlags & nsIDocumentEncoder::OutputWrap) {
-    return NS_OK;
+  if (AsHTMLEditor()) {
+    return EditActionIgnored();
   }
 
-  
-  
-  
-  if (TextEditorRef().AsHTMLEditor()) {
-    return NS_OK;
+  Element* anonymousDivElement = GetRoot();
+  if (!anonymousDivElement) {
+    
+    aValue.Truncate();
+    return EditActionHandled();
   }
 
-  Element* root = TextEditorRef().GetRoot();
-  if (!root) {  
-    aOutString->Truncate();
-    *aHandled = true;
-    return NS_OK;
-  }
-
-  nsIContent* firstChild = root->GetFirstChild();
-  if (!firstChild) {
-    aOutString->Truncate();
-    *aHandled = true;
-    return NS_OK;
+  nsIContent* textNodeOrPaddingBRElement = anonymousDivElement->GetFirstChild();
+  if (!textNodeOrPaddingBRElement) {
+    aValue.Truncate();
+    return EditActionHandled();
   }
 
   
@@ -970,9 +943,17 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
   
   
 
-  Text* text = firstChild->GetAsText();
+  Text* textNode = textNodeOrPaddingBRElement->GetAsText();
+  if (!textNode) {
+    
+    
+    aValue.Truncate();
+    return EditActionHandled();
+  }
+
   nsIContent* firstChildExceptText =
-      text ? firstChild->GetNextSibling() : firstChild;
+      textNode ? textNodeOrPaddingBRElement->GetNextSibling()
+               : textNodeOrPaddingBRElement;
   
   bool isInput = IsSingleLineEditor();
   bool isTextarea = !isInput;
@@ -982,22 +963,12 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
                  !EditorBase::IsPaddingBRElementForEmptyLastLine(
                      *firstChildExceptText) &&
                  !firstChildExceptText->IsXULElement(nsGkAtoms::scrollbar))) {
-    return NS_OK;
+    return EditActionIgnored();
   }
 
   
-  
-  if (!text) {
-    aOutString->Truncate();
-    *aHandled = true;
-    return NS_OK;
-  }
-
-  
-  text->GetData(*aOutString);
-
-  *aHandled = true;
-  return NS_OK;
+  textNode->GetData(aValue);
+  return EditActionHandled();
 }
 
 nsresult TextEditRules::CreateTrailingBRIfNeeded() {
