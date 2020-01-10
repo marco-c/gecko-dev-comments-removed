@@ -109,7 +109,7 @@ LoginStore.prototype._dataPostProcessor = function(data) {
   }
 
   
-  if (data.version < 3) {
+  if (!("version" in data) || data.version < 3) {
     let dateProperties = ["timeCreated", "timeLastUsed", "timePasswordChanged"];
     let now = Date.now();
     function getEarliestDate(login, defaultDate) {
