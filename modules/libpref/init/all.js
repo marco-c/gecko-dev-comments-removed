@@ -799,8 +799,6 @@ pref("ui.scrollToClick", 0);
 
 pref("accessibility.force_disabled", 0);
 
-pref("accessibility.AOM.enabled", false);
-
 #ifdef XP_WIN
 
 
