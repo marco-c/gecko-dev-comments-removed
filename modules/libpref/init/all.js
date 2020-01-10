@@ -1139,6 +1139,10 @@ pref("privacy.restrict3rdpartystorage.userInteractionRequiredForHosts", "");
 
 
 
+pref("privacy.restrict3rdpartystorage.url_decorations", "");
+
+
+
 
 
 
