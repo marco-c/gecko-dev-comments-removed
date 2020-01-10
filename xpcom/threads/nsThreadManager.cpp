@@ -37,6 +37,82 @@ static MOZ_THREAD_LOCAL(PRThread*) gTlsCurrentVirtualThread;
 
 bool NS_IsMainThreadTLSInitialized() { return sTLSIsMainThread.initialized(); }
 
+class BackgroundEventTarget final : public nsIEventTarget
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIEVENTTARGET_FULL
+
+  BackgroundEventTarget() = default;
+
+  nsresult Init();
+
+  nsresult Shutdown();
+
+private:
+  ~BackgroundEventTarget() = default;
+
+  nsCOMPtr<nsIThreadPool> mPool;
+};
+
+NS_IMPL_ISUPPORTS(BackgroundEventTarget, nsIEventTarget)
+
+nsresult BackgroundEventTarget::Init() {
+  nsCOMPtr<nsIThreadPool> pool(new nsThreadPool());
+  NS_ENSURE_TRUE(pool, NS_ERROR_FAILURE);
+
+  nsresult rv = pool->SetName(NS_LITERAL_CSTRING("BackgroundThreadPool"));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = pool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = pool->SetThreadLimit(1);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = pool->SetIdleThreadTimeout(300000);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  pool.swap(mPool);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP_(bool)
+BackgroundEventTarget::IsOnCurrentThreadInfallible() {
+  return mPool->IsOnCurrentThread();
+}
+
+NS_IMETHODIMP
+BackgroundEventTarget::IsOnCurrentThread(bool* aValue) {
+  return mPool->IsOnCurrentThread(aValue);
+}
+
+NS_IMETHODIMP
+BackgroundEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
+                                uint32_t aFlags) {
+  return mPool->Dispatch(std::move(aRunnable), aFlags);
+}
+
+NS_IMETHODIMP
+BackgroundEventTarget::DispatchFromScript(nsIRunnable* aRunnable, uint32_t aFlags) {
+  return mPool->Dispatch(aRunnable, aFlags);
+}
+
+NS_IMETHODIMP
+BackgroundEventTarget::DelayedDispatch(already_AddRefed<nsIRunnable> aRunnable, uint32_t) {
+  nsCOMPtr<nsIRunnable> dropRunnable(aRunnable);
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsresult
+BackgroundEventTarget::Shutdown() {
+  return mPool->Shutdown();
+}
+
 extern "C" {
 
 
@@ -247,25 +323,12 @@ nsresult nsThreadManager::Init() {
   AbstractThread::InitMainThread();
 
   
-  nsCOMPtr<nsIThreadPool> pool(new nsThreadPool());
-  NS_ENSURE_TRUE(pool, NS_ERROR_FAILURE);
+  RefPtr<BackgroundEventTarget> target(new BackgroundEventTarget());
 
-  rv = pool->SetName(NS_LITERAL_CSTRING("BackgroundThreadPool"));
+  rv = target->Init();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  rv = pool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  rv = pool->SetThreadLimit(1);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  rv = pool->SetIdleThreadTimeout(300000);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  pool.swap(mBackgroundEventTarget);
+  mBackgroundEventTarget = target.forget();
 
   mInitialized = true;
 
@@ -287,7 +350,7 @@ void nsThreadManager::Shutdown() {
   
   NS_ProcessPendingEvents(mMainThread);
 
-  mBackgroundEventTarget->Shutdown();
+  static_cast<BackgroundEventTarget*>(mBackgroundEventTarget.get())->Shutdown();
 
   {
     
@@ -395,7 +458,7 @@ nsresult nsThreadManager::DispatchToBackgroundThread(nsIRunnable* aEvent,
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIThreadPool> backgroundTarget(mBackgroundEventTarget);
+  nsCOMPtr<nsIEventTarget> backgroundTarget(mBackgroundEventTarget);
   return backgroundTarget->Dispatch(aEvent, aDispatchFlags);
 }
 
