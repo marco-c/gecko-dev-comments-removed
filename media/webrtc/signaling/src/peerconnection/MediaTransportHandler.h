@@ -71,7 +71,7 @@ class MediaTransportHandler {
 
   
   
-  virtual void SetProxyServer(NrSocketProxyConfig&& aProxyConfig) = 0;
+  virtual void SetProxyConfig(NrSocketProxyConfig&& aProxyConfig) = 0;
 
   virtual void EnsureProvisionalTransport(const std::string& aTransportId,
                                           const std::string& aLocalUfrag,

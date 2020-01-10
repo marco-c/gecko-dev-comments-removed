@@ -300,7 +300,7 @@ class NrIceCtx {
 
   
   
-  nsresult SetProxyServer(NrSocketProxyConfig&& config);
+  nsresult SetProxyConfig(NrSocketProxyConfig&& config);
 
   const std::shared_ptr<NrSocketProxyConfig>& GetProxyConfig() {
     return proxy_config_;

@@ -421,7 +421,7 @@ void PeerConnectionMedia::EnsureIceGathering(bool aDefaultRouteOnly,
     
     
     
-    mTransportHandler->SetProxyServer(std::move(*mProxyConfig));
+    mTransportHandler->SetProxyConfig(std::move(*mProxyConfig));
     mProxyConfig.reset();
   }
 
