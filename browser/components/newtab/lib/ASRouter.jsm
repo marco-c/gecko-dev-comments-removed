@@ -1981,7 +1981,6 @@ class _ASRouter {
     } else {
       
       message = await this.handleMessageRequest({
-        provider: "onboarding",
         template: "extended_triplets",
       });
 
