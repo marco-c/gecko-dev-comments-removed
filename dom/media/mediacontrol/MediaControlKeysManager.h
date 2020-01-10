@@ -19,23 +19,22 @@ namespace dom {
 
 
 
-class MediaControlKeysManager final {
+class MediaControlKeysManager final : public MediaControlKeysEventSource,
+                                      public MediaControlKeysEventListener {
  public:
+  NS_DECL_ISUPPORTS_INHERITED
   MediaControlKeysManager() = default;
-  ~MediaControlKeysManager();
 
-  
-  
-  
-  bool AddListener(MediaControlKeysEventListener* aListener);
-  bool RemoveListener(MediaControlKeysEventListener* aListener);
   void Init();
+
+  void OnKeyPressed(MediaControlKeysEvent aKeyEvent) override;
 
   
   
   void ControllerAmountChanged(uint64_t aControllerAmount);
 
  private:
+  ~MediaControlKeysManager();
   void StartMonitoringControlKeys();
   void StopMonitoringControlKeys();
   void CreateEventSource();
