@@ -481,7 +481,7 @@ SelectorAutocompleter.prototype = {
 
 
 
-  showSuggestions: function() {
+  showSuggestions: async function() {
     let query = this.searchBox.value;
     const state = this.state;
     let firstPart = "";
@@ -514,37 +514,51 @@ SelectorAutocompleter.prototype = {
       query += "*";
     }
 
-    const suggestionsPromise = this.walker.getSuggestionsForQuery(
-      query,
-      firstPart,
-      state
-    );
-    this._lastQuery = suggestionsPromise.then(result => {
-      this.emit("processing-done");
-      if (result.query !== query) {
-        
-        
-        return promise.resolve(null);
-      }
+    const inspectorFront = this.inspector.inspectorFront;
+    const remoteInspectors = await inspectorFront.getChildInspectors();
+    const inspectors = [inspectorFront, ...remoteInspectors];
 
-      if (state === this.States.CLASS) {
-        firstPart = "." + firstPart;
-      } else if (state === this.States.ID) {
-        firstPart = "#" + firstPart;
-      }
-
-      
-      
-      if (
-        result.suggestions.length === 1 &&
-        result.suggestions[0][0] === firstPart
-      ) {
-        result.suggestions = [];
-      }
-
-      
-      
-      return this._showPopup(result.suggestions, state);
+    const suggestionsPromises = inspectors.map(async inspector => {
+      const walker = inspector.walker;
+      return walker.getSuggestionsForQuery(query, firstPart, state);
     });
+
+    this._lastQuery = Promise.all(suggestionsPromises)
+      .then(suggestions => {
+        
+        const result = { query: "", suggestions: [] };
+        for (const r of suggestions) {
+          result.query = r.query;
+          result.suggestions = result.suggestions.concat(r.suggestions);
+        }
+        return result;
+      })
+      .then(result => {
+        this.emit("processing-done");
+        if (result.query !== query) {
+          
+          
+          return promise.resolve(null);
+        }
+
+        if (state === this.States.CLASS) {
+          firstPart = "." + firstPart;
+        } else if (state === this.States.ID) {
+          firstPart = "#" + firstPart;
+        }
+
+        
+        
+        if (
+          result.suggestions.length === 1 &&
+          result.suggestions[0][0] === firstPart
+        ) {
+          result.suggestions = [];
+        }
+
+        
+        
+        return this._showPopup(result.suggestions, state);
+      });
   },
 };
