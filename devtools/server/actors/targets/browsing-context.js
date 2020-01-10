@@ -1353,7 +1353,7 @@ const browsingContextTargetPrototype = {
     if (isTopLevel && threadActor.state != "detached") {
       this.sources.reset();
       threadActor.clearDebuggees();
-      threadActor.dbg.enabled = true;
+      threadActor.dbg.enable();
       threadActor.maybePauseOnExceptions();
       
       
@@ -1423,7 +1423,7 @@ const browsingContextTargetPrototype = {
     const threadActor = this.threadActor;
     if (threadActor.state == "paused") {
       threadActor.unsafeSynchronize(Promise.resolve(threadActor.doResume()));
-      threadActor.dbg.enabled = false;
+      threadActor.dbg.disable();
     }
     threadActor.disableAllBreakpoints();
 
@@ -1464,7 +1464,7 @@ const browsingContextTargetPrototype = {
     
     const threadActor = this.threadActor;
     if (threadActor.state == "running") {
-      threadActor.dbg.enabled = true;
+      threadActor.dbg.enable();
     }
 
     this.emit("tabNavigated", {
