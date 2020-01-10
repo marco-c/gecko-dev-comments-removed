@@ -44,7 +44,10 @@ function Notification(context, notificationsMap, id, options) {
       undefined,
       undefined,
       undefined,
-      context.principal, 
+      
+      
+      
+      undefined,
       context.incognito
     );
   } catch (e) {
