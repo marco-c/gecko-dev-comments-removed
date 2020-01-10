@@ -151,7 +151,7 @@ PausedDebuggerOverlay.prototype = {
 
   onMouseMove(target) {
     
-    if (!target.id) {
+    if (!target || !target.id) {
       return;
     }
 
