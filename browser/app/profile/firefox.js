@@ -5,20 +5,14 @@
 
 
 
+
+
 #filter substitution
 
-#
-# SYNTAX HINTS:
-#
-#  - Dashes are delimiters; use underscores instead.
-#  - The first character after a period must be alphabetic.
-#  - Computed values (e.g. 50 * 1024) don't work.
-#
-
 #ifdef XP_UNIX
-#ifndef XP_MACOSX
-#define UNIX_BUT_NOT_MAC
-#endif
+  #ifndef XP_MACOSX
+    #define UNIX_BUT_NOT_MAC
+  #endif
 #endif
 
 pref("browser.hiddenWindowChromeURL", "chrome://browser/content/hiddenWindowMac.xhtml");
@@ -141,7 +135,7 @@ pref("app.update.elevation.promptMaxAttempts", 2);
 
 
 #ifndef XP_WIN
-pref("app.update.auto", true);
+  pref("app.update.auto", true);
 #endif
 
 
@@ -159,13 +153,13 @@ pref("app.update.url", "https://aus5.mozilla.org/update/6/%PRODUCT%/%VERSION%/%B
 
 
 #ifdef MOZ_MAINTENANCE_SERVICE
-pref("app.update.service.enabled", true);
+  pref("app.update.service.enabled", true);
 #endif
 
 #ifdef XP_WIN
-
-
-pref("app.update.BITS.enabled", true);
+  
+  
+  pref("app.update.BITS.enabled", true);
 #endif
 
 
@@ -183,9 +177,9 @@ pref("extensions.update.interval", 86400);
 pref("lightweightThemes.getMoreURL", "https://addons.mozilla.org/%LOCALE%/firefox/themes");
 
 #if defined(MOZ_WIDEVINE_EME)
-pref("browser.eme.ui.enabled", true);
+  pref("browser.eme.ui.enabled", true);
 #else
-pref("browser.eme.ui.enabled", false);
+  pref("browser.eme.ui.enabled", false);
 #endif
 
 
@@ -202,9 +196,9 @@ pref("browser.fixup.domainwhitelist.localhost", true);
 
 pref("general.smoothScroll", true);
 #ifdef UNIX_BUT_NOT_MAC
-pref("general.autoScroll", false);
+  pref("general.autoScroll", false);
 #else
-pref("general.autoScroll", true);
+  pref("general.autoScroll", true);
 #endif
 
 pref("browser.stopReloadAnimation.enabled", true);
@@ -236,9 +230,9 @@ pref("browser.startup.firstrunSkipsHomepage", true);
 
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)
-pref("browser.startup.blankWindow", true);
+  pref("browser.startup.blankWindow", true);
 #else
-pref("browser.startup.blankWindow", false);
+  pref("browser.startup.blankWindow", false);
 #endif
 
 
@@ -257,14 +251,14 @@ pref("browser.fullscreen.autohide", true);
 pref("browser.overlink-delay", 80);
 
 #ifdef UNIX_BUT_NOT_MAC
-pref("browser.urlbar.clickSelectsAll", false);
+  pref("browser.urlbar.clickSelectsAll", false);
 #else
-pref("browser.urlbar.clickSelectsAll", true);
+  pref("browser.urlbar.clickSelectsAll", true);
 #endif
 #ifdef UNIX_BUT_NOT_MAC
-pref("browser.urlbar.doubleClickSelectsAll", true);
+  pref("browser.urlbar.doubleClickSelectsAll", true);
 #else
-pref("browser.urlbar.doubleClickSelectsAll", false);
+  pref("browser.urlbar.doubleClickSelectsAll", false);
 #endif
 
 
@@ -362,7 +356,7 @@ pref("browser.download.panel.shown", false);
 pref("browser.download.autohideButton", true);
 
 #ifndef XP_MACOSX
-pref("browser.helperApps.deleteTempFileOnExit", true);
+  pref("browser.helperApps.deleteTempFileOnExit", true);
 #endif
 
 
@@ -398,9 +392,9 @@ pref("permissions.default.desktop-notification", 0);
 pref("permissions.default.shortcuts", 0);
 
 #ifdef EARLY_BETA_OR_EARLIER
-pref("permissions.desktop-notification.postPrompt.enabled", true);
+  pref("permissions.desktop-notification.postPrompt.enabled", true);
 #else
-pref("permissions.desktop-notification.postPrompt.enabled", false);
+  pref("permissions.desktop-notification.postPrompt.enabled", false);
 #endif
 
 pref("permissions.fullscreen.allowed", false);
@@ -409,9 +403,9 @@ pref("permissions.postPrompt.animate", true);
 
 
 #ifdef NIGHTLY_BUILD
-pref("permissions.eventTelemetry.enabled", true);
+  pref("permissions.eventTelemetry.enabled", true);
 #else
-pref("permissions.eventTelemetry.enabled", false);
+  pref("permissions.eventTelemetry.enabled", false);
 #endif
 
 
@@ -434,9 +428,9 @@ pref("browser.link.open_newwindow.restriction", 2);
 
 
 #ifdef XP_MACOSX
-pref("browser.link.open_newwindow.disabled_in_fullscreen", true);
+  pref("browser.link.open_newwindow.disabled_in_fullscreen", true);
 #else
-pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
+  pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 #endif
 
 
@@ -466,7 +460,7 @@ pref("browser.tabs.tabMinWidth", 76);
 
 
 #ifndef UNIX_BUT_NOT_MAC
-pref("browser.tabs.drawInTitlebar", true);
+  pref("browser.tabs.drawInTitlebar", true);
 #endif
 
 
@@ -485,29 +479,29 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_ASAN)
-
-
-
-
-pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
-
-
-
-pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
-
-
-pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
+  
+  
+  
+  
+  pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
+  
+  
+  
+  pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
+  
+  
+  pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
-
-
-pref("security.allow_eval_with_system_principal", false);
-pref("security.allow_eval_in_parent_process", false);
-pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
+  
+  
+  pref("security.allow_eval_with_system_principal", false);
+  pref("security.allow_eval_in_parent_process", false);
+  pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
 #else
-
-pref("browser.tabs.remote.useHTTPResponseProcessSelection", false);
+  
+  pref("browser.tabs.remote.useHTTPResponseProcessSelection", false);
 #endif
 
 
@@ -607,24 +601,24 @@ pref("browser.gesture.swipe.right", "Browser:ForwardOrForwardDuplicate");
 pref("browser.gesture.swipe.up", "cmd_scrollTop");
 pref("browser.gesture.swipe.down", "cmd_scrollBottom");
 #ifdef XP_MACOSX
-pref("browser.gesture.pinch.latched", true);
-pref("browser.gesture.pinch.threshold", 150);
+  pref("browser.gesture.pinch.latched", true);
+  pref("browser.gesture.pinch.threshold", 150);
 #else
-pref("browser.gesture.pinch.latched", false);
-pref("browser.gesture.pinch.threshold", 25);
+  pref("browser.gesture.pinch.latched", false);
+  pref("browser.gesture.pinch.threshold", 25);
 #endif
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-
-pref("browser.gesture.pinch.out", "cmd_fullZoomEnlarge");
-pref("browser.gesture.pinch.in", "cmd_fullZoomReduce");
-pref("browser.gesture.pinch.out.shift", "cmd_fullZoomReset");
-pref("browser.gesture.pinch.in.shift", "cmd_fullZoomReset");
+  
+  pref("browser.gesture.pinch.out", "cmd_fullZoomEnlarge");
+  pref("browser.gesture.pinch.in", "cmd_fullZoomReduce");
+  pref("browser.gesture.pinch.out.shift", "cmd_fullZoomReset");
+  pref("browser.gesture.pinch.in.shift", "cmd_fullZoomReset");
 #else
-
-pref("browser.gesture.pinch.out", "");
-pref("browser.gesture.pinch.in", "");
-pref("browser.gesture.pinch.out.shift", "");
-pref("browser.gesture.pinch.in.shift", "");
+  
+  pref("browser.gesture.pinch.out", "");
+  pref("browser.gesture.pinch.in", "");
+  pref("browser.gesture.pinch.out.shift", "");
+  pref("browser.gesture.pinch.in.shift", "");
 #endif
 pref("browser.gesture.twist.latched", false);
 pref("browser.gesture.twist.threshold", 0);
@@ -642,31 +636,31 @@ pref("browser.history_swipe_animation.disabled", false);
 
 
 #ifdef XP_MACOSX
-
-
-
-pref("mousewheel.with_shift.action", 1);
-pref("mousewheel.with_alt.action", 2);
-
-
-
-
-pref("mousewheel.with_meta.action", 3); 
-
-
-
-pref("mousewheel.with_control.action.override_x", 0);
-pref("mousewheel.with_meta.action.override_x", 0);
+  
+  
+  
+  pref("mousewheel.with_shift.action", 1);
+  pref("mousewheel.with_alt.action", 2);
+  
+  
+  
+  
+  pref("mousewheel.with_meta.action", 3); 
+  
+  
+  
+  pref("mousewheel.with_control.action.override_x", 0);
+  pref("mousewheel.with_meta.action.override_x", 0);
 #else
-
-
-
-
-
-
-pref("mousewheel.with_shift.action", 4);
-pref("mousewheel.with_alt.action", 2);
-pref("mousewheel.with_meta.action", 1); 
+  
+  
+  
+  
+  
+  
+  pref("mousewheel.with_shift.action", 4);
+  pref("mousewheel.with_alt.action", 2);
+  pref("mousewheel.with_meta.action", 1); 
 #endif
 pref("mousewheel.with_control.action",3);
 pref("mousewheel.with_win.action", 1);
@@ -686,7 +680,7 @@ pref("network.protocol-handler.external.news", true);
 pref("network.protocol-handler.external.snews", true);  
 pref("network.protocol-handler.external.nntp", true);   
 #ifdef XP_WIN
-pref("network.protocol-handler.external.ms-windows-store", true);
+  pref("network.protocol-handler.external.ms-windows-store", true);
 #endif
 
 
@@ -695,7 +689,7 @@ pref("network.protocol-handler.warn-external.news", false);
 pref("network.protocol-handler.warn-external.snews", false);
 pref("network.protocol-handler.warn-external.nntp", false);
 #ifdef XP_WIN
-pref("network.protocol-handler.warn-external.ms-windows-store", false);
+  pref("network.protocol-handler.warn-external.ms-windows-store", false);
 #endif
 
 
@@ -723,9 +717,9 @@ pref("plugins.testmode", false);
 pref("plugins.show_infobar", false);
 
 #if defined(_ARM64_) && defined(XP_WIN)
-pref("plugin.default.state", 0);
+  pref("plugin.default.state", 0);
 #else
-pref("plugin.default.state", 1);
+  pref("plugin.default.state", 1);
 #endif
 
 
@@ -733,9 +727,9 @@ pref("plugin.defaultXpi.state", 2);
 
 
 #if defined(_ARM64_) && defined(XP_WIN)
-pref("plugin.state.flash", 0);
+  pref("plugin.state.flash", 0);
 #else
-pref("plugin.state.flash", 1);
+  pref("plugin.state.flash", 1);
 #endif
 
 
@@ -749,11 +743,10 @@ pref("plugins.flashBlock.enabled", true);
 pref("plugins.favorfallback.mode", "follow-ctp");
 pref("plugins.favorfallback.rules", "nosrc,video");
 
-
 #ifdef XP_WIN
-pref("browser.preferences.instantApply", false);
+  pref("browser.preferences.instantApply", false);
 #else
-pref("browser.preferences.instantApply", true);
+  pref("browser.preferences.instantApply", true);
 #endif
 
 
@@ -769,9 +762,9 @@ pref("browser.download.hide_plugins_without_extensions", true);
 
 
 #ifdef UNIX_BUT_NOT_MAC
-pref("browser.backspace_action", 2);
+  pref("browser.backspace_action", 2);
 #else
-pref("browser.backspace_action", 0);
+  pref("browser.backspace_action", 0);
 #endif
 
 
@@ -977,9 +970,9 @@ pref("app.support.baseURL", "https://support.mozilla.org/1/firefox/%VERSION%/%OS
 
 
 #ifdef MOZ_DEV_EDITION
-pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/firefoxdev/%VERSION%/");
+  pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/firefoxdev/%VERSION%/");
 #else
-pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/%APP%/%VERSION%/");
+  pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/%APP%/%VERSION%/");
 #endif
 
 
@@ -1019,136 +1012,136 @@ pref("browser.in-content.dark-mode", true);
 pref("dom.ipc.shims.enabledWarnings", false);
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("dom.ipc.plugins.sandbox-level.default", 0);
+  #if defined(_AMD64_)
+    
+    
+    pref("dom.ipc.plugins.sandbox-level.flash", 3);
+  #else
+    pref("dom.ipc.plugins.sandbox-level.flash", 0);
+  #endif
 
+  
+  
+  
+  
+  
+  pref("security.sandbox.content.level", 5);
 
+  
+  
+  
+  
+  pref("security.sandbox.windows.log.stackTraceDepth", 0);
 
+  
+  
+  
+  
+  
+  pref("security.sandbox.gpu.level", 0);
 
-
-
-
-
-
-
-pref("dom.ipc.plugins.sandbox-level.default", 0);
-#if defined(_AMD64_)
-
-
-pref("dom.ipc.plugins.sandbox-level.flash", 3);
-#else
-pref("dom.ipc.plugins.sandbox-level.flash", 0);
-#endif
-
-
-
-
-
-
-pref("security.sandbox.content.level", 5);
-
-
-
-
-
-pref("security.sandbox.windows.log.stackTraceDepth", 0);
-
-
-
-
-
-
-pref("security.sandbox.gpu.level", 0);
-
-
-
-pref("security.sandbox.rdd.win32k-disable", true);
-
-
-pref("security.sandbox.gmp.win32k-disable", false);
+  
+  
+  pref("security.sandbox.rdd.win32k-disable", true);
+  
+  
+  pref("security.sandbox.gmp.win32k-disable", false);
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  pref("security.sandbox.content.mac.earlyinit", true);
+  
+  pref("security.sandbox.rdd.mac.earlyinit", true);
+  
+  pref("security.sandbox.gmp.mac.earlyinit", true);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("security.sandbox.content.level", 3);
 
-pref("security.sandbox.content.mac.earlyinit", true);
-
-pref("security.sandbox.rdd.mac.earlyinit", true);
-
-pref("security.sandbox.gmp.mac.earlyinit", true);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pref("security.sandbox.content.level", 3);
-
-
-
-
-
-
-
-
-pref("dom.ipc.plugins.sandbox-level.flash", 1);
-
-
-pref("dom.ipc.plugins.sandbox-level.flash.legacy", 1);
-
-pref("dom.ipc.plugins.sandbox-level.flash.max-legacy-os-minor", 10);
-
-
-
-pref("dom.ipc.plugins.sandbox-level.default", 1);
+  
+  
+  
+  
+  
+  
+  
+  pref("dom.ipc.plugins.sandbox-level.flash", 1);
+  
+  
+  pref("dom.ipc.plugins.sandbox-level.flash.legacy", 1);
+  
+  pref("dom.ipc.plugins.sandbox-level.flash.max-legacy-os-minor", 10);
+  
+  
+  
+  pref("dom.ipc.plugins.sandbox-level.default", 1);
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-
-
-
-
-
-
-
-
-
-
-
-
-pref("security.sandbox.content.level", 4);
-pref("security.sandbox.content.write_path_whitelist", "");
-pref("security.sandbox.content.read_path_whitelist", "");
-pref("security.sandbox.content.syscall_whitelist", "");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("security.sandbox.content.level", 4);
+  pref("security.sandbox.content.write_path_whitelist", "");
+  pref("security.sandbox.content.read_path_whitelist", "");
+  pref("security.sandbox.content.syscall_whitelist", "");
 #endif
 
 #if defined(XP_OPENBSD) && defined(MOZ_SANDBOX)
-
-
-pref("security.sandbox.pledge.main", "stdio rpath wpath cpath inet proc exec prot_exec flock ps sendfd recvfd dns vminfo tty drm unix fattr getpw mcast");
-pref("security.sandbox.content.level", 1);
-pref("security.sandbox.pledge.content", "stdio rpath wpath cpath inet recvfd sendfd prot_exec unix drm ps");
+  
+  
+  pref("security.sandbox.pledge.main", "stdio rpath wpath cpath inet proc exec prot_exec flock ps sendfd recvfd dns vminfo tty drm unix fattr getpw mcast");
+  pref("security.sandbox.content.level", 1);
+  pref("security.sandbox.pledge.content", "stdio rpath wpath cpath inet recvfd sendfd prot_exec unix drm ps");
 #endif
 
 #if defined(MOZ_SANDBOX)
+  
+  
+  
+  pref("security.sandbox.content.tempDirSuffix", "");
+  pref("security.sandbox.plugin.tempDirSuffix", "");
 
-
-
-pref("security.sandbox.content.tempDirSuffix", "");
-pref("security.sandbox.plugin.tempDirSuffix", "");
-
-
-
-#if defined(XP_WIN) || defined(XP_MACOSX)
-pref("security.sandbox.logging.enabled", false);
-#endif
+  
+  
+  #if defined(XP_WIN) || defined(XP_MACOSX)
+    pref("security.sandbox.logging.enabled", false);
+  #endif
 #endif
 
 
@@ -1159,19 +1152,19 @@ pref("security.sandbox.logging.enabled", false);
 
 
 #ifdef XP_MACOSX
-pref("dom.ipc.plugins.nativeCursorSupport", true);
+  pref("dom.ipc.plugins.nativeCursorSupport", true);
 #endif
 
 #ifdef XP_WIN
-pref("browser.taskbar.previews.enable", false);
-pref("browser.taskbar.previews.max", 20);
-pref("browser.taskbar.previews.cachetime", 5);
-pref("browser.taskbar.lists.enabled", true);
-pref("browser.taskbar.lists.frequent.enabled", true);
-pref("browser.taskbar.lists.recent.enabled", false);
-pref("browser.taskbar.lists.maxListItemCount", 7);
-pref("browser.taskbar.lists.tasks.enabled", true);
-pref("browser.taskbar.lists.refreshInSeconds", 120);
+  pref("browser.taskbar.previews.enable", false);
+  pref("browser.taskbar.previews.max", 20);
+  pref("browser.taskbar.previews.cachetime", 5);
+  pref("browser.taskbar.lists.enabled", true);
+  pref("browser.taskbar.lists.frequent.enabled", true);
+  pref("browser.taskbar.lists.recent.enabled", false);
+  pref("browser.taskbar.lists.maxListItemCount", 7);
+  pref("browser.taskbar.lists.tasks.enabled", true);
+  pref("browser.taskbar.lists.refreshInSeconds", 120);
 #endif
 
 
@@ -1292,7 +1285,7 @@ pref("browser.newtabpage.enabled", true);
 
 
 #ifndef RELEASE_OR_BETA
-pref("browser.newtabpage.activity-stream.debug", false);
+  pref("browser.newtabpage.activity-stream.debug", false);
 #endif
 
 pref("browser.library.activity-stream.enabled", true);
@@ -1312,9 +1305,9 @@ pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "{\"id\":
 
 
 #ifdef NIGHTLY_BUILD
-pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
+  pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
 #else
-pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", false);
+  pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", false);
 #endif
 
 pref("trailhead.firstrun.branches", "join-supercharge");
@@ -1335,7 +1328,7 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 
 
 #if defined(XP_WIN)
-pref("toolkit.winRegisterApplicationRestart", true);
+  pref("toolkit.winRegisterApplicationRestart", true);
 #endif
 
 
@@ -1390,23 +1383,23 @@ pref("dom.debug.propagate_gesture_events_through_content", false);
 
 
 #ifndef EARLY_BETA_OR_EARLIER
-pref("geo.wifi.uri", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%");
+  pref("geo.wifi.uri", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%");
 #else
-
-pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
+  
+  pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
 #endif
 
 #ifdef XP_MACOSX
-pref("geo.provider.use_corelocation", true);
+  pref("geo.provider.use_corelocation", true);
 #endif
 
 
 #ifdef XP_WIN
-pref("geo.provider.ms-windows-location", true);
+  pref("geo.provider.ms-windows-location", true);
 #endif
 
 #if defined(MOZ_WIDGET_GTK) && defined(MOZ_GPSD)
-pref("geo.provider.use_gpsd", true);
+  pref("geo.provider.use_gpsd", true);
 #endif
 
 
@@ -1454,9 +1447,9 @@ pref("identity.mobilepromo.ios", "https://www.mozilla.org/firefox/ios/?utm_sourc
 
 
 #ifdef MOZ_DEV_EDITION
-pref("identity.fxaccounts.migrateToDevEdition", true);
+  pref("identity.fxaccounts.migrateToDevEdition", true);
 #else
-pref("identity.fxaccounts.migrateToDevEdition", false);
+  pref("identity.fxaccounts.migrateToDevEdition", false);
 #endif
 
 
@@ -1467,7 +1460,7 @@ pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
 
 
 #ifdef MOZ_WIDGET_GTK
-pref("ui.key.menuAccessKeyFocuses", true);
+  pref("ui.key.menuAccessKeyFocuses", true);
 #endif
 
 
@@ -1483,8 +1476,8 @@ pref("media.gmp.trial-create.enabled", true);
 
 
 #ifdef MOZ_WIDEVINE_EME
-pref("media.gmp-widevinecdm.visible", true);
-pref("media.gmp-widevinecdm.enabled", true);
+  pref("media.gmp-widevinecdm.visible", true);
+  pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
 pref("media.gmp-gmpopenh264.visible", true);
@@ -1496,17 +1489,17 @@ pref("media.autoplay.enabled.user-gestures-needed", true);
 pref("media.autoplay.default", 1); 
 
 #ifdef NIGHTLY_BUILD
-
-pref("media.autoplay.block-webaudio", true);
+  
+  pref("media.autoplay.block-webaudio", true);
 #else
-pref("media.autoplay.block-webaudio", false);
+  pref("media.autoplay.block-webaudio", false);
 #endif
 
 #if defined(XP_WIN)
-#if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
-pref("media.videocontrols.picture-in-picture.enabled", true);
-pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
-#endif
+  #if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
+    pref("media.videocontrols.picture-in-picture.enabled", true);
+    pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
+  #endif
 #endif
 
 
@@ -1540,9 +1533,9 @@ pref("toolkit.telemetry.bhrPing.enabled", true);
 pref("toolkit.telemetry.hybridContent.enabled", true);
 
 #ifdef NIGHTLY_BUILD
-pref("toolkit.telemetry.ecosystemtelemetry.enabled", true);
+  pref("toolkit.telemetry.ecosystemtelemetry.enabled", true);
 #else
-pref("toolkit.telemetry.ecosystemtelemetry.enabled", false);
+  pref("toolkit.telemetry.ecosystemtelemetry.enabled", false);
 #endif
 
 
@@ -1557,8 +1550,8 @@ pref("media.gmp-provider.enabled", true);
 
 pref("network.cookie.cookieBehavior", 4 );
 #ifdef EARLY_BETA_OR_EARLIER
-
-pref("privacy.trackingprotection.fingerprinting.enabled", true);
+  
+  pref("privacy.trackingprotection.fingerprinting.enabled", true);
 #endif
 
 
@@ -1630,25 +1623,27 @@ pref("browser.contentblocking.report.cryptominer.url", "https://support.mozilla.
 
 
 #ifdef NIGHTLY_BUILD
-pref("browser.protections_panel.enabled", true);
-pref("browser.protections_panel.infoMessage.seen", false);
+  pref("browser.protections_panel.enabled", true);
+  pref("browser.protections_panel.infoMessage.seen", false);
 #endif
 
 
 pref("privacy.usercontext.about_newtab_segregation.enabled", true);
 
 #ifdef NIGHTLY_BUILD
-pref("privacy.userContext.enabled", true);
-pref("privacy.userContext.ui.enabled", true);
+  pref("privacy.userContext.enabled", true);
+  pref("privacy.userContext.ui.enabled", true);
 
-
-pref("privacy.userContext.longPressBehavior", 2);
+  
+  
+  pref("privacy.userContext.longPressBehavior", 2);
 #else
-pref("privacy.userContext.enabled", false);
-pref("privacy.userContext.ui.enabled", false);
+  pref("privacy.userContext.enabled", false);
+  pref("privacy.userContext.ui.enabled", false);
 
-
-pref("privacy.userContext.longPressBehavior", 0);
+  
+  
+  pref("privacy.userContext.longPressBehavior", 0);
 #endif
 pref("privacy.userContext.extension", "");
 
@@ -1658,9 +1653,9 @@ pref("browser.tabs.remote.desktopbehavior", true);
 
 
 #ifdef NIGHTLY_BUILD
-pref("media.peerconnection.mtransport_process", true);
+  pref("media.peerconnection.mtransport_process", true);
 #else
-pref("media.peerconnection.mtransport_process", false);
+  pref("media.peerconnection.mtransport_process", false);
 #endif
 
 
@@ -1668,9 +1663,9 @@ pref("media.peerconnection.mtransport_process", false);
 
 
 #ifdef NIGHTLY_BUILD
-pref("network.process.enabled", true);
+  pref("network.process.enabled", true);
 #else
-pref("network.process.enabled", false);
+  pref("network.process.enabled", false);
 #endif
 
 
@@ -1705,16 +1700,16 @@ pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
 pref("dom.ipc.processHangMonitor", true);
 
 #if defined(XP_WIN)
-
-pref("dom.ipc.processPriorityManager.enabled", true);
+  
+  pref("dom.ipc.processPriorityManager.enabled", true);
 #endif
 
 #ifdef DEBUG
-
-
-pref("dom.ipc.reportProcessHangs", false);
+  
+  
+  pref("dom.ipc.reportProcessHangs", false);
 #else
-pref("dom.ipc.reportProcessHangs", true);
+  pref("dom.ipc.reportProcessHangs", true);
 #endif
 
 
@@ -1768,9 +1763,9 @@ pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.overrideURI", "about:logins?filter=%DOMAIN%");
 pref("signon.management.page.breach-alerts.enabled", false);
 #ifdef NIGHTLY_BUILD
-
-pref("signon.showAutoCompleteOrigins", true);
-pref("signon.includeOtherSubdomainsInLookup", true);
+  
+  pref("signon.showAutoCompleteOrigins", true);
+  pref("signon.includeOtherSubdomainsInLookup", true);
 #endif
 pref("signon.management.page.faqURL", "https://lockwise.firefox.com/faq.html");
 pref("signon.management.page.feedbackURL",
@@ -1792,9 +1787,9 @@ pref("webchannel.allowObject.urlWhitelist", "https://content.cdn.mozilla.net htt
 
 
 #ifdef NIGHTLY_BUILD
-pref("browser.crashReports.unsubmittedCheck.enabled", true);
+  pref("browser.crashReports.unsubmittedCheck.enabled", true);
 #else
-pref("browser.crashReports.unsubmittedCheck.enabled", false);
+  pref("browser.crashReports.unsubmittedCheck.enabled", false);
 #endif
 
 
@@ -1809,9 +1804,9 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 #ifdef NIGHTLY_BUILD
-pref("extensions.formautofill.available", "on");
+  pref("extensions.formautofill.available", "on");
 #else
-pref("extensions.formautofill.available", "detect");
+  pref("extensions.formautofill.available", "detect");
 #endif
 pref("extensions.formautofill.creditCards.available", false);
 pref("extensions.formautofill.addresses.enabled", true);
@@ -1832,12 +1827,12 @@ pref("extensions.formautofill.section.enabled", true);
 pref("extensions.formautofill.loglevel", "Warn");
 
 #ifdef NIGHTLY_BUILD
-
-pref("extensions.formautofill.supportedCountries", "US,CA,DE");
-pref("extensions.formautofill.supportRTL", true);
+  
+  pref("extensions.formautofill.supportedCountries", "US,CA,DE");
+  pref("extensions.formautofill.supportRTL", true);
 #else
-pref("extensions.formautofill.supportedCountries", "US");
-pref("extensions.formautofill.supportRTL", false);
+  pref("extensions.formautofill.supportedCountries", "US");
+  pref("extensions.formautofill.supportRTL", false);
 #endif
 
 
@@ -1864,19 +1859,19 @@ pref("app.normandy.logging.level", 50);
 pref("app.normandy.run_interval_seconds", 21600); 
 pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
 #ifdef MOZ_DATA_REPORTING
-pref("app.shield.optoutstudies.enabled", true);
+  pref("app.shield.optoutstudies.enabled", true);
 #else
-pref("app.shield.optoutstudies.enabled", false);
+  pref("app.shield.optoutstudies.enabled", false);
 #endif
 
 
 #if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
-pref("intl.multilingual.enabled", true);
-pref("intl.multilingual.downloadEnabled", true);
+  pref("intl.multilingual.enabled", true);
+  pref("intl.multilingual.downloadEnabled", true);
 #else
-pref("intl.multilingual.enabled", false);
-
-pref("intl.multilingual.downloadEnabled", false);
+  pref("intl.multilingual.enabled", false);
+  
+  pref("intl.multilingual.downloadEnabled", false);
 #endif
 
 
@@ -1917,9 +1912,9 @@ pref("identity.fxaccounts.service.monitorLoginUrl", "https://monitor.firefox.com
 
 
 #ifdef RELEASE_OR_BETA
-pref("corroborator.enabled", false);
+  pref("corroborator.enabled", false);
 #else
-pref("corroborator.enabled", true);
+  pref("corroborator.enabled", true);
 #endif
 
 
