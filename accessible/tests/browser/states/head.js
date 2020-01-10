@@ -32,7 +32,7 @@ async function waitForIFrameUpdates() {
 
 
 async function spawnTestStates(browsingContext, elementId, expectedStates) {
-  function testStates(id, expected) {
+  function testStates(id, expected, unexpected) {
     const acc = SpecialPowers.Cc[
       "@mozilla.org/accessibilityService;1"
     ].getService(SpecialPowers.Ci.nsIAccessibilityService);
@@ -44,6 +44,7 @@ async function spawnTestStates(browsingContext, elementId, expectedStates) {
     } else {
       Assert.ok(state.value & expected);
     }
+    Assert.ok(!(state.value & unexpected));
   }
   await SpecialPowers.spawn(
     browsingContext,
