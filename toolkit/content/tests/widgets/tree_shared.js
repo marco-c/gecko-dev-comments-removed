@@ -451,9 +451,6 @@ function testtag_tree_TreeSelection(tree, testid, multiple) {
     []
   );
 
-  
-  
-
   is(selection.shiftSelectPivot, -1, testid + "shiftSelectPivot set to -1");
 
   
