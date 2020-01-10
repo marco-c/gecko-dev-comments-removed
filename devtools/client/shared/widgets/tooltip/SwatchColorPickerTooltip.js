@@ -65,7 +65,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
 
     const widget = new Spectrum(node, color);
     this.tooltip.panel.appendChild(container);
-    this.tooltip.setContentSize({ width: 215, height: 175 });
+    this.tooltip.setContentSize({ width: 215 });
 
     widget.inspector = this.inspector;
 
@@ -95,8 +95,15 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     }
 
     
+    
     this.spectrum.contrastEnabled =
       name === "color" && this.isContrastCompatible;
+    this.spectrum.textProps = this.spectrum.contrastEnabled
+      ? await this.inspector.pageStyle.getComputed(
+          this.inspector.selection.nodeFront,
+          { filterProperties: ["font-size", "font-weight"] }
+        )
+      : null;
 
     
     await super.show();
@@ -106,8 +113,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       this.currentSwatchColor = this.activeSwatch.nextSibling;
       this._originalColor = this.currentSwatchColor.textContent;
       const color = this.activeSwatch.style.backgroundColor;
-      this.spectrum.off("changed", this._onSpectrumColorChange);
 
+      this.spectrum.off("changed", this._onSpectrumColorChange);
       this.spectrum.rgb = this._colorToRgba(color);
       this.spectrum.on("changed", this._onSpectrumColorChange);
       this.spectrum.updateUI();
@@ -125,6 +132,12 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       eyeButton.disabled = true;
       eyeButton.title = L10N.getStr("eyedropper.disabled.title");
     }
+
+    
+    
+    
+    this.tooltip.updateContainerBounds(super.tooltipAnchor);
+
     this.emit("ready");
   }
 
