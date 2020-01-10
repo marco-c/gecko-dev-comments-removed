@@ -18,7 +18,7 @@
 #include <cmath>  
 
 #include "mozilla/StaticPrefListBegin.h"
-#include "mozilla/StaticPrefList.h"
+#include "mozilla/StaticPrefListAll.h"
 #include "mozilla/StaticPrefListEnd.h"
 
 #endif  
