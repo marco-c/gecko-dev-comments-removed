@@ -1162,8 +1162,8 @@ bool BaselineCodeGen<Handler>::emitDebugPrologue() {
 }
 
 template <>
-void BaselineCompilerCodeGen::emitPreInitEnvironmentChain(
-    Register nonFunctionEnv) {
+void BaselineCompilerCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
+  masm.store32(Imm32(0), frame.addressOfFlags());
   if (handler.function()) {
     masm.storePtr(ImmPtr(nullptr), frame.addressOfEnvironmentChain());
   } else {
@@ -1172,27 +1172,10 @@ void BaselineCompilerCodeGen::emitPreInitEnvironmentChain(
 }
 
 template <>
-void BaselineInterpreterCodeGen::emitPreInitEnvironmentChain(
-    Register nonFunctionEnv) {
-  Label notFunction, done;
-  masm.branchTestPtr(Assembler::NonZero, frame.addressOfCalleeToken(),
-                     Imm32(CalleeTokenScriptBit), &notFunction);
-  {
-    masm.storePtr(ImmPtr(nullptr), frame.addressOfEnvironmentChain());
-    masm.jump(&done);
-  }
-  masm.bind(&notFunction);
-  { masm.storePtr(nonFunctionEnv, frame.addressOfEnvironmentChain()); }
-  masm.bind(&done);
-}
+void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
+  MOZ_ASSERT(nonFunctionEnv == R1.scratchReg(),
+             "Don't clobber nonFunctionEnv below");
 
-template <>
-void BaselineCompilerCodeGen::emitInitFrameFields() {
-  masm.store32(Imm32(0), frame.addressOfFlags());
-}
-
-template <>
-void BaselineInterpreterCodeGen::emitInitFrameFields() {
   
   
   Register scratch1 =
@@ -1211,12 +1194,14 @@ void BaselineInterpreterCodeGen::emitInitFrameFields() {
     
     masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch1);
     masm.loadPtr(Address(scratch1, JSFunction::offsetOfScript()), scratch1);
+    masm.storePtr(ImmPtr(nullptr), frame.addressOfEnvironmentChain());
     masm.jump(&done);
   }
   masm.bind(&notFunction);
   {
     
     masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch1);
+    masm.storePtr(nonFunctionEnv, frame.addressOfEnvironmentChain());
   }
   masm.bind(&done);
   masm.storePtr(scratch1, frame.addressOfInterpreterScript());
@@ -6720,16 +6705,10 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
   
   
-
-  
-  emitInitFrameFields();
-
   
   
   
-  
-  
-  emitPreInitEnvironmentChain(R1.scratchReg());
+  emitInitFrameFields(R1.scratchReg());
 
   if (!emitIncExecutionProgressCounter(R2.scratchReg())) {
     return false;
