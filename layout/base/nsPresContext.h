@@ -204,8 +204,16 @@ class nsPresContext : public nsISupports,
   
 
 
+  nsIWidget* GetRootWidget() const;
 
-  nsIWidget* GetRootWidget();
+  
+
+
+
+  nsIWidget* GetTextInputHandlingWidget() const {
+    
+    return GetRootWidget();
+  }
 
   
 

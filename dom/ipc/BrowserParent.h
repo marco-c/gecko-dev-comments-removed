@@ -159,6 +159,12 @@ class BrowserParent final : public PBrowserParent,
   
   already_AddRefed<nsIWidget> GetDocWidget() const;
 
+  
+
+
+
+  already_AddRefed<nsIWidget> GetTextInputHandlingWidget() const;
+
   nsIXULBrowserWindow* GetXULBrowserWindow();
 
   static uint32_t GetMaxTouchPoints(Element* aElement);
