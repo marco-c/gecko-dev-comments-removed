@@ -89,6 +89,23 @@ class CanvasChild final : public PCanvasChild {
 
   void RecordEvent(const gfx::RecordedEvent& aEvent);
 
+  
+
+
+
+
+
+  already_AddRefed<gfx::SourceSurface> WrapSurface(
+      const RefPtr<gfx::SourceSurface>& aSurface);
+
+  
+
+
+
+
+
+
+
   already_AddRefed<gfx::DataSourceSurface> GetDataSurface(
       const gfx::SourceSurface* aSurface);
 
