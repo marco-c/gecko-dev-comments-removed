@@ -153,6 +153,28 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
+    id: "bug1582582",
+    platform: "desktop",
+    domain: "sling.com",
+    bug: "1582582",
+    config: {
+      matches: ["https://watch.sling.com/*", "https://www.sling.com/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36"
+        );
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
 
     id: "bug1480710",
     platform: "android",
