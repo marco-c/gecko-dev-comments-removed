@@ -162,6 +162,9 @@ class RaptorRunner(MozbuildObject):
             import mach_commands as browsertime
             
             
+            
+            
+            
             self.config.update({
                 'browsertime_node': browsertime.node_path(),
                 'browsertime_browsertimejs': browsertime.browsertime_path(),
