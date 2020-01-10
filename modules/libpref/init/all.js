@@ -299,7 +299,6 @@ pref("media.volume_scale", "1.0");
 pref("media.play-stand-alone", true);
 
 pref("media.hardware-video-decoding.enabled", true);
-pref("media.hardware-video-decoding.force-enabled", false);
 
 #ifdef MOZ_WMF
 pref("media.wmf.dxva.enabled", true);
@@ -315,7 +314,6 @@ pref("media.wmf.disable-d3d11-for-dlls", "igd11dxva64.dll: 20.19.15.4463, 20.19.
 pref("media.wmf.disable-d3d9-for-dlls", "igdumd64.dll: 8.15.10.2189, 8.15.10.2119, 8.15.10.2104, 8.15.10.2102, 8.771.1.0; atiumd64.dll: 7.14.10.833, 7.14.10.867, 7.14.10.885, 7.14.10.903, 7.14.10.911, 8.14.10.768, 9.14.10.1001, 9.14.10.1017, 9.14.10.1080, 9.14.10.1128, 9.14.10.1162, 9.14.10.1171, 9.14.10.1183, 9.14.10.1197, 9.14.10.945, 9.14.10.972, 9.14.10.984, 9.14.10.996");
 pref("media.wmf.deblacklisting-for-telemetry-in-gpu-process", true);
 pref("media.wmf.play-stand-alone", true);
-pref("media.wmf.use-sync-texture", true);
 #endif
 pref("media.gmp.decoder.aac", 0);
 pref("media.gmp.decoder.h264", 0);
@@ -565,12 +563,6 @@ pref("media.av1.use-dav1d", false);
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
 
 
-pref("layers.amd-switchable-gfx.enabled", true);
-
-
-pref("layers.async-pan-zoom.enabled", true);
-
-
 pref("layers.geometry.opengl.enabled", true);
 
 
@@ -615,10 +607,6 @@ pref("apz.fling_accel_base_mult", "1.0");
 pref("apz.fling_accel_interval_ms", 500);
 pref("apz.fling_accel_min_velocity", "1.5");
 pref("apz.fling_accel_supplemental_mult", "1.0");
-pref("apz.fling_curve_function_x1", "0.0");
-pref("apz.fling_curve_function_y1", "0.0");
-pref("apz.fling_curve_function_x2", "1.0");
-pref("apz.fling_curve_function_y2", "1.0");
 pref("apz.fling_curve_threshold_inches_per_ms", "-1.0");
 pref("apz.fling_friction", "0.002");
 pref("apz.fling_min_velocity_threshold", "0.5");
@@ -626,15 +614,12 @@ pref("apz.fling_stop_on_tap_threshold", "0.05");
 pref("apz.fling_stopped_threshold", "0.01");
 pref("apz.frame_delay.enabled", true);
 #if !defined(MOZ_WIDGET_ANDROID)
-pref("apz.keyboard.enabled", true);
 pref("apz.keyboard.passive-listeners", true);
 #else
-pref("apz.keyboard.enabled", false);
 pref("apz.keyboard.passive-listeners", false);
 #endif
 pref("apz.max_tap_time", 300);
 pref("apz.max_velocity_inches_per_ms", "-1.0");
-pref("apz.max_velocity_queue_size", 5);
 pref("apz.min_skate_speed", "1.0");
 pref("apz.minimap.enabled", false);
 pref("apz.one_touch_pinch.enabled", true);
@@ -652,7 +637,6 @@ pref("apz.pinch_lock.mode", 1);
 pref("apz.pinch_lock.scoll_lock_threshold", "0.03125");  
 pref("apz.pinch_lock.span_breakout_threshold", "0.03125");  
 pref("apz.pinch_lock.span_lock_threshold", "0.03125");  
-pref("apz.pinch_lock.buffer_max_age", 50); 
 pref("apz.popups.enabled", false);
 pref("apz.relative-update.enabled", true);
 
@@ -795,38 +779,11 @@ pref("gfx.content.azure.backends", "skia");
 #endif
 #endif
 
-pref("gfx.text.disable-aa", false);
-
-pref("gfx.work-around-driver-bugs", true);
-
 pref("gfx.draw-color-bars", false);
 
 pref("gfx.logging.painted-pixel-count.enabled", false);
-pref("gfx.logging.texture-usage.enabled", false);
-pref("gfx.logging.peak-texture-usage.enabled", false);
-pref("gfx.logging.slow-frames.enabled", false);
 
 pref("gfx.ycbcr.accurate-conversion", false);
-
-
-
-
-
-
-
-
-
-pref("gfx.webrender.all", false);
-#ifdef MOZ_ENABLE_WEBRENDER
-pref("gfx.webrender.enabled", true);
-#else
-pref("gfx.webrender.enabled", false);
-#endif
-
-
-
-
-pref("gfx.webrender.force-disabled", false);
 
 #ifdef XP_WIN
 pref("gfx.webrender.force-angle", true);
@@ -869,7 +826,6 @@ pref("gfx.webrender.debug.small-screen", false);
 pref("gfx.webrender.dl.dump-parent", false);
 pref("gfx.webrender.dl.dump-content", false);
 pref("gfx.webrender.picture-caching", true);
-pref("gfx.webrender.split-render-roots", false);
 #ifdef NIGHTLY_BUILD
 
 
@@ -1061,11 +1017,6 @@ pref("layout.framevisibility.enabled", true);
 
 pref("layout.framevisibility.numscrollportwidths", 0);
 pref("layout.framevisibility.numscrollportheights", 1);
-
-
-
-
-pref("slider.snapMultiplier", 0);
 
 
 pref("browser.fixup.alternate.enabled", true);
@@ -3736,9 +3687,6 @@ pref("ui.key.menuAccessKeyFocuses", true);
 pref("layout.word_select.eat_space_to_next_word", true);
 
 
-pref("slider.snapMultiplier", 6);
-
-
 
 pref("plugin.scan.plid.all", true);
 
@@ -4609,11 +4557,6 @@ pref("image.animated.decode-on-demand.batch-size", 6);
 
 
 
-
-pref("image.animated.decode-on-demand.recycle", true);
-
-
-
 pref("image.animated.resume-from-last-displayed", true);
 
 
@@ -4626,13 +4569,6 @@ pref("image.cache.factor2.threshold-surfaces", 4);
 
 
 pref("image.cache.max-rasterized-svg-threshold-kb", 204800);
-
-
-pref("image.cache.size", 5242880);
-
-
-
-pref("image.cache.timeweight", 500);
 
 
 pref("image.decode-immediately.enabled", false);
@@ -4664,10 +4600,6 @@ pref("image.mem.discardable", true);
 
 
 
-pref("image.mem.animated.discardable", true);
-
-
-
 #if defined(ANDROID)
 pref("image.mem.animated.use_heap", true);
 #else
@@ -4685,43 +4617,12 @@ pref("image.mem.shared", true);
 pref("image.mem.allow_locking_in_content_processes", true);
 
 
-pref("image.mem.decode_bytes_at_a_time", 16384);
-
-
-
-pref("image.mem.surfacecache.min_expiration_ms", 60000); 
-
-
-pref("image.mem.surfacecache.max_size_kb", 1048576); 
-
-
-
-
-
-pref("image.mem.surfacecache.size_factor", 4);
-
-
-
-
-
-
-
-pref("image.mem.surfacecache.discard_factor", 1);
-
-
 
 #if defined(ANDROID)
 pref("image.mem.volatile.min_threshold_kb", 100);
 #else
 pref("image.mem.volatile.min_threshold_kb", -1);
 #endif
-
-
-
-pref("image.multithreaded_decoding.limit", -1);
-
-
-pref("image.multithreaded_decoding.idle_timeout", 600000);
 
 
 pref("image.webp.enabled", true);
@@ -4831,34 +4732,13 @@ pref("network.tcp.tcp_fastopen_http_stalls_limit", 3);
 pref("network.tcp.tcp_fastopen_http_stalls_timeout", 20);
 
 
-pref("layers.acceleration.disabled", false);
-
 
 pref("layers.bench.enabled", false);
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-pref("layers.gpu-process.enabled", true);
 #ifdef NIGHTLY_BUILD
 pref("layers.gpu-process.max_restarts", 3);
 #endif
-#endif
-
-#if defined(XP_WIN)
-pref("layers.gpu-process.allow-software", true);
-#elif defined(MOZ_WIDGET_GTK)
-pref("layers.gpu-process.allow-software", false);
-#endif
-
-
-#ifdef ANDROID
-
-
-
-
-
-pref("layers.acceleration.force-enabled", true);
-#else
-pref("layers.acceleration.force-enabled", false);
 #endif
 
 pref("layers.acceleration.draw-fps", false);
@@ -4893,28 +4773,10 @@ pref("layers.max-active", -1);
 
 pref("layers.offmainthreadcomposition.frame-rate", -1);
 
-#if defined(XP_MACOSX) || defined (OS_OPENBSD)
-pref("layers.enable-tiles", true);
-#else
-pref("layers.enable-tiles", false);
-#endif
-#if defined(XP_WIN)
-pref("layers.enable-tiles-if-skia-pomtp", true);
-#else
-pref("layers.enable-tiles-if-skia-pomtp", false);
-#endif
 pref("layers.single-tile.enabled", true);
 pref("layers.low-precision-buffer", false);
 pref("layers.progressive-paint", false);
 pref("layers.tiles.retain-back-buffer", true);
-
-
-
-
-
-pref("layers.tiles.adjust", true);
-pref("layers.tile-width", 512);
-pref("layers.tile-height", 512);
 #ifdef MOZ_WIDGET_ANDROID
 pref("layers.tiles.edge-padding", true);
 #else
@@ -4927,9 +4789,6 @@ pref("layers.offmainthreadcomposition.async-animations", true);
 
 pref("layers.offmainthreadcomposition.log-animations", false);
 
-pref("layers.bufferrotation.enabled", true);
-
-pref("layers.componentalpha.enabled", true);
 pref("layers.draw-mask-debug", false);
 
 pref("gfx.content.always-paint", false);
@@ -4954,18 +4813,8 @@ pref("widget.window-transforms.disabled", false);
 
 #ifdef XP_WIN
 
-pref("gfx.direct2d.disabled", false);
-
-
-
-pref("gfx.direct2d.force-enabled", false);
-
-
 
 pref("gfx.direct2d.destroy-dt-on-paintthread", true);
-
-pref("gfx.direct3d11.enable-debug-layer", false);
-pref("gfx.direct3d11.break-on-error", false);
 
 
 
@@ -4974,8 +4823,6 @@ pref("gfx.direct3d11.use-double-buffering", true);
 #else
 pref("gfx.direct3d11.use-double-buffering", false);
 #endif
-
-pref("layers.prefer-opengl", false);
 #endif
 
 
@@ -5205,12 +5052,6 @@ pref("dom.vr.autoactivate.enabled", false);
 
 pref("dom.vr.controller_trigger_threshold", "0.1");
 
-#if defined(XP_WIN)
-pref("dom.vr.external.enabled", true);
-#else
-pref("dom.vr.external.enabled", false);
-#endif
-
 
 pref("dom.vr.external.notdetected.timeout", 60000);
 
@@ -5225,14 +5066,6 @@ pref("dom.vr.external.quit.timeout", 10000);
 
 
 pref("dom.vr.navigation.timeout", 5000);
-
-#if defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
-
-pref("dom.vr.oculus.enabled", true);
-#else
-
-pref("dom.vr.oculus.enabled", false);
-#endif
 
 
 
@@ -5257,20 +5090,6 @@ pref("dom.vr.oculus.quit.timeout", 10000);
 
 pref("dom.vr.oculus.invisible.enabled", true);
 
-pref("dom.vr.osvr.enabled", false);
-
-#if !defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
-
-pref("dom.vr.openvr.enabled", false);
-#elif defined(XP_WIN) || defined(XP_MACOSX)
-
-pref("dom.vr.openvr.enabled", true);
-#else
-
-pref("dom.vr.openvr.enabled", false);
-#endif
-pref("dom.vr.openvr.action_input", true);
-
 
 
 pref("dom.vr.controller.enumerate.interval", 1000);
@@ -5294,12 +5113,6 @@ pref("dom.vr.poseprediction.enabled", true);
 
 pref("dom.vr.require-gesture", true);
 
-#if defined(XP_WIN)
-pref("dom.vr.process.enabled", true);
-#else
-pref("dom.vr.process.enabled", false);
-#endif
-
 pref("dom.vr.puppet.enabled", false);
 
 
@@ -5313,8 +5126,6 @@ pref("gfx.vr.osvr.clientKitLibPath", "");
 
 
 pref("dom.vr.display.rafMaxDuration", 50);
-
-pref("dom.vr.service.enabled", true);
 
 
 
@@ -5755,8 +5566,6 @@ pref("toolkit.telemetry.overrideUpdateChannel", "nightly-asan");
 #endif
 
 #if defined(XP_WIN)
-pref("layers.mlgpu.enabled", true);
-
 
 
 pref("layers.mlgpu.enable-on-windows7", true);
@@ -5794,7 +5603,6 @@ pref("layers.omtp.enabled", true);
 #else
 pref("layers.omtp.enabled", false);
 #endif
-pref("layers.omtp.paint-workers", -1);
 pref("layers.omtp.release-capture-on-main-thread", false);
 pref("layers.omtp.dump-capture", false);
 
@@ -5830,4 +5638,3 @@ pref("fission.preserve_browsing_contexts", false);
 
 
 pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
-

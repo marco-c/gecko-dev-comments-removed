@@ -406,12 +406,18 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+#if !defined(MOZ_WIDGET_ANDROID)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "apz.keyboard.enabled",
   APZKeyboardEnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -536,7 +542,7 @@ VARCACHE_PREF(
   Once,
   "apz.pinch_lock.buffer_max_age",
   APZPinchLockBufferMaxAge,
-  int32_t, 50
+  int32_t, 50 
 )
 
 VARCACHE_PREF(
@@ -2223,12 +2229,19 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, 50
 )
 
+
+#if defined(XP_WIN)
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "dom.vr.external.enabled",
   VRExternalEnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -2258,12 +2271,21 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, 1000
 )
 
+
+#if defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
+
+#define PREF_VALUE true
+#else
+
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "dom.vr.oculus.enabled",
   VROculusEnabled,
-  bool, true
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -2286,12 +2308,24 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, 10000
 )
 
+
+#if !defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
+
+#define PREF_VALUE false
+#elif defined(XP_WIN) || defined(XP_MACOSX)
+
+#define PREF_VALUE true
+#else
+
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "dom.vr.openvr.enabled",
   VROpenVREnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Once,
@@ -2299,6 +2333,7 @@ VARCACHE_PREF(
   VROpenVRActionInputEnabled,
   bool, true
 )
+
 
 VARCACHE_PREF(
   Once,
@@ -2314,12 +2349,19 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
+
+#if defined(XP_WIN)
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "dom.vr.process.enabled",
   VRProcessEnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Once,
@@ -2356,6 +2398,8 @@ VARCACHE_PREF(
   VRRequireGesture,
   RelaxedAtomicBool, true
 )
+
+
 
 VARCACHE_PREF(
   Once,
@@ -3010,12 +3054,15 @@ VARCACHE_PREF(
 )
 
 
+
 VARCACHE_PREF(
   Once,
   "gfx.direct2d.disabled",
   Direct2DDisabled,
   bool, false
 )
+
+
 
 VARCACHE_PREF(
   Once,
@@ -3319,12 +3366,33 @@ VARCACHE_PREF(
   int32_t, 10
 )
 
+
+
+
+
+
+
+
+
 VARCACHE_PREF(
   Once,
   "gfx.webrender.all",
   WebRenderAll,
   bool, false
 )
+
+#ifdef MOZ_ENABLE_WEBRENDER
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  Once,
+  "gfx.webrender.enabled",
+  WebRenderEnabledDoNotUseDirectly,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -3354,12 +3422,8 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-VARCACHE_PREF(
-  Once,
-  "gfx.webrender.enabled",
-  WebRenderEnabledDoNotUseDirectly,
-  bool, false
-)
+
+
 
 VARCACHE_PREF(
   Once,
@@ -3522,11 +3586,14 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, 6
 )
 
+
+
+
 VARCACHE_PREF(
   Once,
   "image.animated.decode-on-demand.recycle",
   ImageAnimatedDecodeOnDemandRecycle,
-  bool, false
+  bool, true
 )
 
 VARCACHE_PREF(
@@ -3550,12 +3617,15 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, 90*1024
 )
 
+
 VARCACHE_PREF(
   Once,
   "image.cache.size",
   ImageCacheSize,
   int32_t, 5*1024*1024
 )
+
+
 
 VARCACHE_PREF(
   Once,
@@ -3592,11 +3662,12 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
+
 VARCACHE_PREF(
   Once,
   "image.mem.decode_bytes_at_a_time",
   ImageMemDecodeBytesAtATime,
-  uint32_t, 200000
+  uint32_t, 16384
 )
 
 VARCACHE_PREF(
@@ -3606,11 +3677,13 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+
+
 VARCACHE_PREF(
   Once,
   "image.mem.animated.discardable",
   ImageMemAnimatedDiscardable,
-  bool, false
+  bool, true
 )
 
 VARCACHE_PREF(
@@ -3634,6 +3707,12 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
+
+
+
+
+
+
 VARCACHE_PREF(
   Once,
   "image.mem.surfacecache.discard_factor",
@@ -3641,12 +3720,15 @@ VARCACHE_PREF(
   uint32_t, 1
 )
 
+
 VARCACHE_PREF(
   Once,
   "image.mem.surfacecache.max_size_kb",
   ImageMemSurfaceCacheMaxSizeKB,
-  uint32_t, 100 * 1024
+  uint32_t, 1024 * 1024
 )
+
+
 
 VARCACHE_PREF(
   Once,
@@ -3655,11 +3737,15 @@ VARCACHE_PREF(
   uint32_t, 60*1000
 )
 
+
+
+
+
 VARCACHE_PREF(
   Once,
   "image.mem.surfacecache.size_factor",
   ImageMemSurfaceCacheSizeFactor,
-  uint32_t, 64
+  uint32_t, 4
 )
 
 VARCACHE_PREF(
@@ -3669,12 +3755,15 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, -1
 )
 
+
 VARCACHE_PREF(
   Once,
   "image.multithreaded_decoding.idle_timeout",
   ImageMTDecodingIdleTimeout,
-  int32_t, -1
+  int32_t, 600000
 )
+
+
 
 VARCACHE_PREF(
   Once,
@@ -3793,6 +3882,7 @@ VARCACHE_PREF(
 
 
 
+
 VARCACHE_PREF(
   Once,
   "layers.acceleration.disabled",
@@ -3822,12 +3912,24 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+
+#ifdef ANDROID
+
+
+
+
+
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.acceleration.force-enabled",
   LayersAccelerationForceEnabledDoNotUseDirectly,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -3836,12 +3938,14 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+
 VARCACHE_PREF(
   Once,
   "layers.amd-switchable-gfx.enabled",
   LayersAMDSwitchableGfxEnabled,
-  bool, false
+  bool, true
 )
+
 
 VARCACHE_PREF(
   Once,
@@ -3993,19 +4097,31 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+#if defined(XP_MACOSX) || defined (OS_OPENBSD)
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.enable-tiles",
   LayersTilesEnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
+#if defined(XP_WIN)
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.enable-tiles-if-skia-pomtp",
   LayersTilesEnabledIfSkiaPOMTP,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -4056,19 +4172,33 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+#if defined(XP_WIN)
+#define PREF_VALUE true
+#elif defined(MOZ_WIDGET_GTK)
+#define PREF_VALUE false
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.gpu-process.allow-software",
   GPUProcessAllowSoftware,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.gpu-process.enabled",
   GPUProcessEnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Once,
@@ -4134,12 +4264,18 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, -1
 )
 
+#if defined(XP_WIN)
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.mlgpu.enabled",
   AdvancedLayersEnabledDoNotUseDirectly,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Once,
@@ -4183,12 +4319,20 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
+#if defined(XP_WIN)
+
+
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.mlgpu.enable-on-windows7",
   AdvancedLayersEnableOnWindows7,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Once,
@@ -4229,7 +4373,7 @@ VARCACHE_PREF(
   Once,
   "layers.omtp.paint-workers",
   LayersOMTPPaintWorkers,
-  int32_t, 1
+  int32_t, -1
 )
 
 VARCACHE_PREF(
@@ -4246,12 +4390,14 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, (uint32_t)0
 )
 
+#ifdef XP_WIN
 VARCACHE_PREF(
   Once,
   "layers.prefer-opengl",
   LayersPreferOpenGL,
   bool, false
 )
+#endif
 
 VARCACHE_PREF(
   Live,
@@ -4282,14 +4428,14 @@ VARCACHE_PREF(
   Once,
   "layers.tile-width",
   LayersTileWidth,
-  int32_t, 256
+  int32_t, 512
 )
 
 VARCACHE_PREF(
   Once,
   "layers.tile-height",
   LayersTileHeight,
-  int32_t, 256
+  int32_t, 512
 )
 
 VARCACHE_PREF(
@@ -4320,6 +4466,11 @@ VARCACHE_PREF(
   uint32_t, (uint32_t)5000
 )
 
+
+
+
+
+
 VARCACHE_PREF(
   Once,
   "layers.tiles.adjust",
@@ -4327,12 +4478,18 @@ VARCACHE_PREF(
   bool, true
 )
 
+#ifdef MOZ_WIDGET_ANDROID
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "layers.tiles.edge-padding",
   TileEdgePaddingEnabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -5684,7 +5841,6 @@ VARCACHE_PREF(
   MediaWmfVp9Enabled,
   bool, true
 )
-
 #endif 
 
 VARCACHE_PREF(
@@ -6894,11 +7050,14 @@ VARCACHE_PREF(
 
 
 
+
+
+
 VARCACHE_PREF(
   Once,
   "slider.snapMultiplier",
   SliderSnapMultiplier,
-  int32_t, 0
+  int32_t, 6
 )
 
 
