@@ -1247,16 +1247,16 @@ nsresult nsPlainTextSerializer::DoAddLeaf(nsAtom* aTag) {
 
 
 
-void nsPlainTextSerializer::EnsureVerticalSpace(int32_t noOfRows) {
+void nsPlainTextSerializer::EnsureVerticalSpace(const int32_t aNumberOfRows) {
   
   
   
-  if (noOfRows >= 0 && !mCurrentLine.mIndentation.mHeader.IsEmpty()) {
+  if (aNumberOfRows >= 0 && !mCurrentLine.mIndentation.mHeader.IsEmpty()) {
     EndLine(false);
     mInWhitespace = true;
   }
 
-  while (mEmptyLines < noOfRows) {
+  while (mEmptyLines < aNumberOfRows) {
     EndLine(false);
     mInWhitespace = true;
   }
