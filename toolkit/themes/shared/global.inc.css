@@ -19,6 +19,12 @@ html|textarea {
 
 
 
+.textbox-contextmenu:-moz-locale-dir(rtl) {
+  direction: rtl;
+}
+
+
+
 .close-icon {
   -moz-appearance: none;
   -moz-context-properties: fill, fill-opacity;
