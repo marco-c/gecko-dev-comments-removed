@@ -7,11 +7,6 @@
 #define _mozilla_dom_ClientManagerService_h
 
 #include "ClientOpPromise.h"
-#include "mozilla/HashTable.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/Variant.h"
-#include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsDataHashtable.h"
 
 namespace mozilla {
@@ -27,14 +22,29 @@ namespace dom {
 class ClientManagerParent;
 class ClientSourceParent;
 class ClientHandleParent;
-
-typedef MozPromise<ClientSourceParent*, nsresult,  false>
-    SourcePromise;
+class ContentParent;
 
 
 
 
 class ClientManagerService final {
+  
+  
+  nsDataHashtable<nsIDHashKey, ClientSourceParent*> mSourceTable;
+
+  
+  
+  nsDataHashtable<nsIDHashKey, nsTArray<ClientHandleParent*>> mPendingHandles;
+
+  nsTArray<ClientManagerParent*> mManagerList;
+
+  bool mShutdown;
+
+  ClientManagerService();
+  ~ClientManagerService();
+
+  void Shutdown();
+
  public:
   static already_AddRefed<ClientManagerService> GetOrCreateInstance();
 
@@ -45,18 +55,14 @@ class ClientManagerService final {
 
   bool RemoveSource(ClientSourceParent* aSource);
 
-  bool ExpectFutureSource(const IPCClientInfo& aClientInfo);
+  ClientSourceParent* FindSource(
+      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
-  bool ForgetFutureSource(const IPCClientInfo& aClientInfo);
-
   
   
   
-  
-  
-  
-  RefPtr<SourcePromise> FindSource(
-      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo) const;
+  void WaitForSource(ClientHandleParent* aHandle, const nsID& aID);
+  void StopWaitingForSource(ClientHandleParent* aHandle, const nsID& aID);
 
   void AddManager(ClientManagerParent* aManager);
 
@@ -80,71 +86,6 @@ class ClientManagerService final {
                  const nsID& aClientId);
 
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::ClientManagerService)
-
- private:
-  ClientManagerService();
-  ~ClientManagerService();
-
-  void Shutdown();
-
-  
-  ClientSourceParent* FindExistingSource(
-      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo) const;
-
-  
-  
-  class FutureClientSourceParent {
-   public:
-    explicit FutureClientSourceParent(const IPCClientInfo& aClientInfo);
-
-    const mozilla::ipc::PrincipalInfo& PrincipalInfo() const {
-      return mPrincipalInfo;
-    }
-
-    already_AddRefed<SourcePromise> Promise() {
-      return mPromiseHolder.Ensure(__func__);
-    }
-
-    void ResolvePromiseIfExists(ClientSourceParent* aSource) {
-      mPromiseHolder.ResolveIfExists(aSource, __func__);
-    }
-
-    void RejectPromiseIfExists(nsresult aRv) {
-      mPromiseHolder.RejectIfExists(aRv, __func__);
-    }
-
-   private:
-    const mozilla::ipc::PrincipalInfo mPrincipalInfo;
-    MozPromiseHolder<SourcePromise> mPromiseHolder;
-  };
-
-  using SourceTableEntry =
-      Variant<FutureClientSourceParent, ClientSourceParent*>;
-
-  
-  friend inline ClientSourceParent* MaybeUnwrapAsExistingSource(
-      const SourceTableEntry& aEntry);
-
-  struct nsIDHasher {
-    using Key = nsID;
-    using Lookup = Key;
-
-    static HashNumber hash(const Lookup& aLookup) {
-      return HashBytes(&aLookup, sizeof(Lookup));
-    }
-
-    static bool match(const Key& aKey, const Lookup& aLookup) {
-      return aKey.Equals(aLookup);
-    }
-  };
-
-  
-  
-  HashMap<nsID, SourceTableEntry, nsIDHasher> mSourceTable;
-
-  nsTArray<ClientManagerParent*> mManagerList;
-
-  bool mShutdown;
 };
 
 }  
