@@ -150,6 +150,12 @@ class NativeLayerCA : public NativeLayer {
   void SetSurfaceIsFlipped(bool aIsFlipped);
   bool SurfaceIsFlipped();
 
+  
+  
+  
+  void SetOpaqueRegion(const gfx::IntRegion& aRegion) override;
+  gfx::IntRegion OpaqueRegion() override;
+
  protected:
   friend class NativeLayerRootCA;
 
@@ -157,7 +163,7 @@ class NativeLayerCA : public NativeLayer {
   ~NativeLayerCA() override;
 
   
-  CALayer* UnderlyingCALayer() { return mCALayer; }
+  CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
   void ApplyChanges();
   void SetBackingScale(float aBackingScale);
 
@@ -169,6 +175,8 @@ class NativeLayerCA : public NativeLayer {
 
   std::vector<SurfaceWithInvalidRegion> RemoveExcessUnusedSurfaces(
       const MutexAutoLock&);
+  void PlaceContentLayers(const MutexAutoLock&, const gfx::IntRegion& aRegion,
+                          bool aOpaque, std::deque<CALayer*>* aLayersToRecycle);
 
   
   Mutex mMutex;
@@ -240,14 +248,18 @@ class NativeLayerCA : public NativeLayer {
   
   std::deque<SurfaceWithInvalidRegion> mSurfaces;
 
-  gfx::IntRect mRect;
+  gfx::IntPoint mPosition;
+  gfx::IntSize mSize;
+  gfx::IntRegion mOpaqueRegion;  
 
   
-  CALayer* mCALayer = nullptr;  
+  CALayer* mWrappingCALayer = nullptr;    
+  std::deque<CALayer*> mContentCALayers;  
 
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
-  bool mMutated = false;
+  bool mMutatedPosition = false;
+  bool mMutatedGeometry = false;
 };
 
 }  
