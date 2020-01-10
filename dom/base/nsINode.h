@@ -1074,6 +1074,28 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  void Adopt(nsNodeInfoManager* aNewNodeInfoManager,
+             JS::Handle<JSObject*> aReparentScope,
+             nsCOMArray<nsINode>& aNodesWithProperties,
+             mozilla::ErrorResult& aError);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
