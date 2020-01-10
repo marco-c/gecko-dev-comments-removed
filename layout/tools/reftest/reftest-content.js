@@ -1029,6 +1029,24 @@ function OnDocumentLoad(event)
           content.document ? content.document.documentElement : null;
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        var paintWaiterFinished = false;
+
+        gExplicitPendingPaintsCompleteHook = function () {
+            LogInfo("PaintWaiters finished while we were sending initial snapshop in AfterOnLoadScripts");
+            paintWaiterFinished = true;
+        }
+
+        
         await FlushRendering(FlushMode.ALL);
 
         
@@ -1037,7 +1055,9 @@ function OnDocumentLoad(event)
         
         let painted = await SendInitCanvasWithSnapshot(ourURL);
 
-        if (shouldWaitForExplicitPaintWaiters() ||
+        gExplicitPendingPaintsCompleteHook = null;
+
+        if (paintWaiterFinished || shouldWaitForExplicitPaintWaiters() ||
             (!inPrintMode && doPrintMode(contentRootElement)) ||
             
             
