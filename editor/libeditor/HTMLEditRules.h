@@ -809,22 +809,10 @@ class HTMLEditRules : public TextEditRules {
 
   void PromoteRange(nsRange& aRange, EditSubAction aEditSubAction) const;
 
-  
-
-
-
-
-
-
-  enum class TouchContent { no, yes };
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult GetNodesForOperation(
-      nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
-      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      EditSubAction aEditSubAction, TouchContent aTouchContent) const;
-
   void GetChildNodesForOperation(
       nsINode& aNode, nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
+
+  enum class TouchContent { no, yes };
 
   
 

@@ -1231,6 +1231,15 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  SplitParentInlineElementsAtRangeEdges(
+      nsTArray<RefPtr<nsRange>>& aArrayOfRanges);
+
+  
+
+
+
+
 
 
 
@@ -1247,6 +1256,16 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SplitElementsAtEveryBRElement(
       nsIContent& aMostAncestorToBeSplit,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MaybeSplitElementsAtEveryBRElement(
+      nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+      EditSubAction aEditSubAction);
 
   
 
@@ -1271,6 +1290,35 @@ class HTMLEditor final : public TextEditor,
       CollectListChildren aCollectListChildren = CollectListChildren::Yes,
       CollectTableChildren aCollectTableChildren =
           CollectTableChildren::Yes) const;
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  SplitInlinesAndCollectEditTargetNodes(
+      nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
+      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
+      EditSubAction aEditSubAction);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  SplitTextNodesAtRangeEnd(nsTArray<RefPtr<nsRange>>& aArrayOfRanges);
+
+  
+
+
+
+
+  nsresult CollectEditTargetNodes(
+      nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
+      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
+      EditSubAction aEditSubAction) const;
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

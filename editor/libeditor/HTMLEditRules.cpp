@@ -968,9 +968,8 @@ nsresult HTMLEditRules::GetAlignment(bool* aMixed,
 
     
     nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-    nsresult rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes,
-                                       EditSubAction::eSetOrClearAlignment,
-                                       TouchContent::no);
+    nsresult rv = HTMLEditorRef().CollectEditTargetNodes(
+        arrayOfRanges, arrayOfNodes, EditSubAction::eSetOrClearAlignment);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4994,8 +4993,9 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  nsresult rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes,
-                                     EditSubAction::eIndent, TouchContent::yes);
+  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                    .SplitInlinesAndCollectEditTargetNodes(
+                        arrayOfRanges, arrayOfNodes, EditSubAction::eIndent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -7168,79 +7168,109 @@ class UniqueFunctor final : public BoolDomIterFunctor {
   nsTArray<OwningNonNull<nsINode>>& mArray;
 };
 
-nsresult HTMLEditRules::GetNodesForOperation(
+nsresult HTMLEditor::SplitInlinesAndCollectEditTargetNodes(
     nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
     nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-    EditSubAction aEditSubAction, TouchContent aTouchContent) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
+    EditSubAction aEditSubAction) {
+  nsresult rv = SplitTextNodesAtRangeEnd(aArrayOfRanges);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SplitTextNodesAtRangeEnd() failed");
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = SplitParentInlineElementsAtRangeEdges(aArrayOfRanges);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "SplitParentInlineElementsAtRangeEdges() failed");
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = CollectEditTargetNodes(aArrayOfRanges, aOutArrayOfNodes, aEditSubAction);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "CollectEditTargetNodes() failed");
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = MaybeSplitElementsAtEveryBRElement(aOutArrayOfNodes, aEditSubAction);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "MaybeSplitElementsAtEveryBRElement() failed");
+  return rv;
+}
 
-  if (aTouchContent == TouchContent::yes) {
-    
-    
-    
-    for (RefPtr<nsRange>& range : aArrayOfRanges) {
-      EditorDOMPoint atEnd(range->EndRef());
-      if (NS_WARN_IF(!atEnd.IsSet()) || !atEnd.IsInTextNode()) {
-        continue;
+nsresult HTMLEditor::SplitTextNodesAtRangeEnd(
+    nsTArray<RefPtr<nsRange>>& aArrayOfRanges) {
+  
+  
+  
+  for (RefPtr<nsRange>& range : aArrayOfRanges) {
+    EditorDOMPoint atEnd(range->EndRef());
+    if (NS_WARN_IF(!atEnd.IsSet()) || !atEnd.IsInTextNode()) {
+      continue;
+    }
+
+    if (!atEnd.IsStartOfContainer() && !atEnd.IsEndOfContainer()) {
+      
+      ErrorResult error;
+      nsCOMPtr<nsIContent> newLeftNode = SplitNodeWithTransaction(atEnd, error);
+      if (NS_WARN_IF(Destroyed())) {
+        error.SuppressException();
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
       }
 
-      if (!atEnd.IsStartOfContainer() && !atEnd.IsEndOfContainer()) {
-        
-        ErrorResult error;
-        nsCOMPtr<nsIContent> newLeftNode =
-            MOZ_KnownLive(HTMLEditorRef())
-                .SplitNodeWithTransaction(atEnd, error);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          error.SuppressException();
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-
-        
-        
-        EditorRawDOMPoint atContainerOfSplitNode(atEnd.GetContainer());
-        MOZ_ASSERT(!range->IsInSelection());
-        range->SetEnd(atContainerOfSplitNode, error);
-        if (NS_WARN_IF(error.Failed())) {
-          error.SuppressException();
-        }
+      
+      
+      EditorRawDOMPoint atContainerOfSplitNode(atEnd.GetContainer());
+      MOZ_ASSERT(!range->IsInSelection());
+      range->SetEnd(atContainerOfSplitNode, error);
+      if (NS_WARN_IF(error.Failed())) {
+        error.SuppressException();
       }
     }
   }
+  return NS_OK;
+}
+
+nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
+    nsTArray<RefPtr<nsRange>>& aArrayOfRanges) {
+  nsTArray<OwningNonNull<RangeItem>> rangeItemArray;
+  rangeItemArray.AppendElements(aArrayOfRanges.Length());
 
   
+  for (auto& rangeItem : rangeItemArray) {
+    rangeItem = new RangeItem();
+    rangeItem->StoreRange(aArrayOfRanges[0]);
+    RangeUpdaterRef().RegisterRangeItem(rangeItem);
+    aArrayOfRanges.RemoveElementAt(0);
+  }
   
-  
-  if (aTouchContent == TouchContent::yes) {
-    nsTArray<OwningNonNull<RangeItem>> rangeItemArray;
-    rangeItemArray.AppendElements(aArrayOfRanges.Length());
-
-    
-    for (auto& rangeItem : rangeItemArray) {
-      rangeItem = new RangeItem();
-      rangeItem->StoreRange(aArrayOfRanges[0]);
-      HTMLEditorRef().RangeUpdaterRef().RegisterRangeItem(rangeItem);
-      aArrayOfRanges.RemoveElementAt(0);
-    }
-    
-    for (auto& item : Reversed(rangeItemArray)) {
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .SplitParentInlineElementsAtRangeEdges(*item);
-      if (NS_FAILED(rv)) {
-        break;
-      }
-    }
-    
-    for (auto& item : rangeItemArray) {
-      HTMLEditorRef().RangeUpdaterRef().DropRangeItem(item);
-      RefPtr<nsRange> range = item->GetRange();
-      if (range) {
-        aArrayOfRanges.AppendElement(range);
-      }
+  nsresult rv = NS_OK;
+  for (auto& item : Reversed(rangeItemArray)) {
+    rv = SplitParentInlineElementsAtRangeEdges(*item);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      break;
     }
   }
+  
+  for (auto& item : rangeItemArray) {
+    RangeUpdaterRef().DropRangeItem(item);
+    RefPtr<nsRange> range = item->GetRange();
+    if (range) {
+      aArrayOfRanges.AppendElement(range);
+    }
+  }
+
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  return NS_OK;
+}
+
+nsresult HTMLEditor::CollectEditTargetNodes(
+    nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
+    nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
+    EditSubAction aEditSubAction) const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   
   for (auto& range : aArrayOfRanges) {
     DOMSubtreeIterator iter;
@@ -7260,83 +7290,91 @@ nsresult HTMLEditRules::GetNodesForOperation(
     }
   }
 
-  
-  
-  if (aEditSubAction == EditSubAction::eCreateOrRemoveBlock) {
-    for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
-      OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
-      if (HTMLEditUtils::IsListItem(node)) {
-        aOutArrayOfNodes.RemoveElementAt(i);
-        HTMLEditorRef().CollectChildren(*node, aOutArrayOfNodes, i);
-      }
-    }
-    
-    for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
-      if (Text* text = aOutArrayOfNodes[i]->GetAsText()) {
-        
-        if (!HTMLEditorRef().IsVisibleTextNode(*text)) {
+  switch (aEditSubAction) {
+    case EditSubAction::eCreateOrRemoveBlock:
+      
+      
+      for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
+        OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
+        if (HTMLEditUtils::IsListItem(node)) {
           aOutArrayOfNodes.RemoveElementAt(i);
+          CollectChildren(*node, aOutArrayOfNodes, i);
         }
       }
-    }
-  }
-  
-  
-  else if (aEditSubAction == EditSubAction::eOutdent ||
-           aEditSubAction == EditSubAction::eIndent ||
-           aEditSubAction == EditSubAction::eSetPositionToAbsolute) {
-    for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
-      OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
-      if (HTMLEditUtils::IsTableElementButNotTable(node)) {
-        aOutArrayOfNodes.RemoveElementAt(i);
-        HTMLEditorRef().CollectChildren(*node, aOutArrayOfNodes, i);
+      
+      for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
+        if (Text* text = aOutArrayOfNodes[i]->GetAsText()) {
+          
+          if (!IsVisibleTextNode(*text)) {
+            aOutArrayOfNodes.RemoveElementAt(i);
+          }
+        }
       }
-    }
+      break;
+    case EditSubAction::eOutdent:
+    case EditSubAction::eIndent:
+    case EditSubAction::eSetPositionToAbsolute:
+      
+      
+      for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
+        OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
+        if (HTMLEditUtils::IsTableElementButNotTable(node)) {
+          aOutArrayOfNodes.RemoveElementAt(i);
+          CollectChildren(*node, aOutArrayOfNodes, i);
+        }
+      }
+      break;
+    default:
+      break;
   }
+
   
-  if (aEditSubAction == EditSubAction::eOutdent &&
-      !HTMLEditorRef().IsCSSEnabled()) {
+  if (aEditSubAction == EditSubAction::eOutdent && !IsCSSEnabled()) {
     for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
       OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
       if (node->IsHTMLElement(nsGkAtoms::div)) {
         aOutArrayOfNodes.RemoveElementAt(i);
-        HTMLEditorRef().CollectChildren(*node, aOutArrayOfNodes, i,
-                                        HTMLEditor::CollectListChildren::No,
-                                        HTMLEditor::CollectTableChildren::No);
+        CollectChildren(*node, aOutArrayOfNodes, i, CollectListChildren::No,
+                        CollectTableChildren::No);
       }
     }
   }
 
-  
-  
-  if (aEditSubAction == EditSubAction::eCreateOrRemoveBlock ||
-      aEditSubAction == EditSubAction::eCreateOrChangeList ||
-      aEditSubAction == EditSubAction::eSetOrClearAlignment ||
-      aEditSubAction == EditSubAction::eSetPositionToAbsolute ||
-      aEditSubAction == EditSubAction::eIndent ||
-      aEditSubAction == EditSubAction::eOutdent) {
-    for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
-      OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
-      
-      if (aTouchContent == TouchContent::yes &&
-          HTMLEditor::NodeIsInlineStatic(node) &&
-          HTMLEditorRef().IsContainer(node) && !EditorBase::IsTextNode(node)) {
-        nsTArray<OwningNonNull<nsINode>> arrayOfInlines;
-        nsresult rv =
-            MOZ_KnownLive(HTMLEditorRef())
-                .SplitElementsAtEveryBRElement(
-                    MOZ_KnownLive(*node->AsContent()), arrayOfInlines);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-
-        
-        aOutArrayOfNodes.RemoveElementAt(i);
-        aOutArrayOfNodes.InsertElementsAt(i, arrayOfInlines);
-      }
-    }
-  }
   return NS_OK;
+}
+
+nsresult HTMLEditor::MaybeSplitElementsAtEveryBRElement(
+    nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+    EditSubAction aEditSubAction) {
+  
+  
+  switch (aEditSubAction) {
+    case EditSubAction::eCreateOrRemoveBlock:
+    case EditSubAction::eCreateOrChangeList:
+    case EditSubAction::eSetOrClearAlignment:
+    case EditSubAction::eSetPositionToAbsolute:
+    case EditSubAction::eIndent:
+    case EditSubAction::eOutdent:
+      for (int32_t i = aArrayOfNodes.Length() - 1; i >= 0; i--) {
+        OwningNonNull<nsINode> node = aArrayOfNodes[i];
+        if (HTMLEditor::NodeIsInlineStatic(node) && IsContainer(node) &&
+            !EditorBase::IsTextNode(node)) {
+          nsTArray<OwningNonNull<nsINode>> arrayOfInlines;
+          nsresult rv = SplitElementsAtEveryBRElement(
+              MOZ_KnownLive(*node->AsContent()), arrayOfInlines);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
+
+          
+          aArrayOfNodes.RemoveElementAt(i);
+          aArrayOfNodes.InsertElementsAt(i, arrayOfInlines);
+        }
+      }
+      return NS_OK;
+    default:
+      return NS_OK;
+  }
 }
 
 void HTMLEditRules::GetChildNodesForOperation(
@@ -7684,14 +7722,19 @@ nsresult HTMLEditRules::GetNodesFromPoint(
   
   arrayOfRanges.AppendElement(range);
 
-  
-  nsresult rv = GetNodesForOperation(arrayOfRanges, outArrayOfNodes,
-                                     aEditSubAction, aTouchContent);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (aTouchContent == TouchContent::yes) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .SplitInlinesAndCollectEditTargetNodes(
+                          arrayOfRanges, outArrayOfNodes, aEditSubAction);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "SplitInlinesAndCollectEditTargetNodes() failed");
     return rv;
   }
 
-  return NS_OK;
+  nsresult rv = HTMLEditorRef().CollectEditTargetNodes(
+      arrayOfRanges, outArrayOfNodes, aEditSubAction);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "CollectEditTargetNodes() failed");
+  return rv;
 }
 
 nsresult HTMLEditRules::GetNodesFromSelection(
@@ -7704,14 +7747,19 @@ nsresult HTMLEditRules::GetNodesFromSelection(
   nsTArray<RefPtr<nsRange>> arrayOfRanges;
   GetPromotedRanges(arrayOfRanges, aEditSubAction);
 
-  
-  nsresult rv = GetNodesForOperation(arrayOfRanges, outArrayOfNodes,
-                                     aEditSubAction, aTouchContent);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (aTouchContent == TouchContent::yes) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .SplitInlinesAndCollectEditTargetNodes(
+                          arrayOfRanges, outArrayOfNodes, aEditSubAction);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "SplitInlinesAndCollectEditTargetNodes() failed");
     return rv;
   }
 
-  return NS_OK;
+  nsresult rv = HTMLEditorRef().CollectEditTargetNodes(
+      arrayOfRanges, outArrayOfNodes, aEditSubAction);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "CollectEditTargetNodes() failed");
+  return rv;
 }
 
 void HTMLEditRules::MakeTransitionList(
@@ -10670,9 +10718,10 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  nsresult rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes,
-                                     EditSubAction::eSetPositionToAbsolute,
-                                     TouchContent::yes);
+  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                    .SplitInlinesAndCollectEditTargetNodes(
+                        arrayOfRanges, arrayOfNodes,
+                        EditSubAction::eSetPositionToAbsolute);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
