@@ -79,6 +79,15 @@ FETCH_SCHEMA = Schema({
 
             
             
+            
+            Optional('strip-components'): int,
+
+            
+            
+            Optional('add-prefix'): basestring,
+
+            
+            
         },
         {
             'type': 'chromium-fetch',
@@ -171,11 +180,23 @@ def create_fetch_url_task(config, job):
     if not artifact_name:
         artifact_name = fetch['url'].split('/')[-1]
 
-    args = [
+    command = [
         '/builds/worker/bin/fetch-content', 'static-url',
+    ]
+
+    
+    args = [
         '--sha256', fetch['sha256'],
         '--size', '%d' % fetch['size'],
     ]
+
+    if fetch.get('strip-components'):
+        args.extend(['--strip-components', '%d' % fetch['strip-components']])
+
+    if fetch.get('add-prefix'):
+        args.extend(['--add-prefix', fetch['add-prefix']])
+
+    command.extend(args)
 
     env = {}
 
@@ -188,16 +209,16 @@ def create_fetch_url_task(config, job):
             gpg_key = fh.read()
 
         env['FETCH_GPG_KEY'] = gpg_key
-        args.extend([
+        command.extend([
             '--gpg-sig-url', sig_url,
             '--gpg-key-env', 'FETCH_GPG_KEY',
         ])
 
-    args.extend([
+    command.extend([
         fetch['url'], '/builds/worker/artifacts/%s' % artifact_name,
     ])
 
-    task = make_base_task(config, name, job['description'], args)
+    task = make_base_task(config, name, job['description'], command)
     task['treeherder']['symbol'] = join_symbol('Fetch', name)
     task['worker']['artifacts'] = [{
         'type': 'directory',
@@ -219,7 +240,7 @@ def create_fetch_url_task(config, job):
             
             
             
-            digest_data=[fetch['sha256'], '%d' % fetch['size'], artifact_name],
+            digest_data=args + [artifact_name],
         )
 
     return task
