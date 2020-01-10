@@ -77,9 +77,16 @@ class Rule {
     this.getUniqueSelector = this.getUniqueSelector.bind(this);
     this.onDeclarationsUpdated = this.onDeclarationsUpdated.bind(this);
     this.onLocationChanged = this.onLocationChanged.bind(this);
+    this.onStyleRuleFrontUpdated = this.onStyleRuleFrontUpdated.bind(this);
     this.updateSourceLocation = this.updateSourceLocation.bind(this);
 
-    this.domRule.on("declarations-updated", this.onDeclarationsUpdated);
+    
+    
+    if (this.domRule.traits.emitsRuleUpdatedEvent) {
+      this.domRule.on("rule-updated", this.onStyleRuleFrontUpdated);
+    } else {
+      this.domRule.on("declarations-updated", this.onDeclarationsUpdated);
+    }
   }
 
   destroy() {
@@ -87,7 +94,13 @@ class Rule {
       this.unsubscribeSourceMap();
     }
 
-    this.domRule.off("declarations-updated", this.onDeclarationsUpdated);
+    
+    if (this.domRule.traits.emitsRuleUpdatedEvent) {
+      this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
+    } else {
+      this.domRule.off("declarations-updated", this.onDeclarationsUpdated);
+    }
+
     this.domRule.off("location-changed", this.onLocationChanged);
   }
 
@@ -580,6 +593,22 @@ class Rule {
 
 
 
+
+  onStyleRuleFrontUpdated(front) {
+    
+    
+    
+    
+    
+    
+    
+    this.domRule = front;
+  }
+
+  
+
+
+
   _getTextProperties() {
     const textProps = [];
     const store = this.elementStyle.store;
@@ -856,6 +885,8 @@ class Rule {
   }
 
   
+
+
 
 
 

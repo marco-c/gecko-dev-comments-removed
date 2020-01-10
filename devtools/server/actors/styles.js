@@ -1359,6 +1359,9 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         canSetRuleText: this.canSetRuleText,
+        
+        
+        emitsRuleUpdatedEvent: true,
       },
     };
 
@@ -1701,6 +1704,8 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     this.authoredText = newText;
     this.pageStyle.refreshObservedRules();
 
+    
+    
     return this;
   },
 
@@ -2008,7 +2013,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-
   refresh() {
     let hasChanged = false;
     const el = this.pageStyle.selectedElement;
@@ -2030,7 +2034,16 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     if (hasChanged) {
-      this.emit("declarations-updated", this._declarations);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.emit("rule-updated", this);
     }
   },
 });
