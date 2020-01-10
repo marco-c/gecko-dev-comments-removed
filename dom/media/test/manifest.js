@@ -636,15 +636,6 @@ var gUnseekableTests = [
   { name:"bogus.duh", type:"bogus/duh"}
 ];
 
-function isWindows32() {
-    return navigator.userAgent.includes("Windows") &&
-        !navigator.userAgent.includes("Win64");
-}
-
-function isAndroid() {
-    return navigator.userAgent.includes("Android");
-}
-
 var androidVersion = -1; 
 if (manifestNavigator().userAgent.includes("Mobile") ||
     manifestNavigator().userAgent.includes("Tablet")) {
@@ -1871,11 +1862,6 @@ function mediaTestCleanup(callback) {
       A[i] = null;
     }
     SpecialPowers.exactGC(callback);
-}
-
-
-function isSlowPlatform() {
-  return SpecialPowers.Services.appinfo.name == "B2G" || getAndroidVersion() == 10;
 }
 
 async function dumpDebugInfoForToken(token) {
