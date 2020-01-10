@@ -1743,6 +1743,10 @@ class nsDisplayListBuilder {
   }
   void UpdateShouldBuildAsyncZoomContainer();
 
+  void UpdateShouldBuildBackdropRootContainer();
+
+  bool ShouldRebuildDisplayListDueToPrefChange();
+
   
 
 
@@ -2020,6 +2024,7 @@ class nsDisplayListBuilder {
   bool mPartialBuildFailed;
   bool mIsInActiveDocShell;
   bool mBuildAsyncZoomContainer;
+  bool mBuildBackdropRootContainer;
 
   nsRect mHitTestArea;
   CompositorHitTestInfo mHitTestInfo;

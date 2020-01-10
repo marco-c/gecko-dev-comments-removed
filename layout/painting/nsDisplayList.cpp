@@ -1273,13 +1273,14 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mPartialBuildFailed(false),
       mIsInActiveDocShell(false),
       mBuildAsyncZoomContainer(false),
+      mBuildBackdropRootContainer(false),
       mHitTestArea(),
       mHitTestInfo(CompositorHitTestInvisibleToHit) {
   MOZ_COUNT_CTOR(nsDisplayListBuilder);
 
   mBuildCompositorHitTestInfo = mAsyncPanZoomEnabled && IsForPainting();
 
-  UpdateShouldBuildAsyncZoomContainer();
+  ShouldRebuildDisplayListDueToPrefChange();
 
   static_assert(
       static_cast<uint32_t>(DisplayItemType::TYPE_MAX) < (1 << TYPE_BITS),
@@ -1507,6 +1508,38 @@ void nsDisplayListBuilder::UpdateShouldBuildAsyncZoomContainer() {
   mBuildAsyncZoomContainer =
       nsLayoutUtils::AllowZoomingForDocument(document) &&
       !StaticPrefs::layout_scroll_root_frame_containers();
+}
+
+void nsDisplayListBuilder::UpdateShouldBuildBackdropRootContainer() {
+  mBuildBackdropRootContainer =
+      StaticPrefs::layout_css_backdrop_filter_enabled();
+}
+
+
+
+bool nsDisplayListBuilder::ShouldRebuildDisplayListDueToPrefChange() {
+  bool shouldRebuild = false;
+
+  
+  
+  
+  
+  bool didBuildAsyncZoomContainer = mBuildAsyncZoomContainer;
+  UpdateShouldBuildAsyncZoomContainer();
+  if (didBuildAsyncZoomContainer != mBuildAsyncZoomContainer) {
+    shouldRebuild = true;
+  }
+
+  
+  
+  
+  bool didBuildBackdropRootContainer = mBuildBackdropRootContainer;
+  UpdateShouldBuildBackdropRootContainer();
+  if (didBuildBackdropRootContainer != mBuildBackdropRootContainer) {
+    shouldRebuild = true;
+  }
+
+  return shouldRebuild;
 }
 
 bool nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,

@@ -3966,13 +3966,8 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       
       
       
-      
       bool shouldAttemptPartialUpdate = useRetainedBuilder;
-      bool didBuildAsyncZoomContainer =
-          builder->ShouldBuildAsyncZoomContainer();
-      builder->UpdateShouldBuildAsyncZoomContainer();
-      if (builder->ShouldBuildAsyncZoomContainer() !=
-          didBuildAsyncZoomContainer) {
+      if (builder->ShouldRebuildDisplayListDueToPrefChange()) {
         shouldAttemptPartialUpdate = false;
       }
 
