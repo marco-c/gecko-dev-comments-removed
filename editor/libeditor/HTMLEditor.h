@@ -47,6 +47,7 @@ class EmptyEditableFunctor;
 class MoveNodeResult;
 class ResizerSelectionListener;
 class SplitRangeOffFromNodeResult;
+class WSRunObject;
 enum class EditSubAction : int32_t;
 struct PropItem;
 template <class T>
@@ -2110,6 +2111,168 @@ class HTMLEditor final : public TextEditor,
 
   already_AddRefed<dom::StaticRange> GetExtendedRangeToIncludeInvisibleNodes(
       const dom::AbstractRange& aAbstractRange);
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtWhiteSpaces(
+      nsIEditor::EDirection aDirectionAndAmount,
+      WSRunObject& aWSRunObjectAtCaret);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtTextNode(
+      nsIEditor::EDirection aDirectionAndAmount,
+      const EditorDOMPoint& aPointToDelete);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtAtomicContent(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, nsIContent& aAtomicContent,
+      const EditorDOMPoint& aCaretPoint, WSRunObject& aWSRunObjectAtCaret);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, Element& aOtherBlockElement,
+      const EditorDOMPoint& aCaretPoint, WSRunObject& aWSRunObjectAtCaret);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtCurrentBlockBoundary(
+      nsIEditor::EDirection aDirectionAndAmount, Element& aCurrentBlockElement,
+      const EditorDOMPoint& aCaretPoint);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  DeleteUnnecessaryNodesAndCollapseSelection(
+      nsIEditor::EDirection aDirectionAndAmount,
+      const EditorDOMPoint& aSelectionStartPoint,
+      const EditorDOMPoint& aSelectionEndPoint);
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteAroundCollapsedSelection(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  enum class SelectionWasCollapsed { Yes, No };
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteNonCollapsedSelection(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers,
+      SelectionWasCollapsed aSelectionWasCollapsed);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  DeleteElementsExceptTableRelatedElements(nsINode& aNode);
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
+                        nsIEditor::EStripWrappers aStripWrappers);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
