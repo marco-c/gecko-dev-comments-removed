@@ -9,6 +9,13 @@
 }
 
 .fxaccounts-extra-text {
+  
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+
   color: var(--in-content-deemphasized-text);
   text-align: end;
 }
