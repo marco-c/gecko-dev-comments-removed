@@ -565,24 +565,23 @@ nsresult ContentIteratorBase::PositionAt(nsINode* aCurNode) {
     if (mPre) {
       
       
-      first.SetAfterRef(mFirst->GetParentNode(), mFirst->GetPreviousSibling());
+      first = {mFirst->GetParentNode(), mFirst->GetPreviousSibling()};
 
       
       if (!mLast->HasChildren()) {
-        last.SetAfterRef(mLast->GetParentNode(), mLast->AsContent());
+        last = {mLast->GetParentNode(), mLast->AsContent()};
       }
     } else {
       
       
       if (mFirst->HasChildren()) {
-        first.SetAfterRef(mFirst, mFirst->GetLastChild());
+        first = {mFirst, mFirst->GetLastChild()};
       } else {
-        first.SetAfterRef(mFirst->GetParentNode(),
-                          mFirst->GetPreviousSibling());
+        first = {mFirst->GetParentNode(), mFirst->GetPreviousSibling()};
       }
 
       
-      last.SetAfterRef(mLast->GetParentNode(), mLast->AsContent());
+      last = {mLast->GetParentNode(), mLast->AsContent()};
     }
   }
 
