@@ -59,8 +59,6 @@ class UrlbarInput {
     
     
     let MozXULElement = this.window.MozXULElement;
-    
-    
     this.textbox.after(
       MozXULElement.parseXULToFragment(`
         <vbox id="urlbar-results"
@@ -68,8 +66,7 @@ class UrlbarInput {
               tooltip="aHTMLTooltip"
               hidden="true">
           <html:div class="urlbarView-body-outer">
-            <html:div class="urlbarView-body-inner"
-                      role="combobox">
+            <html:div class="urlbarView-body-inner">
               <html:div id="urlbarView-results"
                         role="listbox"/>
             </html:div>
