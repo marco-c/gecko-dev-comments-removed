@@ -17,7 +17,7 @@ template <typename StrType>
 struct DllBlockInfoT {
   
   
-  StrType name;
+  StrType mName;
 
   
   
@@ -27,7 +27,7 @@ struct DllBlockInfoT {
   
   
   
-  uint64_t maxVersion;
+  uint64_t mMaxVersion;
 
   
   
@@ -40,7 +40,15 @@ struct DllBlockInfoT {
     BLOCK_WIN8_ONLY = 2,
     USE_TIMESTAMP = 4,
     CHILD_PROCESSES_ONLY = 8
-  } flags;
+  } mFlags;
+
+  bool IsVersionBlocked(const uint64_t aOther) const {
+    if (mMaxVersion == ALL_VERSIONS) {
+      return true;
+    }
+
+    return aOther <= mMaxVersion;
+  }
 
   static const uint64_t ALL_VERSIONS = (uint64_t)-1LL;
 
@@ -76,22 +84,33 @@ static inline constexpr uint64_t MAKE_VERSION(uint16_t a, uint16_t b,
 #  error "You must define DLL_BLOCKLIST_STRING_TYPE"
 #endif  
 
-#define DLL_BLOCKLIST_DEFINITIONS_BEGIN                                   \
+#define DLL_BLOCKLIST_DEFINITIONS_BEGIN_NAMED(name)                       \
   using DllBlockInfo = mozilla::DllBlockInfoT<DLL_BLOCKLIST_STRING_TYPE>; \
-  static const DllBlockInfo gWindowsDllBlocklist[] = {
-#define ALL_VERSIONS DllBlockInfo::ALL_VERSIONS
-#define UNVERSIONED DllBlockInfo::UNVERSIONED
+  static const DllBlockInfo name[] = {
+#define DLL_BLOCKLIST_DEFINITIONS_BEGIN \
+  DLL_BLOCKLIST_DEFINITIONS_BEGIN_NAMED(gWindowsDllBlocklist)
 
 #define DLL_BLOCKLIST_DEFINITIONS_END \
   {}                                  \
   }                                   \
   ;
 
+#define DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY_FOR(name, list) \
+  const DllBlockInfo* name = &list[0]
+
 #define DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY(name) \
-  const DllBlockInfo* name = &gWindowsDllBlocklist[0]
+  DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY_FOR(name, gWindowsDllBlocklist)
+
+#define DECLARE_POINTER_TO_LAST_DLL_BLOCKLIST_ENTRY_FOR(name, list) \
+  const DllBlockInfo* name = &list[mozilla::ArrayLength(list) - 1]
 
 #define DECLARE_POINTER_TO_LAST_DLL_BLOCKLIST_ENTRY(name) \
-  const DllBlockInfo* name =                              \
-      &gWindowsDllBlocklist[mozilla::ArrayLength(gWindowsDllBlocklist) - 1]
+  DECLARE_POINTER_TO_LAST_DLL_BLOCKLIST_ENTRY_FOR(name, gWindowsDllBlocklist)
+
+#define DECLARE_DLL_BLOCKLIST_NUM_ENTRIES_FOR(name, list) \
+  const size_t name = mozilla::ArrayLength(list) - 1
+
+#define DECLARE_DLL_BLOCKLIST_NUM_ENTRIES(name) \
+  DECLARE_DLL_BLOCKLIST_NUM_ENTRIES_FOR(name, gWindowsDllBlocklist)
 
 #endif  
