@@ -7,6 +7,8 @@
 #ifndef gc_Memory_h
 #define gc_Memory_h
 
+#include "mozilla/Attributes.h"
+
 #include <stddef.h>
 
 namespace js {
@@ -28,6 +30,7 @@ size_t SystemAddressBits();
 bool UsingScattershotAllocator();
 
 
+
 void* MapAlignedPages(size_t size, size_t alignment);
 void UnmapPages(void* p, size_t size);
 
@@ -38,7 +41,18 @@ bool MarkPagesUnusedSoft(void* p, size_t size);
 
 
 
+bool MarkPagesUnusedHard(void* p, size_t size);
+
+
+
+
 void MarkPagesInUseSoft(void* p, size_t size);
+
+
+
+
+
+MOZ_MUST_USE bool MarkPagesInUseHard(void* p, size_t size);
 
 
 size_t GetPageFaultCount();
