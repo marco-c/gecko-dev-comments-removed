@@ -104,6 +104,10 @@ class StructuredCloneHolderBase {
   
   bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue);
 
+  
+  bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+            JS::CloneDataPolicy aCloneDataPolicy);
+
   bool HasData() const { return !!mBuffer; }
 
   JSStructuredCloneData& BufferData() const {
@@ -164,6 +168,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   void Read(nsISupports* aParent, JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
+
+  void Read(nsISupports* aParent, JSContext* aCx,
+            JS::MutableHandle<JS::Value> aValue,
+            JS::CloneDataPolicy aCloneDataPolicy, ErrorResult& aRv);
 
   
   bool HasClonedDOMObjects() const {
