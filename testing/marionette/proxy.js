@@ -165,8 +165,6 @@ proxy.AsyncMessageChannel = class {
       
       
       this.dialogueObserver_ = (subject, topic) => {
-        log.trace(`Received observer notification ${topic}`);
-
         this.removeAllListeners_();
         
         this.sendAsync("cancelRequest");
