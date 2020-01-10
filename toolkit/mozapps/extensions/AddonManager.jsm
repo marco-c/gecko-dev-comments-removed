@@ -516,7 +516,8 @@ var gCheckUpdateSecurity = gCheckUpdateSecurityDefault;
 var gUpdateEnabled = true;
 var gAutoUpdateDefault = true;
 var gWebExtensionsMinPlatformVersion = "";
-var gShutdownBarrier = null;
+var gFinalShutdownBarrier = null;
+var gBeforeShutdownBarrier = null;
 var gRepoShutdownState = "";
 var gShutdownInProgress = false;
 var gPluginPageListener = null;
@@ -589,7 +590,7 @@ var AddonManagerInternal = {
       };
       logger.debug("Registering shutdown blocker for " + name);
       this.providerShutdowns.set(aProvider, AMProviderShutdown);
-      AddonManager.shutdown.addBlocker(name, AMProviderShutdown);
+      AddonManagerPrivate.finalShutdown.addBlocker(name, AMProviderShutdown);
     }
 
     this.pendingProviders.delete(aProvider);
@@ -711,7 +712,8 @@ var AddonManagerInternal = {
       }
 
       
-      gShutdownBarrier = new AsyncShutdown.Barrier("AddonManager: Waiting for providers to shut down.");
+      gBeforeShutdownBarrier = new AsyncShutdown.Barrier("AddonManager: Waiting to start provider shutdown.");
+      gFinalShutdownBarrier = new AsyncShutdown.Barrier("AddonManager: Waiting for providers to shut down.");
       AsyncShutdown.profileBeforeChange.addBlocker("AddonManager: shutting down.",
                                                    this.shutdownManager.bind(this),
                                                    {fetchState: this.shutdownState.bind(this)});
@@ -828,12 +830,13 @@ var AddonManagerInternal = {
     
     
     
+    
     if (gStarted && !gShutdownInProgress) {
       logger.debug("Unregistering shutdown blocker for " + providerName(aProvider));
       let shutter = this.providerShutdowns.get(aProvider);
       if (shutter) {
         this.providerShutdowns.delete(aProvider);
-        gShutdownBarrier.client.removeBlocker(shutter);
+        gFinalShutdownBarrier.client.removeBlocker(shutter);
         return shutter();
       }
     }
@@ -905,11 +908,10 @@ var AddonManagerInternal = {
 
   shutdownState() {
     let state = [];
-    if (gShutdownBarrier) {
-      state.push({
-        name: gShutdownBarrier.client.name,
-        state: gShutdownBarrier.state,
-      });
+    for (let barrier of [gBeforeShutdownBarrier, gFinalShutdownBarrier]) {
+      if (barrier) {
+        state.push({name: barrier.client.name, state: barrier.state});
+      }
     }
     state.push({
       name: "AddonRepository: async shutdown",
@@ -925,6 +927,13 @@ var AddonManagerInternal = {
 
 
   async shutdownManager() {
+    logger.debug("before shutdown");
+    try {
+      await gBeforeShutdownBarrier.wait();
+    } catch (e) {
+      Cu.reportError(e);
+    }
+
     logger.debug("shutdown");
     this.callManagerListeners("onShutdown");
 
@@ -943,7 +952,7 @@ var AddonManagerInternal = {
     
     if (gStarted) {
       try {
-        await gShutdownBarrier.wait();
+        await gFinalShutdownBarrier.wait();
       } catch (err) {
         savedError = err;
         logger.error("Failure during wait for shutdown barrier", err);
@@ -972,7 +981,8 @@ var AddonManagerInternal = {
       delete this.startupChanges[type];
     gStarted = false;
     gStartupComplete = false;
-    gShutdownBarrier = null;
+    gFinalShutdownBarrier = null;
+    gBeforeShutdownBarrier = null;
     gShutdownInProgress = false;
     if (savedError) {
       throw savedError;
@@ -2988,6 +2998,16 @@ var AddonManagerPrivate = {
     let provider = AddonManagerInternal._getProviderByName("XPIProvider");
     return provider ? provider.databaseReady : new Promise(() => {});
   },
+
+  
+
+
+
+
+
+  get finalShutdown() {
+    return gFinalShutdownBarrier.client;
+  },
 };
 
 
@@ -3492,8 +3512,13 @@ var AddonManager = {
     return AddonManagerInternal.webAPI;
   },
 
-  get shutdown() {
-    return gShutdownBarrier.client;
+  
+
+
+
+
+  get beforeShutdown() {
+    return gBeforeShutdownBarrier.client;
   },
 };
 

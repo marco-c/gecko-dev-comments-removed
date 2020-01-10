@@ -2873,7 +2873,7 @@ this.XPIDatabaseReconcile = {
       
       
       
-      AddonManager.shutdown.addBlocker(
+      AddonManager.beforeShutdown.addBlocker(
         "Update add-on blocklist state into add-on DB",
         (async () => {
           
