@@ -104,12 +104,15 @@ const EXTRA_BORDER = {
 
 
 
+
+
 const calculateVerticalPosition = (
   anchorRect,
   viewportRect,
   height,
   pos,
-  offset
+  offset,
+  doc = null
 ) => {
   const { TOP, BOTTOM } = POSITION;
 
@@ -147,8 +150,18 @@ const calculateVerticalPosition = (
   
   top += viewportRect.top;
 
+  if (doc && doc.defaultView.devicePixelRatio === 2) {
+    
+    top += 2;
+  } else {
+    
+    top += 1;
+  }
+
   return { top, height, computedPosition: pos };
 };
+
+
 
 
 
@@ -190,7 +203,8 @@ const calculateHorizontalPosition = (
   type,
   offset,
   borderRadius,
-  isRtl
+  isRtl,
+  doc = null
 ) => {
   
   
@@ -260,7 +274,7 @@ const calculateHorizontalPosition = (
   }
 
   
-  const left =
+  let left =
     hangDirection === "right"
       ? viewportRect.left + tooltipStart
       : viewportRect.right - tooltipStart - tooltipWidth;
@@ -268,6 +282,11 @@ const calculateHorizontalPosition = (
     hangDirection === "right"
       ? arrowStart
       : tooltipWidth - arrowWidth - arrowStart;
+
+  if (doc && doc.defaultView.devicePixelRatio !== 2) {
+    
+    left += 1;
+  }
 
   return { left, width: tooltipWidth, arrowLeft };
 };
@@ -566,7 +585,8 @@ HTMLTooltip.prototype = {
       this.type,
       x,
       borderRadius,
-      isRtl
+      isRtl,
+      this.doc
     );
 
     
@@ -615,7 +635,8 @@ HTMLTooltip.prototype = {
       viewportRect,
       preferredHeight,
       position,
-      y
+      y,
+      this.doc
     );
 
     this._position = computedPosition;
