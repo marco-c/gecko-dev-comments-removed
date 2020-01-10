@@ -27,6 +27,11 @@ size_t SystemAddressBits();
 
 
 
+
+size_t VirtualMemoryLimit();
+
+
+
 bool UsingScattershotAllocator();
 
 

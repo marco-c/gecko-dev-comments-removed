@@ -21,6 +21,7 @@
 #include "mozilla/BinarySearch.h"
 #include "mozilla/ScopeExit.h"
 
+#include "gc/Memory.h"
 #include "threading/ExclusiveData.h"
 #include "vm/MutexIDs.h"
 #include "wasm/cranelift/clifapi.h"
@@ -309,6 +310,27 @@ class ReadLockFlag {
   }
 };
 
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+
+
+
+
+
+
+
+
+
+
+static const size_t MinAddressBitsForHugeMemory = 38;
+
+
+
+
+
+static const size_t MinVirtualMemoryLimitForHugeMemory =
+    size_t(1) << MinAddressBitsForHugeMemory;
+#endif
+
 ExclusiveData<ReadLockFlag> sHugeMemoryEnabled(mutexid::WasmHugeMemoryEnabled);
 
 bool wasm::IsHugeMemoryEnabled() {
@@ -321,17 +343,27 @@ bool wasm::DisableHugeMemory() {
   return state->set(false);
 }
 
+void ConfigureHugeMemory() {
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+  if (gc::SystemAddressBits() < MinAddressBitsForHugeMemory) {
+    return;
+  }
+
+  if (gc::VirtualMemoryLimit() != size_t(-1) &&
+      gc::VirtualMemoryLimit() < MinVirtualMemoryLimitForHugeMemory) {
+    return;
+  }
+
+  auto state = sHugeMemoryEnabled.lock();
+  bool set = state->set(true);
+  MOZ_RELEASE_ASSERT(set);
+#endif
+}
+
 bool wasm::Init() {
   MOZ_RELEASE_ASSERT(!sProcessCodeSegmentMap);
 
-#ifdef WASM_SUPPORTS_HUGE_MEMORY
-  {
-    auto state = sHugeMemoryEnabled.lock();
-    if (!state->set(true)) {
-      return false;
-    }
-  }
-#endif
+  ConfigureHugeMemory();
 
 #ifdef ENABLE_WASM_CRANELIFT
   cranelift_initialize();
