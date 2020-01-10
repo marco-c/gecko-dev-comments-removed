@@ -172,7 +172,7 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   
   
-  void EvictOutOfRangeWindowContentViewers(int32_t aIndex);
+  virtual void EvictOutOfRangeWindowContentViewers(int32_t aIndex);
   void EvictContentViewerForEntry(nsISHEntry* aEntry);
   static void GloballyEvictContentViewers();
   static void GloballyEvictAllContentViewers();
@@ -190,17 +190,17 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   
   bool RemoveDuplicate(int32_t aIndex, bool aKeepNext);
 
+ protected:
   
   int32_t Length() { return int32_t(mEntries.Length()); }
 
- protected:
   bool mIsRemote;
-
+  nsTArray<nsCOMPtr<nsISHEntry>> mEntries;  
  private:
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  nsTArray<nsCOMPtr<nsISHEntry>> mEntries;  
+  
   int32_t mIndex;                           
   int32_t mRequestedIndex;                  
 

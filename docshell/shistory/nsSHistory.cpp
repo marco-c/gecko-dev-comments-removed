@@ -59,7 +59,7 @@ int32_t nsSHistory::sHistoryMaxTotalViewers = -1;
 
 static uint32_t gTouchCounter = 0;
 
-static LazyLogModule gSHistoryLog("nsSHistory");
+LazyLogModule gSHistoryLog("nsSHistory");
 
 #define LOG(format) MOZ_LOG(gSHistoryLog, mozilla::LogLevel::Debug, format)
 

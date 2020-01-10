@@ -8,6 +8,10 @@
 #include "mozilla/dom/SHEntryParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentProcessManager.h"
+#include "nsTHashtable.h"
+#include "mozilla/Logging.h"
+
+extern mozilla::LazyLogModule gSHistoryLog;
 
 namespace mozilla {
 namespace dom {
@@ -131,8 +135,7 @@ bool SHistoryParent::RecvNotifyOnHistoryReload(bool* aOk) {
 }
 
 bool SHistoryParent::RecvEvictOutOfRangeContentViewers(int32_t aIndex) {
-  
-  return true;
+  return NS_SUCCEEDED(mHistory->EvictOutOfRangeContentViewers(aIndex));
 }
 
 bool SHistoryParent::RecvEvictAllContentViewers() {
@@ -234,6 +237,98 @@ bool SHistoryParent::RecvEvict(nsTArray<PSHEntryParent*>&& aEntries) {
     }
   }
   return true;
+}
+
+void LegacySHistory::EvictOutOfRangeWindowContentViewers(int32_t aIndex) {
+  if (aIndex < 0) {
+    return;
+  }
+  NS_ENSURE_TRUE_VOID(aIndex < Length());
+
+  
+  int32_t startSafeIndex, endSafeIndex;
+  WindowIndices(aIndex, &startSafeIndex, &endSafeIndex);
+
+  
+
+  MOZ_LOG(gSHistoryLog, mozilla::LogLevel::Debug,
+          ("EvictOutOfRangeWindowContentViewers(index=%d), "
+           "Length()=%d. Safe range [%d, %d]",
+           aIndex, Length(), startSafeIndex, endSafeIndex));
+
+  
+  
+  nsTHashtable<nsUint64HashKey> safeSharedStateIDs;
+  for (int32_t i = startSafeIndex; i <= endSafeIndex; i++) {
+    RefPtr<LegacySHEntry> entry =
+        static_cast<LegacySHEntry*>(mEntries[i].get());
+    MOZ_ASSERT(entry);
+    safeSharedStateIDs.PutEntry(entry->GetSharedStateID());
+  }
+
+  
+  
+  
+  nsDataHashtable<nsPtrHashKey<PContentParent>, nsTHashtable<nsUint64HashKey>>
+      toEvict;
+  for (int32_t i = 0; i < Length(); i++) {
+    if (i >= startSafeIndex && i <= endSafeIndex) {
+      continue;
+    }
+    RefPtr<LegacySHEntry> entry =
+        static_cast<LegacySHEntry*>(mEntries[i].get());
+    dom::SHEntrySharedParentState* sharedParentState = entry->GetSharedState();
+    uint64_t id = entry->GetSharedStateID();
+    PContentParent* parent =
+        static_cast<SHEntrySharedParent*>(sharedParentState)
+            ->GetContentParent();
+    MOZ_ASSERT(parent);
+    if (!safeSharedStateIDs.Contains(id)) {
+      nsTHashtable<nsUint64HashKey>& ids = toEvict.GetOrInsert(parent);
+      ids.PutEntry(id);
+    }
+  }
+  if (toEvict.Count() == 0) {
+    return;
+  }
+  
+  
+  
+  
+
+  
+  
+  
+  for (int32_t i = 0; i < Length(); i++) {
+    RefPtr<LegacySHEntry> entry =
+        static_cast<LegacySHEntry*>(mEntries[i].get());
+    MOZ_ASSERT(entry);
+    uint64_t id = entry->GetSharedStateID();
+    if (!safeSharedStateIDs.Contains(id)) {
+      
+      
+      int32_t index = GetIndexOfEntry(entry);
+      if (index != -1) {
+        RemoveDynEntries(index, entry);
+      }
+    }
+  }
+
+  
+  
+  for (auto iter = toEvict.ConstIter(); !iter.Done(); iter.Next()) {
+    auto parent = iter.Key();
+    const nsTHashtable<nsUint64HashKey>& ids = iter.Data();
+
+    
+    
+    AutoTArray<uint64_t, 4> evictArray;
+    for (auto iter = ids.ConstIter(); !iter.Done(); iter.Next()) {
+      evictArray.AppendElement(iter.Get()->GetKey());
+    }
+
+    Unused << parent->SendEvictContentViewers(evictArray);
+  }
 }
 
 }  
