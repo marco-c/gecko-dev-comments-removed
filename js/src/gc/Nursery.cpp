@@ -1229,12 +1229,12 @@ void js::Nursery::clear() {
     chunk(currentChunk_)
         .poisonAfterEvict(position() - chunk(currentChunk_).start());
   }
-  MOZ_ASSERT(maxChunkCount() > 0);
 
   
 
 
 
+  MOZ_ASSERT(maxChunkCount() > 0);
   if (!runtime()->hasZealMode(ZealMode::GenerationalGC) ||
       (runtime()->hasZealMode(ZealMode::GenerationalGC) &&
        currentChunk_ + 1 == maxChunkCount())) {
