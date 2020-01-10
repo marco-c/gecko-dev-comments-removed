@@ -455,7 +455,11 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
 
 
 
-  void InitEditCommandsFor(nsIWidget::NativeKeyBindingsType aType);
+
+
+
+
+  bool InitEditCommandsFor(nsIWidget::NativeKeyBindingsType aType);
 
   
 

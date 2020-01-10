@@ -999,12 +999,18 @@ nsresult TextInputProcessor::PrepareKeyboardEventToDispatch(
       
       
       
-      aKeyboardEvent.InitEditCommandsFor(
-          nsIWidget::NativeKeyBindingsForSingleLineEditor);
-      aKeyboardEvent.InitEditCommandsFor(
-          nsIWidget::NativeKeyBindingsForMultiLineEditor);
-      aKeyboardEvent.InitEditCommandsFor(
-          nsIWidget::NativeKeyBindingsForRichTextEditor);
+      if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
+              nsIWidget::NativeKeyBindingsForSingleLineEditor))) {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+      if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
+              nsIWidget::NativeKeyBindingsForMultiLineEditor))) {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+      if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
+              nsIWidget::NativeKeyBindingsForRichTextEditor))) {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
     } else {
       aKeyboardEvent.PreventNativeKeyBindings();
     }
