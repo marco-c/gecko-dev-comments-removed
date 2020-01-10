@@ -64,6 +64,11 @@ class PopupBlocker final {
   
   static void ResetLastExternalProtocolIframeAllowed();
 
+  
+  static void RegisterOpenPopupSpam();
+  static void UnregisterOpenPopupSpam();
+  static uint32_t GetOpenPopupSpamCount();
+
   static void Initialize();
   static void Shutdown();
 };

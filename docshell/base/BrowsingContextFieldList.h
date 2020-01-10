@@ -26,6 +26,8 @@ MOZ_BC_FIELD(EmbedderInnerWindowId, uint64_t)
 
 MOZ_BC_FIELD(HadOriginalOpener, bool)
 
+MOZ_BC_FIELD(IsPopupSpam, bool)
+
 
 
 MOZ_BC_FIELD(UserActivationState, UserActivation::State)
