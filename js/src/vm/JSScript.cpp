@@ -2536,6 +2536,9 @@ void ScriptSource::trace(JSTracer* trc) {
 #else
   MOZ_ASSERT(!data.is<BinAST>());
 #endif  
+  if (xdrEncoder_) {
+    xdrEncoder_->trace(trc);
+  }
 }
 
 void ScriptSource::finalizeGCData() {
@@ -2556,6 +2559,9 @@ void ScriptSource::finalizeGCData() {
     }
   }
 #endif  
+  if (xdrEncoder_) {
+    xdrEncoder_.reset();
+  }
 }
 
 ScriptSource::~ScriptSource() {
@@ -2563,6 +2569,7 @@ ScriptSource::~ScriptSource() {
 
   
   
+  MOZ_ASSERT(!xdrEncoder_);
   MOZ_ASSERT_IF(hasBinASTSource(), !data.as<BinAST>().metadata);
 }
 

@@ -652,6 +652,8 @@ class ScriptSource {
   
   
   
+  
+  
   UniquePtr<XDRIncrementalEncoder> xdrEncoder_ = nullptr;
 
   
