@@ -6029,6 +6029,18 @@ VARCACHE_PREF(
 
 PREF("preferences.allow.omt-write", bool, true)
 
+#ifdef DEBUG
+
+
+
+VARCACHE_PREF(
+  Live,
+  "preferences.check.once.policy",
+  preferences_check_once_policy,
+  bool, false
+)
+#endif
+
 
 
 
