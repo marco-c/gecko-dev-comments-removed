@@ -6544,23 +6544,9 @@ void nsCSSFrameConstructor::IssueSingleInsertNofications(
 }
 
 bool nsCSSFrameConstructor::InsertionPoint::IsMultiple() const {
-  if (!mParentFrame) {
-    return false;
-  }
-
   
   
-  if (mParentFrame->IsFieldSetFrame()) {
-    return true;
-  }
-
-  
-  
-  if (mParentFrame->IsDetailsFrame()) {
-    return true;
-  }
-
-  return false;
+  return mParentFrame && mParentFrame->IsFieldSetFrame();
 }
 
 nsCSSFrameConstructor::InsertionPoint
@@ -6786,8 +6772,8 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
 
   
   
-  MOZ_ASSERT(!parentFrame->IsFieldSetFrame() && !parentFrame->IsDetailsFrame(),
-             "Parent frame should not be fieldset or details!");
+  MOZ_ASSERT(!parentFrame->IsFieldSetFrame(),
+             "Parent frame should not be fieldset!");
 
   nsIFrame* nextSibling = FindNextSiblingForAppend(insertion);
   if (nextSibling) {
@@ -7152,21 +7138,6 @@ void nsCSSFrameConstructor::ContentRangeInserted(
       aStartChild->NodeInfo()->NameAtom() == nsGkAtoms::legend) {
     
     
-    
-    
-    
-    
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             InsertionKind::Async);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT(isSingleInsert || frameType != LayoutFrameType::Details);
-  if (frameType == LayoutFrameType::Details) {
     
     
     
@@ -11587,6 +11558,16 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   }
 
   
+  
+  
+  
+  if (aFrame->IsDetailsFrame()) {
+    TRACE("Details / Summary");
+    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    return true;
+  }
+
+  
   if (aFrame->IsColumnSetWrapperFrame()) {
     
     
@@ -11596,6 +11577,9 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   }
 
   if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    MOZ_ASSERT(!aFrame->IsDetailsFrame(),
+               "Inserting elements into <details> should have been reframed!");
+
     bool anyColumnSpanItems = false;
     for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
       if (iter.item().mComputedStyle->StyleColumn()->IsColumnSpanStyle()) {
