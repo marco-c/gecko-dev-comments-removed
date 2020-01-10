@@ -894,6 +894,7 @@ static const nsAttrValue::EnumTable kFrameborderTable[] = {
     {"0", NS_STYLE_FRAME_0},
     {nullptr, 0}};
 
+
 static const nsAttrValue::EnumTable kScrollingTable[] = {
     {"yes", NS_STYLE_FRAME_YES},       {"no", NS_STYLE_FRAME_NO},
     {"on", NS_STYLE_FRAME_ON},         {"off", NS_STYLE_FRAME_OFF},
