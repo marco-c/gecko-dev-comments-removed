@@ -3425,7 +3425,29 @@ void nsFrameLoader::SkipBrowsingContextDetach() {
   if (IsRemoteFrame()) {
     
     if (auto* browserParent = GetBrowserParent()) {
-      Unused << browserParent->SendSkipBrowsingContextDetach();
+      RefPtr<BrowsingContext> bc(GetBrowsingContext());
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      bc->Canonical()->SetInFlightProcessId(
+          browserParent->Manager()->ChildID());
+      browserParent->SendSkipBrowsingContextDetach(
+          [bc](bool aSuccess) { bc->Canonical()->SetInFlightProcessId(0); },
+          [bc](mozilla::ipc::ResponseRejectReason aReason) {
+            bc->Canonical()->SetInFlightProcessId(0);
+          });
     }
     
     else if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
