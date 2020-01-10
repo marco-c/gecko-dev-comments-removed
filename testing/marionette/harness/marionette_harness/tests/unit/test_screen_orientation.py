@@ -38,7 +38,7 @@ class TestScreenOrientation(MarionetteTestCase):
     @parameterized("landscape-primary", "landscape-primary")
     @parameterized("landscape-secondary", "landscape-secondary")
     @parameterized("portrait-primary", "portrait-primary")
-    @parameterized("portrait-secondary", "portrait-secondary")
+    
     def test_set_orientation(self, orientation):
         self.marionette.set_orientation(orientation)
         self.wait_for_orientation(orientation)
