@@ -611,7 +611,7 @@ class ScriptSource {
       pendingCompressed_;
 
   
-  UniqueChars filename_ = nullptr;
+  mozilla::Maybe<SharedImmutableString> filename_;
 
   
   
@@ -623,10 +623,10 @@ class ScriptSource {
   
   
   
-  UniqueChars introducerFilename_ = nullptr;
+  mozilla::Maybe<SharedImmutableString> introducerFilename_;
 
-  UniqueTwoByteChars displayURL_ = nullptr;
-  UniqueTwoByteChars sourceMapURL_ = nullptr;
+  mozilla::Maybe<SharedImmutableTwoByteString> displayURL_;
+  mozilla::Maybe<SharedImmutableTwoByteString> sourceMapURL_;
 
   
   
@@ -713,6 +713,11 @@ class ScriptSource {
 
 
   static constexpr size_t MinimumCompressibleLength = 256;
+
+  mozilla::Maybe<SharedImmutableString> getOrCreateStringZ(JSContext* cx,
+                                                           UniqueChars&& str);
+  mozilla::Maybe<SharedImmutableTwoByteString> getOrCreateStringZ(
+      JSContext* cx, UniqueTwoByteChars&& str);
 
  private:
   class LoadSourceMatcher;
@@ -1101,12 +1106,14 @@ class ScriptSource {
       XDRState<mode>* xdr, uint8_t sourceCharSize, uint32_t uncompressedLength);
 
  public:
-  const char* filename() const { return filename_.get(); }
+  const char* filename() const {
+    return filename_ ? filename_.ref().chars() : nullptr;
+  }
   MOZ_MUST_USE bool setFilename(JSContext* cx, const char* filename);
   MOZ_MUST_USE bool setFilename(JSContext* cx, UniqueChars&& filename);
 
   const char* introducerFilename() const {
-    return introducerFilename_ ? introducerFilename_.get() : filename_.get();
+    return introducerFilename_ ? introducerFilename_.ref().chars() : filename();
   }
   MOZ_MUST_USE bool setIntroducerFilename(JSContext* cx, const char* filename);
   MOZ_MUST_USE bool setIntroducerFilename(JSContext* cx,
@@ -1123,20 +1130,14 @@ class ScriptSource {
   
   MOZ_MUST_USE bool setDisplayURL(JSContext* cx, const char16_t* url);
   MOZ_MUST_USE bool setDisplayURL(JSContext* cx, UniqueTwoByteChars&& url);
-  bool hasDisplayURL() const { return displayURL_ != nullptr; }
-  const char16_t* displayURL() {
-    MOZ_ASSERT(hasDisplayURL());
-    return displayURL_.get();
-  }
+  bool hasDisplayURL() const { return displayURL_.isSome(); }
+  const char16_t* displayURL() { return displayURL_.ref().chars(); }
 
   
   MOZ_MUST_USE bool setSourceMapURL(JSContext* cx, const char16_t* url);
   MOZ_MUST_USE bool setSourceMapURL(JSContext* cx, UniqueTwoByteChars&& url);
-  bool hasSourceMapURL() const { return sourceMapURL_ != nullptr; }
-  const char16_t* sourceMapURL() {
-    MOZ_ASSERT(hasSourceMapURL());
-    return sourceMapURL_.get();
-  }
+  bool hasSourceMapURL() const { return sourceMapURL_.isSome(); }
+  const char16_t* sourceMapURL() { return sourceMapURL_.ref().chars(); }
 
   bool mutedErrors() const { return mutedErrors_; }
 
