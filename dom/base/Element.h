@@ -1468,7 +1468,11 @@ class Element : public FragmentOrElement {
 
 
 
-  virtual void NodeInfoChanged(Document* aOldDoc) {}
+  virtual void NodeInfoChanged(Document* aOldDoc) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    AssertInvariantsOnNodeInfoChange();
+#endif
+  }
 
   
 
@@ -1917,6 +1921,10 @@ class Element : public FragmentOrElement {
                        ReparseAttributes = ReparseAttributes::Yes);
 
  private:
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  void AssertInvariantsOnNodeInfoChange();
+#endif
+
   
 
 
