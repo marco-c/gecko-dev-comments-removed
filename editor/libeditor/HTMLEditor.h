@@ -800,7 +800,8 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  static bool NodeIsBlockStatic(const nsINode* aElement);
+
+  static bool NodeIsBlockStatic(const nsINode& aElement);
 
   
 

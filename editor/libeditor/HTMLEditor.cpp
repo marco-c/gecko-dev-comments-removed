@@ -739,12 +739,10 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
 
 
 
-bool HTMLEditor::NodeIsBlockStatic(const nsINode* aElement) {
-  MOZ_ASSERT(aElement);
-
+bool HTMLEditor::NodeIsBlockStatic(const nsINode& aElement) {
   
   
-  if (aElement->IsAnyOfHTMLElements(
+  if (aElement.IsAnyOfHTMLElements(
           nsGkAtoms::body, nsGkAtoms::head, nsGkAtoms::tbody, nsGkAtoms::thead,
           nsGkAtoms::tfoot, nsGkAtoms::tr, nsGkAtoms::th, nsGkAtoms::td,
           nsGkAtoms::dt, nsGkAtoms::dd)) {
@@ -752,7 +750,7 @@ bool HTMLEditor::NodeIsBlockStatic(const nsINode* aElement) {
   }
 
   return nsHTMLElement::IsBlock(
-      nsHTMLTags::AtomTagToId(aElement->NodeInfo()->NameAtom()));
+      nsHTMLTags::AtomTagToId(aElement.NodeInfo()->NameAtom()));
 }
 
 NS_IMETHODIMP
@@ -762,7 +760,7 @@ HTMLEditor::NodeIsBlock(nsINode* aNode, bool* aIsBlock) {
 }
 
 bool HTMLEditor::IsBlockNode(nsINode* aNode) const {
-  return aNode && NodeIsBlockStatic(aNode);
+  return aNode && HTMLEditor::NodeIsBlockStatic(*aNode);
 }
 
 
@@ -783,7 +781,7 @@ Element* HTMLEditor::GetBlockNodeParent(nsINode* aNode,
   nsCOMPtr<nsINode> p = aNode->GetParentNode();
 
   while (p) {
-    if (NodeIsBlockStatic(p)) {
+    if (HTMLEditor::NodeIsBlockStatic(*p)) {
       return p->AsElement();
     }
     
@@ -804,7 +802,7 @@ Element* HTMLEditor::GetBlock(nsINode& aNode, nsINode* aAncestorLimiter) {
                  EditorUtils::IsDescendantOf(aNode, *aAncestorLimiter),
              "aNode isn't in aAncestorLimiter");
 
-  if (NodeIsBlockStatic(&aNode)) {
+  if (HTMLEditor::NodeIsBlockStatic(aNode)) {
     return aNode.AsElement();
   }
   return GetBlockNodeParent(&aNode, aAncestorLimiter);
@@ -1930,7 +1928,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     }
     do {
       
-      if (NodeIsBlockStatic(nodeToExamine)) {
+      if (HTMLEditor::NodeIsBlockStatic(*nodeToExamine)) {
         
         
         aOutColor.AssignLiteral("transparent");
