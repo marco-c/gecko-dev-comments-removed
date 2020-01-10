@@ -148,7 +148,10 @@ public class SessionAccessibility {
                     if (virtualViewId == View.NO_ID) {
                         sendEvent(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED, View.NO_ID, CLASSNAME_WEBVIEW, null);
                     } else {
-                        if (mFocusedNode == virtualViewId) {
+                        if (mFocusedNode == virtualViewId && mHoveredOnNode != virtualViewId) {
+                            
+                            
+                            
                             mSession.getEventDispatcher().dispatch("GeckoView:AccessibilityCursorToFocused", null);
                         } else {
                             sendEvent(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED, virtualViewId, CLASSNAME_UNKNOWN, null);
@@ -501,6 +504,8 @@ public class SessionAccessibility {
     
     private int mFocusedNode = 0;
     
+    private int mHoveredOnNode = 0;
+    
     final SparseArray<GeckoBundle> mViewportCache = new SparseArray<>();
     
     final SparseArray<GeckoBundle> mFocusPathCache = new SparseArray<>();
@@ -760,8 +765,12 @@ public class SessionAccessibility {
                     mAccessibilityFocusedNode = 0;
                 }
                 break;
+            case AccessibilityEvent.TYPE_VIEW_HOVER_ENTER:
+                mHoveredOnNode = sourceId;
+                break;
             case AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED:
                 mAccessibilityFocusedNode = sourceId;
+                mHoveredOnNode = 0;
                 break;
             case AccessibilityEvent.TYPE_VIEW_FOCUSED:
                 mFocusedNode = sourceId;
