@@ -36,7 +36,16 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/base/telemetry;1",
   "nsITelemetry"
 );
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm"
+);
+XPCOMUtils.defineLazyGetter(
+  this,
+  "WeaveService",
+  () => Cc["@mozilla.org/weave/service;1"].getService().wrappedJSObject
+);
 const log = Log.repository.getLogger("Sync.Telemetry");
 
 const TOPICS = [
@@ -335,7 +344,6 @@ class TelemetryRecord {
       took: this.took,
       failureReason: this.failureReason,
       status: this.status,
-      devices: this.devices,
     };
     if (this.why) {
       result.why = this.why;
@@ -363,33 +371,10 @@ class TelemetryRecord {
       this.failureReason = SyncTelemetry.transformError(error);
     }
 
-    
-    
-    
-    
-    
-    
-    let includeDeviceInfo = false;
     try {
       this.uid = Weave.Service.identity.hashedUID();
-      this.deviceID = Weave.Service.identity.hashedDeviceID(
-        Weave.Service.clientsEngine.localID
-      );
-      includeDeviceInfo = true;
     } catch (e) {
       this.uid = EMPTY_UID;
-      this.deviceID = undefined;
-    }
-
-    if (includeDeviceInfo) {
-      let remoteDevices = Weave.Service.clientsEngine.remoteClients;
-      this.devices = remoteDevices.map(device => {
-        return {
-          os: device.os,
-          version: device.version,
-          id: Weave.Service.identity.hashedDeviceID(device.id),
-        };
-      });
     }
 
     
@@ -567,7 +552,6 @@ class SyncTelemetryImpl {
       Svc.Prefs.get("telemetry.submissionInterval") * 1000;
     this.lastSubmissionTime = Telemetry.msSinceProcessStart();
     this.lastUID = EMPTY_UID;
-    this.lastDeviceID = undefined;
     
     
     
@@ -579,15 +563,116 @@ class SyncTelemetryImpl {
     );
   }
 
+  sanitizeFxaDeviceId(deviceId) {
+    if (!this.syncIsEnabled()) {
+      return null;
+    }
+    try {
+      return Weave.Service.identity.hashedDeviceID(deviceId);
+    } catch {
+      
+    }
+    return null;
+  }
+
+  prepareFxaDevices(devices) {
+    
+    
+    
+    let devicesList = devices.filter(
+      d => !d.pushEndpointExpired && d.lastAccessTime != null
+    );
+    
+    
+    devicesList.sort((a, b) => a.lastAccessTime - b.lastAccessTime);
+    let seenNames = new Map();
+    for (let device of devicesList) {
+      seenNames.set(device.name, device);
+    }
+    devicesList = Array.from(seenNames.values());
+    
+    
+    
+    
+    
+    let threshold = Services.prefs.getIntPref(
+      "identity.fxaccounts.telemetry.staleDeviceThreshold",
+      1000 * 60 * 60 * 24 * 30 * 2
+    );
+    if (threshold != -1) {
+      let limit = Date.now() - threshold;
+      devicesList = devicesList.filter(d => d.lastAccessTime >= limit);
+    }
+    
+    
+    
+    
+    let extraInfoMap = new Map();
+    if (this.syncIsEnabled()) {
+      for (let client of this.getClientsEngineRecords()) {
+        if (client.fxaDeviceId) {
+          extraInfoMap.set(client.fxaDeviceId, {
+            os: client.os,
+            version: client.version,
+            syncID: this.sanitizeFxaDeviceId(client.id),
+          });
+        }
+      }
+    }
+    
+    return devicesList.map(d => {
+      let { os, version, syncID } = extraInfoMap.get(d.id) || {
+        os: undefined,
+        version: undefined,
+        syncID: undefined,
+      };
+      return {
+        id: this.sanitizeFxaDeviceId(d.id) || EMPTY_UID,
+        type: d.type,
+        os,
+        version,
+        syncID,
+      };
+    });
+  }
+
+  syncIsEnabled() {
+    return WeaveService.enabled && WeaveService.ready;
+  }
+
+  
+  getClientsEngineRecords() {
+    if (!this.syncIsEnabled()) {
+      throw new Error("Bug: syncIsEnabled() must be true, check it first");
+    }
+    return Weave.Service.clientsEngine.remoteClients;
+  }
+
+  updateFxaDevices(devices) {
+    if (!devices) {
+      return {};
+    }
+    let me = devices.find(d => d.isCurrentDevice);
+    let id = me ? this.sanitizeFxaDeviceId(me.id) : undefined;
+    let cleanDevices = this.prepareFxaDevices(devices);
+    return { deviceID: id, devices: cleanDevices };
+  }
+
+  getFxaDevices() {
+    return fxAccounts.device.recentDeviceList;
+  }
+
   getPingJSON(reason) {
+    let { devices, deviceID } = this.updateFxaDevices(this.getFxaDevices());
     return {
       os: TelemetryEnvironment.currentEnvironment.system.os,
       why: reason,
+      devices,
       discarded: this.discarded || undefined,
       version: PING_FORMAT_VERSION,
       syncs: this.payloads.slice(),
       uid: this.lastUID,
-      deviceID: this.lastDeviceID,
+      deviceID,
       sessionStartDate: this.sessionStartDate,
       events: this.events.length == 0 ? undefined : this.events,
       histograms:
@@ -665,14 +750,10 @@ class SyncTelemetryImpl {
     return true;
   }
 
-  shouldSubmitForIDChange(newUID, newDeviceID) {
-    if (newUID != EMPTY_UID && this.lastUID != EMPTY_UID) {
+  shouldSubmitForIDChange(newID, oldID, defaultForID) {
+    if (newID != defaultForID && oldID != defaultForID) {
       
-      return newUID != this.lastUID;
-    }
-    if (newDeviceID && this.lastDeviceID) {
-      
-      return newDeviceID != this.lastDeviceID;
+      return newID != oldID;
     }
     
     
@@ -702,7 +783,7 @@ class SyncTelemetryImpl {
     this.current.finished(error);
     if (this.payloads.length) {
       if (
-        this.shouldSubmitForIDChange(this.current.uid, this.current.deviceID)
+        this.shouldSubmitForIDChange(this.current.uid, this.lastUID, EMPTY_UID)
       ) {
         log.info("Early submission of sync telemetry due to changed IDs");
         this.finish("idchange");
@@ -712,9 +793,6 @@ class SyncTelemetryImpl {
     
     if (this.current.uid !== EMPTY_UID) {
       this.lastUID = this.current.uid;
-    }
-    if (this.current.deviceID) {
-      this.lastDeviceID = this.current.deviceID;
     }
     if (this.payloads.length < this.maxPayloadCount) {
       this.payloads.push(this.current.toJSON());
