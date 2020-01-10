@@ -302,7 +302,6 @@ nsresult nsLayoutStatics::Initialize() {
   if (XRE_IsParentProcess()) {
     
     
-    mozilla::dom::DOMPrefs::Initialize();
     mozilla::dom::RemoteWorkerService::Initialize();
     
     mozilla::dom::BrowserParent::InitializeStatics();
