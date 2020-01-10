@@ -331,6 +331,158 @@ class HuffmanTableImplementationMap {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class HuffmanTableImplementationSaturated {
+ public:
+  explicit HuffmanTableImplementationSaturated(JSContext* cx)
+      : values(cx), saturated(cx), maxBitLength(-1) {}
+  HuffmanTableImplementationSaturated(
+      HuffmanTableImplementationSaturated&& other) = default;
+
+  
+  JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
+
+  
+  
+  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
+                      uint8_t largestBitLength);
+
+#ifdef DEBUG
+  void selfCheck();
+#endif  
+
+  
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+
+  HuffmanTableImplementationSaturated() = delete;
+  HuffmanTableImplementationSaturated(HuffmanTableImplementationSaturated&) =
+      delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
+
+  
+  size_t length() const { return values.length(); }
+
+  
+  struct Iterator {
+    explicit Iterator(const HuffmanEntry<T>* position);
+    void operator++();
+    const T* operator*() const;
+    bool operator==(const Iterator& other) const;
+    bool operator!=(const Iterator& other) const;
+
+   private:
+    const HuffmanEntry<T>* position;
+  };
+  Iterator begin() const { return Iterator(values.begin()); }
+  Iterator end() const { return Iterator(values.end()); }
+
+ private:
+  
+  
+  
+  
+  
+  Vector<HuffmanEntry<T>> values;
+
+  
+  
+  
+  
+  
+  
+  
+  Vector<size_t> saturated;
+
+  
+  
+  
+  
+  uint8_t maxBitLength;
+
+  friend class HuffmanPreludeReader;
+};
+
+
+
+
+
+
+
 struct HuffmanTableUnreachable {};
 
 
@@ -360,6 +512,7 @@ struct HuffmanTableImplementationGeneric {
   size_t length() const;
 
   struct Iterator {
+    Iterator(typename HuffmanTableImplementationSaturated<T>::Iterator&&);
     Iterator(typename HuffmanTableImplementationMap<T>::Iterator&&);
     void operator++();
     const T* operator*() const;
@@ -367,7 +520,8 @@ struct HuffmanTableImplementationGeneric {
     bool operator!=(const Iterator& other) const;
 
    private:
-    mozilla::Variant<typename HuffmanTableImplementationMap<T>::Iterator>
+    mozilla::Variant<typename HuffmanTableImplementationSaturated<T>::Iterator,
+                     typename HuffmanTableImplementationMap<T>::Iterator>
         implementation;
   };
 
@@ -386,7 +540,8 @@ struct HuffmanTableImplementationGeneric {
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
  private:
-  mozilla::Variant<HuffmanTableImplementationMap<T>, HuffmanTableUnreachable>
+  mozilla::Variant<HuffmanTableImplementationSaturated<T>,
+                   HuffmanTableImplementationMap<T>, HuffmanTableUnreachable>
       implementation;
 };
 
