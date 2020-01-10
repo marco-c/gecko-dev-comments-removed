@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::io::{Error, ErrorKind};
-use std::fs::{File, create_dir_all, read_dir};
+use std::ffi::{OsString};
+use std::fs::{File, create_dir_all, read_dir, read_to_string};
 use std::io::{Read, Write};
 use std::path::{PathBuf};
 use std::rc::Rc;
@@ -55,7 +56,6 @@ fn get_cache_path_from_prof_path(prof_path: &nsAString) -> Option<PathBuf> {
         return None;
     }
 
-    use std::ffi::OsString;
     use std::os::windows::prelude::*;
 
     let prof_path = OsString::from_wide(prof_path.as_ref());
@@ -71,8 +71,6 @@ fn get_cache_path_from_prof_path(prof_path: &nsAString) -> Option<PathBuf> {
         
         return None;
     }
-
-    use std::ffi::OsString;
 
     let utf8 = String::from_utf16(prof_path.as_ref()).unwrap();
     let prof_path = OsString::from(utf8);
@@ -91,6 +89,9 @@ struct WrProgramBinaryDiskCache {
 const MAGIC: u32 = 0xB154AD30; 
 const VERSION: u32 = 2;
 const MAGIC_AND_VERSION: u32 = MAGIC + VERSION;
+
+const WHITELIST_FILENAME: &str = "startup_shaders";
+const WHITELIST_SEPARATOR: &str = "\n";
 
 
 
@@ -115,6 +116,21 @@ impl WrProgramBinaryDiskCache {
         let mut entries: Vec<(String, Arc<ProgramBinary>)> =
             entries.into_iter().map(|e| (format!("{}", e.source_digest()), e)).collect();
 
+        let whitelist = entries.iter().map(|e| e.0.as_ref()).collect::<Vec<&str>>().join(WHITELIST_SEPARATOR);
+        let mut whitelist_path = self.cache_path.clone();
+        whitelist_path.push(WHITELIST_FILENAME);
+        self.workers.spawn(move || result_to_void(move || {
+            info!("Writing startup shader whitelist");
+            let mut file = File::create(&whitelist_path).unwrap();
+            file.write_all(whitelist.as_bytes())
+                .map_err(|e| error!("shader-cache: Failed to write startup whitelist: {}", e))?;
+            Ok(())
+        }));
+
+        
+        
+        
+        
         
         
         
@@ -124,12 +140,6 @@ impl WrProgramBinaryDiskCache {
             if let Some(p) = pos {
                 info!("Found existing shader: {}", existing.file_name().to_string_lossy());
                 entries.swap_remove(p);
-            } else {
-                self.workers.spawn(move || {
-                    info!("Removing shader: {}", existing.file_name().to_string_lossy());
-                    ::std::fs::remove_file(existing.path())
-                        .unwrap_or_else(|e| error!("shader-cache: Failed to remove shader: {:?}", e));
-                });
             }
         }
 
@@ -174,25 +184,51 @@ impl WrProgramBinaryDiskCache {
         }
     }
 
-    pub fn try_load_from_disk(&mut self, program_cache: &Rc<ProgramCache>) {
+    pub fn try_load_startup_shaders_from_disk(&mut self, program_cache: &Rc<ProgramCache>) {
         use std::time::{Instant};
         let start = Instant::now();
 
         
-        for entry in read_dir(&self.cache_path).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
+        let mut whitelist_path = self.cache_path.clone();
+        whitelist_path.push(WHITELIST_FILENAME);
+        let whitelist = match read_to_string(&whitelist_path) {
+            Ok(whitelist) => {
+                whitelist.split(WHITELIST_SEPARATOR).map(|s| s.to_string()).collect::<Vec<String>>()
+            }
+            Err(err) => {
+                info!("shader-cache: Could not read startup whitelist: {}", err);
+                Vec::new()
+            }
+        };
+        info!("Loaded startup shader whitelist in {:?}", start.elapsed());
 
-            info!("Loading shader: {}", entry.file_name().to_string_lossy());
+        let mut cached_shader_filenames = read_dir(&self.cache_path)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .filter(|e| e != WHITELIST_FILENAME)
+            .collect::<Vec<OsString>>();
 
-            match deserialize_program_binary(&path) {
-                Ok(program) => {
-                    program_cache.load_program_binary(program);
-                }
-                Err(err) => {
-                    error!("shader-cache: Failed to deserialize program binary: {}", err);
-                }
-            };
+        
+        for entry in &whitelist {
+            if let Some(index) = cached_shader_filenames.iter().position(|e| e == entry.as_str()) {
+                let mut path = self.cache_path.clone();
+                path.push(entry);
+
+                cached_shader_filenames.swap_remove(index);
+
+                info!("Loading shader: {}", entry);
+
+                match deserialize_program_binary(&path) {
+                    Ok(program) => {
+                        program_cache.load_program_binary(program);
+                    }
+                    Err(err) => {
+                        error!("shader-cache: Failed to deserialize program binary: {}", err);
+                    }
+                };
+            } else {
+                info!("shader-cache: Program binary not found in disk cache");
+            }
 
             let elapsed = start.elapsed();
             info!("Loaded shader in {:?}", elapsed);
@@ -260,9 +296,9 @@ impl WrProgramCache {
         &self.program_cache
     }
 
-    pub fn try_load_from_disk(&self) {
+    pub fn try_load_startup_shaders_from_disk(&self) {
         if let Some(ref disk_cache) = self.disk_cache {
-            disk_cache.borrow_mut().try_load_from_disk(&self.program_cache);
+            disk_cache.borrow_mut().try_load_startup_shaders_from_disk(&self.program_cache);
         } else {
             error!("shader-cache: Shader disk cache is not supported");
         }
