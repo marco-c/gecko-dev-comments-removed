@@ -9,10 +9,12 @@
 #include "nscore.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ProfilerCounts.h"
+#include "mozilla/ThreadLocal.h"
 
 #include "replace_malloc.h"
 
@@ -66,17 +68,121 @@ static size_t MallocSizeOf(const void* aPtr) {
 
 
 
+
+
+
+#if !defined(XP_DARWIN) && !defined(XP_LINUX)
+#  define PROFILER_THREAD_LOCAL(T) MOZ_THREAD_LOCAL(T)
+#else
+#  define PROFILER_THREAD_LOCAL(T) \
+    ::mozilla::detail::ThreadLocal<T, ::mozilla::detail::ThreadLocalKeyStorage>
+#endif
+
+class ThreadIntercept {
+  
+  
+  
+  static PROFILER_THREAD_LOCAL(bool) tlsIsBlocked;
+
+  
+  
+  static mozilla::Atomic<bool, mozilla::Relaxed,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      sAllocationsFeatureEnabled;
+
+  ThreadIntercept() = default;
+
+  
+  
+  static bool IsBlocked_() { return tlsIsBlocked.get(); }
+
+ public:
+  static void Init() { tlsIsBlocked.infallibleInit(); }
+
+  
+  
+  
+  
+  static Maybe<ThreadIntercept> MaybeGet() {
+    if (sAllocationsFeatureEnabled && !ThreadIntercept::IsBlocked_()) {
+      
+      
+      return Some(ThreadIntercept());
+    }
+    return Nothing();
+  }
+
+  void Block() {
+    MOZ_ASSERT(!tlsIsBlocked.get());
+    tlsIsBlocked.set(true);
+  }
+
+  void Unblock() {
+    MOZ_ASSERT(tlsIsBlocked.get());
+    tlsIsBlocked.set(false);
+  }
+
+  bool IsBlocked() const { return ThreadIntercept::IsBlocked_(); }
+
+  static void EnableAllocationFeature() { sAllocationsFeatureEnabled = true; }
+
+  static void DisableAllocationFeature() { sAllocationsFeatureEnabled = false; }
+};
+
+PROFILER_THREAD_LOCAL(bool) ThreadIntercept::tlsIsBlocked;
+mozilla::Atomic<bool, mozilla::Relaxed,
+                mozilla::recordreplay::Behavior::DontPreserve>
+    ThreadIntercept::sAllocationsFeatureEnabled(false);
+
+
+
+class AutoBlockIntercepts {
+  ThreadIntercept& mThreadIntercept;
+
+ public:
+  
+  AutoBlockIntercepts(const AutoBlockIntercepts&) = delete;
+  void operator=(const AutoBlockIntercepts&) = delete;
+
+  explicit AutoBlockIntercepts(ThreadIntercept& aThreadIntercept)
+      : mThreadIntercept(aThreadIntercept) {
+    mThreadIntercept.Block();
+  }
+  ~AutoBlockIntercepts() {
+    MOZ_ASSERT(mThreadIntercept.IsBlocked());
+    mThreadIntercept.Unblock();
+  }
+};
+
+
+
+
+
 static void AllocCallback(void* aPtr, size_t aReqSize) {
   if (!aPtr) {
     return;
   }
+
+  
   size_t actualSize = gMallocTable.malloc_usable_size(aPtr);
   if (actualSize > 0) {
-    
     sCounter->Add(actualSize);
   }
 
+  auto threadIntercept = ThreadIntercept::MaybeGet();
+  if (threadIntercept.isNothing()) {
+    
+    
+    
+    return;
+  }
+
   
+  
+  AutoBlockIntercepts block(threadIntercept.ref());
+
+  
+
   
 }
 
@@ -87,6 +193,18 @@ static void FreeCallback(void* aPtr) {
 
   
   sCounter->Add(-((int64_t)MallocSizeOf(aPtr)));
+
+  auto threadIntercept = ThreadIntercept::MaybeGet();
+  if (threadIntercept.isNothing()) {
+    
+    
+    
+    return;
+  }
+
+  
+  
+  AutoBlockIntercepts block(threadIntercept.ref());
 
   
 }
@@ -209,6 +327,9 @@ void install_memory_hooks() {
   if (!sCounter) {
     sCounter = new ProfilerCounterTotal("malloc", "Memory",
                                         "Amount of allocated memory");
+    
+    
+    ThreadIntercept::Init();
   }
   jemalloc_replace_dynamic(replace_init);
 }
@@ -218,6 +339,13 @@ void install_memory_hooks() {
 
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
+
+void enable_native_allocations() { ThreadIntercept::EnableAllocationFeature(); }
+
+
+void disable_native_allocations() {
+  ThreadIntercept::DisableAllocationFeature();
+}
 
 }  
 }  
