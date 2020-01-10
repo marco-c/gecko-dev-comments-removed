@@ -185,6 +185,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     kNoReqStates
   },
   { 
+    nsGkAtoms::deletion,
+    roles::CONTENT_DELETION,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+  },
+  { 
     nsGkAtoms::dialog,
     roles::DIALOG,
     kUseMapRole,
@@ -720,6 +729,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates
+  },
+  { 
+    nsGkAtoms::insertion,
+    roles::CONTENT_INSERTION,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
   },
   { 
     nsGkAtoms::key,
