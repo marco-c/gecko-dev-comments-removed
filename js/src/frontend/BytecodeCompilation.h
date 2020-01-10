@@ -93,8 +93,7 @@ class MOZ_STACK_CLASS BytecodeCompiler {
 
   
   
-  MOZ_MUST_USE bool internalCreateScript(HandleObject functionOrGlobal,
-                                         uint32_t toStringStart,
+  MOZ_MUST_USE bool internalCreateScript(uint32_t toStringStart,
                                          uint32_t toStringEnd,
                                          uint32_t sourceBufferLength);
 
