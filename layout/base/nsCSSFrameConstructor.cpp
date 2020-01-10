@@ -1754,7 +1754,12 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   
   
   
-  if (!Servo_ComputedValues_SpecifiesAnimationsOrTransitions(pseudoStyle)) {
+  
+  
+  
+  
+  if (!Servo_ComputedValues_SpecifiesAnimationsOrTransitions(pseudoStyle) &&
+      !aOriginatingElement.MayHaveAnimations()) {
     Servo_SetExplicitStyle(container, pseudoStyle);
   } else {
     

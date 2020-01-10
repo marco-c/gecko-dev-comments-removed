@@ -240,15 +240,30 @@ trait PrivateMatchMethods: TElement {
         let new_box_style = new_style.get_box();
         let new_style_specifies_animations = new_box_style.specifies_animations();
 
-        let old_style = match old_style {
-            Some(old) => old,
-            None => return new_style_specifies_animations,
-        };
-
         let has_animations = self.has_css_animations();
         if !new_style_specifies_animations && !has_animations {
             return false;
         }
+
+        let old_style = match old_style {
+            Some(old) => old,
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            None => {
+                return new_style_specifies_animations || new_style.is_pseudo_style();
+            }
+        };
 
         let old_box_style = old_style.get_box();
 
