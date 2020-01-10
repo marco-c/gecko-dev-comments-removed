@@ -27,6 +27,11 @@ bool WorkletPrincipals::write(JSContext* aCx,
                                             mWorkletImpl->PrincipalInfo());
 }
 
+bool WorkletPrincipals::isSystemOrAddonPrincipal() {
+  
+  return false;
+}
+
 void WorkletPrincipals::Destroy(JSPrincipals* aPrincipals) {
   delete static_cast<WorkletPrincipals*>(aPrincipals);
 }
