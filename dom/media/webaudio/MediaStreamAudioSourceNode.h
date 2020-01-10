@@ -81,7 +81,9 @@ class MediaStreamAudioSourceNode
   void DetachFromTrack();
 
   
-  void AttachToFirstTrack(const RefPtr<DOMMediaStream>& aMediaStream);
+  
+  void AttachToRightTrack(const RefPtr<DOMMediaStream>& aMediaStream,
+                          ErrorResult& aRv);
 
   
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) override;
@@ -91,13 +93,27 @@ class MediaStreamAudioSourceNode
   
   void PrincipalChanged(MediaStreamTrack* aMediaStreamTrack) override;
 
+  
+  
+  
+  enum TrackChangeBehavior {
+    
+    
+    LockOnTrackPicked,
+    
+    
+    FollowChanges
+  };
+
  protected:
-  explicit MediaStreamAudioSourceNode(AudioContext* aContext);
+  MediaStreamAudioSourceNode(AudioContext* aContext,
+                             TrackChangeBehavior aBehavior);
   void Init(DOMMediaStream* aMediaStream, ErrorResult& aRv);
   virtual void Destroy();
   virtual ~MediaStreamAudioSourceNode();
 
  private:
+  const TrackChangeBehavior mBehavior;
   RefPtr<MediaInputPort> mInputPort;
   RefPtr<DOMMediaStream> mInputStream;
 
