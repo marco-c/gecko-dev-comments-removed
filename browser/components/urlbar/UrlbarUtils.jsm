@@ -380,6 +380,30 @@ var UrlbarUtils = {
 
 
 
+  getSpanForResult(result) {
+    switch (result.type) {
+      case UrlbarUtils.RESULT_TYPE.URL:
+      case UrlbarUtils.RESULT_TYPE.BOOKMARKS:
+      case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+      case UrlbarUtils.RESULT_TYPE.KEYWORD:
+      case UrlbarUtils.RESULT_TYPE.SEARCH:
+      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+        return 1;
+      case UrlbarUtils.RESULT_TYPE.TIP:
+        return 3;
+    }
+    return 1;
+  },
+
+  
+
+
+
+
+
+
+
   setupSpeculativeConnection(urlOrEngine, window) {
     if (!UrlbarPrefs.get("speculativeConnect.enabled")) {
       return;
