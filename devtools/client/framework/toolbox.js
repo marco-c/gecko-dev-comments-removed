@@ -571,9 +571,66 @@ Toolbox.prototype = {
     this.unhighlightTool("jsdebugger");
   },
 
-  _startThreadFrontListeners: function() {
-    this.threadFront.on("paused", this._onPausedState);
-    this.threadFront.on("resumed", this._onResumedState);
+  
+
+
+
+
+  async _attachTargets(target) {
+    this._threadFront = await this._attachTarget(target);
+
+    const fissionSupport = Services.prefs.getBoolPref(
+      "devtools.browsertoolbox.fission"
+    );
+
+    if (fissionSupport && target.isParentProcess && !target.isAddon) {
+      const { mainRoot } = target.client;
+      const { processes } = await mainRoot.listProcesses();
+
+      for (const processDescriptor of processes) {
+        const targetFront = await processDescriptor.getTarget();
+
+        
+        if (targetFront === target) {
+          continue;
+        }
+
+        if (!targetFront) {
+          console.warn(
+            "Can't retrieve the target front for process",
+            processDescriptor
+          );
+          continue;
+        }
+        await this._attachTarget(targetFront);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+  async _attachTarget(target) {
+    await target.attach();
+
+    
+    
+    if (target.activeConsole) {
+      await target.activeConsole.startListeners(["NetworkActivity"]);
+    }
+
+    const threadFront = await this._attachAndResumeThread(target);
+    this._startThreadFrontListeners(threadFront);
+    return threadFront;
+  },
+
+  _startThreadFrontListeners: function(threadFront) {
+    threadFront.on("paused", this._onPausedState);
+    threadFront.on("resumed", this._onResumedState);
   },
 
   _stopThreadFrontListeners: function() {
@@ -581,8 +638,8 @@ Toolbox.prototype = {
     this.threadFront.off("resumed", this._onResumedState);
   },
 
-  _attachAndResumeThread: async function() {
-    const [, threadFront] = await this._target.attachThread({
+  _attachAndResumeThread: async function(target) {
+    const [, threadFront] = await target.attachThread({
       autoBlackBox: false,
       ignoreFrameEnvironment: true,
       pauseOnExceptions: Services.prefs.getBoolPref(
@@ -650,17 +707,7 @@ Toolbox.prototype = {
       
       
 
-      
-      await this._target.attach();
-
-      
-      
-      if (this._target.activeConsole) {
-        await this._target.activeConsole.startListeners(["NetworkActivity"]);
-      }
-
-      this._threadFront = await this._attachAndResumeThread();
-      this._startThreadFrontListeners();
+      await this._attachTargets(this.target);
 
       await domReady;
 
