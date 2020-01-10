@@ -20,7 +20,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Swizzle.h"
 #include "skia/src/core/SkBlitRow.h"
 
 #include "DownscalingFilter.h"
@@ -29,83 +28,6 @@
 
 namespace mozilla {
 namespace image {
-
-
-
-
-
-template <typename Next>
-class SwizzleFilter;
-
-
-
-
-struct SwizzleConfig {
-  template <typename Next>
-  using Filter = SwizzleFilter<Next>;
-  gfx::SurfaceFormat mInFormat;
-  gfx::SurfaceFormat mOutFormat;
-  bool mPremultiplyAlpha;
-};
-
-
-
-
-
-
-
-
-template <typename Next>
-class SwizzleFilter final : public SurfaceFilter {
- public:
-  SwizzleFilter() : mSwizzleFn(nullptr) {}
-
-  template <typename... Rest>
-  nsresult Configure(const SwizzleConfig& aConfig, const Rest&... aRest) {
-    nsresult rv = mNext.Configure(aRest...);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    if (aConfig.mPremultiplyAlpha) {
-      mSwizzleFn = gfx::PremultiplyRow(aConfig.mInFormat, aConfig.mOutFormat);
-    } else {
-      mSwizzleFn = gfx::SwizzleRow(aConfig.mInFormat, aConfig.mOutFormat);
-    }
-
-    if (!mSwizzleFn) {
-      return NS_ERROR_INVALID_ARG;
-    }
-
-    ConfigureFilter(mNext.InputSize(), sizeof(uint32_t));
-    return NS_OK;
-  }
-
-  Maybe<SurfaceInvalidRect> TakeInvalidRect() override {
-    return mNext.TakeInvalidRect();
-  }
-
- protected:
-  uint8_t* DoResetToFirstRow() override { return mNext.ResetToFirstRow(); }
-
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    uint8_t* rowPtr = mNext.CurrentRowPointer();
-    if (!rowPtr) {
-      return nullptr;  
-    }
-
-    mSwizzleFn(aInputRow, rowPtr, mNext.InputSize().width);
-    return mNext.AdvanceRow();
-  }
-
-  uint8_t* DoAdvanceRow() override {
-    return DoAdvanceRowFromBuffer(mNext.CurrentRowPointer());
-  }
-
-  Next mNext;  
-
-  gfx::SwizzleRowFn mSwizzleFn;
-};
 
 
 
@@ -158,14 +80,10 @@ class ColorManagementFilter final : public SurfaceFilter {
  protected:
   uint8_t* DoResetToFirstRow() override { return mNext.ResetToFirstRow(); }
 
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    qcms_transform_data(mTransform, aInputRow, mNext.CurrentRowPointer(),
-                        mNext.InputSize().width);
-    return mNext.AdvanceRow();
-  }
-
   uint8_t* DoAdvanceRow() override {
-    return DoAdvanceRowFromBuffer(mNext.CurrentRowPointer());
+    uint8_t* rowPtr = mNext.CurrentRowPointer();
+    qcms_transform_data(mTransform, rowPtr, rowPtr, mNext.InputSize().width);
+    return mNext.AdvanceRow();
   }
 
   Next mNext;  
@@ -262,11 +180,6 @@ class DeinterlacingFilter final : public SurfaceFilter {
     mInputRow = 0;
     mOutputRow = InterlaceOffset(mPass);
     return GetRowPointer(mOutputRow);
-  }
-
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    CopyInputRow(aInputRow);
-    return DoAdvanceRow();
   }
 
   uint8_t* DoAdvanceRow() override {
@@ -725,11 +638,6 @@ class BlendAnimationFilter final : public SurfaceFilter {
     return nullptr;  
   }
 
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    CopyInputRow(aInputRow);
-    return DoAdvanceRow();
-  }
-
   uint8_t* DoAdvanceRow() override {
     uint8_t* rowPtr = nullptr;
 
@@ -1004,11 +912,6 @@ class RemoveFrameRectFilter final : public SurfaceFilter {
     return nullptr;  
   }
 
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    CopyInputRow(aInputRow);
-    return DoAdvanceRow();
-  }
-
   uint8_t* DoAdvanceRow() override {
     uint8_t* rowPtr = nullptr;
 
@@ -1192,11 +1095,6 @@ class ADAM7InterpolatingFilter final : public SurfaceFilter {
     }
 
     return mCurrentRow.get();
-  }
-
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    CopyInputRow(aInputRow);
-    return DoAdvanceRow();
   }
 
   uint8_t* DoAdvanceRow() override {

@@ -167,12 +167,26 @@ bool IsSolidColor(SourceSurface* aSurface, BGRAColor aColor,
                           aColor, aFuzz);
 }
 
+bool IsSolidPalettedColor(Decoder* aDecoder, uint8_t aColor) {
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  return PalettedRectIsSolidColor(aDecoder, currentFrame->GetRect(), aColor);
+}
+
 bool RowsAreSolidColor(SourceSurface* aSurface, int32_t aStartRow,
                        int32_t aRowCount, BGRAColor aColor,
                        uint8_t aFuzz ) {
   IntSize size = aSurface->GetSize();
   return RectIsSolidColor(
       aSurface, IntRect(0, aStartRow, size.width, aRowCount), aColor, aFuzz);
+}
+
+bool PalettedRowsAreSolidColor(Decoder* aDecoder, int32_t aStartRow,
+                               int32_t aRowCount, uint8_t aColor) {
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  IntRect frameRect = currentFrame->GetRect();
+  IntRect solidColorRect(frameRect.X(), aStartRow, frameRect.Width(),
+                         aRowCount);
+  return PalettedRectIsSolidColor(aDecoder, solidColorRect, aColor);
 }
 
 bool RectIsSolidColor(SourceSurface* aSurface, const IntRect& aRect,
@@ -208,6 +222,42 @@ bool RectIsSolidColor(SourceSurface* aSurface, const IntRect& aRect,
         ASSERT_EQ_OR_RETURN(pmColor.mRed, data[i + 2], false);
         ASSERT_EQ_OR_RETURN(pmColor.mAlpha, data[i + 3], false);
       }
+    }
+  }
+
+  return true;
+}
+
+bool PalettedRectIsSolidColor(Decoder* aDecoder, const IntRect& aRect,
+                              uint8_t aColor) {
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  uint8_t* imageData;
+  uint32_t imageLength;
+  currentFrame->GetImageData(&imageData, &imageLength);
+  ASSERT_TRUE_OR_RETURN(imageData, false);
+
+  
+  
+  
+  
+  IntRect frameRect = currentFrame->GetRect();
+  ASSERT_EQ_OR_RETURN(imageLength, uint32_t(frameRect.Area()), false);
+  IntRect rect = aRect.Intersect(frameRect);
+  ASSERT_EQ_OR_RETURN(rect.Area(), aRect.Area(), false);
+
+  
+  
+  
+  
+  rect -= frameRect.TopLeft();
+
+  
+  
+  int32_t rowLength = frameRect.Width();
+  for (int32_t row = rect.Y(); row < rect.YMost(); ++row) {
+    for (int32_t col = rect.X(); col < rect.XMost(); ++col) {
+      int32_t i = row * rowLength + col;
+      ASSERT_EQ_OR_RETURN(aColor, imageData[i], false);
     }
   }
 
@@ -322,20 +372,93 @@ void CheckGeneratedSurface(SourceSurface* aSurface, const IntRect& aRect,
       aOuterColor, aFuzz));
 }
 
+void CheckGeneratedPalettedImage(Decoder* aDecoder, const IntRect& aRect) {
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  IntSize imageSize = currentFrame->GetSize();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder, aRect, 255));
+
+  
+  EXPECT_TRUE(PalettedRectIsSolidColor(
+      aDecoder, IntRect(0, 0, imageSize.width, aRect.Y()), 0));
+
+  
+  
+  EXPECT_TRUE(PalettedRectIsSolidColor(
+      aDecoder, IntRect(0, aRect.Y(), aRect.X(), aRect.YMost()), 0));
+
+  
+  
+  const int32_t widthOnRight = imageSize.width - aRect.XMost();
+  EXPECT_TRUE(PalettedRectIsSolidColor(
+      aDecoder, IntRect(aRect.XMost(), aRect.Y(), widthOnRight, aRect.YMost()),
+      0));
+
+  
+  const int32_t heightBelow = imageSize.height - aRect.YMost();
+  EXPECT_TRUE(PalettedRectIsSolidColor(
+      aDecoder, IntRect(0, aRect.YMost(), imageSize.width, heightBelow), 0));
+}
+
 void CheckWritePixels(Decoder* aDecoder, SurfaceFilter* aFilter,
                       const Maybe<IntRect>& aOutputRect ,
                       const Maybe<IntRect>& aInputRect ,
                       const Maybe<IntRect>& aInputWriteRect ,
                       const Maybe<IntRect>& aOutputWriteRect ,
                       uint8_t aFuzz ) {
-  CheckTransformedWritePixels(aDecoder, aFilter, BGRAColor::Green(),
-                              BGRAColor::Green(), aOutputRect, aInputRect,
-                              aInputWriteRect, aOutputWriteRect, aFuzz);
+  IntRect outputRect = aOutputRect.valueOr(IntRect(0, 0, 100, 100));
+  IntRect inputRect = aInputRect.valueOr(IntRect(0, 0, 100, 100));
+  IntRect inputWriteRect = aInputWriteRect.valueOr(inputRect);
+  IntRect outputWriteRect = aOutputWriteRect.valueOr(outputRect);
+
+  
+  int32_t count = 0;
+  auto result = aFilter->WritePixels<uint32_t>([&] {
+    ++count;
+    return AsVariant(BGRAColor::Green().AsPixel());
+  });
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_EQ(inputWriteRect.Width() * inputWriteRect.Height(), count);
+
+  AssertCorrectPipelineFinalState(aFilter, inputRect, outputRect);
+
+  
+  const int32_t oldCount = count;
+  result = aFilter->WritePixels<uint32_t>([&] {
+    ++count;
+    return AsVariant(BGRAColor::Green().AsPixel());
+  });
+  EXPECT_EQ(oldCount, count);
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_TRUE(aFilter->IsSurfaceFinished());
+  Maybe<SurfaceInvalidRect> invalidRect = aFilter->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  
+  aFilter->AdvanceRow();
+  EXPECT_TRUE(aFilter->IsSurfaceFinished());
+  invalidRect = aFilter->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  
+  CheckGeneratedImage(aDecoder, outputWriteRect, aFuzz);
 }
 
-void CheckTransformedWritePixels(
-    Decoder* aDecoder, SurfaceFilter* aFilter, const BGRAColor& aInputColor,
-    const BGRAColor& aOutputColor,
+void CheckPalettedWritePixels(
+    Decoder* aDecoder, SurfaceFilter* aFilter,
     const Maybe<IntRect>& aOutputRect ,
     const Maybe<IntRect>& aInputRect ,
     const Maybe<IntRect>& aInputWriteRect ,
@@ -348,9 +471,9 @@ void CheckTransformedWritePixels(
 
   
   int32_t count = 0;
-  auto result = aFilter->WritePixels<uint32_t>([&] {
+  auto result = aFilter->WritePixels<uint8_t>([&] {
     ++count;
-    return AsVariant(aInputColor.AsPixel());
+    return AsVariant(uint8_t(255));
   });
   EXPECT_EQ(WriteState::FINISHED, result);
   EXPECT_EQ(inputWriteRect.Width() * inputWriteRect.Height(), count);
@@ -359,9 +482,9 @@ void CheckTransformedWritePixels(
 
   
   const int32_t oldCount = count;
-  result = aFilter->WritePixels<uint32_t>([&] {
+  result = aFilter->WritePixels<uint8_t>([&] {
     ++count;
-    return AsVariant(aInputColor.AsPixel());
+    return AsVariant(uint8_t(255));
   });
   EXPECT_EQ(oldCount, count);
   EXPECT_EQ(WriteState::FINISHED, result);
@@ -377,9 +500,15 @@ void CheckTransformedWritePixels(
 
   
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-  RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-  CheckGeneratedSurface(surface, outputWriteRect, aOutputColor,
-                        BGRAColor::Transparent(), aFuzz);
+  uint8_t* imageData;
+  uint32_t imageLength;
+  currentFrame->GetImageData(&imageData, &imageLength);
+  ASSERT_TRUE(imageData != nullptr);
+  ASSERT_EQ(outputWriteRect.Width() * outputWriteRect.Height(),
+            int32_t(imageLength));
+  for (uint32_t i = 0; i < imageLength; ++i) {
+    ASSERT_EQ(uint8_t(255), imageData[i]);
+  }
 }
 
 
