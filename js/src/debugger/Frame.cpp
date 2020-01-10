@@ -701,10 +701,7 @@ bool DebuggerFrame::setOnStepHandler(JSContext* cx, HandleDebuggerFrame frame,
     } else if (!handler && prior) {
       
       JSFreeOp* fop = cx->runtime()->defaultFreeOp();
-      if (!instance->debug().decrementStepperCount(fop,
-                                                   wasmFrame->funcIndex())) {
-        return false;
-      }
+      instance->debug().decrementStepperCount(fop, wasmFrame->funcIndex());
     }
   } else {
     if (handler && !prior) {
