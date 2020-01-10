@@ -11,24 +11,18 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include <stdint.h>  
-
 #include "jsapi.h"  
 
 #include "builtin/Promise.h"                 
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
-#include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/WritableStreamWriterOperations.h"  
-#include "js/CallArgs.h"     
 #include "js/Promise.h"      
 #include "js/RootingAPI.h"   
-#include "js/Value.h"  
+#include "js/Value.h"        
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
-#include "vm/List.h"         
 
-#include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
@@ -38,22 +32,14 @@
 #include "vm/List-inl.h"         
 #include "vm/Realm-inl.h"        
 
-using js::ExtraFromHandler;
 using js::PromiseObject;
-using js::TargetFromHandler;
-using js::UnwrapAndDowncastObject;
 using js::WritableStream;
-using js::WritableStreamDefaultController;
-using js::WritableStreamRejectCloseAndClosedPromiseIfNeeded;
 
-using JS::CallArgs;
-using JS::CallArgsFromVp;
 using JS::Handle;
 using JS::ObjectValue;
 using JS::RejectPromise;
 using JS::ResolvePromise;
 using JS::Rooted;
-using JS::UndefinedHandleValue;
 using JS::Value;
 
 
@@ -117,84 +103,6 @@ void WritableStream::clearInFlightWriteRequest(JSContext* cx) {
 
   MOZ_ASSERT(!haveInFlightWriteRequest());
   MOZ_ASSERT(inFlightWriteRequest().isUndefined());
-}
-
-
-
-
-
-
-
-
-JSObject* js::WritableStreamAbort(JSContext* cx,
-                                  Handle<WritableStream*> unwrappedStream,
-                                  Handle<Value> reason) {
-  cx->check(reason);
-
-  
-  
-  
-  if (unwrappedStream->closed() || unwrappedStream->errored()) {
-    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
-  }
-
-  
-  
-  if (unwrappedStream->hasPendingAbortRequest()) {
-    Rooted<JSObject*> pendingPromise(
-        cx, unwrappedStream->pendingAbortRequestPromise());
-    if (!cx->compartment()->wrap(cx, &pendingPromise)) {
-      return nullptr;
-    }
-    return pendingPromise;
-  }
-
-  
-  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
-
-  
-  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
-  if (!promise) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  bool wasAlreadyErroring = unwrappedStream->erroring();
-  Handle<Value> pendingReason =
-      wasAlreadyErroring ? UndefinedHandleValue : reason;
-
-  
-  
-  
-  {
-    AutoRealm ar(cx, unwrappedStream);
-
-    Rooted<JSObject*> wrappedPromise(cx, promise);
-    Rooted<Value> wrappedPendingReason(cx, pendingReason);
-
-    JS::Compartment* comp = cx->compartment();
-    if (!comp->wrap(cx, &wrappedPromise) ||
-        !comp->wrap(cx, &wrappedPendingReason)) {
-      return nullptr;
-    }
-
-    unwrappedStream->setPendingAbortRequest(
-        wrappedPromise, wrappedPendingReason, wasAlreadyErroring);
-  }
-
-  
-  
-  if (!wasAlreadyErroring) {
-    if (!WritableStreamStartErroring(cx, unwrappedStream, pendingReason)) {
-      return nullptr;
-    }
-  }
-
-  
-  return promise;
 }
 
 
@@ -322,68 +230,6 @@ MOZ_MUST_USE bool js::WritableStreamStartErroring(
 
 
 
-static bool AbortRequestPromiseFulfilledHandler(JSContext* cx, unsigned argc,
-                                                Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  Rooted<JSObject*> abortRequestPromise(cx, TargetFromHandler<JSObject>(args));
-  if (!ResolvePromise(cx, abortRequestPromise, UndefinedHandleValue)) {
-    return false;
-  }
-
-  
-  
-  Rooted<WritableStream*> unwrappedStream(
-      cx, UnwrapAndDowncastObject<WritableStream>(
-              cx, ExtraFromHandler<JSObject>(args)));
-  if (!unwrappedStream) {
-    return false;
-  }
-
-  if (!WritableStreamRejectCloseAndClosedPromiseIfNeeded(cx, unwrappedStream)) {
-    return false;
-  }
-
-  args.rval().setUndefined();
-  return false;
-}
-
-
-
-
-
-static bool AbortRequestPromiseRejectedHandler(JSContext* cx, unsigned argc,
-                                               Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  Rooted<JSObject*> abortRequestPromise(cx, TargetFromHandler<JSObject>(args));
-  if (!RejectPromise(cx, abortRequestPromise, args.get(0))) {
-    return false;
-  }
-
-  
-  
-  Rooted<WritableStream*> unwrappedStream(
-      cx, UnwrapAndDowncastObject<WritableStream>(
-              cx, ExtraFromHandler<JSObject>(args)));
-  if (!unwrappedStream) {
-    return false;
-  }
-
-  if (!WritableStreamRejectCloseAndClosedPromiseIfNeeded(cx, unwrappedStream)) {
-    return false;
-  }
-
-  args.rval().setUndefined();
-  return false;
-}
-
-
-
-
-
 MOZ_MUST_USE bool js::WritableStreamFinishErroring(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
@@ -397,117 +243,32 @@ MOZ_MUST_USE bool js::WritableStreamFinishErroring(
   unwrappedStream->setErrored();
 
   
-  {
-    Rooted<WritableStreamDefaultController*> unwrappedController(
-        cx, unwrappedStream->controller());
-    if (!WritableStreamControllerErrorSteps(cx, unwrappedController)) {
-      return false;
-    }
-  }
-
-  
-  Rooted<Value> storedError(cx, unwrappedStream->storedError());
-  if (!cx->compartment()->wrap(cx, &storedError)) {
-    return false;
-  }
-
-  
-  
-  {
-    Rooted<ListObject*> unwrappedWriteRequests(
-        cx, unwrappedStream->writeRequests());
-    Rooted<JSObject*> writeRequest(cx);
-    uint32_t len = unwrappedWriteRequests->length();
-    for (uint32_t i = 0; i < len; i++) {
-      
-      writeRequest = &unwrappedWriteRequests->get(i).toObject();
-      if (!RejectUnwrappedPromiseWithError(cx, &writeRequest, storedError)) {
-        return false;
-      }
-    }
-  }
-
   
   
   
   
-  unwrappedStream->clearWriteRequests();
-
-  
-  if (!unwrappedStream->hasPendingAbortRequest()) {
-    
-    
-    
-    return WritableStreamRejectCloseAndClosedPromiseIfNeeded(cx,
-                                                             unwrappedStream);
-  }
-
-  
-  
-  Rooted<Value> abortRequestReason(
-      cx, unwrappedStream->pendingAbortRequestReason());
-  if (!cx->compartment()->wrap(cx, &abortRequestReason)) {
-    return false;
-  }
-  Rooted<JSObject*> abortRequestPromise(
-      cx, unwrappedStream->pendingAbortRequestPromise());
-  bool wasAlreadyErroring =
-      unwrappedStream->pendingAbortRequestWasAlreadyErroring();
-  unwrappedStream->clearPendingAbortRequest();
-
-  
-  if (wasAlreadyErroring) {
-    
-    if (!RejectUnwrappedPromiseWithError(cx, &abortRequestPromise,
-                                         storedError)) {
-      return false;
-    }
-
-    
-    
-    
-    return WritableStreamRejectCloseAndClosedPromiseIfNeeded(cx,
-                                                             unwrappedStream);
-  }
-
   
   
   
-  Rooted<WritableStreamDefaultController*> unwrappedController(
-      cx, unwrappedStream->controller());
-  Rooted<JSObject*> promise(
-      cx, WritableStreamControllerAbortSteps(cx, unwrappedController,
-                                             abortRequestReason));
-  if (!promise) {
-    return false;
-  }
-  cx->check(promise);
-
-  if (!cx->compartment()->wrap(cx, &abortRequestPromise)) {
-    return false;
-  }
-
-  Rooted<JSObject*> stream(cx, unwrappedStream);
-  if (!cx->compartment()->wrap(cx, &stream)) {
-    return false;
-  }
-
   
   
-  Rooted<JSObject*> onFulfilled(
-      cx, NewHandlerWithExtra(cx, AbortRequestPromiseFulfilledHandler,
-                              abortRequestPromise, stream));
-  if (!onFulfilled) {
-    return false;
-  }
-  Rooted<JSObject*> onRejected(
-      cx, NewHandlerWithExtra(cx, AbortRequestPromiseRejectedHandler,
-                              abortRequestPromise, stream));
-  if (!onRejected) {
-    return false;
-  }
-
-  return JS::AddPromiseReactions(cx, promise, onFulfilled, onRejected);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
 }
 
 

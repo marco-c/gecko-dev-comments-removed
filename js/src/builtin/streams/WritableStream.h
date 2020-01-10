@@ -78,14 +78,6 @@ class WritableStream : public NativeObject {
 
 
 
-
-
-
-
-
-
-
-
     Slot_WriteRequests,
 
     
@@ -360,16 +352,9 @@ class WritableStream : public NativeObject {
   }
 
   ListObject* writeRequests() const {
-    MOZ_ASSERT(!getFixedSlot(Slot_WriteRequests).isUndefined(),
-               "shouldn't be accessing [[writeRequests]] on a newborn and "
-               "uninitialized stream, or on a stream that's errored and no "
-               "longer has any write requests");
     return &getFixedSlot(Slot_WriteRequests).toObject().as<ListObject>();
   }
   void clearWriteRequests() {
-    
-    
-    
     MOZ_ASSERT(stateIsInitialized());
     MOZ_ASSERT(!haveInFlightWriteRequest(),
                "must clear the in-flight request flag before clearing "
@@ -392,15 +377,6 @@ class WritableStream : public NativeObject {
   bool pendingAbortRequestWasAlreadyErroring() const {
     MOZ_ASSERT(hasPendingAbortRequest());
     return flags() & PendingAbortRequestWasAlreadyErroring;
-  }
-
-  void setPendingAbortRequest(JSObject* promise, const JS::Value& reason,
-                              bool wasAlreadyErroring) {
-    MOZ_ASSERT(!hasPendingAbortRequest());
-    MOZ_ASSERT(!(flags() & PendingAbortRequestWasAlreadyErroring));
-    setFixedSlot(Slot_PendingAbortRequestPromise, JS::ObjectValue(*promise));
-    setFixedSlot(Slot_PendingAbortRequestReason, reason);
-    setFlag(PendingAbortRequestWasAlreadyErroring, wasAlreadyErroring);
   }
 
   void clearPendingAbortRequest() {

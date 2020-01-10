@@ -6,9 +6,6 @@
 
 
 
-
-
-
 #ifndef builtin_streams_HandlerFunction_inl_h
 #define builtin_streams_HandlerFunction_inl_h
 
@@ -30,16 +27,7 @@
 
 namespace js {
 
-
-
-
 constexpr size_t StreamHandlerFunctionSlot_Target = 0;
-constexpr size_t StreamHandlerFunctionSlot_Extra = 1;
-
-static_assert(StreamHandlerFunctionSlot_Extra <
-                  FunctionExtended::NUM_EXTENDED_SLOTS,
-              "handler function slots shouldn't exceed available extended "
-              "slots");
 
 inline MOZ_MUST_USE JSFunction* NewHandler(JSContext* cx, Native handler,
                                            JS::Handle<JSObject*> target) {
@@ -57,18 +45,6 @@ inline MOZ_MUST_USE JSFunction* NewHandler(JSContext* cx, Native handler,
   return handlerFun;
 }
 
-inline MOZ_MUST_USE JSFunction* NewHandlerWithExtra(
-    JSContext* cx, Native handler, JS::Handle<JSObject*> target,
-    JS::Handle<JSObject*> extra) {
-  cx->check(extra);
-  JSFunction* handlerFun = NewHandler(cx, handler, target);
-  if (handlerFun) {
-    handlerFun->setExtendedSlot(StreamHandlerFunctionSlot_Extra,
-                                JS::ObjectValue(*extra));
-  }
-  return handlerFun;
-}
-
 
 
 
@@ -77,18 +53,6 @@ template <class T>
 inline MOZ_MUST_USE T* TargetFromHandler(const JS::CallArgs& args) {
   JSFunction& func = args.callee().as<JSFunction>();
   return &func.getExtendedSlot(StreamHandlerFunctionSlot_Target)
-              .toObject()
-              .as<T>();
-}
-
-
-
-
-
-template <class T>
-inline MOZ_MUST_USE T* ExtraFromHandler(const JS::CallArgs& args) {
-  JSFunction& func = args.callee().as<JSFunction>();
-  return &func.getExtendedSlot(StreamHandlerFunctionSlot_Extra)
               .toObject()
               .as<T>();
 }

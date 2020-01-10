@@ -245,15 +245,6 @@ enum JSWhyMagic {
   
   JS_GENERIC_MAGIC,
 
-  
-
-
-
-
-
-
-  JS_WRITABLESTREAM_CLOSE_RECORD,
-
   JS_WHY_MAGIC_COUNT
 };
 
