@@ -37,8 +37,6 @@ function getValue(dbg, index) {
 
 
 add_task(async function() {
-  await pushPref("devtools.debugger.features.windowless-workers", true);
-
   const dbg = await initDebugger("doc-windowless-workers.html");
   const mainThread = dbg.toolbox.threadFront.actor;
 

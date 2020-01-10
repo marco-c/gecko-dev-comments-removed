@@ -3,9 +3,6 @@
 
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
-const {
-  gDevToolsBrowser,
-} = require("devtools/client/framework/devtools-browser");
 loader.lazyRequireGetter(
   this,
   "openContentLink",
@@ -77,10 +74,6 @@ DebuggerPanel.prototype = {
 
   openLink: function(url) {
     openContentLink(url);
-  },
-
-  openWorkerToolbox: function(workerTargetFront) {
-    return gDevToolsBrowser.openWorkerToolbox(workerTargetFront, "jsdebugger");
   },
 
   openConsoleAndEvaluate: async function(input) {
