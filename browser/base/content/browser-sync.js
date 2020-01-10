@@ -57,17 +57,12 @@ var gSync = {
     ));
   },
 
-  get syncReady() {
-    return Cc["@mozilla.org/weave/service;1"].getService().wrappedJSObject
-      .ready;
-  },
-
   
   
   get sendTabConfiguredAndLoading() {
     return (
       UIState.get().status == UIState.STATUS_SIGNED_IN &&
-      (!this.syncReady || !Weave.Service.clientsEngine.hasSyncedThisSession)
+      !fxAccounts.device.recentDeviceList
     );
   },
 
@@ -75,14 +70,26 @@ var gSync = {
     return UIState.get().status == UIState.STATUS_SIGNED_IN;
   },
 
-  get sendTabTargets() {
-    return Weave.Service.clientsEngine.fxaDevices
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .filter(
-        d =>
-          !d.isCurrentDevice &&
-          (fxAccounts.commands.sendTab.isDeviceCompatible(d) || d.clientRecord)
+  getSendTabTargets() {
+    let targets = [];
+    if (!fxAccounts.device.recentDeviceList) {
+      return targets;
+    }
+    for (let d of fxAccounts.device.recentDeviceList) {
+      if (d.isCurrentDevice) {
+        continue;
+      }
+      let clientRecord = Weave.Service.clientsEngine.getClientByFxaDeviceId(
+        d.id
       );
+      if (clientRecord || fxAccounts.commands.sendTab.isDeviceCompatible(d)) {
+        targets.push({
+          clientRecord,
+          ...d,
+        });
+      }
+    }
+    return targets.sort((a, b) => a.name.localeCompare(b.name));
   },
 
   _generateNodeGetters() {
@@ -220,6 +227,24 @@ var gSync = {
     this.updateSyncButtonsTooltip(state);
     this.updateSyncStatus(state);
     this.updateFxAPanel(state);
+    
+    this.refreshFxaDevices();
+  },
+
+  async refreshFxaDevices(options) {
+    if (UIState.get().status != UIState.STATUS_SIGNED_IN) {
+      console.info("Skipping device list refresh; not signed in");
+      return;
+    }
+    try {
+      
+      
+      
+      
+      await fxAccounts.device.refreshDeviceList(options);
+    } catch (e) {
+      console.error("Refreshing device list failed.", e);
+    }
   },
 
   updateSendToDeviceTitle() {
@@ -248,7 +273,10 @@ var gSync = {
       return;
     }
 
-    if (this.sendTabConfiguredAndLoading || this.sendTabTargets.length <= 0) {
+    const targets = this.sendTabConfiguredAndLoading
+      ? []
+      : this.getSendTabTargets();
+    if (!targets.length) {
       PanelUI.showSubView("PanelUI-fxa-menu-sendtab-no-devices", anchor);
       return;
     }
@@ -310,18 +338,28 @@ var gSync = {
     bodyNode.removeAttribute("state");
     
     
+    
     if (gSync.sendTabConfiguredAndLoading) {
       bodyNode.setAttribute("state", "notready");
     }
-    if (reloadDevices && UIState.get().syncEnabled) {
-      
-      Services.tm.dispatchToMainThread(async () => {
+    if (reloadDevices) {
+      if (UIState.get().syncEnabled) {
+        Services.tm.dispatchToMainThread(async () => {
+          
+          await Weave.Service.sync({ why: "pageactions", engines: [] });
+          if (!window.closed) {
+            this.populateSendTabToDevicesView(panelViewNode, false);
+          }
+        });
+      } else {
         
-        await Weave.Service.sync({ why: "pageactions", engines: [] });
-        if (!window.closed) {
-          this.populateSendTabToDevicesView(panelViewNode, false);
-        }
-      });
+        
+        this.refreshFxaDevices({ ignoreCached: true }).then(_ => {
+          if (!window.closed) {
+            this.populateSendTabToDevicesView(panelViewNode, false);
+          }
+        });
+      }
     }
   },
 
@@ -806,8 +844,10 @@ var gSync = {
 
     const state = UIState.get();
     if (state.status == UIState.STATUS_SIGNED_IN) {
-      if (this.sendTabTargets.length) {
+      const targets = this.getSendTabTargets();
+      if (targets.length) {
         this._appendSendTabDeviceList(
+          targets,
           fragment,
           createDeviceNodeFn,
           url,
@@ -829,18 +869,14 @@ var gSync = {
     devicesPopup.appendChild(fragment);
   },
 
-  
-  
-  
   _appendSendTabDeviceList(
+    targets,
     fragment,
     createDeviceNodeFn,
     url,
     title,
     multiselected
   ) {
-    const targets = this.sendTabTargets;
-
     let tabsToSend = multiselected
       ? gBrowser.selectedTabs.map(t => {
           return {
@@ -1341,6 +1377,7 @@ var gSync = {
   },
 
   onClientsSynced() {
+    
     let element = document.getElementById("PanelUI-remotetabs-main");
     if (element) {
       if (Weave.Service.clientsEngine.stats.numClients > 1) {

@@ -14,6 +14,8 @@ const {
   ERRNO_DEVICE_SESSION_CONFLICT,
   ERRNO_UNKNOWN_DEVICE,
   ON_NEW_DEVICE_ID,
+  ON_DEVICE_CONNECTED_NOTIFICATION,
+  ON_DEVICE_DISCONNECTED_NOTIFICATION,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 
 const { DEVICE_TYPE_DESKTOP } = ChromeUtils.import(
@@ -44,9 +46,27 @@ const PREF_DEPRECATED_DEVICE_NAME = "services.sync.client.name";
 class FxAccountsDevice {
   constructor(fxai) {
     this._fxai = fxai;
+    this._deviceListCache = null;
+
+    
+    
+    
+    
+    
+    
+    this._generation = 0;
+
     
     
     this.DEVICE_REGISTRATION_VERSION = 2;
+
+    
+    
+    this.TIME_BETWEEN_FXA_DEVICES_FETCH_MS = 1 * 60 * 1000; 
+
+    
+    Services.obs.addObserver(this, ON_DEVICE_CONNECTED_NOTIFICATION, true);
+    Services.obs.addObserver(this, ON_DEVICE_DISCONNECTED_NOTIFICATION, true);
   }
 
   async getLocalId() {
@@ -175,22 +195,87 @@ class FxAccountsDevice {
     );
   }
 
-  getDeviceList() {
-    return this._fxai.withVerifiedAccountState(async state => {
-      let accountData = await state.getUserAccountData();
+  
 
-      const devices = await this._fxai.fxAccountsClient.getDeviceList(
-        accountData.sessionToken
-      );
 
+
+
+
+
+
+  get recentDeviceList() {
+    return this._deviceListCache ? this._deviceListCache.devices : null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async refreshDeviceList({ ignoreCached = false } = {}) {
+    if (this._fetchAndCacheDeviceListPromise) {
       
-      const ourDevice = devices.find(device => device.isCurrentDevice);
-      if (ourDevice.pushEndpointExpired) {
-        await this._fxai.fxaPushService.unsubscribe();
-        await this._registerOrUpdateDevice(accountData);
-      }
-      return devices;
-    });
+      
+      return this._fetchAndCacheDeviceListPromise;
+    }
+    if (ignoreCached || !this._deviceListCache) {
+      return this._fetchAndCacheDeviceList();
+    }
+    if (
+      this._fxai.now() - this._deviceListCache.lastFetch <
+      this.TIME_BETWEEN_FXA_DEVICES_FETCH_MS
+    ) {
+      
+      
+      return false;
+    }
+    return this._fetchAndCacheDeviceList();
+  }
+
+  async _fetchAndCacheDeviceList() {
+    if (this._fetchAndCacheDeviceListPromise) {
+      return this._fetchAndCacheDeviceListPromise;
+    }
+    let generation = this._generation;
+    return (this._fetchAndCacheDeviceListPromise = this._fxai
+      .withVerifiedAccountState(async state => {
+        let accountData = await state.getUserAccountData([
+          "sessionToken",
+          "device",
+        ]);
+
+        let devices = await this._fxai.fxAccountsClient.getDeviceList(
+          accountData.sessionToken
+        );
+        if (generation != this._generation) {
+          throw new Error("Another user has signed in");
+        }
+        this._deviceListCache = {
+          lastFetch: this._fxai.now(),
+          devices,
+        };
+
+        
+        const ourDevice = devices.find(device => device.isCurrentDevice);
+        if (ourDevice.pushEndpointExpired) {
+          await this._fxai.fxaPushService.unsubscribe();
+          await this._registerOrUpdateDevice(accountData);
+        }
+
+        return true;
+      })
+      .finally(_ => {
+        this._fetchAndCacheDeviceListPromise = null;
+      }));
   }
 
   async updateDeviceRegistration() {
@@ -363,7 +448,45 @@ class FxAccountsDevice {
       );
     }
   }
+
+  reset() {
+    this._deviceListCache = null;
+    this._generation++;
+    this._fetchAndCacheDeviceListPromise = null;
+  }
+
+  
+  observe(subject, topic, data) {
+    switch (topic) {
+      case ON_DEVICE_CONNECTED_NOTIFICATION:
+        this._fetchAndCacheDeviceList().catch(error => {
+          log.warn(
+            "failed to refresh devices after connecting a new device",
+            error
+          );
+        });
+        break;
+      case ON_DEVICE_DISCONNECTED_NOTIFICATION:
+        let json = JSON.parse(data);
+        if (!json.isLocalDevice) {
+          
+          
+          this._fetchAndCacheDeviceList().catch(error => {
+            log.warn(
+              "failed to refresh devices after disconnecting a device",
+              error
+            );
+          });
+        }
+        break;
+    }
+  }
 }
+
+FxAccountsDevice.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIObserver,
+  Ci.nsISupportsWeakReference,
+]);
 
 function urlsafeBase64Encode(buffer) {
   return ChromeUtils.base64URLEncode(new Uint8Array(buffer), { pad: false });

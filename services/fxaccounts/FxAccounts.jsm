@@ -422,10 +422,6 @@ class FxAccounts {
     return this._internal.withVerifiedAccountState(func);
   }
 
-  getDeviceList() {
-    return this._internal.getDeviceList();
-  }
-
   
 
 
@@ -1101,10 +1097,6 @@ FxAccountsInternal.prototype = {
       .then(result => currentState.resolve(result));
   },
 
-  getDeviceList() {
-    return this.device.getDeviceList();
-  },
-
   
 
 
@@ -1120,6 +1112,9 @@ FxAccountsInternal.prototype = {
     }
     if (this._commands) {
       this._commands = null;
+    }
+    if (this._device) {
+      this._device.reset();
     }
     
     
