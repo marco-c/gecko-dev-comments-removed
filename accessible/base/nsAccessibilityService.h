@@ -248,6 +248,25 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
+
+  nsStaticAtom* MarkupAttribute(const nsIContent* aContent,
+                                nsStaticAtom* aAtom) const {
+    const mozilla::a11y::HTMLMarkupMapInfo* markupMap =
+        mHTMLMarkupMap.Get(aContent->NodeInfo()->NameAtom());
+    if (markupMap) {
+      for (size_t i = 0; i < mozilla::ArrayLength(markupMap->attrs); i++) {
+        const mozilla::a11y::MarkupAttrInfo* info = markupMap->attrs + i;
+        if (info->name == aAtom) {
+          return info->value;
+        }
+      }
+    }
+    return nullptr;
+  }
+
+  
+
+
   void MarkupAttributes(const nsIContent* aContent,
                         nsIPersistentProperties* aAttributes) const;
 
