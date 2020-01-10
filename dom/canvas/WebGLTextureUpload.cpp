@@ -1727,24 +1727,24 @@ ScopedCopyTexImageSource::ScopedCopyTexImageSource(
   
 
   GLuint rgbaRB = 0;
-  gl->fGenRenderbuffers(1, &rgbaRB);
-  gl::ScopedBindRenderbuffer scopedRB(gl, rgbaRB);
-  gl->fRenderbufferStorage(LOCAL_GL_RENDERBUFFER, sizedFormat, srcWidth,
-                           srcHeight);
-
   GLuint rgbaFB = 0;
-  gl->fGenFramebuffers(1, &rgbaFB);
-  gl->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, rgbaFB);
-  gl->fFramebufferRenderbuffer(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                               LOCAL_GL_RENDERBUFFER, rgbaRB);
+  {
+    gl->fGenRenderbuffers(1, &rgbaRB);
+    gl::ScopedBindRenderbuffer scopedRB(gl, rgbaRB);
+    gl->fRenderbufferStorage(LOCAL_GL_RENDERBUFFER, sizedFormat, srcWidth,
+                             srcHeight);
 
-  const GLenum status = gl->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
-  if (status != LOCAL_GL_FRAMEBUFFER_COMPLETE) {
-    MOZ_CRASH("GFX: Temp framebuffer is not complete.");
+    gl->fGenFramebuffers(1, &rgbaFB);
+    gl->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, rgbaFB);
+    gl->fFramebufferRenderbuffer(LOCAL_GL_FRAMEBUFFER,
+                                 LOCAL_GL_COLOR_ATTACHMENT0,
+                                 LOCAL_GL_RENDERBUFFER, rgbaRB);
+
+    const GLenum status = gl->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
+    if (status != LOCAL_GL_FRAMEBUFFER_COMPLETE) {
+      MOZ_CRASH("GFX: Temp framebuffer is not complete.");
+    }
   }
-
-  
-  scopedRB.Unwrap();  
 
   
   const gfx::IntSize srcSize(srcWidth, srcHeight);
@@ -1753,10 +1753,6 @@ ScopedCopyTexImageSource::ScopedCopyTexImageSource(
     gl->BlitHelper()->DrawBlitTextureToFramebuffer(scopedTex.Texture(), srcSize,
                                                    srcSize);
   }
-
-  
-  scopedBindTex.Unwrap();
-  scopedTex.Unwrap();
 
   
   mRB = rgbaRB;
