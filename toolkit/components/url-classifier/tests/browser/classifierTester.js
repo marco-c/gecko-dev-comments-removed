@@ -305,6 +305,11 @@ var classifierTester = {
   },
 
   checkPluginInfo(pluginInfo, expectedClassification, flashSetting) {
+    
+    
+    if (flashSetting == classifierTester.ALWAYS_ACTIVATE_PREF_VALUE) {
+      flashSetting = classifierTester.ASK_TO_ACTIVATE_PREF_VALUE;
+    }
     is(pluginInfo.flashClassification, expectedClassification,
        "Page's classification should match expected");
 
