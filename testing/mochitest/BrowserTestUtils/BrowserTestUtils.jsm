@@ -88,23 +88,6 @@ var gSynthesizeCompositionChangeCount = 0;
 const kAboutPageRegistrationContentScript =
   "chrome://mochikit/content/tests/BrowserTestUtils/content-about-page-utils.js";
 
-
-
-
-function registerActor() {
-  let actorOptions = {
-    child: {
-      moduleURI: "resource://testing-common/BrowserTestUtilsChild.jsm",
-    },
-
-    allFrames: true,
-    includeChrome: true,
-  };
-  ChromeUtils.registerWindowActor("BrowserTestUtils", actorOptions);
-}
-
-registerActor();
-
 var BrowserTestUtils = {
   
 
@@ -1631,14 +1614,10 @@ var BrowserTestUtils = {
 
 
 
-
-
-
-  async crashFrame(
+  async crashBrowser(
     browser,
     shouldShowTabCrashPage = true,
-    shouldClearMinidumps = true,
-    browsingContext
+    shouldClearMinidumps = true
   ) {
     let extra = {};
     let KeyValueParser = {};
@@ -1680,6 +1659,26 @@ var BrowserTestUtils = {
         file.remove(false);
       }
     }
+
+    
+    
+    
+    
+    let frame_script = () => {
+      const { ctypes } = ChromeUtils.import(
+        "resource://gre/modules/ctypes.jsm"
+      );
+
+      let dies = function() {
+        privateNoteIntentionalCrash();
+        let zero = new ctypes.intptr_t(8);
+        let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
+        badptr.contents;
+      };
+
+      dump("\nEt tu, Brute?\n");
+      dies();
+    };
 
     let expectedPromises = [];
 
@@ -1773,11 +1772,9 @@ var BrowserTestUtils = {
     }
 
     
-    this.sendAsyncMessage(
-      browsingContext || browser.browsingContext,
-      "BrowserTestUtils:CrashFrame",
-      {}
-    );
+    
+    let mm = browser.messageManager;
+    mm.loadFrameScript("data:,(" + frame_script.toString() + ")();", false);
 
     await Promise.all(expectedPromises);
 
@@ -2209,25 +2206,5 @@ var BrowserTestUtils = {
       );
     }
     return tabbrowser.addTab(uri, params);
-  },
-
-  
-
-
-
-
-
-
-
-
-  async sendAsyncMessage(aBrowsingContext, aMessageName, aMessageData) {
-    if (!aBrowsingContext.currentWindowGlobal) {
-      await this.waitForCondition(() => aBrowsingContext.currentWindowGlobal);
-    }
-
-    let actor = aBrowsingContext.currentWindowGlobal.getActor(
-      "BrowserTestUtils"
-    );
-    actor.sendAsyncMessage(aMessageName, aMessageData);
   },
 };
