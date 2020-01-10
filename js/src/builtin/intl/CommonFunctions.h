@@ -61,6 +61,32 @@ static inline bool StringsAreEqual(const char* s1, const char* s2) {
   return !strcmp(s1, s2);
 }
 
+
+
+
+
+
+
+
+static inline const char* LastDitchLocale() { return "en-GB"; }
+
+
+
+
+
+
+struct OldStyleLanguageTagMapping {
+  const char* const oldStyle;
+  const char* const modernStyle;
+
+  
+  constexpr OldStyleLanguageTagMapping(const char* oldStyle,
+                                       const char* modernStyle)
+      : oldStyle(oldStyle), modernStyle(modernStyle) {}
+};
+
+extern const OldStyleLanguageTagMapping oldStyleLanguageTagMappings[5];
+
 static inline const char* IcuLocale(const char* locale) {
   if (StringsAreEqual(locale, "und")) {
     return "";  

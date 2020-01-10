@@ -56,6 +56,11 @@ class SharedIntlData {
         twoByteChars = string->twoByteChars(nogc);
       }
     }
+
+    LinearStringLookup(const char* chars, size_t length)
+        : isLatin1(true), length(length) {
+      latin1Chars = reinterpret_cast<const JS::Latin1Char*>(chars);
+    }
   };
 
  private:
@@ -165,6 +170,97 @@ class SharedIntlData {
       JS::MutableHandle<JSAtom*> result);
 
  private:
+  using Locale = JSAtom*;
+
+  struct LocaleHasher {
+    struct Lookup : LinearStringLookup {
+      explicit Lookup(JSLinearString* locale);
+      Lookup(const char* chars, size_t length);
+    };
+
+    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
+    static bool match(Locale key, const Lookup& lookup);
+  };
+
+  using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
+
+  LocaleSet supportedLocales;
+  LocaleSet collatorSupportedLocales;
+  LocaleSet dateTimeFormatSupportedLocales;
+  LocaleSet numberFormatSupportedLocales;
+
+  bool supportedLocalesInitialized = false;
+
+  
+  
+  using CountAvailable = int32_t (*)();
+  using GetAvailable = const char* (*)(int32_t localeIndex);
+
+  static bool getAvailableLocales(JSContext* cx, LocaleSet& locales,
+                                  CountAvailable countAvailable,
+                                  GetAvailable getAvailable);
+
+  
+
+
+  bool ensureSupportedLocales(JSContext* cx);
+
+  MOZ_MUST_USE bool isSupportedLocale(JSContext* cx, const LocaleSet& locales,
+                                      JS::Handle<JSString*> locale,
+                                      bool* supported);
+
+ public:
+  
+
+
+  MOZ_MUST_USE bool isCollatorSupportedLocale(JSContext* cx,
+                                              JS::Handle<JSString*> locale,
+                                              bool* supported) {
+    return isSupportedLocale(cx, collatorSupportedLocales, locale, supported);
+  }
+
+  
+
+
+  MOZ_MUST_USE bool isDateTimeFormatSupportedLocale(
+      JSContext* cx, JS::Handle<JSString*> locale, bool* supported) {
+    return isSupportedLocale(cx, dateTimeFormatSupportedLocales, locale,
+                             supported);
+  }
+
+  
+
+
+  MOZ_MUST_USE bool isNumberFormatSupportedLocale(JSContext* cx,
+                                                  JS::Handle<JSString*> locale,
+                                                  bool* supported) {
+    return isSupportedLocale(cx, numberFormatSupportedLocales, locale,
+                             supported);
+  }
+
+  
+
+
+  MOZ_MUST_USE bool isPluralRulesSupportedLocale(JSContext* cx,
+                                                 JS::Handle<JSString*> locale,
+                                                 bool* supported) {
+    
+    
+    return isSupportedLocale(cx, supportedLocales, locale, supported);
+  }
+
+  
+
+
+
+  MOZ_MUST_USE bool isRelativeTimeFormatSupportedLocale(
+      JSContext* cx, JS::Handle<JSString*> locale, bool* supported) {
+    
+    
+    return isSupportedLocale(cx, supportedLocales, locale, supported);
+  }
+
+ private:
   
 
 
@@ -189,19 +285,6 @@ class SharedIntlData {
 
 
 #if DEBUG || MOZ_SYSTEM_ICU
-  using Locale = JSAtom*;
-
-  struct LocaleHasher {
-    struct Lookup : LinearStringLookup {
-      explicit Lookup(JSLinearString* locale);
-    };
-
-    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
-    static bool match(Locale key, const Lookup& lookup);
-  };
-
-  using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
-
   LocaleSet upperCaseFirstLocales;
 
   bool upperCaseFirstInitialized = false;
