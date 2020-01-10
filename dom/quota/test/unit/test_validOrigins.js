@@ -11,6 +11,7 @@ async function testSteps() {
   const testingURLs = [
     
     "https://example.com",
+    "https://smaug----.github.io/",
     
     "about:home",
     "about:reader",

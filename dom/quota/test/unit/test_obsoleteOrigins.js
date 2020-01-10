@@ -13,11 +13,6 @@ async function testSteps() {
     "storage/default/chrome+++content+browser.xul/",
     "storage/default/moz-safe-about+++home/",
     
-    
-    
-    
-    
-    
     "storage/default/https+++example.com/asmjs/",
     "storage/default/about+home+1",
     "storage/default/about+home+1+q",
