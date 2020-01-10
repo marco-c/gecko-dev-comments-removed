@@ -483,7 +483,7 @@ pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
   
   
   
-  pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
+  pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
   
   
   
