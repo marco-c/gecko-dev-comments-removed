@@ -255,6 +255,24 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   
   
   
+  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
+  if (cspToInherit) {
+    bool allowsNavigateTo = false;
+    rv = cspToInherit->GetAllowsNavigateTo(newUri, loadInfo,
+                                           true,  
+                                           false, 
+                                           &allowsNavigateTo);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!allowsNavigateTo) {
+      oldChannel->Cancel(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
+      return NS_OK;
+    }
+  }
+
+  
+  
+  
   
   
   nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
@@ -278,13 +296,12 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
     return rv;
   }
 
-  Maybe<nsresult> cancelCode;
-  rv = ConsultCSPForRedirect(originalUri, newUri, loadInfo, cancelCode);
-  if (cancelCode) {
-    oldChannel->Cancel(*cancelCode);
-  }
-  if (NS_FAILED(rv)) {
+  int16_t decision = nsIContentPolicy::ACCEPT;
+  rv = ConsultCSPForRedirect(originalUri, newUri, loadInfo, &decision);
+  if (NS_CP_REJECTED(decision)) {
     autoCallback.DontCallback();
+    oldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+    return NS_BINDING_FAILED;
   }
 
   return rv;
@@ -293,34 +310,15 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
 nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
                                            nsIURI* aNewURI,
                                            nsILoadInfo* aLoadInfo,
-                                           Maybe<nsresult>& aCancelCode) {
-  
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit =
-      aLoadInfo->GetCspToInherit();
-  if (cspToInherit) {
-    bool allowsNavigateTo = false;
-    nsresult rv = cspToInherit->GetAllowsNavigateTo(
-        aNewURI, aLoadInfo, true, 
-        false,                    
-        &allowsNavigateTo);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!allowsNavigateTo) {
-      aCancelCode = Some(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
-      return NS_OK;
-    }
-  }
-
+                                           int16_t* aDecision) {
   nsCOMPtr<nsICSPEventListener> cspEventListener;
   nsresult rv =
       aLoadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
-  MOZ_ALWAYS_SUCCEEDS(rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoString cspNonce;
   rv = aLoadInfo->GetCspNonce(cspNonce);
-  MOZ_ALWAYS_SUCCEEDS(rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
   bool isPreload = nsContentUtils::IsPreloadType(policyType);
@@ -332,7 +330,6 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   policyType =
       nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
-  int16_t decision = nsIContentPolicy::ACCEPT;
   nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
   
   if (isPreload) {
@@ -349,13 +346,12 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
           aOriginalURI,    
           true,            
           cspNonce,        
-          &decision);
+          aDecision);
 
       
       
-      if (NS_CP_REJECTED(decision)) {
-        aCancelCode = Some(NS_ERROR_DOM_BAD_URI);
-        return NS_BINDING_FAILED;
+      if (NS_CP_REJECTED(*aDecision)) {
+        return NS_OK;
       }
     }
   }
@@ -373,11 +369,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
                     aOriginalURI,    
                     true,            
                     cspNonce,        
-                    &decision);
-    if (NS_CP_REJECTED(decision)) {
-      aCancelCode = Some(NS_ERROR_DOM_BAD_URI);
-      return NS_BINDING_FAILED;
-    }
+                    aDecision);
   }
 
   return NS_OK;
