@@ -1374,12 +1374,37 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
+  void GetSelectionRangesExtendedToIncludeAdjuscentWhiteSpaces(
+      nsTArray<RefPtr<nsRange>>& aOutArrayOfRanges);
+
+  
+
+
+
+
   already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
       const dom::AbstractRange& aAbstractRange, EditSubAction aEditSubAction);
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
       const RangeBoundaryBase<SPT, SRT>& aStartRef,
       const RangeBoundaryBase<EPT, ERT>& aEndRef, EditSubAction aEditSubAction);
+
+  
+
+
+
+
+
+
+
+
+  void GetSelectionRangesExtendedToHardLineStartAndEnd(
+      nsTArray<RefPtr<nsRange>>& aOutArrayOfRanges,
+      EditSubAction aEditSubAction);
 
   
 

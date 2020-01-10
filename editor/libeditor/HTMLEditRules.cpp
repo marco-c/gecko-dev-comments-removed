@@ -1039,8 +1039,9 @@ nsresult HTMLEditRules::GetAlignment(bool* aMixed,
       return NS_ERROR_FAILURE;
     }
   } else {
-    nsTArray<RefPtr<nsRange>> arrayOfRanges;
-    GetPromotedRanges(arrayOfRanges, EditSubAction::eSetOrClearAlignment);
+    AutoTArray<RefPtr<nsRange>, 4> arrayOfRanges;
+    HTMLEditorRef().GetSelectionRangesExtendedToHardLineStartAndEnd(
+        arrayOfRanges, EditSubAction::eSetOrClearAlignment);
 
     
     nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -4416,10 +4417,6 @@ nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
 
   AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
 
-  nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(arrayOfRanges, EditSubAction::eCreateOrChangeList);
-
-  
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   rv = GetListActionNodes(arrayOfNodes, EntireList::no, TouchContent::yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -5064,8 +5061,9 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
   
   
 
-  nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(arrayOfRanges, EditSubAction::eIndent);
+  AutoTArray<RefPtr<nsRange>, 4> arrayOfRanges;
+  HTMLEditorRef().GetSelectionRangesExtendedToHardLineStartAndEnd(
+      arrayOfRanges, EditSubAction::eIndent);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -7139,41 +7137,46 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
   return point;
 }
 
-void HTMLEditRules::GetPromotedRanges(
-    nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
-    EditSubAction aEditSubAction) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
+void HTMLEditor::GetSelectionRangesExtendedToIncludeAdjuscentWhiteSpaces(
+    nsTArray<RefPtr<nsRange>>& aOutArrayOfRanges) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aOutArrayOfRanges.IsEmpty());
 
-  uint32_t rangeCount = SelectionRefPtr()->RangeCount();
-  for (uint32_t i = 0; i < rangeCount; i++) {
-    RefPtr<nsRange> selectionRange = SelectionRefPtr()->GetRangeAt(i);
+  aOutArrayOfRanges.SetCapacity(SelectionRefPtr()->RangeCount());
+  for (uint32_t i = 0; i < SelectionRefPtr()->RangeCount(); i++) {
+    nsRange* selectionRange = SelectionRefPtr()->GetRangeAt(i);
     MOZ_ASSERT(selectionRange);
 
-    
-    
-    
-
-    RefPtr<nsRange> opRange;
-    switch (aEditSubAction) {
-      case EditSubAction::eInsertText:
-      case EditSubAction::eInsertTextComingFromIME:
-      case EditSubAction::eInsertLineBreak:
-      case EditSubAction::eInsertParagraphSeparator:
-      case EditSubAction::eDeleteText:
-        opRange = HTMLEditorRef().CreateRangeIncludingAdjuscentWhiteSpaces(
-            *selectionRange);
-        break;
-      default:
-        opRange = HTMLEditorRef().CreateRangeExtendedToHardLineStartAndEnd(
-            *selectionRange, aEditSubAction);
-        break;
-    }
-    if (!opRange) {
-      opRange = selectionRange->CloneRange();
+    RefPtr<nsRange> extendedRange =
+        CreateRangeIncludingAdjuscentWhiteSpaces(*selectionRange);
+    if (!extendedRange) {
+      extendedRange = selectionRange->CloneRange();
     }
 
+    aOutArrayOfRanges.AppendElement(extendedRange);
+  }
+}
+void HTMLEditor::GetSelectionRangesExtendedToHardLineStartAndEnd(
+    nsTArray<RefPtr<nsRange>>& aOutArrayOfRanges,
+    EditSubAction aEditSubAction) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aOutArrayOfRanges.IsEmpty());
+
+  aOutArrayOfRanges.SetCapacity(SelectionRefPtr()->RangeCount());
+  for (uint32_t i = 0; i < SelectionRefPtr()->RangeCount(); i++) {
     
-    outArrayOfRanges.AppendElement(opRange);
+    
+    
+    nsRange* selectionRange = SelectionRefPtr()->GetRangeAt(i);
+    MOZ_ASSERT(selectionRange);
+
+    RefPtr<nsRange> extendedRange = CreateRangeExtendedToHardLineStartAndEnd(
+        *selectionRange, aEditSubAction);
+    if (!extendedRange) {
+      extendedRange = selectionRange->CloneRange();
+    }
+
+    aOutArrayOfRanges.AppendElement(extendedRange);
   }
 }
 
@@ -7937,8 +7940,21 @@ nsresult HTMLEditRules::GetNodesFromSelection(
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
-  nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(arrayOfRanges, aEditSubAction);
+  AutoTArray<RefPtr<nsRange>, 4> arrayOfRanges;
+  switch (aEditSubAction) {
+    case EditSubAction::eInsertText:
+    case EditSubAction::eInsertTextComingFromIME:
+    case EditSubAction::eInsertLineBreak:
+    case EditSubAction::eInsertParagraphSeparator:
+    case EditSubAction::eDeleteText:
+      HTMLEditorRef().GetSelectionRangesExtendedToIncludeAdjuscentWhiteSpaces(
+          arrayOfRanges);
+      break;
+    default:
+      HTMLEditorRef().GetSelectionRangesExtendedToHardLineStartAndEnd(
+          arrayOfRanges, aEditSubAction);
+      break;
+  }
 
   if (aTouchContent == TouchContent::yes) {
     nsresult rv = MOZ_KnownLive(HTMLEditorRef())
@@ -10901,13 +10917,9 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
 
   AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
 
-  
-  
-  
-  
-
-  nsTArray<RefPtr<nsRange>> arrayOfRanges;
-  GetPromotedRanges(arrayOfRanges, EditSubAction::eSetPositionToAbsolute);
+  AutoTArray<RefPtr<nsRange>, 4> arrayOfRanges;
+  HTMLEditorRef().GetSelectionRangesExtendedToHardLineStartAndEnd(
+      arrayOfRanges, EditSubAction::eSetPositionToAbsolute);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;

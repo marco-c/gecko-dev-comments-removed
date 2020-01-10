@@ -786,13 +786,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult NormalizeSelection();
 
-  
-
-
-
-  void GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
-                         EditSubAction aEditSubAction) const;
-
   void GetChildNodesForOperation(
       nsINode& aNode, nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
 
