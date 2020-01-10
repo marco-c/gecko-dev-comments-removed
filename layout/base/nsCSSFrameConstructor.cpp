@@ -2186,8 +2186,7 @@ static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
   
   if (!aParentFrame ||
       !aParentFrame->IsFrameOfType(nsIFrame::eExcludesIgnorableWhitespace) ||
-      aParentFrame->IsGeneratedContentFrame() ||
-      !aChildContent->IsText()) {
+      aParentFrame->IsGeneratedContentFrame() || !aChildContent->IsText()) {
     return true;
   }
 
@@ -2315,8 +2314,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     return nullptr;
   }
 
-  if (aDocElement->IsHTMLElement() &&
-      mDocElementContainingBlock->IsCanvasFrame()) {
+  if (mDocElementContainingBlock->IsCanvasFrame()) {
     
     
     
@@ -2331,12 +2329,13 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
                "We need to copy <body>'s principal writing-mode before "
                "constructing mRootElementFrame.");
 
+    const WritingMode docElementWM(computedStyle);
     Element* body = mDocument->GetBodyElement();
     if (body) {
       RefPtr<ComputedStyle> bodyStyle = ResolveComputedStyle(body);
-      WritingMode bodyWM(bodyStyle);
+      const WritingMode bodyWM(bodyStyle);
 
-      if (bodyWM != mDocElementContainingBlock->GetWritingMode()) {
+      if (bodyWM != docElementWM) {
         nsContentUtils::ReportToConsole(
             nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Layout"),
             mDocument, nsContentUtils::eLAYOUT_PROPERTIES,
@@ -2347,7 +2346,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
           bodyWM);
     } else {
       mDocElementContainingBlock->PropagateWritingModeToSelfAndAncestors(
-          mDocElementContainingBlock->GetWritingMode());
+          docElementWM);
     }
   }
 
@@ -5567,8 +5566,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     aItems.SetParentHasNoXBLChildren(!iter.XBLInvolved());
 
     CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
-                               *aComputedStyle, PseudoStyleType::after,
-                               aItems);
+                               *aComputedStyle, PseudoStyleType::after, aItems);
     return;
   }
 
