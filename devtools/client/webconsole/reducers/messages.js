@@ -60,6 +60,11 @@ ChromeUtils.defineModuleGetter(
   "pointPrecedes",
   "resource://devtools/shared/execution-point-utils.js"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "pointEquals",
+  "resource://devtools/shared/execution-point-utils.js"
+);
 
 const { UPDATE_REQUEST } = require("devtools/client/netmonitor/src/constants");
 
@@ -187,6 +192,22 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 
   if (newMessage.executionPoint) {
     state.hasExecutionPoints = true;
+  }
+
+  
+  
+  
+  const removedIds = [];
+  if (newMessage.logpointId) {
+    const existingMessage = [...state.messagesById.values()].find(existing => {
+      return (
+        existing.logpointId == newMessage.logpointId &&
+        pointEquals(existing.executionPoint, newMessage.executionPoint)
+      );
+    });
+    if (existingMessage) {
+      removedIds.push(existingMessage.id);
+    }
   }
 
   
@@ -331,7 +352,7 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
     state.networkMessagesUpdateById[newMessage.actor] = newMessage;
   }
 
-  return state;
+  return removeMessagesFromState(state, removedIds);
 }
 
 
