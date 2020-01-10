@@ -32,6 +32,8 @@
   list-style-type: none;
   display: flex;
   flex-direction: column;
+  
+  z-index: 1;
 }
 
 .menuitem-button {
