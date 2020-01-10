@@ -2346,7 +2346,8 @@ static bool TransformDisplacement(APZCTreeManager* aTreeManager,
 void APZCTreeManager::DispatchScroll(
     AsyncPanZoomController* aPrev, ParentLayerPoint& aStartPoint,
     ParentLayerPoint& aEndPoint,
-    OverscrollHandoffState& aOverscrollHandoffState) {
+    OverscrollHandoffState& aOverscrollHandoffState,
+    const TimeStamp& aTimeStamp) {
   const OverscrollHandoffChain& overscrollHandoffChain =
       aOverscrollHandoffState.mChain;
   uint32_t overscrollHandoffChainIndex = aOverscrollHandoffState.mChainIndex;
@@ -2372,7 +2373,8 @@ void APZCTreeManager::DispatchScroll(
 
   
   
-  if (!next->AttemptScroll(aStartPoint, aEndPoint, aOverscrollHandoffState)) {
+  if (!next->AttemptScroll(aStartPoint, aEndPoint, aOverscrollHandoffState,
+                           aTimeStamp)) {
     
     
     

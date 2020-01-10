@@ -2029,8 +2029,8 @@ nsEventStatus AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent) {
     OverscrollHandoffState handoffState(
         *mInputQueue->GetCurrentKeyboardBlock()->GetOverscrollHandoffChain(),
         distance, ScrollSource::Keyboard);
-
-    CallDispatchScroll(startPoint, endPoint, handoffState);
+    TimeStamp eventTimeStamp = aEvent.mTimeStamp;
+    CallDispatchScroll(startPoint, endPoint, handoffState, eventTimeStamp);
 
     SetState(NOTHING);
 
@@ -2387,7 +2387,8 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(
           distance, ScrollSource::Wheel);
       ParentLayerPoint startPoint = aEvent.mLocalOrigin;
       ParentLayerPoint endPoint = aEvent.mLocalOrigin - delta;
-      CallDispatchScroll(startPoint, endPoint, handoffState);
+      TimeStamp eventTimeStamp = aEvent.mTimeStamp;
+      CallDispatchScroll(startPoint, endPoint, handoffState, eventTimeStamp);
 
       SetState(NOTHING);
 
@@ -2630,7 +2631,8 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
   ParentLayerPoint startPoint = aEvent.mLocalPanStartPoint;
   ParentLayerPoint endPoint =
       aEvent.mLocalPanStartPoint - logicalPanDisplacement;
-  CallDispatchScroll(startPoint, endPoint, handoffState);
+  TimeStamp eventTimeStamp = aEvent.mTimeStamp;
+  CallDispatchScroll(startPoint, endPoint, handoffState, eventTimeStamp);
 
   return nsEventStatus_eConsumeNoDefault;
 }
@@ -3139,9 +3141,38 @@ void AsyncPanZoomController::UpdateWithTouchAtDevicePoint(
   mY.UpdateWithTouchAtDevicePoint(point.y, aEvent.mTime);
 }
 
+nsTArray<CompositionPayload> AsyncPanZoomController::NotifyScrollSampling() {
+  AsyncTransform currTransform =
+      GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
+  if (IsZero(currTransform.mTranslation)) {
+    
+    
+    mSampledFrameScrolls.Clear();
+    mIncomingFrameScrolls.Clear();
+    mPrevFrameScrolls.Clear();
+    return nsTArray<CompositionPayload>();
+  }
+
+  if (StaticPrefs::apz_frame_delay_enabled()) {
+    
+    
+    mSampledFrameScrolls = std::move(mPrevFrameScrolls);
+    mPrevFrameScrolls = std::move(mIncomingFrameScrolls);
+  } else {
+    
+    
+    mSampledFrameScrolls = std::move(mIncomingFrameScrolls);
+  }
+  
+  mIncomingFrameScrolls.Clear();
+
+  return std::move(mSampledFrameScrolls);
+}
+
 bool AsyncPanZoomController::AttemptScroll(
     ParentLayerPoint& aStartPoint, ParentLayerPoint& aEndPoint,
-    OverscrollHandoffState& aOverscrollHandoffState) {
+    OverscrollHandoffState& aOverscrollHandoffState,
+    const TimeStamp& aTimeStamp) {
   
   
   
@@ -3183,6 +3214,8 @@ bool AsyncPanZoomController::AttemptScroll(
     }
 
     if (!IsZero(adjustedDisplacement)) {
+      mIncomingFrameScrolls.AppendElement(
+          CompositionPayload{CompositionPayloadType::eAPZScroll, aTimeStamp});
       ScrollBy(adjustedDisplacement / Metrics().GetZoom());
       if (InputBlockState* block = GetCurrentInputBlock()) {
 #if defined(MOZ_WIDGET_ANDROID)
@@ -3241,7 +3274,8 @@ bool AsyncPanZoomController::AttemptScroll(
     
     
     ++aOverscrollHandoffState.mChainIndex;
-    CallDispatchScroll(aStartPoint, aEndPoint, aOverscrollHandoffState);
+    CallDispatchScroll(aStartPoint, aEndPoint, aOverscrollHandoffState,
+                       aTimeStamp);
 
     overscroll = aStartPoint - aEndPoint;
     if (IsZero(overscroll)) {
@@ -3475,7 +3509,8 @@ void AsyncPanZoomController::StartOverscrollAnimation(
 
 void AsyncPanZoomController::CallDispatchScroll(
     ParentLayerPoint& aStartPoint, ParentLayerPoint& aEndPoint,
-    OverscrollHandoffState& aOverscrollHandoffState) {
+    OverscrollHandoffState& aOverscrollHandoffState,
+    const TimeStamp& aTimeStamp) {
   
   
   
@@ -3501,7 +3536,7 @@ void AsyncPanZoomController::CallDispatchScroll(
   }
 
   treeManagerLocal->DispatchScroll(this, aStartPoint, endPoint,
-                                   aOverscrollHandoffState);
+                                   aOverscrollHandoffState, aTimeStamp);
 }
 
 void AsyncPanZoomController::TrackTouch(const MultiTouchInput& aEvent) {
@@ -3518,7 +3553,9 @@ void AsyncPanZoomController::TrackTouch(const MultiTouchInput& aEvent) {
     OverscrollHandoffState handoffState(
         *GetCurrentTouchBlock()->GetOverscrollHandoffChain(), panVector,
         ScrollSource::Touch);
-    CallDispatchScroll(prevTouchPoint, touchPoint, handoffState);
+    TimeStamp eventTimeStamp = aEvent.mTimeStamp;
+    CallDispatchScroll(prevTouchPoint, touchPoint, handoffState,
+                       eventTimeStamp);
   }
 }
 
