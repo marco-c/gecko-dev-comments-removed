@@ -27,7 +27,6 @@ class SourceFront extends FrontClassWithSpec(sourceSpec) {
       
       
       this.actorID = form.actor;
-      this.manage(this);
     }
   }
 
