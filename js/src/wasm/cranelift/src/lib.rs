@@ -21,14 +21,13 @@ extern crate target_lexicon;
 extern crate log;
 extern crate env_logger;
 
-mod baldrapi; 
-mod baldrdash; 
+mod bindings; 
 mod compile; 
 mod cpu; 
 mod utils; 
 mod wasm2clif; 
 
-use baldrdash::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
+use bindings::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
 use compile::BatchCompiler;
 use std::ptr;
 
@@ -52,7 +51,7 @@ pub extern "C" fn cranelift_initialize() {
 #[no_mangle]
 pub unsafe extern "C" fn cranelift_compiler_create<'a, 'b>(
     static_env: *const StaticEnvironment,
-    env: *const baldrapi::CraneliftModuleEnvironment,
+    env: *const bindings::LowLevelModuleEnvironment,
 ) -> *mut BatchCompiler<'a, 'b> {
     let env = env.as_ref().unwrap();
     let static_env = static_env.as_ref().unwrap();

@@ -18,8 +18,9 @@
 
 
 
-use baldrdash as bd;
-use cpu::make_isa;
+use std::fmt;
+use std::mem;
+
 use cranelift_codegen::binemit::{Addend, CodeInfo, CodeOffset, NullTrapSink, Reloc, RelocSink};
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir;
@@ -28,8 +29,9 @@ use cranelift_codegen::isa::TargetIsa;
 use cranelift_codegen::CodegenResult;
 use cranelift_codegen::Context;
 use cranelift_wasm::{FuncIndex, FuncTranslator, WasmResult};
-use std::fmt;
-use std::mem;
+
+use bindings;
+use cpu::make_isa;
 use utils::DashResult;
 use wasm2clif::{init_sig, native_pointer_size, TransEnv};
 
@@ -43,7 +45,7 @@ const SYMBOLIC_FUNCTION_NAMESPACE: u32 = 1;
 pub struct CompiledFunc {
     pub frame_pushed: StackSize,
     pub contains_calls: bool,
-    pub metadata: Vec<bd::MetadataEntry>,
+    pub metadata: Vec<bindings::MetadataEntry>,
     
     pub rodata_relocs: Vec<u32>,
     
@@ -82,8 +84,8 @@ impl CompiledFunc {
 
 
 pub struct BatchCompiler<'a, 'b> {
-    static_environ: &'a bd::StaticEnvironment,
-    environ: bd::ModuleEnvironment<'b>,
+    static_environ: &'a bindings::StaticEnvironment,
+    environ: bindings::ModuleEnvironment<'b>,
     isa: Box<dyn TargetIsa>,
     context: Context,
     trans: FuncTranslator,
@@ -92,8 +94,8 @@ pub struct BatchCompiler<'a, 'b> {
 
 impl<'a, 'b> BatchCompiler<'a, 'b> {
     pub fn new(
-        static_environ: &'a bd::StaticEnvironment,
-        environ: bd::ModuleEnvironment<'b>,
+        static_environ: &'a bindings::StaticEnvironment,
+        environ: bindings::ModuleEnvironment<'b>,
     ) -> DashResult<Self> {
         
         Ok(BatchCompiler {
@@ -115,8 +117,8 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     
     pub fn translate_wasm(
         &mut self,
-        func: &bd::FuncCompileInput,
-    ) -> WasmResult<bd::FuncTypeWithId> {
+        func: &bindings::FuncCompileInput,
+    ) -> WasmResult<bindings::FuncTypeWithId> {
         self.context.clear();
 
         
@@ -144,7 +146,10 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         let frame_pushed = self.frame_pushed();
         let contains_calls = self.contains_calls();
 
-        info!("Emitting {} bytes, frame_pushed={}\n.", total_size, frame_pushed);
+        info!(
+            "Emitting {} bytes, frame_pushed={}\n.",
+            total_size, frame_pushed
+        );
 
         self.current_func.reset(frame_pushed, contains_calls);
 
@@ -162,13 +167,17 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
             let current_size = self.current_func.code_buffer.len();
             
             
-            self.current_func.code_buffer.reserve(total_size - current_size);
+            self.current_func
+                .code_buffer
+                .reserve(total_size - current_size);
             unsafe { self.current_func.code_buffer.set_len(total_size) };
         }
 
         {
-            let emit_env = &mut EmitEnv::new(&mut self.current_func.metadata,
-                                             &mut self.current_func.rodata_relocs);
+            let emit_env = &mut EmitEnv::new(
+                &mut self.current_func.metadata,
+                &mut self.current_func.rodata_relocs,
+            );
             let mut trap_sink = NullTrapSink {};
             unsafe {
                 let code_buffer = &mut self.current_func.code_buffer;
@@ -229,7 +238,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     
     
     
-    fn emit_metadata(&self, metadata: &mut Vec<bd::MetadataEntry>) {
+    fn emit_metadata(&self, metadata: &mut Vec<bindings::MetadataEntry>) {
         let encinfo = self.isa.encoding_info();
         let func = &self.context.func;
         for ebb in func.layout.ebbs() {
@@ -311,7 +320,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     
     fn call_metadata(
         &self,
-        metadata: &mut Vec<bd::MetadataEntry>,
+        metadata: &mut Vec<bindings::MetadataEntry>,
         inst: ir::Inst,
         ret_addr: CodeOffset,
     ) {
@@ -332,7 +341,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
             _ => panic!("Direct call to {} unsupported", callee),
         };
 
-        metadata.push(bd::MetadataEntry::direct_call(
+        metadata.push(bindings::MetadataEntry::direct_call(
             ret_addr,
             func_index,
             self.srcloc(inst),
@@ -342,7 +351,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     
     fn indirect_call_metadata(
         &self,
-        metadata: &mut Vec<bd::MetadataEntry>,
+        metadata: &mut Vec<bindings::MetadataEntry>,
         inst: ir::Inst,
         ret_addr: CodeOffset,
     ) {
@@ -354,7 +363,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         
         
         
-        metadata.push(bd::MetadataEntry::indirect_call(
+        metadata.push(bindings::MetadataEntry::indirect_call(
             ret_addr,
             self.srcloc(inst),
         ));
@@ -362,7 +371,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
 
     fn trap_metadata(
         &self,
-        metadata: &mut Vec<bd::MetadataEntry>,
+        metadata: &mut Vec<bindings::MetadataEntry>,
         inst: ir::Inst,
         offset: CodeOffset,
     ) {
@@ -380,21 +389,21 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
 
         
         let bd_trap = match code {
-            ir::TrapCode::StackOverflow => bd::Trap::StackOverflow,
-            ir::TrapCode::HeapOutOfBounds => bd::Trap::OutOfBounds,
-            ir::TrapCode::OutOfBounds => bd::Trap::OutOfBounds,
-            ir::TrapCode::TableOutOfBounds => bd::Trap::OutOfBounds,
-            ir::TrapCode::IndirectCallToNull => bd::Trap::IndirectCallToNull,
-            ir::TrapCode::BadSignature => bd::Trap::IndirectCallBadSig,
-            ir::TrapCode::IntegerOverflow => bd::Trap::IntegerOverflow,
-            ir::TrapCode::IntegerDivisionByZero => bd::Trap::IntegerDivideByZero,
-            ir::TrapCode::BadConversionToInteger => bd::Trap::InvalidConversionToInteger,
-            ir::TrapCode::Interrupt => bd::Trap::CheckInterrupt,
-            ir::TrapCode::UnreachableCodeReached => bd::Trap::Unreachable,
+            ir::TrapCode::StackOverflow => bindings::Trap::StackOverflow,
+            ir::TrapCode::HeapOutOfBounds => bindings::Trap::OutOfBounds,
+            ir::TrapCode::OutOfBounds => bindings::Trap::OutOfBounds,
+            ir::TrapCode::TableOutOfBounds => bindings::Trap::OutOfBounds,
+            ir::TrapCode::IndirectCallToNull => bindings::Trap::IndirectCallToNull,
+            ir::TrapCode::BadSignature => bindings::Trap::IndirectCallBadSig,
+            ir::TrapCode::IntegerOverflow => bindings::Trap::IntegerOverflow,
+            ir::TrapCode::IntegerDivisionByZero => bindings::Trap::IntegerDivideByZero,
+            ir::TrapCode::BadConversionToInteger => bindings::Trap::InvalidConversionToInteger,
+            ir::TrapCode::Interrupt => bindings::Trap::CheckInterrupt,
+            ir::TrapCode::UnreachableCodeReached => bindings::Trap::Unreachable,
             ir::TrapCode::User(_) => panic!("Uncovered trap code {}", code),
         };
 
-        metadata.push(bd::MetadataEntry::trap(
+        metadata.push(bindings::MetadataEntry::trap(
             offset + trap_offset,
             self.srcloc(inst),
             bd_trap,
@@ -403,7 +412,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
 
     fn memory_metadata(
         &self,
-        metadata: &mut Vec<bd::MetadataEntry>,
+        metadata: &mut Vec<bindings::MetadataEntry>,
         inst: ir::Inst,
         offset: CodeOffset,
     ) {
@@ -423,7 +432,10 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
             return;
         }
 
-        metadata.push(bd::MetadataEntry::memory_access(offset, self.srcloc(inst)));
+        metadata.push(bindings::MetadataEntry::memory_access(
+            offset,
+            self.srcloc(inst),
+        ));
     }
 }
 
@@ -442,7 +454,7 @@ pub fn wasm_function_name(func: FuncIndex) -> ir::ExternalName {
 }
 
 
-pub fn symbolic_function_name(sym: bd::SymbolicAddress) -> ir::ExternalName {
+pub fn symbolic_function_name(sym: bindings::SymbolicAddress) -> ir::ExternalName {
     ir::ExternalName::User {
         namespace: SYMBOLIC_FUNCTION_NAMESPACE,
         index: sym as u32,
@@ -451,14 +463,19 @@ pub fn symbolic_function_name(sym: bd::SymbolicAddress) -> ir::ExternalName {
 
 
 struct EmitEnv<'a> {
-    metadata: &'a mut Vec<bd::MetadataEntry>,
-    rodata_relocs: &'a mut Vec<CodeOffset>
+    metadata: &'a mut Vec<bindings::MetadataEntry>,
+    rodata_relocs: &'a mut Vec<CodeOffset>,
 }
 
 impl<'a> EmitEnv<'a> {
-    pub fn new(metadata: &'a mut Vec<bd::MetadataEntry>, rodata_relocs: &'a mut Vec<CodeOffset>)
-               -> EmitEnv<'a> {
-        EmitEnv { metadata, rodata_relocs }
+    pub fn new(
+        metadata: &'a mut Vec<bindings::MetadataEntry>,
+        rodata_relocs: &'a mut Vec<CodeOffset>,
+    ) -> EmitEnv<'a> {
+        EmitEnv {
+            metadata,
+            rodata_relocs,
+        }
     }
 }
 
@@ -493,19 +510,19 @@ impl<'a> RelocSink for EmitEnv<'a> {
                 
                 let offset = offset + native_pointer_size() as u32;
                 self.metadata
-                    .push(bd::MetadataEntry::symbolic_access(offset, sym));
+                    .push(bindings::MetadataEntry::symbolic_access(offset, sym));
             }
 
             ir::ExternalName::LibCall(call) => {
                 let sym = match call {
-                    ir::LibCall::CeilF32 => bd::SymbolicAddress::CeilF32,
-                    ir::LibCall::CeilF64 => bd::SymbolicAddress::CeilF64,
-                    ir::LibCall::FloorF32 => bd::SymbolicAddress::FloorF32,
-                    ir::LibCall::FloorF64 => bd::SymbolicAddress::FloorF64,
-                    ir::LibCall::NearestF32 => bd::SymbolicAddress::NearestF32,
-                    ir::LibCall::NearestF64 => bd::SymbolicAddress::NearestF64,
-                    ir::LibCall::TruncF32 => bd::SymbolicAddress::TruncF32,
-                    ir::LibCall::TruncF64 => bd::SymbolicAddress::TruncF64,
+                    ir::LibCall::CeilF32 => bindings::SymbolicAddress::CeilF32,
+                    ir::LibCall::CeilF64 => bindings::SymbolicAddress::CeilF64,
+                    ir::LibCall::FloorF32 => bindings::SymbolicAddress::FloorF32,
+                    ir::LibCall::FloorF64 => bindings::SymbolicAddress::FloorF64,
+                    ir::LibCall::NearestF32 => bindings::SymbolicAddress::NearestF32,
+                    ir::LibCall::NearestF64 => bindings::SymbolicAddress::NearestF64,
+                    ir::LibCall::TruncF32 => bindings::SymbolicAddress::TruncF32,
+                    ir::LibCall::TruncF64 => bindings::SymbolicAddress::TruncF64,
                     _ => {
                         panic!("Don't understand external {}", name);
                     }
@@ -514,7 +531,7 @@ impl<'a> RelocSink for EmitEnv<'a> {
                 
                 let offset = offset + native_pointer_size() as u32;
                 self.metadata
-                    .push(bd::MetadataEntry::symbolic_access(offset, sym));
+                    .push(bindings::MetadataEntry::symbolic_access(offset, sym));
             }
             _ => {
                 panic!("Don't understand external {}", name);

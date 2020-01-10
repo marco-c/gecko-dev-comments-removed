@@ -18,8 +18,8 @@
 
 
 
-use baldrdash as bd;
-use compile::{symbolic_function_name, wasm_function_name};
+use std::collections::HashMap;
+
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::entity::{EntityRef, PrimaryMap, SecondaryMap};
 use cranelift_codegen::ir;
@@ -29,9 +29,11 @@ use cranelift_codegen::isa::{CallConv, TargetFrontendConfig, TargetIsa};
 use cranelift_codegen::packed_option::PackedOption;
 use cranelift_wasm::{
     FuncEnvironment, FuncIndex, GlobalIndex, GlobalVariable, MemoryIndex, ReturnMode,
-    SignatureIndex, TableIndex, WasmError, WasmResult,
+    SignatureIndex, TableIndex, WasmResult,
 };
-use std::collections::HashMap;
+
+use bindings;
+use compile::{symbolic_function_name, wasm_function_name};
 
 
 fn native_pointer_type() -> ir::Type {
@@ -68,7 +70,7 @@ fn uimm64(offset: usize) -> ir::immediates::Uimm64 {
 }
 
 
-fn init_sig_from_wsig(sig: &mut ir::Signature, wsig: bd::FuncTypeWithId) -> WasmResult<()> {
+fn init_sig_from_wsig(sig: &mut ir::Signature, wsig: bindings::FuncTypeWithId) -> WasmResult<()> {
     sig.clear(CallConv::Baldrdash);
     for arg in wsig.args()? {
         sig.params.push(ir::AbiParam::new(arg));
@@ -97,9 +99,9 @@ fn init_sig_from_wsig(sig: &mut ir::Signature, wsig: bd::FuncTypeWithId) -> Wasm
 
 pub fn init_sig(
     sig: &mut ir::Signature,
-    env: &bd::ModuleEnvironment,
+    env: &bindings::ModuleEnvironment,
     func_index: FuncIndex,
-) -> WasmResult<bd::FuncTypeWithId> {
+) -> WasmResult<bindings::FuncTypeWithId> {
     let wsig = env.function_signature(func_index);
     init_sig_from_wsig(sig, wsig)?;
     Ok(wsig)
@@ -108,8 +110,8 @@ pub fn init_sig(
 
 pub struct TransEnv<'a, 'b, 'c> {
     isa: &'a dyn TargetIsa,
-    env: &'b bd::ModuleEnvironment<'b>,
-    static_env: &'c bd::StaticEnvironment,
+    env: &'b bindings::ModuleEnvironment<'b>,
+    static_env: &'c bindings::StaticEnvironment,
 
     
     
@@ -156,8 +158,8 @@ pub struct TransEnv<'a, 'b, 'c> {
 impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
     pub fn new(
         isa: &'a dyn TargetIsa,
-        env: &'b bd::ModuleEnvironment,
-        static_env: &'c bd::StaticEnvironment,
+        env: &'b bindings::ModuleEnvironment,
+        static_env: &'c bindings::StaticEnvironment,
     ) -> Self {
         TransEnv {
             isa,
@@ -276,7 +278,7 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
     fn symbolic_funcref<MKSIG: FnOnce() -> ir::Signature>(
         &mut self,
         func: &mut ir::Function,
-        sym: bd::SymbolicAddress,
+        sym: bindings::SymbolicAddress,
         make_sig: MKSIG,
     ) -> (ir::FuncRef, ir::SigRef) {
         let symidx = sym as usize;
@@ -434,11 +436,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
     }
 
     fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> WasmResult<ir::Heap> {
-        
-        if index.index() != 0 {
-            return Err(WasmError::Unsupported("only one wasm memory supported"));
-        }
-
+        assert_eq!(index.index(), 0, "Only one WebAssembly memory supported");
         
         let base_addr = self.get_vmctx_gv(func);
         
@@ -486,7 +484,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         let wsig = self.env.signature(index);
         init_sig_from_wsig(&mut sigdata, wsig)?;
 
-        if wsig.id_kind() != bd::FuncTypeIdDescKind::None {
+        if wsig.id_kind() != bindings::FuncTypeIdDescKind::None {
             
             sigdata.params.push(ir::AbiParam::special(
                 native_pointer_type(),
@@ -555,22 +553,20 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         let wsig = self.env.signature(sig_index);
 
         
-        if table_index.index() != 0 {
-            return Err(WasmError::Unsupported("only one wasm table supported"));
-        }
+        assert_eq!(table_index.index(), 0);
         let wtable = self.get_table(pos.func, table_index);
 
         
 
         
         let sigid_value = match wsig.id_kind() {
-            bd::FuncTypeIdDescKind::None => None,
-            bd::FuncTypeIdDescKind::Immediate => {
+            bindings::FuncTypeIdDescKind::None => None,
+            bindings::FuncTypeIdDescKind::Immediate => {
                 
                 let imm = wsig.id_immediate() as i64;
                 Some(pos.ins().iconst(native_pointer_type(), imm))
             }
-            bd::FuncTypeIdDescKind::Global => {
+            bindings::FuncTypeIdDescKind::Global => {
                 let gv = self.sig_global(pos.func, wsig.id_tls_offset());
                 let addr = pos.ins().global_value(native_pointer_type(), gv);
                 Some(
@@ -716,7 +712,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         
         
         let (fnref, sigref) =
-            self.symbolic_funcref(pos.func, bd::SymbolicAddress::MemoryGrow, || {
+            self.symbolic_funcref(pos.func, bindings::SymbolicAddress::MemoryGrow, || {
                 let mut sig = ir::Signature::new(CallConv::Baldrdash);
                 sig.params.push(ir::AbiParam::new(native_pointer_type()));
                 sig.params.push(ir::AbiParam::new(ir::types::I32).uext());
@@ -752,7 +748,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
     ) -> WasmResult<ir::Value> {
         
         let (fnref, sigref) =
-            self.symbolic_funcref(pos.func, bd::SymbolicAddress::MemorySize, || {
+            self.symbolic_funcref(pos.func, bindings::SymbolicAddress::MemorySize, || {
                 let mut sig = ir::Signature::new(CallConv::Baldrdash);
                 sig.params.push(ir::AbiParam::new(native_pointer_type()));
                 sig.params.push(ir::AbiParam::special(
@@ -800,7 +796,11 @@ struct TableInfo {
 
 impl TableInfo {
     
-    pub fn new(wtab: bd::TableDesc, func: &mut ir::Function, vmctx: ir::GlobalValue) -> TableInfo {
+    pub fn new(
+        wtab: bindings::TableDesc,
+        func: &mut ir::Function,
+        vmctx: ir::GlobalValue,
+    ) -> TableInfo {
         
         let offset = wtab.tls_offset();
         assert!(offset < i32::max_value() as usize);
