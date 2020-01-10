@@ -44,11 +44,12 @@ add_task(async function() {
   is(cmdDelete.getAttribute("disabled"), "true", "cmdDelete is disabled");
   is(cmdSelectAll.getAttribute("disabled"), "true", "cmdSelectAll is disabled");
 
-  
-  
-  is(cmdCut.getAttribute("disabled"), "", "cmdCut is enabled");
-  is(cmdCopy.getAttribute("disabled"), "", "cmdCopy is enabled");
-  is(cmdPaste.getAttribute("disabled"), "", "cmdPaste is enabled");
+  is(cmdCut.getAttribute("disabled"), "true", "cmdCut is disabled");
+  is(cmdCopy.getAttribute("disabled"), "true", "cmdCopy is disabled");
+  if (isWindows()) {
+    
+    is(cmdPaste.getAttribute("disabled"), "true", "cmdPaste is disabled");
+  }
 
   info("Closing context menu");
   let onContextMenuClose = toolbox.once("menu-close");
