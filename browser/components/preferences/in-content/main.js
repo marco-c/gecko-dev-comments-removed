@@ -1983,13 +1983,14 @@ var gMainPane = {
       
       this._visibleTypes.push(handlerInfo);
 
-      let otherHandlerInfo = visibleDescriptions.get(handlerInfo.description);
+      let key = JSON.stringify(handlerInfo.description);
+      let otherHandlerInfo = visibleDescriptions.get(key);
       if (!otherHandlerInfo) {
         
         
         
         handlerInfo.disambiguateDescription = false;
-        visibleDescriptions.set(handlerInfo.description, handlerInfo);
+        visibleDescriptions.set(key, handlerInfo);
       } else {
         
         
@@ -3096,7 +3097,7 @@ function localizeElement(node, l10n) {
     node.removeAttribute("data-l10n-id");
     node.textContent = l10n.raw;
   } else {
-    document.l10n.setAttributes(node, l10n.id, l10n.args || {});
+    document.l10n.setAttributes(node, l10n.id, l10n.args);
   }
 }
 
@@ -3142,7 +3143,7 @@ class HandlerInfoWrapper {
 
   get description() {
     if (this.wrappedHandlerInfo.description) {
-      return this.wrappedHandlerInfo.description;
+      return { raw: this.wrappedHandlerInfo.description };
     }
 
     if (this.primaryExtension) {
