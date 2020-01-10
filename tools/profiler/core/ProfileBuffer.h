@@ -28,7 +28,9 @@ class ProfileBuffer final {
 
   
   
-  explicit ProfileBuffer(mozilla::PowerOfTwo32 aCapacity);
+  
+  ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer,
+                mozilla::PowerOfTwo32 aCapacity);
 
   ~ProfileBuffer();
 
@@ -144,7 +146,7 @@ class ProfileBuffer final {
       mozilla::BlocksRingBuffer& aBlocksRingBuffer, int aThreadId);
 
   
-  mozilla::BlocksRingBuffer mEntries;
+  mozilla::BlocksRingBuffer& mEntries;
 
  public:
   

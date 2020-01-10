@@ -31,7 +31,8 @@ class ProfileBuffer final {
 
   
   
-  explicit ProfileBuffer(PowerOfTwo32 aCapacity);
+  
+  ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity);
 
   ~ProfileBuffer();
 
@@ -113,7 +114,7 @@ class ProfileBuffer final {
                                      int aThreadId);
 
   
-  BlocksRingBuffer mEntries;
+  BlocksRingBuffer& mEntries;
 
  public:
   

@@ -18,9 +18,21 @@
 namespace mozilla {
 namespace baseprofiler {
 
-ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
-                                     UniquePtr<ProfileBuffer> aBuffer)
-    : mName(strdup(aName)), mThreadId(aThreadId), mBuffer(std::move(aBuffer)) {}
+ProfilerBacktrace::ProfilerBacktrace(
+    const char* aName, int aThreadId,
+    UniquePtr<BlocksRingBuffer> aBlocksRingBuffer,
+    UniquePtr<ProfileBuffer> aProfileBuffer)
+    : mName(strdup(aName)),
+      mThreadId(aThreadId),
+      mBlocksRingBuffer(std::move(aBlocksRingBuffer)),
+      mProfileBuffer(std::move(aProfileBuffer)) {
+  MOZ_ASSERT(
+      !!mBlocksRingBuffer,
+      "ProfilerBacktrace only takes a non-null UniquePtr<BlocksRingBuffer>");
+  MOZ_ASSERT(
+      !!mProfileBuffer,
+      "ProfilerBacktrace only takes a non-null UniquePtr<ProfileBuffer>");
+}
 
 ProfilerBacktrace::~ProfilerBacktrace() {}
 
@@ -31,7 +43,7 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   
-  StreamSamplesAndMarkers(mName.get(), mThreadId, *mBuffer.get(), aWriter, "",
+  StreamSamplesAndMarkers(mName.get(), mThreadId, *mProfileBuffer, aWriter, "",
                           aProcessStartTime,
                            TimeStamp(),
                            TimeStamp(),
