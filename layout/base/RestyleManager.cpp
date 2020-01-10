@@ -541,7 +541,6 @@ nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
                          "ClearAncestorIntrinsics",
                          "ClearDescendantIntrinsics",
                          "NeedDirtyReflow",
-                         "SyncFrameView",
                          "UpdateCursor",
                          "UpdateEffects",
                          "UpdateOpacityLayer",
@@ -624,12 +623,7 @@ static bool gInApplyRenderingChangeToTree = false;
 
 
 
-
-
-
-
-static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
-                                              nsChangeHint aChange);
+static void SyncViewsAndInvalidateDescendants(nsIFrame*, nsChangeHint);
 
 static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint);
 
@@ -1034,7 +1028,6 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
     
     SyncViewsAndInvalidateDescendants(
         aFrame, nsChangeHint(aChange & (nsChangeHint_RepaintFrame |
-                                        nsChangeHint_SyncFrameView |
                                         nsChangeHint_UpdateOpacityLayer |
                                         nsChangeHint_SchedulePaint)));
     
@@ -1134,16 +1127,13 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
   MOZ_ASSERT(gInApplyRenderingChangeToTree,
              "should only be called within ApplyRenderingChangeToTree");
 
-  NS_ASSERTION(
-      nsChangeHint_size_t(aChange) ==
-          (aChange &
-           (nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView |
-            nsChangeHint_UpdateOpacityLayer | nsChangeHint_SchedulePaint)),
-      "Invalid change flag");
+  NS_ASSERTION(nsChangeHint_size_t(aChange) ==
+                   (aChange & (nsChangeHint_RepaintFrame |
+                               nsChangeHint_UpdateOpacityLayer |
+                               nsChangeHint_SchedulePaint)),
+               "Invalid change flag");
 
-  if (aChange & nsChangeHint_SyncFrameView) {
-    aFrame->SyncFrameViewProperties();
-  }
+  aFrame->SyncFrameViewProperties();
 
   nsIFrame::ChildListIterator lists(aFrame);
   for (; !lists.IsDone(); lists.Next()) {
@@ -1229,8 +1219,7 @@ static void ApplyRenderingChangeToTree(PresShell* aPresShell, nsIFrame* aFrame,
     
     
     if (IsPrimaryFrameOfRootOrBodyElement(aFrame)) {
-      nsIFrame* rootFrame =
-          aFrame->PresShell()->FrameConstructor()->GetRootFrame();
+      nsIFrame* rootFrame = aPresShell->GetRootFrame();
       MOZ_ASSERT(rootFrame, "No root frame?");
       DoApplyRenderingChangeToTree(rootFrame, nsChangeHint_RepaintFrame);
       aChange &= ~nsChangeHint_RepaintFrame;
@@ -1689,8 +1678,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       }
 
       if (hint &
-          (nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView |
-           nsChangeHint_UpdateOpacityLayer | nsChangeHint_UpdateTransformLayer |
+          (nsChangeHint_RepaintFrame | nsChangeHint_UpdateOpacityLayer |
+           nsChangeHint_UpdateTransformLayer |
            nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
         ApplyRenderingChangeToTree(presContext->PresShell(), frame, hint);
       }
