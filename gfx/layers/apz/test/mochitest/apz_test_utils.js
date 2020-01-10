@@ -378,7 +378,7 @@ async function waitUntilApzStable() {
     
     
     function parentProcessFlush() {
-      addMessageListener("apz-flush", function() {
+      function apzFlush() {
         const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
         var topWin = Services.wm.getMostRecentWindow("navigator:browser");
         if (!topWin) {
@@ -409,13 +409,23 @@ async function waitUntilApzStable() {
         
         
         flushRepaint();
-      });
+      }
+      function cleanup() {
+        removeMessageListener("apz-flush", apzFlush);
+        removeMessageListener("cleanup", cleanup);
+      }
+      addMessageListener("apz-flush", apzFlush);
+      addMessageListener("cleanup", cleanup);
     }
 
     
     if (typeof waitUntilApzStable.chromeHelper == "undefined") {
       waitUntilApzStable.chromeHelper = SpecialPowers.loadChromeScript(parentProcessFlush);
-      ApzCleanup.register(() => { waitUntilApzStable.chromeHelper.destroy(); });
+      ApzCleanup.register(() => {
+        waitUntilApzStable.chromeHelper.sendSyncMessage("cleanup", null);
+        waitUntilApzStable.chromeHelper.destroy();
+        delete waitUntilApzStable.chromeHelper;
+      });
     }
 
     

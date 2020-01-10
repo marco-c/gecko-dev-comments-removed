@@ -481,6 +481,14 @@ SpecialPowersObserverAPI.prototype = {
         sb.addMessageListener = (name, listener) => {
           this._chromeScriptListeners.push({ id, name, listener });
         };
+        sb.removeMessageListener = (name, listener) => {
+          let index = this._chromeScriptListeners.findIndex(function(obj) {
+            return obj.id == id && obj.name == name && obj.listener == listener;
+          });
+          if (index >= 0) {
+            this._chromeScriptListeners.splice(index, 1);
+          }
+        };
         sb.browserElement = aMessage.target;
 
         
