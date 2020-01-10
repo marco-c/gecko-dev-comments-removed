@@ -1274,19 +1274,6 @@ void DispatchFileHandleSuccessEvent(FileHandleResultHelper* aResultHelper) {
   MOZ_ASSERT(fileHandle->IsOpen() || fileHandle->IsAborted());
 }
 
-auto GetKeyOperator(const IDBCursor::Direction aDirection) {
-  switch (aDirection) {
-    case IDBCursor::NEXT:
-    case IDBCursor::NEXT_UNIQUE:
-      return &Key::operator>=;
-    case IDBCursor::PREV:
-    case IDBCursor::PREV_UNIQUE:
-      return &Key::operator<=;
-    default:
-      MOZ_CRASH("Should never get here.");
-  }
-}
-
 }  
 
 
@@ -3215,28 +3202,6 @@ BackgroundRequestChild::PreprocessHelper::OnFileMetadataReady(
 
 
 
-BackgroundCursorChild::CachedResponse::CachedResponse(
-    Key aKey, StructuredCloneReadInfo&& aCloneInfo)
-    : mKey{std::move(aKey)}, mCloneInfo{std::move(aCloneInfo)} {}
-
-BackgroundCursorChild::CachedResponse::CachedResponse(
-    Key aKey, Key aLocaleAwareKey, Key aObjectStoreKey,
-    StructuredCloneReadInfo&& aCloneInfo)
-    : mKey{std::move(aKey)},
-      mLocaleAwareKey{std::move(aLocaleAwareKey)},
-      mObjectStoreKey{std::move(aObjectStoreKey)},
-      mCloneInfo{std::move(aCloneInfo)} {}
-
-BackgroundCursorChild::CachedResponse::CachedResponse(Key aKey)
-    : mKey{std::move(aKey)} {}
-
-BackgroundCursorChild::CachedResponse::CachedResponse(Key aKey,
-                                                      Key aLocaleAwareKey,
-                                                      Key aObjectStoreKey)
-    : mKey{std::move(aKey)},
-      mLocaleAwareKey{std::move(aLocaleAwareKey)},
-      mObjectStoreKey{std::move(aObjectStoreKey)} {}
-
 
 
 class BackgroundCursorChild::DelayedActionRunnable final
@@ -3307,8 +3272,7 @@ BackgroundCursorChild::~BackgroundCursorChild() {
 }
 
 void BackgroundCursorChild::SendContinueInternal(
-    const CursorRequestParams& aParams, const Key& aCurrentKey,
-    const Key& aCurrentObjectStoreKey) {
+    const CursorRequestParams& aParams, const Key& aCurrentKey) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mRequest);
   MOZ_ASSERT(mTransaction);
@@ -3324,157 +3288,8 @@ void BackgroundCursorChild::SendContinueInternal(
 
   mTransaction->OnNewRequest();
 
-  CursorRequestParams params = aParams;
-  Key currentKey = aCurrentKey;
-  Key currentObjectStoreKey = aCurrentObjectStoreKey;
-
-  switch (params.type()) {
-    case CursorRequestParams::TContinueParams: {
-      const auto& key = params.get_ContinueParams().key();
-      if (key.IsUnset()) {
-        break;
-      }
-
-      
-      DiscardCachedResponses(
-          [&key, isLocaleAware = mCursor->IsLocaleAware(),
-           keyOperator = GetKeyOperator(mDirection),
-           transactionSerialNumber = mTransaction->LoggingSerialNumber(),
-           requestSerialNumber = mRequest->LoggingSerialNumber()](
-              const auto& currentCachedResponse) {
-            
-            
-            
-            
-            const auto& cachedSortKey =
-                isLocaleAware ? currentCachedResponse.mLocaleAwareKey
-                              : currentCachedResponse.mKey;
-            const bool discard = !(cachedSortKey.*keyOperator)(key);
-            if (discard) {
-              IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-                  "PRELOAD: Continue to key %s, discarding cached key %s/%s",
-                  "Continue, discarding", transactionSerialNumber,
-                  requestSerialNumber, key.GetBuffer().get(),
-                  cachedSortKey.GetBuffer().get(),
-                  currentCachedResponse.mObjectStoreKey.GetBuffer().get());
-            } else {
-              IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-                  "PRELOAD: Continue to key %s, keeping cached key %s/%s and "
-                  "further",
-                  "Continue, keeping", transactionSerialNumber,
-                  requestSerialNumber, key.GetBuffer().get(),
-                  cachedSortKey.GetBuffer().get(),
-                  currentCachedResponse.mObjectStoreKey.GetBuffer().get());
-            }
-
-            return discard;
-          });
-
-      break;
-    }
-
-    case CursorRequestParams::TContinuePrimaryKeyParams:
-      
-      InvalidateCachedResponses();
-      break;
-
-    case CursorRequestParams::TAdvanceParams: {
-      uint32_t& advanceCount = params.get_AdvanceParams().count();
-      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-          "PRELOAD: Advancing %" PRIu32 " records", "Advancing",
-          mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
-          advanceCount);
-
-      
-      DiscardCachedResponses(
-          [&advanceCount, &currentKey,
-           &currentObjectStoreKey](const auto& currentCachedResponse) {
-            const bool res = advanceCount > 1;
-            if (res) {
-              --advanceCount;
-
-              
-              
-              currentKey = currentCachedResponse.mKey;
-              currentObjectStoreKey = currentCachedResponse.mObjectStoreKey;
-            }
-            return res;
-          });
-      break;
-    }
-
-    default:
-      MOZ_CRASH("Should never get here!");
-  }
-
-  if (!mCachedResponses.empty()) {
-    
-    
-    
-    mDelayedResponses.emplace_back(std::move(mCachedResponses.front()));
-    mCachedResponses.pop_front();
-
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIRunnable> continueRunnable = new DelayedActionRunnable(
-        this, &BackgroundCursorChild::CompleteContinueRequestFromCache);
-    MOZ_ALWAYS_TRUE(
-        NS_SUCCEEDED(NS_DispatchToCurrentThread(continueRunnable.forget())));
-
-    
-    
-    
-  } else {
-    MOZ_ALWAYS_TRUE(PBackgroundIDBCursorChild::SendContinue(
-        params, currentKey, currentObjectStoreKey));
-  }
-}
-
-void BackgroundCursorChild::CompleteContinueRequestFromCache() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mTransaction);
-  MOZ_ASSERT(mCursor);
-  MOZ_ASSERT(mStrongCursor);
-  MOZ_ASSERT(!mDelayedResponses.empty());
-
-  RefPtr<IDBCursor> cursor;
-  mStrongCursor.swap(cursor);
-
-  auto& item = mDelayedResponses.front();
-  switch (mCursor->GetType()) {
-    case IDBCursor::Type_ObjectStore:
-      mCursor->Reset(std::move(item.mKey), std::move(item.mCloneInfo));
-      break;
-    case IDBCursor::Type_Index:
-      mCursor->Reset(std::move(item.mKey), std::move(item.mLocaleAwareKey),
-                     std::move(item.mObjectStoreKey),
-                     std::move(item.mCloneInfo));
-      break;
-    case IDBCursor::Type_ObjectStoreKey:
-      mCursor->Reset(std::move(item.mKey));
-      break;
-    case IDBCursor::Type_IndexKey:
-      mCursor->Reset(std::move(item.mKey), std::move(item.mLocaleAwareKey),
-                     std::move(item.mObjectStoreKey));
-      break;
-    default:
-      MOZ_CRASH("Should never get here.");
-  }
-  mDelayedResponses.pop_front();
-
-  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-      "PRELOAD: Consumed 1 cached response, %zu cached responses remaining",
-      "Consumed cached response", mTransaction->LoggingSerialNumber(),
-      mRequest->LoggingSerialNumber(),
-      mDelayedResponses.size() + mCachedResponses.size());
-
-  ResultHelper helper(mRequest, mTransaction, mCursor);
-  DispatchSuccessEvent(&helper);
-
-  mTransaction->OnRequestFinished( true);
+  MOZ_ALWAYS_TRUE(
+      PBackgroundIDBCursorChild::SendContinue(aParams, aCurrentKey));
 }
 
 void BackgroundCursorChild::SendDeleteMeInternal() {
@@ -3493,40 +3308,6 @@ void BackgroundCursorChild::SendDeleteMeInternal() {
 
     MOZ_ALWAYS_TRUE(PBackgroundIDBCursorChild::SendDeleteMe());
   }
-}
-
-void BackgroundCursorChild::InvalidateCachedResponses() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mTransaction);
-  MOZ_ASSERT(mRequest);
-
-  
-  
-  
-  
-  
-
-  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-      "PRELOAD: Invalidating all %zu cached responses", "Invalidating",
-      mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
-      mCachedResponses.size());
-
-  mCachedResponses.clear();
-}
-
-template <typename Condition>
-void BackgroundCursorChild::DiscardCachedResponses(
-    const Condition& aConditionFunc) {
-  size_t discardedCount = 0;
-  while (!mCachedResponses.empty() &&
-         aConditionFunc(mCachedResponses.front())) {
-    mCachedResponses.pop_front();
-    ++discardedCount;
-  }
-  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-      "PRELOAD: Discarded %zu cached responses, %zu remaining", "Discarded",
-      mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
-      discardedCount, mCachedResponses.size());
 }
 
 void BackgroundCursorChild::HandleResponse(nsresult aResponse) {
@@ -3563,146 +3344,130 @@ void BackgroundCursorChild::HandleResponse(const void_t& aResponse) {
   }
 }
 
-template <typename... Args>
-void BackgroundCursorChild::HandleIndividualCursorResponse(
-    const bool aUseAsCurrentResult, Args&&... aArgs) {
-  if (mCursor) {
-    if (aUseAsCurrentResult) {
-      mCursor->Reset(std::forward<Args>(aArgs)...);
-    } else {
-      mCachedResponses.emplace_back(std::forward<Args>(aArgs)...);
-    }
-  } else {
-    MOZ_ASSERT(aUseAsCurrentResult);
-
-    
-    
-    
-    RefPtr<IDBCursor> newCursor =
-        IDBCursor::Create(this, std::forward<Args>(aArgs)...);
-    mCursor = newCursor;
-  }
-}
-
-template <typename T, typename Func>
-void BackgroundCursorChild::HandleMultipleCursorResponses(
-    const nsTArray<T>& aResponses, const Func& aHandleRecord) {
+void BackgroundCursorChild::HandleResponse(
+    const nsTArray<ObjectStoreCursorResponse>& aResponses) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mRequest);
   MOZ_ASSERT(mTransaction);
+  MOZ_ASSERT(mObjectStore);
   MOZ_ASSERT(!mStrongRequest);
   MOZ_ASSERT(!mStrongCursor);
-  MOZ_ASSERT(aResponses.Length() > 0);
 
-  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-      "PRELOAD: Received %zu cursor responses", "Received",
-      mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
-      aResponses.Length());
-  MOZ_ASSERT_IF(aResponses.Length() > 1, mCachedResponses.empty());
+  MOZ_ASSERT(aResponses.Length() == 1);
 
   
-  auto& responses = const_cast<nsTArray<T>&>(aResponses);
+  auto& responses =
+      const_cast<nsTArray<ObjectStoreCursorResponse>&>(aResponses);
 
-  bool isFirst = true;
-  for (auto& response : responses) {
-    IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-        "PRELOAD: Processing response for key %s", "Processing",
-        mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
-        response.key().GetBuffer().get());
+  for (ObjectStoreCursorResponse& response : responses) {
+    StructuredCloneReadInfo cloneReadInfo(std::move(response.cloneInfo()));
+    cloneReadInfo.mDatabase = mTransaction->Database();
 
-    
-    
-    
-    
-    
-    aHandleRecord( isFirst, response);
-    isFirst = false;
+    DeserializeStructuredCloneFiles(
+        mTransaction->Database(), response.cloneInfo().files(),
+         false, cloneReadInfo.mFiles);
+
+    RefPtr<IDBCursor> newCursor;
+
+    if (mCursor) {
+      mCursor->Reset(std::move(response.key()), std::move(cloneReadInfo));
+    } else {
+      newCursor = IDBCursor::Create(this, std::move(response.key()),
+                                    std::move(cloneReadInfo));
+      mCursor = newCursor;
+    }
   }
 
   ResultHelper helper(mRequest, mTransaction, mCursor);
   DispatchSuccessEvent(&helper);
 }
 
+void BackgroundCursorChild::HandleResponse(
+    const ObjectStoreKeyCursorResponse& aResponse) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mRequest);
+  MOZ_ASSERT(mTransaction);
+  MOZ_ASSERT(mObjectStore);
+  MOZ_ASSERT(!mStrongRequest);
+  MOZ_ASSERT(!mStrongCursor);
 
+  
+  auto& response = const_cast<ObjectStoreKeyCursorResponse&>(aResponse);
 
-StructuredCloneReadInfo BackgroundCursorChild::PrepareCloneReadInfo(
-    SerializedStructuredCloneReadInfo&& aCloneInfo) const {
-  StructuredCloneReadInfo cloneReadInfo(
-      std::forward<SerializedStructuredCloneReadInfo>(aCloneInfo));
+  RefPtr<IDBCursor> newCursor;
+
+  if (mCursor) {
+    mCursor->Reset(std::move(response.key()));
+  } else {
+    newCursor = IDBCursor::Create(this, std::move(response.key()));
+    mCursor = newCursor;
+  }
+
+  ResultHelper helper(mRequest, mTransaction, mCursor);
+  DispatchSuccessEvent(&helper);
+}
+
+void BackgroundCursorChild::HandleResponse(
+    const IndexCursorResponse& aResponse) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mRequest);
+  MOZ_ASSERT(mTransaction);
+  MOZ_ASSERT(mIndex);
+  MOZ_ASSERT(!mStrongRequest);
+  MOZ_ASSERT(!mStrongCursor);
+
+  
+  auto& response = const_cast<IndexCursorResponse&>(aResponse);
+
+  StructuredCloneReadInfo cloneReadInfo(std::move(response.cloneInfo()));
   cloneReadInfo.mDatabase = mTransaction->Database();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  DeserializeStructuredCloneFiles(mTransaction->Database(), aCloneInfo.files(),
-                                   false,
-                                  cloneReadInfo.mFiles);
+  DeserializeStructuredCloneFiles(
+      mTransaction->Database(), aResponse.cloneInfo().files(),
+       false, cloneReadInfo.mFiles);
 
-  return cloneReadInfo;
+  RefPtr<IDBCursor> newCursor;
+
+  if (mCursor) {
+    mCursor->Reset(std::move(response.key()), std::move(response.sortKey()),
+                   std::move(response.objectKey()), std::move(cloneReadInfo));
+  } else {
+    newCursor = IDBCursor::Create(
+        this, std::move(response.key()), std::move(response.sortKey()),
+        std::move(response.objectKey()), std::move(cloneReadInfo));
+    mCursor = newCursor;
+  }
+
+  ResultHelper helper(mRequest, mTransaction, mCursor);
+  DispatchSuccessEvent(&helper);
 }
 
 void BackgroundCursorChild::HandleResponse(
-    const nsTArray<ObjectStoreCursorResponse>& aResponses) {
+    const IndexKeyCursorResponse& aResponse) {
   AssertIsOnOwningThread();
-  MOZ_ASSERT(mObjectStore);
-
-  HandleMultipleCursorResponses(
-      aResponses, [this](const bool useAsCurrentResult,
-                         ObjectStoreCursorResponse& response) {
-        
-        
-        
-        HandleIndividualCursorResponse(
-            useAsCurrentResult, std::move(response.key()),
-            PrepareCloneReadInfo(std::move(response.cloneInfo())));
-      });
-}
-
-void BackgroundCursorChild::HandleResponse(
-    const nsTArray<ObjectStoreKeyCursorResponse>& aResponses) {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mObjectStore);
-
-  HandleMultipleCursorResponses(
-      aResponses, [this](const bool useAsCurrentResult,
-                         ObjectStoreKeyCursorResponse& response) {
-        HandleIndividualCursorResponse(useAsCurrentResult,
-                                       std::move(response.key()));
-      });
-}
-
-void BackgroundCursorChild::HandleResponse(
-    const nsTArray<IndexCursorResponse>& aResponses) {
-  AssertIsOnOwningThread();
+  MOZ_ASSERT(mRequest);
+  MOZ_ASSERT(mTransaction);
   MOZ_ASSERT(mIndex);
+  MOZ_ASSERT(!mStrongRequest);
+  MOZ_ASSERT(!mStrongCursor);
 
-  HandleMultipleCursorResponses(
-      aResponses,
-      [this](const bool useAsCurrentResult, IndexCursorResponse& response) {
-        HandleIndividualCursorResponse(
-            useAsCurrentResult, std::move(response.key()),
-            std::move(response.sortKey()), std::move(response.objectKey()),
-            PrepareCloneReadInfo(std::move(response.cloneInfo())));
-      });
-}
+  
+  auto& response = const_cast<IndexKeyCursorResponse&>(aResponse);
 
-void BackgroundCursorChild::HandleResponse(
-    const nsTArray<IndexKeyCursorResponse>& aResponses) {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mIndex);
+  RefPtr<IDBCursor> newCursor;
 
-  HandleMultipleCursorResponses(
-      aResponses,
-      [this](const bool useAsCurrentResult, IndexKeyCursorResponse& response) {
-        HandleIndividualCursorResponse(
-            useAsCurrentResult, std::move(response.key()),
-            std::move(response.sortKey()), std::move(response.objectKey()));
-      });
+  if (mCursor) {
+    mCursor->Reset(std::move(response.key()), std::move(response.sortKey()),
+                   std::move(response.objectKey()));
+  } else {
+    newCursor = IDBCursor::Create(this, std::move(response.key()),
+                                  std::move(response.sortKey()),
+                                  std::move(response.objectKey()));
+    mCursor = newCursor;
+  }
+
+  ResultHelper helper(mRequest, mTransaction, mCursor);
+  DispatchSuccessEvent(&helper);
 }
 
 void BackgroundCursorChild::ActorDestroy(ActorDestroyReason aWhy) {
@@ -3764,16 +3529,16 @@ mozilla::ipc::IPCResult BackgroundCursorChild::RecvResponse(
       HandleResponse(aResponse.get_ArrayOfObjectStoreCursorResponse());
       break;
 
-    case CursorResponse::TArrayOfObjectStoreKeyCursorResponse:
-      HandleResponse(aResponse.get_ArrayOfObjectStoreKeyCursorResponse());
+    case CursorResponse::TObjectStoreKeyCursorResponse:
+      HandleResponse(aResponse.get_ObjectStoreKeyCursorResponse());
       break;
 
-    case CursorResponse::TArrayOfIndexCursorResponse:
-      HandleResponse(aResponse.get_ArrayOfIndexCursorResponse());
+    case CursorResponse::TIndexCursorResponse:
+      HandleResponse(aResponse.get_IndexCursorResponse());
       break;
 
-    case CursorResponse::TArrayOfIndexKeyCursorResponse:
-      HandleResponse(aResponse.get_ArrayOfIndexKeyCursorResponse());
+    case CursorResponse::TIndexKeyCursorResponse:
+      HandleResponse(aResponse.get_IndexKeyCursorResponse());
       break;
 
     default:

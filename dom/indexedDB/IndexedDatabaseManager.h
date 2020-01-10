@@ -97,10 +97,6 @@ class IndexedDatabaseManager final {
 
   static bool PreprocessingEnabled();
 
-  
-  
-  static int32_t MaxPreloadExtraRecords();
-
   void ClearBackgroundActor();
 
   already_AddRefed<FileManager> GetFileManager(PersistenceType aPersistenceType,

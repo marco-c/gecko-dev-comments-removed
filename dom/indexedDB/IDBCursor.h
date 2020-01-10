@@ -33,9 +33,6 @@ namespace indexedDB {
 class BackgroundCursorChild;
 }
 
-
-
-
 class IDBCursor final : public nsISupports, public nsWrapperCache {
  public:
   typedef indexedDB::Key Key;
@@ -51,6 +48,7 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
     DIRECTION_INVALID
   };
 
+ private:
   enum Type {
     Type_ObjectStore,
     Type_ObjectStoreKey,
@@ -58,7 +56,6 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
     Type_IndexKey,
   };
 
- private:
   indexedDB::BackgroundCursorChild* mBackgroundActor;
 
   
@@ -77,8 +74,8 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
   JS::Heap<JS::Value> mCachedValue;
 
   Key mKey;
-  Key mSortKey;     
-  Key mPrimaryKey;  
+  Key mSortKey;
+  Key mPrimaryKey;
   StructuredCloneReadInfo mCloneInfo;
 
   const Type mType;
@@ -123,8 +120,6 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
 
   IDBCursorDirection GetDirection() const;
 
-  Type GetType() const;
-
   void GetKey(JSContext* aCx, JS::MutableHandle<JS::Value> aResult,
               ErrorResult& aRv);
 
@@ -164,11 +159,6 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
     mBackgroundActor = nullptr;
   }
 
-  void InvalidateCachedResponses();
-
-  
-  bool IsLocaleAware() const;
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBCursor)
 
@@ -181,6 +171,9 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
             Key aKey);
 
   ~IDBCursor();
+
+  
+  bool IsLocaleAware() const;
 
   void DropJSObjects();
 
