@@ -257,6 +257,7 @@
 #include "nsThreadManager.h"
 #include "nsIBidiKeyboard.h"
 #include "ReferrerInfo.h"
+#include "nsAboutProtocolUtils.h"
 
 #if defined(XP_WIN)
 
@@ -1670,8 +1671,30 @@ bool nsContentUtils::OfflineAppAllowed(nsIPrincipal* aPrincipal) {
   return NS_SUCCEEDED(rv) && allowed;
 }
 
+static bool IsErrorPage(nsIURI* aURI) {
+  if (!aURI) {
+    return false;
+  }
 
-bool nsContentUtils::PrincipalAllowsL10n(nsIPrincipal* aPrincipal) {
+  if (!aURI->SchemeIs("about")) {
+    return false;
+  }
+
+  nsAutoCString name;
+  nsresult rv = NS_GetAboutModuleName(aURI, name);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  return name.EqualsLiteral("certerror") || name.EqualsLiteral("neterror") ||
+         name.EqualsLiteral("blocked");
+}
+
+
+bool nsContentUtils::PrincipalAllowsL10n(nsIPrincipal* aPrincipal,
+                                         nsIURI* aDocumentURI) {
+  if (IsErrorPage(aDocumentURI)) {
+    return true;
+  }
+
   
   if (IsSystemPrincipal(aPrincipal)) {
     return true;
