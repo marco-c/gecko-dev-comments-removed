@@ -6,6 +6,7 @@
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSMANAGER_H_
 
 #include "MediaControlKeysEvent.h"
+#include "MediaEventSource.h"
 
 namespace mozilla {
 namespace dom {
@@ -16,9 +17,11 @@ namespace dom {
 
 
 
+
+
 class MediaControlKeysManager final {
  public:
-  MediaControlKeysManager();
+  MediaControlKeysManager() = default;
   ~MediaControlKeysManager();
 
   
@@ -26,12 +29,18 @@ class MediaControlKeysManager final {
   
   bool AddListener(MediaControlKeysEventListener* aListener);
   bool RemoveListener(MediaControlKeysEventListener* aListener);
+  void Init();
+
+  
+  
+  void ControllerAmountChanged(uint64_t aControllerAmount);
 
  private:
   void StartMonitoringControlKeys();
   void StopMonitoringControlKeys();
   void CreateEventSource();
   RefPtr<MediaControlKeysEventSource> mEventSource;
+  MediaEventListener mControllerAmountChangedListener;
 };
 
 }  
