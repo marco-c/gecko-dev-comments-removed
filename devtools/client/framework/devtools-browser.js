@@ -151,14 +151,10 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     
-    try {
-      const recordReplayEnabled = Services.prefs.getBoolPref(
-        "devtools.recordreplay.enabled"
-      );
-      toggleMenuItem("menu_webreplay", recordReplayEnabled);
-    } catch (e) {
-      
-    }
+    const recordReplayEnabled = Services.prefs.getBoolPref(
+      "devtools.recordreplay.enabled"
+    );
+    toggleMenuItem("menu_webreplay", recordReplayEnabled);
 
     
     
