@@ -6,7 +6,6 @@ from __future__ import absolute_import, print_function
 
 import os
 import signal
-import which
 import re
 
 
@@ -15,6 +14,7 @@ try:
 except ImportError:
     JSONDecodeError = ValueError
 
+from mozfile import which
 from mozlint import result
 from mozlint.util import pip
 from mozprocess import ProcessHandlerMixin
@@ -90,10 +90,7 @@ def get_codespell_binary():
     if binary:
         return binary
 
-    try:
-        return which.which('codespell')
-    except which.WhichError:
-        return None
+    return which('codespell')
 
 
 def lint(paths, config, fix=None, **lintargs):

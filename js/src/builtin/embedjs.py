@@ -37,14 +37,17 @@
 
 
 from __future__ import with_statement
+
+import errno
 import re
 import sys
 import os
-import mozpack.path as mozpath
 import subprocess
 import shlex
-import which
+
 import buildconfig
+import mozpack.path as mozpath
+from mozfile import which
 
 
 def ToCAsciiArray(lines):
@@ -113,7 +116,11 @@ def embed(cxx, preprocessorOption, cppflags, msgs, sources, c_out, js_out, names
 
 def preprocess(cxx, preprocessorOption, source, args=[]):
     if (not os.path.exists(cxx[0])):
-        cxx[0] = which.which(cxx[0])
+        binary = cxx[0]
+        cxx[0] = which(binary)
+        if not cxx[0]:
+            raise OSError(errno.ENOENT, "%s not found on PATH" % binary)
+
     
     
     tmpIn = 'self-hosting-cpp-input.cpp'

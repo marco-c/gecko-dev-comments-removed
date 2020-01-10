@@ -134,19 +134,21 @@ class MachBrowsertime(MachCommandBase):
         if host_platform().startswith('linux'):
             
             
-            import which
-            im_programs = ('compare', 'convert', 'mogrify')
             try:
-                for im_program in im_programs:
-                    which.which(im_program)
-            except which.WhichError as e:
-                print('Error: {} On Linux, ImageMagick must be on the PATH. '
-                      'Install ImageMagick manually and try again (or update PATH). '
-                      'On Ubuntu and Debian, try `sudo apt-get install imagemagick`. '
-                      'On Fedora, try `sudo dnf install imagemagick`. '
-                      'On CentOS, try `sudo yum install imagemagick`.'
-                      .format(e))
-                return 1
+                from shutil import which
+            except ImportError:
+                from shutil_which import which
+
+            im_programs = ('compare', 'convert', 'mogrify')
+            for im_program in im_programs:
+                prog = which(im_program)
+                if not prog:
+                    print('Error: On Linux, ImageMagick must be on the PATH. '
+                          'Install ImageMagick manually and try again (or update PATH). '
+                          'On Ubuntu and Debian, try `sudo apt-get install imagemagick`. '
+                          'On Fedora, try `sudo dnf install imagemagick`. '
+                          'On CentOS, try `sudo yum install imagemagick`.')
+                    return 1
 
         
         artifact_cache = ArtifactCache(self.artifact_cache_path,
