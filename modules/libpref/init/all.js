@@ -1274,6 +1274,9 @@ pref("javascript.options.strict",           false);
 pref("javascript.options.strict.debug",     false);
 #endif
 pref("javascript.options.unboxed_objects",  false);
+pref("javascript.options.blinterp",         false);
+
+pref("javascript.options.blinterp.threshold", 10);
 pref("javascript.options.baselinejit",      true);
 
 pref("javascript.options.baselinejit.threshold", 10);
