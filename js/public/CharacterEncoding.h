@@ -13,7 +13,7 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
-class JSFlatString;
+class JSLinearString;
 
 namespace JS {
 
@@ -283,7 +283,7 @@ LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8,
 
 
 
-JS_PUBLIC_API size_t GetDeflatedUTF8StringLength(JSFlatString* s);
+JS_PUBLIC_API size_t GetDeflatedUTF8StringLength(JSLinearString* s);
 
 
 
@@ -301,7 +301,7 @@ JS_PUBLIC_API size_t GetDeflatedUTF8StringLength(JSFlatString* s);
 
 
 
-JS_PUBLIC_API size_t DeflateStringToUTF8Buffer(JSFlatString* src,
+JS_PUBLIC_API size_t DeflateStringToUTF8Buffer(JSLinearString* src,
                                                mozilla::Span<char> dst);
 
 

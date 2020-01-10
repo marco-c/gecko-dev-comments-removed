@@ -8,7 +8,7 @@ using namespace JS;
 
 BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
   JSString* str;
-  JSFlatString* flatStr;
+  JSLinearString* linearStr;
 
   
   
@@ -24,12 +24,12 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
 
   str = JS_NewStringCopyZ(cx, "Ohai");  
   MOZ_RELEASE_ASSERT(str);
-  flatStr = JS_FlattenString(cx, str);
+  linearStr = JS_EnsureLinearString(cx, str);
 
   {
     const char expected[] = {0x4F, 0x68, 0x61, 0x69, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span);
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span);
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 4u);
   }
@@ -37,7 +37,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
   {
     const char expected[] = {0x4F, 0x68, 0x61, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(3));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(3));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 3u);
   }
@@ -45,7 +45,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
   {
     const unsigned char expected[] = {0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(0));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(0));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 0u);
   }
@@ -56,13 +56,13 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
 
   str = JS_NewUCStringCopyZ(cx, u"\xD3\x68\xE3\xEF");  
   MOZ_RELEASE_ASSERT(str);
-  flatStr = JS_FlattenString(cx, str);
+  linearStr = JS_EnsureLinearString(cx, str);
 
   {
     const unsigned char expected[] = {0xC3, 0x93, 0x68, 0xC3,
                                       0xA3, 0xC3, 0xAF, 0x1};
     memset(actual, 0x1, 100);
-    JS::DeflateStringToUTF8Buffer(flatStr, span);
+    JS::DeflateStringToUTF8Buffer(linearStr, span);
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
   }
 
@@ -70,7 +70,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
     const unsigned char expected[] = {0xC3, 0x93, 0x68, 0xC3,
                                       0xA3, 0xC3, 0xAF, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(7));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(7));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 7u);
   }
@@ -80,7 +80,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
     
     const unsigned char expected[] = {0xC3, 0x93, 0x68, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(3));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(3));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 3u);
   }
@@ -91,7 +91,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
     
     const unsigned char expected[] = {0xC3, 0x93, 0x68, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(4));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(4));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 3u);
   }
@@ -99,7 +99,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
   {
     const unsigned char expected[] = {0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(0));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(0));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 0u);
   }
@@ -109,13 +109,13 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
 
   str = JS_NewUCStringCopyZ(cx, u"\x038C\x0068\x0203\x0457");  
   MOZ_RELEASE_ASSERT(str);
-  flatStr = JS_FlattenString(cx, str);
+  linearStr = JS_EnsureLinearString(cx, str);
 
   {
     const unsigned char expected[] = {0xCE, 0x8C, 0x68, 0xC8,
                                       0x83, 0xD1, 0x97, 0x1};
     memset(actual, 0x1, 100);
-    JS::DeflateStringToUTF8Buffer(flatStr, span);
+    JS::DeflateStringToUTF8Buffer(linearStr, span);
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
   }
 
@@ -123,7 +123,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
     const unsigned char expected[] = {0xCE, 0x8C, 0x68, 0xC8,
                                       0x83, 0xD1, 0x97, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(7));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(7));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 7u);
   }
@@ -133,7 +133,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
     
     const unsigned char expected[] = {0xCE, 0x8C, 0x68, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(3));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(3));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 3u);
   }
@@ -144,7 +144,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
     
     const unsigned char expected[] = {0xCE, 0x8C, 0x68, 0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(4));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(4));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 3u);
   }
@@ -152,7 +152,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
   {
     const unsigned char expected[] = {0x1};
     memset(actual, 0x1, 100);
-    size_t dstlen = JS::DeflateStringToUTF8Buffer(flatStr, span.To(0));
+    size_t dstlen = JS::DeflateStringToUTF8Buffer(linearStr, span.To(0));
     CHECK_EQUAL(memcmp(actual, expected, sizeof(expected)), 0);
     CHECK_EQUAL(dstlen, 0u);
   }

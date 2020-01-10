@@ -11,7 +11,7 @@
 #include "nsTArray.h"
 #include "mozilla/dom/BindingDeclarations.h"
 
-class JSFlatString;
+class JSLinearString;
 
 namespace mozilla {
 namespace dom {
@@ -77,7 +77,7 @@ class WebIDLGlobalNameHash {
 
   
   
-  static const WebIDLNameTableEntry* GetEntry(JSFlatString* aKey);
+  static const WebIDLNameTableEntry* GetEntry(JSLinearString* aKey);
 
   
   

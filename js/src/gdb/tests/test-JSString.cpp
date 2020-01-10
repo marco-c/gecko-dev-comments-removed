@@ -53,12 +53,12 @@ FRAGMENT(JSString, null) {
 }
 
 FRAGMENT(JSString, subclasses) {
-  JS::Rooted<JSFlatString*> flat(
-      cx, JS_FlattenString(cx, JS_NewStringCopyZ(cx, "Hi!")));
+  JS::Rooted<JSLinearString*> linear(
+      cx, JS_EnsureLinearString(cx, JS_NewStringCopyZ(cx, "Hi!")));
 
   breakpoint();
 
-  use(flat);
+  use(linear);
 }
 
 FRAGMENT(JSString, atom) {
