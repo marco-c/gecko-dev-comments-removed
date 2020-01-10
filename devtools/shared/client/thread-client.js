@@ -195,8 +195,15 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
   
 
 
-  getSources() {
-    return super.sources();
+  async getSources() {
+    let sources = [];
+    try {
+      ({sources} = await super.sources());
+    } catch (e) {
+      
+      console.log(`getSources failed. Connection may have closed: ${e}`);
+    }
+    return { sources };
   }
 
   
