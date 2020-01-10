@@ -91,6 +91,21 @@ this.DevToolsShim = {
 
 
 
+
+
+  getToolboxes: function() {
+    if (this.isInitialized()) {
+      return this._gDevTools.getToolboxes();
+    }
+
+    return [];
+  },
+
+  
+
+
+
+
   register: function(gDevTools) {
     this._gDevTools = gDevTools;
     this._onDevToolsRegistered();
@@ -303,7 +318,6 @@ const webExtensionsMethods = [
   "getTargetForTab",
   "getTheme",
   "openBrowserConsole",
-  "getToolboxes",
 ];
 
 for (const method of webExtensionsMethods) {
