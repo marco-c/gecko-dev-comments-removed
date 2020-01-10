@@ -603,10 +603,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
-  
-  
-  already_AddRefed<nsIPrincipal> GetTopLevelPrincipal();
-
   bool ContainsRestrictedContent();
 
   void NotifyWaitingForKey() override;
