@@ -1238,7 +1238,8 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             
             
             if (typeof error.unsafeDereference === "function") {
-              errorMessage = error.unsafeDereference().toString();
+              const rawError = error.unsafeDereference();
+              errorMessage = rawError ? rawError.toString() : "";
             }
           }
         }
