@@ -70,7 +70,7 @@ addAccessibleTask(
     };
     testAccessibleTree(container1, tree);
 
-    onReorder = waitForEvent(EVENT_REORDER, id2);
+    onReorder = waitForEvent(EVENT_REORDER, "container2_child");
     
     await invokeSetAttribute(browser, "container2_child", "class", "gentext");
     await onReorder;

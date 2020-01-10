@@ -594,6 +594,19 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   void ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm);
 
+  
+
+
+
+
+
+
+
+
+
+
+  bool PruneOrInsertSubtree(nsIContent* aRoot);
+
  protected:
   
 

@@ -689,7 +689,19 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
 }
 
 void DocAccessible::NativeAnonymousChildListChange(nsIContent* aContent,
-                                                   bool aIsRemove) {}
+                                                   bool aIsRemove) {
+  if (aIsRemove) {
+#ifdef A11Y_LOG
+    if (logging::IsEnabled(logging::eTree)) {
+      logging::MsgBegin("TREE", "Anonymous content removed; doc: %p", this);
+      logging::Node("node", aContent);
+      logging::MsgEnd();
+    }
+#endif
+
+    ContentRemoved(aContent);
+  }
+}
 
 void DocAccessible::AttributeChanged(dom::Element* aElement,
                                      int32_t aNameSpaceID, nsAtom* aAttribute,
@@ -1287,15 +1299,80 @@ void DocAccessible::ContentInserted(nsIContent* aStartChildNode,
   for (nsIContent* node = aStartChildNode; node != aEndChildNode;
        node = node->GetNextSibling()) {
     MOZ_ASSERT(parent == node->GetFlattenedTreeParentNode());
-    
-    
-    
-    if (node->GetPrimaryFrame() || nsCoreUtils::IsDisplayContents(node)) {
+    if (PruneOrInsertSubtree(node)) {
       list.AppendElement(node);
     }
   }
 
   mNotificationController->ScheduleContentInsertion(container, list);
+}
+
+bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
+  
+  
+  Accessible* acc = GetAccessible(aRoot);
+  if (acc) {
+    MOZ_ASSERT(aRoot == acc->GetContent(), "Accessible has differing content!");
+#ifdef A11Y_LOG
+    if (logging::IsEnabled(logging::eTree)) {
+      logging::MsgBegin(
+          "TREE", "inserted content already has accessible; doc: %p", this);
+      logging::Node("content node", aRoot);
+      logging::AccessibleInfo("accessible node", acc);
+      logging::MsgEnd();
+    }
+#endif
+
+    nsIFrame* frame = acc->GetFrame();
+
+    
+    if (!frame && !nsCoreUtils::IsDisplayContents(aRoot)) {
+      ContentRemoved(acc);
+      return false;
+    }
+
+    
+    
+    
+    if (acc->IsXULLabel()) {
+      ContentRemoved(acc);
+      return true;
+    }
+
+    
+    
+    if (frame && (acc->IsImage() != (frame->AccessibleType() == eImageType))) {
+      ContentRemoved(aRoot);
+      return true;
+    }
+  } else {
+    
+    
+    if (aRoot->GetPrimaryFrame() || nsCoreUtils::IsDisplayContents(aRoot)) {
+      return true;
+    }
+  }
+
+  if (Accessible* container = AccessibleOrTrueContainer(aRoot)) {
+    AutoTArray<nsCOMPtr<nsIContent>, 10> list;
+    dom::AllChildrenIterator iter =
+        dom::AllChildrenIterator(aRoot, nsIContent::eAllChildren, true);
+    while (nsIContent* childNode = iter.GetNextChild()) {
+      if (PruneOrInsertSubtree(childNode)) {
+        list.AppendElement(childNode);
+      }
+    }
+
+    if (!list.IsEmpty()) {
+      mNotificationController->ScheduleContentInsertion(container, list);
+    }
+  }
+
+  
+  
+  MOZ_ASSERT(acc || (!aRoot->GetPrimaryFrame() &&
+                     !nsCoreUtils::IsDisplayContents(aRoot)));
+  return false;
 }
 
 void DocAccessible::RecreateAccessible(nsIContent* aContent) {
@@ -1623,6 +1700,12 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     
     RecreateAccessible(aElement);
 
+    return true;
+  }
+
+  if (aAttribute == nsGkAtoms::type) {
+    
+    RecreateAccessible(aElement);
     return true;
   }
 
