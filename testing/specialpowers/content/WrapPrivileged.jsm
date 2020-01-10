@@ -40,7 +40,9 @@ function isWrappable(x) {
 
 function isWrapper(x) {
   try {
-    return isWrappable(x) && typeof x.SpecialPowers_wrappedObject !== "undefined";
+    return (
+      isWrappable(x) && typeof x.SpecialPowers_wrappedObject !== "undefined"
+    );
   } catch (e) {
     
     
