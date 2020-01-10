@@ -481,6 +481,17 @@ class UrlbarController {
       return;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     let telemetryType;
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
@@ -517,7 +528,7 @@ class UrlbarController {
         break;
       case UrlbarUtils.RESULT_TYPE.TIP:
         telemetryType = "tip";
-        return;
+        break;
       default:
         Cu.reportError(`Unknown Result Type ${result.type}`);
         return;
@@ -526,8 +537,6 @@ class UrlbarController {
     Services.telemetry
       .getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX")
       .add(resultIndex);
-    
-    
     if (telemetryType in URLBAR_SELECTED_RESULT_TYPES) {
       Services.telemetry
         .getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE")
