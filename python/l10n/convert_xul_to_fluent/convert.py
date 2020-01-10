@@ -8,10 +8,12 @@ from lib.fluent import build_ftl
 import json
 import argparse
 import sys
-# import re
 
 
-# default migration directions
+
+
+
+
 data = {
     'migration': 'python/l10n/fluent_migrations',
     'description': 'Migrate l10n strings',
