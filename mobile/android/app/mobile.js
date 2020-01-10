@@ -58,7 +58,6 @@ pref("toolkit.storage.synchronous", 0);
 
 pref("storage.multiProcessAccess.enabled", true);
 
-pref("browser.viewport.desktopWidth", 980);
 
 
 pref("browser.viewport.defaultZoom", -1);
@@ -104,7 +103,6 @@ pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  16384);
 
 
-pref("network.predictor.enabled", true);
 pref("network.predictor.max-db-size", 2097152); 
 pref("network.predictor.preserve", 50); 
 
@@ -295,12 +293,6 @@ pref("gfx.displayport.strategy_vb.danger_y_incr", -1);
 pref("gfx.displayport.strategy_pb.threshold", -1); 
 
 
-pref("gfx.android.rgb16.force", false);
-
-
-pref("gfx.use-surfacetexture-textures", false);
-
-
 pref("dom.disable_window_move_resize", true);
 
 
@@ -351,9 +343,6 @@ pref("devtools.remote.usb.enabled", false);
 pref("devtools.remote.wifi.enabled", false);
 
 
-pref("browser.ui.zoom.force-user-scalable", false);
-
-
 pref("view_source.wrap_long_lines", true);
 
 
@@ -371,10 +360,6 @@ pref("ui.mouse.radius.rightmm", 3);
 pref("ui.mouse.radius.bottommm", 2);
 pref("ui.mouse.radius.visitedWeight", 120);
 pref("ui.mouse.radius.reposition", true);
-
-
-
-pref("browser.ui.scroll-toolbar-threshold", 10);
 
 
 
@@ -473,7 +458,6 @@ pref("editor.singleLine.pasteNewlines", 2);
 pref("ui.dragThresholdX", 25);
 pref("ui.dragThresholdY", 25);
 
-pref("layers.acceleration.disabled", false);
 pref("layers.async-video.enabled", true);
 
 
@@ -491,7 +475,6 @@ pref("apz.fling_curve_threshold_inches_per_ms", "0.01");
 
 pref("apz.fling_friction", "0.004");
 pref("apz.fling_stopped_threshold", "0.0");
-pref("apz.frame_delay.enabled", true);
 pref("apz.max_velocity_inches_per_ms", "0.07");
 pref("apz.overscroll.enabled", true);
 pref("apz.second_tap_tolerance", "0.3");
@@ -503,8 +486,6 @@ pref("dom.visualviewport.enabled", true);
 
 pref("layers.progressive-paint", true);
 pref("layers.low-precision-buffer", true);
-pref("layers.low-precision-resolution", "0.25");
-pref("layers.low-precision-opacity", "1.0");
 
 
 
@@ -513,7 +494,6 @@ pref("layers.low-precision-opacity", "1.0");
 pref("layers.max-active", 20);
 
 pref("notification.feature.enabled", true);
-pref("dom.webnotifications.enabled", true);
 
 
 pref("browser.chrome.toolbar_tips", false);
@@ -538,9 +518,6 @@ pref("media.video-queue.default-size", 3);
 
 pref("media.video-queue.send-to-compositor-size", 1);
 
-
-pref("media.mediasource.enabled", true);
-
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
@@ -557,9 +534,6 @@ pref("media.gmp-gmpopenh264.enabled", true);
 
 
 pref("media.gmp-gmpopenh264.autoupdate", false);
-
-
-pref("image.downscale-during-decode.enabled", true);
 
 
 pref("browser.safebrowsing.downloads.enabled", false);

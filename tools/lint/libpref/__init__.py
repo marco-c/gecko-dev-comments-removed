@@ -19,6 +19,7 @@ IGNORE_PREFS = {
     'devtools.console.stdout.content',  
     'fission.autostart',                
     'browser.dom.window.dump.enabled',  
+    'apz.fling_curve_function_y2',      
 }
 
 
