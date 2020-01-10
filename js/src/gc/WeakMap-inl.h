@@ -251,8 +251,7 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
 }
 
 template <class K, class V>
-void WeakMap<K, V>::postSeverDelegate(GCMarker* marker, gc::Cell* key,
-                                      Compartment* comp) {
+void WeakMap<K, V>::postSeverDelegate(GCMarker* marker, gc::Cell* key) {
   if (IsMarked(markColor)) {
     
     
