@@ -569,22 +569,7 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
   if (aView != rootView) return;
 
   Element* rootElement = aPresContext->Document()->GetRootElement();
-  if (!rootElement || !rootElement->IsXULElement()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  if (!rootElement) {
     return;
   }
 
@@ -600,12 +585,24 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
   RefPtr<nsPresContext> kungFuDeathGrip(aPresContext);
   AutoWeakFrame weak(rootFrame);
 
-  nsTransparencyMode mode =
-      nsLayoutUtils::GetFrameTransparency(aFrame, rootFrame);
-  int32_t shadow = rootFrame->StyleUIReset()->mWindowShadow;
-  nsCOMPtr<nsIWidget> viewWidget = aView->GetWidget();
-  viewWidget->SetTransparencyMode(mode);
-  windowWidget->SetWindowShadowStyle(shadow);
+  if (!aPresContext->PresShell()->GetRootScrollFrame()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsTransparencyMode mode =
+        nsLayoutUtils::GetFrameTransparency(aFrame, rootFrame);
+    int32_t shadow = rootFrame->StyleUIReset()->mWindowShadow;
+    nsCOMPtr<nsIWidget> viewWidget = aView->GetWidget();
+    viewWidget->SetTransparencyMode(mode);
+    windowWidget->SetWindowShadowStyle(shadow);
+  }
 
   if (!aRC) return;
 
@@ -613,10 +610,27 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
     return;
   }
 
-  nsBoxLayoutState aState(aPresContext, aRC);
-  nsSize minSize = rootFrame->GetXULMinSize(aState);
-  nsSize maxSize = rootFrame->GetXULMaxSize(aState);
-
+  nsSize minSize(0, 0);
+  nsSize maxSize(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  if (rootElement->IsXULElement()) {
+    nsBoxLayoutState aState(aPresContext, aRC);
+    minSize = rootFrame->GetXULMinSize(aState);
+    maxSize = rootFrame->GetXULMaxSize(aState);
+  } else {
+    auto* pos = rootFrame->StylePosition();
+    if (pos->mMinWidth.ConvertsToLength()) {
+      minSize.width = pos->mMinWidth.ToLength();
+    }
+    if (pos->mMinHeight.ConvertsToLength()) {
+      minSize.height = pos->mMinHeight.ToLength();
+    }
+    if (pos->mMaxWidth.ConvertsToLength()) {
+      maxSize.width = pos->mMaxWidth.ToLength();
+    }
+    if (pos->mMaxHeight.ConvertsToLength()) {
+      maxSize.height = pos->mMaxHeight.ToLength();
+    }
+  }
   SetSizeConstraints(aPresContext, windowWidget, minSize, maxSize);
 #endif
 }
@@ -662,17 +676,17 @@ void nsContainerFrame::SetSizeConstraints(nsPresContext* aPresContext,
 
 void nsContainerFrame::SyncFrameViewAfterReflow(
     nsPresContext* aPresContext, nsIFrame* aFrame, nsView* aView,
-    const nsRect& aVisualOverflowArea, uint32_t aFlags) {
+    const nsRect& aVisualOverflowArea, ReflowChildFlags aFlags) {
   if (!aView) {
     return;
   }
 
   
-  if (0 == (aFlags & NS_FRAME_NO_MOVE_VIEW)) {
+  if (!(aFlags & ReflowChildFlags::NoMoveView)) {
     PositionFrameView(aFrame);
   }
 
-  if (0 == (aFlags & NS_FRAME_NO_SIZE_VIEW)) {
+  if (!(aFlags & ReflowChildFlags::NoSizeView)) {
     nsViewManager* vm = aView->GetViewManager();
 
     vm->ResizeView(aView, aVisualOverflowArea, true);
@@ -870,8 +884,8 @@ void nsContainerFrame::ReflowChild(
     nsIFrame* aKidFrame, nsPresContext* aPresContext,
     ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
     const WritingMode& aWM, const LogicalPoint& aPos,
-    const nsSize& aContainerSize, uint32_t aFlags, nsReflowStatus& aStatus,
-    nsOverflowContinuationTracker* aTracker) {
+    const nsSize& aContainerSize, ReflowChildFlags aFlags,
+    nsReflowStatus& aStatus, nsOverflowContinuationTracker* aTracker) {
   MOZ_ASSERT(aReflowInput.mFrame == aKidFrame, "bad reflow input");
   if (aWM.IsVerticalRL() || (!aWM.IsVertical() && !aWM.IsBidiLTR())) {
     NS_ASSERTION(aContainerSize.width != NS_UNCONSTRAINEDSIZE,
@@ -882,11 +896,12 @@ void nsContainerFrame::ReflowChild(
              "please reset the overflow areas before calling ReflowChild");
 
   
-  if (NS_FRAME_NO_MOVE_FRAME != (aFlags & NS_FRAME_NO_MOVE_FRAME)) {
+  if (ReflowChildFlags::NoMoveFrame !=
+      (aFlags & ReflowChildFlags::NoMoveFrame)) {
     aKidFrame->SetPosition(aWM, aPos, aContainerSize);
   }
 
-  if (0 == (aFlags & NS_FRAME_NO_MOVE_VIEW)) {
+  if (!(aFlags & ReflowChildFlags::NoMoveView)) {
     PositionFrameView(aKidFrame);
     PositionChildViews(aKidFrame);
   }
@@ -897,7 +912,7 @@ void nsContainerFrame::ReflowChild(
   
   
   if (!aStatus.IsInlineBreakBefore() && aStatus.IsFullyComplete() &&
-      !(aFlags & NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD)) {
+      !(aFlags & ReflowChildFlags::NoDeleteNextInFlowChild)) {
     nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow();
     if (kidNextInFlow) {
       
@@ -915,17 +930,18 @@ void nsContainerFrame::ReflowChild(nsIFrame* aKidFrame,
                                    nsPresContext* aPresContext,
                                    ReflowOutput& aDesiredSize,
                                    const ReflowInput& aReflowInput, nscoord aX,
-                                   nscoord aY, uint32_t aFlags,
+                                   nscoord aY, ReflowChildFlags aFlags,
                                    nsReflowStatus& aStatus,
                                    nsOverflowContinuationTracker* aTracker) {
   MOZ_ASSERT(aReflowInput.mFrame == aKidFrame, "bad reflow input");
 
   
-  if (NS_FRAME_NO_MOVE_FRAME != (aFlags & NS_FRAME_NO_MOVE_FRAME)) {
+  if (ReflowChildFlags::NoMoveFrame !=
+      (aFlags & ReflowChildFlags::NoMoveFrame)) {
     aKidFrame->SetPosition(nsPoint(aX, aY));
   }
 
-  if (0 == (aFlags & NS_FRAME_NO_MOVE_VIEW)) {
+  if (!(aFlags & ReflowChildFlags::NoMoveView)) {
     PositionFrameView(aKidFrame);
     PositionChildViews(aKidFrame);
   }
@@ -936,7 +952,7 @@ void nsContainerFrame::ReflowChild(nsIFrame* aKidFrame,
   
   
   if (aStatus.IsFullyComplete() &&
-      !(aFlags & NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD)) {
+      !(aFlags & ReflowChildFlags::NoDeleteNextInFlowChild)) {
     nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow();
     if (kidNextInFlow) {
       
@@ -1010,7 +1026,7 @@ void nsContainerFrame::FinishReflowChild(
     nsIFrame* aKidFrame, nsPresContext* aPresContext,
     const ReflowOutput& aDesiredSize, const ReflowInput* aReflowInput,
     const WritingMode& aWM, const LogicalPoint& aPos,
-    const nsSize& aContainerSize, uint32_t aFlags) {
+    const nsSize& aContainerSize, nsIFrame::ReflowChildFlags aFlags) {
   if (aWM.IsVerticalRL() || (!aWM.IsVertical() && !aWM.IsBidiLTR())) {
     NS_ASSERTION(aContainerSize.width != NS_UNCONSTRAINEDSIZE,
                  "FinishReflowChild with unconstrained container width!");
@@ -1021,7 +1037,8 @@ void nsContainerFrame::FinishReflowChild(
   LogicalSize convertedSize =
       aDesiredSize.Size(outerWM).ConvertTo(aWM, outerWM);
 
-  if (NS_FRAME_NO_MOVE_FRAME != (aFlags & NS_FRAME_NO_MOVE_FRAME)) {
+  if (ReflowChildFlags::NoMoveFrame !=
+      (aFlags & ReflowChildFlags::NoMoveFrame)) {
     aKidFrame->SetRect(aWM, LogicalRect(aWM, aPos, convertedSize),
                        aContainerSize);
   } else {
@@ -1037,7 +1054,7 @@ void nsContainerFrame::FinishReflowChild(
   }
 
   nsPoint newOrigin = aKidFrame->GetPosition();
-  if (!(aFlags & NS_FRAME_NO_MOVE_VIEW) && curOrigin != newOrigin) {
+  if (!(aFlags & ReflowChildFlags::NoMoveView) && curOrigin != newOrigin) {
     if (!aKidFrame->HasView()) {
       
       
@@ -1058,10 +1075,11 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
                                          const ReflowOutput& aDesiredSize,
                                          const ReflowInput* aReflowInput,
                                          nscoord aX, nscoord aY,
-                                         uint32_t aFlags) {
+                                         ReflowChildFlags aFlags) {
   nsPoint curOrigin = aKidFrame->GetPosition();
 
-  if (NS_FRAME_NO_MOVE_FRAME != (aFlags & NS_FRAME_NO_MOVE_FRAME)) {
+  if (ReflowChildFlags::NoMoveFrame !=
+      (aFlags & ReflowChildFlags::NoMoveFrame)) {
     aKidFrame->SetRect(
         nsRect(aX, aY, aDesiredSize.Width(), aDesiredSize.Height()));
   } else {
@@ -1076,7 +1094,7 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
                              aDesiredSize.VisualOverflow(), aFlags);
   }
 
-  if (!(aFlags & NS_FRAME_NO_MOVE_VIEW) &&
+  if (!(aFlags & ReflowChildFlags::NoMoveView) &&
       (curOrigin.x != aX || curOrigin.y != aY)) {
     if (!aKidFrame->HasView()) {
       
@@ -1090,8 +1108,8 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
 
 void nsContainerFrame::ReflowOverflowContainerChildren(
     nsPresContext* aPresContext, const ReflowInput& aReflowInput,
-    nsOverflowAreas& aOverflowRects, uint32_t aFlags, nsReflowStatus& aStatus,
-    ChildFrameMerger aMergeFunc) {
+    nsOverflowAreas& aOverflowRects, ReflowChildFlags aFlags,
+    nsReflowStatus& aStatus, ChildFrameMerger aMergeFunc) {
   MOZ_ASSERT(aPresContext, "null pointer");
 
   nsFrameList* overflowContainers =

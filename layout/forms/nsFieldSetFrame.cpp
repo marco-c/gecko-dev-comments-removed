@@ -394,8 +394,8 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   nsOverflowAreas ocBounds;
   nsReflowStatus ocStatus;
   if (GetPrevInFlow()) {
-    ReflowOverflowContainerChildren(aPresContext, aReflowInput, ocBounds, 0,
-                                    ocStatus);
+    ReflowOverflowContainerChildren(aPresContext, aReflowInput, ocBounds,
+                                    ReflowChildFlags::Default, ocStatus);
   }
 
   
@@ -443,8 +443,8 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     
     const nsSize dummyContainerSize;
     ReflowChild(legend, aPresContext, legendDesiredSize, *legendReflowInput, wm,
-                LogicalPoint(wm), dummyContainerSize, NS_FRAME_NO_MOVE_FRAME,
-                aStatus);
+                LogicalPoint(wm), dummyContainerSize,
+                ReflowChildFlags::NoMoveFrame, aStatus);
 #ifdef NOISY_REFLOW
     printf("  returned (%d, %d)\n", legendDesiredSize.Width(),
            legendDesiredSize.Height());
@@ -483,7 +483,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
 
     FinishReflowChild(legend, aPresContext, legendDesiredSize,
                       legendReflowInput.ptr(), wm, LogicalPoint(wm),
-                      dummyContainerSize, NS_FRAME_NO_MOVE_FRAME);
+                      dummyContainerSize, ReflowChildFlags::NoMoveFrame);
   } else if (!legend) {
     mLegendRect.SetEmpty();
     mLegendSpace = 0;
@@ -535,13 +535,13 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     
     const nsSize dummyContainerSize;
     ReflowChild(inner, aPresContext, kidDesiredSize, kidReflowInput, wm, pt,
-                dummyContainerSize, 0, aStatus);
+                dummyContainerSize, ReflowChildFlags::Default, aStatus);
 
     
     
     containerSize += kidDesiredSize.PhysicalSize();
     FinishReflowChild(inner, aPresContext, kidDesiredSize, &kidReflowInput, wm,
-                      pt, containerSize, 0);
+                      pt, containerSize, ReflowChildFlags::Default);
     NS_FRAME_TRACE_REFLOW_OUT("FieldSet::Reflow", aStatus);
   } else if (inner) {
     

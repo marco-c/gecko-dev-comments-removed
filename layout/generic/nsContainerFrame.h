@@ -15,16 +15,6 @@
 #include "nsLayoutUtils.h"
 #include "nsLineBox.h"
 
-
-
-#define NS_FRAME_NO_MOVE_VIEW 0x0001
-#define NS_FRAME_NO_MOVE_FRAME (0x0002 | NS_FRAME_NO_MOVE_VIEW)
-#define NS_FRAME_NO_SIZE_VIEW 0x0004
-#define NS_FRAME_NO_VISIBILITY 0x0008
-
-
-#define NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD 0x0010
-
 class nsOverflowContinuationTracker;
 
 namespace mozilla {
@@ -174,10 +164,10 @@ class nsContainerFrame : public nsSplittableFrame {
   
   
   
-  static void SyncFrameViewAfterReflow(nsPresContext* aPresContext,
-                                       nsIFrame* aFrame, nsView* aView,
-                                       const nsRect& aVisualOverflowArea,
-                                       uint32_t aFlags = 0);
+  static void SyncFrameViewAfterReflow(
+      nsPresContext* aPresContext, nsIFrame* aFrame, nsView* aView,
+      const nsRect& aVisualOverflowArea,
+      ReflowChildFlags aFlags = ReflowChildFlags::Default);
 
   
   
@@ -236,7 +226,7 @@ class nsContainerFrame : public nsSplittableFrame {
                    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
                    const mozilla::WritingMode& aWM,
                    const mozilla::LogicalPoint& aPos,
-                   const nsSize& aContainerSize, uint32_t aFlags,
+                   const nsSize& aContainerSize, ReflowChildFlags aFlags,
                    nsReflowStatus& aStatus,
                    nsOverflowContinuationTracker* aTracker = nullptr);
 
@@ -259,20 +249,18 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  static void FinishReflowChild(nsIFrame* aKidFrame,
-                                nsPresContext* aPresContext,
-                                const ReflowOutput& aDesiredSize,
-                                const ReflowInput* aReflowInput,
-                                const mozilla::WritingMode& aWM,
-                                const mozilla::LogicalPoint& aPos,
-                                const nsSize& aContainerSize, uint32_t aFlags);
+  static void FinishReflowChild(
+      nsIFrame* aKidFrame, nsPresContext* aPresContext,
+      const ReflowOutput& aDesiredSize, const ReflowInput* aReflowInput,
+      const mozilla::WritingMode& aWM, const mozilla::LogicalPoint& aPos,
+      const nsSize& aContainerSize, ReflowChildFlags aFlags);
 
   
   
   
   void ReflowChild(nsIFrame* aKidFrame, nsPresContext* aPresContext,
                    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
-                   nscoord aX, nscoord aY, uint32_t aFlags,
+                   nscoord aX, nscoord aY, ReflowChildFlags aFlags,
                    nsReflowStatus& aStatus,
                    nsOverflowContinuationTracker* aTracker = nullptr);
 
@@ -280,7 +268,7 @@ class nsContainerFrame : public nsSplittableFrame {
                                 nsPresContext* aPresContext,
                                 const ReflowOutput& aDesiredSize,
                                 const ReflowInput* aReflowInput, nscoord aX,
-                                nscoord aY, uint32_t aFlags);
+                                nscoord aY, ReflowChildFlags aFlags);
 
   static void PositionChildViews(nsIFrame* aFrame);
 
@@ -358,7 +346,8 @@ class nsContainerFrame : public nsSplittableFrame {
 
   void ReflowOverflowContainerChildren(
       nsPresContext* aPresContext, const ReflowInput& aReflowInput,
-      nsOverflowAreas& aOverflowRects, uint32_t aFlags, nsReflowStatus& aStatus,
+      nsOverflowAreas& aOverflowRects, ReflowChildFlags aFlags,
+      nsReflowStatus& aStatus,
       ChildFrameMerger aMergeFunc = DefaultChildFrameMerge);
 
   

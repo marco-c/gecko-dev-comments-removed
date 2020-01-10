@@ -451,7 +451,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   nsPopupLevel PopupLevel(bool aIsNoAutoHide) const;
 
   
-  virtual uint32_t GetXULLayoutFlags() override;
+  ReflowChildFlags GetXULLayoutFlags() override;
 
   void InitPositionFromAnchorAlign(const nsAString& aAnchor,
                                    const nsAString& aAlign);

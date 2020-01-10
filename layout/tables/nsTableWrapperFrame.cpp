@@ -766,7 +766,7 @@ void nsTableWrapperFrame::OuterDoReflowChild(nsPresContext* aPresContext,
 
   
   LogicalPoint childPt = aChildFrame->GetLogicalPosition(wm, zeroCSize);
-  uint32_t flags = NS_FRAME_NO_MOVE_FRAME;
+  ReflowChildFlags flags = ReflowChildFlags::NoMoveFrame;
 
   
   
@@ -774,7 +774,7 @@ void nsTableWrapperFrame::OuterDoReflowChild(nsPresContext* aPresContext,
   
   
   if (aChildFrame == InnerTableFrame()) {
-    flags |= NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD;
+    flags |= ReflowChildFlags::NoDeleteNextInFlowChild;
   }
 
   ReflowChild(aChildFrame, aPresContext, aMetrics, aChildRI, wm, childPt,
@@ -960,7 +960,8 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
     GetCaptionOrigin(captionSide, containSize, innerSize, innerMargin,
                      captionSize, captionMargin, captionOrigin, wm);
     FinishReflowChild(mCaptionFrames.FirstChild(), aPresContext, *captionMet,
-                      captionRI.ptr(), wm, captionOrigin, containerSize, 0);
+                      captionRI.ptr(), wm, captionOrigin, containerSize,
+                      ReflowChildFlags::Default);
     captionRI.reset();
   }
   
@@ -970,7 +971,7 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
   GetInnerOrigin(captionSide, containSize, captionSize, captionMargin,
                  innerSize, innerMargin, innerOrigin, wm);
   FinishReflowChild(InnerTableFrame(), aPresContext, innerMet, innerRI.ptr(),
-                    wm, innerOrigin, containerSize, 0);
+                    wm, innerOrigin, containerSize, ReflowChildFlags::Default);
   innerRI.reset();
 
   if (mCaptionFrames.NotEmpty()) {
@@ -983,7 +984,8 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
 
   if (GetPrevInFlow()) {
     ReflowOverflowContainerChildren(aPresContext, aOuterRI,
-                                    aDesiredSize.mOverflowAreas, 0, aStatus);
+                                    aDesiredSize.mOverflowAreas,
+                                    ReflowChildFlags::Default, aStatus);
   }
 
   FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aOuterRI, aStatus);

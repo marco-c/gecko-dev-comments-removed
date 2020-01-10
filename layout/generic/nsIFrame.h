@@ -2544,6 +2544,19 @@ class nsIFrame : public nsQueryFrame {
                       nsReflowStatus& aStatus) = 0;
 
   
+  
+  enum class ReflowChildFlags : uint32_t {
+    Default = 0,
+    NoMoveView = 1 << 0,
+    NoMoveFrame = (1 << 1) | NoMoveView,
+    NoSizeView = 1 << 2,
+    NoVisibility = 1 << 3,
+    
+    
+    NoDeleteNextInFlowChild = 1 << 4
+  };
+
+  
 
 
 
@@ -3733,7 +3746,9 @@ class nsIFrame : public nsQueryFrame {
   virtual nsBoxLayout* GetXULLayoutManager() { return nullptr; }
   nsresult GetXULClientRect(nsRect& aContentRect);
 
-  virtual uint32_t GetXULLayoutFlags() { return 0; }
+  virtual ReflowChildFlags GetXULLayoutFlags() {
+    return ReflowChildFlags::Default;
+  }
 
   
   virtual Valignment GetXULVAlign() const = 0;
@@ -4649,6 +4664,8 @@ class nsIFrame : public nsQueryFrame {
   virtual nsresult GetFrameName(nsAString& aResult) const = 0;
 #endif
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIFrame::ReflowChildFlags)
 
 
 

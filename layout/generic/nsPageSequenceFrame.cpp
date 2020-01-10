@@ -250,14 +250,15 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     nscoord x = pageCSSMargin.left;
 
     
-    ReflowChild(kidFrame, aPresContext, kidSize, kidReflowInput, x, y, 0,
-                status);
+    ReflowChild(kidFrame, aPresContext, kidSize, kidReflowInput, x, y,
+                ReflowChildFlags::Default, status);
 
     
     x += ComputeCenteringMargin(aReflowInput.ComputedWidth(), kidSize.Width(),
                                 pageCSSMargin);
 
-    FinishReflowChild(kidFrame, aPresContext, kidSize, nullptr, x, y, 0);
+    FinishReflowChild(kidFrame, aPresContext, kidSize, nullptr, x, y,
+                      ReflowChildFlags::Default);
     y += kidSize.Height();
     y += pageCSSMargin.bottom;
 

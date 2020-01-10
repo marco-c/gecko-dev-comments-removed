@@ -57,8 +57,8 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     kidReflowInput.SetComputedBSize(logicalSize.BSize(wm));
 
     
-    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0, 0,
-                aStatus);
+    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0,
+                ReflowChildFlags::Default, aStatus);
 
     
     
@@ -90,7 +90,7 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
 
     
     FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, 0, 0,
-                      0);
+                      ReflowChildFlags::Default);
 
     NS_ASSERTION(aPresContext->IsDynamic() || !aStatus.IsFullyComplete() ||
                      !frame->GetNextInFlow(),

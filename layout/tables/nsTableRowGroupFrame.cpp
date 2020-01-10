@@ -282,7 +282,7 @@ void nsTableRowGroupFrame::PlaceChild(
 
   
   FinishReflowChild(aKidFrame, aPresContext, aDesiredSize, nullptr, aWM,
-                    aKidPosition, aContainerSize, 0);
+                    aKidPosition, aContainerSize, ReflowChildFlags::Default);
 
   nsTableFrame* tableFrame = GetTableFrame();
   if (tableFrame->IsBorderCollapse()) {
@@ -406,7 +406,8 @@ void nsTableRowGroupFrame::ReflowChildren(
 
       LogicalPoint kidPosition(wm, 0, aReflowInput.bCoord);
       ReflowChild(kidFrame, aPresContext, desiredSize, kidReflowInput, wm,
-                  kidPosition, containerSize, 0, aStatus);
+                  kidPosition, containerSize, ReflowChildFlags::Default,
+                  aStatus);
       kidReflowInput.ApplyRelativePositioning(&kidPosition, containerSize);
 
       
@@ -1159,7 +1160,7 @@ nsresult nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
         
         
         ReflowChild(rowFrame, aPresContext, rowMetrics, rowReflowInput, 0, 0,
-                    NS_FRAME_NO_MOVE_FRAME, aStatus);
+                    ReflowChildFlags::NoMoveFrame, aStatus);
         rowFrame->SetSize(nsSize(rowMetrics.Width(), rowMetrics.Height()));
         rowFrame->DidReflow(aPresContext, nullptr);
         rowFrame->DidResize();

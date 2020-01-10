@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsProgressFrame.h"
 
@@ -49,11 +49,11 @@ void nsProgressFrame::DestroyFrom(nsIFrame* aDestructRoot,
 
 nsresult nsProgressFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
-  // Create the progress bar div.
+  
   nsCOMPtr<Document> doc = mContent->GetComposedDoc();
   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
 
-  // Associate ::-moz-progress-bar pseudo-element to the anonymous child.
+  
   mBarDiv->SetPseudoElementType(PseudoStyleType::mozProgressBar);
 
   if (!aElements.AppendElement(mBarDiv)) {
@@ -113,7 +113,7 @@ void nsProgressFrame::Reflow(nsPresContext* aPresContext,
 
   FinishAndStoreOverflow(&aDesiredSize);
 
-  aStatus.Reset();  // This type of frame can't be split.
+  aStatus.Reset();  
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
@@ -134,8 +134,8 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
 
   double position = static_cast<HTMLProgressElement*>(GetContent())->Position();
 
-  // Force the bar's size to match the current progress.
-  // When indeterminate, the progress' size will be 100%.
+  
+  
   if (position >= 0.0) {
     size *= position;
   }
@@ -144,16 +144,16 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
     xoffset += aReflowInput.ComputedWidth() - size;
   }
 
-  // The bar size is fixed in these cases:
-  // - the progress position is determined: the bar size is fixed according
-  //   to it's value.
-  // - the progress position is indeterminate and the bar appearance should be
-  //   shown as native: the bar size is forced to 100%.
-  // Otherwise (when the progress is indeterminate and the bar appearance isn't
-  // native), the bar size isn't fixed and can be set by the author.
+  
+  
+  
+  
+  
+  
+  
   if (position != -1 || ShouldUseNativeStyle()) {
     if (vertical) {
-      // We want the bar to begin at the bottom.
+      
       yoffset += aReflowInput.ComputedHeight() - size;
 
       size -= reflowInput.ComputedPhysicalMargin().TopBottom() +
@@ -167,9 +167,9 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
       reflowInput.SetComputedWidth(size);
     }
   } else if (vertical) {
-    // For vertical progress bars, we need to position the bar specificly when
-    // the width isn't constrained (position == -1 and !ShouldUseNativeStyle())
-    // because aReflowInput.ComputedHeight() - size == 0.
+    
+    
+    
     yoffset += aReflowInput.ComputedHeight() - reflowInput.ComputedHeight();
   }
 
@@ -178,9 +178,9 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
 
   ReflowOutput barDesiredSize(aReflowInput);
   ReflowChild(aChild, aPresContext, barDesiredSize, reflowInput, xoffset,
-              yoffset, 0, aStatus);
+              yoffset, ReflowChildFlags::Default, aStatus);
   FinishReflowChild(aChild, aPresContext, barDesiredSize, &reflowInput, xoffset,
-                    yoffset, 0);
+                    yoffset, ReflowChildFlags::Default);
 }
 
 nsresult nsProgressFrame::AttributeChanged(int32_t aNameSpaceID,
@@ -210,12 +210,12 @@ LogicalSize nsProgressFrame::ComputeAutoSize(
   LogicalSize autoSize(wm);
   autoSize.BSize(wm) = autoSize.ISize(wm) =
       NSToCoordRound(StyleFont()->mFont.size *
-                     nsLayoutUtils::FontSizeInflationFor(this));  // 1em
+                     nsLayoutUtils::FontSizeInflationFor(this));  
 
   if (ResolvedOrientationIsVertical() == wm.IsVertical()) {
-    autoSize.ISize(wm) *= 10;  // 10em
+    autoSize.ISize(wm) *= 10;  
   } else {
-    autoSize.BSize(wm) *= 10;  // 10em
+    autoSize.BSize(wm) *= 10;  
   }
 
   return autoSize.ConvertTo(aWM, wm);
@@ -225,11 +225,11 @@ nscoord nsProgressFrame::GetMinISize(gfxContext* aRenderingContext) {
   RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, 1.0f);
 
-  nscoord minISize = fontMet->Font().size;  // 1em
+  nscoord minISize = fontMet->Font().size;  
 
   if (ResolvedOrientationIsVertical() == GetWritingMode().IsVertical()) {
-    // The orientation is inline
-    minISize *= 10;  // 10em
+    
+    minISize *= 10;  
   }
 
   return minISize;
@@ -242,10 +242,10 @@ nscoord nsProgressFrame::GetPrefISize(gfxContext* aRenderingContext) {
 bool nsProgressFrame::ShouldUseNativeStyle() const {
   nsIFrame* barFrame = PrincipalChildList().FirstChild();
 
-  // Use the native style if these conditions are satisfied:
-  // - both frames use the native appearance;
-  // - neither frame has author specified rules setting the border or the
-  //   background.
+  
+  
+  
+  
   return StyleDisplay()->mAppearance == StyleAppearance::ProgressBar &&
          !PresContext()->HasAuthorSpecifiedRules(
              this,

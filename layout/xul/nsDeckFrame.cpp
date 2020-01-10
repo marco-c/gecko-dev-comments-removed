@@ -211,8 +211,9 @@ NS_IMETHODIMP
 nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
   
   
-  uint32_t oldFlags = aState.LayoutFlags();
-  aState.SetLayoutFlags(NS_FRAME_NO_SIZE_VIEW | NS_FRAME_NO_VISIBILITY);
+  ReflowChildFlags oldFlags = aState.LayoutFlags();
+  aState.SetLayoutFlags(ReflowChildFlags::NoSizeView |
+                        ReflowChildFlags::NoVisibility);
 
   
   nsresult rv = nsBoxFrame::DoXULLayout(aState);

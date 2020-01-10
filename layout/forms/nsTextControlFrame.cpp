@@ -670,11 +670,11 @@ void nsTextControlFrame::ReflowTextControlChild(
   
   ReflowOutput desiredSize(aReflowInput);
   ReflowChild(aKid, aPresContext, desiredSize, kidReflowInput, xOffset, yOffset,
-              0, aStatus);
+              ReflowChildFlags::Default, aStatus);
 
   
   FinishReflowChild(aKid, aPresContext, desiredSize, &kidReflowInput, xOffset,
-                    yOffset, 0);
+                    yOffset, ReflowChildFlags::Default);
 
   
   aParentDesiredSize.mOverflowAreas.UnionWith(desiredSize.mOverflowAreas);
