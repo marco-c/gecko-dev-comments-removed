@@ -4,12 +4,21 @@ add_task(async function test_main() {
     return chromeURL.replace("chrome://mochitests/content/", "http://mochi.test:8888/");
   }
 
+  var utils = SpecialPowers.getDOMWindowUtils(window);
+  var isWebRender = (utils.layerManagerType == "WebRender");
+
   
   
   var test_urls = [
     httpURL("helper_fission_basic.html", null),
     
   ];
+  if (isWebRender) {
+    test_urls = test_urls.concat([
+      httpURL("helper_fission_transforms.html", null),
+      
+    ]);
+  }
 
   let fissionWindow = await BrowserTestUtils.openNewBrowserWindow({fission: true});
 
