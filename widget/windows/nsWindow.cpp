@@ -5362,9 +5362,14 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         
         
         SendMessage(mWnd, WM_MOUSEMOVE, 0, lParamClient);
-      } else if (mMousePresent && !sIsInMouseCapture) {
+      } else {
         
         
+        
+        mMouseInDraggableArea = false;
+      }
+
+      if (mMousePresent && !sIsInMouseCapture && !mMouseInDraggableArea) {
         SendMessage(mWnd, WM_MOUSELEAVE, 0, 0);
       }
     } break;
