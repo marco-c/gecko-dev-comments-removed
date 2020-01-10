@@ -173,6 +173,7 @@ static uint32_t AvailableFeatures() {
   
   ProfilerFeature::ClearJava(features);
   ProfilerFeature::ClearJS(features);
+  ProfilerFeature::ClearResponsiveness(features);
   ProfilerFeature::ClearScreenshots(features);
 #  if !defined(HAVE_NATIVE_UNWIND)
   ProfilerFeature::ClearStackWalk(features);
@@ -187,7 +188,8 @@ static uint32_t AvailableFeatures() {
 
 static uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS | ProfilerFeature::Leaf |
-         ProfilerFeature::StackWalk | ProfilerFeature::Threads;
+         ProfilerFeature::StackWalk | ProfilerFeature::Threads |
+         ProfilerFeature::Responsiveness;
 }
 
 
