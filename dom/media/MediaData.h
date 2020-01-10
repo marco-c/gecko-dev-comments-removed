@@ -296,6 +296,8 @@ class MediaData {
 
   media::TimeUnit GetEndTime() const { return mTime + mDuration; }
 
+  media::TimeUnit GetEndTimecode() const { return mTimecode + mDuration; }
+
   
   
   virtual bool AdjustForStartTime(const media::TimeUnit& aStartTime) {
