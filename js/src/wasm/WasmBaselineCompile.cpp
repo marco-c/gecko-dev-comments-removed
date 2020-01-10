@@ -6507,8 +6507,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   }
 
   MOZ_MUST_USE bool emitBarrieredStore(const Maybe<RegPtr>& object,
-                                       RegPtr valueAddr, RegPtr value,
-                                       ValType valueType) {
+                                       RegPtr valueAddr, RegPtr value) {
     
     
     ASSERT_ANYREF_IS_JSOBJECT;
@@ -9251,7 +9250,7 @@ bool BaseCompiler::emitSetGlobal() {
       }
       RegPtr rv = popRef();
       
-      if (!emitBarrieredStore(Nothing(), valueAddr, rv, global.type())) {
+      if (!emitBarrieredStore(Nothing(), valueAddr, rv)) {
         return false;
       }
       freeRef(rv);
@@ -10754,8 +10753,7 @@ bool BaseCompiler::emitStructSet() {
     case ValType::AnyRef: {
       masm.computeEffectiveAddress(Address(rp, offs), valueAddr);
       
-      if (!emitBarrieredStore(Some(rp), valueAddr, rr,
-                              structType.fields_[fieldIndex].type)) {
+      if (!emitBarrieredStore(Some(rp), valueAddr, rr)) {
         return false;
       }
       freeRef(rr);
