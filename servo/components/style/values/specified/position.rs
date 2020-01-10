@@ -94,13 +94,17 @@ impl Parse for Position {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        Self::parse_quirky(context, input, AllowQuirks::No)
+        let position = Self::parse_three_value_quirky(context, input, AllowQuirks::No)?;
+        if position.is_three_value_syntax() {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+        Ok(position)
     }
 }
 
 impl Position {
     
-    pub fn parse_quirky<'i, 't>(
+    pub fn parse_three_value_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
@@ -183,6 +187,12 @@ impl Position {
     pub fn center() -> Self {
         Self::new(PositionComponent::Center, PositionComponent::Center)
     }
+
+    
+    #[inline]
+    fn is_three_value_syntax(&self) -> bool {
+        self.horizontal.component_count() != self.vertical.component_count()
+    }
 }
 
 impl ToCss for Position {
@@ -251,6 +261,17 @@ impl<S> PositionComponent<S> {
     
     pub fn zero() -> Self {
         PositionComponent::Length(LengthPercentage::Percentage(Percentage::zero()))
+    }
+
+    
+    fn component_count(&self) -> usize {
+        match *self {
+            PositionComponent::Length(..) |
+            PositionComponent::Center => 1,
+            PositionComponent::Side(_, ref lp) => {
+                if lp.is_some() { 2 } else { 1 }
+            }
+        }
     }
 }
 
