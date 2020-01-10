@@ -135,6 +135,7 @@ struct nsFont;
 namespace mozilla {
 class AbstractThread;
 class CSSStyleSheet;
+class EditorCommand;
 class Encoding;
 class ErrorResult;
 class EventStates;
@@ -472,6 +473,11 @@ class Document : public nsINode,
  public:
   typedef dom::ExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
   typedef net::ReferrerPolicy ReferrerPolicyEnum;
+
+  
+
+
+  static void Shutdown();
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Document)
 
@@ -4111,6 +4117,85 @@ class Document : public nsINode,
   void* GenerateParserKey(void);
 
  private:
+  
+  
+  enum class ExecCommandParam : uint8_t {
+    
+    Ignore,
+    
+    
+    String,
+    
+    Boolean,
+    
+    InvertedBoolean,
+  };
+
+  typedef mozilla::EditorCommand*(GetEditorCommandFunc)();
+
+  struct InternalCommandData {
+    const char* mXULCommandName;
+    mozilla::Command mCommand;           
+    ExecCommandParam mExecCommandParam;  
+    GetEditorCommandFunc* mGetEditorCommandFunc;
+
+    InternalCommandData()
+        : mXULCommandName(nullptr),
+          mCommand(mozilla::Command::DoNothing),
+          mExecCommandParam(ExecCommandParam::Ignore),
+          mGetEditorCommandFunc(nullptr) {}
+    InternalCommandData(const char* aXULCommandName, mozilla::Command aCommand,
+                        ExecCommandParam aExecCommandParam,
+                        GetEditorCommandFunc aGetEditorCommandFunc)
+        : mXULCommandName(aXULCommandName),
+          mCommand(aCommand),
+          mExecCommandParam(aExecCommandParam),
+          mGetEditorCommandFunc(aGetEditorCommandFunc) {}
+
+    bool IsAvailableOnlyWhenEditable() const {
+      return mCommand != mozilla::Command::Cut &&
+             mCommand != mozilla::Command::Copy &&
+             mCommand != mozilla::Command::Paste;
+    }
+    bool IsClipboardWriteCommand() const {
+      return mCommand == mozilla::Command::Cut ||
+             mCommand == mozilla::Command::Copy;
+    }
+    bool IsClipboardReadCommand() const {
+      return mCommand == mozilla::Command::Paste;
+    }
+  };
+
+  
+
+
+  static void EnsureInitializeInternalCommandDataHashtable();
+
+  
+  
+  
+  
+  
+  
+  static bool ConvertToMidasInternalCommand(const nsAString& inCommandID,
+                                            const nsAString& inParam,
+                                            nsACString& outCommandID,
+                                            nsACString& outParam,
+                                            bool& isBoolean, bool& boolValue);
+
+  static bool ConvertToMidasInternalCommand(const nsAString& inCommandID,
+                                            nsACString& outCommandID);
+
+  static bool ConvertToMidasInternalCommandInner(
+      const nsAString& inCommandID, const nsAString& inParam,
+      nsACString& outCommandID, nsACString& outParam, bool& outIsBoolean,
+      bool& outBooleanValue, bool aIgnoreParams);
+
+  
+  typedef nsDataHashtable<nsStringCaseInsensitiveHashKey, InternalCommandData>
+      InternalCommandDataHashtable;
+  static InternalCommandDataHashtable* sInternalCommandDataHashtable;
+
   void RecordContentBlockingLog(
       const nsACString& aOrigin, uint32_t aType, bool aBlocked,
       const Maybe<AntiTrackingCommon::StorageAccessGrantedReason>& aReason =

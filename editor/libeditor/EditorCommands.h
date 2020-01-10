@@ -301,6 +301,19 @@ class EditorCommand : public nsIControllerCommand {
       case Command::FormatIncreaseZIndex:
         return EditorCommandParamType::None;
 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      case Command::GetHTML:
+        return EditorCommandParamType::None;
+
       default:
         MOZ_ASSERT_UNREACHABLE("Unknown Command");
         return EditorCommandParamType::None;
@@ -474,7 +487,7 @@ class EditorCommand : public nsIControllerCommand {
 
 #define NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(_cmd) \
  public:                                                   \
-  static _cmd* GetInstance() {                             \
+  static EditorCommand* GetInstance() {                    \
     if (!sInstance) {                                      \
       sInstance = new _cmd();                              \
     }                                                      \
