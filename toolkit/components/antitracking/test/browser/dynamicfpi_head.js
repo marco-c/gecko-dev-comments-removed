@@ -120,6 +120,11 @@ this.DynamicFPIHelper = {
       if (cleanupFunction) {
         await cleanupFunction();
       }
+
+      
+      
+      
+      forceGC();
     });
   },
 };
