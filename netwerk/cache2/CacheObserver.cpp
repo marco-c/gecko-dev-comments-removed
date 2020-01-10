@@ -36,9 +36,6 @@ Atomic<uint32_t, Relaxed> CacheObserver::sDiskCacheCapacity(
 static int32_t const kDefaultMaxMemoryEntrySize = 4 * 1024;  
 int32_t CacheObserver::sMaxMemoryEntrySize = kDefaultMaxMemoryEntrySize;
 
-static int32_t const kDefaultMaxDiskEntrySize = 50 * 1024;  
-int32_t CacheObserver::sMaxDiskEntrySize = kDefaultMaxDiskEntrySize;
-
 static uint32_t const kDefaultMaxDiskChunksMemoryUsage = 40 * 1024;  
 uint32_t CacheObserver::sMaxDiskChunksMemoryUsage =
     kDefaultMaxDiskChunksMemoryUsage;
@@ -124,9 +121,6 @@ void CacheObserver::AttachToPreferences() {
                                               "browser.cache.disk.capacity",
                                               kDefaultDiskCacheCapacity);
 
-  mozilla::Preferences::AddIntVarCache(&sMaxDiskEntrySize,
-                                       "browser.cache.disk.max_entry_size",
-                                       kDefaultMaxDiskEntrySize);
   mozilla::Preferences::AddIntVarCache(&sMaxMemoryEntrySize,
                                        "browser.cache.memory.max_entry_size",
                                        kDefaultMaxMemoryEntrySize);
@@ -385,7 +379,8 @@ nsresult Run(OriginAttributes& aOa) {
 
 bool CacheObserver::EntryIsTooBig(int64_t aSize, bool aUsingDisk) {
   
-  int64_t preferredLimit = aUsingDisk ? sMaxDiskEntrySize : sMaxMemoryEntrySize;
+  int64_t preferredLimit =
+      aUsingDisk ? MaxDiskEntrySize() : sMaxMemoryEntrySize;
 
   
   if (preferredLimit > 0) {

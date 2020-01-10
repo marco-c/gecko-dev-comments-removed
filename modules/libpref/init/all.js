@@ -32,9 +32,6 @@ pref("browser.bookmarks.max_backups",       5);
 pref("browser.cache.disk.capacity",         256000);
 
 
-pref("browser.cache.disk.max_entry_size",    51200);  
-
-
 pref("browser.cache.memory.max_entry_size",  5120);
 
 
