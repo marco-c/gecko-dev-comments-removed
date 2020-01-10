@@ -4,13 +4,12 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "SelectParent",
-  "SelectParentHelper",
-];
+var EXPORTED_SYMBOLS = ["SelectParent", "SelectParentHelper"];
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 const MAX_ROWS = 20;
@@ -25,7 +24,9 @@ const PROPERTIES_RESET_WHEN_ACTIVE = [
   "text-shadow",
 ];
 
-const customStylingEnabled = Services.prefs.getBoolPref("dom.forms.select.customstyling");
+const customStylingEnabled = Services.prefs.getBoolPref(
+  "dom.forms.select.customstyling"
+);
 
 var SelectParentHelper = {
   
@@ -59,8 +60,15 @@ var SelectParentHelper = {
 
 
 
-  populate(menulist, items, uniqueItemStyles, selectedIndex, zoom,
-            uaStyle, selectStyle) {
+  populate(
+    menulist,
+    items,
+    uniqueItemStyles,
+    selectedIndex,
+    zoom,
+    uaStyle,
+    selectStyle
+  ) {
     
     menulist.menupopup.textContent = "";
     let stylesheet = menulist.querySelector("#ContentSelectDropdownStylesheet");
@@ -88,8 +96,10 @@ var SelectParentHelper = {
 
     
     
-    if (customStylingEnabled &&
-        selectStyle["background-color"] != uaStyle["background-color"]) {
+    if (
+      customStylingEnabled &&
+      selectStyle["background-color"] != uaStyle["background-color"]
+    ) {
       let color = selectStyle["background-color"];
       selectStyle["background-image"] = `linear-gradient(${color}, ${color});`;
       selectBackgroundSet = true;
@@ -101,26 +111,36 @@ var SelectParentHelper = {
 
     if (customStylingEnabled) {
       if (selectStyle["text-shadow"] != "none") {
-        sheet.insertRule(`#ContentSelectDropdown > menupopup > [_moz-menuactive="true"] {
+        sheet.insertRule(
+          `#ContentSelectDropdown > menupopup > [_moz-menuactive="true"] {
           text-shadow: none;
-        }`, 0);
+        }`,
+          0
+        );
       }
 
       let ruleBody = "";
       for (let property in selectStyle) {
-        if (property == "background-color" || property == "direction")
-          continue; 
+        if (property == "background-color" || property == "direction") {
+          continue;
+        } 
         if (selectStyle[property] != uaStyle[property]) {
           ruleBody += `${property}: ${selectStyle[property]};`;
         }
       }
       if (ruleBody) {
-        sheet.insertRule(`#ContentSelectDropdown > menupopup {
+        sheet.insertRule(
+          `#ContentSelectDropdown > menupopup {
           ${ruleBody}
-        }`, 0);
-        sheet.insertRule(`#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
+        }`,
+          0
+        );
+        sheet.insertRule(
+          `#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
             color: inherit;
-        }`, 0);
+        }`,
+          0
+        );
       }
     }
 
@@ -135,8 +155,16 @@ var SelectParentHelper = {
 
     this._currentZoom = zoom;
     this._currentMenulist = menulist;
-    this.populateChildren(menulist, items, uniqueItemStyles, selectedIndex, zoom,
-                      selectStyle, selectBackgroundSet, sheet);
+    this.populateChildren(
+      menulist,
+      items,
+      uniqueItemStyles,
+      selectedIndex,
+      zoom,
+      selectStyle,
+      selectBackgroundSet,
+      sheet
+    );
   },
 
   open(browser, menulist, rect, isOpenedViaTouch, selectParentActor) {
@@ -161,23 +189,37 @@ var SelectParentHelper = {
 
       
       let cs = win.getComputedStyle(menupopup);
-      let bpHeight = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth) +
-                      parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-      menupopup.style.maxHeight = (itemHeight * MAX_ROWS + bpHeight) + "px";
+      let bpHeight =
+        parseFloat(cs.borderTopWidth) +
+        parseFloat(cs.borderBottomWidth) +
+        parseFloat(cs.paddingTop) +
+        parseFloat(cs.paddingBottom);
+      menupopup.style.maxHeight = itemHeight * MAX_ROWS + bpHeight + "px";
     }
 
     menupopup.classList.toggle("isOpenedViaTouch", isOpenedViaTouch);
 
     if (browser.getAttribute("selectmenuconstrained") != "false") {
       let constraintRect = browser.getBoundingClientRect();
-      constraintRect = new win.DOMRect(constraintRect.left + win.mozInnerScreenX,
-                                        constraintRect.top + win.mozInnerScreenY,
-                                        constraintRect.width, constraintRect.height);
+      constraintRect = new win.DOMRect(
+        constraintRect.left + win.mozInnerScreenX,
+        constraintRect.top + win.mozInnerScreenY,
+        constraintRect.width,
+        constraintRect.height
+      );
       menupopup.setConstraintRect(constraintRect);
     } else {
       menupopup.setConstraintRect(new win.DOMRect(0, 0, 0, 0));
     }
-    menupopup.openPopupAtScreenRect(AppConstants.platform == "macosx" ? "selection" : "after_start", rect.left, rect.top, rect.width, rect.height, false, false);
+    menupopup.openPopupAtScreenRect(
+      AppConstants.platform == "macosx" ? "selection" : "after_start",
+      rect.left,
+      rect.top,
+      rect.width,
+      rect.height,
+      false,
+      false
+    );
   },
 
   hide(menulist, browser) {
@@ -190,12 +232,20 @@ var SelectParentHelper = {
     switch (event.type) {
       case "mouseup":
         function inRect(rect, x, y) {
-          return x >= rect.left && x <= rect.left + rect.width && y >= rect.top && y <= rect.top + rect.height;
+          return (
+            x >= rect.left &&
+            x <= rect.left + rect.width &&
+            y >= rect.top &&
+            y <= rect.top + rect.height
+          );
         }
 
-        let x = event.screenX, y = event.screenY;
-        let onAnchor = !inRect(this._currentMenulist.menupopup.getOuterScreenRect(), x, y) &&
-                        inRect(this._selectRect, x, y) && this._currentMenulist.menupopup.state == "open";
+        let x = event.screenX,
+          y = event.screenY;
+        let onAnchor =
+          !inRect(this._currentMenulist.menupopup.getOuterScreenRect(), x, y) &&
+          inRect(this._selectRect, x, y) &&
+          this._currentMenulist.menupopup.state == "open";
         this._actor.sendAsyncMessage("Forms:MouseUp", { onAnchor });
         break;
 
@@ -260,9 +310,15 @@ var SelectParentHelper = {
 
       let options = msg.data.options;
       let selectedIndex = msg.data.selectedIndex;
-      this.populate(this._currentMenulist, options.options, options.uniqueStyles,
-                    selectedIndex, this._currentZoom, msg.data.defaultStyle,
-                    msg.data.style);
+      this.populate(
+        this._currentMenulist,
+        options.options,
+        options.uniqueStyles,
+        selectedIndex,
+        this._currentZoom,
+        msg.data.defaultStyle,
+        msg.data.style
+      );
 
       
       scrollBox.scrollTop = scrollTop;
@@ -315,21 +371,34 @@ var SelectParentHelper = {
 
 
 
-  populateChildren(menulist, options, uniqueOptionStyles, selectedIndex,
-                            zoom, selectStyle, selectBackgroundSet, sheet,
-                            parentElement = null, isGroupDisabled = false,
-                            addSearch = true, nthChildIndex = 1) {
+  populateChildren(
+    menulist,
+    options,
+    uniqueOptionStyles,
+    selectedIndex,
+    zoom,
+    selectStyle,
+    selectBackgroundSet,
+    sheet,
+    parentElement = null,
+    isGroupDisabled = false,
+    addSearch = true,
+    nthChildIndex = 1
+  ) {
     let element = menulist.menupopup;
 
     for (let option of options) {
-      let isOptGroup = (option.tagName == "OPTGROUP");
-      let item = element.ownerDocument.createXULElement(isOptGroup ? "menucaption" : "menuitem");
+      let isOptGroup = option.tagName == "OPTGROUP";
+      let item = element.ownerDocument.createXULElement(
+        isOptGroup ? "menucaption" : "menuitem"
+      );
       let style = uniqueOptionStyles[option.styleIndex];
 
       item.setAttribute("label", option.textContent);
       item.style.direction = style.direction;
-      item.style.fontSize = (zoom * parseFloat(style["font-size"], 10)) + "px";
-      item.hidden = option.display == "none" || (parentElement && parentElement.hidden);
+      item.style.fontSize = zoom * parseFloat(style["font-size"], 10) + "px";
+      item.hidden =
+        option.display == "none" || (parentElement && parentElement.hidden);
       
       
       item.hiddenByContent = item.hidden;
@@ -339,7 +408,8 @@ var SelectParentHelper = {
         style["background-color"] = selectStyle["background-color"];
       }
 
-      let optionBackgroundSet = style["background-color"] != selectStyle["background-color"];
+      let optionBackgroundSet =
+        style["background-color"] != selectStyle["background-color"];
 
       if (style.color == style["background-color"]) {
         style.color = selectStyle.color;
@@ -348,10 +418,12 @@ var SelectParentHelper = {
       if (customStylingEnabled) {
         let ruleBody = "";
         for (let property in style) {
-          if (property == "direction" || property == "font-size")
-            continue; 
-          if (style[property] == selectStyle[property])
+          if (property == "direction" || property == "font-size") {
             continue;
+          } 
+          if (style[property] == selectStyle[property]) {
+            continue;
+          }
           if (PROPERTIES_RESET_WHEN_ACTIVE.includes(property)) {
             ruleBody += `${property}: ${style[property]};`;
           } else {
@@ -360,23 +432,34 @@ var SelectParentHelper = {
         }
 
         if (ruleBody) {
-          sheet.insertRule(`#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
+          sheet.insertRule(
+            `#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
             ${ruleBody}
-          }`, 0);
+          }`,
+            0
+          );
 
-          if (style["text-shadow"] != "none" &&
-              style["text-shadow"] != selectStyle["text-shadow"]) {
+          if (
+            style["text-shadow"] != "none" &&
+            style["text-shadow"] != selectStyle["text-shadow"]
+          ) {
             
             
             
-            sheet.insertRule(`#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex})[_moz-menuactive="true"] {
+            sheet.insertRule(
+              `#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex})[_moz-menuactive="true"] {
               text-shadow: none;
-            }`, 0);
+            }`,
+              0
+            );
           }
         }
       }
 
-      if (customStylingEnabled && (optionBackgroundSet || selectBackgroundSet)) {
+      if (
+        customStylingEnabled &&
+        (optionBackgroundSet || selectBackgroundSet)
+      ) {
         item.setAttribute("customoptionstyling", "true");
       } else {
         item.removeAttribute("customoptionstyling");
@@ -392,11 +475,20 @@ var SelectParentHelper = {
       }
 
       if (isOptGroup) {
-        nthChildIndex =
-          this.populateChildren(menulist, option.children, uniqueOptionStyles,
-                            selectedIndex, zoom, selectStyle,
-                            selectBackgroundSet, sheet, item, isDisabled, false,
-                            nthChildIndex);
+        nthChildIndex = this.populateChildren(
+          menulist,
+          option.children,
+          uniqueOptionStyles,
+          selectedIndex,
+          zoom,
+          selectStyle,
+          selectBackgroundSet,
+          sheet,
+          item,
+          isDisabled,
+          false,
+          nthChildIndex
+        );
       } else {
         if (option.index == selectedIndex) {
           
@@ -424,22 +516,32 @@ var SelectParentHelper = {
 
     
     
-    if (Services.prefs.getBoolPref("dom.forms.selectSearch") && addSearch
-        && element.childElementCount > SEARCH_MINIMUM_ELEMENTS) {
+    if (
+      Services.prefs.getBoolPref("dom.forms.selectSearch") &&
+      addSearch &&
+      element.childElementCount > SEARCH_MINIMUM_ELEMENTS
+    ) {
       
       let searchbox = element.ownerDocument.createXULElement("textbox", {
         is: "search-textbox",
       });
       searchbox.className = "contentSelectDropdown-searchbox";
       searchbox.addEventListener("input", this.onSearchInput);
-      searchbox.inputField.addEventListener("focus", this.onSearchFocus.bind(this));
+      searchbox.inputField.addEventListener(
+        "focus",
+        this.onSearchFocus.bind(this)
+      );
       searchbox.inputField.addEventListener("blur", this.onSearchBlur);
       searchbox.addEventListener("command", this.onSearchInput);
 
       
-      searchbox.addEventListener("keydown", (event) => {
-        this.onSearchKeydown(event, menulist);
-      }, true);
+      searchbox.addEventListener(
+        "keydown",
+        event => {
+          this.onSearchKeydown(event, menulist);
+        },
+        true
+      );
 
       element.insertBefore(searchbox, element.children[0]);
     }
@@ -461,13 +563,17 @@ var SelectParentHelper = {
       case "Enter":
       case "Tab":
         searchbox.blur();
-        if (searchbox.nextElementSibling.localName == "menuitem" &&
-            !searchbox.nextElementSibling.hidden) {
+        if (
+          searchbox.nextElementSibling.localName == "menuitem" &&
+          !searchbox.nextElementSibling.hidden
+        ) {
           menulist.activeChild = searchbox.nextElementSibling;
         } else {
           let currentOption = searchbox.nextElementSibling;
-          while (currentOption && (currentOption.localName != "menuitem" ||
-                currentOption.hidden)) {
+          while (
+            currentOption &&
+            (currentOption.localName != "menuitem" || currentOption.hidden)
+          ) {
             currentOption = currentOption.nextElementSibling;
           }
           if (currentOption) {
@@ -517,8 +623,12 @@ var SelectParentHelper = {
           prevCaption = currentItem;
           allHidden = true;
         } else {
-          if (!currentItem.classList.contains("contentSelectDropdown-ingroup") &&
-              currentItem.previousElementSibling.classList.contains("contentSelectDropdown-ingroup")) {
+          if (
+            !currentItem.classList.contains("contentSelectDropdown-ingroup") &&
+            currentItem.previousElementSibling.classList.contains(
+              "contentSelectDropdown-ingroup"
+            )
+          ) {
             if (prevCaption != null) {
               prevCaption.hidden = allHidden;
             }
@@ -557,8 +667,7 @@ var SelectParentHelper = {
 class SelectParent extends JSWindowActorParent {
   receiveMessage(message) {
     switch (message.name) {
-      case "Forms:ShowDropDown":
-      {
+      case "Forms:ShowDropDown": {
         let topBrowsingContext = this.manager.browsingContext.top;
         let browser = topBrowsingContext.embedderElement;
 
@@ -567,7 +676,9 @@ class SelectParent extends JSWindowActorParent {
         }
 
         let document = browser.ownerDocument;
-        let menulist = document.getElementById(browser.getAttribute("selectmenulist"));
+        let menulist = document.getElementById(
+          browser.getAttribute("selectmenulist")
+        );
 
         if (!this._menulist) {
           
@@ -578,25 +689,37 @@ class SelectParent extends JSWindowActorParent {
         let data = message.data;
         menulist.menupopup.style.direction = data.style.direction;
 
-        let useFullZoom = !browser.isRemoteBrowser ||
-                          Services.prefs.getBoolPref("browser.zoom.full") ||
-                          browser.isSyntheticDocument;
+        let useFullZoom =
+          !browser.isRemoteBrowser ||
+          Services.prefs.getBoolPref("browser.zoom.full") ||
+          browser.isSyntheticDocument;
         let zoom = useFullZoom ? browser._fullZoom : browser._textZoom;
 
-        SelectParentHelper.populate(menulist, data.options.options,
-          data.options.uniqueStyles, data.selectedIndex, zoom,
-          data.defaultStyle, data.style);
-        SelectParentHelper.open(browser, menulist, data.rect, data.isOpenedViaTouch, this);
+        SelectParentHelper.populate(
+          menulist,
+          data.options.options,
+          data.options.uniqueStyles,
+          data.selectedIndex,
+          zoom,
+          data.defaultStyle,
+          data.style
+        );
+        SelectParentHelper.open(
+          browser,
+          menulist,
+          data.rect,
+          data.isOpenedViaTouch,
+          this
+        );
         break;
       }
 
-      case "Forms:HideDropDown":
-        {
-          let topBrowsingContext = this.manager.browsingContext.top;
-          let browser = topBrowsingContext.embedderElement;
-          SelectParentHelper.hide(this._menulist, browser);
-          break;
-        }
+      case "Forms:HideDropDown": {
+        let topBrowsingContext = this.manager.browsingContext.top;
+        let browser = topBrowsingContext.embedderElement;
+        SelectParentHelper.hide(this._menulist, browser);
+        break;
+      }
 
       default:
         SelectParentHelper.receiveMessage(message);

@@ -5,8 +5,10 @@
 
 var EXPORTED_SYMBOLS = ["SelectionSourceChild"];
 
-const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { ActorChild } = ChromeUtils.import(
+  "resource://gre/modules/ActorChild.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 class SelectionSourceChild extends ActorChild {
   receiveMessage(message) {
@@ -17,7 +19,10 @@ class SelectionSourceChild extends ActorChild {
       try {
         selectionDetails = this.getSelection(global);
       } finally {
-        global.sendAsyncMessage("ViewSource:GetSelectionDone", selectionDetails);
+        global.sendAsyncMessage(
+          "ViewSource:GetSelectionDone",
+          selectionDetails
+        );
       }
     }
   }
@@ -30,11 +35,13 @@ class SelectionSourceChild extends ActorChild {
   getPath(ancestor, node) {
     var n = node;
     var p = n.parentNode;
-    if (n == ancestor || !p)
+    if (n == ancestor || !p) {
       return null;
+    }
     var path = [];
-    if (!path)
+    if (!path) {
       return null;
+    }
     do {
       for (var i = 0; i < p.childNodes.length; i++) {
         if (p.childNodes.item(i) == n) {
@@ -49,7 +56,7 @@ class SelectionSourceChild extends ActorChild {
   }
 
   getSelection(global) {
-    const {content} = global;
+    const { content } = global;
 
     
     
@@ -73,16 +80,20 @@ class SelectionSourceChild extends ActorChild {
 
     
     var Node = doc.defaultView.Node;
-    if (ancestorContainer.nodeType == Node.TEXT_NODE ||
-        ancestorContainer.nodeType == Node.CDATA_SECTION_NODE)
+    if (
+      ancestorContainer.nodeType == Node.TEXT_NODE ||
+      ancestorContainer.nodeType == Node.CDATA_SECTION_NODE
+    ) {
       ancestorContainer = ancestorContainer.parentNode;
+    }
 
     
     
     try {
-      if (ancestorContainer == doc.body)
+      if (ancestorContainer == doc.body) {
         ancestorContainer = doc.documentElement;
-    } catch (e) { }
+      }
+    } catch (e) {}
 
     
     
@@ -95,10 +106,14 @@ class SelectionSourceChild extends ActorChild {
     
     
     
-    var isHTML = (doc.createElement("div").tagName == "DIV");
-    var dataDoc = isHTML ?
-      ancestorContainer.ownerDocument.implementation.createHTMLDocument("") :
-      ancestorContainer.ownerDocument.implementation.createDocument("", "", null);
+    var isHTML = doc.createElement("div").tagName == "DIV";
+    var dataDoc = isHTML
+      ? ancestorContainer.ownerDocument.implementation.createHTMLDocument("")
+      : ancestorContainer.ownerDocument.implementation.createDocument(
+          "",
+          "",
+          null
+        );
     ancestorContainer = dataDoc.importNode(ancestorContainer, true);
     startContainer = ancestorContainer;
     endContainer = ancestorContainer;
@@ -121,51 +136,75 @@ class SelectionSourceChild extends ActorChild {
       
       
       
-      if (endContainer.nodeType == Node.TEXT_NODE ||
-          endContainer.nodeType == Node.CDATA_SECTION_NODE) {
+      if (
+        endContainer.nodeType == Node.TEXT_NODE ||
+        endContainer.nodeType == Node.CDATA_SECTION_NODE
+      ) {
         
         
         
         
         
-        if ((endOffset > 0 && endOffset < endContainer.data.length) ||
-            !endContainer.parentNode || !endContainer.parentNode.parentNode) {
+        if (
+          (endOffset > 0 && endOffset < endContainer.data.length) ||
+          !endContainer.parentNode ||
+          !endContainer.parentNode.parentNode
+        ) {
           endContainer.insertData(endOffset, MARK_SELECTION_END);
         } else {
           tmpNode = dataDoc.createTextNode(MARK_SELECTION_END);
           endContainer = endContainer.parentNode;
-          if (endOffset === 0)
+          if (endOffset === 0) {
             endContainer.parentNode.insertBefore(tmpNode, endContainer);
-          else
-            endContainer.parentNode.insertBefore(tmpNode, endContainer.nextSibling);
+          } else {
+            endContainer.parentNode.insertBefore(
+              tmpNode,
+              endContainer.nextSibling
+            );
+          }
         }
       } else {
         tmpNode = dataDoc.createTextNode(MARK_SELECTION_END);
-        endContainer.insertBefore(tmpNode, endContainer.childNodes.item(endOffset));
+        endContainer.insertBefore(
+          tmpNode,
+          endContainer.childNodes.item(endOffset)
+        );
       }
 
-      if (startContainer.nodeType == Node.TEXT_NODE ||
-          startContainer.nodeType == Node.CDATA_SECTION_NODE) {
+      if (
+        startContainer.nodeType == Node.TEXT_NODE ||
+        startContainer.nodeType == Node.CDATA_SECTION_NODE
+      ) {
         
         
         
         
         
-        if ((startOffset > 0 && startOffset < startContainer.data.length) ||
-            !startContainer.parentNode || !startContainer.parentNode.parentNode ||
-            startContainer != startContainer.parentNode.lastChild) {
+        if (
+          (startOffset > 0 && startOffset < startContainer.data.length) ||
+          !startContainer.parentNode ||
+          !startContainer.parentNode.parentNode ||
+          startContainer != startContainer.parentNode.lastChild
+        ) {
           startContainer.insertData(startOffset, MARK_SELECTION_START);
         } else {
           tmpNode = dataDoc.createTextNode(MARK_SELECTION_START);
           startContainer = startContainer.parentNode;
-          if (startOffset === 0)
+          if (startOffset === 0) {
             startContainer.parentNode.insertBefore(tmpNode, startContainer);
-          else
-            startContainer.parentNode.insertBefore(tmpNode, startContainer.nextSibling);
+          } else {
+            startContainer.parentNode.insertBefore(
+              tmpNode,
+              startContainer.nextSibling
+            );
+          }
         }
       } else {
         tmpNode = dataDoc.createTextNode(MARK_SELECTION_START);
-        startContainer.insertBefore(tmpNode, startContainer.childNodes.item(startOffset));
+        startContainer.insertBefore(
+          tmpNode,
+          startContainer.childNodes.item(startOffset)
+        );
       }
     }
 
@@ -173,11 +212,15 @@ class SelectionSourceChild extends ActorChild {
     tmpNode = dataDoc.createElementNS("http://www.w3.org/1999/xhtml", "div");
     tmpNode.appendChild(ancestorContainer);
 
-    return { uri: (isHTML ? "view-source:data:text/html;charset=utf-8," :
-                            "view-source:data:application/xml;charset=utf-8,")
-                  + encodeURIComponent(tmpNode.innerHTML),
-             drawSelection: canDrawSelection,
-             baseURI: doc.baseURI };
+    return {
+      uri:
+        (isHTML
+          ? "view-source:data:text/html;charset=utf-8,"
+          : "view-source:data:application/xml;charset=utf-8,") +
+        encodeURIComponent(tmpNode.innerHTML),
+      drawSelection: canDrawSelection,
+      baseURI: doc.baseURI,
+    };
   }
 
   get wrapLongLines() {

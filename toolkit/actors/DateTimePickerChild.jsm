@@ -2,9 +2,12 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserUtils",
+  "resource://gre/modules/BrowserUtils.jsm"
+);
 
 var EXPORTED_SYMBOLS = ["DateTimePickerChild"];
 
@@ -39,7 +42,8 @@ class DateTimePickerChild extends JSWindowActorChild {
       
       let win = this._inputElement.ownerGlobal;
       dateTimeBoxElement.dispatchEvent(
-        new win.CustomEvent("MozSetDateTimePickerState", { detail: false }));
+        new win.CustomEvent("MozSetDateTimePickerState", { detail: false })
+      );
     }
 
     this._inputElement = null;
@@ -64,7 +68,8 @@ class DateTimePickerChild extends JSWindowActorChild {
 
 
   getComputedDirection(aElement) {
-    return aElement.ownerGlobal.getComputedStyle(aElement)
+    return aElement.ownerGlobal
+      .getComputedStyle(aElement)
       .getPropertyValue("direction");
   }
 
@@ -105,8 +110,10 @@ class DateTimePickerChild extends JSWindowActorChild {
           
           
           dateTimeBoxElement.dispatchEvent(
-            new win.CustomEvent("MozPickerValueChanged",
-              { detail: Cu.cloneInto(aMessage.data, win) }));
+            new win.CustomEvent("MozPickerValueChanged", {
+              detail: Cu.cloneInto(aMessage.data, win),
+            })
+          );
         }
         break;
       }
@@ -123,8 +130,13 @@ class DateTimePickerChild extends JSWindowActorChild {
     switch (aEvent.type) {
       case "MozOpenDateTimePicker": {
         
-        if (!(aEvent.originalTarget instanceof aEvent.originalTarget.ownerGlobal.HTMLInputElement) ||
-            (aEvent.originalTarget.type == "time" && !this.getTimePickerPref())) {
+        if (
+          !(
+            aEvent.originalTarget instanceof
+            aEvent.originalTarget.ownerGlobal.HTMLInputElement
+          ) ||
+          (aEvent.originalTarget.type == "time" && !this.getTimePickerPref())
+        ) {
           return;
         }
 
@@ -139,7 +151,9 @@ class DateTimePickerChild extends JSWindowActorChild {
 
         let dateTimeBoxElement = this._inputElement.dateTimeBoxElement;
         if (!dateTimeBoxElement) {
-          throw new Error("How do we get this event without a UA Widget or XBL binding?");
+          throw new Error(
+            "How do we get this event without a UA Widget or XBL binding?"
+          );
         }
 
         if (this._inputElement.openOrClosedShadowRoot) {
@@ -148,7 +162,8 @@ class DateTimePickerChild extends JSWindowActorChild {
           
           let win = this._inputElement.ownerGlobal;
           dateTimeBoxElement.dispatchEvent(
-            new win.CustomEvent("MozSetDateTimePickerState", { detail: true }));
+            new win.CustomEvent("MozSetDateTimePickerState", { detail: true })
+          );
         }
 
         this.addListeners(this._inputElement);
@@ -161,8 +176,8 @@ class DateTimePickerChild extends JSWindowActorChild {
           detail: {
             
             
-            value: Object.keys(value).length > 0 ? value
-                                                 : this._inputElement.value,
+            value:
+              Object.keys(value).length > 0 ? value : this._inputElement.value,
             min: this._inputElement.getMinimum(),
             max: this._inputElement.getMaximum(),
             step: this._inputElement.getStep(),
@@ -183,8 +198,10 @@ class DateTimePickerChild extends JSWindowActorChild {
         break;
       }
       case "pagehide": {
-        if (this._inputElement &&
-            this._inputElement.ownerDocument == aEvent.target) {
+        if (
+          this._inputElement &&
+          this._inputElement.ownerDocument == aEvent.target
+        ) {
           this.sendAsyncMessage("FormDateTime:ClosePicker", {});
           this.close();
         }
