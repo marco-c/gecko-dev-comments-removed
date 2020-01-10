@@ -24,6 +24,7 @@ const {
   ERRNO_INVALID_AUTH_NONCE,
   ERRNO_INVALID_AUTH_TIMESTAMP,
   ERRNO_INVALID_AUTH_TOKEN,
+  FX_OAUTH_CLIENT_ID,
   log,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 const { Credentials } = ChromeUtils.import(
@@ -291,29 +292,6 @@ this.FxAccountsClient.prototype = {
 
 
 
-
-
-
-
-  async oauthToken(sessionTokenHex, clientId, scopeString) {
-    const credentials = await deriveHawkCredentials(
-      sessionTokenHex,
-      "sessionToken"
-    );
-    const body = {
-      client_id: clientId,
-      grant_type: "fxa-credentials",
-      scope: scopeString,
-    };
-    return this._request("/oauth/token", "POST", credentials, body);
-  },
-
-  
-
-
-
-
-
   async oauthDestroy(clientId, token) {
     const body = {
       client_id: clientId,
@@ -481,9 +459,26 @@ this.FxAccountsClient.prototype = {
   async signCertificate(sessionTokenHex, serializedPublicKey, lifetime) {
     let creds = await deriveHawkCredentials(sessionTokenHex, "sessionToken");
 
+    
+    
+    
+    
+    
+    let service = FX_OAUTH_CLIENT_ID;
+    if (Services.prefs.prefHasUserValue("services.sync.username")) {
+      service = "sync";
+    }
+
     let body = { publicKey: serializedPublicKey, duration: lifetime };
     return Promise.resolve()
-      .then(_ => this._request("/certificate/sign", "POST", creds, body))
+      .then(_ =>
+        this._request(
+          `/certificate/sign?service=${service}`,
+          "POST",
+          creds,
+          body
+        )
+      )
       .then(
         resp => resp.cert,
         err => {

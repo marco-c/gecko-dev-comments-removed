@@ -59,7 +59,7 @@ MockStorageManager.prototype = {
   },
 };
 
-function MockFxAccountsClient() {
+function MockFxAccountsClient(activeTokens) {
   this._email = "nobody@example.com";
   this._verified = false;
 
@@ -86,17 +86,9 @@ function MockFxAccountsClient() {
     this.activeTokens.delete(token);
     return Promise.resolve();
   });
-  this.oauthToken = function(_sessionToken, _clientId, _scopeString) {
-    let token = "token" + this.numTokenFetches;
-    this.numTokenFetches += 1;
-    this.activeTokens.add(token);
-    print("oauthToken returning token", token);
-    return Promise.resolve({ access_token: token });
-  };
 
   
-  this.numTokenFetches = 0;
-  this.activeTokens = new Set();
+  this.activeTokens = activeTokens;
 
   FxAccountsClient.apply(this);
 }
@@ -105,9 +97,32 @@ MockFxAccountsClient.prototype = {
   __proto__: FxAccountsClient.prototype,
 };
 
+function MockFxAccountsOAuthGrantClient(activeTokens) {
+  
+  this.numTokenFetches = 0;
+  this.activeTokens = activeTokens;
+}
+
+MockFxAccountsOAuthGrantClient.prototype = {
+  serverURL: { href: "http://localhost" },
+  getTokenFromAssertion(assertion, scope) {
+    let token = "token" + this.numTokenFetches;
+    this.numTokenFetches += 1;
+    this.activeTokens.add(token);
+    print("getTokenFromAssertion returning token", token);
+    return Promise.resolve({ access_token: token });
+  },
+};
+
 function MockFxAccounts() {
+  
+  
+  const activeTokens = new Set();
   return new FxAccounts({
-    fxAccountsClient: new MockFxAccountsClient(),
+    fxAccountsClient: new MockFxAccountsClient(activeTokens),
+    fxAccountsOAuthGrantClient: new MockFxAccountsOAuthGrantClient(
+      activeTokens
+    ),
     getAssertion: () => Promise.resolve("assertion"),
     newAccountState(credentials) {
       
@@ -154,11 +169,12 @@ add_task(async function testRevoke() {
   let tokenOptions = { scope: "test-scope" };
   let fxa = await createMockFxA();
   let client = fxa._internal.fxAccountsClient;
+  let oauthClient = fxa._internal.fxAccountsOAuthGrantClient;
 
   
   let token1 = await fxa.getOAuthToken(tokenOptions);
-  equal(client.numTokenFetches, 1);
-  equal(client.activeTokens.size, 1);
+  equal(oauthClient.numTokenFetches, 1);
+  equal(oauthClient.activeTokens.size, 1);
   ok(token1, "got a token");
   equal(token1, "token0");
 
@@ -167,11 +183,11 @@ add_task(async function testRevoke() {
   ok(client.oauthDestroy.calledOnce);
 
   
-  equal(client.activeTokens.size, 0);
+  equal(oauthClient.activeTokens.size, 0);
   
   let token2 = await fxa.getOAuthToken(tokenOptions);
-  equal(client.numTokenFetches, 2);
-  equal(client.activeTokens.size, 1);
+  equal(oauthClient.numTokenFetches, 2);
+  equal(oauthClient.activeTokens.size, 1);
   ok(token2, "got a token");
   notEqual(token1, token2, "got a different token");
 });
@@ -179,17 +195,18 @@ add_task(async function testRevoke() {
 add_task(async function testSignOutDestroysTokens() {
   let fxa = await createMockFxA();
   let client = fxa._internal.fxAccountsClient;
+  let oauthClient = fxa._internal.fxAccountsOAuthGrantClient;
 
   
   let token1 = await fxa.getOAuthToken({ scope: "test-scope" });
-  equal(client.numTokenFetches, 1);
-  equal(client.activeTokens.size, 1);
+  equal(oauthClient.numTokenFetches, 1);
+  equal(oauthClient.activeTokens.size, 1);
   ok(token1, "got a token");
 
   
   let token2 = await fxa.getOAuthToken({ scope: "test-scope-2" });
-  equal(client.numTokenFetches, 2);
-  equal(client.activeTokens.size, 2);
+  equal(oauthClient.numTokenFetches, 2);
+  equal(oauthClient.activeTokens.size, 2);
   ok(token2, "got a token");
   notEqual(token1, token2, "got a different token");
 
@@ -200,7 +217,7 @@ add_task(async function testSignOutDestroysTokens() {
   await signoutComplete;
   ok(client.oauthDestroy.calledTwice);
   
-  equal(client.activeTokens.size, 0);
+  equal(oauthClient.activeTokens.size, 0);
 });
 
 add_task(async function testTokenRaces() {
@@ -211,6 +228,7 @@ add_task(async function testTokenRaces() {
   
   let fxa = await createMockFxA();
   let client = fxa._internal.fxAccountsClient;
+  let oauthClient = fxa._internal.fxAccountsOAuthGrantClient;
 
   let results = await Promise.all([
     fxa.getOAuthToken({ scope: "test-scope" }),
@@ -219,17 +237,17 @@ add_task(async function testTokenRaces() {
     fxa.getOAuthToken({ scope: "test-scope-2" }),
   ]);
 
-  equal(client.numTokenFetches, 2, "should have fetched 2 tokens.");
+  equal(oauthClient.numTokenFetches, 2, "should have fetched 2 tokens.");
 
   
   results.sort();
   equal(results[0], results[1]);
   equal(results[2], results[3]);
   
-  equal(client.activeTokens.size, 2);
+  equal(oauthClient.activeTokens.size, 2);
   await fxa.removeCachedOAuthToken({ token: results[0] });
-  equal(client.activeTokens.size, 1);
+  equal(oauthClient.activeTokens.size, 1);
   await fxa.removeCachedOAuthToken({ token: results[2] });
-  equal(client.activeTokens.size, 0);
+  equal(oauthClient.activeTokens.size, 0);
   ok(client.oauthDestroy.calledTwice);
 });
