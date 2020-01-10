@@ -31,7 +31,8 @@ class SerializedStackHolder {
   SerializedStackHolder();
 
   
-  void SerializeMainThreadStack(JSContext* aCx, JS::HandleObject aStack);
+  void SerializeMainThreadOrWorkletStack(JSContext* aCx,
+                                         JS::HandleObject aStack);
 
   
   void SerializeWorkerStack(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
