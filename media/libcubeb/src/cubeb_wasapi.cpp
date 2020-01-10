@@ -331,7 +331,9 @@ struct cubeb_stream {
   bool draining = false;
   
 
-  std::atomic<std::atomic<bool>*> emergency_bailout;
+  std::atomic<std::atomic<bool>*> emergency_bailout { nullptr };
+  
+  HANDLE thread_ready_event = 0;
 };
 
 class monitor_device_notifications {
@@ -345,7 +347,7 @@ public:
   ~monitor_device_notifications()
   {
     SetEvent(shutdown);
-    WaitForSingleObject(thread, 5000);
+    WaitForSingleObject(thread, INFINITE);
     CloseHandle(thread);
 
     CloseHandle(input_changed);
@@ -1143,6 +1145,13 @@ wasapi_stream_render_loop(LPVOID stream)
   cubeb_stream * stm = static_cast<cubeb_stream *>(stream);
   std::atomic<bool> * emergency_bailout = stm->emergency_bailout;
 
+  
+  BOOL ok = SetEvent(stm->thread_ready_event);
+  if (!ok) {
+    LOG("thread_ready SetEvent failed: %lx", GetLastError());
+    return 0;
+  }
+
   bool is_playing = true;
   HANDLE wait_array[4] = {
     stm->shutdown_event,
@@ -1169,11 +1178,6 @@ wasapi_stream_render_loop(LPVOID stream)
   if (!mmcss_handle) {
     
     LOG("Unable to use mmcss to bump the render thread priority: %lx", GetLastError());
-  }
-
-  
-  if (!emergency_bailout) {
-    is_playing = false;
   }
 
   
@@ -1544,24 +1548,15 @@ bool stop_and_join_render_thread(cubeb_stream * stm)
   
 
   DWORD r = WaitForSingleObject(stm->thread, 5000);
-  if (r == WAIT_TIMEOUT) {
+  if (r != WAIT_OBJECT_0) {
     
 
     *(stm->emergency_bailout) = true;
     
     stm->emergency_bailout = nullptr;
-    LOG("Destroy WaitForSingleObject on thread timed out,"
-        " leaking the thread: %lx", GetLastError());
+    LOG("Destroy WaitForSingleObject on thread failed: %lx, %lx", r, GetLastError());
     rv = false;
   }
-  if (r == WAIT_FAILED) {
-    *(stm->emergency_bailout) = true;
-    
-    stm->emergency_bailout = nullptr;
-    LOG("Destroy WaitForSingleObject on thread failed: %lx", GetLastError());
-    rv = false;
-  }
-
 
   
   
@@ -2471,12 +2466,26 @@ int wasapi_stream_start(cubeb_stream * stm)
     return CUBEB_ERROR;
   }
 
+  stm->thread_ready_event = CreateEvent(NULL, 0, 0, NULL);
+  if (!stm->thread_ready_event) {
+    LOG("Can't create the thread_ready event, error: %lx", GetLastError());
+    return CUBEB_ERROR;
+  }
+
   cubeb_async_log_reset_threads();
   stm->thread = (HANDLE) _beginthreadex(NULL, 512 * 1024, wasapi_stream_render_loop, stm, STACK_SIZE_PARAM_IS_A_RESERVATION, NULL);
   if (stm->thread == NULL) {
     LOG("could not create WASAPI render thread.");
     return CUBEB_ERROR;
   }
+
+  
+  
+  
+  HRESULT hr = WaitForSingleObject(stm->thread_ready_event, INFINITE);
+  XASSERT(hr == WAIT_OBJECT_0);
+  CloseHandle(stm->thread_ready_event);
+  stm->thread_ready_event = 0;
 
   stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_STARTED);
 
@@ -2511,11 +2520,8 @@ int wasapi_stream_stop(cubeb_stream * stm)
   }
 
   if (stop_and_join_render_thread(stm)) {
-    
-    if (stm->emergency_bailout.load()) {
-      delete stm->emergency_bailout.load();
-      stm->emergency_bailout = nullptr;
-    }
+    delete stm->emergency_bailout.load();
+    stm->emergency_bailout = nullptr;
   } else {
     
     stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_ERROR);
@@ -2951,7 +2957,6 @@ cubeb_ops const wasapi_ops = {
    wasapi_stream_get_position,
    wasapi_stream_get_latency,
    wasapi_stream_set_volume,
-   NULL,
    NULL,
    NULL,
    NULL,
