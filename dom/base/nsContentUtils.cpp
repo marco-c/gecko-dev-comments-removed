@@ -10118,11 +10118,13 @@ bool nsContentUtils::
 }
 
 
-nsGlobalWindowInner* nsContentUtils::CallerInnerWindow(JSContext* aCx) {
+nsGlobalWindowInner* nsContentUtils::CallerInnerWindow() {
   nsIGlobalObject* global = GetIncumbentGlobal();
   NS_ENSURE_TRUE(global, nullptr);
-  JS::Rooted<JSObject*> scope(aCx, global->GetGlobalJSObject());
-  NS_ENSURE_TRUE(scope, nullptr);
+
+  if (auto* window = global->AsInnerWindow()) {
+    return nsGlobalWindowInner::Cast(window);
+  }
 
   
   
@@ -10130,10 +10132,16 @@ nsGlobalWindowInner* nsContentUtils::CallerInnerWindow(JSContext* aCx) {
   
   
   
+  JS::Rooted<JSObject*> scope(RootingCx(), global->GetGlobalJSObject());
+  NS_ENSURE_TRUE(scope, nullptr);
+
   if (xpc::IsSandbox(scope)) {
-    JSAutoRealm ar(aCx, scope);
-    JS::Rooted<JSObject*> scopeProto(aCx);
-    bool ok = JS_GetPrototype(aCx, scope, &scopeProto);
+    AutoJSAPI jsapi;
+    MOZ_ALWAYS_TRUE(jsapi.Init(scope));
+    JSContext* cx = jsapi.cx();
+
+    JS::Rooted<JSObject*> scopeProto(cx);
+    bool ok = JS_GetPrototype(cx, scope, &scopeProto);
     NS_ENSURE_TRUE(ok, nullptr);
     if (scopeProto && xpc::IsSandboxPrototypeProxy(scopeProto) &&
         
@@ -10141,7 +10149,7 @@ nsGlobalWindowInner* nsContentUtils::CallerInnerWindow(JSContext* aCx) {
         
         
         (scopeProto = js::CheckedUnwrapDynamic(
-             scopeProto, aCx,  false))) {
+             scopeProto, cx,  false))) {
       global = xpc::NativeGlobal(scopeProto);
       NS_ENSURE_TRUE(global, nullptr);
     }
@@ -10149,8 +10157,7 @@ nsGlobalWindowInner* nsContentUtils::CallerInnerWindow(JSContext* aCx) {
 
   
   
-  nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(global);
-  return nsGlobalWindowInner::Cast(win);
+  return nsGlobalWindowInner::Cast(global->AsInnerWindow());
 }
 
 

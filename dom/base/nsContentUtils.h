@@ -3135,10 +3135,7 @@ class nsContentUtils {
   static bool HighPriorityEventPendingForTopLevelDocumentBeforeContentfulPaint(
       Document* aDocument);
 
-  
-
-
-  static nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
+  static nsGlobalWindowInner* CallerInnerWindow();
 
  private:
   static bool InitializeEventTable();
