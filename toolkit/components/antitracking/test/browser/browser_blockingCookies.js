@@ -1,6 +1,6 @@
 
 
-AntiTracking.runTest(
+AntiTracking.runTestInNormalAndPrivateMode(
   "Set/Get Cookies",
   
   async _ => {

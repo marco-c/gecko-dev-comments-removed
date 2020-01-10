@@ -1,6 +1,6 @@
 
 
-AntiTracking.runTest(
+AntiTracking.runTestInNormalAndPrivateMode(
   "sessionStorage",
   async _ => {
     let shouldThrow =

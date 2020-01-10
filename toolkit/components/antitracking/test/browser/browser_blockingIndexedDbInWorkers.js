@@ -1,6 +1,6 @@
 
 
-AntiTracking.runTest(
+AntiTracking.runTestInNormalAndPrivateMode(
   "IndexedDB in workers",
   async _ => {
     function blockCode() {
