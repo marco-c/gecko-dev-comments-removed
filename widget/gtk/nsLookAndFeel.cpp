@@ -700,9 +700,19 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       break;
     }
     case eIntID_SystemUsesDarkTheme: {
-      EnsureInit();
-      aResult = mSystemUsesDarkTheme;
-      break;
+      
+      
+      
+      nscolor fg, bg;
+      if (NS_SUCCEEDED(NativeGetColor(ColorID::Windowtext, fg)) &&
+          NS_SUCCEEDED(NativeGetColor(ColorID::Window, bg))) {
+        aResult = (RelativeLuminanceUtils::Compute(bg) <
+                   RelativeLuminanceUtils::Compute(fg))
+                      ? 1
+                      : 0;
+        break;
+      }
+      MOZ_FALLTHROUGH;
     }
     default:
       aResult = 0;
@@ -909,17 +919,6 @@ void nsLookAndFeel::EnsureInit() {
 
   GdkRGBA color;
   GtkStyleContext* style;
-
-  
-  
-  
-  GdkRGBA bg, fg;
-  style = GetStyleContext(MOZ_GTK_WINDOW);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &bg);
-  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &fg);
-  mSystemUsesDarkTheme =
-      (RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(bg)) <
-       RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(fg)));
 
   
   
