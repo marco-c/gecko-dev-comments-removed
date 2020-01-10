@@ -49,17 +49,27 @@ typedef struct _REPARSE_DATA_BUFFER {
 
 UpdateLog::UpdateLog() : logFP(nullptr) {}
 
-void UpdateLog::Init(NS_tchar* logFilePath) {
+void UpdateLog::Init(NS_tchar* sourcePath, const NS_tchar* fileName) {
   if (logFP) {
     return;
   }
 
+  int dstFilePathLen =
+      NS_tsnprintf(mDstFilePath, sizeof(mDstFilePath) / sizeof(mDstFilePath[0]),
+                   NS_T("%s/%s"), sourcePath, fileName);
   
   
-  int dstFilePathLen = NS_tstrlen(logFilePath);
-  if (dstFilePathLen > 0 && dstFilePathLen < MAXPATHLEN - 1) {
-    NS_tstrncpy(mDstFilePath, logFilePath, MAXPATHLEN);
-#if defined(XP_WIN) || defined(XP_MACOSX)
+  if ((dstFilePathLen > 0) &&
+      (dstFilePathLen <
+       static_cast<int>(sizeof(mDstFilePath) / sizeof(mDstFilePath[0])))) {
+#ifdef XP_WIN
+    if (GetUUIDTempFilePath(sourcePath, L"log", mTmpFilePath)) {
+      logFP = NS_tfopen(mTmpFilePath, NS_T("w"));
+      
+      
+      DeleteFileW(mDstFilePath);
+    }
+#elif XP_MACOSX
     logFP = NS_tfopen(mDstFilePath, NS_T("w"));
 #else
     
@@ -116,6 +126,16 @@ void UpdateLog::Finish() {
 
   fclose(logFP);
   logFP = nullptr;
+
+#ifdef XP_WIN
+  
+  
+  if (!NS_taccess(mDstFilePath, F_OK)) {
+    DeleteFileW(mTmpFilePath);
+  } else {
+    MoveFileW(mTmpFilePath, mDstFilePath);
+  }
+#endif
 }
 
 void UpdateLog::Flush() {

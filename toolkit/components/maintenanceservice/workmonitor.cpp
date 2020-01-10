@@ -32,6 +32,8 @@ using mozilla::UniquePtr;
 #include "updatererrors.h"
 #include "commonupdatedir.h"
 
+#define PATCH_DIR_PATH L"\\updates\\0"
+
 
 
 
@@ -49,17 +51,17 @@ BOOL DoesFallbackKeyExist();
 
 
 
-
-static BOOL IsStatusApplying(LPCWSTR patchDirPath, BOOL& isApplying) {
+static BOOL IsStatusApplying(LPCWSTR updateDirPath, BOOL& isApplying) {
   isApplying = FALSE;
-  WCHAR statusFilePath[MAX_PATH + 1] = {L'\0'};
-  if (!GetSecureOutputFilePath(patchDirPath, L".status", statusFilePath)) {
-    LOG_WARN(("Could not get path for the secure update status file"));
+  WCHAR updateStatusFilePath[MAX_PATH + 1] = {L'\0'};
+  wcsncpy(updateStatusFilePath, updateDirPath, MAX_PATH);
+  if (!PathAppendSafe(updateStatusFilePath, L"update.status")) {
+    LOG_WARN(("Could not append path for update.status file"));
     return FALSE;
   }
 
   nsAutoHandle statusFile(
-      CreateFileW(statusFilePath, GENERIC_READ,
+      CreateFileW(updateStatusFilePath, GENERIC_READ,
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                   nullptr, OPEN_EXISTING, 0, nullptr));
 
@@ -583,12 +585,18 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
 
   
   
-  WCHAR uuidString[MAX_PATH + 1] = {L'\0'};
-  if (GetUUIDString(uuidString)) {
-    LOG(("Executing service command %ls, ID: %ls", argv[2], uuidString));
-  } else {
-    
-    LOG(("Executing service command %ls", argv[2]));
+  GUID guid;
+  HRESULT hr = CoCreateGuid(&guid);
+  if (SUCCEEDED(hr)) {
+    RPC_WSTR guidString = RPC_WSTR(L"");
+    if (UuidToString(&guid, &guidString) == RPC_S_OK) {
+      LOG(("Executing service command %ls, ID: %ls", argv[2],
+           reinterpret_cast<LPCWSTR>(guidString)));
+      RpcStringFree(&guidString);
+    } else {
+      
+      LOG(("Executing service command %ls", argv[2]));
+    }
   }
 
   BOOL result = FALSE;
@@ -618,16 +626,6 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
       LOG_WARN(
           ("The patch directory path subdirectory is not valid for this "
            "application."));
-      return FALSE;
-    }
-
-    
-    
-    RemoveSecureOutputFiles(argv[4]);
-
-    
-    if (!WriteSecureIDFile(argv[4])) {
-      LOG_WARN(("Unable to write to secure ID file."));
       return FALSE;
     }
 

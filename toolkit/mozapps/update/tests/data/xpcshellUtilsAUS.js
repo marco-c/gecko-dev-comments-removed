@@ -920,18 +920,6 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
     );
   }
 
-  if (gIsServiceTest) {
-    let exts = ["id", "log", "status"];
-    for (let i = 0; i < exts.length; ++i) {
-      let file = getSecureOutputFile(exts[i]);
-      if (file.exists()) {
-        try {
-          file.remove(false);
-        } catch (e) {}
-      }
-    }
-  }
-
   adjustGeneralPaths();
   createWorldWritableAppUpdateDir();
 
@@ -994,18 +982,6 @@ function cleanupTestCommon() {
   if (AppConstants.platform == "macosx" || AppConstants.platform == "linux") {
     
     getLaunchScript();
-  }
-
-  if (gIsServiceTest) {
-    let exts = ["id", "log", "status"];
-    for (let i = 0; i < exts.length; ++i) {
-      let file = getSecureOutputFile(exts[i]);
-      if (file.exists()) {
-        try {
-          file.remove(false);
-        } catch (e) {}
-      }
-    }
   }
 
   if (AppConstants.platform == "win" && MOZ_APP_BASENAME) {
@@ -1534,36 +1510,6 @@ function getMaintSvcDir() {
 
 
 
-function readSecureStatusFile() {
-  let file = getSecureOutputFile("status");
-  if (!file.exists()) {
-    debugDump("update status file does not exist, path: " + file.path);
-    return STATE_NONE;
-  }
-  return readFile(file).split("\n")[0];
-}
-
-
-
-
-
-
-
-
-
-function getSecureOutputFile(aFileExt) {
-  let file = getMaintSvcDir();
-  file.append("UpdateLogs");
-  file.append(gTestID + "." + aFileExt);
-  return file;
-}
-
-
-
-
-
-
-
 
 
 
@@ -2021,7 +1967,7 @@ function runUpdate(
   let status = readStatusFile();
   if (
     (!gIsServiceTest && process.exitValue != aExpectedExitValue) ||
-    (status != aExpectedStatus && !gIsServiceTest && !isInvalidArgTest)
+    status != aExpectedStatus
   ) {
     if (process.exitValue != aExpectedExitValue) {
       logTestInfo(
@@ -2040,13 +1986,6 @@ function runUpdate(
       );
     }
     logUpdateLog(FILE_LAST_UPDATE_LOG);
-  }
-
-  if (gIsServiceTest && isInvalidArgTest) {
-    let secureStatus = readSecureStatusFile();
-    if (secureStatus != STATE_NONE) {
-      status = secureStatus;
-    }
   }
 
   if (!gIsServiceTest) {
