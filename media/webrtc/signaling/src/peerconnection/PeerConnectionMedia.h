@@ -129,8 +129,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void AlpnNegotiated_s(const std::string& aAlpn);
   void AlpnNegotiated_m(const std::string& aAlpn);
 
-  void ProxySettingReceived(bool aProxied);
-
   
   RefPtr<WebRtcCallWrapper> mCall;
 
@@ -140,7 +138,20 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
  private:
   void InitLocalAddrs();  
   nsresult InitProxy();
-  void SetProxy();
+  class ProtocolProxyQueryHandler : public nsIProtocolProxyCallback {
+   public:
+    explicit ProtocolProxyQueryHandler(PeerConnectionMedia* pcm) : pcm_(pcm) {}
+
+    NS_IMETHOD OnProxyAvailable(nsICancelable* request, nsIChannel* aChannel,
+                                nsIProxyInfo* proxyinfo,
+                                nsresult result) override;
+    NS_DECL_ISUPPORTS
+
+   private:
+    void SetProxyOnPcm(nsIProxyInfo& proxyinfo);
+    RefPtr<PeerConnectionMedia> pcm_;
+    virtual ~ProtocolProxyQueryHandler() {}
+  };
 
   class StunAddrsHandler : public net::StunAddrsListener {
    public:
@@ -208,6 +219,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::vector<nsCOMPtr<nsIRunnable>> mQueuedIceCtxOperations;
 
   
+  nsCOMPtr<nsICancelable> mProxyRequest;
+
+  
   bool mProxyResolveCompleted;
 
   
@@ -221,9 +235,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   nsTArray<NrIceStunAddr> mStunAddrs;
-
-  
-  bool mDestroyed;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PeerConnectionMedia)
 };
