@@ -3901,6 +3901,7 @@ nsresult UpgradeSchemaFrom25_0To26_0(mozIStorageConnection* aConnection) {
 nsresult GetDatabaseFileURL(nsIFile* aDatabaseFile, int64_t aDirectoryLockId,
                             uint32_t aTelemetryId, nsIFileURL** aResult) {
   MOZ_ASSERT(aDatabaseFile);
+  MOZ_ASSERT(aDirectoryLockId >= -1);
   MOZ_ASSERT(aResult);
 
   nsresult rv;
@@ -3925,6 +3926,7 @@ nsresult GetDatabaseFileURL(nsIFile* aDatabaseFile, int64_t aDirectoryLockId,
 
   nsCOMPtr<nsIFileURL> fileUrl;
 
+  
   
   
   
@@ -8349,8 +8351,8 @@ class DatabaseMaintenance final : public Runnable {
         mPersistenceType(aPersistenceType) {
     MOZ_ASSERT(aDirectoryLock);
 
-    MOZ_ASSERT(mDirectoryLock->GetId() >= 0);
-    mDirectoryLockId = mDirectoryLock->GetId();
+    MOZ_ASSERT(mDirectoryLock->Id() >= 0);
+    mDirectoryLockId = mDirectoryLock->Id();
   }
 
   const nsString& DatabasePath() const { return mDatabasePath; }
@@ -12604,8 +12606,8 @@ Database::Database(Factory* aFactory, const PrincipalInfo& aPrincipalInfo,
                 aPrincipalInfo.type() == PrincipalInfo::TSystemPrincipalInfo);
 
   MOZ_ASSERT(mDirectoryLock);
-  MOZ_ASSERT(mDirectoryLock->GetId() >= 0);
-  mDirectoryLockId = mDirectoryLock->GetId();
+  MOZ_ASSERT(mDirectoryLock->Id() >= 0);
+  mDirectoryLockId = mDirectoryLock->Id();
 }
 
 void Database::Invalidate() {
@@ -20054,8 +20056,8 @@ void FactoryOp::DirectoryLockAcquired(DirectoryLock* aLock) {
 
   mDirectoryLock = aLock;
 
-  MOZ_ASSERT(mDirectoryLock->GetId() >= 0);
-  mDirectoryLockId = mDirectoryLock->GetId();
+  MOZ_ASSERT(mDirectoryLock->Id() >= 0);
+  mDirectoryLockId = mDirectoryLock->Id();
 
   nsresult rv = DirectoryOpen();
   if (NS_WARN_IF(NS_FAILED(rv))) {
