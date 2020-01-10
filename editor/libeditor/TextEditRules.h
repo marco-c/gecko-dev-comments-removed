@@ -239,14 +239,6 @@ class TextEditRules {
   bool IsEditorDataAvailable() const { return !!mData; }
 #endif  
 
-  
-
-
-
-
-
-  inline already_AddRefed<nsINode> GetTextNodeAroundSelectionStartContainer();
-
 #ifdef DEBUG
   bool mIsHandling;
 #endif  
