@@ -20,9 +20,6 @@
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "ChildIterator.h"
-#ifdef MOZ_XUL
-#  include "XULDocument.h"
-#endif
 #include "nsIXMLContentSink.h"
 #include "nsContentCID.h"
 #include "mozilla/dom/XMLDocument.h"
@@ -165,7 +162,6 @@ void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
   
   
   
-  Document* doc = aElement->GetUncomposedDoc();
   Element* element = aElement->AsElement();
 
   nsAutoScriptBlocker scriptBlocker;
@@ -181,18 +177,6 @@ void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
       child->UnbindFromTree();
       return;
     }
-
-#ifdef MOZ_XUL
-    
-    
-    
-    
-    
-    if (doc && doc->IsXULDocument()) {
-      MOZ_ASSERT(!child->IsXULElement(nsGkAtoms::linkset),
-                 "Linkset not allowed in XBL.");
-    }
-#endif
   }
 }
 

@@ -39,12 +39,6 @@ class nsContentDLF final : public nsIDocumentLoaderFactory {
                           nsIStreamListener** aDocListener,
                           nsIContentViewer** aContentViewer);
 
-  nsresult CreateXULDocument(const char* aCommand, nsIChannel* aChannel,
-                             nsILoadGroup* aLoadGroup, nsIDocShell* aContainer,
-                             nsISupports* aExtraInfo,
-                             nsIStreamListener** aDocListener,
-                             nsIContentViewer** aContentViewer);
-
   
 
 

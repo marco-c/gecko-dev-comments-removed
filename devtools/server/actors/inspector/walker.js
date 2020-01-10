@@ -178,8 +178,6 @@ loader.lazyServiceGetter(
   "nsIEventListenerService"
 );
 
-loader.lazyRequireGetter(this, "ChromeUtils");
-
 
 const MUTATIONS_THROTTLING_DELAY = 100;
 
@@ -2398,15 +2396,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     if (readyState != "interactive" && readyState != "complete") {
       
       
-      
-      
-      
-      
-      
-      const isXULDocument =
-        ChromeUtils.getClassName(window.document) == "XULDocument";
       window.addEventListener(
-        isXULDocument ? "load" : "DOMContentLoaded",
+        "DOMContentLoaded",
         this.onFrameLoad.bind(this, { window, isTopLevel }),
         { once: true }
       );
