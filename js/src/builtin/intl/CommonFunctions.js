@@ -959,6 +959,7 @@ function UnicodeExtensionComponents(extension) {
 
 
 
+
 function CanonicalizeUnicodeExtension(attributes, keywords) {
     assert(attributes.length > 0 || keywords.length > 0,
            "unexpected empty Unicode locale extension components");
