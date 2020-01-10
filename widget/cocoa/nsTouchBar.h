@@ -77,6 +77,7 @@ using namespace mozilla::dom;
 
 
 + (NSTouchBarItemIdentifier)nativeIdentifierWithType:(NSString*)aType withKey:(NSString*)aKey;
++ (NSTouchBarItemIdentifier)nativeIdentifierWithXPCOM:(nsCOMPtr<nsITouchBarInput>)aInput;
 
 @end
 
@@ -162,11 +163,14 @@ using namespace mozilla::dom;
 
 
 
-- (void)updateButton:(NSButton*)aButton input:(TouchBarInput*)aInput;
-- (void)updateMainButton:(NSButton*)aMainButton input:(TouchBarInput*)aInput;
-- (void)updatePopover:(NSPopoverTouchBarItem*)aPopoverItem input:(TouchBarInput*)aInput;
-- (void)updateScrollView:(NSCustomTouchBarItem*)aScrollViewItem input:(TouchBarInput*)aInput;
-- (void)updateLabel:(NSTextField*)aLabel input:(TouchBarInput*)aInput;
+- (void)updateButton:(NSButton*)aButton withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (void)updateMainButton:(NSButton*)aMainButton
+          withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (void)updatePopover:(NSPopoverTouchBarItem*)aPopoverItem
+       withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (void)updateScrollView:(NSCustomTouchBarItem*)aScrollViewItem
+          withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (void)updateLabel:(NSTextField*)aLabel withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
 - (NSTouchBarItem*)makeShareScrubberForIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
 
 
