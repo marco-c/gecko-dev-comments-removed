@@ -3541,6 +3541,17 @@ void PrintHitTestInfoStats(nsDisplayList& aList) {
 }
 #endif
 
+
+
+static void ApplyEffectsUpdates(
+    const nsDataHashtable<nsPtrHashKey<RemoteBrowser>, EffectsInfo>& aUpdates) {
+  for (auto iter = aUpdates.ConstIter(); !iter.Done(); iter.Next()) {
+    auto browser = iter.Key();
+    auto update = iter.Data();
+    browser->UpdateEffects(update);
+  }
+}
+
 nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
                                    nsIFrame* aFrame,
                                    const nsRegion& aDirtyRegion,
@@ -4087,6 +4098,11 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     
     
     builder.SetDisablePartialUpdates(true);
+  }
+
+  
+  if (isForPainting) {
+    ApplyEffectsUpdates(builder.GetEffectUpdates());
   }
 
   builder.Check();
