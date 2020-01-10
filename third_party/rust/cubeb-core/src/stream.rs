@@ -149,17 +149,6 @@ impl StreamRef {
     }
 
     
-    
-    
-    
-    
-    
-    
-    pub fn set_panning(&self, panning: f32) -> Result<()> {
-        unsafe { call!(ffi::cubeb_stream_set_panning(self.as_ptr(), panning)) }
-    }
-
-    
     pub fn current_device(&self) -> Result<&DeviceRef> {
         let mut device: *mut ffi::cubeb_device = ptr::null_mut();
         unsafe {
