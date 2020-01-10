@@ -18,6 +18,16 @@ JITFLAGS = {
          '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
         ['--baseline-eager'],
         ['--no-blinterp', '--no-baseline', '--no-ion', '--more-compartments'],
+        ['--blinterp', '--blinterp-eager'],
+    ],
+    
+    
+    'jstests': [
+        [],  
+        ['--ion-eager', '--ion-offthread-compile=off',  
+         '--more-compartments'],
+        ['--baseline-eager'],
+        ['--no-blinterp', '--no-baseline', '--no-ion', '--more-compartments'],
     ],
     
     'ion': [
