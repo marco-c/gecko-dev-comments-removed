@@ -1656,13 +1656,15 @@ class ClientAuthDataRunnable : public SyncRunnableBase {
  public:
   ClientAuthDataRunnable(CERTCertificate** pRetCert, SECKEYPrivateKey** pRetKey,
                          nsNSSSocketInfo* info,
-                         const UniqueCERTCertificate& serverCert)
+                         const UniqueCERTCertificate& serverCert,
+                         nsTArray<nsCString>& caNamesStrings)
       : mRV(SECFailure),
         mErrorCodeToReport(SEC_ERROR_NO_MEMORY),
         mPRetCert(pRetCert),
         mPRetKey(pRetKey),
         mSocketInfo(info),
-        mServerCert(serverCert.get()) {}
+        mServerCert(serverCert.get()),
+        mCANamesStrings(std::move(caNamesStrings)) {}
 
   SECStatus mRV;                      
   PRErrorCode mErrorCodeToReport;     
@@ -1672,9 +1674,42 @@ class ClientAuthDataRunnable : public SyncRunnableBase {
   virtual void RunOnTargetThread() override;
 
  private:
-  nsNSSSocketInfo* const mSocketInfo;  
-  CERTCertificate* const mServerCert;  
+  nsNSSSocketInfo* const mSocketInfo;   
+  CERTCertificate* const mServerCert;   
+  nsTArray<nsCString> mCANamesStrings;  
 };
+
+nsTArray<nsCString> DecodeCANames(CERTDistNames* caNames) {
+  MOZ_ASSERT(caNames);
+
+  nsTArray<nsCString> caNamesStrings;
+  if (!caNames) {
+    return caNamesStrings;
+  }
+
+  for (int i = 0; i < caNames->nnames; i++) {
+    char* caName = CERT_DerNameToAscii(&caNames->names[i]);
+    
+    if (caName) {
+      caNamesStrings.AppendElement(nsCString(caName));
+      PORT_Free(caName);  
+    }
+  }
+  return caNamesStrings;
+}
+
+nsTArray<char*> GetDependentStringPointers(nsTArray<nsCString>& strings) {
+  nsTArray<char*> pointers;
+  for (auto& string : strings) {
+    
+    
+    
+    
+    pointers.AppendElement(string.BeginWriting());
+  }
+  return pointers;
+}
+
 
 
 
@@ -1690,7 +1725,7 @@ SECStatus nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
                                      CERTDistNames* caNames,
                                      CERTCertificate** pRetCert,
                                      SECKEYPrivateKey** pRetKey) {
-  if (!socket || !pRetCert || !pRetKey) {
+  if (!socket || !caNames || !pRetCert || !pRetKey) {
     PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
     return SECFailure;
   }
@@ -1731,9 +1766,10 @@ SECStatus nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
     return SECSuccess;
   }
 
+  nsTArray<nsCString> caNamesStrings(DecodeCANames(caNames));
   
-  RefPtr<ClientAuthDataRunnable> runnable(
-      new ClientAuthDataRunnable(pRetCert, pRetKey, info, serverCert));
+  RefPtr<ClientAuthDataRunnable> runnable(new ClientAuthDataRunnable(
+      pRetCert, pRetKey, info, serverCert, caNamesStrings));
   nsresult rv = runnable->DispatchToMainThreadAndWait();
   if (NS_FAILED(rv)) {
     PR_SetError(SEC_ERROR_NO_MEMORY, 0);
@@ -1798,7 +1834,17 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     return;
   }
 
-  mRV = SECSuccess;
+  nsTArray<char*> caNamesStringPointers(
+      GetDependentStringPointers(mCANamesStrings));
+  mRV = CERT_FilterCertListByCANames(
+      certList.get(), caNamesStringPointers.Length(),
+      caNamesStringPointers.Elements(), certUsageSSLClient);
+  if (mRV != SECSuccess) {
+    return;
+  }
+  if (CERT_LIST_EMPTY(certList)) {
+    return;
+  }
 
   
   if (nsGetUserCertChoice() == UserCertChoice::Auto) {
