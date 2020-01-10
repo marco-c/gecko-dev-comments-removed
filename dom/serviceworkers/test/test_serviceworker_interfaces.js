@@ -105,8 +105,6 @@ var interfaceNamesInGlobalScope =
 
     "Directory",
 
-    "DOMError",
-
     "DOMException",
 
     "DOMMatrix",

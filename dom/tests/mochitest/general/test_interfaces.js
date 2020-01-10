@@ -304,8 +304,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "DocumentType", insecureContext: true},
 
-    {name: "DOMError", insecureContext: true},
-
     {name: "DOMException", insecureContext: true},
 
     {name: "DOMImplementation", insecureContext: true},
