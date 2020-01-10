@@ -299,6 +299,10 @@ class CycleCollectedJSContext
   std::queue<RefPtr<MicroTaskRunnable>> mPendingMicroTaskRunnables;
   std::queue<RefPtr<MicroTaskRunnable>> mDebuggerMicroTaskQueue;
 
+  
+  
+  uint32_t mDebuggerRecursionDepth;
+
   uint32_t mMicroTaskRecursionDepth;
 
   
