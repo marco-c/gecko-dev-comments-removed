@@ -130,7 +130,7 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
 
   BrowsingContext* inherit = aParent ? aParent : aOpener;
   if (inherit) {
-    context->mOpenerPolicy = inherit->mOpenerPolicy;
+    context->mOpenerPolicy = inherit->Top()->mOpenerPolicy;
     
     context->mEmbedderPolicy = inherit->mEmbedderPolicy;
   }
