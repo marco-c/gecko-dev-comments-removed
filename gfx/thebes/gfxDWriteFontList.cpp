@@ -940,12 +940,15 @@ gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
       mSystemFonts;
 #endif
   RefPtr<IDWriteFontFamily> family;
-  HRESULT hr = collection->GetFontFamily(aFamily->Index(), getter_AddRefs(family));
+  HRESULT hr =
+      collection->GetFontFamily(aFamily->Index(), getter_AddRefs(family));
+  
   
   
   
   bool foundFamily = false;
-  const nsCString& familyName = aFamily->DisplayName().AsString(SharedFontList());
+  const nsCString& familyName =
+      aFamily->DisplayName().AsString(SharedFontList());
   if (SUCCEEDED(hr) && family) {
     RefPtr<IDWriteLocalizedStrings> names;
     hr = family->GetFamilyNames(getter_AddRefs(names));
@@ -958,10 +961,12 @@ gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
   }
   if (!foundFamily) {
     
+    
     UINT32 index;
     BOOL exists;
     NS_ConvertUTF8toUTF16 name16(familyName);
-    hr = collection->FindFamilyName(reinterpret_cast<const WCHAR*>(name16.BeginReading()), &index, &exists);
+    hr = collection->FindFamilyName(
+        reinterpret_cast<const WCHAR*>(name16.BeginReading()), &index, &exists);
     if (SUCCEEDED(hr) && exists && index != UINT_MAX) {
       hr = collection->GetFontFamily(index, getter_AddRefs(family));
       if (FAILED(hr) || !family) {

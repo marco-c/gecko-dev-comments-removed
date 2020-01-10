@@ -87,7 +87,7 @@ void* nsMappedAttributes::operator new(size_t aSize,
   
   
   if (aAttrCount != 0) {
-    size -= sizeof(void * [1]);
+    size -= sizeof(void* [1]);
   }
 
   if (sCachedMappedAttributeAllocations) {

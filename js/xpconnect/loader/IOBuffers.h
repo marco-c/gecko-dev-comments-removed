@@ -142,7 +142,7 @@ class InputBuffer {
   size_t cursor_ = 0;
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

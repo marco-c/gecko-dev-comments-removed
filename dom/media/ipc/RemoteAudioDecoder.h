@@ -35,6 +35,7 @@ class RemoteAudioDecoderParent final : public RemoteDecoderParent {
  protected:
   MediaResult ProcessDecodedData(const MediaDataDecoder::DecodedData& aData,
                                  DecodedOutputIPDL& aDecodedData) override;
+
  private:
   
   

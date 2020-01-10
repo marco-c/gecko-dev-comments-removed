@@ -45,17 +45,20 @@ GFX2D_API bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride,
 
 
 
-typedef void (*SwizzleRowFn)(const uint8_t* aSrc, uint8_t* aDst, int32_t aLength);
+typedef void (*SwizzleRowFn)(const uint8_t* aSrc, uint8_t* aDst,
+                             int32_t aLength);
 
 
 
 
-GFX2D_API SwizzleRowFn PremultiplyRow(SurfaceFormat aSrcFormat, SurfaceFormat aDstFormat);
+GFX2D_API SwizzleRowFn PremultiplyRow(SurfaceFormat aSrcFormat,
+                                      SurfaceFormat aDstFormat);
 
 
 
 
-GFX2D_API SwizzleRowFn SwizzleRow(SurfaceFormat aSrcFormat, SurfaceFormat aDstFormat);
+GFX2D_API SwizzleRowFn SwizzleRow(SurfaceFormat aSrcFormat,
+                                  SurfaceFormat aDstFormat);
 
 }  
 }  

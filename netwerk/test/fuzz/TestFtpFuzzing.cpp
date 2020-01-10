@@ -47,7 +47,7 @@ static int FuzzingRunNetworkFtp(const uint8_t* data, size_t size) {
     
     
     addNetworkFuzzingBuffer(data, 1024, true);
-    addNetworkFuzzingBuffer(data+1024, size-1024, true, true);
+    addNetworkFuzzingBuffer(data + 1024, size - 1024, true, true);
   } else {
     addNetworkFuzzingBuffer(data, size, true);
   }
