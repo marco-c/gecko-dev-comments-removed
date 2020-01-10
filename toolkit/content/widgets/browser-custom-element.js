@@ -1593,19 +1593,22 @@
 
     purgeSessionHistory() {
       if (this.isRemoteBrowser) {
-        try {
-          this.messageManager.sendAsyncMessage("Browser:PurgeSessionHistory");
-        } catch (ex) {
-          
-          if (ex.result != Cr.NS_ERROR_NOT_INITIALIZED) {
-            throw ex;
-          }
-        }
         this._remoteWebNavigationImpl.canGoBack = false;
         this._remoteWebNavigationImpl.canGoForward = false;
-        return;
       }
-      this.messageManager.sendAsyncMessage("Browser:PurgeSessionHistory");
+      try {
+        this.sendMessageToActor(
+          "Browser:PurgeSessionHistory",
+          {},
+          "PurgeSessionHistory",
+          true
+        );
+      } catch (ex) {
+        
+        if (ex.result != Cr.NS_ERROR_NOT_INITIALIZED) {
+          throw ex;
+        }
+      }
     }
 
     createAboutBlankContentViewer(aPrincipal, aStoragePrincipal) {
