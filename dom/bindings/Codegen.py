@@ -1238,7 +1238,7 @@ class CGHeaders(CGWrapper):
             
             
             
-            if desc.interface.isExternal() or desc.interface.isIteratorInterface():
+            if desc.interface.isIteratorInterface():
                 continue
 
             for m in desc.interface.members:
