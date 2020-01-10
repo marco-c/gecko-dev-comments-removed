@@ -121,7 +121,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   void OnBackgroundParentDestroyed();
 
-  base::ProcessId OtherPid() const override;
+  base::ProcessId OtherPid() const;
 
   
   
