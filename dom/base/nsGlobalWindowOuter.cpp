@@ -2215,9 +2215,9 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   
   
-  mInnerWindow->GetWindowGlobalChild()->SendUpdateDocumentURI(
-      aDocument->GetDocumentURI());
-  mInnerWindow->GetWindowGlobalChild()->SendBecomeCurrentWindowGlobal();
+  WindowGlobalChild* wgc = mInnerWindow->GetWindowGlobalChild();
+  wgc->SetDocumentURI(aDocument->GetDocumentURI());
+  wgc->SendBecomeCurrentWindowGlobal();
 
   
   
