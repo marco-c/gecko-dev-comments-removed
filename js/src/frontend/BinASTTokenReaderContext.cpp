@@ -569,10 +569,8 @@ class HuffmanPreludeReader {
       code = (code + 1) << (nextBitLength - bitLength);
     }
 
-    if (table.impl.length() == 0) {
-      
-      return raiseInvalidTableData(entry.identity);
-    }
+    
+    
 
     auxStorageBitLengths.clear();
     return Ok();
@@ -672,7 +670,8 @@ class HuffmanPreludeReader {
       MOZ_TRY((owner.readTable<HuffmanTableListLength, List>(table, list)));
 
       auto& length = table.as<HuffmanTableExplicitSymbolsListLength>();
-      if (length.impl.length() == 1 && length.impl.begin()->value == 0) {
+      if ((length.impl.length() == 0) ||
+          (length.impl.length() == 1 && length.impl.begin()->value == 0)) {
         
         
         
@@ -1118,8 +1117,8 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
       
       this->bits += reversedByte;
       this->bitLength += BIT_BUFFER_READ_UNIT;
-      MOZ_ASSERT_IF(this->bitLength != 32 ,
-                    bits >> this->bitLength == 0);
+      MOZ_ASSERT_IF(this->bitLength != 64 ,
+                    this->bits >> this->bitLength == 0);
 
       
     }
@@ -1412,7 +1411,6 @@ HuffmanEntry<const T*> HuffmanTableImpl<T, N>::lookup(HuffmanLookup key) const {
   
   
   
-  MOZ_ASSERT(length() > 0);
   for (const auto& iter : values) {
     if (iter.key.bitLength > key.bitLength) {
       
@@ -1503,11 +1501,11 @@ MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::run(size_t initialCapacity) {
   MOZ_TRY(pushFields(BinASTKind::Script));
   while (stack.length() > 0) {
     const Entry entry = stack.popCopy();
-#ifdef DEBUG_BINAST
+#ifdef DEBUG
     entry.match(PrintEntry("pop"));
 #endif  
     MOZ_TRY(entry.match(ReadPoppedEntryMatcher(*this)));
-#ifdef DEBUG_BINAST
+#ifdef DEBUG
     entry.match(PrintEntry("pop complete"));
 #endif  
   }
