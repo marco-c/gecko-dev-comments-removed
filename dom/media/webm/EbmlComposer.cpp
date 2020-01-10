@@ -56,13 +56,14 @@ void EbmlComposer::GenerateHeader() {
             
             
             
-            mCodecDelay = (uint64_t)LittleEndian::readUint16(
-                              mCodecPrivateData.Elements() + 10) *
-                          PR_NSEC_PER_SEC / 48000;
+            
+            uint64_t codecDelay = (uint64_t)LittleEndian::readUint16(
+                                      mCodecPrivateData.Elements() + 10) *
+                                  PR_NSEC_PER_SEC / 48000;
             
             uint64_t seekPreRoll = 80 * PR_NSEC_PER_MSEC;
             writeAudioTrack(&ebml, 0x2, 0x0, "A_OPUS", mSampleFreq, mChannels,
-                            mCodecDelay, seekPreRoll,
+                            codecDelay, seekPreRoll,
                             mCodecPrivateData.Elements(),
                             mCodecPrivateData.Length());
           }
@@ -130,9 +131,6 @@ void EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
 
   int64_t timeCode =
       aFrame->GetTimeStamp() / ((int)PR_USEC_PER_MSEC) - mClusterTimecode;
-  if (isOpus) {
-    timeCode += mCodecDelay / PR_NSEC_PER_MSEC;
-  }
 
   if (!mHasVideo && timeCode >= FLUSH_AUDIO_ONLY_AFTER_MS) {
     MOZ_ASSERT(mHasAudio);
@@ -163,9 +161,6 @@ void EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
     
     timeCode =
         aFrame->GetTimeStamp() / ((int)PR_USEC_PER_MSEC) - mClusterTimecode;
-    if (isOpus) {
-      timeCode += mCodecDelay / PR_NSEC_PER_MSEC;
-    }
 
     mWritingCluster = true;
   }
