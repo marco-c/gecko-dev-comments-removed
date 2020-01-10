@@ -556,7 +556,11 @@ void nsListControlFrame::ReflowAsDropdown(nsPresContext* aPresContext,
     
     
     state.SetComputedBSize(blockSizeOfARow);
-    mNumDisplayRows = 1;
+    
+    
+    
+    
+    mNumDisplayRows = XRE_IsContentProcess() ? kMaxDropDownRows : 1;
   } else {
     nsComboboxControlFrame* combobox =
         static_cast<nsComboboxControlFrame*>(mComboboxFrame);
