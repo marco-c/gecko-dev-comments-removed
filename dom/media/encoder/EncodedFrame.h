@@ -7,6 +7,7 @@
 #define EncodedFrame_h_
 
 #include "nsISupportsImpl.h"
+#include "VideoUtils.h"
 
 namespace mozilla {
 
@@ -14,7 +15,7 @@ namespace mozilla {
 class EncodedFrame final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(EncodedFrame)
  public:
-  EncodedFrame() : mTimeStamp(0), mDuration(0), mFrameType(UNKNOWN) {}
+  EncodedFrame() : mTime(0), mDuration(0), mFrameType(UNKNOWN) {}
   enum FrameType {
     VP8_I_FRAME,       
     VP8_P_FRAME,       
@@ -34,14 +35,28 @@ class EncodedFrame final {
     return NS_ERROR_FAILURE;
   }
   const nsTArray<uint8_t>& GetFrameData() const { return mFrameData; }
-  uint64_t GetTimeStamp() const { return mTimeStamp; }
-  void SetTimeStamp(uint64_t aTimeStamp) { mTimeStamp = aTimeStamp; }
+  
+  uint64_t mTime;
+  
+  
+  
+  uint64_t mDuration;
+  
+  FrameType mFrameType;
 
-  uint64_t GetDuration() const { return mDuration; }
-  void SetDuration(uint64_t aDuration) { mDuration = aDuration; }
-
-  FrameType GetFrameType() const { return mFrameType; }
-  void SetFrameType(FrameType aFrameType) { mFrameType = aFrameType; }
+  uint64_t GetEndTime() const {
+    
+    
+    MOZ_ASSERT(mFrameType == OPUS_AUDIO_FRAME || mFrameType == VP8_I_FRAME ||
+               mFrameType == VP8_P_FRAME);
+    if (mFrameType == OPUS_AUDIO_FRAME) {
+      
+      
+      return mTime + FramesToUsecs(mDuration, 48000).value();
+    } else {
+      return mTime + mDuration;
+    }
+  }
 
  private:
   
@@ -49,11 +64,6 @@ class EncodedFrame final {
 
   
   nsTArray<uint8_t> mFrameData;
-  uint64_t mTimeStamp;
-  
-  uint64_t mDuration;
-  
-  FrameType mFrameType;
 };
 
 }  
