@@ -206,11 +206,6 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
 
 
 function computeIsContentAndCategory(frame) {
-  
-  if (frame.category !== null && frame.category !== undefined) {
-    return;
-  }
-
   const location = frame.location;
 
   
@@ -244,6 +239,10 @@ function computeIsContentAndCategory(frame) {
   
   if (isContentScheme(location, schemeStartIndex) || isWASM(location)) {
     frame.isContent = true;
+    return;
+  }
+
+  if (frame.category !== null && frame.category !== undefined) {
     return;
   }
 
