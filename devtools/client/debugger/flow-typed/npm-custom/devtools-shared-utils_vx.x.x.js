@@ -1,7 +1,0 @@
-
-
-
-
-declare module "devtools-shared-utils" {
-  declare module.exports: any;
-}
