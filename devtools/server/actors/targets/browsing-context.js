@@ -282,6 +282,8 @@ const browsingContextTargetPrototype = {
       logInPage: true,
       
       canRewind,
+      
+      watchpoints: true,
     };
 
     this._workerTargetActorList = null;
