@@ -54,6 +54,8 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
     capabilities["goog:chromeOptions"]["androidPackage"] = \
         "org.chromium.webview_shell"
     capabilities["goog:chromeOptions"]["androidActivity"] = ".WebPlatformTestsActivity"
+    if 'device_serial' in kwargs:
+        capabilities["goog:chromeOptions"]["androidDeviceSerial"] = kwargs['device_serial']
 
     
     executor_kwargs["pause_after_test"] = False
