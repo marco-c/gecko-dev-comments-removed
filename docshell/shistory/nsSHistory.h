@@ -201,9 +201,8 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  
-  int32_t mIndex;                           
-  int32_t mRequestedIndex;                  
+  int32_t mIndex;           
+  int32_t mRequestedIndex;  
 
   
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;

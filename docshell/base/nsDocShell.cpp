@@ -11114,7 +11114,8 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     
     rv = AddToSessionHistory(aNewURI, nullptr,
                              aDocument->NodePrincipal(),  
-                             nullptr, nullptr, csp, true, getter_AddRefs(newSHEntry));
+                             nullptr, nullptr, csp, true,
+                             getter_AddRefs(newSHEntry));
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
@@ -11564,7 +11565,8 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
       
       
       
-      nsCOMPtr<nsIPrincipal> principal = NullPrincipal::CreateWithInheritedAttributes(this);
+      nsCOMPtr<nsIPrincipal> principal =
+          NullPrincipal::CreateWithInheritedAttributes(this);
       loadState->SetTriggeringPrincipal(principal);
     }
   }
