@@ -12,7 +12,7 @@ const { getFramePayload } = require("../../utils/request-utils");
 
 
 
-class FrameListColumnData extends Component {
+class FrameListColumnPayload extends Component {
   static get propTypes() {
     return {
       item: PropTypes.object.isRequired,
@@ -61,4 +61,4 @@ class FrameListColumnData extends Component {
   }
 }
 
-module.exports = FrameListColumnData;
+module.exports = FrameListColumnPayload;

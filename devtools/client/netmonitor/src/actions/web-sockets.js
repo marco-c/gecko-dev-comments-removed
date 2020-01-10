@@ -8,13 +8,7 @@ const {
   WS_ADD_FRAME,
   WS_SELECT_FRAME,
   WS_OPEN_FRAME_DETAILS,
-  WS_CLEAR_FRAMES,
-  WS_TOGGLE_FRAME_FILTER_TYPE,
-  WS_SET_REQUEST_FILTER_TEXT,
 } = require("../constants");
-
-
-
 
 function addFrame(httpChannelId, data) {
   return {
@@ -47,43 +41,8 @@ function openFrameDetails(open) {
   };
 }
 
-
-
-
-
-function clearFrames() {
-  return {
-    type: WS_CLEAR_FRAMES,
-  };
-}
-
-
-
-
-
-function toggleFrameFilterType(filter) {
-  return {
-    type: WS_TOGGLE_FRAME_FILTER_TYPE,
-    filter,
-  };
-}
-
-
-
-
-
-function setFrameFilterText(text) {
-  return {
-    type: WS_SET_REQUEST_FILTER_TEXT,
-    text,
-  };
-}
-
 module.exports = {
   addFrame,
   selectFrame,
   openFrameDetails,
-  clearFrames,
-  toggleFrameFilterType,
-  setFrameFilterText,
 };

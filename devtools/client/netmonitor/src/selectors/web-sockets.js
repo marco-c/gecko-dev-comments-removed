@@ -6,44 +6,22 @@
 
 const { createSelector } = require("devtools/client/shared/vendor/reselect");
 
+function getFramesByChannelId(state, channelId) {
+  return state.webSockets.frames.get(channelId);
+}
 
 
 
 
-const getDisplayedFrames = createSelector(
-  state => state.webSockets,
-  ({ frames, frameFilterType, frameFilterText, currentChannelId }) => {
-    if (!currentChannelId || !frames.get(currentChannelId)) {
-      return [];
-    }
 
-    const framesArray = frames.get(currentChannelId);
-    if (frameFilterType === "all" && frameFilterText.length === 0) {
-      return framesArray;
-    }
 
-    return framesArray.filter(
-      frame =>
-        frame.payload.includes(frameFilterText) &&
-        (frameFilterType === "all" || frameFilterType === frame.type)
-    );
+function isSelectedFrameVisible(state, channelId, targetFrame) {
+  const displayedFrames = getFramesByChannelId(state, channelId);
+  if (displayedFrames && targetFrame) {
+    return displayedFrames.some(frame => frame === targetFrame);
   }
-);
-
-
-
-
-
-
-const isSelectedFrameVisible = createSelector(
-  state => state.webSockets,
-  getDisplayedFrames,
-  ({ selectedFrame }, displayedFrames) =>
-    displayedFrames.some(frame => frame === selectedFrame)
-);
-
-
-
+  return false;
+}
 
 const getSelectedFrame = createSelector(
   state => state.webSockets,
@@ -51,7 +29,7 @@ const getSelectedFrame = createSelector(
 );
 
 module.exports = {
+  getFramesByChannelId,
   getSelectedFrame,
   isSelectedFrameVisible,
-  getDisplayedFrames,
 };
