@@ -24,12 +24,32 @@ class ChromiumFormatter(base.BaseFormatter):
         
         self.tests = {}
 
-    def _store_test_result(self, name, actual, expected):
+        
+        
+        self.messages = defaultdict(str)
+
+    def _append_test_message(self, test, subtest, status, message):
+        """
+        Appends the message data for a test.
+        :param str test: the name of the test
+        :param str subtest: the name of the subtest with the message
+        :param str message: the string to append to the message for this test
+        """
+        if not message:
+            return
+        
+        prefix = "[%s] " % status
+        if subtest:
+            prefix += "%s: " % subtest
+        self.messages[test] += prefix + message + "\n"
+
+    def _store_test_result(self, name, actual, expected, message):
         """
         Stores the result of a single test in |self.tests|
         :param str name: name of the test.
         :param str actual: actual status of the test.
         :param str expected: expected status of the test.
+        :param str message: test output, such as status, subtest, errors etc.
         """
         
         
@@ -40,6 +60,16 @@ class ChromiumFormatter(base.BaseFormatter):
             cur_dict = cur_dict.setdefault(name_part, {})
         cur_dict["actual"] = actual
         cur_dict["expected"] = expected
+        if message != "":
+            cur_dict["artifacts"] = {"log": message}
+
+        
+        
+        if actual != "SKIP":
+            if actual != expected:
+                cur_dict["is_unexpected"] = True
+                if actual != "PASS":
+                    cur_dict["is_regression"] = True
 
     def _map_status_name(self, status):
         """
@@ -73,12 +103,27 @@ class ChromiumFormatter(base.BaseFormatter):
         return status
 
     def suite_start(self, data):
-        self.start_timestamp_seconds = data["time"] if "time" in data else time.time()
+        self.start_timestamp_seconds = (data["time"] if "time" in data
+                                        else time.time())
+
+    def test_status(self, data):
+        if "message" in data:
+            self._append_test_message(data["test"], data["subtest"],
+                                      data["status"], data["message"])
 
     def test_end(self, data):
         actual_status = self._map_status_name(data["status"])
-        expected_status = self._map_status_name(data["expected"]) if "expected" in data else "PASS"
-        self._store_test_result(data["test"], actual_status, expected_status)
+        expected_status = (self._map_status_name(data["expected"])
+                           if "expected" in data else "PASS")
+        test_name = data["test"]
+        if "message" in data:
+            self._append_test_message(test_name, None, actual_status,
+                                      data["message"])
+        self._store_test_result(test_name, actual_status, expected_status,
+                                self.messages[test_name])
+
+        
+        self.messages.pop(test_name)
 
         
         self.num_failures_by_status[actual_status] += 1
