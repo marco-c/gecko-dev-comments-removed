@@ -13,6 +13,7 @@ const {
   OPEN_STATISTICS,
   RESET_COLUMNS,
   SELECT_DETAILS_PANEL_TAB,
+  SELECT_ACTION_BAR_TAB,
   TOGGLE_COLUMN,
   WATERFALL_RESIZE,
   SET_COLUMNS_WIDTH,
@@ -141,6 +142,18 @@ function selectDetailsPanelTab(id) {
 
 
 
+function selectActionBarTab(id) {
+  return {
+    type: SELECT_ACTION_BAR_TAB,
+    id,
+  };
+}
+
+
+
+
+
+
 function toggleColumn(column) {
   return {
     type: TOGGLE_COLUMN,
@@ -201,6 +214,7 @@ module.exports = {
   resetColumns,
   resizeWaterfall,
   selectDetailsPanelTab,
+  selectActionBarTab,
   toggleColumn,
   setColumnsWidth,
   toggleNetworkDetails,
