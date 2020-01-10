@@ -707,7 +707,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   
   JSObject* envChain = nullptr;
-  Value returnValue;
+  Value returnValue = UndefinedValue();
   ArgumentsObject* argsObj = nullptr;
   BailoutKind bailoutKind = iter.bailoutKind();
   if (bailoutKind == Bailout_ArgumentCheck) {
@@ -722,7 +722,6 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
     
     iter.skip();
-    returnValue = UndefinedValue();
 
     
     if (script->argumentsHasVarBinding()) {
@@ -789,10 +788,16 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       }
     }
 
-    
-    
-    returnValue = iter.read();
-    flags |= BaselineFrame::HAS_RVAL;
+    if (script->noScriptRval()) {
+      
+      
+      iter.skip();
+    } else {
+      
+      
+      flags |= BaselineFrame::HAS_RVAL;
+      returnValue = iter.read();
+    }
 
     
     if (script->argumentsHasVarBinding()) {
