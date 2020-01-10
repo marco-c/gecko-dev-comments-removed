@@ -103,6 +103,7 @@ function tunnelToInnerBrowser(outer, inner) {
 
     onLocationChange: (webProgress, request, location, flags) => {
       if (webProgress && webProgress.isTopLevel) {
+        inner._securityUI = outer._securityUI;
         inner._documentURI = outer._documentURI;
         inner._documentContentType = outer._documentContentType;
         inner._contentTitle = outer._contentTitle;
@@ -115,10 +116,6 @@ function tunnelToInnerBrowser(outer, inner) {
           outer._remoteWebNavigationImpl._currentURI;
       }
     },
-
-    
-    
-    
 
     QueryInterface: ChromeUtils.generateQI([
       Ci.nsISupportsWeakReference,
@@ -467,6 +464,8 @@ MessageManagerTunnel.prototype = {
     "Link:AddFeed",
     "Link:AddSearch",
     "PageStyle:StyleSheets",
+    
+    "Content:SecurityChange",
     
     "DOMTitleChanged",
     "ImageDocumentLoaded",
