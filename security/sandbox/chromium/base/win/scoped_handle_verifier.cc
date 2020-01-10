@@ -70,7 +70,13 @@ ScopedHandleVerifier* ScopedHandleVerifier::Get() {
 
 bool CloseHandleWrapper(HANDLE handle) {
   if (!::CloseHandle(handle))
+    
+    
+#if defined(NIGHTLY_BUILD)
     CHECK(false);  
+#else
+    DCHECK(false);  
+#endif
   return true;
 }
 
