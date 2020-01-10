@@ -58,11 +58,14 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
                                  
   };
 
-  explicit nsSHistory(nsDocShell* aRootDocShell);
+  nsSHistory(mozilla::dom::BrowsingContext* aRootBC, const nsID& aDocShellID);
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHISTORY
 
   nsresult Reload(uint32_t aReloadFlags);
+  virtual nsresult LoadURI(nsISHEntry* aFrameEntry,
+                           mozilla::dom::BrowsingContext* aFrameBc,
+                           nsDocShellLoadState* aLoadState);
 
   
   static nsresult Startup();
@@ -126,10 +129,11 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   static const int32_t VIEWER_WINDOW = 3;
 
   nsresult LoadDifferingEntries(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
-                                nsIDocShell* aRootDocShell, long aLoadType,
-                                bool& aDifferenceFound);
-  nsresult InitiateLoad(nsISHEntry* aFrameEntry, nsIDocShell* aFrameDS,
-                        long aLoadType);
+                                mozilla::dom::BrowsingContext* aRootBC,
+                                long aLoadType, bool& aDifferenceFound);
+  virtual nsresult InitiateLoad(nsISHEntry* aFrameEntry,
+                                mozilla::dom::BrowsingContext* aFrameBC,
+                                long aLoadType);
 
   nsresult LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd);
 
@@ -178,7 +182,8 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;
 
   
-  nsIDocShell* mRootDocShell;
+  mozilla::dom::BrowsingContext* mRootBC;
+  nsID mRootDocShellID;
 
   
   static int32_t sHistoryMaxTotalViewers;
