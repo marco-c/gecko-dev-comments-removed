@@ -39,12 +39,17 @@ class KeyPressEventModelCheckerChild extends ActorChild {
   _isOldOfficeOnlineServer(aDocument) {
     let editingElement =
         aDocument.getElementById("WACViewPanel_EditingElement");
+    
+    
+    
     if (!editingElement) {
       return false;
     }
     let isOldVersion =
         !editingElement.classList.contains(
             "WACViewPanel_DisableLegacyKeyCodeAndCharCode");
+    Services.telemetry.keyedScalarAdd("dom.event.office_online_load_count",
+                                      isOldVersion ? "old" : "new", 1);
     return isOldVersion;
   }
 
