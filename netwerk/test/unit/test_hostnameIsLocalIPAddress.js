@@ -6,16 +6,25 @@ function run_test() {
   let testURIs = [
     ["http://example.com", false],
     ["about:robots", false],
+    
     ["http://9.255.255.255", false],
     ["http://10.0.0.0", true],
     ["http://10.0.23.31", true],
     ["http://10.255.255.255", true],
     ["http://11.0.0.0", false],
+    
+    ["http://169.253.255.255", false],
+    ["http://169.254.0.0", true],
+    ["http://169.254.42.91", true],
+    ["http://169.254.255.255", true],
+    ["http://169.255.0.0", false],
+    
     ["http://172.15.255.255", false],
     ["http://172.16.0.0", true],
     ["http://172.25.110.0", true],
     ["http://172.31.255.255", true],
     ["http://172.32.0.0", false],
+    
     ["http://192.167.255.255", false],
     ["http://192.168.0.0", true],
     ["http://192.168.127.10", true],

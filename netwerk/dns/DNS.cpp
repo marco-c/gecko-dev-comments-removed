@@ -204,6 +204,21 @@ bool IsIPAddrLocal(const NetAddr* addr) {
   return false;
 }
 
+bool IsIPAddrShared(const NetAddr* addr) {
+  MOZ_ASSERT(addr);
+
+  
+  if (addr->raw.family == AF_INET) {
+    uint32_t addr32 = ntohl(addr->inet.ip);
+    if (addr32 >> 22 == 0x644 >> 2) {  
+      return true;
+    }
+  }
+
+  
+  return false;
+}
+
 nsresult GetPort(const NetAddr* aAddr, uint16_t* aResult) {
   uint16_t port;
   if (aAddr->raw.family == PR_AF_INET) {
