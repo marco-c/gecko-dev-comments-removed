@@ -382,7 +382,7 @@ class RemoteSettingsClient extends EventEmitter {
         }
         
         
-        syncResult.created = importedFromDump.concat(syncResult.created);
+        syncResult.add("created", importedFromDump);
       } catch (e) {
         if (e instanceof RemoteSettingsClient.InvalidSignatureError) {
           
