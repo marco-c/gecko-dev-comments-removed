@@ -13,6 +13,7 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/StaticPtr.h"
 #include "nsBaseWidget.h"
+#include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -184,7 +185,12 @@ void UiCompositorControllerChild::Destroy() {
 
   if (mIsOpen) {
     
-    mWidget = nullptr;
+
+    
+    
+    RefPtr<nsIWidget> widget = mWidget.forget();
+    NS_ReleaseOnMainThreadSystemGroup("UiCompositorControllerChild::mWidget",
+                                      widget.forget());
     PUiCompositorControllerChild::Close();
     mIsOpen = false;
   }
