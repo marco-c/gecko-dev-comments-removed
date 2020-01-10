@@ -1696,6 +1696,10 @@ void Loader::SheetComplete(SheetLoadData& aLoadData, nsresult aStatus) {
     MarkLoadTreeFailed(aLoadData);
   }
 
+  if (mDocument) {
+    mDocument->MaybeWarnAboutZoom();
+  }
+
   
   
   

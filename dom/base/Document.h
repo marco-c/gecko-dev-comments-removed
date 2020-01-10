@@ -3787,6 +3787,8 @@ class Document : public nsINode,
         aDontWarnAboutMutationEventsAndAllowSlowDOMMutations;
   }
 
+  void MaybeWarnAboutZoom();
+
   
   nsIHTMLCollection* Children();
   uint32_t ChildElementCount();
@@ -4885,6 +4887,12 @@ class Document : public nsINode,
   
   
   bool mHasBeenEditable : 1;
+
+  
+  
+  
+  
+  bool mHasWarnedAboutZoom : 1;
 
   uint8_t mPendingFullscreenRequests;
 
