@@ -231,20 +231,18 @@ function openBrowserWindow(
   forcePrivate = false
 ) {
   let chromeURL = AppConstants.BROWSER_CHROME_URL;
+  const isStartup =
+    cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
 
   let args;
   if (!urlOrUrlList) {
     
-    args = [gBrowserContentHandler.defaultArgs];
+    args = [gBrowserContentHandler.getArgs(isStartup)];
   } else {
     let pService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
       Ci.nsIToolkitProfileService
     );
-    if (
-      cmdLine &&
-      cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
-      pService.createdAlternateProfile
-    ) {
+    if (isStartup && pService.createdAlternateProfile) {
       let url = getNewInstallPage();
       if (Array.isArray(urlOrUrlList)) {
         urlOrUrlList.unshift(url);
@@ -295,7 +293,7 @@ function openBrowserWindow(
     }
   }
 
-  if (cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH) {
+  if (isStartup) {
     let win = Services.wm.getMostRecentWindow("navigator:blank");
     if (win) {
       
@@ -603,6 +601,10 @@ nsBrowserContentHandler.prototype = {
   
 
   get defaultArgs() {
+    return this.getArgs();
+  },
+
+  getArgs(isStartup = false) {
     var prefb = Services.prefs;
 
     if (!gFirstWindow) {
@@ -686,6 +688,24 @@ nsBrowserContentHandler.prototype = {
     
     if (overridePage == "about:blank") {
       overridePage = "";
+    }
+
+    
+    const ONCE_PREF = "browser.startup.homepage_override.once";
+    if (isStartup && overridePage == "" && prefb.prefHasUserValue(ONCE_PREF)) {
+      try {
+        
+        const { expire, url } = JSON.parse(
+          Services.urlFormatter.formatURLPref(ONCE_PREF)
+        );
+        if (!(Date.now() > expire) && typeof url == "string") {
+          overridePage = url;
+        }
+      } catch (ex) {
+        
+      } finally {
+        prefb.clearUserPref(ONCE_PREF);
+      }
     }
 
     if (!additionalPage) {
