@@ -10,7 +10,7 @@
 
 
 use crate::binemit::{
-    relax_branches, shrink_instructions, CodeOffset, MemoryCodeSink, RelocSink, TrapSink,
+    relax_branches, shrink_instructions, CodeInfo, MemoryCodeSink, RelocSink, TrapSink,
 };
 use crate::dce::do_dce;
 use crate::dominator_tree::DominatorTree;
@@ -100,13 +100,14 @@ impl Context {
         mem: &mut Vec<u8>,
         relocs: &mut RelocSink,
         traps: &mut TrapSink,
-    ) -> CodegenResult<(CodeOffset, CodeOffset)> {
-        let total_size = self.compile(isa)?;
+    ) -> CodegenResult<CodeInfo> {
+        let info = self.compile(isa)?;
         let old_len = mem.len();
-        mem.resize(old_len + total_size as usize, 0);
-        let code_size =
+        mem.resize(old_len + info.total_size as usize, 0);
+        let new_info =
             unsafe { self.emit_to_memory(isa, mem.as_mut_ptr().add(old_len), relocs, traps) };
-        Ok((code_size, total_size - code_size))
+        debug_assert!(new_info == info);
+        Ok(info)
     }
 
     
@@ -116,7 +117,7 @@ impl Context {
     
     
     
-    pub fn compile(&mut self, isa: &TargetIsa) -> CodegenResult<CodeOffset> {
+    pub fn compile(&mut self, isa: &TargetIsa) -> CodegenResult<CodeInfo> {
         let _tt = timing::compile();
         self.verify_if(isa)?;
 
@@ -167,11 +168,11 @@ impl Context {
         mem: *mut u8,
         relocs: &mut RelocSink,
         traps: &mut TrapSink,
-    ) -> CodeOffset {
+    ) -> CodeInfo {
         let _tt = timing::binemit();
         let mut sink = MemoryCodeSink::new(mem, relocs, traps);
         isa.emit_function_to_memory(&self.func, &mut sink);
-        sink.code_size as CodeOffset
+        sink.info
     }
 
     
@@ -326,11 +327,12 @@ impl Context {
     }
 
     
-    pub fn relax_branches(&mut self, isa: &TargetIsa) -> CodegenResult<CodeOffset> {
-        let code_size = relax_branches(&mut self.func, isa)?;
+    
+    pub fn relax_branches(&mut self, isa: &TargetIsa) -> CodegenResult<CodeInfo> {
+        let info = relax_branches(&mut self.func, isa)?;
         self.verify_if(isa)?;
         self.verify_locations_if(isa)?;
-        Ok(code_size)
+        Ok(info)
     }
 
     

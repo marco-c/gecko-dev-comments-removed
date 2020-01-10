@@ -1,5 +1,5 @@
-use crate::cdsl::ast::{bind, var, ExprBuilder, Literal};
-use crate::cdsl::inst::{Instruction, InstructionGroup};
+use crate::cdsl::ast::{var, ExprBuilder, Literal};
+use crate::cdsl::instructions::{Instruction, InstructionGroup};
 use crate::cdsl::xform::{TransformGroupBuilder, TransformGroups};
 
 use crate::shared::OperandKinds;
@@ -62,6 +62,8 @@ pub fn define(insts: &InstructionGroup, immediates: &OperandKinds) -> TransformG
     let f32const = insts.by_name("f32const");
     let f64const = insts.by_name("f64const");
     let fcopysign = insts.by_name("fcopysign");
+    let fcvt_from_sint = insts.by_name("fcvt_from_sint");
+    let fcvt_from_uint = insts.by_name("fcvt_from_uint");
     let fneg = insts.by_name("fneg");
     let iadd = insts.by_name("iadd");
     let iadd_carry = insts.by_name("iadd_carry");
@@ -350,7 +352,7 @@ pub fn define(insts: &InstructionGroup, immediates: &OperandKinds) -> TransformG
     for &extend_op in &[uextend, sextend] {
         
         
-        let bound = bind(bind(extend_op, I16), I8);
+        let bound = extend_op.bind(I16).bind(I8);
         widen.legalize(
             def!(a = bound(b)),
             vec![def!(c = extend_op.I32(b)), def!(a = ireduce(c))],
@@ -511,6 +513,32 @@ pub fn define(insts: &InstructionGroup, immediates: &OperandKinds) -> TransformG
             def!(b = bor(b1, b2)),
         ],
     );
+
+    
+    
+    
+    
+    for &dest_ty in &[F32, F64] {
+        for &src_ty in &[I8, I16] {
+            let bound_inst = fcvt_from_uint.bind(dest_ty).bind(src_ty);
+            expand.legalize(
+                def!(a = bound_inst(b)),
+                vec![
+                    def!(x = uextend.I32(b)),
+                    def!(a = fcvt_from_uint.dest_ty(x)),
+                ],
+            );
+
+            let bound_inst = fcvt_from_sint.bind(dest_ty).bind(src_ty);
+            expand.legalize(
+                def!(a = bound_inst(b)),
+                vec![
+                    def!(x = sextend.I32(b)),
+                    def!(a = fcvt_from_sint.dest_ty(x)),
+                ],
+            );
+        }
+    }
 
     
     for &(inst_imm, inst) in &[
@@ -738,8 +766,8 @@ pub fn define(insts: &InstructionGroup, immediates: &OperandKinds) -> TransformG
 
     let mut groups = TransformGroups::new();
 
-    narrow.finish_and_add_to(&mut groups);
-    let expand_id = expand.finish_and_add_to(&mut groups);
+    narrow.build_and_add_to(&mut groups);
+    let expand_id = expand.build_and_add_to(&mut groups);
 
     
     let mut expand_flags = TransformGroupBuilder::new(
@@ -774,12 +802,12 @@ pub fn define(insts: &InstructionGroup, immediates: &OperandKinds) -> TransformG
         ],
     );
 
-    expand_flags.finish_and_add_to(&mut groups);
+    expand_flags.build_and_add_to(&mut groups);
 
     
     
     
-    widen.finish_and_add_to(&mut groups);
+    widen.build_and_add_to(&mut groups);
 
     groups
 }

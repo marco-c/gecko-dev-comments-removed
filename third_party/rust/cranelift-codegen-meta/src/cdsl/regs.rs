@@ -273,7 +273,7 @@ impl IsaRegsBuilder {
     
     
     
-    pub fn finish(self) -> IsaRegs {
+    pub fn build(self) -> IsaRegs {
         for reg_bank in self.banks.values() {
             for i1 in reg_bank.classes.iter() {
                 for i2 in reg_bank.classes.iter() {

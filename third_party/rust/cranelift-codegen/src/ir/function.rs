@@ -228,7 +228,8 @@ pub struct DisplayFunctionAnnotations<'a> {
 }
 
 impl<'a> DisplayFunctionAnnotations<'a> {
-    fn default() -> Self {
+    
+    pub fn default() -> Self {
         DisplayFunctionAnnotations {
             isa: None,
             value_ranges: None,

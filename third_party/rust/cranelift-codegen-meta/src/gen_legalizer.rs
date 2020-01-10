@@ -241,7 +241,7 @@ fn emit_runtime_typecheck<'a, 'b>(
 
 
 fn is_value_split(def: &Def) -> bool {
-    let name = def.apply.inst.name;
+    let name = &def.apply.inst.name;
     name == "isplit" || name == "vsplit"
 }
 

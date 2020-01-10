@@ -315,7 +315,7 @@ impl SettingGroupBuilder {
     
     
     
-    pub fn finish(self) -> SettingGroup {
+    pub fn build(self) -> SettingGroup {
         let mut group = SettingGroup {
             name: self.name,
             settings: Vec::new(),

@@ -12,39 +12,39 @@ pub fn define() -> Vec<OperandKind> {
     
     let ebb = create("ebb", "An extended basic block in the same function.")
         .default_member("destination")
-        .finish();
+        .build();
     kinds.push(ebb);
 
     
-    let stack_slot = create("stack_slot", "A stack slot").finish();
+    let stack_slot = create("stack_slot", "A stack slot").build();
     kinds.push(stack_slot);
 
     
-    let global_value = create("global_value", "A global value.").finish();
+    let global_value = create("global_value", "A global value.").build();
     kinds.push(global_value);
 
     
     
-    let sig_ref = create("sig_ref", "A function signature.").finish();
+    let sig_ref = create("sig_ref", "A function signature.").build();
     kinds.push(sig_ref);
 
     
     
-    let func_ref = create("func_ref", "An external function.").finish();
+    let func_ref = create("func_ref", "An external function.").build();
     kinds.push(func_ref);
 
     
     let jump_table = create("jump_table", "A jump table.")
         .default_member("table")
-        .finish();
+        .build();
     kinds.push(jump_table);
 
     
-    let heap = create("heap", "A heap.").finish();
+    let heap = create("heap", "A heap.").build();
     kinds.push(heap);
 
     
-    let table = create("table", "A table.").finish();
+    let table = create("table", "A table.").build();
     kinds.push(table);
 
     
@@ -58,7 +58,7 @@ pub fn define() -> Vec<OperandKind> {
             returned from an instruction.
         "#,
         )
-        .finish();
+        .build();
     kinds.push(varargs);
 
     return kinds;

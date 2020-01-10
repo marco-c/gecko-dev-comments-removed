@@ -34,6 +34,8 @@ pub enum Reloc {
     
     X86PCRel4,
     
+    X86PCRelRodata4,
+    
     X86CallPCRel4,
     
     X86CallPLTRel4,
@@ -55,11 +57,44 @@ impl fmt::Display for Reloc {
             Reloc::Abs4 => write!(f, "Abs4"),
             Reloc::Abs8 => write!(f, "Abs8"),
             Reloc::X86PCRel4 => write!(f, "PCRel4"),
+            Reloc::X86PCRelRodata4 => write!(f, "PCRelRodata4"),
             Reloc::X86CallPCRel4 => write!(f, "CallPCRel4"),
             Reloc::X86CallPLTRel4 => write!(f, "CallPLTRel4"),
             Reloc::X86GOTPCRel4 => write!(f, "GOTPCRel4"),
             Reloc::Arm32Call | Reloc::Arm64Call | Reloc::RiscvCall => write!(f, "Call"),
         }
+    }
+}
+
+
+
+
+
+
+#[derive(PartialEq)]
+pub struct CodeInfo {
+    
+    pub code_size: CodeOffset,
+
+    
+    pub jumptables_size: CodeOffset,
+
+    
+    pub rodata_size: CodeOffset,
+
+    
+    pub total_size: CodeOffset,
+}
+
+impl CodeInfo {
+    
+    pub fn jumptables(&self) -> CodeOffset {
+        self.code_size
+    }
+
+    
+    pub fn rodata(&self) -> CodeOffset {
+        self.code_size + self.jumptables_size
     }
 }
 
@@ -96,7 +131,13 @@ pub trait CodeSink {
     fn trap(&mut self, _: TrapCode, _: SourceLoc);
 
     
+    fn begin_jumptables(&mut self);
+
+    
     fn begin_rodata(&mut self);
+
+    
+    fn end_codegen(&mut self);
 }
 
 
@@ -127,7 +168,7 @@ where
         }
     }
 
-    sink.begin_rodata();
+    sink.begin_jumptables();
 
     
     for (jt, jt_data) in func.jump_tables.iter() {
@@ -137,4 +178,9 @@ where
             sink.put4(rel_offset as u32)
         }
     }
+
+    sink.begin_rodata();
+    
+
+    sink.end_codegen();
 }

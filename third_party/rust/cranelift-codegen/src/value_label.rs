@@ -11,8 +11,11 @@ use std::vec::Vec;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ValueLocRange {
+    
     pub loc: ValueLoc,
+    
     pub start: u32,
+    
     pub end: u32,
 }
 
