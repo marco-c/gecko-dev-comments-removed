@@ -2383,10 +2383,15 @@ void ReflowInput::InitConstraints(
     } else {
       AutoMaybeDisableFontInflation an(mFrame);
 
-      bool isBlock = NS_CSS_FRAME_TYPE_BLOCK == NS_FRAME_GET_TYPE(mFrameType);
+      
+      
+      const bool isBlockLevel =
+          NS_CSS_FRAME_TYPE_BLOCK == NS_FRAME_GET_TYPE(mFrameType) ||
+          mFrame->IsFlexOrGridItem();
       typedef nsIFrame::ComputeSizeFlags ComputeSizeFlags;
-      ComputeSizeFlags computeSizeFlags =
-          isBlock ? ComputeSizeFlags::eDefault : ComputeSizeFlags::eShrinkWrap;
+      ComputeSizeFlags computeSizeFlags = isBlockLevel
+                                              ? ComputeSizeFlags::eDefault
+                                              : ComputeSizeFlags::eShrinkWrap;
       if (mFlags.mIClampMarginBoxMinSize) {
         computeSizeFlags = ComputeSizeFlags(
             computeSizeFlags | ComputeSizeFlags::eIClampMarginBoxMinSize);
@@ -2434,7 +2439,7 @@ void ReflowInput::InitConstraints(
         
         
         
-        if (isBlock &&
+        if (isBlockLevel &&
             ((aFrameType == LayoutFrameType::Legend &&
               mFrame->Style()->GetPseudoType() !=
                   PseudoStyleType::scrolledContent) ||
@@ -2485,7 +2490,7 @@ void ReflowInput::InitConstraints(
 
       
       
-      if (isBlock && !IsSideCaption(mFrame, mStyleDisplay, cbwm) &&
+      if (isBlockLevel && !IsSideCaption(mFrame, mStyleDisplay, cbwm) &&
           mStyleDisplay->mDisplay != StyleDisplay::InlineTable &&
           !alignCB->IsFlexOrGridContainer() &&
           !(mFrame->Style()->GetPseudoType() == PseudoStyleType::marker &&
