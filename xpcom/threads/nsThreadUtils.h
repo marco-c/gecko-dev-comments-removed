@@ -1693,6 +1693,19 @@ void NS_UnsetMainThread();
 extern mozilla::TimeStamp NS_GetTimerDeadlineHintOnCurrentThread(
     mozilla::TimeStamp aDefault, uint32_t aSearchBound);
 
+
+
+
+
+
+
+
+
+extern nsresult NS_DispatchToBackgroundThread(already_AddRefed<nsIRunnable> aEvent,
+                                              uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
+extern nsresult NS_DispatchToBackgroundThread(nsIRunnable* aEvent,
+                                              uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
+
 namespace mozilla {
 
 

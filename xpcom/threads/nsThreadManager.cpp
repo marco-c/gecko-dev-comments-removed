@@ -6,6 +6,7 @@
 
 #include "nsThreadManager.h"
 #include "nsThread.h"
+#include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 #include "nsIClassInfoImpl.h"
 #include "nsTArray.h"
@@ -194,6 +195,12 @@ void nsThreadManager::InitializeShutdownObserver() {
   ClearOnShutdown(&gShutdownObserveHelper);
 }
 
+nsThreadManager::nsThreadManager()
+  : mCurThreadIndex(0),
+    mMainPRThread(nullptr),
+    mInitialized(false)
+{}
+
 nsresult nsThreadManager::Init() {
   
   
@@ -239,6 +246,27 @@ nsresult nsThreadManager::Init() {
   AbstractThread::InitTLS();
   AbstractThread::InitMainThread();
 
+  
+  nsCOMPtr<nsIThreadPool> pool(new nsThreadPool());
+  NS_ENSURE_TRUE(pool, NS_ERROR_FAILURE);
+
+  rv = pool->SetName(NS_LITERAL_CSTRING("BackgroundThreadPool"));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = pool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = pool->SetThreadLimit(1);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = pool->SetIdleThreadTimeout(300000);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  pool.swap(mBackgroundEventTarget);
+
   mInitialized = true;
 
   return NS_OK;
@@ -258,6 +286,8 @@ void nsThreadManager::Shutdown() {
 
   
   NS_ProcessPendingEvents(mMainThread);
+
+  mBackgroundEventTarget->Shutdown();
 
   {
     
@@ -299,6 +329,8 @@ void nsThreadManager::Shutdown() {
   
   
   mMainThread->SetObserver(nullptr);
+
+  mBackgroundEventTarget = nullptr;
 
   
   mMainThread = nullptr;
@@ -355,6 +387,16 @@ nsThread* nsThreadManager::CreateCurrentThread(
   }
 
   return thread.get();  
+}
+
+nsresult nsThreadManager::DispatchToBackgroundThread(nsIRunnable* aEvent,
+                                                     uint32_t aDispatchFlags) {
+  if (!mInitialized) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIThreadPool> backgroundTarget(mBackgroundEventTarget);
+  return backgroundTarget->Dispatch(aEvent, aDispatchFlags);
 }
 
 nsThread* nsThreadManager::GetCurrentThread() {
