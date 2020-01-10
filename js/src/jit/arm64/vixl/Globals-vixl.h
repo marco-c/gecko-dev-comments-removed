@@ -252,6 +252,10 @@ inline void USE(const T1&, const T2&, const T3&, const T4&) {}
 #endif
 
 
+
+
+#define VIXL_INCLUDE_TARGET_A64
+
 #ifdef VIXL_INCLUDE_TARGET_A64
 #define VIXL_INCLUDE_TARGET_AARCH64
 #endif

@@ -2031,6 +2031,9 @@ class Assembler : public MozBaseAssembler {
   void fcvtns(const VRegister& rd, const VRegister& vn);
 
   
+  void fjcvtzs(const Register& rd, const VRegister& vn);
+
+  
   void fcvtnu(const VRegister& rd, const VRegister& vn);
 
   
@@ -4016,6 +4019,12 @@ class Assembler : public MozBaseAssembler {
     return pic_;
   }
 
+  CPUFeatures* GetCPUFeatures() { return &cpu_features_; }
+
+  void SetCPUFeatures(const CPUFeatures& cpu_features) {
+    cpu_features_ = cpu_features;
+  }
+
   bool AllowPageOffsetDependentCode() const {
     return (pic() == PageOffsetDependentCode) ||
            (pic() == PositionDependentCode);
@@ -4118,6 +4127,25 @@ class Assembler : public MozBaseAssembler {
     const CPURegister& rt, const CPURegister& rt2);
   static LoadLiteralOp LoadLiteralOpFor(const CPURegister& rt);
 
+  
+  bool CPUHas(CPUFeatures::Feature feature0,
+              CPUFeatures::Feature feature1 = CPUFeatures::kNone,
+              CPUFeatures::Feature feature2 = CPUFeatures::kNone,
+              CPUFeatures::Feature feature3 = CPUFeatures::kNone) const {
+    return cpu_features_.Has(feature0, feature1, feature2, feature3);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  bool CPUHas(const CPURegister& rt) const;
+  bool CPUHas(const CPURegister& rt, const CPURegister& rt2) const;
+
+  bool CPUHas(SystemRegister sysreg) const;
 
  private:
   static uint32_t FP32ToImm8(float imm);
@@ -4285,6 +4313,8 @@ class Assembler : public MozBaseAssembler {
  protected:
   
   PositionIndependentCodeOption pic_;
+
+  CPUFeatures cpu_features_;
 
 #ifdef DEBUG
   bool finalized_;

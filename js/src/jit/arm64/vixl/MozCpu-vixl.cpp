@@ -31,6 +31,39 @@
 
 namespace vixl {
 
+
+
+void CPU::SetUp() {
+  uint32_t cache_type_register = GetCacheType();
+
+  
+  
+  static const int kDCacheLineSizeShift = 16;
+  static const int kICacheLineSizeShift = 0;
+  static const uint32_t kDCacheLineSizeMask = 0xf << kDCacheLineSizeShift;
+  static const uint32_t kICacheLineSizeMask = 0xf << kICacheLineSizeShift;
+
+  
+  
+  uint32_t dcache_line_size_power_of_two =
+      (cache_type_register & kDCacheLineSizeMask) >> kDCacheLineSizeShift;
+  uint32_t icache_line_size_power_of_two =
+      (cache_type_register & kICacheLineSizeMask) >> kICacheLineSizeShift;
+
+  dcache_line_size_ = 4 << dcache_line_size_power_of_two;
+  icache_line_size_ = 4 << icache_line_size_power_of_two;
+
+  
+  
+  
+  
+  
+  const uint32_t conservative_line_size = 32;
+  dcache_line_size_ = std::min(dcache_line_size_, conservative_line_size);
+  icache_line_size_ = std::min(icache_line_size_, conservative_line_size);
+}
+
+
 uint32_t CPU::GetCacheType() {
 #if defined(__aarch64__) && !defined(_MSC_VER)
   uint64_t cache_type_register;
@@ -38,7 +71,7 @@ uint32_t CPU::GetCacheType() {
   __asm__ __volatile__ ("mrs %[ctr], ctr_el0"  
                         : [ctr] "=r" (cache_type_register));
   VIXL_ASSERT(IsUint32(cache_type_register));
-  return cache_type_register;
+  return static_cast<uint32_t>(cache_type_register);
 #else
   
   
