@@ -56,10 +56,6 @@ class GeckoViewHistory final : public mozilla::IHistory,
 
   
   
-  nsDataHashtable<nsURIHashKey, TrackedURI> mTrackedURIs;
-
-  
-  
   nsTHashtable<nsURIHashKey> mNewURIs;
 
   nsCOMPtr<nsITimer> mQueryVisitedStateTimer;

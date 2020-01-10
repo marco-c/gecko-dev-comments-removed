@@ -195,8 +195,6 @@ class History final : public IHistory,
   
   Mutex mShutdownMutex;
 
-  nsDataHashtable<nsURIHashKey, TrackedURI> mTrackedURIs;
-
   
 
 
