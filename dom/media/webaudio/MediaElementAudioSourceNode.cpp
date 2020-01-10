@@ -14,7 +14,8 @@ namespace mozilla {
 namespace dom {
 
 MediaElementAudioSourceNode::MediaElementAudioSourceNode(AudioContext* aContext)
-    : MediaStreamAudioSourceNode(aContext) {}
+    : MediaStreamAudioSourceNode(aContext, TrackChangeBehavior::FollowChanges) {
+}
 
 
 already_AddRefed<MediaElementAudioSourceNode>
