@@ -209,7 +209,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   struct Indentation {
     
     
-    int32_t mWidth = 0;
+    int32_t mLength = 0;
 
     
     
@@ -232,7 +232,8 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     
     uint32_t DeterminePrefixWidth() const {
       
-      return (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) + mIndentation.mWidth;
+      return (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) +
+             mIndentation.mLength;
     }
 
     Indentation mIndentation;
