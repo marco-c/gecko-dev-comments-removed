@@ -594,7 +594,6 @@ class ContextMenuChild extends JSWindowActorChild {
     
     
     
-    aEvent.preventDefault();
     aEvent.stopPropagation();
 
     this.sendAsyncMessage("contextmenu", data);
