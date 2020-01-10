@@ -13,10 +13,10 @@ const { MessagePort } = ChromeUtils.import(
 
 
 class ChildMessagePort extends MessagePort {
-  constructor(contentFrame, window) {
+  constructor(actor, window) {
     let portID =
       Services.appinfo.processID + ":" + ChildMessagePort.nextPortID++;
-    super(contentFrame, portID);
+    super(actor, portID);
 
     this.window = window;
 
@@ -65,6 +65,12 @@ class ChildMessagePort extends MessagePort {
     Cu.exportFunction(this.addToHistogram.bind(this), window, {
       defineAs: "RPMAddToHistogram",
     });
+
+    
+    
+    if (!(this.messageManager instanceof Ci.nsIMessageSender)) {
+      return;
+    }
 
     
     let loadListener = () => {
