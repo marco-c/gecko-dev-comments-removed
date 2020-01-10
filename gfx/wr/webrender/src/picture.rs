@@ -3073,7 +3073,13 @@ impl PicturePrimitive {
                                 
                                 let scissor_rect = tile.world_dirty_rect.translate(
                                     -tile.world_rect.origin.to_vector()
-                                ) * device_pixel_scale;
+                                );
+                                
+                                
+                                
+                                
+                                
+                                let scissor_rect = (scissor_rect * device_pixel_scale).round();
                                 let cache_item = frame_state.resource_cache.texture_cache.get(handle);
 
                                 let task = RenderTask::new_picture(
