@@ -94,5 +94,10 @@ add_task(async function() {
   await toggleNode(dbg, "0");
   ok(findNodeValue(dbg, "foo"), "foo");
   await toggleNode(dbg, "var_weakset");
+
+  
+  
+  
+  await toggleScopes(dbg);
   await waitForRequestsToSettle(dbg);
 });
