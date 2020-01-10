@@ -5168,7 +5168,7 @@ pref("extensions.webextensions.enablePerformanceCounters", true);
 pref("extensions.webextensions.performanceCountersMaxAge", 5000);
 
 
-pref("extensions.htmlaboutaddons.enabled", false);
+pref("extensions.htmlaboutaddons.enabled", true);
 
 pref("extensions.htmlaboutaddons.inline-options.enabled", true);
 
