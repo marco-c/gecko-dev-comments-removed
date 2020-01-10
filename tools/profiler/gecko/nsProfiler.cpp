@@ -27,6 +27,7 @@
 #include "nsIWebNavigation.h"
 #include "nsLocalFile.h"
 #include "nsMemory.h"
+#include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "shared-libraries.h"
@@ -180,6 +181,83 @@ nsProfiler::AddMarker(const char* aMarker) {
 NS_IMETHODIMP
 nsProfiler::ClearAllPages() {
   profiler_clear_all_pages();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsProfiler::WaitOnePeriodicSampling(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (NS_WARN_IF(!aCx)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aCx);
+  if (NS_WARN_IF(!globalObject)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise = Promise::Create(globalObject, result);
+  if (NS_WARN_IF(result.Failed())) {
+    return result.StealNSResult();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!profiler_callback_after_sampling(
+          [promiseHandleInSampler = nsMainThreadPtrHandle<Promise>(
+               new nsMainThreadPtrHolder<Promise>(
+                   "WaitOnePeriodicSampling promise for Sampler", promise))](
+              SamplingState aSamplingState) mutable {
+            SystemGroup::Dispatch(
+                TaskCategory::Other,
+                NS_NewRunnableFunction(
+                    "nsProfiler::WaitOnePeriodicSampling result on main thread",
+                    [promiseHandleInMT = std::move(promiseHandleInSampler),
+                     aSamplingState]() {
+                      AutoJSAPI jsapi;
+                      if (NS_WARN_IF(!jsapi.Init(
+                              promiseHandleInMT->GetGlobalObject()))) {
+                        
+                        
+                        promiseHandleInMT->MaybeReject(
+                            NS_ERROR_DOM_UNKNOWN_ERR);
+                        return;
+                      }
+
+                      switch (aSamplingState) {
+                        case SamplingState::JustStopped:
+                        case SamplingState::SamplingPaused:
+                          promiseHandleInMT->MaybeReject(NS_ERROR_FAILURE);
+                          break;
+
+                        case SamplingState::NoStackSamplingCompleted:
+                        case SamplingState::SamplingCompleted: {
+                          JS::RootedValue val(jsapi.cx());
+                          promiseHandleInMT->MaybeResolve(val);
+                        } break;
+
+                        default:
+                          MOZ_ASSERT(false, "Unexpected SamplingState value");
+                          promiseHandleInMT->MaybeReject(
+                              NS_ERROR_DOM_UNKNOWN_ERR);
+                          break;
+                      }
+                    }));
+          })) {
+    
+    
+    promise->MaybeReject(NS_ERROR_DOM_UNKNOWN_ERR);
+  }
+
+  promise.forget(aPromise);
   return NS_OK;
 }
 
