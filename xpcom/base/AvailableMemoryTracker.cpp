@@ -9,9 +9,9 @@
 #if defined(XP_WIN)
 #  include "mozilla/WindowsVersion.h"
 #  include "nsExceptionHandler.h"
-#  include "nsICrashReporter.h"
 #  include "nsIMemoryReporter.h"
 #  include "nsMemoryPressure.h"
+#  include "memoryapi.h"
 #endif
 
 #include "nsIObserver.h"
@@ -22,6 +22,7 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
+#include "mozilla/Mutex.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
@@ -51,13 +52,19 @@ typedef struct _HEAP_OPTIMIZE_RESOURCES_INFORMATION {
 } HEAP_OPTIMIZE_RESOURCES_INFORMATION, *PHEAP_OPTIMIZE_RESOURCES_INFORMATION;
 #  endif
 
-Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowVirtualMemEvents;
-Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowCommitSpaceEvents;
+Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowPhysicalMemEvents;
+
+
+
+
+
+
+
 
 class nsAvailableMemoryWatcher final : public nsIObserver,
                                        public nsITimerCallback {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITIMERCALLBACK
 
@@ -66,40 +73,39 @@ class nsAvailableMemoryWatcher final : public nsIObserver,
 
  private:
   
-  
-#  if defined(HAVE_64BIT_BUILD)
-  static const size_t kLowVirtualMemoryThreshold = 0;
-#  else
-  static const size_t kLowVirtualMemoryThreshold = 384 * 1024 * 1024;
-#  endif
-
-  
-  
-  static const size_t kLowCommitSpaceThreshold = 384 * 1024 * 1024;
-
-  
   static const uint32_t kLowMemoryNotificationIntervalMS = 10000;
-
-  
-  static const uint32_t kPollingIntervalMS = 1000;
 
   
   static const char* const kObserverTopics[];
 
-  static bool IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat);
-  static bool IsCommitSpaceLow(const MEMORYSTATUSEX& aStat);
+  static VOID CALLBACK LowMemoryCallback(PVOID aContext, BOOLEAN aIsTimer);
+  static void RecordLowMemoryEvent();
 
   ~nsAvailableMemoryWatcher(){};
-  bool OngoingMemoryPressure() { return mUnderMemoryPressure; }
-  void AdjustPollingInterval(const bool aLowMemory);
-  void SendMemoryPressureEvent();
-  void MaybeSendMemoryPressureStopEvent();
-  void MaybeSaveMemoryReport();
-  void Shutdown();
+  bool RegisterMemoryResourceHandler();
+  void UnregisterMemoryResourceHandler();
+  void Shutdown(const MutexAutoLock&);
+  bool ListenForLowMemory();
+  void OnLowMemory(const MutexAutoLock&);
+  void OnHighMemory(const MutexAutoLock&);
+  bool IsMemoryLow() const;
+  void StartPollingIfUserInteracting();
+  void StopPolling();
+  void StopPollingIfUserIdle(const MutexAutoLock&);
+  void OnUserInteracting(const MutexAutoLock&);
+  void OnUserIdle(const MutexAutoLock&);
 
+  
+  
+  
+  
+  Mutex mMutex;
   nsCOMPtr<nsITimer> mTimer;
+  HANDLE mLowMemoryHandle;
+  HANDLE mWaitHandle;
+  bool mPolling;
+  bool mInteracting;
   bool mUnderMemoryPressure;
-  bool mSavedReport;
 };
 
 const char* const nsAvailableMemoryWatcher::kObserverTopics[] = {
@@ -111,7 +117,13 @@ const char* const nsAvailableMemoryWatcher::kObserverTopics[] = {
 NS_IMPL_ISUPPORTS(nsAvailableMemoryWatcher, nsIObserver, nsITimerCallback)
 
 nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
-    : mTimer(nullptr), mUnderMemoryPressure(false), mSavedReport(false) {}
+    : mMutex("low memory callback mutex"),
+      mTimer(nullptr),
+      mLowMemoryHandle(nullptr),
+      mWaitHandle(nullptr),
+      mPolling(false),
+      mInteracting(false),
+      mUnderMemoryPressure(false) {}
 
 nsresult nsAvailableMemoryWatcher::Init() {
   mTimer = NS_NewTimer();
@@ -119,18 +131,62 @@ nsresult nsAvailableMemoryWatcher::Init() {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   MOZ_ASSERT(observerService);
 
+  if (!RegisterMemoryResourceHandler()) {
+    return NS_ERROR_FAILURE;
+  }
+
   for (auto topic : kObserverTopics) {
     nsresult rv = observerService->AddObserver(this, topic,
                                                 false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  MOZ_TRY(mTimer->InitWithCallback(this, kPollingIntervalMS,
-                                   nsITimer::TYPE_REPEATING_SLACK));
   return NS_OK;
 }
 
-void nsAvailableMemoryWatcher::Shutdown() {
+
+VOID CALLBACK nsAvailableMemoryWatcher::LowMemoryCallback(PVOID aContext,
+                                                          BOOLEAN aIsTimer) {
+  nsAvailableMemoryWatcher* watcher =
+      static_cast<nsAvailableMemoryWatcher*>(aContext);
+  if (!aIsTimer) {
+    MutexAutoLock lock(watcher->mMutex);
+    watcher->OnLowMemory(lock);
+  }
+}
+
+
+void nsAvailableMemoryWatcher::RecordLowMemoryEvent() {
+  sNumLowPhysicalMemEvents++;
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::LowPhysicalMemoryEvents,
+      sNumLowPhysicalMemEvents);
+}
+
+bool nsAvailableMemoryWatcher::RegisterMemoryResourceHandler(void) {
+  mLowMemoryHandle =
+      ::CreateMemoryResourceNotification(LowMemoryResourceNotification);
+
+  if (!mLowMemoryHandle) {
+    return false;
+  }
+
+  return ListenForLowMemory();
+}
+
+void nsAvailableMemoryWatcher::UnregisterMemoryResourceHandler() {
+  if (mWaitHandle) {
+    Unused << ::UnregisterWait(mWaitHandle);
+    mWaitHandle = nullptr;
+  }
+
+  if (mLowMemoryHandle) {
+    Unused << ::CloseHandle(mLowMemoryHandle);
+    mLowMemoryHandle = nullptr;
+  }
+}
+
+void nsAvailableMemoryWatcher::Shutdown(const MutexAutoLock&) {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   MOZ_ASSERT(observerService);
 
@@ -142,67 +198,74 @@ void nsAvailableMemoryWatcher::Shutdown() {
     mTimer->Cancel();
     mTimer = nullptr;
   }
+
+  UnregisterMemoryResourceHandler();
 }
 
-
-bool nsAvailableMemoryWatcher::IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat) {
-  if ((kLowVirtualMemoryThreshold != 0) &&
-      (aStat.ullAvailVirtual < kLowVirtualMemoryThreshold)) {
-    sNumLowVirtualMemEvents++;
-    return true;
+bool nsAvailableMemoryWatcher::ListenForLowMemory(void) {
+  if (mLowMemoryHandle && !mWaitHandle) {
+    return ::RegisterWaitForSingleObject(
+        &mWaitHandle, mLowMemoryHandle, LowMemoryCallback, this, INFINITE,
+        WT_EXECUTEDEFAULT | WT_EXECUTEONLYONCE);
   }
 
   return false;
 }
 
+void nsAvailableMemoryWatcher::OnLowMemory(const MutexAutoLock&) {
+  mUnderMemoryPressure = true;
+  ::UnregisterWait(mWaitHandle);
+  mWaitHandle = nullptr;
+  RecordLowMemoryEvent();
+  NS_DispatchEventualMemoryPressure(MemPressure_New);
+  StartPollingIfUserInteracting();
+}
 
-bool nsAvailableMemoryWatcher::IsCommitSpaceLow(const MEMORYSTATUSEX& aStat) {
-  if ((kLowCommitSpaceThreshold != 0) &&
-      (aStat.ullAvailPageFile < kLowCommitSpaceThreshold)) {
-    sNumLowCommitSpaceEvents++;
-    CrashReporter::AnnotateCrashReport(
-        CrashReporter::Annotation::LowCommitSpaceEvents,
-        uint32_t(sNumLowCommitSpaceEvents));
-    return true;
+void nsAvailableMemoryWatcher::OnHighMemory(const MutexAutoLock&) {
+  mUnderMemoryPressure = false;
+  NS_DispatchEventualMemoryPressure(MemPressure_Stopping);
+  StopPolling();
+  ListenForLowMemory();
+}
+
+bool nsAvailableMemoryWatcher::IsMemoryLow(void) const {
+  BOOL lowMemory = FALSE;
+  if (::QueryMemoryResourceNotification(mLowMemoryHandle, &lowMemory)) {
+    return lowMemory;
   }
-
   return false;
 }
 
-void nsAvailableMemoryWatcher::SendMemoryPressureEvent() {
-  MemoryPressureState state =
-      OngoingMemoryPressure() ? MemPressure_Ongoing : MemPressure_New;
-  NS_DispatchEventualMemoryPressure(state);
-}
-
-void nsAvailableMemoryWatcher::MaybeSendMemoryPressureStopEvent() {
-  if (OngoingMemoryPressure()) {
-    NS_DispatchEventualMemoryPressure(MemPressure_Stopping);
-  }
-}
-
-void nsAvailableMemoryWatcher::MaybeSaveMemoryReport() {
-  if (!mSavedReport && OngoingMemoryPressure()) {
-    nsCOMPtr<nsICrashReporter> cr =
-        do_GetService("@mozilla.org/toolkit/crash-reporter;1");
-    if (cr) {
-      if (NS_SUCCEEDED(cr->SaveMemoryReport())) {
-        mSavedReport = true;
-      }
+void nsAvailableMemoryWatcher::StartPollingIfUserInteracting(void) {
+  if (mInteracting && !mPolling) {
+    if (NS_SUCCEEDED(
+            mTimer->InitWithCallback(this, kLowMemoryNotificationIntervalMS,
+                                     nsITimer::TYPE_REPEATING_SLACK))) {
+      mPolling = true;
     }
   }
 }
 
-void nsAvailableMemoryWatcher::AdjustPollingInterval(const bool aLowMemory) {
-  if (aLowMemory) {
-    
-    
-    mTimer->SetDelay(kLowMemoryNotificationIntervalMS);
-  } else if (OngoingMemoryPressure()) {
-    
-    
-    mTimer->SetDelay(kPollingIntervalMS);
+void nsAvailableMemoryWatcher::StopPolling(void) {
+  mTimer->Cancel();
+  mPolling = false;
+}
+
+void nsAvailableMemoryWatcher::StopPollingIfUserIdle(const MutexAutoLock&) {
+  if (!mInteracting) {
+    StopPolling();
   }
+}
+
+void nsAvailableMemoryWatcher::OnUserInteracting(const MutexAutoLock&) {
+  mInteracting = true;
+  if (mUnderMemoryPressure) {
+    StartPollingIfUserInteracting();
+  }
+}
+
+void nsAvailableMemoryWatcher::OnUserIdle(const MutexAutoLock&) {
+  mInteracting = false;
 }
 
 
@@ -210,27 +273,13 @@ void nsAvailableMemoryWatcher::AdjustPollingInterval(const bool aLowMemory) {
 
 NS_IMETHODIMP
 nsAvailableMemoryWatcher::Notify(nsITimer* aTimer) {
-  MEMORYSTATUSEX stat;
-  stat.dwLength = sizeof(stat);
-  bool success = GlobalMemoryStatusEx(&stat);
+  MutexAutoLock lock(mMutex);
+  StopPollingIfUserIdle(lock);
 
-  if (success) {
-    bool lowMemory = IsVirtualMemoryLow(stat) || IsCommitSpaceLow(stat);
-
-    if (lowMemory) {
-      SendMemoryPressureEvent();
-    } else {
-      MaybeSendMemoryPressureStopEvent();
-    }
-
-    if (lowMemory) {
-      MaybeSaveMemoryReport();
-    } else {
-      mSavedReport = false;  
-    }
-
-    AdjustPollingInterval(lowMemory);
-    mUnderMemoryPressure = lowMemory;
+  if (IsMemoryLow()) {
+    NS_DispatchEventualMemoryPressure(MemPressure_Ongoing);
+  } else {
+    OnHighMemory(lock);
   }
 
   return NS_OK;
@@ -242,13 +291,14 @@ nsAvailableMemoryWatcher::Notify(nsITimer* aTimer) {
 NS_IMETHODIMP
 nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
                                   const char16_t* aData) {
+  MutexAutoLock lock(mMutex);
+
   if (strcmp(aTopic, "quit-application") == 0) {
-    Shutdown();
+    Shutdown(lock);
   } else if (strcmp(aTopic, "user-interaction-inactive") == 0) {
-    mTimer->Cancel();
+    OnUserIdle(lock);
   } else if (strcmp(aTopic, "user-interaction-active") == 0) {
-    mTimer->InitWithCallback(this, kPollingIntervalMS,
-                             nsITimer::TYPE_REPEATING_SLACK);
+    OnUserInteracting(lock);
   } else {
     MOZ_ASSERT_UNREACHABLE("Unknown topic");
   }
@@ -256,12 +306,8 @@ nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-static int64_t LowMemoryEventsVirtualDistinguishedAmount() {
-  return sNumLowVirtualMemEvents;
-}
-
-static int64_t LowMemoryEventsCommitSpaceDistinguishedAmount() {
-  return sNumLowCommitSpaceEvents;
+static int64_t LowMemoryEventsPhysicalDistinguishedAmount() {
+  return sNumLowPhysicalMemEvents;
 }
 
 class LowEventsReporter final : public nsIMemoryReporter {
@@ -274,22 +320,12 @@ class LowEventsReporter final : public nsIMemoryReporter {
                             nsISupports* aData, bool aAnonymize) override {
     
     MOZ_COLLECT_REPORT(
-      "low-memory-events/virtual", KIND_OTHER, UNITS_COUNT_CUMULATIVE,
-      LowMemoryEventsVirtualDistinguishedAmount(),
-"Number of low-virtual-memory events fired since startup. We fire such an "
-"event if we notice there is less than predefined amount of virtual address "
-"space available (if zero, this behavior is disabled, see "
-"xpcom/base/AvailableMemoryTracker.cpp). The process will probably crash if "
-"it runs out of virtual address space, so this event is dire.");
-
-    MOZ_COLLECT_REPORT(
-      "low-memory-events/commit-space", KIND_OTHER, UNITS_COUNT_CUMULATIVE,
-      LowMemoryEventsCommitSpaceDistinguishedAmount(),
-"Number of low-commit-space events fired since startup. We fire such an "
-"event if we notice there is less than a predefined amount of commit space "
-"available (if zero, this behavior is disabled, see "
-"xpcom/base/AvailableMemoryTracker.cpp). Windows will likely kill the process "
-"if it runs out of commit space, so this event is dire.");
+      "low-memory-events/physical", KIND_OTHER, UNITS_COUNT_CUMULATIVE,
+      LowMemoryEventsPhysicalDistinguishedAmount(),
+"Number of low-physical-memory events fired since startup. We fire such an "
+"event when a windows low memory resource notification is signaled. The "
+"machine will start to page if it runs out of physical memory.  This may "
+"cause it to run slowly, but it shouldn't cause it to crash.");
     
 
     return NS_OK;
@@ -405,11 +441,8 @@ void Init() {
   watcher->Init();
 
 #if defined(XP_WIN)
-  RegisterStrongMemoryReporter(new LowEventsReporter());
-  RegisterLowMemoryEventsVirtualDistinguishedAmount(
-      LowMemoryEventsVirtualDistinguishedAmount);
-  RegisterLowMemoryEventsCommitSpaceDistinguishedAmount(
-      LowMemoryEventsCommitSpaceDistinguishedAmount);
+  RegisterLowMemoryEventsPhysicalDistinguishedAmount(
+      LowMemoryEventsPhysicalDistinguishedAmount);
 
   if (XRE_IsParentProcess()) {
     RefPtr<nsAvailableMemoryWatcher> poller = new nsAvailableMemoryWatcher();
