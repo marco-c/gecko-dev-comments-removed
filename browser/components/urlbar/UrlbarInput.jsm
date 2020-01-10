@@ -1233,17 +1233,28 @@ class UrlbarInput {
       uri = this.window.gBrowser.currentURI;
     } else {
       
-      
-      
-      
-      
-      
+      if (!this._resultForCurrentValue) {
+        throw new Error(
+          "UrlbarInput: Should have a UrlbarResult since " +
+            "pageproxystate != 'valid' and valueIsTyped == false"
+        );
+      }
+      let resultURL = this._resultForCurrentValue.payload.url;
+      if (!resultURL) {
+        return selectedVal;
+      }
+
       try {
-        uri = Services.io.newURI(this._untrimmedValue);
-      } catch (ex) {
+        uri = Services.uriFixup.createFixupURI(
+          resultURL,
+          Services.uriFixup.FIXUP_FLAG_NONE
+        );
+      } catch (e) {}
+      if (!uri) {
         return selectedVal;
       }
     }
+
     uri = this.makeURIReadable(uri);
 
     
