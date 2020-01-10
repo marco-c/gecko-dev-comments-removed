@@ -43,7 +43,9 @@ body {
   float: left;
   min-width: 100%;
   
-  padding-left: 5px;
+
+  padding-left: 6px;
+  box-sizing: border-box;
 }
 
 
@@ -111,8 +113,8 @@ body.dragging .tag-line {
 
 
 .child {
-  margin-left: -1000em;
-  padding-left: 1001em;
+  margin-left: -10000px;
+  padding-left: 10011px;
 }
 
 
@@ -156,19 +158,19 @@ ul.children + .tag-line::before {
   font-size: var(--theme-code-font-size);
   min-height: 1.2727em;
   line-height: 1.2727em;
+  padding-block: 1px;
   position: relative;
   cursor: default;
-  padding: 1px 0 1px 2px;
 }
 
 .tag-line[selected] + .children,
 .tag-line[selected] ~ .tag-line {
   background-image: linear-gradient(to top, var(--markup-outline), var(--markup-outline));
-  background-position-x: -6px;
+  background-position: 0 0;
   background-repeat: no-repeat;
   background-size: 1.5px 100%;
-  border-left: 6px solid transparent;
-  margin-left: -6px;
+  padding-left: 8px;
+  margin-left: -8px;
 }
 
 .tag-line[selected] + .children {
@@ -181,16 +183,23 @@ ul.children + .tag-line::before {
   transition-property: none;
 }
 
+
+
+
+
+
+
 .markup-tag-mutation-marker {
   display: none;
   position: absolute;
   top: 2px;
+  left: calc(var(--markup-level, 1) * -11px);
+  margin-left: -8px;
   height: 12px;
   width: 12px;
   background-image: url(resource://devtools/client/debugger/images/markup-breakpoint.svg);
   background-repeat: no-repeat;
   background-size: 12px 12px;
-  margin-left: -7px;
   background-position: right center;
   -moz-context-properties: fill, stroke;
   fill: var(--blue-50);
