@@ -88,16 +88,16 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
     const [, threadFront] = await target.attachThread();
     await threadFront.resume();
 
-    const webConsoleClient = target.activeConsole;
+    const webConsoleFront = target.activeConsole;
 
     
     
-    const response = await webConsoleClient.startListeners(listeners);
+    const response = await webConsoleFront.startListeners(listeners);
     return {
       state: {
         dbgClient: client,
-        client: webConsoleClient,
-        actor: webConsoleClient.actor,
+        webConsoleFront,
+        actor: webConsoleFront.actor,
         
         
         

@@ -39,7 +39,7 @@ async function attachURL(url) {
   const target = await TargetFactory.forTab(tab);
   await target.attach();
   return {
-    consoleClient: target.activeConsole,
+    webConsoleFront: target.activeConsole,
   };
 }
 

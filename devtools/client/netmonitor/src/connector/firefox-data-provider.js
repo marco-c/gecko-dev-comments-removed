@@ -25,9 +25,9 @@ class FirefoxDataProvider {
 
 
 
-  constructor({ webConsoleClient, actions, owner }) {
+  constructor({ webConsoleFront, actions, owner }) {
     
-    this.webConsoleClient = webConsoleClient;
+    this.webConsoleFront = webConsoleFront;
     this.actions = actions || {};
     this.actionsEnabled = true;
     this.owner = owner;
@@ -326,7 +326,7 @@ class FirefoxDataProvider {
 
 
   getNetworkRequest(id) {
-    return this.webConsoleClient.getNetworkRequest(id);
+    return this.webConsoleFront.getNetworkRequest(id);
   }
 
   
@@ -341,7 +341,7 @@ class FirefoxDataProvider {
 
 
   getLongString(stringGrip) {
-    return this.webConsoleClient.getString(stringGrip).then(payload => {
+    return this.webConsoleFront.getString(stringGrip).then(payload => {
       this.emitForTests(EVENTS.LONGSTRING_RESOLVED, { payload });
       return payload;
     });
@@ -609,10 +609,10 @@ class FirefoxDataProvider {
 
     let response = await new Promise((resolve, reject) => {
       
-      if (typeof this.webConsoleClient[clientMethodName] === "function") {
+      if (typeof this.webConsoleFront[clientMethodName] === "function") {
         
         
-        this.webConsoleClient[clientMethodName](
+        this.webConsoleFront[clientMethodName](
           actor.replace("-clone", ""),
           res => {
             if (res.error) {

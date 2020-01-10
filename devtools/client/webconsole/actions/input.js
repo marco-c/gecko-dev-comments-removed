@@ -72,13 +72,13 @@ function evaluateExpression(expression) {
       ? mappedExpressionRes.expression
       : expression;
 
-    const { frameActor, client } = webConsoleUI.getFrameActor();
+    const { frameActor, webConsoleFront } = webConsoleUI.getFrameActor();
 
     
     
     const onSettled = res => res;
 
-    const response = await client
+    const response = await webConsoleFront
       .evaluateJSAsync(expression, {
         frameActor,
         selectedNodeActor: webConsoleUI.getSelectedNodeActor(),

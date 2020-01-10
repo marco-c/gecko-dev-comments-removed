@@ -26,7 +26,10 @@ function autocompleteUpdate(force, getterPath) {
     }
 
     const inputValue = hud.getInputValue();
-    const { frameActor: frameActorId, client } = webConsoleUI.getFrameActor();
+    const {
+      frameActor: frameActorId,
+      webConsoleFront,
+    } = webConsoleUI.getFrameActor();
     const cursor = webConsoleUI.getInputCursor();
 
     const state = getState().autocomplete;
@@ -76,7 +79,7 @@ function autocompleteUpdate(force, getterPath) {
       autocompleteDataFetch({
         input,
         frameActorId,
-        client,
+        webConsoleFront,
         authorizedEvaluations,
         force,
       })
@@ -128,14 +131,14 @@ function autocompleteDataFetch({
   input,
   frameActorId,
   force,
-  client,
+  webConsoleFront,
   authorizedEvaluations,
 }) {
   return ({ dispatch, webConsoleUI }) => {
     const selectedNodeActor = webConsoleUI.getSelectedNodeActor();
     const id = generateRequestId();
     dispatch({ type: AUTOCOMPLETE_PENDING_REQUEST, id });
-    client
+    webConsoleFront
       .autocomplete(
         input,
         undefined,

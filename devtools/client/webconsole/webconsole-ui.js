@@ -73,14 +73,14 @@ class WebConsoleUI {
 
 
 
-  get webConsoleClient() {
+  get webConsoleFront() {
     const proxy = this.getProxy();
 
     if (!proxy) {
       return null;
     }
 
-    return proxy.webConsoleClient;
+    return proxy.webConsoleFront;
   }
 
   
@@ -112,7 +112,7 @@ class WebConsoleUI {
     
     if (filterDisconnectedProxies) {
       proxies = proxies.filter(proxy => {
-        return proxy.webConsoleClient && !!proxy.webConsoleClient.actorID;
+        return proxy.webConsoleFront && !!proxy.webConsoleFront.actorID;
       });
     }
 
@@ -238,13 +238,13 @@ class WebConsoleUI {
 
   clearNetworkRequests() {
     for (const proxy of this.getAllProxies()) {
-      proxy.webConsoleClient.clearNetworkRequests();
+      proxy.webConsoleFront.clearNetworkRequests();
     }
   }
 
   clearMessagesCache() {
     for (const proxy of this.getAllProxies()) {
-      proxy.webConsoleClient.clearMessagesCache();
+      proxy.webConsoleFront.clearMessagesCache();
     }
   }
 
@@ -291,7 +291,7 @@ class WebConsoleUI {
 
 
   async setSaveRequestAndResponseBodies(value) {
-    if (!this.webConsoleClient) {
+    if (!this.webConsoleFront) {
       
       return null;
     }
@@ -302,7 +302,7 @@ class WebConsoleUI {
     };
 
     
-    return this.webConsoleClient.setPreferences(toSet);
+    return this.webConsoleFront.setPreferences(toSet);
   }
 
   
@@ -507,14 +507,11 @@ class WebConsoleUI {
 
 
   evaluateJSAsync(expression, options) {
-    return this.getProxy().webConsoleClient.evaluateJSAsync(
-      expression,
-      options
-    );
+    return this.getProxy().webConsoleFront.evaluateJSAsync(expression, options);
   }
 
   getLongString(grip) {
-    this.getProxy().webConsoleClient.getString(grip);
+    this.getProxy().webConsoleFront.getString(grip);
   }
 
   
@@ -578,22 +575,21 @@ class WebConsoleUI {
 
 
 
-
   getFrameActor() {
     const state = this.hud.getDebuggerFrames();
     if (!state) {
-      return { frameActor: null, client: this.webConsoleClient };
+      return { frameActor: null, webConsoleFront: this.webConsoleFront };
     }
 
     const grip = state.frames[state.selected];
 
     if (!grip) {
-      return { frameActor: null, client: this.webConsoleClient };
+      return { frameActor: null, webConsoleFront: this.webConsoleFront };
     }
 
     return {
       frameActor: grip.actor,
-      client: state.target.activeConsole,
+      webConsoleFront: state.target.activeConsole,
     };
   }
 
