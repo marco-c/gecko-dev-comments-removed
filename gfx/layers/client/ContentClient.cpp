@@ -84,15 +84,20 @@ already_AddRefed<ContentClient> ContentClient::CreateContentClient(
     useDoubleBuffering = gfxWindowsPlatform::GetPlatform()->IsDirect2DBackend();
   } else
 #endif
-#ifdef MOZ_WIDGET_GTK
-      
-      
-      
-      if (!gfxPlatformGtk::GetPlatform()->UseImageOffscreenSurfaces() ||
-          !gfxVars::UseXRender())
-#endif
   {
-    useDoubleBuffering = backend == LayersBackend::LAYERS_BASIC;
+#ifdef MOZ_WIDGET_GTK
+    if (gfxPlatformGtk::GetPlatform()->UseWaylandDMABufSurfaces()) {
+      useDoubleBuffering = true;
+    } else
+        
+        
+        
+        if (!gfxPlatformGtk::GetPlatform()->UseImageOffscreenSurfaces() ||
+            !gfxVars::UseXRender())
+#endif
+    {
+      useDoubleBuffering = backend == LayersBackend::LAYERS_BASIC;
+    }
   }
 
   if (useDoubleBuffering || gfxEnv::ForceDoubleBuffering()) {
