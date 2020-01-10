@@ -251,9 +251,6 @@ nsPlainTextSerializer::nsPlainTextSerializer()
   }
 
   
-  mWrapColumn = 72;  
-
-  
   mEmptyLines = 1;  
   mInWhitespace = false;
   mPreFormattedMail = false;
@@ -318,7 +315,8 @@ nsPlainTextSerializer::Settings::Convert(const int32_t aPrefHeaderStrategy) {
 
 const int32_t kDefaultHeaderStrategy = 1;
 
-void nsPlainTextSerializer::Settings::Init(const int32_t aFlags) {
+void nsPlainTextSerializer::Settings::Init(const int32_t aFlags,
+                                           const uint32_t aWrapColumn) {
   mFlags = aFlags;
 
   if (mFlags & nsIDocumentEncoder::OutputFormatted) {
@@ -338,6 +336,8 @@ void nsPlainTextSerializer::Settings::Init(const int32_t aFlags) {
 
   
   mFlags &= ~nsIDocumentEncoder::OutputNoFramesContent;
+
+  mWrapColumn = aWrapColumn;
 }
 
 NS_IMETHODIMP
@@ -363,9 +363,8 @@ nsPlainTextSerializer::Init(const uint32_t aFlags, uint32_t aWrapColumn,
              (aFlags & nsIDocumentEncoder::OutputFormatFlowed));
 
   *aNeedsPreformatScanning = true;
-  mSettings.Init(aFlags);
+  mSettings.Init(aFlags, aWrapColumn);
   mOutputManager.emplace(mSettings.GetFlags(), aOutput);
-  mWrapColumn = aWrapColumn;
 
   if (MayWrap() && MayBreakLines()) {
     mLineBreaker = nsContentUtils::LineBreaker();
@@ -1133,7 +1132,8 @@ void nsPlainTextSerializer::DoAddText(bool aIsLineBreak,
     
     
     if (mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) ||
-        (mPreFormattedMail && !mWrapColumn) || IsElementPreformatted()) {
+        (mPreFormattedMail && !mSettings.GetWrapColumn()) ||
+        IsElementPreformatted()) {
       EnsureVerticalSpace(mEmptyLines + 1);
     } else if (!mInWhitespace) {
       Write(kSpace);
@@ -1185,7 +1185,7 @@ nsresult nsPlainTextSerializer::DoAddLeaf(const nsAtom* aTag) {
     
     
     nsAutoString line;
-    CreateLineOfDashes(line, mWrapColumn);
+    CreateLineOfDashes(line, mSettings.GetWrapColumn());
     Write(line);
 
     EnsureVerticalSpace(0);
@@ -1263,11 +1263,12 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
   
   
   
-  uint32_t bonuswidth = (mWrapColumn > 20) ? 4 : 0;
+  const uint32_t wrapColumn = mSettings.GetWrapColumn();
+  uint32_t bonuswidth = (wrapColumn > 20) ? 4 : 0;
 
-  while (currentLineContentWidth + prefixwidth > mWrapColumn + bonuswidth) {
+  while (currentLineContentWidth + prefixwidth > wrapColumn + bonuswidth) {
     const int32_t goodSpace = mCurrentLine.FindWrapIndexForContent(
-        mWrapColumn, currentLineContentWidth, mLineBreaker);
+        wrapColumn, currentLineContentWidth, mLineBreaker);
 
     const int32_t contentLength = mCurrentLine.mContent.Length();
     if ((goodSpace < contentLength) && (goodSpace > 0)) {
@@ -1572,7 +1573,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
 
 #ifdef DEBUG_wrapping
   printf("Write(%s): wrap col = %d\n", NS_ConvertUTF16toUTF8(str).get(),
-         mWrapColumn);
+         mSettings.GetWrapColumn());
 #endif
 
   const int32_t totLen = str.Length();
@@ -1589,7 +1590,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
   
   
   
-  if ((mPreFormattedMail && !mWrapColumn) ||
+  if ((mPreFormattedMail && !mSettings.GetWrapColumn()) ||
       (IsElementPreformatted() && !mPreFormattedMail) ||
       (mSpanLevel > 0 && mEmptyLines >= 0 && IsQuotedLine(str))) {
     

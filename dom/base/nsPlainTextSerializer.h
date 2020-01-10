@@ -126,7 +126,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   
   inline bool MayWrap() const {
-    return mWrapColumn &&
+    return mSettings.GetWrapColumn() &&
            mSettings.HasFlag(nsIDocumentEncoder::OutputFormatted |
                              nsIDocumentEncoder::OutputWrap);
   }
@@ -170,7 +170,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     
     
     
-    void Init(int32_t aFlags);
+    void Init(int32_t aFlags, uint32_t aWrapColumn);
 
     
     bool GetStructs() const { return mStructs; }
@@ -188,6 +188,8 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     
     bool GetWithRubyAnnotation() const { return mWithRubyAnnotation; }
 
+    uint32_t GetWrapColumn() const { return mWrapColumn; }
+
    private:
     
     static HeaderStrategy Convert(int32_t aPrefHeaderStrategy);
@@ -204,6 +206,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
     
     bool mWithRubyAnnotation = false;
+
+    
+    
+    
+    
+    uint32_t mWrapColumn = 0;
   };
 
   Settings mSettings;
@@ -308,11 +316,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   bool mHasWrittenCiteBlockquote;
 
   int32_t mFloatingLines;  
-
-  
-  
-  
-  uint32_t mWrapColumn;
 
   
   
