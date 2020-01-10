@@ -299,7 +299,7 @@ var gPermissionManager = {
 
   _loadPermissions() {
     
-    for (let nextPermission of Services.perms.enumerator) {
+    for (let nextPermission of Services.perms.all) {
       this._addPermissionToList(nextPermission);
     }
   },

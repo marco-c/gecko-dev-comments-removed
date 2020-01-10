@@ -793,7 +793,7 @@ var ThirdPartyCookies = {
 
     
     
-    for (let perm of Services.perms.enumerator) {
+    for (let perm of Services.perms.all) {
       if (
         perm.type == "cookie" &&
         Services.eTLD.hasRootDomain(host, perm.principal.URI.host)
