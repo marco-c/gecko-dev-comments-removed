@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 #include "nsStyleConsts.h"
-#include "nsStyleCoord.h"  
 #include "mozilla/dom/WindowBinding.h"
 
 

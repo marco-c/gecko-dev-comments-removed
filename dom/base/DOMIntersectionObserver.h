@@ -1,15 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef DOMIntersectionObserver_h
 #define DOMIntersectionObserver_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/IntersectionObserverBinding.h"
-#include "nsStyleCoord.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "nsTArray.h"
 
 using mozilla::dom::DOMRect;
@@ -151,7 +151,7 @@ class DOMIntersectionObserver final : public nsISupports,
   StyleRect<LengthPercentage> mRootMargin;
   nsTArray<double> mThresholds;
 
-  
+  // Holds raw pointers which are explicitly cleared by UnlinkTarget().
   nsTArray<Element*> mObservationTargets;
 
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
@@ -161,7 +161,7 @@ class DOMIntersectionObserver final : public nsISupports,
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMIntersectionObserver,
                               NS_DOM_INTERSECTION_OBSERVER_IID)
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
 #endif

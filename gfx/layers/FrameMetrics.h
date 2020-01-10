@@ -22,7 +22,7 @@
 #include "mozilla/StaticPtr.h"                   
 #include "mozilla/TimeStamp.h"                   
 #include "nsString.h"
-#include "nsStyleCoord.h"  
+#include "mozilla/ServoStyleConsts.h"
 #include "PLDHashTable.h"  
 
 struct nsStyleDisplay;
