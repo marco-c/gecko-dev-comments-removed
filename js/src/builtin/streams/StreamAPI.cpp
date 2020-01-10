@@ -16,6 +16,7 @@
 #include "jstypes.h"      
 
 #include "builtin/Stream.h"  
+#include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "gc/Zone.h"        
 #include "js/GCAPI.h"       
