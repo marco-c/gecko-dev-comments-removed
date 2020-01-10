@@ -2791,8 +2791,6 @@ struct AudioUnitStream<'ctx> {
     
     input_hw_rate: f64,
     output_hw_rate: f64,
-    
-    expected_output_callbacks_in_a_row: i32,
     mutex: OwnedCriticalSection,
     
     
@@ -2870,7 +2868,6 @@ impl<'ctx> AudioUnitStream<'ctx> {
             output_unit: ptr::null_mut(),
             input_hw_rate: 0_f64,
             output_hw_rate: 0_f64,
-            expected_output_callbacks_in_a_row: 0,
             mutex: OwnedCriticalSection::new(),
             input_linear_buffer: None,
             frames_played: AtomicU64::new(0),
@@ -4200,14 +4197,6 @@ impl<'ctx> AudioUnitStream<'ctx> {
                     Ordering::SeqCst,
                 );
             }
-        }
-
-        if !self.input_unit.is_null() && !self.output_unit.is_null() {
-            
-            
-            
-            self.expected_output_callbacks_in_a_row =
-                (self.output_hw_rate / self.input_hw_rate).ceil() as i32
         }
 
         if self.install_device_changed_callback().is_err() {
