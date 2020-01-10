@@ -55,8 +55,15 @@ MOZ_STATIC_ASSERT(sizeof(BLOCKSIZE) <
 
 #ifdef XP_WIN
 #include <winsock2.h>
+#ifdef __MINGW32__
+
+
+#define ftello ftello64
+#define fseeko fseeko64
+#else
 #define ftello _ftelli64
 #define fseeko _fseeki64
+#endif
 #else
 #define _FILE_OFFSET_BITS 64
 #include <netinet/in.h>
