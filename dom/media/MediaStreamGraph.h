@@ -1297,6 +1297,9 @@ class MediaStreamGraph {
   virtual bool OnGraphThread() const = 0;
 
   
+  virtual bool Destroyed() const = 0;
+
+  
 
 
 

@@ -119,6 +119,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   bool OnGraphThreadOrNotRunning() const override;
   bool OnGraphThread() const override;
 
+  bool Destroyed() const override;
+
 #ifdef DEBUG
   
 
