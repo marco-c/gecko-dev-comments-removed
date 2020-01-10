@@ -173,7 +173,7 @@ var UrlbarTestUtils = {
 
 
   getSelectedElement(win) {
-    return win.gURLBar.view._selectedElement || null;
+    return win.gURLBar.view.selectedElement || null;
   },
 
   
