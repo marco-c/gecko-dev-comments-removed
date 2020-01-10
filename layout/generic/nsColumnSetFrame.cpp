@@ -422,6 +422,7 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   config.mColGap = colGap;
   config.mColMaxBSize = colBSize;
   config.mIsBalancing = isBalancing;
+  config.mForceAuto = aForceAuto;
   config.mKnownFeasibleBSize = NS_UNCONSTRAINEDSIZE;
   config.mKnownInfeasibleBSize = 0;
   config.mComputedBSize = computedBSize;
@@ -888,7 +889,52 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       colData.mHasExcessBSize = true;
     }
 
-    if (columnCount >= aConfig.mUsedColCount - 1 && aConfig.mIsBalancing) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (columnCount >= aConfig.mUsedColCount - 1 &&
+        (aConfig.mIsBalancing ||
+         (StaticPrefs::layout_css_column_span_enabled() &&
+          !aConfig.mForceAuto &&
+          !aReflowInput.mFlags.mColumnSetWrapperHasNoBSizeLeft))) {
+      NS_ASSERTION(aConfig.mIsBalancing ||
+                       aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
+                   "Why are we here if we have unlimited block-size to fill "
+                   "columns sequentially.");
+
       
       aStatus.SetNextInFlowNeedsReflow();
       kidNextInFlow->MarkSubtreeDirty();
@@ -899,6 +945,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
         SetOverflowFrames(continuationColumns);
       }
       child = nullptr;
+
+      COLUMN_SET_LOG("%s: We are not going to create overflow columns.",
+                     __func__);
       break;
     }
 

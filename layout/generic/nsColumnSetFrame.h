@@ -111,6 +111,10 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
     
     
+    bool mForceAuto = false;
+
+    
+    
     nscoord mKnownFeasibleBSize = NS_UNCONSTRAINEDSIZE;
 
     
