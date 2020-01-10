@@ -1,17 +1,11 @@
 
 
-import os
-
-tooltool_url = 'http://taskcluster/tooltool.mozilla-releng.net/'
-if os.environ.get('TASKCLUSTER_ROOT_URL', 'https://taskcluster.net') != 'https://taskcluster.net':
-    
-    tooltool_url = 'http://taskcluster/tooltool.staging.mozilla-releng.net/'
 
 config = {
     "taskcluster": {
         
-        "tooltool_servers": [tooltool_url],
-        "tooltool_url": tooltool_url,
+        "tooltool_servers": ['http://taskcluster/tooltool.mozilla-releng.net/'],
+        "tooltool_url": 'http://taskcluster/tooltool.mozilla-releng.net/',
         'upload_env': {
             'UPLOAD_PATH': '/builds/worker/artifacts',
         },
