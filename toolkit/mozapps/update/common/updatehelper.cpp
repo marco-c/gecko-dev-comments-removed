@@ -9,6 +9,7 @@
 #ifndef ONLY_SERVICE_LAUNCHING
 
 #  include <stdio.h>
+#  include <direct.h>
 #  include "mozilla/UniquePtr.h"
 #  include "pathhash.h"
 #  include "shlobj.h"
@@ -36,20 +37,218 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
 
 BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
                             LPCWSTR newFileName) {
-  if (wcslen(siblingFilePath) >= MAX_PATH) {
+  if (wcslen(siblingFilePath) > MAX_PATH) {
     return FALSE;
   }
 
-  wcsncpy(destinationBuffer, siblingFilePath, MAX_PATH);
+  wcsncpy(destinationBuffer, siblingFilePath, MAX_PATH + 1);
   if (!PathRemoveFileSpecW(destinationBuffer)) {
     return FALSE;
   }
 
-  if (wcslen(destinationBuffer) + wcslen(newFileName) >= MAX_PATH) {
+  return PathAppendSafe(destinationBuffer, newFileName);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BOOL GetSecureOutputDirectoryPath(LPWSTR outBuf) {
+  PWSTR progFilesX86;
+  if (FAILED(SHGetKnownFolderPath(FOLDERID_ProgramFilesX86, KF_FLAG_CREATE,
+                                  nullptr, &progFilesX86))) {
+    return FALSE;
+  }
+  if (wcslen(progFilesX86) > MAX_PATH) {
+    CoTaskMemFree(progFilesX86);
+    return FALSE;
+  }
+  wcsncpy(outBuf, progFilesX86, MAX_PATH + 1);
+  CoTaskMemFree(progFilesX86);
+
+  if (!PathAppendSafe(outBuf, L"Mozilla Maintenance Service")) {
     return FALSE;
   }
 
-  return PathAppendSafe(destinationBuffer, newFileName);
+  
+  int rv = _wmkdir(outBuf);
+  if (rv && errno != EEXIST) {
+    return FALSE;
+  }
+
+  if (!PathAppendSafe(outBuf, L"UpdateLogs")) {
+    return FALSE;
+  }
+
+  
+  rv = _wmkdir(outBuf);
+  if (rv && errno != EEXIST) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BOOL GetSecureOutputFileName(LPCWSTR patchDirPath, LPCWSTR fileExt,
+                             LPWSTR outBuf) {
+  size_t fullPathLen = wcslen(patchDirPath);
+  if (fullPathLen > MAX_PATH) {
+    return FALSE;
+  }
+
+  size_t relPathLen = wcslen(PATCH_DIR_PATH);
+  if (relPathLen > fullPathLen) {
+    return FALSE;
+  }
+
+  
+  
+  
+  if (_wcsnicmp(patchDirPath + fullPathLen - relPathLen, PATCH_DIR_PATH,
+                relPathLen) != 0) {
+    return FALSE;
+  }
+
+  wcsncpy(outBuf, patchDirPath, MAX_PATH + 1);
+  if (!PathRemoveFileSpecW(outBuf)) {
+    return FALSE;
+  }
+
+  if (!PathRemoveFileSpecW(outBuf)) {
+    return FALSE;
+  }
+
+  PathStripPathW(outBuf);
+
+  size_t outBufLen = wcslen(outBuf);
+  size_t fileExtLen = wcslen(fileExt);
+  if (outBufLen + fileExtLen > MAX_PATH) {
+    return FALSE;
+  }
+
+  wcsncat(outBuf, fileExt, fileExtLen);
+
+  return TRUE;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BOOL GetSecureOutputFilePath(LPCWSTR patchDirPath, LPCWSTR fileExt,
+                             LPWSTR outBuf) {
+  if (!GetSecureOutputDirectoryPath(outBuf)) {
+    return FALSE;
+  }
+
+  WCHAR statusFileName[MAX_PATH + 1] = {L'\0'};
+  if (!GetSecureOutputFileName(patchDirPath, fileExt, statusFileName)) {
+    return FALSE;
+  }
+
+  return PathAppendSafe(outBuf, statusFileName);
+}
+
+
+
+
+
+
+
+
+
+
+BOOL WriteSecureIDFile(LPCWSTR patchDirPath) {
+  WCHAR uuidString[MAX_PATH + 1] = {L'\0'};
+  if (!GetUUIDString(uuidString)) {
+    return FALSE;
+  }
+
+  WCHAR idFilePath[MAX_PATH + 1] = {L'\0'};
+  if (!GetSecureOutputFilePath(patchDirPath, L".id", idFilePath)) {
+    return FALSE;
+  }
+
+  FILE* idFile = _wfopen(idFilePath, L"wb+");
+  if (idFile == nullptr) {
+    return FALSE;
+  }
+
+  if (fprintf(idFile, "%ls\n", uuidString) == -1) {
+    fclose(idFile);
+    return FALSE;
+  }
+
+  fclose(idFile);
+
+  return TRUE;
+}
+
+
+
+
+
+
+
+void RemoveSecureOutputFiles(LPCWSTR patchDirPath) {
+  WCHAR filePath[MAX_PATH + 1] = {L'\0'};
+  if (GetSecureOutputFilePath(patchDirPath, L".id", filePath)) {
+    (void)_wremove(filePath);
+  }
+  if (GetSecureOutputFilePath(patchDirPath, L".status", filePath)) {
+    (void)_wremove(filePath);
+  }
+  if (GetSecureOutputFilePath(patchDirPath, L".log", filePath)) {
+    (void)_wremove(filePath);
+  }
 }
 
 
@@ -109,6 +308,10 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   WCHAR tmpService[MAX_PATH + 1] = {L'\0'};
   if (!PathGetSiblingFilePath(tmpService, serviceConfig.lpBinaryPathName,
                               L"maintenanceservice_tmp.exe")) {
+    return FALSE;
+  }
+
+  if (wcslen(installDir) > MAX_PATH) {
     return FALSE;
   }
 
@@ -248,17 +451,18 @@ LaunchServiceSoftwareUpdateCommand(int argc, LPCWSTR* argv) {
 
 
 
-BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode) {
-  
-  
-  WCHAR tmpUpdateStatusFilePath[MAX_PATH + 1] = {L'\0'};
-  if (!GetUUIDTempFilePath(updateDirPath, L"svc", tmpUpdateStatusFilePath)) {
+
+
+
+BOOL WriteStatusFailure(LPCWSTR patchDirPath, int errorCode) {
+  WCHAR statusFilePath[MAX_PATH + 1] = {L'\0'};
+  if (!GetSecureOutputFilePath(patchDirPath, L".status", statusFilePath)) {
     return FALSE;
   }
 
-  HANDLE tmpStatusFile = CreateFileW(tmpUpdateStatusFilePath, GENERIC_WRITE, 0,
-                                     nullptr, CREATE_ALWAYS, 0, nullptr);
-  if (tmpStatusFile == INVALID_HANDLE_VALUE) {
+  HANDLE hStatusFile = CreateFileW(statusFilePath, GENERIC_WRITE, 0, nullptr,
+                                   CREATE_ALWAYS, 0, nullptr);
+  if (hStatusFile == INVALID_HANDLE_VALUE) {
     return FALSE;
   }
 
@@ -266,21 +470,10 @@ BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode) {
   sprintf(failure, "failed: %d", errorCode);
   DWORD toWrite = strlen(failure);
   DWORD wrote;
-  BOOL ok = WriteFile(tmpStatusFile, failure, toWrite, &wrote, nullptr);
-  CloseHandle(tmpStatusFile);
+  BOOL ok = WriteFile(hStatusFile, failure, toWrite, &wrote, nullptr);
+  CloseHandle(hStatusFile);
 
   if (!ok || wrote != toWrite) {
-    return FALSE;
-  }
-
-  WCHAR updateStatusFilePath[MAX_PATH + 1] = {L'\0'};
-  wcsncpy(updateStatusFilePath, updateDirPath, MAX_PATH);
-  if (!PathAppendSafe(updateStatusFilePath, L"update.status")) {
-    return FALSE;
-  }
-
-  if (MoveFileExW(tmpUpdateStatusFilePath, updateStatusFilePath,
-                  MOVEFILE_REPLACE_EXISTING) == 0) {
     return FALSE;
   }
 
