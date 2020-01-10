@@ -161,12 +161,6 @@ const startupPhases = {
     },
     {
       
-      path: "ProfD:minidumps",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
       path: "XCurProcD:defaults/preferences",
       condition: WIN,
       stat: 1,
