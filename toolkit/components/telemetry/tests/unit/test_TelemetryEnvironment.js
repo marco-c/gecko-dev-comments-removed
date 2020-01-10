@@ -1894,6 +1894,10 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
   );
 
   
+  Preferences.set(
+    "browser.search.separatePrivateDefault.ui.enabled",
+    privateOn
+  );
   Preferences.set("browser.search.separatePrivateDefault", privateOn);
 
   let data = await TelemetryEnvironment.testCleanRestart().onInitialized();
