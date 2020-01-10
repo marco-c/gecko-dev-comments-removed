@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
 import json
@@ -27,6 +27,7 @@ results = []
 class ShellcheckProcess(ProcessHandlerMixin):
     def __init__(self, config, *args, **kwargs):
         self.config = config
+        kwargs['universal_newlines'] = True
         kwargs['processOutputLine'] = [self.process_line]
         ProcessHandlerMixin.__init__(self, *args, **kwargs)
 
@@ -70,17 +71,17 @@ def determine_shell_from_script(path):
         if not head.startswith('#!'):
             return
 
-        
+        # allow for parameters to the shell
         shebang = head.split()[0]
 
-        
+        # if the first entry is a variant of /usr/bin/env
         if 'env' in shebang:
             shebang = head.split()[1]
 
         if shebang.endswith('sh'):
-            
+            # Strip first to avoid issues with #!bash
             return shebang.strip('#!').split('/')[-1]
-    
+    # make it clear we return None, rather than fall through.
     return
 
 
