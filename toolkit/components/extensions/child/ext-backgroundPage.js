@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 this.backgroundPage = class extends ExtensionAPI {

@@ -1,3 +1,7 @@
+
+
+
+
 export const cardContextTypes = {
   history: {
     fluentID: "newtab-label-visited",

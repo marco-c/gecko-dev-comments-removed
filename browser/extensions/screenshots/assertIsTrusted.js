@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 this.assertIsTrusted = function assertIsTrusted(handlerFunction) {
   return function(event) {
     if (!event) {
