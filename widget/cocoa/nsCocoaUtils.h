@@ -420,6 +420,11 @@ class nsCocoaUtils {
 
   static nsresult RequestAudioCapturePermission(RefPtr<Promise>& aPromise);
 
+  
+
+
+  static nsresult MaybeRequestScreenCapturePermission();
+
  private:
   
 
