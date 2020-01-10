@@ -34,6 +34,16 @@ loader.lazyRequireGetter(
   "devtools/server/actors/object/stringifiers"
 );
 
+
+if (!isWorker) {
+  loader.lazyRequireGetter(
+    this,
+    "ContentDOMReference",
+    "resource://gre/modules/ContentDOMReference.jsm",
+    true
+  );
+}
+
 const {
   getArrayLength,
   getPromiseState,
@@ -248,6 +258,17 @@ const proto = {
     const raw = this.getRawObject();
     this._populateGripPreview(g, raw);
     this.hooks.decrementGripDepth();
+
+    if (raw && Node.isInstance(raw) && ContentDOMReference) {
+      
+      
+      
+      
+      
+      try {
+        g.contentDomReference = ContentDOMReference.get(raw);
+      } catch (e) {}
+    }
 
     return g;
   },
