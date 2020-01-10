@@ -5863,6 +5863,33 @@ mozilla::ipc::IPCResult ContentParent::RecvCacheBrowsingContextChildren(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContextChildren(
+    BrowsingContext* aContext) {
+  if (!aContext) {
+    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
+            ("ParentIPC: Trying to detach from already detached context"));
+    return IPC_OK();
+  }
+
+  if (!aContext->Canonical()->IsOwnedByProcess(ChildID())) {
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(false,
+                          "Trying to detach from out of process context");
+    return IPC_OK();
+  }
+
+  aContext->DetachChildren( true);
+
+  aContext->Group()->EachOtherParent(this, [&](ContentParent* aParent) {
+    Unused << aParent->SendDetachBrowsingContextChildren(aContext);
+  });
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult ContentParent::RecvRestoreBrowsingContextChildren(
     BrowsingContext* aContext, BrowsingContext::Children&& aChildren) {
   if (!aContext) {
