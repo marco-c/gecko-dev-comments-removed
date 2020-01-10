@@ -23,7 +23,7 @@ body {
   text-overflow: ellipsis;
 }
 
-.hostname {
+.origin {
   font-weight: bold;
   overflow: hidden;
   flex: 1;
