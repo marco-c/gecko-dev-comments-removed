@@ -380,7 +380,7 @@ impl<'a> CachedReader<'a> {
 
 
 
-fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], mut dirty_rect: Box2d) -> Vec<u8> {
+fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u8> {
 
     let mut result = BlobWriter::new();
     dlog!("dirty rect: {:?}", dirty_rect);
@@ -394,11 +394,6 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], mut dirty_rect: Box2d) -> V
 
     
     assert_eq!(old_reader.reader.origin, new_reader.origin);
-
-    dirty_rect.x1 += new_reader.origin.x;
-    dirty_rect.y1 += new_reader.origin.y;
-    dirty_rect.x2 += new_reader.origin.x;
-    dirty_rect.y2 += new_reader.origin.y;
 
     
     
