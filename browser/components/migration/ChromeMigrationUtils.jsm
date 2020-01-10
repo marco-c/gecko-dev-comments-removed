@@ -325,7 +325,16 @@ var ChromeMigrationUtils = {
 
 
 
-  chromeTimeToDate(aTime) {
+
+
+
+  chromeTimeToDate(aTime, aFallbackValue) {
+    
+    
+    
+    if (!aTime) {
+      return new Date(aFallbackValue);
+    }
     return new Date((aTime * S100NS_PER_MS - S100NS_FROM1601TO1970) / 10000);
   },
 
