@@ -10,6 +10,8 @@
 #include "base/thread.h"  
 #include <cstring>        
 
+#include "PuppetSession.h"
+
 #if defined(XP_WIN)
 #  include "OculusSession.h"
 #endif
@@ -49,48 +51,36 @@ bool IsImmersiveContentActive(const mozilla::gfx::VRBrowserState& aState) {
 }  
 
 
-already_AddRefed<VRService> VRService::Create() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!StaticPrefs::dom_vr_service_enabled()) {
-    return nullptr;
-  }
-
-  RefPtr<VRService> service = new VRService();
+already_AddRefed<VRService> VRService::Create(
+    volatile VRExternalShmem* aShmem) {
+  RefPtr<VRService> service = new VRService(aShmem);
   return service.forget();
 }
 
-VRService::VRService()
+VRService::VRService(volatile VRExternalShmem* aShmem)
     : mSystemState{},
       mBrowserState{},
       mBrowserGeneration(0),
       mServiceThread(nullptr),
       mShutdownRequested(false),
-      mAPIShmem(nullptr),
+      mAPIShmem(aShmem),
       mTargetShmemFile(0),
       mLastHapticState{},
       mFrameStartTime{},
 #if defined(XP_WIN)
       mMutex(NULL),
 #endif
-      mVRProcessEnabled(StaticPrefs::dom_vr_process_enabled()) {
+      mVRProcessEnabled(aShmem == nullptr) {
   
   
   
   
-  if (!mVRProcessEnabled) {
-    mAPIShmem = new VRExternalShmem();
-    memset(mAPIShmem, 0, sizeof(VRExternalShmem));
-  }
 }
 
 VRService::~VRService() {
+  
+  
   Stop();
-
-  if (!mVRProcessEnabled && mAPIShmem) {
-    delete mAPIShmem;
-    mAPIShmem = nullptr;
-  }
 }
 
 void VRService::Refresh() {
@@ -241,36 +231,48 @@ void VRService::ServiceInitialize() {
   
   UniquePtr<VRSession> session;
 
-  
-  
-  
+  if (StaticPrefs::dom_vr_puppet_enabled()) {
+    
+    
+    session = MakeUnique<PuppetSession>();
+    if (!session->Initialize(mSystemState)) {
+      session = nullptr;
+    }
+  } else {
+    
+    
+    
 #if defined(XP_WIN)
-  
-  session = MakeUnique<OculusSession>();
-  if (!session->Initialize(mSystemState)) {
-    session = nullptr;
-  }
+    
+    if (!session) {
+      session = MakeUnique<OculusSession>();
+      if (!session->Initialize(mSystemState)) {
+        session = nullptr;
+      }
+    }
 #endif
 
 #if defined(XP_WIN) || defined(XP_MACOSX) || \
     (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
-  
-  if (!session) {
-    session = MakeUnique<OpenVRSession>();
-    if (!session->Initialize(mSystemState)) {
-      session = nullptr;
+    
+    if (!session) {
+      session = MakeUnique<OpenVRSession>();
+      if (!session->Initialize(mSystemState)) {
+        session = nullptr;
+      }
     }
-  }
 #endif
 #if !defined(MOZ_WIDGET_ANDROID)
-  
-  if (!session) {
-    session = MakeUnique<OSVRSession>();
-    if (!session->Initialize(mSystemState)) {
-      session = nullptr;
+    
+    if (!session) {
+      session = MakeUnique<OSVRSession>();
+      if (!session->Initialize(mSystemState)) {
+        session = nullptr;
+      }
     }
-  }
 #endif
+
+  }  
 
   if (session) {
     mSession = std::move(session);
@@ -456,6 +458,10 @@ void VRService::PushState(const mozilla::gfx::VRSystemState& aState) {
 #if defined(MOZ_WIDGET_ANDROID)
   if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) ==
       0) {
+    
+    
+    
+    
     memcpy((void*)&mAPIShmem->state, &aState, sizeof(VRSystemState));
     pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
   }
@@ -505,9 +511,13 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
   if (status) {
     VRExternalShmem tmp;
     if (mAPIShmem->geckoGenerationA != mBrowserGeneration) {
-      memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
+      
+      
+      
+      
+      memcpy(&tmp, (void*)mAPIShmem, sizeof(VRExternalShmem));
       if (tmp.geckoGenerationA == tmp.geckoGenerationB &&
-          tmp.geckoGenerationA != 0 && tmp.geckoGenerationA != -1) {
+          tmp.geckoGenerationA != 0) {
         memcpy(&aState, &tmp.geckoState, sizeof(VRBrowserState));
         mBrowserGeneration = tmp.geckoGenerationA;
       }
@@ -515,5 +525,3 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
   }
 #endif    
 }
-
-VRExternalShmem* VRService::GetAPIShmem() { return mAPIShmem; }

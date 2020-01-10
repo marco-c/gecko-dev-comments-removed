@@ -2241,20 +2241,6 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, 50
 )
 
-
-#if defined(XP_WIN)
-#define PREF_VALUE true
-#else
-#define PREF_VALUE false
-#endif
-VARCACHE_PREF(
-  Once,
-  "dom.vr.external.enabled",
-   dom_vr_external_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
 VARCACHE_PREF(
   Live,
   "dom.vr.external.notdetected.timeout",
@@ -2384,33 +2370,9 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
-  "dom.vr.puppet.submitframe",
-   dom_vr_puppet_submitframe,
-  RelaxedAtomicUint32, 0
-)
-
-
-VARCACHE_PREF(
-  Live,
-  "dom.vr.test.enabled",
-  dom_vr_test_enabled,
-  bool, false
-)
-
-VARCACHE_PREF(
-  Live,
   "dom.vr.require-gesture",
    dom_vr_require_gesture,
   RelaxedAtomicBool, true
-)
-
-
-
-VARCACHE_PREF(
-  Once,
-  "dom.vr.service.enabled",
-   dom_vr_service_enabled,
-  bool, true
 )
 
 

@@ -5102,9 +5102,6 @@ pref("dom.vr.require-gesture", true);
 
 pref("dom.vr.puppet.enabled", false);
 
-
-pref("dom.vr.puppet.submitframe", 0);
-
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
 pref("gfx.vr.osvr.clientLibPath", "");

@@ -17,7 +17,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "nsContentUtils.h"
 #include "mozilla/dom/GamepadManager.h"
-#include "mozilla/dom/VRServiceTest.h"
 #include "mozilla/layers/SyncObject.h"
 
 using namespace mozilla::dom;
@@ -39,10 +38,7 @@ VRManagerChild::VRManagerChild()
     : mDisplaysInitialized(false),
       mMessageLoop(MessageLoop::current()),
       mFrameRequestCallbackCounter(0),
-      mBackend(layers::LayersBackend::LAYERS_NONE),
-      mPromiseID(0),
-      mVRMockDisplay(nullptr),
-      mLastControllerState{} {
+      mBackend(layers::LayersBackend::LAYERS_NONE) {
   MOZ_ASSERT(NS_IsMainThread());
 
   mStartTimeStamp = TimeStamp::Now();
@@ -242,6 +238,52 @@ mozilla::ipc::IPCResult VRManagerChild::RecvUpdateDisplayInfo(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult VRManagerChild::RecvNotifyPuppetCommandBufferCompleted(
+    bool aSuccess) {
+  RefPtr<dom::Promise> promise = mRunPuppetPromise;
+  mRunPuppetPromise = nullptr;
+  if (aSuccess) {
+    promise->MaybeResolve(JS::UndefinedHandleValue);
+  } else {
+    promise->MaybeRejectWithUndefined();
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult VRManagerChild::RecvNotifyPuppetResetComplete() {
+  nsTArray<RefPtr<dom::Promise>> promises;
+  promises.AppendElements(mResetPuppetPromises);
+  mResetPuppetPromises.Clear();
+  for (const auto& promise : promises) {
+    promise->MaybeResolve(JS::UndefinedHandleValue);
+  }
+  return IPC_OK();
+}
+
+void VRManagerChild::RunPuppet(const InfallibleTArray<uint64_t>& aBuffer,
+                               dom::Promise* aPromise, ErrorResult& aRv) {
+  if (mRunPuppetPromise) {
+    
+    
+    
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+  if (!SendRunPuppet(aBuffer)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+  mRunPuppetPromise = aPromise;
+}
+
+void VRManagerChild::ResetPuppet(dom::Promise* aPromise, ErrorResult& aRv) {
+  if (!SendResetPuppet()) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+  mResetPuppetPromises.AppendElement(aPromise);
+}
+
 bool VRManagerChild::GetVRDisplays(
     nsTArray<RefPtr<VRDisplayClient>>& aDisplays) {
   aDisplays = mDisplays;
@@ -254,20 +296,6 @@ bool VRManagerChild::RefreshVRDisplaysWithCallback(uint64_t aWindowId) {
     mNavigatorCallbacks.AppendElement(aWindowId);
   }
   return success;
-}
-
-void VRManagerChild::CreateVRServiceTestDisplay(const nsCString& aID,
-                                                dom::Promise* aPromise) {
-  SendCreateVRServiceTestDisplay(aID, mPromiseID);
-  mPromiseList.Put(mPromiseID, aPromise);
-  ++mPromiseID;
-}
-
-void VRManagerChild::CreateVRServiceTestController(const nsCString& aID,
-                                                   dom::Promise* aPromise) {
-  SendCreateVRServiceTestController(aID, mPromiseID);
-  mPromiseList.Put(mPromiseID, aPromise);
-  ++mPromiseID;
 }
 
 PVRLayerChild* VRManagerChild::CreateVRLayer(uint32_t aDisplayID,
@@ -322,58 +350,6 @@ nsresult VRManagerChild::ScheduleFrameRequestCallback(
 void VRManagerChild::CancelFrameRequestCallback(int32_t aHandle) {
   
   mFrameRequestCallbacks.RemoveElementSorted(aHandle);
-}
-
-mozilla::ipc::IPCResult VRManagerChild::RecvGamepadUpdate(
-    const GamepadChangeEvent& aGamepadEvent) {
-  
-  
-  
-  MOZ_ASSERT(XRE_IsContentProcess() || IsSameProcess());
-
-  RefPtr<GamepadManager> gamepadManager(GamepadManager::GetService());
-  if (gamepadManager) {
-    gamepadManager->Update(aGamepadEvent);
-  }
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult VRManagerChild::RecvReplyCreateVRServiceTestDisplay(
-    const nsCString& aID, const uint32_t& aPromiseID,
-    const uint32_t& aDeviceID) {
-  RefPtr<dom::Promise> p;
-  if (!mPromiseList.Get(aPromiseID, getter_AddRefs(p))) {
-    MOZ_CRASH("We should always have a promise.");
-  }
-
-  
-  if (!mVRMockDisplay) {
-    mVRMockDisplay = new VRMockDisplay(aID, aDeviceID);
-  }
-  p->MaybeResolve(mVRMockDisplay);
-  mPromiseList.Remove(aPromiseID);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult VRManagerChild::RecvReplyCreateVRServiceTestController(
-    const nsCString& aID, const uint32_t& aPromiseID,
-    const uint32_t& aDeviceID) {
-  RefPtr<dom::Promise> p;
-  if (!mPromiseList.Get(aPromiseID, getter_AddRefs(p))) {
-    MOZ_CRASH("We should always have a promise.");
-  }
-
-  if (aDeviceID == 0) {
-    
-    
-    
-    p->MaybeRejectWithUndefined();
-  } else {
-    p->MaybeResolve(new VRMockController(aID, aDeviceID));
-  }
-  mPromiseList.Remove(aPromiseID);
-  return IPC_OK();
 }
 
 void VRManagerChild::RunFrameRequestCallbacks() {
@@ -568,19 +544,6 @@ mozilla::ipc::IPCResult VRManagerChild::RecvReplyGamepadVibrateHaptic(
 
   p->MaybeResolve(true);
   mGamepadPromiseList.Remove(aPromiseID);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult VRManagerChild::RecvDispatchSubmitFrameResult(
-    const uint32_t& aDisplayID, const VRSubmitFrameResultInfo& aResult) {
-  nsTArray<RefPtr<VRDisplayClient>> displays;
-  displays = mDisplays;
-  for (auto& display : displays) {
-    if (display->GetDisplayInfo().GetDisplayID() == aDisplayID) {
-      display->UpdateSubmitFrameResult(aResult);
-    }
-  }
-
   return IPC_OK();
 }
 
