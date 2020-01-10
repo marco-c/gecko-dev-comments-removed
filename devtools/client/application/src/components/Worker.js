@@ -58,6 +58,8 @@ class Worker extends Component {
         active: PropTypes.bool,
         name: PropTypes.string.isRequired,
         scope: PropTypes.string.isRequired,
+        lastUpdateTime: PropTypes.number.isRequired,
+        url: PropTypes.string.isRequired,
         
         registrationFront: PropTypes.object,
         workerTargetFront: PropTypes.object,
