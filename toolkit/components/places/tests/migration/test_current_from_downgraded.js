@@ -13,7 +13,7 @@ add_task(async function setup() {
     }
     version--;
   }
-  Assert.ok(version > 0, "Found a valid database version");
+  Assert.greater(version, 0, "Found a valid database version");
   await setupPlacesDatabase(`places_v${version}.sqlite`);
   
   let path = OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);

@@ -244,7 +244,11 @@ function run_test() {
     numMigrated += 1;
   }
   
-  Assert.ok(numMigrated > 0, "we found at least 1 record that was migrated");
+  Assert.greater(
+    numMigrated,
+    0,
+    "we found at least 1 record that was migrated"
+  );
 
   
   let ssm = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
