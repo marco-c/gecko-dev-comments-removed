@@ -26,8 +26,6 @@ struct RemoteFrameInfo {
 
 struct ContentProcessInfo {
   ContentParent* mCp;
-  ContentParentId mParentCpId;
-  std::set<ContentParentId> mChildrenCpId;
   std::map<TabId, RemoteFrameInfo> mRemoteFrames;
 };
 
@@ -39,30 +37,17 @@ class ContentProcessManager final {
   
 
 
+  void AddContentProcess(ContentParent* aChildCp);
 
-  void AddContentProcess(
-      ContentParent* aChildCp,
-      const ContentParentId& aParentCpId = ContentParentId(0));
   
 
 
   void RemoveContentProcess(const ContentParentId& aChildCpId);
-  
 
-
-
-  bool GetParentProcessId(const ContentParentId& aChildCpId,
-                           ContentParentId* aParentCpId);
   
 
 
   ContentParent* GetContentProcessById(const ContentParentId& aChildCpId);
-
-  
-
-
-  nsTArray<ContentParentId> GetAllChildProcessById(
-      const ContentParentId& aParentCpId);
 
   
 

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ContentProcessManager.h"
 #include "ContentParent.h"
@@ -14,7 +14,7 @@
 #include "nsPrintfCString.h"
 #include "nsIScriptSecurityManager.h"
 
-// XXX need another bug to move this to a common header.
+
 #ifdef DISABLE_ASSERTS_FOR_FUZZING
 #  define ASSERT_UNLESS_FUZZING(...) \
     do {                             \
@@ -26,10 +26,10 @@
 namespace mozilla {
 namespace dom {
 
-/* static */
+
 StaticAutoPtr<ContentProcessManager> ContentProcessManager::sSingleton;
 
-/* static */
+
 ContentProcessManager* ContentProcessManager::GetSingleton() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -40,8 +40,7 @@ ContentProcessManager* ContentProcessManager::GetSingleton() {
   return sSingleton;
 }
 
-void ContentProcessManager::AddContentProcess(
-    ContentParent* aChildCp, const ContentParentId& aParentCpId) {
+void ContentProcessManager::AddContentProcess(ContentParent* aChildCp) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aChildCp);
 
@@ -50,9 +49,7 @@ void ContentProcessManager::AddContentProcess(
     info.mCp = aChildCp;
   } else {
     MOZ_ASSERT(info.mCp == aChildCp);
-    MOZ_ASSERT_IF(!!info.mParentCpId, info.mParentCpId == aParentCpId);
   }
-  info.mParentCpId = aParentCpId;
 }
 
 void ContentProcessManager::RemoveContentProcess(
@@ -61,26 +58,6 @@ void ContentProcessManager::RemoveContentProcess(
   MOZ_ASSERT(mContentParentMap.find(aChildCpId) != mContentParentMap.end());
 
   mContentParentMap.erase(aChildCpId);
-  for (auto iter = mContentParentMap.begin(); iter != mContentParentMap.end();
-       ++iter) {
-    if (!iter->second.mChildrenCpId.empty()) {
-      iter->second.mChildrenCpId.erase(aChildCpId);
-    }
-  }
-}
-
-bool ContentProcessManager::GetParentProcessId(
-    const ContentParentId& aChildCpId,
-    /*out*/ ContentParentId* aParentCpId) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  auto iter = mContentParentMap.find(aChildCpId);
-  if (NS_WARN_IF(iter == mContentParentMap.end())) {
-    ASSERT_UNLESS_FUZZING();
-    return false;
-  }
-  *aParentCpId = iter->second.mParentCpId;
-  return true;
 }
 
 ContentParent* ContentProcessManager::GetContentProcessById(
@@ -93,25 +70,6 @@ ContentParent* ContentProcessManager::GetContentProcessById(
     return nullptr;
   }
   return iter->second.mCp;
-}
-
-nsTArray<ContentParentId> ContentProcessManager::GetAllChildProcessById(
-    const ContentParentId& aParentCpId) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsTArray<ContentParentId> cpIdArray;
-  auto iter = mContentParentMap.find(aParentCpId);
-  if (NS_WARN_IF(iter == mContentParentMap.end())) {
-    ASSERT_UNLESS_FUZZING();
-    return cpIdArray;
-  }
-
-  for (auto cpIter = iter->second.mChildrenCpId.begin();
-       cpIter != iter->second.mChildrenCpId.end(); ++cpIter) {
-    cpIdArray.AppendElement(*cpIter);
-  }
-
-  return cpIdArray;
 }
 
 bool ContentProcessManager::RegisterRemoteFrame(
@@ -128,8 +86,8 @@ bool ContentProcessManager::RegisterRemoteFrame(
 
   struct RemoteFrameInfo info;
 
-  // If it's a PopupIPCTabContext, it's the case that a BrowserChild want to
-  // open a new tab. aOpenerTabId has to be it's parent frame's opener id.
+  
+  
   if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
     auto remoteFrameIter = iter->second.mRemoteFrames.find(aOpenerTabId);
     if (remoteFrameIter == iter->second.mRemoteFrames.end()) {
@@ -182,7 +140,7 @@ void ContentProcessManager::UnregisterRemoteFrame(
 
 bool ContentProcessManager::GetTabContextByProcessAndTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId,
-    /*out*/ TabContext* aTabContext) {
+     TabContext* aTabContext) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aTabContext);
 
@@ -224,8 +182,8 @@ nsTArray<TabContext> ContentProcessManager::GetTabContextByContentProcess(
 
 bool ContentProcessManager::GetRemoteFrameOpenerTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId,
-    /*out*/ ContentParentId* aOpenerCpId,
-    /*out*/ TabId* aOpenerTabId) {
+     ContentParentId* aOpenerCpId,
+     TabId* aOpenerTabId) {
   MOZ_ASSERT(NS_IsMainThread());
   auto iter = mContentParentMap.find(aChildCpId);
   if (NS_WARN_IF(iter == mContentParentMap.end())) {
@@ -282,30 +240,30 @@ ContentProcessManager::GetTopLevelBrowserParentByProcessAndTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // Used to keep the current ContentParentId and the current TabId
-  // in the iteration(do-while loop below)
+  
+  
   ContentParentId currentCpId;
   TabId currentTabId;
 
-  // To get the ContentParentId and the BrowserParentId on upper level
+  
   ContentParentId parentCpId = aChildCpId;
   TabId openerTabId = aChildTabId;
 
-  // Stop this loop when the upper ContentParentId of
-  // the current ContentParentId is chrome(ContentParentId = 0).
+  
+  
   do {
-    // Update the current ContentParentId and TabId in iteration
+    
     currentCpId = parentCpId;
     currentTabId = openerTabId;
 
-    // Get the ContentParentId and TabId on upper level
+    
     if (!GetRemoteFrameOpenerTabId(currentCpId, currentTabId, &parentCpId,
                                    &openerTabId)) {
       return nullptr;
     }
   } while (parentCpId);
 
-  // Get the top level BrowserParent by the current ContentParentId and TabId
+  
   return GetBrowserParentByProcessAndTabId(currentCpId, currentTabId);
 }
 
@@ -340,5 +298,5 @@ uint32_t ContentProcessManager::GetBrowserParentCountByProcessId(
   return iter->second.mRemoteFrames.size();
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
