@@ -2035,7 +2035,7 @@ void InlineFrameIterator::findNextFrame() {
 
   size_t i = 1;
   for (; i <= remaining && si_.moreFrames(); i++) {
-    MOZ_ASSERT(IsIonInlinablePC(pc_));
+    MOZ_ASSERT(IsIonInlinableOp(JSOp(*pc_)));
 
     
     if (JSOp(*pc_) != JSOP_FUNAPPLY) {
@@ -2218,14 +2218,15 @@ bool InlineFrameIterator::isConstructing() const {
     ++parent;
 
     
-    if (IsIonInlinableGetterOrSetterPC(parent.pc())) {
+    JSOp parentOp = JSOp(*parent.pc());
+    if (IsIonInlinableGetterOrSetterOp(parentOp)) {
       return false;
     }
 
     
-    MOZ_ASSERT(IsCallPC(parent.pc()) && !IsSpreadCallPC(parent.pc()));
+    MOZ_ASSERT(IsCallOp(parentOp) && !IsSpreadCallOp(parentOp));
 
-    return IsConstructorCallPC(parent.pc());
+    return IsConstructorCallOp(parentOp);
   }
 
   return frame_->isConstructing();

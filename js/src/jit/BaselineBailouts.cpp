@@ -445,23 +445,23 @@ static inline bool IsInlinableFallback(ICFallbackStub* icEntry) {
 }
 #endif
 
-static inline void* GetStubReturnAddress(JSContext* cx, jsbytecode* pc) {
+static inline void* GetStubReturnAddress(JSContext* cx, JSOp op) {
   const BaselineICFallbackCode& code =
       cx->runtime()->jitRuntime()->baselineICFallbackCode();
 
-  if (IsGetPropPC(pc)) {
+  if (IsGetPropOp(op)) {
     return code.bailoutReturnAddr(BailoutReturnKind::GetProp);
   }
-  if (IsSetPropPC(pc)) {
+  if (IsSetPropOp(op)) {
     return code.bailoutReturnAddr(BailoutReturnKind::SetProp);
   }
-  if (IsGetElemPC(pc)) {
+  if (IsGetElemOp(op)) {
     return code.bailoutReturnAddr(BailoutReturnKind::GetElem);
   }
 
   
-  MOZ_ASSERT(IsCallPC(pc) && !IsSpreadCallPC(pc));
-  if (IsConstructorCallPC(pc)) {
+  MOZ_ASSERT(IsCallOp(op) && !IsSpreadCallOp(op));
+  if (IsConstructorCallOp(op)) {
     return code.bailoutReturnAddr(BailoutReturnKind::New);
   }
   return code.bailoutReturnAddr(BailoutReturnKind::Call);
@@ -903,7 +903,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   JSOp op = JSOp(*pc);
 
   
-  MOZ_ASSERT_IF(IsSpreadCallPC(pc), !iter.moreFrames());
+  MOZ_ASSERT_IF(IsSpreadCallOp(op), !iter.moreFrames());
 
   
   
@@ -911,7 +911,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   uint32_t pushedSlots = 0;
   RootedValueVector savedCallerArgs(cx);
   bool needToSaveArgs =
-      op == JSOP_FUNAPPLY || IsIonInlinableGetterOrSetterPC(pc);
+      op == JSOP_FUNAPPLY || IsIonInlinableGetterOrSetterOp(op);
   if (iter.moreFrames() && (op == JSOP_FUNCALL || needToSaveArgs)) {
     uint32_t inlined_args = 0;
     if (op == JSOP_FUNCALL) {
@@ -919,8 +919,8 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     } else if (op == JSOP_FUNAPPLY) {
       inlined_args = 2 + blFrame->numActualArgs();
     } else {
-      MOZ_ASSERT(IsIonInlinableGetterOrSetterPC(pc));
-      inlined_args = 2 + IsSetPropPC(pc);
+      MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op));
+      inlined_args = 2 + IsSetPropOp(op);
     }
 
     MOZ_ASSERT(exprStackSlots >= inlined_args);
@@ -986,7 +986,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         savedCallerArgs[i].set(iter.read());
       }
 
-      if (IsSetPropPC(pc)) {
+      if (IsSetPropOp(op)) {
         
         
         
@@ -1095,7 +1095,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         
         
         MOZ_ASSERT(expectedDepth - exprStackSlots <= 1);
-      } else if (iter.moreFrames() && IsIonInlinableGetterOrSetterPC(pc)) {
+      } else if (iter.moreFrames() && IsIonInlinableGetterOrSetterOp(op)) {
         
         
         
@@ -1106,7 +1106,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         
         
         
-        MOZ_ASSERT(exprStackSlots - expectedDepth == (IsGetElemPC(pc) ? 0 : 1));
+        MOZ_ASSERT(exprStackSlots - expectedDepth == (IsGetElemOp(op) ? 0 : 1));
       } else {
         
         
@@ -1298,7 +1298,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   
   
-  MOZ_ASSERT(IsIonInlinablePC(pc));
+  MOZ_ASSERT(IsIonInlinableOp(op));
   bool pushedNewTarget = IsConstructorCallPC(pc);
   unsigned actualArgc;
   Value callee;
@@ -1308,7 +1308,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     if (op == JSOP_FUNAPPLY) {
       actualArgc = blFrame->numActualArgs();
     } else {
-      actualArgc = IsSetPropPC(pc);
+      actualArgc = IsSetPropOp(op);
     }
     callee = savedCallerArgs[0];
 
@@ -1401,7 +1401,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   }
 
   
-  void* baselineCallReturnAddr = GetStubReturnAddress(cx, pc);
+  void* baselineCallReturnAddr = GetStubReturnAddress(cx, op);
   MOZ_ASSERT(baselineCallReturnAddr);
   if (!builder.writePtr(baselineCallReturnAddr, "ReturnAddr")) {
     return false;

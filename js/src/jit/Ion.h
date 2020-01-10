@@ -163,17 +163,17 @@ void FreeIonBuilder(IonBuilder* builder);
 void LinkIonScript(JSContext* cx, HandleScript calleescript);
 uint8_t* LazyLinkTopActivation(JSContext* cx, LazyLinkExitFrameLayout* frame);
 
-inline bool IsIonInlinableGetterOrSetterPC(jsbytecode* pc) {
+inline bool IsIonInlinableGetterOrSetterOp(JSOp op) {
   
   
-  return IsGetPropPC(pc) || IsGetElemPC(pc) || IsSetPropPC(pc);
+  return IsGetPropOp(op) || IsGetElemOp(op) || IsSetPropOp(op);
 }
 
-inline bool IsIonInlinablePC(jsbytecode* pc) {
+inline bool IsIonInlinableOp(JSOp op) {
   
   
-  return (IsCallPC(pc) && !IsSpreadCallPC(pc)) ||
-         IsIonInlinableGetterOrSetterPC(pc);
+  return (IsCallOp(op) && !IsSpreadCallOp(op)) ||
+         IsIonInlinableGetterOrSetterOp(op);
 }
 
 inline bool TooManyActualArguments(unsigned nargs) {
