@@ -3,12 +3,34 @@
 
 
 use api::ColorF;
-use api::units::DeviceRect;
+use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
-use crate::internal_types::TextureSource;
+use crate::picture::{ResolvedSurfaceTexture, SurfaceTextureDescriptor};
 
 
 
+
+
+
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum NativeSurfaceOperationDetails {
+    CreateSurface {
+        size: DeviceIntSize,
+    },
+    DestroySurface,
+}
+
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct NativeSurfaceOperation {
+    pub id: NativeSurfaceId,
+    pub details: NativeSurfaceOperationDetails,
+}
 
 
 
@@ -17,8 +39,7 @@ use crate::internal_types::TextureSource;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum CompositeTileSurface {
     Texture {
-        texture_id: TextureSource,
-        texture_layer: i32,
+        surface: ResolvedSurfaceTexture,
     },
     Color {
         color: ColorF,
@@ -40,6 +61,19 @@ pub struct CompositeTile {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum CompositeMode {
+    
+    Draw,
+    
+    
+    
+    Native,
+}
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositeState {
     pub opaque_tiles: Vec<CompositeTile>,
     pub alpha_tiles: Vec<CompositeTile>,
@@ -52,16 +86,130 @@ pub struct CompositeState {
     
     
     pub dirty_rects_are_valid: bool,
+    
+    
+    pub native_surface_updates: Vec<NativeSurfaceOperation>,
+    
+    pub composite_mode: CompositeMode,
 }
 
 impl CompositeState {
-    pub fn new() -> Self {
+    
+    
+    pub fn new(composite_mode: CompositeMode) -> Self {
         CompositeState {
             opaque_tiles: Vec::new(),
             alpha_tiles: Vec::new(),
             clear_tiles: Vec::new(),
             z_generator: ZBufferIdGenerator::new(0),
             dirty_rects_are_valid: true,
+            native_surface_updates: Vec::new(),
+            composite_mode,
         }
     }
+
+    
+    
+    pub fn create_surface(
+        &mut self,
+        id: NativeSurfaceId,
+        size: DeviceIntSize,
+    ) -> SurfaceTextureDescriptor {
+        debug_assert_eq!(self.composite_mode, CompositeMode::Native);
+
+        self.native_surface_updates.push(
+            NativeSurfaceOperation {
+                id,
+                details: NativeSurfaceOperationDetails::CreateSurface {
+                    size,
+                }
+            }
+        );
+
+        SurfaceTextureDescriptor::NativeSurface {
+            id,
+            size,
+        }
+    }
+
+    
+    
+    pub fn destroy_surface(
+        &mut self,
+        id: NativeSurfaceId,
+    ) {
+        debug_assert_eq!(self.composite_mode, CompositeMode::Native);
+
+        self.native_surface_updates.push(
+            NativeSurfaceOperation {
+                id,
+                details: NativeSurfaceOperationDetails::DestroySurface,
+            }
+        );
+    }
+}
+
+
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct NativeSurfaceId(pub u64);
+
+
+
+
+pub trait Compositor {
+    
+    
+    fn create_surface(
+        &mut self,
+        id: NativeSurfaceId,
+        size: DeviceIntSize,
+    );
+
+    
+    fn destroy_surface(
+        &mut self,
+        id: NativeSurfaceId,
+    );
+
+    
+    
+    
+    
+    fn bind(
+        &mut self,
+        id: NativeSurfaceId,
+    ) -> DeviceIntPoint;
+
+    
+    
+    fn unbind(
+        &mut self,
+    );
+
+    
+    fn begin_frame(&mut self);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn add_surface(
+        &mut self,
+        id: NativeSurfaceId,
+        position: DeviceIntPoint,
+        clip_rect: DeviceIntRect,
+    );
+
+    
+    
+    
+    fn end_frame(&mut self);
 }

@@ -11,7 +11,8 @@ use crate::filterdata::SFilterData;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use crate::gpu_types::{BorderInstance, ImageSource, UvRectKind};
-use crate::internal_types::{CacheTextureId, FastHashMap, LayerIndex, SavedTargetIndex, TextureSource};
+use crate::internal_types::{CacheTextureId, FastHashMap, LayerIndex, SavedTargetIndex};
+use crate::picture::ResolvedSurfaceTexture;
 use crate::prim_store::{PictureIndex, PrimitiveVisibilityMask};
 use crate::prim_store::image::ImageCacheKey;
 use crate::prim_store::gradient::{GRADIENT_FP_STOPS, GradientStopKey};
@@ -75,9 +76,7 @@ pub enum RenderTaskLocation {
     
     PictureCache {
         
-        texture: TextureSource,
-        
-        layer: i32,
+        surface: ResolvedSurfaceTexture,
         
         size: DeviceIntSize,
     },
@@ -107,7 +106,9 @@ impl RenderTaskLocation {
             RenderTaskLocation::Dynamic(None, _) => panic!("Expected position to be set for the task!"),
             RenderTaskLocation::Dynamic(Some((origin, layer)), size) => (DeviceIntRect::new(origin, size), layer.0 as LayerIndex),
             RenderTaskLocation::TextureCache { rect, layer, .. } => (rect, layer),
-            RenderTaskLocation::PictureCache { layer, size, .. } => (size.into(), layer as LayerIndex),
+            RenderTaskLocation::PictureCache { .. } => {
+                panic!("bug: picture cache tasks should never be a source!");
+            }
         }
     }
 }
@@ -1354,7 +1355,12 @@ impl RenderTask {
             RenderTaskLocation::TextureCache {layer, rect, .. } => {
                 (rect, RenderTargetIndex(layer as usize))
             }
-            RenderTaskLocation::PictureCache { size, layer, .. } => {
+            RenderTaskLocation::PictureCache { ref surface, size, .. } => {
+                let layer = match surface {
+                    ResolvedSurfaceTexture::TextureCache { layer, .. } => *layer,
+                    ResolvedSurfaceTexture::NativeSurface { .. } => 0,
+                };
+
                 (
                     DeviceIntRect::new(
                         DeviceIntPoint::zero(),

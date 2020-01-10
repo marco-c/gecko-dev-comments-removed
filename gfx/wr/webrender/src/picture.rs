@@ -68,13 +68,14 @@ use crate::clip::{ClipStore, ClipChainInstance, ClipDataHandle, ClipChainId};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX,
     ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, CoordinateSystemId
 };
+use crate::composite::{CompositeMode, CompositeState, NativeSurfaceId};
 use crate::debug_colors;
 use euclid::{vec3, Point2D, Scale, Size2D, Vector2D, Rect};
 use euclid::approxeq::ApproxEq;
 use crate::filterdata::SFilterData;
 use crate::frame_builder::{FrameVisibilityContext, FrameVisibilityState};
 use crate::intern::ItemUid;
-use crate::internal_types::{FastHashMap, FastHashSet, PlaneSplitter, Filter, PlaneSplitAnchor};
+use crate::internal_types::{FastHashMap, FastHashSet, PlaneSplitter, Filter, PlaneSplitAnchor, TextureSource};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use crate::gpu_types::UvRectKind;
@@ -339,6 +340,9 @@ struct TilePostUpdateContext<'a> {
 struct TilePostUpdateState<'a> {
     
     resource_cache: &'a ResourceCache,
+
+    
+    composite_state: &'a mut CompositeState,
 }
 
 
@@ -393,15 +397,83 @@ impl PrimitiveDependencyInfo {
 }
 
 
+
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct TileId(usize);
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct TileId(pub usize);
+
+
+
+#[derive(Debug)]
+pub enum SurfaceTextureDescriptor {
+    
+    
+    TextureCache {
+        handle: TextureCacheHandle
+    },
+    
+    
+    NativeSurface {
+        
+        id: NativeSurfaceId,
+        
+        size: DeviceIntSize,
+    },
+}
+
+
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum ResolvedSurfaceTexture {
+    TextureCache {
+        
+        texture: TextureSource,
+        
+        layer: i32,
+    },
+    NativeSurface {
+        
+        id: NativeSurfaceId,
+        
+        size: DeviceIntSize,
+    }
+}
+
+impl SurfaceTextureDescriptor {
+    
+    pub fn resolve(
+        &self,
+        resource_cache: &ResourceCache,
+    ) -> ResolvedSurfaceTexture {
+        match self {
+            SurfaceTextureDescriptor::TextureCache { handle } => {
+                let cache_item = resource_cache.texture_cache.get(handle);
+
+                ResolvedSurfaceTexture::TextureCache {
+                    texture: cache_item.texture_id,
+                    layer: cache_item.texture_layer,
+                }
+            }
+            SurfaceTextureDescriptor::NativeSurface { id, size } => {
+                ResolvedSurfaceTexture::NativeSurface {
+                    id: *id,
+                    size: *size,
+                }
+            }
+        }
+    }
+}
 
 
 #[derive(Debug)]
 pub enum TileSurface {
     Texture {
         
-        handle: TextureCacheHandle,
+        descriptor: SurfaceTextureDescriptor,
         
         visibility_mask: PrimitiveVisibilityMask,
     },
@@ -671,22 +743,37 @@ impl Tile {
         
         
         
-        let max_split_level = if ctx.current_tile_size == TILE_SIZE_LARGE {
-            3
-        } else {
-            1
-        };
+        
+        
+        
+        
+        if state.composite_state.composite_mode == CompositeMode::Draw {
+            
+            
+            
+            let max_split_level = if ctx.current_tile_size == TILE_SIZE_LARGE {
+                3
+            } else {
+                1
+            };
+
+            
+            self.root.maybe_merge_or_split(
+                0,
+                &self.current_descriptor.prims,
+                max_split_level,
+            );
+        }
 
         
-        self.root.maybe_merge_or_split(
-            0,
-            &self.current_descriptor.prims,
-            max_split_level,
-        );
-
         
         
-        let is_simple_prim = self.current_descriptor.prims.len() == 1 && self.is_opaque;
+        
+        
+        let is_simple_prim =
+            self.current_descriptor.prims.len() == 1 &&
+            self.is_opaque &&
+            state.composite_state.composite_mode == CompositeMode::Draw;
 
         
         let surface = if is_simple_prim {
@@ -713,8 +800,30 @@ impl Tile {
                     old_surface
                 }
                 Some(TileSurface::Color { .. }) | Some(TileSurface::Clear) | None => {
+                    
+                    
+                    
+                    
+                    let descriptor = match state.composite_state.composite_mode {
+                        CompositeMode::Draw => {
+                            
+                            
+                            SurfaceTextureDescriptor::TextureCache {
+                                handle: TextureCacheHandle::invalid(),
+                            }
+                        }
+                        CompositeMode::Native => {
+                            
+                            
+                            state.composite_state.create_surface(
+                                NativeSurfaceId(self.id.0 as u64),
+                                ctx.current_tile_size,
+                            )
+                        }
+                    };
+
                     TileSurface::Texture {
-                        handle: TextureCacheHandle::invalid(),
+                        descriptor,
                         visibility_mask: PrimitiveVisibilityMask::empty(),
                     }
                 }
@@ -1290,6 +1399,11 @@ impl TileCacheInstance {
         
         
         if desired_tile_size != self.current_tile_size {
+            
+            
+            frame_state.composite_state.destroy_native_surfaces(
+                self.tiles.values(),
+            );
             self.tiles.clear();
             self.current_tile_size = desired_tile_size;
         }
@@ -1446,6 +1560,14 @@ impl TileCacheInstance {
                 self.tiles.insert(key, tile);
             }
         }
+
+        
+        
+        
+        
+        frame_state.composite_state.destroy_native_surfaces(
+            old_tiles.values(),
+        );
 
         world_culling_rect
     }
@@ -1763,6 +1885,7 @@ impl TileCacheInstance {
 
         let mut state = TilePostUpdateState {
             resource_cache: frame_state.resource_cache,
+            composite_state: frame_state.composite_state,
         };
 
         
@@ -3038,7 +3161,7 @@ impl PicturePrimitive {
                                 }
                             }
 
-                            if let TileSurface::Texture { ref handle, .. } = surface {
+                            if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::TextureCache { ref handle, .. }, .. } = surface {
                                 
                                 if frame_state.resource_cache.texture_cache.is_allocated(handle) {
                                     
@@ -3066,13 +3189,15 @@ impl PicturePrimitive {
                             }
 
                             
-                            if let TileSurface::Texture { ref mut handle, ref mut visibility_mask } = surface {
-                                if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
-                                    frame_state.resource_cache.texture_cache.update_picture_cache(
-                                        tile_cache.current_tile_size,
-                                        handle,
-                                        frame_state.gpu_cache,
-                                    );
+                            if let TileSurface::Texture { ref mut descriptor, ref mut visibility_mask } = surface {
+                                if let SurfaceTextureDescriptor::TextureCache { ref mut handle } = descriptor {
+                                    if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                        frame_state.resource_cache.texture_cache.update_picture_cache(
+                                            tile_cache.current_tile_size,
+                                            handle,
+                                            frame_state.gpu_cache,
+                                        );
+                                    }
                                 }
 
                                 *visibility_mask = PrimitiveVisibilityMask::empty();
@@ -3115,13 +3240,12 @@ impl PicturePrimitive {
                                 
                                 
                                 let scissor_rect = (scissor_rect * device_pixel_scale).round();
-                                let cache_item = frame_state.resource_cache.texture_cache.get(handle);
+                                let surface = descriptor.resolve(frame_state.resource_cache);
 
                                 let task = RenderTask::new_picture(
                                     RenderTaskLocation::PictureCache {
-                                        texture: cache_item.texture_id,
-                                        layer: cache_item.texture_layer,
                                         size: tile_cache.current_tile_size,
+                                        surface,
                                     },
                                     tile_cache.current_tile_size.to_f32(),
                                     pic_index,
@@ -4517,6 +4641,29 @@ impl TileNode {
                 } else {
                     *dirty_rect = self.rect.union(dirty_rect);
                     *dirty_tracker = *dirty_tracker | 1;
+                }
+            }
+        }
+    }
+}
+
+impl CompositeState {
+    
+    fn destroy_native_surfaces<'a, I: Iterator<Item = &'a Tile>>(
+        &mut self,
+        tiles_iter: I,
+    ) {
+        
+        
+        
+        
+        if let CompositeMode::Native = self.composite_mode {
+            for tile in tiles_iter {
+                
+                
+                
+                if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::NativeSurface { id, .. }, .. }) = tile.surface {
+                    self.destroy_surface(id);
                 }
             }
         }
