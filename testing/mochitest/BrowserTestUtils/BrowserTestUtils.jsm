@@ -1196,15 +1196,12 @@ var BrowserTestUtils = {
 
 
 
-
-
   addContentEventListener(
     browser,
     eventName,
     listener,
-    useCapture = false,
+    listenerOptions = {},
     checkFn,
-    wantsUntrusted = false,
     autoremove = true
   ) {
     let id = gListenerId++;
@@ -1217,13 +1214,7 @@ var BrowserTestUtils = {
     
 
     
-    function frameScript(
-      id,
-      eventName,
-      useCapture,
-      checkFnSource,
-      wantsUntrusted
-    ) {
+    function frameScript(id, eventName, listenerOptions, checkFnSource) {
       let checkFn;
       if (checkFnSource) {
         checkFn = eval(`(() => (${unescape(checkFnSource)}))()`);
@@ -1238,17 +1229,17 @@ var BrowserTestUtils = {
       function removeListener(msg) {
         if (msg.data == id) {
           removeMessageListener("ContentEventListener:Remove", removeListener);
-          removeEventListener(eventName, listener, useCapture, wantsUntrusted);
+          removeEventListener(eventName, listener, listenerOptions);
         }
       }
       addMessageListener("ContentEventListener:Remove", removeListener);
-      addEventListener(eventName, listener, useCapture, wantsUntrusted);
+      addEventListener(eventName, listener, listenerOptions);
     }
     
 
     let frameScriptSource = `data:,(${frameScript.toString()})(${id}, "${eventName}", ${uneval(
-      useCapture
-    )}, "${checkFnSource}", ${wantsUntrusted})`;
+      listenerOptions
+    )}, "${checkFnSource}")`;
 
     let mm = Services.mm;
 
