@@ -11,7 +11,7 @@ const key = Math.random().toString();
 
 
 function doTest(aBrowser) {
-  return ContentTask.spawn(aBrowser, key, function(contentKey) {
+  return SpecialPowers.spawn(aBrowser, [key], function(contentKey) {
     let value = content.localStorage.getItem(contentKey);
     if (value === null) {
       
