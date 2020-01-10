@@ -1115,6 +1115,8 @@ Accessible* nsAccessibilityService::CreateAccessible(nsINode* aNode,
         
         
         newAcc = new EnumRoleAccessible<roles::GRAPHIC>(content, document);
+      } else if (content->IsSVGElement(nsGkAtoms::text)) {
+        newAcc = new HyperTextAccessibleWrap(content->AsElement(), document);
       } else if (content->IsSVGElement(nsGkAtoms::svg)) {
         newAcc = new EnumRoleAccessible<roles::DIAGRAM>(content, document);
       }
