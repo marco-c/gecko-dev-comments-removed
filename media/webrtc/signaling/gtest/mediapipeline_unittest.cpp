@@ -456,7 +456,7 @@ class MediaPipelineTest : public ::testing::Test {
     p2_.Stop();
 
     
-    PR_Sleep(100);
+    PR_Sleep(200);
 
     p1_.Shutdown();
     p2_.Shutdown();
