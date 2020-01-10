@@ -525,12 +525,6 @@ class ContextMenuChild extends JSWindowActorChild {
     let context = this.context;
     this.target = context.target;
 
-    
-    
-    if (!context.shouldDisplay) {
-      return;
-    }
-
     let spellInfo = null;
     let editFlags = null;
     let principal = null;
