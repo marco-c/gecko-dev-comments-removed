@@ -69,6 +69,11 @@ async function expectFocusAfterKey(aKey, aFocus) {
 }
 
 add_task(async function setup() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.allow_unsafe_parent_loads", true]],
+  });
   let navBar = document.getElementById("nav-bar");
   gAnchor = document.createXULElement("toolbarbutton");
   navBar.appendChild(gAnchor);
