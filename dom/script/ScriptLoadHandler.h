@@ -43,12 +43,25 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
 
 
 
+  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+                     uint32_t aDataLength, bool aEndOfStream) {
+    
+    if (mDecoder) {
+      return true;
+    }
 
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+    return TrySetDecoder(aLoader, aData, aDataLength, aEndOfStream);
+  }
+
+  
+
+
+
+
+
+
+  bool TrySetDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
                      uint32_t aDataLength, bool aEndOfStream);
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
-                     uint32_t aDataLength, bool aEndOfStream,
-                     nsCString& oCharset);
 
   
 
