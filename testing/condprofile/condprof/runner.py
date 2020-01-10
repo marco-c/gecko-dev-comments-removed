@@ -13,7 +13,10 @@ import shutil
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from condprof import check_install  
+from condprof.check_install import check  
+
+check()  
+
 from condprof.creator import ProfileCreator  
 from condprof.desktop import DesktopEnv  
 from condprof.android import AndroidEnv  
