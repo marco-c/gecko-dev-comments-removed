@@ -192,6 +192,8 @@ class MutableWrappedPtrOperations<PromiseCapability, Wrapper>
 
 }  
 
+struct PromiseCombinatorElements;
+
 class PromiseCombinatorDataHolder : public NativeObject {
   enum {
     Slot_Promise = 0,
@@ -225,30 +227,151 @@ class PromiseCombinatorDataHolder : public NativeObject {
     return remainingCount;
   }
 
-  static PromiseCombinatorDataHolder* New(JSContext* cx,
-                                          HandleObject resultPromise,
-                                          HandleValue valuesArray,
-                                          HandleObject resolveOrReject);
+  static PromiseCombinatorDataHolder* New(
+      JSContext* cx, HandleObject resultPromise,
+      Handle<PromiseCombinatorElements> elements, HandleObject resolveOrReject);
 };
 
 const JSClass PromiseCombinatorDataHolder::class_ = {
     "PromiseCombinatorDataHolder", JSCLASS_HAS_RESERVED_SLOTS(SlotsCount)};
 
+
+
+
+
+struct MOZ_STACK_CLASS PromiseCombinatorElements final {
+  
+  Value value;
+
+  
+  ArrayObject* unwrappedArray = nullptr;
+
+  
+  bool setElementNeedsWrapping = false;
+
+  PromiseCombinatorElements() = default;
+
+  void trace(JSTracer* trc);
+};
+
+void PromiseCombinatorElements::trace(JSTracer* trc) {
+  TraceRoot(trc, &value, "PromiseCombinatorElements::value");
+  if (unwrappedArray) {
+    TraceRoot(trc, &unwrappedArray,
+              "PromiseCombinatorElements::unwrappedArray");
+  }
+}
+
+namespace js {
+
+template <typename Wrapper>
+class WrappedPtrOperations<PromiseCombinatorElements, Wrapper> {
+  const PromiseCombinatorElements& elements() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
+
+ public:
+  HandleValue value() const {
+    return HandleValue::fromMarkedLocation(&elements().value);
+  }
+
+  HandleArrayObject unwrappedArray() const {
+    return HandleArrayObject::fromMarkedLocation(&elements().unwrappedArray);
+  }
+};
+
+template <typename Wrapper>
+class MutableWrappedPtrOperations<PromiseCombinatorElements, Wrapper>
+    : public WrappedPtrOperations<PromiseCombinatorElements, Wrapper> {
+  PromiseCombinatorElements& elements() {
+    return static_cast<Wrapper*>(this)->get();
+  }
+
+ public:
+  MutableHandleValue value() {
+    return MutableHandleValue::fromMarkedLocation(&elements().value);
+  }
+
+  MutableHandle<ArrayObject*> unwrappedArray() {
+    return MutableHandle<ArrayObject*>::fromMarkedLocation(
+        &elements().unwrappedArray);
+  }
+
+  void initialize(ArrayObject* arrayObj) {
+    unwrappedArray().set(arrayObj);
+    value().setObject(*arrayObj);
+
+    
+    
+  }
+
+  void initialize(PromiseCombinatorDataHolder* data, ArrayObject* arrayObj,
+                  bool needsWrapping) {
+    unwrappedArray().set(arrayObj);
+    value().set(data->valuesArray());
+    elements().setElementNeedsWrapping = needsWrapping;
+  }
+
+  MOZ_MUST_USE bool pushUndefined(JSContext* cx) {
+    
+    
+    
+    AutoRealm ar(cx, unwrappedArray());
+
+    HandleArrayObject arrayObj = unwrappedArray();
+    return js::NewbornArrayPush(cx, arrayObj, UndefinedValue());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool setElement(JSContext* cx, uint32_t index, HandleValue val) {
+    
+    MOZ_ASSERT(unwrappedArray()->getDenseElement(index).isUndefined());
+
+    if (elements().setElementNeedsWrapping) {
+      AutoRealm ar(cx, unwrappedArray());
+
+      RootedValue rootedVal(cx, val);
+      if (!cx->compartment()->wrap(cx, &rootedVal)) {
+        return false;
+      }
+      unwrappedArray()->setDenseElement(index, rootedVal);
+    } else {
+      unwrappedArray()->setDenseElement(index, val);
+    }
+    return true;
+  }
+};
+
+}  
+
 PromiseCombinatorDataHolder* PromiseCombinatorDataHolder::New(
-    JSContext* cx, HandleObject resultPromise, HandleValue valuesArray,
-    HandleObject resolveOrReject) {
+    JSContext* cx, HandleObject resultPromise,
+    Handle<PromiseCombinatorElements> elements, HandleObject resolveOrReject) {
   auto* dataHolder = NewBuiltinClassInstance<PromiseCombinatorDataHolder>(cx);
   if (!dataHolder) {
     return nullptr;
   }
 
   cx->check(resultPromise);
-  cx->check(valuesArray);
+  cx->check(elements.value());
   cx->check(resolveOrReject);
 
   dataHolder->setFixedSlot(Slot_Promise, ObjectValue(*resultPromise));
   dataHolder->setFixedSlot(Slot_RemainingElements, Int32Value(1));
-  dataHolder->setFixedSlot(Slot_ValuesArray, valuesArray);
+  dataHolder->setFixedSlot(Slot_ValuesArray, elements.value());
   dataHolder->setFixedSlot(Slot_ResolveOrRejectFunction,
                            ObjectValue(*resolveOrReject));
   return dataHolder;
@@ -2428,24 +2551,25 @@ MOZ_MUST_USE JSObject* js::GetWaitForAllPromise(
     
 
     
-    RootedNativeObject valuesArray(
-        cx, NewDenseFullyAllocatedArray(cx, promiseCount));
-    if (!valuesArray) {
-      return nullptr;
+    Rooted<PromiseCombinatorElements> values(cx);
+    {
+      auto* valuesArray = NewDenseFullyAllocatedArray(cx, promiseCount);
+      if (!valuesArray) {
+        return nullptr;
+      }
+      valuesArray->ensureDenseInitializedLength(cx, 0, promiseCount);
+
+      values.initialize(valuesArray);
     }
-    valuesArray->ensureDenseInitializedLength(cx, 0, promiseCount);
 
     
     
     
     
     
-    RootedValue valuesArrayVal(cx, ObjectValue(*valuesArray));
     Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
-    dataHolder = PromiseCombinatorDataHolder::New(cx,
-                                                  resultCapability.promise(),
-                                                  valuesArrayVal,
-                                                  resultCapability.resolve());
+    dataHolder = PromiseCombinatorDataHolder::New(
+        cx, resultCapability.promise(), values, resultCapability.resolve());
     if (!dataHolder) {
       return nullptr;
     }
@@ -2463,7 +2587,7 @@ MOZ_MUST_USE JSObject* js::GetWaitForAllPromise(
       
 
       
-      valuesArray->setDenseElement(index, UndefinedHandleValue);
+      values.unwrappedArray()->setDenseElement(index, UndefinedHandleValue);
 
       
       RootedObject nextPromiseObj(cx, promises[index]);
@@ -2505,9 +2629,8 @@ MOZ_MUST_USE JSObject* js::GetWaitForAllPromise(
 
     
     if (remainingCount == 0) {
-      RootedValue valuesArrayVal(cx, ObjectValue(*valuesArray));
       if (!ResolvePromiseInternal(cx, resultCapability.promise(),
-                                  valuesArrayVal)) {
+                                  values.value())) {
         return nullptr;
       }
     }
@@ -2889,6 +3012,82 @@ static MOZ_MUST_USE bool CommonPerformPromiseCombinator(
   }
 }
 
+
+
+static MOZ_MUST_USE bool NewPromiseCombinatorElements(
+    JSContext* cx, Handle<PromiseCapability> resultCapability,
+    MutableHandle<PromiseCombinatorElements> elements) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (IsWrapper(resultCapability.promise())) {
+    JSObject* unwrappedPromiseObj =
+        CheckedUnwrapStatic(resultCapability.promise());
+    MOZ_ASSERT(unwrappedPromiseObj);
+
+    {
+      AutoRealm ar(cx, unwrappedPromiseObj);
+      auto* array = NewDenseEmptyArray(cx);
+      if (!array) {
+        return false;
+      }
+      elements.initialize(array);
+    }
+
+    if (!cx->compartment()->wrap(cx, elements.value())) {
+      return false;
+    }
+  } else {
+    auto* array = NewDenseEmptyArray(cx);
+    if (!array) {
+      return false;
+    }
+
+    elements.initialize(array);
+  }
+  return true;
+}
+
+
+static MOZ_MUST_USE bool GetPromiseCombinatorElements(
+    JSContext* cx, Handle<PromiseCombinatorDataHolder*> data,
+    MutableHandle<PromiseCombinatorElements> elements) {
+  bool needsWrapping = false;
+  JSObject* valuesObj = &data->valuesArray().toObject();
+  if (IsProxy(valuesObj)) {
+    
+    valuesObj = UncheckedUnwrap(valuesObj);
+
+    if (JS_IsDeadWrapper(valuesObj)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
+      return false;
+    }
+
+    needsWrapping = true;
+  }
+
+  elements.initialize(data, &valuesObj->as<ArrayObject>(), needsWrapping);
+  return true;
+}
+
 static JSFunction* NewPromiseCombinatorElementFunction(
     JSContext* cx, Native native,
     Handle<PromiseCombinatorDataHolder*> dataHolder, uint32_t index) {
@@ -2959,51 +3158,9 @@ static MOZ_MUST_USE bool PerformPromiseAll(
   
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RootedArrayObject valuesArray(cx);
-  RootedValue valuesArrayVal(cx);
-  if (IsWrapper(resultCapability.promise())) {
-    JSObject* unwrappedPromiseObj =
-        CheckedUnwrapStatic(resultCapability.promise());
-    MOZ_ASSERT(unwrappedPromiseObj);
-
-    {
-      AutoRealm ar(cx, unwrappedPromiseObj);
-      valuesArray = NewDenseEmptyArray(cx);
-      if (!valuesArray) {
-        return false;
-      }
-    }
-
-    valuesArrayVal.setObject(*valuesArray);
-    if (!cx->compartment()->wrap(cx, &valuesArrayVal)) {
-      return false;
-    }
-  } else {
-    valuesArray = NewDenseEmptyArray(cx);
-    if (!valuesArray) {
-      return false;
-    }
-
-    valuesArrayVal.setObject(*valuesArray);
+  Rooted<PromiseCombinatorElements> values(cx);
+  if (!NewPromiseCombinatorElements(cx, resultCapability, &values)) {
+    return false;
   }
 
   
@@ -3012,9 +3169,8 @@ static MOZ_MUST_USE bool PerformPromiseAll(
   
   
   Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
-  dataHolder = PromiseCombinatorDataHolder::New(cx, resultCapability.promise(),
-                                                valuesArrayVal,
-                                                resultCapability.resolve());
+  dataHolder = PromiseCombinatorDataHolder::New(
+      cx, resultCapability.promise(), values, resultCapability.resolve());
   if (!dataHolder) {
     return false;
   }
@@ -3022,18 +3178,12 @@ static MOZ_MUST_USE bool PerformPromiseAll(
   
   uint32_t index = 0;
 
-  auto getResolveAndReject = [cx, &resultCapability, &valuesArray, &dataHolder,
+  auto getResolveAndReject = [cx, &resultCapability, &values, &dataHolder,
                               &index](MutableHandleValue resolveFunVal,
                                       MutableHandleValue rejectFunVal) {
     
-    {  
-      
-      
-      AutoRealm ar(cx, valuesArray);
-
-      if (!NewbornArrayPush(cx, valuesArray, UndefinedValue())) {
-        return false;
-      }
+    if (!values.pushUndefined(cx)) {
+      return false;
     }
 
     
@@ -3067,7 +3217,7 @@ static MOZ_MUST_USE bool PerformPromiseAll(
 
   
   if (remainingCount == 0) {
-    return RunResolutionFunction(cx, resultCapability.resolve(), valuesArrayVal,
+    return RunResolutionFunction(cx, resultCapability.resolve(), values.value(),
                                  ResolveMode, resultCapability.promise());
   }
 
@@ -3075,10 +3225,11 @@ static MOZ_MUST_USE bool PerformPromiseAll(
 }
 
 
+
 static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  RootedValue xVal(cx, args.get(0));
+  HandleValue xVal = args.get(0);
 
   
   Rooted<PromiseCombinatorDataHolder*> data(cx);
@@ -3089,32 +3240,18 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   }
 
   
-  RootedValue valuesVal(cx, data->valuesArray());
-  RootedObject valuesObj(cx, &valuesVal.toObject());
-  if (IsProxy(valuesObj)) {
-    
-    valuesObj = UncheckedUnwrap(valuesObj);
-
-    if (JS_IsDeadWrapper(valuesObj)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEAD_OBJECT);
-      return false;
-    }
-
-    AutoRealm ar(cx, valuesObj);
-    if (!cx->compartment()->wrap(cx, &xVal)) {
-      return false;
-    }
+  Rooted<PromiseCombinatorElements> values(cx);
+  if (!GetPromiseCombinatorElements(cx, data, &values)) {
+    return false;
   }
-  HandleNativeObject values = valuesObj.as<NativeObject>();
 
   
   
 
   
-  
-  MOZ_ASSERT(values->getDenseElement(index).isUndefined());
-  values->setDenseElement(index, xVal);
+  if (!values.setElement(cx, index, xVal)) {
+    return false;
+  }
 
   
   uint32_t remainingCount = data->decreaseRemainingCount();
@@ -3127,7 +3264,7 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
     
     RootedObject resolveAllFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
-    if (!RunResolutionFunction(cx, resolveAllFun, valuesVal, ResolveMode,
+    if (!RunResolutionFunction(cx, resolveAllFun, values.value(), ResolveMode,
                                promiseObj)) {
       return false;
     }
@@ -3212,34 +3349,9 @@ static MOZ_MUST_USE bool PerformPromiseAllSettled(
   
 
   
-  
-  
-  RootedArrayObject valuesArray(cx);
-  RootedValue valuesArrayVal(cx);
-  if (IsWrapper(resultCapability.promise())) {
-    JSObject* unwrappedPromiseObj =
-        CheckedUnwrapStatic(resultCapability.promise());
-    MOZ_ASSERT(unwrappedPromiseObj);
-
-    {
-      AutoRealm ar(cx, unwrappedPromiseObj);
-      valuesArray = NewDenseEmptyArray(cx);
-      if (!valuesArray) {
-        return false;
-      }
-    }
-
-    valuesArrayVal.setObject(*valuesArray);
-    if (!cx->compartment()->wrap(cx, &valuesArrayVal)) {
-      return false;
-    }
-  } else {
-    valuesArray = NewDenseEmptyArray(cx);
-    if (!valuesArray) {
-      return false;
-    }
-
-    valuesArrayVal.setObject(*valuesArray);
+  Rooted<PromiseCombinatorElements> values(cx);
+  if (!NewPromiseCombinatorElements(cx, resultCapability, &values)) {
+    return false;
   }
 
   
@@ -3248,9 +3360,8 @@ static MOZ_MUST_USE bool PerformPromiseAllSettled(
   
   
   Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
-  dataHolder = PromiseCombinatorDataHolder::New(cx, resultCapability.promise(),
-                                                valuesArrayVal,
-                                                resultCapability.resolve());
+  dataHolder = PromiseCombinatorDataHolder::New(
+      cx, resultCapability.promise(), values, resultCapability.resolve());
   if (!dataHolder) {
     return false;
   }
@@ -3258,18 +3369,12 @@ static MOZ_MUST_USE bool PerformPromiseAllSettled(
   
   uint32_t index = 0;
 
-  auto getResolveAndReject = [cx, &valuesArray, &dataHolder, &index](
+  auto getResolveAndReject = [cx, &values, &dataHolder, &index](
                                  MutableHandleValue resolveFunVal,
                                  MutableHandleValue rejectFunVal) {
     
-    {  
-      
-      
-      AutoRealm ar(cx, valuesArray);
-
-      if (!NewbornArrayPush(cx, valuesArray, UndefinedValue())) {
-        return false;
-      }
+    if (!values.pushUndefined(cx)) {
+      return false;
     }
 
     auto PromiseAllSettledResolveElementFunction =
@@ -3317,14 +3422,12 @@ static MOZ_MUST_USE bool PerformPromiseAllSettled(
 
   
   if (remainingCount == 0) {
-    return RunResolutionFunction(cx, resultCapability.resolve(), valuesArrayVal,
+    return RunResolutionFunction(cx, resultCapability.resolve(), values.value(),
                                  ResolveMode, resultCapability.promise());
   }
 
   return true;
 }
-
-
 
 
 
@@ -3344,22 +3447,10 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   }
 
   
-  RootedValue valuesVal(cx, data->valuesArray());
-  RootedObject valuesObj(cx, &valuesVal.toObject());
-  bool needsWrapping = false;
-  if (IsProxy(valuesObj)) {
-    
-    valuesObj = UncheckedUnwrap(valuesObj);
-
-    if (JS_IsDeadWrapper(valuesObj)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEAD_OBJECT);
-      return false;
-    }
-
-    needsWrapping = true;
+  Rooted<PromiseCombinatorElements> values(cx);
+  if (!GetPromiseCombinatorElements(cx, data, &values)) {
+    return false;
   }
-  HandleNativeObject values = valuesObj.as<NativeObject>();
 
   
   
@@ -3367,7 +3458,7 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   
   
   
-  if (!values->getDenseElement(index).isUndefined()) {
+  if (!values.unwrappedArray()->getDenseElement(index).isUndefined()) {
     args.rval().setUndefined();
     return true;
   }
@@ -3402,16 +3493,11 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
     return false;
   }
 
-  RootedValue objVal(cx, ObjectValue(*obj));
-  if (needsWrapping) {
-    AutoRealm ar(cx, valuesObj);
-    if (!cx->compartment()->wrap(cx, &objVal)) {
-      return false;
-    }
-  }
-
   
-  values->setDenseElement(index, objVal);
+  RootedValue objVal(cx, ObjectValue(*obj));
+  if (!values.setElement(cx, index, objVal)) {
+    return false;
+  }
 
   
   uint32_t remainingCount = data->decreaseRemainingCount();
@@ -3424,7 +3510,7 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
     
     RootedObject resolveAllFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
-    if (!RunResolutionFunction(cx, resolveAllFun, valuesVal, ResolveMode,
+    if (!RunResolutionFunction(cx, resolveAllFun, values.value(), ResolveMode,
                                promiseObj)) {
       return false;
     }
