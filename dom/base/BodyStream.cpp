@@ -485,6 +485,9 @@ void BodyStream::ReleaseObjects(const MutexAutoLock& aProofOfLock) {
     }
   }
 
+  
+  JS::ReadableStreamReleaseCCObject(mStreamHolder->ReadableStreamBody());
+
   mWorkerRef = nullptr;
   mGlobal = nullptr;
 
