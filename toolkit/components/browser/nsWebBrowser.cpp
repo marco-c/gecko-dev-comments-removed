@@ -59,9 +59,7 @@ using namespace mozilla::layers;
 
 nsWebBrowser::nsWebBrowser(int aItemType)
     : mContentType(aItemType),
-      mActivating(false),
       mShouldEnableHistory(true),
-      mIsActive(true),
       mParentNativeWindow(nullptr),
       mProgressListener(nullptr),
       mWidgetListenerDelegate(this),
@@ -1249,12 +1247,6 @@ nsWebBrowser::SetDocShell(nsIDocShell* aDocShell) {
     
     
     mDocShell->SetAllowDNSPrefetch(false);
-
-    
-    
-    
-    
-    mDocShell->SetIsActive(mIsActive);
   } else {
     if (mDocShellTreeOwner) {
       mDocShellTreeOwner->RemoveFromWatcher();  
