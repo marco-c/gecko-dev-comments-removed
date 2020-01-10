@@ -54,8 +54,8 @@ static bool IsSafeToLinkForUntrustedContent(nsIURI* aURI) {
 
   
   
-  if (path.EqualsLiteral("blank") || path.EqualsLiteral("license") ||
-      path.EqualsLiteral("logo") || path.EqualsLiteral("srcdoc")) {
+  if (path.EqualsLiteral("blank") || path.EqualsLiteral("logo") ||
+      path.EqualsLiteral("srcdoc")) {
     return true;
   }
 
