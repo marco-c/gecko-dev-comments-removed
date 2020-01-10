@@ -162,9 +162,6 @@ FunctionBox::FunctionBox(JSContext* cx, TraceListNode* traceListHead,
       isGetter_(fun->isGetter()),
       isSetter_(fun->isSetter()),
       isMethod_(fun->isMethod()),
-      isInterpreted_(fun->isInterpreted()),
-      isInterpretedLazy_(fun->isInterpretedLazy()),
-      nargs_(0),
       kind_(fun->kind()),
       explicitName_(fun->explicitName()) {
   

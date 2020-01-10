@@ -110,7 +110,7 @@ BytecodeEmitter::BytecodeEmitter(
 
   if (sc->isFunctionBox()) {
     
-    bytecodeSection().setNumICEntries(sc->asFunctionBox()->nargs() +
+    bytecodeSection().setNumICEntries(sc->asFunctionBox()->function()->nargs() +
                                       1);
   }
 }
@@ -2486,7 +2486,6 @@ bool BytecodeEmitter::emitFunctionScript(FunctionNode* funNode,
   FunctionBox* funbox = sc->asFunctionBox();
   AutoFrontendTraceLog traceLog(cx, TraceLogger_BytecodeEmission,
                                 parser->errorReporter(), funbox);
-
 
   MOZ_ASSERT((fieldInitializers_.valid) ==
              (funbox->kind() == JSFunction::FunctionKind::ClassConstructor));

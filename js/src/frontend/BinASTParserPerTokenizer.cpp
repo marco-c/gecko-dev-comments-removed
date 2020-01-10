@@ -335,7 +335,7 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::buildFunction(
   
   if (!lazyScript_ ||
       lazyScript_->functionNonDelazifying() != funbox->function()) {
-    funbox->setArgCount(params ? uint16_t(params->count()) : 0);
+    funbox->function()->setArgCount(params ? uint16_t(params->count()) : 0);
   }
 
   
