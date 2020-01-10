@@ -525,7 +525,12 @@ ProxyMessenger = {
       
       
       if (browser.currentURI.specIgnoringRef === "about:addons") {
-        let optionsBrowser = browser.contentDocument.querySelector(".inline-options-browser");
+        let htmlBrowser = browser.contentDocument.getElementById("html-view-browser");
+        
+        
+        let optionsBrowser =
+          htmlBrowser.contentDocument.getElementById("addon-inline-options") ||
+          browser.contentDocument.querySelector(".inline-options-browser");
         if (optionsBrowser) {
           browser = optionsBrowser;
         }

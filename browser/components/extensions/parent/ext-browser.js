@@ -656,7 +656,7 @@ class TabTracker extends TabTrackerBase {
     let {gBrowser} = browser.ownerGlobal;
     
     if (!gBrowser || !gBrowser.getTabForBrowser) {
-      if (browser.ownerDocument.documentURI === "about:addons") {
+      if (browser.ownerGlobal.top.document.documentURI === "about:addons") {
         
         
         browser = browser.ownerGlobal.docShell.chromeEventHandler;
