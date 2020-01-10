@@ -446,58 +446,55 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
 
   if (len == 0) {
     
+    return 0;
+  }
+
+  
+  bool mustTrap = false;
+
+  
+  
+  uint64_t highestDstOffset = uint64_t(dstByteOffset) + uint64_t(len - 1);
+  uint64_t highestSrcOffset = uint64_t(srcByteOffset) + uint64_t(len - 1);
+
+  bool copyDown =
+      srcByteOffset < dstByteOffset && dstByteOffset < highestSrcOffset;
+
+  if (highestDstOffset >= memLen || highestSrcOffset >= memLen) {
     
-    if (dstByteOffset <= memLen && srcByteOffset <= memLen) {
-      return 0;
-    }
-  } else {
     
-    bool mustTrap = false;
+    if (copyDown) {
+      
+      
+      len = 0;
+    } else {
+      
+      
+      uint64_t srcAvail = memLen < srcByteOffset ? 0 : memLen - srcByteOffset;
+      uint64_t dstAvail = memLen < dstByteOffset ? 0 : memLen - dstByteOffset;
+      MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+      len = uint32_t(Min(srcAvail, dstAvail));
+    }
+    mustTrap = true;
+  }
 
+  if (len > 0) {
     
     
-    uint64_t highestDstOffset = uint64_t(dstByteOffset) + uint64_t(len - 1);
-    uint64_t highestSrcOffset = uint64_t(srcByteOffset) + uint64_t(len - 1);
-
-    bool copyDown =
-        srcByteOffset < dstByteOffset && dstByteOffset < highestSrcOffset;
-
-    if (highestDstOffset >= memLen || highestSrcOffset >= memLen) {
-      
-      
-      if (copyDown) {
-        
-        
-        len = 0;
-      } else {
-        
-        
-        uint64_t srcAvail = memLen < srcByteOffset ? 0 : memLen - srcByteOffset;
-        uint64_t dstAvail = memLen < dstByteOffset ? 0 : memLen - dstByteOffset;
-        MOZ_ASSERT(len > Min(srcAvail, dstAvail));
-        len = uint32_t(Min(srcAvail, dstAvail));
-      }
-      mustTrap = true;
+    
+    
+    SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
+    if (mem->isShared()) {
+      AtomicOperations::memmoveSafeWhenRacy(
+          dataPtr + dstByteOffset, dataPtr + srcByteOffset, size_t(len));
+    } else {
+      uint8_t* rawBuf = dataPtr.unwrap();
+      memmove(rawBuf + dstByteOffset, rawBuf + srcByteOffset, size_t(len));
     }
+  }
 
-    if (len > 0) {
-      
-      
-      
-      
-      SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
-      if (mem->isShared()) {
-        AtomicOperations::memmoveSafeWhenRacy(
-            dataPtr + dstByteOffset, dataPtr + srcByteOffset, size_t(len));
-      } else {
-        uint8_t* rawBuf = dataPtr.unwrap();
-        memmove(rawBuf + dstByteOffset, rawBuf + srcByteOffset, size_t(len));
-      }
-    }
-
-    if (!mustTrap) {
-      return 0;
-    }
+  if (!mustTrap) {
+    return 0;
   }
 
   JSContext* cx = TlsContext.get();
@@ -535,43 +532,40 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
 
   if (len == 0) {
     
-    
-    if (byteOffset <= memLen) {
-      return 0;
-    }
-  } else {
-    
+    return 0;
+  }
 
-    bool mustTrap = false;
+  
 
+  bool mustTrap = false;
+
+  
+  
+  uint64_t highestOffset = uint64_t(byteOffset) + uint64_t(len - 1);
+  if (highestOffset >= memLen) {
     
     
-    uint64_t highestOffset = uint64_t(byteOffset) + uint64_t(len - 1);
-    if (highestOffset >= memLen) {
-      
-      
-      uint64_t avail = memLen < byteOffset ? 0 : memLen - byteOffset;
-      MOZ_ASSERT(len > avail);
-      len = uint32_t(avail);
-      mustTrap = true;
-    }
+    uint64_t avail = memLen < byteOffset ? 0 : memLen - byteOffset;
+    MOZ_ASSERT(len > avail);
+    len = uint32_t(avail);
+    mustTrap = true;
+  }
 
-    if (len > 0) {
-      
-      
-      SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
-      if (mem->isShared()) {
-        AtomicOperations::memsetSafeWhenRacy(dataPtr + byteOffset, int(value),
-                                             size_t(len));
-      } else {
-        uint8_t* rawBuf = dataPtr.unwrap();
-        memset(rawBuf + byteOffset, int(value), size_t(len));
-      }
+  if (len > 0) {
+    
+    
+    SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
+    if (mem->isShared()) {
+      AtomicOperations::memsetSafeWhenRacy(dataPtr + byteOffset, int(value),
+                                           size_t(len));
+    } else {
+      uint8_t* rawBuf = dataPtr.unwrap();
+      memset(rawBuf + byteOffset, int(value), size_t(len));
     }
+  }
 
-    if (!mustTrap) {
-      return 0;
-    }
+  if (!mustTrap) {
+    return 0;
   }
 
   JSContext* cx = TlsContext.get();
@@ -610,49 +604,45 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
 
   if (len == 0) {
     
+    return 0;
+  }
+
+  
+
+  bool mustTrap = false;
+
+  
+  
+  uint64_t highestDstOffset = uint64_t(dstOffset) + uint64_t(len - 1);
+  uint64_t highestSrcOffset = uint64_t(srcOffset) + uint64_t(len - 1);
+
+  if (highestDstOffset >= memLen || highestSrcOffset >= segLen) {
     
     
-    if (dstOffset <= memLen && srcOffset <= segLen) {
-      return 0;
+    
+    uint64_t srcAvail = segLen < srcOffset ? 0 : segLen - srcOffset;
+    uint64_t dstAvail = memLen < dstOffset ? 0 : memLen - dstOffset;
+    MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+    len = uint32_t(Min(srcAvail, dstAvail));
+    mustTrap = true;
+  }
+
+  if (len > 0) {
+    
+    
+    SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
+    if (mem->isShared()) {
+      AtomicOperations::memcpySafeWhenRacy(
+          dataPtr + dstOffset, (uint8_t*)seg.bytes.begin() + srcOffset, len);
+    } else {
+      uint8_t* rawBuf = dataPtr.unwrap();
+      memcpy(rawBuf + dstOffset, (const char*)seg.bytes.begin() + srcOffset,
+             len);
     }
-  } else {
-    
+  }
 
-    bool mustTrap = false;
-
-    
-    
-    uint64_t highestDstOffset = uint64_t(dstOffset) + uint64_t(len - 1);
-    uint64_t highestSrcOffset = uint64_t(srcOffset) + uint64_t(len - 1);
-
-    if (highestDstOffset >= memLen || highestSrcOffset >= segLen) {
-      
-      
-      
-      uint64_t srcAvail = segLen < srcOffset ? 0 : segLen - srcOffset;
-      uint64_t dstAvail = memLen < dstOffset ? 0 : memLen - dstOffset;
-      MOZ_ASSERT(len > Min(srcAvail, dstAvail));
-      len = uint32_t(Min(srcAvail, dstAvail));
-      mustTrap = true;
-    }
-
-    if (len > 0) {
-      
-      
-      SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
-      if (mem->isShared()) {
-        AtomicOperations::memcpySafeWhenRacy(
-            dataPtr + dstOffset, (uint8_t*)seg.bytes.begin() + srcOffset, len);
-      } else {
-        uint8_t* rawBuf = dataPtr.unwrap();
-        memcpy(rawBuf + dstOffset, (const char*)seg.bytes.begin() + srcOffset,
-               len);
-      }
-    }
-
-    if (!mustTrap) {
-      return 0;
-    }
+  if (!mustTrap) {
+    return 0;
   }
 
   JS_ReportErrorNumberASCII(TlsContext.get(), GetErrorMessage, nullptr,
@@ -674,64 +664,58 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
 
   if (len == 0) {
     
+    return 0;
+  }
+
+  
+  bool mustTrap = false;
+
+  
+  
+  uint64_t highestDstOffset = uint64_t(dstOffset) + (len - 1);
+  uint64_t highestSrcOffset = uint64_t(srcOffset) + (len - 1);
+
+  bool copyDown = srcOffset < dstOffset && dstOffset < highestSrcOffset;
+
+  if (highestDstOffset >= dstTableLen || highestSrcOffset >= srcTableLen) {
     
     
-    if (dstOffset <= dstTableLen && srcOffset <= srcTableLen) {
-      return 0;
+    if (copyDown) {
+      
+      
+      len = 0;
+    } else {
+      
+      
+      uint64_t srcAvail = srcTableLen < srcOffset ? 0 : srcTableLen - srcOffset;
+      uint64_t dstAvail = dstTableLen < dstOffset ? 0 : dstTableLen - dstOffset;
+      MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+      len = uint32_t(Min(srcAvail, dstAvail));
     }
-  } else {
-    
-    bool mustTrap = false;
+    mustTrap = true;
+  }
 
+  if (len > 0) {
     
     
-    uint64_t highestDstOffset = uint64_t(dstOffset) + (len - 1);
-    uint64_t highestSrcOffset = uint64_t(srcOffset) + (len - 1);
-
-    bool copyDown = srcOffset < dstOffset && dstOffset < highestSrcOffset;
-
-    if (highestDstOffset >= dstTableLen || highestSrcOffset >= srcTableLen) {
-      
-      
-      if (copyDown) {
-        
-        
-        len = 0;
-      } else {
-        
-        
-        uint64_t srcAvail =
-            srcTableLen < srcOffset ? 0 : srcTableLen - srcOffset;
-        uint64_t dstAvail =
-            dstTableLen < dstOffset ? 0 : dstTableLen - dstOffset;
-        MOZ_ASSERT(len > Min(srcAvail, dstAvail));
-        len = uint32_t(Min(srcAvail, dstAvail));
+    
+    
+    
+    if (&srcTable == &dstTable && dstOffset > srcOffset) {
+      for (uint32_t i = len; i > 0; i--) {
+        dstTable->copy(*srcTable, dstOffset + (i - 1), srcOffset + (i - 1));
       }
-      mustTrap = true;
-    }
-
-    if (len > 0) {
+    } else if (&srcTable == &dstTable && dstOffset == srcOffset) {
       
-      
-      
-      
-      
-      if (&srcTable == &dstTable && dstOffset > srcOffset) {
-        for (uint32_t i = len; i > 0; i--) {
-          dstTable->copy(*srcTable, dstOffset + (i - 1), srcOffset + (i - 1));
-        }
-      } else if (&srcTable == &dstTable && dstOffset == srcOffset) {
-        
-      } else {
-        for (uint32_t i = 0; i < len; i++) {
-          dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
-        }
+    } else {
+      for (uint32_t i = 0; i < len; i++) {
+        dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
       }
     }
+  }
 
-    if (!mustTrap) {
-      return 0;
-    }
+  if (!mustTrap) {
+    return 0;
   }
 
   JS_ReportErrorNumberASCII(TlsContext.get(), GetErrorMessage, nullptr,
@@ -843,37 +827,34 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   if (len == 0) {
     
-    
-    if (dstOffset <= tableLen && srcOffset <= segLen) {
-      return 0;
-    }
-  } else {
-    
-    bool mustTrap = false;
+    return 0;
+  }
 
+  
+  bool mustTrap = false;
+
+  
+  
+  uint64_t highestDstOffset = uint64_t(dstOffset) + uint64_t(len - 1);
+  uint64_t highestSrcOffset = uint64_t(srcOffset) + uint64_t(len - 1);
+
+  if (highestDstOffset >= tableLen || highestSrcOffset >= segLen) {
     
     
-    uint64_t highestDstOffset = uint64_t(dstOffset) + uint64_t(len - 1);
-    uint64_t highestSrcOffset = uint64_t(srcOffset) + uint64_t(len - 1);
+    
+    uint64_t srcAvail = segLen < srcOffset ? 0 : segLen - srcOffset;
+    uint64_t dstAvail = tableLen < dstOffset ? 0 : tableLen - dstOffset;
+    MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+    len = uint32_t(Min(srcAvail, dstAvail));
+    mustTrap = true;
+  }
 
-    if (highestDstOffset >= tableLen || highestSrcOffset >= segLen) {
-      
-      
-      
-      uint64_t srcAvail = segLen < srcOffset ? 0 : segLen - srcOffset;
-      uint64_t dstAvail = tableLen < dstOffset ? 0 : tableLen - dstOffset;
-      MOZ_ASSERT(len > Min(srcAvail, dstAvail));
-      len = uint32_t(Min(srcAvail, dstAvail));
-      mustTrap = true;
-    }
+  if (len > 0) {
+    instance->initElems(tableIndex, seg, dstOffset, srcOffset, len);
+  }
 
-    if (len > 0) {
-      instance->initElems(tableIndex, seg, dstOffset, srcOffset, len);
-    }
-
-    if (!mustTrap) {
-      return 0;
-    }
+  if (!mustTrap) {
+    return 0;
   }
 
   JS_ReportErrorNumberASCII(TlsContext.get(), GetErrorMessage, nullptr,
@@ -891,43 +872,40 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   if (len == 0) {
     
+    return 0;
+  }
+
+  
+
+  bool mustTrap = false;
+
+  
+  
+  uint64_t highestOffset = uint64_t(start) + uint64_t(len - 1);
+  if (highestOffset >= table.length()) {
     
-    if (start <= table.length()) {
-      return 0;
-    }
-  } else {
     
+    uint64_t avail = table.length() < start ? 0 : table.length() - start;
+    MOZ_ASSERT(len > avail);
+    len = uint32_t(avail);
+    mustTrap = true;
+  }
 
-    bool mustTrap = false;
+  AnyRef ref = AnyRef::fromCompiledCode(value);
 
-    
-    
-    uint64_t highestOffset = uint64_t(start) + uint64_t(len - 1);
-    if (highestOffset >= table.length()) {
-      
-      
-      uint64_t avail = table.length() < start ? 0 : table.length() - start;
-      MOZ_ASSERT(len > avail);
-      len = uint32_t(avail);
-      mustTrap = true;
-    }
+  switch (table.kind()) {
+    case TableKind::AnyRef:
+      table.fillAnyRef(start, len, ref);
+      break;
+    case TableKind::FuncRef:
+      table.fillFuncRef(start, len, ref, cx);
+      break;
+    case TableKind::AsmJS:
+      MOZ_CRASH("not asm.js");
+  }
 
-    AnyRef ref = AnyRef::fromCompiledCode(value);
-
-    switch (table.kind()) {
-      case TableKind::AnyRef:
-        table.fillAnyRef(start, len, ref);
-        break;
-      case TableKind::FuncRef:
-        table.fillFuncRef(start, len, ref, cx);
-        break;
-      case TableKind::AsmJS:
-        MOZ_CRASH("not asm.js");
-    }
-
-    if (!mustTrap) {
-      return 0;
-    }
+  if (!mustTrap) {
+    return 0;
   }
 
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
