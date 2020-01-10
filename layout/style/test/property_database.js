@@ -12,6 +12,7 @@
 
 
 
+
 function IsCSSPropertyPrefEnabled(prefName) {
   try {
     if (SpecialPowers.getBoolPref(prefName)) {
