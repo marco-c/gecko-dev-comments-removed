@@ -89,6 +89,8 @@ class BrowserHost : public RemoteBrowser,
   void UpdateDimensions(const nsIntRect& aRect,
                         const ScreenIntSize& aSize) override;
 
+  void UpdateEffects(EffectsInfo aInfo) override;
+
  private:
   virtual ~BrowserHost() = default;
 
@@ -97,6 +99,7 @@ class BrowserHost : public RemoteBrowser,
   TabId mId;
   
   RefPtr<BrowserParent> mRoot;
+  EffectsInfo mEffectsInfo;
 };
 
 }  

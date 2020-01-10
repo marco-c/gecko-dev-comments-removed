@@ -312,6 +312,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   bool IsRemoteFrame();
 
+  mozilla::dom::RemoteBrowser* GetRemoteBrowser() const;
+
   
 
 
