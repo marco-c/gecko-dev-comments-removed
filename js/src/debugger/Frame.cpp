@@ -252,6 +252,12 @@ js::AbstractGeneratorObject& js::DebuggerFrame::unwrappedGenerator() const {
   return generatorInfo()->unwrappedGenerator();
 }
 
+#ifdef DEBUG
+JSScript* js::DebuggerFrame::generatorScript() const {
+  return generatorInfo()->generatorScript();
+}
+#endif
+
 bool DebuggerFrame::setGenerator(JSContext* cx,
                                  Handle<AbstractGeneratorObject*> genObj) {
   cx->check(this);
@@ -264,9 +270,6 @@ bool DebuggerFrame::setGenerator(JSContext* cx,
     return true;
   }
 
-  
-  
-  
   
   
   
@@ -290,18 +293,6 @@ bool DebuggerFrame::setGenerator(JSContext* cx,
   auto generatorFramesGuard =
       MakeScopeExit([&] { owner()->generatorFrames.remove(genObj); });
 
-  Rooted<CrossCompartmentKey> generatorKey(
-      cx, CrossCompartmentKey::DebuggeeFrameGenerator(owner()->toJSObject(),
-                                                      genObj));
-  if (!compartment()->putWrapper(cx, generatorKey, ObjectValue(*this))) {
-    return false;
-  }
-  auto crossCompartmentKeysGuard = MakeScopeExit([&] {
-    WrapperMap::Ptr generatorPtr = compartment()->lookupWrapper(generatorKey);
-    MOZ_ASSERT(generatorPtr);
-    compartment()->removeWrapper(generatorPtr);
-  });
-
   {
     AutoRealm ar(cx, script);
     if (!DebugScript::incrementGeneratorObserverCount(cx, script)) {
@@ -312,7 +303,6 @@ bool DebuggerFrame::setGenerator(JSContext* cx,
   InitReservedSlot(this, GENERATOR_INFO_SLOT, info,
                    MemoryUse::DebuggerFrameGeneratorInfo);
 
-  crossCompartmentKeysGuard.release();
   generatorFramesGuard.release();
   infoGuard.release();
 
@@ -357,18 +347,10 @@ void DebuggerFrame::clearGenerator(
     return;
   }
 
-  
-  
-  
-  GeneratorInfo* info = generatorInfo();
-  CrossCompartmentKey generatorKey(CrossCompartmentKey::DebuggeeFrameGenerator(
-      owner->object, &info->unwrappedGenerator()));
-  auto generatorPtr = compartment()->lookupWrapper(generatorKey);
-  MOZ_ASSERT(generatorPtr);
-  compartment()->removeWrapper(generatorPtr);
 
   
   
+  GeneratorInfo* info = generatorInfo();
   if (maybeGeneratorFramesEnum) {
     maybeGeneratorFramesEnum->removeFront();
   } else {

@@ -114,6 +114,11 @@ class DebugAPI {
   static void checkDebugScriptAfterMovingGC(DebugScript* ds);
 #endif
 
+#ifdef DEBUG
+  static bool edgeIsInDebuggerWeakmap(JSRuntime* rt, JSObject* src,
+                                      JS::GCCellPtr dst);
+#endif
+
   
 
   

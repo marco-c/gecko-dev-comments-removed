@@ -192,6 +192,10 @@ class DebuggerFrame : public NativeObject {
   
   AbstractGeneratorObject& unwrappedGenerator() const;
 
+#ifdef DEBUG
+  JSScript* generatorScript() const;
+#endif
+
   
 
 
