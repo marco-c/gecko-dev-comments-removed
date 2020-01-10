@@ -89,11 +89,12 @@ export function generateInlinePreview(cx: ThreadContext, frame: ?Frame) {
         
         
         let properties = null;
-        if (bindings[name].value.class === "Object") {
+        const objectFront = bindings[name].value;
+        if (objectFront.actorID && objectFront.class === "Object") {
           properties = await client.loadObjectProperties({
             name,
             path: name,
-            contents: { value: bindings[name].value },
+            contents: { value: objectFront },
           });
         }
 
