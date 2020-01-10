@@ -334,8 +334,10 @@ select > button[orientation="right"]:active {
   text-align: unset;
   user-select: none;
   
-  block-size: 100% ! important;
-  box-sizing: border-box ! important;
+  block-size: 100%;
+  
+  min-inline-size: max-content;
+  box-sizing: border-box;
   line-height: -moz-block-height;
 }
 

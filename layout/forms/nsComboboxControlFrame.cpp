@@ -228,6 +228,7 @@ nsComboboxControlFrame::nsComboboxControlFrame(ComputedStyle* aStyle,
       mDropdownFrame(nullptr),
       mListControlFrame(nullptr),
       mDisplayISize(0),
+      mMaxDisplayISize(0),
       mRecentSelectedIndex(NS_SKIP_NOTIFY_INDEX),
       mDisplayedIndex(-1),
       mLastDropDownBeforeScreenBCoord(nscoord_MIN),
@@ -828,6 +829,12 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
 
   mDisplayISize = aReflowInput.ComputedISize() - buttonISize;
 
+  
+  
+  
+  
+  mMaxDisplayISize = aReflowInput.ComputedSizeWithBorderPadding().ISize(wm);
+
   nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   
@@ -1245,12 +1252,24 @@ void nsComboboxDisplayFrame::Reflow(nsPresContext* aPresContext,
     state.SetComputedBSize(lh);
   }
   WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord computedISize = mComboBox->mDisplayISize -
-                          state.ComputedLogicalBorderPadding().IStartEnd(wm);
-  if (computedISize < 0) {
-    computedISize = 0;
+  nscoord inlineBp = state.ComputedLogicalBorderPadding().IStartEnd(wm);
+  nscoord computedISize = mComboBox->mDisplayISize - inlineBp;
+
+  
+  
+  
+  
+  const bool shouldHonorMinISize =
+      mComboBox->StyleDisplay()->mAppearance == StyleAppearance::Menulist;
+  if (shouldHonorMinISize) {
+    computedISize = std::max(state.ComputedMinISize(), computedISize);
+    
+    
+    computedISize =
+        std::min(computedISize, mComboBox->mMaxDisplayISize - inlineBp);
   }
-  state.SetComputedISize(computedISize);
+
+  state.SetComputedISize(std::max(0, computedISize));
   nsBlockFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
   aStatus.Reset();  
 }
