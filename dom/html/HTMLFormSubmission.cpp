@@ -755,40 +755,6 @@ nsresult EncodingFormSubmission::EncodeVal(const nsAString& aStr,
 
 namespace {
 
-NotNull<const Encoding*> GetSubmitEncoding(nsGenericHTMLElement* aForm) {
-  nsAutoString acceptCharsetValue;
-  aForm->GetAttr(kNameSpaceID_None, nsGkAtoms::acceptcharset,
-                 acceptCharsetValue);
-
-  int32_t charsetLen = acceptCharsetValue.Length();
-  if (charsetLen > 0) {
-    int32_t offset = 0;
-    int32_t spPos = 0;
-    
-    do {
-      spPos = acceptCharsetValue.FindChar(char16_t(' '), offset);
-      int32_t cnt = ((-1 == spPos) ? (charsetLen - offset) : (spPos - offset));
-      if (cnt > 0) {
-        nsAutoString uCharset;
-        acceptCharsetValue.Mid(uCharset, offset, cnt);
-
-        auto encoding = Encoding::ForLabelNoReplacement(uCharset);
-        if (encoding) {
-          return WrapNotNull(encoding);
-        }
-      }
-      offset = spPos + 1;
-    } while (spPos != -1);
-  }
-  
-  
-  Document* doc = aForm->GetComposedDoc();
-  if (doc) {
-    return doc->GetDocumentCharacterSet();
-  }
-  return UTF_8_ENCODING;
-}
-
 void GetEnumAttr(nsGenericHTMLElement* aContent, nsAtom* atom,
                  int32_t* aValue) {
   const nsAttrValue* value = aContent->GetParsedAttr(atom);
@@ -802,7 +768,7 @@ void GetEnumAttr(nsGenericHTMLElement* aContent, nsAtom* atom,
 
 nsresult HTMLFormSubmission::GetFromForm(
     HTMLFormElement* aForm, nsGenericHTMLElement* aOriginatingElement,
-    HTMLFormSubmission** aFormSubmission) {
+    NotNull<const Encoding*>& aEncoding, HTMLFormSubmission** aFormSubmission) {
   
   NS_ASSERTION(aForm->GetComposedDoc(),
                "Should have doc if we're building submission!");
@@ -866,16 +832,13 @@ nsresult HTMLFormSubmission::GetFromForm(
   }
 
   
-  auto encoding = GetSubmitEncoding(aForm)->OutputEncoding();
-
-  
   if (method == NS_FORM_METHOD_POST && enctype == NS_FORM_ENCTYPE_MULTIPART) {
-    *aFormSubmission = new FSMultipartFormData(actionURL, target, encoding,
+    *aFormSubmission = new FSMultipartFormData(actionURL, target, aEncoding,
                                                aOriginatingElement);
   } else if (method == NS_FORM_METHOD_POST &&
              enctype == NS_FORM_ENCTYPE_TEXTPLAIN) {
     *aFormSubmission =
-        new FSTextPlain(actionURL, target, encoding, aOriginatingElement);
+        new FSTextPlain(actionURL, target, aEncoding, aOriginatingElement);
   } else {
     Document* doc = aForm->OwnerDoc();
     if (enctype == NS_FORM_ENCTYPE_MULTIPART ||
@@ -893,7 +856,7 @@ nsresult HTMLFormSubmission::GetFromForm(
 
       SendJSWarning(doc, "ForgotPostWarning", args);
     }
-    *aFormSubmission = new FSURLEncoded(actionURL, target, encoding, method,
+    *aFormSubmission = new FSURLEncoded(actionURL, target, aEncoding, method,
                                         doc, aOriginatingElement);
   }
 
