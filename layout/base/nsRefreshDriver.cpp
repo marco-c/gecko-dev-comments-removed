@@ -86,6 +86,8 @@
 #  include "nsXULPopupManager.h"
 #endif
 
+#include <numeric>
+
 using namespace mozilla;
 using namespace mozilla::widget;
 using namespace mozilla::ipc;
@@ -139,6 +141,23 @@ uint64_t sJankLevels[12];
 
 
 static uint32_t sRefreshDriverCount = 0;
+
+
+class AutoRecordPhase {
+ public:
+  explicit AutoRecordPhase(double* aResultMs)
+      : mTotalMs(aResultMs), mStartTime(TimeStamp::Now()) {
+    MOZ_ASSERT(mTotalMs);
+  }
+  ~AutoRecordPhase() {
+    *mTotalMs = (TimeStamp::Now() - mStartTime).ToMilliseconds();
+  }
+
+ private:
+  double* mTotalMs;
+  mozilla::TimeStamp mStartTime;
+};
+
 }  
 
 namespace mozilla {
@@ -1894,6 +1913,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   }
   DispatchVisualViewportResizeEvents();
 
+  double phaseMetrics[MOZ_ARRAY_LENGTH(mObservers)] = {
+      0.0,
+  };
+
   
 
 
@@ -1901,6 +1924,8 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
 
 
   for (uint32_t i = 0; i < ArrayLength(mObservers); ++i) {
+    AutoRecordPhase phaseRecord(&phaseMetrics[i]);
+
     ObserverArray::EndLimitedIterator etor(mObservers[i]);
     while (etor.HasMore()) {
       RefPtr<nsARefreshObserver> obs = etor.GetNext();
@@ -2075,8 +2100,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     }
   }
 
+  double phasePaint = 0.0;
   bool dispatchRunnablesAfterTick = false;
   if (mViewManagerFlushIsPending) {
+    AutoRecordPhase paintRecord(&phasePaint);
     RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
 
     nsTArray<nsDocShell*> profilingDocShells;
@@ -2121,10 +2148,36 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     mHasScheduleFlush = false;
   }
 
+  double totalMs = (TimeStamp::Now() - mTickStart).ToMilliseconds();
+
 #ifndef ANDROID 
-  mozilla::Telemetry::AccumulateTimeDelta(
-      mozilla::Telemetry::REFRESH_DRIVER_TICK, mTickStart);
+  mozilla::Telemetry::Accumulate(mozilla::Telemetry::REFRESH_DRIVER_TICK,
+                                 static_cast<uint32_t>(totalMs));
 #endif
+
+  
+  
+  
+  if (totalMs > 1000.0 / 60.0) {
+    auto record = [=](const nsCString& aKey, double aDurationMs) -> void {
+      MOZ_ASSERT(aDurationMs <= totalMs);
+      auto phasePercent = static_cast<uint32_t>(aDurationMs * 100.0 / totalMs);
+      Telemetry::Accumulate(Telemetry::REFRESH_DRIVER_TICK_PHASE_WEIGHT, aKey,
+                            phasePercent);
+    };
+
+    record(NS_LITERAL_CSTRING("Event"), phaseMetrics[0]);
+    record(NS_LITERAL_CSTRING("Style"), phaseMetrics[1]);
+    record(NS_LITERAL_CSTRING("Reflow"), phaseMetrics[2]);
+    record(NS_LITERAL_CSTRING("Display"), phaseMetrics[3]);
+    record(NS_LITERAL_CSTRING("Paint"), phasePaint);
+
+    
+    double other = totalMs -
+                   std::accumulate(phaseMetrics, ArrayEnd(phaseMetrics), 0.0) -
+                   phasePaint;
+    record(NS_LITERAL_CSTRING("Other"), other);
+  }
 
   if (mNotifyDOMContentFlushed) {
     mNotifyDOMContentFlushed = false;
