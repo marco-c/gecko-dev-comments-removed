@@ -5854,7 +5854,7 @@ bool PresShell::AssumeAllFramesVisible() {
   
   
   if (!mHaveShutDown && !mIsDestroying &&
-      !mPresContext->IsRootContentDocument()) {
+      !mPresContext->IsRootContentDocumentInProcess()) {
     nsPresContext* presContext =
         mPresContext->GetToplevelContentDocumentPresContext();
     if (presContext && presContext->PresShell()->AssumeAllFramesVisible()) {
