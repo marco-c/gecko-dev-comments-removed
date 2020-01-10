@@ -456,7 +456,10 @@ class Context {
 
 
 
-  error(errorMessage, choicesMessage = undefined) {
+
+
+
+  error(errorMessage, choicesMessage = undefined, warning = false) {
     if (choicesMessage !== null) {
       let { choicePath } = this;
       if (choicePath) {
@@ -470,7 +473,9 @@ class Context {
       let { currentTarget } = this;
       return {
         error: () =>
-          `Error processing ${currentTarget}: ${forceString(errorMessage)}`,
+          `${
+            warning ? "Warning" : "Error"
+          } processing ${currentTarget}: ${forceString(errorMessage)}`,
       };
     }
     return { error: errorMessage };
@@ -487,8 +492,10 @@ class Context {
 
 
 
-  makeError(message) {
-    let error = forceString(this.error(message).error);
+
+
+  makeError(message, { warning = false } = {}) {
+    let error = forceString(this.error(message, null, warning).error);
     if (this.cloneScope) {
       return new this.cloneScope.Error(error);
     }
@@ -1186,7 +1193,7 @@ class Entry {
       }
     }
 
-    context.logError(context.makeError(message));
+    context.logError(context.makeError(message, { warning: true }));
   }
 
   
