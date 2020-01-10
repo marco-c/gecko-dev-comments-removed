@@ -9,18 +9,15 @@
 const React = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
-const { combineReducers } = require("devtools/client/shared/vendor/redux");
 
 
 const MainFrame = React.createFactory(require("./components/MainFrame"));
 
 
-const createStore = require("devtools/client/shared/redux/create-store")({
-  log: false,
-});
+const createStore = require("devtools/client/shared/redux/create-store");
 
 const { reducers } = require("./reducers/index");
-const store = createStore(combineReducers(reducers));
+const store = createStore(reducers);
 
 
 
