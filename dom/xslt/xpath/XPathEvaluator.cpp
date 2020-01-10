@@ -108,8 +108,7 @@ bool XPathEvaluator::WrapObject(JSContext* aCx,
 }
 
 
-XPathEvaluator* XPathEvaluator::Constructor(const GlobalObject& aGlobal,
-                                            ErrorResult& rv) {
+XPathEvaluator* XPathEvaluator::Constructor(const GlobalObject& aGlobal) {
   return new XPathEvaluator(nullptr);
 }
 

@@ -17,8 +17,7 @@ namespace dom {
 
 
 already_AddRefed<Touch> Touch::Constructor(const GlobalObject& aGlobal,
-                                           const TouchInit& aParam,
-                                           ErrorResult& aRv) {
+                                           const TouchInit& aParam) {
   
   
   RefPtr<Touch> touch = new Touch(

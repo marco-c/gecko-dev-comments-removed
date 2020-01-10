@@ -606,7 +606,7 @@ AudioBufferSourceNode::AudioBufferSourceNode(AudioContext* aContext)
 
 already_AddRefed<AudioBufferSourceNode> AudioBufferSourceNode::Create(
     JSContext* aCx, AudioContext& aAudioContext,
-    const AudioBufferSourceOptions& aOptions, ErrorResult& aRv) {
+    const AudioBufferSourceOptions& aOptions) {
   RefPtr<AudioBufferSourceNode> audioNode =
       new AudioBufferSourceNode(&aAudioContext);
 

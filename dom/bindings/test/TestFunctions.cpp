@@ -16,8 +16,7 @@ namespace mozilla {
 namespace dom {
 
 
-TestFunctions* TestFunctions::Constructor(GlobalObject& aGlobal,
-                                          ErrorResult& aRv) {
+TestFunctions* TestFunctions::Constructor(GlobalObject& aGlobal) {
   return new TestFunctions;
 }
 

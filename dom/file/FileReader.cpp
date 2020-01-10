@@ -120,7 +120,7 @@ FileReader::~FileReader() {
 
 
 already_AddRefed<FileReader> FileReader::Constructor(
-    const GlobalObject& aGlobal, ErrorResult& aRv) {
+    const GlobalObject& aGlobal) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<WeakWorkerRef> workerRef;
 
