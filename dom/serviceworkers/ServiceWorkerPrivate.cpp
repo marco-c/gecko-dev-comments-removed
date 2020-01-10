@@ -6,8 +6,12 @@
 
 #include "ServiceWorkerPrivate.h"
 
+#include <utility>
+
 #include "ServiceWorkerCloneData.h"
 #include "ServiceWorkerManager.h"
+#include "ServiceWorkerPrivateImpl.h"
+#include "ServiceWorkerUtils.h"
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIHttpChannelInternal.h"
@@ -40,8 +44,10 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/net/CookieSettings.h"
 #include "mozilla/net/NeckoChannelParams.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Unused.h"
 #include "nsIReferrerInfo.h"
@@ -89,11 +95,20 @@ ServiceWorkerPrivate::ServiceWorkerPrivate(ServiceWorkerInfo* aInfo)
 
   mIdleWorkerTimer = NS_NewTimer();
   MOZ_ASSERT(mIdleWorkerTimer);
+
+  if (ServiceWorkerParentInterceptEnabled()) {
+    RefPtr<ServiceWorkerPrivateImpl> inner = new ServiceWorkerPrivateImpl(this);
+    nsresult rv = inner->Initialize();
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+
+    mInner = inner.forget();
+  }
 }
 
 ServiceWorkerPrivate::~ServiceWorkerPrivate() {
   MOZ_ASSERT(!mWorkerPrivate);
   MOZ_ASSERT(!mTokenCount);
+  MOZ_ASSERT(!mInner);
   MOZ_ASSERT(!mInfo);
   MOZ_ASSERT(mSupportsArray.IsEmpty());
   MOZ_ASSERT(mIdlePromiseHolder.IsEmpty());
@@ -180,6 +195,12 @@ class CheckScriptEvaluationWithCallback final : public WorkerRunnable {
 
 nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
     LifeCycleEventCallback* aScriptEvaluationCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return mInner->CheckScriptEvaluation(aScriptEvaluationCallback);
+  }
+
   nsresult rv = SpawnWorkerIfNeeded(LifeCycleEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -498,6 +519,10 @@ nsresult ServiceWorkerPrivate::SendMessageEvent(
     const ClientInfoAndState& aClientInfoAndState) {
   MOZ_ASSERT(NS_IsMainThread());
 
+  if (mInner) {
+    return mInner->SendMessageEvent(std::move(aData), aClientInfoAndState);
+  }
+
   nsresult rv = SpawnWorkerIfNeeded(MessageEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -706,6 +731,12 @@ bool LifecycleEventWorkerRunnable::DispatchLifecycleEvent(
 
 nsresult ServiceWorkerPrivate::SendLifeCycleEvent(
     const nsAString& aEventType, LifeCycleEventCallback* aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return mInner->SendLifeCycleEvent(aEventType, aCallback);
+  }
+
   nsresult rv = SpawnWorkerIfNeeded(LifeCycleEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -866,6 +897,12 @@ class SendPushSubscriptionChangeEventRunnable final
 nsresult ServiceWorkerPrivate::SendPushEvent(
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
     ServiceWorkerRegistrationInfo* aRegistration) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return mInner->SendPushEvent(aRegistration, aMessageId, aData);
+  }
+
   nsresult rv = SpawnWorkerIfNeeded(PushEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -893,6 +930,12 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
 }
 
 nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return mInner->SendPushSubscriptionChangeEvent();
+  }
+
   nsresult rv = SpawnWorkerIfNeeded(PushSubscriptionChangeEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1108,6 +1151,8 @@ nsresult ServiceWorkerPrivate::SendNotificationEvent(
     const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
     const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
     const nsAString& aBehavior, const nsAString& aScope) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   WakeUpReason why;
   if (aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME)) {
     why = NotificationClickEvent;
@@ -1118,6 +1163,12 @@ nsresult ServiceWorkerPrivate::SendNotificationEvent(
   } else {
     MOZ_ASSERT_UNREACHABLE("Invalid notification event name");
     return NS_ERROR_FAILURE;
+  }
+
+  if (mInner) {
+    return mInner->SendNotificationEvent(aEventName, aID, aTitle, aDir, aLang,
+                                         aBody, aTag, aIcon, aData, aBehavior,
+                                         aScope, gDOMDisableOpenClickDelay);
   }
 
   nsresult rv = SpawnWorkerIfNeeded(why);
@@ -1569,6 +1620,11 @@ nsresult ServiceWorkerPrivate::SendFetchEvent(
     return NS_OK;
   }
 
+  if (mInner) {
+    return mInner->SendFetchEvent(std::move(registration), aChannel, aClientId,
+                                  aResultingClientId, aIsReload);
+  }
+
   aChannel->SetLaunchServiceWorkerStart(TimeStamp::Now());
   aChannel->SetDispatchFetchEventStart(TimeStamp::Now());
 
@@ -1616,6 +1672,7 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
                                                    bool* aNewWorkerCreated,
                                                    nsILoadGroup* aLoadGroup) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mInner);
 
   
   
@@ -1772,6 +1829,10 @@ void ServiceWorkerPrivate::RemoveISupports(nsISupports* aSupports) {
 void ServiceWorkerPrivate::TerminateWorker() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  if (mInner) {
+    return mInner->TerminateWorker();
+  }
+
   mIdleWorkerTimer->Cancel();
   mIdleKeepAliveToken = nullptr;
   if (mWorkerPrivate) {
@@ -1799,8 +1860,15 @@ void ServiceWorkerPrivate::TerminateWorker() {
 
 void ServiceWorkerPrivate::NoteDeadServiceWorkerInfo() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    mInner->NoteDeadOuter();
+    mInner = nullptr;
+  } else {
+    TerminateWorker();
+  }
+
   mInfo = nullptr;
-  TerminateWorker();
 }
 
 namespace {
@@ -1825,6 +1893,10 @@ class UpdateStateControlRunnable final
 
 void ServiceWorkerPrivate::UpdateState(ServiceWorkerState aState) {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return mInner->UpdateState(aState);
+  }
 
   if (!mWorkerPrivate) {
     MOZ_DIAGNOSTIC_ASSERT(mPendingFunctionalEvents.IsEmpty());
@@ -1854,6 +1926,11 @@ nsresult ServiceWorkerPrivate::GetDebugger(nsIWorkerDebugger** aResult) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aResult);
 
+  if (mInner) {
+    *aResult = nullptr;
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (!mDebuggerCount) {
     return NS_OK;
   }
@@ -1868,6 +1945,10 @@ nsresult ServiceWorkerPrivate::GetDebugger(nsIWorkerDebugger** aResult) {
 
 nsresult ServiceWorkerPrivate::AttachDebugger() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
   
   
@@ -1886,6 +1967,10 @@ nsresult ServiceWorkerPrivate::AttachDebugger() {
 
 nsresult ServiceWorkerPrivate::DetachDebugger() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInner) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
   if (!mDebuggerCount) {
     return NS_ERROR_UNEXPECTED;
@@ -1968,7 +2053,10 @@ void ServiceWorkerPrivate::NoteIdleWorkerCallback(nsITimer* aTimer) {
   
   mIdleKeepAliveToken = nullptr;
 
-  if (mWorkerPrivate) {
+  if (mWorkerPrivate || (mInner && !mInner->WorkerIsDead())) {
+    
+    MOZ_ASSERT(!(mWorkerPrivate && mInner));
+
     
     
     
@@ -1999,7 +2087,7 @@ void ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer) {
 
 void ServiceWorkerPrivate::RenewKeepAliveToken(WakeUpReason aWhy) {
   
-  MOZ_ASSERT(mWorkerPrivate);
+  MOZ_ASSERT(mWorkerPrivate || (mInner && !mInner->WorkerIsDead()));
 
   
   
@@ -2054,8 +2142,13 @@ void ServiceWorkerPrivate::ReleaseToken() {
 already_AddRefed<KeepAliveToken>
 ServiceWorkerPrivate::CreateEventKeepAliveToken() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mWorkerPrivate);
-  MOZ_ASSERT(mIdleKeepAliveToken);
+
+  
+  
+  
+  MOZ_ASSERT(mWorkerPrivate || (mInner && !mInner->WorkerIsDead()));
+  MOZ_ASSERT(mIdleKeepAliveToken || (mInner && !mInner->WorkerIsDead()));
+
   RefPtr<KeepAliveToken> ref = new KeepAliveToken(this);
   return ref.forget();
 }

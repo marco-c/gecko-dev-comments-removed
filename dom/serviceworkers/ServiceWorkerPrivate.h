@@ -268,6 +268,8 @@ class ServiceWorkerPrivate final {
   
   nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
 
+  RefPtr<Inner> mInner;
+
   
   
   
