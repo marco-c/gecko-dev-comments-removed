@@ -25,5 +25,14 @@ int ClampFlashSandboxLevel(const int aLevel);
 bool StartOpenBSDSandbox(GeckoProcessType type);
 #endif
 
+#if !defined(XP_WIN)
+
+
+
+
+
+bool IsDevelopmentBuild();
+#endif 
+
 }  
 #endif  
