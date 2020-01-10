@@ -1,4 +1,4 @@
-/* eslint-env webextensions */
+
 "use strict";
 
 const { E10SUtils } = ChromeUtils.import(
@@ -6,6 +6,8 @@ const { E10SUtils } = ChromeUtils.import(
 );
 
 let PREF_NAME = "browser.tabs.remote.useHTTPResponseProcessSelection";
+const PRINT_POSTDATA = httpURL("print_postdata.sjs");
+const FILE_DUMMY = fileURL("dummy_page.html");
 
 async function performLoad(browser, opts, action) {
   let loadedPromise = BrowserTestUtils.browserLoaded(
@@ -30,6 +32,7 @@ const EXTENSION_DATA = {
 
   files: {
     "dummy.html": "<html>webext dummy</html>",
+    "redirect.html": "<html>webext redirect</html>",
   },
 
   async background() {
@@ -38,13 +41,24 @@ const EXTENSION_DATA = {
       async details => {
         browser.test.log("webRequest onAuthRequired");
 
-        // A blocking request that returns a promise exercises a codepath that
-        // sets the notificationCallbacks on the channel to a JS object that we
-        // can't do directly QueryObject on with expected results.
-        // This triggered a crash which was fixed in bug 1528188.
+        
+        
+        
+        
         return new Promise((resolve, reject) => {
           setTimeout(resolve, 0);
         });
+      },
+      { urls: ["*://*/*"] },
+      ["blocking"]
+    );
+    browser.webRequest.onBeforeRequest.addListener(
+      async details => {
+        browser.test.log("webRequest onBeforeRequest");
+        let isRedirect =
+          details.originUrl == browser.extension.getURL("redirect.html") &&
+          details.url.endsWith("print_postdata.sjs");
+        return isRedirect ? { redirectUrl: details.url + "?redirected" } : {};
       },
       { urls: ["*://*/*"] },
       ["blocking"]
@@ -55,13 +69,10 @@ const EXTENSION_DATA = {
 async function withExtensionDummy(callback) {
   let extension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
   await extension.startup();
-  let rv = await callback(`moz-extension://${extension.uuid}/dummy.html`);
+  let rv = await callback(`moz-extension://${extension.uuid}/`);
   await extension.unload();
   return rv;
 }
-
-const PRINT_POSTDATA = httpURL("print_postdata.sjs");
-const FILE_DUMMY = fileURL("dummy_page.html");
 
 async function postFrom(start, target) {
   return BrowserTestUtils.withNewTab(
@@ -72,9 +83,9 @@ async function postFrom(start, target) {
     async function(browser) {
       info("Test tab ready: postFrom " + start);
 
-      // Create the form element in our loaded URI.
+      
       await ContentTask.spawn(browser, { target }, function({ target }) {
-        // eslint-disable-next-line no-unsanitized/property
+        
         content.document.body.innerHTML = `
         <form method="post" action="${target}">
           <input type="text" name="initialRemoteType" value="${
@@ -84,13 +95,17 @@ async function postFrom(start, target) {
         </form>`;
       });
 
-      // Perform a form POST submit load.
+      
       info("Performing POST submission");
       await performLoad(
         browser,
         {
           url(url) {
-            return url == PRINT_POSTDATA || url == target;
+            let enable = url.startsWith(PRINT_POSTDATA) || url == target;
+            if (!enable) {
+              info(`url ${url} is invalid to perform load`);
+            }
+            return enable;
           },
           maybeErrorPage: true,
         },
@@ -101,7 +116,7 @@ async function postFrom(start, target) {
         }
       );
 
-      // Check that the POST data was submitted.
+      
       info("Fetching results");
       return ContentTask.spawn(browser, null, () => {
         return {
@@ -187,22 +202,22 @@ async function testLoadAndRedirect(
   );
 }
 
-// TODO: Currently no test framework for ftp://.
+
 add_task(async function test_protocol() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_NAME, true]] });
 
-  // TODO: Processes should be switched due to navigation of different origins.
+  
   await testLoadAndRedirect("data:,foo", false, true);
 
-  // Redirecting to file::// is not allowed.
+  
   await testLoadAndRedirect(FILE_DUMMY, true, false);
 });
 
 add_task(async function test_disabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_NAME, false]] });
 
-  // With the pref disabled, file URIs should successfully POST, but remain in
-  // the 'file' process.
+  
+  
   info("DISABLED -- FILE -- raw URI load");
   let resp = await postFrom(FILE_DUMMY, PRINT_POSTDATA);
   is(resp.remoteType, E10SUtils.FILE_REMOTE_TYPE, "no process switch");
@@ -215,17 +230,33 @@ add_task(async function test_disabled() {
   is(resp307.location, PRINT_POSTDATA, "correct location");
   is(resp307.body, "initialRemoteType=file", "correct POST body");
 
-  // With the pref disabled, extension URIs should fail to POST, but correctly
-  // switch processes.
-  await withExtensionDummy(async dummy => {
+  
+  
+  await withExtensionDummy(async extOrigin => {
     info("DISABLED -- EXTENSION -- raw URI load");
-    let respExt = await postFrom(dummy, PRINT_POSTDATA);
+    let respExt = await postFrom(extOrigin + "dummy.html", PRINT_POSTDATA);
     ok(E10SUtils.isWebRemoteType(respExt.remoteType), "process switch");
     is(respExt.location, PRINT_POSTDATA, "correct location");
     is(respExt.body, "", "no POST body");
 
+    info("DISABLED -- EXTENSION -- extension-redirect URI load");
+    let respExtRedirect = await postFrom(
+      extOrigin + "redirect.html",
+      PRINT_POSTDATA
+    );
+    ok(E10SUtils.isWebRemoteType(respExtRedirect.remoteType), "process switch");
+    is(
+      respExtRedirect.location,
+      PRINT_POSTDATA + "?redirected",
+      "correct location"
+    );
+    is(respExtRedirect.body, "redirected", "no POST body");
+
     info("DISABLED -- EXTENSION -- 307-redirect URI load");
-    let respExt307 = await postFrom(dummy, add307(PRINT_POSTDATA));
+    let respExt307 = await postFrom(
+      extOrigin + "dummy.html",
+      add307(PRINT_POSTDATA)
+    );
     ok(E10SUtils.isWebRemoteType(respExt307.remoteType), "process switch");
     is(respExt307.location, PRINT_POSTDATA, "correct location");
     is(respExt307.body, "", "no POST body");
@@ -235,8 +266,8 @@ add_task(async function test_disabled() {
 add_task(async function test_enabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_NAME, true]] });
 
-  // With the pref enabled, URIs should correctly switch processes & the POST
-  // should succeed.
+  
+  
   info("ENABLED -- FILE -- raw URI load");
   let resp = await postFrom(FILE_DUMMY, PRINT_POSTDATA);
   ok(E10SUtils.isWebRemoteType(resp.remoteType), "process switch");
@@ -249,16 +280,36 @@ add_task(async function test_enabled() {
   is(resp307.location, PRINT_POSTDATA, "correct location");
   is(resp307.body, "initialRemoteType=file", "correct POST body");
 
-  // Same with extensions
-  await withExtensionDummy(async dummy => {
+  
+  await withExtensionDummy(async extOrigin => {
     info("ENABLED -- EXTENSION -- raw URI load");
-    let respExt = await postFrom(dummy, PRINT_POSTDATA);
+    let respExt = await postFrom(extOrigin + "dummy.html", PRINT_POSTDATA);
     ok(E10SUtils.isWebRemoteType(respExt.remoteType), "process switch");
     is(respExt.location, PRINT_POSTDATA, "correct location");
     is(respExt.body, "initialRemoteType=extension", "correct POST body");
 
+    info("ENABLED -- EXTENSION -- extension-redirect URI load");
+    let respExtRedirect = await postFrom(
+      extOrigin + "redirect.html",
+      PRINT_POSTDATA
+    );
+    ok(E10SUtils.isWebRemoteType(respExtRedirect.remoteType), "process switch");
+    is(
+      respExtRedirect.location,
+      PRINT_POSTDATA + "?redirected",
+      "correct location"
+    );
+    is(
+      respExtRedirect.body,
+      "initialRemoteType=extension?redirected",
+      "correct POST body"
+    );
+
     info("ENABLED -- EXTENSION -- 307-redirect URI load");
-    let respExt307 = await postFrom(dummy, add307(PRINT_POSTDATA));
+    let respExt307 = await postFrom(
+      extOrigin + "dummy.html",
+      add307(PRINT_POSTDATA)
+    );
     ok(E10SUtils.isWebRemoteType(respExt307.remoteType), "process switch");
     is(respExt307.location, PRINT_POSTDATA, "correct location");
     is(respExt307.body, "initialRemoteType=extension", "correct POST body");
