@@ -32,29 +32,29 @@ pub trait TokenStreamExt: private::Sealed {
     
     
     
-    fn append_all<I>(&mut self, iter: I)
+    fn append_all<T, I>(&mut self, iter: I)
     where
-        I: IntoIterator,
-        I::Item: ToTokens;
+        T: ToTokens,
+        I: IntoIterator<Item = T>;
 
     
     
     
     
-    fn append_separated<I, U>(&mut self, iter: I, op: U)
+    fn append_separated<T, I, U>(&mut self, iter: I, op: U)
     where
-        I: IntoIterator,
-        I::Item: ToTokens,
+        T: ToTokens,
+        I: IntoIterator<Item = T>,
         U: ToTokens;
 
     
     
     
     
-    fn append_terminated<I, U>(&mut self, iter: I, term: U)
+    fn append_terminated<T, I, U>(&mut self, iter: I, term: U)
     where
-        I: IntoIterator,
-        I::Item: ToTokens,
+        T: ToTokens,
+        I: IntoIterator<Item = T>,
         U: ToTokens;
 }
 
@@ -66,20 +66,20 @@ impl TokenStreamExt for TokenStream {
         self.extend(iter::once(token.into()));
     }
 
-    fn append_all<I>(&mut self, iter: I)
+    fn append_all<T, I>(&mut self, iter: I)
     where
-        I: IntoIterator,
-        I::Item: ToTokens,
+        T: ToTokens,
+        I: IntoIterator<Item = T>,
     {
         for token in iter {
             token.to_tokens(self);
         }
     }
 
-    fn append_separated<I, U>(&mut self, iter: I, op: U)
+    fn append_separated<T, I, U>(&mut self, iter: I, op: U)
     where
-        I: IntoIterator,
-        I::Item: ToTokens,
+        T: ToTokens,
+        I: IntoIterator<Item = T>,
         U: ToTokens,
     {
         for (i, token) in iter.into_iter().enumerate() {
@@ -90,10 +90,10 @@ impl TokenStreamExt for TokenStream {
         }
     }
 
-    fn append_terminated<I, U>(&mut self, iter: I, term: U)
+    fn append_terminated<T, I, U>(&mut self, iter: I, term: U)
     where
-        I: IntoIterator,
-        I::Item: ToTokens,
+        T: ToTokens,
+        I: IntoIterator<Item = T>,
         U: ToTokens,
     {
         for token in iter {
