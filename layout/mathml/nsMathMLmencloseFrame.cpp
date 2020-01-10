@@ -714,10 +714,10 @@ class nsDisplayNotation final : public nsPaintedDisplayItem {
   }
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, const nsRect& aRect,
-                                       nscoord aThickness,
-                                       nsMencloseNotation aType) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, const nsRect& aRect,
+                                         nscoord aThickness,
+                                         nsMencloseNotation aType) {
     return aType;
   }
 

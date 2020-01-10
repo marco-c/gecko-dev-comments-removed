@@ -1726,9 +1726,9 @@ class nsDisplayMathMLCharForeground final : public nsPaintedDisplayItem {
   }
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsMathMLChar* aChar,
-                                       uint16_t aIndex, bool aIsSelected) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, nsMathMLChar* aChar,
+                                         uint16_t aIndex, bool aIsSelected) {
     return aIndex;
   }
 

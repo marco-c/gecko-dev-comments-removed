@@ -2052,10 +2052,10 @@ class RetainedDisplayList;
 
 template <typename T>
 MOZ_ALWAYS_INLINE T* MakeClone(nsDisplayListBuilder* aBuilder, const T* aItem) {
-  uint16_t key = aItem->GetRawPerFrameKey();
+  uint16_t key = aItem->GetPerFrameIndex();
   T* item = new (aBuilder) T(aBuilder, *aItem);
   item->SetType(T::ItemType());
-  item->SetPerFrameKey(key);
+  item->SetPerFrameIndex(key);
   return item;
 }
 
@@ -2087,14 +2087,14 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItem(nsDisplayListBuilder* aBuilder, F* aFrame,
   }
 
   uint16_t key =
-      T::CalculatePerFrameKey(aBuilder, aFrame, std::forward<Args>(aArgs)...);
+      T::CalculatePerFrameIndex(aBuilder, aFrame, std::forward<Args>(aArgs)...);
   T* item = new (aBuilder) T(aBuilder, aFrame, std::forward<Args>(aArgs)...);
 
   if (type != DisplayItemType::TYPE_GENERIC) {
     item->SetType(type);
   }
 
-  item->SetPerFrameKey(key);
+  item->SetPerFrameIndex(key);
   item->SetExtraPageForPageNum(aBuilder->GetBuildingExtraPagesForPageNum());
 
   nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
@@ -2264,7 +2264,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
 
 
 
-  uint16_t GetRawPerFrameKey() const { return mKey; }
+  uint16_t GetPerFrameIndex() const { return mKey; }
 
   
 
@@ -2277,7 +2277,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
 
 
   template <typename... Args>
-  static uint16_t CalculatePerFrameKey(Args&&... aArgs) {
+  static uint16_t CalculatePerFrameIndex(Args&&... aArgs) {
     return 0;
   }
 
@@ -2392,7 +2392,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
   }
 
   void SetType(const DisplayItemType aType) { mType = aType; }
-  void SetPerFrameKey(const uint16_t aKey) { mKey = aKey; }
+  void SetPerFrameIndex(const uint16_t aKey) { mKey = aKey; }
 
   
   
@@ -4523,10 +4523,10 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
                                     nsIFrame* aFrameForBounds = nullptr);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame,
-                                       const InitData& aInitData,
-                                       nsIFrame* aFrameForBounds = nullptr);
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame,
+                                         const InitData& aInitData,
+                                         nsIFrame* aFrameForBounds = nullptr);
 
   ~nsDisplayBackgroundImage() override;
 
@@ -4721,10 +4721,10 @@ class nsDisplayTableBackgroundImage : public nsDisplayBackgroundImage {
                                 nsIFrame* aCellFrame);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame,
-                                       const InitData& aInitData,
-                                       nsIFrame* aCellFrame);
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame,
+                                         const InitData& aInitData,
+                                         nsIFrame* aCellFrame);
 
   ~nsDisplayTableBackgroundImage() override;
 
@@ -4847,10 +4847,10 @@ class nsDisplayTableThemedBackground : public nsDisplayThemedBackground {
   }
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame,
-                                       const nsRect& aBackgroundRect,
-                                       nsIFrame* aAncestorFrame) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame,
+                                         const nsRect& aBackgroundRect,
+                                         nsIFrame* aAncestorFrame) {
     return static_cast<uint8_t>(GetTableTypeFromFrame(aAncestorFrame));
   }
 
@@ -5034,7 +5034,7 @@ class nsDisplayTableBackgroundColor : public nsDisplayBackgroundColor {
   }
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
       const nsRect& aBackgroundRect,
       const mozilla::ComputedStyle* aBackgroundStyle, const nscolor& aColor,
@@ -5307,7 +5307,7 @@ class nsDisplayCompositorHitTestInfo : public nsDisplayHitTestInfoItem {
       const mozilla::Maybe<nsRect>& aArea = mozilla::Nothing());
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
       const mozilla::gfx::CompositorHitTestInfo& aHitTestFlags,
       uint16_t aIndex = 0,
@@ -5318,7 +5318,7 @@ class nsDisplayCompositorHitTestInfo : public nsDisplayHitTestInfoItem {
       mozilla::UniquePtr<HitTestInfo>&& aHitTestInfo);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
       mozilla::UniquePtr<HitTestInfo>&& aHitTestInfo);
 
@@ -5388,8 +5388,9 @@ class nsDisplayWrapList : public nsDisplayHitTestInfoItem {
                     nsDisplayList* aList);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsDisplayList* aList) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame,
+                                         nsDisplayList* aList) {
     return 0;
   }
 
@@ -5397,8 +5398,9 @@ class nsDisplayWrapList : public nsDisplayHitTestInfoItem {
                     nsDisplayItem* aItem);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsDisplayItem* aItem) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame,
+                                         nsDisplayItem* aItem) {
     return 0;
   }
 
@@ -5408,7 +5410,7 @@ class nsDisplayWrapList : public nsDisplayHitTestInfoItem {
                     bool aClearClipChain = false, uint16_t aIndex = 0);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot,
       bool aClearClipChain = false, uint16_t aIndex = 0) {
@@ -5816,7 +5818,7 @@ class nsDisplayBlendMode : public nsDisplayWrapList {
                      uint16_t aIndex = 0);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       uint8_t aBlendMode, const ActiveScrolledRoot* aActiveScrolledRoot,
       uint16_t aIndex = 0) {
@@ -5893,7 +5895,7 @@ class nsDisplayTableBlendMode : public nsDisplayBlendMode {
   }
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       uint8_t aBlendMode, const ActiveScrolledRoot* aActiveScrolledRoot,
       uint16_t aIndex, nsIFrame* aAncestorFrame) {
@@ -5989,7 +5991,7 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
                           bool aIsForBackground);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot, bool aIsForBackground) {
     return aIsForBackground ? 1 : 0;
@@ -6043,7 +6045,7 @@ class nsDisplayTableBlendContainer : public nsDisplayBlendContainer {
   }
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot, bool aIsForBackground,
       nsIFrame* aAncestorFrame) {
@@ -6109,7 +6111,7 @@ class nsDisplayOwnLayer : public nsDisplayWrapList {
       bool aForceActive = true, bool aClearClipChain = false);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot,
       nsDisplayOwnLayerFlags aFlags = nsDisplayOwnLayerFlags::None,
@@ -6187,7 +6189,7 @@ class nsDisplayRenderRoot : public nsDisplayWrapList {
                       mozilla::wr::RenderRoot aRenderRoot);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot,
       mozilla::wr::RenderRoot aRenderRoot) {
@@ -6239,11 +6241,11 @@ class nsDisplaySubDocument : public nsDisplayOwnLayer {
                        nsDisplayOwnLayerFlags aFlags);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame,
-                                       nsSubDocumentFrame* aSubDocFrame,
-                                       nsDisplayList* aList,
-                                       nsDisplayOwnLayerFlags aFlags) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame,
+                                         nsSubDocumentFrame* aSubDocFrame,
+                                         nsDisplayList* aList,
+                                         nsDisplayOwnLayerFlags aFlags) {
     return 0;
   }
 
@@ -6329,7 +6331,7 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
                           const ActiveScrolledRoot* aContainerASR);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot,
       const ActiveScrolledRoot* aContainerASR) {
@@ -6388,7 +6390,7 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
                          const ActiveScrolledRoot* aContainerASR);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot,
       const ActiveScrolledRoot* aContainerASR) {
@@ -6451,9 +6453,9 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
                          nsDisplayList* aList, uint16_t aIndex);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsDisplayList* aList,
-                                       uint16_t aIndex) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, nsDisplayList* aList,
+                                         uint16_t aIndex) {
     return aIndex;
   }
 
@@ -6494,10 +6496,10 @@ class nsDisplayTableFixedPosition : public nsDisplayFixedPosition {
                               nsIFrame* aAncestorFrame);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsDisplayList* aList,
-                                       uint16_t aIndex,
-                                       nsIFrame* aAncestorFrame) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, nsDisplayList* aList,
+                                         uint16_t aIndex,
+                                         nsIFrame* aAncestorFrame) {
     return CalculateTablePerFrameKey(aIndex,
                                      GetTableTypeFromFrame(aAncestorFrame));
   }
@@ -6532,9 +6534,9 @@ class nsDisplayScrollInfoLayer : public nsDisplayWrapList {
                            nsIFrame* aScrolledFrame, nsIFrame* aScrollFrame);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aScrolledFrame,
-                                       nsIFrame* aScrollFrame) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aScrolledFrame,
+                                         nsIFrame* aScrollFrame) {
     return 0;
   }
 
@@ -6600,7 +6602,7 @@ class nsDisplayZoom : public nsDisplaySubDocument {
                 nsDisplayOwnLayerFlags aFlags = nsDisplayOwnLayerFlags::None);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
       nsSubDocumentFrame* aSubDocFrame, nsDisplayList* aList, int32_t aAPD,
       int32_t aParentAPD,
@@ -6649,7 +6651,7 @@ class nsDisplayAsyncZoom : public nsDisplayOwnLayer {
                      mozilla::layers::FrameMetrics::ViewID aViewID);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot,
       mozilla::layers::FrameMetrics::ViewID aViewID) {
@@ -6971,10 +6973,10 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
                      uint16_t aIndex);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsDisplayList* aList,
-                                       const nsRect& aChildrenBuildingRect,
-                                       uint16_t aIndex) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, nsDisplayList* aList,
+                                         const nsRect& aChildrenBuildingRect,
+                                         uint16_t aIndex) {
     return aIndex;
   }
 
@@ -6983,11 +6985,11 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
                      uint16_t aIndex, bool aAllowAsyncAnimation);
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, nsDisplayList* aList,
-                                       const nsRect& aChildrenBuildingRect,
-                                       uint16_t aIndex,
-                                       bool aAllowAsyncAnimation) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, nsDisplayList* aList,
+                                         const nsRect& aChildrenBuildingRect,
+                                         uint16_t aIndex,
+                                         bool aAllowAsyncAnimation) {
     return aIndex;
   }
 
@@ -6997,7 +6999,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
                      ComputeTransformFunction aTransformGetter);
 
   
-  static uint16_t CalculatePerFrameKey(
+  static uint16_t CalculatePerFrameIndex(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
       const nsRect& aChildrenBuildingRect, uint16_t aIndex,
       ComputeTransformFunction aTransformGetter) {
