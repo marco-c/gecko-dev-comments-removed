@@ -53,105 +53,6 @@ registerCleanupFunction(function() {
 
 
 
-function test() {
-  TestRunner.run();
-}
-
-
-
-
-var TestRunner = {
-  
-
-
-  run() {
-    waitForExplicitFinish();
-
-    SessionStore.promiseInitialized.then(() => {
-      this._iter = runTests();
-      if (this._iter) {
-        this.next();
-      } else {
-        finish();
-      }
-    });
-  },
-
-  
-
-
-
-
-  next(aValue) {
-    let obj = TestRunner._iter.next(aValue);
-    if (obj.done) {
-      finish();
-      return;
-    }
-
-    let value = obj.value || obj;
-    if (value && typeof value.then == "function") {
-      value.then(
-        result => {
-          next(result);
-        },
-        error => {
-          ok(false, error + "\n" + error.stack);
-        }
-      );
-    }
-  },
-};
-
-
-
-
-
-
-function next(aValue) {
-  TestRunner.next(aValue);
-}
-
-
-
-
-
-
-function addTab(aURI, aCallback) {
-  let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, aURI));
-  let callback = aCallback ? aCallback : next;
-  BrowserTestUtils.browserLoaded(tab.linkedBrowser).then(callback);
-}
-
-
-
-
-
-function navigateTo(aURI) {
-  let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.browserLoaded(browser).then(next);
-  BrowserTestUtils.loadURI(browser, aURI);
-}
-
-
-
-
-
-
-
-function whenLoaded(aElement, aCallback = next) {
-  aElement.addEventListener(
-    "load",
-    function() {
-      executeSoon(aCallback);
-    },
-    { capture: true, once: true }
-  );
-}
-
-
-
-
 
 
 
@@ -165,10 +66,8 @@ async function captureAndCheckColor(aRed, aGreen, aBlue, aMessage) {
 
   
   await PageThumbs.captureAndStore(browser);
-  retrieveImageDataForURL(browser.currentURI.spec, function([r, g, b]) {
-    is("" + [r, g, b], "" + [aRed, aGreen, aBlue], aMessage);
-    next();
-  });
+  let [r, g, b] = await retrieveImageDataForURL(browser.currentURI.spec);
+  is("" + [r, g, b], "" + [aRed, aGreen, aBlue], aMessage);
 }
 
 
@@ -178,7 +77,7 @@ async function captureAndCheckColor(aRed, aGreen, aBlue, aMessage) {
 
 
 
-function retrieveImageDataForURL(aURL, aCallback) {
+async function retrieveImageDataForURL(aURL) {
   let width = 100,
     height = 100;
   let thumb = PageThumbs.getThumbnailURL(aURL, width, height);
@@ -186,18 +85,16 @@ function retrieveImageDataForURL(aURL, aCallback) {
   let htmlns = "http://www.w3.org/1999/xhtml";
   let img = document.createElementNS(htmlns, "img");
   img.setAttribute("src", thumb);
+  await BrowserTestUtils.waitForEvent(img, "load", true);
 
-  whenLoaded(img, function() {
-    let canvas = document.createElementNS(htmlns, "canvas");
-    canvas.setAttribute("width", width);
-    canvas.setAttribute("height", height);
+  let canvas = document.createElementNS(htmlns, "canvas");
+  canvas.setAttribute("width", width);
+  canvas.setAttribute("height", height);
 
-    
-    let ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, width, height);
-    let result = ctx.getImageData(0, 0, 100, 100).data;
-    aCallback(result);
-  });
+  
+  let ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, width, height);
+  return ctx.getImageData(0, 0, 100, 100).data;
 }
 
 
@@ -230,14 +127,28 @@ function removeThumbnail(aURL) {
 
 
 
-function addVisitsAndRepopulateNewTabLinks(aPlaceInfo, aCallback) {
-  PlacesTestUtils.addVisits(makeURI(aPlaceInfo)).then(() => {
-    NewTabUtils.links.populateCache(aCallback, true);
+async function promiseAddVisitsAndRepopulateNewTabLinks(aPlaceInfo) {
+  await PlacesTestUtils.addVisits(makeURI(aPlaceInfo));
+  await new Promise(resolve => {
+    NewTabUtils.links.populateCache(resolve, true);
   });
 }
-function promiseAddVisitsAndRepopulateNewTabLinks(aPlaceInfo) {
-  return new Promise(resolve =>
-    addVisitsAndRepopulateNewTabLinks(aPlaceInfo, resolve)
+
+
+
+
+
+
+
+
+function whenFileExists(aURL) {
+  return TestUtils.waitForCondition(
+    () => {
+      return thumbnailExists(aURL);
+    },
+    `Waiting for ${aURL} to exist.`,
+    1000,
+    50
   );
 }
 
@@ -248,35 +159,15 @@ function promiseAddVisitsAndRepopulateNewTabLinks(aPlaceInfo) {
 
 
 
-
-function whenFileExists(aURL, aCallback = next) {
-  let callback = aCallback;
-  if (!thumbnailExists(aURL)) {
-    callback = () => whenFileExists(aURL, aCallback);
-  }
-
-  setTimeout(callback, 0);
-}
-
-
-
-
-
-
-
-
-
-function whenFileRemoved(aFile, aCallback) {
-  let callback = aCallback;
-  if (aFile.exists()) {
-    callback = () => whenFileRemoved(aFile, aCallback);
-  }
-
-  executeSoon(callback || next);
-}
-
-function wait(aMillis) {
-  setTimeout(next, aMillis);
+function whenFileRemoved(aFile) {
+  return TestUtils.waitForCondition(
+    () => {
+      return !aFile.exists();
+    },
+    `Waiting for ${aFile.leafName} to not exist.`,
+    1000,
+    50
+  );
 }
 
 
@@ -294,21 +185,43 @@ function dontExpireThumbnailURLs(aURLs) {
 }
 
 function bgCapture(aURL, aOptions) {
-  bgCaptureWithMethod("capture", aURL, aOptions);
+  return bgCaptureWithMethod("capture", aURL, aOptions);
 }
 
 function bgCaptureIfMissing(aURL, aOptions) {
-  bgCaptureWithMethod("captureIfMissing", aURL, aOptions);
+  return bgCaptureWithMethod("captureIfMissing", aURL, aOptions);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function bgCaptureWithMethod(aMethodName, aURL, aOptions = {}) {
   
   
   dontExpireThumbnailURLs([aURL]);
-  if (!aOptions.onDone) {
-    aOptions.onDone = next;
-  }
-  BackgroundPageThumbs[aMethodName](aURL, aOptions);
+
+  return new Promise(resolve => {
+    let wrappedDoneFn = aOptions.onDone;
+    aOptions.onDone = (url, doneReason) => {
+      if (wrappedDoneFn) {
+        wrappedDoneFn(url, doneReason);
+      }
+      resolve([url, doneReason]);
+    };
+
+    BackgroundPageThumbs[aMethodName](aURL, aOptions);
+  });
 }
 
 function bgTestPageURL(aOpts = {}) {
