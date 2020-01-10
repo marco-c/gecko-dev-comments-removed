@@ -9,12 +9,18 @@ self.addEventListener('install', (event) => {
     
     
     
-    await cookieStore.subscribeToChanges([
-      { name: 'cookie-name1', matchType: 'equals', url: '/scope/path1' }]);
-    await cookieStore.subscribeToChanges([
-      { },  
-      { name: 'cookie-prefix', matchType: 'starts-with' },
-    ]);
+    try {
+      await cookieStore.subscribeToChanges([
+        { name: 'cookie-name1', matchType: 'equals', url: '/scope/path1' }]);
+      await cookieStore.subscribeToChanges([
+        { },  
+        { name: 'cookie-prefix', matchType: 'starts-with' },
+      ]);
+
+      
+      
+      
+    } catch (err) {}
   })());
 });
 

@@ -6,8 +6,14 @@ importScripts("/resources/testharness.js");
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    await cookieStore.subscribeToChanges([
-      { name: 'cookie-name', matchType: 'equals', url: '/scope/path' }]);
+    try {
+      await cookieStore.subscribeToChanges([
+        { name: 'cookie-name', matchType: 'equals', url: '/scope/path' }]);
+
+      
+      
+      
+    } catch (err) {}
   })());
 });
 
