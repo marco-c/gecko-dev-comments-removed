@@ -976,9 +976,24 @@ nsresult ContentChild::ProvideWindowCommon(
 
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
 
-  auto newChild = MakeRefPtr<BrowserChild>(
-      this, tabId, tabGroup, newTabContext, browsingContext,
-       nullptr, aChromeFlags,  true);
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> initialPrincipal =
+      NullPrincipal::Create(newTabContext.OriginAttributesRef());
+  WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
+      browsingContext, initialPrincipal);
+
+  auto windowChild = MakeRefPtr<WindowGlobalChild>(windowInit, nullptr);
+
+  auto newChild = MakeRefPtr<BrowserChild>(this, tabId, tabGroup, newTabContext,
+                                           browsingContext, aChromeFlags,
+                                            true);
 
   if (aTabOpener) {
     MOZ_ASSERT(ipcContext->type() == IPCTabContext::TPopupIPCTabContext);
@@ -1002,15 +1017,25 @@ nsresult ContentChild::ProvideWindowCommon(
   }
 
   
-  if (NS_WARN_IF(!SendConstructPopupBrowser(std::move(parentEp), tabId,
-                                            *ipcContext, browsingContext,
-                                            aChromeFlags))) {
+  
+  ManagedEndpoint<PWindowGlobalParent> windowParentEp =
+      newChild->OpenPWindowGlobalEndpoint(do_AddRef(windowChild).take());
+  if (NS_WARN_IF(!windowParentEp.IsValid())) {
     return NS_ERROR_ABORT;
   }
 
   
+  if (NS_WARN_IF(!SendConstructPopupBrowser(
+          std::move(parentEp), std::move(windowParentEp), tabId, *ipcContext,
+          windowInit, aChromeFlags))) {
+    return NS_ERROR_ABORT;
+  }
+
+  windowChild->Init();
+
   
-  if (NS_FAILED(newChild->Init(aParent))) {
+  
+  if (NS_FAILED(newChild->Init(aParent, windowChild))) {
     return NS_ERROR_ABORT;
   }
 
