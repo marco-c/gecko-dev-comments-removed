@@ -19,8 +19,6 @@
 #include <stdarg.h>
 
 struct PLDHashTableOps;
-struct JSContext;
-class JSObject;
 
 namespace mozilla {
 namespace recordreplay {
@@ -191,7 +189,10 @@ static inline void MovePLDHashTableContents(const PLDHashTableOps* aFirstOps,
 
 
 
-static inline void HoldJSObject(JSObject* aJSObj);
+
+
+
+static inline void HoldJSObject(void* aJSObj);
 
 
 
@@ -267,7 +268,8 @@ MFBT_API bool ShouldUpdateProgressCounter(const char* aURL);
 
 
 
-MFBT_API bool DefineRecordReplayControlObject(JSContext* aCx, JSObject* aObj);
+
+MFBT_API bool DefineRecordReplayControlObject(void* aCx, void* aObj);
 
 
 
@@ -376,8 +378,7 @@ MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(MovePLDHashTableContents,
                                     (aFirstOps, aSecondOps))
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(InvalidateRecording, (const char* aWhy),
                                     (aWhy))
-MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(HoldJSObject, (JSObject * aObject),
-                                    (aObject))
+MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(HoldJSObject, (void* aJSObj), (aJSObj))
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(RecordReplayAssertBytes,
                                     (const void* aData, size_t aSize),
                                     (aData, aSize))
