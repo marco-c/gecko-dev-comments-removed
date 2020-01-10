@@ -11,6 +11,7 @@
 #include "mozilla/HTMLEditor.h"   
 #include "mozilla/dom/Element.h"  
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/StaticRange.h"
 #include "mozilla/intl/LocaleService.h"    
 #include "mozilla/mozalloc.h"              
 #include "mozilla/mozSpellChecker.h"       
@@ -369,19 +370,24 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
       if (!range->Collapsed()) {
         
         
-
-        RefPtr<nsRange> rangeBounds = range->CloneRange();
-
-        
-
-        rv = textServicesDocument->ExpandRangeToWordBoundaries(rangeBounds);
-        NS_ENSURE_SUCCESS(rv, rv);
+        RefPtr<StaticRange> staticRange =
+            StaticRange::Create(range, IgnoreErrors());
+        if (NS_WARN_IF(!staticRange)) {
+          return NS_ERROR_FAILURE;
+        }
 
         
-        
+        rv = textServicesDocument->ExpandRangeToWordBoundaries(staticRange);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
 
-        rv = textServicesDocument->SetExtent(rangeBounds);
-        NS_ENSURE_SUCCESS(rv, rv);
+        
+        
+        rv = textServicesDocument->SetExtent(staticRange);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
   }

@@ -27,8 +27,10 @@ class OffsetEntry;
 class TextEditor;
 
 namespace dom {
+class AbstractRange;
 class Document;
 class Element;
+class StaticRange;
 };  
 
 
@@ -92,7 +94,7 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  nsresult SetExtent(nsRange* aRange);
+  nsresult SetExtent(const dom::AbstractRange* aAbstractRange);
 
   
 
@@ -100,7 +102,7 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  nsresult ExpandRangeToWordBoundaries(nsRange* aRange);
+  nsresult ExpandRangeToWordBoundaries(dom::StaticRange* aStaticRange);
 
   
 
@@ -229,14 +231,18 @@ class TextServicesDocument final : public nsIEditActionListener {
   void DidDeleteNode(nsINode* aChild);
   void DidJoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
 
-  static nsresult GetRangeEndPoints(nsRange* aRange, nsINode** aStartContainer,
+  
+  
+  static nsresult GetRangeEndPoints(const dom::AbstractRange* aAbstractRange,
+                                    nsINode** aStartContainer,
                                     int32_t* aStartOffset,
                                     nsINode** aEndContainer,
                                     int32_t* aEndOffset);
 
  private:
   nsresult CreateFilteredContentIterator(
-      nsRange* aRange, FilteredContentIterator** aFilteredIter);
+      const dom::AbstractRange* aAbstractRange,
+      FilteredContentIterator** aFilteredIter);
 
   dom::Element* GetDocumentContentRootNode() const;
   already_AddRefed<nsRange> CreateDocumentContentRange();

@@ -8,6 +8,7 @@
 #include "FilteredContentIterator.h"  
 #include "mozilla/Assertions.h"       
 #include "mozilla/EditorUtils.h"      
+#include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/mozalloc.h"    
@@ -142,61 +143,66 @@ nsresult TextServicesDocument::InitWithEditor(nsIEditor* aEditor) {
   return rv;
 }
 
-nsresult TextServicesDocument::SetExtent(nsRange* aRange) {
-  NS_ENSURE_ARG_POINTER(aRange);
-  NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
+nsresult TextServicesDocument::SetExtent(const AbstractRange* aAbstractRange) {
+  MOZ_ASSERT(aAbstractRange);
+
+  if (NS_WARN_IF(!mDocument)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
-
-  mExtent = aRange->CloneRange();
+  mExtent = nsRange::Create(aAbstractRange, IgnoreErrors());
+  if (NS_WARN_IF(!mExtent)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
-
   nsresult rv =
       CreateFilteredContentIterator(mExtent, getter_AddRefs(mFilteredIter));
-
-  if (NS_FAILED(rv)) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
   
-
   mIteratorStatus = IteratorStatus::eDone;
 
   rv = FirstBlock();
-
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "FirstBlock() failed");
   return rv;
 }
 
-nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
-  NS_ENSURE_ARG_POINTER(aRange);
+nsresult TextServicesDocument::ExpandRangeToWordBoundaries(
+    StaticRange* aStaticRange) {
+  MOZ_ASSERT(aStaticRange);
 
   
 
   nsCOMPtr<nsINode> rngStartNode, rngEndNode;
   int32_t rngStartOffset, rngEndOffset;
 
-  nsresult rv =
-      GetRangeEndPoints(aRange, getter_AddRefs(rngStartNode), &rngStartOffset,
-                        getter_AddRefs(rngEndNode), &rngEndOffset);
-
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = GetRangeEndPoints(aStaticRange, getter_AddRefs(rngStartNode),
+                                  &rngStartOffset, getter_AddRefs(rngEndNode),
+                                  &rngEndOffset);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
-
   RefPtr<FilteredContentIterator> filteredIter;
-  rv = CreateFilteredContentIterator(aRange, getter_AddRefs(filteredIter));
-
-  NS_ENSURE_SUCCESS(rv, rv);
+  rv =
+      CreateFilteredContentIterator(aStaticRange, getter_AddRefs(filteredIter));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
-
   IteratorStatus iterStatus = IteratorStatus::eDone;
-
   rv = FirstTextNode(filteredIter, &iterStatus);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   if (iterStatus == IteratorStatus::eDone) {
     
@@ -204,12 +210,16 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
   }
 
   nsINode* firstText = filteredIter->GetCurrentNode();
-  NS_ENSURE_TRUE(firstText, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!firstText)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
 
   rv = LastTextNode(filteredIter, &iterStatus);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   if (iterStatus == IteratorStatus::eDone) {
     
@@ -219,7 +229,9 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
   }
 
   nsINode* lastText = filteredIter->GetCurrentNode();
-  NS_ENSURE_TRUE(lastText, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!lastText)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
 
@@ -240,13 +252,16 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
 
   RefPtr<FilteredContentIterator> docFilteredIter;
   rv = CreateDocumentContentIterator(getter_AddRefs(docFilteredIter));
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
-
   rv = docFilteredIter->PositionAt(firstText);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   iterStatus = IteratorStatus::eValid;
 
@@ -269,7 +284,9 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
 
   ClearOffsetTable(&offsetTable);
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   rngStartNode = wordStartNode;
   rngStartOffset = wordStartOffset;
@@ -278,7 +295,9 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
   
 
   rv = docFilteredIter->PositionAt(lastText);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   iterStatus = IteratorStatus::eValid;
 
@@ -295,7 +314,9 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
 
   ClearOffsetTable(&offsetTable);
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
@@ -308,13 +329,10 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange) {
   }
 
   
-  
-  rv = aRange->SetStartAndEnd(rngStartNode, rngStartOffset, rngEndNode,
-                              rngEndOffset);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  rv = aStaticRange->SetStartAndEnd(rngStartNode, rngStartOffset, rngEndNode,
+                                    rngEndOffset);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to update the given range");
+  return rv;
 }
 
 nsresult TextServicesDocument::SetFilterType(uint32_t aFilterType) {
@@ -1367,8 +1385,11 @@ void TextServicesDocument::DidJoinNodes(nsINode& aLeftNode,
 }
 
 nsresult TextServicesDocument::CreateFilteredContentIterator(
-    nsRange* aRange, FilteredContentIterator** aFilteredIter) {
-  NS_ENSURE_TRUE(aRange && aFilteredIter, NS_ERROR_NULL_POINTER);
+    const AbstractRange* aAbstractRange,
+    FilteredContentIterator** aFilteredIter) {
+  if (NS_WARN_IF(!aAbstractRange) || NS_WARN_IF(!aFilteredIter)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   *aFilteredIter = nullptr;
 
@@ -1388,7 +1409,7 @@ nsresult TextServicesDocument::CreateFilteredContentIterator(
   RefPtr<FilteredContentIterator> filter =
       new FilteredContentIterator(std::move(composeFilter));
 
-  nsresult rv = filter->Init(aRange);
+  nsresult rv = filter->Init(aAbstractRange);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -2250,24 +2271,27 @@ bool TextServicesDocument::SelectionIsCollapsed() {
 bool TextServicesDocument::SelectionIsValid() { return mSelStartIndex >= 0; }
 
 
-nsresult TextServicesDocument::GetRangeEndPoints(nsRange* aRange,
-                                                 nsINode** aStartContainer,
-                                                 int32_t* aStartOffset,
-                                                 nsINode** aEndContainer,
-                                                 int32_t* aEndOffset) {
-  NS_ENSURE_TRUE(
-      aRange && aStartContainer && aStartOffset && aEndContainer && aEndOffset,
-      NS_ERROR_NULL_POINTER);
+nsresult TextServicesDocument::GetRangeEndPoints(
+    const AbstractRange* aAbstractRange, nsINode** aStartContainer,
+    int32_t* aStartOffset, nsINode** aEndContainer, int32_t* aEndOffset) {
+  if (NS_WARN_IF(!aAbstractRange) || NS_WARN_IF(!aStartContainer) ||
+      NS_WARN_IF(!aEndContainer) || NS_WARN_IF(!aEndOffset)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  NS_IF_ADDREF(*aStartContainer = aRange->GetStartContainer());
-  NS_ENSURE_TRUE(aStartContainer, NS_ERROR_FAILURE);
+  nsCOMPtr<nsINode> startContainer = aAbstractRange->GetStartContainer();
+  if (NS_WARN_IF(!startContainer)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsINode> endContainer = aAbstractRange->GetEndContainer();
+  if (NS_WARN_IF(!endContainer)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  *aStartOffset = static_cast<int32_t>(aRange->StartOffset());
-
-  NS_IF_ADDREF(*aEndContainer = aRange->GetEndContainer());
-  NS_ENSURE_TRUE(aEndContainer, NS_ERROR_FAILURE);
-
-  *aEndOffset = static_cast<int32_t>(aRange->EndOffset());
+  startContainer.forget(aStartContainer);
+  endContainer.forget(aEndContainer);
+  *aStartOffset = static_cast<int32_t>(aAbstractRange->StartOffset());
+  *aEndOffset = static_cast<int32_t>(aAbstractRange->EndOffset());
   return NS_OK;
 }
 
