@@ -1878,24 +1878,22 @@ impl EvalResult {
         
         
         
-        
-        
-        
-        
-        
-        let mut found_cant_eval = false;
-        cursor.visit(|c| if c.kind() == CXCursor_TypeRef &&
-            c.cur_type().kind() == CXType_Unexposed
         {
-            found_cant_eval = true;
-            CXChildVisit_Break
-        } else {
-            CXChildVisit_Recurse
-        });
-        if found_cant_eval {
-            return None;
-        }
+            let mut found_cant_eval = false;
+            cursor.visit(|c| {
+                if c.kind() == CXCursor_TypeRef &&
+                    c.cur_type().canonical_type().kind() == CXType_Unexposed {
+                    found_cant_eval = true;
+                    return CXChildVisit_Break;
+                }
 
+                CXChildVisit_Recurse
+            });
+
+            if found_cant_eval {
+                return None;
+            }
+        }
         Some(EvalResult {
             x: unsafe { clang_Cursor_Evaluate(cursor.x) },
         })

@@ -13,10 +13,7 @@ pub enum IntKind {
     UChar,
 
     
-    WChar {
-        
-        size: usize,
-    },
+    WChar,
 
     
     Char {
@@ -97,7 +94,7 @@ impl IntKind {
             
             
             Bool | UChar | UShort | UInt | ULong | ULongLong | U8 | U16 |
-            WChar { .. } | U32 | U64 | U128 => false,
+            WChar | U32 | U64 | U128 => false,
 
             SChar | Short | Int | Long | LongLong | I8 | I16 | I32 | I64 |
             I128 => true,
