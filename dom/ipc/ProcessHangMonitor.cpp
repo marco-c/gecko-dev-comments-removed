@@ -356,6 +356,13 @@ bool HangMonitorChild::InterruptCallback() {
     return true;
   }
 
+  
+  
+  
+  if (!nsContentUtils::IsSafeToRunScript()) {
+    return true;
+  }
+
   bool paintWhileInterruptingJS;
   bool paintWhileInterruptingJSForce;
   TabId paintWhileInterruptingJSTab;
