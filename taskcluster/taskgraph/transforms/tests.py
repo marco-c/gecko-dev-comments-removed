@@ -1074,7 +1074,7 @@ def enable_code_coverage(config, tests):
     for test in tests:
         if 'ccov' in test['build-platform']:
             
-            if 'opt' in test['build-platform'] or 'fuzzing' in test['build-platform']:
+            if 'fuzzing' in test['build-platform']:
                 test['run-on-projects'] = []
                 continue
             
