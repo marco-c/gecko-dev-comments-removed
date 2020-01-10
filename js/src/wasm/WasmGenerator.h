@@ -127,6 +127,7 @@ struct CompileTask : public RunnableTask {
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   void runTask() override;
+  ThreadType threadType() override { return ThreadType::THREAD_TYPE_WASM; }
 };
 
 

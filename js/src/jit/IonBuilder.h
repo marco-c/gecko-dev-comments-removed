@@ -69,6 +69,9 @@ class IonBuilder : public MIRGenerator,
 
   void runTask() override;
 
+  
+  ThreadType threadType() override { return THREAD_TYPE_ION; }
+
  private:
   AbortReasonOr<Ok> traverseBytecode();
   AbortReasonOr<Ok> processIterators();
