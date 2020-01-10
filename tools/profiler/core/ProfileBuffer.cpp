@@ -30,6 +30,11 @@ ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity)
   mEntries.Set(aCapacity);
 }
 
+ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer) : mEntries(aBuffer) {
+  
+  MOZ_ASSERT(mEntries.BufferLength().isSome());
+}
+
 ProfileBuffer::~ProfileBuffer() {
   while (mStoredMarkers.peek()) {
     delete mStoredMarkers.popHead();
