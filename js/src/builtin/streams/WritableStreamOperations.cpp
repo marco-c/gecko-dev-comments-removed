@@ -14,6 +14,7 @@
 #include "jsapi.h"  
 
 #include "builtin/streams/WritableStream.h"  
+#include "builtin/streams/WritableStreamDefaultController.h"  
 #include "js/RootingAPI.h"                   
 #include "js/Value.h"                        
 
@@ -120,6 +121,31 @@ MOZ_MUST_USE bool js::WritableStreamDealWithRejection(
 MOZ_MUST_USE bool js::WritableStreamStartErroring(
     JSContext* cx, Handle<WritableStream*> unwrappedStream,
     Handle<Value> reason) {
+  
+  MOZ_ASSERT(unwrappedStream->storedError().isUndefined());
+
+  
+  MOZ_ASSERT(unwrappedStream->writable());
+
+  
+  
+  MOZ_ASSERT(unwrappedStream->hasController());
+  Rooted<WritableStreamDefaultController*> unwrappedController(
+      cx, unwrappedStream->controller());
+
+  
+  unwrappedStream->setErroring();
+
+  
+  unwrappedStream->setStoredError(reason);
+
+  
+  
+  
+  
+  
+  
+  
   
   JS_ReportErrorASCII(cx, "epic fail");
   return false;
