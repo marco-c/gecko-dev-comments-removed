@@ -1795,6 +1795,7 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
        this, trans, static_cast<uint32_t>(reason)));
 
   MOZ_ASSERT((trans == mTransaction) ||
+             (mTLSFilter && !mTLSFilter->Transaction()) ||
              (mTLSFilter && mTLSFilter->Transaction() == trans));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
@@ -1818,10 +1819,23 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
     
     
     
-    mTLSFilter->Close(reason);
+    
+    
+    
+    
+    
+    if (!mTLSFilter->Transaction()) {
+      LOG(("  closing transaction directly"));
+      MOZ_ASSERT(trans);
+      trans->Close(reason);
+    } else {
+      LOG(("  closing transactin hanging of off mTLSFilter"));
+      mTLSFilter->Close(reason);
+    }
   }
 
   if (mTransaction) {
+    LOG(("  closing associated mTransaction"));
     mHttp1xTransactionCount += mTransaction->Http1xTransactionCount();
 
     mTransaction->Close(reason);
