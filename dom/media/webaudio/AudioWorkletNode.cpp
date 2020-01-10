@@ -80,6 +80,27 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
     return nullptr;
   }
 
+  
+
+
+  JSContext* cx = aGlobal.Context();
+  JS::Rooted<JS::Value> optionsVal(cx);
+  if (NS_WARN_IF(!ToJSValue(cx, aOptions, &optionsVal))) {
+    aRv.NoteJSContextException(cx);
+    return nullptr;
+  }
+  
+  
+  UniquePtr<StructuredCloneHolder> optionsSerialization =
+      MakeUnique<StructuredCloneHolder>(
+          StructuredCloneHolder::CloningSupported,
+          StructuredCloneHolder::TransferringNotSupported,
+          JS::StructuredCloneScope::SameProcessDifferentThread);
+  optionsSerialization->Write(cx, optionsVal, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
   return audioWorkletNode.forget();
 }
 
