@@ -11,7 +11,6 @@
 #include "nsIContent.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Text.h"
-#include "mozilla/intl/Quotes.h"
 
 using namespace mozilla;
 
@@ -42,30 +41,8 @@ nsString nsQuoteNode::Text() {
   int32_t depth = Depth();
   MOZ_ASSERT(depth >= -1);
 
-  if (depth < 0) {
-    return result;
-  }
-
-  const auto& quotesProp = mPseudoFrame->StyleList()->mQuotes;
-
-  if (quotesProp.IsAuto()) {
-    
-    
-    const intl::Quotes* quotes =
-        intl::QuotesForLang(mPseudoFrame->StyleFont()->mLanguage);
-    if (!quotes) {
-      static const intl::Quotes sDefaultQuotes = {0x201c, 0x201d, 0x2018,
-                                                  0x2019};
-      quotes = &sDefaultQuotes;
-    }
-    size_t index = (depth == 0 ? 0 : 2);  
-    index += (mType == StyleContentType::OpenQuote ? 0 : 1);  
-    result.Append(quotes->mChars[index]);
-    return result;
-  }
-
-  MOZ_ASSERT(quotesProp.IsQuoteList());
-  const Span<const StyleQuotePair> quotes = quotesProp.AsQuoteList().AsSpan();
+  Span<const StyleQuotePair> quotes =
+      mPseudoFrame->StyleList()->mQuotes._0.AsSpan();
 
   
   
