@@ -28,7 +28,6 @@ config = {
         "MINIDUMP_SAVEPATH": "%(abs_work_dir)s/../minidumps",
         
     },
-    "marionette_extra": "--emulator",
     "bogomips_minimum": 3000,
     
     "android_version": 24,
