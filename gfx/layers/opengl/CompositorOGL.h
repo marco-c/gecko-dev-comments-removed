@@ -152,8 +152,12 @@ class CompositorOGL final : public Compositor {
     return result;
   }
 
+  
+  
+  
+  
   already_AddRefed<CompositingRenderTargetOGL> RenderTargetForNativeLayer(
-      NativeLayer* aNativeLayer);
+      NativeLayer* aNativeLayer, gfx::IntRegion& aInvalidRegion);
 
   already_AddRefed<CompositingRenderTarget> CreateRenderTarget(
       const gfx::IntRect& aRect, SurfaceInitMode aInit) override;
