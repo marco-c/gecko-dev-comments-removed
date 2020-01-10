@@ -198,6 +198,9 @@ AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
       
       !Declaration->isCopyOrMoveConstructor() &&
       
+      
+      !Declaration->isInheritingConstructor() &&
+      
       !Declaration->isDeleted();
 }
 
