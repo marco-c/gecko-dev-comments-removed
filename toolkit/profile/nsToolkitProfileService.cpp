@@ -771,22 +771,9 @@ nsresult nsToolkitProfileService::Init() {
     
     rv = mProfileDB.GetString(mInstallSection.get(), "Default",
                               installProfilePath);
-
     
     
-    if (NS_FAILED(rv)) {
-      mIsFirstRun = true;
-
-      
-      
-      
-      rv = gDirServiceProvider->GetLegacyInstallHash(installHash);
-      NS_ENSURE_SUCCESS(rv, rv);
-      CopyUTF16toUTF8(installHash, mLegacyInstallSection);
-      mLegacyInstallSection.Insert(INSTALL_PREFIX, 0);
-    } else {
-      mIsFirstRun = false;
-    }
+    mIsFirstRun = NS_FAILED(rv);
   }
 
   nsToolkitProfile* currentProfile = nullptr;
@@ -1111,9 +1098,8 @@ nsresult nsToolkitProfileService::CreateDefaultProfile(
 NS_IMETHODIMP
 nsToolkitProfileService::SelectStartupProfile(
     const nsTArray<nsCString>& aArgv, bool aIsResetting,
-    const nsACString& aUpdateChannel, const nsACString& aLegacyInstallHash,
-    nsIFile** aRootDir, nsIFile** aLocalDir, nsIToolkitProfile** aProfile,
-    bool* aDidCreate) {
+    const nsACString& aUpdateChannel, nsIFile** aRootDir, nsIFile** aLocalDir,
+    nsIToolkitProfile** aProfile, bool* aDidCreate) {
   int argc = aArgv.Length();
   
   
@@ -1129,10 +1115,6 @@ nsToolkitProfileService::SelectStartupProfile(
   argv[argc] = nullptr;
 
   mUpdateChannel = aUpdateChannel;
-  if (!aLegacyInstallHash.IsEmpty()) {
-    mLegacyInstallSection.Assign(aLegacyInstallHash);
-    mLegacyInstallSection.Insert(INSTALL_PREFIX, 0);
-  }
 
   bool wasDefault;
   nsresult rv =
@@ -1379,49 +1361,6 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   }
   if (ar == ARG_FOUND) {
     return NS_ERROR_SHOW_PROFILE_MANAGER;
-  }
-
-  if (mIsFirstRun && mUseDedicatedProfile &&
-      !mInstallSection.Equals(mLegacyInstallSection)) {
-    
-    
-    
-    
-    nsCString defaultDescriptor;
-    rv = mProfileDB.GetString(mLegacyInstallSection.get(), "Default",
-                              defaultDescriptor);
-
-    if (NS_SUCCEEDED(rv)) {
-      
-      bool isRelative;
-      nsCString descriptor;
-
-      for (RefPtr<nsToolkitProfile> profile : mProfiles) {
-        GetProfileDescriptor(profile, descriptor, &isRelative);
-
-        if (descriptor.Equals(defaultDescriptor)) {
-          
-          
-          
-          nsTArray<UniquePtr<KeyValue>> strings =
-              GetSectionStrings(&mProfileDB, mLegacyInstallSection.get());
-          for (const auto& kv : strings) {
-            mProfileDB.SetString(mInstallSection.get(), kv->key.get(),
-                                 kv->value.get());
-          }
-
-          
-          
-          
-          Flush();
-
-          
-          mDedicatedProfile = profile;
-          mIsFirstRun = false;
-          break;
-        }
-      }
-    }
   }
 
   
