@@ -3535,6 +3535,14 @@ void nsIFrame::BuildDisplayListForStackingContext(
         aBuilder, this, &resultList, stickyASR,
         aBuilder->CurrentActiveScrolledRoot());
     ct.TrackContainer(resultList.GetTop());
+
+    
+    
+    
+    if (aBuilder->GetFilterASR() && aBuilder->GetFilterASR() == stickyASR) {
+      aBuilder->GetFilterASR()
+          ->mScrollableFrame->SetHasOutOfFlowContentInsideFilter();
+    }
   }
 
   

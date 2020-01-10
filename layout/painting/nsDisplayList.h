@@ -1128,6 +1128,8 @@ class nsDisplayListBuilder {
     return mActiveScrolledRootForRootScrollframe;
   }
 
+  const ActiveScrolledRoot* GetFilterASR() const { return mFilterASR; }
+
   
 
 
