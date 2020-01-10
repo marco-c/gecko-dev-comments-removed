@@ -7,7 +7,6 @@
 #include "PrioritizedEventQueue.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_idle_period.h"
 #include "mozilla/StaticPrefs_threads.h"
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsThreadManager.h"
@@ -16,10 +15,8 @@
 
 using namespace mozilla;
 
-static uint64_t sIdleRequestCounter = 0;
-
 PrioritizedEventQueue::PrioritizedEventQueue(
-    already_AddRefed<nsIIdlePeriod> aIdlePeriod)
+    already_AddRefed<nsIIdlePeriod>&& aIdlePeriod)
     : mHighQueue(MakeUnique<EventQueue>(EventQueuePriority::High)),
       mInputQueue(MakeUnique<EventQueue>(EventQueuePriority::Input)),
       mMediumHighQueue(MakeUnique<EventQueue>(EventQueuePriority::MediumHigh)),
@@ -27,13 +24,9 @@ PrioritizedEventQueue::PrioritizedEventQueue(
       mDeferredTimersQueue(
           MakeUnique<EventQueue>(EventQueuePriority::DeferredTimers)),
       mIdleQueue(MakeUnique<EventQueue>(EventQueuePriority::Idle)),
-      mIdlePeriod(aIdlePeriod) {}
+      mIdlePeriodState(std::move(aIdlePeriod)) {}
 
-PrioritizedEventQueue::~PrioritizedEventQueue() {
-  if (mIdleScheduler) {
-    mIdleScheduler->Disconnect();
-  }
-}
+PrioritizedEventQueue::~PrioritizedEventQueue() = default;
 
 void PrioritizedEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                                      EventQueuePriority aPriority,
@@ -73,53 +66,6 @@ void PrioritizedEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
       MOZ_CRASH("EventQueuePriority::Count isn't a valid priority");
       break;
   }
-}
-
-TimeStamp PrioritizedEventQueue::GetLocalIdleDeadline(bool& aShuttingDown) {
-  
-  
-  
-  
-  
-  if (gXPCOMThreadsShutDown ||
-      nsThreadManager::get().GetCurrentThread()->ShuttingDown()) {
-    aShuttingDown = true;
-    return TimeStamp::Now();
-  }
-
-  aShuttingDown = false;
-  TimeStamp idleDeadline;
-  {
-    
-    
-    
-    
-    MutexAutoUnlock unlock(*mMutex);
-    mIdlePeriod->GetIdlePeriodHint(&idleDeadline);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mHasPendingEventsPromisedIdleEvent &&
-      (!idleDeadline || idleDeadline < TimeStamp::Now())) {
-    return TimeStamp();
-  }
-  if (mHasPendingEventsPromisedIdleEvent && !idleDeadline) {
-    
-    
-    
-    return TimeStamp::Now();
-  }
-  return idleDeadline;
 }
 
 EventQueuePriority PrioritizedEventQueue::SelectQueue(
@@ -208,13 +154,11 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
 
   EventQueuePriority queue = SelectQueue(true, aProofOfLock);
   auto guard = MakeScopeExit([&] {
-    mHasPendingEventsPromisedIdleEvent = false;
+    mIdlePeriodState.ForgetPendingTaskGuarantee();
     if (queue != EventQueuePriority::Idle &&
         queue != EventQueuePriority::DeferredTimers) {
-      EnsureIsActive();
-      if (mIdleToken && mIdleToken < TimeStamp::Now()) {
-        ClearIdleToken();
-      }
+      MutexAutoUnlock unlock(*mMutex);
+      mIdlePeriodState.FlagNotIdle(unlock);
     }
   });
 
@@ -255,30 +199,19 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
 
   if (mIdleQueue->IsEmpty(aProofOfLock) &&
       mDeferredTimersQueue->IsEmpty(aProofOfLock)) {
-    MOZ_ASSERT(!mHasPendingEventsPromisedIdleEvent);
-    EnsureIsPaused();
-    ClearIdleToken();
+    MutexAutoUnlock unlock(*mMutex);
+    mIdlePeriodState.RanOutOfTasks(unlock);
     return nullptr;
   }
 
-  bool shuttingDown;
-  TimeStamp localIdleDeadline = GetLocalIdleDeadline(shuttingDown);
-  if (!localIdleDeadline) {
-    EnsureIsPaused();
-    ClearIdleToken();
-    return nullptr;
-  }
-
-  TimeStamp idleDeadline = mHasPendingEventsPromisedIdleEvent || shuttingDown
-                               ? localIdleDeadline
-                               : GetIdleToken(localIdleDeadline);
-  if (!idleDeadline) {
-    EnsureIsPaused();
-
-    
+  TimeStamp idleDeadline;
+  {
     
     MutexAutoUnlock unlock(*mMutex);
-    RequestIdleToken(localIdleDeadline);
+    idleDeadline = mIdlePeriodState.GetDeadlineForIdleTask(unlock);
+  }
+
+  if (!idleDeadline) {
     return nullptr;
   }
 
@@ -300,16 +233,14 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
 #endif
   }
 
-  EnsureIsActive();
   return event.forget();
 }
 
 void PrioritizedEventQueue::DidRunEvent(const MutexAutoLock& aProofOfLock) {
   if (IsEmpty(aProofOfLock)) {
-    if (IsActive()) {
-      SetPaused();
-    }
-    ClearIdleToken();
+    
+    MutexAutoUnlock unlock(*mMutex);
+    mIdlePeriodState.RanOutOfTasks(unlock);
   }
 }
 
@@ -325,7 +256,7 @@ bool PrioritizedEventQueue::IsEmpty(const MutexAutoLock& aProofOfLock) {
 }
 
 bool PrioritizedEventQueue::HasReadyEvent(const MutexAutoLock& aProofOfLock) {
-  mHasPendingEventsPromisedIdleEvent = false;
+  mIdlePeriodState.ForgetPendingTaskGuarantee();
 
   EventQueuePriority queue = SelectQueue(false, aProofOfLock);
 
@@ -349,17 +280,15 @@ bool PrioritizedEventQueue::HasReadyEvent(const MutexAutoLock& aProofOfLock) {
     return false;
   }
 
-  bool shuttingDown;
-  TimeStamp localIdleDeadline = GetLocalIdleDeadline(shuttingDown);
-  if (localIdleDeadline) {
-    TimeStamp idleDeadline = mHasPendingEventsPromisedIdleEvent || shuttingDown
-                                 ? localIdleDeadline
-                                 : GetIdleToken(localIdleDeadline);
-    if (idleDeadline && (mDeferredTimersQueue->HasReadyEvent(aProofOfLock) ||
-                         mIdleQueue->HasReadyEvent(aProofOfLock))) {
-      mHasPendingEventsPromisedIdleEvent = true;
-      return true;
-    }
+  TimeStamp idleDeadline;
+  {
+    MutexAutoUnlock unlock(*mMutex);
+    idleDeadline = mIdlePeriodState.PeekIdleDeadline(unlock);
+  }
+  if (idleDeadline && (mDeferredTimersQueue->HasReadyEvent(aProofOfLock) ||
+                       mIdleQueue->HasReadyEvent(aProofOfLock))) {
+    mIdlePeriodState.EnforcePendingTaskGuarantee();
+    return true;
   }
 
   return false;
@@ -400,89 +329,4 @@ void PrioritizedEventQueue::ResumeInputEventPrioritization(
     const MutexAutoLock& aProofOfLock) {
   MOZ_ASSERT(mInputQueueState == STATE_SUSPEND);
   mInputQueueState = STATE_ENABLED;
-}
-
-mozilla::TimeStamp PrioritizedEventQueue::GetIdleToken(
-    TimeStamp aLocalIdlePeriodHint) {
-  if (XRE_IsParentProcess()) {
-    return aLocalIdlePeriodHint;
-  }
-  if (mIdleToken) {
-    TimeStamp now = TimeStamp::Now();
-    if (mIdleToken < now) {
-      ClearIdleToken();
-      return mIdleToken;
-    }
-    return mIdleToken < aLocalIdlePeriodHint ? mIdleToken
-                                             : aLocalIdlePeriodHint;
-  }
-  return TimeStamp();
-}
-
-void PrioritizedEventQueue::RequestIdleToken(TimeStamp aLocalIdlePeriodHint) {
-  MOZ_ASSERT(!mActive);
-
-  if (!mIdleSchedulerInitialized) {
-    mIdleSchedulerInitialized = true;
-    if (StaticPrefs::idle_period_cross_process_scheduling() &&
-        XRE_IsContentProcess() && NS_IsMainThread() &&
-        
-        
-        !recordreplay::IsRecordingOrReplaying()) {
-      
-      
-      mIdleScheduler = ipc::IdleSchedulerChild::GetMainThreadIdleScheduler();
-      if (mIdleScheduler) {
-        mIdleScheduler->Init(this);
-      }
-    }
-  }
-
-  if (mIdleScheduler && !mIdleRequestId) {
-    TimeStamp now = TimeStamp::Now();
-    if (aLocalIdlePeriodHint <= now) {
-      return;
-    }
-
-    mIdleRequestId = ++sIdleRequestCounter;
-    mIdleScheduler->SendRequestIdleTime(mIdleRequestId,
-                                        aLocalIdlePeriodHint - now);
-  }
-}
-
-void PrioritizedEventQueue::SetIdleToken(uint64_t aId, TimeDuration aDuration) {
-  if (mIdleRequestId == aId) {
-    mIdleToken = TimeStamp::Now() + aDuration;
-  }
-}
-
-void PrioritizedEventQueue::SetActive() {
-  MOZ_ASSERT(!mActive);
-  if (mIdleScheduler) {
-    mIdleScheduler->SetActive();
-  }
-  mActive = true;
-}
-
-void PrioritizedEventQueue::SetPaused() {
-  MOZ_ASSERT(mActive);
-  if (mIdleScheduler && mIdleScheduler->SetPaused()) {
-    MutexAutoUnlock unlock(*mMutex);
-    
-    
-    
-    mIdleScheduler->SendSchedule();
-  }
-  mActive = false;
-}
-
-void PrioritizedEventQueue::ClearIdleToken() {
-  if (mIdleRequestId) {
-    if (mIdleScheduler) {
-      MutexAutoUnlock unlock(*mMutex);
-      mIdleScheduler->SendIdleTimeUsed(mIdleRequestId);
-    }
-    mIdleRequestId = 0;
-    mIdleToken = TimeStamp();
-  }
 }
