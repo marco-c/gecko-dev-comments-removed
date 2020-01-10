@@ -440,7 +440,7 @@ pub enum SurfaceTextureDescriptor {
     
     NativeSurface {
         
-        id: NativeSurfaceId,
+        id: Option<NativeSurfaceId>,
         
         size: DeviceIntSize,
     },
@@ -484,7 +484,7 @@ impl SurfaceTextureDescriptor {
             }
             SurfaceTextureDescriptor::NativeSurface { id, size } => {
                 ResolvedSurfaceTexture::NativeSurface {
-                    id: *id,
+                    id: id.expect("bug: native surface not allocated"),
                     size: *size,
                 }
             }
@@ -871,7 +871,7 @@ impl Tile {
             
             
             match self.surface.take() {
-                Some(TileSurface::Texture { descriptor, visibility_mask }) => {
+                Some(TileSurface::Texture { mut descriptor, visibility_mask }) => {
                     
                     
                     
@@ -879,18 +879,17 @@ impl Tile {
                     
                     
                     if opacity_changed {
-                        if let SurfaceTextureDescriptor::NativeSurface { id, size } = descriptor {
+                        if let SurfaceTextureDescriptor::NativeSurface { ref mut id, .. } = descriptor {
                             
                             
                             self.dirty_rect = self.rect;
                             self.is_valid = false;
 
-                            state.composite_state.destroy_surface(id);
-                            state.composite_state.create_surface(
-                                id,
-                                size,
-                                self.is_opaque,
-                            );
+                            
+                            
+                            if let Some(id) = id.take() {
+                                state.composite_state.destroy_surface(id);
+                            }
                         }
                     }
 
@@ -916,11 +915,11 @@ impl Tile {
                         CompositorKind::Native { .. } => {
                             
                             
-                            state.composite_state.create_surface(
-                                NativeSurfaceId(self.id.0 as u64),
-                                ctx.current_tile_size,
-                                self.is_opaque,
-                            )
+                            
+                            SurfaceTextureDescriptor::NativeSurface {
+                                id: None,
+                                size: ctx.current_tile_size,
+                            }
                         }
                     };
 
@@ -3328,11 +3327,23 @@ impl PicturePrimitive {
                                 }
                             };
 
+                            let surface = tile.surface.as_mut().expect("no tile surface set!");
+
                             
                             
                             
                             
                             if frame_state.composite_state.is_tile_occluded(tile_cache.slice, tile_draw_rect) {
+                                
+                                
+                                
+                                
+                                if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::NativeSurface { id, .. }, .. } = surface {
+                                    if let Some(id) = id.take() {
+                                        frame_state.composite_state.destroy_surface(id);
+                                    }
+                                }
+
                                 tile.is_visible = false;
                                 continue;
                             }
@@ -3346,8 +3357,6 @@ impl PicturePrimitive {
                             for image_key in &tile.current_descriptor.image_keys {
                                 frame_state.resource_cache.set_image_active(*image_key);
                             }
-
-                            let surface = tile.surface.as_mut().expect("no tile surface set!");
 
                             if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
                                 tile.root.draw_debug_rects(
@@ -3373,23 +3382,34 @@ impl PicturePrimitive {
                                 }
                             }
 
-                            if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::TextureCache { ref handle, .. }, .. } = surface {
-                                
-                                if frame_state.resource_cache.texture_cache.is_allocated(handle) {
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    frame_state.resource_cache.texture_cache.request(handle, frame_state.gpu_cache);
-                                } else {
-                                    
-                                    
-                                    tile.is_valid = false;
-                                    tile.dirty_rect = tile.rect;
+                            if let TileSurface::Texture { descriptor, .. } = surface {
+                                match descriptor {
+                                    SurfaceTextureDescriptor::TextureCache { ref handle, .. } => {
+                                        
+                                        if frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            frame_state.resource_cache.texture_cache.request(handle, frame_state.gpu_cache);
+                                        } else {
+                                            
+                                            
+                                            tile.is_valid = false;
+                                            tile.dirty_rect = tile.rect;
+                                        }
+                                    }
+                                    SurfaceTextureDescriptor::NativeSurface { id, .. } => {
+                                        if id.is_none() {
+                                            
+                                            tile.is_valid = false;
+                                            tile.dirty_rect = tile.rect;
+                                        }
+                                    }
                                 }
                             }
 
@@ -3402,13 +3422,23 @@ impl PicturePrimitive {
 
                             
                             if let TileSurface::Texture { ref mut descriptor, ref mut visibility_mask } = surface {
-                                if let SurfaceTextureDescriptor::TextureCache { ref mut handle } = descriptor {
-                                    if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
-                                        frame_state.resource_cache.texture_cache.update_picture_cache(
-                                            tile_cache.current_tile_size,
-                                            handle,
-                                            frame_state.gpu_cache,
-                                        );
+                                match descriptor {
+                                    SurfaceTextureDescriptor::TextureCache { ref mut handle } => {
+                                        if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                            frame_state.resource_cache.texture_cache.update_picture_cache(
+                                                tile_cache.current_tile_size,
+                                                handle,
+                                                frame_state.gpu_cache,
+                                            );
+                                        }
+                                    }
+                                    SurfaceTextureDescriptor::NativeSurface { id, size } => {
+                                        if id.is_none() {
+                                            *id = Some(frame_state.composite_state.create_surface(
+                                                *size,
+                                                tile.is_opaque,
+                                            ));
+                                        }
                                     }
                                 }
 
@@ -4871,7 +4901,9 @@ impl CompositeState {
                 
                 
                 if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::NativeSurface { id, .. }, .. }) = tile.surface {
-                    self.destroy_surface(id);
+                    if let Some(id) = id {
+                        self.destroy_surface(id);
+                    }
                 }
             }
         }

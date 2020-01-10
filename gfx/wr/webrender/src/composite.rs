@@ -5,13 +5,17 @@
 use api::ColorF;
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
-use crate::picture::{ResolvedSurfaceTexture, SurfaceTextureDescriptor};
+use crate::picture::{ResolvedSurfaceTexture};
 use std::{ops, u64};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 
 
 
 
+
+
+static NEXT_NATIVE_SURFACE_ID: AtomicU64 = AtomicU64::new(0);
 
 
 #[derive(Debug, Clone)]
@@ -192,10 +196,11 @@ impl CompositeState {
     
     pub fn create_surface(
         &mut self,
-        id: NativeSurfaceId,
         size: DeviceIntSize,
         is_opaque: bool,
-    ) -> SurfaceTextureDescriptor {
+    ) -> NativeSurfaceId {
+        let id = NativeSurfaceId(NEXT_NATIVE_SURFACE_ID.fetch_add(1, Ordering::Relaxed));
+
         self.native_surface_updates.push(
             NativeSurfaceOperation {
                 id,
@@ -206,10 +211,7 @@ impl CompositeState {
             }
         );
 
-        SurfaceTextureDescriptor::NativeSurface {
-            id,
-            size,
-        }
+        id
     }
 
     
