@@ -800,15 +800,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   return NS_OK;
 }
 
-static bool IsTextInput(nsIContent* aContent) {
-  MOZ_ASSERT(aContent);
-  if (!aContent->IsElement()) {
-    return false;
-  }
-  TextEditor* textEditor = aContent->AsElement()->GetTextEditorInternal();
-  return textEditor && !textEditor->IsReadonly();
-}
-
 void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
                                                    nsIContent* aTargetContent) {
   if (!aEvent->IsTrusted()) {
@@ -827,13 +818,6 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
 
   Document* doc = node->OwnerDoc();
   if (!doc || doc->HasBeenUserGestureActivated()) {
-    return;
-  }
-
-  
-  
-  
-  if (aTargetContent->IsEditable() || IsTextInput(aTargetContent)) {
     return;
   }
 
