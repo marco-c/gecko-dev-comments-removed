@@ -2031,17 +2031,16 @@ nsUrlClassifierDBService::SendThreatHitReport(nsIChannel* aChannel,
 
 NS_IMETHODIMP
 nsUrlClassifierDBService::Lookup(nsIPrincipal* aPrincipal,
-                                 const nsACString& tables,
-                                 nsIUrlClassifierCallback* c) {
+                                 const nsACString& aTables,
+                                 nsIUrlClassifierCallback* aCallback) {
+  
+  
+  MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(aPrincipal));
+
   NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
 
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-    
-    return NS_OK;
-  }
-
   nsTArray<nsCString> tableArray;
-  Classifier::SplitTables(tables, tableArray);
+  Classifier::SplitTables(aTables, tableArray);
 
   nsCOMPtr<nsIUrlClassifierFeature> feature;
   nsresult rv =
@@ -2077,7 +2076,7 @@ nsUrlClassifierDBService::Lookup(nsIPrincipal* aPrincipal,
   rv = utilsService->GetKeyForURI(uri, key);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return LookupURI(key, holder, c);
+  return LookupURI(key, holder, aCallback);
 }
 
 nsresult nsUrlClassifierDBService::LookupURI(
