@@ -5267,22 +5267,42 @@ nsHTMLDocument* HTMLEditor::GetHTMLDocument() const {
   return doc->AsHTMLDocument();
 }
 
-void HTMLEditor::OnModifyDocument() {
-  MOZ_ASSERT(mRules);
-
-  RefPtr<HTMLEditRules> htmlRules = mRules->AsHTMLEditRules();
+nsresult HTMLEditor::OnModifyDocument() {
   if (IsEditActionDataAvailable()) {
-    htmlRules->OnModifyDocument();
-    return;
+    return OnModifyDocumentInternal();
   }
 
   AutoEditActionDataSetter editActionData(
       *this, EditAction::eCreatePaddingBRElementForEmptyEditor);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
-  htmlRules->OnModifyDocument();
+  return OnModifyDocumentInternal();
+}
+
+nsresult HTMLEditor::OnModifyDocumentInternal() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  
+  
+  nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
+
+  
+  
+  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "Failed to remove the padding <br> element");
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return rv;
+  }
+
+  
+  rv = MaybeCreatePaddingBRElementForEmptyEditor();
+  NS_WARNING_ASSERTION(
+      rv != NS_ERROR_EDITOR_DESTROYED,
+      "The editor has been destroyed during creating a padding <br> element");
+  return rv;
 }
 
 }  

@@ -1092,7 +1092,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void OnModifyDocument();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnModifyDocument();
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
@@ -2537,6 +2537,11 @@ class HTMLEditor final : public TextEditor,
 
   static nsresult SlurpBlob(dom::Blob* aBlob, nsPIDOMWindowOuter* aWindow,
                             BlobReader* aBlobReader);
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnModifyDocumentInternal();
 
  protected:
   RefPtr<TypeInState> mTypeInState;

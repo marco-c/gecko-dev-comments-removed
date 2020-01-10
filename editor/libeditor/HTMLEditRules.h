@@ -136,13 +136,6 @@ class HTMLEditRules : public TextEditRules {
   void StartToListenToEditSubActions() { mListenerEnabled = true; }
   void EndListeningToEditSubActions() { mListenerEnabled = false; }
 
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void OnModifyDocument();
-
  protected:
   virtual ~HTMLEditRules() = default;
 

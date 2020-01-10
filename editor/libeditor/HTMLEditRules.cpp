@@ -11118,38 +11118,9 @@ void HTMLEditRules::DocumentModifiedWorker() {
   }
 
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
-  htmlEditor->OnModifyDocument();
-}
-
-void HTMLEditRules::OnModifyDocument() {
-  MOZ_ASSERT(mHTMLEditor);
-
-  AutoSafeEditorData setData(*this, *mHTMLEditor);
-
-  
-  
-  nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
-
-  
-  
-  if (HTMLEditorRef().mPaddingBRElementForEmptyEditor) {
-    
-    
-    
-    RefPtr<HTMLBRElement> paddingBRElement(
-        std::move(HTMLEditorRef().mPaddingBRElementForEmptyEditor));
-    DebugOnly<nsresult> rv = MOZ_KnownLive(HTMLEditorRef())
-                                 .DeleteNodeWithTransaction(*paddingBRElement);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "Failed to remove the padding <br> element");
-  }
-
-  
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                    .MaybeCreatePaddingBRElementForEmptyEditor();
-  NS_WARNING_ASSERTION(
-      rv != NS_ERROR_EDITOR_DESTROYED,
-      "The editor has been destroyed during creating a padding <br> element");
+  nsresult rv = htmlEditor->OnModifyDocument();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::OnModifyDocument() failed");
   Unused << rv;
 }
 
