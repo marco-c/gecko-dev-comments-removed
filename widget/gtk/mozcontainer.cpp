@@ -141,43 +141,6 @@ void moz_container_put(MozContainer* container, GtkWidget* child_widget, gint x,
 }
 
 
-#if defined(MOZ_WAYLAND)
-static gint moz_container_get_scale(MozContainer* container) {
-  static auto sGdkWindowGetScaleFactorPtr =
-      (gint(*)(GdkWindow*))dlsym(RTLD_DEFAULT, "gdk_window_get_scale_factor");
-
-  if (sGdkWindowGetScaleFactorPtr) {
-    GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(container));
-    return (*sGdkWindowGetScaleFactorPtr)(window);
-  }
-
-  return 1;
-}
-
-void moz_container_move(MozContainer* container, int dx, int dy) {
-  if (container->subsurface) {
-    wl_subsurface_set_position(container->subsurface, dx, dy);
-  }
-}
-
-void moz_container_scale_update(MozContainer* container) {
-  if (container->surface) {
-    gint scale = moz_container_get_scale(container);
-    wl_surface_set_buffer_scale(container->surface, scale);
-  }
-}
-
-
-
-
-
-void moz_container_egl_window_set_size(MozContainer* container, int width,
-                                       int height) {
-  if (container->eglwindow) {
-    wl_egl_window_resize(container->eglwindow, width, height, 0, 0);
-  }
-}
-#endif
 
 void moz_container_class_init(MozContainerClass* klass) {
   
@@ -327,17 +290,43 @@ static void moz_container_unmap_wayland(MozContainer* container) {
   LOGWAYLAND(("%s [%p]\n", __FUNCTION__, (void*)container));
 }
 
+static gint moz_container_get_scale(MozContainer* container) {
+  static auto sGdkWindowGetScaleFactorPtr =
+      (gint(*)(GdkWindow*))dlsym(RTLD_DEFAULT, "gdk_window_get_scale_factor");
+
+  if (sGdkWindowGetScaleFactorPtr) {
+    GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(container));
+    return (*sGdkWindowGetScaleFactorPtr)(window);
+  }
+
+  return 1;
+}
+
 void moz_container_scale_changed(MozContainer* container,
                                  GtkAllocation* aAllocation) {
-  LOG(("moz_container_scale_changed [%p] surface %p eglwindow %p\n",
-       (void*)container, (void*)container->surface,
-       (void*)container->eglwindow));
+  LOGWAYLAND(("%s [%p] surface %p eglwindow %p\n", __FUNCTION__,
+              (void*)container, (void*)container->surface,
+              (void*)container->eglwindow));
 
   if (!container->surface) {
     return;
   }
 
-  moz_container_scale_update(container);
+  
+  
+  gint x, y;
+  gdk_window_get_position(gtk_widget_get_window(GTK_WIDGET(container)), &x, &y);
+  wl_subsurface_set_position(container->subsurface, x, y);
+
+  
+  
+  if (container->eglwindow) {
+    gint scale = moz_container_get_scale(container);
+    wl_surface_set_buffer_scale(container->surface,
+                                moz_container_get_scale(container));
+    wl_egl_window_resize(container->eglwindow, aAllocation->width * scale,
+                         aAllocation->height * scale, 0, 0);
+  }
 }
 #endif
 
@@ -432,8 +421,8 @@ void moz_container_size_allocate(GtkWidget* widget, GtkAllocation* allocation) {
 
   g_return_if_fail(IS_MOZ_CONTAINER(widget));
 
-  LOG(("moz_container_size_allocate [%p] %d,%d -> %d x %d\n", (void*)widget,
-       allocation->x, allocation->y, allocation->width, allocation->height));
+  LOG(("%s [%p] %d %d %d %d\n", __FUNCTION__, (void*)widget, allocation->x,
+       allocation->y, allocation->width, allocation->height));
 
   
   container = MOZ_CONTAINER(widget);
@@ -461,14 +450,23 @@ void moz_container_size_allocate(GtkWidget* widget, GtkAllocation* allocation) {
     gdk_window_move_resize(gtk_widget_get_window(widget), allocation->x,
                            allocation->y, allocation->width,
                            allocation->height);
-#if defined(MOZ_WAYLAND)
-    
-    
-    
-    moz_container_move(MOZ_CONTAINER(widget), allocation->x, allocation->y);
-    moz_container_scale_update(MOZ_CONTAINER(widget));
-#endif
   }
+
+#if defined(MOZ_WAYLAND)
+  
+  
+  
+  if (container->subsurface) {
+    gint x, y;
+    gdk_window_get_position(gtk_widget_get_window(widget), &x, &y);
+    wl_subsurface_set_position(container->subsurface, x, y);
+  }
+  if (container->eglwindow) {
+    gint scale = moz_container_get_scale(container);
+    wl_egl_window_resize(container->eglwindow, allocation->width * scale,
+                         allocation->height * scale, 0, 0);
+  }
+#endif
 }
 
 void moz_container_remove(GtkContainer* container, GtkWidget* child_widget) {
