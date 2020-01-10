@@ -1304,35 +1304,100 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
     }
   }
 
-  Label skipCall;
+  Label done;
 
   const OptimizationInfo* info =
       IonOptimizations.get(IonOptimizations.firstLevel());
   uint32_t warmUpThreshold = info->compilerWarmUpThreshold(script, pc);
-  masm.branch32(Assembler::LessThan, countReg, Imm32(warmUpThreshold),
-                &skipCall);
+  masm.branch32(Assembler::LessThan, countReg, Imm32(warmUpThreshold), &done);
 
   
   
   masm.movePtr(ImmPtr(script->jitScript()), scriptReg);
   masm.loadPtr(Address(scriptReg, JitScript::offsetOfIonScript()), scriptReg);
   masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonCompilingScriptPtr),
-                 &skipCall);
+                 &done);
   masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonDisabledScriptPtr),
-                 &skipCall);
+                 &done);
 
   
   if (JSOp(*pc) == JSOP_LOOPENTRY) {
     
-    
     computeFrameSize(R0.scratchReg());
-    if (!emitNextIC()) {
+
+    prepareVMCall();
+
+    pushBytecodePCArg();
+    pushArg(R0.scratchReg());
+    masm.PushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+
+    using Fn = bool (*)(JSContext*, BaselineFrame*, uint32_t, jsbytecode*,
+                        IonOsrTempData**);
+    if (!callVM<Fn, IonCompileScriptForBaselineOSR>()) {
       return false;
     }
+
+    
+    
+    static_assert(ReturnReg != OsrFrameReg,
+                  "Code below depends on osrDataReg != OsrFrameReg");
+    Register osrDataReg = ReturnReg;
+    masm.branchTestPtr(Assembler::Zero, osrDataReg, osrDataReg, &done);
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    masm.addToStackPtr(Imm32(frame.frameSize()));
+
+#ifdef DEBUG
+    
+    AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
+    regs.take(BaselineFrameReg);
+    regs.take(osrDataReg);
+    regs.take(OsrFrameReg);
+
+    Register scratchReg = regs.takeAny();
+
+    
+    
+    {
+      Label checkOk;
+      AbsoluteAddress addressOfEnabled(
+          cx->runtime()->geckoProfiler().addressOfEnabled());
+      masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0), &checkOk);
+      masm.loadPtr(AbsoluteAddress((void*)&cx->jitActivation), scratchReg);
+      masm.loadPtr(
+          Address(scratchReg, JitActivation::offsetOfLastProfilingFrame()),
+          scratchReg);
+
+      
+      
+      
+      
+      
+      masm.branchPtr(Assembler::Equal, scratchReg, ImmWord(0), &checkOk);
+
+      masm.branchStackPtr(Assembler::Equal, scratchReg, &checkOk);
+      masm.assumeUnreachable("Baseline OSR lastProfilingFrame mismatch.");
+      masm.bind(&checkOk);
+    }
+#endif
+
+    
+    masm.loadPtr(Address(osrDataReg, IonOsrTempData::offsetOfBaselineFrame()),
+                 OsrFrameReg);
+    masm.jump(Address(osrDataReg, IonOsrTempData::offsetOfJitCode()));
   } else {
-    
-    
-    
     prepareVMCall();
 
     masm.PushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
@@ -1344,8 +1409,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
       return false;
     }
   }
-  masm.bind(&skipCall);
 
+  masm.bind(&done);
   return true;
 }
 

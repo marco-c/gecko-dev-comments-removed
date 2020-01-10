@@ -13,8 +13,6 @@ namespace jit {
 
 
 #define IC_BASELINE_STUB_KIND_LIST(_) \
-  _(WarmUpCounter_Fallback)           \
-                                      \
   _(TypeMonitor_Fallback)             \
   _(TypeMonitor_SingleObject)         \
   _(TypeMonitor_ObjectGroup)          \
@@ -74,7 +72,6 @@ namespace jit {
 
 
 #define IC_BASELINE_FALLBACK_CODE_KIND_LIST(_) \
-  _(WarmUpCounter)                             \
   _(TypeMonitor)                               \
   _(TypeUpdate)                                \
   _(NewArray)                                  \

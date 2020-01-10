@@ -2456,7 +2456,7 @@
 
 
  \
-    MACRO(JSOP_LOOPENTRY, 227, "loopentry", NULL, 6, 0, 0, JOF_LOOPENTRY|JOF_IC) \
+    MACRO(JSOP_LOOPENTRY, 227, "loopentry", NULL, 6, 0, 0, JOF_LOOPENTRY) \
     
 
 
