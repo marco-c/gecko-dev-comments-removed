@@ -186,15 +186,14 @@ nsresult nsXBLDocumentInfo::ReadPrototypeBindings(nsIURI* aURI,
     return NS_ERROR_FAILURE;
   }
 
-  UniquePtr<char[]> buf;
+  const char* buf;
   uint32_t len;
   rv = startupCache->GetBuffer(spec.get(), &buf, &len);
   
   if (NS_FAILED(rv)) return rv;
 
   nsCOMPtr<nsIObjectInputStream> stream;
-  rv = NewObjectInputStreamFromBuffer(std::move(buf), len,
-                                      getter_AddRefs(stream));
+  rv = NewObjectInputStreamFromBuffer(buf, len, getter_AddRefs(stream));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
