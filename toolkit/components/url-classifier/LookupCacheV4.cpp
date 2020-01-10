@@ -101,18 +101,29 @@ nsresult LookupCacheV4::Has(const Completion& aCompletion, bool* aHas,
   nsDependentCSubstring fullhash;
   fullhash.Rebind((const char*)aCompletion.buf, COMPLETE_SIZE);
 
-  nsresult rv = mVLPrefixSet->Matches(fullhash, &length);
+  
+  
+  
+  
+  
+  
+  uint32_t prefix = BigEndian::readUint32(
+      reinterpret_cast<const uint32_t*>(fullhash.BeginReading()));
+
+  nsresult rv = mVLPrefixSet->Matches(prefix, fullhash, &length);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  MOZ_ASSERT(length == 0 || (length >= PREFIX_SIZE && length <= COMPLETE_SIZE));
-
-  *aHas = length >= PREFIX_SIZE;
-  *aMatchLength = length;
-
-  
-  if (!(*aHas)) {
+  if (length == 0) {
     return NS_OK;
   }
+
+  MOZ_ASSERT(length >= PREFIX_SIZE && length <= COMPLETE_SIZE);
+
+  
+  
+  *aHas = true;
+  *aMatchLength = length;
+
 
   
   
@@ -123,10 +134,12 @@ nsresult LookupCacheV4::Build(PrefixStringMap& aPrefixMap) {
   Telemetry::AutoTimer<Telemetry::URLCLASSIFIER_VLPS_CONSTRUCT_TIME> timer;
 
   nsresult rv = mVLPrefixSet->SetPrefixes(aPrefixMap);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   mPrimed = true;
 
-  return rv;
+  return NS_OK;
 }
 
 nsresult LookupCacheV4::GetPrefixes(PrefixStringMap& aPrefixMap) {
@@ -140,7 +153,7 @@ nsresult LookupCacheV4::GetPrefixes(PrefixStringMap& aPrefixMap) {
 
 nsresult LookupCacheV4::GetFixedLengthPrefixes(
     FallibleTArray<uint32_t>& aPrefixes) {
-  return mVLPrefixSet->GetFixedLengthPrefixes(aPrefixes);
+  return mVLPrefixSet->GetFixedLengthPrefixes(&aPrefixes, nullptr);
 }
 
 nsresult LookupCacheV4::ClearLegacyFile() {
