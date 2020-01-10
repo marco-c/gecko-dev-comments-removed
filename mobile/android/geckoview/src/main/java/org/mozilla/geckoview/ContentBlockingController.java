@@ -214,7 +214,12 @@ public class ContentBlockingController {
         
 
 
-        public static final int LOADED_TRACKING_CONTENT         = 0x00002000;
+        public static final int LOADED_LEVEL_1_TRACKING_CONTENT = 0x00002000;
+
+        
+
+
+        public static final int LOADED_LEVEL_2_TRACKING_CONTENT = 0x00100000;
 
         
 
@@ -320,15 +325,16 @@ public class ContentBlockingController {
 
         public static class BlockingData {
             @Retention(RetentionPolicy.SOURCE)
-            @IntDef({ Event.BLOCKED_TRACKING_CONTENT, Event.LOADED_TRACKING_CONTENT,
-                      Event.BLOCKED_FINGERPRINTING_CONTENT, Event.LOADED_FINGERPRINTING_CONTENT,
-                      Event.BLOCKED_CRYPTOMINING_CONTENT, Event.LOADED_CRYPTOMINING_CONTENT,
-                      Event.BLOCKED_UNSAFE_CONTENT, Event.COOKIES_LOADED,
-                      Event.COOKIES_LOADED_TRACKER, Event.COOKIES_LOADED_SOCIALTRACKER,
-                      Event.COOKIES_BLOCKED_BY_PERMISSION, Event.COOKIES_BLOCKED_TRACKER,
-                      Event.COOKIES_BLOCKED_SOCIALTRACKER, Event.COOKIES_BLOCKED_ALL,
-                      Event.COOKIES_PARTITIONED_FOREIGN, Event.COOKIES_BLOCKED_FOREIGN,
-                      Event.BLOCKED_SOCIALTRACKING_CONTENT, Event.LOADED_SOCIALTRACKING_CONTENT })
+            @IntDef({ Event.BLOCKED_TRACKING_CONTENT, Event.LOADED_LEVEL_1_TRACKING_CONTENT,
+                      Event.LOADED_LEVEL_2_TRACKING_CONTENT, Event.BLOCKED_FINGERPRINTING_CONTENT,
+                      Event.LOADED_FINGERPRINTING_CONTENT, Event.BLOCKED_CRYPTOMINING_CONTENT,
+                      Event.LOADED_CRYPTOMINING_CONTENT, Event.BLOCKED_UNSAFE_CONTENT,
+                      Event.COOKIES_LOADED, Event.COOKIES_LOADED_TRACKER,
+                      Event.COOKIES_LOADED_SOCIALTRACKER, Event.COOKIES_BLOCKED_BY_PERMISSION,
+                      Event.COOKIES_BLOCKED_TRACKER, Event.COOKIES_BLOCKED_SOCIALTRACKER,
+                      Event.COOKIES_BLOCKED_ALL, Event.COOKIES_PARTITIONED_FOREIGN,
+                      Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
+                      Event.LOADED_SOCIALTRACKING_CONTENT })
              @interface LogEvent {}
 
             

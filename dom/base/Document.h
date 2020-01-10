@@ -1343,18 +1343,38 @@ class Document : public nsINode,
   
 
 
-  bool GetHasTrackingContentLoaded() {
+  bool GetHasLevel1TrackingContentLoaded() {
     return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
+        nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT);
   }
 
   
 
 
-  void SetHasTrackingContentLoaded(bool aHasTrackingContentLoaded,
-                                   const nsACString& aOriginBlocked) {
+  void SetHasLevel1TrackingContentLoaded(bool aHasTrackingContentLoaded,
+                                         const nsACString& aOriginBlocked) {
     RecordContentBlockingLog(
-        aOriginBlocked, nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT,
+        aOriginBlocked,
+        nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
+        aHasTrackingContentLoaded);
+  }
+
+  
+
+
+  bool GetHasLevel2TrackingContentLoaded() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT);
+  }
+
+  
+
+
+  void SetHasLevel2TrackingContentLoaded(bool aHasTrackingContentLoaded,
+                                         const nsACString& aOriginBlocked) {
+    RecordContentBlockingLog(
+        aOriginBlocked,
+        nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT,
         aHasTrackingContentLoaded);
   }
 
