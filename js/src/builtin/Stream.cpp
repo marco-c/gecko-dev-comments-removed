@@ -18,7 +18,7 @@
 #include "vm/SelfHosting.h"
 
 #include "vm/Compartment-inl.h"
-#include "vm/List-inl.h"
+#include "vm/List-inl.h"  
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
@@ -146,21 +146,6 @@ static MOZ_MUST_USE bool ReturnPromiseRejectedWithPendingError(
   }
 
   args.rval().setObject(*promise);
-  return true;
-}
-
-
-
-
-
-inline static MOZ_MUST_USE bool SetNewList(
-    JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot) {
-  AutoRealm ar(cx, unwrappedContainer);
-  ListObject* list = ListObject::create(cx);
-  if (!list) {
-    return false;
-  }
-  unwrappedContainer->setFixedSlot(slot, ObjectValue(*list));
   return true;
 }
 
@@ -1673,7 +1658,8 @@ MOZ_MUST_USE bool ReadableStreamErrorInternal(
   }
 
   
-  if (!SetNewList(cx, unwrappedReader, ReadableStreamReader::Slot_Requests)) {
+  if (!StoreNewListInFixedSlot(cx, unwrappedReader,
+                               ReadableStreamReader::Slot_Requests)) {
     return false;
   }
 
@@ -2134,7 +2120,8 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
   
   
   
-  if (!SetNewList(cx, reader, ReadableStreamReader::Slot_Requests)) {
+  if (!StoreNewListInFixedSlot(cx, reader,
+                               ReadableStreamReader::Slot_Requests)) {
     return false;
   }
 
@@ -3470,7 +3457,8 @@ CreateReadableByteStreamController(JSContext* cx,
     controller->setAutoAllocateChunkSize(autoAllocateChunkSize);
 
     
-    if (!SetNewList(cx, controller, ReadableByteStreamController::Slot_PendingPullIntos)) {
+    if (!StoreNewListInFixedSlot(cx, controller,
+                                 ReadableByteStreamController::Slot_PendingPullIntos)) {
         return nullptr;
     }
 
@@ -3600,8 +3588,9 @@ static MOZ_MUST_USE bool SetUpExternalReadableByteStreamController(
   MOZ_ASSERT(controller->autoAllocateChunkSize().isUndefined());
 
   
-  if (!SetNewList(cx, controller,
-                  ReadableByteStreamController::Slot_PendingPullIntos)) {
+  if (!StoreNewListInFixedSlot(
+          cx, controller,
+          ReadableByteStreamController::Slot_PendingPullIntos)) {
     return false;
   }
 
@@ -3914,8 +3903,9 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerClearPendingPullIntos(
   }
 
   
-  return SetNewList(cx, unwrappedController,
-                    ReadableByteStreamController::Slot_PendingPullIntos);
+  return StoreNewListInFixedSlot(
+      cx, unwrappedController,
+      ReadableByteStreamController::Slot_PendingPullIntos);
 }
 
 
@@ -4306,7 +4296,8 @@ inline static MOZ_MUST_USE bool ResetQueue(
   
   
   
-  if (!SetNewList(cx, unwrappedContainer, StreamController::Slot_Queue)) {
+  if (!StoreNewListInFixedSlot(cx, unwrappedContainer,
+                               StreamController::Slot_Queue)) {
     return false;
   }
 
