@@ -1324,9 +1324,6 @@ pref("network.http.request.max-attempts", 10);
 
 
 
-pref("network.http.sendRefererHeader",      2);
-
-
 
 pref("network.http.referer.defaultPolicy", 3);
 
