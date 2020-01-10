@@ -73,21 +73,11 @@ namespace recordreplay {
 
 
 
-
-
-
-
-
-
-
 static const size_t InvalidCheckpointId = 0;
 static const size_t FirstCheckpointId = 1;
 
 
 void InitializeRewindState();
-
-
-void SetSaveCheckpoint(size_t aCheckpoint, bool aSave);
 
 
 
@@ -104,25 +94,19 @@ bool MainThreadShouldPause();
 void PauseMainThreadAndServiceCallbacks();
 
 
-bool HasSavedAnyCheckpoint();
-
-
-bool HasSavedCheckpoint(size_t aCheckpoint);
+size_t NumSnapshots();
 
 
 size_t GetLastCheckpoint();
 
 
-size_t GetLastSavedCheckpoint();
 
 
-
-void RestoreCheckpointAndResume(size_t aCheckpoint);
+void RestoreSnapshotAndResume(size_t aNumSnapshots);
 
 
 
 void ResumeExecution();
-
 
 
 
@@ -143,9 +127,11 @@ void DisallowUnhandledDivergeFromRecording();
 void EnsureNotDivergedFromRecording();
 
 
+void NewCheckpoint();
 
 
-bool NewCheckpoint();
+
+bool NewSnapshot();
 
 }  
 }  

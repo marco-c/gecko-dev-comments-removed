@@ -885,7 +885,7 @@ function ClearPausedState() {
 
 
 
-let gManifest;
+let gManifest = { kind: "primordial" };
 
 
 
@@ -902,28 +902,23 @@ let gPauseOnDebuggerStatement = false;
 const gManifestStartHandlers = {
   resume({ breakpoints, pauseOnDebuggerStatement }) {
     RecordReplayControl.resumeExecution();
-    gManifestStartTime = RecordReplayControl.currentExecutionTime();
     breakpoints.forEach(ensurePositionHandler);
 
     gPauseOnDebuggerStatement = pauseOnDebuggerStatement;
     dbg.onDebuggerStatement = debuggerStatementHit;
   },
 
-  restoreCheckpoint({ target }) {
-    RecordReplayControl.restoreCheckpoint(target);
+  restoreSnapshot({ numSnapshots }) {
+    RecordReplayControl.restoreSnapshot(numSnapshots);
     throwError("Unreachable!");
   },
 
-  runToPoint({ needSaveCheckpoints }) {
-    for (const checkpoint of needSaveCheckpoints) {
-      RecordReplayControl.saveCheckpoint(checkpoint);
-    }
+  runToPoint() {
     RecordReplayControl.resumeExecution();
   },
 
   scanRecording(manifest) {
-    gManifestStartTime = RecordReplayControl.currentExecutionTime();
-    gManifestStartHandlers.runToPoint(manifest);
+    RecordReplayControl.resumeExecution();
   },
 
   findHits({ position, startpoint, endpoint }) {
@@ -1006,6 +1001,7 @@ const gManifestStartHandlers = {
 function ManifestStart(manifest) {
   try {
     gManifest = manifest;
+    gManifestStartTime = RecordReplayControl.currentExecutionTime();
 
     if (gManifestStartHandlers[manifest.kind]) {
       gManifestStartHandlers[manifest.kind](manifest);
@@ -1015,12 +1011,6 @@ function ManifestStart(manifest) {
   } catch (e) {
     printError("ManifestStart", e);
   }
-}
-
-
-function BeforeCheckpoint() {
-  clearPositionHandlers();
-  stopScanningAllScripts();
 }
 
 const FirstCheckpointId = 1;
@@ -1066,18 +1056,36 @@ function finishResume(point) {
 
 
 const gManifestFinishedAfterCheckpointHandlers = {
+  primordial(_, point) {
+    
+    
+    assert(point.checkpoint == FirstCheckpointId);
+    if (!newSnapshot(point)) {
+      return;
+    }
+    RecordReplayControl.manifestFinished({ point });
+  },
+
   resume(_, point) {
+    clearPositionHandlers();
     finishResume(point);
   },
 
-  runToPoint({ endpoint }, point) {
+  runToPoint({ endpoint, saveCheckpoints }, point) {
     assert(endpoint.checkpoint >= point.checkpoint);
+    if (saveCheckpoints.includes(point.checkpoint) && !newSnapshot(point)) {
+      return;
+    }
     if (!endpoint.position && point.checkpoint == endpoint.checkpoint) {
       RecordReplayControl.manifestFinished({ point });
     }
   },
 
-  scanRecording({ endpoint }, point) {
+  scanRecording({ endpoint, saveCheckpoints }, point) {
+    stopScanningAllScripts();
+    if (saveCheckpoints.includes(point.checkpoint) && !newSnapshot(point)) {
+      return;
+    }
     if (point.checkpoint == endpoint) {
       const duration =
         RecordReplayControl.currentExecutionTime() - gManifestStartTime;
@@ -1110,19 +1118,7 @@ const gManifestPrepareAfterCheckpointHandlers = {
 };
 
 function processManifestAfterCheckpoint(point, restoredCheckpoint) {
-  
-  
-  if (restoredCheckpoint) {
-    RecordReplayControl.manifestFinished({ restoredCheckpoint, point });
-  }
-
-  if (!gManifest) {
-    
-    
-    assert(point.checkpoint == FirstCheckpointId);
-    RecordReplayControl.manifestFinished({ point });
-    assert(gManifest);
-  } else if (gManifestFinishedAfterCheckpointHandlers[gManifest.kind]) {
+  if (gManifestFinishedAfterCheckpointHandlers[gManifest.kind]) {
     gManifestFinishedAfterCheckpointHandlers[gManifest.kind](gManifest, point);
   }
 
@@ -1132,12 +1128,12 @@ function processManifestAfterCheckpoint(point, restoredCheckpoint) {
 }
 
 
-function AfterCheckpoint(id, restoredCheckpoint) {
+function HitCheckpoint(id) {
   gLastCheckpoint = id;
   const point = currentExecutionPoint();
 
   try {
-    processManifestAfterCheckpoint(point, restoredCheckpoint);
+    processManifestAfterCheckpoint(point);
   } catch (e) {
     printError("AfterCheckpoint", e);
   }
@@ -1178,6 +1174,18 @@ function debuggerStatementHit() {
     clearPositionHandlers();
     finishResume(point);
   }
+}
+
+function newSnapshot(point) {
+  if (RecordReplayControl.newSnapshot()) {
+    return true;
+  }
+
+  
+  
+  RecordReplayControl.manifestFinished({ restoredCheckpoint: true, point });
+
+  return false;
 }
 
 
@@ -1885,8 +1893,7 @@ function printError(why, e) {
 
 var EXPORTED_SYMBOLS = [
   "ManifestStart",
-  "BeforeCheckpoint",
-  "AfterCheckpoint",
+  "HitCheckpoint",
   "NewTimeWarpTarget",
   "ScriptResumeFrame",
 ];

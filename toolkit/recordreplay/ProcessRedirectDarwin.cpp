@@ -380,7 +380,7 @@ static PreambleResult MiddlemanPreamble_sendmsg(CallArguments* aArguments) {
 
 static PreambleResult Preamble_mprotect(CallArguments* aArguments) {
   
-  if (!HasSavedAnyCheckpoint()) {
+  if (!NumSnapshots()) {
     return PreambleResult::PassThrough;
   }
   aArguments->Rval<ssize_t>() = 0;
@@ -408,7 +408,7 @@ static PreambleResult Preamble_mmap(CallArguments* aArguments) {
     
     if (flags & MAP_FIXED) {
       
-      if (!HasSavedAnyCheckpoint()) {
+      if (!NumSnapshots()) {
         
         CallFunction<int>(gOriginal_mprotect, address, size,
                           PROT_READ | PROT_WRITE | PROT_EXEC);
@@ -424,7 +424,7 @@ static PreambleResult Preamble_mmap(CallArguments* aArguments) {
     
     
     
-    int newProt = HasSavedAnyCheckpoint() ? (PROT_READ | PROT_EXEC) : prot;
+    int newProt = NumSnapshots() ? (PROT_READ | PROT_EXEC) : prot;
     memory = CallFunction<void*>(gOriginal_mmap, address, size, newProt, flags,
                                  fd, offset);
 
@@ -608,7 +608,7 @@ static ssize_t WaitForCvar(pthread_mutex_t* aMutex, pthread_cond_t* aCond,
   if (!lock) {
     if (IsReplaying() && !AreThreadEventsPassedThrough()) {
       Thread* thread = Thread::Current();
-      if (thread->MaybeWaitForCheckpointSave(
+      if (thread->MaybeWaitForSnapshot(
               [=]() { pthread_mutex_unlock(aMutex); })) {
         
         
@@ -903,7 +903,7 @@ static PreambleResult Preamble_mach_vm_map(CallArguments* aArguments) {
   } else if (AreThreadEventsPassedThrough()) {
     
     
-    MOZ_RELEASE_ASSERT(!HasSavedAnyCheckpoint());
+    MOZ_RELEASE_ASSERT(!NumSnapshots());
     return PreambleResult::PassThrough;
   }
 
@@ -918,7 +918,7 @@ static PreambleResult Preamble_mach_vm_map(CallArguments* aArguments) {
 static PreambleResult Preamble_mach_vm_protect(CallArguments* aArguments) {
   
   
-  if (!HasSavedAnyCheckpoint()) {
+  if (!NumSnapshots()) {
     return PreambleResult::PassThrough;
   }
   aArguments->Rval<size_t>() = KERN_SUCCESS;

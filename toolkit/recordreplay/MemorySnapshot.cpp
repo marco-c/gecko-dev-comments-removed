@@ -95,6 +95,7 @@ namespace recordreplay {
 
 
 
+
 struct AllocatedMemoryRegion {
   uint8_t* mBase;
   size_t mSize;
@@ -161,16 +162,11 @@ typedef SplayTree<DirtyPage, DirtyPage::AddressSort,
 
 struct DirtyPageSet {
   
-  size_t mCheckpoint;
-
-  
   
   
   
   InfallibleVector<DirtyPage, 256, AllocPolicy<MemoryKind::DirtyPageSet>>
       mPages;
-
-  explicit DirtyPageSet(size_t aCheckpoint) : mCheckpoint(aCheckpoint) {}
 };
 
 
@@ -601,7 +597,7 @@ void UnrecoverableSnapshotFailure() {
 
 
 void AddInitialUntrackedMemoryRegion(uint8_t* aBase, size_t aSize) {
-  MOZ_RELEASE_ASSERT(!HasSavedAnyCheckpoint());
+  MOZ_RELEASE_ASSERT(!NumSnapshots());
 
   if (gInitializationFailureMessage) {
     return;
@@ -631,7 +627,7 @@ void AddInitialUntrackedMemoryRegion(uint8_t* aBase, size_t aSize) {
 }
 
 static void RemoveInitialUntrackedRegion(uint8_t* aBase, size_t aSize) {
-  MOZ_RELEASE_ASSERT(!HasSavedAnyCheckpoint());
+  MOZ_RELEASE_ASSERT(!NumSnapshots());
   AutoSpinLock lock(gMemoryInfo->mInitialUntrackedRegionsLock);
 
   for (AllocatedMemoryRegion& region : gMemoryInfo->mInitialUntrackedRegions) {
@@ -998,10 +994,10 @@ void RegisterAllocatedMemory(void* aBaseAddress, size_t aSize,
   uint8_t* aAddress = reinterpret_cast<uint8_t*>(aBaseAddress);
 
   if (aKind != MemoryKind::Tracked) {
-    if (!HasSavedAnyCheckpoint()) {
+    if (!NumSnapshots()) {
       AddInitialUntrackedMemoryRegion(aAddress, aSize);
     }
-  } else if (HasSavedAnyCheckpoint()) {
+  } else if (NumSnapshots()) {
     EnsureMemoryChangesAllowed();
     DirectWriteProtectMemory(aAddress, aSize, true);
     AddTrackedRegion(aAddress, aSize, true);
@@ -1012,7 +1008,7 @@ void CheckFixedMemory(void* aAddress, size_t aSize) {
   MOZ_RELEASE_ASSERT(aAddress == PageBase(aAddress));
   MOZ_RELEASE_ASSERT(aSize == RoundupSizeToPageBoundary(aSize));
 
-  if (!HasSavedAnyCheckpoint()) {
+  if (!NumSnapshots()) {
     return;
   }
 
@@ -1043,7 +1039,7 @@ void RestoreWritableFixedMemory(void* aAddress, size_t aSize) {
   MOZ_RELEASE_ASSERT(aAddress == PageBase(aAddress));
   MOZ_RELEASE_ASSERT(aSize == RoundupSizeToPageBoundary(aSize));
 
-  if (!HasSavedAnyCheckpoint()) {
+  if (!NumSnapshots()) {
     return;
   }
 
@@ -1064,7 +1060,7 @@ void* AllocateMemoryTryAddress(void* aAddress, size_t aSize, MemoryKind aKind) {
     gMemoryInfo->mMemoryBalance[(size_t)aKind] += aSize;
   }
 
-  if (HasSavedAnyCheckpoint()) {
+  if (NumSnapshots()) {
     if (void* res = FreeRegionSet::Get(aKind).Extract(aAddress, aSize)) {
       return res;
     }
@@ -1097,7 +1093,8 @@ void DeallocateMemory(void* aAddress, size_t aSize, MemoryKind aKind) {
   }
 
   
-  if (!HasSavedAnyCheckpoint()) {
+  
+  if (!NumSnapshots()) {
     if (IsReplaying() && aKind != MemoryKind::Tracked) {
       RemoveInitialUntrackedRegion((uint8_t*)aAddress, aSize);
     }
@@ -1128,10 +1125,7 @@ void DeallocateMemory(void* aAddress, size_t aSize, MemoryKind aKind) {
 
 static void SnapshotThreadRestoreLastDiffSnapshot(
     SnapshotThreadWorklist* aWorklist) {
-  size_t checkpoint = GetLastSavedCheckpoint();
-
   DirtyPageSet& set = aWorklist->mSets.back();
-  MOZ_RELEASE_ASSERT(set.mCheckpoint == checkpoint);
 
   
   for (size_t index = 0; index < set.mPages.length(); index++) {
@@ -1207,7 +1201,6 @@ static void AddDirtyPageToWorklist(uint8_t* aAddress, uint8_t* aOriginal,
         &gMemoryInfo->mSnapshotWorklists[pageIndex];
     MOZ_RELEASE_ASSERT(!worklist->mSets.empty());
     DirtyPageSet& set = worklist->mSets.back();
-    MOZ_RELEASE_ASSERT(set.mCheckpoint == GetLastSavedCheckpoint());
     set.mPages.emplaceBack(aAddress, aOriginal, aExecutable);
   }
 }
@@ -1267,7 +1260,7 @@ void TakeDiffMemorySnapshot() {
   
   for (size_t i = 0; i < NumSnapshotThreads; i++) {
     SnapshotThreadWorklist* worklist = &gMemoryInfo->mSnapshotWorklists[i];
-    worklist->mSets.emplaceBack(GetLastSavedCheckpoint());
+    worklist->mSets.emplaceBack();
   }
 
   
@@ -1285,7 +1278,7 @@ void TakeDiffMemorySnapshot() {
   gMemoryInfo->mSnapshotThreadsShouldIdle.ActivateEnd();
 }
 
-void RestoreMemoryToLastSavedCheckpoint() {
+void RestoreMemoryToLastSnapshot() {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
   MOZ_RELEASE_ASSERT(!gMemoryInfo->mMemoryChangesAllowed);
 
@@ -1301,7 +1294,7 @@ void RestoreMemoryToLastSavedCheckpoint() {
   gMemoryInfo->mActiveDirty.clear();
 }
 
-void RestoreMemoryToLastSavedDiffCheckpoint() {
+void RestoreMemoryToLastDiffSnapshot() {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
   MOZ_RELEASE_ASSERT(!gMemoryInfo->mMemoryChangesAllowed);
   MOZ_RELEASE_ASSERT(gMemoryInfo->mActiveDirty.empty());

@@ -290,10 +290,8 @@ class Thread {
   
   
   
-  
   void NotifyUnrecordedWait(const std::function<void()>& aNotifyCallback);
-  bool MaybeWaitForCheckpointSave(
-      const std::function<void()>& aReleaseCallback);
+  bool MaybeWaitForSnapshot(const std::function<void()>& aReleaseCallback);
 
   
   

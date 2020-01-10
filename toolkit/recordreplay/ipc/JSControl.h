@@ -69,13 +69,7 @@ void AfterSaveRecording();
 
 
 
-
-void BeforeCheckpoint();
-
-
-
-
-void AfterCheckpoint(size_t aCheckpoint, bool aRestoredCheckpoint);
+void HitCheckpoint(size_t aCheckpoint);
 
 
 bool RecoverFromCrash(parent::ChildProcessInfo* aChild);

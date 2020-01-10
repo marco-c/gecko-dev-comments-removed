@@ -72,11 +72,8 @@ struct SavedThreadStack {
   }
 };
 
-struct SavedCheckpoint {
-  size_t mCheckpoint;
+struct AllSavedThreadStacks {
   SavedThreadStack mStacks[MaxRecordedThreadId];
-
-  explicit SavedCheckpoint(size_t aCheckpoint) : mCheckpoint(aCheckpoint) {}
 
   void ReleaseContents() {
     for (SavedThreadStack& stack : mStacks) {
@@ -89,11 +86,11 @@ struct SavedCheckpoint {
 
 
 
-bool SaveAllThreads(SavedCheckpoint& aSavedCheckpoint);
+bool SaveAllThreads(AllSavedThreadStacks& aSaved);
 
 
 
-void RestoreAllThreads(const SavedCheckpoint& aSavedCheckpoint);
+void RestoreAllThreads(const AllSavedThreadStacks& aSaved);
 
 
 

@@ -248,7 +248,7 @@ bool ShouldRestoreThreadStack(size_t aId) {
   return gThreadState[aId].mShouldRestore;
 }
 
-bool SaveAllThreads(SavedCheckpoint& aSaved) {
+bool SaveAllThreads(AllSavedThreadStacks& aSaved) {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
 
   AutoPassThroughThreadEvents pt;  
@@ -266,7 +266,7 @@ bool SaveAllThreads(SavedCheckpoint& aSaved) {
   return true;
 }
 
-void RestoreAllThreads(const SavedCheckpoint& aSaved) {
+void RestoreAllThreads(const AllSavedThreadStacks& aSaved) {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
 
   

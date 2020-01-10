@@ -21,20 +21,14 @@ namespace mozilla {
 namespace recordreplay {
 
 
+static size_t gLastCheckpoint = InvalidCheckpointId;
+
+
 
 struct RewindInfo {
   
-  size_t mLastCheckpoint;
-
-  
-  
-  InfallibleVector<SavedCheckpoint, 1024, AllocPolicy<MemoryKind::Generic>>
-      mSavedCheckpoints;
-
-  
-  
-  InfallibleVector<size_t, 1024, AllocPolicy<MemoryKind::Generic>>
-      mShouldSaveCheckpoints;
+  InfallibleVector<AllSavedThreadStacks, 1024, AllocPolicy<MemoryKind::Generic>>
+      mSnapshots;
 };
 
 static RewindInfo* gRewindInfo;
@@ -51,22 +45,14 @@ void InitializeRewindState() {
   void* memory = AllocateMemory(sizeof(RewindInfo), MemoryKind::Generic);
   gRewindInfo = new (memory) RewindInfo();
 
-  
-  
-  
-  if (IsReplaying()) {
-    gRewindInfo->mShouldSaveCheckpoints.append(FirstCheckpointId);
-  }
-
   gMainThreadCallbackMonitor = new Monitor();
 }
 
-void RestoreCheckpointAndResume(size_t aCheckpoint) {
+void RestoreSnapshotAndResume(size_t aNumSnapshots) {
   MOZ_RELEASE_ASSERT(IsReplaying());
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
   MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
-  MOZ_RELEASE_ASSERT(aCheckpoint == gRewindInfo->mLastCheckpoint ||
-                     aCheckpoint < gRewindInfo->mLastCheckpoint);
+  MOZ_RELEASE_ASSERT(aNumSnapshots < gRewindInfo->mSnapshots.length());
 
   
   {
@@ -81,93 +67,76 @@ void RestoreCheckpointAndResume(size_t aCheckpoint) {
   {
     
     AutoDisallowMemoryChanges disallow;
-    size_t newCheckpoint = gRewindInfo->mSavedCheckpoints.back().mCheckpoint;
-    RestoreMemoryToLastSavedCheckpoint();
-    while (aCheckpoint < newCheckpoint) {
-      gRewindInfo->mSavedCheckpoints.back().ReleaseContents();
-      gRewindInfo->mSavedCheckpoints.popBack();
-      RestoreMemoryToLastSavedDiffCheckpoint();
-      newCheckpoint = gRewindInfo->mSavedCheckpoints.back().mCheckpoint;
+    RestoreMemoryToLastSnapshot();
+    for (size_t i = 0; i < aNumSnapshots; i++) {
+      gRewindInfo->mSnapshots.back().ReleaseContents();
+      gRewindInfo->mSnapshots.popBack();
+      RestoreMemoryToLastDiffSnapshot();
     }
-    MOZ_RELEASE_ASSERT(newCheckpoint == aCheckpoint);
   }
 
   FixupFreeRegionsAfterRewind();
 
   double end = CurrentTime();
-  PrintSpew("Restore #%d -> #%d %.2fs\n", (int)gRewindInfo->mLastCheckpoint,
-            (int)aCheckpoint, (end - start) / 1000000.0);
+  PrintSpew("Restore %.2fs\n", (end - start) / 1000000.0);
 
   
   
-  RestoreAllThreads(gRewindInfo->mSavedCheckpoints.back());
+  RestoreAllThreads(gRewindInfo->mSnapshots.back());
   Unreachable();
 }
 
-void SetSaveCheckpoint(size_t aCheckpoint, bool aSave) {
-  MOZ_RELEASE_ASSERT(aCheckpoint > gRewindInfo->mLastCheckpoint);
-  VectorAddOrRemoveEntry(gRewindInfo->mShouldSaveCheckpoints, aCheckpoint,
-                         aSave);
+bool NewSnapshot() {
+  if (IsRecording()) {
+    return true;
+  }
+
+  Thread::WaitForIdleThreads();
+
+  PrintSpew("Saving snapshot...\n");
+
+  double start = CurrentTime();
+
+  
+  if (gRewindInfo->mSnapshots.empty()) {
+    TakeFirstMemorySnapshot();
+  } else {
+    TakeDiffMemorySnapshot();
+  }
+  gRewindInfo->mSnapshots.emplaceBack();
+
+  double end = CurrentTime();
+
+  bool reached = true;
+
+  
+  
+  if (SaveAllThreads(gRewindInfo->mSnapshots.back())) {
+    PrintSpew("Saved snapshot %.2fs\n", (end - start) / 1000000.0);
+  } else {
+    PrintSpew("Restored snapshot\n");
+
+    reached = false;
+
+    
+    
+    
+    WaitForIdleThreadsToRestoreTheirStacks();
+  }
+
+  Thread::ResumeIdleThreads();
+
+  return reached;
 }
 
-bool NewCheckpoint() {
+void NewCheckpoint() {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
   MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
   MOZ_RELEASE_ASSERT(!HasDivergedFromRecording());
 
-  js::BeforeCheckpoint();
+  gLastCheckpoint++;
 
-  
-  size_t checkpoint = gRewindInfo->mLastCheckpoint + 1;
-
-  
-  
-  bool save = VectorContains(gRewindInfo->mShouldSaveCheckpoints, checkpoint);
-  bool reachedCheckpoint = true;
-
-  if (save) {
-    Thread::WaitForIdleThreads();
-
-    PrintSpew("Starting checkpoint...\n");
-
-    double start = CurrentTime();
-
-    
-    if (gRewindInfo->mSavedCheckpoints.empty()) {
-      TakeFirstMemorySnapshot();
-    } else {
-      TakeDiffMemorySnapshot();
-    }
-    gRewindInfo->mSavedCheckpoints.emplaceBack(checkpoint);
-
-    double end = CurrentTime();
-
-    
-    
-    if (SaveAllThreads(gRewindInfo->mSavedCheckpoints.back())) {
-      PrintSpew("Saved checkpoint #%d %.2fs\n", (int)checkpoint,
-                (end - start) / 1000000.0);
-    } else {
-      PrintSpew("Restored checkpoint #%d\n", (int)checkpoint);
-
-      reachedCheckpoint = false;
-
-      
-      
-      
-      WaitForIdleThreadsToRestoreTheirStacks();
-    }
-
-    Thread::ResumeIdleThreads();
-  } else {
-    PrintSpew("Skipping checkpoint #%d\n", (int)checkpoint);
-  }
-
-  gRewindInfo->mLastCheckpoint = checkpoint;
-
-  js::AfterCheckpoint(checkpoint, !reachedCheckpoint);
-
-  return reachedCheckpoint;
+  js::HitCheckpoint(gLastCheckpoint);
 }
 
 static bool gUnhandledDivergeAllowed;
@@ -222,36 +191,18 @@ void EnsureNotDivergedFromRecording() {
       MOZ_CRASH("Recording divergence while repainting");
     }
 
-    PrintSpew("Unhandled recording divergence, restoring checkpoint...\n");
-    RestoreCheckpointAndResume(
-        gRewindInfo->mSavedCheckpoints.back().mCheckpoint);
+    PrintSpew("Unhandled recording divergence, restoring snapshot...\n");
+    RestoreSnapshotAndResume(0);
     Unreachable();
   }
 }
 
-bool HasSavedAnyCheckpoint() {
-  return gRewindInfo && !gRewindInfo->mSavedCheckpoints.empty();
-}
-
-bool HasSavedCheckpoint(size_t aCheckpoint) {
-  if (!gRewindInfo) {
-    return false;
-  }
-  for (const SavedCheckpoint& saved : gRewindInfo->mSavedCheckpoints) {
-    if (saved.mCheckpoint == aCheckpoint) {
-      return true;
-    }
-  }
-  return false;
+size_t NumSnapshots() {
+  return gRewindInfo ? gRewindInfo->mSnapshots.length() : 0;
 }
 
 size_t GetLastCheckpoint() {
-  return gRewindInfo ? gRewindInfo->mLastCheckpoint : InvalidCheckpointId;
-}
-
-size_t GetLastSavedCheckpoint() {
-  MOZ_RELEASE_ASSERT(HasSavedAnyCheckpoint());
-  return gRewindInfo->mSavedCheckpoints.back().mCheckpoint;
+  return gLastCheckpoint;
 }
 
 static bool gMainThreadShouldPause = false;

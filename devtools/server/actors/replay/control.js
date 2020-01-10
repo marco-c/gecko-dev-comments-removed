@@ -126,9 +126,6 @@ function ChildProcess(id, recording) {
   this.scannedCheckpoints = new Set();
 
   
-  this.needSaveCheckpoints = [];
-
-  
   this.divergedFromRecording = false;
 
   
@@ -242,16 +239,26 @@ ChildProcess.prototype = {
   addSavedCheckpoint(checkpoint) {
     dumpv(`AddSavedCheckpoint #${this.id} ${checkpoint}`);
     this.savedCheckpoints.add(checkpoint);
-    if (checkpoint != FirstCheckpointId) {
-      this.needSaveCheckpoints.push(checkpoint);
-    }
   },
 
   
-  flushNeedSaveCheckpoints() {
-    const rv = this.needSaveCheckpoints;
-    this.needSaveCheckpoints = [];
+  savedCheckpointsInRange(start, end) {
+    const rv = [];
+    for (let i = start; i <= end; i++) {
+      if (this.savedCheckpoints.has(i)) {
+        rv.push(i);
+      }
+    }
     return rv;
+  },
+
+  
+  getCheckpointsToSave(endpoint) {
+    assert(endpoint >= this.pausePoint().checkpoint);
+    return this.savedCheckpointsInRange(
+      this.pausePoint().checkpoint + 1,
+      endpoint
+    );
   },
 
   
@@ -582,7 +589,7 @@ function maybeReachPoint(child, endpoint) {
     contents: {
       kind: "runToPoint",
       endpoint,
-      needSaveCheckpoints: child.flushNeedSaveCheckpoints(),
+      saveCheckpoints: child.getCheckpointsToSave(endpoint.checkpoint),
     },
     onFinished() {},
     destination: endpoint,
@@ -596,9 +603,14 @@ function maybeReachPoint(child, endpoint) {
 
   
   function restoreCheckpointPriorTo(target) {
-    target = child.lastSavedCheckpoint(target);
+    
+    const savedCheckpoints = child.savedCheckpointsInRange(
+      target + 1,
+      child.pausePoint().checkpoint
+    );
+    const numSnapshots = savedCheckpoints.length;
     child.sendManifest({
-      contents: { kind: "restoreCheckpoint", target },
+      contents: { kind: "restoreSnapshot", numSnapshots },
       onFinished({ restoredCheckpoint }) {
         assert(restoredCheckpoint);
         child.divergedFromRecording = false;
@@ -725,7 +737,7 @@ async function scanRecording(checkpoint) {
       return {
         kind: "scanRecording",
         endpoint,
-        needSaveCheckpoints: child.flushNeedSaveCheckpoints(),
+        saveCheckpoints: child.getCheckpointsToSave(endpoint),
       };
     },
     onFinished(child, { duration }) {
@@ -1326,7 +1338,7 @@ let gNearbyPoints = [];
 const NumNearbyBreakpointHits = 2;
 
 
-const NumNearbySteps = 4;
+const NumNearbySteps = 12;
 
 function nextKnownBreakpointHit(point, forward) {
   let checkpoint = getSavedCheckpoint(point.checkpoint);

@@ -31,7 +31,6 @@ namespace recordreplay {
 
 
 
-
 void CheckFixedMemory(void* aAddress, size_t aSize);
 
 
@@ -63,21 +62,16 @@ void InitializeMemorySnapshots();
 void TakeFirstMemorySnapshot();
 
 
-
 void TakeDiffMemorySnapshot();
 
 
 
-void RestoreMemoryToLastSavedCheckpoint();
+void RestoreMemoryToLastSnapshot();
 
 
 
 
-void RestoreMemoryToLastSavedDiffCheckpoint();
-
-
-
-void EraseLastSavedDiffMemorySnapshot();
+void RestoreMemoryToLastDiffSnapshot();
 
 
 
