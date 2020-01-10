@@ -2182,7 +2182,7 @@ EditActionResult HTMLEditRules::SplitMailCites() {
   
   
   
-  if (IsInlineNode(*citeNode)) {
+  if (HTMLEditor::NodeIsInlineStatic(*citeNode)) {
     
     EditorDOMPoint pointToCreateNewBrNode(atBrNode.GetContainer(),
                                           atBrNode.Offset());
@@ -4295,7 +4295,7 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
     
     nsCOMPtr<Element> listItem;
     if (!HTMLEditUtils::IsListItem(curNode)) {
-      if (IsInlineNode(curNode) && prevListItem) {
+      if (HTMLEditor::NodeIsInlineStatic(curNode) && prevListItem) {
         
         
         rv = MOZ_KnownLive(HTMLEditorRef())
@@ -4328,7 +4328,7 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
             return NS_ERROR_FAILURE;
           }
         }
-        if (IsInlineNode(curNode)) {
+        if (HTMLEditor::NodeIsInlineStatic(curNode)) {
           prevListItem = listItem;
         } else {
           prevListItem = nullptr;
@@ -6397,7 +6397,7 @@ nsresult HTMLEditRules::MaybeDeleteTopMostEmptyAncestor(
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
-  if (IsInlineNode(aEditingHostElement)) {
+  if (HTMLEditor::NodeIsInlineStatic(aEditingHostElement)) {
     return NS_OK;
   }
 
@@ -7351,7 +7351,8 @@ nsresult HTMLEditRules::GetNodesForOperation(
     for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
       OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
       
-      if (aTouchContent == TouchContent::yes && IsInlineNode(node) &&
+      if (aTouchContent == TouchContent::yes &&
+          HTMLEditor::NodeIsInlineStatic(node) &&
           HTMLEditorRef().IsContainer(node) && !EditorBase::IsTextNode(node)) {
         nsTArray<OwningNonNull<nsINode>> arrayOfInlines;
         nsresult rv = BustUpInlinesAtBRs(MOZ_KnownLive(*node->AsContent()),
@@ -7697,7 +7698,7 @@ nsIContent* HTMLEditRules::GetHighestInlineParent(nsINode& aNode) const {
   
   nsIContent* content = aNode.AsContent();
   for (nsIContent* parent = content->GetParent();
-       parent && parent != host && IsInlineNode(*parent);
+       parent && parent != host && HTMLEditor::NodeIsInlineStatic(*parent);
        parent = parent->GetParent()) {
     content = parent;
   }
@@ -8654,7 +8655,7 @@ nsresult HTMLEditRules::RemoveBlockStyle(
       continue;
     }
 
-    if (IsInlineNode(curNode)) {
+    if (HTMLEditor::NodeIsInlineStatic(curNode)) {
       if (curBlock) {
         
         if (EditorUtils::IsDescendantOf(*curNode, *curBlock)) {
@@ -8882,7 +8883,7 @@ nsresult HTMLEditRules::ApplyBlockStyle(
       continue;
     }
 
-    if (IsInlineNode(curNode)) {
+    if (HTMLEditor::NodeIsInlineStatic(curNode)) {
       
       
       
@@ -9865,7 +9866,8 @@ nsresult HTMLEditRules::SelectionEndpointInNode(nsINode* aNode, bool* aResult) {
 bool HTMLEditRules::IsEmptyInline(nsINode& aNode) {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  if (IsInlineNode(aNode) && HTMLEditorRef().IsContainer(&aNode)) {
+  if (HTMLEditor::NodeIsInlineStatic(aNode) &&
+      HTMLEditorRef().IsContainer(&aNode)) {
     bool isEmpty = true;
     HTMLEditorRef().IsEmptyNode(&aNode, &isEmpty);
     return isEmpty;

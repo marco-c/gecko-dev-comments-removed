@@ -808,6 +808,15 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  static bool NodeIsInlineStatic(const nsINode& aElement) {
+    return !NodeIsBlockStatic(aElement);
+  }
+
+  
+
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT
