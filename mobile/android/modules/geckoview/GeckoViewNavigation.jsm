@@ -134,6 +134,11 @@ class GeckoViewNavigation extends GeckoViewModule {
         });
         break;
       case "GeckoView:Reload":
+        
+        
+        
+        
+        
         this.browser.reload();
         break;
       case "GeckoView:Stop":
