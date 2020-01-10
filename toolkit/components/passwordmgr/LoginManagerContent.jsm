@@ -1077,6 +1077,20 @@ this.LoginManagerContent = {
         showMasterPassword: false,
       })
         .then(({ form, loginsFound, recipes }) => {
+          if (!loginGUID) {
+            
+            loginsFound = this._filterForExactFormOriginLogins(
+              loginsFound,
+              acForm
+            );
+            
+            
+            let searchString = usernameField.value.toLowerCase();
+            loginsFound = loginsFound.filter(
+              l => l.username.toLowerCase() == searchString
+            );
+          }
+
           this._fillForm(form, loginsFound, recipes, {
             autofillForm: true,
             clobberPassword: true,
@@ -1716,6 +1730,53 @@ this.LoginManagerContent = {
 
 
 
+  _filterForExactFormOriginLogins(logins, form) {
+    let loginOrigin = LoginHelper.getLoginOrigin(
+      form.ownerDocument.documentURI
+    );
+    let formActionOrigin = LoginHelper.getFormActionOrigin(form);
+
+    logins = logins.filter(l => {
+      let formActionMatches = LoginHelper.isOriginMatching(
+        l.formActionOrigin,
+        formActionOrigin,
+        {
+          schemeUpgrades: LoginHelper.schemeUpgrades,
+          acceptWildcardMatch: true,
+          acceptDifferentSubdomains: false,
+        }
+      );
+      let formOriginMatches = LoginHelper.isOriginMatching(
+        l.origin,
+        loginOrigin,
+        {
+          schemeUpgrades: LoginHelper.schemeUpgrades,
+          acceptWildcardMatch: true,
+          acceptDifferentSubdomains: false,
+        }
+      );
+      return formActionMatches && formOriginMatches;
+    });
+
+    
+    
+    logins = LoginHelper.dedupeLogins(
+      logins,
+      ["username"],
+      ["scheme", "timePasswordChanged"],
+      loginOrigin,
+      formActionOrigin
+    );
+    return logins;
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -1839,41 +1900,7 @@ this.LoginManagerContent = {
       if (!userTriggered) {
         
         
-        let loginOrigin = LoginHelper.getLoginOrigin(
-          form.ownerDocument.documentURI
-        );
-        let formActionOrigin = LoginHelper.getFormActionOrigin(form);
-        foundLogins = foundLogins.filter(l => {
-          let formActionMatches = LoginHelper.isOriginMatching(
-            l.formActionOrigin,
-            formActionOrigin,
-            {
-              schemeUpgrades: LoginHelper.schemeUpgrades,
-              acceptWildcardMatch: true,
-              acceptDifferentSubdomains: false,
-            }
-          );
-          let formOriginMatches = LoginHelper.isOriginMatching(
-            l.origin,
-            loginOrigin,
-            {
-              schemeUpgrades: LoginHelper.schemeUpgrades,
-              acceptWildcardMatch: true,
-              acceptDifferentSubdomains: false,
-            }
-          );
-          return formActionMatches && formOriginMatches;
-        });
-
-        
-        
-        foundLogins = LoginHelper.dedupeLogins(
-          foundLogins,
-          ["username"],
-          ["scheme", "timePasswordChanged"],
-          loginOrigin,
-          formActionOrigin
-        );
+        foundLogins = this._filterForExactFormOriginLogins(foundLogins, form);
       }
 
       
