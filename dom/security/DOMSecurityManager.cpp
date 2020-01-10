@@ -123,7 +123,8 @@ nsresult DOMSecurityManager::ParseCSPAndEnforceFrameAncestorCheck(
   nsContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
   
   
-  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT) {
+  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT &&
+      contentType != nsIContentPolicy::TYPE_OBJECT) {
     return NS_OK;
   }
 
