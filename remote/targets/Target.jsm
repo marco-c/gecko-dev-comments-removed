@@ -25,16 +25,25 @@ class Target {
 
 
   constructor(targets, sessionClass) {
+    
+    
     this.targets = targets;
+
+    
+    
+    
+    
     this.sessionClass = sessionClass;
-    this.sessions = new Map();
+
+    
+    this.connections = new Set();
   }
 
   
 
 
   destructor() {
-    for (const [conn] of this.sessions) {
+    for (const conn of this.connections) {
       conn.close();
     }
   }
@@ -45,7 +54,9 @@ class Target {
     const so = await WebSocketHandshake.upgrade(request, response);
     const transport = new WebSocketTransport(so);
     const conn = new Connection(transport, response._connection);
-    this.sessions.set(conn, new this.sessionClass(conn, this));
+    const session = new this.sessionClass(conn, this);
+    conn.registerSession(session);
+    this.connections.add(conn);
   }
 
   

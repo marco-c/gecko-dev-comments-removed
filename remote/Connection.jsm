@@ -244,9 +244,13 @@ class Connection {
     this.onPacket(packet);
   }
 
+  
+
+
+
+
   close() {
     this.transport.close();
-    this.sessions.clear();
 
     
     
@@ -254,7 +258,16 @@ class Connection {
     this.httpdConnection.close();
   }
 
-  onClosed(status) {}
+  
+
+
+
+  onClosed(status) {
+    for (const session of this.sessions.values()) {
+      session.destructor();
+    }
+    this.sessions.clear();
+  }
 
   
 
