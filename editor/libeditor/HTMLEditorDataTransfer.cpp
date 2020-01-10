@@ -98,77 +98,66 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
 
   
   CommitComposition();
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
       *this, EditSubAction::eInsertHTMLSource, nsIEditor::eNext);
 
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertHTMLSource);
-  bool cancel, handled;
+  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   
-  RefPtr<TextEditRules> rules(mRules);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (cancel) {
-    return NS_OK;  
-  }
-
-  if (!handled) {
-    
-    if (!SelectionRefPtr()->IsCollapsed()) {
-      rv = DeleteSelectionAsSubAction(eNone, eStrip);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
-    
-    RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(0);
-    if (NS_WARN_IF(!range)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    ErrorResult error;
-    RefPtr<DocumentFragment> documentFragment =
-        range->CreateContextualFragment(aInputString, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-
-    
-    EditorDOMPoint pointToInsert(range->StartRef());
-    
-    
-    
-    
-    Unused << pointToInsert.Offset();
-    for (nsCOMPtr<nsIContent> contentToInsert =
-             documentFragment->GetFirstChild();
-         contentToInsert; contentToInsert = documentFragment->GetFirstChild()) {
-      rv = InsertNodeWithTransaction(*contentToInsert, pointToInsert);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      
-      
-      
-      
-      pointToInsert.Set(pointToInsert.GetContainer(),
-                        pointToInsert.Offset() + 1);
-      if (NS_WARN_IF(!pointToInsert.Offset())) {
-        
-        
-        pointToInsert.SetToEndOf(pointToInsert.GetContainer());
-      }
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    rv = DeleteSelectionAsSubAction(eNone, eStrip);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
 
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  
+  RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(0);
+  if (NS_WARN_IF(!range)) {
+    return NS_ERROR_FAILURE;
   }
+
+  
+  ErrorResult error;
+  RefPtr<DocumentFragment> documentFragment =
+      range->CreateContextualFragment(aInputString, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  
+  EditorDOMPoint pointToInsert(range->StartRef());
+  
+  
+  
+  
+  Unused << pointToInsert.Offset();
+  for (nsCOMPtr<nsIContent> contentToInsert = documentFragment->GetFirstChild();
+       contentToInsert; contentToInsert = documentFragment->GetFirstChild()) {
+    rv = InsertNodeWithTransaction(*contentToInsert, pointToInsert);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    
+    
+    
+    
+    pointToInsert.Set(pointToInsert.GetContainer(), pointToInsert.Offset() + 1);
+    if (NS_WARN_IF(!pointToInsert.Offset())) {
+      
+      
+      pointToInsert.SetToEndOf(pointToInsert.GetContainer());
+    }
+  }
+
   return NS_OK;
 }
 

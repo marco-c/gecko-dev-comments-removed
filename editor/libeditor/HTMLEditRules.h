@@ -195,12 +195,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult WillLoadHTML();
-
-  
-
-
-
 
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE EditActionResult WillInsertParagraphSeparator();
