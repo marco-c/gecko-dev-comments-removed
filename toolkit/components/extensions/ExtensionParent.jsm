@@ -808,14 +808,14 @@ class ExtensionPageContextParent extends ProxyContextParent {
   }
 
   
-  get xulWindow() {
+  get appWindow() {
     let win = this.xulBrowser.ownerGlobal;
     return win.docShell.rootTreeItem.domWindow;
   }
 
   get currentWindow() {
     if (this.viewType !== "background") {
-      return this.xulWindow;
+      return this.appWindow;
     }
   }
 

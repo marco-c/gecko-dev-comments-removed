@@ -246,8 +246,8 @@ class TelemetryHandler {
 
 
 
-  onOpenWindow(xulWin) {
-    let win = xulWin.docShell.domWindow;
+  onOpenWindow(appWin) {
+    let win = appWin.docShell.domWindow;
     win.addEventListener(
       "load",
       () => {
@@ -270,8 +270,8 @@ class TelemetryHandler {
 
 
 
-  onCloseWindow(xulWin) {
-    let win = xulWin.docShell.domWindow;
+  onCloseWindow(appWin) {
+    let win = appWin.docShell.domWindow;
 
     if (
       win.document.documentElement.getAttribute("windowtype") !=
