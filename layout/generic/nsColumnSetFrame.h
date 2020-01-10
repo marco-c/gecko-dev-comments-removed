@@ -89,7 +89,6 @@ class nsColumnSetFrame final : public nsContainerFrame {
   struct ReflowConfig {
     
     
-    
     int32_t mUsedColCount = INT32_MAX;
 
     
@@ -107,7 +106,6 @@ class nsColumnSetFrame final : public nsContainerFrame {
     
     nscoord mColMaxBSize = NS_UNCONSTRAINEDSIZE;
 
-    
     
     bool mIsBalancing = false;
 

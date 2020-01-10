@@ -406,10 +406,6 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   } else {
     
     
-    numColumns = INT32_MAX;
-
-    
-    
     
     
     
@@ -650,7 +646,8 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
   while (child) {
     const bool isMeasuringFeasibleContentBSize =
-        aUnboundedLastColumn && columnCount == aConfig.mUsedColCount - 1;
+        aUnboundedLastColumn && columnCount == aConfig.mUsedColCount - 1 &&
+        aConfig.mIsBalancing;
 
     
     
@@ -891,7 +888,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       colData.mHasExcessBSize = true;
     }
 
-    if (columnCount >= aConfig.mUsedColCount - 1) {
+    if (columnCount >= aConfig.mUsedColCount - 1 && aConfig.mIsBalancing) {
       
       aStatus.SetNextInFlowNeedsReflow();
       kidNextInFlow->MarkSubtreeDirty();
