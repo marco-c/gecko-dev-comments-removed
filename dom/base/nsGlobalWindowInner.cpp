@@ -1921,8 +1921,8 @@ bool nsGlobalWindowInner::DialogsAreBeingAbused() {
 void nsGlobalWindowInner::FireFrameLoadEvent(bool aIsTrusted) {
   
   
-  if (!GetBrowsingContext()->GetParent() ||
-      !GetBrowsingContext()->IsContent()) {
+  if (GetBrowsingContext()->IsTopContent() ||
+      GetBrowsingContext()->IsChrome()) {
     return;
   }
 
