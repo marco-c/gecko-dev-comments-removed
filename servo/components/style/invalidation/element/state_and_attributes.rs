@@ -158,6 +158,14 @@ where
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
         if state_changes.intersects(ElementState::IN_VISITED_OR_UNVISITED_STATE) {
             trace!(" > visitedness change, force subtree restyle");
             

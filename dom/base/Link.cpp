@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "Link.h"
 
@@ -10,6 +10,8 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/IHistory.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "nsLayoutUtils.h"
 #include "nsIURL.h"
 #include "nsIURIMutator.h"
 #include "nsISizeOf.h"
@@ -51,7 +53,7 @@ Link::Link()
       mHistory(false) {}
 
 Link::~Link() {
-  // !mElement is for mock_Link.
+  
   MOZ_ASSERT(!mElement || !mElement->IsInComposedDoc());
   if (IsInDNSPrefetch()) {
     nsHTMLDNSPrefetch::LinkDestroyed(this);
@@ -74,14 +76,14 @@ void Link::TryDNSPrefetch() {
 
 void Link::CancelDNSPrefetch(nsWrapperCache::FlagsType aDeferredFlag,
                              nsWrapperCache::FlagsType aRequestedFlag) {
-  // If prefetch was deferred, clear flag and move on
+  
   if (mElement->HasFlag(aDeferredFlag)) {
     mElement->UnsetFlags(aDeferredFlag);
-    // Else if prefetch was requested, clear flag and send cancellation
+    
   } else if (mElement->HasFlag(aRequestedFlag)) {
     mElement->UnsetFlags(aRequestedFlag);
-    // Possible that hostname could have changed since binding, but since this
-    // covers common cases, most DNS prefetch requests will be canceled
+    
+    
     nsHTMLDNSPrefetch::CancelPrefetchLow(this, NS_ERROR_ABORT);
   }
 }
@@ -93,11 +95,11 @@ void Link::VisitedQueryFinished(bool aVisited) {
 
   auto newState = aVisited ? eLinkState_Visited : eLinkState_Unvisited;
 
-  // Set our current state as appropriate.
+  
   mLinkState = newState;
 
-  // We will be no longer registered if we're visited, as it'd be pointless, we
-  // never transition from visited -> unvisited.
+  
+  
   if (aVisited) {
     mRegistered = false;
   }
@@ -106,49 +108,54 @@ void Link::VisitedQueryFinished(bool aVisited) {
                  LinkState() == NS_EVENT_STATE_UNVISITED,
              "Unexpected state obtained from LinkState()!");
 
-  // Tell the element to update its visited state
+  
   mElement->UpdateState(true);
 
-  // FIXME(emilio, bug 1506842): Repaint here unconditionally.
+  if (StaticPrefs::layout_css_always_repaint_on_unvisited()) {
+    
+    
+    nsLayoutUtils::PostRestyleEvent(GetElement(), RestyleHint::RestyleSubtree(),
+                                    nsChangeHint_RepaintFrame);
+  }
 }
 
 EventStates Link::LinkState() const {
-  // We are a constant method, but we are just lazily doing things and have to
-  // track that state.  Cast away that constness!
-  //
-  // XXX(emilio): that's evil.
+  
+  
+  
+  
   Link* self = const_cast<Link*>(this);
 
   Element* element = self->mElement;
 
-  // If we have not yet registered for notifications and need to,
-  // due to our href changing, register now!
+  
+  
   if (!mRegistered && mNeedsRegistration && element->IsInComposedDoc() &&
       !HasPendingLinkUpdate()) {
-    // Only try and register once.
+    
     self->mNeedsRegistration = false;
 
     nsCOMPtr<nsIURI> hrefURI(GetURI());
 
-    // Assume that we are not visited until we are told otherwise.
+    
     self->mLinkState = eLinkState_Unvisited;
 
-    // Make sure the href attribute has a valid link (bug 23209).
-    // If we have a good href, register with History if available.
+    
+    
     if (mHistory && hrefURI) {
       if (nsCOMPtr<IHistory> history = services::GetHistoryService()) {
         nsresult rv = history->RegisterVisitedCallback(hrefURI, self);
         if (NS_SUCCEEDED(rv)) {
           self->mRegistered = true;
 
-          // And make sure we are in the document's link map.
+          
           element->GetComposedDoc()->AddStyleRelevantLink(self);
         }
       }
     }
   }
 
-  // Otherwise, return our known state.
+  
   if (mLinkState == eLinkState_Visited) {
     return NS_EVENT_STATE_VISITED;
   }
@@ -161,12 +168,12 @@ EventStates Link::LinkState() const {
 }
 
 nsIURI* Link::GetURI() const {
-  // If we have this URI cached, use it.
+  
   if (mCachedURI) {
     return mCachedURI;
   }
 
-  // Otherwise obtain it.
+  
   Link* self = const_cast<Link*>(this);
   Element* element = self->mElement;
   mCachedURI = element->GetHrefURI();
@@ -177,7 +184,7 @@ nsIURI* Link::GetURI() const {
 void Link::SetProtocol(const nsAString& aProtocol) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -199,7 +206,7 @@ void Link::SetProtocol(const nsAString& aProtocol) {
 void Link::SetPassword(const nsAString& aPassword) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -214,7 +221,7 @@ void Link::SetPassword(const nsAString& aPassword) {
 void Link::SetUsername(const nsAString& aUsername) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -229,7 +236,7 @@ void Link::SetUsername(const nsAString& aUsername) {
 void Link::SetHost(const nsAString& aHost) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -244,7 +251,7 @@ void Link::SetHost(const nsAString& aHost) {
 void Link::SetHostname(const nsAString& aHostname) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -260,7 +267,7 @@ void Link::SetPathname(const nsAString& aPathname) {
   nsCOMPtr<nsIURI> uri(GetURI());
   nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
   if (!url) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -277,7 +284,7 @@ void Link::SetSearch(const nsAString& aSearch) {
   nsCOMPtr<nsIURI> uri(GetURI());
   nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
   if (!url) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -295,14 +302,14 @@ void Link::SetSearch(const nsAString& aSearch) {
 void Link::SetPort(const nsAString& aPort) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
   nsresult rv;
   nsAutoString portStr(aPort);
 
-  // nsIURI uses -1 as default value.
+  
   int32_t port = -1;
   if (!aPort.IsEmpty()) {
     port = portStr.ToInteger(&rv);
@@ -321,7 +328,7 @@ void Link::SetPort(const nsAString& aPort) {
 void Link::SetHash(const nsAString& aHash) {
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Ignore failures to be compatible with NS4.
+    
     return;
   }
 
@@ -390,7 +397,7 @@ void Link::GetHost(nsAString& _host) {
 
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Do not throw!  Not having a valid URI should result in an empty string.
+    
     return;
   }
 
@@ -406,7 +413,7 @@ void Link::GetHostname(nsAString& _hostname) {
 
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Do not throw!  Not having a valid URI should result in an empty string.
+    
     return;
   }
 
@@ -419,8 +426,8 @@ void Link::GetPathname(nsAString& _pathname) {
   nsCOMPtr<nsIURI> uri(GetURI());
   nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
   if (!url) {
-    // Do not throw!  Not having a valid URI or URL should result in an empty
-    // string.
+    
+    
     return;
   }
 
@@ -437,8 +444,8 @@ void Link::GetSearch(nsAString& _search) {
   nsCOMPtr<nsIURI> uri(GetURI());
   nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
   if (!url) {
-    // Do not throw!  Not having a valid URI or URL should result in an empty
-    // string.
+    
+    
     return;
   }
 
@@ -455,14 +462,14 @@ void Link::GetPort(nsAString& _port) {
 
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Do not throw!  Not having a valid URI should result in an empty string.
+    
     return;
   }
 
   int32_t port;
   nsresult rv = uri->GetPort(&port);
-  // Note that failure to get the port from the URI is not necessarily a bad
-  // thing.  Some URIs do not have a port.
+  
+  
   if (NS_SUCCEEDED(rv) && port != -1) {
     nsAutoString portStr;
     portStr.AppendInt(port, 10);
@@ -475,8 +482,8 @@ void Link::GetHash(nsAString& _hash) {
 
   nsCOMPtr<nsIURI> uri(GetURI());
   if (!uri) {
-    // Do not throw!  Not having a valid URI should result in an empty
-    // string.
+    
+    
     return;
   }
 
@@ -491,47 +498,47 @@ void Link::GetHash(nsAString& _hash) {
 void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   nsLinkState defaultState;
 
-  // The default state for links with an href is unvisited.
+  
   if (aHasHref) {
     defaultState = eLinkState_Unvisited;
   } else {
     defaultState = eLinkState_NotLink;
   }
 
-  // If !mNeedsRegstration, then either we've never registered, or we're
-  // currently registered; in either case, we should remove ourself
-  // from the doc and the history.
+  
+  
+  
   if (!mNeedsRegistration && mLinkState != eLinkState_NotLink) {
     Document* doc = mElement->GetComposedDoc();
     if (doc && (mRegistered || mLinkState == eLinkState_Visited)) {
-      // Tell the document to forget about this link if we've registered
-      // with it before.
+      
+      
       doc->ForgetLink(this);
     }
   }
 
-  // If we have an href, and we're not a <link>, we should register with the
-  // history.
-  //
-  // FIXME(emilio): Do we really want to allow all MathML elements to be
-  // :visited? That seems not great.
+  
+  
+  
+  
+  
   mNeedsRegistration = aHasHref && !mElement->IsHTMLElement(nsGkAtoms::link);
 
-  // If we've cached the URI, reset always invalidates it.
+  
   UnregisterFromHistory();
   mCachedURI = nullptr;
 
-  // Update our state back to the default.
+  
   mLinkState = defaultState;
 
-  // We have to be very careful here: if aNotify is false we do NOT
-  // want to call UpdateState, because that will call into LinkState()
-  // and try to start off loads, etc.  But ResetLinkState is called
-  // with aNotify false when things are in inconsistent states, so
-  // we'll get confused in that situation.  Instead, just silently
-  // update the link state on mElement. Since we might have set the
-  // link state to unvisited, make sure to update with that state if
-  // required.
+  
+  
+  
+  
+  
+  
+  
+  
   if (aNotify) {
     mElement->UpdateState(aNotify);
   } else {
@@ -544,12 +551,12 @@ void Link::ResetLinkState(bool aNotify, bool aHasHref) {
 }
 
 void Link::UnregisterFromHistory() {
-  // If we are not registered, we have nothing to do.
+  
   if (!mRegistered) {
     return;
   }
 
-  // And tell History to stop tracking us.
+  
   if (mHistory && mCachedURI) {
     if (nsCOMPtr<IHistory> history = services::GetHistoryService()) {
       history->UnregisterVisitedCallback(mCachedURI, this);
@@ -561,9 +568,9 @@ void Link::UnregisterFromHistory() {
 void Link::SetHrefAttribute(nsIURI* aURI) {
   NS_ASSERTION(aURI, "Null URI is illegal!");
 
-  // if we change this code to not reserialize we need to do something smarter
-  // in SetProtocol because changing the protocol of an URI can change the
-  // "nature" of the nsIURL/nsIURI implementation.
+  
+  
+  
   nsAutoCString href;
   (void)aURI->GetSpec(href);
   (void)mElement->SetAttr(kNameSpaceID_None, nsGkAtoms::href,
@@ -580,11 +587,11 @@ size_t Link::SizeOfExcludingThis(mozilla::SizeOfState& aState) const {
     }
   }
 
-  // The following members don't need to be measured:
-  // - mElement, because it is a pointer-to-self used to avoid QIs
+  
+  
 
   return n;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

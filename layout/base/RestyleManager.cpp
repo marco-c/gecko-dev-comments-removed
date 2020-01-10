@@ -3205,13 +3205,25 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
 
   const EventStates kVisitedAndUnvisited =
       NS_EVENT_STATE_VISITED | NS_EVENT_STATE_UNVISITED;
+
   
   
-  if (aChangedBits.HasAllStates(kVisitedAndUnvisited) &&
-      !Gecko_VisitedStylesEnabled(element.OwnerDoc())) {
-    aChangedBits &= ~kVisitedAndUnvisited;
-    if (aChangedBits.IsEmpty()) {
-      return;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aChangedBits.HasAllStates(kVisitedAndUnvisited)) {
+    if (!Gecko_VisitedStylesEnabled(element.OwnerDoc()) ||
+        StaticPrefs::layout_css_always_repaint_on_unvisited()) {
+      aChangedBits &= ~kVisitedAndUnvisited;
+      if (aChangedBits.IsEmpty()) {
+        return;
+      }
     }
   }
 
