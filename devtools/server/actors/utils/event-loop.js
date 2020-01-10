@@ -132,7 +132,18 @@ EventLoop.prototype = {
         })
         
         
-        .filter(window => !Cu.isDeadWrapper(window) && window.top === window)
+        .filter(window => {
+          try {
+            return window.top === window;
+          } catch (e) {
+            
+            
+            if (!Cu.isDeadWrapper(window) && !/not initialized/.test(e)) {
+              console.warn(`Exception in getAllWindowDebuggees: ${e}`);
+            }
+            return false;
+          }
+        })
     );
   },
 
