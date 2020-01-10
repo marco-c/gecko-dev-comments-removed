@@ -498,7 +498,8 @@
 
 
       static parseXULToFragment(str, entities = []) {
-        let fullSrc = `
+        let doc = gXULDOMParser.parseFromSafeString(
+          `
       ${
         entities.length
           ? `<!DOCTYPE bindings [
@@ -517,13 +518,9 @@
            xmlns:html="http://www.w3.org/1999/xhtml">
         ${str}
       </box>
-    `;
-        let doc = gXULDOMParser.parseFromString(fullSrc, "application/xml");
-
-        if (doc.documentElement.localName === "parsererror") {
-          throw new Error("not well-formed XML");
-        }
-
+    `,
+          "application/xml"
+        );
         
         
         
