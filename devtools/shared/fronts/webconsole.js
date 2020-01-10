@@ -13,6 +13,7 @@ const {
   registerFront,
 } = require("devtools/shared/protocol");
 const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
+const { generateUUID } = require("devtools/shared/generate-uuid");
 
 
 
@@ -206,6 +207,7 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
   evaluateJSAsync(string, opts = {}) {
+    const resultID = generateUUID().toString();
     const options = {
       text: string,
       frameActor: opts.frameActor,
@@ -213,14 +215,15 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
       selectedNodeActor: opts.selectedNodeActor,
       selectedObjectActor: opts.selectedObjectActor,
       mapped: opts.mapped,
+      resultID,
     };
 
     return new Promise(async (resolve, reject) => {
-      const response = await super.evaluateJSAsync(options);
+      await super.evaluateJSAsync(options);
       
       
       if (this.pendingEvaluationResults) {
-        this.pendingEvaluationResults.set(response.resultID, resp => {
+        this.pendingEvaluationResults.set(resultID, resp => {
           if (resp.error) {
             reject(resp);
           } else {

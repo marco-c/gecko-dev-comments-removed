@@ -112,7 +112,7 @@ const webconsoleSpecPrototype = {
 
     startListeners: {
       request: {
-        listeners: Arg(0, "array:string"),
+        events: Arg(0, "array:string"),
       },
       response: RetVal("console.startlisteners"),
     },
@@ -128,7 +128,7 @@ const webconsoleSpecPrototype = {
 
     stopListeners: {
       request: {
-        listeners: Arg(0, "nullable:array:string"),
+        events: Arg(0, "nullable:array:string"),
       },
       response: RetVal("array:string"),
     },
@@ -168,8 +168,9 @@ const webconsoleSpecPrototype = {
         selectedNodeActor: Option(0, "string"),
         selectedObjectActor: Option(0, "string"),
         mapped: Option(0, "nullable:json"),
+        resultID: Option(0, "string"),
       },
-      response: RetVal("console.evaluatejsasync"),
+      oneway: true,
     },
     
 
@@ -190,7 +191,7 @@ const webconsoleSpecPrototype = {
       request: {
         text: Arg(0, "string"),
         cursor: Arg(1, "nullable:number"),
-        frameActor: Arg(2, "nullable:string"),
+        frameActorId: Arg(2, "nullable:string"),
         selectedNodeActor: Arg(3, "nullable:string"),
         authorizedEvaluations: Arg(4, "nullable:json"),
       },

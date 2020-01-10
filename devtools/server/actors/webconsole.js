@@ -7,6 +7,8 @@
 "use strict";
 
 
+const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
 
 const Services = require("Services");
 const { Cc, Ci, Cu } = require("chrome");
@@ -179,49 +181,50 @@ function isObject(value) {
 
 
 
-function WebConsoleActor(connection, parentActor) {
-  this.conn = connection;
-  this.parentActor = parentActor;
+const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
+  initialize: function(connection, parentActor) {
+    Actor.prototype.initialize.call(this, connection);
+    this.conn = connection;
+    this.parentActor = parentActor;
 
-  this._actorPool = new ActorPool(this.conn);
-  this.conn.addActorPool(this._actorPool);
+    this._actorPool = new ActorPool(this.conn);
+    this.conn.addActorPool(this._actorPool);
 
-  this._prefs = {};
+    this._prefs = {};
+    this.dbg = this.parentActor.makeDebugger();
 
-  this.dbg = this.parentActor.makeDebugger();
+    this._gripDepth = 0;
+    this._listeners = new Set();
+    this._lastConsoleInputEvaluation = undefined;
 
-  this._gripDepth = 0;
-  this._listeners = new Set();
-  this._lastConsoleInputEvaluation = undefined;
-
-  this.objectGrip = this.objectGrip.bind(this);
-  this._onWillNavigate = this._onWillNavigate.bind(this);
-  this._onChangedToplevelDocument = this._onChangedToplevelDocument.bind(this);
-  EventEmitter.on(
-    this.parentActor,
-    "changed-toplevel-document",
-    this._onChangedToplevelDocument
-  );
-  this._onObserverNotification = this._onObserverNotification.bind(this);
-  if (this.parentActor.isRootActor) {
-    Services.obs.addObserver(
-      this._onObserverNotification,
-      "last-pb-context-exited"
+    this.objectGrip = this.objectGrip.bind(this);
+    this._onWillNavigate = this._onWillNavigate.bind(this);
+    this._onChangedToplevelDocument = this._onChangedToplevelDocument.bind(
+      this
     );
-  }
+    EventEmitter.on(
+      this.parentActor,
+      "changed-toplevel-document",
+      this._onChangedToplevelDocument
+    );
+    this._onObserverNotification = this._onObserverNotification.bind(this);
+    if (this.parentActor.isRootActor) {
+      Services.obs.addObserver(
+        this._onObserverNotification,
+        "last-pb-context-exited"
+      );
+    }
 
-  this.traits = {
-    transferredResponseSize: true,
-    selectedObjectActor: true, 
-    fetchCacheDescriptor: true,
-  };
+    this.traits = {
+      transferredResponseSize: true,
+      selectedObjectActor: true, 
+      fetchCacheDescriptor: true,
+    };
 
-  if (this.dbg.replaying && !isWorker) {
-    this.dbg.onConsoleMessage = this.onReplayingMessage.bind(this);
-  }
-}
-
-WebConsoleActor.prototype = {
+    if (this.dbg.replaying && !isWorker) {
+      this.dbg.onConsoleMessage = this.onReplayingMessage.bind(this);
+    }
+  },
   
 
 
@@ -445,6 +448,9 @@ WebConsoleActor.prototype = {
 
 
   destroy() {
+    this.stopListeners();
+    Actor.prototype.destroy.call(this);
+
     EventEmitter.off(
       this.parentActor,
       "changed-toplevel-document",
@@ -464,7 +470,6 @@ WebConsoleActor.prototype = {
       this.dbg.onConsoleMessage = null;
     }
 
-    this.stopListeners({ listeners: null });
     this._actorPool = null;
     this._webConsoleCommandsCache = null;
     this._lastConsoleInputEvaluation = null;
@@ -664,13 +669,12 @@ WebConsoleActor.prototype = {
 
 
   
-  startListeners: async function(request) {
+  startListeners: async function(events) {
     const startedListeners = [];
     const window = !this.parentActor.isRootActor ? this.window : null;
 
-    while (request.listeners.length > 0) {
-      const listener = request.listeners.shift();
-      switch (listener) {
+    for (const event of events) {
+      switch (event) {
         case "PageError":
           
           if (isWorker) {
@@ -683,7 +687,7 @@ WebConsoleActor.prototype = {
             );
             this.consoleServiceListener.init();
           }
-          startedListeners.push(listener);
+          startedListeners.push(event);
           break;
         case "ConsoleAPI":
           if (!this.consoleAPIListener) {
@@ -696,7 +700,7 @@ WebConsoleActor.prototype = {
             );
             this.consoleAPIListener.init();
           }
-          startedListeners.push(listener);
+          startedListeners.push(event);
           break;
         case "NetworkActivity":
           
@@ -772,7 +776,7 @@ WebConsoleActor.prototype = {
             );
             this.stackTraceCollector.init();
           }
-          startedListeners.push(listener);
+          startedListeners.push(event);
           break;
         case "FileActivity":
           
@@ -789,7 +793,7 @@ WebConsoleActor.prototype = {
             this.consoleProgressListener.startMonitor(
               this.consoleProgressListener.MONITOR_FILE_ACTIVITY
             );
-            startedListeners.push(listener);
+            startedListeners.push(event);
           }
           break;
         case "ReflowActivity":
@@ -803,7 +807,7 @@ WebConsoleActor.prototype = {
               this
             );
           }
-          startedListeners.push(listener);
+          startedListeners.push(event);
           break;
         case "ContentProcessMessages":
           
@@ -813,7 +817,7 @@ WebConsoleActor.prototype = {
           if (!this.contentProcessListener) {
             this.contentProcessListener = new ContentProcessListener(this);
           }
-          startedListeners.push(listener);
+          startedListeners.push(event);
           break;
         case "DocumentEvents":
           
@@ -823,7 +827,7 @@ WebConsoleActor.prototype = {
           if (!this.documentEventsListener) {
             this.documentEventsListener = new DocumentEventsListener(this);
           }
-          startedListeners.push(listener);
+          startedListeners.push(event);
           break;
       }
     }
@@ -848,12 +852,12 @@ WebConsoleActor.prototype = {
 
 
 
-  stopListeners: function(request) {
+  stopListeners: function(events) {
     const stoppedListeners = [];
 
     
     
-    const toDetach = request.listeners || [
+    const eventsToDetach = events || [
       "PageError",
       "ConsoleAPI",
       "NetworkActivity",
@@ -863,22 +867,21 @@ WebConsoleActor.prototype = {
       "DocumentEvents",
     ];
 
-    while (toDetach.length > 0) {
-      const listener = toDetach.shift();
-      switch (listener) {
+    for (const event of eventsToDetach) {
+      switch (event) {
         case "PageError":
           if (this.consoleServiceListener) {
             this.consoleServiceListener.destroy();
             this.consoleServiceListener = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
         case "ConsoleAPI":
           if (this.consoleAPIListener) {
             this.consoleAPIListener.destroy();
             this.consoleAPIListener = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
         case "NetworkActivity":
           if (this.netmonitors) {
@@ -893,7 +896,7 @@ WebConsoleActor.prototype = {
             this.stackTraceCollector.destroy();
             this.stackTraceCollector = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
         case "FileActivity":
           if (this.consoleProgressListener) {
@@ -902,28 +905,28 @@ WebConsoleActor.prototype = {
             );
             this.consoleProgressListener = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
         case "ReflowActivity":
           if (this.consoleReflowListener) {
             this.consoleReflowListener.destroy();
             this.consoleReflowListener = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
         case "ContentProcessMessages":
           if (this.contentProcessListener) {
             this.contentProcessListener.destroy();
             this.contentProcessListener = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
         case "DocumentEvents":
           if (this.documentEventsListener) {
             this.documentEventsListener.destroy();
             this.documentEventsListener = null;
           }
-          stoppedListeners.push(listener);
+          stoppedListeners.push(event);
           break;
       }
     }
@@ -944,9 +947,8 @@ WebConsoleActor.prototype = {
 
 
 
-  getCachedMessages: function(request) {
-    const types = request.messageTypes;
-    if (!types) {
+  getCachedMessages: function(messageTypes) {
+    if (!messageTypes) {
       return {
         error: "missingParameter",
         message: "The messageTypes parameter is missing.",
@@ -960,8 +962,8 @@ WebConsoleActor.prototype = {
       replayingMessages = this.dbg.findAllConsoleMessages();
     }
 
-    while (types.length > 0) {
-      const type = types.shift();
+    while (messageTypes.length > 0) {
+      const type = messageTypes.shift();
       switch (type) {
         case "ConsoleAPI": {
           replayingMessages.forEach(msg => {
@@ -1053,32 +1055,23 @@ WebConsoleActor.prototype = {
 
 
 
-
   evaluateJSAsync: async function(request) {
-    
-    
-
-    
-    const resultID = Date.now();
-    this.conn.send({
-      from: this.actorID,
-      resultID: resultID,
-    });
-
     try {
       
       let response = this.evaluateJS(request);
-      response.resultID = resultID;
-
       
       response = await this._maybeWaitForResponseResult(response);
       
-      this.conn.sendActorEvent(this.actorID, "evaluationResult", response);
+      this.emit("evaluationResult", {
+        from: this.actorID,
+        type: "evaluationResult",
+        resultID: request.resultID,
+        ...response,
+      });
+      return;
     } catch (e) {
-      DevToolsUtils.reportException(
-        "evaluateJSAsync",
-        Error(`Encountered error while waiting for Helper Result: ${e}`)
-      );
+      const message = `Encountered error while waiting for Helper Result: ${e}`;
+      DevToolsUtils.reportException("evaluateJSAsync", Error(message));
     }
   },
 
@@ -1340,8 +1333,21 @@ WebConsoleActor.prototype = {
 
 
 
-  autocomplete: function(request) {
-    const frameActorId = request.frameActor;
+
+
+
+
+
+
+
+
+  autocomplete: function(
+    text,
+    cursor,
+    frameActorId,
+    selectedNodeActor,
+    authorizedEvaluations
+  ) {
     let dbgObject = null;
     let environment = null;
     let hadDebuggee = false;
@@ -1349,7 +1355,7 @@ WebConsoleActor.prototype = {
     let matchProp;
     let isElementAccess;
 
-    const reqText = request.text.substr(0, request.cursor);
+    const reqText = text.substr(0, cursor);
 
     if (isCommand(reqText)) {
       const commandsCache = this._getWebConsoleCommandsCache();
@@ -1385,11 +1391,11 @@ WebConsoleActor.prototype = {
       const result = JSPropertyProvider({
         dbgObject,
         environment,
-        inputValue: request.text,
-        cursor: request.cursor,
+        inputValue: text,
+        cursor,
         webconsoleActor: this,
-        selectedNodeActor: request.selectedNodeActor,
-        authorizedEvaluations: request.authorizedEvaluations,
+        selectedNodeActor,
+        authorizedEvaluations,
       });
 
       if (!hadDebuggee && dbgObject) {
@@ -1504,9 +1510,9 @@ WebConsoleActor.prototype = {
 
 
 
-  getPreferences: function(request) {
+  getPreferences: function(preferences) {
     const prefs = Object.create(null);
-    for (const key of request.preferences) {
+    for (const key of preferences) {
       prefs[key] = this._prefs[key];
     }
     return { preferences: prefs };
@@ -1518,9 +1524,9 @@ WebConsoleActor.prototype = {
 
 
 
-  setPreferences: function(request) {
-    for (const key in request.preferences) {
-      this._prefs[key] = request.preferences[key];
+  setPreferences: function(preferences) {
+    for (const key in preferences) {
+      this._prefs[key] = preferences[key];
 
       if (this.netmonitors) {
         if (key == "NetworkMonitor.saveRequestAndResponseBodies") {
@@ -1538,7 +1544,7 @@ WebConsoleActor.prototype = {
         }
       }
     }
-    return { updated: Object.keys(request.preferences) };
+    return { updated: Object.keys(preferences) };
   },
 
   
@@ -1838,7 +1844,7 @@ WebConsoleActor.prototype = {
 
 
 
-  async sendHTTPRequest({ request }) {
+  async sendHTTPRequest(request) {
     const { url, method, headers, body, cause } = request;
     
     
@@ -1922,7 +1928,7 @@ WebConsoleActor.prototype = {
 
 
 
-  async blockRequest({ filter }) {
+  async blockRequest(filter) {
     if (this.netmonitors) {
       for (const { messageManager } of this.netmonitors) {
         messageManager.sendAsyncMessage("debug:block-request", {
@@ -1944,7 +1950,7 @@ WebConsoleActor.prototype = {
 
 
 
-  async unblockRequest({ filter }) {
+  async unblockRequest(filter) {
     if (this.netmonitors) {
       for (const { messageManager } of this.netmonitors) {
         messageManager.sendAsyncMessage("debug:unblock-request", {
@@ -2084,30 +2090,15 @@ WebConsoleActor.prototype = {
 
     
     
-    this.stopListeners({ listeners: listeners.slice() });
+    this.stopListeners(listeners.slice());
 
     
     
-    this.startListeners({ listeners: listeners });
+    this.startListeners(listeners);
 
     
     this._lastChromeWindow = null;
   },
-};
-
-WebConsoleActor.prototype.requestTypes = {
-  startListeners: WebConsoleActor.prototype.startListeners,
-  stopListeners: WebConsoleActor.prototype.stopListeners,
-  getCachedMessages: WebConsoleActor.prototype.getCachedMessages,
-  evaluateJS: WebConsoleActor.prototype.evaluateJS,
-  evaluateJSAsync: WebConsoleActor.prototype.evaluateJSAsync,
-  autocomplete: WebConsoleActor.prototype.autocomplete,
-  clearMessagesCache: WebConsoleActor.prototype.clearMessagesCache,
-  getPreferences: WebConsoleActor.prototype.getPreferences,
-  setPreferences: WebConsoleActor.prototype.setPreferences,
-  sendHTTPRequest: WebConsoleActor.prototype.sendHTTPRequest,
-  blockRequest: WebConsoleActor.prototype.blockRequest,
-  unblockRequest: WebConsoleActor.prototype.unblockRequest,
-};
+});
 
 exports.WebConsoleActor = WebConsoleActor;
