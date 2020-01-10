@@ -597,13 +597,17 @@ add_task(async function testThemeList() {
     "There is one enabled theme"
   );
 
-  let themesChanged = waitForThemeChange(list);
-  card.querySelector('[action="toggle-disabled"]').click();
-  await themesChanged;
+  let toggleThemeEnabled = async () => {
+    let themesChanged = waitForThemeChange(list);
+    card.querySelector('[action="toggle-disabled"]').click();
+    await themesChanged;
 
-  await TestUtils.waitForCondition(
-    () => enabledSection.querySelectorAll("addon-card").length == 1
-  );
+    await TestUtils.waitForCondition(
+      () => enabledSection.querySelectorAll("addon-card").length == 1
+    );
+  };
+
+  await toggleThemeEnabled();
 
   is(
     card.parentNode,
@@ -615,6 +619,31 @@ add_task(async function testThemeList() {
     1,
     "There is one enabled theme"
   );
+
+  
+  await toggleThemeEnabled();
+  is(card.parentNode, enabledSection, "Card is back in the Enabled section");
+
+  
+  let removed = BrowserTestUtils.waitForEvent(list, "remove");
+  
+  promptService._response = 0;
+  card.querySelector('[action="remove"]').click();
+  await removed;
+  is(card.parentNode, null, "Card has been removed from the view");
+  await TestUtils.waitForCondition(
+    () => enabledSection.querySelectorAll("addon-card").length == 1
+  );
+
+  let defaultTheme = getCardByAddonId(doc, "default-theme@mozilla.org");
+  is(defaultTheme.parentNode, enabledSection, "The default theme is reenabled");
+
+  await testUndoPendingUninstall(list, card.addon);
+  await TestUtils.waitForCondition(
+    () => enabledSection.querySelectorAll("addon-card").length == 1
+  );
+  is(defaultTheme.parentNode, disabledSection, "The default theme is disabled");
+  ok(getCardByAddonId(enabledSection, theme.id), "Theme should be reenabled");
 
   await theme.unload();
   await closeView(win);
