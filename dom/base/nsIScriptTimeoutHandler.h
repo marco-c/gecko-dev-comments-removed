@@ -35,14 +35,7 @@ class nsIScriptTimeoutHandler : public nsITimeoutHandler {
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISCRIPTTIMEOUTHANDLER_IID)
 
   
-  
-  virtual mozilla::dom::Function* GetCallback() = 0;
-
-  
   virtual const nsAString& GetHandlerText() = 0;
-
-  
-  virtual const nsTArray<JS::Value>& GetArgs() = 0;
 
   
   virtual mozilla::dom::LoadedScript* GetInitiatingScript() = 0;
