@@ -1,0 +1,38 @@
+
+
+
+
+"use strict";
+
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  caption,
+  table,
+  tbody,
+} = require("devtools/client/shared/vendor/react-dom-factories");
+
+
+
+
+class ManifestSection extends PureComponent {
+  static get propTypes() {
+    return {
+      children: PropTypes.node,
+      title: PropTypes.string.isRequired,
+    };
+  }
+
+  render() {
+    const { children, title } = this.props;
+
+    return table(
+      { className: "manifest" },
+      caption({ className: "manifest__title" }, title),
+      tbody({}, children)
+    );
+  }
+}
+
+
+module.exports = ManifestSection;

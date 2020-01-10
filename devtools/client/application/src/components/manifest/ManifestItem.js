@@ -1,0 +1,45 @@
+
+
+
+
+"use strict";
+
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  tr,
+  td,
+  th,
+} = require("devtools/client/shared/vendor/react-dom-factories");
+
+
+
+
+class ManifestItem extends PureComponent {
+  static get propTypes() {
+    return {
+      label: PropTypes.string.isRequired,
+      children: PropTypes.node,
+    };
+  }
+
+  render() {
+    const { children, label } = this.props;
+    return tr(
+      {
+        className: "manifest__row",
+      },
+      th(
+        {
+          className: "manifest__col-label",
+          scope: "row",
+        },
+        label
+      ),
+      td({ className: "manifest__col-value" }, children)
+    );
+  }
+}
+
+
+module.exports = ManifestItem;
