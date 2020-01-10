@@ -74,9 +74,11 @@ var navigateTo = async function(inspector, url) {
 
 
 var startPicker = async function(toolbox, skipFocus) {
+  const inspectorFront = await toolbox.target.getFront("inspector");
+
   info("Start the element picker");
   toolbox.win.focus();
-  await toolbox.inspectorFront.nodePicker.start();
+  await inspectorFront.nodePicker.start();
   if (!skipFocus) {
     
     
