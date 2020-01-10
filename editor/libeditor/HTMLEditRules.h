@@ -122,34 +122,10 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillRemoveAbsolutePosition(bool* aCancel,
-                                                   bool* aHandled);
-
-  
-
-
-
-
-
-
-
-
 
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillRelativeChangeZIndex(int32_t aChange, bool* aCancel,
                                                  bool* aHandled);
-
-  
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
 
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);

@@ -408,7 +408,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult SetSelectionToAbsoluteOrStaticAsAction(
+  MOZ_CAN_RUN_SCRIPT nsresult SetSelectionToAbsoluteOrStaticAsAction(
       bool aEnabled, nsIPrincipal* aPrincipal = nullptr);
 
   
@@ -2669,6 +2669,23 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
       RefPtr<Element>* aTargetElement);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  SetSelectionToAbsoluteAsSubAction();
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  SetSelectionToStaticAsSubAction();
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

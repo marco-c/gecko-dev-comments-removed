@@ -55,26 +55,16 @@ nsresult HTMLEditor::SetSelectionToAbsoluteOrStaticAsAction(
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
-  AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this,
-      aEnabled ? EditSubAction::eSetPositionToAbsolute
-               : EditSubAction::eSetPositionToStatic,
-      nsIEditor::eNext);
-
-  
-  
-
-  EditSubActionInfo subActionInfo(aEnabled
-                                      ? EditSubAction::eSetPositionToAbsolute
-                                      : EditSubAction::eSetPositionToStatic);
-  bool cancel, handled;
-  
-  RefPtr<TextEditRules> rules(mRules);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditRules::WillDoAction() failed");
-  return rv;
+  if (aEnabled) {
+    EditActionResult result = SetSelectionToAbsoluteAsSubAction();
+    NS_WARNING_ASSERTION(result.Succeeded(),
+                         "SetSelectionToAbsoluteAsSubAction() failed");
+    return result.Rv();
+  }
+  EditActionResult result = SetSelectionToStaticAsSubAction();
+  NS_WARNING_ASSERTION(result.Succeeded(),
+                       "SetSelectionToStaticAsSubAction() failed");
+  return result.Rv();
 }
 
 already_AddRefed<Element>
