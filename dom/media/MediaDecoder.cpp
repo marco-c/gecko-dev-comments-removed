@@ -380,9 +380,6 @@ void MediaDecoder::Shutdown() {
     mAbstractMainThread->Dispatch(r.forget());
   }
 
-  
-  GetOwner()->RemoveMediaTracks();
-
   ChangeState(PLAY_STATE_SHUTDOWN);
   mVideoDecodingOberver->UnregisterEvent();
   mVideoDecodingOberver = nullptr;
@@ -664,7 +661,6 @@ void MediaDecoder::MetadataLoaded(
   mMediaSeekableOnlyInBufferedRanges =
       aInfo->mMediaSeekableOnlyInBufferedRanges;
   mInfo = aInfo.release();
-  GetOwner()->ConstructMediaTracks(mInfo);
   mDecoderStateMachine->EnsureOutputStreamManagerHasTracks(*mInfo);
 
   
@@ -856,12 +852,6 @@ void MediaDecoder::ChangeState(PlayState aState) {
     DDLOG(DDLogCategory::Property, "play_state", ToPlayStateStr(aState));
   }
   mPlayState = aState;
-
-  if (mPlayState == PLAY_STATE_PLAYING) {
-    GetOwner()->ConstructMediaTracks(mInfo);
-  } else if (IsEnded()) {
-    GetOwner()->RemoveMediaTracks();
-  }
 }
 
 bool MediaDecoder::IsLoopingBack(double aPrevPos, double aCurPos) const {

@@ -693,10 +693,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   Document* GetDocument() const override;
 
-  void ConstructMediaTracks(const MediaInfo* aInfo) override;
-
-  void RemoveMediaTracks() override;
-
   already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() override;
 
   nsISerialEventTarget* MainThreadEventTarget() {
@@ -1248,6 +1244,18 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   void NotifyDecoderActivityChanges() const;
+
+  
+  
+  
+  void ConstructMediaTracks(const MediaInfo* aInfo);
+
+  
+  
+  
+  
+  
+  void RemoveMediaTracks();
 
   
   
@@ -1806,10 +1814,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   bool mForcedHidden = false;
-
-  
-  
-  bool mMediaTracksConstructed = false;
 
   Visibility mVisibilityState = Visibility::Untracked;
 
