@@ -65,13 +65,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  
-  void NotifySetUserGestureActivationFromIPC(bool aIsUserGestureActivation);
-
-  
-  
-  
-  
   void NotifyStartDelayedAutoplayMedia();
 
   
