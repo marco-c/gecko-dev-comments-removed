@@ -376,11 +376,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   },
 
   getBreakpointPositions: async function(query) {
-    const {
-      start: { line: startLine = 0, column: startColumn = 0 } = {},
-      end: { line: endLine = Infinity, column: endColumn = Infinity } = {},
-    } = query || {};
-
     const scripts = this._findDebuggeeScripts();
 
     
@@ -418,37 +413,16 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     const positions = [];
     for (const script of scripts) {
-      
-      
-      if (
-        script.startLine > endLine ||
-        script.startLine + script.lineCount < startLine
-      ) {
-        continue;
-      }
-
-      const offsets = script.getPossibleBreakpoints();
-      for (const { lineNumber, columnNumber } of offsets) {
-        if (
-          lineNumber < startLine ||
-          (lineNumber === startLine && columnNumber < startColumn) ||
-          lineNumber > endLine ||
-          (lineNumber === endLine && columnNumber >= endColumn)
-        ) {
-          continue;
-        }
-
+      try {
+        await this._addScriptBreakpointPositions(query, script, positions);
+      } catch (e) {
         
         
-        const position = await this._adjustInlineScriptLocation(
-          {
-            line: lineNumber,
-            column: columnNumber,
-          },
-           true
+        
+        reportError(
+          e,
+          "Got an exception during SA_addScriptBreakpointPositions: "
         );
-
-        positions.push(position);
       }
     }
 
@@ -460,6 +434,46 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
           return lineDiff === 0 ? a.column - b.column : lineDiff;
         })
     );
+  },
+
+  async _addScriptBreakpointPositions(query, script, positions) {
+    const {
+      start: { line: startLine = 0, column: startColumn = 0 } = {},
+      end: { line: endLine = Infinity, column: endColumn = Infinity } = {},
+    } = query || {};
+
+    
+    
+    if (
+      script.startLine > endLine ||
+      script.startLine + script.lineCount < startLine
+    ) {
+      return;
+    }
+
+    const offsets = script.getPossibleBreakpoints();
+    for (const { lineNumber, columnNumber } of offsets) {
+      if (
+        lineNumber < startLine ||
+        (lineNumber === startLine && columnNumber < startColumn) ||
+        lineNumber > endLine ||
+        (lineNumber === endLine && columnNumber >= endColumn)
+      ) {
+        continue;
+      }
+
+      
+      
+      const position = await this._adjustInlineScriptLocation(
+        {
+          line: lineNumber,
+          column: columnNumber,
+        },
+         true
+      );
+
+      positions.push(position);
+    }
   },
 
   getBreakpointPositionsCompressed: async function(query) {
