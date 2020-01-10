@@ -2414,11 +2414,13 @@ static uint32_t GetDisplayFlagsForFlexItem(nsIFrame* aFrame) {
 
 void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
-  DisplayBorderBackgroundOutline(aBuilder, aLists);
+  nsDisplayListCollection tempLists(aBuilder);
+
+  DisplayBorderBackgroundOutline(aBuilder, tempLists);
 
   
   
-  nsDisplayListSet childLists(aLists, aLists.BlockBorderBackgrounds());
+  nsDisplayListSet childLists(tempLists, tempLists.BlockBorderBackgrounds());
 
   typedef CSSOrderAwareFrameIterator::OrderState OrderState;
   OrderState orderState =
@@ -2434,6 +2436,34 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, childFrame, childLists,
                              GetDisplayFlagsForFlexItem(childFrame));
   }
+
+  wr::RenderRoot renderRoot =
+      gfxUtils::GetRenderRootForFrame(this).valueOr(wr::RenderRoot::Default);
+  if (renderRoot == wr::RenderRoot::Default) {
+    tempLists.MoveTo(aLists);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(!XRE_IsContentProcess());
+  nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
+  nsDisplayList masterList;
+  masterList.AppendToTop(tempLists.BorderBackground());
+  masterList.AppendToTop(tempLists.BlockBorderBackgrounds());
+  masterList.AppendToTop(tempLists.Floats());
+  masterList.AppendToTop(tempLists.Content());
+  masterList.AppendToTop(tempLists.PositionedDescendants());
+  masterList.AppendToTop(tempLists.Outlines());
+  const ActiveScrolledRoot* ownLayerASR = contASRTracker.GetContainerASR();
+
+  aLists.Content()->AppendNewToTop<nsDisplayRenderRoot>(
+      aBuilder, this, &masterList, ownLayerASR, renderRoot);
 }
 
 void FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow,
