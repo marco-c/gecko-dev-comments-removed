@@ -109,6 +109,10 @@ exports.COMMAND_CHANGE_PASSWORD = "fxaccounts:change_password";
 exports.COMMAND_FXA_STATUS = "fxaccounts:fxa_status";
 exports.COMMAND_PAIR_PREFERENCES = "fxaccounts:pair_preferences";
 
+
+
+exports.PREF_ACCOUNT_ROOT = "identity.fxaccounts.account.";
+
 exports.PREF_LAST_FXA_USER = "identity.fxaccounts.lastSignedInUserHash";
 exports.PREF_REMOTE_PAIRING_URI = "identity.fxaccounts.remote.pairing.uri";
 
