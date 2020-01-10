@@ -1056,6 +1056,67 @@ void CompositorOGL::CreateFBOWithTexture(const gfx::IntRect& aRect,
   mGLContext->fGenFramebuffers(1, aFBO);
 }
 
+
+
+static void WorkAroundAppleIntelHD3000GraphicsGLDriverBug(GLContext* aGL) {
+#ifdef XP_MACOSX
+  if (aGL->WorkAroundDriverBugs() &&
+      aGL->Renderer() == GLRenderer::IntelHD3000) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    ScopedTexture texForReading(aGL);
+    {
+      
+      ScopedBindTexture autoBindTexForReading(aGL, texForReading);
+      aGL->fTexImage2D(LOCAL_GL_TEXTURE_2D, 0, LOCAL_GL_RGBA, 1, 1, 0,
+                       LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE, nullptr);
+      aGL->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
+                          LOCAL_GL_LINEAR);
+      aGL->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MAG_FILTER,
+                          LOCAL_GL_LINEAR);
+    }
+    
+    ScopedFramebufferForTexture autoFBForReading(aGL, texForReading);
+    if (autoFBForReading.IsComplete()) {
+      
+      
+      ScopedBindFramebuffer autoFB(aGL, autoFBForReading.FB());
+      ScopedTexture texReadingDest(aGL);
+      ScopedBindTexture autoBindTexReadingDest(aGL, texReadingDest);
+      aGL->fCopyTexImage2D(LOCAL_GL_TEXTURE_2D, 0, LOCAL_GL_RGBA, 0, 0, 1, 1,
+                           0);
+    }
+    
+    
+  }
+#endif
+}
+
 GLuint CompositorOGL::CreateTexture(const IntRect& aRect, bool aCopyFromSource,
                                     GLuint aSourceFrameBuffer,
                                     IntSize* aAllocSize) {
@@ -1100,6 +1161,7 @@ GLuint CompositorOGL::CreateTexture(const IntRect& aRect, bool aCopyFromSource,
       mGLContext->fCopyTexImage2D(mFBOTextureTarget, 0, LOCAL_GL_RGBA,
                                   clampedRect.X(), FlipY(clampedRect.YMost()),
                                   clampedRectWidth, clampedRectHeight, 0);
+      WorkAroundAppleIntelHD3000GraphicsGLDriverBug(mGLContext);
     } else {
       
 
@@ -1110,6 +1172,7 @@ GLuint CompositorOGL::CreateTexture(const IntRect& aRect, bool aCopyFromSource,
       mGLContext->fReadPixels(clampedRect.X(), clampedRect.Y(),
                               clampedRectWidth, clampedRectHeight,
                               LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE, buf.get());
+      WorkAroundAppleIntelHD3000GraphicsGLDriverBug(mGLContext);
       mGLContext->fTexImage2D(mFBOTextureTarget, 0, LOCAL_GL_RGBA,
                               clampedRectWidth, clampedRectHeight, 0,
                               LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE, buf.get());
