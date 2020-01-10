@@ -712,11 +712,18 @@ class nsDisplayNotation final : public nsPaintedDisplayItem {
         mType(aType) {
     MOZ_COUNT_CTOR(nsDisplayNotation);
   }
+
+  
+  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
+                                       nsIFrame* aFrame, const nsRect& aRect,
+                                       nscoord aThickness,
+                                       nsMencloseNotation aType) {
+    return aType;
+  }
+
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayNotation() { MOZ_COUNT_DTOR(nsDisplayNotation); }
 #endif
-
-  virtual uint16_t CalculatePerFrameKey() const override { return mType; }
 
   virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
   NS_DISPLAY_DECL_NAME("MathMLMencloseNotation", TYPE_MATHML_MENCLOSE_NOTATION)
