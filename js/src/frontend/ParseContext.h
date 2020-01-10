@@ -11,6 +11,7 @@
 
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/ErrorReporter.h"
+#include "frontend/FunctionTree.h"
 #include "frontend/NameCollections.h"
 #include "frontend/SharedContext.h"
 
@@ -177,19 +178,6 @@ class UsedNameTracker {
 
 class FunctionTree;
 class FunctionTreeHolder;
-
-
-
-class MOZ_RAII AutoPushTree {
-  FunctionTreeHolder& holder_;
-  FunctionTree* oldParent_ = nullptr;
-
- public:
-  explicit AutoPushTree(FunctionTreeHolder& holder);
-  ~AutoPushTree();
-
-  bool init(JSContext* cx, FunctionBox* box);
-};
 
 
 
