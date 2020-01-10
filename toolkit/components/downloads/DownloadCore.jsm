@@ -1967,8 +1967,6 @@ this.DownloadCopySaver.prototype = {
 
 
   async execute(aSetProgressBytesFn, aSetPropertiesFn) {
-    let copySaver = this;
-
     this._canceled = false;
 
     let download = this.download;
@@ -2017,6 +2015,8 @@ this.DownloadCopySaver.prototype = {
 
     
     let backgroundFileSaver = new BackgroundFileSaverStreamListener();
+    backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
+
     try {
       
       
@@ -2044,52 +2044,10 @@ this.DownloadCopySaver.prototype = {
 
       
       
-      let channel = NetUtil.newChannel({
-        uri: download.source.url,
-        loadUsingSystemPrincipal: true,
-        contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
-      });
-      if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
-        channel.setPrivate(download.source.isPrivate);
-      }
-      if (
-        channel instanceof Ci.nsIHttpChannel &&
-        download.source.referrerInfo
-      ) {
-        channel.referrerInfo = download.source.referrerInfo;
-        
-        download.source.referrerInfo = channel.referrerInfo;
-      }
-
-      
-      
-      if (channel instanceof Ci.nsIHttpChannelInternal) {
-        channel.channelIsForDownload = true;
-      }
-
-      
-      
       let resumeAttempted = false;
       let resumeFromBytes = 0;
-      if (
-        channel instanceof Ci.nsIResumableChannel &&
-        this.entityID &&
-        partFilePath &&
-        keepPartialData
-      ) {
-        try {
-          let stat = await OS.File.stat(partFilePath);
-          channel.resumeAt(stat.size, this.entityID);
-          resumeAttempted = true;
-          resumeFromBytes = stat.size;
-        } catch (ex) {
-          if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
-            throw ex;
-          }
-        }
-      }
 
-      channel.notificationCallbacks = {
+      const notificationCallbacks = {
         QueryInterface: ChromeUtils.generateQI([Ci.nsIInterfaceRequestor]),
         getInterface: ChromeUtils.generateQI([Ci.nsIProgressEventSink]),
         onProgress: function DCSE_onProgress(
@@ -2110,28 +2068,46 @@ this.DownloadCopySaver.prototype = {
         onStatus() {},
       };
 
-      
-      if (download.source.adjustChannel) {
-        await download.source.adjustChannel(channel);
-      }
-
-      
-      backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
-      channel.asyncOpen({
+      const streamListener = {
         onStartRequest: function(aRequest) {
           backgroundFileSaver.onStartRequest(aRequest);
 
-          
-          
-          if (
-            aRequest instanceof Ci.nsIHttpChannel &&
-            aRequest.responseStatus == 450
-          ) {
+          if (aRequest instanceof Ci.nsIHttpChannel) {
             
             
-            this.download._blockedByParentalControls = true;
-            aRequest.cancel(Cr.NS_BINDING_ABORTED);
-            return;
+            if (aRequest.responseStatus == 450) {
+              
+              
+              this.download._blockedByParentalControls = true;
+              aRequest.cancel(Cr.NS_BINDING_ABORTED);
+              return;
+            }
+
+            
+            
+            
+            
+            if (
+              download.source.allowHttpStatus &&
+              !download.source.allowHttpStatus(
+                download,
+                aRequest.responseStatus
+              )
+            ) {
+              aRequest.cancel(Cr.NS_BINDING_ABORTED);
+              return;
+            }
+          }
+
+          if (aRequest instanceof Ci.nsIChannel) {
+            aSetPropertiesFn({ contentType: aRequest.contentType });
+
+            
+            
+            
+            if (aRequest.contentLength >= 0) {
+              aSetProgressBytesFn(0, aRequest.contentLength);
+            }
           }
 
           
@@ -2139,37 +2115,15 @@ this.DownloadCopySaver.prototype = {
           
           
           if (
-            download.source.allowHttpStatus &&
-            aRequest instanceof Ci.nsIHttpChannel &&
-            !download.source.allowHttpStatus(download, aRequest.responseStatus)
+            aRequest instanceof Ci.nsIEncodedChannel &&
+            aRequest.contentEncodings
           ) {
-            aRequest.cancel(Cr.NS_BINDING_ABORTED);
-            return;
-          }
-
-          aSetPropertiesFn({ contentType: channel.contentType });
-
-          
-          
-          
-          if (channel.contentLength >= 0) {
-            aSetProgressBytesFn(0, channel.contentLength);
-          }
-
-          
-          
-          
-          
-          if (
-            channel instanceof Ci.nsIEncodedChannel &&
-            channel.contentEncodings
-          ) {
-            let uri = channel.URI;
+            let uri = aRequest.URI;
             if (uri instanceof Ci.nsIURL && uri.fileExtension) {
               
-              let encoding = channel.contentEncodings.getNext();
+              let encoding = aRequest.contentEncodings.getNext();
               if (encoding) {
-                channel.applyConversion = gExternalHelperAppService.applyDecodingForExtension(
+                aRequest.applyConversion = gExternalHelperAppService.applyDecodingForExtension(
                   uri.fileExtension,
                   encoding
                 );
@@ -2221,7 +2175,7 @@ this.DownloadCopySaver.prototype = {
               false
             );
           }
-        }.bind(copySaver),
+        }.bind(this),
 
         onStopRequest(aRequest, aStatusCode) {
           try {
@@ -2244,7 +2198,71 @@ this.DownloadCopySaver.prototype = {
             aCount
           );
         },
-      });
+      };
+
+      
+      
+      
+      
+      
+      
+      
+      
+      const open = async () => {
+        
+        
+        const channel = NetUtil.newChannel({
+          uri: download.source.url,
+          loadUsingSystemPrincipal: true,
+          contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
+        });
+        if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
+          channel.setPrivate(download.source.isPrivate);
+        }
+        if (
+          channel instanceof Ci.nsIHttpChannel &&
+          download.source.referrerInfo
+        ) {
+          channel.referrerInfo = download.source.referrerInfo;
+          
+          download.source.referrerInfo = channel.referrerInfo;
+        }
+
+        
+        
+        if (channel instanceof Ci.nsIHttpChannelInternal) {
+          channel.channelIsForDownload = true;
+        }
+
+        if (
+          channel instanceof Ci.nsIResumableChannel &&
+          this.entityID &&
+          partFilePath &&
+          keepPartialData
+        ) {
+          try {
+            let stat = await OS.File.stat(partFilePath);
+            channel.resumeAt(stat.size, this.entityID);
+            resumeAttempted = true;
+            resumeFromBytes = stat.size;
+          } catch (ex) {
+            if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
+              throw ex;
+            }
+          }
+        }
+
+        channel.notificationCallbacks = notificationCallbacks;
+
+        
+        if (download.source.adjustChannel) {
+          await download.source.adjustChannel(channel);
+        }
+        channel.asyncOpen(streamListener);
+      };
+
+      
+      await open();
 
       
       
