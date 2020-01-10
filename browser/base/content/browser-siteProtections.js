@@ -17,6 +17,11 @@ var gProtectionsHandler = {
     delete this._protectionsIconBox;
     return this._protectionsIconBox = document.getElementById("tracking-protection-icon-animatable-box");
   },
+  get _protectionsPopupMultiView() {
+    delete this._protectionsPopupMultiView;
+    return this._protectionsPopupMultiView =
+      document.getElementById("protections-popup-multiView");
+  },
   get _protectionsPopupMainView() {
     delete this._protectionsPopupMainView;
     return this._protectionsPopupMainView =
@@ -51,6 +56,11 @@ var gProtectionsHandler = {
     delete this._protectionPopupTrackersCounterDescription;
     return this._protectionPopupTrackersCounterDescription =
       document.getElementById("protections-popup-trackers-blocked-counter-description");
+  },
+  get _protectionsPopupSiteNotWorkingTPSwitch() {
+    delete this._protectionsPopupSiteNotWorkingTPSwitch;
+    return this._protectionsPopupSiteNotWorkingTPSwitch =
+      document.getElementById("protections-popup-siteNotWorking-tp-switch");
   },
   get _protectionsPopupToastTimeout() {
     delete this._protectionsPopupToastTimeout;
@@ -128,10 +138,6 @@ var gProtectionsHandler = {
   },
 
   refreshProtectionsPopup() {
-    
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled",
-      !this._protectionsPopup.hasAttribute("hasException"));
-
     let host = gIdentityHandler.getHostForDisplay();
 
     
@@ -142,7 +148,10 @@ var gProtectionsHandler = {
     let currentlyEnabled =
       !this._protectionsPopup.hasAttribute("hasException");
 
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled", currentlyEnabled);
+    for (let tpSwitch of [this._protectionsPopupTPSwitch,
+                          this._protectionsPopupSiteNotWorkingTPSwitch]) {
+      tpSwitch.toggleAttribute("enabled", currentlyEnabled);
+    }
 
     
     
@@ -171,7 +180,10 @@ var gProtectionsHandler = {
     
     let newExceptionState =
       this._protectionsPopup.toggleAttribute("hasException");
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled", !newExceptionState);
+    for (let tpSwitch of [this._protectionsPopupTPSwitch,
+                          this._protectionsPopupSiteNotWorkingTPSwitch]) {
+      tpSwitch.toggleAttribute("enabled", !newExceptionState);
+    }
 
     
     
@@ -247,5 +259,9 @@ var gProtectionsHandler = {
       position: "bottomcenter topleft",
       triggerEvent: event,
     }).catch(Cu.reportError);
+  },
+
+  showSiteNotWorkingView() {
+    this._protectionsPopupMultiView.showSubView("protections-popup-siteNotWorkingView");
   },
 };
