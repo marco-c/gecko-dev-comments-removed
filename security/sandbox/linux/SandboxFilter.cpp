@@ -424,6 +424,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
           return Trap(LStatTrap, mBroker);
         CASES_FOR_fstatat:
           return Trap(StatAtTrap, mBroker);
+        
+        
+        case __NR_statx:
+          return Error(ENOSYS);
         case __NR_chmod:
           return Trap(ChmodTrap, mBroker);
         case __NR_link:
@@ -542,6 +546,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #endif
             .Else(InvalidSyscall());
       }
+
+        
+      case __NR_membarrier:
+        return Allow();
 
       
 #if defined(ANDROID) || defined(MOZ_ASAN)
