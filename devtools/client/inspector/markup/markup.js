@@ -698,7 +698,10 @@ MarkupView.prototype = {
 
 
   _showBoxModel: function(nodeFront) {
-    return this.toolbox.highlighter
+    
+    
+    this._highlightedNodeFront = nodeFront;
+    return nodeFront.highlighterFront
       .highlight(nodeFront)
       .catch(this._handleRejectionIfNotDestroyed);
   },
@@ -713,7 +716,7 @@ MarkupView.prototype = {
 
 
   _hideBoxModel: function(forceHide) {
-    return this.toolbox.highlighter
+    return this._highlightedNodeFront.highlighterFront
       .unhighlight(forceHide)
       .catch(this._handleRejectionIfNotDestroyed);
   },
@@ -2232,6 +2235,7 @@ MarkupView.prototype = {
 
     this._clearBriefBoxModelTimer();
 
+    this._highlightedNodeFront = null;
     this._hoveredContainer = null;
 
     if (this._contextMenu) {

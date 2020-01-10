@@ -381,6 +381,7 @@ class WebConsoleWrapper {
               "inspector",
               "inspect_dom"
             );
+            
             const onGripNodeToFront = this.toolbox.walker.gripToNodeFront(grip);
             const [front, inspector] = await Promise.all([
               onGripNodeToFront,

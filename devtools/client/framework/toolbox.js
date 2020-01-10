@@ -516,14 +516,6 @@ Toolbox.prototype = {
 
 
 
-  get highlighter() {
-    return this._highlighter;
-  },
-
-  
-
-
-
   get inspectorFront() {
     return this._inspector;
   },
@@ -2980,14 +2972,14 @@ Toolbox.prototype = {
 
 
   onHighlightFrame: async function(frameId) {
-    
-    
-    await this.initInspector();
+    const inspectorFront = await this.target.getFront("inspector");
 
     
     if (this.rootFrameSelected) {
-      const frameActor = await this.walker.getNodeActorFromWindowID(frameId);
-      this.highlighter.highlight(frameActor);
+      const frameActor = await inspectorFront.walker.getNodeActorFromWindowID(
+        frameId
+      );
+      inspectorFront.highlighter.highlight(frameActor);
     }
   },
 
@@ -3334,7 +3326,6 @@ Toolbox.prototype = {
         
         this._inspector = await this.target.getFront("inspector");
         this._walker = this.inspectorFront.walker;
-        this._highlighter = this.inspectorFront.highlighter;
         this.nodePicker = new NodePicker(this.target, this.selection);
 
         this.nodePicker.on("picker-starting", this._onPickerStarting);
@@ -3371,16 +3362,14 @@ Toolbox.prototype = {
     return {
       highlight: async (nodeFront, options) => {
         pendingHighlight = (async () => {
-          await this.initInspector();
-          if (!this.highlighter) {
-            return null;
-          }
-
           if (fromGrip) {
-            nodeFront = await this.walker.gripToNodeFront(nodeFront);
+            
+            const walkerFront = (await this.target.getFront("inspector"))
+              .walker;
+            nodeFront = await walkerFront.gripToNodeFront(nodeFront);
           }
 
-          return this.highlighter.highlight(nodeFront, options);
+          return nodeFront.highlighterFront.highlight(nodeFront, options);
         })();
         return pendingHighlight;
       },
@@ -3390,8 +3379,9 @@ Toolbox.prototype = {
           pendingHighlight = null;
         }
 
-        return this.highlighter
-          ? this.highlighter.unhighlight(forceHide)
+        const inspectorFront = this.target.getCachedFront("inspector");
+        return inspectorFront
+          ? inspectorFront.highlighter.unhighlight(forceHide)
           : null;
       },
     };
@@ -3460,7 +3450,6 @@ Toolbox.prototype = {
     this._inspector.destroy();
 
     this._inspector = null;
-    this._highlighter = null;
     this._walker = null;
   },
 

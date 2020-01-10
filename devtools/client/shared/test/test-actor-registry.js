@@ -88,14 +88,18 @@
     return fetch(uri).then(({ content }) => content);
   };
 
-  const getTestActor = async function(client, tab, toolbox) {
+  const getTestActor = async function(client, tab, toolbox = null) {
     
     
     const form = await getUpdatedForm(client, tab);
-
     const { TestActorFront } = await loadFront();
 
-    const front = new TestActorFront(client, toolbox);
+    let highlighter;
+    if (toolbox) {
+      highlighter = (await toolbox.target.getFront("inspector")).highlighter;
+    }
+
+    const front = new TestActorFront(client, highlighter);
     
     
     front.actorID = form.testActor;

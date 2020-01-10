@@ -20,11 +20,11 @@ add_task(async function() {
   
   
   let highlightedNode = null;
-  inspector.toolbox._highlighter.showBoxModel = function(nodeFront) {
+  inspector.highlighter.showBoxModel = function(nodeFront) {
     highlightedNode = nodeFront;
     return promise.resolve();
   };
-  inspector.toolbox._highlighter.hideBoxModel = function() {
+  inspector.highlighter.hideBoxModel = function() {
     return promise.resolve();
   };
 

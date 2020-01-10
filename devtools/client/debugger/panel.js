@@ -25,7 +25,9 @@ async function getNodeFront(gripOrFront, toolbox) {
     return new Promise(resolve => resolve(gripOrFront));
   }
   
-  return toolbox.walker.gripToNodeFront(gripOrFront);
+  
+  const walkerFront = (await toolbox.target.getFront("inspector")).walker;
+  return walkerFront.gripToNodeFront(gripOrFront);
 }
 
 DebuggerPanel.prototype = {
@@ -91,7 +93,6 @@ DebuggerPanel.prototype = {
   },
 
   openElementInInspector: async function(gripOrFront) {
-    await this.toolbox.initInspector();
     const onSelectInspector = this.toolbox.selectTool("inspector");
     const onGripNodeToFront = getNodeFront(gripOrFront, this.toolbox);
 
@@ -109,18 +110,18 @@ DebuggerPanel.prototype = {
   },
 
   highlightDomElement: async function(gripOrFront) {
-    await this.toolbox.initInspector();
-    if (!this.toolbox.highlighter) {
-      return null;
-    }
-    const front = await getNodeFront(gripOrFront, this.toolbox);
-    return this.toolbox.highlighter.highlight(front);
+    const nodeFront = await getNodeFront(gripOrFront, this.toolbox);
+    nodeFront.highlighterFront.highlight(nodeFront);
   },
 
-  unHighlightDomElement: function() {
-    return this.toolbox.highlighter
-      ? this.toolbox.highlighter.unhighlight(false)
-      : null;
+  unHighlightDomElement: async function(gripOrFront) {
+    try {
+      const nodeFront = await getNodeFront(gripOrFront, this.toolbox);
+      nodeFront.highlighterFront.unhighlight();
+    } catch (e) {
+      
+      
+    }
   },
 
   getFrames: function() {

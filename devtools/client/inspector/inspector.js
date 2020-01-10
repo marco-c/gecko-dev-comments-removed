@@ -1822,11 +1822,11 @@ Inspector.prototype = {
 
 
   onShowBoxModelHighlighterForNode(nodeFront, options) {
-    const toolbox = this.toolbox;
-    toolbox.highlighter.highlight(nodeFront, options);
+    nodeFront.highlighterFront.highlight(nodeFront, options);
   },
 
   async inspectNodeActor(nodeActor, inspectFromAnnotation) {
+    
     const nodeFront = await this.walker.gripToNodeFront({ actor: nodeActor });
     if (!nodeFront) {
       console.error(
