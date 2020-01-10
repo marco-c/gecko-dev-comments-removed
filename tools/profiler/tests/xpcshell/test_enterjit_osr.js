@@ -23,6 +23,7 @@ function run_test() {
       const then = Date.now();
       do {
         let n = 10000;
+        
         while (--n) {} 
         
       } while (Date.now() - then < delayMS);
