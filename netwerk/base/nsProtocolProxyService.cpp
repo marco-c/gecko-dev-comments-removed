@@ -767,9 +767,7 @@ nsProtocolProxyService::nsProtocolProxyService()
       mSessionStart(PR_Now()),
       mFailedProxyTimeout(30 * 60)  
       ,
-      mIsShutdown(false) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-}
+      mIsShutdown(false) {}
 
 nsProtocolProxyService::~nsProtocolProxyService() {
   
