@@ -139,21 +139,6 @@ assertErrorMessage(() => wasmEval(moduleWithSections([v2vSigSection, declSection
 assertErrorMessage(() => wasmEval(moduleWithSections([v2vSigSection, declSection([0]), bodySection([funcBody({locals:[], body:[EndCode,UnreachableCode]})])])), CompileError, bodyMismatch);
 
 
-
-
-
-
-var jco = getJitCompilerOptions();
-if (jco["ion.enable"] && jco["baseline.enable"] && jco["baseline.warmup.trigger"] > 0 && jco["ion.warmup.trigger"] > 10) {
-    var manyBlocks = [];
-    for (var i = 0; i < 20000; i++)
-        manyBlocks.push(BlockCode, VoidCode);
-    for (var i = 0; i < 20000; i++)
-        manyBlocks.push(EndCode);
-    wasmEval(moduleWithSections([v2vSigSection, declSection([0]), bodySection([funcBody({locals:[], body:manyBlocks})])]));
-}
-
-
 var tooBigNameSection = {
     name: userDefinedId,
     body: [...string(nameName), ...varU32(Math.pow(2, 31))] 
