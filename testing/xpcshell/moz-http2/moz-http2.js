@@ -660,6 +660,13 @@ function handleRequest(req, res) {
         });
       }
 
+      if (req.headers["accept-language"]) {
+        
+        
+        
+        answers = [];
+      }
+
       let buf = dnsPacket.encode({
         type: 'response',
         id: packet.id,
