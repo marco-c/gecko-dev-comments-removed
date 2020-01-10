@@ -526,18 +526,6 @@ struct DIGroup {
             aData->mRect = transformedRect.Intersect(mClippedImageBounds);
             InvalidateRect(aData->mRect);
             GP("DetectContainerLayerPropertiesBoundsChange change\n");
-          } else if (!aData->mImageRect.IsEqualEdges(mClippedImageBounds)) {
-            
-            nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
-                geometry->ComputeInvalidationRegion());
-            IntRect transformedRect =
-                ToDeviceSpace(clippedBounds, aMatrix, appUnitsPerDevPixel);
-            
-            
-            InvalidateRect(aData->mRect);
-            aData->mRect = transformedRect.Intersect(mClippedImageBounds);
-            InvalidateRect(aData->mRect);
-            GP("ContainerLayer image rect bounds change\n");
           } else {
             
             nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
@@ -545,27 +533,18 @@ struct DIGroup {
             IntRect transformedRect =
                 ToDeviceSpace(clippedBounds, aMatrix, appUnitsPerDevPixel);
             auto rect = transformedRect.Intersect(mClippedImageBounds);
-            GP("Layer NoChange: %s %d %d %d %d\n", aItem->Name(),
+            if (!rect.IsEqualEdges(aData->mRect)) {
+              GP("ContainerLayer image rect bounds change\n");
+              InvalidateRect(aData->mRect);
+              aData->mRect = rect;
+              InvalidateRect(aData->mRect);
+            } else {
+              GP("Layer NoChange: %s %d %d %d %d\n", aItem->Name(),
                aData->mRect.x, aData->mRect.y, aData->mRect.XMost(),
                aData->mRect.YMost());
-            MOZ_RELEASE_ASSERT(rect.IsEqualEdges(aData->mRect));
+            }
           }
-        } else if (!aData->mImageRect.IsEqualEdges(mClippedImageBounds)) {
-          
-          UniquePtr<nsDisplayItemGeometry> geometry(
-              aItem->AllocateGeometry(aBuilder));
-          nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
-              geometry->ComputeInvalidationRegion());
-          IntRect transformedRect =
-              ToDeviceSpace(clippedBounds, aMatrix, appUnitsPerDevPixel);
-          
-          
-          InvalidateRect(aData->mRect);
-          aData->mRect = transformedRect.Intersect(mClippedImageBounds);
-          InvalidateRect(aData->mRect);
-          GP("image rect bounds change\n");
         } else {
-          
           UniquePtr<nsDisplayItemGeometry> geometry(
               aItem->AllocateGeometry(aBuilder));
           nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
@@ -573,10 +552,17 @@ struct DIGroup {
           IntRect transformedRect =
               ToDeviceSpace(clippedBounds, aMatrix, appUnitsPerDevPixel);
           auto rect = transformedRect.Intersect(mClippedImageBounds);
-          GP("NoChange: %s %d %d %d %d vs %d %d %d %d\n", aItem->Name(), rect.x,
-             rect.y, rect.XMost(), rect.YMost(), aData->mRect.x, aData->mRect.y,
-             aData->mRect.XMost(), aData->mRect.YMost());
-          MOZ_RELEASE_ASSERT(rect.IsEqualEdges(aData->mRect));
+          
+          if (!rect.IsEqualEdges(aData->mRect)) {
+            GP("ContainerLayer image rect bounds change\n");
+            InvalidateRect(aData->mRect);
+            aData->mRect = rect;
+            InvalidateRect(aData->mRect);
+          } else {
+            GP("NoChange: %s %d %d %d %d\n", aItem->Name(),
+               aData->mRect.x, aData->mRect.y, aData->mRect.XMost(),
+               aData->mRect.YMost());
+          }
         }
       }
     }
