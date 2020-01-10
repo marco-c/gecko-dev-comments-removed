@@ -3727,10 +3727,9 @@ Maybe<CSSIntSize> nsGlobalWindowOuter::GetRDMDeviceSize(
   
   
   
-  
-  
-  
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  Maybe<CSSIntSize> deviceSize;
 
   
   const Document* topInProcessContentDoc =
@@ -3738,23 +3737,14 @@ Maybe<CSSIntSize> nsGlobalWindowOuter::GetRDMDeviceSize(
   if (topInProcessContentDoc && topInProcessContentDoc->InRDMPane()) {
     nsIDocShell* docShell = topInProcessContentDoc->GetDocShell();
     if (docShell) {
-      nsPresContext* presContext = docShell->GetPresContext();
-      if (presContext) {
-        nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild();
-        if (child) {
-          
-          
-          
-          
-          float zoom = presContext->GetFullZoom();
-          BrowserChild* bc = static_cast<BrowserChild*>(child.get());
-          CSSSize unscaledSize = bc->GetUnscaledInnerSize();
-          return Some(CSSIntSize(gfx::RoundedToInt(unscaledSize / zoom)));
-        }
+      nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild();
+      if (child) {
+        BrowserChild* bc = static_cast<BrowserChild*>(child.get());
+        deviceSize = Some(bc->GetUnscaledInnerSize());
       }
     }
   }
-  return Nothing();
+  return deviceSize;
 }
 
 float nsGlobalWindowOuter::GetMozInnerScreenXOuter(CallerType aCallerType) {
@@ -4740,7 +4730,7 @@ bool nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType) {
   if (aCallerType != CallerType::System) {
     
     
-    if (!mHadOriginalOpener) {
+    if (!HadOriginalOpener()) {
       return false;
     }
 
@@ -6283,7 +6273,7 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     NS_ENSURE_SUCCESS_VOID(rv);
 
     if (!StringBeginsWith(url, NS_LITERAL_STRING("about:neterror")) &&
-        !mHadOriginalOpener && !aTrustedCaller) {
+        !HadOriginalOpener() && !aTrustedCaller) {
       bool allowClose =
           mAllowScriptsToClose ||
           Preferences::GetBool("dom.allow_scripts_to_close_windows", true);
