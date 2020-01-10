@@ -3,9 +3,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const FIREFOX_VERSION = parseInt(Services.appinfo.version.match(/\d+/), 10);
 const TWO_DAYS = 2 * 24 * 3600 * 1000;
 
 const MESSAGES = () => [
@@ -65,29 +62,6 @@ const MESSAGES = () => [
       },
     },
     trigger: { id: "momentsUpdate" },
-  },
-  {
-    id: `WHATS_NEW_BADGE_${FIREFOX_VERSION}`,
-    template: "toolbar_badge",
-    content: {
-      
-      delay: 5000,
-      target: "whats-new-menu-button",
-      action: { id: "show-whatsnew-button" },
-    },
-    priority: 1,
-    trigger: { id: "toolbarBadgeUpdate" },
-    frequency: {
-      
-      
-      lifetime: Infinity,
-    },
-    
-    targeting: `isWhatsNewPanelEnabled &&
-      (earliestFirefoxVersion && firefoxVersion > earliestFirefoxVersion) &&
-        (!messageImpressions['WHATS_NEW_BADGE_${FIREFOX_VERSION}'] ||
-      (messageImpressions['WHATS_NEW_BADGE_${FIREFOX_VERSION}']|length >= 1 &&
-        currentDate|date - messageImpressions['WHATS_NEW_BADGE_${FIREFOX_VERSION}'][0] <= 4 * 24 * 3600 * 1000))`,
   },
   {
     id: "WHATS_NEW_70_1",
