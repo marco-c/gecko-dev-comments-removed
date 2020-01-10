@@ -2650,6 +2650,14 @@ class nsContentUtils {
 
 
 
+  static mozilla::TextEditor* GetTextEditorFromAnonymousNodeWithoutCreation(
+      nsIContent* aAnonymousContent);
+
+  
+
+
+
+
   static mozilla::LogModule* DOMDumpLog();
 
   
