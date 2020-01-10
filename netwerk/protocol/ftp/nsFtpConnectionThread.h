@@ -218,6 +218,10 @@ class nsFtpState final : public nsBaseContentStream,
                             
   bool mRlist1xxReceived;   
                             
+  bool mRretr1xxReceived;   
+                            
+  bool mRstor1xxReceived;   
+                            
   nsresult mInternalError;  
   bool mReconnectAndLoginAgain;
   bool mCacheConnection;
