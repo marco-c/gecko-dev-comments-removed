@@ -913,12 +913,6 @@ impl TextureCache {
     ) {
         debug_assert!(self.now.is_valid());
 
-        if let Some(CachedImageData::Empty) = data {
-            self.mark_unused(handle);
-            *handle = TextureCacheHandle::invalid();
-            return;
-        }
-
         
         
         
@@ -1851,9 +1845,6 @@ impl TextureCacheUpdate {
         let source = match data {
             CachedImageData::Blob => {
                 panic!("The vector image should have been rasterized.");
-            }
-            CachedImageData::Empty => {
-                panic!("The entry should have been cleared instead.");
             }
             CachedImageData::External(ext_image) => match ext_image.image_type {
                 ExternalImageType::TextureHandle(_) => {
