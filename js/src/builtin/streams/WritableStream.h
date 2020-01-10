@@ -33,15 +33,6 @@ class WritableStreamDefaultWriter;
 
 class WritableStream : public NativeObject {
  public:
-  
-
-
-
-
-
-
-
-
   enum Slots {
     
 
@@ -56,6 +47,10 @@ class WritableStream : public NativeObject {
 
 
     Slot_Writer,
+
+    
+
+
 
     Slot_State,
 
