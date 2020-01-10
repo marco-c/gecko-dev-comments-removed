@@ -758,40 +758,64 @@ async function runUrlbarTest(
     await UrlbarTestUtils.promisePopupClose(win);
   };
 
-  let dropmarkerRect = URLBar.dropmarker.getBoundingClientRect();
-  let textBoxRect = URLBar.querySelector(
-    "moz-input-box"
-  ).getBoundingClientRect();
-  let resultsRect = {
-    top: URLBar.textbox.closest("toolbar").getBoundingClientRect().bottom,
-    right: win.innerWidth,
-    bottom: win.innerHeight,
-    left: 0,
-  };
-  let expectedRects = {
-    filter: rects =>
-      rects.filter(
-        r =>
-          !
-          (
-            (r.x1 >= textBoxRect.left &&
-              r.x2 <= textBoxRect.right &&
-              r.y1 >= textBoxRect.top &&
-              r.y2 <= textBoxRect.bottom) ||
-            
-            
-            (r.x1 >= dropmarkerRect.left - 1 &&
-              r.x2 <= dropmarkerRect.right + 1 &&
-              r.y1 >= dropmarkerRect.top &&
-              r.y2 <= dropmarkerRect.bottom) ||
-            
-            (r.x1 >= resultsRect.left &&
-              r.x2 <= resultsRect.right &&
-              r.y1 >= resultsRect.top &&
-              r.y2 <= resultsRect.bottom)
-          )
-      ),
-  };
+  let expectedRects;
+  if (URLBar.megabar) {
+    let urlbarRect = URLBar.textbox.getBoundingClientRect();
+    const SHADOW_SIZE = 4;
+    expectedRects = {
+      filter: rects => {
+        
+        
+        
+        
+        
+        
+        return rects.filter(
+          r =>
+            !(
+              r.x1 >= urlbarRect.left - SHADOW_SIZE &&
+              r.x2 <= urlbarRect.right + SHADOW_SIZE &&
+              r.y1 >= urlbarRect.top - SHADOW_SIZE
+            )
+        );
+      },
+    };
+  } else {
+    let dropmarkerRect = URLBar.dropmarker.getBoundingClientRect();
+    let textBoxRect = URLBar.querySelector(
+      "moz-input-box"
+    ).getBoundingClientRect();
+    let resultsRect = {
+      top: URLBar.textbox.closest("toolbar").getBoundingClientRect().bottom,
+      right: win.innerWidth,
+      bottom: win.innerHeight,
+      left: 0,
+    };
+    expectedRects = {
+      filter: rects =>
+        rects.filter(
+          r =>
+            !
+            (
+              (r.x1 >= textBoxRect.left &&
+                r.x2 <= textBoxRect.right &&
+                r.y1 >= textBoxRect.top &&
+                r.y2 <= textBoxRect.bottom) ||
+              
+              
+              (r.x1 >= dropmarkerRect.left - 1 &&
+                r.x2 <= dropmarkerRect.right + 1 &&
+                r.y1 >= dropmarkerRect.top &&
+                r.y2 <= dropmarkerRect.bottom) ||
+              
+              (r.x1 >= resultsRect.left &&
+                r.x2 <= resultsRect.right &&
+                r.y1 >= resultsRect.top &&
+                r.y2 <= resultsRect.bottom)
+            )
+        ),
+    };
+  }
 
   info("First opening");
   await withPerfObserver(

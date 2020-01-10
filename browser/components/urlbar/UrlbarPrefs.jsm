@@ -64,6 +64,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   
+  ["disableExtendForTests", false],
+
+  
+  
+  
   ["doubleClickSelectsAll", false],
 
   
