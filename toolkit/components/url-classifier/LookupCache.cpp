@@ -34,7 +34,6 @@
 
 
 
-
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
 #define LOG(args) \
   MOZ_LOG(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug, args)

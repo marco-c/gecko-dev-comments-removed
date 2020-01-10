@@ -2251,7 +2251,8 @@ class nsDisplayItemBase : public nsDisplayItemLink {
     
     
     
-    return (static_cast<uint32_t>(mExtraPageForPageNum) << (TYPE_BITS + (sizeof(mKey) * 8))) |
+    return (static_cast<uint32_t>(mExtraPageForPageNum)
+            << (TYPE_BITS + (sizeof(mKey) * 8))) |
            (static_cast<uint32_t>(mKey) << TYPE_BITS) |
            static_cast<uint32_t>(mType);
   }

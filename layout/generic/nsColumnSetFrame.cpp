@@ -598,10 +598,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   
   nsSize containerSize = aReflowInput.ComputedSizeAsContainerIfConstrained();
 
-  LogicalSize computedSize =
-      StaticPrefs::layout_css_column_span_enabled()
-          ? aReflowInput.mCBReflowInput->ComputedSize(wm)
-          : aReflowInput.ComputedSize(wm);
+  LogicalSize computedSize = StaticPrefs::layout_css_column_span_enabled()
+                                 ? aReflowInput.mCBReflowInput->ComputedSize(wm)
+                                 : aReflowInput.ComputedSize(wm);
 
   
   

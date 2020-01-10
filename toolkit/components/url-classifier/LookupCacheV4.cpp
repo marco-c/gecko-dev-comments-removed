@@ -124,7 +124,6 @@ nsresult LookupCacheV4::Has(const Completion& aCompletion, bool* aHas,
   *aHas = true;
   *aMatchLength = length;
 
-
   
   
   return CheckCache(aCompletion, aHas, aConfirmed);

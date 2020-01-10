@@ -540,8 +540,10 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   if (aChildDoc->IsTopLevelInContentProcess()) {
     
     
-    auto embeddedBrowser = static_cast<dom::BrowserParent*>(aChildDoc->Manager());
-    dom::BrowserBridgeParent* bridge = embeddedBrowser->GetBrowserBridgeParent();
+    auto embeddedBrowser =
+        static_cast<dom::BrowserParent*>(aChildDoc->Manager());
+    dom::BrowserBridgeParent* bridge =
+        embeddedBrowser->GetBrowserBridgeParent();
     if (bridge) {
       
       

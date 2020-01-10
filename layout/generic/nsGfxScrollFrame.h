@@ -517,7 +517,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   void UpdateMinimumScaleSize(const nsRect& aScrollableOverflow,
                               const nsSize& aICBSize);
 
-
   
   
   

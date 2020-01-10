@@ -87,7 +87,7 @@ inline const StyleTrackBreadth& StyleTrackSize::GetMin() const {
   return kAuto;
 }
 
-}
+}  
 
 static void ReparentFrame(nsIFrame* aFrame, nsContainerFrame* aOldParent,
                           nsContainerFrame* aNewParent) {
@@ -3878,7 +3878,9 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   
   
   const nsStylePosition* const gridStyle = aState.mGridStyle;
-  const auto* areas = gridStyle->mGridTemplateAreas.IsNone() ? nullptr : &*gridStyle->mGridTemplateAreas.AsAreas();
+  const auto* areas = gridStyle->mGridTemplateAreas.IsNone()
+                          ? nullptr
+                          : &*gridStyle->mGridTemplateAreas.AsAreas();
   int32_t clampMinColLine = kMinLine;
   int32_t clampMaxColLine = kMaxLine;
   uint32_t numRepeatCols;
