@@ -25,7 +25,9 @@ const { reducers } = require("./reducers/index");
 
 const eventTelemetry = require("./middleware/event-telemetry");
 const historyPersistence = require("./middleware/history-persistence");
-const thunk = require("./middleware/thunk");
+const {
+  thunkWithOptions,
+} = require("devtools/client/shared/redux/middleware/thunk-with-options");
 
 
 const enableBatching = require("./enhancers/batching");
@@ -86,7 +88,7 @@ function configureStore(webConsoleUI, options = {}) {
   const services = options.services || {};
 
   const middleware = applyMiddleware(
-    thunk.bind(null, {
+    thunkWithOptions.bind(null, {
       prefsService,
       services,
       
