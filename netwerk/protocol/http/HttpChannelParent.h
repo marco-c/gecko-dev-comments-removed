@@ -248,11 +248,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   void MaybeFlushPendingDiversion();
   void ResponseSynthesized();
 
-  void CrossProcessRedirectDone(
-      const nsresult& aResult,
-      const mozilla::Maybe<LoadInfoArgs>& aLoadInfoArgs);
-  void FinishCrossProcessSwitch(nsHttpChannel* aChannel, nsresult aStatus);
-
   
   
   
