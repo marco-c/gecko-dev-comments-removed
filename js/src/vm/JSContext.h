@@ -159,12 +159,12 @@ struct JSContext : public JS::RootingContext,
   js::WriteOnceData<js::ContextKind> kind_;
 
   friend class js::gc::AutoSuppressNurseryCellAlloc;
-  js::ThreadData<size_t> nurserySuppressions_;
+  js::ContextData<size_t> nurserySuppressions_;
 
-  js::ThreadData<JS::ContextOptions> options_;
+  js::ContextData<JS::ContextOptions> options_;
 
   
-  js::ThreadData<js::gc::FreeLists*> freeLists_;
+  js::ContextData<js::gc::FreeLists*> freeLists_;
 
   
   
@@ -172,9 +172,9 @@ struct JSContext : public JS::RootingContext,
   uint32_t allocsThisZoneSinceMinorGC_;
 
   
-  js::ThreadData<js::gc::FreeLists*> atomsZoneFreeLists_;
+  js::ContextData<js::gc::FreeLists*> atomsZoneFreeLists_;
 
-  js::ThreadData<js::FreeOp> defaultFreeOp_;
+  js::ContextData<js::FreeOp> defaultFreeOp_;
 
   js::ParseTask* parseTask_;
 
@@ -432,17 +432,17 @@ struct JSContext : public JS::RootingContext,
 
 
 
-  js::ThreadData<js::jit::JitActivation*> jitActivation;
+  js::ContextData<js::jit::JitActivation*> jitActivation;
 
   
   
-  js::ThreadData<js::irregexp::RegExpStack> regexpStack;
+  js::ContextData<js::irregexp::RegExpStack> regexpStack;
 
   
 
 
 
-  js::ThreadData<js::Activation*> activation_;
+  js::ContextData<js::Activation*> activation_;
 
   
 
@@ -479,12 +479,9 @@ struct JSContext : public JS::RootingContext,
   
   const uintptr_t nativeStackBase;
 
-  
-  js::ThreadData<size_t> nativeStackQuota[JS::StackKindCount];
-
  public:
   
-  js::ThreadData<JS::dbg::AutoEntryMonitor*> entryMonitor;
+  js::ContextData<JS::dbg::AutoEntryMonitor*> entryMonitor;
 
   
 
@@ -493,16 +490,16 @@ struct JSContext : public JS::RootingContext,
 
 
 
-  js::ThreadData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
+  js::ContextData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
 
 #ifdef DEBUG
-  js::ThreadData<uint32_t> inUnsafeCallWithABI;
-  js::ThreadData<bool> hasAutoUnsafeCallWithABI;
+  js::ContextData<uint32_t> inUnsafeCallWithABI;
+  js::ContextData<bool> hasAutoUnsafeCallWithABI;
 #endif
 
 #ifdef JS_SIMULATOR
  private:
-  js::ThreadData<js::jit::Simulator*> simulator_;
+  js::ContextData<js::jit::Simulator*> simulator_;
 
  public:
   js::jit::Simulator* simulator() const;
@@ -515,14 +512,14 @@ struct JSContext : public JS::RootingContext,
 
  private:
   
-  js::ThreadData<js::jit::AutoFlushICache*> autoFlushICache_;
+  js::ContextData<js::jit::AutoFlushICache*> autoFlushICache_;
 
  public:
   js::jit::AutoFlushICache* autoFlushICache() const;
   void setAutoFlushICache(js::jit::AutoFlushICache* afc);
 
   
-  js::ThreadData<DtoaState*> dtoaState;
+  js::ContextData<DtoaState*> dtoaState;
 
   
 
@@ -532,36 +529,32 @@ struct JSContext : public JS::RootingContext,
 
 
 
-  js::ThreadData<int32_t> suppressGC;
+  js::ContextData<int32_t> suppressGC;
 
 #ifdef DEBUG
   
-  js::ThreadData<bool> ionCompiling;
+  js::ContextData<bool> ionCompiling;
 
   
   
   
-  js::ThreadData<bool> ionCompilingSafeForMinorGC;
+  js::ContextData<bool> ionCompilingSafeForMinorGC;
 
   
   
   
-  js::ThreadData<bool> performingGC;
+  js::ContextData<bool> performingGC;
 
   
   
   
   
-  js::ThreadData<bool> gcSweeping;
+  js::ContextData<bool> gcSweeping;
 
   
-  
-  js::ThreadData<bool> gcHelperStateThread;
+  js::ContextData<size_t> isTouchingGrayThings;
 
-  
-  js::ThreadData<size_t> isTouchingGrayThings;
-
-  js::ThreadData<size_t> noNurseryAllocationCheck;
+  js::ContextData<size_t> noNurseryAllocationCheck;
 
   
 
@@ -569,7 +562,7 @@ struct JSContext : public JS::RootingContext,
 
 
 
-  js::ThreadData<uintptr_t> disableStrictProxyCheckingCount;
+  js::ContextData<uintptr_t> disableStrictProxyCheckingCount;
 
   bool isNurseryAllocAllowed() { return noNurseryAllocationCheck == 0; }
   void disallowNurseryAlloc() { ++noNurseryAllocationCheck; }
@@ -590,13 +583,13 @@ struct JSContext : public JS::RootingContext,
 
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
   
-  js::ThreadData<bool> runningOOMTest;
+  js::ContextData<bool> runningOOMTest;
 #endif
 
   
   
   
-  js::ThreadData<unsigned> enableAccessValidation;
+  js::ContextData<unsigned> enableAccessValidation;
 
   
 
@@ -604,14 +597,14 @@ struct JSContext : public JS::RootingContext,
 
 
 
-  js::ThreadData<int> inUnsafeRegion;
+  js::ContextData<int> inUnsafeRegion;
 
   
-  js::ThreadData<unsigned> generationalDisabled;
+  js::ContextData<unsigned> generationalDisabled;
 
   
   
-  js::ThreadData<unsigned> compactingDisabledCount;
+  js::ContextData<unsigned> compactingDisabledCount;
 
   bool canCollectAtoms() const {
     
@@ -623,7 +616,7 @@ struct JSContext : public JS::RootingContext,
   
   
   
-  js::ThreadData<js::frontend::NameCollectionPool> frontendCollectionPool_;
+  js::ContextData<js::frontend::NameCollectionPool> frontendCollectionPool_;
 
  public:
   js::frontend::NameCollectionPool& frontendCollectionPool() {
@@ -655,23 +648,23 @@ struct JSContext : public JS::RootingContext,
   static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
 
  private:
-  js::ThreadData<js::LifoAlloc> tempLifoAlloc_;
+  js::ContextData<js::LifoAlloc> tempLifoAlloc_;
 
  public:
   js::LifoAlloc& tempLifoAlloc() { return tempLifoAlloc_.ref(); }
   const js::LifoAlloc& tempLifoAlloc() const { return tempLifoAlloc_.ref(); }
 
-  js::ThreadData<uint32_t> debuggerMutations;
+  js::ContextData<uint32_t> debuggerMutations;
 
   
-  js::ThreadData<js::UniquePtr<js::jit::PcScriptCache>> ionPcScriptCache;
+  js::ContextData<js::UniquePtr<js::jit::PcScriptCache>> ionPcScriptCache;
 
  private:
   
-  js::ThreadData<bool> throwing; 
-  js::ThreadData<JS::PersistentRooted<JS::Value>>
+  js::ContextData<bool> throwing; 
+  js::ContextData<JS::PersistentRooted<JS::Value>>
       unwrappedException_; 
-  js::ThreadData<JS::PersistentRooted<js::SavedFrame*>>
+  js::ContextData<JS::PersistentRooted<js::SavedFrame*>>
       unwrappedExceptionStack_; 
 
   JS::Value& unwrappedException() {
@@ -690,32 +683,32 @@ struct JSContext : public JS::RootingContext,
 
   
   
-  js::ThreadData<bool> overRecursed_;
+  js::ContextData<bool> overRecursed_;
 
   
   
-  js::ThreadData<bool> propagatingForcedReturn_;
+  js::ContextData<bool> propagatingForcedReturn_;
 
   
   
-  js::ThreadData<js::jit::DebugModeOSRVolatileJitFrameIter*>
+  js::ContextData<js::jit::DebugModeOSRVolatileJitFrameIter*>
       liveVolatileJitFrameIter_;
 
  public:
-  js::ThreadData<int32_t> reportGranularity; 
+  js::ContextData<int32_t> reportGranularity; 
 
-  js::ThreadData<js::AutoResolving*> resolvingList;
+  js::ContextData<js::AutoResolving*> resolvingList;
 
 #ifdef DEBUG
-  js::ThreadData<js::AutoEnterPolicy*> enteredPolicy;
+  js::ContextData<js::AutoEnterPolicy*> enteredPolicy;
 #endif
 
   
-  js::ThreadData<bool> generatingError;
+  js::ContextData<bool> generatingError;
 
  private:
   
-  js::ThreadData<js::AutoCycleDetector::Vector> cycleDetectorVector_;
+  js::ContextData<js::AutoCycleDetector::Vector> cycleDetectorVector_;
 
  public:
   js::AutoCycleDetector::Vector& cycleDetectorVector() {
@@ -746,7 +739,7 @@ struct JSContext : public JS::RootingContext,
 
 
 
-  js::ThreadData<JS::PersistentRooted<js::SavedFrame*>>
+  js::ContextData<JS::PersistentRooted<js::SavedFrame*>>
       asyncStackForNewActivations_;
 
  public:
@@ -760,13 +753,13 @@ struct JSContext : public JS::RootingContext,
   
 
 
-  js::ThreadData<const char*> asyncCauseForNewActivations;
+  js::ContextData<const char*> asyncCauseForNewActivations;
 
   
 
 
 
-  js::ThreadData<bool> asyncCallIsExplicit;
+  js::ContextData<bool> asyncCallIsExplicit;
 
   bool currentlyRunningInInterpreter() const {
     return activation()->isInterpreter();
@@ -847,14 +840,14 @@ struct JSContext : public JS::RootingContext,
       js::Vector<JSInterruptCallback, 2, js::SystemAllocPolicy>;
 
  private:
-  js::ThreadData<InterruptCallbackVector> interruptCallbacks_;
+  js::ContextData<InterruptCallbackVector> interruptCallbacks_;
 
  public:
   InterruptCallbackVector& interruptCallbacks() {
     return interruptCallbacks_.ref();
   }
 
-  js::ThreadData<bool> interruptCallbackDisabled;
+  js::ContextData<bool> interruptCallbackDisabled;
 
   
   mozilla::Atomic<uint32_t, mozilla::Relaxed,
@@ -908,7 +901,7 @@ struct JSContext : public JS::RootingContext,
 
   
   
-  js::ThreadData<uint8_t*> osrTempData_;
+  js::ContextData<uint8_t*> osrTempData_;
 
   uint8_t* allocateOsrTempData(size_t size);
   void freeOsrTempData();
@@ -925,7 +918,7 @@ struct JSContext : public JS::RootingContext,
   
   
   
-  js::ThreadData<js::Value> ionReturnOverride_;
+  js::ContextData<js::Value> ionReturnOverride_;
 
   bool hasIonReturnOverride() const {
     return !ionReturnOverride_.ref().isMagic(JS_ARG_POISON);
@@ -946,7 +939,7 @@ struct JSContext : public JS::RootingContext,
       jitStackLimit;
 
   
-  js::ThreadData<uintptr_t> jitStackLimitNoInterrupt;
+  js::ContextData<uintptr_t> jitStackLimitNoInterrupt;
 
   
   
@@ -955,20 +948,20 @@ struct JSContext : public JS::RootingContext,
   
   
   
-  js::ThreadData<JS::JobQueue*> jobQueue;
+  js::ContextData<JS::JobQueue*> jobQueue;
 
   
   
   
-  js::ThreadData<js::UniquePtr<js::InternalJobQueue>> internalJobQueue;
+  js::ContextData<js::UniquePtr<js::InternalJobQueue>> internalJobQueue;
 
   
   
-  js::ThreadData<bool> canSkipEnqueuingJobs;
+  js::ContextData<bool> canSkipEnqueuingJobs;
 
-  js::ThreadData<JS::PromiseRejectionTrackerCallback>
+  js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;
-  js::ThreadData<void*> promiseRejectionTrackerCallbackData;
+  js::ContextData<void*> promiseRejectionTrackerCallbackData;
 
   JSObject* getIncumbentGlobal(JSContext* cx);
   bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job,
