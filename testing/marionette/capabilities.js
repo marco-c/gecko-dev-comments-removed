@@ -435,7 +435,7 @@ class Capabilities extends Map {
   constructor() {
     super([
       
-      ["browserName", appinfo.name],
+      ["browserName", getWebDriverBrowserName()],
       ["browserVersion", appinfo.version],
       ["platformName", getWebDriverPlatformName()],
       ["platformVersion", Services.sysinfo.getProperty("version")],
