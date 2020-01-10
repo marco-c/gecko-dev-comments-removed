@@ -1181,12 +1181,13 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   
   mClientSource.reset();
 
-  if (mBrowserChild) {
+  if (mWindowGlobalChild) {
     
-    for (int i = 0; i < mBeforeUnloadListenerCount; ++i) {
-      mBrowserChild->BeforeUnloadRemoved();
+    int64_t nListeners = mWindowGlobalChild->BeforeUnloadListeners();
+    for (int64_t i = 0; i < nListeners; ++i) {
+      mWindowGlobalChild->BeforeUnloadRemoved();
     }
-    mBeforeUnloadListenerCount = 0;
+    MOZ_ASSERT(mWindowGlobalChild->BeforeUnloadListeners() == 0);
   }
 
   
@@ -6070,9 +6071,8 @@ void nsGlobalWindowInner::EventListenerAdded(nsAtom* aType) {
 
   if (aType == nsGkAtoms::onbeforeunload && mBrowserChild &&
       (!mDoc || !(mDoc->GetSandboxFlags() & SANDBOXED_MODALS))) {
-    mBeforeUnloadListenerCount++;
-    MOZ_ASSERT(mBeforeUnloadListenerCount > 0);
-    mBrowserChild->BeforeUnloadAdded();
+    mWindowGlobalChild->BeforeUnloadAdded();
+    MOZ_ASSERT(mWindowGlobalChild->BeforeUnloadListeners() > 0);
   }
 
   
@@ -6093,9 +6093,8 @@ void nsGlobalWindowInner::EventListenerAdded(nsAtom* aType) {
 void nsGlobalWindowInner::EventListenerRemoved(nsAtom* aType) {
   if (aType == nsGkAtoms::onbeforeunload && mBrowserChild &&
       (!mDoc || !(mDoc->GetSandboxFlags() & SANDBOXED_MODALS))) {
-    mBeforeUnloadListenerCount--;
-    MOZ_ASSERT(mBeforeUnloadListenerCount >= 0);
-    mBrowserChild->BeforeUnloadRemoved();
+    mWindowGlobalChild->BeforeUnloadRemoved();
+    MOZ_ASSERT(mWindowGlobalChild->BeforeUnloadListeners() >= 0);
   }
 
   if (aType == nsGkAtoms::onstorage) {

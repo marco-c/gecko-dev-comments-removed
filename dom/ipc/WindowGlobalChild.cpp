@@ -46,6 +46,7 @@ WindowGlobalChild::WindowGlobalChild(nsGlobalWindowInner* aWindow,
       mBrowsingContext(aBrowsingContext),
       mInnerWindowId(aWindow->WindowID()),
       mOuterWindowId(aWindow->GetOuterWindow()->WindowID()),
+      mBeforeUnloadListeners(0),
       mIPCClosed(true) {}
 
 already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
@@ -155,6 +156,26 @@ bool WindowGlobalChild::IsProcessRoot() {
   }
 
   return !BrowsingContext()->GetEmbedderElement();
+}
+
+void WindowGlobalChild::BeforeUnloadAdded() {
+  
+  if (mBeforeUnloadListeners == 0 && !mIPCClosed) {
+    SendSetHasBeforeUnload(true);
+  }
+
+  mBeforeUnloadListeners++;
+  MOZ_ASSERT(mBeforeUnloadListeners > 0);
+}
+
+void WindowGlobalChild::BeforeUnloadRemoved() {
+  mBeforeUnloadListeners--;
+  MOZ_ASSERT(mBeforeUnloadListeners >= 0);
+
+  
+  if (mBeforeUnloadListeners == 0 && !mIPCClosed) {
+    SendSetHasBeforeUnload(false);
+  }
 }
 
 void WindowGlobalChild::Destroy() {

@@ -274,8 +274,6 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvAccessKeyNotHandled(
       const WidgetKeyboardEvent& aEvent);
 
-  mozilla::ipc::IPCResult RecvSetHasBeforeUnload(const bool& aHasBeforeUnload);
-
   mozilla::ipc::IPCResult RecvRegisterProtocolHandler(const nsString& aScheme,
                                                       nsIURI* aHandlerURI,
                                                       const nsString& aTitle,
@@ -716,7 +714,6 @@ class BrowserParent final : public PBrowserParent,
   void Deprioritize();
 
   bool GetHasContentOpener();
-  bool GetHasBeforeUnload();
 
   bool StartApzAutoscroll(float aAnchorX, float aAnchorY, nsViewID aScrollId,
                           uint32_t aPresShellId);
@@ -941,10 +938,6 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mHasPresented;
-
-  
-  
-  bool mHasBeforeUnload;
 
   
   bool mIsReadyToHandleInputEvents;
