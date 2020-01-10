@@ -155,15 +155,11 @@ nsresult nsDataHandler::ParsePathWithoutRef(
 
   
   int32_t commaIdx = aPath.FindChar(',');
-
-  
-  
-  
-  
-  if (aContentCharset && commaIdx == kNotFound) {
+  if (commaIdx == kNotFound) {
     return NS_ERROR_MALFORMED_URI;
   }
-  if (commaIdx == 0 || commaIdx == kNotFound) {
+
+  if (commaIdx == 0) {
     
     aContentType.AssignLiteral("text/plain");
     if (aContentCharset) {
