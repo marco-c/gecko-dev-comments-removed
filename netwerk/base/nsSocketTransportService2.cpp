@@ -961,6 +961,11 @@ nsSocketTransportService::Run() {
       startOfNextIteration = TimeStamp::NowLoRes();
     }
     pollDuration = nullptr;
+    
+    
+    
+    
+    mRawThread->SetRunningEventDelay(TimeDuration(), TimeStamp());
 
     do {
       if (Telemetry::CanRecordPrereleaseData()) {
