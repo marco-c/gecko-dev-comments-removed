@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import argparse
 import logging
 import os
-import json
 
 import mozpack.path as mozpath
 
@@ -30,6 +29,16 @@ from mach.decorators import (
 
 
 
+LINT_DEPRECATION_MESSAGE = """
+Android lints are now integrated with mozlint.  Instead of
+`mach android {api-lint,checkstyle,findbugs,lint,test}`, run
+`mach lint --linter android-{api-lint,checkstyle,findbugs,lint,test}`.
+Or run `mach lint`.
+"""
+
+
+
+
 
 def REMOVED(cls):
     """Command no longer exists! Use the Gradle configuration rooted in the top source directory
@@ -42,17 +51,6 @@ def REMOVED(cls):
 
 @CommandProvider
 class MachCommands(MachCommandBase):
-    def _root_url(self, artifactdir=None, objdir=None):
-        """Generate a publicly-accessible URL for the tasks's artifacts, or an objdir path"""
-        if 'TASK_ID' in os.environ and 'RUN_ID' in os.environ:
-            import taskcluster_urls
-            from taskgraph.util.taskcluster import get_root_url
-            return taskcluster_urls.api(
-                get_root_url(False), 'queue', 'v1', 'task/{}/runs/{}/artifacts/{}'.format(
-                    os.environ['TASK_ID'], os.environ['RUN_ID'], artifactdir))
-        else:
-            return os.path.join(self.topobjdir, objdir)
-
     @Command('android', category='devenv',
              description='Run Android-specific commands.',
              conditions=[conditions.is_android])
@@ -111,271 +109,39 @@ class MachCommands(MachCommandBase):
         return ret
 
     @SubCommand('android', 'api-lint',
-                """Runs apilint against GeckoView.""")
-    @CommandArgument('args', nargs=argparse.REMAINDER)
-    def android_api_lint(self, args):
-        ret = self.gradle(self.substs['GRADLE_ANDROID_API_LINT_TASKS'] + args, verbose=True)
-        folder = self.substs['GRADLE_ANDROID_GECKOVIEW_APILINT_FOLDER']
-
-        with open(os.path.join(
-                self.topobjdir,
-                '{}/apilint-result.json'.format(folder))) as f:
-            result = json.load(f)
-
-            print('SUITE-START | android-api-lint')
-            for r in result['compat_failures'] + result['failures']:
-                print ('TEST-UNEXPECTED-FAIL | {}:{}:{} | {}'.format(
-                    r['file'], r['line'], r['column'], r['msg']))
-            for r in result['api_changes']:
-                print ('TEST-UNEXPECTED-FAIL | {}:{}:{} | Unexpected api change'.format(
-                    r['file'], r['line'], r['column']))
-            print('SUITE-END | android-api-lint')
-
-        return ret
+                """Run Android api-lint.
+REMOVED/DEPRECATED: Use 'mach lint --linter android-api-lint'.""")
+    def android_apilint_REMOVED(self):
+        print(LINT_DEPRECATION_MESSAGE)
+        return 1
 
     @SubCommand('android', 'test',
-                """Run Android local unit tests.
-                See https://developer.mozilla.org/en-US/docs/Mozilla/Android-specific_test_suites#android-test""")  
-    @CommandArgument('args', nargs=argparse.REMAINDER)
-    def android_test(self, args):
-        ret = self.gradle(self.substs['GRADLE_ANDROID_TEST_TASKS'] +
-                          args, verbose=True)
-
-        ret |= self._parse_android_test_results('public/app/unittest',
-                                                'gradle/build/mobile/android/app',
-                                                (self.substs['GRADLE_ANDROID_APP_VARIANT_NAME'],))
-
-        ret |= self._parse_android_test_results('public/geckoview/unittest',
-                                                'gradle/build/mobile/android/geckoview',
-                                                (self.substs['GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME'],))  
-
-        return ret
-
-    def _parse_android_test_results(self, artifactdir, gradledir, variants):
-        
-        
-        
-        import itertools
-        import xml.etree.ElementTree as ET
-
-        from mozpack.files import (
-            FileFinder,
-        )
-
-        ret = 0
-        found_reports = False
-
-        root_url = self._root_url(
-            artifactdir=artifactdir,
-            objdir=gradledir + '/reports/tests')
-
-        def capitalize(s):
-            
-            return (s[0].upper() + s[1:]) if s else ''
-
-        for variant in variants:
-            report = 'test{}UnitTest'.format(capitalize(variant))
-            finder = FileFinder(os.path.join(self.topobjdir, gradledir + '/test-results/', report))
-            for p, _ in finder.find('TEST-*.xml'):
-                found_reports = True
-                f = open(os.path.join(finder.base, p), 'rt')
-                tree = ET.parse(f)
-                root = tree.getroot()
-
-                
-                failed = root.findall('testcase/error') or root.findall('testcase/failure')
-                if failed:
-                    print(
-                        'TEST-UNEXPECTED-FAIL | android-test | There were failing tests. See the reports at: {}/{}/index.html'.format(root_url, report))  
-
-                for testcase in root.findall('testcase'):
-                    name = testcase.get('name')
-
-                    
-                    
-                    
-                    
-                    
-                    error_count = 0
-                    for unexpected in itertools.chain(testcase.findall('error'),
-                                                      testcase.findall('failure')):
-                        print('TEST-START | {}'.format(name))
-                        for line in ET.tostring(unexpected).strip().splitlines():
-                            print('TEST-UNEXPECTED-FAIL | {} | {}'.format(name, line))
-                        error_count += 1
-                        ret |= 1
-
-        if not found_reports:
-            print('TEST-UNEXPECTED-FAIL | android-test | No reports found under {}'.format(gradledir))  
-            return 1
-
-        return ret
+                """Run Android test.
+REMOVED/DEPRECATED: Use 'mach lint --linter android-test'.""")
+    def android_test_REMOVED(self):
+        print(LINT_DEPRECATION_MESSAGE)
+        return 1
 
     @SubCommand('android', 'lint',
                 """Run Android lint.
-                See https://developer.mozilla.org/en-US/docs/Mozilla/Android-specific_test_suites#android-lint""")  
-    @CommandArgument('args', nargs=argparse.REMAINDER)
-    def android_lint(self, args):
-        ret = self.gradle(self.substs['GRADLE_ANDROID_LINT_TASKS'] +
-                          args, verbose=True)
-
-        
-        
-        
-        import xml.etree.ElementTree as ET
-
-        root_url = self._root_url(
-            artifactdir='public/android/lint',
-            objdir='gradle/build/mobile/android/app/reports')
-
-        reports = (self.substs['GRADLE_ANDROID_APP_VARIANT_NAME'],)
-        for report in reports:
-            f = open(os.path.join(
-                self.topobjdir,
-                'gradle/build/mobile/android/geckoview/reports/lint-results-{}.xml'.format(report)),  
-                     'rt')
-            tree = ET.parse(f)
-            root = tree.getroot()
-
-            
-            html_report_url = '{}/lint-results-{}.html'.format(root_url, report)
-            xml_report_url = '{}/lint-results-{}.xml'.format(root_url, report)
-            print('TinderboxPrint: report<br/><a href="{}">HTML {} report</a>, visit "Inspect Task" link for details'.format(html_report_url, report))  
-            print('TinderboxPrint: report<br/><a href="{}">XML {} report</a>, visit "Inspect Task" link for details'.format(xml_report_url, report))  
-
-            
-            if root.findall("issue[@severity='Error']"):
-                print('TEST-UNEXPECTED-FAIL | android-lint | Lint found errors in the project; aborting build. See the report at: {}'.format(html_report_url))  
-
-            print('SUITE-START | android-lint | {}'.format(report))
-            for issue in root.findall("issue[@severity='Error']"):
-                
-                
-                
-                for line in ET.tostring(issue).strip().splitlines():
-                    print('TEST-UNEXPECTED-FAIL | {}'.format(line))
-                ret |= 1
-            print('SUITE-END | android-lint | {}'.format(report))
-
-        return ret
-
-    def _parse_checkstyle_output(self, output_path):
-        ret = 0
-        
-        
-        
-        import xml.etree.ElementTree as ET
-
-        output_absolute_path = os.path.join(self.topobjdir, output_path)
-        f = open(output_absolute_path, 'rt')
-        tree = ET.parse(f)
-        root = tree.getroot()
-
-        
-        report_xml = self._root_url(
-            artifactdir='public/android/checkstyle',
-            objdir=output_absolute_path)
-        report_html = self._root_url(
-            artifactdir='public/android/checkstyle',
-            objdir=os.path.splitext(output_absolute_path)[0] + '.html')
-
-        
-        if root.findall('file/error'):
-            ret |= 1
-
-        if ret:
-            
-            print('TinderboxPrint: report<br/><a href="{}">HTML checkstyle report</a>, visit "Inspect Task" link for details'.format(report_xml))  
-            print('TinderboxPrint: report<br/><a href="{}">XML checkstyle report</a>, visit "Inspect Task" link for details'.format(report_html))  
-
-            print('TEST-UNEXPECTED-FAIL | android-checkstyle | Checkstyle rule violations were found. See the report at: {}'.format(report_html))  
-
-        for file in root.findall('file'):
-            name = file.get('name')
-
-            error_count = 0
-            for error in file.findall('error'):
-                
-                
-                
-                print('TEST-UNEXPECTED-FAIL | {}'.format(name))
-                for line in ET.tostring(error).strip().splitlines():
-                    print('TEST-UNEXPECTED-FAIL | {}'.format(line))
-                error_count += 1
-
-        return ret
+REMOVED/DEPRECATED: Use 'mach lint --linter android-lint'.""")
+    def android_lint_REMOVED(self):
+        print(LINT_DEPRECATION_MESSAGE)
+        return 1
 
     @SubCommand('android', 'checkstyle',
                 """Run Android checkstyle.
-                See https://developer.mozilla.org/en-US/docs/Mozilla/Android-specific_test_suites#android-checkstyle""")  
-    @CommandArgument('args', nargs=argparse.REMAINDER)
-    def android_checkstyle(self, args):
-        ret = self.gradle(self.substs['GRADLE_ANDROID_CHECKSTYLE_TASKS'] +
-                          args, verbose=True)
-        print('SUITE-START | android-checkstyle')
-        for filePath in self.substs['GRADLE_ANDROID_CHECKSTYLE_OUTPUT_FILES']:
-            ret |= self._parse_checkstyle_output(filePath)
-        print('SUITE-END | android-checkstyle')
-
-        return ret
+REMOVED/DEPRECATED: Use 'mach lint --linter android-checkstyle'.""")
+    def android_checkstyle_REMOVED(self):
+        print(LINT_DEPRECATION_MESSAGE)
+        return 1
 
     @SubCommand('android', 'findbugs',
                 """Run Android findbugs.
-                See https://developer.mozilla.org/en-US/docs/Mozilla/Android-specific_test_suites#android-findbugs""")  
-    @CommandArgument('args', nargs=argparse.REMAINDER)
-    def android_findbugs(self, dryrun=False, args=[]):
-        ret = self.gradle(self.substs['GRADLE_ANDROID_FINDBUGS_TASKS'] +
-                          args, verbose=True)
-
-        
-        
-        
-        import xml.etree.ElementTree as ET
-
-        root_url = self._root_url(
-            artifactdir='public/android/findbugs',
-            objdir='gradle/build/mobile/android/app/reports/findbugs')
-
-        reports = (self.substs['GRADLE_ANDROID_APP_VARIANT_NAME'],)
-        for report in reports:
-            try:
-                f = open(os.path.join(
-                    self.topobjdir, 'gradle/build/mobile/android/app/reports/findbugs',
-                    'findbugs-{}-output.xml'.format(report)),
-                         'rt')
-            except IOError:
-                continue
-
-            tree = ET.parse(f)
-            root = tree.getroot()
-
-            
-            html_report_url = '{}/findbugs-{}-output.html'.format(root_url, report)
-            xml_report_url = '{}/findbugs-{}-output.xml'.format(root_url, report)
-            print('TinderboxPrint: report<br/><a href="{}">HTML {} report</a>, visit "Inspect Task" link for details'.format(html_report_url, report))  
-            print('TinderboxPrint: report<br/><a href="{}">XML {} report</a>, visit "Inspect Task" link for details'.format(xml_report_url, report))  
-
-            
-            if root.findall("./BugInstance"):
-                print('TEST-UNEXPECTED-FAIL | android-findbugs | Findbugs found issues in the project. See the report at: {}'.format(html_report_url))  
-
-            print('SUITE-START | android-findbugs | {}'.format(report))
-            for error in root.findall('./BugInstance'):
-                
-                
-                
-                print('TEST-UNEXPECTED-FAIL | {}:{} | {}'.format(report,
-                                                                 error.get('type'),
-                                                                 error.find('Class')
-                                                                 .get('classname')))
-                for line in ET.tostring(error).strip().splitlines():
-                    print('TEST-UNEXPECTED-FAIL | {}:{} | {}'.format(report,
-                                                                     error.get('type'),
-                                                                     line))
-                ret |= 1
-            print('SUITE-END | android-findbugs | {}'.format(report))
-
-        return ret
+REMOVED/DEPRECATED: Use 'mach lint --linter android-findbugs'.""")
+    def android_findbugs_REMOVED(self):
+        print(LINT_DEPRECATION_MESSAGE)
+        return 1
 
     @SubCommand('android', 'gradle-dependencies',
                 """Collect Android Gradle dependencies.
@@ -566,7 +332,7 @@ class MachCommands(MachCommandBase):
 
     @Command('gradle-install', category='devenv',
              conditions=[REMOVED])
-    def gradle_install(self):
+    def gradle_install_REMOVED(self):
         pass
 
     @Command('install-android', category='post-build',
