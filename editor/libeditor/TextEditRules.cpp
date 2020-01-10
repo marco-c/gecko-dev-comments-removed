@@ -88,22 +88,21 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(TextEditRules, Release)
 TextEditRules::TextEditRules()
     : mTextEditor(nullptr),
       mData(nullptr),
-      mActionNesting(0),
+#ifdef DEBUG
+      mIsHandling(false),
+#endif  
       mLockRulesSniffing(false),
       mDidExplicitlySetInterline(false),
       mDeleteBidiImmediately(false),
-      mIsHTMLEditRules(false),
-      mTopLevelEditSubAction(EditSubAction::eNone) {
+      mIsHTMLEditRules(false) {
   InitFields();
 }
 
 void TextEditRules::InitFields() {
   mTextEditor = nullptr;
-  mActionNesting = 0;
   mLockRulesSniffing = false;
   mDidExplicitlySetInterline = false;
   mDeleteBidiImmediately = false;
-  mTopLevelEditSubAction = EditSubAction::eNone;
 }
 
 HTMLEditRules* TextEditRules::AsHTMLEditRules() {
@@ -167,19 +166,17 @@ nsresult TextEditRules::DetachEditor() {
 
 nsresult TextEditRules::BeforeEdit(EditSubAction aEditSubAction,
                                    nsIEditor::EDirection aDirection) {
-  MOZ_ASSERT(!mLockRulesSniffing);
+  MOZ_ASSERT(!mIsHandling);
 
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
-  AutoLockRulesSniffing lockIt(this);
   mDidExplicitlySetInterline = false;
-  if (!mActionNesting) {
-    
-    mTopLevelEditSubAction = aEditSubAction;
-  }
-  mActionNesting++;
+
+#ifdef DEBUG
+  mIsHandling = true;
+#endif  
 
   return NS_OK;
 }
@@ -192,42 +189,43 @@ nsresult TextEditRules::AfterEdit(EditSubAction aEditSubAction,
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
+#ifdef DEBUG
+  MOZ_ASSERT(mIsHandling);
+  mIsHandling = false;
+#endif  
+
   AutoLockRulesSniffing lockIt(this);
 
-  MOZ_ASSERT(mActionNesting > 0, "bad action nesting!");
-  if (!--mActionNesting) {
-    AutoSafeEditorData setData(*this, *mTextEditor);
+  AutoSafeEditorData setData(*this, *mTextEditor);
 
-    
-    
-    
-    nsresult rv =
-        TextEditorRef().HandleInlineSpellCheckAfterEdit(aEditSubAction);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    rv = MOZ_KnownLive(TextEditorRef()).EnsurePaddingBRElementForEmptyEditor();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    rv = CreateTrailingBRIfNeeded();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    
-    
-    rv = CollapseSelectionToTrailingBRIfNeeded();
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "Failed to selection to after the text node in TextEditor");
+  
+  
+  
+  nsresult rv = TextEditorRef().HandleInlineSpellCheckAfterEdit(aEditSubAction);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
+
+  rv = MOZ_KnownLive(TextEditorRef()).EnsurePaddingBRElementForEmptyEditor();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  rv = CreateTrailingBRIfNeeded();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  
+  rv = CollapseSelectionToTrailingBRIfNeeded();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "Failed to selection to after the text node in TextEditor");
   return NS_OK;
 }
 

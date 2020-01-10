@@ -365,15 +365,16 @@ class TextEditRules {
 
   inline already_AddRefed<nsINode> GetTextNodeAroundSelectionStartContainer();
 
-  uint32_t mActionNesting;
+#ifdef DEBUG
+  bool mIsHandling;
+#endif  
+
   bool mLockRulesSniffing;
   bool mDidExplicitlySetInterline;
   
   
   bool mDeleteBidiImmediately;
   bool mIsHTMLEditRules;
-  
-  EditSubAction mTopLevelEditSubAction;
 
   
   friend class AutoLockRulesSniffing;

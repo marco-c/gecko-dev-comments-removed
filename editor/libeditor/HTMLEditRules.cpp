@@ -318,6 +318,8 @@ nsresult HTMLEditRules::DetachEditor() {
 
 nsresult HTMLEditRules::BeforeEdit(EditSubAction aEditSubAction,
                                    nsIEditor::EDirection aDirection) {
+  MOZ_ASSERT(!mIsHandling);
+
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -329,77 +331,76 @@ nsresult HTMLEditRules::BeforeEdit(EditSubAction aEditSubAction,
   AutoLockRulesSniffing lockIt(this);
   mDidExplicitlySetInterline = false;
 
-  if (!mActionNesting) {
-    mActionNesting++;
+#ifdef DEBUG
+  mIsHandling = true;
+#endif  
 
+  
+  mDidRangedDelete = false;
+
+  AutoSafeEditorData setData(*this, *mHTMLEditor);
+
+  
+  if (HTMLEditorRef().GetCompositionStartPoint().IsSet()) {
     
-    mDidRangedDelete = false;
-
-    AutoSafeEditorData setData(*this, *mHTMLEditor);
-
     
-    if (HTMLEditorRef().GetCompositionStartPoint().IsSet()) {
-      
-      
-      mRangeItem->StoreRange(HTMLEditorRef().GetCompositionStartPoint(),
-                             HTMLEditorRef().GetCompositionEndPoint());
-    } else {
-      
-      if (!SelectionRefPtr()->RangeCount()) {
-        return NS_ERROR_UNEXPECTED;
-      }
-      mRangeItem->StoreRange(SelectionRefPtr()->GetRangeAt(0));
+    mRangeItem->StoreRange(HTMLEditorRef().GetCompositionStartPoint(),
+                           HTMLEditorRef().GetCompositionEndPoint());
+  } else {
+    
+    if (!SelectionRefPtr()->RangeCount()) {
+      return NS_ERROR_UNEXPECTED;
     }
-    nsCOMPtr<nsINode> selStartNode = mRangeItem->mStartContainer;
-    nsCOMPtr<nsINode> selEndNode = mRangeItem->mEndContainer;
-
-    
-    HTMLEditorRef().RangeUpdaterRef().RegisterRangeItem(mRangeItem);
-
-    
-    mDidDeleteSelection = false;
-
-    
-    if (mDocChangeRange) {
-      
-      mDocChangeRange->Reset();
-    }
-    if (mUtilRange) {
-      
-      mUtilRange->Reset();
-    }
-
-    
-    if (aEditSubAction == EditSubAction::eInsertText ||
-        aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-        aEditSubAction == EditSubAction::eDeleteSelectedContent ||
-        IsStyleCachePreservingSubAction(aEditSubAction)) {
-      nsCOMPtr<nsINode> selNode =
-          aDirection == nsIEditor::eNext ? selEndNode : selStartNode;
-      nsresult rv = CacheInlineStyles(selNode);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
-    
-    Document* doc = HTMLEditorRef().GetDocument();
-    if (NS_WARN_IF(!doc)) {
-      return NS_ERROR_FAILURE;
-    }
-    if (doc->GetEditingState() == Document::EditingState::eContentEditable) {
-      doc->ChangeContentEditableCount(nullptr, +1);
-      mRestoreContentEditableCount = true;
-    }
-
-    
-    nsresult rv = ConfirmSelectionInBody();
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    
-    mTopLevelEditSubAction = aEditSubAction;
+    mRangeItem->StoreRange(SelectionRefPtr()->GetRangeAt(0));
   }
+  nsCOMPtr<nsINode> selStartNode = mRangeItem->mStartContainer;
+  nsCOMPtr<nsINode> selEndNode = mRangeItem->mEndContainer;
+
+  
+  HTMLEditorRef().RangeUpdaterRef().RegisterRangeItem(mRangeItem);
+
+  
+  mDidDeleteSelection = false;
+
+  
+  if (mDocChangeRange) {
+    
+    mDocChangeRange->Reset();
+  }
+  if (mUtilRange) {
+    
+    mUtilRange->Reset();
+  }
+
+  
+  if (aEditSubAction == EditSubAction::eInsertText ||
+      aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
+      aEditSubAction == EditSubAction::eDeleteSelectedContent ||
+      IsStyleCachePreservingSubAction(aEditSubAction)) {
+    nsCOMPtr<nsINode> selNode =
+        aDirection == nsIEditor::eNext ? selEndNode : selStartNode;
+    nsresult rv = CacheInlineStyles(selNode);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  
+  Document* doc = HTMLEditorRef().GetDocument();
+  if (NS_WARN_IF(!doc)) {
+    return NS_ERROR_FAILURE;
+  }
+  if (doc->GetEditingState() == Document::EditingState::eContentEditable) {
+    doc->ChangeContentEditableCount(nullptr, +1);
+    mRestoreContentEditableCount = true;
+  }
+
+  
+  nsresult rv = ConfirmSelectionInBody();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+
   return NS_OK;
 }
 
@@ -415,38 +416,36 @@ nsresult HTMLEditRules::AfterEdit(EditSubAction aEditSubAction,
 
   AutoLockRulesSniffing lockIt(this);
 
-  MOZ_ASSERT(mActionNesting > 0);
-  nsresult rv = NS_OK;
-  mActionNesting--;
-  if (!mActionNesting) {
-    AutoSafeEditorData setData(*this, *mHTMLEditor);
+#ifdef DEBUG
+  MOZ_ASSERT(mIsHandling);
+  mIsHandling = false;
+#endif  
 
-    
-    rv = AfterEditInner(aEditSubAction, aDirection);
-    
-    
-    
+  AutoSafeEditorData setData(*this, *mHTMLEditor);
 
-    
-    HTMLEditorRef().RangeUpdaterRef().DropRangeItem(mRangeItem);
+  
+  nsresult rv = AfterEditInner(aEditSubAction, aDirection);
+  
+  
+  
 
-    
-    if (mRestoreContentEditableCount) {
-      Document* doc = HTMLEditorRef().GetDocument();
-      if (NS_WARN_IF(!doc)) {
-        return NS_ERROR_FAILURE;
-      }
-      if (doc->GetEditingState() == Document::EditingState::eContentEditable) {
-        doc->ChangeContentEditableCount(nullptr, -1);
-      }
-      mRestoreContentEditableCount = false;
+  
+  HTMLEditorRef().RangeUpdaterRef().DropRangeItem(mRangeItem);
+
+  
+  if (mRestoreContentEditableCount) {
+    Document* doc = HTMLEditorRef().GetDocument();
+    if (NS_WARN_IF(!doc)) {
+      return NS_ERROR_FAILURE;
     }
+    if (doc->GetEditingState() == Document::EditingState::eContentEditable) {
+      doc->ChangeContentEditableCount(nullptr, -1);
+    }
+    mRestoreContentEditableCount = false;
   }
 
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AfterEditInner() failed");
+  return rv;
 }
 
 nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
@@ -1313,18 +1312,25 @@ nsresult HTMLEditRules::WillInsert(bool* aCancel) {
     }
   }
 
-  if (mDidDeleteSelection &&
-      (mTopLevelEditSubAction == EditSubAction::eInsertText ||
-       mTopLevelEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-       mTopLevelEditSubAction == EditSubAction::eDeleteSelectedContent)) {
-    nsresult rv = ReapplyCachedStyles();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+  if (mDidDeleteSelection) {
+    switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+      case EditSubAction::eInsertText:
+      case EditSubAction::eInsertTextComingFromIME:
+      case EditSubAction::eDeleteSelectedContent: {
+        nsresult rv = ReapplyCachedStyles();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        break;
+      }
+      default:
+        break;
     }
   }
   
   
-  if (!IsStyleCachePreservingSubAction(mTopLevelEditSubAction)) {
+  if (!IsStyleCachePreservingSubAction(
+          HTMLEditorRef().GetTopLevelEditSubAction())) {
     ClearCachedStyles();
   }
   return NS_OK;
@@ -9230,7 +9236,8 @@ nsresult HTMLEditRules::ReapplyCachedStyles() {
       }
       
       
-      if ((!bAny || IsStyleCachePreservingSubAction(mTopLevelEditSubAction)) &&
+      if ((!bAny || IsStyleCachePreservingSubAction(
+                        HTMLEditorRef().GetTopLevelEditSubAction())) &&
           (!styleAtInsertionPoint[i].mPresent ||
            styleAtInsertionPoint[i].value != mCachedStyles[i].value)) {
         HTMLEditorRef().mTypeInState->SetProp(mCachedStyles[i].tag,
