@@ -313,6 +313,10 @@ bool ADTSTrackDemuxer::Init() {
   
   FastSeek(TimeUnit::Zero());
 
+  if (!mSamplesPerSecond) {
+    return false;
+  }
+
   if (!mInfo) {
     mInfo = MakeUnique<AudioInfo>();
   }
@@ -342,7 +346,7 @@ bool ADTSTrackDemuxer::Init() {
   
   
   mPreRoll = TimeUnit::FromMicroseconds(2112 * 1000000ULL / mSamplesPerSecond);
-  return mSamplesPerSecond && mChannels;
+  return mChannels;
 }
 
 UniquePtr<TrackInfo> ADTSTrackDemuxer::GetInfo() const {
