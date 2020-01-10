@@ -723,13 +723,41 @@ pub enum MixBlendMode {
     Luminosity = 15,
 }
 
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub enum ColorSpace {
     Srgb,
     LinearRgb,
 }
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
+pub enum CompositeOperator {
+    Over,
+    In,
+    Atop,
+    Out,
+    Xor,
+    Lighter,
+    Arithmetic([f32; 4]),
+}
+
+impl CompositeOperator {
+    
+    pub fn as_int(&self) -> u32 {
+        match self {
+            CompositeOperator::Over => 0,
+            CompositeOperator::In => 1,
+            CompositeOperator::Out => 2,
+            CompositeOperator::Atop => 3,
+            CompositeOperator::Xor => 4,
+            CompositeOperator::Lighter => 5,
+            CompositeOperator::Arithmetic(..) => 6,
+        }
+    }
+}
+
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
@@ -844,6 +872,14 @@ pub struct OffsetPrimitive {
     pub offset: LayoutVector2D,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub struct CompositePrimitive {
+    pub input1: FilterPrimitiveInput,
+    pub input2: FilterPrimitiveInput,
+    pub operator: CompositeOperator,
+}
+
 
 /// cbindgen:derive-eq=false
 #[repr(C)]
@@ -860,6 +896,7 @@ pub enum FilterPrimitiveKind {
     DropShadow(DropShadowPrimitive),
     ComponentTransfer(ComponentTransferPrimitive),
     Offset(OffsetPrimitive),
+    Composite(CompositePrimitive),
 }
 
 impl Default for FilterPrimitiveKind {
@@ -881,6 +918,7 @@ impl FilterPrimitiveKind {
             FilterPrimitiveKind::Blend(..) |
             FilterPrimitiveKind::ColorMatrix(..) |
             FilterPrimitiveKind::Offset(..) |
+            FilterPrimitiveKind::Composite(..) |
             
             FilterPrimitiveKind::ComponentTransfer(..) => {}
         }
@@ -1429,5 +1467,6 @@ impl_default_for_enums! {
     YuvData => NV12(ImageKey::default(), ImageKey::default()),
     YuvFormat => NV12,
     FilterPrimitiveInput => Original,
-    ColorSpace => Srgb
+    ColorSpace => Srgb,
+    CompositeOperator => Over
 }
