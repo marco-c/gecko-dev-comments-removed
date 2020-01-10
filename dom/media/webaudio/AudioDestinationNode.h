@@ -77,6 +77,14 @@ class AudioDestinationNode final : public AudioNode,
   virtual ~AudioDestinationNode();
 
  private:
+  
+  
+  
+  
+  bool IsCapturingAudio() const;
+  void StartAudioCapturingStream();
+  void StopAudioCapturingStream();
+
   SelfReference<AudioDestinationNode> mOfflineRenderingRef;
   uint32_t mFramesToProduce;
 
@@ -88,7 +96,6 @@ class AudioDestinationNode final : public AudioNode,
   bool mIsOffline;
   bool mAudioChannelSuspended;
 
-  bool mCaptured;
   AudioChannelService::AudibleState mAudible;
 
   

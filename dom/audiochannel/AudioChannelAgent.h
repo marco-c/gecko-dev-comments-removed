@@ -46,13 +46,14 @@ class AudioChannelAgent : public nsIAudioChannelAgent {
   uint64_t WindowID() const;
   uint64_t InnerWindowID() const;
 
+  bool IsWindowAudioCapturingEnabled() const;
   bool IsPlayingStarted() const;
   bool ShouldBlockMedia() const;
 
  private:
   virtual ~AudioChannelAgent();
 
-  AudioPlaybackConfig GetMediaConfig();
+  AudioPlaybackConfig GetMediaConfig() const;
   bool IsDisposableSuspend(nsSuspendedTypes aSuspend) const;
 
   
