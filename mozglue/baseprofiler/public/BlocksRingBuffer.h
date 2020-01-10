@@ -2004,12 +2004,7 @@ struct BlocksRingBuffer::Serializer<BlocksRingBuffer> {
     aEW.WriteObject(start);
     aEW.WriteObject(end);
     
-    const auto readerEnd =
-        aBuffer.mMaybeUnderlyingBuffer->mBuffer.ReaderAt(end);
-    for (auto reader = aBuffer.mMaybeUnderlyingBuffer->mBuffer.ReaderAt(start);
-         reader != readerEnd; ++reader) {
-      aEW.WriteObject(*reader);
-    }
+    aBuffer.mMaybeUnderlyingBuffer->mBuffer.ReaderAt(start).ReadInto(aEW, len);
     
     aEW.WriteObject(aBuffer.mMaybeUnderlyingBuffer->mPushedBlockCount);
     aEW.WriteObject(aBuffer.mMaybeUnderlyingBuffer->mClearedBlockCount);
@@ -2046,12 +2041,9 @@ struct BlocksRingBuffer::Deserializer<BlocksRingBuffer> {
     aBuffer.mNextWriteIndex = BlocksRingBuffer::BlockIndex(end);
     MOZ_ASSERT(end - start == len);
     
-    const auto writerEnd =
-        aBuffer.mMaybeUnderlyingBuffer->mBuffer.WriterAt(end);
-    for (auto writer = aBuffer.mMaybeUnderlyingBuffer->mBuffer.WriterAt(start);
-         writer != writerEnd; ++writer, ++aER) {
-      *writer = *aER;
-    }
+    auto writer = aBuffer.mMaybeUnderlyingBuffer->mBuffer.WriterAt(start);
+    aER.ReadInto(writer, len);
+    MOZ_ASSERT(writer.CurrentIndex() == end);
     
     aBuffer.mMaybeUnderlyingBuffer->mPushedBlockCount = aER.ReadObject<decltype(
         aBuffer.mMaybeUnderlyingBuffer->mPushedBlockCount)>();
