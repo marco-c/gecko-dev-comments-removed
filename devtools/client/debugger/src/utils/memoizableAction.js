@@ -5,11 +5,14 @@
 
 
 import type { ThunkArgs } from "../actions/types";
+import { asSettled, type AsyncValue } from "./async-value";
 
-export type MemoizedAction<Args, Result> = Args => ThunkArgs => Promise<Result>;
+export type MemoizedAction<
+  Args,
+  Result
+> = Args => ThunkArgs => Promise<Result | null>;
 type MemoizableActionParams<Args, Result> = {
-  hasValue: (args: Args, thunkArgs: ThunkArgs) => boolean,
-  getValue: (args: Args, thunkArgs: ThunkArgs) => Result,
+  getValue: (args: Args, thunkArgs: ThunkArgs) => AsyncValue<Result> | null,
   createKey: (args: Args, thunkArgs: ThunkArgs) => string,
   action: (args: Args, thunkArgs: ThunkArgs) => Promise<mixed>,
 };
@@ -36,39 +39,49 @@ type MemoizableActionParams<Args, Result> = {
 
 
 
-
 export function memoizeableAction<Args, Result>(
   name: string,
-  {
-    hasValue,
-    getValue,
-    createKey,
-    action,
-  }: MemoizableActionParams<Args, Result>
+  { getValue, createKey, action }: MemoizableActionParams<Args, Result>
 ): MemoizedAction<Args, Result> {
   const requests = new Map();
-  return args => async (thunkArgs: ThunkArgs) => {
-    if (hasValue(args, thunkArgs)) {
-      return getValue(args, thunkArgs);
+  return args => async thunkArgs => {
+    let result = asSettled(getValue(args, thunkArgs));
+    if (!result) {
+      const key = createKey(args, thunkArgs);
+      if (!requests.has(key)) {
+        requests.set(
+          key,
+          (async () => {
+            try {
+              await action(args, thunkArgs);
+            } catch (e) {
+              console.warn(`Action ${name} had an exception:`, e);
+            } finally {
+              requests.delete(key);
+            }
+          })()
+        );
+      }
+
+      await requests.get(key);
+
+      result = asSettled(getValue(args, thunkArgs));
+
+      if (!result) {
+        
+        
+        
+        
+        
+        
+        
+        return null;
+      }
     }
 
-    const key = createKey(args, thunkArgs);
-    if (!requests.has(key)) {
-      requests.set(
-        key,
-        (async () => {
-          try {
-            await action(args, thunkArgs);
-          } catch (e) {
-            console.warn(`Action ${name} had an exception:`, e);
-          } finally {
-            requests.delete(key);
-          }
-        })()
-      );
+    if (result.state === "rejected") {
+      throw result.value;
     }
-
-    await requests.get(key);
-    return getValue(args, thunkArgs);
+    return result.value;
   };
 }
