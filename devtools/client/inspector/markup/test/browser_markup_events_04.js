@@ -116,7 +116,7 @@ const TEST_DATA = [
     ],
   },
   {
-    selector: "#arraysort",
+    selector: "#math-pow",
     expected: [
       {
         type: "click",
@@ -125,7 +125,7 @@ const TEST_DATA = [
           "Bubbling",
           "DOM2",
         ],
-        handler: "function sort(, ) {\n" +
+        handler: "function pow(, ) {\n" +
                  "  [native code]\n" +
                  "}",
       },
