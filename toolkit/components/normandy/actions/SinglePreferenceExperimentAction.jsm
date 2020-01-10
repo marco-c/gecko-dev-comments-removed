@@ -61,7 +61,7 @@ class SinglePreferenceExperimentAction extends PreferenceExperimentAction {
       }),
     };
 
-    const multiprefSchema = ActionSchemas["multiple-preference-experiment"];
+    const multiprefSchema = ActionSchemas["multi-preference-experiment"];
 
     let [
       valid,
