@@ -68,8 +68,10 @@ class BrowsingContextBase {
   type m##name;                                                     \
                                                                     \
   /* shadow to validate fields. aSource is setter process or null*/ \
-  void WillSet##name(type const& aValue, ContentParent* aSource) {} \
-  void DidSet##name(ContentParent* aSource) {}
+  bool MaySet##name(type const& aValue, ContentParent* aSource) {   \
+    return true;                                                    \
+  }                                                                 \
+  void DidSet##name() {}
 #include "mozilla/dom/BrowsingContextFieldList.h"
 };
 
@@ -295,17 +297,6 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
 
 
-
-  struct FieldEpochs {
-#define MOZ_BC_FIELD(...)
-#define MOZ_BC_FIELD_RACY(name, ...) uint64_t m##name = 0;
-#include "mozilla/dom/BrowsingContextFieldList.h"
-  };
-
-  
-
-
-
   class Transaction {
    public:
     
@@ -320,25 +311,25 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
     
     
     
-    void Apply(BrowsingContext* aOwner, ContentParent* aSource,
-               const FieldEpochs* aEpochs = nullptr);
+    MOZ_MUST_USE bool Validate(BrowsingContext* aOwner, ContentParent* aSource,
+                               uint64_t aEpoch);
+    MOZ_MUST_USE bool Validate(BrowsingContext* aOwner, ContentParent* aSource);
 
-    bool HasNonRacyField() const {
-#define MOZ_BC_FIELD(name, ...) \
-  if (m##name.isSome()) {       \
-    return true;                \
-  }
-#define MOZ_BC_FIELD_RACY(...)
-#include "mozilla/dom/BrowsingContextFieldList.h"
-
-      return false;
-    }
+    
+    
+    
+    
+    void Apply(BrowsingContext* aOwner);
 
 #define MOZ_BC_FIELD(name, type) mozilla::Maybe<type> m##name;
 #include "mozilla/dom/BrowsingContextFieldList.h"
 
    private:
     friend struct mozilla::ipc::IPDLParamTraits<Transaction>;
+
+    
+    
+    bool mValidated = false;
   };
 
 #define MOZ_BC_FIELD(name, type)                        \
@@ -449,15 +440,16 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   };
 
   
-  void WillSetOpener(const uint64_t& aValue, ContentParent* aSource) {
+  bool MaySetOpener(const uint64_t& aValue, ContentParent* aSource) {
     if (aValue != 0) {
       RefPtr<BrowsingContext> opener = Get(aValue);
-      MOZ_RELEASE_ASSERT(opener && opener->Group() == Group());
+      return opener && opener->Group() == Group();
     }
+    return true;
   }
 
   
-  void DidSetIsActivatedByUserGesture(ContentParent* aSource);
+  void DidSetIsActivatedByUserGesture();
 
   
   const Type mType;
@@ -479,7 +471,17 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   JS::Heap<JSObject*> mWindowProxy;
   LocationProxy mLocation;
 
-  FieldEpochs mFieldEpochs;
+  
+  
+  
+  
+  
+  
+  
+  struct {
+#define MOZ_BC_FIELD(name, ...) uint64_t name;
+#include "mozilla/dom/BrowsingContextFieldList.h"
+  } mEpochs;
 
   
   
@@ -509,7 +511,6 @@ extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                       JS::MutableHandle<JSObject*> aRetVal);
 
 typedef BrowsingContext::Transaction BrowsingContextTransaction;
-typedef BrowsingContext::FieldEpochs BrowsingContextFieldEpochs;
 typedef BrowsingContext::IPCInitializer BrowsingContextInitializer;
 typedef BrowsingContext::Children BrowsingContextChildren;
 
@@ -533,16 +534,6 @@ struct IPDLParamTraits<dom::BrowsingContext::Transaction> {
   static bool Read(const IPC::Message* aMessage, PickleIterator* aIterator,
                    IProtocol* aActor,
                    dom::BrowsingContext::Transaction* aTransaction);
-};
-
-template <>
-struct IPDLParamTraits<dom::BrowsingContext::FieldEpochs> {
-  static void Write(IPC::Message* aMessage, IProtocol* aActor,
-                    const dom::BrowsingContext::FieldEpochs& aEpochs);
-
-  static bool Read(const IPC::Message* aMessage, PickleIterator* aIterator,
-                   IProtocol* aActor,
-                   dom::BrowsingContext::FieldEpochs* aEpochs);
 };
 
 template <>

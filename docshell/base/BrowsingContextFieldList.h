@@ -10,12 +10,8 @@
 
 
 
-#ifndef MOZ_BC_FIELD_RACY
-#  define MOZ_BC_FIELD_RACY MOZ_BC_FIELD
-#endif
-
-MOZ_BC_FIELD_RACY(Name, nsString)
-MOZ_BC_FIELD_RACY(Closed, bool)
+MOZ_BC_FIELD(Name, nsString)
+MOZ_BC_FIELD(Closed, bool)
 MOZ_BC_FIELD(CrossOriginPolicy, nsILoadInfo::CrossOriginPolicy)
 MOZ_BC_FIELD(InheritedCrossOriginPolicy, nsILoadInfo::CrossOriginPolicy)
 MOZ_BC_FIELD(OpenerPolicy, nsILoadInfo::CrossOriginOpenerPolicy)
@@ -26,7 +22,6 @@ MOZ_BC_FIELD(OpenerId, uint64_t)
 
 
 
-MOZ_BC_FIELD_RACY(IsActivatedByUserGesture, bool)
+MOZ_BC_FIELD(IsActivatedByUserGesture, bool)
 
 #undef MOZ_BC_FIELD
-#undef MOZ_BC_FIELD_RACY
