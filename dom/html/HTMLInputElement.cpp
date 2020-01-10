@@ -3411,12 +3411,16 @@ nsresult HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor) {
 }
 
 void HTMLInputElement::StartRangeThumbDrag(WidgetGUIEvent* aEvent) {
+  nsRangeFrame* rangeFrame = do_QueryFrame(GetPrimaryFrame());
+  if (!rangeFrame) {
+    return;
+  }
+
   mIsDraggingRange = true;
   mRangeThumbDragStartValue = GetValueAsDecimal();
   
   
   PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
-  nsRangeFrame* rangeFrame = do_QueryFrame(GetPrimaryFrame());
 
   
   
