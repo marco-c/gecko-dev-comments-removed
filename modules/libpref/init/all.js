@@ -1087,8 +1087,6 @@ pref("dom.send_after_paint_to_content", false);
 
 pref("dom.timeout.background_throttling_max_budget", 50);
 
-pref("dom.timeout.foreground_budget_regeneration_rate", 1);
-
 
 pref("dom.timeout.foreground_throttling_max_budget", -1);
 
