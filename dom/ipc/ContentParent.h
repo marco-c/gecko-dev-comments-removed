@@ -582,15 +582,6 @@ class ContentParent final : public PContentParent,
   bool DeallocPSessionStorageObserverParent(
       PSessionStorageObserverParent* aActor);
 
-  PSHEntryParent* AllocPSHEntryParent(
-      PSHistoryParent* aSHistory, const PSHEntryOrSharedID& aEntryOrSharedID);
-
-  void DeallocPSHEntryParent(PSHEntryParent*);
-
-  PSHistoryParent* AllocPSHistoryParent(BrowsingContext* aContext);
-
-  void DeallocPSHistoryParent(PSHistoryParent* aActor);
-
   bool DeallocPURLClassifierLocalParent(PURLClassifierLocalParent* aActor);
 
   bool DeallocPURLClassifierParent(PURLClassifierParent* aActor);
@@ -963,7 +954,7 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvGetShowPasswordSetting(bool* showPassword);
 
-  mozilla::ipc::IPCResult RecvStartVisitedQuery(const URIParams& uri);
+  mozilla::ipc::IPCResult RecvStartVisitedQueries(const nsTArray<URIParams>&);
 
   mozilla::ipc::IPCResult RecvSetURITitle(const URIParams& uri,
                                           const nsString& title);
