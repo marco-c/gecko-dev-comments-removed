@@ -17,6 +17,7 @@
 #include "builtin/Array.h"                   
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
+#include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
@@ -61,6 +62,16 @@ using JS::Rooted;
 using JS::Value;
 
 
+
+JS::ReadableStreamMode ReadableStream::mode() const {
+  ReadableStreamController* controller = this->controller();
+  if (controller->is<ReadableStreamDefaultController>()) {
+    return JS::ReadableStreamMode::Default;
+  }
+  return controller->as<ReadableByteStreamController>().hasExternalSource()
+             ? JS::ReadableStreamMode::ExternalSource
+             : JS::ReadableStreamMode::Byte;
+}
 
 ReadableStream* ReadableStream::createExternalSourceStream(
     JSContext* cx, JS::ReadableStreamUnderlyingSource* source,
