@@ -607,6 +607,7 @@ class UrlbarMuxer {
   get name() {
     return "UrlbarMuxerBase";
   }
+
   
 
 
@@ -630,6 +631,7 @@ class UrlbarProvider {
   get name() {
     return "UrlbarProviderBase";
   }
+
   
 
 
@@ -637,6 +639,7 @@ class UrlbarProvider {
   get type() {
     throw new Error("Trying to access the base class, must be overridden");
   }
+
   
 
 
@@ -648,6 +651,7 @@ class UrlbarProvider {
   isActive(queryContext) {
     throw new Error("Trying to access the base class, must be overridden");
   }
+
   
 
 
@@ -659,6 +663,7 @@ class UrlbarProvider {
   isRestricting(queryContext) {
     throw new Error("Trying to access the base class, must be overridden");
   }
+
   
 
 
@@ -671,6 +676,7 @@ class UrlbarProvider {
   startQuery(queryContext, addCallback) {
     throw new Error("Trying to access the base class, must be overridden");
   }
+
   
 
 
@@ -678,6 +684,19 @@ class UrlbarProvider {
 
 
   cancelQuery(queryContext) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  
+
+
+
+
+
+
+
+
+  pickResult(result, details) {
     throw new Error("Trying to access the base class, must be overridden");
   }
 }
