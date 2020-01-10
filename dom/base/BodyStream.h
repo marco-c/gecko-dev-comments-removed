@@ -47,6 +47,16 @@ class BodyStream final : public nsIInputStreamCallback,
   NS_DECL_NSIINPUTSTREAMCALLBACK
   NS_DECL_NSIOBSERVER
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static void Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
                      nsIGlobalObject* aGlobal, nsIInputStream* aInputStream,
                      JS::MutableHandle<JSObject*> aStream, ErrorResult& aRv);

@@ -1329,6 +1329,11 @@ void FetchBody<Derived>::GetBody(JSContext* aCx,
   MOZ_ASSERT(body);
 
   
+  
+  auto raii =
+      mozilla::MakeScopeExit([&] { JS::ReadableStreamReleaseCCObject(body); });
+
+  
   bool bodyUsed = GetBodyUsed(aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
@@ -1351,6 +1356,8 @@ void FetchBody<Derived>::GetBody(JSContext* aCx,
       Follow(signalImpl);
     }
   }
+
+  raii.release();
 
   mReadableStreamBody = body;
   aBodyOut.set(mReadableStreamBody);
