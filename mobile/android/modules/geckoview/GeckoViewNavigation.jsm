@@ -413,6 +413,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     aFlags,
     aTriggeringPrincipal,
     aCsp,
+    aReferrerInfo,
     aNextRemoteTabId
   ) {
     debug`handleOpenUri: uri=${aUri && aUri.spec}
@@ -452,9 +453,11 @@ class GeckoViewNavigation extends GeckoViewModule {
       return null;
     }
 
+    
     browser.loadURI(aUri.spec, {
       triggeringPrincipal: aTriggeringPrincipal,
       csp: aCsp,
+      referrerInfo: aReferrerInfo,
     });
     return browser;
   }
@@ -468,6 +471,7 @@ class GeckoViewNavigation extends GeckoViewModule {
       aFlags,
       aTriggeringPrincipal,
       aCsp,
+      null,
       null
     );
     return browser && browser.contentWindow;
@@ -482,6 +486,7 @@ class GeckoViewNavigation extends GeckoViewModule {
       aFlags,
       aParams.triggeringPrincipal,
       aParams.csp,
+      aParams.referrerInfo,
       aNextRemoteTabId
     );
     return browser;
