@@ -4311,7 +4311,9 @@ static void NotifyEditableStateChange(nsINode* aNode, Document* aDocument) {
 void Document::TearingDownEditor() {
   if (IsEditingOn()) {
     mEditingState = EditingState::eTearingDown;
-    RemoveContentEditableStyleSheets();
+    if (IsHTMLOrXHTML()) {
+      RemoveContentEditableStyleSheets();
+    }
   }
 }
 
@@ -4462,7 +4464,9 @@ nsresult Document::EditingStateChanged() {
     
     
     
-    AddContentEditableStyleSheetsToStyleSet(designMode);
+    if (IsHTMLOrXHTML()) {
+      AddContentEditableStyleSheetsToStyleSet(designMode);
+    }
 
     
     
@@ -4510,7 +4514,13 @@ nsresult Document::EditingStateChanged() {
     
     htmlEditor = docshell->GetHTMLEditor();
     if (!htmlEditor) {
-      return NS_ERROR_FAILURE;
+      
+      
+      
+      
+      
+      
+      return NS_OK;
     }
 
     
