@@ -428,7 +428,8 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
   
   nsAutoJSString scriptSample;
   nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
-  if (reportViolation || subjectPrincipal->IsSystemPrincipal()) {
+  if (reportViolation || subjectPrincipal->IsSystemPrincipal() ||
+      XRE_IsE10sParentProcess()) {
     JS::Rooted<JSString*> jsString(cx, JS::ToString(cx, aValue));
     if (NS_WARN_IF(!jsString)) {
       JS_ClearPendingException(cx);
@@ -442,8 +443,8 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
   }
 
 #if !defined(ANDROID) && (defined(NIGHTLY_BUILD) || defined(DEBUG))
-  nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
-      cx, subjectPrincipal, scriptSample);
+  nsContentSecurityManager::AssertEvalNotRestricted(cx, subjectPrincipal,
+                                                    scriptSample);
 #endif
 
   if (NS_FAILED(rv)) {

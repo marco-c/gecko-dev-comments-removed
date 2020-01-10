@@ -503,6 +503,7 @@ pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
 
 
 pref("security.allow_eval_with_system_principal", false);
+pref("security.allow_eval_in_parent_process", false);
 pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
 #else
 
