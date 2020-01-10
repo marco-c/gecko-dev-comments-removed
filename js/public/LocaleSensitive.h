@@ -15,14 +15,11 @@
 
 #include "js/RootingAPI.h"  
 #include "js/Utility.h"     
+#include "js/Value.h"       
 
 struct JSContext;
 struct JSRuntime;
 class JSString;
-
-namespace JS {
-union Value;
-}
 
 
 

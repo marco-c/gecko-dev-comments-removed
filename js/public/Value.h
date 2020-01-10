@@ -27,7 +27,7 @@
 #include "js/Utility.h"
 
 namespace JS {
-union Value;
+class Value;
 }
 
 
@@ -340,7 +340,7 @@ static inline double CanonicalizeNaN(double d) {
 
 
 
-union alignas(8) Value {
+class alignas(8) Value {
  private:
   uint64_t asBits_;
 
