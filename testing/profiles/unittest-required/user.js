@@ -113,7 +113,7 @@ user_pref("extensions.defaultProviders.enabled", true);
 user_pref("extensions.getAddons.cache.enabled", false);
 
 user_pref("extensions.getAddons.get.url", "http://{server}/extensions-dummy/repositoryGetURL");
-user_pref("extensions.getAddons.getWithPerformance.url", "http://{server}/extensions-dummy/repositoryGetWithPerformanceURL");
+user_pref("extensions.getAddons.compatOverides.url", "http://{server}/extensions-dummy/repositoryCompatOverridesURL");
 user_pref("extensions.getAddons.search.browseURL", "http://{server}/extensions-dummy/repositoryBrowseURL");
 user_pref("extensions.hotfix.url", "http://{server}/extensions-dummy/hotfixURL");
 
