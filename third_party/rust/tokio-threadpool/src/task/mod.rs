@@ -1,24 +1,22 @@
 mod blocking;
 mod blocking_state;
-mod queue;
 mod state;
 
 pub(crate) use self::blocking::{Blocking, CanBlock};
-pub(crate) use self::queue::Queue;
 use self::blocking_state::BlockingState;
 use self::state::State;
 
 use notifier::Notifier;
 use pool::Pool;
 
-use futures::{self, Future, Async};
 use futures::executor::{self, Spawn};
+use futures::{self, Async, Future};
 
-use std::{fmt, panic, ptr};
-use std::cell::{UnsafeCell};
+use std::cell::{Cell, UnsafeCell};
+use std::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
+use std::sync::atomic::{AtomicPtr, AtomicUsize};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, AtomicPtr};
-use std::sync::atomic::Ordering::{AcqRel, Release, Relaxed};
+use std::{fmt, panic, ptr};
 
 
 
@@ -33,6 +31,21 @@ pub(crate) struct Task {
 
     
     next_blocking: AtomicPtr<Task>,
+
+    
+    
+    
+    
+    
+    
+    
+    pub reg_worker: Cell<Option<u32>>,
+
+    
+    
+    
+    
+    pub reg_index: Cell<usize>,
 
     
     
@@ -61,6 +74,8 @@ impl Task {
             state: AtomicUsize::new(State::new().into()),
             blocking: AtomicUsize::new(BlockingState::new().into()),
             next_blocking: AtomicPtr::new(ptr::null_mut()),
+            reg_worker: Cell::new(None),
+            reg_index: Cell::new(0),
             future: UnsafeCell::new(Some(task_fut)),
         }
     }
@@ -75,6 +90,8 @@ impl Task {
             state: AtomicUsize::new(State::stub().into()),
             blocking: AtomicUsize::new(BlockingState::new().into()),
             next_blocking: AtomicPtr::new(ptr::null_mut()),
+            reg_worker: Cell::new(None),
+            reg_index: Cell::new(0),
             future: UnsafeCell::new(Some(task_fut)),
         }
     }
@@ -86,15 +103,20 @@ impl Task {
 
         
         
-        let actual: State = self.state.compare_and_swap(
-            Scheduled.into(), Running.into(), AcqRel).into();
+        let actual: State = self
+            .state
+            .compare_and_swap(Scheduled.into(), Running.into(), AcqRel)
+            .into();
 
         match actual {
-            Scheduled => {},
+            Scheduled => {}
             _ => panic!("unexpected task state; {:?}", actual),
         }
 
-        trace!("Task::run; state={:?}", State::from(self.state.load(Relaxed)));
+        trace!(
+            "Task::run; state={:?}",
+            State::from(self.state.load(Relaxed))
+        );
 
         
         
@@ -119,8 +141,10 @@ impl Task {
 
             let mut g = Guard(fut, true);
 
-            let ret = g.0.as_mut().unwrap()
-                .poll_future_notify(unpark, self as *const _ as usize);
+            let ret =
+                g.0.as_mut()
+                    .unwrap()
+                    .poll_future_notify(unpark, self as *const _ as usize);
 
             g.1 = false;
 
@@ -141,6 +165,12 @@ impl Task {
                 
                 self.state.store(State::Complete.into(), Release);
 
+                if let Err(panic_err) = res {
+                    if let Some(ref f) = unpark.pool.config.panic_handler {
+                        f(panic_err);
+                    }
+                }
+
                 Run::Complete
             }
             Ok(Ok(Async::NotReady)) => {
@@ -151,8 +181,10 @@ impl Task {
                 
                 
                 
-                let prev: State = self.state.compare_and_swap(
-                    Running.into(), Idle.into(), AcqRel).into();
+                let prev: State = self
+                    .state
+                    .compare_and_swap(Running.into(), Idle.into(), AcqRel)
+                    .into();
 
                 match prev {
                     Running => Run::Idle,
@@ -163,6 +195,41 @@ impl Task {
                     _ => unreachable!(),
                 }
             }
+        }
+    }
+
+    
+    
+    
+    
+    pub fn abort(&self) {
+        use self::State::*;
+
+        let mut state = self.state.load(Acquire).into();
+
+        loop {
+            match state {
+                Idle | Scheduled => {}
+                Running | Notified | Complete | Aborted => {
+                    
+                    
+                    panic!("unexpected state while aborting task: {:?}", state);
+                }
+            }
+
+            let actual = self
+                .state
+                .compare_and_swap(state.into(), Aborted.into(), AcqRel)
+                .into();
+
+            if actual == state {
+                
+                
+                self.drop_future();
+                break;
+            }
+
+            state = actual;
         }
     }
 
@@ -187,10 +254,10 @@ impl Task {
 
         loop {
             
-            let actual = self.state.compare_and_swap(
-                Idle.into(),
-                Scheduled.into(),
-                AcqRel).into();
+            let actual = self
+                .state
+                .compare_and_swap(Idle.into(), Scheduled.into(), AcqRel)
+                .into();
 
             match actual {
                 Idle => return true,
@@ -198,15 +265,17 @@ impl Task {
                     
                     
                     
-                    let actual = self.state.compare_and_swap(
-                        Running.into(), Notified.into(), AcqRel).into();
+                    let actual = self
+                        .state
+                        .compare_and_swap(Running.into(), Notified.into(), AcqRel)
+                        .into();
 
                     match actual {
                         Idle => continue,
                         _ => return false,
                     }
                 }
-                Complete | Notified | Scheduled => return false,
+                Complete | Aborted | Notified | Scheduled => return false,
             }
         }
     }

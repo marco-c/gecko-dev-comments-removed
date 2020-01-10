@@ -57,7 +57,7 @@ impl ThreadPool {
     #[deprecated(note = "Use `ThreadPoolBuilder::build`")]
     #[allow(deprecated)]
     
-    pub fn new(configuration: Configuration) -> Result<ThreadPool, Box<Error>> {
+    pub fn new(configuration: Configuration) -> Result<ThreadPool, Box<dyn Error>> {
         Self::build(configuration.into_builder()).map_err(Box::from)
     }
 

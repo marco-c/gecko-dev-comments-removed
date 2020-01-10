@@ -1,5 +1,5 @@
-use std::io::prelude::*;
 use std::io;
+use std::io::prelude::*;
 
 #[cfg(feature = "tokio")]
 use futures::Poll;
@@ -36,7 +36,6 @@ use {Compress, Decompress};
 pub struct ZlibEncoder<W: Write> {
     inner: zio::Writer<W, Compress>,
 }
-
 
 impl<W: Write> ZlibEncoder<W> {
     
@@ -79,7 +78,7 @@ impl<W: Write> ZlibEncoder<W> {
     
     
     pub fn reset(&mut self, w: W) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.data.reset();
         Ok(self.inner.replace(w))
     }
@@ -119,7 +118,7 @@ impl<W: Write> ZlibEncoder<W> {
     
     
     pub fn finish(mut self) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         Ok(self.inner.take_inner())
     }
 
@@ -136,7 +135,7 @@ impl<W: Write> ZlibEncoder<W> {
     
     
     pub fn flush_finish(mut self) -> io::Result<W> {
-        try!(self.inner.flush());
+        self.inner.flush()?;
         Ok(self.inner.take_inner())
     }
 
@@ -170,7 +169,7 @@ impl<W: Write> Write for ZlibEncoder<W> {
 #[cfg(feature = "tokio")]
 impl<W: AsyncWrite> AsyncWrite for ZlibEncoder<W> {
     fn shutdown(&mut self) -> Poll<(), io::Error> {
-        try_nb!(self.try_finish());
+        self.try_finish()?;
         self.get_mut().shutdown()
     }
 }
@@ -219,12 +218,10 @@ impl<W: AsyncRead + AsyncWrite> AsyncRead for ZlibEncoder<W> {}
 
 
 
-
 #[derive(Debug)]
 pub struct ZlibDecoder<W: Write> {
     inner: zio::Writer<W, Decompress>,
 }
-
 
 impl<W: Write> ZlibDecoder<W> {
     
@@ -263,7 +260,7 @@ impl<W: Write> ZlibDecoder<W> {
     
     
     pub fn reset(&mut self, w: W) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.data = Decompress::new(true);
         Ok(self.inner.replace(w))
     }
@@ -303,7 +300,7 @@ impl<W: Write> ZlibDecoder<W> {
     
     
     pub fn finish(mut self) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         Ok(self.inner.take_inner())
     }
 
@@ -336,7 +333,7 @@ impl<W: Write> Write for ZlibDecoder<W> {
 #[cfg(feature = "tokio")]
 impl<W: AsyncWrite> AsyncWrite for ZlibDecoder<W> {
     fn shutdown(&mut self) -> Poll<(), io::Error> {
-        try_nb!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.get_mut().shutdown()
     }
 }

@@ -12,6 +12,7 @@ use remove_dir_all::remove_dir_all;
 use std::path::{self, Path, PathBuf};
 use std::{fmt, fs, io};
 
+use error::IoResultExt;
 use Builder;
 
 
@@ -192,7 +193,6 @@ pub fn tempdir_in<P: AsRef<Path>>(dir: P) -> io::Result<TempDir> {
 
 
 
-
 pub struct TempDir {
     path: Option<PathBuf>,
 }
@@ -236,7 +236,6 @@ impl TempDir {
         Builder::new().tempdir()
     }
 
-    
     
     
     
@@ -369,9 +368,8 @@ impl TempDir {
     
     
     
-    
     pub fn close(mut self) -> io::Result<()> {
-        let result = remove_dir_all(self.path());
+        let result = remove_dir_all(self.path()).with_err_path(|| self.path());
 
         
         self.path = None;
@@ -403,7 +401,8 @@ impl Drop for TempDir {
     }
 }
 
-
-pub fn create(path: PathBuf) -> io::Result<TempDir> {
-    fs::create_dir(&path).map(|_| TempDir { path: Some(path) })
+pub(crate) fn create(path: PathBuf) -> io::Result<TempDir> {
+    fs::create_dir(&path)
+        .with_err_path(|| &path)
+        .map(|_| TempDir { path: Some(path) })
 }

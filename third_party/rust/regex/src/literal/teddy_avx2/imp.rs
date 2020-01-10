@@ -9,7 +9,7 @@
 
 use std::cmp;
 
-use aho_corasick::{Automaton, AcAutomaton, FullAcAutomaton};
+use aho_corasick::{self, AhoCorasick, AhoCorasickBuilder};
 use syntax::hir::literal::Literals;
 
 use vector::avx2::{AVX2VectorBuilder, u8x32};
@@ -38,7 +38,7 @@ pub struct Teddy {
     pats: Vec<Vec<u8>>,
     
     
-    ac: FullAcAutomaton<Vec<u8>>,
+    ac: AhoCorasick,
     
     
     
@@ -88,10 +88,15 @@ impl Teddy {
             buckets[bucket].push(pati);
             masks.add(bucket as u8, pat);
         }
+        let ac = AhoCorasickBuilder::new()
+            .match_kind(aho_corasick::MatchKind::LeftmostFirst)
+            .dfa(true)
+            .prefilter(false)
+            .build(&pats);
         Some(Teddy {
             vb: vb,
             pats: pats.to_vec(),
-            ac: AcAutomaton::new(pats.to_vec()).into_full(),
+            ac: ac,
             buckets: buckets,
             masks: masks,
         })
@@ -281,6 +286,7 @@ impl Teddy {
         res: u8x32,
         mut bitfield: u32,
     ) -> Option<Match> {
+        let patterns = res.bytes();
         while bitfield != 0 {
             
             
@@ -292,7 +298,7 @@ impl Teddy {
 
             
             
-            let mut patterns = res.extract(byte_pos);
+            let mut patterns = patterns[byte_pos];
             while patterns != 0 {
                 let bucket = patterns.trailing_zeros() as usize;
                 patterns &= !(1 << bucket);
@@ -341,11 +347,11 @@ impl Teddy {
     
     #[inline(never)]
     fn slow(&self, haystack: &[u8], pos: usize) -> Option<Match> {
-        self.ac.find(&haystack[pos..]).next().map(|m| {
+        self.ac.find(&haystack[pos..]).map(|m| {
             Match {
-                pat: m.pati,
-                start: pos + m.start,
-                end: pos + m.end,
+                pat: m.pattern(),
+                start: pos + m.start(),
+                end: pos + m.end(),
             }
         })
     }
@@ -457,12 +463,20 @@ impl Mask {
         let byte_lo = (byte & 0xF) as usize;
         let byte_hi = (byte >> 4) as usize;
 
-        let lo = self.lo.extract(byte_lo) | ((1 << bucket) as u8);
-        self.lo.replace(byte_lo, lo);
-        self.lo.replace(byte_lo + 16, lo);
+        {
+            let mut lo_bytes = self.lo.bytes();
+            let lo = lo_bytes[byte_lo] | ((1 << bucket) as u8);
+            lo_bytes[byte_lo] = lo;
+            lo_bytes[byte_lo + 16] = lo;
+            self.lo.replace_bytes(lo_bytes);
+        }
 
-        let hi = self.hi.extract(byte_hi) | ((1 << bucket) as u8);
-        self.hi.replace(byte_hi, hi);
-        self.hi.replace(byte_hi + 16, hi);
+        {
+            let mut hi_bytes = self.hi.bytes();
+            let hi = hi_bytes[byte_hi] | ((1 << bucket) as u8);
+            hi_bytes[byte_hi] = hi;
+            hi_bytes[byte_hi + 16] = hi;
+            self.hi.replace_bytes(hi_bytes);
+        }
     }
 }

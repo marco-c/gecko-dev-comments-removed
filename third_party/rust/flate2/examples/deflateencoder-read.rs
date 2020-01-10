@@ -1,9 +1,9 @@
 extern crate flate2;
 
-use std::io::prelude::*;
-use std::io;
-use flate2::Compression;
 use flate2::read::DeflateEncoder;
+use flate2::Compression;
+use std::io;
+use std::io::prelude::*;
 
 
 fn main() {
@@ -12,7 +12,7 @@ fn main() {
 
 
 fn deflateencoder_read_hello_world() -> io::Result<Vec<u8>> {
-    let mut ret_vec = [0;100];
+    let mut ret_vec = [0; 100];
     let c = b"hello world";
     let mut deflater = DeflateEncoder::new(&c[..], Compression::fast());
     let count = deflater.read(&mut ret_vec)?;

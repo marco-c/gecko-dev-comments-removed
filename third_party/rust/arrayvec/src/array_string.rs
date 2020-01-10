@@ -26,6 +26,7 @@ use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 #[derive(Copy)]
 pub struct ArrayString<A: Array<Item=u8>> {
+    
     xs: A,
     len: A::Index,
 }
@@ -53,7 +54,8 @@ impl<A: Array<Item=u8>> ArrayString<A> {
     pub fn new() -> ArrayString<A> {
         unsafe {
             ArrayString {
-                xs: ::new_array(),
+                
+                xs: mem::zeroed(),
                 len: Index::from(0),
             }
         }

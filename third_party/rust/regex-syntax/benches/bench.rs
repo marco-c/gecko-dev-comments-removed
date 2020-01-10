@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 #![feature(test)]
 
 extern crate regex_syntax;
@@ -59,7 +49,8 @@ fn parse_medium2(b: &mut Bencher) {
 #[bench]
 fn parse_medium3(b: &mut Bencher) {
     b.iter(|| {
-        let re = r"\p{age:3.2}\p{hira}\p{scx:hira}\p{alphabetic}\p{sc:Greek}\pL";
+        let re =
+            r"\p{age:3.2}\p{hira}\p{scx:hira}\p{alphabetic}\p{sc:Greek}\pL";
         Parser::new().parse(re).unwrap()
     });
 }

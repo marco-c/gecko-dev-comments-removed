@@ -1108,6 +1108,7 @@ impl<'r, 't> Iterator for Matches<'r, 't> {
 
 
 
+
 pub trait Replacer {
     
     
@@ -1183,9 +1184,9 @@ impl<'a> Replacer for &'a str {
     }
 }
 
-impl<F> Replacer for F where F: FnMut(&Captures) -> String {
+impl<F, T> Replacer for F where F: FnMut(&Captures) -> T, T: AsRef<str> {
     fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
-        dst.push_str(&(*self)(caps));
+        dst.push_str((*self)(caps).as_ref());
     }
 }
 

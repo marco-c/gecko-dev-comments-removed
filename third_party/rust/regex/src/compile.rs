@@ -263,11 +263,11 @@ impl Compiler {
         match *expr.kind() {
             Empty => Ok(Patch { hole: Hole::None, entry: self.insts.len() }),
             Literal(hir::Literal::Unicode(c)) => {
-                self.c_literal(&[c])
+                self.c_char(c)
             }
             Literal(hir::Literal::Byte(b)) => {
                 assert!(self.compiled.uses_bytes());
-                self.c_bytes(&[b])
+                self.c_byte(b)
             }
             Class(hir::Class::Unicode(ref cls)) => {
                 self.c_class(cls.ranges())
@@ -395,24 +395,6 @@ impl Compiler {
         })
     }
 
-    fn c_literal(&mut self, chars: &[char]) -> Result {
-        debug_assert!(!chars.is_empty());
-        let mut chars: Box<Iterator<Item=&char>> =
-            if self.compiled.is_reverse {
-                Box::new(chars.iter().rev())
-            } else {
-                Box::new(chars.iter())
-            };
-        let first = *chars.next().expect("non-empty literal");
-        let Patch { mut hole, entry } = self.c_char(first)?;
-        for &c in chars {
-            let p = self.c_char(c)?;
-            self.fill(hole, p.entry);
-            hole = p.hole;
-        }
-        Ok(Patch { hole: hole, entry: entry })
-    }
-
     fn c_char(&mut self, c: char) -> Result {
         self.c_class(&[hir::ClassUnicodeRange::new(c, c)])
     }
@@ -434,24 +416,6 @@ impl Compiler {
             };
             Ok(Patch { hole: hole, entry: self.insts.len() - 1 })
         }
-    }
-
-    fn c_bytes(&mut self, bytes: &[u8]) -> Result {
-        debug_assert!(!bytes.is_empty());
-        let mut bytes: Box<Iterator<Item=&u8>> =
-            if self.compiled.is_reverse {
-                Box::new(bytes.iter().rev())
-            } else {
-                Box::new(bytes.iter())
-            };
-        let first = *bytes.next().expect("non-empty literal");
-        let Patch { mut hole, entry } = self.c_byte(first)?;
-        for &b in bytes {
-            let p = self.c_byte(b)?;
-            self.fill(hole, p.entry);
-            hole = p.hole;
-        }
-        Ok(Patch { hole: hole, entry: entry })
     }
 
     fn c_byte(&mut self, b: u8) -> Result {
@@ -980,20 +944,19 @@ impl<'a, 'b> CompileClass<'a, 'b> {
 
 
 
+
+
+
+
 struct SuffixCache {
-    table: Vec<SuffixCacheEntry>,
-    
-    
-    
-    
-    version: usize,
+    sparse: Box<[usize]>,
+    dense: Vec<SuffixCacheEntry>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 struct SuffixCacheEntry {
     key: SuffixCacheKey,
     pc: InstPtr,
-    version: usize,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
@@ -1006,28 +969,29 @@ struct SuffixCacheKey {
 impl SuffixCache {
     fn new(size: usize) -> Self {
         SuffixCache {
-            table: vec![SuffixCacheEntry::default(); size],
-            version: 0,
+            sparse: vec![0usize; size].into(),
+            dense: Vec::with_capacity(size),
         }
     }
 
     fn get(&mut self, key: SuffixCacheKey, pc: InstPtr) -> Option<InstPtr> {
-        let h = self.hash(&key);
-        let e = self.table[h];
-        if e.key == key && e.version == self.version {
-            Some(e.pc)
-        } else {
-            self.table[h] = SuffixCacheEntry {
-                key: key,
-                pc: pc,
-                version: self.version,
-            };
-            None
+        let hash = self.hash(&key);
+        let pos = &mut self.sparse[hash];
+        if let Some(entry) = self.dense.get(*pos) {
+            if entry.key == key {
+                return Some(entry.pc);
+            }
         }
+        *pos = self.dense.len();
+        self.dense.push(SuffixCacheEntry {
+            key: key,
+            pc: pc,
+        });
+        None
     }
 
     fn clear(&mut self) {
-        self.version += 1;
+        self.dense.clear();
     }
 
     fn hash(&self, suffix: &SuffixCacheKey) -> usize {
@@ -1038,7 +1002,7 @@ impl SuffixCache {
         h = (h ^ (suffix.from_inst as u64)).wrapping_mul(FNV_PRIME);
         h = (h ^ (suffix.start as u64)).wrapping_mul(FNV_PRIME);
         h = (h ^ (suffix.end as u64)).wrapping_mul(FNV_PRIME);
-        (h as usize) % self.table.len()
+        (h as usize) % self.sparse.len()
     }
 }
 

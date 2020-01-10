@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(windows)]
+extern crate winapi;
+
+#[cfg(windows)]
+pub use win::*;
+
+
+#[cfg(windows)]
+pub mod console;
+
+#[cfg(windows)]
+pub mod file;
+#[cfg(windows)]
+mod win;

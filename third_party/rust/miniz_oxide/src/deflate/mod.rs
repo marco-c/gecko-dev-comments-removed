@@ -1,6 +1,8 @@
 
 
+mod buffer;
 pub mod core;
+pub mod stream;
 use self::core::*;
 
 
@@ -102,7 +104,6 @@ pub enum CompressionLevel {
 
 
 
-
 pub fn compress_to_vec(input: &[u8], level: u8) -> Vec<u8> {
     compress_to_vec_inner(input, level, 0, 0)
 }
@@ -118,23 +119,17 @@ fn compress_to_vec_inner(input: &[u8], level: u8, window_bits: i32, strategy: i3
     
     let flags = create_comp_flags_from_zip_params(level.into(), window_bits, strategy);
     let mut compressor = CompressorOxide::new(flags);
-    let mut output = Vec::with_capacity(input.len() / 2);
-    
-    
-    unsafe {
-        let cap = output.capacity();
-        output.set_len(cap);
-    }
+    let mut output = vec![0; input.len() / 2];
+
     let mut in_pos = 0;
     let mut out_pos = 0;
     loop {
-        let (status, bytes_in, bytes_out) =
-            compress(
-                &mut compressor,
-                &input[in_pos..],
-                &mut output[out_pos..],
-                TDEFLFlush::Finish,
-            );
+        let (status, bytes_in, bytes_out) = compress(
+            &mut compressor,
+            &input[in_pos..],
+            &mut output[out_pos..],
+            TDEFLFlush::Finish,
+        );
 
         out_pos += bytes_out;
         in_pos += bytes_in;
@@ -147,15 +142,7 @@ fn compress_to_vec_inner(input: &[u8], level: u8, window_bits: i32, strategy: i3
             TDEFLStatus::Okay => {
                 
                 if output.len().saturating_sub(out_pos) < 30 {
-                    let current_len = output.len();
-                    output.reserve(current_len);
-
-                    
-                    
-                    unsafe {
-                        let cap = output.capacity();
-                        output.set_len(cap);
-                    }
+                    output.resize(output.len() * 2, 0)
                 }
             }
             
@@ -166,11 +153,10 @@ fn compress_to_vec_inner(input: &[u8], level: u8, window_bits: i32, strategy: i3
     output
 }
 
-
 #[cfg(test)]
 mod test {
     use super::{compress_to_vec, compress_to_vec_inner, CompressionStrategy};
-    use inflate::decompress_to_vec;
+    use crate::inflate::decompress_to_vec;
 
     
     
@@ -179,7 +165,9 @@ mod test {
     #[test]
     fn compress_small() {
         let test_data = b"Deflate late";
-        let check = [0x73, 0x49, 0x4d, 0xcb, 0x49, 0x2c, 0x49, 0x55, 0x00, 0x11, 0x00];
+        let check = [
+            0x73, 0x49, 0x4d, 0xcb, 0x49, 0x2c, 0x49, 0x55, 0x00, 0x11, 0x00,
+        ];
 
         let res = compress_to_vec(test_data, 1);
         assert_eq!(&check[..], res.as_slice());
@@ -204,8 +192,13 @@ mod test {
         let encoded = {
             let len = text.len();
             let notlen = !len;
-            let mut encoded =
-                vec![1, len as u8, (len >> 8) as u8, notlen as u8, (notlen >> 8) as u8];
+            let mut encoded = vec![
+                1,
+                len as u8,
+                (len >> 8) as u8,
+                notlen as u8,
+                (notlen >> 8) as u8,
+            ];
             encoded.extend_from_slice(&text[..]);
             encoded
         };

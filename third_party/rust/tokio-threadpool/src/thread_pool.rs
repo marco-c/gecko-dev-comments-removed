@@ -3,8 +3,8 @@ use pool::Pool;
 use sender::Sender;
 use shutdown::{Shutdown, ShutdownTrigger};
 
-use futures::{Future, Poll};
 use futures::sync::oneshot;
+use futures::{Future, Poll};
 
 use std::sync::Arc;
 
@@ -36,10 +36,7 @@ impl ThreadPool {
         Builder::new().build()
     }
 
-    pub(crate) fn new2(
-        pool: Arc<Pool>,
-        trigger: Arc<ShutdownTrigger>,
-    ) -> ThreadPool {
+    pub(crate) fn new2(pool: Arc<Pool>, trigger: Arc<ShutdownTrigger>) -> ThreadPool {
         ThreadPool {
             inner: Some(Inner {
                 sender: Sender { pool },
@@ -80,7 +77,8 @@ impl ThreadPool {
     
     
     pub fn spawn<F>(&self, future: F)
-    where F: Future<Item = (), Error = ()> + Send + 'static,
+    where
+        F: Future<Item = (), Error = ()> + Send + 'static,
     {
         self.sender().spawn(future).unwrap();
     }
@@ -118,7 +116,7 @@ impl ThreadPool {
     
     
     pub fn spawn_handle<F>(&self, future: F) -> SpawnHandle<F::Item, F::Error>
-    where 
+    where
         F: Future + Send + 'static,
         F::Item: Send + 'static,
         F::Error: Send + 'static,

@@ -1,5 +1,5 @@
-use std::io::prelude::*;
 use std::io;
+use std::io::prelude::*;
 
 #[cfg(feature = "tokio")]
 use futures::Poll;
@@ -78,7 +78,7 @@ impl<W: Write> DeflateEncoder<W> {
     
     
     pub fn reset(&mut self, w: W) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.data.reset();
         Ok(self.inner.replace(w))
     }
@@ -118,7 +118,7 @@ impl<W: Write> DeflateEncoder<W> {
     
     
     pub fn finish(mut self) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         Ok(self.inner.take_inner())
     }
 
@@ -135,7 +135,7 @@ impl<W: Write> DeflateEncoder<W> {
     
     
     pub fn flush_finish(mut self) -> io::Result<W> {
-        try!(self.inner.flush());
+        self.inner.flush()?;
         Ok(self.inner.take_inner())
     }
 
@@ -169,7 +169,7 @@ impl<W: Write> Write for DeflateEncoder<W> {
 #[cfg(feature = "tokio")]
 impl<W: AsyncWrite> AsyncWrite for DeflateEncoder<W> {
     fn shutdown(&mut self) -> Poll<(), io::Error> {
-        try_nb!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.get_mut().shutdown()
     }
 }
@@ -221,7 +221,6 @@ pub struct DeflateDecoder<W: Write> {
     inner: zio::Writer<W, Decompress>,
 }
 
-
 impl<W: Write> DeflateDecoder<W> {
     
     
@@ -262,7 +261,7 @@ impl<W: Write> DeflateDecoder<W> {
     
     
     pub fn reset(&mut self, w: W) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.data = Decompress::new(false);
         Ok(self.inner.replace(w))
     }
@@ -302,7 +301,7 @@ impl<W: Write> DeflateDecoder<W> {
     
     
     pub fn finish(mut self) -> io::Result<W> {
-        try!(self.inner.finish());
+        self.inner.finish()?;
         Ok(self.inner.take_inner())
     }
 
@@ -335,7 +334,7 @@ impl<W: Write> Write for DeflateDecoder<W> {
 #[cfg(feature = "tokio")]
 impl<W: AsyncWrite> AsyncWrite for DeflateDecoder<W> {
     fn shutdown(&mut self) -> Poll<(), io::Error> {
-        try_nb!(self.inner.finish());
+        self.inner.finish()?;
         self.inner.get_mut().shutdown()
     }
 }

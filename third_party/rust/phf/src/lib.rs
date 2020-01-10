@@ -3,7 +3,41 @@
 
 
 
-#![doc(html_root_url="https://docs.rs/phf/0.7.20")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url="https://docs.rs/phf/0.7")]
 #![warn(missing_docs)]
 #![cfg_attr(feature = "core", no_std)]
 
@@ -11,6 +45,11 @@
 extern crate std as core;
 
 extern crate phf_shared;
+#[cfg(feature = "macros")]
+extern crate phf_macros;
+
+#[cfg(feature = "macros")]
+pub use phf_macros::*;
 
 use core::ops::Deref;
 

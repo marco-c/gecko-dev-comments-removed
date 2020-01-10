@@ -205,10 +205,13 @@ where
     
     
     fn split_at(self, index: usize) -> (Self, Self) {
+        #[inline]
+        fn odd_offset(flag: bool) -> usize {
+            (!flag) as usize
+        }
+
         let even = index % 2 == 0;
         let idx = index >> 1;
-
-        let odd_offset = |flag| if flag { 0 } else { 1 };
 
         
         let (i_idx, j_idx) = (

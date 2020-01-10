@@ -19,7 +19,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/rayon-core/1.5")]
+#![doc(html_root_url = "https://docs.rs/rayon-core/1.6")]
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]
@@ -140,7 +140,7 @@ pub struct ThreadPoolBuilder<S = DefaultSpawn> {
     panic_handler: Option<Box<PanicHandler>>,
 
     
-    get_thread_name: Option<Box<FnMut(usize) -> String>>,
+    get_thread_name: Option<Box<dyn FnMut(usize) -> String>>,
 
     
     stack_size: Option<usize>,
@@ -170,17 +170,17 @@ pub struct Configuration {
 
 
 
-type PanicHandler = Fn(Box<Any + Send>) + Send + Sync;
+type PanicHandler = dyn Fn(Box<dyn Any + Send>) + Send + Sync;
 
 
 
 
-type StartHandler = Fn(usize) + Send + Sync;
+type StartHandler = dyn Fn(usize) + Send + Sync;
 
 
 
 
-type ExitHandler = Fn(usize) + Send + Sync;
+type ExitHandler = dyn Fn(usize) + Send + Sync;
 
 
 impl Default for ThreadPoolBuilder {
@@ -481,7 +481,7 @@ impl<S> ThreadPoolBuilder<S> {
     
     pub fn panic_handler<H>(mut self, panic_handler: H) -> Self
     where
-        H: Fn(Box<Any + Send>) + Send + Sync + 'static,
+        H: Fn(Box<dyn Any + Send>) + Send + Sync + 'static,
     {
         self.panic_handler = Some(Box::new(panic_handler));
         self
@@ -585,7 +585,7 @@ impl Configuration {
     }
 
     
-    pub fn build(self) -> Result<ThreadPool, Box<Error + 'static>> {
+    pub fn build(self) -> Result<ThreadPool, Box<dyn Error + 'static>> {
         self.builder.build().map_err(Box::from)
     }
 
@@ -607,7 +607,7 @@ impl Configuration {
     
     pub fn panic_handler<H>(mut self, panic_handler: H) -> Configuration
     where
-        H: Fn(Box<Any + Send>) + Send + Sync + 'static,
+        H: Fn(Box<dyn Any + Send>) + Send + Sync + 'static,
     {
         self.builder = self.builder.panic_handler(panic_handler);
         self
@@ -678,7 +678,7 @@ impl fmt::Display for ThreadPoolBuildError {
 
 #[deprecated(note = "use `ThreadPoolBuilder::build_global`")]
 #[allow(deprecated)]
-pub fn initialize(config: Configuration) -> Result<(), Box<Error>> {
+pub fn initialize(config: Configuration) -> Result<(), Box<dyn Error>> {
     config.into_builder().build_global().map_err(Box::from)
 }
 

@@ -1,4 +1,4 @@
-use crossbeam_deque::{self as deque, Pop, Steal, Stealer, Worker};
+use crossbeam_deque::{Steal, Stealer, Worker};
 use crossbeam_queue::SegQueue;
 #[cfg(rayon_unstable)]
 use internal::task::Task;
@@ -19,7 +19,7 @@ use std::ptr;
 #[allow(deprecated)]
 use std::sync::atomic::ATOMIC_USIZE_INIT;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Once, ONCE_INIT};
+use std::sync::{Arc, Once};
 use std::thread;
 use std::usize;
 use unwind;
@@ -161,7 +161,7 @@ pub(super) struct Registry {
 
 
 static mut THE_REGISTRY: Option<&'static Arc<Registry>> = None;
-static THE_REGISTRY_SET: Once = ONCE_INIT;
+static THE_REGISTRY_SET: Once = Once::new();
 
 
 
@@ -224,11 +224,14 @@ impl Registry {
 
         let (workers, stealers): (Vec<_>, Vec<_>) = (0..n_threads)
             .map(|_| {
-                if breadth_first {
-                    deque::fifo()
+                let worker = if breadth_first {
+                    Worker::new_fifo()
                 } else {
-                    deque::lifo()
-                }
+                    Worker::new_lifo()
+                };
+
+                let stealer = worker.stealer();
+                (worker, stealer)
             })
             .unzip();
 
@@ -319,7 +322,7 @@ impl Registry {
         self.thread_infos.len()
     }
 
-    pub(super) fn handle_panic(&self, err: Box<Any + Send>) {
+    pub(super) fn handle_panic(&self, err: Box<dyn Any + Send>) {
         match self.panic_handler {
             Some(ref handler) => {
                 
@@ -486,19 +489,23 @@ impl Registry {
         OP: FnOnce(&WorkerThread, bool) -> R + Send,
         R: Send,
     {
-        
-        debug_assert!(WorkerThread::current().is_null());
-        let job = StackJob::new(
-            |injected| {
-                let worker_thread = WorkerThread::current();
-                assert!(injected && !worker_thread.is_null());
-                op(&*worker_thread, true)
-            },
-            LockLatch::new(),
-        );
-        self.inject(&[job.as_job_ref()]);
-        job.latch.wait();
-        job.into_result()
+        thread_local!(static LOCK_LATCH: LockLatch = LockLatch::new());
+
+        LOCK_LATCH.with(|l| {
+            
+            debug_assert!(WorkerThread::current().is_null());
+            let job = StackJob::new(
+                |injected| {
+                    let worker_thread = WorkerThread::current();
+                    assert!(injected && !worker_thread.is_null());
+                    op(&*worker_thread, true)
+                },
+                l,
+            );
+            self.inject(&[job.as_job_ref()]);
+            job.latch.wait_and_reset(); 
+            job.into_result()
+        })
     }
 
     #[cold]
@@ -674,13 +681,7 @@ impl WorkerThread {
     
     #[inline]
     pub(super) unsafe fn take_local_job(&self) -> Option<JobRef> {
-        loop {
-            match self.worker.pop() {
-                Pop::Empty => return None,
-                Pop::Data(d) => return Some(d),
-                Pop::Retry => {}
-            }
-        }
+        self.worker.pop()
     }
 
     
@@ -763,7 +764,7 @@ impl WorkerThread {
                 loop {
                     match victim.stealer.steal() {
                         Steal::Empty => return None,
-                        Steal::Data(d) => {
+                        Steal::Success(d) => {
                             log!(StoleWork {
                                 worker: self.index,
                                 victim: victim_index

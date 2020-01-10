@@ -103,12 +103,63 @@
 
 
 
-#![deny(missing_docs)]
 
-extern crate ucd_util;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![deny(missing_docs)]
+#![forbid(unsafe_code)]
 
 pub use error::{Error, Result};
 pub use parser::{Parser, ParserBuilder};
+pub use unicode::UnicodeWordError;
 
 pub mod ast;
 mod either;
@@ -117,6 +168,7 @@ pub mod hir;
 mod parser;
 mod unicode;
 mod unicode_tables;
+pub mod utf8;
 
 
 
@@ -152,8 +204,8 @@ pub fn escape_into(text: &str, buf: &mut String) {
 
 pub fn is_meta_character(c: char) -> bool {
     match c {
-        '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' |
-        '[' | ']' | '{' | '}' | '^' | '$' | '#' | '&' | '-' | '~' => true,
+        '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{'
+        | '}' | '^' | '$' | '#' | '&' | '-' | '~' => true,
         _ => false,
     }
 }
@@ -167,23 +219,35 @@ pub fn is_meta_character(c: char) -> bool {
 
 
 
-pub fn is_word_character(c: char) -> bool {
-    use std::cmp::Ordering;
-    use unicode_tables::perl_word::PERL_WORD;
 
-    if c <= 0x7F as char && is_word_byte(c as u8) {
-        return true;
-    }
-    PERL_WORD
-        .binary_search_by(|&(start, end)| {
-            if start <= c && c <= end {
-                Ordering::Equal
-            } else if start > c {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            }
-        }).is_ok()
+
+
+
+
+
+
+pub fn is_word_character(c: char) -> bool {
+    try_is_word_character(c).expect("unicode-perl feature must be enabled")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn try_is_word_character(
+    c: char,
+) -> std::result::Result<bool, UnicodeWordError> {
+    unicode::is_word_character(c)
 }
 
 
@@ -192,7 +256,7 @@ pub fn is_word_character(c: char) -> bool {
 
 pub fn is_word_byte(c: u8) -> bool {
     match c {
-        b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,
+        b'_' | b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' => true,
         _ => false,
     }
 }
@@ -205,17 +269,42 @@ mod tests {
     fn escape_meta() {
         assert_eq!(
             escape(r"\.+*?()|[]{}^$#&-~"),
-            r"\\\.\+\*\?\(\)\|\[\]\{\}\^\$\#\&\-\~".to_string());
+            r"\\\.\+\*\?\(\)\|\[\]\{\}\^\$\#\&\-\~".to_string()
+        );
     }
 
     #[test]
-    fn word() {
+    fn word_byte() {
         assert!(is_word_byte(b'a'));
         assert!(!is_word_byte(b'-'));
+    }
 
-        assert!(is_word_character('a'));
-        assert!(is_word_character('β'));
+    #[test]
+    #[cfg(feature = "unicode-perl")]
+    fn word_char() {
+        assert!(is_word_character('a'), "ASCII");
+        assert!(is_word_character('à'), "Latin-1");
+        assert!(is_word_character('β'), "Greek");
+        assert!(is_word_character('\u{11011}'), "Brahmi (Unicode 6.0)");
+        assert!(is_word_character('\u{11611}'), "Modi (Unicode 7.0)");
+        assert!(is_word_character('\u{11711}'), "Ahom (Unicode 8.0)");
+        assert!(is_word_character('\u{17828}'), "Tangut (Unicode 9.0)");
+        assert!(is_word_character('\u{1B1B1}'), "Nushu (Unicode 10.0)");
+        assert!(is_word_character('\u{16E40}'), "Medefaidrin (Unicode 11.0)");
         assert!(!is_word_character('-'));
         assert!(!is_word_character('☃'));
+    }
+
+    #[test]
+    #[should_panic]
+    #[cfg(not(feature = "unicode-perl"))]
+    fn word_char_disabled_panic() {
+        assert!(is_word_character('a'));
+    }
+
+    #[test]
+    #[cfg(not(feature = "unicode-perl"))]
+    fn word_char_disabled_error() {
+        assert!(try_is_word_character('a').is_err());
     }
 }

@@ -4,12 +4,15 @@ use worker::state::{State, PUSHED_MASK};
 
 use std::cell::UnsafeCell;
 use std::fmt;
+use std::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::atomic::Ordering::{AcqRel, Relaxed};
+use std::time::Duration;
 
+use crossbeam_deque::{Steal, Stealer, Worker};
+use crossbeam_queue::SegQueue;
 use crossbeam_utils::CachePadded;
-use deque;
+use slab::Slab;
 
 
 
@@ -26,29 +29,43 @@ pub(crate) struct WorkerEntry {
     next_sleeper: UnsafeCell<usize>,
 
     
-    worker: deque::Worker<Arc<Task>>,
+    pub worker: Worker<Arc<Task>>,
 
     
-    stealer: deque::Stealer<Arc<Task>>,
+    stealer: Stealer<Arc<Task>>,
 
     
-    pub park: UnsafeCell<BoxPark>,
+    park: UnsafeCell<Option<BoxPark>>,
 
     
-    pub unpark: BoxUnpark,
+    unpark: UnsafeCell<Option<BoxUnpark>>,
+
+    
+    running_tasks: UnsafeCell<Slab<Arc<Task>>>,
+
+    
+    remotely_completed_tasks: SegQueue<Arc<Task>>,
+
+    
+    
+    needs_drain: AtomicBool,
 }
 
 impl WorkerEntry {
     pub fn new(park: BoxPark, unpark: BoxUnpark) -> Self {
-        let (w, s) = deque::fifo();
+        let w = Worker::new_fifo();
+        let s = w.stealer();
 
         WorkerEntry {
             state: CachePadded::new(AtomicUsize::new(State::default().into())),
             next_sleeper: UnsafeCell::new(0),
             worker: w,
             stealer: s,
-            park: UnsafeCell::new(park),
-            unpark,
+            park: UnsafeCell::new(Some(park)),
+            unpark: UnsafeCell::new(Some(unpark)),
+            running_tasks: UnsafeCell::new(Slab::new()),
+            remotely_completed_tasks: SegQueue::new(),
+            needs_drain: AtomicBool::new(false),
         }
     }
 
@@ -85,9 +102,10 @@ impl WorkerEntry {
             let mut next = state;
             next.notify();
 
-            let actual = self.state.compare_and_swap(
-                state.into(), next.into(),
-                AcqRel).into();
+            let actual = self
+                .state
+                .compare_and_swap(state.into(), next.into(), AcqRel)
+                .into();
 
             if state == actual {
                 break;
@@ -100,7 +118,7 @@ impl WorkerEntry {
             Sleeping => {
                 
                 
-                self.wakeup();
+                self.unpark();
                 true
             }
             Shutdown => false,
@@ -152,8 +170,10 @@ impl WorkerEntry {
 
             next.set_lifecycle(Signaled);
 
-            let actual = self.state.compare_and_swap(
-                state.into(), next.into(), AcqRel).into();
+            let actual = self
+                .state
+                .compare_and_swap(state.into(), next.into(), AcqRel)
+                .into();
 
             if actual == state {
                 break;
@@ -163,7 +183,7 @@ impl WorkerEntry {
         }
 
         
-        self.wakeup();
+        self.unpark();
     }
 
     
@@ -171,7 +191,7 @@ impl WorkerEntry {
     
     
     #[inline]
-    pub fn pop_task(&self) -> deque::Pop<Arc<Task>> {
+    pub fn pop_task(&self) -> Option<Arc<Task>> {
         self.worker.pop()
     }
 
@@ -183,21 +203,97 @@ impl WorkerEntry {
     
     
     
-    pub fn steal_tasks(&self, dest: &Self) -> deque::Steal<Arc<Task>> {
-        self.stealer.steal_many(&dest.worker)
+    pub fn steal_tasks(&self, dest: &Self) -> Steal<Arc<Task>> {
+        self.stealer.steal_batch_and_pop(&dest.worker)
     }
 
     
     
     
     pub fn drain_tasks(&self) {
-        use deque::Pop::*;
+        while self.worker.pop().is_some() {}
+    }
 
-        loop {
-            match self.worker.pop() {
-                Data(_) => {}
-                Empty => break,
-                Retry => {}
+    
+    pub fn park(&self) {
+        if let Some(park) = unsafe { (*self.park.get()).as_mut() } {
+            park.park().unwrap();
+        }
+    }
+
+    
+    pub fn park_timeout(&self, duration: Duration) {
+        if let Some(park) = unsafe { (*self.park.get()).as_mut() } {
+            park.park_timeout(duration).unwrap();
+        }
+    }
+
+    
+    #[inline]
+    pub fn unpark(&self) {
+        if let Some(park) = unsafe { (*self.unpark.get()).as_ref() } {
+            park.unpark();
+        }
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn register_task(&self, task: &Arc<Task>) {
+        let running_tasks = unsafe { &mut *self.running_tasks.get() };
+
+        let key = running_tasks.insert(task.clone());
+        task.reg_index.set(key);
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unregister_task(&self, task: Arc<Task>) {
+        let running_tasks = unsafe { &mut *self.running_tasks.get() };
+        running_tasks.remove(task.reg_index.get());
+        self.drain_remotely_completed_tasks();
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn remotely_complete_task(&self, task: Arc<Task>) {
+        self.remotely_completed_tasks.push(task);
+        self.needs_drain.store(true, Release);
+    }
+
+    
+    
+    
+    pub fn shutdown(&self) {
+        self.drain_remotely_completed_tasks();
+
+        
+        let running_tasks = unsafe { &mut *self.running_tasks.get() };
+        for (_, task) in running_tasks.iter() {
+            task.abort();
+        }
+        running_tasks.clear();
+
+        unsafe {
+            *self.park.get() = None;
+            *self.unpark.get() = None;
+        }
+    }
+
+    
+    #[inline]
+    fn drain_remotely_completed_tasks(&self) {
+        if self.needs_drain.compare_and_swap(true, false, Acquire) {
+            let running_tasks = unsafe { &mut *self.running_tasks.get() };
+
+            while let Ok(task) = self.remotely_completed_tasks.pop() {
+                running_tasks.remove(task.reg_index.get());
             }
         }
     }
@@ -208,18 +304,15 @@ impl WorkerEntry {
     }
 
     #[inline]
-    pub fn wakeup(&self) {
-        self.unpark.unpark();
-    }
-
-    #[inline]
     pub fn next_sleeper(&self) -> usize {
         unsafe { *self.next_sleeper.get() }
     }
 
     #[inline]
     pub fn set_next_sleeper(&self, val: usize) {
-        unsafe { *self.next_sleeper.get() = val; }
+        unsafe {
+            *self.next_sleeper.get() = val;
+        }
     }
 }
 

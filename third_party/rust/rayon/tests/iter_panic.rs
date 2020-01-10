@@ -1,6 +1,7 @@
 extern crate rayon;
 
 use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 use std::ops::Range;
 use std::panic::{self, UnwindSafe};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -22,26 +23,32 @@ fn iter_panic() {
 
 #[test]
 fn iter_panic_fuse() {
-    fn count(iter: impl ParallelIterator + UnwindSafe) -> usize {
-        let count = AtomicUsize::new(0);
-        let result = panic::catch_unwind(|| {
-            iter.for_each(|_| {
-                count.fetch_add(1, Ordering::Relaxed);
+    
+    
+    let pool = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+
+    pool.install(|| {
+        fn count(iter: impl ParallelIterator + UnwindSafe) -> usize {
+            let count = AtomicUsize::new(0);
+            let result = panic::catch_unwind(|| {
+                iter.for_each(|_| {
+                    count.fetch_add(1, Ordering::Relaxed);
+                });
             });
-        });
-        assert!(result.is_err());
-        count.into_inner()
-    }
+            assert!(result.is_err());
+            count.into_inner()
+        }
 
-    
-    let expected = ITER.len() - 1;
-    let iter = ITER.into_par_iter().with_max_len(1);
-    assert_eq!(count(iter.clone().inspect(check)), expected);
+        
+        let expected = ITER.len() - 1;
+        let iter = ITER.into_par_iter().with_max_len(1);
+        assert_eq!(count(iter.clone().inspect(check)), expected);
 
-    
-    assert!(count(iter.clone().inspect(check).panic_fuse()) < expected);
-    assert!(count(iter.clone().panic_fuse().inspect(check)) < expected);
+        
+        assert!(count(iter.clone().inspect(check).panic_fuse()) < expected);
+        assert!(count(iter.clone().panic_fuse().inspect(check)) < expected);
 
-    
-    assert!(count(iter.clone().panic_fuse().inspect(check).rev()) < expected);
+        
+        assert!(count(iter.clone().panic_fuse().inspect(check).rev()) < expected);
+    });
 }

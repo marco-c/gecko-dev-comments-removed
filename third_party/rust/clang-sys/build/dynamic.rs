@@ -13,75 +13,80 @@
 
 
 use std::env;
-use std::fs::{File};
-use std::io::{Read, Seek, SeekFrom};
+use std::fs::File;
+use std::io::{self, Error, ErrorKind, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use super::common;
 
 
-fn parse_elf_header(path: &Path) -> Result<u8, String> {
-    let mut file = File::open(path).map_err(|e| e.to_string())?;
-    let mut elf = [0; 5];
-    file.read_exact(&mut elf).map_err(|e| e.to_string())?;
-    if elf[..4] == [127, 69, 76, 70] {
-        Ok(elf[4])
+fn parse_elf_header(path: &Path) -> io::Result<u8> {
+    let mut file = File::open(path)?;
+    let mut buffer = [0; 5];
+    file.read_exact(&mut buffer)?;
+    if buffer[..4] == [127, 69, 76, 70] {
+        Ok(buffer[4])
     } else {
-        Err("invalid ELF header".into())
+        Err(Error::new(ErrorKind::InvalidData, "invalid ELF header"))
     }
 }
 
 
-fn parse_pe_header(path: &Path) -> Result<u16, String> {
-    let mut file = File::open(path).map_err(|e| e.to_string())?;
-    let mut pe = [0; 4];
+fn parse_pe_header(path: &Path) -> io::Result<u16> {
+    let mut file = File::open(path)?;
 
     
-    file.seek(SeekFrom::Start(0x3C)).map_err(|e| e.to_string())?;
-    file.read_exact(&mut pe).map_err(|e| e.to_string())?;
-    let offset =
-        i32::from(pe[0]) +
-        (i32::from(pe[1]) << 8) +
-        (i32::from(pe[2]) << 16) +
-        (i32::from(pe[3]) << 24);
+    let mut buffer = [0; 4];
+    let start = SeekFrom::Start(0x3C);
+    file.seek(start)?;
+    file.read_exact(&mut buffer)?;
+    let offset = i32::from_le_bytes(buffer);
 
     
-    file.seek(SeekFrom::Start(offset as u64)).map_err(|e| e.to_string())?;
-    file.read_exact(&mut pe).map_err(|e| e.to_string())?;
-    if pe != [80, 69, 0, 0] {
-        return Err("invalid PE header".into());
+    file.seek(SeekFrom::Start(offset as u64))?;
+    file.read_exact(&mut buffer)?;
+    if buffer != [80, 69, 0, 0] {
+        return Err(Error::new(ErrorKind::InvalidData, "invalid PE header"));
     }
 
     
-    file.seek(SeekFrom::Current(20)).map_err(|e| e.to_string())?;
-    file.read_exact(&mut pe).map_err(|e| e.to_string())?;
-    Ok(u16::from(pe[0]) + (u16::from(pe[1]) << 8))
+    let mut buffer = [0; 2];
+    file.seek(SeekFrom::Current(20))?;
+    file.read_exact(&mut buffer)?;
+    Ok(u16::from_le_bytes(buffer))
 }
 
 
 fn validate_header(path: &Path) -> Result<(), String> {
-    if cfg!(any(target_os="freebsd", target_os="linux")) {
-        let class = parse_elf_header(path)?;
-        if cfg!(target_pointer_width="32") && class != 1 {
+    if cfg!(any(target_os = "freebsd", target_os = "linux")) {
+        let class = parse_elf_header(path).map_err(|e| e.to_string())?;
+
+        if cfg!(target_pointer_width = "32") && class != 1 {
             return Err("invalid ELF class (64-bit)".into());
         }
-        if cfg!(target_pointer_width="64") && class != 2 {
+
+        if cfg!(target_pointer_width = "64") && class != 2 {
             return Err("invalid ELF class (32-bit)".into());
         }
+
         Ok(())
-    } else if cfg!(target_os="windows") {
-        let magic = parse_pe_header(path)?;
-        if cfg!(target_pointer_width="32") && magic != 267 {
+    } else if cfg!(target_os = "windows") {
+        let magic = parse_pe_header(path).map_err(|e| e.to_string())?;
+
+        if cfg!(target_pointer_width = "32") && magic != 267 {
             return Err("invalid DLL (64-bit)".into());
         }
-        if cfg!(target_pointer_width="64") && magic != 523 {
+
+        if cfg!(target_pointer_width = "64") && magic != 523 {
             return Err("invalid DLL (32-bit)".into());
         }
+
         Ok(())
     } else {
         Ok(())
     }
 }
+
 
 
 fn parse_version(filename: &str) -> Vec<u32> {
@@ -97,14 +102,20 @@ fn parse_version(filename: &str) -> Vec<u32> {
 }
 
 
-fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Vec<u32>)>, String> {
-    let mut files = vec![format!("{}clang{}", env::consts::DLL_PREFIX, env::consts::DLL_SUFFIX)];
 
-    if cfg!(target_os="linux") {
+fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Vec<u32>)>, String> {
+    let mut files = vec![format!(
+        "{}clang{}",
+        env::consts::DLL_PREFIX,
+        env::consts::DLL_SUFFIX
+    )];
+
+    if cfg!(target_os = "linux") {
         
         
         files.push("libclang-*.so".into());
 
+        
         
         
         
@@ -114,13 +125,18 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
         }
     }
 
-    if cfg!(any(target_os="openbsd", target_os="freebsd", target_os="netbsd")) {
+    if cfg!(any(
+        target_os = "openbsd",
+        target_os = "freebsd",
+        target_os = "netbsd"
+    )) {
+        
         
         
         files.push("libclang.so.*".into());
     }
 
-    if cfg!(target_os="windows") {
+    if cfg!(target_os = "windows") {
         
         
         files.push("libclang.dll".into());
@@ -135,7 +151,7 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
             Ok(()) => {
                 let version = parse_version(&filename);
                 valid.push((directory, filename, version))
-            },
+            }
             Err(message) => invalid.push(format!("({}: {})", path.display(), message)),
         }
     }
@@ -145,9 +161,14 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
     }
 
     let message = format!(
-        "couldn't find any valid shared libraries matching: [{}], set the `LIBCLANG_PATH` \
-        environment variable to a path where one of these files can be found (invalid: [{}])",
-        files.iter().map(|f| format!("'{}'", f)).collect::<Vec<_>>().join(", "),
+        "couldn't find any valid shared libraries matching: [{}], set the \
+         `LIBCLANG_PATH` environment variable to a path where one of these files \
+         can be found (invalid: [{}])",
+        files
+            .iter()
+            .map(|f| format!("'{}'", f))
+            .collect::<Vec<_>>()
+            .join(", "),
         invalid.join(", "),
     );
 
@@ -155,8 +176,10 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
 }
 
 
+
 pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
-    search_libclang_directories(runtime)?.iter()
+    search_libclang_directories(runtime)?
+        .iter()
         .max_by_key(|f| &f.2)
         .cloned()
         .map(|(path, filename, _)| (path, filename))
@@ -164,14 +187,15 @@ pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
 }
 
 
-#[cfg(not(feature="runtime"))]
+#[cfg(not(feature = "runtime"))]
 pub fn link() {
     use std::fs;
 
     let (directory, filename) = find(false).unwrap();
     println!("cargo:rustc-link-search={}", directory.display());
 
-    if cfg!(all(target_os="windows", target_env="msvc")) {
+    if cfg!(all(target_os = "windows", target_env = "msvc")) {
+        
         
         let lib = if !directory.ends_with("bin") {
             directory.to_owned()
@@ -188,11 +212,16 @@ pub fn link() {
             
             
             let out = env::var("OUT_DIR").unwrap();
-            fs::copy(lib.join("libclang.dll.a"), Path::new(&out).join("libclang.lib")).unwrap();
+            fs::copy(
+                lib.join("libclang.dll.a"),
+                Path::new(&out).join("libclang.lib"),
+            )
+            .unwrap();
             println!("cargo:rustc-link-search=native={}", out);
         } else {
             panic!(
-                "using '{}', so 'libclang.lib' or 'libclang.dll.a' must be available in {}",
+                "using '{}', so 'libclang.lib' or 'libclang.dll.a' must be \
+                 available in {}",
                 filename,
                 lib.display(),
             );
@@ -200,8 +229,9 @@ pub fn link() {
 
         println!("cargo:rustc-link-lib=dylib=libclang");
     } else {
-        let name = filename.trim_left_matches("lib");
+        let name = filename.trim_start_matches("lib");
 
+        
         
         let name = match name.find(".dylib").or(name.find(".so")) {
             Some(index) => &name[0..index],

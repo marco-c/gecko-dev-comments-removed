@@ -186,7 +186,7 @@ pub trait ParallelSliceMut<T: Send> {
     where
         T: Ord,
     {
-        par_mergesort(self.as_parallel_slice_mut(), |a, b| a.lt(b));
+        par_mergesort(self.as_parallel_slice_mut(), T::lt);
     }
 
     
@@ -310,7 +310,7 @@ pub trait ParallelSliceMut<T: Send> {
     where
         T: Ord,
     {
-        par_quicksort(self.as_parallel_slice_mut(), |a, b| a.lt(b));
+        par_quicksort(self.as_parallel_slice_mut(), T::lt);
     }
 
     

@@ -15,6 +15,9 @@ pub(crate) enum State {
 
     
     Complete = 4,
+
+    
+    Aborted = 5,
 }
 
 
@@ -38,8 +41,10 @@ impl From<usize> for State {
         use self::State::*;
 
         debug_assert!(
-            src >= Idle as usize &&
-            src <= Complete as usize, "actual={}", src);
+            src >= Idle as usize && src <= Aborted as usize,
+            "actual={}",
+            src
+        );
 
         unsafe { ::std::mem::transmute(src) }
     }

@@ -70,36 +70,43 @@
 
 
 
+
+
+
 #![doc(html_root_url = "https://docs.rs/flate2/0.2")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![allow(trivial_numeric_casts)]
 #![cfg_attr(test, deny(warnings))]
 
+extern crate crc32fast;
 #[cfg(feature = "tokio")]
 extern crate futures;
+#[cfg(not(any(
+    all(not(feature = "zlib"), feature = "rust_backend"),
+    all(target_arch = "wasm32", not(target_os = "emscripten"))
+)))]
 extern crate libc;
 #[cfg(test)]
 extern crate quickcheck;
 #[cfg(test)]
 extern crate rand;
 #[cfg(feature = "tokio")]
-#[macro_use]
 extern crate tokio_io;
 
+pub use crc::{Crc, CrcReader, CrcWriter};
 pub use gz::GzBuilder;
 pub use gz::GzHeader;
-pub use mem::{Compress, CompressError, DecompressError, Decompress, Status};
+pub use mem::{Compress, CompressError, Decompress, DecompressError, Status};
 pub use mem::{FlushCompress, FlushDecompress};
-pub use crc::{Crc, CrcReader};
 
 mod bufreader;
 mod crc;
 mod deflate;
 mod ffi;
 mod gz;
-mod zio;
 mod mem;
+mod zio;
 mod zlib;
 
 
@@ -107,13 +114,13 @@ mod zlib;
 
 
 pub mod read {
-    pub use deflate::read::DeflateEncoder;
     pub use deflate::read::DeflateDecoder;
-    pub use zlib::read::ZlibEncoder;
-    pub use zlib::read::ZlibDecoder;
-    pub use gz::read::GzEncoder;
+    pub use deflate::read::DeflateEncoder;
     pub use gz::read::GzDecoder;
+    pub use gz::read::GzEncoder;
     pub use gz::read::MultiGzDecoder;
+    pub use zlib::read::ZlibDecoder;
+    pub use zlib::read::ZlibEncoder;
 }
 
 
@@ -121,11 +128,12 @@ pub mod read {
 
 
 pub mod write {
-    pub use deflate::write::DeflateEncoder;
     pub use deflate::write::DeflateDecoder;
-    pub use zlib::write::ZlibEncoder;
-    pub use zlib::write::ZlibDecoder;
+    pub use deflate::write::DeflateEncoder;
+    pub use gz::write::GzDecoder;
     pub use gz::write::GzEncoder;
+    pub use zlib::write::ZlibDecoder;
+    pub use zlib::write::ZlibEncoder;
 }
 
 
@@ -133,13 +141,13 @@ pub mod write {
 
 
 pub mod bufread {
-    pub use deflate::bufread::DeflateEncoder;
     pub use deflate::bufread::DeflateDecoder;
-    pub use zlib::bufread::ZlibEncoder;
-    pub use zlib::bufread::ZlibDecoder;
-    pub use gz::bufread::GzEncoder;
+    pub use deflate::bufread::DeflateEncoder;
     pub use gz::bufread::GzDecoder;
+    pub use gz::bufread::GzEncoder;
     pub use gz::bufread::MultiGzDecoder;
+    pub use zlib::bufread::ZlibDecoder;
+    pub use zlib::bufread::ZlibEncoder;
 }
 
 fn _assert_send_sync() {
@@ -157,6 +165,7 @@ fn _assert_send_sync() {
     _assert_send_sync::<write::ZlibEncoder<Vec<u8>>>();
     _assert_send_sync::<write::ZlibDecoder<Vec<u8>>>();
     _assert_send_sync::<write::GzEncoder<Vec<u8>>>();
+    _assert_send_sync::<write::GzDecoder<Vec<u8>>>();
 }
 
 
@@ -201,4 +210,12 @@ impl Default for Compression {
     fn default() -> Compression {
         Compression(6)
     }
+}
+
+#[cfg(test)]
+fn random_bytes() -> impl Iterator<Item = u8> {
+    use rand::Rng;
+    use std::iter;
+
+    iter::repeat(()).map(|_| rand::thread_rng().gen())
 }

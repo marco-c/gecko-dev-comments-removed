@@ -33,6 +33,8 @@ fn init_logger() {
     let mut builder = Builder::from_env(env);
 
     
+    
+    #[cfg(feature = "termcolor")]
     builder.format(|buf, record| {
         let mut style = buf.style();
         style.set_bg(fmt::Color::Yellow).set_bold(true);

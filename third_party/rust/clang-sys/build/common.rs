@@ -16,9 +16,9 @@ extern crate glob;
 
 use std::env;
 use std::path::{Path, PathBuf};
-use std::process::{Command};
+use std::process::Command;
 
-use glob::{MatchOptions};
+use glob::MatchOptions;
 
 
 const DIRECTORIES_LINUX: &[&str] = &[
@@ -28,11 +28,11 @@ const DIRECTORIES_LINUX: &[&str] = &[
     "/usr/local/lib*",
     "/usr/local/lib*/*",
     "/usr/local/lib*/*/*",
-    "/usr/local/llvm*/lib",
+    "/usr/local/llvm*/lib*",
 ];
 
 
-const DIRECTORIES_OSX: &[&str] = &[
+const DIRECTORIES_MACOS: &[&str] = &[
     "/usr/local/opt/llvm*/lib",
     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
     "/Library/Developer/CommandLineTools/usr/lib",
@@ -49,44 +49,82 @@ const DIRECTORIES_WINDOWS: &[&str] = &[
 
 
 fn run_command(command: &str, arguments: &[&str]) -> Option<String> {
-    let output = Command::new(command).args(arguments).output().ok()?;
+    macro_rules! warn {
+        ($error:expr) => {
+            println!(
+                "cargo:warning=couldn't execute `{} {}` ({})",
+                command,
+                arguments.join(" "),
+                $error,
+            );
+        };
+    }
+
+    let output = match Command::new(command).args(arguments).output() {
+        Ok(output) => output,
+        Err(error) => {
+            warn!(format!("error: {}", error));
+            return None;
+        }
+    };
+
+    if !output.status.success() {
+        warn!(format!("exit code: {}", output.status));
+        return None;
+    }
+
     Some(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 
-pub fn run_llvm_config(arguments: &[&str]) -> Result<String, String> {
-    let command = env::var("LLVM_CONFIG_PATH").unwrap_or_else(|_| "llvm-config".into());
-    match run_command(&command, arguments) {
-        Some(output) => Ok(output),
-        None => Err(format!(
-            "couldn't execute `llvm-config {}`, set the LLVM_CONFIG_PATH environment variable to a \
-            path to a valid `llvm-config` executable",
-            arguments.join(" "),
-        )),
+
+pub fn run_llvm_config(arguments: &[&str]) -> Option<String> {
+    let path = env::var("LLVM_CONFIG_PATH").unwrap_or_else(|_| "llvm-config".into());
+
+    let output = run_command(&path, arguments);
+    if output.is_none() {
+        println!("cargo:warning=set the LLVM_CONFIG_PATH environment variable to a valid `llvm-config` executable");
     }
+
+    output
 }
 
 
 
 fn search_directory(directory: &Path, filenames: &[String]) -> Vec<(PathBuf, String)> {
     
-    let paths = filenames.iter().filter_map(|f| directory.join(f).to_str().map(ToOwned::to_owned));
+    let paths = filenames
+        .iter()
+        .filter_map(|f| directory.join(f).to_str().map(ToOwned::to_owned));
 
     
     let mut options = MatchOptions::new();
     options.require_literal_separator = true;
 
-    paths.flat_map(|p| {
-        if let Ok(paths) = glob::glob_with(&p, &options) {
-            paths.filter_map(Result::ok).collect()
-        } else {
-            vec![]
-        }
-    }).filter_map(|p| {
-        let filename = p.file_name().and_then(|f| f.to_str())?;
-        Some((directory.to_owned(), filename.into()))
-    }).collect::<Vec<_>>()
+    paths
+        .flat_map(|p| {
+            if let Ok(paths) = glob::glob_with(&p, options) {
+                paths.filter_map(Result::ok).collect()
+            } else {
+                vec![]
+            }
+        })
+        .filter_map(|p| {
+            let filename = p.file_name().and_then(|f| f.to_str())?;
+
+            
+            
+            
+            
+            if filename.contains("-cpp.") {
+                return None;
+            }
+
+            Some((directory.to_owned(), filename.into()))
+        })
+        .collect::<Vec<_>>()
 }
+
 
 
 
@@ -97,7 +135,8 @@ fn search_directories(directory: &Path, filenames: &[String]) -> Vec<(PathBuf, S
     
     
     
-    if cfg!(target_os="windows") && directory.ends_with("lib") {
+    
+    if cfg!(target_os = "windows") && directory.ends_with("lib") {
         let sibling = directory.parent().unwrap().join("bin");
         results.extend(search_directory(&sibling, filenames).into_iter());
     }
@@ -109,21 +148,33 @@ fn search_directories(directory: &Path, filenames: &[String]) -> Vec<(PathBuf, S
 
 pub fn search_libclang_directories(files: &[String], variable: &str) -> Vec<(PathBuf, String)> {
     
-    if let Ok(directory) = env::var(variable).map(|d| Path::new(&d).to_path_buf()) {
-        return search_directories(&directory, files);
+    if let Ok(path) = env::var(variable).map(|d| Path::new(&d).to_path_buf()) {
+        
+        if let Some(parent) = path.parent() {
+            let filename = path.file_name().unwrap().to_str().unwrap();
+            let libraries = search_directories(parent, files);
+            if libraries.iter().any(|(_, f)| f == filename) {
+                return vec![(parent.into(), filename.into())];
+            }
+        }
+
+        return search_directories(&path, files);
     }
 
     let mut found = vec![];
 
     
-    if let Ok(output) = run_llvm_config(&["--prefix"]) {
+    
+    if let Some(output) = run_llvm_config(&["--prefix"]) {
         let directory = Path::new(output.lines().next().unwrap()).to_path_buf();
         found.extend(search_directories(&directory.join("bin"), files));
         found.extend(search_directories(&directory.join("lib"), files));
+        found.extend(search_directories(&directory.join("lib64"), files));
     }
 
     
-    if cfg!(target_os="macos") {
+    
+    if cfg!(target_os = "macos") {
         if let Some(output) = run_command("xcode-select", &["--print-path"]) {
             let directory = Path::new(output.lines().next().unwrap()).to_path_buf();
             let directory = directory.join("Toolchains/XcodeDefault.xctoolchain/usr/lib");
@@ -132,6 +183,7 @@ pub fn search_libclang_directories(files: &[String], variable: &str) -> Vec<(Pat
     }
 
     
+    
     if let Ok(path) = env::var("LD_LIBRARY_PATH") {
         for directory in path.split(':').map(Path::new) {
             found.extend(search_directories(&directory, files));
@@ -139,11 +191,11 @@ pub fn search_libclang_directories(files: &[String], variable: &str) -> Vec<(Pat
     }
 
     
-    let directories = if cfg!(any(target_os="freebsd", target_os="linux")) {
+    let directories = if cfg!(any(target_os = "freebsd", target_os = "linux")) {
         DIRECTORIES_LINUX
-    } else if cfg!(target_os="macos") {
-        DIRECTORIES_OSX
-    } else if cfg!(target_os="windows") {
+    } else if cfg!(target_os = "macos") {
+        DIRECTORIES_MACOS
+    } else if cfg!(target_os = "windows") {
         DIRECTORIES_WINDOWS
     } else {
         &[]
@@ -154,7 +206,7 @@ pub fn search_libclang_directories(files: &[String], variable: &str) -> Vec<(Pat
     options.case_sensitive = false;
     options.require_literal_separator = true;
     for directory in directories.iter().rev() {
-        if let Ok(directories) = glob::glob_with(directory, &options) {
+        if let Ok(directories) = glob::glob_with(directory, options) {
             for directory in directories.filter_map(Result::ok).filter(|p| p.is_dir()) {
                 found.extend(search_directories(&directory, files));
             }

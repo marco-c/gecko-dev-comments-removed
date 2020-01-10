@@ -50,7 +50,7 @@ struct ScopeBase<'scope> {
 
     
     
-    panic: AtomicPtr<Box<Any + Send + 'static>>,
+    panic: AtomicPtr<Box<dyn Any + Send + 'static>>,
 
     
     job_completed_latch: CountLatch,
@@ -59,7 +59,7 @@ struct ScopeBase<'scope> {
     
     
     
-    marker: PhantomData<Box<FnOnce(&Scope<'scope>) + Send + Sync + 'scope>>,
+    marker: PhantomData<Box<dyn FnOnce(&Scope<'scope>) + Send + Sync + 'scope>>,
 }
 
 
@@ -572,7 +572,7 @@ impl<'scope> ScopeBase<'scope> {
         }
     }
 
-    unsafe fn job_panicked(&self, err: Box<Any + Send + 'static>) {
+    unsafe fn job_panicked(&self, err: Box<dyn Any + Send + 'static>) {
         
         let nil = ptr::null_mut();
         let mut err = Box::new(err); 
@@ -613,7 +613,7 @@ impl<'scope> ScopeBase<'scope> {
             log!(ScopeCompletePanicked {
                 owner_thread: owner_thread.index()
             });
-            let value: Box<Box<Any + Send + 'static>> = mem::transmute(panic);
+            let value: Box<Box<dyn Any + Send + 'static>> = mem::transmute(panic);
             unwind::resume_unwinding(*value);
         } else {
             log!(ScopeCompleteNoPanic {

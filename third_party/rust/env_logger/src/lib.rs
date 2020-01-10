@@ -167,9 +167,78 @@
 
 
 
-#![doc(html_logo_url = "http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-       html_favicon_url = "http://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/env_logger/0.5.6")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
+       html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
+       html_root_url = "https://docs.rs/env_logger/0.6.2")]
 #![cfg_attr(test, deny(warnings))]
 
 
@@ -180,26 +249,36 @@
 #![deny(missing_debug_implementations, missing_docs, warnings)]
 
 extern crate log;
+
+#[cfg(feature = "termcolor")]
 extern crate termcolor;
+#[cfg(feature = "humantime")]
 extern crate humantime;
+#[cfg(feature = "atty")]
 extern crate atty;
 
-use std::env;
+use std::{env, io};
 use std::borrow::Cow;
-use std::io::prelude::*;
-use std::io;
-use std::mem;
 use std::cell::RefCell;
 
-use log::{Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
+use log::{Log, LevelFilter, Record, SetLoggerError, Metadata};
 
 pub mod filter;
 pub mod fmt;
 
-pub use self::fmt::{Target, WriteStyle, Color, Formatter};
+pub use self::fmt::glob::*;
 
-const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
-const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
+use self::filter::Filter;
+use self::fmt::Formatter;
+use self::fmt::writer::{self, Writer};
+
+
+pub const DEFAULT_FILTER_ENV: &'static str = "RUST_LOG";
+
+
+pub const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
+
+
 
 
 
@@ -211,8 +290,14 @@ const DEFAULT_WRITE_STYLE_ENV: &'static str = "RUST_LOG_STYLE";
 
 #[derive(Debug)]
 pub struct Env<'a> {
-    filter: Cow<'a, str>,
-    write_style: Cow<'a, str>,
+    filter: Var<'a>,
+    write_style: Var<'a>,
+}
+
+#[derive(Debug)]
+struct Var<'a> {
+    name: Cow<'a, str>,
+    default: Option<Cow<'a, str>>,
 }
 
 
@@ -235,78 +320,10 @@ pub struct Env<'a> {
 
 
 pub struct Logger {
-    writer: fmt::Writer,
-    filter: filter::Filter,
+    writer: Writer,
+    filter: Filter,
+    #[allow(unknown_lints, bare_trait_objects)]
     format: Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>,
-}
-
-struct Format {
-    default_format_timestamp: bool,
-    default_format_module_path: bool,
-    default_format_level: bool,
-    custom_format: Option<Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>>,
-}
-
-impl Default for Format {
-    fn default() -> Self {
-        Format {
-            default_format_timestamp: true,
-            default_format_module_path: true,
-            default_format_level: true,
-            custom_format: None,
-        }
-    }
-}
-
-impl Format {
-    
-    
-    
-    
-    
-    fn into_boxed_fn(self) -> Box<Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send> {
-        if let Some(fmt) = self.custom_format {
-            fmt
-        }
-        else {
-            Box::new(move |buf, record| {
-                let write_level = if self.default_format_level {
-                    let level = record.level();
-                    let mut level_style = buf.style();
-
-                    match level {
-                        Level::Trace => level_style.set_color(Color::White),
-                        Level::Debug => level_style.set_color(Color::Blue),
-                        Level::Info => level_style.set_color(Color::Green),
-                        Level::Warn => level_style.set_color(Color::Yellow),
-                        Level::Error => level_style.set_color(Color::Red).set_bold(true),
-                    };
-
-                    write!(buf, "{:>5} ", level_style.value(level))
-                } else {
-                    Ok(())
-                };
-
-                let write_ts = if self.default_format_timestamp {
-                    let ts = buf.timestamp();
-                    write!(buf, "{}: ", ts)
-                } else {
-                    Ok(())
-                };
-
-                let default_format_module_path = (self.default_format_module_path, record.module_path());
-                let write_module_path = if let (true, Some(module_path)) = default_format_module_path {
-                    write!(buf, "{}: ", module_path)
-                } else {
-                    Ok(())
-                };
-
-                let write_args = writeln!(buf, "{}", record.args());
-
-                write_level.and(write_ts).and(write_module_path).and(write_args)
-            })
-        }
-    }
 }
 
 
@@ -340,8 +357,9 @@ impl Format {
 #[derive(Default)]
 pub struct Builder {
     filter: filter::Builder,
-    writer: fmt::Builder,
-    format: Format,
+    writer: writer::Builder,
+    format: fmt::Builder,
+    built: bool,
 }
 
 impl Builder {
@@ -414,7 +432,7 @@ impl Builder {
         let env = env.into();
 
         if let Some(s) = env.get_filter() {
-            builder.parse(&s);
+            builder.parse_filters(&s);
         }
 
         if let Some(s) = env.get_write_style() {
@@ -424,7 +442,6 @@ impl Builder {
         builder
     }
 
-    
     
     
     
@@ -507,6 +524,58 @@ impl Builder {
     }
 
     
+    pub fn default_format_timestamp_nanos(&mut self, write: bool) -> &mut Self {
+        self.format.default_format_timestamp_nanos = write;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
+        self.filter.filter_module(module, level);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
+        self.filter.filter_level(level);
+        self
+    }
+
+    
     
     
     
@@ -538,7 +607,16 @@ impl Builder {
     
     
     
+    #[deprecated(since = "0.6.1", note = "use `parse_filters` instead.")]
     pub fn parse(&mut self, filters: &str) -> &mut Self {
+        self.parse_filters(filters)
+    }
+
+    
+    
+    
+    
+    pub fn parse_filters(&mut self, filters: &str) -> &mut Self {
         self.filter.parse(filters);
         self
     }
@@ -589,7 +667,16 @@ impl Builder {
     
     
     pub fn parse_write_style(&mut self, write_style: &str) -> &mut Self {
-        self.writer.parse(write_style);
+        self.writer.parse_write_style(write_style);
+        self
+    }
+
+    
+    
+    
+    
+    pub fn is_test(&mut self, is_test: bool) -> &mut Self {
+        self.writer.is_test(is_test);
         self
     }
 
@@ -605,8 +692,14 @@ impl Builder {
     pub fn try_init(&mut self) -> Result<(), SetLoggerError> {
         let logger = self.build();
 
-        log::set_max_level(logger.filter());
-        log::set_boxed_logger(Box::new(logger))
+        let max_level = logger.filter();
+        let r = log::set_boxed_logger(Box::new(logger));
+
+        if r.is_ok() {
+            log::set_max_level(max_level);
+        }
+
+        r
     }
 
     
@@ -626,17 +719,73 @@ impl Builder {
     
     
     
-    
     pub fn build(&mut self) -> Logger {
+        assert!(!self.built, "attempt to re-use consumed builder");
+        self.built = true;
+
         Logger {
             writer: self.writer.build(),
             filter: self.filter.build(),
-            format: mem::replace(&mut self.format, Default::default()).into_boxed_fn(),
+            format: self.format.build(),
         }
     }
 }
 
 impl Logger {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_env<'a, E>(env: E) -> Self
+        where
+            E: Into<Env<'a>>
+    {
+        Builder::from_env(env).build()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_default_env() -> Self {
+        Builder::from_default_env().build()
+    }
+
     
     
     pub fn filter(&self) -> LevelFilter {
@@ -720,12 +869,38 @@ impl<'a> Env<'a> {
     where
         E: Into<Cow<'a, str>>
     {
-        self.filter = filter_env.into();
+        self.filter = Var::new(filter_env);
+
+        self
+    }
+
+    
+    
+    
+    pub fn filter_or<E, V>(mut self, filter_env: E, default: V) -> Self
+    where
+        E: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        self.filter = Var::new_with_default(filter_env, default);
+
+        self
+    }
+
+    
+    
+    
+    pub fn default_filter_or<V>(mut self, default: V) -> Self
+    where
+        V: Into<Cow<'a, str>>,
+    {
+        self.filter = Var::new_with_default(DEFAULT_FILTER_ENV, default);
+
         self
     }
 
     fn get_filter(&self) -> Option<String> {
-        env::var(&*self.filter).ok()
+        self.filter.get()
     }
 
     
@@ -733,12 +908,69 @@ impl<'a> Env<'a> {
     where
         E: Into<Cow<'a, str>>
     {
-        self.write_style = write_style_env.into();
+        self.write_style = Var::new(write_style_env);
+
+        self
+    }
+
+    
+    
+    
+    pub fn write_style_or<E, V>(mut self, write_style_env: E, default: V) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+            V: Into<Cow<'a, str>>,
+    {
+        self.write_style = Var::new_with_default(write_style_env, default);
+
+        self
+    }
+
+    
+    
+    
+    pub fn default_write_style_or<V>(mut self, default: V) -> Self
+        where
+            V: Into<Cow<'a, str>>,
+    {
+        self.write_style = Var::new_with_default(DEFAULT_WRITE_STYLE_ENV, default);
+
         self
     }
 
     fn get_write_style(&self) -> Option<String> {
-        env::var(&*self.write_style).ok()
+        self.write_style.get()
+    }
+}
+
+impl<'a> Var<'a> {
+    fn new<E>(name: E) -> Self
+        where
+            E: Into<Cow<'a, str>>,
+    {
+        Var {
+            name: name.into(),
+            default: None,
+        }
+    }
+
+    fn new_with_default<E, V>(name: E, default: V) -> Self
+    where
+        E: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        Var {
+            name: name.into(),
+            default: Some(default.into()),
+        }
+    }
+
+    fn get(&self) -> Option<String> {
+        env::var(&*self.name)
+            .ok()
+            .or_else(|| self.default
+                .to_owned()
+                .map(|v| v.into_owned()))
     }
 }
 
@@ -754,8 +986,8 @@ where
 impl<'a> Default for Env<'a> {
     fn default() -> Self {
         Env {
-            filter: DEFAULT_FILTER_ENV.into(),
-            write_style: DEFAULT_WRITE_STYLE_ENV.into()
+            filter: Var::new(DEFAULT_FILTER_ENV),
+            write_style: Var::new(DEFAULT_WRITE_STYLE_ENV),
         }
     }
 }
@@ -774,10 +1006,16 @@ mod std_fmt_impls {
 
     impl fmt::Debug for Builder{
         fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-            f.debug_struct("Logger")
-            .field("filter", &self.filter)
-            .field("writer", &self.writer)
-            .finish()
+            if self.built {
+                f.debug_struct("Logger")
+                .field("built", &true)
+                .finish()
+            } else {
+                f.debug_struct("Logger")
+                .field("filter", &self.filter)
+                .field("writer", &self.writer)
+                .finish()
+            }
         }
     }
 }
@@ -874,4 +1112,62 @@ where
     E: Into<Env<'a>>
 {
     try_init_from_env(env).expect("env_logger::init_from_env should not be called after logger initialized");
+}
+
+
+
+
+pub fn builder() -> Builder {
+    Builder::from_default_env()
+}
+
+
+
+
+pub fn from_env<'a, E>(env: E) -> Builder
+where
+    E: Into<Env<'a>>
+{
+    Builder::from_env(env)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn env_get_filter_reads_from_var_if_set() {
+        env::set_var("env_get_filter_reads_from_var_if_set", "from var");
+
+        let env = Env::new().filter_or("env_get_filter_reads_from_var_if_set", "from default");
+
+        assert_eq!(Some("from var".to_owned()), env.get_filter());
+    }
+
+    #[test]
+    fn env_get_filter_reads_from_default_if_var_not_set() {
+        env::remove_var("env_get_filter_reads_from_default_if_var_not_set");
+
+        let env = Env::new().filter_or("env_get_filter_reads_from_default_if_var_not_set", "from default");
+
+        assert_eq!(Some("from default".to_owned()), env.get_filter());
+    }
+
+    #[test]
+    fn env_get_write_style_reads_from_var_if_set() {
+        env::set_var("env_get_write_style_reads_from_var_if_set", "from var");
+
+        let env = Env::new().write_style_or("env_get_write_style_reads_from_var_if_set", "from default");
+
+        assert_eq!(Some("from var".to_owned()), env.get_write_style());
+    }
+
+    #[test]
+    fn env_get_write_style_reads_from_default_if_var_not_set() {
+        env::remove_var("env_get_write_style_reads_from_default_if_var_not_set");
+
+        let env = Env::new().write_style_or("env_get_write_style_reads_from_default_if_var_not_set", "from default");
+
+        assert_eq!(Some("from default".to_owned()), env.get_write_style());
+    }
 }

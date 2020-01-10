@@ -25,10 +25,7 @@ impl ParserBuilder {
 
     
     pub fn build(&self) -> Parser {
-        Parser {
-            ast: self.ast.build(),
-            hir: self.hir.build(),
-        }
+        Parser { ast: self.ast.build(), hir: self.hir.build() }
     }
 
     
@@ -132,10 +129,7 @@ impl ParserBuilder {
     
     
     
-    pub fn dot_matches_new_line(
-        &mut self,
-        yes: bool,
-    ) -> &mut ParserBuilder {
+    pub fn dot_matches_new_line(&mut self, yes: bool) -> &mut ParserBuilder {
         self.hir.dot_matches_new_line(yes);
         self
     }

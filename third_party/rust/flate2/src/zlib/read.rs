@@ -1,13 +1,13 @@
-use std::io::prelude::*;
 use std::io;
+use std::io::prelude::*;
 
 #[cfg(feature = "tokio")]
 use futures::Poll;
 #[cfg(feature = "tokio")]
 use tokio_io::{AsyncRead, AsyncWrite};
 
-use bufreader::BufReader;
 use super::bufread;
+use bufreader::BufReader;
 
 
 
@@ -167,7 +167,6 @@ impl<R: AsyncRead + AsyncWrite> AsyncWrite for ZlibEncoder<R> {
 pub struct ZlibDecoder<R> {
     inner: bufread::ZlibDecoder<BufReader<R>>,
 }
-
 
 impl<R: Read> ZlibDecoder<R> {
     

@@ -50,6 +50,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::iter::repeat;
 use std::mem;
+use std::sync::Arc;
 
 use exec::ProgramCache;
 use prog::{Inst, Program};
@@ -88,7 +89,7 @@ pub fn can_exec(insts: &Program) -> bool {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Cache {
     
     
@@ -107,7 +108,7 @@ pub struct Cache {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 struct CacheInner {
     
     
@@ -117,7 +118,7 @@ struct CacheInner {
     
     
     
-    compiled: HashMap<State, StatePtr>,
+    compiled: StateMap,
     
     
     
@@ -136,9 +137,6 @@ struct CacheInner {
     trans: Transitions,
     
     
-    states: Vec<State>,
-    
-    
     
     
     
@@ -155,6 +153,9 @@ struct CacheInner {
     
     
     size: usize,
+    
+    
+    insts_scratch_space: Vec<u8>,
 }
 
 
@@ -267,8 +268,8 @@ impl<T> Result<T> {
 
 
 #[derive(Clone, Eq, Hash, PartialEq)]
-struct State{
-    data: Box<[u8]>,
+struct State {
+    data: Arc<[u8]>,
 }
 
 
@@ -428,13 +429,13 @@ impl Cache {
         let starts = vec![STATE_UNKNOWN; 256];
         let mut cache = Cache {
             inner: CacheInner {
-                compiled: HashMap::new(),
+                compiled: StateMap::new(num_byte_classes),
                 trans: Transitions::new(num_byte_classes),
-                states: vec![],
                 start_states: starts,
                 stack: vec![],
                 flush_count: 0,
                 size: 0,
+                insts_scratch_space: vec![],
             },
             qcur: SparseSet::new(prog.insts.len()),
             qnext: SparseSet::new(prog.insts.len()),
@@ -1179,7 +1180,11 @@ impl<'a> Fsm<'a> {
             Some(v) => v,
         };
         
-        if let Some(&si) = self.cache.compiled.get(&key) {
+        if let Some(si) = self
+            .cache
+            .compiled
+            .get_ptr(&key)
+        {
             return Some(si);
         }
         
@@ -1219,8 +1224,14 @@ impl<'a> Fsm<'a> {
         
         
 
+        let mut insts = mem::replace(
+            &mut self.cache.insts_scratch_space,
+            vec![],
+        );
+        insts.clear();
         
-        let mut insts = vec![0];
+        insts.push(0);
+
         let mut prev = 0;
         for &ip in q {
             let ip = usize_to_u32(ip);
@@ -1244,13 +1255,16 @@ impl<'a> Fsm<'a> {
         
         
         
-        if insts.len() == 1 && !state_flags.is_match() {
-            None
-        } else {
-            let StateFlags(f) = *state_flags;
-            insts[0] = f;
-            Some(State { data: insts.into_boxed_slice() })
-        }
+        let opt_state =
+            if insts.len() == 1 && !state_flags.is_match() {
+                None
+            } else {
+                let StateFlags(f) = *state_flags;
+                insts[0] = f;
+                Some(State { data: Arc::from(&*insts) })
+            };
+        self.cache.insts_scratch_space = insts;
+        opt_state
     }
 
     
@@ -1265,7 +1279,7 @@ impl<'a> Fsm<'a> {
         &mut self,
         current_state: Option<&mut StatePtr>,
     ) -> bool {
-        if self.cache.states.is_empty() {
+        if self.cache.compiled.is_empty() {
             
             return true;
         }
@@ -1295,7 +1309,7 @@ impl<'a> Fsm<'a> {
         
         
         
-        let nstates = self.cache.states.len();
+        let nstates = self.cache.compiled.len();
         if self.cache.flush_count >= 3
             && self.at >= self.last_cache_flush
             && (self.at - self.last_cache_flush) <= 10 * nstates {
@@ -1314,7 +1328,6 @@ impl<'a> Fsm<'a> {
         };
         self.cache.reset_size();
         self.cache.trans.clear();
-        self.cache.states.clear();
         self.cache.compiled.clear();
         for s in &mut self.cache.start_states {
             *s = STATE_UNKNOWN;
@@ -1334,7 +1347,7 @@ impl<'a> Fsm<'a> {
     fn restore_state(&mut self, state: State) -> Option<StatePtr> {
         
         
-        if let Some(&si) = self.cache.compiled.get(&state) {
+        if let Some(si) = self.cache.compiled.get_ptr(&state) {
             return Some(si);
         }
         self.add_state(state)
@@ -1475,7 +1488,7 @@ impl<'a> Fsm<'a> {
 
     
     fn state(&self, si: StatePtr) -> &State {
-        &self.cache.states[si as usize / self.num_byte_classes()]
+        self.cache.compiled.get_state(si).unwrap()
     }
 
     
@@ -1508,16 +1521,13 @@ impl<'a> Fsm<'a> {
         
         self.cache.size +=
             self.cache.trans.state_heap_size()
-            + (2 * state.data.len())
+            + state.data.len()
             + (2 * mem::size_of::<State>())
             + mem::size_of::<StatePtr>();
-        self.cache.states.push(state.clone());
         self.cache.compiled.insert(state, si);
         
-        debug_assert!(self.cache.states.len()
+        debug_assert!(self.cache.compiled.len()
                       == self.cache.trans.num_states());
-        debug_assert!(self.cache.states.len()
-                      == self.cache.compiled.len());
         Some(si)
     }
 
@@ -1595,6 +1605,66 @@ impl<'a> Fsm<'a> {
     
     fn approximate_size(&self) -> usize {
         self.cache.size + self.prog.approximate_size()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+struct StateMap {
+    
+    
+    
+    
+    map: HashMap<State, StatePtr>,
+    
+    
+    states: Vec<State>,
+    
+    num_byte_classes: usize,
+}
+
+impl StateMap {
+    fn new(num_byte_classes: usize) -> StateMap {
+        StateMap {
+            map: HashMap::new(),
+            states: vec![],
+            num_byte_classes: num_byte_classes,
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.states.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.states.is_empty()
+    }
+
+    fn get_ptr(&self, state: &State) -> Option<StatePtr> {
+        self.map.get(state).cloned()
+    }
+
+    fn get_state(&self, si: StatePtr) -> Option<&State> {
+        self.states.get(si as usize / self.num_byte_classes)
+    }
+
+    fn insert(&mut self, state: State, si: StatePtr) {
+        self.map.insert(state.clone(), si);
+        self.states.push(state);
+    }
+
+    fn clear(&mut self) {
+        self.map.clear();
+        self.states.clear();
     }
 }
 
@@ -1844,6 +1914,7 @@ fn read_varu32(data: &[u8]) -> (u32, usize) {
 mod tests {
     extern crate rand;
 
+    use std::sync::Arc;
     use quickcheck::{QuickCheck, StdGen, quickcheck};
     use super::{
         StateFlags, State, push_inst_ptr,
@@ -1858,7 +1929,7 @@ mod tests {
             for &ip in ips.iter() {
                 push_inst_ptr(&mut data, &mut prev, ip);
             }
-            let state = State { data: data.into_boxed_slice() };
+            let state = State { data: Arc::from(&data[..]) };
 
             let expected: Vec<usize> =
                 ips.into_iter().map(|ip| ip as usize).collect();

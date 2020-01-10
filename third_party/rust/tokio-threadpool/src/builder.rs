@@ -1,21 +1,22 @@
 use callback::Callback;
 use config::{Config, MAX_WORKERS};
 use park::{BoxPark, BoxedPark, DefaultPark};
-use shutdown::ShutdownTrigger;
 use pool::{Pool, MAX_BACKUP};
-use task::Queue;
+use shutdown::ShutdownTrigger;
 use thread_pool::ThreadPool;
 use worker::{self, Worker, WorkerId};
 
+use std::any::Any;
+use std::cmp::max;
 use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
-use std::cmp::max;
 
+use crossbeam_deque::Injector;
 use num_cpus;
-use tokio_executor::Enter;
 use tokio_executor::park::Park;
+use tokio_executor::Enter;
 
 
 
@@ -93,10 +94,8 @@ impl Builder {
     pub fn new() -> Builder {
         let num_cpus = max(1, num_cpus::get());
 
-        let new_park = Box::new(|_: &WorkerId| {
-            Box::new(BoxedPark::new(DefaultPark::new()))
-                as BoxPark
-        });
+        let new_park =
+            Box::new(|_: &WorkerId| Box::new(BoxedPark::new(DefaultPark::new())) as BoxPark);
 
         Builder {
             pool_size: num_cpus,
@@ -108,6 +107,7 @@ impl Builder {
                 around_worker: None,
                 after_start: None,
                 before_stop: None,
+                panic_handler: None,
             },
             new_park,
         }
@@ -221,6 +221,34 @@ impl Builder {
     
     
     
+    pub fn panic_handler<F>(&mut self, f: F) -> &mut Self
+    where
+        F: Fn(Box<Any + Send>) + Send + Sync + 'static,
+    {
+        self.config.panic_handler = Some(Arc::new(f));
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     pub fn name_prefix<S: Into<String>>(&mut self, val: S) -> &mut Self {
@@ -280,7 +308,8 @@ impl Builder {
     
     
     pub fn around_worker<F>(&mut self, f: F) -> &mut Self
-        where F: Fn(&Worker, &mut Enter) + Send + Sync + 'static
+    where
+        F: Fn(&Worker, &mut Enter) + Send + Sync + 'static,
     {
         self.config.around_worker = Some(Callback::new(f));
         self
@@ -307,7 +336,8 @@ impl Builder {
     
     
     pub fn after_start<F>(&mut self, f: F) -> &mut Self
-        where F: Fn() + Send + Sync + 'static
+    where
+        F: Fn() + Send + Sync + 'static,
     {
         self.config.after_start = Some(Arc::new(f));
         self
@@ -333,7 +363,8 @@ impl Builder {
     
     
     pub fn before_stop<F>(&mut self, f: F) -> &mut Self
-        where F: Fn() + Send + Sync + 'static
+    where
+        F: Fn() + Send + Sync + 'static,
     {
         self.config.before_stop = Some(Arc::new(f));
         self
@@ -369,13 +400,12 @@ impl Builder {
     
     
     pub fn custom_park<F, P>(&mut self, f: F) -> &mut Self
-    where F: Fn(&WorkerId) -> P + 'static,
-          P: Park + Send + 'static,
-          P::Error: Error,
+    where
+        F: Fn(&WorkerId) -> P + 'static,
+        P: Park + Send + 'static,
+        P::Error: Error,
     {
-        self.new_park = Box::new(move |id| {
-            Box::new(BoxedPark::new(f(id)))
-        });
+        self.new_park = Box::new(move |id| Box::new(BoxedPark::new(f(id))));
 
         self
     }
@@ -414,7 +444,7 @@ impl Builder {
             workers.into()
         };
 
-        let queue = Arc::new(Queue::new());
+        let queue = Arc::new(Injector::new());
 
         
         

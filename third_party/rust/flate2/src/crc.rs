@@ -1,18 +1,17 @@
 
 
-use std::io::prelude::*;
 use std::io;
-use libc;
+use std::io::prelude::*;
 
-use ffi;
+use crc32fast::Hasher;
 
 
 
 
 #[derive(Debug)]
 pub struct Crc {
-    crc: libc::c_ulong,
     amt: u32,
+    hasher: Hasher,
 }
 
 
@@ -27,12 +26,15 @@ pub struct CrcReader<R> {
 impl Crc {
     
     pub fn new() -> Crc {
-        Crc { crc: 0, amt: 0 }
+        Crc {
+            amt: 0,
+            hasher: Hasher::new(),
+        }
     }
 
     
     pub fn sum(&self) -> u32 {
-        self.crc as u32
+        self.hasher.clone().finalize()
     }
 
     
@@ -44,25 +46,19 @@ impl Crc {
     
     pub fn update(&mut self, data: &[u8]) {
         self.amt = self.amt.wrapping_add(data.len() as u32);
-        self.crc = unsafe {
-            ffi::mz_crc32(self.crc, data.as_ptr(), data.len() as libc::size_t)
-        };
+        self.hasher.update(data);
     }
 
     
     pub fn reset(&mut self) {
-        self.crc = 0;
         self.amt = 0;
+        self.hasher.reset();
     }
 
     
     pub fn combine(&mut self, additional_crc: &Crc) {
-        self.crc = unsafe {
-            ffi::mz_crc32_combine(self.crc as ::libc::c_ulong,
-                                  additional_crc.crc as ::libc::c_ulong,
-                                  additional_crc.amt as ::libc::off_t)
-        };
         self.amt += additional_crc.amt;
+        self.hasher.combine(&additional_crc.hasher);
     }
 }
 
@@ -105,7 +101,7 @@ impl<R> CrcReader<R> {
 
 impl<R: Read> Read for CrcReader<R> {
     fn read(&mut self, into: &mut [u8]) -> io::Result<usize> {
-        let amt = try!(self.inner.read(into));
+        let amt = self.inner.read(into)?;
         self.crc.update(&into[..amt]);
         Ok(amt)
     }
@@ -120,5 +116,63 @@ impl<R: BufRead> BufRead for CrcReader<R> {
             self.crc.update(&data[..amt]);
         }
         self.inner.consume(amt);
+    }
+}
+
+
+
+
+#[derive(Debug)]
+pub struct CrcWriter<W> {
+    inner: W,
+    crc: Crc,
+}
+
+impl<W> CrcWriter<W> {
+    
+    pub fn crc(&self) -> &Crc {
+        &self.crc
+    }
+
+    
+    pub fn into_inner(self) -> W {
+        self.inner
+    }
+
+    
+    pub fn get_ref(&self) -> &W {
+        &self.inner
+    }
+
+    
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.inner
+    }
+
+    
+    pub fn reset(&mut self) {
+        self.crc.reset();
+    }
+}
+
+impl<W: Write> CrcWriter<W> {
+    
+    pub fn new(w: W) -> CrcWriter<W> {
+        CrcWriter {
+            inner: w,
+            crc: Crc::new(),
+        }
+    }
+}
+
+impl<W: Write> Write for CrcWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let amt = try!(self.inner.write(buf));
+        self.crc.update(&buf[..amt]);
+        Ok(amt)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
     }
 }

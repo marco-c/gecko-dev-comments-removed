@@ -21,27 +21,39 @@
 
 
 
-extern crate adler32;
-extern crate libc;
+#![forbid(unsafe_code)]
 
-pub mod inflate;
+extern crate adler32;
+
 pub mod deflate;
+pub mod inflate;
 mod shared;
 
-pub use shared::update_adler32 as mz_adler32_oxide;
-pub use shared::MZ_ADLER32_INIT;
+pub use crate::shared::update_adler32 as mz_adler32_oxide;
+pub use crate::shared::{MZ_ADLER32_INIT, MZ_DEFAULT_WINDOW_BITS};
 
-use libc::{c_int, c_void};
+
 
 
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum MZFlush {
+    
+    
     None = 0,
+    
+    
     Partial = 1,
+    
+    
     Sync = 2,
+    
+    
+    
     Full = 3,
+    
     Finish = 4,
+    
     Block = 5,
 }
 
@@ -49,7 +61,7 @@ impl MZFlush {
     
     
     
-    pub fn new(flush: c_int) -> Result<Self, MZError> {
+    pub fn new(flush: i32) -> Result<Self, MZError> {
         match flush {
             0 => Ok(MZFlush::None),
             1 | 2 => Ok(MZFlush::Sync),
@@ -83,4 +95,64 @@ pub enum MZError {
 }
 
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum DataFormat {
+    
+    Zlib,
+    
+    Raw,
+}
+
+impl DataFormat {
+    pub(crate) fn from_window_bits(window_bits: i32) -> DataFormat {
+        if window_bits > 0 {
+            DataFormat::Zlib
+        } else {
+            DataFormat::Raw
+        }
+    }
+
+    pub(crate) fn to_window_bits(self) -> i32 {
+        match self {
+            DataFormat::Zlib => shared::MZ_DEFAULT_WINDOW_BITS,
+            DataFormat::Raw => -shared::MZ_DEFAULT_WINDOW_BITS,
+        }
+    }
+}
+
+
 pub type MZResult = Result<MZStatus, MZError>;
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct StreamResult {
+    
+    pub bytes_consumed: usize,
+    
+    pub bytes_written: usize,
+    
+    pub status: MZResult,
+}
+
+impl StreamResult {
+    #[inline]
+    pub(crate) fn error(error: MZError) -> StreamResult {
+        StreamResult {
+            bytes_consumed: 0,
+            bytes_written: 0,
+            status: Err(error),
+        }
+    }
+}
+
+impl std::convert::From<StreamResult> for MZResult {
+    fn from(res: StreamResult) -> Self {
+        res.status
+    }
+}
+
+impl std::convert::From<&StreamResult> for MZResult {
+    fn from(res: &StreamResult) -> Self {
+        res.status
+    }
+}

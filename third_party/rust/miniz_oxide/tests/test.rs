@@ -2,8 +2,8 @@ extern crate miniz_oxide;
 
 use std::io::Read;
 
-use miniz_oxide::inflate::{TINFLStatus, decompress_to_vec_zlib, decompress_to_vec};
 use miniz_oxide::deflate::compress_to_vec;
+use miniz_oxide::inflate::{decompress_to_vec, decompress_to_vec_zlib, TINFLStatus};
 
 fn get_test_file_data(name: &str) -> Vec<u8> {
     use std::fs::File;
@@ -22,6 +22,29 @@ fn inf_issue_14() {
     assert!(result.is_err());
     let error = result.unwrap_err();
     assert_eq!(error, TINFLStatus::Failed);
+}
+
+
+#[test]
+fn inf_issue_19() {
+    let data = get_test_file_data("tests/test_data/issue_19.deflate");
+    let _ = decompress_to_vec(data.as_slice());
+}
+
+
+
+#[test]
+fn decompress_zero_code_len_oom() {
+    let data = get_test_file_data("tests/test_data/invalid_code_len_oom");
+    let _ = decompress_to_vec(data.as_slice());
+}
+
+
+
+#[test]
+fn decompress_zero_code_len_2() {
+    let data = get_test_file_data("tests/test_data/invalid_code_len_oom");
+    let _ = decompress_to_vec(data.as_slice());
 }
 
 fn get_test_data() -> Vec<u8> {

@@ -470,6 +470,44 @@ impl<T> Atomic<T> {
     pub fn fetch_xor<'g>(&self, val: usize, ord: Ordering, _: &'g Guard) -> Shared<'g, T> {
         unsafe { Shared::from_usize(self.data.fetch_xor(val & low_bits::<T>(), ord)) }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn into_owned(self) -> Owned<T> {
+        Owned::from_usize(self.data.into_inner())
+    }
 }
 
 impl<T> fmt::Debug for Atomic<T> {

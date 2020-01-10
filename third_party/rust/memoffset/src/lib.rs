@@ -57,12 +57,18 @@
 
 
 
+
+
+
 #![no_std]
 
 
 
 #[doc(hidden)]
 pub use core::mem;
+
+#[doc(hidden)]
+pub use core::ptr;
 
 #[macro_use]
 mod offset_of;

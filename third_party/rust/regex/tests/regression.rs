@@ -15,6 +15,18 @@ fn regression_many_repeat_stack_overflow() {
 }
 
 
+#[test]
+fn regression_invalid_repetition_expr() {
+    assert!(regex_new!("(?m){1,1}").is_err());
+}
+
+
+#[test]
+fn regression_invalid_flags_expression() {
+    assert!(regex_new!("(((?x)))").is_ok());
+}
+
+
 mat!(regression_unsorted_binary_search_1, r"(?i)[a_]+", "A_", Some((0, 2)));
 mat!(regression_unsorted_binary_search_2, r"(?i)[A_]+", "a_", Some((0, 2)));
 
@@ -83,8 +95,18 @@ ismatch!(strange_anchor_non_complete_prefix, r"a^{2}", "", false);
 ismatch!(strange_anchor_non_complete_suffix, r"${2}a", "", false);
 
 
-mat!(captures_after_dfa_premature_end, r"a(b*(X|$))?", "abcbX",
+ismatch!(reverse_suffix1, r"[0-4][0-4][0-4]000", "153.230000", true);
+ismatch!(reverse_suffix2, r"\d\d\d000", "153.230000\n", true);
+matiter!(reverse_suffix3, r"\d\d\d000", "153.230000\n", (4, 10));
+
+
+
+mat!(captures_after_dfa_premature_end1, r"a(b*(X|$))?", "abcbX",
      Some((0, 1)), None, None);
+mat!(captures_after_dfa_premature_end2, r"a(bc*(X|$))?", "abcbX",
+     Some((0, 1)), None, None);
+mat!(captures_after_dfa_premature_end3, r"(aa$)?", "aaz",
+     Some((0, 0)));
 
 
 ismatch!(
@@ -92,3 +114,39 @@ ismatch!(
     r"typename type\-parameter\-\d+\-\d+::.+",
     "test",
     false);
+
+
+ismatch!(
+    blank_matches_nothing_between_space_and_tab,
+    r"[[:blank:]]",
+    "\u{a}\u{b}\u{c}\u{d}\u{e}\u{f}\
+    \u{10}\u{11}\u{12}\u{13}\u{14}\u{15}\u{16}\u{17}\
+    \u{18}\u{19}\u{1a}\u{1b}\u{1c}\u{1d}\u{1e}\u{1f}",
+    false);
+
+ismatch!(
+    inverted_blank_matches_everything_between_space_and_tab,
+    r"^[[:^blank:]]+$",
+    "\u{a}\u{b}\u{c}\u{d}\u{e}\u{f}\
+    \u{10}\u{11}\u{12}\u{13}\u{14}\u{15}\u{16}\u{17}\
+    \u{18}\u{19}\u{1a}\u{1b}\u{1c}\u{1d}\u{1e}\u{1f}",
+    true);
+
+
+
+
+
+mat!(
+    ahocorasick1,
+    "samwise|sam|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|\
+     A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z",
+    "samwise",
+    Some((0, 7))
+);
+
+
+#[test]
+fn regression_nfa_stops1() {
+    let re = ::regex::bytes::Regex::new(r"\bs(?:[ab])").unwrap();
+    assert_eq!(0, re.find_iter(b"s\xE4").count());
+}

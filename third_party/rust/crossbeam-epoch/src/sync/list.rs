@@ -64,11 +64,11 @@ pub struct Entry {
 
 
 
-
 pub trait IsElement<T> {
     
     fn entry_of(&T) -> &Entry;
 
+    
     
     
     
@@ -88,7 +88,7 @@ pub trait IsElement<T> {
     
     
     
-    unsafe fn finalize(&Entry);
+    unsafe fn finalize(&Entry, &Guard);
 }
 
 
@@ -225,7 +225,7 @@ impl<T, C: IsElement<T>> Drop for List<T, C> {
                 
                 assert_eq!(succ.tag(), 1);
 
-                C::finalize(curr.deref());
+                C::finalize(curr.deref(), guard);
                 curr = succ;
             }
         }
@@ -256,8 +256,7 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
                         
                         
                         unsafe {
-                            let p = self.curr;
-                            self.guard.defer_unchecked(move || C::finalize(p.deref()));
+                            C::finalize(self.curr.deref(), self.guard);
                         }
 
                         
@@ -303,8 +302,8 @@ mod tests {
             entry
         }
 
-        unsafe fn finalize(entry: &Entry) {
-            drop(Box::from_raw(entry as *const Entry as *mut Entry));
+        unsafe fn finalize(entry: &Entry, guard: &Guard) {
+            guard.defer_destroy(Shared::from(Self::element_of(entry) as *const _));
         }
     }
 
@@ -420,7 +419,8 @@ mod tests {
                     }
                 });
             }
-        }).unwrap();
+        })
+        .unwrap();
 
         let handle = collector.register();
         let guard = handle.pin();
@@ -466,7 +466,8 @@ mod tests {
                     }
                 });
             }
-        }).unwrap();
+        })
+        .unwrap();
 
         let handle = collector.register();
         let guard = handle.pin();

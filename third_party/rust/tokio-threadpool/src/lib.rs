@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/tokio-threadpool/0.1.10")]
+#![doc(html_root_url = "https://docs.rs/tokio-threadpool/0.1.14")]
 #![deny(warnings, missing_docs, missing_debug_implementations)]
 
 
@@ -79,13 +79,14 @@
 
 extern crate tokio_executor;
 
-extern crate crossbeam_channel;
-extern crate crossbeam_deque as deque;
+extern crate crossbeam_deque;
+extern crate crossbeam_queue;
 extern crate crossbeam_utils;
 #[macro_use]
 extern crate futures;
 extern crate num_cpus;
 extern crate rand;
+extern crate slab;
 
 #[macro_use]
 extern crate log;
@@ -158,5 +159,5 @@ pub use blocking::{blocking, BlockingError};
 pub use builder::Builder;
 pub use sender::Sender;
 pub use shutdown::Shutdown;
-pub use thread_pool::{ThreadPool, SpawnHandle};
+pub use thread_pool::{SpawnHandle, ThreadPool};
 pub use worker::{Worker, WorkerId};
