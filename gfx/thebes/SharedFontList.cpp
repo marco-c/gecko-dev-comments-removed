@@ -6,6 +6,7 @@
 #include "gfxPlatformFontList.h"
 #include "gfxFontUtils.h"
 #include "gfxFont.h"
+#include "nsReadableUtils.h"
 #include "prerror.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Logging.h"
@@ -747,6 +748,48 @@ Family* FontList::FindFamily(const nsCString& aName) {
       return &families[match];
     }
   }
+
+#ifdef XP_WIN
+  
+  
+  
+  
+  
+  
+  
+  if (!header.mAliasCount && aName.Contains(' ')) {
+    const nsLiteralCString kStyleSuffixes[] = {
+        nsLiteralCString(" book"),   nsLiteralCString(" medium"),
+        nsLiteralCString(" normal"), nsLiteralCString(" regular"),
+        nsLiteralCString(" roman"),  nsLiteralCString(" upright")};
+    for (const auto& styleName : kStyleSuffixes) {
+      if (StringEndsWith(aName, styleName)) {
+        
+        
+        nsAutoCString strippedName(aName.BeginReading(),
+                                   aName.Length() - styleName.Length());
+        families = Families();
+        if (BinarySearchIf(families, 0, header.mFamilyCount,
+                           FamilyNameComparator(this, strippedName), &match)) {
+          
+          
+          
+          
+          Family* candidateFamily = &families[match];
+          auto pfl = gfxPlatformFontList::PlatformFontList();
+          if (pfl->mAliasTable.Lookup(aName)) {
+            return candidateFamily;
+          }
+          pfl->ReadFaceNamesForFamily(candidateFamily, false);
+          if (pfl->mAliasTable.Lookup(aName)) {
+            return candidateFamily;
+          }
+        }
+        break;
+      }
+    }
+  }
+#endif
 
   return nullptr;
 }
