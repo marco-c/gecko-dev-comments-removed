@@ -30,6 +30,7 @@ class GeckoViewAccessibility extends GeckoViewModule {
   }
 }
 
+
 const { debug, warn } = GeckoViewAccessibility.initLogging(
   "GeckoViewAccessibility"
-); 
+);

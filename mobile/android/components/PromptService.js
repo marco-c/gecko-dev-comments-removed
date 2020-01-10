@@ -498,6 +498,8 @@ InternalPrompt.prototype = {
     }
 
     
+    
+
     let ok = false;
     if (aUser) {
       ok = this.nsIPrompt_promptUsernameAndPassword(
@@ -508,10 +510,11 @@ InternalPrompt.prototype = {
         checkMsg,
         check
       );
-    } 
-    else {
+    } else {
       ok = this.nsIPrompt_promptPassword(aTitle, aText, aPass, checkMsg, check);
-    } 
+    }
+
+    
 
     if (ok && canSave && check.value) {
       PromptUtils.savePassword(hostname, realm, aUser, aPass);

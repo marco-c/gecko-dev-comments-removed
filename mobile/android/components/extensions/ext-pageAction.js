@@ -65,18 +65,14 @@ class PageAction extends EventEmitter {
 
     this.shouldShow = false;
 
-    this.tabContext.on(
-      "tab-selected", 
-      (evt, tabId) => {
-        this.onTabSelected(tabId);
-      }
-    );
-    this.tabContext.on(
-      "tab-closed", 
-      (evt, tabId) => {
-        this.onTabClosed(tabId);
-      }
-    );
+    
+    this.tabContext.on("tab-selected", (evt, tabId) => {
+      this.onTabSelected(tabId);
+    });
+    
+    this.tabContext.on("tab-closed", (evt, tabId) => {
+      this.onTabClosed(tabId);
+    });
   }
 
   
