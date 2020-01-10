@@ -4,27 +4,48 @@ async function clickToReportAndAwaitReportTabLoad() {
   await openPageActions();
   await isPanelItemEnabled();
 
-  let screenshotPromise;
-  let newTabPromise = new Promise(resolve => {
+  
+  const tab = await new Promise(resolve => {
     gBrowser.tabContainer.addEventListener(
       "TabOpen",
       event => {
-        let tab = event.target;
-        screenshotPromise = BrowserTestUtils.waitForContentEvent(
-          tab.linkedBrowser,
-          "ScreenshotReceived",
-          false,
-          null,
-          true
-        );
-        resolve(tab);
+        resolve(event.target);
       },
       { once: true }
     );
+    document.getElementById(WC_PAGE_ACTION_PANEL_ID).click();
   });
-  document.getElementById(WC_PAGE_ACTION_PANEL_ID).click();
-  const tab = await newTabPromise;
-  await screenshotPromise;
+
+  
+  await new Promise(resolve => {
+    const progressListener = {
+      onLocationChange(browser) {
+        
+        if (browser != tab.linkedBrowser) {
+          return;
+        }
+
+        
+        if (browser.currentURI.spec === "about:blank") {
+          return;
+        }
+
+        gBrowser.removeTabsProgressListener(progressListener);
+        TestUtils.executeSoon(() => resolve());
+      },
+    };
+    gBrowser.addTabsProgressListener(progressListener);
+  });
+
+  
+  await BrowserTestUtils.waitForContentEvent(
+    gBrowser.selectedBrowser,
+    "ScreenshotReceived",
+    false,
+    null,
+    true
+  );
+
   return tab;
 }
 
