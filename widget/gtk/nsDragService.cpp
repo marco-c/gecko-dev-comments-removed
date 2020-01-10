@@ -1244,9 +1244,6 @@ GtkTargetList* nsDragService::GetSourceList(void) {
       g_free(thisTarget);
     }
     g_free(targets);
-  } else {
-    
-    targetList = gtk_target_list_new(nullptr, 0);
   }
   return targetList;
 }
