@@ -2261,9 +2261,6 @@ pref("devtools.webconsole.input.editorWidth", 0);
 pref("devtools.browserconsole.input.editorWidth", 0);
 
 
-pref("devtools.webconsole.input.editorOnboarding", true);
-
-
 pref("devtools.performance.new-panel-enabled", false);
 
 

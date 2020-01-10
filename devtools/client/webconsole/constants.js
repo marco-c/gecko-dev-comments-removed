@@ -13,7 +13,6 @@ const actionTypes = {
   BATCH_ACTIONS: "BATCH_ACTIONS",
   CLEAR_HISTORY: "CLEAR_HISTORY",
   EDITOR_TOGGLE: "EDITOR_TOGGLE",
-  EDITOR_ONBOARDING_DISMISS: "EDITOR_ONBOARDING_DISMISS",
   EVALUATE_EXPRESSION: "EVALUATE_EXPRESSION",
   FILTER_TEXT_SET: "FILTER_TEXT_SET",
   FILTER_TOGGLE: "FILTER_TOGGLE",
@@ -77,8 +76,6 @@ const prefs = {
       MESSAGE_TIMESTAMP: "devtools.webconsole.timestampMessages",
       
       EDITOR_WIDTH: "input.editorWidth",
-      
-      EDITOR_ONBOARDING: "devtools.webconsole.input.editorOnboarding",
     },
     FEATURES: {
       
