@@ -799,6 +799,15 @@ SHEntryChild::ReplaceChild(nsISHEntry* aNewEntry) {
 }
 
 NS_IMETHODIMP_(void)
+SHEntryChild::ClearEntry() {
+  
+  
+  RefPtr<SHEntryChildShared> shared = mShared->Duplicate();
+  SendClearEntry(shared->GetID());
+  shared.swap(mShared);
+}
+
+NS_IMETHODIMP_(void)
 SHEntryChild::AddChildShell(nsIDocShellTreeItem* aShell) {
   mShared->mChildShells.AppendObject(aShell);
 }
