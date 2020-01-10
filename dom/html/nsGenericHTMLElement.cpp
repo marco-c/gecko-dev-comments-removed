@@ -1591,30 +1591,6 @@ nsIContent::IMEState nsGenericHTMLFormElement::GetDesiredIMEState() {
   return state;
 }
 
-static bool IsSameOriginAsTop(const BindContext& aContext,
-                              const nsGenericHTMLFormElement* aElement) {
-  MOZ_ASSERT(aElement);
-
-  BrowsingContext* browsingContext = aContext.OwnerDoc().GetBrowsingContext();
-  if (!browsingContext) {
-    return false;
-  }
-
-  nsPIDOMWindowOuter* topWindow = browsingContext->Top()->GetDOMWindow();
-  if (!topWindow) {
-    
-    return false;
-  }
-
-  Document* topLevelDocument = topWindow->GetExtantDoc();
-  if (!topLevelDocument) {
-    return false;
-  }
-
-  return NS_SUCCEEDED(
-      nsContentUtils::CheckSameOrigin(topLevelDocument, aElement));
-}
-
 nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
                                               nsINode& aParent) {
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
@@ -1624,11 +1600,8 @@ nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
   
   
   
-  
-  
   if (IsAutofocusable() && HasAttr(kNameSpaceID_None, nsGkAtoms::autofocus) &&
-      StaticPrefs::browser_autofocus() && IsInUncomposedDoc() &&
-      IsSameOriginAsTop(aContext, this)) {
+      StaticPrefs::browser_autofocus() && IsInUncomposedDoc()) {
     aContext.OwnerDoc().SetAutoFocusElement(this);
   }
 
