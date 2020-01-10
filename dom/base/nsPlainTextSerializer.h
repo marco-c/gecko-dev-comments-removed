@@ -145,7 +145,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   static bool IsCssBlockLevelElement(mozilla::dom::Element* aElement);
 
  private:
-  nsString mCurrentLine;
   uint32_t mHeadLevel;
   bool mAtFirstColumn;
 
@@ -169,6 +168,15 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   Settings mSettings;
 
+  struct CurrentLineContent {
+    
+    nsString mValue;
+
+    
+    uint32_t mWidth = 0;
+  };
+
+  CurrentLineContent mCurrentLineContent;
 
   
   
@@ -186,9 +194,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   uint32_t mWrapColumn;
-
-  
-  uint32_t mCurrentLineWidth;
 
   
   
