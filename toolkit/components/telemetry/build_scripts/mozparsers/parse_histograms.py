@@ -91,11 +91,11 @@ def exponential_buckets(dmin, dmax, n_buckets):
     return ret_array
 
 
-whitelists = None
+allowlists = None
 
 
-def load_whitelist():
-    global whitelists
+def load_allowlist():
+    global allowlists
     try:
         parsers_path = os.path.realpath(os.path.dirname(__file__))
         
@@ -103,17 +103,17 @@ def load_whitelist():
         
         
         telemetry_module_path = os.path.abspath(os.path.join(parsers_path, os.pardir, os.pardir))
-        whitelist_path = os.path.join(telemetry_module_path, 'histogram-whitelists.json')
-        with open(whitelist_path, 'r') as f:
+        allowlist_path = os.path.join(telemetry_module_path, 'histogram-allowlists.json')
+        with open(allowlist_path, 'r') as f:
             try:
-                whitelists = json.load(f)
-                for name, whitelist in whitelists.iteritems():
-                    whitelists[name] = set(whitelist)
+                allowlists = json.load(f)
+                for name, allowlist in allowlists.iteritems():
+                    allowlists[name] = set(allowlist)
             except ValueError:
-                ParserError('Error parsing whitelist: %s' % whitelist_path).handle_now()
+                ParserError('Error parsing allowlist: %s' % allowlist_path).handle_now()
     except IOError:
-        whitelists = None
-        ParserError('Unable to parse whitelist: %s.' % whitelist_path).handle_now()
+        allowlists = None
+        ParserError('Unable to parse allowlist: %s.' % allowlist_path).handle_now()
 
 
 class Histogram:
@@ -304,8 +304,8 @@ the histogram."""
         self.check_keys(name, definition, allowed_keys)
         self.check_keys_field(name, definition)
         self.check_field_types(name, definition)
-        self.check_whitelisted_kind(name, definition)
-        self.check_whitelistable_fields(name, definition)
+        self.check_allowlisted_kind(name, definition)
+        self.check_allowlistable_fields(name, definition)
         self.check_expiration(name, definition)
         self.check_label_values(name, definition)
         self.check_record_in_processes(name, definition)
@@ -341,8 +341,8 @@ the histogram."""
         
         
         if expiration == "default" and \
-           whitelists is not None and \
-           name not in whitelists['expiry_default']:
+           allowlists is not None and \
+           name not in allowlists['expiry_default']:
             ParserError('New histogram "%s" cannot have "default" %s value.' %
                         (name, field)).handle_later()
 
@@ -472,9 +472,9 @@ the histogram."""
             raise ValueError('"keys" values for %s are exceeding length "%d": %s' %
                              (name, MAX_KEY_LENGTH, ', '.join(invalid)))
 
-    def check_whitelisted_kind(self, name, definition):
+    def check_allowlisted_kind(self, name, definition):
         
-        if not self._strict_type_checks or whitelists is None:
+        if not self._strict_type_checks or allowlists is None:
             return
 
         
@@ -485,7 +485,7 @@ the histogram."""
 
         if not android_target and \
            hist_kind in ["flag", "count"] and \
-           name not in whitelists["kind"]:
+           name not in allowlists["kind"]:
             ParserError(('Unsupported kind "%s" for histogram "%s":\n'
                          'New "%s" histograms are not supported on Desktop, you should'
                          ' use scalars instead:\n'
@@ -495,7 +495,7 @@ the histogram."""
                         % (hist_kind, name, hist_kind, SCALARS_DOC_URL)).handle_now()
 
     
-    def check_whitelistable_fields(self, name, definition):
+    def check_allowlistable_fields(self, name, definition):
         
         
         
@@ -503,16 +503,16 @@ the histogram."""
             return
 
         
-        if whitelists is None:
+        if allowlists is None:
             return
 
         for field in ['alert_emails', 'bug_numbers']:
-            if field not in definition and name not in whitelists[field]:
+            if field not in definition and name not in allowlists[field]:
                 ParserError('New histogram "%s" must have a "%s" field.' %
                             (name, field)).handle_later()
-            if field in definition and name in whitelists[field]:
-                msg = 'Histogram "%s" should be removed from the whitelist for "%s" in ' \
-                      'histogram-whitelists.json.'
+            if field in definition and name in allowlists[field]:
+                msg = 'Histogram "%s" should be removed from the allowlist for "%s" in ' \
+                      'histogram-allowlists.json.'
                 ParserError(msg % (name, field)).handle_later()
 
     def check_field_types(self, name, definition):
@@ -601,8 +601,8 @@ the histogram."""
         self._low = low
         self._high = high
         self._n_buckets = n_buckets
-        if whitelists is not None and self._n_buckets > 100 and type(self._n_buckets) is int:
-            if self._name not in whitelists['n_buckets']:
+        if allowlists is not None and self._n_buckets > 100 and type(self._n_buckets) is int:
+            if self._name not in allowlists['n_buckets']:
                 ParserError(
                     'New histogram "%s" is not permitted to have more than 100 buckets.\n'
                     'Histograms with large numbers of buckets use disproportionately high'
@@ -751,7 +751,7 @@ def from_files(filenames, strict_type_checks=True):
 the histograms defined in filenames.
     """
     if strict_type_checks:
-        load_whitelist()
+        load_allowlist()
 
     all_histograms = OrderedDict()
     for filename in filenames:
@@ -784,12 +784,12 @@ the histograms defined in filenames.
 
     
     
-    if whitelists is not None:
-        all_whitelist_entries = itertools.chain.from_iterable(whitelists.itervalues())
-        orphaned = set(all_whitelist_entries) - set(all_histograms.keys())
+    if allowlists is not None:
+        all_allowlist_entries = itertools.chain.from_iterable(allowlists.itervalues())
+        orphaned = set(all_allowlist_entries) - set(all_histograms.keys())
         if len(orphaned) > 0:
             msg = 'The following entries are orphaned and should be removed from ' \
-                  'histogram-whitelists.json:\n%s'
+                  'histogram-allowlists.json:\n%s'
             ParserError(msg % (', '.join(sorted(orphaned)))).handle_later()
 
     for (name, definition) in all_histograms.iteritems():

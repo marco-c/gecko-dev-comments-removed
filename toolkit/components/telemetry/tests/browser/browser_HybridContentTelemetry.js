@@ -132,7 +132,7 @@ add_task(async function test_untrusted_http_origin() {
   Services.telemetry.setEventRecordingEnabled("telemetry.test", false);
 });
 
-add_task(async function test_secure_non_whitelisted_origin() {
+add_task(async function test_secure_unallowed_origin() {
   Services.telemetry.clearEvents();
 
   
