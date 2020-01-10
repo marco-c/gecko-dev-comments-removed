@@ -2377,6 +2377,22 @@ class HTMLEditor final : public TextEditor,
                      nsIContent& aEndOutdent,
                      BlockIndentedWith aBlockIndentedWith);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE SplitRangeOffFromNodeResult
+  OutdentAroundSelection();
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
