@@ -2727,11 +2727,6 @@ static void MOZ_gdk_display_close(GdkDisplay* display) {
   if (gtk_check_version(3, 9, 8) != NULL) skip_display_close = true;
 #    endif
 
-  
-  
-  
-  PangoContext* pangoContext = gdk_pango_context_get();
-
   bool buggyCairoShutdown = cairo_version() < CAIRO_VERSION_ENCODE(1, 4, 0);
 
   if (!buggyCairoShutdown) {
@@ -2741,26 +2736,6 @@ static void MOZ_gdk_display_close(GdkDisplay* display) {
     
     if (!skip_display_close) gdk_display_close(display);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  PangoFontMap* fontmap = pango_context_get_font_map(pangoContext);
-  
-  
-  
-  
-  if (PANGO_IS_FC_FONT_MAP(fontmap))
-    pango_fc_font_map_shutdown(PANGO_FC_FONT_MAP(fontmap));
-  g_object_unref(pangoContext);
 
   
   pango_cairo_font_map_set_default(nullptr);
