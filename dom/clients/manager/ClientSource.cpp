@@ -12,6 +12,7 @@
 #include "ClientSourceChild.h"
 #include "ClientState.h"
 #include "ClientValidation.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/DOMMozPromiseRequestHolder.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
@@ -20,6 +21,7 @@
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/ServiceWorker.h"
 #include "mozilla/dom/ServiceWorkerContainer.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
@@ -462,15 +464,39 @@ void ClientSource::InheritController(
   
   
   
-  
-  
-  
-  
-  if (!ServiceWorkerParentInterceptEnabled() && GetDocShell()) {
-    AssertIsOnMainThread();
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    if (swm) {
-      swm->NoteInheritedController(mClientInfo, aServiceWorker);
+  if (!ServiceWorkerParentInterceptEnabled()) {
+    if (GetDocShell()) {
+      AssertIsOnMainThread();
+
+      RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+      if (swm) {
+        swm->NoteInheritedController(mClientInfo, aServiceWorker);
+      }
+    } else {
+      WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+      MOZ_ASSERT(workerPrivate);
+
+      RefPtr<StrongWorkerRef> strongWorkerRef = StrongWorkerRef::Create(
+          workerPrivate,
+          NS_ConvertUTF16toUTF8(workerPrivate->WorkerName()).get());
+      auto threadSafeWorkerRef =
+          MakeRefPtr<ThreadSafeWorkerRef>(strongWorkerRef);
+
+      nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+          __func__, [workerRef = threadSafeWorkerRef, clientInfo = mClientInfo,
+                     serviceWorker = aServiceWorker]() {
+            MOZ_ASSERT(IsBlobURI(workerRef->Private()->GetBaseURI()));
+
+            RefPtr<ServiceWorkerManager> swm =
+                ServiceWorkerManager::GetInstance();
+
+            if (swm) {
+              swm->NoteInheritedController(clientInfo, serviceWorker);
+            }
+          });
+
+      Unused << NS_WARN_IF(
+          NS_FAILED(workerPrivate->DispatchToMainThread(r.forget())));
     }
   }
 
