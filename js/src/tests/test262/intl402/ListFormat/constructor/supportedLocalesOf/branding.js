@@ -10,7 +10,6 @@
 
 
 
-
 const fn = Intl.ListFormat.supportedLocalesOf;
 const thisValues = [
   undefined,

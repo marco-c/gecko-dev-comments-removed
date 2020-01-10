@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.ListFormat.prototype.resolvedOptions,
   "function",

@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.supportedLocalesOf, "name", {
   value: "supportedLocalesOf",
   writable: false,

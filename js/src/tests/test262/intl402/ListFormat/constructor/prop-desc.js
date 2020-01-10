@@ -25,7 +25,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.ListFormat, "function");
 
 verifyProperty(Intl, "ListFormat", {

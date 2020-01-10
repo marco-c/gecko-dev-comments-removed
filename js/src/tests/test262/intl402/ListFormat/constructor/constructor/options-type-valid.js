@@ -11,7 +11,6 @@
 
 
 
-
 const validOptions = [
   [undefined, "conjunction"],
   ["conjunction", "conjunction"],

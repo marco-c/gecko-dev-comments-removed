@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.prototype.format, "length", {
   value: 1,
   writable: false,

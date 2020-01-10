@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.prototype.formatToParts, "name", {
   value: "formatToParts",
   writable: false,

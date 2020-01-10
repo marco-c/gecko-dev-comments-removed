@@ -9,7 +9,6 @@
 
 
 
-
 const optionsArguments = [
   true,
   "test",

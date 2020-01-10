@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat, "prototype", {
   writable: false,
   enumerable: false,

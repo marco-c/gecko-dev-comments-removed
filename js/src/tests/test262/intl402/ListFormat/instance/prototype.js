@@ -11,7 +11,6 @@
 
 
 
-
 const value = new Intl.ListFormat();
 assert.sameValue(
   Object.getPrototypeOf(value),

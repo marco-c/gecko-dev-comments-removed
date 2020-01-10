@@ -16,7 +16,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.prototype, "constructor", {
   value: Intl.ListFormat,
   writable: true,

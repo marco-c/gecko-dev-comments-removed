@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.prototype.resolvedOptions, "name", {
   value: "resolvedOptions",
   writable: false,

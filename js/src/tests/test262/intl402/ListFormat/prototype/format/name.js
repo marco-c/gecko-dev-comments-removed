@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.prototype.format, "name", {
   value: "format",
   writable: false,

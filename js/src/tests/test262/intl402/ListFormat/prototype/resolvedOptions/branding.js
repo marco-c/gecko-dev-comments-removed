@@ -12,7 +12,6 @@
 
 
 
-
 const resolvedOptions = Intl.ListFormat.prototype.resolvedOptions;
 
 assert.sameValue(typeof resolvedOptions, "function");

@@ -12,7 +12,6 @@
 
 
 
-
 class CustomListFormat extends Intl.ListFormat {
   constructor(locales, options) {
     super(locales, options);

@@ -9,7 +9,6 @@
 
 
 
-
 Object.defineProperties(Object.prototype, {
   "type": {
     get() {

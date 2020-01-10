@@ -8,7 +8,6 @@
 
 
 
-
 const options = new Intl.ListFormat().resolvedOptions();
 
 const expected = [

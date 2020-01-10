@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.ListFormat.supportedLocalesOf, "function",
                  "supportedLocalesOf should be supported.");
 

@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat, "name", {
   value: "ListFormat",
   writable: false,

@@ -12,7 +12,6 @@
 
 
 
-
 const formatToParts = Intl.ListFormat.prototype.formatToParts;
 
 assert.sameValue(typeof formatToParts, "function");

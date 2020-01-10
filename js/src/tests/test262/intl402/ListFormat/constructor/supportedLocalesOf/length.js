@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat.supportedLocalesOf, "length", {
   value: 1,
   writable: false,

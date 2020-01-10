@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.ListFormat.supportedLocalesOf,
   "function",

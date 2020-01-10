@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Intl.ListFormat, "length", {
   value: 0,
   writable: false,
