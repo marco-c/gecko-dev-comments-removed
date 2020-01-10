@@ -61,10 +61,6 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
   DWORD CheckAdaptersAddresses(void);
 
   
-  bool CheckICSGateway(PIP_ADAPTER_ADDRESSES aAdapter);
-  bool CheckICSStatus(PWCHAR aAdapterName);
-
-  
   
   nsCOMPtr<nsIThreadPool> mThread;
 
