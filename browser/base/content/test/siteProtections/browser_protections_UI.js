@@ -7,6 +7,8 @@ add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.protections_panel.enabled", true],
+      
+      ["browser.protections_panel.toast.timeout", 100],
     ],
   });
 });
@@ -19,7 +21,19 @@ add_task(async function testToggleSwitch() {
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   gProtectionsHandler._protectionsPopupTPSwitch.click();
   await popuphiddenPromise;
+
+  
+  
+  
+  let popupShownPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popupshown");
+  popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+
   await browserLoadedPromise;
+
+  
+  await popupShownPromise;
+  await popuphiddenPromise;
+
   await openProtectionsPanel();
   ok(!gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("enabled"), "TP Switch should be disabled");
   Services.perms.remove(ContentBlocking._baseURIForChannelClassifier, "trackingprotection");
@@ -52,7 +66,7 @@ add_task(async function testSettingsButton() {
 
 
 
-add_task(async function testShouFullReportLink() {
+add_task(async function testShowFullReportLink() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com");
   await openProtectionsPanel();
@@ -72,5 +86,91 @@ add_task(async function testShouFullReportLink() {
   ok(true, "about:protections has been opened successfully");
 
   BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+
+add_task(async function testMiniPanel() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com");
+
+  
+  await openProtectionsPanel(true);
+  let popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+
+  
+  for (let item of protectionsPopupMainView.childNodes) {
+    if (item.id !== "protections-popup-mainView-panel-header") {
+      ok(!BrowserTestUtils.is_visible(item),
+         `The section '${item.id}' is hidden in the toast.`);
+    } else {
+      ok(BrowserTestUtils.is_visible(item),
+         "The panel header is displayed as the content of the toast.");
+    }
+  }
+
+  
+  await popuphiddenPromise;
+
+  ok(true, "The mini panel hides automatically.");
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+
+add_task(async function testToggleSwitchFlow() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com");
+  await openProtectionsPanel();
+
+  let popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+  let popupShownPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popupshown");
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+
+  
+  gProtectionsHandler._protectionsPopupTPSwitch.click();
+
+  
+  await popuphiddenPromise;
+  await browserLoadedPromise;
+  await popupShownPromise;
+
+  ok(gProtectionsHandler._protectionsPopup.hasAttribute("toast"),
+     "The protections popup should have the 'toast' attribute.");
+
+  
+  popupShownPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popupshown");
+  popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+  protectionsPopupHeader.click();
+  await popuphiddenPromise;
+  await popupShownPromise;
+
+  ok(!gProtectionsHandler._protectionsPopup.hasAttribute("toast"),
+     "The 'toast' attribute should be cleared on the protections popup.");
+
+  
+  popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+  popupShownPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popupshown");
+  browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  gProtectionsHandler._protectionsPopupTPSwitch.click();
+
+  
+  await popuphiddenPromise;
+  popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+  await browserLoadedPromise;
+  await popupShownPromise;
+
+  ok(gProtectionsHandler._protectionsPopup.hasAttribute("toast"),
+     "The protections popup should have the 'toast' attribute.");
+
+  
+  await popuphiddenPromise;
+
+  
+  Services.perms.remove(ContentBlocking._baseURIForChannelClassifier, "trackingprotection");
   BrowserTestUtils.removeTab(tab);
 });
