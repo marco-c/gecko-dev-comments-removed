@@ -51,6 +51,16 @@ const MESSAGES = () => [
     trigger: { id: "bookmark-panel" },
   },
   {
+    id: "FXA_ACCOUNTS_BADGE",
+    template: "toolbar_badge",
+    content: {
+      target: "fxa-toolbar-menu-button",
+    },
+    
+    targeting: `!hasAccessedFxAPanel && !usesFirefoxSync && isFxAEnabled == true`,
+    trigger: { id: "toolbarBadgeUpdate" },
+  },
+  {
     id: `WHATS_NEW_BADGE_${FIREFOX_VERSION}`,
     template: "toolbar_badge",
     content: {
