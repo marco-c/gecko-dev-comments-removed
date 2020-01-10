@@ -2,6 +2,7 @@
 
 
 
+import {recordTelemetryEvent} from "chrome://browser/content/aboutlogins/aboutLoginsUtils.js";
 import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
 export default class LoginFilter extends ReflectedFluentElement {
@@ -60,6 +61,8 @@ export default class LoginFilter extends ReflectedFluentElement {
       composed: true,
       detail: value,
     }));
+
+    recordTelemetryEvent({object: "list", method: "filter"});
   }
 }
 customElements.define("login-filter", LoginFilter);
