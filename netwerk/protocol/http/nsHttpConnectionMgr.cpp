@@ -625,6 +625,8 @@ nsresult nsHttpConnectionMgr::UpdateRequestTokenBucket(
 nsresult nsHttpConnectionMgr::ClearConnectionHistory() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
+  LOG(("nsHttpConnectionMgr::ClearConnectionHistory"));
+
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<nsConnectionEntry> ent = iter.Data();
     if (ent->mIdleConns.Length() == 0 && ent->mActiveConns.Length() == 0 &&
@@ -2792,6 +2794,7 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase* param) {
                                ? mCT.GetWeak(conn->ConnectionInfo()->HashKey())
                                : nullptr;
 
+  DebugOnly<bool> newEntry = false;
   if (!ent) {
     
     
@@ -2801,6 +2804,8 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase* param) {
         ("nsHttpConnectionMgr::OnMsgReclaimConnection conn %p "
          "forced new hash entry %s\n",
          conn, conn->ConnectionInfo()->HashKey().get()));
+
+    newEntry = true;
   }
 
   MOZ_ASSERT(ent);
@@ -2834,6 +2839,31 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase* param) {
   if (ent->mActiveConns.RemoveElement(conn)) {
     DecrementActiveConnCount(conn);
     ConditionallyStopTimeoutTick();
+  } else if (conn->EverUsedSpdy()) {
+    LOG(("nsHttpConnection %p not found in its connection entry, try ^anon",
+         conn));
+    
+    
+    RefPtr<nsHttpConnectionInfo> anonInvertedCI(ci->Clone());
+    anonInvertedCI->SetAnonymous(!ci->GetAnonymous());
+
+    nsConnectionEntry* ent = mCT.GetWeak(anonInvertedCI->HashKey());
+    if (ent && ent->mActiveConns.RemoveElement(conn)) {
+      DecrementActiveConnCount(conn);
+      ConditionallyStopTimeoutTick();
+    } else {
+      LOG(
+          ("nsHttpConnection %p could not be removed from its entry's active "
+           "list",
+           conn));
+
+      
+      
+      
+      MOZ_ASSERT(newEntry,
+                 "Active connection not found in a pre-existing entry nor "
+                 "^anonymous entry");
+    }
   }
 
   if (conn->CanReuse()) {
