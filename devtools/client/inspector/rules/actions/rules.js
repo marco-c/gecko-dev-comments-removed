@@ -6,7 +6,6 @@
 
 const {
   UPDATE_ADD_RULE_ENABLED,
-  UPDATE_COLOR_SCHEME_SIMULATION_HIDDEN,
   UPDATE_HIGHLIGHTED_SELECTOR,
   UPDATE_PRINT_SIMULATION_HIDDEN,
   UPDATE_RULES,
@@ -25,19 +24,6 @@ module.exports = {
     return {
       type: UPDATE_ADD_RULE_ENABLED,
       enabled,
-    };
-  },
-
-  
-
-
-
-
-
-  updateColorSchemeSimulationHidden(hidden) {
-    return {
-      type: UPDATE_COLOR_SCHEME_SIMULATION_HIDDEN,
-      hidden,
     };
   },
 

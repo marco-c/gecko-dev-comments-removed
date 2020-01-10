@@ -8,7 +8,6 @@ const Services = require("Services");
 
 const {
   UPDATE_ADD_RULE_ENABLED,
-  UPDATE_COLOR_SCHEME_SIMULATION_HIDDEN,
   UPDATE_HIGHLIGHTED_SELECTOR,
   UPDATE_PRINT_SIMULATION_HIDDEN,
   UPDATE_RULES,
@@ -21,8 +20,6 @@ const INITIAL_RULES = {
   highlightedSelector: "",
   
   isAddRuleEnabled: false,
-  
-  isColorSchemeSimulationHidden: false,
   
   isPrintSimulationHidden: false,
   
@@ -116,13 +113,6 @@ const reducers = {
     return {
       ...rules,
       isAddRuleEnabled: enabled,
-    };
-  },
-
-  [UPDATE_COLOR_SCHEME_SIMULATION_HIDDEN](rules, { hidden }) {
-    return {
-      ...rules,
-      isColorSchemeSimulationHidden: hidden,
     };
   },
 
