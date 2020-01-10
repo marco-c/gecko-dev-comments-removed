@@ -648,6 +648,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   static const uint32_t WAIT_FOR_CACHE_ENTRY = 1;
   static const uint32_t WAIT_FOR_OFFLINE_CACHE_ENTRY = 2;
 
+  
+  
+  Maybe<nsILoadInfo::CrossOriginOpenerPolicy> mComputedCrossOriginOpenerPolicy;
+
   bool mCacheOpenWithPriority;
   uint32_t mCacheQueueSizeWhenOpen;
 
