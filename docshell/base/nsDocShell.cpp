@@ -1567,7 +1567,13 @@ nsDocShell::GetUseRemoteSubframes(bool* aUseRemoteSubframes) {
 
 NS_IMETHODIMP
 nsDocShell::SetRemoteSubframes(bool aUseRemoteSubframes) {
-  
+  static bool annotated = false;
+
+  if (aUseRemoteSubframes && !annotated) {
+    annotated = true;
+    CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::DOMFissionEnabled,
+                                       true);
+  }
 
   
   if (NS_WARN_IF(aUseRemoteSubframes && !mUseRemoteTabs)) {
