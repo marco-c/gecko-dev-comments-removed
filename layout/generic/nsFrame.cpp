@@ -987,7 +987,14 @@ void nsIFrame::DiscardOldItems() {
   }
 
   for (nsDisplayItemBase* i : *items) {
-    i->DiscardIfOldItem();
+    
+    
+    
+    
+    
+    if (i->FrameForInvalidation() == this) {
+      i->DiscardIfOldItem();
+    }
   }
 }
 
