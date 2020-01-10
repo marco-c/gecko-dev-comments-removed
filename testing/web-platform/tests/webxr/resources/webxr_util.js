@@ -131,26 +131,38 @@ let loadChromiumResources = Promise.resolve().then(() => {
     return;
   }
 
+  let chromiumResources = [
+    '/gen/layout_test_data/mojo/public/js/mojo_bindings.js',
+    '/gen/mojo/public/mojom/base/time.mojom.js',
+    '/gen/gpu/ipc/common/mailbox_holder.mojom.js',
+    '/gen/gpu/ipc/common/sync_token.mojom.js',
+    '/gen/ui/display/mojom/display.mojom.js',
+    '/gen/ui/gfx/geometry/mojo/geometry.mojom.js',
+    '/gen/ui/gfx/mojo/gpu_fence_handle.mojom.js',
+    '/gen/ui/gfx/mojo/transform.mojom.js',
+    '/gen/device/vr/public/mojom/vr_service.mojom.js',
+    '/resources/chromium/webxr-test.js',
+    '/resources/testdriver.js',
+    '/resources/testdriver-vendor.js',
+  ];
+
+  
+  
+  
+  
+  if (typeof(additionalChromiumResources) !== 'undefined') {
+    chromiumResources = chromiumResources.concat(additionalChromiumResources);
+  }
+
   let chain = Promise.resolve();
-  ['/gen/layout_test_data/mojo/public/js/mojo_bindings.js',
-   '/gen/mojo/public/mojom/base/time.mojom.js',
-   '/gen/gpu/ipc/common/mailbox_holder.mojom.js',
-   '/gen/gpu/ipc/common/sync_token.mojom.js',
-   '/gen/ui/display/mojom/display.mojom.js',
-   '/gen/ui/gfx/geometry/mojo/geometry.mojom.js',
-   '/gen/ui/gfx/mojo/gpu_fence_handle.mojom.js',
-   '/gen/ui/gfx/mojo/transform.mojom.js',
-   '/gen/device/vr/public/mojom/vr_service.mojom.js',
-   '/resources/chromium/webxr-test.js', '/resources/testdriver.js',
-   '/resources/testdriver-vendor.js',
-  ].forEach(path => {
-    let script = document.createElement('script');
-    script.src = path;
-    script.async = false;
-    chain = chain.then(() => new Promise(resolve => {
-                         script.onload = () => resolve();
-                       }));
-    document.head.appendChild(script);
+    chromiumResources.forEach(path => {
+      let script = document.createElement('script');
+      script.src = path;
+      script.async = false;
+      chain = chain.then(() => new Promise(resolve => {
+                           script.onload = () => resolve();
+                         }));
+      document.head.appendChild(script);
   });
 
   return chain;
