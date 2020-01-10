@@ -2990,6 +2990,14 @@ class nsLayoutUtils {
 
   static bool FrameIsScrolledOutOfViewInCrossProcess(const nsIFrame* aFrame);
 
+  
+
+
+
+
+  static bool FrameIsMostlyScrolledOutOfViewInCrossProcess(
+      const nsIFrame* aFrame, nscoord aMargin);
+
  private:
   
 
