@@ -37,7 +37,12 @@ const SYNC_API_VERSION = "1.1";
 
 
 function new_timestamp() {
-  return Math.round(Date.now() / 10) / 100;
+  return round_timestamp(Date.now());
+}
+
+
+function round_timestamp(t) {
+  return Math.round(t / 10) / 100;
 }
 
 function return_timestamp(request, response, timestamp) {
