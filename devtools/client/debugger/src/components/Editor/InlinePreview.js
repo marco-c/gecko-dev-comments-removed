@@ -22,7 +22,6 @@ class InlinePreview extends PureComponent<Props> {
   showInScopes(variable: string) {
     
     
-    console.log(`show ${variable}`);
   }
 
   render() {
