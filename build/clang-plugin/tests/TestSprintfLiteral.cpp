@@ -4,11 +4,8 @@ void bad() {
   char x[100];
   snprintf(x, sizeof(x), "bar"); 
   snprintf(x, 100, "bar"); 
-  snprintf(x, 101, "bar"); 
   const int hundred = 100;
   snprintf(x, hundred, "bar"); 
-  const int hundredandone = 101;
-  snprintf(x, hundredandone, "bar"); 
 }
 
 void ok() {
@@ -27,11 +24,8 @@ void vargs_bad(va_list args) {
   char x[100];
   vsnprintf(x, sizeof(x), "bar", args); 
   vsnprintf(x, 100, "bar", args); 
-  vsnprintf(x, 101, "bar", args); 
   const int hundred = 100;
   vsnprintf(x, hundred, "bar", args); 
-  const int hundredandone = 101;
-  vsnprintf(x, hundredandone, "bar", args); 
 }
 
 void vargs_good(va_list args) {
