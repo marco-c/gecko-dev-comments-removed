@@ -1,0 +1,23 @@
+
+
+
+"use strict";
+
+
+const { shallow } = require("enzyme");
+const { createFactory } = require("react");
+
+const ManifestEmpty = createFactory(
+  require("devtools/client/application/src/components/manifest/ManifestEmpty")
+);
+
+
+
+
+
+describe("ManifestEmpty", () => {
+  it("renders the expected snapshot", () => {
+    const wrapper = shallow(ManifestEmpty({}));
+    expect(wrapper).toMatchSnapshot();
+  });
+});
