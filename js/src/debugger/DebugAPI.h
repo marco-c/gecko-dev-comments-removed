@@ -89,44 +89,65 @@ class DebugAPI {
 
 
 
-  static void traceIncomingCrossCompartmentEdges(JSTracer* tracer);
   static MOZ_MUST_USE bool markIteratively(GCMarker* marker);
+
+  
+  static void traceCrossCompartmentEdges(JSTracer* tracer);
+
+  
   static void traceAllForMovingGC(JSTracer* trc);
+
+  
   static void sweepAll(FreeOp* fop);
+
+  
   static MOZ_MUST_USE bool findSweepGroupEdges(JSRuntime* rt);
+
+  
   static inline void sweepBreakpoints(FreeOp* fop, JSScript* script);
+
+  
   static void destroyDebugScript(FreeOp* fop, JSScript* script);
+
+  
 #ifdef JSGC_HASH_TABLE_CHECKS
   static void checkDebugScriptAfterMovingGC(DebugScript* ds);
 #endif
 
   
 
+  
   static inline bool stepModeEnabled(JSScript* script);
-
   static inline bool hasBreakpointsAt(JSScript* script, jsbytecode* pc);
-
   static inline bool hasAnyBreakpointsOrStepMode(JSScript* script);
 
   
 
+  
+  
   static MOZ_MUST_USE bool handleBaselineOsr(JSContext* cx,
                                              InterpreterFrame* from,
                                              jit::BaselineFrame* to);
 
+  
+  
   static MOZ_MUST_USE bool handleIonBailout(JSContext* cx,
                                             jit::RematerializedFrame* from,
                                             jit::BaselineFrame* to);
 
+  
+  
   static void handleUnrecoverableIonBailoutError(
       JSContext* cx, jit::RematerializedFrame* frame);
 
-  static void propagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
-                                    HandleValue rval);
-
+  
+  
+  
   static MOZ_MUST_USE bool ensureExecutionObservabilityOfOsrFrame(
       JSContext* cx, AbstractFramePtr osrSourceFrame);
 
+  
+  
   class ExecutionObservableSet {
    public:
     typedef HashSet<Zone*>::Range ZoneRange;
@@ -146,10 +167,11 @@ class DebugAPI {
   enum IsObserving { NotObserving = 0, Observing = 1 };
 
   
-  static inline MOZ_MUST_USE bool checkNoExecute(JSContext* cx,
-                                                 HandleScript script);
 
+  
   static inline void onNewScript(JSContext* cx, HandleScript script);
+
+  
   static inline void onNewWasmInstance(
       JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
 
@@ -214,7 +236,10 @@ class DebugAPI {
                                                AbstractFramePtr frame,
                                                jsbytecode* pc, bool ok);
 
+  
   static ResumeMode onTrap(JSContext* cx, MutableHandleValue vp);
+
+  
   static ResumeMode onSingleStep(JSContext* cx, MutableHandleValue vp);
 
   
@@ -234,6 +259,12 @@ class DebugAPI {
                                       Handle<PromiseObject*> promise);
 
   
+  static inline void onNewGlobalObject(JSContext* cx,
+                                       Handle<GlobalObject*> global);
+
+  
+
+  
   static bool debuggerObservesAllExecution(GlobalObject* global);
 
   
@@ -246,34 +277,53 @@ class DebugAPI {
 
 
 
+  static bool isObservedByDebuggerTrackingAllocations(
+      const GlobalObject& debuggee);
+
+  
+  
+  static mozilla::Maybe<double> allocationSamplingProbability(
+      GlobalObject* global);
+
+  
+  static bool hasExceptionUnwindHook(GlobalObject* global);
+
+  
+  static bool hasDebuggerStatementHook(GlobalObject* global);
+
+  
+
+  
+  
+  
+  static void propagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
+                                    HandleValue rval);
+
+  
+  static inline MOZ_MUST_USE bool checkNoExecute(JSContext* cx,
+                                                 HandleScript script);
+
+  
+
+
+
 
 
   static inline MOZ_MUST_USE bool onNewGenerator(
       JSContext* cx, AbstractFramePtr frame,
       Handle<AbstractGeneratorObject*> genObj);
 
+  
+  
   static inline MOZ_MUST_USE bool onLogAllocationSite(JSContext* cx,
                                                       JSObject* obj,
                                                       HandleSavedFrame frame,
                                                       mozilla::TimeStamp when);
 
-  static inline void onNewGlobalObject(JSContext* cx,
-                                       Handle<GlobalObject*> global);
-
-  
-
-
-
-  static bool isObservedByDebuggerTrackingAllocations(
-      const GlobalObject& debuggee);
-
   
   
   static inline void notifyParticipatesInGC(GlobalObject* global,
                                             uint64_t majorGCNumber);
-
-  static mozilla::Maybe<double> allocationSamplingProbability(
-      GlobalObject* global);
 
   
   static JSObject* newGlobalDebuggersHolder(JSContext* cx);
@@ -281,12 +331,6 @@ class DebugAPI {
   
   
   static GlobalObject::DebuggerVector* getGlobalDebuggers(JSObject* holder);
-
-  
-  static bool hasExceptionUnwindHook(GlobalObject* global);
-
-  
-  static bool hasDebuggerStatementHook(GlobalObject* global);
 
   
 
