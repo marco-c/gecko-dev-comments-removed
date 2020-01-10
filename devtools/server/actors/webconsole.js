@@ -194,6 +194,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     this.dbg = this.parentActor.makeDebugger();
 
     this._gripDepth = 0;
+    this._evalCounter = 0;
     this._listeners = new Set();
     this._lastConsoleInputEvaluation = undefined;
 
@@ -665,11 +666,11 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   
-  startListeners: async function(events) {
+  startListeners: async function(listeners) {
     const startedListeners = [];
     const window = !this.parentActor.isRootActor ? this.window : null;
 
-    for (const event of events) {
+    for (const event of listeners) {
       switch (event) {
         case "PageError":
           
@@ -848,12 +849,12 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  stopListeners: function(events) {
+  stopListeners: function(listeners) {
     const stoppedListeners = [];
 
     
     
-    const eventsToDetach = events || [
+    const eventsToDetach = listeners || [
       "PageError",
       "ConsoleAPI",
       "NetworkActivity",
@@ -1052,23 +1053,34 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   evaluateJSAsync: async function(request) {
-    try {
-      
-      let response = this.evaluateJS(request);
-      
-      response = await this._maybeWaitForResponseResult(response);
-      
-      this.emit("evaluationResult", {
-        from: this.actorID,
-        type: "evaluationResult",
-        resultID: request.resultID,
-        ...response,
-      });
-      return;
-    } catch (e) {
-      const message = `Encountered error while waiting for Helper Result: ${e}`;
-      DevToolsUtils.reportException("evaluateJSAsync", Error(message));
-    }
+    
+    
+    
+    
+    const resultID = Date.now() + "-" + this._evalCounter++;
+
+    
+    
+    DevToolsUtils.executeSoon(async () => {
+      try {
+        
+        let response = this.evaluateJS(request);
+        
+        response = await this._maybeWaitForResponseResult(response);
+        
+        this.emit("evaluationResult", {
+          from: this.actorID,
+          type: "evaluationResult",
+          resultID,
+          ...response,
+        });
+        return;
+      } catch (e) {
+        const message = `Encountered error while waiting for Helper Result: ${e}`;
+        DevToolsUtils.reportException("evaluateJSAsync", Error(message));
+      }
+    });
+    return { resultID };
   },
 
   
