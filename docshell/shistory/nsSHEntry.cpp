@@ -587,7 +587,8 @@ nsSHEntry::GetChildCount(int32_t* aCount) {
 }
 
 NS_IMETHODIMP
-nsSHEntry::AddChild(nsISHEntry* aChild, int32_t aOffset) {
+nsSHEntry::AddChild(nsISHEntry* aChild, int32_t aOffset,
+                    bool aUseRemoteSubframes) {
   if (aChild) {
     NS_ENSURE_SUCCESS(aChild->SetParent(this), NS_ERROR_FAILURE);
   }
@@ -667,7 +668,16 @@ nsSHEntry::AddChild(nsISHEntry* aChild, int32_t aOffset) {
     if (aOffset < mChildren.Count()) {
       nsISHEntry* oldChild = mChildren[aOffset];
       if (oldChild && oldChild != aChild) {
-        NS_ERROR(
+        
+        
+        
+        
+        
+        
+        
+        
+        NS_ASSERTION(
+            aUseRemoteSubframes,
             "Adding a child where we already have a child? This may misbehave");
         oldChild->SetParent(nullptr);
       }

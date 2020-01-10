@@ -3460,7 +3460,7 @@ nsDocShell::AddChildSHEntry(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
   } else if (!aCloneRef) {
     
     if (mOSHE) {
-      rv = mOSHE->AddChild(aNewEntry, aChildOffset);
+      rv = mOSHE->AddChild(aNewEntry, aChildOffset, UseRemoteSubframes());
     }
   } else {
     rv = AddChildSHEntryInternal(aCloneRef, aNewEntry, aChildOffset, aLoadType,
