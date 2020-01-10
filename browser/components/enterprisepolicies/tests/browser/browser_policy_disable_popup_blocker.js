@@ -33,10 +33,10 @@ async function test_popup_blocker_disabled({ disabled, locked }) {
     gBrowser,
     "about:preferences#privacy"
   );
-  
   await ContentTask.spawn(
     tab.linkedBrowser,
     { disabled, locked },
+    
     async function({ disabled, locked }) {
       let checkbox = content.document.getElementById("popupPolicy");
       is(

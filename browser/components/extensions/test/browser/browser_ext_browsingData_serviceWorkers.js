@@ -33,10 +33,10 @@ add_task(async function testServiceWorkers() {
   }
 
   function contentScript() {
+    
     window.addEventListener(
       "message",
       msg => {
-        
         if (msg.data == "serviceWorkerRegistered") {
           browser.runtime.sendMessage("serviceWorkerRegistered");
         }

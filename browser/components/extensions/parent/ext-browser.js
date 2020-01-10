@@ -1186,8 +1186,8 @@ class WindowManager extends WindowManagerBase {
   }
 }
 
+
 extensions.on("startup", (type, extension) => {
-  
   defineLazyGetter(extension, "tabManager", () => new TabManager(extension));
   defineLazyGetter(
     extension,

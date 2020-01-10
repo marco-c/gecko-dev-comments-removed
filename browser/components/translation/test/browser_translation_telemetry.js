@@ -246,8 +246,8 @@ add_task(async function test_show_original() {
 
 add_task(async function test_language_change() {
   
+  
   for (let i of Array(4)) {
-    
     let tab = await offerTranslationFor("<h1>Hallo Welt!</h1>", "fr");
     let browser = tab.linkedBrowser;
     

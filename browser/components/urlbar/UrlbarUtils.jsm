@@ -140,9 +140,9 @@ var UrlbarUtils = {
       !PrivateBrowsingUtils.isWindowPrivate(window) &&
       url &&
       !url.includes(" ") &&
+      
       !/[\x00-\x1F]/.test(url)
     ) {
-      
       PlacesUIUtils.markPageAsTyped(url);
     }
   },
@@ -274,6 +274,7 @@ var UrlbarUtils = {
     let ranges = [];
     for (let index = hits.indexOf(1); index >= 0 && index < hits.length; ) {
       let len = 0;
+      
       for (let j = index; j < hits.length && hits[j]; ++j, ++len) {}
       ranges.push([index, len]);
       

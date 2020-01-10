@@ -256,12 +256,10 @@ this.browserAction = class extends ExtensionAPI {
       },
     });
 
-    this.tabContext.on(
-      "tab-select", 
-      (evt, tab) => {
-        this.updateWindow(tab.ownerGlobal);
-      }
-    );
+    
+    this.tabContext.on("tab-select", (evt, tab) => {
+      this.updateWindow(tab.ownerGlobal);
+    });
 
     this.widget = widget;
   }

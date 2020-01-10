@@ -19,10 +19,10 @@ add_task(async function testIndexedDB() {
   }
 
   function contentScript() {
+    
     window.addEventListener(
       "message",
       msg => {
-        
         browser.test.sendMessage("indexedDBCreated");
       },
       true

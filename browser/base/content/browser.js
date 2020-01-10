@@ -3119,7 +3119,7 @@ async function BrowserViewSourceOfDocument(aArgsOrDocument) {
     
     if (Cu.isCrossProcessWrapper(doc)) {
       throw new Error(
-        "BrowserViewSourceOfDocument cannot accept a CPOW " + "as a document."
+        "BrowserViewSourceOfDocument cannot accept a CPOW as a document."
       );
     }
 
@@ -3366,8 +3366,8 @@ function losslessDecodeURI(aURI) {
   
   
   
-  
   value = value.replace(
+    
     /[\u0000-\u001f\u007f-\u00a0\u2028\u2029\ufffc]/g,
     encodeURIComponent
   );

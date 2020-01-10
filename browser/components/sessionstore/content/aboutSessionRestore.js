@@ -393,11 +393,13 @@ var treeView = {
     if (item.open) {
       
       var thisLevel = this.getLevel(idx);
+      
       for (
         var t = idx + 1;
         t < gTreeData.length && this.getLevel(t) > thisLevel;
         t++
       ) {}
+      
       var deletecount = t - idx - 1;
       gTreeData.splice(idx + 1, deletecount);
       this.treeBox.rowCountChanged(idx + 1, -deletecount);

@@ -595,7 +595,7 @@ this.FormAutofillHeuristics = {
       fieldScanner.parsingIndex > 0
     ) {
       const regExpTelExtension = new RegExp(
-        "\\bext|ext\\b|extension" + "|ramal", 
+        "\\bext|ext\\b|extension|ramal", 
         "iu"
       );
       const previousField = fieldScanner.getFieldDetailByIndex(

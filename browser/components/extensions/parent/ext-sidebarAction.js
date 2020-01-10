@@ -129,12 +129,10 @@ this.sidebarAction = class extends ExtensionAPI {
   }
 
   build() {
-    this.tabContext.on(
-      "tab-select", 
-      (evt, tab) => {
-        this.updateWindow(tab.ownerGlobal);
-      }
-    );
+    
+    this.tabContext.on("tab-select", (evt, tab) => {
+      this.updateWindow(tab.ownerGlobal);
+    });
 
     let install = this.extension.startupReason === "ADDON_INSTALL";
     for (let window of windowTracker.browserWindows()) {

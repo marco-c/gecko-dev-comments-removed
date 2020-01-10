@@ -46,8 +46,8 @@ async function test_reset_disabled({ disabled }) {
     gBrowser,
     "about:support"
   );
-  
   await ContentTask.spawn(tab.linkedBrowser, { disabled }, async function({
+    
     disabled,
   }) {
     let resetBox = content.document.getElementById("reset-box");

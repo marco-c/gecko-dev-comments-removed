@@ -243,8 +243,8 @@ export default class PaymentDialog extends HandleEventMixin(
 
 
 
+  
   async setStateFromParent(state) {
-    
     let oldAddresses = paymentRequest.getAddresses(
       this.requestStore.getState()
     );

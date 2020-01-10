@@ -611,6 +611,7 @@ var gIdentityHandler = {
   _hasCustomRoot() {
     let issuerCert = null;
     
+    
     for (issuerCert of this._secInfo.succeededCertChain.getEnumerator()) {
     }
 
