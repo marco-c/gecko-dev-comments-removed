@@ -1113,7 +1113,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset {
   nscoord mInitialLetterSink;    
   float mInitialLetterSize;      
   mozilla::StyleColor mTextDecorationColor;
-  mozilla::StyleLengthOrAuto mTextDecorationThickness;
+  mozilla::StyleTextDecorationLength mTextDecorationThickness;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
@@ -1157,7 +1157,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleLineHeight mLineHeight;
   mozilla::LengthPercentage mTextIndent;
 
-  mozilla::StyleLengthOrAuto mTextUnderlineOffset;
+  mozilla::StyleTextDecorationLength mTextUnderlineOffset;
   mozilla::StyleTextDecorationSkipInk mTextDecorationSkipInk;
 
   nscoord mWebkitTextStrokeWidth;  

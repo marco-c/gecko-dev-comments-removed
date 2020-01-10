@@ -12,7 +12,7 @@ use crate::values::computed::text::TextOverflow as ComputedTextOverflow;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::generics::text::InitialLetter as GenericInitialLetter;
 use crate::values::generics::text::LineHeight as GenericLineHeight;
-use crate::values::generics::text::Spacing;
+use crate::values::generics::text::{Spacing, GenericTextDecorationLength};
 use crate::values::specified::length::NonNegativeLengthPercentage;
 use crate::values::specified::length::{FontRelativeLength, Length};
 use crate::values::specified::length::{LengthPercentage, NoCalcLength};
@@ -1038,4 +1038,21 @@ pub enum OverflowWrap {
 pub enum TextDecorationSkipInk {
     Auto,
     None,
+}
+
+
+pub type TextDecorationLength = GenericTextDecorationLength<Length>;
+
+impl TextDecorationLength {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        GenericTextDecorationLength::Auto
+    }
+
+    
+    #[inline]
+    pub fn is_auto(&self) -> bool {
+        matches!(*self,  GenericTextDecorationLength::Auto)
+    }
 }

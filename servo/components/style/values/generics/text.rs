@@ -100,9 +100,9 @@ pub enum GenericLineHeight<N, L> {
     #[cfg(feature = "gecko")]
     #[parse(condition = "line_height_moz_block_height_enabled")]
     MozBlockHeight,
-    
+    /// `<number>`
     Number(N),
-    
+    /// `<length-percentage>`
     Length(L),
 }
 
@@ -116,9 +116,39 @@ impl<N, L> ToAnimatedZero for LineHeight<N, L> {
 }
 
 impl<N, L> LineHeight<N, L> {
-    
+    /// Returns `normal`.
     #[inline]
     pub fn normal() -> Self {
         LineHeight::Normal
     }
+}
+
+/// Implements type for text-underline-offset and text-decoration-thickness
+/// which take the grammar of auto | from-font | <length>
+///
+/// https://drafts.csswg.org/css-text-decor-4/
+#[repr(C, u8)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    ComputeSquaredDistance,
+    ToAnimatedZero,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[allow(missing_docs)]
+pub enum GenericTextDecorationLength<L> {
+    Length(L),
+    Auto,
+    FromFont,
 }

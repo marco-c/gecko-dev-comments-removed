@@ -698,17 +698,17 @@ class nsTextFrame : public nsFrame {
     nscoord mBaselineOffset;
 
     
-    const mozilla::LengthOrAuto mTextUnderlineOffset;
+    const mozilla::StyleTextDecorationLength mTextUnderlineOffset;
 
     
     
-    const mozilla::LengthOrAuto mTextDecorationThickness;
+    const mozilla::StyleTextDecorationLength mTextDecorationThickness;
     nscolor mColor;
     uint8_t mStyle;
 
     LineDecoration(nsIFrame* const aFrame, const nscoord aOff,
-                   const mozilla::LengthOrAuto& aUnderline,
-                   const mozilla::LengthOrAuto& aDecThickness,
+                   const mozilla::StyleTextDecorationLength& aUnderline,
+                   const mozilla::StyleTextDecorationLength& aDecThickness,
                    const nscolor aColor, const uint8_t aStyle)
         : mFrame(aFrame),
           mBaselineOffset(aOff),
