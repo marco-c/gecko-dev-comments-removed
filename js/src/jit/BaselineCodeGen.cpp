@@ -1505,9 +1505,10 @@ bool BaselineInterpreterCodeGen::emitArgumentTypeChecks() {
   masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch1);
 
   
+  
   masm.load16ZeroExtend(Address(scratch1, JSFunction::offsetOfNargs()),
                         scratch1);
-  masm.store32(scratch1, frame.addressOfScratchValue());
+  masm.store32(scratch1, frame.addressOfScratchValueLow32());
 
   
   masm.loadValue(frame.addressOfThis(), R0);
@@ -1522,7 +1523,7 @@ bool BaselineInterpreterCodeGen::emitArgumentTypeChecks() {
   
   Label top;
   masm.bind(&top);
-  masm.branch32(Assembler::Equal, frame.addressOfScratchValue(), scratch1,
+  masm.branch32(Assembler::Equal, frame.addressOfScratchValueLow32(), scratch1,
                 &done);
   {
     
@@ -1531,7 +1532,7 @@ bool BaselineInterpreterCodeGen::emitArgumentTypeChecks() {
                         BaselineFrame::offsetOfArg(0));
     masm.loadValue(addr, R0);
     masm.add32(Imm32(1), scratch1);
-    masm.store32(scratch1, frame.addressOfReturnValue());
+    masm.store32(scratch1, frame.addressOfScratchValueHigh32());
 
     
     if (!emitNextIC()) {
@@ -1540,7 +1541,7 @@ bool BaselineInterpreterCodeGen::emitArgumentTypeChecks() {
     frame.bumpInterpreterICEntry();
 
     
-    masm.load32(frame.addressOfReturnValue(), scratch1);
+    masm.load32(frame.addressOfScratchValueHigh32(), scratch1);
     masm.jump(&top);
   }
 
