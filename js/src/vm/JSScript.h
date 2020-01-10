@@ -1400,11 +1400,25 @@ class BaseScript : public gc::TenuredCell {
   
   uint8_t* jitCodeRaw_ = nullptr;
 
-  explicit BaseScript(uint8_t* stubEntry)
-    : jitCodeRaw_(stubEntry) { }
+  
+  GCPtr<ScriptSourceObject*> sourceObject_ = {};
+
+  BaseScript(uint8_t* stubEntry, ScriptSourceObject* sourceObject)
+      : jitCodeRaw_(stubEntry), sourceObject_(sourceObject) {}
 
  public:
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
+
+  ScriptSourceObject* sourceObject() const { return sourceObject_; }
+  ScriptSource* scriptSource() const { return sourceObject()->source(); }
+  ScriptSource* maybeForwardedScriptSource() const;
+
+  bool mutedErrors() const { return scriptSource()->mutedErrors(); }
+
+  const char* filename() const { return scriptSource()->filename(); }
+  const char* maybeForwardedFilename() const {
+    return maybeForwardedScriptSource()->filename();
+  }
 
   void traceChildren(JSTracer* trc);
 
@@ -1942,9 +1956,6 @@ class JSScript : public js::BaseScript {
  private:
   
   js::jit::JitScript* jitScript_ = nullptr;
-
-  
-  js::GCPtr<js::ScriptSourceObject*> sourceObject_ = {};
 
   
 
@@ -2760,20 +2771,9 @@ class JSScript : public js::BaseScript {
   MOZ_MUST_USE bool appendSourceDataForToString(JSContext* cx,
                                                 js::StringBuffer& buf);
 
-  void setSourceObject(js::ScriptSourceObject* object);
-  js::ScriptSourceObject* sourceObject() const { return sourceObject_; }
-  js::ScriptSource* scriptSource() const;
-  js::ScriptSource* maybeForwardedScriptSource() const;
-
   void setDefaultClassConstructorSpan(js::ScriptSourceObject* sourceObject,
                                       uint32_t start, uint32_t end,
                                       unsigned line, unsigned column);
-
-  bool mutedErrors() const { return scriptSource()->mutedErrors(); }
-  const char* filename() const { return scriptSource()->filename(); }
-  const char* maybeForwardedFilename() const {
-    return maybeForwardedScriptSource()->filename();
-  }
 
 #ifdef MOZ_VTUNE
   
@@ -3345,10 +3345,6 @@ class LazyScript : public BaseScript {
 
   
   
-  GCPtr<ScriptSourceObject*> sourceObject_;
-
-  
-  
   LazyScriptData* lazyData_;
 
   static const uint32_t NumClosedOverBindingsBits = 20;
@@ -3470,11 +3466,6 @@ class LazyScript : public BaseScript {
     return enclosingScope()->hasOnChain(ScopeKind::NonSyntactic);
   }
 
-  ScriptSourceObject& sourceObject() const;
-  ScriptSource* scriptSource() const { return sourceObject().source(); }
-  ScriptSource* maybeForwardedScriptSource() const;
-  bool mutedErrors() const { return scriptSource()->mutedErrors(); }
-
   mozilla::Span<GCPtrAtom> closedOverBindings() {
     return lazyData_ ? lazyData_->closedOverBindings()
                      : mozilla::Span<GCPtrAtom>();
@@ -3595,7 +3586,6 @@ class LazyScript : public BaseScript {
     return lazyData_->fieldInitializers_;
   }
 
-  const char* filename() const { return scriptSource()->filename(); }
   uint32_t sourceStart() const { return sourceStart_; }
   uint32_t sourceEnd() const { return sourceEnd_; }
   uint32_t sourceLength() const { return sourceEnd_ - sourceStart_; }

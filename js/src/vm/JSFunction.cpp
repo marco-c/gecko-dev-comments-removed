@@ -1675,7 +1675,7 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
 
     
     if (script->scriptSource()->hasEncoder()) {
-      RootedScriptSourceObject sourceObject(cx, &lazy->sourceObject());
+      RootedScriptSourceObject sourceObject(cx, lazy->sourceObject());
       if (!script->scriptSource()->xdrEncodeFunction(cx, fun, sourceObject)) {
         return false;
       }
