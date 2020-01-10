@@ -310,10 +310,10 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void ComputeFinalBSize(const ReflowInput& aReflowInput,
-                         nsReflowStatus* aStatus, nscoord aContentBSize,
-                         const mozilla::LogicalMargin& aBorderPadding,
-                         mozilla::LogicalSize& aFinalSize, nscoord aConsumed);
+  nscoord ComputeFinalBSize(const ReflowInput& aReflowInput,
+                            nsReflowStatus* aStatus, nscoord aContentBSize,
+                            const mozilla::LogicalMargin& aBorderPadding,
+                            nscoord aConsumed);
 
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput,

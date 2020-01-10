@@ -1781,9 +1781,10 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
       (!GetParent()->IsColumnSetFrame() ||
        aReflowInput.mParentReflowInput->AvailableBSize() ==
            NS_UNCONSTRAINEDSIZE)) {
-    ComputeFinalBSize(aReflowInput, &aState.mReflowStatus,
-                      aState.mBCoord + nonCarriedOutBDirMargin, borderPadding,
-                      finalSize, aState.ConsumedBSize());
+    finalSize.BSize(wm) =
+        ComputeFinalBSize(aReflowInput, &aState.mReflowStatus,
+                          aState.mBCoord + nonCarriedOutBDirMargin,
+                          borderPadding, aState.ConsumedBSize());
 
     
     aMetrics.mCarriedOutBEndMargin.Zero();
@@ -7342,13 +7343,13 @@ nsBlockFrame* nsBlockFrame::GetNearestAncestorBlock(nsIFrame* aCandidate) {
   return nullptr;
 }
 
-void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
-                                     nsReflowStatus* aStatus,
-                                     nscoord aContentBSize,
-                                     const LogicalMargin& aBorderPadding,
-                                     LogicalSize& aFinalSize,
-                                     nscoord aConsumed) {
+nscoord nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
+                                        nsReflowStatus* aStatus,
+                                        nscoord aContentBSize,
+                                        const LogicalMargin& aBorderPadding,
+                                        nscoord aConsumed) {
   WritingMode wm = aReflowInput.GetWritingMode();
+
   
   
   const nscoord computedBSizeLeftOver =
@@ -7356,26 +7357,25 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
   NS_ASSERTION(!(IS_TRUE_OVERFLOW_CONTAINER(this) && computedBSizeLeftOver),
                "overflow container must not have computedBSizeLeftOver");
 
-  aFinalSize.BSize(wm) = NSCoordSaturatingAdd(
+  const nscoord availBSize = aReflowInput.AvailableBSize();
+  nscoord finalBSize = NSCoordSaturatingAdd(
       NSCoordSaturatingAdd(aBorderPadding.BStart(wm), computedBSizeLeftOver),
       aBorderPadding.BEnd(wm));
 
-  if (aStatus->IsIncomplete() &&
-      aFinalSize.BSize(wm) <= aReflowInput.AvailableBSize()) {
+  if (aStatus->IsIncomplete() && finalBSize <= availBSize) {
     
     
     
     aStatus->SetOverflowIncomplete();
-    return;
+    return finalBSize;
   }
 
   if (aStatus->IsComplete()) {
-    if (computedBSizeLeftOver > 0 &&
-        NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize() &&
-        aFinalSize.BSize(wm) > aReflowInput.AvailableBSize()) {
+    if (computedBSizeLeftOver > 0 && NS_UNCONSTRAINEDSIZE != availBSize &&
+        finalBSize > availBSize) {
       if (ShouldAvoidBreakInside(aReflowInput)) {
         aStatus->SetInlineLineBreakBeforeAndReset();
-        return;
+        return finalBSize;
       }
 
       
@@ -7389,7 +7389,7 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
   }
 
   if (aStatus->IsIncomplete()) {
-    MOZ_ASSERT(aFinalSize.BSize(wm) > aReflowInput.AvailableBSize(),
+    MOZ_ASSERT(finalBSize > availBSize,
                "We should be overflow incomplete and should've returned "
                "in early if-branch!");
 
@@ -7397,12 +7397,10 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     
     
     
-    aFinalSize.BSize(wm) =
-        std::max(aReflowInput.AvailableBSize(), aContentBSize);
+    finalBSize = std::max(availBSize, aContentBSize);
     
-    aFinalSize.BSize(wm) =
-        std::min(aFinalSize.BSize(wm),
-                 aBorderPadding.BStart(wm) + computedBSizeLeftOver);
+    finalBSize =
+        std::min(finalBSize, aBorderPadding.BStart(wm) + computedBSizeLeftOver);
     
     
     
@@ -7411,6 +7409,8 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     
     
   }
+
+  return finalBSize;
 }
 
 nsresult nsBlockFrame::ResolveBidi() {
