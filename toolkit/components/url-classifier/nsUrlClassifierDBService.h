@@ -27,13 +27,6 @@
 #include "HashStore.h"
 
 
-#if defined(XP_WIN) && defined(__MINGW32__)
-#  define GCC_MANGLING_WORKAROUND __stdcall
-#else
-#  define GCC_MANGLING_WORKAROUND
-#endif
-
-
 #define DOMAIN_LENGTH 4
 
 
@@ -180,12 +173,12 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
       LookupResultArray& aResults);
 
   
-  nsresult GCC_MANGLING_WORKAROUND OpenDb();
+  nsresult OpenDb();
 
   
-  nsresult GCC_MANGLING_WORKAROUND CloseDb();
+  nsresult CloseDb();
 
-  nsresult GCC_MANGLING_WORKAROUND PreShutdown();
+  nsresult PreShutdown();
 
   nsresult CacheCompletions(const ConstCacheResultArray& aEntries);
 
