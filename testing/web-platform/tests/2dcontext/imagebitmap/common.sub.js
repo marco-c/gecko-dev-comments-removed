@@ -38,6 +38,11 @@ var imageBitmapVideoPromise = new Promise(function(resolve, reject) {
         resolve(video);
     };
     video.onerror = reject;
+
+    
+    
+    
+    video.preload = "auto";
     video.src = getVideoURI("/images/pattern");
 
     
@@ -60,6 +65,11 @@ var imageBitmapDataUrlVideoPromise = fetch(getVideoURI("/images/pattern"))
 
             var encoded = btoa(String.fromCodePoint(...new Uint8Array(data)));
             var dataUrl = `data:${type};base64,${encoded}`;
+
+            
+            
+            
+            video.preload = "auto";
             video.src = dataUrl;
 
             
