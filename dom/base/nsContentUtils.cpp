@@ -553,12 +553,6 @@ class nsContentUtils::UserInteractionObserver final
 };
 
 
-TimeDuration nsContentUtils::HandlingUserInputTimeout() {
-  return TimeDuration::FromMilliseconds(
-      StaticPrefs::dom_event_handling_user_input_time_limit());
-}
-
-
 nsresult nsContentUtils::Init() {
   if (sInitialized) {
     NS_WARNING("Init() called twice");

@@ -3326,22 +3326,16 @@ CORSMode Element::AttrValueToCORSMode(const nsAttrValue* aValue) {
 
 
 
-static const char* GetFullscreenError(CallerType aCallerType) {
+static const char* GetFullscreenError(CallerType aCallerType,
+                                      Document* aDocument) {
+  MOZ_ASSERT(aDocument);
+
   if (!StaticPrefs::full_screen_api_allow_trusted_requests_only() ||
       aCallerType == CallerType::System) {
     return nullptr;
   }
 
-  if (!UserActivation::IsHandlingUserInput()) {
-    return "FullscreenDeniedNotInputDriven";
-  }
-
-  
-  
-  
-  TimeDuration timeout = nsContentUtils::HandlingUserInputTimeout();
-  if (timeout > TimeDuration(nullptr) &&
-      (TimeStamp::Now() - UserActivation::GetHandlingInputStart()) > timeout) {
+  if (!aDocument->HasValidTransientUserGestureActivation()) {
     return "FullscreenDeniedNotInputDriven";
   }
 
@@ -3374,7 +3368,7 @@ already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,
   
   
   
-  if (const char* error = GetFullscreenError(aCallerType)) {
+  if (const char* error = GetFullscreenError(aCallerType, OwnerDoc())) {
     request->Reject(error);
   } else {
     OwnerDoc()->AsyncRequestFullscreen(std::move(request));
