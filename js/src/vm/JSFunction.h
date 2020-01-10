@@ -1097,6 +1097,9 @@ extern bool fun_toString(JSContext* cx, unsigned argc, Value* vp);
 
 struct WellKnownSymbols;
 
+
+
+
 extern bool FunctionHasDefaultHasInstance(JSFunction* fun,
                                           const WellKnownSymbols& symbols);
 

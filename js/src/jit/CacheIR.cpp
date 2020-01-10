@@ -4418,20 +4418,33 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
 
   
   
-  if (!js::FunctionHasDefaultHasInstance(fun, cx_->wellKnownSymbols())) {
-    trackAttached(IRGenerator::NotAttached);
-    return AttachDecision::NoAction;
-  }
-
   
   
-  if (!fun->hasStaticPrototype() || fun->hasUncacheableProto()) {
+  
+  
+  PropertyResult hasInstanceProp;
+  JSObject* hasInstanceHolder = nullptr;
+  jsid hasInstanceID = SYMBOL_TO_JSID(cx_->wellKnownSymbols().hasInstance);
+  if (!LookupPropertyPure(cx_, fun, hasInstanceID, &hasInstanceHolder,
+                          &hasInstanceProp) ||
+      !hasInstanceProp.isFound() || hasInstanceProp.isNonNativeProperty()) {
     trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
 
   Value funProto = cx_->global()->getPrototype(JSProto_Function);
-  if (!funProto.isObject() || fun->staticPrototype() != &funProto.toObject()) {
+  if (hasInstanceHolder != &funProto.toObject()) {
+    trackAttached(IRGenerator::NotAttached);
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  MOZ_ASSERT(hasInstanceProp.shape()->isDataProperty());
+  MOZ_ASSERT(!hasInstanceProp.shape()->configurable());
+  MOZ_ASSERT(!hasInstanceProp.shape()->writable());
+
+  if (!IsCacheableProtoChain(fun, hasInstanceHolder)) {
     trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
@@ -4459,6 +4472,15 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
 
   ObjOperandId rhsId = writer.guardToObject(rhs);
   writer.guardShape(rhsId, fun->lastProperty());
+
+  
+  
+  
+  if (hasInstanceHolder != fun) {
+    GeneratePrototypeGuards(writer, fun, hasInstanceHolder, rhsId);
+    ObjOperandId holderId = writer.loadObject(hasInstanceHolder);
+    TestMatchingHolder(writer, hasInstanceHolder, holderId);
+  }
 
   
   ObjOperandId protoId = writer.loadObject(prototypeObject);
