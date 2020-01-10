@@ -673,6 +673,8 @@ define(function(require, exports, module) {
           dom.tbody({
             role: "presentation",
             tabIndex: -1,
+            
+            onMouseDown: event => event.preventDefault(),
           }, rows)
         )
       );
