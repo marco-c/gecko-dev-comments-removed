@@ -96,8 +96,6 @@ class ProfilerScreenshots final {
   void ReturnSurface(gfx::DataSourceSurface* aSurface);
 
   
-  nsCOMPtr<nsIThread> mThread;
-  
   
   nsTArray<RefPtr<gfx::DataSourceSurface>> mAvailableSurfaces;
   

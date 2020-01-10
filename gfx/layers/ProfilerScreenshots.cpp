@@ -23,19 +23,7 @@ using namespace mozilla::layers;
 ProfilerScreenshots::ProfilerScreenshots()
     : mMutex("ProfilerScreenshots::mMutex"), mLiveSurfaceCount(0) {}
 
-ProfilerScreenshots::~ProfilerScreenshots() {
-  if (mThread) {
-    
-    
-    
-    
-    SystemGroup::Dispatch(
-        TaskCategory::Other,
-        NewRunnableMethod("ProfilerScreenshots::~ProfilerScreenshots", mThread,
-                          &nsIThread::AsyncShutdown));
-    mThread = nullptr;
-  }
-}
+ProfilerScreenshots::~ProfilerScreenshots() {}
 
 
 bool ProfilerScreenshots::IsEnabled() {
@@ -68,18 +56,6 @@ void ProfilerScreenshots::SubmitScreenshot(
     return;
   }
 
-  if (!mThread) {
-    nsresult rv = NS_NewNamedThread("ProfScreenshot", getter_AddRefs(mThread));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      PROFILER_ADD_MARKER(
-          "NoCompositorScreenshot because ProfilerScreenshots thread creation "
-          "failed",
-          DOM);
-      ReturnSurface(backingSurface);
-      return;
-    }
-  }
-
   int sourceThread = profiler_current_thread_id();
   uintptr_t windowIdentifier = aWindowIdentifier;
   IntSize originalSize = aOriginalSize;
@@ -88,7 +64,7 @@ void ProfilerScreenshots::SubmitScreenshot(
 
   RefPtr<ProfilerScreenshots> self = this;
 
-  mThread->Dispatch(NS_NewRunnableFunction(
+  NS_DispatchToBackgroundThread(NS_NewRunnableFunction(
       "ProfilerScreenshots::SubmitScreenshot",
       [self{std::move(self)}, backingSurface, sourceThread, windowIdentifier,
        originalSize, scaledSize, timeStamp]() {
