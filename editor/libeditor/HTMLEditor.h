@@ -2338,7 +2338,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult IndentAroundSelectionWithCSS();
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult HandleCSSIndentAtSelectionInternal();
 
   
 
@@ -2346,7 +2347,30 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult IndentAroundSelectionWithHTML();
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  HandleHTMLIndentAtSelectionInternal();
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult HandleCSSIndentAtSelection();
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult HandleHTMLIndentAtSelection();
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult HandleIndentAtSelection();
 
   
 
