@@ -433,8 +433,10 @@ static bool intl_FormatNumber(JSContext* cx, UNumberFormat* nf, double x,
   return true;
 }
 
-static intl::FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
-                                                  double d) {
+using FieldType = ImmutablePropertyNamePtr JSAtomState::*;
+
+static FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
+                                            double d) {
   
   
   
@@ -494,6 +496,7 @@ static intl::FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
       break;
 
 #ifndef U_HIDE_DRAFT_API
+#  if U_ICU_VERSION_MAJOR_NUM >= 64
     case UNUM_MEASURE_UNIT_FIELD:
       MOZ_ASSERT_UNREACHABLE(
           "unexpected measure unit field found, even though "
@@ -507,6 +510,7 @@ static intl::FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
           "we don't use any user-defined patterns that "
           "would require a compact number notation");
       break;
+#  endif
 #endif
 
 #ifndef U_HIDE_DEPRECATED_API
@@ -524,29 +528,72 @@ static intl::FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
   return nullptr;
 }
 
-bool js::intl::NumberFormatFields::append(int32_t field, int32_t begin,
-                                          int32_t end) {
-  MOZ_ASSERT(begin >= 0);
-  MOZ_ASSERT(end >= 0);
-  MOZ_ASSERT(begin < end, "erm, aren't fields always non-empty?");
+static bool intl_FormatNumberToParts(JSContext* cx, UNumberFormat* nf, double x,
+                                     MutableHandleValue result) {
+  UErrorCode status = U_ZERO_ERROR;
 
-  FieldType type =
-      GetFieldTypeForNumberField(UNumberFormatFields(field), number_);
-  return fields_.emplaceBack(uint32_t(begin), uint32_t(end), type);
-}
+  UFieldPositionIterator* fpositer = ufieldpositer_open(&status);
+  if (U_FAILURE(status)) {
+    intl::ReportInternalError(cx);
+    return false;
+  }
 
-ArrayObject* js::intl::NumberFormatFields::toArray(JSContext* cx,
-                                                   HandleString overallResult,
-                                                   FieldType unitType) {
+  MOZ_ASSERT(fpositer);
+  ScopedICUObject<UFieldPositionIterator, ufieldpositer_close> toClose(
+      fpositer);
+
+  RootedString overallResult(cx, PartitionNumberPattern(cx, nf, &x, fpositer));
+  if (!overallResult) {
+    return false;
+  }
+
+  RootedArrayObject partsArray(cx, NewDenseEmptyArray(cx));
+  if (!partsArray) {
+    return false;
+  }
+
+  
+
+  struct Field {
+    uint32_t begin;
+    uint32_t end;
+    FieldType type;
+
+    
+    Field() = default;
+
+    Field(uint32_t begin, uint32_t end, FieldType type)
+        : begin(begin), end(end), type(type) {}
+  };
+
+  using FieldsVector = Vector<Field, 16>;
+  FieldsVector fields(cx);
+
+  int32_t fieldInt, beginIndexInt, endIndexInt;
+  while ((fieldInt = ufieldpositer_next(fpositer, &beginIndexInt,
+                                        &endIndexInt)) >= 0) {
+    MOZ_ASSERT(beginIndexInt >= 0);
+    MOZ_ASSERT(endIndexInt >= 0);
+    MOZ_ASSERT(beginIndexInt < endIndexInt,
+               "erm, aren't fields always non-empty?");
+
+    FieldType type =
+        GetFieldTypeForNumberField(UNumberFormatFields(fieldInt), x);
+    if (!fields.emplaceBack(uint32_t(beginIndexInt), uint32_t(endIndexInt),
+                            type)) {
+      return false;
+    }
+  }
+
   
   
-  size_t fieldsLen = fields_.length();
-  if (!fields_.resizeUninitialized(fieldsLen * 2)) {
-    return nullptr;
+  size_t fieldsLen = fields.length();
+  if (!fields.resizeUninitialized(fieldsLen * 2)) {
+    return false;
   }
 
   MOZ_ALWAYS_TRUE(MergeSort(
-      fields_.begin(), fieldsLen, fields_.begin() + fieldsLen,
+      fields.begin(), fieldsLen, fields.begin() + fieldsLen,
       [](const Field& left, const Field& right, bool* lessOrEqual) {
         
         
@@ -556,8 +603,8 @@ ArrayObject* js::intl::NumberFormatFields::toArray(JSContext* cx,
       }));
 
   
-  if (!fields_.resize(fieldsLen)) {
-    return nullptr;
+  if (!fields.resize(fieldsLen)) {
+    return false;
   }
 
   
@@ -767,17 +814,12 @@ ArrayObject* js::intl::NumberFormatFields::toArray(JSContext* cx,
   RootedObject singlePart(cx);
   RootedValue propVal(cx);
 
-  RootedArrayObject partsArray(cx, NewDenseEmptyArray(cx));
-  if (!partsArray) {
-    return nullptr;
-  }
-
-  PartGenerator gen(cx, fields_, overallResult->length());
+  PartGenerator gen(cx, fields, overallResult->length());
   do {
     bool hasPart;
     Part part;
     if (!gen.nextPart(&hasPart, &part)) {
-      return nullptr;
+      return false;
     }
 
     if (!hasPart) {
@@ -791,35 +833,28 @@ ArrayObject* js::intl::NumberFormatFields::toArray(JSContext* cx,
 
     singlePart = NewBuiltinClassInstance<PlainObject>(cx);
     if (!singlePart) {
-      return nullptr;
+      return false;
     }
 
     propVal.setString(cx->names().*type);
     if (!DefineDataProperty(cx, singlePart, cx->names().type, propVal)) {
-      return nullptr;
+      return false;
     }
 
     JSLinearString* partSubstr = NewDependentString(
         cx, overallResult, lastEndIndex, endIndex - lastEndIndex);
     if (!partSubstr) {
-      return nullptr;
+      return false;
     }
 
     propVal.setString(partSubstr);
     if (!DefineDataProperty(cx, singlePart, cx->names().value, propVal)) {
-      return nullptr;
-    }
-
-    if (unitType != nullptr && type != &JSAtomState::literal) {
-      propVal.setString(cx->names().*unitType);
-      if (!DefineDataProperty(cx, singlePart, cx->names().unit, propVal)) {
-        return nullptr;
-      }
+      return false;
     }
 
     propVal.setObject(*singlePart);
     if (!DefineDataElement(cx, partsArray, partIndex, propVal)) {
-      return nullptr;
+      return false;
     }
 
     lastEndIndex = endIndex;
@@ -829,45 +864,7 @@ ArrayObject* js::intl::NumberFormatFields::toArray(JSContext* cx,
   MOZ_ASSERT(lastEndIndex == overallResult->length(),
              "result array must partition the entire string");
 
-  return partsArray;
-}
-
-static bool intl_FormatNumberToParts(JSContext* cx, UNumberFormat* nf, double x,
-                                     MutableHandleValue result) {
-  UErrorCode status = U_ZERO_ERROR;
-
-  UFieldPositionIterator* fpositer = ufieldpositer_open(&status);
-  if (U_FAILURE(status)) {
-    intl::ReportInternalError(cx);
-    return false;
-  }
-
-  MOZ_ASSERT(fpositer);
-  ScopedICUObject<UFieldPositionIterator, ufieldpositer_close> toClose(
-      fpositer);
-
-  RootedString overallResult(cx, PartitionNumberPattern(cx, nf, &x, fpositer));
-  if (!overallResult) {
-    return false;
-  }
-
-  
-
-  intl::NumberFormatFields fields(cx, x);
-
-  int32_t field, beginIndex, endIndex;
-  while ((field = ufieldpositer_next(fpositer, &beginIndex, &endIndex)) >= 0) {
-    if (!fields.append(field, beginIndex, endIndex)) {
-      return false;
-    }
-  }
-
-  ArrayObject* array = fields.toArray(cx, overallResult, nullptr);
-  if (!array) {
-    return false;
-  }
-
-  result.setObject(*array);
+  result.setObject(*partsArray);
   return true;
 }
 
