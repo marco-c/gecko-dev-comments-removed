@@ -5256,34 +5256,6 @@ VARCACHE_PREF(
 
 
 
-
-
-
-
-
-
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-#define PREF_VALUE true
-#else
-#define PREF_VALUE false
-#endif
-VARCACHE_PREF(
-  Live,
-  "layout.css.line-height.normal-as-resolved-value.enabled",
-  layout_css_line_height_normal_as_resolved_value_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
-
-
-
-
-
-
-
 VARCACHE_PREF(
   Live,
   "media.autoplay.enabled.user-gestures-needed",
