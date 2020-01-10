@@ -24,9 +24,9 @@ class JSObjectHolder;
 namespace dom {
 
 class ClientInfoAndState;
-class KeepAliveToken;
 class ServiceWorkerCloneData;
 class ServiceWorkerInfo;
+class ServiceWorkerPrivate;
 class ServiceWorkerRegistrationInfo;
 
 namespace ipc {
@@ -39,6 +39,20 @@ class LifeCycleEventCallback : public Runnable {
 
   
   virtual void SetResult(bool aResult) = 0;
+};
+
+
+
+class KeepAliveToken final : public nsISupports {
+ public:
+  NS_DECL_ISUPPORTS
+
+  explicit KeepAliveToken(ServiceWorkerPrivate* aPrivate);
+
+ private:
+  ~KeepAliveToken();
+
+  RefPtr<ServiceWorkerPrivate> mPrivate;
 };
 
 
