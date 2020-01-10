@@ -1256,6 +1256,7 @@ def make_unicode_file(version,
         
         
         
+        
         assert len(non_bmp_space_set.keys()) == 0
 
         write_supplemental_identifier_method('IsIdentifierStartNonBMP', non_bmp_id_start_set,

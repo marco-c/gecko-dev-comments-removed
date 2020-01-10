@@ -7,6 +7,8 @@
 #ifndef util_Unicode_h
 #define util_Unicode_h
 
+#include "mozilla/Casting.h"  
+
 #include "jspubtd.h"
 
 #include "util/UnicodeNonBMP.h"
@@ -241,6 +243,7 @@ inline bool IsSpace(char ch) {
   return IsSpace(static_cast<JS::Latin1Char>(ch));
 }
 
+
 inline bool IsSpace(char32_t ch) {
   if (ch < 128) {
     return js_isspace[ch];
@@ -250,11 +253,13 @@ inline bool IsSpace(char32_t ch) {
     return true;
   }
 
+  
+  
   if (ch >= NonBMPMin) {
     return false;
   }
 
-  return CharInfo(ch).isSpace();
+  return CharInfo(mozilla::AssertedCast<char16_t>(ch)).isSpace();
 }
 
 
