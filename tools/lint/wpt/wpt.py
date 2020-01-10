@@ -39,6 +39,15 @@ def lint(files, config, **kwargs):
 
     proc = ProcessHandler(cmd, env=os.environ, processOutputLine=process_line,
                           universal_newlines=True)
+
+    if sys.platform == 'win32':
+        
+        
+        
+        
+        
+        proc.env = None
+
     proc.run()
     try:
         proc.wait()
