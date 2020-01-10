@@ -174,7 +174,6 @@ class Instance {
   
 
   void addSizeOfMisc(MallocSizeOf mallocSizeOf, Metadata::SeenSet* seenMetadata,
-                     ShareableBytes::SeenSet* seenBytes,
                      Code::SeenSet* seenCode, Table::SeenSet* seenTables,
                      size_t* code, size_t* data) const;
 
