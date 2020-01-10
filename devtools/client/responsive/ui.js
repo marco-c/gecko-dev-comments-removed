@@ -466,6 +466,9 @@ class ResponsiveUI {
       case "screenshot":
         this.onScreenshot();
         break;
+      case "toggle-left-alignment":
+        this.onToggleLeftAlignment(event);
+        break;
       case "update-device-modal":
         this.onUpdateDeviceModal(event);
     }
@@ -586,6 +589,10 @@ class ResponsiveUI {
     }
   }
 
+  onToggleLeftAlignment(event) {
+    this.updateUIAlignment(event.data.leftAlignmentEnabled);
+  }
+
   onUpdateDeviceModal(event) {
     this.browserStackEl.classList.toggle(
       "device-modal-opened",
@@ -597,6 +604,16 @@ class ResponsiveUI {
 
 
   async restoreState() {
+    
+    if (this.isBrowserUIEnabled) {
+      const leftAlignmentEnabled = Services.prefs.getBoolPref(
+        "devtools.responsive.leftAlignViewport.enabled",
+        false
+      );
+
+      this.updateUIAlignment(leftAlignmentEnabled);
+    }
+
     const deviceState = await asyncStorage.getItem(
       "devtools.responsive.deviceState"
     );
@@ -771,6 +788,19 @@ class ResponsiveUI {
     if (!isViewportRotated) {
       this.emit("only-viewport-orientation-changed");
     }
+  }
+
+  
+
+
+
+
+
+  updateUIAlignment(leftAlignmentEnabled) {
+    this.browserContainerEl.classList.toggle(
+      "left-aligned",
+      leftAlignmentEnabled
+    );
   }
 
   
