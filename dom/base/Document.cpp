@@ -9822,7 +9822,8 @@ void Document::Destroy() {
 
   
   if (!nsContentUtils::IsInPrivateBrowsing(this)) {
-    mContentBlockingLog.ReportLog();
+    mContentBlockingLog.ReportLog(NodePrincipal());
+    mContentBlockingLog.ReportOrigins();
   }
 
   mIsGoingAway = true;
