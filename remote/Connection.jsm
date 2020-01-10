@@ -62,46 +62,186 @@ class Connection {
     this.transport.send(message);
   }
 
-  error(id, e) {
+  
+
+
+
+
+
+
+
+
+
+
+  onError(id, e, sessionId) {
     const error = {
       message: e.message,
       data: e.stack,
     };
-    this.send({ id, error });
-  }
-
-  deserialize(data) {
-    const id = data.id;
-    const method = data.method;
-    const params = data.params || {};
-    return { id, method, params };
+    this.send({ id, sessionId, error });
   }
 
   
 
-  onPacket(packet) {
+
+
+
+
+
+
+
+
+
+  onResult(id, result, sessionId) {
+    this.sendResult(id, result, sessionId);
+
+    
+    
+    
+    
+    
+    
+    if (sessionId) {
+      this.sendEvent("Target.receivedMessageFromTarget", {
+        sessionId,
+        
+        
+        
+        message: JSON.stringify({
+          id,
+          result,
+        }),
+      });
+    }
+  }
+
+  sendResult(id, result, sessionId) {
+    this.send({
+      sessionId, 
+      id,
+      result,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onEvent(method, params, sessionId) {
+    this.sendEvent(method, params, sessionId);
+
+    
+    
+    
+    
+    
+    if (sessionId) {
+      this.sendEvent("Target.receivedMessageFromTarget", {
+        sessionId,
+        message: JSON.stringify({
+          method,
+          params,
+        }),
+      });
+    }
+  }
+
+  sendEvent(method, params, sessionId) {
+    this.send({
+      sessionId, 
+      method,
+      params,
+    });
+  }
+
+  
+
+  
+
+
+
+
+
+
+
+  async onPacket(packet) {
     log.trace(`(connection ${this.id})-> ${JSON.stringify(packet)}`);
 
-    let message = { id: null };
     try {
-      message = this.deserialize(packet);
-      const { sessionId } = packet;
+      const { id, method, params, sessionId } = packet;
+
+      
+      if (typeof id == "undefined") {
+        throw new TypeError("Message missing 'id' field");
+      }
+      if (typeof method == "undefined") {
+        throw new TypeError("Message missing 'method' field");
+      }
+
+      
+      const { domain, command } = Connection.splitMethod(method);
+
+      
+      
+      let session;
       if (!sessionId) {
         if (!this.defaultSession) {
           throw new Error(`Connection is missing a default Session.`);
         }
-        this.defaultSession.onMessage(message);
+        session = this.defaultSession;
       } else {
-        const session = this.sessions.get(sessionId);
+        session = this.sessions.get(sessionId);
         if (!session) {
           throw new Error(`Session '${sessionId}' doesn't exists.`);
         }
-        session.onMessage(message);
       }
+
+      
+      const result = await session.execute(id, domain, command, params);
+      this.onResult(id, result, sessionId);
     } catch (e) {
       log.warn(e);
-      this.error(message.id, e);
+      this.onError(packet.id, e, packet.sessionId);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  sendMessageToTarget(sessionId, message) {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Session '${sessionId}' doesn't exists.`);
+    }
+    
+    
+    
+    const packet = JSON.parse(message);
+
+    
+    
+    
+    
+    
+    
+    packet.sessionId = sessionId;
+    this.onPacket(packet);
   }
 
   close() {
@@ -115,6 +255,21 @@ class Connection {
   }
 
   onClosed(status) {}
+
+  
+
+
+
+  static splitMethod(s) {
+    const ss = s.split(".");
+    if (ss.length != 2 || ss[0].length == 0 || ss[1].length == 0) {
+      throw new TypeError(`Invalid method format: "${s}"`);
+    }
+    return {
+      domain: ss[0],
+      command: ss[1],
+    };
+  }
 
   toString() {
     return `[object Connection ${this.id}]`;

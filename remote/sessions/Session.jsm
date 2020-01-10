@@ -12,9 +12,6 @@ const { ParentProcessDomains } = ChromeUtils.import(
 const { Domains } = ChromeUtils.import(
   "chrome://remote/content/domains/Domains.jsm"
 );
-const { RemoteAgentError, UnknownMethodError } = ChromeUtils.import(
-  "chrome://remote/content/Error.jsm"
-);
 
 
 
@@ -58,57 +55,16 @@ class Session {
     this.domains.clear();
   }
 
-  async onMessage({ id, method, params }) {
-    try {
-      if (typeof id == "undefined") {
-        throw new TypeError("Message missing 'id' field");
-      }
-      if (typeof method == "undefined") {
-        throw new TypeError("Message missing 'method' field");
-      }
-
-      const { domain, command } = Domains.splitMethod(method);
-      await this.execute(id, domain, command, params);
-    } catch (e) {
-      this.onError(id, e);
-    }
-  }
-
-  async execute(id, domain, command, params) {
-    if (!this.domains.domainSupportsMethod(domain, command)) {
-      throw new UnknownMethodError(domain, command);
-    }
-    const inst = this.domains.get(domain);
-    const result = await inst[command](params);
-    this.onResult(id, result);
-  }
-
-  onResult(id, result) {
-    this.connection.send({
-      id,
-      sessionId: this.id,
-      result,
-    });
-  }
-
-  onError(id, error) {
-    this.connection.send({
-      id,
-      sessionId: this.id,
-      error: {
-        message: RemoteAgentError.format(error, { stack: true }),
-      },
-    });
+  execute(id, domain, command, params) {
+    return this.domains.execute(domain, command, params);
   }
 
   
 
+
+
   onEvent(eventName, params) {
-    this.connection.send({
-      sessionId: this.id,
-      method: eventName,
-      params,
-    });
+    this.connection.onEvent(eventName, params, this.id);
   }
 
   toString() {

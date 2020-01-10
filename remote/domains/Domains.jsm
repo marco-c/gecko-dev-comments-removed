@@ -87,26 +87,24 @@ class Domains {
   }
 
   
+
+
+
+
+  execute(domain, command, params) {
+    if (!this.domainSupportsMethod(domain, command)) {
+      throw new UnknownMethodError(domain, command);
+    }
+    const inst = this.get(domain);
+    return inst[command](params);
+  }
+
+  
   clear() {
     for (const inst of this.instances.values()) {
       inst.destructor();
     }
     this.instances.clear();
-  }
-
-  
-
-
-
-  static splitMethod(s) {
-    const ss = s.split(".");
-    if (ss.length != 2 || ss[0].length == 0 || ss[1].length == 0) {
-      throw new TypeError(`Invalid method format: "${s}"`);
-    }
-    return {
-      domain: ss[0],
-      command: ss[1],
-    };
   }
 }
 
