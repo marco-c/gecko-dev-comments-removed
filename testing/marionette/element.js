@@ -82,6 +82,8 @@ element.Strategy = {
   PartialLinkText: "partial link text",
   TagName: "tag name",
   XPath: "xpath",
+  Anon: "anon",
+  AnonAttribute: "anon attribute",
 };
 
 
@@ -327,7 +329,17 @@ element.find = function(container, strategy, selector, opts = {}) {
       
       
       if (!opts.all && (!foundEls || foundEls.length == 0)) {
-        let msg = `Unable to locate element: ${selector}`;
+        let msg;
+        switch (strategy) {
+          case element.Strategy.AnonAttribute:
+            msg =
+              "Unable to locate anonymous element: " + JSON.stringify(selector);
+            break;
+
+          default:
+            msg = "Unable to locate element: " + selector;
+        }
+
         reject(new NoSuchElementError(msg));
       }
 
@@ -349,7 +361,19 @@ function find_(
   let rootNode = container.shadowRoot || container.frame.document;
 
   if (!startNode) {
-    startNode = rootNode;
+    switch (strategy) {
+      
+      
+      case element.Strategy.Anon:
+      case element.Strategy.AnonAttribute:
+        if (rootNode.nodeType == rootNode.DOCUMENT_NODE) {
+          startNode = rootNode.documentElement;
+        }
+        break;
+
+      default:
+        startNode = rootNode;
+    }
   }
 
   let res;
@@ -471,6 +495,24 @@ element.findByPartialLinkText = function(startNode, linkText) {
 
 
 
+element.findAnonymousNodes = function*(document, node) {
+  let anons = document.getAnonymousNodes(node) || [];
+  for (let node of anons) {
+    yield node;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function* filterLinks(startNode, predicate) {
@@ -550,6 +592,17 @@ function findElement(strategy, selector, document, startNode = undefined) {
       } catch (e) {
         throw new InvalidSelectorError(`${e.message}: "${selector}"`);
       }
+
+    case element.Strategy.Anon:
+      return element.findAnonymousNodes(document, startNode).next().value;
+
+    case element.Strategy.AnonAttribute:
+      let attr = Object.keys(selector)[0];
+      return document.getAnonymousElementByAttribute(
+        startNode,
+        attr,
+        selector[attr]
+      );
   }
 
   throw new InvalidSelectorError(`No such strategy: ${strategy}`);
@@ -610,6 +663,21 @@ function findElements(strategy, selector, document, startNode = undefined) {
 
     case element.Strategy.Selector:
       return startNode.querySelectorAll(selector);
+
+    case element.Strategy.Anon:
+      return [...element.findAnonymousNodes(document, startNode)];
+
+    case element.Strategy.AnonAttribute:
+      let attr = Object.keys(selector)[0];
+      let el = document.getAnonymousElementByAttribute(
+        startNode,
+        attr,
+        selector[attr]
+      );
+      if (el) {
+        return [el];
+      }
+      return [];
 
     default:
       throw new InvalidSelectorError(`No such strategy: ${strategy}`);
