@@ -33,9 +33,10 @@ add_task(async function test_profile_feature_jsallocations() {
 
     
     {
-      const { parentThread, contentThread } = await stopProfilerAndGetThreads(
-        contentPid
-      );
+      const {
+        parentThread,
+        contentThread,
+      } = await stopProfilerNowAndGetThreads(contentPid);
       Assert.greater(
         getPayloadsOfType(parentThread, "JS allocation").length,
         0,
@@ -50,22 +51,18 @@ add_task(async function test_profile_feature_jsallocations() {
       );
     }
 
-    
-    
     startProfiler({ features: ["threads", "js"] });
-    await stopProfilerAndGetThreads(contentPid);
-
     
     gBrowser.reload();
     await wait(500);
-    startProfiler({ features: ["threads", "js"] });
 
     
     
     {
-      const { parentThread, contentThread } = await stopProfilerAndGetThreads(
-        contentPid
-      );
+      const {
+        parentThread,
+        contentThread,
+      } = await stopProfilerNowAndGetThreads(contentPid);
       Assert.equal(
         getPayloadsOfType(parentThread, "JS allocation").length,
         0,
