@@ -130,6 +130,8 @@ class CompositableHost {
     return gfx::IntSize();
   }
 
+  const TextureInfo& GetTextureInfo() const { return mTextureInfo; }
+
   
 
 

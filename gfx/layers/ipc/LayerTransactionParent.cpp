@@ -393,8 +393,8 @@ mozilla::ipc::IPCResult LayerTransactionParent::RecvUpdate(
         if (!imageBridge) {
           return IPC_FAIL_NO_REASON(this);
         }
-        RefPtr<CompositableHost> host =
-            imageBridge->FindCompositable(op.compositable());
+        RefPtr<CompositableHost> host = imageBridge->FindCompositable(
+            op.compositable(),  true);
         if (!host) {
           
           

@@ -25,6 +25,7 @@ namespace layers {
 
 class TextureHost;
 class DataTextureSource;
+class BasicCompositor;
 class Compositor;
 class CompositorOGL;
 
@@ -85,6 +86,10 @@ class TextureSourceProvider {
   
   
   virtual Compositor* AsCompositor() { return nullptr; }
+
+  
+  
+  virtual BasicCompositor* AsBasicCompositor() { return nullptr; }
 
   
   
