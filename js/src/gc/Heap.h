@@ -278,7 +278,7 @@ class Arena {
 
     
     AlwaysPoison(&zone, JS_FREED_ARENA_PATTERN, sizeof(zone),
-                 MemCheckKind::MakeUndefined);
+                 MemCheckKind::MakeNoAccess);
 
     allocKind = size_t(AllocKind::LIMIT);
     onDelayedMarkingList_ = 0;
