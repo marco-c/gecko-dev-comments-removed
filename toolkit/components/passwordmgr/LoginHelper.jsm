@@ -781,19 +781,15 @@ this.LoginHelper = {
 
 
   openPasswordManager(window, { filterString = "", entryPoint = "" } = {}) {
+    Services.telemetry.recordEvent("pwmgr", "open_management", entryPoint);
     if (this.managementURI && window.openTrustedLinkIn) {
       let managementURL = this.managementURI.replace(
         "%DOMAIN%",
         window.encodeURIComponent(filterString)
       );
-      
-      window.openTrustedLinkIn(
-        managementURL + `&entryPoint=${entryPoint}`,
-        "tab"
-      );
+      window.openTrustedLinkIn(managementURL, "tab");
       return;
     }
-    Services.telemetry.recordEvent("pwmgr", "open_management", entryPoint);
     let win = Services.wm.getMostRecentWindow("Toolkit:PasswordManager");
     if (win) {
       win.setFilter(filterString);

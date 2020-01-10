@@ -548,22 +548,10 @@ var BrowserTestUtils = {
 
 
 
-
-
-  waitForNewTab(
-    tabbrowser,
-    wantLoad = null,
-    waitForLoad = false,
-    waitForAnyTab = false
-  ) {
-    let urlMatches;
-    if (wantLoad && typeof wantLoad == "function") {
-      urlMatches = wantLoad;
-    } else if (wantLoad) {
-      urlMatches = urlToMatch => urlToMatch == wantLoad;
-    } else {
-      urlMatches = urlToMatch => urlToMatch != "about:blank";
-    }
+  waitForNewTab(tabbrowser, url, waitForLoad = false, waitForAnyTab = false) {
+    let urlMatches = url
+      ? urlToMatch => urlToMatch == url
+      : urlToMatch => urlToMatch != "about:blank";
     return new Promise((resolve, reject) => {
       tabbrowser.tabContainer.addEventListener(
         "TabOpen",

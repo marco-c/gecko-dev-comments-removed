@@ -31,10 +31,7 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 const TELEMETRY_EVENT_CATEGORY = "pwmgr";
-const TELEMETRY_MIN_MS_BETWEEN_OPEN_MANAGEMENT = 5000;
 
-let lastOpenManagementOuterWindowID = null;
-let lastOpenManagementEventTime = Number.NEGATIVE_INFINITY;
 let masterPasswordPromise;
 
 class AboutLoginsChild extends ActorChild {
@@ -145,26 +142,6 @@ class AboutLoginsChild extends ActorChild {
       }
       case "AboutLoginsRecordTelemetryEvent": {
         let { method, object, extra = {} } = event.detail;
-
-        if (method == "open_management") {
-          let { docShell } = event.target.ownerGlobal;
-          
-          
-          
-          
-          
-          let now = docShell.now();
-          if (
-            docShell.outerWindowID == lastOpenManagementOuterWindowID &&
-            now - lastOpenManagementEventTime <
-              TELEMETRY_MIN_MS_BETWEEN_OPEN_MANAGEMENT
-          ) {
-            return;
-          }
-          lastOpenManagementEventTime = now;
-          lastOpenManagementOuterWindowID = docShell.outerWindowID;
-        }
-
         try {
           Services.telemetry.recordEvent(
             TELEMETRY_EVENT_CATEGORY,
