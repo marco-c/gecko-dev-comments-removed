@@ -416,13 +416,29 @@ void nsContentSecurityManager::AssertEvalNotRestricted(
   
   
   
-  nsAutoString configPref;
-  Preferences::GetString("general.config.filename", configPref);
-  if (!configPref.IsEmpty()) {
+  nsAutoString jsConfigPref;
+  Preferences::GetString("general.config.filename", jsConfigPref);
+  if (!jsConfigPref.IsEmpty()) {
     MOZ_LOG(
         sCSMLog, LogLevel::Debug,
         ("Allowing eval() %s because of "
          "general.config.filename",
+         (systemPrincipal ? "with System Principal" : "in parent process")));
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (Preferences::GetBool(
+          "toolkit.legacyUserProfileCustomizations.stylesheets")) {
+    MOZ_LOG(
+        sCSMLog, LogLevel::Debug,
+        ("Allowing eval() %s because of "
+         "toolkit.legacyUserProfileCustomizations.stylesheets",
          (systemPrincipal ? "with System Principal" : "in parent process")));
     return;
   }
