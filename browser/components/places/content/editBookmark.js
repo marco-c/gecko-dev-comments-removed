@@ -6,8 +6,6 @@ var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const MAX_FOLDER_ITEM_IN_MENU_LIST = 5;
-
 var gEditItemOverlay = {
   
   
@@ -474,7 +472,7 @@ var gEditItemOverlay = {
     }
 
     var numberOfItems = Math.min(
-      MAX_FOLDER_ITEM_IN_MENU_LIST,
+      PlacesUIUtils.maxRecentFolders,
       this._recentFolders.length
     );
     for (let i = 0; i < numberOfItems; i++) {
@@ -817,6 +815,7 @@ var gEditItemOverlay = {
 
 
 
+
   _getFolderMenuItem(aFolderGuid, aTitle) {
     let menupopup = this._folderMenuList.menupopup;
     let menuItem = Array.prototype.find.call(
@@ -828,7 +827,7 @@ var gEditItemOverlay = {
     }
 
     
-    if (menupopup.children.length == 4 + MAX_FOLDER_ITEM_IN_MENU_LIST) {
+    if (menupopup.children.length == 4 + PlacesUIUtils.maxRecentFolders) {
       menupopup.removeChild(menupopup.lastElementChild);
     }
 
