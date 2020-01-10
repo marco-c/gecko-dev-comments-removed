@@ -2720,20 +2720,19 @@ void NS_SniffContent(const char* aSnifferType, nsIRequest* aRequest,
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
   if (channel) {
     nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-    nsAutoCString currentContentType;
-    channel->GetContentType(currentContentType);
-    
+    if (loadInfo->GetSkipContentSniffing()) {
+      
 
 
 
 
 
-    if (loadInfo->GetSkipContentSniffing() &&
-        !currentContentType.Equals(APPLICATION_JSON) &&
-        !currentContentType.Equals(APPLICATION_WEB_MANIFEST) &&
-        !currentContentType.Equals(TEXT_JSON)) {
-      aSniffedType.Truncate();
-      return;
+      nsAutoCString currentContentType;
+      channel->GetContentType(currentContentType);
+      if (!StringBeginsWith(currentContentType,
+                            NS_LITERAL_CSTRING("application/"))) {
+        return;
+      }
     }
   }
   nsCOMArray<nsIContentSniffer> sniffers;
