@@ -413,6 +413,9 @@ pref("media.hardware-video-decoding.enabled", true);
 #endif
 pref("media.gmp.decoder.aac", 0);
 pref("media.gmp.decoder.h264", 0);
+pref("media.opus.enabled", true);
+pref("media.wave.enabled", true);
+pref("media.webm.enabled", true);
 
 
 
@@ -470,6 +473,18 @@ pref("media.videocontrols.picture-in-picture.video-toggle.always-show", false);
   pref("media.navigator.video.h264.level", 31); 
   pref("media.navigator.video.h264.max_br", 0);
   pref("media.navigator.video.h264.max_mbps", 0);
+  #if defined(NIGHTLY_BUILD) && !defined(ANDROID)
+    pref("media.navigator.mediadatadecoder_vpx_enabled", true);
+  #else
+    pref("media.navigator.mediadatadecoder_vpx_enabled", false);
+  #endif
+  #if defined(ANDROID)
+    pref("media.navigator.mediadatadecoder_h264_enabled", false); 
+  #elif defined(_ARM64_) && defined(XP_WIN)
+    pref("media.navigator.mediadatadecoder_h264_enabled", false);
+  #else
+    pref("media.navigator.mediadatadecoder_h264_enabled", true);
+  #endif
   pref("media.peerconnection.video.vp9_enabled", true);
   pref("media.peerconnection.video.vp9_preferred", false);
   pref("media.getusermedia.browser.enabled", false);
@@ -544,6 +559,17 @@ pref("media.webvtt.pseudo.enabled", true);
 
 pref("media.webvtt.debug.logging", false);
 
+pref("media.benchmark.vp9.threshold", 150);
+pref("media.benchmark.frames", 300);
+pref("media.benchmark.timeout", 1000);
+
+pref("media.media-capabilities.enabled", true);
+pref("media.media-capabilities.screen.enabled", false);
+
+#ifdef MOZ_WEBM_ENCODER
+  pref("media.encoder.webm.enabled", true);
+#endif
+
 
 pref("media.recorder.audio_node.enabled", false);
 
@@ -560,6 +586,14 @@ pref("media.autoplay.block-webaudio", false);
 
 
 pref("media.autoplay.allow-extension-background-pages", true);
+
+
+
+
+
+#ifdef NIGHTLY_BUILD
+  pref("media.autoplay.enabled.user-gestures-needed", false);
+#endif
 
 
 
@@ -586,6 +620,31 @@ pref("media.cubeb.logging_level", "");
 
 pref("media.audiograph.single_thread.enabled", false);
 
+#ifdef MOZ_AV1
+  #if defined(XP_WIN) && !defined(_ARM64_)
+    pref("media.av1.enabled", true);
+    pref("media.av1.use-dav1d", true);
+  #elif defined(XP_MACOSX)
+    pref("media.av1.enabled", true);
+    pref("media.av1.use-dav1d", true);
+  #elif defined(XP_UNIX) && !defined(MOZ_WIDGET_ANDROID)
+    pref("media.av1.enabled", true);
+    pref("media.av1.use-dav1d", true);
+  #else
+    pref("media.av1.enabled", false);
+    pref("media.av1.use-dav1d", false);
+  #endif
+#endif
+
+
+pref("layers.geometry.opengl.enabled", true);
+
+
+pref("layers.geometry.basic.enabled", true);
+
+
+pref("layers.geometry.d3d11.enabled", true);
+
 
 
 pref("apz.overscroll.stop_velocity_threshold", "0.01");
@@ -600,6 +659,11 @@ pref("apz.overscroll.stretch_factor", "0.35");
   
   pref("gfx.hidpi.enabled", 2);
 #endif
+
+
+pref("layout.scroll.root-frame-containers", false);
+
+pref("layout.scrollbars.always-layerize-track", false);
 
 pref("gfx.color_management.display_profile", "");
 
@@ -787,6 +851,8 @@ pref("toolkit.cosmeticAnimations.enabled", true);
 
 pref("toolkit.scrollbox.smoothScroll", true);
 pref("toolkit.scrollbox.scrollIncrement", 20);
+pref("toolkit.scrollbox.verticalScrollDistance", 3);
+pref("toolkit.scrollbox.horizontalScrollDistance", 5);
 pref("toolkit.scrollbox.clickToScroll.scrollDelay", 150);
 
 pref("toolkit.tabbox.switchByScrolling", false);
@@ -861,6 +927,10 @@ pref("nglayout.debug.paint_flashing", false);
 pref("nglayout.debug.paint_flashing_chrome", false);
 
 
+
+pref("nglayout.debug.widget_update_flashing", false);
+
+
 pref("layout.framevisibility.enabled", true);
 
 pref("layout.framevisibility.numscrollportwidths", 0);
@@ -924,6 +994,11 @@ pref("print.print_edge_bottom", 0);
 #else
   pref("print.print_via_parent", false);
 #endif
+
+
+
+
+pref("print.font-variations-as-paths", true);
 
 
 
@@ -1043,6 +1118,11 @@ pref("privacy.restrict3rdpartystorage.url_decorations", "");
 
 
 pref("privacy.popups.maxReported", 100);
+
+
+#ifdef NIGHTLY_BUILD
+  pref("privacy.trackingprotection.origin_telemetry.enabled", true);
+#endif
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.coalesce_mouse_move",       true);
@@ -1188,11 +1268,17 @@ pref("javascript.options.dump_stack_on_debuggee_would_run", false);
 #endif
 
 
+pref("javascript.options.streams", true);
+
+
 pref("javascript.options.dynamicImport", true);
 
 
 pref("advanced.mailftp",                    false);
 pref("image.animation_mode",                "normal");
+
+
+pref("security.fileuri.strict_origin_policy", true);
 
 
 
@@ -2375,6 +2461,30 @@ pref("clipboard.plainTextOnly", false);
 #endif
 
 
+pref("mousewheel.transaction.timeout", 1500);
+
+pref("mousewheel.transaction.ignoremovedelay", 100);
+
+
+
+
+pref("mousewheel.acceleration.start", -1);
+
+pref("mousewheel.acceleration.factor", 10);
+
+
+
+
+
+
+
+
+
+
+pref("mousewheel.system_scroll_override_on_root_content.vertical.factor", 200);
+pref("mousewheel.system_scroll_override_on_root_content.horizontal.factor", 200);
+
+
 
 
 
@@ -2532,10 +2642,46 @@ pref("layout.word_select.stop_at_underscore", false);
 pref("layout.selection.caret_style", 0);
 
 
+pref("layout.css.report_errors", true);
+
+
 
 
 
 pref("layout.css.dpi", -1);
+
+
+
+pref("layout.css.scroll-snap.proximity-threshold", 200);
+
+
+
+pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
+
+
+
+
+
+pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
+
+
+pref("layout.css.scroll-behavior.enabled", true);
+
+
+
+
+pref("layout.css.scroll-behavior.spring-constant", "250.0");
+
+
+
+
+
+
+
+
+
+
+pref("layout.css.scroll-behavior.damping-ratio", "1.0");
 
 
 
@@ -2548,10 +2694,41 @@ pref("layout.scrollbar.side", 0);
 pref("layout.testing.overlay-scrollbars.always-visible", false);
 
 
+
+
+pref("layout.frame_rate", -1);
+
+
+pref("layout.display-list.dump", false);
+pref("layout.display-list.dump-content", false);
+pref("layout.display-list.dump-parent", false);
+
+
+#if !defined(ANDROID)
+  pref("layout.display-list.retain", true);
+  pref("layout.display-list.retain.chrome", true);
+#else
+  pref("layout.display-list.retain", true);
+  pref("layout.display-list.retain.chrome", true);
+#endif
+
+
+
+pref("layout.display-list.rebuild-frame-limit", 500);
+
+
 pref("layout.spammy_warnings.enabled", false);
 
 
 pref("dom.animations.offscreen-throttling", true);
+
+
+
+pref("layout.animation.prerender.partial", false);
+pref("layout.animation.prerender.viewport-ratio-limit-x", "1.125");
+pref("layout.animation.prerender.viewport-ratio-limit-y", "1.125");
+pref("layout.animation.prerender.absolute-limit-x", 4096);
+pref("layout.animation.prerender.absolute-limit-y", 4096);
 
 
 pref("plugin.override_internal_types", false);
@@ -3255,6 +3432,8 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   pref("ui.panel.default_level_parent", false);
 
+  pref("mousewheel.system_scroll_override_on_root_content.enabled", true);
+
   
   
   
@@ -3509,6 +3688,8 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
 
   pref("ui.plugin.cancel_composition_at_input_source_changed", false);
 
+  pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
+
   
   pref("mousewheel.enable_pixel_scrolling", true);
 
@@ -3550,6 +3731,8 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   
   pref("ui.panel.default_level_parent", true);
+
+  pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
 
   
   
@@ -3748,6 +3931,8 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   
   pref("ui.panel.default_level_parent", true);
+
+  pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
 
   pref("intl.ime.use_simple_context_on_password_field", false);
 
@@ -3948,6 +4133,36 @@ pref("toolkit.zoomManager.zoomValues", ".3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2
 
 
 
+
+
+pref("image.animated.decode-on-demand.threshold-kb", 20480);
+
+
+
+pref("image.animated.decode-on-demand.batch-size", 6);
+
+
+
+pref("image.animated.resume-from-last-displayed", true);
+
+
+
+
+
+
+pref("image.cache.factor2.threshold-surfaces", 4);
+
+
+
+pref("image.cache.max-rasterized-svg-threshold-kb", 204800);
+
+
+pref("image.decode-immediately.enabled", false);
+
+
+pref("image.downscale-during-decode.enabled", true);
+
+
 pref("image.http.accept", "image/webp,*/*");
 
 
@@ -3955,11 +4170,106 @@ pref("image.http.accept", "image/webp,*/*");
 
 
 
+pref("image.infer-src-animation.threshold-ms", 2000);
+
+
+
+pref("image.layout_network_priority", true);
+
+
+
+
+
+
+
+pref("image.mem.discardable", true);
+
+
+
+#if defined(ANDROID)
+  pref("image.mem.animated.use_heap", true);
+#else
+  pref("image.mem.animated.use_heap", false);
+#endif
+
+
+pref("image.mem.debug-reporting", false);
+
+
+
+pref("image.mem.shared", true);
+
+
 pref("image.mem.allow_locking_in_content_processes", true);
+
+
+
+#if defined(ANDROID)
+  pref("image.mem.volatile.min_threshold_kb", 100);
+#else
+  pref("image.mem.volatile.min_threshold_kb", -1);
+#endif
+
+
+pref("image.webp.enabled", true);
+
+
+pref("gl.require-hardware", false);
+#ifdef XP_MACOSX
+  pref("gl.multithreaded", true);
+#endif
+pref("gl.ignore-dx-interop2-blacklist", false);
+pref("gl.use-tls-is-current", 0);
+pref("gl.allow-high-power", true);
+
+#ifdef XP_MACOSX
+  pref("webgl.1.allow-core-profiles", true);
+#else
+  pref("webgl.1.allow-core-profiles", false);
+#endif
+pref("webgl.force-enabled", false);
+pref("webgl.disabled", false);
+pref("webgl.disable-angle", false);
+pref("webgl.disable-wgl", false);
+pref("webgl.min_capability_mode", false);
+pref("webgl.disable-extensions", false);
+pref("webgl.msaa-force", false);
+pref("webgl.prefer-16bpp", false);
+pref("webgl.default-low-power", false);
+pref("webgl.default-no-alpha", false);
+pref("webgl.force-layers-readback", false);
+pref("webgl.force-index-validation", 0);
+pref("webgl.lose-context-on-memory-pressure", false);
+pref("webgl.can-lose-context-in-foreground", true);
+#ifdef ANDROID
+  pref("webgl.max-contexts", 16);
+  pref("webgl.max-contexts-per-principal", 8);
+#else
+  pref("webgl.max-contexts", 32);
+  pref("webgl.max-contexts-per-principal", 16);
+#endif
+pref("webgl.max-warnings-per-context", 32);
+pref("webgl.enable-draft-extensions", false);
+pref("webgl.enable-privileged-extensions", false);
+pref("webgl.disable-fail-if-major-performance-caveat", false);
+pref("webgl.disable-DOM-blit-uploads", false);
+pref("webgl.allow-fb-invalidation", false);
+
+pref("webgl.perf.max-warnings", 0);
+pref("webgl.perf.max-acceptable-fb-status-invals", 0);
+pref("webgl.perf.spew-frame-allocs", true);
 
 pref("webgl.enable-debug-renderer-info", true);
 pref("webgl.renderer-string-override", "");
 pref("webgl.vendor-string-override", "");
+
+#ifdef XP_WIN
+  pref("webgl.angle.try-d3d11", true);
+  pref("webgl.angle.force-d3d11", false);
+  pref("webgl.angle.force-warp", false);
+  pref("webgl.dxgl.enabled", true);
+  pref("webgl.dxgl.needs-finish", false);
+#endif
 
 
 
@@ -3997,6 +4307,60 @@ pref("network.tcp.tcp_fastopen_http_check_for_stalls_only_if_idle_for", 10);
 pref("network.tcp.tcp_fastopen_http_stalls_limit", 3);
 pref("network.tcp.tcp_fastopen_http_stalls_timeout", 20);
 
+
+
+pref("layers.bench.enabled", false);
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+  #ifdef NIGHTLY_BUILD
+    pref("layers.gpu-process.max_restarts", 3);
+  #endif
+#endif
+
+pref("layers.acceleration.draw-fps", false);
+
+
+#if !defined(MOZ_WIDGET_ANDROID)
+  
+  pref("layers.deaa.enabled", true);
+#else
+  
+  pref("layers.deaa.enabled", false);
+#endif
+
+pref("layers.dump", false);
+#ifdef MOZ_DUMP_PAINTING
+  
+  pref("layers.dump-texture", false);
+  pref("layers.dump-decision", false);
+  pref("layers.dump-client-layers", false);
+  pref("layers.dump-host-layers", false);
+#endif
+pref("layers.draw-borders", false);
+pref("layers.draw-tile-borders", false);
+pref("layers.draw-bigimage-borders", false);
+pref("layers.child-process-shutdown", true);
+
+pref("layers.max-active", -1);
+
+
+
+
+
+pref("layers.offmainthreadcomposition.frame-rate", -1);
+
+pref("layers.single-tile.enabled", true);
+pref("layers.low-precision-buffer", false);
+pref("layers.progressive-paint", false);
+pref("layers.tiles.retain-back-buffer", true);
+#ifdef MOZ_WIDGET_ANDROID
+  pref("layers.tiles.edge-padding", true);
+#else
+  pref("layers.tiles.edge-padding", false);
+#endif
+
+pref("layers.draw-mask-debug", false);
+
 #ifdef MOZ_X11
   #ifdef MOZ_WIDGET_GTK
     pref("gfx.xrender.enabled",false);
@@ -4006,6 +4370,11 @@ pref("network.tcp.tcp_fastopen_http_stalls_timeout", 20);
 #ifdef MOZ_WAYLAND
   pref("widget.wayland_dmabuf_backend.enabled", false);
 #endif
+
+pref("widget.window-transforms.disabled", false);
+
+
+pref("layers.shared-buffer-provider.enabled", true);
 
 
 pref("geo.wifi.xhr.timeout", 60000);
@@ -4279,6 +4648,9 @@ pref("network.trr.disable-ECS", true);
 pref("network.trr.max-fails", 5);
 
 pref("network.trr.excluded-domains", "localhost,local");
+
+
+pref("network.traffic_analyzer.enabled", true);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
@@ -4635,6 +5007,12 @@ pref("dom.payments.request.supportedRegions", "US,CA");
   pref("toolkit.telemetry.overrideUpdateChannel", "nightly-asan");
 #endif
 
+#if defined(XP_WIN)
+  
+  
+  pref("layers.mlgpu.enable-on-windows7", true);
+#endif
+
 
 
 
@@ -4664,6 +5042,8 @@ pref("dom.noopener.newprocess.enabled", true);
 #else
   pref("layers.omtp.enabled", false);
 #endif
+pref("layers.omtp.release-capture-on-main-thread", false);
+pref("layers.omtp.dump-capture", false);
 
 
 
