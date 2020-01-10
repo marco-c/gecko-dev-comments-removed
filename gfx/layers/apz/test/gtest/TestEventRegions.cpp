@@ -311,3 +311,38 @@ TEST_F(APZEventRegionsTester, Bug1117712) {
   targets.AppendElement(apzc2->GetGuid());
   manager->SetTargetAPZC(inputBlockId, targets);
 }
+
+
+
+TEST_F(APZEventRegionsTester, ApzAwareListenersFlag) {
+  
+  
+  const char* layerTreeSyntax = "c";
+  nsIntRegion layerVisibleRegions[] = {
+      nsIntRegion(IntRect(0, 0, 100, 100)),
+  };
+  root = CreateLayerTree(layerTreeSyntax, layerVisibleRegions, nullptr, lm,
+                         layers);
+  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
+  
+  EventRegions regions(nsIntRegion(IntRect(0, 0, 100, 100)));
+  
+  regions.mDispatchToContentHitRegion = nsIntRegion(IntRect(0, 50, 100, 50));
+  root->SetEventRegions(regions);
+  registration =
+      MakeUnique<ScopedLayerTreeRegistration>(manager, LayersId{0}, root, mcc);
+  UpdateHitTestingTree();
+
+  
+  
+  APZEventResult result =
+      TouchDown(manager, ScreenIntPoint(50, 25), mcc->Time());
+  TouchUp(manager, ScreenIntPoint(50, 25), mcc->Time());
+  EXPECT_FALSE(result.mHitRegionWithApzAwareListeners);
+
+  
+  
+  result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
+  TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
+  EXPECT_TRUE(result.mHitRegionWithApzAwareListeners);
+}
