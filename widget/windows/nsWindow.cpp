@@ -5393,7 +5393,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_NCMOUSELEAVE: {
       mMouseInDraggableArea = false;
 
-      if (WindowAtMouse() == mWnd) {
+      if (EventIsInsideWindow(this)) {
         
         
         
