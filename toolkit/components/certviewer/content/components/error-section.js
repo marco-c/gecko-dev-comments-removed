@@ -2,7 +2,7 @@
 
 
 
-export class ErrorSection extends HTMLElement {
+class ErrorSection extends HTMLElement {
   constructor() {
     super();
   }

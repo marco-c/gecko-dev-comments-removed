@@ -2,9 +2,9 @@
 
 
 
-import { InfoItem } from "./info-item.js";
 
-export class InfoGroup extends HTMLElement {
+
+class InfoGroup extends HTMLElement {
   constructor(item) {
     super();
     this.item = item;
