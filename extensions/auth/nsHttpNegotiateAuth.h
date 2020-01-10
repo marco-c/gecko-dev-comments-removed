@@ -32,9 +32,6 @@ class nsHttpNegotiateAuth final : public nsIHttpAuthenticator {
   bool TestNonFqdn(nsIURI* uri);
 
   
-  RefPtr<mozilla::LazyIdleThread> mNegotiateThread;
-
-  
   static mozilla::StaticRefPtr<nsHttpNegotiateAuth> gSingleton;
 };
 #endif 
