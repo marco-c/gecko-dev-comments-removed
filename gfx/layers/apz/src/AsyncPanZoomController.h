@@ -1043,15 +1043,9 @@ class AsyncPanZoomController {
   
   ExternalPoint mStartTouch;
 
-  nsTArray<CompositionPayload> mPrevFrameScrolls;
-  nsTArray<CompositionPayload> mIncomingFrameScrolls;
-  nsTArray<CompositionPayload> mSampledFrameScrolls;
-
   friend class Axis;
 
  public:
-  nsTArray<CompositionPayload> NotifyScrollSampling();
-
   
 
 
@@ -1464,8 +1458,7 @@ class AsyncPanZoomController {
 
 
   bool AttemptScroll(ParentLayerPoint& aStartPoint, ParentLayerPoint& aEndPoint,
-                     OverscrollHandoffState& aOverscrollHandoffState,
-                     const TimeStamp& aTimeStamp);
+                     OverscrollHandoffState& aOverscrollHandoffState);
 
   void FlushRepaintForOverscrollHandoff();
 
@@ -1504,8 +1497,7 @@ class AsyncPanZoomController {
 
   void CallDispatchScroll(ParentLayerPoint& aStartPoint,
                           ParentLayerPoint& aEndPoint,
-                          OverscrollHandoffState& aOverscrollHandoffState,
-                          const TimeStamp& aTimeStamp);
+                          OverscrollHandoffState& aOverscrollHandoffState);
 
   
 
