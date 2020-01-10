@@ -39,6 +39,7 @@
 
 #include "HTMLFormSubmissionConstants.h"
 #include "mozilla/dom/FormData.h"
+#include "mozilla/dom/FormDataEvent.h"
 #include "mozilla/Telemetry.h"
 #include "nsIFormSubmitObserver.h"
 #include "nsIObserverService.h"
@@ -117,7 +118,8 @@ HTMLFormElement::HTMLFormElement(
       mDeferSubmission(false),
       mNotifiedObservers(false),
       mNotifiedObserversResult(false),
-      mEverTriedInvalidSubmit(false) {
+      mEverTriedInvalidSubmit(false),
+      mIsConstructingEntryList(false) {
   
   AddStatesSilently(NS_EVENT_STATE_VALID);
 }
@@ -504,7 +506,8 @@ nsresult HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
   if (eFormSubmit == aMessage) {
     
     
-    if (!doc || (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
+    if (mIsConstructingEntryList || !doc ||
+        (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
       return NS_OK;
     }
     return DoSubmit(aEvent);
@@ -555,6 +558,13 @@ nsresult HTMLFormElement::DoSubmit(WidgetEvent* aEvent) {
   
   
   nsresult rv = BuildSubmission(getter_Transfers(submission), aEvent);
+
+  
+  if (rv == NS_ERROR_NOT_AVAILABLE) {
+    mIsSubmitting = false;
+    return NS_OK;
+  }
+
   if (NS_FAILED(rv)) {
     mIsSubmitting = false;
     return rv;
@@ -609,14 +619,30 @@ nsresult HTMLFormElement::BuildSubmission(HTMLFormSubmission** aFormSubmission,
   
   
   
-  rv = HTMLFormSubmission::GetFromForm(this, originatingElement,
+  
+  auto encoding = GetSubmitEncoding()->OutputEncoding();
+  RefPtr<FormData> formData =
+      new FormData(GetOwnerGlobal(), encoding, originatingElement);
+  rv = ConstructEntryList(formData);
+  NS_ENSURE_SUBMIT_SUCCESS(rv);
+
+  
+  
+  if (!GetComposedDoc()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  
+  rv = HTMLFormSubmission::GetFromForm(this, originatingElement, encoding,
                                        aFormSubmission);
   NS_ENSURE_SUBMIT_SUCCESS(rv);
 
   
   
   
-  rv = WalkFormElements(*aFormSubmission);
+  rv = formData->CopySubmissionDataTo(*aFormSubmission);
   NS_ENSURE_SUBMIT_SUCCESS(rv);
 
   return NS_OK;
@@ -857,8 +883,15 @@ nsresult HTMLFormElement::NotifySubmitObservers(nsIURI* aActionURL,
   return rv;
 }
 
-nsresult HTMLFormElement::WalkFormElements(
-    HTMLFormSubmission* aFormSubmission) {
+nsresult HTMLFormElement::ConstructEntryList(FormData* aFormData) {
+  MOZ_ASSERT(aFormData, "Must have FormData!");
+  if (mIsConstructingEntryList) {
+    
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  AutoRestore<bool> resetConstructingEntryList(mIsConstructingEntryList);
+  mIsConstructingEntryList = true;
   
   
   AutoTArray<RefPtr<nsGenericHTMLFormElement>, 100> sortedControls;
@@ -872,10 +905,54 @@ nsresult HTMLFormElement::WalkFormElements(
   
   for (uint32_t i = 0; i < len; ++i) {
     
-    sortedControls[i]->SubmitNamesValues(aFormSubmission);
+    sortedControls[i]->SubmitNamesValues(aFormData);
   }
 
+  FormDataEventInit init;
+  init.mBubbles = true;
+  init.mCancelable = false;
+  init.mFormData = aFormData;
+  RefPtr<FormDataEvent> event =
+      FormDataEvent::Constructor(this, NS_LITERAL_STRING("formdata"), init);
+  event->SetTrusted(true);
+
+  EventDispatcher::DispatchDOMEvent(ToSupports(this), nullptr, event, nullptr,
+                                    nullptr);
+
   return NS_OK;
+}
+
+NotNull<const Encoding*> HTMLFormElement::GetSubmitEncoding() {
+  nsAutoString acceptCharsetValue;
+  GetAttr(kNameSpaceID_None, nsGkAtoms::acceptcharset, acceptCharsetValue);
+
+  int32_t charsetLen = acceptCharsetValue.Length();
+  if (charsetLen > 0) {
+    int32_t offset = 0;
+    int32_t spPos = 0;
+    
+    do {
+      spPos = acceptCharsetValue.FindChar(char16_t(' '), offset);
+      int32_t cnt = ((-1 == spPos) ? (charsetLen - offset) : (spPos - offset));
+      if (cnt > 0) {
+        nsAutoString uCharset;
+        acceptCharsetValue.Mid(uCharset, offset, cnt);
+
+        auto encoding = Encoding::ForLabelNoReplacement(uCharset);
+        if (encoding) {
+          return WrapNotNull(encoding);
+        }
+      }
+      offset = spPos + 1;
+    } while (spPos != -1);
+  }
+  
+  
+  Document* doc = GetComposedDoc();
+  if (doc) {
+    return doc->GetDocumentCharacterSet();
+  }
+  return UTF_8_ENCODING;
 }
 
 
