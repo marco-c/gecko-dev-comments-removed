@@ -34,9 +34,13 @@ function sleep(ms) {
 async function blockedIconShown() {
   await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.is_visible(autoplayBlockedIcon());
-  });
+  }, "Blocked icon is shown");
+}
 
-  ok(BrowserTestUtils.is_visible(autoplayBlockedIcon()), "Blocked icon is shown");
+async function blockedIconHidden() {
+  await TestUtils.waitForCondition(() => {
+    return BrowserTestUtils.is_hidden(autoplayBlockedIcon());
+  }, "Blocked icon is hidden");
 }
 
 add_task(async function setup() {
@@ -133,9 +137,7 @@ add_task(async function testBFCache() {
     await blockedIconShown();
 
     gBrowser.goBack();
-    await TestUtils.waitForCondition(() => {
-      return BrowserTestUtils.is_hidden(autoplayBlockedIcon());
-    });
+    await blockedIconHidden();
 
     
     
@@ -158,9 +160,7 @@ add_task(async function testChangingBlockingSettingDuringNavigation() {
     Services.prefs.setIntPref(AUTOPLAY_PREF, Ci.nsIAutoplay.ALLOWED);
 
     gBrowser.goBack();
-    await TestUtils.waitForCondition(() => {
-      return BrowserTestUtils.is_hidden(autoplayBlockedIcon());
-    });
+    await blockedIconHidden();
 
     gBrowser.goForward();
 
@@ -184,9 +184,7 @@ add_task(async function testSlowLoadingPage() {
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   
-  await TestUtils.waitForCondition(() => {
-    return BrowserTestUtils.is_hidden(autoplayBlockedIcon());
-  });
+  await blockedIconHidden();
   await BrowserTestUtils.switchTab(gBrowser, tab2);
   await blockedIconShown();
 

@@ -185,7 +185,7 @@ const GloballyBlockedPermissions = {
           browser.removeProgressListener(this);
         }
       },
-    });
+    }, Ci.nsIWebProgress.NOTIFY_LOCATION);
   },
 
   
