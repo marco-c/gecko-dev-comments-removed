@@ -49,6 +49,9 @@ class MOZ_RAII AutoProfilerLabel {
  private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   void* mEntryContext;
+  
+  
+  uint32_t mGeneration;
 };
 
 #endif

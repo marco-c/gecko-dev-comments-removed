@@ -6,15 +6,67 @@
 
 #include "mozilla/AutoProfilerLabel.h"
 
+#include "mozilla/PlatformMutex.h"
+
 namespace mozilla {
 
-static ProfilerLabelEnter sEnter = nullptr;
-static ProfilerLabelExit sExit = nullptr;
+
+
+class MOZ_RAII AutoProfilerLabelData {
+ public:
+  AutoProfilerLabelData() { sAPLMutex.Lock(); }
+
+  ~AutoProfilerLabelData() { sAPLMutex.Unlock(); }
+
+  AutoProfilerLabelData(const AutoProfilerLabelData&) = delete;
+  void operator=(const AutoProfilerLabelData&) = delete;
+
+  const ProfilerLabelEnter& EnterCRef() const { return sEnter; }
+  ProfilerLabelEnter& EnterRef() { return sEnter; }
+
+  const ProfilerLabelExit& ExitCRef() const { return sExit; }
+  ProfilerLabelExit& ExitRef() { return sExit; }
+
+  const uint32_t& GenerationCRef() const { return sGeneration; }
+  uint32_t& GenerationRef() { return sGeneration; }
+
+ private:
+  
+  
+  class Mutex : private mozilla::detail::MutexImpl {
+   public:
+    Mutex()
+        : mozilla::detail::MutexImpl(
+              mozilla::recordreplay::Behavior::DontPreserve) {}
+    void Lock() { mozilla::detail::MutexImpl::lock(); }
+    void Unlock() { mozilla::detail::MutexImpl::unlock(); }
+  };
+
+  
+  static Mutex sAPLMutex;
+
+  static ProfilerLabelEnter sEnter;
+  static ProfilerLabelExit sExit;
+
+  
+  static uint32_t sGeneration;
+};
+
+ AutoProfilerLabelData::Mutex AutoProfilerLabelData::sAPLMutex;
+ ProfilerLabelEnter AutoProfilerLabelData::sEnter = nullptr;
+ ProfilerLabelExit AutoProfilerLabelData::sExit = nullptr;
+ uint32_t AutoProfilerLabelData::sGeneration = 0;
 
 void RegisterProfilerLabelEnterExit(ProfilerLabelEnter aEnter,
                                     ProfilerLabelExit aExit) {
-  sEnter = aEnter;
-  sExit = aExit;
+  MOZ_ASSERT(!aEnter == !aExit, "Must provide both null or both non-null");
+
+  AutoProfilerLabelData data;
+  MOZ_ASSERT(!aEnter != !data.EnterRef(),
+             "Must go from null to non-null, or from non-null to null");
+  data.EnterRef() = aEnter;
+  data.ExitRef() = aExit;
+  ++data.GenerationRef();
 }
 
 AutoProfilerLabel::AutoProfilerLabel(
@@ -22,12 +74,20 @@ AutoProfilerLabel::AutoProfilerLabel(
     const char* aDynamicString MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL) {
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
-  mEntryContext = sEnter ? sEnter(aLabel, aDynamicString, this) : nullptr;
+  const AutoProfilerLabelData data;
+  mEntryContext = (data.EnterCRef())
+                      ? data.EnterCRef()(aLabel, aDynamicString, this)
+                      : nullptr;
+  mGeneration = data.GenerationCRef();
 }
 
 AutoProfilerLabel::~AutoProfilerLabel() {
-  if (sExit && mEntryContext) {
-    sExit(mEntryContext);
+  if (!mEntryContext) {
+    return;
+  }
+  const AutoProfilerLabelData data;
+  if (data.ExitCRef() && (mGeneration == data.GenerationCRef())) {
+    data.ExitCRef()(mEntryContext);
   }
 }
 
