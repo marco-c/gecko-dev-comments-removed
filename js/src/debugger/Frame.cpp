@@ -14,6 +14,7 @@
 #include "debugger/Object.h"
 #include "debugger/Script.h"
 #include "frontend/BytecodeCompilation.h"
+#include "gc/ZoneAllocator.h"
 #include "jit/JitFrames.h"
 #include "jit/RematerializedFrame.h"
 #include "vm/Interpreter.h"
@@ -39,9 +40,12 @@ ScriptedOnStepHandler::ScriptedOnStepHandler(JSObject* object)
 
 JSObject* ScriptedOnStepHandler::object() const { return object_; }
 
-void ScriptedOnStepHandler::drop(FreeOp* fop, DebuggerFrame* frame) {
-  MOZ_ASSERT(frame->onStepHandler() == this);
-  fop->delete_(frame, this, allocSize(), MemoryUse::DebuggerOnStepHandler);
+void ScriptedOnStepHandler::hold(JSObject* owner) {
+  AddCellMemory(owner, allocSize(), MemoryUse::DebuggerOnStepHandler);
+}
+
+void ScriptedOnStepHandler::drop(FreeOp* fop, JSObject* owner) {
+  fop->delete_(owner, this, allocSize(), MemoryUse::DebuggerOnStepHandler);
 }
 
 void ScriptedOnStepHandler::trace(JSTracer* tracer) {
@@ -68,9 +72,12 @@ ScriptedOnPopHandler::ScriptedOnPopHandler(JSObject* object) : object_(object) {
 
 JSObject* ScriptedOnPopHandler::object() const { return object_; }
 
-void ScriptedOnPopHandler::drop(FreeOp* fop, DebuggerFrame* frame) {
-  MOZ_ASSERT(frame->onPopHandler() == this);
-  fop->delete_(frame, this, allocSize(), MemoryUse::DebuggerOnPopHandler);
+void ScriptedOnPopHandler::hold(JSObject* owner) {
+  AddCellMemory(owner, allocSize(), MemoryUse::DebuggerOnPopHandler);
+}
+
+void ScriptedOnPopHandler::drop(FreeOp* fop, JSObject* owner) {
+  fop->delete_(owner, this, allocSize(), MemoryUse::DebuggerOnPopHandler);
 }
 
 void ScriptedOnPopHandler::trace(JSTracer* tracer) {
@@ -622,12 +629,15 @@ bool DebuggerFrame::setOnStepHandler(JSContext* cx, HandleDebuggerFrame frame,
   MOZ_ASSERT(frame->isLive());
 
   OnStepHandler* prior = frame->onStepHandler();
-  if (prior && handler != prior) {
-    prior->drop(cx->defaultFreeOp(), frame);
-    frame->setReservedSlot(ONSTEP_HANDLER_SLOT, UndefinedValue());
+  if (handler == prior) {
+    return true;
   }
 
+  FreeOp* fop = cx->defaultFreeOp();
   AbstractFramePtr referent = DebuggerFrame::getReferent(frame);
+
+  
+  
   if (referent.isWasmDebugFrame()) {
     wasm::Instance* instance = referent.asWasmDebugFrame()->instance();
     wasm::DebugFrame* wasmFrame = referent.asWasmDebugFrame();
@@ -666,11 +676,16 @@ bool DebuggerFrame::setOnStepHandler(JSContext* cx, HandleDebuggerFrame frame,
   }
 
   
-  if (handler && handler != prior) {
-    
-    
-    InitReservedSlot(frame, ONSTEP_HANDLER_SLOT, handler, handler->allocSize(),
-                     MemoryUse::DebuggerOnStepHandler);
+  
+  if (prior) {
+    prior->drop(fop, frame);
+  }
+
+  if (handler) {
+    frame->setReservedSlot(ONSTEP_HANDLER_SLOT, PrivateValue(handler));
+    handler->hold(frame);
+  } else {
+    frame->setReservedSlot(ONSTEP_HANDLER_SLOT, UndefinedValue());
   }
 
   return true;
@@ -908,16 +923,21 @@ void DebuggerFrame::setOnPopHandler(JSContext* cx, OnPopHandler* handler) {
   MOZ_ASSERT(isLive());
 
   OnPopHandler* prior = onPopHandler();
-  if (prior && prior != handler) {
-    prior->drop(cx->defaultFreeOp(), this);
-    setReservedSlot(ONPOP_HANDLER_SLOT, UndefinedValue());
+  if (handler == prior) {
+    return;
   }
 
-  if (handler && prior != handler) {
-    
-    
-    InitReservedSlot(this, ONPOP_HANDLER_SLOT, handler, handler->allocSize(),
-                     MemoryUse::DebuggerOnPopHandler);
+  FreeOp* fop = cx->defaultFreeOp();
+
+  if (prior) {
+    prior->drop(fop, this);
+  }
+
+  if (handler) {
+    setReservedSlot(ONPOP_HANDLER_SLOT, PrivateValue(handler));
+    handler->hold(this);
+  } else {
+    setReservedSlot(ONPOP_HANDLER_SLOT, UndefinedValue());
   }
 }
 

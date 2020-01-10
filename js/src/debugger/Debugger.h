@@ -1384,6 +1384,16 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
+
+
+
+
+
+
+
+
+
+
 struct Handler {
   virtual ~Handler() {}
 
@@ -1392,17 +1402,19 @@ struct Handler {
 
 
 
+
+
+
+
   virtual JSObject* object() const = 0;
 
   
-
-
-
-
-  virtual void drop(js::FreeOp* fop, DebuggerFrame* frame) = 0;
+  virtual void hold(JSObject* owner) = 0;
 
   
+  virtual void drop(js::FreeOp* fop, JSObject* owner) = 0;
 
+  
 
 
 
