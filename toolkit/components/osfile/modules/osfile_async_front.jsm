@@ -1115,6 +1115,27 @@ File.remove = function remove(path, options) {
 };
 
 
+if (SharedAll.Constants.Sys.Name == "Darwin") {
+  
+
+
+
+
+
+
+
+
+
+  File.macRemoveXAttr = function macRemoveXAttr(path, name) {
+    return Scheduler.post(
+      "macRemoveXAttr",
+      [Type.path.toMsg(path), Type.cstring.toMsg(name)],
+      [path, name]
+    );
+  };
+}
+
+
 
 
 

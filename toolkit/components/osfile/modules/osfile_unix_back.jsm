@@ -692,6 +692,20 @@
         ); 
       }
 
+      if (OS.Constants.Sys.Name == "Darwin") {
+        
+        libc.declareLazyFFI(
+          SysFile,
+          "removexattr",
+          "removexattr",
+          ctypes.default_abi,
+           Type.negativeone_or_nothing,
+          Type.path,
+          Type.cstring,
+          Type.int
+        );
+      }
+
       libc.declareLazyFFI(
         SysFile,
         "rename",

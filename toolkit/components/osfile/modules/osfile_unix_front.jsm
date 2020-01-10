@@ -916,6 +916,24 @@
       return serialized;
     };
 
+    
+    if (OS.Constants.Sys.Name == "Darwin") {
+      
+
+
+
+
+
+
+
+      File.macRemoveXAttr = function removexattr(path, name) {
+        let result = UnixFile.removexattr(path, name, 0 );
+        if (result == -1) {
+          throw new File.Error("removexattr", ctypes.errno, path);
+        }
+      };
+    }
+
     let gStatData = new Type.stat.implementation();
     let gStatDataPtr = gStatData.address();
 
