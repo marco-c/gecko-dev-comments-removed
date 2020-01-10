@@ -1,5 +1,6 @@
 var seenIndex = false;
 
+
 onfetch = function(ev) {
   if (ev.request.url.includes("ignore")) {
     return;

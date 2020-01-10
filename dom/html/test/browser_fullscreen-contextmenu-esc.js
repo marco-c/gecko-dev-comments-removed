@@ -6,6 +6,7 @@
 
 SimpleTest.ignoreAllUncaughtExceptions(true);
 
+
 function frameScript() {
   addMessageListener("Test:RequestFullscreen", () => {
     content.document.body.requestFullscreen();
@@ -27,6 +28,7 @@ function frameScript() {
   }
   waitUntilActive();
 }
+
 
 var gMessageManager;
 
@@ -93,6 +95,7 @@ add_task(async function() {
   await popupHidePromise;
   is(contextMenu.state, "closed", "Should have closed context menu");
 
+  
   
   
   await new Promise(resolve => setTimeout(resolve, 1000));

@@ -61,6 +61,7 @@ async function runTest() {
     
     await Promise.race([
       BrowserTestUtils.waitForCondition(() => getSizeMode() == "normal"),
+      
       new Promise(resolve => setTimeout(resolve, 2000))
     ]);
 
