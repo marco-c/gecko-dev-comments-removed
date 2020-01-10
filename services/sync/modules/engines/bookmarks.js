@@ -842,10 +842,6 @@ BufferedBookmarksEngine.prototype = {
   
   _defaultSort: "oldest",
 
-  
-  
-  _applyTimeout: BUFFERED_BOOKMARK_APPLY_TIMEOUT_MS,
-
   async _ensureCurrentSyncID(newSyncID) {
     await super._ensureCurrentSyncID(newSyncID);
     let buf = await this._store.ensureOpenMirror();
@@ -885,8 +881,8 @@ BufferedBookmarksEngine.prototype = {
     await super._processIncoming(newitems);
     let buf = await this._store.ensureOpenMirror();
 
-    let watchdog = Async.watchdog();
-    watchdog.start(this._applyTimeout);
+    let watchdog = this._newWatchdog();
+    watchdog.start(BUFFERED_BOOKMARK_APPLY_TIMEOUT_MS);
 
     try {
       let recordsToUpload = await buf.apply({
@@ -1016,6 +1012,11 @@ BufferedBookmarksEngine.prototype = {
   async finalize() {
     await super.finalize();
     await this._store.finalize();
+  },
+
+  
+  _newWatchdog() {
+    return Async.watchdog();
   },
 };
 
