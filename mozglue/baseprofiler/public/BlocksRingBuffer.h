@@ -492,7 +492,24 @@ class BlocksRingBuffer {
     BlockIterator begin() const {
       return BlockIterator(mRing, BufferRangeStart());
     }
+    
+    
     BlockIterator end() const { return BlockIterator(mRing, BufferRangeEnd()); }
+
+    
+    
+    
+    BlockIterator At(BlockIndex aBlockIndex) const {
+      if (aBlockIndex < BufferRangeStart()) {
+        
+        
+        return begin();
+      }
+      
+      
+      mRing.AssertBlockIndexIsValidOrEnd(aBlockIndex);
+      return BlockIterator(mRing, aBlockIndex);
+    }
 
     
     
@@ -834,8 +851,8 @@ class BlocksRingBuffer {
   
   
   void AssertBlockIndexIsValid(BlockIndex aBlockIndex) const {
-    mMutex.AssertCurrentThreadOwns();
 #ifdef DEBUG
+    mMutex.AssertCurrentThreadOwns();
     MOZ_ASSERT(aBlockIndex >= mFirstReadIndex);
     MOZ_ASSERT(aBlockIndex < mNextWriteIndex);
     
@@ -864,6 +881,20 @@ class BlocksRingBuffer {
     }
     MOZ_ASSERT(it.CurrentBlockIndex() == aBlockIndex);
 #  endif
+#endif  
+  }
+
+  
+  
+  
+  
+  void AssertBlockIndexIsValidOrEnd(BlockIndex aBlockIndex) const {
+#ifdef DEBUG
+    mMutex.AssertCurrentThreadOwns();
+    if (aBlockIndex == mNextWriteIndex) {
+      return;
+    }
+    AssertBlockIndexIsValid(aBlockIndex);
 #endif  
   }
 
