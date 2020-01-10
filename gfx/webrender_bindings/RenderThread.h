@@ -225,8 +225,6 @@ class RenderThread final {
   void IncPendingFrameCount(wr::WindowId aWindowId, const VsyncId& aStartId,
                             const TimeStamp& aStartTime,
                             uint8_t aDocFrameCount);
-  
-  void FrameRenderingComplete(wr::WindowId aWindowId);
 
   void NotifySlowFrame(wr::WindowId aWindowId);
 
