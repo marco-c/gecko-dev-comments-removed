@@ -1418,7 +1418,7 @@ var PanelView = class extends AssociatedToNode {
     return tag == "menulist" || tag == "textbox" || tag == "input"
            || tag == "textarea"
            
-           || tag == "browser";
+           || tag == "browser" || tag == "iframe";
   }
 
   
@@ -1441,7 +1441,10 @@ var PanelView = class extends AssociatedToNode {
           node.classList.contains("navigable") ||
           (!arrowKey && this._isNavigableWithTabOnly(node))) {
         
-        if (!node.hasAttribute("tabindex")) {
+        
+        
+        if (node.tagName != "browser" && node.tagName != "iframe" &&
+            !node.hasAttribute("tabindex")) {
           node.setAttribute("tabindex", "-1");
         }
         return NodeFilter.FILTER_ACCEPT;
@@ -1586,7 +1589,7 @@ var PanelView = class extends AssociatedToNode {
 
     
     
-    if (focus && focus.tagName == "browser") {
+    if (focus && (focus.tagName == "browser" || focus.tagName == "iframe")) {
       return;
     }
 

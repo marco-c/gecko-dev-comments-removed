@@ -8,6 +8,7 @@
 
 
 const {PanelMultiView} = ChromeUtils.import("resource:///modules/PanelMultiView.jsm");
+const kEmbeddedDocUrl = 'data:text/html,<textarea id="docTextarea">value</textarea><button id="docButton"></button>';
 
 let gAnchor;
 let gPanel;
@@ -24,8 +25,10 @@ let gMainArrowOrder;
 let gSubView;
 let gSubButton;
 let gSubTextarea;
-let gDocView;
-let gDocBrowser;
+let gBrowserView;
+let gBrowserBrowser;
+let gIframeView;
+let gIframeIframe;
 
 async function openPopup() {
   let shown = BrowserTestUtils.waitForEvent(gMainView, "ViewShown");
@@ -122,17 +125,24 @@ add_task(async function setup() {
   gSubView.appendChild(gSubTextarea);
   gSubTextarea.value = "value";
 
-  gDocView = document.createXULElement("panelview");
-  gDocView.id = "testDocView";
-  gPanelMultiView.appendChild(gDocView);
-  gDocBrowser = document.createXULElement("browser");
-  gDocBrowser.id = "gDocBrowser";
-  gDocBrowser.setAttribute("type", "content");
-  gDocBrowser.setAttribute("src",
-    'data:text/html,<textarea id="docTextarea">value</textarea><button id="docButton"></button>');
-  gDocBrowser.setAttribute("width", 100);
-  gDocBrowser.setAttribute("height", 100);
-  gDocView.appendChild(gDocBrowser);
+  gBrowserView = document.createXULElement("panelview");
+  gBrowserView.id = "testBrowserView";
+  gPanelMultiView.appendChild(gBrowserView);
+  gBrowserBrowser = document.createXULElement("browser");
+  gBrowserBrowser.id = "GBrowserBrowser";
+  gBrowserBrowser.setAttribute("type", "content");
+  gBrowserBrowser.setAttribute("src", kEmbeddedDocUrl);
+  gBrowserBrowser.setAttribute("width", 100);
+  gBrowserBrowser.setAttribute("height", 100);
+  gBrowserView.appendChild(gBrowserBrowser);
+
+  gIframeView = document.createXULElement("panelview");
+  gIframeView.id = "testIframeView";
+  gPanelMultiView.appendChild(gIframeView);
+  gIframeIframe = document.createXULElement("iframe");
+  gIframeIframe.id = "gIframeIframe";
+  gIframeIframe.setAttribute("src", kEmbeddedDocUrl);
+  gIframeView.appendChild(gIframeIframe);
 
   registerCleanupFunction(() => {
     gAnchor.remove();
@@ -309,13 +319,13 @@ add_task(async function testActivationMousedown() {
 });
 
 
-add_task(async function testTabArrowsBrowser() {
+async function testTabArrowsEmbeddedDoc(aView, aEmbedder) {
   await openPopup();
-  await showSubView(gDocView);
-  let backButton = gDocView.querySelector(".subviewbutton-back");
+  await showSubView(aView);
+  let backButton = aView.querySelector(".subviewbutton-back");
   backButton.id = "docBack";
   await expectFocusAfterKey("Tab", backButton);
-  let doc = gDocBrowser.contentDocument;
+  let doc = aEmbedder.contentDocument;
   
   doc.id = "doc";
   await expectFocusAfterKey("Tab", doc);
@@ -338,6 +348,16 @@ add_task(async function testTabArrowsBrowser() {
   
   expectFocusAfterKey("Tab", backButton);
   await hidePopup();
+}
+
+
+add_task(async function testTabArrowsBrowser() {
+  await testTabArrowsEmbeddedDoc(gBrowserView, gBrowserBrowser);
+});
+
+
+add_task(async function testTabArrowsIframe() {
+  await testTabArrowsEmbeddedDoc(gIframeView, gIframeIframe);
 });
 
 
