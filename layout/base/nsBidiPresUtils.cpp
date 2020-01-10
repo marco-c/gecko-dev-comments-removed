@@ -459,6 +459,7 @@ void MOZ_EXPORT DumpBidiLine(BidiLineData* aData, bool aVisualOrder) {
 
 
 static bool IsBidiSplittable(nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame);
   
   LayoutFrameType frameType = aFrame->Type();
   return (aFrame->IsFrameOfType(nsIFrame::eBidiInlineContainer) &&
@@ -555,7 +556,7 @@ static void MakeContinuationsNonFluidUpParentChain(nsIFrame* aFrame,
 
 static void JoinInlineAncestors(nsIFrame* aFrame) {
   nsIFrame* frame = aFrame;
-  do {
+  while (frame && IsBidiSplittable(frame)) {
     nsIFrame* next = frame->GetNextContinuation();
     if (next) {
       MakeContinuationFluid(frame, next);
@@ -563,7 +564,7 @@ static void JoinInlineAncestors(nsIFrame* aFrame) {
     
     if (frame->GetNextSibling()) break;
     frame = frame->GetParent();
-  } while (frame && IsBidiSplittable(frame));
+  }
 }
 
 static nsresult CreateContinuation(nsIFrame* aFrame, nsIFrame** aNewFrame,
@@ -1788,7 +1789,7 @@ void nsBidiPresUtils::RemoveBidiContinuation(BidiParagraphData* aBpd,
       
       frame->SetProperty(nsIFrame::BidiDataProperty(), bidiData);
       frame->AddStateBits(NS_FRAME_IS_BIDI);
-      while (frame) {
+      while (frame && IsBidiSplittable(frame)) {
         nsIFrame* prev = frame->GetPrevContinuation();
         if (prev) {
           MakeContinuationFluid(prev, frame);
