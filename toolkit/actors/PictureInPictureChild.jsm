@@ -31,6 +31,7 @@ const TOGGLE_ENABLED_PREF =
 const TOGGLE_TESTING_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.testing";
 const MOUSEMOVE_PROCESSING_DELAY_MS = 50;
+const TOGGLE_HIDING_TIMEOUT_MS = 2000;
 
 
 
@@ -91,6 +92,9 @@ class PictureInPictureToggleChild extends ActorChild {
         
         
         clickedElement: null,
+        
+        
+        hideToggleDeferredTask: null,
       };
       this.weakDocStates.set(this.content.document, state);
     }
@@ -444,6 +448,12 @@ class PictureInPictureToggleChild extends ActorChild {
 
   onMouseMove(event) {
     let state = this.docState;
+
+    if (state.hideToggleDeferredTask) {
+      state.hideToggleDeferredTask.disarm();
+      state.hideToggleDeferredTask.arm();
+    }
+
     state.lastMouseMoveEvent = event;
     state.mousemoveDeferredTask.arm();
   }
@@ -515,6 +525,21 @@ class PictureInPictureToggleChild extends ActorChild {
     }
 
     let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+    let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
+    controlsOverlay.removeAttribute("hidetoggle");
+
+    
+    
+    
+    
+    
+    
+    
+    if (!state.hideToggleDeferredTask && !this.toggleTesting) {
+      state.hideToggleDeferredTask = new DeferredTask(() => {
+        controlsOverlay.setAttribute("hidetoggle", true);
+      }, TOGGLE_HIDING_TIMEOUT_MS);
+    }
 
     if (oldOverVideo) {
       if (oldOverVideo == video) {
@@ -530,7 +555,6 @@ class PictureInPictureToggleChild extends ActorChild {
     }
 
     state.weakOverVideo = Cu.getWeakReference(video);
-    let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
     InspectorUtils.addPseudoClassLock(controlsOverlay, ":hover");
 
     
@@ -572,6 +596,8 @@ class PictureInPictureToggleChild extends ActorChild {
     }
 
     state.weakOverVideo = null;
+    state.hideToggleDeferredTask.disarm();
+    state.hideToggleDeferredTask = null;
   }
 
   
