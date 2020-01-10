@@ -36,6 +36,8 @@ class MozTabbrowserTab extends MozElements.MozTab {
     this.mOverCloseButton = false;
 
     this.mCorrespondingMenuitem = null;
+
+    this.closing = false;
   }
 
   static get inheritedAttributes() {
@@ -416,12 +418,6 @@ class MozTabbrowserTab extends MozElements.MozTab {
       this.removeAttribute("bursting");
     }
   }
-
-  
-
-
-
-
 
   _mouseenter() {
     if (this.hidden || this.closing) {
