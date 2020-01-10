@@ -1,0 +1,13 @@
+
+
+
+
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Types.h"
+
+
+extern "C" void RustMozCrash(const char* aFilename, int aLine,
+                             const char* aReason) {
+  MOZ_Crash(aFilename, aLine, aReason);
+}
