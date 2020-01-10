@@ -569,22 +569,7 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
   if (aView != rootView) return;
 
   Element* rootElement = aPresContext->Document()->GetRootElement();
-  if (!rootElement || !rootElement->IsXULElement()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  if (!rootElement) {
     return;
   }
 
@@ -600,12 +585,24 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
   RefPtr<nsPresContext> kungFuDeathGrip(aPresContext);
   AutoWeakFrame weak(rootFrame);
 
-  nsTransparencyMode mode =
-      nsLayoutUtils::GetFrameTransparency(aFrame, rootFrame);
-  int32_t shadow = rootFrame->StyleUIReset()->mWindowShadow;
-  nsCOMPtr<nsIWidget> viewWidget = aView->GetWidget();
-  viewWidget->SetTransparencyMode(mode);
-  windowWidget->SetWindowShadowStyle(shadow);
+  if (!aPresContext->PresShell()->GetRootScrollFrame()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsTransparencyMode mode =
+        nsLayoutUtils::GetFrameTransparency(aFrame, rootFrame);
+    int32_t shadow = rootFrame->StyleUIReset()->mWindowShadow;
+    nsCOMPtr<nsIWidget> viewWidget = aView->GetWidget();
+    viewWidget->SetTransparencyMode(mode);
+    windowWidget->SetWindowShadowStyle(shadow);
+  }
 
   if (!aRC) return;
 
@@ -613,10 +610,27 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
     return;
   }
 
-  nsBoxLayoutState aState(aPresContext, aRC);
-  nsSize minSize = rootFrame->GetXULMinSize(aState);
-  nsSize maxSize = rootFrame->GetXULMaxSize(aState);
-
+  nsSize minSize(0, 0);
+  nsSize maxSize(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  if (rootElement->IsXULElement()) {
+    nsBoxLayoutState aState(aPresContext, aRC);
+    minSize = rootFrame->GetXULMinSize(aState);
+    maxSize = rootFrame->GetXULMaxSize(aState);
+  } else {
+    auto* pos = rootFrame->StylePosition();
+    if (pos->mMinWidth.ConvertsToLength()) {
+      minSize.width = pos->mMinWidth.ToLength();
+    }
+    if (pos->mMinHeight.ConvertsToLength()) {
+      minSize.height = pos->mMinHeight.ToLength();
+    }
+    if (pos->mMaxWidth.ConvertsToLength()) {
+      maxSize.width = pos->mMaxWidth.ToLength();
+    }
+    if (pos->mMaxHeight.ConvertsToLength()) {
+      maxSize.height = pos->mMaxHeight.ToLength();
+    }
+  }
   SetSizeConstraints(aPresContext, windowWidget, minSize, maxSize);
 #endif
 }
