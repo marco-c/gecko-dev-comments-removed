@@ -1135,13 +1135,6 @@ class AsyncPanZoomController {
 
 
 
-  AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(
-      AsyncTransformConsumer aMode) const;
-
-  
-
-
-
   AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
       AsyncTransformConsumer aMode,
       AsyncTransformComponents aComponents = LayoutAndVisual) const;
@@ -1173,16 +1166,6 @@ class AsyncPanZoomController {
 
 
   bool SampleCompositedAsyncTransform();
-
-  
-
-
-
-
-
-
-  AsyncTransform GetCurrentAsyncViewportTransform(
-      AsyncTransformConsumer aMode) const;
 
   
 

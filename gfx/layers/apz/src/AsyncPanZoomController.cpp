@@ -4110,37 +4110,6 @@ CSSPoint AsyncPanZoomController::GetCurrentAsyncScrollOffsetInCssPixels(
   return GetEffectiveScrollOffset(aMode);
 }
 
-AsyncTransform AsyncPanZoomController::GetCurrentAsyncViewportTransform(
-    AsyncTransformConsumer aMode) const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
-  AutoApplyAsyncTestAttributes testAttributeApplier(this);
-
-  if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
-    return AsyncTransform();
-  }
-
-  CSSPoint lastPaintViewportOffset;
-  if (mLastContentPaintMetrics.IsScrollable()) {
-    lastPaintViewportOffset =
-        mLastContentPaintMetrics.GetLayoutViewport().TopLeft();
-  }
-
-  CSSPoint currentViewportOffset = GetEffectiveLayoutViewport(aMode).TopLeft();
-
-  
-  
-  
-  
-  
-  CSSToParentLayerScale2D effectiveZoom =
-      Metrics().LayersPixelsPerCSSPixel() * LayerToParentLayerScale(1.0f);
-  ParentLayerPoint translation =
-      (currentViewportOffset - lastPaintViewportOffset) * effectiveZoom;
-  LayerToParentLayerScale compositedAsyncZoom;
-
-  return AsyncTransform(compositedAsyncZoom, -translation);
-}
-
 AsyncTransform AsyncPanZoomController::GetCurrentAsyncTransform(
     AsyncTransformConsumer aMode, AsyncTransformComponents aComponents) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
@@ -4190,29 +4159,6 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncTransform(
   }
 
   return AsyncTransform(compositedAsyncZoom, -translation);
-}
-
-AsyncTransform
-AsyncPanZoomController::GetCurrentAsyncTransformForFixedAdjustment(
-    AsyncTransformConsumer aMode) const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
-
-  
-  
-  
-  
-  AutoApplyAsyncTestAttributes testAttributeApplier(this);
-
-  
-  
-  
-  
-  
-  return (StaticPrefs::apz_allow_zooming() && Metrics().IsRootContent() &&
-          Metrics().GetVisualViewport().Size() <=
-              Metrics().GetLayoutViewport().Size())
-             ? GetCurrentAsyncViewportTransform(aMode)
-             : GetCurrentAsyncTransform(aMode);
 }
 
 AsyncTransformComponentMatrix
