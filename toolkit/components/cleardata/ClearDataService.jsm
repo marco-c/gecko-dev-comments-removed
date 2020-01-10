@@ -46,7 +46,22 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
+
+
+
+
 const CookieCleaner = {
+  deleteByLocalFiles(aOriginAttributes) {
+    return new Promise(aResolve => {
+      Services.cookies.removeCookiesFromExactHost(
+        "",
+        JSON.stringify(aOriginAttributes)
+      );
+      aResolve();
+    });
+  },
+
   deleteByHost(aHost, aOriginAttributes) {
     return new Promise(aResolve => {
       Services.cookies.removeCookiesFromExactHost(
@@ -1098,6 +1113,22 @@ ClearDataService.prototype = Object.freeze({
     if (!Services.qms) {
       Cu.reportError("Failed initializiation of QuotaManagerService.");
     }
+  },
+
+  deleteDataFromLocalFiles(aIsUserRequest, aFlags, aCallback) {
+    if (!aCallback) {
+      return Cr.NS_ERROR_INVALID_ARG;
+    }
+
+    return this._deleteInternal(aFlags, aCallback, aCleaner => {
+      
+      
+      if (aCleaner.deleteByLocalFiles) {
+        
+        return aCleaner.deleteByLocalFiles({});
+      }
+      return Promise.resolve();
+    });
   },
 
   deleteDataFromHost(aHost, aIsUserRequest, aFlags, aCallback) {

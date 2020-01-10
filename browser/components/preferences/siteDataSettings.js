@@ -61,7 +61,10 @@ let gSiteDataSettings = {
     }
 
     
-    addColumnItem({ raw: site.host }, "4");
+    let hostData = site.host
+      ? { raw: site.host }
+      : { id: "site-data-local-file-host" };
+    addColumnItem(hostData, "4");
 
     
     addColumnItem({ raw: site.cookies.length }, "1");
