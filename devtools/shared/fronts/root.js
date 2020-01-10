@@ -9,6 +9,7 @@ const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 loader.lazyRequireGetter(
@@ -28,6 +29,13 @@ loader.lazyRequireGetter(
   "ContentProcessTargetFront",
   "devtools/shared/fronts/targets/content-process",
   true
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "swm",
+  "@mozilla.org/serviceworkers/manager;1",
+  "nsIServiceWorkerManager"
 );
 
 class RootFront extends FrontClassWithSpec(rootSpec) {
@@ -107,6 +115,9 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     };
 
     registrations.forEach(front => {
+      const { activeWorker, waitingWorker, installingWorker } = front;
+      const newestWorker = activeWorker || waitingWorker || installingWorker;
+
       
       
       
@@ -120,8 +131,19 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
         registrationFront: front,
         scope: front.scope,
         url: front.url,
+        newestWorkerId: newestWorker && newestWorker.id,
       });
     });
+
+    
+
+
+
+
+
+
+
+    const isParentInterceptEnabled = swm.isParentInterceptEnabled();
 
     workers.forEach(front => {
       const worker = {
@@ -132,9 +154,24 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
       };
       switch (front.type) {
         case Ci.nsIWorkerDebugger.TYPE_SERVICE:
-          const registration = result.service.find(
-            r => r.scope === front.scope
-          );
+          const registration = result.service.find(r => {
+            
+
+
+
+
+
+
+
+
+
+            if (!r.newestWorkerId || !isParentInterceptEnabled) {
+              return r.scope === front.scope;
+            }
+
+            return r.newestWorkerId === front.id;
+          });
+
           if (registration) {
             
             

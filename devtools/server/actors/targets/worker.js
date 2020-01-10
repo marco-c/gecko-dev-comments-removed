@@ -45,13 +45,21 @@ const WorkerTargetActor = protocol.ActorClassWithSpec(workerTargetSpec, {
       type: this._dbg.type,
     };
     if (this._dbg.type === Ci.nsIWorkerDebugger.TYPE_SERVICE) {
-      const registration = this._getServiceWorkerRegistrationInfo();
-      form.scope = registration.scope;
-      const newestWorker =
-        registration.activeWorker ||
-        registration.waitingWorker ||
-        registration.installingWorker;
-      form.fetch = newestWorker && newestWorker.handlesFetchEvents;
+      
+
+
+
+
+
+      if (!swm.isParentInterceptEnabled() || !DebuggerServer.isInChildProcess) {
+        const registration = this._getServiceWorkerRegistrationInfo();
+        form.scope = registration.scope;
+        const newestWorker =
+          registration.activeWorker ||
+          registration.waitingWorker ||
+          registration.installingWorker;
+        form.fetch = newestWorker && newestWorker.handlesFetchEvents;
+      }
     }
     return form;
   },
