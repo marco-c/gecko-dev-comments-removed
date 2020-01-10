@@ -68,26 +68,17 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(ServiceWorkerPrivate, Release)
 
 Atomic<uint32_t> gDOMDisableOpenClickDelay(0);
 
+KeepAliveToken::KeepAliveToken(ServiceWorkerPrivate* aPrivate)
+    : mPrivate(aPrivate) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aPrivate);
+  mPrivate->AddToken();
+}
 
-
-class KeepAliveToken final : public nsISupports {
- public:
-  NS_DECL_ISUPPORTS
-
-  explicit KeepAliveToken(ServiceWorkerPrivate* aPrivate) : mPrivate(aPrivate) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(aPrivate);
-    mPrivate->AddToken();
-  }
-
- private:
-  ~KeepAliveToken() {
-    MOZ_ASSERT(NS_IsMainThread());
-    mPrivate->ReleaseToken();
-  }
-
-  RefPtr<ServiceWorkerPrivate> mPrivate;
-};
+KeepAliveToken::~KeepAliveToken() {
+  MOZ_ASSERT(NS_IsMainThread());
+  mPrivate->ReleaseToken();
+}
 
 NS_IMPL_ISUPPORTS0(KeepAliveToken)
 
