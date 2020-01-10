@@ -265,7 +265,7 @@ add_task(async function test_ui_state_loginFailed() {
       "PanelUI-fxa-menu-sync-prefs-button",
     ],
   });
-  checkFxAAvatar("unverified");
+  checkFxAAvatar("login-failed");
 });
 
 function checkPanelUIStatusBar({ label, fxastatus, syncing }) {
@@ -399,6 +399,7 @@ function checkFxAAvatar(fxaStatus) {
         'url("chrome://browser/skin/fxa/avatar-empty-badged.svg")',
       unverified: 'url("chrome://browser/skin/fxa/avatar-confirm.svg")',
       signedin: 'url("chrome://browser/skin/fxa/avatar.svg")',
+      "login-failed": 'url("chrome://browser/skin/fxa/avatar-alert.svg")',
     };
     ok(
       avatarURL == expected[fxaStatus],

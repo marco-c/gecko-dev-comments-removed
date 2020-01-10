@@ -404,6 +404,7 @@ var gSync = {
     
     
     
+    
     let stateValue = "not_configured";
 
     const menuHeaderTitleEl = document.getElementById("fxa-menu-header-title");
@@ -452,7 +453,7 @@ var gSync = {
     if (state.status === UIState.STATUS_NOT_CONFIGURED) {
       mainWindowEl.style.removeProperty("--avatar-image-url");
     } else if (state.status === UIState.STATUS_LOGIN_FAILED) {
-      stateValue = "unverified";
+      stateValue = "login-failed";
       headerTitle = this.fxaStrings.GetStringFromName("account.reconnectToFxA");
       headerDescription = state.email;
       mainWindowEl.style.removeProperty("--avatar-image-url");
