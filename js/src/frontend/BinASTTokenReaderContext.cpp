@@ -60,15 +60,6 @@ static_assert(
 const uint8_t MAX_PREFIX_BIT_LENGTH = 32;
 
 
-
-
-
-
-
-
-const uint8_t MAX_BIT_LENGTH_IN_SATURATED_TABLE = 10;
-
-
 const uint8_t BIT_BUFFER_SIZE = 64;
 
 
