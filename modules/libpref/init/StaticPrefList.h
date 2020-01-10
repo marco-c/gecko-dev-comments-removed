@@ -756,6 +756,19 @@ VARCACHE_PREF(
 )
 
 
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "browser.cache.disk.free_space_soft_limit",
+   browser_cache_disk_free_space_soft_limit,
+  RelaxedAtomicUint32, 5 * 1024 
+)
+
+
 VARCACHE_PREF(
   Live,
   "browser.contentblocking.allowlist.storage.enabled",
