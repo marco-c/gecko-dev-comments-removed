@@ -522,6 +522,9 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
   show: function PopupNotifications_show(
     browser,
     id,

@@ -729,18 +729,17 @@ this.LoginManagerParent = {
 
     if (shouldSaveLogin) {
       Services.logins.addLogin(formLogin);
-      log(
-        "TODO: bug 1559994 will get/create dismissed prompt to save/update password and color the icon blue"
-      );
-    } else {
-      
-      log(
-        "_onGeneratedPasswordFilled, login will not be saved so show dismissed save-password notification"
-      );
-      let browser = browsingContext.top.embedderElement;
-      let prompter = this._getPrompter(browser, openerTopWindowID);
-      prompter.promptToSavePassword(formLogin, true); 
     }
+    log(
+      "_onGeneratedPasswordFilled: show dismissed save-password notification"
+    );
+    let browser = browsingContext.top.embedderElement;
+    let prompter = this._getPrompter(browser, openerTopWindowID);
+    prompter.promptToSavePassword(
+      formLogin,
+      true, 
+      shouldSaveLogin 
+    );
   },
 
   

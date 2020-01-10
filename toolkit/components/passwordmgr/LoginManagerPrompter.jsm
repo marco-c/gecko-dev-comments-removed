@@ -925,12 +925,14 @@ LoginManagerPrompter.prototype = {
     this._openerBrowser = aOpenerBrowser;
   },
 
-  promptToSavePassword(aLogin, dismissed) {
+  promptToSavePassword(aLogin, dismissed = false, notifySaved = false) {
     this.log("promptToSavePassword");
     var notifyObj = this._getPopupNote();
     if (notifyObj) {
       this._showLoginCaptureDoorhanger(aLogin, "password-save", {
         dismissed: this._inPrivateBrowsing || dismissed,
+        notifySaved,
+        extraAttr: notifySaved ? "attention" : "",
       });
       Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save");
     } else {
@@ -1260,9 +1262,15 @@ LoginManagerPrompter.prototype = {
                     .setAttribute("hidden", true);
                 }
                 break;
-              case "shown":
+              case "shown": {
                 writeDataToUI();
+                let anchorIcon = this.anchorElement;
+                if (anchorIcon && this.options.extraAttr == "attention") {
+                  anchorIcon.removeAttribute("extraAttr");
+                  delete this.options.extraAttr;
+                }
                 break;
+              }
               case "dismissed":
                 this.wasDismissed = true;
                 readDataFromUI();
@@ -1371,7 +1379,10 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptToChangePassword(aOldLogin, aNewLogin, dismissed) {
+
+
+
+  promptToChangePassword(aOldLogin, aNewLogin, dismissed, notifySaved) {
     this.log("promptToChangePassword");
     let notifyObj = this._getPopupNote();
 
@@ -1380,7 +1391,8 @@ LoginManagerPrompter.prototype = {
         notifyObj,
         aOldLogin,
         aNewLogin,
-        dismissed
+        dismissed,
+        notifySaved
       );
     } else {
       this._showChangeLoginDialog(aOldLogin, aNewLogin);
@@ -1402,11 +1414,15 @@ LoginManagerPrompter.prototype = {
 
 
 
+
+
+
   _showChangeLoginNotification(
     aNotifyObj,
     aOldLogin,
     aNewLogin,
-    dismissed = false
+    dismissed = false,
+    notifySaved = false
   ) {
     aOldLogin.origin = aNewLogin.origin;
     aOldLogin.formActionOrigin = aNewLogin.formActionOrigin;
@@ -1414,6 +1430,8 @@ LoginManagerPrompter.prototype = {
     aOldLogin.username = aNewLogin.username;
     this._showLoginCaptureDoorhanger(aOldLogin, "password-change", {
       dismissed,
+      notifySaved,
+      extraAttr: notifySaved ? "attention" : "",
     });
 
     let oldGUID = aOldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid;
