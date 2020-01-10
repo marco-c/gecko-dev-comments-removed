@@ -10,7 +10,6 @@ const {
 } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { getVisibleColumns } = require("../selectors/index");
 const {
   fetchNetworkUpdatePacket,
   propertiesEqual,
@@ -280,7 +279,6 @@ class RequestListItem extends Component {
       isSelected,
       firstRequestStartedMs,
       fromCache,
-      networkDetailsOpen,
       onDoubleClick,
       onContextMenu,
       onMouseDown,
@@ -328,11 +326,7 @@ class RequestListItem extends Component {
         })
       ),
       
-      
-      ((columns.waterfall && !networkDetailsOpen) ||
-        (networkDetailsOpen &&
-          columns.waterfall &&
-          getVisibleColumns(columns).length === 1)) &&
+      columns.waterfall &&
         RequestListColumnWaterfall({
           connector,
           firstRequestStartedMs,
