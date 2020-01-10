@@ -94,6 +94,24 @@ function deserializeUnknownProperties(aObject, aSerializable, aFilterFn) {
 
 
 
+
+
+async function isPlaceholder(path) {
+  try {
+    if ((await OS.File.stat(path)).size == 0) {
+      return true;
+    }
+  } catch (ex) {
+    Cu.reportError(ex);
+  }
+  return false;
+}
+
+
+
+
+
+
 const kProgressUpdateIntervalMs = 400;
 
 
@@ -440,7 +458,7 @@ this.Download.prototype = {
           
           
           if (!this.hasPartialData && !this.hasBlockedData) {
-            await this.saver.removeData();
+            await this.saver.removeData(true);
           }
           throw ex;
         }
@@ -458,7 +476,7 @@ this.Download.prototype = {
           
           
           
-          await this.saver.removeData();
+          await this.saver.removeData(true);
 
           
           throw new DownloadError();
@@ -1704,7 +1722,9 @@ this.DownloadSaver.prototype = {
 
 
 
-  async removeData() {},
+
+
+  async removeData(canRemoveFinalTarget) {},
 
   
 
@@ -2125,7 +2145,7 @@ this.DownloadCopySaver.prototype = {
       
       
       if (!DownloadIntegration.shouldKeepBlockedData() || !partFilePath) {
-        await this.removeData();
+        await this.removeData(!partFilePath);
       } else {
         newProperties.hasBlockedData = true;
       }
@@ -2157,7 +2177,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  async removeData() {
+  async removeData(canRemoveFinalTarget = false) {
     
     async function _tryToRemoveFile(path) {
       try {
@@ -2179,7 +2199,9 @@ this.DownloadCopySaver.prototype = {
     }
 
     if (this.download.target.path) {
-      await _tryToRemoveFile(this.download.target.path);
+      if (canRemoveFinalTarget || await isPlaceholder(this.download.target.path)) {
+        await _tryToRemoveFile(this.download.target.path);
+      }
       this.download.target.exists = false;
       this.download.target.size = 0;
     }
@@ -2507,11 +2529,11 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  removeData() {
+  removeData(canRemoveFinalTarget) {
     
     
     
-    return DownloadCopySaver.prototype.removeData.call(this);
+    return DownloadCopySaver.prototype.removeData.call(this, canRemoveFinalTarget);
   },
 
   
