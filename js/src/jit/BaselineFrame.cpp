@@ -66,20 +66,23 @@ void BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator) {
   frameIterator.baselineScriptAndPc(nullptr, &pc);
   size_t nlivefixed = script->calculateLiveFixed(pc);
 
+  uint32_t numValueSlots = frameIterator.baselineFrameNumValueSlots();
+
   
   
-  if (numValueSlots() == 0) {
+  
+  if (numValueSlots == 0) {
     return;
   }
 
-  MOZ_ASSERT(nfixed <= numValueSlots());
+  MOZ_ASSERT(nfixed <= numValueSlots);
 
   if (nfixed == nlivefixed) {
     
-    TraceLocals(this, trc, 0, numValueSlots());
+    TraceLocals(this, trc, 0, numValueSlots);
   } else {
     
-    TraceLocals(this, trc, nfixed, numValueSlots());
+    TraceLocals(this, trc, nfixed, numValueSlots);
 
     
     while (nfixed > nlivefixed) {
