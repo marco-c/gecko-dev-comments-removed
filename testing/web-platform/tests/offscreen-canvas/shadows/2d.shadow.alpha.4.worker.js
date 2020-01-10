@@ -4,7 +4,7 @@
 
 
 importScripts("/resources/testharness.js");
-importScripts("/common/canvas-tests.js");
+importScripts("/2dcontext/resources/canvas-tests.js");
 
 var t = async_test("Shadows with alpha components are correctly affected by globalAlpha");
 t.step(function() {
