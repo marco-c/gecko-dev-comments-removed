@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(typeof Promise.allSettled, 'function');
 
 reportCompare(0, 0);

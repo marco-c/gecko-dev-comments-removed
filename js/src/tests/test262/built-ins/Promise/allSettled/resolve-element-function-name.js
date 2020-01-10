@@ -19,7 +19,6 @@
 
 
 
-
 var resolveElementFunction;
 var thenable = {
   then(fulfill) {

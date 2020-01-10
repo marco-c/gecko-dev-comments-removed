@@ -11,7 +11,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Promise.allSettled.call(undefined, []);
 });

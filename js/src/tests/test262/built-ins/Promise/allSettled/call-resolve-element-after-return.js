@@ -17,7 +17,6 @@
 
 
 
-
 var callCount = 0;
 var valuesArray;
 var expected = [{ status: 'fulfilled', value: 'expectedValue' }];

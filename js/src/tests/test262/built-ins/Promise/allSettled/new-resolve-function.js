@@ -16,7 +16,6 @@
 
 
 
-
 function resolveFunction() {}
 
 function Constructor(executor) {

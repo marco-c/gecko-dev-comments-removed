@@ -18,7 +18,6 @@
 
 
 
-
 var resolve = Promise.resolve;
 var getCount = 0;
 var callCount = 0;

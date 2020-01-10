@@ -18,7 +18,6 @@
 
 
 
-
 var p = Promise.allSettled([]);
 
 assert(p instanceof Promise);

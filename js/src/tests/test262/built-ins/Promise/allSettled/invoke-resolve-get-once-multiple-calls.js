@@ -18,7 +18,6 @@
 
 
 
-
 var p1 = Promise.resolve(1);
 var p2 = Promise.resolve(1);
 var p3 = Promise.reject(1);

@@ -27,7 +27,6 @@
 
 
 
-
 var callCount = 0;
 
 function Constructor(executor) {

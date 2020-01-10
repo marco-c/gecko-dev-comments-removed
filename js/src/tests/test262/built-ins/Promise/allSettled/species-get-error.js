@@ -13,7 +13,6 @@
 
 
 
-
 function C(executor) {
   executor(function() {}, function() {});
 }

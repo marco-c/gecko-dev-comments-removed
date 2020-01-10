@@ -18,7 +18,6 @@
 
 
 
-
 var p1 = new Promise(function() {});
 var p2 = new Promise(function() {});
 var p3 = new Promise(function() {});

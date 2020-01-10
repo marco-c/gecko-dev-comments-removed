@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(Promise.allSettled, 'length', {
   configurable: true,
   writable: false,

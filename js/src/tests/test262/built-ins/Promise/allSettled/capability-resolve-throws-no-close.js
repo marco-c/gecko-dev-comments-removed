@@ -32,7 +32,6 @@
 
 
 
-
 var returnCount = 0;
 var iter = {};
 iter[Symbol.iterator] = function() {
