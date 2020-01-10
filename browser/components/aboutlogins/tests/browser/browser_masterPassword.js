@@ -169,6 +169,34 @@ add_task(async function test() {
     );
   });
 
+  info("Test toggling the password visibility on a new login");
+  await ContentTask.spawn(browser, null, async function createNewToggle() {
+    let createButton = content.document
+      .querySelector("login-list")
+      .shadowRoot.querySelector(".create-login-button");
+    createButton.click();
+
+    let loginItem = Cu.waiveXrays(content.document.querySelector("login-item"));
+    let passwordField = loginItem.shadowRoot.querySelector(
+      "input[name='password']"
+    );
+    let revealCheckbox = loginItem.shadowRoot.querySelector(
+      ".reveal-password-checkbox"
+    );
+    ok(ContentTaskUtils.is_visible(revealCheckbox), "Toggle visible");
+    ok(!revealCheckbox.checked, "Not revealed initially");
+    is(passwordField.type, "password", "type is password");
+    revealCheckbox.click();
+
+    await ContentTaskUtils.waitForCondition(() => {
+      return passwordField.type == "text";
+    }, "Waiting for type='text'");
+    ok(revealCheckbox.checked, "Not revealed after click");
+
+    let cancelButton = loginItem.shadowRoot.querySelector(".cancel-button");
+    cancelButton.click();
+  });
+
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     let loginFilter = Cu.waiveXrays(
       content.document.querySelector("login-filter")

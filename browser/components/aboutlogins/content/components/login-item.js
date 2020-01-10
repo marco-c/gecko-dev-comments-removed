@@ -152,7 +152,15 @@ export default class LoginItem extends HTMLElement {
     this._title.textContent = this._login.title;
     this._originInput.defaultValue = this._login.origin || "";
     this._usernameInput.defaultValue = this._login.username || "";
-    
+    if (this._login.password) {
+      
+      
+      
+      
+      
+      
+      this._passwordInput.value = this._login.password;
+    }
 
     if (this.dataset.editing) {
       this._usernameInput.removeAttribute("data-l10n-id");
@@ -253,8 +261,7 @@ export default class LoginItem extends HTMLElement {
       case "click": {
         let classList = event.currentTarget.classList;
         if (classList.contains("reveal-password-checkbox")) {
-          
-          if (this._revealCheckbox.checked && !this.dataset.editing) {
+          if (this._revealCheckbox.checked && !this.dataset.isNewLogin) {
             let masterPasswordAuth = await new Promise(resolve => {
               window.AboutLoginsUtils.promptForMasterPassword(resolve);
             });
@@ -360,13 +367,6 @@ export default class LoginItem extends HTMLElement {
           return;
         }
         if (classList.contains("edit-button")) {
-          let masterPasswordAuth = await new Promise(resolve => {
-            window.AboutLoginsUtils.promptForMasterPassword(resolve);
-          });
-          if (!masterPasswordAuth) {
-            return;
-          }
-
           this._toggleEditing();
           this.render();
 
@@ -607,9 +607,8 @@ export default class LoginItem extends HTMLElement {
       return;
     }
 
-    this._login = {};
+    this.setLogin({}, { skipFocusChange: true });
     this._toggleEditing(false);
-    this.render();
   }
 
   _handleOriginClick() {
@@ -719,14 +718,6 @@ export default class LoginItem extends HTMLElement {
     let { checked } = this._revealCheckbox;
     let inputType = checked ? "text" : "password";
     this._passwordInput.type = inputType;
-    
-    
-    
-    let password = this._login.password || "";
-    
-    
-    this._passwordInput.defaultValue =
-      checked || this.dataset.editing ? password : " ".repeat(password.length);
   }
 }
 customElements.define("login-item", LoginItem);
