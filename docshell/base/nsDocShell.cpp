@@ -704,6 +704,16 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState) {
     }
   }
 
+  if (aLoadState->GetOriginalURIString().isSome()) {
+    
+    
+    mOriginalUriString = *aLoadState->GetOriginalURIString();
+  }
+
+  if (aLoadState->GetCancelContentJSEpoch().isSome()) {
+    SetCancelContentJSEpoch(*aLoadState->GetCancelContentJSEpoch());
+  }
+
   
   
   
