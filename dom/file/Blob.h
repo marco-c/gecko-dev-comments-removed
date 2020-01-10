@@ -51,9 +51,6 @@ class Blob : public nsIMutable,
   
   static Blob* Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl);
 
-  static already_AddRefed<Blob> CreateEmptyBlob(nsIGlobalObject* aGlobal,
-                                                const nsAString& aContentType);
-
   static already_AddRefed<Blob> CreateStringBlob(nsIGlobalObject* aGlobal,
                                                  const nsACString& aData,
                                                  const nsAString& aContentType);

@@ -121,7 +121,7 @@ class MediaRecorder final : public DOMEventTargetHelper,
 
   MediaRecorder& operator=(const MediaRecorder& x) = delete;
   
-  nsresult CreateAndDispatchBlobEvent(Blob* aBlob);
+  nsresult CreateAndDispatchBlobEvent(BlobImpl* aBlobImpl);
   
   void DispatchSimpleEvent(const nsAString& aStr);
   

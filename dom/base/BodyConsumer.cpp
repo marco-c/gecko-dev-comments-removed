@@ -240,8 +240,8 @@ class ConsumeBodyDoneObserver final : public nsIStreamLoaderObserver,
     return NS_OK;
   }
 
-  virtual void BlobStoreCompleted(MutableBlobStorage* aBlobStorage, Blob* aBlob,
-                                  nsresult aRv) override {
+  virtual void BlobStoreCompleted(MutableBlobStorage* aBlobStorage,
+                                  BlobImpl* aBlobImpl, nsresult aRv) override {
     
     if (NS_FAILED(aRv)) {
       OnStreamComplete(nullptr, nullptr, aRv, 0, nullptr);
@@ -252,7 +252,7 @@ class ConsumeBodyDoneObserver final : public nsIStreamLoaderObserver,
     
     mBodyConsumer->NullifyConsumeBodyPump();
 
-    mBodyConsumer->OnBlobResult(aBlob, mWorkerRef);
+    mBodyConsumer->OnBlobResult(aBlobImpl, mWorkerRef);
   }
 
  private:
@@ -406,7 +406,7 @@ class FileCreationHandler final : public PromiseNativeHandler {
       return;
     }
 
-    mConsumer->OnBlobResult(blob, mWorkerRef);
+    mConsumer->OnBlobResult(blob->Impl(), mWorkerRef);
   }
 
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
@@ -532,8 +532,8 @@ void BodyConsumer::BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWorkerRef) {
 
   nsCOMPtr<nsIStreamListener> listener;
   if (mConsumeType == CONSUME_BLOB) {
-    listener = new MutableBlobStreamListener(
-        mBlobStorageType, nullptr, mBodyMimeType, p, mMainThreadEventTarget);
+    listener = new MutableBlobStreamListener(mBlobStorageType, mBodyMimeType, p,
+                                             mMainThreadEventTarget);
   } else {
     nsCOMPtr<nsIStreamLoader> loader;
     rv = NS_NewStreamLoader(getter_AddRefs(loader), p);
@@ -574,10 +574,11 @@ void BodyConsumer::BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWorkerRef) {
 
 
 
-void BodyConsumer::OnBlobResult(Blob* aBlob, ThreadSafeWorkerRef* aWorkerRef) {
+void BodyConsumer::OnBlobResult(BlobImpl* aBlobImpl,
+                                ThreadSafeWorkerRef* aWorkerRef) {
   AssertIsOnMainThread();
 
-  DispatchContinueConsumeBlobBody(aBlob ? aBlob->Impl() : nullptr, aWorkerRef);
+  DispatchContinueConsumeBlobBody(aBlobImpl, aWorkerRef);
 }
 
 void BodyConsumer::DispatchContinueConsumeBlobBody(

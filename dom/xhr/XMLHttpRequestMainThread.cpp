@@ -2143,7 +2143,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
     
     
     MaybeCreateBlobStorage();
-    mBlobStorage->GetBlobWhenReady(GetOwnerGlobal(), contentType, this);
+    mBlobStorage->GetBlobImplWhenReady(contentType, this);
     waitingForBlobCreation = true;
 
     NS_ASSERTION(mResponseBody.IsEmpty(), "mResponseBody should be empty");
@@ -3583,7 +3583,7 @@ void XMLHttpRequestMainThread::MaybeCreateBlobStorage() {
 }
 
 void XMLHttpRequestMainThread::BlobStoreCompleted(
-    MutableBlobStorage* aBlobStorage, Blob* aBlob, nsresult aRv) {
+    MutableBlobStorage* aBlobStorage, BlobImpl* aBlobImpl, nsresult aRv) {
   
   if (mBlobStorage != aBlobStorage || NS_FAILED(aRv)) {
     return;
@@ -3591,7 +3591,7 @@ void XMLHttpRequestMainThread::BlobStoreCompleted(
 
   MOZ_ASSERT(mState != XMLHttpRequest_Binding::DONE);
 
-  mResponseBlob = aBlob;
+  mResponseBlob = Blob::Create(GetOwnerGlobal(), aBlobImpl);
   mBlobStorage = nullptr;
 
   ChangeStateToDone(mFlagSyncLooping);
