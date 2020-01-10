@@ -2554,18 +2554,8 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   }
 
   
-  
-  bool isScrollable = true;
-  if (isPaginated) {
-    isScrollable = presContext->HasPaginatedScrolling();
-  } else if (isXUL) {
-    isScrollable = false;
-  } else if (nsContentUtils::IsInChromeDocshell(aDocElement->OwnerDoc()) &&
-             aDocElement->AsElement()->AttrValueIs(
-                 kNameSpaceID_None, nsGkAtoms::scrolling, nsGkAtoms::_false,
-                 eCaseMatters)) {
-    isScrollable = false;
-  }
+  bool isScrollable =
+      isPaginated ? presContext->HasPaginatedScrolling() : !isXUL;
 
   
   

@@ -197,9 +197,8 @@ async function drop(dragData, expectedURLs, ignoreFirstWindow = false) {
   );
 
   
-  
-  let dragSrcElement = document.getElementById("sidebar-button");
-  ok(dragSrcElement, "Sidebar button exists");
+  let dragSrcElement = document.getElementById("downloads-button");
+  ok(dragSrcElement, "Downloads button exists");
   let newWindowButton = document.getElementById("new-window-button");
   ok(newWindowButton, "New Window button exists");
 
