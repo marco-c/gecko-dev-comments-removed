@@ -1291,6 +1291,7 @@ void nsPresContext::ThemeChangedInternal() {
   }
 
   RefreshSystemMetrics();
+  PreferenceSheet::Refresh();
 
   
   
