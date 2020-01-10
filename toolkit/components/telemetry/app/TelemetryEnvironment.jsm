@@ -49,6 +49,11 @@ ChromeUtils.defineModuleGetter(
   "UpdateUtils",
   "resource://gre/modules/UpdateUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm"
+);
 
 
 const MAX_ADDON_STRING_LENGTH = 100;
@@ -327,6 +332,7 @@ const SESSIONSTORE_WINDOWS_RESTORED_TOPIC = "sessionstore-windows-restored";
 const PREF_CHANGED_TOPIC = "nsPref:changed";
 const BLOCKLIST_LOADED_TOPIC = "plugin-blocklist-loaded";
 const AUTO_UPDATE_PREF_CHANGE_TOPIC = "auto-update-config-change";
+const SERVICES_INFO_CHANGE_TOPIC = "sync-ui-state:update";
 
 
 
@@ -1362,6 +1368,7 @@ EnvironmentCache.prototype = {
     Services.obs.addObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC);
     Services.obs.addObserver(this, SEARCH_SERVICE_TOPIC);
     Services.obs.addObserver(this, AUTO_UPDATE_PREF_CHANGE_TOPIC);
+    Services.obs.addObserver(this, SERVICES_INFO_CHANGE_TOPIC);
   },
 
   _removeObservers() {
@@ -1378,6 +1385,7 @@ EnvironmentCache.prototype = {
     Services.obs.removeObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC);
     Services.obs.removeObserver(this, SEARCH_SERVICE_TOPIC);
     Services.obs.removeObserver(this, AUTO_UPDATE_PREF_CHANGE_TOPIC);
+    Services.obs.removeObserver(this, SERVICES_INFO_CHANGE_TOPIC);
   },
 
   observe(aSubject, aTopic, aData) {
@@ -1433,6 +1441,9 @@ EnvironmentCache.prototype = {
         break;
       case AUTO_UPDATE_PREF_CHANGE_TOPIC:
         this._currentEnvironment.settings.update.autoDownload = aData == "true";
+        break;
+      case SERVICES_INFO_CHANGE_TOPIC:
+        this._updateServicesInfo();
         break;
     }
   },
@@ -1769,6 +1780,42 @@ EnvironmentCache.prototype = {
     await Policy._browserDelayedStartup();
     this._currentEnvironment.settings.intl = getIntlSettings();
     Policy._intlLoaded = true;
+  },
+  
+  async _getFxaSignedInUser() {
+    return fxAccounts.getSignedInUser();
+  },
+
+  async _updateServicesInfo() {
+    let syncEnabled = false;
+    let accountEnabled = false;
+    let weaveService = Cc["@mozilla.org/weave/service;1"].getService()
+      .wrappedJSObject;
+    syncEnabled = weaveService && weaveService.enabled;
+    if (syncEnabled) {
+      
+      accountEnabled = true;
+    } else {
+      
+      try {
+        let user = await this._getFxaSignedInUser();
+        if (user) {
+          accountEnabled = true;
+        }
+      } catch (e) {
+        
+        
+        
+        
+        delete this._currentEnvironment.services;
+        this._log.error("_updateServicesInfo() caught error", e);
+        return;
+      }
+    }
+    this._currentEnvironment.services = {
+      accountEnabled,
+      syncEnabled,
+    };
   },
 
   
