@@ -114,7 +114,22 @@ function createPromiseInPage(fun, contentGlobal) {
       
       result => resolve(Cu.cloneInto(result, contentGlobal)),
       
-      error => reject(Cu.cloneInto(error, contentGlobal))
+      error => {
+        if (error.name) {
+          
+          const { name, message, fileName, lineNumber } = error;
+          const ErrorObjConstructor =
+            name in contentGlobal &&
+            contentGlobal.Error.isPrototypeOf(contentGlobal[name])
+              ? contentGlobal[name]
+              : contentGlobal.Error;
+          const e = new ErrorObjConstructor(message, fileName, lineNumber);
+          e.name = name;
+          reject(e);
+        } else {
+          reject(Cu.cloneInto(error, contentGlobal));
+        }
+      }
     );
   }
   return new contentGlobal.Promise(

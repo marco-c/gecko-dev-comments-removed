@@ -44,6 +44,35 @@ function readFileInto(file, dataBuf) {
   }
 }
 
+
+
+function createPlainErrorObject(e) {
+  
+  
+  
+  if (!(e instanceof OS.File.Error)) {
+    
+    if (e instanceof Error) {
+      const { name, message, fileName, lineNumber } = e;
+      return { name, message, fileName, lineNumber };
+    }
+    
+    if (e.error_type) {
+      return {
+        name: e.error_type,
+        message: e.error_msg,
+      };
+    }
+  }
+
+  return {
+    name: e instanceof OS.File.Error ? "OSFileError" : "Error",
+    message: e.toString(),
+    fileName: e.fileName,
+    lineNumber: e.lineNumber,
+  };
+}
+
 onmessage = async e => {
   try {
     const { binaryPath, debugPath, breakpadId, module } = e.data;
@@ -89,7 +118,7 @@ onmessage = async e => {
       }
     }
   } catch (error) {
-    postMessage({ error });
+    postMessage({ error: createPlainErrorObject(error) });
   }
   close();
 };

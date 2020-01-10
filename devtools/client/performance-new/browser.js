@@ -135,11 +135,13 @@ function receiveProfile(profile, getSymbolTableCallback) {
         });
       },
       error => {
+        
+        const { name, message, lineNumber, fileName } = error;
         mm.sendAsyncMessage(SYMBOL_TABLE_RESPONSE_EVENT, {
           status: "error",
           debugName,
           breakpadId,
-          error: `${error}`,
+          error: { name, message, lineNumber, fileName },
         });
       }
     );

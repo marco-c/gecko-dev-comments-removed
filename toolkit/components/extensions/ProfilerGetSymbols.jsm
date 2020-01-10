@@ -21,6 +21,8 @@ ChromeUtils.defineModuleGetter(
 
 Cu.importGlobalProperties(["fetch"]);
 
+const global = this;
+
 
 
 
@@ -96,12 +98,25 @@ this.ProfilerGetSymbols = {
       const worker = new ChromeWorker(
         "resource://gre/modules/ProfilerGetSymbols-worker.js"
       );
-      worker.onmessage = e => {
-        if (e.data.error) {
-          reject(e.data.error);
+      worker.onmessage = msg => {
+        if (msg.data.error) {
+          const error = msg.data.error;
+          if (error.name) {
+            
+            const { name, message, fileName, lineNumber } = error;
+            const ErrorObjConstructor =
+              name in global && Error.isPrototypeOf(global[name])
+                ? global[name]
+                : Error;
+            const e = new ErrorObjConstructor(message, fileName, lineNumber);
+            e.name = name;
+            reject(e);
+          } else {
+            reject(error);
+          }
           return;
         }
-        resolve(e.data.result);
+        resolve(msg.data.result);
       };
       worker.postMessage({ binaryPath, debugPath, breakpadId, module });
     });
