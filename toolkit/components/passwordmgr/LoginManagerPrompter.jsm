@@ -48,6 +48,17 @@ const PROMPT_NEVER = 3;
 
 
 
+const NOTIFICATION_TIMEOUT_MS = 10 * 1000; 
+
+
+
+
+
+const ATTENTION_NOTIFICATION_TIMEOUT_MS = 60 * 1000; 
+
+
+
+
 const PromptAbuseHelper = {
   getBaseDomainOrFallback(hostname) {
     try {
@@ -1286,6 +1297,11 @@ LoginManagerPrompter.prototype = {
 
     let popupNote = this._getPopupNote();
     let notificationID = "password";
+    
+    const timeoutMs =
+      showOptions.dismissed && showOptions.extraAttr == "attention"
+        ? ATTENTION_NOTIFICATION_TIMEOUT_MS
+        : NOTIFICATION_TIMEOUT_MS;
     popupNote.show(
       browser,
       notificationID,
@@ -1295,7 +1311,7 @@ LoginManagerPrompter.prototype = {
       secondaryActions,
       Object.assign(
         {
-          timeout: Date.now() + 10000,
+          timeout: Date.now() + timeoutMs,
           persistWhileVisible: true,
           passwordNotificationType: type,
           hideClose: true,
