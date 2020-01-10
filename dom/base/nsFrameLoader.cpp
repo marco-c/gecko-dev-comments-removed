@@ -87,6 +87,7 @@
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/dom/SessionStoreListener.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "nsGenericHTMLFrameElement.h"
@@ -2585,6 +2586,16 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
 
     
     Tie(openerContentParent, sameTabGroupAs) = GetContentParent(mOwnerContent);
+    
+    
+    
+    
+    
+    
+    
+    if (RefPtr<BrowsingContext> openerBC = mBrowsingContext->GetOpener()) {
+      sameTabGroupAs = openerBC->Canonical()->GetCurrentWindowGlobal()->GetBrowserParent();
+    }
   }
 
   uint32_t chromeFlags = 0;
