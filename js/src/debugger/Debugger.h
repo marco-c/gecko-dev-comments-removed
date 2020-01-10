@@ -261,11 +261,10 @@ extern void CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
 
 
 
-template <class UnbarrieredKey, class Wrapper, bool InvisibleKeysOk = false>
-class DebuggerWeakMap
-    : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<Wrapper*>> {
+template <class Referent, class Wrapper, bool InvisibleKeysOk = false>
+class DebuggerWeakMap : private WeakMap<HeapPtr<Referent>, HeapPtr<Wrapper*>> {
  private:
-  typedef HeapPtr<UnbarrieredKey> Key;
+  typedef HeapPtr<Referent> Key;
   typedef HeapPtr<Wrapper*> Value;
 
   typedef HashMap<JS::Zone*, uintptr_t, DefaultHasher<JS::Zone*>,
