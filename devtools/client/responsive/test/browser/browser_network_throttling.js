@@ -15,7 +15,7 @@ addRDMTask(TEST_URL, async function({ ui, manager }) {
   await waitUntilState(store, state => state.viewports.length == 1);
 
   
-  testNetworkThrottlingSelectorLabel(ui, "No throttling");
+  testNetworkThrottlingSelectorLabel(ui, "No Throttling");
   await testNetworkThrottlingState(ui, null);
 
   
@@ -25,8 +25,8 @@ addRDMTask(TEST_URL, async function({ ui, manager }) {
   await testThrottlingProfile(ui, "Regular 3G");
 
   
-  await selectNetworkThrottling(ui, "No throttling");
-  testNetworkThrottlingSelectorLabel(ui, "No throttling");
+  await selectNetworkThrottling(ui, "No Throttling");
+  testNetworkThrottlingSelectorLabel(ui, "No Throttling");
   await testNetworkThrottlingState(ui, null);
 });
 
