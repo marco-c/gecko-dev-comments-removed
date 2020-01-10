@@ -1282,14 +1282,16 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
   enum class CollectListChildren { No, Yes };
   enum class CollectTableChildren { No, Yes };
+  enum class CollectNonEditableNodes { No, Yes };
   size_t CollectChildren(
       nsINode& aNode, nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      size_t aIndexToInsertChildren,
-      CollectListChildren aCollectListChildren = CollectListChildren::Yes,
-      CollectTableChildren aCollectTableChildren =
-          CollectTableChildren::Yes) const;
+      size_t aIndexToInsertChildren, CollectListChildren aCollectListChildren,
+      CollectTableChildren aCollectTableChildren,
+      CollectNonEditableNodes aCollectNonEditableNodes) const;
 
   
 
@@ -1305,7 +1307,8 @@ class HTMLEditor final : public TextEditor,
   SplitInlinesAndCollectEditTargetNodes(
       nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      EditSubAction aEditSubAction);
+      EditSubAction aEditSubAction,
+      CollectNonEditableNodes aCollectNonEditableNodes);
 
   
 
@@ -1324,7 +1327,8 @@ class HTMLEditor final : public TextEditor,
   nsresult CollectEditTargetNodes(
       nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      EditSubAction aEditSubAction) const;
+      EditSubAction aEditSubAction,
+      CollectNonEditableNodes aCollectNonEditableNodes) const;
 
   
 
@@ -1421,12 +1425,14 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      EditSubAction aEditSubAction) {
+      EditSubAction aEditSubAction,
+      CollectNonEditableNodes aCollectNonEditableNodes) {
     AutoTArray<RefPtr<nsRange>, 4> extendedSelectionRanges;
     GetSelectionRangesExtendedToHardLineStartAndEnd(extendedSelectionRanges,
                                                     aEditSubAction);
     nsresult rv = SplitInlinesAndCollectEditTargetNodes(
-        extendedSelectionRanges, aOutArrayOfNodes, aEditSubAction);
+        extendedSelectionRanges, aOutArrayOfNodes, aEditSubAction,
+        aCollectNonEditableNodes);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "SplitInlinesAndCollectEditTargetNodes() failed");
     return rv;
@@ -1444,7 +1450,8 @@ class HTMLEditor final : public TextEditor,
   SplitInlinesAndCollectEditTargetNodesInOneHardLine(
       const EditorDOMPoint& aPointInOneHardLine,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      EditSubAction aEditSubAction) {
+      EditSubAction aEditSubAction,
+      CollectNonEditableNodes aCollectNonEditableNodes) {
     if (NS_WARN_IF(!aPointInOneHardLine.IsSet())) {
       return NS_ERROR_INVALID_ARG;
     }
@@ -1464,7 +1471,8 @@ class HTMLEditor final : public TextEditor,
     AutoTArray<RefPtr<nsRange>, 1> arrayOfLineRanges;
     arrayOfLineRanges.AppendElement(oneLineRange);
     nsresult rv = SplitInlinesAndCollectEditTargetNodes(
-        arrayOfLineRanges, aOutArrayOfNodes, aEditSubAction);
+        arrayOfLineRanges, aOutArrayOfNodes, aEditSubAction,
+        aCollectNonEditableNodes);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "SplitInlinesAndCollectEditTargetNodes() failed");
     return rv;
@@ -1478,12 +1486,14 @@ class HTMLEditor final : public TextEditor,
 
   nsresult CollectEditTargetNodesInExtendedSelectionRanges(
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-      EditSubAction aEditSubAction) {
+      EditSubAction aEditSubAction,
+      CollectNonEditableNodes aCollectNonEditableNodes) {
     AutoTArray<RefPtr<nsRange>, 4> extendedSelectionRanges;
     GetSelectionRangesExtendedToHardLineStartAndEnd(extendedSelectionRanges,
                                                     aEditSubAction);
-    nsresult rv = CollectEditTargetNodes(extendedSelectionRanges,
-                                         aOutArrayOfNodes, aEditSubAction);
+    nsresult rv =
+        CollectEditTargetNodes(extendedSelectionRanges, aOutArrayOfNodes,
+                               aEditSubAction, aCollectNonEditableNodes);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "CollectEditTargetNodes() failed");
     return rv;
   }
