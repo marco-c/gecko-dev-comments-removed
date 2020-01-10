@@ -12,7 +12,7 @@ import { asyncStoreHelper } from "./asyncStoreHelper";
 
 
 
-const prefsSchemaVersion = "1.0.10";
+const prefsSchemaVersion = "1.0.11";
 const pref = Services.pref;
 
 if (isDevelopment()) {

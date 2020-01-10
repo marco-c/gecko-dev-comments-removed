@@ -1,0 +1,7 @@
+
+
+
+
+declare module "devtools-wasm-dwarf" {
+  declare module.exports: any;
+}
