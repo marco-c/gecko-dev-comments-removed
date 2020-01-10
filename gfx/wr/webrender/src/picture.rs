@@ -2244,10 +2244,6 @@ bitflags! {
         const IS_VISIBLE = 4;
         /// Is a backdrop-filter cluster that requires special handling during post_update.
         const IS_BACKDROP_FILTER = 8;
-        /// Force creation of a picture caching slice before this cluster.
-        const CREATE_PICTURE_CACHE_PRE = 16;
-        /// Force creation of a picture caching slice after this cluster.
-        const CREATE_PICTURE_CACHE_POST = 32;
     }
 }
 
@@ -2303,6 +2299,7 @@ impl PrimitiveCluster {
         &mut self,
         prim_instance: PrimitiveInstance,
         prim_size: LayoutSize,
+        insert_position: PrimitiveListPosition,
     ) {
         let prim_rect = LayoutRect::new(
             prim_instance.prim_origin,
@@ -2313,7 +2310,15 @@ impl PrimitiveCluster {
             .unwrap_or_else(LayoutRect::zero);
 
         self.bounding_rect = self.bounding_rect.union(&culling_rect);
-        self.prim_instances.push(prim_instance);
+
+        match insert_position {
+            PrimitiveListPosition::Begin => {
+                self.prim_instances.insert(0, prim_instance);
+            }
+            PrimitiveListPosition::End => {
+                self.prim_instances.push(prim_instance);
+            }
+        }
     }
 }
 
@@ -2368,17 +2373,9 @@ impl PrimitiveList {
         
         match insert_position {
             PrimitiveListPosition::Begin => {
-                let mut cluster = PrimitiveCluster::new(
-                    spatial_node_index,
-                    flags,
-                );
-                cluster.push(prim_instance, prim_size);
-                self.clusters.insert(0, cluster);
-            }
-            PrimitiveListPosition::End => {
-                if let Some(cluster) = self.clusters.last_mut() {
+                if let Some(cluster) = self.clusters.first_mut() {
                     if cluster.is_compatible(spatial_node_index, flags) {
-                        cluster.push(prim_instance, prim_size);
+                        cluster.push(prim_instance, prim_size, insert_position);
                         return;
                     }
                 }
@@ -2387,7 +2384,22 @@ impl PrimitiveList {
                     spatial_node_index,
                     flags,
                 );
-                cluster.push(prim_instance, prim_size);
+                cluster.push(prim_instance, prim_size, insert_position);
+                self.clusters.insert(0, cluster);
+            }
+            PrimitiveListPosition::End => {
+                if let Some(cluster) = self.clusters.last_mut() {
+                    if cluster.is_compatible(spatial_node_index, flags) {
+                        cluster.push(prim_instance, prim_size, insert_position);
+                        return;
+                    }
+                }
+
+                let mut cluster = PrimitiveCluster::new(
+                    spatial_node_index,
+                    flags,
+                );
+                cluster.push(prim_instance, prim_size, insert_position);
                 self.clusters.push(cluster);
             }
         }
@@ -2433,13 +2445,21 @@ impl PrimitiveList {
     }
 
     
-    pub fn add_cluster(&mut self, cluster: PrimitiveCluster) {
-        self.clusters.push(cluster);
+    pub fn extend(&mut self, prim_list: PrimitiveList) {
+        self.clusters.extend(prim_list.clusters);
     }
 
     
-    pub fn extend(&mut self, prim_list: PrimitiveList) {
-        self.clusters.extend(prim_list.clusters);
+    pub fn len(&self) -> usize {
+        self.clusters.len()
+    }
+
+    
+    pub fn split_off(&mut self, index: usize) -> PrimitiveList {
+        let clusters = self.clusters.split_off(index);
+        PrimitiveList {
+            clusters
+        }
     }
 }
 
