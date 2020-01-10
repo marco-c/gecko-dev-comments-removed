@@ -124,8 +124,7 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
   }
 
   
-  if (RefPtr<CharacterData> charDataNode =
-          CharacterData::FromNode(aStart.Container())) {
+  if (RefPtr<Text> textNode = Text::FromNode(aStart.Container())) {
     
     int32_t numToDel;
     if (aStart == aEnd) {
@@ -136,7 +135,7 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
     }
 
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        DeleteTextTransaction::MaybeCreate(*mEditorBase, *charDataNode,
+        DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode,
                                            aStart.Offset(), numToDel);
     
     
@@ -176,8 +175,8 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteContent(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  RefPtr<CharacterData> dataNode = CharacterData::FromNode(aPoint.Container());
-  if (!dataNode) {
+  RefPtr<Text> textNode = Text::FromNode(aPoint.Container());
+  if (!textNode) {
     return NS_OK;
   }
 
@@ -196,7 +195,7 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteContent(
   }
 
   RefPtr<DeleteTextTransaction> deleteTextTransaction =
-      DeleteTextTransaction::MaybeCreate(*mEditorBase, *dataNode, startOffset,
+      DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode, startOffset,
                                          numToDelete);
   
   

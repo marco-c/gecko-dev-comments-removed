@@ -7,7 +7,7 @@
 #define DeleteTextTransaction_h
 
 #include "mozilla/EditTransactionBase.h"
-#include "mozilla/dom/CharacterData.h"
+#include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"
@@ -24,7 +24,7 @@ class RangeUpdater;
 
 class DeleteTextTransaction final : public EditTransactionBase {
  protected:
-  DeleteTextTransaction(EditorBase& aEditorBase, dom::CharacterData& aCharData,
+  DeleteTextTransaction(EditorBase& aEditorBase, dom::Text& aTextNode,
                         uint32_t aOffset, uint32_t aLengthToDelete);
 
  public:
@@ -38,7 +38,7 @@ class DeleteTextTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<DeleteTextTransaction> MaybeCreate(
-      EditorBase& aEditorBase, dom::CharacterData& aCharData, uint32_t aOffset,
+      EditorBase& aEditorBase, dom::Text& aTextNode, uint32_t aOffset,
       uint32_t aLengthToDelete);
 
   
@@ -50,11 +50,10 @@ class DeleteTextTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<DeleteTextTransaction>
-  MaybeCreateForPreviousCharacter(EditorBase& aEditorBase,
-                                  dom::CharacterData& aCharData,
+  MaybeCreateForPreviousCharacter(EditorBase& aEditorBase, dom::Text& aTextNode,
                                   uint32_t aOffset);
   static already_AddRefed<DeleteTextTransaction> MaybeCreateForNextCharacter(
-      EditorBase& aEditorBase, dom::CharacterData& aCharData, uint32_t aOffset);
+      EditorBase& aEditorBase, dom::Text& aTextNode, uint32_t aOffset);
 
   
 
@@ -77,7 +76,7 @@ class DeleteTextTransaction final : public EditTransactionBase {
   RefPtr<EditorBase> mEditorBase;
 
   
-  RefPtr<dom::CharacterData> mCharData;
+  RefPtr<dom::Text> mTextNode;
 
   
   uint32_t mOffset;

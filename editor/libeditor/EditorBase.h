@@ -95,7 +95,6 @@ class DataTransfer;
 class DragEvent;
 class Element;
 class EventTarget;
-class Text;
 }  
 
 namespace widget {
@@ -943,7 +942,8 @@ class EditorBase : public nsIEditor,
       const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
       bool aSuppressIME = false);
 
-  nsresult SetTextImpl(const nsAString& aString, Text& aTextNode);
+  MOZ_CAN_RUN_SCRIPT nsresult SetTextImpl(const nsAString& aString,
+                                          Text& aTextNode);
 
   
 
@@ -1255,6 +1255,24 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT void DoInsertText(dom::Text& aText, uint32_t aOffset,
+                                       const nsAString& aStringToInsert,
+                                       ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void DoDeleteText(dom::Text& aText, uint32_t aOffset,
+                                       uint32_t aCount, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void DoReplaceText(dom::Text& aText, uint32_t aOffset,
+                                        uint32_t aCount,
+                                        const nsAString& aStringToInsert,
+                                        ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void DoSetText(dom::Text& aText,
+                                    const nsAString& aStringToSet,
+                                    ErrorResult& aRv);
+
+  
+
+
+
+
 
 
 
@@ -1308,9 +1326,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult DeleteTextWithTransaction(dom::CharacterData& aCharacterData,
-                                     uint32_t aOffset, uint32_t aLength);
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteTextWithTransaction(dom::Text& aTextNode,
+                                                        uint32_t aOffset,
+                                                        uint32_t aLength);
 
   
 
@@ -1375,9 +1393,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
-                   nsIContent& aNewLeftNode, ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
+                                      nsIContent& aNewLeftNode,
+                                      ErrorResult& aError);
 
   
 
@@ -1391,8 +1409,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsresult DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
-                       nsINode* aParent);
+  MOZ_CAN_RUN_SCRIPT nsresult DoJoinNodes(nsINode* aNodeToKeep,
+                                          nsINode* aNodeToJoin,
+                                          nsINode* aParent);
 
   
 

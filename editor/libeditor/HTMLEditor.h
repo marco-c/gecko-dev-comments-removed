@@ -617,9 +617,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult DeleteTextWithTransaction(dom::CharacterData& aTextNode,
-                                     uint32_t aOffset, uint32_t aLength);
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteTextWithTransaction(dom::Text& aTextNode,
+                                                        uint32_t aOffset,
+                                                        uint32_t aLength);
 
   
 
