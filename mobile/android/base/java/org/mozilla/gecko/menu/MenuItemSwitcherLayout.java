@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.util.BitmapUtils;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -118,6 +120,9 @@ public class MenuItemSwitcherLayout extends LinearLayout
     }
 
     public void setIcon(Drawable icon) {
+        
+        
+        icon = new BitmapDrawable(BitmapUtils.getBitmapFromDrawable(icon));
         mMenuItem.setIcon(icon);
         mMenuButton.setIcon(icon);
     }
