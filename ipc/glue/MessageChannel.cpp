@@ -556,6 +556,18 @@ static void TryRegisterStrongMemoryReporter() {
 
 Atomic<size_t> MessageChannel::gUnresolvedResponses;
 
+
+
+
+
+static const int32_t MiddlemanStartSeqno = -(1 << 30);
+
+
+bool MessageChannel::MessageOriginatesFromMiddleman(const Message& aMessage) {
+  MOZ_ASSERT(recordreplay::IsMiddleman());
+  return aMessage.seqno() < MiddlemanStartSeqno;
+}
+
 MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
     : mName(aName),
       mListener(aListener),
@@ -605,6 +617,10 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
 
   TryRegisterStrongMemoryReporter<PendingResponseReporter>();
   TryRegisterStrongMemoryReporter<ChannelCountReporter>();
+
+  if (recordreplay::IsMiddleman()) {
+    mNextSeqno = MiddlemanStartSeqno;
+  }
 }
 
 MessageChannel::~MessageChannel() {

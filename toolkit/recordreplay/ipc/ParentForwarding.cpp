@@ -140,6 +140,12 @@ static bool HandleMessageInMiddleman(ipc::Side aSide,
     return false;
   }
 
+  
+  
+  if (ipc::MessageChannel::MessageOriginatesFromMiddleman(aMessage)) {
+    return true;
+  }
+
   return false;
 }
 
