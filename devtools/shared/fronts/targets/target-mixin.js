@@ -4,22 +4,6 @@
 
 "use strict";
 
-
-
-
-
-loader.lazyRequireGetter(
-  this,
-  "gDevTools",
-  "devtools/client/framework/devtools",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "TargetFactory",
-  "devtools/client/framework/target",
-  true
-);
 loader.lazyRequireGetter(
   this,
   "ThreadClient",
@@ -69,15 +53,6 @@ function TargetMixin(parentClass) {
       this.fronts = new Map();
 
       this._setupRemoteListeners();
-    }
-
-    attachTab(tab) {
-      
-      
-      
-      
-      this._tab = tab;
-      this._setupListeners();
     }
 
     
@@ -178,8 +153,36 @@ function TargetMixin(parentClass) {
       return this.client.traits[traitName];
     }
 
+    
+
+
+
+
+
+    get isLocalTab() {
+      return false;
+    }
+
     get tab() {
-      return this._tab;
+      return null;
+    }
+
+    
+
+
+
+
+
+    get contentPrincipal() {
+      return null;
+    }
+
+    
+
+
+
+    get csp() {
+      return null;
     }
 
     
@@ -315,10 +318,6 @@ function TargetMixin(parentClass) {
       );
     }
 
-    get isLocalTab() {
-      return !!this._tab;
-    }
-
     get isMultiProcess() {
       return !this.window;
     }
@@ -348,30 +347,6 @@ function TargetMixin(parentClass) {
         
         return url;
       }
-    }
-
-    
-
-
-
-
-
-    get contentPrincipal() {
-      if (!this.isLocalTab) {
-        return null;
-      }
-      return this.tab.linkedBrowser.contentPrincipal;
-    }
-
-    
-
-
-
-    get csp() {
-      if (!this.isLocalTab) {
-        return null;
-      }
-      return this.tab.linkedBrowser.csp;
     }
 
     
@@ -424,26 +399,6 @@ function TargetMixin(parentClass) {
     
 
 
-    _setupListeners() {
-      this.tab.addEventListener("TabClose", this);
-      this.tab.ownerDocument.defaultView.addEventListener("unload", this);
-      this.tab.addEventListener("TabRemotenessChange", this);
-    }
-
-    
-
-
-    _teardownListeners() {
-      if (this._tab.ownerDocument.defaultView) {
-        this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
-      }
-      this._tab.removeEventListener("TabClose", this);
-      this._tab.removeEventListener("TabRemotenessChange", this);
-    }
-
-    
-
-
     _setupRemoteListeners() {
       this.client.on("closed", this.destroy);
 
@@ -474,63 +429,6 @@ function TargetMixin(parentClass) {
     
 
 
-    async handleEvent(event) {
-      switch (event.type) {
-        case "TabClose":
-          
-          
-          
-          
-          const toolbox = gDevTools.getToolbox(this);
-          
-          
-          
-          
-          if (toolbox) {
-            
-            await toolbox.destroy();
-          } else {
-            this.destroy();
-          }
-          break;
-        case "unload":
-          this.destroy();
-          break;
-        case "TabRemotenessChange":
-          this.onRemotenessChange();
-          break;
-      }
-    }
-
-    
-
-
-
-
-    async onRemotenessChange() {
-      
-      
-      
-      if (this._tab.isResponsiveDesignMode) {
-        return;
-      }
-
-      
-      const tab = this._tab;
-      const toolbox = gDevTools.getToolbox(this);
-
-      
-      
-      await toolbox.destroy();
-
-      
-      const newTarget = await TargetFactory.forTab(tab);
-      gDevTools.showToolbox(newTarget);
-    }
-
-    
-
-
     destroy() {
       
       
@@ -545,10 +443,6 @@ function TargetMixin(parentClass) {
         for (let [, front] of this.fronts) {
           front = await front;
           await front.destroy();
-        }
-
-        if (this._tab) {
-          this._teardownListeners();
         }
 
         this._teardownRemoteListeners();
@@ -595,7 +489,6 @@ function TargetMixin(parentClass) {
       this.activeConsole = null;
       this.threadFront = null;
       this._client = null;
-      this._tab = null;
 
       
       
@@ -606,9 +499,7 @@ function TargetMixin(parentClass) {
     }
 
     toString() {
-      const id = this._tab
-        ? this._tab
-        : this.targetForm && this.targetForm.actor;
+      const id = this.targetForm ? this.targetForm.actor : null;
       return `Target:${id}`;
     }
 

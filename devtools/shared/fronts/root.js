@@ -29,6 +29,12 @@ loader.lazyRequireGetter(
   "devtools/shared/fronts/targets/content-process",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "LocalTabTargetFront",
+  "devtools/shared/fronts/targets/local-tab",
+  true
+);
 
 class RootFront extends FrontClassWithSpec(rootSpec) {
   constructor(client, form) {
@@ -320,7 +326,29 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
       }
     }
 
-    return super.getTab(packet);
+    const form = await super.getTab(packet);
+    let front = this.actor(form.actor);
+    if (front) {
+      front.form(form);
+      return front;
+    }
+    
+    
+    
+    
+    
+    
+    if (filter && filter.tab && filter.tab.tagName == "tab") {
+      front = new LocalTabTargetFront(this._client, filter.tab);
+    } else {
+      front = new BrowsingContextTargetFront(this._client);
+    }
+    
+    
+    front.actorID = form.actor;
+    front.form(form);
+    this.manage(front);
+    return front;
   }
 
   

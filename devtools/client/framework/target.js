@@ -43,7 +43,6 @@ exports.TargetFactory = {
     target = await promise;
     
     targets.set(tab, target);
-    target.attachTab(tab);
     target.once("close", () => {
       targets.delete(tab);
     });
