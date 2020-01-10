@@ -214,6 +214,7 @@ this.LoginHelper = {
       if (allowJS && uri.scheme == "javascript") {
         return "javascript:";
       }
+      
 
       
       realm = uri.scheme + "://" + uri.displayHostPort;
