@@ -384,6 +384,15 @@ void WindowGlobalChild::ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
 }
 
 void WindowGlobalChild::SetDocumentURI(nsIURI* aDocumentURI) {
+#ifdef MOZ_GECKO_PROFILER
+  
+  
+  
+  
+  profiler_register_page(mBrowsingContext->Id(), mInnerWindowId,
+                         aDocumentURI->GetSpecOrDefault(),
+                         mBrowsingContext->GetParent() != nullptr);
+#endif
   mDocumentURI = aDocumentURI;
   SendUpdateDocumentURI(aDocumentURI);
 }
@@ -430,6 +439,10 @@ already_AddRefed<JSWindowActorChild> WindowGlobalChild::GetActor(
 
 void WindowGlobalChild::ActorDestroy(ActorDestroyReason aWhy) {
   gWindowGlobalChildById->Remove(mInnerWindowId);
+
+#ifdef MOZ_GECKO_PROFILER
+  profiler_unregister_page(mInnerWindowId);
+#endif
 
   
   nsRefPtrHashtable<nsStringHashKey, JSWindowActorChild> windowActors;
