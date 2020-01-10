@@ -476,6 +476,9 @@ nsWindow::nsWindow() {
 
   mHasAlphaVisual = false;
   mIsPIPWindow = false;
+
+  mWindowScaleFactorChanged = true;
+  mWindowScaleFactor = 1;
 }
 
 nsWindow::~nsWindow() {
@@ -3440,6 +3443,9 @@ void nsWindow::OnCompositedChanged() {
 }
 
 void nsWindow::OnScaleChanged(GtkAllocation* aAllocation) {
+  
+  mWindowScaleFactorChanged = true;
+
   
   OnDPIChanged();
 
@@ -6747,6 +6753,12 @@ GtkWindow* nsWindow::GetCurrentTopmostWindow() {
 }
 
 gint nsWindow::GdkScaleFactor() {
+  
+  
+  if (mWindowType == eWindowType_toplevel && !mWindowScaleFactorChanged) {
+    return mWindowScaleFactor;
+  }
+
   GdkWindow* scaledGdkWindow = mGdkWindow;
   if (!mIsX11Display) {
     
@@ -6767,13 +6779,18 @@ gint nsWindow::GdkScaleFactor() {
       }
     }
   }
+
   
   static auto sGdkWindowGetScaleFactorPtr =
       (gint(*)(GdkWindow*))dlsym(RTLD_DEFAULT, "gdk_window_get_scale_factor");
   if (sGdkWindowGetScaleFactorPtr && scaledGdkWindow) {
-    return (*sGdkWindowGetScaleFactorPtr)(scaledGdkWindow);
+    mWindowScaleFactor = (*sGdkWindowGetScaleFactorPtr)(scaledGdkWindow);
+  } else {
+    mWindowScaleFactor = ScreenHelperGTK::GetGTKMonitorScaleFactor();
   }
-  return ScreenHelperGTK::GetGTKMonitorScaleFactor();
+  mWindowScaleFactorChanged = false;
+
+  return mWindowScaleFactor;
 }
 
 gint nsWindow::DevicePixelsToGdkCoordRoundUp(int pixels) {
