@@ -2,6 +2,7 @@
 
 
 
+extern crate autocfg;
 #[macro_use]
 extern crate quote;
 #[macro_use]
@@ -10,7 +11,6 @@ extern crate proc_macro2;
 
 #[cfg(feature = "dummy_match_byte")]
 mod codegen {
-    use std::path::Path;
     pub fn main() {}
 }
 
@@ -49,6 +49,8 @@ fn main() {
         
         println!("cargo:rustc-cfg=rustc_has_pr45225")
     }
+
+    autocfg::new().emit_has_path("std::mem::MaybeUninit");
 
     codegen::main();
 }
