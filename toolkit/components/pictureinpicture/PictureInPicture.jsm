@@ -297,12 +297,22 @@ var PictureInPicture = {
       screenWidth,
       screenHeight
     );
+    let fullLeft = {},
+      fullTop = {},
+      fullWidth = {},
+      fullHeight = {};
+    screen.GetRectDisplayPix(fullLeft, fullTop, fullWidth, fullHeight);
 
     
     
     
-    screenWidth.value = screenWidth.value / screen.defaultCSSScaleFactor;
-    screenHeight.value = screenHeight.value / screen.defaultCSSScaleFactor;
+    let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
+    screenWidth.value *= scaleFactor;
+    screenHeight.value *= scaleFactor;
+    screenLeft.value =
+      (screenLeft.value - fullLeft.value) * scaleFactor + fullLeft.value;
+    screenTop.value =
+      (screenTop.value - fullTop.value) * scaleFactor + fullTop.value;
 
     
     
