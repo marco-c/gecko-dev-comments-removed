@@ -66,6 +66,7 @@ class GCParallelTask;
 class LazyScript;
 class ModuleObject;
 class RegExpObject;
+class ScriptSourceHolder;
 class SourceCompressionTask;
 class Shape;
 class DebugAPI;
@@ -435,16 +436,30 @@ struct SourceTypeTraits<char16_t> {
 extern MOZ_MUST_USE bool SynchronouslyCompressSource(
     JSContext* cx, JS::Handle<JSScript*> script);
 
-class ScriptSourceHolder;
-
 
 
 
 enum class SourceRetrievable { Yes, No };
 
-class ScriptSource {
-  friend class SourceCompressionTask;
 
+
+
+
+
+
+
+
+class ScriptSource {
+  
+  
+  
+
+  friend class SourceCompressionTask;
+  friend bool SynchronouslyCompressSource(JSContext* cx,
+                                          JS::Handle<JSScript*> script);
+
+ private:
+  
   class PinnedUnitsBase {
    protected:
     PinnedUnitsBase** stack_ = nullptr;
@@ -480,58 +495,10 @@ class ScriptSource {
   };
 
  private:
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      refs;
-
   
   
   
-
-  
-
-  template <typename Unit>
-  class UncompressedData {
-    typename SourceTypeTraits<Unit>::SharedImmutableString string_;
-
-   public:
-    explicit UncompressedData(
-        typename SourceTypeTraits<Unit>::SharedImmutableString str)
-        : string_(std::move(str)) {}
-
-    const Unit* units() const { return SourceTypeTraits<Unit>::units(string_); }
-
-    size_t length() const { return string_.length(); }
-  };
-
-  
-  template <typename Unit, SourceRetrievable CanRetrieve>
-  class Uncompressed : public UncompressedData<Unit> {
-    using Base = UncompressedData<Unit>;
-
-   public:
-    using Base::Base;
-  };
-
-  template <typename Unit>
-  struct CompressedData {
-    
-    
-    SharedImmutableString raw;
-    size_t uncompressedLength;
-
-    CompressedData(SharedImmutableString raw, size_t uncompressedLength)
-        : raw(std::move(raw)), uncompressedLength(uncompressedLength) {}
-  };
-
-  
-  template <typename Unit, SourceRetrievable CanRetrieve>
-  struct Compressed : public CompressedData<Unit> {
-    using Base = CompressedData<Unit>;
-
-   public:
-    using Base::Base;
-  };
+  struct Missing {};
 
   
   
@@ -547,8 +514,48 @@ class ScriptSource {
 
   
   
+  template <typename Unit>
+  class UncompressedData {
+    typename SourceTypeTraits<Unit>::SharedImmutableString string_;
+
+   public:
+    explicit UncompressedData(
+        typename SourceTypeTraits<Unit>::SharedImmutableString str)
+        : string_(std::move(str)) {}
+
+    const Unit* units() const { return SourceTypeTraits<Unit>::units(string_); }
+
+    size_t length() const { return string_.length(); }
+  };
+
+  template <typename Unit, SourceRetrievable CanRetrieve>
+  class Uncompressed : public UncompressedData<Unit> {
+    using Base = UncompressedData<Unit>;
+
+   public:
+    using Base::Base;
+  };
+
   
-  struct Missing {};
+  
+  template <typename Unit>
+  struct CompressedData {
+    
+    
+    SharedImmutableString raw;
+    size_t uncompressedLength;
+
+    CompressedData(SharedImmutableString raw, size_t uncompressedLength)
+        : raw(std::move(raw)), uncompressedLength(uncompressedLength) {}
+  };
+
+  template <typename Unit, SourceRetrievable CanRetrieve>
+  struct Compressed : public CompressedData<Unit> {
+    using Base = CompressedData<Unit>;
+
+   public:
+    using Base::Base;
+  };
 
   
   struct BinAST {
@@ -560,6 +567,7 @@ class ScriptSource {
         : string(std::move(str)), metadata(std::move(metadata)) {}
   };
 
+  
   using SourceType =
       mozilla::Variant<Compressed<mozilla::Utf8Unit, SourceRetrievable::Yes>,
                        Uncompressed<mozilla::Utf8Unit, SourceRetrievable::Yes>,
@@ -571,10 +579,17 @@ class ScriptSource {
                        Uncompressed<char16_t, SourceRetrievable::No>,
                        Retrievable<mozilla::Utf8Unit>, Retrievable<char16_t>,
                        Missing, BinAST>;
-  SourceType data;
 
-  friend bool SynchronouslyCompressSource(JSContext* cx,
-                                          JS::Handle<JSScript*> script);
+  
+  
+  
+
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      refs;
+
+  
+  SourceType data;
 
   
   
@@ -652,13 +667,17 @@ class ScriptSource {
   
   uint32_t id_;
 
+  bool hasIntroductionOffset_ : 1;
+  bool containsAsmJS_ : 1;
+
+  
+  
+  
+
   
   static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
                          mozilla::recordreplay::Behavior::DontPreserve>
       idCount_;
-
-  bool hasIntroductionOffset_ : 1;
-  bool containsAsmJS_ : 1;
 
   template <typename Unit>
   const Unit* chunkUnits(JSContext* cx,
