@@ -49,7 +49,6 @@ class UrlbarInput {
 
     this.window = this.textbox.ownerGlobal;
     this.document = this.window.document;
-    this.window.addEventListener("unload", this);
 
     
     
@@ -98,6 +97,7 @@ class UrlbarInput {
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
     this._untrimmedValue = "";
+    this._openViewOnFocus = false;
 
     
     this._enableAutofillPlaceholder = true;
@@ -179,16 +179,12 @@ class UrlbarInput {
 
     this.editor.QueryInterface(Ci.nsIPlaintextEditor).newlineHandling =
       Ci.nsIPlaintextEditor.eNewlinesStripSurroundingWhitespace;
-
-    this._setOpenViewOnFocus();
-    Services.prefs.addObserver("browser.urlbar.openViewOnFocus", this);
   }
 
   
 
 
   uninit() {
-    this.window.removeEventListener("unload", this);
     for (let name of this._inputFieldEvents) {
       this.inputField.removeEventListener(name, this);
     }
@@ -214,8 +210,6 @@ class UrlbarInput {
     if (Object.getOwnPropertyDescriptor(this, "valueFormatter").get) {
       this.valueFormatter.uninit();
     }
-
-    Services.prefs.removeObserver("browser.urlbar.openViewOnFocus", this);
 
     delete this.document;
     delete this.window;
@@ -301,14 +295,6 @@ class UrlbarInput {
     } catch (ex) {}
 
     return uri;
-  }
-
-  observe(subject, topic, data) {
-    switch (data) {
-      case "browser.urlbar.openViewOnFocus":
-        this._setOpenViewOnFocus();
-        break;
-    }
   }
 
   
@@ -735,15 +721,12 @@ class UrlbarInput {
     return this._openViewOnFocus;
   }
 
-  
-
-  _setOpenViewOnFocus() {
-    
-    
-    
-    this._openViewOnFocus = Services.prefs.getBoolPref("browser.urlbar.openViewOnFocus");
-    this.toggleAttribute("hidedropmarker", this._openViewOnFocus);
+  set openViewOnFocus(val) {
+    this._openViewOnFocus = val;
+    this.toggleAttribute("hidedropmarker", val);
   }
+
+  
 
   _setValue(val, allowTrim) {
     this._untrimmedValue = val;
@@ -1567,12 +1550,6 @@ class UrlbarInput {
       this.window.gBrowser.userTypedValue = null;
       this.window.URLBarSetURI(null, true);
     }
-  }
-
-  _on_unload() {
-    
-    
-    this.uninit();
   }
 }
 

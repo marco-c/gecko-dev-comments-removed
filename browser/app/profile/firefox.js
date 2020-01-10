@@ -331,8 +331,6 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 pref("browser.urlbar.quantumbar", true);
 
-pref("browser.urlbar.openViewOnFocus", false);
-
 pref("browser.altClickSave", false);
 
 
