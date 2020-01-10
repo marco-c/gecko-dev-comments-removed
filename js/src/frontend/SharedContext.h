@@ -291,6 +291,7 @@ struct LazyScriptCreationData {
     }
 
     if (!closedOverBindings.appendAll(COB)) {
+      ReportOutOfMemory(cx);  
       return false;
     }
     return true;
