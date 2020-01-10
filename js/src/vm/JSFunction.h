@@ -470,6 +470,7 @@ class JSFunction : public js::NativeObject {
   bool hasSelfHostedLazyScript() const {
     return flags_.hasSelfHostedLazyScript();
   }
+  bool hasBaseScript() const { return hasScript() || hasLazyScript(); }
 
   
   bool isArrow() const { return flags_.isArrow(); }
@@ -514,11 +515,7 @@ class JSFunction : public js::NativeObject {
   bool needsPrototypeProperty();
 
   
-  bool strict() const {
-    MOZ_ASSERT(isInterpreted());
-    return isInterpretedLazy() ? lazyScript()->strict()
-                               : nonLazyScript()->strict();
-  }
+  bool strict() const { return baseScript()->strict(); }
 
   void setFlags(uint16_t flags) { flags_ = FunctionFlags(flags); }
   void setFlags(FunctionFlags flags) { flags_ = flags; }
@@ -767,17 +764,20 @@ class JSFunction : public js::NativeObject {
     return u.scripted.s.selfHostedLazy_;
   }
 
-  js::GeneratorKind generatorKind() const {
-    if (!isInterpreted()) {
-      return js::GeneratorKind::NotGenerator;
-    }
+  
+  
+  js::BaseScript* baseScript() const {
     if (hasScript()) {
-      return nonLazyScript()->generatorKind();
+      return nonLazyScript();
     }
-    if (hasLazyScript()) {
-      return lazyScript()->generatorKind();
+    MOZ_ASSERT(hasLazyScript());
+    return lazyScript();
+  }
+
+  js::GeneratorKind generatorKind() const {
+    if (hasBaseScript()) {
+      return baseScript()->generatorKind();
     }
-    MOZ_ASSERT(isSelfHostedBuiltin());
     return js::GeneratorKind::NotGenerator;
   }
 
@@ -786,16 +786,9 @@ class JSFunction : public js::NativeObject {
   }
 
   js::FunctionAsyncKind asyncKind() const {
-    if (!isInterpreted()) {
-      return js::FunctionAsyncKind::SyncFunction;
+    if (hasBaseScript()) {
+      return baseScript()->asyncKind();
     }
-    if (hasScript()) {
-      return nonLazyScript()->asyncKind();
-    }
-    if (hasLazyScript()) {
-      return lazyScript()->asyncKind();
-    }
-    MOZ_ASSERT(isSelfHostedBuiltin());
     return js::FunctionAsyncKind::SyncFunction;
   }
 

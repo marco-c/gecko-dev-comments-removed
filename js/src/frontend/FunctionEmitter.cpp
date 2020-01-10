@@ -36,9 +36,7 @@ FunctionEmitter::FunctionEmitter(BytecodeEmitter* bce, FunctionBox* funbox,
       fun_(bce_->cx, funbox_->function()),
       name_(bce_->cx, fun_->explicitName()),
       syntaxKind_(syntaxKind),
-      isHoisted_(isHoisted) {
-  MOZ_ASSERT_IF(fun_->isInterpretedLazy(), fun_->lazyScript());
-}
+      isHoisted_(isHoisted) {}
 
 bool FunctionEmitter::interpretedCommon() {
   
@@ -116,7 +114,7 @@ bool FunctionEmitter::emitLazy() {
   if (bce_->emittingRunOnceLambda) {
     
     
-    fun_->lazyScript()->setTreatAsRunOnce();
+    fun_->baseScript()->setTreatAsRunOnce();
   }
 
   if (!emitFunction()) {
