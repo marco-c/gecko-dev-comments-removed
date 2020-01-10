@@ -302,7 +302,6 @@ class ElementStyle {
 
 
   onRuleUpdated() {
-    this.variablesMap.clear();
     this.updateDeclarations();
 
     
@@ -399,6 +398,16 @@ class ElementStyle {
     }
 
     
+    const previousVariablesMap = new Map(this.variablesMap.get(pseudo));
+    const changedVariableNamesSet = new Set(
+      [...variables.keys(), ...previousVariablesMap.keys()].filter(
+        k => variables.get(k) !== previousVariablesMap.get(k)
+      )
+    );
+
+    this.variablesMap.set(pseudo, variables);
+
+    
     
     
     
@@ -406,7 +415,12 @@ class ElementStyle {
     for (const textProp of textProps) {
       
       
-      if (this._updatePropertyOverridden(textProp)) {
+      
+      
+      if (
+        this._updatePropertyOverridden(textProp) ||
+        this._hasUpdatedCSSVariable(textProp, changedVariableNamesSet)
+      ) {
         textProp.updateEditor();
       }
 
@@ -415,8 +429,25 @@ class ElementStyle {
         textProp.editor.updatePropertyState();
       }
     }
+  }
 
-    this.variablesMap.set(pseudo, variables);
+  
+
+
+
+
+
+
+
+
+  _hasUpdatedCSSVariable(declaration, variableNamesSet) {
+    for (const variableName of variableNamesSet) {
+      if (declaration.hasCSSVariable(variableName)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   

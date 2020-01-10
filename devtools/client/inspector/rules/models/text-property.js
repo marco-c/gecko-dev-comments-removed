@@ -273,6 +273,19 @@ class TextProperty {
 
     return this.rule.domRule.declarations[selfIndex].isNameValid;
   }
+
+  
+
+
+
+
+
+
+
+  hasCSSVariable(name) {
+    const regex = new RegExp(`(^|\\W)var\\(${name}\\s*[,)]`);
+    return regex.test(this.value);
+  }
 }
 
 module.exports = TextProperty;
