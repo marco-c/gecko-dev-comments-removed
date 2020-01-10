@@ -12,6 +12,7 @@
 
 #include "CompositableHost.h"  
 #include "GLContextProvider.h"
+#include "Layers.h"
 #include "mozilla/layers/CompositableTransactionParent.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"

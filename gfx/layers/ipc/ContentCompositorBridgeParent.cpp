@@ -13,6 +13,7 @@
 #include "base/message_loop.h"        
 #include "base/task.h"                
 #include "base/thread.h"              
+#include "gfxUtils.h"
 #ifdef XP_WIN
 #  include "mozilla/gfx/DeviceManagerDx.h"  
 #endif
@@ -35,7 +36,10 @@
 #include "nsXULAppAPI.h"       
 #include "mozilla/Unused.h"
 #include "mozilla/StaticPtr.h"
-#include "gfxUtils.h"
+#include "mozilla/Telemetry.h"
+#ifdef MOZ_GECKO_PROFILER
+#  include "ProfilerMarkerPayload.h"
+#endif
 
 using namespace std;
 
@@ -306,12 +310,12 @@ mozilla::ipc::IPCResult ContentCompositorBridgeParent::RecvCheckContentOnlyTDR(
     const uint32_t& sequenceNum, bool* isContentOnlyTDR) {
   *isContentOnlyTDR = false;
 #ifdef XP_WIN
-  ContentDeviceData compositor;
+  gfx::ContentDeviceData compositor;
 
-  DeviceManagerDx* dm = DeviceManagerDx::Get();
+  gfx::DeviceManagerDx* dm = gfx::DeviceManagerDx::Get();
 
   
-  D3D11DeviceStatus status;
+  gfx::D3D11DeviceStatus status;
   dm->ExportDeviceInfo(&status);
 
   if (sequenceNum == status.sequenceNumber() && !dm->HasDeviceReset()) {

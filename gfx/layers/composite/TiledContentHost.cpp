@@ -15,6 +15,7 @@
 
 #include "mozilla/layers/Effects.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"  
+#include "mozilla/layers/PTextureParent.h"
 #include "mozilla/layers/TextureHostOGL.h"       
 #ifdef XP_DARWIN
 #  include "mozilla/layers/TextureSync.h"  

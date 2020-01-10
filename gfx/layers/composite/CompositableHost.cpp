@@ -11,6 +11,7 @@
 #include "Effects.h"      
 #include "gfxUtils.h"
 #include "ImageHost.h"         
+#include "Layers.h"
 #include "TiledContentHost.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  

@@ -11,6 +11,9 @@
 
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsTArray.h"
 
 #include "mozilla/gfx/Point.h"
 
@@ -84,19 +87,19 @@ class ProfilerScreenshots final {
 
 
 
-  already_AddRefed<DataSourceSurface> TakeNextSurface();
+  already_AddRefed<gfx::DataSourceSurface> TakeNextSurface();
 
   
 
 
 
-  void ReturnSurface(DataSourceSurface* aSurface);
+  void ReturnSurface(gfx::DataSourceSurface* aSurface);
 
   
   nsCOMPtr<nsIThread> mThread;
   
   
-  nsTArray<RefPtr<DataSourceSurface>> mAvailableSurfaces;
+  nsTArray<RefPtr<gfx::DataSourceSurface>> mAvailableSurfaces;
   
   Mutex mMutex;
   
