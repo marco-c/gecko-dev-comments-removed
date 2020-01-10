@@ -39,14 +39,6 @@ typedef ASTConsumer *ASTConsumerPtr;
 #define getEndLoc getLocEnd
 #endif
 
-#ifndef HAS_ACCEPTS_IGNORINGPARENIMPCASTS
-#define hasIgnoringParenImpCasts(x) has(x)
-#else
-
-
-#define hasIgnoringParenImpCasts(x) has(ignoringParenImpCasts(x))
-#endif
-
 
 
 
