@@ -14,7 +14,9 @@
 #include "nsCOMPtr.h"
 #include "imgINotificationObserver.h"
 #include "nsIContentPolicy.h"
+#include "nsIconLoaderService.h"
 
+class nsIconLoaderService;
 class nsIURI;
 class nsIContent;
 class nsIPrincipal;
@@ -23,7 +25,7 @@ class nsMenuObjectX;
 
 #import <Cocoa/Cocoa.h>
 
-class nsMenuItemIconX : public imgINotificationObserver {
+class nsMenuItemIconX : public nsIconLoaderObserver {
  public:
   nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
                   NSMenuItem* aNativeMenuItem);
@@ -32,9 +34,6 @@ class nsMenuItemIconX : public imgINotificationObserver {
   virtual ~nsMenuItemIconX();
 
  public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_IMGINOTIFICATIONOBSERVER
-
   
   
   nsresult SetupIcon();
@@ -44,7 +43,7 @@ class nsMenuItemIconX : public imgINotificationObserver {
 
   
   
-  nsresult LoadIcon(nsIURI* aIconURI);
+  nsresult OnComplete(NSImage* aImage) override;
 
   
   
@@ -53,17 +52,16 @@ class nsMenuItemIconX : public imgINotificationObserver {
   void Destroy();
 
  protected:
-  nsresult OnFrameComplete(imgIRequest* aRequest);
-
   nsCOMPtr<nsIContent> mContent;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsContentPolicyType mContentType;
-  RefPtr<imgRequestProxy> mIconRequest;
   nsMenuObjectX* mMenuObject;  
   nsIntRect mImageRegionRect;
-  bool mLoadedIcon;
   bool mSetIcon;
   NSMenuItem* mNativeMenuItem;  
+  
+  
+  RefPtr<nsIconLoaderService> mIconLoader;
 };
 
 #endif  

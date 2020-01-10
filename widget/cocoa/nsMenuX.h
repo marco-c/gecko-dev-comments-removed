@@ -83,9 +83,9 @@ class nsMenuX : public nsMenuObjectX, public nsChangeObserver {
   nsMenuObjectX* mParent;              
   nsMenuGroupOwnerX* mMenuGroupOwner;  
   
-  RefPtr<nsMenuItemIconX> mIcon;
-  GeckoNSMenu* mNativeMenu;     
-  MenuDelegate* mMenuDelegate;  
+  RefPtr<nsMenuItemIconX> mIcon;  
+  GeckoNSMenu* mNativeMenu;       
+  MenuDelegate* mMenuDelegate;    
   
   NSMenuItem* mNativeMenuItem;  
   bool mIsEnabled;
