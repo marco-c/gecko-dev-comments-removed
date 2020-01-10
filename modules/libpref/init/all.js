@@ -1084,9 +1084,6 @@ pref("dom.storage.client_validation", true);
 pref("dom.send_after_paint_to_content", false);
 
 
-pref("dom.timeout.enable_budget_timer_throttling", true);
-
-
 pref("dom.experimental_forms", false);
 
 

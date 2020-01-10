@@ -907,16 +907,6 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow)
     }
   }
 
-  
-  
-  
-
-  static bool sFirstTime = true;
-  if (sFirstTime) {
-    sFirstTime = false;
-    TimeoutManager::Initialize();
-  }
-
   if (gDumpFile == nullptr) {
     nsAutoCString fname;
     Preferences::GetCString("browser.dom.window.dump.file", fname);

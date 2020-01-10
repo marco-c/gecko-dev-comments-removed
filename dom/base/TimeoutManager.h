@@ -81,9 +81,6 @@ class TimeoutManager final {
   void UpdateBackgroundState();
 
   
-  static void Initialize();
-
-  
   void OnDocumentLoaded();
   void StartThrottlingTimeouts();
 
