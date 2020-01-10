@@ -34,7 +34,7 @@ void read_procmaps(lul::LUL* aLUL) {
   for (size_t i = 0; i < info.GetSize(); i++) {
     const SharedLibrary& lib = info.GetEntry(i);
 
-    std::string nativePath = lib.GetNativeDebugPath();
+    std::string nativePath = lib.GetDebugPath();
 
 #    if defined(GP_OS_android)
     
@@ -52,7 +52,7 @@ void read_procmaps(lul::LUL* aLUL) {
     if (ok && image && size > 0) {
       aLUL->NotifyAfterMap(lib.GetStart(), lib.GetEnd() - lib.GetStart(),
                            nativePath.c_str(), image);
-    } else if (!ok && lib.GetDebugName().IsEmpty()) {
+    } else if (!ok && lib.GetDebugName().empty()) {
       
       
       
@@ -77,8 +77,10 @@ void logging_sink_for_LUL(const char* str) {
   
   
   
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Verbose,
-          ("[%d] %s", profiler_current_process_id(), str));
+  
+  
+  
+  
 }
 
 #endif  

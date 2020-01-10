@@ -12,10 +12,7 @@
 
 #  include "ProfilerMarker.h"
 
-#  include "jsfriendapi.h"
 #  include "mozilla/MathAlgorithms.h"
-#  include "nsJSPrincipals.h"
-#  include "nsScriptSecurityManager.h"
 
 using namespace mozilla;
 
@@ -120,22 +117,8 @@ size_t ProfileBuffer::SizeOfIncludingThis(
 
 
 
-static bool IsChromeJSScript(JSScript* aScript) {
-  
-  auto realm = js::GetScriptRealm(aScript);
-  return js::IsSystemRealm(realm);
-}
-
 void ProfileBufferCollector::CollectNativeLeafAddr(void* aAddr) {
   mBuf.AddEntry(ProfileBufferEntry::NativeLeafAddr(aAddr));
-}
-
-void ProfileBufferCollector::CollectJitReturnAddr(void* aAddr) {
-  mBuf.AddEntry(ProfileBufferEntry::JitReturnAddr(aAddr));
-}
-
-void ProfileBufferCollector::CollectWasmFrame(const char* aLabel) {
-  mBuf.CollectCodeLocation("", aLabel, 0, Nothing(), Nothing(), Nothing());
 }
 
 void ProfileBufferCollector::CollectProfilingStackFrame(
@@ -151,34 +134,7 @@ void ProfileBufferCollector::CollectProfilingStackFrame(
   Maybe<uint32_t> line;
   Maybe<uint32_t> column;
 
-  if (aFrame.isJsFrame()) {
-    
-    
-    
-    
-    
-    
-
-    if (label[0] == '\0') {
-      MOZ_ASSERT(dynamicString);
-
-      
-      
-      if (aFrame.script()) {
-        isChromeJSEntry = IsChromeJSScript(aFrame.script());
-        if (aFrame.pc()) {
-          unsigned col = 0;
-          line = Some(JS_PCToLineNumber(aFrame.script(), aFrame.pc(), &col));
-          column = Some(col);
-        }
-      }
-
-    } else {
-      MOZ_ASSERT(strcmp(label, "js::RunScript") == 0 && !dynamicString);
-    }
-  } else {
-    MOZ_ASSERT(aFrame.isLabelFrame());
-  }
+  MOZ_ASSERT(aFrame.isLabelFrame());
 
   if (dynamicString) {
     

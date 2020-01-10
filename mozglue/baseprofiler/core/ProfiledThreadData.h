@@ -7,14 +7,16 @@
 #ifndef ProfiledThreadData_h
 #define ProfiledThreadData_h
 
+#include "BaseProfilingStack.h"
 #include "platform.h"
 #include "ProfileBufferEntry.h"
 #include "ThreadInfo.h"
-#include "ThreadResponsiveness.h"
 
-#include "js/ProfilingStack.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+
+#include <string>
 
 class ProfileBuffer;
 
@@ -43,12 +45,10 @@ class ProfileBuffer;
 
 class ProfiledThreadData final {
  public:
-  ProfiledThreadData(ThreadInfo* aThreadInfo, nsIEventTarget* aEventTarget,
-                     bool aIncludeResponsiveness);
+  explicit ProfiledThreadData(ThreadInfo* aThreadInfo);
   ~ProfiledThreadData();
 
   void NotifyUnregistered(uint64_t aBufferPosition) {
-    mResponsiveness.reset();
     mLastSample = mozilla::Nothing();
     MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
                "JSContext should have been cleared before the thread was "
@@ -62,20 +62,10 @@ class ProfiledThreadData final {
 
   mozilla::Maybe<uint64_t>& LastSample() { return mLastSample; }
 
-  void StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
-                  SpliceableJSONWriter& aWriter, const nsACString& aProcessName,
+  void StreamJSON(const ProfileBuffer& aBuffer, SpliceableJSONWriter& aWriter,
+                  const std::string& aProcessName,
                   const mozilla::TimeStamp& aProcessStartTime,
-                  double aSinceTime, bool aJSTracerEnabled);
-
-  void StreamTraceLoggerJSON(JSContext* aCx, SpliceableJSONWriter& aWriter,
-                             const mozilla::TimeStamp& aProcessStartTime);
-
-  
-  
-  ThreadResponsiveness* GetThreadResponsiveness() {
-    ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
-    return responsiveness;
-  }
+                  double aSinceTime);
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
 
@@ -83,12 +73,6 @@ class ProfiledThreadData final {
     mBufferPositionWhenReceivedJSContext =
         mozilla::Some(aCurrentBufferPosition);
   }
-
-  
-  
-  void NotifyAboutToLoseJSContext(JSContext* aCx,
-                                  const mozilla::TimeStamp& aProcessStartTime,
-                                  ProfileBuffer& aBuffer);
 
  private:
   
@@ -101,16 +85,6 @@ class ProfiledThreadData final {
   
   
   
-  
-  mozilla::UniquePtr<JITFrameInfo> mJITFrameInfoForPreviousJSContexts;
-
-  
-  
-  
-
-  
-  
-  mozilla::Maybe<ThreadResponsiveness> mResponsiveness;
 
   
   
@@ -130,7 +104,7 @@ class ProfiledThreadData final {
 void StreamSamplesAndMarkers(const char* aName, int aThreadId,
                              const ProfileBuffer& aBuffer,
                              SpliceableJSONWriter& aWriter,
-                             const nsACString& aProcessName,
+                             const std::string& aProcessName,
                              const mozilla::TimeStamp& aProcessStartTime,
                              const mozilla::TimeStamp& aRegisterTime,
                              const mozilla::TimeStamp& aUnregisterTime,

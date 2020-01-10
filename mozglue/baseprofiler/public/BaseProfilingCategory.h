@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_ProfilingCategory_h
-#define js_ProfilingCategory_h
+#ifndef BaseProfilingCategory_h
+#define BaseProfilingCategory_h
 
 #include "BaseProfiler.h"
 
@@ -13,7 +13,9 @@
 #  error Do not #include this header when MOZ_BASE_PROFILER is not #defined.
 #endif
 
-#include "jstypes.h"  
+#include "mozilla/Types.h"
+
+#include <cstdint>
 
 
 
@@ -121,7 +123,7 @@ struct ProfilingCategoryPairInfo {
   const char* mLabel;
 };
 
-JS_FRIEND_API const ProfilingCategoryPairInfo& GetProfilingCategoryPairInfo(
+MFBT_API const ProfilingCategoryPairInfo& GetBaseProfilingCategoryPairInfo(
     ProfilingCategoryPair aCategoryPair);
 
 }  

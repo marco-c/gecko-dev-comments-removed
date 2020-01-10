@@ -3,8 +3,8 @@
 
 
 
-#ifndef PROFILEJSONWRITER_H
-#define PROFILEJSONWRITER_H
+#ifndef BASEPROFILEJSONWRITER_H
+#define BASEPROFILEJSONWRITER_H
 
 #include "BaseProfiler.h"
 
