@@ -9,7 +9,6 @@ const {
   getCurrentZoom,
   getWindowDimensions,
   getViewportDimensions,
-  getRootBindingParent,
   loadSheet,
 } = require("devtools/shared/layout/utils");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -138,9 +137,7 @@ function isNodeValid(node, nodeType = Node.ELEMENT_NODE) {
   }
 
   
-  
-  const bindingParent = getRootBindingParent(node);
-  if (!doc.documentElement.contains(bindingParent)) {
+  if (!node.isConnected) {
     return false;
   }
 
