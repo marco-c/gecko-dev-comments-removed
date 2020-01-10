@@ -2148,8 +2148,8 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   ObserverArray& observers = key->array;
 
   if (observers.IsEmpty()) {
-    NS_ASSERTION(!keyAlreadyExists,
-                 "An empty key was kept around in our hashtable!");
+    MOZ_ASSERT(!keyAlreadyExists,
+               "An empty key was kept around in our hashtable!");
 
     
     
@@ -2162,7 +2162,8 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
     
     if (NS_FAILED(rv) || !aLink) {
       
-      MOZ_ASSERT(key == mObservers.GetEntry(aURI), "The URIs hash mutated!");
+      MOZ_DIAGNOSTIC_ASSERT(key == mObservers.GetEntry(aURI),
+                            "The URIs hash mutated!");
       
       
       
@@ -2187,8 +2188,8 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
 
   
   
-  NS_ASSERTION(!observers.Contains(aLink),
-               "Already tracking this Link object!");
+  MOZ_DIAGNOSTIC_ASSERT(!observers.Contains(aLink),
+                        "Already tracking this Link object!");
 
   
   observers.AppendElement(aLink);
