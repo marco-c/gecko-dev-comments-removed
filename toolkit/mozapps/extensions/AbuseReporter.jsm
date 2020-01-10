@@ -12,6 +12,7 @@ Cu.importGlobalProperties(["fetch"]);
 
 const PREF_ABUSE_REPORT_URL = "extensions.abuseReport.url";
 const PREF_ABUSE_REPORT_OPEN_DIALOG = "extensions.abuseReport.openDialog";
+const PREF_AMO_DETAILS_API_URL = "extensions.abuseReport.amoDetailsURL";
 
 
 const MAX_STRING_LENGTH = 255;
@@ -35,6 +36,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
+  "AMO_DETAILS_API_URL",
+  PREF_AMO_DETAILS_API_URL
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
   "SHOULD_OPEN_DIALOG",
   PREF_ABUSE_REPORT_OPEN_DIALOG,
   false
@@ -50,6 +57,8 @@ const ERROR_TYPES = Object.freeze([
   "ERROR_UNKNOWN",
   "ERROR_RECENT_SUBMIT",
   "ERROR_SERVER",
+  "ERROR_AMODETAILS_NOTFOUND",
+  "ERROR_AMODETAILS_FAILURE",
 ]);
 
 class AbuseReportError extends Error {
@@ -65,6 +74,22 @@ class AbuseReportError extends Error {
     this.errorType = errorType;
     this.errorInfo = errorInfo;
   }
+}
+
+
+
+
+
+
+
+
+
+
+async function responseToErrorInfo(response) {
+  return JSON.stringify({
+    status: response.status,
+    responseText: await response.text().catch(err => ""),
+  });
 }
 
 
@@ -107,7 +132,12 @@ const AbuseReporter = {
 
 
   async createAbuseReport(addonId, { reportEntryPoint } = {}) {
-    const addon = await AddonManager.getAddonByID(addonId);
+    let addon = await AddonManager.getAddonByID(addonId);
+
+    if (!addon) {
+      
+      addon = await this.queryAMOAddonDetails(addonId, reportEntryPoint);
+    }
 
     if (!addon) {
       AMTelemetry.recordReportEvent({
@@ -125,6 +155,121 @@ const AbuseReporter = {
       reportData,
       reportEntryPoint,
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async queryAMOAddonDetails(addonId, reportEntryPoint) {
+    let details;
+    try {
+      
+      
+      details = await fetch(`${AMO_DETAILS_API_URL}/${addonId}`, {
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+        headers: { "Content-Type": "application/json" },
+      }).then(async response => {
+        if (response.status === 200) {
+          return response.json();
+        }
+
+        let errorInfo = await responseToErrorInfo(response).catch(
+          err => undefined
+        );
+
+        if (response.status === 404) {
+          
+          throw new AbuseReportError("ERROR_AMODETAILS_NOTFOUND", errorInfo);
+        }
+
+        throw new AbuseReportError("ERROR_AMODETAILS_FAILURE", errorInfo);
+      });
+    } catch (err) {
+      
+      Cu.reportError(err);
+
+      AMTelemetry.recordReportEvent({
+        addonId,
+        errorType: err.errorType || "ERROR_AMODETAILS_FAILURE",
+        reportEntryPoint,
+      });
+
+      return null;
+    }
+
+    const locale = Services.locale.appLocaleAsLangTag;
+
+    
+    
+    const getTranslatedValue = value => {
+      if (typeof value === "string") {
+        return value;
+      }
+      return value && (value[locale] || value["en-US"]);
+    };
+
+    const getAuthorField = fieldName =>
+      details.authors && details.authors[0] && details.authors[0][fieldName];
+
+    return {
+      id: addonId,
+      name: getTranslatedValue(details.name),
+      version: details.current_version.version,
+      description: getTranslatedValue(details.summary),
+      type: details.type,
+      iconURL: details.icon_url,
+      homepageURL: getTranslatedValue(details.homepage),
+      supportURL: getTranslatedValue(details.support_url),
+      
+      creator: {
+        name: getAuthorField("name"),
+        url: getAuthorField("url"),
+      },
+      isRecommended: details.is_recommended,
+      
+      signedState: AddonManager.SIGNEDSTATE_UNKNOWN,
+      
+      installTelemetryInfo: { source: "not_installed" },
+    };
   },
 
   
@@ -403,17 +548,12 @@ class AbuseReport {
     const rejectReportError = async (errorType, { response } = {}) => {
       this.recordTelemetry(errorType);
 
-      let errorInfo;
-      if (response) {
-        try {
-          errorInfo = JSON.stringify({
-            status: response.status,
-            responseText: await response.text().catch(err => ""),
-          });
-        } catch (err) {
-          
-        }
-      }
+      
+      
+      const errorInfo = response
+        ? await responseToErrorInfo(response).catch(err => undefined)
+        : undefined;
+
       throw new AbuseReportError(errorType, errorInfo);
     };
 
