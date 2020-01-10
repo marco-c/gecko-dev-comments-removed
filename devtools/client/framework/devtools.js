@@ -710,43 +710,6 @@ DevTools.prototype = {
 
 
 
-  async findNodeFront(walker, nodeSelectors) {
-    async function querySelectors(nodeFront) {
-      const selector = nodeSelectors.shift();
-      if (!selector) {
-        return nodeFront;
-      }
-      nodeFront = await walker.querySelector(nodeFront, selector);
-      if (nodeSelectors.length > 0) {
-        const { nodes } = await walker.children(nodeFront);
-        
-        
-        
-        
-        nodeFront = nodes.find(node => {
-          const { nodeType } = node;
-          return (
-            nodeType === Node.DOCUMENT_FRAGMENT_NODE ||
-            nodeType === Node.DOCUMENT_NODE
-          );
-        });
-      }
-      return querySelectors(nodeFront);
-    }
-    const nodeFront = await walker.getRootNode();
-    return querySelectors(nodeFront);
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -774,7 +737,7 @@ DevTools.prototype = {
     
     const onNewNode = inspector.selection.once("new-node-front");
 
-    const nodeFront = await this.findNodeFront(inspector.walker, nodeSelectors);
+    const nodeFront = await inspector.walker.findNodeFront(nodeSelectors);
     
     inspector.selection.setNodeFront(nodeFront, {
       reason: "browser-context-menu",
@@ -812,10 +775,7 @@ DevTools.prototype = {
       startTime
     );
     const inspectorFront = await toolbox.target.getFront("inspector");
-    const nodeFront = await this.findNodeFront(
-      inspectorFront.walker,
-      nodeSelectors
-    );
+    const nodeFront = await inspectorFront.walker.findNodeFront(nodeSelectors);
     
     
     const a11yPanel = toolbox.getCurrentPanel();
