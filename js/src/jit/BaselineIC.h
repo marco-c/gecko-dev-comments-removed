@@ -1833,13 +1833,6 @@ inline bool IsCacheableDOMProxy(JSObject* obj) {
 
 struct IonOsrTempData;
 
-
-
-
-void StoreToTypedObject(JSContext* cx, MacroAssembler& masm, Scalar::Type type,
-                        const ValueOperand& value, const Address& dest,
-                        Register scratch, Label* failure);
-
 extern MOZ_MUST_USE bool TypeMonitorResult(JSContext* cx,
                                            ICMonitoredFallbackStub* stub,
                                            BaselineFrame* frame,

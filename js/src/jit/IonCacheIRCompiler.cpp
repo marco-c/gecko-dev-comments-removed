@@ -1573,20 +1573,49 @@ bool IonCacheIRCompiler::emitStoreTypedObjectScalarProperty() {
   int32_t offset = int32StubField(reader.stubOffset());
   TypedThingLayout layout = reader.typedThingLayout();
   Scalar::Type type = reader.scalarType();
-  ValueOperand val = allocator.useValueRegister(masm, reader.valOperandId());
-  AutoScratchRegister scratch1(allocator, masm);
-  AutoScratchRegister scratch2(allocator, masm);
 
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
+  Maybe<Register> valInt32;
+  switch (type) {
+    case Scalar::Int8:
+    case Scalar::Uint8:
+    case Scalar::Int16:
+    case Scalar::Uint16:
+    case Scalar::Int32:
+    case Scalar::Uint32:
+    case Scalar::Uint8Clamped:
+      valInt32.emplace(allocator.useRegister(masm, reader.int32OperandId()));
+      break;
+
+    case Scalar::Float32:
+    case Scalar::Float64:
+      
+      
+      
+      allocator.ensureDoubleRegister(masm, reader.numberOperandId(), FloatReg0);
+      break;
+
+    case Scalar::BigInt64:
+    case Scalar::BigUint64:
+    case Scalar::MaxTypedArrayViewType:
+    case Scalar::Int64:
+      MOZ_CRASH("Unsupported TypedArray type");
   }
 
-  
-  LoadTypedThingData(masm, layout, obj, scratch1);
-  Address dest(scratch1, offset);
+  AutoScratchRegister scratch(allocator, masm);
 
-  StoreToTypedObject(cx_, masm, type, val, dest, scratch2, failure->label());
+  
+  LoadTypedThingData(masm, layout, obj, scratch);
+  Address dest(scratch, offset);
+
+  if (type == Scalar::Float32) {
+    ScratchFloat32Scope fpscratch(masm);
+    masm.convertDoubleToFloat32(FloatReg0, fpscratch);
+    masm.storeToTypedFloatArray(type, fpscratch, dest);
+  } else if (type == Scalar::Float64) {
+    masm.storeToTypedFloatArray(type, FloatReg0, dest);
+  } else {
+    masm.storeToTypedIntArray(type, *valInt32, dest);
+  }
   return true;
 }
 
