@@ -50,20 +50,32 @@ FormHistoryStartup.prototype = {
     Services.obs.addObserver(this, "idle-daily", true);
     Services.obs.addObserver(this, "formhistory-expire-now", true);
 
-    Services.ppmm.addMessageListener(
-      "FormHistory:AutoCompleteSearchAsync",
-      this
-    );
-    Services.ppmm.addMessageListener("FormHistory:RemoveEntry", this);
+    Services.mm.addMessageListener("FormHistory:FormSubmitEntries", this);
+
+    
+    
+    
+    for (let manager of [Services.mm, Services.ppmm]) {
+      manager.addMessageListener("FormHistory:AutoCompleteSearchAsync", this);
+      manager.addMessageListener("FormHistory:RemoveEntry", this);
+    }
   },
 
   receiveMessage(message) {
     switch (message.name) {
-      case "FormHistory:AutoCompleteSearchAsync": {
-        
-        
-        
+      case "FormHistory:FormSubmitEntries": {
+        let entries = message.data;
+        let changes = entries.map(entry => ({
+          op: "bump",
+          fieldname: entry.name,
+          value: entry.value,
+        }));
 
+        FormHistory.update(changes);
+        break;
+      }
+
+      case "FormHistory:AutoCompleteSearchAsync": {
         let { id, searchString, params } = message.data;
 
         if (this.pendingQuery) {
@@ -71,7 +83,19 @@ FormHistoryStartup.prototype = {
           this.pendingQuery = null;
         }
 
+        let mm;
         let query = null;
+        
+        
+        
+        if (message.target instanceof MessageListenerManager) {
+          
+          
+          mm = message.target;
+        } else {
+          
+          mm = message.target.messageManager;
+        }
 
         let results = [];
         let processResults = {
@@ -85,13 +109,10 @@ FormHistoryStartup.prototype = {
             if (query === this.pendingQuery) {
               this.pendingQuery = null;
               if (!aReason) {
-                message.target.sendAsyncMessage(
-                  "FormHistory:AutoCompleteSearchResults",
-                  {
-                    id,
-                    results,
-                  }
-                );
+                mm.sendAsyncMessage("FormHistory:AutoCompleteSearchResults", {
+                  id,
+                  results,
+                });
               }
             }
           },

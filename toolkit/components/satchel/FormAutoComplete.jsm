@@ -39,14 +39,17 @@ function isAutocompleteDisabled(aField) {
 function FormHistoryClient({ formField, inputName }) {
   if (formField && inputName != this.SEARCHBAR_ID) {
     let window = formField.ownerGlobal;
-    this.windowGlobal = window.getWindowGlobalChild();
-  } else if (inputName == this.SEARCHBAR_ID && formField) {
-    throw new Error(
-      "FormHistoryClient constructed with both a " +
-        "formField and an inputName. This is not " +
-        "supported, and only empty results will be " +
-        "returned."
-    );
+    this.mm = window.docShell.messageManager;
+  } else {
+    if (inputName == this.SEARCHBAR_ID && formField) {
+      throw new Error(
+        "FormHistoryClient constructed with both a " +
+          "formField and an inputName. This is not " +
+          "supported, and only empty results will be " +
+          "returned."
+      );
+    }
+    this.mm = Services.cpmm;
   }
 
   this.inputName = inputName;
@@ -56,16 +59,15 @@ function FormHistoryClient({ formField, inputName }) {
 FormHistoryClient.prototype = {
   SEARCHBAR_ID: "searchbar-history",
 
-  cancelled: false,
+  
+  
+  
+  
+  
+  id: 0,
+  callback: null,
   inputName: "",
-
-  getActor() {
-    if (this.windowGlobal) {
-      return this.windowGlobal.getActor("FormHistory");
-    }
-
-    return null;
-  },
+  mm: null,
 
   
 
@@ -81,50 +83,14 @@ FormHistoryClient.prototype = {
 
 
   requestAutoCompleteResults(searchString, params, callback) {
-    this.cancelled = false;
+    this.mm.sendAsyncMessage("FormHistory:AutoCompleteSearchAsync", {
+      id: this.id,
+      searchString,
+      params,
+    });
 
-    
-    
-    
-    let actor = this.getActor();
-    if (actor) {
-      actor
-        .sendQuery("FormHistory:AutoCompleteSearchAsync", {
-          searchString,
-          params,
-        })
-        .then(
-          results => {
-            this.handleAutoCompleteResults(results, callback);
-          },
-          () => this.cancel()
-        );
-    } else {
-      this.callback = callback;
-      Services.cpmm.addMessageListener(
-        "FormHistory:AutoCompleteSearchResults",
-        this
-      );
-      Services.cpmm.sendAsyncMessage("FormHistory:AutoCompleteSearchAsync", {
-        id: this.id,
-        searchString,
-        params,
-      });
-    }
-  },
-
-  handleAutoCompleteResults(results, callback) {
-    if (this.cancelled) {
-      return;
-    }
-
-    if (!callback) {
-      Cu.reportError("FormHistoryClient received response with no callback");
-      return;
-    }
-
-    callback(results);
-    this.cancel();
+    this.mm.addMessageListener("FormHistory:AutoCompleteSearchResults", this);
+    this.callback = callback;
   },
 
   
@@ -133,14 +99,7 @@ FormHistoryClient.prototype = {
 
 
   cancel() {
-    if (this.callback) {
-      Services.cpmm.removeMessageListener(
-        "FormHistory:AutoCompleteSearchResults",
-        this
-      );
-      this.callback = null;
-    }
-    this.cancelled = true;
+    this.clearListeners();
   },
 
   
@@ -156,19 +115,34 @@ FormHistoryClient.prototype = {
 
 
   remove(value, guid) {
-    let actor = this.getActor() || Services.cpmm;
-    actor.sendAsyncMessage("FormHistory:RemoveEntry", {
+    this.mm.sendAsyncMessage("FormHistory:RemoveEntry", {
       inputName: this.inputName,
       value,
       guid,
     });
   },
 
+  
+
   receiveMessage(msg) {
     let { id, results } = msg.data;
-    if (id == this.id) {
-      this.handleAutoCompleteResults(results, this.callback);
+    if (id != this.id) {
+      return;
     }
+    if (!this.callback) {
+      Cu.reportError("FormHistoryClient received message with no callback");
+      return;
+    }
+    this.callback(results);
+    this.clearListeners();
+  },
+
+  clearListeners() {
+    this.mm.removeMessageListener(
+      "FormHistory:AutoCompleteSearchResults",
+      this
+    );
+    this.callback = null;
   },
 };
 
