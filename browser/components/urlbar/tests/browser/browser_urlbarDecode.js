@@ -55,7 +55,6 @@ add_task(async function actionURILosslessDecode() {
   
   
   
-  
   do {
     EventUtils.synthesizeKey("KEY_ArrowDown");
   } while (UrlbarTestUtils.getSelectedRowIndex(window) != 0);

@@ -444,7 +444,6 @@ var PlacesUtils = {
   TOPIC_BOOKMARKS_RESTORE_SUCCESS: "bookmarks-restore-success",
   TOPIC_BOOKMARKS_RESTORE_FAILED: "bookmarks-restore-failed",
 
-  ACTION_SCHEME: "moz-action:",
   observers: PlacesObservers,
 
   
@@ -581,28 +580,6 @@ var PlacesUtils = {
 
 
 
-
-
-
-  mozActionURI(type, params) {
-    let encodedParams = {};
-    for (let key in params) {
-      
-      
-      if (params[key] === null || params[key] === undefined) {
-        continue;
-      }
-      encodedParams[key] = encodeURIComponent(params[key]);
-    }
-    return this.ACTION_SCHEME + type + "," + JSON.stringify(encodedParams);
-  },
-
-  
-
-
-
-
-
   parseActionUrl(url) {
     if (url instanceof Ci.nsIURI) {
       url = url.spec;
@@ -610,7 +587,7 @@ var PlacesUtils = {
       url = url.href;
     }
     
-    if (!url.startsWith(this.ACTION_SCHEME)) {
+    if (!url.startsWith("moz-action:")) {
       return null;
     }
 
