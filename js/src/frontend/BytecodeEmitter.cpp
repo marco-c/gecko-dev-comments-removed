@@ -110,8 +110,7 @@ BytecodeEmitter::BytecodeEmitter(
 
   if (sc->isFunctionBox()) {
     
-    bytecodeSection().setNumICEntries(sc->asFunctionBox()->function()->nargs() +
-                                      1);
+    bytecodeSection().setNumICEntries(sc->asFunctionBox()->nargs() + 1);
   }
 }
 
