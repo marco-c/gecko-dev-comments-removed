@@ -291,14 +291,13 @@ void ScaleYCbCrToRGB32(const uint8* y_buf,
                        YUVType yuv_type,
                        YUVColorSpace yuv_color_space,
                        ScaleFilter filter) {
-
   bool use_deprecated =
       StaticPrefs::gfx_ycbcr_accurate_conversion() ||
 #if defined(XP_WIN) && defined(_M_X64)
-                        
-                        supports_sse3() ||
+      
+      supports_sse3() ||
 #endif
-                        (supports_mmx() && supports_sse() && !supports_sse3());
+      (supports_mmx() && supports_sse() && !supports_sse3());
   
   
   if (yuv_color_space != YUVColorSpace::BT601) {
