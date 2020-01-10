@@ -903,16 +903,6 @@ class Accessible : public nsISupports {
   
 
 
-  bool NativeHasNumericValue() const;
-
-  
-
-
-  bool ARIAHasNumericValue() const;
-
-  
-
-
   bool HasNumericValue() const;
 
   
