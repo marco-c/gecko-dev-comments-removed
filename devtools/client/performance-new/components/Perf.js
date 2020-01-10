@@ -20,18 +20,6 @@ const Description = createFactory(
   require("devtools/client/performance-new/components/Description.js")
 );
 const actions = require("devtools/client/performance-new/store/actions");
-const {
-  recordingState: {
-    NOT_YET_KNOWN,
-    AVAILABLE_TO_RECORD,
-    REQUEST_TO_START_RECORDING,
-    REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER,
-    REQUEST_TO_STOP_PROFILER,
-    RECORDING,
-    OTHER_IS_RECORDING,
-    LOCKED_BY_PRIVATE_BROWSING,
-  },
-} = require("devtools/client/performance-new/utils");
 const selectors = require("devtools/client/performance-new/store/selectors");
 
 
@@ -90,15 +78,15 @@ class Perf extends PureComponent {
       let recordingState = this.props.recordingState;
       
       
-      if (recordingState === NOT_YET_KNOWN && isSupportedPlatform) {
+      if (recordingState === "not-yet-known" && isSupportedPlatform) {
         if (isLockedForPrivateBrowsing) {
-          recordingState = LOCKED_BY_PRIVATE_BROWSING;
+          recordingState = "locked-by-private-browsing";
         } else if (isActive) {
           
           
-          recordingState = isPopup ? RECORDING : OTHER_IS_RECORDING;
+          recordingState = isPopup ? "recording" : "other-is-recording";
         } else {
-          recordingState = AVAILABLE_TO_RECORD;
+          recordingState = "available-to-record";
         }
       }
       reportProfilerReady(isSupportedPlatform, recordingState);
@@ -127,17 +115,17 @@ class Perf extends PureComponent {
 
   componentWillUnmount() {
     switch (this.props.recordingState) {
-      case NOT_YET_KNOWN:
-      case AVAILABLE_TO_RECORD:
-      case REQUEST_TO_STOP_PROFILER:
-      case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
-      case LOCKED_BY_PRIVATE_BROWSING:
-      case OTHER_IS_RECORDING:
+      case "not-yet-known":
+      case "available-to-record":
+      case "request-to-stop-profiler":
+      case "request-to-get-profile-and-stop-profiler":
+      case "locked-by-private-browsing":
+      case "other-is-recording":
         
         break;
 
-      case RECORDING:
-      case REQUEST_TO_START_RECORDING:
+      case "recording":
+      case "request-to-start-recording":
         this.props.perfFront.stopProfilerAndDiscardProfile();
         break;
 
@@ -149,34 +137,34 @@ class Perf extends PureComponent {
   handleProfilerStarting() {
     const { changeRecordingState, recordingState, isPopup } = this.props;
     switch (recordingState) {
-      case NOT_YET_KNOWN:
+      case "not-yet-known":
       
       
-      case AVAILABLE_TO_RECORD:
+      case "available-to-record":
       
-      case REQUEST_TO_STOP_PROFILER:
+      case "request-to-stop-profiler":
       
       
-      case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
+      case "request-to-get-profile-and-stop-profiler":
         if (isPopup) {
           
           
-          changeRecordingState(RECORDING);
+          changeRecordingState("recording");
         } else {
           
           
-          changeRecordingState(OTHER_IS_RECORDING);
+          changeRecordingState("other-is-recording");
         }
         break;
 
-      case REQUEST_TO_START_RECORDING:
+      case "request-to-start-recording":
         
-        changeRecordingState(RECORDING);
+        changeRecordingState("recording");
         break;
 
-      case LOCKED_BY_PRIVATE_BROWSING:
-      case OTHER_IS_RECORDING:
-      case RECORDING:
+      case "locked-by-private-browsing":
+      case "other-is-recording":
+      case "recording":
         
         
         throw new Error(
@@ -191,27 +179,27 @@ class Perf extends PureComponent {
   handleProfilerStopping() {
     const { changeRecordingState, recordingState } = this.props;
     switch (recordingState) {
-      case NOT_YET_KNOWN:
-      case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
-      case REQUEST_TO_STOP_PROFILER:
-      case OTHER_IS_RECORDING:
-        changeRecordingState(AVAILABLE_TO_RECORD);
+      case "not-yet-known":
+      case "request-to-get-profile-and-stop-profiler":
+      case "request-to-stop-profiler":
+      case "other-is-recording":
+        changeRecordingState("available-to-record");
         break;
 
-      case REQUEST_TO_START_RECORDING:
+      case "request-to-start-recording":
       
       
-      case LOCKED_BY_PRIVATE_BROWSING:
+      case "locked-by-private-browsing":
         
         break;
 
-      case RECORDING:
-        changeRecordingState(AVAILABLE_TO_RECORD, {
+      case "recording":
+        changeRecordingState("available-to-record", {
           didRecordingUnexpectedlyStopped: true,
         });
         break;
 
-      case AVAILABLE_TO_RECORD:
+      case "available-to-record":
         throw new Error(
           "The profiler stopped recording, when it shouldn't have been able to."
         );
@@ -224,24 +212,24 @@ class Perf extends PureComponent {
     const { recordingState, changeRecordingState } = this.props;
 
     switch (recordingState) {
-      case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
+      case "request-to-get-profile-and-stop-profiler":
       
       
-      case REQUEST_TO_STOP_PROFILER:
-      case AVAILABLE_TO_RECORD:
-      case OTHER_IS_RECORDING:
-      case NOT_YET_KNOWN:
-        changeRecordingState(LOCKED_BY_PRIVATE_BROWSING);
+      case "request-to-stop-profiler":
+      case "available-to-record":
+      case "other-is-recording":
+      case "not-yet-known":
+        changeRecordingState("locked-by-private-browsing");
         break;
 
-      case REQUEST_TO_START_RECORDING:
-      case RECORDING:
-        changeRecordingState(LOCKED_BY_PRIVATE_BROWSING, {
+      case "request-to-start-recording":
+      case "recording":
+        changeRecordingState("locked-by-private-browsing", {
           didRecordingUnexpectedlyStopped: false,
         });
         break;
 
-      case LOCKED_BY_PRIVATE_BROWSING:
+      case "locked-by-private-browsing":
         
         break;
 
@@ -253,7 +241,7 @@ class Perf extends PureComponent {
   handlePrivateBrowsingEnding() {
     
     
-    this.props.changeRecordingState(AVAILABLE_TO_RECORD);
+    this.props.changeRecordingState("available-to-record");
   }
 
   render() {
