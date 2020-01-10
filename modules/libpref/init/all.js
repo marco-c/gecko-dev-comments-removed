@@ -2928,9 +2928,6 @@ pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
 pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 
 
-pref("layout.css.outline-style-auto.enabled", false);
-
-
 pref("layout.css.scroll-behavior.enabled", true);
 
 
