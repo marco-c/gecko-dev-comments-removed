@@ -3171,6 +3171,13 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+VARCACHE_PREF(
+  Once,
+  "gfx.core-animation.enabled",
+  gfx_core_animation_enabled,
+  bool, false
+)
+
 #if defined(MOZ_WIDGET_ANDROID)
 
 
