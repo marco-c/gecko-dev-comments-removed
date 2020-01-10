@@ -317,6 +317,14 @@ class WorkerPrivate : public RelativeTimeline {
     return data->mDebuggerScope;
   }
 
+  
+  
+  
+  nsIGlobalObject* GetCurrentEventLoopGlobal() const {
+    MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+    return data->mCurrentEventLoopGlobal;
+  }
+
   nsICSPEventListener* CSPEventListener() const;
 
   void SetThread(WorkerThread* aThread);
@@ -1098,6 +1106,19 @@ class WorkerPrivate : public RelativeTimeline {
 
     UniquePtr<ClientSource> mClientSource;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIGlobalObject> mCurrentEventLoopGlobal;
+
     uint32_t mNumWorkerRefsPreventingShutdownStart;
     uint32_t mDebuggerEventLoopLevel;
 
@@ -1112,6 +1133,17 @@ class WorkerPrivate : public RelativeTimeline {
     bool mOnLine;
   };
   ThreadBound<WorkerThreadAccessible> mWorkerThreadAccessible;
+
+  class MOZ_RAII AutoPushEventLoopGlobal {
+   public:
+    AutoPushEventLoopGlobal(WorkerPrivate* aWorkerPrivate, JSContext* aCx);
+    ~AutoPushEventLoopGlobal();
+
+   private:
+    WorkerPrivate* mWorkerPrivate;
+    nsCOMPtr<nsIGlobalObject> mOldEventLoopGlobal;
+  };
+  friend class AutoPushEventLoopGlobal;
 
   uint32_t mPostSyncLoopOperations;
 

@@ -3651,6 +3651,8 @@ bool WorkerPrivate::RunCurrentSyncLoop() {
   JSContext* cx = GetJSContext();
   MOZ_ASSERT(cx);
 
+  AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
+
   
   
   uint32_t currentLoopIndex = mSyncLoopStack.Length() - 1;
@@ -3715,7 +3717,10 @@ bool WorkerPrivate::RunCurrentSyncLoop() {
       MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(mThread, false));
 
       
-      if (JS::CurrentGlobalOrNull(cx)) {
+      if (GetCurrentEventLoopGlobal()) {
+        
+        
+        MOZ_ASSERT(JS::CurrentGlobalOrNull(cx));
         JS_MaybeGC(cx);
       }
     }
@@ -3904,6 +3909,9 @@ void WorkerPrivate::EnterDebuggerEventLoop() {
 
   JSContext* cx = GetJSContext();
   MOZ_ASSERT(cx);
+
+  AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
+
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
 
   uint32_t currentEventLoopLevel = ++data->mDebuggerEventLoopLevel;
@@ -3958,7 +3966,10 @@ void WorkerPrivate::EnterDebuggerEventLoop() {
       ccjscx->PerformDebuggerMicroTaskCheckpoint();
 
       
-      if (JS::CurrentGlobalOrNull(cx)) {
+      if (GetCurrentEventLoopGlobal()) {
+        
+        
+        MOZ_ASSERT(JS::CurrentGlobalOrNull(cx));
         JS_MaybeGC(cx);
       }
     }
@@ -4964,6 +4975,21 @@ WorkerPrivate::EventTarget::IsOnCurrentThreadInfallible() {
   }
 
   return mWorkerPrivate->IsOnCurrentThread();
+}
+
+WorkerPrivate::AutoPushEventLoopGlobal::AutoPushEventLoopGlobal(
+    WorkerPrivate* aWorkerPrivate, JSContext* aCx)
+    : mWorkerPrivate(aWorkerPrivate) {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerPrivate->mWorkerThreadAccessible, data);
+  mOldEventLoopGlobal = data->mCurrentEventLoopGlobal.forget();
+  if (JSObject* global = JS::CurrentGlobalOrNull(aCx)) {
+    data->mCurrentEventLoopGlobal = xpc::NativeGlobal(global);
+  }
+}
+
+WorkerPrivate::AutoPushEventLoopGlobal::~AutoPushEventLoopGlobal() {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerPrivate->mWorkerThreadAccessible, data);
+  data->mCurrentEventLoopGlobal = mOldEventLoopGlobal.forget();
 }
 
 }  
