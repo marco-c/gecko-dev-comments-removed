@@ -163,10 +163,15 @@ static bool DoLauncherProcessChecks(int& argc, wchar_t** argv) {
   return result;
 }
 
+#if defined(MOZ_LAUNCHER_PROCESS)
+static mozilla::Maybe<bool> RunAsLauncherProcess(
+    mozilla::LauncherRegistryInfo& aRegInfo, int& argc, wchar_t** argv) {
+#else
 static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
-  
-  
-  
+#endif
+
+
+
   if (mozilla::CheckArg(argc, argv, L"contentproc",
                         static_cast<const wchar_t**>(nullptr),
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND) {
@@ -190,9 +195,8 @@ static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
       forceLauncher ? mozilla::LauncherRegistryInfo::CheckOption::Force
                     : mozilla::LauncherRegistryInfo::CheckOption::Default;
 
-  mozilla::LauncherRegistryInfo regInfo;
   mozilla::LauncherResult<mozilla::LauncherRegistryInfo::ProcessType>
-      runAsType = regInfo.Check(desiredType, checkOption);
+      runAsType = aRegInfo.Check(desiredType, checkOption);
 
   if (runAsType.isErr()) {
     mozilla::HandleLauncherError(runAsType);
@@ -228,8 +232,20 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
     SetLauncherErrorForceEventLog();
   }
 
+#if defined(MOZ_LAUNCHER_PROCESS)
+  LauncherRegistryInfo regInfo;
+  Maybe<bool> runAsLauncher = RunAsLauncherProcess(regInfo, argc, argv);
+#else
   Maybe<bool> runAsLauncher = RunAsLauncherProcess(argc, argv);
+#endif  
   if (!runAsLauncher || !runAsLauncher.value()) {
+#if defined(MOZ_LAUNCHER_PROCESS)
+    
+    LauncherVoidResult commitResult = regInfo.Commit();
+    if (commitResult.isErr()) {
+      mozilla::HandleLauncherError(commitResult);
+    }
+#endif  
     return Nothing();
   }
 
@@ -282,6 +298,15 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
 
     return Some(0);
   }
+
+#if defined(MOZ_LAUNCHER_PROCESS)
+  
+  LauncherVoidResult commitResult = regInfo.Commit();
+  if (commitResult.isErr()) {
+    mozilla::HandleLauncherError(commitResult);
+    return Nothing();
+  }
+#endif  
 
   
   UniquePtr<wchar_t[]> cmdLine(MakeCommandLine(argc, argv));
