@@ -1198,12 +1198,28 @@ void js::Nursery::sweep(JSTracer* trc) {
 void js::Nursery::clear() {
 #if defined(JS_GC_ZEAL) || defined(JS_CRASH_DIAGNOSTICS)
   
-  for (unsigned i = currentStartChunk_; i < currentChunk_; ++i) {
+  unsigned firstClearChunk;
+  if (runtime()->hasZealMode(ZealMode::GenerationalGC)) {
+    
+    
+    
+    firstClearChunk = currentStartChunk_;
+  } else {
+    
+    
+    MOZ_ASSERT(currentStartChunk_ == 0);
+    firstClearChunk = 1;
+  }
+  for (unsigned i = firstClearChunk; i < currentChunk_; ++i) {
     chunk(i).poisonAfterEvict();
   }
+  
+  
+  if (currentChunk_ >= firstClearChunk) {
+    chunk(currentChunk_)
+        .poisonAfterEvict(position() - chunk(currentChunk_).start());
+  }
   MOZ_ASSERT(maxChunkCount() > 0);
-  chunk(currentChunk_)
-      .poisonAfterEvict(position() - chunk(currentChunk_).start());
 #endif
 
   
