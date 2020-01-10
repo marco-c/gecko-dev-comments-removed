@@ -172,6 +172,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   bool IsCached();
 
+  
+  
+  bool IsTargetable();
+
   const nsString& Name() const { return mName; }
   void GetName(nsAString& aName) { aName = mName; }
   bool NameEquals(const nsAString& aName) { return mName.Equals(aName); }
@@ -396,10 +400,6 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   
   bool CanAccess(BrowsingContext* aContext);
-
-  
-  
-  bool IsTargetable();
 
   
   void Unregister();
