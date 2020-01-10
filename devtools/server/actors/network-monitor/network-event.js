@@ -40,6 +40,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     };
 
     this._timings = {};
+    this._serverTimings = {};
     this._stackTrace = {};
 
     this._discardRequestBody = false;
@@ -49,6 +50,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
   _request: null,
   _response: null,
   _timings: null,
+  _serverTimings: null,
 
   
 
@@ -250,6 +252,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       timings: this._timings,
       totalTime: this._totalTime,
       offsets: this._offsets,
+      serverTimings: this._serverTimings,
     };
   },
 
@@ -525,7 +528,10 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
 
-  addEventTimings(total, timings, offsets) {
+
+
+
+  addEventTimings(total, timings, offsets, serverTimings) {
     
     if (!this.actorID) {
       return;
@@ -535,9 +541,28 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._timings = timings;
     this._offsets = offsets;
 
+    if (serverTimings) {
+      this._serverTimings = serverTimings;
+    }
+
     this.emit("network-event-update:event-timings", "eventTimings", {
       totalTime: total,
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+  addSeverTimings(serverTimings) {
+    if (serverTimings) {
+      this._serverTimings = serverTimings;
+    }
   },
 
   
