@@ -1108,6 +1108,17 @@ namespace gc {
 
 extern JS_PUBLIC_API JSObject* NewMemoryInfoObject(JSContext* cx);
 
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void FinalizeDeadNurseryObject(JSContext* cx,
+                                                    JSObject* obj);
+
 } 
 } 
 
