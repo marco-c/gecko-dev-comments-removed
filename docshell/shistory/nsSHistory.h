@@ -148,6 +148,9 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
  protected:
   virtual ~nsSHistory();
 
+  
+  mozilla::dom::BrowsingContext* mRootBC;
+
  private:
   friend class nsSHistoryObserver;
 
@@ -207,8 +210,6 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;
 
-  
-  mozilla::dom::BrowsingContext* mRootBC;
   nsID mRootDocShellID;
 
   

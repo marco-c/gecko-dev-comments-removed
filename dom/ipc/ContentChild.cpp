@@ -3479,7 +3479,7 @@ bool ContentChild::DeallocPSessionStorageObserverChild(
 }
 
 PSHEntryChild* ContentChild::AllocPSHEntryChild(
-    const PSHEntryOrSharedID& aEntryOrSharedID) {
+    PSHistoryChild* aSHistory, const PSHEntryOrSharedID& aEntryOrSharedID) {
   
   
   
