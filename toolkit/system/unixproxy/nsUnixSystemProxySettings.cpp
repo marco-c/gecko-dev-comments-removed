@@ -175,10 +175,9 @@ static nsresult GetProxyFromEnvironment(const nsACString& aScheme,
 
   
   
-  bool isHTTP;
-  rv = proxyURI->SchemeIs("http", &isHTTP);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!isHTTP) return NS_ERROR_UNKNOWN_PROTOCOL;
+  if (!proxyURI->SchemeIs("http")) {
+    return NS_ERROR_UNKNOWN_PROTOCOL;
+  }
 
   nsAutoCString proxyHost;
   rv = proxyURI->GetHost(proxyHost);
