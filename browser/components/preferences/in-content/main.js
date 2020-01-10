@@ -417,21 +417,24 @@ var gMainPane = {
     setEventListener("manageBrowserLanguagesButton", "command", function() {
       gMainPane.showBrowserLanguages({ search: false });
     });
-    setEventListener("checkForUpdatesButton", "command", function() {
-      gAppUpdater.checkForUpdates();
-    });
-    setEventListener("downloadAndInstallButton", "command", function() {
-      gAppUpdater.startDownload();
-    });
-    setEventListener("updateButton", "command", function() {
-      gAppUpdater.buttonRestartAfterDownload();
-    });
-    setEventListener("checkForUpdatesButton2", "command", function() {
-      gAppUpdater.checkForUpdates();
-    });
-    setEventListener("checkForUpdatesButton3", "command", function() {
-      gAppUpdater.checkForUpdates();
-    });
+    if (AppConstants.MOZ_UPDATER) {
+      
+      setEventListener("checkForUpdatesButton", "command", function() {
+        gAppUpdater.checkForUpdates();
+      });
+      setEventListener("downloadAndInstallButton", "command", function() {
+        gAppUpdater.startDownload();
+      });
+      setEventListener("updateButton", "command", function() {
+        gAppUpdater.buttonRestartAfterDownload();
+      });
+      setEventListener("checkForUpdatesButton2", "command", function() {
+        gAppUpdater.checkForUpdates();
+      });
+      setEventListener("checkForUpdatesButton3", "command", function() {
+        gAppUpdater.checkForUpdates();
+      });
+    }
 
     
     setEventListener(
