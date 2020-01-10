@@ -7,9 +7,13 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SpecialPowersAPI", "bindDOMWindowUtils"];
+var EXPORTED_SYMBOLS = ["SpecialPowersChild"];
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const { ExtensionUtils } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionUtils.jsm"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -141,9 +145,27 @@ SPConsoleListener.prototype = {
   ]),
 };
 
-class SpecialPowersAPI extends JSWindowActorChild {
+class SpecialPowersChild extends JSWindowActorChild {
   constructor() {
     super();
+
+    this._windowID = null;
+    this.DOMWindowUtils = null;
+
+    this._encounteredCrashDumpFiles = [];
+    this._unexpectedCrashDumpFiles = {};
+    this._crashDumpDir = null;
+    this._serviceWorkerRegistered = false;
+    this._serviceWorkerCleanUpRequests = new Map();
+    Object.defineProperty(this, "Components", {
+      configurable: true,
+      enumerable: true,
+      value: this.getFullComponents(),
+    });
+    this._createFilesOnError = null;
+    this._createFilesOnSuccess = null;
+
+    this._messageListeners = new ExtensionUtils.DefaultMap(() => new Set());
 
     this._consoleListeners = [];
     this._encounteredCrashDumpFiles = [];
@@ -161,13 +183,103 @@ class SpecialPowersAPI extends JSWindowActorChild {
     this._extensionListeners = null;
   }
 
+  handleEvent(aEvent) {
+    
+    
+  }
+
+  actorCreated() {
+    this.attachToWindow();
+  }
+
+  attachToWindow() {
+    let window = this.contentWindow;
+    if (!window.wrappedJSObject.SpecialPowers) {
+      this._windowID = window.windowUtils.currentInnerWindowID;
+      this.DOMWindowUtils = bindDOMWindowUtils(window);
+
+      window.SpecialPowers = this;
+      window.wrappedJSObject.SpecialPowers = this;
+      if (this.IsInNestedFrame) {
+        this.addPermission("allowXULXBL", true, window.document);
+      }
+    }
+  }
+
+  get window() {
+    return this.contentWindow;
+  }
+
   
   toJSON() {
     return {};
   }
 
+  toString() {
+    return "[SpecialPowers]";
+  }
+  sanityCheck() {
+    return "foo";
+  }
+
+  _addMessageListener(msgname, listener) {
+    this._messageListeners.get(msgname).add(listener);
+  }
+
+  _removeMessageListener(msgname, listener) {
+    this._messageListeners.get(msgname).delete(listener);
+  }
+
   receiveMessage(message) {
+    if (this._messageListeners.has(message.name)) {
+      for (let listener of this._messageListeners.get(message.name)) {
+        try {
+          if (typeof listener === "function") {
+            listener(message);
+          } else {
+            listener.receiveMessage(message);
+          }
+        } catch (e) {
+          Cu.reportError(e);
+        }
+      }
+    }
+
     switch (message.name) {
+      case "SPProcessCrashService":
+        if (message.json.type == "crash-observed") {
+          for (let e of message.json.dumpIDs) {
+            this._encounteredCrashDumpFiles.push(e.id + "." + e.extension);
+          }
+        }
+        break;
+
+      case "SPServiceWorkerRegistered":
+        this._serviceWorkerRegistered = message.data.registered;
+        break;
+
+      case "SpecialPowers.FilesCreated":
+        var createdHandler = this._createFilesOnSuccess;
+        this._createFilesOnSuccess = null;
+        this._createFilesOnError = null;
+        if (createdHandler) {
+          createdHandler(Cu.cloneInto(message.data, this.contentWindow));
+        }
+        break;
+
+      case "SpecialPowers.FilesError":
+        var errorHandler = this._createFilesOnError;
+        this._createFilesOnSuccess = null;
+        this._createFilesOnError = null;
+        if (errorHandler) {
+          errorHandler(message.data);
+        }
+        break;
+
+      case "Spawn":
+        let { task, args, caller, taskId } = message.data;
+        return this._spawnTask(task, args, caller, taskId);
+
       case "Assert":
         {
           
@@ -191,6 +303,16 @@ class SpecialPowersAPI extends JSWindowActorChild {
         break;
     }
     return undefined;
+  }
+
+  registerProcessCrashObservers() {
+    this.sendAsyncMessage("SPProcessCrashService", { op: "register-observer" });
+  }
+
+  unregisterProcessCrashObservers() {
+    this.sendAsyncMessage("SPProcessCrashService", {
+      op: "unregister-observer",
+    });
   }
 
   
@@ -288,6 +410,69 @@ class SpecialPowersAPI extends JSWindowActorChild {
 
   get MockPermissionPrompt() {
     return MockPermissionPrompt;
+  }
+
+  quit() {
+    this.sendAsyncMessage("SpecialPowers.Quit", {});
+  }
+
+  
+  
+  
+  
+  createFiles(fileRequests, onCreation, onError) {
+    return this.sendQuery("SpecialPowers.CreateFiles", fileRequests).then(
+      onCreation,
+      onError
+    );
+  }
+
+  
+  
+  removeFiles() {
+    this.sendAsyncMessage("SpecialPowers.RemoveFiles", {});
+  }
+
+  executeAfterFlushingMessageQueue(aCallback) {
+    return this.sendQuery("Ping").then(aCallback);
+  }
+
+  async registeredServiceWorkers() {
+    
+    
+    
+    if (
+      !Services.prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false)
+    ) {
+      let swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+        Ci.nsIServiceWorkerManager
+      );
+      let regs = swm.getAllRegistrations();
+
+      
+      let workers = new Array(regs.length);
+      for (let i = 0; i < workers.length; ++i) {
+        let { scope, scriptSpec } = regs.queryElementAt(
+          i,
+          Ci.nsIServiceWorkerRegistrationInfo
+        );
+        workers[i] = { scope, scriptSpec };
+      }
+
+      return workers;
+    }
+
+    
+    
+    if (this._serviceWorkerRegistered) {
+      
+      
+      
+      let { workers } = await this.sendQuery("SPCheckServiceWorkers");
+      return workers;
+    }
+
+    return [];
   }
 
   
@@ -1604,10 +1789,8 @@ class SpecialPowersAPI extends JSWindowActorChild {
   }
 
   get isDebugBuild() {
-    delete SpecialPowersAPI.prototype.isDebugBuild;
-
-    var debug = Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2);
-    return (SpecialPowersAPI.prototype.isDebugBuild = debug.isDebugBuild);
+    return Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2)
+      .isDebugBuild;
   }
   assertionCount() {
     var debugsvc = Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2);
@@ -2027,7 +2210,7 @@ class SpecialPowersAPI extends JSWindowActorChild {
   }
 }
 
-SpecialPowersAPI.prototype._proxiedObservers = {
+SpecialPowersChild.prototype._proxiedObservers = {
   "specialpowers-http-notify-request": function(aMessage) {
     let uri = aMessage.json.uri;
     Services.obs.notifyObservers(
@@ -2042,7 +2225,7 @@ SpecialPowersAPI.prototype._proxiedObservers = {
   },
 };
 
-SpecialPowersAPI.prototype.permissionObserverProxy = {
+SpecialPowersChild.prototype.permissionObserverProxy = {
   
   
   
@@ -2055,7 +2238,7 @@ SpecialPowersAPI.prototype.permissionObserverProxy = {
   },
 };
 
-SpecialPowersAPI.prototype._permissionObserver = {
+SpecialPowersChild.prototype._permissionObserver = {
   _self: null,
   _lastPermission: {},
   _callBack: null,
@@ -2102,17 +2285,14 @@ SpecialPowersAPI.prototype._permissionObserver = {
   },
 };
 
-SpecialPowersAPI.prototype.EARLY_BETA_OR_EARLIER =
+SpecialPowersChild.prototype.EARLY_BETA_OR_EARLIER =
   AppConstants.EARLY_BETA_OR_EARLIER;
 
 
 
 
 
-Object.assign(SpecialPowersAPI.prototype, {
+Object.assign(SpecialPowersChild.prototype, {
   _permissionsUndoStack: [],
   _pendingPermissions: [],
 });
-
-this.SpecialPowersAPI = SpecialPowersAPI;
-this.bindDOMWindowUtils = bindDOMWindowUtils;
