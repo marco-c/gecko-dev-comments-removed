@@ -7,6 +7,8 @@
 
 
 #include "nsFlexContainerFrame.h"
+
+#include "nsBlockFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsDisplayList.h"
