@@ -393,13 +393,7 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
       mPendingLayersObserverEpoch{0},
       mPendingDocShellBlockers(0),
       mCancelContentJSEpoch(0),
-      mWidgetNativeData(0)
-#ifdef XP_WIN
-      ,
-      mWindowSupportsProtectedMedia(true),
-      mWindowSupportsProtectedMediaChecked(false)
-#endif
-{
+      mWidgetNativeData(0) {
   mozilla::HoldJSObjects(this);
 
   nsWeakPtr weakPtrThis(do_GetWeakReference(
@@ -3918,23 +3912,38 @@ bool BrowserChild::UpdateSessionStore(uint32_t aFlushId, bool aIsFinal) {
 }
 
 #ifdef XP_WIN
-
-
-void BrowserChild::UpdateIsWindowSupportingProtectedMedia(bool aIsSupported) {
-  mWindowSupportsProtectedMediaChecked = true;
-  mWindowSupportsProtectedMedia = aIsSupported;
-}
-
-
-
-bool BrowserChild::RequiresIsWindowSupportingProtectedMediaCheck(
-    bool& aIsSupported) {
-  if (mWindowSupportsProtectedMediaChecked) {
-    aIsSupported = mWindowSupportsProtectedMedia;
-    return false;
-  } else {
-    return true;
+RefPtr<PBrowserChild::IsWindowSupportingProtectedMediaPromise>
+BrowserChild::DoesWindowSupportProtectedMedia() {
+  MOZ_ASSERT(
+      NS_IsMainThread(),
+      "Protected media support check should be done on main thread only.");
+  if (mWindowSupportsProtectedMedia) {
+    
+    return IsWindowSupportingProtectedMediaPromise::CreateAndResolve(
+        mWindowSupportsProtectedMedia.value(), __func__);
   }
+  RefPtr<BrowserChild> self = this;
+  
+  
+  return SendIsWindowSupportingProtectedMedia(ChromeOuterWindowID())
+      ->Then(
+          GetCurrentThreadSerialEventTarget(), __func__,
+          [self](bool isSupported) {
+            
+            
+            MOZ_ASSERT_IF(
+                self->mWindowSupportsProtectedMedia,
+                self->mWindowSupportsProtectedMedia.value() == isSupported);
+            
+            
+            self->mWindowSupportsProtectedMedia = Some(isSupported);
+            return IsWindowSupportingProtectedMediaPromise::CreateAndResolve(
+                self->mWindowSupportsProtectedMedia.value(), __func__);
+          },
+          [](ResponseRejectReason reason) {
+            return IsWindowSupportingProtectedMediaPromise::CreateAndReject(
+                reason, __func__);
+          });
 }
 #endif
 

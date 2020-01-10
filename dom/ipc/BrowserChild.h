@@ -662,8 +662,15 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   bool UpdateSessionStore(uint32_t aFlushId, bool aIsFinal = false);
 
 #ifdef XP_WIN
-  void UpdateIsWindowSupportingProtectedMedia(bool aIsSupported);
-  bool RequiresIsWindowSupportingProtectedMediaCheck(bool& aIsSupported);
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<IsWindowSupportingProtectedMediaPromise>
+  DoesWindowSupportProtectedMedia();
 #endif
 
  protected:
@@ -913,8 +920,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   ScreenRect mRemoteDocumentRect;
 
 #ifdef XP_WIN
-  bool mWindowSupportsProtectedMedia;
-  bool mWindowSupportsProtectedMediaChecked;
+  
+  Maybe<bool> mWindowSupportsProtectedMedia;
 #endif
 
   
