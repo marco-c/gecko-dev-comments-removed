@@ -1,4 +1,4 @@
-import { StorageArea, storage as defaultArea } from "std:kv-storage";
+import defaultArea, { StorageArea } from "std:kv-storage";
 import { assertAsyncIteratorEquals, assertAsyncIteratorCustomEquals } from "./equality-asserters.js";
 
 
