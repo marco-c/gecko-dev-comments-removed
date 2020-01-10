@@ -433,6 +433,9 @@ class AudioCallbackDriver : public GraphDriver,
 
   void CompleteAudioContextOperations(AsyncCubebOperation aOperation);
 
+  
+  TimeDuration AudioOutputLatency();
+
  private:
   
   void RemoveMixerCallback();

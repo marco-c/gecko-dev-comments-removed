@@ -453,6 +453,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
   uint32_t AudioOutputChannelCount() const { return mOutputChannels; }
 
+  double AudioOutputLatency();
+
   
 
 
@@ -950,6 +952,12 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   GraphTime mNextMainThreadGraphTime = 0;
+
+  
+
+
+
+  double mAudioOutputLatency;
 };
 
 }  
