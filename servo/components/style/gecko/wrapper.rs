@@ -706,44 +706,6 @@ impl<'le> GeckoElement<'le> {
         !self.xbl_binding_with_content().is_none()
     }
 
-    
-    
-    
-    
-    
-    fn xbl_binding_parent(&self) -> Option<Self> {
-        if self.is_xul_element() {
-            
-            
-            
-            unsafe {
-                bindings::Gecko_GetBindingParent(self.0)
-                    .as_ref()
-                    .map(GeckoElement)
-            }
-        } else {
-            let binding_parent =
-                unsafe { self.non_xul_xbl_binding_parent().as_ref() }.map(GeckoElement);
-
-            debug_assert!(
-                binding_parent ==
-                    unsafe {
-                        bindings::Gecko_GetBindingParent(self.0)
-                            .as_ref()
-                            .map(GeckoElement)
-                    }
-            );
-            binding_parent
-        }
-    }
-
-    #[inline]
-    fn non_xul_xbl_binding_parent(&self) -> *mut RawGeckoElement {
-        debug_assert!(!self.is_xul_element());
-        self.extended_slots()
-            .map_or(ptr::null_mut(), |slots| slots._base.mBindingParent.mRawPtr)
-    }
-
     #[inline]
     fn namespace_id(&self) -> i32 {
         self.as_node().node_info().mInner.mNamespaceID
@@ -865,19 +827,11 @@ impl<'le> GeckoElement<'le> {
         return self.flags() & (NODE_IS_NATIVE_ANONYMOUS_ROOT as u32) != 0;
     }
 
-    
     #[inline]
     fn is_in_anonymous_subtree(&self) -> bool {
-        if self.is_in_native_anonymous_subtree() {
-            return true;
+        unsafe {
+            bindings::Gecko_IsInAnonymousSubtree(self.0)
         }
-
-        let binding_parent = match self.xbl_binding_parent() {
-            Some(p) => p,
-            None => return false,
-        };
-
-        binding_parent.shadow_root().is_none()
     }
 
     
