@@ -2860,10 +2860,8 @@ mozilla::ipc::IPCResult ContentParent::RecvGetExternalClipboardFormats(
 
 mozilla::ipc::IPCResult ContentParent::RecvPlaySound(const URIParams& aURI) {
   nsCOMPtr<nsIURI> soundURI = DeserializeURI(aURI);
-  bool isChrome = false;
   
-  if (!soundURI || NS_FAILED(soundURI->SchemeIs("chrome", &isChrome)) ||
-      !isChrome) {
+  if (!soundURI || !soundURI->SchemeIs("chrome")) {
     
     return IPC_FAIL_NO_REASON(this);
   }
