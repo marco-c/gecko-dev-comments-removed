@@ -792,19 +792,22 @@ function dateTimeFormatLocaleData() {
 
 
 
-function dateTimeFormatFormatToBind(date) {
+function createDateTimeFormatFormat(dtf) {
     
-    var dtf = this;
+    
+    return function(date) {
+        
 
-    
-    assert(IsObject(dtf), "dateTimeFormatFormatToBind called with non-Object");
-    assert(GuardToDateTimeFormat(dtf) !== null, "dateTimeFormatFormatToBind called with non-DateTimeFormat");
+        
+        assert(IsObject(dtf), "dateTimeFormatFormatToBind called with non-Object");
+        assert(GuardToDateTimeFormat(dtf) !== null, "dateTimeFormatFormatToBind called with non-DateTimeFormat");
 
-    
-    var x = (date === undefined) ? std_Date_now() : ToNumber(date);
+        
+        var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
-    
-    return intl_FormatDateTime(dtf, x,  false);
+        
+        return intl_FormatDateTime(dtf, x,  false);
+    };
 }
 
 
@@ -830,10 +833,7 @@ function $Intl_DateTimeFormat_format_get() {
     
     if (internals.boundFormat === undefined) {
         
-        var F = callFunction(FunctionBind, dateTimeFormatFormatToBind, dtf);
-
-        
-        internals.boundFormat = F;
+        internals.boundFormat = createDateTimeFormatFormat(dtf);
     }
 
     
