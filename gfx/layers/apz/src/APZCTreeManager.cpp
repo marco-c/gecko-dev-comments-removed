@@ -431,6 +431,9 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
             ++asyncZoomContainerNestingDepth;
           }
 
+          
+          
+          
           if (aLayerMetrics.Metrics().IsRootContent() &&
               asyncZoomContainerNestingDepth == 0) {
             haveRootContentOutsideAsyncZoomContainer = true;
@@ -3158,8 +3161,13 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
   if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
     
     
+    bool visualTransformIsInheritedFromAncestor =
+        apzc->IsRootContent() &&        
+
+        mUsingAsyncZoomContainer &&     
+        !aNode->IsAsyncZoomContainer(); 
     AsyncTransformComponents components =
-        mUsingAsyncZoomContainer && apzc->IsRootContent()
+        visualTransformIsInheritedFromAncestor
             ? AsyncTransformComponents{AsyncTransformComponent::eLayout}
             : LayoutAndVisual;
     return aNode->GetTransform() *
