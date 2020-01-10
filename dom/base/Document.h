@@ -574,6 +574,9 @@ class Document : public nsINode,
     return mContentBlockingAllowListPrincipal;
   }
 
+  already_AddRefed<nsIPrincipal> RecomputeContentBlockingAllowListPrincipal(
+      nsIURI* aURIBeingLoaded, const OriginAttributes& aAttrs);
+
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
   EventListenerManager* GetOrCreateListenerManager() override;

@@ -2841,10 +2841,23 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   GetClientSetCorsPreflightParameters(optionalCorsPreflightArgs);
 
   
+  
   nsCOMPtr<nsIURI> uri;
   GetTopWindowURI(mURI, getter_AddRefs(uri));
 
   SerializeURI(mTopWindowURI, openArgs.topWindowURI());
+
+  if (mContentBlockingAllowListPrincipal) {
+    PrincipalInfo principalInfo;
+    rv = PrincipalToPrincipalInfo(mContentBlockingAllowListPrincipal,
+                                  &principalInfo);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    openArgs.contentBlockingAllowListPrincipal() = principalInfo;
+  } else {
+    openArgs.contentBlockingAllowListPrincipal() = void_t();
+  }
 
   openArgs.preflightArgs() = optionalCorsPreflightArgs;
 
