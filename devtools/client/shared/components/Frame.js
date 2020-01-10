@@ -19,6 +19,7 @@ const {
   getSourceMappedFile,
 } = require("devtools/client/shared/source-utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
+const { MESSAGE_SOURCE } = require("devtools/client/webconsole/constants");
 
 const l10n = new LocalizationHelper(
   "devtools/client/locales/components.properties"
@@ -51,6 +52,8 @@ class Frame extends Component {
       showFullSourceUrl: PropTypes.bool,
       
       sourceMapService: PropTypes.object,
+      
+      messageSource: PropTypes.string,
     };
   }
 
@@ -131,6 +134,7 @@ class Frame extends Component {
       showHost,
       showEmptyPathAsHost,
       showFullSourceUrl,
+      messageSource,
     } = this.props;
 
     if (this.state && this.state.isSourceMapped && this.state.frame) {
@@ -267,13 +271,21 @@ class Frame extends Component {
 
     
     
+    let tooltipMessage;
+    if (messageSource && messageSource === MESSAGE_SOURCE.CSS) {
+      tooltipMessage = l10n.getFormatStr(
+        "frame.viewsourceinstyleeditor",
+        tooltip
+      );
+    } else {
+      tooltipMessage = l10n.getFormatStr("frame.viewsourceindebugger", tooltip);
+    }
+
     const sourceInnerEl = dom.span(
       {
         key: "source-inner",
         className: "frame-link-source-inner",
-        title: isLinkable
-          ? l10n.getFormatStr("frame.viewsourceindebugger", tooltip)
-          : tooltip,
+        title: isLinkable ? tooltipMessage : tooltip,
       },
       sourceElements
     );
