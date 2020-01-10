@@ -784,7 +784,12 @@
           if (this.oneOffButtons) {
             width = Math.max(width, this.oneOffButtons.buttonWidth * 3);
           }
+
+          
+          
+          
           popup.style.minWidth = width + "px";
+          popup.setAttribute("width", width);
 
           popup._invalidate();
 
