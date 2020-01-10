@@ -13,11 +13,11 @@ use cvt;
 
 
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 use libc::{SOCK_CLOEXEC, SOCK_NONBLOCK};
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "android")))]
 const SOCK_CLOEXEC: c_int = 0;
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "android")))]
 const SOCK_NONBLOCK: c_int = 0;
 
 pub struct Socket {
@@ -32,7 +32,7 @@ impl Socket {
             
             
             
-            if cfg!(target_os = "linux") {
+            if cfg!(target_os = "linux") || cfg!(target_os = "android") {
                 let flags = ty | SOCK_CLOEXEC | SOCK_NONBLOCK;
                 match cvt(libc::socket(libc::AF_UNIX, flags, 0)) {
                     Ok(fd) => return Ok(Socket { fd: fd }),
@@ -54,7 +54,7 @@ impl Socket {
             let mut fds = [0, 0];
 
             
-            if cfg!(target_os = "linux") {
+            if cfg!(target_os = "linux") || cfg!(target_os = "android") {
                 let flags = ty | SOCK_CLOEXEC | SOCK_NONBLOCK;
                 match cvt(libc::socketpair(libc::AF_UNIX, flags, 0, fds.as_mut_ptr())) {
                     Ok(_) => {

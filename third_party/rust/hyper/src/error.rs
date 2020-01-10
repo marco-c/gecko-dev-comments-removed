@@ -98,13 +98,6 @@ pub(crate) enum Parse {
 
 impl Error {
     
-    
-    
-    
-    
-    
-
-    
     pub fn is_parse(&self) -> bool {
         match self.inner.kind {
             Kind::Parse(_) => true,
@@ -137,6 +130,11 @@ impl Error {
     
     pub fn is_closed(&self) -> bool {
         self.inner.kind == Kind::Closed
+    }
+
+    
+    pub fn is_connect(&self) -> bool {
+        self.inner.kind == Kind::Connect
     }
 
     
@@ -258,8 +256,8 @@ impl Error {
         Error::new(Kind::Shutdown, Some(Box::new(cause)))
     }
 
-    pub(crate) fn new_execute() -> Error {
-        Error::new(Kind::Execute, None)
+    pub(crate) fn new_execute<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::Execute, Some(cause.into()))
     }
 
     pub(crate) fn new_h2(cause: ::h2::Error) -> Error {
@@ -269,10 +267,12 @@ impl Error {
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Error")
-            .field("kind", &self.inner.kind)
-            .field("cause", &self.inner.cause)
-            .finish()
+        let mut f = f.debug_struct("Error");
+        f.field("kind", &self.inner.kind);
+        if let Some(ref cause) = self.inner.cause {
+            f.field("cause", cause);
+        }
+        f.finish()
     }
 }
 
@@ -367,6 +367,12 @@ impl From<http::status::InvalidStatusCode> for Parse {
 
 impl From<http::uri::InvalidUri> for Parse {
     fn from(_: http::uri::InvalidUri) -> Parse {
+        Parse::Uri
+    }
+}
+
+impl From<http::uri::InvalidUriBytes> for Parse {
+    fn from(_: http::uri::InvalidUriBytes) -> Parse {
         Parse::Uri
     }
 }

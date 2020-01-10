@@ -80,16 +80,52 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::fmt;
 use std::io;
 use std::marker::PhantomData;
 use std::mem;
 use std::panic;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, Mutex};
 use std::thread;
+
+use sync::WaitGroup;
 
 type SharedVec<T> = Arc<Mutex<Vec<T>>>;
 type SharedOption<T> = Arc<Mutex<Option<T>>>;
+
 
 
 
@@ -114,10 +150,10 @@ pub fn scope<'env, F, R>(f: F) -> thread::Result<R>
 where
     F: FnOnce(&Scope<'env>) -> R,
 {
-    let (tx, rx) = mpsc::channel();
+    let wg = WaitGroup::new();
     let scope = Scope::<'env> {
         handles: SharedVec::default(),
-        chan: tx,
+        wait_group: wg.clone(),
         _marker: PhantomData,
     };
 
@@ -125,8 +161,8 @@ where
     let result = panic::catch_unwind(panic::AssertUnwindSafe(|| f(&scope)));
 
     
-    drop(scope.chan);
-    let _ = rx.recv();
+    drop(scope.wait_group);
+    wg.wait();
 
     
     let panics: Vec<_> = {
@@ -163,7 +199,7 @@ pub struct Scope<'env> {
     handles: SharedVec<SharedOption<thread::JoinHandle<()>>>,
 
     
-    chan: mpsc::Sender<()>,
+    wait_group: WaitGroup,
 
     
     _marker: PhantomData<&'env mut &'env ()>,
@@ -172,6 +208,27 @@ pub struct Scope<'env> {
 unsafe impl<'env> Sync for Scope<'env> {}
 
 impl<'env> Scope<'env> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -191,6 +248,18 @@ impl<'env> Scope<'env> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn builder<'scope>(&'scope self) -> ScopedThreadBuilder<'scope, 'env> {
         ScopedThreadBuilder {
             scope: self,
@@ -207,6 +276,37 @@ impl<'env> fmt::Debug for Scope<'env> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct ScopedThreadBuilder<'scope, 'env: 'scope> {
     scope: &'scope Scope<'env>,
@@ -216,17 +316,74 @@ pub struct ScopedThreadBuilder<'scope, 'env: 'scope> {
 impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn name(mut self, name: String) -> ScopedThreadBuilder<'scope, 'env> {
         self.builder = self.builder.name(name);
         self
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn stack_size(mut self, size: usize) -> ScopedThreadBuilder<'scope, 'env> {
         self.builder = self.builder.stack_size(size);
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn spawn<F, T>(self, f: F) -> io::Result<ScopedJoinHandle<'scope, T>>
     where
@@ -244,7 +401,7 @@ impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
             
             let scope = Scope::<'env> {
                 handles: Arc::clone(&self.scope.handles),
-                chan: self.scope.chan.clone(),
+                wait_group: self.scope.wait_group.clone(),
                 _marker: PhantomData,
             };
 
@@ -321,6 +478,22 @@ impl<'scope, T> ScopedJoinHandle<'scope, T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn join(self) -> thread::Result<T> {
         
         
@@ -332,6 +505,15 @@ impl<'scope, T> ScopedJoinHandle<'scope, T> {
             .map(|()| self.result.lock().unwrap().take().unwrap())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

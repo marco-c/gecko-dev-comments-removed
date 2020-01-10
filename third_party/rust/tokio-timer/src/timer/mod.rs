@@ -29,32 +29,38 @@
 
 
 
+
+
 #![allow(deprecated)]
 
+mod atomic_stack;
 mod entry;
 mod handle;
-mod level;
 mod now;
 mod registration;
+mod stack;
 
+use self::atomic_stack::AtomicStack;
 use self::entry::Entry;
-use self::level::{Level, Expiration};
+use self::stack::Stack;
 
-pub use self::handle::{Handle, with_default};
+pub(crate) use self::handle::HandlePriv;
+pub use self::handle::{with_default, Handle};
 pub use self::now::{Now, SystemNow};
 pub(crate) use self::registration::Registration;
 
-use Error;
 use atomic::AtomicU64;
+use wheel;
+use Error;
 
-use tokio_executor::park::{Park, Unpark, ParkThread};
+use tokio_executor::park::{Park, ParkThread, Unpark};
 
-use std::{cmp, fmt};
-use std::time::{Duration, Instant};
-use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::SeqCst;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 use std::usize;
+use std::{cmp, fmt};
 
 
 
@@ -125,19 +131,7 @@ pub struct Timer<T, N = SystemNow> {
     inner: Arc<Inner>,
 
     
-    elapsed: u64,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    levels: Vec<Level>,
+    wheel: wheel::Wheel<Stack>,
 
     
     park: T,
@@ -165,19 +159,11 @@ pub(crate) struct Inner {
     num: AtomicUsize,
 
     
-    process: entry::AtomicStack,
+    process: AtomicStack,
 
     
     unpark: Box<Unpark>,
 }
-
-
-
-
-const NUM_LEVELS: usize = 6;
-
-
-const MAX_DURATION: u64 = 1 << (6 * NUM_LEVELS);
 
 
 const MAX_TIMEOUTS: usize = usize::MAX >> 1;
@@ -185,7 +171,8 @@ const MAX_TIMEOUTS: usize = usize::MAX >> 1;
 
 
 impl<T> Timer<T>
-where T: Park
+where
+    T: Park,
 {
     
     
@@ -215,8 +202,9 @@ impl<T, N> Timer<T, N> {
 }
 
 impl<T, N> Timer<T, N>
-where T: Park,
-      N: Now,
+where
+    T: Park,
+    N: Now,
 {
     
     
@@ -225,14 +213,9 @@ where T: Park,
     pub fn new_with_now(park: T, mut now: N) -> Self {
         let unpark = Box::new(park.unpark());
 
-        let levels = (0..NUM_LEVELS)
-            .map(Level::new)
-            .collect();
-
         Timer {
             inner: Arc::new(Inner::new(now.now(), unpark)),
-            elapsed: 0,
-            levels,
+            wheel: wheel::Wheel::new(),
             park,
             now,
         }
@@ -277,101 +260,27 @@ where T: Park,
     }
 
     
-    fn next_expiration(&self) -> Option<Expiration> {
-        
-        for level in 0..NUM_LEVELS {
-            if let Some(expiration) = self.levels[level].next_expiration(self.elapsed) {
-                
-                
-                debug_assert!({
-                    let mut res = true;
-
-                    for l2 in (level+1)..NUM_LEVELS {
-                        if let Some(e2) = self.levels[l2].next_expiration(self.elapsed) {
-                            if e2.deadline < expiration.deadline {
-                                res = false;
-                            }
-                        }
-                    }
-
-                    res
-                });
-
-                return Some(expiration);
-            }
-        }
-
-        None
-    }
-
-    
-    fn expiration_instant(&self, expiration: &Expiration) -> Instant {
-        self.inner.start + Duration::from_millis(expiration.deadline)
+    fn expiration_instant(&self, when: u64) -> Instant {
+        self.inner.start + Duration::from_millis(when)
     }
 
     
     fn process(&mut self) {
-        let now = ms(self.now.now() - self.inner.start, Round::Down);
+        let now = ::ms(self.now.now() - self.inner.start, ::Round::Down);
+        let mut poll = wheel::Poll::new(now);
 
-        loop {
-            let expiration = match self.next_expiration() {
-                Some(expiration) => expiration,
-                None => break,
-            };
-
-            if expiration.deadline > now {
-                
-                break;
-            }
+        while let Some(entry) = self.wheel.poll(&mut poll, &mut ()) {
+            let when = entry.when_internal().expect("invalid internal entry state");
 
             
+            entry.fire(when);
+
             
-            self.process_expiration(&expiration);
-
-            self.set_elapsed(expiration.deadline);
+            entry.set_when_internal(None);
         }
 
-        self.set_elapsed(now);
-    }
-
-    fn set_elapsed(&mut self, when: u64) {
-        assert!(self.elapsed <= when, "elapsed={:?}; when={:?}", self.elapsed, when);
-
-        if when > self.elapsed {
-            self.elapsed = when;
-            self.inner.elapsed.store(when, SeqCst);
-        } else {
-            assert_eq!(self.elapsed, when);
-        }
-    }
-
-    fn process_expiration(&mut self, expiration: &Expiration) {
-        while let Some(entry) = self.pop_entry(expiration) {
-            if expiration.level == 0 {
-                let when = entry.when_internal()
-                    .expect("invalid internal entry state");
-
-                debug_assert_eq!(when, expiration.deadline);
-
-                
-                entry.fire(when);
-
-                
-                entry.set_when_internal(None);
-            } else {
-                let when = entry.when_internal()
-                    .expect("entry not tracked");
-
-                let next_level = expiration.level - 1;
-
-                self.levels[next_level]
-                    .add_entry(entry, when);
-            }
-        }
-    }
-
-    fn pop_entry(&mut self, expiration: &Expiration) -> Option<Arc<Entry>> {
-        self.levels[expiration.level].pop_entry_slot(expiration.slot)
+        
+        self.inner.elapsed.store(self.wheel.elapsed(), SeqCst);
     }
 
     
@@ -383,27 +292,24 @@ where T: Park,
                 (None, None) => {
                     
                 }
-                (Some(when), None) => {
+                (Some(_), None) => {
                     
-                    self.clear_entry(&entry, when);
+                    self.clear_entry(&entry);
                 }
                 (None, Some(when)) => {
                     
                     self.add_entry(entry, when);
                 }
-                (Some(curr), Some(next)) => {
-                    self.clear_entry(&entry, curr);
+                (Some(_), Some(next)) => {
+                    self.clear_entry(&entry);
                     self.add_entry(entry, next);
                 }
             }
         }
     }
 
-    fn clear_entry(&mut self, entry: &Arc<Entry>, when: u64) {
-        
-        let level = self.level_for(when);
-        self.levels[level].remove_entry(entry, when);
-
+    fn clear_entry(&mut self, entry: &Arc<Entry>) {
+        self.wheel.remove(entry, &mut ());
         entry.set_when_internal(None);
     }
 
@@ -411,48 +317,26 @@ where T: Park,
     
     
     fn add_entry(&mut self, entry: Arc<Entry>, when: u64) {
-        if when <= self.elapsed {
-            
-            
-            entry.set_when_internal(None);
-            entry.fire(when);
-
-            return;
-        } else if when - self.elapsed > MAX_DURATION {
-            
-            
-            entry.set_when_internal(None);
-            entry.error();
-
-            return;
-        }
-
-        
-        let level = self.level_for(when);
+        use wheel::InsertError;
 
         entry.set_when_internal(Some(when));
-        self.levels[level].add_entry(entry, when);
 
-        debug_assert!({
-            self.levels[level].next_expiration(self.elapsed)
-                .map(|e| e.deadline >= self.elapsed)
-                .unwrap_or(true)
-        });
+        match self.wheel.insert(when, entry, &mut ()) {
+            Ok(_) => {}
+            Err((entry, InsertError::Elapsed)) => {
+                
+                
+                entry.set_when_internal(None);
+                entry.fire(when);
+            }
+            Err((entry, InsertError::Invalid)) => {
+                
+                
+                entry.set_when_internal(None);
+                entry.error();
+            }
+        }
     }
-
-    fn level_for(&self, when: u64) -> usize {
-        level_for(self.elapsed, when)
-    }
-}
-
-fn level_for(elapsed: u64, when: u64) -> usize {
-    let masked = elapsed ^ when;
-
-    assert!(masked != 0, "elapsed={}; when={}", elapsed, when);
-
-    let leading_zeros = masked.leading_zeros() as usize;
-    let significant = 63 - leading_zeros;
-    significant / 6
 }
 
 impl Default for Timer<ParkThread, SystemNow> {
@@ -462,8 +346,9 @@ impl Default for Timer<ParkThread, SystemNow> {
 }
 
 impl<T, N> Park for Timer<T, N>
-where T: Park,
-      N: Now,
+where
+    T: Park,
+    N: Now,
 {
     type Unpark = T::Unpark;
     type Error = T::Error;
@@ -475,10 +360,10 @@ where T: Park,
     fn park(&mut self) -> Result<(), Self::Error> {
         self.process_queue();
 
-        match self.next_expiration() {
-            Some(expiration) => {
+        match self.wheel.poll_at() {
+            Some(when) => {
                 let now = self.now.now();
-                let deadline = self.expiration_instant(&expiration);
+                let deadline = self.expiration_instant(when);
 
                 if deadline > now {
                     self.park.park_timeout(deadline - now)?;
@@ -499,10 +384,10 @@ where T: Park,
     fn park_timeout(&mut self, duration: Duration) -> Result<(), Self::Error> {
         self.process_queue();
 
-        match self.next_expiration() {
-            Some(expiration) => {
+        match self.wheel.poll_at() {
+            Some(when) => {
                 let now = self.now.now();
-                let deadline = self.expiration_instant(&expiration);
+                let deadline = self.expiration_instant(when);
 
                 if deadline > now {
                     self.park.park_timeout(cmp::min(deadline - now, duration))?;
@@ -523,9 +408,18 @@ where T: Park,
 
 impl<T, N> Drop for Timer<T, N> {
     fn drop(&mut self) {
+        use std::u64;
+
         
         
         self.inner.process.shutdown();
+
+        
+        let mut poll = wheel::Poll::new(u64::MAX);
+
+        while let Some(entry) = self.wheel.poll(&mut poll, &mut ()) {
+            entry.error();
+        }
     }
 }
 
@@ -536,7 +430,7 @@ impl Inner {
         Inner {
             num: AtomicUsize::new(0),
             elapsed: AtomicU64::new(0),
-            process: entry::AtomicStack::new(),
+            process: AtomicStack::new(),
             start,
             unpark,
         }
@@ -585,69 +479,12 @@ impl Inner {
             return 0;
         }
 
-        ms(deadline - self.start, Round::Up)
+        ::ms(deadline - self.start, ::Round::Up)
     }
 }
 
 impl fmt::Debug for Inner {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Inner")
-            .finish()
-    }
-}
-
-enum Round {
-    Up,
-    Down,
-}
-
-
-
-
-
-
-#[inline]
-fn ms(duration: Duration, round: Round) -> u64 {
-    const NANOS_PER_MILLI: u32 = 1_000_000;
-    const MILLIS_PER_SEC: u64 = 1_000;
-
-    
-    let millis = match round {
-        Round::Up => (duration.subsec_nanos() + NANOS_PER_MILLI - 1) / NANOS_PER_MILLI,
-        Round::Down => duration.subsec_nanos() / NANOS_PER_MILLI,
-    };
-
-    duration.as_secs().saturating_mul(MILLIS_PER_SEC).saturating_add(millis as u64)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_level_for() {
-        for pos in 1..64 {
-            assert_eq!(0, level_for(0, pos), "level_for({}) -- binary = {:b}", pos, pos);
-        }
-
-        for level in 1..5 {
-            for pos in level..64 {
-                let a = pos * 64_usize.pow(level as u32);
-                assert_eq!(level, level_for(0, a as u64),
-                           "level_for({}) -- binary = {:b}", a, a);
-
-                if pos > level {
-                    let a = a - 1;
-                    assert_eq!(level, level_for(0, a as u64),
-                               "level_for({}) -- binary = {:b}", a, a);
-                }
-
-                if pos < 64 {
-                    let a = a + 1;
-                    assert_eq!(level, level_for(0, a as u64),
-                               "level_for({}) -- binary = {:b}", a, a);
-                }
-            }
-        }
+        fmt.debug_struct("Inner").finish()
     }
 }

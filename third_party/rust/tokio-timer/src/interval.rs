@@ -2,9 +2,9 @@ use Delay;
 
 use clock;
 
-use futures::{Future, Stream, Poll};
+use futures::{Future, Poll, Stream};
 
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 
 #[derive(Debug)]
@@ -28,7 +28,10 @@ impl Interval {
     
     
     pub fn new(at: Instant, duration: Duration) -> Interval {
-        assert!(duration > Duration::new(0, 0), "`duration` must be non-zero.");
+        assert!(
+            duration > Duration::new(0, 0),
+            "`duration` must be non-zero."
+        );
 
         Interval::new_with_delay(Delay::new(at), duration)
     }
@@ -47,10 +50,7 @@ impl Interval {
     }
 
     pub(crate) fn new_with_delay(delay: Delay, duration: Duration) -> Interval {
-        Interval {
-            delay,
-            duration,
-        }
+        Interval { delay, duration }
     }
 }
 

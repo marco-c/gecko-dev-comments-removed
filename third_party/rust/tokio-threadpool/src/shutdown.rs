@@ -1,9 +1,10 @@
-use pool::Pool;
-use sender::Sender;
+use task::Queue;
+use worker;
 
 use futures::{Future, Poll, Async};
-#[cfg(feature = "unstable-futures")]
-use futures2;
+use futures::task::AtomicTask;
+
+use std::sync::{Arc, Mutex};
 
 
 
@@ -18,12 +19,25 @@ use futures2;
 
 #[derive(Debug)]
 pub struct Shutdown {
-    pub(crate) inner: Sender,
+    inner: Arc<Mutex<Inner>>,
+}
+
+
+
+
+#[derive(Debug)]
+struct Inner {
+    
+    task: AtomicTask,
+    
+    completed: bool,
 }
 
 impl Shutdown {
-    fn inner(&self) -> &Pool {
-        &*self.inner.inner
+    pub(crate) fn new(trigger: &ShutdownTrigger) -> Shutdown {
+        Shutdown {
+            inner: trigger.inner.clone(),
+        }
     }
 }
 
@@ -32,32 +46,49 @@ impl Future for Shutdown {
     type Error = ();
 
     fn poll(&mut self) -> Poll<(), ()> {
-        use futures::task;
+        let inner = self.inner.lock().unwrap();
 
-        self.inner().shutdown_task.task1.register_task(task::current());
-
-        if !self.inner().is_shutdown() {
-            return Ok(Async::NotReady);
+        if !inner.completed {
+            inner.task.register();
+            Ok(Async::NotReady)
+        } else {
+            Ok(().into())
         }
-
-        Ok(().into())
     }
 }
 
-#[cfg(feature = "unstable-futures")]
-impl futures2::Future for Shutdown {
-    type Item = ();
-    type Error = ();
 
-    fn poll(&mut self, cx: &mut futures2::task::Context) -> futures2::Poll<(), ()> {
-        trace!("Shutdown::poll");
+#[derive(Debug)]
+pub(crate) struct ShutdownTrigger {
+    inner: Arc<Mutex<Inner>>,
+    workers: Arc<[worker::Entry]>,
+    queue: Arc<Queue>,
+}
 
-        self.inner().shutdown_task.task2.register(cx.waker());
+unsafe impl Send for ShutdownTrigger {}
+unsafe impl Sync for ShutdownTrigger {}
 
-        if 0 != self.inner().num_workers.load(Acquire) {
-            return Ok(futures2::Async::Pending);
+impl ShutdownTrigger {
+    pub(crate) fn new(workers: Arc<[worker::Entry]>, queue: Arc<Queue>) -> ShutdownTrigger {
+        ShutdownTrigger {
+            inner: Arc::new(Mutex::new(Inner {
+                task: AtomicTask::new(),
+                completed: false,
+            })),
+            workers,
+            queue,
         }
+    }
+}
 
-        Ok(().into())
+impl Drop for ShutdownTrigger {
+    fn drop(&mut self) {
+        
+        while self.queue.pop().is_some() {}
+
+        
+        let mut inner = self.inner.lock().unwrap();
+        inner.completed = true;
+        inner.task.notify();
     }
 }

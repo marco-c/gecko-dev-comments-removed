@@ -1,9 +1,14 @@
+use timer::{HandlePriv, Registration};
 use Error;
-use timer::Registration;
 
 use futures::{Future, Poll};
 
-use std::time::Instant;
+use std::time::{Duration, Instant};
+
+
+
+
+
 
 
 
@@ -17,18 +22,9 @@ use std::time::Instant;
 #[derive(Debug)]
 pub struct Delay {
     
-    deadline: Instant,
-
     
     
-    
-    
-    
-    
-    
-    
-    
-    registration: Option<Registration>,
+    registration: Registration,
 }
 
 impl Delay {
@@ -38,34 +34,33 @@ impl Delay {
     
     
     pub fn new(deadline: Instant) -> Delay {
-        Delay {
-            deadline,
-            registration: None,
-        }
+        let registration = Registration::new(deadline, Duration::from_millis(0));
+
+        Delay { registration }
     }
 
-    pub(crate) fn new_with_registration(
-        deadline: Instant,
-        registration: Registration) -> Delay
-    {
-        Delay {
-            deadline,
-            registration: Some(registration),
-        }
+    pub(crate) fn new_timeout(deadline: Instant, duration: Duration) -> Delay {
+        let registration = Registration::new(deadline, duration);
+        Delay { registration }
+    }
+
+    pub(crate) fn new_with_handle(deadline: Instant, handle: HandlePriv) -> Delay {
+        let mut registration = Registration::new(deadline, Duration::from_millis(0));
+        registration.register_with(handle);
+
+        Delay { registration }
     }
 
     
     pub fn deadline(&self) -> Instant {
-        self.deadline
+        self.registration.deadline()
     }
 
     
     
     
     pub fn is_elapsed(&self) -> bool {
-        self.registration.as_ref()
-            .map(|r| r.is_elapsed())
-            .unwrap_or(false)
+        self.registration.is_elapsed()
     }
 
     
@@ -76,21 +71,17 @@ impl Delay {
     
     
     pub fn reset(&mut self, deadline: Instant) {
-        self.deadline = deadline;
+        self.registration.reset(deadline);
+    }
 
-        if let Some(registration) = self.registration.as_ref() {
-            registration.reset(deadline);
-        }
+    pub(crate) fn reset_timeout(&mut self) {
+        self.registration.reset_timeout();
     }
 
     
     
     fn register(&mut self) {
-        if self.registration.is_some() {
-            return;
-        }
-
-        self.registration = Some(Registration::new(self.deadline));
+        self.registration.register();
     }
 }
 
@@ -102,7 +93,6 @@ impl Future for Delay {
         
         self.register();
 
-        self.registration.as_ref().unwrap()
-            .poll_elapsed()
+        self.registration.poll_elapsed()
     }
 }

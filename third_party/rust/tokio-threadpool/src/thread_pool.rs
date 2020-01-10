@@ -1,9 +1,12 @@
 use builder::Builder;
 use pool::Pool;
 use sender::Sender;
-use shutdown::Shutdown;
+use shutdown::{Shutdown, ShutdownTrigger};
 
-use futures::Future;
+use futures::{Future, Poll};
+use futures::sync::oneshot;
+
+use std::sync::Arc;
 
 
 
@@ -14,7 +17,13 @@ use futures::Future;
 
 #[derive(Debug)]
 pub struct ThreadPool {
-    pub(crate) inner: Option<Sender>,
+    inner: Option<Inner>,
+}
+
+#[derive(Debug)]
+struct Inner {
+    sender: Sender,
+    trigger: Arc<ShutdownTrigger>,
 }
 
 impl ThreadPool {
@@ -25,6 +34,18 @@ impl ThreadPool {
     
     pub fn new() -> ThreadPool {
         Builder::new().build()
+    }
+
+    pub(crate) fn new2(
+        pool: Arc<Pool>,
+        trigger: Arc<ShutdownTrigger>,
+    ) -> ThreadPool {
+        ThreadPool {
+            inner: Some(Inner {
+                sender: Sender { pool },
+                trigger,
+            }),
+        }
     }
 
     
@@ -68,13 +89,54 @@ impl ThreadPool {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn spawn_handle<F>(&self, future: F) -> SpawnHandle<F::Item, F::Error>
+    where 
+        F: Future + Send + 'static,
+        F::Item: Send + 'static,
+        F::Error: Send + 'static,
+    {
+        SpawnHandle(oneshot::spawn(future, self.sender()))
+    }
+
+    
+    
+    
+    
     pub fn sender(&self) -> &Sender {
-        self.inner.as_ref().unwrap()
+        &self.inner.as_ref().unwrap().sender
     }
 
     
     pub fn sender_mut(&mut self) -> &mut Sender {
-        self.inner.as_mut().unwrap()
+        &mut self.inner.as_mut().unwrap().sender
     }
 
     
@@ -88,8 +150,9 @@ impl ThreadPool {
     
     
     pub fn shutdown_on_idle(mut self) -> Shutdown {
-        self.inner().shutdown(false, false);
-        Shutdown { inner: self.inner.take().unwrap() }
+        let inner = self.inner.take().unwrap();
+        inner.sender.pool.shutdown(false, false);
+        Shutdown::new(&inner.trigger)
     }
 
     
@@ -101,8 +164,9 @@ impl ThreadPool {
     
     
     pub fn shutdown(mut self) -> Shutdown {
-        self.inner().shutdown(true, false);
-        Shutdown { inner: self.inner.take().unwrap() }
+        let inner = self.inner.take().unwrap();
+        inner.sender.pool.shutdown(true, false);
+        Shutdown::new(&inner.trigger)
     }
 
     
@@ -114,21 +178,42 @@ impl ThreadPool {
     
     
     pub fn shutdown_now(mut self) -> Shutdown {
-        self.inner().shutdown(true, true);
-        Shutdown { inner: self.inner.take().unwrap() }
-    }
-
-    fn inner(&self) -> &Pool {
-        &*self.inner.as_ref().unwrap().inner
+        let inner = self.inner.take().unwrap();
+        inner.sender.pool.shutdown(true, true);
+        Shutdown::new(&inner.trigger)
     }
 }
 
 impl Drop for ThreadPool {
     fn drop(&mut self) {
-        if let Some(sender) = self.inner.take() {
-            sender.inner.shutdown(true, true);
-            let shutdown = Shutdown { inner: sender };
+        if let Some(inner) = self.inner.take() {
+            
+            inner.sender.pool.shutdown(true, true);
+            let shutdown = Shutdown::new(&inner.trigger);
+
+            
+            drop(inner);
+
+            
             let _ = shutdown.wait();
         }
+    }
+}
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct SpawnHandle<T, E>(oneshot::SpawnHandle<T, E>);
+
+impl<T, E> Future for SpawnHandle<T, E> {
+    type Item = T;
+    type Error = E;
+
+    fn poll(&mut self) -> Poll<T, E> {
+        self.0.poll()
     }
 }

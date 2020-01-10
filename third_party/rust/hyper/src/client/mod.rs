@@ -86,32 +86,33 @@ use futures::{Async, Future, Poll};
 use futures::future::{self, Either, Executor};
 use futures::sync::oneshot;
 use http::{Method, Request, Response, Uri, Version};
-use http::header::{Entry, HeaderValue, HOST};
+use http::header::{HeaderValue, HOST};
 use http::uri::Scheme;
 
 use body::{Body, Payload};
-use common::Exec;
-use common::lazy as hyper_lazy;
-use self::connect::{Connect, Destination};
-use self::pool::{Pool, Poolable, Reservation};
+use common::{lazy as hyper_lazy, Lazy};
+use self::connect::{Alpn, Connect, Connected, Destination};
+use self::pool::{Key as PoolKey, Pool, Poolable, Pooled, Reservation};
 
 #[cfg(feature = "runtime")] pub use self::connect::HttpConnector;
 
 pub mod conn;
 pub mod connect;
 pub(crate) mod dispatch;
-#[cfg(feature = "runtime")] mod dns;
 mod pool;
 #[cfg(test)]
 mod tests;
 
 
 pub struct Client<C, B = Body> {
+    config: Config,
+    conn_builder: conn::Builder,
     connector: Arc<C>,
-    executor: Exec,
-    h1_writev: bool,
-    h1_title_case_headers: bool,
     pool: Pool<PoolClient<B>>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Config {
     retry_canceled_requests: bool,
     set_host: bool,
     ver: Ver,
@@ -194,22 +195,18 @@ where C: Connect + Sync + 'static,
 
     
     pub fn request(&self, mut req: Request<B>) -> ResponseFuture {
-        let is_http_11 = self.ver == Ver::Http1 && match req.version() {
-            Version::HTTP_11 => true,
-            Version::HTTP_10 => false,
-            other => {
+        let is_http_connect = req.method() == &Method::CONNECT;
+        match req.version() {
+            Version::HTTP_11 => (),
+            Version::HTTP_10 => if is_http_connect {
+                debug!("CONNECT is not allowed for HTTP/1.0");
+                return ResponseFuture::new(Box::new(future::err(::Error::new_user_unsupported_request_method())));
+            },
+            other => if self.config.ver != Ver::Http2 {
                 error!("Request has unsupported version \"{:?}\"", other);
                 return ResponseFuture::new(Box::new(future::err(::Error::new_user_unsupported_version())));
             }
         };
-
-        let is_http_connect = req.method() == &Method::CONNECT;
-
-        if !is_http_11 && is_http_connect {
-            debug!("client does not support CONNECT requests for {:?}", req.version());
-            return ResponseFuture::new(Box::new(future::err(::Error::new_user_unsupported_request_method())));
-        }
-
 
         let uri = req.uri().clone();
         let domain = match (uri.scheme_part(), uri.authority_part()) {
@@ -217,8 +214,9 @@ where C: Connect + Sync + 'static,
                 format!("{}://{}", scheme, auth)
             }
             (None, Some(auth)) if is_http_connect => {
-                let scheme = match auth.port() {
-                    Some(443) => {
+                let port = auth.port_part().unwrap();
+                let scheme = match port.as_str() {
+                    "443" => {
                         set_scheme(req.uri_mut(), Scheme::HTTPS);
                         "https"
                     },
@@ -235,93 +233,171 @@ where C: Connect + Sync + 'static,
             }
         };
 
-        if self.set_host && self.ver == Ver::Http1 {
-            if let Entry::Vacant(entry) = req.headers_mut().entry(HOST).expect("HOST is always valid header name") {
-                let hostname = uri.host().expect("authority implies host");
-                let host = if let Some(port) = uri.port() {
-                    let s = format!("{}:{}", hostname, port);
-                    HeaderValue::from_str(&s)
-                } else {
-                    HeaderValue::from_str(hostname)
-                }.expect("uri host is valid header value");
-                entry.insert(host);
-            }
-        }
-
-
-        let client = self.clone();
-        let uri = req.uri().clone();
-        let fut = RetryableSendRequest {
-            client: client,
-            future: self.send_request(req, &domain),
-            domain: domain,
-            uri: uri,
-        };
-        ResponseFuture::new(Box::new(fut))
+        let pool_key = Arc::new(domain.to_string());
+        ResponseFuture::new(Box::new(self.retryably_send_request(req, pool_key)))
     }
 
-    
-    fn send_request(&self, mut req: Request<B>, domain: &str) -> Box<Future<Item=Response<Body>, Error=ClientError<B>> + Send> {
-        let url = req.uri().clone();
-        let ver = self.ver;
-        let pool_key = (Arc::new(domain.to_string()), self.ver);
-        let checkout = self.pool.checkout(pool_key.clone());
-        let connect = {
-            let executor = self.executor.clone();
-            let pool = self.pool.clone();
-            let h1_writev = self.h1_writev;
-            let h1_title_case_headers = self.h1_title_case_headers;
-            let connector = self.connector.clone();
-            let dst = Destination {
-                uri: url,
-            };
-            hyper_lazy(move || {
-                if let Some(connecting) = pool.connecting(&pool_key) {
-                    Either::A(connector.connect(dst)
-                        .map_err(::Error::new_connect)
-                        .and_then(move |(io, connected)| {
-                            conn::Builder::new()
-                                .exec(executor.clone())
-                                .h1_writev(h1_writev)
-                                .h1_title_case_headers(h1_title_case_headers)
-                                .http2_only(pool_key.1 == Ver::Http2)
-                                .handshake(io)
-                                .and_then(move |(tx, conn)| {
-                                    let bg = executor.execute(conn.map_err(|e| {
-                                        debug!("client connection error: {}", e)
-                                    }));
+    fn retryably_send_request(&self, req: Request<B>, pool_key: PoolKey) -> impl Future<Item=Response<Body>, Error=::Error> {
+        let client = self.clone();
+        let uri = req.uri().clone();
 
-                                    
-                                    
-                                    if let Err(err) = bg {
-                                        warn!("error spawning critical client task: {}", err);
-                                        return Either::A(future::err(err));
-                                    }
+        let mut send_fut = client.send_request(req, pool_key.clone());
+        future::poll_fn(move || loop {
+            match send_fut.poll() {
+                Ok(Async::Ready(resp)) => return Ok(Async::Ready(resp)),
+                Ok(Async::NotReady) => return Ok(Async::NotReady),
+                Err(ClientError::Normal(err)) => return Err(err),
+                Err(ClientError::Canceled {
+                    connection_reused,
+                    mut req,
+                    reason,
+                }) => {
+                    if !client.config.retry_canceled_requests || !connection_reused {
+                        
+                        
+                        return Err(reason);
+                    }
 
-                                    
-                                    
-                                    Either::B(tx.when_ready())
-                                })
-                                .map(move |tx| {
-                                    pool.pooled(connecting, PoolClient {
-                                        is_proxied: connected.is_proxied,
-                                        tx: match ver {
-                                            Ver::Http1 => PoolTx::Http1(tx),
-                                            Ver::Http2 => PoolTx::Http2(tx.into_http2()),
-                                        },
-                                    })
-                                })
-                        }))
-                } else {
-                    let canceled = ::Error::new_canceled(Some("HTTP/2 connection in progress"));
-                    Either::B(future::err(canceled))
+                    trace!("unstarted request canceled, trying again (reason={:?})", reason);
+                    *req.uri_mut() = uri.clone();
+                    send_fut = client.send_request(req, pool_key.clone());
                 }
-            })
-        };
+            }
+        })
+    }
 
-        let executor = self.executor.clone();
+    fn send_request(&self, mut req: Request<B>, pool_key: PoolKey) -> impl Future<Item=Response<Body>, Error=ClientError<B>> {
+        let conn = self.connection_for(req.uri().clone(), pool_key);
+
+        let set_host = self.config.set_host;
+        let executor = self.conn_builder.exec.clone();
+        conn.and_then(move |mut pooled| {
+            if pooled.is_http1() {
+                if set_host {
+                    let uri = req.uri().clone();
+                    req
+                        .headers_mut()
+                        .entry(HOST)
+                        .expect("HOST is always valid header name")
+                        .or_insert_with(|| {
+                            let hostname = uri.host().expect("authority implies host");
+                            if let Some(port) = uri.port_part() {
+                                let s = format!("{}:{}", hostname, port);
+                                HeaderValue::from_str(&s)
+                            } else {
+                                HeaderValue::from_str(hostname)
+                            }.expect("uri host is valid header value")
+                        });
+                }
+
+                
+                if req.method() == &Method::CONNECT {
+                    authority_form(req.uri_mut());
+                } else if pooled.conn_info.is_proxied {
+                    absolute_form(req.uri_mut());
+                } else {
+                    origin_form(req.uri_mut());
+                };
+            } else if req.method() == &Method::CONNECT {
+                debug!("client does not support CONNECT requests over HTTP2");
+                return Either::A(future::err(ClientError::Normal(::Error::new_user_unsupported_request_method())));
+            }
+
+            let fut = pooled.send_request_retryable(req)
+                .map_err(ClientError::map_with_reused(pooled.is_reused()));
+
+            
+            let extra_info = pooled.conn_info.extra.clone();
+            let fut = fut.map(move |mut res| {
+                if let Some(extra) = extra_info {
+                    extra.set(&mut res);
+                }
+                res
+            });
+
+            
+            
+            
+            
+            
+            
+            
+            if pooled.is_closed() {
+                return Either::B(Either::A(fut));
+            }
+
+            Either::B(Either::B(fut
+                .and_then(move |mut res| {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if pooled.is_http2() || !pooled.is_pool_enabled() || pooled.is_ready() {
+                        drop(pooled);
+                    } else if !res.body().is_end_stream() {
+                        let (delayed_tx, delayed_rx) = oneshot::channel();
+                        res.body_mut().delayed_eof(delayed_rx);
+                        let on_idle = future::poll_fn(move || {
+                            pooled.poll_ready()
+                        })
+                            .then(move |_| {
+                                
+                                
+                                drop(delayed_tx);
+                                Ok(())
+                            });
+
+                        if let Err(err) = executor.execute(on_idle) {
+                            
+                            warn!("error spawning task to insert idle connection: {}", err);
+                        }
+                    } else {
+                        
+                        
+                        let on_idle = future::poll_fn(move || {
+                            pooled.poll_ready()
+                        })
+                            .then(|_| Ok(()));
+
+                        if let Err(err) = executor.execute(on_idle) {
+                            
+                            warn!("error spawning task to insert idle connection: {}", err);
+                        }
+                    }
+                    Ok(res)
+                })))
+        })
+    }
+
+    fn connection_for(&self, uri: Uri, pool_key: PoolKey)
+        -> impl Future<Item=Pooled<PoolClient<B>>, Error=ClientError<B>>
+    {
         
-        let race = checkout.select2(connect)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let checkout = self.pool.checkout(pool_key.clone());
+        let connect = self.connect_to(uri, pool_key);
+
+        let executor = self.conn_builder.exec.clone();
+        checkout
+            
+            .select2(connect)
             .map(move |either| match either {
                 
                 
@@ -378,128 +454,98 @@ where C: Connect + Sync + 'static,
                         Either::B(future::err(ClientError::Normal(err)))
                     }
                 }
-            });
+            })
+    }
 
-        let executor = self.executor.clone();
-        let resp = race.and_then(move |mut pooled| {
-            let conn_reused = pooled.is_reused();
-            if ver == Ver::Http1 {
-                
-                if req.method() == &Method::CONNECT {
-                    authority_form(req.uri_mut());
-                } else if pooled.is_proxied {
-                    absolute_form(req.uri_mut());
-                } else {
-                    origin_form(req.uri_mut());
-                };
-            } else {
-                debug_assert!(
-                    req.method() != &Method::CONNECT,
-                    "Client should have returned Error for HTTP2 CONNECT"
-                );
-            }
-
-            let fut = pooled.send_request_retryable(req);
-
+    fn connect_to(&self, uri: Uri, pool_key: PoolKey)
+        -> impl Lazy<Item=Pooled<PoolClient<B>>, Error=::Error>
+    {
+        let executor = self.conn_builder.exec.clone();
+        let pool = self.pool.clone();
+        let mut conn_builder = self.conn_builder.clone();
+        let ver = self.config.ver;
+        let is_ver_h2 = ver == Ver::Http2;
+        let connector = self.connector.clone();
+        let dst = Destination {
+            uri,
+        };
+        hyper_lazy(move || {
             
             
             
             
             
-            
-            
-            if pooled.is_closed() {
-                drop(pooled);
-                let fut = fut
-                    .map_err(move |(err, orig_req)| {
-                        if let Some(req) = orig_req {
-                            ClientError::Canceled {
-                                connection_reused: conn_reused,
-                                reason: err,
-                                req,
-                            }
-                        } else {
-                            ClientError::Normal(err)
-                        }
-                    });
-                Either::A(fut)
-            } else {
-                let fut = fut
-                    .map_err(move |(err, orig_req)| {
-                        if let Some(req) = orig_req {
-                            ClientError::Canceled {
-                                connection_reused: conn_reused,
-                                reason: err,
-                                req,
-                            }
-                        } else {
-                            ClientError::Normal(err)
-                        }
-                    })
-                    .and_then(move |mut res| {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        if ver == Ver::Http2 || !pooled.is_pool_enabled() || pooled.is_ready() {
-                            drop(pooled);
-                        } else if !res.body().is_end_stream() {
-                            let (delayed_tx, delayed_rx) = oneshot::channel();
-                            res.body_mut().delayed_eof(delayed_rx);
-                            let on_idle = future::poll_fn(move || {
-                                pooled.poll_ready()
-                            })
-                                .then(move |_| {
-                                    
-                                    
-                                    drop(delayed_tx);
-                                    Ok(())
-                                });
-
-                            if let Err(err) = executor.execute(on_idle) {
+            let connecting = match pool.connecting(&pool_key, ver) {
+                Some(lock) => lock,
+                None => {
+                    let canceled = ::Error::new_canceled(Some("HTTP/2 connection in progress"));
+                    return Either::B(future::err(canceled));
+                }
+            };
+            Either::A(connector.connect(dst)
+                .map_err(::Error::new_connect)
+                .and_then(move |(io, connected)| {
+                    
+                    
+                    
+                    let connecting = if connected.alpn == Alpn::H2 && !is_ver_h2 {
+                        match connecting.alpn_h2(&pool) {
+                            Some(lock) => {
+                                trace!("ALPN negotiated h2, updating pool");
+                                lock
+                            },
+                            None => {
                                 
-                                warn!("error spawning task to insert idle connection: {}", err);
+                                
+                                let canceled = ::Error::new_canceled(Some("ALPN upgraded to HTTP/2"));
+                                return Either::B(future::err(canceled));
                             }
-                        } else {
+                        }
+                    } else {
+                        connecting
+                    };
+                    let is_h2 = is_ver_h2 || connected.alpn == Alpn::H2;
+                    Either::A(conn_builder
+                        .http2_only(is_h2)
+                        .handshake(io)
+                        .and_then(move |(tx, conn)| {
+                            let bg = executor.execute(conn.map_err(|e| {
+                                debug!("client connection error: {}", e)
+                            }));
+
                             
                             
-                            let on_idle = future::poll_fn(move || {
-                                pooled.poll_ready()
-                            })
-                                .then(|_| Ok(()));
-
-                            if let Err(err) = executor.execute(on_idle) {
-                                
-                                warn!("error spawning task to insert idle connection: {}", err);
+                            if let Err(err) = bg {
+                                warn!("error spawning critical client task: {}", err);
+                                return Either::A(future::err(err));
                             }
-                        }
-                        Ok(res)
-                    });
-                Either::B(fut)
-            }
-        });
 
-        Box::new(resp)
+                            
+                            
+                            Either::B(tx.when_ready())
+                        })
+                        .map(move |tx| {
+                            pool.pooled(connecting, PoolClient {
+                                conn_info: connected,
+                                tx: if is_h2 {
+                                    PoolTx::Http2(tx.into_http2())
+                                } else {
+                                    PoolTx::Http1(tx)
+                                },
+                            })
+                        }))
+                }))
+        })
     }
 }
 
 impl<C, B> Clone for Client<C, B> {
     fn clone(&self) -> Client<C, B> {
         Client {
+            config: self.config.clone(),
+            conn_builder: self.conn_builder.clone(),
             connector: self.connector.clone(),
-            executor: self.executor.clone(),
-            h1_writev: self.h1_writev,
-            h1_title_case_headers: self.h1_title_case_headers,
             pool: self.pool.clone(),
-            retry_canceled_requests: self.retry_canceled_requests,
-            set_host: self.set_host,
-            ver: self.ver,
         }
     }
 }
@@ -540,51 +586,10 @@ impl Future for ResponseFuture {
     }
 }
 
-struct RetryableSendRequest<C, B> {
-    client: Client<C, B>,
-    domain: String,
-    future: Box<Future<Item=Response<Body>, Error=ClientError<B>> + Send>,
-    uri: Uri,
-}
 
-impl<C, B> Future for RetryableSendRequest<C, B>
-where
-    C: Connect + 'static,
-    C::Future: 'static,
-    B: Payload + Send + 'static,
-    B::Data: Send,
-{
-    type Item = Response<Body>;
-    type Error = ::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        loop {
-            match self.future.poll() {
-                Ok(Async::Ready(resp)) => return Ok(Async::Ready(resp)),
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(ClientError::Normal(err)) => return Err(err),
-                Err(ClientError::Canceled {
-                    connection_reused,
-                    mut req,
-                    reason,
-                }) => {
-                    if !self.client.retry_canceled_requests || !connection_reused {
-                        
-                        
-                        return Err(reason);
-                    }
-
-                    trace!("unstarted request canceled, trying again (reason={:?})", reason);
-                    *req.uri_mut() = self.uri.clone();
-                    self.future = self.client.send_request(req, &self.domain);
-                }
-            }
-        }
-    }
-}
-
+#[allow(missing_debug_implementations)]
 struct PoolClient<B> {
-    is_proxied: bool,
+    conn_info: Connected,
     tx: PoolTx<B>,
 }
 
@@ -598,6 +603,17 @@ impl<B> PoolClient<B> {
         match self.tx {
             PoolTx::Http1(ref mut tx) => tx.poll_ready(),
             PoolTx::Http2(_) => Ok(Async::Ready(())),
+        }
+    }
+
+    fn is_http1(&self) -> bool {
+        !self.is_http2()
+    }
+
+    fn is_http2(&self) -> bool {
+        match self.tx {
+            PoolTx::Http1(_) => false,
+            PoolTx::Http2(_) => true,
         }
     }
 
@@ -617,14 +633,13 @@ impl<B> PoolClient<B> {
 }
 
 impl<B: Payload + 'static> PoolClient<B> {
-    
-    fn send_request_retryable(&mut self, req: Request<B>) -> Box<Future<Item=Response<Body>, Error=(::Error, Option<Request<B>>)> + Send>
+    fn send_request_retryable(&mut self, req: Request<B>) -> impl Future<Item = Response<Body>, Error = (::Error, Option<Request<B>>)>
     where
         B: Send,
     {
         match self.tx {
-            PoolTx::Http1(ref mut tx) => tx.send_request_retryable(req),
-            PoolTx::Http2(ref mut tx) => tx.send_request_retryable(req),
+            PoolTx::Http1(ref mut tx) => Either::A(tx.send_request_retryable(req)),
+            PoolTx::Http2(ref mut tx) => Either::B(tx.send_request_retryable(req)),
         }
     }
 }
@@ -644,25 +659,31 @@ where
         match self.tx {
             PoolTx::Http1(tx) => {
                 Reservation::Unique(PoolClient {
-                    is_proxied: self.is_proxied,
+                    conn_info: self.conn_info,
                     tx: PoolTx::Http1(tx),
                 })
             },
             PoolTx::Http2(tx) => {
                 let b = PoolClient {
-                    is_proxied: self.is_proxied,
+                    conn_info: self.conn_info.clone(),
                     tx: PoolTx::Http2(tx.clone()),
                 };
                 let a = PoolClient {
-                    is_proxied: self.is_proxied,
+                    conn_info: self.conn_info,
                     tx: PoolTx::Http2(tx),
                 };
                 Reservation::Shared(a, b)
             }
         }
     }
+
+    fn can_share(&self) -> bool {
+        self.is_http2()
+    }
 }
 
+
+#[allow(missing_debug_implementations)]
 enum ClientError<B> {
     Normal(::Error),
     Canceled {
@@ -672,10 +693,28 @@ enum ClientError<B> {
     }
 }
 
+impl<B> ClientError<B> {
+    fn map_with_reused(conn_reused: bool)
+        -> impl Fn((::Error, Option<Request<B>>)) -> Self
+    {
+        move |(err, orig_req)| {
+            if let Some(req) = orig_req {
+                ClientError::Canceled {
+                    connection_reused: conn_reused,
+                    reason: err,
+                    req,
+                }
+            } else {
+                ClientError::Normal(err)
+            }
+        }
+    }
+}
+
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum Ver {
-    Http1,
+    Auto,
     Http2,
 }
 
@@ -742,31 +781,25 @@ fn set_scheme(uri: &mut Uri, scheme: Scheme) {
 
 #[derive(Clone)]
 pub struct Builder {
-    
-    exec: Exec,
-    keep_alive: bool,
-    keep_alive_timeout: Option<Duration>,
-    h1_writev: bool,
-    h1_title_case_headers: bool,
-    
-    max_idle: usize,
-    retry_canceled_requests: bool,
-    set_host: bool,
-    ver: Ver,
+    client_config: Config,
+    conn_builder: conn::Builder,
+    pool_config: pool::Config,
 }
 
 impl Default for Builder {
     fn default() -> Self {
         Self {
-            exec: Exec::Default,
-            keep_alive: true,
-            keep_alive_timeout: Some(Duration::from_secs(90)),
-            h1_writev: true,
-            h1_title_case_headers: false,
-            max_idle: 5,
-            retry_canceled_requests: true,
-            set_host: true,
-            ver: Ver::Http1,
+            client_config: Config {
+                retry_canceled_requests: true,
+                set_host: true,
+                ver: Ver::Auto,
+            },
+            conn_builder: conn::Builder::new(),
+            pool_config: pool::Config {
+                enabled: true,
+                keep_alive_timeout: Some(Duration::from_secs(90)),
+                max_idle_per_host: ::std::usize::MAX,
+            },
         }
     }
 }
@@ -777,7 +810,7 @@ impl Builder {
     
     #[inline]
     pub fn keep_alive(&mut self, val: bool) -> &mut Self {
-        self.keep_alive = val;
+        self.pool_config.enabled = val;
         self
     }
 
@@ -791,7 +824,7 @@ impl Builder {
     where
         D: Into<Option<Duration>>,
     {
-        self.keep_alive_timeout = val.into();
+        self.pool_config.keep_alive_timeout = val.into();
         self
     }
 
@@ -805,7 +838,16 @@ impl Builder {
     
     #[inline]
     pub fn http1_writev(&mut self, val: bool) -> &mut Self {
-        self.h1_writev = val;
+        self.conn_builder.h1_writev(val);
+        self
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn http1_read_buf_exact_size(&mut self, sz: usize) -> &mut Self {
+        self.conn_builder.h1_read_buf_exact_size(Some(sz));
         self
     }
 
@@ -816,7 +858,7 @@ impl Builder {
     
     
     pub fn http1_title_case_headers(&mut self, val: bool) -> &mut Self {
-        self.h1_title_case_headers = val;
+        self.conn_builder.h1_title_case_headers(val);
         self
     }
 
@@ -825,12 +867,25 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
     pub fn http2_only(&mut self, val: bool) -> &mut Self {
-        self.ver = if val {
+        self.client_config.ver = if val {
             Ver::Http2
         } else {
-            Ver::Http1
+            Ver::Auto
         };
+        self
+    }
+
+    
+    
+    
+    pub fn max_idle_per_host(&mut self, max_idle: usize) -> &mut Self {
+        self.pool_config.max_idle_per_host = max_idle;
         self
     }
 
@@ -847,7 +902,7 @@ impl Builder {
     
     #[inline]
     pub fn retry_canceled_requests(&mut self, val: bool) -> &mut Self {
-        self.retry_canceled_requests = val;
+        self.client_config.retry_canceled_requests = val;
         self
     }
 
@@ -859,7 +914,7 @@ impl Builder {
     
     #[inline]
     pub fn set_host(&mut self, val: bool) -> &mut Self {
-        self.set_host = val;
+        self.client_config.set_host = val;
         self
     }
 
@@ -868,7 +923,7 @@ impl Builder {
     where
         E: Executor<Box<Future<Item=(), Error=()> + Send>> + Send + Sync + 'static,
     {
-        self.exec = Exec::Executor(Arc::new(exec));
+        self.conn_builder.executor(exec);
         self
     }
 
@@ -880,8 +935,8 @@ impl Builder {
         B::Data: Send,
     {
         let mut connector = HttpConnector::new(4);
-        if self.keep_alive {
-            connector.set_keepalive(self.keep_alive_timeout);
+        if self.pool_config.enabled {
+            connector.set_keepalive(self.pool_config.keep_alive_timeout);
         }
         self.build(connector)
     }
@@ -896,14 +951,10 @@ impl Builder {
         B::Data: Send,
     {
         Client {
+            config: self.client_config,
+            conn_builder: self.conn_builder.clone(),
             connector: Arc::new(connector),
-            executor: self.exec.clone(),
-            h1_writev: self.h1_writev,
-            h1_title_case_headers: self.h1_title_case_headers,
-            pool: Pool::new(self.keep_alive, self.keep_alive_timeout, &self.exec),
-            retry_canceled_requests: self.retry_canceled_requests,
-            set_host: self.set_host,
-            ver: self.ver,
+            pool: Pool::new(self.pool_config, &self.conn_builder.exec),
         }
     }
 }
@@ -911,12 +962,9 @@ impl Builder {
 impl fmt::Debug for Builder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Builder")
-            .field("keep_alive", &self.keep_alive)
-            .field("keep_alive_timeout", &self.keep_alive_timeout)
-            .field("http1_writev", &self.h1_writev)
-            .field("max_idle", &self.max_idle)
-            .field("set_host", &self.set_host)
-            .field("version", &self.ver)
+            .field("client_config", &self.client_config)
+            .field("conn_builder", &self.conn_builder)
+            .field("pool_config", &self.pool_config)
             .finish()
     }
 }

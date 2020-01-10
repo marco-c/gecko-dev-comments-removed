@@ -1,13 +1,14 @@
 use park::{BoxPark, BoxUnpark};
-use task::{Task, Queue};
+use task::Task;
 use worker::state::{State, PUSHED_MASK};
 
 use std::cell::UnsafeCell;
 use std::fmt;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::atomic::Ordering::{Acquire, AcqRel, Relaxed};
+use std::sync::atomic::Ordering::{AcqRel, Relaxed};
 
+use crossbeam_utils::CachePadded;
 use deque;
 
 
@@ -19,50 +20,36 @@ pub(crate) struct WorkerEntry {
     
     
     
-    pub state: AtomicUsize,
+    pub state: CachePadded<AtomicUsize>,
 
     
     next_sleeper: UnsafeCell<usize>,
 
     
-    deque: deque::Deque<Arc<Task>>,
+    worker: deque::Worker<Arc<Task>>,
 
     
-    steal: deque::Stealer<Arc<Task>>,
+    stealer: deque::Stealer<Arc<Task>>,
 
     
     pub park: UnsafeCell<BoxPark>,
 
     
     pub unpark: BoxUnpark,
-
-    
-    pub inbound: Queue,
 }
 
 impl WorkerEntry {
     pub fn new(park: BoxPark, unpark: BoxUnpark) -> Self {
-        let w = deque::Deque::new();
-        let s = w.stealer();
+        let (w, s) = deque::fifo();
 
         WorkerEntry {
-            state: AtomicUsize::new(State::default().into()),
+            state: CachePadded::new(AtomicUsize::new(State::default().into())),
             next_sleeper: UnsafeCell::new(0),
-            deque: w,
-            steal: s,
-            inbound: Queue::new(),
+            worker: w,
+            stealer: s,
             park: UnsafeCell::new(park),
             unpark,
         }
-    }
-
-    
-    
-    
-    
-    
-    pub fn load_state(&self) -> State {
-        self.state.load(Acquire).into()
     }
 
     
@@ -90,14 +77,9 @@ impl WorkerEntry {
     
     
     
-    
-    
-    
-    pub fn submit_external(&self, task: Arc<Task>, mut state: State) -> bool {
+    #[inline]
+    pub fn notify(&self, mut state: State) -> bool {
         use worker::Lifecycle::*;
-
-        
-        self.push_external(task);
 
         loop {
             let mut next = state;
@@ -188,34 +170,41 @@ impl WorkerEntry {
     
     
     
-    pub fn pop_task(&self) -> deque::Steal<Arc<Task>> {
-        self.deque.steal()
+    #[inline]
+    pub fn pop_task(&self) -> deque::Pop<Arc<Task>> {
+        self.worker.pop()
     }
 
     
     
     
     
-    pub fn steal_task(&self) -> deque::Steal<Arc<Task>> {
-        self.steal.steal()
+    
+    
+    
+    
+    pub fn steal_tasks(&self, dest: &Self) -> deque::Steal<Arc<Task>> {
+        self.stealer.steal_many(&dest.worker)
     }
 
     
     
     
     pub fn drain_tasks(&self) {
-        while let Some(_) = self.deque.pop() {
+        use deque::Pop::*;
+
+        loop {
+            match self.worker.pop() {
+                Data(_) => {}
+                Empty => break,
+                Retry => {}
+            }
         }
     }
 
     #[inline]
-    fn push_external(&self, task: Arc<Task>) {
-        self.inbound.push(task);
-    }
-
-    #[inline]
     pub fn push_internal(&self, task: Arc<Task>) {
-        self.deque.push(task);
+        self.worker.push(task);
     }
 
     #[inline]
@@ -239,11 +228,10 @@ impl fmt::Debug for WorkerEntry {
         fmt.debug_struct("WorkerEntry")
             .field("state", &self.state.load(Relaxed))
             .field("next_sleeper", &"UnsafeCell<usize>")
-            .field("deque", &self.deque)
-            .field("steal", &self.steal)
+            .field("worker", &self.worker)
+            .field("stealer", &self.stealer)
             .field("park", &"UnsafeCell<BoxPark>")
             .field("unpark", &"BoxUnpark")
-            .field("inbound", &self.inbound)
             .finish()
     }
 }

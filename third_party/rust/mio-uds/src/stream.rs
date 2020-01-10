@@ -1,3 +1,4 @@
+use std::cmp;
 use std::io::prelude::*;
 use std::io;
 use std::os::unix::net;
@@ -5,6 +6,8 @@ use std::os::unix::prelude::*;
 use std::path::Path;
 use std::net::Shutdown;
 
+use iovec::IoVec;
+use iovec::unix as iovec;
 use libc;
 use mio::event::Evented;
 use mio::unix::EventedFd;
@@ -113,6 +116,60 @@ impl UnixStream {
     
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         self.inner.shutdown(how)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn read_bufs(&self, bufs: &mut [&mut IoVec]) -> io::Result<usize> {
+        unsafe {
+            let slice = iovec::as_os_slice_mut(bufs);
+            let len = cmp::min(<libc::c_int>::max_value() as usize, slice.len());
+            let rc = libc::readv(self.inner.as_raw_fd(),
+                                slice.as_ptr(),
+                                len as libc::c_int);
+            if rc < 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(rc as usize)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn write_bufs(&self, bufs: &[&IoVec]) -> io::Result<usize> {
+        unsafe {
+            let slice = iovec::as_os_slice(bufs);
+            let len = cmp::min(<libc::c_int>::max_value() as usize, slice.len());
+            let rc = libc::writev(self.inner.as_raw_fd(),
+                                 slice.as_ptr(),
+                                 len as libc::c_int);
+            if rc < 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(rc as usize)
+            }
+        }
     }
 }
 

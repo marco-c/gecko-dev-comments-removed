@@ -1,10 +1,13 @@
 use std::io;
 use std::os::unix::net::SocketAddr;
-use std::path::PathBuf;
+use std::path::Path;
 
 use futures::{Async, Poll, Stream, Sink, StartSend, AsyncSink};
 
-use UnixDatagram;
+use super::UnixDatagram;
+
+use tokio_codec::{Decoder, Encoder};
+use bytes::{BytesMut, BufMut};
 
 
 
@@ -21,119 +24,119 @@ use UnixDatagram;
 
 
 
-pub trait UnixDatagramCodec {
-    
-    type In;
 
-    
-    type Out;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn decode(&mut self, src: &SocketAddr, buf: &[u8]) -> io::Result<Self::In>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    fn encode(&mut self, msg: Self::Out, buf: &mut Vec<u8>)
-              -> io::Result<PathBuf>;
-}
-
-
-
-
-
-
-
-pub struct UnixDatagramFramed<C> {
+#[must_use = "sinks do nothing unless polled"]
+#[derive(Debug)]
+pub struct UnixDatagramFramed<A, C> {
     socket: UnixDatagram,
     codec: C,
-    rd: Vec<u8>,
-    wr: Vec<u8>,
-    out_addr: PathBuf,
+    rd: BytesMut,
+    wr: BytesMut,
+    out_addr: Option<A>,
+    flushed: bool,
 }
 
-impl<C: UnixDatagramCodec> Stream for UnixDatagramFramed<C> {
-    type Item = C::In;
-    type Error = io::Error;
+impl<A, C: Decoder> Stream for UnixDatagramFramed<A, C> {
+    type Item = (C::Item, SocketAddr);
+    type Error = C::Error;
 
-    fn poll(&mut self) -> Poll<Option<C::In>, io::Error> {
-        let (n, addr) = try_nb!(self.socket.recv_from(&mut self.rd));
+    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+        self.rd.reserve(INITIAL_RD_CAPACITY);
+
+        let (n, addr) = unsafe {
+            let (n, addr) = try_ready!(self.socket.poll_recv_from(self.rd.bytes_mut()));
+            self.rd.advance_mut(n);
+            (n, addr)
+        };
         trace!("received {} bytes, decoding", n);
-        let frame = try!(self.codec.decode(&addr, &self.rd[..n]));
+        let frame_res = self.codec.decode(&mut self.rd);
+        self.rd.clear();
+        let frame = frame_res?;
+        let result = frame.map(|frame| (frame, addr));
         trace!("frame decoded from buffer");
-        Ok(Async::Ready(Some(frame)))
+        Ok(Async::Ready(result))
     }
 }
 
-impl<C: UnixDatagramCodec> Sink for UnixDatagramFramed<C> {
-    type SinkItem = C::Out;
-    type SinkError = io::Error;
+impl<A: AsRef<Path>, C: Encoder> Sink for UnixDatagramFramed<A, C> {
+    type SinkItem = (C::Item, A);
+    type SinkError = C::Error;
 
-    fn start_send(&mut self, item: C::Out) -> StartSend<C::Out, io::Error> {
-        if self.wr.len() > 0 {
-            try!(self.poll_complete());
-            if self.wr.len() > 0 {
-                return Ok(AsyncSink::NotReady(item));
+    fn start_send(&mut self, item: Self::SinkItem) -> StartSend<Self::SinkItem, Self::SinkError> {
+        trace!("sending frame");
+
+        if !self.flushed {
+            match try!(self.poll_complete()) {
+                Async::Ready(()) => {},
+                Async::NotReady => return Ok(AsyncSink::NotReady(item)),
             }
         }
 
-        self.out_addr = try!(self.codec.encode(item, &mut self.wr));
+        let (frame, out_addr) = item;
+        self.codec.encode(frame, &mut self.wr)?;
+        self.out_addr = Some(out_addr);
+        self.flushed = false;
+        trace!("frame encoded; length={}", self.wr.len());
+
         Ok(AsyncSink::Ready)
     }
 
-    fn poll_complete(&mut self) -> Poll<(), io::Error> {
-        trace!("flushing framed transport");
-
-        if self.wr.is_empty() {
+    fn poll_complete(&mut self) -> Poll<(), C::Error> {
+        if self.flushed {
             return Ok(Async::Ready(()))
         }
 
-        trace!("writing; remaining={}", self.wr.len());
-        let n = try_nb!(self.socket.send_to(&self.wr, &self.out_addr));
+        let n = {
+            let out_path = match self.out_addr {
+                Some(ref out_path) => out_path.as_ref(),
+                None => return Err(io::Error::new(io::ErrorKind::Other,
+                                                      "internal error: addr not available while data not flushed").into()),
+            };
+
+            trace!("flushing frame; length={}", self.wr.len());
+            try_ready!(self.socket.poll_send_to(&self.wr, out_path))
+        };
+
         trace!("written {}", n);
+
         let wrote_all = n == self.wr.len();
         self.wr.clear();
+        self.flushed = true;
+
         if wrote_all {
+            self.out_addr = None;
             Ok(Async::Ready(()))
         } else {
             Err(io::Error::new(io::ErrorKind::Other,
-                               "failed to write entire datagram to socket"))
+                               "failed to write entire datagram to socket").into())
         }
     }
 
-    fn close(&mut self) -> Poll<(), io::Error> {
-        try_ready!(self.poll_complete());
-        Ok(().into())
+    fn close(&mut self) -> Poll<(), C::Error> {
+        self.poll_complete()
     }
 }
 
-pub fn new<C: UnixDatagramCodec>(socket: UnixDatagram, codec: C) -> UnixDatagramFramed<C> {
-    UnixDatagramFramed {
-        socket: socket,
-        codec: codec,
-        out_addr: PathBuf::new(),
-        rd: vec![0; 64 * 1024],
-        wr: Vec::with_capacity(8 * 1024),
-    }
-}
+const INITIAL_RD_CAPACITY: usize = 64 * 1024;
+const INITIAL_WR_CAPACITY: usize = 8 * 1024;
 
-impl<C> UnixDatagramFramed<C> {
+impl<A, C> UnixDatagramFramed<A, C> {
+    
+    
+    
+    pub fn new(socket: UnixDatagram, codec: C) -> UnixDatagramFramed<A, C> {
+        UnixDatagramFramed {
+            socket: socket,
+            codec: codec,
+            out_addr: None,
+            rd: BytesMut::with_capacity(INITIAL_RD_CAPACITY),
+            wr: BytesMut::with_capacity(INITIAL_WR_CAPACITY),
+            flushed: true,
+        }
+    }
+
+    
+    
     
     
     
@@ -149,16 +152,9 @@ impl<C> UnixDatagramFramed<C> {
     
     
     
+    
+    
     pub fn get_mut(&mut self) -> &mut UnixDatagram {
         &mut self.socket
-    }
-
-    
-    
-    
-    
-    
-    pub fn into_inner(self) -> UnixDatagram {
-        self.socket
     }
 }

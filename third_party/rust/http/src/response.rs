@@ -645,6 +645,63 @@ impl Builder {
     
     
     
+    
+    pub fn headers_ref(&self) -> Option<&HeaderMap<HeaderValue>> {
+        if self.err.is_some() {
+            return None;
+        }
+        match self.head
+        {
+            Some(ref head) => Some(&head.headers),
+            None => None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn headers_mut(&mut self) -> Option<&mut HeaderMap<HeaderValue>> {
+        if self.err.is_some() {
+            return None;
+        }
+        match self.head
+        {
+            Some(ref mut head) => Some(&mut head.headers),
+            None => None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn extension<T>(&mut self, extension: T) -> &mut Builder
         where T: Any + Send + Sync + 'static,
     {

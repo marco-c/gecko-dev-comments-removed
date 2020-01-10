@@ -466,7 +466,7 @@ where
                 
                 Ok(Async::Ready(None))
             },
-            Ok(Async::NotReady) => return Ok(Async::NotReady),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
             Err(never) => match never {},
         }
     }

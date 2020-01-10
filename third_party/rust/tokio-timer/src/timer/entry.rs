@@ -1,16 +1,17 @@
-use Error;
 use atomic::AtomicU64;
-use timer::{Handle, Inner};
+use timer::{HandlePriv, Inner};
+use Error;
 
-use futures::Poll;
+use crossbeam_utils::CachePadded;
 use futures::task::AtomicTask;
+use futures::Poll;
 
 use std::cell::UnsafeCell;
 use std::ptr;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering::{Relaxed, SeqCst};
 use std::sync::{Arc, Weak};
-use std::sync::atomic::{AtomicBool, AtomicPtr};
-use std::sync::atomic::Ordering::SeqCst;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::u64;
 
 
@@ -27,11 +28,13 @@ use std::u64;
 #[derive(Debug)]
 pub(crate) struct Entry {
     
-    
-    inner: Weak<Inner>,
+    time: CachePadded<UnsafeCell<Time>>,
 
     
-    task: AtomicTask,
+    
+    
+    
+    inner: Option<Weak<Inner>>,
 
     
     
@@ -45,23 +48,20 @@ pub(crate) struct Entry {
     state: AtomicU64,
 
     
-    
-    
-    
-    
-    
-    
-    
-    counted: bool,
-
-    
-    
-    queued: AtomicBool,
+    task: AtomicTask,
 
     
     
     
-    next_atomic: UnsafeCell<*mut Entry>,
+    
+    pub(super) queued: AtomicBool,
+
+    
+    
+    
+    
+    
+    pub(super) next_atomic: UnsafeCell<*mut Entry>,
 
     
     
@@ -80,7 +80,7 @@ pub(crate) struct Entry {
     
     
     
-    next_stack: UnsafeCell<Option<Arc<Entry>>>,
+    pub(super) next_stack: UnsafeCell<Option<Arc<Entry>>>,
 
     
     
@@ -88,25 +88,14 @@ pub(crate) struct Entry {
     
     
     
-    prev_stack: UnsafeCell<*const Entry>,
-}
-
-
-pub(crate) struct Stack {
-    head: Option<Arc<Entry>>,
+    pub(super) prev_stack: UnsafeCell<*const Entry>,
 }
 
 
 #[derive(Debug)]
-pub(crate) struct AtomicStack {
-    
-    head: AtomicPtr<Entry>,
-}
-
-
-#[derive(Debug)]
-pub(crate) struct AtomicStackEntries {
-    ptr: *mut Entry,
+pub(crate) struct Time {
+    pub(crate) deadline: Instant,
+    pub(crate) duration: Duration,
 }
 
 
@@ -116,33 +105,14 @@ const ELAPSED: u64 = 1 << 63;
 const ERROR: u64 = u64::MAX;
 
 
-const SHUTDOWN: *mut Entry = 1 as *mut _;
-
-
 
 impl Entry {
-    pub fn new(when: u64, handle: Handle) -> Entry {
-        assert!(when > 0 && when < u64::MAX);
-
+    pub fn new(deadline: Instant, duration: Duration) -> Entry {
         Entry {
-            inner: handle.into_inner(),
+            time: CachePadded::new(UnsafeCell::new(Time { deadline, duration })),
+            inner: None,
             task: AtomicTask::new(),
-            state: AtomicU64::new(when),
-            counted: true,
-            queued: AtomicBool::new(false),
-            next_atomic: UnsafeCell::new(ptr::null_mut()),
-            when: UnsafeCell::new(None),
-            next_stack: UnsafeCell::new(None),
-            prev_stack: UnsafeCell::new(ptr::null_mut()),
-        }
-    }
-
-    pub fn new_elapsed(handle: Handle) -> Entry {
-        Entry {
-            inner: handle.into_inner(),
-            task: AtomicTask::new(),
-            state: AtomicU64::new(ELAPSED),
-            counted: true,
+            state: AtomicU64::new(0),
             queued: AtomicBool::new(false),
             next_atomic: UnsafeCell::new(ptr::null_mut()),
             when: UnsafeCell::new(None),
@@ -152,19 +122,84 @@ impl Entry {
     }
 
     
+    pub fn time_ref(&self) -> &Time {
+        unsafe { &*self.time.get() }
+    }
+
     
-    pub fn new_error() -> Entry {
-        Entry {
-            inner: Weak::new(),
-            task: AtomicTask::new(),
-            state: AtomicU64::new(ERROR),
-            counted: false,
-            queued: AtomicBool::new(false),
-            next_atomic: UnsafeCell::new(ptr::null_mut()),
-            when: UnsafeCell::new(None),
-            next_stack: UnsafeCell::new(None),
-            prev_stack: UnsafeCell::new(ptr::null_mut()),
+    pub fn time_mut(&self) -> &mut Time {
+        unsafe { &mut *self.time.get() }
+    }
+
+    
+    
+    pub fn is_registered(&self) -> bool {
+        self.inner.is_some()
+    }
+
+    
+    pub fn register(me: &mut Arc<Self>) {
+        let handle = match HandlePriv::try_current() {
+            Ok(handle) => handle,
+            Err(_) => {
+                
+                
+                Arc::get_mut(me).unwrap().transition_to_error();
+
+                return;
+            }
+        };
+
+        Entry::register_with(me, handle)
+    }
+
+    
+    pub fn register_with(me: &mut Arc<Self>, handle: HandlePriv) {
+        assert!(!me.is_registered(), "only register an entry once");
+
+        let deadline = me.time_ref().deadline;
+
+        let inner = match handle.inner() {
+            Some(inner) => inner,
+            None => {
+                
+                
+                Arc::get_mut(me).unwrap().transition_to_error();
+
+                return;
+            }
+        };
+
+        
+        if inner.increment().is_err() {
+            Arc::get_mut(me).unwrap().transition_to_error();
+
+            return;
         }
+
+        
+        Arc::get_mut(me).unwrap().inner = Some(handle.into_inner());
+
+        let when = inner.normalize_deadline(deadline);
+
+        
+        
+        if when <= inner.elapsed() {
+            me.state.store(ELAPSED, Relaxed);
+            return;
+        } else {
+            me.state.store(when, Relaxed);
+        }
+
+        if inner.queue(me).is_err() {
+            
+            me.error();
+        }
+    }
+
+    fn transition_to_error(&mut self) {
+        self.inner = Some(Weak::new());
+        self.state = AtomicU64::new(ERROR);
     }
 
     
@@ -174,7 +209,9 @@ impl Entry {
     }
 
     pub fn set_when_internal(&self, when: Option<u64>) {
-        unsafe { (*self.when.get()) = when; }
+        unsafe {
+            (*self.when.get()) = when;
+        }
     }
 
     
@@ -245,7 +282,8 @@ impl Entry {
             return;
         }
 
-        let inner = match entry.inner.upgrade() {
+        
+        let inner = match entry.upgrade_inner() {
             Some(inner) => inner,
             None => return,
         };
@@ -281,12 +319,18 @@ impl Entry {
         Ok(NotReady)
     }
 
-    pub fn reset(entry: &Arc<Entry>, deadline: Instant) {
-        let inner = match entry.inner.upgrade() {
+    
+    pub fn reset(entry: &mut Arc<Entry>) {
+        if !entry.is_registered() {
+            return;
+        }
+
+        let inner = match entry.upgrade_inner() {
             Some(inner) => inner,
             None => return,
         };
 
+        let deadline = entry.time_ref().deadline;
         let when = inner.normalize_deadline(deadline);
         let elapsed = inner.elapsed();
 
@@ -312,8 +356,7 @@ impl Entry {
                 notify = true;
             }
 
-            let actual = entry.state.compare_and_swap(
-                curr, next, SeqCst);
+            let actual = entry.state.compare_and_swap(curr, next, SeqCst);
 
             if curr == actual {
                 break;
@@ -326,6 +369,10 @@ impl Entry {
             let _ = inner.queue(entry);
         }
     }
+
+    fn upgrade_inner(&self) -> Option<Arc<Inner>> {
+        self.inner.as_ref().and_then(|inner| inner.upgrade())
+    }
 }
 
 fn is_elapsed(state: u64) -> bool {
@@ -334,11 +381,7 @@ fn is_elapsed(state: u64) -> bool {
 
 impl Drop for Entry {
     fn drop(&mut self) {
-        if !self.counted {
-            return;
-        }
-
-        let inner = match self.inner.upgrade() {
+        let inner = match self.upgrade_inner() {
             Some(inner) => inner,
             None => return,
         };
@@ -349,211 +392,3 @@ impl Drop for Entry {
 
 unsafe impl Send for Entry {}
 unsafe impl Sync for Entry {}
-
-
-
-impl Stack {
-    pub fn new() -> Stack {
-        Stack { head: None }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.head.is_none()
-    }
-
-    
-    pub fn push(&mut self, entry: Arc<Entry>) {
-        
-        let ptr: *const Entry = &*entry as *const _;
-
-        
-        let old = self.head.take();
-
-        unsafe {
-            
-            debug_assert!((*entry.next_stack.get()).is_none());
-            debug_assert!((*entry.prev_stack.get()).is_null());
-
-            if let Some(ref entry) = old.as_ref() {
-                debug_assert!({
-                    // The head is not already set to the entry
-                    ptr != &***entry as *const _
-                });
-
-                
-                *entry.prev_stack.get() = ptr;
-            }
-
-            
-            *entry.next_stack.get() = old;
-
-        }
-
-        
-        self.head = Some(entry);
-    }
-
-    
-    pub fn pop(&mut self) -> Option<Arc<Entry>> {
-        let entry = self.head.take();
-
-        unsafe {
-            if let Some(entry) = entry.as_ref() {
-                self.head = (*entry.next_stack.get()).take();
-
-                if let Some(entry) = self.head.as_ref() {
-                    *entry.prev_stack.get() = ptr::null();
-                }
-
-                *entry.prev_stack.get() = ptr::null();
-            }
-        }
-
-        entry
-    }
-
-    
-    
-    
-    pub fn remove(&mut self, entry: &Entry) {
-        unsafe {
-            
-            debug_assert!({
-                // This walks the full linked list even if an entry is found.
-                let mut next = self.head.as_ref();
-                let mut contains = false;
-
-                while let Some(n) = next {
-                    if entry as *const _ == &**n as *const _ {
-                        debug_assert!(!contains);
-                        contains = true;
-                    }
-
-                    next = (*n.next_stack.get()).as_ref();
-                }
-
-                contains
-            });
-
-            
-            let next = (*entry.next_stack.get()).take();
-
-            if let Some(next) = next.as_ref() {
-                (*next.prev_stack.get()) = *entry.prev_stack.get();
-            }
-
-            
-
-            if let Some(prev) = (*entry.prev_stack.get()).as_ref() {
-                *prev.next_stack.get() = next;
-            } else {
-                
-                self.head = next;
-            }
-
-            
-            *entry.prev_stack.get() = ptr::null();
-        }
-    }
-}
-
-
-
-impl AtomicStack {
-    pub fn new() -> AtomicStack {
-        AtomicStack { head: AtomicPtr::new(ptr::null_mut()) }
-    }
-
-    
-    
-    
-    
-    pub fn push(&self, entry: &Arc<Entry>) -> Result<bool, Error> {
-        
-        let queued = entry.queued.fetch_or(true, SeqCst).into();
-
-        if queued {
-            
-            return Ok(false);
-        }
-
-        let ptr = Arc::into_raw(entry.clone()) as *mut _;
-
-        let mut curr = self.head.load(SeqCst);
-
-        loop {
-            if curr == SHUTDOWN {
-                
-                let _ = unsafe { Arc::from_raw(ptr) };
-
-                return Err(Error::shutdown());
-            }
-
-            
-            
-            unsafe {
-                *(entry.next_atomic.get()) = curr;
-            }
-
-            let actual = self.head.compare_and_swap(curr, ptr, SeqCst);
-
-            if actual == curr {
-                break;
-            }
-
-            curr = actual;
-        }
-
-        Ok(true)
-    }
-
-    
-    pub fn take(&self) -> AtomicStackEntries {
-        let ptr = self.head.swap(ptr::null_mut(), SeqCst);
-        AtomicStackEntries { ptr }
-    }
-
-    
-    
-    pub fn shutdown(&self) {
-        
-        let ptr = self.head.swap(SHUTDOWN, SeqCst);
-
-        
-        drop(AtomicStackEntries { ptr });
-    }
-}
-
-
-
-impl Iterator for AtomicStackEntries {
-    type Item = Arc<Entry>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.ptr.is_null() {
-            return None;
-        }
-
-        
-        let entry = unsafe { Arc::from_raw(self.ptr) };
-
-        
-        self.ptr = unsafe { (*entry.next_atomic.get()) };
-
-        
-        let res = entry.queued.fetch_and(false, SeqCst);
-        debug_assert!(res);
-
-        
-        Some(entry)
-    }
-}
-
-impl Drop for AtomicStackEntries {
-    fn drop(&mut self) {
-        while let Some(entry) = self.next() {
-            
-            entry.error();
-        }
-    }
-}

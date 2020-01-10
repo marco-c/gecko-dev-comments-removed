@@ -319,3 +319,11 @@ fn insert_invalid() {
     let mut headers = HeaderMap::new();
     headers.insert("evil\r\nfoo", "bar".parse().unwrap());
 }
+
+#[test]
+fn value_htab() {
+    
+    
+    HeaderValue::from_static("hello\tworld");
+    HeaderValue::from_str("hello\tworld").unwrap();
+}

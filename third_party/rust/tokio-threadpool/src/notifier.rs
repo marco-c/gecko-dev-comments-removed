@@ -3,7 +3,7 @@ use task::Task;
 
 use std::mem;
 use std::ops;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 use futures::executor::Notify;
 
@@ -13,7 +13,7 @@ use futures::executor::Notify;
 
 #[derive(Debug)]
 pub(crate) struct Notifier {
-    pub inner: Weak<Pool>,
+    pub pool: Arc<Pool>,
 }
 
 
@@ -38,9 +38,7 @@ impl Notify for Notifier {
                 
                 let task = task.clone();
 
-                if let Some(inner) = self.inner.upgrade() {
-                    let _ = inner.submit(task, &inner);
-                }
+                let _ = self.pool.submit(task, &self.pool);
             }
         }
     }

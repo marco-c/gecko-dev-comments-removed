@@ -1,8 +1,10 @@
+#[allow(deprecated)]
 use tokio_timer::Deadline;
+use tokio_timer::Timeout;
 
 use futures::Future;
 
-use std::time::Instant;
+use std::time::{Instant, Duration};
 
 
 
@@ -51,6 +53,17 @@ pub trait FutureExt: Future {
     
     
     
+    
+    
+    fn timeout(self, timeout: Duration) -> Timeout<Self>
+    where Self: Sized,
+    {
+        Timeout::new(self, timeout)
+    }
+
+    #[deprecated(since = "0.1.8", note = "use `timeout` instead")]
+    #[allow(deprecated)]
+    #[doc(hidden)]
     fn deadline(self, deadline: Instant) -> Deadline<Self>
     where Self: Sized,
     {
@@ -59,3 +72,16 @@ pub trait FutureExt: Future {
 }
 
 impl<T: ?Sized> FutureExt for T where T: Future {}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use prelude::future;
+
+    #[test]
+    fn timeout_polls_at_least_once() {
+        let base_future = future::result::<(), ()>(Ok(()));
+        let timeouted_future = base_future.timeout(Duration::new(0, 0));
+        assert!(timeouted_future.wait().is_ok());
+    }
+}

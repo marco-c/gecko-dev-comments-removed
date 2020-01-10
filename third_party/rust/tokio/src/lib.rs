@@ -1,77 +1,85 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/tokio/0.1.5")]
+#![doc(html_root_url = "https://docs.rs/tokio/0.1.11")]
 #![deny(missing_docs, warnings, missing_debug_implementations)]
+#![cfg_attr(feature = "async-await-preview", feature(
+        async_await,
+        await_macro,
+        futures_api,
+        ))]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern crate bytes;
 #[macro_use]
 extern crate futures;
 extern crate mio;
+extern crate tokio_current_thread;
 extern crate tokio_io;
 extern crate tokio_executor;
+extern crate tokio_codec;
 extern crate tokio_fs;
 extern crate tokio_reactor;
 extern crate tokio_threadpool;
@@ -79,157 +87,34 @@ extern crate tokio_timer;
 extern crate tokio_tcp;
 extern crate tokio_udp;
 
-#[cfg(feature = "unstable-futures")]
-extern crate futures2;
+#[cfg(feature = "async-await-preview")]
+extern crate tokio_async_await;
+
+#[cfg(unix)]
+extern crate tokio_uds;
 
 pub mod clock;
+pub mod codec;
 pub mod executor;
 pub mod fs;
+pub mod io;
 pub mod net;
+pub mod prelude;
 pub mod reactor;
 pub mod runtime;
 pub mod timer;
 pub mod util;
 
 pub use executor::spawn;
-#[cfg(feature = "unstable-futures")]
-pub use executor::spawn2;
-
 pub use runtime::run;
 
-pub mod io {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-    pub use tokio_io::{
-        AsyncRead,
-        AsyncWrite,
-    };
 
-    
-    pub use tokio_fs::{
-        stdin,
-        Stdin,
-        stdout,
-        Stdout,
-        stderr,
-        Stderr,
-    };
+#[cfg(feature = "async-await-preview")]
+mod async_await;
 
-    
-    pub use tokio_io::io::{
-        copy,
-        Copy,
-        flush,
-        Flush,
-        lines,
-        Lines,
-        read_exact,
-        ReadExact,
-        read_to_end,
-        ReadToEnd,
-        read_until,
-        ReadUntil,
-        ReadHalf,
-        shutdown,
-        Shutdown,
-        write_all,
-        WriteAll,
-        WriteHalf,
-    };
+#[cfg(feature = "async-await-preview")]
+pub use async_await::{run_async, spawn_async};
 
-    
-    
-    pub use ::std::io::{
-        Error,
-        ErrorKind,
-        Result,
-        Read,
-        Write,
-    };
-}
-
-pub mod prelude {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    pub use tokio_io::{
-        AsyncRead,
-        AsyncWrite,
-    };
-
-    pub use util::{
-        FutureExt,
-    };
-
-    pub use ::std::io::{
-        Read,
-        Write,
-    };
-
-    pub use futures::{
-        Future,
-        future,
-        Stream,
-        stream,
-        Sink,
-        IntoFuture,
-        Async,
-        AsyncSink,
-        Poll,
-        task,
-    };
-}
+#[cfg(feature = "async-await-preview")]
+pub use tokio_async_await::await;

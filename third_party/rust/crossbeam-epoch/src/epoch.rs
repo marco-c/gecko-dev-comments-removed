@@ -46,13 +46,17 @@ impl Epoch {
     
     #[inline]
     pub fn pinned(self) -> Epoch {
-        Epoch { data: self.data | 1 }
+        Epoch {
+            data: self.data | 1,
+        }
     }
 
     
     #[inline]
     pub fn unpinned(self) -> Epoch {
-        Epoch { data: self.data & !1 }
+        Epoch {
+            data: self.data & !1,
+        }
     }
 
     
@@ -60,7 +64,9 @@ impl Epoch {
     
     #[inline]
     pub fn successor(self) -> Epoch {
-        Epoch { data: self.data.wrapping_add(2) }
+        Epoch {
+            data: self.data.wrapping_add(2),
+        }
     }
 }
 
@@ -83,7 +89,9 @@ impl AtomicEpoch {
     
     #[inline]
     pub fn load(&self, ord: Ordering) -> Epoch {
-        Epoch { data: self.data.load(ord) }
+        Epoch {
+            data: self.data.load(ord),
+        }
     }
 
     

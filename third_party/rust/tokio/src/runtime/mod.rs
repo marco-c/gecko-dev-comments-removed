@@ -125,12 +125,11 @@ use reactor::{Background, Handle};
 
 use std::io;
 
+use tokio_executor::enter;
 use tokio_threadpool as threadpool;
 
 use futures;
 use futures::future::Future;
-#[cfg(feature = "unstable-futures")]
-use futures2;
 
 
 
@@ -212,19 +211,9 @@ where F: Future<Item = (), Error = ()> + Send + 'static,
 {
     let mut runtime = Runtime::new().unwrap();
     runtime.spawn(future);
-    runtime.shutdown_on_idle().wait().unwrap();
-}
-
-
-
-
-#[cfg(feature = "unstable-futures")]
-pub fn run2<F>(future: F)
-    where F: futures2::Future<Item = (), Error = futures2::Never> + Send + 'static,
-{
-    let mut runtime = Runtime::new().unwrap();
-    runtime.spawn2(future);
-    runtime.shutdown_on_idle().wait().unwrap();
+    enter().expect("nested tokio::run")
+        .block_on(runtime.shutdown_on_idle())
+        .unwrap();
 }
 
 impl Runtime {
@@ -356,19 +345,6 @@ impl Runtime {
     
     
     
-    #[cfg(feature = "unstable-futures")]
-    pub fn spawn2<F>(&mut self, future: F) -> &mut Self
-        where F: futures2::Future<Item = (), Error = futures2::Never> + Send + 'static,
-    {
-        futures2::executor::Executor::spawn(
-            self.inner_mut().pool.sender_mut(), Box::new(future)
-        ).unwrap();
-        self
-    }
-
-    
-    
-    
     
     
     
@@ -387,6 +363,31 @@ impl Runtime {
         let (tx, rx) = futures::sync::oneshot::channel();
         self.spawn(future.then(move |r| tx.send(r).map_err(|_| unreachable!())));
         rx.wait().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn block_on_all<F, R, E>(mut self, future: F) -> Result<R, E>
+    where
+        F: Send + 'static + Future<Item = R, Error = E>,
+        R: Send + 'static,
+        E: Send + 'static,
+    {
+        let res = self.block_on(future);
+        self.shutdown_on_idle().wait().unwrap();
+        res
     }
 
     

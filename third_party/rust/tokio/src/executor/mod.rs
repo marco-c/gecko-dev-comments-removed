@@ -39,90 +39,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(
+    since = "0.1.8",
+    note = "use tokio-current-thread crate or functions in tokio::runtime::current_thread instead",
+)]
+#[doc(hidden)]
 pub mod current_thread;
 
-pub mod thread_pool {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+#[deprecated(since = "0.1.8", note = "use tokio-threadpool crate instead")]
+#[doc(hidden)]
 
+
+
+pub mod thread_pool {
     pub use tokio_threadpool::{
         Builder,
         Sender,
@@ -135,9 +64,6 @@ pub use tokio_executor::{Executor, DefaultExecutor, SpawnError};
 
 use futures::{Future, IntoFuture};
 use futures::future::{self, FutureResult};
-
-#[cfg(feature = "unstable-futures")]
-use futures2;
 
 
 
@@ -208,15 +134,6 @@ where F: Future<Item = (), Error = ()> + 'static + Send
     Spawn(())
 }
 
-
-#[cfg(feature = "unstable-futures")]
-pub fn spawn2<F>(f: F) -> Spawn
-    where F: futures2::Future<Item = (), Error = futures2::Never> + 'static + Send
-{
-    ::tokio_executor::spawn2(f);
-    Spawn(())
-}
-
 impl IntoFuture for Spawn {
     type Future = FutureResult<(), ()>;
     type Item = ();
@@ -224,16 +141,5 @@ impl IntoFuture for Spawn {
 
     fn into_future(self) -> Self::Future {
         future::ok(())
-    }
-}
-
-#[cfg(feature = "unstable-futures")]
-impl futures2::IntoFuture for Spawn {
-    type Future = futures2::future::FutureResult<(), ()>;
-    type Item = ();
-    type Error = ();
-
-    fn into_future(self) -> Self::Future {
-        futures2::future::ok(())
     }
 }

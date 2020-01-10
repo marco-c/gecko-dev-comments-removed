@@ -2,21 +2,20 @@ use tokio_executor::park::{Park, Unpark};
 
 use std::error::Error;
 use std::fmt;
-use std::sync::{Arc, Mutex, Condvar};
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering::SeqCst;
 use std::time::Duration;
+
+use crossbeam_utils::sync::{Parker, Unparker};
 
 
 #[derive(Debug)]
 pub struct DefaultPark {
-    inner: Arc<Inner>,
+    inner: Parker,
 }
 
 
 #[derive(Debug)]
 pub struct DefaultUnpark {
-    inner: Arc<Inner>,
+    inner: Unparker,
 }
 
 
@@ -29,40 +28,28 @@ pub struct ParkError {
     _p: (),
 }
 
-#[derive(Debug)]
-struct Inner {
-    state: AtomicUsize,
-    mutex: Mutex<()>,
-    condvar: Condvar,
-}
-
-const IDLE: usize = 0;
-const NOTIFY: usize = 1;
-const SLEEP: usize = 2;
-
 
 
 impl DefaultPark {
     
     pub fn new() -> DefaultPark {
-        let inner = Arc::new(Inner {
-            state: AtomicUsize::new(IDLE),
-            mutex: Mutex::new(()),
-            condvar: Condvar::new(),
-        });
-
-        DefaultPark { inner }
+        DefaultPark {
+            inner: Parker::new(),
+        }
     }
 
     
     
     
     pub(crate) fn notify(&self) {
-        self.inner.unpark();
+        self.inner.unparker().unpark();
     }
 
     pub(crate) fn park_sync(&self, duration: Option<Duration>) {
-        self.inner.park(duration);
+        match duration {
+            None => self.inner.park(),
+            Some(duration) => self.inner.park_timeout(duration),
+        }
     }
 }
 
@@ -71,17 +58,18 @@ impl Park for DefaultPark {
     type Error = ParkError;
 
     fn unpark(&self) -> Self::Unpark {
-        let inner = self.inner.clone();
-        DefaultUnpark { inner }
+        DefaultUnpark {
+            inner: self.inner.unparker().clone(),
+        }
     }
 
     fn park(&mut self) -> Result<(), Self::Error> {
-        self.inner.park(None);
+        self.inner.park();
         Ok(())
     }
 
     fn park_timeout(&mut self, duration: Duration) -> Result<(), Self::Error> {
-        self.inner.park(Some(duration));
+        self.inner.park_timeout(duration);
         Ok(())
     }
 }
@@ -91,80 +79,6 @@ impl Park for DefaultPark {
 impl Unpark for DefaultUnpark {
     fn unpark(&self) {
         self.inner.unpark();
-    }
-}
-
-impl Inner {
-    
-    fn park(&self, timeout: Option<Duration>) {
-        
-        
-        match self.state.compare_and_swap(NOTIFY, IDLE, SeqCst) {
-            NOTIFY => return,
-            IDLE => {},
-            _ => unreachable!(),
-        }
-
-        
-        if let Some(ref dur) = timeout {
-            if *dur == Duration::from_millis(0) {
-                return;
-            }
-        }
-
-        
-        
-        let mut m = self.mutex.lock().unwrap();
-
-        
-        match self.state.compare_and_swap(IDLE, SLEEP, SeqCst) {
-            NOTIFY => {
-                
-                
-                self.state.store(IDLE, SeqCst);
-                return;
-            }
-            IDLE => {},
-            _ => unreachable!(),
-        }
-
-        m = match timeout {
-            Some(timeout) => self.condvar.wait_timeout(m, timeout).unwrap().0,
-            None => self.condvar.wait(m).unwrap(),
-        };
-
-        
-        
-        self.state.store(IDLE, SeqCst);
-
-        
-        
-        
-        drop(m);
-    }
-
-    fn unpark(&self) {
-        
-        
-        match self.state.compare_and_swap(IDLE, NOTIFY, SeqCst) {
-            IDLE | NOTIFY => return,
-            SLEEP => {}
-            _ => unreachable!(),
-        }
-
-        
-        let _m = self.mutex.lock().unwrap();
-
-        
-        match self.state.swap(NOTIFY, SeqCst) {
-            SLEEP => {}
-            NOTIFY => return,
-            IDLE => return,
-            _ => unreachable!(),
-        }
-
-        
-        self.condvar.notify_one();
     }
 }
 

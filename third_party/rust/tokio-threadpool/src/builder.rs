@@ -1,8 +1,9 @@
 use callback::Callback;
 use config::{Config, MAX_WORKERS};
 use park::{BoxPark, BoxedPark, DefaultPark};
-use sender::Sender;
+use shutdown::ShutdownTrigger;
 use pool::{Pool, MAX_BACKUP};
+use task::Queue;
 use thread_pool::ThreadPool;
 use worker::{self, Worker, WorkerId};
 
@@ -10,13 +11,11 @@ use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
+use std::cmp::max;
 
 use num_cpus;
 use tokio_executor::Enter;
 use tokio_executor::park::Park;
-
-#[cfg(feature = "unstable-futures")]
-use futures2;
 
 
 
@@ -92,7 +91,7 @@ impl Builder {
     
     
     pub fn new() -> Builder {
-        let num_cpus = num_cpus::get();
+        let num_cpus = max(1, num_cpus::get());
 
         let new_park = Box::new(|_: &WorkerId| {
             Box::new(BoxedPark::new(DefaultPark::new()))
@@ -136,7 +135,7 @@ impl Builder {
     
     pub fn pool_size(&mut self, val: usize) -> &mut Self {
         assert!(val >= 1, "at least one thread required");
-        assert!(val <= MAX_WORKERS, "max value is {}", 32768);
+        assert!(val <= MAX_WORKERS, "max value is {}", MAX_WORKERS);
 
         self.pool_size = val;
         self
@@ -398,31 +397,41 @@ impl Builder {
     
     
     pub fn build(&self) -> ThreadPool {
-        let mut workers = vec![];
-
         trace!("build; num-workers={}", self.pool_size);
 
-        for i in 0..self.pool_size {
-            let id = WorkerId::new(i);
-            let park = (self.new_park)(&id);
-            let unpark = park.unpark();
+        
+        let workers: Arc<[worker::Entry]> = {
+            let mut workers = vec![];
 
-            workers.push(worker::Entry::new(park, unpark));
-        }
+            for i in 0..self.pool_size {
+                let id = WorkerId::new(i);
+                let park = (self.new_park)(&id);
+                let unpark = park.unpark();
+
+                workers.push(worker::Entry::new(park, unpark));
+            }
+
+            workers.into()
+        };
+
+        let queue = Arc::new(Queue::new());
 
         
-        let inner = Arc::new(
-            Pool::new(
-                workers.into_boxed_slice(),
-                self.max_blocking,
-                self.config.clone()));
+        
+        
+        
+        let trigger = Arc::new(ShutdownTrigger::new(workers.clone(), queue.clone()));
 
         
-        let inner = Some(Sender {
-            inner
-        });
+        let pool = Arc::new(Pool::new(
+            workers,
+            Arc::downgrade(&trigger),
+            self.max_blocking,
+            self.config.clone(),
+            queue,
+        ));
 
-        ThreadPool { inner }
+        ThreadPool::new2(pool, trigger)
     }
 }
 

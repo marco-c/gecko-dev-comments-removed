@@ -10,6 +10,7 @@
 
 extern crate futures;
 extern crate tokio;
+extern crate tokio_current_thread;
 extern crate tokio_executor;
 extern crate tokio_reactor;
 extern crate tokio_timer;
@@ -18,7 +19,7 @@ use std::io::Error as IoError;
 use std::time::{Duration, Instant};
 
 use futures::{future, Future};
-use tokio::executor::current_thread::{self, CurrentThread};
+use tokio_current_thread::CurrentThread;
 use tokio_reactor::Reactor;
 use tokio_timer::timer::{self, Timer};
 
@@ -46,7 +47,7 @@ fn run<F: Future<Item = (), Error = ()>>(f: F) -> Result<(), IoError> {
             
             
             
-            let mut default_executor = current_thread::TaskExecutor::current();
+            let mut default_executor = tokio_current_thread::TaskExecutor::current();
             tokio_executor::with_default(&mut default_executor, enter, |enter| {
                 let mut executor = executor.enter(enter);
                 
@@ -72,7 +73,7 @@ fn main() {
             .map_err(|e| println!("Failed to connect: {}", e));
         
         
-        current_thread::spawn(connect);
+        tokio_current_thread::spawn(connect);
 
         
         let deadline = tokio::timer::Delay::new(Instant::now() + Duration::from_secs(5))

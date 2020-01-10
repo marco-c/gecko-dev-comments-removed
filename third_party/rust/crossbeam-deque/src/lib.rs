@@ -60,62 +60,118 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
 
 extern crate crossbeam_epoch as epoch;
 extern crate crossbeam_utils as utils;
 
+use std::cell::Cell;
 use std::cmp;
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
+use std::sync::atomic::{self, AtomicIsize, Ordering};
 use std::sync::Arc;
-use std::sync::atomic::{self, AtomicIsize};
-use std::sync::atomic::Ordering::{Acquire, Relaxed, Release, SeqCst};
 
 use epoch::{Atomic, Owned};
-use utils::cache_padded::CachePadded;
+use utils::CachePadded;
 
 
-const DEFAULT_MIN_CAP: usize = 16;
+const MIN_CAP: usize = 32;
+
+
+const MAX_BATCH: usize = 128;
 
 
 
 const FLUSH_THRESHOLD_BYTES: usize = 1 << 10;
 
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-pub enum Steal<T> {
-    
-    Empty,
 
-    
-    Data(T),
 
-    
-    Retry,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn fifo<T>() -> (Worker<T>, Stealer<T>) {
+    let buffer = Buffer::alloc(MIN_CAP);
+
+    let inner = Arc::new(CachePadded::new(Inner {
+        front: AtomicIsize::new(0),
+        back: AtomicIsize::new(0),
+        buffer: Atomic::new(buffer),
+    }));
+
+    let w = Worker {
+        inner: inner.clone(),
+        cached_buffer: Cell::new(buffer),
+        flavor: Flavor::Fifo,
+        _marker: PhantomData,
+    };
+    let s = Stealer {
+        inner,
+        flavor: Flavor::Fifo,
+    };
+    (w, s)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn lifo<T>() -> (Worker<T>, Stealer<T>) {
+    let buffer = Buffer::alloc(MIN_CAP);
+
+    let inner = Arc::new(CachePadded::new(Inner {
+        front: AtomicIsize::new(0),
+        back: AtomicIsize::new(0),
+        buffer: Atomic::new(buffer),
+    }));
+
+    let w = Worker {
+        inner: inner.clone(),
+        cached_buffer: Cell::new(buffer),
+        flavor: Flavor::Lifo,
+        _marker: PhantomData,
+    };
+    let s = Stealer {
+        inner,
+        flavor: Flavor::Lifo,
+    };
+    (w, s)
+}
+
+
+
 
 
 struct Buffer<T> {
@@ -130,7 +186,7 @@ unsafe impl<T> Send for Buffer<T> {}
 
 impl<T> Buffer<T> {
     
-    fn new(cap: usize) -> Self {
+    fn alloc(cap: usize) -> Self {
         debug_assert_eq!(cap, cap.next_power_of_two());
 
         let mut v = Vec::with_capacity(cap);
@@ -141,90 +197,186 @@ impl<T> Buffer<T> {
     }
 
     
+    unsafe fn dealloc(self) {
+        drop(Vec::from_raw_parts(self.ptr, 0, self.cap));
+    }
+
+    
     unsafe fn at(&self, index: isize) -> *mut T {
         
         self.ptr.offset(index & (self.cap - 1) as isize)
     }
 
     
+    
+    
+    
+    
+    
     unsafe fn write(&self, index: isize, value: T) {
-        ptr::write(self.at(index), value)
+        ptr::write_volatile(self.at(index), value)
     }
 
     
+    
+    
+    
+    
+    
     unsafe fn read(&self, index: isize) -> T {
-        ptr::read(self.at(index))
+        ptr::read_volatile(self.at(index))
     }
 }
 
-impl<T> Drop for Buffer<T> {
-    fn drop(&mut self) {
-        unsafe {
-            drop(Vec::from_raw_parts(self.ptr, 0, self.cap));
+impl<T> Clone for Buffer<T> {
+    fn clone(&self) -> Buffer<T> {
+        Buffer {
+            ptr: self.ptr,
+            cap: self.cap,
         }
     }
 }
+
+impl<T> Copy for Buffer<T> {}
+
+
+#[must_use]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+pub enum Pop<T> {
+    
+    Empty,
+
+    
+    Data(T),
+
+    
+    Retry,
+}
+
+
+#[must_use]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+pub enum Steal<T> {
+    
+    Empty,
+
+    
+    Data(T),
+
+    
+    Retry,
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 struct Inner<T> {
     
-    bottom: AtomicIsize,
+    front: AtomicIsize,
 
     
-    top: AtomicIsize,
+    back: AtomicIsize,
 
     
     buffer: Atomic<Buffer<T>>,
-
-    
-    min_cap: usize,
 }
 
-impl<T> Inner<T> {
-    
-    fn new() -> Self {
-        Self::with_min_capacity(DEFAULT_MIN_CAP)
-    }
+impl<T> Drop for Inner<T> {
+    fn drop(&mut self) {
+        
+        let b = self.back.load(Ordering::Relaxed);
+        let f = self.front.load(Ordering::Relaxed);
 
-    
-    fn with_min_capacity(min_cap: usize) -> Self {
-        let power = min_cap.next_power_of_two();
-        assert!(power >= min_cap, "capacity too large: {}", min_cap);
-        Inner {
-            bottom: AtomicIsize::new(0),
-            top: AtomicIsize::new(0),
-            buffer: Atomic::new(Buffer::new(power)),
-            min_cap: power,
+        unsafe {
+            let buffer = self.buffer.load(Ordering::Relaxed, epoch::unprotected());
+
+            
+            let mut i = f;
+            while i != b {
+                ptr::drop_in_place(buffer.deref().at(i));
+                i = i.wrapping_add(1);
+            }
+
+            
+            buffer.into_owned().into_box().dealloc();
         }
     }
+}
 
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Flavor {
+    
+    Fifo,
+
+    
+    Lifo,
+}
+
+
+
+
+
+
+
+
+
+pub struct Worker<T> {
+    
+    inner: Arc<CachePadded<Inner<T>>>,
+
+    
+    cached_buffer: Cell<Buffer<T>>,
+
+    
+    flavor: Flavor,
+
+    
+    _marker: PhantomData<*mut ()>, 
+}
+
+unsafe impl<T: Send> Send for Worker<T> {}
+
+impl<T> Worker<T> {
     
     #[cold]
     unsafe fn resize(&self, new_cap: usize) {
         
-        let b = self.bottom.load(Relaxed);
-        let t = self.top.load(Relaxed);
-
-        let buffer = self.buffer.load(Relaxed, epoch::unprotected());
-
-        
-        let new = Buffer::new(new_cap);
+        let b = self.inner.back.load(Ordering::Relaxed);
+        let f = self.inner.front.load(Ordering::Relaxed);
+        let buffer = self.cached_buffer.get();
 
         
-        let mut i = t;
+        let new = Buffer::alloc(new_cap);
+        self.cached_buffer.set(new);
+
+        
+        let mut i = f;
         while i != b {
-            ptr::copy_nonoverlapping(buffer.deref().at(i), new.at(i), 1);
+            ptr::copy_nonoverlapping(buffer.at(i), new.at(i), 1);
             i = i.wrapping_add(1);
         }
 
         let guard = &epoch::pin();
 
         
-        let old = self.buffer
-            .swap(Owned::new(new).into_shared(guard), Release, guard);
+        let old =
+            self.inner
+                .buffer
+                .swap(Owned::new(new).into_shared(guard), Ordering::Release, guard);
 
         
-        guard.defer(move || old.into_owned());
+        guard.defer_unchecked(move || old.into_owned().into_box().dealloc());
 
         
         
@@ -232,126 +384,35 @@ impl<T> Inner<T> {
             guard.flush();
         }
     }
-}
 
-impl<T> Drop for Inner<T> {
-    fn drop(&mut self) {
-        
-        let b = self.bottom.load(Relaxed);
-        let t = self.top.load(Relaxed);
-
-        unsafe {
-            let buffer = self.buffer.load(Relaxed, epoch::unprotected());
+    
+    
+    fn reserve(&self, reserve_cap: usize) {
+        if reserve_cap > 0 {
+            
+            let b = self.inner.back.load(Ordering::Relaxed);
+            let f = self.inner.front.load(Ordering::SeqCst);
+            let len = b.wrapping_sub(f) as usize;
 
             
-            let mut i = t;
-            while i != b {
-                ptr::drop_in_place(buffer.deref().at(i));
-                i = i.wrapping_add(1);
+            let cap = self.cached_buffer.get().cap;
+
+            
+            if cap - len < reserve_cap {
+                
+                let mut new_cap = cap * 2;
+                while new_cap - len < reserve_cap {
+                    new_cap *= 2;
+                }
+
+                
+                unsafe {
+                    self.resize(new_cap);
+                }
             }
-
-            
-            drop(buffer.into_owned());
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub struct Deque<T> {
-    inner: Arc<CachePadded<Inner<T>>>,
-    _marker: PhantomData<*mut ()>, 
-}
-
-unsafe impl<T: Send> Send for Deque<T> {}
-
-impl<T> Deque<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new() -> Deque<T> {
-        Deque {
-            inner: Arc::new(CachePadded::new(Inner::new())),
-            _marker: PhantomData,
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn with_min_capacity(min_cap: usize) -> Deque<T> {
-        Deque {
-            inner: Arc::new(CachePadded::new(Inner::with_min_capacity(min_cap))),
-            _marker: PhantomData,
-        }
-    }
-
-    
-    
     
     
     
@@ -363,121 +424,11 @@ impl<T> Deque<T> {
     
     
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        let b = self.inner.back.load(Ordering::Relaxed);
+        let f = self.inner.front.load(Ordering::SeqCst);
+        b.wrapping_sub(f) <= 0
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn len(&self) -> usize {
-        let b = self.inner.bottom.load(Relaxed);
-        let t = self.inner.top.load(Relaxed);
-        b.wrapping_sub(t) as usize
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn min_capacity(&self) -> usize {
-        self.inner.min_cap
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn capacity(&self) -> usize {
-        unsafe {
-            let buf = self.inner.buffer.load(Relaxed, epoch::unprotected());
-            buf.deref().cap
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn shrink_to_fit(&self) {
-        let b = self.inner.bottom.load(Relaxed);
-        let t = self.inner.top.load(Acquire);
-        let cap = self.capacity();
-        let len = b.wrapping_sub(t);
-
-        
-        let mut new_cap = cap;
-        while self.inner.min_cap <= new_cap / 2 && len <= new_cap as isize / 2 {
-            new_cap /= 2;
-        }
-
-        if new_cap != cap {
-            unsafe {
-                self.inner.resize(new_cap);
-            }
-        }
-    }
-
-    
-    
-    
     
     
     
@@ -490,115 +441,35 @@ impl<T> Deque<T> {
     
     
     pub fn push(&self, value: T) {
+        
+        let b = self.inner.back.load(Ordering::Relaxed);
+        let f = self.inner.front.load(Ordering::Acquire);
+        let mut buffer = self.cached_buffer.get();
+
+        
+        let len = b.wrapping_sub(f);
+
+        
+        if len >= buffer.cap as isize {
+            
+            unsafe {
+                self.resize(2 * buffer.cap);
+            }
+            buffer = self.cached_buffer.get();
+        }
+
+        
         unsafe {
-            
-            
-            let b = self.inner.bottom.load(Relaxed);
-            let t = self.inner.top.load(Acquire);
-
-            let mut buffer = self.inner.buffer.load(Relaxed, epoch::unprotected());
-
-            
-            let len = b.wrapping_sub(t);
-
-            let cap = buffer.deref().cap;
-            
-            if len >= cap as isize {
-                
-                self.inner.resize(2 * cap);
-                buffer = self.inner.buffer.load(Relaxed, epoch::unprotected());
-            
-            } else if cap > self.inner.min_cap && len + 1 < cap as isize / 4 {
-                
-                self.inner.resize(cap / 2);
-                buffer = self.inner.buffer.load(Relaxed, epoch::unprotected());
-            }
-
-            
-            buffer.deref().write(b, value);
-            atomic::fence(Release);
-            self.inner.bottom.store(b.wrapping_add(1), Relaxed);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn pop(&self) -> Option<T> {
-        
-        let b = self.inner.bottom.load(Relaxed);
-
-        
-        let t = self.inner.top.load(Relaxed);
-        if b.wrapping_sub(t) <= 0 {
-            return None;
+            buffer.write(b, value);
         }
 
-        
-        let b = b.wrapping_sub(1);
-        self.inner.bottom.store(b, Relaxed);
+        atomic::fence(Ordering::Release);
 
         
         
-        let buf = unsafe { self.inner.buffer.load(Relaxed, epoch::unprotected()) };
-
-        atomic::fence(SeqCst);
-
         
-        let t = self.inner.top.load(Relaxed);
-
         
-        let len = b.wrapping_sub(t);
-
-        if len < 0 {
-            
-            self.inner.bottom.store(b.wrapping_add(1), Relaxed);
-            None
-        } else {
-            
-            let mut value = unsafe { Some(buf.deref().read(b)) };
-
-            
-            if len == 0 {
-                
-                if self.inner
-                    .top
-                    .compare_exchange(t, t.wrapping_add(1), SeqCst, Relaxed)
-                    .is_err()
-                {
-                    
-                    mem::forget(value.take());
-                }
-
-                
-                self.inner.bottom.store(b.wrapping_add(1), Relaxed);
-            } else {
-                
-                unsafe {
-                    let cap = buf.deref().cap;
-                    if cap > self.inner.min_cap && len < cap as isize / 4 {
-                        self.inner.resize(cap / 2);
-                    }
-                }
-            }
-
-            value
-        }
+        self.inner.back.store(b.wrapping_add(1), Ordering::Release);
     }
 
     
@@ -621,95 +492,112 @@ impl<T> Deque<T> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn steal(&self) -> Steal<T> {
-        let b = self.inner.bottom.load(Relaxed);
-        let buf = unsafe { self.inner.buffer.load(Relaxed, epoch::unprotected()) };
-        let t = self.inner.top.load(Relaxed);
-        let len = b.wrapping_sub(t);
+    pub fn pop(&self) -> Pop<T> {
+        
+        let b = self.inner.back.load(Ordering::Relaxed);
+        let f = self.inner.front.load(Ordering::Relaxed);
+
+        
+        let len = b.wrapping_sub(f);
 
         
         if len <= 0 {
-            return Steal::Empty;
+            return Pop::Empty;
         }
 
-        
-        if self.inner
-            .top
-            .compare_exchange(t, t.wrapping_add(1), SeqCst, Relaxed)
-            .is_ok()
-        {
-            let data = unsafe { buf.deref().read(t) };
-
+        match self.flavor {
             
-            unsafe {
-                let cap = buf.deref().cap;
-                if cap > self.inner.min_cap && len <= cap as isize / 4 {
-                    self.inner.resize(cap / 2);
+            Flavor::Fifo => {
+                
+                if self
+                    .inner
+                    .front
+                    .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
+                    .is_ok()
+                {
+                    unsafe {
+                        
+                        let buffer = self.cached_buffer.get();
+                        let data = buffer.read(f);
+
+                        
+                        if buffer.cap > MIN_CAP && len <= buffer.cap as isize / 4 {
+                            self.resize(buffer.cap / 2);
+                        }
+
+                        return Pop::Data(data);
+                    }
                 }
+
+                Pop::Retry
             }
 
-            return Steal::Data(data);
-        }
+            
+            Flavor::Lifo => {
+                
+                let b = b.wrapping_sub(1);
+                self.inner.back.store(b, Ordering::Relaxed);
 
-        Steal::Retry
-    }
+                atomic::fence(Ordering::SeqCst);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn stealer(&self) -> Stealer<T> {
-        Stealer {
-            inner: self.inner.clone(),
-            _marker: PhantomData,
+                
+                let f = self.inner.front.load(Ordering::Relaxed);
+
+                
+                let len = b.wrapping_sub(f);
+
+                if len < 0 {
+                    
+                    self.inner.back.store(b.wrapping_add(1), Ordering::Relaxed);
+                    Pop::Empty
+                } else {
+                    
+                    let buffer = self.cached_buffer.get();
+                    let mut value = unsafe { Some(buffer.read(b)) };
+
+                    
+                    if len == 0 {
+                        
+                        if self
+                            .inner
+                            .front
+                            .compare_exchange(
+                                f,
+                                f.wrapping_add(1),
+                                Ordering::SeqCst,
+                                Ordering::Relaxed,
+                            ).is_err()
+                        {
+                            
+                            mem::forget(value.take());
+                        }
+
+                        
+                        self.inner.back.store(b.wrapping_add(1), Ordering::Relaxed);
+                    } else {
+                        
+                        if buffer.cap > MIN_CAP && len < buffer.cap as isize / 4 {
+                            unsafe {
+                                self.resize(buffer.cap / 2);
+                            }
+                        }
+                    }
+
+                    match value {
+                        None => Pop::Empty,
+                        Some(data) => Pop::Data(data),
+                    }
+                }
+            }
         }
     }
 }
 
-impl<T> fmt::Debug for Deque<T> {
+impl<T> fmt::Debug for Worker<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Deque {{ ... }}")
+        f.pad("Worker { .. }")
     }
 }
-
-impl<T> Default for Deque<T> {
-    fn default() -> Deque<T> {
-        Deque::new()
-    }
-}
-
-
-
 
 
 
@@ -717,8 +605,11 @@ impl<T> Default for Deque<T> {
 
 
 pub struct Stealer<T> {
+    
     inner: Arc<CachePadded<Inner<T>>>,
-    _marker: PhantomData<*mut ()>, 
+
+    
+    flavor: Flavor,
 }
 
 unsafe impl<T: Send> Send for Stealer<T> {}
@@ -735,51 +626,13 @@ impl<T> Stealer<T> {
     
     
     
-    
-    
-    
-    
-    
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        let f = self.inner.front.load(Ordering::Acquire);
+        atomic::fence(Ordering::SeqCst);
+        let b = self.inner.back.load(Ordering::Acquire);
+        b.wrapping_sub(f) <= 0
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn len(&self) -> usize {
-        let t = self.inner.top.load(Relaxed);
-        atomic::fence(SeqCst);
-        let b = self.inner.bottom.load(Relaxed);
-        cmp::max(b.wrapping_sub(t), 0) as usize
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -797,340 +650,230 @@ impl<T> Stealer<T> {
     
     pub fn steal(&self) -> Steal<T> {
         
-        let t = self.inner.top.load(Acquire);
+        let f = self.inner.front.load(Ordering::Acquire);
 
         
         
         
+        
+        
         if epoch::is_pinned() {
-            atomic::fence(SeqCst);
+            atomic::fence(Ordering::SeqCst);
         }
 
         let guard = &epoch::pin();
 
         
-        let b = self.inner.bottom.load(Acquire);
+        let b = self.inner.back.load(Ordering::Acquire);
 
         
-        if b.wrapping_sub(t) <= 0 {
+        if b.wrapping_sub(f) <= 0 {
             return Steal::Empty;
         }
 
         
-        let buf = self.inner.buffer.load(Acquire, guard);
-        let value = unsafe { buf.deref().read(t) };
+        let buffer = self.inner.buffer.load(Ordering::Acquire, guard);
+        let value = unsafe { buffer.deref().read(f) };
 
         
-        if self.inner
-            .top
-            .compare_exchange(t, t.wrapping_add(1), SeqCst, Relaxed)
-            .is_ok()
+        if self
+            .inner
+            .front
+            .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
+            .is_err()
         {
-            return Steal::Data(value);
+            
+            mem::forget(value);
+            return Steal::Retry;
         }
 
         
-        mem::forget(value);
+        Steal::Data(value)
+    }
 
-        Steal::Retry
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn steal_many(&self, dest: &Worker<T>) -> Steal<T> {
+        
+        let mut f = self.inner.front.load(Ordering::Acquire);
+
+        
+        
+        
+        
+        
+        if epoch::is_pinned() {
+            atomic::fence(Ordering::SeqCst);
+        }
+
+        let guard = &epoch::pin();
+
+        
+        let b = self.inner.back.load(Ordering::Acquire);
+
+        
+        let len = b.wrapping_sub(f);
+        if len <= 0 {
+            return Steal::Empty;
+        }
+
+        
+        let additional = cmp::min((len as usize - 1) / 2, MAX_BATCH);
+        dest.reserve(additional);
+        let additional = additional as isize;
+
+        
+        let dest_buffer = dest.cached_buffer.get();
+        let mut dest_b = dest.inner.back.load(Ordering::Relaxed);
+
+        
+        let buffer = self.inner.buffer.load(Ordering::Acquire, guard);
+        let value = unsafe { buffer.deref().read(f) };
+
+        match self.flavor {
+            
+            Flavor::Fifo => {
+                
+                for i in 0..additional {
+                    unsafe {
+                        let value = buffer.deref().read(f.wrapping_add(i + 1));
+                        dest_buffer.write(dest_b.wrapping_add(i), value);
+                    }
+                }
+
+                
+                if self
+                    .inner
+                    .front
+                    .compare_exchange(
+                        f,
+                        f.wrapping_add(additional + 1),
+                        Ordering::SeqCst,
+                        Ordering::Relaxed,
+                    ).is_err()
+                {
+                    
+                    mem::forget(value);
+                    return Steal::Retry;
+                }
+
+                atomic::fence(Ordering::Release);
+
+                
+                
+                
+                
+                dest.inner
+                    .back
+                    .store(dest_b.wrapping_add(additional), Ordering::Release);
+
+                
+                Steal::Data(value)
+            }
+
+            
+            Flavor::Lifo => {
+                
+                if self
+                    .inner
+                    .front
+                    .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
+                    .is_err()
+                {
+                    
+                    mem::forget(value);
+                    return Steal::Retry;
+                }
+
+                
+                f = f.wrapping_add(1);
+
+                
+                for _ in 0..additional {
+                    
+                    
+                    atomic::fence(Ordering::SeqCst);
+
+                    
+                    let b = self.inner.back.load(Ordering::Acquire);
+
+                    
+                    if b.wrapping_sub(f) <= 0 {
+                        break;
+                    }
+
+                    
+                    let value = unsafe { buffer.deref().read(f) };
+
+                    
+                    if self
+                        .inner
+                        .front
+                        .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
+                        .is_err()
+                    {
+                        
+                        mem::forget(value);
+                        break;
+                    }
+
+                    
+                    unsafe {
+                        dest_buffer.write(dest_b, value);
+                    }
+
+                    
+                    f = f.wrapping_add(1);
+                    dest_b = dest_b.wrapping_add(1);
+
+                    atomic::fence(Ordering::Release);
+
+                    
+                    
+                    
+                    
+                    dest.inner.back.store(dest_b, Ordering::Release);
+                }
+
+                
+                Steal::Data(value)
+            }
+        }
     }
 }
 
 impl<T> Clone for Stealer<T> {
-    
     fn clone(&self) -> Stealer<T> {
         Stealer {
             inner: self.inner.clone(),
-            _marker: PhantomData,
+            flavor: self.flavor,
         }
     }
 }
 
 impl<T> fmt::Debug for Stealer<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Stealer {{ ... }}")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    extern crate rand;
-
-    use std::sync::{Arc, Mutex};
-    use std::sync::atomic::{AtomicBool, AtomicUsize};
-    use std::sync::atomic::Ordering::SeqCst;
-    use std::thread;
-
-    use epoch;
-    use self::rand::Rng;
-
-    use super::{Deque, Steal};
-
-    #[test]
-    fn smoke() {
-        let d = Deque::new();
-        let s = d.stealer();
-        assert_eq!(d.pop(), None);
-        assert_eq!(s.steal(), Steal::Empty);
-        assert_eq!(d.len(), 0);
-        assert_eq!(s.len(), 0);
-
-        d.push(1);
-        assert_eq!(d.len(), 1);
-        assert_eq!(s.len(), 1);
-        assert_eq!(d.pop(), Some(1));
-        assert_eq!(d.pop(), None);
-        assert_eq!(s.steal(), Steal::Empty);
-        assert_eq!(d.len(), 0);
-        assert_eq!(s.len(), 0);
-
-        d.push(2);
-        assert_eq!(s.steal(), Steal::Data(2));
-        assert_eq!(s.steal(), Steal::Empty);
-        assert_eq!(d.pop(), None);
-
-        d.push(3);
-        d.push(4);
-        d.push(5);
-        assert_eq!(d.steal(), Steal::Data(3));
-        assert_eq!(s.steal(), Steal::Data(4));
-        assert_eq!(d.steal(), Steal::Data(5));
-        assert_eq!(d.steal(), Steal::Empty);
-    }
-
-    #[test]
-    fn steal_push() {
-        const STEPS: usize = 50_000;
-
-        let d = Deque::new();
-        let s = d.stealer();
-        let t = thread::spawn(move || for i in 0..STEPS {
-            loop {
-                if let Steal::Data(v) = s.steal() {
-                    assert_eq!(i, v);
-                    break;
-                }
-            }
-        });
-
-        for i in 0..STEPS {
-            d.push(i);
-        }
-        t.join().unwrap();
-    }
-
-    #[test]
-    fn stampede() {
-        const COUNT: usize = 50_000;
-
-        let d = Deque::new();
-
-        for i in 0..COUNT {
-            d.push(Box::new(i + 1));
-        }
-        let remaining = Arc::new(AtomicUsize::new(COUNT));
-
-        let threads = (0..8)
-            .map(|_| {
-                let s = d.stealer();
-                let remaining = remaining.clone();
-
-                thread::spawn(move || {
-                    let mut last = 0;
-                    while remaining.load(SeqCst) > 0 {
-                        if let Steal::Data(x) = s.steal() {
-                            assert!(last < *x);
-                            last = *x;
-                            remaining.fetch_sub(1, SeqCst);
-                        }
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
-
-        let mut last = COUNT + 1;
-        while remaining.load(SeqCst) > 0 {
-            if let Some(x) = d.pop() {
-                assert!(last > *x);
-                last = *x;
-                remaining.fetch_sub(1, SeqCst);
-            }
-        }
-
-        for t in threads {
-            t.join().unwrap();
-        }
-    }
-
-    fn run_stress() {
-        const COUNT: usize = 50_000;
-
-        let d = Deque::new();
-        let done = Arc::new(AtomicBool::new(false));
-        let hits = Arc::new(AtomicUsize::new(0));
-
-        let threads = (0..8)
-            .map(|_| {
-                let s = d.stealer();
-                let done = done.clone();
-                let hits = hits.clone();
-
-                thread::spawn(move || while !done.load(SeqCst) {
-                    if let Steal::Data(_) = s.steal() {
-                        hits.fetch_add(1, SeqCst);
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
-
-        let mut rng = rand::thread_rng();
-        let mut expected = 0;
-        while expected < COUNT {
-            if rng.gen_range(0, 3) == 0 {
-                if d.pop().is_some() {
-                    hits.fetch_add(1, SeqCst);
-                }
-            } else {
-                d.push(expected);
-                expected += 1;
-            }
-        }
-
-        while hits.load(SeqCst) < COUNT {
-            if d.pop().is_some() {
-                hits.fetch_add(1, SeqCst);
-            }
-        }
-        done.store(true, SeqCst);
-
-        for t in threads {
-            t.join().unwrap();
-        }
-    }
-
-    #[test]
-    fn stress() {
-        run_stress();
-    }
-
-    #[test]
-    fn stress_pinned() {
-        let _guard = epoch::pin();
-        run_stress();
-    }
-
-    #[test]
-    fn no_starvation() {
-        const COUNT: usize = 50_000;
-
-        let d = Deque::new();
-        let done = Arc::new(AtomicBool::new(false));
-
-        let (threads, hits): (Vec<_>, Vec<_>) = (0..8)
-            .map(|_| {
-                let s = d.stealer();
-                let done = done.clone();
-                let hits = Arc::new(AtomicUsize::new(0));
-
-                let t = {
-                    let hits = hits.clone();
-                    thread::spawn(move || while !done.load(SeqCst) {
-                        if let Steal::Data(_) = s.steal() {
-                            hits.fetch_add(1, SeqCst);
-                        }
-                    })
-                };
-
-                (t, hits)
-            })
-            .unzip();
-
-        let mut rng = rand::thread_rng();
-        let mut my_hits = 0;
-        loop {
-            for i in 0..rng.gen_range(0, COUNT) {
-                if rng.gen_range(0, 3) == 0 && my_hits == 0 {
-                    if d.pop().is_some() {
-                        my_hits += 1;
-                    }
-                } else {
-                    d.push(i);
-                }
-            }
-
-            if my_hits > 0 && hits.iter().all(|h| h.load(SeqCst) > 0) {
-                break;
-            }
-        }
-        done.store(true, SeqCst);
-
-        for t in threads {
-            t.join().unwrap();
-        }
-    }
-
-    #[test]
-    fn destructors() {
-        const COUNT: usize = 50_000;
-
-        struct Elem(usize, Arc<Mutex<Vec<usize>>>);
-
-        impl Drop for Elem {
-            fn drop(&mut self) {
-                self.1.lock().unwrap().push(self.0);
-            }
-        }
-
-        let d = Deque::new();
-
-        let dropped = Arc::new(Mutex::new(Vec::new()));
-        let remaining = Arc::new(AtomicUsize::new(COUNT));
-        for i in 0..COUNT {
-            d.push(Elem(i, dropped.clone()));
-        }
-
-        let threads = (0..8)
-            .map(|_| {
-                let s = d.stealer();
-                let remaining = remaining.clone();
-
-                thread::spawn(move || for _ in 0..1000 {
-                    if let Steal::Data(_) = s.steal() {
-                        remaining.fetch_sub(1, SeqCst);
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
-
-        for _ in 0..1000 {
-            if d.pop().is_some() {
-                remaining.fetch_sub(1, SeqCst);
-            }
-        }
-
-        for t in threads {
-            t.join().unwrap();
-        }
-
-        let rem = remaining.load(SeqCst);
-        assert!(rem > 0);
-        assert_eq!(d.len(), rem);
-
-        {
-            let mut v = dropped.lock().unwrap();
-            assert_eq!(v.len(), COUNT - rem);
-            v.clear();
-        }
-
-        drop(d);
-
-        {
-            let mut v = dropped.lock().unwrap();
-            assert_eq!(v.len(), rem);
-            v.sort();
-            for pair in v.windows(2) {
-                assert_eq!(pair[0] + 1, pair[1]);
-            }
-        }
+        f.pad("Stealer { .. }")
     }
 }

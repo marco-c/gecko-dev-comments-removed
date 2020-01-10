@@ -4,13 +4,12 @@ mod queue;
 mod state;
 
 pub(crate) use self::blocking::{Blocking, CanBlock};
-pub(crate) use self::queue::{Queue, Poll};
+pub(crate) use self::queue::Queue;
 use self::blocking_state::BlockingState;
 use self::state::State;
 
 use notifier::Notifier;
 use pool::Pool;
-use sender::Sender;
 
 use futures::{self, Future, Async};
 use futures::executor::{self, Spawn};
@@ -20,9 +19,6 @@ use std::cell::{UnsafeCell};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, AtomicPtr};
 use std::sync::atomic::Ordering::{AcqRel, Release, Relaxed};
-
-#[cfg(feature = "unstable-futures")]
-use futures2;
 
 
 
@@ -36,15 +32,12 @@ pub(crate) struct Task {
     blocking: AtomicUsize,
 
     
-    next: AtomicPtr<Task>,
-
-    
     next_blocking: AtomicPtr<Task>,
 
     
     
     
-    future: UnsafeCell<Option<TaskFuture>>,
+    future: UnsafeCell<Option<Spawn<BoxFuture>>>,
 }
 
 #[derive(Debug)]
@@ -56,67 +49,31 @@ pub(crate) enum Run {
 
 type BoxFuture = Box<Future<Item = (), Error = ()> + Send + 'static>;
 
-#[cfg(feature = "unstable-futures")]
-type BoxFuture2 = Box<futures2::Future<Item = (), Error = futures2::Never> + Send>;
-
-enum TaskFuture {
-    Futures1(Spawn<BoxFuture>),
-
-    #[cfg(feature = "unstable-futures")]
-    Futures2 {
-        tls: futures2::task::LocalMap,
-        waker: futures2::task::Waker,
-        fut: BoxFuture2,
-    }
-}
-
 
 
 impl Task {
     
     pub fn new(future: BoxFuture) -> Task {
         
-        let task_fut = TaskFuture::Futures1(executor::spawn(future));
+        let task_fut = executor::spawn(future);
 
         Task {
             state: AtomicUsize::new(State::new().into()),
             blocking: AtomicUsize::new(BlockingState::new().into()),
-            next: AtomicPtr::new(ptr::null_mut()),
             next_blocking: AtomicPtr::new(ptr::null_mut()),
             future: UnsafeCell::new(Some(task_fut)),
         }
-    }
-
-    
-    #[cfg(feature = "unstable-futures")]
-    pub fn new2<F>(fut: BoxFuture2, make_waker: F) -> Task
-    where F: FnOnce(usize) -> futures2::task::Waker
-    {
-        let mut inner = Box::new(Task {
-            state: AtomicUsize::new(State::new().into()),
-            blocking: AtomicUsize::new(BlockingState::new().into()),
-            next: AtomicPtr::new(ptr::null_mut()),
-            next_blocking: AtomicPtr::new(ptr::null_mut()),
-            future: None,
-        });
-
-        let waker = make_waker((&*inner) as *const _ as usize);
-        let tls = futures2::task::LocalMap::new();
-        inner.future = Some(TaskFuture::Futures2 { waker, tls, fut });
-
-        Task { ptr: Box::into_raw(inner) }
     }
 
     
     
     fn stub() -> Task {
-        let future = Box::new(futures::empty());
-        let task_fut = TaskFuture::Futures1(executor::spawn(future));
+        let future = Box::new(futures::empty()) as BoxFuture;
+        let task_fut = executor::spawn(future);
 
         Task {
             state: AtomicUsize::new(State::stub().into()),
             blocking: AtomicUsize::new(BlockingState::new().into()),
-            next: AtomicPtr::new(ptr::null_mut()),
             next_blocking: AtomicPtr::new(ptr::null_mut()),
             future: UnsafeCell::new(Some(task_fut)),
         }
@@ -124,7 +81,7 @@ impl Task {
 
     
     
-    pub fn run(&self, unpark: &Arc<Notifier>, exec: &mut Sender) -> Run {
+    pub fn run(&self, unpark: &Arc<Notifier>) -> Run {
         use self::State::*;
 
         
@@ -149,7 +106,7 @@ impl Task {
         
         
         let res = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-            struct Guard<'a>(&'a mut Option<TaskFuture>, bool);
+            struct Guard<'a>(&'a mut Option<Spawn<BoxFuture>>, bool);
 
             impl<'a> Drop for Guard<'a> {
                 fn drop(&mut self) {
@@ -163,8 +120,7 @@ impl Task {
             let mut g = Guard(fut, true);
 
             let ret = g.0.as_mut().unwrap()
-                .poll(unpark, self as *const _ as usize, exec);
-
+                .poll_future_notify(unpark, self as *const _ as usize);
 
             g.1 = false;
 
@@ -212,7 +168,7 @@ impl Task {
 
     
     pub fn notify(me: Arc<Task>, pool: &Arc<Pool>) {
-        if me.schedule(){
+        if me.schedule() {
             let _ = pool.submit(me, pool);
         }
     }
@@ -276,29 +232,8 @@ impl Task {
 impl fmt::Debug for Task {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Task")
-            .field("next", &self.next)
             .field("state", &self.state)
             .field("future", &"Spawn<BoxFuture>")
             .finish()
-    }
-}
-
-
-
-impl TaskFuture {
-    #[allow(unused_variables)]
-    fn poll(&mut self, unpark: &Arc<Notifier>, id: usize, exec: &mut Sender) -> futures::Poll<(), ()> {
-        match *self {
-            TaskFuture::Futures1(ref mut fut) => fut.poll_future_notify(unpark, id),
-
-            #[cfg(feature = "unstable-futures")]
-            TaskFuture::Futures2 { ref mut fut, ref waker, ref mut tls } => {
-                let mut cx = futures2::task::Context::new(tls, waker, exec);
-                match fut.poll(&mut cx).unwrap() {
-                    futures2::Async::Pending => Ok(Async::NotReady),
-                    futures2::Async::Ready(x) => Ok(Async::Ready(x)),
-                }
-            }
-        }
     }
 }

@@ -8,7 +8,8 @@ use std::str::FromStr;
 use bytes::Bytes;
 
 use byte_str::ByteStr;
-use super::{ErrorKind, InvalidUri, InvalidUriBytes, URI_CHARS};
+use convert::HttpTryFrom;
+use super::{ErrorKind, InvalidUri, InvalidUriBytes, URI_CHARS, Port};
 
 
 #[derive(Clone)]
@@ -90,7 +91,9 @@ impl Authority {
         let mut colon_cnt = 0;
         let mut start_bracket = false;
         let mut end_bracket = false;
+        let mut has_percent = false;
         let mut end = s.len();
+        let mut at_sign_pos = None;
 
         for (i, &b) in s.iter().enumerate() {
             match URI_CHARS[b as usize] {
@@ -111,9 +114,22 @@ impl Authority {
                     colon_cnt = 0;
                 }
                 b'@' => {
+                    at_sign_pos = Some(i);
+
                     
                     
                     colon_cnt = 0;
+                    has_percent = false;
+                }
+                0 if b == b'%' => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    has_percent = true;
                 }
                 0 => {
                     return Err(ErrorKind::InvalidUriChar.into());
@@ -127,6 +143,16 @@ impl Authority {
         }
 
         if colon_cnt > 1 {
+            
+            return Err(ErrorKind::InvalidAuthority.into());
+        }
+
+        if end > 0 && at_sign_pos == Some(end - 1) {
+            
+            return Err(ErrorKind::InvalidAuthority.into());
+        }
+
+        if has_percent {
             
             return Err(ErrorKind::InvalidAuthority.into());
         }
@@ -171,44 +197,66 @@ impl Authority {
         host(self.as_str())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since="0.1.14", note="use `port_part` or `port_u16` instead")]
+    #[doc(hidden)]
     pub fn port(&self) -> Option<u16> {
-        let s = self.as_str();
-        s.rfind(":").and_then(|i| {
-            u16::from_str(&s[i+1..]).ok()
-        })
+        self.port_u16()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn port_part(&self) -> Option<Port<&str>> {
+        let bytes = self.as_str();
+        bytes
+            .rfind(":")
+            .and_then(|i| Port::from_str(&bytes[i + 1..]).ok())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn port_u16(&self) -> Option<u16> {
+        self.port_part().and_then(|p| Some(p.as_u16()))
     }
 
     
@@ -381,17 +429,44 @@ impl Hash for Authority {
     }
 }
 
-impl FromStr for Authority {
-    type Err = InvalidUri;
+impl HttpTryFrom<Bytes> for Authority {
+    type Error = InvalidUriBytes;
+    #[inline]
+    fn try_from(bytes: Bytes) -> Result<Self, Self::Error> {
+        Authority::from_shared(bytes)
+    }
+}
 
-    fn from_str(s: &str) -> Result<Self, InvalidUri> {
-        let end = Authority::parse_non_empty(s.as_bytes())?;
+impl<'a> HttpTryFrom<&'a [u8]> for Authority {
+    type Error = InvalidUri;
+    #[inline]
+    fn try_from(s: &'a [u8]) -> Result<Self, Self::Error> {
+        
+        let end = Authority::parse_non_empty(s)?;
 
         if end != s.len() {
             return Err(ErrorKind::InvalidAuthority.into());
         }
 
-        Ok(Authority { data: s.into() })
+        Ok(Authority {
+            data: unsafe { ByteStr::from_utf8_unchecked(s.into()) },
+        })
+    }
+}
+
+impl<'a> HttpTryFrom<&'a str> for Authority {
+    type Error = InvalidUri;
+    #[inline]
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        HttpTryFrom::try_from(s.as_bytes())
+    }
+}
+
+impl FromStr for Authority {
+    type Err = InvalidUri;
+
+    fn from_str(s: &str) -> Result<Self, InvalidUri> {
+        HttpTryFrom::try_from(s)
     }
 }
 
@@ -418,10 +493,12 @@ fn host(auth: &str) -> &str {
     let host_port = auth.rsplitn(2, '@')
         .next()
         .expect("split always has at least 1 item");
+
     if host_port.as_bytes()[0] == b'[' {
         let i = host_port.find(']')
             .expect("parsing should validate brackets");
-        &host_port[1..i]
+        
+        &host_port[0 .. i + 1]
     } else {
         host_port.split(':')
             .next()
@@ -518,5 +595,21 @@ mod tests {
         assert!("ghi.com".to_string() > authority);
         assert!(authority > "abc.com".to_string());
         assert!("abc.com".to_string() < authority);
+    }
+
+    #[test]
+    fn allows_percent_in_userinfo() {
+        let authority_str = "a%2f:b%2f@example.com";
+        let authority: Authority = authority_str.parse().unwrap();
+        assert_eq!(authority, authority_str);
+    }
+
+    #[test]
+    fn rejects_percent_in_hostname() {
+        let err = Authority::parse_non_empty(b"example%2f.com").unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidAuthority);
+
+        let err = Authority::parse_non_empty(b"a%2f:b%2f@example%2f.com").unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidAuthority);
     }
 }

@@ -35,6 +35,8 @@ pub use self::into_header_name::IntoHeaderName;
 
 
 
+
+
 #[derive(Clone)]
 pub struct HeaderMap<T = HeaderValue> {
     
@@ -655,6 +657,12 @@ impl<T> HeaderMap<T> {
     
     
     pub fn get<K>(&self, key: K) -> Option<&T>
+        where K: AsHeaderName
+    {
+        self.get2(&key)
+    }
+
+    fn get2<K>(&self, key: &K) -> Option<&T>
         where K: AsHeaderName
     {
         match key.find(self) {
@@ -1854,7 +1862,10 @@ impl<'a, K, T> ops::Index<K> for HeaderMap<T>
     
     #[inline]
     fn index(&self, index: K) -> &T {
-        self.get(index).expect("no entry found for key")
+        match self.get2(&index) {
+            Some(val) => val,
+            None => panic!("no entry found for key {:?}", index.as_str()),
+        }
     }
 }
 
@@ -3167,6 +3178,9 @@ mod as_header_name {
 
         #[doc(hidden)]
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)>;
+
+        #[doc(hidden)]
+        fn as_str(&self) -> &str;
     }
 
     
@@ -3182,6 +3196,11 @@ mod as_header_name {
         #[inline]
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)> {
             map.find(self)
+        }
+
+        #[doc(hidden)]
+        fn as_str(&self) -> &str {
+            <HeaderName>::as_str(self)
         }
     }
 
@@ -3199,6 +3218,11 @@ mod as_header_name {
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)> {
             map.find(*self)
         }
+
+        #[doc(hidden)]
+        fn as_str(&self) -> &str {
+            <HeaderName>::as_str(*self)
+        }
     }
 
     impl<'a> AsHeaderName for &'a HeaderName {}
@@ -3214,6 +3238,11 @@ mod as_header_name {
         #[inline]
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)> {
             HdrName::from_bytes(self.as_bytes(), move |hdr| map.find(&hdr)).unwrap_or(None)
+        }
+
+        #[doc(hidden)]
+        fn as_str(&self) -> &str {
+            self
         }
     }
 
@@ -3231,6 +3260,11 @@ mod as_header_name {
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)> {
             Sealed::find(&self.as_str(), map)
         }
+
+        #[doc(hidden)]
+        fn as_str(&self) -> &str {
+            self
+        }
     }
 
     impl AsHeaderName for String {}
@@ -3246,6 +3280,11 @@ mod as_header_name {
         #[inline]
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)> {
             Sealed::find(*self, map)
+        }
+
+        #[doc(hidden)]
+        fn as_str(&self) -> &str {
+            *self
         }
     }
 

@@ -1,19 +1,10 @@
 use core::fmt;
-use core::ptr;
 use core::mem;
 
+use atomic::Shared;
+use collector::Collector;
 use deferred::Deferred;
 use internal::Local;
-use collector::Collector;
-
-
-
-
-
-
-
-
-
 
 
 
@@ -96,6 +87,16 @@ impl Guard {
     
     
     
+    pub fn defer<F, R>(&self, f: F)
+    where
+        F: FnOnce() -> R,
+        F: Send + 'static,
+    {
+        unsafe {
+            self.defer_unchecked(f);
+        }
+    }
+
     
     
     
@@ -168,13 +169,105 @@ impl Guard {
     
     
     
-    pub unsafe fn defer<F, R>(&self, f: F)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn defer_unchecked<F, R>(&self, f: F)
     where
         F: FnOnce() -> R,
     {
         if let Some(local) = self.local.as_ref() {
             local.defer(Deferred::new(move || drop(f())), self);
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn defer_destroy<T>(&self, ptr: Shared<T>) {
+        self.defer_unchecked(move || ptr.into_owned());
     }
 
     
@@ -330,19 +423,9 @@ impl Drop for Guard {
     }
 }
 
-impl Clone for Guard {
-    #[inline]
-    fn clone(&self) -> Guard {
-        match unsafe { self.local.as_ref() } {
-            None => Guard { local: ptr::null() },
-            Some(local) => local.pin(),
-        }
-    }
-}
-
 impl fmt::Debug for Guard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Guard").finish()
+        f.pad("Guard { .. }")
     }
 }
 

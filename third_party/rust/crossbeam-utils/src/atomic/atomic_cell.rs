@@ -5,6 +5,8 @@ use core::ptr;
 use core::slice;
 use core::sync::atomic::{self, AtomicBool, AtomicUsize, Ordering};
 
+use Backoff;
+
 
 
 
@@ -464,18 +466,24 @@ macro_rules! impl_arithmetic {
             }
         }
     };
+    ($t:ty, $size:tt, $atomic:ty, $example:tt) => {
+        #[cfg(target_has_atomic = $size)]
+        impl_arithmetic!($t, $atomic, $example);
+    };
 }
 
 cfg_if! {
     if #[cfg(feature = "nightly")] {
-        impl_arithmetic!(u8, atomic::AtomicU8, "let a = AtomicCell::new(7u8);");
-        impl_arithmetic!(i8, atomic::AtomicI8, "let a = AtomicCell::new(7i8);");
-        impl_arithmetic!(u16, atomic::AtomicU16, "let a = AtomicCell::new(7u16);");
-        impl_arithmetic!(i16, atomic::AtomicI16, "let a = AtomicCell::new(7i16);");
-        impl_arithmetic!(u32, atomic::AtomicU32, "let a = AtomicCell::new(7u32);");
-        impl_arithmetic!(i32, atomic::AtomicI32, "let a = AtomicCell::new(7i32);");
-        impl_arithmetic!(u64, atomic::AtomicU64, "let a = AtomicCell::new(7u64);");
-        impl_arithmetic!(i64, atomic::AtomicI64, "let a = AtomicCell::new(7i64);");
+        impl_arithmetic!(u8, "8", atomic::AtomicU8, "let a = AtomicCell::new(7u8);");
+        impl_arithmetic!(i8, "8", atomic::AtomicI8, "let a = AtomicCell::new(7i8);");
+        impl_arithmetic!(u16, "16", atomic::AtomicU16, "let a = AtomicCell::new(7u16);");
+        impl_arithmetic!(i16, "16", atomic::AtomicI16, "let a = AtomicCell::new(7i16);");
+        impl_arithmetic!(u32, "32", atomic::AtomicU32, "let a = AtomicCell::new(7u32);");
+        impl_arithmetic!(i32, "32", atomic::AtomicI32, "let a = AtomicCell::new(7i32);");
+        impl_arithmetic!(u64, "64", atomic::AtomicU64, "let a = AtomicCell::new(7u64);");
+        impl_arithmetic!(i64, "64", atomic::AtomicI64, "let a = AtomicCell::new(7i64);");
+        impl_arithmetic!(u128, "let a = AtomicCell::new(7u128);");
+        impl_arithmetic!(i128, "let a = AtomicCell::new(7i128);");
     } else {
         impl_arithmetic!(u8, "let a = AtomicCell::new(7u8);");
         impl_arithmetic!(i8, "let a = AtomicCell::new(7i8);");
@@ -485,6 +493,8 @@ cfg_if! {
         impl_arithmetic!(i32, "let a = AtomicCell::new(7i32);");
         impl_arithmetic!(u64, "let a = AtomicCell::new(7u64);");
         impl_arithmetic!(i64, "let a = AtomicCell::new(7i64);");
+        impl_arithmetic!(u128, "let a = AtomicCell::new(7u128);");
+        impl_arithmetic!(i128, "let a = AtomicCell::new(7i128);");
     }
 }
 
@@ -629,8 +639,7 @@ impl Lock {
     
     #[inline]
     fn write(&'static self) -> WriteGuard {
-        let mut step = 0usize;
-
+        let backoff = Backoff::new();
         loop {
             let previous = self.state.swap(1, Ordering::Acquire);
 
@@ -643,17 +652,7 @@ impl Lock {
                 };
             }
 
-            if step < 10 {
-                atomic::spin_loop_hint();
-            } else {
-                #[cfg(not(feature = "std"))]
-                atomic::spin_loop_hint();
-
-                #[cfg(feature = "std")]
-                ::std::thread::yield_now();
-            }
-
-            step = step.wrapping_add(1);
+            backoff.snooze();
         }
     }
 }
@@ -696,6 +695,27 @@ impl Drop for WriteGuard {
 #[inline]
 #[must_use]
 fn lock(addr: usize) -> &'static Lock {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     const LEN: usize = 97;
 

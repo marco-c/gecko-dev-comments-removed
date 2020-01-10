@@ -1,0 +1,91 @@
+use util::{FlatCsv};
+use super::ETag;
+use {HeaderValue};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Header)]
+pub struct IfNoneMatch(FlatCsv);
+
+impl IfNoneMatch {
+    
+    pub fn any() -> IfNoneMatch {
+        IfNoneMatch(HeaderValue::from_static("*").into())
+    }
+}
+
+impl From<ETag> for IfNoneMatch {
+    fn from(etag: ETag) -> IfNoneMatch {
+        IfNoneMatch(HeaderValue::from(etag.0).into())
+    }
+}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

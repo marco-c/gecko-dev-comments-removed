@@ -12,13 +12,18 @@ use std::time::Instant;
 
 
 
+
+
+
 #[derive(Default, Clone)]
 pub struct Clock {
     now: Option<Arc<Now>>,
 }
 
-
-thread_local!(static CLOCK: Cell<Option<*const Clock>> = Cell::new(None));
+thread_local! {
+    /// Thread-local tracking the current clock
+    static CLOCK: Cell<Option<*const Clock>> = Cell::new(None)
+}
 
 
 
@@ -38,13 +43,9 @@ thread_local!(static CLOCK: Cell<Option<*const Clock>> = Cell::new(None));
 
 
 pub fn now() -> Instant {
-    CLOCK.with(|current| {
-        match current.get() {
-            Some(ptr) => {
-                unsafe { (*ptr).now() }
-            }
-            None => Instant::now(),
-        }
+    CLOCK.with(|current| match current.get() {
+        Some(ptr) => unsafe { (*ptr).now() },
+        None => Instant::now(),
     })
 }
 
@@ -52,13 +53,9 @@ impl Clock {
     
     
     pub fn new() -> Clock {
-        CLOCK.with(|current| {
-            match current.get() {
-                Some(ptr) => {
-                    unsafe { (*ptr).clone() }
-                }
-                None => Clock::system(),
-            }
+        CLOCK.with(|current| match current.get() {
+            Some(ptr) => unsafe { (*ptr).clone() },
+            None => Clock::system(),
         })
     }
 
@@ -71,10 +68,10 @@ impl Clock {
 
     
     
+    
+    
     pub fn system() -> Clock {
-        Clock {
-            now: None,
-        }
+        Clock { now: None }
     }
 
     
@@ -114,10 +111,14 @@ impl fmt::Debug for Clock {
 
 
 pub fn with_default<F, R>(clock: &Clock, enter: &mut Enter, f: F) -> R
-where F: FnOnce(&mut Enter) -> R
+where
+    F: FnOnce(&mut Enter) -> R,
 {
     CLOCK.with(|cell| {
-        assert!(cell.get().is_none(), "default clock already set for execution context");
+        assert!(
+            cell.get().is_none(),
+            "default clock already set for execution context"
+        );
 
         
         

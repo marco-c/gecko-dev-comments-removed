@@ -1,16 +1,15 @@
+use alloc::boxed::Box;
 use core::borrow::{Borrow, BorrowMut};
 use core::cmp;
 use core::fmt;
 use core::marker::PhantomData;
 use core::mem;
-use core::ptr;
 use core::ops::{Deref, DerefMut};
-use core::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
-use core::sync::atomic::Ordering;
-use alloc::boxed::Box;
+use core::ptr;
+use core::sync::atomic::{AtomicUsize, Ordering};
 
+use crossbeam_utils::atomic::AtomicConsume;
 use guard::Guard;
-use crossbeam_utils::consume::AtomicConsume;
 
 
 
@@ -154,7 +153,7 @@ impl<T> Atomic<T> {
     #[cfg(not(feature = "nightly"))]
     pub fn null() -> Atomic<T> {
         Self {
-            data: ATOMIC_USIZE_INIT,
+            data: AtomicUsize::new(0),
             _marker: PhantomData,
         }
     }
@@ -171,7 +170,7 @@ impl<T> Atomic<T> {
     #[cfg(feature = "nightly")]
     pub const fn null() -> Atomic<T> {
         Self {
-            data: ATOMIC_USIZE_INIT,
+            data: AtomicUsize::new(0),
             _marker: PhantomData,
         }
     }
@@ -934,6 +933,46 @@ impl<'g, T> Shared<'g, T> {
     
     pub unsafe fn deref(&self) -> &'g T {
         &*self.as_raw()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn deref_mut(&mut self) -> &'g mut T {
+        &mut *(self.as_raw() as *mut T)
     }
 
     

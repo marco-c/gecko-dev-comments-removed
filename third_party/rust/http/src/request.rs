@@ -565,7 +565,6 @@ impl<T> Request<T> {
         &mut self.head.headers
     }
 
-
     
     
     
@@ -737,7 +736,6 @@ impl Builder {
     
     
     
-    
     #[inline]
     pub fn new() -> Builder {
         Builder::default()
@@ -789,6 +787,34 @@ impl Builder {
     
     
     
+    pub fn method_ref(&self) -> Option<&Method>
+    {
+        if self.err.is_some() {
+            return None
+        }
+        match self.head {
+            Some(ref head) => Some(&head.method),
+            None => None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn uri<T>(&mut self, uri: T) -> &mut Builder
         where Uri: HttpTryFrom<T>,
     {
@@ -799,6 +825,31 @@ impl Builder {
             }
         }
         self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn uri_ref(&self) -> Option<&Uri>
+    {
+        if self.err.is_some() {
+            return None;
+        }
+        match self.head
+        {
+            Some(ref head) => Some(&head.uri),
+            None => None
+        }
     }
 
     
@@ -859,6 +910,63 @@ impl Builder {
             };
         }
         self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn headers_ref(&self) -> Option<&HeaderMap<HeaderValue>> {
+        if self.err.is_some() {
+            return None;
+        }
+        match self.head
+        {
+            Some(ref head) => Some(&head.headers),
+            None => None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn headers_mut(&mut self) -> Option<&mut HeaderMap<HeaderValue>> {
+        if self.err.is_some() {
+            return None;
+        }
+        match self.head
+        {
+            Some(ref mut head) => Some(&mut head.headers),
+            None => None
+        }
     }
 
     

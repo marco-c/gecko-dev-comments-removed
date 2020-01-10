@@ -46,9 +46,10 @@
 
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex, Condvar};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
+
+use crossbeam_utils::sync::{Parker, Unparker};
 
 
 
@@ -133,6 +134,12 @@ impl Unpark for Box<Unpark> {
     }
 }
 
+impl Unpark for Arc<Unpark> {
+    fn unpark(&self) {
+        (**self).unpark()
+    }
+}
+
 
 
 
@@ -161,26 +168,11 @@ pub struct ParkError {
 
 #[derive(Clone, Debug)]
 pub struct UnparkThread {
-    inner: Arc<Inner>,
+    inner: Unparker,
 }
-
-#[derive(Debug)]
-struct Inner {
-    state: AtomicUsize,
-    mutex: Mutex<()>,
-    condvar: Condvar,
-}
-
-const IDLE: usize = 0;
-const NOTIFY: usize = 1;
-const SLEEP: usize = 2;
 
 thread_local! {
-    static CURRENT_PARK_THREAD: Arc<Inner> = Arc::new(Inner {
-        state: AtomicUsize::new(IDLE),
-        mutex: Mutex::new(()),
-        condvar: Condvar::new(),
-    });
+    static CURRENT_PARKER: Parker = Parker::new();
 }
 
 
@@ -198,9 +190,10 @@ impl ParkThread {
 
     
     fn with_current<F, R>(&self, f: F) -> R
-        where F: FnOnce(&Arc<Inner>) -> R,
+    where
+        F: FnOnce(&Parker) -> R,
     {
-        CURRENT_PARK_THREAD.with(|inner| f(inner))
+        CURRENT_PARKER.with(|inner| f(inner))
     }
 }
 
@@ -209,16 +202,18 @@ impl Park for ParkThread {
     type Error = ParkError;
 
     fn unpark(&self) -> Self::Unpark {
-        let inner = self.with_current(|inner| inner.clone());
+        let inner = self.with_current(|inner| inner.unparker().clone());
         UnparkThread { inner }
     }
 
     fn park(&mut self) -> Result<(), Self::Error> {
-        self.with_current(|inner| inner.park(None))
+        self.with_current(|inner| inner.park());
+        Ok(())
     }
 
     fn park_timeout(&mut self, duration: Duration) -> Result<(), Self::Error> {
-        self.with_current(|inner| inner.park(Some(duration)))
+        self.with_current(|inner| inner.park_timeout(duration));
+        Ok(())
     }
 }
 
@@ -227,76 +222,5 @@ impl Park for ParkThread {
 impl Unpark for UnparkThread {
     fn unpark(&self) {
         self.inner.unpark();
-    }
-}
-
-
-
-impl Inner {
-    
-    fn park(&self, timeout: Option<Duration>) -> Result<(), ParkError> {
-        
-        
-        match self.state.compare_and_swap(NOTIFY, IDLE, Ordering::SeqCst) {
-            NOTIFY => return Ok(()),
-            IDLE => {},
-            _ => unreachable!(),
-        }
-
-        
-        
-        let mut m = self.mutex.lock().unwrap();
-
-        
-        match self.state.compare_and_swap(IDLE, SLEEP, Ordering::SeqCst) {
-            NOTIFY => {
-                
-                
-                self.state.store(IDLE, Ordering::SeqCst);
-                return Ok(());
-            }
-            IDLE => {},
-            _ => unreachable!(),
-        }
-
-        m = match timeout {
-            Some(timeout) => self.condvar.wait_timeout(m, timeout).unwrap().0,
-            None => self.condvar.wait(m).unwrap(),
-        };
-
-        
-        
-        self.state.store(IDLE, Ordering::SeqCst);
-
-        
-        
-        
-        drop(m);
-
-        Ok(())
-    }
-
-    fn unpark(&self) {
-        
-        
-        match self.state.compare_and_swap(IDLE, NOTIFY, Ordering::SeqCst) {
-            IDLE | NOTIFY => return,
-            SLEEP => {}
-            _ => unreachable!(),
-        }
-
-        
-        let _m = self.mutex.lock().unwrap();
-
-        
-        match self.state.swap(NOTIFY, Ordering::SeqCst) {
-            SLEEP => {}
-            NOTIFY => return,
-            IDLE => return,
-            _ => unreachable!(),
-        }
-
-        
-        self.condvar.notify_one();
     }
 }

@@ -51,21 +51,26 @@
 
 
 pub mod conn;
+mod shutdown;
 #[cfg(feature = "runtime")] mod tcp;
 
 use std::fmt;
-#[cfg(feature = "runtime")] use std::net::SocketAddr;
+#[cfg(feature = "runtime")] use std::net::{SocketAddr, TcpListener as StdTcpListener};
+
 #[cfg(feature = "runtime")] use std::time::Duration;
 
 use futures::{Future, Stream, Poll};
 use tokio_io::{AsyncRead, AsyncWrite};
+#[cfg(feature = "runtime")] use tokio_reactor;
 
 use body::{Body, Payload};
-use service::{NewService, Service};
+use common::exec::{Exec, H2Exec, NewSvcExec};
+use service::{MakeServiceRef, Service};
 
 
-use self::conn::{Http as Http_, SpawnAll};
-#[cfg(feature = "runtime")] use self::tcp::{AddrIncoming};
+use self::conn::{Http as Http_, NoopWatcher, SpawnAll};
+use self::shutdown::{Graceful, GracefulWatcher};
+#[cfg(feature = "runtime")] use self::tcp::AddrIncoming;
 
 
 
@@ -73,15 +78,15 @@ use self::conn::{Http as Http_, SpawnAll};
 
 
 
-pub struct Server<I, S> {
-    spawn_all: SpawnAll<I, S>,
+pub struct Server<I, S, E = Exec> {
+    spawn_all: SpawnAll<I, S, E>,
 }
 
 
 #[derive(Debug)]
-pub struct Builder<I> {
+pub struct Builder<I, E = Exec> {
     incoming: I,
-    protocol: Http_,
+    protocol: Http_<E>,
 }
 
 
@@ -117,6 +122,13 @@ impl Server<AddrIncoming, ()> {
         AddrIncoming::new(addr, None)
             .map(Server::builder)
     }
+
+    
+    pub fn from_tcp(listener: StdTcpListener) -> Result<Builder<AddrIncoming>, ::Error> {
+        let handle = tokio_reactor::Handle::default();
+        AddrIncoming::from_std(listener, &handle)
+            .map(Server::builder)
+    }
 }
 
 #[cfg(feature = "runtime")]
@@ -127,23 +139,82 @@ impl<S> Server<AddrIncoming, S> {
     }
 }
 
-impl<I, S, B> Future for Server<I, S>
+impl<I, S, E, B> Server<I, S, E>
 where
     I: Stream,
     I::Error: Into<Box<::std::error::Error + Send + Sync>>,
     I::Item: AsyncRead + AsyncWrite + Send + 'static,
-    S: NewService<ReqBody=Body, ResBody=B> + Send + 'static,
+    S: MakeServiceRef<I::Item, ReqBody=Body, ResBody=B>,
     S::Error: Into<Box<::std::error::Error + Send + Sync>>,
-    S::Service: Send,
-    S::Future: Send + 'static,
-    <S::Service as Service>::Future: Send + 'static,
+    S::Service: 'static,
     B: Payload,
+    E: H2Exec<<S::Service as Service>::Future, B>,
+    E: NewSvcExec<I::Item, S::Future, S::Service, E, GracefulWatcher>,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_graceful_shutdown<F>(self, signal: F) -> Graceful<I, S, F, E>
+    where
+        F: Future<Item=()>
+    {
+        Graceful::new(self.spawn_all, signal)
+    }
+}
+
+impl<I, S, B, E> Future for Server<I, S, E>
+where
+    I: Stream,
+    I::Error: Into<Box<::std::error::Error + Send + Sync>>,
+    I::Item: AsyncRead + AsyncWrite + Send + 'static,
+    S: MakeServiceRef<I::Item, ReqBody=Body, ResBody=B>,
+    S::Error: Into<Box<::std::error::Error + Send + Sync>>,
+    S::Service: 'static,
+    B: Payload,
+    E: H2Exec<<S::Service as Service>::Future, B>,
+    E: NewSvcExec<I::Item, S::Future, S::Service, E, NoopWatcher>,
 {
     type Item = ();
     type Error = ::Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.spawn_all.poll()
+        self.spawn_all.poll_watch(&NoopWatcher)
     }
 }
 
@@ -157,15 +228,37 @@ impl<I: fmt::Debug, S: fmt::Debug> fmt::Debug for Server<I, S> {
 
 
 
-impl<I> Builder<I> {
+impl<I, E> Builder<I, E> {
     
     
     
-    pub fn new(incoming: I, protocol: Http_) -> Self {
+    pub fn new(incoming: I, protocol: Http_<E>) -> Self {
         Builder {
             incoming,
             protocol,
         }
+    }
+
+    
+    
+    
+    pub fn http1_keepalive(mut self, val: bool) -> Self {
+        self.protocol.keep_alive(val);
+        self
+    }
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn http1_half_close(mut self, val: bool) -> Self {
+        self.protocol.http1_half_close(val);
+        self
     }
 
     
@@ -212,6 +305,13 @@ impl<I> Builder<I> {
     
     
     
+    pub fn executor<E2>(self, executor: E2) -> Builder<I, E2> {
+        Builder {
+            incoming: self.incoming,
+            protocol: self.protocol.with_executor(executor),
+        }
+    }
+
     
     
     
@@ -238,16 +338,20 @@ impl<I> Builder<I> {
     
     
     
-    pub fn serve<S, B>(self, new_service: S) -> Server<I, S>
+    
+    
+    
+    pub fn serve<S, B>(self, new_service: S) -> Server<I, S, E>
     where
         I: Stream,
         I::Error: Into<Box<::std::error::Error + Send + Sync>>,
         I::Item: AsyncRead + AsyncWrite + Send + 'static,
-        S: NewService<ReqBody=Body, ResBody=B> + Send + 'static,
+        S: MakeServiceRef<I::Item, ReqBody=Body, ResBody=B>,
         S::Error: Into<Box<::std::error::Error + Send + Sync>>,
-        S::Service: Send,
-        <S::Service as Service>::Future: Send + 'static,
+        S::Service: 'static,
         B: Payload,
+        E: NewSvcExec<I::Item, S::Future, S::Service, E, NoopWatcher>,
+        E: H2Exec<<S::Service as Service>::Future, B>,
     {
         let serve = self.protocol.serve_incoming(self.incoming, new_service);
         let spawn_all = serve.spawn_all();
@@ -258,7 +362,7 @@ impl<I> Builder<I> {
 }
 
 #[cfg(feature = "runtime")]
-impl Builder<AddrIncoming> {
+impl<E> Builder<AddrIncoming, E> {
     
     
     
@@ -272,6 +376,26 @@ impl Builder<AddrIncoming> {
     
     pub fn tcp_nodelay(mut self, enabled: bool) -> Self {
         self.incoming.set_nodelay(enabled);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn tcp_sleep_on_accept_errors(mut self, val: bool) -> Self {
+        self.incoming.set_sleep_on_errors(val);
         self
     }
 }

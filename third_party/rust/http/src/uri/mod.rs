@@ -38,11 +38,15 @@ use std::error::Error;
 use self::scheme::Scheme2;
 
 pub use self::authority::Authority;
+pub use self::builder::Builder;
 pub use self::path::PathAndQuery;
 pub use self::scheme::Scheme;
+pub use self::port::Port;
 
 mod authority;
+mod builder;
 mod path;
+mod port;
 mod scheme;
 #[cfg(test)]
 mod tests;
@@ -133,6 +137,7 @@ enum ErrorKind {
     InvalidUriChar,
     InvalidScheme,
     InvalidAuthority,
+    InvalidPort,
     InvalidFormat,
     SchemeMissing,
     AuthorityMissing,
@@ -176,6 +181,27 @@ const URI_CHARS: [u8; 256] = [
 ];
 
 impl Uri {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn builder() -> Builder {
+        Builder::new()
+    }
+
     
     pub fn from_parts(src: Parts) -> Result<Uri, InvalidUriParts> {
         if src.scheme.is_some() {
@@ -306,6 +332,32 @@ impl Uri {
     
     
     
+    pub fn from_static(src: &'static str) -> Self {
+        let s = Bytes::from_static(src.as_bytes());
+        match Uri::from_shared(s) {
+            Ok(uri) => uri,
+            Err(e) => panic!("static str is not valid URI: {}", e),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]
@@ -400,6 +452,7 @@ impl Uri {
     
     
     
+    
     #[inline]
     pub fn scheme_part(&self) -> Option<&Scheme> {
         if self.scheme.inner.is_none() {
@@ -409,10 +462,25 @@ impl Uri {
         }
     }
 
-    #[deprecated(since = "0.1.2", note = "use scheme_part instead")]
+    #[deprecated(since = "0.1.2", note = "use scheme_part or scheme_str instead")]
     #[doc(hidden)]
     #[inline]
     pub fn scheme(&self) -> Option<&str> {
+        self.scheme_str()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn scheme_str(&self) -> Option<&str> {
         if self.scheme.inner.is_none() {
             None
         } else {
@@ -517,51 +585,73 @@ impl Uri {
         self.authority_part().map(|a| a.host())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since="0.1.14", note="use `port_part` or `port_u16` instead")]
+    #[doc(hidden)]
     pub fn port(&self) -> Option<u16> {
+        self.port_u16()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn port_part(&self) -> Option<Port<&str>> {
         self.authority_part()
-            .and_then(|a| a.port())
+            .and_then(|a| a.port_part())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn port_u16(&self) -> Option<u16> {
+        self.port_part().and_then(|p| Some(p.as_u16()))
     }
 
     
@@ -878,6 +968,10 @@ impl PartialEq<str> for Uri {
         }
 
         if let Some(query) = self.query() {
+            if other.len() == 0 {
+                return query.len() == 0;
+            }
+
             if other[0] != b'?' {
                 return false;
             }
@@ -987,6 +1081,7 @@ impl Error for InvalidUri {
             ErrorKind::InvalidUriChar => "invalid uri character",
             ErrorKind::InvalidScheme => "invalid scheme",
             ErrorKind::InvalidAuthority => "invalid authority",
+            ErrorKind::InvalidPort => "invalid port",
             ErrorKind::InvalidFormat => "invalid format",
             ErrorKind::SchemeMissing => "scheme missing",
             ErrorKind::AuthorityMissing => "authority missing",

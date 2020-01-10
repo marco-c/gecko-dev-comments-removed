@@ -8,7 +8,7 @@ use tokio_reactor::Handle;
 use tokio_tcp::TcpListener;
 use tokio_timer::Delay;
 
-use self::addr_stream::AddrStream;
+pub use self::addr_stream::AddrStream;
 
 
 #[must_use = "streams do nothing unless polled"]
@@ -22,26 +22,35 @@ pub struct AddrIncoming {
 }
 
 impl AddrIncoming {
-    pub(super) fn new(addr: &SocketAddr, handle: Option<&Handle>) -> ::Result<AddrIncoming> {
-        let listener = if let Some(handle) = handle {
-            let std_listener = StdTcpListener::bind(addr)
+    pub(super) fn new(addr: &SocketAddr, handle: Option<&Handle>) -> ::Result<Self> {
+        let std_listener = StdTcpListener::bind(addr)
                 .map_err(::Error::new_listen)?;
-            TcpListener::from_std(std_listener, handle)
-                .map_err(::Error::new_listen)?
+
+        if let Some(handle) = handle {
+            AddrIncoming::from_std(std_listener, handle)
         } else {
-            TcpListener::bind(addr).map_err(::Error::new_listen)?
-        };
+            let handle = Handle::default();
+            AddrIncoming::from_std(std_listener, &handle)
+        }
+    }
 
+    pub(super) fn from_std(std_listener: StdTcpListener, handle: &Handle) -> ::Result<Self> {
+        let listener = TcpListener::from_std(std_listener, &handle)
+            .map_err(::Error::new_listen)?;
         let addr = listener.local_addr().map_err(::Error::new_listen)?;
-
         Ok(AddrIncoming {
+            listener,
             addr: addr,
-            listener: listener,
             sleep_on_errors: true,
             tcp_keepalive_timeout: None,
             tcp_nodelay: false,
             timeout: None,
         })
+    }
+
+    
+    pub fn bind(addr: &SocketAddr) -> ::Result<Self> {
+        AddrIncoming::new(addr, None)
     }
 
     
@@ -117,13 +126,14 @@ impl Stream for AddrIncoming {
                 },
                 Ok(Async::NotReady) => return Ok(Async::NotReady),
                 Err(e) => {
+                    
+                    
+                    if is_connection_error(&e) {
+                        debug!("accepted connection already errored: {}", e);
+                        continue;
+                    }
+
                     if self.sleep_on_errors {
-                        
-                        
-                        if is_connection_error(&e) {
-                            debug!("accepted connection already errored: {}", e);
-                            continue;
-                        }
                         
                         let delay = Instant::now() + Duration::from_secs(1);
                         let mut timeout = Delay::new(delay);
@@ -161,9 +171,12 @@ impl Stream for AddrIncoming {
 
 
 fn is_connection_error(e: &io::Error) -> bool {
-    e.kind() == io::ErrorKind::ConnectionRefused ||
-    e.kind() == io::ErrorKind::ConnectionAborted ||
-    e.kind() == io::ErrorKind::ConnectionReset
+    match e.kind() {
+        io::ErrorKind::ConnectionRefused |
+        io::ErrorKind::ConnectionAborted |
+        io::ErrorKind::ConnectionReset => true,
+        _ => false,
+    }
 }
 
 impl fmt::Debug for AddrIncoming {
@@ -186,6 +199,7 @@ mod addr_stream {
     use tokio_io::{AsyncRead, AsyncWrite};
 
 
+    
     #[derive(Debug)]
     pub struct AddrStream {
         inner: TcpStream,
@@ -198,6 +212,12 @@ mod addr_stream {
                 inner: tcp,
                 remote_addr: addr,
             }
+        }
+
+        
+        #[inline]
+        pub fn remote_addr(&self) -> SocketAddr {
+            self.remote_addr
         }
     }
 

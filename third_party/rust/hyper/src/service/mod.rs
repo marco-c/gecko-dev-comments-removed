@@ -28,8 +28,13 @@
 
 
 
+
+mod make_service;
 mod new_service;
 mod service;
 
-pub use self::new_service::{NewService};
+pub use self::make_service::{make_service_fn, MakeService, MakeServiceRef};
+
+#[doc(hidden)]
+pub use self::new_service::NewService;
 pub use self::service::{service_fn, service_fn_ok, Service};

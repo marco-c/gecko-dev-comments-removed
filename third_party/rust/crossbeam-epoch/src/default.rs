@@ -4,7 +4,7 @@
 
 
 
-use collector::{Collector, Handle};
+use collector::{Collector, LocalHandle};
 use guard::Guard;
 
 lazy_static! {
@@ -14,33 +14,62 @@ lazy_static! {
 
 thread_local! {
     /// The per-thread participant for the default garbage collector.
-    static HANDLE: Handle = COLLECTOR.register();
+    static HANDLE: LocalHandle = COLLECTOR.register();
 }
 
 
 #[inline]
 pub fn pin() -> Guard {
-    
-    
-    HANDLE.with(|handle| handle.pin())
+    with_handle(|handle| handle.pin())
 }
 
 
 #[inline]
 pub fn is_pinned() -> bool {
-    
-    
-    HANDLE.with(|handle| handle.is_pinned())
+    with_handle(|handle| handle.is_pinned())
 }
 
 
-#[inline]
-pub fn default_handle() -> Handle {
-    HANDLE.with(|handle| handle.clone())
-}
-
-
-#[inline]
 pub fn default_collector() -> &'static Collector {
     &COLLECTOR
+}
+
+#[inline]
+fn with_handle<F, R>(mut f: F) -> R
+where
+    F: FnMut(&LocalHandle) -> R,
+{
+    HANDLE
+        .try_with(|h| f(h))
+        .unwrap_or_else(|_| f(&COLLECTOR.register()))
+}
+
+#[cfg(test)]
+mod tests {
+    use crossbeam_utils::thread;
+
+    #[test]
+    fn pin_while_exiting() {
+        struct Foo;
+
+        impl Drop for Foo {
+            fn drop(&mut self) {
+                
+                super::pin();
+            }
+        }
+
+        thread_local! {
+            static FOO: Foo = Foo;
+        }
+
+        thread::scope(|scope| {
+            scope.spawn(|_| {
+                
+                FOO.with(|_| ());
+                super::pin();
+                
+            });
+        }).unwrap();
+    }
 }

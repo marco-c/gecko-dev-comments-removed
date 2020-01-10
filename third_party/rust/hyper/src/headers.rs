@@ -14,7 +14,7 @@ pub fn connection_close(value: &HeaderValue) -> bool {
 fn connection_has(value: &HeaderValue, needle: &str) -> bool {
     if let Ok(s) = value.to_str() {
         for val in s.split(',') {
-            if eq_ascii(val.trim(), needle) {
+            if val.trim().eq_ignore_ascii_case(needle) {
                 return true;
             }
         }
@@ -87,7 +87,7 @@ pub fn is_chunked_(value: &HeaderValue) -> bool {
     
     if let Ok(s) = value.to_str() {
         if let Some(encoding) = s.rsplit(',').next() {
-            return eq_ascii(encoding.trim(), "chunked");
+            return encoding.trim().eq_ignore_ascii_case("chunked");
         }
     }
 
@@ -111,15 +111,4 @@ pub fn add_chunked(mut entry: OccupiedEntry<HeaderValue>) {
     }
 
     entry.insert(HeaderValue::from_static(CHUNKED));
-}
-
-fn eq_ascii(left: &str, right: &str) -> bool {
-    
-    
-    
-    
-    #[allow(unused, deprecated)]
-    use std::ascii::AsciiExt;
-
-    left.eq_ignore_ascii_case(right)
 }

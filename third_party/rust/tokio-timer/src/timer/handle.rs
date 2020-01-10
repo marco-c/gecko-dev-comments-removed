@@ -1,9 +1,10 @@
-use {Error, Delay, Deadline, Interval};
-use timer::{Registration, Inner};
+use timer::Inner;
+use {Deadline, Delay, Error, Interval, Timeout};
 
 use tokio_executor::Enter;
 
 use std::cell::RefCell;
+use std::fmt;
 use std::sync::{Arc, Weak};
 use std::time::{Duration, Instant};
 
@@ -15,13 +16,38 @@ use std::time::{Duration, Instant};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone)]
 pub struct Handle {
-    inner: Weak<Inner>,
+    inner: Option<HandlePriv>,
 }
 
 
-thread_local!(static CURRENT_TIMER: RefCell<Option<Handle>> = RefCell::new(None));
+#[derive(Clone)]
+pub(crate) struct HandlePriv {
+    inner: Weak<Inner>,
+}
+
+thread_local! {
+    /// Tracks the timer for the current execution context.
+    static CURRENT_TIMER: RefCell<Option<HandlePriv>> = RefCell::new(None)
+}
 
 
 
@@ -35,7 +61,8 @@ thread_local!(static CURRENT_TIMER: RefCell<Option<Handle>> = RefCell::new(None)
 
 
 pub fn with_default<F, R>(handle: &Handle, enter: &mut Enter, f: F) -> R
-where F: FnOnce(&mut Enter) -> R
+where
+    F: FnOnce(&mut Enter) -> R,
 {
     
     
@@ -57,8 +84,17 @@ where F: FnOnce(&mut Enter) -> R
     CURRENT_TIMER.with(|current| {
         {
             let mut current = current.borrow_mut();
-            assert!(current.is_none(), "default Tokio timer already set \
-                    for execution context");
+
+            assert!(
+                current.is_none(),
+                "default Tokio timer already set \
+                 for execution context"
+            );
+
+            let handle = handle
+                .as_priv()
+                .unwrap_or_else(|| panic!("`handle` does not reference a timer"));
+
             *current = Some(handle.clone());
         }
 
@@ -68,9 +104,13 @@ where F: FnOnce(&mut Enter) -> R
 
 impl Handle {
     pub(crate) fn new(inner: Weak<Inner>) -> Handle {
-        Handle { inner }
+        let inner = HandlePriv { inner };
+        Handle { inner: Some(inner) }
     }
 
+    
+    
+    
     
     
     
@@ -83,19 +123,31 @@ impl Handle {
     
     
     pub fn current() -> Handle {
-        Handle::try_current()
-            .unwrap_or(Handle { inner: Weak::new() })
+        let private =
+            HandlePriv::try_current().unwrap_or_else(|_| HandlePriv { inner: Weak::new() });
+
+        Handle {
+            inner: Some(private),
+        }
     }
 
     
     pub fn delay(&self, deadline: Instant) -> Delay {
-        let registration = Registration::new_with_handle(deadline, self.clone());
-        Delay::new_with_registration(deadline, registration)
+        match self.inner {
+            Some(ref handle_priv) => Delay::new_with_handle(deadline, handle_priv.clone()),
+            None => Delay::new(deadline),
+        }
+    }
+
+    #[doc(hidden)]
+    #[deprecated(since = "0.2.11", note = "use timeout instead")]
+    pub fn deadline<T>(&self, future: T, deadline: Instant) -> Deadline<T> {
+        Deadline::new_with_delay(future, self.delay(deadline))
     }
 
     
-    pub fn deadline<T>(&self, future: T, deadline: Instant) -> Deadline<T> {
-        Deadline::new_with_delay(future, self.delay(deadline))
+    pub fn timeout<T>(&self, value: T, deadline: Instant) -> Timeout<T> {
+        Timeout::new_with_delay(value, self.delay(deadline))
     }
 
     
@@ -104,15 +156,25 @@ impl Handle {
         Interval::new_with_delay(self.delay(at), duration)
     }
 
+    fn as_priv(&self) -> Option<&HandlePriv> {
+        self.inner.as_ref()
+    }
+}
+
+impl Default for Handle {
+    fn default() -> Handle {
+        Handle { inner: None }
+    }
+}
+
+impl HandlePriv {
     
     
     
-    pub(crate) fn try_current() -> Result<Handle, Error> {
-        CURRENT_TIMER.with(|current| {
-            match *current.borrow() {
-                Some(ref handle) => Ok(handle.clone()),
-                None => Err(Error::shutdown()),
-            }
+    pub(crate) fn try_current() -> Result<HandlePriv, Error> {
+        CURRENT_TIMER.with(|current| match *current.borrow() {
+            Some(ref handle) => Ok(handle.clone()),
+            None => Err(Error::shutdown()),
         })
     }
 
@@ -124,5 +186,11 @@ impl Handle {
     
     pub(crate) fn into_inner(self) -> Weak<Inner> {
         self.inner
+    }
+}
+
+impl fmt::Debug for HandlePriv {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "HandlePriv")
     }
 }

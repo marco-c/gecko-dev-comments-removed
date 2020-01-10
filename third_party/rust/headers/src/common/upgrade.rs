@@ -1,0 +1,50 @@
+use ::HeaderValue;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Header)]
+pub struct Upgrade(HeaderValue);
+
+impl Upgrade {
+    
+    pub fn websocket() -> Upgrade {
+        Upgrade(HeaderValue::from_static("websocket"))
+    }
+}
