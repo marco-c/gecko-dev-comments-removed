@@ -190,9 +190,6 @@ pref("devtools.netmonitor.har.pageLoadedTimeout", 1500);
 pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 
 
-pref("devtools.netmonitor.features.webSockets", false);
-
-
 
 
 
