@@ -25,6 +25,7 @@ add_task(
     const step2 = await stepOut(threadFront);
     
     equal(step2.frame.where.line, 2);
+    equal(step2.frame.where.column, 31);
     deepEqual(step2.why.frameFinished.return, { type: "undefined" });
   })
 );

@@ -807,12 +807,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
 
       
-      const { onStep, onPop } = this._makeSteppingHooks(
-        null,
-        "next",
-        false,
-        null
-      );
+      const { onStep, onPop } = this._makeSteppingHooks({
+        steppingType: "next",
+        rewinding: false,
+      });
 
       if (this.dbg.replaying) {
         const offsets = this._findReplayingStepOffsets(
@@ -830,7 +828,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     };
   },
 
-  _makeOnPop: function({ pauseAndRespond, startLocation, steppingType }) {
+  _makeOnPop: function({ pauseAndRespond, steppingType }) {
     const thread = this;
     const result = function(completion) {
       
@@ -857,15 +855,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       if (steppingType == "finish") {
         const parentFrame = thread._getNextStepFrame(this);
         if (parentFrame && parentFrame.script) {
-          
-          
-          const ncompletion = thread.dbg.replaying ? null : completion;
-          const { onStep, onPop } = thread._makeSteppingHooks(
-            location,
-            "next",
-            false,
-            ncompletion
-          );
+          const { onStep, onPop } = thread._makeSteppingHooks({
+            steppingType: "next",
+            rewinding: false,
+            completion,
+          });
+
           if (thread.dbg.replaying) {
             const parentLocation = thread.sources.getFrameLocation(parentFrame);
             const offsets = thread._findReplayingStepOffsets(
@@ -885,31 +880,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         }
       }
 
-      return pauseAndRespond(this, packet => {
-        if (completion) {
-          thread.createCompletionGrip(packet, completion);
-        } else {
-          packet.why.frameFinished = {
-            terminated: true,
-          };
-        }
-        return packet;
-      });
+      return pauseAndRespond(this, packet =>
+        thread.createCompletionGrip(packet, completion)
+      );
     };
-
-    
-    
-    
-    
-    
-    
-    
-    result.location = startLocation;
 
     return result;
   },
 
-  hasMoved: function(newLocation, newType) {
+  hasMoved: function(frame, newType) {
+    const newLocation = this.sources.getFrameLocation(frame);
+
     if (!this._priorPause) {
       return true;
     }
@@ -928,44 +909,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return line !== newLocation.line || column !== newLocation.column;
   },
 
-  
-  
-  _intraFrameLocationIsStepTarget: function(startLocation, script, offset) {
-    
-    if (!script.getOffsetMetadata(offset).isBreakpoint) {
-      return false;
-    }
-
-    const location = this.sources.getScriptOffsetLocation(script, offset);
-
-    if (!startLocation || startLocation.url !== location.url) {
-      return true;
-    }
-
-    
-    
-    
-    if (!this.hasMoved(location)) {
-      return false;
-    }
-
-    
-    
-    const pausePoints = location.sourceActor.pausePoints;
-    const pausePoint =
-      pausePoints && findPausePointForLocation(pausePoints, location);
-
-    if (pausePoint) {
-      return pausePoint.step;
-    }
-
-    return script.getOffsetMetadata(offset).isStepStart;
-  },
-
   _makeOnStep: function({
     pauseAndRespond,
     startFrame,
-    startLocation,
     steppingType,
     completion,
     rewinding,
@@ -981,35 +927,43 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this.onPop = undefined;
         return undefined;
       }
-      const location = thread.sources.getFrameLocation(this);
 
-      
-      if (thread.sources.isBlackBoxed(location.url)) {
-        return undefined;
-      }
-
-      
-      if (rewinding && this !== startFrame) {
-        return pauseAndRespond(this);
-      }
-
-      
-      if (
-        thread._intraFrameLocationIsStepTarget(
-          startLocation,
-          this.script,
-          this.offset
-        )
-      ) {
+      if (thread._validFrameStepOffset(this, startFrame)) {
         return pauseAndRespond(this, packet =>
           thread.createCompletionGrip(packet, completion)
         );
       }
 
-      
-      
       return undefined;
     };
+  },
+
+  _validFrameStepOffset: function(frame, startFrame) {
+    const location = this.sources.getFrameLocation(frame);
+    const offsetMetadata = frame.script.getOffsetMetadata(frame.offset);
+
+    
+    
+    if (
+      !offsetMetadata.isBreakpoint ||
+      this.sources.isBlackBoxed(location.url)
+    ) {
+      return false;
+    }
+
+    
+    if (frame !== startFrame) {
+      return true;
+    }
+
+    
+    
+    if (!this.hasMoved(frame)) {
+      return false;
+    }
+
+    
+    return offsetMetadata.isStepStart;
   },
 
   createCompletionGrip: function(packet, completion) {
@@ -1038,7 +992,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  _findReplayingStepOffsets: function(startLocation, frame, rewinding) {
+  _findReplayingStepOffsets: function(frame, rewinding) {
     const worklist = [frame.offset],
       seen = [],
       result = [];
@@ -1048,13 +1002,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         continue;
       }
       seen.push(offset);
-      if (
-        this._intraFrameLocationIsStepTarget(
-          startLocation,
-          frame.script,
-          offset
-        )
-      ) {
+      if (this._validFrameStepOffset(frame)) {
         if (!result.includes(offset)) {
           result.push(offset);
         }
@@ -1073,12 +1021,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  _makeSteppingHooks: function(
-    startLocation,
-    steppingType,
-    rewinding,
-    completion
-  ) {
+  _makeSteppingHooks: function({ steppingType, rewinding, completion }) {
+    
+    
+    if (this.dbg.replaying) {
+      completion = null;
+    }
+
     
     
     
@@ -1087,9 +1036,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       pauseAndRespond: (frame, onPacket = k => k) =>
         this._pauseAndRespond(frame, { type: "resumeLimit" }, onPacket),
       startFrame: this.youngestFrame,
-      startLocation: startLocation,
-      steppingType: steppingType,
-      rewinding: rewinding,
+      steppingType,
+      rewinding,
       completion,
     };
 
@@ -1130,12 +1078,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       steppingType = "next";
     }
 
-    const location = this.sources.getFrameLocation(this.youngestFrame);
-    const { onEnterFrame, onPop, onStep } = this._makeSteppingHooks(
-      location,
+    const { onEnterFrame, onPop, onStep } = this._makeSteppingHooks({
       steppingType,
-      rewinding
-    );
+      rewinding,
+    });
 
     
     
@@ -1154,7 +1100,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           if (stepFrame.script) {
             if (this.dbg.replaying) {
               const offsets = this._findReplayingStepOffsets(
-                location,
                 stepFrame,
                 rewinding
               );
@@ -1176,11 +1121,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
               
               
               
-              const offsets = this._findReplayingStepOffsets(
-                {},
-                olderFrame,
-                true
-              );
+              const offsets = this._findReplayingStepOffsets(olderFrame, true);
               olderFrame.setReplayingOnStep(onStep, offsets);
             }
           } else {
@@ -1663,7 +1604,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   createProtocolCompletionValue: function(completion) {
     const protoValue = {};
     if (completion == null) {
-      protoValue.terminated = true;
+      return protoValue;
     } else if ("return" in completion) {
       protoValue.return = createValueGrip(
         completion.return,
@@ -1883,7 +1824,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     if (
-      !this.hasMoved(location, "debuggerStatement") ||
+      !this.hasMoved(frame, "debuggerStatement") ||
       this.skipBreakpoints ||
       this.sources.isBlackBoxed(url)
     ) {
@@ -2193,11 +2134,6 @@ this.reportError = function(error, prefix = "") {
   oldReportError(msg);
   dumpn(msg);
 };
-
-function findPausePointForLocation(pausePoints, location) {
-  const { line: line, column: column } = location;
-  return pausePoints[line] && pausePoints[line][column];
-}
 
 
 
