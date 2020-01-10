@@ -1271,6 +1271,56 @@ void GatherCertificateTransparencyTelemetry(
 }
 
 
+
+
+static void CollectCertTelemetry(
+    mozilla::pkix::Result aCertVerificationResult, SECOidTag aEvOidPolicy,
+    CertVerifier::OCSPStaplingStatus aOcspStaplingStatus,
+    KeySizeStatus aKeySizeStatus, SHA1ModeResult aSha1ModeResult,
+    const PinningTelemetryInfo& aPinningTelemetryInfo,
+    const UniqueCERTCertList& aBuiltCertChain,
+    const CertificateTransparencyInfo& aCertificateTransparencyInfo) {
+  uint32_t evStatus = (aCertVerificationResult != Success)
+                          ? 0  
+                          : (aEvOidPolicy == SEC_OID_UNKNOWN) ? 1   
+                                                              : 2;  
+  Telemetry::Accumulate(Telemetry::CERT_EV_STATUS, evStatus);
+
+  if (aOcspStaplingStatus != CertVerifier::OCSP_STAPLING_NEVER_CHECKED) {
+    Telemetry::Accumulate(Telemetry::SSL_OCSP_STAPLING, aOcspStaplingStatus);
+  }
+
+  if (aKeySizeStatus != KeySizeStatus::NeverChecked) {
+    Telemetry::Accumulate(Telemetry::CERT_CHAIN_KEY_SIZE_STATUS,
+                          static_cast<uint32_t>(aKeySizeStatus));
+  }
+
+  if (aSha1ModeResult != SHA1ModeResult::NeverChecked) {
+    Telemetry::Accumulate(Telemetry::CERT_CHAIN_SHA1_POLICY_STATUS,
+                          static_cast<uint32_t>(aSha1ModeResult));
+  }
+
+  if (aPinningTelemetryInfo.accumulateForRoot) {
+    Telemetry::Accumulate(Telemetry::CERT_PINNING_FAILURES_BY_CA,
+                          aPinningTelemetryInfo.rootBucket);
+  }
+
+  if (aPinningTelemetryInfo.accumulateResult) {
+    MOZ_ASSERT(aPinningTelemetryInfo.certPinningResultHistogram.isSome());
+    Telemetry::Accumulate(
+        aPinningTelemetryInfo.certPinningResultHistogram.value(),
+        aPinningTelemetryInfo.certPinningResultBucket);
+  }
+
+  if (aCertVerificationResult == Success) {
+    GatherSuccessfulValidationTelemetry(aBuiltCertChain);
+    GatherCertificateTransparencyTelemetry(
+        aBuiltCertChain,
+         aEvOidPolicy != SEC_OID_UNKNOWN, aCertificateTransparencyInfo);
+  }
+}
+
+
 SECStatus AuthCertificate(CertVerifier& certVerifier,
                           nsNSSSocketInfo* infoObject,
                           const UniqueCERTCertificate& cert,
@@ -1308,45 +1358,15 @@ SECStatus AuthCertificate(CertVerifier& certVerifier,
       &keySizeStatus, &sha1ModeResult, &pinningTelemetryInfo,
       &certificateTransparencyInfo);
 
-  uint32_t evStatus = (rv != Success)
-                          ? 0                                     
-                          : (evOidPolicy == SEC_OID_UNKNOWN) ? 1  
-                                                             : 2;  
-  Telemetry::Accumulate(Telemetry::CERT_EV_STATUS, evStatus);
-
-  if (ocspStaplingStatus != CertVerifier::OCSP_STAPLING_NEVER_CHECKED) {
-    Telemetry::Accumulate(Telemetry::SSL_OCSP_STAPLING, ocspStaplingStatus);
-  }
-  if (keySizeStatus != KeySizeStatus::NeverChecked) {
-    Telemetry::Accumulate(Telemetry::CERT_CHAIN_KEY_SIZE_STATUS,
-                          static_cast<uint32_t>(keySizeStatus));
-  }
-  if (sha1ModeResult != SHA1ModeResult::NeverChecked) {
-    Telemetry::Accumulate(Telemetry::CERT_CHAIN_SHA1_POLICY_STATUS,
-                          static_cast<uint32_t>(sha1ModeResult));
-  }
-
-  if (pinningTelemetryInfo.accumulateForRoot) {
-    Telemetry::Accumulate(Telemetry::CERT_PINNING_FAILURES_BY_CA,
-                          pinningTelemetryInfo.rootBucket);
-  }
-
-  if (pinningTelemetryInfo.accumulateResult) {
-    MOZ_ASSERT(pinningTelemetryInfo.certPinningResultHistogram.isSome());
-    Telemetry::Accumulate(
-        pinningTelemetryInfo.certPinningResultHistogram.value(),
-        pinningTelemetryInfo.certPinningResultBucket);
-  }
+  CollectCertTelemetry(rv, evOidPolicy, ocspStaplingStatus, keySizeStatus,
+                       sha1ModeResult, pinningTelemetryInfo, builtCertChain,
+                       certificateTransparencyInfo);
 
   if (rv == Success) {
     
     
     RememberCertErrorsTable::GetInstance().RememberCertHasError(infoObject,
                                                                 SECSuccess);
-    GatherSuccessfulValidationTelemetry(builtCertChain);
-    GatherCertificateTransparencyTelemetry(
-        builtCertChain,
-         evOidPolicy != SEC_OID_UNKNOWN, certificateTransparencyInfo);
 
     EVStatus evStatus;
     if (evOidPolicy == SEC_OID_UNKNOWN) {
