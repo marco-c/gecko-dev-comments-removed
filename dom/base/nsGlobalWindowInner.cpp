@@ -856,6 +856,7 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
       mHasGamepad(false),
       mHasVREvents(false),
       mHasVRDisplayActivateEvents(false),
+      mWasCurrentInnerWindow(false),
       mHasSeenGamepadInput(false),
       mSuspendDepth(0),
       mFreezeDepth(0),
@@ -2548,19 +2549,13 @@ bool nsPIDOMWindowInner::IsCurrentInnerWindow() const {
   auto* bc = GetBrowsingContext();
   MOZ_ASSERT(bc);
 
-  nsPIDOMWindowOuter* outer;
-  
-  
-  
-  
-  
-  
-  
-  if (!bc->IsDiscarded()) {
-    outer = bc->GetDOMWindow();
-  } else {
-    outer = mOuterWindow;
+  if (bc->IsDiscarded()) {
+    
+    
+    return WasCurrentInnerWindow();
   }
+
+  nsPIDOMWindowOuter* outer = bc->GetDOMWindow();
   return outer && outer->GetCurrentInnerWindow() == this;
 }
 
