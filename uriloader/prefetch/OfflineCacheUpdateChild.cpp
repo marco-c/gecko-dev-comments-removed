@@ -386,14 +386,8 @@ OfflineCacheUpdateChild::Schedule() {
   
   bool stickDocument = mDocument != nullptr;
 
-  
-  
-  
   ContentChild::GetSingleton()->SendPOfflineCacheUpdateConstructor(
       this, manifestURI, documentURI, loadingPrincipalInfo, stickDocument);
-
-  
-  NS_ADDREF_THIS();
 
   return NS_OK;
 }
