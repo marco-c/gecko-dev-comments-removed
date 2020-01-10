@@ -13,6 +13,7 @@
 #include "nsHashKeys.h"
 #include "nsCoord.h"
 #include "nsTArray.h"
+#include "nsLineBox.h"
 
 #ifdef DrawText
 #  undef DrawText
@@ -544,9 +545,10 @@ class nsBidiPresUtils {
 
 
 
-  static inline nsresult EnsureBidiContinuation(nsIFrame* aFrame,
-                                                nsIFrame** aNewFrame,
-                                                int32_t aStart, int32_t aEnd);
+
+  static inline nsresult EnsureBidiContinuation(
+      nsIFrame* aFrame, const nsLineList::iterator aLine, nsIFrame** aNewFrame,
+      int32_t aStart, int32_t aEnd);
 
   
 
