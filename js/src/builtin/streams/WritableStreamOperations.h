@@ -9,6 +9,25 @@
 #ifndef builtin_streams_WritableStreamOperations_h
 #define builtin_streams_WritableStreamOperations_h
 
-namespace js {}  
+#include "mozilla/Attributes.h"  
+
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
+
+struct JSContext;
+
+namespace js {
+
+class WritableStream;
+
+extern MOZ_MUST_USE bool WritableStreamDealWithRejection(
+    JSContext* cx, JS::Handle<WritableStream*> unwrappedStream,
+    JS::Handle<JS::Value> error);
+
+extern MOZ_MUST_USE bool WritableStreamUpdateBackpressure(
+    JSContext* cx, JS::Handle<WritableStream*> unwrappedStream,
+    bool backpressure);
+
+}  
 
 #endif  

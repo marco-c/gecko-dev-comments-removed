@@ -13,18 +13,96 @@
 
 #include "jsapi.h"  
 
+#include "builtin/Promise.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
+#include "builtin/streams/QueueWithSizes.h"  
 #include "builtin/streams/WritableStream.h"  
+#include "builtin/streams/WritableStreamDefaultController.h"  
+#include "builtin/streams/WritableStreamOperations.h"  
+#include "js/CallArgs.h"                     
 #include "js/RootingAPI.h"                   
 #include "js/Value.h"                        
 #include "vm/JSContext.h"                    
+#include "vm/JSObject.h"                     
 #include "vm/Runtime.h"                      
 
-#include "vm/JSObject-inl.h"                 
+#include "builtin/streams/HandlerFunction-inl.h"  
+#include "vm/JSObject-inl.h"  
 
+using JS::CallArgs;
+using JS::CallArgsFromVp;
 using JS::Handle;
+using JS::ObjectValue;
 using JS::Rooted;
 using JS::Value;
+
+using js::WritableStreamDefaultController;
+
+
+
+static MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController);
+
+
+
+
+
+bool js::WritableStreamControllerStartHandler(JSContext* cx, unsigned argc,
+                                              Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<WritableStreamDefaultController*> unwrappedController(
+      cx, TargetFromHandler<WritableStreamDefaultController>(args));
+
+  
+#ifdef DEBUG
+  const auto* unwrappedStream = unwrappedController->stream();
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+#endif
+
+  
+  unwrappedController->setStarted();
+
+  
+  
+  if (!WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+          cx, unwrappedController)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+bool js::WritableStreamControllerStartFailedHandler(JSContext* cx,
+                                                    unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<WritableStreamDefaultController*> unwrappedController(
+      cx, TargetFromHandler<WritableStreamDefaultController>(args));
+
+  Rooted<WritableStream*> unwrappedStream(cx, unwrappedController->stream());
+
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  unwrappedController->setStarted();
+
+  
+  if (!WritableStreamDealWithRejection(cx, unwrappedStream, args.get(0))) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
 
 
 
@@ -65,13 +143,108 @@ using JS::Value;
 
 
 MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
-    JSContext* cx, Handle<WritableStream*> stream, SinkAlgorithms algorithms,
-    Handle<Value> underlyingSink, Handle<Value> writeMethod,
-    Handle<Value> closeMethod, Handle<Value> abortMethod, double highWaterMark,
-    Handle<Value> size) {
+    JSContext* cx, Handle<WritableStream*> stream,
+    SinkAlgorithms sinkAlgorithms, Handle<Value> underlyingSink,
+    Handle<Value> writeMethod, Handle<Value> closeMethod,
+    Handle<Value> abortMethod, double highWaterMark, Handle<Value> size) {
+  cx->check(stream, underlyingSink, size);
+  MOZ_ASSERT(writeMethod.isUndefined() || IsCallable(writeMethod));
+  MOZ_ASSERT(closeMethod.isUndefined() || IsCallable(closeMethod));
+  MOZ_ASSERT(abortMethod.isUndefined() || IsCallable(abortMethod));
+  MOZ_ASSERT(highWaterMark >= 0);
+  MOZ_ASSERT(size.isUndefined() || IsCallable(size));
+
   
-  JS_ReportErrorASCII(cx, "epic fail");
-  return false;
+  Rooted<WritableStreamDefaultController*> controller(
+      cx, NewBuiltinClassInstance<WritableStreamDefaultController>(cx));
+  if (!controller) {
+    return false;
+  }
+
+  
+  
+
+  
+  MOZ_ASSERT(!stream->hasController());
+
+  
+  controller->setStream(stream);
+
+  
+  stream->setController(controller);
+
+  
+  if (!ResetQueue(cx, controller)) {
+    return false;
+  }
+
+  
+  controller->setFlags(0);
+  MOZ_ASSERT(!controller->started());
+
+  
+  controller->setStrategySize(size);
+
+  
+  controller->setStrategyHWM(highWaterMark);
+
+  
+  
+  
+  controller->setWriteMethod(writeMethod);
+  controller->setCloseMethod(closeMethod);
+  controller->setAbortMethod(abortMethod);
+
+  
+  
+  bool backpressure =
+      WritableStreamDefaultControllerGetBackpressure(controller);
+
+  
+  if (!WritableStreamUpdateBackpressure(cx, stream, backpressure)) {
+    return false;
+  }
+
+  
+  
+  Rooted<Value> startResult(cx);
+  if (sinkAlgorithms == SinkAlgorithms::Script) {
+    Rooted<Value> controllerVal(cx, ObjectValue(*controller));
+    if (!InvokeOrNoop(cx, underlyingSink, cx->names().start, controllerVal,
+                      &startResult)) {
+      return false;
+    }
+  }
+
+  
+  Rooted<JSObject*> startPromise(
+      cx, PromiseObject::unforgeableResolve(cx, startResult));
+  if (!startPromise) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Rooted<JSObject*> onStartFulfilled(
+      cx, NewHandler(cx, WritableStreamControllerStartHandler, controller));
+  if (!onStartFulfilled) {
+    return false;
+  }
+  Rooted<JSObject*> onStartRejected(
+      cx,
+      NewHandler(cx, WritableStreamControllerStartFailedHandler, controller));
+  if (!onStartRejected) {
+    return false;
+  }
+
+  return JS::AddPromiseReactions(cx, startPromise, onStartFulfilled,
+                                 onStartRejected);
 }
 
 
@@ -130,4 +303,34 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
   return SetUpWritableStreamDefaultController(
       cx, stream, sinkAlgorithms, underlyingSink, writeMethod, closeMethod,
       abortMethod, highWaterMark, sizeAlgorithm);
+}
+
+
+
+
+
+double js::WritableStreamDefaultControllerGetDesiredSize(
+    const WritableStreamDefaultController* controller) {
+  return controller->strategyHWM() - controller->queueTotalSize();
+}
+
+
+
+
+
+MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController) {
+  
+  JS_ReportErrorASCII(cx, "nope");
+  return false;
+}
+
+
+
+
+
+bool js::WritableStreamDefaultControllerGetBackpressure(
+    const WritableStreamDefaultController* controller) {
+  return WritableStreamDefaultControllerGetDesiredSize(controller) <= 0.0;
 }

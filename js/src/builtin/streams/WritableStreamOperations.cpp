@@ -14,6 +14,9 @@
 #include "jsapi.h"  
 
 #include "builtin/streams/WritableStream.h"  
+#include "js/RootingAPI.h"                   
+#include "js/Value.h"                        
+
 #include "vm/JSObject-inl.h"                 
 #include "vm/List-inl.h"                     
 
@@ -84,4 +87,29 @@ void WritableStream::clearInFlightWriteRequest(JSContext* cx) {
 
   MOZ_ASSERT(!haveInFlightWriteRequest());
   MOZ_ASSERT(inFlightWriteRequest().isUndefined());
+}
+
+
+
+
+
+
+
+MOZ_MUST_USE bool js::WritableStreamDealWithRejection(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream,
+    Handle<Value> error) {
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
+}
+
+
+
+
+
+MOZ_MUST_USE bool js::WritableStreamUpdateBackpressure(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream, bool backpressure) {
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
 }

@@ -79,13 +79,6 @@ extern MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
 
 
 
-
-
-
-
-
-
-
 extern MOZ_MUST_USE bool MakeSizeAlgorithmFromSizeFunction(
     JSContext* cx, JS::Handle<JS::Value> size);
 
