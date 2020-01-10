@@ -23,9 +23,8 @@ exports.getDOMWindowUtils = getDOMWindowUtils;
 
 
 
-const isStartupFinished = (window) =>
-  window.gBrowserInit &&
-  window.gBrowserInit.delayedStartupFinished;
+const isStartupFinished = window =>
+  window.gBrowserInit && window.gBrowserInit.delayedStartupFinished;
 
 function startup(window) {
   return new Promise(resolve => {
@@ -35,7 +34,10 @@ function startup(window) {
     }
     Services.obs.addObserver(function listener({ subject }) {
       if (subject === window) {
-        Services.obs.removeObserver(listener, "browser-delayed-startup-finished");
+        Services.obs.removeObserver(
+          listener,
+          "browser-delayed-startup-finished"
+        );
         resolve(window);
       }
     }, "browser-delayed-startup-finished");

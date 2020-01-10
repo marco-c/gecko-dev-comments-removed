@@ -14,92 +14,93 @@ const {
   CHANGE_NETWORK_THROTTLING,
 } = require("devtools/client/shared/components/throttling/actions");
 
-createEnum([
+createEnum(
+  [
+    
+    "ADD_DEVICE",
 
-  
-  "ADD_DEVICE",
+    
+    "ADD_DEVICE_TYPE",
 
-  
-  "ADD_DEVICE_TYPE",
+    
+    "ADD_VIEWPORT",
 
-  
-  "ADD_VIEWPORT",
+    
+    "CHANGE_DEVICE",
 
-  
-  "CHANGE_DEVICE",
+    
+    
+    "CHANGE_LOCATION",
 
-  
-  
-  "CHANGE_LOCATION",
+    
+    
+    
+    "CHANGE_DISPLAY_PIXEL_RATIO",
 
-  
-  
-  
-  "CHANGE_DISPLAY_PIXEL_RATIO",
+    
+    CHANGE_NETWORK_THROTTLING,
 
-  
-  CHANGE_NETWORK_THROTTLING,
+    
+    "CHANGE_USER_AGENT",
 
-  
-  "CHANGE_USER_AGENT",
+    
+    
+    
+    "CHANGE_PIXEL_RATIO",
 
-  
-  
-  
-  "CHANGE_PIXEL_RATIO",
+    
+    "CHANGE_VIEWPORT_ANGLE",
 
-  
-  "CHANGE_VIEWPORT_ANGLE",
+    
+    "EDIT_DEVICE",
 
-  
-  "EDIT_DEVICE",
+    
+    "LOAD_DEVICE_LIST_START",
 
-  
-  "LOAD_DEVICE_LIST_START",
+    
+    "LOAD_DEVICE_LIST_ERROR",
 
-  
-  "LOAD_DEVICE_LIST_ERROR",
+    
+    "LOAD_DEVICE_LIST_END",
 
-  
-  "LOAD_DEVICE_LIST_END",
+    
+    "REMOVE_DEVICE",
 
-  
-  "REMOVE_DEVICE",
+    
+    "REMOVE_DEVICE_ASSOCIATION",
 
-  
-  "REMOVE_DEVICE_ASSOCIATION",
+    
+    "RESIZE_VIEWPORT",
 
-  
-  "RESIZE_VIEWPORT",
+    
+    "ROTATE_VIEWPORT",
 
-  
-  "ROTATE_VIEWPORT",
+    
+    "TAKE_SCREENSHOT_START",
 
-  
-  "TAKE_SCREENSHOT_START",
+    
+    "TAKE_SCREENSHOT_END",
 
-  
-  "TAKE_SCREENSHOT_END",
+    
+    "TOGGLE_LEFT_ALIGNMENT",
 
-  
-  "TOGGLE_LEFT_ALIGNMENT",
+    
+    "TOGGLE_RELOAD_ON_TOUCH_SIMULATION",
 
-  
-  "TOGGLE_RELOAD_ON_TOUCH_SIMULATION",
+    
+    "TOGGLE_RELOAD_ON_USER_AGENT",
 
-  
-  "TOGGLE_RELOAD_ON_USER_AGENT",
+    
+    "TOGGLE_TOUCH_SIMULATION",
 
-  
-  "TOGGLE_TOUCH_SIMULATION",
+    
+    "TOGGLE_USER_AGENT_INPUT",
 
-  
-  "TOGGLE_USER_AGENT_INPUT",
+    
+    "UPDATE_DEVICE_DISPLAYED",
 
-  
-  "UPDATE_DEVICE_DISPLAYED",
-
-  
-  "UPDATE_DEVICE_MODAL",
-
-], module.exports);
+    
+    "UPDATE_DEVICE_MODAL",
+  ],
+  module.exports
+);

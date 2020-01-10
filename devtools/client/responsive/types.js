@@ -28,7 +28,6 @@ exports.loadableState = createEnum([
 
 
 const device = {
-
   
   name: PropTypes.string,
 
@@ -52,14 +51,12 @@ const device = {
 
   
   displayed: PropTypes.bool,
-
 };
 
 
 
 
 exports.devices = {
-
   
   types: PropTypes.arrayOf(PropTypes.string),
 
@@ -89,7 +86,6 @@ exports.devices = {
 
   
   listState: PropTypes.oneOf(Object.keys(exports.loadableState)),
-
 };
 
 
@@ -98,20 +94,17 @@ exports.devices = {
 
 
 exports.networkThrottling = {
-
   
   enabled: PropTypes.bool,
 
   
   profile: PropTypes.string,
-
 };
 
 
 
 
 exports.viewport = {
-
   
   id: PropTypes.number,
 
@@ -133,7 +126,6 @@ exports.viewport = {
   
   
   userContextId: PropTypes.number,
-
 };
 
 
@@ -142,8 +134,6 @@ exports.viewport = {
 
 
 exports.screenshot = {
-
   
   isCapturing: PropTypes.bool,
-
 };

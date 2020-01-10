@@ -5,8 +5,9 @@
 
 
 
-const TEST_URL = "data:text/html;charset=utf-8," +
-  "<head><meta name=\"viewport\" content=\"width=300\"/></head>" +
+const TEST_URL =
+  "data:text/html;charset=utf-8," +
+  '<head><meta name="viewport" content="width=300"/></head>' +
   "<body>meta viewport width 300</body>";
 addRDMTask(TEST_URL, async function({ ui, manager }) {
   
@@ -52,18 +53,30 @@ addRDMTask(TEST_URL, async function({ ui, manager }) {
     await setViewportSize(ui, manager, 600, 300);
     await testViewportZoomWidthAndHeight(
       message + " before resize",
-      ui, b[0], b[1], b[2]);
+      ui,
+      b[0],
+      b[1],
+      b[2]
+    );
 
     
     await setViewportSize(ui, manager, 50, 50);
     await testViewportZoomWidthAndHeight(
       message + " after resize",
-      ui, a[0], a[1], a[2]);
+      ui,
+      a[0],
+      a[1],
+      a[2]
+    );
 
     
     await setViewportSize(ui, manager, 600, 300);
     await testViewportZoomWidthAndHeight(
       message + " return to initial size",
-      ui, b[0], b[1], b[2]);
+      ui,
+      b[0],
+      b[1],
+      b[2]
+    );
   }
 });

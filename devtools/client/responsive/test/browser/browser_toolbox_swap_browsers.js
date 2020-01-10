@@ -10,7 +10,9 @@ const TEST_URL = "http://example.com/";
 function getServerConnections(browser) {
   ok(browser.isRemoteBrowser, "Content browser is remote");
   return ContentTask.spawn(browser, {}, async function() {
-    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+    const { require } = ChromeUtils.import(
+      "resource://devtools/shared/Loader.jsm"
+    );
     const { DebuggerServer } = require("devtools/server/main");
     if (!DebuggerServer._connections) {
       return 0;
@@ -32,89 +34,135 @@ const checkToolbox = async function(tab, location) {
 add_task(async function() {
   const tab = await addTab(TEST_URL);
 
-  const tabsInDifferentProcesses = E10S_MULTI_ENABLED &&
-    (gBrowser.tabs[0].linkedBrowser.frameLoader.childID !=
-     gBrowser.tabs[1].linkedBrowser.frameLoader.childID);
+  const tabsInDifferentProcesses =
+    E10S_MULTI_ENABLED &&
+    gBrowser.tabs[0].linkedBrowser.frameLoader.childID !=
+      gBrowser.tabs[1].linkedBrowser.frameLoader.childID;
 
   info("Open toolbox outside RDM");
   {
     
-    await checkServerConnectionCount(tab.linkedBrowser, 0,
-      "0: No DevTools connections yet");
+    await checkServerConnectionCount(
+      tab.linkedBrowser,
+      0,
+      "0: No DevTools connections yet"
+    );
     const { toolbox } = await openInspector();
     if (tabsInDifferentProcesses) {
       
-      await checkServerConnectionCount(tab.linkedBrowser, 1,
-        "1: Two tabs open, but only one per content process");
+      await checkServerConnectionCount(
+        tab.linkedBrowser,
+        1,
+        "1: Two tabs open, but only one per content process"
+      );
     } else {
       
-      await checkServerConnectionCount(tab.linkedBrowser, 2,
-        "2: One for each tab (starting tab plus the one we opened)");
+      await checkServerConnectionCount(
+        tab.linkedBrowser,
+        2,
+        "2: One for each tab (starting tab plus the one we opened)"
+      );
     }
     await checkToolbox(tab, "outside RDM");
     const { ui } = await openRDM(tab);
     if (tabsInDifferentProcesses) {
       
-      await checkServerConnectionCount(ui.getViewportBrowser(), 2,
-        "2: RDM UI uses an extra connection");
+      await checkServerConnectionCount(
+        ui.getViewportBrowser(),
+        2,
+        "2: RDM UI uses an extra connection"
+      );
     } else {
       
-      await checkServerConnectionCount(ui.getViewportBrowser(), 3,
-        "3: RDM UI uses an extra connection");
+      await checkServerConnectionCount(
+        ui.getViewportBrowser(),
+        3,
+        "3: RDM UI uses an extra connection"
+      );
     }
     await checkToolbox(tab, "after opening RDM");
     await closeRDM(tab);
     if (tabsInDifferentProcesses) {
       
-      await checkServerConnectionCount(tab.linkedBrowser, 1,
-        "1: RDM UI closed, return to previous connection count");
+      await checkServerConnectionCount(
+        tab.linkedBrowser,
+        1,
+        "1: RDM UI closed, return to previous connection count"
+      );
     } else {
       
-      await checkServerConnectionCount(tab.linkedBrowser, 2,
-        "2: RDM UI closed, return to previous connection count");
+      await checkServerConnectionCount(
+        tab.linkedBrowser,
+        2,
+        "2: RDM UI closed, return to previous connection count"
+      );
     }
     await checkToolbox(tab, tab.linkedBrowser, "after closing RDM");
     await toolbox.destroy();
     
-    await checkServerConnectionCount(tab.linkedBrowser, 0,
-      "0: All DevTools usage closed");
+    await checkServerConnectionCount(
+      tab.linkedBrowser,
+      0,
+      "0: All DevTools usage closed"
+    );
   }
 
   info("Open toolbox inside RDM");
   {
     
-    await checkServerConnectionCount(tab.linkedBrowser, 0,
-      "0: No DevTools connections yet");
+    await checkServerConnectionCount(
+      tab.linkedBrowser,
+      0,
+      "0: No DevTools connections yet"
+    );
     const { ui } = await openRDM(tab);
     
-    await checkServerConnectionCount(ui.getViewportBrowser(), 1,
-      "1: RDM UI uses an extra connection");
+    await checkServerConnectionCount(
+      ui.getViewportBrowser(),
+      1,
+      "1: RDM UI uses an extra connection"
+    );
     const { toolbox } = await openInspector();
     if (tabsInDifferentProcesses) {
       
-      await checkServerConnectionCount(ui.getViewportBrowser(), 2,
-        "2: Two tabs open, but only one per content process");
+      await checkServerConnectionCount(
+        ui.getViewportBrowser(),
+        2,
+        "2: Two tabs open, but only one per content process"
+      );
     } else {
       
-      await checkServerConnectionCount(ui.getViewportBrowser(), 3,
-        "3: One for each tab (starting tab plus the one we opened)");
+      await checkServerConnectionCount(
+        ui.getViewportBrowser(),
+        3,
+        "3: One for each tab (starting tab plus the one we opened)"
+      );
     }
     await checkToolbox(tab, ui.getViewportBrowser(), "inside RDM");
     await closeRDM(tab);
     if (tabsInDifferentProcesses) {
       
-      await checkServerConnectionCount(tab.linkedBrowser, 1,
-        "1: RDM UI closed, one less connection");
+      await checkServerConnectionCount(
+        tab.linkedBrowser,
+        1,
+        "1: RDM UI closed, one less connection"
+      );
     } else {
       
-      await checkServerConnectionCount(tab.linkedBrowser, 2,
-        "2: RDM UI closed, one less connection");
+      await checkServerConnectionCount(
+        tab.linkedBrowser,
+        2,
+        "2: RDM UI closed, one less connection"
+      );
     }
     await checkToolbox(tab, tab.linkedBrowser, "after closing RDM");
     await toolbox.destroy();
     
-    await checkServerConnectionCount(tab.linkedBrowser, 0,
-      "0: All DevTools usage closed");
+    await checkServerConnectionCount(
+      tab.linkedBrowser,
+      0,
+      "0: All DevTools usage closed"
+    );
   }
 
   await removeTab(tab);

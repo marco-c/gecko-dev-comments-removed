@@ -56,12 +56,18 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   const addTabSilently = (uri, options) => {
-    browserWindow.addEventListener("TabOpen", event => {
-      event.stopImmediatePropagation();
-    }, { capture: true, once: true });
-    options.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({
-      userContextId: options.userContextId,
-    });
+    browserWindow.addEventListener(
+      "TabOpen",
+      event => {
+        event.stopImmediatePropagation();
+      },
+      { capture: true, once: true }
+    );
+    options.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
+      {
+        userContextId: options.userContextId,
+      }
+    );
     return gBrowser.addWebTab(uri, options);
   };
 
@@ -69,9 +75,13 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   const swapBrowsersAndCloseOtherSilently = (ourTab, otherTab) => {
-    browserWindow.addEventListener("TabClose", event => {
-      event.stopImmediatePropagation();
-    }, { capture: true, once: true });
+    browserWindow.addEventListener(
+      "TabClose",
+      event => {
+        event.stopImmediatePropagation();
+      },
+      { capture: true, once: true }
+    );
     gBrowser.swapBrowsersAndCloseOther(ourTab, otherTab);
   };
 
@@ -83,7 +93,10 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   const swapBrowserDocShells = (ourTab, otherBrowser) => {
     
-    if (!ourTab.linkedBrowser.isRemoteBrowser || !otherBrowser.isRemoteBrowser) {
+    if (
+      !ourTab.linkedBrowser.isRemoteBrowser ||
+      !otherBrowser.isRemoteBrowser
+    ) {
       throw new Error("Both browsers should be remote before swapping.");
     }
     const contentTabId = ourTab.linkedBrowser.frameLoader.remoteTab.tabId;
@@ -97,13 +110,14 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   function loadURIWithNewFrameLoader(browser, uri, options) {
     return new Promise(resolve => {
-      gBrowser.addEventListener("XULFrameLoaderCreated", resolve, { once: true });
+      gBrowser.addEventListener("XULFrameLoaderCreated", resolve, {
+        once: true,
+      });
       browser.loadURI(uri, options);
     });
   }
 
   return {
-
     async start() {
       
       
@@ -116,14 +130,18 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
         mustChangeProcess,
         newFrameloader,
       } = E10SUtils.shouldLoadURIInBrowser(
-         tab.linkedBrowser,
+        tab.linkedBrowser,
         "http://example.com"
       );
       if (newFrameloader) {
-        debug(`Tab will force a new frameloader on navigation, load about:blank first`);
+        debug(
+          `Tab will force a new frameloader on navigation, load about:blank first`
+        );
         await loadURIWithNewFrameLoader(tab.linkedBrowser, "about:blank", {
           flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
-          triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
+          triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+            {}
+          ),
         });
       }
       
@@ -140,10 +158,14 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      if (mustChangeProcess &&
-          tab.linkedBrowser.remoteType == "privilegedabout") {
-        debug(`Tab must flip away from the privileged content process ` +
-              `on navigation`);
+      if (
+        mustChangeProcess &&
+        tab.linkedBrowser.remoteType == "privilegedabout"
+      ) {
+        debug(
+          `Tab must flip away from the privileged content process ` +
+            `on navigation`
+        );
         gBrowser.updateBrowserRemoteness(tab.linkedBrowser, {
           remoteType: requiredRemoteType,
         });
@@ -214,8 +236,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       innerBrowser = await getInnerBrowser(containerBrowser);
       addXULBrowserDecorations(innerBrowser);
       if (innerBrowser.isRemoteBrowser != tab.linkedBrowser.isRemoteBrowser) {
-        throw new Error("The inner browser's remoteness must match the " +
-                        "original tab.");
+        throw new Error(
+          "The inner browser's remoteness must match the " + "original tab."
+        );
       }
 
       
@@ -337,7 +360,6 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       tab.linkedBrowser.style.visibility = "";
     },
-
   };
 }
 
@@ -346,11 +368,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
 
 
 
-const NAVIGATION_PROPERTIES = [
-  "currentURI",
-  "contentTitle",
-  "securityUI",
-];
+const NAVIGATION_PROPERTIES = ["currentURI", "contentTitle", "securityUI"];
 
 function freezeNavigationState(tab) {
   
@@ -452,8 +470,10 @@ function addXULBrowserDecorations(browser) {
 function tabLoaded(tab) {
   return new Promise(resolve => {
     function handle(event) {
-      if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-          event.target.location.href == "about:blank") {
+      if (
+        event.originalTarget != tab.linkedBrowser.contentDocument ||
+        event.target.location.href == "about:blank"
+      ) {
         return;
       }
       tab.linkedBrowser.removeEventListener("load", handle, true);

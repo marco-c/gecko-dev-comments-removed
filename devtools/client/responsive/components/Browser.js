@@ -143,8 +143,9 @@ class Browser extends PureComponent {
     await ready;
 
     const browserWindow = getTopLevelWindow(window);
-    const requiresFloatingScrollbars =
-      !browserWindow.matchMedia("(-moz-overlay-scrollbars)").matches;
+    const requiresFloatingScrollbars = !browserWindow.matchMedia(
+      "(-moz-overlay-scrollbars)"
+    ).matches;
 
     await e10s.request(mm, "Start", {
       requiresFloatingScrollbars,
@@ -170,9 +171,7 @@ class Browser extends PureComponent {
   }
 
   render() {
-    const {
-      userContextId,
-    } = this.props;
+    const { userContextId } = this.props;
 
     
     
@@ -181,25 +180,21 @@ class Browser extends PureComponent {
     
     
     
-    return (
-      dom.iframe(
-        {
-          allowFullScreen: "true",
-          className: "browser",
-          height: "100%",
-          mozbrowser: "true",
-          noisolation: "true",
-          remote: "true",
-          remoteType: "web",
-          src: "about:blank",
-          usercontextid: userContextId,
-          width: "100%",
-          ref: browser => {
-            this.browser = browser;
-          },
-        }
-      )
-    );
+    return dom.iframe({
+      allowFullScreen: "true",
+      className: "browser",
+      height: "100%",
+      mozbrowser: "true",
+      noisolation: "true",
+      remote: "true",
+      remoteType: "web",
+      src: "about:blank",
+      usercontextid: userContextId,
+      width: "100%",
+      ref: browser => {
+        this.browser = browser;
+      },
+    });
   }
 }
 

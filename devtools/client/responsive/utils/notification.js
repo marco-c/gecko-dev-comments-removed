@@ -4,8 +4,18 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
-loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
+loader.lazyRequireGetter(
+  this,
+  "TargetFactory",
+  "devtools/client/framework/target",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "gDevTools",
+  "devtools/client/framework/devtools",
+  true
+);
 
 
 
@@ -22,7 +32,11 @@ loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools"
 
 
 
-async function showNotification(window, tab, { toolboxButton, msg, priority } = {}) {
+async function showNotification(
+  window,
+  tab,
+  { toolboxButton, msg, priority } = {}
+) {
   
   let nbox = window.gBrowser.getNotificationBox(tab.linkedBrowser);
 

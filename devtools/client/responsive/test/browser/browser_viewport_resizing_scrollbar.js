@@ -7,7 +7,9 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochikit/content/tests/SimpleTest/WindowSnapshot.js", this);
+  "chrome://mochikit/content/tests/SimpleTest/WindowSnapshot.js",
+  this
+);
 
 
 
@@ -39,20 +41,23 @@ Services.scriptloader.loadSubScript(
 
 
 
-const TEST_URL = "data:text/html;charset=utf-8," +
-    "<head>" +
-    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>" +
-    "</head>" +
-    "<body><div style=\"background:orange; width:1000px; height:1000px\"></div></body>";
+const TEST_URL =
+  "data:text/html;charset=utf-8," +
+  "<head>" +
+  '<meta name="viewport" content="width=device-width, initial-scale=1"/>' +
+  "</head>" +
+  '<body><div style="background:orange; width:1000px; height:1000px"></div></body>';
 
 addRDMTask(TEST_URL, async function({ ui, manager }) {
   
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["devtools.responsive.metaViewport.enabled", true],
-          ["layout.testing.overlay-scrollbars.always-visible", true],
-          ["security.data_uri.unique_opaque_origin", false]],
+    set: [
+      ["devtools.responsive.metaViewport.enabled", true],
+      ["layout.testing.overlay-scrollbars.always-visible", true],
+      ["security.data_uri.unique_opaque_origin", false],
+    ],
   });
 
   const store = ui.toolWindow.store;

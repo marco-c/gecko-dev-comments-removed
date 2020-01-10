@@ -8,8 +8,9 @@
 
 
 
-const TEST_URL = "data:text/html;charset=utf-8," +
-  "<div style=\"background:blue; width:200px; height:200px\"></div>";
+const TEST_URL =
+  "data:text/html;charset=utf-8," +
+  '<div style="background:blue; width:200px; height:200px"></div>';
 
 addRDMTask(TEST_URL, async function({ ui, manager }) {
   await setViewportSize(ui, manager, 100, 100);

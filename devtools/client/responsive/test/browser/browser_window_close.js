@@ -17,8 +17,10 @@ add_task(async function() {
   
   
   
-  ok(ResponsiveUIManager.isActiveForTab(tab),
-     "ResponsiveUI should be active for tab when the window is closed");
+  ok(
+    ResponsiveUIManager.isActiveForTab(tab),
+    "ResponsiveUI should be active for tab when the window is closed"
+  );
   const offPromise = once(ResponsiveUIManager, "off");
   await BrowserTestUtils.closeWindow(newWindow);
   await offPromise;

@@ -6,7 +6,10 @@
 
 "use strict";
 
-const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  createFactory,
+  PureComponent,
+} = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
@@ -38,12 +41,12 @@ class DeviceList extends PureComponent {
 
     
     const removeDeviceButton = dom.button({
-        id: "device-edit-remove",
-        className: "device-remove-button devtools-button",
-        onClick: () => {
-          onRemoveCustomDevice(device);
-          this.props.onDeviceFormHide();
-        },
+      id: "device-edit-remove",
+      className: "device-remove-button devtools-button",
+      onClick: () => {
+        onRemoveCustomDevice(device);
+        this.props.onDeviceFormHide();
+      },
     });
 
     
@@ -64,28 +67,27 @@ class DeviceList extends PureComponent {
       },
       
       !isDeviceFormShown ? editButton : null,
-      !isDeviceFormShown ? removeDeviceButton : null,
+      !isDeviceFormShown ? removeDeviceButton : null
     );
   }
 
   render() {
     const { devices, type, onDeviceCheckboxChange } = this.props;
 
-    return (
-      dom.div({ className: "device-list"},
-        devices[type].map(device => {
-          if (type === "custom") {
-            return this.renderCustomDevice(device);
-          }
+    return dom.div(
+      { className: "device-list" },
+      devices[type].map(device => {
+        if (type === "custom") {
+          return this.renderCustomDevice(device);
+        }
 
-          return Device({
-            device,
-            key: device.name,
-            type,
-            onDeviceCheckboxChange,
-          });
-        })
-      )
+        return Device({
+          device,
+          key: device.name,
+          type,
+          onDeviceCheckboxChange,
+        });
+      })
     );
   }
 }
