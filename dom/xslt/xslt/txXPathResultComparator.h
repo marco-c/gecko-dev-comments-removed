@@ -59,9 +59,17 @@ class txResultStringComparator : public txXPathResultComparator {
     StringValue();
     ~StringValue();
 
+    nsresult initCaseKeyBuffer(nsICollation* aCollation);
+
     uint8_t* mKey;
-    void* mCaseKey;
-    uint32_t mLength, mCaseLength;
+    union {
+      nsString* mCaseKeyString;
+      uint8_t* mCaseKeyBuffer;
+    };
+    
+    
+    
+    uint32_t mLength, mCaseKeyLength;
   };
 };
 
