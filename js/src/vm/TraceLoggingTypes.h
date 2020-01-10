@@ -11,6 +11,8 @@
 
 #include "js/AllocPolicy.h"
 
+class JSLinearString;
+
 
 #define TRACELOGGER_TREE_ITEMS(_)              \
   _(AnnotateScripts)                           \
