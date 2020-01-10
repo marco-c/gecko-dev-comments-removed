@@ -103,7 +103,7 @@ class ResponsePanel extends Component {
 
     
     
-    if (limit <= request.responseContent.content.size) {
+    if (limit > 0 && limit <= request.responseContent.content.size) {
       const result = {};
       result.error = RESPONSE_TRUNCATED;
       return result;
