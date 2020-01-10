@@ -1549,6 +1549,52 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
 
+  
+
+
+
+  bool IsEmptyInineNode(nsINode& aNode) const {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+
+    if (!HTMLEditor::NodeIsInlineStatic(aNode) || !IsContainer(&aNode)) {
+      return false;
+    }
+    bool isEmpty = true;
+    IsEmptyNode(&aNode, &isEmpty);
+    return isEmpty;
+  }
+
+  
+
+
+
+  bool IsEmptyOneHardLine(
+      nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes) const {
+    if (NS_WARN_IF(!aArrayOfNodes.Length())) {
+      return true;
+    }
+
+    bool brElementHasFound = false;
+    for (auto& node : aArrayOfNodes) {
+      if (!IsEditable(node)) {
+        continue;
+      }
+      if (node->IsHTMLElement(nsGkAtoms::br)) {
+        
+        
+        if (brElementHasFound) {
+          return false;
+        }
+        brElementHasFound = true;
+        continue;
+      }
+      if (!IsEmptyInineNode(node)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

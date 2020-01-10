@@ -4029,7 +4029,8 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
   bool bOnlyBreaks = true;
   for (auto& curNode : arrayOfNodes) {
     
-    if (!TextEditUtils::IsBreak(curNode) && !IsEmptyInline(curNode)) {
+    if (!TextEditUtils::IsBreak(curNode) &&
+        !HTMLEditorRef().IsEmptyInineNode(curNode)) {
       bOnlyBreaks = false;
       break;
     }
@@ -4159,7 +4160,8 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
     
     
     if (HTMLEditorRef().IsEditable(curNode) &&
-        (TextEditUtils::IsBreak(curNode) || IsEmptyInline(curNode))) {
+        (TextEditUtils::IsBreak(curNode) ||
+         HTMLEditorRef().IsEmptyInineNode(curNode))) {
       nsresult rv =
           MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*curNode);
       if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -4577,7 +4579,9 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
   }
 
   
-  if (ListIsEmptyLine(arrayOfNodes)) {
+  
+  
+  if (HTMLEditorRef().IsEmptyOneHardLine(arrayOfNodes)) {
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
@@ -4846,7 +4850,9 @@ nsresult HTMLEditRules::IndentAroundSelectionWithCSS() {
   }
 
   
-  if (ListIsEmptyLine(arrayOfNodes)) {
+  
+  
+  if (HTMLEditorRef().IsEmptyOneHardLine(arrayOfNodes)) {
     
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
@@ -5138,7 +5144,9 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
   }
 
   
-  if (ListIsEmptyLine(arrayOfNodes)) {
+  
+  
+  if (HTMLEditorRef().IsEmptyOneHardLine(arrayOfNodes)) {
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
@@ -10023,49 +10031,6 @@ nsresult HTMLEditRules::SelectionEndpointInNode(nsINode* aNode, bool* aResult) {
   return NS_OK;
 }
 
-bool HTMLEditRules::IsEmptyInline(nsINode& aNode) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  if (HTMLEditor::NodeIsInlineStatic(aNode) &&
-      HTMLEditorRef().IsContainer(&aNode)) {
-    bool isEmpty = true;
-    HTMLEditorRef().IsEmptyNode(&aNode, &isEmpty);
-    return isEmpty;
-  }
-  return false;
-}
-
-bool HTMLEditRules::ListIsEmptyLine(
-    nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  
-  
-  if (NS_WARN_IF(!aArrayOfNodes.Length())) {
-    return true;
-  }
-
-  int32_t brCount = 0;
-  for (auto& node : aArrayOfNodes) {
-    if (!HTMLEditorRef().IsEditable(node)) {
-      continue;
-    }
-    if (TextEditUtils::IsBreak(node)) {
-      
-      if (brCount) {
-        return false;
-      }
-      brCount++;
-    } else if (IsEmptyInline(node)) {
-      
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
 nsresult HTMLEditRules::PopListItem(nsIContent& aListItem, bool* aOutOfList) {
   MOZ_ASSERT(IsEditorDataAvailable());
 
@@ -10888,7 +10853,9 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
   }
 
   
-  if (ListIsEmptyLine(arrayOfNodes)) {
+  
+  
+  if (HTMLEditorRef().IsEmptyOneHardLine(arrayOfNodes)) {
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
