@@ -21,6 +21,7 @@ import requests
 import mozcrash
 import mozinfo
 import mozprocess
+import mozproxy.utils as mpu
 from logger.logger import RaptorLogger
 from mozdevice import ADBDevice
 from mozlog import commandline
@@ -65,6 +66,9 @@ from utils import view_gecko_profile, write_yml_file
 from cpu import start_android_cpu_profiler
 
 LOG = RaptorLogger(component='raptor-main')
+
+
+mpu.LOG = RaptorLogger(component='raptor-mitmproxy')
 
 
 class SignalHandler:
