@@ -4399,7 +4399,7 @@ NS_IMETHODIMP HttpBaseChannel::GetCrossOriginOpenerPolicy(
     
     
     
-    bool unsafeAllowOutgoing =
+    unsafeAllowOutgoing =
         t.ReadUntil(Tokenizer::Token::Whitespace(), samenessString);
     if (unsafeAllowOutgoing) {
       t.SkipWhites();
