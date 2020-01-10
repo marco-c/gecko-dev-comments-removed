@@ -155,5 +155,5 @@ def lint(paths, config, fix=None, **lintargs):
 
     if fix and results:
         
-        run_rustfmt(config, files, fix=True)
+        run_rustfmt(config, files, log, fix=True)
     return results
