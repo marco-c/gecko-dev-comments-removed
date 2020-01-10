@@ -1885,7 +1885,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
-    if (value == Cr.NS_ERROR_NO_INTERFACE) {
+    if (!isWorker && value == Cr.NS_ERROR_NO_INTERFACE) {
       return undefined;
     }
 

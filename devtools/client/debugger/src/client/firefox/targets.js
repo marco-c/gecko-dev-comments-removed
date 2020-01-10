@@ -9,6 +9,9 @@ import { prefs } from "../../utils/prefs";
 import type { DebuggerClient, Target } from "./types";
 import type { ThreadType } from "../../types";
 
+
+const { defaultThreadOptions } = require("devtools/client/shared/thread-utils");
+
 type Args = {
   currentTarget: Target,
   debuggerClient: DebuggerClient,
@@ -35,7 +38,10 @@ async function attachTargets(type, targetLists, args) {
         
         
         if (!threadFront) {
-          [, threadFront] = await targetFront.attachThread(args.options);
+          [, threadFront] = await targetFront.attachThread({
+            ...defaultThreadOptions(),
+            ...args.options,
+          });
           
           
           threadFront.resume();
