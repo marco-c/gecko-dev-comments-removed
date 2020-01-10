@@ -34,24 +34,7 @@ const UnsolicitedNotifications = {
   newSource: "newSource",
 };
 
-
-
-
-
-const UnsolicitedPauses = {
-  resumeLimit: "resumeLimit",
-  debuggerStatement: "debuggerStatement",
-  breakpoint: "breakpoint",
-  DOMEvent: "DOMEvent",
-  watchpoint: "watchpoint",
-  eventBreakpoint: "eventBreakpoint",
-  exception: "exception",
-  replayForcedPause: "replayForcedPause",
-  mutationBreakpoint: "mutationBreakpoint",
-};
-
 module.exports = {
   ThreadStateTypes,
   UnsolicitedNotifications,
-  UnsolicitedPauses,
 };
