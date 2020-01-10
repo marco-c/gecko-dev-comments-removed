@@ -11,6 +11,10 @@
 
 
 
+const { AbuseReporter } = ChromeUtils.import(
+  "resource://gre/modules/AbuseReporter.jsm"
+);
+
 
 const ABUSE_REPORT_MESSAGE_BARS = {
   
@@ -73,13 +77,65 @@ const ABUSE_REPORT_MESSAGE_BARS = {
   },
 };
 
-function openAbuseReport({ addonId, reportEntryPoint }) {
-  document.dispatchEvent(
-    new CustomEvent("abuse-report:new", {
-      detail: { addonId, reportEntryPoint },
-    })
-  );
+async function openAbuseReport({ addonId, reportEntryPoint }) {
+  if (AbuseReporter.openDialogDisabled) {
+    document.dispatchEvent(
+      new CustomEvent("abuse-report:new", {
+        detail: { addonId, reportEntryPoint },
+      })
+    );
+    return;
+  }
+
+  try {
+    const reportDialog = await AbuseReporter.openDialog(
+      addonId,
+      reportEntryPoint,
+      window.docShell.chromeEventHandler
+    );
+
+    
+    
+    
+    
+    const beforeunloadListener = evt => evt.preventDefault();
+    const unloadListener = () => reportDialog.close();
+    const clearUnloadListeners = () => {
+      window.removeEventListener("beforeunload", beforeunloadListener);
+      window.removeEventListener("unload", unloadListener);
+    };
+    window.addEventListener("beforeunload", beforeunloadListener);
+    window.addEventListener("unload", unloadListener);
+
+    reportDialog.promiseReport
+      .then(
+        report => {
+          if (report) {
+            submitReport({ report });
+          }
+        },
+        err => {
+          Cu.reportError(
+            `Unexpected abuse report panel error: ${err} :: ${err.stack}`
+          );
+          reportDialog.close();
+        }
+      )
+      .then(clearUnloadListeners);
+  } catch (err) {
+    document.dispatchEvent(
+      new CustomEvent("abuse-report:create-error", {
+        detail: {
+          addonId,
+          addon: err.addon,
+          errorType: err.errorType,
+        },
+      })
+    );
+  }
 }
+
+window.openAbuseReport = openAbuseReport;
 
 
 
@@ -143,11 +199,19 @@ function createReportMessageBar(
   return messagebar;
 }
 
-async function submitReport({ report, reason, message }) {
+async function submitReport({ report }) {
   const { addon } = report;
   const addonId = addon.id;
   const addonName = addon.name;
   const addonType = addon.type;
+
+  
+  
+  const { gBrowser } = window.windowRoot.ownerGlobal;
+  if (gBrowser && gBrowser.getTabForBrowser) {
+    let tab = gBrowser.getTabForBrowser(window.docShell.chromeEventHandler);
+    gBrowser.selectedTab = tab;
+  }
 
   
   const mbSubmitting = createReportMessageBar(
@@ -164,7 +228,7 @@ async function submitReport({ report, reason, message }) {
   );
 
   try {
-    await report.submit({ reason, message });
+    await report.submit();
     mbSubmitting.remove();
 
     
@@ -227,7 +291,7 @@ async function submitReport({ report, reason, message }) {
           mbError.remove();
           switch (action) {
             case "retry":
-              submitReport({ report, reason, message });
+              submitReport({ report });
               break;
             case "cancel":
               report.abort();

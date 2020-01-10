@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 Cu.importGlobalProperties(["fetch"]);
 
 const PREF_ABUSE_REPORT_URL = "extensions.abuseReport.url";
+const PREF_ABUSE_REPORT_OPEN_DIALOG = "extensions.abuseReport.openDialog";
 
 
 const MAX_STRING_LENGTH = 255;
@@ -30,6 +31,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "ABUSE_REPORT_URL",
   PREF_ABUSE_REPORT_URL
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "SHOULD_OPEN_DIALOG",
+  PREF_ABUSE_REPORT_OPEN_DIALOG,
+  false
 );
 
 const PRIVATE_REPORT_PROPS = Symbol("privateReportProps");
@@ -201,6 +209,114 @@ const AbuseReporter = {
 
     return data;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async openDialog(addonId, reportEntryPoint, browser) {
+    const chromeWin = browser && browser.ownerGlobal;
+    if (!chromeWin) {
+      throw new Error("Abuse Reporter dialog cancelled, opener tab closed");
+    }
+
+    const report = await AbuseReporter.createAbuseReport(addonId, {
+      reportEntryPoint,
+    });
+    const params = Cc["@mozilla.org/array;1"].createInstance(
+      Ci.nsIMutableArray
+    );
+
+    const dialogInit = {
+      report,
+      openWebLink(url) {
+        chromeWin.openWebLinkIn(url, "tab", {
+          relatedToCurrent: true,
+        });
+      },
+    };
+
+    params.appendElement(dialogInit);
+
+    let win;
+    function closeDialog() {
+      if (win && !win.closed) {
+        win.close();
+      }
+    }
+
+    const promiseReport = new Promise((resolve, reject) => {
+      dialogInit.deferredReport = { resolve, reject };
+    }).then(
+      ({ userCancelled }) => {
+        closeDialog();
+        return userCancelled ? undefined : report;
+      },
+      err => {
+        Cu.reportError(
+          `Unexpected abuse report panel error: ${err} :: ${err.stack}`
+        );
+        closeDialog();
+        return Promise.reject({
+          message: "Unexpected abuse report panel error",
+        });
+      }
+    );
+
+    const promiseReportPanel = new Promise((resolve, reject) => {
+      dialogInit.deferredReportPanel = { resolve, reject };
+    });
+
+    dialogInit.promiseReport = promiseReport;
+    dialogInit.promiseReportPanel = promiseReportPanel;
+
+    win = Services.ww.openWindow(
+      chromeWin,
+      "chrome://mozapps/content/extensions/abuse-report-frame.html",
+      "addons-abuse-report-dialog",
+      
+      
+      
+      "dialog,centerscreen,alwaysOnTop,height=700",
+      params
+    );
+
+    return {
+      close: closeDialog,
+      promiseReport,
+
+      
+      promiseReportPanel,
+      window: win,
+    };
+  },
+
+  get openDialogDisabled() {
+    return !SHOULD_OPEN_DIALOG;
+  },
 };
 
 
@@ -234,6 +350,10 @@ class AbuseReport {
       addon,
       reportData,
       reportEntryPoint,
+      
+      
+      message: null,
+      reason: null,
     };
   }
 
@@ -255,16 +375,15 @@ class AbuseReport {
 
 
 
-
-
-
-
-
-
-  async submit({ reason, message }) {
-    const { aborted, abortController, reportData, reportEntryPoint } = this[
-      PRIVATE_REPORT_PROPS
-    ];
+  async submit() {
+    const {
+      aborted,
+      abortController,
+      message,
+      reason,
+      reportData,
+      reportEntryPoint,
+    } = this[PRIVATE_REPORT_PROPS];
 
     
     const rejectReportError = async (errorType, { response } = {}) => {
@@ -358,5 +477,25 @@ class AbuseReport {
 
   get reportEntryPoint() {
     return this[PRIVATE_REPORT_PROPS].reportEntryPoint;
+  }
+
+  
+
+
+
+
+
+  setMessage(message) {
+    this[PRIVATE_REPORT_PROPS].message = message;
+  }
+
+  
+
+
+
+
+
+  setReason(reason) {
+    this[PRIVATE_REPORT_PROPS].reason = reason;
   }
 }

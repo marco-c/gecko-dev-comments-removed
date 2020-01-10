@@ -281,7 +281,18 @@
   
   
   window.openAbuseReport = ({ addonId, reportEntryPoint }) => {
-    const frame = document.querySelector("addon-abuse-report-xulframe");
-    frame.openReport({ addonId, reportEntryPoint });
+    if (AbuseReporter.openDialogDisabled) {
+      const frame = document.querySelector("addon-abuse-report-xulframe");
+      frame.openReport({ addonId, reportEntryPoint });
+
+      return;
+    }
+
+    htmlBrowserLoaded.then(() => {
+      getHtmlBrowser().contentWindow.openAbuseReport({
+        addonId,
+        reportEntryPoint,
+      });
+    });
   };
 }
