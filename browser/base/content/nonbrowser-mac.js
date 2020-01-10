@@ -64,11 +64,11 @@ function nonBrowserWindowStartup() {
     }
   }
 
-  
-  
   if (
     window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml"
   ) {
+    
+    
     var hiddenWindowDisabledItems = [
       "cmd_close",
       "minimizeWindow",
@@ -101,13 +101,14 @@ function nonBrowserWindowStartup() {
         dockSupport.dockMenu = nativeMenu;
       } catch (e) {}
     }
-  }
 
-  if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-    document.getElementById("macDockMenuNewWindow").hidden = true;
-  }
-  if (!PrivateBrowsingUtils.enabled) {
-    document.getElementById("macDockMenuNewPrivateWindow").hidden = true;
+    
+    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      document.getElementById("macDockMenuNewWindow").hidden = true;
+    }
+    if (!PrivateBrowsingUtils.enabled) {
+      document.getElementById("macDockMenuNewPrivateWindow").hidden = true;
+    }
   }
 
   delayedStartupTimeoutId = setTimeout(nonBrowserWindowDelayedStartup, 0);
