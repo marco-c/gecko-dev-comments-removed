@@ -5605,3 +5605,7 @@ namespace mozilla {
 void UnloadPrefsModule() { Preferences::Shutdown(); }
 
 }  
+
+
+
+#include "init/StaticPrefsCGetters.cpp"
