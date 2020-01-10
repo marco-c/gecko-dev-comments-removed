@@ -13,7 +13,7 @@ onmessage = function(event) {
   const refText = xhr.responseText;
 
   function getResponse(type) {
-    var xhr = new XMLHttpRequest();
+    xhr = new XMLHttpRequest();
     xhr.open("GET", url, false);
     if (type !== undefined) {
       xhr.responseType = type;
@@ -48,7 +48,7 @@ onmessage = function(event) {
   
 
   function testResponseTextException(type) {
-    var xhr = new XMLHttpRequest();
+    xhr = new XMLHttpRequest();
     xhr.open("GET", url, false);
     xhr.responseType = type;
     xhr.send();

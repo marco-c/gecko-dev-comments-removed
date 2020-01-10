@@ -1,3 +1,5 @@
+
+
 var data = new Array(256).join("1234567890ABCDEF");
 
 function createXHR() {
