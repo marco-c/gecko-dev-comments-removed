@@ -841,6 +841,7 @@ class BuildReader(object):
         ignores = {
             
             'python/mozbuild/mozbuild/test',
+            'testing/mozbase/moztest/tests/data',
 
             
             'obj*',
