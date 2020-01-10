@@ -16,6 +16,17 @@ namespace widget {
 bool nsWaylandDisplay::mIsDMABufEnabled;
 bool nsWaylandDisplay::mIsDMABufPrefLoaded;
 
+wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
+  if (!aGdkDisplay) {
+    aGdkDisplay = gdk_display_get_default();
+  }
+
+  
+  static auto sGdkWaylandDisplayGetWlDisplay = (wl_display * (*)(GdkDisplay*))
+      dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
+  return sGdkWaylandDisplayGetWlDisplay(aGdkDisplay);
+}
+
 
 
 #define MAX_DISPLAY_CONNECTIONS 3
@@ -63,10 +74,7 @@ void WaylandDispatchDisplays() {
 
 static nsWaylandDisplay* WaylandDisplayGetLocked(GdkDisplay* aGdkDisplay,
                                                  const StaticMutexAutoLock&) {
-  
-  static auto sGdkWaylandDisplayGetWlDisplay = (wl_display * (*)(GdkDisplay*))
-      dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
-  wl_display* waylandDisplay = sGdkWaylandDisplayGetWlDisplay(aGdkDisplay);
+  wl_display* waylandDisplay = WaylandDisplayGetWLDisplay(aGdkDisplay);
 
   
   for (auto& display : gWaylandDisplays) {

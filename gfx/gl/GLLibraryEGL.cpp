@@ -36,6 +36,7 @@
 #  ifdef MOZ_WAYLAND
 #    include <gdk/gdkwayland.h>
 #    include <dlfcn.h>
+#    include "mozilla/widget/nsWaylandDisplay.h"
 #  endif  
 #endif    
 
@@ -289,14 +290,14 @@ static EGLDisplay GetAndInitDisplayForAccelANGLE(
 
   FeatureState& d3d11ANGLE = gfxConfig::GetFeature(Feature::D3D11_HW_ANGLE);
 
-  if (!StaticPrefs::webgl_angle_try_d3d11()) {
+  if (!StaticPrefs::WebGLANGLETryD3D11())
     d3d11ANGLE.UserDisable("User disabled D3D11 ANGLE by pref",
                            NS_LITERAL_CSTRING("FAILURE_ID_ANGLE_PREF"));
-  }
-  if (StaticPrefs::webgl_angle_force_d3d11()) {
+
+  if (StaticPrefs::WebGLANGLEForceD3D11())
     d3d11ANGLE.UserForceEnable(
         "User force-enabled D3D11 ANGLE on disabled hardware");
-  }
+
   gAngleErrorReporter.SetFailureId(out_failureId);
 
   auto guardShutdown = mozilla::MakeScopeExit([&] {
@@ -741,7 +742,7 @@ EGLDisplay GLLibraryEGL::CreateDisplay(bool forceAccel,
     bool shouldTryWARP = !forceAccel;  
 
     
-    if (StaticPrefs::webgl_angle_force_warp()) {
+    if (StaticPrefs::WebGLANGLEForceWARP()) {
       shouldTryWARP = true;
       shouldTryAccel = false;
       if (accelAngleFailureId.IsEmpty()) {
@@ -787,10 +788,7 @@ EGLDisplay GLLibraryEGL::CreateDisplay(bool forceAccel,
     
     GdkDisplay* gdkDisplay = gdk_display_get_default();
     if (!GDK_IS_X11_DISPLAY(gdkDisplay)) {
-      static auto sGdkWaylandDisplayGetWlDisplay =
-          (wl_display * (*)(GdkDisplay*))
-              dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
-      nativeDisplay = sGdkWaylandDisplayGetWlDisplay(gdkDisplay);
+      nativeDisplay = WaylandDisplayGetWLDisplay(gdkDisplay);
       if (!nativeDisplay) {
         NS_WARNING("Failed to get wl_display.");
         return nullptr;
