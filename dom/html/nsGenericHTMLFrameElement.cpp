@@ -354,14 +354,13 @@ void nsGenericHTMLFrameElement::AfterMaybeChangeAttr(
       }
     } else if (aName == nsGkAtoms::name) {
       
-      
-      nsIDocShell* docShell =
-          mFrameLoader ? mFrameLoader->GetExistingDocShell() : nullptr;
-      if (docShell) {
+      RefPtr<BrowsingContext> bc =
+          mFrameLoader ? mFrameLoader->GetBrowsingContext() : nullptr;
+      if (bc) {
         if (aValue) {
-          docShell->SetName(aValue->String());
+          bc->SetName(aValue->String());
         } else {
-          docShell->SetName(EmptyString());
+          bc->SetName(EmptyString());
         }
       }
     }
