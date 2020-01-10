@@ -218,19 +218,6 @@ class nsNodeUtils {
     nsMutationGuard::DidMutate();
   }
 
-  
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<nsINode> CloneNodeImpl(nsINode* aNode, bool aDeep,
-                                                 mozilla::ErrorResult& aError);
-
  private:
   
 

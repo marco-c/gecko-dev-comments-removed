@@ -18,7 +18,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsIContent.h"                    
-#include "nsNodeUtils.h"  
 #include "nsIHTMLCollection.h"
 #include "nsDataHashtable.h"
 #ifdef MOZ_XBL

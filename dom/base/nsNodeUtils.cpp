@@ -264,12 +264,6 @@ void nsNodeUtils::AnimationRemoved(dom::Animation* aAnimation) {
 }
 
 
-already_AddRefed<nsINode> nsNodeUtils::CloneNodeImpl(nsINode* aNode, bool aDeep,
-                                                     ErrorResult& aError) {
-  return Clone(aNode, aDeep, nullptr, nullptr, aError);
-}
-
-
 already_AddRefed<nsINode> nsNodeUtils::CloneAndAdopt(
     nsINode* aNode, bool aClone, bool aDeep,
     nsNodeInfoManager* aNewNodeInfoManager,
