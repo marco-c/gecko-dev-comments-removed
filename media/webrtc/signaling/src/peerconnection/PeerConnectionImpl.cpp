@@ -862,7 +862,7 @@ PeerConnectionImpl::EnsureDataConnection(uint16_t aLocalPort,
     return NS_OK;
   }
 
-  nsCOMPtr<nsISerialEventTarget> target =
+  nsCOMPtr<nsIEventTarget> target =
       mWindow ? mWindow->EventTargetFor(TaskCategory::Other) : nullptr;
   Maybe<uint64_t> mms = aMMSSet ? Some(aMaxMessageSize) : Nothing();
   if (auto res = DataChannelConnection::Create(this, target, mTransportHandler,
@@ -1001,29 +1001,13 @@ already_AddRefed<TransceiverImpl> PeerConnectionImpl::CreateTransceiverImpl(
     aSendTrack->AddPrincipalChangeObserver(this);
   }
 
-  
-  
-  
-  RefPtr<nsIPrincipal> principal;
-  Document* doc = GetWindow()->GetExtantDoc();
-  MOZ_ASSERT(doc);
-  if (mPrivacyRequested.valueOr(false)) {
-    principal =
-        NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
-  } else {
-    
-    
-    
-    principal = doc->NodePrincipal();
-  }
-
   OwningNonNull<dom::MediaStreamTrack> receiveTrack =
-      CreateReceiveTrack(aJsepTransceiver->GetMediaType(), principal);
+      CreateReceiveTrack(aJsepTransceiver->GetMediaType());
 
   RefPtr<TransceiverImpl> transceiverImpl;
-  aRv =
-      mMedia->AddTransceiver(aJsepTransceiver, *receiveTrack, aSendTrack,
-                             MakePrincipalHandle(principal), &transceiverImpl);
+
+  aRv = mMedia->AddTransceiver(aJsepTransceiver, *receiveTrack, aSendTrack,
+                               &transceiverImpl);
 
   return transceiverImpl.forget();
 }
@@ -1643,14 +1627,28 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
   return NS_OK;
 }
 
-nsresult PeerConnectionImpl::OnAlpnNegotiated(bool aPrivacyRequested) {
+nsresult PeerConnectionImpl::OnAlpnNegotiated(const std::string& aAlpn) {
   PC_AUTO_ENTER_API_CALL(false);
   if (mPrivacyRequested.isSome()) {
-    MOZ_DIAGNOSTIC_ASSERT(*mPrivacyRequested == aPrivacyRequested);
     return NS_OK;
   }
 
-  mPrivacyRequested = Some(aPrivacyRequested);
+  mPrivacyRequested = Some(aAlpn == "c-webrtc");
+
+  
+  
+  
+  
+  if (!*mPrivacyRequested) {
+    
+    Document* doc = GetWindow()->GetExtantDoc();
+    if (!doc) {
+      CSFLogInfo(LOGTAG, "Can't update principal on streams; document gone");
+      return NS_ERROR_FAILURE;
+    }
+    mMedia->UpdateRemoteStreamPrincipals_m(doc->NodePrincipal());
+  }
+
   return NS_OK;
 }
 
@@ -1831,8 +1829,23 @@ static int GetDTMFToneCode(uint16_t c) {
 }
 
 OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
-    SdpMediaSection::MediaType type, nsIPrincipal* aPrincipal) {
+    SdpMediaSection::MediaType type) {
   bool audio = (type == SdpMediaSection::MediaType::kAudio);
+
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> principal;
+  Document* doc = GetWindow()->GetExtantDoc();
+  MOZ_ASSERT(doc);
+  if (mPrivacyRequested.isSome() && !*mPrivacyRequested) {
+    principal = doc->NodePrincipal();
+  } else {
+    
+    
+    principal =
+        NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
+  }
 
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       audio ? MediaTrackGraph::AUDIO_THREAD_DRIVER
@@ -1844,13 +1857,13 @@ OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
   if (audio) {
     RefPtr<SourceMediaTrack> source =
         graph->CreateSourceTrack(MediaSegment::AUDIO);
-    trackSource = new RemoteTrackSource(source, aPrincipal,
+    trackSource = new RemoteTrackSource(source, principal,
                                         NS_ConvertASCIItoUTF16("remote audio"));
     track = new AudioStreamTrack(GetWindow(), source, trackSource);
   } else {
     RefPtr<SourceMediaTrack> source =
         graph->CreateSourceTrack(MediaSegment::VIDEO);
-    trackSource = new RemoteTrackSource(source, aPrincipal,
+    trackSource = new RemoteTrackSource(source, principal,
                                         NS_ConvertASCIItoUTF16("remote video"));
     track = new VideoStreamTrack(GetWindow(), source, trackSource);
   }

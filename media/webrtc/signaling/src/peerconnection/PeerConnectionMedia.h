@@ -82,7 +82,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsresult AddTransceiver(JsepTransceiver* aJsepTransceiver,
                           dom::MediaStreamTrack& aReceiveTrack,
                           dom::MediaStreamTrack* aSendTrack,
-                          const PrincipalHandle& aPrincipalHandle,
                           RefPtr<TransceiverImpl>* aTransceiverImpl);
 
   void GetTransmitPipelinesMatching(
@@ -110,13 +109,14 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                             const PeerIdentity* aSinkIdentity);
   
   bool AnyLocalTrackHasPeerIdentity() const;
+  
+  
+  void UpdateRemoteStreamPrincipals_m(nsIPrincipal* aPrincipal);
 
   bool AnyCodecHasPluginID(uint64_t aPluginID);
 
   const nsCOMPtr<nsIThread>& GetMainThread() const { return mMainThread; }
-  const nsCOMPtr<nsISerialEventTarget>& GetSTSThread() const {
-    return mSTSThread;
-  }
+  const nsCOMPtr<nsIEventTarget>& GetSTSThread() const { return mSTSThread; }
 
   
   
@@ -127,8 +127,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsPIDOMWindowInner* GetWindow() const;
   already_AddRefed<nsIHttpChannelInternal> GetChannel() const;
 
-  void AlpnNegotiated_s(const std::string& aAlpn, bool aPrivacyRequested);
-  void AlpnNegotiated_m(bool aPrivacyRequested);
+  void AlpnNegotiated_s(const std::string& aAlpn);
+  void AlpnNegotiated_m(const std::string& aAlpn);
 
   
   RefPtr<WebRtcCallWrapper> mCall;
@@ -202,7 +202,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsCOMPtr<nsIThread> mMainThread;
 
   
-  nsCOMPtr<nsISerialEventTarget> mSTSThread;
+  nsCOMPtr<nsIEventTarget> mSTSThread;
 
   
   
