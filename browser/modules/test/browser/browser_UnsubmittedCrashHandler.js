@@ -111,7 +111,7 @@ function createPendingCrashReports(howMany, accessDate) {
   );
   
   
-  let extraFileContents = "ServerURL=" + SERVER_URL;
+  let extraFileContents = JSON.stringify({ ServerURL: SERVER_URL });
 
   return (async function() {
     let uuids = [];

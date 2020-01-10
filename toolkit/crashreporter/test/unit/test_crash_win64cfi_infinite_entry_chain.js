@@ -1,4 +1,4 @@
-function run_test() {
+add_task(async function run_test() {
   
   
   
@@ -11,7 +11,7 @@ function run_test() {
   
   
   
-  do_x64CFITest(
+  await do_x64CFITest(
     "CRASH_X64CFI_ALLOC_SMALL",
     [
       { symbol: "CRASH_X64CFI_ALLOC_SMALL", trust: "context" },
@@ -19,4 +19,4 @@ function run_test() {
     ],
     ["--force-use-module", exe.path]
   );
-}
+});
