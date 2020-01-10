@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 
 #include <stdint.h>
 
@@ -204,7 +205,7 @@ class DateTimeInfo {
 
   static void resyncICUDefaultTimeZone() {
     auto guard = acquireLockWithValidTimeZone();
-    guard->internalResyncICUDefaultTimeZone();
+    mozilla::Unused << guard;
   }
 
   struct RangeCache {
@@ -229,19 +230,6 @@ class DateTimeInfo {
   };
 
   LocalTimeZoneAdjustmentStatus localTZAStatus_;
-
-#if ENABLE_INTL_API
-  
-  
-  
-  
-  
-  
-  
-  enum class IcuTimeZoneStatus : bool { Valid, NeedsUpdate };
-
-  IcuTimeZoneStatus icuTimeZoneStatus_;
-#endif
 
   
 

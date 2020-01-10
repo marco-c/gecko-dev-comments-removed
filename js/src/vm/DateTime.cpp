@@ -213,21 +213,21 @@ void js::DateTimeInfo::updateTimeZoneAdjustment() {
   daylightSavingsName_ = nullptr;
 #endif 
 
-#if ENABLE_INTL_API
-  icuTimeZoneStatus_ = IcuTimeZoneStatus::NeedsUpdate;
-#endif
+  
+  {
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
+    internalResyncICUDefaultTimeZone();
+  }
 }
 
 js::DateTimeInfo::DateTimeInfo() {
+  
+  
+  
+  
   localTZAStatus_ = LocalTimeZoneAdjustmentStatus::NeedsUpdate;
-
-#if ENABLE_INTL_API
-  
-  
-  
-  
-  icuTimeZoneStatus_ = IcuTimeZoneStatus::NeedsUpdate;
-#endif
 }
 
 js::DateTimeInfo::~DateTimeInfo() = default;
@@ -508,11 +508,6 @@ bool js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
 
 icu::TimeZone* js::DateTimeInfo::timeZone() {
   if (!timeZone_) {
-    
-    
-    
-    internalResyncICUDefaultTimeZone();
-
     timeZone_.reset(icu::TimeZone::createDefault());
     MOZ_ASSERT(timeZone_);
   }
@@ -739,51 +734,46 @@ void js::ResyncICUDefaultTimeZone() {
 
 void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
 #if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-  if (icuTimeZoneStatus_ == IcuTimeZoneStatus::NeedsUpdate) {
-    bool recreate = true;
+  bool recreate = true;
 
-    if (const char* tz = std::getenv("TZ")) {
-      icu::UnicodeString tzid;
+  if (const char* tz = std::getenv("TZ")) {
+    icu::UnicodeString tzid;
 
 #  if defined(XP_WIN)
+    
+    
+    if (IsOlsonCompatibleWindowsTimeZoneId(tz)) {
+      tzid.setTo(icu::UnicodeString(tz, -1, US_INV));
+    } else {
       
       
       
-      if (IsOlsonCompatibleWindowsTimeZoneId(tz)) {
-        tzid.setTo(icu::UnicodeString(tz, -1, US_INV));
-      } else {
-        
-        
-        
-      }
+    }
 #  else
-      
-      
-      
-      
-      
-      
-      if (const char* tzlink = TZContainsAbsolutePath(tz)) {
-        tzid.setTo(ReadTimeZoneLink(tzlink));
-      }
+    
+    
+    
+    
+    
+    if (const char* tzlink = TZContainsAbsolutePath(tz)) {
+      tzid.setTo(ReadTimeZoneLink(tzlink));
+    }
 #  endif 
 
-      if (!tzid.isEmpty()) {
-        mozilla::UniquePtr<icu::TimeZone> newTimeZone(
-            icu::TimeZone::createTimeZone(tzid));
-        MOZ_ASSERT(newTimeZone);
-        if (*newTimeZone != icu::TimeZone::getUnknown()) {
-          
-          icu::TimeZone::adoptDefault(newTimeZone.release());
-          recreate = false;
-        }
+    if (!tzid.isEmpty()) {
+      mozilla::UniquePtr<icu::TimeZone> newTimeZone(
+          icu::TimeZone::createTimeZone(tzid));
+      MOZ_ASSERT(newTimeZone);
+      if (*newTimeZone != icu::TimeZone::getUnknown()) {
+        
+        icu::TimeZone::adoptDefault(newTimeZone.release());
+        recreate = false;
       }
     }
+  }
 
-    if (recreate) {
-      icu::TimeZone::recreateDefault();
-    }
-    icuTimeZoneStatus_ = IcuTimeZoneStatus::Valid;
+  if (recreate) {
+    icu::TimeZone::recreateDefault();
   }
 #endif
 }
