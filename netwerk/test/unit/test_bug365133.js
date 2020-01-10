@@ -8,7 +8,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "a%20" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00 DIRECTORY \n',
+      '201: "a%20" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00%20GMT DIRECTORY \n',
   ],
   [
     
@@ -17,7 +17,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "l%20" 2 Sat%2C%2001%20Jan%202000%2000%3A00%3A00 SYMBOLIC-LINK \n',
+      '201: "l%20" 2 Sat%2C%2001%20Jan%202000%2000%3A00%3A00%20GMT SYMBOLIC-LINK \n',
   ],
   [
     
@@ -26,7 +26,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "arrow%20-%3E%20in%20name%20" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00 FILE \n',
+      '201: "arrow%20-%3E%20in%20name%20" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00%20GMT FILE \n',
   ],
   [
     
@@ -35,7 +35,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "t%09" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00 DIRECTORY \n',
+      '201: "t%09" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00%20GMT DIRECTORY \n',
   ],
   [
     
@@ -44,7 +44,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "symlink%20with%20arrow%20-%3E%20in%20name" 26 Sat%2C%2001%20Jan%202000%2000%3A00%3A00 SYMBOLIC-LINK \n',
+      '201: "symlink%20with%20arrow%20-%3E%20in%20name" 26 Sat%2C%2001%20Jan%202000%2000%3A00%3A00%20GMT SYMBOLIC-LINK \n',
   ],
   [
     
@@ -53,7 +53,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "symlink%20with%20arrow%20-%3E%20in%20name%20-%3E%20file%20with%20arrow" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00 SYMBOLIC-LINK \n',
+      '201: "symlink%20with%20arrow%20-%3E%20in%20name%20-%3E%20file%20with%20arrow" 0 Sat%2C%2001%20Jan%202000%2000%3A00%3A00%20GMT SYMBOLIC-LINK \n',
   ],
   [
     
@@ -62,7 +62,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "file%20" 1024 Fri%2C%2001%20Jan%201999%2001%3A00%3A00 FILE \n',
+      '201: "file%20" 1024 Fri%2C%2001%20Jan%201999%2001%3A00%3A00%20GMT FILE \n',
   ],
   [
     
@@ -71,7 +71,7 @@ const tests = [
       URL +
       "\n" +
       "200: filename content-length last-modified file-type\n" +
-      '201: "file%09" 1024 Sat%2C%2001%20Jan%202000%2001%3A00%3A00 FILE \n',
+      '201: "file%09" 1024 Sat%2C%2001%20Jan%202000%2001%3A00%3A00%20GMT FILE \n',
   ],
 ];
 

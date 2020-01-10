@@ -294,7 +294,7 @@ char* nsFTPDirListingConv::DigestBufferLines(char* aBuffer,
     
     
     
-    PR_FormatTimeUSEnglish(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S",
+    PR_FormatTimeUSEnglish(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT",
                            &result.fe_time);
 
     nsAutoCString escaped;
