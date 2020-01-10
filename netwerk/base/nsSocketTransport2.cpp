@@ -1062,7 +1062,7 @@ nsresult nsSocketTransport::ResolveHost() {
       esniHost.Append("_esni.");
       
       
-      esniHost.Append(mOriginHost);
+      esniHost.Append(SocketHost());
       rv = dns->AsyncResolveByTypeNative(
           esniHost, nsIDNSService::RESOLVE_TYPE_TXT, dnsFlags, this,
           mSocketTransportService, mOriginAttributes,
