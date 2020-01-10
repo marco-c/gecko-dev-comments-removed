@@ -18,8 +18,6 @@ enum class CSSPropFlags : uint8_t {
 
   
   
-  GetCSNeedsLayoutFlush = 1 << 1,
-
   
   
   
@@ -34,26 +32,24 @@ enum class CSSPropFlags : uint8_t {
   
   
   
-  
-  
-  EnabledInUASheets = 1 << 2,
-  EnabledInChrome = 1 << 3,
+  EnabledInUASheets = 1 << 1,
+  EnabledInChrome = 1 << 2,
   EnabledInUASheetsAndChrome = EnabledInUASheets | EnabledInChrome,
   EnabledMask = EnabledInUASheetsAndChrome,
 
   
-  CanAnimateOnCompositor = 1 << 4,
+  CanAnimateOnCompositor = 1 << 3,
 
   
   
   
-  Internal = 1 << 5,
+  Internal = 1 << 4,
 
   
-  SerializedByServo = 1 << 6,
+  SerializedByServo = 1 << 5,
 
   
-  IsLogical = 1 << 7,
+  IsLogical = 1 << 6,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSPropFlags)
