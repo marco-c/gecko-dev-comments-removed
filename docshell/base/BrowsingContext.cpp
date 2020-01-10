@@ -957,12 +957,24 @@ void IPDLParamTraits<dom::BrowsingContext*>::Write(
     IPC::Message* aMsg, IProtocol* aActor, dom::BrowsingContext* aParam) {
   uint64_t id = aParam ? aParam->Id() : 0;
   WriteIPDLParam(aMsg, aActor, id);
+  if (!aParam) {
+    return;
+  }
 
   
   
-  
-  if (!aActor->GetIPCChannel()->IsCrossProcess()) {
-    NS_IF_ADDREF(aParam);
+  if (aActor->GetIPCChannel()->IsCrossProcess()) {
+    
+    
+    
+    MOZ_RELEASE_ASSERT(
+        !aParam->IsDiscarded(),
+        "Cannot send discarded BrowsingContext between processes!");
+  } else {
+    
+    
+    
+    aParam->AddRef();
   }
 }
 
@@ -979,16 +991,26 @@ bool IPDLParamTraits<dom::BrowsingContext*>::Read(
     return true;
   }
 
-  *aResult = dom::BrowsingContext::Get(id);
-  MOZ_ASSERT(*aResult, "Deserialized absent BrowsingContext!");
-
-  
-  if (!aActor->GetIPCChannel()->IsCrossProcess()) {
-    dom::BrowsingContext* bc = *aResult;
-    NS_IF_RELEASE(bc);
+  RefPtr<dom::BrowsingContext> browsingContext = dom::BrowsingContext::Get(id);
+  if (!browsingContext) {
+    
+    
+    
+    
+    
+    
+    MOZ_CRASH("Attempt to deserialize absent BrowsingContext");
+    *aResult = nullptr;
+    return false;
   }
 
-  return *aResult != nullptr;
+  if (!aActor->GetIPCChannel()->IsCrossProcess()) {
+    
+    browsingContext.get()->Release();
+  }
+
+  *aResult = browsingContext.forget();
+  return true;
 }
 
 void IPDLParamTraits<dom::BrowsingContext::Transaction>::Write(
