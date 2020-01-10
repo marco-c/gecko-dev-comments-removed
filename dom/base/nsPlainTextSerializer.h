@@ -179,7 +179,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   bool mInWhitespace;
   bool mPreFormattedMail;  
                            
-  bool mStartedOutput;     
 
   
   

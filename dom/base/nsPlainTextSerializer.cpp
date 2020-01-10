@@ -108,7 +108,6 @@ nsPlainTextSerializer::nsPlainTextSerializer()
   mEmptyLines = 1;  
   mInWhitespace = false;
   mPreFormattedMail = false;
-  mStartedOutput = false;
 
   mPreformattedBlockBoundary = false;
   mWithRubyAnnotation = false;  
@@ -1105,10 +1104,6 @@ void nsPlainTextSerializer::FlushLine() {
 
 
 void nsPlainTextSerializer::Output(nsString& aString) {
-  if (!aString.IsEmpty()) {
-    mStartedOutput = true;
-  }
-
   if (!(mFlags & nsIDocumentEncoder::OutputPersistNBSP)) {
     
     
