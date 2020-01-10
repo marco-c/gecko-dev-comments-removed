@@ -2553,6 +2553,13 @@ static bool WebRenderEnvvarDisabled() {
   return (env && *env == '0');
 }
 
+static bool InMarionetteRolloutTest() {
+  
+  
+  
+  return Preferences::HasUserValue(WR_ROLLOUT_HW_QUALIFIED_OVERRIDE);
+}
+
 
 
 
@@ -2889,7 +2896,7 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   if (StaticPrefs::gfx_webrender_force_disabled() ||
-      WebRenderEnvvarDisabled()) {
+      (WebRenderEnvvarDisabled() && !InMarionetteRolloutTest())) {
     featureWebRender.UserDisable(
         "User force-disabled WR",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_USER_FORCE_DISABLED"));
