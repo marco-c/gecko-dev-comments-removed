@@ -14,12 +14,8 @@ namespace mozilla {
 class ErrorResult;
 namespace dom {
 class BrowsingContext;
-class PBrowserBridgeChild;
+class BrowserBridgeChild;
 struct RemotenessOptions;
-}  
-namespace ipc {
-template <typename T>
-class ManagedEndpoint;
 }  
 }  
 
@@ -57,10 +53,8 @@ class nsFrameLoaderOwner : public nsISupports {
   void ChangeRemoteness(const mozilla::dom::RemotenessOptions& aOptions,
                         mozilla::ErrorResult& rv);
 
-  void ChangeRemotenessWithBridge(
-      mozilla::ipc::ManagedEndpoint<mozilla::dom::PBrowserBridgeChild>
-          aEndpoint,
-      uint64_t aTabId, mozilla::ErrorResult& rv);
+  void ChangeRemotenessWithBridge(mozilla::dom::BrowserBridgeChild* aBridge,
+                                  mozilla::ErrorResult& rv);
 
  private:
   bool UseRemoteSubframes();
