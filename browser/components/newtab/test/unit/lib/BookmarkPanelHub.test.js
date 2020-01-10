@@ -28,7 +28,7 @@ describe("BookmarkPanelHub", () => {
       return fakeL10n;
     }); 
     globals.set("FxAccounts", {
-      config: { promiseEmailFirstURI: sandbox.stub() },
+      config: { promiseConnectAccountURI: sandbox.stub() },
     });
     isBrowserPrivateStub = sandbox.stub().returns(false);
     globals.set("PrivateBrowsingUtils", {
