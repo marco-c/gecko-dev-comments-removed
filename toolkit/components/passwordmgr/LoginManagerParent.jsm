@@ -469,6 +469,13 @@ this.LoginManagerParent = {
     generatedPW = {
       edited: false,
       filled: false,
+      
+
+
+
+
+
+      storageGUID: null,
       value: PasswordGenerator.generatePassword(),
     };
     this._generatedPasswordsByPrincipalOrigin.set(
@@ -712,6 +719,10 @@ this.LoginManagerParent = {
       log("_onGeneratedPasswordFilledOrEdited: The password field is empty");
       return;
     }
+
+    let autoSaveLogin = true;
+    let loginToChange = null;
+
     if (password != generatedPW.value) {
       
       log("The field containing the generated password has changed");
@@ -727,8 +738,21 @@ this.LoginManagerParent = {
         generatedPW.edited = true;
       }
 
+      
+      
+      if (generatedPW.storageGUID) {
+        let existingLogins = LoginHelper.searchLoginsWithObject({
+          guid: generatedPW.storageGUID,
+        });
+
+        if (existingLogins.length) {
+          loginToChange = existingLogins[0];
+        }
+        
+        
+      }
+
       generatedPW.value = password;
-      return;
     }
 
     let formLogin = new LoginInfo(
@@ -747,11 +771,13 @@ this.LoginManagerParent = {
       generatedPW.value
     );
 
-    let autoSaveLogin = true;
-    let loginToChange = null;
-
     
     if (!generatedPW.filled) {
+      if (generatedPW.storageGUID) {
+        throw new Error(
+          "Generated password was saved in storage without being filled first"
+        );
+      }
       
       Services.telemetry.recordEvent(
         "pwmgr",
@@ -762,39 +788,64 @@ this.LoginManagerParent = {
       generatedPW.filled = true;
     }
 
-    
-    
-    
-    let logins = this._searchAndDedupeLogins(formOrigin, {
-      acceptDifferentSubdomains: false,
-      httpRealm: null,
-      ignoreActionAndRealm: false,
-    });
-
-    let matchedLogin = logins.find(login =>
-      formLoginWithoutUsername.matches(login, true)
-    );
-    if (matchedLogin) {
-      autoSaveLogin = false;
-      if (matchedLogin.password == formLoginWithoutUsername.password) {
-        
-        log("_onGeneratedPasswordFilledOrEdited: Matching login already saved");
-        return;
-      }
+    if (!loginToChange) {
       
-      loginToChange = matchedLogin;
-      log(
-        "_onGeneratedPasswordFilledOrEdited: Login with empty username already saved for this site"
+      
+      
+      let logins = this._searchAndDedupeLogins(formOrigin, {
+        acceptDifferentSubdomains: false,
+        httpRealm: null,
+        ignoreActionAndRealm: false,
+      });
+
+      let matchedLogin = logins.find(login =>
+        formLoginWithoutUsername.matches(login, true)
       );
+      if (matchedLogin) {
+        autoSaveLogin = false;
+        if (matchedLogin.password == formLoginWithoutUsername.password) {
+          
+          log(
+            "_onGeneratedPasswordFilledOrEdited: Matching login already saved"
+          );
+          return;
+        }
+        
+        loginToChange = matchedLogin;
+        log(
+          "_onGeneratedPasswordFilledOrEdited: Login with empty username already saved for this site"
+        );
+      }
     }
 
     if (autoSaveLogin) {
-      log(
-        "_onGeneratedPasswordFilledOrEdited: auto-saving new login with empty username"
-      );
-      loginToChange = Services.logins.addLogin(formLoginWithoutUsername);
+      if (loginToChange) {
+        log(
+          "_onGeneratedPasswordFilledOrEdited: auto-updating login with generated password"
+        );
+
+        Services.logins.modifyLogin(
+          loginToChange,
+          LoginHelper.newPropertyBag({
+            password,
+          })
+        );
+        
+        
+        loginToChange.password = password;
+      } else {
+        log(
+          "_onGeneratedPasswordFilledOrEdited: auto-saving new login with empty username"
+        );
+        loginToChange = Services.logins.addLogin(formLoginWithoutUsername);
+        
+        
+        generatedPW.storageGUID = loginToChange.guid;
+      }
     } else {
-      log("_onGeneratedPasswordFilledOrEdited: not auto-saving this login");
+      log(
+        "_onGeneratedPasswordFilledOrEdited: not auto-saving/updating this login"
+      );
     }
     let browser = browsingContext.top.embedderElement;
     let prompter = this._getPrompter(browser, openerTopWindowID);
