@@ -322,49 +322,6 @@ SessionHistoryListener.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 
-
-
-
-
-
-
-
-
-class FormDataListener extends Handler {
-  constructor(store) {
-    super(store);
-
-    SessionStoreUtils.addDynamicFrameFilteredListener(
-      this.mm,
-      "input",
-      this,
-      true
-    );
-    this.stateChangeNotifier.addObserver(this);
-  }
-
-  handleEvent() {
-    this.messageQueue.push("formdata", () => this.collect());
-  }
-
-  onPageLoadStarted() {
-    this.messageQueue.push("formdata", () => null);
-  }
-
-  collect() {
-    return SessionStoreUtils.collectFormData(this.mm.content);
-  }
-}
-
-
-
-
-
-
-
-
-
-
 class SessionStorageListener extends Handler {
   constructor(store) {
     super(store);
@@ -757,7 +714,6 @@ class ContentSessionStore {
 
     this.handlers = [
       new EventListener(this),
-      new FormDataListener(this),
       new SessionHistoryListener(this),
       new SessionStorageListener(this),
       this.stateChangeNotifier,
