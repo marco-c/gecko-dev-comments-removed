@@ -35,7 +35,8 @@ TransceiverImpl::TransceiverImpl(
     const std::string& aPCHandle, MediaTransportHandler* aTransportHandler,
     JsepTransceiver* aJsepTransceiver, nsIEventTarget* aMainThread,
     nsIEventTarget* aStsThread, dom::MediaStreamTrack* aReceiveTrack,
-    dom::MediaStreamTrack* aSendTrack, WebRtcCallWrapper* aCallWrapper)
+    dom::MediaStreamTrack* aSendTrack, WebRtcCallWrapper* aCallWrapper,
+    const PrincipalHandle& aPrincipalHandle)
     : mPCHandle(aPCHandle),
       mTransportHandler(aTransportHandler),
       mJsepTransceiver(aJsepTransceiver),
@@ -47,9 +48,9 @@ TransceiverImpl::TransceiverImpl(
       mSendTrack(aSendTrack),
       mCallWrapper(aCallWrapper) {
   if (IsVideo()) {
-    InitVideo();
+    InitVideo(aPrincipalHandle);
   } else {
-    InitAudio();
+    InitAudio(aPrincipalHandle);
   }
 
   if (!IsValid()) {
@@ -69,7 +70,7 @@ TransceiverImpl::~TransceiverImpl() = default;
 
 NS_IMPL_ISUPPORTS0(TransceiverImpl)
 
-void TransceiverImpl::InitAudio() {
+void TransceiverImpl::InitAudio(const PrincipalHandle& aPrincipalHandle) {
   mConduit = AudioSessionConduit::Create(mCallWrapper, mStsThread);
 
   if (!mConduit) {
@@ -82,10 +83,11 @@ void TransceiverImpl::InitAudio() {
 
   mReceivePipeline = new MediaPipelineReceiveAudio(
       mPCHandle, mTransportHandler, mMainThread.get(), mStsThread.get(),
-      static_cast<AudioSessionConduit*>(mConduit.get()), mReceiveTrack);
+      static_cast<AudioSessionConduit*>(mConduit.get()), mReceiveTrack,
+      aPrincipalHandle);
 }
 
-void TransceiverImpl::InitVideo() {
+void TransceiverImpl::InitVideo(const PrincipalHandle& aPrincipalHandle) {
   mConduit = VideoSessionConduit::Create(mCallWrapper, mStsThread);
 
   if (!mConduit) {
@@ -98,7 +100,8 @@ void TransceiverImpl::InitVideo() {
 
   mReceivePipeline = new MediaPipelineReceiveVideo(
       mPCHandle, mTransportHandler, mMainThread.get(), mStsThread.get(),
-      static_cast<VideoSessionConduit*>(mConduit.get()), mReceiveTrack);
+      static_cast<VideoSessionConduit*>(mConduit.get()), mReceiveTrack,
+      aPrincipalHandle);
 }
 
 nsresult TransceiverImpl::UpdateSinkIdentity(
