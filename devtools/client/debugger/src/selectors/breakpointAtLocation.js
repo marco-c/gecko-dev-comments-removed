@@ -4,11 +4,14 @@
 
 
 
-import { getSelectedSource } from "../reducers/sources";
+import {
+  getSelectedSource,
+  getBreakpointPositionsForLine,
+} from "../reducers/sources";
 import { getBreakpointsList } from "../reducers/breakpoints";
 import { isGenerated } from "../utils/source";
 
-import type { Breakpoint } from "../types";
+import type { Breakpoint, BreakpointPosition, PartialPosition } from "../types";
 import type { State } from "../reducers/types";
 
 function getColumn(column, selectedSource) {
@@ -57,22 +60,24 @@ function findBreakpointAtLocation(
 }
 
 
-function findClosestBreakpointToCursor(lineBreakpoints, cursorPosition) {
-  const closestBreakpoint = lineBreakpoints.reduce((closestBp, currentBp) => {
-    
-    if (typeof closestBp === "object") {
-      const currentColumn = currentBp.generatedLocation.column;
-      const closestColumn = closestBp.generatedLocation.column;
-      
-      if (currentColumn && closestColumn) {
-        const currentDistance = Math.abs(currentColumn - cursorPosition.column);
-        const closestDistance = Math.abs(closestColumn - cursorPosition.column);
+function findClosestBreakpoint(breakpoints, column) {
+  if (!breakpoints || breakpoints.length == 0) {
+    return null;
+  }
 
-        return currentDistance < closestDistance ? currentBp : closestBp;
-      }
+  const firstBreakpoint = breakpoints[0];
+  return breakpoints.reduce((closestBp, currentBp) => {
+    const currentColumn = currentBp.generatedLocation.column;
+    const closestColumn = closestBp.generatedLocation.column;
+    
+    if (column && currentColumn && closestColumn) {
+      const currentDistance = Math.abs(currentColumn - column);
+      const closestDistance = Math.abs(closestColumn - column);
+
+      return currentDistance < closestDistance ? currentBp : closestBp;
     }
-  }, lineBreakpoints[0] || {});
-  return closestBreakpoint;
+    return closestBp;
+  }, firstBreakpoint);
 }
 
 
@@ -104,7 +109,30 @@ export function getBreakpointsAtLine(state: State, line: number): Breakpoint[] {
   );
 }
 
-export function getClosestBreakpoint(state: State, cursorPosition: Object) {
-  const lineBreakpoints = getBreakpointsAtLine(state, cursorPosition.line);
-  return findClosestBreakpointToCursor(lineBreakpoints, cursorPosition);
+export function getClosestBreakpoint(
+  state: State,
+  position: PartialPosition
+): ?Breakpoint {
+  const columnBreakpoints = getBreakpointsAtLine(state, position.line);
+
+  const breakpoint = findClosestBreakpoint(columnBreakpoints, position.column);
+  return (breakpoint: any);
+}
+
+export function getClosestBreakpointPosition(
+  state: State,
+  position: PartialPosition
+): ?BreakpointPosition {
+  const selectedSource = getSelectedSource(state);
+  if (!selectedSource) {
+    throw new Error("no selectedSource");
+  }
+
+  const columnBreakpoints = getBreakpointPositionsForLine(
+    state,
+    selectedSource.id,
+    position.line
+  );
+
+  return findClosestBreakpoint(columnBreakpoints, position.column);
 }
