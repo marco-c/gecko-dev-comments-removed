@@ -1,3 +1,6 @@
+if (!window.opener && window.arguments) {
+  window.opener = window.arguments[0];
+}
 
 
 
