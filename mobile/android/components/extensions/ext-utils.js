@@ -404,13 +404,35 @@ class TabContext extends EventEmitter {
   constructor(getDefaultPrototype) {
     super();
 
+    windowTracker.addListener("progress", this);
+
     this.getDefaultPrototype = getDefaultPrototype;
     this.tabData = new Map();
+  }
 
-    GlobalEventDispatcher.registerListener(this, [
-      "Tab:Selected",
-      "Tab:Closed",
-    ]);
+  onLocationChange(browser, webProgress, request, locationURI, flags) {
+    if (!webProgress.isTopLevel) {
+      
+      
+      
+      return;
+    }
+    const gBrowser = browser.ownerGlobal.gBrowser;
+    const tab = gBrowser.getTabForBrowser(browser);
+    
+    const fromBrowse = !(
+      flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
+    );
+    this.emit(
+      "location-change",
+      {
+        id: tab.id,
+        linkedBrowser: browser,
+        
+        selected: true,
+      },
+      fromBrowse
+    );
   }
 
   get(tabId) {
@@ -426,28 +448,8 @@ class TabContext extends EventEmitter {
     this.tabData.delete(tabId);
   }
 
-  
-
-
-
-
-
-  onEvent(event, data) {
-    switch (event) {
-      case "Tab:Selected":
-        this.emit("tab-selected", data.id);
-        break;
-      case "Tab:Closed":
-        this.emit("tab-closed", data.tabId);
-        break;
-    }
-  }
-
   shutdown() {
-    GlobalEventDispatcher.unregisterListener(this, [
-      "Tab:Selected",
-      "Tab:Closed",
-    ]);
+    windowTracker.removeListener("progress", this);
   }
 }
 
