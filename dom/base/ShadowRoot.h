@@ -39,7 +39,6 @@ class HTMLInputElement;
 
 class ShadowRoot final : public DocumentFragment,
                          public DocumentOrShadowRoot,
-                         public nsStubMutationObserver,
                          public nsIRadioGroupContainer {
  public:
   NS_IMPL_FROMNODE_HELPER(ShadowRoot, IsShadowRoot());
@@ -47,15 +46,19 @@ class ShadowRoot final : public DocumentFragment,
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ShadowRoot, DocumentFragment)
   NS_DECL_ISUPPORTS_INHERITED
 
-  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-
   ShadowRoot(Element* aElement, ShadowRootMode aMode,
              already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   void AddSizeOfExcludingThis(nsWindowSizes&, size_t* aNodeSize) const final;
+
+  
+  void MaybeReassignElement(Element&);
+  
+  
+  void MaybeSlotHostChild(nsIContent&);
+  
+  
+  void MaybeUnslotHostChild(nsIContent&);
 
   
   Element* Host() const {
@@ -109,12 +112,6 @@ class ShadowRoot final : public DocumentFragment,
   
 
 
-
-  void MaybeReassignElement(Element* aElement);
-
-  
-
-
   struct SlotAssignment {
     HTMLSlotElement* mSlot = nullptr;
     Maybe<uint32_t> mIndex;
@@ -131,7 +128,7 @@ class ShadowRoot final : public DocumentFragment,
 
 
 
-  SlotAssignment SlotAssignmentFor(nsIContent* aContent);
+  SlotAssignment SlotAssignmentFor(nsIContent&);
 
   
 

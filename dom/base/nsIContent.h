@@ -492,6 +492,22 @@ class nsIContent : public nsINode {
 
   inline nsIContent* GetFlattenedTreeParent() const;
 
+ protected:
+  
+  
+  inline void HandleInsertionToOrRemovalFromSlot();
+
+  
+  
+  
+  inline void HandleShadowDOMRelatedInsertionSteps(bool aHadParent);
+
+  
+  
+  
+  inline void HandleShadowDOMRelatedRemovalSteps(bool aNullParent);
+
+ public:
   
 
 
