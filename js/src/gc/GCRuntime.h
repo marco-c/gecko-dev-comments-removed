@@ -409,6 +409,9 @@ class GCRuntime {
   uint64_t majorGCCount() const { return majorGCNumber; }
   void incMajorGcNumber() { ++majorGCNumber; }
 
+  uint64_t gcSliceCount() const { return sliceNumber; }
+  void incGcSliceNumber() { ++sliceNumber; }
+
   int64_t defaultSliceBudgetMS() const { return defaultTimeBudgetMS_; }
 
   bool isIncrementalGc() const { return isIncremental; }
@@ -831,6 +834,9 @@ class GCRuntime {
 
   
   MainThreadData<uint64_t> number;
+
+  
+  MainThreadData<uint64_t> sliceNumber;
 
   
   MainThreadData<bool> isIncremental;
