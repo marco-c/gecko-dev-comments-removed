@@ -9,7 +9,6 @@
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsContentUtils.h"
-#include "nsDOMWindowList.h"
 #include "nsGlobalWindow.h"
 #include "nsHTMLDocument.h"
 #include "nsJSUtils.h"
@@ -18,7 +17,7 @@
 namespace mozilla {
 namespace dom {
 
-static bool ShouldExposeChildWindow(nsString& aNameBeingResolved,
+static bool ShouldExposeChildWindow(const nsString& aNameBeingResolved,
                                     BrowsingContext* aChild) {
   nsPIDOMWindowOuter* child = aChild->GetDOMWindow();
   Element* e = child->GetFrameElementInternal();
@@ -169,23 +168,12 @@ bool WindowNamedPropertiesHandler::ownPropNames(
   
   nsGlobalWindowOuter* outer = win->GetOuterWindowInternal();
   if (outer) {
-    nsDOMWindowList* childWindows = outer->GetFrames();
-    if (childWindows) {
-      uint32_t length = childWindows->GetLength();
-      for (uint32_t i = 0; i < length; ++i) {
-        nsCOMPtr<nsIDocShellTreeItem> item =
-            childWindows->GetDocShellTreeItemAt(i);
-        
-        
-        
-        
-        
-        nsString name;
-        item->GetName(name);
-        if (!names.Contains(name)) {
+    if (BrowsingContext* bc = outer->GetBrowsingContext()) {
+      for (const auto& child : bc->GetChildren()) {
+        const nsString& name = child->Name();
+        if (!name.IsEmpty() && !names.Contains(name)) {
           
-          RefPtr<BrowsingContext> child = win->GetChildWindow(name);
-          if (child && ShouldExposeChildWindow(name, child)) {
+          if (ShouldExposeChildWindow(name, child)) {
             names.AppendElement(name);
           }
         }
