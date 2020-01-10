@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fg = new FinalizationGroup(function() {});
+assert.sameValue(Object.isExtensible(fg), true);
+
+reportCompare(0, 0);

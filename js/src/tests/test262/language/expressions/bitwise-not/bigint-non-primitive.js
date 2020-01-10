@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(~Object(1n), -2n, 'The value of ~Object(1n) is -2n');
 
 function err() {

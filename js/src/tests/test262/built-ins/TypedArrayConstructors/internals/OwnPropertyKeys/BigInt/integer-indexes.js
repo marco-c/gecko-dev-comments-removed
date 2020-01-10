@@ -17,7 +17,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample1 = new TA([42n, 42n, 42n]);
   var result1 = Reflect.ownKeys(sample1);

@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = eval('{}{}');
+
+assert.sameValue(result, undefined);
+
+reportCompare(0, 0);

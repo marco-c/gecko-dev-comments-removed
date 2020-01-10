@@ -17,8 +17,8 @@
 
 const validOptions = [
   [undefined, "symbol"],
-  ["narrow-symbol", "narrow-symbol"],
-  [{ toString() { return "narrow-symbol"; } }, "narrow-symbol"],
+  ["narrowSymbol", "narrowSymbol"],
+  [{ toString() { return "narrowSymbol"; } }, "narrowSymbol"],
 ];
 
 for (const [validOption, expected] of validOptions) {

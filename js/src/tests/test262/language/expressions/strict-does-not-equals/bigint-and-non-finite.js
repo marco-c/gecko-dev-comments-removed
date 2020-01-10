@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(0n !== Infinity, true, 'The result of (0n !== Infinity) is true');
 assert.sameValue(Infinity !== 0n, true, 'The result of (Infinity !== 0n) is true');
 assert.sameValue(1n !== Infinity, true, 'The result of (1n !== Infinity) is true');

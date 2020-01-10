@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   1n ** 1;
 }, '1n ** 1 throws TypeError');

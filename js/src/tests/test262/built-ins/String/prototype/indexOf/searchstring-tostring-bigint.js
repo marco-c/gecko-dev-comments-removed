@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue("__0__".indexOf(0n), 2, "ToString: BigInt to String");
 assert.sameValue("__0__".indexOf(Object(0n)), 2,
   "ToString: unbox object with internal slot => BigInt to String");

@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(Object(2n) ^ 3n, 1n, 'The result of (Object(2n) ^ 3n) is 1n');
 assert.sameValue(3n ^ Object(2n), 1n, 'The result of (3n ^ Object(2n)) is 1n');
 

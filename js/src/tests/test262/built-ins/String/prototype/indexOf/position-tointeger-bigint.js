@@ -10,7 +10,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   "".indexOf("", 0n);
 }, "ToInteger: BigInt => TypeError");

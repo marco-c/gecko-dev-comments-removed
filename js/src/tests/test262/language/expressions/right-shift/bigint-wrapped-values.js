@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(Object(2n) >> 1n, 1n, 'The result of (Object(2n) >> 1n) is 1n');
 assert.sameValue(4n >> Object(2n), 1n, 'The result of (4n >> Object(2n)) is 1n');
 

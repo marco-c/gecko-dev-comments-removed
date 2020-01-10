@@ -9,7 +9,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   assert.sameValue(TA.prototype.hasOwnProperty(Symbol.toStringTag), false);
 });

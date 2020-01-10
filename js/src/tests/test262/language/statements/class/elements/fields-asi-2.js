@@ -7,7 +7,6 @@
 
 
 
-
 class C {
   x = "lol"
   [1]

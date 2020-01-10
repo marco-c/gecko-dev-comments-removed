@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(Object(2n) & 3n, 2n, 'The result of (Object(2n) & 3n) is 2n');
 assert.sameValue(3n & Object(2n), 2n, 'The result of (3n & Object(2n)) is 2n');
 

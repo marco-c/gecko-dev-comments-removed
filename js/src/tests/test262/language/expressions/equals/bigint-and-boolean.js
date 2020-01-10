@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(-1n == false, false, 'The result of (-1n == false) is false');
 assert.sameValue(false == -1n, false, 'The result of (false == -1n) is false');
 assert.sameValue(-1n == true, false, 'The result of (-1n == true) is false');

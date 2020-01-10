@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var wr = new WeakRef({});
+assert.sameValue(Object.isExtensible(wr), true);
+
+reportCompare(0, 0);

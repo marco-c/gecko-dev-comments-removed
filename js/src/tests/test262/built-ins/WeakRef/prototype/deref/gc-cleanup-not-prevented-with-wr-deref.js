@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var deref = false;
+
+function emptyCells() {
+  var wr;
+  (function() {
+    var a = {};
+    wr = new WeakRef(a);
+  })();
+  $262.gc();
+  deref = wr.deref();
+}
+
+emptyCells();
+
+assert.sameValue(deref, undefined);
+
+reportCompare(0, 0);

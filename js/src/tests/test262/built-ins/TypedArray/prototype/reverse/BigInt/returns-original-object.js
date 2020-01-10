@@ -19,7 +19,6 @@
 
 
 
-
 var buffer = new ArrayBuffer(64);
 
 testWithBigIntTypedArrayConstructors(function(TA) {

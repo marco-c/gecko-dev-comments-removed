@@ -12,7 +12,6 @@
 
 
 
-
 var valueOf = BigInt.prototype.valueOf;
 
 assert.sameValue(valueOf.call(0n), 0n, "0n");

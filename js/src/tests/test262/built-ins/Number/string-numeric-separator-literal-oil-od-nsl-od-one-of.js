@@ -25,7 +25,6 @@
 
 
 
-
 assert.sameValue(Number("0o0_0"), NaN, "0o0_0");
 assert.sameValue(Number("0o1_1"), NaN, "0o1_1");
 assert.sameValue(Number("0o2_2"), NaN, "0o2_2");

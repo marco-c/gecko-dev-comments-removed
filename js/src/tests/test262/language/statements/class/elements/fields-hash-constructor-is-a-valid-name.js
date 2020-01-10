@@ -11,7 +11,6 @@
 
 
 
-
 class C1 {
   ["#constructor"];
 }

@@ -26,7 +26,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var OtherCtor = TA === BigInt64Array ? BigUint64Array : BigInt64Array;
   var sample = new OtherCtor();

@@ -21,7 +21,6 @@
 
 
 
-
 Object.defineProperty(TypedArray.prototype, "length", {value: 0});
 
 testWithBigIntTypedArrayConstructors(function(TA) {

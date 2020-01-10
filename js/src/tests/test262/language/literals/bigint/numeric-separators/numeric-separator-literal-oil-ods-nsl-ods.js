@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(0o01_00n, 0o0100n);
+assert.sameValue(0O01_00n, 0O0100n);
+
+reportCompare(0, 0);

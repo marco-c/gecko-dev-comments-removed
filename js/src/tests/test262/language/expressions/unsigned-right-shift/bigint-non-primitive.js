@@ -20,7 +20,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Object(0b101n) >>> 1n;
 }, 'Object(0b101n) >>> 1n throws TypeError');

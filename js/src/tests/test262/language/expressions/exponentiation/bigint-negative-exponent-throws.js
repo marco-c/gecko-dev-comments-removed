@@ -15,7 +15,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   1n ** -1n;
 }, '1n ** -1n throws RangeError');

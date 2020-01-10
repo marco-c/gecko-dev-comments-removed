@@ -21,7 +21,6 @@
 
 
 
-
 var C = class {
   a
   b = 42;;

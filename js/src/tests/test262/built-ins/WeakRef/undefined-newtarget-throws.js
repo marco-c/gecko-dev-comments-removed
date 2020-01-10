@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof WeakRef, 'function',
+  'typeof WeakRef is function'
+);
+
+assert.throws(TypeError, function() {
+  WeakRef();
+});
+
+assert.throws(TypeError, function() {
+  WeakRef({});
+});
+
+reportCompare(0, 0);

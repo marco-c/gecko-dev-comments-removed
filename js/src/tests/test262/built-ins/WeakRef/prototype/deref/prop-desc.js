@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof WeakRef.prototype.deref, 'function');
+
+verifyProperty(WeakRef.prototype, 'deref', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -14,7 +14,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample1 = new TA(42);
   var loop = 0;

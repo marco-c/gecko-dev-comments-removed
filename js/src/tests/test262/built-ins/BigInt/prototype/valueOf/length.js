@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(BigInt.prototype.valueOf, "length", {
   value: 0,
   writable: false,

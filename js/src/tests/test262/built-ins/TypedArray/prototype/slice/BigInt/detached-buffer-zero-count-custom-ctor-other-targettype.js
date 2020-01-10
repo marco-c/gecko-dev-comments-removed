@@ -23,7 +23,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample, result, other;
   var ctor = {};

@@ -28,7 +28,6 @@
 
 
 
-
 var end = Symbol(1);
 
 testWithBigIntTypedArrayConstructors(function(TA) {

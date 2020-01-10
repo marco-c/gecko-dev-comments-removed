@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(WeakRef),
+  Function.prototype,
+  'Object.getPrototypeOf(WeakRef) returns the value of `Function.prototype`'
+);
+
+reportCompare(0, 0);

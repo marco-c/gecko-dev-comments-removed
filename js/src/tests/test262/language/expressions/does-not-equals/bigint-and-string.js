@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(0n != '', false, 'The result of (0n != "") is false');
 assert.sameValue('' != 0n, false, 'The result of ("" != 0n) is false');
 assert.sameValue(0n != '-0', false, 'The result of (0n != "-0") is false');

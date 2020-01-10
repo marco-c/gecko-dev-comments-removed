@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(Object(2n) * 2n, 4n, 'The result of (Object(2n) * 2n) is 4n');
 assert.sameValue(2n * Object(2n), 4n, 'The result of (2n * Object(2n)) is 4n');
 

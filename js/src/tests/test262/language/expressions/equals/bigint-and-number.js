@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(0n == 0, true, 'The result of (0n == 0) is true');
 assert.sameValue(0 == 0n, true, 'The result of (0 == 0n) is true');
 assert.sameValue(0n == -0, true, 'The result of (0n == -0) is true');

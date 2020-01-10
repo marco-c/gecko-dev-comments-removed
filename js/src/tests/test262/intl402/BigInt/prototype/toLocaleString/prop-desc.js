@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(
   typeof BigInt.prototype.toLocaleString,
   "function",

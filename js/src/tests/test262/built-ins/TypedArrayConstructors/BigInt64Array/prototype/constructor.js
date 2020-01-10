@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(BigInt64Array.prototype, "constructor", {
   value: BigInt64Array,
   writable: true,

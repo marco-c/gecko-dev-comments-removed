@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof BigInt.asUintN, 'function');
 
 verifyProperty(BigInt, "asUintN", {

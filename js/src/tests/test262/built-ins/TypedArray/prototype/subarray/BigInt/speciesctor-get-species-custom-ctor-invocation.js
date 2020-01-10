@@ -35,7 +35,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA([40n, 41n, 42n]);
   var expectedOffset = TA.BYTES_PER_ELEMENT;

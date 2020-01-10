@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(BigInt.prototype.toLocaleString, "name", {
   value: "toLocaleString",
   writable: false,

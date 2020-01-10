@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(parseFloat("123456789_0"), 123456789);
 assert.sameValue(parseFloat("123456789_1"), 123456789);
 assert.sameValue(parseFloat("123456789_2"), 123456789);

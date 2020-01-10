@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(Object.prototype.toString.call(3n), "[object BigInt]");
 assert.sameValue(Object.prototype.toString.call(Object(3n)), "[object BigInt]");
 assert.sameValue(Object.prototype.toString.call(BigInt(3n)), "[object BigInt]");

@@ -13,7 +13,6 @@
 
 
 
-
 var x = 0n;
 assert.sameValue(++x, 1n, "var x = 0n; ++x === 1n");
 assert.sameValue(x, 1n, "var x = 0n; ++x; x === 1n");

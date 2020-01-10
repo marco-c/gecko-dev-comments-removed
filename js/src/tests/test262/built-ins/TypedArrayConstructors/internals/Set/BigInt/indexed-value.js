@@ -23,7 +23,6 @@
 
 
 
-
 var proto = TypedArray.prototype;
 var throwDesc = {
   set: function() {

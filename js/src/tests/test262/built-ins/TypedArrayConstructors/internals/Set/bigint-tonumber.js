@@ -51,7 +51,6 @@
 
 
 
-
 var typedArray;
 
 testWithTypedArrayConstructors(function(TA) {

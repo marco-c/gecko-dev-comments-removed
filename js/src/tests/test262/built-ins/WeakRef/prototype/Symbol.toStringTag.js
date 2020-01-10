@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(WeakRef.prototype, Symbol.toStringTag, {
+  value: 'WeakRef',
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

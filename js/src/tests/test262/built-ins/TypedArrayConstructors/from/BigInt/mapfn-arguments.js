@@ -17,7 +17,6 @@
 
 
 
-
 var source = [42, 43, 44];
 
 testWithBigIntTypedArrayConstructors(function(TA) {

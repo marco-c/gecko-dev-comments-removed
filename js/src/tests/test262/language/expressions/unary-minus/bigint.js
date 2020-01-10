@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(-0n, 0n, "-0n === 0n");
 assert.sameValue(-(0n), 0n, "-(0n) === 0n");
 assert.notSameValue(-1n, 1n, "-1n !== 1n");

@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(BigInt.asUintN(0, 1n), 0n);
 assert.sameValue(BigInt.asUintN(1, 1n), 1n);
 assert.sameValue(BigInt.asUintN(-0.9, 1n), 0n, "ToIndex: truncate towards 0");

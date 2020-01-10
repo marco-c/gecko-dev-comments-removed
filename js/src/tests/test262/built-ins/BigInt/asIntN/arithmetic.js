@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(BigInt.asIntN(0, -2n), 0n);
 assert.sameValue(BigInt.asIntN(0, -1n), 0n);
 assert.sameValue(BigInt.asIntN(0, 0n), 0n);

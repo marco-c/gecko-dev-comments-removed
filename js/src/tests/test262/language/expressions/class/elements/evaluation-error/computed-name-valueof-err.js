@@ -41,7 +41,6 @@
 
 
 
-
 var obj = {
   toString: undefined,
   valueOf: function() {

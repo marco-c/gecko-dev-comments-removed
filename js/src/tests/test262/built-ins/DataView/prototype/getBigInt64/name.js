@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(DataView.prototype.getBigInt64, "name", {
   value: "getBigInt64",
   writable: false,

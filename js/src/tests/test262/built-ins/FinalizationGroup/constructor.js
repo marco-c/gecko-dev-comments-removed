@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof FinalizationGroup, 'function',
+  'typeof FinalizationGroup is function'
+);
+
+reportCompare(0, 0);

@@ -21,7 +21,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample, result;
   var ctor = {};

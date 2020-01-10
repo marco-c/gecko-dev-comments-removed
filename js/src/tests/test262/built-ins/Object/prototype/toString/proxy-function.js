@@ -53,15 +53,16 @@ assert.sameValue(
   'proxy for generator function proxy'
 );
 
-delete generatorProxy.constructor.prototype[Symbol.toStringTag];
+var asyncProxy = new Proxy(async function() {}, {});
+var asyncProxyProxy = new Proxy(asyncProxy, {});
 
 assert.sameValue(
-  Object.prototype.toString.call(generatorProxy), '[object Function]', 'generator function proxy without Symbol.toStringTag'
+  Object.prototype.toString.call(asyncProxy), '[object AsyncFunction]', 'async function proxy'
 );
 assert.sameValue(
-  Object.prototype.toString.call(generatorProxyProxy),
-  '[object Function]',
-  'proxy for generator function proxy without Symbol.toStringTag'
+  Object.prototype.toString.call(asyncProxyProxy),
+  '[object AsyncFunction]',
+  'proxy for async function proxy'
 );
 
 reportCompare(0, 0);

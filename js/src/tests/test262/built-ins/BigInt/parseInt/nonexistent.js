@@ -6,7 +6,6 @@
 
 
 
-
 assert(!BigInt.hasOwnProperty("parseInt"));
 
 reportCompare(0, 0);

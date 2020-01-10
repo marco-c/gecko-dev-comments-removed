@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(BigInt.asIntN(2, Object(0n)), 0n, "ToPrimitive: unbox object with internal slot");
 assert.sameValue(BigInt.asIntN(2, {
   [Symbol.toPrimitive]: function() {

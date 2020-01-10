@@ -15,7 +15,6 @@
 
 
 
-
 var s = Symbol("foo");
 
 testWithBigIntTypedArrayConstructors(function(TA) {

@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(typeof BigUint64Array, "function");
 
 reportCompare(0, 0);

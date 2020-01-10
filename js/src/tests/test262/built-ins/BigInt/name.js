@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(BigInt, "name", {
   value: "BigInt",
   writable: false,

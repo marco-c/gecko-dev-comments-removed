@@ -21,7 +21,6 @@
 
 
 
-
 class C {
   static m() { return 42; } 'a'; "b"; 'c' = 39;
   "d" = 42;

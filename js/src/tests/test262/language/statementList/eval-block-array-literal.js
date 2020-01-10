@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = eval('{}[];');
+
+assert.sameValue(Object.getPrototypeOf(result), Array.prototype);
+assert.sameValue(result.length, 0);
+
+reportCompare(0, 0);

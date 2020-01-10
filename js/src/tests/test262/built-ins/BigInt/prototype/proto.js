@@ -10,7 +10,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(BigInt.prototype);
 assert.sameValue(proto, Object.prototype);
 

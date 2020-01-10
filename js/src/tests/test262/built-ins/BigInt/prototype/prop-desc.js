@@ -11,7 +11,6 @@
 
 
 
-
 verifyProperty(BigInt, "prototype", {
   writable: false,
   enumerable: false,

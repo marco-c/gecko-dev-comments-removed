@@ -23,7 +23,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample1 = new TA();
   var result1 = sample1.copyWithin(0, 0);

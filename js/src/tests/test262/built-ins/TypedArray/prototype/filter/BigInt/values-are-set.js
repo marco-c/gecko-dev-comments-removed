@@ -16,7 +16,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA([41n, 1n, 42n, 7n]);
   var result;

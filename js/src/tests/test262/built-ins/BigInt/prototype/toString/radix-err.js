@@ -14,7 +14,6 @@
 
 
 
-
 for (let r of [0, 1, 37, null]) {
   assert.throws(RangeError, function() {
     (0n).toString(r);

@@ -26,7 +26,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(RangeError, function() {
     new TA(-1);

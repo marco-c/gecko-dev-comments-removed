@@ -19,7 +19,6 @@
 
 
 
-
 TypedArray.prototype["-0"] = "test262";
 
 testWithBigIntTypedArrayConstructors(function(TA) {

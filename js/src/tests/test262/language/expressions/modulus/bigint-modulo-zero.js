@@ -18,7 +18,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   1n % 0n;
 }, '1n % 0n throws RangeError');

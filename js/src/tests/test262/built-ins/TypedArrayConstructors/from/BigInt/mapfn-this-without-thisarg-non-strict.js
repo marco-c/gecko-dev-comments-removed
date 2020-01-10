@@ -20,7 +20,6 @@
 
 
 
-
 var global = this;
 
 testWithBigIntTypedArrayConstructors(function(TA) {

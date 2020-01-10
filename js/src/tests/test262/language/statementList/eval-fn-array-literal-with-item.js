@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = eval('function fn() {}[42];;');
+
+assert.sameValue(Object.getPrototypeOf(result), Array.prototype);
+assert.sameValue(result.length, 1);
+assert.sameValue(result[0], 42);
+
+reportCompare(0, 0);

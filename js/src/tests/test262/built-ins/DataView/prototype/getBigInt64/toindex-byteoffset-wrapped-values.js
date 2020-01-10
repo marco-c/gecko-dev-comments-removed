@@ -18,7 +18,6 @@
 
 
 
-
 var buffer = new ArrayBuffer(12);
 var sample = new DataView(buffer, 0);
 sample.setUint8(0, 0x27);

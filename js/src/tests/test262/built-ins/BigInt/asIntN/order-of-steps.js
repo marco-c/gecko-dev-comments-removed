@@ -12,7 +12,6 @@
 
 
 
-
 var i = 0;
 var bits = {
   valueOf() {

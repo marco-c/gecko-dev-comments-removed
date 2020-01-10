@@ -32,7 +32,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA();
   Object.defineProperty(sample.buffer, "constructor", {

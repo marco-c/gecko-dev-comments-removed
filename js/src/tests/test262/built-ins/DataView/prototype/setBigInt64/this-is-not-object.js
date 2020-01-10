@@ -7,7 +7,6 @@
 
 
 
-
 var setBigInt64 = DataView.prototype.setBigInt64;
 
 assert.throws(TypeError, function() {

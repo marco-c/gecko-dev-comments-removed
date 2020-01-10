@@ -16,7 +16,6 @@
 
 
 
-
 verifyProperty(BigUint64Array.prototype, "BYTES_PER_ELEMENT", {
   value: 8,
   writable: false,

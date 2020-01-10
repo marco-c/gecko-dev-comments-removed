@@ -17,7 +17,6 @@
 
 
 
-
 var source = {
   "0": 42n,
   length: 2

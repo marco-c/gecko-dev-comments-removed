@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(BigInt(0).toString(), "0", "BigInt(0).toString() === '0'");
 assert.sameValue(BigInt(0n).toString(), "0", "BigInt(0n).toString() === '0'");
 assert.sameValue(0n.toString(), "0", "0n.toString() === '0'");

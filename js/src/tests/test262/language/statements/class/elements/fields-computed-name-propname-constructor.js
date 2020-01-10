@@ -42,7 +42,6 @@
 
 
 
-
 var x = "constructor";
 class C1 {
   [x];

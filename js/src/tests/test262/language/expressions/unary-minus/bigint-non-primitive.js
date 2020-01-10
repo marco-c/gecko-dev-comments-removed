@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(-Object(1n), -1n, 'The value of -Object(1n) is -1n');
 assert.notSameValue(-Object(1n), 1n, 'The value of -Object(1n) is not 1n');
 assert.notSameValue(-Object(1n), Object(-1n), 'The value of -Object(1n) is not Object(-1n)');

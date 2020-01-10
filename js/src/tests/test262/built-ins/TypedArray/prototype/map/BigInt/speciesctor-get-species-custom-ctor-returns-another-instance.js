@@ -36,7 +36,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA([40n]);
   var otherTA = TA === BigInt64Array ? BigUint64Array : BigInt64Array;

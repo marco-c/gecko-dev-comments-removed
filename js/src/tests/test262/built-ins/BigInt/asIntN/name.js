@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(BigInt.asIntN, "name", {
   value: "asIntN",
   enumerable: false,

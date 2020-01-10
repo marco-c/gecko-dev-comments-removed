@@ -24,7 +24,6 @@
 
 
 
-
 assert.sameValue(Number(".00_01e2"), NaN, ".00_01e2");
 
 reportCompare(0, 0);

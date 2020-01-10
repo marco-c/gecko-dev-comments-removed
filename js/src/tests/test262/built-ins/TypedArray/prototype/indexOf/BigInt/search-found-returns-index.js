@@ -31,7 +31,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA([42n, 43n, 42n, 41n]);
   assert.sameValue(sample.indexOf(42n), 0, "indexOf(42)");

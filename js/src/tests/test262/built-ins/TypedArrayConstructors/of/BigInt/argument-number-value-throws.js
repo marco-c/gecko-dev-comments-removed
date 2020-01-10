@@ -16,7 +16,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var lastValue = false;
 

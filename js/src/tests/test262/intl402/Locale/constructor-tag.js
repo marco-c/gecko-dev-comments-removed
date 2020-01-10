@@ -25,7 +25,7 @@ const validLanguageTags = {
   "DE-1996": "de-1996", 
   
   
-  "sl-ROZAJ-BISKE-1994": "sl-rozaj-biske-1994",
+  "sl-ROZAJ-BISKE-1994": "sl-1994-biske-rozaj",
   "zh-latn-pinyin-pinyin2": "zh-Latn-pinyin-pinyin2",
 };
 

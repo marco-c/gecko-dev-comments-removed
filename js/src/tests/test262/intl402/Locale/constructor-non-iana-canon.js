@@ -79,13 +79,18 @@ var testData = [
         maximized: "cs-Latn-CZ",
     },
     {
+        
+        
         tag: "hy-arevela",
-        canonical: "hy",
-        maximized: "hy-Armn-AM",
+        canonical: "hy-arevela",
+        maximized: "hy-Armn-AM-arevela",
     },
     {
+        
+        
         tag: "hy-arevmda",
-        canonical: "hyw",
+        canonical: "hy-arevmda",
+        maximized: "hy-Armn-AM-arevmda",
     },
 ];
 

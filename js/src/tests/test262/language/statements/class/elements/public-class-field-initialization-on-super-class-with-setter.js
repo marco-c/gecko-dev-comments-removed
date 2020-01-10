@@ -17,7 +17,6 @@
 
 
 
-
 class Super {
   set f(v) {
     throw new Test262Error();

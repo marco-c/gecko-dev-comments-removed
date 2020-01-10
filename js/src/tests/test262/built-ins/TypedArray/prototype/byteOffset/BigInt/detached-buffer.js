@@ -14,7 +14,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var buffer = new ArrayBuffer(128);
   var sample = new TA(buffer, 8, 1);

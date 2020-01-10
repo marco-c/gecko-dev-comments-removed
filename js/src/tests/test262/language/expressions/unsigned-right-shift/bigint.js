@@ -14,7 +14,6 @@
 
 
 
-
 assert.throws(TypeError, function() { 0n >>> 0n; }, "bigint >>> bigint throws a TypeError");
 assert.throws(TypeError, function() { 5n >>> 1n; }, "bigint >>> bigint throws a TypeError");
 assert.throws(TypeError, function() { 5n >>> 2n; }, "bigint >>> bigint throws a TypeError");

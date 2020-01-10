@@ -18,7 +18,6 @@
 
 
 
-
 var getBigInt64 = DataView.prototype.getBigInt64;
 
 assert.throws(TypeError, () => getBigInt64.call(undefined),

@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(-1n !== false, true, 'The result of (-1n !== false) is true');
 assert.sameValue(false !== -1n, true, 'The result of (false !== -1n) is true');
 assert.sameValue(-1n !== true, true, 'The result of (-1n !== true) is true');

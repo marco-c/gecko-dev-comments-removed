@@ -23,7 +23,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sourceItor = [1n, 2n];
   var sourceObj = {

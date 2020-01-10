@@ -21,7 +21,6 @@
 
 
 
-
 class C {
   m() { return 42; } a
   b = 42;;

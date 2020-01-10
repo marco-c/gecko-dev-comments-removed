@@ -9,7 +9,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var result = TA.from([]);
   assert.sameValue(result.length, 0);

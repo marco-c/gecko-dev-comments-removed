@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  get #m() { return "Test262"; };
+  v = eval("this.#m");
+}
+
+let c = new C();
+assert.sameValue(c.v, "Test262");
+
+reportCompare(0, 0);

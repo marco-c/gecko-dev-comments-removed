@@ -23,7 +23,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag);
 
 assert.sameValue(desc.get.length, 0);

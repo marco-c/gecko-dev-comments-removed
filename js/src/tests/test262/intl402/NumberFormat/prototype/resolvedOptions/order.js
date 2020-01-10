@@ -7,6 +7,8 @@
 
 
 
+
+
 const options = new Intl.NumberFormat([], {
   "style": "currency",
   "currency": "EUR",
@@ -21,10 +23,13 @@ const expected = [
   "style",
   "currency",
   "currencyDisplay",
+  "currencySign",
   "minimumIntegerDigits",
   "minimumSignificantDigits",
   "maximumSignificantDigits",
   "useGrouping",
+  "notation",
+  "signDisplay",
 ];
 
 assert.compareArray(Object.getOwnPropertyNames(options), expected);

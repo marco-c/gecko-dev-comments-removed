@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(parseFloat("1_0"), 1);
 assert.sameValue(parseFloat("1_1"), 1);
 assert.sameValue(parseFloat("1_2"), 1);

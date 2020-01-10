@@ -19,7 +19,6 @@
 
 
 
-
 var toString = BigInt.prototype.toString;
 
 assert.sameValue(typeof toString, 'function');

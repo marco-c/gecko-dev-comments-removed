@@ -29,7 +29,6 @@
 
 
 
-
 var typedArraySample1 = new BigInt64Array();
 var typedArraySample2 = new BigInt64Array();
 Object.preventExtensions(typedArraySample2);

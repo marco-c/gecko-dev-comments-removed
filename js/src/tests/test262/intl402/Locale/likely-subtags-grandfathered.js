@@ -68,7 +68,8 @@ const regularGrandfathered = [
     },
     {
         tag: "zh-guoyu",
-        canonical: "cmn",
+        canonical: "zh",
+        maximized: "zh-Hans-CN",
     },
     {
         tag: "zh-hakka",
@@ -126,16 +127,73 @@ for (const {tag} of regularGrandfathered) {
     for (const extra of extras) {
         const loc = new Intl.Locale(tag + "-" + extra);
 
-        assert.sameValue(loc.maximize().toString(), tagMax + "-" + extra);
-        assert.sameValue(loc.maximize().maximize().toString(), tagMax + "-" + extra);
+        let canonical = tag + "-" + extra;
+        let canonicalMax = tagMax + "-" + extra;
+        let canonicalMin = tagMin + "-" + extra;
 
-        assert.sameValue(loc.minimize().toString(), tagMin + "-" + extra);
-        assert.sameValue(loc.minimize().minimize().toString(), tagMin + "-" + extra);
+        
+        if (/^[a-z0-9]{5,8}|[0-9][a-z0-9]{3}$/i.test(extra)) {
+            const sorted = s => s.replace(/(-([a-z0-9]{5,8}|[0-9][a-z0-9]{3}))+$/i,
+                                          m => m.split("-").sort().join("-"));
+            canonical = sorted(canonical);
+            canonicalMax = sorted(canonicalMax);
+            canonicalMin = sorted(canonicalMin);
+        }
 
-        assert.sameValue(loc.maximize().minimize().toString(), tagMin + "-" + extra);
-        assert.sameValue(loc.minimize().maximize().toString(), tagMax + "-" + extra);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        assert.sameValue(loc.toString(), canonical);
+
+        assert.sameValue(loc.maximize().toString(), canonicalMax);
+        assert.sameValue(loc.maximize().maximize().toString(), canonicalMax);
+
+        assert.sameValue(loc.minimize().toString(), canonicalMin);
+        assert.sameValue(loc.minimize().minimize().toString(), canonicalMin);
+
+        assert.sameValue(loc.maximize().minimize().toString(), canonicalMin);
+        assert.sameValue(loc.minimize().maximize().toString(), canonicalMax);
     }
 }
-
 
 reportCompare(0, 0);

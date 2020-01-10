@@ -7,7 +7,6 @@
 
 
 
-
 var C = class {
   x = "lol"
   [1]

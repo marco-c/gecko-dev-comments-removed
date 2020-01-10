@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(FinalizationGroup.prototype, 'constructor', {
+  value: FinalizationGroup,
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

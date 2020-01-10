@@ -28,7 +28,6 @@
 
 
 
-
 var callbackfn = function() { return true; };
 
 testWithBigIntTypedArrayConstructors(function(TA) {

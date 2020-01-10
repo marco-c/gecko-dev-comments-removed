@@ -19,7 +19,6 @@
 
 
 
-
 var srcTypedArray;
 var targetTypedArray;
 var testValue = 42n;

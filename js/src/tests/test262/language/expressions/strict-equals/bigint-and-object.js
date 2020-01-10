@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(0n === Object(0n), false, 'The result of (0n === Object(0n)) is false');
 assert.sameValue(Object(0n) === 0n, false, 'The result of (Object(0n) === 0n) is false');
 assert.sameValue(0n === Object(1n), false, 'The result of (0n === Object(1n)) is false');

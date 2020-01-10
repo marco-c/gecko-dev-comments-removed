@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fn = function() {};
+var fg = new FinalizationGroup(fn);
+
+assert.sameValue(fg.register(fg), undefined, 'Register itself');
+assert.sameValue(fg.register(fg, fg), undefined, 'Register itself with holdings');
+assert.sameValue(fg.register(fg, fg, fg), undefined, 'Register itself with holdings and unregisterToken');
+
+reportCompare(0, 0);

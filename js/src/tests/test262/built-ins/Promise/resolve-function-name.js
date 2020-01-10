@@ -19,5 +19,6 @@ new Promise(function(resolve, reject) {
 });
 
 assert.sameValue(Object.prototype.hasOwnProperty.call(resolveFunction, "name"), false);
+assert.sameValue(resolveFunction.name, "");
 
 reportCompare(0, 0);

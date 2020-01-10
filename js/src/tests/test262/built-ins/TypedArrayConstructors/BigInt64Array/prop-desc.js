@@ -10,7 +10,6 @@
 
 
 
-
 verifyProperty(this, "BigInt64Array", {
   writable: true,
   enumerable: false,

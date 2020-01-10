@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number("123456789_0"), NaN, "123456789_0");
 assert.sameValue(Number("123456789_1"), NaN, "123456789_1");
 assert.sameValue(Number("123456789_2"), NaN, "123456789_2");

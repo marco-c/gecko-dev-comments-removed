@@ -5,7 +5,6 @@
 
 
 
-
 function err() {
   throw new Test262Error();
 }

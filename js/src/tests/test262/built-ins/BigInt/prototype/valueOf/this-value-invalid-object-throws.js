@@ -19,7 +19,6 @@
 
 
 
-
 var valueOf = BigInt.prototype.valueOf;
 assert.sameValue(typeof valueOf, 'function');
 

@@ -18,7 +18,6 @@
 
 
 
-
 assert.sameValue(Object(0b101n) >> 1n, 0b10n, 'The result of (Object(0b101n) >> 1n) is 0b10n');
 
 assert.sameValue(

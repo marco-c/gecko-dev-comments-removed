@@ -34,7 +34,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
     var speciesCallCount = 0;
     var bufferConstructor = Object.defineProperty({}, Symbol.species, {

@@ -30,7 +30,6 @@
 
 
 
-
 var arr = [42n, 43n, 44n];
 
 testWithBigIntTypedArrayConstructors(function(TA) {

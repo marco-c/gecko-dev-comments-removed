@@ -28,7 +28,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   BigInt(0.00005);
 });

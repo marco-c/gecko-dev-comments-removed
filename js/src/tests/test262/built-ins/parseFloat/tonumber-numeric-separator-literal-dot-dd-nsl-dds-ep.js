@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(parseFloat(".1_01e2"), .1);
 
 reportCompare(0, 0);

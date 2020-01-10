@@ -29,7 +29,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var obj = {
     "0": 0n,

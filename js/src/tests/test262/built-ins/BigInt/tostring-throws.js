@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(Test262Error, function() {
   BigInt({
     toString: function() {

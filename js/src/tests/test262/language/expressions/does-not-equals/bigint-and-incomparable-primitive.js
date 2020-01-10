@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(0n != undefined, true, 'The result of (0n != undefined) is true');
 assert.sameValue(undefined != 0n, true, 'The result of (undefined != 0n) is true');
 assert.sameValue(1n != undefined, true, 'The result of (1n != undefined) is true');

@@ -5,7 +5,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   3n > Symbol('2');
 }, '3n > Symbol("2") throws TypeError');

@@ -26,7 +26,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   assert(
     compareArray(

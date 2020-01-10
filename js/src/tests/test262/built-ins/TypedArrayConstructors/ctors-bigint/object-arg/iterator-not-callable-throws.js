@@ -19,7 +19,6 @@
 
 
 
-
 var obj = function () {};
 
 testWithBigIntTypedArrayConstructors(function(TA) {

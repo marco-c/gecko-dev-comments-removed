@@ -25,7 +25,6 @@
 
 
 
-
 assert.sameValue(Number("1.0e-10_0"), NaN, "1.0e-10_0");
 
 reportCompare(0, 0);

@@ -21,7 +21,6 @@
 
 
 
-
 function ToString(x) { return x + ""; }
 
 assert.sameValue(-1n + "", "-1");

@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(0n == undefined, false, 'The result of (0n == undefined) is false');
 assert.sameValue(undefined == 0n, false, 'The result of (undefined == 0n) is false');
 assert.sameValue(1n == undefined, false, 'The result of (1n == undefined) is false');

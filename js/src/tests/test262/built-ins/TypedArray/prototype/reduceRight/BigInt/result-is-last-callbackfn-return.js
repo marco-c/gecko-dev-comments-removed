@@ -36,7 +36,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var calls, result;
 

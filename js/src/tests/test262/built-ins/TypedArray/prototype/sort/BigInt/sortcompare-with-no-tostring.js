@@ -18,7 +18,6 @@
 
 
 
-
 var toStringCalled = false;
 BigInt.prototype.toString = function() {
   toStringCalled = true;

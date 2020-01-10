@@ -8,7 +8,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var mapfn = function(kValue) {
     return kValue * 2n;

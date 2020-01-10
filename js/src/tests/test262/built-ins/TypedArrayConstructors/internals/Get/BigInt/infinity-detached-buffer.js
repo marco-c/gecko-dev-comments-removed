@@ -30,7 +30,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(0);
   $DETACHBUFFER(sample.buffer);

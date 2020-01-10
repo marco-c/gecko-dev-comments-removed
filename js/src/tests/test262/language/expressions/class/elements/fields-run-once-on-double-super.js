@@ -15,7 +15,6 @@
 
 
 
-
 var baseCtorCalled = 0;
 var fieldInitCalled = 0;
 class Base {

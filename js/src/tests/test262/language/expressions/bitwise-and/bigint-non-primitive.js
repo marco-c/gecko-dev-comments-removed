@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Object(0b101n) & 0b011n,
   0b001n,

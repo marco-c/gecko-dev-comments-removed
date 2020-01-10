@@ -15,7 +15,6 @@
 
 
 
-
 var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
 
 testWithBigIntTypedArrayConstructors(function(TA) {

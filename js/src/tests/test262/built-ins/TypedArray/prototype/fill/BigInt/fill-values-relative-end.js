@@ -30,7 +30,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   assert(
     compareArray(new TA([0n, 0n, 0n]).fill(8n, 0, 1), [8n, 0n, 0n]),

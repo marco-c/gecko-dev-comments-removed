@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof FinalizationGroup.prototype.register, 'function');
+
+verifyProperty(FinalizationGroup.prototype, 'register', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

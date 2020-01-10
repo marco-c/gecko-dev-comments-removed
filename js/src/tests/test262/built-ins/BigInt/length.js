@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(BigInt, "length", {
   value: 1,
   writable: false,

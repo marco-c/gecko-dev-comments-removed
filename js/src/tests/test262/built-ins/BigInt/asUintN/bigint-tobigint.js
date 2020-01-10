@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(BigInt.asUintN(2, 0n), 0n);
 assert.sameValue(BigInt.asUintN(2, -0n), 0n);
 assert.sameValue(BigInt.asUintN(2, false), 0n, "ToBigInt: false => 0n");

@@ -26,7 +26,6 @@
 
 
 
-
 var expected = (function() { return this; })();
 
 testWithBigIntTypedArrayConstructors(function(TA) {

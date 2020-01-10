@@ -33,56 +33,66 @@
 
 
 
+var irregularGrandfathered = [
+  "en-gb-oed",
+  "i-ami",
+  "i-bnn",
+  "i-default",
+  "i-enochian",
+  "i-hak",
+  "i-klingon",
+  "i-lux",
+  "i-mingo",
+  "i-navajo",
+  "i-pwn",
+  "i-tao",
+  "i-tay",
+  "i-tsu",
+  "sgn-be-fr",
+  "sgn-be-nl",
+  "sgn-ch-de",
+];
 
+var regularGrandfatheredNonUTS35 = [
+  "no-bok",
+  "no-nyn",
+  "zh-min",
+  "zh-min-nan",
+];
 
-
-
-
-var canonicalizedTags = {
-  
-  "en-gb-oed": "en-GB-oxendict",
-  "i-ami": "ami",
-  "i-bnn": "bnn",
-  "i-default": "i-default",
-  "i-enochian": "i-enochian",
-  "i-hak": "hak",
-  "i-klingon": "tlh",
-  "i-lux": "lb",
-  "i-mingo": "i-mingo",
-  "i-navajo": "nv",
-  "i-pwn": "pwn",
-  "i-tao": "tao",
-  "i-tay": "tay",
-  "i-tsu": "tsu",
-  "sgn-be-fr": "sfb",
-  "sgn-be-nl": "vgt",
-  "sgn-ch-de": "sgg",
-
-  
+var regularGrandfatheredUTS35 = {
   "art-lojban": "jbo",
-  "cel-gaulish": "cel-gaulish",
-  "no-bok": "nb",
-  "no-nyn": "nn",
-  "zh-guoyu": "cmn",
+  "cel-gaulish": "xtg-x-cel-gaulish",
+  "zh-guoyu": "zh",
   "zh-hakka": "hak",
-  "zh-min": "zh-min",
-  "zh-min-nan": "nan",
   "zh-xiang": "hsn",
 };
 
 
-Object.getOwnPropertyNames(canonicalizedTags).forEach(function (tag) {
-  var canonicalizedTag = canonicalizedTags[tag];
+irregularGrandfathered.forEach(function (tag) {
+  assert.sameValue(
+    isCanonicalizedStructurallyValidLanguageTag(tag), false,
+    "Test data \"" + tag + "\" is not a structurally valid language tag."
+  );
+});
+regularGrandfatheredNonUTS35.forEach(function (tag) {
+  assert.sameValue(
+    isCanonicalizedStructurallyValidLanguageTag(tag), false,
+    "Test data \"" + tag + "\" is not a structurally valid language tag."
+  );
+});
+Object.getOwnPropertyNames(regularGrandfatheredUTS35).forEach(function (tag) {
+  var canonicalizedTag = regularGrandfatheredUTS35[tag];
   assert(
     isCanonicalizedStructurallyValidLanguageTag(canonicalizedTag),
-    "Test data \"" + canonicalizedTag + "\" is not canonicalized and structurally valid language tag."
+    "Test data \"" + canonicalizedTag + "\" is a canonicalized and structurally valid language tag."
   );
 });
 
-Object.getOwnPropertyNames(canonicalizedTags).forEach(function (tag) {
+Object.getOwnPropertyNames(regularGrandfatheredUTS35).forEach(function (tag) {
   var canonicalLocales = Intl.getCanonicalLocales(tag);
   assert.sameValue(canonicalLocales.length, 1);
-  assert.sameValue(canonicalLocales[0], canonicalizedTags[tag]);
+  assert.sameValue(canonicalLocales[0], regularGrandfatheredUTS35[tag]);
 });
 
 reportCompare(0, 0);

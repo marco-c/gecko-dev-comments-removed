@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fn = function() {};
+var register = FinalizationGroup.prototype.register;
+var fg = new FinalizationGroup(fn);
+
+var target = {};
+assert.sameValue(register.call(fg, target), undefined);
+
+reportCompare(0, 0);

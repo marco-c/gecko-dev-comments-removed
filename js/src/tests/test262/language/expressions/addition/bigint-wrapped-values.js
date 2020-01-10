@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(Object(2n) + 1n, 3n, 'The result of (Object(2n) + 1n) is 3n');
 assert.sameValue(1n + Object(2n), 3n, 'The result of (1n + Object(2n)) is 3n');
 

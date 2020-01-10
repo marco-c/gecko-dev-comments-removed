@@ -17,7 +17,6 @@
 
 
 
-
 for (let r = 2; r <= 36; r++) {
   assert.sameValue((0n).toString(r), "0", "0, radix " + r);
   assert.sameValue((-1n).toString(r), "-1", "-1, radix " + r);

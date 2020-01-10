@@ -42,7 +42,6 @@
 
 
 
-
 var err = function() { throw new Test262Error(); };
 var obj1 = {
   [Symbol.toPrimitive]: function() { return "d"; },

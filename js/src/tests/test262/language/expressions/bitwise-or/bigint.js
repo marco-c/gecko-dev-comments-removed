@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue(0b00n | 0b00n, 0b00n, "0b00n | 0b00n === 0b00n");
 assert.sameValue(0b00n | 0b01n, 0b01n, "0b00n | 0b01n === 0b01n");
 assert.sameValue(0b01n | 0b00n, 0b01n, "0b01n | 0b00n === 0b01n");

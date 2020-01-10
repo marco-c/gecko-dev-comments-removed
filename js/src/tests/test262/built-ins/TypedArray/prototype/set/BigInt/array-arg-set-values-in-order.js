@@ -22,7 +22,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(5);
   var calls = [];

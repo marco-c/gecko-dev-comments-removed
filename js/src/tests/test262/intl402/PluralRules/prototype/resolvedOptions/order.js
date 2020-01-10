@@ -7,6 +7,8 @@
 
 
 
+
+
 const options = new Intl.PluralRules([], {
   "minimumSignificantDigits": 1,
   "maximumSignificantDigits": 2,
@@ -16,8 +18,6 @@ const expected = [
   "locale",
   "type",
   "minimumIntegerDigits",
-  "minimumFractionDigits",
-  "maximumFractionDigits",
   "minimumSignificantDigits",
   "maximumSignificantDigits",
   "pluralCategories",

@@ -12,6 +12,7 @@
 
 
 
+
 const formatRange = Intl.DateTimeFormat.prototype.formatRange;
 
 assert.sameValue(Object.prototype.toString.call(formatRange), "[object Function]",

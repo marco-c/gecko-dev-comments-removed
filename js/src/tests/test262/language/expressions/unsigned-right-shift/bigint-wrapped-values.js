@@ -6,7 +6,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Object(2n) >>> 0n;
 }, 'Object(2n) >>> 0n throws TypeError');

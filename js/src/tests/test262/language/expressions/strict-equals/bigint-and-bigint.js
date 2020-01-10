@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(0n === 0n, true, 'The result of (0n === 0n) is true');
 assert.sameValue(1n === 1n, true, 'The result of (1n === 1n) is true');
 assert.sameValue(-1n === -1n, true, 'The result of (-1n === -1n) is true');

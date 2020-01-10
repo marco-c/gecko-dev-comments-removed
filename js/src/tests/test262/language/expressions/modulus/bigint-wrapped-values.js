@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(Object(2n) % 2n, 0n, 'The result of (Object(2n) % 2n) is 0n');
 assert.sameValue(2n % Object(2n), 0n, 'The result of (2n % Object(2n)) is 0n');
 

@@ -17,7 +17,6 @@
 
 
 
-
 verifyProperty(this, "BigInt", {
   enumerable: false,
   writable: true,

@@ -23,7 +23,6 @@
 
 
 
-
 var C = class {
   x
   y

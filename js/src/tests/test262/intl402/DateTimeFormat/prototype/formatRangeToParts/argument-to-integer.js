@@ -20,6 +20,7 @@
 
 
 
+
 function* zip(a, b) {
   assert.sameValue(a.length, b.length);
   for (let i = 0; i < a.length; ++i) {

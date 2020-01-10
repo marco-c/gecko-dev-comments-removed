@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(1n != Number.MAX_VALUE, true, 'The result of (1n != Number.MAX_VALUE) is true');
 assert.sameValue(Number.MAX_VALUE != 1n, true, 'The result of (Number.MAX_VALUE != 1n) is true');
 assert.sameValue(1n != -Number.MAX_VALUE, true, 'The result of (1n != -Number.MAX_VALUE) is true');

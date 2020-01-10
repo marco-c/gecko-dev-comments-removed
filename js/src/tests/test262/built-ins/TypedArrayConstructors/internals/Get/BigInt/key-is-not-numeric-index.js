@@ -17,7 +17,6 @@
 
 
 
-
 TypedArray.prototype.baz = "test262";
 
 testWithBigIntTypedArrayConstructors(function(TA) {

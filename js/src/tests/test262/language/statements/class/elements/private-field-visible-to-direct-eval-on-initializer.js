@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  #m = 44;
+  v = eval("this.#m");
+}
+
+let c = new C();
+assert.sameValue(c.v, 44);
+
+reportCompare(0, 0);

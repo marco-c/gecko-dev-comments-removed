@@ -29,7 +29,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var arr = [1n, 2n, 3n];
   var sample;

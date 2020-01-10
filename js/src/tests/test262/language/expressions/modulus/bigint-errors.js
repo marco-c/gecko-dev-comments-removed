@@ -5,7 +5,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Symbol('1') % 1n;
 }, 'Symbol("1") % 1n throws TypeError');

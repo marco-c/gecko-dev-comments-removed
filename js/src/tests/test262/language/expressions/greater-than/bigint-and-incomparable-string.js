@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(1n > '0n', false, 'The result of (1n > "0n") is false');
 assert.sameValue(1n > '0.', false, 'The result of (1n > "0.") is false');
 assert.sameValue(1n > '.0', false, 'The result of (1n > ".0") is false');

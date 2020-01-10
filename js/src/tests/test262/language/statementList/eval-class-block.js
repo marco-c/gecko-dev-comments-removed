@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = eval('class C {}{};');
+
+assert.sameValue(result, undefined);
+
+reportCompare(0, 0);

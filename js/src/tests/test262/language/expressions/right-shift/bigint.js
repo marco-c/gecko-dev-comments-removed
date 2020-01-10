@@ -25,7 +25,6 @@
 
 
 
-
 assert.sameValue(0n >> 0n, 0n, "0n >> 0n === 0n");
 assert.sameValue(0b101n >> -1n, 0b1010n, "0b101n >> -1n === 0b1010n");
 assert.sameValue(0b101n >> -2n, 0b10100n, "0b101n >> -2n === 0b10100n");

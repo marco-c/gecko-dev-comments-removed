@@ -8,7 +8,6 @@
 
 
 
-
 assert.throws(TypeError, () => JSON.stringify(1n),
               "toString throws for BigInt object");
 

@@ -41,7 +41,6 @@
 
 
 
-
 var obj = {
   [Symbol.toPrimitive]: {}
 };

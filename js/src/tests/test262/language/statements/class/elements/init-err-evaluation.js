@@ -18,7 +18,6 @@
 
 
 
-
 var x = 0;
 function fn1() { x += 1; }
 function fn2() { throw new Test262Error(); }

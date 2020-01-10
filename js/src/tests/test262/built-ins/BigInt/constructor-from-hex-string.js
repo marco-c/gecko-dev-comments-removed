@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(BigInt("0xa"), 10n);
 assert.sameValue(BigInt("0xff"), 255n);
 assert.sameValue(BigInt("0xfabc"), 64188n);

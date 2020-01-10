@@ -22,7 +22,6 @@
 
 
 
-
 var fromIndex = Symbol("1");
 
 testWithBigIntTypedArrayConstructors(function(TA) {

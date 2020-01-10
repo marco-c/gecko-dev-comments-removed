@@ -34,5 +34,6 @@ assert.sameValue(
   Object.prototype.hasOwnProperty.call(resolveElementFunction, 'name'),
   false
 );
+assert.sameValue(resolveElementFunction.name, '');
 
 reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(DataView.prototype.getBigUint64, "length", {
   value: 1,
   writable: false,

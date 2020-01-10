@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof WeakRef, 'function',
+  'typeof WeakRef is function'
+);
+
+reportCompare(0, 0);

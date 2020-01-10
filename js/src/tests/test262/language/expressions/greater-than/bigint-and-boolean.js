@@ -5,7 +5,6 @@
 
 
 
-
 assert.sameValue(0n > false, false, 'The result of (0n > false) is false');
 assert.sameValue(false > 0n, false, 'The result of (false > 0n) is false');
 assert.sameValue(0n > true, false, 'The result of (0n > true) is false');

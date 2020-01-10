@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(1n > Infinity, false, 'The result of (1n > Infinity) is false');
 assert.sameValue(Infinity > 1n, true, 'The result of (Infinity > 1n) is true');
 assert.sameValue(-1n > Infinity, false, 'The result of (-1n > Infinity) is false');

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fg = new FinalizationGroup(function() {});
+
+var target = {};
+var holdings = {};
+assert.sameValue(fg.register(target, holdings, holdings), undefined);
+
+reportCompare(0, 0);

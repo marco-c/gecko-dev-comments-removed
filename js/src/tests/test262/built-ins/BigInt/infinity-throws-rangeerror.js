@@ -25,7 +25,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   BigInt(Infinity);
 });

@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(BigInt("0b1111"), 15n);
 assert.sameValue(BigInt("0b10"), 2n);
 assert.sameValue(BigInt("0b0"), 0n);

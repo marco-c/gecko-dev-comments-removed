@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {}
 class C {
   x = obj

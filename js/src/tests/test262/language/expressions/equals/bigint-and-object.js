@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(0n == Object(0n), true, 'The result of (0n == Object(0n)) is true');
 assert.sameValue(Object(0n) == 0n, true, 'The result of (Object(0n) == 0n) is true');
 assert.sameValue(0n == Object(1n), false, 'The result of (0n == Object(1n)) is false');

@@ -28,7 +28,6 @@
 
 
 
-
 verifyProperty(BigUint64Array, "name", {
   value: "BigUint64Array",
   writable: false,

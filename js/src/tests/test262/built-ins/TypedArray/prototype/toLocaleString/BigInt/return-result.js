@@ -31,7 +31,6 @@
 
 
 
-
 var separator = ["", ""].toLocaleString();
 
 testWithBigIntTypedArrayConstructors(function(TA) {

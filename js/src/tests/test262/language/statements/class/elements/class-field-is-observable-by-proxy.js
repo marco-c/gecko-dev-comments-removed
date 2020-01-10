@@ -17,7 +17,6 @@
 
 
 
-
 let arr = [];
 let expectedTarget = null;
 function ProxyBase() {
