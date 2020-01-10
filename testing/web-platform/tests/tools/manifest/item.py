@@ -32,13 +32,13 @@ class ManifestItemMeta(ABCMeta):
 
     def __new__(cls, name, bases, attrs):
         
-        rv = ABCMeta.__new__(cls, name, bases, attrs)
+        rv = super(ManifestItemMeta, cls).__new__(cls, name, bases, attrs)
         if not isabstract(rv):
             assert issubclass(rv, ManifestItem)
             assert isinstance(rv.item_type, str)
             item_types[rv.item_type] = rv
 
-        return rv
+        return rv  
 
 
 class ManifestItem(with_metaclass(ManifestItemMeta)):
