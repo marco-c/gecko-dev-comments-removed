@@ -160,7 +160,14 @@ class _ToolbarPanelHub {
       (await this.messages).sort(this._sortWhatsNewMessages);
     const container = doc.getElementById(containerId);
 
-    if (messages && !container.querySelector(".whatsNew-message")) {
+    if (messages) {
+      
+      
+      for (const prevMessageEl of container.querySelectorAll(
+        ".whatsNew-message"
+      )) {
+        container.removeChild(prevMessageEl);
+      }
       let previousDate = 0;
       
       this.state.contentArguments = await this._contentArguments();

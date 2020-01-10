@@ -92,6 +92,17 @@ add_task(async function test_trailhead_branches() {
   );
 
   await test_trailhead_branch(
+    "modal_variant_a-supercharge",
+    
+    [
+      ".trailhead.joinCohort",
+      "p[data-l10n-id=onboarding-benefit-sync-text]",
+      "p[data-l10n-id=onboarding-benefit-monitor-text]",
+      "p[data-l10n-id=onboarding-benefit-lockwise-text]",
+    ]
+  );
+
+  await test_trailhead_branch(
     "cards-multidevice",
     
     [
@@ -117,14 +128,6 @@ add_task(async function test_trailhead_branches() {
   await test_trailhead_branch(
     "nofirstrun",
     [],
-    
-    ["#trailheadDialog", ".trailheadCards"]
-  );
-
-  await test_trailhead_branch(
-    "control",
-    
-    [".firstrun-scene"],
     
     ["#trailheadDialog", ".trailheadCards"]
   );
