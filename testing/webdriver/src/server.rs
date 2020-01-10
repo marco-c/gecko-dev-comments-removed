@@ -241,7 +241,7 @@ fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
     }
     .or(warp::head())
     .unify()
-    .map(|| Parameters::new())
+    .map(Parameters::new)
     .boxed();
 
     
