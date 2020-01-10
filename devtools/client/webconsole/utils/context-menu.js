@@ -203,8 +203,9 @@ function createContextMenu(
       click: () => {
         if (actor) {
           
-          webConsoleUI.jsterm
-            .copyObject(`_self`, { selectedObjectActor: actor })
+          
+          webConsoleUI.webConsoleClient
+            .evaluateJSAsync("copy(_self)", { selectedObjectActor: actor })
             .then(res => {
               clipboardHelper.copyString(res.helperResult.value);
             });

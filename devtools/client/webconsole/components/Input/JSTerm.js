@@ -829,23 +829,6 @@ class JSTerm extends Component {
 
 
 
-
-
-
-
-
-  copyObject(evalString, evalOptions) {
-    return this.webConsoleClient.evaluateJSAsync(
-      `copy(${evalString})`,
-      evalOptions
-    );
-  }
-
-  
-
-
-
-
   resizeInput() {
     if (this.props.codeMirrorEnabled || !this.inputNode) {
       return;
