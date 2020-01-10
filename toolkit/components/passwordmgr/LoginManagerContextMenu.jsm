@@ -42,8 +42,8 @@ this.LoginManagerContextMenu = {
 
 
 
-  addLoginsToMenu(inputElementIdentifier, browser, documentURI) {
-    let foundLogins = this._findLogins(documentURI);
+  addLoginsToMenu(inputElementIdentifier, browser, formOrigin) {
+    let foundLogins = this._findLogins(formOrigin);
 
     if (!foundLogins.length) {
       return null;
@@ -77,7 +77,7 @@ this.LoginManagerContextMenu = {
             login,
             inputElementIdentifier,
             browser,
-            documentURI
+            formOrigin
           );
         }.bind(this, login)
       );
@@ -139,9 +139,9 @@ this.LoginManagerContextMenu = {
 
 
 
-  _findLogins(documentURI) {
+  _findLogins(formOrigin) {
     let searchParams = {
-      origin: documentURI.displayPrePath,
+      origin: formOrigin,
       schemeUpgrades: LoginHelper.schemeUpgrades,
     };
     let logins = LoginHelper.searchLoginsWithObject(searchParams);
@@ -150,7 +150,7 @@ this.LoginManagerContextMenu = {
       logins,
       ["username", "password"],
       resolveBy,
-      documentURI.displayPrePath
+      formOrigin
     );
 
     
@@ -209,11 +209,12 @@ this.LoginManagerContextMenu = {
 
 
 
-  _fillTargetField(login, inputElementIdentifier, browser, documentURI) {
+
+  _fillTargetField(login, inputElementIdentifier, browser, formOrigin) {
     LoginManagerParent.fillForm({
       browser,
       inputElementIdentifier,
-      loginFormOrigin: documentURI.displayPrePath,
+      loginFormOrigin: formOrigin,
       login,
     }).catch(Cu.reportError);
   },
