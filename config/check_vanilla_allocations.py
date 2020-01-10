@@ -36,6 +36,8 @@
 
 
 
+
+
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -157,6 +159,10 @@ def main():
         
         
         if filename == 'umutex.o':
+            continue
+
+        
+        if filename == 'Decimal.o':
             continue
 
         fn = m.group(2)
