@@ -124,7 +124,11 @@ async function expectFocusOnF6(
 
 
 add_task(async function() {
-  let page1Promise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  let page1Promise = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    testPage1
+  );
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, testPage1);
   await page1Promise;
 
