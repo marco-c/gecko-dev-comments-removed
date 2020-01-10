@@ -172,7 +172,9 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
 
 
-  webrtc::CaptureCapability GetCapability(size_t aIndex) const;
+
+
+  webrtc::CaptureCapability& GetCapability(size_t aIndex) const;
 
   int mCaptureIndex;
   const camera::CaptureEngine mCapEngine;  
@@ -239,7 +241,21 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
 
 
-  mutable nsTArray<webrtc::CaptureCapability> mHardcodedCapabilities;
+
+
+
+  mutable nsTArray<UniquePtr<webrtc::CaptureCapability>> mCapabilities;
+
+  
+
+
+
+
+
+
+
+
+  mutable bool mCapabilitiesAreHardcoded = false;
 
   nsString mDeviceName;
   nsCString mUniqueId;

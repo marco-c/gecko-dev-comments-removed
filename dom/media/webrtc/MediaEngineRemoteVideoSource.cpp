@@ -440,33 +440,36 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
 size_t MediaEngineRemoteVideoSource::NumCapabilities() const {
   AssertIsOnOwningThread();
 
-  mHardcodedCapabilities.Clear();
+  if (!mCapabilities.IsEmpty()) {
+    return mCapabilities.Length();
+  }
+
   int num = camera::GetChildAndCall(&camera::CamerasChild::NumberOfCapabilities,
                                     mCapEngine, mUniqueId.get());
-
-  if (num >= 1) {
-    return num;
+  if (num > 0) {
+    mCapabilities.SetLength(num);
+  } else {
+    
+    
+    
+    mCapabilities.AppendElement(MakeUnique<webrtc::CaptureCapability>());
+    mCapabilitiesAreHardcoded = true;
   }
 
-  
-  
-  
-  mHardcodedCapabilities.AppendElement(webrtc::CaptureCapability());
-  return mHardcodedCapabilities.Length();  
+  return mCapabilities.Length();
 }
 
-webrtc::CaptureCapability MediaEngineRemoteVideoSource::GetCapability(
+webrtc::CaptureCapability& MediaEngineRemoteVideoSource::GetCapability(
     size_t aIndex) const {
   AssertIsOnOwningThread();
-  webrtc::CaptureCapability result;
-  if (!mHardcodedCapabilities.IsEmpty()) {
-    MOZ_ASSERT(aIndex < mHardcodedCapabilities.Length());
-    result = mHardcodedCapabilities.SafeElementAt(aIndex,
-                                                  webrtc::CaptureCapability());
+  MOZ_RELEASE_ASSERT(aIndex < mCapabilities.Length());
+  if (!mCapabilities[aIndex]) {
+    mCapabilities[aIndex] = MakeUnique<webrtc::CaptureCapability>();
+    camera::GetChildAndCall(&camera::CamerasChild::GetCaptureCapability,
+                            mCapEngine, mUniqueId.get(), aIndex,
+                            *mCapabilities[aIndex]);
   }
-  camera::GetChildAndCall(&camera::CamerasChild::GetCaptureCapability,
-                          mCapEngine, mUniqueId.get(), aIndex, result);
-  return result;
+  return *mCapabilities[aIndex];
 }
 
 int MediaEngineRemoteVideoSource::DeliverFrame(
@@ -813,13 +816,13 @@ bool MediaEngineRemoteVideoSource::ChooseCapability(
     candidateSet.AppendElement(CapabilityCandidate(GetCapability(i)));
   }
 
-  if (!mHardcodedCapabilities.IsEmpty() && mCapEngine == camera::CameraEngine) {
+  if (mCapabilitiesAreHardcoded && mCapEngine == camera::CameraEngine) {
     
     
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(mHardcodedCapabilities.Length() == 1);
+    MOZ_DIAGNOSTIC_ASSERT(mCapabilities.Length() == 1);
     MOZ_DIAGNOSTIC_ASSERT(candidateSet.Length() == 1);
     candidateSet.Clear();
 
