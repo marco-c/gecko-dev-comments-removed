@@ -95,7 +95,6 @@ InternalRequest::InternalRequest(const nsACString& aURL,
       mResponseTainting(LoadTainting::Basic),
       mCacheMode(RequestCache::Default),
       mRedirectMode(RequestRedirect::Follow),
-      mMozErrors(false),
       mAuthenticationFlag(false),
       mPreserveContentCodings(false)
       
@@ -131,7 +130,6 @@ InternalRequest::InternalRequest(
       mCacheMode(aCacheMode),
       mRedirectMode(aRequestRedirect),
       mIntegrity(aIntegrity),
-      mMozErrors(false),
       mAuthenticationFlag(false),
       mPreserveContentCodings(false)
       
