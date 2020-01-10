@@ -126,7 +126,6 @@ add_task(async function basicGetAndPost() {
       });
     }
   }
-
   await cleanup();
 });
 
@@ -245,6 +244,15 @@ add_task(async function engineWithSuggestions() {
 
 
 add_task(async function tokenAliasEngines() {
+  await Services.search.init();
+  
+  
+  Services.prefs.setCharPref("browser.search.region", "US");
+  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
+
+  Services.search.restoreDefaultEngines();
+  Services.search.resetToOriginalDefaultEngine();
+
   let tokenEngines = [];
   for (let engine of await Services.search.getEngines()) {
     let aliases = [];

@@ -437,3 +437,92 @@ function assertHighlighted(highlighted, expectedAlias) {
   Assert.equal(range.startOffset, index);
   Assert.equal(range.endOffset, index + expectedAlias.length);
 }
+
+
+
+
+
+
+add_task(async function hiddenEngine() {
+  await promiseAutocompleteResultPopup("@", window, true);
+
+  const defaultEngine = await Services.search.getDefault();
+
+  let foundDefaultEngineInPopup = false;
+
+  
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (defaultEngine.name == details.searchParams.engine) {
+      foundDefaultEngineInPopup = true;
+      break;
+    }
+  }
+  Assert.ok(foundDefaultEngineInPopup, "Default engine appears in the popup.");
+
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
+
+  
+  
+  defaultEngine.hidden = true;
+  await promiseAutocompleteResultPopup("@", window, true);
+  foundDefaultEngineInPopup = false;
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (defaultEngine.name == details.searchParams.engine) {
+      foundDefaultEngineInPopup = true;
+      break;
+    }
+  }
+  Assert.ok(!foundDefaultEngineInPopup, "Hidden default engine does not appear in the popup");
+
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
+
+  defaultEngine.hidden = false;
+});
+
+
+
+
+
+add_task(async function hiddenEngine() {
+  await promiseAutocompleteResultPopup("@", window, true);
+
+  const defaultEngine = await Services.search.getDefault();
+
+  let foundDefaultEngineInPopup = false;
+
+  
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (defaultEngine.name == details.searchParams.engine) {
+      foundDefaultEngineInPopup = true;
+      break;
+    }
+  }
+  Assert.ok(foundDefaultEngineInPopup, "Default engine appears in the popup.");
+
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
+
+  
+  
+  defaultEngine.hidden = true;
+  await promiseAutocompleteResultPopup("@", window, true);
+  foundDefaultEngineInPopup = false;
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (defaultEngine.name == details.searchParams.engine) {
+      foundDefaultEngineInPopup = true;
+      break;
+    }
+  }
+  Assert.ok(!foundDefaultEngineInPopup, "Hidden default engine does not appear in the popup");
+
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
+
+  defaultEngine.hidden = false;
+});
