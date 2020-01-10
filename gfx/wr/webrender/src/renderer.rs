@@ -115,6 +115,7 @@ cfg_if! {
 }
 
 const DEFAULT_BATCH_LOOKBACK_COUNT: usize = 10;
+const VERTEX_TEXTURE_EXTRA_ROWS: i32 = 10;
 
 
 static HAS_BEEN_INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -1529,8 +1530,6 @@ impl<T> VertexDataTexture<T> {
             }
         }
 
-        let width =
-            (MAX_VERTEX_TEXTURE_WIDTH - (MAX_VERTEX_TEXTURE_WIDTH % texels_per_item)) as i32;
         let needed_height = (data.len() / items_per_row) as i32;
         let existing_height = self.texture.as_ref().map_or(0, |t| t.get_dimensions().height);
 
@@ -1543,7 +1542,7 @@ impl<T> VertexDataTexture<T> {
         
         
         
-        if needed_height > existing_height || needed_height + 10 < existing_height {
+        if needed_height > existing_height || needed_height + VERTEX_TEXTURE_EXTRA_ROWS < existing_height {
             
             if let Some(t) = self.texture.take() {
                 device.delete_texture(t);
@@ -1552,7 +1551,7 @@ impl<T> VertexDataTexture<T> {
             let texture = device.create_texture(
                 TextureTarget::Default,
                 self.format,
-                width,
+                MAX_VERTEX_TEXTURE_WIDTH as i32,
                 
                 
                 needed_height.max(2),
@@ -1563,9 +1562,17 @@ impl<T> VertexDataTexture<T> {
             self.texture = Some(texture);
         }
 
+        
+        
+        
+        
+        
+        let logical_width =
+            (MAX_VERTEX_TEXTURE_WIDTH - (MAX_VERTEX_TEXTURE_WIDTH % texels_per_item)) as i32;
+
         let rect = DeviceIntRect::new(
             DeviceIntPoint::zero(),
-            DeviceIntSize::new(width, needed_height),
+            DeviceIntSize::new(logical_width, needed_height),
         );
         device
             .upload_texture(self.texture(), &self.pbo, 0)
