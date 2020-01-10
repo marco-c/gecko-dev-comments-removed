@@ -519,13 +519,12 @@ class ScriptSource {
 
   
 
-  
   template <typename Unit>
-  class Uncompressed {
+  class UncompressedData {
     typename SourceTypeTraits<Unit>::SharedImmutableString string_;
 
    public:
-    explicit Uncompressed(
+    explicit UncompressedData(
         typename SourceTypeTraits<Unit>::SharedImmutableString str)
         : string_(std::move(str)) {}
 
@@ -536,14 +535,34 @@ class ScriptSource {
 
   
   template <typename Unit>
-  struct Compressed {
+  class Uncompressed : public UncompressedData<Unit> {
+    using Base = UncompressedData<Unit>;
+
+   public:
+    using Base::Base;
+  };
+
+  template <typename Unit>
+  struct CompressedData {
     
     
     SharedImmutableString raw;
     size_t uncompressedLength;
 
-    Compressed(SharedImmutableString raw, size_t uncompressedLength)
+    CompressedData(SharedImmutableString raw, size_t uncompressedLength)
         : raw(std::move(raw)), uncompressedLength(uncompressedLength) {}
+  };
+
+  
+  template <typename Unit>
+  struct Compressed : public CompressedData<Unit> {
+    using Base = CompressedData<Unit>;
+
+   public:
+    using Base::Base;
+
+    explicit Compressed(CompressedData<Unit>&& data)
+        : Base(std::move(data.raw), data.uncompressedLength) {}
   };
 
   
@@ -584,7 +603,8 @@ class ScriptSource {
   
   
   PinnedUnitsBase* pinnedUnitsStack_;
-  mozilla::MaybeOneOf<Compressed<mozilla::Utf8Unit>, Compressed<char16_t>>
+  mozilla::MaybeOneOf<CompressedData<mozilla::Utf8Unit>,
+                      CompressedData<char16_t>>
       pendingCompressed_;
 
   
