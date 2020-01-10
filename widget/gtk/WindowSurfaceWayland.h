@@ -177,12 +177,9 @@ class WindowSurfaceWayland : public WindowSurface {
 
  private:
   WindowBackBuffer* CreateWaylandBuffer(int aWidth, int aHeight);
-  WindowBackBuffer* GetWaylandBufferToDraw(int aWidth, int aHeight,
-                                           bool aFullScreenUpdate);
+  WindowBackBuffer* GetWaylandBufferToDraw(bool aCanSwitchBuffer);
 
-  already_AddRefed<gfx::DrawTarget> LockWaylandBuffer(int aWidth, int aHeight,
-                                                      bool aClearBuffer,
-                                                      bool aFullScreenUpdate);
+  already_AddRefed<gfx::DrawTarget> LockWaylandBuffer(bool aCanSwitchBuffer);
   void UnlockWaylandBuffer();
 
   already_AddRefed<gfx::DrawTarget> LockImageSurface(
@@ -198,7 +195,10 @@ class WindowSurfaceWayland : public WindowSurface {
 
   
   nsWindow* mWindow;
-  LayoutDeviceIntRect mLastScreenRect;
+  
+  
+  
+  LayoutDeviceIntRect mBufferScreenRect;
   nsWaylandDisplay* mWaylandDisplay;
   WindowBackBuffer* mWaylandBuffer;
   LayoutDeviceIntRegion mWaylandBufferDamage;
@@ -211,7 +211,8 @@ class WindowSurfaceWayland : public WindowSurface {
   AutoTArray<WindowImageSurface, 30> mDelayedImageCommits;
   bool mDrawToWaylandBufferDirectly;
   bool mPendingCommit;
-  bool mWaylandBufferFullScreenDamage;
+  bool mWholeWindowBufferDamage;
+  bool mBufferNeedsClear;
   bool mIsMainThread;
   bool mNeedScaleFactorUpdate;
 
