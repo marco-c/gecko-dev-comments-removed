@@ -2953,9 +2953,6 @@ pref("layout.css.scroll-behavior.spring-constant", "250.0");
 pref("layout.css.scroll-behavior.damping-ratio", "1.0");
 
 
-pref("layout.css.ruby.intercharacter.enabled", false);
-
-
 
 
 

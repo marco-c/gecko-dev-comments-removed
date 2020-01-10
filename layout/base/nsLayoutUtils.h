@@ -2397,11 +2397,6 @@ class nsLayoutUtils {
 
   static bool GPUImageScalingEnabled();
 
-  
-
-
-  static bool IsInterCharacterRubyEnabled();
-
   static bool InterruptibleReflowEnabled() {
     return sInterruptibleReflowEnabled;
   }
