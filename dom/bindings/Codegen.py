@@ -1119,13 +1119,6 @@ class CGHeaders(CGWrapper):
         implementationIncludes = set(d.headerFile for d in descriptors if d.needsHeaderInclude())
 
         
-        interfacesImplementingSelf = set()
-        for d in descriptors:
-            interfacesImplementingSelf |= d.interface.interfacesImplementingSelf
-        implementationIncludes |= set(self.getDeclarationFilename(i) for i in
-                                      interfacesImplementingSelf)
-
-        
         
         bindingHeaders = set()
         declareIncludes = set(declareIncludes)
@@ -5780,8 +5773,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                 """,
                 typeName=typeName)
 
-        if (not descriptor.interface.isConsequential() and
-            not descriptor.interface.isExternal()):
+        if (not descriptor.interface.isExternal()):
             if failureCode is not None:
                 templateBody += str(CastableObjectUnwrapper(
                     descriptor,
@@ -5799,7 +5791,6 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                     isCallbackReturnValue,
                     firstCap(sourceDescription)))
         else:
-            
             
             
             
@@ -8866,10 +8857,6 @@ class CGAbstractBindingMethod(CGAbstractStaticMethod):
             JS::Rooted<JS::Value> rootSelf(cx, JS::ObjectValue(*obj));
             """)
 
-        
-        
-        
-        
         body += str(CastableObjectUnwrapper(
             self.descriptor,
             "rootSelf",

@@ -61,31 +61,6 @@ class nsRenamedInterface : public nsISupports, public nsWrapperCache {
 NS_DEFINE_STATIC_IID_ACCESSOR(nsRenamedInterface, NS_RENAMED_INTERFACE_IID)
 
 
-#define NS_INDIRECTLY_IMPLEMENTED_INTERFACE_IID      \
-  {                                                  \
-    0xfed55b69, 0x7012, 0x4849, {                    \
-      0xaf, 0x56, 0x4b, 0xa9, 0xee, 0x41, 0x30, 0x89 \
-    }                                                \
-  }
-
-class IndirectlyImplementedInterface : public nsISupports,
-                                       public nsWrapperCache {
- public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_INDIRECTLY_IMPLEMENTED_INTERFACE_IID)
-  NS_DECL_ISUPPORTS
-
-  
-  virtual nsISupports* GetParentObject();
-
-  bool IndirectlyImplementedProperty();
-  void IndirectlyImplementedProperty(bool);
-  void IndirectlyImplementedMethod();
-};
-
-NS_DEFINE_STATIC_IID_ACCESSOR(IndirectlyImplementedInterface,
-                              NS_INDIRECTLY_IMPLEMENTED_INTERFACE_IID)
-
-
 #define NS_TEST_EXTERNAL_INTERFACE_IID               \
   {                                                  \
     0xd5ba0c99, 0x9b1d, 0x4e71, {                    \
@@ -135,7 +110,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   static already_AddRefed<TestInterface> Constructor(const GlobalObject&,
                                                      TestInterface*);
   static already_AddRefed<TestInterface> Constructor(
-      const GlobalObject&, uint32_t, IndirectlyImplementedInterface&);
+      const GlobalObject&, uint32_t, TestInterface&);
 
   static already_AddRefed<TestInterface> Constructor(const GlobalObject&,
                                                      Date&);
@@ -342,21 +317,6 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ReceiveNullableNonWrapperCacheInterfaceNullableSequence(
       Nullable<nsTArray<RefPtr<TestNonWrapperCacheInterface>>>&);
 
-  already_AddRefed<IndirectlyImplementedInterface> ReceiveOther();
-  already_AddRefed<IndirectlyImplementedInterface> ReceiveNullableOther();
-  IndirectlyImplementedInterface* ReceiveWeakOther();
-  IndirectlyImplementedInterface* ReceiveWeakNullableOther();
-  void PassOther(IndirectlyImplementedInterface&);
-  void PassNullableOther(IndirectlyImplementedInterface*);
-  already_AddRefed<IndirectlyImplementedInterface> NonNullOther();
-  void SetNonNullOther(IndirectlyImplementedInterface&);
-  already_AddRefed<IndirectlyImplementedInterface> GetNullableOther();
-  void SetNullableOther(IndirectlyImplementedInterface*);
-  void PassOptionalOther(const Optional<IndirectlyImplementedInterface*>&);
-  void PassOptionalNonNullOther(
-      const Optional<NonNull<IndirectlyImplementedInterface>>&);
-  void PassOptionalOtherWithDefault(IndirectlyImplementedInterface*);
-
   already_AddRefed<TestExternalInterface> ReceiveExternal();
   already_AddRefed<TestExternalInterface> ReceiveNullableExternal();
   TestExternalInterface* ReceiveWeakExternal();
@@ -386,10 +346,6 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalNonNullCallbackInterface(
       const Optional<OwningNonNull<TestCallbackInterface>>&);
   void PassOptionalCallbackInterfaceWithDefault(TestCallbackInterface*);
-
-  already_AddRefed<IndirectlyImplementedInterface>
-  ReceiveConsequentialInterface();
-  void PassConsequentialInterface(IndirectlyImplementedInterface&);
 
   
   void GetReadonlySequence(nsTArray<int32_t>&);
@@ -1087,16 +1043,9 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void NonEnumerableMethod();
 
   
-  bool ImplementedProperty();
-  void SetImplementedProperty(bool);
-  void ImplementedMethod();
-  bool ImplementedParentProperty();
-  void SetImplementedParentProperty(bool);
-  void ImplementedParentMethod();
-  bool IndirectlyImplementedProperty();
-  void SetIndirectlyImplementedProperty(bool);
-  void IndirectlyImplementedMethod();
-  uint32_t DiamondImplementedProperty();
+  bool MixedInProperty();
+  void SetMixedInProperty(bool);
+  void MixedInMethod();
 
   
   void DontEnforceRangeOrClamp(int8_t);
@@ -1237,9 +1186,6 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalUnsignedLongLong(Optional<uint64_t>&) = delete;
   void PassOptionalSelf(Optional<TestInterface*>&) = delete;
   void PassOptionalNonNullSelf(Optional<NonNull<TestInterface>>&) = delete;
-  void PassOptionalOther(Optional<IndirectlyImplementedInterface*>&);
-  void PassOptionalNonNullOther(
-      Optional<NonNull<IndirectlyImplementedInterface>>&);
   void PassOptionalExternal(Optional<TestExternalInterface*>&) = delete;
   void PassOptionalNonNullExternal(Optional<TestExternalInterface*>&) = delete;
   void PassOptionalSequence(Optional<Sequence<int32_t>>&) = delete;
@@ -1313,10 +1259,6 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassSelf(OwningNonNull<TestInterface>&) = delete;
   void PassSelf(const NonNull<TestInterface>&) = delete;
   void PassSelf(const OwningNonNull<TestInterface>&) = delete;
-  void PassOther(NonNull<IndirectlyImplementedInterface>&) = delete;
-  void PassOther(const NonNull<IndirectlyImplementedInterface>&) = delete;
-  void PassOther(OwningNonNull<IndirectlyImplementedInterface>&) = delete;
-  void PassOther(const OwningNonNull<IndirectlyImplementedInterface>&) = delete;
   void PassCallbackInterface(OwningNonNull<TestCallbackInterface>&) = delete;
   void PassCallbackInterface(const OwningNonNull<TestCallbackInterface>&) =
       delete;
@@ -1580,7 +1522,7 @@ class TestThrowingConstructorInterface : public nsISupports,
   static already_AddRefed<TestThrowingConstructorInterface> Constructor(
       const GlobalObject&, TestInterface*, ErrorResult&);
   static already_AddRefed<TestThrowingConstructorInterface> Constructor(
-      const GlobalObject&, uint32_t, IndirectlyImplementedInterface&,
+      const GlobalObject&, uint32_t, TestInterface&,
       ErrorResult&);
 
   static already_AddRefed<TestThrowingConstructorInterface> Constructor(

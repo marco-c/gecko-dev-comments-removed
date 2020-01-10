@@ -533,9 +533,6 @@ class IDLExternalInterface(IDLObjectWithIdentifier, IDLExposureMixins):
     def isInterface(self):
         return True
 
-    def isConsequential(self):
-        return False
-
     def addExtendedAttributes(self, attrs):
         if len(attrs) != 0:
             raise WebIDLError("There are no extended attributes that are "
@@ -876,16 +873,11 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         
         self.namedConstructors = list()
         self.legacyWindowAliases = []
-        self.implementedInterfaces = set()
         self.includedMixins = set()
-        self._consequential = False
         
         
         
         self.interfacesBasedOnSelf = set([self])
-        
-        
-        self.interfacesImplementingSelf = set()
         self._hasChildInterfaces = False
         self._isOnGlobalProtoChain = False
         
@@ -1021,8 +1013,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
 
             
             
-            
-            
             if self.isCallback():
                 if not self.parent.isCallback():
                     raise WebIDLError("Callback interface %s inheriting from "
@@ -1059,23 +1049,14 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                                    self.parent.identifier.name),
                                   [self.location, self.parent.location])
 
-        for iface in self.implementedInterfaces:
-            iface.finish(scope)
         for mixin in self.includedMixins:
             mixin.finish(scope)
 
         cycleInGraph = self.findInterfaceLoopPoint(self)
         if cycleInGraph:
-            raise WebIDLError("Interface %s has itself as ancestor or "
-                              "implemented interface" % self.identifier.name,
-                              [self.location, cycleInGraph.location])
-
-        if self.isCallback():
-            
-            
-            assert len(self.getConsequentialInterfaces()) == 0
-            
-            assert not self.isConsequential()
+            raise WebIDLError(
+                "Interface %s has itself as ancestor" % self.identifier.name,
+                [self.location, cycleInGraph.location])
 
         self.finishMembers(scope)
 
@@ -1118,41 +1099,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         
         self.originalMembers = list(self.members)
 
-        
-        
-        
-        for iface in sorted(self.getConsequentialInterfaces(),
-                            key=lambda x: x.identifier.name):
-            
-            iface.setIsConsequentialInterfaceOf(self)
-            
-            if not self.exposureSet.issubset(iface.exposureSet):
-                raise WebIDLError("Interface %s is exposed in globals where its "
-                                  "consequential interface %s is not exposed." %
-                                  (self.identifier.name, iface.identifier.name),
-                                  [self.location, iface.location])
-
-            
-            
-            if iface.maplikeOrSetlikeOrIterable and self.maplikeOrSetlikeOrIterable:
-                raise WebIDLError("Maplike/setlike/iterable interface %s cannot have "
-                                  "maplike/setlike/iterable interface %s as a "
-                                  "consequential interface" %
-                                  (self.identifier.name,
-                                   iface.identifier.name),
-                                  [self.maplikeOrSetlikeOrIterable.location,
-                                   iface.maplikeOrSetlikeOrIterable.location])
-            additionalMembers = iface.originalMembers
-            for additionalMember in additionalMembers:
-                for member in self.members:
-                    if additionalMember.identifier.name == member.identifier.name:
-                        raise WebIDLError(
-                            "Multiple definitions of %s on %s coming from 'implements' statements" %
-                            (member.identifier.name, self),
-                            [additionalMember.location, member.location])
-            self.members.extend(additionalMembers)
-            iface.interfacesImplementingSelf.add(self)
-
         for mixin in sorted(self.includedMixins,
                             key=lambda x: x.identifier.name):
             self.members.extend(mixin.members)
@@ -1168,8 +1114,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                                    ancestor.identifier.name),
                                   [self.maplikeOrSetlikeOrIterable.location,
                                    ancestor.maplikeOrSetlikeOrIterable.location])
-            for ancestorConsequential in ancestor.getConsequentialInterfaces():
-                ancestorConsequential.interfacesBasedOnSelf.add(self)
 
         
         
@@ -1240,7 +1184,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                     self._ownMembersInSlots += 1
 
         if self.parent:
-            
             
             
             
@@ -1381,17 +1324,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                     raise WebIDLError("conflicting [%s=%s] definitions" %
                                       (attributeName, name),
                                       [member.location, m.location])
-
-        
-        
-        
-        if self.getExtendedAttribute("Unforgeable") and self.isConsequential():
-            raise WebIDLError(
-                "%s is an unforgeable consequential interface" %
-                self.identifier.name,
-                [self.location] +
-                list(i.location for i in
-                     (self.interfacesBasedOnSelf - {self})))
 
         
         if self.getExtendedAttribute("Unforgeable") and self.hasChildInterfaces():
@@ -1551,13 +1483,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
     def isExternal(self):
         return False
 
-    def setIsConsequentialInterfaceOf(self, other):
-        self._consequential = True
-        self.interfacesBasedOnSelf.add(other)
-
-    def isConsequential(self):
-        return self._consequential
-
     def setCallback(self, value):
         self._callback = value
 
@@ -1572,8 +1497,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
             not self.isJSImplemented() and
             
             not self.parent and
-            
-            len(self.getConsequentialInterfaces()) == 0 and
             
             not any(m.isAttr() for m in self.members) and
             
@@ -1601,10 +1524,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         return (not self.isCallback() and not self.isNamespace()
                 and self.getUserData('hasConcreteDescendant', False))
 
-    def addImplementedInterface(self, implementedInterface):
-        assert(isinstance(implementedInterface, IDLInterface))
-        self.implementedInterfaces.add(implementedInterface)
-
     def addIncludedMixin(self, includedMixin):
         assert(isinstance(includedMixin, IDLInterfaceMixin))
         self.includedMixins.add(includedMixin)
@@ -1622,27 +1541,10 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         parentInterfaces.insert(0, self.parent)
         return parentInterfaces
 
-    def getConsequentialInterfaces(self):
-        assert(self._finished)
-        
-        consequentialInterfaces = set(self.implementedInterfaces)
-
-        
-        for iface in self.implementedInterfaces:
-            consequentialInterfaces |= set(iface.getInheritedInterfaces())
-
-        
-        temp = set()
-        for iface in consequentialInterfaces:
-            temp |= iface.getConsequentialInterfaces()
-
-        return consequentialInterfaces | temp
-
     def findInterfaceLoopPoint(self, otherInterface):
         """
-        Finds an interface, amongst our ancestors and consequential interfaces,
-        that inherits from otherInterface or implements otherInterface
-        directly.  If there is no such interface, returns None.
+        Finds an interface amongst our ancestors that inherits from otherInterface.
+        If there is no such interface, returns None.
         """
         if self.parent:
             if self.parent == otherInterface:
@@ -1650,13 +1552,8 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
             loopPoint = self.parent.findInterfaceLoopPoint(otherInterface)
             if loopPoint:
                 return loopPoint
-        if otherInterface in self.implementedInterfaces:
-            return self
-        for iface in self.implementedInterfaces:
-            loopPoint = iface.findInterfaceLoopPoint(otherInterface)
-            if loopPoint:
-                return loopPoint
         return None
+
     def setNonPartial(self, location, parent, members):
         assert not parent or isinstance(parent, IDLIdentifierPlaceholder)
         IDLInterfaceOrInterfaceMixinOrNamespace.setNonPartial(self, location, members)
@@ -1690,7 +1587,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
 
     def _getDependentObjects(self):
         deps = set(self.members)
-        deps.update(self.implementedInterfaces)
         deps.update(self.includedMixins)
         if self.parent:
             deps.add(self.parent)
@@ -5548,52 +5444,6 @@ class IDLConstructor(IDLMethod):
             [IDLExtendedAttribute(self.location, ("NewObject",))])
 
 
-class IDLImplementsStatement(IDLObject):
-    def __init__(self, location, implementor, implementee):
-        IDLObject.__init__(self, location)
-        self.implementor = implementor
-        self.implementee = implementee
-        self._finished = False
-
-    def finish(self, scope):
-        if self._finished:
-            return
-        assert(isinstance(self.implementor, IDLIdentifierPlaceholder))
-        assert(isinstance(self.implementee, IDLIdentifierPlaceholder))
-        implementor = self.implementor.finish(scope)
-        implementee = self.implementee.finish(scope)
-        
-        
-        
-        if not isinstance(implementor, IDLInterface):
-            raise WebIDLError("Left-hand side of 'implements' is not an "
-                              "interface",
-                              [self.implementor.location])
-        if implementor.isCallback():
-            raise WebIDLError("Left-hand side of 'implements' is a callback "
-                              "interface",
-                              [self.implementor.location])
-        if not isinstance(implementee, IDLInterface):
-            raise WebIDLError("Right-hand side of 'implements' is not an "
-                              "interface",
-                              [self.implementee.location])
-        if implementee.isCallback():
-            raise WebIDLError("Right-hand side of 'implements' is a callback "
-                              "interface",
-                              [self.implementee.location])
-        implementor.addImplementedInterface(implementee)
-        self.implementor = implementor
-        self.implementee = implementee
-
-    def validate(self):
-        pass
-
-    def addExtendedAttributes(self, attrs):
-        if len(attrs) != 0:
-            raise WebIDLError("There are no extended attributes that are "
-                              "allowed on implements statements",
-                              [attrs[0].location, self.location])
-
 class IDLIncludesStatement(IDLObject):
     def __init__(self, location, interface, mixin):
         IDLObject.__init__(self, location)
@@ -5743,7 +5593,6 @@ class Tokenizer(object):
         "enum": "ENUM",
         "callback": "CALLBACK",
         "typedef": "TYPEDEF",
-        "implements": "IMPLEMENTS",
         "includes": "INCLUDES",
         "const": "CONST",
         "null": "NULL",
@@ -5907,7 +5756,6 @@ class Parser(Tokenizer):
                        | Exception
                        | Enum
                        | Typedef
-                       | ImplementsStatement
                        | IncludesStatement
         """
         p[0] = p[1]
@@ -6440,16 +6288,6 @@ class Parser(Tokenizer):
                              p[2], p[3])
         p[0] = typedef
 
-    def p_ImplementsStatement(self, p):
-        """
-            ImplementsStatement : ScopedName IMPLEMENTS ScopedName SEMICOLON
-        """
-        assert(p[2] == "implements")
-        implementor = IDLIdentifierPlaceholder(self.getLocation(p, 1), p[1])
-        implementee = IDLIdentifierPlaceholder(self.getLocation(p, 3), p[3])
-        p[0] = IDLImplementsStatement(self.getLocation(p, 1), implementor,
-                                      implementee)
-
     def p_IncludesStatement(self, p):
         """
             IncludesStatement : ScopedName INCLUDES ScopedName SEMICOLON
@@ -6911,7 +6749,6 @@ class Parser(Tokenizer):
                          | ENUM
                          | EXCEPTION
                          | GETTER
-                         | IMPLEMENTS
                          | INHERIT
                          | INTERFACE
                          | ITERABLE
@@ -7038,7 +6875,6 @@ class Parser(Tokenizer):
                   | FALSE
                   | FLOAT
                   | GETTER
-                  | IMPLEMENTS
                   | INHERIT
                   | INTERFACE
                   | LONG
@@ -7583,17 +7419,10 @@ class Parser(Tokenizer):
         
         
         
-        implementsStatements = [p for p in self._productions if
-                                isinstance(p, IDLImplementsStatement)]
-        
-        
         includesStatements = [p for p in self._productions if
                                 isinstance(p, IDLIncludesStatement)]
         otherStatements = [p for p in self._productions if
-                           not isinstance(p, (IDLImplementsStatement,
-                                              IDLIncludesStatement))]
-        for production in implementsStatements:
-            production.finish(self.globalScope())
+                           not isinstance(p, IDLIncludesStatement)]
         for production in includesStatements:
             production.finish(self.globalScope())
         for production in otherStatements:

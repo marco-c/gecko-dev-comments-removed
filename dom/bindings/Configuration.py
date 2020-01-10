@@ -2,7 +2,7 @@
 
 
 
-from WebIDL import IDLImplementsStatement, IDLIncludesStatement
+from WebIDL import IDLIncludesStatement
 import os
 from collections import defaultdict
 
@@ -46,31 +46,9 @@ class Configuration(DescriptorProvider):
         self.descriptors = []
         self.interfaces = {}
         self.descriptorsByName = {}
-        self.optimizedOutDescriptorNames = set()
         self.generatedEvents = generatedEvents
         self.maxProtoChainLength = 0
         for thing in parseData:
-            if isinstance(thing, IDLImplementsStatement):
-                
-                
-                
-                
-                
-                
-                
-                
-                if (thing.implementor.filename() != thing.filename() and
-                    thing.implementee.identifier.name != "LegacyQueryInterface"):
-                    raise TypeError(
-                        "The binding build system doesn't really support "
-                        "'implements' statements which don't appear in the "
-                        "file in which the left-hand side of the statement is "
-                        "defined.  Don't do this unless your right-hand side "
-                        "is LegacyQueryInterface.\n"
-                        "%s\n"
-                        "%s" %
-                        (thing.location, thing.implementor.location))
-
             if isinstance(thing, IDLIncludesStatement):
                 
                 
@@ -126,17 +104,10 @@ class Configuration(DescriptorProvider):
                         "%s" %
                         (webRoots, iface.location))
             self.interfaces[iface.identifier.name] = iface
-            if iface.identifier.name not in config:
-                
-                
-                
-                if iface.isConsequential() and not iface.hasInterfaceObject():
-                    self.optimizedOutDescriptorNames.add(iface.identifier.name)
-                    continue
-                entry = {}
-            else:
-                entry = config[iface.identifier.name]
+
+            entry = config.get(iface.identifier.name, {})
             assert not isinstance(entry, list)
+
             desc = Descriptor(self, iface, entry)
             self.descriptors.append(desc)
             
@@ -291,12 +262,6 @@ class Configuration(DescriptorProvider):
         if d:
             return d
 
-        if interfaceName in self.optimizedOutDescriptorNames:
-            raise NoSuchDescriptorError(
-                "No descriptor for '%s', which is a mixin ([NoInterfaceObject] "
-                "and a consequential interface) without an explicit "
-                "Bindings.conf annotation." % interfaceName)
-
         raise NoSuchDescriptorError("For " + interfaceName + " found no matches")
 
 
@@ -410,10 +375,6 @@ class Descriptor(DescriptorProvider):
         
         concreteDefault = (not self.interface.isExternal() and
                            not self.interface.isCallback() and
-                           
-                           
-                           
-                           not self.interface.isConsequential() and
                            not self.interface.isNamespace() and
                            
                            
