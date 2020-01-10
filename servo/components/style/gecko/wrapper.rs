@@ -300,7 +300,10 @@ impl<'ln> GeckoNode<'ln> {
     fn flattened_tree_parent_is_parent(&self) -> bool {
         use crate::gecko_bindings::structs::*;
         let flags = self.flags();
-        if !self.is_in_shadow_tree() {
+
+        
+        
+        if self.is_in_shadow_tree() {
             return false;
         }
 
