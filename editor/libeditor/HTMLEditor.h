@@ -1513,6 +1513,16 @@ class HTMLEditor final : public TextEditor,
     }
   }
 
+  
+
+
+
+
+
+
+  Element* GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
+      nsINode& aNode);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

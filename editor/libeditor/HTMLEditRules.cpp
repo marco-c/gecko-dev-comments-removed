@@ -4097,8 +4097,24 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
 
   
   
-
-  LookInsideDivBQandList(arrayOfNodes);
+  if (arrayOfNodes.Length() == 1) {
+    if (Element* deepestDivBlockquoteOrListElement =
+            HTMLEditorRef()
+                .GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
+                    arrayOfNodes[0])) {
+      if (deepestDivBlockquoteOrListElement->IsAnyOfHTMLElements(
+              nsGkAtoms::div, nsGkAtoms::blockquote)) {
+        arrayOfNodes.Clear();
+        HTMLEditorRef().CollectChildren(*deepestDivBlockquoteOrListElement,
+                                        arrayOfNodes, 0,
+                                        HTMLEditor::CollectListChildren::No,
+                                        HTMLEditor::CollectTableChildren::No);
+      } else {
+        arrayOfNodes.ReplaceElementAt(
+            0, OwningNonNull<nsINode>(*deepestDivBlockquoteOrListElement));
+      }
+    }
+  }
 
   
   
@@ -7630,55 +7646,50 @@ nsresult HTMLEditRules::GetListActionNodes(
 
   
   
-  LookInsideDivBQandList(aOutArrayOfNodes);
+  if (aOutArrayOfNodes.Length() != 1) {
+    return NS_OK;
+  }
 
+  Element* deepestDivBlockquoteOrListElement =
+      HTMLEditorRef().GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
+          aOutArrayOfNodes[0]);
+  if (!deepestDivBlockquoteOrListElement) {
+    return NS_OK;
+  }
+
+  if (deepestDivBlockquoteOrListElement->IsAnyOfHTMLElements(
+          nsGkAtoms::div, nsGkAtoms::blockquote)) {
+    aOutArrayOfNodes.Clear();
+    HTMLEditorRef().CollectChildren(*deepestDivBlockquoteOrListElement,
+                                    aOutArrayOfNodes, 0,
+                                    HTMLEditor::CollectListChildren::No,
+                                    HTMLEditor::CollectTableChildren::No);
+    return NS_OK;
+  }
+
+  aOutArrayOfNodes.ReplaceElementAt(
+      0, OwningNonNull<nsINode>(*deepestDivBlockquoteOrListElement));
   return NS_OK;
 }
 
-void HTMLEditRules::LookInsideDivBQandList(
-    nsTArray<OwningNonNull<nsINode>>& aNodeArray) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  
-  if (aNodeArray.Length() != 1) {
-    return;
+Element* HTMLEditor::GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
+    nsINode& aNode) {
+  if (!aNode.IsElement()) {
+    return nullptr;
   }
-
-  OwningNonNull<nsINode> curNode = aNodeArray[0];
-
-  while (curNode->IsHTMLElement(nsGkAtoms::div) ||
-         HTMLEditUtils::IsList(curNode) ||
-         curNode->IsHTMLElement(nsGkAtoms::blockquote)) {
-    
-    uint32_t numChildren = HTMLEditorRef().CountEditableChildren(curNode);
-    if (numChildren != 1) {
-      break;
+  
+  Element* parentElement = nullptr;
+  for (nsIContent* content = aNode.AsContent();
+       content && content->IsElement() &&
+       (content->IsAnyOfHTMLElements(nsGkAtoms::div, nsGkAtoms::blockquote) ||
+        HTMLEditUtils::IsList(content));
+       content = content->GetFirstChild()) {
+    if (CountEditableChildren(content) != 1) {
+      return content->AsElement();
     }
-
-    
-    nsCOMPtr<nsIContent> child = curNode->GetFirstChild();
-    if (!child->IsHTMLElement(nsGkAtoms::div) &&
-        !HTMLEditUtils::IsList(child) &&
-        !child->IsHTMLElement(nsGkAtoms::blockquote)) {
-      break;
-    }
-
-    
-    curNode = child;
+    parentElement = content->AsElement();
   }
-
-  
-  
-  aNodeArray.RemoveElementAt(0);
-  if (curNode->IsAnyOfHTMLElements(nsGkAtoms::div, nsGkAtoms::blockquote)) {
-    HTMLEditorRef().CollectChildren(*curNode, aNodeArray, 0,
-                                    HTMLEditor::CollectListChildren::No,
-                                    HTMLEditor::CollectTableChildren::No);
-    return;
-  }
-
-  aNodeArray.AppendElement(*curNode);
+  return parentElement;
 }
 
 void HTMLEditRules::GetDefinitionListItemTypes(dom::Element* aElement,
