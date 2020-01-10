@@ -19,22 +19,6 @@ const MAX_DATA_URL_LENGTH = 40;
 
 const Services = require("Services");
 
-loader.lazyImporter(
-  this,
-  "findCssSelector",
-  "resource://gre/modules/css-selector.js"
-);
-loader.lazyImporter(
-  this,
-  "findAllCssSelectors",
-  "resource://gre/modules/css-selector.js"
-);
-loader.lazyImporter(
-  this,
-  "getCssPath",
-  "resource://gre/modules/css-selector.js"
-);
-loader.lazyImporter(this, "getXPath", "resource://gre/modules/css-selector.js");
 loader.lazyRequireGetter(
   this,
   "getCSSLexer",
@@ -47,7 +31,7 @@ loader.lazyRequireGetter(
   "devtools/shared/indentation",
   true
 );
-
+const { getRootBindingParent } = require("devtools/shared/layout/utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const styleInspectorL10N = new LocalizationHelper(
   "devtools/shared/locales/styleinspector.properties"
@@ -500,38 +484,6 @@ exports.prettifyCSS = prettifyCSS;
 
 
 
-exports.findCssSelector = findCssSelector;
-
-
-
-
-
-
-
-
-
-exports.findAllCssSelectors = findAllCssSelectors;
-
-
-
-
-
-
-
-exports.getCssPath = getCssPath;
-
-
-
-
-
-
-exports.getXPath = getXPath;
-
-
-
-
-
-
 
 
 
@@ -585,3 +537,298 @@ function hasVisitedState(node) {
   );
 }
 exports.hasVisitedState = hasVisitedState;
+
+
+
+
+
+function getShadowRoot(node) {
+  const doc = node.ownerDocument;
+  if (!doc) {
+    return null;
+  }
+
+  const parent = doc.getBindingParent(node);
+  const shadowRoot = parent && parent.openOrClosedShadowRoot;
+  if (shadowRoot) {
+    return shadowRoot;
+  }
+
+  return null;
+}
+
+
+
+
+
+function positionInNodeList(element, nodeList) {
+  for (let i = 0; i < nodeList.length; i++) {
+    if (element === nodeList[i]) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+
+
+
+
+
+function findNodeAndContainer(node) {
+  const shadowRoot = getShadowRoot(node);
+  if (shadowRoot) {
+    
+    
+    return {
+      containingDocOrShadow: shadowRoot,
+      node,
+    };
+  }
+
+  
+  
+  const bindingParent = getRootBindingParent(node);
+  return {
+    containingDocOrShadow: bindingParent.ownerDocument,
+    node: bindingParent,
+  };
+}
+
+
+
+
+
+
+
+const findCssSelector = function(ele) {
+  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
+  ele = node;
+
+  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
+    
+    return "";
+  }
+
+  const cssEscape = ele.ownerGlobal.CSS.escape;
+
+  
+  if (
+    ele.id &&
+    containingDocOrShadow.querySelectorAll("#" + cssEscape(ele.id)).length === 1
+  ) {
+    return "#" + cssEscape(ele.id);
+  }
+
+  
+  const tagName = ele.localName;
+  if (tagName === "html") {
+    return "html";
+  }
+  if (tagName === "head") {
+    return "head";
+  }
+  if (tagName === "body") {
+    return "body";
+  }
+
+  
+  let selector, index, matches;
+  for (let i = 0; i < ele.classList.length; i++) {
+    
+    selector = "." + cssEscape(ele.classList.item(i));
+    matches = containingDocOrShadow.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
+    }
+    
+    selector = cssEscape(tagName) + selector;
+    matches = containingDocOrShadow.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
+    }
+    
+    index = positionInNodeList(ele, ele.parentNode.children) + 1;
+    selector = selector + ":nth-child(" + index + ")";
+    matches = containingDocOrShadow.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
+    }
+  }
+
+  
+  index = positionInNodeList(ele, ele.parentNode.children) + 1;
+  selector = cssEscape(tagName) + ":nth-child(" + index + ")";
+  if (ele.parentNode !== containingDocOrShadow) {
+    selector = findCssSelector(ele.parentNode) + " > " + selector;
+  }
+  return selector;
+};
+exports.findCssSelector = findCssSelector;
+
+
+
+
+
+function getSelectorParent(node) {
+  const shadowRoot = getShadowRoot(node);
+  if (shadowRoot) {
+    
+    return shadowRoot.host;
+  }
+
+  
+  return node.ownerGlobal.frameElement;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const findAllCssSelectors = function(node) {
+  const selectors = [];
+  while (node) {
+    selectors.unshift(findCssSelector(node));
+    node = getSelectorParent(node);
+  }
+
+  return selectors;
+};
+exports.findAllCssSelectors = findAllCssSelectors;
+
+
+
+
+
+
+
+
+function getCssPath(ele) {
+  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
+  ele = node;
+  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
+    
+    return "";
+  }
+
+  const nodeGlobal = ele.ownerGlobal.Node;
+
+  const getElementSelector = element => {
+    if (!element.localName) {
+      return "";
+    }
+
+    let label =
+      element.nodeName == element.nodeName.toUpperCase()
+        ? element.localName.toLowerCase()
+        : element.localName;
+
+    if (element.id) {
+      label += "#" + element.id;
+    }
+
+    if (element.classList) {
+      for (const cl of element.classList) {
+        label += "." + cl;
+      }
+    }
+
+    return label;
+  };
+
+  const paths = [];
+
+  while (ele) {
+    if (!ele || ele.nodeType !== nodeGlobal.ELEMENT_NODE) {
+      break;
+    }
+
+    paths.splice(0, 0, getElementSelector(ele));
+    ele = ele.parentNode;
+  }
+
+  return paths.length ? paths.join(" ") : "";
+}
+exports.getCssPath = getCssPath;
+
+
+
+
+
+
+
+function getXPath(ele) {
+  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
+  ele = node;
+  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
+    
+    return "";
+  }
+
+  
+  if (ele.id) {
+    return `//*[@id="${ele.id}"]`;
+  }
+
+  
+  const parts = [];
+
+  const nodeGlobal = ele.ownerGlobal.Node;
+  
+  while (ele && ele.nodeType === nodeGlobal.ELEMENT_NODE) {
+    let nbOfPreviousSiblings = 0;
+    let hasNextSiblings = false;
+
+    
+    let sibling = ele.previousSibling;
+    while (sibling) {
+      
+      if (
+        sibling.nodeType !== nodeGlobal.DOCUMENT_TYPE_NODE &&
+        sibling.nodeName == ele.nodeName
+      ) {
+        nbOfPreviousSiblings++;
+      }
+
+      sibling = sibling.previousSibling;
+    }
+
+    
+    sibling = ele.nextSibling;
+    while (sibling) {
+      if (sibling.nodeName == ele.nodeName) {
+        hasNextSiblings = true;
+        break;
+      }
+      sibling = sibling.nextSibling;
+    }
+
+    const prefix = ele.prefix ? ele.prefix + ":" : "";
+    const nth =
+      nbOfPreviousSiblings || hasNextSiblings
+        ? `[${nbOfPreviousSiblings + 1}]`
+        : "";
+
+    parts.push(prefix + ele.localName + nth);
+
+    ele = ele.parentNode;
+  }
+
+  return parts.length ? "/" + parts.reverse().join("/") : "";
+}
+exports.getXPath = getXPath;
