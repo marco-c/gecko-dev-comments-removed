@@ -4731,6 +4731,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "layout.css.text-decoration-skip-ink.enabled",
+  layout_css_text_decoration_skip_ink_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
   "layout.css.column-span.enabled",
   layout_css_column_span_enabled,
   bool, false
@@ -7161,8 +7169,13 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   Once,
   "slider.snapMultiplier",
-   slider_snapMultiplier,
-  int32_t, 6
+  SliderSnapMultiplier,
+  int32_t,
+#ifdef XP_WIN
+  6
+#else
+  0
+#endif
 )
 
 
