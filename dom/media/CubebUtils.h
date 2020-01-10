@@ -23,9 +23,6 @@ typedef cubeb_devid AudioDeviceID;
 
 
 void InitLibrary();
-#  ifdef XP_LINUX
-void InitAudioThreads();
-#  endif
 
 
 
