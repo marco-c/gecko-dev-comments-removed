@@ -199,17 +199,18 @@ MOZ_MUST_USE bool js::ReadableStreamControllerCallPullIfNeeded(
     } else {
       
       {
-        AutoRealm ar(cx, &unwrappedPullMethod.toObject());
-        Rooted<Value> underlyingSource(cx, unwrappedUnderlyingSource);
-        if (!cx->compartment()->wrap(cx, &underlyingSource)) {
-          return false;
-        }
+        AutoRealm ar(cx, unwrappedController);
+
+        
+        
+        cx->check(unwrappedPullMethod);
+        cx->check(unwrappedUnderlyingSource);
+
         Rooted<Value> controller(cx, ObjectValue(*unwrappedController));
-        if (!cx->compartment()->wrap(cx, &controller)) {
-          return false;
-        }
-        pullPromise =
-            PromiseCall(cx, unwrappedPullMethod, underlyingSource, controller);
+        cx->check(controller);
+
+        pullPromise = PromiseCall(cx, unwrappedPullMethod,
+                                  unwrappedUnderlyingSource, controller);
         if (!pullPromise) {
           return false;
         }

@@ -337,8 +337,8 @@ MOZ_MUST_USE JSObject* js::ReadableStreamControllerCancelSteps(
     }
   }
 
-  Rooted<Value> unwrappedUnderlyingSource(cx);
-  unwrappedUnderlyingSource = unwrappedController->underlyingSource();
+  Rooted<Value> unwrappedUnderlyingSource(
+      cx, unwrappedController->underlyingSource());
 
   
   if (!ResetQueue(cx, unwrappedController)) {
@@ -397,11 +397,13 @@ MOZ_MUST_USE JSObject* js::ReadableStreamControllerCancelSteps(
     } else {
       
       {
-        AutoRealm ar(cx, &unwrappedCancelMethod.toObject());
-        Rooted<Value> underlyingSource(cx, unwrappedUnderlyingSource);
-        if (!cx->compartment()->wrap(cx, &underlyingSource)) {
-          return nullptr;
-        }
+        AutoRealm ar(cx, unwrappedController);
+
+        
+        
+        cx->check(unwrappedCancelMethod);
+        cx->check(unwrappedUnderlyingSource);
+
         Rooted<Value> wrappedReason(cx, reason);
         if (!cx->compartment()->wrap(cx, &wrappedReason)) {
           return nullptr;
@@ -409,8 +411,8 @@ MOZ_MUST_USE JSObject* js::ReadableStreamControllerCancelSteps(
 
         
         
-        result = PromiseCall(cx, unwrappedCancelMethod, underlyingSource,
-                             wrappedReason);
+        result = PromiseCall(cx, unwrappedCancelMethod,
+                             unwrappedUnderlyingSource, wrappedReason);
       }
       if (!cx->compartment()->wrap(cx, &result)) {
         result = nullptr;
