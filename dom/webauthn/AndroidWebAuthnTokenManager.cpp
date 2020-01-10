@@ -121,19 +121,11 @@ RefPtr<U2FRegisterPromise> AndroidWebAuthnTokenManager::Register(
             attestation = AttestationConveyancePreference::None;
           }
 
-          if (static_cast<uint32_t>(attestation) <
-              static_cast<uint32_t>(
-                  AttestationConveyancePreference::EndGuard_)) {
-            
-            
-            nsString attestPref;
-            const EnumEntry& attPrefEntry =
-                AttestationConveyancePreferenceValues::strings
-                    [static_cast<uint32_t>(attestation)];
-            attestPref.AssignASCII(attPrefEntry.value, attPrefEntry.length);
-            GECKOBUNDLE_PUT(authSelBundle, "attestationPreference",
-                            jni::StringParam(attestPref));
-          }
+          nsString attestPref;
+          attestPref.AssignASCII(
+              AttestationConveyancePreferenceValues::GetString(attestation));
+          GECKOBUNDLE_PUT(authSelBundle, "attestationPreference",
+                          jni::StringParam(attestPref));
 
           const WebAuthnAuthenticatorSelection& sel =
               extra.AuthenticatorSelection();
