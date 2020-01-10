@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cu } = require("chrome");
+const { Cu } = require("chrome");
 const Services = require("Services");
 const { Pool } = require("devtools/shared/protocol");
 const {
@@ -23,14 +23,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "ContentProcessTargetActor",
-  "devtools/server/actors/targets/content-process",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "ParentProcessTargetActor",
-  "devtools/server/actors/targets/parent-process",
+  "ProcessDescriptorActor",
+  "devtools/server/actors/descriptors/process",
   true
 );
 
@@ -123,7 +117,6 @@ function RootActor(connection, parameters) {
   this._globalActorPool = new LazyPool(this.conn);
 
   this._parentProcessTargetActor = null;
-  this._processActors = new Map();
 }
 
 RootActor.prototype = {
@@ -241,6 +234,9 @@ RootActor.prototype = {
     if (this._tabTargetActorPool) {
       this._tabTargetActorPool.destroy();
     }
+    if (this._processDescriptorActorPool) {
+      this._processDescriptorActorPool.destroy();
+    }
     if (this._globalActorPool) {
       this._globalActorPool.destroy();
     }
@@ -263,7 +259,6 @@ RootActor.prototype = {
     this._chromeWindowActorPool = null;
     this._parameters = null;
     this._parentProcessTargetActor = null;
-    this._processActors.clear();
   },
 
   
@@ -560,8 +555,25 @@ RootActor.prototype = {
       };
     }
     processList.onListChanged = this._onProcessListChanged;
+    const processes = processList.getList();
+    const pool = new Pool(this.conn);
+    for (const metadata of processes) {
+      let processDescriptor = this._getKnownProcessDescriptor(metadata.id);
+      if (!processDescriptor) {
+        processDescriptor = new ProcessDescriptorActor(this.conn, metadata);
+      }
+      pool.manage(processDescriptor);
+    }
+    
+    
+    if (this._processDescriptorActorPool) {
+      this._processDescriptorActorPool.destroy();
+    }
+    this._processDescriptorActorPool = pool;
+    
+    const processActors = [...this._processDescriptorActorPool.poolChildren()];
     return {
-      processes: processList.getList(),
+      processes: processActors.map(actor => actor.form()),
     };
   },
 
@@ -585,44 +597,8 @@ RootActor.prototype = {
     }
     
     
-    if (!("id" in request) || request.id === 0) {
-      
-      
-      
-      
-      
-      const env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      const isXpcshell = env.exists("XPCSHELL_TEST_PROFILE_DIR");
+    const id = request.id || 0;
 
-      if (
-        !isXpcshell &&
-        this._parentProcessTargetActor &&
-        (!this._parentProcessTargetActor.docShell ||
-          this._parentProcessTargetActor.docShell.isBeingDestroyed)
-      ) {
-        this._parentProcessTargetActor.destroy();
-        this._parentProcessTargetActor = null;
-      }
-      if (!this._parentProcessTargetActor) {
-        
-        if (isXpcshell) {
-          this._parentProcessTargetActor = new ContentProcessTargetActor(
-            this.conn
-          );
-        } else {
-          this._parentProcessTargetActor = new ParentProcessTargetActor(
-            this.conn
-          );
-        }
-        this._globalActorPool.manage(this._parentProcessTargetActor);
-      }
-
-      return { form: this._parentProcessTargetActor.form() };
-    }
-
-    const { id } = request;
     const mm = Services.ppmm.getChildAt(id);
     if (!mm) {
       return {
@@ -630,20 +606,28 @@ RootActor.prototype = {
         message: "There is no process with id '" + id + "'.",
       };
     }
-    let form = this._processActors.get(id);
-    if (form) {
-      return { form };
+    let processDescriptor = this._getKnownProcessDescriptor(id);
+    this._processDescriptorActorPool =
+      this._processDescriptorActorPool || new Pool(this.conn);
+    if (!processDescriptor) {
+      const options = { id, parent: id === 0 };
+      processDescriptor = new ProcessDescriptorActor(this.conn, options);
+      this._processDescriptorActorPool.manage(processDescriptor);
     }
-    const onDestroy = () => {
-      this._processActors.delete(id);
-    };
-    form = await DebuggerServer.connectToContentProcess(
-      this.conn,
-      mm,
-      onDestroy
-    );
-    this._processActors.set(id, form);
-    return { form };
+    return { form: processDescriptor.form() };
+  },
+
+  _getKnownProcessDescriptor(id) {
+    
+    if (!this._processDescriptorActorPool) {
+      return null;
+    }
+    for (const descriptor of this._processDescriptorActorPool.poolChildren()) {
+      if (descriptor.id === id) {
+        return descriptor;
+      }
+    }
+    return null;
   },
 
   
