@@ -5057,12 +5057,8 @@ pref("dom.event.default_to_passive_touch_listeners", true);
 
 pref("dom.events.testing.asyncClipboard", false);
 
-#ifdef NIGHTLY_BUILD
-  
-  pref("dom.datatransfer.mozAtAPIs", false);
-#else
-  pref("dom.datatransfer.mozAtAPIs", true);
-#endif
+
+pref("dom.datatransfer.mozAtAPIs", false);
 
 
 
