@@ -32,6 +32,14 @@
 
 namespace js {
 
+class AbstractGeneratorObject;
+class Breakpoint;
+class DebuggerMemory;
+class PromiseObject;
+class ScriptedOnStepHandler;
+class ScriptedOnPopHandler;
+class WasmInstanceObject;
+
 
 
 
@@ -79,13 +87,6 @@ enum class ResumeMode {
   Return,
 };
 
-class AbstractGeneratorObject;
-class Breakpoint;
-class DebuggerMemory;
-class PromiseObject;
-class ScriptedOnStepHandler;
-class ScriptedOnPopHandler;
-class WasmInstanceObject;
 
 typedef HashSet<WeakHeapPtrGlobalObject,
                 MovableCellHasher<WeakHeapPtrGlobalObject>, ZoneAllocPolicy>
