@@ -106,7 +106,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderBase {
 
   TokenPos pos();
   TokenPos pos(size_t startOffset);
-  size_t offset() const;
+  size_t offset() const { return current_ - start_; }
 
   
   void seek(size_t offset);
