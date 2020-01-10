@@ -297,11 +297,7 @@ FinderParent.prototype = {
         return;
       }
 
-      response = await this.sendQueryToContext(
-        "Finder:FindInFrame",
-        aArgs,
-        currentBC
-      );
+      response = await this.sendQueryToContext("Finder:Find", aArgs, currentBC);
 
       
       if (!response) {

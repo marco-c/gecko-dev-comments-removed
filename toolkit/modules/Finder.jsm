@@ -208,8 +208,14 @@ Finder.prototype = {
 
 
 
+
   fastFind(aSearchString, aLinksOnly, aDrawOutline) {
-    this._lastFindResult = this._fastFind.find(aSearchString, aLinksOnly);
+    this._lastFindResult = this._fastFind.find(
+      aSearchString,
+      aLinksOnly,
+      Ci.nsITypeAheadFind.FIND_INITIAL,
+      false
+    );
     let searchString = this._fastFind.searchString;
 
     let results = {
@@ -238,8 +244,17 @@ Finder.prototype = {
 
 
 
+
   findAgain(aSearchString, aFindBackwards, aLinksOnly, aDrawOutline) {
-    this._lastFindResult = this._fastFind.findAgain(aFindBackwards, aLinksOnly);
+    let mode = aFindBackwards
+      ? Ci.nsITypeAheadFind.FIND_PREVIOUS
+      : Ci.nsITypeAheadFind.FIND_NEXT;
+    this._lastFindResult = this._fastFind.find(
+      aFindBackwards,
+      aLinksOnly,
+      mode,
+      false
+    );
     let searchString = this._fastFind.searchString;
 
     let results = {
@@ -257,8 +272,20 @@ Finder.prototype = {
     return this._lastFindResult;
   },
 
-  findInFrame(options) {
-    this._lastFindResult = this._fastFind.findInFrame(
+  
+
+
+
+
+
+
+
+
+
+
+
+  find(options) {
+    this._lastFindResult = this._fastFind.find(
       options.searchString,
       options.linksOnly,
       options.mode,
