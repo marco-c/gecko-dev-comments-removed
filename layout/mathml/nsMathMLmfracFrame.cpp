@@ -10,6 +10,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsDisplayList.h"
@@ -103,28 +104,38 @@ nscoord nsMathMLmfracFrame::CalcLineThickness(nsPresContext* aPresContext,
   
   
   if (!aThicknessAttribute.IsEmpty()) {
-    if (aThicknessAttribute.EqualsLiteral("thin")) {
-      lineThickness = NSToCoordFloor(defaultThickness * THIN_FRACTION_LINE);
-      minimumThickness = onePixel * THIN_FRACTION_LINE_MINIMUM_PIXELS;
-      
-      
-      if (defaultThickness > onePixel &&
-          lineThickness > defaultThickness - onePixel)
-        lineThickness = defaultThickness - onePixel;
-    } else if (aThicknessAttribute.EqualsLiteral("medium")) {
-      
-    } else if (aThicknessAttribute.EqualsLiteral("thick")) {
-      lineThickness = NSToCoordCeil(defaultThickness * THICK_FRACTION_LINE);
-      minimumThickness = onePixel * THICK_FRACTION_LINE_MINIMUM_PIXELS;
-      
-      if (lineThickness < defaultThickness + onePixel)
-        lineThickness = defaultThickness + onePixel;
-    } else {
+    if (StaticPrefs::mathml_mfrac_linethickness_names_disabled()) {
       
       lineThickness = defaultThickness;
       ParseNumericValue(aThicknessAttribute, &lineThickness,
                         nsMathMLElement::PARSE_ALLOW_UNITLESS, aPresContext,
                         aComputedStyle, aFontSizeInflation);
+    } else {
+      if (aThicknessAttribute.EqualsLiteral("thin")) {
+        lineThickness = NSToCoordFloor(defaultThickness * THIN_FRACTION_LINE);
+        minimumThickness = onePixel * THIN_FRACTION_LINE_MINIMUM_PIXELS;
+        
+        
+        if (defaultThickness > onePixel &&
+            lineThickness > defaultThickness - onePixel) {
+          lineThickness = defaultThickness - onePixel;
+        }
+      } else if (aThicknessAttribute.EqualsLiteral("medium")) {
+        
+      } else if (aThicknessAttribute.EqualsLiteral("thick")) {
+        lineThickness = NSToCoordCeil(defaultThickness * THICK_FRACTION_LINE);
+        minimumThickness = onePixel * THICK_FRACTION_LINE_MINIMUM_PIXELS;
+        
+        if (lineThickness < defaultThickness + onePixel) {
+          lineThickness = defaultThickness + onePixel;
+        }
+      } else {
+        
+        lineThickness = defaultThickness;
+        ParseNumericValue(aThicknessAttribute, &lineThickness,
+                          nsMathMLElement::PARSE_ALLOW_UNITLESS, aPresContext,
+                          aComputedStyle, aFontSizeInflation);
+      }
     }
   }
 
