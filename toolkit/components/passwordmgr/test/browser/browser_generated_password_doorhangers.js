@@ -1024,7 +1024,7 @@ add_task(async function autosaved_login_updated_to_existing_login() {
 
       info("storage-change promises resolved");
       
-      verifyLogins([
+      let savedLogins = verifyLogins([
         {
           username: "user1",
           password: autoSavedLogin.password,
@@ -1043,11 +1043,14 @@ add_task(async function autosaved_login_updated_to_existing_login() {
       );
 
       
-      ok(
-        !LoginManagerParent._generatedPasswordsByPrincipalOrigin.has(
-          "https://example.com"
-        ),
-        "Generated password cache entry has been removed"
+      let updatedLogin = savedLogins[0];
+      passwordCacheEntry = LoginManagerParent._generatedPasswordsByPrincipalOrigin.get(
+        "https://example.com"
+      );
+      todo_is(
+        passwordCacheEntry.storageGUID,
+        updatedLogin.guid,
+        "Generated password cache entry points at the correct login"
       );
     }
   );
