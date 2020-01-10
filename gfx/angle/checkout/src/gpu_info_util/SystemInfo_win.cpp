@@ -14,8 +14,18 @@
 
 #include <windows.h>
 
-#include <d3d10.h>
-#include <dxgi.h>
+#if defined(GPU_INFO_USE_SETUPAPI)
+
+#    define NOTOOLBAR
+#    define NOTOOLTIPS
+#    include <cfgmgr32.h>
+#    include <setupapi.h>
+#elif defined(GPU_INFO_USE_DXGI)
+#    include <d3d10.h>
+#    include <dxgi.h>
+#else
+#    error "SystemInfo_win needs at least GPU_INFO_USE_SETUPAPI or GPU_INFO_USE_DXGI defined"
+#endif
 
 #include <array>
 #include <sstream>
@@ -25,6 +35,110 @@ namespace angle
 
 namespace
 {
+
+
+std::string GetPrimaryDisplayDeviceId()
+{
+    DISPLAY_DEVICEA displayDevice;
+    displayDevice.cb = sizeof(DISPLAY_DEVICEA);
+
+    for (int i = 0; EnumDisplayDevicesA(nullptr, i, &displayDevice, 0); ++i)
+    {
+        if (displayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+        {
+            return displayDevice.DeviceID;
+        }
+    }
+
+    return "";
+}
+
+#if defined(GPU_INFO_USE_SETUPAPI)
+
+std::string GetRegistryStringValue(HKEY key, const char *valueName)
+{
+    std::array<char, 255> value;
+    DWORD valueSize = sizeof(value);
+    if (RegQueryValueExA(key, valueName, nullptr, nullptr, reinterpret_cast<LPBYTE>(value.data()),
+                         &valueSize) == ERROR_SUCCESS)
+    {
+        return value.data();
+    }
+    return "";
+}
+
+
+
+
+bool GetDevicesFromRegistry(std::vector<GPUDeviceInfo> *devices)
+{
+    
+    
+    GUID displayClass = {
+        0x4d36e968, 0xe325, 0x11ce, {0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18}};
+
+    HDEVINFO deviceInfo = SetupDiGetClassDevsW(&displayClass, nullptr, nullptr, DIGCF_PRESENT);
+
+    if (deviceInfo == INVALID_HANDLE_VALUE)
+    {
+        return false;
+    }
+
+    
+    DWORD deviceIndex = 0;
+    SP_DEVINFO_DATA deviceData;
+    deviceData.cbSize = sizeof(deviceData);
+    while (SetupDiEnumDeviceInfo(deviceInfo, deviceIndex++, &deviceData))
+    {
+        
+        
+        char fullDeviceID[MAX_DEVICE_ID_LEN];
+        if (CM_Get_Device_IDA(deviceData.DevInst, fullDeviceID, MAX_DEVICE_ID_LEN, 0) != CR_SUCCESS)
+        {
+            continue;
+        }
+
+        GPUDeviceInfo device;
+
+        if (!CMDeviceIDToDeviceAndVendorID(fullDeviceID, &device.vendorId, &device.deviceId))
+        {
+            continue;
+        }
+
+        
+        std::array<WCHAR, 255> value;
+        if (!SetupDiGetDeviceRegistryPropertyW(deviceInfo, &deviceData, SPDRP_DRIVER, nullptr,
+                                               reinterpret_cast<PBYTE>(value.data()), sizeof(value),
+                                               nullptr))
+        {
+            continue;
+        }
+
+        std::wstring driverKey = L"System\\CurrentControlSet\\Control\\Class\\";
+        driverKey += value.data();
+
+        HKEY key;
+        if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, driverKey.c_str(), 0, KEY_QUERY_VALUE, &key) !=
+            ERROR_SUCCESS)
+        {
+            continue;
+        }
+
+        device.driverVersion = GetRegistryStringValue(key, "DriverVersion");
+        device.driverDate    = GetRegistryStringValue(key, "DriverDate");
+        device.driverVendor  = GetRegistryStringValue(key, "ProviderName");
+
+        RegCloseKey(key);
+
+        devices->push_back(device);
+    }
+
+    SetupDiDestroyDeviceInfoList(deviceInfo);
+
+    return true;
+}
+
+#elif defined(GPU_INFO_USE_DXGI)
 
 bool GetDevicesFromDXGI(std::vector<GPUDeviceInfo> *devices)
 {
@@ -71,29 +185,61 @@ bool GetDevicesFromDXGI(std::vector<GPUDeviceInfo> *devices)
 
     factory->Release();
 
-    return (i > 0);
+    return true;
 }
+
+#else
+#    error
+#endif
 
 }  
 
 bool GetSystemInfo(SystemInfo *info)
 {
+    
+    info->primaryDisplayDeviceId = GetPrimaryDisplayDeviceId();
+
+#if defined(GPU_INFO_USE_SETUPAPI)
+    if (!GetDevicesFromRegistry(&info->gpus))
+    {
+        return false;
+    }
+#elif defined(GPU_INFO_USE_DXGI)
     if (!GetDevicesFromDXGI(&info->gpus))
     {
         return false;
     }
+#else
+#    error
+#endif
 
     if (info->gpus.size() == 0)
     {
         return false;
     }
 
-    
-    FindActiveGPU(info);
+    FindPrimaryGPU(info);
 
     
-    
-    info->activeGPUIndex = 0;
+    uint32_t primaryVendorId = 0;
+    uint32_t primaryDeviceId = 0;
+
+    if (!CMDeviceIDToDeviceAndVendorID(info->primaryDisplayDeviceId, &primaryVendorId,
+                                       &primaryDeviceId))
+    {
+        return false;
+    }
+
+    bool foundPrimary = false;
+    for (size_t i = 0; i < info->gpus.size(); ++i)
+    {
+        if (info->gpus[i].vendorId == primaryVendorId && info->gpus[i].deviceId == primaryDeviceId)
+        {
+            info->primaryGPUIndex = static_cast<int>(i);
+            foundPrimary          = true;
+        }
+    }
+    ASSERT(foundPrimary);
 
     
     HMODULE nvd3d9wrap = GetModuleHandleW(L"nvd3d9wrap.dll");

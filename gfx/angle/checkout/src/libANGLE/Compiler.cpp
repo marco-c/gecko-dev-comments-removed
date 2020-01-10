@@ -22,18 +22,8 @@ namespace
 
 size_t gActiveCompilers = 0;
 
-ShShaderSpec SelectShaderSpec(GLint majorVersion,
-                              GLint minorVersion,
-                              bool isWebGL,
-                              EGLenum clientType)
+ShShaderSpec SelectShaderSpec(GLint majorVersion, GLint minorVersion, bool isWebGL)
 {
-    
-    if (clientType == EGL_OPENGL_API)
-    {
-        ASSERT(majorVersion == 3 && minorVersion == 3);
-        return SH_GL3_3_SPEC;
-    }
-
     if (majorVersion >= 3)
     {
         if (minorVersion == 1)
@@ -61,8 +51,7 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     : mImplementation(implFactory->createCompiler()),
       mSpec(SelectShaderSpec(state.getClientMajorVersion(),
                              state.getClientMinorVersion(),
-                             state.getExtensions().webglCompatibility,
-                             state.getClientType())),
+                             state.getExtensions().webglCompatibility)),
       mOutputType(mImplementation->getTranslatorOutputType()),
       mResources()
 {
@@ -96,17 +85,12 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     mResources.ARB_texture_rectangle           = extensions.textureRectangle;
     mResources.OES_texture_storage_multisample_2d_array =
         extensions.textureStorageMultisample2DArray;
-    mResources.OES_texture_3D                  = extensions.texture3DOES;
-    mResources.ANGLE_texture_multisample       = extensions.textureMultisample;
-    mResources.ANGLE_multi_draw                = extensions.multiDraw;
-    mResources.ANGLE_base_vertex_base_instance = extensions.baseVertexBaseInstance;
+    mResources.ANGLE_texture_multisample = extensions.textureMultisample;
+    mResources.ANGLE_multi_draw          = extensions.multiDraw;
 
     
     mResources.FragmentPrecisionHigh = 1;
     mResources.EXT_frag_depth        = extensions.fragDepth;
-
-    
-    mResources.OVR_multiview = extensions.multiview;
 
     
     mResources.OVR_multiview2 = extensions.multiview2;

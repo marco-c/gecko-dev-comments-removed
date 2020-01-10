@@ -21,8 +21,6 @@
 namespace angle
 {
 
-class WorkerThreadPool;
-
 
 class Closure
 {
@@ -43,7 +41,6 @@ class WaitableEvent : angle::NonCopyable
 
     
     virtual bool isReady() = 0;
-    void setWorkerThreadPool(std::shared_ptr<WorkerThreadPool> pool) { mPool = pool; }
 
     template <size_t Count>
     static void WaitMany(std::array<std::shared_ptr<WaitableEvent>, Count> *waitables)
@@ -54,17 +51,6 @@ class WaitableEvent : angle::NonCopyable
             (*waitables)[index]->wait();
         }
     }
-
-  private:
-    std::shared_ptr<WorkerThreadPool> mPool;
-};
-
-
-class WaitableEventDone final : public WaitableEvent
-{
-  public:
-    void wait() override;
-    bool isReady() override;
 };
 
 
@@ -76,17 +62,14 @@ class WorkerThreadPool : angle::NonCopyable
     virtual ~WorkerThreadPool();
 
     static std::shared_ptr<WorkerThreadPool> Create(bool multithreaded);
-    static std::shared_ptr<WaitableEvent> PostWorkerTask(std::shared_ptr<WorkerThreadPool> pool,
-                                                         std::shared_ptr<Closure> task);
+
+    
+    
+    virtual std::shared_ptr<WaitableEvent> postWorkerTask(std::shared_ptr<Closure> task) = 0;
 
     virtual void setMaxThreads(size_t maxThreads) = 0;
 
     virtual bool isAsync() = 0;
-
-  private:
-    
-    
-    virtual std::shared_ptr<WaitableEvent> postWorkerTask(std::shared_ptr<Closure> task) = 0;
 };
 
 }  

@@ -15,7 +15,6 @@
 
 #include "common/angleutils.h"
 #include "common/debug.h"
-#include "common/mathutil.h"
 #include "common/platform.h"
 #include "common/tls.h"
 
@@ -37,48 +36,42 @@ PoolAllocator::PoolAllocator(int growthIncrement, int allocationAlignment)
 #endif
       mLocked(false)
 {
-#if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    if (mAlignment == 1)
-    {
-        
-        mAlignmentMask = 0;
-        mHeaderSkip    = sizeof(Header);
-    }
-    else
-    {
-#endif
-
-
-
-
-        size_t minAlign = sizeof(void *);
-        mAlignment &= ~(minAlign - 1);
-        if (mAlignment < minAlign)
-            mAlignment = minAlign;
-        mAlignment     = gl::ceilPow2(mAlignment);
-        mAlignmentMask = mAlignment - 1;
+    
+    
+    
+    
+    size_t minAlign = sizeof(void *);
+    mAlignment &= ~(minAlign - 1);
+    if (mAlignment < minAlign)
+        mAlignment = minAlign;
+    size_t a = 1;
+    while (a < mAlignment)
+        a <<= 1;
+    mAlignment     = a;
+    mAlignmentMask = a - 1;
 
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
-        
-        
-        
-        mHeaderSkip = minAlign;
-        if (mHeaderSkip < sizeof(Header))
-        {
-            mHeaderSkip = rx::roundUp(sizeof(Header), mAlignment);
-        }
-    }
     
     
     
     
     if (mPageSize < 4 * 1024)
         mPageSize = 4 * 1024;
+
     
     
     
     
     mCurrentPageOffset = mPageSize;
+
+    
+    
+    
+    mHeaderSkip = minAlign;
+    if (mHeaderSkip < sizeof(Header))
+    {
+        mHeaderSkip = (sizeof(Header) + mAlignmentMask) & ~mAlignmentMask;
+    }
 #else  
     mStack.push_back({});
 #endif
@@ -269,22 +262,7 @@ void *PoolAllocator::allocate(size_t numBytes)
             reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(memory) + mHeaderSkip);
         return std::align(mAlignment, numBytes, unalignedPtr, allocationSize);
     }
-    unsigned char *newPageAddr =
-        static_cast<unsigned char *>(allocateNewPage(numBytes, allocationSize));
-    return initializeAllocation(mInUseList, newPageAddr, numBytes);
-#else  
-    void *alloc = malloc(numBytes + mAlignmentMask);
-    mStack.back().push_back(alloc);
 
-    intptr_t intAlloc = reinterpret_cast<intptr_t>(alloc);
-    intAlloc          = (intAlloc + mAlignmentMask) & ~mAlignmentMask;
-    return reinterpret_cast<void *>(intAlloc);
-#endif
-}
-
-#if !defined(ANGLE_DISABLE_POOL_ALLOC)
-void *PoolAllocator::allocateNewPage(size_t numBytes, size_t allocationSize)
-{
     
     
     
@@ -300,15 +278,23 @@ void *PoolAllocator::allocateNewPage(size_t numBytes, size_t allocationSize)
         if (memory == 0)
             return 0;
     }
+
     
     new (memory) Header(mInUseList, 1);
     mInUseList = memory;
 
     unsigned char *ret = reinterpret_cast<unsigned char *>(mInUseList) + mHeaderSkip;
     mCurrentPageOffset = (mHeaderSkip + allocationSize + mAlignmentMask) & ~mAlignmentMask;
-    return ret;
-}
+    return initializeAllocation(mInUseList, ret, numBytes);
+#else  
+    void *alloc = malloc(numBytes + mAlignmentMask);
+    mStack.back().push_back(alloc);
+
+    intptr_t intAlloc = reinterpret_cast<intptr_t>(alloc);
+    intAlloc          = (intAlloc + mAlignmentMask) & ~mAlignmentMask;
+    return reinterpret_cast<void *>(intAlloc);
 #endif
+}
 
 void PoolAllocator::lock()
 {

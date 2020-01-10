@@ -91,14 +91,6 @@ class CheckedNumeric
 
     
     
-    template <typename Dst>
-    constexpr bool AssignIfValid(Dst *result) const
-    {
-        return IsValid() ? ((*result = static_cast<Dst>(state_.value())), true) : false;
-    }
-
-    
-    
     T ValueOrDie() const
     {
         CHECK(IsValid());

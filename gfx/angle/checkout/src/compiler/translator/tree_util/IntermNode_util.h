@@ -10,7 +10,6 @@
 #define COMPILER_TRANSLATOR_INTERMNODEUTIL_H_
 
 #include "compiler/translator/IntermNode.h"
-#include "compiler/translator/tree_util/FindFunction.h"
 
 namespace sh
 {
@@ -43,13 +42,6 @@ TVariable *DeclareTempVariable(TSymbolTable *symbolTable,
                                TIntermTyped *initializer,
                                TQualifier qualifier,
                                TIntermDeclaration **declarationOut);
-const TVariable *DeclareInterfaceBlock(TIntermBlock *root,
-                                       TSymbolTable *symbolTable,
-                                       TFieldList *fieldList,
-                                       TQualifier qualifier,
-                                       const TMemoryQualifier &memoryQualifier,
-                                       const char *blockTypeName,
-                                       const char *blockVariableName);
 
 
 

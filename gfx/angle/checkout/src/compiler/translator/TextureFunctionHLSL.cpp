@@ -602,23 +602,12 @@ void OutputIntegerTextureSampleFunctionComputations(
     const ImmutableString &textureReference,
     ImmutableString *texCoordX,
     ImmutableString *texCoordY,
-    ImmutableString *texCoordZ,
-    bool getDimensionsIgnoresBaseLevel)
+    ImmutableString *texCoordZ)
 {
     if (!IsIntegerSampler(textureFunction.sampler))
     {
         return;
     }
-
-    if (getDimensionsIgnoresBaseLevel)
-    {
-        out << "    int baseLevel = samplerMetadata[samplerIndex].baseLevel;\n";
-    }
-    else
-    {
-        out << "    int baseLevel = 0;\n";
-    }
-
     if (IsSamplerCube(textureFunction.sampler))
     {
         out << "    float width; float height; float layers; float levels;\n";
@@ -626,10 +615,10 @@ void OutputIntegerTextureSampleFunctionComputations(
         out << "    uint mip = 0;\n";
 
         out << "    " << textureReference
-            << ".GetDimensions(baseLevel + mip, width, height, layers, levels);\n";
+            << ".GetDimensions(mip, width, height, layers, levels);\n";
 
-        out << "    bool xMajor = abs(t.x) >= abs(t.y) && abs(t.x) >= abs(t.z);\n";
-        out << "    bool yMajor = abs(t.y) >= abs(t.z) && abs(t.y) > abs(t.x);\n";
+        out << "    bool xMajor = abs(t.x) > abs(t.y) && abs(t.x) > abs(t.z);\n";
+        out << "    bool yMajor = abs(t.y) > abs(t.z) && abs(t.y) > abs(t.x);\n";
         out << "    bool zMajor = abs(t.z) > abs(t.x) && abs(t.z) > abs(t.y);\n";
         out << "    bool negative = (xMajor && t.x < 0.0f) || (yMajor && t.y < 0.0f) || "
                "(zMajor && t.z < 0.0f);\n";
@@ -646,7 +635,6 @@ void OutputIntegerTextureSampleFunctionComputations(
         out << "    float v = yMajor ? t.z : (negative ? t.y : -t.y);\n";
         out << "    float m = xMajor ? t.x : (yMajor ? t.y : t.z);\n";
 
-        out << "    float3 r = any(t) ? t : float3(1, 0, 0);\n";
         out << "    t.x = (u * 0.5f / m) + 0.5f;\n";
         out << "    t.y = (v * 0.5f / m) + 0.5f;\n";
 
@@ -657,76 +645,10 @@ void OutputIntegerTextureSampleFunctionComputations(
         {
             if (textureFunction.method == TextureFunctionHLSL::TextureFunction::IMPLICIT)
             {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-
-                
-                
-                out << "    float3 ddxr = xMajor ? ddx(r).yzx : yMajor ? ddx(r).zxy : ddx(r).xyz;\n"
-                       "    float3 ddyr = xMajor ? ddy(r).yzx : yMajor ? ddy(r).zxy : ddy(r).xyz;\n"
-                       "    r = xMajor ? r.yzx : yMajor ? r.zxy : r.xyz;\n";
-
-                out << "    float2 s = 0.5*float2(width, height);\n"
-                       "    float2 dpx = s * (ddxr.xy - ddxr.z*r.xy/r.z)/r.z;\n"
-                       "    float2 dpy = s * (ddyr.xy - ddyr.z*r.xy/r.z)/r.z;\n"
-                       "    float dpxx = dot(dpx, dpx);\n;"
-                       "    float dpyy = dot(dpy, dpy);\n;"
-                       "    float dpxy = dot(dpx, dpy);\n"
-                       "    float ma = max(dpxx, dpyy);\n"
-                       "    float mb = 0.5 * (dpxx + dpyy) + abs(dpxy);\n"
-                       "    float mab = max(ma, mb);\n"
-                       "    float lod = 0.5f * log2(mab);\n";
+                out << "    float2 tSized = float2(t.x * width, t.y * height);\n"
+                       "    float2 dx = ddx(tSized);\n"
+                       "    float2 dy = ddy(tSized);\n"
+                       "    float lod = 0.5f * log2(max(dot(dx, dx), dot(dy, dy)));\n";
             }
             else if (textureFunction.method == TextureFunctionHLSL::TextureFunction::GRAD)
             {
@@ -764,7 +686,7 @@ void OutputIntegerTextureSampleFunctionComputations(
             }
             out << "    mip = uint(min(max(round(lod), 0), levels - 1));\n"
                 << "    " << textureReference
-                << ".GetDimensions(baseLevel + mip, width, height, layers, levels);\n";
+                << ".GetDimensions(mip, width, height, layers, levels);\n";
         }
 
         
@@ -786,6 +708,7 @@ void OutputIntegerTextureSampleFunctionComputations(
         if (IsSamplerArray(textureFunction.sampler))
         {
             out << "    float width; float height; float layers; float levels;\n";
+
             if (textureFunction.method == TextureFunctionHLSL::TextureFunction::LOD0)
             {
                 out << "    uint mip = 0;\n";
@@ -798,7 +721,7 @@ void OutputIntegerTextureSampleFunctionComputations(
             {
 
                 out << "    " << textureReference
-                    << ".GetDimensions(baseLevel, width, height, layers, levels);\n";
+                    << ".GetDimensions(0, width, height, layers, levels);\n";
                 if (textureFunction.method == TextureFunctionHLSL::TextureFunction::IMPLICIT ||
                     textureFunction.method == TextureFunctionHLSL::TextureFunction::BIAS)
                 {
@@ -825,7 +748,7 @@ void OutputIntegerTextureSampleFunctionComputations(
             }
 
             out << "    " << textureReference
-                << ".GetDimensions(baseLevel + mip, width, height, layers, levels);\n";
+                << ".GetDimensions(mip, width, height, layers, levels);\n";
         }
         else if (IsSampler2D(textureFunction.sampler))
         {
@@ -841,8 +764,7 @@ void OutputIntegerTextureSampleFunctionComputations(
             }
             else
             {
-                out << "    " << textureReference
-                    << ".GetDimensions(baseLevel, width, height, levels);\n";
+                out << "    " << textureReference << ".GetDimensions(0, width, height, levels);\n";
 
                 if (textureFunction.method == TextureFunctionHLSL::TextureFunction::IMPLICIT ||
                     textureFunction.method == TextureFunctionHLSL::TextureFunction::BIAS)
@@ -869,8 +791,7 @@ void OutputIntegerTextureSampleFunctionComputations(
                 out << "    uint mip = uint(min(max(round(lod), 0), levels - 1));\n";
             }
 
-            out << "    " << textureReference
-                << ".GetDimensions(baseLevel + mip, width, height, levels);\n";
+            out << "    " << textureReference << ".GetDimensions(mip, width, height, levels);\n";
         }
         else if (IsSampler3D(textureFunction.sampler))
         {
@@ -887,7 +808,7 @@ void OutputIntegerTextureSampleFunctionComputations(
             else
             {
                 out << "    " << textureReference
-                    << ".GetDimensions(baseLevel, width, height, depth, levels);\n";
+                    << ".GetDimensions(0, width, height, depth, levels);\n";
 
                 if (textureFunction.method == TextureFunctionHLSL::TextureFunction::IMPLICIT ||
                     textureFunction.method == TextureFunctionHLSL::TextureFunction::BIAS)
@@ -915,7 +836,7 @@ void OutputIntegerTextureSampleFunctionComputations(
             }
 
             out << "    " << textureReference
-                << ".GetDimensions(baseLevel + mip, width, height, depth, levels);\n";
+                << ".GetDimensions(mip, width, height, depth, levels);\n";
         }
         else
             UNREACHABLE();
@@ -1537,9 +1458,9 @@ void TextureFunctionHLSL::textureFunctionHeader(TInfoSinkBase &out,
             else
             {
                 ProjectTextureCoordinates(textureFunction, &texCoordX, &texCoordY, &texCoordZ);
-                OutputIntegerTextureSampleFunctionComputations(
-                    out, textureFunction, outputType, textureReference, &texCoordX, &texCoordY,
-                    &texCoordZ, getDimensionsIgnoresBaseLevel);
+                OutputIntegerTextureSampleFunctionComputations(out, textureFunction, outputType,
+                                                               textureReference, &texCoordX,
+                                                               &texCoordY, &texCoordZ);
                 OutputTextureSampleFunctionReturnStatement(out, textureFunction, outputType,
                                                            textureReference, samplerReference,
                                                            texCoordX, texCoordY, texCoordZ);

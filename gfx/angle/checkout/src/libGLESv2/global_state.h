@@ -21,14 +21,10 @@ namespace egl
 class Debug;
 class Thread;
 
-std::mutex &GetGlobalMutex();
 Thread *GetCurrentThread();
 Debug *GetDebug();
 void SetContextCurrent(Thread *thread, gl::Context *context);
 }  
-
-#define ANGLE_SCOPED_GLOBAL_LOCK() \
-    std::lock_guard<std::mutex> globalMutexLock(egl::GetGlobalMutex())
 
 namespace gl
 {
@@ -57,5 +53,17 @@ ANGLE_INLINE Context *GetValidGlobalContext()
 }
 
 }  
+
+#if ANGLE_FORCE_THREAD_SAFETY == ANGLE_ENABLED
+namespace angle
+{
+std::mutex &GetGlobalMutex();
+}  
+
+#    define ANGLE_SCOPED_GLOBAL_LOCK() \
+        std::lock_guard<std::mutex> globalMutexLock(angle::GetGlobalMutex())
+#else
+#    define ANGLE_SCOPED_GLOBAL_LOCK()
+#endif
 
 #endif  

@@ -184,21 +184,9 @@ angle::Result TextureD3D::setStorageMultisample(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-angle::Result TextureD3D::setStorageExternalMemory(const gl::Context *context,
-                                                   gl::TextureType type,
-                                                   size_t levels,
-                                                   GLenum internalFormat,
-                                                   const gl::Extents &size,
-                                                   gl::MemoryObject *memoryObject,
-                                                   GLuint64 offset)
-{
-    ANGLE_HR_UNREACHABLE(GetImplAs<ContextD3D>(context));
-    return angle::Result::Continue;
-}
-
 bool TextureD3D::shouldUseSetData(const ImageD3D *image) const
 {
-    if (!mRenderer->getFeatures().setDataFasterThanImageUpload.enabled)
+    if (!mRenderer->getWorkarounds().setDataFasterThanImageUpload)
     {
         return false;
     }
@@ -438,7 +426,7 @@ angle::Result TextureD3D::generateMipmap(const gl::Context *context)
     const GLuint maxLevel  = mState.getMipmapMaxLevel();
     ASSERT(maxLevel > baseLevel);  
 
-    if (mTexStorage && mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (mTexStorage && mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         
         TextureStorage *textureStorage = nullptr;
@@ -474,7 +462,7 @@ angle::Result TextureD3D::generateMipmapUsingImages(const gl::Context *context,
     
     
     
-    if (mRenderer->getFeatures().setDataFasterThanImageUpload.enabled && mTexStorage)
+    if (mRenderer->getWorkarounds().setDataFasterThanImageUpload && mTexStorage)
     {
         if (!mTexStorage->isRenderTarget())
         {
@@ -501,7 +489,7 @@ angle::Result TextureD3D::generateMipmapUsingImages(const gl::Context *context,
     
     
     bool renderableStorage = (mTexStorage && mTexStorage->isRenderTarget() &&
-                              !(mRenderer->getFeatures().zeroMaxLodWorkaround.enabled));
+                              !(mRenderer->getWorkarounds().zeroMaxLodWorkaround));
 
     for (GLint layer = 0; layer < layerCount; ++layer)
     {
@@ -581,9 +569,6 @@ angle::Result TextureD3D::ensureRenderTarget(const gl::Context *context)
             ANGLE_TRY(mTexStorage->copyToStorage(context, newRenderTargetStorage.get()));
             ANGLE_TRY(setCompleteTexStorage(context, newRenderTargetStorage.get()));
             newRenderTargetStorage.release();
-            
-            
-            mTexStorage->invalidateTextures();
         }
     }
 
@@ -732,10 +717,7 @@ angle::Result TextureD3D::initializeContents(const gl::Context *context,
     
     
     
-    const angle::FeaturesD3D &features = mRenderer->getFeatures();
-    bool shouldUseClear                = (image == nullptr);
-    if (canCreateRenderTargetForImage(index) && !features.zeroMaxLodWorkaround.enabled &&
-        (shouldUseClear || features.allowClearForRobustResourceInit.enabled))
+    if (canCreateRenderTargetForImage(index) && !mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         ANGLE_TRY(ensureRenderTarget(context));
         ASSERT(mTexStorage);
@@ -744,8 +726,6 @@ angle::Result TextureD3D::initializeContents(const gl::Context *context,
         ANGLE_TRY(mRenderer->initRenderTarget(context, renderTarget));
         return angle::Result::Continue;
     }
-
-    ASSERT(image != nullptr);
 
     
     const auto &formatInfo = gl::GetSizedInternalFormatInfo(image->getInternalFormat());
@@ -984,7 +964,7 @@ angle::Result TextureD3D_2D::copyImage(const gl::Context *context,
     ANGLE_TRY(redefineImage(context, index.getLevelIndex(), internalFormatInfo.sizedInternalFormat,
                             sourceExtents, false));
 
-    gl::Extents fbSize = source->getReadColorAttachment()->getSize();
+    gl::Extents fbSize = source->getReadColorbuffer()->getSize();
 
     
     bool outside = sourceArea.x < 0 || sourceArea.y < 0 ||
@@ -1011,8 +991,7 @@ angle::Result TextureD3D_2D::copyImage(const gl::Context *context,
 
     
     
-    if (!canCreateRenderTargetForImage(index) ||
-        mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (!canCreateRenderTargetForImage(index) || mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         ANGLE_TRY(mImageArray[index.getLevelIndex()]->copyFromFramebuffer(context, destOffset,
                                                                           clippedArea, source));
@@ -1042,7 +1021,7 @@ angle::Result TextureD3D_2D::copySubImage(const gl::Context *context,
 {
     ASSERT(index.getTarget() == gl::TextureTarget::_2D && destOffset.z == 0);
 
-    gl::Extents fbSize = source->getReadColorAttachment()->getSize();
+    gl::Extents fbSize = source->getReadColorbuffer()->getSize();
     gl::Rectangle clippedArea;
     if (!ClipRectangle(sourceArea, gl::Rectangle(0, 0, fbSize.width, fbSize.height), &clippedArea))
     {
@@ -1057,8 +1036,7 @@ angle::Result TextureD3D_2D::copySubImage(const gl::Context *context,
 
     
     
-    if (!canCreateRenderTargetForImage(index) ||
-        mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (!canCreateRenderTargetForImage(index) || mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         ANGLE_TRY(mImageArray[index.getLevelIndex()]->copyFromFramebuffer(context, clippedOffset,
                                                                           clippedArea, source));
@@ -1438,7 +1416,7 @@ angle::Result TextureD3D_2D::createCompleteStorage(bool renderTarget,
     GLint levels = (mTexStorage ? mTexStorage->getLevelCount() : creationLevels(width, height, 1));
 
     bool hintLevelZeroOnly = false;
-    if (mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         
         
@@ -1734,7 +1712,7 @@ angle::Result TextureD3D_Cube::copyImage(const gl::Context *context,
     ANGLE_TRY(redefineImage(context, faceIndex, index.getLevelIndex(),
                             internalFormatInfo.sizedInternalFormat, size, false));
 
-    gl::Extents fbSize = source->getReadColorAttachment()->getSize();
+    gl::Extents fbSize = source->getReadColorbuffer()->getSize();
 
     
     bool outside = sourceArea.x < 0 || sourceArea.y < 0 ||
@@ -1761,8 +1739,7 @@ angle::Result TextureD3D_Cube::copyImage(const gl::Context *context,
 
     
     
-    if (!canCreateRenderTargetForImage(index) ||
-        mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (!canCreateRenderTargetForImage(index) || mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         ANGLE_TRY(mImageArray[faceIndex][index.getLevelIndex()]->copyFromFramebuffer(
             context, destOffset, clippedArea, source));
@@ -1792,7 +1769,7 @@ angle::Result TextureD3D_Cube::copySubImage(const gl::Context *context,
                                             const gl::Rectangle &sourceArea,
                                             gl::Framebuffer *source)
 {
-    gl::Extents fbSize = source->getReadColorAttachment()->getSize();
+    gl::Extents fbSize = source->getReadColorbuffer()->getSize();
     gl::Rectangle clippedArea;
     if (!ClipRectangle(sourceArea, gl::Rectangle(0, 0, fbSize.width, fbSize.height), &clippedArea))
     {
@@ -1805,8 +1782,7 @@ angle::Result TextureD3D_Cube::copySubImage(const gl::Context *context,
 
     
     
-    if (!canCreateRenderTargetForImage(index) ||
-        mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (!canCreateRenderTargetForImage(index) || mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         ANGLE_TRY(mImageArray[faceIndex][index.getLevelIndex()]->copyFromFramebuffer(
             context, clippedOffset, clippedArea, source));
@@ -2094,7 +2070,7 @@ angle::Result TextureD3D_Cube::createCompleteStorage(bool renderTarget,
     GLint levels = (mTexStorage ? mTexStorage->getLevelCount() : creationLevels(size, size, 1));
 
     bool hintLevelZeroOnly = false;
-    if (mRenderer->getFeatures().zeroMaxLodWorkaround.enabled)
+    if (mRenderer->getWorkarounds().zeroMaxLodWorkaround)
     {
         
         
@@ -2187,6 +2163,14 @@ bool TextureD3D_Cube::isFaceLevelComplete(int faceIndex, int level) const
     if (levelZeroSize <= 0)
     {
         return false;
+    }
+
+    
+    
+    
+    if (level == 0)
+    {
+        return true;
     }
 
     
@@ -2509,7 +2493,7 @@ angle::Result TextureD3D_3D::copySubImage(const gl::Context *context,
 {
     ASSERT(index.getTarget() == gl::TextureTarget::_3D);
 
-    gl::Extents fbSize = source->getReadColorAttachment()->getSize();
+    gl::Extents fbSize = source->getReadColorbuffer()->getSize();
     gl::Rectangle clippedSourceArea;
     if (!ClipRectangle(sourceArea, gl::Rectangle(0, 0, fbSize.width, fbSize.height),
                        &clippedSourceArea))
@@ -3201,7 +3185,7 @@ angle::Result TextureD3D_2DArray::copySubImage(const gl::Context *context,
 {
     ASSERT(index.getTarget() == gl::TextureTarget::_2DArray);
 
-    gl::Extents fbSize = source->getReadColorAttachment()->getSize();
+    gl::Extents fbSize = source->getReadColorbuffer()->getSize();
     gl::Rectangle clippedSourceArea;
     if (!ClipRectangle(sourceArea, gl::Rectangle(0, 0, fbSize.width, fbSize.height),
                        &clippedSourceArea))
@@ -3292,8 +3276,8 @@ angle::Result TextureD3D_2DArray::copyTexture(const gl::Context *context,
             ANGLE_TRY(getImageAndSyncFromStorage(context, currentDestDepthIndex, &destImage));
             ANGLE_TRY(sourceD3D->getImageAndSyncFromStorage(context, currentSourceDepthIndex,
                                                             &sourceImage));
-            gl::Box imageBox(sourceBox.x, sourceBox.y, 0, sourceBox.width, sourceBox.height, 1);
-            ANGLE_TRY(mRenderer->copyImage(context, destImage, sourceImage, imageBox, destOffset,
+
+            ANGLE_TRY(mRenderer->copyImage(context, destImage, sourceImage, sourceBox, destOffset,
                                            unpackFlipY, unpackPremultiplyAlpha,
                                            unpackUnmultiplyAlpha));
         }

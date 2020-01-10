@@ -52,29 +52,27 @@ struct SystemInfo
 
     SystemInfo(const SystemInfo &other);
 
-    bool hasNVIDIAGPU() const;
-    bool hasIntelGPU() const;
-    bool hasAMDGPU() const;
-
     std::vector<GPUDeviceInfo> gpus;
 
+    
+    
+    int primaryGPUIndex = -1;
     
     
     int activeGPUIndex = -1;
 
     bool isOptimus       = false;
     bool isAMDSwitchable = false;
-    
-    bool isMacSwitchable = false;
 
     
     std::string machineManufacturer;
 
     
     std::string machineModelName;
+    std::string machineModelVersion;
 
     
-    std::string machineModelVersion;
+    std::string primaryDisplayDeviceId;
 };
 
 
@@ -87,9 +85,8 @@ constexpr VendorID kVendorID_AMD      = 0x1002;
 constexpr VendorID kVendorID_ARM      = 0x13B5;
 constexpr VendorID kVendorID_ImgTec   = 0x1010;
 constexpr VendorID kVendorID_Intel    = 0x8086;
-constexpr VendorID kVendorID_NVIDIA   = 0x10DE;
+constexpr VendorID kVendorID_Nvidia   = 0x10DE;
 constexpr VendorID kVendorID_Qualcomm = 0x5143;
-constexpr VendorID kVendorID_VMWare   = 0x15ad;
 
 
 constexpr VendorID kVendorID_Vivante     = 0x10001;
@@ -102,14 +99,11 @@ bool IsARM(VendorID vendorId);
 bool IsImgTec(VendorID vendorId);
 bool IsIntel(VendorID vendorId);
 bool IsKazan(VendorID vendorId);
-bool IsNVIDIA(VendorID vendorId);
+bool IsNvidia(VendorID vendorId);
 bool IsQualcomm(VendorID vendorId);
 bool IsVeriSilicon(VendorID vendorId);
-bool IsVMWare(VendorID vendorId);
 bool IsVivante(VendorID vendorId);
 
-
-void PrintSystemInfo(const SystemInfo &info);
 }  
 
 #endif  

@@ -1,11 +1,11 @@
+//
+// Copyright (c) 2002-2016 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
 
-
-
-
-
-
-
-
+// ResourceManager.h : Defines the ResourceManager classes, which handle allocation and lifetime of
+// GL objects.
 
 #ifndef LIBANGLE_RESOURCEMANAGER_H_
 #define LIBANGLE_RESOURCEMANAGER_H_
@@ -30,14 +30,12 @@ class Context;
 class Sync;
 class Framebuffer;
 struct Limitations;
-class MemoryObject;
 class Path;
 class Program;
 class ProgramPipeline;
 class Renderbuffer;
 class Sampler;
 class Shader;
-class Semaphore;
 class Texture;
 
 template <typename HandleAllocatorType>
@@ -68,14 +66,14 @@ class TypedResourceManager : public ResourceManagerBase<HandleAllocatorType>
     void deleteObject(const Context *context, GLuint handle);
     ANGLE_INLINE bool isHandleGenerated(GLuint handle) const
     {
-        
+        // Zero is always assumed to have been generated implicitly.
         return handle == 0 || mObjectMap.contains(handle);
     }
 
   protected:
     ~TypedResourceManager() override;
 
-    
+    // Inlined in the header for performance.
     template <typename... ArgTypes>
     ANGLE_INLINE ResourceType *checkObjectAllocation(rx::GLImplFactory *factory,
                                                      GLuint handle,
@@ -128,7 +126,7 @@ class BufferManager : public TypedResourceManager<Buffer, HandleAllocator, Buffe
         return checkObjectAllocation(factory, handle);
     }
 
-    
+    // TODO(jmadill): Investigate design which doesn't expose these methods publicly.
     static Buffer *AllocateNewObject(rx::GLImplFactory *factory, GLuint handle);
     static void DeleteObject(const Context *context, Buffer *buffer);
 
@@ -175,7 +173,7 @@ class TextureManager : public TypedResourceManager<Texture, HandleAllocator, Tex
         return mObjectMap.query(handle);
     }
 
-    void signalAllTexturesDirty() const;
+    void signalAllTexturesDirty(const Context *context) const;
 
     ANGLE_INLINE Texture *checkTextureAllocation(rx::GLImplFactory *factory,
                                                  GLuint handle,
@@ -269,7 +267,7 @@ class FramebufferManager
     Framebuffer *getFramebuffer(GLuint handle) const;
     void setDefaultFramebuffer(Framebuffer *framebuffer);
 
-    void invalidateFramebufferComplenessCache() const;
+    void invalidateFramebufferComplenessCache(const Context *context) const;
 
     Framebuffer *checkFramebufferAllocation(rx::GLImplFactory *factory,
                                             const Caps &caps,
@@ -306,42 +304,6 @@ class ProgramPipelineManager
     ~ProgramPipelineManager() override {}
 };
 
-class MemoryObjectManager : public ResourceManagerBase<HandleAllocator>
-{
-  public:
-    MemoryObjectManager();
+}  // namespace gl
 
-    GLuint createMemoryObject(rx::GLImplFactory *factory);
-    void deleteMemoryObject(const Context *context, GLuint handle);
-    MemoryObject *getMemoryObject(GLuint handle) const;
-
-  protected:
-    ~MemoryObjectManager() override;
-
-  private:
-    void reset(const Context *context) override;
-
-    ResourceMap<MemoryObject> mMemoryObjects;
-};
-
-class SemaphoreManager : public ResourceManagerBase<HandleAllocator>
-{
-  public:
-    SemaphoreManager();
-
-    GLuint createSemaphore(rx::GLImplFactory *factory);
-    void deleteSemaphore(const Context *context, GLuint handle);
-    Semaphore *getSemaphore(GLuint handle) const;
-
-  protected:
-    ~SemaphoreManager() override;
-
-  private:
-    void reset(const Context *context) override;
-
-    ResourceMap<Semaphore> mSemaphores;
-};
-
-}  
-
-#endif  
+#endif  // LIBANGLE_RESOURCEMANAGER_H_

@@ -21,7 +21,6 @@ namespace gl
 class ErrorSet;
 class MemoryProgramCache;
 class Path;
-class Semaphore;
 struct Workarounds;
 }  
 
@@ -126,7 +125,7 @@ class ContextImpl : public GLImplFactory
                                                      const GLfloat *transformValues);
 
     
-    virtual gl::GraphicsResetStatus getResetStatus() = 0;
+    virtual GLenum getResetStatus() = 0;
 
     
     virtual std::string getVendorString() const        = 0;
@@ -142,12 +141,6 @@ class ContextImpl : public GLImplFactory
     virtual void popDebugGroup()                                                      = 0;
 
     
-    virtual void setMaxShaderCompilerThreads(GLuint count) {}
-
-    
-    virtual void invalidateTexture(gl::TextureType target);
-
-    
     virtual angle::Result syncState(const gl::Context *context,
                                     const gl::State::DirtyBits &dirtyBits,
                                     const gl::State::DirtyBits &bitMask) = 0;
@@ -158,13 +151,14 @@ class ContextImpl : public GLImplFactory
 
     
     virtual angle::Result onMakeCurrent(const gl::Context *context) = 0;
-    virtual angle::Result onUnMakeCurrent(const gl::Context *context);
 
     
     virtual gl::Caps getNativeCaps() const                         = 0;
     virtual const gl::TextureCapsMap &getNativeTextureCaps() const = 0;
     virtual const gl::Extensions &getNativeExtensions() const      = 0;
     virtual const gl::Limitations &getNativeLimitations() const    = 0;
+
+    virtual void applyNativeWorkarounds(gl::Workarounds *workarounds) const {}
 
     virtual angle::Result dispatchCompute(const gl::Context *context,
                                           GLuint numGroupsX,

@@ -38,7 +38,6 @@
 #include <vector>
 
 #include "angleutils.h"
-#include "common/debug.h"
 
 namespace angle
 {
@@ -124,10 +123,6 @@ class PoolAllocator : angle::NonCopyable
 {
   public:
     static const int kDefaultAlignment = 16;
-    
-    
-    
-    
     PoolAllocator(int growthIncrement = 8 * 1024, int allocationAlignment = kDefaultAlignment);
 
     
@@ -157,33 +152,6 @@ class PoolAllocator : angle::NonCopyable
     
     
     void *allocate(size_t numBytes);
-
-    
-    
-    
-    ANGLE_INLINE uint8_t *fastAllocate(size_t numBytes)
-    {
-#if defined(ANGLE_DISABLE_POOL_ALLOC)
-        return reinterpret_cast<uint8_t *>(allocate(numBytes));
-#else
-        ASSERT(mAlignment == 1);
-        
-        ASSERT(numBytes <= (mPageSize - mHeaderSkip));
-        
-        
-        
-        if (numBytes <= mPageSize - mCurrentPageOffset)
-        {
-            
-            
-            
-            uint8_t *memory = reinterpret_cast<uint8_t *>(mInUseList) + mCurrentPageOffset;
-            mCurrentPageOffset += numBytes;
-            return memory;
-        }
-        return reinterpret_cast<uint8_t *>(allocateNewPage(numBytes, numBytes));
-#endif
-    }
 
     
     
@@ -237,8 +205,6 @@ class PoolAllocator : angle::NonCopyable
     };
     using AllocStack = std::vector<AllocState>;
 
-    
-    void *allocateNewPage(size_t numBytes, size_t allocationSize);
     
     void *initializeAllocation(Header *block, unsigned char *memory, size_t numBytes)
     {

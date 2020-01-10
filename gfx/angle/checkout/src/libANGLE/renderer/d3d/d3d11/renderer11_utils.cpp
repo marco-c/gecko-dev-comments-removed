@@ -28,8 +28,8 @@
 #include "libANGLE/renderer/d3d/d3d11/formatutils11.h"
 #include "libANGLE/renderer/d3d/d3d11/texture_format_table.h"
 #include "libANGLE/renderer/driver_utils.h"
-#include "platform/FeaturesD3D.h"
 #include "platform/Platform.h"
+#include "platform/WorkaroundsD3D.h"
 
 namespace rx
 {
@@ -1386,7 +1386,7 @@ unsigned int GetMaxSampleMaskWords(D3D_FEATURE_LEVEL featureLevel)
 void GenerateCaps(ID3D11Device *device,
                   ID3D11DeviceContext *deviceContext,
                   const Renderer11DeviceCaps &renderer11DeviceCaps,
-                  const angle::FeaturesD3D &features,
+                  const angle::WorkaroundsD3D &workarounds,
                   gl::Caps *caps,
                   gl::TextureCapsMap *textureCapsMap,
                   gl::Extensions *extensions,
@@ -1467,7 +1467,7 @@ void GenerateCaps(ID3D11Device *device,
     caps->maxVertexAttributes = static_cast<GLuint>(GetMaximumVertexInputSlots(featureLevel));
     caps->maxVertexUniformVectors =
         static_cast<GLuint>(GetMaximumVertexUniformVectors(featureLevel));
-    if (features.skipVSConstantRegisterZero.enabled)
+    if (workarounds.skipVSConstantRegisterZero)
     {
         caps->maxVertexUniformVectors -= 1;
     }
@@ -1585,11 +1585,6 @@ void GenerateCaps(ID3D11Device *device,
 
     
     extensions->setTextureExtensionSupport(*textureCapsMap);
-
-    
-    
-    extensions->compressedETC1RGB8Texture = false;
-
     extensions->elementIndexUint            = true;
     extensions->getProgramBinary            = true;
     extensions->rgb8rgba8                   = true;
@@ -1624,9 +1619,8 @@ void GenerateCaps(ID3D11Device *device,
     extensions->standardDerivatives    = GetDerivativeInstructionSupport(featureLevel);
     extensions->shaderTextureLOD       = GetShaderTextureLODSupport(featureLevel);
     extensions->fragDepth              = true;
-    extensions->multiview              = IsMultiviewSupported(featureLevel);
     extensions->multiview2             = IsMultiviewSupported(featureLevel);
-    if (extensions->multiview || extensions->multiview2)
+    if (extensions->multiview2)
     {
         extensions->maxViews =
             std::min(static_cast<GLuint>(gl::IMPLEMENTATION_ANGLE_MULTIVIEW_MAX_VIEWS),
@@ -1649,19 +1643,14 @@ void GenerateCaps(ID3D11Device *device,
     extensions->copyTexture                      = true;
     extensions->copyCompressedTexture            = true;
     extensions->textureStorageMultisample2DArray = true;
-    extensions->multiviewMultisample     = ((extensions->multiview || extensions->multiview2) &&
-                                        extensions->textureStorageMultisample2DArray);
-    extensions->copyTexture3d            = true;
-    extensions->textureBorderClamp       = true;
-    extensions->textureMultisample       = true;
-    extensions->provokingVertex          = true;
+    extensions->multiviewMultisample =
+        (extensions->multiview2 && extensions->textureStorageMultisample2DArray);
+    extensions->copyTexture3d      = true;
+    extensions->textureBorderClamp = true;
+    extensions->textureMultisample = true;
+    extensions->provokingVertex    = true;
     extensions->blendFuncExtended        = true;
     extensions->maxDualSourceDrawBuffers = 1;
-    extensions->texture3DOES                     = true;
-
-    
-    
-    extensions->depthTextureOES = false;
 
     
     
@@ -1688,9 +1677,6 @@ void GenerateCaps(ID3D11Device *device,
 
     
     limitations->noDoubleBoundTransformFeedbackBuffers = true;
-
-    
-    limitations->noVertexAttributeAliasing = true;
 
 #ifdef ANGLE_ENABLE_WINDOWS_STORE
     
@@ -2377,16 +2363,16 @@ angle::Result LazyBlendState::resolve(d3d::Context *context, Renderer11 *rendere
     return resolveImpl(context, renderer, mDesc, nullptr, mDebugName);
 }
 
-void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
-                        const DXGI_ADAPTER_DESC &adapterDesc,
-                        angle::FeaturesD3D *features)
+angle::WorkaroundsD3D GenerateWorkarounds(const Renderer11DeviceCaps &deviceCaps,
+                                          const DXGI_ADAPTER_DESC &adapterDesc)
 {
     bool is9_3 = (deviceCaps.featureLevel <= D3D_FEATURE_LEVEL_9_3);
 
-    features->mrtPerfWorkaround.enabled                = true;
-    features->setDataFasterThanImageUpload.enabled     = true;
-    features->zeroMaxLodWorkaround.enabled             = is9_3;
-    features->useInstancedPointSpriteEmulation.enabled = is9_3;
+    angle::WorkaroundsD3D workarounds;
+    workarounds.mrtPerfWorkaround                = true;
+    workarounds.setDataFasterThanImageUpload     = true;
+    workarounds.zeroMaxLodWorkaround             = is9_3;
+    workarounds.useInstancedPointSpriteEmulation = is9_3;
 
     
     if (IsNvidia(adapterDesc.VendorId))
@@ -2397,51 +2383,45 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
             WORD part2 = LOWORD(deviceCaps.driverVersion.value().LowPart);
 
             
-            features->depthStencilBlitExtraCopy.enabled = (part1 <= 13u && part2 < 6881);
+            workarounds.depthStencilBlitExtraCopy = (part1 <= 13u && part2 < 6881);
         }
         else
         {
-            features->depthStencilBlitExtraCopy.enabled = true;
+            workarounds.depthStencilBlitExtraCopy = true;
         }
     }
 
     
-    features->expandIntegerPowExpressions.enabled = true;
+    workarounds.expandIntegerPowExpressions = true;
 
-    features->flushAfterEndingTransformFeedback.enabled = IsNvidia(adapterDesc.VendorId);
-    features->getDimensionsIgnoresBaseLevel.enabled     = IsNvidia(adapterDesc.VendorId);
-    features->skipVSConstantRegisterZero.enabled        = IsNvidia(adapterDesc.VendorId);
-    features->forceAtomicValueResolution.enabled        = IsNvidia(adapterDesc.VendorId);
+    workarounds.flushAfterEndingTransformFeedback = IsNvidia(adapterDesc.VendorId);
+    workarounds.getDimensionsIgnoresBaseLevel     = IsNvidia(adapterDesc.VendorId);
+    workarounds.skipVSConstantRegisterZero        = IsNvidia(adapterDesc.VendorId);
 
     if (IsIntel(adapterDesc.VendorId))
     {
         IntelDriverVersion capsVersion = d3d11_gl::GetIntelDriverVersion(deviceCaps.driverVersion);
 
-        features->preAddTexelFetchOffsets.enabled           = true;
-        features->useSystemMemoryForConstantBuffers.enabled = true;
-        features->disableB5G6R5Support.enabled          = capsVersion < IntelDriverVersion(4539);
-        features->addDummyTextureNoRenderTarget.enabled = capsVersion < IntelDriverVersion(4815);
+        workarounds.preAddTexelFetchOffsets           = true;
+        workarounds.useSystemMemoryForConstantBuffers = true;
+        workarounds.disableB5G6R5Support              = capsVersion < IntelDriverVersion(4539);
+        workarounds.addDummyTextureNoRenderTarget     = capsVersion < IntelDriverVersion(4815);
         if (IsSkylake(adapterDesc.DeviceId))
         {
-            features->callClearTwice.enabled    = capsVersion < IntelDriverVersion(4771);
-            features->emulateIsnanFloat.enabled = capsVersion < IntelDriverVersion(4542);
+            workarounds.callClearTwice    = capsVersion < IntelDriverVersion(4771);
+            workarounds.emulateIsnanFloat = capsVersion < IntelDriverVersion(4542);
         }
         else if (IsBroadwell(adapterDesc.DeviceId) || IsHaswell(adapterDesc.DeviceId))
         {
-            features->rewriteUnaryMinusOperator.enabled = capsVersion < IntelDriverVersion(4624);
+            workarounds.rewriteUnaryMinusOperator = capsVersion < IntelDriverVersion(4624);
 
             
-            features->setDataFasterThanImageUpload.enabled = false;
+            workarounds.setDataFasterThanImageUpload = false;
         }
     }
 
-    if (IsAMD(adapterDesc.VendorId))
-    {
-        features->disableB5G6R5Support.enabled = true;
-    }
-
     
-    features->emulateTinyStencilTextures.enabled = IsAMD(adapterDesc.VendorId);
+    workarounds.emulateTinyStencilTextures = IsAMD(adapterDesc.VendorId);
 
     
     
@@ -2449,20 +2429,19 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     
     if (deviceCaps.featureLevel < D3D_FEATURE_LEVEL_10_1)
     {
-        features->emulateTinyStencilTextures.enabled = false;
+        workarounds.emulateTinyStencilTextures = false;
     }
 
     
     
-    features->selectViewInGeometryShader.enabled =
+    workarounds.selectViewInGeometryShader =
         (deviceCaps.supportsVpRtIndexWriteFromVertexShader == false);
 
     
-    features->allowClearForRobustResourceInit.enabled = false;
-
-    
     auto *platform = ANGLEPlatformCurrent();
-    platform->overrideWorkaroundsD3D(platform, features);
+    platform->overrideWorkaroundsD3D(platform, &workarounds);
+
+    return workarounds;
 }
 
 void InitConstantBufferDesc(D3D11_BUFFER_DESC *constantBufferDescription, size_t byteWidth)

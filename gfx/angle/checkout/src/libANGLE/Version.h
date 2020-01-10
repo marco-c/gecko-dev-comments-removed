@@ -29,6 +29,6 @@ bool operator<(const Version &a, const Version &b);
 bool operator>(const Version &a, const Version &b);
 }  
 
-#include "Version.inc"
+#include "Version.inl"
 
 #endif  

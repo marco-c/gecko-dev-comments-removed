@@ -12,17 +12,14 @@
 
 #include <cstdint>
 
-#include <atomic>
 #include <limits>
 #include <map>
 
 #include "common/angleutils.h"
-#include "common/utilities.h"
 #include "libANGLE/angletypes.h"
 
 namespace angle
 {
-struct FeatureSetBase;
 struct Format;
 enum class FormatID;
 }  
@@ -31,13 +28,11 @@ namespace gl
 {
 struct FormatType;
 struct InternalFormat;
-class State;
 }  
 
 namespace egl
 {
 class AttributeMap;
-struct DisplayState;
 }  
 
 namespace rx
@@ -64,6 +59,8 @@ class ResourceSerial
 
     uintptr_t mValue;
 };
+
+class SerialFactory;
 
 class Serial final
 {
@@ -95,31 +92,26 @@ class Serial final
     constexpr uint64_t getValue() const { return mValue; }
 
   private:
-    template <typename T>
-    friend class SerialFactoryBase;
+    friend class SerialFactory;
     constexpr explicit Serial(uint64_t value) : mValue(value) {}
     uint64_t mValue;
     static constexpr uint64_t kInvalid = 0;
 };
 
-template <typename SerialBaseType>
-class SerialFactoryBase final : angle::NonCopyable
+class SerialFactory final : angle::NonCopyable
 {
   public:
-    SerialFactoryBase() : mSerial(1) {}
+    SerialFactory() : mSerial(1) {}
 
     Serial generate()
     {
-        ASSERT(mSerial + 1 > mSerial);
+        ASSERT(mSerial != std::numeric_limits<uint64_t>::max());
         return Serial(mSerial++);
     }
 
   private:
-    SerialBaseType mSerial;
+    uint64_t mSerial;
 };
-
-using SerialFactory       = SerialFactoryBase<uint64_t>;
-using AtomicSerialFactory = SerialFactoryBase<std::atomic<uint64_t>>;
 
 using MipGenerationFunction = void (*)(size_t sourceWidth,
                                        size_t sourceHeight,
@@ -265,28 +257,13 @@ class IncompleteTextureSet final : angle::NonCopyable
 };
 
 
-
 template <int cols, int rows>
-struct SetFloatUniformMatrixGLSL
-{
-    static bool Run(unsigned int arrayElementOffset,
-                    unsigned int elementCount,
-                    GLsizei countIn,
-                    GLboolean transpose,
-                    const GLfloat *value,
-                    uint8_t *targetData);
-};
-
-template <int cols, int rows>
-struct SetFloatUniformMatrixHLSL
-{
-    static bool Run(unsigned int arrayElementOffset,
-                    unsigned int elementCount,
-                    GLsizei countIn,
-                    GLboolean transpose,
-                    const GLfloat *value,
-                    uint8_t *targetData);
-};
+bool SetFloatUniformMatrix(unsigned int arrayElementOffset,
+                           unsigned int elementCount,
+                           GLsizei countIn,
+                           GLboolean transpose,
+                           const GLfloat *value,
+                           uint8_t *targetData);
 
 
 void GetMatrixUniform(GLenum type, GLfloat *dataOut, const GLfloat *source, bool transpose);
@@ -309,98 +286,6 @@ angle::Result GetVertexRangeInfo(const gl::Context *context,
                                  GLint baseVertex,
                                  GLint *startVertexOut,
                                  size_t *vertexCountOut);
-
-gl::Rectangle ClipRectToScissor(const gl::State &glState, const gl::Rectangle &rect, bool invertY);
-
-
-void OverrideFeaturesWithDisplayState(angle::FeatureSetBase *features,
-                                      const egl::DisplayState &state);
-
-template <typename In>
-size_t LineLoopRestartIndexCountHelper(GLsizei indexCount, const uint8_t *srcPtr)
-{
-    constexpr In restartIndex = gl::GetPrimitiveRestartIndexFromType<In>();
-    const In *inIndices       = reinterpret_cast<const In *>(srcPtr);
-    size_t numIndices         = 0;
-    
-    
-    GLsizei loopStartIndex = 0;
-    for (GLsizei curIndex = 0; curIndex < indexCount; curIndex++)
-    {
-        In vertex = inIndices[curIndex];
-        if (vertex != restartIndex)
-        {
-            numIndices++;
-        }
-        else
-        {
-            if (curIndex > loopStartIndex)
-            {
-                numIndices += 2;
-            }
-            loopStartIndex = curIndex + 1;
-        }
-    }
-    if (indexCount > loopStartIndex)
-    {
-        numIndices++;
-    }
-    return numIndices;
-}
-
-inline size_t GetLineLoopWithRestartIndexCount(gl::DrawElementsType glIndexType,
-                                               GLsizei indexCount,
-                                               const uint8_t *srcPtr)
-{
-    switch (glIndexType)
-    {
-        case gl::DrawElementsType::UnsignedByte:
-            return LineLoopRestartIndexCountHelper<uint8_t>(indexCount, srcPtr);
-        case gl::DrawElementsType::UnsignedShort:
-            return LineLoopRestartIndexCountHelper<uint16_t>(indexCount, srcPtr);
-        case gl::DrawElementsType::UnsignedInt:
-            return LineLoopRestartIndexCountHelper<uint32_t>(indexCount, srcPtr);
-        default:
-            UNREACHABLE();
-            return 0;
-    }
-}
-
-
-
-template <typename In, typename Out>
-void CopyLineLoopIndicesWithRestart(GLsizei indexCount, const uint8_t *srcPtr, uint8_t *outPtr)
-{
-    constexpr In restartIndex     = gl::GetPrimitiveRestartIndexFromType<In>();
-    constexpr Out outRestartIndex = gl::GetPrimitiveRestartIndexFromType<Out>();
-    const In *inIndices           = reinterpret_cast<const In *>(srcPtr);
-    Out *outIndices               = reinterpret_cast<Out *>(outPtr);
-    GLsizei loopStartIndex        = 0;
-    for (GLsizei curIndex = 0; curIndex < indexCount; curIndex++)
-    {
-        In vertex = inIndices[curIndex];
-        if (vertex != restartIndex)
-        {
-            *(outIndices++) = static_cast<Out>(vertex);
-        }
-        else
-        {
-            if (curIndex > loopStartIndex)
-            {
-                
-                *(outIndices++) = inIndices[loopStartIndex];
-                
-                *(outIndices++) = outRestartIndex;
-            }
-            loopStartIndex = curIndex + 1;
-        }
-    }
-    if (indexCount > loopStartIndex)
-    {
-        
-        *(outIndices++) = inIndices[loopStartIndex];
-    }
-}
 }  
 
 #endif  

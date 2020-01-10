@@ -267,12 +267,7 @@ class OutputHLSL : public TIntermTraverser
     TString generateStructMapping(const std::vector<MappedStruct> &std140Structs) const;
     ImmutableString samplerNamePrefixFromStruct(TIntermTyped *node);
     bool ancestorEvaluatesToSamplerInStruct();
-    
-    
-    bool needStructMapping(TIntermTyped *node);
-
     ShaderStorageBlockOutputHLSL *mSSBOOutputHLSL;
-    bool mNeedStructMapping;
 };
 }  
 

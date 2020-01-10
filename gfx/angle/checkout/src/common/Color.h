@@ -99,6 +99,6 @@ using ColorGeneric = angle::ColorGeneric;
 
 }  
 
-#include "Color.inc"
+#include "Color.inl"
 
 #endif  

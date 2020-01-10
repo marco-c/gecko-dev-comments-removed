@@ -24,9 +24,6 @@ bool UnsetEnvironmentVar(const char *variableName);
 std::string GetEnvironmentVar(const char *variableName);
 const char *GetPathSeparator();
 bool PrependPathToEnvironmentVar(const char *variableName, const char *path);
-bool IsDirectory(const char *filename);
-
-
 
 
 
@@ -51,21 +48,7 @@ class Library : angle::NonCopyable
     }
 };
 
-
-
-enum class SearchType
-{
-    ApplicationDir,
-    SystemDir
-};
-
-Library *OpenSharedLibrary(const char *libraryName, SearchType searchType);
-
-
-bool IsDebuggerAttached();
-
-
-void BreakDebugger();
+Library *OpenSharedLibrary(const char *libraryName);
 }  
 
 #endif  

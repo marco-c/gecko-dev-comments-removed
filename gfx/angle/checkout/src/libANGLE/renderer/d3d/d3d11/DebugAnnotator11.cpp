@@ -8,79 +8,119 @@
 
 #include "libANGLE/renderer/d3d/d3d11/DebugAnnotator11.h"
 
+#include "common/debug.h"
 #include "libANGLE/renderer/d3d/d3d11/renderer11_utils.h"
-
-#include <versionhelpers.h>
 
 namespace rx
 {
 
-DebugAnnotator11::DebugAnnotator11() {}
+DebugAnnotator11::DebugAnnotator11()
+    : mInitialized(false), mD3d11Module(nullptr), mUserDefinedAnnotation(nullptr)
+{
+    
+    
+}
 
-DebugAnnotator11::~DebugAnnotator11() {}
+DebugAnnotator11::~DebugAnnotator11()
+{
+    if (mInitialized)
+    {
+        SafeRelease(mUserDefinedAnnotation);
+
+#if !defined(ANGLE_ENABLE_WINDOWS_STORE)
+        FreeLibrary(mD3d11Module);
+#endif  
+    }
+}
 
 void DebugAnnotator11::beginEvent(const char *eventName, const char *eventMessage)
 {
+    initializeDevice();
+
     angle::LoggingAnnotator::beginEvent(eventName, eventMessage);
     if (mUserDefinedAnnotation != nullptr)
     {
         std::mbstate_t state = std::mbstate_t();
         std::mbsrtowcs(mWCharMessage, &eventMessage, kMaxMessageLength, &state);
-        std::lock_guard<std::mutex> lock(mAnnotationMutex);
         mUserDefinedAnnotation->BeginEvent(mWCharMessage);
     }
 }
 
 void DebugAnnotator11::endEvent(const char *eventName)
 {
+    initializeDevice();
+
     angle::LoggingAnnotator::endEvent(eventName);
     if (mUserDefinedAnnotation != nullptr)
     {
-        std::lock_guard<std::mutex> lock(mAnnotationMutex);
         mUserDefinedAnnotation->EndEvent();
     }
 }
 
 void DebugAnnotator11::setMarker(const char *markerName)
 {
+    initializeDevice();
+
     angle::LoggingAnnotator::setMarker(markerName);
     if (mUserDefinedAnnotation != nullptr)
     {
         std::mbstate_t state = std::mbstate_t();
         std::mbsrtowcs(mWCharMessage, &markerName, kMaxMessageLength, &state);
-        std::lock_guard<std::mutex> lock(mAnnotationMutex);
         mUserDefinedAnnotation->SetMarker(mWCharMessage);
     }
 }
 
 bool DebugAnnotator11::getStatus()
 {
+#if defined(ANGLE_ENABLE_WINDOWS_STORE)
+    static_assert(NTDDI_VERSION >= NTDDI_WIN10, "GetStatus only works on Win10 and above");
+    initializeDevice();
+
     if (mUserDefinedAnnotation != nullptr)
     {
-        std::lock_guard<std::mutex> lock(mAnnotationMutex);
         return !!(mUserDefinedAnnotation->GetStatus());
     }
 
-    return false;
+    return true;  
+#else
+    
+    return true;
+#endif  
 }
 
-void DebugAnnotator11::initialize(ID3D11DeviceContext *context)
+void DebugAnnotator11::initializeDevice()
 {
-    
-    
-    
-    
-    
-    if (IsWindows10OrGreater())
+    if (!mInitialized)
     {
-        mUserDefinedAnnotation.Attach(
-            d3d11::DynamicCastComObject<ID3DUserDefinedAnnotation>(context));
-    }
-}
+#if !defined(ANGLE_ENABLE_WINDOWS_STORE)
+        mD3d11Module = LoadLibrary(TEXT("d3d11.dll"));
+        ASSERT(mD3d11Module);
 
-void DebugAnnotator11::release()
-{
-    mUserDefinedAnnotation.Reset();
+        PFN_D3D11_CREATE_DEVICE D3D11CreateDevice =
+            (PFN_D3D11_CREATE_DEVICE)GetProcAddress(mD3d11Module, "D3D11CreateDevice");
+        ASSERT(D3D11CreateDevice != nullptr);
+#endif  
+
+        ID3D11Device *device         = nullptr;
+        ID3D11DeviceContext *context = nullptr;
+
+        HRESULT hr = E_FAIL;
+
+        
+        hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_NULL, nullptr, 0, nullptr, 0,
+                               D3D11_SDK_VERSION, &device, nullptr, &context);
+        ASSERT(SUCCEEDED(hr));
+        if (SUCCEEDED(hr))
+        {
+            mUserDefinedAnnotation =
+                d3d11::DynamicCastComObject<ID3DUserDefinedAnnotation>(context);
+            ASSERT(mUserDefinedAnnotation != nullptr);
+            mInitialized = true;
+        }
+
+        SafeRelease(device);
+        SafeRelease(context);
+    }
 }
 
 }  

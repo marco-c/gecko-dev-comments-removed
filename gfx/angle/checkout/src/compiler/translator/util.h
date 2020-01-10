@@ -23,18 +23,6 @@ bool atoi_clamp(const char *str, unsigned int *value);
 
 namespace sh
 {
-
-
-
-
-enum class ImplicitTypeConversion
-{
-    Same,
-    Left,
-    Right,
-    Invalid,
-};
-
 class TIntermBlock;
 class TSymbolTable;
 class TIntermTyped;
@@ -71,7 +59,6 @@ bool IsBuiltinOutputVariable(TQualifier qualifier);
 bool IsBuiltinFragmentInputVariable(TQualifier qualifier);
 bool CanBeInvariantESSL1(TQualifier qualifier);
 bool CanBeInvariantESSL3OrGreater(TQualifier qualifier);
-bool IsShaderOutput(TQualifier qualifier);
 bool IsOutputESSL(ShShaderOutput output);
 bool IsOutputGLSL(ShShaderOutput output);
 bool IsOutputHLSL(ShShaderOutput output);
@@ -80,13 +67,6 @@ bool IsOutputVulkan(ShShaderOutput output);
 bool IsInShaderStorageBlock(TIntermTyped *node);
 
 GLenum GetImageInternalFormatType(TLayoutImageInternalFormat iifq);
-
-bool IsSpecWithFunctionBodyNewScope(ShShaderSpec shaderSpec, int shaderVersion);
-
-
-ImplicitTypeConversion GetConversion(TBasicType t1, TBasicType t2);
-
-bool IsValidImplicitConversion(ImplicitTypeConversion conversion, TOperator op);
 }  
 
 #endif  

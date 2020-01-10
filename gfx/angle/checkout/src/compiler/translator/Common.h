@@ -125,15 +125,6 @@ inline const char *AllocatePoolCharArray(const char *str, size_t strLength)
     return buffer;
 }
 
-
-template <typename T>
-T InitializeStream()
-{
-    T stream;
-    stream.imbue(std::locale::classic());
-    return stream;
-}
-
 }  
 
 namespace std

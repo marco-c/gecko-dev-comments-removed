@@ -155,110 +155,101 @@
 
 
 
-#define TRACE_EVENT0(platform, category, name) \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(platform, category, name)
-#define TRACE_EVENT1(platform, category, name, arg1_name, arg1_val) \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(platform, category, name, arg1_name, arg1_val)
-#define TRACE_EVENT2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)                \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(platform, category, name, arg1_name, arg1_val, arg2_name, \
-                                    arg2_val)
+#define TRACE_EVENT0(category, name) INTERNAL_TRACE_EVENT_ADD_SCOPED(category, name)
+#define TRACE_EVENT1(category, name, arg1_name, arg1_val) \
+    INTERNAL_TRACE_EVENT_ADD_SCOPED(category, name, arg1_name, arg1_val)
+#define TRACE_EVENT2(category, name, arg1_name, arg1_val, arg2_name, arg2_val) \
+    INTERNAL_TRACE_EVENT_ADD_SCOPED(category, name, arg1_name, arg1_val, arg2_name, arg2_val)
 
 
 
 
 
 
-#define TRACE_EVENT_INSTANT0(platform, category, name)                            \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_INSTANT, category, name, \
-                             TRACE_EVENT_FLAG_NONE)
-#define TRACE_EVENT_INSTANT1(platform, category, name, arg1_name, arg1_val)       \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_INSTANT, category, name, \
-                             TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-#define TRACE_EVENT_INSTANT2(platform, category, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_INSTANT, category, name,                \
-                             TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name, arg2_val)
-#define TRACE_EVENT_COPY_INSTANT0(platform, category, name)                       \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_INSTANT, category, name, \
-                             TRACE_EVENT_FLAG_COPY)
-#define TRACE_EVENT_COPY_INSTANT1(platform, category, name, arg1_name, arg1_val)  \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_INSTANT, category, name, \
-                             TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-#define TRACE_EVENT_COPY_INSTANT2(platform, category, name, arg1_name, arg1_val, arg2_name, \
-                                  arg2_val)                                                 \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_INSTANT, category, name,           \
-                             TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name, arg2_val)
+#define TRACE_EVENT_INSTANT0(category, name) \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_INSTANT, category, name, TRACE_EVENT_FLAG_NONE)
+#define TRACE_EVENT_INSTANT1(category, name, arg1_name, arg1_val)                              \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_INSTANT, category, name, TRACE_EVENT_FLAG_NONE, \
+                             arg1_name, arg1_val)
+#define TRACE_EVENT_INSTANT2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)         \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_INSTANT, category, name, TRACE_EVENT_FLAG_NONE, \
+                             arg1_name, arg1_val, arg2_name, arg2_val)
+#define TRACE_EVENT_COPY_INSTANT0(category, name) \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_INSTANT, category, name, TRACE_EVENT_FLAG_COPY)
+#define TRACE_EVENT_COPY_INSTANT1(category, name, arg1_name, arg1_val)                         \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_INSTANT, category, name, TRACE_EVENT_FLAG_COPY, \
+                             arg1_name, arg1_val)
+#define TRACE_EVENT_COPY_INSTANT2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)    \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_INSTANT, category, name, TRACE_EVENT_FLAG_COPY, \
+                             arg1_name, arg1_val, arg2_name, arg2_val)
 
 
 
 
 
 
-#define TRACE_EVENT_BEGIN0(platform, category, name)                            \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_BEGIN, category, name, \
-                             TRACE_EVENT_FLAG_NONE)
-#define TRACE_EVENT_BEGIN1(platform, category, name, arg1_name, arg1_val)       \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_BEGIN, category, name, \
-                             TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-#define TRACE_EVENT_BEGIN2(platform, category, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_BEGIN, category, name,                \
-                             TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name, arg2_val)
-#define TRACE_EVENT_COPY_BEGIN0(platform, category, name)                       \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_BEGIN, category, name, \
-                             TRACE_EVENT_FLAG_COPY)
-#define TRACE_EVENT_COPY_BEGIN1(platform, category, name, arg1_name, arg1_val)  \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_BEGIN, category, name, \
-                             TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-#define TRACE_EVENT_COPY_BEGIN2(platform, category, name, arg1_name, arg1_val, arg2_name, \
-                                arg2_val)                                                 \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_BEGIN, category, name,           \
-                             TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name, arg2_val)
+#define TRACE_EVENT_BEGIN0(category, name) \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category, name, TRACE_EVENT_FLAG_NONE)
+#define TRACE_EVENT_BEGIN1(category, name, arg1_name, arg1_val)                              \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category, name, TRACE_EVENT_FLAG_NONE, \
+                             arg1_name, arg1_val)
+#define TRACE_EVENT_BEGIN2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)         \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category, name, TRACE_EVENT_FLAG_NONE, \
+                             arg1_name, arg1_val, arg2_name, arg2_val)
+#define TRACE_EVENT_COPY_BEGIN0(category, name) \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category, name, TRACE_EVENT_FLAG_COPY)
+#define TRACE_EVENT_COPY_BEGIN1(category, name, arg1_name, arg1_val)                         \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category, name, TRACE_EVENT_FLAG_COPY, \
+                             arg1_name, arg1_val)
+#define TRACE_EVENT_COPY_BEGIN2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)    \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category, name, TRACE_EVENT_FLAG_COPY, \
+                             arg1_name, arg1_val, arg2_name, arg2_val)
 
 
 
 
 
-#define TRACE_EVENT_END0(platform, category, name) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_NONE)
-#define TRACE_EVENT_END1(platform, category, name, arg1_name, arg1_val)       \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_END, category, name, \
-                             TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-#define TRACE_EVENT_END2(platform, category, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_END, category, name,                \
-                             TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name, arg2_val)
-#define TRACE_EVENT_COPY_END0(platform, category, name) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_COPY)
-#define TRACE_EVENT_COPY_END1(platform, category, name, arg1_name, arg1_val)  \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_END, category, name, \
-                             TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-#define TRACE_EVENT_COPY_END2(platform, category, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_END, category, name,                     \
-                             TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name, arg2_val)
+#define TRACE_EVENT_END0(category, name) \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_NONE)
+#define TRACE_EVENT_END1(category, name, arg1_name, arg1_val)                              \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_NONE, \
+                             arg1_name, arg1_val)
+#define TRACE_EVENT_END2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)         \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_NONE, \
+                             arg1_name, arg1_val, arg2_name, arg2_val)
+#define TRACE_EVENT_COPY_END0(category, name) \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_COPY)
+#define TRACE_EVENT_COPY_END1(category, name, arg1_name, arg1_val)                         \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_COPY, \
+                             arg1_name, arg1_val)
+#define TRACE_EVENT_COPY_END2(category, name, arg1_name, arg1_val, arg2_name, arg2_val)    \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category, name, TRACE_EVENT_FLAG_COPY, \
+                             arg1_name, arg1_val, arg2_name, arg2_val)
 
 
 
 
 
-#define TRACE_COUNTER1(platform, category, name, value)                           \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_COUNTER, category, name, \
-                             TRACE_EVENT_FLAG_NONE, "value", static_cast<int>(value))
-#define TRACE_COPY_COUNTER1(platform, category, name, value)                      \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_COUNTER, category, name, \
-                             TRACE_EVENT_FLAG_COPY, "value", static_cast<int>(value))
+#define TRACE_COUNTER1(category, name, value)                                                  \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category, name, TRACE_EVENT_FLAG_NONE, \
+                             "value", static_cast<int>(value))
+#define TRACE_COPY_COUNTER1(category, name, value)                                             \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category, name, TRACE_EVENT_FLAG_COPY, \
+                             "value", static_cast<int>(value))
 
 
 
 
 
 
-#define TRACE_COUNTER2(platform, category, name, value1_name, value1_val, value2_name, value2_val) \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_COUNTER, category, name,                  \
-                             TRACE_EVENT_FLAG_NONE, value1_name, static_cast<int>(value1_val),     \
-                             value2_name, static_cast<int>(value2_val))
-#define TRACE_COPY_COUNTER2(platform, category, name, value1_name, value1_val, value2_name,    \
-                            value2_val)                                                        \
-    INTERNAL_TRACE_EVENT_ADD(platform, TRACE_EVENT_PHASE_COUNTER, category, name,              \
-                             TRACE_EVENT_FLAG_COPY, value1_name, static_cast<int>(value1_val), \
-                             value2_name, static_cast<int>(value2_val))
+#define TRACE_COUNTER2(category, name, value1_name, value1_val, value2_name, value2_val)       \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category, name, TRACE_EVENT_FLAG_NONE, \
+                             value1_name, static_cast<int>(value1_val), value2_name,           \
+                             static_cast<int>(value2_val))
+#define TRACE_COPY_COUNTER2(category, name, value1_name, value1_val, value2_name, value2_val)  \
+    INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category, name, TRACE_EVENT_FLAG_COPY, \
+                             value1_name, static_cast<int>(value1_val), value2_name,           \
+                             static_cast<int>(value2_val))
 
 
 
@@ -268,11 +259,11 @@
 
 
 
-#define TRACE_COUNTER_ID1(platform, category, name, id, value)                                \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_COUNTER, category, name, id, \
+#define TRACE_COUNTER_ID1(category, name, id, value)                                \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_COUNTER, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE, "value", static_cast<int>(value))
-#define TRACE_COPY_COUNTER_ID1(platform, category, name, id, value)                           \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_COUNTER, category, name, id, \
+#define TRACE_COPY_COUNTER_ID1(category, name, id, value)                           \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_COUNTER, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY, "value", static_cast<int>(value))
 
 
@@ -284,16 +275,15 @@
 
 
 
-#define TRACE_COUNTER_ID2(platform, category, name, id, value1_name, value1_val, value2_name, \
-                          value2_val)                                                         \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(                                                         \
-        platform, TRACE_EVENT_PHASE_COUNTER, category, name, id, TRACE_EVENT_FLAG_NONE,       \
-        value1_name, static_cast<int>(value1_val), value2_name, static_cast<int>(value2_val))
-#define TRACE_COPY_COUNTER_ID2(platform, category, name, id, value1_name, value1_val, value2_name, \
-                               value2_val)                                                         \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(                                                              \
-        platform, TRACE_EVENT_PHASE_COUNTER, category, name, id, TRACE_EVENT_FLAG_COPY,            \
-        value1_name, static_cast<int>(value1_val), value2_name, static_cast<int>(value2_val))
+#define TRACE_COUNTER_ID2(category, name, id, value1_name, value1_val, value2_name, value2_val) \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(                                                           \
+        TRACE_EVENT_PHASE_COUNTER, category, name, id, TRACE_EVENT_FLAG_NONE, value1_name,      \
+        static_cast<int>(value1_val), value2_name, static_cast<int>(value2_val))
+#define TRACE_COPY_COUNTER_ID2(category, name, id, value1_name, value1_val, value2_name,   \
+                               value2_val)                                                 \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(                                                      \
+        TRACE_EVENT_PHASE_COUNTER, category, name, id, TRACE_EVENT_FLAG_COPY, value1_name, \
+        static_cast<int>(value1_val), value2_name, static_cast<int>(value2_val))
 
 
 
@@ -311,27 +301,26 @@
 
 
 
-#define TRACE_EVENT_ASYNC_BEGIN0(platform, category, name, id)                                    \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
+#define TRACE_EVENT_ASYNC_BEGIN0(category, name, id)                                    \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE)
-#define TRACE_EVENT_ASYNC_BEGIN1(platform, category, name, id, arg1_name, arg1_val)               \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
+#define TRACE_EVENT_ASYNC_BEGIN1(category, name, id, arg1_name, arg1_val)               \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-#define TRACE_EVENT_ASYNC_BEGIN2(platform, category, name, id, arg1_name, arg1_val, arg2_name,    \
-                                 arg2_val)                                                        \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
-                                     TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name,       \
+#define TRACE_EVENT_ASYNC_BEGIN2(category, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id,        \
+                                     TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name,    \
                                      arg2_val)
-#define TRACE_EVENT_COPY_ASYNC_BEGIN0(platform, category, name, id)                               \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
+#define TRACE_EVENT_COPY_ASYNC_BEGIN0(category, name, id)                               \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY)
-#define TRACE_EVENT_COPY_ASYNC_BEGIN1(platform, category, name, id, arg1_name, arg1_val)          \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
+#define TRACE_EVENT_COPY_ASYNC_BEGIN1(category, name, id, arg1_name, arg1_val)          \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-#define TRACE_EVENT_COPY_ASYNC_BEGIN2(platform, category, name, id, arg1_name, arg1_val,          \
-                                      arg2_name, arg2_val)                                        \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id, \
-                                     TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name,       \
+#define TRACE_EVENT_COPY_ASYNC_BEGIN2(category, name, id, arg1_name, arg1_val, arg2_name,   \
+                                      arg2_val)                                             \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_BEGIN, category, name, id,     \
+                                     TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name, \
                                      arg2_val)
 
 
@@ -339,41 +328,39 @@
 
 
 
-#define TRACE_EVENT_ASYNC_STEP0(platform, category, name, id, step)                              \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
+#define TRACE_EVENT_ASYNC_STEP0(category, name, id, step)                              \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE, "step", step)
-#define TRACE_EVENT_ASYNC_STEP1(platform, category, name, id, step, arg1_name, arg1_val)         \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
+#define TRACE_EVENT_ASYNC_STEP1(category, name, id, step, arg1_name, arg1_val)         \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE, "step", step, arg1_name, arg1_val)
-#define TRACE_EVENT_COPY_ASYNC_STEP0(platform, category, name, id, step)                         \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
+#define TRACE_EVENT_COPY_ASYNC_STEP0(category, name, id, step)                         \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY, "step", step)
-#define TRACE_EVENT_COPY_ASYNC_STEP1(platform, category, name, id, step, arg1_name, arg1_val)    \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
+#define TRACE_EVENT_COPY_ASYNC_STEP1(category, name, id, step, arg1_name, arg1_val)    \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_STEP, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY, "step", step, arg1_name, arg1_val)
 
 
 
-#define TRACE_EVENT_ASYNC_END0(platform, category, name, id)                                    \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
+#define TRACE_EVENT_ASYNC_END0(category, name, id)                                    \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE)
-#define TRACE_EVENT_ASYNC_END1(platform, category, name, id, arg1_name, arg1_val)               \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
+#define TRACE_EVENT_ASYNC_END1(category, name, id, arg1_name, arg1_val)               \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
                                      TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-#define TRACE_EVENT_ASYNC_END2(platform, category, name, id, arg1_name, arg1_val, arg2_name,    \
-                               arg2_val)                                                        \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
-                                     TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name,     \
+#define TRACE_EVENT_ASYNC_END2(category, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_END, category, name, id,        \
+                                     TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name,  \
                                      arg2_val)
-#define TRACE_EVENT_COPY_ASYNC_END0(platform, category, name, id)                               \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
+#define TRACE_EVENT_COPY_ASYNC_END0(category, name, id)                               \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY)
-#define TRACE_EVENT_COPY_ASYNC_END1(platform, category, name, id, arg1_name, arg1_val)          \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
+#define TRACE_EVENT_COPY_ASYNC_END1(category, name, id, arg1_name, arg1_val)          \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_END, category, name, id, \
                                      TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-#define TRACE_EVENT_COPY_ASYNC_END2(platform, category, name, id, arg1_name, arg1_val, arg2_name, \
-                                    arg2_val)                                                     \
-    INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, TRACE_EVENT_PHASE_ASYNC_END, category, name, id,   \
+#define TRACE_EVENT_COPY_ASYNC_END2(category, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+    INTERNAL_TRACE_EVENT_ADD_WITH_ID(TRACE_EVENT_PHASE_ASYNC_END, category, name, id,             \
                                      TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name,       \
                                      arg2_val)
 
@@ -454,53 +441,52 @@
 #define INTERNALTRACEEVENTUID(name_prefix) INTERNAL_TRACE_EVENT_UID2(name_prefix, __LINE__)
 
 
-#define INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(platform, category)    \
+#define INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category)              \
     static const unsigned char *INTERNALTRACEEVENTUID(catstatic) = 0; \
     if (!INTERNALTRACEEVENTUID(catstatic))                            \
-        INTERNALTRACEEVENTUID(catstatic) = TRACE_EVENT_API_GET_CATEGORY_ENABLED(platform, category);
+        INTERNALTRACEEVENTUID(catstatic) = TRACE_EVENT_API_GET_CATEGORY_ENABLED(category);
 
 
 
-#define INTERNAL_TRACE_EVENT_ADD(platform, phase, category, name, flags, ...)                      \
-    do                                                                                             \
-    {                                                                                              \
-        INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(platform, category);                                \
-        if (*INTERNALTRACEEVENTUID(catstatic))                                                     \
-        {                                                                                          \
-            gl::TraceEvent::addTraceEvent(platform, phase, INTERNALTRACEEVENTUID(catstatic), name, \
-                                          gl::TraceEvent::noEventId, flags, ##__VA_ARGS__);        \
-        }                                                                                          \
+#define INTERNAL_TRACE_EVENT_ADD(phase, category, name, flags, ...)                         \
+    do                                                                                      \
+    {                                                                                       \
+        INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category);                                   \
+        if (*INTERNALTRACEEVENTUID(catstatic))                                              \
+        {                                                                                   \
+            gl::TraceEvent::addTraceEvent(phase, INTERNALTRACEEVENTUID(catstatic), name,    \
+                                          gl::TraceEvent::noEventId, flags, ##__VA_ARGS__); \
+        }                                                                                   \
     } while (0)
 
 
 
 
-#define INTERNAL_TRACE_EVENT_ADD_SCOPED(platform, category, name, ...)                 \
-    INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(platform, category);                        \
-    gl::TraceEvent::TraceEndOnScopeClose INTERNALTRACEEVENTUID(profileScope);          \
-    if (*INTERNALTRACEEVENTUID(catstatic))                                             \
-    {                                                                                  \
-        gl::TraceEvent::addTraceEvent(                                                 \
-            platform, TRACE_EVENT_PHASE_BEGIN, INTERNALTRACEEVENTUID(catstatic), name, \
-            gl::TraceEvent::noEventId, TRACE_EVENT_FLAG_NONE, ##__VA_ARGS__);          \
-        INTERNALTRACEEVENTUID(profileScope)                                            \
-            .initialize(platform, INTERNALTRACEEVENTUID(catstatic), name);             \
+#define INTERNAL_TRACE_EVENT_ADD_SCOPED(category, name, ...)                                     \
+    INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category);                                            \
+    gl::TraceEvent::TraceEndOnScopeClose INTERNALTRACEEVENTUID(profileScope);                    \
+    if (*INTERNALTRACEEVENTUID(catstatic))                                                       \
+    {                                                                                            \
+        gl::TraceEvent::addTraceEvent(TRACE_EVENT_PHASE_BEGIN, INTERNALTRACEEVENTUID(catstatic), \
+                                      name, gl::TraceEvent::noEventId, TRACE_EVENT_FLAG_NONE,    \
+                                      ##__VA_ARGS__);                                            \
+        INTERNALTRACEEVENTUID(profileScope).initialize(INTERNALTRACEEVENTUID(catstatic), name);  \
     }
 
 
 
-#define INTERNAL_TRACE_EVENT_ADD_WITH_ID(platform, phase, category, name, id, flags, ...)          \
-    do                                                                                             \
-    {                                                                                              \
-        INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(platform, category);                                \
-        if (*INTERNALTRACEEVENTUID(catstatic))                                                     \
-        {                                                                                          \
-            unsigned char traceEventFlags = flags | TRACE_EVENT_FLAG_HAS_ID;                       \
-            gl::TraceEvent::TraceID traceEventTraceID(id, &traceEventFlags);                       \
-            gl::TraceEvent::addTraceEvent(platform, phase, INTERNALTRACEEVENTUID(catstatic), name, \
-                                          traceEventTraceID.data(), traceEventFlags,               \
-                                          ##__VA_ARGS__);                                          \
-        }                                                                                          \
+#define INTERNAL_TRACE_EVENT_ADD_WITH_ID(phase, category, name, id, flags, ...)          \
+    do                                                                                   \
+    {                                                                                    \
+        INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category);                                \
+        if (*INTERNALTRACEEVENTUID(catstatic))                                           \
+        {                                                                                \
+            unsigned char traceEventFlags = flags | TRACE_EVENT_FLAG_HAS_ID;             \
+            gl::TraceEvent::TraceID traceEventTraceID(id, &traceEventFlags);             \
+            gl::TraceEvent::addTraceEvent(phase, INTERNALTRACEEVENTUID(catstatic), name, \
+                                          traceEventTraceID.data(), traceEventFlags,     \
+                                          ##__VA_ARGS__);                                \
+        }                                                                                \
     } while (0)
 
 
@@ -667,20 +653,18 @@ static inline void setTraceValue(const std::string &arg,
 
 
 
-static inline angle::TraceEventHandle addTraceEvent(angle::PlatformMethods *platform,
-                                                    char phase,
+static inline angle::TraceEventHandle addTraceEvent(char phase,
                                                     const unsigned char *categoryEnabled,
                                                     const char *name,
                                                     unsigned long long id,
                                                     unsigned char flags)
 {
-    return TRACE_EVENT_API_ADD_TRACE_EVENT(platform, phase, categoryEnabled, name, id, zeroNumArgs,
-                                           0, 0, 0, flags);
+    return TRACE_EVENT_API_ADD_TRACE_EVENT(phase, categoryEnabled, name, id, zeroNumArgs, 0, 0, 0,
+                                           flags);
 }
 
 template <class ARG1_TYPE>
-static inline angle::TraceEventHandle addTraceEvent(angle::PlatformMethods *platform,
-                                                    char phase,
+static inline angle::TraceEventHandle addTraceEvent(char phase,
                                                     const unsigned char *categoryEnabled,
                                                     const char *name,
                                                     unsigned long long id,
@@ -692,13 +676,12 @@ static inline angle::TraceEventHandle addTraceEvent(angle::PlatformMethods *plat
     unsigned char argTypes[1];
     unsigned long long argValues[1];
     setTraceValue(arg1Val, &argTypes[0], &argValues[0]);
-    return TRACE_EVENT_API_ADD_TRACE_EVENT(platform, phase, categoryEnabled, name, id, numArgs,
-                                           &arg1Name, argTypes, argValues, flags);
+    return TRACE_EVENT_API_ADD_TRACE_EVENT(phase, categoryEnabled, name, id, numArgs, &arg1Name,
+                                           argTypes, argValues, flags);
 }
 
 template <class ARG1_TYPE, class ARG2_TYPE>
-static inline angle::TraceEventHandle addTraceEvent(angle::PlatformMethods *platform,
-                                                    char phase,
+static inline angle::TraceEventHandle addTraceEvent(char phase,
                                                     const unsigned char *categoryEnabled,
                                                     const char *name,
                                                     unsigned long long id,
@@ -714,8 +697,8 @@ static inline angle::TraceEventHandle addTraceEvent(angle::PlatformMethods *plat
     unsigned long long argValues[2];
     setTraceValue(arg1Val, &argTypes[0], &argValues[0]);
     setTraceValue(arg2Val, &argTypes[1], &argValues[1]);
-    return TRACE_EVENT_API_ADD_TRACE_EVENT(platform, phase, categoryEnabled, name, id, numArgs,
-                                           argNames, argTypes, argValues, flags);
+    return TRACE_EVENT_API_ADD_TRACE_EVENT(phase, categoryEnabled, name, id, numArgs, argNames,
+                                           argTypes, argValues, flags);
 }
 
 
@@ -730,11 +713,8 @@ class TraceEndOnScopeClose
             addEventIfEnabled();
     }
 
-    void initialize(angle::PlatformMethods *platform,
-                    const unsigned char *categoryEnabled,
-                    const char *name)
+    void initialize(const unsigned char *categoryEnabled, const char *name)
     {
-        m_data.platform        = platform;
         m_data.categoryEnabled = categoryEnabled;
         m_data.name            = name;
         m_pdata                = &m_data;
@@ -747,9 +727,9 @@ class TraceEndOnScopeClose
         
         if (*m_pdata->categoryEnabled)
         {
-            TRACE_EVENT_API_ADD_TRACE_EVENT(m_pdata->platform, TRACE_EVENT_PHASE_END,
-                                            m_pdata->categoryEnabled, m_pdata->name, noEventId,
-                                            zeroNumArgs, 0, 0, 0, TRACE_EVENT_FLAG_NONE);
+            TRACE_EVENT_API_ADD_TRACE_EVENT(TRACE_EVENT_PHASE_END, m_pdata->categoryEnabled,
+                                            m_pdata->name, noEventId, zeroNumArgs, 0, 0, 0,
+                                            TRACE_EVENT_FLAG_NONE);
         }
     }
 
@@ -760,7 +740,6 @@ class TraceEndOnScopeClose
     
     struct Data
     {
-        angle::PlatformMethods *platform;
         const unsigned char *categoryEnabled;
         const char *name;
     };
