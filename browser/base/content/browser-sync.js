@@ -364,7 +364,9 @@ var gSync = {
     
     let stateValue = "not_configured";
     document.getElementById("PanelUI-fxa").removeAttribute("title");
-    if (
+    if (state.status === UIState.STATUS_NOT_CONFIGURED) {
+      mainWindowEl.style.removeProperty("--avatar-image-url");
+    } else if (
       state.status === UIState.STATUS_LOGIN_FAILED ||
       state.status === UIState.STATUS_NOT_VERIFIED
     ) {
