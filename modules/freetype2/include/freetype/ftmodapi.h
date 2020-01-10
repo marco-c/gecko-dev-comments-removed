@@ -623,7 +623,7 @@ FT_BEGIN_HEADER
 
 
 
-  typedef void
+  typedef FT_Error
   (*FT_DebugHook_Func)( void*  arg );
 
 

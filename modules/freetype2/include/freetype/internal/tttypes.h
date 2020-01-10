@@ -163,81 +163,6 @@ FT_BEGIN_HEADER
 
 
 
-  typedef struct  WOFF_HeaderRec_
-  {
-    FT_ULong   signature;
-    FT_ULong   flavor;
-    FT_ULong   length;
-    FT_UShort  num_tables;
-    FT_UShort  reserved;
-    FT_ULong   totalSfntSize;
-    FT_UShort  majorVersion;
-    FT_UShort  minorVersion;
-    FT_ULong   metaOffset;
-    FT_ULong   metaLength;
-    FT_ULong   metaOrigLength;
-    FT_ULong   privOffset;
-    FT_ULong   privLength;
-
-  } WOFF_HeaderRec, *WOFF_Header;
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  typedef struct  WOFF_TableRec_
-  {
-    FT_ULong  Tag;           
-    FT_ULong  Offset;        
-    FT_ULong  CompLength;    
-    FT_ULong  OrigLength;    
-    FT_ULong  CheckSum;      
-
-    FT_ULong  OrigOffset;    
-                             
-  } WOFF_TableRec, *WOFF_Table;
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1533,6 +1458,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
   typedef struct  TT_FaceRec_
   {
     FT_FaceRec            root;
@@ -1633,7 +1560,7 @@ FT_BEGIN_HEADER
 
     
     FT_ULong              cvt_size;
-    FT_Short*             cvt;
+    FT_Int32*             cvt;
 
     
     

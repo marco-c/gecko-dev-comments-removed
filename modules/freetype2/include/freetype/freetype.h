@@ -1874,6 +1874,13 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
   typedef struct  FT_GlyphSlotRec_
   {
     FT_Library        library;
@@ -3932,8 +3939,8 @@ FT_BEGIN_HEADER
 
 
   FT_EXPORT( FT_UInt )
-  FT_Get_Name_Index( FT_Face     face,
-                     FT_String*  glyph_name );
+  FT_Get_Name_Index( FT_Face           face,
+                     const FT_String*  glyph_name );
 
 
   
@@ -4774,7 +4781,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  10
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   

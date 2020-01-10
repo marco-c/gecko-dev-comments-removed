@@ -148,7 +148,7 @@
   
 
   static FT_Bool
-  tt_check_trickyness_family( FT_String*  name )
+  tt_check_trickyness_family( const FT_String*  name )
   {
 
 #define TRICK_NAMES_MAX_CHARACTERS  19
@@ -937,7 +937,22 @@
     TT_Face         face = (TT_Face)size->root.face;
     TT_ExecContext  exec;
     FT_Error        error;
+    FT_UInt         i;
 
+    
+    FT_Fixed  scale = size->ttmetrics.scale >> 6;
+
+
+    
+    
+    FT_TRACE6(( "CVT values:\n" ));
+    for ( i = 0; i < size->cvt_size; i++ )
+    {
+      size->cvt[i] = FT_MulFix( face->cvt[i], scale );
+      FT_TRACE6(( "  %3d: %f (%f)\n",
+                  i, face->cvt[i] / 64.0, size->cvt[i] / 64.0 ));
+    }
+    FT_TRACE6(( "\n" ));
 
     exec = size->context;
 
@@ -1095,6 +1110,12 @@
       tt_metrics->stretched = FALSE;
 
       
+      
+      
+      
+      
+      
+      
       tt_metrics->compensations[0] = 0;   
       tt_metrics->compensations[1] = 0;   
       tt_metrics->compensations[2] = 0;   
@@ -1171,19 +1192,7 @@
     if ( size->cvt_ready < 0 )
     {
       FT_UInt  i;
-      TT_Face  face = (TT_Face)size->root.face;
 
-
-      
-      
-      FT_TRACE6(( "CVT values:\n" ));
-      for ( i = 0; i < size->cvt_size; i++ )
-      {
-        size->cvt[i] = FT_MulFix( face->cvt[i], size->ttmetrics.scale );
-        FT_TRACE6(( "  %3d: %d (%f)\n",
-                    i, face->cvt[i], size->cvt[i] / 64.0 ));
-      }
-      FT_TRACE6(( "\n" ));
 
       
       for ( i = 0; i < (FT_UInt)size->twilight.n_points; i++ )

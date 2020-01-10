@@ -109,9 +109,9 @@ FT_BEGIN_HEADER
   
   typedef struct  bdf_property_t_
   {
-    char*  name;         
-    int    format;       
-    int    builtin;      
+    const char*  name;         
+    int          format;       
+    int          builtin;      
     union
     {
       char*          atom;

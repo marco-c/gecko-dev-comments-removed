@@ -244,7 +244,9 @@
 #define FT_ERR_PROTOS_DEFINED
 
 
+FT_BEGIN_HEADER
 
+  
 
 
 
@@ -273,6 +275,8 @@
 
   FT_EXPORT( const char* )
   FT_Error_String( FT_Error  error_code );
+
+FT_END_HEADER
 
 
 #endif 

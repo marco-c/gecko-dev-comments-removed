@@ -48,6 +48,7 @@ FT_TRACE_DEF( cache )
   
 FT_TRACE_DEF( sfdriver )  
 FT_TRACE_DEF( sfobjs )    
+FT_TRACE_DEF( sfwoff )    
 FT_TRACE_DEF( ttbdf )     
 FT_TRACE_DEF( ttcmap )    
 FT_TRACE_DEF( ttcolr )    

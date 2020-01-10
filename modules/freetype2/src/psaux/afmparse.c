@@ -954,6 +954,7 @@
         if ( error )
           goto Fail;
         
+        
 
       case AFM_TOKEN_ENDFONTMETRICS:
         return FT_Err_Ok;

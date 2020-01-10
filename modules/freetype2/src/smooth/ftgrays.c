@@ -81,6 +81,14 @@
 
 
 
+
+
+
+
+
+
+
+
   
 
 
@@ -327,17 +335,9 @@ typedef ptrdiff_t  FT_PtrDist;
   
 #define PIXEL_BITS  8
 
-#undef FLOOR
-#undef CEILING
-#undef TRUNC
-#undef SCALED
-
 #define ONE_PIXEL       ( 1 << PIXEL_BITS )
-#define TRUNC( x )      ( (TCoord)( (x) >> PIXEL_BITS ) )
-#define SUBPIXELS( x )  ( (TPos)(x) * ONE_PIXEL )
-#define FLOOR( x )      ( (x) & -ONE_PIXEL )
-#define CEILING( x )    ( ( (x) + ONE_PIXEL - 1 ) & -ONE_PIXEL )
-#define ROUND( x )      ( ( (x) + ONE_PIXEL / 2 ) & -ONE_PIXEL )
+#define TRUNC( x )      (TCoord)( (x) >> PIXEL_BITS )
+#define FRACT( x )      (TCoord)( (x) & ( ONE_PIXEL - 1 ) )
 
 #if PIXEL_BITS >= 6
 #define UPSCALE( x )    ( (x) * ( ONE_PIXEL >> 6 ) )
@@ -388,9 +388,9 @@ typedef ptrdiff_t  FT_PtrDist;
 #define FT_UDIVPREP( c, b )                                        \
   long  b ## _r = c ? (long)( FT_ULONG_MAX >> PIXEL_BITS ) / ( b ) \
                     : 0
-#define FT_UDIV( a, b )                                        \
-  ( ( (unsigned long)( a ) * (unsigned long)( b ## _r ) ) >>   \
-    ( sizeof( long ) * FT_CHAR_BIT - PIXEL_BITS ) )
+#define FT_UDIV( a, b )                                                \
+  (TCoord)( ( (unsigned long)( a ) * (unsigned long)( b ## _r ) ) >>   \
+            ( sizeof( long ) * FT_CHAR_BIT - PIXEL_BITS ) )
 
 
   
@@ -432,6 +432,9 @@ typedef ptrdiff_t  FT_PtrDist;
 #define FT_MAX_GRAY_POOL  ( 2048 / sizeof ( TCell ) )
 #endif
 
+  
+#define FT_MAX_GRAY_SPANS  10
+
 
 #if defined( _MSC_VER )      
   
@@ -465,6 +468,8 @@ typedef ptrdiff_t  FT_PtrDist;
 
     FT_Raster_Span_Func  render_span;
     void*                render_span_data;
+    FT_Span              spans[FT_MAX_GRAY_SPANS];
+    int                  num_spans;
 
   } gray_TWorker, *gray_PWorker;
 
@@ -526,10 +531,9 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
     pcell = &ras.ycells[ras.ey - ras.min_ey];
-    for (;;)
+    while ( ( cell = *pcell ) )
     {
-      cell = *pcell;
-      if ( !cell || cell->x > x )
+      if ( cell->x > x )
         break;
 
       if ( cell->x == x )
@@ -577,16 +581,13 @@ typedef ptrdiff_t  FT_PtrDist;
     
     
 
-    if ( ex < ras.min_ex )
-      ex = ras.min_ex - 1;
-
     
     if ( !ras.invalid && ( ras.area || ras.cover ) )
       gray_record_cell( RAS_VAR );
 
     ras.area  = 0;
     ras.cover = 0;
-    ras.ex    = ex;
+    ras.ex    = FT_MAX( ex, ras.min_ex - 1 );
     ras.ey    = ey;
 
     ras.invalid = ( ey >= ras.max_ey || ey < ras.min_ey ||
@@ -622,8 +623,8 @@ typedef ptrdiff_t  FT_PtrDist;
       return;
     }
 
-    fx1   = (TCoord)( x1 - SUBPIXELS( ex1 ) );
-    fx2   = (TCoord)( x2 - SUBPIXELS( ex2 ) );
+    fx1   = FRACT( x1 );
+    fx2   = FRACT( x2 );
 
     
     
@@ -650,6 +651,9 @@ typedef ptrdiff_t  FT_PtrDist;
       dx    = -dx;
     }
 
+    
+    
+    
     FT_DIV_MOD( TCoord, p, dx, delta, mod );
 
     ras.area  += (TArea)( ( fx1 + first ) * delta );
@@ -715,8 +719,8 @@ typedef ptrdiff_t  FT_PtrDist;
          ( ey1 <  ras.min_ey && ey2 <  ras.min_ey ) )
       goto End;
 
-    fy1 = (TCoord)( ras.y - SUBPIXELS( ey1 ) );
-    fy2 = (TCoord)( to_y - SUBPIXELS( ey2 ) );
+    fy1 = FRACT( ras.y );
+    fy2 = FRACT( to_y );
 
     
     if ( ey1 == ey2 )
@@ -732,7 +736,7 @@ typedef ptrdiff_t  FT_PtrDist;
     if ( dx == 0 )
     {
       TCoord  ex     = TRUNC( ras.x );
-      TCoord  two_fx = (TCoord)( ( ras.x - SUBPIXELS( ex ) ) << 1 );
+      TCoord  two_fx = FRACT( ras.x ) << 1;
       TArea   area;
 
 
@@ -787,6 +791,8 @@ typedef ptrdiff_t  FT_PtrDist;
       dy    = -dy;
     }
 
+    
+    
     FT_DIV_MOD( TCoord, p, dy, delta, mod );
 
     x = ras.x + delta;
@@ -843,8 +849,9 @@ typedef ptrdiff_t  FT_PtrDist;
   gray_render_line( RAS_ARG_ TPos  to_x,
                              TPos  to_y )
   {
-    TPos    dx, dy, fx1, fy1, fx2, fy2;
-    TCoord  ex1, ex2, ey1, ey2;
+    TPos    dx, dy;
+    TCoord  fx1, fy1, fx2, fy2;
+    TCoord  ex1, ey1, ex2, ey2;
 
 
     ey1 = TRUNC( ras.y );
@@ -858,8 +865,8 @@ typedef ptrdiff_t  FT_PtrDist;
     ex1 = TRUNC( ras.x );
     ex2 = TRUNC( to_x );
 
-    fx1 = ras.x - SUBPIXELS( ex1 );
-    fy1 = ras.y - SUBPIXELS( ey1 );
+    fx1 = FRACT( ras.x );
+    fy1 = FRACT( ras.y );
 
     dx = to_x - ras.x;
     dy = to_y - ras.y;
@@ -868,8 +875,8 @@ typedef ptrdiff_t  FT_PtrDist;
       ;
     else if ( dy == 0 )   
     {
-      ex1 = ex2;
-      gray_set_cell( RAS_VAR_ ex1, ey1 );
+      gray_set_cell( RAS_VAR_ ex2, ey2 );
+      goto End;
     }
     else if ( dx == 0 )
     {
@@ -896,7 +903,7 @@ typedef ptrdiff_t  FT_PtrDist;
     }
     else                                  
     {
-      TPos  prod = dx * fy1 - dy * fx1;
+      TPos  prod = dx * (TPos)fy1 - dy * (TPos)fx1;
       FT_UDIVPREP( ex1 != ex2, dx );
       FT_UDIVPREP( ey1 != ey2, dy );
 
@@ -910,7 +917,7 @@ typedef ptrdiff_t  FT_PtrDist;
                   prod - dx * ONE_PIXEL                  >  0 ) 
         {
           fx2 = 0;
-          fy2 = (TPos)FT_UDIV( -prod, -dx );
+          fy2 = FT_UDIV( -prod, -dx );
           prod -= dy * ONE_PIXEL;
           ras.cover += ( fy2 - fy1 );
           ras.area  += ( fy2 - fy1 ) * ( fx1 + fx2 );
@@ -922,7 +929,7 @@ typedef ptrdiff_t  FT_PtrDist;
                   prod - dx * ONE_PIXEL + dy * ONE_PIXEL >  0 ) 
         {
           prod -= dx * ONE_PIXEL;
-          fx2 = (TPos)FT_UDIV( -prod, dy );
+          fx2 = FT_UDIV( -prod, dy );
           fy2 = ONE_PIXEL;
           ras.cover += ( fy2 - fy1 );
           ras.area  += ( fy2 - fy1 ) * ( fx1 + fx2 );
@@ -935,7 +942,7 @@ typedef ptrdiff_t  FT_PtrDist;
         {
           prod += dy * ONE_PIXEL;
           fx2 = ONE_PIXEL;
-          fy2 = (TPos)FT_UDIV( prod, dx );
+          fy2 = FT_UDIV( prod, dx );
           ras.cover += ( fy2 - fy1 );
           ras.area  += ( fy2 - fy1 ) * ( fx1 + fx2 );
           fx1 = 0;
@@ -945,7 +952,7 @@ typedef ptrdiff_t  FT_PtrDist;
         else 
 
         {
-          fx2 = (TPos)FT_UDIV( prod, -dy );
+          fx2 = FT_UDIV( prod, -dy );
           fy2 = 0;
           prod += dx * ONE_PIXEL;
           ras.cover += ( fy2 - fy1 );
@@ -959,8 +966,8 @@ typedef ptrdiff_t  FT_PtrDist;
       } while ( ex1 != ex2 || ey1 != ey2 );
     }
 
-    fx2 = to_x - SUBPIXELS( ex2 );
-    fy2 = to_y - SUBPIXELS( ey2 );
+    fx2 = FRACT( to_x );
+    fy2 = FRACT( to_y );
 
     ras.cover += ( fy2 - fy1 );
     ras.area  += ( fy2 - fy1 ) * ( fx1 + fx2 );
@@ -979,16 +986,18 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
     base[4].x = base[2].x;
-    b = base[1].x;
-    a = base[3].x = ( base[2].x + b ) / 2;
-    b = base[1].x = ( base[0].x + b ) / 2;
-    base[2].x = ( a + b ) / 2;
+    a = base[0].x + base[1].x;
+    b = base[1].x + base[2].x;
+    base[3].x = b >> 1;
+    base[2].x = ( a + b ) >> 2;
+    base[1].x = a >> 1;
 
     base[4].y = base[2].y;
-    b = base[1].y;
-    a = base[3].y = ( base[2].y + b ) / 2;
-    b = base[1].y = ( base[0].y + b ) / 2;
-    base[2].y = ( a + b ) / 2;
+    a = base[0].y + base[1].y;
+    b = base[1].y + base[2].y;
+    base[3].y = b >> 1;
+    base[2].y = ( a + b ) >> 2;
+    base[1].y = a >> 1;
   }
 
 
@@ -1042,12 +1051,11 @@ typedef ptrdiff_t  FT_PtrDist;
     
     do
     {
-      split = 1;
-      while ( ( draw & split ) == 0 )
+      split = draw & ( -draw );  
+      while ( ( split >>= 1 ) )
       {
         gray_split_conic( arc );
         arc += 2;
-        split <<= 1;
       }
 
       gray_render_line( RAS_VAR_ arc[0].x, arc[0].y );
@@ -1060,28 +1068,32 @@ typedef ptrdiff_t  FT_PtrDist;
   static void
   gray_split_cubic( FT_Vector*  base )
   {
-    TPos  a, b, c, d;
+    TPos  a, b, c;
 
 
     base[6].x = base[3].x;
-    c = base[1].x;
-    d = base[2].x;
-    base[1].x = a = ( base[0].x + c ) / 2;
-    base[5].x = b = ( base[3].x + d ) / 2;
-    c = ( c + d ) / 2;
-    base[2].x = a = ( a + c ) / 2;
-    base[4].x = b = ( b + c ) / 2;
-    base[3].x = ( a + b ) / 2;
+    a = base[0].x + base[1].x;
+    b = base[1].x + base[2].x;
+    c = base[2].x + base[3].x;
+    base[5].x = c >> 1;
+    c += b;
+    base[4].x = c >> 2;
+    base[1].x = a >> 1;
+    a += b;
+    base[2].x = a >> 2;
+    base[3].x = ( a + c ) >> 3;
 
     base[6].y = base[3].y;
-    c = base[1].y;
-    d = base[2].y;
-    base[1].y = a = ( base[0].y + c ) / 2;
-    base[5].y = b = ( base[3].y + d ) / 2;
-    c = ( c + d ) / 2;
-    base[2].y = a = ( a + c ) / 2;
-    base[4].y = b = ( b + c ) / 2;
-    base[3].y = ( a + b ) / 2;
+    a = base[0].y + base[1].y;
+    b = base[1].y + base[2].y;
+    c = base[2].y + base[3].y;
+    base[5].y = c >> 1;
+    c += b;
+    base[4].y = c >> 2;
+    base[1].y = a >> 1;
+    a += b;
+    base[2].y = a >> 2;
+    base[3].y = ( a + c ) >> 3;
   }
 
 
@@ -1092,9 +1104,6 @@ typedef ptrdiff_t  FT_PtrDist;
   {
     FT_Vector   bez_stack[16 * 3 + 1];  
     FT_Vector*  arc = bez_stack;
-    TPos        dx, dy, dx_, dy_;
-    TPos        dx1, dy1, dx2, dy2;
-    TPos        L, s, s_limit;
 
 
     arc[0].x = UPSCALE( to->x );
@@ -1126,42 +1135,10 @@ typedef ptrdiff_t  FT_PtrDist;
       
       
       
-      
-
-      
-      dx = dx_ = arc[3].x - arc[0].x;
-      dy = dy_ = arc[3].y - arc[0].y;
-
-      L = FT_HYPOT( dx_, dy_ );
-
-      
-      if ( L > 32767 )
-        goto Split;
-
-      
-      s_limit = L * (TPos)( ONE_PIXEL / 6 );
-
-      
-      dx1 = arc[1].x - arc[0].x;
-      dy1 = arc[1].y - arc[0].y;
-      s = FT_ABS( SUB_LONG( MUL_LONG( dy, dx1 ), MUL_LONG( dx, dy1 ) ) );
-
-      if ( s > s_limit )
-        goto Split;
-
-      
-      dx2 = arc[2].x - arc[0].x;
-      dy2 = arc[2].y - arc[0].y;
-      s = FT_ABS( SUB_LONG( MUL_LONG( dy, dx2 ), MUL_LONG( dx, dy2 ) ) );
-
-      if ( s > s_limit )
-        goto Split;
-
-      
-
-
-      if ( dx1 * ( dx1 - dx ) + dy1 * ( dy1 - dy ) > 0 ||
-           dx2 * ( dx2 - dx ) + dy2 * ( dy2 - dy ) > 0 )
+      if ( FT_ABS( 2 * arc[0].x - 3 * arc[1].x + arc[3].x ) > ONE_PIXEL / 2 ||
+           FT_ABS( 2 * arc[0].y - 3 * arc[1].y + arc[3].y ) > ONE_PIXEL / 2 ||
+           FT_ABS( arc[0].x - 3 * arc[2].x + 2 * arc[3].x ) > ONE_PIXEL / 2 ||
+           FT_ABS( arc[0].y - 3 * arc[2].y + 2 * arc[3].y ) > ONE_PIXEL / 2 )
         goto Split;
 
       gray_render_line( RAS_VAR_ arc[0].x, arc[0].y );
@@ -1236,8 +1213,6 @@ typedef ptrdiff_t  FT_PtrDist;
   {
     
     coverage >>= PIXEL_BITS * 2 + 1 - 8;
-    if ( coverage < 0 )
-      coverage = -coverage - 1;
 
     
     if ( ras.outline.flags & FT_OUTLINE_EVEN_ODD_FILL )
@@ -1247,23 +1222,30 @@ typedef ptrdiff_t  FT_PtrDist;
       if ( coverage >= 256 )
         coverage = 511 - coverage;
     }
-    else
+    else  
     {
-      
+      if ( coverage < 0 )
+        coverage = ~coverage;  
+
       if ( coverage >= 256 )
         coverage = 255;
     }
 
-    if ( ras.render_span )  
+    if ( ras.num_spans >= 0 )  
     {
-      FT_Span  span;
+      FT_Span*  span = ras.spans + ras.num_spans++;
 
 
-      span.x        = (short)x;
-      span.len      = (unsigned short)acount;
-      span.coverage = (unsigned char)coverage;
+      span->x        = (short)x;
+      span->len      = (unsigned short)acount;
+      span->coverage = (unsigned char)coverage;
 
-      ras.render_span( y, 1, &span, ras.render_span_data );
+      if ( ras.num_spans == FT_MAX_GRAY_SPANS )
+      {
+        
+        ras.render_span( y, ras.num_spans, ras.spans, ras.render_span_data );
+        ras.num_spans = 0;
+      }
     }
     else
     {
@@ -1277,14 +1259,29 @@ typedef ptrdiff_t  FT_PtrDist;
 
       switch ( acount )
       {
-      case 7: *q++ = c;
-      case 6: *q++ = c;
-      case 5: *q++ = c;
-      case 4: *q++ = c;
-      case 3: *q++ = c;
-      case 2: *q++ = c;
-      case 1: *q   = c;
-      case 0: break;
+      case 7:
+        *q++ = c;
+        
+      case 6:
+        *q++ = c;
+        
+      case 5:
+        *q++ = c;
+        
+      case 4:
+        *q++ = c;
+        
+      case 3:
+        *q++ = c;
+        
+      case 2:
+        *q++ = c;
+        
+      case 1:
+        *q = c;
+        
+      case 0:
+        break;
       default:
         FT_MEM_SET( q, c, acount );
       }
@@ -1322,6 +1319,13 @@ typedef ptrdiff_t  FT_PtrDist;
 
       if ( cover != 0 )
         gray_hline( RAS_VAR_ x, y, cover, ras.max_ex - x );
+
+      if ( ras.num_spans > 0 )  
+      {
+        
+        ras.render_span( y, ras.num_spans, ras.spans, ras.render_span_data );
+        ras.num_spans = 0;
+      }
     }
   }
 
@@ -1371,7 +1375,7 @@ typedef ptrdiff_t  FT_PtrDist;
                         void*                    user )
   {
 #undef SCALED
-#define SCALED( x )  ( ( (x) << shift ) - delta )
+#define SCALED( x )  ( (x) * ( 1L << shift ) - delta )
 
     FT_Vector   v_last;
     FT_Vector   v_control;
@@ -1631,7 +1635,7 @@ typedef ptrdiff_t  FT_PtrDist;
   gray_convert_glyph_inner( RAS_ARG,
                             int  continued )
   {
-    volatile int  error = 0;
+    int  error;
 
 
     if ( ft_setjmp( ras.jump_buffer ) == 0 )
@@ -1755,7 +1759,6 @@ typedef ptrdiff_t  FT_PtrDist;
   {
     const FT_Outline*  outline    = (const FT_Outline*)params->source;
     const FT_Bitmap*   target_map = params->target;
-    FT_BBox            clip;
 
 #ifndef FT_STATIC_RASTER
     gray_TWorker  worker[1];
@@ -1792,6 +1795,12 @@ typedef ptrdiff_t  FT_PtrDist;
 
       ras.render_span      = (FT_Raster_Span_Func)params->gray_spans;
       ras.render_span_data = params->user;
+      ras.num_spans        = 0;
+
+      ras.min_ex = params->clip_box.xMin;
+      ras.min_ey = params->clip_box.yMin;
+      ras.max_ex = params->clip_box.xMax;
+      ras.max_ey = params->clip_box.yMax;
     }
     else
     {
@@ -1816,27 +1825,15 @@ typedef ptrdiff_t  FT_PtrDist;
 
       ras.render_span      = (FT_Raster_Span_Func)NULL;
       ras.render_span_data = NULL;
+      ras.num_spans        = -1;  
+
+      ras.min_ex = 0;
+      ras.min_ey = 0;
+      ras.max_ex = (FT_Pos)target_map->width;
+      ras.max_ey = (FT_Pos)target_map->rows;
     }
 
     
-    if ( params->flags & FT_RASTER_FLAG_DIRECT &&
-         params->flags & FT_RASTER_FLAG_CLIP   )
-      clip = params->clip_box;
-    else
-    {
-      
-      clip.xMin = 0;
-      clip.yMin = 0;
-      clip.xMax = (FT_Pos)target_map->width;
-      clip.yMax = (FT_Pos)target_map->rows;
-    }
-
-    
-    ras.min_ex = clip.xMin;
-    ras.min_ey = clip.yMin;
-    ras.max_ex = clip.xMax;
-    ras.max_ey = clip.yMax;
-
     if ( ras.max_ex <= ras.min_ex || ras.max_ey <= ras.min_ey )
       return 0;
 

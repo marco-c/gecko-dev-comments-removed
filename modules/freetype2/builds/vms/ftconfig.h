@@ -63,8 +63,6 @@ FT_BEGIN_HEADER
 #define FT_SIZEOF_INT   4
 #define FT_SIZEOF_LONG  4
 
-#define FT_CHAR_BIT  8
-
 
   
   

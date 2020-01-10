@@ -956,9 +956,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
 #define FT_RASTER_FLAG_DEFAULT  0x0
 #define FT_RASTER_FLAG_AA       0x1
 #define FT_RASTER_FLAG_DIRECT   0x2
@@ -973,6 +970,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 

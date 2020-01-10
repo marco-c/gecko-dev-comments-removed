@@ -922,11 +922,17 @@
     else
       FT_TRACE5(( "  target bitmap: empty\n" ));
 
-    FT_TRACE5(( "  final bitmap: (%d, %d) -- (%d, %d); %d x %d\n",
-      final_llx / 64, final_lly / 64,
-      final_urx / 64, final_ury / 64,
-      final_width, final_rows ));
+    if ( final_width && final_rows )
+      FT_TRACE5(( "  final bitmap: (%d, %d) -- (%d, %d); %d x %d\n",
+        final_llx / 64, final_lly / 64,
+        final_urx / 64, final_ury / 64,
+        final_width, final_rows ));
+    else
+      FT_TRACE5(( "  final bitmap: empty\n" ));
 #endif 
+
+    if ( !( final_width && final_rows ) )
+      return FT_Err_Ok;               
 
     
     
@@ -971,6 +977,7 @@
 
 
       pitch = target->pitch;
+
       if ( pitch < 0 )
         pitch = -pitch;
 
