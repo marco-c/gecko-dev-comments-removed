@@ -951,16 +951,6 @@ static void WaylandBufferDelayCommitHandler(WindowSurfaceWayland** aSurface) {
   }
 }
 
-void WindowSurfaceWayland::CalcRectScale(LayoutDeviceIntRect& aRect,
-                                         int aScale) {
-  aRect.x = aRect.x / aScale;
-  aRect.y = aRect.y / aScale;
-
-  
-  aRect.width = (aRect.width / aScale) + 2;
-  aRect.height = (aRect.height / aScale) + 2;
-}
-
 void WindowSurfaceWayland::CommitWaylandBuffer() {
   MOZ_ASSERT(mPendingCommit, "Committing empty surface!");
 
@@ -1022,16 +1012,10 @@ void WindowSurfaceWayland::CommitWaylandBuffer() {
     mWholeWindowBufferDamage = false;
     mNeedScaleFactorUpdate = true;
   } else {
-    gint scaleFactor = mWindow->GdkScaleFactor();
     for (auto iter = mWaylandBufferDamage.RectIter(); !iter.Done();
          iter.Next()) {
       mozilla::LayoutDeviceIntRect r = iter.Get();
-      
-      
-      if (scaleFactor > 1) {
-        CalcRectScale(r, scaleFactor);
-      }
-      wl_surface_damage(waylandSurface, r.x, r.y, r.width, r.height);
+      wl_surface_damage_buffer(waylandSurface, r.x, r.y, r.width, r.height);
     }
   }
 
