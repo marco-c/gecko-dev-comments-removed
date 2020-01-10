@@ -5,14 +5,70 @@
 #include "gtest/gtest.h"
 #include "AudioFocusManager.h"
 #include "MediaControlService.h"
+#include "mozilla/Preferences.h"
 
 using namespace mozilla::dom;
 
 #define FIRST_CONTROLLER_ID 0
 #define SECOND_CONTROLLER_ID 1
 
-TEST(AudioFocusManager, TestMultipleAudioFocusNums)
+
+
+
+class AudioFocusManagmentPrefSetterRAII {
+ public:
+  explicit AudioFocusManagmentPrefSetterRAII(bool aPrefValue) {
+    mOriginalValue = mozilla::Preferences::GetBool(mPrefName, false);
+    mozilla::Preferences::SetBool(mPrefName, aPrefValue);
+  }
+  ~AudioFocusManagmentPrefSetterRAII() {
+    mozilla::Preferences::SetBool(mPrefName, mOriginalValue);
+  }
+
+ private:
+  const char* mPrefName = "media.audioFocus.management";
+  bool mOriginalValue;
+};
+
+TEST(AudioFocusManager, TestAudioFocusNumsWhenEnableAudioFocusManagement)
 {
+  
+  
+  
+  
+  AudioFocusManagmentPrefSetterRAII prefSetter(true);
+
+  RefPtr<MediaControlService> service = MediaControlService::GetService();
+  AudioFocusManager& manager = service->GetAudioFocusManager();
+  ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
+
+  RefPtr<MediaController> controller1 =
+      new TabMediaController(FIRST_CONTROLLER_ID);
+  service->AddMediaController(controller1);
+  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
+
+  
+  
+  RefPtr<MediaController> controller2 =
+      new TabMediaController(SECOND_CONTROLLER_ID);
+  service->AddMediaController(controller2);
+  manager.RequestAudioFocus(SECOND_CONTROLLER_ID);
+  ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
+
+  manager.RevokeAudioFocus(SECOND_CONTROLLER_ID);
+  ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
+
+  service->RemoveMediaController(controller1);
+  service->RemoveMediaController(controller2);
+}
+
+TEST(AudioFocusManager, TestAudioFocusNumsWhenDisableAudioFocusManagement)
+{
+  
+  
+  AudioFocusManagmentPrefSetterRAII prefSetter(false);
+
   AudioFocusManager manager(nullptr);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
