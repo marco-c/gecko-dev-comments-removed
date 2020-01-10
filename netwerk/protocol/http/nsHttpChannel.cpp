@@ -1450,11 +1450,9 @@ nsresult ProcessXCTO(nsHttpChannel* aChannel, nsIURI* aURI,
                            Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
-
   auto policyType = aLoadInfo->GetExternalContentPolicyType();
-  if ((policyType == nsIContentPolicy::TYPE_DOCUMENT ||
-       policyType == nsIContentPolicy::TYPE_SUBDOCUMENT) &&
-      gHttpHandler->IsDocumentNosniffEnabled()) {
+  if (policyType == nsIContentPolicy::TYPE_DOCUMENT ||
+      policyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
     
     
     

@@ -157,8 +157,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   bool CriticalRequestPrioritization() {
     return mCriticalRequestPrioritization;
   }
-
-  bool IsDocumentNosniffEnabled() { return mRespectDocumentNoSniff; }
   bool UseH2Deps() { return mUseH2Deps; }
   bool IsH2WebsocketsEnabled() { return mEnableH2Websockets; }
 
@@ -653,9 +651,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
   bool mCriticalRequestPrioritization;
-
-  
-  bool mRespectDocumentNoSniff;
 
   
 
