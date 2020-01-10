@@ -311,59 +311,12 @@ XPCOMUtils.defineLazyGetter(this, "gNavToolbox", () => {
   return document.getElementById("navigator-toolbox");
 });
 
-XPCOMUtils.defineLazyGetter(this, "gURLBar", () => gURLBarHandler.urlbar);
-
-
-
-
-
-var gURLBarHandler = {
-  
-
-
-  get urlbar() {
-    if (!this._urlbar) {
-      let textbox = document.getElementById("urlbar");
-      this._urlbar = new UrlbarInput({
-        textbox,
-        eventTelemetryCategory: "urlbar",
-      });
-      if (this._lastValue) {
-        this._urlbar.value = this._lastValue;
-        delete this._lastValue;
-      }
-    }
-    return this._urlbar;
-  },
-
-  
-
-
-  customizeStart() {
-    if (this._urlbar) {
-      this._urlbar.removeCopyCutController();
-    }
-  },
-
-  
-
-
-  customizeEnd() {
-    this._reset();
-  },
-
-  
-
-
-  _reset() {
-    if (this._urlbar) {
-      this._lastValue = this._urlbar.value;
-      this._urlbar.uninit();
-      delete this._urlbar;
-      gURLBar = this.urlbar;
-    }
-  },
-};
+XPCOMUtils.defineLazyGetter(this, "gURLBar", () => {
+  return new UrlbarInput({
+    textbox: document.getElementById("urlbar"),
+    eventTelemetryCategory: "urlbar",
+  });
+});
 
 XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
   Components.Constructor(

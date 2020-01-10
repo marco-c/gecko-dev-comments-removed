@@ -208,11 +208,12 @@ class UrlbarInput {
 
     this.window.gBrowser.tabContainer.addEventListener("TabSelect", this);
 
-    this._copyCutController = new CopyCutController(this);
-    this.inputField.controllers.insertControllerAt(0, this._copyCutController);
+    this.window.addEventListener("customizationstarting", this);
+    this.window.addEventListener("aftercustomization", this);
 
     this.updateLayoutBreakout();
 
+    this._initCopyCutController();
     this._initPasteAndGo();
 
     
@@ -224,71 +225,6 @@ class UrlbarInput {
 
     this._setOpenViewOnFocus();
     Services.prefs.addObserver("browser.urlbar.openViewOnFocus", this);
-  }
-
-  
-
-
-  uninit() {
-    this.window.removeEventListener("unload", this);
-    for (let name of this._inputFieldEvents) {
-      this.removeEventListener(name, this);
-    }
-    this.dropmarker.removeEventListener("mousedown", this);
-    this.window.removeEventListener("mousedown", this);
-    this.textbox.removeEventListener("mousedown", this);
-    this._inputContainer.removeEventListener("click", this);
-    this.window.gBrowser.tabContainer.removeEventListener("TabSelect", this);
-
-    this.view.panel.remove();
-    this.endLayoutExtend(true);
-
-    
-    
-    
-    
-    
-    try {
-      
-      
-      
-      
-      this.removeCopyCutController();
-    } catch (ex) {
-      Cu.reportError(
-        "Leaking UrlbarInput._copyCutController! You should have called removeCopyCutController!"
-      );
-    }
-
-    if (Object.getOwnPropertyDescriptor(this, "valueFormatter").get) {
-      this.valueFormatter.uninit();
-    }
-
-    Services.prefs.removeObserver("browser.urlbar.openViewOnFocus", this);
-
-    this.controller.uninit();
-
-    delete this.document;
-    delete this.window;
-    delete this.eventBufferer;
-    delete this.valueFormatter;
-    delete this.panel;
-    delete this.view;
-    delete this.controller;
-    delete this.textbox;
-    delete this.inputField;
-    delete this._layoutBreakoutUpdateKey;
-  }
-
-  
-
-
-
-  removeCopyCutController() {
-    if (this._copyCutController) {
-      this.inputField.controllers.removeController(this._copyCutController);
-      delete this._copyCutController;
-    }
   }
 
   
@@ -1017,11 +953,6 @@ class UrlbarInput {
       return;
     }
     await this._updateLayoutBreakoutDimensions();
-    if (!this.textbox) {
-      
-      
-      return;
-    }
     this.startLayoutExtend();
   }
 
@@ -1061,13 +992,7 @@ class UrlbarInput {
     
     if (!this.hasAttribute("breakout-extend-animate")) {
       this.window.promiseDocumentFlushed(() => {
-        if (!this.window) {
-          return;
-        }
         this.window.requestAnimationFrame(() => {
-          if (!this.textbox) {
-            return;
-          }
           this.setAttribute("breakout-extend-animate", "true");
         });
       });
@@ -1103,11 +1028,6 @@ class UrlbarInput {
 
     await this.window.promiseDocumentFlushed(() => {});
     await new Promise(resolve => {
-      if (!this.window) {
-        
-        resolve();
-        return;
-      }
       this.window.requestAnimationFrame(() => {
         if (this._layoutBreakoutUpdateKey != updateKey) {
           return;
@@ -1647,6 +1567,11 @@ class UrlbarInput {
     return where;
   }
 
+  _initCopyCutController() {
+    this._copyCutController = new CopyCutController(this);
+    this.inputField.controllers.insertControllerAt(0, this._copyCutController);
+  }
+
   _initPasteAndGo() {
     let inputBox = this.querySelector("moz-input-box");
     let contextMenu = inputBox.menupopup;
@@ -2184,10 +2109,22 @@ class UrlbarInput {
     }
   }
 
+  _on_customizationstarting() {
+    this.blur();
+
+    this.inputField.controllers.removeController(this._copyCutController);
+    delete this._copyCutController;
+  }
+
+  _on_aftercustomization() {
+    this._initCopyCutController();
+    this._initPasteAndGo();
+  }
+
   _on_unload() {
     
     
-    this.uninit();
+    Services.prefs.removeObserver("browser.urlbar.openViewOnFocus", this);
   }
 }
 
