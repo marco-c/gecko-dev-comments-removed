@@ -213,17 +213,6 @@ typedef size_t (*JSSizeOfIncludingThisCompartmentCallback)(
 
 
 
-
-
-
-
-
-using JSExternalStringSizeofCallback =
-    size_t (*)(JSString* str, mozilla::MallocSizeOf mallocSizeOf);
-
-
-
-
 struct JSErrorInterceptor {
   
 
@@ -427,9 +416,6 @@ extern JS_PUBLIC_API void JS_SetSizeOfIncludingThisCompartmentCallback(
 
 extern JS_PUBLIC_API void JS_SetWrapObjectCallbacks(
     JSContext* cx, const JSWrapObjectCallbacks* callbacks);
-
-extern JS_PUBLIC_API void JS_SetExternalStringSizeofCallback(
-    JSContext* cx, JSExternalStringSizeofCallback callback);
 
 #if defined(NIGHTLY_BUILD)
 

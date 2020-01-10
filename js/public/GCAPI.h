@@ -409,8 +409,23 @@ typedef void (*JSWeakPointerCompartmentCallback)(JSContext* cx,
 
 
 
-struct JSStringFinalizer {
-  void (*finalize)(const JSStringFinalizer* fin, char16_t* chars);
+struct JSExternalStringCallbacks {
+  
+
+
+
+  virtual void finalize(char16_t* chars) const = 0;
+
+  
+
+
+
+
+
+
+
+  virtual size_t sizeOfBuffer(const char16_t* chars,
+                              mozilla::MallocSizeOf mallocSizeOf) const = 0;
 };
 
 namespace JS {
@@ -1049,7 +1064,7 @@ extern JS_PUBLIC_API void JS_SetGCParametersBasedOnAvailableMemory(
 
 extern JS_PUBLIC_API JSString* JS_NewExternalString(
     JSContext* cx, const char16_t* chars, size_t length,
-    const JSStringFinalizer* fin);
+    const JSExternalStringCallbacks* callbacks);
 
 
 
@@ -1060,7 +1075,7 @@ extern JS_PUBLIC_API JSString* JS_NewExternalString(
 
 extern JS_PUBLIC_API JSString* JS_NewMaybeExternalString(
     JSContext* cx, const char16_t* chars, size_t length,
-    const JSStringFinalizer* fin, bool* allocatedExternal);
+    const JSExternalStringCallbacks* callbacks, bool* allocatedExternal);
 
 
 
@@ -1071,8 +1086,9 @@ extern JS_PUBLIC_API bool JS_IsExternalString(JSString* str);
 
 
 
-extern JS_PUBLIC_API const JSStringFinalizer* JS_GetExternalStringFinalizer(
-    JSString* str);
+
+extern JS_PUBLIC_API const JSExternalStringCallbacks*
+JS_GetExternalStringCallbacks(JSString* str);
 
 namespace JS {
 

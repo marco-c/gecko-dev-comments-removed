@@ -518,7 +518,6 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
 
   JS_SetObjectsTenuredCallback(aCx, JSObjectsTenuredCb, this);
   JS::SetOutOfMemoryCallback(aCx, OutOfMemoryCallback, this);
-  JS_SetExternalStringSizeofCallback(aCx, SizeofExternalStringCallback);
   JS::SetWarningReporter(aCx, MozCrashWarningReporter);
 
   js::AutoEnterOOMUnsafeRegion::setAnnotateOOMAllocationSizeCallback(
@@ -951,25 +950,6 @@ void CycleCollectedJSRuntime::OutOfMemoryCallback(JSContext* aContext,
   MOZ_ASSERT(CycleCollectedJSContext::Get()->Runtime() == self);
 
   self->OnOutOfMemory();
-}
-
-
-size_t CycleCollectedJSRuntime::SizeofExternalStringCallback(
-    JSString* aStr, MallocSizeOf aMallocSizeOf) {
-  
-  JS::AutoCheckCannotGC autoCannotGC;
-
-  if (!XPCStringConvert::IsDOMString(aStr)) {
-    
-    return 0;
-  }
-
-  const char16_t* chars = JS_GetTwoByteExternalStringChars(aStr);
-  const nsStringBuffer* buf = nsStringBuffer::FromData((void*)chars);
-  
-  
-  
-  return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
 }
 
 struct JsGcTracer : public TraceCallbacks {

@@ -384,10 +384,6 @@ struct JSRuntime {
   
   js::MainThreadData<JS::RealmNameCallback> realmNameCallback;
 
-  
-  js::MainThreadData<JSExternalStringSizeofCallback>
-      externalStringSizeofCallback;
-
   js::MainThreadData<mozilla::UniquePtr<js::SourceHook>> sourceHook;
 
   js::MainThreadData<const JSSecurityCallbacks*> securityCallbacks;

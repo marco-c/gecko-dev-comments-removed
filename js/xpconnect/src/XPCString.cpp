@@ -27,35 +27,59 @@
 
 using namespace JS;
 
+const XPCStringConvert::LiteralExternalString
+    XPCStringConvert::sLiteralExternalString;
 
-void XPCStringConvert::FinalizeLiteral(const JSStringFinalizer* fin,
-                                       char16_t* chars) {}
+const XPCStringConvert::DOMStringExternalString
+    XPCStringConvert::sDOMStringExternalString;
 
-const JSStringFinalizer XPCStringConvert::sLiteralFinalizer = {
-    XPCStringConvert::FinalizeLiteral};
+const XPCStringConvert::DynamicAtomExternalString
+    XPCStringConvert::sDynamicAtomExternalString;
 
+void XPCStringConvert::LiteralExternalString::finalize(char16_t* aChars) const {
+  
+}
 
-void XPCStringConvert::FinalizeDOMString(const JSStringFinalizer* fin,
-                                         char16_t* chars) {
-  nsStringBuffer* buf = nsStringBuffer::FromData(chars);
+size_t XPCStringConvert::LiteralExternalString::sizeOfBuffer(
+    const char16_t* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  return 0;
+}
+
+void XPCStringConvert::DOMStringExternalString::finalize(
+    char16_t* aChars) const {
+  nsStringBuffer* buf = nsStringBuffer::FromData(aChars);
   buf->Release();
 }
 
-const JSStringFinalizer XPCStringConvert::sDOMStringFinalizer = {
-    XPCStringConvert::FinalizeDOMString};
+size_t XPCStringConvert::DOMStringExternalString::sizeOfBuffer(
+    const char16_t* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  JS::AutoCheckCannotGC autoCannotGC;
 
+  const nsStringBuffer* buf =
+      nsStringBuffer::FromData(const_cast<char16_t*>(aChars));
+  
+  
+  
+  return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
+}
 
-void XPCStringConvert::FinalizeDynamicAtom(const JSStringFinalizer* fin,
-                                           char16_t* chars) {
-  nsDynamicAtom* atom = nsDynamicAtom::FromChars(chars);
+void XPCStringConvert::DynamicAtomExternalString::finalize(
+    char16_t* aChars) const {
+  nsDynamicAtom* atom = nsDynamicAtom::FromChars(aChars);
   
   
   
   static_cast<nsAtom*>(atom)->Release();
 }
 
-const JSStringFinalizer XPCStringConvert::sDynamicAtomFinalizer = {
-    XPCStringConvert::FinalizeDynamicAtom};
+size_t XPCStringConvert::DynamicAtomExternalString::sizeOfBuffer(
+    const char16_t* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  
+  return 0;
+}
 
 
 
