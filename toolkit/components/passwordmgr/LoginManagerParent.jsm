@@ -396,6 +396,15 @@ class LoginManagerParent extends JSWindowActorParent {
 
     
     if (!Services.logins.isLoggedIn) {
+      if (Services.logins.uiBusy) {
+        log(
+          "Not searching logins for autocomplete since the master password prompt is already showing"
+        );
+        
+        
+        return { logins: [] };
+      }
+
       let timeDiff = Date.now() - gLastMPLoginCancelled;
       if (timeDiff < LoginManagerParent._repromptTimeout) {
         log(

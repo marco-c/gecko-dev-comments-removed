@@ -5,19 +5,19 @@ const URL =
 const TIMEOUT_PREF = "signon.masterPasswordReprompt.timeout_ms";
 
 
-function waitForDialog() {
-  let dialogShown = TestUtils.topicObserved("common-dialog-loaded");
-  return dialogShown.then(function([subject]) {
-    let dialog = subject.Dialog;
-    is(dialog.args.title, "Password Required");
-    dialog.ui.button1.click();
-    return BrowserTestUtils.waitForEvent(window, "DOMModalDialogClosed");
-  });
+async function waitForDialog() {
+  let [subject] = await TestUtils.topicObserved("common-dialog-loaded");
+  let dialog = subject.Dialog;
+  is(dialog.args.title, "Password Required", "Check common dialog title");
+  return {
+    async close(win = window) {
+      dialog.ui.button1.click();
+      return BrowserTestUtils.waitForEvent(win, "DOMModalDialogClosed");
+    },
+  };
 }
 
-
-
-add_task(async function test_mpAutocompleteTimeout() {
+add_task(async function setup() {
   let login = LoginTestUtils.testData.formLogin({
     origin: "https://example.com",
     formActionOrigin: "https://example.com",
@@ -29,18 +29,21 @@ add_task(async function test_mpAutocompleteTimeout() {
 
   registerCleanupFunction(function() {
     LoginTestUtils.masterPassword.disable();
-    Services.logins.removeAllLogins();
   });
 
   
   
   await SpecialPowers.pushPrefEnv({ set: [[TIMEOUT_PREF, 3000]] });
+});
 
+
+
+add_task(async function test_mpAutocompleteTimeout() {
   
   let dialogShown = waitForDialog();
 
   await BrowserTestUtils.withNewTab(URL, async function(browser) {
-    await dialogShown;
+    (await dialogShown).close();
 
     await ContentTask.spawn(browser, null, async function() {
       
@@ -57,7 +60,62 @@ add_task(async function test_mpAutocompleteTimeout() {
       content.document.getElementById("form-basic-username").focus();
       content.document.getElementById("form-basic-password").focus();
     });
-    await dialogShown;
+    (await dialogShown).close();
     closePopup(document.getElementById("PopupAutoComplete"));
   });
+
+  
+  await new Promise(c => setTimeout(c, 4000));
+});
+
+
+
+add_task(async function test_mpAutocompleteUIBusy() {
+  
+  let dialogShown = waitForDialog();
+
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+
+  Services.tm.dispatchToMainThread(() => {
+    try {
+      
+      Services.logins.addLogin(LoginTestUtils.testData.formLogin());
+    } catch (e) {
+      
+    }
+  });
+  let { close } = await dialogShown;
+
+  let windowGlobal =
+    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal;
+  let loginManagerParent = windowGlobal.getActor("LoginManager");
+  let arg1 = {
+    autocompleteInfo: {
+      section: "",
+      addressType: "",
+      contactType: "",
+      fieldName: "",
+      canAutomaticallyPersist: false,
+    },
+    formOrigin: "https://www.example.com",
+    actionOrigin: "",
+    searchString: "",
+    previousResult: null,
+    isSecure: false,
+    isPasswordField: true,
+  };
+
+  function dialogObserver(subject, topic, data) {
+    ok(false, "A second dialog shouldn't have been shown");
+    Services.obs.removeObserver(dialogObserver, topic);
+  }
+  Services.obs.addObserver(dialogObserver, "common-dialog-loaded");
+
+  let results = loginManagerParent.doAutocompleteSearch(arg1);
+  is(results.logins.length, 0, "No results since uiBusy is true");
+  await close(win);
+
+  await BrowserTestUtils.closeWindow(win);
+
+  Services.obs.removeObserver(dialogObserver, "common-dialog-loaded");
 });
