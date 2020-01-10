@@ -59,13 +59,11 @@ add_task(async function() {
   await checkInputContent("hH", 2);
 
   info("Send char type event for char [’]");
-  await addInputEventListener("input");
   await Input.dispatchKeyEvent({
     type: "char",
     modifiers: 0,
     key: "’",
   });
-  await waitForInputEvent();
   await checkInputContent("hH’", 3);
 
   info("Send Left");
@@ -107,29 +105,14 @@ add_task(async function() {
   await RemoteAgent.close();
 });
 
-
-
-
 async function sendTextKey(Input, key) {
-  await addInputEventListener("input");
-
   await dispatchKeyEvent(Input, key, "keyDown");
   await dispatchKeyEvent(Input, key, "keyUp");
-
-  await waitForInputEvent();
 }
 
-
-
-
-
 async function sendArrowKey(Input, arrowKey, modifiers = 0) {
-  await addInputEventListener("selectionchange");
-
   await dispatchKeyEvent(Input, arrowKey, "rawKeyDown", modifiers);
   await dispatchKeyEvent(Input, arrowKey, "keyUp", modifiers);
-
-  await waitForInputEvent();
 }
 
 function dispatchKeyEvent(Input, key, type, modifiers = 0) {
@@ -166,50 +149,8 @@ async function checkInputContent(expectedValue, expectedCaret) {
 
 async function sendBackspace(Input, expected) {
   info("Send Backspace");
-  await addInputEventListener("input");
-
   await dispatchKeyEvent(Input, "Backspace", "rawKeyDown");
   await dispatchKeyEvent(Input, "Backspace", "keyUp");
 
-  await waitForInputEvent();
-
   await checkInputContent(expected, expected.length);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function addInputEventListener(eventName) {
-  return ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    eventName,
-    async _eventName => {
-      const input = content.document.querySelector("input");
-      this.__onInputEvent = new Promise(r =>
-        input.addEventListener(_eventName, r, { once: true })
-      );
-    }
-  );
-}
-
-
-
-
-function waitForInputEvent() {
-  return ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    null,
-    () => this.__onInputEvent
-  );
 }
