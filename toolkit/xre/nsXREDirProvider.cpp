@@ -1180,15 +1180,26 @@ static nsresult GetRegWindowsAppDataFolder(bool aLocal, nsAString& _retval) {
 }
 #endif
 
-static nsresult HashInstallPath(nsAString& aInstallPath, nsAString& aPathHash) {
+nsresult nsXREDirProvider::GetInstallHash(nsAString& aPathHash) {
+  nsCOMPtr<nsIFile> installDir;
+  nsCOMPtr<nsIFile> appFile;
+  bool per = false;
+  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = appFile->GetParent(getter_AddRefs(installDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString installPath;
+  rv = installDir->GetPath(installPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   const char* vendor = GetAppVendor();
   if (vendor && vendor[0] == '\0') {
     vendor = nullptr;
   }
 
   mozilla::UniquePtr<NS_tchar[]> hash;
-  nsresult rv =
-      ::GetInstallHash(PromiseFlatString(aInstallPath).get(), vendor, hash);
+  rv = ::GetInstallHash(PromiseFlatString(installPath).get(), vendor, hash);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1199,68 +1210,6 @@ static nsresult HashInstallPath(nsAString& aInstallPath, nsAString& aPathHash) {
   aPathHash.AssignASCII(hash.get());
 #endif
   return NS_OK;
-}
-
-
-
-
-nsresult nsXREDirProvider::GetInstallHash(nsAString& aPathHash) {
-  nsCOMPtr<nsIFile> installDir;
-  nsCOMPtr<nsIFile> appFile;
-  bool per = false;
-  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = appFile->GetParent(getter_AddRefs(installDir));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-#ifdef XP_WIN
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
-          installDir)) {
-    NS_WARNING("Failed to resolve install directory.");
-  }
-#elif defined(MOZ_WIDGET_COCOA)
-  
-  FSRef ref;
-  nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(installDir);
-  rv = macFile->GetFSRef(&ref);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = NS_NewLocalFileWithFSRef(&ref, true, getter_AddRefs(macFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  installDir = do_QueryInterface(macFile);
-#endif
-  
-
-  nsAutoString installPath;
-  rv = installDir->GetPath(installPath);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return HashInstallPath(installPath, aPathHash);
-}
-
-
-
-
-
-
-
-nsresult nsXREDirProvider::GetLegacyInstallHash(nsAString& aPathHash) {
-  nsCOMPtr<nsIFile> installDir;
-  nsCOMPtr<nsIFile> appFile;
-  bool per = false;
-  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = appFile->GetParent(getter_AddRefs(installDir));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsAutoString installPath;
-  rv = installDir->GetPath(installPath);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return HashInstallPath(installPath, aPathHash);
 }
 
 nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,

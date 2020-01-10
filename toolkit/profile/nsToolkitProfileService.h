@@ -139,10 +139,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   nsCString mInstallSection;
   
-  
-  
-  nsCString mLegacyInstallSection;
-  
   bool mStartWithLast;
   
   bool mIsFirstRun;

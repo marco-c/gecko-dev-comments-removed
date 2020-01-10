@@ -50,8 +50,6 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
   nsresult GetUserProfilesRootDir(nsIFile** aResult);
   nsresult GetUserProfilesLocalDir(nsIFile** aResult);
 
-  nsresult GetLegacyInstallHash(nsAString& aPathHash);
-
   
   
   
