@@ -19,16 +19,15 @@ namespace dom {
 
 static bool ShouldExposeChildWindow(const nsString& aNameBeingResolved,
                                     BrowsingContext* aChild) {
-  nsPIDOMWindowOuter* child = aChild->GetDOMWindow();
-  Element* e = child->GetFrameElementInternal();
+  Element* e = aChild->GetEmbedderElement();
   if (e && e->IsInShadowTree()) {
     return false;
   }
 
   
+  nsPIDOMWindowOuter* child = aChild->GetDOMWindow();
   nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(child);
-  NS_ENSURE_TRUE(sop, false);
-  if (nsContentUtils::SubjectPrincipal()->Equals(sop->GetPrincipal())) {
+  if (sop && nsContentUtils::SubjectPrincipal()->Equals(sop->GetPrincipal())) {
     return true;
   }
 
