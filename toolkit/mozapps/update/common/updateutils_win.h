@@ -36,7 +36,12 @@ DIR* opendir(const WCHAR* path);
 int closedir(DIR* dir);
 dirent* readdir(DIR* dir);
 
+
+
+#define UUID_LEN 37
+
 BOOL PathAppendSafe(LPWSTR base, LPCWSTR extra);
+BOOL GetUUIDString(LPWSTR outBuf);
 BOOL GetUUIDTempFilePath(LPCWSTR basePath, LPCWSTR prefix, LPWSTR tmpPath);
 
 #endif  
