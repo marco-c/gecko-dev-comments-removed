@@ -2,23 +2,10 @@ function test() {
   var startup_info = Services.startup.getStartupInfo();
   
 
-  
-  
-  var snapshot = Services.telemetry
-    .getHistogramById("STARTUP_MEASUREMENT_ERRORS")
-    .snapshot();
-
-  if (snapshot.values[0] == 0) {
-    ok(
-      startup_info.process <= startup_info.main,
-      "process created before main is run " + uneval(startup_info)
-    );
-  } else {
-    todo(
-      false,
-      "An error occurred while recording the process creation timestamp, skipping this test"
-    );
-  }
+  ok(
+    startup_info.process <= startup_info.main,
+    "process created before main is run " + uneval(startup_info)
+  );
 
   
   if (startup_info.firstPaint) {
