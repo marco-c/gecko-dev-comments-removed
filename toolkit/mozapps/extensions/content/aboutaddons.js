@@ -715,25 +715,21 @@ class PanelList extends HTMLElement {
           
           
           
-          this.walker.currentNode = this.contains(document.activeElement)
+          this.focusWalker.currentNode = this.contains(document.activeElement)
             ? document.activeElement
             : this;
           let nextItem = moveForward
-            ? this.walker.nextNode()
-            : this.walker.previousNode();
+            ? this.focusWalker.nextNode()
+            : this.focusWalker.previousNode();
 
           
           if (!nextItem) {
-            this.walker.currentNode = this;
+            this.focusWalker.currentNode = this;
             if (moveForward) {
-              nextItem = this.walker.firstChild();
+              nextItem = this.focusWalker.firstChild();
             } else {
-              nextItem = this.walker.lastChild();
+              nextItem = this.focusWalker.lastChild();
             }
-          }
-
-          if (nextItem) {
-            nextItem.focus();
           }
           break;
         } else if (e.key === "Escape") {
@@ -768,19 +764,44 @@ class PanelList extends HTMLElement {
     }
   }
 
-  get walker() {
-    if (!this._walker) {
-      this._walker = document.createTreeWalker(this, NodeFilter.SHOW_ELEMENT, {
-        acceptNode: node => {
-          if (node.disabled || node.hidden || node.localName !== "panel-item") {
-            return NodeFilter.FILTER_REJECT;
-          }
+  
 
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      });
+
+
+
+
+
+
+
+
+
+
+
+  get focusWalker() {
+    if (!this._focusWalker) {
+      this._focusWalker = document.createTreeWalker(
+        this,
+        NodeFilter.SHOW_ELEMENT,
+        {
+          acceptNode: node => {
+            
+            if (node.hidden) {
+              return NodeFilter.FILTER_REJECT;
+            }
+
+            
+            node.focus();
+            if (node === document.activeElement) {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+
+            
+            return NodeFilter.FILTER_SKIP;
+          },
+        }
+      );
     }
-    return this._walker;
+    return this._focusWalker;
   }
 
   async onShow() {
@@ -797,11 +818,8 @@ class PanelList extends HTMLElement {
         triggeringEvent &&
         triggeringEvent.mozInputSource === MouseEvent.MOZ_SOURCE_KEYBOARD
       ) {
-        this.walker.currentNode = this;
-        let firstItem = this.walker.nextNode();
-        if (firstItem) {
-          firstItem.focus();
-        }
+        this.focusWalker.currentNode = this;
+        this.focusWalker.nextNode();
       }
 
       this.sendEvent("shown");
@@ -895,7 +913,27 @@ class AddonOptions extends HTMLElement {
   setElementState(el, card, addon, updateInstall) {
     switch (el.getAttribute("action")) {
       case "remove":
-        el.hidden = !hasPermission(addon, "uninstall");
+        if (hasPermission(addon, "uninstall")) {
+          
+          el.disabled = false;
+          el.hidden = false;
+          document.l10n.setAttributes(el, "remove-addon-button");
+        } else if (addon.isBuiltin) {
+          
+          el.hidden = true;
+        } else {
+          
+          el.hidden = false;
+          el.disabled = true;
+          if (!el.querySelector('[slot="support-link"]')) {
+            let link = document.createElement("a", { is: "support-link" });
+            link.setAttribute("data-l10n-name", "link");
+            link.setAttribute("support-page", "cant-remove-addon");
+            link.setAttribute("slot", "support-link");
+            el.appendChild(link);
+            document.l10n.setAttributes(el, "remove-addon-disabled-button");
+          }
+        }
         break;
       case "report":
         el.hidden = !isAbuseReportSupported(addon);
