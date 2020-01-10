@@ -7,6 +7,8 @@
 
 #undef LoadImage
 
+#include <algorithm>
+
 #include "ImageLogging.h"
 #include "imgLoader.h"
 
@@ -997,9 +999,6 @@ imgCacheQueue::imgCacheQueue() : mDirty(false), mSize(0) {}
 void imgCacheQueue::UpdateSize(int32_t diff) { mSize += diff; }
 
 uint32_t imgCacheQueue::GetSize() const { return mSize; }
-
-#include <algorithm>
-using namespace std;
 
 void imgCacheQueue::Remove(imgCacheEntry* entry) {
   uint64_t index = mQueue.IndexOf(entry);
