@@ -13,32 +13,6 @@ const RESIST_FINGERPRINTING_ENABLED = Services.prefs.getBoolPref(
 );
 const MIDI_ENABLED = Services.prefs.getBoolPref("dom.webmidi.enabled");
 
-add_task(async function testNsIURI() {
-  let uri = "http://foo.com/bar/baz";
-  const expectedError = /uri parameter should be an nsIURI/;
-
-  Assert.throws(
-    () => SitePermissions.getAllByURI(uri),
-    expectedError,
-    "Should throw if arguments is not of type nsIURI."
-  );
-  Assert.throws(
-    () => SitePermissions.get(uri),
-    expectedError,
-    "Should throw if arguments is not of type nsIURI."
-  );
-  Assert.throws(
-    () => SitePermissions.set(uri),
-    expectedError,
-    "Should throw if arguments is not of type nsIURI."
-  );
-  Assert.throws(
-    () => SitePermissions.remove(uri),
-    expectedError,
-    "Should throw if arguments is not of type nsIURI."
-  );
-});
-
 add_task(async function testPermissionsListing() {
   let expectedPermissions = [
     "autoplay-media",
@@ -72,17 +46,21 @@ add_task(async function testPermissionsListing() {
   );
 });
 
-add_task(async function testGetAllByURI() {
+add_task(async function testGetAllByPrincipal() {
   
   
-  let wrongURI = Services.io.newURI("file:///example.js");
-  Assert.deepEqual(SitePermissions.getAllByURI(wrongURI), []);
+  let wrongPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "file:///example.js"
+  );
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(wrongPrincipal), []);
 
-  let uri = Services.io.newURI("https://example.com");
-  Assert.deepEqual(SitePermissions.getAllByURI(uri), []);
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "https://example.com"
+  );
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(principal), []);
 
-  SitePermissions.set(uri, "camera", SitePermissions.ALLOW);
-  Assert.deepEqual(SitePermissions.getAllByURI(uri), [
+  SitePermissions.setForPrincipal(principal, "camera", SitePermissions.ALLOW);
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(principal), [
     {
       id: "camera",
       state: SitePermissions.ALLOW,
@@ -90,15 +68,19 @@ add_task(async function testGetAllByURI() {
     },
   ]);
 
-  SitePermissions.set(
-    uri,
+  SitePermissions.setForPrincipal(
+    principal,
     "microphone",
     SitePermissions.ALLOW,
     SitePermissions.SCOPE_SESSION
   );
-  SitePermissions.set(uri, "desktop-notification", SitePermissions.BLOCK);
+  SitePermissions.setForPrincipal(
+    principal,
+    "desktop-notification",
+    SitePermissions.BLOCK
+  );
 
-  Assert.deepEqual(SitePermissions.getAllByURI(uri), [
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(principal), [
     {
       id: "camera",
       state: SitePermissions.ALLOW,
@@ -116,8 +98,8 @@ add_task(async function testGetAllByURI() {
     },
   ]);
 
-  SitePermissions.remove(uri, "microphone");
-  Assert.deepEqual(SitePermissions.getAllByURI(uri), [
+  SitePermissions.removeFromPrincipal(principal, "microphone");
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(principal), [
     {
       id: "camera",
       state: SitePermissions.ALLOW,
@@ -130,16 +112,20 @@ add_task(async function testGetAllByURI() {
     },
   ]);
 
-  SitePermissions.remove(uri, "camera");
-  SitePermissions.remove(uri, "desktop-notification");
-  Assert.deepEqual(SitePermissions.getAllByURI(uri), []);
+  SitePermissions.removeFromPrincipal(principal, "camera");
+  SitePermissions.removeFromPrincipal(principal, "desktop-notification");
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(principal), []);
 
   Assert.equal(Services.prefs.getIntPref("permissions.default.shortcuts"), 0);
-  SitePermissions.set(uri, "shortcuts", SitePermissions.BLOCK);
+  SitePermissions.setForPrincipal(
+    principal,
+    "shortcuts",
+    SitePermissions.BLOCK
+  );
 
   
   Assert.equal(Services.prefs.getIntPref("permissions.default.shortcuts"), 0);
-  Assert.deepEqual(SitePermissions.getAllByURI(uri), [
+  Assert.deepEqual(SitePermissions.getAllByPrincipal(principal), [
     {
       id: "shortcuts",
       state: SitePermissions.BLOCK,
@@ -147,7 +133,7 @@ add_task(async function testGetAllByURI() {
     },
   ]);
 
-  SitePermissions.remove(uri, "shortcuts");
+  SitePermissions.removeFromPrincipal(principal, "shortcuts");
   Services.prefs.clearUserPref("permissions.default.shortcuts");
 });
 
@@ -183,8 +169,12 @@ add_task(async function testGetAvailableStates() {
 });
 
 add_task(async function testExactHostMatch() {
-  let uri = Services.io.newURI("https://example.com");
-  let subUri = Services.io.newURI("https://test1.example.com");
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "https://example.com"
+  );
+  let subPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "https://test1.example.com"
+  );
 
   let exactHostMatched = [
     "autoplay-media",
@@ -217,19 +207,23 @@ add_task(async function testExactHostMatch() {
 
   let permissions = SitePermissions.listPermissions();
   for (let permission of permissions) {
-    SitePermissions.set(uri, permission, SitePermissions.ALLOW);
+    SitePermissions.setForPrincipal(
+      principal,
+      permission,
+      SitePermissions.ALLOW
+    );
 
     if (exactHostMatched.includes(permission)) {
       
       Assert.equal(
-        SitePermissions.get(subUri, permission).state,
+        SitePermissions.getForPrincipal(subPrincipal, permission).state,
         SitePermissions.getDefault(permission),
         `${permission} should exact-host match`
       );
     } else if (nonExactHostMatched.includes(permission)) {
       
       Assert.equal(
-        SitePermissions.get(subUri, permission).state,
+        SitePermissions.getForPrincipal(subPrincipal, permission).state,
         SitePermissions.ALLOW,
         `${permission} should not exact-host match`
       );
@@ -242,26 +236,32 @@ add_task(async function testExactHostMatch() {
     }
 
     
-    SitePermissions.set(subUri, permission, SitePermissions.PROMPT);
-    Assert.equal(
-      SitePermissions.get(subUri, permission).state,
+    SitePermissions.setForPrincipal(
+      subPrincipal,
+      permission,
       SitePermissions.PROMPT
     );
     Assert.equal(
-      SitePermissions.get(uri, permission).state,
+      SitePermissions.getForPrincipal(subPrincipal, permission).state,
+      SitePermissions.PROMPT
+    );
+    Assert.equal(
+      SitePermissions.getForPrincipal(principal, permission).state,
       SitePermissions.ALLOW
     );
 
-    SitePermissions.remove(subUri, permission);
-    SitePermissions.remove(uri, permission);
+    SitePermissions.removeFromPrincipal(subPrincipal, permission);
+    SitePermissions.removeFromPrincipal(principal, permission);
   }
 });
 
 add_task(async function testDefaultPrefs() {
-  let uri = Services.io.newURI("https://example.com");
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "https://example.com"
+  );
 
   
-  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "camera"), {
     state: SitePermissions.UNKNOWN,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
@@ -271,13 +271,13 @@ add_task(async function testDefaultPrefs() {
     "permissions.default.camera",
     SitePermissions.BLOCK
   );
-  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "camera"), {
     state: SitePermissions.BLOCK,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
 
   
-  Assert.deepEqual(SitePermissions.get(uri, "microphone"), {
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "microphone"), {
     state: SitePermissions.UNKNOWN,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
@@ -287,28 +287,28 @@ add_task(async function testDefaultPrefs() {
     "permissions.default.camera",
     SitePermissions.ALLOW
   );
-  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "camera"), {
     state: SitePermissions.ALLOW,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
 
   
-  SitePermissions.set(uri, "camera", SitePermissions.BLOCK);
-  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+  SitePermissions.setForPrincipal(principal, "camera", SitePermissions.BLOCK);
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "camera"), {
     state: SitePermissions.BLOCK,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
 
   
-  SitePermissions.remove(uri, "camera");
-  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+  SitePermissions.removeFromPrincipal(principal, "camera");
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "camera"), {
     state: SitePermissions.ALLOW,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
 
   
   Services.prefs.clearUserPref("permissions.default.camera");
-  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+  Assert.deepEqual(SitePermissions.getForPrincipal(principal, "camera"), {
     state: SitePermissions.UNKNOWN,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
@@ -319,15 +319,17 @@ add_task(async function testCanvasPermission() {
     "privacy.resistFingerprinting",
     false
   );
-  let uri = Services.io.newURI("https://example.com");
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "https://example.com"
+  );
 
-  SitePermissions.set(uri, "canvas", SitePermissions.ALLOW);
+  SitePermissions.setForPrincipal(principal, "canvas", SitePermissions.ALLOW);
 
   
   Services.prefs.setBoolPref("privacy.resistFingerprinting", false);
   Assert.equal(SitePermissions.listPermissions().indexOf("canvas"), -1);
   Assert.equal(
-    SitePermissions.getAllByURI(uri).filter(
+    SitePermissions.getAllByPrincipal(principal).filter(
       permission => permission.id === "canvas"
     ).length,
     0
@@ -337,13 +339,13 @@ add_task(async function testCanvasPermission() {
   Services.prefs.setBoolPref("privacy.resistFingerprinting", true);
   Assert.notEqual(SitePermissions.listPermissions().indexOf("canvas"), -1);
   Assert.notEqual(
-    SitePermissions.getAllByURI(uri).filter(
+    SitePermissions.getAllByPrincipal(principal).filter(
       permission => permission.id === "canvas"
     ).length,
     0
   );
 
-  SitePermissions.remove(uri, "canvas");
+  SitePermissions.removeFromPrincipal(principal, "canvas");
   Services.prefs.setBoolPref(
     "privacy.resistFingerprinting",
     resistFingerprinting
