@@ -238,13 +238,13 @@ void PromiseNativeThenHandlerBase::ResolvedCallback(
   if (promise) {
     mPromise->MaybeResolve(promise);
   } else {
-    mPromise->MaybeResolve(JS::UndefinedHandleValue);
+    mPromise->MaybeResolveWithUndefined();
   }
 }
 
 void PromiseNativeThenHandlerBase::RejectedCallback(
     JSContext* aCx, JS::Handle<JS::Value> aValue) {
-  mPromise->MaybeReject(aCx, aValue);
+  mPromise->MaybeReject(aValue);
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(PromiseNativeThenHandlerBase)
@@ -556,7 +556,10 @@ void Promise::MaybeResolveWithClone(JSContext* aCx,
 
   xpc::StackScopedCloneOptions options;
   options.wrapReflectors = true;
-  StackScopedClone(cx, options, sourceScope, &value);
+  if (!StackScopedClone(cx, options, sourceScope, &value)) {
+    HandleException(cx);
+    return;
+  }
   MaybeResolve(aCx, value);
 }
 
@@ -569,7 +572,10 @@ void Promise::MaybeRejectWithClone(JSContext* aCx,
 
   xpc::StackScopedCloneOptions options;
   options.wrapReflectors = true;
-  StackScopedClone(cx, options, sourceScope, &value);
+  if (!StackScopedClone(cx, options, sourceScope, &value)) {
+    HandleException(cx);
+    return;
+  }
   MaybeReject(aCx, value);
 }
 
