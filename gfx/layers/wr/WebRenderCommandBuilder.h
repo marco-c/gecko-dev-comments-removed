@@ -192,17 +192,8 @@ class WebRenderCommandBuilder final {
       frame->AddProperty(WebRenderUserDataProperty::Key(), userDataTable);
     }
 
-    
-    
-    
-    const uint32_t key =
-        T::Type() == WebRenderUserData::UserDataType::eAnimation
-            ? static_cast<uint32_t>(aItem->GetType())
-            : aItem->GetPerFrameKey();
-
-    RefPtr<WebRenderUserData>& data =
-        userDataTable->GetOrInsert(WebRenderUserDataKey(key, T::Type()));
-
+    RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(
+        WebRenderUserDataKey(aItem->GetPerFrameKey(), T::Type()));
     if (!data) {
       data = new T(GetRenderRootStateManager(aRenderRoot), aItem);
       mWebRenderUserDatas.PutEntry(data);
