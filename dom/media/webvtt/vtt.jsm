@@ -1040,8 +1040,34 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
           specifiedPosition = box.clone(),
           outsideAreaPercentage = 1; 
       let hasFoundBestPosition = false;
-      const axis = ["-y", "-x", "+x", "+y"];
-      const toMove = styleBox.getFirstLineBoxSize();
+
+      
+      
+      
+      
+      
+      
+      
+      function getAxis(writingDirection) {
+        if (writingDirection == "") {
+          return ["+y", "-y", "+x", "-x"];
+        }
+        
+        if (writingDirection == "lr") {
+          return ["+x", "-x", "+y", "-y"];
+        }
+        
+        return ["-x", "+x", "+y", "-y"];
+      }
+      const axis = getAxis(cue.vertical);
+
+      
+      
+      
+      
+      
+      const factor = 4;
+      const toMove = styleBox.getFirstLineBoxSize() / factor;
       for (let i = 0; i < axis.length && !hasFoundBestPosition; i++) {
         while (!box.isOutsideTheAxisBoundary(containerBox, axis[i]) &&
                (!box.within(containerBox) || box.overlapsAny(outputBoxes))) {
