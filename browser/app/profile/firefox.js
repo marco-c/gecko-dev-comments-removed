@@ -1375,7 +1375,7 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 pref("sidebar.position_start", true);
 
-pref("security.identitypopup.recordEventElemetry", true);
+pref("security.identitypopup.recordEventTelemetry", true);
 
 
 pref("security.mixed_content.block_active_content", true);
