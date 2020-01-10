@@ -78,9 +78,6 @@ class MediaTransportHandler {
                                           const std::string& aLocalPwd,
                                           size_t aComponentCount) = 0;
 
-  virtual void SetTargetForDefaultLocalAddressLookup(
-      const std::string& aTargetIp, uint16_t aTargetPort) = 0;
-
   
   
   

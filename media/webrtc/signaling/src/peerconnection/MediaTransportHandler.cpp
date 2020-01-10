@@ -79,9 +79,6 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
                                   const std::string& aPwd,
                                   size_t aComponentCount) override;
 
-  void SetTargetForDefaultLocalAddressLookup(const std::string& aTargetIp,
-                                             uint16_t aTargetPort) override;
-
   
   
   
@@ -639,16 +636,6 @@ void MediaTransportHandlerSTS::ActivateTransport(
         }
 
         mTransports[aTransportId] = transport;
-      },
-      [](const std::string& aError) {});
-}
-
-void MediaTransportHandlerSTS::SetTargetForDefaultLocalAddressLookup(
-    const std::string& aTargetIp, uint16_t aTargetPort) {
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        mIceCtx->SetTargetForDefaultLocalAddressLookup(aTargetIp, aTargetPort);
       },
       [](const std::string& aError) {});
 }

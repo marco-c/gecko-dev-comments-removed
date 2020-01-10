@@ -183,19 +183,6 @@ void MediaTransportHandlerIPC::EnsureProvisionalTransport(
       [](const nsCString& aError) {});
 }
 
-void MediaTransportHandlerIPC::SetTargetForDefaultLocalAddressLookup(
-    const std::string& aTargetIp, uint16_t aTargetPort) {
-  mInitPromise->Then(
-      mCallbackThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
-        if (mChild) {
-          mChild->SendSetTargetForDefaultLocalAddressLookup(aTargetIp,
-                                                            aTargetPort);
-        }
-      },
-      [](const nsCString& aError) {});
-}
-
 
 
 
@@ -333,7 +320,9 @@ MediaTransportHandlerIPC::GetIceStats(
 MediaTransportChild::MediaTransportChild(MediaTransportHandlerIPC* aUser)
     : mUser(aUser) {}
 
-MediaTransportChild::~MediaTransportChild() { mUser->mChild = nullptr; }
+MediaTransportChild::~MediaTransportChild() {
+  mUser->mChild = nullptr;
+}
 
 mozilla::ipc::IPCResult MediaTransportChild::RecvOnCandidate(
     const string& transportId, const CandidateInfo& candidateInfo) {

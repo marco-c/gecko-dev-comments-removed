@@ -174,9 +174,6 @@ class LoopbackTransport : public MediaTransportHandler {
                                   const std::string& aLocalPwd,
                                   size_t aComponentCount) override {}
 
-  void SetTargetForDefaultLocalAddressLookup(const std::string& aTargetIp,
-                                             uint16_t aTargetPort) override {}
-
   
   
   
