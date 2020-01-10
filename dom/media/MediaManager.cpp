@@ -2290,8 +2290,9 @@ static void ReduceConstraint(
 
   
   auto& c = aConstraint.GetAsMediaTrackConstraints();
-  nsString mediaSource = c.mMediaSource;
-  aConstraint.SetAsMediaTrackConstraints().mMediaSource = mediaSource;
+  MOZ_DIAGNOSTIC_ASSERT(c.mMediaSource.WasPassed());
+  nsString mediaSource = c.mMediaSource.Value();
+  aConstraint.SetAsMediaTrackConstraints().mMediaSource.Construct(mediaSource);
 }
 
 
@@ -2435,8 +2436,12 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
 
   if (c.mVideo.IsMediaTrackConstraints()) {
     auto& vc = c.mVideo.GetAsMediaTrackConstraints();
+    if (!vc.mMediaSource.WasPassed()) {
+      vc.mMediaSource.Construct().AssignASCII(EnumToASCII(
+          dom::MediaSourceEnumValues::strings, MediaSourceEnum::Camera));
+    }
     videoType = StringToEnum(dom::MediaSourceEnumValues::strings,
-                             vc.mMediaSource, MediaSourceEnum::Other);
+                             vc.mMediaSource.Value(), MediaSourceEnum::Other);
     Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_TYPE,
                           (uint32_t)videoType);
     switch (videoType) {
@@ -2479,17 +2484,6 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       }
     }
 
-    if (vc.mAdvanced.WasPassed() && videoType != MediaSourceEnum::Camera) {
-      
-      
-      const char* unset = EnumToASCII(dom::MediaSourceEnumValues::strings,
-                                      MediaSourceEnum::Camera);
-      for (MediaTrackConstraintSet& cs : vc.mAdvanced.Value()) {
-        if (cs.mMediaSource.EqualsASCII(unset)) {
-          cs.mMediaSource = vc.mMediaSource;
-        }
-      }
-    }
     if (!privileged) {
       
       
@@ -2513,7 +2507,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       if (videoType == MediaSourceEnum::Screen ||
           videoType == MediaSourceEnum::Browser) {
         videoType = MediaSourceEnum::Window;
-        vc.mMediaSource.AssignASCII(
+        vc.mMediaSource.Value().AssignASCII(
             EnumToASCII(dom::MediaSourceEnumValues::strings, videoType));
       }
       
@@ -2536,15 +2530,12 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
 
   if (c.mAudio.IsMediaTrackConstraints()) {
     auto& ac = c.mAudio.GetAsMediaTrackConstraints();
-    audioType = StringToEnum(dom::MediaSourceEnumValues::strings,
-                             ac.mMediaSource, MediaSourceEnum::Other);
-    
-    
-    if (audioType == MediaSourceEnum::Camera) {
-      audioType = MediaSourceEnum::Microphone;
-      ac.mMediaSource.AssignASCII(
-          EnumToASCII(dom::MediaSourceEnumValues::strings, audioType));
+    if (!ac.mMediaSource.WasPassed()) {
+      ac.mMediaSource.Construct(NS_ConvertASCIItoUTF16(EnumToASCII(
+          dom::MediaSourceEnumValues::strings, MediaSourceEnum::Microphone)));
     }
+    audioType = StringToEnum(dom::MediaSourceEnumValues::strings,
+                             ac.mMediaSource.Value(), MediaSourceEnum::Other);
     Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_TYPE,
                           (uint32_t)audioType);
 
@@ -2569,17 +2560,6 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
                                       NS_LITERAL_STRING(""),
                                       NS_LITERAL_STRING("mediaSource")),
             __func__);
-      }
-    }
-    if (ac.mAdvanced.WasPassed()) {
-      
-      
-      const char* unset = EnumToASCII(dom::MediaSourceEnumValues::strings,
-                                      MediaSourceEnum::Camera);
-      for (MediaTrackConstraintSet& cs : ac.mAdvanced.Value()) {
-        if (cs.mMediaSource.EqualsASCII(unset)) {
-          cs.mMediaSource = ac.mMediaSource;
-        }
       }
     }
   } else if (IsOn(c.mAudio)) {
@@ -2953,8 +2933,9 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetDisplayMedia(
   
   
   
-  vc.mMediaSource.AssignASCII(EnumToASCII(dom::MediaSourceEnumValues::strings,
-                                          MediaSourceEnum::Screen));
+  vc.mMediaSource.Reset();
+  vc.mMediaSource.Construct().AssignASCII(EnumToASCII(
+      dom::MediaSourceEnumValues::strings, MediaSourceEnum::Screen));
 
   return MediaManager::GetUserMedia(aWindow, c, aCallerType);
 }
