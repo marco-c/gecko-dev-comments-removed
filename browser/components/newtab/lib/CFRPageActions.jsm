@@ -136,16 +136,6 @@ class PageAction {
 
 
   _createDOML10n() {
-    const ftlResourceIDs = [
-      "browser/newtab/asrouter.ftl",
-      "browser/branding/brandings.ftl",
-      "browser/branding/sync-brand.ftl",
-      "branding/brand.ftl",
-    ];
-    if (!Services.prefs.getBoolPref(USE_REMOTE_L10N_PREF, true)) {
-      return new DOMLocalization(ftlResourceIDs);
-    }
-
     async function* generateBundles(resourceIds) {
       const appLocale = Services.locale.appLocaleAsBCP47;
       const appLocales = Services.locale.appLocalesAsBCP47;
@@ -157,25 +147,32 @@ class PageAction {
       
       
       const resource = await fs.fetchFile(appLocale, "asrouter.ftl");
-      if (resource) {
+      for await (let bundle of L10nRegistry.generateBundles(
+        appLocales.slice(0, 1),
+        resourceIds
+      )) {
         
         
-        
-        
-        for await (let bundle of L10nRegistry.generateBundles(
-          [appLocale],
-          resourceIds.slice(1)
-        )) {
-          
-          bundle.addResource(resource, true);
-          yield bundle;
+        if (resource) {
+          bundle.addResource(resource, { allowOverrides: true });
         }
-      } else {
-        yield* L10nRegistry.generateBundles(appLocales, resourceIds);
+        yield bundle;
       }
+      
+      yield* L10nRegistry.generateBundles(appLocales.slice(1), resourceIds);
     }
 
-    return new DOMLocalization(ftlResourceIDs, generateBundles);
+    return new DOMLocalization(
+      [
+        "browser/newtab/asrouter.ftl",
+        "browser/branding/brandings.ftl",
+        "browser/branding/sync-brand.ftl",
+        "branding/brand.ftl",
+      ],
+      Services.prefs.getBoolPref(USE_REMOTE_L10N_PREF, true)
+        ? generateBundles
+        : undefined
+    );
   }
 
   reloadL10n() {
