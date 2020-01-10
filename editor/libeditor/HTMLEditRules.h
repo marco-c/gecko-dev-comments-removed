@@ -28,6 +28,7 @@ class EditActionResult;
 class HTMLEditor;
 class SplitNodeResult;
 class TextEditor;
+class WSRunObject;
 enum class EditSubAction : int32_t;
 
 namespace dom {
@@ -128,6 +129,89 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
   WillDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                       nsIEditor::EStripWrappers aStripWrappers);
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtWhiteSpaces(
+      nsIEditor::EDirection aDirectionAndAmount,
+      WSRunObject& aWSRunObjectAtCaret);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtTextNode(
+      nsIEditor::EDirection aDirectionAndAmount,
+      const EditorDOMPoint& aPointToDelete);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtAtomicContent(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, nsIContent& aAtomicContent,
+      const EditorDOMPoint& aCaretPoint, WSRunObject& aWSRunObjectAtCaret);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, Element& aOtherBlockElement,
+      const EditorDOMPoint& aCaretPoint, WSRunObject& aWSRunObjectAtCaret);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleDeleteCollapsedSelectionAtCurrentBlockBoundary(
+      nsIEditor::EDirection aDirectionAndAmount, Element& aCurrentBlockElement,
+      const EditorDOMPoint& aCaretPoint);
 
   
 
