@@ -842,11 +842,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "Request", insecureContext: true},
 
-    {name: "ResizeObserver", insecureContext: true, nightly: true},
+    {name: "ResizeObserver", insecureContext: true},
 
-    {name: "ResizeObserverEntry", insecureContext: true, nightly: true},
+    {name: "ResizeObserverEntry", insecureContext: true},
 
-    {name: "ResizeObserverSize", insecureContext: true, nightly: true},
+    {name: "ResizeObserverSize", insecureContext: true},
 
     {name: "Response", insecureContext: true},
 
