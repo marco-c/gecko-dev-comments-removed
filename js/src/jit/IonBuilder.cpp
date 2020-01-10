@@ -3212,7 +3212,9 @@ AbortReasonOr<Ok> IonBuilder::visitTry(CFGTry* try_) {
   
 
   
-  MOZ_ASSERT(!isInlineBuilder());
+  if (isInlineBuilder()) {
+    return abort(AbortReason::Disable, "Try-catch during inlining");
+  }
 
   
   
@@ -12733,7 +12735,9 @@ AbortReasonOr<Ok> IonBuilder::jsop_setarg(uint32_t arg) {
   if (info().argumentsAliasesFormals()) {
     
     
-    MOZ_ASSERT(script()->uninlineable() && !isInlineBuilder());
+    if (isInlineBuilder()) {
+      return abort(AbortReason::Disable, "setarg with magic args and inlining");
+    }
 
     MSetFrameArgument* store = MSetFrameArgument::New(alloc(), arg, val);
     modifiesFrameArguments_ = true;
