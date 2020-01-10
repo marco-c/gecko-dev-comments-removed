@@ -40,6 +40,26 @@ for (const override of [
 
 
 
+    id: "bug1563839",
+    platform: "all",
+    domain: "rolb.santanderbank.com",
+    bug: "1563839",
+    config: {
+      matches: ["*://rolb.santanderbank.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA.replace("Gecko", "like Gecko");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
     id: "bug1480710",
     platform: "android",
     domain: "m.imgur.com",
