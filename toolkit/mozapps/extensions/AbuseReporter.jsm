@@ -179,8 +179,6 @@ const AbuseReporter = {
     }
     data.addon_install_method = install_method;
 
-    
-    
     switch (addon.signedState) {
       case AddonManager.SIGNEDSTATE_BROKEN:
         data.addon_signature = "broken";
@@ -205,6 +203,13 @@ const AbuseReporter = {
         break;
       default:
         data.addon_signature = `unknown: ${addon.signedState}`;
+    }
+
+    
+    
+    
+    if (addon.isRecommended) {
+      data.addon_signature = "curated";
     }
 
     data.client_id = await ClientID.getClientIdHash();
