@@ -18930,7 +18930,8 @@ DatabaseOperationBase::OnProgress(mozIStorageConnection* aConnection,
   MOZ_ASSERT(_retval);
 
   
-  *_retval = !OperationMayProceed();
+  *_retval = QuotaClient::IsShuttingDownOnNonBackgroundThread() ||
+             !OperationMayProceed();
   return NS_OK;
 }
 
