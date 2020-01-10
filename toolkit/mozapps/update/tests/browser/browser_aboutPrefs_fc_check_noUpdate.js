@@ -6,7 +6,7 @@
 
 
 add_task(async function aboutPrefs_foregroundCheck_noUpdate() {
-  let params = {queryString: "&noUpdates=1"};
+  let params = { queryString: "&noUpdates=1" };
   await runAboutPrefsUpdateTest(params, [
     {
       panelId: "checkingForUpdates",

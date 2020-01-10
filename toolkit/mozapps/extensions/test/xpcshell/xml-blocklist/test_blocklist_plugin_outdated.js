@@ -7,33 +7,39 @@ const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 const nsIBLS = Ci.nsIBlocklistService;
 
 var gBlocklist = null;
-var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
+var gTestserver = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
 gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
-var PLUGINS = [{
-  
-  name: "test_bug514327_outdated",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-}, {
-  
-  name: "test_bug514327_1",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-}, {
-  
-  name: "test_bug514327_2",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-}].map(opts => new MockPluginTag(opts, opts.enabledState));
+var PLUGINS = [
+  {
+    
+    name: "test_bug514327_outdated",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_bug514327_1",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_bug514327_2",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+].map(opts => new MockPluginTag(opts, opts.enabledState));
 
 mockPluginHost(PLUGINS);
 
 var BlocklistPrompt = {
-  get wrappedJSObject() { return this; },
+  get wrappedJSObject() {
+    return this;
+  },
 
   prompt(list) {
     
@@ -47,21 +53,27 @@ var BlocklistPrompt = {
   QueryInterface: ChromeUtils.generateQI([]),
 };
 
-
 async function loadBlocklist(file) {
   let blocklistUpdated = TestUtils.topicObserved("plugin-blocklist-updated");
 
-  Services.prefs.setCharPref("extensions.blocklist.url",
-                             "http://example.com/data/" + file);
+  Services.prefs.setCharPref(
+    "extensions.blocklist.url",
+    "http://example.com/data/" + file
+  );
   Blocklist.notify();
 
   await blocklistUpdated;
 }
 
-let factory = XPCOMUtils.generateSingletonFactory(function() { return BlocklistPrompt; });
-Cm.registerFactory(Components.ID("{26d32654-30c7-485d-b983-b4d2568aebba}"),
-                   "Blocklist Prompt",
-                   "@mozilla.org/addons/blocklist-prompt;1", factory);
+let factory = XPCOMUtils.generateSingletonFactory(function() {
+  return BlocklistPrompt;
+});
+Cm.registerFactory(
+  Components.ID("{26d32654-30c7-485d-b983-b4d2568aebba}"),
+  "Blocklist Prompt",
+  "@mozilla.org/addons/blocklist-prompt;1",
+  factory
+);
 
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
@@ -80,7 +92,10 @@ add_task(async function setup() {
   });
 
   
-  Assert.equal(await gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"), nsIBLS.STATE_NOT_BLOCKED);
+  Assert.equal(
+    await gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
+    nsIBLS.STATE_NOT_BLOCKED
+  );
 });
 
 add_task(async function test_part_1() {
@@ -88,7 +103,10 @@ add_task(async function test_part_1() {
   await loadBlocklist("test_bug514327_3_outdated_1.xml");
 
   
-  Assert.equal(await gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"), nsIBLS.STATE_OUTDATED);
+  Assert.equal(
+    await gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
+    nsIBLS.STATE_OUTDATED
+  );
 });
 
 add_task(async function test_part_2() {
@@ -96,5 +114,8 @@ add_task(async function test_part_2() {
   await loadBlocklist("test_bug514327_3_outdated_2.xml");
 
   
-  Assert.equal(await gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"), nsIBLS.STATE_OUTDATED);
+  Assert.equal(
+    await gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
+    nsIBLS.STATE_OUTDATED
+  );
 });

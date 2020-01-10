@@ -1,12 +1,14 @@
-
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
 
 add_task(async function() {
   let triggered = {};
-  const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
+  const { Management } = ChromeUtils.import(
+    "resource://gre/modules/Extension.jsm",
+    null
+  );
   for (let event of ["install", "uninstall", "update"]) {
     triggered[event] = false;
-    Management.on(event, () => triggered[event] = true);
+    Management.on(event, () => (triggered[event] = true));
   }
 
   async function expectEvents(expected, fn) {
@@ -19,8 +21,11 @@ add_task(async function() {
     await new Promise(executeSoon);
 
     for (let event of events) {
-      equal(triggered[event], expected[event],
-            `Event ${event} was${expected[event] ? "" : " not"} triggered`);
+      equal(
+        triggered[event],
+        expected[event],
+        `Event ${event} was${expected[event] ? "" : " not"} triggered`
+      );
     }
   }
 
@@ -29,21 +34,21 @@ add_task(async function() {
   const id = "webextension@tests.mozilla.org";
 
   
-  await expectEvents({update: false, uninstall: false}, async () => {
+  await expectEvents({ update: false, uninstall: false }, async () => {
     await promiseInstallWebExtension({
       manifest: {
         version: "1.0",
-        applications: {gecko: {id}},
+        applications: { gecko: { id } },
       },
     });
   });
 
   
-  await expectEvents({update: true, uninstall: false}, async () => {
+  await expectEvents({ update: true, uninstall: false }, async () => {
     await promiseInstallWebExtension({
       manifest: {
         version: "2.0",
-        applications: {gecko: {id}},
+        applications: { gecko: { id } },
       },
     });
   });
@@ -53,34 +58,38 @@ add_task(async function() {
   let v3 = createTempWebExtensionFile({
     manifest: {
       version: "3.0",
-      applications: {gecko: {id}},
+      applications: { gecko: { id } },
     },
   });
 
-  await expectEvents({update: true, uninstall: false}, () =>
-    AddonManager.installTemporaryAddon(v3));
+  await expectEvents({ update: true, uninstall: false }, () =>
+    AddonManager.installTemporaryAddon(v3)
+  );
 
   
   
   let addon = await promiseAddonByID(id);
-  await expectEvents({update: true, uninstall: false},
-                     () => addon.uninstall());
+  await expectEvents({ update: true, uninstall: false }, () =>
+    addon.uninstall()
+  );
 
   
   await AddonManager.installTemporaryAddon(v3);
 
   
   
-  await expectEvents({update: true, uninstall: false},
-                     () => promiseShutdownManager());
+  await expectEvents({ update: true, uninstall: false }, () =>
+    promiseShutdownManager()
+  );
 
   
-  await expectEvents({install: false}, () => promiseStartupManager());
+  await expectEvents({ install: false }, () => promiseStartupManager());
 
   addon = await promiseAddonByID(id);
 
   
   
-  await expectEvents({update: false, uninstall: true},
-                     () => addon.uninstall());
+  await expectEvents({ update: false, uninstall: true }, () =>
+    addon.uninstall()
+  );
 });

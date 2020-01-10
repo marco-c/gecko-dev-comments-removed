@@ -10,9 +10,7 @@
 
 add_task(async function telemetry_complete_stageFailure() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_APP_UPDATE_STAGING_ENABLED, true],
-    ],
+    set: [[PREF_APP_UPDATE_STAGING_ENABLED, true]],
   });
 
   let updateParams = "&completePatchOnly=1";

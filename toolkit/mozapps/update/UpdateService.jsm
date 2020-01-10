@@ -6,14 +6,26 @@
 
 "use strict";
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {AUSTLMY} = ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm");
-const {Bits, BitsRequest, BitsUnknownError, BitsVerificationError} =
-  ChromeUtils.import("resource://gre/modules/Bits.jsm");
-const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { AUSTLMY } = ChromeUtils.import(
+  "resource://gre/modules/UpdateTelemetry.jsm"
+);
+const {
+  Bits,
+  BitsRequest,
+  BitsUnknownError,
+  BitsVerificationError,
+} = ChromeUtils.import("resource://gre/modules/Bits.jsm");
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "XMLHttpRequest"]);
 
@@ -27,69 +39,72 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
 });
 
-const UPDATESERVICE_CID = Components.ID("{B3C290A6-3943-4B89-8BBE-C01EB7B3B311}");
+const UPDATESERVICE_CID = Components.ID(
+  "{B3C290A6-3943-4B89-8BBE-C01EB7B3B311}"
+);
 
-const PREF_APP_UPDATE_ALTUPDATEDIRPATH     = "app.update.altUpdateDirPath";
-const PREF_APP_UPDATE_BACKGROUNDERRORS     = "app.update.backgroundErrors";
-const PREF_APP_UPDATE_BACKGROUNDMAXERRORS  = "app.update.backgroundMaxErrors";
-const PREF_APP_UPDATE_BITS_ENABLED         = "app.update.BITS.enabled";
-const PREF_APP_UPDATE_CANCELATIONS         = "app.update.cancelations";
-const PREF_APP_UPDATE_CANCELATIONS_OSX     = "app.update.cancelations.osx";
+const PREF_APP_UPDATE_ALTUPDATEDIRPATH = "app.update.altUpdateDirPath";
+const PREF_APP_UPDATE_BACKGROUNDERRORS = "app.update.backgroundErrors";
+const PREF_APP_UPDATE_BACKGROUNDMAXERRORS = "app.update.backgroundMaxErrors";
+const PREF_APP_UPDATE_BITS_ENABLED = "app.update.BITS.enabled";
+const PREF_APP_UPDATE_CANCELATIONS = "app.update.cancelations";
+const PREF_APP_UPDATE_CANCELATIONS_OSX = "app.update.cancelations.osx";
 const PREF_APP_UPDATE_CANCELATIONS_OSX_MAX = "app.update.cancelations.osx.max";
-const PREF_APP_UPDATE_DISABLEDFORTESTING   = "app.update.disabledForTesting";
-const PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS    = "app.update.download.attempts";
+const PREF_APP_UPDATE_DISABLEDFORTESTING = "app.update.disabledForTesting";
+const PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS = "app.update.download.attempts";
 const PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS = "app.update.download.maxAttempts";
-const PREF_APP_UPDATE_ELEVATE_NEVER        = "app.update.elevate.never";
-const PREF_APP_UPDATE_ELEVATE_VERSION      = "app.update.elevate.version";
-const PREF_APP_UPDATE_ELEVATE_ATTEMPTS     = "app.update.elevate.attempts";
-const PREF_APP_UPDATE_ELEVATE_MAXATTEMPTS  = "app.update.elevate.maxAttempts";
-const PREF_APP_UPDATE_LOG                  = "app.update.log";
-const PREF_APP_UPDATE_LOG_FILE             = "app.update.log.file";
-const PREF_APP_UPDATE_POSTUPDATE           = "app.update.postupdate";
-const PREF_APP_UPDATE_PROMPTWAITTIME       = "app.update.promptWaitTime";
-const PREF_APP_UPDATE_SERVICE_ENABLED      = "app.update.service.enabled";
-const PREF_APP_UPDATE_SERVICE_ERRORS       = "app.update.service.errors";
-const PREF_APP_UPDATE_SERVICE_MAXERRORS    = "app.update.service.maxErrors";
-const PREF_APP_UPDATE_SOCKET_MAXERRORS     = "app.update.socket.maxErrors";
-const PREF_APP_UPDATE_SOCKET_RETRYTIMEOUT  = "app.update.socket.retryTimeout";
-const PREF_APP_UPDATE_STAGING_ENABLED      = "app.update.staging.enabled";
-const PREF_APP_UPDATE_URL                  = "app.update.url";
-const PREF_APP_UPDATE_URL_DETAILS          = "app.update.url.details";
-const PREF_NETWORK_PROXY_TYPE              = "network.proxy.type";
+const PREF_APP_UPDATE_ELEVATE_NEVER = "app.update.elevate.never";
+const PREF_APP_UPDATE_ELEVATE_VERSION = "app.update.elevate.version";
+const PREF_APP_UPDATE_ELEVATE_ATTEMPTS = "app.update.elevate.attempts";
+const PREF_APP_UPDATE_ELEVATE_MAXATTEMPTS = "app.update.elevate.maxAttempts";
+const PREF_APP_UPDATE_LOG = "app.update.log";
+const PREF_APP_UPDATE_LOG_FILE = "app.update.log.file";
+const PREF_APP_UPDATE_POSTUPDATE = "app.update.postupdate";
+const PREF_APP_UPDATE_PROMPTWAITTIME = "app.update.promptWaitTime";
+const PREF_APP_UPDATE_SERVICE_ENABLED = "app.update.service.enabled";
+const PREF_APP_UPDATE_SERVICE_ERRORS = "app.update.service.errors";
+const PREF_APP_UPDATE_SERVICE_MAXERRORS = "app.update.service.maxErrors";
+const PREF_APP_UPDATE_SOCKET_MAXERRORS = "app.update.socket.maxErrors";
+const PREF_APP_UPDATE_SOCKET_RETRYTIMEOUT = "app.update.socket.retryTimeout";
+const PREF_APP_UPDATE_STAGING_ENABLED = "app.update.staging.enabled";
+const PREF_APP_UPDATE_URL = "app.update.url";
+const PREF_APP_UPDATE_URL_DETAILS = "app.update.url.details";
+const PREF_NETWORK_PROXY_TYPE = "network.proxy.type";
 
-const URI_BRAND_PROPERTIES      = "chrome://branding/locale/brand.properties";
-const URI_UPDATE_NS             = "http://www.mozilla.org/2005/app-update";
-const URI_UPDATES_PROPERTIES    = "chrome://mozapps/locale/update/updates.properties";
+const URI_BRAND_PROPERTIES = "chrome://branding/locale/brand.properties";
+const URI_UPDATE_NS = "http://www.mozilla.org/2005/app-update";
+const URI_UPDATES_PROPERTIES =
+  "chrome://mozapps/locale/update/updates.properties";
 
-const KEY_EXECUTABLE      = "XREExeF";
-const KEY_PROFILE_DIR     = "ProfD";
-const KEY_UPDROOT         = "UpdRootD";
+const KEY_EXECUTABLE = "XREExeF";
+const KEY_PROFILE_DIR = "ProfD";
+const KEY_UPDROOT = "UpdRootD";
 
-const DIR_UPDATES         = "updates";
+const DIR_UPDATES = "updates";
 
 const FILE_ACTIVE_UPDATE_XML = "active-update.xml";
 const FILE_BACKUP_UPDATE_LOG = "backup-update.log";
-const FILE_BT_RESULT         = "bt.result";
-const FILE_LAST_UPDATE_LOG   = "last-update.log";
-const FILE_UPDATES_XML       = "updates.xml";
-const FILE_UPDATE_LOG        = "update.log";
-const FILE_UPDATE_MAR        = "update.mar";
-const FILE_UPDATE_STATUS     = "update.status";
-const FILE_UPDATE_TEST       = "update.test";
-const FILE_UPDATE_VERSION    = "update.version";
-const FILE_UPDATE_MESSAGES   = "update_messages.log";
+const FILE_BT_RESULT = "bt.result";
+const FILE_LAST_UPDATE_LOG = "last-update.log";
+const FILE_UPDATES_XML = "updates.xml";
+const FILE_UPDATE_LOG = "update.log";
+const FILE_UPDATE_MAR = "update.mar";
+const FILE_UPDATE_STATUS = "update.status";
+const FILE_UPDATE_TEST = "update.test";
+const FILE_UPDATE_VERSION = "update.version";
+const FILE_UPDATE_MESSAGES = "update_messages.log";
 
-const STATE_NONE            = "null";
-const STATE_DOWNLOADING     = "downloading";
-const STATE_PENDING         = "pending";
+const STATE_NONE = "null";
+const STATE_DOWNLOADING = "downloading";
+const STATE_PENDING = "pending";
 const STATE_PENDING_SERVICE = "pending-service";
 const STATE_PENDING_ELEVATE = "pending-elevate";
-const STATE_APPLYING        = "applying";
-const STATE_APPLIED         = "applied";
+const STATE_APPLYING = "applying";
+const STATE_APPLIED = "applied";
 const STATE_APPLIED_SERVICE = "applied-service";
-const STATE_SUCCEEDED       = "succeeded";
+const STATE_SUCCEEDED = "succeeded";
 const STATE_DOWNLOAD_FAILED = "download-failed";
-const STATE_FAILED          = "failed";
+const STATE_FAILED = "failed";
 
 
 
@@ -99,89 +114,93 @@ const BITS_IDLE_POLL_RATE_MS = 1000;
 const BITS_ACTIVE_POLL_RATE_MS = 200;
 
 
-const WRITE_ERROR                          = 7;
-const ELEVATION_CANCELED                   = 9;
+const WRITE_ERROR = 7;
+const ELEVATION_CANCELED = 9;
 const SERVICE_UPDATER_COULD_NOT_BE_STARTED = 24;
 const SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS = 25;
-const SERVICE_UPDATER_SIGN_ERROR           = 26;
-const SERVICE_UPDATER_COMPARE_ERROR        = 27;
-const SERVICE_UPDATER_IDENTITY_ERROR       = 28;
-const SERVICE_STILL_APPLYING_ON_SUCCESS    = 29;
-const SERVICE_STILL_APPLYING_ON_FAILURE    = 30;
-const SERVICE_UPDATER_NOT_FIXED_DRIVE      = 31;
-const SERVICE_COULD_NOT_LOCK_UPDATER       = 32;
-const SERVICE_INSTALLDIR_ERROR             = 33;
-const WRITE_ERROR_ACCESS_DENIED            = 35;
-const WRITE_ERROR_CALLBACK_APP             = 37;
-const UNEXPECTED_STAGING_ERROR             = 43;
-const DELETE_ERROR_STAGING_LOCK_FILE       = 44;
-const SERVICE_COULD_NOT_COPY_UPDATER       = 49;
-const SERVICE_STILL_APPLYING_TERMINATED    = 50;
-const SERVICE_STILL_APPLYING_NO_EXIT_CODE  = 51;
-const SERVICE_COULD_NOT_IMPERSONATE        = 58;
-const WRITE_ERROR_FILE_COPY                = 61;
-const WRITE_ERROR_DELETE_FILE              = 62;
-const WRITE_ERROR_OPEN_PATCH_FILE          = 63;
-const WRITE_ERROR_PATCH_FILE               = 64;
-const WRITE_ERROR_APPLY_DIR_PATH           = 65;
-const WRITE_ERROR_CALLBACK_PATH            = 66;
-const WRITE_ERROR_FILE_ACCESS_DENIED       = 67;
-const WRITE_ERROR_DIR_ACCESS_DENIED        = 68;
-const WRITE_ERROR_DELETE_BACKUP            = 69;
-const WRITE_ERROR_EXTRACT                  = 70;
+const SERVICE_UPDATER_SIGN_ERROR = 26;
+const SERVICE_UPDATER_COMPARE_ERROR = 27;
+const SERVICE_UPDATER_IDENTITY_ERROR = 28;
+const SERVICE_STILL_APPLYING_ON_SUCCESS = 29;
+const SERVICE_STILL_APPLYING_ON_FAILURE = 30;
+const SERVICE_UPDATER_NOT_FIXED_DRIVE = 31;
+const SERVICE_COULD_NOT_LOCK_UPDATER = 32;
+const SERVICE_INSTALLDIR_ERROR = 33;
+const WRITE_ERROR_ACCESS_DENIED = 35;
+const WRITE_ERROR_CALLBACK_APP = 37;
+const UNEXPECTED_STAGING_ERROR = 43;
+const DELETE_ERROR_STAGING_LOCK_FILE = 44;
+const SERVICE_COULD_NOT_COPY_UPDATER = 49;
+const SERVICE_STILL_APPLYING_TERMINATED = 50;
+const SERVICE_STILL_APPLYING_NO_EXIT_CODE = 51;
+const SERVICE_COULD_NOT_IMPERSONATE = 58;
+const WRITE_ERROR_FILE_COPY = 61;
+const WRITE_ERROR_DELETE_FILE = 62;
+const WRITE_ERROR_OPEN_PATCH_FILE = 63;
+const WRITE_ERROR_PATCH_FILE = 64;
+const WRITE_ERROR_APPLY_DIR_PATH = 65;
+const WRITE_ERROR_CALLBACK_PATH = 66;
+const WRITE_ERROR_FILE_ACCESS_DENIED = 67;
+const WRITE_ERROR_DIR_ACCESS_DENIED = 68;
+const WRITE_ERROR_DELETE_BACKUP = 69;
+const WRITE_ERROR_EXTRACT = 70;
 
 
-const WRITE_ERRORS = [WRITE_ERROR,
-                      WRITE_ERROR_ACCESS_DENIED,
-                      WRITE_ERROR_CALLBACK_APP,
-                      WRITE_ERROR_FILE_COPY,
-                      WRITE_ERROR_DELETE_FILE,
-                      WRITE_ERROR_OPEN_PATCH_FILE,
-                      WRITE_ERROR_PATCH_FILE,
-                      WRITE_ERROR_APPLY_DIR_PATH,
-                      WRITE_ERROR_CALLBACK_PATH,
-                      WRITE_ERROR_FILE_ACCESS_DENIED,
-                      WRITE_ERROR_DIR_ACCESS_DENIED,
-                      WRITE_ERROR_DELETE_BACKUP,
-                      WRITE_ERROR_EXTRACT];
+const WRITE_ERRORS = [
+  WRITE_ERROR,
+  WRITE_ERROR_ACCESS_DENIED,
+  WRITE_ERROR_CALLBACK_APP,
+  WRITE_ERROR_FILE_COPY,
+  WRITE_ERROR_DELETE_FILE,
+  WRITE_ERROR_OPEN_PATCH_FILE,
+  WRITE_ERROR_PATCH_FILE,
+  WRITE_ERROR_APPLY_DIR_PATH,
+  WRITE_ERROR_CALLBACK_PATH,
+  WRITE_ERROR_FILE_ACCESS_DENIED,
+  WRITE_ERROR_DIR_ACCESS_DENIED,
+  WRITE_ERROR_DELETE_BACKUP,
+  WRITE_ERROR_EXTRACT,
+];
 
 
-const SERVICE_ERRORS = [SERVICE_UPDATER_COULD_NOT_BE_STARTED,
-                        SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS,
-                        SERVICE_UPDATER_SIGN_ERROR,
-                        SERVICE_UPDATER_COMPARE_ERROR,
-                        SERVICE_UPDATER_IDENTITY_ERROR,
-                        SERVICE_STILL_APPLYING_ON_SUCCESS,
-                        SERVICE_STILL_APPLYING_ON_FAILURE,
-                        SERVICE_UPDATER_NOT_FIXED_DRIVE,
-                        SERVICE_COULD_NOT_LOCK_UPDATER,
-                        SERVICE_INSTALLDIR_ERROR,
-                        SERVICE_COULD_NOT_COPY_UPDATER,
-                        SERVICE_STILL_APPLYING_TERMINATED,
-                        SERVICE_STILL_APPLYING_NO_EXIT_CODE,
-                        SERVICE_COULD_NOT_IMPERSONATE];
+const SERVICE_ERRORS = [
+  SERVICE_UPDATER_COULD_NOT_BE_STARTED,
+  SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS,
+  SERVICE_UPDATER_SIGN_ERROR,
+  SERVICE_UPDATER_COMPARE_ERROR,
+  SERVICE_UPDATER_IDENTITY_ERROR,
+  SERVICE_STILL_APPLYING_ON_SUCCESS,
+  SERVICE_STILL_APPLYING_ON_FAILURE,
+  SERVICE_UPDATER_NOT_FIXED_DRIVE,
+  SERVICE_COULD_NOT_LOCK_UPDATER,
+  SERVICE_INSTALLDIR_ERROR,
+  SERVICE_COULD_NOT_COPY_UPDATER,
+  SERVICE_STILL_APPLYING_TERMINATED,
+  SERVICE_STILL_APPLYING_NO_EXIT_CODE,
+  SERVICE_COULD_NOT_IMPERSONATE,
+];
 
 
 
-const ERR_OLDER_VERSION_OR_SAME_BUILD      = 90;
-const ERR_UPDATE_STATE_NONE                = 91;
-const ERR_CHANNEL_CHANGE                   = 92;
-const INVALID_UPDATER_STATE_CODE           = 98;
-const INVALID_UPDATER_STATUS_CODE          = 99;
+const ERR_OLDER_VERSION_OR_SAME_BUILD = 90;
+const ERR_UPDATE_STATE_NONE = 91;
+const ERR_CHANNEL_CHANGE = 92;
+const INVALID_UPDATER_STATE_CODE = 98;
+const INVALID_UPDATER_STATUS_CODE = 99;
 
 
 const BACKGROUNDCHECK_MULTIPLE_FAILURES = 110;
-const NETWORK_ERROR_OFFLINE             = 111;
+const NETWORK_ERROR_OFFLINE = 111;
 
 
-const HTTP_ERROR_OFFSET                 = 1000;
+const HTTP_ERROR_OFFSET = 1000;
 
 
 
 
-const HRESULT_E_ACCESSDENIED            = -2147024891;
+const HRESULT_E_ACCESSDENIED = -2147024891;
 
-const DOWNLOAD_CHUNK_SIZE           = 300000; 
+const DOWNLOAD_CHUNK_SIZE = 300000; 
 
 
 
@@ -215,7 +234,7 @@ const XML_SAVER_INTERVAL_MS = 200;
 
 
 
-var gUpdateFileWriteInfo = {phase: null, failure: false};
+var gUpdateFileWriteInfo = { phase: null, failure: false };
 var gUpdateMutexHandle = null;
 
 
@@ -231,18 +250,27 @@ var gBITSInUseByAnotherUser = false;
 var gCheckStartMs;
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
-  return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false) ||
-         Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
+  return (
+    Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false) ||
+    Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false)
+  );
 });
 
-XPCOMUtils.defineLazyGetter(this, "gLogfileEnabled",
-                            function aus_gLogfileEnabled() {
-  return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
-});
+XPCOMUtils.defineLazyGetter(
+  this,
+  "gLogfileEnabled",
+  function aus_gLogfileEnabled() {
+    return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
+  }
+);
 
-XPCOMUtils.defineLazyGetter(this, "gUpdateBundle", function aus_gUpdateBundle() {
-  return Services.strings.createBundle(URI_UPDATES_PROPERTIES);
-});
+XPCOMUtils.defineLazyGetter(
+  this,
+  "gUpdateBundle",
+  function aus_gUpdateBundle() {
+    return Services.strings.createBundle(URI_UPDATES_PROPERTIES);
+  }
+);
 
 
 
@@ -254,10 +282,13 @@ XPCOMUtils.defineLazyGetter(this, "gUpdateBundle", function aus_gUpdateBundle() 
 function testWriteAccess(updateTestFile, createDirectory) {
   const NORMAL_FILE_TYPE = Ci.nsIFile.NORMAL_FILE_TYPE;
   const DIRECTORY_TYPE = Ci.nsIFile.DIRECTORY_TYPE;
-  if (updateTestFile.exists())
+  if (updateTestFile.exists()) {
     updateTestFile.remove(false);
-  updateTestFile.create(createDirectory ? DIRECTORY_TYPE : NORMAL_FILE_TYPE,
-                        createDirectory ? FileUtils.PERMS_DIRECTORY : FileUtils.PERMS_FILE);
+  }
+  updateTestFile.create(
+    createDirectory ? DIRECTORY_TYPE : NORMAL_FILE_TYPE,
+    createDirectory ? FileUtils.PERMS_DIRECTORY : FileUtils.PERMS_FILE
+  );
   updateTestFile.remove(false);
 }
 
@@ -269,10 +300,12 @@ function testWriteAccess(updateTestFile, createDirectory) {
 function closeHandle(handle) {
   if (handle) {
     let lib = ctypes.open("kernel32.dll");
-    let CloseHandle = lib.declare("CloseHandle",
-                                  ctypes.winapi_abi,
-                                  ctypes.int32_t, 
-                                  ctypes.void_t.ptr); 
+    let CloseHandle = lib.declare(
+      "CloseHandle",
+      ctypes.winapi_abi,
+      ctypes.int32_t ,
+      ctypes.void_t.ptr
+    ); 
     CloseHandle(handle);
     lib.close();
   }
@@ -293,14 +326,16 @@ function createMutex(aName, aAllowExisting = true) {
   }
 
   const INITIAL_OWN = 1;
-  const ERROR_ALREADY_EXISTS = 0xB7;
+  const ERROR_ALREADY_EXISTS = 0xb7;
   let lib = ctypes.open("kernel32.dll");
-  let CreateMutexW = lib.declare("CreateMutexW",
-                                 ctypes.winapi_abi,
-                                 ctypes.void_t.ptr, 
-                                 ctypes.void_t.ptr, 
-                                 ctypes.int32_t, 
-                                 ctypes.char16_t.ptr); 
+  let CreateMutexW = lib.declare(
+    "CreateMutexW",
+    ctypes.winapi_abi,
+    ctypes.void_t.ptr ,
+    ctypes.void_t.ptr ,
+    ctypes.int32_t ,
+    ctypes.char16_t.ptr
+  ); 
 
   let handle = CreateMutexW(null, INITIAL_OWN, aName);
   let alreadyExists = ctypes.winLastError == ERROR_ALREADY_EXISTS;
@@ -330,19 +365,23 @@ function getPerInstallationMutexName(aGlobal = true) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  let hasher = Cc["@mozilla.org/security/hash;1"].
-               createInstance(Ci.nsICryptoHash);
+  let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
+    Ci.nsICryptoHash
+  );
   hasher.init(hasher.SHA1);
 
   let exeFile = Services.dirsvc.get(KEY_EXECUTABLE, Ci.nsIFile);
 
-  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                  createInstance(Ci.nsIScriptableUnicodeConverter);
+  let converter = Cc[
+    "@mozilla.org/intl/scriptableunicodeconverter"
+  ].createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "UTF-8";
   var data = converter.convertToByteArray(exeFile.path.toLowerCase());
 
   hasher.update(data, data.length);
-  return (aGlobal ? "Global\\" : "") + "MozillaUpdateMutex-" + hasher.finish(true);
+  return (
+    (aGlobal ? "Global\\" : "") + "MozillaUpdateMutex-" + hasher.finish(true)
+  );
 }
 
 
@@ -398,21 +437,32 @@ function getElevationRequired() {
   try {
     
     
-    LOG("getElevationRequired - recursively testing write access on " +
-        getInstallDirRoot().path);
-    if (!getInstallDirRoot().isWritable() ||
-        !areDirectoryEntriesWriteable(getInstallDirRoot())) {
-      LOG("getElevationRequired - unable to write to application bundle, " +
-          "elevation required");
+    LOG(
+      "getElevationRequired - recursively testing write access on " +
+        getInstallDirRoot().path
+    );
+    if (
+      !getInstallDirRoot().isWritable() ||
+      !areDirectoryEntriesWriteable(getInstallDirRoot())
+    ) {
+      LOG(
+        "getElevationRequired - unable to write to application bundle, " +
+          "elevation required"
+      );
       return true;
     }
   } catch (ex) {
-    LOG("getElevationRequired - unable to write to application bundle, " +
-        "elevation required. Exception: " + ex);
+    LOG(
+      "getElevationRequired - unable to write to application bundle, " +
+        "elevation required. Exception: " +
+        ex
+    );
     return true;
   }
-  LOG("getElevationRequired - able to write to application bundle, elevation " +
-      "not required");
+  LOG(
+    "getElevationRequired - able to write to application bundle, elevation " +
+      "not required"
+  );
   return false;
 }
 
@@ -425,14 +475,18 @@ function getElevationRequired() {
 
 function getCanApplyUpdates() {
   if (AppConstants.platform == "macosx") {
-    LOG("getCanApplyUpdates - bypass the write since elevation can be used " +
-        "on Mac OS X");
+    LOG(
+      "getCanApplyUpdates - bypass the write since elevation can be used " +
+        "on Mac OS X"
+    );
     return true;
   }
 
   if (shouldUseService()) {
-    LOG("getCanApplyUpdates - bypass the write checks because the Windows " +
-        "Maintenance Service can be used");
+    LOG(
+      "getCanApplyUpdates - bypass the write checks because the Windows " +
+        "Maintenance Service can be used"
+    );
     return true;
   }
 
@@ -452,8 +506,8 @@ function getCanApplyUpdates() {
       
       
       
-      let userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper).
-                           userCanElevate;
+      let userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper)
+        .userCanElevate;
       if (!userCanElevate) {
         
         let appDirTestFile = getAppBaseDir();
@@ -462,7 +516,10 @@ function getCanApplyUpdates() {
         if (appDirTestFile.exists()) {
           appDirTestFile.remove(false);
         }
-        appDirTestFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+        appDirTestFile.create(
+          Ci.nsIFile.NORMAL_FILE_TYPE,
+          FileUtils.PERMS_FILE
+        );
         appDirTestFile.remove(false);
       }
     }
@@ -482,46 +539,56 @@ function getCanApplyUpdates() {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "gCanStageUpdatesSession", function aus_gCSUS() {
-  if (getElevationRequired()) {
-    LOG("gCanStageUpdatesSession - unable to stage updates because elevation " +
-        "is required.");
-    return false;
-  }
-
-  try {
-    let updateTestFile;
-    if (AppConstants.platform == "macosx") {
-      updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
-    } else {
-      updateTestFile = getInstallDirRoot();
-      updateTestFile.append(FILE_UPDATE_TEST);
+XPCOMUtils.defineLazyGetter(
+  this,
+  "gCanStageUpdatesSession",
+  function aus_gCSUS() {
+    if (getElevationRequired()) {
+      LOG(
+        "gCanStageUpdatesSession - unable to stage updates because elevation " +
+          "is required."
+      );
+      return false;
     }
-    LOG("gCanStageUpdatesSession - testing write access " +
-        updateTestFile.path);
-    testWriteAccess(updateTestFile, true);
-    if (AppConstants.platform != "macosx") {
-      
-      
-      
-      updateTestFile = getInstallDirRoot().parent;
-      updateTestFile.append(FILE_UPDATE_TEST);
-      LOG("gCanStageUpdatesSession - testing write access " +
-          updateTestFile.path);
-      updateTestFile.createUnique(Ci.nsIFile.DIRECTORY_TYPE,
-                                  FileUtils.PERMS_DIRECTORY);
-      updateTestFile.remove(false);
-    }
-  } catch (e) {
-    LOG("gCanStageUpdatesSession - unable to stage updates. Exception: " +
-        e);
-    
-    return false;
-  }
 
-  LOG("gCanStageUpdatesSession - able to stage updates");
-  return true;
-});
+    try {
+      let updateTestFile;
+      if (AppConstants.platform == "macosx") {
+        updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
+      } else {
+        updateTestFile = getInstallDirRoot();
+        updateTestFile.append(FILE_UPDATE_TEST);
+      }
+      LOG(
+        "gCanStageUpdatesSession - testing write access " + updateTestFile.path
+      );
+      testWriteAccess(updateTestFile, true);
+      if (AppConstants.platform != "macosx") {
+        
+        
+        
+        updateTestFile = getInstallDirRoot().parent;
+        updateTestFile.append(FILE_UPDATE_TEST);
+        LOG(
+          "gCanStageUpdatesSession - testing write access " +
+            updateTestFile.path
+        );
+        updateTestFile.createUnique(
+          Ci.nsIFile.DIRECTORY_TYPE,
+          FileUtils.PERMS_DIRECTORY
+        );
+        updateTestFile.remove(false);
+      }
+    } catch (e) {
+      LOG("gCanStageUpdatesSession - unable to stage updates. Exception: " + e);
+      
+      return false;
+    }
+
+    LOG("gCanStageUpdatesSession - able to stage updates");
+    return true;
+  }
+);
 
 
 
@@ -531,8 +598,10 @@ XPCOMUtils.defineLazyGetter(this, "gCanStageUpdatesSession", function aus_gCSUS(
 function getCanStageUpdates() {
   
   if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false)) {
-    LOG("getCanStageUpdates - staging updates is disabled by preference " +
-        PREF_APP_UPDATE_STAGING_ENABLED);
+    LOG(
+      "getCanStageUpdates - staging updates is disabled by preference " +
+        PREF_APP_UPDATE_STAGING_ENABLED
+    );
     return false;
   }
 
@@ -544,9 +613,11 @@ function getCanStageUpdates() {
   }
 
   if (!hasUpdateMutex()) {
-    LOG("getCanStageUpdates - unable to apply updates because another " +
+    LOG(
+      "getCanStageUpdates - unable to apply updates because another " +
         "instance of the application is already handling updates for this " +
-        "installation.");
+        "installation."
+    );
     return false;
   }
 
@@ -590,8 +661,11 @@ function getCanUseBits() {
   
   
   let defaultProxy = Ci.nsIProtocolProxyService.PROXYCONFIG_SYSTEM;
-  if (Services.prefs.getIntPref(PREF_NETWORK_PROXY_TYPE, defaultProxy) !=
-      defaultProxy && !Cu.isInAutomation) {
+  if (
+    Services.prefs.getIntPref(PREF_NETWORK_PROXY_TYPE, defaultProxy) !=
+      defaultProxy &&
+    !Cu.isInAutomation
+  ) {
     LOG("getCanUseBits - Not using BITS because of proxy usage");
     return "NoBits_Proxy";
   }
@@ -616,12 +690,14 @@ function LOG(string) {
       if (!gLogfileWritePromise) {
         let logfile = Services.dirsvc.get(KEY_PROFILE_DIR, Ci.nsIFile);
         logfile.append(FILE_UPDATE_MESSAGES);
-        gLogfileWritePromise = OS.File.open(logfile.path,
-                                            {write: true, append: true})
-                               .catch(error => {
+        gLogfileWritePromise = OS.File.open(logfile.path, {
+          write: true,
+          append: true,
+        }).catch(error => {
           dump("*** AUS:SVC Unable to open messages file: " + error + "\n");
-          Services.console.logStringMessage("AUS:SVC Unable to open messages " +
-                                            "file: " + error);
+          Services.console.logStringMessage(
+            "AUS:SVC Unable to open messages " + "file: " + error
+          );
           
           
           return Promise.reject(error);
@@ -638,8 +714,9 @@ function LOG(string) {
           await logfile.flush();
         } catch (e) {
           dump("*** AUS:SVC Unable to write to messages file: " + e + "\n");
-          Services.console.logStringMessage("AUS:SVC Unable to write to " +
-                                            "messages file: " + e);
+          Services.console.logStringMessage(
+            "AUS:SVC Unable to write to " + "messages file: " + e
+          );
         }
         return logfile;
       });
@@ -661,8 +738,10 @@ function getUpdateDirCreate(pathArray) {
     
     const MAGIC_TEST_ROOT_PREFIX = "<test-root>";
     const PREF_TEST_ROOT = "mochitest.testRoot";
-    let alternatePath =
-      Services.prefs.getCharPref(PREF_APP_UPDATE_ALTUPDATEDIRPATH, null);
+    let alternatePath = Services.prefs.getCharPref(
+      PREF_APP_UPDATE_ALTUPDATEDIRPATH,
+      null
+    );
     if (alternatePath && alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
       let testRoot = Services.prefs.getCharPref(PREF_TEST_ROOT);
       let relativePath = alternatePath.substring(MAGIC_TEST_ROOT_PREFIX.length);
@@ -670,7 +749,9 @@ function getUpdateDirCreate(pathArray) {
         relativePath = relativePath.replace(/\//g, "\\");
       }
       alternatePath = testRoot + relativePath;
-      let updateDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+      let updateDir = Cc["@mozilla.org/file/local;1"].createInstance(
+        Ci.nsIFile
+      );
       updateDir.initWithPath(alternatePath);
       for (let i = 0; i < pathArray.length; ++i) {
         updateDir.append(pathArray[i]);
@@ -737,13 +818,18 @@ function getStatusTextFromCode(code, defaultCode) {
   let reason;
   try {
     reason = gUpdateBundle.GetStringFromName("check_error-" + code);
-    LOG("getStatusTextFromCode - transfer error: " + reason + ", code: " +
-        code);
+    LOG(
+      "getStatusTextFromCode - transfer error: " + reason + ", code: " + code
+    );
   } catch (e) {
     
     reason = gUpdateBundle.GetStringFromName("check_error-" + defaultCode);
-    LOG("getStatusTextFromCode - transfer error: " + reason +
-        ", default code: " + defaultCode);
+    LOG(
+      "getStatusTextFromCode - transfer error: " +
+        reason +
+        ", default code: " +
+        defaultCode
+    );
   }
   return reason;
 }
@@ -786,8 +872,12 @@ function readBinaryTransparencyResult(dir) {
   let binaryTransparencyResultFile = dir.clone();
   binaryTransparencyResultFile.append(FILE_BT_RESULT);
   let result = readStringFromFile(binaryTransparencyResultFile);
-  LOG("readBinaryTransparencyResult - result: " + result + ", path: "
-      + binaryTransparencyResultFile.path);
+  LOG(
+    "readBinaryTransparencyResult - result: " +
+      result +
+      ", path: " +
+      binaryTransparencyResultFile.path
+  );
   
   
   if (result) {
@@ -851,8 +941,11 @@ function shouldUseService() {
   
   
   
-  if (!AppConstants.MOZ_MAINTENANCE_SERVICE || !isServiceInstalled() ||
-      !Services.prefs.getBoolPref(PREF_APP_UPDATE_SERVICE_ENABLED, false)) {
+  if (
+    !AppConstants.MOZ_MAINTENANCE_SERVICE ||
+    !isServiceInstalled() ||
+    !Services.prefs.getBoolPref(PREF_APP_UPDATE_SERVICE_ENABLED, false)
+  ) {
     LOG("shouldUseService - returning false");
     return false;
   }
@@ -874,15 +967,17 @@ function isServiceInstalled() {
 
   let installed = 0;
   try {
-    let wrk = Cc["@mozilla.org/windows-registry-key;1"].
-              createInstance(Ci.nsIWindowsRegKey);
-    wrk.open(wrk.ROOT_KEY_LOCAL_MACHINE,
-             "SOFTWARE\\Mozilla\\MaintenanceService",
-             wrk.ACCESS_READ | wrk.WOW64_64);
+    let wrk = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
+      Ci.nsIWindowsRegKey
+    );
+    wrk.open(
+      wrk.ROOT_KEY_LOCAL_MACHINE,
+      "SOFTWARE\\Mozilla\\MaintenanceService",
+      wrk.ACCESS_READ | wrk.WOW64_64
+    );
     installed = wrk.readIntValue("Installed");
     wrk.close();
-  } catch (e) {
-  }
+  } catch (e) {}
   installed = installed == 1; 
   LOG("isServiceInstalled - returning " + installed);
   return installed;
@@ -903,8 +998,11 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
   try {
     updateDir = getUpdatesDir();
   } catch (e) {
-    LOG("cleanUpUpdatesDir - unable to get the updates patch directory. " +
-        "Exception: " + e);
+    LOG(
+      "cleanUpUpdatesDir - unable to get the updates patch directory. " +
+        "Exception: " +
+        e
+    );
     return;
   }
 
@@ -919,16 +1017,24 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
       try {
         logFile.moveTo(dir, FILE_BACKUP_UPDATE_LOG);
       } catch (e) {
-        LOG("cleanUpUpdatesDir - failed to rename file " + logFile.path +
-            " to " + FILE_BACKUP_UPDATE_LOG);
+        LOG(
+          "cleanUpUpdatesDir - failed to rename file " +
+            logFile.path +
+            " to " +
+            FILE_BACKUP_UPDATE_LOG
+        );
       }
     }
 
     try {
       updateLogFile.moveTo(dir, FILE_LAST_UPDATE_LOG);
     } catch (e) {
-      LOG("cleanUpUpdatesDir - failed to rename file " + updateLogFile.path +
-          " to " + FILE_LAST_UPDATE_LOG);
+      LOG(
+        "cleanUpUpdatesDir - failed to rename file " +
+          updateLogFile.path +
+          " to " +
+          FILE_LAST_UPDATE_LOG
+      );
     }
   }
 
@@ -954,8 +1060,9 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
 
 function cleanupActiveUpdate() {
   
-  var um = Cc["@mozilla.org/updates/update-manager;1"].
-           getService(Ci.nsIUpdateManager);
+  var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+    Ci.nsIUpdateManager
+  );
   
   
   um.activeUpdate = null;
@@ -985,8 +1092,9 @@ function writeStringToFile(file, text) {
 }
 
 function readStringFromInputStream(inputStream) {
-  var sis = Cc["@mozilla.org/scriptableinputstream;1"].
-            createInstance(Ci.nsIScriptableInputStream);
+  var sis = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
+    Ci.nsIScriptableInputStream
+  );
   sis.init(inputStream);
   var text = sis.read(sis.available());
   sis.close();
@@ -1005,8 +1113,9 @@ function readStringFromFile(file) {
     LOG("readStringFromFile - file doesn't exist: " + file.path);
     return null;
   }
-  var fis = Cc["@mozilla.org/network/file-input-stream;1"].
-            createInstance(Ci.nsIFileInputStream);
+  var fis = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
   fis.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
   return readStringFromInputStream(fis);
 }
@@ -1014,49 +1123,80 @@ function readStringFromFile(file) {
 function handleUpdateFailure(update, errorCode) {
   update.errorCode = parseInt(errorCode);
   if (WRITE_ERRORS.includes(update.errorCode)) {
-    writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
+    writeStatusFile(getUpdatesDir(), (update.state = STATE_PENDING));
     return true;
   }
 
   if (update.errorCode == ELEVATION_CANCELED) {
-    let elevationAttempts = Services.prefs.getIntPref(PREF_APP_UPDATE_ELEVATE_ATTEMPTS, 0);
+    let elevationAttempts = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_ELEVATE_ATTEMPTS,
+      0
+    );
     elevationAttempts++;
-    Services.prefs.setIntPref(PREF_APP_UPDATE_ELEVATE_ATTEMPTS, elevationAttempts);
-    let maxAttempts = Math.min(Services.prefs.getIntPref(PREF_APP_UPDATE_ELEVATE_MAXATTEMPTS, 2), 10);
+    Services.prefs.setIntPref(
+      PREF_APP_UPDATE_ELEVATE_ATTEMPTS,
+      elevationAttempts
+    );
+    let maxAttempts = Math.min(
+      Services.prefs.getIntPref(PREF_APP_UPDATE_ELEVATE_MAXATTEMPTS, 2),
+      10
+    );
 
     if (elevationAttempts > maxAttempts) {
-      LOG("handleUpdateFailure - notifying observers of error. " +
-          "topic: update-error, status: elevation-attempts-exceeded");
-      Services.obs.notifyObservers(update, "update-error", "elevation-attempts-exceeded");
+      LOG(
+        "handleUpdateFailure - notifying observers of error. " +
+          "topic: update-error, status: elevation-attempts-exceeded"
+      );
+      Services.obs.notifyObservers(
+        update,
+        "update-error",
+        "elevation-attempts-exceeded"
+      );
     } else {
-      LOG("handleUpdateFailure - notifying observers of error. " +
-          "topic: update-error, status: elevation-attempt-failed");
-      Services.obs.notifyObservers(update, "update-error", "elevation-attempt-failed");
+      LOG(
+        "handleUpdateFailure - notifying observers of error. " +
+          "topic: update-error, status: elevation-attempt-failed"
+      );
+      Services.obs.notifyObservers(
+        update,
+        "update-error",
+        "elevation-attempt-failed"
+      );
     }
 
-    let cancelations = Services.prefs.getIntPref(PREF_APP_UPDATE_CANCELATIONS, 0);
+    let cancelations = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_CANCELATIONS,
+      0
+    );
     cancelations++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS, cancelations);
     if (AppConstants.platform == "macosx") {
-      let osxCancelations =
-        Services.prefs.getIntPref(PREF_APP_UPDATE_CANCELATIONS_OSX, 0);
+      let osxCancelations = Services.prefs.getIntPref(
+        PREF_APP_UPDATE_CANCELATIONS_OSX,
+        0
+      );
       osxCancelations++;
-      Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS_OSX,
-                                osxCancelations);
-      let maxCancels =
-        Services.prefs.getIntPref(PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
-                                  DEFAULT_CANCELATIONS_OSX_MAX);
+      Services.prefs.setIntPref(
+        PREF_APP_UPDATE_CANCELATIONS_OSX,
+        osxCancelations
+      );
+      let maxCancels = Services.prefs.getIntPref(
+        PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
+        DEFAULT_CANCELATIONS_OSX_MAX
+      );
       
       maxCancels = Math.min(maxCancels, 5);
       if (osxCancelations >= maxCancels) {
         cleanupActiveUpdate();
       } else {
-        writeStatusFile(getUpdatesDir(),
-                        update.state = STATE_PENDING_ELEVATE);
+        writeStatusFile(
+          getUpdatesDir(),
+          (update.state = STATE_PENDING_ELEVATE)
+        );
       }
       update.statusText = gUpdateBundle.GetStringFromName("elevationFailure");
     } else {
-      writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
+      writeStatusFile(getUpdatesDir(), (update.state = STATE_PENDING));
     }
     return true;
   }
@@ -1069,9 +1209,14 @@ function handleUpdateFailure(update, errorCode) {
   }
 
   if (SERVICE_ERRORS.includes(update.errorCode)) {
-    var failCount = Services.prefs.getIntPref(PREF_APP_UPDATE_SERVICE_ERRORS, 0);
-    var maxFail = Services.prefs.getIntPref(PREF_APP_UPDATE_SERVICE_MAXERRORS,
-                                            DEFAULT_SERVICE_MAX_ERRORS);
+    var failCount = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_SERVICE_ERRORS,
+      0
+    );
+    var maxFail = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_SERVICE_MAXERRORS,
+      DEFAULT_SERVICE_MAX_ERRORS
+    );
     
     maxFail = Math.min(maxFail, 10);
     
@@ -1082,11 +1227,10 @@ function handleUpdateFailure(update, errorCode) {
       Services.prefs.clearUserPref(PREF_APP_UPDATE_SERVICE_ERRORS);
     } else {
       failCount++;
-      Services.prefs.setIntPref(PREF_APP_UPDATE_SERVICE_ERRORS,
-                                failCount);
+      Services.prefs.setIntPref(PREF_APP_UPDATE_SERVICE_ERRORS, failCount);
     }
 
-    writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
+    writeStatusFile(getUpdatesDir(), (update.state = STATE_PENDING));
     return true;
   }
 
@@ -1107,24 +1251,31 @@ function handleFallbackToCompleteUpdate(update, postStaging) {
   cleanupActiveUpdate();
 
   update.statusText = gUpdateBundle.GetStringFromName("patchApplyFailure");
-  var oldType = update.selectedPatch ? update.selectedPatch.type
-                                     : "complete";
+  var oldType = update.selectedPatch ? update.selectedPatch.type : "complete";
   if (update.selectedPatch && oldType == "partial" && update.patchCount == 2) {
     
     
-    LOG("handleFallbackToCompleteUpdate - install of partial patch " +
-        "failed, downloading complete patch");
-    var status = Cc["@mozilla.org/updates/update-service;1"].
-                 getService(Ci.nsIApplicationUpdateService).
-                 downloadUpdate(update, !postStaging);
-    if (status == STATE_NONE)
+    LOG(
+      "handleFallbackToCompleteUpdate - install of partial patch " +
+        "failed, downloading complete patch"
+    );
+    var status = Cc["@mozilla.org/updates/update-service;1"]
+      .getService(Ci.nsIApplicationUpdateService)
+      .downloadUpdate(update, !postStaging);
+    if (status == STATE_NONE) {
       cleanupActiveUpdate();
+    }
   } else {
-    LOG("handleFallbackToCompleteUpdate - install of complete or " +
+    LOG(
+      "handleFallbackToCompleteUpdate - install of complete or " +
         "only one patch offered failed. Notifying observers. topic: " +
         "update-error, status: unknown, " +
-        "update.patchCount: " + update.patchCount + ", " +
-        "oldType: " + oldType);
+        "update.patchCount: " +
+        update.patchCount +
+        ", " +
+        "oldType: " +
+        oldType
+    );
     Services.obs.notifyObservers(update, "update-error", "unknown");
   }
 }
@@ -1193,7 +1344,10 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
   }
   let binaryTransparencyResult = readBinaryTransparencyResult(getUpdatesDir());
   if (binaryTransparencyResult) {
-    AUSTLMY.pingBinaryTransparencyResult(suffix, parseInt(binaryTransparencyResult));
+    AUSTLMY.pingBinaryTransparencyResult(
+      suffix,
+      parseInt(binaryTransparencyResult)
+    );
   }
   AUSTLMY.pingStateCode(suffix, stateCode);
 }
@@ -1214,13 +1368,16 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
 
 
 function handleCriticalWriteFailure(path) {
-  LOG("handleCriticalWriteFailure - Unable to write to critical update file: " +
-      path);
+  LOG(
+    "handleCriticalWriteFailure - Unable to write to critical update file: " +
+      path
+  );
   if (!gUpdateFileWriteInfo.failure) {
     gUpdateFileWriteInfo.failure = true;
     let patchType = AUSTLMY.PATCH_UNKNOWN;
-    let update = Cc["@mozilla.org/updates/update-manager;1"].
-                 getService(Ci.nsIUpdateManager).activeUpdate;
+    let update = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    ).activeUpdate;
     if (update) {
       let patch = update.selectedPatch;
       if (patch.type == "complete") {
@@ -1249,7 +1406,10 @@ function handleCriticalWriteFailure(path) {
     } else {
       
       
-      AUSTLMY.pingDownloadCode(patchType, AUSTLMY.DWNLD_UNKNOWN_PHASE_ERR_WRITE_FAILURE);
+      AUSTLMY.pingDownloadCode(
+        patchType,
+        AUSTLMY.DWNLD_UNKNOWN_PHASE_ERR_WRITE_FAILURE
+      );
     }
   }
 
@@ -1257,17 +1417,21 @@ function handleCriticalWriteFailure(path) {
     
     
     if (AppConstants.platform != "win") {
-      LOG("There is currently no implementation for fixing update directory " +
-          "permissions on this platform");
+      LOG(
+        "There is currently no implementation for fixing update directory " +
+          "permissions on this platform"
+      );
       return false;
     }
     LOG("Attempting to fix update directory permissions");
     try {
-      Cc["@mozilla.org/updates/update-processor;1"].
-        createInstance(Ci.nsIUpdateProcessor).
-        fixUpdateDirectoryPerms(shouldUseService());
+      Cc["@mozilla.org/updates/update-processor;1"]
+        .createInstance(Ci.nsIUpdateProcessor)
+        .fixUpdateDirectoryPerms(shouldUseService());
     } catch (e) {
-      LOG("Attempt to fix update directory permissions failed. Exception: " + e);
+      LOG(
+        "Attempt to fix update directory permissions failed. Exception: " + e
+      );
       return false;
     }
     gUpdateDirPermissionFixAttempted = true;
@@ -1356,7 +1520,13 @@ UpdatePatch.prototype = {
   
   
   _attrNames: [
-    "errorCode", "finalURL", "selected", "size", "state", "type", "URL",
+    "errorCode",
+    "finalURL",
+    "selected",
+    "size",
+    "state",
+    "type",
+    "URL",
   ],
 
   
@@ -1398,9 +1568,12 @@ UpdatePatch.prototype = {
   setProperty: function UpdatePatch_setProperty(name, value) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
-        "Illegal value '" + name + "' (attribute exists on nsIUpdatePatch) " +
-        "when calling method: [nsIWritablePropertyBag::setProperty]",
-        Cr.NS_ERROR_ILLEGAL_VALUE);
+        "Illegal value '" +
+          name +
+          "' (attribute exists on nsIUpdatePatch) " +
+          "when calling method: [nsIWritablePropertyBag::setProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
     this._properties[name] = { data: value, present: true };
   },
@@ -1411,9 +1584,12 @@ UpdatePatch.prototype = {
   deleteProperty: function UpdatePatch_deleteProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
-        "Illegal value '" + name + "' (attribute exists on nsIUpdatePatch) " +
-        "when calling method: [nsIWritablePropertyBag::deleteProperty]",
-        Cr.NS_ERROR_ILLEGAL_VALUE);
+        "Illegal value '" +
+          name +
+          "' (attribute exists on nsIUpdatePatch) " +
+          "when calling method: [nsIWritablePropertyBag::deleteProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
     if (name in this._properties) {
       this._properties[name].present = false;
@@ -1432,11 +1608,12 @@ UpdatePatch.prototype = {
     return this.enumerate();
   },
 
-  * enumerate() {
+  *enumerate() {
     
     
-    let ip = Cc["@mozilla.org/supports-interface-pointer;1"].
-             createInstance(Ci.nsISupportsInterfacePointer);
+    let ip = Cc["@mozilla.org/supports-interface-pointer;1"].createInstance(
+      Ci.nsISupportsInterfacePointer
+    );
     let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
     for (let [name, value] of Object.entries(this._properties)) {
       if (value.present && !this._attrNames.includes(name)) {
@@ -1445,7 +1622,7 @@ UpdatePatch.prototype = {
         
         
         
-        ip.data = {name, value: value.data, QueryInterface: qi};
+        ip.data = { name, value: value.data, QueryInterface: qi };
         yield ip.data.QueryInterface(Ci.nsIProperty);
       }
     }
@@ -1460,9 +1637,12 @@ UpdatePatch.prototype = {
   getProperty: function UpdatePatch_getProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
-        "Illegal value '" + name + "' (attribute exists on nsIUpdatePatch) " +
-        "when calling method: [nsIWritablePropertyBag::getProperty]",
-        Cr.NS_ERROR_ILLEGAL_VALUE);
+        "Illegal value '" +
+          name +
+          "' (attribute exists on nsIUpdatePatch) " +
+          "when calling method: [nsIWritablePropertyBag::getProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
     if (name in this._properties && this._properties[name].present) {
       return this._properties[name].data;
@@ -1470,9 +1650,11 @@ UpdatePatch.prototype = {
     return null;
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdatePatch,
-                                          Ci.nsIPropertyBag,
-                                          Ci.nsIWritablePropertyBag]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIUpdatePatch,
+    Ci.nsIPropertyBag,
+    Ci.nsIWritablePropertyBag,
+  ]),
 };
 
 
@@ -1488,7 +1670,10 @@ function Update(update) {
   this._properties = {};
   this.isCompleteUpdate = false;
   this.channel = "default";
-  this.promptWaitTime = Services.prefs.getIntPref(PREF_APP_UPDATE_PROMPTWAITTIME, 43200);
+  this.promptWaitTime = Services.prefs.getIntPref(
+    PREF_APP_UPDATE_PROMPTWAITTIME,
+    43200
+  );
   this.unsupported = false;
 
   
@@ -1499,8 +1684,10 @@ function Update(update) {
 
   for (let i = 0; i < update.childNodes.length; ++i) {
     let patchElement = update.childNodes.item(i);
-    if (patchElement.nodeType != patchElement.ELEMENT_NODE ||
-        patchElement.localName != "patch") {
+    if (
+      patchElement.nodeType != patchElement.ELEMENT_NODE ||
+      patchElement.localName != "patch"
+    ) {
       continue;
     }
 
@@ -1520,7 +1707,7 @@ function Update(update) {
   
   
   
-  this.installDate = (new Date()).getTime();
+  this.installDate = new Date().getTime();
   this.patchCount = this._patches.length;
 
   for (let i = 0; i < update.attributes.length; ++i) {
@@ -1589,7 +1776,9 @@ function Update(update) {
     try {
       
       
-      this.detailsURL = Services.urlFormatter.formatURLPref(PREF_APP_UPDATE_URL_DETAILS);
+      this.detailsURL = Services.urlFormatter.formatURLPref(
+        PREF_APP_UPDATE_URL_DETAILS
+      );
     } catch (e) {
       this.detailsURL = "";
     }
@@ -1604,18 +1793,33 @@ function Update(update) {
     
     let brandBundle = Services.strings.createBundle(URI_BRAND_PROPERTIES);
     let appName = brandBundle.GetStringFromName("brandShortName");
-    this.name = gUpdateBundle.formatStringFromName("updateName",
-                                                   [appName, this.displayVersion]);
+    this.name = gUpdateBundle.formatStringFromName("updateName", [
+      appName,
+      this.displayVersion,
+    ]);
   }
 }
 Update.prototype = {
   
   
   _attrNames: [
-    "appVersion", "buildID", "channel", "detailsURL", "displayVersion",
-    "elevationFailure", "errorCode", "installDate", "isCompleteUpdate", "name",
-    "previousAppVersion", "promptWaitTime", "serviceURL", "state", "statusText",
-    "type", "unsupported",
+    "appVersion",
+    "buildID",
+    "channel",
+    "detailsURL",
+    "displayVersion",
+    "elevationFailure",
+    "errorCode",
+    "installDate",
+    "isCompleteUpdate",
+    "name",
+    "previousAppVersion",
+    "promptWaitTime",
+    "serviceURL",
+    "state",
+    "statusText",
+    "type",
+    "unsupported",
   ],
 
   
@@ -1635,13 +1839,15 @@ Update.prototype = {
 
   _state: "",
   get state() {
-    if (this.selectedPatch)
+    if (this.selectedPatch) {
       return this.selectedPatch.state;
+    }
     return this._state;
   },
   set state(state) {
-    if (this.selectedPatch)
+    if (this.selectedPatch) {
       this.selectedPatch.state = state;
+    }
     this._state = state;
   },
 
@@ -1655,13 +1861,15 @@ Update.prototype = {
 
   _errorCode: 0,
   get errorCode() {
-    if (this.selectedPatch)
+    if (this.selectedPatch) {
       return this.selectedPatch.errorCode;
+    }
     return this._errorCode;
   },
   set errorCode(errorCode) {
-    if (this.selectedPatch)
+    if (this.selectedPatch) {
       this.selectedPatch.errorCode = errorCode;
+    }
     this._errorCode = errorCode;
   },
 
@@ -1730,9 +1938,12 @@ Update.prototype = {
   setProperty: function Update_setProperty(name, value) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
-        "Illegal value '" + name + "' (attribute exists on nsIUpdate) " +
-        "when calling method: [nsIWritablePropertyBag::setProperty]",
-        Cr.NS_ERROR_ILLEGAL_VALUE);
+        "Illegal value '" +
+          name +
+          "' (attribute exists on nsIUpdate) " +
+          "when calling method: [nsIWritablePropertyBag::setProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
     this._properties[name] = { data: value, present: true };
   },
@@ -1743,9 +1954,12 @@ Update.prototype = {
   deleteProperty: function Update_deleteProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
-        "Illegal value '" + name + "' (attribute exists on nsIUpdate) " +
-        "when calling method: [nsIWritablePropertyBag::deleteProperty]",
-        Cr.NS_ERROR_ILLEGAL_VALUE);
+        "Illegal value '" +
+          name +
+          "' (attribute exists on nsIUpdate) " +
+          "when calling method: [nsIWritablePropertyBag::deleteProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
     if (name in this._properties) {
       this._properties[name].present = false;
@@ -1764,11 +1978,12 @@ Update.prototype = {
     return this.enumerate();
   },
 
-  * enumerate() {
+  *enumerate() {
     
     
-    let ip = Cc["@mozilla.org/supports-interface-pointer;1"].
-             createInstance(Ci.nsISupportsInterfacePointer);
+    let ip = Cc["@mozilla.org/supports-interface-pointer;1"].createInstance(
+      Ci.nsISupportsInterfacePointer
+    );
     let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
     for (let [name, value] of Object.entries(this._properties)) {
       if (value.present && !this._attrNames.includes(name)) {
@@ -1777,7 +1992,7 @@ Update.prototype = {
         
         
         
-        ip.data = {name, value: value.data, QueryInterface: qi};
+        ip.data = { name, value: value.data, QueryInterface: qi };
         yield ip.data.QueryInterface(Ci.nsIProperty);
       }
     }
@@ -1791,9 +2006,12 @@ Update.prototype = {
   getProperty: function Update_getProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
-        "Illegal value '" + name + "' (attribute exists on nsIUpdate) " +
-        "when calling method: [nsIWritablePropertyBag::getProperty]",
-        Cr.NS_ERROR_ILLEGAL_VALUE);
+        "Illegal value '" +
+          name +
+          "' (attribute exists on nsIUpdate) " +
+          "when calling method: [nsIWritablePropertyBag::getProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
     if (name in this._properties && this._properties[name].present) {
       return this._properties[name].data;
@@ -1801,9 +2019,11 @@ Update.prototype = {
     return null;
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdate,
-                                          Ci.nsIPropertyBag,
-                                          Ci.nsIWritablePropertyBag]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIUpdate,
+    Ci.nsIPropertyBag,
+    Ci.nsIWritablePropertyBag,
+  ]),
 };
 
 const UpdateServiceFactory = {
@@ -1812,8 +2032,9 @@ const UpdateServiceFactory = {
     if (outer != null) {
       throw Cr.NS_ERROR_NO_AGGREGATION;
     }
-    return this._instance == null ? this._instance = new UpdateService() :
-                                    this._instance;
+    return this._instance == null
+      ? (this._instance = new UpdateService())
+      : this._instance;
   },
 };
 
@@ -1894,14 +2115,16 @@ UpdateService.prototype = {
           Services.obs.addObserver(this, APPID_TO_TOPIC[Services.appinfo.ID]);
           break;
         }
-        
+      
       case "sessionstore-windows-restored":
       case "mail-startup-done":
         if (Services.appinfo.ID in APPID_TO_TOPIC) {
-          Services.obs.removeObserver(this,
-                                      APPID_TO_TOPIC[Services.appinfo.ID]);
+          Services.obs.removeObserver(
+            this,
+            APPID_TO_TOPIC[Services.appinfo.ID]
+          );
         }
-        
+      
       case "test-post-update-processing":
         
         this._postUpdateProcessing();
@@ -1918,9 +2141,11 @@ UpdateService.prototype = {
         }
         if (data == PREF_APP_UPDATE_LOG_FILE) {
           gLogfileEnabled; 
-                           
-          gLogfileEnabled =
-            Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
+          
+          gLogfileEnabled = Services.prefs.getBoolPref(
+            PREF_APP_UPDATE_LOG_FILE,
+            false
+          );
           if (gLogfileEnabled) {
             this._logStatus();
           }
@@ -1955,22 +2180,27 @@ UpdateService.prototype = {
             
             
             
-            Cc["@mozilla.org/updates/update-manager;1"].
-              getService(Ci.nsIUpdateManager).saveUpdates();
+            Cc["@mozilla.org/updates/update-manager;1"]
+              .getService(Ci.nsIUpdateManager)
+              .saveUpdates();
           }
         }
         
         this._downloader = null;
         
-        Cc["@mozilla.org/updates/update-checker;1"].
-          createInstance(Ci.nsIUpdateChecker).stopCurrentCheck();
+        Cc["@mozilla.org/updates/update-checker;1"]
+          .createInstance(Ci.nsIUpdateChecker)
+          .stopCurrentCheck();
 
         if (gLogfileWritePromise) {
           
           
-          gLogfileWritePromise = gLogfileWritePromise.then(logfile => {
-            logfile.close();
-          }, () => {});
+          gLogfileWritePromise = gLogfileWritePromise.then(
+            logfile => {
+              logfile.close();
+            },
+            () => {}
+          );
           await gLogfileWritePromise;
         }
         break;
@@ -2002,24 +2232,29 @@ UpdateService.prototype = {
 
 
   _postUpdateProcessing: function AUS__postUpdateProcessing() {
-    gUpdateFileWriteInfo = {phase: "startup", failure: false};
+    gUpdateFileWriteInfo = { phase: "startup", failure: false };
     if (!this.canCheckForUpdates) {
-      LOG("UpdateService:_postUpdateProcessing - unable to check for " +
-          "updates... returning early");
+      LOG(
+        "UpdateService:_postUpdateProcessing - unable to check for " +
+          "updates... returning early"
+      );
       return;
     }
 
     if (!this.canApplyUpdates) {
-      LOG("UpdateService:_postUpdateProcessing - unable to apply " +
-          "updates... returning early");
+      LOG(
+        "UpdateService:_postUpdateProcessing - unable to apply " +
+          "updates... returning early"
+      );
       
       
       cleanupActiveUpdate();
       return;
     }
 
-    var um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     var update = um.activeUpdate;
     var status = readStatusFile(getUpdatesDir());
     if (status == STATE_NONE) {
@@ -2040,8 +2275,10 @@ UpdateService.prototype = {
     }
 
     if (update && update.channel != UpdateUtils.UpdateChannel) {
-      LOG("UpdateService:_postUpdateProcessing - channel has changed, " +
-          "reloading default preferences to workaround bug 802022");
+      LOG(
+        "UpdateService:_postUpdateProcessing - channel has changed, " +
+          "reloading default preferences to workaround bug 802022"
+      );
       
       
       
@@ -2049,10 +2286,14 @@ UpdateService.prototype = {
       let prefSvc = Services.prefs.QueryInterface(Ci.nsIObserver);
       prefSvc.observe(null, "reload-default-prefs", null);
       if (update.channel != UpdateUtils.UpdateChannel) {
-        LOG("UpdateService:_postUpdateProcessing - update channel is " +
+        LOG(
+          "UpdateService:_postUpdateProcessing - update channel is " +
             "different than application's channel, removing update. update " +
-            "channel: " + update.channel + ", expected channel: " +
-            UpdateUtils.UpdateChannel);
+            "channel: " +
+            update.channel +
+            ", expected channel: " +
+            UpdateUtils.UpdateChannel
+        );
         
         
         update.state = STATE_FAILED;
@@ -2069,19 +2310,36 @@ UpdateService.prototype = {
     
     
     
-    if (update && update.appVersion &&
-        (status == STATE_PENDING || status == STATE_PENDING_SERVICE ||
-         status == STATE_APPLIED || status == STATE_APPLIED_SERVICE ||
-         status == STATE_PENDING_ELEVATE || status == STATE_DOWNLOADING)) {
-      if (Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
-          Services.vc.compare(update.appVersion, Services.appinfo.version) == 0 &&
-          update.buildID == Services.appinfo.appBuildID) {
-        LOG("UpdateService:_postUpdateProcessing - removing update for older " +
+    if (
+      update &&
+      update.appVersion &&
+      (status == STATE_PENDING ||
+        status == STATE_PENDING_SERVICE ||
+        status == STATE_APPLIED ||
+        status == STATE_APPLIED_SERVICE ||
+        status == STATE_PENDING_ELEVATE ||
+        status == STATE_DOWNLOADING)
+    ) {
+      if (
+        Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
+        (Services.vc.compare(update.appVersion, Services.appinfo.version) ==
+          0 &&
+          update.buildID == Services.appinfo.appBuildID)
+      ) {
+        LOG(
+          "UpdateService:_postUpdateProcessing - removing update for older " +
             "application version or same application version with same build " +
-            "ID. update application version: " + update.appVersion + ", " +
-            "application version: " + Services.appinfo.version + ", update " +
-            "build ID: " + update.buildID + ", application build ID: " +
-            Services.appinfo.appBuildID);
+            "ID. update application version: " +
+            update.appVersion +
+            ", " +
+            "application version: " +
+            Services.appinfo.version +
+            ", update " +
+            "build ID: " +
+            update.buildID +
+            ", application build ID: " +
+            Services.appinfo.appBuildID
+        );
         update.state = STATE_FAILED;
         update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
         update.errorCode = ERR_OLDER_VERSION_OR_SAME_BUILD;
@@ -2095,8 +2353,10 @@ UpdateService.prototype = {
 
     pingStateAndStatusCodes(update, true, status);
     if (status == STATE_DOWNLOADING) {
-      LOG("UpdateService:_postUpdateProcessing - patch found in downloading " +
-          "state");
+      LOG(
+        "UpdateService:_postUpdateProcessing - patch found in downloading " +
+          "state"
+      );
       
       status = this.downloadUpdate(update, true);
       if (status == STATE_NONE) {
@@ -2119,16 +2379,22 @@ UpdateService.prototype = {
       
       
       
-      if (update &&
-          (update.state == STATE_PENDING ||
-           update.state == STATE_PENDING_SERVICE)) {
-        LOG("UpdateService:_postUpdateProcessing - patch found in applying " +
-            "state for the first time");
+      if (
+        update &&
+        (update.state == STATE_PENDING || update.state == STATE_PENDING_SERVICE)
+      ) {
+        LOG(
+          "UpdateService:_postUpdateProcessing - patch found in applying " +
+            "state for the first time"
+        );
         update.state = STATE_APPLYING;
         um.saveUpdates();
-      } else { 
-        LOG("UpdateService:_postUpdateProcessing - patch found in applying " +
-            "state for the second time");
+      } else {
+        
+        LOG(
+          "UpdateService:_postUpdateProcessing - patch found in applying " +
+            "state for the second time"
+        );
         cleanupActiveUpdate();
       }
       return;
@@ -2136,8 +2402,10 @@ UpdateService.prototype = {
 
     if (!update) {
       if (status != STATE_SUCCEEDED) {
-        LOG("UpdateService:_postUpdateProcessing - previous patch failed " +
-            "and no patch available");
+        LOG(
+          "UpdateService:_postUpdateProcessing - previous patch failed " +
+            "and no patch available"
+        );
         cleanupActiveUpdate();
         return;
       }
@@ -2150,8 +2418,11 @@ UpdateService.prototype = {
       update.errorCode = parseInt(parts[1]);
     }
 
-    if (update.state == STATE_SUCCEEDED || update.patchCount == 1 ||
-        (update.selectedPatch && update.selectedPatch.type == "complete")) {
+    if (
+      update.state == STATE_SUCCEEDED ||
+      update.patchCount == 1 ||
+      (update.selectedPatch && update.selectedPatch.type == "complete")
+    ) {
       AUSTLMY.pingUpdatePhases(update, true);
     }
 
@@ -2180,13 +2451,15 @@ UpdateService.prototype = {
     } else if (status == STATE_PENDING_ELEVATE) {
       
       if (!um.activeUpdate) {
-        LOG("UpdateService:_postUpdateProcessing - status is pending-elevate " +
-            "but there isn't an active update, removing update");
+        LOG(
+          "UpdateService:_postUpdateProcessing - status is pending-elevate " +
+            "but there isn't an active update, removing update"
+        );
         cleanupActiveUpdate();
       } else {
         let uri = "chrome://mozapps/content/update/updateElevation.xul";
-        let features = "chrome,centerscreen,resizable=no,titlebar,toolbar=no," +
-                       "dialog=no";
+        let features =
+          "chrome,centerscreen,resizable=no,titlebar,toolbar=no," + "dialog=no";
         Services.ww.openWindow(null, uri, "Update:Elevation", features, null);
       }
     } else {
@@ -2210,12 +2483,16 @@ UpdateService.prototype = {
 
   _registerOnlineObserver: function AUS__registerOnlineObserver() {
     if (this._registeredOnlineObserver) {
-      LOG("UpdateService:_registerOnlineObserver - observer already registered");
+      LOG(
+        "UpdateService:_registerOnlineObserver - observer already registered"
+      );
       return;
     }
 
-    LOG("UpdateService:_registerOnlineObserver - waiting for the network to " +
-        "be online, then forcing another check");
+    LOG(
+      "UpdateService:_registerOnlineObserver - waiting for the network to " +
+        "be online, then forcing another check"
+    );
 
     Services.obs.addObserver(this, "network:offline-status-changed");
     this._registeredOnlineObserver = true;
@@ -2232,8 +2509,10 @@ UpdateService.prototype = {
     Services.obs.removeObserver(this, "network:offline-status-changed");
     this._registeredOnlineObserver = false;
 
-    LOG("UpdateService:_offlineStatusChanged - network is online, forcing " +
-        "another background check");
+    LOG(
+      "UpdateService:_offlineStatusChanged - network is online, forcing " +
+        "another background check"
+    );
 
     
     this._attemptResume();
@@ -2244,8 +2523,12 @@ UpdateService.prototype = {
   },
 
   onError: function AUS_onError(request, update) {
-    LOG("UpdateService:onError - error during background update. error code: " +
-        update.errorCode + ", status text: " + update.statusText);
+    LOG(
+      "UpdateService:onError - error during background update. error code: " +
+        update.errorCode +
+        ", status text: " +
+        update.statusText
+    );
 
     if (update.errorCode == NETWORK_ERROR_OFFLINE) {
       
@@ -2259,21 +2542,39 @@ UpdateService.prototype = {
     
     AUSTLMY.pingCheckExError(this._pingSuffix, update.errorCode);
     update.errorCode = BACKGROUNDCHECK_MULTIPLE_FAILURES;
-    let errCount = Services.prefs.getIntPref(PREF_APP_UPDATE_BACKGROUNDERRORS, 0);
+    let errCount = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_BACKGROUNDERRORS,
+      0
+    );
     errCount++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_BACKGROUNDERRORS, errCount);
     
-    let maxErrors = Math.min(Services.prefs.getIntPref(PREF_APP_UPDATE_BACKGROUNDMAXERRORS, 10), 20);
+    let maxErrors = Math.min(
+      Services.prefs.getIntPref(PREF_APP_UPDATE_BACKGROUNDMAXERRORS, 10),
+      20
+    );
 
     if (errCount >= maxErrors) {
-      LOG("UpdateService:onError - notifying observers of error. " +
-          "topic: update-error, status: check-attempts-exceeded");
-      Services.obs.notifyObservers(update, "update-error", "check-attempts-exceeded");
+      LOG(
+        "UpdateService:onError - notifying observers of error. " +
+          "topic: update-error, status: check-attempts-exceeded"
+      );
+      Services.obs.notifyObservers(
+        update,
+        "update-error",
+        "check-attempts-exceeded"
+      );
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_GENERAL_ERROR_PROMPT);
     } else {
-      LOG("UpdateService:onError - notifying observers of error. " +
-          "topic: update-error, status: check-attempt-failed");
-      Services.obs.notifyObservers(update, "update-error", "check-attempt-failed");
+      LOG(
+        "UpdateService:onError - notifying observers of error. " +
+          "topic: update-error, status: check-attempt-failed"
+      );
+      Services.obs.notifyObservers(
+        update,
+        "update-error",
+        "check-attempt-failed"
+      );
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_GENERAL_ERROR_SILENT);
     }
   },
@@ -2284,15 +2585,22 @@ UpdateService.prototype = {
   _attemptResume: function AUS_attemptResume() {
     LOG("UpdateService:_attemptResume");
     
-    if (this._downloader && this._downloader._patch &&
-        this._downloader._patch.state == STATE_DOWNLOADING &&
-        this._downloader._update) {
-      LOG("UpdateService:_attemptResume - _patch.state: " +
-          this._downloader._patch.state);
+    if (
+      this._downloader &&
+      this._downloader._patch &&
+      this._downloader._patch.state == STATE_DOWNLOADING &&
+      this._downloader._update
+    ) {
+      LOG(
+        "UpdateService:_attemptResume - _patch.state: " +
+          this._downloader._patch.state
+      );
       
       writeStatusFile(getUpdatesDir(), STATE_DOWNLOADING);
-      var status = this.downloadUpdate(this._downloader._update,
-                                       this._downloader.background);
+      var status = this.downloadUpdate(
+        this._downloader._update,
+        this._downloader.background
+      );
       LOG("UpdateService:_attemptResume - downloadUpdate status: " + status);
       if (status == STATE_NONE) {
         cleanupActiveUpdate();
@@ -2330,31 +2638,40 @@ UpdateService.prototype = {
 
 
 
-  _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(isNotify) {
+  _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
+    isNotify
+  ) {
     this._isNotify = isNotify;
 
     
     
     
-    AUSTLMY.pingGeneric("UPDATE_PING_COUNT_" + this._pingSuffix,
-                        true, false);
+    AUSTLMY.pingGeneric("UPDATE_PING_COUNT_" + this._pingSuffix, true, false);
 
     
     
     
-    AUSTLMY.pingGeneric("UPDATE_UNABLE_TO_APPLY_" + this._pingSuffix,
-                        getCanApplyUpdates(), true);
+    AUSTLMY.pingGeneric(
+      "UPDATE_UNABLE_TO_APPLY_" + this._pingSuffix,
+      getCanApplyUpdates(),
+      true
+    );
     
     
     
-    AUSTLMY.pingGeneric("UPDATE_CANNOT_STAGE_" + this._pingSuffix,
-                        getCanStageUpdates(), true);
+    AUSTLMY.pingGeneric(
+      "UPDATE_CANNOT_STAGE_" + this._pingSuffix,
+      getCanStageUpdates(),
+      true
+    );
     if (AppConstants.platform == "win") {
       
       
       
-      AUSTLMY.pingGeneric("UPDATE_CAN_USE_BITS_" + this._pingSuffix,
-                          getCanUseBits());
+      AUSTLMY.pingGeneric(
+        "UPDATE_CAN_USE_BITS_" + this._pingSuffix,
+        getCanUseBits()
+      );
     }
     
     
@@ -2366,49 +2683,71 @@ UpdateService.prototype = {
     
     
     UpdateUtils.getAppUpdateAutoEnabled().then(enabled => {
-      AUSTLMY.pingGeneric("UPDATE_NOT_PREF_UPDATE_AUTO_" + this._pingSuffix,
-                          enabled, true);
+      AUSTLMY.pingGeneric(
+        "UPDATE_NOT_PREF_UPDATE_AUTO_" + this._pingSuffix,
+        enabled,
+        true
+      );
     });
     
     
     
-    AUSTLMY.pingBoolPref("UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_" +
-                         this._pingSuffix,
-                         PREF_APP_UPDATE_STAGING_ENABLED, true, true);
+    AUSTLMY.pingBoolPref(
+      "UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_" + this._pingSuffix,
+      PREF_APP_UPDATE_STAGING_ENABLED,
+      true,
+      true
+    );
     if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
       
       
       
-      AUSTLMY.pingIntPref("UPDATE_PREF_UPDATE_CANCELATIONS_" + this._pingSuffix,
-                          PREF_APP_UPDATE_CANCELATIONS, 0, 0);
+      AUSTLMY.pingIntPref(
+        "UPDATE_PREF_UPDATE_CANCELATIONS_" + this._pingSuffix,
+        PREF_APP_UPDATE_CANCELATIONS,
+        0,
+        0
+      );
     }
     if (AppConstants.platform == "macosx") {
       
       
       
-      AUSTLMY.pingIntPref("UPDATE_PREF_UPDATE_CANCELATIONS_OSX_" +
-                          this._pingSuffix,
-                          PREF_APP_UPDATE_CANCELATIONS_OSX, 0, 0);
+      AUSTLMY.pingIntPref(
+        "UPDATE_PREF_UPDATE_CANCELATIONS_OSX_" + this._pingSuffix,
+        PREF_APP_UPDATE_CANCELATIONS_OSX,
+        0,
+        0
+      );
     }
     if (AppConstants.MOZ_MAINTENANCE_SERVICE) {
       
       
       
-      AUSTLMY.pingBoolPref("UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_" +
-                           this._pingSuffix,
-                           PREF_APP_UPDATE_SERVICE_ENABLED, true);
+      AUSTLMY.pingBoolPref(
+        "UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_" + this._pingSuffix,
+        PREF_APP_UPDATE_SERVICE_ENABLED,
+        true
+      );
       
       
       
-      AUSTLMY.pingIntPref("UPDATE_PREF_SERVICE_ERRORS_" + this._pingSuffix,
-                          PREF_APP_UPDATE_SERVICE_ERRORS, 0, 0);
+      AUSTLMY.pingIntPref(
+        "UPDATE_PREF_SERVICE_ERRORS_" + this._pingSuffix,
+        PREF_APP_UPDATE_SERVICE_ERRORS,
+        0,
+        0
+      );
       if (AppConstants.platform == "win") {
         
         
         
         
         
-        AUSTLMY.pingServiceInstallStatus(this._pingSuffix, isServiceInstalled());
+        AUSTLMY.pingServiceInstallStatus(
+          this._pingSuffix,
+          isServiceInstalled()
+        );
       }
     }
 
@@ -2420,8 +2759,11 @@ UpdateService.prototype = {
 
     if (this._downloader && this._downloader.patchIsStaged) {
       let readState = readStatusFile(getUpdatesDir());
-      if (readState == STATE_PENDING || readState == STATE_PENDING_SERVICE ||
-          readState == STATE_PENDING_ELEVATE) {
+      if (
+        readState == STATE_PENDING ||
+        readState == STATE_PENDING_SERVICE ||
+        readState == STATE_PENDING_ELEVATE
+      ) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADED);
       } else {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_STAGED);
@@ -2430,28 +2772,36 @@ UpdateService.prototype = {
     }
 
     let validUpdateURL = true;
-    this.backgroundChecker.getUpdateURL(false).catch(e => {
-      validUpdateURL = false;
-    }).then(() => {
-      
-      
-      if (!UpdateUtils.OSVersion) {
-        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
-      } else if (!UpdateUtils.ABI) {
-        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_ABI);
-      } else if (!validUpdateURL) {
-        AUSTLMY.pingCheckCode(this._pingSuffix,
-                              AUSTLMY.CHK_INVALID_DEFAULT_URL);
-      } else if (this.disabledByPolicy) {
-        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_BY_POLICY);
-      } else if (!hasUpdateMutex()) {
-        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
-      } else if (!this.canCheckForUpdates) {
-        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
-      }
+    this.backgroundChecker
+      .getUpdateURL(false)
+      .catch(e => {
+        validUpdateURL = false;
+      })
+      .then(() => {
+        
+        
+        if (!UpdateUtils.OSVersion) {
+          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
+        } else if (!UpdateUtils.ABI) {
+          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_ABI);
+        } else if (!validUpdateURL) {
+          AUSTLMY.pingCheckCode(
+            this._pingSuffix,
+            AUSTLMY.CHK_INVALID_DEFAULT_URL
+          );
+        } else if (this.disabledByPolicy) {
+          AUSTLMY.pingCheckCode(
+            this._pingSuffix,
+            AUSTLMY.CHK_DISABLED_BY_POLICY
+          );
+        } else if (!hasUpdateMutex()) {
+          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
+        } else if (!this.canCheckForUpdates) {
+          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
+        }
 
-      this.backgroundChecker.checkForUpdates(this, false);
-    });
+        this.backgroundChecker.checkForUpdates(this, false);
+      });
   },
 
   
@@ -2482,32 +2832,44 @@ UpdateService.prototype = {
     updates.forEach(function(aUpdate) {
       
       
-      if (vc.compare(aUpdate.appVersion, Services.appinfo.version) < 0 ||
-          vc.compare(aUpdate.appVersion, Services.appinfo.version) == 0 &&
-          aUpdate.buildID == Services.appinfo.appBuildID) {
-        LOG("UpdateService:selectUpdate - skipping update because the " +
+      if (
+        vc.compare(aUpdate.appVersion, Services.appinfo.version) < 0 ||
+        (vc.compare(aUpdate.appVersion, Services.appinfo.version) == 0 &&
+          aUpdate.buildID == Services.appinfo.appBuildID)
+      ) {
+        LOG(
+          "UpdateService:selectUpdate - skipping update because the " +
             "update's application version is less than the current " +
-            "application version");
+            "application version"
+        );
         lastCheckCode = AUSTLMY.CHK_UPDATE_PREVIOUS_VERSION;
         return;
       }
 
       switch (aUpdate.type) {
         case "major":
-          if (!majorUpdate)
+          if (!majorUpdate) {
             majorUpdate = aUpdate;
-          else if (vc.compare(majorUpdate.appVersion, aUpdate.appVersion) <= 0)
+          } else if (
+            vc.compare(majorUpdate.appVersion, aUpdate.appVersion) <= 0
+          ) {
             majorUpdate = aUpdate;
+          }
           break;
         case "minor":
-          if (!minorUpdate)
+          if (!minorUpdate) {
             minorUpdate = aUpdate;
-          else if (vc.compare(minorUpdate.appVersion, aUpdate.appVersion) <= 0)
+          } else if (
+            vc.compare(minorUpdate.appVersion, aUpdate.appVersion) <= 0
+          ) {
             minorUpdate = aUpdate;
+          }
           break;
         default:
-          LOG("UpdateService:selectUpdate - skipping unknown update type: " +
-              aUpdate.type);
+          LOG(
+            "UpdateService:selectUpdate - skipping unknown update type: " +
+              aUpdate.type
+          );
           lastCheckCode = AUSTLMY.CHK_UPDATE_INVALID_TYPE;
           break;
       }
@@ -2516,44 +2878,63 @@ UpdateService.prototype = {
     let update = minorUpdate || majorUpdate;
     if (AppConstants.platform == "macosx" && update) {
       if (getElevationRequired()) {
-        let installAttemptVersion =
-          Services.prefs.getCharPref(PREF_APP_UPDATE_ELEVATE_VERSION, null);
+        let installAttemptVersion = Services.prefs.getCharPref(
+          PREF_APP_UPDATE_ELEVATE_VERSION,
+          null
+        );
         if (vc.compare(installAttemptVersion, update.appVersion) != 0) {
-          Services.prefs.setCharPref(PREF_APP_UPDATE_ELEVATE_VERSION,
-                                     update.appVersion);
-          if (Services.prefs.prefHasUserValue(
-                PREF_APP_UPDATE_CANCELATIONS_OSX)) {
+          Services.prefs.setCharPref(
+            PREF_APP_UPDATE_ELEVATE_VERSION,
+            update.appVersion
+          );
+          if (
+            Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CANCELATIONS_OSX)
+          ) {
             Services.prefs.clearUserPref(PREF_APP_UPDATE_CANCELATIONS_OSX);
           }
           if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
             Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
           }
         } else {
-          let numCancels =
-            Services.prefs.getIntPref(PREF_APP_UPDATE_CANCELATIONS_OSX, 0);
-          let rejectedVersion =
-            Services.prefs.getCharPref(PREF_APP_UPDATE_ELEVATE_NEVER, "");
-          let maxCancels =
-            Services.prefs.getIntPref(PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
-                                      DEFAULT_CANCELATIONS_OSX_MAX);
+          let numCancels = Services.prefs.getIntPref(
+            PREF_APP_UPDATE_CANCELATIONS_OSX,
+            0
+          );
+          let rejectedVersion = Services.prefs.getCharPref(
+            PREF_APP_UPDATE_ELEVATE_NEVER,
+            ""
+          );
+          let maxCancels = Services.prefs.getIntPref(
+            PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
+            DEFAULT_CANCELATIONS_OSX_MAX
+          );
           if (numCancels >= maxCancels) {
-            LOG("UpdateService:selectUpdate - the user requires elevation to " +
+            LOG(
+              "UpdateService:selectUpdate - the user requires elevation to " +
                 "install this update, but the user has exceeded the max " +
-                "number of elevation attempts.");
+                "number of elevation attempts."
+            );
             update.elevationFailure = true;
             AUSTLMY.pingCheckCode(
               this._pingSuffix,
-              AUSTLMY.CHK_ELEVATION_DISABLED_FOR_VERSION);
+              AUSTLMY.CHK_ELEVATION_DISABLED_FOR_VERSION
+            );
           } else if (vc.compare(rejectedVersion, update.appVersion) == 0) {
-            LOG("UpdateService:selectUpdate - the user requires elevation to " +
+            LOG(
+              "UpdateService:selectUpdate - the user requires elevation to " +
                 "install this update, but elevation is disabled for this " +
-                "version.");
+                "version."
+            );
             update.elevationFailure = true;
-            AUSTLMY.pingCheckCode(this._pingSuffix,
-                                  AUSTLMY.CHK_ELEVATION_OPTOUT_FOR_VERSION);
+            AUSTLMY.pingCheckCode(
+              this._pingSuffix,
+              AUSTLMY.CHK_ELEVATION_OPTOUT_FOR_VERSION
+            );
           } else {
-            LOG("UpdateService:selectUpdate - the user requires elevation to " +
-                "install the update.");
+            LOG(
+              "UpdateService:selectUpdate - the user requires elevation to " +
+                "install the update."
+            );
           }
         }
       } else {
@@ -2586,8 +2967,9 @@ UpdateService.prototype = {
   _selectAndInstallUpdate: async function AUS__selectAndInstallUpdate(updates) {
     
     
-    var um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     if (um.activeUpdate) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_HAS_ACTIVEUPDATE);
       return;
@@ -2595,8 +2977,10 @@ UpdateService.prototype = {
 
     if (this.disabledByPolicy) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_PREF_DISABLED);
-      LOG("UpdateService:_selectAndInstallUpdate - not prompting because " +
-          "update is disabled");
+      LOG(
+        "UpdateService:_selectAndInstallUpdate - not prompting because " +
+          "update is disabled"
+      );
       return;
     }
 
@@ -2606,18 +2990,22 @@ UpdateService.prototype = {
     }
 
     if (update.unsupported) {
-      LOG("UpdateService:_selectAndInstallUpdate - update not supported for " +
+      LOG(
+        "UpdateService:_selectAndInstallUpdate - update not supported for " +
           "this system. Notifying observers. topic: update-available, " +
-          "status: unsupported");
+          "status: unsupported"
+      );
       Services.obs.notifyObservers(update, "update-available", "unsupported");
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNSUPPORTED);
       return;
     }
 
     if (!getCanApplyUpdates()) {
-      LOG("UpdateService:_selectAndInstallUpdate - the user is unable to " +
+      LOG(
+        "UpdateService:_selectAndInstallUpdate - the user is unable to " +
           "apply updates... prompting. Notifying observers. " +
-          "topic: update-available, status: cant-apply");
+          "topic: update-available, status: cant-apply"
+      );
       Services.obs.notifyObservers(null, "update-available", "cant-apply");
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_APPLY);
       return;
@@ -2640,9 +3028,11 @@ UpdateService.prototype = {
 
     let updateAuto = await UpdateUtils.getAppUpdateAutoEnabled();
     if (!updateAuto) {
-      LOG("UpdateService:_selectAndInstallUpdate - prompting because silent " +
+      LOG(
+        "UpdateService:_selectAndInstallUpdate - prompting because silent " +
           "install is disabled. Notifying observers. topic: update-available, " +
-          "status: show-prompt");
+          "status: show-prompt"
+      );
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_SHOWPROMPT_PREF);
       Services.obs.notifyObservers(update, "update-available", "show-prompt");
       return;
@@ -2665,8 +3055,9 @@ UpdateService.prototype = {
 
 
   get backgroundChecker() {
-    if (!this._backgroundChecker)
+    if (!this._backgroundChecker) {
       this._backgroundChecker = new Checker();
+    }
     return this._backgroundChecker;
   },
 
@@ -2674,17 +3065,22 @@ UpdateService.prototype = {
     let marionetteRunning = false;
 
     if ("nsIMarionette" in Ci) {
-      marionetteRunning = Cc["@mozilla.org/remote/marionette;1"].
-                          createInstance(Ci.nsIMarionette).running;
+      marionetteRunning = Cc["@mozilla.org/remote/marionette;1"].createInstance(
+        Ci.nsIMarionette
+      ).running;
     }
 
-    return (Cu.isInAutomation || marionetteRunning) &&
-           Services.prefs.getBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false);
+    return (
+      (Cu.isInAutomation || marionetteRunning) &&
+      Services.prefs.getBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false)
+    );
   },
 
   get disabledByPolicy() {
-    return (Services.policies && !Services.policies.isAllowed("appUpdate")) ||
-           this.disabledForTesting;
+    return (
+      (Services.policies && !Services.policies.isAllowed("appUpdate")) ||
+      this.disabledForTesting
+    );
   },
 
   
@@ -2692,28 +3088,36 @@ UpdateService.prototype = {
 
   get canCheckForUpdates() {
     if (this.disabledByPolicy) {
-      LOG("UpdateService.canCheckForUpdates - unable to automatically check " +
-          "for updates, the option has been disabled by the administrator.");
+      LOG(
+        "UpdateService.canCheckForUpdates - unable to automatically check " +
+          "for updates, the option has been disabled by the administrator."
+      );
       return false;
     }
 
     
     if (!UpdateUtils.ABI) {
-      LOG("UpdateService.canCheckForUpdates - unable to check for updates, " +
-          "unknown ABI");
+      LOG(
+        "UpdateService.canCheckForUpdates - unable to check for updates, " +
+          "unknown ABI"
+      );
       return false;
     }
 
     
     if (!UpdateUtils.OSVersion) {
-      LOG("UpdateService.canCheckForUpdates - unable to check for updates, " +
-          "unknown OS version");
+      LOG(
+        "UpdateService.canCheckForUpdates - unable to check for updates, " +
+          "unknown OS version"
+      );
       return false;
     }
 
     if (!hasUpdateMutex()) {
-      LOG("UpdateService.canCheckForUpdates - unable to check for updates, " +
-          "unable to acquire update mutex");
+      LOG(
+        "UpdateService.canCheckForUpdates - unable to check for updates, " +
+          "unable to acquire update mutex"
+      );
       return false;
     }
 
@@ -2749,7 +3153,6 @@ UpdateService.prototype = {
     return !hasUpdateMutex();
   },
 
-
   
 
 
@@ -2776,23 +3179,36 @@ UpdateService.prototype = {
 
 
   downloadUpdate: function AUS_downloadUpdate(update, background) {
-    if (!update)
+    if (!update) {
       throw Cr.NS_ERROR_NULL_POINTER;
+    }
 
     
     
     
     
-    if (update.appVersion &&
-        (Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
-         update.buildID && update.buildID == Services.appinfo.appBuildID &&
-         update.appVersion == Services.appinfo.version)) {
-      LOG("UpdateService:downloadUpdate - canceling download of update since " +
+    if (
+      update.appVersion &&
+      (Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
+        (update.buildID &&
+          update.buildID == Services.appinfo.appBuildID &&
+          update.appVersion == Services.appinfo.version))
+    ) {
+      LOG(
+        "UpdateService:downloadUpdate - canceling download of update since " +
           "it is for an earlier or same application version and build ID.\n" +
-          "current application version: " + Services.appinfo.version + "\n" +
-          "update application version : " + update.appVersion + "\n" +
-          "current build ID: " + Services.appinfo.appBuildID + "\n" +
-          "update build ID : " + update.buildID);
+          "current application version: " +
+          Services.appinfo.version +
+          "\n" +
+          "update application version : " +
+          update.appVersion +
+          "\n" +
+          "current build ID: " +
+          Services.appinfo.appBuildID +
+          "\n" +
+          "update build ID : " +
+          update.buildID
+      );
       cleanupActiveUpdate();
       return STATE_NONE;
     }
@@ -2800,8 +3216,10 @@ UpdateService.prototype = {
     
     if (this.isDownloading) {
       if (update.isCompleteUpdate == this._downloader.isCompleteUpdate) {
-        LOG("UpdateService:downloadUpdate - no support for downloading more " +
-            "than one update at a time");
+        LOG(
+          "UpdateService:downloadUpdate - no support for downloading more " +
+            "than one update at a time"
+        );
         this._downloader.background = background;
         return readStatusFile(getUpdatesDir());
       }
@@ -2850,8 +3268,10 @@ UpdateService.prototype = {
     this.canApplyUpdates;
     this.canStageUpdates;
     LOG("Elevation required: " + this.elevationRequired);
-    LOG("Update being handled by other instance: " +
-        this.isOtherInstanceHandlingUpdates);
+    LOG(
+      "Update being handled by other instance: " +
+        this.isOtherInstanceHandlingUpdates
+    );
     LOG("Downloading: " + !!this.isDownloading);
     if (this._downloader && this._downloader.isBusy) {
       LOG("Downloading complete update: " + this._downloader.isCompleteUpdate);
@@ -2867,8 +3287,9 @@ UpdateService.prototype = {
         if (bitsResult != null) {
           LOG("Patch BITS result: " + bitsResult);
         }
-        let internalResult =
-          this._downloader._patch.getProperty("internalResult");
+        let internalResult = this._downloader._patch.getProperty(
+          "internalResult"
+        );
         if (internalResult != null) {
           LOG("Patch nsIIncrementalDownload result: " + internalResult);
         }
@@ -2880,10 +3301,12 @@ UpdateService.prototype = {
   classID: UPDATESERVICE_CID,
 
   _xpcom_factory: UpdateServiceFactory,
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIApplicationUpdateService,
-                                          Ci.nsIUpdateCheckListener,
-                                          Ci.nsITimerCallback,
-                                          Ci.nsIObserver]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIApplicationUpdateService,
+    Ci.nsIUpdateCheckListener,
+    Ci.nsITimerCallback,
+    Ci.nsIObserver,
+  ]),
 };
 
 
@@ -2905,7 +3328,9 @@ function UpdateManager() {
       
       this._activeUpdate.state = STATE_FAILED;
       this._activeUpdate.errorCode = ERR_UPDATE_STATE_NONE;
-      this._activeUpdate.statusText = gUpdateBundle.GetStringFromName("statusFailed");
+      this._activeUpdate.statusText = gUpdateBundle.GetStringFromName(
+        "statusFailed"
+      );
       let newStatus = STATE_FAILED + ": " + ERR_UPDATE_STATE_NONE;
       pingStateAndStatusCodes(this._activeUpdate, true, newStatus);
       
@@ -2971,31 +3396,45 @@ UpdateManager.prototype = {
     let updates = [];
     let file = getUpdateFile([fileName]);
     if (!file.exists()) {
-      LOG("UpdateManager:_loadXMLFileIntoArray - XML file does not exist. " +
-          "path: " + file.path);
+      LOG(
+        "UpdateManager:_loadXMLFileIntoArray - XML file does not exist. " +
+          "path: " +
+          file.path
+      );
       return updates;
     }
 
-    let fileStream = Cc["@mozilla.org/network/file-input-stream;1"].
-                     createInstance(Ci.nsIFileInputStream);
+    let fileStream = Cc[
+      "@mozilla.org/network/file-input-stream;1"
+    ].createInstance(Ci.nsIFileInputStream);
     try {
       fileStream.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
     } catch (e) {
-      LOG("UpdateManager:_loadXMLFileIntoArray - error initializing file " +
-          "stream. Exception: " + e);
+      LOG(
+        "UpdateManager:_loadXMLFileIntoArray - error initializing file " +
+          "stream. Exception: " +
+          e
+      );
       return updates;
     }
     try {
       var parser = new DOMParser();
-      var doc = parser.parseFromStream(fileStream, "UTF-8",
-                                       fileStream.available(), "text/xml");
+      var doc = parser.parseFromStream(
+        fileStream,
+        "UTF-8",
+        fileStream.available(),
+        "text/xml"
+      );
 
       var updateCount = doc.documentElement.childNodes.length;
       for (var i = 0; i < updateCount; ++i) {
         var updateElement = doc.documentElement.childNodes.item(i);
-        if (updateElement.nodeType != updateElement.ELEMENT_NODE ||
-            updateElement.localName != "update")
+        if (
+          updateElement.nodeType != updateElement.ELEMENT_NODE ||
+          updateElement.localName != "update"
+        ) {
           continue;
+        }
 
         let update;
         try {
@@ -3007,19 +3446,29 @@ UpdateManager.prototype = {
         updates.push(update);
       }
     } catch (ex) {
-      LOG("UpdateManager:_loadXMLFileIntoArray - error constructing update " +
-          "list. Exception: " + ex);
+      LOG(
+        "UpdateManager:_loadXMLFileIntoArray - error constructing update " +
+          "list. Exception: " +
+          ex
+      );
     }
     fileStream.close();
     if (updates.length == 0) {
-      LOG("UpdateManager:_loadXMLFileIntoArray - update xml file " + fileName +
-          " exists but doesn't contain any updates");
+      LOG(
+        "UpdateManager:_loadXMLFileIntoArray - update xml file " +
+          fileName +
+          " exists but doesn't contain any updates"
+      );
       
       try {
         file.remove(false);
       } catch (e) {
-        LOG("UpdateManager:_loadXMLFileIntoArray - error removing " + fileName +
-            " file. Exception: " + e);
+        LOG(
+          "UpdateManager:_loadXMLFileIntoArray - error removing " +
+            fileName +
+            " file. Exception: " +
+            e
+        );
       }
     }
     return updates;
@@ -3083,47 +3532,66 @@ UpdateManager.prototype = {
 
 
 
-  _writeUpdatesToXMLFile: async function UM__writeUpdatesToXMLFile(updates, fileName) {
+  _writeUpdatesToXMLFile: async function UM__writeUpdatesToXMLFile(
+    updates,
+    fileName
+  ) {
     let file;
     try {
       file = getUpdateFile([fileName]);
     } catch (e) {
-      LOG("UpdateManager:_writeUpdatesToXMLFile - Unable to get XML file - " +
-          "Exception: " + e);
+      LOG(
+        "UpdateManager:_writeUpdatesToXMLFile - Unable to get XML file - " +
+          "Exception: " +
+          e
+      );
       return false;
     }
     if (updates.length == 0) {
-      LOG("UpdateManager:_writeUpdatesToXMLFile - no updates to write. " +
-          "removing file: " + file.path);
+      LOG(
+        "UpdateManager:_writeUpdatesToXMLFile - no updates to write. " +
+          "removing file: " +
+          file.path
+      );
       try {
-        await OS.File.remove(file.path, {ignoreAbsent: true});
+        await OS.File.remove(file.path, { ignoreAbsent: true });
       } catch (e) {
-        LOG("UpdateManager:_writeUpdatesToXMLFile - Delete file exception: " +
-            e);
+        LOG(
+          "UpdateManager:_writeUpdatesToXMLFile - Delete file exception: " + e
+        );
         return false;
       }
       return true;
     }
 
     const EMPTY_UPDATES_DOCUMENT_OPEN =
-      "<?xml version=\"1.0\"?><updates xmlns=\"" + URI_UPDATE_NS + "\">";
+      '<?xml version="1.0"?><updates xmlns="' + URI_UPDATE_NS + '">';
     const EMPTY_UPDATES_DOCUMENT_CLOSE = "</updates>";
     try {
       var parser = new DOMParser();
-      var doc = parser.parseFromString(EMPTY_UPDATES_DOCUMENT_OPEN + EMPTY_UPDATES_DOCUMENT_CLOSE, "text/xml");
+      var doc = parser.parseFromString(
+        EMPTY_UPDATES_DOCUMENT_OPEN + EMPTY_UPDATES_DOCUMENT_CLOSE,
+        "text/xml"
+      );
 
       for (var i = 0; i < updates.length; ++i) {
         doc.documentElement.appendChild(updates[i].serialize(doc));
       }
 
-      var xml = EMPTY_UPDATES_DOCUMENT_OPEN + doc.documentElement.innerHTML +
-                EMPTY_UPDATES_DOCUMENT_CLOSE;
+      var xml =
+        EMPTY_UPDATES_DOCUMENT_OPEN +
+        doc.documentElement.innerHTML +
+        EMPTY_UPDATES_DOCUMENT_CLOSE;
       
       
       
-      await OS.File.writeAtomic(file.path, xml, {encoding: "utf-8",
-                                                 tmpPath: file.path + ".tmp"});
-      await OS.File.setPermissions(file.path, {unixMode: FileUtils.PERMS_FILE});
+      await OS.File.writeAtomic(file.path, xml, {
+        encoding: "utf-8",
+        tmpPath: file.path + ".tmp",
+      });
+      await OS.File.setPermissions(file.path, {
+        unixMode: FileUtils.PERMS_FILE,
+      });
     } catch (e) {
       LOG("UpdateManager:_writeUpdatesToXMLFile - Exception: " + e);
       return false;
@@ -3140,10 +3608,14 @@ UpdateManager.prototype = {
     if (!this._updatesXMLSaver) {
       this._updatesXMLSaverCallback = () => this._updatesXMLSaver.finalize();
 
-      this._updatesXMLSaver = new DeferredTask(() => this._saveUpdatesXML(),
-                                               XML_SAVER_INTERVAL_MS);
+      this._updatesXMLSaver = new DeferredTask(
+        () => this._saveUpdatesXML(),
+        XML_SAVER_INTERVAL_MS
+      );
       AsyncShutdown.profileBeforeChange.addBlocker(
-        "UpdateManager: writing update xml data", this._updatesXMLSaverCallback);
+        "UpdateManager: writing update xml data",
+        this._updatesXMLSaverCallback
+      );
     } else {
       this._updatesXMLSaver.disarm();
     }
@@ -3161,20 +3633,22 @@ UpdateManager.prototype = {
     
     let updates = this._activeUpdate ? [this._activeUpdate] : [];
     let promises = [];
-    promises[0] = this._writeUpdatesToXMLFile(updates,
-                                              FILE_ACTIVE_UPDATE_XML).then(
-      wroteSuccessfully => handleCriticalWriteResult(wroteSuccessfully,
-                                                     FILE_ACTIVE_UPDATE_XML)
+    promises[0] = this._writeUpdatesToXMLFile(
+      updates,
+      FILE_ACTIVE_UPDATE_XML
+    ).then(wroteSuccessfully =>
+      handleCriticalWriteResult(wroteSuccessfully, FILE_ACTIVE_UPDATE_XML)
     );
     
     
     
     if (this._updatesDirty) {
       this._updatesDirty = false;
-      promises[1] = this._writeUpdatesToXMLFile(this._updates,
-                                                FILE_UPDATES_XML).then(
-        wroteSuccessfully => handleCriticalWriteResult(wroteSuccessfully,
-                                                       FILE_UPDATES_XML)
+      promises[1] = this._writeUpdatesToXMLFile(
+        this._updates,
+        FILE_UPDATES_XML
+      ).then(wroteSuccessfully =>
+        handleCriticalWriteResult(wroteSuccessfully, FILE_UPDATES_XML)
       );
     }
     return Promise.all(promises);
@@ -3206,26 +3680,30 @@ UpdateManager.prototype = {
     cleanUpUpdatesDir(false);
 
     if (update.state == STATE_FAILED && parts[1]) {
-      if (parts[1] == DELETE_ERROR_STAGING_LOCK_FILE ||
-          parts[1] == UNEXPECTED_STAGING_ERROR) {
-        writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
+      if (
+        parts[1] == DELETE_ERROR_STAGING_LOCK_FILE ||
+        parts[1] == UNEXPECTED_STAGING_ERROR
+      ) {
+        writeStatusFile(getUpdatesDir(), (update.state = STATE_PENDING));
       } else if (!handleUpdateFailure(update, parts[1])) {
         handleFallbackToCompleteUpdate(update, true);
       }
     }
     if (update.state == STATE_APPLIED && shouldUseService()) {
-      writeStatusFile(getUpdatesDir(), update.state = STATE_APPLIED_SERVICE);
+      writeStatusFile(getUpdatesDir(), (update.state = STATE_APPLIED_SERVICE));
     }
 
     if (update.state == STATE_FAILED) {
       AUSTLMY.pingUpdatePhases(update, false);
     }
 
-    if (update.state == STATE_APPLIED ||
-        update.state == STATE_APPLIED_SERVICE ||
-        update.state == STATE_PENDING ||
-        update.state == STATE_PENDING_SERVICE ||
-        update.state == STATE_PENDING_ELEVATE) {
+    if (
+      update.state == STATE_APPLIED ||
+      update.state == STATE_APPLIED_SERVICE ||
+      update.state == STATE_PENDING ||
+      update.state == STATE_PENDING_SERVICE ||
+      update.state == STATE_PENDING_ELEVATE
+    ) {
       patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
     }
 
@@ -3236,8 +3714,11 @@ UpdateManager.prototype = {
 
     
     
-    LOG("UpdateManager:refreshUpdateStatus - Notifying observers that " +
-        "the update was staged. topic: update-staged, status: " + update.state);
+    LOG(
+      "UpdateManager:refreshUpdateStatus - Notifying observers that " +
+        "the update was staged. topic: update-staged, status: " +
+        update.state
+    );
     Services.obs.notifyObservers(update, "update-staged", update.state);
   },
 
@@ -3283,8 +3764,7 @@ UpdateManager.prototype = {
 
 
 
-function Checker() {
-}
+function Checker() {}
 Checker.prototype = {
   
 
@@ -3309,15 +3789,24 @@ Checker.prototype = {
       return false;
     }
 
-    let wrk = Cc["@mozilla.org/windows-registry-key;1"].
-              createInstance(Ci.nsIWindowsRegKey);
+    let wrk = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
+      Ci.nsIWindowsRegKey
+    );
 
-    let regPath = "SOFTWARE\\Mozilla\\" + Services.appinfo.name +
-                  "\\32to64DidMigrate";
-    let regValHKCU = WindowsRegistry.readRegKey(wrk.ROOT_KEY_CURRENT_USER,
-                                                regPath, "Never", wrk.WOW64_32);
-    let regValHKLM = WindowsRegistry.readRegKey(wrk.ROOT_KEY_LOCAL_MACHINE,
-                                                regPath, "Never", wrk.WOW64_32);
+    let regPath =
+      "SOFTWARE\\Mozilla\\" + Services.appinfo.name + "\\32to64DidMigrate";
+    let regValHKCU = WindowsRegistry.readRegKey(
+      wrk.ROOT_KEY_CURRENT_USER,
+      regPath,
+      "Never",
+      wrk.WOW64_32
+    );
+    let regValHKLM = WindowsRegistry.readRegKey(
+      wrk.ROOT_KEY_LOCAL_MACHINE,
+      regPath,
+      "Never",
+      wrk.WOW64_32
+    );
     
     
     if (regValHKCU === 1 || regValHKLM === 1) {
@@ -3326,10 +3815,18 @@ Checker.prototype = {
     }
 
     let appBaseDirPath = getAppBaseDir().path;
-    regValHKCU = WindowsRegistry.readRegKey(wrk.ROOT_KEY_CURRENT_USER, regPath,
-                                            appBaseDirPath, wrk.WOW64_32);
-    regValHKLM = WindowsRegistry.readRegKey(wrk.ROOT_KEY_LOCAL_MACHINE, regPath,
-                                            appBaseDirPath, wrk.WOW64_32);
+    regValHKCU = WindowsRegistry.readRegKey(
+      wrk.ROOT_KEY_CURRENT_USER,
+      regPath,
+      appBaseDirPath,
+      wrk.WOW64_32
+    );
+    regValHKLM = WindowsRegistry.readRegKey(
+      wrk.ROOT_KEY_LOCAL_MACHINE,
+      regPath,
+      appBaseDirPath,
+      wrk.WOW64_32
+    );
     
     
     
@@ -3356,8 +3853,9 @@ Checker.prototype = {
   getUpdateURL: async function UC_getUpdateURL(force) {
     this._forced = force;
 
-    let url = Services.prefs.getDefaultBranch(null).
-              getCharPref(PREF_APP_UPDATE_URL, "");
+    let url = Services.prefs
+      .getDefaultBranch(null)
+      .getCharPref(PREF_APP_UPDATE_URL, "");
 
     if (!url) {
       LOG("Checker:getUpdateURL - update URL not defined");
@@ -3383,7 +3881,7 @@ Checker.prototype = {
 
   checkForUpdates: function UC_checkForUpdates(listener, force) {
     LOG("Checker: checkForUpdates, force: " + force);
-    gUpdateFileWriteInfo = {phase: "check", failure: false};
+    gUpdateFileWriteInfo = { phase: "check", failure: false };
     if (!listener) {
       throw Cr.NS_ERROR_NULL_POINTER;
     }
@@ -3407,13 +3905,17 @@ Checker.prototype = {
 
       this._request = new XMLHttpRequest();
       this._request.open("GET", url, true);
-      this._request.channel.notificationCallbacks = new CertUtils.BadCertHandler(false);
+      this._request.channel.notificationCallbacks = new CertUtils.BadCertHandler(
+        false
+      );
       
       this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
       
       this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
       
-      this._request.channel.QueryInterface(Ci.nsIHttpChannelInternal).beConservative = true;
+      this._request.channel.QueryInterface(
+        Ci.nsIHttpChannelInternal
+      ).beConservative = true;
 
       this._request.overrideMimeType("text/xml");
       
@@ -3425,8 +3927,12 @@ Checker.prototype = {
       this._request.setRequestHeader("Pragma", "no-cache");
 
       var self = this;
-      this._request.addEventListener("error", function(event) { self.onError(event); });
-      this._request.addEventListener("load", function(event) { self.onLoad(event); });
+      this._request.addEventListener("error", function(event) {
+        self.onError(event);
+      });
+      this._request.addEventListener("load", function(event) {
+        self.onLoad(event);
+      });
 
       LOG("Checker:checkForUpdates - sending request to: " + url);
       this._request.send(null);
@@ -3448,16 +3954,21 @@ Checker.prototype = {
 
     if (updatesElement.nodeName != "updates") {
       LOG("Checker:_updates get - unexpected node name!");
-      throw new Error("Unexpected node name, expected: updates, got: " +
-                      updatesElement.nodeName);
+      throw new Error(
+        "Unexpected node name, expected: updates, got: " +
+          updatesElement.nodeName
+      );
     }
 
     var updates = [];
     for (var i = 0; i < updatesElement.childNodes.length; ++i) {
       var updateElement = updatesElement.childNodes.item(i);
-      if (updateElement.nodeType != updateElement.ELEMENT_NODE ||
-          updateElement.localName != "update")
+      if (
+        updateElement.nodeType != updateElement.ELEMENT_NODE ||
+        updateElement.localName != "update"
+      ) {
         continue;
+      }
 
       let update;
       try {
@@ -3481,11 +3992,11 @@ Checker.prototype = {
     var status = 0;
     try {
       status = request.status;
-    } catch (e) {
-    }
+    } catch (e) {}
 
-    if (status == 0)
+    if (status == 0) {
       status = request.channel.QueryInterface(Ci.nsIRequest).status;
+    }
     return status;
   },
 
@@ -3504,14 +4015,19 @@ Checker.prototype = {
     
     
     try {
-      let sslStatus = request.channel.QueryInterface(Ci.nsIRequest)
-                        .securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+      let sslStatus = request.channel
+        .QueryInterface(Ci.nsIRequest)
+        .securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
       if (sslStatus && sslStatus.succeededCertChain) {
         let rootCert = null;
         
-        for (rootCert of sslStatus.succeededCertChain.getEnumerator());
+        for (rootCert of sslStatus.succeededCertChain.getEnumerator()) {
+        }
         if (rootCert) {
-          Services.prefs.setStringPref("security.pki.mitm_detected", !rootCert.isBuiltInRoot);
+          Services.prefs.setStringPref(
+            "security.pki.mitm_detected",
+            !rootCert.isBuiltInRoot
+          );
         }
       }
     } catch (e) {
@@ -3530,8 +4046,11 @@ Checker.prototype = {
       
       this._callback.onCheckComplete(event.target, updates);
     } catch (e) {
-      LOG("Checker:onLoad - there was a problem checking for updates. " +
-          "Exception: " + e);
+      LOG(
+        "Checker:onLoad - there was a problem checking for updates. " +
+          "Exception: " +
+          e
+      );
       var request = event.target;
       var status = this._getChannelStatus(request);
       LOG("Checker:onLoad - request.status: " + status);
@@ -3562,10 +4081,14 @@ Checker.prototype = {
 
     
     try {
-      var secInfo = request.channel.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+      var secInfo = request.channel.securityInfo.QueryInterface(
+        Ci.nsITransportSecurityInfo
+      );
       if (secInfo.serverCert && secInfo.serverCert.issuerName) {
-        Services.prefs.setStringPref("security.pki.mitm_canary_issuer",
-                                     secInfo.serverCert.issuerName);
+        Services.prefs.setStringPref(
+          "security.pki.mitm_canary_issuer",
+          secInfo.serverCert.issuerName
+        );
       }
     } catch (e) {
       LOG("Checker:onError - Getting secInfo failed.");
@@ -3594,8 +4117,9 @@ Checker.prototype = {
 
   stopCurrentCheck: function UC_stopCurrentCheck() {
     
-    if (this._request)
+    if (this._request) {
       this._request.abort();
+    }
     this._callback = null;
   },
 
@@ -3734,9 +4258,13 @@ Downloader.prototype = {
     
     
     
-    return readState == STATE_PENDING || readState == STATE_PENDING_SERVICE ||
-           readState == STATE_PENDING_ELEVATE ||
-           readState == STATE_APPLIED || readState == STATE_APPLIED_SERVICE;
+    return (
+      readState == STATE_PENDING ||
+      readState == STATE_PENDING_SERVICE ||
+      readState == STATE_PENDING_ELEVATE ||
+      readState == STATE_APPLIED ||
+      readState == STATE_APPLIED_SERVICE
+    );
   },
 
   
@@ -3746,8 +4274,10 @@ Downloader.prototype = {
   _verifyDownload: function Downloader__verifyDownload() {
     LOG("Downloader:_verifyDownload called");
     if (!this._request) {
-      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                               AUSTLMY.DWNLD_ERR_VERIFY_NO_REQUEST);
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_ERR_VERIFY_NO_REQUEST
+      );
       return false;
     }
 
@@ -3757,8 +4287,10 @@ Downloader.prototype = {
     
     if (destination.fileSize != this._patch.size) {
       LOG("Downloader:_verifyDownload downloaded size != expected size.");
-      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                               AUSTLMY.DWNLD_ERR_VERIFY_PATCH_SIZE_NOT_EQUAL);
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_ERR_VERIFY_PATCH_SIZE_NOT_EQUAL
+      );
       return false;
     }
 
@@ -3788,8 +4320,9 @@ Downloader.prototype = {
     function getPatchOfType(type) {
       for (var i = 0; i < update.patchCount; ++i) {
         var patch = update.getPatchAt(i);
-        if (patch && patch.type == type)
+        if (patch && patch.type == type) {
           return patch;
+        }
       }
       return null;
     }
@@ -3805,15 +4338,20 @@ Downloader.prototype = {
     
     var useComplete = false;
     if (selectedPatch) {
-      LOG("Downloader:_selectPatch - found existing patch with state: " +
-          state);
+      LOG(
+        "Downloader:_selectPatch - found existing patch with state: " + state
+      );
       if (state == STATE_DOWNLOADING) {
         LOG("Downloader:_selectPatch - resuming download");
         return selectedPatch;
       }
-      if (state == STATE_PENDING || state == STATE_PENDING_SERVICE ||
-          state == STATE_PENDING_ELEVATE || state == STATE_APPLIED ||
-          state == STATE_APPLIED_SERVICE) {
+      if (
+        state == STATE_PENDING ||
+        state == STATE_PENDING_SERVICE ||
+        state == STATE_PENDING_ELEVATE ||
+        state == STATE_APPLIED ||
+        state == STATE_APPLIED_SERVICE
+      ) {
         LOG("Downloader:_selectPatch - already downloaded");
         return null;
       }
@@ -3827,12 +4365,16 @@ Downloader.prototype = {
       
       
       selectedPatch.QueryInterface(Ci.nsIWritablePropertyBag);
-      if (selectedPatch.getProperty("bitsResult") != null &&
-          selectedPatch.getProperty("internalResult") == null &&
-          !selectedPatch.errorCode) {
-        LOG("Downloader:_selectPatch - Falling back to non-BITS download " +
+      if (
+        selectedPatch.getProperty("bitsResult") != null &&
+        selectedPatch.getProperty("internalResult") == null &&
+        !selectedPatch.errorCode
+      ) {
+        LOG(
+          "Downloader:_selectPatch - Falling back to non-BITS download " +
             "mechanism for the same patch due to existing BITS result: " +
-            selectedPatch.getProperty("bitsResult"));
+            selectedPatch.getProperty("bitsResult")
+        );
         return selectedPatch;
       }
 
@@ -3853,11 +4395,13 @@ Downloader.prototype = {
     
     
     var partialPatch = getPatchOfType("partial");
-    if (!useComplete)
+    if (!useComplete) {
       selectedPatch = partialPatch;
+    }
     if (!selectedPatch) {
-      if (partialPatch)
+      if (partialPatch) {
         partialPatch.selected = false;
+      }
       selectedPatch = getPatchOfType("complete");
     }
 
@@ -3867,15 +4411,17 @@ Downloader.prototype = {
     
     
     
-    if (selectedPatch)
+    if (selectedPatch) {
       selectedPatch.selected = true;
+    }
 
-    update.isCompleteUpdate = (selectedPatch.type == "complete");
+    update.isCompleteUpdate = selectedPatch.type == "complete";
 
     
     
-    var um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     um.activeUpdate = update;
 
     return selectedPatch;
@@ -3903,7 +4449,9 @@ Downloader.prototype = {
     
     
     if (patch.getProperty("bitsResult") != null) {
-      LOG("Downloader:_canUseBits - Not using BITS because it was already tried");
+      LOG(
+        "Downloader:_canUseBits - Not using BITS because it was already tried"
+      );
       return false;
     }
     LOG("Downloader:_canUseBits - Patch is able to use BITS download");
@@ -3917,7 +4465,7 @@ Downloader.prototype = {
 
   downloadUpdate: function Downloader_downloadUpdate(update) {
     LOG("UpdateService:_downloadUpdate");
-    gUpdateFileWriteInfo = {phase: "download", failure: false};
+    gUpdateFileWriteInfo = { phase: "download", failure: false };
     if (!update) {
       AUSTLMY.pingDownloadCode(undefined, AUSTLMY.DWNLD_ERR_NO_UPDATE);
       throw Cr.NS_ERROR_NULL_POINTER;
@@ -3939,7 +4487,10 @@ Downloader.prototype = {
     
     this._update.QueryInterface(Ci.nsIWritablePropertyBag);
     if (gCheckStartMs && !this._update.getProperty("checkInterval")) {
-      let interval = Math.max(Math.ceil((Date.now() - gCheckStartMs) / 1000), 1);
+      let interval = Math.max(
+        Math.ceil((Date.now() - gCheckStartMs) / 1000),
+        1
+      );
       this._update.setProperty("checkInterval", interval);
     }
     
@@ -3951,15 +4502,20 @@ Downloader.prototype = {
     let canUseBits = false;
     
     if (this._update.getProperty("disableBITS") != null) {
-      LOG("Downloader:downloadUpdate - BITS downloads disabled by update " +
-          "advertisement");
+      LOG(
+        "Downloader:downloadUpdate - BITS downloads disabled by update " +
+          "advertisement"
+      );
     } else {
       canUseBits = this._canUseBits(this._patch);
     }
 
     this._downloaderName = canUseBits ? "bits" : "internal";
     if (!this._patch.getProperty(this._downloaderName + "DownloadStart")) {
-      this._patch.setProperty(this._downloaderName + "DownloadStart", Math.floor(Date.now() / 1000));
+      this._patch.setProperty(
+        this._downloaderName + "DownloadStart",
+        Math.floor(Date.now() / 1000)
+      );
     }
 
     if (!canUseBits) {
@@ -3969,13 +4525,20 @@ Downloader.prototype = {
       
       let interval = 0;
 
-      LOG("Downloader:downloadUpdate - Starting nsIIncrementalDownload with " +
-          "url: " + this._patch.URL + ", path: " + patchFile.path +
-          ", interval: " + interval);
+      LOG(
+        "Downloader:downloadUpdate - Starting nsIIncrementalDownload with " +
+          "url: " +
+          this._patch.URL +
+          ", path: " +
+          patchFile.path +
+          ", interval: " +
+          interval
+      );
       let uri = Services.io.newURI(this._patch.URL);
 
-      this._request = Cc["@mozilla.org/network/incremental-download;1"].
-                      createInstance(Ci.nsIIncrementalDownload);
+      this._request = Cc[
+        "@mozilla.org/network/incremental-download;1"
+      ].createInstance(Ci.nsIIncrementalDownload);
       this._request.init(uri, patchFile, DOWNLOAD_CHUNK_SIZE, interval);
       this._request.start(this, null);
     } else {
@@ -4002,90 +4565,121 @@ Downloader.prototype = {
 
       let bitsId = this._patch.getProperty("bitsId");
       if (bitsId) {
-        LOG("Downloader:downloadUpdate - Connecting to in-progress download. " +
-            "BITS ID: " + bitsId);
+        LOG(
+          "Downloader:downloadUpdate - Connecting to in-progress download. " +
+            "BITS ID: " +
+            bitsId
+        );
 
-        this._pendingRequest = Bits.monitorDownload(bitsId, monitorInterval,
-                                                    this, null);
+        this._pendingRequest = Bits.monitorDownload(
+          bitsId,
+          monitorInterval,
+          this,
+          null
+        );
       } else {
-        LOG("Downloader:downloadUpdate - Starting BITS download with url: " +
-            this._patch.URL + ", updateDir: " + updatePath + ", filename: " +
-            FILE_UPDATE_MAR);
+        LOG(
+          "Downloader:downloadUpdate - Starting BITS download with url: " +
+            this._patch.URL +
+            ", updateDir: " +
+            updatePath +
+            ", filename: " +
+            FILE_UPDATE_MAR
+        );
 
-        this._pendingRequest = Bits.startDownload(this._patch.URL,
-                                                  FILE_UPDATE_MAR,
-                                                  Ci.nsIBits.PROXY_PRECONFIG,
-                                                  monitorInterval, this, null);
+        this._pendingRequest = Bits.startDownload(
+          this._patch.URL,
+          FILE_UPDATE_MAR,
+          Ci.nsIBits.PROXY_PRECONFIG,
+          monitorInterval,
+          this,
+          null
+        );
       }
-      this._pendingRequest = this._pendingRequest.then(request => {
-        this._request = request;
-        this._patch.setProperty("bitsId", request.bitsId);
+      this._pendingRequest = this._pendingRequest.then(
+        request => {
+          this._request = request;
+          this._patch.setProperty("bitsId", request.bitsId);
 
-        LOG("Downloader:downloadUpdate - BITS download running. BITS ID: " +
-            request.bitsId);
+          LOG(
+            "Downloader:downloadUpdate - BITS download running. BITS ID: " +
+              request.bitsId
+          );
 
-        if (this.hasDownloadListeners) {
-          this._maybeStartActiveNotifications();
-        } else {
-          this._maybeStopActiveNotifications();
-        }
+          if (this.hasDownloadListeners) {
+            this._maybeStartActiveNotifications();
+          } else {
+            this._maybeStopActiveNotifications();
+          }
 
-        Cc["@mozilla.org/updates/update-manager;1"].
-          getService(Ci.nsIUpdateManager).saveUpdates();
-        this._pendingRequest = null;
-      }, error => {
-        if ((error.type == Ci.nsIBits.ERROR_TYPE_FAILED_TO_GET_BITS_JOB ||
-            error.type == Ci.nsIBits.ERROR_TYPE_FAILED_TO_CONNECT_TO_BCM) &&
+          Cc["@mozilla.org/updates/update-manager;1"]
+            .getService(Ci.nsIUpdateManager)
+            .saveUpdates();
+          this._pendingRequest = null;
+        },
+        error => {
+          if (
+            (error.type == Ci.nsIBits.ERROR_TYPE_FAILED_TO_GET_BITS_JOB ||
+              error.type == Ci.nsIBits.ERROR_TYPE_FAILED_TO_CONNECT_TO_BCM) &&
             error.action == Ci.nsIBits.ERROR_ACTION_MONITOR_DOWNLOAD &&
             error.stage == Ci.nsIBits.ERROR_STAGE_BITS_CLIENT &&
             error.codeType == Ci.nsIBits.ERROR_CODE_TYPE_HRESULT &&
-            error.code == HRESULT_E_ACCESSDENIED) {
-          LOG("Downloader:downloadUpdate - Failed to connect to existing " +
-              "BITS job. It is likely owned by another user.");
-          
-          
-          
-          error.type = Ci.nsIBits.ERROR_TYPE_ACCESS_DENIED_EXPECTED;
-          error.codeType = Ci.nsIBits.ERROR_CODE_TYPE_NONE;
-          error.code = null;
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          gBITSInUseByAnotherUser = true;
-        } else {
-          this._patch.setProperty("bitsResult", Cr.NS_ERROR_FAILURE);
-          Cc["@mozilla.org/updates/update-manager;1"].
-            getService(Ci.nsIUpdateManager).saveUpdates();
+            error.code == HRESULT_E_ACCESSDENIED
+          ) {
+            LOG(
+              "Downloader:downloadUpdate - Failed to connect to existing " +
+                "BITS job. It is likely owned by another user."
+            );
+            
+            
+            
+            error.type = Ci.nsIBits.ERROR_TYPE_ACCESS_DENIED_EXPECTED;
+            error.codeType = Ci.nsIBits.ERROR_CODE_TYPE_NONE;
+            error.code = null;
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            gBITSInUseByAnotherUser = true;
+          } else {
+            this._patch.setProperty("bitsResult", Cr.NS_ERROR_FAILURE);
+            Cc["@mozilla.org/updates/update-manager;1"]
+              .getService(Ci.nsIUpdateManager)
+              .saveUpdates();
 
-          LOG("Downloader:downloadUpdate - Failed to start to BITS job. " +
-              "Error: " + error);
+            LOG(
+              "Downloader:downloadUpdate - Failed to start to BITS job. " +
+                "Error: " +
+                error
+            );
+          }
+
+          this._pendingRequest = null;
+
+          AUSTLMY.pingBitsError(this.isCompleteUpdate, error);
+
+          
+          
+          
+          
+          
+          
+          this.downloadUpdate(this._update);
         }
-
-        this._pendingRequest = null;
-
-        AUSTLMY.pingBitsError(this.isCompleteUpdate, error);
-
-        
-        
-        
-        
-        
-        
-        this.downloadUpdate(this._update);
-      });
+      );
     }
 
     writeStatusFile(updateDir, STATE_DOWNLOADING);
     if (this._patch.state != STATE_DOWNLOADING) {
       this._patch.state = STATE_DOWNLOADING;
-      Cc["@mozilla.org/updates/update-manager;1"].
-        getService(Ci.nsIUpdateManager).saveUpdates();
+      Cc["@mozilla.org/updates/update-manager;1"]
+        .getService(Ci.nsIUpdateManager)
+        .saveUpdates();
     }
     return STATE_DOWNLOADING;
   },
@@ -4104,8 +4698,9 @@ Downloader.prototype = {
 
   addDownloadListener: function Downloader_addDownloadListener(listener) {
     for (var i = 0; i < this._listeners.length; ++i) {
-      if (this._listeners[i] == listener)
+      if (this._listeners[i] == listener) {
         return;
+      }
     }
     this._listeners.push(listener);
 
@@ -4144,15 +4739,26 @@ Downloader.prototype = {
 
 
   _maybeStartActiveNotifications: async function Downloader__maybeStartActiveNotifications() {
-    if (this.usingBits && !this._bitsActiveNotifications &&
-        this.hasDownloadListeners && this._request) {
-      LOG("Downloader:_maybeStartActiveNotifications - Starting active " +
-          "notifications");
+    if (
+      this.usingBits &&
+      !this._bitsActiveNotifications &&
+      this.hasDownloadListeners &&
+      this._request
+    ) {
+      LOG(
+        "Downloader:_maybeStartActiveNotifications - Starting active " +
+          "notifications"
+      );
       this._bitsActiveNotifications = true;
-      await this._request.changeMonitorInterval(BITS_ACTIVE_POLL_RATE_MS).catch(error => {
-        LOG("Downloader:_maybeStartActiveNotifications - Failed to increase " +
-            "status update frequency. Error: " + error);
-      });
+      await this._request
+        .changeMonitorInterval(BITS_ACTIVE_POLL_RATE_MS)
+        .catch(error => {
+          LOG(
+            "Downloader:_maybeStartActiveNotifications - Failed to increase " +
+              "status update frequency. Error: " +
+              error
+          );
+        });
     }
   },
 
@@ -4161,15 +4767,26 @@ Downloader.prototype = {
 
 
   _maybeStopActiveNotifications: async function Downloader__maybeStopActiveNotifications() {
-    if (this.usingBits && this._bitsActiveNotifications &&
-        !this.hasDownloadListeners && this._request) {
-      LOG("Downloader:_maybeStopActiveNotifications - Stopping active " +
-          "notifications");
+    if (
+      this.usingBits &&
+      this._bitsActiveNotifications &&
+      !this.hasDownloadListeners &&
+      this._request
+    ) {
+      LOG(
+        "Downloader:_maybeStopActiveNotifications - Stopping active " +
+          "notifications"
+      );
       this._bitsActiveNotifications = false;
-      await this._request.changeMonitorInterval(BITS_IDLE_POLL_RATE_MS).catch(error => {
-        LOG("Downloader:_maybeStopActiveNotifications - Failed to decrease " +
-            "status update frequency: " + error);
-      });
+      await this._request
+        .changeMonitorInterval(BITS_IDLE_POLL_RATE_MS)
+        .catch(error => {
+          LOG(
+            "Downloader:_maybeStopActiveNotifications - Failed to decrease " +
+              "status update frequency: " +
+              error
+          );
+        });
     }
   },
 
@@ -4180,13 +4797,18 @@ Downloader.prototype = {
 
   onStartRequest: function Downloader_onStartRequest(request) {
     if (!this.usingBits) {
-      LOG("Downloader:onStartRequest - original URI spec: " + request.URI.spec +
-          ", final URI spec: " + request.finalURI.spec);
+      LOG(
+        "Downloader:onStartRequest - original URI spec: " +
+          request.URI.spec +
+          ", final URI spec: " +
+          request.finalURI.spec
+      );
       
       if (this._patch.finalURL != request.finalURI.spec) {
         this._patch.finalURL = request.finalURI.spec;
-        Cc["@mozilla.org/updates/update-manager;1"].
-          getService(Ci.nsIUpdateManager).saveUpdates();
+        Cc["@mozilla.org/updates/update-manager;1"]
+          .getService(Ci.nsIUpdateManager)
+          .saveUpdates();
       }
     }
     
@@ -4196,8 +4818,10 @@ Downloader.prototype = {
     
     
     
-    if (!this._patch.getProperty("internalBytes") &&
-        !this._patch.getProperty("bitsBytes")) {
+    if (
+      !this._patch.getProperty("internalBytes") &&
+      !this._patch.getProperty("bitsBytes")
+    ) {
       this._startDownloadMs = Date.now();
     }
 
@@ -4220,8 +4844,12 @@ Downloader.prototype = {
 
 
 
-  onProgress: function Downloader_onProgress(request, context, progress,
-                                             maxProgress) {
+  onProgress: function Downloader_onProgress(
+    request,
+    context,
+    progress,
+    maxProgress
+  ) {
     LOG("Downloader:onProgress - progress: " + progress + "/" + maxProgress);
     if (this._startDownloadMs) {
       let seconds = Math.round((Date.now() - this._startDownloadMs) / 1000);
@@ -4230,10 +4858,16 @@ Downloader.prototype = {
     }
 
     if (progress > this._patch.size) {
-      LOG("Downloader:onProgress - progress: " + progress +
-          " is higher than patch size: " + this._patch.size);
-      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                               AUSTLMY.DWNLD_ERR_PATCH_SIZE_LARGER);
+      LOG(
+        "Downloader:onProgress - progress: " +
+          progress +
+          " is higher than patch size: " +
+          this._patch.size
+      );
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_ERR_PATCH_SIZE_LARGER
+      );
       this.cancel(Cr.NS_ERROR_UNEXPECTED);
       return;
     }
@@ -4242,10 +4876,16 @@ Downloader.prototype = {
     
     
     if (progress > 0 && maxProgress != this._patch.size) {
-      LOG("Downloader:onProgress - maxProgress: " + maxProgress +
-          " is not equal to expected patch size: " + this._patch.size);
-      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                               AUSTLMY.DWNLD_ERR_PATCH_SIZE_NOT_EQUAL);
+      LOG(
+        "Downloader:onProgress - maxProgress: " +
+          maxProgress +
+          " is not equal to expected patch size: " +
+          this._patch.size
+      );
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_ERR_PATCH_SIZE_NOT_EQUAL
+      );
       this.cancel(Cr.NS_ERROR_UNEXPECTED);
       return;
     }
@@ -4255,12 +4895,12 @@ Downloader.prototype = {
     var listenerCount = listeners.length;
     for (var i = 0; i < listenerCount; ++i) {
       var listener = listeners[i];
-      if (listener instanceof Ci.nsIProgressEventSink)
+      if (listener instanceof Ci.nsIProgressEventSink) {
         listener.onProgress(request, context, progress, maxProgress);
+      }
     }
     this.updateService._consecutiveSocketErrors = 0;
   },
-
 
   
 
@@ -4274,16 +4914,18 @@ Downloader.prototype = {
 
 
   onStatus: function Downloader_onStatus(request, context, status, statusText) {
-    LOG("Downloader:onStatus - status: " + status + ", statusText: " +
-        statusText);
+    LOG(
+      "Downloader:onStatus - status: " + status + ", statusText: " + statusText
+    );
 
     
     var listeners = this._listeners.concat();
     var listenerCount = listeners.length;
     for (var i = 0; i < listenerCount; ++i) {
       var listener = listeners[i];
-      if (listener instanceof Ci.nsIProgressEventSink)
+      if (listener instanceof Ci.nsIProgressEventSink) {
         listener.onStatus(request, context, status, statusText);
+      }
     }
   },
 
@@ -4294,12 +4936,18 @@ Downloader.prototype = {
 
 
 
-   
+  
   onStopRequest: async function Downloader_onStopRequest(request, status) {
     if (!this.usingBits) {
-      LOG("Downloader:onStopRequest - downloader: nsIIncrementalDownload, " +
-          "original URI spec: " + request.URI.spec + ", final URI spec: " +
-          request.finalURI.spec + ", status: " + status);
+      LOG(
+        "Downloader:onStopRequest - downloader: nsIIncrementalDownload, " +
+          "original URI spec: " +
+          request.URI.spec +
+          ", final URI spec: " +
+          request.finalURI.spec +
+          ", status: " +
+          status
+      );
     } else {
       LOG("Downloader:onStopRequest - downloader: BITS, status: " + status);
     }
@@ -4310,8 +4958,9 @@ Downloader.prototype = {
         try {
           await request.complete();
         } catch (e) {
-          LOG("Downloader:onStopRequest - Unable to complete BITS download: " +
-              e);
+          LOG(
+            "Downloader:onStopRequest - Unable to complete BITS download: " + e
+          );
           status = Cr.NS_ERROR_FAILURE;
           bitsCompletionError = e;
         }
@@ -4337,21 +4986,36 @@ Downloader.prototype = {
     var shouldRegisterOnlineObserver = false;
     var shouldRetrySoon = false;
     var deleteActiveUpdate = false;
-    var retryTimeout = Services.prefs.getIntPref(PREF_APP_UPDATE_SOCKET_RETRYTIMEOUT,
-                                                 DEFAULT_SOCKET_RETRYTIMEOUT);
+    var retryTimeout = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_SOCKET_RETRYTIMEOUT,
+      DEFAULT_SOCKET_RETRYTIMEOUT
+    );
     
     retryTimeout = Math.min(retryTimeout, 10000);
-    var maxFail = Services.prefs.getIntPref(PREF_APP_UPDATE_SOCKET_MAXERRORS,
-                                            DEFAULT_SOCKET_MAX_ERRORS);
+    var maxFail = Services.prefs.getIntPref(
+      PREF_APP_UPDATE_SOCKET_MAXERRORS,
+      DEFAULT_SOCKET_MAX_ERRORS
+    );
     
     maxFail = Math.min(maxFail, 20);
     let permissionFixingInProgress = false;
-    LOG("Downloader:onStopRequest - status: " + status + ", " +
-        "current fail: " + this.updateService._consecutiveSocketErrors + ", " +
-        "max fail: " + maxFail + ", " +
-        "retryTimeout: " + retryTimeout);
-    this._patch.setProperty(this._downloaderName + "DownloadFinished",
-                            Math.floor(Date.now() / 1000));
+    LOG(
+      "Downloader:onStopRequest - status: " +
+        status +
+        ", " +
+        "current fail: " +
+        this.updateService._consecutiveSocketErrors +
+        ", " +
+        "max fail: " +
+        maxFail +
+        ", " +
+        "retryTimeout: " +
+        retryTimeout
+    );
+    this._patch.setProperty(
+      this._downloaderName + "DownloadFinished",
+      Math.floor(Date.now() / 1000)
+    );
     if (Components.isSuccessCode(status)) {
       if (this._verifyDownload()) {
         if (shouldUseService()) {
@@ -4369,8 +5033,10 @@ Downloader.prototype = {
         
         writeStatusFile(getUpdatesDir(), state);
         writeVersionFile(getUpdatesDir(), this._update.appVersion);
-        this._update.installDate = (new Date()).getTime();
-        this._update.statusText = gUpdateBundle.GetStringFromName("installPending");
+        this._update.installDate = new Date().getTime();
+        this._update.statusText = gUpdateBundle.GetStringFromName(
+          "installPending"
+        );
         Services.prefs.setIntPref(PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, 0);
       } else {
         LOG("Downloader:onStopRequest - download verification failed");
@@ -4382,8 +5048,9 @@ Downloader.prototype = {
         var message = getStatusTextFromCode(vfCode, vfCode);
         this._update.statusText = message;
 
-        if (this._update.isCompleteUpdate || this._update.patchCount != 2)
+        if (this._update.isCompleteUpdate || this._update.patchCount != 2) {
           deleteActiveUpdate = true;
+        }
 
         
         cleanUpUpdatesDir();
@@ -4394,21 +5061,25 @@ Downloader.prototype = {
       
       
       LOG("Downloader:onStopRequest - offline, register online observer: true");
-      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                               AUSTLMY.DWNLD_RETRY_OFFLINE);
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_RETRY_OFFLINE
+      );
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
 
-    
-    
-    
-    
-    
-    } else if ((status == Cr.NS_ERROR_NET_TIMEOUT ||
-                status == Cr.NS_ERROR_CONNECTION_REFUSED ||
-                status == Cr.NS_ERROR_NET_RESET ||
-                status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) &&
-               this.updateService._consecutiveSocketErrors < maxFail) {
+      
+      
+      
+      
+      
+    } else if (
+      (status == Cr.NS_ERROR_NET_TIMEOUT ||
+        status == Cr.NS_ERROR_CONNECTION_REFUSED ||
+        status == Cr.NS_ERROR_NET_RESET ||
+        status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) &&
+      this.updateService._consecutiveSocketErrors < maxFail
+    ) {
       LOG("Downloader:onStopRequest - socket error, shouldRetrySoon: true");
       let dwnldCode = AUSTLMY.DWNLD_RETRY_CONNECTION_REFUSED;
       if (status == Cr.NS_ERROR_NET_TIMEOUT) {
@@ -4421,10 +5092,11 @@ Downloader.prototype = {
       AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
       shouldRetrySoon = true;
       deleteActiveUpdate = false;
-    } else if (status != Cr.NS_BINDING_ABORTED &&
-               status != Cr.NS_ERROR_ABORT) {
-      if (status == Cr.NS_ERROR_FILE_ACCESS_DENIED ||
-          status == Cr.NS_ERROR_FILE_READ_ONLY) {
+    } else if (status != Cr.NS_BINDING_ABORTED && status != Cr.NS_ERROR_ABORT) {
+      if (
+        status == Cr.NS_ERROR_FILE_ACCESS_DENIED ||
+        status == Cr.NS_ERROR_FILE_READ_ONLY
+      ) {
         LOG("Downloader:onStopRequest - permission error");
         
         
@@ -4447,8 +5119,10 @@ Downloader.prototype = {
       
       
 
-      this._update.statusText = getStatusTextFromCode(status,
-                                                      Cr.NS_BINDING_FAILED);
+      this._update.statusText = getStatusTextFromCode(
+        status,
+        Cr.NS_BINDING_FAILED
+      );
 
       
       cleanUpUpdatesDir();
@@ -4464,9 +5138,11 @@ Downloader.prototype = {
       
       
       
-      if (!Components.isSuccessCode(status) &&
-          status != Cr.NS_BINDING_ABORTED &&
-          status != Cr.NS_ERROR_ABORT) {
+      if (
+        !Components.isSuccessCode(status) &&
+        status != Cr.NS_BINDING_ABORTED &&
+        status != Cr.NS_ERROR_ABORT
+      ) {
         deleteActiveUpdate = false;
         shouldRetrySoon = true;
       }
@@ -4494,10 +5170,11 @@ Downloader.prototype = {
     if (this._patch.state != state) {
       this._patch.state = state;
     }
-    var um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     if (deleteActiveUpdate) {
-      this._update.installDate = (new Date()).getTime();
+      this._update.installDate = new Date().getTime();
       
       
       um.activeUpdate = null;
@@ -4523,8 +5200,10 @@ Downloader.prototype = {
       var allFailed = true;
       
       if (request instanceof BitsRequest) {
-        LOG("Downloader:onStopRequest - BITS download failed. Falling back " +
-            "to nsIIncrementalDownload");
+        LOG(
+          "Downloader:onStopRequest - BITS download failed. Falling back " +
+            "to nsIIncrementalDownload"
+        );
         let updateStatus = this.downloadUpdate(this._update);
         if (updateStatus == STATE_NONE) {
           cleanupActiveUpdate();
@@ -4534,10 +5213,15 @@ Downloader.prototype = {
       }
 
       
-      if (allFailed && !this._update.isCompleteUpdate &&
-          this._update.patchCount == 2) {
-        LOG("Downloader:onStopRequest - verification of patch failed, " +
-            "downloading complete update patch");
+      if (
+        allFailed &&
+        !this._update.isCompleteUpdate &&
+        this._update.patchCount == 2
+      ) {
+        LOG(
+          "Downloader:onStopRequest - verification of patch failed, " +
+            "downloading complete update patch"
+        );
         this._update.isCompleteUpdate = true;
         let updateStatus = this.downloadUpdate(this._update);
 
@@ -4549,23 +5233,47 @@ Downloader.prototype = {
       }
 
       if (allFailed && !permissionFixingInProgress) {
-        let downloadAttempts = Services.prefs.getIntPref(PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, 0);
+        let downloadAttempts = Services.prefs.getIntPref(
+          PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS,
+          0
+        );
         downloadAttempts++;
-        Services.prefs.setIntPref(PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, downloadAttempts);
-        let maxAttempts = Math.min(Services.prefs.getIntPref(PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 2), 10);
+        Services.prefs.setIntPref(
+          PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS,
+          downloadAttempts
+        );
+        let maxAttempts = Math.min(
+          Services.prefs.getIntPref(PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 2),
+          10
+        );
 
         AUSTLMY.pingUpdatePhases(this._update, false);
         if (downloadAttempts > maxAttempts) {
-          LOG("Downloader:onStopRequest - notifying observers of error. " +
+          LOG(
+            "Downloader:onStopRequest - notifying observers of error. " +
               "topic: update-error, status: download-attempts-exceeded, " +
-              "downloadAttempts: " + downloadAttempts + " " +
-              "maxAttempts: " + maxAttempts);
-          Services.obs.notifyObservers(this._update, "update-error", "download-attempts-exceeded");
+              "downloadAttempts: " +
+              downloadAttempts +
+              " " +
+              "maxAttempts: " +
+              maxAttempts
+          );
+          Services.obs.notifyObservers(
+            this._update,
+            "update-error",
+            "download-attempts-exceeded"
+          );
         } else {
           this._update.selectedPatch.selected = false;
-          LOG("Downloader:onStopRequest - notifying observers of error. " +
-              "topic: update-error, status: download-attempt-failed");
-          Services.obs.notifyObservers(this._update, "update-error", "download-attempt-failed");
+          LOG(
+            "Downloader:onStopRequest - notifying observers of error. " +
+              "topic: update-error, status: download-attempt-failed"
+          );
+          Services.obs.notifyObservers(
+            this._update,
+            "update-error",
+            "download-attempt-failed"
+          );
         }
       }
       if (allFailed) {
@@ -4576,22 +5284,29 @@ Downloader.prototype = {
       return;
     }
 
-    if (state == STATE_PENDING || state == STATE_PENDING_SERVICE ||
-        state == STATE_PENDING_ELEVATE) {
+    if (
+      state == STATE_PENDING ||
+      state == STATE_PENDING_SERVICE ||
+      state == STATE_PENDING_ELEVATE
+    ) {
       if (getCanStageUpdates()) {
-        LOG("Downloader:onStopRequest - attempting to stage update: " +
-            this._update.name);
-        gUpdateFileWriteInfo = {phase: "stage", failure: false};
+        LOG(
+          "Downloader:onStopRequest - attempting to stage update: " +
+            this._update.name
+        );
+        gUpdateFileWriteInfo = { phase: "stage", failure: false };
         this._patch.setProperty("stageStart", Math.floor(Date.now() / 1000));
         
         try {
-          Cc["@mozilla.org/updates/update-processor;1"].
-            createInstance(Ci.nsIUpdateProcessor).processUpdate();
+          Cc["@mozilla.org/updates/update-processor;1"]
+            .createInstance(Ci.nsIUpdateProcessor)
+            .processUpdate();
         } catch (e) {
           
           
-          LOG("Downloader:onStopRequest - failed to stage update. Exception: " +
-              e);
+          LOG(
+            "Downloader:onStopRequest - failed to stage update. Exception: " + e
+          );
           if (this.background) {
             shouldShowPrompt = true;
           }
@@ -4605,9 +5320,16 @@ Downloader.prototype = {
     
     
     if (shouldShowPrompt) {
-      LOG("UpdateManager:refreshUpdateStatus - Notifying observers that " +
-          "an update was downloaded. topic: update-downloaded, status: " + this._update.state);
-      Services.obs.notifyObservers(this._update, "update-downloaded", this._update.state);
+      LOG(
+        "UpdateManager:refreshUpdateStatus - Notifying observers that " +
+          "an update was downloaded. topic: update-downloaded, status: " +
+          this._update.state
+      );
+      Services.obs.notifyObservers(
+        this._update,
+        "update-downloaded",
+        this._update.state
+      );
     }
 
     if (shouldRegisterOnlineObserver) {
@@ -4619,10 +5341,16 @@ Downloader.prototype = {
       if (this.updateService._retryTimer) {
         this.updateService._retryTimer.cancel();
       }
-      this.updateService._retryTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      this.updateService._retryTimer.initWithCallback(function() {
-        this._attemptResume();
-      }.bind(this.updateService), retryTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
+      this.updateService._retryTimer = Cc[
+        "@mozilla.org/timer;1"
+      ].createInstance(Ci.nsITimer);
+      this.updateService._retryTimer.initWithCallback(
+        function() {
+          this._attemptResume();
+        }.bind(this.updateService),
+        retryTimeout,
+        Ci.nsITimer.TYPE_ONE_SHOT
+      );
     } else {
       
       this._update = null;
@@ -4650,16 +5378,19 @@ Downloader.prototype = {
     
     
     if (iid.equals(Ci.nsIAuthPrompt)) {
-      var prompt = Cc["@mozilla.org/network/default-auth-prompt;1"].
-                   createInstance();
+      var prompt = Cc[
+        "@mozilla.org/network/default-auth-prompt;1"
+      ].createInstance();
       return prompt.QueryInterface(iid);
     }
     throw Cr.NS_NOINTERFACE;
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIRequestObserver,
-                                          Ci.nsIProgressEventSink,
-                                          Ci.nsIInterfaceRequestor]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIRequestObserver,
+    Ci.nsIProgressEventSink,
+    Ci.nsIInterfaceRequestor,
+  ]),
 };
 
 var EXPORTED_SYMBOLS = ["UpdateService", "Checker", "UpdateManager"];

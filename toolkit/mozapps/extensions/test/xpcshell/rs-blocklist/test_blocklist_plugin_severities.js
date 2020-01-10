@@ -2,35 +2,37 @@
 
 
 
-var PLUGINS = [{
-  
-  name: "test_bug514327_1",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_bug514327_2",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_bug514327_3",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_bug514327_4",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-  outdated: false,
-}];
+var PLUGINS = [
+  {
+    
+    name: "test_bug514327_1",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_bug514327_2",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_bug514327_3",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_bug514327_4",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+    outdated: false,
+  },
+];
 
 let BLOCKLIST_DATA = {
   plugins: [
@@ -40,11 +42,11 @@ let BLOCKLIST_DATA = {
     },
     {
       matchName: "^test_bug514327_2",
-      versionRange: [{severity: "0"}],
+      versionRange: [{ severity: "0" }],
     },
     {
       matchName: "^test_bug514327_3",
-      versionRange: [{severity: "0"}],
+      versionRange: [{ severity: "0" }],
     },
   ],
 };
@@ -54,7 +56,7 @@ add_task(async function checkBlocklistSeverities() {
 
   await AddonTestUtils.loadBlocklistRawData(BLOCKLIST_DATA);
 
-  var {blocklist} = Services;
+  var { blocklist } = Services;
 
   
   
@@ -63,14 +65,26 @@ add_task(async function checkBlocklistSeverities() {
   });
 
   
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"), blocklist.STATE_BLOCKED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
+    blocklist.STATE_BLOCKED
+  );
 
   
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9"), blocklist.STATE_OUTDATED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9"),
+    blocklist.STATE_OUTDATED
+  );
 
   
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9"), blocklist.STATE_OUTDATED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9"),
+    blocklist.STATE_OUTDATED
+  );
 
   
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9"), blocklist.STATE_NOT_BLOCKED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9"),
+    blocklist.STATE_NOT_BLOCKED
+  );
 });

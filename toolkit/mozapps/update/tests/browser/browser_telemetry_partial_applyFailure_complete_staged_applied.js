@@ -11,34 +11,34 @@
 
 
 
-add_task(async function telemetry_partial_applyFailure_complete_staged_applied() {
-  let updateParams = "";
-  await runTelemetryUpdateTest(updateParams, "update-downloaded");
+add_task(
+  async function telemetry_partial_applyFailure_complete_staged_applied() {
+    let updateParams = "";
+    await runTelemetryUpdateTest(updateParams, "update-downloaded");
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_APP_UPDATE_STAGING_ENABLED, true],
-    ],
-  });
-  
-  await setupTestUpdater();
-  
-  writeStatusFile(STATE_FAILED_CRC_ERROR);
-  testPostUpdateProcessing();
-  
-  checkTelemetryUpdatePhaseEmpty(true);
+    await SpecialPowers.pushPrefEnv({
+      set: [[PREF_APP_UPDATE_STAGING_ENABLED, true]],
+    });
+    
+    await setupTestUpdater();
+    
+    writeStatusFile(STATE_FAILED_CRC_ERROR);
+    testPostUpdateProcessing();
+    
+    checkTelemetryUpdatePhaseEmpty(true);
 
-  
-  await waitForEvent("update-staged");
-  
-  writeStatusFile(STATE_SUCCEEDED);
-  testPostUpdateProcessing();
+    
+    await waitForEvent("update-staged");
+    
+    writeStatusFile(STATE_SUCCEEDED);
+    testPostUpdateProcessing();
 
-  let expected = getTelemetryUpdatePhaseValues({
-    noStagePartial: true,
-  });
-  checkTelemetryUpdatePhases(expected);
+    let expected = getTelemetryUpdatePhaseValues({
+      noStagePartial: true,
+    });
+    checkTelemetryUpdatePhases(expected);
 
-  
-  checkTelemetryUpdatePhaseEmpty(false);
-});
+    
+    checkTelemetryUpdatePhaseEmpty(false);
+  }
+);

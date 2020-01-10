@@ -17,44 +17,57 @@ if ("@mozilla.org/xre/app-info;1" in Cc) {
   }
 }
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
-const MOZ_COMPATIBILITY_NIGHTLY = !["aurora", "beta", "release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL);
+const MOZ_COMPATIBILITY_NIGHTLY = ![
+  "aurora",
+  "beta",
+  "release",
+  "esr",
+].includes(AppConstants.MOZ_UPDATE_CHANNEL);
 
 const PREF_BLOCKLIST_PINGCOUNTVERSION = "extensions.blocklist.pingCountVersion";
-const PREF_EM_UPDATE_ENABLED          = "extensions.update.enabled";
-const PREF_EM_LAST_APP_VERSION        = "extensions.lastAppVersion";
-const PREF_EM_LAST_PLATFORM_VERSION   = "extensions.lastPlatformVersion";
-const PREF_EM_AUTOUPDATE_DEFAULT      = "extensions.update.autoUpdateDefault";
-const PREF_EM_STRICT_COMPATIBILITY    = "extensions.strictCompatibility";
-const PREF_EM_CHECK_UPDATE_SECURITY   = "extensions.checkUpdateSecurity";
-const PREF_SYS_ADDON_UPDATE_ENABLED   = "extensions.systemAddon.update.enabled";
+const PREF_EM_UPDATE_ENABLED = "extensions.update.enabled";
+const PREF_EM_LAST_APP_VERSION = "extensions.lastAppVersion";
+const PREF_EM_LAST_PLATFORM_VERSION = "extensions.lastPlatformVersion";
+const PREF_EM_AUTOUPDATE_DEFAULT = "extensions.update.autoUpdateDefault";
+const PREF_EM_STRICT_COMPATIBILITY = "extensions.strictCompatibility";
+const PREF_EM_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
+const PREF_SYS_ADDON_UPDATE_ENABLED = "extensions.systemAddon.update.enabled";
 
-const PREF_MIN_WEBEXT_PLATFORM_VERSION = "extensions.webExtensionsMinPlatformVersion";
-const PREF_WEBAPI_TESTING             = "extensions.webapi.testing";
-const PREF_WEBEXT_PERM_PROMPTS        = "extensions.webextPermissionPrompts";
+const PREF_MIN_WEBEXT_PLATFORM_VERSION =
+  "extensions.webExtensionsMinPlatformVersion";
+const PREF_WEBAPI_TESTING = "extensions.webapi.testing";
+const PREF_WEBEXT_PERM_PROMPTS = "extensions.webextPermissionPrompts";
 
-const UPDATE_REQUEST_VERSION          = 2;
+const UPDATE_REQUEST_VERSION = 2;
 
-const BRANCH_REGEXP                   = /^([^\.]+\.[0-9]+[a-z]*).*/gi;
+const BRANCH_REGEXP = /^([^\.]+\.[0-9]+[a-z]*).*/gi;
 const PREF_EM_CHECK_COMPATIBILITY_BASE = "extensions.checkCompatibility";
-var PREF_EM_CHECK_COMPATIBILITY = MOZ_COMPATIBILITY_NIGHTLY ?
-                                  PREF_EM_CHECK_COMPATIBILITY_BASE + ".nightly" :
-                                  undefined;
+var PREF_EM_CHECK_COMPATIBILITY = MOZ_COMPATIBILITY_NIGHTLY
+  ? PREF_EM_CHECK_COMPATIBILITY_BASE + ".nightly"
+  : undefined;
 
 const VALID_TYPES_REGEXP = /^[\w\-]+$/;
 
 const WEBAPI_INSTALL_HOSTS = ["addons.mozilla.org"];
 const WEBAPI_TEST_INSTALL_HOSTS = [
-  "addons.allizom.org", "addons-dev.allizom.org",
+  "addons.allizom.org",
+  "addons-dev.allizom.org",
   "example.com",
 ];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
-var {AsyncShutdown} = ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+var { AsyncShutdown } = ChromeUtils.import(
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["Element"]);
 
@@ -63,28 +76,31 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Extension: "resource://gre/modules/Extension.jsm",
 });
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "WEBEXT_PERMISSION_PROMPTS",
-                                      PREF_WEBEXT_PERM_PROMPTS, false);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "WEBEXT_PERMISSION_PROMPTS",
+  PREF_WEBEXT_PERM_PROMPTS,
+  false
+);
 
 
 
 
 Services.ppmm.loadProcessScript(
   "data:,ChromeUtils.import('resource://gre/modules/ExtensionProcessScript.jsm')",
-  true);
+  true
+);
 
 const INTEGER = /^[1-9]\d*$/;
 
-var EXPORTED_SYMBOLS = [ "AddonManager", "AddonManagerPrivate", "AMTelemetry" ];
+var EXPORTED_SYMBOLS = ["AddonManager", "AddonManagerPrivate", "AMTelemetry"];
 
 const CATEGORY_PROVIDER_MODULE = "addon-provider-module";
 
 
-const DEFAULT_PROVIDERS = [
-  "resource://gre/modules/addons/XPIProvider.jsm",
-];
+const DEFAULT_PROVIDERS = ["resource://gre/modules/addons/XPIProvider.jsm"];
 
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 
 const PARENT_LOGGER_ID = "addons";
@@ -124,25 +140,28 @@ function providerName(aProvider) {
 
 
 var PrefObserver = {
-    init() {
-      Services.prefs.addObserver(PREF_LOGGING_ENABLED, this);
-      Services.obs.addObserver(this, "xpcom-shutdown");
-      this.observe(null, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, PREF_LOGGING_ENABLED);
-    },
+  init() {
+    Services.prefs.addObserver(PREF_LOGGING_ENABLED, this);
+    Services.obs.addObserver(this, "xpcom-shutdown");
+    this.observe(null, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, PREF_LOGGING_ENABLED);
+  },
 
-    observe(aSubject, aTopic, aData) {
-      if (aTopic == "xpcom-shutdown") {
-        Services.prefs.removeObserver(PREF_LOGGING_ENABLED, this);
-        Services.obs.removeObserver(this, "xpcom-shutdown");
-      } else if (aTopic == NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) {
-        let debugLogEnabled = Services.prefs.getBoolPref(PREF_LOGGING_ENABLED, false);
-        if (debugLogEnabled) {
-          parentLogger.level = Log.Level.Debug;
-        } else {
-          parentLogger.level = Log.Level.Warn;
-        }
+  observe(aSubject, aTopic, aData) {
+    if (aTopic == "xpcom-shutdown") {
+      Services.prefs.removeObserver(PREF_LOGGING_ENABLED, this);
+      Services.obs.removeObserver(this, "xpcom-shutdown");
+    } else if (aTopic == NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) {
+      let debugLogEnabled = Services.prefs.getBoolPref(
+        PREF_LOGGING_ENABLED,
+        false
+      );
+      if (debugLogEnabled) {
+        parentLogger.level = Log.Level.Debug;
+      } else {
+        parentLogger.level = Log.Level.Warn;
       }
-    },
+    }
+  },
 };
 
 PrefObserver.init();
@@ -186,8 +205,9 @@ function reportProviderError(aProvider, aMethod, aError) {
 
 
 function callProvider(aProvider, aMethod, aDefault, ...aArgs) {
-  if (!(aMethod in aProvider))
+  if (!(aMethod in aProvider)) {
     return aDefault;
+  }
 
   try {
     return aProvider[aMethod].apply(aProvider, aArgs);
@@ -228,8 +248,14 @@ function getLocale() {
   return Services.locale.requestedLocale || "en-US";
 }
 
-const WEB_EXPOSED_ADDON_PROPERTIES = [ "id", "version", "type", "name",
-                                       "description", "isActive" ];
+const WEB_EXPOSED_ADDON_PROPERTIES = [
+  "id",
+  "version",
+  "type",
+  "name",
+  "description",
+  "isActive",
+];
 
 function webAPIForAddon(addon) {
   if (!addon) {
@@ -245,7 +271,9 @@ function webAPIForAddon(addon) {
 
   
   result.isEnabled = !addon.userDisabled;
-  result.canUninstall = Boolean(addon.permissions & AddonManager.PERM_CAN_UNINSTALL);
+  result.canUninstall = Boolean(
+    addon.permissions & AddonManager.PERM_CAN_UNINSTALL
+  );
 
   return result;
 }
@@ -273,14 +301,16 @@ BrowserListener.prototype = {
   registered: false,
 
   unregister() {
-    if (!this.registered)
+    if (!this.registered) {
       return;
+    }
     this.registered = false;
 
     Services.obs.removeObserver(this, "message-manager-close");
     
-    if (this.browser.removeProgressListener)
+    if (this.browser.removeProgressListener) {
       this.browser.removeProgressListener(this);
+    }
 
     this.install.removeListener(this);
     this.install = null;
@@ -295,8 +325,9 @@ BrowserListener.prototype = {
   },
 
   observe(subject, topic, data) {
-    if (subject != this.browser.messageManager)
+    if (subject != this.browser.messageManager) {
       return;
+    }
 
     
     
@@ -304,8 +335,12 @@ BrowserListener.prototype = {
   },
 
   onLocationChange(webProgress, request, location) {
-    if (this.browser.contentPrincipal && this.principal.subsumes(this.browser.contentPrincipal))
+    if (
+      this.browser.contentPrincipal &&
+      this.principal.subsumes(this.browser.contentPrincipal)
+    ) {
       return;
+    }
 
     
     this.cancelInstall();
@@ -327,9 +362,11 @@ BrowserListener.prototype = {
     this.unregister();
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsISupportsWeakReference,
-                                          Ci.nsIWebProgressListener,
-                                          Ci.nsIObserver]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsISupportsWeakReference,
+    Ci.nsIWebProgressListener,
+    Ci.nsIObserver,
+  ]),
 };
 
 
@@ -373,15 +410,34 @@ AddonAuthor.prototype = {
 
 
 
-function AddonScreenshot(aURL, aWidth, aHeight, aThumbnailURL,
-                         aThumbnailWidth, aThumbnailHeight, aCaption) {
+function AddonScreenshot(
+  aURL,
+  aWidth,
+  aHeight,
+  aThumbnailURL,
+  aThumbnailWidth,
+  aThumbnailHeight,
+  aCaption
+) {
   this.url = aURL;
-  if (aWidth) this.width = aWidth;
-  if (aHeight) this.height = aHeight;
-  if (aThumbnailURL) this.thumbnailURL = aThumbnailURL;
-  if (aThumbnailWidth) this.thumbnailWidth = aThumbnailWidth;
-  if (aThumbnailHeight) this.thumbnailHeight = aThumbnailHeight;
-  if (aCaption) this.caption = aCaption;
+  if (aWidth) {
+    this.width = aWidth;
+  }
+  if (aHeight) {
+    this.height = aHeight;
+  }
+  if (aThumbnailURL) {
+    this.thumbnailURL = aThumbnailURL;
+  }
+  if (aThumbnailWidth) {
+    this.thumbnailWidth = aThumbnailWidth;
+  }
+  if (aThumbnailHeight) {
+    this.thumbnailHeight = aThumbnailHeight;
+  }
+  if (aCaption) {
+    this.caption = aCaption;
+  }
 }
 
 AddonScreenshot.prototype = {
@@ -415,9 +471,14 @@ AddonScreenshot.prototype = {
 
 
 
-
-function AddonCompatibilityOverride(aType, aMinVersion, aMaxVersion, aAppID,
-                                    aAppMinVersion, aAppMaxVersion) {
+function AddonCompatibilityOverride(
+  aType,
+  aMinVersion,
+  aMaxVersion,
+  aAppID,
+  aAppMinVersion,
+  aAppMaxVersion
+) {
   this.type = aType;
   this.minVersion = aMinVersion;
   this.maxVersion = aMaxVersion;
@@ -479,18 +540,34 @@ AddonCompatibilityOverride.prototype = {
 
 
 
+function AddonType(
+  aID,
+  aLocaleURI,
+  aLocaleKey,
+  aViewType,
+  aUIPriority,
+  aFlags
+) {
+  if (!aID) {
+    throw Components.Exception(
+      "An AddonType must have an ID",
+      Cr.NS_ERROR_INVALID_ARG
+    );
+  }
 
-function AddonType(aID, aLocaleURI, aLocaleKey, aViewType, aUIPriority, aFlags) {
-  if (!aID)
-    throw Components.Exception("An AddonType must have an ID", Cr.NS_ERROR_INVALID_ARG);
+  if (aViewType && aUIPriority === undefined) {
+    throw Components.Exception(
+      "An AddonType with a defined view must have a set UI priority",
+      Cr.NS_ERROR_INVALID_ARG
+    );
+  }
 
-  if (aViewType && aUIPriority === undefined)
-    throw Components.Exception("An AddonType with a defined view must have a set UI priority",
-                               Cr.NS_ERROR_INVALID_ARG);
-
-  if (!aLocaleKey)
-    throw Components.Exception("An AddonType must have a displayable name",
-                               Cr.NS_ERROR_INVALID_ARG);
+  if (!aLocaleKey) {
+    throw Components.Exception(
+      "An AddonType must have a displayable name",
+      Cr.NS_ERROR_INVALID_ARG
+    );
+  }
 
   this.id = aID;
   this.uiPriority = aUIPriority;
@@ -561,12 +638,22 @@ var AddonManagerInternal = {
 
 
   _startProvider(aProvider, aAppChanged, aOldAppVersion, aOldPlatformVersion) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
     logger.debug(`Starting provider: ${providerName(aProvider)}`);
-    callProvider(aProvider, "startup", null, aAppChanged, aOldAppVersion, aOldPlatformVersion);
+    callProvider(
+      aProvider,
+      "startup",
+      null,
+      aAppChanged,
+      aOldAppVersion,
+      aOldPlatformVersion
+    );
     if ("shutdown" in aProvider) {
       let name = providerName(aProvider);
       let AMProviderShutdown = () => {
@@ -580,13 +667,16 @@ var AddonManagerInternal = {
         }
 
         return new Promise((resolve, reject) => {
-            logger.debug("Calling shutdown blocker for " + name);
-            resolve(aProvider.shutdown());
-          })
-          .catch(err => {
-            logger.warn("Failure during shutdown of " + name, err);
-            AddonManagerPrivate.recordException("AMI", "Async shutdown of " + name, err);
-          });
+          logger.debug("Calling shutdown blocker for " + name);
+          resolve(aProvider.shutdown());
+        }).catch(err => {
+          logger.warn("Failure during shutdown of " + name, err);
+          AddonManagerPrivate.recordException(
+            "AMI",
+            "Async shutdown of " + name,
+            err
+          );
+        });
       };
       logger.debug("Registering shutdown blocker for " + name);
       this.providerShutdowns.set(aProvider, AMProviderShutdown);
@@ -600,8 +690,9 @@ var AddonManagerInternal = {
 
   _getProviderByName(aName) {
     for (let provider of this.providers) {
-      if (providerName(provider) == aName)
+      if (providerName(provider) == aName) {
         return provider;
+      }
     }
     return undefined;
   },
@@ -612,8 +703,9 @@ var AddonManagerInternal = {
 
   startup() {
     try {
-      if (gStarted)
+      if (gStarted) {
         return;
+      }
 
       this.recordTimestamp("AMI_startup_begin");
 
@@ -621,8 +713,9 @@ var AddonManagerInternal = {
       AMTelemetry.init();
 
       
-      for (let provider in this.telemetryDetails)
+      for (let provider in this.telemetryDetails) {
         delete this.telemetryDetails[provider];
+      }
 
       let appChanged = undefined;
 
@@ -630,53 +723,78 @@ var AddonManagerInternal = {
       try {
         oldAppVersion = Services.prefs.getCharPref(PREF_EM_LAST_APP_VERSION);
         appChanged = Services.appinfo.version != oldAppVersion;
-      } catch (e) { }
+      } catch (e) {}
 
       gBrowserUpdated = appChanged;
 
-      let oldPlatformVersion = Services.prefs.getCharPref(PREF_EM_LAST_PLATFORM_VERSION, "");
+      let oldPlatformVersion = Services.prefs.getCharPref(
+        PREF_EM_LAST_PLATFORM_VERSION,
+        ""
+      );
 
       if (appChanged !== false) {
         logger.debug("Application has been upgraded");
-        Services.prefs.setCharPref(PREF_EM_LAST_APP_VERSION,
-                                   Services.appinfo.version);
-        Services.prefs.setCharPref(PREF_EM_LAST_PLATFORM_VERSION,
-                                   Services.appinfo.platformVersion);
-        Services.prefs.setIntPref(PREF_BLOCKLIST_PINGCOUNTVERSION,
-                                  (appChanged === undefined ? 0 : -1));
+        Services.prefs.setCharPref(
+          PREF_EM_LAST_APP_VERSION,
+          Services.appinfo.version
+        );
+        Services.prefs.setCharPref(
+          PREF_EM_LAST_PLATFORM_VERSION,
+          Services.appinfo.platformVersion
+        );
+        Services.prefs.setIntPref(
+          PREF_BLOCKLIST_PINGCOUNTVERSION,
+          appChanged === undefined ? 0 : -1
+        );
       }
 
       if (!MOZ_COMPATIBILITY_NIGHTLY) {
-        PREF_EM_CHECK_COMPATIBILITY = PREF_EM_CHECK_COMPATIBILITY_BASE + "." +
-                                      Services.appinfo.version.replace(BRANCH_REGEXP, "$1");
+        PREF_EM_CHECK_COMPATIBILITY =
+          PREF_EM_CHECK_COMPATIBILITY_BASE +
+          "." +
+          Services.appinfo.version.replace(BRANCH_REGEXP, "$1");
       }
 
-      gCheckCompatibility = Services.prefs.getBoolPref(PREF_EM_CHECK_COMPATIBILITY,
-                                                       gCheckCompatibility);
+      gCheckCompatibility = Services.prefs.getBoolPref(
+        PREF_EM_CHECK_COMPATIBILITY,
+        gCheckCompatibility
+      );
       Services.prefs.addObserver(PREF_EM_CHECK_COMPATIBILITY, this);
 
-      gStrictCompatibility = Services.prefs.getBoolPref(PREF_EM_STRICT_COMPATIBILITY,
-                                                        gStrictCompatibility);
+      gStrictCompatibility = Services.prefs.getBoolPref(
+        PREF_EM_STRICT_COMPATIBILITY,
+        gStrictCompatibility
+      );
       Services.prefs.addObserver(PREF_EM_STRICT_COMPATIBILITY, this);
 
       let defaultBranch = Services.prefs.getDefaultBranch("");
-      gCheckUpdateSecurityDefault = defaultBranch.getBoolPref(PREF_EM_CHECK_UPDATE_SECURITY,
-                                                              gCheckUpdateSecurityDefault);
+      gCheckUpdateSecurityDefault = defaultBranch.getBoolPref(
+        PREF_EM_CHECK_UPDATE_SECURITY,
+        gCheckUpdateSecurityDefault
+      );
 
-      gCheckUpdateSecurity = Services.prefs.getBoolPref(PREF_EM_CHECK_UPDATE_SECURITY,
-                                                        gCheckUpdateSecurity);
+      gCheckUpdateSecurity = Services.prefs.getBoolPref(
+        PREF_EM_CHECK_UPDATE_SECURITY,
+        gCheckUpdateSecurity
+      );
       Services.prefs.addObserver(PREF_EM_CHECK_UPDATE_SECURITY, this);
 
-      gUpdateEnabled = Services.prefs.getBoolPref(PREF_EM_UPDATE_ENABLED, gUpdateEnabled);
+      gUpdateEnabled = Services.prefs.getBoolPref(
+        PREF_EM_UPDATE_ENABLED,
+        gUpdateEnabled
+      );
       Services.prefs.addObserver(PREF_EM_UPDATE_ENABLED, this);
 
-      gAutoUpdateDefault = Services.prefs.getBoolPref(PREF_EM_AUTOUPDATE_DEFAULT,
-                                                      gAutoUpdateDefault);
+      gAutoUpdateDefault = Services.prefs.getBoolPref(
+        PREF_EM_AUTOUPDATE_DEFAULT,
+        gAutoUpdateDefault
+      );
       Services.prefs.addObserver(PREF_EM_AUTOUPDATE_DEFAULT, this);
 
-      gWebExtensionsMinPlatformVersion =
-        Services.prefs.getCharPref(PREF_MIN_WEBEXT_PLATFORM_VERSION,
-                                   gWebExtensionsMinPlatformVersion);
+      gWebExtensionsMinPlatformVersion = Services.prefs.getCharPref(
+        PREF_MIN_WEBEXT_PLATFORM_VERSION,
+        gWebExtensionsMinPlatformVersion
+      );
       Services.prefs.addObserver(PREF_MIN_WEBEXT_PLATFORM_VERSION, this);
 
       
@@ -687,57 +805,97 @@ var AddonManagerInternal = {
           
           
           let syms = Object.keys(scope);
-          if ((syms.length < 1) ||
-              (typeof scope[syms[0]].startup != "function")) {
+          if (syms.length < 1 || typeof scope[syms[0]].startup != "function") {
             logger.warn("Provider " + url + " has no startup()");
-            AddonManagerPrivate.recordException("AMI", "provider " + url, "no startup()");
+            AddonManagerPrivate.recordException(
+              "AMI",
+              "provider " + url,
+              "no startup()"
+            );
           }
-          logger.debug("Loaded provider scope for " + url + ": " + Object.keys(scope).toSource());
+          logger.debug(
+            "Loaded provider scope for " +
+              url +
+              ": " +
+              Object.keys(scope).toSource()
+          );
         } catch (e) {
-          AddonManagerPrivate.recordException("AMI", "provider " + url + " load failed", e);
-          logger.error("Exception loading default provider \"" + url + "\"", e);
+          AddonManagerPrivate.recordException(
+            "AMI",
+            "provider " + url + " load failed",
+            e
+          );
+          logger.error('Exception loading default provider "' + url + '"', e);
         }
       }
 
       
-      for (let {entry, value: url} of Services.catMan.enumerateCategory(CATEGORY_PROVIDER_MODULE)) {
+      for (let { entry, value: url } of Services.catMan.enumerateCategory(
+        CATEGORY_PROVIDER_MODULE
+      )) {
         try {
           ChromeUtils.import(url, {});
           logger.debug(`Loaded provider scope for ${url}`);
         } catch (e) {
-          AddonManagerPrivate.recordException("AMI", "provider " + url + " load failed", e);
-          logger.error("Exception loading provider " + entry + " from category \"" +
-                url + "\"", e);
+          AddonManagerPrivate.recordException(
+            "AMI",
+            "provider " + url + " load failed",
+            e
+          );
+          logger.error(
+            "Exception loading provider " +
+              entry +
+              ' from category "' +
+              url +
+              '"',
+            e
+          );
         }
       }
 
       
-      gBeforeShutdownBarrier = new AsyncShutdown.Barrier("AddonManager: Waiting to start provider shutdown.");
-      gFinalShutdownBarrier = new AsyncShutdown.Barrier("AddonManager: Waiting for providers to shut down.");
-      AsyncShutdown.profileBeforeChange.addBlocker("AddonManager: shutting down.",
-                                                   this.shutdownManager.bind(this),
-                                                   {fetchState: this.shutdownState.bind(this)});
+      gBeforeShutdownBarrier = new AsyncShutdown.Barrier(
+        "AddonManager: Waiting to start provider shutdown."
+      );
+      gFinalShutdownBarrier = new AsyncShutdown.Barrier(
+        "AddonManager: Waiting for providers to shut down."
+      );
+      AsyncShutdown.profileBeforeChange.addBlocker(
+        "AddonManager: shutting down.",
+        this.shutdownManager.bind(this),
+        { fetchState: this.shutdownState.bind(this) }
+      );
 
       
       gStarted = true;
 
       for (let provider of this.pendingProviders) {
-        this._startProvider(provider, appChanged, oldAppVersion, oldPlatformVersion);
+        this._startProvider(
+          provider,
+          appChanged,
+          oldAppVersion,
+          oldPlatformVersion
+        );
       }
 
       
       if (appChanged === undefined) {
-        for (let type in this.startupChanges)
+        for (let type in this.startupChanges) {
           delete this.startupChanges[type];
+        }
       }
 
       
       
-      let { RemotePages } =
-        ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm");
+      let { RemotePages } = ChromeUtils.import(
+        "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
+      );
 
       gPluginPageListener = new RemotePages("about:plugins");
-      gPluginPageListener.addMessageListener("RequestPlugins", this.requestPlugins);
+      gPluginPageListener.addMessageListener(
+        "RequestPlugins",
+        this.requestPlugins
+      );
 
       gStartupComplete = true;
       this.recordTimestamp("AMI_startup_end");
@@ -757,13 +915,19 @@ var AddonManagerInternal = {
 
 
   registerProvider(aProvider, aTypes) {
-    if (!aProvider || typeof aProvider != "object")
-      throw Components.Exception("aProvider must be specified",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aProvider || typeof aProvider != "object") {
+      throw Components.Exception(
+        "aProvider must be specified",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aTypes && !Array.isArray(aTypes))
-      throw Components.Exception("aTypes must be an array or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aTypes && !Array.isArray(aTypes)) {
+      throw Components.Exception(
+        "aTypes must be an array or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.pendingProviders.add(aProvider);
 
@@ -781,8 +945,9 @@ var AddonManagerInternal = {
           };
 
           let typeListeners = new Set(this.typeListeners);
-          for (let listener of typeListeners)
+          for (let listener of typeListeners) {
             safeCall(() => listener.onTypeAdded(type));
+          }
         } else {
           this.types[type.id].providers.push(aProvider);
         }
@@ -805,9 +970,12 @@ var AddonManagerInternal = {
 
 
   unregisterProvider(aProvider) {
-    if (!aProvider || typeof aProvider != "object")
-      throw Components.Exception("aProvider must be specified",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aProvider || typeof aProvider != "object") {
+      throw Components.Exception(
+        "aProvider must be specified",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.providers.delete(aProvider);
     
@@ -816,14 +984,17 @@ var AddonManagerInternal = {
     this.pendingProviders.delete(aProvider);
 
     for (let type in this.types) {
-      this.types[type].providers = this.types[type].providers.filter(p => p != aProvider);
+      this.types[type].providers = this.types[type].providers.filter(
+        p => p != aProvider
+      );
       if (this.types[type].providers.length == 0) {
         let oldType = this.types[type].type;
         delete this.types[type];
 
         let typeListeners = new Set(this.typeListeners);
-        for (let listener of typeListeners)
+        for (let listener of typeListeners) {
           safeCall(() => listener.onTypeRemoved(oldType));
+        }
       }
     }
 
@@ -832,7 +1003,9 @@ var AddonManagerInternal = {
     
     
     if (gStarted && !gShutdownInProgress) {
-      logger.debug("Unregistering shutdown blocker for " + providerName(aProvider));
+      logger.debug(
+        "Unregistering shutdown blocker for " + providerName(aProvider)
+      );
       let shutter = this.providerShutdowns.get(aProvider);
       if (shutter) {
         this.providerShutdowns.delete(aProvider);
@@ -859,13 +1032,17 @@ var AddonManagerInternal = {
 
   markProviderSafe(aProvider) {
     if (!gStarted) {
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
     }
 
     if (!aProvider || typeof aProvider != "object") {
-      throw Components.Exception("aProvider must be specified",
-                                 Cr.NS_ERROR_INVALID_ARG);
+      throw Components.Exception(
+        "aProvider must be specified",
+        Cr.NS_ERROR_INVALID_ARG
+      );
     }
 
     if (!this.pendingProviders.has(aProvider)) {
@@ -888,15 +1065,19 @@ var AddonManagerInternal = {
 
 
   callProviders(aMethod, ...aArgs) {
-    if (!aMethod || typeof aMethod != "string")
-      throw Components.Exception("aMethod must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMethod || typeof aMethod != "string") {
+      throw Components.Exception(
+        "aMethod must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let providers = [...this.providers];
     for (let provider of providers) {
       try {
-        if (aMethod in provider)
+        if (aMethod in provider) {
           provider[aMethod].apply(provider, aArgs);
+        }
       } catch (e) {
         reportProviderError(provider, aMethod, e);
       }
@@ -910,7 +1091,7 @@ var AddonManagerInternal = {
     let state = [];
     for (let barrier of [gBeforeShutdownBarrier, gFinalShutdownBarrier]) {
       if (barrier) {
-        state.push({name: barrier.client.name, state: barrier.state});
+        state.push({ name: barrier.client.name, state: barrier.state });
       }
     }
     state.push({
@@ -956,7 +1137,11 @@ var AddonManagerInternal = {
       } catch (err) {
         savedError = err;
         logger.error("Failure during wait for shutdown barrier", err);
-        AddonManagerPrivate.recordException("AMI", "Async shutdown of AddonManager providers", err);
+        AddonManagerPrivate.recordException(
+          "AMI",
+          "Async shutdown of AddonManager providers",
+          err
+        );
       }
     }
 
@@ -968,7 +1153,11 @@ var AddonManagerInternal = {
     } catch (err) {
       savedError = err;
       logger.error("Failure during AddonRepository shutdown", err);
-      AddonManagerPrivate.recordException("AMI", "Async shutdown of AddonRepository", err);
+      AddonManagerPrivate.recordException(
+        "AMI",
+        "Async shutdown of AddonRepository",
+        err
+      );
     }
 
     logger.debug("Async provider shutdown done");
@@ -977,8 +1166,9 @@ var AddonManagerInternal = {
     this.addonListeners.clear();
     this.typeListeners.clear();
     this.providerShutdowns.clear();
-    for (let type in this.startupChanges)
+    for (let type in this.startupChanges) {
       delete this.startupChanges[type];
+    }
     gStarted = false;
     gStartupComplete = false;
     gFinalShutdownBarrier = null;
@@ -991,9 +1181,16 @@ var AddonManagerInternal = {
 
   async requestPlugins({ target: port }) {
     
-    const NEEDED_PROPS = ["name", "pluginLibraries", "pluginFullpath", "version",
-                          "isActive", "blocklistState", "description",
-                          "pluginMimeTypes"];
+    const NEEDED_PROPS = [
+      "name",
+      "pluginLibraries",
+      "pluginFullpath",
+      "version",
+      "isActive",
+      "blocklistState",
+      "description",
+      "pluginMimeTypes",
+    ];
     function filterProperties(plugin) {
       let filtered = {};
       for (let prop of NEEDED_PROPS) {
@@ -1015,51 +1212,71 @@ var AddonManagerInternal = {
     switch (aData) {
       case PREF_EM_CHECK_COMPATIBILITY: {
         let oldValue = gCheckCompatibility;
-        gCheckCompatibility = Services.prefs.getBoolPref(PREF_EM_CHECK_COMPATIBILITY, true);
+        gCheckCompatibility = Services.prefs.getBoolPref(
+          PREF_EM_CHECK_COMPATIBILITY,
+          true
+        );
 
         this.callManagerListeners("onCompatibilityModeChanged");
 
-        if (gCheckCompatibility != oldValue)
+        if (gCheckCompatibility != oldValue) {
           this.updateAddonAppDisabledStates();
+        }
 
         break;
       }
       case PREF_EM_STRICT_COMPATIBILITY: {
         let oldValue = gStrictCompatibility;
-        gStrictCompatibility = Services.prefs.getBoolPref(PREF_EM_STRICT_COMPATIBILITY, true);
+        gStrictCompatibility = Services.prefs.getBoolPref(
+          PREF_EM_STRICT_COMPATIBILITY,
+          true
+        );
 
         this.callManagerListeners("onCompatibilityModeChanged");
 
-        if (gStrictCompatibility != oldValue)
+        if (gStrictCompatibility != oldValue) {
           this.updateAddonAppDisabledStates();
+        }
 
         break;
       }
       case PREF_EM_CHECK_UPDATE_SECURITY: {
         let oldValue = gCheckUpdateSecurity;
-        gCheckUpdateSecurity = Services.prefs.getBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, true);
+        gCheckUpdateSecurity = Services.prefs.getBoolPref(
+          PREF_EM_CHECK_UPDATE_SECURITY,
+          true
+        );
 
         this.callManagerListeners("onCheckUpdateSecurityChanged");
 
-        if (gCheckUpdateSecurity != oldValue)
+        if (gCheckUpdateSecurity != oldValue) {
           this.updateAddonAppDisabledStates();
+        }
 
         break;
       }
       case PREF_EM_UPDATE_ENABLED: {
-        gUpdateEnabled = Services.prefs.getBoolPref(PREF_EM_UPDATE_ENABLED, true);
+        gUpdateEnabled = Services.prefs.getBoolPref(
+          PREF_EM_UPDATE_ENABLED,
+          true
+        );
 
         this.callManagerListeners("onUpdateModeChanged");
         break;
       }
       case PREF_EM_AUTOUPDATE_DEFAULT: {
-        gAutoUpdateDefault = Services.prefs.getBoolPref(PREF_EM_AUTOUPDATE_DEFAULT, true);
+        gAutoUpdateDefault = Services.prefs.getBoolPref(
+          PREF_EM_AUTOUPDATE_DEFAULT,
+          true
+        );
 
         this.callManagerListeners("onUpdateModeChanged");
         break;
       }
       case PREF_MIN_WEBEXT_PLATFORM_VERSION: {
-        gWebExtensionsMinPlatformVersion = Services.prefs.getCharPref(PREF_MIN_WEBEXT_PLATFORM_VERSION);
+        gWebExtensionsMinPlatformVersion = Services.prefs.getCharPref(
+          PREF_MIN_WEBEXT_PLATFORM_VERSION
+        );
         break;
       }
     }
@@ -1078,42 +1295,58 @@ var AddonManagerInternal = {
 
 
   escapeAddonURI(aAddon, aUri, aAppVersion) {
-    if (!aAddon || typeof aAddon != "object")
-      throw Components.Exception("aAddon must be an Addon object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aAddon || typeof aAddon != "object") {
+      throw Components.Exception(
+        "aAddon must be an Addon object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aUri || typeof aUri != "string")
-      throw Components.Exception("aUri must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aUri || typeof aUri != "string") {
+      throw Components.Exception(
+        "aUri must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aAppVersion && typeof aAppVersion != "string")
-      throw Components.Exception("aAppVersion must be a string or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aAppVersion && typeof aAppVersion != "string") {
+      throw Components.Exception(
+        "aAppVersion must be a string or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    var addonStatus = aAddon.userDisabled || aAddon.softDisabled ? "userDisabled"
-                                                                 : "userEnabled";
+    var addonStatus =
+      aAddon.userDisabled || aAddon.softDisabled
+        ? "userDisabled"
+        : "userEnabled";
 
-    if (!aAddon.isCompatible)
+    if (!aAddon.isCompatible) {
       addonStatus += ",incompatible";
+    }
 
-    let {blocklistState} = aAddon;
-    if (blocklistState == Ci.nsIBlocklistService.STATE_BLOCKED)
+    let { blocklistState } = aAddon;
+    if (blocklistState == Ci.nsIBlocklistService.STATE_BLOCKED) {
       addonStatus += ",blocklisted";
-    if (blocklistState == Ci.nsIBlocklistService.STATE_SOFTBLOCKED)
+    }
+    if (blocklistState == Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
       addonStatus += ",softblocked";
+    }
 
-    let params = new Map(Object.entries({
-      ITEM_ID: aAddon.id,
-      ITEM_VERSION: aAddon.version,
-      ITEM_STATUS: addonStatus,
-      APP_ID: Services.appinfo.ID,
-      APP_VERSION: aAppVersion ? aAppVersion : Services.appinfo.version,
-      REQ_VERSION: UPDATE_REQUEST_VERSION,
-      APP_OS: Services.appinfo.OS,
-      APP_ABI: Services.appinfo.XPCOMABI,
-      APP_LOCALE: getLocale(),
-      CURRENT_APP_VERSION: Services.appinfo.version,
-    }));
+    let params = new Map(
+      Object.entries({
+        ITEM_ID: aAddon.id,
+        ITEM_VERSION: aAddon.version,
+        ITEM_STATUS: addonStatus,
+        APP_ID: Services.appinfo.ID,
+        APP_VERSION: aAppVersion ? aAppVersion : Services.appinfo.version,
+        REQ_VERSION: UPDATE_REQUEST_VERSION,
+        APP_OS: Services.appinfo.OS,
+        APP_ABI: Services.appinfo.XPCOMABI,
+        APP_LOCALE: getLocale(),
+        CURRENT_APP_VERSION: Services.appinfo.version,
+      })
+    );
 
     let uri = aUri.replace(/%([A-Z_]+)%/g, (m0, m1) => params.get(m1) || m0);
 
@@ -1138,14 +1371,17 @@ var AddonManagerInternal = {
     }
 
     return new Promise((resolve, reject) => {
-      let subject = {wrappedJSObject: {
-        addon: info.addon,
-        permissions: difference,
-        resolve, reject,
-        
-        
-        install: info.install,
-      }};
+      let subject = {
+        wrappedJSObject: {
+          addon: info.addon,
+          permissions: difference,
+          resolve,
+          reject,
+          
+          
+          install: info.install,
+        },
+      };
       Services.obs.notifyObservers(subject, "webextension-update-permissions");
     });
   },
@@ -1168,9 +1404,12 @@ var AddonManagerInternal = {
 
 
   backgroundUpdateCheck() {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
     let buPromise = (async () => {
       logger.debug("Background update check beginning");
@@ -1195,42 +1434,54 @@ var AddonManagerInternal = {
             continue;
           }
 
-          updates.push(new Promise((resolve, reject) => {
-            addon.findUpdates({
-              onUpdateAvailable(aAddon, aInstall) {
-                
-                
-                logger.debug("Found update for add-on ${id}", aAddon);
-                if (aAddon.permissions & AddonManager.PERM_CAN_UPGRADE &&
-                    AddonManager.shouldAutoUpdate(aAddon)) {
-                  
-                  
-                  logger.debug(`Starting upgrade install of ${aAddon.id}`);
-                  if (WEBEXT_PERMISSION_PROMPTS) {
-                    aInstall.promptHandler = (...args) => AddonManagerInternal._updatePromptHandler(...args);
-                  }
-                  aInstall.install();
-                }
-              },
+          updates.push(
+            new Promise((resolve, reject) => {
+              addon.findUpdates(
+                {
+                  onUpdateAvailable(aAddon, aInstall) {
+                    
+                    
+                    logger.debug("Found update for add-on ${id}", aAddon);
+                    if (
+                      aAddon.permissions & AddonManager.PERM_CAN_UPGRADE &&
+                      AddonManager.shouldAutoUpdate(aAddon)
+                    ) {
+                      
+                      
+                      logger.debug(`Starting upgrade install of ${aAddon.id}`);
+                      if (WEBEXT_PERMISSION_PROMPTS) {
+                        aInstall.promptHandler = (...args) =>
+                          AddonManagerInternal._updatePromptHandler(...args);
+                      }
+                      aInstall.install();
+                    }
+                  },
 
-              onUpdateFinished: aAddon => { logger.debug("onUpdateFinished for ${id}", aAddon); resolve(); },
-            }, AddonManager.UPDATE_WHEN_PERIODIC_UPDATE);
-          }));
+                  onUpdateFinished: aAddon => {
+                    logger.debug("onUpdateFinished for ${id}", aAddon);
+                    resolve();
+                  },
+                },
+                AddonManager.UPDATE_WHEN_PERIODIC_UPDATE
+              );
+            })
+          );
         }
         await Promise.all(updates);
       }
 
       if (AddonManagerInternal.systemUpdateEnabled()) {
         try {
-          await AddonManagerInternal._getProviderByName("XPIProvider").updateSystemAddons();
+          await AddonManagerInternal._getProviderByName(
+            "XPIProvider"
+          ).updateSystemAddons();
         } catch (e) {
           logger.warn("Failed to update system addons", e);
         }
       }
 
       logger.debug("Background update check complete");
-      Services.obs.notifyObservers(null,
-                                   "addons-background-update-complete");
+      Services.obs.notifyObservers(null, "addons-background-update-complete");
     })();
     
     buPromise.catch(e => logger.warn("Error in background update", e));
@@ -1250,24 +1501,33 @@ var AddonManagerInternal = {
 
 
   addStartupChange(aType, aID) {
-    if (!aType || typeof aType != "string")
-      throw Components.Exception("aType must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aType || typeof aType != "string") {
+      throw Components.Exception(
+        "aType must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aID || typeof aID != "string")
-      throw Components.Exception("aID must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aID || typeof aID != "string") {
+      throw Components.Exception(
+        "aID must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (gStartupComplete)
+    if (gStartupComplete) {
       return;
+    }
     logger.debug("Registering startup change '" + aType + "' for " + aID);
 
     
-    for (let type in this.startupChanges)
+    for (let type in this.startupChanges) {
       this.removeStartupChange(type, aID);
+    }
 
-    if (!(aType in this.startupChanges))
+    if (!(aType in this.startupChanges)) {
       this.startupChanges[aType] = [];
+    }
     this.startupChanges[aType].push(aID);
   },
 
@@ -1280,21 +1540,31 @@ var AddonManagerInternal = {
 
 
   removeStartupChange(aType, aID) {
-    if (!aType || typeof aType != "string")
-      throw Components.Exception("aType must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aType || typeof aType != "string") {
+      throw Components.Exception(
+        "aType must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aID || typeof aID != "string")
-      throw Components.Exception("aID must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aID || typeof aID != "string") {
+      throw Components.Exception(
+        "aID must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (gStartupComplete)
+    if (gStartupComplete) {
       return;
+    }
 
-    if (!(aType in this.startupChanges))
+    if (!(aType in this.startupChanges)) {
       return;
+    }
 
-    this.startupChanges[aType] = this.startupChanges[aType].filter(aItem => aItem != aID);
+    this.startupChanges[aType] = this.startupChanges[aType].filter(
+      aItem => aItem != aID
+    );
   },
 
   
@@ -1305,21 +1575,31 @@ var AddonManagerInternal = {
 
 
   callManagerListeners(aMethod, ...aArgs) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aMethod || typeof aMethod != "string")
-      throw Components.Exception("aMethod must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMethod || typeof aMethod != "string") {
+      throw Components.Exception(
+        "aMethod must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let managerListeners = new Set(this.managerListeners);
     for (let listener of managerListeners) {
       try {
-        if (aMethod in listener)
+        if (aMethod in listener) {
           listener[aMethod].apply(listener, aArgs);
+        }
       } catch (e) {
-        logger.warn("AddonManagerListener threw exception when calling " + aMethod, e);
+        logger.warn(
+          "AddonManagerListener threw exception when calling " + aMethod,
+          e
+        );
       }
     }
   },
@@ -1334,35 +1614,50 @@ var AddonManagerInternal = {
 
 
 
-  callInstallListeners(aMethod,
-                                 aExtraListeners, ...aArgs) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+  callInstallListeners(aMethod, aExtraListeners, ...aArgs) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aMethod || typeof aMethod != "string")
-      throw Components.Exception("aMethod must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMethod || typeof aMethod != "string") {
+      throw Components.Exception(
+        "aMethod must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aExtraListeners && !Array.isArray(aExtraListeners))
-      throw Components.Exception("aExtraListeners must be an array or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aExtraListeners && !Array.isArray(aExtraListeners)) {
+      throw Components.Exception(
+        "aExtraListeners must be an array or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let result = true;
     let listeners;
-    if (aExtraListeners)
-      listeners = new Set(aExtraListeners.concat(Array.from(this.installListeners)));
-    else
+    if (aExtraListeners) {
+      listeners = new Set(
+        aExtraListeners.concat(Array.from(this.installListeners))
+      );
+    } else {
       listeners = new Set(this.installListeners);
+    }
 
     for (let listener of listeners) {
       try {
         if (aMethod in listener) {
-          if (listener[aMethod].apply(listener, aArgs) === false)
+          if (listener[aMethod].apply(listener, aArgs) === false) {
             result = false;
+          }
         }
       } catch (e) {
-        logger.warn("InstallListener threw exception when calling " + aMethod, e);
+        logger.warn(
+          "InstallListener threw exception when calling " + aMethod,
+          e
+        );
       }
     }
     return result;
@@ -1376,19 +1671,26 @@ var AddonManagerInternal = {
 
 
   callAddonListeners(aMethod, ...aArgs) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aMethod || typeof aMethod != "string")
-      throw Components.Exception("aMethod must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMethod || typeof aMethod != "string") {
+      throw Components.Exception(
+        "aMethod must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let addonListeners = new Set(this.addonListeners);
     for (let listener of addonListeners) {
       try {
-        if (aMethod in listener)
+        if (aMethod in listener) {
           listener[aMethod].apply(listener, aArgs);
+        }
       } catch (e) {
         logger.warn("AddonListener threw exception when calling " + aMethod, e);
       }
@@ -1409,17 +1711,26 @@ var AddonManagerInternal = {
 
 
   async notifyAddonChanged(aID, aType, aPendingRestart) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (aID && typeof aID != "string")
-      throw Components.Exception("aID must be a string or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aID && typeof aID != "string") {
+      throw Components.Exception(
+        "aID must be a string or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aType || typeof aType != "string")
-      throw Components.Exception("aType must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aType || typeof aType != "string") {
+      throw Components.Exception(
+        "aType must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     
     
@@ -1434,7 +1745,14 @@ var AddonManagerInternal = {
     
     let providers = [...this.providers, ...this.pendingProviders];
     for (let provider of providers) {
-      let result = callProvider(provider, "addonChanged", null, aID, aType, aPendingRestart);
+      let result = callProvider(
+        provider,
+        "addonChanged",
+        null,
+        aID,
+        aType,
+        aPendingRestart
+      );
       if (result) {
         await result;
       }
@@ -1447,9 +1765,12 @@ var AddonManagerInternal = {
 
 
   updateAddonAppDisabledStates() {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
     this.callProviders("updateAddonAppDisabledStates");
   },
@@ -1459,9 +1780,12 @@ var AddonManagerInternal = {
 
 
   updateAddonRepositoryData() {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
     return (async () => {
       for (let provider of this.providers) {
@@ -1499,43 +1823,68 @@ var AddonManagerInternal = {
 
 
   async getInstallForURL(aUrl, aOptions = {}) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aUrl || typeof aUrl != "string")
-      throw Components.Exception("aURL must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aUrl || typeof aUrl != "string") {
+      throw Components.Exception(
+        "aURL must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aOptions.hash && typeof aOptions.hash != "string")
-      throw Components.Exception("hash must be a string or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aOptions.hash && typeof aOptions.hash != "string") {
+      throw Components.Exception(
+        "hash must be a string or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aOptions.name && typeof aOptions.name != "string")
-      throw Components.Exception("name must be a string or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aOptions.name && typeof aOptions.name != "string") {
+      throw Components.Exception(
+        "name must be a string or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     if (aOptions.icons) {
-      if (typeof aOptions.icons == "string")
+      if (typeof aOptions.icons == "string") {
         aOptions.icons = { "32": aOptions.icons };
-      else if (typeof aOptions.icons != "object")
-        throw Components.Exception("icons must be a string, an object or null",
-                                   Cr.NS_ERROR_INVALID_ARG);
+      } else if (typeof aOptions.icons != "object") {
+        throw Components.Exception(
+          "icons must be a string, an object or null",
+          Cr.NS_ERROR_INVALID_ARG
+        );
+      }
     } else {
       aOptions.icons = {};
     }
 
-    if (aOptions.version && typeof aOptions.version != "string")
-      throw Components.Exception("version must be a string or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aOptions.version && typeof aOptions.version != "string") {
+      throw Components.Exception(
+        "version must be a string or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aOptions.browser && !Element.isInstance(aOptions.browser))
-      throw Components.Exception("aOptions.browser must be an Element or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aOptions.browser && !Element.isInstance(aOptions.browser)) {
+      throw Components.Exception(
+        "aOptions.browser must be an Element or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     for (let provider of this.providers) {
-      let install = await promiseCallProvider(provider, "getInstallForURL",
-                                              aUrl, aOptions);
+      let install = await promiseCallProvider(
+        provider,
+        "getInstallForURL",
+        aUrl,
+        aOptions
+      );
       if (install) {
         return install;
       }
@@ -1557,25 +1906,39 @@ var AddonManagerInternal = {
 
 
   getInstallForFile(aFile, aMimetype, aTelemetryInfo) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!(aFile instanceof Ci.nsIFile))
-      throw Components.Exception("aFile must be a nsIFile",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!(aFile instanceof Ci.nsIFile)) {
+      throw Components.Exception(
+        "aFile must be a nsIFile",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aMimetype && typeof aMimetype != "string")
-      throw Components.Exception("aMimetype must be a string or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aMimetype && typeof aMimetype != "string") {
+      throw Components.Exception(
+        "aMimetype must be a string or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     return (async () => {
       for (let provider of this.providers) {
         let install = await promiseCallProvider(
-          provider, "getInstallForFile", aFile, aTelemetryInfo);
+          provider,
+          "getInstallForFile",
+          aFile,
+          aTelemetryInfo
+        );
 
-        if (install)
+        if (install) {
           return install;
+        }
       }
 
       return null;
@@ -1591,23 +1954,33 @@ var AddonManagerInternal = {
 
 
   getInstallsByTypes(aTypes) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (aTypes && !Array.isArray(aTypes))
-      throw Components.Exception("aTypes must be an array or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aTypes && !Array.isArray(aTypes)) {
+      throw Components.Exception(
+        "aTypes must be an array or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     return (async () => {
       let installs = [];
 
       for (let provider of this.providers) {
         let providerInstalls = await promiseCallProvider(
-          provider, "getInstallsByTypes", aTypes);
+          provider,
+          "getInstallsByTypes",
+          aTypes
+        );
 
-        if (providerInstalls)
+        if (providerInstalls) {
           installs.push(...providerInstalls);
+        }
       }
 
       return installs;
@@ -1618,9 +1991,12 @@ var AddonManagerInternal = {
 
 
   getAllInstalls() {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
     return this.getInstallsByTypes(null);
   },
@@ -1633,19 +2009,28 @@ var AddonManagerInternal = {
 
 
   isInstallEnabled(aMimetype) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aMimetype || typeof aMimetype != "string")
-      throw Components.Exception("aMimetype must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMimetype || typeof aMimetype != "string") {
+      throw Components.Exception(
+        "aMimetype must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let providers = [...this.providers];
     for (let provider of providers) {
-      if (callProvider(provider, "supportsMimetype", false, aMimetype) &&
-          callProvider(provider, "isInstallEnabled"))
+      if (
+        callProvider(provider, "supportsMimetype", false, aMimetype) &&
+        callProvider(provider, "isInstallEnabled")
+      ) {
         return true;
+      }
     }
     return false;
   },
@@ -1661,27 +2046,48 @@ var AddonManagerInternal = {
 
 
   isInstallAllowed(aMimetype, aInstallingPrincipal) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aMimetype || typeof aMimetype != "string")
-      throw Components.Exception("aMimetype must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMimetype || typeof aMimetype != "string") {
+      throw Components.Exception(
+        "aMimetype must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aInstallingPrincipal || !(aInstallingPrincipal instanceof Ci.nsIPrincipal))
-      throw Components.Exception("aInstallingPrincipal must be a nsIPrincipal",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (
+      !aInstallingPrincipal ||
+      !(aInstallingPrincipal instanceof Ci.nsIPrincipal)
+    ) {
+      throw Components.Exception(
+        "aInstallingPrincipal must be a nsIPrincipal",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (this.isInstallAllowedByPolicy(aInstallingPrincipal, null, true )) {
+    if (
+      this.isInstallAllowedByPolicy(
+        aInstallingPrincipal,
+        null,
+        true 
+      )
+    ) {
       return true;
     }
 
     let providers = [...this.providers];
     for (let provider of providers) {
-      if (callProvider(provider, "supportsMimetype", false, aMimetype) &&
-          callProvider(provider, "isInstallAllowed", null, aInstallingPrincipal))
+      if (
+        callProvider(provider, "supportsMimetype", false, aMimetype) &&
+        callProvider(provider, "isInstallAllowed", null, aInstallingPrincipal)
+      ) {
         return true;
+      }
     }
     return false;
   },
@@ -1709,9 +2115,13 @@ var AddonManagerInternal = {
     if (Services.policies) {
       let extensionSettings = Services.policies.getExtensionSettings("*");
       if (extensionSettings && extensionSettings.install_sources) {
-        if ((!aInstall || Services.policies.allowedInstallSource(aInstall.sourceURI)) &&
-            (!aInstallingPrincipal || !aInstallingPrincipal.URI ||
-            Services.policies.allowedInstallSource(aInstallingPrincipal.URI))) {
+        if (
+          (!aInstall ||
+            Services.policies.allowedInstallSource(aInstall.sourceURI)) &&
+          (!aInstallingPrincipal ||
+            !aInstallingPrincipal.URI ||
+            Services.policies.allowedInstallSource(aInstallingPrincipal.URI))
+        ) {
           return true;
         }
         return false;
@@ -1737,9 +2147,17 @@ var AddonManagerInternal = {
 
     
     
-    if (install.state == AddonManager.STATE_DOWNLOADED && install.addon.appDisabled) {
+    if (
+      install.state == AddonManager.STATE_DOWNLOADED &&
+      install.addon.appDisabled
+    ) {
       install.cancel();
-      this.installNotifyObservers("addon-install-failed", browser, url, install);
+      this.installNotifyObservers(
+        "addon-install-failed",
+        browser,
+        url,
+        install
+      );
       return;
     }
 
@@ -1751,7 +2169,12 @@ var AddonManagerInternal = {
 
       onDownloadFailed() {
         install.removeListener(listener);
-        self.installNotifyObservers("addon-install-failed", browser, url, install);
+        self.installNotifyObservers(
+          "addon-install-failed",
+          browser,
+          url,
+          install
+        );
       },
 
       onDownloadEnded() {
@@ -1759,7 +2182,12 @@ var AddonManagerInternal = {
           
           install.removeListener(listener);
           install.cancel();
-          self.installNotifyObservers("addon-install-failed", browser, url, install);
+          self.installNotifyObservers(
+            "addon-install-failed",
+            browser,
+            url,
+            install
+          );
         }
       },
 
@@ -1769,7 +2197,12 @@ var AddonManagerInternal = {
 
       onInstallFailed() {
         install.removeListener(listener);
-        self.installNotifyObservers("addon-install-failed", browser, url, install);
+        self.installNotifyObservers(
+          "addon-install-failed",
+          browser,
+          url,
+          install
+        );
       },
 
       onInstallEnded() {
@@ -1777,19 +2210,29 @@ var AddonManagerInternal = {
 
         
         
-        if (install.addon.type == "theme" &&
-            !!install.addon.userDisabled &&
-            !install.addon.appDisabled) {
+        if (
+          install.addon.type == "theme" &&
+          !!install.addon.userDisabled &&
+          !install.addon.appDisabled
+        ) {
           install.addon.enable();
         }
 
-        let needsRestart = (install.addon.pendingOperations != AddonManager.PENDING_NONE);
+        let needsRestart =
+          install.addon.pendingOperations != AddonManager.PENDING_NONE;
 
         if (WEBEXT_PERMISSION_PROMPTS && !needsRestart) {
-          let subject = {wrappedJSObject: {target: browser, addon: install.addon}};
+          let subject = {
+            wrappedJSObject: { target: browser, addon: install.addon },
+          };
           Services.obs.notifyObservers(subject, "webextension-install-notify");
         } else {
-          self.installNotifyObservers("addon-install-complete", browser, url, install);
+          self.installNotifyObservers(
+            "addon-install-complete",
+            browser,
+            url,
+            install
+          );
         }
       },
     };
@@ -1813,23 +2256,37 @@ var AddonManagerInternal = {
 
 
 
-  installAddonFromWebpage(aMimetype, aBrowser,
-                                    aInstallingPrincipal, aInstall) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+  installAddonFromWebpage(aMimetype, aBrowser, aInstallingPrincipal, aInstall) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aMimetype || typeof aMimetype != "string")
-      throw Components.Exception("aMimetype must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aMimetype || typeof aMimetype != "string") {
+      throw Components.Exception(
+        "aMimetype must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (aBrowser && !Element.isInstance(aBrowser))
-      throw Components.Exception("aSource must be an Element, or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aBrowser && !Element.isInstance(aBrowser)) {
+      throw Components.Exception(
+        "aSource must be an Element, or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aInstallingPrincipal || !(aInstallingPrincipal instanceof Ci.nsIPrincipal))
-      throw Components.Exception("aInstallingPrincipal must be a nsIPrincipal",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (
+      !aInstallingPrincipal ||
+      !(aInstallingPrincipal instanceof Ci.nsIPrincipal)
+    ) {
+      throw Components.Exception(
+        "aInstallingPrincipal must be a nsIPrincipal",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     
     
@@ -1838,8 +2295,9 @@ var AddonManagerInternal = {
     
     let topBrowser = aBrowser;
     let docShell = aBrowser.ownerGlobal.docShell;
-    if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent)
+    if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent) {
       topBrowser = docShell.chromeEventHandler;
+    }
 
     try {
       if (topBrowser.ownerGlobal.fullScreen) {
@@ -1848,22 +2306,41 @@ var AddonManagerInternal = {
         
         aInstall.cancel();
 
-        this.installNotifyObservers("addon-install-blocked-silent", topBrowser,
-                                    aInstallingPrincipal.URI, aInstall);
+        this.installNotifyObservers(
+          "addon-install-blocked-silent",
+          topBrowser,
+          aInstallingPrincipal.URI,
+          aInstall
+        );
         return;
       } else if (!this.isInstallEnabled(aMimetype)) {
         aInstall.cancel();
 
-        this.installNotifyObservers("addon-install-disabled", topBrowser,
-                                    aInstallingPrincipal.URI, aInstall);
+        this.installNotifyObservers(
+          "addon-install-disabled",
+          topBrowser,
+          aInstallingPrincipal.URI,
+          aInstall
+        );
         return;
-      } else if (aInstallingPrincipal.isNullPrincipal || !aBrowser.contentPrincipal ||
-                 !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal) ||
-                 !this.isInstallAllowedByPolicy(aInstallingPrincipal, aInstall, false )) {
+      } else if (
+        aInstallingPrincipal.isNullPrincipal ||
+        !aBrowser.contentPrincipal ||
+        !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal) ||
+        !this.isInstallAllowedByPolicy(
+          aInstallingPrincipal,
+          aInstall,
+          false 
+        )
+      ) {
         aInstall.cancel();
 
-        this.installNotifyObservers("addon-install-origin-blocked", topBrowser,
-                                    aInstallingPrincipal.URI, aInstall);
+        this.installNotifyObservers(
+          "addon-install-origin-blocked",
+          topBrowser,
+          aInstallingPrincipal.URI,
+          aInstall
+        );
         return;
       }
 
@@ -1872,26 +2349,51 @@ var AddonManagerInternal = {
       
       new BrowserListener(aBrowser, aInstallingPrincipal, aInstall);
 
-      let startInstall = (source) => {
-        AddonManagerInternal.setupPromptHandler(aBrowser, aInstallingPrincipal.URI, aInstall, true, source);
+      let startInstall = source => {
+        AddonManagerInternal.setupPromptHandler(
+          aBrowser,
+          aInstallingPrincipal.URI,
+          aInstall,
+          true,
+          source
+        );
 
-        AddonManagerInternal.startInstall(aBrowser, aInstallingPrincipal.URI, aInstall);
+        AddonManagerInternal.startInstall(
+          aBrowser,
+          aInstallingPrincipal.URI,
+          aInstall
+        );
       };
 
-      let installAllowed = this.isInstallAllowed(aMimetype, aInstallingPrincipal);
-      let installPerm = Services.perms.testPermissionFromPrincipal(aInstallingPrincipal, "install");
+      let installAllowed = this.isInstallAllowed(
+        aMimetype,
+        aInstallingPrincipal
+      );
+      let installPerm = Services.perms.testPermissionFromPrincipal(
+        aInstallingPrincipal,
+        "install"
+      );
 
       if (installAllowed) {
         startInstall("AMO");
       } else if (installPerm === Ci.nsIPermissionManager.DENY_ACTION) {
         
         aInstall.cancel();
-        this.installNotifyObservers("addon-install-blocked-silent", topBrowser, aInstallingPrincipal.URI, aInstall);
+        this.installNotifyObservers(
+          "addon-install-blocked-silent",
+          topBrowser,
+          aInstallingPrincipal.URI,
+          aInstall
+        );
       } else {
         
-        this.installNotifyObservers("addon-install-blocked", topBrowser,
-          aInstallingPrincipal.URI, aInstall,
-          () => startInstall("other"));
+        this.installNotifyObservers(
+          "addon-install-blocked",
+          topBrowser,
+          aInstallingPrincipal.URI,
+          aInstall,
+          () => startInstall("other")
+        );
       }
     } catch (e) {
       
@@ -1917,15 +2419,28 @@ var AddonManagerInternal = {
     if (!this.isInstallAllowedByPolicy(null, install)) {
       install.cancel();
 
-      this.installNotifyObservers("addon-install-origin-blocked", browser,
-                                  install.sourceURI, install);
+      this.installNotifyObservers(
+        "addon-install-origin-blocked",
+        browser,
+        install.sourceURI,
+        install
+      );
       return;
     }
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    AddonManagerInternal.setupPromptHandler(browser, uri, install, true, "local");
+    AddonManagerInternal.setupPromptHandler(
+      browser,
+      uri,
+      install,
+      true,
+      "local"
+    );
     AddonManagerInternal.startInstall(browser, uri, install);
   },
 
@@ -1936,11 +2451,14 @@ var AddonManagerInternal = {
 
 
   addInstallListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be a InstallListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be a InstallListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-      this.installListeners.add(aListener);
+    this.installListeners.add(aListener);
   },
 
   
@@ -1950,9 +2468,12 @@ var AddonManagerInternal = {
 
 
   removeInstallListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be a InstallListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be a InstallListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.installListeners.delete(aListener);
   },
@@ -1966,13 +2487,19 @@ var AddonManagerInternal = {
 
 
   addUpgradeListener(aInstanceID, aCallback) {
-    if (!aInstanceID || typeof aInstanceID != "symbol")
-      throw Components.Exception("aInstanceID must be a symbol",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aInstanceID || typeof aInstanceID != "symbol") {
+      throw Components.Exception(
+        "aInstanceID must be a symbol",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!aCallback || typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aCallback || typeof aCallback != "function") {
+      throw Components.Exception(
+        "aCallback must be a function",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let addonId = this.syncGetAddonIDByInstanceID(aInstanceID);
     if (!addonId) {
@@ -1989,9 +2516,12 @@ var AddonManagerInternal = {
 
 
   removeUpgradeListener(aInstanceID) {
-    if (!aInstanceID || typeof aInstanceID != "symbol")
-      throw Components.Exception("aInstanceID must be a symbol",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aInstanceID || typeof aInstanceID != "symbol") {
+      throw Components.Exception(
+        "aInstanceID must be a symbol",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let addonId = this.syncGetAddonIDByInstanceID(aInstanceID);
     if (!addonId) {
@@ -2018,16 +2548,23 @@ var AddonManagerInternal = {
 
 
   installTemporaryAddon(aFile) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!(aFile instanceof Ci.nsIFile))
-      throw Components.Exception("aFile must be a nsIFile",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!(aFile instanceof Ci.nsIFile)) {
+      throw Components.Exception(
+        "aFile must be a nsIFile",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .installTemporaryAddon(aFile);
+    return AddonManagerInternal._getProviderByName(
+      "XPIProvider"
+    ).installTemporaryAddon(aFile);
   },
 
   
@@ -2039,12 +2576,16 @@ var AddonManagerInternal = {
 
 
   installBuiltinAddon(aBase) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .installBuiltinAddon(aBase);
+    return AddonManagerInternal._getProviderByName(
+      "XPIProvider"
+    ).installBuiltinAddon(aBase);
   },
 
   
@@ -2061,27 +2602,37 @@ var AddonManagerInternal = {
 
 
   maybeInstallBuiltinAddon(aID, aVersion, aBase) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .maybeInstallBuiltinAddon(aID, aVersion, aBase);
+    return AddonManagerInternal._getProviderByName(
+      "XPIProvider"
+    ).maybeInstallBuiltinAddon(aID, aVersion, aBase);
   },
 
-   syncGetAddonIDByInstanceID(aInstanceID) {
-     if (!gStarted)
-       throw Components.Exception("AddonManager is not initialized",
-                                  Cr.NS_ERROR_NOT_INITIALIZED);
+  syncGetAddonIDByInstanceID(aInstanceID) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-     if (!aInstanceID || typeof aInstanceID != "symbol")
-       throw Components.Exception("aInstanceID must be a Symbol()",
-                                  Cr.NS_ERROR_INVALID_ARG);
+    if (!aInstanceID || typeof aInstanceID != "symbol") {
+      throw Components.Exception(
+        "aInstanceID must be a Symbol()",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-     return AddonManagerInternal._getProviderByName("XPIProvider")
-                                .getAddonIDByInstanceID(aInstanceID);
-   },
-
+    return AddonManagerInternal._getProviderByName(
+      "XPIProvider"
+    ).getAddonIDByInstanceID(aInstanceID);
+  },
 
   
 
@@ -2127,8 +2678,10 @@ var AddonManagerInternal = {
 
     for (let size of Object.keys(icons)) {
       if (!INTEGER.test(size)) {
-        throw Components.Exception("Invalid icon size, must be an integer",
-                                   Cr.NS_ERROR_ILLEGAL_VALUE);
+        throw Components.Exception(
+          "Invalid icon size, must be an integer",
+          Cr.NS_ERROR_ILLEGAL_VALUE
+        );
       }
 
       size = parseInt(size, 10);
@@ -2162,16 +2715,23 @@ var AddonManagerInternal = {
 
 
   getAddonByID(aID) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aID || typeof aID != "string")
-      throw Components.Exception("aID must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aID || typeof aID != "string") {
+      throw Components.Exception(
+        "aID must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    let promises = Array.from(this.providers,
-      p => promiseCallProvider(p, "getAddonByID", aID));
+    let promises = Array.from(this.providers, p =>
+      promiseCallProvider(p, "getAddonByID", aID)
+    );
     return Promise.all(promises).then(aAddons => {
       return aAddons.find(a => !!a) || null;
     });
@@ -2185,21 +2745,31 @@ var AddonManagerInternal = {
 
 
   getAddonBySyncGUID(aGUID) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!aGUID || typeof aGUID != "string")
-      throw Components.Exception("aGUID must be a non-empty string",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aGUID || typeof aGUID != "string") {
+      throw Components.Exception(
+        "aGUID must be a non-empty string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     return (async () => {
       for (let provider of this.providers) {
         let addon = await promiseCallProvider(
-          provider, "getAddonBySyncGUID", aGUID);
+          provider,
+          "getAddonBySyncGUID",
+          aGUID
+        );
 
-        if (addon)
+        if (addon) {
           return addon;
+        }
       }
 
       return null;
@@ -2217,13 +2787,19 @@ var AddonManagerInternal = {
 
 
   getAddonsByIDs(aIDs) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (!Array.isArray(aIDs))
-      throw Components.Exception("aIDs must be an array",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!Array.isArray(aIDs)) {
+      throw Components.Exception(
+        "aIDs must be an array",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     let promises = aIDs.map(a => AddonManagerInternal.getAddonByID(a));
     return Promise.all(promises);
@@ -2236,23 +2812,33 @@ var AddonManagerInternal = {
 
 
   getAddonsByTypes(aTypes) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (aTypes && !Array.isArray(aTypes))
-      throw Components.Exception("aTypes must be an array or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aTypes && !Array.isArray(aTypes)) {
+      throw Components.Exception(
+        "aTypes must be an array or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     return (async () => {
       let addons = [];
 
       for (let provider of this.providers) {
         let providerAddons = await promiseCallProvider(
-          provider, "getAddonsByTypes", aTypes);
+          provider,
+          "getAddonsByTypes",
+          aTypes
+        );
 
-        if (providerAddons)
+        if (providerAddons) {
           addons.push(...providerAddons);
+        }
       }
 
       return addons;
@@ -2275,22 +2861,36 @@ var AddonManagerInternal = {
 
 
   async getActiveAddons(aTypes) {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-    if (aTypes && !Array.isArray(aTypes))
-      throw Components.Exception("aTypes must be an array or null",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (aTypes && !Array.isArray(aTypes)) {
+      throw Components.Exception(
+        "aTypes must be an array or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    let addons = [], fullData = true;
+    let addons = [],
+      fullData = true;
 
     for (let provider of this.providers) {
       let providerAddons, providerFullData;
       if ("getActiveAddons" in provider) {
-        ({addons: providerAddons, fullData: providerFullData} = await callProvider(provider, "getActiveAddons", null, aTypes));
+        ({
+          addons: providerAddons,
+          fullData: providerFullData,
+        } = await callProvider(provider, "getActiveAddons", null, aTypes));
       } else {
-        providerAddons = await promiseCallProvider(provider, "getAddonsByTypes", aTypes);
+        providerAddons = await promiseCallProvider(
+          provider,
+          "getAddonsByTypes",
+          aTypes
+        );
         providerAddons = providerAddons.filter(a => a.isActive);
         providerFullData = true;
       }
@@ -2301,16 +2901,19 @@ var AddonManagerInternal = {
       }
     }
 
-    return {addons, fullData};
+    return { addons, fullData };
   },
 
   
 
 
   getAllAddons() {
-    if (!gStarted)
-      throw Components.Exception("AddonManager is not initialized",
-                                 Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
     return this.getAddonsByTypes(null);
   },
@@ -2322,9 +2925,12 @@ var AddonManagerInternal = {
 
 
   addManagerListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be an AddonManagerListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be an AddonManagerListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.managerListeners.add(aListener);
   },
@@ -2336,9 +2942,12 @@ var AddonManagerInternal = {
 
 
   removeManagerListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be an AddonManagerListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be an AddonManagerListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.managerListeners.delete(aListener);
   },
@@ -2350,9 +2959,12 @@ var AddonManagerInternal = {
 
 
   addAddonListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be an AddonListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be an AddonListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.addonListeners.add(aListener);
   },
@@ -2364,9 +2976,12 @@ var AddonManagerInternal = {
 
 
   removeAddonListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be an AddonListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be an AddonListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.addonListeners.delete(aListener);
   },
@@ -2378,9 +2993,12 @@ var AddonManagerInternal = {
 
 
   addTypeListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be a TypeListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be a TypeListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.typeListeners.add(aListener);
   },
@@ -2392,9 +3010,12 @@ var AddonManagerInternal = {
 
 
   removeTypeListener(aListener) {
-    if (!aListener || typeof aListener != "object")
-      throw Components.Exception("aListener must be a TypeListener object",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aListener || typeof aListener != "object") {
+      throw Components.Exception(
+        "aListener must be a TypeListener object",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
     this.typeListeners.delete(aListener);
   },
@@ -2413,15 +3034,17 @@ var AddonManagerInternal = {
       },
 
       get(target, property, receiver) {
-        if (!target.hasOwnProperty(property))
+        if (!target.hasOwnProperty(property)) {
           return undefined;
+        }
 
         return target[property].type;
       },
 
       getOwnPropertyDescriptor(target, property) {
-        if (!target.hasOwnProperty(property))
+        if (!target.hasOwnProperty(property)) {
           return undefined;
+        }
 
         return {
           value: target[property].type,
@@ -2455,8 +3078,9 @@ var AddonManagerInternal = {
 
   set autoUpdateDefault(aValue) {
     aValue = !!aValue;
-    if (aValue != gAutoUpdateDefault)
+    if (aValue != gAutoUpdateDefault) {
       Services.prefs.setBoolPref(PREF_EM_AUTOUPDATE_DEFAULT, aValue);
+    }
     return aValue;
   },
 
@@ -2467,10 +3091,11 @@ var AddonManagerInternal = {
   set checkCompatibility(aValue) {
     aValue = !!aValue;
     if (aValue != gCheckCompatibility) {
-      if (!aValue)
+      if (!aValue) {
         Services.prefs.setBoolPref(PREF_EM_CHECK_COMPATIBILITY, false);
-      else
+      } else {
         Services.prefs.clearUserPref(PREF_EM_CHECK_COMPATIBILITY);
+      }
     }
     return aValue;
   },
@@ -2481,8 +3106,9 @@ var AddonManagerInternal = {
 
   set strictCompatibility(aValue) {
     aValue = !!aValue;
-    if (aValue != gStrictCompatibility)
+    if (aValue != gStrictCompatibility) {
       Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, aValue);
+    }
     return aValue;
   },
 
@@ -2497,10 +3123,11 @@ var AddonManagerInternal = {
   set checkUpdateSecurity(aValue) {
     aValue = !!aValue;
     if (aValue != gCheckUpdateSecurity) {
-      if (aValue != gCheckUpdateSecurityDefault)
+      if (aValue != gCheckUpdateSecurityDefault) {
         Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, aValue);
-      else
+      } else {
         Services.prefs.clearUserPref(PREF_EM_CHECK_UPDATE_SECURITY);
+      }
     }
     return aValue;
   },
@@ -2511,82 +3138,96 @@ var AddonManagerInternal = {
 
   set updateEnabled(aValue) {
     aValue = !!aValue;
-    if (aValue != gUpdateEnabled)
+    if (aValue != gUpdateEnabled) {
       Services.prefs.setBoolPref(PREF_EM_UPDATE_ENABLED, aValue);
+    }
     return aValue;
   },
 
   setupPromptHandler(browser, url, install, requireConfirm, source) {
-    install.promptHandler = info => new Promise((resolve, _reject) => {
-      let reject = () => {
-        this.installNotifyObservers("addon-install-cancelled",
-                                    browser, url, install);
-        _reject();
-      };
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (info.addon.userPermissions && WEBEXT_PERMISSION_PROMPTS) {
-        let subject = {
-          wrappedJSObject: {
-            target: browser,
-            info: Object.assign({resolve, reject, source}, info),
-          },
+    install.promptHandler = info =>
+      new Promise((resolve, _reject) => {
+        let reject = () => {
+          this.installNotifyObservers(
+            "addon-install-cancelled",
+            browser,
+            url,
+            install
+          );
+          _reject();
         };
-        subject.wrappedJSObject.info.permissions = info.addon.userPermissions;
-        Services.obs.notifyObservers(subject, "webextension-permission-prompt");
-      } else if (requireConfirm) {
-        
-        
-        
-        
-        
-        
-        
-        let proxy = new Proxy(install, {
-          get(target, property) {
-            if (property == "install") {
-              return resolve;
-            } else if (property == "cancel") {
-              return reject;
-            } else if (property == "wrapped") {
-              return target;
-            }
-            let result = target[property];
-            return (typeof result == "function") ? result.bind(target) : result;
-          },
-        });
 
         
         
-        if ("@mozilla.org/addons/web-install-prompt;1" in Cc) {
-          try {
-            let prompt = Cc["@mozilla.org/addons/web-install-prompt;1"].
-                                      getService(Ci.amIWebInstallPrompt);
-            prompt.confirm(browser, url, [proxy]);
-            return;
-          } catch (e) {}
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (info.addon.userPermissions && WEBEXT_PERMISSION_PROMPTS) {
+          let subject = {
+            wrappedJSObject: {
+              target: browser,
+              info: Object.assign({ resolve, reject, source }, info),
+            },
+          };
+          subject.wrappedJSObject.info.permissions = info.addon.userPermissions;
+          Services.obs.notifyObservers(
+            subject,
+            "webextension-permission-prompt"
+          );
+        } else if (requireConfirm) {
+          
+          
+          
+          
+          
+          
+          
+          let proxy = new Proxy(install, {
+            get(target, property) {
+              if (property == "install") {
+                return resolve;
+              } else if (property == "cancel") {
+                return reject;
+              } else if (property == "wrapped") {
+                return target;
+              }
+              let result = target[property];
+              return typeof result == "function" ? result.bind(target) : result;
+            },
+          });
+
+          
+          
+          if ("@mozilla.org/addons/web-install-prompt;1" in Cc) {
+            try {
+              let prompt = Cc[
+                "@mozilla.org/addons/web-install-prompt;1"
+              ].getService(Ci.amIWebInstallPrompt);
+              prompt.confirm(browser, url, [proxy]);
+              return;
+            } catch (e) {}
+          }
+
+          this.installNotifyObservers(
+            "addon-install-confirmation",
+            browser,
+            url,
+            proxy
+          );
+        } else {
+          resolve();
         }
-
-        this.installNotifyObservers("addon-install-confirmation",
-                                    browser, url, proxy);
-      } else {
-        resolve();
-      }
-    });
+      });
   },
 
   webAPI: {
@@ -2628,8 +3269,10 @@ var AddonManagerInternal = {
         if (WEBAPI_INSTALL_HOSTS.includes(host)) {
           return;
         }
-        if (Services.prefs.getBoolPref(PREF_WEBAPI_TESTING)
-            && WEBAPI_TEST_INSTALL_HOSTS.includes(host)) {
+        if (
+          Services.prefs.getBoolPref(PREF_WEBAPI_TESTING) &&
+          WEBAPI_TEST_INSTALL_HOSTS.includes(host)
+        ) {
           return;
         }
 
@@ -2647,26 +3290,37 @@ var AddonManagerInternal = {
           "onInstallEnded",
           "onInstallCancelled",
           "onInstallFailed",
-         ];
+        ];
 
         let listener = {};
         let installPromise = new Promise((resolve, reject) => {
           events.forEach(event => {
             listener[event] = (install, addon) => {
-              let data = {event, id};
+              let data = { event, id };
               AddonManager.webAPI.copyProps(install, data);
               this.sendEvent(mm, data);
               if (event == "onInstallEnded") {
                 resolve(addon);
-              } else if (event == "onDownloadFailed" || event == "onInstallFailed") {
-                reject({message: "install failed"});
-              } else if (event == "onDownloadCancelled" || event == "onInstallCancelled") {
-                reject({message: "install cancelled"});
+              } else if (
+                event == "onDownloadFailed" ||
+                event == "onInstallFailed"
+              ) {
+                reject({ message: "install failed" });
+              } else if (
+                event == "onDownloadCancelled" ||
+                event == "onInstallCancelled"
+              ) {
+                reject({ message: "install cancelled" });
               } else if (event == "onDownloadEnded") {
                 if (install.addon.appDisabled) {
                   
                   install.cancel();
-                  AddonManagerInternal.installNotifyObservers("addon-install-failed", target, Services.io.newURI(options.url), install);
+                  AddonManagerInternal.installNotifyObservers(
+                    "addon-install-failed",
+                    target,
+                    Services.io.newURI(options.url),
+                    install
+                  );
                 }
               }
             };
@@ -2678,13 +3332,13 @@ var AddonManagerInternal = {
         
         installPromise.catch(() => {});
 
-        return {listener, installPromise};
+        return { listener, installPromise };
       };
 
       try {
         checkInstallUrl(options.url);
       } catch (err) {
-        return Promise.reject({message: err.message});
+        return Promise.reject({ message: err.message });
       }
 
       return AddonManagerInternal.getInstallForURL(options.url, {
@@ -2697,19 +3351,30 @@ var AddonManagerInternal = {
         },
       }).then(install => {
         let requireConfirm = true;
-        if (target.contentDocument &&
-            target.contentDocument.nodePrincipal.isSystemPrincipal) {
+        if (
+          target.contentDocument &&
+          target.contentDocument.nodePrincipal.isSystemPrincipal
+        ) {
           requireConfirm = false;
         }
-        AddonManagerInternal.setupPromptHandler(target, null, install, requireConfirm, "AMO");
+        AddonManagerInternal.setupPromptHandler(
+          target,
+          null,
+          install,
+          requireConfirm,
+          "AMO"
+        );
 
         let id = this.nextInstall++;
-        let {listener, installPromise} = makeListener(id, target.messageManager);
+        let { listener, installPromise } = makeListener(
+          id,
+          target.messageManager
+        );
         install.addListener(listener);
 
-        this.installs.set(id, {install, target, listener, installPromise});
+        this.installs.set(id, { install, target, listener, installPromise });
 
-        let result = {id};
+        let result = { id };
         this.copyProps(install, result);
         return result;
       });
@@ -2736,10 +3401,11 @@ var AddonManagerInternal = {
         throw new Error(`No such addon ${id}`);
       }
 
-      if (value)
+      if (value) {
         await addon.enable();
-      else
+      } else {
         await addon.disable();
+      }
     },
 
     async addonInstallDoInstall(target, id) {
@@ -2756,7 +3422,9 @@ var AddonManagerInternal = {
 
       if (Services.prefs.getBoolPref(PREF_WEBEXT_PERM_PROMPTS, false)) {
         await new Promise(resolve => {
-          let subject = {wrappedJSObject: {target, addon, callback: resolve}};
+          let subject = {
+            wrappedJSObject: { target, addon, callback: resolve },
+          };
           Services.obs.notifyObservers(subject, "webextension-install-notify");
         });
       }
@@ -2798,8 +3466,9 @@ var AddonManagerPrivate = {
   },
 
   addonIsActive(addonId) {
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .addonIsActive(addonId);
+    return AddonManagerInternal._getProviderByName("XPIProvider").addonIsActive(
+      addonId
+    );
   },
 
   
@@ -2809,8 +3478,9 @@ var AddonManagerPrivate = {
 
 
   getNewSideloads() {
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .getNewSideloads();
+    return AddonManagerInternal._getProviderByName(
+      "XPIProvider"
+    ).getNewSideloads();
   },
 
   get browserUpdated() {
@@ -2859,8 +3529,10 @@ var AddonManagerPrivate = {
   },
 
   callInstallListeners(...aArgs) {
-    return AddonManagerInternal.callInstallListeners.apply(AddonManagerInternal,
-                                                           aArgs);
+    return AddonManagerInternal.callInstallListeners.apply(
+      AddonManagerInternal,
+      aArgs
+    );
   },
 
   callAddonListeners(...aArgs) {
@@ -2877,7 +3549,7 @@ var AddonManagerPrivate = {
 
   get BOOTSTRAP_REASONS() {
     return AddonManagerInternal._getProviderByName("XPIProvider")
-            .BOOTSTRAP_REASONS;
+      .BOOTSTRAP_REASONS;
   },
 
   recordTimestamp(name, value) {
@@ -2925,7 +3597,8 @@ var AddonManagerPrivate = {
   simpleTimer(aName) {
     let startTime = Cu.now();
     return {
-      done: () => this.recordSimpleMeasure(aName, Math.round(Cu.now() - startTime)),
+      done: () =>
+        this.recordSimpleMeasure(aName, Math.round(Cu.now() - startTime)),
     };
   },
 
@@ -2977,16 +3650,23 @@ var AddonManagerPrivate = {
 
 
   isTemporaryInstallID(extensionId) {
-     if (!gStarted)
-       throw Components.Exception("AddonManager is not initialized",
-                                  Cr.NS_ERROR_NOT_INITIALIZED);
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-     if (!extensionId || typeof extensionId != "string")
-       throw Components.Exception("extensionId must be a string",
-                                  Cr.NS_ERROR_INVALID_ARG);
+    if (!extensionId || typeof extensionId != "string") {
+      throw Components.Exception(
+        "extensionId must be a string",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-                               .isTemporaryInstallID(extensionId);
+    return AddonManagerInternal._getProviderByName(
+      "XPIProvider"
+    ).isTemporaryInstallID(extensionId);
   },
 
   isDBLoaded() {
@@ -3027,9 +3707,9 @@ var AddonManager = {
   
   _states: new Map([
     
-    ["STATE_AVAILABLE",  0],
+    ["STATE_AVAILABLE", 0],
     
-    ["STATE_DOWNLOADING",  1],
+    ["STATE_DOWNLOADING", 1],
     
     ["STATE_CHECKING", 2],
     
@@ -3305,7 +3985,11 @@ var AddonManager = {
   },
 
   getInstallForFile(aFile, aMimetype, aTelemetryInfo) {
-    return AddonManagerInternal.getInstallForFile(aFile, aMimetype, aTelemetryInfo);
+    return AddonManagerInternal.getInstallForFile(
+      aFile,
+      aMimetype,
+      aTelemetryInfo
+    );
   },
 
   
@@ -3316,8 +4000,9 @@ var AddonManager = {
 
 
   getStartupChanges(aType) {
-    if (!(aType in AddonManagerInternal.startupChanges))
+    if (!(aType in AddonManagerInternal.startupChanges)) {
       return [];
+    }
     return AddonManagerInternal.startupChanges[aType].slice(0);
   },
 
@@ -3362,9 +4047,12 @@ var AddonManager = {
   },
 
   installAddonFromWebpage(aType, aBrowser, aInstallingPrincipal, aInstall) {
-    AddonManagerInternal.installAddonFromWebpage(aType, aBrowser,
-                                                 aInstallingPrincipal,
-                                                 aInstall);
+    AddonManagerInternal.installAddonFromWebpage(
+      aType,
+      aBrowser,
+      aInstallingPrincipal,
+      aInstall
+    );
   },
 
   installAddonFromAOM(aBrowser, aUri, aInstall) {
@@ -3443,16 +4131,22 @@ var AddonManager = {
 
 
   shouldAutoUpdate(aAddon) {
-    if (!aAddon || typeof aAddon != "object")
-      throw Components.Exception("aAddon must be specified",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    if (!aAddon || typeof aAddon != "object") {
+      throw Components.Exception(
+        "aAddon must be specified",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    if (!("applyBackgroundUpdates" in aAddon))
+    if (!("applyBackgroundUpdates" in aAddon)) {
       return false;
-    if (aAddon.applyBackgroundUpdates == AddonManager.AUTOUPDATE_ENABLE)
+    }
+    if (aAddon.applyBackgroundUpdates == AddonManager.AUTOUPDATE_ENABLE) {
       return true;
-    if (aAddon.applyBackgroundUpdates == AddonManager.AUTOUPDATE_DISABLE)
+    }
+    if (aAddon.applyBackgroundUpdates == AddonManager.AUTOUPDATE_DISABLE) {
       return false;
+    }
     return this.autoUpdateDefault;
   },
 
@@ -3559,18 +4253,20 @@ AMTelemetry = {
   observe(subject, topic, data) {
     switch (topic) {
       case "addon-install-blocked": {
-        const {installs} = subject.wrappedJSObject;
-        this.recordInstallEvent(installs[0], {step: "site_warning"});
+        const { installs } = subject.wrappedJSObject;
+        this.recordInstallEvent(installs[0], { step: "site_warning" });
         break;
       }
       case "addon-install-origin-blocked": {
-        const {installs} = subject.wrappedJSObject;
-        this.recordInstallEvent(installs[0], {step: "site_blocked"});
+        const { installs } = subject.wrappedJSObject;
+        this.recordInstallEvent(installs[0], { step: "site_blocked" });
         break;
       }
       case "addon-install-disabled": {
-        const {installs} = subject.wrappedJSObject;
-        this.recordInstallEvent(installs[0], {step: "install_disabled_warning"});
+        const { installs } = subject.wrappedJSObject;
+        this.recordInstallEvent(installs[0], {
+          step: "install_disabled_warning",
+        });
         break;
       }
     }
@@ -3579,41 +4275,47 @@ AMTelemetry = {
   
 
   onNewInstall(install) {
-    this.recordInstallEvent(install, {step: "started"});
+    this.recordInstallEvent(install, { step: "started" });
   },
 
   onInstallCancelled(install) {
-    this.recordInstallEvent(install, {step: "cancelled"});
+    this.recordInstallEvent(install, { step: "cancelled" });
   },
 
   onInstallPostponed(install) {
-    this.recordInstallEvent(install, {step: "postponed"});
+    this.recordInstallEvent(install, { step: "postponed" });
   },
 
   onInstallFailed(install) {
-    this.recordInstallEvent(install, {step: "failed"});
+    this.recordInstallEvent(install, { step: "failed" });
   },
 
   onInstallEnded(install) {
-    this.recordInstallEvent(install, {step: "completed"});
+    this.recordInstallEvent(install, { step: "completed" });
   },
 
   onDownloadStarted(install) {
-    this.recordInstallEvent(install, {step: "download_started"});
+    this.recordInstallEvent(install, { step: "download_started" });
   },
 
   onDownloadCancelled(install) {
-    this.recordInstallEvent(install, {step: "cancelled"});
+    this.recordInstallEvent(install, { step: "cancelled" });
   },
 
   onDownloadEnded(install) {
     let download_time = Math.round(Cu.now() - install.downloadStartedAt);
-    this.recordInstallEvent(install, {step: "download_completed", download_time});
+    this.recordInstallEvent(install, {
+      step: "download_completed",
+      download_time,
+    });
   },
 
   onDownloadFailed(install) {
     let download_time = Math.round(Cu.now() - install.downloadStartedAt);
-    this.recordInstallEvent(install, {step: "download_failed", download_time});
+    this.recordInstallEvent(install, {
+      step: "download_failed",
+      download_time,
+    });
   },
 
   
@@ -3723,7 +4425,10 @@ AMTelemetry = {
   getInstallTelemetryInfo(install) {
     if (install.installTelemetryInfo) {
       return install.installTelemetryInfo;
-    } else if (install.existingAddon && install.existingAddon.installTelemetryInfo) {
+    } else if (
+      install.existingAddon &&
+      install.existingAddon.installTelemetryInfo
+    ) {
       
       return install.existingAddon.installTelemetryInfo;
     }
@@ -3742,16 +4447,16 @@ AMTelemetry = {
 
   getEventObjectFromAddonType(addonType) {
     switch (addonType) {
-    case undefined:
-      return "unknown";
-    case "extension":
-    case "theme":
-    case "locale":
-    case "dictionary":
-      return addonType;
-    default:
-      
-      return "other";
+      case undefined:
+        return "unknown";
+      case "extension":
+      case "theme":
+      case "locale":
+      case "dictionary":
+        return addonType;
+      default:
+        
+        return "other";
     }
   },
 
@@ -3760,7 +4465,7 @@ AMTelemetry = {
       
       return "";
     }
-    switch (typeof(value)) {
+    switch (typeof value) {
       case "string":
         return value;
       case "boolean":
@@ -3775,7 +4480,7 @@ AMTelemetry = {
 
 
 
-  formatExtraVars({addon, ...extraVars}) {
+  formatExtraVars({ addon, ...extraVars }) {
     if (addon) {
       extraVars.addonId = addon.id;
       extraVars.type = addon.type;
@@ -3858,9 +4563,9 @@ AMTelemetry = {
     }
 
     
-    extra = this.formatExtraVars({...extraVars, ...extra});
+    extra = this.formatExtraVars({ ...extraVars, ...extra });
 
-    this.recordEvent({method: eventMethod, object, value: installId, extra});
+    this.recordEvent({ method: eventMethod, object, value: installId, extra });
   },
 
   
@@ -3903,12 +4608,17 @@ AMTelemetry = {
     let object = this.getEventObjectFromAddonType(addon.type);
     let value = this.getTrimmedString(addon.id);
 
-    extra = {...extraVars, ...extra};
+    extra = { ...extraVars, ...extra };
 
     let hasExtraVars = Object.keys(extra).length > 0;
     extra = this.formatExtraVars(extra);
 
-    this.recordEvent({method, object, value, extra: hasExtraVars ? extra : null});
+    this.recordEvent({
+      method,
+      object,
+      value,
+      extra: hasExtraVars ? extra : null,
+    });
   },
 
   
@@ -3924,8 +4634,8 @@ AMTelemetry = {
 
 
 
-  recordLinkEvent({object, value, extra = null}) {
-    this.recordEvent({method: "link", object, value, extra});
+  recordLinkEvent({ object, value, extra = null }) {
+    this.recordEvent({ method: "link", object, value, extra });
   },
 
   
@@ -3952,8 +4662,8 @@ AMTelemetry = {
 
 
 
-  recordActionEvent({object, action, value, addon, view, extra}) {
-    extra = {...extra, action, addon, view};
+  recordActionEvent({ object, action, value, addon, view, extra }) {
+    extra = { ...extra, action, addon, view };
     this.recordEvent({
       method: "action",
       object,
@@ -3977,12 +4687,12 @@ AMTelemetry = {
 
 
 
-  recordViewEvent({view, addon, type}) {
+  recordViewEvent({ view, addon, type }) {
     this.recordEvent({
       method: "view",
       object: "aboutAddons",
       value: view,
-      extra: this.formatExtraVars({type, addon}),
+      extra: this.formatExtraVars({ type, addon }),
     });
   },
 
@@ -4000,7 +4710,7 @@ AMTelemetry = {
 
 
 
-  recordReportEvent({addonId, addonType, errorType, reportEntryPoint}) {
+  recordReportEvent({ addonId, addonType, errorType, reportEntryPoint }) {
     this.recordEvent({
       method: "report",
       object: reportEntryPoint,
@@ -4012,14 +4722,20 @@ AMTelemetry = {
     });
   },
 
-  recordEvent({method, object, value, extra}) {
+  recordEvent({ method, object, value, extra }) {
     if (typeof value != "string") {
       
       
       value = null;
     }
     try {
-      Services.telemetry.recordEvent("addonsManager", method, object, value, extra);
+      Services.telemetry.recordEvent(
+        "addonsManager",
+        method,
+        object,
+        value,
+        extra
+      );
     } catch (err) {
       
       
@@ -4034,7 +4750,10 @@ this.AddonManager.init();
 this.AddonManager.addManagerListener(AMTelemetry);
 
 
-ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm", AddonManagerInternal);
+ChromeUtils.import(
+  "resource://gre/modules/TelemetryTimestamps.jsm",
+  AddonManagerInternal
+);
 Object.freeze(AddonManagerInternal);
 Object.freeze(AddonManagerPrivate);
 Object.freeze(AddonManager);

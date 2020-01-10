@@ -5,8 +5,7 @@
 
 
 
-
-var testserver = createHttpServer({hosts: ["example.com"]});
+var testserver = createHttpServer({ hosts: ["example.com"] });
 
 
 testserver.registerDirectory("/data/", do_get_file("data"));
@@ -61,7 +60,7 @@ const ADDONS = {
   "addon5@tests.mozilla.org": {
     manifest: {
       name: "Test 5",
-      applications: {gecko: {id: "addon5@tests.mozilla.org"}},
+      applications: { gecko: { id: "addon5@tests.mozilla.org" } },
     },
     desiredState: {
       isActive: true,
@@ -74,7 +73,7 @@ const ADDONS = {
   "addon7@tests.mozilla.org": {
     manifest: {
       name: "Test 7",
-      applications: { gecko: {id: "addon7@tests.mozilla.org"}},
+      applications: { gecko: { id: "addon7@tests.mozilla.org" } },
     },
     initialState: {
       userDisabled: true,
@@ -136,8 +135,10 @@ const IDS = Object.keys(ADDONS);
 
 function promiseUpdates(addon) {
   return new Promise(resolve => {
-    addon.findUpdates({onUpdateFinished: resolve},
-                      AddonManager.UPDATE_WHEN_PERIODIC_UPDATE);
+    addon.findUpdates(
+      { onUpdateFinished: resolve },
+      AddonManager.UPDATE_WHEN_PERIODIC_UPDATE
+    );
   });
 }
 
@@ -145,7 +146,7 @@ add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "2", "2");
 
   for (let addon of Object.values(ADDONS)) {
-    let webext = createTempWebExtensionFile({manifest: addon.manifest});
+    let webext = createTempWebExtensionFile({ manifest: addon.manifest });
     await AddonTestUtils.manuallyInstall(webext);
   }
 

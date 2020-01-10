@@ -16,15 +16,24 @@ async function run_test() {
   await setupUpdaterTest(FILE_PARTIAL_MAR, false);
   
   
-  runUpdate(STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE,
-            false, (USE_EXECV ? 0 : 1), true);
+  runUpdate(
+    STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE,
+    false,
+    USE_EXECV ? 0 : 1,
+    true
+  );
   checkAppBundleModTime();
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContents(LOG_PARTIAL_FAILURE);
   await waitForUpdateXMLFiles();
-  checkUpdateManager(STATE_NONE, false, STATE_FAILED,
-                     LOADSOURCE_ERROR_WRONG_SIZE, 1);
+  checkUpdateManager(
+    STATE_NONE,
+    false,
+    STATE_FAILED,
+    LOADSOURCE_ERROR_WRONG_SIZE,
+    1
+  );
   checkCallbackLog();
 }

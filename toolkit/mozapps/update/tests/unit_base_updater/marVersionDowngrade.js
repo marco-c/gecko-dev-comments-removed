@@ -19,14 +19,23 @@ async function run_test() {
   await setupUpdaterTest(FILE_OLD_VERSION_MAR, false);
   
   
-  runUpdate(STATE_FAILED_VERSION_DOWNGRADE_ERROR,
-            false, (USE_EXECV ? 0 : 1), false);
+  runUpdate(
+    STATE_FAILED_VERSION_DOWNGRADE_ERROR,
+    false,
+    USE_EXECV ? 0 : 1,
+    false
+  );
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContains(STATE_FAILED_VERSION_DOWNGRADE_ERROR);
   await waitForUpdateXMLFiles();
-  checkUpdateManager(STATE_NONE, false, STATE_FAILED,
-                     VERSION_DOWNGRADE_ERROR, 1);
+  checkUpdateManager(
+    STATE_NONE,
+    false,
+    STATE_FAILED,
+    VERSION_DOWNGRADE_ERROR,
+    1
+  );
   waitForFilesInUse();
 }

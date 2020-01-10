@@ -7,51 +7,53 @@ const nsIBLS = Ci.nsIBlocklistService;
 var gNotifier = null;
 var gPluginHost = null;
 
-var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
+var gTestserver = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
 gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
-var PLUGINS = [{
-  
-  name: "test_plugin_0",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_plugin_1",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_plugin_2",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_plugin_3",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_plugin_4",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-},
-{
-  
-  name: "test_plugin_5",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-}];
+var PLUGINS = [
+  {
+    
+    name: "test_plugin_0",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_plugin_1",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_plugin_2",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_plugin_3",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_plugin_4",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+  {
+    
+    name: "test_plugin_5",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+  },
+];
 
 async function updateBlocklist(blocklistURL) {
   if (blocklistURL) {
@@ -65,12 +67,17 @@ async function updateBlocklist(blocklistURL) {
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
 
-  Services.prefs.setCharPref("extensions.blocklist.url", "http://example.com/data/test_pluginBlocklistCtp.xml");
+  Services.prefs.setCharPref(
+    "extensions.blocklist.url",
+    "http://example.com/data/test_pluginBlocklistCtp.xml"
+  );
   Services.prefs.setBoolPref("plugin.load_flash_only", false);
   await promiseStartupManager();
 
   gPluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
-  gNotifier = Cc["@mozilla.org/extensions/blocklist;1"].getService(Ci.nsITimerCallback);
+  gNotifier = Cc["@mozilla.org/extensions/blocklist;1"].getService(
+    Ci.nsITimerCallback
+  );
 
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref("extensions.blocklist.url");
@@ -80,31 +87,44 @@ add_task(async function setup() {
 
 add_task(async function basic() {
   await updateBlocklist();
-  var {blocklist} = Services;
+  var { blocklist } = Services;
 
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
-               nsIBLS.STATE_OUTDATED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
+    nsIBLS.STATE_OUTDATED
+  );
 
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9"),
-               nsIBLS.STATE_VULNERABLE_UPDATE_AVAILABLE);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[1], "1", "1.9"),
+    nsIBLS.STATE_VULNERABLE_UPDATE_AVAILABLE
+  );
 
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9"),
-               nsIBLS.STATE_VULNERABLE_NO_UPDATE);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[2], "1", "1.9"),
+    nsIBLS.STATE_VULNERABLE_NO_UPDATE
+  );
 
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9"),
-               nsIBLS.STATE_BLOCKED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[3], "1", "1.9"),
+    nsIBLS.STATE_BLOCKED
+  );
 
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[4], "1", "1.9"),
-               nsIBLS.STATE_SOFTBLOCKED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[4], "1", "1.9"),
+    nsIBLS.STATE_SOFTBLOCKED
+  );
 
-  Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[5], "1", "1.9"),
-               nsIBLS.STATE_NOT_BLOCKED);
+  Assert.equal(
+    await blocklist.getPluginBlocklistState(PLUGINS[5], "1", "1.9"),
+    nsIBLS.STATE_NOT_BLOCKED
+  );
 });
 
 function get_test_plugin() {
   for (var plugin of gPluginHost.getPluginTags()) {
-    if (plugin.name == "Test Plug-in")
+    if (plugin.name == "Test Plug-in") {
       return plugin;
+    }
   }
   Assert.ok(false);
   return null;
@@ -114,18 +134,37 @@ function get_test_plugin() {
 
 add_task(async function test_is_not_clicktoplay() {
   var plugin = get_test_plugin();
-  var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
-  Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE);
-  Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);
+  var blocklistState = await Blocklist.getPluginBlocklistState(
+    plugin,
+    "1",
+    "1.9"
+  );
+  Assert.notEqual(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE
+  );
+  Assert.notEqual(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE
+  );
 });
 
 
 
 add_task(async function test_is_clicktoplay() {
-  await updateBlocklist("http://example.com/data/test_pluginBlocklistCtpUndo.xml");
+  await updateBlocklist(
+    "http://example.com/data/test_pluginBlocklistCtpUndo.xml"
+  );
   var plugin = get_test_plugin();
-  var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
-  Assert.equal(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);
+  var blocklistState = await Blocklist.getPluginBlocklistState(
+    plugin,
+    "1",
+    "1.9"
+  );
+  Assert.equal(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE
+  );
 });
 
 
@@ -133,30 +172,57 @@ add_task(async function test_is_clicktoplay() {
 add_task(async function test_is_not_clicktoplay2() {
   await updateBlocklist("http://example.com/data/test_pluginBlocklistCtp.xml");
   var plugin = get_test_plugin();
-  var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
-  Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE);
-  Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);
+  var blocklistState = await Blocklist.getPluginBlocklistState(
+    plugin,
+    "1",
+    "1.9"
+  );
+  Assert.notEqual(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE
+  );
+  Assert.notEqual(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE
+  );
 });
 
 
 
 add_task(async function test_disable_blocklist() {
-  await updateBlocklist("http://example.com/data/test_pluginBlocklistCtpUndo.xml");
+  await updateBlocklist(
+    "http://example.com/data/test_pluginBlocklistCtpUndo.xml"
+  );
   var plugin = get_test_plugin();
-  var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
-  Assert.equal(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);
+  var blocklistState = await Blocklist.getPluginBlocklistState(
+    plugin,
+    "1",
+    "1.9"
+  );
+  Assert.equal(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE
+  );
 
   Services.prefs.setBoolPref("extensions.blocklist.enabled", false);
   blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
-  Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);
-  Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE);
+  Assert.notEqual(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE
+  );
+  Assert.notEqual(
+    blocklistState,
+    Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE
+  );
 
   
   
   let previousEnabledState = plugin.enabledState;
   plugin.enabledState = Ci.nsIPluginTag.STATE_CLICKTOPLAY;
-  Assert.equal(gPluginHost.getStateForType("application/x-test"), Ci.nsIPluginTag.STATE_CLICKTOPLAY);
+  Assert.equal(
+    gPluginHost.getStateForType("application/x-test"),
+    Ci.nsIPluginTag.STATE_CLICKTOPLAY
+  );
   
   plugin.enabledState = previousEnabledState;
 });
-

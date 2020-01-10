@@ -19,15 +19,19 @@ function waitForClear() {
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.webapi.testing", true],
-          ["xpinstall.enabled", false],
-          ["extensions.install.requireBuiltInCerts", false]],
+    set: [
+      ["extensions.webapi.testing", true],
+      ["xpinstall.enabled", false],
+      ["extensions.install.requireBuiltInCerts", false],
+    ],
   });
   info("added preferences");
 });
 
 async function testInstall(browser, args) {
-  let success = await ContentTask.spawn(browser, {args}, async function(opts) {
+  let success = await ContentTask.spawn(browser, { args }, async function(
+    opts
+  ) {
     let { args } = opts;
     let install;
     try {
@@ -39,16 +43,16 @@ async function testInstall(browser, args) {
 }
 
 add_task(async function() {
-    
-    
-    
-    
-    
-    let clearPromise = waitForClear();
+  
+  
+  
+  
+  
+  let clearPromise = waitForClear();
 
-    await BrowserTestUtils.withNewTab(TESTPAGE, async function(browser) {
-      await testInstall(browser, {url: XPI_URL});
-    });
+  await BrowserTestUtils.withNewTab(TESTPAGE, async function(browser) {
+    await testInstall(browser, { url: XPI_URL });
+  });
 
-    await clearPromise;
+  await clearPromise;
 });

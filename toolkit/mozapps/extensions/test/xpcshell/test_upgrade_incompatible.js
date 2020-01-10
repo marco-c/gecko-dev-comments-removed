@@ -2,7 +2,6 @@
 
 
 
-
 add_task(async function test_upgrade_incompatible() {
   const ID = "incompatible-upgrade@tests.mozilla.org";
 
@@ -12,11 +11,11 @@ add_task(async function test_upgrade_incompatible() {
 
   let file = createTempWebExtensionFile({
     manifest: {
-      applications: {gecko: {id: ID}},
+      applications: { gecko: { id: ID } },
     },
   });
 
-  let {addon} = await promiseInstallFile(file);
+  let { addon } = await promiseInstallFile(file);
 
   notEqual(addon, null);
   equal(addon.appDisabled, false);
@@ -26,7 +25,7 @@ add_task(async function test_upgrade_incompatible() {
   
   let newfile = createTempWebExtensionFile({
     manifest: {
-      applications: {gecko: {id: ID}},
+      applications: { gecko: { id: ID } },
       manifest_version: 1,
     },
   });
@@ -53,7 +52,7 @@ add_task(async function test_upgrade_incompatible() {
 
   file = createTempWebExtensionFile({
     manifest: {
-      applications: {gecko: {id: ID}},
+      applications: { gecko: { id: ID } },
     },
   });
 
@@ -72,4 +71,3 @@ add_task(async function test_upgrade_incompatible() {
 
   await promiseShutdownManager();
 });
-

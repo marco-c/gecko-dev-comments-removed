@@ -3,14 +3,15 @@
 
 
 
-
 let win;
 let popupPromise;
 const exampleURI = Services.io.newURI("http://example.com");
 async function test() {
   waitForExplicitFinish(); 
   Harness.installConfirmCallback = confirm_install;
-  Harness.installEndedCallback = install => { install.cancel(); };
+  Harness.installEndedCallback = install => {
+    install.cancel();
+  };
   Harness.installsCompletedCallback = finish_test;
   Harness.finalContentEvent = "InstallComplete";
   win = await BrowserTestUtils.openNewBrowserWindow();
@@ -19,16 +20,21 @@ async function test() {
   const pm = Services.perms;
   pm.add(exampleURI, "install", pm.ALLOW_ACTION);
 
-  const triggers = encodeURIComponent(JSON.stringify({
-    "Unsigned XPI": {
-     URL: TESTROOT + "amosigned.xpi",
-      IconURL: TESTROOT + "icon.png",
-    },
-  }));
+  const triggers = encodeURIComponent(
+    JSON.stringify({
+      "Unsigned XPI": {
+        URL: TESTROOT + "amosigned.xpi",
+        IconURL: TESTROOT + "icon.png",
+      },
+    })
+  );
 
   const url = `${TESTROOT}installtrigger.html?${triggers}`;
   BrowserTestUtils.openNewForegroundTab(win.gBrowser, url);
-  popupPromise = BrowserTestUtils.waitForEvent(win.PanelUI.notificationPanel, "popupshown");
+  popupPromise = BrowserTestUtils.waitForEvent(
+    win.PanelUI.notificationPanel,
+    "popupshown"
+  );
 }
 
 function confirm_install(panel) {
@@ -41,12 +47,16 @@ async function finish_test(count) {
 
   Services.perms.remove(exampleURI, "install");
 
-  const results = await ContentTask.spawn(win.gBrowser.selectedBrowser, null, () => {
-    return {
-      return: content.document.getElementById("return").textContent,
-      status: content.document.getElementById("status").textContent,
-    };
-  });
+  const results = await ContentTask.spawn(
+    win.gBrowser.selectedBrowser,
+    null,
+    () => {
+      return {
+        return: content.document.getElementById("return").textContent,
+        status: content.document.getElementById("status").textContent,
+      };
+    }
+  );
 
   is(results.return, "true", "installTrigger should have claimed success");
   is(results.status, "0", "Callback should have seen a success");
@@ -54,7 +64,9 @@ async function finish_test(count) {
   
   
   await popupPromise;
-  win.PanelUI.notificationPanel.querySelector("popupnotification[popupid=addon-installed]").button.click();
+  win.PanelUI.notificationPanel
+    .querySelector("popupnotification[popupid=addon-installed]")
+    .button.click();
 
   
   await BrowserTestUtils.closeWindow(win);

@@ -5,14 +5,12 @@
 
 add_task(async function elevation_dialog() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
-    ],
+    set: [[PREF_APP_UPDATE_DISABLEDFORTESTING, false]],
   });
 
   
   
-  let {startup} = Services;
+  let { startup } = Services;
   let appStartup = {
     QueryInterface: ChromeUtils.generateQI([Ci.nsIAppStartup]),
     quit(mode) {
@@ -31,9 +29,10 @@ add_task(async function elevation_dialog() {
     let win = Services.wm.getMostRecentWindow("Update:Elevation");
     if (win) {
       win.close();
-      await TestUtils.waitForCondition(() =>
-        (!Services.wm.getMostRecentWindow("Update:Elevation")),
-        "The Update Elevation dialog should have closed");
+      await TestUtils.waitForCondition(
+        () => !Services.wm.getMostRecentWindow("Update:Elevation"),
+        "The Update Elevation dialog should have closed"
+      );
     }
   });
 
@@ -41,38 +40,56 @@ add_task(async function elevation_dialog() {
   let elevationDialog = await waitForElevationDialog();
   await TestUtils.waitForTick();
   elevationDialog.document.getElementById("elevateExtra2").click();
-  await TestUtils.waitForCondition(() =>
-    (!Services.wm.getMostRecentWindow("Update:Elevation")),
-    "The Update Elevation dialog should have closed");
+  await TestUtils.waitForCondition(
+    () => !Services.wm.getMostRecentWindow("Update:Elevation"),
+    "The Update Elevation dialog should have closed"
+  );
   ok(!!gUpdateManager.activeUpdate, "There should be an active update");
-  is(gUpdateManager.activeUpdate.state, STATE_PENDING_ELEVATE,
-     "The active update state should equal " + STATE_PENDING_ELEVATE);
-  is(readStatusFile(), STATE_PENDING_ELEVATE,
-     "The status file state should equal " + STATE_PENDING_ELEVATE);
+  is(
+    gUpdateManager.activeUpdate.state,
+    STATE_PENDING_ELEVATE,
+    "The active update state should equal " + STATE_PENDING_ELEVATE
+  );
+  is(
+    readStatusFile(),
+    STATE_PENDING_ELEVATE,
+    "The status file state should equal " + STATE_PENDING_ELEVATE
+  );
 
   
   elevationDialog = await waitForElevationDialog();
   await TestUtils.waitForTick();
   elevationDialog.document.getElementById("elevateExtra1").click();
-  await TestUtils.waitForCondition(() =>
-    (!Services.wm.getMostRecentWindow("Update:Elevation")),
-    "The Update Elevation dialog should have closed");
+  await TestUtils.waitForCondition(
+    () => !Services.wm.getMostRecentWindow("Update:Elevation"),
+    "The Update Elevation dialog should have closed"
+  );
   ok(!gUpdateManager.activeUpdate, "There should not be an active update");
-  is(readStatusFile(), STATE_NONE,
-     "The status file state should equal " + STATE_NONE);
+  is(
+    readStatusFile(),
+    STATE_NONE,
+    "The status file state should equal " + STATE_NONE
+  );
 
   
   elevationDialog = await waitForElevationDialog();
   await TestUtils.waitForTick();
   elevationDialog.document.getElementById("elevateAccept").click();
-  await TestUtils.waitForCondition(() =>
-    (!Services.wm.getMostRecentWindow("Update:Elevation")),
-    "The Update Elevation dialog should have closed");
+  await TestUtils.waitForCondition(
+    () => !Services.wm.getMostRecentWindow("Update:Elevation"),
+    "The Update Elevation dialog should have closed"
+  );
   ok(!!gUpdateManager.activeUpdate, "There should be an active update");
-  is(gUpdateManager.activeUpdate.state, STATE_PENDING_ELEVATE,
-     "The active update state should equal " + STATE_PENDING_ELEVATE);
-  is(readStatusFile(), STATE_PENDING,
-     "The status file state should equal " + STATE_PENDING);
+  is(
+    gUpdateManager.activeUpdate.state,
+    STATE_PENDING_ELEVATE,
+    "The active update state should equal " + STATE_PENDING_ELEVATE
+  );
+  is(
+    readStatusFile(),
+    STATE_PENDING,
+    "The status file state should equal " + STATE_PENDING
+  );
 });
 
 
@@ -88,11 +105,14 @@ function waitForElevationDialog() {
         debugDump("Update Elevation dialog shown...");
         Services.wm.removeListener(listener);
 
-         async function elevationDialogOnLoad() {
+        async function elevationDialogOnLoad() {
           domwindow.removeEventListener("load", elevationDialogOnLoad, true);
           let chromeURI = "chrome://mozapps/content/update/updateElevation.xul";
-          is(domwindow.document.location.href, chromeURI,
-             "Update Elevation appeared");
+          is(
+            domwindow.document.location.href,
+            chromeURI,
+            "Update Elevation appeared"
+          );
           resolve(domwindow);
         }
 
@@ -106,9 +126,9 @@ function waitForElevationDialog() {
     
     
     
-    let patchProps = {state: STATE_PENDING_ELEVATE};
+    let patchProps = { state: STATE_PENDING_ELEVATE };
     let patches = getLocalPatchString(patchProps);
-    let updateProps = {checkInterval: "1"};
+    let updateProps = { checkInterval: "1" };
     let updates = getLocalUpdateString(updateProps, patches);
     writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
     writeStatusFile(STATE_PENDING_ELEVATE);

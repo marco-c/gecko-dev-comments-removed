@@ -6,12 +6,11 @@
 
 
 add_task(async function aboutDialog_backgroundCheck_downloaded() {
-  let params = {backgroundUpdate: true,
-                waitForUpdateState: STATE_PENDING};
+  let params = { backgroundUpdate: true, waitForUpdateState: STATE_PENDING };
   await runAboutDialogUpdateTest(params, [
     {
       panelId: "apply",
-      checkActiveUpdate: {state: STATE_PENDING},
+      checkActiveUpdate: { state: STATE_PENDING },
       continueFile: null,
     },
   ]);

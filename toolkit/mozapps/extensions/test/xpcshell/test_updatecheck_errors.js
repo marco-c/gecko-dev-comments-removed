@@ -13,7 +13,7 @@ add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   
-  testserver = createHttpServer({hosts: ["example.com"]});
+  testserver = createHttpServer({ hosts: ["example.com"] });
   testserver.registerDirectory("/data/", do_get_file("data"));
 
   await promiseStartupManager();
@@ -38,8 +38,10 @@ add_task(async function() {
   equal(addon.version, "1.0");
 
   
-  let update = await promiseFindAddonUpdates(addon, AddonManager.UPDATE_WHEN_USER_REQUESTED)
-    .catch(e => e);
+  let update = await promiseFindAddonUpdates(
+    addon,
+    AddonManager.UPDATE_WHEN_USER_REQUESTED
+  ).catch(e => e);
 
   ok(!update.compatibilityUpdate, "not expecting a compatibility update");
   ok(!update.updateAvailable, "not expecting a compatibility update");

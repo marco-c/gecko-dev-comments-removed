@@ -4,18 +4,16 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const CONTENT_HANDLING_URL = "chrome://mozapps/content/handling/dialog.xul";
 const STRINGBUNDLE_URL = "chrome://mozapps/locale/handling/handling.properties";
 
 
 
-function nsContentDispatchChooser() {
-}
+function nsContentDispatchChooser() {}
 
-nsContentDispatchChooser.prototype =
-{
+nsContentDispatchChooser.prototype = {
   classID: Components.ID("e35d5067-95bc-4029-8432-e8f1e431148d"),
 
   
@@ -23,30 +21,36 @@ nsContentDispatchChooser.prototype =
   ask: function ask(aHandler, aWindowContext, aURI, aReason) {
     var window = null;
     try {
-      if (aWindowContext)
+      if (aWindowContext) {
         window = aWindowContext.getInterface(Ci.nsIDOMWindow);
-    } catch (e) {  }
+      }
+    } catch (e) {
+      
+    }
 
     var bundle = Services.strings.createBundle(STRINGBUNDLE_URL);
 
     
     
-    var arr = [bundle.GetStringFromName("protocol.title"),
-               "",
-               bundle.GetStringFromName("protocol.description"),
-               bundle.GetStringFromName("protocol.choices.label"),
-               bundle.formatStringFromName("protocol.checkbox.label",
-                                           [aURI.scheme]),
-               bundle.GetStringFromName("protocol.checkbox.accesskey"),
-               bundle.formatStringFromName("protocol.checkbox.extra",
-                                           [Services.appinfo.name])];
+    var arr = [
+      bundle.GetStringFromName("protocol.title"),
+      "",
+      bundle.GetStringFromName("protocol.description"),
+      bundle.GetStringFromName("protocol.choices.label"),
+      bundle.formatStringFromName("protocol.checkbox.label", [aURI.scheme]),
+      bundle.GetStringFromName("protocol.checkbox.accesskey"),
+      bundle.formatStringFromName("protocol.checkbox.extra", [
+        Services.appinfo.name,
+      ]),
+    ];
 
     var params = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
     let SupportsString = Components.Constructor(
-                           "@mozilla.org/supports-string;1",
-                           "nsISupportsString");
+      "@mozilla.org/supports-string;1",
+      "nsISupportsString"
+    );
     for (let text of arr) {
-      let string = new SupportsString;
+      let string = new SupportsString();
       string.data = text;
       params.appendElement(string);
     }
@@ -54,11 +58,13 @@ nsContentDispatchChooser.prototype =
     params.appendElement(aURI);
     params.appendElement(aWindowContext);
 
-    Services.ww.openWindow(window,
-                           CONTENT_HANDLING_URL,
-                           null,
-                           "chrome,dialog=yes,resizable,centerscreen",
-                           params);
+    Services.ww.openWindow(
+      window,
+      CONTENT_HANDLING_URL,
+      null,
+      "chrome,dialog=yes,resizable,centerscreen",
+      params
+    );
   },
 
   

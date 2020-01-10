@@ -5,7 +5,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [ "DownloadUtils" ];
+var EXPORTED_SYMBOLS = ["DownloadUtils"];
 
 
 
@@ -37,20 +37,26 @@ var EXPORTED_SYMBOLS = [ "DownloadUtils" ];
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PluralForm",
-                               "resource://gre/modules/PluralForm.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PluralForm",
+  "resource://gre/modules/PluralForm.jsm"
+);
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 var localeNumberFormatCache = new Map();
 function getLocaleNumberFormat(fractionDigits) {
   if (!localeNumberFormatCache.has(fractionDigits)) {
-    localeNumberFormatCache.set(fractionDigits,
-      new Services.intl.NumberFormat(undefined,
-                        { maximumFractionDigits: fractionDigits,
-                          minimumFractionDigits: fractionDigits }));
+    localeNumberFormatCache.set(
+      fractionDigits,
+      new Services.intl.NumberFormat(undefined, {
+        maximumFractionDigits: fractionDigits,
+        minimumFractionDigits: fractionDigits,
+      })
+    );
   }
   return localeNumberFormatCache.get(fractionDigits);
 }
@@ -85,7 +91,7 @@ Object.defineProperty(this, "gBundle", {
   enumerable: true,
   get() {
     delete this.gBundle;
-    return this.gBundle = Services.strings.createBundle(kDownloadProperties);
+    return (this.gBundle = Services.strings.createBundle(kDownloadProperties));
   },
 });
 
@@ -109,18 +115,33 @@ var DownloadUtils = {
 
 
 
-  getDownloadStatus: function DU_getDownloadStatus(aCurrBytes, aMaxBytes,
-                                                   aSpeed, aLastSec) {
-    let [transfer, timeLeft, newLast, normalizedSpeed]
-      = this._deriveTransferRate(aCurrBytes, aMaxBytes, aSpeed, aLastSec);
+  getDownloadStatus: function DU_getDownloadStatus(
+    aCurrBytes,
+    aMaxBytes,
+    aSpeed,
+    aLastSec
+  ) {
+    let [
+      transfer,
+      timeLeft,
+      newLast,
+      normalizedSpeed,
+    ] = this._deriveTransferRate(aCurrBytes, aMaxBytes, aSpeed, aLastSec);
 
     let [rate, unit] = DownloadUtils.convertByteUnits(normalizedSpeed);
 
     let status;
     if (rate === "Infinity") {
       
-      let params = [transfer, gBundle.GetStringFromName(gStr.infiniteRate), timeLeft];
-      status = gBundle.formatStringFromName(gStr.statusFormatInfiniteRate, params);
+      let params = [
+        transfer,
+        gBundle.GetStringFromName(gStr.infiniteRate),
+        timeLeft,
+      ];
+      status = gBundle.formatStringFromName(
+        gStr.statusFormatInfiniteRate,
+        params
+      );
     } else {
       let params = [transfer, rate, unit, timeLeft];
       status = gBundle.formatStringFromName(gStr.statusFormat, params);
@@ -144,11 +165,18 @@ var DownloadUtils = {
 
 
 
-  getDownloadStatusNoRate:
-  function DU_getDownloadStatusNoRate(aCurrBytes, aMaxBytes, aSpeed,
-                                      aLastSec) {
-    let [transfer, timeLeft, newLast]
-      = this._deriveTransferRate(aCurrBytes, aMaxBytes, aSpeed, aLastSec);
+  getDownloadStatusNoRate: function DU_getDownloadStatusNoRate(
+    aCurrBytes,
+    aMaxBytes,
+    aSpeed,
+    aLastSec
+  ) {
+    let [transfer, timeLeft, newLast] = this._deriveTransferRate(
+      aCurrBytes,
+      aMaxBytes,
+      aSpeed,
+      aLastSec
+    );
 
     let params = [transfer, timeLeft];
     let status = gBundle.formatStringFromName(gStr.statusFormatNoRate, params);
@@ -169,19 +197,25 @@ var DownloadUtils = {
 
 
 
-  _deriveTransferRate: function DU__deriveTransferRate(aCurrBytes,
-                                                       aMaxBytes, aSpeed,
-                                                       aLastSec) {
-    if (aMaxBytes == null)
+  _deriveTransferRate: function DU__deriveTransferRate(
+    aCurrBytes,
+    aMaxBytes,
+    aSpeed,
+    aLastSec
+  ) {
+    if (aMaxBytes == null) {
       aMaxBytes = -1;
-    if (aSpeed == null)
+    }
+    if (aSpeed == null) {
       aSpeed = -1;
-    if (aLastSec == null)
+    }
+    if (aLastSec == null) {
       aLastSec = Infinity;
+    }
 
     
-    let seconds = (aSpeed > 0) && (aMaxBytes > 0) ?
-      (aMaxBytes - aCurrBytes) / aSpeed : -1;
+    let seconds =
+      aSpeed > 0 && aMaxBytes > 0 ? (aMaxBytes - aCurrBytes) / aSpeed : -1;
 
     let transfer = DownloadUtils.getTransferTotal(aCurrBytes, aMaxBytes);
     let [timeLeft, newLast] = DownloadUtils.getTimeLeft(seconds, aLastSec);
@@ -200,8 +234,9 @@ var DownloadUtils = {
 
 
   getTransferTotal: function DU_getTransferTotal(aCurrBytes, aMaxBytes) {
-    if (aMaxBytes == null)
+    if (aMaxBytes == null) {
       aMaxBytes = -1;
+    }
 
     let [progress, progressUnits] = DownloadUtils.convertByteUnits(aCurrBytes);
     let [total, totalUnits] = DownloadUtils.convertByteUnits(aMaxBytes);
@@ -210,25 +245,13 @@ var DownloadUtils = {
     let name, values;
     if (aMaxBytes < 0) {
       name = gStr.transferNoTotal;
-      values = [
-        progress,
-        progressUnits,
-      ];
+      values = [progress, progressUnits];
     } else if (progressUnits == totalUnits) {
       name = gStr.transferSameUnits;
-      values = [
-        progress,
-        total,
-        totalUnits,
-      ];
+      values = [progress, total, totalUnits];
     } else {
       name = gStr.transferDiffUnits;
-      values = [
-        progress,
-        progressUnits,
-        total,
-        totalUnits,
-      ];
+      values = [progress, progressUnits, total, totalUnits];
     }
 
     return gBundle.formatStringFromName(name, values);
@@ -248,20 +271,25 @@ var DownloadUtils = {
 
   getTimeLeft: function DU_getTimeLeft(aSeconds, aLastSec) {
     let nf = new Services.intl.NumberFormat();
-    if (aLastSec == null)
+    if (aLastSec == null) {
       aLastSec = Infinity;
+    }
 
-    if (aSeconds < 0)
+    if (aSeconds < 0) {
       return [gBundle.GetStringFromName(gStr.timeUnknown), aLastSec];
+    }
 
     
-    aLastSec = gCachedLast.reduce((aResult, aItem) =>
-      aItem[0] == aSeconds ? aItem[1] : aResult, aLastSec);
+    aLastSec = gCachedLast.reduce(
+      (aResult, aItem) => (aItem[0] == aSeconds ? aItem[1] : aResult),
+      aLastSec
+    );
 
     
     gCachedLast.push([aSeconds, aLastSec]);
-    if (gCachedLast.length > kCachedLastMaxSize)
+    if (gCachedLast.length > kCachedLastMaxSize) {
       gCachedLast.shift();
+    }
 
     
     
@@ -270,13 +298,14 @@ var DownloadUtils = {
       
       
       let diff = aSeconds - aLastSec;
-      aSeconds = aLastSec + (diff < 0 ? .3 : .1) * diff;
+      aSeconds = aLastSec + (diff < 0 ? 0.3 : 0.1) * diff;
 
       
       
-      let diffPct = diff / aLastSec * 100;
-      if (Math.abs(diff) < 5 || Math.abs(diffPct) < 5)
-        aSeconds = aLastSec - (diff < 0 ? .4 : .2);
+      let diffPct = (diff / aLastSec) * 100;
+      if (Math.abs(diff) < 5 || Math.abs(diffPct) < 5) {
+        aSeconds = aLastSec - (diff < 0 ? 0.4 : 0.2);
+      }
     }
 
     
@@ -286,23 +315,29 @@ var DownloadUtils = {
       timeLeft = gBundle.GetStringFromName(gStr.timeFewSeconds);
     } else {
       
-      let [time1, unit1, time2, unit2] =
-        DownloadUtils.convertTimeUnits(aSeconds);
+      let [time1, unit1, time2, unit2] = DownloadUtils.convertTimeUnits(
+        aSeconds
+      );
 
-      let pair1 =
-        gBundle.formatStringFromName(gStr.timePair, [nf.format(time1), unit1]);
-      let pair2 =
-        gBundle.formatStringFromName(gStr.timePair, [nf.format(time2), unit2]);
+      let pair1 = gBundle.formatStringFromName(gStr.timePair, [
+        nf.format(time1),
+        unit1,
+      ]);
+      let pair2 = gBundle.formatStringFromName(gStr.timePair, [
+        nf.format(time2),
+        unit2,
+      ]);
 
       
       
       if ((aSeconds < 3600 && time1 >= 4) || time2 == 0) {
-        timeLeft = gBundle.formatStringFromName(gStr.timeLeftSingle,
-                                                [pair1]);
+        timeLeft = gBundle.formatStringFromName(gStr.timeLeftSingle, [pair1]);
       } else {
         
-        timeLeft = gBundle.formatStringFromName(gStr.timeLeftDouble,
-                                                [pair1, pair2]);
+        timeLeft = gBundle.formatStringFromName(gStr.timeLeftDouble, [
+          pair1,
+          pair2,
+        ]);
       }
     }
 
@@ -342,23 +377,27 @@ var DownloadUtils = {
         timeStyle: "short",
       });
       dateTimeCompact = dts.format(aDate);
-    } else if (today - aDate < (MS_PER_DAY)) {
+    } else if (today - aDate < MS_PER_DAY) {
       
       dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
-    } else if (today - aDate < (6 * MS_PER_DAY)) {
+    } else if (today - aDate < 6 * MS_PER_DAY) {
       
-      dateTimeCompact = aDate.toLocaleDateString(undefined, { weekday: "long" });
+      dateTimeCompact = aDate.toLocaleDateString(undefined, {
+        weekday: "long",
+      });
     } else {
       
       dateTimeCompact = aDate.toLocaleString(undefined, {
-                          month: "long",
-                          day: "numeric",
+        month: "long",
+        day: "numeric",
       });
     }
 
     const dtOptions = { dateStyle: "long", timeStyle: "short" };
-    dateTimeFull =
-      new Services.intl.DateTimeFormat(undefined, dtOptions).format(aDate);
+    dateTimeFull = new Services.intl.DateTimeFormat(
+      undefined,
+      dtOptions
+    ).format(aDate);
 
     return [dateTimeCompact, dateTimeFull];
   },
@@ -372,8 +411,9 @@ var DownloadUtils = {
 
 
   getURIHost: function DU_getURIHost(aURIString) {
-    let idnService = Cc["@mozilla.org/network/idn-service;1"].
-                     getService(Ci.nsIIDNService);
+    let idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
+      Ci.nsIIDNService
+    );
 
     
     let uri;
@@ -384,8 +424,9 @@ var DownloadUtils = {
     }
 
     
-    if (uri instanceof Ci.nsINestedURI)
+    if (uri instanceof Ci.nsINestedURI) {
       uri = uri.innermostURI;
+    }
 
     let fullHost;
     try {
@@ -414,8 +455,7 @@ var DownloadUtils = {
       fullHost = displayHost;
     } else if (displayHost.length == 0) {
       
-      displayHost =
-        gBundle.formatStringFromName(gStr.doneScheme, [uri.scheme]);
+      displayHost = gBundle.formatStringFromName(gStr.doneScheme, [uri.scheme]);
       fullHost = displayHost;
     } else if (uri.port != -1) {
       
@@ -440,7 +480,7 @@ var DownloadUtils = {
 
     
     
-    while ((aBytes >= 999.5) && (unitIndex < gStr.units.length - 1)) {
+    while (aBytes >= 999.5 && unitIndex < gStr.units.length - 1) {
       aBytes /= 1024;
       unitIndex++;
     }
@@ -448,7 +488,7 @@ var DownloadUtils = {
     
     
     
-    let fractionDigits = (aBytes > 0) && (aBytes < 100) && (unitIndex != 0) ? 1 : 0;
+    let fractionDigits = aBytes > 0 && aBytes < 100 && unitIndex != 0 ? 1 : 0;
 
     
     if (aBytes === Infinity) {
@@ -479,7 +519,7 @@ var DownloadUtils = {
 
     
     
-    while ((unitIndex < timeSize.length) && (time >= timeSize[unitIndex])) {
+    while (unitIndex < timeSize.length && time >= timeSize[unitIndex]) {
       time /= timeSize[unitIndex];
       scale *= timeSize[unitIndex];
       unitIndex++;
@@ -492,8 +532,9 @@ var DownloadUtils = {
     let nextIndex = unitIndex - 1;
 
     
-    for (let index = 0; index < nextIndex; index++)
+    for (let index = 0; index < nextIndex; index++) {
       extra /= timeSize[index];
+    }
 
     let value2 = convertTimeUnitsValue(extra);
     let units2 = convertTimeUnitsUnits(value2, nextIndex);
@@ -524,10 +565,14 @@ function convertTimeUnitsValue(aTime) {
 
 function convertTimeUnitsUnits(aTime, aIndex) {
   
-  if (aIndex < 0)
+  if (aIndex < 0) {
     return "";
+  }
 
-  return PluralForm.get(aTime, gBundle.GetStringFromName(gStr.timeUnits[aIndex]));
+  return PluralForm.get(
+    aTime,
+    gBundle.GetStringFromName(gStr.timeUnits[aIndex])
+  );
 }
 
 

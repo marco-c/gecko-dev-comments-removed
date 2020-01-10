@@ -23,13 +23,18 @@ function run_test() {
 
     
     
-    Assert.ok(!gAUS.canCheckForUpdates, "should not be able to check for " +
-              "updates when there is an update mutex");
+    Assert.ok(
+      !gAUS.canCheckForUpdates,
+      "should not be able to check for " +
+        "updates when there is an update mutex"
+    );
 
     
     
-    Assert.ok(!gAUS.canApplyUpdates, "should not be able to apply updates " +
-              "when there is an update mutex");
+    Assert.ok(
+      !gAUS.canApplyUpdates,
+      "should not be able to apply updates " + "when there is an update mutex"
+    );
 
     debugDump("destroying mutex");
     closeHandle(handle);
@@ -46,8 +51,11 @@ function run_test() {
     debugDump("attempting to create mutex");
     let handle = createMutex(getPerInstallationMutexName());
 
-    Assert.ok(!handle, "should not be able to create the update mutex when " +
-              "the application has created the update mutex");
+    Assert.ok(
+      !handle,
+      "should not be able to create the update mutex when " +
+        "the application has created the update mutex"
+    );
   }
 
   doTestFinish();

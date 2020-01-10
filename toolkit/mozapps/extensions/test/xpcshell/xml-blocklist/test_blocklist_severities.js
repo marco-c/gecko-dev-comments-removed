@@ -3,75 +3,89 @@
 
 
 
-const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
+const URI_EXTENSION_BLOCKLIST_DIALOG =
+  "chrome://mozapps/content/extensions/blocklist.xul";
 
-var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
+var gTestserver = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
 gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
 
 const PREF_BLOCKLIST_ITEM_URL = "extensions.blocklist.itemURL";
-Services.prefs.setCharPref(PREF_BLOCKLIST_ITEM_URL, "http://example.com/blocklist/%blockID%");
+Services.prefs.setCharPref(
+  PREF_BLOCKLIST_ITEM_URL,
+  "http://example.com/blocklist/%blockID%"
+);
 
 async function getAddonBlocklistURL(addon) {
   let entry = await Blocklist.getAddonBlocklistEntry(addon);
   return entry && entry.url;
 }
 
-var ADDONS = [{
-  
-  id: "test_bug455906_1@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 1",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "test_bug455906_2@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 2",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "test_bug455906_3@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 3",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "test_bug455906_4@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 4",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "test_bug455906_5@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 5",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "test_bug455906_6@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 6",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "test_bug455906_7@tests.mozilla.org",
-  name: "Bug 455906 Addon Test 7",
-  version: "5",
-  appVersion: "2",
-}, {
-  
-  id: "dummy_bug455906_1@tests.mozilla.org",
-  name: "Dummy Addon 1",
-  version: "5",
-  appVersion: "3",
-}, {
-  
-  id: "dummy_bug455906_2@tests.mozilla.org",
-  name: "Dummy Addon 2",
-  version: "5",
-  appVersion: "3",
-}];
+var ADDONS = [
+  {
+    
+    id: "test_bug455906_1@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 1",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "test_bug455906_2@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 2",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "test_bug455906_3@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 3",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "test_bug455906_4@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 4",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "test_bug455906_5@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 5",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "test_bug455906_6@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 6",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "test_bug455906_7@tests.mozilla.org",
+    name: "Bug 455906 Addon Test 7",
+    version: "5",
+    appVersion: "2",
+  },
+  {
+    
+    id: "dummy_bug455906_1@tests.mozilla.org",
+    name: "Dummy Addon 1",
+    version: "5",
+    appVersion: "3",
+  },
+  {
+    
+    id: "dummy_bug455906_2@tests.mozilla.org",
+    name: "Dummy Addon 2",
+    version: "5",
+    appVersion: "3",
+  },
+];
 
 
 
@@ -81,17 +95,35 @@ copyBlocklistToProfile(do_get_file("../data/bug455906_start.xml"));
 
 var PLUGINS = [
   
-  new MockPluginTag({name: "test_bug455906_1", version: "5"}, Ci.nsIPluginTag.STATE_DISABLED),
+  new MockPluginTag(
+    { name: "test_bug455906_1", version: "5" },
+    Ci.nsIPluginTag.STATE_DISABLED
+  ),
   
-  new MockPluginTag({name: "test_bug455906_2", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag(
+    { name: "test_bug455906_2", version: "5" },
+    Ci.nsIPluginTag.STATE_ENABLED
+  ),
   
-  new MockPluginTag({name: "test_bug455906_3", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag(
+    { name: "test_bug455906_3", version: "5" },
+    Ci.nsIPluginTag.STATE_ENABLED
+  ),
   
-  new MockPluginTag({name: "test_bug455906_4", version: "5"}, Ci.nsIPluginTag.STATE_DISABLED),
+  new MockPluginTag(
+    { name: "test_bug455906_4", version: "5" },
+    Ci.nsIPluginTag.STATE_DISABLED
+  ),
   
-  new MockPluginTag({name: "test_bug455906_5", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag(
+    { name: "test_bug455906_5", version: "5" },
+    Ci.nsIPluginTag.STATE_ENABLED
+  ),
   
-  new MockPluginTag({name: "test_bug455906_6", version: "5"}, Ci.nsIPluginTag.STATE_ENABLED),
+  new MockPluginTag(
+    { name: "test_bug455906_6", version: "5" },
+    Ci.nsIPluginTag.STATE_ENABLED
+  ),
 ];
 
 var gNotificationCheck = null;
@@ -116,7 +148,10 @@ var WindowWatcher = {
   QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),
 };
 
-MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1", WindowWatcher);
+MockRegistrar.register(
+  "@mozilla.org/embedcomp/window-watcher;1",
+  WindowWatcher
+);
 
 function createAddon(addon) {
   return promiseInstallWebExtension({
@@ -139,8 +174,10 @@ async function loadBlocklist(file, callback) {
 
   gNotificationCheck = callback;
 
-  Services.prefs.setCharPref("extensions.blocklist.url",
-                             "http://example.com/data/" + file);
+  Services.prefs.setCharPref(
+    "extensions.blocklist.url",
+    "http://example.com/data/" + file
+  );
   Blocklist.notify();
 
   await blocklistUpdated;
@@ -148,7 +185,8 @@ async function loadBlocklist(file, callback) {
 
 async function check_plugin_state(plugin) {
   let blocklistState = await Blocklist.getPluginBlocklistState(plugin);
-  return `${plugin.disabled},${blocklistState == Services.blocklist.STATE_BLOCKED}`;
+  return `${plugin.disabled},${blocklistState ==
+    Services.blocklist.STATE_BLOCKED}`;
 }
 
 function create_blocklistURL(blockID) {
@@ -161,13 +199,41 @@ function create_blocklistURL(blockID) {
 async function checkInitialState() {
   let addons = await AddonManager.getAddonsByIDs(ADDONS.map(a => a.id));
 
-  checkAddonState(addons[0], {userDisabled: true, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[1], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[2], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[3], {userDisabled: true, softDisabled: true, appDisabled: false});
-  checkAddonState(addons[4], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[5], {userDisabled: false, softDisabled: false, appDisabled: true});
-  checkAddonState(addons[6], {userDisabled: false, softDisabled: false, appDisabled: true});
+  checkAddonState(addons[0], {
+    userDisabled: true,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[1], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[2], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[3], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: false,
+  });
+  checkAddonState(addons[4], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[5], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
+  checkAddonState(addons[6], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
 
   equal(await check_plugin_state(PLUGINS[0]), "true,false");
   equal(await check_plugin_state(PLUGINS[1]), "false,false");
@@ -185,8 +251,9 @@ add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "3");
   await promiseStartupManager();
 
-  for (let addon of ADDONS)
+  for (let addon of ADDONS) {
     await createAddon(addon);
+  }
 });
 
 add_task(async function test_1() {
@@ -197,17 +264,45 @@ add_task(async function test_1() {
     ok(addons[i], `Addon ${i + 1} should be installed correctly`);
   }
 
-  checkAddonState(addons[0], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[1], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[2], {userDisabled: false, softDisabled: false, appDisabled: false});
+  checkAddonState(addons[0], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[1], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[2], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
 
   
-  checkAddonState(addons[3], {userDisabled: true, softDisabled: true, appDisabled: false});
-  checkAddonState(addons[4], {userDisabled: true, softDisabled: true, appDisabled: false});
+  checkAddonState(addons[3], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: false,
+  });
+  checkAddonState(addons[4], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: false,
+  });
 
   
-  checkAddonState(addons[5], {userDisabled: false, softDisabled: false, appDisabled: true});
-  checkAddonState(addons[6], {userDisabled: false, softDisabled: false, appDisabled: true});
+  checkAddonState(addons[5], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
+  checkAddonState(addons[6], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
 
   
   
@@ -258,19 +353,47 @@ add_task(async function test_1() {
   addons = await AddonManager.getAddonsByIDs(ADDONS.map(a => a.id));
 
   
-  checkAddonState(addons[2], {userDisabled: true, softDisabled: true, appDisabled: false});
+  checkAddonState(addons[2], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: false,
+  });
   equal(await check_plugin_state(PLUGINS[2]), "true,false");
 
   
-  checkAddonState(addons[5], {userDisabled: true, softDisabled: true, appDisabled: false});
-  checkAddonState(addons[6], {userDisabled: true, softDisabled: true, appDisabled: true});
+  checkAddonState(addons[5], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: false,
+  });
+  checkAddonState(addons[6], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: true,
+  });
   equal(await check_plugin_state(PLUGINS[5]), "true,false");
 
   
-  checkAddonState(addons[0], {userDisabled: true, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[1], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[3], {userDisabled: true, softDisabled: true, appDisabled: false});
-  checkAddonState(addons[4], {userDisabled: false, softDisabled: false, appDisabled: false});
+  checkAddonState(addons[0], {
+    userDisabled: true,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[1], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[3], {
+    userDisabled: true,
+    softDisabled: true,
+    appDisabled: false,
+  });
+  checkAddonState(addons[4], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
   equal(await check_plugin_state(PLUGINS[0]), "true,false");
   equal(await check_plugin_state(PLUGINS[1]), "false,false");
   equal(await check_plugin_state(PLUGINS[3]), "true,false");
@@ -333,10 +456,26 @@ add_task(async function test_pt3() {
   let addons = await AddonManager.getAddonsByIDs(ADDONS.map(a => a.id));
 
   
-  checkAddonState(addons[0], {userDisabled: true, softDisabled: false, appDisabled: true});
-  checkAddonState(addons[1], {userDisabled: false, softDisabled: false, appDisabled: true});
-  checkAddonState(addons[2], {userDisabled: false, softDisabled: false, appDisabled: true});
-  checkAddonState(addons[4], {userDisabled: false, softDisabled: false, appDisabled: true});
+  checkAddonState(addons[0], {
+    userDisabled: true,
+    softDisabled: false,
+    appDisabled: true,
+  });
+  checkAddonState(addons[1], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
+  checkAddonState(addons[2], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
+  checkAddonState(addons[4], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
   equal(await check_plugin_state(PLUGINS[0]), "true,true");
   equal(await check_plugin_state(PLUGINS[1]), "false,true");
   equal(await check_plugin_state(PLUGINS[2]), "false,true");
@@ -344,25 +483,67 @@ add_task(async function test_pt3() {
   equal(await check_plugin_state(PLUGINS[4]), "false,true");
 
   
-  checkAddonState(addons[3], {userDisabled: false, softDisabled: false, appDisabled: true});
+  checkAddonState(addons[3], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
 
   
-  equal(await getAddonBlocklistURL(addons[0]), create_blocklistURL(addons[0].id));
-  equal(await getAddonBlocklistURL(addons[1]), create_blocklistURL(addons[1].id));
-  equal(await getAddonBlocklistURL(addons[2]), create_blocklistURL(addons[2].id));
-  equal(await getAddonBlocklistURL(addons[3]), create_blocklistURL(addons[3].id));
-  equal(await getAddonBlocklistURL(addons[4]), create_blocklistURL(addons[4].id));
+  equal(
+    await getAddonBlocklistURL(addons[0]),
+    create_blocklistURL(addons[0].id)
+  );
+  equal(
+    await getAddonBlocklistURL(addons[1]),
+    create_blocklistURL(addons[1].id)
+  );
+  equal(
+    await getAddonBlocklistURL(addons[2]),
+    create_blocklistURL(addons[2].id)
+  );
+  equal(
+    await getAddonBlocklistURL(addons[3]),
+    create_blocklistURL(addons[3].id)
+  );
+  equal(
+    await getAddonBlocklistURL(addons[4]),
+    create_blocklistURL(addons[4].id)
+  );
 
   
-  equal(await Blocklist.getPluginBlockURL(PLUGINS[0]), create_blocklistURL("test_bug455906_plugin"));
-  equal(await Blocklist.getPluginBlockURL(PLUGINS[1]), create_blocklistURL("test_bug455906_plugin"));
-  equal(await Blocklist.getPluginBlockURL(PLUGINS[2]), create_blocklistURL("test_bug455906_plugin"));
-  equal(await Blocklist.getPluginBlockURL(PLUGINS[3]), create_blocklistURL("test_bug455906_plugin"));
-  equal(await Blocklist.getPluginBlockURL(PLUGINS[4]), create_blocklistURL("test_bug455906_plugin"));
+  equal(
+    await Blocklist.getPluginBlockURL(PLUGINS[0]),
+    create_blocklistURL("test_bug455906_plugin")
+  );
+  equal(
+    await Blocklist.getPluginBlockURL(PLUGINS[1]),
+    create_blocklistURL("test_bug455906_plugin")
+  );
+  equal(
+    await Blocklist.getPluginBlockURL(PLUGINS[2]),
+    create_blocklistURL("test_bug455906_plugin")
+  );
+  equal(
+    await Blocklist.getPluginBlockURL(PLUGINS[3]),
+    create_blocklistURL("test_bug455906_plugin")
+  );
+  equal(
+    await Blocklist.getPluginBlockURL(PLUGINS[4]),
+    create_blocklistURL("test_bug455906_plugin")
+  );
 
   
-  checkAddonState(addons[5], {userDisabled: false, softDisabled: false, appDisabled: true});
-  checkAddonState(addons[6], {userDisabled: false, softDisabled: false, appDisabled: true});
+  checkAddonState(addons[5], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
+  checkAddonState(addons[6], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
   equal(await check_plugin_state(PLUGINS[5]), "false,true");
 
   
@@ -391,18 +572,46 @@ add_task(async function test_pt4() {
 
   let addons = await AddonManager.getAddonsByIDs(ADDONS.map(a => a.id));
   
-  checkAddonState(addons[5], {userDisabled: false, softDisabled: false, appDisabled: false});
+  checkAddonState(addons[5], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
   equal(await check_plugin_state(PLUGINS[5]), "false,false");
 
   
-  checkAddonState(addons[3], {userDisabled: false, softDisabled: false, appDisabled: false});
+  checkAddonState(addons[3], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
 
   
-  checkAddonState(addons[0], {userDisabled: true, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[1], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[2], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[4], {userDisabled: false, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[6], {userDisabled: false, softDisabled: false, appDisabled: true});
+  checkAddonState(addons[0], {
+    userDisabled: true,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[1], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[2], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[4], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: false,
+  });
+  checkAddonState(addons[6], {
+    userDisabled: false,
+    softDisabled: false,
+    appDisabled: true,
+  });
   equal(await check_plugin_state(PLUGINS[0]), "true,false");
   equal(await check_plugin_state(PLUGINS[1]), "false,false");
   equal(await check_plugin_state(PLUGINS[2]), "false,false");

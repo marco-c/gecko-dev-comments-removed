@@ -38,12 +38,14 @@ SpecialPowers.pushPrefEnv({
 async function test() {
   waitForExplicitFinish();
 
-  gProvider = new MockProvider(true, [{
-    id: "mock-addon",
-    name: "Mock Add-ons",
-    uiPriority: 4500,
-    flags: AddonManager.TYPE_UI_VIEW_LIST,
-  }]);
+  gProvider = new MockProvider(true, [
+    {
+      id: "mock-addon",
+      name: "Mock Add-ons",
+      uiPriority: 4500,
+      flags: AddonManager.TYPE_UI_VIEW_LIST,
+    },
+  ]);
 
   let aWindow = await open_manager(VIEW_ID);
   gManagerWindow = aWindow;
@@ -64,17 +66,24 @@ function check_list(aItem) {
   
   let emptyNotice = gManagerWindow.document.getElementById(EMPTY_ID);
   ok(emptyNotice != null, "Should have found the empty notice");
-  is(!emptyNotice.hidden, (aItem == null), "Empty notice should be showing if list empty");
+  is(
+    !emptyNotice.hidden,
+    aItem == null,
+    "Empty notice should be showing if list empty"
+  );
 
   
   let list = gManagerWindow.document.getElementById(LIST_ID);
-  is(list.childNodes.length, aItem ? 1 : 0, "Should get expected number of items in list");
+  is(
+    list.childNodes.length,
+    aItem ? 1 : 0,
+    "Should get expected number of items in list"
+  );
   if (aItem != null) {
     let itemName = list.firstChild.getAttribute("name");
     is(itemName, aItem.name, "List item should have correct name");
   }
 }
-
 
 
 add_test(function() {
@@ -160,4 +169,3 @@ add_test(async function() {
   check_list(gItem);
   run_next_test();
 });
-

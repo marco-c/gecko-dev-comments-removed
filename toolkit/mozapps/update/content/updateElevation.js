@@ -20,24 +20,28 @@ const gUpdateElevationDialog = {
     }
   },
   getAUSString(key, strings) {
-    if (strings)
+    if (strings) {
       return this.strings.getFormattedString(key, strings);
+    }
     return this.strings.getString(key);
   },
   _setButton(button, string) {
-      var label = this.getAUSString(string);
-      if (label.includes("%S"))
-        label = label.replace(/%S/, this.brandName);
-      button.label = label;
-      button.setAttribute("accesskey",
-                          this.getAUSString(string + ".accesskey"));
+    var label = this.getAUSString(string);
+    if (label.includes("%S")) {
+      label = label.replace(/%S/, this.brandName);
+    }
+    button.label = label;
+    button.setAttribute("accesskey", this.getAUSString(string + ".accesskey"));
   },
   onLoad() {
     this.strings = document.getElementById("updateStrings");
-    this.brandName = document.getElementById("brandStrings").getString("brandShortName");
+    this.brandName = document
+      .getElementById("brandStrings")
+      .getString("brandShortName");
 
-    let um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     let update = um.activeUpdate;
     let updateFinishedName = document.getElementById("updateFinishedName");
     updateFinishedName.value = update.name;
@@ -53,7 +57,9 @@ const gUpdateElevationDialog = {
     }
 
     let manualLinkLabel = document.getElementById("manualLinkLabel");
-    let manualURL = Services.urlFormatter.formatURLPref("app.update.url.manual");
+    let manualURL = Services.urlFormatter.formatURLPref(
+      "app.update.url.manual"
+    );
     manualLinkLabel.value = manualURL;
     manualLinkLabel.setAttribute("url", manualURL);
 
@@ -70,18 +76,19 @@ const gUpdateElevationDialog = {
   },
   onNoThanks() {
     Services.obs.notifyObservers(null, "update-canceled");
-    let um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     let update = um.activeUpdate;
     um.cleanupActiveUpdate();
     
     
     
-    let aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
+    let aus = Cc["@mozilla.org/updates/update-service;1"].getService(
+      Ci.nsIApplicationUpdateService
+    );
     if (aus.elevationRequired && update) {
-      Services.prefs.setCharPref("app.update.elevate.never",
-                                 update.appVersion);
+      Services.prefs.setCharPref("app.update.elevate.never", update.appVersion);
     }
     window.close();
   },
@@ -101,15 +108,20 @@ const gUpdateElevationDialog = {
 
     
     
-    let um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
+    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+      Ci.nsIUpdateManager
+    );
     um.elevationOptedIn();
 
     
-    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].
-                     createInstance(Ci.nsISupportsPRBool);
-    Services.obs.notifyObservers(cancelQuit, "quit-application-requested",
-                                 "restart");
+    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+      Ci.nsISupportsPRBool
+    );
+    Services.obs.notifyObservers(
+      cancelQuit,
+      "quit-application-requested",
+      "restart"
+    );
 
     
     if (cancelQuit.data) {
@@ -118,13 +130,15 @@ const gUpdateElevationDialog = {
 
     
     if (Services.appinfo.inSafeMode) {
-      let env = Cc["@mozilla.org/process/environment;1"].
-                getService(Ci.nsIEnvironment);
+      let env = Cc["@mozilla.org/process/environment;1"].getService(
+        Ci.nsIEnvironment
+      );
       env.set("MOZ_SAFE_MODE_RESTART", "1");
     }
 
     
-    Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit |
-                          Ci.nsIAppStartup.eRestart);
+    Services.startup.quit(
+      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
+    );
   },
 };

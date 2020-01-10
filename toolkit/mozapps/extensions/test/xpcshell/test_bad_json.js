@@ -14,7 +14,7 @@ add_task(async function() {
   await promiseInstallWebExtension({
     manifest: {
       version: "2.0",
-      applications: {gecko: {id: ID}},
+      applications: { gecko: { id: ID } },
     },
   });
 
@@ -22,7 +22,7 @@ add_task(async function() {
 
   
   
-  await saveJSON({not: "what we expect to find"}, gExtensionsJSON.path);
+  await saveJSON({ not: "what we expect to find" }, gExtensionsJSON.path);
 
   await promiseStartupManager();
   

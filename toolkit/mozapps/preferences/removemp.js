@@ -4,7 +4,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var gRemovePasswordDialog = {
   _token: null,
@@ -16,14 +16,17 @@ var gRemovePasswordDialog = {
 
     this._password = document.getElementById("password");
 
-    var pk11db = Cc["@mozilla.org/security/pk11tokendb;1"]
-                   .getService(Ci.nsIPK11TokenDB);
+    var pk11db = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
+      Ci.nsIPK11TokenDB
+    );
     this._token = pk11db.getInternalKeyToken();
 
     
     
     this.validateInput();
-    document.addEventListener("dialogaccept", function() { gRemovePasswordDialog.removePassword(); });
+    document.addEventListener("dialogaccept", function() {
+      gRemovePasswordDialog.removePassword();
+    });
   },
 
   validateInput() {
@@ -32,8 +35,8 @@ var gRemovePasswordDialog = {
 
   async createAlert(titleL10nId, messageL10nId) {
     const [title, message] = await document.l10n.formatValues([
-      {id: titleL10nId},
-      {id: messageL10nId},
+      { id: titleL10nId },
+      { id: messageL10nId },
     ]);
     Services.prompt.alert(window, title, message);
   },

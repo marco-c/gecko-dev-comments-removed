@@ -3,7 +3,9 @@
 
 "use strict";
 
-const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 
 
 PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
@@ -50,7 +52,7 @@ add_task(async function testAboutDebugging() {
     let aboutDebuggingTab = gBrowser.selectedTab;
 
     if (newAboutAddons) {
-      const {AboutDebugging} = aboutDebuggingTab.linkedBrowser.contentWindow;
+      const { AboutDebugging } = aboutDebuggingTab.linkedBrowser.contentWindow;
       
       
       info("Wait until about:debugging actions are finished");
@@ -63,7 +65,8 @@ add_task(async function testAboutDebugging() {
 
     info("Re-open about:debugging");
     let switched = TestUtils.waitForCondition(
-      () => gBrowser.selectedTab == aboutDebuggingTab);
+      () => gBrowser.selectedTab == aboutDebuggingTab
+    );
     debugAddonsBtn.doCommand();
     await switched;
 

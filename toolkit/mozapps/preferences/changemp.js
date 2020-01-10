@@ -4,7 +4,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const nsPK11TokenDB = "@mozilla.org/security/pk11tokendb;1";
 const nsIPK11TokenDB = Ci.nsIPK11TokenDB;
@@ -13,7 +13,6 @@ const nsPKCS11ModuleDB = "@mozilla.org/security/pkcs11moduledb;1";
 const nsIPKCS11ModuleDB = Ci.nsIPKCS11ModuleDB;
 const nsIPKCS11Slot = Ci.nsIPKCS11Slot;
 const nsIPK11Token = Ci.nsIPK11Token;
-
 
 var params;
 var pw1;
@@ -25,13 +24,13 @@ function init() {
   document.addEventListener("dialogaccept", setPassword);
 }
 
-
 function process() {
   
   
 
-  let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                  .getService(Ci.nsIPK11TokenDB);
+  let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
+    Ci.nsIPK11TokenDB
+  );
   let token = tokenDB.getInternalKeyToken();
   if (token) {
     let oldpwbox = document.getElementById("oldpw");
@@ -67,8 +66,8 @@ function process() {
 
 async function createAlert(titleL10nId, messageL10nId) {
   const [title, message] = await document.l10n.formatValues([
-    {id: titleL10nId},
-    {id: messageL10nId},
+    { id: titleL10nId },
+    { id: messageL10nId },
   ]);
   Services.prompt.alert(window, title, message);
 }
@@ -101,7 +100,10 @@ function setPassword() {
             var secmoddb = Cc[nsPKCS11ModuleDB].getService(nsIPKCS11ModuleDB);
             if (secmoddb.isFIPSEnabled) {
               
-              createAlert("pw-change-failed-title", "pw-change2empty-in-fips-mode");
+              createAlert(
+                "pw-change-failed-title",
+                "pw-change2empty-in-fips-mode"
+              );
               passok = 0;
             }
           }
@@ -131,47 +133,50 @@ function setPassword() {
 }
 
 function setPasswordStrength() {
-
-
-
-
-
+  
+  
+  
+  
+  
 
   var pw = document.getElementById("pw1").value;
 
-
-  var pwlength = (pw.length);
-  if (pwlength > 5)
+  
+  var pwlength = pw.length;
+  if (pwlength > 5) {
     pwlength = 5;
-
-
-
-  var numnumeric = pw.replace(/[0-9]/g, "");
-  var numeric = (pw.length - numnumeric.length);
-  if (numeric > 3)
-    numeric = 3;
-
-
-  var symbols = pw.replace(/\W/g, "");
-  var numsymbols = (pw.length - symbols.length);
-  if (numsymbols > 3)
-    numsymbols = 3;
-
-
-  var numupper = pw.replace(/[A-Z]/g, "");
-  var upper = (pw.length - numupper.length);
-  if (upper > 3)
-    upper = 3;
-
-
-  var pwstrength = ((pwlength * 10) - 20) + (numeric * 10) + (numsymbols * 15) + (upper * 10);
+  }
 
   
-  if ( pwstrength < 0 ) {
+  var numnumeric = pw.replace(/[0-9]/g, "");
+  var numeric = pw.length - numnumeric.length;
+  if (numeric > 3) {
+    numeric = 3;
+  }
+
+  
+  var symbols = pw.replace(/\W/g, "");
+  var numsymbols = pw.length - symbols.length;
+  if (numsymbols > 3) {
+    numsymbols = 3;
+  }
+
+  
+  var numupper = pw.replace(/[A-Z]/g, "");
+  var upper = pw.length - numupper.length;
+  if (upper > 3) {
+    upper = 3;
+  }
+
+  var pwstrength =
+    pwlength * 10 - 20 + numeric * 10 + numsymbols * 15 + upper * 10;
+
+  
+  if (pwstrength < 0) {
     pwstrength = 0;
   }
 
-  if ( pwstrength > 100 ) {
+  if (pwstrength > 100) {
     pwstrength = 100;
   }
 

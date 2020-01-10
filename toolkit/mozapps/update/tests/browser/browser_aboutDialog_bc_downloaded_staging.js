@@ -7,25 +7,25 @@
 
 add_task(async function aboutDialog_backgroundCheck_downloaded_staging() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_APP_UPDATE_STAGING_ENABLED, true],
-    ],
+    set: [[PREF_APP_UPDATE_STAGING_ENABLED, true]],
   });
 
   
   
-  let params = {queryString: "&invalidCompleteSize=1",
-                backgroundUpdate: true,
-                waitForUpdateState: STATE_PENDING};
+  let params = {
+    queryString: "&invalidCompleteSize=1",
+    backgroundUpdate: true,
+    waitForUpdateState: STATE_PENDING,
+  };
   await runAboutDialogUpdateTest(params, [
     {
       panelId: "applying",
-      checkActiveUpdate: {state: STATE_PENDING},
+      checkActiveUpdate: { state: STATE_PENDING },
       continueFile: CONTINUE_STAGING,
     },
     {
       panelId: "apply",
-      checkActiveUpdate: {state: STATE_APPLIED},
+      checkActiveUpdate: { state: STATE_APPLIED },
       continueFile: null,
     },
   ]);

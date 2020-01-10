@@ -6,7 +6,7 @@
 
 
 add_task(async function aboutDialog_foregroundCheck_malformedXML() {
-  let params = {queryString: "&xmlMalformed=1"};
+  let params = { queryString: "&xmlMalformed=1" };
   await runAboutDialogUpdateTest(params, [
     {
       panelId: "checkingForUpdates",

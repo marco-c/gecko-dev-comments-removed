@@ -7,7 +7,9 @@
 
 
 
-const {DownloadUtils} = ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
+const { DownloadUtils } = ChromeUtils.import(
+  "resource://gre/modules/DownloadUtils.jsm"
+);
 
 
 

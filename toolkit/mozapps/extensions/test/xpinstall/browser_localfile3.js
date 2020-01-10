@@ -9,8 +9,9 @@ function test() {
   
   Services.prefs.setBoolPref("xpinstall.whitelist.directRequest", false);
 
-  var cr = Cc["@mozilla.org/chrome/chrome-registry;1"]
-             .getService(Ci.nsIChromeRegistry);
+  var cr = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+    Ci.nsIChromeRegistry
+  );
 
   var chromeroot = extractChromeRoot(gTestPath);
   var xpipath = chromeroot + "amosigned.xpi";

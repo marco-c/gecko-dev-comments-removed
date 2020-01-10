@@ -2,7 +2,8 @@
 
 
 function setup_redirect(aSettings) {
-  var url = "https://example.com/browser/" + RELATIVE_DIR + "redirect.sjs?mode=setup";
+  var url =
+    "https://example.com/browser/" + RELATIVE_DIR + "redirect.sjs?mode=setup";
   for (var name in aSettings) {
     url += "&" + name + "=" + aSettings[name];
   }
@@ -26,23 +27,37 @@ function test() {
   
   setup_redirect({
     "X-Target-Digest": "sha1:foo",
-    "Location": "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi",
+    Location: "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi",
   });
 
-  var url = "https://example.com/browser/" + RELATIVE_DIR + "redirect.sjs?mode=redirect";
+  var url =
+    "https://example.com/browser/" +
+    RELATIVE_DIR +
+    "redirect.sjs?mode=redirect";
 
-  var triggers = encodeURIComponent(JSON.stringify({
-    "Unsigned XPI": {
-      URL: url,
-      toString() { return this.URL; },
-    },
-  }));
+  var triggers = encodeURIComponent(
+    JSON.stringify({
+      "Unsigned XPI": {
+        URL: url,
+        toString() {
+          return this.URL;
+        },
+      },
+    })
+  );
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  BrowserTestUtils.loadURI(gBrowser, TESTROOT + "installtrigger.html?" + triggers);
+  BrowserTestUtils.loadURI(
+    gBrowser,
+    TESTROOT + "installtrigger.html?" + triggers
+  );
 }
 
 function download_failed(install) {
-  is(install.error, AddonManager.ERROR_INCORRECT_HASH, "Should have seen a hash failure");
+  is(
+    install.error,
+    AddonManager.ERROR_INCORRECT_HASH,
+    "Should have seen a hash failure"
+  );
   
   gInstall = install;
 }
@@ -56,16 +71,19 @@ function finish_failed_download() {
   
   setup_redirect({
     "X-Target-Digest": "sha1:ee95834ad862245a9ef99ccecc2a857cadc16404",
-    "Location": "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi",
+    Location: "http://example.com/browser/" + RELATIVE_DIR + "amosigned.xpi",
   });
 
   
   Harness.onNewInstall(gInstall);
 
   
-  AddonManager.installAddonFromWebpage("application/x-xpinstall",
-                                       gBrowser.selectedBrowser,
-                                       gBrowser.contentPrincipal, gInstall);
+  AddonManager.installAddonFromWebpage(
+    "application/x-xpinstall",
+    gBrowser.selectedBrowser,
+    gBrowser.contentPrincipal,
+    gInstall
+  );
 }
 
 function install_ended(install, addon) {

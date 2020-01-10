@@ -14,66 +14,88 @@
 
 const ABUSE_REPORT_MESSAGE_BARS = {
   
-  "submitting": {id: "submitting", actions: ["cancel"]},
+  submitting: { id: "submitting", actions: ["cancel"] },
   
-  "submitted": {
-    id: "submitted", actionAddonTypeSuffix: true,
-    actions: ["remove", "keep"], dismissable: true,
+  submitted: {
+    id: "submitted",
+    actionAddonTypeSuffix: true,
+    actions: ["remove", "keep"],
+    dismissable: true,
   },
   
   "submitted-no-remove-action": {
-    id: "submitted-noremove", dismissable: true,
+    id: "submitted-noremove",
+    dismissable: true,
   },
   
   "submitted-and-removed": {
-    id: "removed", addonTypeSuffix: true, dismissable: true,
+    id: "removed",
+    addonTypeSuffix: true,
+    dismissable: true,
   },
   
   
-  "ERROR_ABORTED_SUBMIT": {
-    id: "aborted", type: "generic", dismissable: true,
+  ERROR_ABORTED_SUBMIT: {
+    id: "aborted",
+    type: "generic",
+    dismissable: true,
   },
   
-  "ERROR_ADDON_NOTFOUND": {
-    id: "error", type: "error", dismissable: true,
+  ERROR_ADDON_NOTFOUND: {
+    id: "error",
+    type: "error",
+    dismissable: true,
   },
-  "ERROR_CLIENT": {
-    id: "error", type: "error", dismissable: true,
+  ERROR_CLIENT: {
+    id: "error",
+    type: "error",
+    dismissable: true,
   },
-  "ERROR_NETWORK": {
-    id: "error", actions: ["retry", "cancel"], type: "error",
+  ERROR_NETWORK: {
+    id: "error",
+    actions: ["retry", "cancel"],
+    type: "error",
   },
-  "ERROR_RECENT_SUBMIT": {
-    id: "error-recent-submit", actions: ["retry", "cancel"], type: "error",
+  ERROR_RECENT_SUBMIT: {
+    id: "error-recent-submit",
+    actions: ["retry", "cancel"],
+    type: "error",
   },
-  "ERROR_SERVER": {
-    id: "error", actions: ["retry", "cancel"], type: "error",
+  ERROR_SERVER: {
+    id: "error",
+    actions: ["retry", "cancel"],
+    type: "error",
   },
-  "ERROR_UNKNOWN": {
-    id: "error", actions: ["retry", "cancel"], type: "error",
+  ERROR_UNKNOWN: {
+    id: "error",
+    actions: ["retry", "cancel"],
+    type: "error",
   },
 };
 
-function openAbuseReport({addonId, reportEntryPoint}) {
-  document.dispatchEvent(new CustomEvent("abuse-report:new", {
-    detail: {addonId, reportEntryPoint},
-  }));
+function openAbuseReport({ addonId, reportEntryPoint }) {
+  document.dispatchEvent(
+    new CustomEvent("abuse-report:new", {
+      detail: { addonId, reportEntryPoint },
+    })
+  );
 }
 
 
 
 function createReportMessageBar(
-  definitionId, {addonId, addonName, addonType},
-  {onclose, onaction} = {}
+  definitionId,
+  { addonId, addonName, addonType },
+  { onclose, onaction } = {}
 ) {
-  const getMessageL10n = (id) => `abuse-report-messagebar-${id}`;
-  const getActionL10n = (action) => getMessageL10n(`action-${action}`);
+  const getMessageL10n = id => `abuse-report-messagebar-${id}`;
+  const getActionL10n = action => getMessageL10n(`action-${action}`);
 
   const barInfo = ABUSE_REPORT_MESSAGE_BARS[definitionId];
   if (!barInfo) {
     throw new Error(`message-bar definition not found: ${definitionId}`);
   }
-  const {id, dismissable, actions, type} = barInfo;
+  const { id, dismissable, actions, type } = barInfo;
   const messageEl = document.createElement("span");
 
   
@@ -86,18 +108,22 @@ function createReportMessageBar(
   document.l10n.setAttributes(
     messageEl,
     getMessageL10n(barInfo.addonTypeSuffix ? `${id}-${addonType}` : id),
-    {"addon-name": addonName || addonId});
+    { "addon-name": addonName || addonId }
+  );
 
-  const barActions = actions ? actions.map(action => {
-    
-    
-    const actionId = barInfo.actionAddonTypeSuffix ?
-      `${action}-${addonType}` : action;
-    const buttonEl = document.createElement("button");
-    buttonEl.addEventListener("click", () => onaction && onaction(action));
-    document.l10n.setAttributes(buttonEl, getActionL10n(actionId));
-    return buttonEl;
-  }) : [];
+  const barActions = actions
+    ? actions.map(action => {
+        
+        
+        const actionId = barInfo.actionAddonTypeSuffix
+          ? `${action}-${addonType}`
+          : action;
+        const buttonEl = document.createElement("button");
+        buttonEl.addEventListener("click", () => onaction && onaction(action));
+        document.l10n.setAttributes(buttonEl, getActionL10n(actionId));
+        return buttonEl;
+      })
+    : [];
 
   const messagebar = document.createElement("message-bar");
   messagebar.setAttribute("type", type || "generic");
@@ -105,35 +131,40 @@ function createReportMessageBar(
     messagebar.setAttribute("dismissable", "");
   }
   messagebar.append(messageEl, ...barActions);
-  messagebar.addEventListener("message-bar:close", onclose, {once: true});
+  messagebar.addEventListener("message-bar:close", onclose, { once: true });
 
   document.getElementById("abuse-reports-messages").append(messagebar);
 
-  document.dispatchEvent(new CustomEvent("abuse-report:new-message-bar", {
-    detail: {definitionId, messagebar},
-  }));
+  document.dispatchEvent(
+    new CustomEvent("abuse-report:new-message-bar", {
+      detail: { definitionId, messagebar },
+    })
+  );
   return messagebar;
 }
 
-async function submitReport({report, reason, message}) {
-  const {addon} = report;
+async function submitReport({ report, reason, message }) {
+  const { addon } = report;
   const addonId = addon.id;
   const addonName = addon.name;
   const addonType = addon.type;
 
   
   const mbSubmitting = createReportMessageBar(
-    "submitting", {addonId, addonName, addonType}, {
-      onaction: (action) => {
+    "submitting",
+    { addonId, addonName, addonType },
+    {
+      onaction: action => {
         if (action === "cancel") {
           report.abort();
           mbSubmitting.remove();
         }
       },
-    });
+    }
+  );
 
   try {
-    await report.submit({reason, message});
+    await report.submit({ reason, message });
     mbSubmitting.remove();
 
     
@@ -152,53 +183,67 @@ async function submitReport({report, reason, message}) {
       barId = "submitted";
     }
 
-    const mbInfo = createReportMessageBar(barId, {
-      addonId, addonName, addonType,
-    }, {
-      onaction: (action) => {
-        mbInfo.remove();
-        
-        
-        if (action === "remove") {
-          report.addon.uninstall(true);
-        }
+    const mbInfo = createReportMessageBar(
+      barId,
+      {
+        addonId,
+        addonName,
+        addonType,
       },
-    });
+      {
+        onaction: action => {
+          mbInfo.remove();
+          
+          
+          if (action === "remove") {
+            report.addon.uninstall(true);
+          }
+        },
+      }
+    );
   } catch (err) {
     
     console.error("Error submitting abuse report for", addonId, err);
     mbSubmitting.remove();
     
     
-    const barId = err.errorType in ABUSE_REPORT_MESSAGE_BARS ?
-      err.errorType : "ERROR_UNKNOWN";
+    const barId =
+      err.errorType in ABUSE_REPORT_MESSAGE_BARS
+        ? err.errorType
+        : "ERROR_UNKNOWN";
 
-    const mbError = createReportMessageBar(barId, {
-      addonId, addonName, addonType,
-    }, {
-      onaction: (action) => {
-        mbError.remove();
-        switch (action) {
-          case "retry":
-            submitReport({report, reason, message});
-            break;
-          case "cancel":
-            report.abort();
-            break;
-        }
+    const mbError = createReportMessageBar(
+      barId,
+      {
+        addonId,
+        addonName,
+        addonType,
       },
-    });
+      {
+        onaction: action => {
+          mbError.remove();
+          switch (action) {
+            case "retry":
+              submitReport({ report, reason, message });
+              break;
+            case "cancel":
+              report.abort();
+              break;
+          }
+        },
+      }
+    );
   }
 }
 
-document.addEventListener("abuse-report:submit", ({detail}) => {
+document.addEventListener("abuse-report:submit", ({ detail }) => {
   submitReport(detail);
 });
 
-document.addEventListener("abuse-report:create-error", ({detail}) => {
-  const {addonId, addon, errorType} = detail;
-  const barId = errorType in ABUSE_REPORT_MESSAGE_BARS ?
-    errorType : "ERROR_UNKNOWN";
+document.addEventListener("abuse-report:create-error", ({ detail }) => {
+  const { addonId, addon, errorType } = detail;
+  const barId =
+    errorType in ABUSE_REPORT_MESSAGE_BARS ? errorType : "ERROR_UNKNOWN";
   createReportMessageBar(barId, {
     addonId,
     addonName: addon && addon.name,
