@@ -128,17 +128,6 @@ class NativeLayerCA : public NativeLayer {
   
   
   
-  CFTypeRefPtr<IOSurfaceRef> NextSurface();
-  CFTypeRefPtr<IOSurfaceRef> NextSurfaceLocked(const MutexAutoLock&);
-
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -154,6 +143,16 @@ class NativeLayerCA : public NativeLayer {
 
   NativeLayerCA();
   ~NativeLayerCA() override;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  CFTypeRefPtr<IOSurfaceRef> NextSurface(const MutexAutoLock&);
 
   
   CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
