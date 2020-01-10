@@ -355,8 +355,6 @@ module.exports = {
     
     "no-irregular-whitespace": "off",
     
-    "no-iterator": "off",
-    
     "no-label-var": "off",
     
     "no-lone-blocks": "off",
