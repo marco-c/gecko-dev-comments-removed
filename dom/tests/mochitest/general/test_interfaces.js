@@ -412,6 +412,14 @@ var interfaceNamesInGlobalScope = [
   
   { name: "GamepadTouch", insecureContext: false, disabled: true },
   
+  { name: "Geolocation", insecureContext: true },
+  
+  { name: "GeolocationCoordinates", insecureContext: false },
+  
+  { name: "GeolocationPosition", insecureContext: false },
+  
+  { name: "GeolocationPositionError", insecureContext: true },
+  
   { name: "HashChangeEvent", insecureContext: true },
   
   { name: "Headers", insecureContext: true },
