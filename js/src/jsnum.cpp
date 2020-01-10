@@ -1810,8 +1810,7 @@ JS_PUBLIC_API bool js::ToNumberSlow(JSContext* cx, HandleValue v_,
 
 
 bool js::ToNumericSlow(JSContext* cx, MutableHandleValue vp) {
-  MOZ_ASSERT(!vp.isNumber());
-  MOZ_ASSERT(!vp.isBigInt());
+  MOZ_ASSERT(!vp.isNumeric());
 
   
   if (!vp.isPrimitive()) {

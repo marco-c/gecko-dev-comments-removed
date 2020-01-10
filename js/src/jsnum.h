@@ -219,10 +219,7 @@ bool ToNumericSlow(JSContext* cx, JS::MutableHandleValue vp);
 
 MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToNumeric(JSContext* cx,
                                               JS::MutableHandleValue vp) {
-  if (vp.isNumber()) {
-    return true;
-  }
-  if (vp.isBigInt()) {
+  if (vp.isNumeric()) {
     return true;
   }
   return ToNumericSlow(cx, vp);
