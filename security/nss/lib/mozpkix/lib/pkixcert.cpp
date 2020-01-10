@@ -105,29 +105,24 @@ BackCert::Init()
     return rv;
   }
 
+  
+  
+  
+  
+
+  
+  rv = der::SkipOptionalImplicitPrimitiveTag(tbsCertificate, 1);
+  if (rv != Success) {
+    return rv;
+  }
+
+  
+  rv = der::SkipOptionalImplicitPrimitiveTag(tbsCertificate, 2);
+  if (rv != Success) {
+    return rv;
+  }
+
   static const uint8_t CSC = der::CONTEXT_SPECIFIC | der::CONSTRUCTED;
-
-  
-  
-  
-  
-
-  
-  if (tbsCertificate.Peek(CSC | 1)) {
-    rv = der::ExpectTagAndSkipValue(tbsCertificate, CSC | 1);
-    if (rv != Success) {
-      return rv;
-    }
-  }
-
-  
-  if (tbsCertificate.Peek(CSC | 2)) {
-    rv = der::ExpectTagAndSkipValue(tbsCertificate, CSC | 2);
-    if (rv != Success) {
-      return rv;
-    }
-  }
-
   rv = der::OptionalExtensions(
          tbsCertificate, CSC | 3,
          [this](Reader& extnID, const Input& extnValue, bool critical,
