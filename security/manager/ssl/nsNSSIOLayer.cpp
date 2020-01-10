@@ -1795,6 +1795,47 @@ nsresult nsSSLIOLayerNewSocket(int32_t family, const char* host, int32_t port,
 }
 
 
+
+
+
+
+
+
+
+static SECStatus nsConvertCANamesToStrings(const UniquePLArenaPool& arena,
+                                           char** caNameStrings,
+                                           CERTDistNames* caNames) {
+  MOZ_ASSERT(arena.get());
+  MOZ_ASSERT(caNameStrings);
+  MOZ_ASSERT(caNames);
+  if (!arena.get() || !caNameStrings || !caNames) {
+    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+    return SECFailure;
+  }
+
+  SECItem* dername;
+  int n;
+  char* namestring;
+
+  for (n = 0; n < caNames->nnames; n++) {
+    dername = &caNames->names[n];
+    namestring = CERT_DerNameToAscii(dername);
+    if (!namestring) {
+      
+      caNameStrings[n] = const_cast<char*>("");
+    } else {
+      caNameStrings[n] = PORT_ArenaStrdup(arena.get(), namestring);
+      PR_Free(namestring);  
+      if (!caNameStrings[n]) {
+        return SECFailure;
+      }
+    }
+  }
+
+  return SECSuccess;
+}
+
+
 enum class UserCertChoice {
   
   Ask = 0,
@@ -1840,13 +1881,14 @@ static bool hasExplicitKeyUsageNonRepudiation(CERTCertificate* cert) {
 
 class ClientAuthDataRunnable : public SyncRunnableBase {
  public:
-  ClientAuthDataRunnable(CERTCertificate** pRetCert, SECKEYPrivateKey** pRetKey,
-                         nsNSSSocketInfo* info,
+  ClientAuthDataRunnable(CERTDistNames* caNames, CERTCertificate** pRetCert,
+                         SECKEYPrivateKey** pRetKey, nsNSSSocketInfo* info,
                          const UniqueCERTCertificate& serverCert)
       : mRV(SECFailure),
         mErrorCodeToReport(SEC_ERROR_NO_MEMORY),
         mPRetCert(pRetCert),
         mPRetKey(pRetKey),
+        mCANames(caNames),
         mSocketInfo(info),
         mServerCert(serverCert.get()) {}
 
@@ -1858,6 +1900,7 @@ class ClientAuthDataRunnable : public SyncRunnableBase {
   virtual void RunOnTargetThread() override;
 
  private:
+  CERTDistNames* const mCANames;       
   nsNSSSocketInfo* const mSocketInfo;  
   CERTCertificate* const mServerCert;  
 };
@@ -1876,7 +1919,7 @@ SECStatus nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
                                      CERTDistNames* caNames,
                                      CERTCertificate** pRetCert,
                                      SECKEYPrivateKey** pRetKey) {
-  if (!socket || !pRetCert || !pRetKey) {
+  if (!socket || !caNames || !pRetCert || !pRetKey) {
     PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
     return SECFailure;
   }
@@ -1919,7 +1962,7 @@ SECStatus nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
 
   
   RefPtr<ClientAuthDataRunnable> runnable(
-      new ClientAuthDataRunnable(pRetCert, pRetKey, info, serverCert));
+      new ClientAuthDataRunnable(caNames, pRetCert, pRetKey, info, serverCert));
   nsresult rv = runnable->DispatchToMainThreadAndWait();
   if (NS_FAILED(rv)) {
     PR_SetError(SEC_ERROR_NO_MEMORY, 0);
@@ -1943,6 +1986,8 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
   
   MOZ_ASSERT(NS_IsMainThread());
 
+  UniquePLArenaPool arena;
+  char** caNameStrings;
   UniqueCERTCertificate cert;
   UniqueSECKEYPrivateKey privKey;
   void* wincx = mSocketInfo;
@@ -1979,7 +2024,22 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     return;
   }
 
-  mRV = SECSuccess;
+  
+  arena.reset(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+  if (!arena) {
+    goto loser;
+  }
+
+  caNameStrings = static_cast<char**>(
+      PORT_ArenaAlloc(arena.get(), sizeof(char*) * mCANames->nnames));
+  if (!caNameStrings) {
+    goto loser;
+  }
+
+  mRV = nsConvertCANamesToStrings(arena, caNameStrings, mCANames);
+  if (mRV != SECSuccess) {
+    goto loser;
+  }
 
   
   if (nsGetUserCertChoice() == UserCertChoice::Auto) {
@@ -1989,6 +2049,13 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     UniqueCERTCertList certList(CERT_FindUserCertsByUsage(
         CERT_GetDefaultCertDB(), certUsageSSLClient, false, true, wincx));
     if (!certList) {
+      goto loser;
+    }
+
+    
+    mRV = CERT_FilterCertListByCANames(certList.get(), mCANames->nnames,
+                                       caNameStrings, certUsageSSLClient);
+    if (mRV != SECSuccess) {
       goto loser;
     }
 
@@ -2082,6 +2149,15 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
           CERT_GetDefaultCertDB(), certUsageSSLClient, false, false, wincx));
       if (!certList) {
         goto loser;
+      }
+
+      if (mCANames->nnames != 0) {
+        
+        mRV = CERT_FilterCertListByCANames(certList.get(), mCANames->nnames,
+                                           caNameStrings, certUsageSSLClient);
+        if (mRV != SECSuccess) {
+          goto loser;
+        }
       }
 
       if (CERT_LIST_END(CERT_LIST_HEAD(certList), certList)) {
