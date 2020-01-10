@@ -8,10 +8,13 @@
 #define frontend_ParseNode_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Variant.h"
 
 #include "frontend/Token.h"
+#include "util/Text.h"
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"
+#include "vm/JSContext.h"
 #include "vm/Printer.h"
 #include "vm/Scope.h"
 
@@ -43,6 +46,7 @@ namespace js {
 namespace frontend {
 
 class ParseContext;
+class ParserSharedBase;
 class FullParseHandler;
 class FunctionBox;
 class ObjectBox;
@@ -1516,12 +1520,58 @@ class NumericLiteral : public ParseNode {
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
 };
 
+
+
+
+class BigIntCreationData {
+  UniqueTwoByteChars buf_;
+  size_t length_ = 0;
+
+ public:
+  BigIntCreationData() = default;
+
+  MOZ_MUST_USE bool init(JSContext* cx, const Vector<char16_t, 32>& buf) {
+#ifdef DEBUG
+    
+    
+    for (char16_t c : buf) {
+      MOZ_ASSERT(c != '_');
+    }
+#endif
+    length_ = buf.length();
+    buf_ = js::DuplicateString(cx, buf.begin(), buf.length());
+    return buf_ != nullptr;
+  }
+
+  BigInt* createBigInt(JSContext* cx) {
+    mozilla::Range<const char16_t> source(buf_.get(), length_);
+
+    return js::ParseBigIntLiteral(cx, source);
+  }
+
+  bool isZero() {
+    mozilla::Range<const char16_t> source(buf_.get(), length_);
+    return js::BigIntLiteralIsZero(source);
+  }
+};
+
 class BigIntLiteral : public ParseNode {
-  BigIntBox* box_;
+  mozilla::Variant<mozilla::Nothing, BigIntCreationData, BigIntBox*> data_;
 
  public:
   BigIntLiteral(BigIntBox* bibox, const TokenPos& pos)
-      : ParseNode(ParseNodeKind::BigIntExpr, pos), box_(bibox) {}
+      : ParseNode(ParseNodeKind::BigIntExpr, pos),
+        data_(mozilla::AsVariant(bibox)) {}
+
+  
+  
+  explicit BigIntLiteral(const TokenPos& pos)
+      : ParseNode(ParseNodeKind::BigIntExpr, pos),
+        data_(AsVariant(mozilla::Nothing())) {}
+
+  void init(BigIntCreationData data) {
+    data_ = mozilla::AsVariant(std::move(data));
+  }
 
   static bool test(const ParseNode& node) {
     return node.isKind(ParseNodeKind::BigIntExpr);
@@ -1538,7 +1588,11 @@ class BigIntLiteral : public ParseNode {
   void dumpImpl(GenericPrinter& out, int indent);
 #endif
 
-  BigIntBox* box() const { return box_; }
+  bool publish(JSContext* cx, ParserSharedBase* parser);
+
+  BigIntBox* box() const { return data_.as<BigIntBox*>(); }
+
+  bool isZero();
 };
 
 class LexicalScopeNode : public ParseNode {
