@@ -61,7 +61,7 @@ inline LauncherVoidResult ShellExecuteByExplorer(const _bstr_t& aPath,
   }
 
   
-  _variant_t loc(CSIDL_DESKTOP);
+  _variant_t loc(int(CSIDL_DESKTOP));
   _variant_t empty;
   long hwnd;
   RefPtr<IDispatch> dispDesktop;
@@ -70,6 +70,11 @@ inline LauncherVoidResult ShellExecuteByExplorer(const _bstr_t& aPath,
                                   getter_AddRefs(dispDesktop));
   if (FAILED(hr)) {
     return LAUNCHER_ERROR_FROM_HRESULT(hr);
+  }
+
+  if (hr == S_FALSE) {
+    
+    return LAUNCHER_ERROR_FROM_WIN32(ERROR_NOT_FOUND);
   }
 
   RefPtr<IServiceProvider> servProv;
