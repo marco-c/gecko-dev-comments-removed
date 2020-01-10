@@ -46,7 +46,6 @@
 #include "nsContentList.h"
 #include "nsVariant.h"
 #include "nsDOMTokenList.h"
-#include "nsXBLPrototypeBinding.h"
 #include "nsError.h"
 #include "nsDOMString.h"
 #include "nsIScriptSecurityManager.h"
@@ -91,8 +90,12 @@
 #  include "nsRange.h"
 #endif
 
-#include "nsBindingManager.h"
-#include "nsXBLBinding.h"
+#ifdef MOZ_XBL
+#  include "nsXBLPrototypeBinding.h"
+#  include "nsBindingManager.h"
+#  include "nsXBLBinding.h"
+#  include "nsXBLService.h"
+#endif
 #include "nsPIDOMWindow.h"
 #include "mozilla/dom/DOMRect.h"
 #include "nsSVGUtils.h"
@@ -131,7 +134,6 @@
 #include "mozilla/dom/NodeListBinding.h"
 
 #include "nsStyledElement.h"
-#include "nsXBLService.h"
 #include "nsITextControlElement.h"
 #include "nsITextControlFrame.h"
 #include "nsISupportsImpl.h"
@@ -258,9 +260,13 @@ Element::QueryInterface(REFNSIID aIID, void** aInstancePtr) {
     return NS_OK;
   }
 
+#if MOZ_XBL
   
   return OwnerDoc()->BindingManager()->GetBindingImplementation(this, aIID,
                                                                 aInstancePtr);
+#else
+  return NS_NOINTERFACE;
+#endif
 }
 
 EventStates Element::IntrinsicState() const {
@@ -369,6 +375,7 @@ void Element::SetTabIndex(int32_t aTabIndex, mozilla::ErrorResult& aError) {
   SetAttr(nsGkAtoms::tabindex, value, aError);
 }
 
+#ifdef MOZ_XBL
 void Element::SetXBLBinding(nsXBLBinding* aBinding,
                             nsBindingManager* aOldBindingManager) {
   nsBindingManager* bindingManager;
@@ -408,6 +415,7 @@ void Element::SetXBLBinding(nsXBLBinding* aBinding,
     }
   }
 }
+#endif
 
 void Element::SetShadowRoot(ShadowRoot* aShadowRoot) {
   nsExtendedDOMSlots* slots = ExtendedDOMSlots();
@@ -517,6 +525,7 @@ void Element::ClearStyleStateLocks() {
   NotifyStyleStateChange(locks.mLocks);
 }
 
+#ifdef MOZ_XBL
 static bool MayNeedToLoadXBLBinding(const Element& aElement) {
   if (!aElement.IsAnyOfXULElements(nsGkAtoms::textbox)) {
     
@@ -537,6 +546,7 @@ static bool MayNeedToLoadXBLBinding(const Element& aElement) {
   
   return true;
 }
+#endif
 
 JSObject* Element::WrapObject(JSContext* aCx,
                               JS::Handle<JSObject*> aGivenProto) {
@@ -545,6 +555,7 @@ JSObject* Element::WrapObject(JSContext* aCx,
     return nullptr;
   }
 
+#ifdef MOZ_XBL
   if (!MayNeedToLoadXBLBinding(*this)) {
     return obj;
   }
@@ -585,6 +596,7 @@ JSObject* Element::WrapObject(JSContext* aCx,
       }
     }
   }
+#endif
 
   return obj;
 }
@@ -1114,7 +1126,11 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
 
 
 
-  if (GetShadowRoot() || GetXBLBinding()) {
+  if (GetShadowRoot()
+#ifdef MOZ_XBL
+      || GetXBLBinding()
+#endif
+  ) {
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
@@ -1641,6 +1657,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   UpdateEditableState(false);
 
+#ifdef MOZ_XBL
   
   
   if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
@@ -1651,6 +1668,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
       binding->BindAnonymousContent(binding->GetAnonymousContent(), this);
     }
   }
+#endif
 
   
   nsresult rv;
@@ -1732,6 +1750,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   return NS_OK;
 }
 
+#ifdef MOZ_XBL
 RemoveFromBindingManagerRunnable::RemoveFromBindingManagerRunnable(
     nsBindingManager* aManager, nsIContent* aContent, Document* aDoc)
     : mozilla::Runnable("dom::RemoveFromBindingManagerRunnable"),
@@ -1757,6 +1776,7 @@ RemoveFromBindingManagerRunnable::Run() {
 
   return NS_OK;
 }
+#endif
 
 bool WillDetachFromShadowOnUnbind(const Element& aElement, bool aNullParent) {
   
@@ -1905,6 +1925,7 @@ void Element::UnbindFromTree(bool aNullParent) {
   }
 
   if (document) {
+#ifdef MOZ_XBL
     if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
       
       
@@ -1918,6 +1939,7 @@ void Element::UnbindFromTree(bool aNullParent) {
                                               false);
       }
     }
+#endif
 
     
     
@@ -2444,12 +2466,14 @@ nsresult Element::SetAttrAndNotify(
     oldValue = aOldValue;
   }
 
+#ifdef MOZ_XBL
   if (aComposedDocument) {
     RefPtr<nsXBLBinding> binding = GetXBLBinding();
     if (binding) {
       binding->AttributeChanged(aName, aNamespaceID, false, aNotify);
     }
   }
+#endif
 
   if (HasElementCreatedFromPrototypeAndHasUnmodifiedL10n() &&
       aNamespaceID == kNameSpaceID_None &&
@@ -2754,12 +2778,14 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
 
   PostIdMaybeChange(aNameSpaceID, aName, nullptr);
 
+#ifdef MOZ_XBL
   if (document) {
     RefPtr<nsXBLBinding> binding = GetXBLBinding();
     if (binding) {
       binding->AttributeChanged(aName, aNameSpaceID, true, aNotify);
     }
   }
+#endif
 
   CustomElementDefinition* definition = GetCustomElementDefinition();
   
@@ -2881,6 +2907,7 @@ void Element::List(FILE* out, int32_t aIndent, const nsCString& aPrefix) const {
 
   fputs(">\n", out);
 
+#  ifdef MOZ_XBL
   Element* nonConstThis = const_cast<Element*>(this);
 
   
@@ -2925,6 +2952,7 @@ void Element::List(FILE* out, int32_t aIndent, const nsCString& aPrefix) const {
       fputs(">\n", out);
     }
   }
+#  endif
 }
 
 void Element::DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const {
@@ -3972,10 +4000,12 @@ void Element::GetCustomInterface(nsGetterAddRefs<T> aResult) {
     }
   }
 
+#ifdef MOZ_XBL
   
   
   OwnerDoc()->BindingManager()->GetBindingImplementation(
       this, NS_GET_TEMPLATE_IID(T), aResult);
+#endif
 }
 
 void Element::ClearServoData(Document* aDoc) {

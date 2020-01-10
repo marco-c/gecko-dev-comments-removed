@@ -240,6 +240,7 @@ class nsJSUtils {
       JSContext* aCx, mozilla::dom::Element* aElement,
       JS::MutableHandleVector<JSObject*> aScopeChain);
 
+#ifdef MOZ_XBL
   
   
   
@@ -250,6 +251,7 @@ class nsJSUtils {
       JSContext* aCx, mozilla::dom::Element* aBoundElement,
       const nsXBLPrototypeBinding& aProtoBinding,
       JS::MutableHandleVector<JSObject*> aScopeChain);
+#endif
 
   static void ResetTimeZone();
 

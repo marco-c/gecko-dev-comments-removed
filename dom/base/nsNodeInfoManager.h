@@ -19,7 +19,9 @@
 #include "nsDataHashtable.h"
 #include "nsStringFwd.h"
 
+#ifdef MOZ_XBL
 class nsBindingManager;
+#endif
 class nsAtom;
 class nsIPrincipal;
 class nsWindowSizes;
@@ -98,7 +100,9 @@ class nsNodeInfoManager final {
 
   void RemoveNodeInfo(mozilla::dom::NodeInfo* aNodeInfo);
 
+#ifdef MOZ_XBL
   nsBindingManager* GetBindingManager() const { return mBindingManager; }
+#endif
 
   
 
@@ -161,7 +165,9 @@ class nsNodeInfoManager final {
       mCommentNodeInfo;  
   mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
       mDocumentNodeInfo;  
+#ifdef MOZ_XBL
   RefPtr<nsBindingManager> mBindingManager;
+#endif
   NodeInfoCache mRecentlyUsedNodeInfos;
   mozilla::Maybe<bool> mSVGEnabled;     
   mozilla::Maybe<bool> mMathMLEnabled;  

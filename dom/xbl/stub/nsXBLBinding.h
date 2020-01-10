@@ -1,0 +1,12 @@
+
+
+
+
+
+
+#ifndef nsXBLBinding_h_
+#define nsXBLBinding_h_
+
+
+class nsXBLBindingStub final {};
+#endif  

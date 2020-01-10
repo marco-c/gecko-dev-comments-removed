@@ -54,7 +54,9 @@
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "nsRange.h"
-#include "nsXBLBinding.h"
+#ifdef MOZ_XBL
+#  include "nsXBLBinding.h"
+#endif
 
 #include "nsTypeAheadFind.h"
 
@@ -783,6 +785,7 @@ nsresult nsTypeAheadFind::GetSearchContainers(
   }
   nsCOMPtr<nsINode> searchRootNode(rootContent);
 
+#ifdef MOZ_XBL
   
   
   
@@ -795,6 +798,7 @@ nsresult nsTypeAheadFind::GetSearchContainers(
       searchRootNode = anonContent->GetFirstChild();
     }
   }
+#endif
   mSearchRange->SelectNodeContents(*searchRootNode, IgnoreErrors());
 
   if (!mStartPointRange) {

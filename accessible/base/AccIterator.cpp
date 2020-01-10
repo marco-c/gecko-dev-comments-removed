@@ -264,12 +264,16 @@ dom::Element* IDRefsIterator::GetElem(nsIContent* aContent,
         aContent->GetUncomposedDocOrConnectedShadowRoot();
     if (docOrShadowRoot) {
       dom::Element* refElm = docOrShadowRoot->GetElementById(aID);
-      if (refElm || !aContent->GetXBLBinding()) {
+      if (refElm
+#ifdef MOZ_XBL
+          || !aContent->GetXBLBinding()
+#endif
+      )
         return refElm;
-      }
     }
   }
 
+#ifdef MOZ_XBL
   
   
 
@@ -288,6 +292,7 @@ dom::Element* IDRefsIterator::GetElem(nsIContent* aContent,
     return aContent->OwnerDoc()->GetAnonymousElementByAttribute(
         aContent, nsGkAtoms::anonid, aID);
   }
+#endif
 
   return nullptr;
 }
