@@ -201,7 +201,12 @@ class HashStore {
 
   const nsCString& TableName() const { return mTableName; }
 
-  nsresult Open();
+  
+  
+  
+  
+  nsresult Open(uint32_t aVersion = 0);
+
   
   
   
@@ -237,11 +242,13 @@ class HashStore {
   
   nsresult WriteFile();
 
- private:
+  nsresult ReadCompletionsLegacyV3(AddCompleteArray& aCompletes);
+
   nsresult Reset();
 
+ private:
   nsresult ReadHeader();
-  nsresult SanityCheck() const;
+  nsresult SanityCheck(uint32_t aVersion = 0) const;
   nsresult CalculateChecksum(nsAutoCString& aChecksum, uint32_t aFileSize,
                              bool aChecksumPresent);
   nsresult CheckChecksum(uint32_t aFileSize);

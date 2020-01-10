@@ -197,6 +197,64 @@ nsresult Classifier::CreateStoreDirectory() {
   return NS_OK;
 }
 
+
+
+
+
+nsresult Classifier::ClearLegacyFiles() {
+  if (ShouldAbort()) {
+    return NS_OK;  
+  }
+
+  nsTArray<nsLiteralCString> tables = {
+      NS_LITERAL_CSTRING("test-phish-simple"),
+      NS_LITERAL_CSTRING("test-malware-simple"),
+      NS_LITERAL_CSTRING("test-unwanted-simple"),
+      NS_LITERAL_CSTRING("test-harmful-simple"),
+      NS_LITERAL_CSTRING("test-track-simple"),
+      NS_LITERAL_CSTRING("test-trackwhite-simple"),
+      NS_LITERAL_CSTRING("test-block-simple"),
+  };
+
+  const auto fnFindAndRemove = [](nsIFile* aRootDirectory,
+                                  const nsACString& aFileName) {
+    nsCOMPtr<nsIFile> file;
+    nsresult rv = aRootDirectory->Clone(getter_AddRefs(file));
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    rv = file->AppendNative(aFileName);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    bool exists;
+    rv = file->Exists(&exists);
+    if (NS_FAILED(rv) || !exists) {
+      return false;
+    }
+
+    rv = file->Remove(false);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  for (const auto& table : tables) {
+    
+    if (fnFindAndRemove(mRootStoreDirectory,
+                        table + NS_LITERAL_CSTRING(".sbstore"))) {
+      fnFindAndRemove(mRootStoreDirectory,
+                      table + NS_LITERAL_CSTRING(".vlpset"));
+    }
+  }
+
+  return NS_OK;
+}
+
 nsresult Classifier::Open(nsIFile& aCacheDirectory) {
   
   nsresult rv = aCacheDirectory.Clone(getter_AddRefs(mCacheDirectory));
@@ -228,6 +286,9 @@ nsresult Classifier::Open(nsIFile& aCacheDirectory) {
   
   rv = CreateStoreDirectory();
   NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = ClearLegacyFiles();
+  Unused << NS_WARN_IF(NS_FAILED(rv));
 
   
   
@@ -1218,7 +1279,26 @@ nsresult Classifier::UpdateHashStore(TableUpdateArray& aUpdates,
   }
 
   nsresult rv = store.Open();
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (rv == NS_ERROR_FILE_CORRUPTED) {
+    
+    
+    
+    
+    
+    LOG(("HashStore is corrupted, remove on-disk data and continue to update"));
+
+    
+    
+    rv = store.Reset();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = store.Open();
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   rv = store.BeginUpdate();
   NS_ENSURE_SUCCESS(rv, rv);
 

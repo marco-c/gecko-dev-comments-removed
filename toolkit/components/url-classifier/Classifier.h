@@ -199,7 +199,11 @@ class Classifier {
   
   bool ShouldAbort() const;
 
+  
   nsresult AddMozEntries(nsTArray<nsCString>& aTables);
+
+  
+  nsresult ClearLegacyFiles();
 
   
   nsCOMPtr<nsIFile> mCacheDirectory;
