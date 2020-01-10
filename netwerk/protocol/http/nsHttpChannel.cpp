@@ -2593,6 +2593,15 @@ void nsHttpChannel::AssertNotDocumentChannel() {
     return;
   }
 
+#ifndef DEBUG
+  if (!StaticPrefs::fission_autostart()) {
+    
+    
+    
+    return;
+  }
+#endif
+
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(this, parentChannel);
   RefPtr<DocumentChannelParent> documentChannelParent =
