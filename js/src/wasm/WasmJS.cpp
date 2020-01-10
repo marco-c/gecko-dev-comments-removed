@@ -686,7 +686,9 @@ const JSFunctionSpec WasmModuleObject::static_methods[] = {
 
 
 void WasmModuleObject::finalize(FreeOp* fop, JSObject* obj) {
-  obj->as<WasmModuleObject>().module().Release();
+  const Module& module = obj->as<WasmModuleObject>().module();
+  fop->release(obj, &module, module.gcMallocBytesExcludingCode(),
+               MemoryUse::WasmModule);
 }
 
 static bool IsModuleObject(JSObject* obj, const Module** module) {
@@ -1033,9 +1035,14 @@ WasmModuleObject* WasmModuleObject::create(JSContext* cx, const Module& module,
     return nullptr;
   }
 
-  obj->initReservedSlot(MODULE_SLOT,
-                        PrivateValue(const_cast<Module*>(&module)));
+  
+  
+  
+  
+  InitReservedSlot(obj, MODULE_SLOT, const_cast<Module*>(&module),
+                   module.gcMallocBytesExcludingCode(), MemoryUse::WasmModule);
   module.AddRef();
+
   
   
   cx->zone()->updateJitCodeMallocBytes(
@@ -1963,7 +1970,8 @@ bool WasmTableObject::isNewborn() const {
 void WasmTableObject::finalize(FreeOp* fop, JSObject* obj) {
   WasmTableObject& tableObj = obj->as<WasmTableObject>();
   if (!tableObj.isNewborn()) {
-    tableObj.table().Release();
+    auto& table = tableObj.table();
+    fop->release(obj, &table, table.gcMallocBytes(), MemoryUse::WasmTableTable);
   }
 }
 
@@ -1997,7 +2005,9 @@ WasmTableObject* WasmTableObject::create(JSContext* cx, const Limits& limits,
     return nullptr;
   }
 
-  obj->initReservedSlot(TABLE_SLOT, PrivateValue(table.forget().take()));
+  size_t size = table->gcMallocBytes();
+  InitReservedSlot(obj, TABLE_SLOT, table.forget().take(), size,
+                   MemoryUse::WasmTableTable);
 
   MOZ_ASSERT(!obj->isNewborn());
   return obj;

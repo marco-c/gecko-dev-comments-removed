@@ -432,6 +432,17 @@ void Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
   }
 }
 
+void Module::initGCMallocBytesExcludingCode() {
+  
+  
+  gcMallocBytesExcludingCode_ = sizeof(*this) +
+      SerializedVectorSize(imports_) +
+      SerializedVectorSize(exports_) +
+      SerializedVectorSize(dataSegments_) +
+      SerializedVectorSize(elemSegments_) +
+      SerializedVectorSize(customSections_);
+}
+
 
 
 
