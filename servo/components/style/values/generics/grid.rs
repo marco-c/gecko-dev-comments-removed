@@ -185,8 +185,6 @@ impl Parse for GridLine<specified::Integer> {
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -230,8 +228,6 @@ impl<L> TrackBreadth<L> {
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Clone,
     Debug,
@@ -494,8 +490,6 @@ impl<L: ToCss, I: ToCss> ToCss for TrackRepeat<L, I> {
 }
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -729,8 +723,6 @@ impl ToCss for LineNameList {
 }
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,

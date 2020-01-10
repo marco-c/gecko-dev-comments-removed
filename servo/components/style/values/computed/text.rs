@@ -198,8 +198,6 @@ impl TextDecorationsInEffect {
 }
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 #[allow(missing_docs)]
 #[repr(C, u8)]

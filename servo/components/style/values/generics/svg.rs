@@ -9,7 +9,6 @@ use cssparser::Parser;
 use style_traits::ParseError;
 
 
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -43,8 +42,6 @@ pub use self::GenericSVGPaintFallback as SVGPaintFallback;
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[animation(no_bound(Url))]
 #[derive(
     Animate,
@@ -84,8 +81,6 @@ impl<C, U> Default for SVGPaint<C, U> {
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[animation(no_bound(U))]
 #[derive(
     Animate,

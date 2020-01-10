@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* FFI functions for Servo to call into Gecko */
+
+
+
+
+
+
 
 #include "mozilla/GeckoBindings.h"
 
@@ -83,7 +83,7 @@ using namespace mozilla;
 using namespace mozilla::css;
 using namespace mozilla::dom;
 
-// Definitions of the global traversal stats.
+
 bool ServoTraversalStatistics::sActive = false;
 ServoTraversalStatistics ServoTraversalStatistics::sSingleton;
 
@@ -114,11 +114,11 @@ static const nsFont* ThreadSafeGetDefaultFontHelper(
   return retval;
 }
 
-/*
- * Does this child count as significant for selector matching?
- *
- * See nsStyleUtil::IsSignificantChild for details.
- */
+
+
+
+
+
 bool Gecko_IsSignificantChild(const nsINode* aNode,
                               bool aWhitespaceIsSignificant) {
   return nsStyleUtil::ThreadSafeIsSignificantChild(aNode->AsContent(),
@@ -190,11 +190,11 @@ ServoComputedData::ServoComputedData(const ServoComputedDataForgotten aValue) {
 MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoStyleStructsMallocEnclosingSizeOf)
 
 void ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const {
-  // Note: GetStyleFoo() returns a pointer to an nsStyleFoo that sits within a
-  // servo_arc::Arc, i.e. it is preceded by a word-sized refcount. So we need
-  // to measure it with a function that can handle an interior pointer. We use
-  // ServoStyleStructsEnclosingMallocSizeOf to clearly identify in DMD's
-  // output the memory measured here.
+  
+  
+  
+  
+  
 #define STYLE_STRUCT(name_)                                       \
   static_assert(alignof(nsStyle##name_) <= sizeof(size_t),        \
                 "alignment will break AddSizeOfExcludingThis()"); \
@@ -211,12 +211,12 @@ void ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const {
         aSizes, &aSizes.mLayoutComputedValuesVisited);
   }
 
-  // Measurement of the following members may be added later if DMD finds it is
-  // worthwhile:
-  // - custom_properties
-  // - writing_mode
-  // - rules
-  // - font_computation_data
+  
+  
+  
+  
+  
+  
 }
 
 void Gecko_ComputedStyle_Destroy(ComputedStyle* aStyle) {
@@ -269,7 +269,7 @@ bool Gecko_IsRootElement(const Element* aElement) {
   return aElement->OwnerDoc()->GetRootElement() == aElement;
 }
 
-// Dirtiness tracking.
+
 void Gecko_SetNodeFlags(const nsINode* aNode, uint32_t aFlags) {
   const_cast<nsINode*>(aNode)->SetFlags(aFlags);
 }
@@ -336,8 +336,8 @@ const ServoElementSnapshot* Gecko_GetElementSnapshot(
 bool Gecko_HaveSeenPtr(SeenPtrs* aTable, const void* aPtr) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aTable);
-  // Empty Rust allocations are indicated by small values up to the alignment
-  // of the relevant type. We shouldn't see anything like that here.
+  
+  
   MOZ_ASSERT(uintptr_t(aPtr) > 16);
 
   return aTable->HaveSeenPtr(aPtr);
@@ -417,12 +417,12 @@ StyleSheet* Gecko_StyleSheet_Clone(const StyleSheet* aSheet,
   RefPtr<StyleSheet> newSheet =
       aSheet->Clone(nullptr, nullptr, nullptr, nullptr);
 
-  // NOTE(emilio): This code runs in the StylesheetInner constructor, which
-  // means that the inner pointer of `aNewParentSheet` still points to the old
-  // one.
-  //
-  // So we _don't_ update neither the parent pointer of the stylesheet, nor the
-  // child list (yet). This is fixed up in that same constructor.
+  
+  
+  
+  
+  
+  
   return static_cast<StyleSheet*>(newSheet.forget().take());
 }
 
@@ -487,7 +487,7 @@ bool Gecko_GetAnimationRule(const Element* aElement,
   }
   nsPresContext* presContext = doc->GetPresContext();
   if (!presContext || !presContext->IsDynamic()) {
-    // For print or print preview, ignore animations.
+    
     return false;
   }
 
@@ -542,12 +542,12 @@ void Gecko_UpdateAnimations(const Element* aElement,
         const_cast<Element*>(aElement), pseudoType, aComputedData);
   }
 
-  // aComputedData might be nullptr if the target element is now in a
-  // display:none subtree. We still call Gecko_UpdateAnimations in this case
-  // because we need to stop CSS animations in the display:none subtree.
-  // However, we don't need to update transitions since they are stopped by
-  // RestyleManager::AnimationsWithDestroyedFrame so we just return early
-  // here.
+  
+  
+  
+  
+  
+  
   if (!aComputedData) {
     return;
   }
@@ -566,15 +566,15 @@ void Gecko_UpdateAnimations(const Element* aElement,
 
   if (aTasks & UpdateAnimationsTasks::CascadeResults) {
     EffectSet* effectSet = EffectSet::GetEffectSet(aElement, pseudoType);
-    // CSS animations/transitions might have been destroyed as part of the above
-    // steps so before updating cascade results, we check if there are still any
-    // animations to update.
+    
+    
+    
     if (effectSet) {
-      // We call UpdateCascadeResults directly (intead of
-      // MaybeUpdateCascadeResults) since we know for sure that the cascade has
-      // changed, but we were unable to call MarkCascadeUpdated when we noticed
-      // it since we avoid mutating state as part of the Servo parallel
-      // traversal.
+      
+      
+      
+      
+      
       presContext->EffectCompositor()->UpdateCascadeResults(
           *effectSet, const_cast<Element*>(aElement), pseudoType);
     }
@@ -666,9 +666,9 @@ double Gecko_GetPositionInSegment(
              "The segment from key should be less than to key");
 
   double positionInSegment = (aProgress - aSegment->mFromKey) /
-                             // To avoid floating precision inaccuracies, make
-                             // sure we calculate both the numerator and
-                             // denominator using double precision.
+                             
+                             
+                             
                              (double(aSegment->mToKey) - aSegment->mFromKey);
 
   return ComputedTimingFunction::GetPortion(aSegment->mTimingFunction,
@@ -710,20 +710,20 @@ bool Gecko_MatchLang(const Element* aElement, nsAtom* aOverrideLang,
     return false;
   }
 
-  // We have to determine the language of the current element.  Since
-  // this is currently no property and since the language is inherited
-  // from the parent we have to be prepared to look at all parent
-  // nodes.  The language itself is encoded in the LANG attribute.
+  
+  
+  
+  
   if (auto* language = aHasOverrideLang ? aOverrideLang : aElement->GetLang()) {
     return nsStyleUtil::DashMatchCompare(
         nsDependentAtomString(language), nsDependentString(aValue),
         nsASCIICaseInsensitiveStringComparator());
   }
 
-  // Try to get the language from the HTTP header or if this
-  // is missing as well from the preferences.
-  // The content language can be a comma-separated list of
-  // language codes.
+  
+  
+  
+  
   nsAutoString language;
   aElement->OwnerDoc()->GetContentLanguage(language);
 
@@ -777,7 +777,7 @@ bool Gecko_IsBrowserFrame(const Element* aElement) {
 
 template <typename Implementor>
 static nsAtom* LangValue(Implementor* aElement) {
-  // TODO(emilio): Deduplicate a bit with nsIContent::GetLang().
+  
   const nsAttrValue* attr =
       aElement->GetParsedAttr(nsGkAtoms::lang, kNameSpaceID_XML);
   if (!attr && aElement->SupportsLangAttr()) {
@@ -809,7 +809,7 @@ static bool DoMatch(Implementor* aElement, nsAtom* aNS, nsAtom* aName,
     return value && aMatch(value);
   }
 
-  // No namespace means any namespace - we have to check them all. :-(
+  
   BorrowedAttrInfo attrInfo;
   for (uint32_t i = 0; (attrInfo = aElement->GetAttrInfoAt(i)); ++i) {
     if (attrInfo.mName->LocalName() != aName) {
@@ -1002,10 +1002,10 @@ void Gecko_nsFont_InitSystem(nsFont* aDest, int32_t aFontId,
   const nsFont* defaultVariableFont = ThreadSafeGetDefaultFontHelper(
       *aDocument, aFont->mLanguage, StyleGenericFontFamily::None);
 
-  // We have passed uninitialized memory to this function,
-  // initialize it. We can't simply return an nsFont because then
-  // we need to know its size beforehand. Servo cannot initialize nsFont
-  // itself, so this will do.
+  
+  
+  
+  
   new (aDest) nsFont(*defaultVariableFont);
 
   LookAndFeel::FontID fontID = static_cast<LookAndFeel::FontID>(aFontId);
@@ -1037,15 +1037,15 @@ nsTArray<uint32_t>* Gecko_AppendFeatureValueHashEntry(
 }
 
 float Gecko_FontStretch_ToFloat(FontStretch aStretch) {
-  // Servo represents percentages with 1. being 100%.
+  
   return aStretch.Percentage() / 100.0f;
 }
 
 void Gecko_FontStretch_SetFloat(FontStretch* aStretch, float aFloat) {
-  // Servo represents percentages with 1. being 100%.
-  //
-  // Also, the font code assumes a given maximum that style doesn't really need
-  // to know about. So clamp here at the boundary.
+  
+  
+  
+  
   *aStretch = FontStretch(std::min(aFloat * 100.0f, float(FontStretch::kMax)));
 }
 
@@ -1152,7 +1152,9 @@ void Gecko_CopyImageValueFrom(nsStyleImage* aImage,
 
 void Gecko_InitializeImageCropRect(nsStyleImage* aImage) {
   MOZ_ASSERT(aImage);
-  aImage->SetCropRect(MakeUnique<nsStyleImage::CropRect>());
+  auto zero = StyleNumberOrPercentage::Number(0);
+  aImage->SetCropRect(MakeUnique<nsStyleImage::CropRect>(
+      nsStyleImage::CropRect{zero, zero, zero, zero}));
 }
 
 void Gecko_SetCursorArrayLength(nsStyleUI* aStyleUI, size_t aLen) {
@@ -1471,7 +1473,7 @@ void Gecko_GetComputedURLSpec(const StyleComputedUrl* aURL, nsCString* aOut) {
 
 void Gecko_GetComputedImageURLSpec(const StyleComputedUrl* aURL,
                                    nsCString* aOut) {
-  // Image URIs don't serialize local refs as local.
+  
   if (nsIURI* uri = aURL->GetURI()) {
     nsresult rv = uri->GetSpec(*aOut);
     if (NS_SUCCEEDED(rv)) {
@@ -1483,14 +1485,14 @@ void Gecko_GetComputedImageURLSpec(const StyleComputedUrl* aURL,
 }
 
 void Gecko_nsIURI_Debug(nsIURI* aURI, nsCString* aOut) {
-  // TODO(emilio): Do we have more useful stuff to put here, maybe?
+  
   if (aURI) {
     *aOut = aURI->GetSpecOrDefault();
   }
 }
 
-// XXX Implemented by hand because even though it's thread-safe, only the
-// subclasses have the HasThreadSafeRefCnt bits.
+
+
 void Gecko_AddRefnsIURIArbitraryThread(nsIURI* aPtr) { NS_ADDREF(aPtr); }
 void Gecko_ReleasensIURIArbitraryThread(nsIURI* aPtr) { NS_RELEASE(aPtr); }
 void Gecko_AddRefnsIReferrerInfoArbitraryThread(nsIReferrerInfo* aPtr) {
@@ -1570,8 +1572,8 @@ void Gecko_nsStyleFont_PrioritizeUserFonts(
 
 nscoord Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont* aFont,
                                          const Document* aDocument) {
-  // Don't change font-size:0, since that would un-hide hidden text, nor chrome
-  // docs, we assume those know what they do.
+  
+  
   if (aFont->mSize == 0 || nsContentUtils::IsChromeDoc(aDocument)) {
     return 0;
   }
@@ -1656,7 +1658,7 @@ void AssertIsMainThreadOrServoFontMetricsLocked() {
   }
 }
 
-}  // namespace mozilla
+}  
 
 GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext* aPresContext,
                                       bool aIsVertical,
@@ -1665,16 +1667,16 @@ GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext* aPresContext,
   AutoWriteLock guard(*sServoFFILock);
   GeckoFontMetrics ret;
 
-  // Getting font metrics can require some main thread only work to be
-  // done, such as work that needs to touch non-threadsafe refcounted
-  // objects (like the DOM FontFace/FontFaceSet objects), network loads, etc.
-  //
-  // To handle this work, font code checks whether we are in a Servo traversal
-  // and if so, appends PostTraversalTasks to the current ServoStyleSet
-  // to be performed immediately after the traversal is finished.  This
-  // works well for starting downloadable font loads, since we don't have
-  // those fonts available to get metrics for anyway.  Platform fonts and
-  // ArrayBuffer-backed FontFace objects are handled synchronously.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   nsPresContext* presContext = const_cast<nsPresContext*>(aPresContext);
   presContext->SetUsesExChUnits(true);
@@ -1736,16 +1738,16 @@ static already_AddRefed<StyleSheet> LoadImportSheet(
 
   if (NS_FAILED(rv) || !aParent->GetFirstChild() ||
       aParent->GetFirstChild() == previousFirstChild) {
-    // Servo and Gecko have different ideas of what a valid URL is, so we might
-    // get in here with a URL string that NS_NewURI can't handle.  We may also
-    // reach here via an import cycle.  For the import cycle case, we need some
-    // sheet object per spec, even if its empty.  DevTools uses the URI to
-    // realize it has hit an import cycle, so we mark it complete to make the
-    // sheet readable from JS.
+    
+    
+    
+    
+    
+    
     RefPtr<StyleSheet> emptySheet =
         aParent->CreateEmptyChildSheet(media.forget());
-    // Make a dummy URI if we don't have one because some methods assume
-    // non-null URIs.
+    
+    
     if (!uri) {
       NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:invalid"));
     }
@@ -1859,7 +1861,7 @@ bool Gecko_DocumentRule_UseForPresentation(
   nsIURI* docURI = aDocument->GetDocumentURI();
   nsAutoCString docURISpec;
   if (docURI) {
-    // If GetSpec fails (due to OOM) just skip these URI-specific CSS rules.
+    
     nsresult rv = docURI->GetSpec(docURISpec);
     NS_ENSURE_SUCCESS(rv, false);
   }

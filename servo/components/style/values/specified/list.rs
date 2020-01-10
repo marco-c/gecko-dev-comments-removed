@@ -126,8 +126,6 @@ pub struct QuoteList(
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Clone,
     Debug,

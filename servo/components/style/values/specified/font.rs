@@ -1091,8 +1091,6 @@ bitflags! {
 )]
 #[repr(C, u8)]
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 pub enum VariantAlternates {
     
     #[css(function)]

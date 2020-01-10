@@ -707,8 +707,6 @@ fn is_name_code_point(c: char) -> bool {
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[repr(C, u8)]
 #[derive(
     Clone,

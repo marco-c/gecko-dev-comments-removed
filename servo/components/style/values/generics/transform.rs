@@ -151,7 +151,6 @@ fn is_same<N: PartialEq>(x: &N, y: &N) -> bool {
 )]
 #[repr(C, u8)]
 
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 pub enum GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>
 where
     Angle: Zero,

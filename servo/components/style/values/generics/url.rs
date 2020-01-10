@@ -5,8 +5,6 @@
 
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,

@@ -132,7 +132,6 @@ impl ToComputedValue for LineHeight {
 }
 
 
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 #[repr(C, u8)]
 pub enum TextOverflowSide {
