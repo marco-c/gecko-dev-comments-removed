@@ -5,8 +5,8 @@
 
 const { RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
-const webExtensionSpec = generateActorSpec({
-  typeName: "webExtension",
+const webExtensionDescriptorSpec = generateActorSpec({
+  typeName: "webExtensionDescriptor",
 
   methods: {
     reload: {
@@ -14,11 +14,16 @@ const webExtensionSpec = generateActorSpec({
       response: { addon: RetVal("json") },
     },
 
+    
     connect: {
+      request: {},
+      response: { form: RetVal("json") },
+    },
+    getTarget: {
       request: {},
       response: { form: RetVal("json") },
     },
   },
 });
 
-exports.webExtensionSpec = webExtensionSpec;
+exports.webExtensionDescriptorSpec = webExtensionDescriptorSpec;
