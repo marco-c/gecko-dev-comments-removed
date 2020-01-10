@@ -444,6 +444,14 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
     return mCodepointsWithNoFonts.test(aCh);
   }
 
+  
+  
+  
+  
+  
+  
+  uint32_t GetGeneration() const;
+
  protected:
   friend class mozilla::fontlist::FontList;
   friend class InitOtherFamilyNamesForStylo;
