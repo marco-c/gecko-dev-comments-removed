@@ -106,6 +106,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   bool IsElementPreformatted() const;
   bool IsInOL() const;
+  bool IsInOlOrUl() const;
   bool IsCurrentNodeConverted() const;
   bool MustSuppressLeaf() const;
 
