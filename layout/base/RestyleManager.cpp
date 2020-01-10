@@ -674,6 +674,12 @@ static nsIFrame* GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame) {
 static bool RecomputePosition(nsIFrame* aFrame) {
   
   
+  if (aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)) {
+    return true;
+  }
+
+  
+  
   
   
   if (aFrame->IsTableFrame()) {
@@ -690,9 +696,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   
   if (aFrame->HasView() ||
-      (aFrame->GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    StyleChangeReflow(aFrame, nsChangeHint_NeedReflow |
-                                  nsChangeHint_ReflowChangesSizeOrPosition);
+      aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
     return false;
   }
 
@@ -701,16 +705,17 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
     nsIFrame* ph = aFrame->GetPlaceholderFrame();
     if (ph && ph->HasAnyStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN)) {
-      StyleChangeReflow(aFrame, nsChangeHint_NeedReflow |
-                                    nsChangeHint_ReflowChangesSizeOrPosition);
       return false;
     }
   }
 
   
   
-  if (aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)) {
-    return true;
+  
+  
+  
+  if (aFrame->DescendantMayDependOnItsStaticPosition()) {
+    return false;
   }
 
   aFrame->SchedulePaint();
@@ -887,8 +892,6 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   }
 
   
-  StyleChangeReflow(aFrame, nsChangeHint_NeedReflow |
-                                nsChangeHint_ReflowChangesSizeOrPosition);
   return false;
 }
 
@@ -1689,6 +1692,9 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
         ActiveLayerTracker::NotifyOffsetRestyle(frame);
         
         if (!RecomputePosition(frame)) {
+          StyleChangeReflow(frame,
+                            nsChangeHint_NeedReflow |
+                                nsChangeHint_ReflowChangesSizeOrPosition);
           didReflowThisFrame = true;
         }
       }

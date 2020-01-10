@@ -601,7 +601,8 @@ class nsIFrame : public nsQueryFrame {
         mMayHaveOpacityAnimation(false),
         mAllDescendantsAreInvisible(false),
         mHasBSizeChange(false),
-        mInScrollAnchorChain(false) {
+        mInScrollAnchorChain(false),
+        mDescendantMayDependOnItsStaticPosition(false) {
     MOZ_ASSERT(mComputedStyle);
     MOZ_ASSERT(mPresContext);
     mozilla::PodZero(&mOverflow);
@@ -4192,6 +4193,14 @@ class nsIFrame : public nsQueryFrame {
     mHasBSizeChange = aHasBSizeChange;
   }
 
+  bool DescendantMayDependOnItsStaticPosition() const {
+    return mDescendantMayDependOnItsStaticPosition;
+  }
+
+  void SetDescendantMayDependOnItsStaticPosition(bool aValue) {
+    mDescendantMayDependOnItsStaticPosition = aValue;
+  }
+
   
 
 
@@ -4417,6 +4426,13 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mInScrollAnchorChain : 1;
+
+  
+
+
+
+
+  bool mDescendantMayDependOnItsStaticPosition : 1;
 
  protected:
   

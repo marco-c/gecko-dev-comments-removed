@@ -104,6 +104,51 @@ void nsAbsoluteContainingBlock::RemoveFrame(nsIFrame* aDelegatingFrame,
   mAbsoluteFrames.DestroyFrame(aOldFrame);
 }
 
+static void MaybeMarkAncestorsAsHavingDescendantDependentOnItsStaticPos(
+    nsIFrame* aFrame, nsIFrame* aContainingBlockFrame) {
+  MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
+  if (!aFrame->StylePosition()->NeedsHypotheticalPositionIfAbsPos()) {
+    return;
+  }
+  
+  
+  if (aFrame->GetPrevContinuation()) {
+    return;
+  }
+
+  auto* placeholder = aFrame->GetPlaceholderFrame();
+  MOZ_ASSERT(placeholder);
+
+  
+  if (!placeholder->HasAnyStateBits(PLACEHOLDER_FOR_FIXEDPOS)) {
+    return;
+  }
+
+  for (nsIFrame* ancestor = placeholder->GetParent(); ancestor;
+       ancestor = ancestor->GetParent()) {
+    
+    
+    
+    
+    do {
+      if (ancestor->DescendantMayDependOnItsStaticPosition()) {
+        return;
+      }
+      
+      
+      if (aFrame == aContainingBlockFrame) {
+        return;
+      }
+      ancestor->SetDescendantMayDependOnItsStaticPosition(true);
+      nsIFrame* prev = ancestor->GetPrevContinuation();
+      if (!prev) {
+        break;
+      }
+      ancestor = prev;
+    } while (true);
+  }
+}
+
 void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                        nsPresContext* aPresContext,
                                        const ReflowInput& aReflowInput,
@@ -124,6 +169,12 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
         FrameDependsOnContainer(
             kidFrame, !!(aFlags & AbsPosReflowFlags::CBWidthChanged),
             !!(aFlags & AbsPosReflowFlags::CBHeightChanged));
+
+    if (NS_SUBTREE_DIRTY(kidFrame)) {
+      MaybeMarkAncestorsAsHavingDescendantDependentOnItsStaticPos(
+          kidFrame, aDelegatingFrame);
+    }
+
     nscoord availBSize = aReflowInput.AvailableBSize();
     const nsRect& cb =
         isGrid ? nsGridContainerFrame::GridItemCB(kidFrame) : aContainingBlock;
