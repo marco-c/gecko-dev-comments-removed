@@ -1,0 +1,35 @@
+
+
+
+"use strict";
+
+
+const { shallow } = require("enzyme");
+const React = require("react");
+
+
+const {
+  CLIENT,
+  EMPTY_WORKER_LIST,
+} = require("devtools/client/application/test/components/fixtures/data/constants");
+
+const WorkerListEmpty = React.createFactory(
+  require("devtools/client/application/src/components/WorkerListEmpty")
+);
+
+
+
+
+
+describe("Empty Service Worker List:", () => {
+  it("renders the expected snapshot for a workerListEmpty with empty worker list", () => {
+    const wrapper = shallow(
+      WorkerListEmpty({
+        client: CLIENT,
+        workers: EMPTY_WORKER_LIST,
+        isDebugEnabled: true,
+      })
+    );
+    expect(wrapper).toMatchSnapshot();
+  });
+});

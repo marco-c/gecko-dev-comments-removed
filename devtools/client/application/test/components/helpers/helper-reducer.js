@@ -1,0 +1,16 @@
+
+
+
+"use strict";
+
+const {
+  workersReducer,
+} = require("devtools/client/application/src/reducers/workers-state");
+const {
+  pageReducer,
+} = require("devtools/client/application/src/reducers/page-state");
+
+exports.reducers = {
+  workers: workersReducer,
+  page: pageReducer,
+};

@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  
+  getUnicodeHostname: arg => arg,
+  getUnicodeUrl: arg => arg,
+  getUnicodeUrlPath: arg => arg,
+};
