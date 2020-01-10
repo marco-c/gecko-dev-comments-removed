@@ -111,7 +111,7 @@ function createUrlRecord(url) {
   return createRecord('url', 'text/plain', url);
 }
 
-function createNFCPushOptions(target, timeout, ignoreRead) {
+function createNDEFPushOptions(target, timeout, ignoreRead) {
   return {target, timeout, ignoreRead};
 }
 
@@ -172,10 +172,10 @@ function assertWebNDEFMessagesEqual(message, expectedMessage) {
   }
 }
 
-function testNFCScanOptions(message, scanOptions, unmatchedScanOptions, desc) {
+function testNDEFScanOptions(message, scanOptions, unmatchedScanOptions, desc) {
   nfc_test(async (t, mockNFC) => {
-    const reader1 = new NFCReader();
-    const reader2 = new NFCReader();
+    const reader1 = new NDEFReader();
+    const reader2 = new NDEFReader();
     const controller = new AbortController();
 
     mockNFC.setReadingMessage(message);
@@ -201,7 +201,7 @@ function testNFCScanOptions(message, scanOptions, unmatchedScanOptions, desc) {
 function testReadingMultiMessages(
     message, scanOptions, unmatchedMessage, desc) {
   nfc_test(async (t, mockNFC) => {
-    const reader = new NFCReader();
+    const reader = new NDEFReader();
     const controller = new AbortController();
     const readerWatcher = new EventWatcher(t, reader, ["reading", "error"]);
 
