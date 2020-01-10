@@ -1996,6 +1996,8 @@ pref("devtools.inspector.showUserAgentShadowRoots", false);
 
 pref("devtools.inspector.new-rulesview.enabled", false);
 
+pref("devtools.inspector.compatibility.enabled", false);
+
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);
