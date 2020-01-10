@@ -297,6 +297,9 @@ void nsHtml5StreamParser::FeedJapaneseDetector(Span<const uint8_t> aBuffer,
     return;
   }
   mFeedChardet = false;
+  if (mDecodingLocalFileAsUTF8 && detected != ISO_2022_JP_ENCODING) {
+    return;
+  }
   int32_t source = kCharsetFromAutoDetection;
   if (mCharsetSource == kCharsetFromParentForced ||
       mCharsetSource == kCharsetFromUserForced) {
@@ -325,7 +328,8 @@ void nsHtml5StreamParser::FeedDetector(Span<const uint8_t> aBuffer,
                                        bool aLast) {
   if (mEncoding->IsJapaneseLegacy()) {
     FeedJapaneseDetector(aBuffer, aLast);
-  } else if (mEncoding == WINDOWS_1251_ENCODING && mChardet) {
+  } else if (mEncoding == WINDOWS_1251_ENCODING && mChardet &&
+             !mDecodingLocalFileAsUTF8) {
     if (!aBuffer.IsEmpty()) {
       bool dontFeed = false;
       mozilla::Unused << mChardet->DoIt((const char*)aBuffer.Elements(),
@@ -633,7 +637,7 @@ nsresult nsHtml5StreamParser::FinalizeSniffing(Span<const uint8_t> aFromSegment,
   }
   
   
-  if (mFeedChardet && !mDecodingLocalFileAsUTF8) {
+  if (mFeedChardet) {
     FinalizeSniffingWithDetector(aFromSegment, aCountToSniffingLimit, aEof);
     
   }
@@ -892,6 +896,12 @@ void nsHtml5StreamParser::ReDecodeLocalFile() {
   mHasHadErrors = false;
 
   
+  
+  
+  mJapaneseDetector = mozilla::JapaneseDetector::Create(false);
+  mFeedChardet = true;
+
+  
   mLastBuffer = mFirstBuffer;
   mLastBuffer->next = nullptr;
   mLastBuffer->setStart(0);
@@ -1137,7 +1147,7 @@ void nsHtml5StreamParser::DoStopRequest() {
       return;
     }
   }
-  if (mFeedChardet && !mDecodingLocalFileAsUTF8) {
+  if (mFeedChardet) {
     mFeedChardet = false;
     FeedDetector(Span<uint8_t>(), true);
   }
@@ -1299,7 +1309,7 @@ void nsHtml5StreamParser::DoDataAvailable(Span<const uint8_t> aBuffer) {
 
   nsresult rv;
   if (HasDecoder()) {
-    if (mFeedChardet && !mDecodingLocalFileAsUTF8) {
+    if (mFeedChardet) {
       FeedDetector(aBuffer, false);
     }
     rv = WriteStreamBytes(aBuffer);
