@@ -332,13 +332,13 @@ nsresult mozInlineSpellStatus::FinishNavigationEvent(
 
   NS_ASSERTION(mAnchorRange, "No anchor for navigation!");
 
-  
-  ErrorResult err;
-  nsCOMPtr<nsINode> oldAnchorNode =
-      mOldNavigationAnchorRange->GetStartContainer(err);
-  if (NS_WARN_IF(err.Failed())) {
-    return err.StealNSResult();
+  if (!mOldNavigationAnchorRange->IsPositioned()) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
+
+  
+  nsCOMPtr<nsINode> oldAnchorNode =
+      mOldNavigationAnchorRange->GetStartContainer();
   uint32_t oldAnchorOffset = mOldNavigationAnchorRange->StartOffset();
 
   
@@ -356,15 +356,13 @@ nsresult mozInlineSpellStatus::FinishNavigationEvent(
   }
 
   
-  nsCOMPtr<nsINode> newAnchorNode = mAnchorRange->GetStartContainer(err);
-  if (NS_WARN_IF(err.Failed())) {
-    return err.StealNSResult();
-  }
+  nsCOMPtr<nsINode> newAnchorNode = mAnchorRange->GetStartContainer();
   uint32_t newAnchorOffset = mAnchorRange->StartOffset();
 
   
   bool isInRange = false;
   if (!mForceNavigationWordCheck) {
+    ErrorResult err;
     isInRange = oldWord->IsPointInRange(
         *newAnchorNode, newAnchorOffset + mNewNavigationPositionOffset, err);
     if (NS_WARN_IF(err.Failed())) {
@@ -395,12 +393,10 @@ nsresult mozInlineSpellStatus::FinishNavigationEvent(
 
 nsresult mozInlineSpellStatus::FillNoCheckRangeFromAnchor(
     mozInlineSpellWordUtil& aWordUtil) {
-  ErrorResult err;
-  nsCOMPtr<nsINode> anchorNode = mAnchorRange->GetStartContainer(err);
-  if (NS_WARN_IF(err.Failed())) {
-    return err.StealNSResult();
+  if (!mAnchorRange->IsPositioned()) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
-
+  nsCOMPtr<nsINode> anchorNode = mAnchorRange->GetStartContainer();
   uint32_t anchorOffset = mAnchorRange->StartOffset();
   return aWordUtil.GetRangeForWord(anchorNode,
                                    static_cast<int32_t>(anchorOffset),

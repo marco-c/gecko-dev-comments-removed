@@ -122,6 +122,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "AbortSignal", insecureContext: true},
 
+    {name: "AbstractRange", insecureContext: true},
+
     {name: "AnalyserNode", insecureContext: true},
 
     {name: "Animation", insecureContext: true},
