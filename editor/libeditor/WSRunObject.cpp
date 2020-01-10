@@ -362,7 +362,12 @@ nsresult WSRunObject::InsertText(Document& aDocument,
           theString.SetCharAt(kNBSP, lastCharIndex);
         }
       }
-    } else if (mEndReason & WSType::block) {
+    } else if (afterRunObject.mEndReason & WSType::block) {
+      
+      
+      
+      
+      
       theString.SetCharAt(kNBSP, lastCharIndex);
     }
   }
