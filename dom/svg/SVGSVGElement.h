@@ -196,7 +196,10 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
 
 
-  bool WillBeOutermostSVG(nsINode& aParent, Element* aBindingParent) const;
+
+
+
+  bool WillBeOutermostSVG(nsINode& aParent) const;
 
   
   void InvalidateTransformNotifyFrame();
