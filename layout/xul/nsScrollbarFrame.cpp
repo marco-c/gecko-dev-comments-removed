@@ -284,19 +284,6 @@ int32_t nsScrollbarFrame::MoveToNewPosition() {
 
 nsresult nsScrollbarFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-
   nsNodeInfoManager* nodeInfoManager = mContent->NodeInfo()->NodeInfoManager();
 
   Element* el(GetContent()->AsElement());
@@ -352,8 +339,6 @@ nsresult nsScrollbarFrame::CreateAnonymousContent(
       getter_AddRefs(mThumb),
       nodeInfoManager->GetNodeInfo(nsGkAtoms::thumb, nullptr, kNameSpaceID_XUL,
                                    nsINode::ELEMENT_NODE));
-  mThumb->SetAttr(kNameSpaceID_None, nsGkAtoms::sbattr,
-                  NS_LITERAL_STRING("scrollbar-thumb"), false);
   mThumb->SetAttr(kNameSpaceID_None, nsGkAtoms::orient, orient, false);
   mThumb->SetAttr(kNameSpaceID_None, nsGkAtoms::align,
                   NS_LITERAL_STRING("center"), false);
