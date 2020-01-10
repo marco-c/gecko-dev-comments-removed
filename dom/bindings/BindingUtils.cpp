@@ -1560,39 +1560,6 @@ static bool ResolvePrototypeOrConstructor(
   return JS_WrapPropertyDescriptor(cx, desc);
 }
 
-#ifdef DEBUG
-
-static void DEBUG_CheckXBLCallable(JSContext* cx, JSObject* obj) {
-  
-  
-  
-  
-  
-  MOZ_ASSERT_IF(js::IsCrossCompartmentWrapper(obj),
-                xpc::IsInContentXBLScope(js::UncheckedUnwrap(obj)));
-  MOZ_ASSERT(JS::IsCallable(obj));
-}
-
-static void DEBUG_CheckXBLLookup(JSContext* cx, JS::PropertyDescriptor* desc) {
-  if (!desc->obj) return;
-  if (!desc->value.isUndefined()) {
-    MOZ_ASSERT(desc->value.isObject());
-    DEBUG_CheckXBLCallable(cx, &desc->value.toObject());
-  }
-  if (desc->getter) {
-    MOZ_ASSERT(desc->attrs & JSPROP_GETTER);
-    DEBUG_CheckXBLCallable(cx, JS_FUNC_TO_DATA_PTR(JSObject*, desc->getter));
-  }
-  if (desc->setter) {
-    MOZ_ASSERT(desc->attrs & JSPROP_SETTER);
-    DEBUG_CheckXBLCallable(cx, JS_FUNC_TO_DATA_PTR(JSObject*, desc->setter));
-  }
-}
-#else
-#  define DEBUG_CheckXBLLookup(a, b) \
-    {}
-#endif
-
  bool XrayResolveOwnProperty(
     JSContext* cx, JS::Handle<JSObject*> wrapper, JS::Handle<JSObject*> obj,
     JS::Handle<jsid> id, JS::MutableHandle<JS::PropertyDescriptor> desc,
@@ -1646,37 +1613,6 @@ static void DEBUG_CheckXBLLookup(JSContext* cx, JS::PropertyDescriptor* desc) {
 
       if (desc.object()) {
         
-        return true;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    JS::Rooted<JSObject*> maybeElement(cx, obj);
-    Element* element;
-    if (xpc::IsInContentXBLScope(wrapper) &&
-        NS_SUCCEEDED(UNWRAP_OBJECT(Element, &maybeElement, element))) {
-      if (!nsContentUtils::LookupBindingMember(cx, element, id, desc)) {
-        return false;
-      }
-
-      DEBUG_CheckXBLLookup(cx, desc.address());
-
-      if (desc.object()) {
-        
-        
-        desc.object().set(wrapper);
-
         return true;
       }
     }

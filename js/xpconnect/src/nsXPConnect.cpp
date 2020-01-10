@@ -1158,8 +1158,7 @@ bool IsChromeOrXBL(JSContext* cx, JSObject* ) {
   
   
   
-  return AccessCheck::isChrome(c) || IsContentXBLCompartment(c) ||
-         !AllowContentXBLScope(realm);
+  return AccessCheck::isChrome(c) || !AllowContentXBLScope(realm);
 }
 
 bool IsNotUAWidget(JSContext* cx, JSObject* ) {

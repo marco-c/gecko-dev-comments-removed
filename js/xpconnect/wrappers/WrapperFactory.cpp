@@ -487,16 +487,6 @@ static const Wrapper* SelectWrapper(bool securityWrapper, XrayType xrayType,
 
   
   
-  
-  
-  
-  
-  
-  
-  if (xrayType == XrayForJSObject && IsInContentXBLScope(obj)) {
-    return &FilteringWrapper<CrossCompartmentSecurityWrapper,
-                             OpaqueWithCall>::singleton;
-  }
   return &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
 }
 
