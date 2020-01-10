@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#include "mozilla/CheckedInt.h"
 #if defined(XP_WIN) && !defined(UPDATER_NO_STRING_GLUE_STL)
 #  include <wchar.h>
 #  include "nsString.h"
@@ -39,6 +40,29 @@ struct VersionPartW {
 };
 #endif
 
+static int32_t ns_strtol(const char* aPart, char** aNext) {
+  errno = 0;
+  long result_long = strtol(aPart, aNext, 10);
+
+  
+  
+  
+  
+  
+  
+  
+  if (errno != 0) {
+    return 0;
+  }
+
+  mozilla::CheckedInt<int32_t> result = result_long;
+  if (!result.isValid()) {
+    return 0;
+  }
+
+  return result.value();
+}
+
 
 
 
@@ -66,19 +90,7 @@ static char* ParseVP(char* aPart, VersionPart& aResult) {
     aResult.numA = INT32_MAX;
     aResult.strB = "";
   } else {
-    errno = 0;
-    aResult.numA = strtol(aPart, const_cast<char**>(&aResult.strB), 10);
-
-    
-    
-    
-    
-    
-    
-    
-    if (errno != 0) {
-      aResult.numA = 0;
-    }
+    aResult.numA = ns_strtol(aPart, const_cast<char**>(&aResult.strB));
   }
 
   if (!*aResult.strB) {
@@ -97,14 +109,7 @@ static char* ParseVP(char* aPart, VersionPart& aResult) {
         aResult.strBlen = strlen(aResult.strB);
       } else {
         aResult.strBlen = numstart - aResult.strB;
-
-        errno = 0;
-        aResult.numC = strtol(numstart, &aResult.extraD, 10);
-
-        
-        if (errno != 0) {
-          aResult.numC = 0;
-        }
+        aResult.numC = ns_strtol(numstart, const_cast<char**>(&aResult.extraD));
 
         if (!*aResult.extraD) {
           aResult.extraD = nullptr;
@@ -130,6 +135,24 @@ static char* ParseVP(char* aPart, VersionPart& aResult) {
 
 
 #ifdef XP_WIN
+
+static int32_t ns_wcstol(const wchar_t* aPart, wchar_t** aNext) {
+  errno = 0;
+  long result_long = wcstol(aPart, aNext, 10);
+
+  
+  if (errno != 0) {
+    return 0;
+  }
+
+  mozilla::CheckedInt<int32_t> result = result_long;
+  if (!result.isValid()) {
+    return 0;
+  }
+
+  return result.value();
+}
+
 static wchar_t* ParseVP(wchar_t* aPart, VersionPartW& aResult) {
   wchar_t* dot;
 
@@ -154,13 +177,7 @@ static wchar_t* ParseVP(wchar_t* aPart, VersionPartW& aResult) {
     aResult.numA = INT32_MAX;
     aResult.strB = kEmpty;
   } else {
-    errno = 0;
-    aResult.numA = wcstol(aPart, const_cast<wchar_t**>(&aResult.strB), 10);
-
-    
-    if (errno != 0) {
-      aResult.numA = 0;
-    }
+    aResult.numA = ns_wcstol(aPart, const_cast<wchar_t**>(&aResult.strB));
   }
 
   if (!*aResult.strB) {
@@ -179,14 +196,7 @@ static wchar_t* ParseVP(wchar_t* aPart, VersionPartW& aResult) {
         aResult.strBlen = wcslen(aResult.strB);
       } else {
         aResult.strBlen = numstart - aResult.strB;
-
-        errno = 0;
-        aResult.numC = wcstol(numstart, &aResult.extraD, 10);
-
-        
-        if (errno != 0) {
-          aResult.numC = 0;
-        }
+        aResult.numC = ns_wcstol(numstart, const_cast<wchar_t**>(&aResult.extraD));
 
         if (!*aResult.extraD) {
           aResult.extraD = nullptr;

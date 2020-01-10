@@ -2,6 +2,9 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 var comparisons = [
+  "pre",
+  
+  String(0x1F0000000),
   "0.9",
   "0.9.1",
   "1.0pre1",
