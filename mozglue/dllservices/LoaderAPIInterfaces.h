@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_LoaderAPIInternal_h
-#define mozilla_LoaderAPIInternal_h
+#ifndef mozilla_LoaderAPIInterfaces_h
+#define mozilla_LoaderAPIInterfaces_h
 
 #include "mozilla/ModuleLoadInfo.h"
 
