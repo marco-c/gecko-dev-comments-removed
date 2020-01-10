@@ -94,6 +94,19 @@ class UnregisterServiceWorkerCallback final : public Runnable {
     service->UnregisterServiceWorker(mPrincipalInfo,
                                      NS_ConvertUTF16toUTF8(mScope));
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ServiceWorkerParentInterceptEnabled()) {
+      return NS_OK;
+    }
+
     RefPtr<ServiceWorkerManagerService> managerService =
         ServiceWorkerManagerService::Get();
     if (managerService) {

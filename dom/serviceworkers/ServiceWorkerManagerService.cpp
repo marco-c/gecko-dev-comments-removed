@@ -156,10 +156,6 @@ void ServiceWorkerManagerService::PropagateUnregister(
     const nsAString& aScope) {
   AssertIsOnBackgroundThread();
 
-  if (ServiceWorkerParentInterceptEnabled()) {
-    return;
-  }
-
   RefPtr<dom::ServiceWorkerRegistrar> service =
       dom::ServiceWorkerRegistrar::Get();
   MOZ_ASSERT(service);
@@ -168,6 +164,18 @@ void ServiceWorkerManagerService::PropagateUnregister(
   
   service->UnregisterServiceWorker(aPrincipalInfo,
                                    NS_ConvertUTF16toUTF8(aScope));
+
+  
+  
+  
+  
+  
+  
+  
+
+  if (ServiceWorkerParentInterceptEnabled()) {
+    return;
+  }
 
   DebugOnly<bool> parentFound = false;
   for (auto iter = mAgents.Iter(); !iter.Done(); iter.Next()) {
