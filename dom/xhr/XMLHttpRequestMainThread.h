@@ -304,10 +304,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   
   static bool IsMappedArrayBufferEnabled();
 
-  
-  
-  static bool IsLowercaseResponseHeader();
-
   void MaybeLowerChannelPriority();
 
  public:
@@ -526,9 +522,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
       }
 
       bool operator<(const HeaderEntry& aOther) const {
-        if (!IsLowercaseResponseHeader()) {
-          return mName < aOther.mName;
-        }
         uint32_t selfLen = mName.Length();
         uint32_t otherLen = aOther.mName.Length();
         uint32_t min = XPCOM_MIN(selfLen, otherLen);
