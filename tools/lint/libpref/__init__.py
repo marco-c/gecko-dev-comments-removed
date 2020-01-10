@@ -15,7 +15,12 @@ from mozlint import result
 
 
 IGNORE_PREFS = {
+    'devtools.console.stdout.chrome',   
+    'devtools.console.stdout.content',  
+    'fission.autostart',                
+    'browser.dom.window.dump.enabled',  
 }
+
 
 def get_names(pref_list_filename):
     pref_names = set()
