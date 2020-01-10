@@ -43,10 +43,12 @@ class Element;
 class ServoRestyleState {
  public:
   ServoRestyleState(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList,
-                    nsTArray<nsIFrame*>& aPendingWrapperRestyles)
+                    nsTArray<nsIFrame*>& aPendingWrapperRestyles,
+                    nsTArray<nsIFrame*>& aPendingScrollAnchorSuppressions)
       : mStyleSet(aStyleSet),
         mChangeList(aChangeList),
         mPendingWrapperRestyles(aPendingWrapperRestyles),
+        mPendingScrollAnchorSuppressions(aPendingScrollAnchorSuppressions),
         mPendingWrapperRestyleOffset(aPendingWrapperRestyles.Length()),
         mChangesHandled(nsChangeHint(0))
 #ifdef DEBUG
@@ -77,6 +79,8 @@ class ServoRestyleState {
       : mStyleSet(aParentState.mStyleSet),
         mChangeList(aParentState.mChangeList),
         mPendingWrapperRestyles(aParentState.mPendingWrapperRestyles),
+        mPendingScrollAnchorSuppressions(
+            aParentState.mPendingScrollAnchorSuppressions),
         mPendingWrapperRestyleOffset(
             aParentState.mPendingWrapperRestyles.Length()),
         mChangesHandled(aType == Type::InFlow
@@ -126,6 +130,20 @@ class ServoRestyleState {
   
   static nsIFrame* TableAwareParentFor(const nsIFrame* aChild);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void AddPendingScrollAnchorSuppression(nsIFrame* aFrame) {
+    mPendingScrollAnchorSuppressions.AppendElement(aFrame);
+  }
+
  private:
   
   
@@ -154,6 +172,8 @@ class ServoRestyleState {
   
   
   nsTArray<nsIFrame*>& mPendingWrapperRestyles;
+
+  nsTArray<nsIFrame*>& mPendingScrollAnchorSuppressions;
 
   
   

@@ -1549,23 +1549,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       
       
-      bool wasAbsPosStyle = false;
-      ScrollAnchorContainer* previousAnchorContainer = nullptr;
-      AutoWeakFrame previousAnchorContainerFrame;
-      if (frame) {
-        wasAbsPosStyle = frame->StyleDisplay()->IsAbsolutelyPositionedStyle();
-        previousAnchorContainer = ScrollAnchorContainer::FindFor(frame);
-
-        
-        
-        if (previousAnchorContainer) {
-          previousAnchorContainerFrame = previousAnchorContainer->Frame();
-        }
-      }
-
-      
-      
-      
       
       
       
@@ -1575,33 +1558,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       frameConstructor->RecreateFramesForContent(
           content, nsCSSFrameConstructor::InsertionKind::Sync);
       frame = content->GetPrimaryFrame();
-
-      
-      bool isAbsPosStyle = false;
-      ScrollAnchorContainer* newAnchorContainer = nullptr;
-      if (frame) {
-        isAbsPosStyle = frame->StyleDisplay()->IsAbsolutelyPositionedStyle();
-        newAnchorContainer = ScrollAnchorContainer::FindFor(frame);
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (wasAbsPosStyle != isAbsPosStyle) {
-        if (previousAnchorContainerFrame) {
-          previousAnchorContainer->SuppressAdjustments();
-        }
-        if (newAnchorContainer) {
-          newAnchorContainer->SuppressAdjustments();
-        }
-      }
     } else {
       NS_ASSERTION(frame, "This shouldn't happen");
 
@@ -2525,8 +2481,11 @@ static void UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoStyleSet& aStyleSet,
   MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame() ||
              backdropFrame->GetParent()->IsCanvasFrame());
   nsTArray<nsIFrame*> wrappersToRestyle;
-  ServoRestyleState state(aStyleSet, aChangeList, wrappersToRestyle);
+  nsTArray<nsIFrame*> anchorsToSuppress;
+  ServoRestyleState state(aStyleSet, aChangeList, wrappersToRestyle,
+                          anchorsToSuppress);
   nsIFrame::UpdateStyleOfOwnedChildFrame(backdropFrame, newStyle, state);
+  MOZ_ASSERT(anchorsToSuppress.IsEmpty());
 }
 
 static void UpdateFirstLetterIfNeeded(nsIFrame* aFrame,
@@ -2780,6 +2739,12 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   if (changeHint & nsChangeHint_ReconstructFrame) {
+    if (wasRestyled && styleFrame &&
+        styleFrame->StyleDisplay()->IsAbsolutelyPositionedStyle() !=
+            upToDateStyleIfRestyled->StyleDisplay()
+                ->IsAbsolutelyPositionedStyle()) {
+      aRestyleState.AddPendingScrollAnchorSuppression(styleFrame);
+    }
     ClearRestyleStateFromSubtree(aElement);
     return true;
   }
@@ -3079,16 +3044,32 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     nsStyleChangeList currentChanges;
     bool anyStyleChanged = false;
 
+    nsTArray<RefPtr<nsIContent>> anchorContentToSuppress;
+
     
     
     {
       AutoRestyleTimelineMarker marker(presContext->GetDocShell(), false);
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
+      nsTArray<nsIFrame*> anchorsToSuppress;
       while (Element* root = iter.GetNextStyleRoot()) {
         nsTArray<nsIFrame*> wrappersToRestyle;
-        ServoRestyleState state(*styleSet, currentChanges, wrappersToRestyle);
+        ServoRestyleState state(*styleSet, currentChanges, wrappersToRestyle,
+                                anchorsToSuppress);
         ServoPostTraversalFlags flags = ServoPostTraversalFlags::Empty;
         anyStyleChanged |= ProcessPostTraversal(root, nullptr, state, flags);
+      }
+
+      
+      
+      
+      anchorContentToSuppress.SetCapacity(anchorsToSuppress.Length());
+      for (nsIFrame* frame : anchorsToSuppress) {
+        MOZ_ASSERT(frame->GetContent());
+        if (auto* container = ScrollAnchorContainer::FindFor(frame)) {
+          container->SuppressAdjustments();
+        }
+        anchorContentToSuppress.AppendElement(frame->GetContent());
       }
     }
 
@@ -3122,6 +3103,16 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
         newChanges.Clear();
       }
       mReentrantChanges = nullptr;
+    }
+
+    
+    
+    for (nsIContent* content : anchorContentToSuppress) {
+      if (nsIFrame* frame = content->GetPrimaryFrame()) {
+        if (auto* container = ScrollAnchorContainer::FindFor(frame)) {
+          container->SuppressAdjustments();
+        }
+      }
     }
 
     if (anyStyleChanged) {
