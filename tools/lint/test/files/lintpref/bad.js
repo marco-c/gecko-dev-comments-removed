@@ -1,0 +1,2 @@
+
+pref("dom.webidl.test1", true);
