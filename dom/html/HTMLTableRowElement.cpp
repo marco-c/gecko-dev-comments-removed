@@ -210,9 +210,6 @@ bool HTMLTableRowElement::ParseAttribute(int32_t aNamespaceID,
       
       return aResult.ParseHTMLDimension(aValue);
     }
-    if (aAttribute == nsGkAtoms::width) {
-      return aResult.ParseSpecialIntValue(aValue);
-    }
     if (aAttribute == nsGkAtoms::align) {
       return ParseTableCellHAlignValue(aValue, aResult);
     }

@@ -314,20 +314,6 @@ class nsAttrValue {
 
 
 
-  bool ParseSpecialIntValue(const nsAString& aString);
-
-  
-
-
-
-
-
-
-
-
-
-
-
   bool ParseHTMLDimension(const nsAString& aInput) {
     return DoParseHTMLDimension(aInput, false);
   }
