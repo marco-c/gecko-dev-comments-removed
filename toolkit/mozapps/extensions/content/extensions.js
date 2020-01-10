@@ -828,19 +828,12 @@ var gCategories = {
     }
 
     this.node.addEventListener("select", () => {
+      
       gViewController.loadView(this.node.selectedItem.value);
     });
-
-    this.node.addEventListener("click", aEvent => {
-      var selectedItem = this.node.selectedItem;
-      if (
-        aEvent.target.localName == "richlistitem" &&
-        aEvent.target == selectedItem
-      ) {
-        var viewId = selectedItem.value;
-
-        gViewController.loadView(viewId);
-      }
+    this.node.addEventListener("click", () => {
+      
+      gViewController.loadView(this.node.selectedItem.value);
     });
   },
 
