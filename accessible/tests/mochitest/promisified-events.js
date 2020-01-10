@@ -17,7 +17,6 @@
 
 
 
-
 const EVENT_ANNOUNCEMENT = nsIAccessibleEvent.EVENT_ANNOUNCEMENT;
 const EVENT_DOCUMENT_LOAD_COMPLETE =
   nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE;
@@ -27,6 +26,8 @@ const EVENT_SCROLLING = nsIAccessibleEvent.EVENT_SCROLLING;
 const EVENT_SCROLLING_END = nsIAccessibleEvent.EVENT_SCROLLING_END;
 const EVENT_SHOW = nsIAccessibleEvent.EVENT_SHOW;
 const EVENT_STATE_CHANGE = nsIAccessibleEvent.EVENT_STATE_CHANGE;
+const EVENT_TEXT_ATTRIBUTE_CHANGED =
+  nsIAccessibleEvent.EVENT_TEXT_ATTRIBUTE_CHANGED;
 const EVENT_TEXT_CARET_MOVED = nsIAccessibleEvent.EVENT_TEXT_CARET_MOVED;
 const EVENT_TEXT_INSERTED = nsIAccessibleEvent.EVENT_TEXT_INSERTED;
 const EVENT_TEXT_REMOVED = nsIAccessibleEvent.EVENT_TEXT_REMOVED;
@@ -38,6 +39,16 @@ const EVENT_FOCUS = nsIAccessibleEvent.EVENT_FOCUS;
 const EVENT_DOCUMENT_RELOAD = nsIAccessibleEvent.EVENT_DOCUMENT_RELOAD;
 const EVENT_VIRTUALCURSOR_CHANGED =
   nsIAccessibleEvent.EVENT_VIRTUALCURSOR_CHANGED;
+
+const EventsLogger = {
+  enabled: false,
+
+  log(msg) {
+    if (this.enabled) {
+      info(msg);
+    }
+  },
+};
 
 
 
@@ -65,24 +76,37 @@ function eventToString(event) {
 }
 
 function matchEvent(event, matchCriteria) {
+  if (!matchCriteria) {
+    return true;
+  }
+
   let acc = event.accessible;
   switch (typeof matchCriteria) {
     case "string":
       let id = getAccessibleDOMNodeID(acc);
       if (id === matchCriteria) {
-        Logger.log(`Event matches DOMNode id: ${id}`);
+        EventsLogger.log(`Event matches DOMNode id: ${id}`);
         return true;
       }
       break;
     case "function":
       if (matchCriteria(event)) {
-        Logger.log(`Lambda function matches event: ${eventToString(event)}`);
+        EventsLogger.log(
+          `Lambda function matches event: ${eventToString(event)}`
+        );
         return true;
       }
       break;
     default:
-      if (acc === matchCriteria) {
-        Logger.log(`Event matches accessible: ${prettyName(acc)}`);
+      if (matchCriteria instanceof nsIAccessible) {
+        if (acc === matchCriteria) {
+          EventsLogger.log(`Event matches accessible: ${prettyName(acc)}`);
+          return true;
+        }
+      } else if (event.DOMNode == matchCriteria) {
+        EventsLogger.log(
+          `Event matches DOM node: ${prettyName(event.DOMNode)}`
+        );
         return true;
       }
   }
@@ -102,7 +126,8 @@ function matchEvent(event, matchCriteria) {
 
 
 
-function waitForEvent(eventType, matchCriteria) {
+
+function waitForEvent(eventType, matchCriteria, message) {
   return new Promise(resolve => {
     let eventObserver = {
       observe(subject, topic, data) {
@@ -111,10 +136,10 @@ function waitForEvent(eventType, matchCriteria) {
         }
 
         let event = subject.QueryInterface(nsIAccessibleEvent);
-        if (Logger.enabled) {
+        if (EventsLogger.enabled) {
           
           
-          Logger.log(eventToString(event));
+          EventsLogger.log(eventToString(event));
         }
 
         
@@ -123,8 +148,16 @@ function waitForEvent(eventType, matchCriteria) {
         }
 
         if (matchEvent(event, matchCriteria)) {
-          Logger.log(`Correct event type: ${eventTypeToString(eventType)}`);
+          EventsLogger.log(
+            `Correct event type: ${eventTypeToString(eventType)}`
+          );
           Services.obs.removeObserver(this, "accessible-event");
+          ok(
+            true,
+            `${message ? message + ": " : ""}Recieved ${eventTypeToString(
+              eventType
+            )} event`
+          );
           resolve(event);
         }
       },
@@ -171,7 +204,9 @@ class UnexpectedEvents {
 
 
 
-function waitForEvents(events, ordered = false) {
+
+
+async function waitForEvents(events, message, ordered = false) {
   let expected = events.expected || events;
   let unexpected = events.unexpected || [];
   
@@ -179,61 +214,27 @@ function waitForEvents(events, ordered = false) {
 
   let unexpectedListener = new UnexpectedEvents(unexpected);
 
-  return Promise.all(
+  let results = await Promise.all(
     expected.map((evt, idx) => {
-      let promise = evt instanceof Array ? waitForEvent(...evt) : evt;
-      return promise.then(result => {
-        if (ordered) {
-          is(idx, currentIdx++, `Unexpected event order: ${result}`);
-        }
-        return result;
+      const [eventType, matchCriteria] = evt;
+      return waitForEvent(eventType, matchCriteria, message).then(result => {
+        return [result, idx == currentIdx++];
       });
     })
-  ).then(results => {
-    unexpectedListener.stop();
-    return results;
-  });
-}
-
-function waitForOrderedEvents(events) {
-  return waitForEvents(events, true);
-}
-
-
-
-
-
-
-
-async function contentSpawnMutation(browser, waitFor, func, args = null) {
-  let onReorders = waitForEvents({ expected: waitFor.expected || [] });
-  let unexpectedListener = new UnexpectedEvents(waitFor.unexpected || []);
-
-  function tick() {
-    
-    
-    
-    content.windowUtils.advanceTimeAndRefresh(100);
-  }
-
-  
-  
-  await ContentTask.spawn(browser, null, tick);
-
-  
-  await ContentTask.spawn(browser, args, func);
-
-  
-  await ContentTask.spawn(browser, null, tick);
-
-  let events = await onReorders;
+  );
 
   unexpectedListener.stop();
 
-  
-  await ContentTask.spawn(browser, null, function() {
-    content.windowUtils.restoreNormalRefresh();
-  });
+  if (ordered) {
+    ok(
+      results.every(([, isOrdered]) => isOrdered),
+      `${message ? message + ": " : ""}Correct event order`
+    );
+  }
 
-  return events;
+  return results.map(([event]) => event);
+}
+
+function waitForOrderedEvents(events, message) {
+  return waitForEvents(events, message, true);
 }

@@ -389,3 +389,42 @@ function forceGC() {
   SpecialPowers.forceShrinkingGC();
   SpecialPowers.forceCC();
 }
+
+
+
+
+
+
+
+async function contentSpawnMutation(browser, waitFor, func, args = null) {
+  let onReorders = waitForEvents({ expected: waitFor.expected || [] });
+  let unexpectedListener = new UnexpectedEvents(waitFor.unexpected || []);
+
+  function tick() {
+    
+    
+    
+    content.windowUtils.advanceTimeAndRefresh(100);
+  }
+
+  
+  
+  await ContentTask.spawn(browser, null, tick);
+
+  
+  await ContentTask.spawn(browser, args, func);
+
+  
+  await ContentTask.spawn(browser, null, tick);
+
+  let events = await onReorders;
+
+  unexpectedListener.stop();
+
+  
+  await ContentTask.spawn(browser, null, function() {
+    content.windowUtils.restoreNormalRefresh();
+  });
+
+  return events;
+}
