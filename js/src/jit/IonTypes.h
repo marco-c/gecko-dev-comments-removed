@@ -459,7 +459,6 @@ enum class MIRType : uint8_t {
   MagicUninitializedLexical,  
   
   Value,
-  SinCosDouble,  
   ObjectOrNull,
   None,         
   Slots,        
@@ -602,8 +601,6 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "MagicUninitializedLexical";
     case MIRType::Value:
       return "Value";
-    case MIRType::SinCosDouble:
-      return "SinCosDouble";
     case MIRType::ObjectOrNull:
       return "ObjectOrNull";
     case MIRType::None:
