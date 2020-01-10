@@ -169,6 +169,9 @@ class Stream {
   void RecordOrReplayThreadEvent(ThreadEvent aEvent);
 
   
+  ThreadEvent ReplayThreadEvent();
+
+  
   
   void CheckInput(size_t aValue);
   void CheckInput(const char* aValue);
