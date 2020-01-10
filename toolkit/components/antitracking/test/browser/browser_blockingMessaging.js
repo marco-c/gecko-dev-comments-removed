@@ -1,5 +1,7 @@
 
 
+requestLongerTimeout(6);
+
 AntiTracking.runTestInNormalAndPrivateMode(
   "BroadcastChannel",
   async _ => {
