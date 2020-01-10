@@ -36,6 +36,17 @@ function recordEvent(method, details) {
   
   const eventDetails = Object.assign({}, details, { session_id: sessionId });
   telemetry.recordEvent(method, "aboutdebugging", null, eventDetails);
+
+  
+  
+  if (method === "open_adbg") {
+    telemetry.toolOpened("aboutdebugging", sessionId, window.AboutDebugging);
+  } else if (method === "close_adbg") {
+    
+    
+    
+    telemetry.toolClosed("aboutdebugging", sessionId, window.AboutDebugging);
+  }
 }
 
 const telemetryRuntimeIds = new Map();
