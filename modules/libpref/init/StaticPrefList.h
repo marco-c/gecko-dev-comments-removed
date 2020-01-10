@@ -1058,20 +1058,6 @@ VARCACHE_PREF(
 
 
 
-#if defined(ANDROID)
-
-VARCACHE_PREF(
-  Live,
-  "consoleservice.logcat",
-   consoleservice_logcat,
-  bool, NOT_IN_RELEASE_OR_BETA_VALUE
-)
-#endif
-
-
-
-
-
 
 VARCACHE_PREF(
   Live,
