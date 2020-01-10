@@ -8,6 +8,9 @@
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
+#include <algorithm>
+#include <vector>
+
 #include <stdarg.h>
 #include <windef.h>
 #include <winbase.h>
@@ -184,8 +187,18 @@ void nsNotifyAddrListener::calculateNetworkId(void) {
     return;
   }
 
+  
+  
   SHA1Sum sha1;
   uint32_t networkCount = 0;
+
+  
+  
+  
+  
+  std::vector<GUID> nwGUIDS;
+
+  
   while (true) {
     RefPtr<INetwork> network;
     hr = enumNetworks->Next(1, getter_AddRefs(network), nullptr);
@@ -198,6 +211,15 @@ void nsNotifyAddrListener::calculateNetworkId(void) {
     if (hr != S_OK) {
       continue;
     }
+    nwGUIDS.push_back(nwGUID);
+  }
+
+  std::sort(nwGUIDS.begin(), nwGUIDS.end(), [](REFGUID a, REFGUID b) {
+    return memcmp(&a, &b, sizeof(GUID)) < 0;
+  });
+
+  
+  for (const REFGUID& nwGUID : nwGUIDS) {
     networkCount++;
     sha1.update(&nwGUID, sizeof(nwGUID));
 
