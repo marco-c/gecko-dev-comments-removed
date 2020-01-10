@@ -26,31 +26,15 @@ class WorkletThread;
 
 class WorkletLoadInfo {
  public:
-  WorkletLoadInfo(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
-  ~WorkletLoadInfo();
+  explicit WorkletLoadInfo(nsPIDOMWindowInner* aWindow);
 
   uint64_t OuterWindowID() const { return mOuterWindowID; }
   uint64_t InnerWindowID() const { return mInnerWindowID; }
-
-  const OriginAttributes& OriginAttributesRef() const {
-    return mOriginAttributes;
-  }
-
-  nsIPrincipal* Principal() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mPrincipal;
-  }
 
  private:
   
   uint64_t mOuterWindowID;
   const uint64_t mInnerWindowID;
-  const OriginAttributes mOriginAttributes;
-  
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-
-  friend class WorkletImpl;
-  friend class WorkletThread;
 };
 
 
@@ -71,6 +55,11 @@ class WorkletImpl {
 
   virtual nsresult SendControlMessage(already_AddRefed<nsIRunnable> aRunnable);
 
+  nsIPrincipal* Principal() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mPrincipal;
+  }
+
   void NotifyWorkletFinished();
 
   
@@ -79,6 +68,9 @@ class WorkletImpl {
   
 
   const WorkletLoadInfo& LoadInfo() const { return mWorkletLoadInfo; }
+  const OriginAttributes& OriginAttributesRef() const {
+    return mOriginAttributes;
+  }
 
  protected:
   WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
@@ -86,9 +78,11 @@ class WorkletImpl {
 
   virtual already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope() = 0;
 
+  const OriginAttributes mOriginAttributes;
   
-  
-  WorkletLoadInfo mWorkletLoadInfo;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  const WorkletLoadInfo mWorkletLoadInfo;
 
   
   RefPtr<dom::WorkletThread> mWorkletThread;
