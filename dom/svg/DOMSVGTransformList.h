@@ -21,7 +21,6 @@ namespace dom {
 class SVGElement;
 class SVGMatrix;
 class DOMSVGTransform;
-}  
 
 
 
@@ -151,6 +150,7 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
   RefPtr<dom::DOMSVGAnimatedTransformList> mAList;
 };
 
+}  
 }  
 
 #endif  

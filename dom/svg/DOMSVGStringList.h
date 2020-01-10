@@ -17,6 +17,8 @@ namespace mozilla {
 class ErrorResult;
 class SVGStringList;
 
+namespace dom {
+
 
 
 
@@ -106,6 +108,7 @@ class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
   bool mIsConditionalProcessingAttribute;
 };
 
+}  
 }  
 
 #endif  

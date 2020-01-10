@@ -15,11 +15,10 @@
 #include "mozilla/dom/SVGPathSegListBinding.h"
 #include "mozilla/RefPtr.h"
 
-using namespace mozilla::dom;
-
 
 
 namespace mozilla {
+namespace dom {
 
 static inline SVGAttrTearoffTable<void, DOMSVGPathSegList>&
 SVGPathSegListTearoffTable() {
@@ -558,4 +557,5 @@ void DOMSVGPathSegList::UpdateListIndicesFromIndex(
   }
 }
 
+}  
 }  

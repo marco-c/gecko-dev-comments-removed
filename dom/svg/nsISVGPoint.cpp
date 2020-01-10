@@ -13,7 +13,8 @@
 
 
 
-using namespace mozilla;
+namespace mozilla {
+namespace dom {
 
 
 
@@ -75,3 +76,6 @@ bool nsISVGPoint::IndexIsValid() {
   return mListIndex < mList->InternalList().Length();
 }
 #endif
+
+}  
+}  

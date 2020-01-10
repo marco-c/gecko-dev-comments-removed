@@ -16,15 +16,13 @@
 #include "mozilla/dom/SVGPointListBinding.h"
 #include <algorithm>
 
-using namespace mozilla::dom;
-
 
 
 
 namespace {
 
 void UpdateListIndicesFromIndex(
-    FallibleTArray<mozilla::nsISVGPoint*>& aItemsArray,
+    FallibleTArray<mozilla::dom::nsISVGPoint*>& aItemsArray,
     uint32_t aStartingIndex) {
   uint32_t length = aItemsArray.Length();
 
@@ -38,6 +36,7 @@ void UpdateListIndicesFromIndex(
 }  
 
 namespace mozilla {
+namespace dom {
 
 static inline SVGAttrTearoffTable<void, DOMSVGPointList>&
 SVGPointListTearoffTable() {
@@ -438,4 +437,5 @@ void DOMSVGPointList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex) {
   UpdateListIndicesFromIndex(animVal->mItems, aIndex);
 }
 
+}  
 }  

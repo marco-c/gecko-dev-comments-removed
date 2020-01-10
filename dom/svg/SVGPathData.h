@@ -27,6 +27,11 @@ struct SVGMark;
 
 class SVGPathDataParser;  
 
+namespace dom {
+class DOMSVGPathSeg;
+class DOMSVGPathSegList;
+}  
+
 
 
 
@@ -75,8 +80,8 @@ class SVGPathDataParser;
 
 class SVGPathData {
   friend class SVGAnimatedPathSegList;
-  friend class DOMSVGPathSegList;
-  friend class DOMSVGPathSeg;
+  friend class dom::DOMSVGPathSeg;
+  friend class dom::DOMSVGPathSegList;
   friend class SVGPathDataParser;
   
   

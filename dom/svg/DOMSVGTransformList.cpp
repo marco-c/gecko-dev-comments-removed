@@ -32,8 +32,7 @@ void UpdateListIndicesFromIndex(
 }  
 
 namespace mozilla {
-
-using namespace dom;
+namespace dom {
 
 
 
@@ -414,4 +413,5 @@ void DOMSVGTransformList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex) {
   UpdateListIndicesFromIndex(animVal->mItems, aIndex);
 }
 
+}  
 }  

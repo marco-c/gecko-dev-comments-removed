@@ -18,6 +18,8 @@ namespace mozilla {
 class SMILValue;
 
 namespace dom {
+class DOMSVGPoint;
+class DOMSVGPointList;
 class SVGAnimationElement;
 class SVGElement;
 }  
@@ -39,8 +41,8 @@ class SVGElement;
 
 class SVGAnimatedPointList {
   
-  friend class DOMSVGPoint;
-  friend class DOMSVGPointList;
+  friend class dom::DOMSVGPoint;
+  friend class dom::DOMSVGPointList;
 
  public:
   SVGAnimatedPointList() = default;
