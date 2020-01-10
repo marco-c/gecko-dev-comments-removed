@@ -242,6 +242,9 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     toolbox.nodePicker.cancel();
 
     
+    toolbox.tellRDMAboutPickerState(true);
+
+    
     
     
     this.eyedropperOpen = true;
@@ -270,6 +273,9 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
   }
 
   _onEyeDropperDone() {
+    
+    this.inspector.toolbox.tellRDMAboutPickerState(false);
+
     this.eyedropperOpen = false;
     this.activeSwatch = null;
   }
