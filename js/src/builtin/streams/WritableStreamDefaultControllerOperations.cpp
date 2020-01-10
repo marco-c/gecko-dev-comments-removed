@@ -22,26 +22,96 @@
 #include "js/CallArgs.h"    
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
+#include "vm/Compartment.h"  
 #include "vm/JSContext.h"   
 #include "vm/JSObject.h"    
 #include "vm/List.h"        
 #include "vm/Runtime.h"     
 
 #include "builtin/streams/HandlerFunction-inl.h"  
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
+#include "vm/Compartment-inl.h"                   
 #include "vm/JSContext-inl.h"                     
 #include "vm/JSObject-inl.h"  
+#include "vm/Realm-inl.h"     
 
 using JS::CallArgs;
 using JS::CallArgsFromVp;
 using JS::Handle;
 using JS::ObjectValue;
 using JS::Rooted;
+using JS::UndefinedHandleValue;
 using JS::Value;
 
 using js::ListObject;
 using js::WritableStream;
 using js::WritableStreamDefaultController;
 using js::WritableStreamFinishErroring;
+
+
+
+
+
+
+
+JSObject* js::WritableStreamControllerAbortSteps(
+    JSContext* cx, Handle<WritableStreamDefaultController*> unwrappedController,
+    Handle<Value> reason) {
+  cx->check(reason);
+
+  
+  
+  
+  Rooted<Value> unwrappedAbortMethod(cx, unwrappedController->abortMethod());
+  Rooted<JSObject*> result(cx);
+  if (unwrappedAbortMethod.isUndefined()) {
+    
+    result = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    if (!result) {
+      return nullptr;
+    }
+  } else {
+    
+    {
+      AutoRealm ar(cx, unwrappedController);
+      cx->check(unwrappedAbortMethod);
+
+      Rooted<Value> underlyingSink(cx, unwrappedController->underlyingSink());
+      cx->check(underlyingSink);
+
+      Rooted<Value> wrappedReason(cx, reason);
+      if (!cx->compartment()->wrap(cx, &wrappedReason)) {
+        return nullptr;
+      }
+
+      result =
+          PromiseCall(cx, unwrappedAbortMethod, underlyingSink, wrappedReason);
+      if (!result) {
+        return nullptr;
+      }
+    }
+    if (!cx->compartment()->wrap(cx, &result)) {
+      return nullptr;
+    }
+  }
+
+  
+  WritableStreamDefaultControllerClearAlgorithms(unwrappedController);
+
+  
+  return result;
+}
+
+
+
+
+
+bool js::WritableStreamControllerErrorSteps(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController) {
+  
+  return ResetQueue(cx, unwrappedController);
+}
 
 
 
@@ -152,11 +222,16 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
     SinkAlgorithms sinkAlgorithms, Handle<Value> underlyingSink,
     Handle<Value> writeMethod, Handle<Value> closeMethod,
     Handle<Value> abortMethod, double highWaterMark, Handle<Value> size) {
-  cx->check(stream, underlyingSink, size);
+  cx->check(stream);
+  cx->check(underlyingSink);
+  cx->check(writeMethod);
   MOZ_ASSERT(writeMethod.isUndefined() || IsCallable(writeMethod));
+  cx->check(closeMethod);
   MOZ_ASSERT(closeMethod.isUndefined() || IsCallable(closeMethod));
+  cx->check(abortMethod);
   MOZ_ASSERT(abortMethod.isUndefined() || IsCallable(abortMethod));
   MOZ_ASSERT(highWaterMark >= 0);
+  cx->check(size);
   MOZ_ASSERT(size.isUndefined() || IsCallable(size));
 
   
