@@ -207,6 +207,15 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
   MOZ_MUST_USE bool useGrouping(bool on);
 
+  enum class SignDisplay { Auto, Never, Always, ExceptZero };
+
+  
+
+
+
+
+  MOZ_MUST_USE bool signDisplay(SignDisplay display);
+
   
 
 

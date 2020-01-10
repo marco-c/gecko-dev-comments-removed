@@ -85,6 +85,9 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     internalProps.useGrouping = lazyNumberFormatData.useGrouping;
 
     
+    internalProps.signDisplay = lazyNumberFormatData.signDisplay;
+
+    
     
     return internalProps;
 }
@@ -278,6 +281,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     
     
+    
+    
     var lazyNumberFormatData = std_Object_create(null);
 
     
@@ -343,6 +348,11 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     var useGrouping = GetOption(options, "useGrouping", "boolean", undefined, true);
     lazyNumberFormatData.useGrouping = useGrouping;
+
+    
+    var signDisplay = GetOption(options, "signDisplay", "string",
+                                ["auto", "never", "always", "exceptZero"], "auto");
+    lazyNumberFormatData.signDisplay = signDisplay;
 
     
     
@@ -573,6 +583,8 @@ function Intl_NumberFormat_resolvedOptions() {
     }
 
     _DefineDataProperty(result, "useGrouping", internals.useGrouping);
+
+    _DefineDataProperty(result, "signDisplay", internals.signDisplay);
 
     
     return result;
