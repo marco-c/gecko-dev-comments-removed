@@ -2,10 +2,8 @@
 
 
 
-
-
-
 PromiseTestUtils.whitelistRejectionsGlobally(/Current state is running/);
+PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
 
 function findNode(dbg, text) {
   for (let index = 0; ; index++) {
