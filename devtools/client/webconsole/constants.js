@@ -47,6 +47,7 @@ const actionTypes = {
   PAUSED_EXCECUTION_POINT: "PAUSED_EXCECUTION_POINT",
   WARNING_GROUPS_TOGGLE: "WARNING_GROUPS_TOGGLE",
   WILL_NAVIGATE: "WILL_NAVIGATE",
+  EDITOR_SET_WIDTH: "EDITOR_SET_WIDTH",
 };
 
 const prefs = {
@@ -74,6 +75,8 @@ const prefs = {
       CONTENT_MESSAGES: "devtools.browserconsole.contentMessages",
       
       MESSAGE_TIMESTAMP: "devtools.webconsole.timestampMessages",
+      
+      EDITOR_WIDTH: "input.editorWidth",
     },
     FEATURES: {
       

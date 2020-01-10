@@ -291,6 +291,10 @@ pref("devtools.webconsole.features.editor", false);
 pref("devtools.webconsole.input.editor", false);
 
 
+pref("devtools.webconsole.input.editorWidth", 0);
+pref("devtools.browserconsole.input.editorWidth", 0);
+
+
 pref("devtools.performance.new-panel-enabled", false);
 
 
