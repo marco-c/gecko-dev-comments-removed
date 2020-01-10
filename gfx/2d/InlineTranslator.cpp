@@ -32,11 +32,12 @@ bool InlineTranslator::TranslateRecording(char* aData, size_t aLen) {
       } else {
         
         
-        mData = mEnd + 1;
+        SetIsBad();
       }
     }
     bool eof() { return mData > mEnd; }
     bool good() { return !eof(); }
+    void SetIsBad() { mData = mEnd + 1; }
 
     char* mData;
     char* mEnd;
