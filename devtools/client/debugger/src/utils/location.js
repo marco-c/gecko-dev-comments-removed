@@ -27,7 +27,8 @@ export function comparePosition(a: ?PartialPosition, b: ?PartialPosition) {
 
 export function createLocation({
   sourceId,
-  line = 1,
+  
+  line = 0,
   column,
   sourceUrl = "",
 }: IncompleteLocation): SourceLocation {
