@@ -188,20 +188,20 @@ Inspector.prototype = {
     localizeMarkup(this.panelDoc);
 
     
-    if (this.target.isReplayEnabled()) {
+    if (this.currentTarget.isReplayEnabled()) {
       let dbg = this._toolbox.getPanel("jsdebugger");
       if (!dbg) {
         dbg = await this._toolbox.loadTool("jsdebugger");
       }
       this._replayResumed = !dbg.isPaused();
 
-      this.target.threadFront.on("paused", this.handleThreadPaused);
-      this.target.threadFront.on("resumed", this.handleThreadResumed);
+      this.currentTarget.threadFront.on("paused", this.handleThreadPaused);
+      this.currentTarget.threadFront.on("resumed", this.handleThreadResumed);
     }
 
     await this.initInspectorFront();
 
-    this.target.on("will-navigate", this._onBeforeNavigate);
+    this.currentTarget.on("will-navigate", this._onBeforeNavigate);
 
     await Promise.all([
       this._getCssProperties(),
@@ -213,8 +213,8 @@ Inspector.prototype = {
 
     
     
-    this.previousURL = this.target.url;
-    this.reflowTracker = new ReflowTracker(this.target);
+    this.previousURL = this.currentTarget.url;
+    this.reflowTracker = new ReflowTracker(this.currentTarget);
     this.styleChangeTracker = new InspectorStyleChangeTracker(this);
 
     this._markupBox = this.panelDoc.getElementById("markup-box");
@@ -223,7 +223,7 @@ Inspector.prototype = {
   },
 
   async initInspectorFront() {
-    this.inspectorFront = await this.target.getFront("inspector");
+    this.inspectorFront = await this.currentTarget.getFront("inspector");
     this.highlighter = this.inspectorFront.highlighter;
     this.walker = this.inspectorFront.walker;
   },
@@ -245,7 +245,7 @@ Inspector.prototype = {
   },
 
   get is3PaneModeEnabled() {
-    if (this.target.chrome) {
+    if (this.currentTarget.chrome) {
       if (!this._is3PaneModeChromeEnabled) {
         this._is3PaneModeChromeEnabled = Services.prefs.getBoolPref(
           THREE_PANE_CHROME_ENABLED_PREF
@@ -265,7 +265,7 @@ Inspector.prototype = {
   },
 
   set is3PaneModeEnabled(value) {
-    if (this.target.chrome) {
+    if (this.currentTarget.chrome) {
       this._is3PaneModeChromeEnabled = value;
       Services.prefs.setBoolPref(
         THREE_PANE_CHROME_ENABLED_PREF,
@@ -381,7 +381,9 @@ Inspector.prototype = {
   },
 
   _getAccessibilityFront: async function() {
-    this.accessibilityFront = await this.target.getFront("accessibility");
+    this.accessibilityFront = await this.currentTarget.getFront(
+      "accessibility"
+    );
     return this.accessibilityFront;
   },
 
@@ -389,7 +391,7 @@ Inspector.prototype = {
     
     
     
-    this.changesFront = await this.toolbox.target.getFront("changes");
+    this.changesFront = await this.currentTarget.getFront("changes");
     await this.changesFront.start();
     return this.changesFront;
   },
@@ -482,15 +484,8 @@ Inspector.prototype = {
   
 
 
-  get target() {
+  get currentTarget() {
     return this._target;
-  },
-
-  
-
-
-  set target(value) {
-    this._target = value;
   },
 
   
@@ -1444,7 +1439,7 @@ Inspector.prototype = {
     await this._onLazyPanelResize();
     
     
-    if (!this.target || !this.is3PaneModeEnabled) {
+    if (!this.currentTarget || !this.is3PaneModeEnabled) {
       return;
     }
 
@@ -1573,7 +1568,7 @@ Inspector.prototype = {
     this.sidebar.off("show", this.onSidebarShown);
     this.sidebar.off("hide", this.onSidebarHidden);
     this.sidebar.off("destroy", this.onSidebarHidden);
-    this.target.off("will-navigate", this._onBeforeNavigate);
+    this.currentTarget.off("will-navigate", this._onBeforeNavigate);
 
     for (const [, panel] of this._panels) {
       panel.destroy();
@@ -1796,7 +1791,7 @@ Inspector.prototype = {
       nodeActorID: this.selection.nodeFront.actorID,
       clipboard: clipboardEnabled,
     };
-    const screenshotFront = await this.target.getFront("screenshot");
+    const screenshotFront = await this.currentTarget.getFront("screenshot");
     const screenshot = await screenshotFront.capture(args);
     await saveScreenshot(this.panelWin, args, screenshot);
   },

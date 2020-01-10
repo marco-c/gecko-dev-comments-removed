@@ -61,7 +61,7 @@ class FlexboxInspector {
       return;
     }
     try {
-      this.hasGetCurrentFlexbox = await this.inspector.target.actorHasMethod(
+      this.hasGetCurrentFlexbox = await this.inspector.currentTarget.actorHasMethod(
         "layout",
         "getCurrentFlexbox"
       );
@@ -260,7 +260,7 @@ class FlexboxInspector {
     
     
     const customColors = await this.getCustomHostColors();
-    const currentUrl = this.inspector.target.url;
+    const currentUrl = this.inspector.currentTarget.url;
     
     
     const hostname =
@@ -418,7 +418,7 @@ class FlexboxInspector {
 
     this._overlayColor = color;
 
-    const currentUrl = this.inspector.target.url;
+    const currentUrl = this.inspector.currentTarget.url;
     
     
     const hostname =

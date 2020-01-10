@@ -157,7 +157,7 @@ class RulesView {
   }
 
   async initPrintSimulation() {
-    const target = this.inspector.target;
+    const target = this.inspector.currentTarget;
 
     
     
@@ -379,12 +379,15 @@ class RulesView {
 
   async onOpenSourceLink(ruleId) {
     const rule = this.elementStyle.getRule(ruleId);
-    if (!rule || !Tools.styleEditor.isTargetSupported(this.inspector.target)) {
+    if (
+      !rule ||
+      !Tools.styleEditor.isTargetSupported(this.inspector.currentTarget)
+    ) {
       return;
     }
 
     const toolbox = await gDevTools.showToolbox(
-      this.inspector.target,
+      this.inspector.currentTarget,
       "styleeditor"
     );
     const styleEditor = toolbox.getCurrentPanel();
