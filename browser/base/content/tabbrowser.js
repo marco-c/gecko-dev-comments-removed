@@ -1358,10 +1358,7 @@
 
       
       
-      if (
-        gMultiProcessBrowser &&
-        document.activeElement != document.documentElement
-      ) {
+      if (gMultiProcessBrowser && document.activeElement != document.body) {
         return;
       }
 
