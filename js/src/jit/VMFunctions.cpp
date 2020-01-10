@@ -845,7 +845,7 @@ JSObject* WrapObjectPure(JSContext* cx, JSObject* obj) {
   
   
   if (ObjectWrapperMap::Ptr p = cx->compartment()->lookupWrapper(obj)) {
-    JSObject* wrapped = &p->value().get().toObject();
+    JSObject* wrapped = p->value().get();
 
     
     JS::ExposeObjectToActiveJS(wrapped);

@@ -669,7 +669,6 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
   JS::AssertCellIsNotGray(origobj);
   JS::AssertCellIsNotGray(target);
 
-  RootedValue origv(cx, ObjectValue(*origobj));
   RootedObject newIdentity(cx);
 
   
@@ -691,7 +690,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     
     
     
-    newIdentity = &p->value().get().toObject();
+    newIdentity = p->value().get();
 
     
     
@@ -725,7 +724,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     JSObject::swap(cx, origobj, newIdentityWrapper);
     if (origobj->compartment()->lookupWrapper(newIdentity)) {
       MOZ_ASSERT(origobj->is<CrossCompartmentWrapperObject>());
-      if (!origobj->compartment()->putWrapper(cx, newIdentity, origv)) {
+      if (!origobj->compartment()->putWrapper(cx, newIdentity, origobj)) {
         MOZ_CRASH();
       }
     }
