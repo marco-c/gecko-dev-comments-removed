@@ -79,23 +79,40 @@ function dismissNotification(popup) {
 }
 
 function waitForMessage(aMessage, browser) {
-  function checkFn(event) {
-    is(event.data.message, arguments.Message, "received " + arguments.aMessage);
-    if (event.data.message == arguments.aMessage) {
-      return true;
+  return new Promise((resolve, reject) => {
+    
+    
+    
+    
+    function contentScript() {
+      addEventListener(
+        "message",
+        function(event) {
+          sendAsyncMessage("testLocal:message", { message: event.data });
+        },
+        { once: true, capture: true },
+        true
+      );
     }
-    throw new Error(
-      `Unexpected result: ${event.data.message}, expected ${arguments.aMessage}`
-    );
-  }
-  checkFn.aMessage = aMessage;
-  return BrowserTestUtils.waitForContentEvent(
-    browser.selectedBrowser,
-    "message",
-     true,
-    checkFn,
-     true
-  );
+    
+
+    let script = "data:,(" + contentScript.toString() + ")();";
+
+    let mm = browser.selectedBrowser.messageManager;
+
+    mm.addMessageListener("testLocal:message", function listener(msg) {
+      mm.removeMessageListener("testLocal:message", listener);
+      mm.removeDelayedFrameScript(script);
+      is(msg.data.message, aMessage, "received " + aMessage);
+      if (msg.data.message == aMessage) {
+        resolve();
+      } else {
+        reject();
+      }
+    });
+
+    mm.loadFrameScript(script, true);
+  });
 }
 
 function dispatchEvent(eventName) {
