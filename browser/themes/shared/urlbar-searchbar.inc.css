@@ -87,7 +87,9 @@
 
 #urlbar[breakout] {
   position: absolute;
-  z-index: 2;
+  
+
+  z-index: 3;
   top: 0;
   margin-top: -@urlbarBreakoutVerticalExtend@;
   margin-inline-start: -@urlbarBreakoutHorizontalExtend@;
