@@ -37,7 +37,7 @@ def symlink(source, link_name):
 
 
 def check_run(args):
-    print(' '.join(args), file=sys.stderr)
+    print(' '.join(args), file=sys.stderr, flush=True)
     if args[0] == 'cmake':
         
         
