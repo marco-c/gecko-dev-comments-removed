@@ -425,6 +425,48 @@ void js::WritableStreamMarkCloseRequestInFlight(
 MOZ_MUST_USE bool js::WritableStreamUpdateBackpressure(
     JSContext* cx, Handle<WritableStream*> unwrappedStream, bool backpressure) {
   
-  JS_ReportErrorASCII(cx, "epic fail");
-  return false;
+  MOZ_ASSERT(unwrappedStream->writable());
+
+  
+  MOZ_ASSERT(!WritableStreamCloseQueuedOrInFlight(unwrappedStream));
+
+  
+  
+  
+  if (unwrappedStream->hasWriter() &&
+      backpressure != unwrappedStream->backpressure()) {
+    Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+        cx, UnwrapWriterFromStream(cx, unwrappedStream));
+    if (!unwrappedWriter) {
+      return false;
+    }
+
+    
+    
+    if (backpressure) {
+      Rooted<JSObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
+      if (!promise) {
+        return false;
+      }
+
+      AutoRealm ar(cx, unwrappedWriter);
+      if (!cx->compartment()->wrap(cx, &promise)) {
+        return false;
+      }
+      unwrappedWriter->setReadyPromise(promise);
+    } else {
+      
+      
+      
+      if (!ResolveUnwrappedPromiseWithUndefined(
+              cx, unwrappedWriter->readyPromise())) {
+        return false;
+      }
+    }
+  }
+
+  
+  unwrappedStream->setBackpressure(backpressure);
+
+  return true;
 }

@@ -48,7 +48,18 @@ class WritableStreamDefaultWriter : public NativeObject {
 
     Slot_Stream,
 
+    
+
+
+
+
+
+
+
+
+
     Slot_ReadyPromise,
+
     SlotCount,
   };
 
