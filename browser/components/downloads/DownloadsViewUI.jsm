@@ -169,6 +169,10 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
   connect() {
     let document = this.element.ownerDocument;
     let downloadListItemFragment = gDownloadListItemFragments.get(document);
+    
+    
+    
+    
     if (!downloadListItemFragment) {
       let MozXULElement = document.defaultView.MozXULElement;
       downloadListItemFragment = MozXULElement.parseXULToFragment(`
