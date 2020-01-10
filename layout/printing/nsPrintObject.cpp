@@ -60,16 +60,16 @@ nsPrintObject::~nsPrintObject() {
 }
 
 
-nsresult nsPrintObject::Init(nsIDocShell* aDocShell, Document* aDoc,
-                             bool aPrintPreview) {
+nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
+                                         bool aForPrintPreview) {
+  NS_ENSURE_STATE(aDocShell);
   NS_ENSURE_STATE(aDoc);
 
-  mPrintPreview = aPrintPreview;
-
-  if (mPrintPreview || mParent) {
+  if (aForPrintPreview) {
     mDocShell = aDocShell;
   } else {
-    mTreeOwner = do_GetInterface(aDocShell);
+    
+    
 
     
     RefPtr<BrowsingContext> bc = BrowsingContext::Create(
@@ -85,31 +85,42 @@ nsresult nsPrintObject::Init(nsIDocShell* aDocShell, Document* aDoc,
 
     mDidCreateDocShell = true;
     MOZ_ASSERT(mDocShell->ItemType() == aDocShell->ItemType());
+
+    mTreeOwner = do_GetInterface(aDocShell);
     mDocShell->SetTreeOwner(mTreeOwner);
-  }
-  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
 
-  
-  nsCOMPtr<Document> dummy = do_GetInterface(mDocShell);
-  mozilla::Unused << dummy;
-
-  nsCOMPtr<nsIContentViewer> viewer;
-  mDocShell->GetContentViewer(getter_AddRefs(viewer));
-  NS_ENSURE_STATE(viewer);
-
-  if (mParent) {
-    nsCOMPtr<nsPIDOMWindowOuter> window = aDoc->GetWindow();
-    if (window) {
-      mContent = window->GetFrameElementInternal();
-    }
-    mDocument = aDoc;
-    return NS_OK;
+    
+    mozilla::Unused << nsDocShell::Cast(mDocShell)->GetDocument();
   }
 
   mDocument = aDoc->CreateStaticClone(mDocShell);
   NS_ENSURE_STATE(mDocument);
 
+  nsCOMPtr<nsIContentViewer> viewer;
+  mDocShell->GetContentViewer(getter_AddRefs(viewer));
+  NS_ENSURE_STATE(viewer);
   viewer->SetDocument(mDocument);
+
+  mPrintPreview = aForPrintPreview;
+
+  return NS_OK;
+}
+
+nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
+                                           Document* aDoc,
+                                           bool aForPrintPreview,
+                                           nsPrintObject* aParent) {
+  NS_ENSURE_STATE(aDocShell);
+  NS_ENSURE_STATE(aDoc);
+
+  mParent = aParent;
+  mDocShell = aDocShell;
+  mDocument = aDoc;
+  mPrintPreview = aForPrintPreview;
+
+  nsCOMPtr<nsPIDOMWindowOuter> window = aDoc->GetWindow();
+  mContent = window->GetFrameElementInternal();
+
   return NS_OK;
 }
 
