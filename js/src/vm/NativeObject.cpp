@@ -21,6 +21,7 @@
 
 #include "gc/Nursery-inl.h"
 #include "vm/ArrayObject-inl.h"
+#include "vm/BytecodeLocation-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
@@ -2336,53 +2337,64 @@ bool js::NativeGetExistingProperty(JSContext* cx, HandleObject receiver,
 
 
 
+
+
+
+
+
+
+
+
 static bool Detecting(JSContext* cx, JSScript* script, jsbytecode* pc) {
   MOZ_ASSERT(script->containsPC(pc));
 
-  
-  while (pc < script->codeEnd() &&
-         (BytecodeIsJumpTarget(JSOp(*pc)) || JSOp(*pc) == JSOP_DUP))
-    pc = GetNextPc(pc);
+  BytecodeIterator scriptIterator =
+      BytecodeIterator(BytecodeLocation(script, pc));
+  BytecodeIterator endIter = BytecodeIterator(script->endLocation());
 
-  MOZ_ASSERT(script->containsPC(pc));
-  if (pc >= script->codeEnd()) {
-    return false;
+  
+  while (scriptIterator->isJumpTarget() || scriptIterator->is(JSOP_DUP)) {
+    if (++scriptIterator == endIter) {
+      
+      
+      return false;
+    }
   }
 
   
-  JSOp op = JSOp(*pc);
-  if (CodeSpec[op].format & JOF_DETECTING) {
+  
+  if (scriptIterator->isDetectingOp()) {
     return true;
   }
 
-  jsbytecode* endpc = script->codeEnd();
-
-  if (op == JSOP_NULL) {
-    
-    if (++pc < endpc) {
-      op = JSOp(*pc);
-      return op == JSOP_EQ || op == JSOP_NE;
+  
+  if (scriptIterator->is(JSOP_NULL)) {
+    if (++scriptIterator == endIter) {
+      return false;
     }
-    return false;
+    return scriptIterator->isEqualityOp() &&
+           !scriptIterator->isStrictEqualityOp();
   }
 
   
-  if (op == JSOP_GETGNAME || op == JSOP_GETNAME) {
-    JSAtom* atom = script->getAtom(GET_UINT32_INDEX(pc));
-    if (atom == cx->names().undefined && (pc += CodeSpec[op].length) < endpc) {
-      op = JSOp(*pc);
-      return op == JSOP_EQ || op == JSOP_NE || op == JSOP_STRICTEQ ||
-             op == JSOP_STRICTNE;
+  
+  if (scriptIterator->is(JSOP_GETGNAME) || scriptIterator->is(JSOP_GETNAME) ||
+      scriptIterator->is(JSOP_UNDEFINED)) {
+    
+    
+    
+    if (scriptIterator->isNameOp() &&
+        scriptIterator->getPropertyName(script) != cx->names().undefined) {
+      return false;
     }
-  }
-  if (op == JSOP_UNDEFINED) {
-    if ((pc += CodeSpec[op].length) < endpc) {
-      op = JSOp(*pc);
-      return op == JSOP_EQ || op == JSOP_NE || op == JSOP_STRICTEQ ||
-             op == JSOP_STRICTNE;
+    
+    
+    
+    if (++scriptIterator == endIter) {
+      return false;
     }
+    return scriptIterator->isEqualityOp();
   }
-
   return false;
 }
 
