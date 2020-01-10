@@ -71,12 +71,6 @@ let NewTabPagePreloading = {
     let panel = gBrowser.getPanel(browser);
     gBrowser.tabpanels.appendChild(panel);
 
-    if (remoteType != E10SUtils.NOT_REMOTE) {
-      
-      
-      
-      browser.webProgress;
-    }
     return browser;
   },
 
