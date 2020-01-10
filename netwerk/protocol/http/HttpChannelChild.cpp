@@ -2920,8 +2920,7 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   openArgs.forceMainDocumentChannel() = mForceMainDocumentChannel;
 
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
-  openArgs.hasSandboxedAuxiliaryNavigations() =
-      GetHasSandboxedAuxiliaryNavigations();
+  openArgs.hasNonEmptySandboxingFlag() = GetHasNonEmptySandboxingFlag();
 
   
   

@@ -322,12 +322,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD GetCrossOriginOpenerPolicy(
       nsILoadInfo::CrossOriginOpenerPolicy aInitiatorPolicy,
       nsILoadInfo::CrossOriginOpenerPolicy* aOutPolicy) override;
-  virtual bool GetHasSandboxedAuxiliaryNavigations() override {
-    return mHasSandboxedNavigations;
+  virtual bool GetHasNonEmptySandboxingFlag() override {
+    return mHasNonEmptySandboxingFlag;
   }
-  virtual void SetHasSandboxedAuxiliaryNavigations(
-      bool aHasSandboxedAuxiliaryNavigations) override {
-    mHasSandboxedNavigations = aHasSandboxedAuxiliaryNavigations;
+  virtual void SetHasNonEmptySandboxingFlag(
+      bool aHasNonEmptySandboxingFlag) override {
+    mHasNonEmptySandboxingFlag = aHasNonEmptySandboxingFlag;
   }
 
   inline void CleanRedirectCacheChainIfNecessary() {
@@ -805,7 +805,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   uint32_t mUpgradableToSecure : 1;
 
   
-  uint32_t mHasSandboxedNavigations : 1;
+  uint32_t mHasNonEmptySandboxingFlag : 1;
 
   
   

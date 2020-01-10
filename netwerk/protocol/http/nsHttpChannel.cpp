@@ -2573,9 +2573,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
 
   rv = NS_OK;
   if (!mCanceled) {
-    ComputeCrossOriginOpenerPolicyMismatch();
-    if (mHasCrossOriginOpenerPolicyMismatch &&
-        GetHasSandboxedAuxiliaryNavigations()) {
+    rv = ComputeCrossOriginOpenerPolicyMismatch();
+    if (rv == NS_ERROR_BLOCKED_BY_POLICY) {
       
       mStatus = NS_ERROR_BLOCKED_BY_POLICY;
       HandleAsyncAbort();
@@ -7382,6 +7381,16 @@ nsresult nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch() {
       nsILoadInfo::OPENER_POLICY_NULL;
   Unused << GetCrossOriginOpenerPolicy(documentPolicy, &resultPolicy);
 
+  
+  
+  if (resultPolicy != nsILoadInfo::OPENER_POLICY_NULL &&
+      GetHasNonEmptySandboxingFlag()) {
+    LOG(
+        ("nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch network error "
+         "for non empty sandboxing and non null COOP"));
+    return NS_ERROR_BLOCKED_BY_POLICY;
+  }
+
   if (!ctx->Canonical()->GetCurrentWindowGlobal()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -7708,10 +7717,9 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
   rv = NS_OK;
   if (!mCanceled) {
     
-    ComputeCrossOriginOpenerPolicyMismatch();
+    rv = ComputeCrossOriginOpenerPolicyMismatch();
 
-    if (mHasCrossOriginOpenerPolicyMismatch &&
-        GetHasSandboxedAuxiliaryNavigations()) {
+    if (rv == NS_ERROR_BLOCKED_BY_POLICY) {
       
       mStatus = NS_ERROR_BLOCKED_BY_POLICY;
       HandleAsyncAbort();
