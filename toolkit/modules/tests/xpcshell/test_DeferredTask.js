@@ -21,6 +21,16 @@ ChromeUtils.defineModuleGetter(
 
 const T = 100;
 
+const originalIdleDispatch = DeferredTask.prototype._startIdleDispatch;
+function replaceIdleDispatch(handleIdleDispatch) {
+  DeferredTask.prototype._startIdleDispatch = function(callback, timeout) {
+    handleIdleDispatch(callback, timeout);
+  };
+}
+function restoreIdleDispatch() {
+  DeferredTask.prototype.idleDispatch = originalIdleDispatch;
+}
+
 
 
 
@@ -316,9 +326,88 @@ add_test(function test_isArmed_isRunning() {
 
 
 
+add_test(function test_idle_without_deadline() {
+  let idleStarted = false;
+  let executed = false;
+
+  
+  replaceIdleDispatch((callback, timeout) => {
+    Assert.ok(!idleStarted);
+    idleStarted = true;
+    do_timeout(timeout || 2 * T, callback);
+  });
+
+  let deferredTask = new DeferredTask(function() {
+    Assert.ok(!executed);
+    executed = true;
+  }, 1 * T);
+  deferredTask.arm();
+
+  do_timeout(2 * T, () => {
+    Assert.ok(idleStarted);
+    Assert.ok(!executed);
+  });
+
+  do_timeout(4 * T, () => {
+    Assert.ok(executed);
+    restoreIdleDispatch();
+    run_next_test();
+  });
+});
+
+
+
+
+add_test(function test_idle_deadline() {
+  let idleStarted = false;
+  let executed = false;
+
+  
+  replaceIdleDispatch((callback, timeout) => {
+    Assert.ok(!idleStarted);
+    idleStarted = true;
+    do_timeout(timeout || 0, callback);
+  });
+
+  let deferredTask = new DeferredTask(
+    function() {
+      Assert.ok(!executed);
+      executed = true;
+    },
+    1 * T,
+    2 * T
+  );
+  deferredTask.arm();
+
+  
+  
+  do_timeout(2 * T, () => {
+    Assert.ok(idleStarted);
+    Assert.ok(!executed);
+  });
+
+  do_timeout(4 * T, () => {
+    Assert.ok(executed);
+    restoreIdleDispatch();
+    run_next_test();
+  });
+});
+
+
+
+
 add_test(function test_finalize() {
   let executed = false;
   let timePassed = false;
+  let idleStarted = false;
+  let finalized = false;
+
+  
+  replaceIdleDispatch((callback, timeout) => {
+    Assert.ok(!idleStarted);
+    idleStarted = true;
+    do_timeout(T, callback);
+  });
 
   let deferredTask = new DeferredTask(function() {
     Assert.ok(!timePassed);
@@ -328,11 +417,22 @@ add_test(function test_finalize() {
 
   do_timeout(1 * T, () => {
     timePassed = true;
+    Assert.ok(finalized);
+    Assert.ok(!idleStarted);
   });
 
   
   deferredTask.finalize().then(function() {
+    finalized = true;
     Assert.ok(executed);
+  });
+
+  
+  
+  do_timeout(3 * T, () => {
+    
+    Assert.ok(!idleStarted);
+    restoreIdleDispatch();
     run_next_test();
   });
 });

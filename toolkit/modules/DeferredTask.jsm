@@ -165,11 +165,31 @@ this.DeferredTask.prototype = {
 
 
   _startTimer() {
-    this._timer = new Timer(
-      this._timerCallback.bind(this),
-      this._delayMs,
-      Ci.nsITimer.TYPE_ONE_SHOT
-    );
+    let callback, timer;
+    if (this._timeoutMs === 0) {
+      callback = () => this._timerCallback();
+    } else {
+      callback = () => {
+        this._startIdleDispatch(() => {
+          
+          
+          
+          
+          if (this._timer === timer) {
+            this._timerCallback();
+          }
+        }, this._timeoutMs);
+      };
+    }
+    timer = new Timer(callback, this._delayMs, Ci.nsITimer.TYPE_ONE_SHOT);
+    this._timer = timer;
+  },
+
+  
+
+
+  _startIdleDispatch(callback, timeout) {
+    ChromeUtils.idleDispatch(callback, { timeout });
   },
 
   
@@ -250,6 +270,7 @@ this.DeferredTask.prototype = {
 
     
     
+    
     if (this._timer) {
       this.disarm();
       this._timerCallback();
@@ -309,13 +330,7 @@ this.DeferredTask.prototype = {
 
   async _runTask() {
     try {
-      
-      
-      if (this._finalized || this._timeoutMs === 0) {
-        await this._taskFn();
-      } else {
-        await PromiseUtils.idleDispatch(this._taskFn, this._timeoutMs);
-      }
+      await this._taskFn();
     } catch (ex) {
       Cu.reportError(ex);
     }
