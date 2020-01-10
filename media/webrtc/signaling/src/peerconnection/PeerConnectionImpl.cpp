@@ -1007,13 +1007,13 @@ already_AddRefed<TransceiverImpl> PeerConnectionImpl::CreateTransceiverImpl(
   RefPtr<nsIPrincipal> principal;
   Document* doc = GetWindow()->GetExtantDoc();
   MOZ_ASSERT(doc);
-  const bool privacyRequested = mPrivacyRequested.valueOr(true);
-  if (privacyRequested) {
-    
-    
+  if (mPrivacyRequested.valueOr(false)) {
     principal =
         NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
   } else {
+    
+    
+    
     principal = doc->NodePrincipal();
   }
 
@@ -1643,28 +1643,14 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
   return NS_OK;
 }
 
-nsresult PeerConnectionImpl::OnAlpnNegotiated(const std::string& aAlpn) {
+nsresult PeerConnectionImpl::OnAlpnNegotiated(bool aPrivacyRequested) {
   PC_AUTO_ENTER_API_CALL(false);
   if (mPrivacyRequested.isSome()) {
+    MOZ_DIAGNOSTIC_ASSERT(*mPrivacyRequested == aPrivacyRequested);
     return NS_OK;
   }
 
-  mPrivacyRequested = Some(aAlpn == "c-webrtc");
-
-  
-  
-  
-  
-  if (!*mPrivacyRequested) {
-    
-    Document* doc = GetWindow()->GetExtantDoc();
-    if (!doc) {
-      CSFLogInfo(LOGTAG, "Can't update principal on streams; document gone");
-      return NS_ERROR_FAILURE;
-    }
-    mMedia->UpdateRemoteStreamPrincipals_m(doc->NodePrincipal());
-  }
-
+  mPrivacyRequested = Some(aPrivacyRequested);
   return NS_OK;
 }
 

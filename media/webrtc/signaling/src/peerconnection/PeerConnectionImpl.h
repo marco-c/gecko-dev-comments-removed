@@ -484,7 +484,7 @@ class PeerConnectionImpl final
 
   bool IsClosed() const;
   
-  nsresult OnAlpnNegotiated(const std::string& aAlpn);
+  nsresult OnAlpnNegotiated(bool aPrivacyRequested);
 
   bool HasMedia() const;
 

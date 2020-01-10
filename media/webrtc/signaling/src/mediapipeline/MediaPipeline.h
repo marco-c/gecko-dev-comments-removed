@@ -205,6 +205,7 @@ class MediaPipeline : public sigslot::has_slots<> {
   void RtcpStateChange(const std::string& aTransportId, TransportLayer::State);
   virtual void CheckTransportStates();
   void PacketReceived(const std::string& aTransportId, MediaPacket& packet);
+  void AlpnNegotiated(const std::string& aAlpn, bool aPrivacyRequested);
 
   void RtpPacketReceived(MediaPacket& packet);
   void RtcpPacketReceived(MediaPacket& packet);
@@ -213,6 +214,10 @@ class MediaPipeline : public sigslot::has_slots<> {
                               MediaPacket& aPacket);
 
   void SetDescription_s(const std::string& description);
+
+  
+  
+  virtual void MakePrincipalPrivate_s() {}
 
   const DirectionType mDirection;
   size_t mLevel;
@@ -331,11 +336,6 @@ class MediaPipelineReceive : public MediaPipeline {
                        nsCOMPtr<nsISerialEventTarget> aStsThread,
                        RefPtr<MediaSessionConduit> aConduit);
 
-  
-  
-  virtual void SetPrincipalHandle_m(
-      const PrincipalHandle& aPrincipalHandle) = 0;
-
  protected:
   ~MediaPipelineReceive();
 };
@@ -356,7 +356,7 @@ class MediaPipelineReceiveAudio : public MediaPipelineReceive {
 
   bool IsVideo() const override { return false; }
 
-  void SetPrincipalHandle_m(const PrincipalHandle& aPrincipalHandle) override;
+  void MakePrincipalPrivate_s() override;
 
   void Start() override;
   void Stop() override;
@@ -387,7 +387,7 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
 
   bool IsVideo() const override { return true; }
 
-  void SetPrincipalHandle_m(const PrincipalHandle& aPrincipalHandle) override;
+  void MakePrincipalPrivate_s() override;
 
   void Start() override;
   void Stop() override;
