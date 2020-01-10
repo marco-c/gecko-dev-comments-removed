@@ -97,6 +97,32 @@ inline bool UnsafeIsValidUtf8Latin1(mozilla::Span<const char> aString) {
 
 
 
+
+
+inline size_t Utf8Latin1UpTo(mozilla::Span<const char> aString) {
+  return encoding_mem_utf8_latin1_up_to(aString.Elements(), aString.Length());
+}
+
+
+
+
+
+
+
+
+
+inline size_t UnsafeValidUtf8Lati1UpTo(mozilla::Span<const char> aString) {
+  return encoding_mem_str_latin1_up_to(aString.Elements(), aString.Length());
+}
+
+
+
+
+
+
+
+
+
 inline void LossyConvertUtf16toLatin1(mozilla::Span<const char16_t> aSource,
                                       mozilla::Span<char> aDest) {
   encoding_mem_convert_utf16_to_latin1_lossy(

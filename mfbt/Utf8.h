@@ -13,6 +13,7 @@
 #define mozilla_Utf8_h
 
 #include "mozilla/Casting.h"    
+#include "mozilla/IntegerTypeTraits.h"  
 #include "mozilla/Likely.h"     
 #include "mozilla/Maybe.h"      
 #include "mozilla/Span.h"       
@@ -359,6 +360,30 @@ inline size_t UnsafeConvertValidUtf8toUtf16(mozilla::Span<const char> aSource,
                                             mozilla::Span<char16_t> aDest) {
   return encoding_mem_convert_utf8_to_utf16(
       aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline mozilla::Maybe<size_t> ConvertUtf8toUtf16WithoutReplacement(
+    mozilla::Span<const char> aSource, mozilla::Span<char16_t> aDest) {
+  size_t written = encoding_mem_convert_utf8_to_utf16_without_replacement(
+      aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+  if (MOZ_UNLIKELY(written == mozilla::MaxValue<size_t>::value)) {
+    return mozilla::Nothing();
+  }
+  return mozilla::Some(written);
 }
 
 #endif  
