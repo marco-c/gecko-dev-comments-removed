@@ -32,6 +32,7 @@ function createSVGElement(type) {
   return document.createElementNS("http://www.w3.org/2000/svg", type);
 }
 
+
 function moveAnimationTimelineAndSample(index) {
     var animationId = expectedResults[index][0];
     var time = expectedResults[index][1];
