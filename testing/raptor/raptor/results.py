@@ -6,10 +6,10 @@
 
 from __future__ import absolute_import
 
-from mozlog import get_proxy_logger
+from logger.logger import RaptorLogger
 from output import Output
 
-LOG = get_proxy_logger(component='results-handler')
+LOG = RaptorLogger(component='raptor-results-handler')
 
 
 class RaptorResultsHandler():
