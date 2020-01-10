@@ -132,6 +132,9 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.tabs.disableBackgroundZombification", false],
 
   
+  ["browser.tabs.remote.separatePrivilegedContentProcess", false],
+
+  
   ["browser.tabs.unloadOnLowMemory", false],
 
   

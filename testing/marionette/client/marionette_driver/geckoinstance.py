@@ -564,6 +564,9 @@ class DesktopInstance(GeckoInstance):
         "toolkit.cosmeticAnimations.enabled": False,
 
         
+        "browser.tabs.remote.separatePrivilegedContentProcess": False,
+
+        
         "browser.tabs.unloadOnLowMemory": False,
 
         
