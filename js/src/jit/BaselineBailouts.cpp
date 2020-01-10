@@ -1821,17 +1821,13 @@ static bool CopyFromRematerializedFrame(JSContext* cx, JitActivation* act,
 }
 
 bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
-  
-  
-  JSContext* cx = TlsContext.get();
-  js::gc::AutoSuppressGC suppressGC(cx);
-
   JitSpew(JitSpew_BaselineBailouts, "  Done restoring frames");
 
   
   UniquePtr<BaselineBailoutInfo> bailoutInfo(bailoutInfoArg);
   bailoutInfoArg = nullptr;
 
+  JSContext* cx = TlsContext.get();
   BaselineFrame* topFrame = GetTopBaselineFrame(cx);
 
   
