@@ -517,6 +517,21 @@ class SVGMozElementObserver final : public nsSVGPaintingProperty {
   bool ObservesReflow() override { return true; }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BackgroundClipRenderingObserver : public SVGRenderingObserver {
  public:
   explicit BackgroundClipRenderingObserver(nsIFrame* aFrame) : mFrame(aFrame) {}
@@ -531,8 +546,15 @@ class BackgroundClipRenderingObserver : public SVGRenderingObserver {
   }
 
   void OnRenderingChange() final;
+
+  
+
+
+
+
   bool ObservesReflow() final { return true; }
 
+  
   nsIFrame* mFrame;
 };
 
