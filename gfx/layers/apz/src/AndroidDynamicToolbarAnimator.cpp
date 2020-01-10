@@ -202,9 +202,9 @@ nsEventStatus AndroidDynamicToolbarAnimator::ReceiveInputEvent(
         }
         
         
-        const uint32_t dragThreshold =
-            Abs(std::lround(0.01f * StaticPrefs::ToolbarScrollThreshold() *
-                            mControllerCompositionHeight));
+        const uint32_t dragThreshold = Abs(std::lround(
+            0.01f * StaticPrefs::browser_ui_scroll_toolbar_threshold() *
+            mControllerCompositionHeight));
         if ((Abs(mControllerTotalDistance.value) > dragThreshold) &&
             (delta != 0)) {
           mControllerDragThresholdReached = true;

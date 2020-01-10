@@ -79,7 +79,7 @@ VRManager::VRManager()
 #if !defined(MOZ_WIDGET_ANDROID)
   
   
-  if (!StaticPrefs::VRProcessEnabled() || !XRE_IsGPUProcess()) {
+  if (!StaticPrefs::dom_vr_process_enabled() || !XRE_IsGPUProcess()) {
     VRServiceManager::Get().CreateService();
   }
   if (VRServiceManager::Get().IsServiceValid()) {
@@ -144,7 +144,7 @@ void VRManager::Shutdown() {
   }
   
   
-  if (XRE_IsGPUProcess() && StaticPrefs::VRProcessEnabled() &&
+  if (XRE_IsGPUProcess() && StaticPrefs::dom_vr_process_enabled() &&
       mVRServiceStarted) {
     RefPtr<Runnable> task = NS_NewRunnableFunction(
         "VRServiceManager::ShutdownVRProcess",
@@ -388,7 +388,7 @@ void VRManager::CheckForInactiveTimeout() {
     Shutdown();
   } else {
     TimeDuration duration = TimeStamp::Now() - mLastActiveTime;
-    if (duration.ToMilliseconds() > StaticPrefs::VRInactiveTimeout()) {
+    if (duration.ToMilliseconds() > StaticPrefs::dom_vr_inactive_timeout()) {
       Shutdown();
       
       
@@ -423,7 +423,8 @@ void VRManager::EnumerateVRDisplays() {
 
   if (!mLastDisplayEnumerationTime.IsNull()) {
     TimeDuration duration = TimeStamp::Now() - mLastDisplayEnumerationTime;
-    if (duration.ToMilliseconds() < StaticPrefs::VRDisplayEnumerateInterval()) {
+    if (duration.ToMilliseconds() <
+        StaticPrefs::dom_vr_display_enumerate_interval()) {
       return;
     }
   }
@@ -456,7 +457,7 @@ void VRManager::EnumerateVRDisplays() {
 
 #if !defined(MOZ_WIDGET_ANDROID)
   if (!mVRServiceStarted) {
-    if (XRE_IsGPUProcess() && StaticPrefs::VRProcessEnabled()) {
+    if (XRE_IsGPUProcess() && StaticPrefs::dom_vr_process_enabled()) {
       VRServiceManager::Get().CreateVRProcess();
       mVRServiceStarted = true;
     } else {
@@ -699,7 +700,7 @@ void VRManager::ScanForControllers() {
   if (!mLastControllerEnumerationTime.IsNull()) {
     TimeDuration duration = TimeStamp::Now() - mLastControllerEnumerationTime;
     if (duration.ToMilliseconds() <
-        StaticPrefs::VRControllerEnumerateInterval()) {
+        StaticPrefs::dom_vr_controller_enumerate_interval()) {
       return;
     }
   }

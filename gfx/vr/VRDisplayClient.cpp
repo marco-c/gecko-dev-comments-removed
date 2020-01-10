@@ -96,7 +96,7 @@ void VRDisplayClient::FireEvents() {
   
   if (!bLastEventWasMounted && mDisplayInfo.mDisplayState.isMounted) {
     bLastEventWasMounted = true;
-    if (StaticPrefs::VRAutoActivateEnabled()) {
+    if (StaticPrefs::dom_vr_autoactivate_enabled()) {
       vm->FireDOMVRDisplayMountedEvent(mDisplayInfo.mDisplayID);
     }
   }
@@ -104,7 +104,7 @@ void VRDisplayClient::FireEvents() {
   
   if (bLastEventWasMounted && !mDisplayInfo.mDisplayState.isMounted) {
     bLastEventWasMounted = false;
-    if (StaticPrefs::VRAutoActivateEnabled()) {
+    if (StaticPrefs::dom_vr_autoactivate_enabled()) {
       vm->FireDOMVRDisplayUnmountedEvent(mDisplayInfo.mDisplayID);
     }
   }

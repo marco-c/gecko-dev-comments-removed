@@ -289,7 +289,7 @@ bool VRDisplayPuppet::SubmitFrame(ID3D11Texture2D* aSource,
   VRManager* vm = VRManager::Get();
   MOZ_ASSERT(vm);
 
-  switch (StaticPrefs::VRPuppetSubmitFrame()) {
+  switch (StaticPrefs::dom_vr_puppet_submitframe()) {
     case 0:
       
       break;
@@ -479,7 +479,7 @@ bool VRDisplayPuppet::SubmitFrame(MacIOSurface* aMacIOSurface,
   VRManager* vm = VRManager::Get();
   MOZ_ASSERT(vm);
 
-  switch (StaticPrefs::VRPuppetSubmitFrame()) {
+  switch (StaticPrefs::dom_vr_puppet_submitframe()) {
     case 0:
       
       break;
@@ -640,7 +640,7 @@ VRSystemManagerPuppet::VRSystemManagerPuppet()
 
 
 already_AddRefed<VRSystemManagerPuppet> VRSystemManagerPuppet::Create() {
-  if (!StaticPrefs::dom_vr_enabled() || !StaticPrefs::VRPuppetEnabled()) {
+  if (!StaticPrefs::dom_vr_enabled() || !StaticPrefs::dom_vr_puppet_enabled()) {
     return nullptr;
   }
 

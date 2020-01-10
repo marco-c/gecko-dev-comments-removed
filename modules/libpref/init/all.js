@@ -5070,13 +5070,6 @@ pref("dom.vr.oculus.present.timeout", 500);
 
 
 
-pref("dom.vr.oculus.quit.timeout", 10000);
-
-
-
-
-
-
 pref("dom.vr.oculus.invisible.enabled", true);
 
 

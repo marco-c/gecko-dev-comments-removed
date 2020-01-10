@@ -10008,7 +10008,7 @@ bool nsLayoutUtils::ShouldHandleMetaViewport(const Document* aDocument) {
                  nsIDocShell::META_VIEWPORT_OVERRIDE_NONE);
       
       
-      return StaticPrefs::MetaViewportEnabled();
+      return StaticPrefs::dom_meta_viewport_enabled();
   }
 }
 

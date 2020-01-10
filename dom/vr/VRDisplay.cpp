@@ -445,7 +445,7 @@ void VRDisplay::StartHandlingVRNavigationEvent() {
   mHandlingVRNavigationEventStart = TimeStamp::Now();
   ++mVRNavigationEventDepth;
   TimeDuration timeout =
-      TimeDuration::FromMilliseconds(StaticPrefs::VRNavigationTimeout());
+      TimeDuration::FromMilliseconds(StaticPrefs::dom_vr_navigation_timeout());
   
   
   
@@ -470,7 +470,7 @@ bool VRDisplay::IsHandlingVRNavigationEvent() {
     return false;
   }
   TimeDuration timeout =
-      TimeDuration::FromMilliseconds(StaticPrefs::VRNavigationTimeout());
+      TimeDuration::FromMilliseconds(StaticPrefs::dom_vr_navigation_timeout());
   return timeout.ToMilliseconds() <= 0 ||
          (TimeStamp::Now() - mHandlingVRNavigationEventStart) <= timeout;
 }
@@ -494,7 +494,7 @@ already_AddRefed<Promise> VRDisplay::RequestPresent(
       isChromePresentation ? gfx::kVRGroupChrome : gfx::kVRGroupContent;
 
   if (!EventStateManager::IsHandlingUserInput() && !isChromePresentation &&
-      !IsHandlingVRNavigationEvent() && StaticPrefs::VRRequireGesture() &&
+      !IsHandlingVRNavigationEvent() && StaticPrefs::dom_vr_require_gesture() &&
       !IsPresenting()) {
     
     

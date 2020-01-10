@@ -153,6 +153,7 @@ ZoomConstraintsClient::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     
+    
 
     RefPtr<nsRunnableMethod<ZoomConstraintsClient>> event =
         NewRunnableMethod("ZoomConstraintsClient::RefreshZoomConstraints", this,
