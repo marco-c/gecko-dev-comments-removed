@@ -198,34 +198,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult MoveNodeSmart(nsIContent& aNode,
-                                              Element& aDestElement,
-                                              int32_t* aInOutDestOffset);
-
-  
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult MoveContents(Element& aElement,
-                                             Element& aDestElement,
-                                             int32_t* aInOutDestOffset);
-
-  
-
-
-
-
-
-
-
-
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult

@@ -44,6 +44,7 @@ class AutoSelectionSetterAfterTableEdit;
 class AutoSetTemporaryAncestorLimiter;
 class EditActionResult;
 class EmptyEditableFunctor;
+class MoveNodeResult;
 class ResizerSelectionListener;
 class SplitRangeOffFromNodeResult;
 enum class EditSubAction : int32_t;
@@ -1987,6 +1988,31 @@ class HTMLEditor final : public TextEditor,
   JoinNearestEditableNodesWithTransaction(
       nsIContent& aLeftNode, nsIContent& aRightNode,
       EditorDOMPoint* aNewFirstChildOfRightNode);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE MoveNodeResult
+  MoveNodeOrChildren(nsIContent& aNode, const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE MoveNodeResult
+  MoveChildren(Element& aElement, const EditorDOMPoint& aPointToInsert);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

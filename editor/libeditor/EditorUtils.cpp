@@ -31,6 +31,38 @@ using namespace dom;
 
 
 
+EditActionResult& EditActionResult::operator|=(
+    const MoveNodeResult& aMoveNodeResult) {
+  mHandled |= aMoveNodeResult.Handled();
+  
+  if (mRv == aMoveNodeResult.Rv()) {
+    return *this;
+  }
+  
+  
+  if (EditorDestroyed() || aMoveNodeResult.EditorDestroyed()) {
+    mRv = NS_ERROR_EDITOR_DESTROYED;
+    return *this;
+  }
+  
+  
+  if (aMoveNodeResult.Rv() == NS_ERROR_NOT_INITIALIZED) {
+    return *this;
+  }
+  
+  if (Failed() || aMoveNodeResult.Failed()) {
+    mRv = NS_ERROR_FAILURE;
+    return *this;
+  }
+  
+  mRv = NS_OK;
+  return *this;
+}
+
+
+
+
+
 DOMIterator::DOMIterator(nsINode& aNode MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
     : mIter(&mPostOrderIter) {
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
