@@ -36,6 +36,15 @@ enum NAL_TYPES {
   H264_NAL_SLICE_EXT_DVC = 21,
 };
 
+
+enum SLICE_TYPES {
+  P_SLICE = 0,
+  B_SLICE = 1,
+  I_SLICE = 2,
+  SP_SLICE = 3,
+  SI_SLICE = 4,
+};
+
 struct SPSData {
   bool operator==(const SPSData& aOther) const;
   bool operator!=(const SPSData& aOther) const;

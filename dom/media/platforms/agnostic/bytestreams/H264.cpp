@@ -984,6 +984,19 @@ uint32_t H264::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
       if (DecodeRecoverySEI(decodedNAL, data)) {
         return FrameType::I_FRAME;
       }
+    } else if (nalType == H264_NAL_SLICE) {
+      
+      
+      RefPtr<mozilla::MediaByteBuffer> decodedNAL = DecodeNALUnit(p, nalLen);
+      BitReader br(decodedNAL);
+      
+      br.ReadUE();
+      
+      
+      const uint32_t sliceType = br.ReadUE() % 5;
+      if (sliceType == SLICE_TYPES::I_SLICE || sliceType == SI_SLICE) {
+        return FrameType::I_FRAME;
+      }
     }
   }
 
