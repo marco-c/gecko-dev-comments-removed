@@ -42,7 +42,13 @@ enum class SectionId {
   GcFeatureOptIn = 42  
 };
 
+
+
+static const uint8_t SLEB128SignMask = 0xc0;
+static const uint8_t SLEB128SignBit = 0x40;
+
 enum class TypeCode {
+
   I32 = 0x7f,  
   I64 = 0x7e,  
   F32 = 0x7d,  
@@ -139,13 +145,13 @@ enum class MemoryMasks { AllowUnshared = 0x1, AllowShared = 0x3 };
 enum class DataSegmentKind {
   Active = 0x00,
   Passive = 0x01,
-  ActiveWithIndex = 0x02
+  ActiveWithMemoryIndex = 0x02
 };
 
 enum class ElemSegmentKind : uint32_t {
   Active = 0x0,
   Passive = 0x1,
-  ActiveWithIndex = 0x2,
+  ActiveWithTableIndex = 0x2,
   Declared = 0x3,
 };
 

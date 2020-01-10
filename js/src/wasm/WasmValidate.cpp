@@ -444,15 +444,24 @@ bool wasm::DecodeValidatedLocalEntries(Decoder& d, ValTypeVector* locals) {
 
 
 
+class NothingVector {
+  Nothing unused_;
+
+ public:
+  bool resize(size_t length) { return true; }
+  Nothing& operator[](size_t) { return unused_; }
+  Nothing& back() { return unused_; }
+};
+
 struct ValidatingPolicy {
   typedef Nothing Value;
+  typedef NothingVector ValueVector;
   typedef Nothing ControlItem;
 };
 
 typedef OpIter<ValidatingPolicy> ValidatingOpIter;
 
 static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
-                                    
                                     uint32_t funcIndex,
                                     const ValTypeVector& locals,
                                     const uint8_t* bodyEnd, Decoder* d) {
@@ -473,12 +482,13 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
     }
 
     Nothing nothing;
+    NothingVector nothings;
+    ResultType unusedType;
 
     switch (op.b0) {
       case uint16_t(Op::End): {
         LabelKind unusedKind;
-        ExprType unusedType;
-        if (!iter.readEnd(&unusedKind, &unusedType, &nothing)) {
+        if (!iter.readEnd(&unusedKind, &unusedType, &nothings)) {
           return false;
         }
         iter.popEnd();
@@ -493,12 +503,12 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
         CHECK(iter.readDrop());
       case uint16_t(Op::Call): {
         uint32_t unusedIndex;
-        ValidatingOpIter::ValueVector unusedArgs;
+        NothingVector unusedArgs;
         CHECK(iter.readCall(&unusedIndex, &unusedArgs));
       }
       case uint16_t(Op::CallIndirect): {
         uint32_t unusedIndex, unusedIndex2;
-        ValidatingOpIter::ValueVector unusedArgs;
+        NothingVector unusedArgs;
         CHECK(iter.readCallIndirect(&unusedIndex, &unusedIndex2, &nothing,
                                     &unusedArgs));
       }
@@ -573,10 +583,8 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
         CHECK(iter.readLoop());
       case uint16_t(Op::If):
         CHECK(iter.readIf(&nothing));
-      case uint16_t(Op::Else): {
-        ExprType type;
-        CHECK(iter.readElse(&type, &nothing));
-      }
+      case uint16_t(Op::Else):
+        CHECK(iter.readElse(&unusedType, &nothings));
       case uint16_t(Op::I32Clz):
       case uint16_t(Op::I32Ctz):
       case uint16_t(Op::I32Popcnt):
@@ -815,23 +823,20 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
         CHECK(iter.readMemorySize());
       case uint16_t(Op::Br): {
         uint32_t unusedDepth;
-        ExprType unusedType;
-        CHECK(iter.readBr(&unusedDepth, &unusedType, &nothing));
+        CHECK(iter.readBr(&unusedDepth, &unusedType, &nothings));
       }
       case uint16_t(Op::BrIf): {
         uint32_t unusedDepth;
-        ExprType unusedType;
-        CHECK(iter.readBrIf(&unusedDepth, &unusedType, &nothing, &nothing));
+        CHECK(iter.readBrIf(&unusedDepth, &unusedType, &nothings, &nothing));
       }
       case uint16_t(Op::BrTable): {
         Uint32Vector unusedDepths;
         uint32_t unusedDefault;
-        ExprType unusedType;
         CHECK(iter.readBrTable(&unusedDepths, &unusedDefault, &unusedType,
-                               &nothing, &nothing));
+                               &nothings, &nothing));
       }
       case uint16_t(Op::Return):
-        CHECK(iter.readReturn(&nothing));
+        CHECK(iter.readReturn(&nothings));
       case uint16_t(Op::Unreachable):
         CHECK(iter.readUnreachable());
       case uint16_t(Op::MiscPrefix): {
@@ -958,7 +963,7 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
               return iter.unrecognizedOpcode(&op);
             }
             uint32_t unusedUint;
-            ValidatingOpIter::ValueVector unusedArgs;
+            NothingVector unusedArgs;
             CHECK(iter.readStructNew(&unusedUint, &unusedArgs));
           }
           case uint32_t(MiscOp::StructGet): {
@@ -1210,10 +1215,8 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
 bool wasm::ValidateFunctionBody(const ModuleEnvironment& env,
                                 uint32_t funcIndex, uint32_t bodySize,
                                 Decoder& d) {
-  const FuncType& funcType = *env.funcTypes[funcIndex];
-
   ValTypeVector locals;
-  if (!locals.appendAll(funcType.args())) {
+  if (!locals.appendAll(env.funcTypes[funcIndex]->args())) {
     return false;
   }
 
@@ -2292,7 +2295,7 @@ static inline ElemSegment::Kind NormalizeElemSegmentKind(
     ElemSegmentKind decodedKind) {
   switch (decodedKind) {
     case ElemSegmentKind::Active:
-    case ElemSegmentKind::ActiveWithIndex: {
+    case ElemSegmentKind::ActiveWithTableIndex: {
       return ElemSegment::Kind::Active;
     }
     case ElemSegmentKind::Passive: {
@@ -2347,13 +2350,13 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
     seg->kind = NormalizeElemSegmentKind(kind);
 
     if (kind == ElemSegmentKind::Active ||
-        kind == ElemSegmentKind::ActiveWithIndex) {
+        kind == ElemSegmentKind::ActiveWithTableIndex) {
       if (env->tables.length() == 0) {
         return d.fail("active elem segment requires a table");
       }
 
       uint32_t tableIndex = 0;
-      if (kind == ElemSegmentKind::ActiveWithIndex &&
+      if (kind == ElemSegmentKind::ActiveWithTableIndex &&
           !d.readVarU32(&tableIndex)) {
         return d.fail("expected table index");
       }
@@ -2699,7 +2702,7 @@ static bool DecodeDataSection(Decoder& d, ModuleEnvironment* env) {
     switch (initializerKindVal) {
       case uint32_t(DataSegmentKind::Active):
       case uint32_t(DataSegmentKind::Passive):
-      case uint32_t(DataSegmentKind::ActiveWithIndex):
+      case uint32_t(DataSegmentKind::ActiveWithMemoryIndex):
         break;
       default:
         return d.fail("invalid data initializer-kind field");
@@ -2712,7 +2715,7 @@ static bool DecodeDataSection(Decoder& d, ModuleEnvironment* env) {
     }
 
     uint32_t memIndex = 0;
-    if (initializerKind == DataSegmentKind::ActiveWithIndex) {
+    if (initializerKind == DataSegmentKind::ActiveWithMemoryIndex) {
       if (!d.readVarU32(&memIndex)) {
         return d.fail("expected memory index");
       }
@@ -2723,7 +2726,7 @@ static bool DecodeDataSection(Decoder& d, ModuleEnvironment* env) {
 
     DataSegmentEnv seg;
     if (initializerKind == DataSegmentKind::Active ||
-        initializerKind == DataSegmentKind::ActiveWithIndex) {
+        initializerKind == DataSegmentKind::ActiveWithMemoryIndex) {
       InitExpr segOffset;
       if (!DecodeInitializerExpression(d, env, ValType::I32, &segOffset)) {
         return false;
