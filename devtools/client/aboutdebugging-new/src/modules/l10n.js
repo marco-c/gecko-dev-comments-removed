@@ -4,7 +4,43 @@
 
 "use strict";
 
-const { FluentL10n } = require("devtools/client/shared/fluent-l10n/fluent-l10n");
+const Services = require("Services");
+
+const FluentReact = require("devtools/client/shared/vendor/fluent-react");
+const { L10nRegistry } = require("resource://gre/modules/L10nRegistry.jsm");
+
+class L10n {
+  async init() {
+    const locales = Services.locale.appLocalesAsBCP47;
+    const generator = L10nRegistry.generateBundles(locales, [
+      "branding/brand.ftl",
+      "devtools/aboutdebugging.ftl",
+    ]);
+
+    this._bundles = [];
+    for await (const bundle of generator) {
+      this._bundles.push(bundle);
+    }
+    this._reactLocalization = new FluentReact.ReactLocalization(this._bundles);
+  }
+
+  
 
 
-exports.l10n = new FluentL10n();
+  getBundles() {
+    return this._bundles;
+  }
+
+  
+
+
+  getString(id, args, fallback) {
+    
+    
+    
+    return this._reactLocalization.getString.apply(this._reactLocalization, arguments);
+  }
+}
+
+
+exports.l10n = new L10n();
