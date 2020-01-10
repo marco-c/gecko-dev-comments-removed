@@ -308,12 +308,6 @@ class InternalRequest final {
   already_AddRefed<InternalRequest> GetRequestConstructorCopy(
       nsIGlobalObject* aGlobal, ErrorResult& aRv) const;
 
-  bool WasCreatedByFetchEvent() const { return mCreatedByFetchEvent; }
-
-  void SetCreatedByFetchEvent() { mCreatedByFetchEvent = true; }
-
-  void ClearCreatedByFetchEvent() { mCreatedByFetchEvent = false; }
-
   bool IsNavigationRequest() const;
 
   bool IsWorkerRequest() const;
@@ -415,10 +409,6 @@ class InternalRequest final {
   MOZ_INIT_OUTSIDE_CTOR bool mSynchronous;
   MOZ_INIT_OUTSIDE_CTOR bool mUnsafeRequest;
   MOZ_INIT_OUTSIDE_CTOR bool mUseURLCredentials;
-  
-  
-  
-  bool mCreatedByFetchEvent = false;
   
   
   

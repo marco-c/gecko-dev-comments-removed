@@ -1429,9 +1429,6 @@ class FetchEventRunnable : public ExtendableFunctionalEventWorkerRunnable,
         mRequestMode, mRequestRedirect, mRequestCredentials, mReferrer,
         mReferrerPolicy, mContentPolicyType, mIntegrity);
     internalReq->SetBody(mUploadStream, mUploadStreamContentLength);
-    
-    
-    internalReq->SetCreatedByFetchEvent();
 
     nsCOMPtr<nsIChannel> channel;
     nsresult rv = mInterceptedChannel->GetChannel(getter_AddRefs(channel));
