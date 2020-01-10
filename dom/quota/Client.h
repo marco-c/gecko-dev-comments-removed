@@ -36,7 +36,7 @@ class UsageInfo;
 
 class Client {
  public:
-  typedef mozilla::Atomic<bool> AtomicBool;
+  typedef Atomic<bool> AtomicBool;
 
   enum Type {
     IDB = 0,
