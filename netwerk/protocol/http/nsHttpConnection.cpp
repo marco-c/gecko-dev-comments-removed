@@ -1830,9 +1830,10 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
     
     
     if (!mTLSFilter->Transaction()) {
-      LOG(("  closing transaction directly"));
-      MOZ_ASSERT(trans);
-      trans->Close(reason);
+      if (trans) {
+        LOG(("  closing transaction directly"));
+        trans->Close(reason);
+      }
     } else {
       LOG(("  closing transactin hanging of off mTLSFilter"));
       mTLSFilter->Close(reason);
