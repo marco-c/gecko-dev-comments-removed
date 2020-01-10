@@ -21,14 +21,12 @@ const EXPECTED_REFLOWS = [
 
 
 
-function filterLikelyFocusChange(rects) {
-  if (rects.length > 5 && rects.every(r => r.y2 < 100)) {
-    return [];
-  }
-  if (Services.appinfo.OS == "Darwin" && rects.length >= 2) {
-    return rects.filter(r => r.y1 != 0 || r.h != 33);
-  }
-  return rects;
+function isLikelyFocusChange(rects) {
+  if (rects.length > 5 && rects.every(r => r.y2 < 100))
+    return true;
+  if (Services.appinfo.OS == "Darwin" && rects.length == 2 && rects.every(r => r.y1 == 0 && r.h == 33))
+    return true;
+  return false;
 }
 
 
@@ -54,15 +52,12 @@ add_task(async function() {
       filter(rects, frame, previousFrame) {
         
         
-        if (!alreadyFocused) {
+        if (!alreadyFocused && isLikelyFocusChange(rects)) {
           alreadyFocused = true;
-          let filteredRects = filterLikelyFocusChange(rects);
-          if (rects !== filteredRects) {
-            todo(false,
-                 "bug 1445161 - the window should be focused at first paint, " +
-                 rects.filter(r => !filteredRects.includes(r)).toSource());
-          }
-          return filteredRects;
+          todo(false,
+               "bug 1445161 - the window should be focused at first paint, " +
+               rects.toSource());
+          return [];
         }
 
         return rects;
