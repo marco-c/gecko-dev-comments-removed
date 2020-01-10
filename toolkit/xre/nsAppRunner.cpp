@@ -3642,6 +3642,9 @@ static void PR_CALLBACK ReadAheadDlls_ThreadStart(void*) {
 
   
   ReadAheadDll(L"ExplorerFrame.dll");
+
+  
+  ReadAheadDll(L"WinTypes.dll");
 }
 #endif
 
