@@ -2316,7 +2316,7 @@ impl PicturePrimitive {
                             blur_std_deviation * scale_factors.1
                         );
                         let inflation_factor = frame_state.surfaces[raster_config.surface_index.0].inflation_factor;
-                        let inflation_factor = (inflation_factor * device_pixel_scale.0).ceil() as i32;
+                        let inflation_factor = (inflation_factor * device_pixel_scale.0).ceil();
 
                         
                         
@@ -2326,10 +2326,20 @@ impl PicturePrimitive {
                         
                         
                         
-                        let mut device_rect = clipped
+                        
+                        
+                        let device_rect = clipped.to_f32()
                             .inflate(inflation_factor, inflation_factor)
-                            .intersection(&unclipped.to_i32())
+                            .intersection(&unclipped)
                             .unwrap();
+
+                        let mut device_rect = match device_rect.try_cast::<i32>() {
+                            Some(rect) => rect,
+                            None => {
+                                return None
+                            }
+                        };
+
                         
                         
                         
@@ -2379,10 +2389,21 @@ impl PicturePrimitive {
                         }
 
                         max_std_deviation = max_std_deviation.round();
-                        let max_blur_range = (max_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
-                        let mut device_rect = clipped.inflate(max_blur_range, max_blur_range)
-                                .intersection(&unclipped.to_i32())
+                        let max_blur_range = (max_std_deviation * BLUR_SAMPLE_SCALE).ceil();
+                        
+                        
+                        let device_rect = clipped.to_f32()
+                                .inflate(max_blur_range, max_blur_range)
+                                .intersection(&unclipped)
                                 .unwrap();
+
+                        let mut device_rect = match device_rect.try_cast::<i32>() {
+                            Some(rect) => rect,
+                            None => {
+                                return None
+                            }
+                        };
+
                         device_rect.size = RenderTask::adjusted_blur_source_size(
                             device_rect.size,
                             DeviceSize::new(max_std_deviation, max_std_deviation),
