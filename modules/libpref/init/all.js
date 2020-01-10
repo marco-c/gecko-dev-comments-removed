@@ -2261,6 +2261,15 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 
 
 
+
+
+
+
+
+pref("security.cert_pinning.hpkp.enabled", false);
+
+
+
 #if !defined(RELEASE_OR_BETA) && !defined(ANDROID)
   pref("security.strict_security_checks.enabled", true);
 #else

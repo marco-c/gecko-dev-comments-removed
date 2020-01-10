@@ -299,6 +299,9 @@ function check_pinning_telemetry() {
 }
 
 function run_test() {
+  
+  Services.prefs.setBoolPref("security.cert_pinning.hpkp.enabled", false);
+
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
 
   
