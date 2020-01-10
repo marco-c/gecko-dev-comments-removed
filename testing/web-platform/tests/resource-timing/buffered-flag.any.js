@@ -1,0 +1,18 @@
+async_test(t => {
+  performance.clearResourceTimings();
+  
+  
+  new PerformanceObserver(() => {
+    
+    new PerformanceObserver(t.step_func_done(list => {
+      const entries = list.getEntries();
+      assert_equals(entries.length, 1, 'There should be 1 resource entry.');
+      assert_equals(entries[0].entryType, 'resource');
+      assert_greater_than(entries[0].startTime, 0);
+      assert_greater_than(entries[0].responseEnd, entries[0].startTime);
+      assert_greater_than(entries[0].duration, 0);
+      assert_true(entries[0].name.endsWith('resources/empty.js'));
+    })).observe({'type': 'resource', buffered: true});
+  }).observe({'entryTypes': ['resource']});
+  fetch('resources/empty.js');
+}, 'PerformanceObserver with buffered flag sees previous resource entries.');
