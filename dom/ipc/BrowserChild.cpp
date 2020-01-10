@@ -1269,7 +1269,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvUpdateDimensions(
   
   
   RefPtr<Document> doc = GetTopLevelDocument();
-  if (doc && doc->InRDMPane()) {
+  BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
+  if (bc && bc->InRDMPane()) {
     RefPtr<AsyncEventDispatcher> dispatcher = new AsyncEventDispatcher(
         doc, NS_LITERAL_STRING("mozupdatedremoteframedimensions"),
         CanBubble::eYes, ChromeOnlyDispatch::eYes);

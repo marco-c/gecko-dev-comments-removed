@@ -699,8 +699,9 @@ bool nsLayoutUtils::AllowZoomingForDocument(
   
   
   
+  BrowsingContext* bc = aDocument ? aDocument->GetBrowsingContext() : nullptr;
   return StaticPrefs::apz_allow_zooming() ||
-         (aDocument && aDocument->InRDMPane() &&
+         (bc && bc->InRDMPane() &&
           nsLayoutUtils::ShouldHandleMetaViewport(aDocument));
 }
 
