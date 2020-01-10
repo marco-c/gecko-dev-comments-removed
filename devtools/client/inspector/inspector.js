@@ -328,6 +328,7 @@ Inspector.prototype = {
   },
 
   _deferredOpen: async function() {
+    const onMarkupLoaded = this.once("markuploaded");
     this._initMarkup();
     this.isReady = false;
 
@@ -349,9 +350,9 @@ Inspector.prototype = {
       "visible";
 
     
-    this.setupSidebar();
+    await this.setupSidebar();
 
-    await this.once("markuploaded");
+    await onMarkupLoaded;
     this.isReady = true;
 
     
@@ -404,7 +405,7 @@ Inspector.prototype = {
     
     
     this.changesFront = await this.toolbox.target.getFront("changes");
-    this.changesFront.start();
+    await this.changesFront.start();
     return this.changesFront;
   },
 
