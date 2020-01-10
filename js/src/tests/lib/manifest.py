@@ -181,6 +181,10 @@ def _parse_one(testcase, terms, xul_tester):
             
             testcase.is_module = True
             pos += 1
+        elif parts[pos] == 'async':
+            
+            testcase.is_async = True
+            pos += 1
         else:
             print('warning: invalid manifest line element "{}"'.format(
                 parts[pos]))
@@ -193,15 +197,17 @@ def _build_manifest_script_entry(script_name, test):
     if test.terms:
         
         terms = " ".join([term for term in test.terms.split()
-                          if not (term == "module" or term.startswith("error:"))])
+                          if not (term == "module" or
+                                  term == "async" or
+                                  term.startswith("error:"))])
         if terms:
             line.append(terms)
     if test.error:
         properties.append("error=" + test.error)
     if test.is_module:
-        
-        line.append("pref(dom.moduleScripts.enabled,true)")
         properties.append("module")
+    if test.is_async:
+        properties.append("async")
     line.append("script")
     script = script_name
     if properties:

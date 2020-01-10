@@ -504,6 +504,10 @@
     
     scripts.push({src: "js-test-driver-end.js", module: false});
 
+    if (properties.async) {
+      gDelayTestDriverEnd = true;
+    }
+
     if (!moduleTest) {
       for (var i = 0; i < scripts.length; i++) {
         var src = scripts[i].src;
@@ -555,6 +559,8 @@
       appendScript(0);
     }
   }
+
+  global.gDelayTestDriverEnd = false;
 
   function jsTestDriverEnd() {
     
@@ -639,7 +645,5 @@
   jsTestDriverBrowserInit();
 
 })(this);
-
-var gDelayTestDriverEnd = false;
 
 var gPageCompleted;

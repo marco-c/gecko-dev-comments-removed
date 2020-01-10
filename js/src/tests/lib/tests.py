@@ -174,6 +174,9 @@ class RefTestCase(object):
         
         self.is_module = False
         
+        
+        self.is_async = False
+        
         self.enable = True
         
         self.error = None

@@ -43,7 +43,6 @@ UNSUPPORTED_FEATURES = set([
 FEATURE_CHECK_NEEDED = {
     "Atomics": "!this.hasOwnProperty('Atomics')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
-    "dynamic-import": "!xulRuntime.shell",
 }
 RELEASE_OR_BETA = set([
     "Intl.NumberFormat-unified",
@@ -94,7 +93,7 @@ def tryParseTestFile(test262parser, source, testName):
         return None
 
 
-def createRefTestEntry(skip, skipIf, error, isModule):
+def createRefTestEntry(skip, skipIf, error, isModule, isAsync):
     """
     Returns the |reftest| tuple (terms, comments) from the input arguments. Or a
     tuple of empty strings if no reftest entry is required.
@@ -116,6 +115,9 @@ def createRefTestEntry(skip, skipIf, error, isModule):
 
     if isModule:
         terms.append("module")
+
+    if isAsync:
+        terms.append("async")
 
     return (" ".join(terms), ", ".join(comments))
 
@@ -273,6 +275,11 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
 
     
     
+    if isNegative and isAsync:
+        isAsync = False
+
+    
+    
     if "CanBlockIsFalse" in testRec:
         refTestSkipIf.append(("xulRuntime.shell", "shell can block main thread"))
 
@@ -317,7 +324,8 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     else:
         testEpilogue = ""
 
-    (terms, comments) = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule)
+    (terms, comments) = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule,
+                                           isAsync)
     if raw:
         refTest = ""
         externRefTest = (terms, comments)
@@ -357,8 +365,10 @@ def convertFixtureFile(fixtureSource, fixtureName):
     refTestSkipIf = []
     errorType = None
     isModule = False
+    isAsync = False
 
-    (terms, comments) = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule)
+    (terms, comments) = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule,
+                                           isAsync)
     refTest = createRefTestLine(terms, comments)
 
     source = createSource(fixtureSource, refTest, "", "")
