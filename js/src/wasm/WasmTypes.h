@@ -2293,7 +2293,7 @@ static const unsigned PageSize = 64 * 1024;
 
 static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
 
-#ifdef WASM_HUGE_MEMORY
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
 
 
 
@@ -2301,16 +2301,18 @@ static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
 
 
 
-static const uint64_t IndexRange = uint64_t(UINT32_MAX) + 1;
-static const uint64_t OffsetGuardLimit = uint64_t(INT32_MAX) + 1;
-static const uint64_t UnalignedGuardPage = PageSize;
+static const uint64_t HugeIndexRange = uint64_t(UINT32_MAX) + 1;
+static const uint64_t HugeOffsetGuardLimit = uint64_t(INT32_MAX) + 1;
+static const uint64_t HugeUnalignedGuardPage = PageSize;
 static const uint64_t HugeMappedSize =
-    IndexRange + OffsetGuardLimit + UnalignedGuardPage;
+    HugeIndexRange + HugeOffsetGuardLimit + HugeUnalignedGuardPage;
 
-static_assert(MaxMemoryAccessSize <= UnalignedGuardPage,
+static_assert(MaxMemoryAccessSize <= HugeUnalignedGuardPage,
               "rounded up to static page size");
+static_assert(HugeOffsetGuardLimit < UINT32_MAX,
+              "checking for overflow against OffsetGuardLimit is enough.");
 
-#else  
+#endif
 
 
 
@@ -2322,6 +2324,19 @@ static_assert(MaxMemoryAccessSize <= UnalignedGuardPage,
 
 static const size_t OffsetGuardLimit = PageSize - MaxMemoryAccessSize;
 static const size_t GuardSize = PageSize;
+
+static_assert(MaxMemoryAccessSize < GuardSize,
+              "Guard page handles partial out-of-bounds");
+static_assert(OffsetGuardLimit < UINT32_MAX,
+              "checking for overflow against OffsetGuardLimit is enough.");
+
+static constexpr bool GetOffsetGuardLimit(bool hugeMemory) {
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+  return hugeMemory ? HugeOffsetGuardLimit : OffsetGuardLimit;
+#else
+  return OffsetGuardLimit;
+#endif
+}
 
 
 
@@ -2335,8 +2350,6 @@ extern bool IsValidBoundsCheckImmediate(uint32_t i);
 
 
 extern size_t ComputeMappedSize(uint32_t maxSize);
-
-#endif  
 
 
 
