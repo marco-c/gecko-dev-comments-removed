@@ -29,7 +29,16 @@ sendAsyncMessage("Content:BrowserChildReady", {
 addEventListener(
   "DOMTitleChanged",
   function(aEvent) {
-    if (!aEvent.isTrusted || aEvent.target.defaultView != content) {
+    if (
+      !aEvent.isTrusted ||
+      
+      
+      content.closed ||
+      
+      
+      
+      docShell.document != aEvent.target
+    ) {
       return;
     }
     sendAsyncMessage("DOMTitleChanged", { title: content.document.title });
