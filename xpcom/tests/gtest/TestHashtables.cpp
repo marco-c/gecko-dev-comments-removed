@@ -17,6 +17,8 @@
 
 #include "gtest/gtest.h"
 
+#include <numeric>
+
 namespace TestHashtables {
 
 class TestUniChar  
@@ -35,6 +37,11 @@ class TestUniChar
 struct EntityNode {
   const char* mStr;  
   uint32_t mUnicode;
+
+  bool operator<(const EntityNode& aOther) const {
+    return mUnicode < aOther.mUnicode ||
+           (mUnicode == aOther.mUnicode && strcmp(mStr, aOther.mStr) < 0);
+  }
 };
 
 static const EntityNode gEntities[] = {
@@ -286,6 +293,68 @@ TEST(Hashtables, DataHashtable)
   ASSERT_EQ(count, uint32_t(0));
 }
 
+TEST(Hashtables, DataHashtable_STLIterators)
+{
+  nsDataHashtable<nsUint32HashKey, const char*> UniToEntity(ENTITY_COUNT);
+
+  for (auto& entity : gEntities) {
+    UniToEntity.Put(entity.mUnicode, entity.mStr);
+  }
+
+  
+  nsDataHashtable<nsUint32HashKey, const char*>::const_iterator ci =
+      UniToEntity.begin();
+  ++ci;
+  ASSERT_EQ(1, std::distance(UniToEntity.cbegin(), ci++));
+  ASSERT_EQ(2, std::distance(UniToEntity.cbegin(), ci));
+  ASSERT_TRUE(ci == ci);
+  auto otherCi = ci;
+  ++otherCi;
+  ++ci;
+  ASSERT_TRUE(&*ci == &*otherCi);
+
+  
+  
+  std::for_each(UniToEntity.cbegin(), UniToEntity.cend(),
+                [](const auto& entry) {});
+  std::find_if(UniToEntity.cbegin(), UniToEntity.cend(),
+               [](const auto& entry) { return entry.GetKey() == 42; });
+  std::accumulate(
+      UniToEntity.cbegin(), UniToEntity.cend(), 0u,
+      [](size_t sum, const auto& entry) { return sum + entry.GetKey(); });
+  std::any_of(UniToEntity.cbegin(), UniToEntity.cend(),
+              [](const auto& entry) { return entry.GetKey() == 42; });
+  std::max_element(UniToEntity.cbegin(), UniToEntity.cend(),
+                   [](const auto& lhs, const auto& rhs) {
+                     return lhs.GetKey() > rhs.GetKey();
+                   });
+
+  
+  {
+    std::set<EntityNode> entities(gEntities, gEntities + ENTITY_COUNT);
+    for (const auto& entity :
+         const_cast<const nsDataHashtable<nsUint32HashKey, const char*>&>(
+             UniToEntity)) {
+      ASSERT_EQ(1u,
+                entities.erase(EntityNode{entity.GetData(), entity.GetKey()}));
+    }
+    ASSERT_TRUE(entities.empty());
+  }
+
+  
+  {
+    std::set<EntityNode> entities(gEntities, gEntities + ENTITY_COUNT);
+    for (auto& entity : UniToEntity) {
+      ASSERT_EQ(1u,
+                entities.erase(EntityNode{entity.GetData(), entity.GetKey()}));
+
+      entity.SetData(nullptr);
+      ASSERT_EQ(nullptr, entity.GetData());
+    }
+    ASSERT_TRUE(entities.empty());
+  }
+}
+
 TEST(Hashtables, ClassHashtable)
 {
   
@@ -317,6 +386,46 @@ TEST(Hashtables, ClassHashtable)
     count++;
   }
   ASSERT_EQ(count, uint32_t(0));
+}
+
+TEST(Hashtables, ClassHashtable_RangeBasedFor)
+{
+  
+  nsClassHashtable<nsCStringHashKey, TestUniChar> EntToUniClass(ENTITY_COUNT);
+
+  for (auto& entity : gEntities) {
+    auto* temp = new TestUniChar(entity.mUnicode);
+    EntToUniClass.Put(nsDependentCString(entity.mStr), temp);
+  }
+
+  
+  {
+    std::set<EntityNode> entities(gEntities, gEntities + ENTITY_COUNT);
+    for (const auto& entity :
+         const_cast<const nsClassHashtable<nsCStringHashKey, TestUniChar>&>(
+             EntToUniClass)) {
+      const char* str;
+      entity.GetKey().GetData(&str);
+      ASSERT_EQ(1u,
+                entities.erase(EntityNode{str, entity.GetData()->GetChar()}));
+    }
+    ASSERT_TRUE(entities.empty());
+  }
+
+  
+  {
+    std::set<EntityNode> entities(gEntities, gEntities + ENTITY_COUNT);
+    for (auto& entity : EntToUniClass) {
+      const char* str;
+      entity.GetKey().GetData(&str);
+      ASSERT_EQ(1u,
+                entities.erase(EntityNode{str, entity.GetData()->GetChar()}));
+
+      entity.SetData(nsAutoPtr<TestUniChar>{});
+      ASSERT_EQ(nullptr, entity.GetData());
+    }
+    ASSERT_TRUE(entities.empty());
+  }
 }
 
 TEST(Hashtables, DataHashtableWithInterfaceKey)
