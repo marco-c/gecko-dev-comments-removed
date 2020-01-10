@@ -1792,11 +1792,20 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       nsCOMPtr<nsIContent> eventContent, targetContent;
       nsCOMPtr<nsIPrincipal> principal;
       mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(eventContent));
-      if (eventContent)
+      if (eventContent) {
+        
+        
+        
+        
+        if (eventContent->IsText() && eventContent->HasFlag(NS_MAYBE_MASKED)) {
+          StopTrackingDragGesture();
+          return;
+        }
         DetermineDragTargetAndDefaultData(
             window, eventContent, dataTransfer, getter_AddRefs(selection),
             getter_AddRefs(remoteDragStartData), getter_AddRefs(targetContent),
             getter_AddRefs(principal));
+      }
 
       
       
