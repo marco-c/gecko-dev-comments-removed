@@ -23,10 +23,17 @@ class WebConsoleConnectionProxy {
 
 
 
-  constructor(webConsoleUI, target) {
+
+
+
+  constructor(
+    webConsoleUI,
+    target,
+    needContentProcessMessagesListener = false
+  ) {
     this.webConsoleUI = webConsoleUI;
     this.target = target;
-    this.fissionSupport = this.webConsoleUI.fissionSupport;
+    this.needContentProcessMessagesListener = needContentProcessMessagesListener;
 
     this._connecter = null;
 
@@ -116,7 +123,7 @@ class WebConsoleConnectionProxy {
     
     
     
-    if (this.target.chrome && !this.target.isAddon && !this.fissionSupport) {
+    if (this.needContentProcessMessagesListener) {
       listeners.push("ContentProcessMessages");
     }
     return this.webConsoleClient.startListeners(listeners);
