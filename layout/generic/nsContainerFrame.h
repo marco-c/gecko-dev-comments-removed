@@ -13,6 +13,7 @@
 #include "nsSplittableFrame.h"
 #include "nsFrameList.h"
 #include "nsLayoutUtils.h"
+#include "nsLineBox.h"
 
 
 
@@ -117,7 +118,10 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+
+
   virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            const nsLineList::iterator* aPrevFrameLine,
                             nsFrameList& aFrameList);
 
   

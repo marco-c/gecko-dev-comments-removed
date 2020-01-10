@@ -2272,6 +2272,7 @@ struct ChildListInsertions {
 };
 
 void nsTableFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                                const nsLineList::iterator* aPrevFrameLine,
                                 nsFrameList& aFrameList) {
   
   

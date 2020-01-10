@@ -319,7 +319,7 @@ nsresult nsFirstLetterFrame::CreateContinuationForFloatingParent(
   
   
   nsFrameList temp(continuation, continuation);
-  parent->InsertFrames(kNoReflowPrincipalList, placeholderFrame, temp);
+  parent->InsertFrames(kNoReflowPrincipalList, placeholderFrame, nullptr, temp);
 
   *aContinuation = continuation;
   return NS_OK;
