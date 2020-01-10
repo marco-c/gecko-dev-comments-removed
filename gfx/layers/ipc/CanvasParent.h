@@ -49,7 +49,7 @@ class CanvasParent final : public PCanvasParent {
 
 
 
-  ipc::IPCResult RecvCreateTranslator(
+  ipc::IPCResult RecvInitTranslator(
       const TextureType& aTextureType,
       const ipc::SharedMemoryBasic::Handle& aReadHandle,
       const CrossProcessSemaphoreHandle& aReaderSem,

@@ -34,16 +34,27 @@ class CanvasTranslator final : public gfx::InlineTranslator {
 
 
 
-
-
-  static UniquePtr<CanvasTranslator> Create(
-      const TextureType& aTextureType,
-      const ipc::SharedMemoryBasic::Handle& aReadHandle,
-      const CrossProcessSemaphoreHandle& aReaderSem,
-      const CrossProcessSemaphoreHandle& aWriterSem,
-      UniquePtr<CanvasEventRingBuffer::ReaderServices> aReaderServices);
+  static UniquePtr<CanvasTranslator> Create();
 
   ~CanvasTranslator();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool Init(const TextureType& aTextureType,
+            const ipc::SharedMemoryBasic::Handle& aReadHandle,
+            const CrossProcessSemaphoreHandle& aReaderSem,
+            const CrossProcessSemaphoreHandle& aWriterSem,
+            UniquePtr<CanvasEventRingBuffer::ReaderServices> aReaderServices);
 
   bool IsValid() { return mIsValid; }
 
@@ -185,13 +196,7 @@ class CanvasTranslator final : public gfx::InlineTranslator {
       gfx::ReferencePtr aSurface);
 
  private:
-  CanvasTranslator(
-      const TextureType& aTextureType, TextureData* aTextureData,
-      gfx::DrawTarget* aDrawTarget,
-      const ipc::SharedMemoryBasic::Handle& aReadHandle,
-      const CrossProcessSemaphoreHandle& aReaderSem,
-      const CrossProcessSemaphoreHandle& aWriterSem,
-      UniquePtr<CanvasEventRingBuffer::ReaderServices> aReaderServices);
+  CanvasTranslator(); 
 
   void AddSurfaceDescriptor(gfx::ReferencePtr aRefPtr,
                             TextureData* atextureData);
