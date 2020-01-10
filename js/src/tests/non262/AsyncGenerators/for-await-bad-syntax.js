@@ -1,5 +1,3 @@
-
-
 var AsyncGenerator = async function*(){}.constructor;
 
 function assertSyntaxError(code) {

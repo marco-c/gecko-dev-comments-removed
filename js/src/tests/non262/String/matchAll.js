@@ -1,7 +1,5 @@
 
 
-
-
 assertEq(typeof String.prototype.matchAll, "function");
 assertEq(String.prototype.matchAll.name, "matchAll");
 assertEq(String.prototype.matchAll.length, 1);

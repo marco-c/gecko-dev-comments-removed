@@ -2,8 +2,6 @@
 
 
 
-
-
 Promise.allSettled([]).then(v => {
     assertDeepEq(v, []);
 });
