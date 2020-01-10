@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 var EventEmitter = require("devtools/shared/event-emitter");
