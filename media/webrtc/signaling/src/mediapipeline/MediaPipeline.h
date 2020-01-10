@@ -260,11 +260,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   bool IsRtp(const unsigned char* aData, size_t aLen) const;
   
   void DetachTransport_s();
-
-  
-  static Atomic<bool, ReleaseAcquire> sPrefsRegistered;
-  
-  static Atomic<bool, ReleaseAcquire> sForceDisableRtcpReceptionPref;
 };
 
 
