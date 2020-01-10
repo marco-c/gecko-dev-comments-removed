@@ -171,9 +171,6 @@ BrowserToolboxProcess.prototype = {
   _initProfile(overwritePreferences) {
     dumpn("Initializing the chrome toolbox user profile.");
 
-    
-    this._migrateProfileDir();
-
     const debuggingProfileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
     debuggingProfileDir.append(CHROME_DEBUGGER_PROFILE_NAME);
     try {
@@ -210,43 +207,6 @@ BrowserToolboxProcess.prototype = {
       "Finished creating the chrome toolbox user profile at: " +
         this._dbgProfilePath
     );
-  },
-
-  
-
-
-
-
-  _migrateProfileDir() {
-    const oldDebuggingProfileDir = Services.dirsvc.get("ProfLD", Ci.nsIFile);
-    const newDebuggingProfileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-    if (oldDebuggingProfileDir.path == newDebuggingProfileDir.path) {
-      
-      
-      return;
-    }
-    oldDebuggingProfileDir.append(CHROME_DEBUGGER_PROFILE_NAME);
-    if (!oldDebuggingProfileDir.exists()) {
-      return;
-    }
-    dumpn(`Old debugging profile exists: ${oldDebuggingProfileDir.path}`);
-    try {
-      
-      newDebuggingProfileDir.append(CHROME_DEBUGGER_PROFILE_NAME);
-      if (newDebuggingProfileDir.exists()) {
-        dumpn(`Removing folder at destination: ${newDebuggingProfileDir.path}`);
-        newDebuggingProfileDir.remove(true);
-      }
-      
-      const newDebuggingProfileParent = Services.dirsvc.get(
-        "ProfD",
-        Ci.nsIFile
-      );
-      oldDebuggingProfileDir.moveTo(newDebuggingProfileParent, null);
-      dumpn("Debugging profile migrated successfully");
-    } catch (e) {
-      dumpn(`Debugging profile migration failed: ${e}`);
-    }
   },
 
   
