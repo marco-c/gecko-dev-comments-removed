@@ -293,7 +293,7 @@ nsresult nsContentBlocker::TestPermission(nsIURI* aCurrentURI,
   
   
   uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
-  if (mPermissionManager->GetHasPreloadPermissions()) {
+  if (mPermissionManager->HasPreloadPermissions()) {
     rv = mPermissionManager->LegacyTestPermissionFromURI(
         aCurrentURI, nullptr, kTypeString[aContentType - 1], &permission);
     NS_ENSURE_SUCCESS(rv, rv);
