@@ -497,7 +497,11 @@ class HuffmanPreludeReader {
 
     MOZ_ASSERT(numberOfSymbols <= MAX_NUMBER_OF_SYMBOLS);
 
+    fprintf(stderr, "readMultipleValuesTable %s with %u entries\n",
+            describeBinASTInterfaceAndField(entry.identity.identity),
+            numberOfSymbols);
     if (numberOfSymbols == 1) {
+      fprintf(stderr, "readMultipleValuesTable (handling single symbol)\n");
       
       BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::No>());
       if (bitLength != 0) {
@@ -535,45 +539,60 @@ class HuffmanPreludeReader {
     MOZ_TRY(table.impl.init(cx_, numberOfSymbols));
 
     
-    size_t nextIndex = 1;
-    for (size_t i = 0; i < numberOfSymbols; i = nextIndex) {
-      
-      
-      
-      for (nextIndex = i + 1; nextIndex <= numberOfSymbols; ++nextIndex) {
-        if (auxStorageBitLengths[nextIndex] != 0) {
-          break;
-        }
-      }
+    
+    
+    
+    
+    
 
-      
+    
+    
+    size_t i;
+    for (i = 0; i < numberOfSymbols && auxStorageBitLengths[i] == 0; ++i) {
+      MOZ_TRY(readSymbol<Entry>(entry, i));  
+    }
+
+    while (i < numberOfSymbols) {
+      fprintf(stderr,
+              "readMultipleValuesTable (reading non-0 entry at index %zu)\n",
+              i);
       
       BINJS_MOZ_TRY_DECL(symbol, readSymbol<Entry>(entry, i));
 
-      const auto bitLength = auxStorageBitLengths[i];
-      if (bitLength == 0) {
-        
-        
-        continue;
+      
+      
+      size_t j;
+      for (j = i + 1; j <= numberOfSymbols && auxStorageBitLengths[j] == 0;
+           ++j) {
+        MOZ_TRY(readSymbol<Entry>(entry, j));  
       }
 
-      
-      const auto nextBitLength =
-          auxStorageBitLengths[nextIndex];  
+      const auto bitLength = auxStorageBitLengths[i];
+      const auto nextBitLength = auxStorageBitLengths[j];
+      MOZ_ASSERT(bitLength != 0);
+      MOZ_ASSERT(nextBitLength != 0);
+
       if (bitLength > nextBitLength) {
         
         
         return raiseInvalidTableData(entry.identity);
       }
 
+      
       MOZ_TRY(table.impl.addSymbol(code, bitLength, std::move(symbol)));
 
+      
       code = (code + 1) << (nextBitLength - bitLength);
+
+      i = j;
     }
 
-    
-    
+    fprintf(stderr,
+            "readMultipleValuesTable (finally, the table has %lu elements)\n",
+            table.impl.length());
 
+    
+    
     auxStorageBitLengths.clear();
     return Ok();
   }
@@ -603,6 +622,9 @@ class HuffmanPreludeReader {
         
         table = {mozilla::VariantType<typename Entry::Table>{}, cx_};
         auto& tableRef = table.template as<typename Entry::Table>();
+
+        fprintf(stderr, "readSingleValueTable %s\n",
+                describeBinASTInterfaceAndField(entry.identity.identity));
 
         
         MOZ_TRY((readSingleValueTable<Entry>(tableRef, entry)));
@@ -1289,8 +1311,9 @@ JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
       context.as<BinASTTokenReaderBase::ListContext>().content;
   const auto& table = dictionary.tableForListLength(identity);
   BINJS_MOZ_TRY_DECL(bits, bitBuffer.getHuffmanLookup<Compression::No>(*this));
-  const auto lookup =
-      table.as<HuffmanTableExplicitSymbolsListLength>().impl.lookup(bits);
+  const auto& tableForLookup =
+      table.as<HuffmanTableExplicitSymbolsListLength>();
+  const auto lookup = tableForLookup.impl.lookup(bits);
   bitBuffer.advanceBitBuffer<Compression::No>(lookup.key.bitLength);
   if (!lookup.value) {
     return raiseInvalidValue(context);
@@ -1421,6 +1444,9 @@ HuffmanEntry<const T*> HuffmanTableImpl<T, N>::lookup(HuffmanLookup key) const {
   
   
   
+  fprintf(stderr, "HuffmanTableImpl::lookup among %lu values\n",
+          values.length());
+
   for (const auto& iter : values) {
     if (iter.key.bitLength > key.bitLength) {
       
@@ -1723,7 +1749,7 @@ MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
 template <>
 MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readSymbol(
     const List& list, size_t) {
-  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::No>());
+  BINJS_MOZ_TRY_DECL(length, reader.readUnpackedLong());
   if (length > MAX_LIST_LENGTH) {
     return raiseInvalidTableData(list.identity);
   }
