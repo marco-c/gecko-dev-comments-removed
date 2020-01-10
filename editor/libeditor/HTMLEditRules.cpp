@@ -463,6 +463,7 @@ nsresult HTMLEditRules::AfterEditInner() {
             HTMLEditorRef().CreateRangeIncludingAdjuscentWhiteSpaces(
                 *HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange);
         if (extendedChangedRange) {
+          MOZ_ASSERT(extendedChangedRange->IsPositioned());
           
           HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange =
               std::move(extendedChangedRange);
@@ -475,6 +476,7 @@ nsresult HTMLEditRules::AfterEditInner() {
                 *HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange,
                 HTMLEditorRef().GetTopLevelEditSubAction());
         if (extendedChangedRange) {
+          MOZ_ASSERT(extendedChangedRange->IsPositioned());
           
           HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange =
               std::move(extendedChangedRange);
@@ -549,7 +551,10 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
 
     
-    rv = RemoveEmptyNodesInChangedRange();
+    rv =
+        MOZ_KnownLive(HTMLEditorRef())
+            .RemoveEmptyNodesIn(MOZ_KnownLive(
+                *HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -9959,10 +9964,10 @@ bool HTMLEditor::NodesInDifferentTableElements(nsINode& aNode1,
   return parentNode1 != parentNode2;
 }
 
-nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aRange.IsPositioned());
 
-  
   
   
   
@@ -9991,13 +9996,12 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
   
 
   PostContentIterator postOrderIter;
-  nsresult rv = postOrderIter.Init(
-      HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange);
+  nsresult rv = postOrderIter.Init(&aRange);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  nsTArray<OwningNonNull<nsINode>> arrayOfEmptyNodes, arrayOfEmptyCites,
+  AutoTArray<OwningNonNull<nsINode>, 64> arrayOfEmptyNodes, arrayOfEmptyCites,
       skipList;
 
   
@@ -10013,61 +10017,60 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
       if (parent) {
         skipList[idx] = parent;
       }
-    } else {
-      bool isCandidate = false;
-      bool isEmptyNode = false;
-      bool isMailCite = false;
+      continue;
+    }
 
-      if (node->IsElement()) {
-        if (node->IsHTMLElement(nsGkAtoms::body)) {
-          
-        } else if ((isMailCite = HTMLEditUtils::IsMailCite(node)) ||
-                   node->IsHTMLElement(nsGkAtoms::a) ||
-                   HTMLEditUtils::IsInlineStyle(node) ||
-                   HTMLEditUtils::IsList(node) ||
-                   node->IsHTMLElement(nsGkAtoms::div)) {
-          
-          isCandidate = true;
-        } else if (HTMLEditUtils::IsFormatNode(node) ||
-                   HTMLEditUtils::IsListItem(node) ||
-                   node->IsHTMLElement(nsGkAtoms::blockquote)) {
-          
-          
-          
-          isCandidate = !HTMLEditorRef().StartOrEndOfSelectionRangesIsIn(
-              *node->AsContent());
-        }
-      }
-
-      if (isCandidate) {
+    bool isCandidate = false;
+    bool isMailCite = false;
+    if (node->IsElement()) {
+      if (node->IsHTMLElement(nsGkAtoms::body)) {
+        
+      } else if ((isMailCite = HTMLEditUtils::IsMailCite(node)) ||
+                 node->IsHTMLElement(nsGkAtoms::a) ||
+                 HTMLEditUtils::IsInlineStyle(node) ||
+                 HTMLEditUtils::IsList(node) ||
+                 node->IsHTMLElement(nsGkAtoms::div)) {
+        
+        isCandidate = true;
+      } else if (HTMLEditUtils::IsFormatNode(node) ||
+                 HTMLEditUtils::IsListItem(node) ||
+                 node->IsHTMLElement(nsGkAtoms::blockquote)) {
         
         
-        rv = HTMLEditorRef().IsEmptyNode(node, &isEmptyNode, isMailCite, true);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-        if (isEmptyNode) {
-          if (isMailCite) {
-            
-            arrayOfEmptyCites.AppendElement(*node);
-          } else {
-            arrayOfEmptyNodes.AppendElement(*node);
-          }
-        }
-      }
-
-      if (!isEmptyNode && parent) {
         
-        skipList.AppendElement(*parent);
+        isCandidate = !StartOrEndOfSelectionRangesIsIn(*node->AsContent());
       }
+    }
+
+    bool isEmptyNode = false;
+    if (isCandidate) {
+      
+      
+      nsresult rv = IsEmptyNode(node, &isEmptyNode, isMailCite, true);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      if (isEmptyNode) {
+        if (isMailCite) {
+          
+          arrayOfEmptyCites.AppendElement(*node);
+        } else {
+          arrayOfEmptyNodes.AppendElement(*node);
+        }
+      }
+    }
+
+    if (!isEmptyNode && parent) {
+      
+      skipList.AppendElement(*parent);
     }
   }
 
   
   for (OwningNonNull<nsINode>& delNode : arrayOfEmptyNodes) {
-    if (HTMLEditorRef().IsModifiableNode(delNode)) {
-      rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*delNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+    if (IsModifiableNode(delNode)) {
+      rv = DeleteNodeWithTransaction(*delNode);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -10080,7 +10083,7 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
   
   for (OwningNonNull<nsINode>& delNode : arrayOfEmptyCites) {
     bool isEmptyNode;
-    rv = HTMLEditorRef().IsEmptyNode(delNode, &isEmptyNode, false, true);
+    nsresult rv = IsEmptyNode(delNode, &isEmptyNode, false, true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -10088,17 +10091,16 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
       
       
       RefPtr<Element> brElement =
-          MOZ_KnownLive(HTMLEditorRef())
-              .InsertBRElementWithTransaction(EditorDOMPoint(delNode));
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+          InsertBRElementWithTransaction(EditorDOMPoint(delNode));
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
     }
-    rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*delNode);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    rv = DeleteNodeWithTransaction(*delNode);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
