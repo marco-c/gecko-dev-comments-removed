@@ -782,7 +782,7 @@ function saveMedia() {
 
       
       let referrerInfo = new ReferrerInfo(
-        Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
+        Ci.nsIReferrerInfo.EMPTY,
         true,
         Services.io.newURI(item.baseURI)
       );
@@ -805,7 +805,7 @@ function saveMedia() {
           uniqueFile(aChosenData.file);
 
           let referrerInfo = new ReferrerInfo(
-            Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
+            Ci.nsIReferrerInfo.EMPTY,
             true,
             aBaseURI
           );
