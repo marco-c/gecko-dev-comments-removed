@@ -145,29 +145,34 @@ class BlocksRingBuffer {
   
   
   
+  
 
   
-  template <typename Deleter>
-  explicit BlocksRingBuffer(PowerOfTwo<Length> aLength, Deleter&& aDeleter)
-      : mBuffer(aLength), mDeleter(std::forward<Deleter>(aDeleter)) {}
+  template <typename EntryDestructor>
+  explicit BlocksRingBuffer(PowerOfTwo<Length> aLength,
+                            EntryDestructor&& aEntryDestructor)
+      : mBuffer(aLength),
+        mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {}
 
   
-  template <typename Deleter>
+  template <typename EntryDestructor>
   explicit BlocksRingBuffer(UniquePtr<Buffer::Byte[]> aExistingBuffer,
-                            PowerOfTwo<Length> aLength, Deleter&& aDeleter)
+                            PowerOfTwo<Length> aLength,
+                            EntryDestructor&& aEntryDestructor)
       : mBuffer(std::move(aExistingBuffer), aLength),
-        mDeleter(std::forward<Deleter>(aDeleter)) {}
+        mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {}
 
   
-  template <typename Deleter>
+  template <typename EntryDestructor>
   explicit BlocksRingBuffer(Buffer::Byte* aExternalBuffer,
-                            PowerOfTwo<Length> aLength, Deleter&& aDeleter)
+                            PowerOfTwo<Length> aLength,
+                            EntryDestructor&& aEntryDestructor)
       : mBuffer(aExternalBuffer, aLength),
-        mDeleter(std::forward<Deleter>(aDeleter)) {}
+        mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {}
 
   
   
-  ~BlocksRingBuffer() { DeleteAllEntries(); }
+  ~BlocksRingBuffer() { DestroyAllEntries(); }
 
   
   PowerOfTwo<Length> BufferLength() const { return mBuffer.BufferLength(); }
@@ -175,9 +180,9 @@ class BlocksRingBuffer {
   
   
   
-  Pair<uint64_t, uint64_t> GetPushedAndDeletedCounts() const {
+  Pair<uint64_t, uint64_t> GetPushedAndClearedCounts() const {
     RBAutoLock lock(*this);
-    return {mPushedBlockCount, mDeletedBlockCount};
+    return {mPushedBlockCount, mClearedBlockCount};
   }
 
   
@@ -523,10 +528,10 @@ class BlocksRingBuffer {
         
         EntryReader reader = mRing->ReaderInBlockAt(mRing->mFirstReadIndex);
         
-        if (mRing->mDeleter) {
-          mRing->mDeleter(reader);
+        if (mRing->mEntryDestructor) {
+          mRing->mEntryDestructor(reader);
         }
-        mRing->mDeletedBlockCount += 1;
+        mRing->mClearedBlockCount += 1;
         MOZ_ASSERT(reader.CurrentIndex() <= Index(reader.NextBlockIndex()));
         
         mRing->mFirstReadIndex = reader.NextBlockIndex();
@@ -631,15 +636,14 @@ class BlocksRingBuffer {
   }
 
   
+  
   void Clear() {
     RBAutoLock lock(*this);
-    DeleteAllEntries();
-    
-    
-    
-    mFirstReadIndex = mNextWriteIndex;
+    ClearAllEntries();
   }
 
+  
+  
   
   void ClearBefore(BlockIndex aBlockIndex) {
     RBAutoLock lock(*this);
@@ -651,18 +655,19 @@ class BlocksRingBuffer {
     }
     if (aBlockIndex == mNextWriteIndex) {
       
-      Clear();
+      ClearAllEntries();
+      return;
     }
     
     AssertBlockIndexIsValid(aBlockIndex);
-    if (mDeleter) {
+    if (mEntryDestructor) {
       
       Reader reader(*this);
       BlockIterator it = reader.begin();
       for (; it.CurrentBlockIndex() < aBlockIndex; ++it) {
         MOZ_ASSERT(it.CurrentBlockIndex() < reader.end().CurrentBlockIndex());
-        mDeleter(*it);
-        mDeletedBlockCount += 1;
+        mEntryDestructor(*it);
+        mClearedBlockCount += 1;
       }
       MOZ_ASSERT(it.CurrentBlockIndex() == aBlockIndex);
     } else {
@@ -671,7 +676,7 @@ class BlocksRingBuffer {
       BlockIterator it = reader.begin();
       for (; it.CurrentBlockIndex() < aBlockIndex; ++it) {
         MOZ_ASSERT(it.CurrentBlockIndex() < reader.end().CurrentBlockIndex());
-        mDeletedBlockCount += 1;
+        mClearedBlockCount += 1;
       }
       MOZ_ASSERT(it.CurrentBlockIndex() == aBlockIndex);
     }
@@ -735,12 +740,25 @@ class BlocksRingBuffer {
   }
 
   
-  void DeleteAllEntries() {
-    if (mDeleter) {
+  
+  
+  void DestroyAllEntries() {
+    if (mEntryDestructor) {
       
-      Reader(*this).ForEach([this](EntryReader aReader) { mDeleter(aReader); });
+      Reader(*this).ForEach(
+          [this](EntryReader aReader) { mEntryDestructor(aReader); });
     }
-    mDeletedBlockCount = mPushedBlockCount;
+    mClearedBlockCount = mPushedBlockCount;
+  }
+
+  
+  
+  void ClearAllEntries() {
+    DestroyAllEntries();
+    
+    
+    
+    mFirstReadIndex = mNextWriteIndex;
   }
 
   
@@ -778,11 +796,11 @@ class BlocksRingBuffer {
   
   BlockIndex mNextWriteIndex = BlockIndex(Index(1));
   
-  std::function<void(EntryReader)> mDeleter;
+  std::function<void(EntryReader)> mEntryDestructor;
 
   
   uint64_t mPushedBlockCount = 0;
-  uint64_t mDeletedBlockCount = 0;
+  uint64_t mClearedBlockCount = 0;
 };
 
 }  

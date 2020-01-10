@@ -669,7 +669,7 @@ void TestBlocksRingBufferAPI() {
     
     
     
-    auto bi5 = rb.Put([&](BlocksRingBuffer::EntryReserver aER) {
+    auto bi5_6 = rb.Put([&](BlocksRingBuffer::EntryReserver aER) {
       return aER.Reserve(
           sizeof(uint32_t), [&](BlocksRingBuffer::EntryWriter aEW) {
             aEW.WriteObject(uint32_t(5));
@@ -678,9 +678,11 @@ void TestBlocksRingBufferAPI() {
             MOZ_RELEASE_ASSERT(aEW.GetEntryAt(bi4)->CurrentBlockIndex() == bi4);
             MOZ_RELEASE_ASSERT(aEW.GetEntryAt(bi4)->ReadObject<uint32_t>() ==
                                4);
-            return aEW.CurrentBlockIndex();
+            return MakePair(aEW.CurrentBlockIndex(), aEW.BlockEndIndex());
           });
     });
+    auto& bi5 = bi5_6.first();
+    auto& bi6 = bi5_6.second();
     
     
     VERIFY_START_END_DESTROYED(11, 26, 2);
@@ -725,7 +727,7 @@ void TestBlocksRingBufferAPI() {
 
     
     
-    rb.Clear();
+    rb.ClearBefore(bi6);
     
     
     VERIFY_START_END_DESTROYED(26, 26, 5);
@@ -744,11 +746,12 @@ void TestBlocksRingBufferAPI() {
     VERIFY_START_END_DESTROYED(26, 26, 0);
 
     
-    MOZ_RELEASE_ASSERT(ExtractBlockIndex(rb.PutObject(uint32_t(6))) == 26);
+    MOZ_RELEASE_ASSERT(rb.PutObject(uint32_t(6)) == bi6);
     
     
     VERIFY_START_END_DESTROYED(26, 31, 0);
 
+    
     
   }
   MOZ_RELEASE_ASSERT(lastDestroyed == 6);
@@ -792,8 +795,8 @@ void TestBlocksRingBufferThreading() {
   std::atomic<bool> stopReader{false};
   std::thread reader([&]() {
     for (;;) {
-      Pair<uint64_t, uint64_t> counts = rb.GetPushedAndDeletedCounts();
-      printf("Reader: pushed=%llu deleted=%llu alive=%llu lastDestroyed=%d\n",
+      Pair<uint64_t, uint64_t> counts = rb.GetPushedAndClearedCounts();
+      printf("Reader: pushed=%llu cleared=%llu alive=%llu lastDestroyed=%d\n",
              static_cast<unsigned long long>(counts.first()),
              static_cast<unsigned long long>(counts.second()),
              static_cast<unsigned long long>(counts.first() - counts.second()),
