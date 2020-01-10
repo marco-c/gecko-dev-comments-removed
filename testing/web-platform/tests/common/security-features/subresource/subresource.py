@@ -34,8 +34,13 @@ def __get_swapped_origin_netloc(netloc, subdomain_prefix = "www1."):
 
 
 
-def create_url(request, swap_scheme = False, swap_origin = False,
-               query_parameter_to_remove = "redirection"):
+
+
+def create_url(request,
+               swap_scheme=False,
+               swap_origin=False,
+               downgrade=False,
+               query_parameter_to_remove="redirection"):
     parsed = urlparse.urlsplit(request.url)
     destination_netloc = parsed.netloc
 
@@ -44,6 +49,24 @@ def create_url(request, swap_scheme = False, swap_origin = False,
         scheme = "http" if parsed.scheme == "https" else "https"
         hostname = parsed.netloc.split(':')[0]
         port = request.server.config["ports"][scheme][0]
+        destination_netloc = ":".join([hostname, str(port)])
+
+    if downgrade:
+        
+        
+        
+        
+        
+        
+        if parsed.scheme == "https":
+            scheme = "http"
+        elif parsed.scheme == "wss":
+            scheme = "ws"
+        else:
+            raise ValueError("Downgrade redirection: Invalid scheme '%s'" %
+                             parsed.scheme)
+        hostname = parsed.netloc.split(':')[0]
+        port = request.server.config["ports"][parsed.scheme][0]
         destination_netloc = ":".join([hostname, str(port)])
 
     if swap_origin:
@@ -75,6 +98,8 @@ def preprocess_redirection(request, response):
         redirect_url = create_url(request, swap_scheme=False)
     elif redirection == "swap-scheme":
         redirect_url = create_url(request, swap_scheme=True)
+    elif redirection == "downgrade":
+        redirect_url = create_url(request, downgrade=True)
     elif redirection == "keep-origin":
         redirect_url = create_url(request, swap_origin=False)
     elif redirection == "swap-origin":
