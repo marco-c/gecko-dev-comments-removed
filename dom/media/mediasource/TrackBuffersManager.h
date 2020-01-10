@@ -223,14 +223,13 @@ class TrackBuffersManager final
 
   
   void AppendDataToCurrentInputBuffer(const MediaSpan& aData);
-  void AppendDataToCurrentInputBuffer(MediaByteBuffer* aData);
 
   RefPtr<MediaByteBuffer> mInitData;
   
   
   
   
-  RefPtr<MediaByteBuffer> mPendingInputBuffer;
+  Maybe<MediaSpan> mPendingInputBuffer;
   RefPtr<SourceBufferResource> mCurrentInputBuffer;
   RefPtr<MediaDataDemuxer> mInputDemuxer;
   
