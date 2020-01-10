@@ -15,6 +15,7 @@
 #define nsPlainTextSerializer_h__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/intl/LineBreaker.h"
 #include "nsCOMPtr.h"
 #include "nsAtom.h"
@@ -150,7 +151,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
  private:
   uint32_t mHeadLevel;
-  bool mAtFirstColumn;
 
   class Settings {
    public:
@@ -203,8 +203,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
     void MaybeReplaceNbsps();
 
-    void AppendLineBreak();
-
     nsString mValue;
 
     
@@ -213,11 +211,38 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
    private:
     
     int32_t mFlags;
+  };
+
+  CurrentLineContent mCurrentLineContent;
+
+  class OutputManager {
+   public:
+    
+
+
+
+    OutputManager(int32_t aFlags, nsAString& aOutput);
+
+    
+
+
+    void Append(const nsAString& aString);
+
+    void AppendLineBreak();
+
+    bool IsAtFirstColumn() const { return mAtFirstColumn; }
+
+    uint32_t GetOutputLength() const;
+
+   private:
+    nsAString& mOutput;
+
+    bool mAtFirstColumn;
 
     nsString mLineBreak;
   };
 
-  CurrentLineContent mCurrentLineContent;
+  mozilla::Maybe<OutputManager> mOutputManager;
 
   
   
