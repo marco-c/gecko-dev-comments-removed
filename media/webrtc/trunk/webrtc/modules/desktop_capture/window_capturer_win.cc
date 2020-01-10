@@ -304,8 +304,25 @@ void WindowCapturerWin::CaptureFrame() {
   
   
   
+  
+  
+  
+  
+  
+  
+  if (rtc::IsWindows8OrLater()) {
+    
+    
+    
+    
+    
+    
+    const UINT flags = PW_RENDERFULLCONTENT;
+    result = PrintWindow(window_, mem_dc, flags);
+  }
 
-  if (!aero_checker_.IsAeroEnabled() || !previous_size_.equals(frame->size())) {
+  if (!result && (!aero_checker_.IsAeroEnabled() ||
+                  !previous_size_.equals(frame->size()))) {
     result = PrintWindow(window_, mem_dc, 0);
   }
 
