@@ -10099,7 +10099,14 @@ AbortReasonOr<Ok> IonBuilder::jsop_setelem_typed(Scalar::Type arrayType,
   }
 
   
-  MInstruction* idInt32 = MToNumberInt32::New(alloc(), id);
+  
+  
+  MInstruction* idInt32;
+  if (expectOOB) {
+    idInt32 = MTypedArrayIndexToInt32::New(alloc(), id);
+  } else {
+    idInt32 = MToNumberInt32::New(alloc(), id);
+  }
   current->add(idInt32);
   id = idInt32;
 
