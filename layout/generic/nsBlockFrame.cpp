@@ -3538,7 +3538,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     }
 
     
-    Maybe<ReflowInput> blockReflowInput;
+    Maybe<ReflowInput> childReflowInput;
     Maybe<LogicalSize> cbSize;
     LogicalSize availSize = availSpace.Size(wm);
     if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
@@ -3599,7 +3599,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       }
     }
 
-    blockReflowInput.emplace(aState.mPresContext, aState.mReflowInput, frame,
+    childReflowInput.emplace(aState.mPresContext, aState.mReflowInput, frame,
                              availSize.ConvertTo(frame->GetWritingMode(), wm),
                              cbSize);
 
@@ -3607,7 +3607,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       
       
       
-      blockReflowInput->mFlags.mMovedBlockFragments = true;
+      childReflowInput->mFlags.mMovedBlockFragments = true;
     }
 
     nsFloatManager::SavedState floatManagerState;
@@ -3633,16 +3633,16 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       }
 
       if (mayNeedRetry) {
-        blockReflowInput->mDiscoveredClearance = &clearanceFrame;
+        childReflowInput->mDiscoveredClearance = &clearanceFrame;
       } else if (!applyBStartMargin) {
-        blockReflowInput->mDiscoveredClearance =
+        childReflowInput->mDiscoveredClearance =
             aState.mReflowInput.mDiscoveredClearance;
       }
 
       frameReflowStatus.Reset();
       brc.ReflowBlock(availSpace, applyBStartMargin, aState.mPrevBEndMargin,
                       clearance, aState.IsAdjacentWithTop(), aLine.get(),
-                      *blockReflowInput, frameReflowStatus, aState);
+                      *childReflowInput, frameReflowStatus, aState);
 
       
       
@@ -3727,8 +3727,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
         clearance = 0;
       }
 
-      blockReflowInput.reset();
-      blockReflowInput.emplace(
+      childReflowInput.reset();
+      childReflowInput.emplace(
           aState.mPresContext, aState.mReflowInput, frame,
           availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
     } while (true);
@@ -3742,7 +3742,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
 
     aState.mPrevChild = frame;
 
-    if (blockReflowInput->WillReflowAgainForClearance()) {
+    if (childReflowInput->WillReflowAgainForClearance()) {
       
       
       
@@ -3780,7 +3780,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       nsCollapsingMargin collapsedBEndMargin;
       nsOverflowAreas overflowAreas;
       *aKeepReflowGoing =
-          brc.PlaceBlock(*blockReflowInput, forceFit, aLine.get(),
+          brc.PlaceBlock(*childReflowInput, forceFit, aLine.get(),
                          collapsedBEndMargin, overflowAreas, frameReflowStatus);
       if (!frameReflowStatus.IsFullyComplete() &&
           ShouldAvoidBreakInside(aState.mReflowInput)) {
