@@ -28,7 +28,14 @@ class nsHyphenator {
   void HyphenateWord(const nsAString& aString, uint32_t aStart, uint32_t aLimit,
                      nsTArray<bool>& aHyphens);
 
-  void* mDict;
+  const void* mDict;  
+                      
+                      
+                      
+                      
+                      
+  uint32_t mDictSize;
+  bool mOwnsDict;
   bool mHyphenateCapitalized;
 };
 
