@@ -812,8 +812,9 @@ var E10SUtils = {
   
 
 
-  isWebRemoteType(aBrowser) {
-    return aBrowser.remoteType.startsWith(WEB_REMOTE_TYPE);
+
+  isWebRemoteType(aRemoteType) {
+    return aRemoteType.startsWith(WEB_REMOTE_TYPE);
   },
 };
 
