@@ -11,122 +11,49 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-this.EXPORTED_SYMBOLS = [
-  "CertificateOverrideManager",
-  "InsecureSweepingOverride",
-];
+this.EXPORTED_SYMBOLS = ["allowAllCerts"];
 
-const registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 const sss = Cc["@mozilla.org/ssservice;1"].getService(
   Ci.nsISiteSecurityService
 );
 
+const certOverrideService = Cc[
+  "@mozilla.org/security/certoverride;1"
+].getService(Ci.nsICertOverrideService);
+
 const CERT_PINNING_ENFORCEMENT_PREF = "security.cert_pinning.enforcement_level";
-const CID = Components.ID("{4b67cce0-a51c-11e6-9598-0800200c9a66}");
-const CONTRACT_ID = "@mozilla.org/security/certoverride;1";
-const DESC = "All-encompassing cert service that matches on a bitflag";
 const HSTS_PRELOAD_LIST_PREF = "network.stricttransportsecurity.preloadlist";
 
-const Error = {
-  Untrusted: 1,
-  Mismatch: 2,
-  Time: 4,
+
+this.allowAllCerts = {};
+
+
+
+
+allowAllCerts.enable = function() {
+  
+  
+  Preferences.set(HSTS_PRELOAD_LIST_PREF, false);
+  Preferences.set(CERT_PINNING_ENFORCEMENT_PREF, 0);
+
+  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    true
+  );
 };
 
-let currentOverride = null;
-
-
-class CertificateOverrideManager {
-  
 
 
 
+allowAllCerts.disable = function() {
+  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    false
+  );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static install(service) {
-    if (currentOverride) {
-      return;
-    }
-
-    service.register();
-    currentOverride = service;
-  }
+  Preferences.reset(HSTS_PRELOAD_LIST_PREF);
+  Preferences.reset(CERT_PINNING_ENFORCEMENT_PREF);
 
   
-
-
-
-
-
-  static uninstall() {
-    if (!currentOverride) {
-      return;
-    }
-    currentOverride.unregister();
-    currentOverride = null;
-  }
-}
-this.CertificateOverrideManager = CertificateOverrideManager;
-
-
-
-
-
-
-
-
-function InsecureSweepingOverride() {
   
-  
-  
-  
-  let service = function() {};
-  service.prototype = {
-    hasMatchingOverride(aHostName, aPort, aCert, aOverrideBits, aIsTemporary) {
-      aIsTemporary.value = false;
-      aOverrideBits.value = Error.Untrusted | Error.Mismatch | Error.Time;
-
-      return true;
-    },
-
-    QueryInterface: ChromeUtils.generateQI([Ci.nsICertOverrideService]),
-  };
-  let factory = XPCOMUtils.generateSingletonFactory(service);
-
-  return {
-    register() {
-      
-      
-      Preferences.set(HSTS_PRELOAD_LIST_PREF, false);
-      Preferences.set(CERT_PINNING_ENFORCEMENT_PREF, 0);
-
-      registrar.registerFactory(CID, DESC, CONTRACT_ID, factory);
-    },
-
-    unregister() {
-      registrar.unregisterFactory(CID, factory);
-
-      Preferences.reset(HSTS_PRELOAD_LIST_PREF);
-      Preferences.reset(CERT_PINNING_ENFORCEMENT_PREF);
-
-      
-      
-      sss.clearAll();
-      sss.clearPreloads();
-    },
-  };
-}
-this.InsecureSweepingOverride = InsecureSweepingOverride;
+  sss.clearAll();
+  sss.clearPreloads();
+};
