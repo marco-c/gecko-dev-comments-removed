@@ -441,6 +441,13 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
     return ExamineResult::Exclude;
   }
 
+  const bool isReplaced = aFrame->IsFrameOfType(nsIFrame::eReplaced);
+
+  const bool isNonReplacedInline =
+      aFrame->StyleDisplay()->IsInlineInsideStyle() && !isReplaced;
+
+  const bool isAnonBox = aFrame->Style()->IsAnonBox();
+
   
   
   
@@ -455,26 +462,19 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
   
   
   
-  bool canDescend = !scrollable && !aFrame->IsSVGOuterSVGFrame();
-
   
-  bool isBlockOutside = aFrame->IsBlockOutside();
-  bool isAnonBox = aFrame->Style()->IsAnonBox() && !isText;
-  bool isInlineOutside = aFrame->IsInlineOutside() && !isText;
+  const bool canDescend = !scrollable && !isReplaced;
 
   
   
-  if ((isAnonBox || isInlineOutside) && canDescend) {
+  
+  if (!isText && (isNonReplacedInline || isAnonBox)) {
     ANCHOR_LOG(
-        "\t\tSearching descendants of anon or inline box (a=%d, i=%d).\n",
-        isAnonBox, isInlineOutside);
-    return ExamineResult::PassThrough;
-  }
-
-  
-  if (!isBlockOutside && !isText) {
-    ANCHOR_LOG("\t\tExcluding non block-outside or text node (b=%d, t=%d).\n",
-               isBlockOutside, isText);
+        "\t\tSearching descendants of anon or non-replaced inline box (a=%d, i=%d).\n",
+        isAnonBox, isNonReplacedInline);
+    if (canDescend) {
+      return ExamineResult::PassThrough;
+    }
     return ExamineResult::Exclude;
   }
 
@@ -494,7 +494,6 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
     return ExamineResult::Exclude;
   }
 
-  
   
   
   
