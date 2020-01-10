@@ -16,8 +16,8 @@ using namespace mozilla;
 namespace mozilla {
 namespace css {
 
-StreamLoader::StreamLoader(mozilla::css::SheetLoadData* aSheetLoadData)
-    : mSheetLoadData(aSheetLoadData), mStatus(NS_OK) {}
+StreamLoader::StreamLoader(SheetLoadData& aSheetLoadData)
+    : mSheetLoadData(&aSheetLoadData), mStatus(NS_OK) {}
 
 StreamLoader::~StreamLoader() {}
 
@@ -106,7 +106,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   
   
-  mSheetLoadData->mLoader->ParseSheet(utf8String, mSheetLoadData,
+  mSheetLoadData->mLoader->ParseSheet(utf8String, *mSheetLoadData,
                                       Loader::AllowAsyncParse::Yes);
   return NS_OK;
 }

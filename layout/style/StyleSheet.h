@@ -102,15 +102,17 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
-  RefPtr<StyleSheetParsePromise> ParseSheet(css::Loader* aLoader,
+  RefPtr<StyleSheetParsePromise> ParseSheet(css::Loader&,
                                             const nsACString& aBytes,
-                                            css::SheetLoadData* aLoadData);
+                                            css::SheetLoadData&);
 
   
   
   void FinishAsyncParse(
       already_AddRefed<RawServoStyleSheetContents> aSheetContents);
 
+  
+  
   
   
   void ParseSheetSync(

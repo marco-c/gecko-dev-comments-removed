@@ -174,7 +174,8 @@ class Loader final {
 
 
 
-  nsresult LoadChildSheet(StyleSheet* aParentSheet, SheetLoadData* aParentData,
+
+  nsresult LoadChildSheet(StyleSheet& aParentSheet, SheetLoadData* aParentData,
                           nsIURI* aURL, dom::MediaList* aMedia,
                           LoaderReusableStyleSheets* aSavedSheets);
 
@@ -385,12 +386,11 @@ class Loader final {
   
   void StartDeferredLoads();
 
-  
-  void HandleLoadEvent(SheetLoadData* aEvent);
+  void HandleLoadEvent(SheetLoadData&);
 
   
   
-  nsresult LoadSheet(SheetLoadData*, SheetState, IsPreload);
+  nsresult LoadSheet(SheetLoadData&, SheetState, IsPreload);
 
   enum class AllowAsyncParse {
     Yes,
@@ -404,22 +404,21 @@ class Loader final {
   
   
   
-  Completed ParseSheet(const nsACString& aBytes, SheetLoadData*,
-                       AllowAsyncParse);
+  Completed ParseSheet(const nsACString&, SheetLoadData&, AllowAsyncParse);
 
   
   
-  void SheetComplete(SheetLoadData* aLoadData, nsresult aStatus);
-
-  
-  
-  
-  void DoSheetComplete(SheetLoadData* aLoadData, LoadDataArray& aDatasToNotify);
+  void SheetComplete(SheetLoadData&, nsresult aStatus);
 
   
   
   
-  void MarkLoadTreeFailed(SheetLoadData* aLoadData);
+  void DoSheetComplete(SheetLoadData&, LoadDataArray& aDatasToNotify);
+
+  
+  
+  
+  void MarkLoadTreeFailed(SheetLoadData&);
 
   struct Sheets;
   UniquePtr<Sheets> mSheets;

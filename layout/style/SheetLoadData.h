@@ -102,7 +102,7 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   RefPtr<StyleSheet> mSheet;
 
   
-  SheetLoadData* mNext;  
+  RefPtr<SheetLoadData> mNext;
 
   
   
