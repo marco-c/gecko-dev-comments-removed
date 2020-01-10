@@ -69,66 +69,61 @@ struct IsAtomic<Atomic<T, Order>> : TrueType {};
 template <typename T>
 struct IsAtomic<std::atomic<T>> : TrueType {};
 
-class StaticPrefs {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+namespace StaticPrefs {
 
- public:
-  
-  enum class UpdatePolicy {
-    Skip,  
-    Once,  
-    Live   
-  };
 
-#define PREF(str, cpp_type, default_value)
-#define VARCACHE_PREF(policy, str, id, cpp_type, default_value) \
- private:                                                       \
-  static cpp_type sVarCache_##id;                               \
-                                                                \
- public:                                                        \
-  static StripAtomic<cpp_type> id() {                           \
-    if (UpdatePolicy::policy != UpdatePolicy::Once) {           \
-      MOZ_DIAGNOSTIC_ASSERT(                                    \
-          UpdatePolicy::policy == UpdatePolicy::Skip ||         \
-              IsAtomic<cpp_type>::value || NS_IsMainThread(),   \
-          "Non-atomic static pref '" str                        \
-          "' being accessed on background thread by getter");   \
-      return sVarCache_##id;                                    \
-    }                                                           \
-    MaybeInitOncePrefs();                                       \
-    return sVarCache_##id;                                      \
-  }                                                             \
-  static const char* Get##id##PrefName() { return str; }        \
-  static StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
+enum class UpdatePolicy {
+  Skip,  
+  Once,  
+  Live   
+};
+
+void MaybeInitOncePrefs();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define PREF(name, cpp_type, default_value)
+#define VARCACHE_PREF(policy, name, id, cpp_type, default_value) \
+  extern cpp_type sVarCache_##id;                                \
+  inline StripAtomic<cpp_type> id() {                            \
+    if (UpdatePolicy::policy != UpdatePolicy::Once) {            \
+      MOZ_DIAGNOSTIC_ASSERT(                                     \
+          UpdatePolicy::policy == UpdatePolicy::Skip ||          \
+              IsAtomic<cpp_type>::value || NS_IsMainThread(),    \
+          "Non-atomic static pref '" name                        \
+          "' being accessed on background thread by getter");    \
+      return sVarCache_##id;                                     \
+    }                                                            \
+    MaybeInitOncePrefs();                                        \
+    return sVarCache_##id;                                       \
+  }                                                              \
+  inline const char* Get##id##PrefName() { return name; }        \
+  inline StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
 
 #include "mozilla/StaticPrefList.h"
 #undef PREF
 #undef VARCACHE_PREF
 
- private:
-  friend class Preferences;
-  static void InitAll(bool aIsStartup);
-  static void MaybeInitOncePrefs();
-  static void InitOncePrefs();
-  static void InitStaticPrefsFromShared();
-  static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder);
-};
+}  
 
 }  
 
