@@ -35,10 +35,10 @@ use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
 use crate::scene_builder::Interners;
 use smallvec::SmallVec;
-use std::{mem, u16};
+use std::{mem, u8, u16};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
-use crate::util::{ComparableVec, TransformedRectKind, MatrixHelpers, MaxRect, scale_factors};
+use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors};
 use crate::filterdata::{FilterDataHandle};
 
 
@@ -192,6 +192,10 @@ const MAX_SURFACE_SIZE: f32 = 4096.0;
 
 
 
+const MAX_PRIM_SUB_DEPS: usize = u8::MAX as usize;
+
+
+
 static NEXT_TILE_ID: AtomicUsize = AtomicUsize::new(0);
 
 fn clamp(value: i32, low: i32, high: i32) -> i32 {
@@ -312,7 +316,7 @@ struct PrimitiveDependencyInfo {
     opacity_bindings: SmallVec<[OpacityBinding; 4]>,
 
     
-    clips: SmallVec<[ClipDescriptor; 8]>,
+    clips: SmallVec<[ItemUid; 8]>,
 
     
     clip_spatial_nodes: FastHashSet<SpatialNodeIndex>,
@@ -379,7 +383,9 @@ pub struct Tile {
     clipped_rect: PictureRect,
     
     
-    pub descriptor: TileDescriptor,
+    pub current_descriptor: TileDescriptor,
+    
+    pub prev_descriptor: TileDescriptor,
     
     pub surface: Option<TileSurface>,
     
@@ -406,7 +412,8 @@ impl Tile {
             clipped_rect: PictureRect::zero(),
             world_rect: WorldRect::zero(),
             surface: None,
-            descriptor: TileDescriptor::new(),
+            current_descriptor: TileDescriptor::new(),
+            prev_descriptor: TileDescriptor::new(),
             is_same_content: false,
             is_valid: false,
             id,
@@ -415,13 +422,112 @@ impl Tile {
     }
 
     
+    fn is_content_same(
+        &self,
+        ctx: &TilePostUpdateContext,
+        state: &TilePostUpdateState,
+    ) -> bool {
+        
+        if self.prev_descriptor.prims.len() != self.current_descriptor.prims.len() {
+            return false;
+        }
+
+        
+        let mut clip_comparer = CompareHelper::new(
+            &self.prev_descriptor.clips,
+            &self.current_descriptor.clips,
+        );
+
+        let mut transform_comparer = CompareHelper::new(
+            &self.prev_descriptor.transforms,
+            &self.current_descriptor.transforms,
+        );
+
+        let mut image_comparer = CompareHelper::new(
+            &self.prev_descriptor.image_keys,
+            &self.current_descriptor.image_keys,
+        );
+
+        let mut opacity_comparer = CompareHelper::new(
+            &self.prev_descriptor.opacity_bindings,
+            &self.current_descriptor.opacity_bindings,
+        );
+
+        
+        for (prev, curr) in self.prev_descriptor.prims.iter().zip(self.current_descriptor.prims.iter()) {
+            
+            if prev != curr {
+                return false;
+            }
+
+            
+            if !clip_comparer.is_same(
+                prev.clip_dep_count,
+                curr.clip_dep_count,
+                |_| {
+                    false
+                }
+            ) {
+                return false;
+            }
+
+            
+            if !transform_comparer.is_same(
+                prev.transform_dep_count,
+                curr.transform_dep_count,
+                |curr| {
+                    ctx.spatial_nodes[curr].changed
+                }
+            ) {
+                return false;
+            }
+
+            
+            if !image_comparer.is_same(
+                prev.image_dep_count,
+                curr.image_dep_count,
+                |curr| {
+                    state.resource_cache.is_image_dirty(*curr)
+                }
+            ) {
+                return false;
+            }
+
+            
+            if !opacity_comparer.is_same(
+                prev.opacity_binding_dep_count,
+                curr.opacity_binding_dep_count,
+                |curr| {
+                    if let OpacityBinding::Binding(id) = curr {
+                        if ctx.opacity_bindings
+                            .get(id)
+                            .map_or(true, |info| info.changed) {
+                            return true;
+                        }
+                    }
+
+                    false
+                }
+            ) {
+                return false;
+            }
+        }
+
+        true
+    }
+
     
     
     
-    fn update_content_validity(&mut self) {
+    
+    fn update_content_validity(
+        &mut self,
+        ctx: &TilePostUpdateContext,
+        state: &TilePostUpdateState,
+    ) {
         
         
-        self.is_same_content &= self.descriptor.is_same_content(self.id);
+        self.is_same_content &= self.is_content_same(ctx, state);
         self.is_valid &= self.is_same_content;
     }
 
@@ -450,7 +556,11 @@ impl Tile {
 
         
         
-        self.descriptor.clear();
+        mem::swap(
+            &mut self.current_descriptor,
+            &mut self.prev_descriptor,
+        );
+        self.current_descriptor.clear();
     }
 
     
@@ -463,52 +573,26 @@ impl Tile {
         
         self.is_same_content &= info.is_cacheable;
 
-        let initial_extra_dep_count = self.descriptor.extra_dependencies.len();
+        
+        self.current_descriptor.image_keys.extend_from_slice(&info.image_keys);
 
         
-        if !info.image_keys.is_empty() {
-            self.descriptor.image_keys.extend_from_slice(&info.image_keys);
-            self.descriptor.extra_dependencies.push(PrimitiveDependency {
-                kind: PrimitiveDependencyKind::ImageKey,
-                count: info.image_keys.len() as u16,
-            });
-        }
+        self.current_descriptor.opacity_bindings.extend_from_slice(&info.opacity_bindings);
 
         
-        if !info.opacity_bindings.is_empty() {
-            self.descriptor.opacity_bindings.extend_from_slice(&info.opacity_bindings);
-            self.descriptor.extra_dependencies.push(PrimitiveDependency {
-                kind: PrimitiveDependencyKind::OpacityBinding,
-                count: info.opacity_bindings.len() as u16,
-            });
-        }
-
-        
-        if !info.clips.is_empty() {
-            self.descriptor.clips.extend_from_slice(&info.clips);
-            self.descriptor.extra_dependencies.push(PrimitiveDependency {
-                kind: PrimitiveDependencyKind::Clip,
-                count: info.clips.len() as u16,
-            });
-        }
+        self.current_descriptor.clips.extend_from_slice(&info.clips);
 
         
         
-        let current_transform_count = self.descriptor.transforms.len();
+        let mut transform_count = info.clip_spatial_nodes.len();
         if info.prim_spatial_node_index != cache_spatial_node_index {
-            self.descriptor.transforms.push(info.prim_spatial_node_index);
+            transform_count += 1;
+            self.current_descriptor.transforms.push(info.prim_spatial_node_index);
             used_spatial_nodes.insert(info.prim_spatial_node_index);
         }
         for spatial_node_index in &info.clip_spatial_nodes {
-            self.descriptor.transforms.push(*spatial_node_index);
+            self.current_descriptor.transforms.push(*spatial_node_index);
             used_spatial_nodes.insert(*spatial_node_index);
-        }
-        let transform_dep_count = self.descriptor.transforms.len() - current_transform_count;
-        if transform_dep_count != 0 {
-            self.descriptor.extra_dependencies.push(PrimitiveDependency {
-                kind: PrimitiveDependencyKind::Transform,
-                count: transform_dep_count as u16,
-            });
         }
 
         
@@ -546,11 +630,17 @@ impl Tile {
         };
 
         
-        self.descriptor.prims.push(PrimitiveDescriptor {
+        self.current_descriptor.prims.push(PrimitiveDescriptor {
             prim_uid: info.prim_uid,
             origin: prim_origin.into(),
             prim_clip_rect: prim_clip_rect.into(),
-            extra_dep_count: (self.descriptor.extra_dependencies.len() - initial_extra_dep_count) as u16,
+            
+            
+            
+            transform_dep_count: transform_count.min(MAX_PRIM_SUB_DEPS) as u8,
+            clip_dep_count: info.clips.len().min(MAX_PRIM_SUB_DEPS) as u8,
+            image_dep_count: info.image_keys.len().min(MAX_PRIM_SUB_DEPS) as u8,
+            opacity_binding_dep_count: info.opacity_bindings.len().min(MAX_PRIM_SUB_DEPS) as u8,
         });
     }
 
@@ -565,48 +655,10 @@ impl Tile {
         self.is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
 
         
-        if self.is_same_content {
-            for binding in self.descriptor.opacity_bindings.items() {
-                if let OpacityBinding::Binding(id) = binding {
-                    let changed = ctx.opacity_bindings
-                        .get(id)
-                        .map_or(true, |info| info.changed);
-                    if changed {
-                        self.is_same_content = false;
-                        break;
-                    }
-                }
-            }
-        }
+        self.update_content_validity(ctx, state);
 
         
-        
-        
-        
-        if self.is_same_content {
-            for image_key in self.descriptor.image_keys.items() {
-                if state.resource_cache.is_image_dirty(*image_key) {
-                    self.is_same_content = false;
-                    break;
-                }
-            }
-        }
-
-        
-        if self.is_same_content {
-            for spatial_node_index in self.descriptor.transforms.items() {
-                if ctx.spatial_nodes[spatial_node_index].changed {
-                    self.is_same_content = false;
-                    break;
-                }
-            }
-        }
-
-        
-        self.update_content_validity();
-
-        
-        if self.descriptor.prims.is_empty() {
+        if self.current_descriptor.prims.is_empty() {
             return false;
         }
 
@@ -616,7 +668,7 @@ impl Tile {
 
         
         
-        let is_solid_color = self.descriptor.prims.len() == 1 && self.is_opaque;
+        let is_solid_color = self.current_descriptor.prims.len() == 1 && self.is_opaque;
 
         
         let mut surface = if is_solid_color {
@@ -745,23 +797,6 @@ impl Tile {
 }
 
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(u16)]
-enum PrimitiveDependencyKind {
-    Clip,
-    ImageKey,
-    OpacityBinding,
-    Transform,
-}
-
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-struct PrimitiveDependency {
-    kind: PrimitiveDependencyKind,
-    count: u16,
-}
-
-
 #[derive(Debug, Clone)]
 pub struct PrimitiveDescriptor {
     
@@ -773,7 +808,10 @@ pub struct PrimitiveDescriptor {
     
     prim_clip_rect: RectangleKey,
     
-    extra_dep_count: u16,
+    transform_dep_count: u8,
+    image_dep_count: u8,
+    opacity_binding_dep_count: u8,
+    clip_dep_count: u8,
 }
 
 impl PartialEq for PrimitiveDescriptor {
@@ -781,9 +819,6 @@ impl PartialEq for PrimitiveDescriptor {
         const EPSILON: f32 = 0.001;
 
         if self.prim_uid != other.prim_uid {
-            return false;
-        }
-        if self.extra_dep_count != other.extra_dep_count {
             return false;
         }
 
@@ -812,16 +847,66 @@ impl PartialEq for PrimitiveDescriptor {
 }
 
 
-#[derive(Debug, Clone)]
-pub struct ClipDescriptor {
-    
-    uid: ItemUid,
+struct CompareHelper<'a, T> {
+    offset_curr: usize,
+    offset_prev: usize,
+    curr_items: &'a [T],
+    prev_items: &'a [T],
 }
 
-impl PartialEq for ClipDescriptor {
-    fn eq(&self, other: &Self) -> bool {
-        if self.uid != other.uid {
+impl<'a, T> CompareHelper<'a, T> where T: PartialEq {
+    
+    fn new(
+        prev_items: &'a [T],
+        curr_items: &'a [T],
+    ) -> Self {
+        CompareHelper {
+            offset_curr: 0,
+            offset_prev: 0,
+            curr_items,
+            prev_items,
+        }
+    }
+
+    
+    
+    fn is_same<F>(
+        &mut self,
+        prev_count: u8,
+        curr_count: u8,
+        f: F,
+    ) -> bool where F: Fn(&T) -> bool {
+        
+        if prev_count != curr_count {
             return false;
+        }
+        
+        if curr_count == 0 {
+            return true;
+        }
+        
+        
+        if curr_count as usize == MAX_PRIM_SUB_DEPS {
+            return false;
+        }
+
+        let end_prev = self.offset_prev + prev_count as usize;
+        let end_curr = self.offset_curr + curr_count as usize;
+
+        let curr_items = &self.curr_items[self.offset_curr .. end_curr];
+        let prev_items = &self.prev_items[self.offset_prev .. end_prev];
+
+        self.offset_prev = end_prev;
+        self.offset_curr = end_curr;
+
+        for (curr, prev) in curr_items.iter().zip(prev_items.iter()) {
+            if prev != curr {
+                return false;
+            }
+
+            if f(curr) {
+                return false;
+            }
         }
 
         true
@@ -835,74 +920,42 @@ pub struct TileDescriptor {
     
     
     
-    pub prims: ComparableVec<PrimitiveDescriptor>,
+    pub prims: Vec<PrimitiveDescriptor>,
 
     
-    clips: ComparableVec<ClipDescriptor>,
+    clips: Vec<ItemUid>,
 
     
-    image_keys: ComparableVec<ImageKey>,
-
-    
-    
-    opacity_bindings: ComparableVec<OpacityBinding>,
+    image_keys: Vec<ImageKey>,
 
     
     
-    transforms: ComparableVec<SpatialNodeIndex>,
+    opacity_bindings: Vec<OpacityBinding>,
 
     
     
-    extra_dependencies: ComparableVec<PrimitiveDependency>,
+    transforms: Vec<SpatialNodeIndex>,
 }
 
 impl TileDescriptor {
     fn new() -> Self {
         TileDescriptor {
-            prims: ComparableVec::new(),
-            clips: ComparableVec::new(),
-            opacity_bindings: ComparableVec::new(),
-            image_keys: ComparableVec::new(),
-            transforms: ComparableVec::new(),
-            extra_dependencies: ComparableVec::new(),
+            prims: Vec::new(),
+            clips: Vec::new(),
+            opacity_bindings: Vec::new(),
+            image_keys: Vec::new(),
+            transforms: Vec::new(),
         }
     }
 
     
     
     fn clear(&mut self) {
-        self.prims.reset();
-        self.clips.reset();
-        self.opacity_bindings.reset();
-        self.image_keys.reset();
-        self.transforms.reset();
-        self.extra_dependencies.reset();
-    }
-
-    
-    
-    
-    fn is_same_content(&self, _id: TileId) -> bool {
-        if !self.image_keys.is_valid() {
-            return false;
-        }
-        if !self.opacity_bindings.is_valid() {
-            return false;
-        }
-        if !self.clips.is_valid() {
-            return false;
-        }
-        if !self.prims.is_valid() {
-            return false;
-        }
-        if !self.transforms.is_valid() {
-            return false;
-        }
-        if !self.extra_dependencies.is_valid() {
-            return false;
-        }
-
-        true
+        self.prims.clear();
+        self.clips.clear();
+        self.opacity_bindings.clear();
+        self.image_keys.clear();
+        self.transforms.clear();
     }
 }
 
@@ -1427,9 +1480,7 @@ impl TileCacheInstance {
             let clip_instances = &clip_store
                 .clip_node_instances[prim_clip_chain.clips_range.to_range()];
             for clip_instance in clip_instances {
-                prim_info.clips.push(ClipDescriptor {
-                    uid: clip_instance.handle.uid(),
-                });
+                prim_info.clips.push(clip_instance.handle.uid());
 
                 
                 
@@ -2849,7 +2900,7 @@ impl PicturePrimitive {
 
                             if tile.is_valid {
                                 
-                                for image_key in tile.descriptor.image_keys.items() {
+                                for image_key in &tile.current_descriptor.image_keys {
                                     frame_state.resource_cache.set_image_active(*image_key);
                                 }
                                 continue;
