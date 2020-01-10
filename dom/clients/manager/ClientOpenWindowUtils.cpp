@@ -297,6 +297,55 @@ void WaitForLoad(const ClientOpenWindowArgs& aArgs,
 
 #ifdef MOZ_WIDGET_ANDROID
 
+void GeckoViewOpenWindow(const ClientOpenWindowArgs& aArgs,
+  ClientOpPromise::Private* aPromise) {
+
+  RefPtr<ClientOpPromise::Private> promise = aPromise;
+
+  
+  
+  auto genericResult = java::GeckoRuntime::ServiceWorkerOpenWindow(aArgs.baseURL(), aArgs.url());
+  auto typedResult = java::GeckoResult::LocalRef(std::move(genericResult));
+
+  
+  auto promiseResult = mozilla::MozPromise<nsString, nsString, false>::FromGeckoResult(typedResult);
+
+  promiseResult->Then(
+  SystemGroup::EventTargetFor(TaskCategory::Other),
+  __func__,
+  [aArgs, promise](nsString sessionId){
+
+    nsresult rv;
+    nsCOMPtr<nsIWindowWatcher> wwatch = do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      promise->Reject(rv, __func__);
+      return rv;
+    }
+
+    
+    
+    nsCOMPtr<mozIDOMWindowProxy> domWindow;
+    wwatch->GetWindowByName(sessionId, nullptr, getter_AddRefs(domWindow));
+    if (!domWindow) {
+      promise->Reject(NS_ERROR_FAILURE, __func__);
+      return NS_ERROR_FAILURE;
+    }
+
+    nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_QueryInterface(domWindow);
+    if (NS_WARN_IF(!outerWindow)) {
+      promise->Reject(NS_ERROR_FAILURE, __func__);
+      return NS_ERROR_FAILURE;
+    }
+
+    WaitForLoad(aArgs, outerWindow, promise);
+    return NS_OK;
+  },
+  [promise](nsString aResult){
+    promise->Reject(NS_ERROR_FAILURE, __func__);
+  }
+  );
+}
+
 class LaunchObserver final : public nsIObserver {
   RefPtr<GenericPromise::Private> mPromise;
 
@@ -358,10 +407,10 @@ RefPtr<ClientOpPromise> ClientOpenWindowInCurrentProcess(
       new ClientOpPromise::Private(__func__);
 
 #ifdef MOZ_WIDGET_ANDROID
-  
+
   
   if (!jni::IsFennec()) {
-    promise->Reject(NS_ERROR_NOT_IMPLEMENTED, __func__);
+    GeckoViewOpenWindow(aArgs, promise);
     return promise.forget();
   }
 

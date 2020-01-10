@@ -46,6 +46,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.URI;
 
 public final class GeckoRuntime implements Parcelable {
     private static final String LOGTAG = "GeckoRuntime";
@@ -160,6 +161,7 @@ public final class GeckoRuntime implements Parcelable {
     private static GeckoRuntime sRuntime;
     private GeckoRuntimeSettings mSettings;
     private Delegate mDelegate;
+    private ServiceWorkerDelegate mServiceWorkerDelegate;
     private WebNotificationDelegate mNotificationDelegate;
     private RuntimeTelemetry mTelemetry;
     private final WebExtensionEventDispatcher mWebExtensionDispatcher;
@@ -183,6 +185,44 @@ public final class GeckoRuntime implements Parcelable {
     private @Nullable static GeckoRuntime getInstance() {
         return sRuntime;
     }
+
+
+    
+
+
+
+
+
+
+    @WrapForJNI(calledFrom = "gecko")
+    private static @NonNull GeckoResult<String> serviceWorkerOpenWindow(final @NonNull String baseUrl, final @NonNull String url) {
+        if (sRuntime != null && sRuntime.mServiceWorkerDelegate != null) {
+            final URI actual = URI.create(baseUrl).resolve(url);
+            GeckoResult<String> result = new GeckoResult<>();
+            
+            ThreadUtils.postToUiThread(() -> {
+                sRuntime
+                    .mServiceWorkerDelegate
+                    .onOpenWindow(actual.toString())
+                    .accept( session -> {
+                        if (session != null) {
+                            if (!session.isOpen()) {
+                                result.completeExceptionally(new RuntimeException("Returned GeckoSession must be open."));
+                            } else {
+                                session.loadUri(actual.toString());
+                                result.complete(session.getId());
+                            }
+                        } else {
+                            result.complete(null);
+                        }
+                    });
+            });
+            return result;
+        } else {
+            return GeckoResult.fromException(new java.lang.RuntimeException("No available Service Worker delegate."));
+        }
+    }
+
 
     
 
@@ -527,6 +567,34 @@ public final class GeckoRuntime implements Parcelable {
     @UiThread
     public @Nullable Delegate getDelegate() {
         return mDelegate;
+    }
+
+    @UiThread
+    public interface ServiceWorkerDelegate {
+
+        
+
+
+
+
+
+
+
+
+
+        @UiThread
+        @NonNull
+        GeckoResult<GeckoSession> onOpenWindow(@NonNull String url);
+    }
+
+    
+
+
+
+
+    @UiThread
+    public void setServiceWorkerDelegate(final @Nullable ServiceWorkerDelegate serviceWorkerDelegate) {
+        mServiceWorkerDelegate = serviceWorkerDelegate;
     }
 
     
