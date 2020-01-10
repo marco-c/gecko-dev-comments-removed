@@ -1168,7 +1168,14 @@ GroupPos Accessible::GroupPosition() {
   
   if (groupPos.level == 0) {
     int32_t level = GetLevelInternal();
-    if (level != 0) groupPos.level = level;
+    if (level != 0) {
+      groupPos.level = level;
+    } else {
+      const nsRoleMapEntry* role = this->ARIARoleMap();
+      if (role && role->Is(nsGkAtoms::heading)) {
+        groupPos.level = 2;
+      }
+    }
   }
 
   
@@ -1939,6 +1946,7 @@ void Accessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
 }
 
 void Accessible::Shutdown() {
+  
   
   
   mStateFlags |= eIsDefunct;
