@@ -275,16 +275,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
 
 
-
-  void registerEmbedVisit(nsIURI* aURI, int64_t aTime);
-
-  
-
-
-
-
-
-
   bool hasEmbedVisit(nsIURI* aURI);
 
   int32_t GetFrecencyAgedWeight(int32_t aAgeInDays) const {
@@ -486,18 +476,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   RecentEventHash mRecentTyped;
   RecentEventHash mRecentLink;
   RecentEventHash mRecentBookmark;
-
-  
-  class VisitHashKey : public nsURIHashKey {
-   public:
-    explicit VisitHashKey(const nsIURI* aURI) : nsURIHashKey(aURI) {}
-    VisitHashKey(VisitHashKey&& aOther) : nsURIHashKey(std::move(aOther)) {
-      MOZ_ASSERT_UNREACHABLE("Do not call me!");
-    }
-    PRTime visitTime;
-  };
-
-  nsTHashtable<VisitHashKey> mEmbedVisits;
 
   bool CheckIsRecentEvent(RecentEventHash* hashTable, const nsACString& url);
   void ExpireNonrecentEvents(RecentEventHash* hashTable);
