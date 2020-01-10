@@ -92,6 +92,8 @@ class TabGroup final : public SchedulerGroup,
 
   void Leave(nsPIDOMWindowOuter* aWindow);
 
+  void MaybeDestroy();
+
   Iterator Iter() { return mDocGroups.Iter(); }
 
   
