@@ -2949,23 +2949,25 @@ bool nsCookieService::DomainMatches(nsCookie* aCookie,
 }
 
 bool nsCookieService::PathMatches(nsCookie* aCookie, const nsACString& aPath) {
-  
-  
-  
-  if (aCookie->Path().IsEmpty()) return false;
-
-  
-  if (aCookie->Path().Equals(aPath)) return true;
-
-  
-  
-  bool isPrefix = StringBeginsWith(aPath, aCookie->Path());
-  if (isPrefix && aCookie->Path().Last() == '/') return true;
+  nsCString cookiePath(aCookie->GetFilePath());
 
   
   
   
-  uint32_t cookiePathLen = aCookie->Path().Length();
+  if (cookiePath.IsEmpty()) return false;
+
+  
+  if (cookiePath.Equals(aPath)) return true;
+
+  
+  
+  bool isPrefix = StringBeginsWith(aPath, cookiePath);
+  if (isPrefix && cookiePath.Last() == '/') return true;
+
+  
+  
+  
+  uint32_t cookiePathLen = cookiePath.Length();
   if (isPrefix && aPath[cookiePathLen] == '/') return true;
 
   return false;
@@ -3000,7 +3002,7 @@ void nsCookieService::GetCookiesForURI(
   nsresult rv =
       GetBaseDomain(mTLDService, aHostURI, baseDomain, requireHostMatch);
   if (NS_SUCCEEDED(rv)) rv = aHostURI->GetAsciiHost(hostFromURI);
-  if (NS_SUCCEEDED(rv)) rv = aHostURI->GetPathQueryRef(pathFromURI);
+  if (NS_SUCCEEDED(rv)) rv = aHostURI->GetFilePath(pathFromURI);
   if (NS_FAILED(rv)) {
     COOKIE_LOGFAILURE(GET_COOKIE, aHostURI, VoidCString(),
                       "invalid host/path from URI");
@@ -4877,7 +4879,7 @@ bool nsCookieService::FindSecureCookie(const nsCookieKey& aKey,
       
       
       
-      if (PathMatches(cookie, aCookie->Path())) {
+      if (PathMatches(cookie, aCookie->GetFilePath())) {
         return true;
       }
     }

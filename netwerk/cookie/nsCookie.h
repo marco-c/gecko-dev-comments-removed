@@ -70,6 +70,7 @@ class nsCookie final : public nsICookie {
     return nsDependentCSubstring(mData.host(), IsDomain() ? 1 : 0);
   }
   inline const nsCString& Path() const { return mData.path(); }
+  const nsCString& GetFilePath();
   inline int64_t Expiry() const { return mData.expiry(); }  
   inline int64_t LastAccessed() const {
     return mData.lastAccessed();
@@ -108,6 +109,7 @@ class nsCookie final : public nsICookie {
   
   mozilla::net::CookieStruct mData;
   mozilla::OriginAttributes mOriginAttributes;
+  nsCString mFilePathCache;
 };
 
 
