@@ -12,7 +12,6 @@
 
 
 
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["BrowserTestUtils"];
@@ -96,6 +95,25 @@ function registerActor() {
     includeChrome: true,
   };
   ChromeUtils.registerWindowActor("BrowserTestUtils", actorOptions);
+}
+
+function registerContentEventListenerActor() {
+  let actorOptions = {
+    parent: {
+      moduleURI: "resource://testing-common/ContentEventListenerParent.jsm",
+    },
+
+    child: {
+      moduleURI: "resource://testing-common/ContentEventListenerChild.jsm",
+      events: {
+        
+        
+        DOMWindowCreated: { capture: true },
+      },
+    },
+    allFrames: true,
+  };
+  ChromeUtils.registerWindowActor("ContentEventListener", actorOptions);
 }
 
 registerActor();
@@ -504,6 +522,12 @@ var BrowserTestUtils = {
   },
 
   _webProgressListeners: new Set(),
+
+  _contentEventListenerSharedState: new Map(),
+
+  _contentEventListeners: new Map(),
+
+  _contentEventListenerActorRegistered: false,
 
   
 
@@ -1244,82 +1268,113 @@ var BrowserTestUtils = {
     eventName,
     listener,
     listenerOptions = {},
-    checkFn,
-    autoremove = true
+    checkFn
   ) {
     let id = gListenerId++;
-    let checkFnSource = checkFn
-      ? encodeURIComponent(escape(checkFn.toSource()))
-      : "";
+    let contentEventListeners = this._contentEventListeners;
+    contentEventListeners.set(id, { listener, browser });
 
-    
-    
-    
+    let eventListenerState = this._contentEventListenerSharedState;
+    eventListenerState.set(id, {
+      eventName,
+      listenerOptions,
+      checkFnSource: checkFn ? checkFn.toSource() : "",
+    });
 
-    
-    function frameScript(id, eventName, listenerOptions, checkFnSource) {
-      let checkFn;
-      if (checkFnSource) {
-        checkFn = eval(`(() => (${unescape(checkFnSource)}))()`);
-      }
+    Services.ppmm.sharedData.set(
+      "BrowserTestUtils:ContentEventListener",
+      eventListenerState
+    );
+    Services.ppmm.sharedData.flush();
 
-      function listener(event) {
-        if (checkFn && !checkFn(event)) {
-          return;
+    if (!this._contentEventListenerActorRegistered) {
+      this._contentEventListenerActorRegistered = true;
+      registerContentEventListenerActor();
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let contextsToVisit = [browser.browsingContext];
+      while (contextsToVisit.length) {
+        let currentContext = contextsToVisit.pop();
+        let global = currentContext.currentWindowGlobal;
+        if (!global) {
+          continue;
         }
-        sendAsyncMessage("ContentEventListener:Run", id);
-      }
-      function removeListener(msg) {
-        if (msg.data == id) {
-          removeMessageListener("ContentEventListener:Remove", removeListener);
-          removeEventListener(eventName, listener, listenerOptions);
-        }
-      }
-      addMessageListener("ContentEventListener:Remove", removeListener);
-      addEventListener(eventName, listener, listenerOptions);
-    }
-    
-
-    let frameScriptSource = `data:,(${frameScript.toString()})(${id}, "${eventName}", ${uneval(
-      listenerOptions
-    )}, "${checkFnSource}")`;
-
-    let mm = Services.mm;
-
-    function runListener(msg) {
-      if (msg.data == id && msg.target == browser) {
-        listener();
+        let actor = browser.browsingContext.currentWindowGlobal.getActor(
+          "ContentEventListener"
+        );
+        actor.sendAsyncMessage("ContentEventListener:LateCreate");
+        contextsToVisit.push(...currentContext.getChildren());
       }
     }
-    mm.addMessageListener("ContentEventListener:Run", runListener);
-
-    let needCleanup = true;
 
     let unregisterFunction = function() {
-      if (!needCleanup) {
+      if (!eventListenerState.has(id)) {
         return;
       }
-      needCleanup = false;
-      mm.removeMessageListener("ContentEventListener:Run", runListener);
-      mm.broadcastAsyncMessage("ContentEventListener:Remove", id);
-      mm.removeDelayedFrameScript(frameScriptSource);
-      if (autoremove) {
-        Services.obs.removeObserver(cleanupObserver, "message-manager-close");
-      }
+      eventListenerState.delete(id);
+      contentEventListeners.delete(id);
+      Services.ppmm.sharedData.set(
+        "BrowserTestUtils:ContentEventListener",
+        eventListenerState
+      );
+      Services.ppmm.sharedData.flush();
     };
-
-    function cleanupObserver(subject, topic, data) {
-      if (subject == browser.messageManager) {
-        unregisterFunction();
-      }
-    }
-    if (autoremove) {
-      Services.obs.addObserver(cleanupObserver, "message-manager-close");
-    }
-
-    mm.loadFrameScript(frameScriptSource, true);
-
     return unregisterFunction;
+  },
+
+  
+
+
+
+
+  _receivedContentEventListener(listenerId, browser) {
+    let listenerData = this._contentEventListeners.get(listenerId);
+    if (!listenerData) {
+      return;
+    }
+    if (listenerData.browser != browser) {
+      return;
+    }
+    listenerData.listener();
+  },
+
+  
+
+
+
+  _cleanupContentEventListeners() {
+    this._contentEventListeners.clear();
+
+    if (this._contentEventListenerSharedState.size != 0) {
+      this._contentEventListenerSharedState.clear();
+      Services.ppmm.sharedData.set(
+        "BrowserTestUtils:ContentEventListener",
+        this._contentEventListenerSharedState
+      );
+      Services.ppmm.sharedData.flush();
+    }
+
+    if (this._contentEventListenerActorRegistered) {
+      this._contentEventListenerActorRegistered = false;
+      ChromeUtils.unregisterWindowActor("ContentEventListener");
+    }
+  },
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "test-complete":
+        this._cleanupContentEventListeners();
+        break;
+    }
   },
 
   
@@ -2279,3 +2334,5 @@ var BrowserTestUtils = {
     return actor.sendQuery(aMessageName, aMessageData);
   },
 };
+
+Services.obs.addObserver(BrowserTestUtils, "test-complete");
