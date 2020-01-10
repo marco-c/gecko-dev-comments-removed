@@ -326,9 +326,8 @@ void Link::CancelPrefetchOrPreload() {
 }
 
 void Link::SetLinkState(nsLinkState aState) {
-  NS_ASSERTION(mRegistered, "Setting the link state of an unregistered Link!");
-  NS_ASSERTION(mLinkState != aState,
-               "Setting state to the currently set state!");
+  MOZ_ASSERT(mRegistered, "Setting the link state of an unregistered Link!");
+  MOZ_ASSERT(mLinkState != aState, "Setting state to the currently set state!");
 
   
   mLinkState = aState;
@@ -345,6 +344,8 @@ void Link::SetLinkState(nsLinkState aState) {
 }
 
 EventStates Link::LinkState() const {
+  
+  
   
   
   Link* self = const_cast<Link*>(this);
@@ -748,7 +749,11 @@ void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   }
 
   
-  mNeedsRegistration = aHasHref;
+  
+  
+  
+  
+  mNeedsRegistration = aHasHref && !mElement->IsHTMLElement(nsGkAtoms::link);
 
   
   UnregisterFromHistory();

@@ -17,6 +17,8 @@ class EventChainPostVisitor;
 class EventChainPreVisitor;
 namespace dom {
 
+
+
 class HTMLLinkElement final : public nsGenericHTMLElement,
                               public nsStyleLinkElement,
                               public Link {
