@@ -102,7 +102,7 @@ class ChannelEventQueue final {
                            bool aAssertionWhenNotQueued = false);
 
   
-  inline nsresult PrependEvent(UniquePtr<ChannelEvent>& aEvent);
+  inline nsresult PrependEvent(UniquePtr<ChannelEvent>&& aEvent);
   inline nsresult PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents);
 
   
@@ -231,7 +231,7 @@ inline void ChannelEventQueue::EndForcedQueueing() {
 }
 
 inline nsresult ChannelEventQueue::PrependEvent(
-    UniquePtr<ChannelEvent>& aEvent) {
+    UniquePtr<ChannelEvent>&& aEvent) {
   MutexAutoLock lock(mMutex);
 
   

@@ -3777,8 +3777,7 @@ void HttpChannelChild::CancelOnMainThread(nsresult aRv) {
   
   
   
-  UniquePtr<ChannelEvent> cancelEvent = MakeUnique<CancelEvent>(this, aRv);
-  mEventQ->PrependEvent(cancelEvent);
+  mEventQ->PrependEvent(MakeUnique<CancelEvent>(this, aRv));
   mEventQ->Resume();
 }
 
