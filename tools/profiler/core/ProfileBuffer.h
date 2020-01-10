@@ -32,6 +32,10 @@ class ProfileBuffer final {
   ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer,
                 mozilla::PowerOfTwo32 aCapacity);
 
+  
+  
+  explicit ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer);
+
   ~ProfileBuffer();
 
   bool IsThreadSafe() const { return mEntries.IsThreadSafe(); }

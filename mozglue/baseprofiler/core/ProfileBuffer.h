@@ -34,6 +34,10 @@ class ProfileBuffer final {
   
   ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity);
 
+  
+  
+  explicit ProfileBuffer(BlocksRingBuffer& aBuffer);
+
   ~ProfileBuffer();
 
   bool IsThreadSafe() const { return mEntries.IsThreadSafe(); }
