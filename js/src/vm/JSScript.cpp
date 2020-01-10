@@ -2214,9 +2214,6 @@ JSFlatString* ScriptSource::substring(JSContext* cx, size_t start,
   MOZ_ASSERT(start <= stop);
 
   size_t len = stop - start;
-  if (!len) {
-    return cx->emptyString();
-  }
   UncompressedSourceCache::AutoHoldEntry holder;
 
   
@@ -2244,9 +2241,6 @@ JSFlatString* ScriptSource::substringDontDeflate(JSContext* cx, size_t start,
   MOZ_ASSERT(start <= stop);
 
   size_t len = stop - start;
-  if (!len) {
-    return cx->emptyString();
-  }
   UncompressedSourceCache::AutoHoldEntry holder;
 
   
