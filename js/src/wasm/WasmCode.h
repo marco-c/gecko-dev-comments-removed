@@ -339,6 +339,7 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
   TableDescVector tables;
   CacheableChars filename;
   CacheableChars sourceMapURL;
+  bool omitsBoundsChecks;
 
   
   

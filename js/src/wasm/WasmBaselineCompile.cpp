@@ -5292,11 +5292,11 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     
 
-#ifdef WASM_HUGE_MEMORY
-    
-    
-    MOZ_ASSERT_IF(check->omitBoundsCheck, tls.isInvalid());
-#endif
+    if (env_.hugeMemoryEnabled()) {
+      
+      
+      MOZ_ASSERT_IF(check->omitBoundsCheck, tls.isInvalid());
+    }
 #ifdef JS_CODEGEN_ARM
     
     MOZ_ASSERT_IF(check->omitBoundsCheck, tls.isInvalid());
@@ -5304,8 +5304,7 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     
 
-#ifndef WASM_HUGE_MEMORY
-    if (!check->omitBoundsCheck) {
+    if (!env_.hugeMemoryEnabled() && !check->omitBoundsCheck) {
       Label ok;
       masm.wasmBoundsCheck(Assembler::Below, ptr,
                            Address(tls, offsetof(TlsData, boundsCheckLimit)),
@@ -5313,7 +5312,6 @@ class BaseCompiler final : public BaseCompilerInterface {
       masm.wasmTrap(Trap::OutOfBounds, bytecodeOffset());
       masm.bind(&ok);
     }
-#endif
   }
 
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM) ||      \
@@ -5369,12 +5367,10 @@ class BaseCompiler final : public BaseCompilerInterface {
 
   MOZ_MUST_USE bool needTlsForAccess(const AccessCheck& check) {
 #if defined(JS_CODEGEN_X86)
+    
     return true;
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || \
-    defined(JS_CODEGEN_MIPS64) || !defined(WASM_HUGE_MEMORY)
-    return !check.omitBoundsCheck;
 #else
-    return false;
+    return !env_.hugeMemoryEnabled() && !check.omitBoundsCheck;
 #endif
   }
 
