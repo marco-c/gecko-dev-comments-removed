@@ -26,6 +26,7 @@
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/Unused.h"
 #include "nsCharTraits.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "nsFontMetrics.h"
@@ -3786,12 +3787,20 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     builder->SetInActiveDocShell(isActive);
   }
 
+  nsRect rootVisualOverflow = aFrame->GetVisualOverflowRectRelativeToSelf();
+
+  
+  if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
+    rootVisualOverflow.IntersectRect(rootVisualOverflow,
+                                     browserChild->GetVisibleRect());
+  }
+
   nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
   if (rootScrollFrame && !aFrame->GetParent()) {
     nsIScrollableFrame* rootScrollableFrame =
         presShell->GetRootScrollFrameAsScrollable();
     MOZ_ASSERT(rootScrollableFrame);
-    nsRect displayPortBase = aFrame->GetVisualOverflowRectRelativeToSelf();
+    nsRect displayPortBase = rootVisualOverflow;
     nsRect temp = displayPortBase;
     Unused << rootScrollableFrame->DecideScrollableLayer(
         builder, &displayPortBase, &temp,
@@ -3806,7 +3815,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     
     
     
-    visibleRegion = aFrame->GetVisualOverflowRectRelativeToSelf();
+    visibleRegion = rootVisualOverflow;
   } else {
     visibleRegion = aDirtyRegion;
   }
@@ -6320,7 +6329,7 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
       LinePosition kidPosition;
       nsIFrame* kid = aFrame->PrincipalChildList().FirstChild();
       
-      if (kid && GetFirstLinePosition(aWM, kid, &kidPosition)) {
+      if (GetFirstLinePosition(aWM, kid, &kidPosition)) {
         *aResult = kidPosition +
                    kid->GetLogicalNormalPosition(aWM, aFrame->GetSize()).B(aWM);
         return true;

@@ -418,6 +418,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   bool IsTransparent() const { return mIsTransparent; }
 
+  const EffectsInfo& GetEffectsInfo() const { return mEffectsInfo; }
+
   void GetMaxTouchPoints(uint32_t* aTouchPoints) {
     *aTouchPoints = mMaxTouchPoints;
   }
@@ -546,6 +548,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   bool AsyncPanZoomEnabled() const;
 
   ScreenIntSize GetInnerSize();
+
+  nsRect GetVisibleRect();
 
   
   void DoFakeShow(const ShowInfo& aShowInfo);
