@@ -4455,18 +4455,22 @@ void HTMLMediaElement::UnbindFromTree(bool aNullParent) {
   
   
   
-  if (!mDispatchedTaskToPauseIfNotInDocument) {
-    mDispatchedTaskToPauseIfNotInDocument = true;
-    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
-        "dom::HTMLMediaElement::UnbindFromTree",
-        [self = RefPtr<HTMLMediaElement>(this)]() {
-          self->mDispatchedTaskToPauseIfNotInDocument = false;
-          if (!self->IsInComposedDoc()) {
-            self->Pause();
-          }
-        });
-    RunInStableState(task);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
+      "dom::HTMLMediaElement::UnbindFromTree",
+      [self = RefPtr<HTMLMediaElement>(this)]() {
+        if (!self->IsInComposedDoc()) {
+          self->Pause();
+        }
+      });
+  RunInStableState(task);
 }
 
 

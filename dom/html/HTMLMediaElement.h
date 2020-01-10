@@ -1660,12 +1660,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  
-  
-  bool mDispatchedTaskToPauseIfNotInDocument = false;
-
-  
-  
   bool mBlockedAsWithoutMetadata = false;
 
   
