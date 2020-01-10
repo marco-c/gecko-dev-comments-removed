@@ -879,10 +879,8 @@ var gSync = {
         );
         lastModified = new Date(target.clientRecord.serverLastModified * 1000);
       } else {
-        const validFxADeviceTypes = ["desktop", "phone", "tablet", "tv", "vr"];
-        type = validFxADeviceTypes.includes(target.type)
-          ? target.type
-          : "desktop";
+        
+        type = target.type == "mobile" ? "phone" : target.type;
         lastModified = null;
       }
       addTargetDevice(target.id, target.name, type, lastModified);
