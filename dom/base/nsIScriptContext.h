@@ -40,20 +40,6 @@ class nsIScriptContext : public nsISupports {
   virtual nsIScriptGlobalObject* GetGlobalObject() = 0;
 
   
-
-
-  virtual nsresult InitContext() = 0;
-
-  
-
-
-
-
-
-
-  virtual bool IsContextInitialized() = 0;
-
-  
   
   virtual nsresult SetProperty(JS::Handle<JSObject*> aTarget,
                                const char* aPropName, nsISupports* aVal) = 0;
@@ -67,20 +53,7 @@ class nsIScriptContext : public nsISupports {
   
 
 
-
-
-
   virtual nsresult InitClasses(JS::Handle<JSObject*> aGlobalObj) = 0;
-
-  
-
-
-  virtual void WillInitializeContext() = 0;
-
-  
-
-
-  virtual void DidInitializeContext() = 0;
 
   
 

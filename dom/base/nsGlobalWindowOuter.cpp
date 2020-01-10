@@ -1486,21 +1486,12 @@ nsresult nsGlobalWindowOuter::EnsureScriptEnvironment() {
 
   NS_ASSERTION(!GetCurrentInnerWindowInternal(),
                "No cached wrapper, but we have an inner window?");
-
-  
-  
-  
-  nsCOMPtr<nsIScriptContext> context = new nsJSContext(!IsFrame(), this);
-
   NS_ASSERTION(!mContext, "Will overwrite mContext!");
 
   
-  context->WillInitializeContext();
-
-  nsresult rv = context->InitContext();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mContext = context;
+  
+  
+  mContext = new nsJSContext(!IsFrame(), this);
   return NS_OK;
 }
 
@@ -1977,8 +1968,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   mLastOpenedURI = aDocument->GetDocumentURI();
 #endif
 
-  mContext->WillInitializeContext();
-
   RefPtr<nsGlobalWindowInner> currentInner = GetCurrentInnerWindowInternal();
 
   if (currentInner && currentInner->mNavigator) {
@@ -2094,7 +2083,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
       
       mContext->SetWindowProxy(outer);
-      mContext->DidInitializeContext();
 
       SetWrapper(mContext->GetWindowProxy());
     } else {
@@ -2261,8 +2249,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     js::SetRealmValidAccessPtr(
         cx, newInnerGlobal, newInnerWindow->GetDocGroup()->GetValidAccessPtr());
   }
-
-  kungFuDeathGrip->DidInitializeContext();
 
   
   
