@@ -116,8 +116,8 @@ void MaybeInitOncePrefs();
     MaybeInitOncePrefs();                                        \
     return sVarCache_##id;                                       \
   }                                                              \
-  inline const char* Get##id##PrefName() { return name; }        \
-  inline StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
+  inline const char* GetPrefName_##id() { return name; }         \
+  inline StripAtomic<cpp_type> GetPrefDefault_##id() { return default_value; }
 
 #include "mozilla/StaticPrefList.h"
 #undef PREF
