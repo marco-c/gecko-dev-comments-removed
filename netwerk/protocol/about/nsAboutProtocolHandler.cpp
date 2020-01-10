@@ -165,6 +165,26 @@ nsresult nsAboutProtocolHandler::CreateNewURI(const nsACString& aSpec,
   return NS_OK;
 }
 
+
+
+
+
+
+
+
+
+
+static const char kAboutPageEnterpriseWhitelist[][10] = {
+    
+    "blank",
+    "certerror",
+    "home",
+    "neterror",
+    "newtab",
+    "welcome",
+    
+};
+
 NS_IMETHODIMP
 nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
                                    nsIChannel** result) {
@@ -178,17 +198,18 @@ nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
   nsAutoCString path;
   nsresult rv2 = NS_GetAboutModuleName(uri, path);
   if (NS_SUCCEEDED(rv2)) {
+    size_t matchIdx;
     if (path.EqualsLiteral("srcdoc")) {
       
       
       
       
       rv = NS_ERROR_FACTORY_NOT_REGISTERED;
-    } else if (!path.EqualsLiteral("blank") &&
-               !path.EqualsLiteral("neterror") && !path.EqualsLiteral("home") &&
-               !path.EqualsLiteral("welcome") &&
-               !path.EqualsLiteral("newtab") &&
-               !path.EqualsLiteral("certerror")) {
+    } else if (!BinarySearchIf(
+                   kAboutPageEnterpriseWhitelist, 0,
+                   ArrayLength(kAboutPageEnterpriseWhitelist),
+                   [&path](const char* aOther) { return path.Compare(aOther); },
+                   &matchIdx)) {
       nsCOMPtr<nsIEnterprisePolicies> policyManager =
           do_GetService("@mozilla.org/enterprisepolicies;1", &rv2);
       if (NS_SUCCEEDED(rv2)) {
