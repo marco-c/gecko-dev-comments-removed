@@ -15,9 +15,12 @@
 
 
 
+const CURRENT_FILE_DIR = "/browser/accessible/tests/browser/";
 
-const CURRENT_DIR =
-  "chrome://mochitests/content/browser/accessible/tests/browser/";
+
+
+
+const CURRENT_DIR = `chrome://mochitests/content${CURRENT_FILE_DIR}`;
 
 
 
@@ -27,10 +30,34 @@ const MOCHITESTS_DIR =
 
 
 
-const CURRENT_CONTENT_DIR =
-  "http://example.com/browser/accessible/tests/browser/";
+const CURRENT_CONTENT_DIR = `http://example.com${CURRENT_FILE_DIR}`;
 
 const LOADED_CONTENT_SCRIPTS = new Map();
+
+const DEFAULT_CONTENT_DOC_BODY_ID = "body";
+const FISSION_IFRAME_ID = "fission-iframe";
+const DEFAULT_FISSION_DOC_BODY_ID = "fission-body";
+
+let gIsFission = false;
+
+function currentContentDoc() {
+  return gIsFission ? DEFAULT_FISSION_DOC_BODY_ID : DEFAULT_CONTENT_DOC_BODY_ID;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function matchContentDoc(event) {
+  return getAccessibleDOMNodeID(event.accessible) === currentContentDoc();
+}
 
 
 
@@ -98,7 +125,8 @@ function invokeSetAttribute(browser, id, attr, value) {
   } else {
     Logger.log(`Removing ${attr} attribute from node with id: ${id}`);
   }
-  return SpecialPowers.spawn(
+
+  return invokeContentTask(
     browser,
     [id, attr, value],
     (contentId, contentAttr, contentValue) => {
@@ -122,17 +150,19 @@ function invokeSetAttribute(browser, id, attr, value) {
 
 
 
+
 function invokeSetStyle(browser, id, style, value) {
   if (value) {
     Logger.log(`Setting ${style} style to ${value} for node with id: ${id}`);
   } else {
     Logger.log(`Removing ${style} style from node with id: ${id}`);
   }
-  return SpecialPowers.spawn(
+
+  return invokeContentTask(
     browser,
     [id, style, value],
     (contentId, contentStyle, contentValue) => {
-      let elm = content.document.getElementById(contentId);
+      const elm = content.document.getElementById(contentId);
       if (contentValue) {
         elm.style[contentStyle] = contentValue;
       } else {
@@ -149,15 +179,47 @@ function invokeSetStyle(browser, id, style, value) {
 
 
 
+
 function invokeFocus(browser, id) {
   Logger.log(`Setting focus on a node with id: ${id}`);
-  return SpecialPowers.spawn(browser, [id], contentId => {
-    let elm = content.document.getElementById(contentId);
+
+  return invokeContentTask(browser, [id], contentId => {
+    const elm = content.document.getElementById(contentId);
     if (elm.editor) {
       elm.selectionStart = elm.selectionEnd = elm.value.length;
     }
+
     elm.focus();
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+function invokeContentTask(browser, args, task) {
+  return SpecialPowers.spawn(
+    browser,
+    [FISSION_IFRAME_ID, task.toString(), ...args],
+    (fissionFrameId, contentTask, ...contentArgs) => {
+      
+      const runnableTask = eval(`
+      (() => {
+        return (${contentTask});
+      })();`);
+      const frame = content.document.getElementById(fissionFrameId);
+
+      return frame
+        ? SpecialPowers.spawn(frame, contentArgs, runnableTask)
+        : runnableTask.call(this, ...contentArgs);
+    }
+  );
 }
 
 
@@ -207,31 +269,36 @@ async function loadContentScripts(target, ...scripts) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-function snippetToURL(snippet, bodyAttrs = {}) {
-  let attrs = Object.assign({}, { id: "body" }, bodyAttrs);
-  let attrsString = Object.entries(attrs)
+function attrsToString(attrs) {
+  return Object.entries(attrs)
     .map(([attr, value]) => `${attr}=${JSON.stringify(value)}`)
     .join(" ");
-  let encodedDoc = encodeURIComponent(
-    `<html>
-      <head>
-        <meta charset="utf-8"/>
-        <title>Accessibility Test</title>
-      </head>
-      <body ${attrsString}>${snippet}</body>
-    </html>`
-  );
+}
 
-  return `data:text/html;charset=utf-8,${encodedDoc}`;
+function wrapWithFissionIFrame(doc, options = {}) {
+  const srcURL = new URL(`${CURRENT_CONTENT_DIR}fission_document_builder.sjs`);
+  if (doc.endsWith("html")) {
+    srcURL.searchParams.append("file", `${CURRENT_FILE_DIR}e10s/${doc}`);
+  } else {
+    const { fissionDocBodyAttrs = {} } = options;
+    const attrs = {
+      id: DEFAULT_FISSION_DOC_BODY_ID,
+      ...fissionDocBodyAttrs,
+    };
+
+    srcURL.searchParams.append(
+      "html",
+      `<html>
+        <head>
+          <meta charset="utf-8"/>
+          <title>Accessibility Fission Test</title>
+        </head>
+        <body ${attrsToString(attrs)}>${doc}</body>
+      </html>`
+    );
+  }
+
+  return `<iframe id="${FISSION_IFRAME_ID}" src="${srcURL.href}"/>`;
 }
 
 
@@ -243,13 +310,46 @@ function snippetToURL(snippet, bodyAttrs = {}) {
 
 
 
-function addAccessibleTask(doc, task) {
-  add_task(async function() {
+
+
+
+
+
+
+
+
+
+function snippetToURL(doc, options = {}) {
+  const { contentDocBodyAttrs = {} } = options;
+  const attrs = {
+    id: DEFAULT_CONTENT_DOC_BODY_ID,
+    ...contentDocBodyAttrs,
+  };
+
+  if (options.fission) {
+    doc = wrapWithFissionIFrame(doc, options);
+  }
+
+  const encodedDoc = encodeURIComponent(
+    `<html>
+      <head>
+        <meta charset="utf-8"/>
+        <title>Accessibility Test</title>
+      </head>
+      <body ${attrsToString(attrs)}>${doc}</body>
+    </html>`
+  );
+
+  return `data:text/html;charset=utf-8,${encodedDoc}`;
+}
+
+function accessibleTask(doc, task, options = {}) {
+  return async function() {
     let url;
-    if (doc.includes("doc_")) {
+    if (doc.endsWith("html") && !options.fission) {
       url = `${CURRENT_CONTENT_DIR}e10s/${doc}`;
     } else {
-      url = snippetToURL(doc);
+      url = snippetToURL(doc, options);
     }
 
     registerCleanupFunction(() => {
@@ -260,7 +360,21 @@ function addAccessibleTask(doc, task) {
       }
     });
 
-    let onDocLoad = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, "body");
+    const onContentDocLoad = waitForEvent(
+      EVENT_DOCUMENT_LOAD_COMPLETE,
+      DEFAULT_CONTENT_DOC_BODY_ID
+    );
+
+    let onFissionDocLoad;
+    if (options.fission) {
+      gIsFission = true;
+      if (gFissionBrowser) {
+        onFissionDocLoad = waitForEvent(
+          EVENT_DOCUMENT_LOAD_COMPLETE,
+          DEFAULT_FISSION_DOC_BODY_ID
+        );
+      }
+    }
 
     await BrowserTestUtils.withNewTab(
       {
@@ -285,11 +399,54 @@ function addAccessibleTask(doc, task) {
         );
         Logger.log(`Actually remote browser: ${browser.isRemoteBrowser}`);
 
-        let event = await onDocLoad;
-        await task(browser, event.accessible);
+        const { accessible: docAccessible } = await onContentDocLoad;
+        let fissionDocAccessible;
+        if (options.fission) {
+          fissionDocAccessible = gFissionBrowser
+            ? (await onFissionDocLoad).accessible
+            : findAccessibleChildByID(docAccessible, FISSION_IFRAME_ID)
+                .firstChild;
+        }
+
+        await task(
+          browser,
+          fissionDocAccessible || docAccessible,
+          fissionDocAccessible && docAccessible
+        );
       }
     );
-  });
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function addAccessibleTask(
+  doc,
+  task,
+  { topLevel = true, iframe = false } = {}
+) {
+  if (topLevel) {
+    add_task(accessibleTask(doc, task));
+  }
+
+  if (iframe) {
+    add_task(accessibleTask(doc, task, { fission: true }));
+  }
 }
 
 
@@ -401,20 +558,20 @@ async function contentSpawnMutation(browser, waitFor, func, args = []) {
 
   
   
-  await SpecialPowers.spawn(browser, [], tick);
+  await invokeContentTask(browser, [], tick);
 
   
-  await SpecialPowers.spawn(browser, args, func);
+  await invokeContentTask(browser, args, func);
 
   
-  await SpecialPowers.spawn(browser, [], tick);
+  await invokeContentTask(browser, [], tick);
 
   let events = await onReorders;
 
   unexpectedListener.stop();
 
   
-  await SpecialPowers.spawn(browser, [], function() {
+  await invokeContentTask(browser, [], function() {
     content.windowUtils.restoreNormalRefresh();
   });
 
