@@ -311,20 +311,21 @@ extern "C" {
         Window *window,
         uint64_t id,
         int width,
-        int height
+        int height,
+        bool is_opaque
     ) {
         assert(window->tiles.count(id) == 0);
 
         Tile tile;
 
-        
-        
+        DXGI_ALPHA_MODE alpha_mode = is_opaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+
         
         HRESULT hr = window->pDCompDevice->CreateSurface(
             width,
             height,
             DXGI_FORMAT_B8G8R8A8_UNORM,
-            DXGI_ALPHA_MODE_PREMULTIPLIED,
+            alpha_mode,
             &tile.pSurface
         );
         assert(SUCCEEDED(hr));
