@@ -113,8 +113,13 @@ NS_IMETHODIMP
 nsClipboard::Observe(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData) {
   
-  gtk_clipboard_store(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD));
-  return NS_OK;
+  
+  
+  return SystemGroup::Dispatch(
+      TaskCategory::Other,
+      NS_NewRunnableFunction("gtk_clipboard_store()", []() {
+        gtk_clipboard_store(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD));
+      }));
 }
 
 NS_IMETHODIMP
