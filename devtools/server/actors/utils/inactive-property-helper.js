@@ -84,8 +84,6 @@ class InactivePropertyHelper {
           "grid-auto-rows",
           "grid-template",
           "grid-gap",
-          "row-gap",
-          "column-gap",
           "justify-items",
         ],
         when: () => !this.gridContainer,
@@ -126,11 +124,23 @@ class InactivePropertyHelper {
           "align-content",
           "align-items",
           "justify-content",
+          "row-gap",
         ],
         when: () => !this.gridContainer && !this.flexContainer,
         fixId: "inactive-css-not-grid-or-flex-container-fix",
         msgId: "inactive-css-not-grid-or-flex-container",
         numFixProps: 2,
+      },
+      
+      {
+        invalidProperties: [
+          "column-gap",
+          "gap",
+        ],
+        when: () => !this.gridContainer && !this.flexContainer && !this.multiColContainer,
+        fixId: "inactive-css-not-grid-or-flex-container-or-multicol-container-fix",
+        msgId: "inactive-css-not-grid-or-flex-container-or-multicol-container",
+        numFixProps: 3,
       },
       
       {
@@ -384,6 +394,17 @@ class InactivePropertyHelper {
 
   get gridItem() {
     return this.isGridItem(this.node);
+  }
+
+  
+
+
+
+  get multiColContainer() {
+    const autoColumnWidth = this.checkStyle("column-width", ["auto"]);
+    const autoColumnCount = this.checkStyle("column-count", ["auto"]);
+
+    return !autoColumnWidth || !autoColumnCount;
   }
 
   
