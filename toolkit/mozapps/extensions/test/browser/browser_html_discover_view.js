@@ -118,7 +118,10 @@ class DiscoveryAPIHandler {
 
 function getVisibleActions(documentOrElement) {
   return Array.from(documentOrElement.querySelectorAll("[action]")).filter(
-    elem => elem.offsetWidth && elem.offsetHeight
+    elem =>
+      elem.getAttribute("action") !== "page-options" &&
+      elem.offsetWidth &&
+      elem.offsetHeight
   );
 }
 
@@ -156,7 +159,7 @@ async function switchToNonDiscoView(win) {
   
   
   
-  win.managerWindow.gViewController.loadView("addons://list/extensions");
+  win.managerWindow.gViewController.loadView("addons://list/extension");
   await wait_for_view_load(win.managerWindow);
   ok(
     win.document.querySelector("addon-list"),

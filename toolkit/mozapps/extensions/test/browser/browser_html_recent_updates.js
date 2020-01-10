@@ -74,12 +74,22 @@ add_task(async function testRecentUpdatesList() {
   
   let win = await loadInitialView("extension");
   let doc = win.document;
-  let managerDoc = win.managerWindow.document;
+  const RECENT_URL = "addons://updates/recent";
+  let recentCat = win.managerWindow.gCategories.get(RECENT_URL);
+
+  ok(recentCat.hidden, "Recent updates category is initially hidden");
 
   
   let loaded = waitForViewLoad(win);
-  managerDoc.getElementById("utils-viewUpdates").doCommand();
+  doc.querySelector('#page-options [action="view-recent-updates"]').click();
   await loaded;
+
+  is(
+    win.managerWindow.gCategories.selected,
+    RECENT_URL,
+    "Recent updates is selected"
+  );
+  ok(!recentCat.hidden, "Recent updates category is now shown");
 
   
   let list = doc.querySelector("addon-list");
@@ -119,7 +129,7 @@ add_task(async function testRecentUpdatesList() {
 
   info("Go back to the recent updates view");
   loaded = waitForViewLoad(win);
-  managerDoc.getElementById("utils-viewUpdates").doCommand();
+  doc.querySelector('#page-options [action="view-recent-updates"]').click();
   await loaded;
 
   

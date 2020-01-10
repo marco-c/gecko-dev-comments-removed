@@ -5,6 +5,13 @@ const { PromiseTestUtils } = ChromeUtils.import(
 );
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 
+function extensionShortcutsReady(id) {
+  let extension = WebExtensionPolicy.getByID(id).extension;
+  return BrowserTestUtils.waitForCondition(() => {
+    return extension.shortcuts.keysetsMap.has(window);
+  }, "Wait for add-on keyset to be registered");
+}
+
 async function loadShortcutsView() {
   
   
@@ -17,7 +24,9 @@ async function loadShortcutsView() {
     "The theme category is selected"
   );
 
-  let shortcutsLink = managerWindow.document.getElementById("manage-shortcuts");
+  let shortcutsLink = win.document.querySelector(
+    '#page-options [action="manage-shortcuts"]'
+  );
   ok(!shortcutsLink.hidden, "The shortcuts link is visible");
 
   let loaded = waitForViewLoad(win);
@@ -63,6 +72,7 @@ add_task(async function testUpdatingCommands() {
 
   await extension.startup();
   await extension.awaitMessage("ready");
+  await extensionShortcutsReady(extension.id);
 
   async function checkShortcut(name, key, modifiers) {
     EventUtils.synthesizeKey(key, modifiers);
@@ -107,7 +117,8 @@ add_task(async function testUpdatingCommands() {
 
     
     await BrowserTestUtils.waitForCondition(
-      () => input.getAttribute("shortcut") == "Alt+Shift+8"
+      () => input.getAttribute("shortcut") == "Alt+Shift+8",
+      "Wait for shortcut to update to Alt+Shift+8"
     );
 
     
@@ -125,7 +136,8 @@ add_task(async function testUpdatingCommands() {
       altKey: true,
     });
     await BrowserTestUtils.waitForCondition(
-      () => input.getAttribute("shortcut") == `Alt+Shift+${count}`
+      () => input.getAttribute("shortcut") == `Alt+Shift+${count}`,
+      `Wait for shortcut to update to Alt+Shift+${count}`
     );
   }
 
@@ -191,6 +203,7 @@ async function startExtensionWithCommands(numCommands) {
 
   await extension.startup();
   await extension.awaitMessage("ready");
+  await extensionShortcutsReady(extension.id);
 
   return extension;
 }

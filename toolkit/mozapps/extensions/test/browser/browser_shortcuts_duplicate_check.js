@@ -9,9 +9,7 @@ async function loadShortcutsView() {
   let win = await loadInitialView("extension");
 
   
-  let shortcutsLink = win.managerWindow.document.getElementById(
-    "manage-shortcuts"
-  );
+  let shortcutsLink = win.document.querySelector('[action="manage-shortcuts"]');
 
   
   let loaded = waitForViewLoad(win);
