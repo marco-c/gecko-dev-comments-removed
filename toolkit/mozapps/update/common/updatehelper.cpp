@@ -10,7 +10,6 @@
 
 #  include <stdio.h>
 #  include "mozilla/UniquePtr.h"
-#  include "nsWindowsHelpers.h"
 #  include "pathhash.h"
 #  include "shlobj.h"
 #  include "uachelper.h"
@@ -240,14 +239,7 @@ LaunchServiceSoftwareUpdateCommand(int argc, LPCWSTR* argv) {
 
 
 
-
-BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode,
-                        nsAutoHandle& userToken) {
-  ImpersonationScope impersonated(userToken);
-  if (userToken && !impersonated) {
-    return FALSE;
-  }
-
+BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode) {
   
   
   WCHAR tmpUpdateStatusFilePath[MAX_PATH + 1] = {L'\0'};

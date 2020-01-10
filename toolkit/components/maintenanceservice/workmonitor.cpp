@@ -20,11 +20,9 @@
 #include "nsWindowsHelpers.h"
 #include "mozilla/UniquePtr.h"
 
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 
 #include "workmonitor.h"
-#include "usertoken.h"
 #include "serviceinstall.h"
 #include "servicebase.h"
 #include "registrycertificates.h"
@@ -172,19 +170,18 @@ static BOOL GetInstallationDir(int argcTmp, LPWSTR* argvTmp,
 
 
 
-
 BOOL StartUpdateProcess(int argc, LPWSTR* argv, LPCWSTR installDir,
-                        BOOL& processStarted, nsAutoHandle& userToken) {
+                        BOOL& processStarted) {
   processStarted = FALSE;
 
   LOG(("Starting update process as the service in session 0."));
-  STARTUPINFOEXW sie;
-  ZeroMemory(&sie, sizeof(sie));
-  sie.StartupInfo.cb = sizeof(sie);
+  STARTUPINFOW si;
+  PROCESS_INFORMATION pi;
 
-  STARTUPINFOW& si = sie.StartupInfo;
+  ZeroMemory(&si, sizeof(si));
+  ZeroMemory(&pi, sizeof(pi));
+  si.cb = sizeof(si);
   si.lpDesktop = const_cast<LPWSTR>(L"winsta0\\Default");  
-  PROCESS_INFORMATION pi = {0};
 
   
   
@@ -211,58 +208,10 @@ BOOL StartUpdateProcess(int argc, LPWSTR* argv, LPCWSTR installDir,
   
   putenv(const_cast<char*>("MOZ_USING_SERVICE=1"));
 
-#ifndef DISABLE_USER_IMPERSONATION
-  
-  {
-    static const char USER_TOKEN_FMT[] = USER_TOKEN_VAR_NAME "=%p";
-    int fmtChars = _scprintf(USER_TOKEN_FMT, userToken.get());
-    UniquePtr<char[]> userTokenEnv = MakeUnique<char[]>(fmtChars + 1);
-    sprintf_s(userTokenEnv.get(), fmtChars + 1, USER_TOKEN_FMT,
-              userToken.get());
-    putenv(userTokenEnv.get());
-  }
-#endif
-
-  
-  {
-#ifndef DISABLE_USER_IMPERSONATION
-    SIZE_T attributeListSize = 0;
-    const DWORD attributeListCount = 1;
-    UniquePtr<char[]> attributeListBuf;
-
-    if (InitializeProcThreadAttributeList(nullptr, attributeListCount, 0,
-                                          &attributeListSize) ||
-        (GetLastError() != ERROR_INSUFFICIENT_BUFFER) ||
-        !(attributeListBuf = MakeUnique<char[]>(attributeListSize))) {
-      LOG_WARN(("Failed to allocate attribute list for child process. (%d)",
-                GetLastError()));
-      return FALSE;
-    }
-
-    UniquePtr<_PROC_THREAD_ATTRIBUTE_LIST, ProcThreadAttributeListDeleter>
-        attributeList(reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(
-            attributeListBuf.get()));
-    HANDLE handlesToInherit[] = {userToken};
-
-    if (!InitializeProcThreadAttributeList(
-            attributeList.get(), attributeListCount, 0, &attributeListSize) ||
-        !UpdateProcThreadAttribute(
-            attributeList.get(), 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-            handlesToInherit, sizeof(handlesToInherit), nullptr, nullptr)) {
-      LOG_WARN(("Failed to create attribute list for child process. (%d)",
-                GetLastError()));
-      return FALSE;
-    }
-
-    sie.lpAttributeList = attributeList.get();
-#endif
-
-    LOG(("Starting service with cmdline: %ls", cmdLine.get()));
-    processStarted =
-        CreateProcessW(argv[0], cmdLine.get(), nullptr, nullptr, TRUE,
-                       CREATE_DEFAULT_ERROR_MODE | EXTENDED_STARTUPINFO_PRESENT,
-                       nullptr, nullptr, &si, &pi);
-  }
+  LOG(("Starting service with cmdline: %ls", cmdLine.get()));
+  processStarted =
+      CreateProcessW(argv[0], cmdLine.get(), nullptr, nullptr, FALSE,
+                     CREATE_DEFAULT_ERROR_MODE, nullptr, nullptr, &si, &pi);
 
   BOOL updateWasSuccessful = FALSE;
   if (processStarted) {
@@ -299,8 +248,7 @@ BOOL StartUpdateProcess(int argc, LPWSTR* argv, LPCWSTR installDir,
         LOG(
             ("update.status is still applying even though update was "
              "successful."));
-        if (!WriteStatusFailure(argv[1], SERVICE_STILL_APPLYING_ON_SUCCESS,
-                                userToken)) {
+        if (!WriteStatusFailure(argv[1], SERVICE_STILL_APPLYING_ON_SUCCESS)) {
           LOG_WARN(
               ("Could not write update.status still applying on "
                "success error."));
@@ -317,7 +265,7 @@ BOOL StartUpdateProcess(int argc, LPWSTR* argv, LPCWSTR installDir,
         } else if (processTerminated) {
           failcode = SERVICE_STILL_APPLYING_TERMINATED;
         }
-        if (!WriteStatusFailure(argv[1], failcode, userToken)) {
+        if (!WriteStatusFailure(argv[1], failcode)) {
           LOG_WARN(
               ("Could not write update.status still applying on "
                "failure error."));
@@ -334,7 +282,6 @@ BOOL StartUpdateProcess(int argc, LPWSTR* argv, LPCWSTR installDir,
 
   
   putenv(const_cast<char*>("MOZ_USING_SERVICE="));
-  putenv(const_cast<char*>(USER_TOKEN_VAR_NAME "="));
 
   return updateWasSuccessful;
 }
@@ -350,12 +297,8 @@ BOOL StartUpdateProcess(int argc, LPWSTR* argv, LPCWSTR installDir,
 
 
 
-
-
-
-
-static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir,
-                           nsAutoHandle& userToken) {
+static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir,
+                           LPWSTR updateDir) {
   
   
   
@@ -363,12 +306,7 @@ static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir,
   if (!IsLocalFile(updater, isLocal) || !isLocal) {
     LOG_WARN(("Filesystem in path %ls is not supported (%d)", updater,
               GetLastError()));
-    if (
-#ifndef DISABLE_USER_IMPERSONATION
-        !userToken ||
-#endif
-        !WriteStatusFailure(updateDir, SERVICE_UPDATER_NOT_FIXED_DRIVE,
-                            userToken)) {
+    if (!WriteStatusFailure(updateDir, SERVICE_UPDATER_NOT_FIXED_DRIVE)) {
       LOG_WARN(("Could not write update.status service update failure.  (%d)",
                 GetLastError()));
     }
@@ -380,12 +318,7 @@ static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir,
   if (INVALID_HANDLE_VALUE == noWriteLock) {
     LOG_WARN(("Could not set no write sharing access on file.  (%d)",
               GetLastError()));
-    if (
-#ifndef DISABLE_USER_IMPERSONATION
-        !userToken ||
-#endif
-        !WriteStatusFailure(updateDir, SERVICE_COULD_NOT_LOCK_UPDATER,
-                            userToken)) {
+    if (!WriteStatusFailure(updateDir, SERVICE_COULD_NOT_LOCK_UPDATER)) {
       LOG_WARN(("Could not write update.status service update failure.  (%d)",
                 GetLastError()));
     }
@@ -416,12 +349,7 @@ static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir,
         ("The updaters do not match, updater will not run.\n"
          "Path 1: %ls\nPath 2: %ls",
          updater, installDirUpdater));
-    if (
-#ifndef DISABLE_USER_IMPERSONATION
-        !userToken ||
-#endif
-        !WriteStatusFailure(updateDir, SERVICE_UPDATER_COMPARE_ERROR,
-                            userToken)) {
+    if (!WriteStatusFailure(updateDir, SERVICE_UPDATER_COMPARE_ERROR)) {
       LOG_WARN(("Could not write update.status updater compare failure."));
     }
     return false;
@@ -462,12 +390,7 @@ static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir,
         ("The updater.exe application contains the Mozilla"
          " updater identity."));
   } else {
-    if (
-#ifndef DISABLE_USER_IMPERSONATION
-        !userToken ||
-#endif
-        !WriteStatusFailure(updateDir, SERVICE_UPDATER_IDENTITY_ERROR,
-                            userToken)) {
+    if (!WriteStatusFailure(updateDir, SERVICE_UPDATER_IDENTITY_ERROR)) {
       LOG_WARN(("Could not write update.status no updater identity."));
     }
     return false;
@@ -489,10 +412,7 @@ static bool UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir,
 
 
 
-
-
-BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv,
-                                  nsAutoHandle& userToken) {
+BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv) {
   BOOL result = TRUE;
   if (argc < 3) {
     LOG_WARN(
@@ -502,8 +422,7 @@ BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv,
     
     
     if (argc < 2 ||
-        !WriteStatusFailure(argv[1], SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS,
-                            userToken)) {
+        !WriteStatusFailure(argv[1], SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS)) {
       LOG_WARN(("Could not write update.status service update failure.  (%d)",
                 GetLastError()));
     }
@@ -513,17 +432,16 @@ BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv,
   WCHAR installDir[MAX_PATH + 1] = {L'\0'};
   if (!GetInstallationDir(argc, argv, installDir)) {
     LOG_WARN(("Could not get the installation directory"));
-    if (!WriteStatusFailure(argv[1], SERVICE_INSTALLDIR_ERROR, userToken)) {
+    if (!WriteStatusFailure(argv[1], SERVICE_INSTALLDIR_ERROR)) {
       LOG_WARN(
           ("Could not write update.status for GetInstallationDir failure."));
     }
     return FALSE;
   }
 
-  if (UpdaterIsValid(argv[0], installDir, argv[1], userToken)) {
+  if (UpdaterIsValid(argv[0], installDir, argv[1])) {
     BOOL updateProcessWasStarted = FALSE;
-    if (StartUpdateProcess(argc, argv, installDir, updateProcessWasStarted,
-                           userToken)) {
+    if (StartUpdateProcess(argc, argv, installDir, updateProcessWasStarted)) {
       LOG(("updater.exe was launched and run successfully!"));
       LogFlush();
 
@@ -545,8 +463,8 @@ BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv,
       
       
       if (!updateProcessWasStarted) {
-        if (!WriteStatusFailure(argv[1], SERVICE_UPDATER_COULD_NOT_BE_STARTED,
-                                userToken)) {
+        if (!WriteStatusFailure(argv[1],
+                                SERVICE_UPDATER_COULD_NOT_BE_STARTED)) {
           LOG_WARN(
               ("Could not write update.status service update failure.  (%d)",
                GetLastError()));
@@ -562,7 +480,7 @@ BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv,
 
     
     
-    if (!WriteStatusFailure(argv[1], SERVICE_UPDATER_SIGN_ERROR, userToken)) {
+    if (!WriteStatusFailure(argv[1], SERVICE_UPDATER_SIGN_ERROR)) {
       LOG_WARN(("Could not write pending state to update.status.  (%d)",
                 GetLastError()));
     }
@@ -685,10 +603,6 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
   if (!lstrcmpi(argv[2], L"software-update")) {
     
     
-    nsAutoHandle userToken;
-
-    
-    
     if (argc < 4 || !IsValidFullPath(argv[4])) {
       
       
@@ -720,15 +634,10 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
     if (argc < 5 || !IsValidFullPath(argv[5])) {
       LOG_WARN(
           ("The install directory path is not valid for this application."));
-#ifdef DISABLE_USER_IMPERSONATION
-      if (!WriteStatusFailure(argv[4], SERVICE_INVALID_INSTALL_DIR_PATH_ERROR,
-                              userToken)) {
+      if (!WriteStatusFailure(argv[4],
+                              SERVICE_INVALID_INSTALL_DIR_PATH_ERROR)) {
         LOG_WARN(("Could not write update.status for previous failure."));
       }
-#else
-      
-      
-#endif
       return FALSE;
     }
 
@@ -738,15 +647,10 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
       if (argc < 6 || !IsValidFullPath(argv[6])) {
         LOG_WARN(
             ("The working directory path is not valid for this application."));
-#ifdef DISABLE_USER_IMPERSONATION
-        if (!WriteStatusFailure(argv[4], SERVICE_INVALID_WORKING_DIR_PATH_ERROR,
-                                userToken)) {
+        if (!WriteStatusFailure(argv[4],
+                                SERVICE_INVALID_WORKING_DIR_PATH_ERROR)) {
           LOG_WARN(("Could not write update.status for previous failure."));
         }
-#else
-        
-        
-#endif
         return FALSE;
       }
 
@@ -758,15 +662,9 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
           LOG_WARN(
               ("Installation directory and working directory must be the "
                "same for non-staged updates. Exiting."));
-#ifdef DISABLE_USER_IMPERSONATION
-          if (!WriteStatusFailure(argv[4], SERVICE_INVALID_APPLYTO_DIR_ERROR,
-                                  userToken)) {
+          if (!WriteStatusFailure(argv[4], SERVICE_INVALID_APPLYTO_DIR_ERROR)) {
             LOG_WARN(("Could not write update.status for previous failure."));
           }
-#else
-          
-          
-#endif
           return FALSE;
         }
 
@@ -779,14 +677,9 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
               ("Couldn't remove file spec when attempting to verify the "
                "working directory path.  (%d)",
                GetLastError()));
-#ifdef DISABLE_USER_IMPERSONATION
-          if (!WriteStatusFailure(argv[4], REMOVE_FILE_SPEC_ERROR, userToken)) {
+          if (!WriteStatusFailure(argv[4], REMOVE_FILE_SPEC_ERROR)) {
             LOG_WARN(("Could not write update.status for previous failure."));
           }
-#else
-          
-          
-#endif
           return FALSE;
         }
 
@@ -794,17 +687,10 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
           LOG_WARN(
               ("The apply-to directory must be the same as or "
                "a child of the installation directory! Exiting."));
-#ifdef DISABLE_USER_IMPERSONATION
           if (!WriteStatusFailure(argv[4],
-                                  SERVICE_INVALID_APPLYTO_DIR_STAGED_ERROR,
-                                  userToken)) {
+                                  SERVICE_INVALID_APPLYTO_DIR_STAGED_ERROR)) {
             LOG_WARN(("Could not write update.status for previous failure."));
           }
-#else
-          
-          
-          
-#endif
           return FALSE;
         }
       }
@@ -819,14 +705,9 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
     WCHAR installDir[MAX_PATH + 1] = {L'\0'};
     if (!GetInstallationDir(argc - 3, argv + 3, installDir)) {
       LOG_WARN(("Could not get the installation directory"));
-#ifdef DISABLE_USER_IMPERSONATION
-      if (!WriteStatusFailure(argv[4], SERVICE_INSTALLDIR_ERROR, userToken)) {
+      if (!WriteStatusFailure(argv[4], SERVICE_INSTALLDIR_ERROR)) {
         LOG_WARN(("Could not write update.status for previous failure."));
       }
-#else
-      
-      
-#endif
       return FALSE;
     }
 
@@ -841,28 +722,16 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
                           KEY_READ | KEY_WOW64_64KEY,
                           &baseKey) != ERROR_SUCCESS) {
           LOG_WARN(("The maintenance service registry key does not exist."));
-#ifdef DISABLE_USER_IMPERSONATION
-          if (!WriteStatusFailure(argv[4], SERVICE_INSTALL_DIR_REG_ERROR,
-                                  userToken)) {
+          if (!WriteStatusFailure(argv[4], SERVICE_INSTALL_DIR_REG_ERROR)) {
             LOG_WARN(("Could not write update.status for previous failure."));
           }
-#else
-          
-          
-#endif
           return FALSE;
         }
         RegCloseKey(baseKey);
       } else {
-#ifdef DISABLE_USER_IMPERSONATION
-        if (!WriteStatusFailure(argv[4], SERVICE_CALC_REG_PATH_ERROR,
-                                userToken)) {
+        if (!WriteStatusFailure(argv[4], SERVICE_CALC_REG_PATH_ERROR)) {
           LOG_WARN(("Could not write update.status for previous failure."));
         }
-#else
-        
-        
-#endif
         return FALSE;
       }
     }
@@ -874,20 +743,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
       result = FALSE;
     }
 
-    
-    
-    result = UpdaterIsValid(installDirUpdater, installDir, argv[4], userToken);
-
-#ifndef DISABLE_USER_IMPERSONATION
-    if (result) {
-      userToken.own(GetUserProcessToken(installDirUpdater, argc - 3,
-                                        const_cast<LPCWSTR*>(argv + 3)));
-      result = !!userToken;
-      if (!userToken) {
-        LOG_WARN(("Could not get user process impersonation token"));
-      }
-    }
-#endif
+    result = UpdaterIsValid(installDirUpdater, installDir, argv[4]);
 
     WCHAR secureUpdaterPath[MAX_PATH + 1] = {L'\0'};
     if (result) {
@@ -906,12 +762,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
     if (!result) {
       LOG_WARN(
           ("Could not copy path to secure location.  (%d)", GetLastError()));
-      if (
-#ifndef DISABLE_USER_IMPERSONATION
-          !userToken ||
-#endif
-          !WriteStatusFailure(argv[4], SERVICE_COULD_NOT_COPY_UPDATER,
-                              userToken)) {
+      if (!WriteStatusFailure(argv[4], SERVICE_COULD_NOT_COPY_UPDATER)) {
         LOG_WARN(
             ("Could not write update.status could not copy updater error"));
       }
@@ -934,7 +785,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
         }
       }
 
-      result = ProcessSoftwareUpdateCommand(argc - 3, argv + 3, userToken);
+      result = ProcessSoftwareUpdateCommand(argc - 3, argv + 3);
       DeleteSecureUpdater(secureUpdaterPath);
     }
 
