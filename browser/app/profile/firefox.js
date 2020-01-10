@@ -2320,13 +2320,6 @@ pref("devtools.responsive.metaViewport.enabled", false);
 pref("devtools.responsive.userAgent", "");
 
 
-
-#if defined(RELEASE_OR_BETA)
-  pref("devtools.responsive.show-setting-tooltip", true);
-#else
-  pref("devtools.responsive.show-setting-tooltip", false);
-#endif
-
 #if defined(NIGHTLY_BUILD)
   pref("devtools.responsive.showUserAgentInput", true);
 #else
