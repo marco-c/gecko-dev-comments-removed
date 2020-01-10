@@ -655,21 +655,31 @@ class EditorBase : public nsIEditor,
     
 
 
-    nsresult AddNodeToChangedRange(const HTMLEditor& aHTMLEditor,
-                                   nsINode& aNode);
-
-    
 
 
-    nsresult AddPointToChangedRange(const HTMLEditor& aHTMLEditor,
-                                    const EditorRawDOMPoint& aPoint);
-
-    
 
 
-    nsresult AddRangeToChangedRange(const HTMLEditor& aHTMLEditor,
-                                    const EditorRawDOMPoint& aStart,
-                                    const EditorRawDOMPoint& aEnd);
+
+
+    void DidCreateElement(EditorBase& aEditorBase, Element& aNewElement);
+    void DidInsertContent(EditorBase& aEditorBase, nsIContent& aNewContent);
+    void WillDeleteContent(EditorBase& aEditorBase,
+                           nsIContent& aRemovingContent);
+    void DidSplitContent(EditorBase& aEditorBase,
+                         nsIContent& aExistingRightContent,
+                         nsIContent& aNewLeftContent);
+    void WillJoinContents(EditorBase& aEditorBase, nsIContent& aLeftContent,
+                          nsIContent& aRightContent);
+    void DidJoinContents(EditorBase& aEditorBase, nsIContent& aLeftContent,
+                         nsIContent& aRightContent);
+    void DidInsertText(EditorBase& aEditorBase,
+                       const EditorRawDOMPoint& aInsertionPoint,
+                       const nsAString& aString);
+    void DidDeleteText(EditorBase& aEditorBase,
+                       const EditorRawDOMPoint& aStartInTextNode);
+    void WillDeleteRange(EditorBase& aEditorBase,
+                         const EditorRawDOMPoint& aStart,
+                         const EditorRawDOMPoint& aEnd);
 
    private:
     void Clear() {
@@ -689,6 +699,25 @@ class EditorBase : public nsIEditor,
       mDidDeleteEmptyParentBlocks = false;
       mRestoreContentEditableCount = false;
     }
+
+    
+
+
+    nsresult AddNodeToChangedRange(const HTMLEditor& aHTMLEditor,
+                                   nsINode& aNode);
+
+    
+
+
+    nsresult AddPointToChangedRange(const HTMLEditor& aHTMLEditor,
+                                    const EditorRawDOMPoint& aPoint);
+
+    
+
+
+    nsresult AddRangeToChangedRange(const HTMLEditor& aHTMLEditor,
+                                    const EditorRawDOMPoint& aStart,
+                                    const EditorRawDOMPoint& aEnd);
 
     TopLevelEditSubActionData() = default;
     TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
@@ -2617,6 +2646,8 @@ class EditorBase : public nsIEditor,
   
   uint8_t mSpellcheckCheckboxState;
 
+  
+  bool mInitSucceeded;
   
   
   bool mAllowsTransactionsToChangeSelection;
