@@ -577,6 +577,9 @@ pref("media.gmp-gmpopenh264.visible", true);
 pref("media.gmp-gmpopenh264.enabled", true);
 
 
+pref("media.gmp-gmpopenh264.autoupdate", false);
+
+
 pref("image.downscale-during-decode.enabled", true);
 
 
