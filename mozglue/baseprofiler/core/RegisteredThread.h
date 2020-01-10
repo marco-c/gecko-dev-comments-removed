@@ -8,8 +8,6 @@
 #define RegisteredThread_h
 
 #include "platform.h"
-#include "ProfilerMarker.h"
-#include "BaseProfilerMarkerPayload.h"
 #include "ThreadInfo.h"
 
 #include "mozilla/UniquePtr.h"
@@ -34,25 +32,6 @@ class RacyRegisteredThread final {
   }
 
   bool IsBeingProfiled() const { return mIsBeingProfiled; }
-
-  void AddPendingMarker(const char* aMarkerName,
-                        ProfilingCategoryPair aCategoryPair,
-                        UniquePtr<ProfilerMarkerPayload> aPayload,
-                        double aTime) {
-    
-    
-    ProfilerMarker* marker = new ProfilerMarker(
-        aMarkerName, aCategoryPair, mThreadId, std::move(aPayload), aTime);
-    mPendingMarkers.insert(marker);
-  }
-
-  
-  ProfilerMarkerLinkedList* GetPendingMarkers() {
-    
-    
-    
-    return mPendingMarkers.accessList();
-  }
 
   
   
@@ -102,9 +81,6 @@ class RacyRegisteredThread final {
 
  private:
   class ProfilingStack mProfilingStack;
-
-  
-  ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
 
   
   

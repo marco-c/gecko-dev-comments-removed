@@ -6,8 +6,8 @@
 #ifndef MOZ_PROFILE_BUFFER_H
 #define MOZ_PROFILE_BUFFER_H
 
+#include "GeckoProfiler.h"
 #include "ProfileBufferEntry.h"
-#include "ProfilerMarker.h"
 
 #include "mozilla/BlocksRingBuffer.h"
 #include "mozilla/Maybe.h"
@@ -98,11 +98,6 @@ class ProfileBuffer final {
 
   void DiscardSamplesBeforeTime(double aTime);
 
-  void AddMarker(ProfilerMarker* aMarker);
-
-  
-  void DeleteExpiredStoredMarkers();
-
   
   ProfileBufferEntry GetEntry(uint64_t aPosition) const {
     ProfileBufferEntry entry;
@@ -172,9 +167,6 @@ class ProfileBuffer final {
   uint64_t BufferRangeEnd() const {
     return mEntries.GetState().mRangeEnd.ConvertToU64();
   }
-
-  
-  ProfilerMarkerLinkedList mStoredMarkers;
 
  private:
   
