@@ -26,9 +26,10 @@ var _assign = ReactInternals.assign;
 
 
 
+
 function invariant(condition, format, a, b, c, d, e, f) {
   if (!condition) {
-    var error;
+    var error = void 0;
     if (format === undefined) {
       error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
     } else {
@@ -44,8 +45,6 @@ function invariant(condition, format, a, b, c, d, e, f) {
     throw error;
   }
 }
-
-var invariant_1 = invariant;
 
 
 
@@ -63,49 +62,13 @@ function reactProdInvariant(code) {
   }
   
   
-  var i = invariant_1;
+  var i = invariant;
   i(false,
   
   
   
   'Minified React error #' + code + '; visit %s ' + 'for the full message or use the non-minified dev environment ' + 'for full errors and additional helpful warnings. ', url);
 }
-
-
-
-
-
-
-
-
-
-
-function makeEmptyFunction(arg) {
-  return function () {
-    return arg;
-  };
-}
-
-
-
-
-
-
-var emptyFunction = function emptyFunction() {};
-
-emptyFunction.thatReturns = makeEmptyFunction;
-emptyFunction.thatReturnsFalse = makeEmptyFunction(false);
-emptyFunction.thatReturnsTrue = makeEmptyFunction(true);
-emptyFunction.thatReturnsNull = makeEmptyFunction(null);
-emptyFunction.thatReturnsThis = function () {
-  return this;
-};
-emptyFunction.thatReturnsArgument = function (arg) {
-  return arg;
-};
-
-var emptyFunction_1 = emptyFunction;
-
 
 
 
@@ -135,16 +98,23 @@ function get(key) {
   return key._reactInternalFiber;
 }
 
-var ReactInternals$1 = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-
-var ReactCurrentOwner = ReactInternals$1.ReactCurrentOwner;
+var ReactSharedInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
 
 
 
 
+if (!ReactSharedInternals.hasOwnProperty('ReactCurrentDispatcher')) {
+  ReactSharedInternals.ReactCurrentDispatcher = {
+    current: null
+  };
+}
 
-var FunctionalComponent = 1;
-var ClassComponent = 2;
+
+
+
+var FunctionComponent = 0;
+var ClassComponent = 1;
+ 
 var HostRoot = 3; 
  
 var HostComponent = 5;
@@ -166,6 +136,12 @@ var Placement = 2;
 
 
 
+
+
+
+
+
+var ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
 var MOUNTING = 1;
 var MOUNTED = 2;
@@ -324,8 +300,6 @@ function findCurrentFiberUsingSlowPath(fiber) {
 
 var EVENT_POOL_SIZE = 10;
 
-var shouldBeReleasedProperties = ['dispatchConfig', '_targetInst', 'nativeEvent', 'isDefaultPrevented', 'isPropagationStopped', '_dispatchListeners', '_dispatchInstances'];
-
 
 
 
@@ -334,7 +308,9 @@ var EventInterface = {
   type: null,
   target: null,
   
-  currentTarget: emptyFunction_1.thatReturnsNull,
+  currentTarget: function () {
+    return null;
+  },
   eventPhase: null,
   bubbles: null,
   cancelable: null,
@@ -344,6 +320,14 @@ var EventInterface = {
   defaultPrevented: null,
   isTrusted: null
 };
+
+function functionThatReturnsTrue() {
+  return true;
+}
+
+function functionThatReturnsFalse() {
+  return false;
+}
 
 
 
@@ -387,11 +371,11 @@ function SyntheticEvent(dispatchConfig, targetInst, nativeEvent, nativeEventTarg
 
   var defaultPrevented = nativeEvent.defaultPrevented != null ? nativeEvent.defaultPrevented : nativeEvent.returnValue === false;
   if (defaultPrevented) {
-    this.isDefaultPrevented = emptyFunction_1.thatReturnsTrue;
+    this.isDefaultPrevented = functionThatReturnsTrue;
   } else {
-    this.isDefaultPrevented = emptyFunction_1.thatReturnsFalse;
+    this.isDefaultPrevented = functionThatReturnsFalse;
   }
-  this.isPropagationStopped = emptyFunction_1.thatReturnsFalse;
+  this.isPropagationStopped = functionThatReturnsFalse;
   return this;
 }
 
@@ -408,7 +392,7 @@ _assign(SyntheticEvent.prototype, {
     } else if (typeof event.returnValue !== 'unknown') {
       event.returnValue = false;
     }
-    this.isDefaultPrevented = emptyFunction_1.thatReturnsTrue;
+    this.isDefaultPrevented = functionThatReturnsTrue;
   },
 
   stopPropagation: function () {
@@ -428,7 +412,7 @@ _assign(SyntheticEvent.prototype, {
       event.cancelBubble = true;
     }
 
-    this.isPropagationStopped = emptyFunction_1.thatReturnsTrue;
+    this.isPropagationStopped = functionThatReturnsTrue;
   },
 
   
@@ -437,7 +421,7 @@ _assign(SyntheticEvent.prototype, {
 
 
   persist: function () {
-    this.isPersistent = emptyFunction_1.thatReturnsTrue;
+    this.isPersistent = functionThatReturnsTrue;
   },
 
   
@@ -445,7 +429,7 @@ _assign(SyntheticEvent.prototype, {
 
 
 
-  isPersistent: emptyFunction_1.thatReturnsFalse,
+  isPersistent: functionThatReturnsFalse,
 
   
 
@@ -457,9 +441,13 @@ _assign(SyntheticEvent.prototype, {
         this[propName] = null;
       }
     }
-    for (var i = 0; i < shouldBeReleasedProperties.length; i++) {
-      this[shouldBeReleasedProperties[i]] = null;
-    }
+    this.dispatchConfig = null;
+    this._targetInst = null;
+    this.nativeEvent = null;
+    this.isDefaultPrevented = functionThatReturnsFalse;
+    this.isPropagationStopped = functionThatReturnsFalse;
+    this._dispatchListeners = null;
+    this._dispatchInstances = null;
     
   }
 });
@@ -490,10 +478,6 @@ SyntheticEvent.extend = function (Interface) {
   return Class;
 };
 
-
-
-
-
 addEventPoolingTo(SyntheticEvent);
 
 function getPooledEvent(dispatchConfig, targetInst, nativeEvent, nativeInst) {
@@ -508,7 +492,7 @@ function getPooledEvent(dispatchConfig, targetInst, nativeEvent, nativeInst) {
 
 function releasePooledEvent(event) {
   var EventConstructor = this;
-  !(event instanceof EventConstructor) ? reactProdInvariant('223') : void 0;
+  !(event instanceof EventConstructor) ? reactProdInvariant('279') : void 0;
   event.destructor();
   if (EventConstructor.eventPool.length < EVENT_POOL_SIZE) {
     EventConstructor.eventPool.push(event);
@@ -525,43 +509,31 @@ function addEventPoolingTo(EventConstructor) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ELEMENT_NODE = 1;
+
+
+
+
+
 function unsafeCastStringToDOMTopLevelType(topLevelType) {
   return topLevelType;
 }
 
-
-
-
-
-
-
-
-
-
-
 var canUseDOM = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
-
-
-
-
-
-
-
-var ExecutionEnvironment = {
-
-  canUseDOM: canUseDOM,
-
-  canUseWorkers: typeof Worker !== 'undefined',
-
-  canUseEventListeners: canUseDOM && !!(window.addEventListener || window.attachEvent),
-
-  canUseViewport: canUseDOM && !!window.screen,
-
-  isInWorker: !canUseDOM 
-
-};
-
-var ExecutionEnvironment_1 = ExecutionEnvironment;
 
 
 
@@ -576,8 +548,6 @@ function makePrefixMap(styleProp, eventName) {
   prefixes[styleProp.toLowerCase()] = eventName.toLowerCase();
   prefixes['Webkit' + styleProp] = 'webkit' + eventName;
   prefixes['Moz' + styleProp] = 'moz' + eventName;
-  prefixes['ms' + styleProp] = 'MS' + eventName;
-  prefixes['O' + styleProp] = 'o' + eventName.toLowerCase();
 
   return prefixes;
 }
@@ -605,7 +575,7 @@ var style = {};
 
 
 
-if (ExecutionEnvironment_1.canUseDOM) {
+if (canUseDOM) {
   style = document.createElementNS('http://www.w3.org/1999/xhtml', 'div').style;
 
   
@@ -673,6 +643,7 @@ var TOP_CONTEXT_MENU = unsafeCastStringToDOMTopLevelType('contextmenu');
 var TOP_COPY = unsafeCastStringToDOMTopLevelType('copy');
 var TOP_CUT = unsafeCastStringToDOMTopLevelType('cut');
 var TOP_DOUBLE_CLICK = unsafeCastStringToDOMTopLevelType('dblclick');
+
 var TOP_DRAG = unsafeCastStringToDOMTopLevelType('drag');
 var TOP_DRAG_END = unsafeCastStringToDOMTopLevelType('dragend');
 var TOP_DRAG_ENTER = unsafeCastStringToDOMTopLevelType('dragenter');
@@ -741,14 +712,23 @@ var TOP_WHEEL = unsafeCastStringToDOMTopLevelType('wheel');
 
 
 
+
 var findDOMNode = ReactDOM.findDOMNode;
-var _ReactDOM$__SECRET_IN = ReactDOM.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-var EventPluginHub = _ReactDOM$__SECRET_IN.EventPluginHub;
-var EventPluginRegistry = _ReactDOM$__SECRET_IN.EventPluginRegistry;
-var EventPropagators = _ReactDOM$__SECRET_IN.EventPropagators;
-var ReactControlledComponent = _ReactDOM$__SECRET_IN.ReactControlledComponent;
-var ReactDOMComponentTree = _ReactDOM$__SECRET_IN.ReactDOMComponentTree;
-var ReactDOMEventListener = _ReactDOM$__SECRET_IN.ReactDOMEventListener;
+
+
+
+var _ReactDOM$__SECRET_IN = ReactDOM.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.Events;
+var getInstanceFromNode = _ReactDOM$__SECRET_IN[0];
+var getNodeFromInstance = _ReactDOM$__SECRET_IN[1];
+var getFiberCurrentPropsFromNode = _ReactDOM$__SECRET_IN[2];
+var injectEventPluginsByName = _ReactDOM$__SECRET_IN[3];
+var eventNameDispatchConfigs = _ReactDOM$__SECRET_IN[4];
+var accumulateTwoPhaseDispatches = _ReactDOM$__SECRET_IN[5];
+var accumulateDirectDispatches = _ReactDOM$__SECRET_IN[6];
+var enqueueStateRestore = _ReactDOM$__SECRET_IN[7];
+var restoreStateIfNeeded = _ReactDOM$__SECRET_IN[8];
+var dispatchEvent = _ReactDOM$__SECRET_IN[9];
+var runEventsInBatch = _ReactDOM$__SECRET_IN[10];
 
 
 function Event(suffix) {}
@@ -766,7 +746,7 @@ function Event(suffix) {}
 
 function simulateNativeEventOnNode(topLevelType, node, fakeNativeEvent) {
   fakeNativeEvent.target = node;
-  ReactDOMEventListener.dispatchEvent(topLevelType, fakeNativeEvent);
+  dispatchEvent(topLevelType, fakeNativeEvent);
 }
 
 
@@ -791,7 +771,7 @@ function findAllInRenderedFiberTreeInternal(fiber, test) {
   var node = currentParent;
   var ret = [];
   while (true) {
-    if (node.tag === HostComponent || node.tag === HostText || node.tag === ClassComponent || node.tag === FunctionalComponent) {
+    if (node.tag === HostComponent || node.tag === HostText || node.tag === ClassComponent || node.tag === FunctionComponent) {
       var publicInst = node.stateNode;
       if (test(publicInst)) {
         ret.push(publicInst);
@@ -815,6 +795,32 @@ function findAllInRenderedFiberTreeInternal(fiber, test) {
     node = node.sibling;
   }
 }
+
+function validateClassInstance(inst, methodName) {
+  if (!inst) {
+    
+    return;
+  }
+  if (get(inst)) {
+    
+    return;
+  }
+  var received = void 0;
+  var stringified = '' + inst;
+  if (Array.isArray(inst)) {
+    received = 'an array';
+  } else if (inst && inst.nodeType === ELEMENT_NODE && inst.tagName) {
+    received = 'a DOM node';
+  } else if (stringified === '[object Object]') {
+    received = 'object with keys {' + Object.keys(inst).join(', ') + '}';
+  } else {
+    received = stringified;
+  }
+  reactProdInvariant('286', methodName, received);
+}
+
+
+var actContainerElement = null;
 
 
 
@@ -845,7 +851,7 @@ var ReactTestUtils = {
   },
 
   isDOMComponent: function (inst) {
-    return !!(inst && inst.nodeType === 1 && inst.tagName);
+    return !!(inst && inst.nodeType === ELEMENT_NODE && inst.tagName);
   },
 
   isDOMComponentElement: function (inst) {
@@ -871,10 +877,10 @@ var ReactTestUtils = {
   },
 
   findAllInRenderedTree: function (inst, test) {
+    validateClassInstance(inst, 'findAllInRenderedTree');
     if (!inst) {
       return [];
     }
-    !ReactTestUtils.isCompositeComponent(inst) ? reactProdInvariant('10') : void 0;
     var internalInstance = get(inst);
     return findAllInRenderedFiberTreeInternal(internalInstance, test);
   },
@@ -885,6 +891,7 @@ var ReactTestUtils = {
 
 
   scryRenderedDOMComponentsWithClass: function (root, classNames) {
+    validateClassInstance(root, 'scryRenderedDOMComponentsWithClass');
     return ReactTestUtils.findAllInRenderedTree(root, function (inst) {
       if (ReactTestUtils.isDOMComponent(inst)) {
         var className = inst.className;
@@ -913,6 +920,7 @@ var ReactTestUtils = {
 
 
   findRenderedDOMComponentWithClass: function (root, className) {
+    validateClassInstance(root, 'findRenderedDOMComponentWithClass');
     var all = ReactTestUtils.scryRenderedDOMComponentsWithClass(root, className);
     if (all.length !== 1) {
       throw new Error('Did not find exactly one match (found: ' + all.length + ') ' + 'for class:' + className);
@@ -926,6 +934,7 @@ var ReactTestUtils = {
 
 
   scryRenderedDOMComponentsWithTag: function (root, tagName) {
+    validateClassInstance(root, 'scryRenderedDOMComponentsWithTag');
     return ReactTestUtils.findAllInRenderedTree(root, function (inst) {
       return ReactTestUtils.isDOMComponent(inst) && inst.tagName.toUpperCase() === tagName.toUpperCase();
     });
@@ -938,6 +947,7 @@ var ReactTestUtils = {
 
 
   findRenderedDOMComponentWithTag: function (root, tagName) {
+    validateClassInstance(root, 'findRenderedDOMComponentWithTag');
     var all = ReactTestUtils.scryRenderedDOMComponentsWithTag(root, tagName);
     if (all.length !== 1) {
       throw new Error('Did not find exactly one match (found: ' + all.length + ') ' + 'for tag:' + tagName);
@@ -950,6 +960,7 @@ var ReactTestUtils = {
 
 
   scryRenderedComponentsWithType: function (root, componentType) {
+    validateClassInstance(root, 'scryRenderedComponentsWithType');
     return ReactTestUtils.findAllInRenderedTree(root, function (inst) {
       return ReactTestUtils.isCompositeComponentWithType(inst, componentType);
     });
@@ -962,6 +973,7 @@ var ReactTestUtils = {
 
 
   findRenderedComponentWithType: function (root, componentType) {
+    validateClassInstance(root, 'findRenderedComponentWithType');
     var all = ReactTestUtils.scryRenderedComponentsWithType(root, componentType);
     if (all.length !== 1) {
       throw new Error('Did not find exactly one match (found: ' + all.length + ') ' + 'for componentType:' + componentType);
@@ -999,7 +1011,26 @@ var ReactTestUtils = {
   },
 
   Simulate: null,
-  SimulateNative: {}
+  SimulateNative: {},
+
+  act: function (callback) {
+    if (actContainerElement === null) {
+      
+      actContainerElement = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+    }
+
+    var result = ReactDOM.unstable_batchedUpdates(callback);
+    
+    
+    ReactDOM.render(React.createElement('div', null), actContainerElement);
+    
+    
+    return {
+      then: function () {
+        
+      }
+    };
+  }
 };
 
 
@@ -1015,7 +1046,7 @@ function makeSimulator(eventType) {
     !!React.isValidElement(domNode) ? reactProdInvariant('228') : void 0;
     !!ReactTestUtils.isCompositeComponent(domNode) ? reactProdInvariant('229') : void 0;
 
-    var dispatchConfig = EventPluginRegistry.eventNameDispatchConfigs[eventType];
+    var dispatchConfig = eventNameDispatchConfigs[eventType];
 
     var fakeNativeEvent = new Event();
     fakeNativeEvent.target = domNode;
@@ -1023,7 +1054,7 @@ function makeSimulator(eventType) {
 
     
     
-    var targetInst = ReactDOMComponentTree.getInstanceFromNode(domNode);
+    var targetInst = getInstanceFromNode(domNode);
     var event = new SyntheticEvent(dispatchConfig, targetInst, fakeNativeEvent, domNode);
 
     
@@ -1032,18 +1063,18 @@ function makeSimulator(eventType) {
     _assign(event, eventData);
 
     if (dispatchConfig.phasedRegistrationNames) {
-      EventPropagators.accumulateTwoPhaseDispatches(event);
+      accumulateTwoPhaseDispatches(event);
     } else {
-      EventPropagators.accumulateDirectDispatches(event);
+      accumulateDirectDispatches(event);
     }
 
     ReactDOM.unstable_batchedUpdates(function () {
       
       
-      ReactControlledComponent.enqueueStateRestore(domNode);
-      EventPluginHub.runEventsInBatch(event, true);
+      enqueueStateRestore(domNode);
+      runEventsInBatch(event);
     });
-    ReactControlledComponent.restoreStateIfNeeded();
+    restoreStateIfNeeded();
   };
 }
 
@@ -1051,7 +1082,7 @@ function buildSimulators() {
   ReactTestUtils.Simulate = {};
 
   var eventType = void 0;
-  for (eventType in EventPluginRegistry.eventNameDispatchConfigs) {
+  for (eventType in eventNameDispatchConfigs) {
     
 
 
@@ -1059,18 +1090,6 @@ function buildSimulators() {
     ReactTestUtils.Simulate[eventType] = makeSimulator(eventType);
   }
 }
-
-
-var oldInjectEventPluginOrder = EventPluginHub.injection.injectEventPluginOrder;
-EventPluginHub.injection.injectEventPluginOrder = function () {
-  oldInjectEventPluginOrder.apply(this, arguments);
-  buildSimulators();
-};
-var oldInjectEventPlugins = EventPluginHub.injection.injectEventPluginsByName;
-EventPluginHub.injection.injectEventPluginsByName = function () {
-  oldInjectEventPlugins.apply(this, arguments);
-  buildSimulators();
-};
 
 buildSimulators();
 
@@ -1124,7 +1143,7 @@ var ReactTestUtils$3 = ( ReactTestUtils$2 && ReactTestUtils ) || ReactTestUtils$
 
 
 
-var testUtils = ReactTestUtils$3.default ? ReactTestUtils$3.default : ReactTestUtils$3;
+var testUtils = ReactTestUtils$3.default || ReactTestUtils$3;
 
 return testUtils;
 
