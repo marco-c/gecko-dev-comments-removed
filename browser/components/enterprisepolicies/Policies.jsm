@@ -512,6 +512,9 @@ var Policies = {
       setAndLockPref("browser.download.dir", replacePathVariables(param));
       
       setAndLockPref("browser.download.folderList", 2);
+      
+      
+      setAndLockPref("browser.download.useDownloadDir", true);
     },
   },
 
