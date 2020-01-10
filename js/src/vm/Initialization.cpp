@@ -63,8 +63,16 @@ static void CheckMessageParameterCounts() {
 #endif 
 
 static void CheckCanonicalNaN() {
+#if defined(JS_NONCANONICAL_HARDWARE_NAN)
   
   
+  
+  
+#if !defined(JS_CODEGEN_NONE)
+#error "No JIT support for non-canonical hardware NaN"
+#endif
+
+#else
   
   
   
@@ -73,6 +81,7 @@ static void CheckCanonicalNaN() {
   uint64_t bits = mozilla::BitwiseCast<uint64_t>(hardwareNaN);
   bits &= ~mozilla::FloatingPoint<double>::kSignBit;
   MOZ_RELEASE_ASSERT(bits == JS::detail::CanonicalizedNaNBits);
+#endif
 }
 
 #define RETURN_IF_FAIL(code)           \
