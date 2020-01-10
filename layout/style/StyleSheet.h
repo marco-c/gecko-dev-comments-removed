@@ -390,8 +390,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  void SetSharedContents(nsLayoutStylesheetCacheShm* aSharedMemory,
-                         const ServoCssRules* aSharedRules);
+  void SetSharedContents(const ServoCssRules* aSharedRules);
 
   
   

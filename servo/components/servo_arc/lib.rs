@@ -486,6 +486,14 @@ impl<T: ?Sized> Arc<T> {
     }
 
     
+    #[inline]
+    pub fn is_static(&self) -> bool {
+        
+        
+        self.inner().count.load(Relaxed) == STATIC_REFCOUNT
+    }
+
+    
     
     #[inline]
     pub fn is_unique(&self) -> bool {
@@ -501,10 +509,7 @@ impl<T: ?Sized> Drop for Arc<T> {
     fn drop(&mut self) {
         
         
-        
-        
-        
-        if self.inner().count.load(Relaxed) == STATIC_REFCOUNT {
+        if self.is_static() {
             return;
         }
 
