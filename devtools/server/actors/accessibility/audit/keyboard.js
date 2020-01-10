@@ -371,7 +371,12 @@ function semanticsRule(accessible) {
     
     accessible.role === Ci.nsIAccessibleRole.ROLE_TEXT_LEAF ||
     
-    accessible.actionCount === 0
+    accessible.actionCount === 0 ||
+    
+    
+    (accessible.role === Ci.nsIAccessibleRole.ROLE_LABEL &&
+      accessible.getRelationByType(Ci.nsIAccessibleRelation.RELATION_LABEL_FOR)
+        .targetsCount > 0)
   ) {
     return null;
   }
