@@ -55,7 +55,7 @@ class WindowGlobalParent final : public WindowGlobalActor,
   }
 
   
-  bool IsClosed() { return !CanSend(); }
+  bool IsClosed() { return mIPCClosed; }
 
   
   
@@ -90,7 +90,7 @@ class WindowGlobalParent final : public WindowGlobalActor,
   
   
   
-  already_AddRefed<nsFrameLoader> GetRootFrameLoader();
+  nsFrameLoader* GetRootFrameLoader() { return mFrameLoader; }
 
   
   nsIURI* GetDocumentURI() override { return mDocumentURI; }
@@ -165,11 +165,13 @@ class WindowGlobalParent final : public WindowGlobalActor,
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   nsCOMPtr<nsIURI> mDocumentURI;
+  RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<CanonicalBrowsingContext> mBrowsingContext;
   nsRefPtrHashtable<nsStringHashKey, JSWindowActorParent> mWindowActors;
   uint64_t mInnerWindowId;
   uint64_t mOuterWindowId;
   bool mInProcess;
+  bool mIPCClosed;
   bool mIsInitialDocument;
 
   

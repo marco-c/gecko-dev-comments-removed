@@ -14,6 +14,18 @@ namespace ipc {
 
 NS_IMPL_ISUPPORTS(InProcessParent, nsIObserver)
 
+IPCResult InProcessParent::RecvPWindowGlobalConstructor(
+    PWindowGlobalParent* aActor, const WindowGlobalInit& aInit) {
+  static_cast<WindowGlobalParent*>(aActor)->Init(aInit);
+  return IPC_OK();
+}
+
+PWindowGlobalParent* InProcessParent::AllocPWindowGlobalParent(
+    const WindowGlobalInit& aInit) {
+  
+  return do_AddRef(new WindowGlobalParent(aInit,  true)).take();
+}
+
 bool InProcessParent::DeallocPWindowGlobalParent(PWindowGlobalParent* aActor) {
   
   static_cast<WindowGlobalParent*>(aActor)->Release();

@@ -52,6 +52,7 @@ WindowGlobalParent::WindowGlobalParent(const WindowGlobalInit& aInit,
       mInnerWindowId(aInit.innerWindowId()),
       mOuterWindowId(aInit.outerWindowId()),
       mInProcess(aInProcess),
+      mIPCClosed(true),  
       mIsInitialDocument(false),
       mHasBeforeUnload(false) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(), "Parent process only");
@@ -64,6 +65,10 @@ WindowGlobalParent::WindowGlobalParent(const WindowGlobalInit& aInit,
 
 void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   MOZ_ASSERT(Manager(), "Should have a manager!");
+  MOZ_ASSERT(!mFrameLoader, "Cannot Init() a WindowGlobalParent twice!");
+
+  MOZ_ASSERT(mIPCClosed, "IPC shouldn't be open yet");
+  mIPCClosed = false;
 
   
   if (!gWindowGlobalParentsById) {
@@ -77,11 +82,7 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   
   dom::ContentParentId processId(0);
   if (!mInProcess) {
-    ContentParent* cp = static_cast<ContentParent*>(Manager()->Manager());
-    processId = cp->ChildID();
-
-    
-    cp->TransmitPermissionsForPrincipal(mDocumentPrincipal);
+    processId = static_cast<ContentParent*>(Manager()->Manager())->ChildID();
   }
 
   mBrowsingContext = CanonicalBrowsingContext::Cast(aInit.browsingContext());
@@ -97,8 +98,32 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   }
 
   
-  if (!mDocumentURI) {
-    NS_NewURI(getter_AddRefs(mDocumentURI), "about:blank");
+  
+  RefPtr<Element> frameElement;
+  if (mInProcess) {
+    
+    
+    MOZ_ASSERT(Manager()->GetProtocolId() == PInProcessMsgStart);
+    RefPtr<WindowGlobalChild> otherSide = GetChildActor();
+    if (otherSide && otherSide->WindowGlobal()) {
+      
+      RefPtr<nsDocShell> docShell =
+          nsDocShell::Cast(otherSide->WindowGlobal()->GetDocShell());
+      if (docShell) {
+        docShell->GetTopFrameElement(getter_AddRefs(frameElement));
+      }
+    }
+  } else {
+    
+    MOZ_ASSERT(Manager()->GetProtocolId() == PBrowserMsgStart);
+    frameElement = static_cast<BrowserParent*>(Manager())->GetOwnerElement();
+  }
+
+  
+  
+  RefPtr<nsFrameLoaderOwner> flOwner = do_QueryObject(frameElement);
+  if (flOwner) {
+    mFrameLoader = flOwner->GetFrameLoader();
   }
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
@@ -117,7 +142,7 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::GetByInnerWindowId(
 }
 
 already_AddRefed<WindowGlobalChild> WindowGlobalParent::GetChildActor() {
-  if (!CanSend()) {
+  if (mIPCClosed) {
     return nullptr;
   }
   IProtocol* otherSide = InProcessParent::ChildActorFor(this);
@@ -125,21 +150,10 @@ already_AddRefed<WindowGlobalChild> WindowGlobalParent::GetChildActor() {
 }
 
 already_AddRefed<BrowserParent> WindowGlobalParent::GetBrowserParent() {
-  if (IsInProcess() || !CanSend()) {
+  if (IsInProcess() || mIPCClosed) {
     return nullptr;
   }
   return do_AddRef(static_cast<BrowserParent*>(Manager()));
-}
-
-already_AddRefed<nsFrameLoader> WindowGlobalParent::GetRootFrameLoader() {
-  dom::BrowsingContext* top = BrowsingContext()->Top();
-
-  RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
-      do_QueryObject(top->GetEmbedderElement());
-  if (frameLoaderOwner) {
-    return frameLoaderOwner->GetFrameLoader();
-  }
-  return nullptr;
 }
 
 uint64_t WindowGlobalParent::ContentParentId() {
@@ -185,7 +199,7 @@ IPCResult WindowGlobalParent::RecvBecomeCurrentWindowGlobal() {
 }
 
 IPCResult WindowGlobalParent::RecvDestroy() {
-  if (CanSend()) {
+  if (!mIPCClosed) {
     RefPtr<BrowserParent> browserParent = GetBrowserParent();
     if (!browserParent || !browserParent->IsDestroyed()) {
       
@@ -231,7 +245,7 @@ const nsAString& WindowGlobalParent::GetRemoteType() {
 
 already_AddRefed<JSWindowActorParent> WindowGlobalParent::GetActor(
     const nsAString& aName, ErrorResult& aRv) {
-  if (!CanSend()) {
+  if (mIPCClosed) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
@@ -262,7 +276,7 @@ already_AddRefed<JSWindowActorParent> WindowGlobalParent::GetActor(
 }
 
 bool WindowGlobalParent::IsCurrentGlobal() {
-  return CanSend() && mBrowsingContext->GetCurrentWindowGlobal() == this;
+  return !mIPCClosed && mBrowsingContext->GetCurrentWindowGlobal() == this;
 }
 
 IPCResult WindowGlobalParent::RecvDidEmbedBrowsingContext(
@@ -421,6 +435,7 @@ already_AddRefed<Promise> WindowGlobalParent::GetSecurityInfo(
 }
 
 void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
+  mIPCClosed = true;
   gWindowGlobalParentsById->Remove(mInnerWindowId);
   mBrowsingContext->UnregisterWindowGlobal(this);
 
@@ -455,7 +470,8 @@ nsIGlobalObject* WindowGlobalParent::GetParentObject() {
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WindowGlobalParent, WindowGlobalActor,
-                                   mBrowsingContext, mWindowActors)
+                                   mFrameLoader, mBrowsingContext,
+                                   mWindowActors)
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(WindowGlobalParent,
                                                WindowGlobalActor)

@@ -55,7 +55,6 @@
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/URLClassifierChild.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WorkerDebugger.h"
 #include "mozilla/dom/WorkerDebuggerManager.h"
 #include "mozilla/dom/ipc/SharedMap.h"
@@ -975,25 +974,9 @@ nsresult ContentChild::ProvideWindowCommon(
       nullptr, openerBC, aName, BrowsingContext::Type::Content);
 
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> initialPrincipal =
-      NullPrincipal::Create(newTabContext.OriginAttributesRef());
-  WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
-      browsingContext, initialPrincipal);
-
-  auto windowChild = MakeRefPtr<WindowGlobalChild>(windowInit, nullptr);
-
-  auto newChild = MakeRefPtr<BrowserChild>(this, tabId, tabGroup, newTabContext,
-                                           browsingContext, aChromeFlags,
-                                            true);
+  RefPtr<BrowserChild> newChild =
+      new BrowserChild(this, tabId, tabGroup, newTabContext, browsingContext,
+                       aChromeFlags,  true);
 
   if (aTabOpener) {
     MOZ_ASSERT(ipcContext->type() == IPCTabContext::TPopupIPCTabContext);
@@ -1017,25 +1000,15 @@ nsresult ContentChild::ProvideWindowCommon(
   }
 
   
-  
-  ManagedEndpoint<PWindowGlobalParent> windowParentEp =
-      newChild->OpenPWindowGlobalEndpoint(do_AddRef(windowChild).take());
-  if (NS_WARN_IF(!windowParentEp.IsValid())) {
+  if (NS_WARN_IF(!SendConstructPopupBrowser(std::move(parentEp), tabId,
+                                            *ipcContext, browsingContext,
+                                            aChromeFlags))) {
     return NS_ERROR_ABORT;
   }
 
   
-  if (NS_WARN_IF(!SendConstructPopupBrowser(
-          std::move(parentEp), std::move(windowParentEp), tabId, *ipcContext,
-          windowInit, aChromeFlags))) {
-    return NS_ERROR_ABORT;
-  }
-
-  windowChild->Init();
-
   
-  
-  if (NS_FAILED(newChild->Init(aParent, windowChild))) {
+  if (NS_FAILED(newChild->Init(aParent))) {
     return NS_ERROR_ABORT;
   }
 
@@ -1834,10 +1807,9 @@ bool ContentChild::DeallocPJavaScriptChild(PJavaScriptChild* aChild) {
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
-    ManagedEndpoint<PBrowserChild>&& aBrowserEp,
-    ManagedEndpoint<PWindowGlobalChild>&& aWindowEp, const TabId& aTabId,
+    ManagedEndpoint<PBrowserChild>&& aBrowserEp, const TabId& aTabId,
     const TabId& aSameTabGroupAs, const IPCTabContext& aContext,
-    const WindowGlobalInit& aWindowInit, const uint32_t& aChromeFlags,
+    BrowsingContext* aBrowsingContext, const uint32_t& aChromeFlags,
     const ContentParentId& aCpID, const bool& aIsForBrowser,
     const bool& aIsTopLevel) {
   MOZ_ASSERT(!IsShuttingDown());
@@ -1868,11 +1840,9 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     MOZ_CRASH("Invalid TabContext received from the parent process.");
   }
 
-  auto windowChild = MakeRefPtr<WindowGlobalChild>(aWindowInit, nullptr);
-
-  RefPtr<BrowserChild> browserChild = BrowserChild::Create(
-      this, aTabId, aSameTabGroupAs, tc.GetTabContext(),
-      aWindowInit.browsingContext(), aChromeFlags, aIsTopLevel);
+  RefPtr<BrowserChild> browserChild =
+      BrowserChild::Create(this, aTabId, aSameTabGroupAs, tc.GetTabContext(),
+                           aBrowsingContext, aChromeFlags, aIsTopLevel);
 
   
   
@@ -1881,14 +1851,6 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
-  
-  if (NS_WARN_IF(!browserChild->BindPWindowGlobalEndpoint(
-          std::move(aWindowEp), do_AddRef(windowChild).take()))) {
-    return IPC_FAIL(this, "BindPWindowGlobalEndpoint failed");
-  }
-  windowChild->Init();
-
-  
   if (!browserChild->mTabGroup) {
     browserChild->mTabGroup = TabGroup::GetFromActor(browserChild);
 
@@ -1898,8 +1860,7 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     }
   }
 
-  if (NS_WARN_IF(
-          NS_FAILED(browserChild->Init( nullptr, windowChild)))) {
+  if (NS_WARN_IF(NS_FAILED(browserChild->Init( nullptr)))) {
     return IPC_FAIL(browserChild, "BrowserChild::Init failed");
   }
 
@@ -2108,17 +2069,14 @@ already_AddRefed<RemoteBrowser> ContentChild::CreateBrowser(
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
   }
 
-  WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
-      aBrowsingContext, owner->NodePrincipal());
-
   TabId tabId(nsContentUtils::GenerateTabId());
   RefPtr<BrowserBridgeChild> browserBridge =
       new BrowserBridgeChild(aFrameLoader, aBrowsingContext, tabId);
   
   browserChild->SendPBrowserBridgeConstructor(
       do_AddRef(browserBridge).take(),
-      PromiseFlatString(aContext.PresentationURL()), aRemoteType, windowInit,
-      chromeFlags, tabId);
+      PromiseFlatString(aContext.PresentationURL()), aRemoteType,
+      aBrowsingContext, chromeFlags, tabId);
   browserBridge->mIPCOpen = true;
 
 #if defined(ACCESSIBILITY)
@@ -3255,6 +3213,48 @@ mozilla::ipc::IPCResult ContentChild::RecvSetAudioSessionData(
 #endif
 }
 
+
+
+
+static uint64_t gNextWindowID = 0;
+
+
+
+
+static const uint64_t kWindowIDTotalBits = 53;
+static const uint64_t kWindowIDProcessBits = 22;
+static const uint64_t kWindowIDWindowBits =
+    kWindowIDTotalBits - kWindowIDProcessBits;
+
+
+
+uint64_t NextWindowID() {
+  uint64_t processID = 0;
+  if (XRE_IsContentProcess()) {
+    ContentChild* cc = ContentChild::GetSingleton();
+    processID = cc->GetID();
+  }
+
+  MOZ_RELEASE_ASSERT(processID < (uint64_t(1) << kWindowIDProcessBits));
+  uint64_t processBits =
+      processID & ((uint64_t(1) << kWindowIDProcessBits) - 1);
+
+  
+  uint64_t windowID = ++gNextWindowID;
+
+  MOZ_RELEASE_ASSERT(windowID < (uint64_t(1) << kWindowIDWindowBits));
+  uint64_t windowBits = windowID & ((uint64_t(1) << kWindowIDWindowBits) - 1);
+
+  
+  
+  
+  if (recordreplay::IsMiddleman()) {
+    windowBits |= uint64_t(1) << (kWindowIDWindowBits - 1);
+  }
+
+  return (processBits << kWindowIDWindowBits) | windowBits;
+}
+
 mozilla::ipc::IPCResult ContentChild::RecvInvokeDragSession(
     nsTArray<IPCDataTransfer>&& aTransfers, const uint32_t& aAction) {
   nsCOMPtr<nsIDragService> dragService =
@@ -3775,14 +3775,9 @@ already_AddRefed<nsIEventTarget> ContentChild::GetSpecificMessageEventTarget(
       
       
       ManagedEndpoint<PBrowserChild> endpoint;
-      ManagedEndpoint<PWindowGlobalChild> windowGlobalEndpoint;
       TabId tabId, sameTabGroupAs;
       PickleIterator iter(aMsg);
       if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &endpoint))) {
-        return nullptr;
-      }
-      aMsg.IgnoreSentinel(&iter);
-      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &windowGlobalEndpoint))) {
         return nullptr;
       }
       aMsg.IgnoreSentinel(&iter);

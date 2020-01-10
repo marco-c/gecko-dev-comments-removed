@@ -9848,12 +9848,8 @@ bool nsContentUtils::IsLocalRefURL(const nsString& aString) {
   return !aString.IsEmpty() && aString[0] == '#';
 }
 
-
-
-
-static constexpr uint64_t kIdTotalBits = 53;
-static constexpr uint64_t kIdProcessBits = 22;
-static constexpr uint64_t kIdBits = kIdTotalBits - kIdProcessBits;
+static const uint64_t kIdProcessBits = 32;
+static const uint64_t kIdBits = 64 - kIdProcessBits;
 
  uint64_t GenerateProcessSpecificId(uint64_t aId) {
   uint64_t processId = 0;
@@ -9892,14 +9888,6 @@ static uint64_t gNextBrowsingContextId = 0;
 
 uint64_t nsContentUtils::GenerateBrowsingContextId() {
   return GenerateProcessSpecificId(++gNextBrowsingContextId);
-}
-
-
-static uint64_t gNextWindowId = 0;
-
-
-uint64_t nsContentUtils::GenerateWindowId() {
-  return GenerateProcessSpecificId(++gNextWindowId);
 }
 
 
