@@ -7485,7 +7485,9 @@ bool BytecodeEmitter::emitCallOrNew(
         
         
         
-        if (!bytecodeSection().atSeparator(calleeNode->pn_pos.begin)) {
+        
+        if (argsList->empty() ||
+            !bytecodeSection().atSeparator(calleeNode->pn_pos.begin)) {
           
           coordNode = calleeNode;
         }
