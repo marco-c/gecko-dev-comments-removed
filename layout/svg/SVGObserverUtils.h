@@ -103,7 +103,7 @@ class SVGRenderingObserver : public nsStubMutationObserver {
  public:
   typedef mozilla::dom::Element Element;
 
-  SVGRenderingObserver() : mInObserverList(false) {}
+  SVGRenderingObserver() : mInObserverSet(false) {}
 
   
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -163,7 +163,7 @@ class SVGRenderingObserver : public nsStubMutationObserver {
 #endif
 
   
-  bool mInObserverList;
+  bool mInObserverSet;
 };
 
 class SVGObserverUtils {
