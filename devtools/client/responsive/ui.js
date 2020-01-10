@@ -254,7 +254,7 @@ class ResponsiveUI {
     this.browserContainerEl.classList.add("responsive-mode");
 
     
-    this.browserContainerEl.prepend(rdmFrame);
+    this.browserStackEl.prepend(rdmFrame);
 
     
     message.wait(rdmFrame.contentWindow, "script-init").then(async () => {
@@ -465,6 +465,9 @@ class ResponsiveUI {
         break;
       case "screenshot":
         this.onScreenshot();
+        break;
+      case "update-device-modal":
+        this.onUpdateDeviceModal(event);
     }
   }
 
@@ -581,6 +584,13 @@ class ResponsiveUI {
 
       message.post(this.rdmFrame.contentWindow, "screenshot-captured");
     }
+  }
+
+  onUpdateDeviceModal(event) {
+    this.browserStackEl.classList.toggle(
+      "device-modal-opened",
+      event.data.isOpen
+    );
   }
 
   
