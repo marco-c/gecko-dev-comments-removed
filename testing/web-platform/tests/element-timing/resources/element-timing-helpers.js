@@ -22,7 +22,8 @@ function checkElement(entry, expectedUrl, expectedIdentifier, expectedID, before
   assert_equals(entry.name, 'image-paint');
   const rt_entries = performance.getEntriesByName(expectedUrl, 'resource');
   assert_equals(rt_entries.length, 1);
-  assert_equals(rt_entries[0].responseEnd, entry.responseEnd);
+  assert_greater_than_equal(entry.loadTime, rt_entries[0].responseEnd,
+    'Image loadTime is after the resource responseEnd');
 }
 
 function checkElementWithoutResourceTiming(entry, expectedUrl, expectedIdentifier,
@@ -31,7 +32,7 @@ function checkElementWithoutResourceTiming(entry, expectedUrl, expectedIdentifie
       expectedElement);
   assert_equals(entry.name, 'image-paint');
   
-  assert_equals(entry.responseEnd, 0);
+  assert_greater_than(entry.loadTime, 0);
 }
 
 
@@ -57,5 +58,5 @@ function checkTextElement(entry, expectedIdentifier, expectedID, beforeRender,
   checkElementInternal(entry, '', expectedIdentifier, expectedID, beforeRender,
       expectedElement);
   assert_equals(entry.name, 'text-paint');
-  assert_equals(entry.responseEnd, 0);
+  assert_equals(entry.loadTime, 0);
 }
