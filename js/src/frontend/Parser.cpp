@@ -1736,7 +1736,6 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   PropagateTransitiveParseFlags(funbox, lazy);
 
   fun->initLazyScript(lazy);
-  funbox->setIsInterpretedLazy(true);
   return true;
 }
 
@@ -7011,7 +7010,7 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     }
 
     
-    if (ctorbox->isInterpretedLazy()) {
+    if (ctorbox->function()->isInterpretedLazy()) {
       ctorbox->function()->lazyScript()->setToStringEnd(classEndOffset);
 
       if (numFields > 0) {
