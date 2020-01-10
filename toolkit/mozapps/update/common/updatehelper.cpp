@@ -12,6 +12,7 @@
 #  include "mozilla/UniquePtr.h"
 #  include "pathhash.h"
 #  include "shlobj.h"
+#  include "registrycertificates.h"
 #  include "uachelper.h"
 #  include "updatehelper.h"
 #  include "updateutils_win.h"
@@ -119,6 +120,14 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   
   
   if (!CopyFileW(newMaintServicePath, tmpService, FALSE)) {
+    return FALSE;
+  }
+
+  
+  
+  
+  if (!DoesBinaryMatchAllowedCertificates(installDir, tmpService)) {
+    DeleteFileW(tmpService);
     return FALSE;
   }
 

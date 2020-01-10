@@ -246,15 +246,6 @@ BOOL FixServicePath(SC_HANDLE service, LPCWSTR currentServicePath,
 
 
 BOOL SvcInstall(SvcInstallAction action) {
-  mozilla::UniquePtr<wchar_t[]> updateDir;
-  HRESULT permResult = GetCommonUpdateDirectory(
-      nullptr, SetPermissionsOf::FilesAndDirsWithBadPerms, updateDir);
-  if (FAILED(permResult)) {
-    LOG_WARN(
-        ("Unable to set the permissions on the update directory ('%S'): %d",
-         updateDir.get(), permResult));
-  }
-
   
   nsAutoServiceHandle schSCManager(
       OpenSCManager(nullptr, nullptr, SC_MANAGER_ALL_ACCESS));
