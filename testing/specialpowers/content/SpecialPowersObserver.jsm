@@ -9,8 +9,6 @@
 
 
 
-
-
 var EXPORTED_SYMBOLS = ["SpecialPowersObserver"];
 
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -48,8 +46,7 @@ const FRAME_SCRIPTS = [
 ];
 
 
-
-Services.scriptloader.loadSubScript("resource://specialpowers/SpecialPowersObserverAPI.js");
+const {SpecialPowersObserverAPI} = ChromeUtils.import("resource://specialpowers/SpecialPowersObserverAPI.jsm");
 
 class SpecialPowersObserver extends SpecialPowersObserverAPI {
   constructor() {
