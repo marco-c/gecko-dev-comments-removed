@@ -8,7 +8,9 @@
 
 
 
-requestLongerTimeout(2);
+
+
+requestLongerTimeout(4);
 
 const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 
@@ -899,5 +901,37 @@ add_task(async function test_legacy_discopane_history_navigation() {
     is_in_discovery(aManager, MAIN_URL, true, false);
 
     await close_manager(aManager);
+  });
+});
+
+add_task(async function test_initialSelectedView_on_aboutaddons_reload() {
+  await runTestOnPrefEnvs([
+    ["Test on HTML about:addons", {
+      set: [
+        ["extensions.htmlaboutaddons.enabled", true],
+        ["extensions.htmlaboutaddons.discover.enabled", true],
+        ["extensions.getAddons.discovery.api_url", DISCOAPI_URL],
+      ],
+    }],
+    ["Test on XUL about:addons", {
+      set: [
+        ["extensions.htmlaboutaddons.enabled", false],
+        ["extensions.htmlaboutaddons.discover.enabled", false],
+      ],
+    }],
+  ], async () => {
+    let managerWindow = await open_manager("addons://list/extension");
+    ok(managerWindow.gViewController.initialViewSelected,
+       "initialViewSelected is true as expected on first about:addons load");
+
+    managerWindow.location.reload();
+    await wait_for_manager_load(managerWindow);
+    await wait_for_view_load(managerWindow);
+
+    ok(managerWindow.gViewController.initialViewSelected,
+       "initialViewSelected is true as expected on first about:addons load");
+    is(managerWindow.gPendingInitializations, 0, "No pending initializations");
+
+    await close_manager(managerWindow);
   });
 });
