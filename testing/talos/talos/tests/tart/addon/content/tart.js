@@ -445,17 +445,6 @@ Tart.prototype = {
       }
     }
 
-    function getReferenceCustomizationDuration() {
-      
-      try {
-        let deck = document.getElementById("content-deck");
-        let cstyle = window.getComputedStyle(deck);
-        return 1000 * parseFloat(cstyle.transitionDuration, 10);
-      } catch (e) {
-        return 150; 
-      }
-    }
-
     this.unpinTart();
     var tabRefDuration = getMaxTabTransitionTimeMs(this._tartTab);
     if (tabRefDuration < 20 || tabRefDuration > 2000) {
@@ -463,7 +452,7 @@ Tart.prototype = {
       tabRefDuration = 250;
     }
 
-    var custRefDuration = getReferenceCustomizationDuration();
+    var custRefDuration = 0;
 
     var subtests = {
       init: [ 
