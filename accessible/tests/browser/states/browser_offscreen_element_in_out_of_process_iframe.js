@@ -61,7 +61,8 @@ add_task(async function() {
     await spawnTestStates(
       iframe,
       "target",
-      nsIAccessibleStates.STATE_OFFSCREEN
+      nsIAccessibleStates.STATE_OFFSCREEN,
+      nsIAccessibleStates.STATE_INVISIBLE
     );
 
     
@@ -70,19 +71,26 @@ add_task(async function() {
     await spawnTestStates(
       iframe,
       "target",
-      nsIAccessibleStates.STATE_OFFSCREEN
+      nsIAccessibleStates.STATE_OFFSCREEN,
+      nsIAccessibleStates.STATE_INVISIBLE
     );
 
     
     await scrollTo(0, 713);
-    await spawnTestStates(iframe, "target", 0);
+    await spawnTestStates(
+      iframe,
+      "target",
+      0,
+      nsIAccessibleStates.STATE_OFFSCREEN
+    );
 
     
     await scrollTo(0, 0);
     await spawnTestStates(
       iframe,
       "target",
-      nsIAccessibleStates.STATE_OFFSCREEN
+      nsIAccessibleStates.STATE_OFFSCREEN,
+      nsIAccessibleStates.STATE_INVISIBLE
     );
   } finally {
     await BrowserTestUtils.closeWindow(win);
