@@ -135,6 +135,12 @@ class AntiTrackingCommon final {
                                                bool aIsPrivateBrowsing,
                                                bool& aIsAllowListed);
 
+  
+  
+  
+  static void ComputeContentBlockingAllowListPrincipal(
+      nsIPrincipal* aDocumentPrincipal, nsIPrincipal** aPrincipal);
+
   enum class BlockingDecision {
     eBlock,
     eAllow,

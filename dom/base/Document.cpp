@@ -3505,6 +3505,9 @@ void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
   mNodeInfoManager->SetDocumentPrincipal(aNewPrincipal);
   mIntrinsicStoragePrincipal = aNewStoragePrincipal;
 
+  AntiTrackingCommon::ComputeContentBlockingAllowListPrincipal(
+      aNewPrincipal, getter_AddRefs(mContentBlockingAllowListPrincipal));
+
 #ifdef DEBUG
   
   

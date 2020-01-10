@@ -570,6 +570,10 @@ class Document : public nsINode,
     return mIntrinsicStoragePrincipal;
   }
 
+  nsIPrincipal* GetContentBlockingAllowListPrincipal() const {
+    return mContentBlockingAllowListPrincipal;
+  }
+
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
   EventListenerManager* GetOrCreateListenerManager() override;
@@ -5288,6 +5292,9 @@ class Document : public nsINode,
 
   
   nsCOMPtr<nsIPrincipal> mIntrinsicStoragePrincipal;
+
+  
+  nsCOMPtr<nsIPrincipal> mContentBlockingAllowListPrincipal;
 
   
   int32_t mNextFormNumber;
