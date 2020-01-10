@@ -341,7 +341,10 @@ class FirefoxDataProvider {
 
 
   getLongString(stringGrip) {
-    return this.webConsoleClient.getString(stringGrip);
+    return this.webConsoleClient.getString(stringGrip).then(payload => {
+      this.emit(EVENTS.LONGSTRING_RESOLVED, { payload });
+      return payload;
+    });
   }
 
   

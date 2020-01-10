@@ -138,6 +138,9 @@ const EVENTS = {
 
   
   THROTTLING_CHANGED: "NetMonitor:ThrottlingChanged",
+
+  
+  LONGSTRING_RESOLVED: "NetMonitor:LongStringResolved",
 };
 
 const UPDATE_PROPS = [

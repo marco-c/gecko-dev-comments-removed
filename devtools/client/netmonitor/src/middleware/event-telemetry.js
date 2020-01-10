@@ -13,6 +13,7 @@ const {
   SELECT_DETAILS_PANEL_TAB,
   SEND_CUSTOM_REQUEST,
   ENABLE_PERSISTENT_LOGS,
+  WS_SELECT_FRAME,
 } = require("../constants");
 
 const {
@@ -89,6 +90,14 @@ function eventTelemetryMiddleware(connector, telemetry) {
       persistenceChange({
         telemetry,
         state,
+        sessionId,
+      });
+    }
+
+    
+    if (action.type == WS_SELECT_FRAME) {
+      selectWSFrame({
+        telemetry,
         sessionId,
       });
     }
@@ -187,6 +196,16 @@ function persistenceChange({ telemetry, state, sessionId }) {
       session_id: sessionId,
     }
   );
+}
+
+
+
+
+
+function selectWSFrame({ telemetry, sessionId }) {
+  telemetry.recordEvent("select_ws_frame", "netmonitor", null, {
+    session_id: sessionId,
+  });
 }
 
 module.exports = eventTelemetryMiddleware;
