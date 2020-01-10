@@ -764,9 +764,13 @@ inline void JSFunction::trace(JSTracer* trc) {
     
     
     if (hasScript() && !hasUncompletedScript()) {
-      TraceManuallyBarrieredEdge(trc, &u.scripted.s.script_, "script");
+      JSScript* script = static_cast<JSScript*>(u.scripted.s.script_);
+      TraceManuallyBarrieredEdge(trc, &script, "script");
+      u.scripted.s.script_ = script;
     } else if (hasLazyScript()) {
-      TraceManuallyBarrieredEdge(trc, &u.scripted.s.lazy_, "lazyScript");
+      LazyScript* lazy = static_cast<LazyScript*>(u.scripted.s.script_);
+      TraceManuallyBarrieredEdge(trc, &lazy, "lazy");
+      u.scripted.s.script_ = lazy;
     }
     
 
@@ -1678,7 +1682,7 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   
   
   
-  if (!hasScript() || !u.scripted.s.script_) {
+  if (!hasScript() || hasUncompletedScript()) {
     return;
   }
 
@@ -1708,7 +1712,8 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   }
 
   
-  if (!u.scripted.s.script_->isRelazifiable()) {
+  JSScript* script = nonLazyScript();
+  if (!script->isRelazifiable()) {
     return;
   }
 
@@ -1719,8 +1724,6 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
     return;
   }
 
-  JSScript* script = nonLazyScript();
-
   flags_.clearInterpreted();
   flags_.setInterpretedLazy();
 
@@ -1729,8 +1732,8 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
 
   LazyScript* lazy = script->maybeLazyScript();
   if (lazy) {
-    u.scripted.s.lazy_ = lazy;
-    MOZ_ASSERT(!isSelfHostedBuiltin());
+    u.scripted.s.script_ = lazy;
+    MOZ_ASSERT(hasLazyScript());
   } else {
     
     
