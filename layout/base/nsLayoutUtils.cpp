@@ -690,19 +690,14 @@ static nsIFrame* GetScrollFrameFromContent(nsIContent* aContent) {
   return frame;
 }
 
-nsIScrollableFrame* nsLayoutUtils::FindScrollableFrameFor(
-    nsIContent* aContent) {
-  nsIFrame* scrollFrame = GetScrollFrameFromContent(aContent);
-  return scrollFrame ? scrollFrame->GetScrollTargetFrame() : nullptr;
-}
-
 nsIScrollableFrame* nsLayoutUtils::FindScrollableFrameFor(ViewID aId) {
   nsIContent* content = FindContentFor(aId);
   if (!content) {
     return nullptr;
   }
 
-  return FindScrollableFrameFor(content);
+  nsIFrame* scrollFrame = GetScrollFrameFromContent(content);
+  return scrollFrame ? scrollFrame->GetScrollTargetFrame() : nullptr;
 }
 
 ViewID nsLayoutUtils::FindIDForScrollableFrame(
@@ -776,7 +771,7 @@ float nsLayoutUtils::GetCurrentAPZResolutionScale(PresShell* aPresShell) {
 
 static nscoord GetMaxDisplayPortSize(nsIContent* aContent,
                                      nsPresContext* aFallbackPrescontext) {
-  MOZ_ASSERT(!StaticPrefs::LayersTilesEnabled(),
+  MOZ_ASSERT(!StaticPrefs::layers_enable_tiles(),
              "Do not clamp displayports if tiling is enabled");
 
   
@@ -913,7 +908,7 @@ static nsRect GetDisplayPortFromMarginsData(
 
   if (presShell->IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);
-  } else if (StaticPrefs::LayersTilesEnabled()) {
+  } else if (StaticPrefs::layers_enable_tiles()) {
     
     
     
@@ -935,7 +930,7 @@ static nsRect GetDisplayPortFromMarginsData(
     alignment.height = 128;
   }
 
-  if (StaticPrefs::LayersTilesEnabled()) {
+  if (StaticPrefs::layers_enable_tiles()) {
     
     screenRect.Inflate(aMarginsData->mMargins);
   } else {
@@ -1147,7 +1142,7 @@ static bool GetDisplayPortImpl(
     result = GetDisplayPortFromMarginsData(aContent, marginsData, aMultiplier);
   }
 
-  if (!StaticPrefs::LayersTilesEnabled()) {
+  if (!StaticPrefs::layers_enable_tiles()) {
     
     
     nscoord maxSize = GetMaxDisplayPortSize(aContent, nullptr);
@@ -1169,8 +1164,10 @@ static bool GetDisplayPortImpl(
 static void TranslateFromScrollPortToScrollFrame(nsIContent* aContent,
                                                  nsRect* aRect) {
   MOZ_ASSERT(aRect);
-  if (nsIScrollableFrame* scrollableFrame =
-          nsLayoutUtils::FindScrollableFrameFor(aContent)) {
+  nsIFrame* frame = GetScrollFrameFromContent(aContent);
+  nsIScrollableFrame* scrollableFrame =
+      frame ? frame->GetScrollTargetFrame() : nullptr;
+  if (scrollableFrame) {
     *aRect += scrollableFrame->GetScrollPortRect().TopLeft();
   }
 }
@@ -1178,8 +1175,8 @@ static void TranslateFromScrollPortToScrollFrame(nsIContent* aContent,
 bool nsLayoutUtils::GetDisplayPort(
     nsIContent* aContent, nsRect* aResult,
     RelativeTo aRelativeTo ) {
-  float multiplier = StaticPrefs::UseLowPrecisionBuffer()
-                         ? 1.0f / StaticPrefs::LowPrecisionResolution()
+  float multiplier = StaticPrefs::layers_low_precision_buffer()
+                         ? 1.0f / StaticPrefs::layers_low_precision_resolution()
                          : 1.0f;
   bool usingDisplayPort = GetDisplayPortImpl(aContent, aResult, multiplier);
   if (aResult && usingDisplayPort && aRelativeTo == RelativeTo::ScrollFrame) {
@@ -1309,7 +1306,9 @@ bool nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
   InvalidateForDisplayPortChange(aContent, hadDisplayPort, oldDisplayPort,
                                  newDisplayPort, aRepaintMode);
 
-  nsIScrollableFrame* scrollableFrame = FindScrollableFrameFor(aContent);
+  nsIFrame* frame = GetScrollFrameFromContent(aContent);
+  nsIScrollableFrame* scrollableFrame =
+      frame ? frame->GetScrollTargetFrame() : nullptr;
   if (!scrollableFrame) {
     return true;
   }
@@ -1369,7 +1368,7 @@ void nsLayoutUtils::SetDisplayPortBaseIfNotSet(nsIContent* aContent,
 
 bool nsLayoutUtils::GetCriticalDisplayPort(nsIContent* aContent,
                                            nsRect* aResult) {
-  if (StaticPrefs::UseLowPrecisionBuffer()) {
+  if (StaticPrefs::layers_low_precision_buffer()) {
     return GetDisplayPortImpl(aContent, aResult, 1.0f);
   }
   return false;
@@ -1381,7 +1380,7 @@ bool nsLayoutUtils::HasCriticalDisplayPort(nsIContent* aContent) {
 
 bool nsLayoutUtils::GetHighResolutionDisplayPort(nsIContent* aContent,
                                                  nsRect* aResult) {
-  if (StaticPrefs::UseLowPrecisionBuffer()) {
+  if (StaticPrefs::layers_low_precision_buffer()) {
     return GetCriticalDisplayPort(aContent, aResult);
   }
   return GetDisplayPort(aContent, aResult);
@@ -4039,7 +4038,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     builder->IncrementPresShellPaintCount(presShell);
   }
 
-  if (StaticPrefs::LayersDrawFPS()) {
+  if (StaticPrefs::layers_acceleration_draw_fps()) {
     RefPtr<LayerManager> lm = builder->GetWidgetLayerManager();
     PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(lm);
 
@@ -4120,7 +4119,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   gfxUtils::sDumpPaintFile = savedDumpFile;
 #endif
 
-  if (StaticPrefs::DumpClientLayers()) {
+  if (StaticPrefs::layers_dump_client_layers()) {
     std::stringstream ss;
     FrameLayerBuilder::DumpRetainedLayerTree(layerManager, ss, false);
     print_stderr(ss);
@@ -7911,11 +7910,11 @@ static void AddFontsFromTextRun(gfxTextRun* aTextRun, nsTextFrame* aFrame,
       end = std::min(end, contentLimit);
 
       if (end > start) {
-        RefPtr<nsRange> range =
-            nsRange::Create(content, start, content, end, IgnoreErrors());
-        NS_WARNING_ASSERTION(range,
-                             "nsRange::Create() failed to create valid range");
-        if (range) {
+        RefPtr<nsRange> range;
+        if (NS_FAILED(nsRange::CreateRange(content, start, content, end,
+                                           getter_AddRefs(range)))) {
+          NS_WARNING("failed to create range");
+        } else {
           fontFace->AddRange(range);
         }
       }
@@ -8999,7 +8998,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
     
     if (IsAPZTestLoggingEnabled()) {
       LogTestDataForPaint(aLayerManager, scrollId, "displayport",
-                          StaticPrefs::UseLowPrecisionBuffer()
+                          StaticPrefs::layers_low_precision_buffer()
                               ? metrics.GetCriticalDisplayPort()
                               : metrics.GetDisplayPort());
     }

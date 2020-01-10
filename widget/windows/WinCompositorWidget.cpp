@@ -37,9 +37,9 @@ WinCompositorWidget::WinCompositorWidget(
 
   
   
-  mNotDeferEndRemoteDrawing = StaticPrefs::LayersCompositionFrameRate() == 0 ||
-                              gfxPlatform::IsInLayoutAsapMode() ||
-                              gfxPlatform::ForceSoftwareVsync();
+  mNotDeferEndRemoteDrawing =
+      StaticPrefs::layers_offmainthreadcomposition_frame_rate() == 0 ||
+      gfxPlatform::IsInLayoutAsapMode() || gfxPlatform::ForceSoftwareVsync();
 }
 
 WinCompositorWidget::~WinCompositorWidget() { DestroyCompositorWindow(); }

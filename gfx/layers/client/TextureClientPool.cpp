@@ -141,7 +141,7 @@ void TextureClientPool::AllocateTextureClient() {
   }
 
   RefPtr<TextureClient> newClient;
-  if (StaticPrefs::ForceShmemTiles()) {
+  if (StaticPrefs::layers_force_shmem_tiles()) {
     
     newClient = TextureClient::CreateForRawBufferAccess(
         mSurfaceAllocator, mFormat, mSize, gfx::BackendType::NONE, mBackend,

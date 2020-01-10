@@ -2100,7 +2100,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
 
   EnsureFrameVisPrefsCached();
 
-  if (IsAlwaysActive() && StaticPrefs::LayersTilesEnabled() &&
+  if (IsAlwaysActive() && StaticPrefs::layers_enable_tiles() &&
       !nsLayoutUtils::UsesAsyncScrolling(mOuter) && mOuter->GetContent()) {
     
     
@@ -7161,15 +7161,8 @@ bool ScrollFrameHelper::SmoothScrollVisual(
 }
 
 bool ScrollFrameHelper::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
-  if (aBehavior == dom::ScrollBehavior::Smooth) {
-    return true;
-  }
-
-  nsIFrame* styleFrame = GetFrameForStyle();
-  if (!styleFrame) {
-    return false;
-  }
-  return (aBehavior == dom::ScrollBehavior::Auto &&
-          styleFrame->StyleDisplay()->mScrollBehavior ==
+  return aBehavior == dom::ScrollBehavior::Smooth ||
+         (aBehavior == dom::ScrollBehavior::Auto &&
+          GetFrameForStyle()->StyleDisplay()->mScrollBehavior ==
               NS_STYLE_SCROLL_BEHAVIOR_SMOOTH);
 }

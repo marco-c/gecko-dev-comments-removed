@@ -85,7 +85,7 @@ bool MLGDevice::Initialize() {
 
   
   
-  if (!StaticPrefs::AdvancedLayersEnableBufferSharing()) {
+  if (!StaticPrefs::layers_mlgpu_enable_buffer_sharing()) {
     gfxConfig::EnableFallback(Fallback::NO_CONSTANT_BUFFER_OFFSETTING,
                               "Disabled by pref");
     mCanUseConstantBufferOffsetBinding = false;
@@ -99,7 +99,7 @@ bool MLGDevice::Initialize() {
   
   
   
-  if (!StaticPrefs::AdvancedLayersEnableClearView()) {
+  if (!StaticPrefs::layers_mlgpu_enable_clear_view()) {
     mCanUseClearView = false;
   }
 
@@ -127,7 +127,7 @@ bool MLGDevice::Initialize() {
                 "Failed to allocate a shared shader buffer");
   }
 
-  if (StaticPrefs::AdvancedLayersEnableBufferCache()) {
+  if (StaticPrefs::layers_mlgpu_enable_buffer_cache()) {
     mConstantBufferCache = MakeUnique<BufferCache>(this);
   }
 

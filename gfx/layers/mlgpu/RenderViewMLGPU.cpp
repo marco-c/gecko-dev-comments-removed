@@ -74,7 +74,7 @@ RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder,
       mCurrentMaskRectBufferIndex(kInvalidResourceIndex),
       mCurrentDepthMode(MLGDepthTestMode::Disabled),
       mNextSortIndex(1),
-      mUseDepthBuffer(StaticPrefs::AdvancedLayersEnableDepthBuffer()),
+      mUseDepthBuffer(StaticPrefs::layers_mlgpu_enable_depth_buffer()),
       mDepthBufferNeedsClear(false) {
   if (aParent) {
     aParent->AddChild(this);
@@ -188,7 +188,7 @@ bool RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem) {
   
   
   if (mUseDepthBuffer || !aItem.translation ||
-      !StaticPrefs::AdvancedLayersEnableCPUOcclusion()) {
+      !StaticPrefs::layers_mlgpu_enable_cpu_occlusion()) {
     
     
     

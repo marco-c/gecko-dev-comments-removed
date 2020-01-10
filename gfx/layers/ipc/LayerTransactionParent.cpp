@@ -475,9 +475,10 @@ mozilla::ipc::IPCResult LayerTransactionParent::RecvUpdate(
 #endif
 
   
-  bool drawFps = StaticPrefs::LayersDrawFPS();
+  bool drawFps = StaticPrefs::layers_acceleration_draw_fps();
   if (drawFps) {
-    uint32_t visualWarningTrigger = StaticPrefs::LayerTransactionWarning();
+    uint32_t visualWarningTrigger =
+        StaticPrefs::layers_transaction_warning_ms();
     
     
     TimeDuration latency = TimeStamp::Now() - aInfo.transactionStart();

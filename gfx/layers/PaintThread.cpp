@@ -48,7 +48,7 @@ void PaintThread::AddRef() {}
 
 int32_t PaintThread::CalculatePaintWorkerCount() {
   int32_t cpuCores = PR_GetNumberOfProcessors();
-  int32_t workerCount = StaticPrefs::LayersOMTPPaintWorkers();
+  int32_t workerCount = StaticPrefs::layers_omtp_paint_workers();
 
   
   
@@ -162,7 +162,7 @@ void PaintThread::QueuePaintTask(UniquePtr<PaintTask>&& aTask) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aTask);
 
-  if (StaticPrefs::LayersOMTPDumpCapture() && aTask->mCapture) {
+  if (StaticPrefs::layers_omtp_dump_capture() && aTask->mCapture) {
     aTask->mCapture->Dump();
   }
 
@@ -207,7 +207,7 @@ void PaintThread::AsyncPaintTask(CompositorBridgeChild* aBridge,
     target->Flush();
   }
 
-  if (StaticPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
+  if (StaticPrefs::layers_omtp_release_capture_on_main_thread()) {
     
     
     

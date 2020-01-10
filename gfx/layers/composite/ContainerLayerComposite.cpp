@@ -432,7 +432,7 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
       continue;
     }
 
-    if (StaticPrefs::LayersDrawFPS()) {
+    if (StaticPrefs::layers_acceleration_draw_fps()) {
       for (const auto& metadata : layer->GetAllScrollMetadata()) {
         if (metadata.IsApzForceDisabled()) {
           aManager->DisabledApzWarning();
@@ -473,11 +473,11 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
       layerToRender->RenderLayer(clipRect, geometry);
     }
 
-    if (StaticPrefs::UniformityInfo()) {
+    if (StaticPrefs::layers_uniformity_info()) {
       PrintUniformityInfo(layer);
     }
 
-    if (StaticPrefs::DrawLayerInfo()) {
+    if (StaticPrefs::layers_draw_layer_info()) {
       DrawLayerInfo(preparedData.mClipRect, aManager, layer);
     }
 
@@ -650,7 +650,7 @@ void ContainerRender(ContainerT* aContainer, LayerManagerComposite* aManager,
   
   
   
-  if (StaticPrefs::LayersDrawFPS() &&
+  if (StaticPrefs::layers_acceleration_draw_fps() &&
       aContainer->IsScrollableWithoutContent()) {
     RefPtr<APZSampler> sampler =
         aManager->GetCompositor()->GetCompositorBridgeParent()->GetAPZSampler();

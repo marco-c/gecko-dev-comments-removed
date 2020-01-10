@@ -78,9 +78,10 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(
 
   
   
-  mAsapScheduling = StaticPrefs::LayersCompositionFrameRate() == 0 ||
-                    gfxPlatform::IsInLayoutAsapMode() ||
-                    recordreplay::IsRecordingOrReplaying();
+  mAsapScheduling =
+      StaticPrefs::layers_offmainthreadcomposition_frame_rate() == 0 ||
+      gfxPlatform::IsInLayoutAsapMode() ||
+      recordreplay::IsRecordingOrReplaying();
 }
 
 CompositorVsyncScheduler::~CompositorVsyncScheduler() {
