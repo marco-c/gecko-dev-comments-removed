@@ -254,15 +254,18 @@ add_task(async function test_popup_url() {
   );
 
   
-  let span = document.createXULElement("span");
-  span.style.color = "GrayText";
-  document.documentElement.appendChild(span);
-  let GRAY_TEXT = window.getComputedStyle(span).color;
-  span.remove();
+  
+  if (AppConstants.platform != "macosx") {
+    let span = document.createXULElement("span");
+    span.style.color = "GrayText";
+    document.documentElement.appendChild(span);
+    let GRAY_TEXT = window.getComputedStyle(span).color;
+    span.remove();
 
-  Assert.equal(
-    window.getComputedStyle(urlResult.element.separator, ":before").color,
-    GRAY_TEXT,
-    `Urlbar popup separator color should be set to ${GRAY_TEXT}`
-  );
+    Assert.equal(
+      window.getComputedStyle(urlResult.element.separator, ":before").color,
+      GRAY_TEXT,
+      `Urlbar popup separator color should be set to ${GRAY_TEXT}`
+    );
+  }
 });
