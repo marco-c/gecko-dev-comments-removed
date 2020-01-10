@@ -6,7 +6,7 @@ import os
 import pytest
 import sys
 
-from urlparse import parse_qs, urlsplit
+from six.moves.urllib.parse import parse_qs, urlsplit
 
 
 here = os.path.abspath(os.path.dirname(__file__))
