@@ -1931,6 +1931,21 @@ impl PrimitiveStore {
         for cluster in &mut prim_list.clusters {
             
             if !cluster.flags.contains(ClusterFlags::IS_VISIBLE) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                for prim_instance in &mut cluster.prim_instances {
+                    prim_instance.reset();
+                }
                 continue;
             }
 
