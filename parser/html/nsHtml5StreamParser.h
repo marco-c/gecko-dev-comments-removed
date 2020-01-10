@@ -296,6 +296,12 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
 
 
+  void FinalizeSniffingWithDetector(mozilla::Span<const uint8_t> aFromSegment,
+                                    uint32_t aCountToSniffingLimit, bool aEof);
+
+  
+
+
 
 
 

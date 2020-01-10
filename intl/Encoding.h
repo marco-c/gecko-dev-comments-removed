@@ -255,6 +255,14 @@ class Encoding final {
   
 
 
+  inline bool IsJapaneseLegacy() const {
+    return this == SHIFT_JIS_ENCODING || this == EUC_JP_ENCODING ||
+           this == ISO_2022_JP_ENCODING;
+  }
+
+  
+
+
 
   inline NotNull<const mozilla::Encoding*> OutputEncoding() const {
     return WrapNotNull(encoding_output_encoding(this));
