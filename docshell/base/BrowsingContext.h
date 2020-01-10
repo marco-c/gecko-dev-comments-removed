@@ -13,6 +13,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/LocationBase.h"
+#include "mozilla/dom/UserActivation.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h"
@@ -281,6 +282,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   
   
+  bool HasBeenUserGestureActivated();
+
+  
+  
   
   bool HasValidTransientUserGestureActivation();
 
@@ -503,8 +508,7 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
     return true;
   }
 
-  
-  void DidSetIsActivatedByUserGesture();
+  void DidSetUserActivationState();
 
   
   
