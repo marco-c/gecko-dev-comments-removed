@@ -4380,8 +4380,7 @@ void nsWindow::HideWaylandWindow() {
     
     
     
-    mCompositorInitiallyPaused = true;
-    GPUProcessManager::Get()->ResetCompositors();
+    DestroyLayerManager();
   }
 #endif
   gtk_widget_hide(mShell);
