@@ -75,11 +75,13 @@ def get_logger():
 
     if sys.version_info.major == 3:
         
-        from arsenic import connection
-        from structlog import wrap_logger
-
-        logger = wrap_logger(NullLogger(), processors=[])
-        connection.log = logger
+        try:
+            from arsenic import connection
+            from structlog import wrap_logger
+            logger = wrap_logger(NullLogger(), processors=[])
+            connection.log = logger
+        except ImportError:
+            logger = NullLogger()
     else:
         
         logger = NullLogger()
