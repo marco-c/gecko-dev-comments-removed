@@ -30,7 +30,24 @@ struct MutexId {
 
 
 
-class Mutex : public mozilla::detail::MutexImpl {
+class MutexImpl : public mozilla::detail::MutexImpl {
+ protected:
+  MutexImpl()
+      : mozilla::detail::MutexImpl(
+            mozilla::recordreplay::Behavior::DontPreserve) {}
+
+  friend class Mutex;
+};
+
+
+
+
+
+
+class Mutex {
+ private:
+  MutexImpl impl_;
+
  public:
 #ifdef DEBUG
   static bool Init();
@@ -41,10 +58,8 @@ class Mutex : public mozilla::detail::MutexImpl {
 #endif
 
   explicit Mutex(const MutexId& id)
-      : mozilla::detail::MutexImpl(
-            mozilla::recordreplay::Behavior::DontPreserve)
 #ifdef DEBUG
-        , id_(id)
+      : id_(id)
 #endif
   {
     MOZ_ASSERT(id_.order != 0);
@@ -54,8 +69,8 @@ class Mutex : public mozilla::detail::MutexImpl {
   void lock();
   void unlock();
 #else
-  using MutexImpl::lock;
-  using MutexImpl::unlock;
+  void lock() { impl_.lock(); }
+  void unlock() { impl_.unlock(); }
 #endif
 
 #ifdef DEBUG
@@ -69,6 +84,15 @@ class Mutex : public mozilla::detail::MutexImpl {
   static MOZ_THREAD_LOCAL(MutexVector*) HeldMutexStack;
   static MutexVector& heldMutexStack();
 #endif
+
+ private:
+#ifdef DEBUG
+  void preLockChecks() const;
+  void postLockChecks();
+  void preUnlockChecks();
+#endif
+
+  friend class ConditionVariable;
 };
 
 }  

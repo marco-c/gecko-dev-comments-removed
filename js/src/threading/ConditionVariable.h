@@ -46,7 +46,17 @@ class ConditionVariable {
 
   
   
-  void wait(UniqueLock<Mutex>& lock) { impl_.wait(lock.lock); }
+  void wait(Mutex& lock) {
+#ifdef DEBUG
+    lock.preUnlockChecks();
+#endif
+    impl_.wait(lock.impl_);
+#ifdef DEBUG
+    lock.preLockChecks();
+    lock.postLockChecks();
+#endif
+  }
+  void wait(UniqueLock<Mutex>& lock) { wait(lock.lock); }
 
   
   
@@ -90,9 +100,18 @@ class ConditionVariable {
   
   CVStatus wait_for(UniqueLock<Mutex>& lock,
                     const mozilla::TimeDuration& rel_time) {
-    return impl_.wait_for(lock.lock, rel_time) == mozilla::CVStatus::Timeout
-               ? CVStatus::Timeout
-               : CVStatus::NoTimeout;
+#ifdef DEBUG
+    lock.lock.preUnlockChecks();
+#endif
+    CVStatus res =
+        impl_.wait_for(lock.lock.impl_, rel_time) == mozilla::CVStatus::Timeout
+            ? CVStatus::Timeout
+            : CVStatus::NoTimeout;
+#ifdef DEBUG
+    lock.lock.preLockChecks();
+    lock.lock.postLockChecks();
+#endif
+    return res;
   }
 
   
