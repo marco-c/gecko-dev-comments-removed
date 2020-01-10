@@ -570,18 +570,18 @@ this.LoginManagerParent = {
       formActionOrigin,
     });
 
+    let { browsingContext } = browser;
+    let framePrincipalOrigin =
+      browsingContext.currentWindowGlobal.documentPrincipal.origin;
+    let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
+      framePrincipalOrigin
+    );
+
     
     
     
     if (!usernameField && oldPasswordField && logins.length > 0) {
       let prompter = this._getPrompter(browser, openerTopWindowID);
-
-      let { browsingContext } = browser;
-      let framePrincipalOrigin =
-        browsingContext.currentWindowGlobal.documentPrincipal.origin;
-      let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
-        framePrincipalOrigin
-      );
 
       if (logins.length == 1) {
         let oldLogin = logins[0];
@@ -595,10 +595,25 @@ this.LoginManagerParent = {
           return;
         }
 
+        let autoSavedStorageGUID = "";
+        if (
+          generatedPW &&
+          generatedPW.storageGUID == oldLogin.guid &&
+          generatedPW.value == formLogin.password
+        ) {
+          
+          autoSavedStorageGUID = generatedPW.storageGUID;
+        }
         formLogin.username = oldLogin.username;
         formLogin.usernameField = oldLogin.usernameField;
 
-        prompter.promptToChangePassword(oldLogin, formLogin, dismissedPrompt);
+        prompter.promptToChangePassword(
+          oldLogin,
+          formLogin,
+          dismissedPrompt,
+          false, 
+          autoSavedStorageGUID
+        );
         return;
       } else if (!generatedPW || generatedPW.value != newPasswordField.value) {
         
@@ -648,6 +663,15 @@ this.LoginManagerParent = {
 
     if (existingLogin) {
       log("Found an existing login matching this form submission");
+      let autoSavedStorageGUID = "";
+      if (
+        generatedPW &&
+        generatedPW.storageGUID == existingLogin.guid &&
+        generatedPW.value == formLogin.password
+      ) {
+        
+        autoSavedStorageGUID = generatedPW.storageGUID;
+      }
 
       
       if (existingLogin.password != formLogin.password) {
@@ -656,7 +680,9 @@ this.LoginManagerParent = {
         prompter.promptToChangePassword(
           existingLogin,
           formLogin,
-          dismissedPrompt
+          dismissedPrompt,
+          false, 
+          autoSavedStorageGUID
         );
       } else if (!existingLogin.username && formLogin.username) {
         log("...empty username update, prompting to change.");
@@ -664,7 +690,9 @@ this.LoginManagerParent = {
         prompter.promptToChangePassword(
           existingLogin,
           formLogin,
-          dismissedPrompt
+          dismissedPrompt,
+          false, 
+          autoSavedStorageGUID
         );
       } else {
         recordLoginUse(existingLogin);
@@ -860,11 +888,24 @@ this.LoginManagerParent = {
     if (loginToChange) {
       
       
+      let autoSavedStorageGUID = "";
+      if (
+        generatedPW.value == loginToChange.password &&
+        generatedPW.storageGUID == loginToChange.guid
+      ) {
+        autoSavedStorageGUID = generatedPW.storageGUID;
+      }
+
+      log(
+        "_onGeneratedPasswordFilledOrEdited: promptToChangePassword with autoSavedStorageGUID: " +
+          autoSavedStorageGUID
+      );
       prompter.promptToChangePassword(
         loginToChange,
         formLogin,
         true, 
-        autoSaveLogin 
+        autoSaveLogin, 
+        autoSavedStorageGUID 
       );
       return;
     }
