@@ -261,63 +261,6 @@ enum class Nullable {
 };
 
 
-
-
-template <int N = HUFFMAN_TABLE_DEFAULT_INLINE_BUFFER_LENGTH>
-class NaiveHuffmanTable {
- public:
-  explicit NaiveHuffmanTable(JSContext* cx) : values_(cx) {}
-  NaiveHuffmanTable(NaiveHuffmanTable&& other) noexcept
-      : values_(std::move(other.values_)) {}
-
-  
-  JS::Result<Ok> initWithSingleValue(JSContext* cx, const BinASTSymbol& value);
-
-  
-  
-  
-  
-  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
-                           uint8_t maxBitLength);
-
-  JS::Result<Ok> initComplete();
-
-  
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength,
-                           const BinASTSymbol& value);
-
-  NaiveHuffmanTable() = delete;
-  NaiveHuffmanTable(NaiveHuffmanTable&) = delete;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  HuffmanLookupResult lookup(HuffmanLookup key) const;
-
-  
-  size_t length() const { return values_.length(); }
-  const HuffmanEntry* begin() const { return values_.begin(); }
-  const HuffmanEntry* end() const { return values_.end(); }
-
- private:
-  
-  
-  
-  
-  
-  Vector<HuffmanEntry, N> values_;
-  friend class HuffmanPreludeReader;
-};
-
-
 class SingleEntryHuffmanTable {
  public:
   explicit SingleEntryHuffmanTable(const BinASTSymbol& value) : value_(value) {}
@@ -961,28 +904,29 @@ struct HuffmanTableIndexedSymbolsSum : GenericHuffmanTable {
       : GenericHuffmanTable(cx) {}
 };
 
-struct HuffmanTableIndexedSymbolsBool : NaiveHuffmanTable<2> {
+struct HuffmanTableIndexedSymbolsBool : GenericHuffmanTable {
   explicit HuffmanTableIndexedSymbolsBool(JSContext* cx)
-      : NaiveHuffmanTable(cx) {}
+      : GenericHuffmanTable(cx) {}
 };
 
 
 
-struct HuffmanTableIndexedSymbolsMaybeInterface : NaiveHuffmanTable<2> {
+struct HuffmanTableIndexedSymbolsMaybeInterface : GenericHuffmanTable {
   explicit HuffmanTableIndexedSymbolsMaybeInterface(JSContext* cx)
-      : NaiveHuffmanTable(cx) {}
+      : GenericHuffmanTable(cx) {}
 
   
   bool isAlwaysNull() const {
-    MOZ_ASSERT(length() > 0);
+    MOZ_ASSERT(length() == 1 || length() == 2);
 
     
     
-    if (length() != 1) {
+    if (length() == 2) {
       return false;
     }
+
     
-    return begin()->value().toKind() == BinASTKind::_Null;
+    return begin()->toKind() == BinASTKind::_Null;
   }
 };
 
