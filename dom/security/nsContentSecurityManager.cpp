@@ -909,6 +909,15 @@ NS_IMETHODIMP
 nsContentSecurityManager::AsyncOnChannelRedirect(
     nsIChannel* aOldChannel, nsIChannel* aNewChannel, uint32_t aRedirFlags,
     nsIAsyncVerifyRedirectCallback* aCb) {
+  
+  
+  
+  
+  if (aRedirFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+    aCb->OnRedirectVerifyCallback(NS_OK);
+    return NS_OK;
+  }
+
   nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->LoadInfo();
   nsresult rv = CheckChannel(aNewChannel);
   if (NS_SUCCEEDED(rv)) {
