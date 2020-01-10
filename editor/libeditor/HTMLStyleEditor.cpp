@@ -488,25 +488,28 @@ nsresult HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
   bool useCSS = (IsCSSEnabled() && CSSEditUtils::IsCSSEditableProperty(
                                        &aNode, &aProperty, aAttribute)) ||
                 
-                aAttribute == nsGkAtoms::bgcolor;
+                aAttribute == nsGkAtoms::bgcolor ||
+                
+                
+                aValue.EqualsLiteral("-moz-editor-invert-value");
 
   if (useCSS) {
-    RefPtr<dom::Element> tmp;
+    RefPtr<Element> spanElement;
     
     
     if (aNode.IsHTMLElement(nsGkAtoms::span) &&
         !aNode.AsElement()->GetAttrCount()) {
-      tmp = aNode.AsElement();
+      spanElement = aNode.AsElement();
     } else {
-      tmp = InsertContainerWithTransaction(aNode, *nsGkAtoms::span);
-      if (NS_WARN_IF(!tmp)) {
+      spanElement = InsertContainerWithTransaction(aNode, *nsGkAtoms::span);
+      if (NS_WARN_IF(!spanElement)) {
         return NS_ERROR_FAILURE;
       }
     }
 
     
-    mCSSEditUtils->SetCSSEquivalentToHTMLStyle(tmp, &aProperty, aAttribute,
-                                               &aValue, false);
+    mCSSEditUtils->SetCSSEquivalentToHTMLStyle(spanElement, &aProperty,
+                                               aAttribute, &aValue, false);
     return NS_OK;
   }
 
@@ -636,7 +639,18 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     return SplitNodeResult(NS_ERROR_INVALID_ARG);
   }
 
-  bool useCSS = IsCSSEnabled();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool useCSS = aProperty != nsGkAtoms::tt || IsCSSEnabled();
 
   
   SplitNodeResult result(aPointToSplit);
@@ -1571,10 +1585,6 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
           startOfRange.IsInTextNode()) {
         
         
-        
-        if (!IsCSSEnabled()) {
-          continue;
-        }
         if (!CSSEditUtils::IsCSSEditableProperty(startOfRange.GetContainer(),
                                                  aProperty, aAttribute)) {
           continue;
@@ -1593,11 +1603,10 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
         if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
           continue;
         }
-        NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
         SetInlinePropertyOnTextNode(
             MOZ_KnownLive(*startOfRange.GetContainerAsText()),
             startOfRange.Offset(), endOfRange.Offset(), *aProperty, aAttribute,
-            value);
+            NS_LITERAL_STRING("-moz-editor-invert-value"));
         if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
@@ -1629,10 +1638,6 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
         }
         
         
-        
-        if (!IsCSSEnabled()) {
-          continue;
-        }
         if (!CSSEditUtils::IsCSSEditableProperty(content, aProperty,
                                                  aAttribute)) {
           continue;
@@ -1650,8 +1655,14 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
         if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
           continue;
         }
-        NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
-        SetInlinePropertyOnNode(content, *aProperty, aAttribute, value);
+        nsresult rv = SetInlinePropertyOnNode(
+            content, *aProperty, aAttribute,
+            NS_LITERAL_STRING("-moz-editor-invert-value"));
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        NS_WARNING_ASSERTION(NS_FAILED(rv),
+                             "SetInlinePropertyOnNode() failed, but ignored");
       }
     }
   }
