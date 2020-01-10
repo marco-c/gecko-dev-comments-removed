@@ -278,6 +278,21 @@ bool nsDisplayRemote::CreateWebRenderCommands(
     return true;
   }
 
+  if (RefPtr<RemoteBrowser> remoteBrowser =
+          GetFrameLoader()->GetRemoteBrowser()) {
+    
+    aDisplayListBuilder->AddEffectUpdate(remoteBrowser,
+                                         EffectsInfo::FullyVisible());
+
+    
+    
+    RefPtr<WebRenderRemoteData> userData =
+        aManager->CommandBuilder()
+            .CreateOrRecycleWebRenderUserData<WebRenderRemoteData>(
+                this, aBuilder.GetRenderRoot(), nullptr);
+    userData->SetRemoteBrowser(remoteBrowser);
+  }
+
   mOffset = GetContentRectLayerOffset(mFrame, aDisplayListBuilder);
 
   LayoutDeviceRect rect = LayoutDeviceRect::FromAppUnits(
