@@ -64,19 +64,6 @@ struct IsAtomic<std::atomic<T>> : TrueType {};
 
 namespace StaticPrefs {
 
-
-#undef Always
-
-
-enum class MirrorKind {
-  
-  Once,
-
-  
-  
-  Always
-};
-
 void MaybeInitOncePrefs();
 
 }  

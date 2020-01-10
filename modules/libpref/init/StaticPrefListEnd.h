@@ -11,8 +11,9 @@
 
 
 
-#undef PREF
-#undef VARCACHE_PREF
+#undef NEVER_PREF
+#undef ALWAYS_PREF
+#undef ONCE_PREF
 
 }  
 }  
