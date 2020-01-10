@@ -23,6 +23,9 @@ pref("dom.ipc.processHangMonitor", true);
 pref("dom.ipc.processPrelaunch.enabled", false);
 
 
+pref("dom.ipc.reportProcessHangs", true);
+
+
 pref("toolkit.telemetry.isGeckoViewMode", true);
 
 pref("toolkit.telemetry.eventping.enabled", false);
