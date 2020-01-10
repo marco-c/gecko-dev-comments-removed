@@ -511,8 +511,11 @@ class HuffmanPreludeReader {
   struct Boolean : EntryBase {
     
     using Type = bool;
+
     Boolean(const NormalizedInterfaceAndField identity) : EntryBase(identity) {}
-    size_t maxMumberOfSymbols() {
+
+    
+    size_t maxMumberOfSymbols() const {
       
       return 2;
     }
@@ -544,9 +547,16 @@ class HuffmanPreludeReader {
   
   struct MaybeInterface : EntryBase {
     
+    using Type = Nullable;
+
+    
     const BinASTKind kind;
+
     MaybeInterface(const NormalizedInterfaceAndField identity, BinASTKind kind)
         : EntryBase(identity), kind(kind) {}
+
+    
+    size_t maxMumberOfSymbols() const { return 2; }
 
     
     
@@ -805,7 +815,11 @@ class HuffmanPreludeReader {
       case TableHeader::SingleValue: {
         
         table = {mozilla::VariantType<Table>{}, cx_};
-        return readSingleValueTable<Table, Entry>(table.as<Table>(), entry);
+        auto& tableRef = table.as<Table>();
+
+        
+        MOZ_TRY((readSingleValueTable<Table, Entry>(tableRef, entry)));
+        return Ok();
       }
       case TableHeader::MultipleValues: {
         
@@ -814,8 +828,12 @@ class HuffmanPreludeReader {
         if (numberOfSymbols > entry.maxMumberOfSymbols()) {
           return raiseInvalidTableData(entry.identity);
         }
-        return readMultipleValuesTable<Table, Entry>(table.as<Table>(), entry,
-                                                     numberOfSymbols);
+        
+        table = {mozilla::VariantType<Table>{}, cx_};
+        auto& tableRef = table.as<Table>();
+        MOZ_TRY((readMultipleValuesTable<Table, Entry>(tableRef, entry,
+                                                       numberOfSymbols)));
+        return Ok();
       }
       case TableHeader::Unreachable:
         
@@ -823,6 +841,15 @@ class HuffmanPreludeReader {
       default:
         return raiseInvalidTableData(entry.identity);
     }
+  }
+
+  
+  
+  
+  template <>
+  MOZ_MUST_USE JS::Result<bool> readSymbol<Boolean>() {
+    BINJS_MOZ_TRY_DECL(symbol, reader.readByte());
+    return symbol != 0;
   }
 
   
@@ -846,9 +873,27 @@ class HuffmanPreludeReader {
   
   
   template <>
-  MOZ_MUST_USE JS::Result<bool> readSymbol<Boolean>() {
+  MOZ_MUST_USE JS::Result<Nullable> readSymbol<MaybeInterface>() {
     BINJS_MOZ_TRY_DECL(symbol, reader.readByte());
-    return symbol != 0;
+    return symbol == 0 ? Nullable::Null : Nullable::NonNull;
+  }
+
+  
+  
+  
+  template <>
+  MOZ_MUST_USE JS::Result<Ok> readSingleValueTable<
+      HuffmanTableIndexedSymbolsMaybeInterface, MaybeInterface>(
+      HuffmanTableIndexedSymbolsMaybeInterface& table, MaybeInterface entry) {
+    uint8_t indexByte;
+    MOZ_TRY_VAR(indexByte, reader.readByte());
+    if (indexByte >= 2) {
+      return raiseInvalidTableData(entry.identity);
+    }
+
+    MOZ_TRY(table.impl.initWithSingleValue(
+        cx_, indexByte == 0 ? Nullable::Null : Nullable::NonNull));
+    return Ok();
   }
 
  private:
@@ -885,11 +930,26 @@ class HuffmanPreludeReader {
       return Ok();
     }
 
+    
+    
     MOZ_MUST_USE JS::Result<Ok> operator()(const MaybeInterface& entry) {
       
+      MOZ_TRY((owner.readTable<HuffmanTableIndexedSymbolsMaybeInterface,
+                               MaybeInterface>(entry)));
+
       
       
-      MOZ_CRASH("Unimplemented");
+      
+      
+      const auto& table = owner.dictionary.tableForField(entry.identity);
+      if (table.is<HuffmanTableUnreachable>()) {
+        return Ok();
+      }
+      const auto& tableRef =
+          table.as<HuffmanTableIndexedSymbolsMaybeInterface>();
+      if (!tableRef.isAlwaysNull()) {
+        owner.pushFields(entry.kind);
+      }
       return Ok();
     }
 
