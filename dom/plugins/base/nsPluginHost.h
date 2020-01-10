@@ -234,9 +234,8 @@ class nsPluginHost final : public nsIPluginHost,
   void CreateWidget(nsPluginInstanceOwner* aOwner);
 
   nsresult EnumerateSiteData(const nsACString& domain,
-                             const InfallibleTArray<nsCString>& sites,
-                             InfallibleTArray<nsCString>& result,
-                             bool firstMatchOnly);
+                             const nsTArray<nsCString>& sites,
+                             nsTArray<nsCString>& result, bool firstMatchOnly);
 
   nsresult SendPluginsToContent();
   nsresult SetPluginsInContent(
@@ -257,8 +256,7 @@ class nsPluginHost final : public nsIPluginHost,
                                   nsPluginInstanceOwner* aOwner);
 
   
-  nsPluginTag* FindPreferredPlugin(
-      const InfallibleTArray<nsPluginTag*>& matches);
+  nsPluginTag* FindPreferredPlugin(const nsTArray<nsPluginTag*>& matches);
 
   
   

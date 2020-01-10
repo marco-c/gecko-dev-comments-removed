@@ -1105,7 +1105,7 @@ nsPluginHost::GetPluginTags(nsTArray<RefPtr<nsIPluginTag>>& aResults) {
 }
 
 nsPluginTag* nsPluginHost::FindPreferredPlugin(
-    const InfallibleTArray<nsPluginTag*>& matches) {
+    const nsTArray<nsPluginTag*>& matches) {
   
   
   
@@ -1179,7 +1179,7 @@ nsPluginTag* nsPluginHost::FindNativePluginForType(const nsACString& aMimeType,
 
   LoadPlugins();
 
-  InfallibleTArray<nsPluginTag*> matchingPlugins;
+  nsTArray<nsPluginTag*> matchingPlugins;
 
   nsPluginTag* plugin = mPlugins;
   while (plugin) {
@@ -1202,7 +1202,7 @@ nsPluginTag* nsPluginHost::FindNativePluginForExtension(
 
   LoadPlugins();
 
-  InfallibleTArray<nsPluginTag*> matchingPlugins;
+  nsTArray<nsPluginTag*> matchingPlugins;
   nsCString matchingMime;  
   nsPluginTag* plugin = mPlugins;
 
@@ -1380,9 +1380,10 @@ nsresult nsPluginHost::NormalizeHostname(nsCString& host) {
 
 
 
-nsresult nsPluginHost::EnumerateSiteData(
-    const nsACString& domain, const InfallibleTArray<nsCString>& sites,
-    InfallibleTArray<nsCString>& result, bool firstMatchOnly) {
+nsresult nsPluginHost::EnumerateSiteData(const nsACString& domain,
+                                         const nsTArray<nsCString>& sites,
+                                         nsTArray<nsCString>& result,
+                                         bool firstMatchOnly) {
   NS_ASSERTION(!domain.IsVoid(), "null domain string");
 
   nsresult rv;
@@ -1605,7 +1606,7 @@ class ClearDataFromSitesClosure : public nsIClearSiteDataCallback,
 
   
   
-  NS_IMETHOD SitesWithData(InfallibleTArray<nsCString>& sites) override {
+  NS_IMETHOD SitesWithData(nsTArray<nsCString>& sites) override {
     
     nsresult rv = host->EnumerateSiteData(domain, sites, matches, false);
     Callback(rv);
@@ -1614,7 +1615,7 @@ class ClearDataFromSitesClosure : public nsIClearSiteDataCallback,
 
   nsCString domain;
   nsCOMPtr<nsIClearSiteDataCallback> callback;
-  InfallibleTArray<nsCString> matches;
+  nsTArray<nsCString> matches;
   nsIPluginTag* tag;
   uint64_t flags;
   int64_t maxAge;
@@ -1701,13 +1702,13 @@ class GetSitesClosure : public nsIGetSitesWithDataCallback {
         keepWaiting(true),
         retVal(NS_ERROR_NOT_INITIALIZED) {}
 
-  NS_IMETHOD SitesWithData(InfallibleTArray<nsCString>& sites) override {
+  NS_IMETHOD SitesWithData(nsTArray<nsCString>& sites) override {
     retVal = HandleGetSites(sites);
     keepWaiting = false;
     return NS_OK;
   }
 
-  nsresult HandleGetSites(InfallibleTArray<nsCString>& sites) {
+  nsresult HandleGetSites(nsTArray<nsCString>& sites) {
     
     if (sites.IsEmpty()) {
       result = false;
@@ -1722,7 +1723,7 @@ class GetSitesClosure : public nsIGetSitesWithDataCallback {
     }
 
     
-    InfallibleTArray<nsCString> matches;
+    nsTArray<nsCString> matches;
     nsresult rv = host->EnumerateSiteData(domain, sites, matches, true);
     NS_ENSURE_SUCCESS(rv, rv);
 
