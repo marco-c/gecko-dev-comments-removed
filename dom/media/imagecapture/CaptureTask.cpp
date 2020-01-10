@@ -48,7 +48,7 @@ nsresult CaptureTask::TaskComplete(already_AddRefed<dom::Blob> aBlob,
   
   
   if (blob) {
-    blob = dom::Blob::Create(mImageCapture->GetParentObject(), blob->Impl());
+    blob = dom::Blob::Create(mImageCapture->GetOwnerGlobal(), blob->Impl());
   }
 
   if (mPrincipalChanged) {

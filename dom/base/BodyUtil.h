@@ -36,7 +36,7 @@ class BodyUtil final {
 
 
 
-  static already_AddRefed<Blob> ConsumeBlob(nsISupports* aParent,
+  static already_AddRefed<Blob> ConsumeBlob(nsIGlobalObject* aParent,
                                             const nsString& aMimeType,
                                             uint32_t aInputLength,
                                             uint8_t* aInput, ErrorResult& aRv);

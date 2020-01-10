@@ -13,13 +13,13 @@
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "nsISupports.h"
 #include "nsTArray.h"
 
 #ifdef DEBUG
 #  include "nsIThread.h"
 #endif
 
+class nsIGlobalObject;
 class nsIInputStream;
 
 namespace mozilla {
@@ -162,7 +162,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
              JS::Handle<JS::Value> aTransfer,
              JS::CloneDataPolicy cloneDataPolicy, ErrorResult& aRv);
 
-  void Read(nsISupports* aParent, JSContext* aCx,
+  void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
 
   
@@ -193,7 +193,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   
   
-  nsISupports* ParentDuringRead() const { return mParent; }
+  nsIGlobalObject* GlobalDuringRead() const { return mGlobal; }
 
   
   
@@ -270,11 +270,11 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   
-  void ReadFromBuffer(nsISupports* aParent, JSContext* aCx,
+  void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
                       JSStructuredCloneData& aBuffer,
                       JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
 
-  void ReadFromBuffer(nsISupports* aParent, JSContext* aCx,
+  void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
                       JSStructuredCloneData& aBuffer,
                       uint32_t aAlgorithmVersion,
                       JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
@@ -304,7 +304,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   nsTArray<RefPtr<gfx::DataSourceSurface>> mClonedSurfaces;
 
   
-  nsISupports* MOZ_NON_OWNING_REF mParent;
+  nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
 
   
   

@@ -25,9 +25,9 @@ class File final : public Blob {
  public:
   
   
-  static File* Create(nsISupports* aParent, BlobImpl* aImpl);
+  static File* Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl);
 
-  static already_AddRefed<File> Create(nsISupports* aParent,
+  static already_AddRefed<File> Create(nsIGlobalObject* aGlobal,
                                        const nsAString& aName,
                                        const nsAString& aContentType,
                                        uint64_t aLength,
@@ -36,7 +36,7 @@ class File final : public Blob {
   
   
   
-  static already_AddRefed<File> CreateMemoryFile(nsISupports* aParent,
+  static already_AddRefed<File> CreateMemoryFile(nsIGlobalObject* aGlobal,
                                                  void* aMemoryBuffer,
                                                  uint64_t aLength,
                                                  const nsAString& aName,
@@ -49,10 +49,10 @@ class File final : public Blob {
   
   
   
-  static already_AddRefed<File> CreateFromFile(nsISupports* aParent,
+  static already_AddRefed<File> CreateFromFile(nsIGlobalObject* aGlobal,
                                                nsIFile* aFile);
 
-  static already_AddRefed<File> CreateFromFile(nsISupports* aParent,
+  static already_AddRefed<File> CreateFromFile(nsIGlobalObject* aGlobal,
                                                nsIFile* aFile,
                                                const nsAString& aName,
                                                const nsAString& aContentType);
@@ -98,7 +98,7 @@ class File final : public Blob {
  private:
   
   
-  File(nsISupports* aParent, BlobImpl* aImpl);
+  File(nsIGlobalObject* aGlobal, BlobImpl* aImpl);
   ~File();
 };
 

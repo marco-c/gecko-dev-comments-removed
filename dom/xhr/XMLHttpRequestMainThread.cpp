@@ -1701,7 +1701,7 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest* request,
       rv = NS_GetBlobForBlobURI(blobURI, getter_AddRefs(blobImpl));
       if (NS_SUCCEEDED(rv)) {
         if (blobImpl) {
-          mResponseBlob = Blob::Create(GetOwner(), blobImpl);
+          mResponseBlob = Blob::Create(GetOwnerGlobal(), blobImpl);
         }
         if (!mResponseBlob) {
           rv = NS_ERROR_FILE_NOT_FOUND;
@@ -2143,7 +2143,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
     
     
     MaybeCreateBlobStorage();
-    mBlobStorage->GetBlobWhenReady(GetOwner(), contentType, this);
+    mBlobStorage->GetBlobWhenReady(GetOwnerGlobal(), contentType, this);
     waitingForBlobCreation = true;
 
     NS_ASSERTION(mResponseBody.IsEmpty(), "mResponseBody should be empty");

@@ -18,6 +18,7 @@
 #include "nsWrapperCache.h"
 #include "nsWeakReference.h"
 
+class nsIGlobalObject;
 class nsIInputStream;
 
 namespace mozilla {
@@ -48,19 +49,19 @@ class Blob : public nsIMutable,
   typedef OwningArrayBufferViewOrArrayBufferOrBlobOrUSVString BlobPart;
 
   
-  static Blob* Create(nsISupports* aParent, BlobImpl* aImpl);
+  static Blob* Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl);
 
-  static already_AddRefed<Blob> CreateEmptyBlob(nsISupports* aParent,
+  static already_AddRefed<Blob> CreateEmptyBlob(nsIGlobalObject* aGlobal,
                                                 const nsAString& aContentType);
 
-  static already_AddRefed<Blob> CreateStringBlob(nsISupports* aParent,
+  static already_AddRefed<Blob> CreateStringBlob(nsIGlobalObject* aGlobal,
                                                  const nsACString& aData,
                                                  const nsAString& aContentType);
 
   
   
   
-  static already_AddRefed<Blob> CreateMemoryBlob(nsISupports* aParent,
+  static already_AddRefed<Blob> CreateMemoryBlob(nsIGlobalObject* aGlobal,
                                                  void* aMemoryBuffer,
                                                  uint64_t aLength,
                                                  const nsAString& aContentType);
@@ -97,7 +98,7 @@ class Blob : public nsIMutable,
   static void MakeValidBlobType(nsAString& aType);
 
   
-  nsISupports* GetParentObject() const { return mParent; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   bool IsMemoryFile() const;
 
@@ -132,7 +133,7 @@ class Blob : public nsIMutable,
 
  protected:
   
-  Blob(nsISupports* aParent, BlobImpl* aImpl);
+  Blob(nsIGlobalObject* aGlobal, BlobImpl* aImpl);
   virtual ~Blob();
 
   virtual bool HasFileInterface() const { return false; }
@@ -147,7 +148,7 @@ class Blob : public nsIMutable,
   RefPtr<BlobImpl> mImpl;
 
  private:
-  nsCOMPtr<nsISupports> mParent;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Blob, NS_DOM_BLOB_IID)

@@ -27,7 +27,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Directory)
     tmp->mFileSystem->Unlink();
     tmp->mFileSystem = nullptr;
   }
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -35,7 +35,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Directory)
   if (tmp->mFileSystem) {
     tmp->mFileSystem->Traverse(cb);
   }
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mParent)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(Directory)
@@ -57,23 +57,29 @@ already_AddRefed<Directory> Directory::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  return Create(aGlobal.GetAsSupports(), path);
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  if (NS_WARN_IF(!global)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  return Create(global, path);
 }
 
 
-already_AddRefed<Directory> Directory::Create(nsISupports* aParent,
+already_AddRefed<Directory> Directory::Create(nsIGlobalObject* aGlobal,
                                               nsIFile* aFile,
                                               FileSystemBase* aFileSystem) {
-  MOZ_ASSERT(aParent);
+  MOZ_ASSERT(aGlobal);
   MOZ_ASSERT(aFile);
 
-  RefPtr<Directory> directory = new Directory(aParent, aFile, aFileSystem);
+  RefPtr<Directory> directory = new Directory(aGlobal, aFile, aFileSystem);
   return directory.forget();
 }
 
-Directory::Directory(nsISupports* aParent, nsIFile* aFile,
+Directory::Directory(nsIGlobalObject* aGlobal, nsIFile* aFile,
                      FileSystemBase* aFileSystem)
-    : mParent(aParent), mFile(aFile) {
+    : mGlobal(aGlobal), mFile(aFile) {
   MOZ_ASSERT(aFile);
 
   
@@ -88,7 +94,7 @@ Directory::Directory(nsISupports* aParent, nsIFile* aFile,
 
 Directory::~Directory() {}
 
-nsISupports* Directory::GetParentObject() const { return mParent; }
+nsIGlobalObject* Directory::GetParentObject() const { return mGlobal; }
 
 JSObject* Directory::WrapObject(JSContext* aCx,
                                 JS::Handle<JSObject*> aGivenProto) {
@@ -183,7 +189,7 @@ FileSystemBase* Directory::GetFileSystem(ErrorResult& aRv) {
     }
 
     RefPtr<OSFileSystem> fs = new OSFileSystem(path);
-    fs->Init(mParent);
+    fs->Init(mGlobal);
 
     mFileSystem = fs;
   }
