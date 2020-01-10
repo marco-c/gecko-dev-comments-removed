@@ -136,6 +136,16 @@ const AbuseReporter = {
     const truncateString = text =>
       typeof text == "string" ? text.slice(0, MAX_STRING_LENGTH) : text;
 
+    
+    
+    
+    const normalizeValue = text =>
+      typeof text == "string"
+        ? text.toLowerCase().replace(/[- :]/g, "_")
+        : null;
+
+    const installInfo = addon.installTelemetryInfo || {};
+
     const data = {
       addon: addon.id,
       addon_version: addon.version,
@@ -144,46 +154,9 @@ const AbuseReporter = {
       addon_install_origin:
         addon.sourceURI && truncateString(addon.sourceURI.spec),
       install_date: addon.installDate && addon.installDate.toISOString(),
+      addon_install_source: normalizeValue(installInfo.source),
+      addon_install_method: normalizeValue(installInfo.method),
     };
-
-    
-    
-    
-    let install_method = "other";
-    if (addon.installTelemetryInfo) {
-      const { source, method } = addon.installTelemetryInfo;
-      switch (source) {
-        case "enterprise-policy":
-        case "file-url":
-        case "system-addon":
-        case "temporary-addon":
-          install_method = source.replace(/-/g, "_");
-          break;
-        case "distribution":
-        case "sync":
-          install_method = source;
-          break;
-        default:
-          install_method = "other";
-      }
-
-      switch (method) {
-        case "sideload":
-        case "link":
-          install_method = method;
-          break;
-        case "amWebAPI":
-        case "installTrigger":
-          install_method = method.toLowerCase();
-          break;
-        case "drag-and-drop":
-        case "install-from-file":
-        case "management-webext-api":
-          install_method = method.replace(/-/g, "_");
-          break;
-      }
-    }
-    data.addon_install_method = install_method;
 
     switch (addon.signedState) {
       case AddonManager.SIGNEDSTATE_BROKEN:
