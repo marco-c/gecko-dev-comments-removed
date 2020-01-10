@@ -770,6 +770,7 @@ var gIdentityHandler = {
         "identity.extension.label",
         [extensionName]
       );
+      icon_labels_dir = "";
     } else if (this._uriHasHost && this._isSecureConnection) {
       
       this._identityBox.className = "verifiedDomain";
