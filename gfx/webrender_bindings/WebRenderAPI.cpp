@@ -96,7 +96,8 @@ class NewRenderer : public RendererEvent {
             &WebRenderMallocEnclosingSizeOf, (uint32_t)wr::RenderRoot::Default,
             compositor->ShouldUseNativeCompositor() ? compositor.get()
                                                     : nullptr,
-            mDocHandle, &wrRenderer, mMaxTextureSize)) {
+            compositor->GetMaxPartialPresentRects(), mDocHandle, &wrRenderer,
+            mMaxTextureSize)) {
       
       return;
     }

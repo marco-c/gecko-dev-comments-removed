@@ -37,7 +37,7 @@ class RenderCompositor {
   virtual ~RenderCompositor();
 
   virtual bool BeginFrame() = 0;
-  virtual void EndFrame() = 0;
+  virtual void EndFrame(const FfiVec<DeviceIntRect>& aDirtyRects) = 0;
   
   
   virtual bool WaitForGPU() { return true; }
@@ -77,6 +77,10 @@ class RenderCompositor {
   virtual void DestroySurface(NativeSurfaceId aId) {}
   virtual void AddSurface(wr::NativeSurfaceId aId, wr::DeviceIntPoint aPosition,
                           wr::DeviceIntRect aClipRect) {}
+
+  
+  virtual bool RequestFullRender() { return false; }
+  virtual uint32_t GetMaxPartialPresentRects() { return 0; }
 
   
   virtual bool SurfaceIsYFlipped() { return false; }
