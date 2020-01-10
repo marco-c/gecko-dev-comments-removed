@@ -31,6 +31,30 @@ namespace fontlist {
 
 
 
+struct AliasData {
+  nsTArray<Pointer> mFaces;
+  uint32_t mIndex = 0;
+  bool mHidden = false;
+  bool mBundled = false;
+  bool mBadUnderline = false;
+  bool mForceClassic = false;
+
+  void InitFromFamily(const Family* aFamily) {
+    mIndex = aFamily->Index();
+    mHidden = aFamily->IsHidden();
+    mBundled = aFamily->IsBundled();
+    mBadUnderline = aFamily->IsBadUnderlineFamily();
+    mForceClassic = aFamily->IsForceClassic();
+  }
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -93,8 +117,7 @@ class FontList {
 
 
 
-  void SetAliases(
-      nsClassHashtable<nsCStringHashKey, nsTArray<Pointer>>& aAliasTable);
+  void SetAliases(nsClassHashtable<nsCStringHashKey, AliasData>& aAliasTable);
 
   
 
