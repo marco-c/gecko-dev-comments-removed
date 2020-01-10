@@ -5,6 +5,19 @@
 
 
 
+AddonTestUtils.init(this);
+
+
+
+
+
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "1",
+  "42"
+);
+
 const { getTrimmedString } = ChromeUtils.import(
   "resource://gre/modules/ExtensionTelemetry.jsm"
 );
@@ -24,14 +37,6 @@ const { TelemetryTestUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
 });
-
-AddonTestUtils.init(this);
-AddonTestUtils.createAppInfo(
-  "xpcshell@tests.mozilla.org",
-  "XPCShell",
-  "1",
-  "42"
-);
 
 const { promiseShutdownManager, promiseStartupManager } = AddonTestUtils;
 
