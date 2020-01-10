@@ -1401,8 +1401,9 @@ nsresult nsTextEditorState::PrepareEditor(const nsAString* aValue) {
 
   
   if (shouldInitializeEditor) {
-    
-    newTextEditor->SetWrapColumn(GetWrapCols());
+    const int32_t wrapCols = GetWrapCols();
+    MOZ_ASSERT(wrapCols >= 0);
+    newTextEditor->SetWrapColumn(wrapCols);
   }
 
   
