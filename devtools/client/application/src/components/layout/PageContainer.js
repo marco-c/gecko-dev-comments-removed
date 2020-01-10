@@ -1,0 +1,44 @@
+
+
+
+
+"use strict";
+
+const {
+  createFactory,
+  PureComponent,
+} = require("devtools/client/shared/vendor/react");
+const { connect } = require("devtools/client/shared/vendor/react-redux");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const { PAGE_TYPES } = require("../../constants");
+
+const WorkersPage = createFactory(require("../service-workers/WorkersPage"));
+
+class PageContainer extends PureComponent {
+  static get propTypes() {
+    return {
+      page: PropTypes.oneOf(Object.values(PAGE_TYPES)),
+    };
+  }
+
+  render() {
+    let component = null;
+
+    switch (this.props.page) {
+      case PAGE_TYPES.SERVICE_WORKERS:
+        component = WorkersPage({});
+        break;
+    }
+
+    return component;
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    page: state.ui.selectedPage,
+  };
+}
+
+module.exports = connect(mapStateToProps)(PageContainer);

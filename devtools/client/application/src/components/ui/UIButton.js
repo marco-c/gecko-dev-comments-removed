@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");

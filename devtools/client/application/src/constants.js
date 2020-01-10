@@ -5,10 +5,20 @@
 "use strict";
 
 const actionTypes = {
+  
   UPDATE_DOMAIN: "UPDATE_DOMAIN",
+  
+  UPDATE_SELECTED_PAGE: "UPDATE_SELECTED_PAGE",
+  
   UPDATE_CAN_DEBUG_WORKERS: "UPDATE_CAN_DEBUG_WORKERS",
   UPDATE_WORKERS: "UPDATE_WORKERS",
 };
 
+const PAGE_TYPES = {
+  SERVICE_WORKERS: "service-workers",
+};
 
-module.exports = Object.assign({}, actionTypes);
+const DEFAULT_PAGE = PAGE_TYPES.SERVICE_WORKERS;
+
+
+module.exports = Object.assign({}, { DEFAULT_PAGE, PAGE_TYPES }, actionTypes);
