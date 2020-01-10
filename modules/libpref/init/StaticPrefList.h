@@ -6858,6 +6858,13 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  Live,
+  "privacy.file_unique_origin",
+   privacy_file_unique_origin,
+  bool, true
+)
+
 
 
 #ifdef EARLY_BETA_OR_EARLIER
