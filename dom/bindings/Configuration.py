@@ -82,7 +82,7 @@ class Configuration(DescriptorProvider):
             
             
             if not iface.isExternal():
-                for partialIface in iface.getPartialInterfaces():
+                for partialIface in iface.getPartials():
                     if (partialIface.filename() != iface.filename() and
                         
                         
