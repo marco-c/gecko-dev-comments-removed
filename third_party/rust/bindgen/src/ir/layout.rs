@@ -1,9 +1,9 @@
 
 
 use super::derive::CanDerive;
-use super::ty::{RUST_DERIVE_IN_ARRAY_LIMIT, Type, TypeKind};
-use ir::context::BindgenContext;
+use super::ty::{Type, TypeKind, RUST_DERIVE_IN_ARRAY_LIMIT};
 use clang;
+use ir::context::BindgenContext;
 use std::cmp;
 
 
@@ -107,7 +107,10 @@ impl Opaque {
 
     
     
-    pub fn known_rust_type_for_array(&self,ctx: &BindgenContext) -> Option<&'static str> {
+    pub fn known_rust_type_for_array(
+        &self,
+        ctx: &BindgenContext,
+    ) -> Option<&'static str> {
         Layout::known_type_for_size(ctx, self.0.align)
     }
 
@@ -124,10 +127,14 @@ impl Opaque {
     
     
     
-    pub fn array_size_within_derive_limit(&self, ctx: &BindgenContext) -> CanDerive {
-        if self.array_size(ctx).map_or(false, |size| {
-            size <= RUST_DERIVE_IN_ARRAY_LIMIT
-        }) {
+    pub fn array_size_within_derive_limit(
+        &self,
+        ctx: &BindgenContext,
+    ) -> CanDerive {
+        if self
+            .array_size(ctx)
+            .map_or(false, |size| size <= RUST_DERIVE_IN_ARRAY_LIMIT)
+        {
             CanDerive::Yes
         } else {
             CanDerive::Manually

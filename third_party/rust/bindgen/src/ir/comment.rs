@@ -67,7 +67,8 @@ fn preprocess_multi_line(comment: &str, indent: usize) -> String {
     let indent = make_indent(indent);
     
     let mut is_first = true;
-    let mut lines: Vec<_> = comment.lines()
+    let mut lines: Vec<_> = comment
+        .lines()
         .map(|line| line.trim().trim_start_matches('*').trim_start_matches('!'))
         .skip_while(|line| line.trim().is_empty()) 
         .map(|line| {
@@ -78,7 +79,10 @@ fn preprocess_multi_line(comment: &str, indent: usize) -> String {
         .collect();
 
     
-    if lines.last().map_or(false, |l| l.trim().is_empty() || l.trim() == "///") {
+    if lines
+        .last()
+        .map_or(false, |l| l.trim().is_empty() || l.trim() == "///")
+    {
         lines.pop();
     }
 

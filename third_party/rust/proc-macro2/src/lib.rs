@@ -78,20 +78,19 @@
 
 
 
-
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.27")]
-#![cfg_attr(nightly, feature(proc_macro_span))]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.4")]
+#![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
-extern crate unicode_xid;
 
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
+use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -102,7 +101,7 @@ mod strnom;
 mod fallback;
 
 #[cfg(not(wrap_proc_macro))]
-use fallback as imp;
+use crate::fallback as imp;
 #[path = "wrapper.rs"]
 #[cfg(wrap_proc_macro)]
 mod imp;
@@ -129,7 +128,7 @@ pub struct LexError {
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         TokenStream {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -144,11 +143,6 @@ impl TokenStream {
     
     pub fn new() -> TokenStream {
         TokenStream::_new(imp::TokenStream::new())
-    }
-
-    #[deprecated(since = "0.4.4", note = "please use TokenStream::new")]
-    pub fn empty() -> TokenStream {
-        TokenStream::new()
     }
 
     
@@ -196,6 +190,12 @@ impl From<proc_macro::TokenStream> for TokenStream {
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
         inner.inner.into()
+    }
+}
+
+impl From<TokenTree> for TokenStream {
+    fn from(token: TokenTree) -> Self {
+        TokenStream::_new(imp::TokenStream::from(token))
     }
 }
 
@@ -261,7 +261,7 @@ pub struct SourceFile {
 impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -301,6 +301,7 @@ impl fmt::Debug for SourceFile {
 
 
 #[cfg(span_locations)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct LineColumn {
     
     
@@ -320,7 +321,7 @@ pub struct Span {
 impl Span {
     fn _new(inner: imp::Span) -> Span {
         Span {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -403,10 +404,7 @@ impl Span {
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
-        LineColumn {
-            line: line,
-            column: column,
-        }
+        LineColumn { line, column }
     }
 
     
@@ -415,10 +413,7 @@ impl Span {
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
-        LineColumn {
-            line: line,
-            column: column,
-        }
+        LineColumn { line, column }
     }
 
     
@@ -426,7 +421,10 @@ impl Span {
     
     
     
-    #[cfg(procmacro2_semver_exempt)]
+    
+    
+    
+    
     pub fn join(&self, other: Span) -> Option<Span> {
         self.inner.join(other.inner).map(Span::_new)
     }
@@ -575,7 +573,7 @@ pub enum Delimiter {
 
 impl Group {
     fn _new(inner: imp::Group) -> Self {
-        Group { inner: inner }
+        Group { inner }
     }
 
     fn _new_stable(inner: fallback::Group) -> Self {
@@ -625,7 +623,6 @@ impl Group {
     
     
     
-    #[cfg(procmacro2_semver_exempt)]
     pub fn span_open(&self) -> Span {
         Span::_new(self.inner.span_open())
     }
@@ -636,7 +633,6 @@ impl Group {
     
     
     
-    #[cfg(procmacro2_semver_exempt)]
     pub fn span_close(&self) -> Span {
         Span::_new(self.inner.span_close())
     }
@@ -701,8 +697,8 @@ impl Punct {
     
     pub fn new(op: char, spacing: Spacing) -> Punct {
         Punct {
-            op: op,
-            spacing: spacing,
+            op,
+            spacing,
             span: Span::call_site(),
         }
     }
@@ -823,11 +819,16 @@ pub struct Ident {
 impl Ident {
     fn _new(inner: imp::Ident) -> Ident {
         Ident {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -986,7 +987,7 @@ macro_rules! unsuffixed_int_literals {
 impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -1003,18 +1004,14 @@ impl Literal {
         u16_suffixed => u16,
         u32_suffixed => u32,
         u64_suffixed => u64,
+        u128_suffixed => u128,
         usize_suffixed => usize,
         i8_suffixed => i8,
         i16_suffixed => i16,
         i32_suffixed => i32,
         i64_suffixed => i64,
-        isize_suffixed => isize,
-    }
-
-    #[cfg(u128)]
-    suffixed_int_literals! {
-        u128_suffixed => u128,
         i128_suffixed => i128,
+        isize_suffixed => isize,
     }
 
     unsuffixed_int_literals! {
@@ -1022,25 +1019,47 @@ impl Literal {
         u16_unsuffixed => u16,
         u32_unsuffixed => u32,
         u64_unsuffixed => u64,
+        u128_unsuffixed => u128,
         usize_unsuffixed => usize,
         i8_unsuffixed => i8,
         i16_unsuffixed => i16,
         i32_unsuffixed => i32,
         i64_unsuffixed => i64,
+        i128_unsuffixed => i128,
         isize_unsuffixed => isize,
     }
 
-    #[cfg(u128)]
-    unsuffixed_int_literals! {
-        u128_unsuffixed => u128,
-        i128_unsuffixed => i128,
-    }
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn f64_unsuffixed(f: f64) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f64_unsuffixed(f))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn f64_suffixed(f: f64) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f64_suffixed(f))
@@ -1064,29 +1083,60 @@ impl Literal {
         Literal::_new(imp::Literal::f32_unsuffixed(f))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn f32_suffixed(f: f32) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f32_suffixed(f))
     }
 
+    
     pub fn string(string: &str) -> Literal {
         Literal::_new(imp::Literal::string(string))
     }
 
+    
     pub fn character(ch: char) -> Literal {
         Literal::_new(imp::Literal::character(ch))
     }
 
+    
     pub fn byte_string(s: &[u8]) -> Literal {
         Literal::_new(imp::Literal::byte_string(s))
     }
 
+    
     pub fn span(&self) -> Span {
         Span::_new(self.inner.span())
     }
 
+    
     pub fn set_span(&mut self, span: Span) {
         self.inner.set_span(span.inner);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn subspan<R: RangeBounds<usize>>(&self, range: R) -> Option<Span> {
+        self.inner.subspan(range).map(Span::_new)
     }
 }
 
@@ -1108,14 +1158,14 @@ pub mod token_stream {
     use std::marker;
     use std::rc::Rc;
 
-    use imp;
-    pub use TokenStream;
-    use TokenTree;
+    pub use crate::TokenStream;
+    use crate::{imp, TokenTree};
 
     
     
     
     
+    #[derive(Clone)]
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
         _marker: marker::PhantomData<Rc<()>>,

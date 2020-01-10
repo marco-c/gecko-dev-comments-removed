@@ -92,10 +92,10 @@ pub trait CanDeriveOrd {
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CanDerive {
     
-    No,
+    Yes,
 
     
     
@@ -104,28 +104,12 @@ pub enum CanDerive {
     Manually,
 
     
-    Yes,
+    No,
 }
 
 impl Default for CanDerive {
     fn default() -> CanDerive {
         CanDerive::Yes
-    }
-}
-
-impl cmp::PartialOrd for CanDerive {
-    fn partial_cmp(&self, rhs: &Self) -> Option<cmp::Ordering> {
-        use self::CanDerive::*;
-
-        let ordering = match (*self, *rhs) {
-            (x, y) if x == y => cmp::Ordering::Equal,
-            (No, _) => cmp::Ordering::Greater,
-            (_, No) => cmp::Ordering::Less,
-            (Manually, _) => cmp::Ordering::Greater,
-            (_, Manually) => cmp::Ordering::Less,
-            _ => unreachable!()
-        };
-        Some(ordering)
     }
 }
 

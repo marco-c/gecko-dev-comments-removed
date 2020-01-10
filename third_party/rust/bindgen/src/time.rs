@@ -1,6 +1,5 @@
 use std::io::{self, Write};
-use std::time::{Instant, Duration};
-
+use std::time::{Duration, Instant};
 
 
 #[derive(Debug)]
@@ -10,7 +9,6 @@ pub struct Timer<'a> {
     start: Instant,
 }
 
-
 impl<'a> Timer<'a> {
     
     
@@ -18,7 +16,7 @@ impl<'a> Timer<'a> {
         Timer {
             output: true,
             name,
-            start: Instant::now()
+            start: Instant::now(),
         }
     }
 
@@ -37,18 +35,15 @@ impl<'a> Timer<'a> {
     fn print_elapsed(&mut self) {
         if self.output {
             let elapsed = self.elapsed();
-            let time = (elapsed.as_secs() as f64) * 1e3
-                       + (elapsed.subsec_nanos() as f64) / 1e6;
+            let time = (elapsed.as_secs() as f64) * 1e3 +
+                (elapsed.subsec_nanos() as f64) / 1e6;
             let stderr = io::stderr();
             
-            writeln!(stderr.lock(),
-                     "  time: {:>9.3} ms.\t{}",
-                     time, self.name)
-                     .expect("timer write should not fail");
+            writeln!(stderr.lock(), "  time: {:>9.3} ms.\t{}", time, self.name)
+                .expect("timer write should not fail");
         }
     }
 }
-
 
 impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
