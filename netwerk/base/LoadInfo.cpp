@@ -177,7 +177,7 @@ LoadInfo::LoadInfo(
       nsGlobalWindowInner* innerWindow =
           nsGlobalWindowInner::Cast(contextOuter->GetCurrentInnerWindow());
       if (innerWindow) {
-        mTopLevelPrincipal = innerWindow->GetTopLevelPrincipal();
+        mTopLevelPrincipal = innerWindow->GetTopLevelAntiTrackingPrincipal();
 
         
         
@@ -388,7 +388,7 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   nsGlobalWindowInner* innerWindow =
       nsGlobalWindowInner::Cast(aOuterWindow->GetCurrentInnerWindow());
   if (innerWindow) {
-    mTopLevelPrincipal = innerWindow->GetTopLevelPrincipal();
+    mTopLevelPrincipal = innerWindow->GetTopLevelAntiTrackingPrincipal();
     
     
   }
