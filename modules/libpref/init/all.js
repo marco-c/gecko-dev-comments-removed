@@ -4725,55 +4725,10 @@ pref("dom.vr.external.quit.timeout", 10000);
 
 pref("dom.vr.navigation.timeout", 5000);
 
-
-
-
-
-
-
-
-pref("dom.vr.oculus.present.timeout", 500);
-
-
-
-
-
-
-pref("dom.vr.oculus.invisible.enabled", true);
-
-
-
-pref("dom.vr.controller.enumerate.interval", 1000);
-
-
-
-
-pref("dom.vr.display.enumerate.interval", 5000);
-
-
-
-
-pref("dom.vr.inactive.timeout", 5000);
-
-
-
-pref("dom.vr.poseprediction.enabled", true);
-
-
-
-
-pref("dom.vr.require-gesture", true);
-
-pref("dom.vr.puppet.enabled", false);
-
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
 pref("gfx.vr.osvr.clientLibPath", "");
 pref("gfx.vr.osvr.clientKitLibPath", "");
-
-
-
-pref("dom.vr.display.rafMaxDuration", 50);
 
 
 
@@ -5001,9 +4956,6 @@ pref("dom.presentation.session_transport.data_channel.enable", false);
     pref("intl.allow-insecure-text-input", false);
   #endif
 #endif // XP_MACOSX
-
-
-pref("dom.meta-viewport.enabled", false);
 
 
 pref("browser.search.log", false);
