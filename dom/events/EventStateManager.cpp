@@ -687,7 +687,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       GenerateMouseEnterExit(mouseEvent);
       
       
-      FlushPendingEvents(aPresContext);
+      FlushLayout(aPresContext);
       break;
     }
     case ePointerGotCapture:
@@ -1794,164 +1794,170 @@ bool EventStateManager::IsEventOutsideDragThreshold(
 void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                             WidgetInputEvent* aEvent) {
   NS_ASSERTION(aPresContext, "This shouldn't happen.");
-  if (IsTrackingDragGesture()) {
-    mCurrentTarget = mGestureDownFrameOwner->GetPrimaryFrame();
+  if (!IsTrackingDragGesture()) {
+    return;
+  }
 
-    if (!mCurrentTarget || !mCurrentTarget->GetNearestWidget()) {
+  mCurrentTarget = mGestureDownFrameOwner->GetPrimaryFrame();
+
+  if (!mCurrentTarget || !mCurrentTarget->GetNearestWidget()) {
+    StopTrackingDragGesture(true);
+    return;
+  }
+
+  
+  
+  if (mCurrentTarget) {
+    RefPtr<nsFrameSelection> frameSel = mCurrentTarget->GetFrameSelection();
+    if (frameSel && frameSel->GetDragState()) {
       StopTrackingDragGesture(true);
       return;
     }
+  }
 
+  
+  if (PresShell::IsMouseCapturePreventingDrag()) {
+    StopTrackingDragGesture(true);
+    return;
+  }
+
+  if (!IsEventOutsideDragThreshold(aEvent)) {
+    
+    FlushLayout(aPresContext);
+    return;
+  }
+
+  if (Prefs::ClickHoldContextMenu()) {
     
     
-    if (mCurrentTarget) {
-      RefPtr<nsFrameSelection> frameSel = mCurrentTarget->GetFrameSelection();
-      if (frameSel && frameSel->GetDragState()) {
+    KillClickHoldTimer();
+  }
+
+  nsCOMPtr<nsIDocShell> docshell = aPresContext->GetDocShell();
+  if (!docshell) {
+    return;
+  }
+
+  nsCOMPtr<nsPIDOMWindowOuter> window = docshell->GetWindow();
+  if (!window) return;
+
+  RefPtr<DataTransfer> dataTransfer =
+      new DataTransfer(window, eDragStart, false, -1);
+  auto protectDataTransfer = MakeScopeExit([&] {
+    if (dataTransfer) {
+      dataTransfer->Disconnect();
+    }
+  });
+
+  RefPtr<Selection> selection;
+  RefPtr<RemoteDragStartData> remoteDragStartData;
+  nsCOMPtr<nsIContent> eventContent, targetContent;
+  nsCOMPtr<nsIPrincipal> principal;
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(eventContent));
+  if (eventContent) {
+    
+    
+    
+    
+    if (eventContent->IsText() && eventContent->HasFlag(NS_MAYBE_MASKED)) {
+      
+      
+      
+      
+      
+      TextEditor* textEditor =
+          nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
+              eventContent);
+      if (!textEditor || !textEditor->IsCopyToClipboardAllowed()) {
         StopTrackingDragGesture(true);
         return;
       }
     }
-
-    
-    if (PresShell::IsMouseCapturePreventingDrag()) {
-      StopTrackingDragGesture(true);
-      return;
-    }
-
-    if (IsEventOutsideDragThreshold(aEvent)) {
-      if (Prefs::ClickHoldContextMenu()) {
-        
-        
-        KillClickHoldTimer();
-      }
-
-      nsCOMPtr<nsIDocShell> docshell = aPresContext->GetDocShell();
-      if (!docshell) {
-        return;
-      }
-
-      nsCOMPtr<nsPIDOMWindowOuter> window = docshell->GetWindow();
-      if (!window) return;
-
-      RefPtr<DataTransfer> dataTransfer =
-          new DataTransfer(window, eDragStart, false, -1);
-      auto protectDataTransfer = MakeScopeExit([&] {
-        if (dataTransfer) {
-          dataTransfer->Disconnect();
-        }
-      });
-
-      RefPtr<Selection> selection;
-      RefPtr<RemoteDragStartData> remoteDragStartData;
-      nsCOMPtr<nsIContent> eventContent, targetContent;
-      nsCOMPtr<nsIPrincipal> principal;
-      nsCOMPtr<nsIContentSecurityPolicy> csp;
-      mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(eventContent));
-      if (eventContent) {
-        
-        
-        
-        
-        if (eventContent->IsText() && eventContent->HasFlag(NS_MAYBE_MASKED)) {
-          
-          
-          
-          
-          
-          TextEditor* textEditor =
-              nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
-                  eventContent);
-          if (!textEditor || !textEditor->IsCopyToClipboardAllowed()) {
-            StopTrackingDragGesture(true);
-            return;
-          }
-        }
-        DetermineDragTargetAndDefaultData(
-            window, eventContent, dataTransfer, getter_AddRefs(selection),
-            getter_AddRefs(remoteDragStartData), getter_AddRefs(targetContent),
-            getter_AddRefs(principal), getter_AddRefs(csp));
-      }
-
-      
-      
-      
-      
-      StopTrackingDragGesture(false);
-
-      if (!targetContent) return;
-
-      
-      
-      nsCOMPtr<nsIContent> parentContent =
-          targetContent->FindFirstNonChromeOnlyAccessContent();
-      dataTransfer->SetParentObject(parentContent);
-
-      sLastDragOverFrame = nullptr;
-      nsCOMPtr<nsIWidget> widget = mCurrentTarget->GetNearestWidget();
-
-      
-      WidgetDragEvent startEvent(aEvent->IsTrusted(), eDragStart, widget);
-      FillInEventFromGestureDown(&startEvent);
-
-      startEvent.mDataTransfer = dataTransfer;
-      if (aEvent->AsMouseEvent()) {
-        startEvent.mInputSource = aEvent->AsMouseEvent()->mInputSource;
-      } else if (aEvent->AsTouchEvent()) {
-        startEvent.mInputSource = MouseEvent_Binding::MOZ_SOURCE_TOUCH;
-      } else {
-        MOZ_ASSERT(false);
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-
-      
-      nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
-
-      
-      mCurrentTargetContent = targetContent;
-
-      
-      nsEventStatus status = nsEventStatus_eIgnore;
-      EventDispatcher::Dispatch(targetContent, aPresContext, &startEvent,
-                                nullptr, &status);
-
-      WidgetDragEvent* event = &startEvent;
-
-      nsCOMPtr<nsIObserverService> observerService =
-          mozilla::services::GetObserverService();
-      
-      
-      if (observerService) {
-        observerService->NotifyObservers(dataTransfer,
-                                         "on-datatransfer-available", nullptr);
-      }
-
-      if (status != nsEventStatus_eConsumeNoDefault) {
-        bool dragStarted =
-            DoDefaultDragStart(aPresContext, event, dataTransfer, targetContent,
-                               selection, remoteDragStartData, principal, csp);
-        if (dragStarted) {
-          sActiveESM = nullptr;
-          MaybeFirePointerCancel(aEvent);
-          aEvent->StopPropagation();
-        }
-      }
-
-      
-      mCurrentTargetContent = targetBeforeEvent;
-    }
-
-    
-    
-    FlushPendingEvents(aPresContext);
+    DetermineDragTargetAndDefaultData(
+        window, eventContent, dataTransfer, getter_AddRefs(selection),
+        getter_AddRefs(remoteDragStartData), getter_AddRefs(targetContent),
+        getter_AddRefs(principal), getter_AddRefs(csp));
   }
+
+  
+  
+  
+  
+  StopTrackingDragGesture(false);
+
+  if (!targetContent) return;
+
+  
+  
+  nsCOMPtr<nsIContent> parentContent =
+      targetContent->FindFirstNonChromeOnlyAccessContent();
+  dataTransfer->SetParentObject(parentContent);
+
+  sLastDragOverFrame = nullptr;
+  nsCOMPtr<nsIWidget> widget = mCurrentTarget->GetNearestWidget();
+
+  
+  WidgetDragEvent startEvent(aEvent->IsTrusted(), eDragStart, widget);
+  FillInEventFromGestureDown(&startEvent);
+
+  startEvent.mDataTransfer = dataTransfer;
+  if (aEvent->AsMouseEvent()) {
+    startEvent.mInputSource = aEvent->AsMouseEvent()->mInputSource;
+  } else if (aEvent->AsTouchEvent()) {
+    startEvent.mInputSource = MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+  } else {
+    MOZ_ASSERT(false);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
+
+  
+  mCurrentTargetContent = targetContent;
+
+  
+  nsEventStatus status = nsEventStatus_eIgnore;
+  EventDispatcher::Dispatch(targetContent, aPresContext, &startEvent, nullptr,
+                            &status);
+
+  WidgetDragEvent* event = &startEvent;
+
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  
+  
+  if (observerService) {
+    observerService->NotifyObservers(dataTransfer, "on-datatransfer-available",
+                                     nullptr);
+  }
+
+  if (status != nsEventStatus_eConsumeNoDefault) {
+    bool dragStarted =
+        DoDefaultDragStart(aPresContext, event, dataTransfer, targetContent,
+                           selection, remoteDragStartData, principal, csp);
+    if (dragStarted) {
+      sActiveESM = nullptr;
+      MaybeFirePointerCancel(aEvent);
+      aEvent->StopPropagation();
+    }
+  }
+
+  
+  mCurrentTargetContent = targetBeforeEvent;
+
+  
+  
+  FlushLayout(aPresContext);
 }  
 
 void EventStateManager::DetermineDragTargetAndDefaultData(
@@ -4788,7 +4794,7 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
   mCurrentTargetContent = targetBeforeEvent;
 
   
-  FlushPendingEvents(aPresContext);
+  FlushLayout(aPresContext);
 }
 
 void EventStateManager::FireDragEnterOrExit(nsPresContext* aPresContext,
@@ -5604,7 +5610,7 @@ void EventStateManager::EnsureDocument(nsPresContext* aPresContext) {
   if (!mDocument) mDocument = aPresContext->Document();
 }
 
-void EventStateManager::FlushPendingEvents(nsPresContext* aPresContext) {
+void EventStateManager::FlushLayout(nsPresContext* aPresContext) {
   MOZ_ASSERT(aPresContext, "nullptr ptr");
   if (RefPtr<PresShell> presShell = aPresContext->GetPresShell()) {
     presShell->FlushPendingNotifications(FlushType::InterruptibleLayout);
