@@ -310,6 +310,12 @@ nsresult ExpandedPrincipal::PopulateJSONObject(Json::Value& aObject) {
   }
   aObject[std::to_string(eSpecs)] = principalList.get();
 
+  nsAutoCString suffix;
+  OriginAttributesRef().CreateSuffix(suffix);
+  if (suffix.Length() > 0) {
+    aObject[std::to_string(eSuffix)] = suffix.get();
+  }
+
   return NS_OK;
 }
 
@@ -317,6 +323,7 @@ already_AddRefed<BasePrincipal> ExpandedPrincipal::FromProperties(
     nsTArray<ExpandedPrincipal::KeyVal>& aFields) {
   MOZ_ASSERT(aFields.Length() == eMax + 1, "Must have all the keys");
   nsTArray<nsCOMPtr<nsIPrincipal>> allowList;
+  OriginAttributes attrs;
   
   
   for (const auto& field : aFields) {
@@ -338,6 +345,14 @@ already_AddRefed<BasePrincipal> ExpandedPrincipal::FromProperties(
           allowList.AppendElement(principal);
         }
         break;
+      case ExpandedPrincipal::eSuffix:
+        if (field.valueWasSerialized) {
+          bool ok = attrs.PopulateFromSuffix(field.value);
+          if (!ok) {
+            return nullptr;
+          }
+        }
+        break;
     }
   }
 
@@ -345,8 +360,6 @@ already_AddRefed<BasePrincipal> ExpandedPrincipal::FromProperties(
     return nullptr;
   }
 
-  
-  OriginAttributes attrs;
   RefPtr<ExpandedPrincipal> expandedPrincipal =
       ExpandedPrincipal::Create(allowList, attrs);
 

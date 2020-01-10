@@ -62,7 +62,7 @@ class ExpandedPrincipal : public nsIExpandedPrincipal,
 
   virtual nsresult PopulateJSONObject(Json::Value& aObject) override;
   
-  enum SerializableKeys { eSpecs = 0, eMax = eSpecs };
+  enum SerializableKeys { eSpecs = 0, eSuffix, eMax = eSuffix };
   
   
   
