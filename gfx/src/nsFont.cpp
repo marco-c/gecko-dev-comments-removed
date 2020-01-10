@@ -48,8 +48,7 @@ nsFont::MaxDifference nsFont::CalcDifference(const nsFont& aOther) const {
       (variantLigatures != aOther.variantLigatures) ||
       (variantNumeric != aOther.variantNumeric) ||
       (variantPosition != aOther.variantPosition) ||
-      (variantWidth != aOther.variantWidth) ||
-      (alternateValues != aOther.alternateValues)) {
+      (variantWidth != aOther.variantWidth)) {
     return MaxDifference::eLayoutAffecting;
   }
 
@@ -62,11 +61,6 @@ nsFont::MaxDifference nsFont::CalcDifference(const nsFont& aOther) const {
 }
 
 nsFont& nsFont::operator=(const nsFont& aOther) = default;
-
-void nsFont::CopyAlternates(const nsFont& aOther) {
-  variantAlternates = aOther.variantAlternates;
-  alternateValues = aOther.alternateValues;
-}
 
 
 
@@ -173,15 +167,22 @@ void nsFont::AddFontFeaturesToStyle(gfxFontStyle* aStyle,
   }
 
   
-  if (variantAlternates & NS_FONT_VARIANT_ALTERNATES_HISTORICAL) {
-    setting.mValue = 1;
-    setting.mTag = TRUETYPE_TAG('h', 'i', 's', 't');
-    aStyle->featureSettings.AppendElement(setting);
+  
+  
+  
+  
+  for (auto& alternate : variantAlternates.AsSpan()) {
+    if (alternate.IsHistoricalForms()) {
+      setting.mValue = 1;
+      setting.mTag = TRUETYPE_TAG('h', 'i', 's', 't');
+      aStyle->featureSettings.AppendElement(setting);
+      break;
+    }
   }
 
   
   
-  aStyle->alternateValues.AppendElements(alternateValues);
+  aStyle->variantAlternates = variantAlternates;
 
   
   aStyle->variantCaps = variantCaps;

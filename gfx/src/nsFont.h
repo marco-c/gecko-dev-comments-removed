@@ -38,9 +38,6 @@ struct nsFont final {
   nsTArray<gfxFontVariation> fontVariationSettings;
 
   
-  nsTArray<gfxAlternateValue> alternateValues;
-
-  
   nscoord size = 0;
 
   
@@ -68,9 +65,7 @@ struct nsFont final {
   
   
   
-
-  
-  uint16_t variantAlternates = NS_FONT_VARIANT_ALTERNATES_NORMAL;
+  mozilla::StyleVariantAlternatesList variantAlternates;
 
   
   uint16_t variantLigatures = NS_FONT_VARIANT_LIGATURES_NORMAL;
@@ -122,8 +117,6 @@ struct nsFont final {
   enum class MaxDifference : uint8_t { eNone, eVisual, eLayoutAffecting };
 
   MaxDifference CalcDifference(const nsFont& aOther) const;
-
-  void CopyAlternates(const nsFont& aOther);
 
   
   void AddFontFeaturesToStyle(gfxFontStyle* aStyle, bool aVertical) const;

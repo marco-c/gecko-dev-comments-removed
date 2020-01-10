@@ -27,20 +27,6 @@ inline bool operator==(const gfxFontFeature& a, const gfxFontFeature& b) {
   return (a.mTag == b.mTag) && (a.mValue == b.mValue);
 }
 
-struct gfxAlternateValue {
-  uint32_t alternate;  
-  nsString value;      
-};
-
-inline bool operator<(const gfxAlternateValue& a, const gfxAlternateValue& b) {
-  return (a.alternate < b.alternate) ||
-         ((a.alternate == b.alternate) && (a.value < b.value));
-}
-
-inline bool operator==(const gfxAlternateValue& a, const gfxAlternateValue& b) {
-  return (a.alternate == b.alternate) && (a.value == b.value);
-}
-
 class gfxFontFeatureValueSet final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFeatureValueSet)
@@ -64,9 +50,6 @@ class gfxFontFeatureValueSet final {
                                uint32_t aVariantProperty,
                                const nsAString& aName,
                                nsTArray<uint32_t>& aValues);
-  void AddFontFeatureValues(
-      const nsACString& aFamily,
-      const nsTArray<gfxFontFeatureValueSet::FeatureValues>& aValues);
 
   
   

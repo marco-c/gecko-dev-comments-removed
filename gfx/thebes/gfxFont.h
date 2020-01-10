@@ -103,7 +103,7 @@ struct gfxFontStyle {
   
 
   
-  nsTArray<gfxAlternateValue> alternateValues;
+  mozilla::StyleVariantAlternatesList variantAlternates;
 
   
   RefPtr<gfxFontFeatureValueSet> featureValueLookup;
@@ -227,7 +227,7 @@ struct gfxFontStyle {
            (*reinterpret_cast<const uint32_t*>(&sizeAdjust) ==
             *reinterpret_cast<const uint32_t*>(&other.sizeAdjust)) &&
            (featureSettings == other.featureSettings) &&
-           (alternateValues == other.alternateValues) &&
+           (variantAlternates == other.variantAlternates) &&
            (featureValueLookup == other.featureValueLookup) &&
            (variationSettings == other.variationSettings) &&
            (languageOverride == other.languageOverride) &&
