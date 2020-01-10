@@ -549,9 +549,22 @@ testCM("markTextCSS", function(cm) {
   function present() {
     var spans = cm.display.lineDiv.getElementsByTagName("span");
     for (var i = 0; i < spans.length; i++)
-      if (spans[i].style.color == "cyan" && span[i].textContent == "cdefg") return true;
+      if (spans[i].style.color && spans[i].textContent == "cdef") return true;
   }
   var m = cm.markText(Pos(0, 2), Pos(0, 6), {css: "color: cyan"});
+  is(present());
+  m.clear();
+  is(!present());
+}, {value: "abcdefgh"});
+
+testCM("markTextWithAttributes", function(cm) {
+  function present() {
+    var spans = cm.display.lineDiv.getElementsByTagName("span");
+    for (var i = 0; i < spans.length; i++)
+      if (spans[i].getAttribute("label") == "label" && spans[i].textContent == "cdef") return true;
+  }
+  var m = cm.markText(Pos(0, 2), Pos(0, 6), {attributes: {label: "label"}});
+  is(present());
   m.clear();
   is(!present());
 }, {value: "abcdefgh"});
@@ -1795,10 +1808,21 @@ testCM("addLineClass", function(cm) {
 
 testCM("atomicMarker", function(cm) {
   addDoc(cm, 10, 10);
-  function atom(ll, cl, lr, cr, li, ri) {
-    return cm.markText(Pos(ll, cl), Pos(lr, cr),
-                       {atomic: true, inclusiveLeft: li, inclusiveRight: ri});
+
+  function atom(ll, cl, lr, cr, li, ri, ls, rs) {
+    var options = {
+      atomic: true,
+      inclusiveLeft: li,
+      inclusiveRight: ri
+    };
+
+    if (ls === true || ls === false) options["selectLeft"] = ls;
+    if (rs === true || rs === false) options["selectRight"] = rs;
+
+    return cm.markText(Pos(ll, cl), Pos(lr, cr), options);
   }
+
+  
   var m = atom(0, 1, 0, 5);
   cm.setCursor(Pos(0, 1));
   cm.execCommand("goCharRight");
@@ -1806,11 +1830,55 @@ testCM("atomicMarker", function(cm) {
   cm.execCommand("goCharLeft");
   eqCursorPos(cm.getCursor(), Pos(0, 1));
   m.clear();
+
+  
   m = atom(0, 0, 0, 5, true);
   eqCursorPos(cm.getCursor(), Pos(0, 5), "pushed out");
   cm.execCommand("goCharLeft");
   eqCursorPos(cm.getCursor(), Pos(0, 5));
   m.clear();
+
+  
+  m = atom(0, 0, 0, 5, false, false, false);
+  cm.setCursor(Pos(0, 5));
+  eqCursorPos(cm.getCursor(), Pos(0, 5), "pushed out");
+  cm.execCommand("goCharLeft");
+  eqCursorPos(cm.getCursor(), Pos(0, 5));
+  m.clear();
+
+  
+  m = atom(0, 0, 0, 5, false, false, true);
+  cm.setCursor(Pos(0, 5));
+  eqCursorPos(cm.getCursor(), Pos(0, 5), "pushed out");
+  cm.execCommand("goCharLeft");
+  eqCursorPos(cm.getCursor(), Pos(0, 0));
+  m.clear();
+
+  
+  m = atom(0, 0, 0, 5, false, true);
+  cm.setCursor(Pos(0, 0));
+  eqCursorPos(cm.getCursor(), Pos(0, 0));
+  cm.execCommand("goCharRight");
+  eqCursorPos(cm.getCursor(), Pos(0, 6));
+  m.clear();
+
+  
+  m = atom(0, 0, 0, 5, false, false, true, false);
+  cm.setCursor(Pos(0, 0));
+  eqCursorPos(cm.getCursor(), Pos(0, 0));
+  cm.execCommand("goCharRight");
+  eqCursorPos(cm.getCursor(), Pos(0, 6));
+  m.clear();
+
+  
+  m = atom(0, 0, 0, 5, false, false, true, true);
+  cm.setCursor(Pos(0, 0));
+  eqCursorPos(cm.getCursor(), Pos(0, 0));
+  cm.execCommand("goCharRight");
+  eqCursorPos(cm.getCursor(), Pos(0, 5));
+  m.clear();
+
+  
   m = atom(8, 4, 9, 10, false, true);
   cm.setCursor(Pos(9, 8));
   eqCursorPos(cm.getCursor(), Pos(8, 4), "set");
@@ -1821,6 +1889,9 @@ testCM("atomicMarker", function(cm) {
   cm.execCommand("goCharLeft");
   eqCursorPos(cm.getCursor(), Pos(8, 3, "after"));
   m.clear();
+
+  
+  
   m = atom(1, 1, 3, 8);
   cm.setCursor(Pos(0, 0));
   cm.setCursor(Pos(2, 0));
@@ -1835,10 +1906,16 @@ testCM("atomicMarker", function(cm) {
   eqCursorPos(cm.getCursor(), Pos(3, 8));
   cm.execCommand("delCharBefore");
   eq(cm.getValue().length, 80, "del chunk");
+  m.clear();
+  addDoc(cm, 10, 10);
+
+  
   m = atom(3, 0, 5, 5);
   cm.setCursor(Pos(3, 0));
   cm.execCommand("delWordAfter");
-  eq(cm.getValue().length, 53, "del chunk");
+  eq(cm.getValue().length, 82, "del chunk");
+  m.clear();
+  addDoc(cm, 10, 10);
 });
 
 testCM("selectionBias", function(cm) {
