@@ -3266,6 +3266,40 @@ XDRResult ScriptSource::xdrData(XDRState<mode>* const xdr,
   return Ok();
 }
 
+
+static bool MaybeNoteContentParse(JSContext* cx, ScriptSource* ss) {
+  if (!mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+  if (!ss->hasSourceText()) {
+    return true;
+  }
+
+  UncompressedSourceCache::AutoHoldEntry holder;
+  if (ss->hasSourceType<Utf8Unit>()) {
+    
+    ScriptSource::PinnedUnits<Utf8Unit> units(cx, ss, holder, 0, ss->length());
+    if (!units.get()) {
+      return false;
+    }
+    mozilla::recordreplay::NoteContentParse(ss, ss->filename(),
+                                            "application/javascript",
+                                            units.get(), ss->length());
+  } else {
+    
+    MOZ_ASSERT(ss->hasSourceType<char16_t>());
+    ScriptSource::PinnedUnits<char16_t> units(cx, ss, holder, 0, ss->length());
+    if (!units.get()) {
+      return false;
+    }
+    mozilla::recordreplay::NoteContentParse(ss, ss->filename(),
+                                            "application/javascript",
+                                            units.get(), ss->length());
+  }
+
+  return true;
+}
+
 template <XDRMode mode>
 
 XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
@@ -3362,30 +3396,9 @@ XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
     }
 
     
-    if (mode == XDR_DECODE && ss->hasSourceText() &&
-        mozilla::recordreplay::IsRecordingOrReplaying()) {
-      UncompressedSourceCache::AutoHoldEntry holder;
-
-      if (ss->hasSourceType<Utf8Unit>()) {
-        
-        ScriptSource::PinnedUnits<Utf8Unit> units(xdr->cx(), ss, holder, 0,
-                                                  ss->length());
-        if (!units.get()) {
-          return xdr->fail(JS::TranscodeResult_Throw);
-        }
-        mozilla::recordreplay::NoteContentParse(ss, ss->filename(),
-                                                "application/javascript",
-                                                units.get(), ss->length());
-      } else {
-        
-        ScriptSource::PinnedUnits<char16_t> units(xdr->cx(), ss, holder, 0,
-                                                  ss->length());
-        if (!units.get()) {
-          return xdr->fail(JS::TranscodeResult_Throw);
-        }
-        mozilla::recordreplay::NoteContentParse(ss, ss->filename(),
-                                                "application/javascript",
-                                                units.get(), ss->length());
+    if (mode == XDR_DECODE) {
+      if (!MaybeNoteContentParse(xdr->cx(), ss)) {
+        return xdr->fail(JS::TranscodeResult_Throw);
       }
     }
   }
