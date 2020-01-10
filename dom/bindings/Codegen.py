@@ -10646,6 +10646,11 @@ class CGUnionStruct(CGThing):
                        unions=[ClassUnion("Value", unionValues, visibility="private")])
 
     def getConversionToJS(self, templateVars, type):
+        if type.isDictionary() and not type.inner.needsConversionToJS:
+            
+            
+            return None
+
         assert not type.nullable()  
         val = "mValue.m%(name)s.Value()" % templateVars
         wrapCode = wrapForType(
@@ -13977,7 +13982,8 @@ class CGDictionary(CGThing):
             d.getExtendedAttribute("GenerateInitFromJSON")):
             methods.append(self.initFromJSONMethod())
 
-        methods.append(self.toObjectInternalMethod())
+        if d.needsConversionToJS:
+            methods.append(self.toObjectInternalMethod())
 
         if (canBeRepresentedAsJSON and
             d.getExtendedAttribute("GenerateToJSON")):
