@@ -1800,32 +1800,50 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
     }
 
     
-    if (supportedExtension.length > 2) {
-        assert(!callFunction(std_String_startsWith, foundLocale, "x-"),
-               "unexpected privateuse-only locale returned from ICU");
-
-        
-        var privateIndex = callFunction(std_String_indexOf, foundLocale, "-x-");
-
-        
-        if (privateIndex === -1) {
-            foundLocale += supportedExtension;
-        } else {
-            var preExtension = callFunction(String_substring, foundLocale, 0, privateIndex);
-            var postExtension = callFunction(String_substring, foundLocale, privateIndex);
-            foundLocale = preExtension + supportedExtension + postExtension;
-        }
-
-        
-        
-        assertIsValidAndCanonicalLanguageTag(foundLocale, "locale after concatenation");
-    }
+    if (supportedExtension.length > 2)
+        foundLocale = addUnicodeExtension(foundLocale, supportedExtension);
 
     
     result.locale = foundLocale;
 
     
     return result;
+}
+
+
+
+
+
+
+function addUnicodeExtension(locale, extension) {
+    assert(typeof locale === "string", "locale is a string value");
+    assert(!callFunction(std_String_startsWith, locale, "x-"),
+           "unexpected privateuse-only locale");
+    assert(startOfUnicodeExtensions(locale) < 0,
+           "Unicode extension subtag already present in locale");
+
+    assert(typeof extension === "string", "extension is a string value");
+    assert(callFunction(std_String_startsWith, extension, "-u-") &&
+           getUnicodeExtensions("und" + extension) === extension,
+           "extension is a Unicode extension subtag");
+
+    
+    var privateIndex = callFunction(std_String_indexOf, locale, "-x-");
+
+    
+    if (privateIndex === -1) {
+        locale += extension;
+    } else {
+         var preExtension = callFunction(String_substring, locale, 0, privateIndex);
+         var postExtension = callFunction(String_substring, locale, privateIndex);
+         locale = preExtension + extension + postExtension;
+    }
+
+    
+    
+    assertIsValidAndCanonicalLanguageTag(locale, "locale after concatenation");
+
+    return locale;
 }
 
 
