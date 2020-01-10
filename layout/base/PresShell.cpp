@@ -194,9 +194,6 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/ImageTracker.h"
 #include "nsIDocShellTreeOwner.h"
-#ifdef MOZ_XBL
-#  include "nsBindingManager.h"
-#endif
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "VisualViewport.h"
@@ -1670,21 +1667,6 @@ void PresShell::EndObservingDocument() {
 char* nsPresShell_ReflowStackPointerTop;
 #endif
 
-#ifdef MOZ_XBL
-class XBLConstructorRunner : public Runnable {
- public:
-  explicit XBLConstructorRunner(Document* aDocument)
-      : Runnable("XBLConstructorRunner"), mDocument(aDocument) {}
-
-  NS_IMETHOD Run() override {
-    mDocument->BindingManager()->ProcessAttachedQueue();
-    return NS_OK;
-  }
-
- private:
-  RefPtr<Document> mDocument;
-};
-#endif
 
 nsresult PresShell::Initialize() {
   if (mIsDestroying) {
@@ -1763,12 +1745,6 @@ nsresult PresShell::Initialize() {
     
     NS_ENSURE_STATE(!mHaveShutDown);
 
-#ifdef MOZ_XBL
-    
-    
-    
-    nsContentUtils::AddScriptRunner(new XBLConstructorRunner(mDocument));
-#endif
 
     
     NS_ENSURE_STATE(!mHaveShutDown);
@@ -2882,23 +2858,6 @@ static void AssertNoFramesInSubtree(nsIContent* aContent) {
   for (nsINode* node : ShadowIncludingTreeIterator(*aContent)) {
     nsIContent* c = nsIContent::FromNode(node);
     MOZ_ASSERT(!c->GetPrimaryFrame());
-#  ifdef MOZ_XBL
-    if (auto* binding = c->GetXBLBinding()) {
-      if (auto* bindingWithContent = binding->GetBindingWithContent()) {
-        nsIContent* anonContent = bindingWithContent->GetAnonymousContent();
-        MOZ_ASSERT(!anonContent->GetPrimaryFrame());
-
-        
-        
-        
-        
-        for (nsIContent* child = anonContent->GetFirstChild(); child;
-             child = child->GetNextSibling()) {
-          AssertNoFramesInSubtree(child);
-        }
-      }
-    }
-#  endif
   }
 }
 #endif
@@ -4117,14 +4076,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
       mPresContext->RestyleManager()->ProcessPendingRestyles();
     }
 
-#ifdef MOZ_XBL
-    
-    
-    
-    if (MOZ_LIKELY(!mIsDestroying)) {
-      mDocument->BindingManager()->ProcessAttachedQueue();
-    }
-#endif
 
     
     
@@ -9898,9 +9849,6 @@ bool PresShell::VerifyIncrementalReflow() {
     nsAutoCauseReflowNotifier crNotifier(this);
     presShell->Initialize();
   }
-#  ifdef MOZ_XBL
-  mDocument->BindingManager()->ProcessAttachedQueue();
-#  endif
   presShell->FlushPendingNotifications(FlushType::Layout);
   presShell->SetVerifyReflowEnable(
       true);  

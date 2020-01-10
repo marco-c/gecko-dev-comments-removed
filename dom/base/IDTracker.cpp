@@ -10,10 +10,6 @@
 #include "nsContentUtils.h"
 #include "nsIURI.h"
 #include "nsIReferrerInfo.h"
-#ifdef MOZ_XBL
-#  include "nsBindingManager.h"
-#  include "nsXBLPrototypeBinding.h"
-#endif
 #include "nsEscape.h"
 #include "nsCycleCollectionParticipant.h"
 
@@ -65,14 +61,10 @@ void IDTracker::ResetToURIFragmentID(nsIContent* aFromContent, nsIURI* aURI,
 
   nsIContent* bindingParent = aFromContent->GetBindingParent();
   if (bindingParent && !aFromContent->IsInShadowTree()) {
-#ifdef MOZ_XBL
-    nsXBLBinding* binding = bindingParent->GetXBLBinding();
-    if (!binding) {
-#endif
-
-
-
-
+      
+      
+      
+      
       Element* anonRoot =
           doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
       if (anonRoot) {
@@ -81,37 +73,6 @@ void IDTracker::ResetToURIFragmentID(nsIContent* aFromContent, nsIURI* aURI,
         
         return;
       }
-#ifdef MOZ_XBL
-    } else {
-      bool isEqualExceptRef;
-      rv = aURI->EqualsExceptRef(binding->PrototypeBinding()->DocURI(),
-                                 &isEqualExceptRef);
-      if (NS_SUCCEEDED(rv) && isEqualExceptRef) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        nsINodeList* anonymousChildren =
-            doc->BindingManager()->GetAnonymousNodesFor(bindingParent);
-
-        if (anonymousChildren) {
-          uint32_t length = anonymousChildren->Length();
-          for (uint32_t i = 0; i < length && !mElement; ++i) {
-            mElement =
-                nsContentUtils::MatchElementId(anonymousChildren->Item(i), ref);
-          }
-        }
-
-        
-        return;
-      }
-    }
-#endif
   }
 
   bool isEqualExceptRef;

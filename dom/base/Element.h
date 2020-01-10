@@ -224,23 +224,6 @@ class Element : public FragmentOrElement {
 
   void SetTabIndex(int32_t aTabIndex, mozilla::ErrorResult& aError);
 
-#ifdef MOZ_XBL
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  void SetXBLBinding(nsXBLBinding* aBinding,
-                     nsBindingManager* aOldBindingManager = nullptr);
-#endif
 
   
 
@@ -1975,21 +1958,6 @@ class Element : public FragmentOrElement {
   AttrArray mAttrs;
 };
 
-#ifdef MOZ_XBL
-class RemoveFromBindingManagerRunnable : public mozilla::Runnable {
- public:
-  RemoveFromBindingManagerRunnable(nsBindingManager* aManager,
-                                   nsIContent* aContent, Document* aDoc);
-
-  NS_IMETHOD Run() override;
-
- private:
-  virtual ~RemoveFromBindingManagerRunnable();
-  RefPtr<nsBindingManager> mManager;
-  RefPtr<nsIContent> mContent;
-  RefPtr<Document> mDoc;
-};
-#endif
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Element, NS_ELEMENT_IID)
 

@@ -8,9 +8,6 @@
 #include "nsContentUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSlotElement.h"
-#ifdef MOZ_XBL
-#  include "mozilla/dom/XBLChildrenElement.h"
-#endif
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIFrame.h"
@@ -48,17 +45,7 @@ nsIContent* ExplicitChildIterator::GetNextChild() {
       return mChild;
     }
 
-#ifdef MOZ_XBL
-    MOZ_ASSERT(mChild->IsActiveChildrenElement());
-    auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
-    if (mIndexInInserted < childrenElement->InsertedChildrenLength()) {
-      return childrenElement->InsertedChild(mIndexInInserted++);
-    }
-    mIndexInInserted = 0;
-    mChild = mChild->GetNextSibling();
-#else
     MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-#endif
   } else if (mDefaultChild) {
     
     MOZ_ASSERT(mChild);
@@ -94,30 +81,7 @@ nsIContent* ExplicitChildIterator::GetNextChild() {
   
   while (mChild) {
     if (mChild->IsActiveChildrenElement()) {
-#ifdef MOZ_XBL
-      
-      
-      
-      auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
-      if (childrenElement->HasInsertedChildren()) {
-        
-        mIndexInInserted = 1;
-        return childrenElement->InsertedChild(0);
-      }
-
-      
-      
-      mDefaultChild = mChild->GetFirstChild();
-      if (mDefaultChild) {
-        return mDefaultChild;
-      }
-
-      
-      
-      mChild = mChild->GetNextSibling();
-#else
       MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-#endif
     } else {
       
       
@@ -144,16 +108,6 @@ void FlattenedChildIterator::Init(bool aIgnoreXBL) {
     }
   }
 
-#ifdef MOZ_XBL
-  nsXBLBinding* binding =
-      mParent->OwnerDoc()->BindingManager()->GetBindingWithContent(mParent);
-
-  if (binding) {
-    MOZ_ASSERT(binding->GetAnonymousContent());
-    mParent = binding->GetAnonymousContent();
-    mXBLInvolved = Some(true);
-  }
-#endif
 }
 
 bool FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const {
@@ -211,13 +165,7 @@ nsIContent* ExplicitChildIterator::Get() const {
   }
 
   if (mIndexInInserted) {
-#ifdef MOZ_XBL
-    MOZ_ASSERT(mChild->IsActiveChildrenElement());
-    auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
-    return childrenElement->InsertedChild(mIndexInInserted - 1);
-#else
     MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-#endif
   }
 
   return mDefaultChild ? mDefaultChild : mChild;
@@ -240,18 +188,7 @@ nsIContent* ExplicitChildIterator::GetPreviousChild() {
       return mChild;
     }
 
-#ifdef MOZ_XBL
-    
-    
-    MOZ_ASSERT(mChild->IsActiveChildrenElement());
-    auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
-    if (--mIndexInInserted) {
-      return childrenElement->InsertedChild(mIndexInInserted - 1);
-    }
-    mChild = mChild->GetPreviousSibling();
-#else
     MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-#endif
   } else if (mDefaultChild) {
     
     mDefaultChild = mDefaultChild->GetPreviousSibling();
@@ -284,25 +221,7 @@ nsIContent* ExplicitChildIterator::GetPreviousChild() {
   
   while (mChild) {
     if (mChild->IsActiveChildrenElement()) {
-#ifdef MOZ_XBL
-      
-      
-      
-      auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
-      if (childrenElement->HasInsertedChildren()) {
-        mIndexInInserted = childrenElement->InsertedChildrenLength();
-        return childrenElement->InsertedChild(mIndexInInserted - 1);
-      }
-
-      mDefaultChild = mChild->GetLastChild();
-      if (mDefaultChild) {
-        return mDefaultChild;
-      }
-
-      mChild = mChild->GetPreviousSibling();
-#else
       MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-#endif
     } else {
       
       
