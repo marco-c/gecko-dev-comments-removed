@@ -15,12 +15,6 @@ nsExternalURLHandlerService::~nsExternalURLHandlerService() {}
 NS_IMETHODIMP
 nsExternalURLHandlerService::GetURLHandlerInfoFromOS(nsIURI* aURL, bool* found,
                                                      nsIHandlerInfo** info) {
-  if (!mozilla::jni::IsFennec()) {
-    
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
   nsCString uriSpec;
   aURL->GetSpec(uriSpec);
   return nsMIMEInfoAndroid::GetMimeInfoForURL(uriSpec, found, info);
