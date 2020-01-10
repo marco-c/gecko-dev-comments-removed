@@ -1396,13 +1396,6 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
     addrRec->mTrrAAAAUsed = AddrHostRecord::INIT;
   }
 
-  if (rec->flags & RES_DISABLE_TRR) {
-    if (mode == MODE_TRRONLY) {
-      return rv;
-    }
-    mode = MODE_NATIVEONLY;
-  }
-
   
   
   
@@ -1410,6 +1403,13 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
   bool skipTRR = true;
   if (gTRRService) {
     skipTRR = gTRRService->IsExcludedFromTRR(rec->host);
+  }
+
+  if (rec->flags & RES_DISABLE_TRR) {
+    if (mode == MODE_TRRONLY && !skipTRR) {
+      return rv;
+    }
+    mode = MODE_NATIVEONLY;
   }
 
   if (!TRR_DISABLED(mode) && !skipTRR) {

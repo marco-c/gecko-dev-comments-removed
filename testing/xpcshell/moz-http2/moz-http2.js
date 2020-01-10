@@ -611,6 +611,13 @@ function handleRequest(req, res) {
     function emitResponse(response, requestPayload) {
       let packet = dnsPacket.decode(requestPayload);
 
+      
+      if (packet.questions.length > 0 &&
+        packet.questions[0].name == "closeme.com") {
+        response.stream.connection.close('INTERNAL_ERROR', response.stream.id);
+        return;
+      }
+
       function responseType() {
         if (packet.questions.length > 0 &&
           packet.questions[0].name == "confirm.example.com" &&
