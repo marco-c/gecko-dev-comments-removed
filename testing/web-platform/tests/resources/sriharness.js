@@ -1,3 +1,5 @@
+
+
 var SRIScriptTest = function(pass, name, src, integrityValue, crossoriginValue, nonce) {
     this.pass = pass;
     this.name = "Script: " + name;
@@ -32,6 +34,98 @@ SRIScriptTest.prototype.execute = function() {
     document.body.appendChild(e);
 };
 
+function buildElementFromDestination(resource_url, destination, attrs) {
+  
+  let element;
+
+  
+  
+  
+  
+  switch (destination) {
+    case "script":
+      element = document.createElement(destination);
+      element.src = resource_url;
+      break;
+    case "style":
+      element = document.createElement('link');
+      element.rel = 'stylesheet';
+      element.href = resource_url;
+      break;
+    case "image":
+      element = document.createElement('img');
+      element.src = resource_url;
+      break;
+    default:
+      assert_unreached("INVALID DESTINATION");
+  }
+
+  
+  for (const [attr_name, attr_val] of Object.entries(attrs)) {
+    element[attr_name] = attr_val;
+  }
+
+  return element;
+}
+
+const SRIPreloadTest = (preload_sri_success, subresource_sri_success, name,
+                        destination, resource_url, link_attrs,
+                        subresource_attrs) => {
+  const test = async_test(name);
+  const link = document.createElement('link');
+
+  
+  test.step_func(() => {
+    assert_true(link.relList.supports('preload'), "Clever message here.");
+  })();
+
+  
+  link.rel = 'preload';
+  link.as = destination;
+  link.href = resource_url;
+  for (const [attr_name, attr_val] of Object.entries(link_attrs)) {
+    link[attr_name] = attr_val; 
+  }
+
+  
+  const valid_preload_failed = test.step_func(() =>
+    { assert_unreached("Valid preload fired error handler.") });
+  const invalid_preload_succeeded = test.step_func(() =>
+    { assert_unreached("Invalid preload load succeeded.") });
+  const valid_subresource_failed = test.step_func(() =>
+    { assert_unreached("Valid subresource fired error handler.") });
+  const invalid_subresource_succeeded = test.step_func(() =>
+    { assert_unreached("Invalid subresource load succeeded.") });
+  const subresource_pass = test.step_func(() => { test.done(); });
+  const preload_pass = test.step_func(() => {
+    const subresource_element = buildElementFromDestination(
+      resource_url,
+      destination,
+      subresource_attrs
+    );
+
+    if (subresource_sri_success) {
+      subresource_element.onload = subresource_pass;
+      subresource_element.onerror = valid_subresource_failed;
+    } else {
+      subresource_element.onload = invalid_subresource_succeeded;
+      subresource_element.onerror = subresource_pass;
+    }
+
+    document.body.append(subresource_element);
+  });
+
+  if (preload_sri_success) {
+    link.onload = preload_pass;
+    link.onerror = valid_preload_failed;
+  } else {
+    link.onload = invalid_preload_succeeded;
+    link.onerror = preload_pass;
+  }
+
+  document.head.append(link);
+}
+
 
 
 
@@ -63,6 +157,8 @@ SRIStyleTest.prototype.execute = function() {
     var div = document.createElement("div");
     div.className = "testdiv";
     var e = document.createElement("link");
+
+    
     this.attrs.rel = this.attrs.rel || "stylesheet";
     for (var key in this.attrs) {
         if (this.attrs.hasOwnProperty(key)) {
