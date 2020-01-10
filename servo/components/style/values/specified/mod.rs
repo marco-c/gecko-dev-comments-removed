@@ -8,6 +8,7 @@
 
 use super::computed::transform::DirectionVector;
 use super::computed::{Context, ToComputedValue};
+use super::generics::grid::ImplicitGridTracks as GenericImplicitGridTracks;
 use super::generics::grid::{GridLine as GenericGridLine, TrackBreadth as GenericTrackBreadth};
 use super::generics::grid::{TrackList as GenericTrackList, TrackSize as GenericTrackSize};
 use super::generics::transform::IsParallelTo;
@@ -625,6 +626,9 @@ pub type TrackBreadth = GenericTrackBreadth<LengthPercentage>;
 
 
 pub type TrackSize = GenericTrackSize<LengthPercentage>;
+
+
+pub type ImplicitGridTracks = GenericImplicitGridTracks<TrackSize>;
 
 
 
