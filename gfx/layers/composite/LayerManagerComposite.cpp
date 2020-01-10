@@ -546,7 +546,6 @@ void LayerManagerComposite::UpdateAndRender() {
     return;
   }
 
-  nsIntRegion invalid;
   
   
   mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
@@ -554,12 +553,12 @@ void LayerManagerComposite::UpdateAndRender() {
   nsIntRegion opaque;
   PostProcessLayers(opaque);
 
+  nsIntRegion changed;
   if (mClonedLayerTreeProperties) {
     
     
     
     
-    nsIntRegion changed;
 
     const bool overflowed = !mClonedLayerTreeProperties->ComputeDifferences(
         mRoot, changed, nullptr);
@@ -567,25 +566,23 @@ void LayerManagerComposite::UpdateAndRender() {
     if (overflowed) {
       changed = mTarget ? mTargetBounds : mRenderBounds;
     }
-
-    if (mTarget) {
-      
-      
-      
-      
-      mInvalidRegion.Or(mInvalidRegion, changed);
-    } else {
-      invalid = std::move(changed);
-    }
   }
 
+  nsIntRegion invalid;
   if (mTarget) {
-    invalid.Or(invalid, mTargetBounds);
+    
+    
+    
+    
+    mInvalidRegion.Or(mInvalidRegion, changed);
+    invalid = mTargetBounds;
   } else {
-    
-    
-    if (!mClonedLayerTreeProperties) {
-      invalid.Or(invalid, mRenderBounds);
+    if (mClonedLayerTreeProperties) {
+      invalid = std::move(changed);
+    } else {
+      
+      
+      invalid = mRenderBounds;
     }
 
     
