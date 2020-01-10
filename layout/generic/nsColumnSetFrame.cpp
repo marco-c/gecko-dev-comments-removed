@@ -607,6 +607,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   
   
   
+  
+  
+  
+  
   nsSize containerSize = aReflowInput.ComputedSizeAsContainerIfConstrained();
 
   const nscoord computedBSize =
@@ -1004,14 +1008,23 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   
   
   
-  if (wm.IsVerticalRL() && containerSize.width != contentSize.Width(wm)) {
+  
+  
+  
+  if ((wm.IsVerticalRL() ||
+       (StaticPrefs::layout_css_column_span_enabled() && isRTL)) &&
+      containerSize.width != contentSize.Width(wm)) {
     const nsSize finalContainerSize = aDesiredSize.PhysicalSize();
+    nsOverflowAreas overflowRects;
     for (nsIFrame* child : mFrames) {
       
       
       child->SetPosition(wm, child->GetLogicalPosition(wm, containerSize),
                          finalContainerSize);
+      ConsiderChildOverflow(overflowRects, child);
     }
+    aDesiredSize.mOverflowAreas = overflowRects;
+    aDesiredSize.UnionOverflowAreasWithDesiredBounds();
   }
 
   colData.mFeasible =
