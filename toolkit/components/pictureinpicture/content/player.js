@@ -43,7 +43,7 @@ function setIsPlayingState(isPlaying) {
 
 
 let Player = {
-  WINDOW_EVENTS: ["click", "mouseout", "resize", "unload"],
+  WINDOW_EVENTS: ["click", "keydown", "mouseout", "resize", "unload"],
   mm: null,
   
 
@@ -58,6 +58,12 @@ let Player = {
   lastScreenX: -1,
   lastScreenY: -1,
   id: -1,
+
+  
+
+
+
+  showingTimeout: null,
 
   
 
@@ -93,12 +99,7 @@ let Player = {
     
     browser.addEventListener("oop-browser-crashed", this);
 
-    
-    
-    this.controls.setAttribute("showing", true);
-    setTimeout(() => {
-      this.controls.removeAttribute("showing");
-    }, CONTROLS_FADE_TIMEOUT_MS);
+    this.revealControls(false);
 
     Services.telemetry.setEventRecordingEnabled("pictureinpicture", true);
 
@@ -129,6 +130,16 @@ let Player = {
     switch (event.type) {
       case "click": {
         this.onClick(event);
+        this.controls.removeAttribute("keying");
+        break;
+      }
+
+      case "keydown": {
+        if (event.keyCode == KeyEvent.DOM_VK_TAB) {
+          this.controls.setAttribute("keying", true);
+        } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
+          this.controls.removeAttribute("keying");
+        }
         break;
       }
 
@@ -164,9 +175,12 @@ let Player = {
       case "playpause": {
         if (!this.isPlaying) {
           this.mm.sendAsyncMessage("PictureInPicture:Play");
+          this.revealControls(false);
         } else {
           this.mm.sendAsyncMessage("PictureInPicture:Pause");
+          this.revealControls(true);
         }
+
         break;
       }
 
@@ -229,5 +243,26 @@ let Player = {
       this.id,
       args
     );
+  },
+
+  
+
+
+
+
+
+
+
+
+  revealControls(revealIndefinitely) {
+    clearTimeout(this.showingTimeout);
+    this.showingTimeout = null;
+
+    this.controls.setAttribute("showing", true);
+    if (!revealIndefinitely) {
+      this.showingTimeout = setTimeout(() => {
+        this.controls.removeAttribute("showing");
+      }, CONTROLS_FADE_TIMEOUT_MS);
+    }
   },
 };
