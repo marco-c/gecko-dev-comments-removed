@@ -7397,7 +7397,7 @@ nsresult nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch() {
   nsILoadInfo::CrossOriginOpenerPolicy resultPolicy =
       nsILoadInfo::OPENER_POLICY_NULL;
   Unused << ComputeCrossOriginOpenerPolicy(documentPolicy, &resultPolicy);
-  mComputedCrossOriginOpenerPolicy.emplace(resultPolicy);
+  mComputedCrossOriginOpenerPolicy = Some(resultPolicy);
 
   
   
