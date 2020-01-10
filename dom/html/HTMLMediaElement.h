@@ -825,7 +825,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void UpdateSrcTrackTime();
+  void UpdateSrcStreamTime();
 
   
 
