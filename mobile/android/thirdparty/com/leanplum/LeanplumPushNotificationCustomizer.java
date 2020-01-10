@@ -21,12 +21,45 @@
 
 package com.leanplum;
 
+import android.app.Notification;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 
 
 
 
 public interface LeanplumPushNotificationCustomizer {
+  
+
+
+
+
+
+
+
+
+
   void customize(NotificationCompat.Builder builder, Bundle notificationPayload);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void customize(Notification.Builder builder, Bundle notificationPayload,
+      @Nullable Notification.Style notificationStyle);
 }

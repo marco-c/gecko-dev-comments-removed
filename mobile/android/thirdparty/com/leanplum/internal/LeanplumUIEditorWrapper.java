@@ -23,6 +23,7 @@ package com.leanplum.internal;
 
 import android.app.Activity;
 
+import com.leanplum.Leanplum;
 import com.leanplum.LeanplumEditorMode;
 import com.leanplum.LeanplumUIEditor;
 
@@ -30,6 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static com.leanplum.internal.Constants.ClassUtil.UI_INTERFACE_EDITOR;
+
+
 
 
 
@@ -44,17 +47,17 @@ public class LeanplumUIEditorWrapper implements LeanplumUIEditor {
   }
 
   static {
-    Class<?> clazz = null;
+    Class clazz = null;
     try {
       clazz = Class.forName(UI_INTERFACE_EDITOR);
-    } catch (ClassNotFoundException ignored) {
+    } catch (Throwable ignored) {
     }
     if (clazz != null) {
       Method method = null;
       try {
         method = clazz.getMethod("getInstance");
-      } catch (NoSuchMethodException e) {
-        Util.handleException(e);
+      } catch (Throwable t) {
+        Util.handleException(t);
       }
       if (method != null) {
         try {
@@ -66,6 +69,8 @@ public class LeanplumUIEditorWrapper implements LeanplumUIEditor {
           Util.handleException(e);
         } catch (InvocationTargetException e) {
           Util.handleException(e);
+        } catch (Throwable t) {
+          Util.handleException(t);
         }
       }
     }
@@ -104,6 +109,7 @@ public class LeanplumUIEditorWrapper implements LeanplumUIEditor {
     if (interfaceEditorSingleton != null) {
       interfaceEditorSingleton.startUpdating();
     }
+    Leanplum.countAggregator().incrementCount("start_updating_ui");
   }
 
   
@@ -121,6 +127,7 @@ public class LeanplumUIEditorWrapper implements LeanplumUIEditor {
     if (interfaceEditorSingleton != null) {
       interfaceEditorSingleton.sendUpdate();
     }
+    Leanplum.countAggregator().incrementCount("send_update_ui");
   }
 
   @Override

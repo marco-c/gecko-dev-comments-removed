@@ -1,28 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 package com.leanplum.internal;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+
+import com.leanplum.Leanplum;
 
 import org.json.JSONObject;
 
@@ -36,117 +37,120 @@ import java.util.Map;
 
 
 class LeanplumEventCallbackManager {
-    
-    private final Map<Request, LeanplumEventCallbacks> eventCallbacks = new HashMap<>();
+  
+  private final Map<RequestOld, LeanplumEventCallbacks> eventCallbacks = new HashMap<>();
 
-    
-
-
+  
 
 
 
 
-    void addCallbacks(Request request, Request.ResponseCallback responseCallback,
-                      Request.ErrorCallback errorCallback) {
-        if (request == null) {
-            return;
-        }
 
-        if (responseCallback == null && errorCallback == null) {
-            return;
-        }
 
-        eventCallbacks.put(request, new LeanplumEventCallbacks(responseCallback, errorCallback));
+  void addCallbacks(RequestOld request, RequestOld.ResponseCallback responseCallback,
+                    RequestOld.ErrorCallback errorCallback) {
+    if (request == null) {
+      return;
     }
 
+    if (responseCallback == null && errorCallback == null) {
+      return;
+    }
+
+    eventCallbacks.put(request, new LeanplumEventCallbacks(responseCallback, errorCallback));
+    Leanplum.countAggregator().incrementCount("add_event_callback_at");
+  }
+
+  
+
+
+
+
+
+
+  void invokeAllCallbacksWithError(@NonNull final Exception error, int countOfEvents) {
+    if (eventCallbacks.size() == 0) {
+      return;
+    }
+
+    Iterator<Map.Entry<RequestOld, LeanplumEventCallbacks>> iterator =
+        eventCallbacks.entrySet().iterator();
     
-
-
-
-
-
-
-    void invokeAllCallbacksWithError(@NonNull final Exception error, int countOfEvents) {
-        if (eventCallbacks.size() == 0) {
-            return;
-        }
-
-        Iterator<Map.Entry<Request, LeanplumEventCallbacks>> iterator =
-                eventCallbacks.entrySet().iterator();
-        
-        for (; iterator.hasNext(); ) {
-            final Map.Entry<Request, LeanplumEventCallbacks> entry = iterator.next();
-            if (entry.getKey() == null) {
-                continue;
+    for (; iterator.hasNext(); ) {
+      final Map.Entry<RequestOld, LeanplumEventCallbacks> entry = iterator.next();
+      if (entry.getKey() == null) {
+        continue;
+      }
+      if (entry.getKey().getDataBaseIndex() >= countOfEvents) {
+        entry.getKey().setDataBaseIndex(entry.getKey().getDataBaseIndex() - countOfEvents);
+      } else {
+        if (entry.getValue() != null && entry.getValue().errorCallback != null) {
+          
+          
+          Util.executeAsyncTask(false, new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+              entry.getValue().errorCallback.error(error);
+              return null;
             }
-            if (entry.getKey().getDataBaseIndex() >= countOfEvents) {
-                entry.getKey().setDataBaseIndex(entry.getKey().getDataBaseIndex() - countOfEvents);
-            } else {
-                if (entry.getValue() != null && entry.getValue().errorCallback != null) {
-                    
-                    
-                    Util.executeAsyncTask(false, new AsyncTask<Void, Void, Void>() {
-                        @Override
-                        protected Void doInBackground(Void... params) {
-                            entry.getValue().errorCallback.error(error);
-                            return null;
-                        }
-                    });
-                }
-                iterator.remove();
-            }
+          });
         }
+        iterator.remove();
+      }
+    }
+    Leanplum.countAggregator().incrementCount("invoke_error_callbacks_on_responses");
+  }
+
+  
+
+
+
+
+
+
+  void invokeAllCallbacksForResponse(@NonNull final JSONObject responseBody, int countOfEvents) {
+    if (eventCallbacks.size() == 0) {
+      return;
     }
 
+    Iterator<Map.Entry<RequestOld, LeanplumEventCallbacks>> iterator =
+        eventCallbacks.entrySet().iterator();
     
+    for (; iterator.hasNext(); ) {
+      final Map.Entry<RequestOld, LeanplumEventCallbacks> entry = iterator.next();
+      if (entry.getKey() == null) {
+        continue;
+      }
 
-
-
-
-
-
-    void invokeAllCallbacksForResponse(@NonNull final JSONObject responseBody, int countOfEvents) {
-        if (eventCallbacks.size() == 0) {
-            return;
-        }
-
-        Iterator<Map.Entry<Request, LeanplumEventCallbacks>> iterator =
-                eventCallbacks.entrySet().iterator();
-        
-        for (; iterator.hasNext(); ) {
-            final Map.Entry<Request, LeanplumEventCallbacks> entry = iterator.next();
-            if (entry.getKey() == null) {
-                continue;
+      if (entry.getKey().getDataBaseIndex() >= countOfEvents) {
+        entry.getKey().setDataBaseIndex(entry.getKey().getDataBaseIndex() - countOfEvents);
+      } else {
+        if (entry.getValue() != null && entry.getValue().responseCallback != null) {
+          
+          
+          Util.executeAsyncTask(false, new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+              entry.getValue().responseCallback.response(RequestOld.getResponseAt(responseBody,
+                  (int) entry.getKey().getDataBaseIndex()));
+              return null;
             }
-
-            if (entry.getKey().getDataBaseIndex() >= countOfEvents) {
-                entry.getKey().setDataBaseIndex(entry.getKey().getDataBaseIndex() - countOfEvents);
-            } else {
-                if (entry.getValue() != null && entry.getValue().responseCallback != null) {
-                    
-                    
-                    Util.executeAsyncTask(false, new AsyncTask<Void, Void, Void>() {
-                        @Override
-                        protected Void doInBackground(Void... params) {
-                            entry.getValue().responseCallback.response(Request.getResponseAt(responseBody,
-                                    (int) entry.getKey().getDataBaseIndex()));
-                            return null;
-                        }
-                    });
-                }
-                iterator.remove();
-            }
+          });
         }
+        iterator.remove();
+      }
     }
+    Leanplum.countAggregator().incrementCount("invoke_success_callbacks_on_responses");
+  }
 
-    private static class LeanplumEventCallbacks {
-        private Request.ResponseCallback responseCallback;
-        private Request.ErrorCallback errorCallback;
+  private static class LeanplumEventCallbacks {
+    private RequestOld.ResponseCallback responseCallback;
+    private RequestOld.ErrorCallback errorCallback;
 
-        LeanplumEventCallbacks(Request.ResponseCallback responseCallback, Request.ErrorCallback
-                errorCallback) {
-            this.responseCallback = responseCallback;
-            this.errorCallback = errorCallback;
-        }
+    LeanplumEventCallbacks(RequestOld.ResponseCallback responseCallback, RequestOld.ErrorCallback
+        errorCallback) {
+      this.responseCallback = responseCallback;
+      this.errorCallback = errorCallback;
     }
+  }
 }

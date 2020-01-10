@@ -1,3 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 package com.leanplum.callbacks;
 
 
@@ -6,20 +27,19 @@ package com.leanplum.callbacks;
 
 
 public abstract class InboxSyncedCallback implements Runnable {
-    private boolean success;
+  private boolean success;
 
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
+  public void setSuccess(boolean success) {
+    this.success = success;
+  }
 
-    public void run() {
-        this.onForceContentUpdate(success);
-    }
+  public void run() {
+    this.onForceContentUpdate(success);
+  }
 
-    
-
-
+  
 
 
-    public abstract void onForceContentUpdate(boolean success);
+
+  public abstract void onForceContentUpdate(boolean success);
 }
