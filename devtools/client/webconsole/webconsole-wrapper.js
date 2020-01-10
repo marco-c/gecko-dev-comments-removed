@@ -167,16 +167,13 @@ class WebConsoleWrapper {
 
 
 
-
-        getFrameActor: (frame = null) => {
+        getFrameActor: () => {
           const state = this.hud.getDebuggerFrames();
           if (!state) {
             return { frameActor: null, client: webConsoleUI.webConsoleClient };
           }
 
-          const grip = Number.isInteger(frame)
-            ? state.frames[frame]
-            : state.frames[state.selected];
+          const grip = state.frames[state.selected];
 
           if (!grip) {
             return { frameActor: null, client: webConsoleUI.webConsoleClient };
