@@ -27,7 +27,6 @@
 #include "nsFocusManager.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
-#include "mozilla/dom/UserActivation.h"
 #include "nsAttrValueOrString.h"
 #include "imgLoader.h"
 #include "Image.h"
@@ -317,7 +316,7 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aName == nsGkAtoms::src && aNameSpaceID == kNameSpaceID_None && !aValue) {
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     
     
@@ -333,7 +332,7 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   } else if (aName == nsGkAtoms::srcset && aNameSpaceID == kNameSpaceID_None) {
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     mSrcsetTriggeringPrincipal = aMaybeScriptedPrincipal;
 
@@ -341,7 +340,7 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   } else if (aName == nsGkAtoms::sizes && aNameSpaceID == kNameSpaceID_None) {
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     PictureSourceSizesChanged(this, attrVal.String(), aNotify);
   } else if (aName == nsGkAtoms::decoding &&
@@ -384,7 +383,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
   if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::src) {
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
         this, aValue.String(), aMaybeScriptedPrincipal);
@@ -447,7 +446,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
   if (forceReload) {
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     if (InResponsiveMode()) {
       
@@ -519,7 +518,7 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     
     
@@ -535,7 +534,7 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     
     
@@ -723,7 +722,7 @@ nsresult HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest) {
         aDest->OwnerDoc()->ShouldLoadImages()) {
       
       
-      mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+      mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
       nsContentUtils::AddScriptRunner(NewRunnableMethod<bool>(
           "dom::HTMLImageElement::MaybeLoadImage", aDest,

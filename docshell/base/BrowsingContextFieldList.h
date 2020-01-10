@@ -25,7 +25,7 @@ MOZ_BC_FIELD(HadOriginalOpener, bool)
 
 
 
-MOZ_BC_FIELD(UserActivationState, UserActivation::State)
+MOZ_BC_FIELD(IsActivatedByUserGesture, bool)
 
 
 

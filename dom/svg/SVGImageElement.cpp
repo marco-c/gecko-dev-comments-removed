@@ -7,6 +7,7 @@
 #include "mozilla/dom/SVGImageElement.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
@@ -15,7 +16,6 @@
 #include "imgINotificationObserver.h"
 #include "mozilla/dom/SVGImageElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
-#include "mozilla/dom/UserActivation.h"
 #include "nsContentUtils.h"
 #include "SVGGeometryProperty.h"
 
@@ -142,7 +142,7 @@ nsresult SVGImageElement::LoadSVGImage(bool aForce, bool aNotify) {
 
   
   
-  mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+  mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
   return LoadImage(href, aForce, aNotify, eImageLoadType_Normal);
 }

@@ -252,6 +252,45 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   void RecomputeMouseEnterStateForRemoteFrame(Element& aElement);
 
+  
+
+
+
+  static bool IsUserInteractionEvent(const WidgetEvent* aEvent);
+
+  
+
+
+
+
+
+
+
+
+  static void StartHandlingUserInput(EventMessage aMessage);
+  static void StopHandlingUserInput(EventMessage aMessage);
+
+  static TimeStamp GetHandlingInputStart() { return sHandlingInputStart; }
+
+  
+
+
+
+
+
+
+
+  static bool IsHandlingUserInput();
+  static bool IsHandlingKeyboardInput();
+
+  
+
+
+
+
+
+  static TimeStamp LatestUserInputStart() { return sLatestUserInputStart; }
+
   nsPresContext* GetPresContext() { return mPresContext; }
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EventStateManager, nsIObserver)
@@ -1216,6 +1255,14 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   bool m_haveShutdown;
 
+  
+  
+  static TimeStamp sHandlingInputStart;
+
+  
+  
+  static TimeStamp sLatestUserInputStart;
+
   RefPtr<OverOutElementsWrapper> mMouseEnterLeaveHelper;
   nsRefPtrHashtable<nsUint32HashKey, OverOutElementsWrapper>
       mPointersEnterLeaveHelper;
@@ -1224,6 +1271,15 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   static nsresult UpdateUserActivityTimer(void);
   
   nsCOMArray<nsIContent> mAccessKeys;
+
+  
+  
+  
+  
+  
+  
+  static int32_t sUserInputEventDepth;
+  static int32_t sUserKeyboardEventDepth;
 
   static bool sNormalLMouseEventInProcess;
   static int16_t sCurrentMouseBtn;
@@ -1242,6 +1298,21 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   MOZ_CAN_RUN_SCRIPT static void SetPointerLock(nsIWidget* aWidget,
                                                 nsIContent* aElement);
   static void sClickHoldCallback(nsITimer* aTimer, void* aESM);
+};
+
+
+
+
+
+class MOZ_RAII AutoHandlingUserInputStatePusher final {
+ public:
+  explicit AutoHandlingUserInputStatePusher(bool aIsHandlingUserInput,
+                                            WidgetEvent* aEvent = nullptr);
+  ~AutoHandlingUserInputStatePusher();
+
+ protected:
+  EventMessage mMessage;
+  bool mIsHandlingUserInput;
 };
 
 }  

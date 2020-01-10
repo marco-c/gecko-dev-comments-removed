@@ -5,8 +5,7 @@
 
 
 #include "mozilla/dom/PopupBlocker.h"
-#include "mozilla/dom/UserActivation.h"
-#include "mozilla/MouseEvents.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEvents.h"
@@ -187,7 +186,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
       
       
       
-      if (UserActivation::IsHandlingUserInput()) {
+      if (EventStateManager::IsHandlingUserInput()) {
         abuse = PopupBlocker::openBlocked;
         switch (aEvent->mMessage) {
           case eFormSelect:
@@ -209,7 +208,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
       
       
       
-      if (UserActivation::IsHandlingUserInput()) {
+      if (EventStateManager::IsHandlingUserInput()) {
         abuse = PopupBlocker::openBlocked;
         switch (aEvent->mMessage) {
           case eEditorInput:
@@ -226,7 +225,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
       
       
       
-      if (UserActivation::IsHandlingUserInput()) {
+      if (EventStateManager::IsHandlingUserInput()) {
         abuse = PopupBlocker::openBlocked;
         switch (aEvent->mMessage) {
           case eFormChange:
@@ -372,7 +371,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
       
       
       
-      if (UserActivation::IsHandlingUserInput()) {
+      if (EventStateManager::IsHandlingUserInput()) {
         abuse = PopupBlocker::openBlocked;
         switch (aEvent->mMessage) {
           case eFormSubmit:

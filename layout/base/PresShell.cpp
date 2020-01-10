@@ -54,7 +54,6 @@
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/UserActivation.h"
 #include "nsAnimationManager.h"
 #include "nsNameSpaceManager.h"  
 #include "nsFrame.h"
@@ -7758,7 +7757,7 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
   RecordEventPreparationPerformance(aEvent);
 
   AutoHandlingUserInputStatePusher userInpStatePusher(
-      UserActivation::IsUserInteractionEvent(aEvent), aEvent);
+      EventStateManager::IsUserInteractionEvent(aEvent), aEvent);
   AutoEventHandler eventHandler(aEvent, GetDocument());
   AutoPopupStatePusher popupStatePusher(
       PopupBlocker::GetEventPopupControlState(aEvent));
