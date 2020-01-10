@@ -1381,11 +1381,6 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
   
 
 
-  void FlushFrames();
-
-  
-
-
 
 
   bool ShouldPreventDOMActivateDispatch(EventTarget* aOriginalTarget);
