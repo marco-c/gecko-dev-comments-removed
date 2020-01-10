@@ -8,6 +8,7 @@
 #define mozilla_layout_ScrollAnchorContainer_h_
 
 #include "nsPoint.h"
+#include "mozilla/Saturate.h"
 
 class nsFrameList;
 class nsIFrame;
@@ -130,6 +131,10 @@ class ScrollAnchorContainer final {
   nsIFrame* FindAnchorInList(const nsFrameList& aFrameList) const;
 
   
+  
+  void AdjustmentMade(nscoord aAdjustment);
+
+  
   ScrollFrameHelper* mScrollFrame;
 
   
@@ -142,6 +147,20 @@ class ScrollAnchorContainer final {
   
   
   nscoord mLastAnchorOffset;
+
+  
+  
+  SaturateUint32 mConsecutiveScrollAnchoringAdjustments{0};
+
+  
+  
+  
+  nscoord mConsecutiveScrollAnchoringAdjustmentLength{0};
+
+  
+  
+  
+  bool mDisabled : 1;
 
   
   bool mAnchorNodeIsDirty : 1;
