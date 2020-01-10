@@ -51,25 +51,21 @@
 
 
 
-
-
 #![doc(html_root_url = "https://docs.rs/cc/1.0")]
 #![cfg_attr(test, deny(warnings))]
 #![allow(deprecated)]
 #![deny(missing_docs)]
 
-#[cfg(feature = "parallel")]
-extern crate rayon;
-
+use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
+use std::fmt::{self, Display};
 use std::fs;
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::io::{self, BufRead, BufReader, Read, Write};
-use std::thread::{self, JoinHandle};
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
 
 
 
@@ -98,6 +94,8 @@ pub struct Build {
     flags: Vec<String>,
     flags_supported: Vec<String>,
     known_flag_support_status: Arc<Mutex<HashMap<String, bool>>>,
+    ar_flags: Vec<String>,
+    no_default_flags: bool,
     files: Vec<PathBuf>,
     cpp: bool,
     cpp_link_stdlib: Option<Option<String>>,
@@ -108,6 +106,7 @@ pub struct Build {
     out_dir: Option<PathBuf>,
     opt_level: Option<String>,
     debug: Option<bool>,
+    force_frame_pointer: Option<bool>,
     env: Vec<(OsString, OsString)>,
     compiler: Option<PathBuf>,
     archiver: Option<PathBuf>,
@@ -162,6 +161,12 @@ impl From<io::Error> for Error {
     }
 }
 
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}: {}", self.kind, self.message)
+    }
+}
+
 
 
 
@@ -202,35 +207,28 @@ impl ToolFamily {
     fn add_debug_flags(&self, cmd: &mut Tool) {
         match *self {
             ToolFamily::Msvc { .. } => {
-                cmd.push_cc_arg("/Z7".into());
+                cmd.push_cc_arg("-Z7".into());
             }
             ToolFamily::Gnu | ToolFamily::Clang => {
                 cmd.push_cc_arg("-g".into());
-                cmd.push_cc_arg("-fno-omit-frame-pointer".into());
             }
         }
     }
 
     
-    fn include_flag(&self) -> &'static str {
+    fn add_force_frame_pointer(&self, cmd: &mut Tool) {
         match *self {
-            ToolFamily::Msvc { .. } => "/I",
-            ToolFamily::Gnu | ToolFamily::Clang => "-I",
-        }
-    }
-
-    
-    fn expand_flag(&self) -> &'static str {
-        match *self {
-            ToolFamily::Msvc { .. } => "/E",
-            ToolFamily::Gnu | ToolFamily::Clang => "-E",
+            ToolFamily::Gnu | ToolFamily::Clang => {
+                cmd.push_cc_arg("-fno-omit-frame-pointer".into());
+            }
+            _ => (),
         }
     }
 
     
     fn warnings_flags(&self) -> &'static str {
         match *self {
-            ToolFamily::Msvc { .. } => "/W4",
+            ToolFamily::Msvc { .. } => "-W4",
             ToolFamily::Gnu | ToolFamily::Clang => "-Wall",
         }
     }
@@ -246,26 +244,8 @@ impl ToolFamily {
     
     fn warnings_to_errors_flag(&self) -> &'static str {
         match *self {
-            ToolFamily::Msvc { .. } => "/WX",
+            ToolFamily::Msvc { .. } => "-WX",
             ToolFamily::Gnu | ToolFamily::Clang => "-Werror",
-        }
-    }
-
-    
-    
-    fn nvcc_debug_flag(&self) -> &'static str {
-        match *self {
-            ToolFamily::Msvc { .. } => unimplemented!(),
-            ToolFamily::Gnu | ToolFamily::Clang => "-G",
-        }
-    }
-
-    
-    
-    fn nvcc_redirect_flag(&self) -> &'static str {
-        match *self {
-            ToolFamily::Msvc { .. } => unimplemented!(),
-            ToolFamily::Gnu | ToolFamily::Clang => "-Xcompiler",
         }
     }
 
@@ -304,6 +284,8 @@ impl Build {
             flags: Vec::new(),
             flags_supported: Vec::new(),
             known_flag_support_status: Arc::new(Mutex::new(HashMap::new())),
+            ar_flags: Vec::new(),
+            no_default_flags: false,
             files: Vec::new(),
             shared_flag: None,
             static_flag: None,
@@ -316,6 +298,7 @@ impl Build {
             out_dir: None,
             opt_level: None,
             debug: None,
+            force_frame_pointer: None,
             env: Vec::new(),
             compiler: None,
             archiver: None,
@@ -388,6 +371,23 @@ impl Build {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    pub fn ar_flag(&mut self, flag: &str) -> &mut Build {
+        self.ar_flags.push(flag.to_string());
+        self
+    }
+
     fn ensure_check_file(&self) -> Result<PathBuf, Error> {
         let out_dir = self.get_out_dir()?;
         let src = if self.cuda {
@@ -447,12 +447,19 @@ impl Build {
 
         let mut cmd = compiler.to_command();
         let is_arm = target.contains("aarch64") || target.contains("arm");
-        command_add_output_file(&mut cmd, &obj, target.contains("msvc"), false, is_arm);
+        command_add_output_file(
+            &mut cmd,
+            &obj,
+            self.cuda,
+            target.contains("msvc"),
+            false,
+            is_arm,
+        );
 
         
         
-        if target.contains("msvc") {
-            cmd.arg("/c");
+        if target.contains("msvc") && !self.cuda {
+            cmd.arg("-c");
         }
 
         cmd.arg(&src);
@@ -493,7 +500,6 @@ impl Build {
     
     
     
-
     pub fn shared_flag(&mut self, shared_flag: bool) -> &mut Build {
         self.shared_flag = Some(shared_flag);
         self
@@ -515,6 +521,17 @@ impl Build {
     
     pub fn static_flag(&mut self, static_flag: bool) -> &mut Build {
         self.static_flag = Some(static_flag);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn no_default_flags(&mut self, no_default_flags: bool) -> &mut Build {
+        self.no_default_flags = no_default_flags;
         self
     }
 
@@ -766,9 +783,19 @@ impl Build {
     
     
     
-    
     pub fn debug(&mut self, debug: bool) -> &mut Build {
         self.debug = Some(debug);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn force_frame_pointer(&mut self, force: bool) -> &mut Build {
+        self.force_frame_pointer = Some(force);
         self
     }
 
@@ -891,7 +918,7 @@ impl Build {
                     return Err(Error::new(
                         ErrorKind::IOError,
                         "Getting object file details failed.",
-                    ))
+                    ));
                 }
             };
 
@@ -953,22 +980,150 @@ impl Build {
     }
 
     #[cfg(feature = "parallel")]
-    fn compile_objects(&self, objs: &[Object]) -> Result<(), Error> {
-        use self::rayon::prelude::*;
+    fn compile_objects<'me>(&'me self, objs: &[Object]) -> Result<(), Error> {
+        use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
+        use std::sync::Once;
 
-        if let Some(amt) = self.getenv("NUM_JOBS") {
-            if let Ok(amt) = amt.parse() {
-                let _ = rayon::ThreadPoolBuilder::new()
-                    .num_threads(amt)
-                    .build_global();
+        
+        
+        
+        
+        
+        let server = jobserver();
+        let reacquire = server.release_raw().is_ok();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let error = AtomicBool::new(false);
+        let mut threads = Vec::new();
+        for obj in objs {
+            if error.load(SeqCst) {
+                break;
+            }
+            let token = server.acquire()?;
+            let state = State {
+                build: self,
+                obj,
+                error: &error,
+            };
+            let state = unsafe { std::mem::transmute::<State, State<'static>>(state) };
+            let thread = thread::spawn(|| {
+                let state: State<'me> = state; 
+                let result = state.build.compile_object(state.obj);
+                if result.is_err() {
+                    state.error.store(true, SeqCst);
+                }
+                drop(token); 
+                return result;
+            });
+            threads.push(JoinOnDrop(Some(thread)));
+        }
+
+        for mut thread in threads {
+            if let Some(thread) = thread.0.take() {
+                thread.join().expect("thread should not panic")?;
             }
         }
 
         
-        objs.par_iter()
-            .with_max_len(1)
-            .map(|obj| self.compile_object(obj))
-            .collect()
+        
+        if reacquire {
+            server.acquire_raw()?;
+        }
+
+        return Ok(());
+
+        
+        
+        
+        
+        struct State<'a> {
+            build: &'a Build,
+            obj: &'a Object,
+            error: &'a AtomicBool,
+        }
+
+        
+        
+        fn jobserver() -> &'static jobserver::Client {
+            static INIT: Once = Once::new();
+            static mut JOBSERVER: Option<jobserver::Client> = None;
+
+            fn _assert_sync<T: Sync>() {}
+            _assert_sync::<jobserver::Client>();
+
+            unsafe {
+                INIT.call_once(|| {
+                    let server = default_jobserver();
+                    JOBSERVER = Some(server);
+                });
+                JOBSERVER.as_ref().unwrap()
+            }
+        }
+
+        unsafe fn default_jobserver() -> jobserver::Client {
+            
+            
+            if let Some(client) = jobserver::Client::from_env() {
+                return client;
+            }
+
+            
+            
+            let mut parallelism = num_cpus::get();
+            if let Ok(amt) = env::var("NUM_JOBS") {
+                if let Ok(amt) = amt.parse() {
+                    parallelism = amt;
+                }
+            }
+
+            
+            
+            let client = jobserver::Client::new(parallelism).expect("failed to create jobserver");
+            client.acquire_raw().expect("failed to acquire initial");
+            return client;
+        }
+
+        struct JoinOnDrop(Option<thread::JoinHandle<Result<(), Error>>>);
+
+        impl Drop for JoinOnDrop {
+            fn drop(&mut self) {
+                if let Some(thread) = self.0.take() {
+                    drop(thread.join());
+                }
+            }
+        }
     }
 
     #[cfg(not(feature = "parallel"))]
@@ -1002,10 +1157,10 @@ impl Build {
             )
         };
         let is_arm = target.contains("aarch64") || target.contains("arm");
-        command_add_output_file(&mut cmd, &obj.dst, msvc, is_asm, is_arm);
+        command_add_output_file(&mut cmd, &obj.dst, self.cuda, msvc, is_asm, is_arm);
         
         if !msvc || !is_asm || !is_arm {
-            cmd.arg(if msvc { "/c" } else { "-c" });
+            cmd.arg("-c");
         }
         cmd.arg(&obj.src);
 
@@ -1020,7 +1175,7 @@ impl Build {
         for &(ref a, ref b) in self.env.iter() {
             cmd.env(a, b);
         }
-        cmd.arg(compiler.family.expand_flag());
+        cmd.arg("-E");
 
         assert!(
             self.files.len() <= 1,
@@ -1096,10 +1251,9 @@ impl Build {
         let envflags = self.envflags(if self.cpp { "CXXFLAGS" } else { "CFLAGS" });
 
         
-        
-        let use_defaults = self.getenv("CRATE_CC_NO_DEFAULTS").is_none();
+        let no_defaults = self.no_default_flags || self.getenv("CRATE_CC_NO_DEFAULTS").is_some();
 
-        if use_defaults {
+        if !no_defaults {
             self.add_default_flags(&mut cmd, &target, &opt_level)?;
         } else {
             println!("Info: default compiler flags are disabled");
@@ -1110,7 +1264,7 @@ impl Build {
         }
 
         for directory in self.include_directories.iter() {
-            cmd.args.push(cmd.family.include_flag().into());
+            cmd.args.push("-I".into());
             cmd.args.push(directory.into());
         }
 
@@ -1119,12 +1273,18 @@ impl Build {
         
         
 
-        if self.warnings.unwrap_or(if self.has_flags() { false } else { true }) {
+        if self
+            .warnings
+            .unwrap_or(if self.has_flags() { false } else { true })
+        {
             let wflags = cmd.family.warnings_flags().into();
             cmd.push_cc_arg(wflags);
         }
 
-        if self.extra_warnings.unwrap_or(if self.has_flags() { false } else { true }) {
+        if self
+            .extra_warnings
+            .unwrap_or(if self.has_flags() { false } else { true })
+        {
             if let Some(wflags) = cmd.family.extra_warnings_flags() {
                 cmd.push_cc_arg(wflags.into());
             }
@@ -1141,15 +1301,10 @@ impl Build {
         }
 
         for &(ref key, ref value) in self.definitions.iter() {
-            let lead = if let ToolFamily::Msvc { .. } = cmd.family {
-                "/"
-            } else {
-                "-"
-            };
             if let Some(ref value) = *value {
-                cmd.args.push(format!("{}D{}={}", lead, key, value).into());
+                cmd.args.push(format!("-D{}={}", key, value).into());
             } else {
-                cmd.args.push(format!("{}D{}", lead, key).into());
+                cmd.args.push(format!("-D{}", key).into());
             }
         }
 
@@ -1161,36 +1316,39 @@ impl Build {
         Ok(cmd)
     }
 
-    fn add_default_flags(&self, cmd: &mut Tool, target: &str, opt_level: &str) -> Result<(), Error> {
+    fn add_default_flags(
+        &self,
+        cmd: &mut Tool,
+        target: &str,
+        opt_level: &str,
+    ) -> Result<(), Error> {
         
         
         match cmd.family {
             ToolFamily::Msvc { .. } => {
-                assert!(!self.cuda,
-                    "CUDA C++ compilation not supported for MSVC, yet... but you are welcome to implement it :)");
-
-                cmd.args.push("/nologo".into());
+                cmd.push_cc_arg("-nologo".into());
 
                 let crt_flag = match self.static_crt {
-                    Some(true) => "/MT",
-                    Some(false) => "/MD",
+                    Some(true) => "-MT",
+                    Some(false) => "-MD",
                     None => {
-                        let features =
-                            self.getenv("CARGO_CFG_TARGET_FEATURE").unwrap_or(String::new());
+                        let features = self
+                            .getenv("CARGO_CFG_TARGET_FEATURE")
+                            .unwrap_or(String::new());
                         if features.contains("crt-static") {
-                            "/MT"
+                            "-MT"
                         } else {
-                            "/MD"
+                            "-MD"
                         }
                     }
                 };
-                cmd.args.push(crt_flag.into());
+                cmd.push_cc_arg(crt_flag.into());
 
                 match &opt_level[..] {
                     
-                    "z" | "s" | "1" => cmd.push_opt_unless_duplicate("/O1".into()),
+                    "z" | "s" | "1" => cmd.push_opt_unless_duplicate("-O1".into()),
                     
-                    "2" | "3" => cmd.push_opt_unless_duplicate("/O2".into()),
+                    "2" | "3" => cmd.push_opt_unless_duplicate("-O2".into()),
                     _ => {}
                 }
             }
@@ -1207,7 +1365,11 @@ impl Build {
                     cmd.push_cc_arg("-ffunction-sections".into());
                     cmd.push_cc_arg("-fdata-sections".into());
                 }
-                if self.pic.unwrap_or(!target.contains("windows-gnu")) {
+                
+                if self
+                    .pic
+                    .unwrap_or(!target.contains("windows-gnu") && !target.contains("riscv"))
+                {
                     cmd.push_cc_arg("-fPIC".into());
                     
                     
@@ -1220,11 +1382,16 @@ impl Build {
 
         if self.get_debug() {
             if self.cuda {
-                let nvcc_debug_flag = cmd.family.nvcc_debug_flag().into();
-                cmd.args.push(nvcc_debug_flag);
+                
+                cmd.args.push("-G".into());
             }
             let family = cmd.family;
             family.add_debug_flags(cmd);
+        }
+
+        if self.get_force_frame_pointer() {
+            let family = cmd.family;
+            family.add_force_frame_pointer(cmd);
         }
 
         
@@ -1233,18 +1400,23 @@ impl Build {
                 cmd.args.push(format!("--target={}", target).into());
             }
             ToolFamily::Msvc { clang_cl } => {
+                
+                
+                
+                cmd.args.push("-Brepro".into());
+
                 if clang_cl {
                     if target.contains("x86_64") {
                         cmd.args.push("-m64".into());
                     } else if target.contains("86") {
                         cmd.args.push("-m32".into());
-                        cmd.args.push("/arch:IA32".into());
+                        cmd.push_cc_arg("-arch:IA32".into());
                     } else {
-                        cmd.args.push(format!("--target={}", target).into());
+                        cmd.push_cc_arg(format!("--target={}", target).into());
                     }
                 } else {
                     if target.contains("i586") {
-                        cmd.args.push("/ARCH:IA32".into());
+                        cmd.push_cc_arg("-arch:IA32".into());
                     }
                 }
 
@@ -1258,7 +1430,8 @@ impl Build {
                 
                 
                 if target.contains("arm") || target.contains("thumb") {
-                    cmd.args.push("/D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1".into());
+                    cmd.args
+                        .push("-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1".into());
                 }
             }
             ToolFamily::Gnu => {
@@ -1271,14 +1444,18 @@ impl Build {
                 }
 
                 if self.static_flag.is_none() {
-                    let features = self.getenv("CARGO_CFG_TARGET_FEATURE").unwrap_or(String::new());
+                    let features = self
+                        .getenv("CARGO_CFG_TARGET_FEATURE")
+                        .unwrap_or(String::new());
                     if features.contains("crt-static") {
                         cmd.args.push("-static".into());
                     }
                 }
 
                 
-                if (target.starts_with("armv7") || target.starts_with("thumbv7")) && target.contains("-linux-") {
+                if (target.starts_with("armv7") || target.starts_with("thumbv7"))
+                    && target.contains("-linux-")
+                {
                     cmd.args.push("-march=armv7-a".into());
                 }
 
@@ -1405,6 +1582,21 @@ impl Build {
                         cmd.args.push("-mfloat-abi=soft".into());
                     }
                 }
+                if target.starts_with("riscv32") || target.starts_with("riscv64") {
+                    
+                    let mut parts = target.split('-');
+                    if let Some(arch) = parts.next() {
+                        let arch = &arch[5..];
+                        cmd.args.push(("-march=rv".to_owned() + arch).into());
+                        
+                        
+                        if arch.starts_with("64") {
+                            cmd.args.push("-mabi=lp64".into());
+                        } else {
+                            cmd.args.push("-mabi=ilp32".into());
+                        }
+                    }
+                }
             }
         }
 
@@ -1443,7 +1635,11 @@ impl Build {
     fn has_flags(&self) -> bool {
         let flags_env_var_name = if self.cpp { "CXXFLAGS" } else { "CFLAGS" };
         let flags_env_var_value = self.get_var(flags_env_var_name);
-        if let Ok(_) = flags_env_var_value { true } else { false }
+        if let Ok(_) = flags_env_var_value {
+            true
+        } else {
+            false
+        }
     }
 
     fn msvc_macro_assembler(&self) -> Result<(Command, String), Error> {
@@ -1459,18 +1655,18 @@ impl Build {
         };
         let mut cmd = windows_registry::find(&target, tool).unwrap_or_else(|| self.cmd(tool));
         for directory in self.include_directories.iter() {
-            cmd.arg("/I").arg(directory);
+            cmd.arg("-I").arg(directory);
         }
         for &(ref key, ref value) in self.definitions.iter() {
             if let Some(ref value) = *value {
-                cmd.arg(&format!("/D{}={}", key, value));
+                cmd.arg(&format!("-D{}={}", key, value));
             } else {
-                cmd.arg(&format!("/D{}", key));
+                cmd.arg(&format!("-D{}", key));
             }
         }
 
         if target.contains("i686") || target.contains("i586") {
-            cmd.arg("/safeseh");
+            cmd.arg("-safeseh");
         }
         for flag in self.flags.iter() {
             cmd.arg(flag);
@@ -1488,9 +1684,12 @@ impl Build {
         let target = self.get_target()?;
         if target.contains("msvc") {
             let (mut cmd, program) = self.get_ar()?;
-            let mut out = OsString::from("/OUT:");
+            let mut out = OsString::from("-out:");
             out.push(dst);
-            cmd.arg(out).arg("/nologo");
+            cmd.arg(out).arg("-nologo");
+            for flag in self.ar_flags.iter() {
+                cmd.arg(flag);
+            }
 
             
             
@@ -1548,11 +1747,38 @@ impl Build {
                     return Err(Error::new(
                         ErrorKind::IOError,
                         "Could not copy or create a hard-link to the generated lib file.",
-                    ))
+                    ));
                 }
             };
         } else {
             let (mut ar, cmd) = self.get_ar()?;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            ar.env("ZERO_AR_DATE", "1");
+            for flag in self.ar_flags.iter() {
+                ar.arg(flag);
+            }
             run(
                 ar.arg("crs").arg(dst).args(&objects).args(&self.objects),
                 &cmd,
@@ -1585,26 +1811,32 @@ impl Build {
                 return Err(Error::new(
                     ErrorKind::ArchitectureInvalid,
                     "Unknown architecture for iOS target.",
-                ))
+                ));
             }
         };
+
+        let min_version =
+            std::env::var("IPHONEOS_DEPLOYMENT_TARGET").unwrap_or_else(|_| "7.0".into());
 
         let sdk = match arch {
             ArchSpec::Device(arch) => {
                 cmd.args.push("-arch".into());
                 cmd.args.push(arch.into());
-                cmd.args.push("-miphoneos-version-min=7.0".into());
+                cmd.args
+                    .push(format!("-miphoneos-version-min={}", min_version).into());
                 "iphoneos"
             }
             ArchSpec::Simulator(arch) => {
                 cmd.args.push(arch.into());
-                cmd.args.push("-mios-simulator-version-min=7.0".into());
+                cmd.args
+                    .push(format!("-mios-simulator-version-min={}", min_version).into());
                 "iphonesimulator"
             }
         };
 
         self.print(&format!("Detecting iOS SDK path for {}", sdk));
-        let sdk_path = self.cmd("xcrun")
+        let sdk_path = self
+            .cmd("xcrun")
             .arg("--show-sdk-path")
             .arg("--sdk")
             .arg(sdk)
@@ -1618,7 +1850,7 @@ impl Build {
                 return Err(Error::new(
                     ErrorKind::IOError,
                     "Unable to determine iOS SDK path.",
-                ))
+                ));
             }
         };
 
@@ -1669,14 +1901,21 @@ impl Build {
 
         let cl_exe = windows_registry::find_tool(&target, "cl.exe");
 
-        let tool_opt: Option<Tool> = self.env_tool(env)
-            .map(|(tool, cc, args)| {
+        let tool_opt: Option<Tool> = self
+            .env_tool(env)
+            .map(|(tool, wrapper, args)| {
+                
+                const DRIVER_MODE: &str = "--driver-mode=";
+                let driver_mode = args
+                    .iter()
+                    .find(|a| a.starts_with(DRIVER_MODE))
+                    .map(|a| &a[DRIVER_MODE.len()..]);
                 
                 
                 
                 
-                let mut t = Tool::new(PathBuf::from(tool.trim()));
-                if let Some(cc) = cc {
+                let mut t = Tool::with_clang_driver(PathBuf::from(tool.trim()), driver_mode);
+                if let Some(cc) = wrapper {
                     t.cc_wrapper_path = Some(PathBuf::from(cc));
                 }
                 for arg in args {
@@ -1728,8 +1967,13 @@ impl Build {
                     }
                 } else if target.contains("cloudabi") {
                     format!("{}-{}", target, traditional)
-                } else if target == "wasm32-unknown-wasi" || target == "wasm32-unknown-unknown" {
+                } else if target == "wasm32-wasi"
+                    || target == "wasm32-unknown-wasi"
+                    || target == "wasm32-unknown-unknown"
+                {
                     "clang".to_string()
+                } else if target.contains("vxworks") {
+                    "wr-c++".to_string()
                 } else if self.get_host()? != target {
                     
                     let cc_env = self.getenv("CROSS_COMPILE");
@@ -1758,17 +2002,29 @@ impl Build {
                         "armv7-unknown-netbsd-eabihf" => Some("armv7--netbsdelf-eabihf"),
                         "i586-unknown-linux-musl" => Some("musl"),
                         "i686-pc-windows-gnu" => Some("i686-w64-mingw32"),
+                        "i686-uwp-windows-gnu" => Some("i686-w64-mingw32"),
                         "i686-unknown-linux-musl" => Some("musl"),
                         "i686-unknown-netbsd" => Some("i486--netbsdelf"),
                         "mips-unknown-linux-gnu" => Some("mips-linux-gnu"),
                         "mipsel-unknown-linux-gnu" => Some("mipsel-linux-gnu"),
                         "mips64-unknown-linux-gnuabi64" => Some("mips64-linux-gnuabi64"),
                         "mips64el-unknown-linux-gnuabi64" => Some("mips64el-linux-gnuabi64"),
+                        "mipsisa32r6-unknown-linux-gnu" => Some("mipsisa32r6-linux-gnu"),
+                        "mipsisa32r6el-unknown-linux-gnu" => Some("mipsisa32r6el-linux-gnu"),
+                        "mipsisa64r6-unknown-linux-gnuabi64" => Some("mipsisa64r6-linux-gnuabi64"),
+                        "mipsisa64r6el-unknown-linux-gnuabi64" => {
+                            Some("mipsisa64r6el-linux-gnuabi64")
+                        }
                         "powerpc-unknown-linux-gnu" => Some("powerpc-linux-gnu"),
                         "powerpc-unknown-linux-gnuspe" => Some("powerpc-linux-gnuspe"),
                         "powerpc-unknown-netbsd" => Some("powerpc--netbsd"),
                         "powerpc64-unknown-linux-gnu" => Some("powerpc-linux-gnu"),
                         "powerpc64le-unknown-linux-gnu" => Some("powerpc64le-linux-gnu"),
+                        "riscv32i-unknown-none-elf" => Some("riscv32-unknown-elf"),
+                        "riscv32imac-unknown-none-elf" => Some("riscv32-unknown-elf"),
+                        "riscv32imc-unknown-none-elf" => Some("riscv32-unknown-elf"),
+                        "riscv64gc-unknown-none-elf" => Some("riscv64-unknown-elf"),
+                        "riscv64imac-unknown-none-elf" => Some("riscv64-unknown-elf"),
                         "s390x-unknown-linux-gnu" => Some("s390x-linux-gnu"),
                         "sparc-unknown-linux-gnu" => Some("sparc-linux-gnu"),
                         "sparc64-unknown-linux-gnu" => Some("sparc64-linux-gnu"),
@@ -1786,6 +2042,7 @@ impl Build {
                         "thumbv8m.main-none-eabi" => Some("arm-none-eabi"),
                         "thumbv8m.main-none-eabihf" => Some("arm-none-eabi"),
                         "x86_64-pc-windows-gnu" => Some("x86_64-w64-mingw32"),
+                        "x86_64-uwp-windows-gnu" => Some("x86_64-w64-mingw32"),
                         "x86_64-rumprun-netbsd" => Some("x86_64-rumprun-netbsd"),
                         "x86_64-unknown-linux-musl" => Some("musl"),
                         "x86_64-unknown-netbsd" => Some("x86_64--netbsd"),
@@ -1811,10 +2068,11 @@ impl Build {
                 Err(_) => "nvcc".into(),
                 Ok(nvcc) => nvcc,
             };
-            let mut nvcc_tool = Tool::with_features(PathBuf::from(nvcc), self.cuda);
+            let mut nvcc_tool = Tool::with_features(PathBuf::from(nvcc), None, self.cuda);
             nvcc_tool
                 .args
                 .push(format!("-ccbin={}", tool.path.display()).into());
+            nvcc_tool.family = tool.family;
             nvcc_tool
         } else {
             tool
@@ -1831,9 +2089,9 @@ impl Build {
         
         
         if let Some(cl_exe) = cl_exe {
-            if tool.family == (ToolFamily::Msvc { clang_cl: true }) &&
-                tool.env.len() == 0 &&
-                target.contains("msvc")
+            if tool.family == (ToolFamily::Msvc { clang_cl: true })
+                && tool.env.len() == 0
+                && target.contains("msvc")
             {
                 for &(ref k, ref v) in cl_exe.env.iter() {
                     tool.env.push((k.to_owned(), v.to_owned()));
@@ -1849,7 +2107,8 @@ impl Build {
         let host = self.get_host()?;
         let kind = if host == target { "HOST" } else { "TARGET" };
         let target_u = target.replace("-", "_");
-        let res = self.getenv(&format!("{}_{}", var_base, target))
+        let res = self
+            .getenv(&format!("{}_{}", var_base, target))
             .or_else(|| self.getenv(&format!("{}_{}", var_base, target_u)))
             .or_else(|| self.getenv(&format!("{}_{}", kind, var_base)))
             .or_else(|| self.getenv(var_base));
@@ -2025,6 +2284,10 @@ impl Build {
         })
     }
 
+    fn get_force_frame_pointer(&self) -> bool {
+        self.force_frame_pointer.unwrap_or_else(|| self.get_debug())
+    }
+
     fn get_out_dir(&self) -> Result<PathBuf, Error> {
         match self.out_dir.clone() {
             Some(p) => Ok(p),
@@ -2040,7 +2303,7 @@ impl Build {
     fn getenv(&self, v: &str) -> Option<String> {
         let mut cache = self.env_cache.lock().unwrap();
         if let Some(val) = cache.get(v) {
-            return val.clone()
+            return val.clone();
         }
         let r = env::var(v).ok();
         self.print(&format!("{} = {:?}", v, r));
@@ -2072,28 +2335,37 @@ impl Default for Build {
 }
 
 impl Tool {
-    fn new(path: PathBuf) -> Tool {
-        Tool::with_features(path, false)
+    fn new(path: PathBuf) -> Self {
+        Tool::with_features(path, None, false)
     }
 
-    fn with_features(path: PathBuf, cuda: bool) -> Tool {
+    fn with_clang_driver(path: PathBuf, clang_driver: Option<&str>) -> Self {
+        Self::with_features(path, clang_driver, false)
+    }
+
+    fn with_features(path: PathBuf, clang_driver: Option<&str>, cuda: bool) -> Self {
         
         let family = if let Some(fname) = path.file_name().and_then(|p| p.to_str()) {
             if fname.contains("clang-cl") {
                 ToolFamily::Msvc { clang_cl: true }
-            } else if fname.contains("cl") &&
-                !fname.contains("cloudabi") &&
-                !fname.contains("uclibc") &&
-                !fname.contains("clang") {
+            } else if fname.contains("cl")
+                && !fname.contains("cloudabi")
+                && !fname.contains("uclibc")
+                && !fname.contains("clang")
+            {
                 ToolFamily::Msvc { clang_cl: false }
             } else if fname.contains("clang") {
-                ToolFamily::Clang
+                match clang_driver {
+                    Some("cl") => ToolFamily::Msvc { clang_cl: true },
+                    _ => ToolFamily::Clang,
+                }
             } else {
                 ToolFamily::Gnu
             }
         } else {
             ToolFamily::Gnu
         };
+
         Tool {
             path: path,
             cc_wrapper_path: None,
@@ -2118,7 +2390,7 @@ impl Tool {
     
     fn push_cc_arg(&mut self, flag: OsString) {
         if self.cuda {
-            self.args.push(self.family.nvcc_redirect_flag().into());
+            self.args.push("-Xcompiler".into());
         }
         self.args.push(flag);
     }
@@ -2140,9 +2412,10 @@ impl Tool {
 
         
         if chars.next() == Some('O') {
-            return self.args().iter().any(|ref a|
-                a.to_str().unwrap_or("").chars().nth(1) == Some('O')
-            );
+            return self
+                .args()
+                .iter()
+                .any(|ref a| a.to_str().unwrap_or("").chars().nth(1) == Some('O'));
         }
 
         
@@ -2174,7 +2447,11 @@ impl Tool {
         };
         cmd.args(&self.cc_wrapper_args);
 
-        let value = self.args.iter().filter(|a| !self.removed_args.contains(a)).collect::<Vec<_>>();
+        let value = self
+            .args
+            .iter()
+            .filter(|a| !self.removed_args.contains(a))
+            .collect::<Vec<_>>();
         cmd.args(&value);
 
         for &(ref k, ref v) in self.env.iter() {
@@ -2269,7 +2546,7 @@ fn run(cmd: &mut Command, program: &str) -> Result<(), Error> {
                     "Failed to wait on spawned child process, command {:?} with args {:?}.",
                     cmd, program
                 ),
-            ))
+            ));
         }
     };
     print.join().unwrap();
@@ -2307,7 +2584,7 @@ fn run_output(cmd: &mut Command, program: &str) -> Result<Vec<u8>, Error> {
                     "Failed to wait on spawned child process, command {:?} with args {:?}.",
                     cmd, program
                 ),
-            ))
+            ));
         }
     };
     print.join().unwrap();
@@ -2365,16 +2642,20 @@ fn spawn(cmd: &mut Command, program: &str) -> Result<(Child, JoinHandle<()>), Er
 }
 
 fn fail(s: &str) -> ! {
-    panic!("\n\nInternal error occurred: {}\n\n", s)
+    let _ = writeln!(io::stderr(), "\n\nerror occurred: {}\n\n", s);
+    std::process::exit(1);
 }
 
-fn command_add_output_file(cmd: &mut Command, dst: &Path, msvc: bool, is_asm: bool, is_arm: bool) {
-    if msvc && is_asm && is_arm {
-        cmd.arg("-o").arg(&dst);
-    } else if msvc && is_asm {
-        cmd.arg("/Fo").arg(dst);
-    } else if msvc {
-        let mut s = OsString::from("/Fo");
+fn command_add_output_file(
+    cmd: &mut Command,
+    dst: &Path,
+    cuda: bool,
+    msvc: bool,
+    is_asm: bool,
+    is_arm: bool,
+) {
+    if msvc && !cuda && !(is_asm && is_arm) {
+        let mut s = OsString::from("-Fo");
         s.push(&dst);
         cmd.arg(s);
     } else {

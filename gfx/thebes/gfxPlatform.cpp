@@ -986,6 +986,8 @@ void gfxPlatform::Init() {
   gPlatform->InitAcceleration();
   gPlatform->InitWebRenderConfig();
 
+  gPlatform->InitWebGPUConfig();
+
   
   
   

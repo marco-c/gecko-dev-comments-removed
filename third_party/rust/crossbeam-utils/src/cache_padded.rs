@@ -48,8 +48,23 @@ use core::ops::{Deref, DerefMut};
 
 
 
+
+
+
+
+
+
+
+
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
-#[repr(align(64))]
+
+
+
+
+
+
+#[cfg_attr(target_arch = "x86_64", repr(align(128)))]
+#[cfg_attr(not(target_arch = "x86_64"), repr(align(64)))]
 pub struct CachePadded<T> {
     value: T,
 }
