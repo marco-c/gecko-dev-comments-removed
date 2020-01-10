@@ -161,6 +161,10 @@ class WindowImageSurface {
   WindowImageSurface(gfxImageSurface* aImageSurface,
                      const LayoutDeviceIntRegion& aUpdateRegion);
 
+  bool OverlapsSurface(class WindowImageSurface& aBottomSurface);
+
+  const LayoutDeviceIntRegion* GetUpdateRegion() { return &mUpdateRegion; };
+
  private:
   RefPtr<gfx::SourceSurface> mSurface;
   RefPtr<gfxImageSurface> mImageSurface;
@@ -226,12 +230,8 @@ class WindowSurfaceWayland : public WindowSurface {
   WindowBackBuffer* CreateWaylandBuffer(int aWidth, int aHeight);
   WindowBackBuffer* GetWaylandBufferToDraw(bool aCanSwitchBuffer);
 
-  already_AddRefed<gfx::DrawTarget> LockWaylandBuffer(bool aCanSwitchBuffer);
+  already_AddRefed<gfx::DrawTarget> LockWaylandBuffer();
   void UnlockWaylandBuffer();
-
-  bool CanDrawToWaylandBufferDirectly(
-      const LayoutDeviceIntRect& aScreenRect,
-      const LayoutDeviceIntRegion& aUpdatedRegion);
 
   already_AddRefed<gfx::DrawTarget> LockImageSurface(
       const gfx::IntSize& aLockSize);
@@ -287,6 +287,11 @@ class WindowSurfaceWayland : public WindowSurface {
 
   
   
+  
+  bool mCanSwitchWaylandBuffer;
+
+  
+  
   bool mBufferPendingCommit;
 
   
@@ -295,11 +300,6 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   bool mBufferCommitAllowed;
-
-  
-  
-  
-  bool mWholeWindowBufferDamage;
 
   
   
