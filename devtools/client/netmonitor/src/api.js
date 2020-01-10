@@ -80,13 +80,13 @@ NetMonitorAPI.prototype = {
   
 
 
-  async destroy() {
+  destroy() {
     this.off(EVENTS.PAYLOAD_READY, this.onPayloadReady);
 
-    await this.connector.disconnect();
+    this.connector.disconnect();
 
     if (this.harExportConnector) {
-      await this.harExportConnector.disconnect();
+      this.harExportConnector.disconnect();
     }
   },
 

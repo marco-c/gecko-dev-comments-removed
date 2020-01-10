@@ -68,14 +68,14 @@ NetMonitorApp.prototype = {
   
 
 
-  async destroy() {
+  destroy() {
     unmountComponentAtNode(this.mount);
 
     
     
     
     
-    await this.api.destroy();
+    this.api.destroy();
   },
 
   
