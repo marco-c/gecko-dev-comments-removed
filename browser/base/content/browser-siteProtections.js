@@ -665,7 +665,20 @@ var ThirdPartyCookies = {
   },
 
   isDetected(state) {
-    return (state & Ci.nsIWebProgressListener.STATE_COOKIES_LOADED) != 0;
+    if (this.behaviorPref == Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER) {
+      
+      
+      
+      return (
+        (state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) != 0
+      );
+    }
+
+    
+    return (
+      this.isBlocking(state) ||
+      (state & Ci.nsIWebProgressListener.STATE_COOKIES_LOADED) != 0
+    );
   },
 
   async updateSubView() {
@@ -678,7 +691,10 @@ var ThirdPartyCookies = {
 
     for (let category of ["firstParty", "trackers", "thirdParty"]) {
       let itemsToShow;
-      if (category == "trackers" && gProtectionsHandler.hasException) {
+      if (
+        category == "trackers" &&
+        (gProtectionsHandler.hasException || !this.enabled)
+      ) {
         itemsToShow = categories[category];
       } else {
         itemsToShow = categories[category].filter(
