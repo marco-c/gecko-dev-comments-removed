@@ -308,6 +308,12 @@ constexpr auto kOpenLimit = NS_LITERAL_CSTRING(" LIMIT ");
 
 
 
+const uint32_t kMaxExtraCount = 1;
+
+
+
+
+
 
 
 
@@ -5572,10 +5578,12 @@ class TransactionDatabaseOperationBase : public DatabaseOperationBase {
   };
 
   RefPtr<TransactionBase> mTransaction;
-  const int64_t mTransactionLoggingSerialNumber;
   InternalState mInternalState;
   bool mWaitingForContinue;
   const bool mTransactionIsAborted;
+
+ protected:
+  const int64_t mTransactionLoggingSerialNumber;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
  protected:
@@ -7708,8 +7716,12 @@ class Cursor::CursorOpBase : public TransactionDatabaseOperationBase {
 
   void Cleanup() override;
 
-  nsresult PopulateResponseFromStatement(
-      DatabaseConnection::CachedStatement& aStmt, bool aInitializeResponse);
+  nsresult PopulateResponseFromStatement(mozIStorageStatement* aStmt,
+                                         bool aInitializeResponse);
+
+  nsresult PopulateExtraResponses(mozIStorageStatement* aStmt,
+                                  uint32_t aMaxExtraCount,
+                                  const nsCString& aOperation);
 };
 
 class Cursor::OpenOp final : public Cursor::CursorOpBase {
@@ -7755,9 +7767,9 @@ class Cursor::ContinueOp final : public Cursor::CursorOpBase {
 
  private:
   
-  ContinueOp(Cursor* aCursor, const CursorRequestParams& aParams)
-      : CursorOpBase(aCursor), mParams(aParams) {
-    MOZ_ASSERT(aParams.type() != CursorRequestParams::T__None);
+  ContinueOp(Cursor* aCursor, CursorRequestParams aParams)
+      : CursorOpBase(aCursor), mParams(std::move(aParams)) {
+    MOZ_ASSERT(mParams.type() != CursorRequestParams::T__None);
   }
 
   
@@ -9297,6 +9309,15 @@ constexpr bool IsIncreasingOrder(const IDBCursor::Direction aDirection) {
       aDirection == IDBCursor::PREV || aDirection == IDBCursor::PREV_UNIQUE);
 
   return aDirection == IDBCursor::NEXT || aDirection == IDBCursor::NEXT_UNIQUE;
+}
+
+constexpr bool IsUnique(const IDBCursor::Direction aDirection) {
+  MOZ_ASSERT(
+      aDirection == IDBCursor::NEXT || aDirection == IDBCursor::NEXT_UNIQUE ||
+      aDirection == IDBCursor::PREV || aDirection == IDBCursor::PREV_UNIQUE);
+
+  return aDirection == IDBCursor::NEXT_UNIQUE ||
+         aDirection == IDBCursor::PREV_UNIQUE;
 }
 
 constexpr bool IsKeyCursor(const Cursor::Type aType) {
@@ -15260,7 +15281,21 @@ mozilla::ipc::IPCResult Cursor::RecvContinue(const CursorRequestParams& aParams,
 
   
   
-  MOZ_ASSERT(aCurrentKey.IsUnset());
+  
+  
+  
+  
+  if (!aCurrentKey.IsUnset()) {
+    if (IsLocaleAware()) {
+      const nsresult rv =
+          LocalizeKey(aCurrentKey, mLocale, &mLocaleAwarePosition);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        ASSERT_UNLESS_FUZZING();
+        return IPC_FAIL_NO_REASON(this);
+      }
+    }
+    mPosition = aCurrentKey;
+  }
 
   if (!trustParams && !VerifyRequestParams(aParams)) {
     ASSERT_UNLESS_FUZZING();
@@ -21746,15 +21781,15 @@ TransactionDatabaseOperationBase::TransactionDatabaseOperationBase(
     : DatabaseOperationBase(aTransaction->GetLoggingInfo()->Id(),
                             aTransaction->GetLoggingInfo()->NextRequestSN()),
       mTransaction(aTransaction),
-      mTransactionLoggingSerialNumber(aTransaction->LoggingSerialNumber()),
       mInternalState(InternalState::Initial),
       mWaitingForContinue(false),
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       mTransactionIsAborted(aTransaction->IsAborted()),
-      mAssumingPreviousOperationFail(false) {
-#else
-      mTransactionIsAborted(aTransaction->IsAborted()) {
+      mTransactionLoggingSerialNumber(aTransaction->LoggingSerialNumber())
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+      ,
+      mAssumingPreviousOperationFail(false)
 #endif
+{
   MOZ_ASSERT(aTransaction);
   MOZ_ASSERT(LoggingSerialNumber());
 }
@@ -21764,14 +21799,14 @@ TransactionDatabaseOperationBase::TransactionDatabaseOperationBase(
     : DatabaseOperationBase(aTransaction->GetLoggingInfo()->Id(),
                             aLoggingSerialNumber),
       mTransaction(aTransaction),
-      mTransactionLoggingSerialNumber(aTransaction->LoggingSerialNumber()),
       mInternalState(InternalState::Initial),
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       mTransactionIsAborted(aTransaction->IsAborted()),
-      mAssumingPreviousOperationFail(false) {
-#else
-      mTransactionIsAborted(aTransaction->IsAborted()) {
+      mTransactionLoggingSerialNumber(aTransaction->LoggingSerialNumber())
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+      ,
+      mAssumingPreviousOperationFail(false)
 #endif
+{
   MOZ_ASSERT(aTransaction);
 }
 
@@ -25574,16 +25609,22 @@ void Cursor::CursorOpBase::Cleanup() {
 }
 
 nsresult Cursor::CursorOpBase::PopulateResponseFromStatement(
-    DatabaseConnection::CachedStatement& aStmt,
-    const bool aInitializeResponse) {
+    mozIStorageStatement* const aStmt, const bool aInitializeResponse) {
   Transaction()->AssertIsOnConnectionThread();
-  MOZ_ASSERT(mResponse.type() == CursorResponse::T__None);
+  MOZ_ASSERT(aInitializeResponse ==
+             (mResponse.type() == CursorResponse::T__None));
   MOZ_ASSERT_IF(mFiles.IsEmpty(), aInitializeResponse);
 
   nsresult rv = mCursor->mPosition.SetFromStatement(aStmt, 0);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+
+  IDB_LOG_MARK_PARENT_TRANSACTION_REQUEST(
+      "PRELOAD: Populating response with key %s", "Populating",
+      IDB_LOG_ID_STRING(mBackgroundChildLoggingId),
+      mTransactionLoggingSerialNumber, mLoggingSerialNumber,
+      mCursor->mPosition.GetBuffer().get());
 
   switch (mCursor->mType) {
     case OpenCursorParams::TObjectStoreOpenCursorParams: {
@@ -25680,6 +25721,77 @@ nsresult Cursor::CursorOpBase::PopulateResponseFromStatement(
     default:
       MOZ_CRASH("Should never get here!");
   }
+
+  return NS_OK;
+}
+
+nsresult Cursor::CursorOpBase::PopulateExtraResponses(
+    mozIStorageStatement* const aStmt, const uint32_t aMaxExtraCount,
+    const nsCString& aOperation) {
+  AssertIsOnConnectionThread();
+
+  if (mCursor->mType != OpenCursorParams::TObjectStoreOpenCursorParams) {
+    IDB_WARNING(
+        "PRELOAD: Not yet implemented. Extra results were queried, but are "
+        "discarded for now.");
+    return NS_OK;
+  }
+
+  
+  
+  Key previousKey =
+      IsUnique(mCursor->mDirection)
+          ? (mCursor->IsLocaleAware() ? mCursor->mLocaleAwarePosition
+                                      : mCursor->mPosition)
+          : Key{};
+
+  uint32_t extraCount = 0;
+  do {
+    bool hasResult;
+    nsresult rv = aStmt->ExecuteStep(&hasResult);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+
+      break;
+    }
+
+    if (!hasResult) {
+      
+      
+      
+
+      break;
+    }
+
+    if (IsUnique(mCursor->mDirection)) {
+      const auto& currentKey = mCursor->IsLocaleAware()
+                                   ? mCursor->mLocaleAwarePosition
+                                   : mCursor->mPosition;
+      const bool sameKey = previousKey == currentKey;
+      previousKey = currentKey;
+      if (sameKey) {
+        continue;
+      }
+    }
+
+    
+    
+    
+    
+    rv = PopulateResponseFromStatement(aStmt, false);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    ++extraCount;
+  } while (true);
+
+  IDB_LOG_MARK_PARENT_TRANSACTION_REQUEST(
+      "PRELOAD: %s: Number of extra results populated: %" PRIu32 "/%" PRIu32,
+      "Populated", IDB_LOG_ID_STRING(mBackgroundChildLoggingId),
+      mTransactionLoggingSerialNumber, mLoggingSerialNumber, aOperation.get(),
+      extraCount, aMaxExtraCount);
 
   return NS_OK;
 }
@@ -25847,7 +25959,7 @@ nsresult Cursor::OpenOp::DoObjectStoreDatabaseWork(
   
   
   const nsCString firstQuery = queryStart + keyRangeClause + directionClause +
-                               kOpenLimit + NS_LITERAL_CSTRING("1");
+                               kOpenLimit + ToAutoCString(1 + kMaxExtraCount);
 
   DatabaseConnection::CachedStatement stmt;
   nsresult rv = aConnection->GetCachedStatement(firstQuery, &stmt);
@@ -25886,7 +25998,18 @@ nsresult Cursor::OpenOp::DoObjectStoreDatabaseWork(
   
   PrepareKeyConditionClauses(kStmtParamNameKey, directionClause, queryStart);
 
-  return NS_OK;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  return PopulateExtraResponses(stmt, kMaxExtraCount,
+                                NS_LITERAL_CSTRING("OpenOp"));
 }
 
 nsresult Cursor::OpenOp::DoObjectStoreKeyDatabaseWork(
@@ -26278,19 +26401,43 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
   
   
   
+  
+  
+  
+  
+  
+  
 
-  
-  
+  const uint32_t advanceCount =
+      mParams.type() == CursorRequestParams::TAdvanceParams
+          ? mParams.get_AdvanceParams().count()
+          : 1;
+  MOZ_ASSERT(advanceCount > 0);
+
   bool hasContinueKey = false;
   bool hasContinuePrimaryKey = false;
-  uint32_t advanceCount = 1;
+  
+  
+  
+  
+  
   Key& currentKey = mCursor->IsLocaleAware() ? mCursor->mLocaleAwarePosition
                                              : mCursor->mPosition;
+
+  IDB_LOG_MARK_PARENT_TRANSACTION_REQUEST(
+      "PRELOAD: ContinueOp: currentKey == %s", "currentKey",
+      IDB_LOG_ID_STRING(mBackgroundChildLoggingId),
+      mTransactionLoggingSerialNumber, mLoggingSerialNumber,
+      currentKey.GetBuffer().get());
 
   switch (mParams.type()) {
     case CursorRequestParams::TContinueParams:
       if (!mParams.get_ContinueParams().key().IsUnset()) {
         hasContinueKey = true;
+        
+        
+        
+        
         currentKey = mParams.get_ContinueParams().key();
       }
       break;
@@ -26305,7 +26452,6 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
       currentKey = mParams.get_ContinuePrimaryKeyParams().key();
       break;
     case CursorRequestParams::TAdvanceParams:
-      advanceCount = mParams.get_AdvanceParams().count();
       break;
     default:
       MOZ_CRASH("Should never get here!");
@@ -26316,9 +26462,23 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
                             : hasContinueKey ? mCursor->mContinueToQuery
                                              : mCursor->mContinueQuery;
 
-  MOZ_ASSERT(advanceCount > 0);
-  nsAutoCString countString;
-  countString.AppendInt(advanceCount);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const uint32_t maxExtraCount = hasContinueKey ? 0 : kMaxExtraCount;
 
   DatabaseConnection::CachedStatement stmt;
   nsresult rv = aConnection->GetCachedStatement(continueQuery, &stmt);
@@ -26328,12 +26488,12 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
 
   
   rv = stmt->BindUTF8StringByName(kStmtParamNameLimit,
-                                  ToAutoCString(advanceCount));
+                                  ToAutoCString(advanceCount + kMaxExtraCount));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  int64_t id = isIndex ? mCursor->mIndexId : mCursor->mObjectStoreId;
+  const int64_t id = isIndex ? mCursor->mIndexId : mCursor->mObjectStoreId;
 
   rv = stmt->BindInt64ByName(kStmtParamNameId, id);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -26365,10 +26525,7 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  }
-
-  
-  if (hasContinuePrimaryKey) {
+  } else if (hasContinuePrimaryKey) {
     rv = mParams.get_ContinuePrimaryKeyParams().primaryKey().BindToStatement(
         stmt, kStmtParamNameObjectStorePosition);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -26376,8 +26533,10 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
     }
   }
 
-  bool hasResult;
+  
+  
   for (uint32_t index = 0; index < advanceCount; index++) {
+    bool hasResult;
     rv = stmt->ExecuteStep(&hasResult);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -26398,7 +26557,8 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
     return rv;
   }
 
-  return NS_OK;
+  return PopulateExtraResponses(stmt, maxExtraCount,
+                                NS_LITERAL_CSTRING("ContinueOp"));
 }
 
 nsresult Cursor::ContinueOp::SendSuccessResult() {

@@ -1272,6 +1272,19 @@ void DispatchFileHandleSuccessEvent(FileHandleResultHelper* aResultHelper) {
   MOZ_ASSERT(fileHandle->IsOpen() || fileHandle->IsAborted());
 }
 
+auto GetKeyOperator(const IDBCursor::Direction aDirection) {
+  switch (aDirection) {
+    case IDBCursor::NEXT:
+    case IDBCursor::NEXT_UNIQUE:
+      return &Key::operator>=;
+    case IDBCursor::PREV:
+    case IDBCursor::PREV_UNIQUE:
+      return &Key::operator<=;
+    default:
+      MOZ_CRASH("Should never get here.");
+  }
+}
+
 }  
 
 
@@ -3286,8 +3299,131 @@ void BackgroundCursorChild::SendContinueInternal(
 
   mTransaction->OnNewRequest();
 
-  MOZ_ALWAYS_TRUE(
-      PBackgroundIDBCursorChild::SendContinue(aParams, aCurrentKey));
+  CursorRequestParams params = aParams;
+  Key currentKey = aCurrentKey;
+
+  switch (params.type()) {
+    case CursorRequestParams::TContinueParams: {
+      const auto& key = params.get_ContinueParams().key();
+      if (key.IsUnset()) {
+        break;
+      }
+
+      
+      size_t discardedCount = 0;
+      while (!mCachedResponses.empty()) {
+        const auto& keyOperator = GetKeyOperator(mDirection);
+        if ((mCachedResponses.front().mKey.*keyOperator)(key)) {
+          IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+              "PRELOAD: Continue to key %s, keeping cached key %s and further",
+              "Continue/keep", mTransaction->LoggingSerialNumber(),
+              mRequest->LoggingSerialNumber(), key.GetBuffer().get(),
+              mCachedResponses.front().mKey.GetBuffer().get());
+          break;
+        }
+        IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+            "PRELOAD: Continue to key %s, discarding cached key %s",
+            "Continue/discard", mTransaction->LoggingSerialNumber(),
+            mRequest->LoggingSerialNumber(), key.GetBuffer().get(),
+            mCachedResponses.front().mKey.GetBuffer().get());
+        mCachedResponses.pop_front();
+        ++discardedCount;
+      }
+      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+          "PRELOAD: Discarded %zu cached responses before requested "
+          "continue key, %zu remaining",
+          "Discarding", mTransaction->LoggingSerialNumber(),
+          mRequest->LoggingSerialNumber(), discardedCount,
+          mCachedResponses.size());
+      break;
+    }
+
+    case CursorRequestParams::TContinuePrimaryKeyParams:
+      
+      InvalidateCachedResponses();
+      break;
+
+    case CursorRequestParams::TAdvanceParams: {
+      uint32_t& advanceCount = params.get_AdvanceParams().count();
+      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+          "PRELOAD: Advancing %" PRIu32 " records", "Advancing",
+          mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
+          advanceCount);
+
+      
+      size_t discardedCount = 0;
+      while (!mCachedResponses.empty() && advanceCount > 1) {
+        --advanceCount;
+
+        
+        
+        currentKey = mCachedResponses.front().mKey;
+        mCachedResponses.pop_front();
+        ++discardedCount;
+      }
+      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+          "PRELOAD: Discarded %zu cached responses that are advanced over, "
+          "%zu remaining",
+          "Discarded", mTransaction->LoggingSerialNumber(),
+          mRequest->LoggingSerialNumber(), discardedCount,
+          mCachedResponses.size());
+      break;
+    }
+
+    default:
+      MOZ_CRASH("Should never get here!");
+  }
+
+  if (!mCachedResponses.empty()) {
+    
+    
+    
+    mDelayedResponses.emplace_back(std::move(mCachedResponses.front()));
+    mCachedResponses.pop_front();
+
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIRunnable> continueRunnable = new DelayedActionRunnable(
+        this, &BackgroundCursorChild::CompleteContinueRequestFromCache);
+    MOZ_ALWAYS_TRUE(
+        NS_SUCCEEDED(NS_DispatchToCurrentThread(continueRunnable.forget())));
+
+    
+    
+    
+  } else {
+    MOZ_ALWAYS_TRUE(
+        PBackgroundIDBCursorChild::SendContinue(params, currentKey));
+  }
+}
+
+void BackgroundCursorChild::CompleteContinueRequestFromCache() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mTransaction);
+  MOZ_ASSERT(mCursor);
+  MOZ_ASSERT(mStrongCursor);
+  MOZ_ASSERT(!mDelayedResponses.empty());
+
+  RefPtr<IDBCursor> cursor;
+  mStrongCursor.swap(cursor);
+
+  auto& item = mDelayedResponses.front();
+  mCursor->Reset(std::move(item.mKey), std::move(item.mCloneInfo));
+  mDelayedResponses.pop_front();
+
+  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+      "PRELOAD: Consumed 1 cached response, %zu cached responses remaining",
+      "Consumed cached response", mTransaction->LoggingSerialNumber(),
+      mRequest->LoggingSerialNumber(),
+      mDelayedResponses.size() + mCachedResponses.size());
+
+  ResultHelper helper(mRequest, mTransaction, mCursor);
+  DispatchSuccessEvent(&helper);
+
+  mTransaction->OnRequestFinished( true);
 }
 
 void BackgroundCursorChild::SendDeleteMeInternal() {
@@ -3306,6 +3442,25 @@ void BackgroundCursorChild::SendDeleteMeInternal() {
 
     MOZ_ALWAYS_TRUE(PBackgroundIDBCursorChild::SendDeleteMe());
   }
+}
+
+void BackgroundCursorChild::InvalidateCachedResponses() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mTransaction);
+  MOZ_ASSERT(mRequest);
+
+  
+  
+  
+  
+  
+
+  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+      "PRELOAD: Invalidating all %zu cached responses", "Invalidating",
+      mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
+      mCachedResponses.size());
+
+  mCachedResponses.clear();
 }
 
 void BackgroundCursorChild::HandleResponse(nsresult aResponse) {
@@ -3351,7 +3506,11 @@ void BackgroundCursorChild::HandleResponse(
   MOZ_ASSERT(!mStrongRequest);
   MOZ_ASSERT(!mStrongCursor);
 
-  MOZ_ASSERT(aResponses.Length() == 1);
+  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+      "PRELOAD: Received %zu cursor responses", "Received",
+      mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
+      aResponses.Length());
+  MOZ_ASSERT_IF(aResponses.Length() > 1, mCachedResponses.empty());
 
   
   auto& responses =
@@ -3361,6 +3520,12 @@ void BackgroundCursorChild::HandleResponse(
     StructuredCloneReadInfo cloneReadInfo(std::move(response.cloneInfo()));
     cloneReadInfo.mDatabase = mTransaction->Database();
 
+    
+    
+    
+    
+    
+    
     DeserializeStructuredCloneFiles(
         mTransaction->Database(), response.cloneInfo().files(),
          false, cloneReadInfo.mFiles);
@@ -3368,7 +3533,14 @@ void BackgroundCursorChild::HandleResponse(
     RefPtr<IDBCursor> newCursor;
 
     if (mCursor) {
-      mCursor->Reset(std::move(response.key()), std::move(cloneReadInfo));
+      if (mCursor->IsContinueCalled()) {
+        mCursor->Reset(std::move(response.key()), std::move(cloneReadInfo));
+      } else {
+        CachedResponse cachedResponse;
+        cachedResponse.mKey = std::move(response.key());
+        cachedResponse.mCloneInfo = std::move(cloneReadInfo);
+        mCachedResponses.emplace_back(std::move(cachedResponse));
+      }
     } else {
       newCursor = IDBCursor::Create(this, std::move(response.key()),
                                     std::move(cloneReadInfo));
@@ -3430,6 +3602,10 @@ void BackgroundCursorChild::HandleResponse(
     mCursor->Reset(std::move(response.key()), std::move(response.sortKey()),
                    std::move(response.objectKey()), std::move(cloneReadInfo));
   } else {
+    
+    
+    
+    
     newCursor = IDBCursor::Create(
         this, std::move(response.key()), std::move(response.sortKey()),
         std::move(response.objectKey()), std::move(cloneReadInfo));
