@@ -1100,17 +1100,25 @@ nsresult ContentChild::ProvideWindowCommon(
     newChild->SetMaxTouchPoints(maxTouchPoints);
     newChild->SetHasSiblings(hasSiblings);
 
-    
-    
-    
-    
-    nsCOMPtr<mozIDOMWindowProxy> windowProxy =
-        do_GetInterface(newChild->WebNavigation());
-    if (!aForceNoOpener && windowProxy && aParent) {
-      nsPIDOMWindowOuter* outer = nsPIDOMWindowOuter::From(windowProxy);
-      nsPIDOMWindowOuter* parent = nsPIDOMWindowOuter::From(aParent);
-      outer->SetOpenerWindow(parent, *aWindowIsNew);
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    if (nsCOMPtr<nsPIDOMWindowOuter> outer =
+            do_GetInterface(newChild->WebNavigation())) {
+      BrowsingContext* bc = outer->GetBrowsingContext();
+      auto parentBC =
+          aParent
+              ? nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext()->Id()
+              : 0;
+
+      if (aForceNoOpener) {
+        MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew || !bc->HadOriginalOpener());
+        MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == 0);
+      } else {
+        MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew ||
+                              bc->HadOriginalOpener() == !!parentBC);
+        MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == parentBC);
+      }
     }
+#endif
 
     
     

@@ -210,11 +210,15 @@ nsresult nsWebShellWindow::Initialize(
                                      nsIWebProgress::NOTIFY_STATE_NETWORK);
   }
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   if (aOpenerWindow) {
-    nsPIDOMWindowOuter* window = mDocShell->GetWindow();
-    MOZ_ASSERT(window);
-    window->SetOpenerWindow(nsPIDOMWindowOuter::From(aOpenerWindow), true);
+    BrowsingContext* bc = mDocShell->GetBrowsingContext();
+    BrowsingContext* openerBC =
+        nsPIDOMWindowOuter::From(aOpenerWindow)->GetBrowsingContext();
+    MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == openerBC->Id());
+    MOZ_DIAGNOSTIC_ASSERT(bc->HadOriginalOpener());
   }
+#endif
 
   
   

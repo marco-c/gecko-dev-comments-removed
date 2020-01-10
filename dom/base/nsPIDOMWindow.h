@@ -890,16 +890,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-
-
-  virtual void SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
-                               bool aOriginalOpener) = 0;
-
-  
-
-
-
-
   virtual void EnsureSizeAndPositionUpToDate() = 0;
 
   

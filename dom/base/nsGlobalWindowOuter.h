@@ -323,9 +323,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   void DispatchDOMWindowCreated();
 
-  virtual void SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
-                               bool aOriginalOpener) override;
-
   
   virtual void EnsureSizeAndPositionUpToDate() override;
 
@@ -1077,7 +1074,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   bool mHavePendingClose : 1;
-  bool mHadOriginalOpener : 1;
   bool mIsPopupSpam : 1;
 
   
@@ -1103,7 +1099,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool mHasStorageAccess : 1;
 
   nsCOMPtr<nsIScriptContext> mContext;
-  nsWeakPtr mOpener;
   nsCOMPtr<nsIControllers> mControllers;
 
   
