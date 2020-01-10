@@ -84,8 +84,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
-  uint32_t GetPerceivedScrollingDirections() const;
+  uint32_t GetAvailableScrollingDirections() const;
   
 
 
