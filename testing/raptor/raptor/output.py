@@ -839,27 +839,40 @@ class Output(object):
         
         
         if self.summarized_results == {}:
-            return False
+            return False, 0
 
         
         extra_opts = self.summarized_results['suites'][0].get('extraOptions', [])
-        if 'gecko_profile' not in extra_opts:
+        test_type = self.summarized_results['suites'][0].get('type', '')
+
+        output_perf_data = True
+        not_posting = '- not posting regular test results for perfherder'
+        if 'gecko_profile' in extra_opts:
+            LOG.info("gecko profiling enabled %s" % not_posting)
+            output_perf_data = False
+        elif test_type == 'scenario':
+            
+            
+            LOG.info("scenario test type was run %s" % not_posting)
+            output_perf_data = False
+
+        total_perfdata = 0
+        if output_perf_data:
             
             
             
             
             if len(self.summarized_supporting_data) == 0:
                 LOG.info("PERFHERDER_DATA: %s" % json.dumps(self.summarized_results))
+                total_perfdata = 1
             else:
                 LOG.info("supporting data measurements exist - only posting those to perfherder")
-        else:
-            LOG.info("gecko profiling enabled - not posting results for perfherder")
 
         json.dump(self.summarized_results, open(results_path, 'w'), indent=2,
                   sort_keys=True)
         LOG.info("results can also be found locally at: %s" % results_path)
 
-        return True
+        return True, total_perfdata
 
     def output_supporting_data(self, test_names):
         '''
@@ -874,8 +887,9 @@ class Output(object):
         if len(self.summarized_supporting_data) == 0:
             LOG.error("no summarized supporting data found for %s" %
                       ', '.join(test_names))
-            return False
+            return False, 0
 
+        total_perfdata = 0
         for next_data_set in self.summarized_supporting_data:
             data_type = next_data_set['suites'][0]['type']
 
@@ -894,8 +908,9 @@ class Output(object):
             
             LOG.info("PERFHERDER_DATA: %s" % json.dumps(next_data_set))
             LOG.info("%s results can also be found locally at: %s" % (data_type, results_path))
+            total_perfdata += 1
 
-        return True
+        return True, total_perfdata
 
     @classmethod
     def v8_Metric(cls, val_list):
