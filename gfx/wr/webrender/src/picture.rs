@@ -381,7 +381,7 @@ struct PrimitiveDependencyInfo {
     prim_uid: ItemUid,
 
     
-    prim_rect: PictureRect,
+    prim_origin: PicturePoint,
 
     
     prim_clip_rect: PictureRect,
@@ -403,17 +403,18 @@ impl PrimitiveDependencyInfo {
     
     fn new(
         prim_uid: ItemUid,
-        prim_rect: PictureRect,
+        prim_origin: PicturePoint,
+        prim_clip_rect: PictureRect,
         is_cacheable: bool,
     ) -> Self {
         PrimitiveDependencyInfo {
             prim_uid,
-            prim_rect,
+            prim_origin,
             is_cacheable,
             image_keys: SmallVec::new(),
             opacity_bindings: SmallVec::new(),
             clip_by_tile: false,
-            prim_clip_rect: PictureRect::zero(),
+            prim_clip_rect,
             clips: SmallVec::new(),
             spatial_nodes: SmallVec::new(),
         }
@@ -789,7 +790,7 @@ impl Tile {
 
         
         if !info.is_cacheable {
-            self.invalidate(Some(info.prim_rect), InvalidationReason::NonCacheable);
+            self.invalidate(Some(info.prim_clip_rect), InvalidationReason::NonCacheable);
         }
 
         
@@ -823,8 +824,8 @@ impl Tile {
 
             (
                 PicturePoint::new(
-                    clampf(info.prim_rect.origin.x, tile_p0.x, tile_p1.x),
-                    clampf(info.prim_rect.origin.y, tile_p0.y, tile_p1.y),
+                    clampf(info.prim_origin.x, tile_p0.x, tile_p1.x),
+                    clampf(info.prim_origin.y, tile_p0.y, tile_p1.y),
                 ),
                 PictureRect::new(
                     clip_p0,
@@ -835,7 +836,7 @@ impl Tile {
                 ),
             )
         } else {
-            (info.prim_rect.origin, info.prim_clip_rect)
+            (info.prim_origin, info.prim_clip_rect)
         };
 
         
@@ -859,7 +860,7 @@ impl Tile {
         });
 
         
-        self.root.add_prim(prim_index, &info.prim_rect);
+        self.root.add_prim(prim_index, &info.prim_clip_rect);
     }
 
     
@@ -1446,6 +1447,8 @@ pub struct TileCacheInstance {
     
     map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
     
+    map_child_pic_to_surface: SpaceMapper<PicturePixel, PicturePixel>,
+    
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
@@ -1514,6 +1517,10 @@ impl TileCacheInstance {
             spatial_node_index,
             tiles: FastHashMap::default(),
             map_local_to_surface: SpaceMapper::new(
+                ROOT_SPATIAL_NODE_INDEX,
+                PictureRect::zero(),
+            ),
+            map_child_pic_to_surface: SpaceMapper::new(
                 ROOT_SPATIAL_NODE_INDEX,
                 PictureRect::zero(),
             ),
@@ -1594,6 +1601,10 @@ impl TileCacheInstance {
         self.subpixel_mode = SubpixelMode::Allow;
 
         self.map_local_to_surface = SpaceMapper::new(
+            self.spatial_node_index,
+            PictureRect::from_untyped(&pic_rect.to_untyped()),
+        );
+        self.map_child_pic_to_surface = SpaceMapper::new(
             self.spatial_node_index,
             PictureRect::from_untyped(&pic_rect.to_untyped()),
         );
@@ -1877,7 +1888,15 @@ impl TileCacheInstance {
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
         surface_index: SurfaceIndex,
+        surface_spatial_node_index: SpatialNodeIndex,
     ) -> bool {
+        
+        
+        let prim_clip_chain = match prim_clip_chain {
+            Some(prim_clip_chain) => prim_clip_chain,
+            None => return false,
+        };
+
         self.map_local_to_surface.set_target_spatial_node(
             prim_spatial_node_index,
             clip_scroll_tree,
@@ -1895,7 +1914,23 @@ impl TileCacheInstance {
         }
 
         
-        let (p0, p1) = self.get_tile_coords_for_rect(&prim_rect);
+        
+        
+        let on_picture_surface = surface_index == self.surface_index;
+        let pic_clip_rect = if on_picture_surface {
+            prim_clip_chain.pic_clip_rect
+        } else {
+            self.map_child_pic_to_surface.set_target_spatial_node(
+                surface_spatial_node_index,
+                clip_scroll_tree,
+            );
+            self.map_child_pic_to_surface
+                .map(&prim_clip_chain.pic_clip_rect)
+                .expect("bug: unable to map clip rect to picture cache space")
+        };
+
+        
+        let (p0, p1) = self.get_tile_coords_for_rect(&pic_clip_rect);
 
         
         
@@ -1912,7 +1947,8 @@ impl TileCacheInstance {
         
         let mut prim_info = PrimitiveDependencyInfo::new(
             prim_instance.uid(),
-            prim_rect,
+            prim_rect.origin,
+            pic_clip_rect,
             is_cacheable,
         );
 
@@ -1922,21 +1958,17 @@ impl TileCacheInstance {
         }
 
         
-        if let Some(prim_clip_chain) = prim_clip_chain {
-            prim_info.prim_clip_rect = prim_clip_chain.pic_clip_rect;
+        let clip_instances = &clip_store
+            .clip_node_instances[prim_clip_chain.clips_range.to_range()];
+        for clip_instance in clip_instances {
+            prim_info.clips.push(clip_instance.handle.uid());
 
-            let clip_instances = &clip_store
-                .clip_node_instances[prim_clip_chain.clips_range.to_range()];
-            for clip_instance in clip_instances {
-                prim_info.clips.push(clip_instance.handle.uid());
-
-                
-                
-                let clip_node = &data_stores.clip[clip_instance.handle];
-                if clip_node.item.spatial_node_index != self.spatial_node_index {
-                    if !prim_info.spatial_nodes.contains(&clip_node.item.spatial_node_index) {
-                        prim_info.spatial_nodes.push(clip_node.item.spatial_node_index);
-                    }
+            
+            
+            let clip_node = &data_stores.clip[clip_instance.handle];
+            if clip_node.item.spatial_node_index != self.spatial_node_index {
+                if !prim_info.spatial_nodes.contains(&clip_node.item.spatial_node_index) {
+                    prim_info.spatial_nodes.push(clip_node.item.spatial_node_index);
                 }
             }
         }
@@ -2027,18 +2059,16 @@ impl TileCacheInstance {
 
                     
                     
-                    let on_picture_surface = surface_index == self.surface_index;
-
-                    
-                    
                     
                     let subpx_requested = match run_data.font.render_mode {
                         FontRenderMode::Subpixel => true,
                         FontRenderMode::Alpha | FontRenderMode::Mono => false,
                     };
 
+                    
+                    
                     if on_picture_surface && subpx_requested {
-                        if !self.backdrop.rect.contains_rect(&prim_info.prim_clip_rect) {
+                        if !self.backdrop.rect.contains_rect(&pic_clip_rect) {
                             self.subpixel_mode = SubpixelMode::Deny;
                         }
                     }
@@ -2076,8 +2106,6 @@ impl TileCacheInstance {
                     
                     
                     
-                    let on_picture_surface = surface_index == self.surface_index;
-
                     let same_coord_system = {
                         let prim_spatial_node = &clip_scroll_tree
                             .spatial_nodes[prim_spatial_node_index.0 as usize];
@@ -2092,12 +2120,10 @@ impl TileCacheInstance {
             };
 
             if is_suitable_backdrop {
-                if let Some(ref clip_chain) = prim_clip_chain {
-                    if !clip_chain.needs_mask && clip_chain.pic_clip_rect.contains_rect(&self.backdrop.rect) {
-                        self.backdrop = BackdropInfo {
-                            rect: clip_chain.pic_clip_rect,
-                            kind: backdrop_candidate,
-                        }
+                if !prim_clip_chain.needs_mask && pic_clip_rect.contains_rect(&self.backdrop.rect) {
+                    self.backdrop = BackdropInfo {
+                        rect: pic_clip_rect,
+                        kind: backdrop_candidate,
                     }
                 }
             }
