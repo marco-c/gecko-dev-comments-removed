@@ -112,7 +112,13 @@ const int32_t kDefaultDataThresholdBytes = 1024 * 1024;
 
 const int32_t kDefaultMaxSerializedMsgSize = IPC::Channel::kMaximumMessageSize;
 
-const int32_t kDefaultMaxPreloadExtraRecords = 0;
+
+
+
+
+
+
+const int32_t kDefaultMaxPreloadExtraRecords = 64;
 
 #define IDB_PREF_BRANCH_ROOT "dom.indexedDB."
 
