@@ -530,6 +530,7 @@ static ExceptionHandlerState* sMachExceptionState = nullptr;
 
 
 static void MachExceptionHandler() {
+  ThisThread::SetName("JS MachExceptionHandler");
   kern_return_t ret;
   MachExceptionParameters& current = sMachExceptionState->current;
   MachExceptionParameters& previous = sMachExceptionState->previous;
