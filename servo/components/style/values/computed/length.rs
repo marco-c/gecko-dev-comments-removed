@@ -607,7 +607,6 @@ impl Size {
 }
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,
     Clone,
