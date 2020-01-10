@@ -532,7 +532,19 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
       
       if (s.mTransports.WasPassed()) {
         uint8_t transports = 0;
-        for (const auto& t : s.mTransports.Value()) {
+
+        
+        
+        for (const nsAString& str : s.mTransports.Value()) {
+          NS_ConvertUTF16toUTF8 cStr(str);
+          int i = FindEnumStringIndexImpl(
+              cStr.get(), cStr.Length(), AuthenticatorTransportValues::strings);
+          if (i < 0 ||
+              i >= static_cast<int>(AuthenticatorTransport::EndGuard_)) {
+            continue;  
+          }
+          AuthenticatorTransport t = static_cast<AuthenticatorTransport>(i);
+
           if (t == AuthenticatorTransport::Usb) {
             transports |= U2F_AUTHENTICATOR_TRANSPORT_USB;
           }
