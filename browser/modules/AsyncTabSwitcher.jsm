@@ -149,6 +149,7 @@ class AsyncTabSwitcher {
 
     this._useDumpForLogging = false;
     this._logInit = false;
+    this._logFlags = [];
 
     this.window.addEventListener("MozAfterPaint", this);
     this.window.addEventListener("MozLayerTreeReady", this);
@@ -372,19 +373,34 @@ class AsyncTabSwitcher {
       
       
       
-      let hasSufficientlyLoaded =
-        !this.requestedTab.hasAttribute("busy") &&
-        !this.tabbrowser.isLocalAboutURI(requestedBrowser.currentURI);
+      let isBusy = this.requestedTab.hasAttribute("busy");
+      let isLocalAbout = this.tabbrowser.isLocalAboutURI(
+        requestedBrowser.currentURI
+      );
+      let hasSufficientlyLoaded = !isBusy && !isLocalAbout;
 
       let fl = requestedBrowser.frameLoader;
       shouldBeBlank =
         !this.minimizedOrFullyOccluded &&
         (!fl.remoteTab ||
           (!hasSufficientlyLoaded && !fl.remoteTab.hasPresented));
+
+      if (this.logging()) {
+        let flag = shouldBeBlank ? "blank" : "nonblank";
+        this.addLogFlag(
+          flag,
+          this.minimizedOrFullyOccluded,
+          fl.remoteTab,
+          isBusy,
+          isLocalAbout,
+          fl.remoteTab ? fl.remoteTab.hasPresented : 0
+        );
+      }
     }
 
-    this.log("Tab should be blank: " + shouldBeBlank);
-    this.log("Requested tab is remote?: " + requestedBrowser.isRemoteBrowser);
+    if (requestedBrowser.isRemoteBrowser) {
+      this.addLogFlag("isRemote");
+    }
 
     
     let showTab = null;
@@ -595,7 +611,7 @@ class AsyncTabSwitcher {
   
   
   
-  postActions() {
+  postActions(eventString) {
     
     
     this.assert(
@@ -688,7 +704,7 @@ class AsyncTabSwitcher {
       this.finish();
     }
 
-    this.logState("done");
+    this.logState("/" + eventString);
   }
 
   
@@ -699,7 +715,7 @@ class AsyncTabSwitcher {
 
     this.unloadNonRequiredTabs();
 
-    this.postActions();
+    this.postActions("onUnloadTimeout");
   }
 
   deactivateCachedBackgroundTabs() {
@@ -762,7 +778,7 @@ class AsyncTabSwitcher {
     this.logState("onLoadTimeout");
     this.preActions();
     this.maybeClearLoadTimer("onLoadTimeout");
-    this.postActions();
+    this.postActions("onLoadTimeout");
   }
 
   
@@ -793,6 +809,11 @@ class AsyncTabSwitcher {
   
   
   onPaint(event) {
+    this.addLogFlag(
+      "onPaint",
+      this.switchPaintId != -1,
+      event.transactionId >= this.switchPaintId
+    );
     if (this.switchPaintId != -1 && event.transactionId >= this.switchPaintId) {
       if (
         TelemetryStopwatch.running(
@@ -862,7 +883,7 @@ class AsyncTabSwitcher {
       
       this.preActions();
       this.lastVisibleTab = null;
-      this.postActions();
+      this.postActions("onTabRemoved");
     }
   }
 
@@ -1103,7 +1124,7 @@ class AsyncTabSwitcher {
       unloadTimeout
     );
 
-    this.postActions();
+    this.postActions("queueUnload");
   }
 
   handleEvent(event, delayed = false) {
@@ -1145,7 +1166,7 @@ class AsyncTabSwitcher {
           break;
       }
 
-      this.postActions();
+      this.postActions(event.type);
     } finally {
       this._processing = false;
     }
@@ -1284,14 +1305,23 @@ class AsyncTabSwitcher {
     }
   }
 
-  logState(prefix) {
+  addLogFlag(flag, ...subFlags) {
+    if (this.logging()) {
+      if (subFlags.length > 0) {
+        flag += `(${subFlags.map(f => (f ? 1 : 0)).join("")})`;
+      }
+      this._logFlags.push(flag);
+    }
+  }
+
+  logState(suffix) {
     if (!this.logging()) {
       return;
     }
 
-    let accum = prefix + " ";
-    for (let i = 0; i < this.tabbrowser.tabs.length; i++) {
-      let tab = this.tabbrowser.tabs[i];
+    let getTabString = tab => {
+      let tabString = "";
+
       let state = this.getTabState(tab);
       let isWarming = this.warmingTabs.has(tab);
       let isCached = this.tabLayerCache.includes(tab);
@@ -1300,18 +1330,17 @@ class AsyncTabSwitcher {
       let isActive = linkedBrowser && linkedBrowser.docShellIsActive;
       let isRendered = linkedBrowser && linkedBrowser.renderLayers;
 
-      accum += i + ":";
       if (tab === this.lastVisibleTab) {
-        accum += "V";
+        tabString += "V";
       }
       if (tab === this.loadingTab) {
-        accum += "L";
+        tabString += "L";
       }
       if (tab === this.requestedTab) {
-        accum += "R";
+        tabString += "R";
       }
       if (tab === this.blankTab) {
-        accum += "B";
+        tabString += "B";
       }
 
       let extraStates = "";
@@ -1331,30 +1360,91 @@ class AsyncTabSwitcher {
         extraStates += "R";
       }
       if (extraStates != "") {
-        accum += `(${extraStates})`;
+        tabString += `(${extraStates})`;
       }
 
-      if (state == this.STATE_LOADED) {
-        accum += "(+)";
+      switch (state) {
+        case this.STATE_LOADED: {
+          tabString += "(loaded)";
+          break;
+        }
+        case this.STATE_LOADING: {
+          tabString += "(loading)";
+          break;
+        }
+        case this.STATE_UNLOADING: {
+          tabString += "(unloading)";
+          break;
+        }
+        case this.STATE_UNLOADED: {
+          tabString += "(unloaded)";
+          break;
+        }
       }
-      if (state == this.STATE_LOADING) {
-        accum += "(+?)";
+
+      return tabString;
+    };
+
+    let accum = "";
+
+    
+    
+    
+    
+    
+    
+    
+    let tabStrings = this.tabbrowser.tabs.map(t => getTabString(t));
+    let lastMatch = -1;
+    let unloadedTabsStrings = [];
+    for (let i = 0; i <= tabStrings.length; i++) {
+      if (i > 0) {
+        if (i < tabStrings.length && tabStrings[i] == tabStrings[lastMatch]) {
+          continue;
+        }
+
+        if (tabStrings[lastMatch] == "(unloaded)") {
+          if (lastMatch == i - 1) {
+            unloadedTabsStrings.push(lastMatch.toString());
+          } else {
+            unloadedTabsStrings.push(`${lastMatch}...${i - 1}`);
+          }
+        } else if (lastMatch == i - 1) {
+          accum += `${lastMatch}:${tabStrings[lastMatch]} `;
+        } else {
+          accum += `${lastMatch}...${i - 1}:${tabStrings[lastMatch]} `;
+        }
       }
-      if (state == this.STATE_UNLOADED) {
-        accum += "(-)";
-      }
-      if (state == this.STATE_UNLOADING) {
-        accum += "(-?)";
-      }
-      accum += " ";
+
+      lastMatch = i;
     }
 
-    accum += "cached: " + this.tabLayerCache.length;
+    if (unloadedTabsStrings.length > 0) {
+      accum += `${unloadedTabsStrings.join(",")}:(unloaded) `;
+    }
+
+    accum += "cached: " + this.tabLayerCache.length + " ";
+
+    if (this._logFlags.length > 0) {
+      accum += `[${this._logFlags.join(",")}] `;
+      this._logFlags = [];
+    }
+
+    
+    
+    
+    let logString;
+    if (this._lastLogString == accum) {
+      accum = "unchanged";
+    } else {
+      this._lastLogString = accum;
+    }
+    logString = `ATS: ${accum}{${suffix}}`;
 
     if (this._useDumpForLogging) {
-      dump(accum + "\n");
+      dump(logString + "\n");
     } else {
-      Services.console.logStringMessage(accum);
+      Services.console.logStringMessage(logString);
     }
   }
 }
