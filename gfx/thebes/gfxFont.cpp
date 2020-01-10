@@ -1624,10 +1624,6 @@ class GlyphBufferAzure {
 
   
   void FlushGlyphs() {
-    if (mRunParams.isRTL) {
-      std::reverse(mBuffer, mBuffer + mNumGlyphs);
-    }
-
     gfx::GlyphBuffer buf;
     buf.mGlyphs = mBuffer;
     buf.mNumGlyphs = mNumGlyphs;
