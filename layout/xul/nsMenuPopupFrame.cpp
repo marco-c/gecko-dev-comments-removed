@@ -1502,7 +1502,7 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
   nscoord oldAlignmentOffset = mAlignmentOffset;
 
-  static bool inWayland = false;
+  bool inWayland = false;
 #ifdef MOZ_WAYLAND
   inWayland = !GDK_IS_X11_DISPLAY(gdk_display_get_default());
 #endif
@@ -1512,9 +1512,9 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   
   
   
-  if (mInContentShell ||
-      (mFlip != FlipType_None &&
-       (!aIsMove || mIsOffset || mPopupType != ePopupTypePanel))) {
+  if (!inWayland && (mInContentShell || (mFlip != FlipType_None &&
+                                         (!aIsMove || mIsOffset ||
+                                          mPopupType != ePopupTypePanel)))) {
     int32_t appPerDev = presContext->AppUnitsPerDevPixel();
     LayoutDeviceIntRect anchorRectDevPix =
         LayoutDeviceIntRect::FromAppUnitsToNearest(anchorRect, appPerDev);
@@ -1534,64 +1534,58 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
     
     
+
     
-    if (!inWayland) {
-      
-      
-      
-
-      
-      
-      
-      bool slideHorizontal = false, slideVertical = false;
-      if (mFlip == FlipType_Slide) {
-        int8_t position = GetAlignmentPosition();
-        slideHorizontal = position >= POPUPPOSITION_BEFORESTART &&
-                          position <= POPUPPOSITION_AFTEREND;
-        slideVertical = position >= POPUPPOSITION_STARTBEFORE &&
-                        position <= POPUPPOSITION_ENDAFTER;
-      }
-
-      
-      
-      
-      bool endAligned = IsDirectionRTL()
-                            ? mPopupAlignment == POPUPALIGNMENT_TOPLEFT ||
-                                  mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT
-                            : mPopupAlignment == POPUPALIGNMENT_TOPRIGHT ||
-                                  mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
-      nscoord preOffsetScreenPoint = screenPoint.x;
-      if (slideHorizontal) {
-        mRect.width = SlideOrResize(screenPoint.x, mRect.width, screenRect.x,
-                                    screenRect.XMost(), &mAlignmentOffset);
-      } else {
-        mRect.width = FlipOrResize(
-            screenPoint.x, mRect.width, screenRect.x, screenRect.XMost(),
-            anchorRect.x, anchorRect.XMost(), margin.left, margin.right,
-            offsetForContextMenu.x, hFlip, endAligned, &mHFlip);
-      }
-      mIsOffset = preOffsetScreenPoint != screenPoint.x;
-
-      endAligned = mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT ||
-                   mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
-      preOffsetScreenPoint = screenPoint.y;
-      if (slideVertical) {
-        mRect.height = SlideOrResize(screenPoint.y, mRect.height, screenRect.y,
-                                     screenRect.YMost(), &mAlignmentOffset);
-      } else {
-        mRect.height = FlipOrResize(
-            screenPoint.y, mRect.height, screenRect.y, screenRect.YMost(),
-            anchorRect.y, anchorRect.YMost(), margin.top, margin.bottom,
-            offsetForContextMenu.y, vFlip, endAligned, &mVFlip);
-      }
-      mIsOffset = mIsOffset || (preOffsetScreenPoint != screenPoint.y);
-
-      NS_ASSERTION(screenPoint.x >= screenRect.x &&
-                       screenPoint.y >= screenRect.y &&
-                       screenPoint.x + mRect.width <= screenRect.XMost() &&
-                       screenPoint.y + mRect.height <= screenRect.YMost(),
-                   "Popup is offscreen");
+    
+    
+    bool slideHorizontal = false, slideVertical = false;
+    if (mFlip == FlipType_Slide) {
+      int8_t position = GetAlignmentPosition();
+      slideHorizontal = position >= POPUPPOSITION_BEFORESTART &&
+                        position <= POPUPPOSITION_AFTEREND;
+      slideVertical = position >= POPUPPOSITION_STARTBEFORE &&
+                      position <= POPUPPOSITION_ENDAFTER;
     }
+
+    
+    
+    
+    bool endAligned = IsDirectionRTL()
+                          ? mPopupAlignment == POPUPALIGNMENT_TOPLEFT ||
+                                mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT
+                          : mPopupAlignment == POPUPALIGNMENT_TOPRIGHT ||
+                                mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
+    nscoord preOffsetScreenPoint = screenPoint.x;
+    if (slideHorizontal) {
+      mRect.width = SlideOrResize(screenPoint.x, mRect.width, screenRect.x,
+                                  screenRect.XMost(), &mAlignmentOffset);
+    } else {
+      mRect.width = FlipOrResize(
+          screenPoint.x, mRect.width, screenRect.x, screenRect.XMost(),
+          anchorRect.x, anchorRect.XMost(), margin.left, margin.right,
+          offsetForContextMenu.x, hFlip, endAligned, &mHFlip);
+    }
+    mIsOffset = preOffsetScreenPoint != screenPoint.x;
+
+    endAligned = mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT ||
+                 mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
+    preOffsetScreenPoint = screenPoint.y;
+    if (slideVertical) {
+      mRect.height = SlideOrResize(screenPoint.y, mRect.height, screenRect.y,
+                                   screenRect.YMost(), &mAlignmentOffset);
+    } else {
+      mRect.height = FlipOrResize(
+          screenPoint.y, mRect.height, screenRect.y, screenRect.YMost(),
+          anchorRect.y, anchorRect.YMost(), margin.top, margin.bottom,
+          offsetForContextMenu.y, vFlip, endAligned, &mVFlip);
+    }
+    mIsOffset = mIsOffset || (preOffsetScreenPoint != screenPoint.y);
+
+    NS_ASSERTION(screenPoint.x >= screenRect.x &&
+                     screenPoint.y >= screenRect.y &&
+                     screenPoint.x + mRect.width <= screenRect.XMost() &&
+                     screenPoint.y + mRect.height <= screenRect.YMost(),
+                 "Popup is offscreen");
   }
 
   
@@ -1693,14 +1687,6 @@ LayoutDeviceIntRect nsMenuPopupFrame::GetConstraintRect(
         screen->GetAvailRect(&screenRectPixels.x, &screenRectPixels.y,
                              &screenRectPixels.width, &screenRectPixels.height);
     }
-#ifdef MOZ_WAYLAND
-    else {
-      if (GetWidget() &&
-          GetWidget()->GetScreenRect(&screenRectPixels) != NS_OK) {
-        NS_WARNING("Cannot get screen rect from widget!");
-      }
-    }
-#endif
   }
 
   if (mInContentShell) {
