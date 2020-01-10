@@ -7345,7 +7345,7 @@ nsBlockFrame* nsBlockFrame::GetNearestAncestorBlock(nsIFrame* aCandidate) {
 
 nscoord nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
                                         nsReflowStatus& aStatus,
-                                        nscoord aContentBSize,
+                                        nscoord aBEndEdgeOfChildren,
                                         const LogicalMargin& aBorderPadding,
                                         nscoord aConsumed) {
   WritingMode wm = aReflowInput.GetWritingMode();
@@ -7398,7 +7398,7 @@ nscoord nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     
     
     
-    finalBSize = std::max(availBSize, aContentBSize);
+    finalBSize = std::max(availBSize, aBEndEdgeOfChildren);
     
     finalBSize =
         std::min(finalBSize, aBorderPadding.BStart(wm) + computedBSizeLeftOver);
