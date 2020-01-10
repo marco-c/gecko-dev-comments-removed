@@ -42,7 +42,8 @@
 }
 
 #customization-panel-container {
-  padding: 0 20px 25px;
+  --customization-panel-padding: 20px;
+  padding: 0 var(--customization-panel-padding) 25px;
 }
 
 #customization-footer {
@@ -492,18 +493,7 @@ toolbarpaletteitem > #search-container > #searchbar > .searchbar-textbox {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  margin-inline-end: calc(9px + 3 * var(--toolbarbutton-inner-padding));
+  margin-inline-end: calc(var(--panel-arrow-offset) - var(--customization-panel-padding) - 10px);
   vertical-align: top;
 }
 
