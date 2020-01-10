@@ -348,10 +348,6 @@ void nsXULTooltipListener::CheckTreeBodyMove(MouseEvent* aMouseEvent) {
     
     
     mNeedTitletip = false;
-    int16_t colType = -1;
-    if (col) {
-      colType = col->Type();
-    }
     if (row >= 0 && cellInfo.mChildElt.EqualsLiteral("text")) {
       mNeedTitletip = tree->IsCellCropped(row, col, rv);
     }
