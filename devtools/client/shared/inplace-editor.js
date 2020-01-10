@@ -1204,11 +1204,16 @@ InplaceEditor.prototype = {
         this._hideAutocompletePopup();
       }
     } else if (
-      !cycling &&
-      !multilineNavigation &&
-      !event.metaKey &&
-      !event.altKey &&
-      !event.ctrlKey
+      
+      
+      
+      
+      (event.key === " " && event.ctrlKey) ||
+      (!cycling &&
+        !multilineNavigation &&
+        !event.metaKey &&
+        !event.altKey &&
+        !event.ctrlKey)
     ) {
       this._maybeSuggestCompletion(true);
     }
