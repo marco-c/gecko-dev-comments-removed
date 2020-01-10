@@ -1333,9 +1333,6 @@
       
       if (newBrowser._urlbarFocused && gURLBar) {
         
-        gURLBar.view.close();
-
-        
         
         
         
