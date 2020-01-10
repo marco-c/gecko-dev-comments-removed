@@ -140,7 +140,7 @@ def log_crashes(logger,
 
 ABORT_SIGNATURES = (
     "Abort(char const*)",
-    "GeckoCrash",
+    "RustMozCrash",
     "NS_DebugBreak",
     
     

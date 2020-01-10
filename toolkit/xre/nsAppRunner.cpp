@@ -5098,12 +5098,6 @@ mozilla::BinPathType XRE_GetChildProcBinPathType(
 extern "C" void GeckoHandleOOM(size_t size) { mozalloc_handle_oom(size); }
 
 
-extern "C" void GeckoCrash(const char* aFilename, int aLine,
-                           const char* aReason) {
-  MOZ_Crash(aFilename, aLine, aReason);
-}
-
-
 extern "C" void install_rust_panic_hook();
 extern "C" void install_rust_oom_hook();
 
