@@ -145,6 +145,9 @@ class DOMMediaStream : public DOMEventTargetHelper,
   
 
   
+  bool Audible() const;
+
+  
 
 
   bool HasTrack(const MediaStreamTrack& aTrack) const;
