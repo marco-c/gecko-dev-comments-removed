@@ -27,7 +27,6 @@
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/recordreplay/ParentIPC.h"
 #include "mozilla/JSONWriter.h"
-#include "BaseProfiler.h"
 
 #include "nsAppRunner.h"
 #include "mozilla/XREAppData.h"
@@ -2547,11 +2546,11 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
   *aCachesOK = (NS_FAILED(rv) || !buf.EqualsLiteral("1"));
 
   bool purgeCaches = false;
-  if (aFlagFile) {
-    aFlagFile->Exists(&purgeCaches);
+  if (aFlagFile && NS_SUCCEEDED(aFlagFile->Exists(&purgeCaches)) &&
+      purgeCaches) {
+    *aCachesOK = false;
   }
 
-  *aCachesOK = !purgeCaches && *aCachesOK;
   return true;
 }
 
@@ -4176,6 +4175,9 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       mProfD, version, osABI, mDirProvider.GetGREDir(), mAppData->directory,
       flagFile, &cachesOK, &isDowngrade, lastVersion);
 
+  NS_ASSERTION(cachesOK && !versionOK,
+               "Caches cannot be good if the version has changed.");
+
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
   
   
@@ -4217,7 +4219,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   bool lastStartupWasCrash = CheckLastStartupWasCrash().unwrapOr(false);
 
   if (CheckArg("purgecaches") || PR_GetEnv("MOZ_PURGE_CACHES") ||
-      lastStartupWasCrash) {
+      lastStartupWasCrash || gSafeMode) {
     cachesOK = false;
   }
 
@@ -4229,32 +4231,15 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
   
   bool startupCacheValid = true;
-  if (gSafeMode) {
+
+  if (!cachesOK || !versionOK) {
     startupCacheValid = RemoveComponentRegistries(mProfD, mProfLD, false);
-    WriteVersion(mProfD, NS_LITERAL_CSTRING("Safe Mode"), osABI,
-                 mDirProvider.GetGREDir(), mAppData->directory,
-                 !startupCacheValid);
-  } else if (versionOK) {
-    if (!cachesOK) {
-      
-      
-      
-      startupCacheValid = RemoveComponentRegistries(mProfD, mProfLD, false);
 
-      
-      WriteVersion(mProfD, version, osABI, mDirProvider.GetGREDir(),
-                   mAppData->directory, !startupCacheValid);
-    }
-    
-  } else {
     
     
-    
-    startupCacheValid = RemoveComponentRegistries(mProfD, mProfLD, true);
-
     
     WriteVersion(mProfD, version, osABI, mDirProvider.GetGREDir(),
-                 mAppData->directory, !startupCacheValid);
+                 mAppData->directory, gSafeMode || !startupCacheValid);
   }
 
   if (!startupCacheValid) StartupCache::IgnoreDiskCache();
@@ -4668,7 +4653,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   CodeCoverageHandler::Init();
 #endif
 
-  AUTO_BASE_PROFILER_LABEL("XREMain::XRE_main (around Gecko Profiler)", OTHER);
   AUTO_PROFILER_INIT;
   AUTO_PROFILER_LABEL("XREMain::XRE_main", OTHER);
 
