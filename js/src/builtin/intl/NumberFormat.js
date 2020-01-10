@@ -60,6 +60,7 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     if (style === "currency") {
         internalProps.currency = lazyNumberFormatData.currency;
         internalProps.currencyDisplay = lazyNumberFormatData.currencyDisplay;
+        internalProps.currencySign = lazyNumberFormatData.currencySign;
     }
 
     
@@ -300,6 +301,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     
     
+    
     var lazyNumberFormatData = std_Object_create(null);
 
     
@@ -332,8 +334,15 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
 
     
     var currency = GetOption(options, "currency", "string", undefined, undefined);
+
+    
+    
+    
+    
+    
     if (currency !== undefined && !IsWellFormedCurrencyCode(currency))
         ThrowRangeError(JSMSG_INVALID_CURRENCY_CODE, currency);
+
     var cDigits;
     if (style === "currency") {
         if (currency === undefined)
@@ -350,6 +359,12 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
                                     ["code", "symbol", "name"], "symbol");
     if (style === "currency")
         lazyNumberFormatData.currencyDisplay = currencyDisplay;
+
+    
+    var currencySign = GetOption(options, "currencySign", "string",
+                                 ["standard", "accounting"], "standard");
+    if (style === "currency")
+        lazyNumberFormatData.currencySign = currencySign;
 
     
     var mnfdDefault, mxfdDefault;
@@ -578,14 +593,18 @@ function Intl_NumberFormat_resolvedOptions() {
     };
 
     
+    
     assert(hasOwn("currency", internals) === (internals.style === "currency"),
            "currency is present iff style is 'currency'");
     assert(hasOwn("currencyDisplay", internals) === (internals.style === "currency"),
            "currencyDisplay is present iff style is 'currency'");
+    assert(hasOwn("currencySign", internals) === (internals.style === "currency"),
+           "currencySign is present iff style is 'currency'");
 
     if (hasOwn("currency", internals)) {
         _DefineDataProperty(result, "currency", internals.currency);
         _DefineDataProperty(result, "currencyDisplay", internals.currencyDisplay);
+        _DefineDataProperty(result, "currencySign", internals.currencySign);
     }
 
     _DefineDataProperty(result, "minimumIntegerDigits", internals.minimumIntegerDigits);
