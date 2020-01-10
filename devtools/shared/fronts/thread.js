@@ -125,7 +125,12 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   
 
 
-  rewind() {
+  async rewind() {
+    if (!this.paused) {
+      this.interrupt();
+      await this.once("paused");
+    }
+
     this._doResume(null, true);
   }
 
