@@ -465,7 +465,7 @@ pref("media.cubeb.logging_level", "");
 
 #if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
 pref("media.cubeb.sandbox", true);
-pref("media.audioipc.pool_size", 1);
+pref("media.audioipc.pool_size", 2);
 
 pref("media.audioipc.stack_size", 262144);
 #else
