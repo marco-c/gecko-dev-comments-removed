@@ -1312,6 +1312,15 @@ pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "{\"id\":
 
 
 #ifdef NIGHTLY_BUILD
+pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);
+#else
+pref("browser.newtabpage.activity-stream.discoverystream.enabled", false);
+#endif
+pref("browser.newtabpage.activity-stream.discoverystream.hardcoded-basic-layout", false);
+pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
+
+
+#ifdef NIGHTLY_BUILD
 pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
 #else
 pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", false);

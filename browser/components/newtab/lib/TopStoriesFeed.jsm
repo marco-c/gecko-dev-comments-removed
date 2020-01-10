@@ -54,6 +54,9 @@ const SECTION_ID = "topstories";
 const IMPRESSION_SOURCE = "TOP_STORIES";
 const SPOC_IMPRESSION_TRACKING_PREF =
   "feeds.section.topstories.spoc.impressions";
+const DISCOVERY_STREAM_PREF_ENABLED = "discoverystream.enabled";
+const DISCOVERY_STREAM_PREF_ENABLED_PATH =
+  "browser.newtabpage.activity-stream.discoverystream.enabled";
 const REC_IMPRESSION_TRACKING_PREF = "feeds.section.topstories.rec.impressions";
 const OPTIONS_PREF = "feeds.section.topstories.options";
 const MAX_LIFETIME_CAP = 500; 
@@ -65,7 +68,10 @@ this.TopStoriesFeed = class TopStoriesFeed {
     
     
     this.discoveryStreamEnabled =
-      ds && ds.value && JSON.parse(ds.value).enabled;
+      ds &&
+      ds.value &&
+      JSON.parse(ds.value).enabled &&
+      Services.prefs.getBoolPref(DISCOVERY_STREAM_PREF_ENABLED_PATH, false);
     if (!this.discoveryStreamEnabled) {
       this.initializeProperties();
     }
@@ -784,7 +790,9 @@ this.TopStoriesFeed = class TopStoriesFeed {
     }
 
     try {
-      this.discoveryStreamEnabled = JSON.parse(_dsPref).enabled;
+      this.discoveryStreamEnabled =
+        JSON.parse(_dsPref).enabled &&
+        this.store.getState().Prefs.values[DISCOVERY_STREAM_PREF_ENABLED];
     } catch (e) {
       
       this.discoveryStreamEnabled = false;
@@ -809,6 +817,9 @@ this.TopStoriesFeed = class TopStoriesFeed {
       case at.PREF_CHANGED:
         if (action.data.name === DISCOVERY_STREAM_PREF) {
           this.lazyLoadTopStories(action.data.value);
+        }
+        if (action.data.name === DISCOVERY_STREAM_PREF_ENABLED) {
+          this.lazyLoadTopStories();
         }
         break;
       case at.UNINIT:
