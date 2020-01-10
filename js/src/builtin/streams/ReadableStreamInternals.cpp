@@ -21,7 +21,7 @@
 #include "gc/AllocKind.h"  
 #include "js/CallArgs.h"   
 #include "js/GCAPI.h"      
-#include "js/Promise.h"  
+#include "js/Promise.h"    
 #include "js/Result.h"      
 #include "js/RootingAPI.h"  
 #include "js/Stream.h"  
@@ -33,6 +33,7 @@
 #include "vm/Realm.h"         
 #include "vm/StringType.h"    
 
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"                        
 #include "vm/JSContext-inl.h"                          
@@ -226,11 +227,8 @@ MOZ_MUST_USE bool js::ReadableStreamCloseInternal(
   }
 
   
-  Rooted<JSObject*> closedPromise(cx, unwrappedReader->closedPromise());
-  if (!cx->compartment()->wrap(cx, &closedPromise)) {
-    return false;
-  }
-  if (!ResolvePromise(cx, closedPromise, UndefinedHandleValue)) {
+  if (!ResolveUnwrappedPromiseWithUndefined(cx,
+                                            unwrappedReader->closedPromise())) {
     return false;
   }
 
@@ -319,24 +317,19 @@ MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
   
   
   
-  Rooted<ListObject*> unwrappedReadRequests(cx, unwrappedReader->requests());
-  Rooted<JSObject*> readRequest(cx);
-  Rooted<Value> val(cx);
-  uint32_t len = unwrappedReadRequests->length();
-  for (uint32_t i = 0; i < len; i++) {
-    
-    val = unwrappedReadRequests->get(i);
-    readRequest = &val.toObject();
-
-    
-    
-    
-    if (!cx->compartment()->wrap(cx, &readRequest)) {
-      return false;
-    }
-
-    if (!RejectPromise(cx, readRequest, e)) {
-      return false;
+  {
+    Rooted<ListObject*> unwrappedReadRequests(cx, unwrappedReader->requests());
+    Rooted<JSObject*> readRequest(cx);
+    uint32_t len = unwrappedReadRequests->length();
+    for (uint32_t i = 0; i < len; i++) {
+      
+      
+      
+      
+      readRequest = &unwrappedReadRequests->get(i).toObject();
+      if (!RejectUnwrappedPromiseWithError(cx, &readRequest, e)) {
+        return false;
+      }
     }
   }
 
@@ -347,15 +340,8 @@ MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
   }
 
   
-  
-  
-  
-  
-  Rooted<JSObject*> closedPromise(cx, unwrappedReader->closedPromise());
-  if (!cx->compartment()->wrap(cx, &closedPromise)) {
-    return false;
-  }
-  if (!RejectPromise(cx, closedPromise, e)) {
+  if (!RejectUnwrappedPromiseWithError(cx, unwrappedReader->closedPromise(),
+                                       e)) {
     return false;
   }
 

@@ -25,6 +25,7 @@
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
 
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
 #include "vm/Compartment-inl.h"  
@@ -93,11 +94,8 @@ JSObject* js::WritableStreamDefaultWriterClose(
   
   
   if (unwrappedStream->backpressure() && unwrappedStream->writable()) {
-    Rooted<JSObject*> readyPromise(cx, unwrappedWriter->readyPromise());
-    if (!cx->compartment()->wrap(cx, &readyPromise)) {
-      return nullptr;
-    }
-    if (!ResolvePromise(cx, readyPromise, UndefinedHandleValue)) {
+    if (!ResolveUnwrappedPromiseWithUndefined(
+            cx, unwrappedWriter->readyPromise())) {
       return nullptr;
     }
   }
