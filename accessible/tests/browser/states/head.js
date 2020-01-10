@@ -6,6 +6,8 @@
 
 
 
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -17,3 +19,35 @@ loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
   { name: "promisified-events.js", dir: MOCHITESTS_DIR }
 );
+
+
+
+async function waitForIFrameUpdates() {
+  
+  
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  await new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+
+
+async function spawnTestStates(browsingContext, elementId, expectedStates) {
+  function testStates(id, expected) {
+    const acc = SpecialPowers.Cc[
+      "@mozilla.org/accessibilityService;1"
+    ].getService(SpecialPowers.Ci.nsIAccessibilityService);
+    const target = content.document.getElementById(id);
+    let state = {};
+    acc.getAccessibleFor(target).getState(state, {});
+    if (expected === 0) {
+      Assert.equal(state.value, expected);
+    } else {
+      Assert.ok(state.value & expected);
+    }
+  }
+  await SpecialPowers.spawn(
+    browsingContext,
+    [elementId, expectedStates],
+    testStates
+  );
+}

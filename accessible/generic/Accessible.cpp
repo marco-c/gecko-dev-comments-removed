@@ -362,12 +362,12 @@ uint64_t Accessible::VisibilityState() const {
     
     
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(parentFrame);
+    const nscoord kMinPixels = nsPresContext::CSSPixelsToAppUnits(12);
     if (scrollableFrame) {
       nsRect scrollPortRect = scrollableFrame->GetScrollPortRect();
       nsRect frameRect = nsLayoutUtils::TransformFrameRectToAncestor(
           frame, frame->GetRectRelativeToSelf(), parentFrame);
       if (!scrollPortRect.Contains(frameRect)) {
-        const nscoord kMinPixels = nsPresContext::CSSPixelsToAppUnits(12);
         scrollPortRect.Deflate(kMinPixels, kMinPixels);
         if (!scrollPortRect.Intersects(frameRect)) return states::OFFSCREEN;
       }
@@ -375,6 +375,14 @@ uint64_t Accessible::VisibilityState() const {
 
     if (!parentFrame) {
       parentFrame = nsLayoutUtils::GetCrossDocParentFrame(curFrame);
+      
+      
+      
+      if (!parentFrame &&
+          nsLayoutUtils::FrameIsMostlyScrolledOutOfViewInCrossProcess(
+              frame, kMinPixels)) {
+        return states::OFFSCREEN;
+      }
     }
 
     curFrame = parentFrame;
