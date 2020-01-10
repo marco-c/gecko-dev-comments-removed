@@ -68,7 +68,8 @@ class RenderCompositor {
   
   virtual void CompositorBeginFrame() {}
   virtual void CompositorEndFrame() {}
-  virtual void Bind(wr::NativeSurfaceId aId, wr::DeviceIntPoint* aOffset) {}
+  virtual void Bind(wr::NativeSurfaceId aId, wr::DeviceIntPoint* aOffset,
+                    uint32_t* aFboId) {}
   virtual void Unbind() {}
   virtual void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aSize) {
   }

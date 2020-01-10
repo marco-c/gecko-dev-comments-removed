@@ -202,6 +202,27 @@ pub struct NativeSurfaceId(pub u64);
 
 
 
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NativeSurfaceInfo {
+    
+    
+    
+    
+    
+    pub origin: DeviceIntPoint,
+    
+    
+    
+    
+    
+    
+    
+    pub fbo_id: u32,
+}
+
+
+
 
 pub trait Compositor {
     
@@ -225,7 +246,7 @@ pub trait Compositor {
     fn bind(
         &mut self,
         id: NativeSurfaceId,
-    ) -> DeviceIntPoint;
+    ) -> NativeSurfaceInfo;
 
     
     
