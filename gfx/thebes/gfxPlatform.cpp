@@ -2621,7 +2621,8 @@ static void HardwareTooOldForWR(FeatureState& aFeature) {
 }
 
 static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
-                                           int32_t aDeviceId) {
+                                           int32_t aDeviceId,
+                                           bool* aOutGuardedByQualifiedPref) {
   
   
   
@@ -2633,10 +2634,16 @@ static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
   }
 
   
+  
+  
+
+  
+  *aOutGuardedByQualifiedPref = false;
 }
 
 static void UpdateWRQualificationForAMD(FeatureState& aFeature,
-                                        int32_t aDeviceId) {
+                                        int32_t aDeviceId,
+                                        bool* aOutGuardedByQualifiedPref) {
   
   
   bool supported = (aDeviceId >= 0x6600 && aDeviceId < 0x66b0) ||
@@ -2654,18 +2661,26 @@ static void UpdateWRQualificationForAMD(FeatureState& aFeature,
   }
 
   
+
+#if defined(XP_WIN)
+  
+  *aOutGuardedByQualifiedPref = false;
+#elif defined(NIGHTLY_BUILD)
   
   
-#if !defined(XP_WIN) && !defined(NIGHTLY_BUILD)
+  
+#else
+  
   aFeature.Disable(FeatureStatus::BlockedReleaseChannelAMD,
                    "Release channel and AMD",
                    NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_AMD"));
-#endif  
+#endif
 }
 
 static void UpdateWRQualificationForIntel(FeatureState& aFeature,
                                           int32_t aDeviceId,
-                                          int32_t aScreenPixels) {
+                                          int32_t aScreenPixels,
+                                          bool* aOutGuardedByQualifiedPref) {
   const uint16_t supportedDevices[] = {
       
       0x1912,
@@ -2794,6 +2809,8 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
 #if (defined(XP_WIN) || (defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)))
   
   
+  
+  
 #else
   
   aFeature.Disable(FeatureStatus::BlockedReleaseChannelIntel,
@@ -2803,10 +2820,12 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
 }
 
 static FeatureState& WebRenderHardwareQualificationStatus(
-    const IntSize& aScreenSize, bool aHasBattery) {
+    const IntSize& aScreenSize, bool aHasBattery,
+    bool* aOutGuardedByQualifiedPref) {
   FeatureState& featureWebRenderQualified =
       gfxConfig::GetFeature(Feature::WEBRENDER_QUALIFIED);
   featureWebRenderQualified.EnableByDefault();
+  MOZ_ASSERT(aOutGuardedByQualifiedPref && *aOutGuardedByQualifiedPref);
 
   if (Preferences::HasUserValue(WR_ROLLOUT_HW_QUALIFIED_OVERRIDE)) {
     if (!Preferences::GetBool(WR_ROLLOUT_HW_QUALIFIED_OVERRIDE)) {
@@ -2851,12 +2870,14 @@ static FeatureState& WebRenderHardwareQualificationStatus(
   const int32_t screenPixels = aScreenSize.width * aScreenSize.height;
 
   if (adapterVendorID == u"0x10de") {  
-    UpdateWRQualificationForNvidia(featureWebRenderQualified, deviceID);
+    UpdateWRQualificationForNvidia(featureWebRenderQualified, deviceID,
+                                   aOutGuardedByQualifiedPref);
   } else if (adapterVendorID == u"0x1002") {  
-    UpdateWRQualificationForAMD(featureWebRenderQualified, deviceID);
+    UpdateWRQualificationForAMD(featureWebRenderQualified, deviceID,
+                                aOutGuardedByQualifiedPref);
   } else if (adapterVendorID == u"0x8086") {  
     UpdateWRQualificationForIntel(featureWebRenderQualified, deviceID,
-                                  screenPixels);
+                                  screenPixels, aOutGuardedByQualifiedPref);
   } else {
     featureWebRenderQualified.Disable(
         FeatureStatus::BlockedVendorUnsupported, "Unsupported vendor",
@@ -2865,12 +2886,19 @@ static FeatureState& WebRenderHardwareQualificationStatus(
 
   if (!featureWebRenderQualified.IsEnabled()) {
     
+    
+    MOZ_ASSERT(*aOutGuardedByQualifiedPref);
     return featureWebRenderQualified;
   }
 
   
   
   if (aHasBattery) {
+    
+    
+    
+    *aOutGuardedByQualifiedPref = true;
+
     
     
     
@@ -2922,8 +2950,10 @@ void gfxPlatform::InitWebRenderConfig() {
     return;
   }
 
+  bool guardedByQualifiedPref = true;
   FeatureState& featureWebRenderQualified =
-      WebRenderHardwareQualificationStatus(GetScreenSize(), HasBattery());
+      WebRenderHardwareQualificationStatus(GetScreenSize(), HasBattery(),
+                                           &guardedByQualifiedPref);
   FeatureState& featureWebRender = gfxConfig::GetFeature(Feature::WEBRENDER);
 
   featureWebRender.DisableByDefault(
@@ -2940,8 +2970,15 @@ void gfxPlatform::InitWebRenderConfig() {
     featureWebRender.UserEnable("Force enabled by envvar");
   } else if (prefEnabled) {
     featureWebRender.UserEnable("Force enabled by pref");
-  } else if (wrQualifiedAll && featureWebRenderQualified.IsEnabled()) {
-    featureWebRender.UserEnable("Qualified enabled by pref ");
+  } else if (featureWebRenderQualified.IsEnabled()) {
+    
+    
+    
+    if (!guardedByQualifiedPref) {
+      featureWebRender.UserEnable("Qualified in release");
+    } else if (wrQualifiedAll) {
+      featureWebRender.UserEnable("Qualified enabled by pref");
+    }
   }
 
   
