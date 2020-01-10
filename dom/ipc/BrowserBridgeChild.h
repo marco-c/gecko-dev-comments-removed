@@ -20,6 +20,7 @@ class RemoteIframeDocProxyAccessibleWrap;
 namespace dom {
 class BrowsingContext;
 class ContentChild;
+class BrowserBridgeHost;
 
 
 
@@ -54,6 +55,8 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   void Deactivate(bool aWindowLowering);
 
   void SetIsUnderHiddenEmbedderElement(bool aIsUnderHiddenEmbedderElement);
+
+  already_AddRefed<BrowserBridgeHost> FinishInit();
 
 #if defined(ACCESSIBILITY) && defined(XP_WIN)
   a11y::RemoteIframeDocProxyAccessibleWrap* GetEmbeddedDocAccessible() {
