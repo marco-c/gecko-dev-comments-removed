@@ -1432,7 +1432,6 @@ bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
 
   if (minNurseryBytes > capacity()) {
     
-    
     MOZ_ASSERT(minNurseryBytes <= roundSize(tunables().gcMaxNurseryBytes()));
     growAllocableSpace(minNurseryBytes);
     return true;
