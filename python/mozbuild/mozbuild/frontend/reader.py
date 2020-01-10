@@ -901,9 +901,6 @@ class BuildReader(object):
         
         
         
-        
-        yield 'moz.build'
-
         for path, f in self._relevant_mozbuild_finder.find('**/moz.build'):
             yield path
 
