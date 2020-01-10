@@ -81,13 +81,19 @@ StackTraceCollector.prototype = {
     try {
       channel = subject.QueryInterface(Ci.nsIHttpChannel);
       id = channel.channelId;
-    } catch (e) {
+    } catch (e1) {
       
       
       
       
       
-      channel = subject.QueryInterface(Ci.nsIWebSocketChannel);
+      try {
+        channel = subject.QueryInterface(Ci.nsIWebSocketChannel);
+      } catch (e2) {
+        
+        
+        return;
+      }
       id = channel.URI.spec;
     }
 
