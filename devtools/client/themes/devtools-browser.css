@@ -6,3 +6,9 @@
 
 
 @import url("resource://devtools/client/responsive/responsive-browser.css");
+
+
+
+.devtools-toolbox-bottom-iframe {
+  min-height: 29px;
+}
