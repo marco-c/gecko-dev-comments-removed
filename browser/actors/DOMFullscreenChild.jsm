@@ -62,6 +62,13 @@ class DOMFullscreenChild extends JSWindowActorChild {
   }
 
   handleEvent(aEvent) {
+    if (this.hasBeenDestroyed()) {
+      
+      
+      
+      return;
+    }
+
     switch (aEvent.type) {
       case "MozDOMFullscreen:Request": {
         this.sendAsyncMessage("DOMFullscreen:Request", {});
@@ -113,6 +120,18 @@ class DOMFullscreenChild extends JSWindowActorChild {
         }
         break;
       }
+    }
+  }
+
+  hasBeenDestroyed() {
+    
+    
+    
+    
+    try {
+      return !this.browsingContext;
+    } catch {
+      return true;
     }
   }
 }

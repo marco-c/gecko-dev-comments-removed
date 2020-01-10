@@ -518,6 +518,11 @@ var FullScreen = {
 
 
   _sendMessageToTheRightContent(aActor, aMessage) {
+    if (aActor.hasBeenDestroyed()) {
+      
+      return true;
+    }
+
     let childBC = aActor.browsingContext;
     let parentBC = childBC.parent;
 

@@ -87,7 +87,13 @@ class DOMFullscreenParent extends JSWindowActorParent {
       }
       case "MozDOMFullscreen:Exited": {
         TelemetryStopwatch.start("FULLSCREEN_CHANGE_MS");
-        if (!this.requestOrigin) {
+
+        
+        
+        
+        
+        
+        if (!this.hasBeenDestroyed() && !this.requestOrigin) {
           this.requestOrigin = this;
         }
         window.FullScreen.cleanupDomFullscreen(this);
@@ -139,6 +145,18 @@ class DOMFullscreenParent extends JSWindowActorParent {
       );
     } else {
       delete this.browsingContext.top.fullscreenRequestOrigin;
+    }
+  }
+
+  hasBeenDestroyed() {
+    
+    
+    
+    
+    try {
+      return !this.browsingContext;
+    } catch {
+      return true;
     }
   }
 }
