@@ -10,6 +10,10 @@ Cu.importGlobalProperties(["fetch"]);
 
 const PREF_ABUSE_REPORT_URL  = "extensions.abuseReport.url";
 
+
+const MAX_STRING_LENGTH = 255;
+
+
 const MIN_MS_BETWEEN_SUBMITS = 30000;
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -124,11 +128,15 @@ const AbuseReporter = {
 
 
   async getReportData(addon) {
+    const truncateString = (text) =>
+      typeof text == "string" ? text.slice(0, MAX_STRING_LENGTH) : text;
+
     const data = {
       addon: addon.id,
       addon_version: addon.version,
-      addon_summary: addon.description,
-      addon_install_origin: addon.sourceURI && addon.sourceURI.spec,
+      addon_name: truncateString(addon.name),
+      addon_summary: truncateString(addon.description),
+      addon_install_origin: addon.sourceURI && truncateString(addon.sourceURI.spec),
       install_date: addon.installDate && addon.installDate.toISOString(),
     };
 
