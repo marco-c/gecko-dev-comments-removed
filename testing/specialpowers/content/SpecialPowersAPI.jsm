@@ -1000,17 +1000,27 @@ class SpecialPowersAPI {
   }
 
   
-  getBoolPref(prefName, defaultValue) {
-    return this._getPref(prefName, "BOOL", { defaultValue });
+  getBoolPref(...args) {
+    return Services.prefs.getBoolPref(...args);
   }
-  getIntPref(prefName, defaultValue) {
-    return this._getPref(prefName, "INT", { defaultValue });
+  getIntPref(...args) {
+    return Services.prefs.getIntPref(...args);
   }
-  getCharPref(prefName, defaultValue) {
-    return this._getPref(prefName, "CHAR", { defaultValue });
+  getCharPref(...args) {
+    return Services.prefs.getCharPref(...args);
   }
   getComplexValue(prefName, iid) {
     return this._getPref(prefName, "COMPLEX", { iid });
+  }
+
+  getParentBoolPref(prefName, defaultValue) {
+    return this._getParentPref(prefName, "BOOL", { defaultValue });
+  }
+  getParentIntPref(prefName, defaultValue) {
+    return this._getParentPref(prefName, "INT", { defaultValue });
+  }
+  getParentCharPref(prefName, defaultValue) {
+    return this._getParentPref(prefName, "CHAR", { defaultValue });
   }
 
   
