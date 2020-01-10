@@ -121,6 +121,7 @@ Preferences.addAll([
   
   { id: "signon.rememberSignons", type: "bool" },
   { id: "signon.generation.enabled", type: "bool" },
+  { id: "signon.autofillForms", type: "bool" },
 
   
   { id: "pref.privacy.disable_button.view_passwords", type: "bool" },
@@ -1824,15 +1825,18 @@ var gPrivacyPane = {
     var pref = Preferences.get("signon.rememberSignons");
     var excepts = document.getElementById("passwordExceptions");
     var generatePasswords = document.getElementById("generatePasswords");
+    var autofillCheckbox = document.getElementById("passwordAutofillCheckbox");
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
       document.getElementById("savePasswords").disabled = true;
       excepts.disabled = true;
       generatePasswords.disabled = true;
+      autofillCheckbox.disabled = true;
       return false;
     }
     excepts.disabled = !pref.value;
     generatePasswords.disabled = !pref.value;
+    autofillCheckbox.disabled = !pref.value;
 
     
     return undefined;
