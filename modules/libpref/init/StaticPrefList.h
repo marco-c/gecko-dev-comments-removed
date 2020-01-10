@@ -824,6 +824,16 @@ VARCACHE_PREF(
 )
 
 
+
+
+VARCACHE_PREF(
+  Live,
+  "browser.cache.max_shutdown_io_lag",
+   browser_cache_max_shutdown_io_lag,
+  RelaxedAtomicUint32, 2
+)
+
+
 VARCACHE_PREF(
   Live,
   "browser.contentblocking.allowlist.storage.enabled",
