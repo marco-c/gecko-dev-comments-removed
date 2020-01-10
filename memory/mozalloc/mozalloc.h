@@ -106,85 +106,13 @@ MOZ_END_EXTERN_C
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #  if defined(XP_MACOSX)
-#    define MOZALLOC_EXPORT_NEW MFBT_API
+#    define MOZALLOC_EXPORT_NEW MFBT_API MOZ_ALWAYS_INLINE_EVEN_DEBUG
 #  else
-#    define MOZALLOC_EXPORT_NEW
+#    define MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
 #  endif
 
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void* operator new(
-    size_t size) noexcept(false) {
-  return moz_xmalloc(size);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void* operator new(
-    size_t size, const std::nothrow_t&) noexcept(true) {
-  return malloc_impl(size);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void* operator new[](
-    size_t size) noexcept(false) {
-  return moz_xmalloc(size);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void* operator new[](
-    size_t size, const std::nothrow_t&) noexcept(true) {
-  return malloc_impl(size);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete(
-    void* ptr) noexcept(true) {
-  return free_impl(ptr);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete(
-    void* ptr, const std::nothrow_t&)noexcept(true) {
-  return free_impl(ptr);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete[](
-    void* ptr) noexcept(true) {
-  return free_impl(ptr);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete[](
-    void* ptr, const std::nothrow_t&) noexcept(true) {
-  return free_impl(ptr);
-}
-
-#  if defined(XP_WIN)
-
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete(
-    void* ptr, size_t ) noexcept(true) {
-  return free_impl(ptr);
-}
-
-MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete[](
-    void* ptr, size_t ) noexcept(true) {
-  return free_impl(ptr);
-}
-#  endif
+#  include "mozilla/cxxalloc.h"
 
 
 
