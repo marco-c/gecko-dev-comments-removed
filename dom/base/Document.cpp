@@ -4205,10 +4205,10 @@ Document::InternalCommandData Document::ConvertToInternalCommand(
           for (const nsStaticAtom* kTag : kFormattableBlockTags) {
             if (valueAtom == kTag) {
               kTag->ToString(*aAdjustedValue);
-              break;
+              return commandData;
             }
           }
-          return commandData;
+          return InternalCommandData();
         }
         case Command::FormatFontSize: {
           
@@ -4217,12 +4217,30 @@ Document::InternalCommandData Document::ConvertToInternalCommand(
           
           
           int32_t size = nsContentUtils::ParseLegacyFontSize(aValue);
-          if (size) {
-            MOZ_ASSERT(aAdjustedValue->IsEmpty());
-            aAdjustedValue->AppendInt(size);
+          if (!size) {
+            return InternalCommandData();
           }
+          MOZ_ASSERT(aAdjustedValue->IsEmpty());
+          aAdjustedValue->AppendInt(size);
           return commandData;
         }
+        case Command::InsertImage:
+        case Command::InsertLink:
+          if (aValue.IsEmpty()) {
+            
+            return InternalCommandData();
+          }
+          aAdjustedValue->Assign(aValue);
+          return commandData;
+        case Command::SetDocumentDefaultParagraphSeparator:
+          if (!aValue.LowerCaseEqualsLiteral("div") &&
+              !aValue.LowerCaseEqualsLiteral("p") &&
+              !aValue.LowerCaseEqualsLiteral("br")) {
+            
+            return InternalCommandData();
+          }
+          aAdjustedValue->Assign(aValue);
+          return commandData;
         default:
           aAdjustedValue->Assign(aValue);
           return commandData;
@@ -4317,28 +4335,6 @@ bool Document::ExecCommand(const nsAString& commandID, bool doShowUI,
   if (!window) {
     rv.Throw(NS_ERROR_FAILURE);
     return false;
-  }
-
-  switch (commandData.mCommand) {
-    case Command::FormatFontSize:
-    case Command::InsertImage:
-    case Command::InsertLink:
-    case Command::FormatBlock:
-      if (adjustedValue.IsEmpty()) {
-        
-        return false;
-      }
-      break;
-    case Command::SetDocumentDefaultParagraphSeparator:
-      if (!adjustedValue.LowerCaseEqualsLiteral("div") &&
-          !adjustedValue.LowerCaseEqualsLiteral("p") &&
-          !adjustedValue.LowerCaseEqualsLiteral("br")) {
-        
-        return false;
-      }
-      break;
-    default:
-      break;
   }
 
   
@@ -4495,9 +4491,7 @@ bool Document::QueryCommandState(const nsAString& commandID, ErrorResult& rv) {
     return false;
   }
 
-  nsAutoString adjustedValue;
-  InternalCommandData commandData =
-      ConvertToInternalCommand(commandID, EmptyString(), &adjustedValue);
+  InternalCommandData commandData = ConvertToInternalCommand(commandID);
   if (commandData.mCommand == Command::DoNothing) {
     return false;
   }
@@ -4540,20 +4534,37 @@ bool Document::QueryCommandState(const nsAString& commandID, ErrorResult& rv) {
   
   
   switch (commandData.mCommand) {
-    case Command::FormatJustifyLeft:
-    case Command::FormatJustifyRight:
-    case Command::FormatJustifyCenter:
-    case Command::FormatJustifyFull: {
-      if (NS_WARN_IF(adjustedValue.IsEmpty())) {
-        return false;
-      }
+    case Command::FormatJustifyLeft: {
       nsAutoCString currentValue;
       rv = params->GetCString("state_attribute", currentValue);
       if (rv.Failed()) {
         return false;
       }
-      NS_LossyConvertUTF16toASCII asciiValue(adjustedValue);
-      return asciiValue == currentValue;
+      return currentValue.EqualsLiteral("left");
+    }
+    case Command::FormatJustifyRight: {
+      nsAutoCString currentValue;
+      rv = params->GetCString("state_attribute", currentValue);
+      if (rv.Failed()) {
+        return false;
+      }
+      return currentValue.EqualsLiteral("right");
+    }
+    case Command::FormatJustifyCenter: {
+      nsAutoCString currentValue;
+      rv = params->GetCString("state_attribute", currentValue);
+      if (rv.Failed()) {
+        return false;
+      }
+      return currentValue.EqualsLiteral("center");
+    }
+    case Command::FormatJustifyFull: {
+      nsAutoCString currentValue;
+      rv = params->GetCString("state_attribute", currentValue);
+      if (rv.Failed()) {
+        return false;
+      }
+      return currentValue.EqualsLiteral("justify");
     }
     default:
       
