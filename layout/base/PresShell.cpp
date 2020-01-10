@@ -5526,11 +5526,6 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
     
     
     
-    event.mLayersId = mMouseEventTargetGuid.mLayersId;
-
-    
-    
-    
     
     
     
