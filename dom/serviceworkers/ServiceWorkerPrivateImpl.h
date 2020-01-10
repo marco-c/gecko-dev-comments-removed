@@ -116,7 +116,7 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
   void Terminated() override;
 
   
-  nsresult RefreshRemoteWorkerData(
+  void RefreshRemoteWorkerData(
       const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration);
 
   nsresult SendPushEventInternal(
