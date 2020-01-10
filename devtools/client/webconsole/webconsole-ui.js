@@ -96,11 +96,21 @@ class WebConsoleUI {
 
 
 
-  getAllProxies() {
+
+
+
+  getAllProxies(filterDisconnectedProxies = true) {
     let proxies = [this.getProxy()];
 
     if (this.additionalProxies) {
       proxies = proxies.concat(this.additionalProxies);
+    }
+
+    
+    if (filterDisconnectedProxies) {
+      proxies = proxies.filter(proxy => {
+        return proxy.webConsoleClient && !!proxy.webConsoleClient.actorID;
+      });
     }
 
     return proxies;
@@ -118,7 +128,7 @@ class WebConsoleUI {
 
     this._initializer = (async () => {
       this._initUI();
-      await this._initConnection();
+      await this._attachTargets();
       await this.wrapper.init();
 
       const id = WebConsoleUtils.supportsString(this.hudId);
@@ -167,6 +177,31 @@ class WebConsoleUI {
 
     
     this.window = this.hud = this.wrapper = null;
+  }
+
+  async switchToTarget(newTarget) {
+    
+    
+    const packet = {
+      url: newTarget.url,
+      title: newTarget.title,
+      
+      
+      
+      nativeConsoleAPI: true,
+    };
+    this.handleTabWillNavigate(packet);
+
+    
+    for (const proxy of this.getAllProxies()) {
+      proxy.disconnect();
+    }
+    this.proxy = null;
+    this.additionalProxies = [];
+
+    await this._attachTargets();
+
+    this.handleTabNavigated(packet);
   }
 
   
@@ -270,7 +305,7 @@ class WebConsoleUI {
 
 
 
-  async _initConnection() {
+  async _attachTargets() {
     const target = this.hud.currentTarget;
     const fissionSupport = Services.prefs.getBoolPref(
       PREFS.FEATURES.BROWSER_TOOLBOX_FISSION
@@ -312,7 +347,7 @@ class WebConsoleUI {
       }
     }
 
-    return Promise.all(this.getAllProxies().map(proxy => proxy.connect()));
+    return Promise.all(this.getAllProxies(false).map(proxy => proxy.connect()));
   }
 
   _initUI() {

@@ -3,6 +3,7 @@
 
 "use strict";
 
+const Services = require("Services");
 loader.lazyRequireGetter(
   this,
   "gDevTools",
@@ -126,13 +127,53 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
 
     const toolbox = gDevTools.getToolbox(this);
 
-    
-    
-    await toolbox.destroy();
+    const targetSwitchingEnabled = Services.prefs.getBoolPref(
+      "devtools.target-switching.enabled",
+      false
+    );
 
     
-    const newTarget = await TargetFactory.forTab(this.tab);
-    gDevTools.showToolbox(newTarget);
+    const client = this.client;
+
+    if (targetSwitchingEnabled) {
+      
+      
+      
+      
+      
+      
+      
+      this.shouldCloseClient = false;
+
+      
+      
+      await this.once("close");
+    } else {
+      
+      
+      
+      await toolbox.destroy();
+    }
+
+    
+    
+    
+    const newTarget = await TargetFactory.forTab(
+      this.tab,
+      targetSwitchingEnabled ? client : null
+    );
+
+    
+    
+    
+    if (targetSwitchingEnabled) {
+      
+      
+      this.shouldCloseClient = true;
+      toolbox.switchToTarget(newTarget);
+    } else {
+      gDevTools.showToolbox(newTarget);
+    }
   }
 }
 exports.LocalTabTargetFront = LocalTabTargetFront;

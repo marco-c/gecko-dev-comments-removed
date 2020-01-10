@@ -1961,6 +1961,15 @@ pref("devtools.toolbox.tabsOrder", "");
 pref("devtools.browsertoolbox.fission", false);
 
 
+
+
+
+
+
+
+pref("devtools.target-switching.enabled", false);
+
+
 pref("devtools.command-button-pick.enabled", true);
 pref("devtools.command-button-frames.enabled", true);
 pref("devtools.command-button-splitconsole.enabled", true);

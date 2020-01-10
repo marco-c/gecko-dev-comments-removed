@@ -32,12 +32,14 @@ exports.TargetFactory = {
 
 
 
-  forTab: async function(tab) {
+
+
+  forTab: async function(tab, client) {
     let target = targets.get(tab);
     if (target) {
       return target;
     }
-    const promise = this.createTargetForTab(tab);
+    const promise = this.createTargetForTab(tab, client);
     
     targets.set(tab, promise);
     target = await promise;
@@ -63,7 +65,9 @@ exports.TargetFactory = {
 
 
 
-  async createTargetForTab(tab) {
+
+
+  async createTargetForTab(tab, client) {
     function createLocalServer() {
       
       
@@ -81,14 +85,16 @@ exports.TargetFactory = {
     }
 
     function createLocalClient() {
+      createLocalServer();
       return new DebuggerClient(DebuggerServer.connectPipe());
     }
 
-    createLocalServer();
-    const client = createLocalClient();
+    if (!client) {
+      client = createLocalClient();
 
-    
-    await client.connect();
+      
+      await client.connect();
+    }
 
     
     return client.mainRoot.getTab({ tab });

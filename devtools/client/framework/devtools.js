@@ -634,6 +634,13 @@ DevTools.prototype = {
       this._toolboxes.delete(target);
       this.emit("toolbox-destroyed", target);
     });
+    
+    
+    toolbox.on("switch-target", newTarget => {
+      this._toolboxes.delete(target);
+      this._toolboxes.set(newTarget, toolbox);
+      target = newTarget;
+    });
 
     await toolbox.open();
     this.emit("toolbox-ready", toolbox);

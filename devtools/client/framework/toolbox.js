@@ -299,15 +299,6 @@ function Toolbox(
 
   EventEmitter.decorate(this);
 
-  this._target.on("will-navigate", this._onWillNavigate);
-  this._target.on("navigate", this._refreshHostTitle);
-  this._target.on("frame-update", this._updateFrames);
-  this._target.on("inspect-object", this._onInspectObject);
-
-  this._target.onFront("inspector", async inspectorFront => {
-    registerWalkerListeners(this.store, inspectorFront.walker);
-  });
-
   this.on("host-changed", this._refreshHostTitle);
   this.on("select", this._onToolSelected);
 
@@ -488,6 +479,39 @@ Toolbox.prototype = {
 
 
 
+
+  async switchToTarget(newTarget) {
+    
+    this.detachTarget();
+
+    this._target = newTarget;
+
+    
+    this.emit("switch-target", newTarget);
+
+    
+    await this._attachTargets(newTarget);
+    await this._listFrames();
+    await this.initPerformance();
+
+    
+    await Promise.all(
+      [...this._toolPanels.values()].map(panel => {
+        if (panel.switchToTarget) {
+          return panel.switchToTarget(newTarget);
+        }
+        return Promise.resolve();
+      })
+    );
+
+    this.emit("switched-target", newTarget);
+  },
+
+  
+
+
+
+
   get target() {
     return this._target;
   },
@@ -584,6 +608,16 @@ Toolbox.prototype = {
 
 
   async _attachTargets(target) {
+    
+    this._target.on("will-navigate", this._onWillNavigate);
+    this._target.on("navigate", this._refreshHostTitle);
+    this._target.on("frame-update", this._updateFrames);
+    this._target.on("inspect-object", this._onInspectObject);
+
+    this._target.onFront("inspector", async inspectorFront => {
+      registerWalkerListeners(this.store, inspectorFront.walker);
+    });
+
     this._threadFront = await this._attachTarget(target);
 
     const fissionSupport = Services.prefs.getBoolPref(
@@ -696,7 +730,6 @@ Toolbox.prototype = {
 
       
       
-
       await this._attachTargets(this.target);
 
       await domReady;
@@ -847,6 +880,17 @@ Toolbox.prototype = {
         
         dump(e.stack + "\n");
       });
+  },
+
+  detachTarget() {
+    this._target.off("inspect-object", this._onInspectObject);
+    this._target.off("will-navigate", this._onWillNavigate);
+    this._target.off("navigate", this._refreshHostTitle);
+    this._target.off("frame-update", this._updateFrames);
+
+    
+    this._stopThreadFrontListeners();
+    this._threadFront = null;
   },
 
   
@@ -3469,10 +3513,6 @@ Toolbox.prototype = {
   _destroyToolbox: async function() {
     this.emit("destroy");
 
-    this._target.off("inspect-object", this._onInspectObject);
-    this._target.off("will-navigate", this._onWillNavigate);
-    this._target.off("navigate", this._refreshHostTitle);
-    this._target.off("frame-update", this._updateFrames);
     this.off("select", this._onToolSelected);
     this.off("host-changed", this._refreshHostTitle);
 
@@ -3549,9 +3589,7 @@ Toolbox.prototype = {
     
     outstanding.push(this.resetPreference());
 
-    
-    this._stopThreadFrontListeners();
-    this._threadFront = null;
+    this.detachTarget();
 
     
     this.toolbarButtons.forEach(button => {
