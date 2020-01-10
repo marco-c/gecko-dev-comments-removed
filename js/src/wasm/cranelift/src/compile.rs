@@ -20,7 +20,7 @@
 
 use baldrdash as bd;
 use cpu::make_isa;
-use cranelift_codegen::binemit::{Addend, CodeOffset, NullTrapSink, Reloc, RelocSink};
+use cranelift_codegen::binemit::{Addend, CodeInfo, CodeOffset, NullTrapSink, Reloc, RelocSink};
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir;
 use cranelift_codegen::ir::stackslot::StackSize;
@@ -45,7 +45,12 @@ pub struct CompiledFunc {
     pub contains_calls: bool,
     pub metadata: Vec<bd::MetadataEntry>,
     
+    pub rodata_relocs: Vec<u32>,
+    
     pub code_buffer: Vec<u8>,
+    pub code_size: CodeOffset,
+    pub jumptables_size: CodeOffset,
+    pub rodata_size: CodeOffset,
 }
 
 impl CompiledFunc {
@@ -54,7 +59,11 @@ impl CompiledFunc {
             frame_pushed: 0,
             contains_calls: false,
             metadata: vec![],
+            rodata_relocs: vec![],
             code_buffer: vec![],
+            code_size: 0,
+            jumptables_size: 0,
+            rodata_size: 0,
         }
     }
 
@@ -62,7 +71,11 @@ impl CompiledFunc {
         self.frame_pushed = frame_pushed;
         self.contains_calls = contains_calls;
         self.metadata.clear();
+        self.rodata_relocs.clear();
         self.code_buffer.clear();
+        self.code_size = 0;
+        self.jumptables_size = 0;
+        self.rodata_size = 0;
     }
 }
 
@@ -94,9 +107,9 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     }
 
     pub fn compile(&mut self) -> CodegenResult<()> {
-        let size = self.context.compile(&*self.isa)?;
+        let info = self.context.compile(&*self.isa)?;
         debug!("Optimized wasm function IR: {}", self);
-        self.binemit(size as usize)
+        self.binemit(info)
     }
 
     
@@ -126,11 +139,12 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     }
 
     
-    fn binemit(&mut self, size: usize) -> CodegenResult<()> {
+    fn binemit(&mut self, info: CodeInfo) -> CodegenResult<()> {
+        let total_size = info.total_size as usize;
         let frame_pushed = self.frame_pushed();
         let contains_calls = self.contains_calls();
 
-        info!("Emitting {} bytes, frame_pushed={}\n.", size, frame_pushed);
+        info!("Emitting {} bytes, frame_pushed={}\n.", total_size, frame_pushed);
 
         self.current_func.reset(frame_pushed, contains_calls);
 
@@ -144,16 +158,17 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         
         
         
-        if self.current_func.code_buffer.len() < size {
+        if self.current_func.code_buffer.len() < total_size {
             let current_size = self.current_func.code_buffer.len();
             
             
-            self.current_func.code_buffer.reserve(size - current_size);
-            unsafe { self.current_func.code_buffer.set_len(size) };
+            self.current_func.code_buffer.reserve(total_size - current_size);
+            unsafe { self.current_func.code_buffer.set_len(total_size) };
         }
 
         {
-            let emit_env = &mut EmitEnv::new(&mut self.current_func.metadata);
+            let emit_env = &mut EmitEnv::new(&mut self.current_func.metadata,
+                                             &mut self.current_func.rodata_relocs);
             let mut trap_sink = NullTrapSink {};
             unsafe {
                 let code_buffer = &mut self.current_func.code_buffer;
@@ -165,6 +180,10 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
                 )
             };
         }
+
+        self.current_func.code_size = info.code_size;
+        self.current_func.jumptables_size = info.jumptables_size;
+        self.current_func.rodata_size = info.rodata_size;
 
         Ok(())
     }
@@ -433,11 +452,13 @@ pub fn symbolic_function_name(sym: bd::SymbolicAddress) -> ir::ExternalName {
 
 struct EmitEnv<'a> {
     metadata: &'a mut Vec<bd::MetadataEntry>,
+    rodata_relocs: &'a mut Vec<CodeOffset>
 }
 
 impl<'a> EmitEnv<'a> {
-    pub fn new(metadata: &'a mut Vec<bd::MetadataEntry>) -> EmitEnv<'a> {
-        EmitEnv { metadata }
+    pub fn new(metadata: &'a mut Vec<bd::MetadataEntry>, rodata_relocs: &'a mut Vec<CodeOffset>)
+               -> EmitEnv<'a> {
+        EmitEnv { metadata, rodata_relocs }
     }
 }
 
@@ -501,7 +522,14 @@ impl<'a> RelocSink for EmitEnv<'a> {
         }
     }
 
-    fn reloc_jt(&mut self, _offset: CodeOffset, _reloc: Reloc, _jt: ir::JumpTable) {
-        unimplemented!();
+    fn reloc_jt(&mut self, offset: CodeOffset, reloc: Reloc, _jt: ir::JumpTable) {
+        match reloc {
+            Reloc::X86PCRelRodata4 => {
+                self.rodata_relocs.push(offset);
+            }
+            _ => {
+                panic!("Unhandled/unexpected reloc type");
+            }
+        }
     }
 }

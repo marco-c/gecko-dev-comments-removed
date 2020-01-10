@@ -120,7 +120,7 @@ fn make_shared_flags() -> settings::SetResult<settings::Flags> {
     sb.set("opt_level", "best")?;
 
     
-    sb.set("jump_tables_enabled", "false")?;
+    sb.set("jump_tables_enabled", "true")?;
 
     Ok(settings::Flags::new(sb))
 }

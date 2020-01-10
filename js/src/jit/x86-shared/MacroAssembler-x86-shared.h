@@ -89,6 +89,10 @@ class MacroAssemblerX86Shared : public Assembler {
     return masm.appendRawCode(code, numBytes);
   }
 
+  void addToPCRel4(uint32_t offset, int32_t bias) {
+    return masm.addToPCRel4(offset, bias);
+  }
+
   
   
   void minMaxDouble(FloatRegister srcDest, FloatRegister second, bool canBeNaN,

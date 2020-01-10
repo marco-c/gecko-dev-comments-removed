@@ -137,8 +137,21 @@ struct CraneliftCompiledFunc {
   size_t framePushed;
   bool containsCalls;
 
-  size_t codeSize;
+  
+  
+  
+  
   const uint8_t* code;
+  size_t codeSize;
+  size_t jumptablesSize;
+  size_t rodataSize;
+  size_t totalSize;
+
+  
+  
+  
+  size_t numRodataRelocs;
+  const uint32_t* rodataRelocs;
 };
 
 
