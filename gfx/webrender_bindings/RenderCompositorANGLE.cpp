@@ -553,6 +553,13 @@ void RenderCompositorANGLE::Pause() {}
 
 bool RenderCompositorANGLE::Resume() { return true; }
 
+void RenderCompositorANGLE::Update() {
+  
+  
+  
+  mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
+}
+
 bool RenderCompositorANGLE::MakeCurrent() {
   gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
   return gl()->MakeCurrent();

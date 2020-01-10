@@ -249,6 +249,9 @@ void LayerManagerMLGPU::EndTransaction(const TimeStamp& aTimeStamp,
   }
 
   
+#ifdef XP_WIN
+  mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
+#endif
   if (mSwapChain->GetSize() != windowSize) {
     
     mDevice->SetRenderTarget(nullptr);

@@ -477,6 +477,8 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void ScheduleRotationOnCompositorThread(const TargetConfig& aTargetConfig,
                                           bool aIsFirstPaint);
 
+  static void ScheduleForcedComposition(const LayersId& aLayersId);
+
   
 
 
