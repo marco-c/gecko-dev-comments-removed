@@ -158,7 +158,10 @@ export default class MonitorClass {
       "data-l10n-args",
       JSON.stringify({ count: monitorData.passwords })
     );
-    infoExposedPasswords.setAttribute("data-l10n-id", "info-exposed-passwords-found");
+    infoExposedPasswords.setAttribute(
+      "data-l10n-id",
+      "info-exposed-passwords-found"
+    );
 
     
     if (monitorData.potentiallyBreachedLogins > 0) {
