@@ -51,6 +51,8 @@ class BodyStreamHolder : public nsISupports {
   
   
   BodyStream* mBodyStream;
+
+  DebugOnly<bool> mStreamCreated = false;
 };
 
 class BodyStream final : public nsIInputStreamCallback,
