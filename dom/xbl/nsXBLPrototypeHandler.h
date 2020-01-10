@@ -18,6 +18,7 @@
 #include "nsIWeakReference.h"
 #include "nsCycleCollectionParticipant.h"
 #include "js/TypeDecls.h"
+#include "mozilla/ShortcutKeys.h"
 
 class nsIContent;
 class nsIObjectInputStream;
@@ -91,6 +92,10 @@ class nsXBLPrototypeHandler {
   
   explicit nsXBLPrototypeHandler(mozilla::dom::Element* aKeyElement,
                                  XBLReservedKey aReserved);
+
+  
+  
+  explicit nsXBLPrototypeHandler(mozilla::ShortcutKeyData* aKeyData);
 
   
   explicit nsXBLPrototypeHandler(nsXBLPrototypeBinding* aBinding);
