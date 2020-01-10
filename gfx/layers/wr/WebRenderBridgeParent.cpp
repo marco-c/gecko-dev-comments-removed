@@ -1941,15 +1941,6 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
-  if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
-    
-    if (cbp->IsPaused()) {
-      TimeStamp now = TimeStamp::Now();
-      cbp->NotifyPipelineRendered(mPipelineId, mWrEpoch, VsyncId(), now, now,
-                                  now);
-    }
-  }
-
   TimeStamp start = TimeStamp::Now();
   mAsyncImageManager->SetCompositionTime(start);
 
