@@ -3802,6 +3802,11 @@ nsChangeHint nsStyleEffects::CalcDifference(
     hint |= nsChangeHint_RepaintFrame;
   }
 
+  if (HasBackdropFilters() != aNewData.HasBackdropFilters()) {
+    
+    hint |= nsChangeHint_UpdateContainingBlock;
+  }
+
   if (mBackdropFilters != aNewData.mBackdropFilters) {
     hint |= nsChangeHint_UpdateEffects | nsChangeHint_RepaintFrame;
   }

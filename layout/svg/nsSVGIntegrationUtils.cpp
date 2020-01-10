@@ -160,8 +160,11 @@ bool nsSVGIntegrationUtils::UsingEffectsForFrame(const nsIFrame* aFrame) {
   
   
   const nsStyleSVGReset* style = aFrame->StyleSVGReset();
-  return aFrame->StyleEffects()->HasFilters() || style->HasClipPath() ||
-         style->HasMask();
+  const nsStyleEffects* effects = aFrame->StyleEffects();
+  
+  
+  return effects->HasFilters() || effects->HasBackdropFilters() ||
+         style->HasClipPath() || style->HasMask();
 }
 
 bool nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(
@@ -1103,10 +1106,10 @@ void nsSVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams) {
 }
 
 bool nsSVGIntegrationUtils::BuildWebRenderFilters(
-    nsIFrame* aFilteredFrame, WrFiltersHolder& aWrFilters,
-    Maybe<nsRect>& aPostFilterClip) {
-  return nsFilterInstance::BuildWebRenderFilters(aFilteredFrame, aWrFilters,
-                                                 aPostFilterClip);
+    nsIFrame* aFilteredFrame, Span<const StyleFilter> aFilters,
+    WrFiltersHolder& aWrFilters, Maybe<nsRect>& aPostFilterClip) {
+  return nsFilterInstance::BuildWebRenderFilters(aFilteredFrame, aFilters,
+                                                 aWrFilters, aPostFilterClip);
 }
 
 class PaintFrameCallback : public gfxDrawingCallback {
