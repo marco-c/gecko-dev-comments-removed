@@ -1621,6 +1621,10 @@ var gBrowserInit = {
 
   onBeforeInitialXULLayout() {
     
+    let urlbar = document.getElementById("urlbar");
+    urlbar.setAttribute("quantumbar", true);
+
+    
     if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
       
       
@@ -1795,7 +1799,7 @@ var gBrowserInit = {
 
     if (!window.toolbar.visible) {
       
-      gURLBar.readOnly = true;
+      gURLBar.setAttribute("readonly", "true");
     }
 
     
@@ -4524,7 +4528,7 @@ const BrowserSearch = {
     } else {
       placeholder = gURLBar.getAttribute("defaultPlaceholder");
     }
-    gURLBar.placeholder = placeholder;
+    gURLBar.setAttribute("placeholder", placeholder);
   },
 
   addEngine(browser, engine, uri) {
