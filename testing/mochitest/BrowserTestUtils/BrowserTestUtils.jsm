@@ -1424,7 +1424,9 @@ var BrowserTestUtils = {
 
 
 
-  waitForDocLoadAndStopIt(expectedURL, browser) {
+
+
+  waitForDocLoadAndStopIt(expectedURL, browser, checkFn) {
     let isHttp = url => /^https?:/.test(url);
 
     let stoppedDocLoadPromise = () => {
@@ -1462,6 +1464,9 @@ var BrowserTestUtils = {
         function observer(chan) {
           chan.QueryInterface(Ci.nsIHttpChannel);
           if (!chan.originalURI || chan.originalURI.spec !== expectedURL) {
+            return;
+          }
+          if (checkFn && !checkFn(chan)) {
             return;
           }
 
