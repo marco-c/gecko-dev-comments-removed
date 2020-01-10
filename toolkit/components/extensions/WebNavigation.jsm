@@ -43,7 +43,6 @@ var Manager = {
     
     this.createdNavigationTargetByOuterWindowId = new Map();
 
-    Services.obs.addObserver(this, "autocomplete-did-enter-text", true);
     Services.obs.addObserver(this, "urlbar-user-start-navigation", true);
 
     Services.obs.addObserver(this, "webNavigation-createdNavigationTarget");
@@ -63,7 +62,6 @@ var Manager = {
 
   uninit() {
     
-    Services.obs.removeObserver(this, "autocomplete-did-enter-text");
     Services.obs.removeObserver(this, "urlbar-user-start-navigation");
     Services.obs.removeObserver(this, "webNavigation-createdNavigationTarget");
 
@@ -130,14 +128,9 @@ var Manager = {
 
 
 
-
   observe: function(subject, topic, data) {
     if (topic == "urlbar-user-start-navigation") {
       this.onURLBarUserStartNavigation(subject.wrappedJSObject);
-    } else if (topic == "autocomplete-did-enter-text") {
-      
-      
-      this.onURLBarAutoCompletion(subject);
     } else if (topic == "webNavigation-createdNavigationTarget") {
       
       
@@ -229,50 +222,6 @@ var Manager = {
     }
 
     this.setRecentTabTransitionData(tabTransitionData);
-  },
-
-  
-
-
-
-
-
-
-  onURLBarAutoCompletion(input) {
-    if (input && input instanceof Ci.nsIAutoCompleteInput) {
-      
-      if (input.id !== "urlbar") {
-        return;
-      }
-
-      let controller = input.popup.view.QueryInterface(
-        Ci.nsIAutoCompleteController
-      );
-      let idx = input.popup.selectedIndex;
-
-      let tabTransitionData = {
-        from_address_bar: true,
-      };
-
-      if (idx < 0 || idx >= controller.matchCount) {
-        
-        tabTransitionData.typed = true;
-      } else {
-        
-        
-        let styles = new Set(controller.getStyleAt(idx).split(/\s+/));
-
-        if (styles.has("bookmark")) {
-          tabTransitionData.auto_bookmark = true;
-        } else {
-          
-          
-          tabTransitionData.typed = true;
-        }
-      }
-
-      this.setRecentTabTransitionData(tabTransitionData);
-    }
   },
 
   
