@@ -473,6 +473,19 @@ GroupPos ARIARowAccessible::GroupPosition() {
 }
 
 
+ENameValueFlag ARIARowAccessible::NativeName(nsString& aName) const {
+  
+  
+  
+  
+  if (HasStrongARIARole()) {
+    return AccessibleWrap::NativeName(aName);
+  }
+
+  return eNameOK;
+}
+
+
 
 
 

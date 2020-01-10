@@ -329,6 +329,17 @@ GroupPos HTMLTableRowAccessible::GroupPosition() {
 }
 
 
+ENameValueFlag HTMLTableRowAccessible::NativeName(nsString& aName) const {
+  
+  
+  if (HasStrongARIARole()) {
+    return AccessibleWrap::NativeName(aName);
+  }
+
+  return eNameOK;
+}
+
+
 
 
 
