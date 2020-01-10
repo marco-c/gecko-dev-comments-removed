@@ -122,7 +122,7 @@ enum StackKind {
 
 
 
-const uint32_t DefaultNurseryMaxBytes = 16 * js::gc::ChunkSize;
+const uint32_t DefaultNurseryBytes = 16 * js::gc::ChunkSize;
 
 
 const uint32_t DefaultHeapMaxBytes = 32 * 1024 * 1024;
