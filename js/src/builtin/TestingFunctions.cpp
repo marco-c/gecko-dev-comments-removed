@@ -2989,7 +2989,13 @@ static bool testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp) {
 
   
   FrameIter iter(cx);
-  MOZ_ASSERT(!iter.done());
+
+  
+  
+  if (iter.done()) {
+    args.rval().setBoolean(false);
+    return true;
+  }
 
   if (iter.hasScript()) {
     
