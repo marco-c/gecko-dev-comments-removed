@@ -3705,7 +3705,6 @@ class Document : public nsINode,
 
   
   nsINodeList* GetAnonymousNodes(Element& aElement);
-  Element* GetBindingParent(nsINode& aNode);
 
   XPathExpression* CreateExpression(const nsAString& aExpression,
                                     XPathNSResolver* aResolver,
