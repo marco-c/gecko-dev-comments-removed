@@ -200,7 +200,7 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-  evaluateJSAsync(string, opts = {}) {
+  async evaluateJSAsync(string, opts = {}) {
     const options = {
       text: string,
       frameActor: opts.frameActor,
@@ -210,8 +210,8 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
       mapped: opts.mapped,
     };
 
-    return new Promise(async (resolve, reject) => {
-      const { resultID } = await super.evaluateJSAsync(options);
+    const { resultID } = await super.evaluateJSAsync(options);
+    return new Promise((resolve, reject) => {
       
       
       if (this.pendingEvaluationResults) {
