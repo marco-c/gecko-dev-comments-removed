@@ -110,7 +110,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       const target = this.inspector.target;
       this.isContrastCompatible = await target.actorHasMethod(
         "domnode",
-        "getClosestBackgroundColor"
+        "getBackgroundColor"
       );
     }
 
@@ -118,12 +118,13 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     
     this.spectrum.contrastEnabled =
       name === "color" && this.isContrastCompatible;
-    this.spectrum.textProps = this.spectrum.contrastEnabled
-      ? await this.inspector.pageStyle.getComputed(
-          this.inspector.selection.nodeFront,
-          { filterProperties: ["font-size", "font-weight"] }
-        )
-      : null;
+    if (this.spectrum.contrastEnabled) {
+      this.spectrum.textProps = await this.inspector.pageStyle.getComputed(
+        this.inspector.selection.nodeFront,
+        { filterProperties: ["font-size", "font-weight", "opacity"] }
+      );
+      this.spectrum.backgroundColorData = await this.inspector.selection.nodeFront.getBackgroundColor();
+    }
 
     
     if (this.activeSwatch) {
