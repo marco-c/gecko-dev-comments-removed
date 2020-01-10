@@ -13,6 +13,7 @@ const { require } = BrowserLoader({
   baseURI: "resource://devtools/client/responsive/",
   window,
 });
+const Services = require("Services");
 const Telemetry = require("devtools/client/shared/telemetry");
 
 const {
@@ -35,6 +36,11 @@ const { changeDisplayPixelRatio } = require("./actions/ui");
 
 
 window.require = require;
+
+if (Services.prefs.getBoolPref("devtools.responsive.browserUI.enabled")) {
+  
+  message.post(window, "script-init");
+}
 
 const bootstrap = {
   telemetry: new Telemetry(),
@@ -127,7 +133,7 @@ function onDevicePixelRatioChange() {
 
 
 
-window.addInitialViewport = ({ uri, userContextId }) => {
+window.addInitialViewport = ({ userContextId }) => {
   try {
     onDevicePixelRatioChange();
     bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));

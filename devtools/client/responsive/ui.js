@@ -90,11 +90,29 @@ class ResponsiveUI {
 
 
     this.toolWindow = null;
+    
+    this.rdmFrame = null;
 
     
     this.inited = this.init();
 
     EventEmitter.decorate(this);
+  }
+
+  get docShell() {
+    return this.isBrowserUIEnabled
+      ? this.rdmFrame.contentWindow.docShell
+      : this.toolWindow.docShell;
+  }
+
+  get isBrowserUIEnabled() {
+    if (!this._isBrowserUIEnabled) {
+      this._isBrowserUIEnabled = Services.prefs.getBoolPref(
+        "devtools.responsive.browserUI.enabled"
+      );
+    }
+
+    return this._isBrowserUIEnabled;
   }
 
   
@@ -109,31 +127,39 @@ class ResponsiveUI {
 
     const ui = this;
 
+    if (this.isBrowserUIEnabled) {
+      this.initRDMFrame();
+    }
+
     
     this.tab.addEventListener("TabClose", this);
     this.browserWindow.addEventListener("unload", this);
 
-    
-    debug("Create browser swapper");
-    this.swap = swapToInnerBrowser({
-      tab: this.tab,
-      containerURL: TOOL_URL,
-      async getInnerBrowser(containerBrowser) {
-        const toolWindow = (ui.toolWindow = containerBrowser.contentWindow);
-        toolWindow.addEventListener("message", ui);
-        debug("Wait until init from inner");
-        await message.request(toolWindow, "init");
-        toolWindow.addInitialViewport({
-          uri: "about:blank",
-          userContextId: ui.tab.userContextId,
-        });
-        debug("Wait until browser mounted");
-        await message.wait(toolWindow, "browser-mounted");
-        return ui.getViewportBrowser();
-      },
-    });
-    debug("Wait until swap start");
-    await this.swap.start();
+    if (!this.isBrowserUIEnabled) {
+      
+      debug("Create browser swapper");
+      this.swap = swapToInnerBrowser({
+        tab: this.tab,
+        containerURL: TOOL_URL,
+        async getInnerBrowser(containerBrowser) {
+          const toolWindow = (ui.toolWindow = containerBrowser.contentWindow);
+          toolWindow.addEventListener("message", ui);
+          debug("Wait until init from inner");
+          await message.request(toolWindow, "init");
+          toolWindow.addInitialViewport({
+            uri: "about:blank",
+            userContextId: ui.tab.userContextId,
+          });
+          debug("Wait until browser mounted");
+          await message.wait(toolWindow, "browser-mounted");
+          return ui.getViewportBrowser();
+        },
+      });
+      debug("Wait until swap start");
+      await this.swap.start();
+    } else {
+      this.rdmFrame.contentWindow.addEventListener("message", this);
+    }
 
     
     
@@ -149,23 +175,25 @@ class ResponsiveUI {
     
     
     const rdmContent = this.tab.linkedBrowser;
-    const rdmViewport = ui.toolWindow;
-
     const fullZoom = rdmContent.fullZoom;
     const textZoom = rdmContent.textZoom;
 
-    rdmViewport.docShell.contentViewer.fullZoom = 1;
-    rdmViewport.docShell.contentViewer.textZoom = 1;
+    if (!this.isBrowserUIEnabled) {
+      this.docShell.contentViewer.fullZoom = 1;
+      this.docShell.contentViewer.textZoom = 1;
 
-    
-    
-    rdmContent.addEventListener("FullZoomChange", this);
+      
+      
+      rdmContent.addEventListener("FullZoomChange", this);
+    }
 
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
 
-    
-    debug("Wait until start frame script");
-    await message.request(this.toolWindow, "start-frame-script");
+    if (!this.isBrowserUIEnabled) {
+      
+      debug("Wait until start frame script");
+      await message.request(this.toolWindow, "start-frame-script");
+    }
 
     
     debug("Wait until RDP server connect");
@@ -174,15 +202,54 @@ class ResponsiveUI {
     
     await this.restoreState();
 
-    
-    
-    rdmContent.fullZoom = fullZoom;
-    rdmContent.textZoom = textZoom;
+    if (!this.isBrowserUIEnabled) {
+      
+      
+      rdmContent.fullZoom = fullZoom;
+      rdmContent.textZoom = textZoom;
+    }
 
     
-    message.post(this.toolWindow, "post-init");
+    if (!this.isBrowserUIEnabled) {
+      message.post(this.toolWindow, "post-init");
+    } else {
+      message.post(this.rdmFrame.contentWindow, "post-init");
+    }
 
     debug("Init done");
+  }
+
+  
+
+
+  initRDMFrame() {
+    const { document: doc, gBrowser } = this.browserWindow;
+    const rdmFrame = doc.createElement("iframe");
+    rdmFrame.src = "chrome://devtools/content/responsive/toolbar.xhtml";
+    rdmFrame.style.height = rdmFrame.style.minHeight = "30px";
+    rdmFrame.style.borderStyle = "none";
+
+    
+    gBrowser
+      .getBrowserContainer(gBrowser.getBrowserForTab(this.tab))
+      .prepend(rdmFrame);
+
+    
+    message.wait(rdmFrame.contentWindow, "script-init").then(async () => {
+      
+      
+      message.post(rdmFrame.contentWindow, "init");
+      
+      
+      
+      message.wait(rdmFrame.contentWindow, "init:done").then(() => {
+        rdmFrame.contentWindow.addInitialViewport({
+          userContextId: this.tab.userContextId,
+        });
+      });
+    });
+
+    this.rdmFrame = rdmFrame;
   }
 
   
@@ -217,13 +284,19 @@ class ResponsiveUI {
       await this.inited;
     }
 
-    this.tab.linkedBrowser.removeEventListener("FullZoomChange", this);
     this.tab.removeEventListener("TabClose", this);
     this.tab.removeEventListener("BeforeTabRemotenessChange", this);
     this.browserWindow.removeEventListener("unload", this);
-    this.toolWindow.removeEventListener("message", this);
 
-    if (!isTabContentDestroying) {
+    if (!this.isBrowserUIEnabled) {
+      this.tab.linkedBrowser.removeEventListener("FullZoomChange", this);
+      this.toolWindow.removeEventListener("message", this);
+    } else {
+      this.rdmFrame.contentWindow.removeEventListener("message", this);
+      this.rdmFrame.remove();
+    }
+
+    if (!this.isBrowserUIEnabled && !isTabContentDestroying) {
       
       await message.request(this.toolWindow, "stop-frame-script");
     }
@@ -249,6 +322,7 @@ class ResponsiveUI {
     this.browserWindow = null;
     this.tab = null;
     this.inited = null;
+    this.rdmFrame = null;
     this.toolWindow = null;
     this.swap = null;
 
@@ -261,7 +335,7 @@ class ResponsiveUI {
     }
     this.client = this.emulationFront = null;
 
-    if (!isWindowClosing) {
+    if (!this.isBrowserUIEnabled && !isWindowClosing) {
       
       swap.stop();
     }

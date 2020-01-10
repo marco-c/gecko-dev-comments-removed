@@ -2309,6 +2309,8 @@ pref("devtools.responsive.metaViewport.enabled", false);
 
 pref("devtools.responsive.userAgent", "");
 
+pref("devtools.responsive.browserUI.enabled", false);
+
 
 #if defined(NIGHTLY_BUILD)
   pref("devtools.responsive.showUserAgentInput", true);
