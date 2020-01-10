@@ -5,10 +5,6 @@
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ThumbnailsChild"];
-
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
@@ -17,65 +13,39 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/PageThumbUtils.jsm"
 );
 
-class ThumbnailsChild extends ActorChild {
+class ThumbnailsChild extends JSWindowActorChild {
   receiveMessage(message) {
-    if (message.name == "Browser:Thumbnail:Request") {
-      
-
-
-      let snapshot;
-      let args = message.data.additionalArgs;
-      let fullScale = args ? args.fullScale : false;
-      if (fullScale) {
-        snapshot = PageThumbUtils.createSnapshotThumbnail(
-          this.content,
-          null,
-          args
-        );
-      } else {
-        let snapshotWidth = message.data.canvasWidth;
-        let snapshotHeight = message.data.canvasHeight;
-        snapshot = PageThumbUtils.createCanvas(
-          this.content,
-          snapshotWidth,
-          snapshotHeight
-        );
-        PageThumbUtils.createSnapshotThumbnail(this.content, snapshot, args);
+    switch (message.name) {
+      case "Browser:Thumbnail:ContentSize": {
+        return PageThumbUtils.getContentSize(this.contentWindow);
       }
-
-      snapshot.toBlob(aBlob => {
-        this.mm.sendAsyncMessage("Browser:Thumbnail:Response", {
-          thumbnail: aBlob,
-          id: message.data.id,
-        });
-      });
-    } else if (message.name == "Browser:Thumbnail:CheckState") {
-      
+      case "Browser:Thumbnail:CheckState": {
+        
 
 
-      Services.tm.idleDispatchToMainThread(() => {
-        let result = PageThumbUtils.shouldStoreContentThumbnail(
-          this.content,
-          this.mm.docShell
+        return new Promise(resolve =>
+          Services.tm.idleDispatchToMainThread(() => {
+            let result = PageThumbUtils.shouldStoreContentThumbnail(
+              this.contentWindow,
+              this.browsingContext.docShell
+            );
+            resolve(result);
+          })
         );
-        this.mm.sendAsyncMessage("Browser:Thumbnail:CheckState:Response", {
-          result,
-        });
-      });
-    } else if (message.name == "Browser:Thumbnail:GetOriginalURL") {
-      
+      }
+      case "Browser:Thumbnail:GetOriginalURL": {
+        
 
 
-      let channel = this.mm.docShell.currentDocumentChannel;
-      let channelError = PageThumbUtils.isChannelErrorResponse(channel);
-      let originalURL;
-      try {
-        originalURL = channel.originalURI.spec;
-      } catch (ex) {}
-      this.mm.sendAsyncMessage("Browser:Thumbnail:GetOriginalURL:Response", {
-        channelError,
-        originalURL,
-      });
+        let channel = this.browsingContext.docShell.currentDocumentChannel;
+        let channelError = PageThumbUtils.isChannelErrorResponse(channel);
+        let originalURL;
+        try {
+          originalURL = channel.originalURI.spec;
+        } catch (ex) {}
+        return { channelError, originalURL };
+      }
     }
+    return undefined;
   }
 }

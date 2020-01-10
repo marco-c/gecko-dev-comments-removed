@@ -235,19 +235,16 @@ PreviewController.prototype = {
 
 
 
-  updateCanvasPreview(aFullScale, aCallback) {
+  updateCanvasPreview(aFullScale) {
     
     
     this.cacheBrowserDims();
-    PageThumbs.captureToCanvas(
-      this.linkedBrowser,
-      this.canvasPreview,
-      aCallback,
-      { fullScale: aFullScale }
-    );
-    
-    
     AeroPeek.resetCacheTimer();
+    return PageThumbs.captureToCanvas(this.linkedBrowser, this.canvasPreview, {
+      fullScale: aFullScale,
+    }).catch(e => Cu.reportError(e));
+    
+    
   },
 
   updateTitleAndTooltip() {
@@ -288,7 +285,7 @@ PreviewController.prototype = {
   requestPreview(aTaskbarCallback) {
     
     this.resetCanvasPreview();
-    this.updateCanvasPreview(true, aPreviewCanvas => {
+    this.updateCanvasPreview(true).then(aPreviewCanvas => {
       let winWidth = this.win.width;
       let winHeight = this.win.height;
 
@@ -340,7 +337,7 @@ PreviewController.prototype = {
 
   requestThumbnail(aTaskbarCallback, aRequestedWidth, aRequestedHeight) {
     this.resizeCanvasPreview(aRequestedWidth, aRequestedHeight);
-    this.updateCanvasPreview(false, aThumbnailCanvas => {
+    this.updateCanvasPreview(false).then(aThumbnailCanvas => {
       aTaskbarCallback.done(aThumbnailCanvas, false);
     });
   },

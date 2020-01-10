@@ -12,8 +12,6 @@ const LATEST_STORAGE_VERSION = 3;
 const EXPIRATION_MIN_CHUNK_SIZE = 50;
 const EXPIRATION_INTERVAL_SECS = 3600;
 
-var gRemoteThumbId = 0;
-
 
 
 
@@ -175,11 +173,13 @@ var PageThumbs = {
 
     return new Promise(resolve => {
       let canvas = this.createCanvas(aBrowser.ownerGlobal);
-      this.captureToCanvas(aBrowser, canvas, () => {
-        canvas.toBlob(blob => {
-          resolve(blob, this.contentType);
-        });
-      });
+      this.captureToCanvas(aBrowser, canvas)
+        .then(() => {
+          canvas.toBlob(blob => {
+            resolve(blob, this.contentType);
+          });
+        })
+        .catch(e => Cu.reportError(e));
     });
   },
 
@@ -195,20 +195,16 @@ var PageThumbs = {
 
 
 
-
-
-  captureToCanvas(aBrowser, aCanvas, aCallback, aArgs) {
+  async captureToCanvas(aBrowser, aCanvas, aArgs) {
     let telemetryCaptureTime = new Date();
     let args = {
       fullScale: aArgs ? aArgs.fullScale : false,
     };
-    this._captureToCanvas(aBrowser, aCanvas, args, aCanvas => {
+    return this._captureToCanvas(aBrowser, aCanvas, args).then(() => {
       Services.telemetry
         .getHistogramById("FX_THUMBNAILS_CAPTURE_TIME_MS")
         .add(new Date() - telemetryCaptureTime);
-      if (aCallback) {
-        aCallback(aCanvas);
-      }
+      return aCanvas;
     });
   },
 
@@ -221,68 +217,51 @@ var PageThumbs = {
 
 
 
-
-
-
-  shouldStoreThumbnail(aBrowser, aCallback) {
+  async shouldStoreThumbnail(aBrowser) {
     
     if (PrivateBrowsingUtils.isBrowserPrivate(aBrowser)) {
-      aCallback(false);
-      return;
+      return false;
     }
     if (aBrowser.isRemoteBrowser) {
-      let mm = aBrowser.messageManager;
-      let resultFunc = function(aMsg) {
-        mm.removeMessageListener(
-          "Browser:Thumbnail:CheckState:Response",
-          resultFunc
+      if (aBrowser.browsingContext.currentWindowGlobal) {
+        let thumbnailsActor = aBrowser.browsingContext.currentWindowGlobal.getActor(
+          "Thumbnails"
         );
-        aCallback(aMsg.data.result);
-      };
-      mm.addMessageListener(
-        "Browser:Thumbnail:CheckState:Response",
-        resultFunc
-      );
-      try {
-        mm.sendAsyncMessage("Browser:Thumbnail:CheckState");
-      } catch (ex) {
-        Cu.reportError(ex);
-        
-        
-        resultFunc({ data: { result: false } });
+        return thumbnailsActor
+          .sendQuery("Browser:Thumbnail:CheckState")
+          .catch(err => {
+            return false;
+          });
       }
-    } else {
-      aCallback(
-        PageThumbUtils.shouldStoreContentThumbnail(
-          aBrowser.contentDocument,
-          aBrowser.docShell
-        )
-      );
+      return false;
     }
+    return PageThumbUtils.shouldStoreContentThumbnail(
+      aBrowser.contentDocument,
+      aBrowser.docShell
+    );
   },
 
   
   
-  _captureToCanvas(aBrowser, aCanvas, aArgs, aCallback) {
+  async _captureToCanvas(aBrowser, aCanvas, aArgs) {
     if (aBrowser.isRemoteBrowser) {
-      (async () => {
-        let data = await this._captureRemoteThumbnail(
-          aBrowser,
-          aCanvas.width,
-          aCanvas.height,
-          aArgs
-        );
-        let canvas = data.thumbnail;
-        let ctx = canvas.getContext("2d");
-        let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        aCanvas.width = canvas.width;
-        aCanvas.height = canvas.height;
+      let thumbnail = await this._captureRemoteThumbnail(
+        aBrowser,
+        aCanvas.width,
+        aCanvas.height,
+        aArgs
+      );
+
+      
+      
+      if (thumbnail) {
+        let ctx = thumbnail.getContext("2d");
+        let imgData = ctx.getImageData(0, 0, thumbnail.width, thumbnail.height);
+        aCanvas.width = thumbnail.width;
+        aCanvas.height = thumbnail.height;
         aCanvas.getContext("2d").putImageData(imgData, 0, 0);
-        if (aCallback) {
-          aCallback(aCanvas);
-        }
-      })();
-      return;
+      }
+      return aCanvas;
     }
     
     PageThumbUtils.createSnapshotThumbnail(
@@ -290,81 +269,61 @@ var PageThumbs = {
       aCanvas,
       aArgs
     );
+    return aCanvas;
+  },
 
-    if (aCallback) {
-      aCallback(aCanvas);
+  
+
+
+
+
+
+
+
+
+
+  async _captureRemoteThumbnail(aBrowser, aWidth, aHeight, aArgs) {
+    if (!aBrowser.browsingContext) {
+      return null;
     }
+    let thumbnailsActor = aBrowser.browsingContext.currentWindowGlobal.getActor(
+      "Thumbnails"
+    );
+    let [contentWidth, contentHeight] = await thumbnailsActor.sendQuery(
+      "Browser:Thumbnail:ContentSize"
+    );
+    let fullScale = aArgs ? aArgs.fullScale : false;
+    let scale = fullScale
+      ? 1
+      : Math.min(Math.max(aWidth / contentWidth, aHeight / contentHeight), 1);
+    let image = await aBrowser.drawSnapshot(
+      0,
+      0,
+      contentWidth,
+      contentHeight,
+      scale,
+      PageThumbUtils.THUMBNAIL_BG_COLOR
+    );
+    if (aBrowser.parentElement) {
+      let doc = aBrowser.parentElement.ownerDocument;
+      let thumbnail = doc.createElementNS(
+        PageThumbUtils.HTML_NAMESPACE,
+        "canvas"
+      );
+      thumbnail.width = aWidth;
+      thumbnail.height = aHeight;
+      let ctx = thumbnail.getContext("2d");
+      ctx.drawImage(image, 0, 0);
+      return thumbnail;
+    }
+    return null;
   },
 
   
 
 
 
-
-
-
-
-
-
-  _captureRemoteThumbnail(aBrowser, aWidth, aHeight, aArgs) {
-    return new Promise(resolve => {
-      
-      
-      let index = gRemoteThumbId++;
-
-      
-      let mm = aBrowser.messageManager;
-
-      
-      let thumbFunc = function(aMsg) {
-        
-        if (aMsg.data.id != index) {
-          return;
-        }
-
-        mm.removeMessageListener("Browser:Thumbnail:Response", thumbFunc);
-        let imageBlob = aMsg.data.thumbnail;
-        let doc = aBrowser.parentElement.ownerDocument;
-        let reader = new FileReader();
-        reader.addEventListener("loadend", function() {
-          let image = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "img");
-          image.onload = function() {
-            let thumbnail = doc.createElementNS(
-              PageThumbUtils.HTML_NAMESPACE,
-              "canvas"
-            );
-            thumbnail.width = image.naturalWidth;
-            thumbnail.height = image.naturalHeight;
-            let ctx = thumbnail.getContext("2d");
-            ctx.drawImage(image, 0, 0);
-            resolve({
-              thumbnail,
-            });
-          };
-          image.src = reader.result;
-        });
-        
-        reader.readAsDataURL(imageBlob);
-      };
-
-      
-      mm.addMessageListener("Browser:Thumbnail:Response", thumbFunc);
-      mm.sendAsyncMessage("Browser:Thumbnail:Request", {
-        canvasWidth: aWidth,
-        canvasHeight: aHeight,
-        background: PageThumbUtils.THUMBNAIL_BG_COLOR,
-        id: index,
-        additionalArgs: aArgs,
-      });
-    });
-  },
-
-  
-
-
-
-
-  captureAndStore: function PageThumbs_captureAndStore(aBrowser, aCallback) {
+  captureAndStore: async function PageThumbs_captureAndStore(aBrowser) {
     if (!this._prefEnabled()) {
       return;
     }
@@ -373,41 +332,30 @@ var PageThumbs = {
     let originalURL;
     let channelError = false;
 
-    (async () => {
-      if (!aBrowser.isRemoteBrowser) {
-        let channel = aBrowser.docShell.currentDocumentChannel;
-        originalURL = channel.originalURI.spec;
-        
-        channelError = PageThumbUtils.isChannelErrorResponse(channel);
-      } else {
-        let resp = await new Promise(resolve => {
-          let mm = aBrowser.messageManager;
-          let respName = "Browser:Thumbnail:GetOriginalURL:Response";
-          mm.addMessageListener(respName, function onResp(msg) {
-            mm.removeMessageListener(respName, onResp);
-            resolve(msg.data);
-          });
-          mm.sendAsyncMessage("Browser:Thumbnail:GetOriginalURL");
-        });
-        originalURL = resp.originalURL || url;
-        channelError = resp.channelError;
-      }
+    if (!aBrowser.isRemoteBrowser) {
+      let channel = aBrowser.docShell.currentDocumentChannel;
+      originalURL = channel.originalURI.spec;
+      
+      channelError = PageThumbUtils.isChannelErrorResponse(channel);
+    } else {
+      let thumbnailsActor = aBrowser.browsingContext.currentWindowGlobal.getActor(
+        "Thumbnails"
+      );
+      let resp = await thumbnailsActor.sendQuery(
+        "Browser:Thumbnail:GetOriginalURL"
+      );
 
-      let isSuccess = true;
-      try {
-        let blob = await this.captureToBlob(aBrowser);
-        let buffer = await TaskUtils.readBlob(blob);
-        await this._store(originalURL, url, buffer, channelError);
-      } catch (ex) {
-        Cu.reportError(
-          "Exception thrown during thumbnail capture: '" + ex + "'"
-        );
-        isSuccess = false;
-      }
-      if (aCallback) {
-        aCallback(isSuccess);
-      }
-    })();
+      originalURL = resp.originalURL || url;
+      channelError = resp.channelError;
+    }
+
+    try {
+      let blob = await this.captureToBlob(aBrowser);
+      let buffer = await TaskUtils.readBlob(blob);
+      await this._store(originalURL, url, buffer, channelError);
+    } catch (ex) {
+      Cu.reportError("Exception thrown during thumbnail capture: '" + ex + "'");
+    }
   },
 
   
@@ -418,32 +366,29 @@ var PageThumbs = {
 
 
 
-
-  captureAndStoreIfStale: function PageThumbs_captureAndStoreIfStale(
-    aBrowser,
-    aCallback
+  captureAndStoreIfStale: async function PageThumbs_captureAndStoreIfStale(
+    aBrowser
   ) {
+    if (!aBrowser.currentURI) {
+      return false;
+    }
     let url = aBrowser.currentURI.spec;
-    PageThumbsStorage.isFileRecentForURL(url).then(
-      recent => {
-        if (
-          !recent &&
-          
-          
-          aBrowser.currentURI &&
-          aBrowser.currentURI.spec == url
-        ) {
-          this.captureAndStore(aBrowser, aCallback);
-        } else if (aCallback) {
-          aCallback(true);
-        }
-      },
-      err => {
-        if (aCallback) {
-          aCallback(false);
-        }
-      }
-    );
+    let recent;
+    try {
+      recent = await PageThumbsStorage.isFileRecentForURL(url);
+    } catch {
+      return false;
+    }
+    if (
+      !recent &&
+      
+      
+      aBrowser.currentURI &&
+      aBrowser.currentURI.spec == url
+    ) {
+      await this.captureAndStore(aBrowser);
+    }
+    return true;
   },
 
   
@@ -457,41 +402,34 @@ var PageThumbs = {
 
 
 
-
-  _store: function PageThumbs__store(
+  _store: async function PageThumbs__store(
     aOriginalURL,
     aFinalURL,
     aData,
     aNoOverwrite
   ) {
-    return (async function() {
-      let telemetryStoreTime = new Date();
-      await PageThumbsStorage.writeData(aFinalURL, aData, aNoOverwrite);
-      Services.telemetry
-        .getHistogramById("FX_THUMBNAILS_STORE_TIME_MS")
-        .add(new Date() - telemetryStoreTime);
+    let telemetryStoreTime = new Date();
+    await PageThumbsStorage.writeData(aFinalURL, aData, aNoOverwrite);
+    Services.telemetry
+      .getHistogramById("FX_THUMBNAILS_STORE_TIME_MS")
+      .add(new Date() - telemetryStoreTime);
 
-      Services.obs.notifyObservers(null, "page-thumbnail:create", aFinalURL);
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aFinalURL != aOriginalURL) {
-        await PageThumbsStorage.copy(aFinalURL, aOriginalURL, aNoOverwrite);
-        Services.obs.notifyObservers(
-          null,
-          "page-thumbnail:create",
-          aOriginalURL
-        );
-      }
-    })();
+    Services.obs.notifyObservers(null, "page-thumbnail:create", aFinalURL);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aFinalURL != aOriginalURL) {
+      await PageThumbsStorage.copy(aFinalURL, aOriginalURL, aNoOverwrite);
+      Services.obs.notifyObservers(null, "page-thumbnail:create", aOriginalURL);
+    }
   },
 
   

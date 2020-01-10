@@ -64,12 +64,12 @@ function* simpleCaptureTest() {
   let browser = gBrowser.selectedBrowser;
 
   
-  PageThumbs.captureAndStore(browser, function() {
+  PageThumbs.captureAndStore(browser).then(function() {
     
     is(numNotifications, 1, "got notification of item being created.");
     
     
-    PageThumbs.captureAndStoreIfStale(browser, function() {
+    PageThumbs.captureAndStoreIfStale(browser).then(function() {
       is(
         numNotifications,
         1,
@@ -105,7 +105,9 @@ function* capIfStaleErrorResponseUpdateTest() {
   
   
   let now = Date.now() - 1000;
-  PageThumbs.captureAndStoreIfStale(gBrowser.selectedBrowser, () => {
+  PageThumbs.captureAndStoreIfStale(gBrowser.selectedBrowser).then(() => {
+    PageThumbsStorageService.getFilePathForURL(URL);
+
     ok(getThumbnailModifiedTime(URL) < now, "modified time should be < now");
     retrieveImageDataForURL(URL, function([r, g, b]) {
       is("" + [r, g, b], "" + [0, 255, 0], "thumbnail is still green");
@@ -136,7 +138,7 @@ function* capIfStaleGoodResponseUpdateTest() {
   
   
   let now = Date.now() - 1000;
-  PageThumbs.captureAndStoreIfStale(browser, () => {
+  PageThumbs.captureAndStoreIfStale(browser).then(() => {
     ok(getThumbnailModifiedTime(URL) >= now, "modified time should be >= now");
     
     

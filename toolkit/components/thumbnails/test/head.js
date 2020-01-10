@@ -157,18 +157,17 @@ function whenLoaded(aElement, aCallback = next) {
 
 
 
-function captureAndCheckColor(aRed, aGreen, aBlue, aMessage) {
+async function captureAndCheckColor(aRed, aGreen, aBlue, aMessage) {
   let browser = gBrowser.selectedBrowser;
   
   
   dontExpireThumbnailURLs([browser.currentURI.spec]);
 
   
-  PageThumbs.captureAndStore(browser, function() {
-    retrieveImageDataForURL(browser.currentURI.spec, function([r, g, b]) {
-      is("" + [r, g, b], "" + [aRed, aGreen, aBlue], aMessage);
-      next();
-    });
+  await PageThumbs.captureAndStore(browser);
+  retrieveImageDataForURL(browser.currentURI.spec, function([r, g, b]) {
+    is("" + [r, g, b], "" + [aRed, aGreen, aBlue], aMessage);
+    next();
   });
 }
 

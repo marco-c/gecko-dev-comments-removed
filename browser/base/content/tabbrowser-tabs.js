@@ -470,11 +470,15 @@
         }
         
         
-        PageThumbs.captureToCanvas(browser, canvas, captureListener);
+        PageThumbs.captureToCanvas(browser, canvas)
+          .then(captureListener)
+          .catch(e => Cu.reportError(e));
       } else {
         
         
-        PageThumbs.captureToCanvas(browser, canvas);
+        PageThumbs.captureToCanvas(browser, canvas).catch(e =>
+          Cu.reportError(e)
+        );
         dragImageOffset = dragImageOffset * scale;
       }
       dt.setDragImage(toDrag, dragImageOffset, dragImageOffset);
