@@ -31,14 +31,6 @@ enum class CaptureFlags {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CaptureFlags)
 
-enum class RectVisibility {
-  Visible,
-  AboveViewport,
-  BelowViewport,
-  LeftOfViewport,
-  RightOfViewport,
-};
-
 enum class ResizeReflowOptions : uint32_t {
   NoOption = 0,
   

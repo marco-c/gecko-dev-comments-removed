@@ -583,29 +583,6 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  RectVisibility GetRectVisibility(nsIFrame* aFrame, const nsRect& aRect,
-                                   nscoord aMinTwips) const;
-
-  
-
-
-
   void SetIgnoreFrameDestruction(bool aIgnore);
 
   
