@@ -12,13 +12,126 @@ const {
   ManifestState,
 } = require("devtools/client/application/src/reducers/manifest-state.js");
 
+const MANIFEST_PROCESSING = [
+  
+  {
+    source: {},
+    processed: {},
+  },
+  
+  {
+    source: { name: "Foo" },
+    processed: {
+      identity: [{ key: "name", value: "Foo" }],
+    },
+  },
+  
+  {
+    source: {
+      short_name: "Short Foo",
+      name: "Long Foo",
+    },
+    processed: {
+      identity: [
+        { key: "short_name", value: "Short Foo" },
+        { key: "name", value: "Long Foo" },
+      ],
+    },
+  },
+  
+  {
+    source: {
+      name: "Foo",
+      background_color: "#FF0000",
+    },
+    processed: {
+      identity: [{ key: "name", value: "Foo" }],
+      presentation: [{ key: "background_color", value: "#FF0000" }],
+    },
+  },
+  
+  {
+    source: {
+      icons: [
+        {
+          src: "something.png",
+          type: "image/png",
+          sizes: ["16x16", "32x32"],
+          purpose: ["any"],
+        },
+        {
+          src: "another.svg",
+          type: "image/svg",
+          sizes: ["any"],
+          purpose: ["any"],
+        },
+      ],
+    },
+    processed: {
+      icons: [
+        { key: "16x16 32x32", value: "something.png" },
+        { key: "any", value: "another.svg" },
+      ],
+    },
+  },
+  
+  {
+    source: {
+      moz_validation: [
+        { warn: "A warning" },
+        { error: "An error", type: "json" },
+      ],
+    },
+    processed: {
+      validation: [
+        { level: "warning", message: "A warning", type: null },
+        { level: "error", message: "An error", type: "json" },
+      ],
+    },
+  },
+  
+  {
+    source: {
+      moz_manifest_url: "https://example.com/manifest.json",
+    },
+    processed: {
+      url: "https://example.com/manifest.json",
+    },
+  },
+];
+
 add_task(async function() {
   info("Test manifest reducer: UPDATE_MANIFEST action");
-  const state = ManifestState();
 
+  
+  MANIFEST_PROCESSING.forEach(({ source, processed }) => {
+    test_manifest_processing(source, processed);
+  });
+
+  
+  const state = ManifestState();
   const action = updateManifest({ name: "foo" }, "some error");
   const newState = manifestReducer(state, action);
-  equal(newState.manifest.identity[0].key, "name");
-  equal(newState.manifest.identity[0].value, "foo");
   equal(newState.errorMessage, "some error");
 });
+
+function test_manifest_processing(source, processed) {
+  const state = ManifestState();
+  const action = updateManifest(source, "");
+  const newState = manifestReducer(state, action);
+
+  
+  const expected = Object.assign(
+    {
+      icons: [],
+      identity: [],
+      presentation: [],
+      url: undefined,
+      validation: [],
+    },
+    processed
+  );
+
+  deepEqual(newState.manifest, expected, "Processed manifest as expected");
+  equal(newState.errorMessage, "");
+}
