@@ -20,33 +20,6 @@ namespace jit {
 
 
 
-
-
-
-
-
-class DebugModeOSRVolatileJitFrameIter : public JitFrameIter {
-  DebugModeOSRVolatileJitFrameIter** stack;
-  DebugModeOSRVolatileJitFrameIter* prev;
-
- public:
-  explicit DebugModeOSRVolatileJitFrameIter(JSContext* cx)
-      : JitFrameIter(cx->activation()->asJit(),
-                      true) {
-    stack = &cx->liveVolatileJitFrameIter_.ref();
-    prev = *stack;
-    *stack = this;
-  }
-
-  ~DebugModeOSRVolatileJitFrameIter() {
-    MOZ_ASSERT(*stack == this);
-    *stack = prev;
-  }
-
-  static void forwardLiveIterators(JSContext* cx, uint8_t* oldAddr,
-                                   uint8_t* newAddr);
-};
-
 MOZ_MUST_USE bool RecompileOnStackBaselineScriptsForDebugMode(
     JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
     DebugAPI::IsObserving observing);

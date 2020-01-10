@@ -39,6 +39,7 @@
 #include "debugger/DebugAPI-inl.h"
 #include "gc/Nursery-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/Probes-inl.h"
 #include "vm/TypeInference-inl.h"
@@ -289,19 +290,6 @@ static void SettleOnTryNote(JSContext* cx, const JSTryNote* tn,
   *pc = script->offsetToPC(tn->start + tn->length);
 }
 
-struct AutoBaselineHandlingException {
-  BaselineFrame* frame;
-  AutoBaselineHandlingException(BaselineFrame* frame, jsbytecode* pc)
-      : frame(frame) {
-    frame->setIsHandlingException();
-    frame->setOverridePc(pc);
-  }
-  ~AutoBaselineHandlingException() {
-    frame->unsetIsHandlingException();
-    frame->clearOverridePc();
-  }
-};
-
 class BaselineTryNoteFilter {
   BaselineFrame* frame_;
 
@@ -348,6 +336,9 @@ static void CloseLiveIteratorsBaselineForUncatchableException(
 static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
                                     EnvironmentIter& ei,
                                     ResumeFromException* rfe, jsbytecode** pc) {
+  MOZ_ASSERT(frame.baselineFrame()->runningInInterpreter(),
+             "Caller must ensure frame is an interpreter frame");
+
   RootedScript script(cx, frame.baselineFrame()->script());
 
   for (TryNoteIterBaseline tni(cx, frame.baselineFrame(), *pc); !tni.done();
@@ -371,35 +362,23 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         script->resetWarmUpCounterToDelayIonCompilation();
 
         
+        const BaselineInterpreter& interp =
+            cx->runtime()->jitRuntime()->baselineInterpreter();
+        frame.baselineFrame()->setInterpreterFields(*pc);
         rfe->kind = ResumeFromException::RESUME_CATCH;
-        if (frame.baselineFrame()->runningInInterpreter()) {
-          const BaselineInterpreter& interp =
-              cx->runtime()->jitRuntime()->baselineInterpreter();
-          frame.baselineFrame()->setInterpreterFields(*pc);
-          rfe->target = interp.interpretOpAddr().value;
-        } else {
-          PCMappingSlotInfo slotInfo;
-          rfe->target =
-              script->baselineScript()->nativeCodeForPC(script, *pc, &slotInfo);
-          MOZ_ASSERT(slotInfo.isStackSynced());
-        }
+        rfe->target = interp.interpretOpAddr().value;
         return true;
       }
 
       case JSTRY_FINALLY: {
         SettleOnTryNote(cx, tn, frame, ei, rfe, pc);
+
+        const BaselineInterpreter& interp =
+            cx->runtime()->jitRuntime()->baselineInterpreter();
+        frame.baselineFrame()->setInterpreterFields(*pc);
         rfe->kind = ResumeFromException::RESUME_FINALLY;
-        if (frame.baselineFrame()->runningInInterpreter()) {
-          const BaselineInterpreter& interp =
-              cx->runtime()->jitRuntime()->baselineInterpreter();
-          frame.baselineFrame()->setInterpreterFields(*pc);
-          rfe->target = interp.interpretOpAddr().value;
-        } else {
-          PCMappingSlotInfo slotInfo;
-          rfe->target =
-              script->baselineScript()->nativeCodeForPC(script, *pc, &slotInfo);
-          MOZ_ASSERT(slotInfo.isStackSynced());
-        }
+        rfe->target = interp.interpretOpAddr().value;
+
         
         if (!cx->getPendingException(
                 MutableHandleValue::fromMarkedLocation(&rfe->exception))) {
@@ -450,9 +429,38 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
   return true;
 }
 
-static void HandleExceptionBaseline(JSContext* cx, const JSJitFrameIter& frame,
-                                    ResumeFromException* rfe, jsbytecode* pc) {
+static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
+                                    CommonFrameLayout* prevFrame,
+                                    ResumeFromException* rfe) {
   MOZ_ASSERT(frame.isBaselineJS());
+  MOZ_ASSERT(prevFrame);
+
+  jsbytecode* pc;
+  frame.baselineScriptAndPc(nullptr, &pc);
+
+  
+  
+  
+  
+  
+  
+  
+  if (!frame.baselineFrame()->runningInInterpreter()) {
+    const BaselineInterpreter& interp =
+        cx->runtime()->jitRuntime()->baselineInterpreter();
+    uint8_t* retAddr = interp.codeRaw();
+    BaselineFrame* baselineFrame = frame.baselineFrame();
+
+    
+    
+    AutoSuppressProfilerSampling suppressProfilerSampling(cx);
+    baselineFrame->switchFromJitToInterpreterForExceptionHandler(cx, pc);
+    prevFrame->setReturnAddress(retAddr);
+
+    
+    
+    frame.setResumePCInCurrentFrame(nullptr);
+  }
 
   bool frameOk = false;
   RootedScript script(cx, frame.baselineFrame()->script());
@@ -591,20 +599,12 @@ void HandleException(ResumeFromException* rfe) {
   }
 #endif
 
-  
-  
-  
-  
-  
-  
-  DebugModeOSRVolatileJitFrameIter iter(cx);
-  while (true) {
-    iter.skipNonScriptedJSFrames();
-    if (iter.done()) {
-      break;
-    }
-
+  JitFrameIter iter(cx->activation()->asJit(),
+                     true);
+  CommonFrameLayout* prevJitFrame = nullptr;
+  while (!iter.done()) {
     if (iter.isWasm()) {
+      prevJitFrame = nullptr;
       HandleExceptionWasm(cx, &iter.asWasm(), rfe);
       if (!iter.done()) {
         ++iter;
@@ -612,11 +612,13 @@ void HandleException(ResumeFromException* rfe) {
       continue;
     }
 
-    
-    
-    cx->setRealmForJitExceptionHandler(iter.realm());
+    JSJitFrameIter& frame = iter.asJSJit();
 
-    const JSJitFrameIter& frame = iter.asJSJit();
+    
+    
+    if (frame.isScripted()) {
+      cx->setRealmForJitExceptionHandler(iter.realm());
+    }
 
     if (frame.isIonJS()) {
       
@@ -680,24 +682,7 @@ void HandleException(ResumeFromException* rfe) {
       }
 
     } else if (frame.isBaselineJS()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      jsbytecode* pc;
-      frame.baselineScriptAndPc(nullptr, &pc);
-      AutoBaselineHandlingException handlingException(frame.baselineFrame(),
-                                                      pc);
-
-      HandleExceptionBaseline(cx, frame, rfe, pc);
+      HandleExceptionBaseline(cx, frame, prevJitFrame, rfe);
 
       if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME &&
           rfe->kind != ResumeFromException::RESUME_FORCED_RETURN) {
@@ -717,6 +702,7 @@ void HandleException(ResumeFromException* rfe) {
       }
     }
 
+    prevJitFrame = frame.current();
     ++iter;
   }
 
@@ -1346,13 +1332,8 @@ void GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes) {
     
     
     
-    
-    
-    
-    
     if (it.frame().isBaselineJS() &&
-        (it.frame().baselineFrame()->hasOverridePc() ||
-         it.frame().baselineFrame()->runningInInterpreter())) {
+        it.frame().baselineFrame()->runningInInterpreter()) {
       it.frame().baselineScriptAndPc(scriptRes, pcRes);
       return;
     }

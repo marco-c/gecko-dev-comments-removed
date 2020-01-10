@@ -698,11 +698,6 @@ struct JSContext : public JS::RootingContext,
   
   js::ContextData<bool> propagatingForcedReturn_;
 
-  
-  
-  js::ContextData<js::jit::DebugModeOSRVolatileJitFrameIter*>
-      liveVolatileJitFrameIter_;
-
  public:
   js::ContextData<int32_t> reportGranularity; 
 

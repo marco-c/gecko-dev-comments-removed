@@ -123,14 +123,6 @@ void JSJitFrameIter::baselineScriptAndPc(JSScript** scriptRes,
   MOZ_ASSERT(pcRes);
 
   
-  
-  
-  if (jsbytecode* overridePc = baselineFrame()->maybeOverridePc()) {
-    *pcRes = overridePc;
-    return;
-  }
-
-  
   if (baselineFrame()->runningInInterpreter()) {
     MOZ_ASSERT(baselineFrame()->interpreterScript() == script);
     *pcRes = baselineFrame()->interpreterPC();
@@ -627,37 +619,6 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
   return false;
 }
 
-void JSJitProfilingFrameIterator::fixBaselineReturnAddress() {
-  MOZ_ASSERT(type_ == FrameType::BaselineJS);
-  BaselineFrame* bl = (BaselineFrame*)(fp_ - BaselineFrame::FramePointerOffset -
-                                       BaselineFrame::Size());
-
-  
-  
-  
-  
-  if (jsbytecode* overridePC = bl->maybeOverridePc()) {
-    JSScript* script = bl->script();
-    if (bl->runningInInterpreter()) {
-      
-      
-      
-      JitRuntime* jrt = script->runtimeFromAnyThread()->jitRuntime();
-      resumePCinCurrentFrame_ =
-          jrt->baselineInterpreter().interpretOpAddr().value;
-    } else {
-      PCMappingSlotInfo slotInfo;
-      BaselineScript* blScript = script->baselineScript();
-      resumePCinCurrentFrame_ =
-          blScript->nativeCodeForPC(script, overridePC, &slotInfo);
-      
-      
-    }
-
-    return;
-  }
-}
-
 const char* JSJitProfilingFrameIterator::baselineInterpreterLabel() const {
   MOZ_ASSERT(type_ == FrameType::BaselineJS);
   return frameScript()->jitScript()->profileString();
@@ -752,7 +713,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
     resumePCinCurrentFrame_ = frame->returnAddress();
     fp_ = GetPreviousRawFrame<uint8_t*>(frame);
     type_ = FrameType::BaselineJS;
-    fixBaselineReturnAddress();
     return;
   }
 
@@ -765,7 +725,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
     fp_ = ((uint8_t*)stubFrame->reverseSavedFramePtr()) +
           jit::BaselineFrame::FramePointerOffset;
     type_ = FrameType::BaselineJS;
-    fixBaselineReturnAddress();
     return;
   }
 
@@ -788,7 +747,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       fp_ = ((uint8_t*)stubFrame->reverseSavedFramePtr()) +
             jit::BaselineFrame::FramePointerOffset;
       type_ = FrameType::BaselineJS;
-      fixBaselineReturnAddress();
       return;
     }
 

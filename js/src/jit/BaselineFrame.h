@@ -49,25 +49,6 @@ class BaselineFrame {
     
     
     DEBUGGEE = 1 << 6,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    HAS_OVERRIDE_PC = 1 << 7,
-
-    
-    
-    
-    HANDLING_EXCEPTION = 1 << 8,
   };
 
  protected:  
@@ -234,10 +215,27 @@ class BaselineFrame {
   
   
   
-  void switchFromJitToInterpreter(jsbytecode* pc) {
+  
+  
+  void switchFromJitToInterpreter(JSContext* cx, jsbytecode* pc) {
+    MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
     MOZ_ASSERT(!runningInInterpreter());
     flags_ |= RUNNING_IN_INTERPRETER;
     setInterpreterFields(pc);
+  }
+
+  
+  
+  
+  
+  void switchFromJitToInterpreterForExceptionHandler(JSContext* cx,
+                                                     jsbytecode* pc) {
+    MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
+    MOZ_ASSERT(!runningInInterpreter());
+    flags_ |= RUNNING_IN_INTERPRETER;
+    interpreterScript_ = script();
+    interpreterPC_ = pc;
+    interpreterICEntry_ = nullptr;
   }
 
   bool runningInInterpreter() const { return flags_ & RUNNING_IN_INTERPRETER; }
@@ -312,32 +310,6 @@ class BaselineFrame {
   bool isDebuggee() const { return flags_ & DEBUGGEE; }
   void setIsDebuggee() { flags_ |= DEBUGGEE; }
   inline void unsetIsDebuggee();
-
-  bool isHandlingException() const { return flags_ & HANDLING_EXCEPTION; }
-  void setIsHandlingException() { flags_ |= HANDLING_EXCEPTION; }
-  void unsetIsHandlingException() { flags_ &= ~HANDLING_EXCEPTION; }
-
-  
-  bool hasOverridePc() const { return flags_ & HAS_OVERRIDE_PC; }
-
-  jsbytecode* overridePc() const {
-    MOZ_ASSERT(hasOverridePc());
-    return script()->offsetToPC(overrideOffset_);
-  }
-
-  jsbytecode* maybeOverridePc() const {
-    if (hasOverridePc()) {
-      return overridePc();
-    }
-    return nullptr;
-  }
-
-  void setOverridePc(jsbytecode* pc) {
-    flags_ |= HAS_OVERRIDE_PC;
-    overrideOffset_ = script()->pcToOffset(pc);
-  }
-
-  void clearOverridePc() { flags_ &= ~HAS_OVERRIDE_PC; }
 
   void trace(JSTracer* trc, const JSJitFrameIter& frame);
 
