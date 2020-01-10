@@ -175,6 +175,22 @@ class UsedNameTracker {
   }
 };
 
+class FunctionTree;
+class FunctionTreeHolder;
+
+
+
+class MOZ_RAII AutoPushTree {
+  FunctionTreeHolder* holder_ = nullptr;
+  FunctionTree* oldParent_ = nullptr;
+
+ public:
+  explicit AutoPushTree(FunctionTreeHolder* holder);
+  ~AutoPushTree();
+
+  bool init(JSContext* cx, FunctionBox* box);
+};
+
 
 
 
@@ -402,6 +418,9 @@ class ParseContext : public Nestable<ParseContext> {
 
  private:
   
+  mozilla::Maybe<AutoPushTree> tree;
+
+  
   AutoFrontendTraceLog traceLog_;
 
   
@@ -481,7 +500,8 @@ class ParseContext : public Nestable<ParseContext> {
  public:
   ParseContext(JSContext* cx, ParseContext*& parent, SharedContext* sc,
                ErrorReporter& errorReporter, UsedNameTracker& usedNames,
-               Directives* newDirectives, bool isFull);
+               Directives* newDirectives, FunctionTreeHolder* treeHolder,
+               bool isFull);
 
   MOZ_MUST_USE bool init();
 

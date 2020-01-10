@@ -517,6 +517,11 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
     AutoGeckoProfilerEntry pseudoFrame(cx, "script emit",
                                        JS::ProfilingCategoryPair::JS_Parsing);
     if (pn) {
+      
+      if (!parser->publishLazyScripts()) {
+        return nullptr;
+      }
+
       if (!emitter->emitScript(pn)) {
         return nullptr;
       }
@@ -530,6 +535,7 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
     
     info.usedNames->reset();
+    parser->getTreeHolder()->resetFunctionTree();
   }
 
   
@@ -571,10 +577,15 @@ ModuleObject* frontend::ModuleCompiler<Unit>::compile(ModuleInfo& info) {
     return nullptr;
   }
 
+  if (!parser->publishLazyScripts()) {
+    return nullptr;
+  }
+
   Maybe<BytecodeEmitter> emitter;
   if (!emplaceEmitter(info, emitter, &modulesc)) {
     return nullptr;
   }
+
   if (!emitter->emitScript(pn->as<ModuleNode>().body())) {
     return nullptr;
   }
@@ -648,6 +659,9 @@ bool frontend::StandaloneFunctionCompiler<Unit>::compile(
       return false;
     }
 
+    if (!parser->publishLazyScripts()) {
+      return false;
+    }
     Maybe<BytecodeEmitter> emitter;
     if (!emplaceEmitter(info, emitter, funbox)) {
       return false;

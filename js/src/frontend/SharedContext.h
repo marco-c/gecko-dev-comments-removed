@@ -271,6 +271,32 @@ inline EvalSharedContext* SharedContext::asEvalContext() {
 
 enum class HasHeritage : bool { No, Yes };
 
+
+struct LazyScriptCreationData {
+  frontend::AtomVector closedOverBindings;
+
+  
+  FunctionBoxVector innerFunctionBoxes;
+  bool strict;
+
+  explicit LazyScriptCreationData(JSContext* cx)
+      : closedOverBindings(), innerFunctionBoxes(cx), strict(false) {}
+
+  bool init(JSContext* cx, const frontend::AtomVector& COB,
+            FunctionBoxVector& innerBoxes, bool isStrict) {
+    strict = isStrict;
+    
+    if (!innerFunctionBoxes.appendAll(innerBoxes)) {
+      return false;
+    }
+
+    if (!closedOverBindings.appendAll(COB)) {
+      return false;
+    }
+    return true;
+  }
+};
+
 class FunctionBox : public ObjectBox, public SharedContext {
   
   
@@ -403,6 +429,12 @@ class FunctionBox : public ObjectBox, public SharedContext {
 
   uint16_t nargs_;
 
+  mozilla::Maybe<LazyScriptCreationData> lazyScriptData_;
+
+  mozilla::Maybe<LazyScriptCreationData>& lazyScriptData() {
+    return lazyScriptData_;
+  }
+
   FunctionBox(JSContext* cx, TraceListNode* traceListHead, JSFunction* fun,
               uint32_t toStringStart, Directives directives, bool extraWarnings,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
@@ -444,7 +476,7 @@ class FunctionBox : public ObjectBox, public SharedContext {
   void finish();
 
   JSFunction* function() const { return &object()->as<JSFunction>(); }
-  
+
   void clobberFunction(JSFunction* function) {
     gcThing = function;
     
@@ -462,8 +494,7 @@ class FunctionBox : public ObjectBox, public SharedContext {
     
     
     MOZ_ASSERT_IF(
-        isInterpretedLazy() &&
-            function()->lazyScript()->hasEnclosingScope(),
+        isInterpretedLazy() && function()->lazyScript()->hasEnclosingScope(),
         enclosingScope_ == function()->lazyScript()->enclosingScope());
 
     
@@ -539,9 +570,11 @@ class FunctionBox : public ObjectBox, public SharedContext {
   bool isInterpreted() const { return isInterpreted_; }
   void setIsInterpreted(bool interpreted) { isInterpreted_ = interpreted; }
   bool isInterpretedLazy() const { return isInterpretedLazy_; }
-  void setIsInterpretedLazy(bool interpretedLazy) { isInterpretedLazy_ = interpretedLazy; }
+  void setIsInterpretedLazy(bool interpretedLazy) {
+    isInterpretedLazy_ = interpretedLazy;
+  }
 
-  void initLazyScript(LazyScript* script) { 
+  void initLazyScript(LazyScript* script) {
     function()->initLazyScript(script);
     setIsInterpretedLazy(function()->isInterpretedLazy());
   }
