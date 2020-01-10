@@ -404,7 +404,7 @@ bool BytecodeCompiler::createScriptSource(
 bool BytecodeCompiler::canLazilyParse() const {
   return options.canLazilyParse &&
          !cx->realm()->behaviors().disableLazyParsing() &&
-         !cx->realm()->behaviors().discardSource() && !options.sourceIsLazy &&
+         !options.discardSource && !options.sourceIsLazy &&
          !coverage::IsLCovEnabled() &&
          
          
