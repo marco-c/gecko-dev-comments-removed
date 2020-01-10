@@ -4,12 +4,13 @@
 
 
 
-#ifndef nsGeoPosition_h
-#define nsGeoPosition_h
+#ifndef mozilla_dom_GeolocationPosition_h
+#define mozilla_dom_GeolocationPosition_h
 
 #include "nsIDOMGeoPositionCoords.h"
 #include "nsIDOMGeoPosition.h"
 #include "nsString.h"
+#include "nsCOMPtr.h"
 #include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -91,41 +92,6 @@ class GeolocationPosition final : public nsISupports, public nsWrapperCache {
   RefPtr<GeolocationCoordinates> mCoordinates;
   nsCOMPtr<nsISupports> mParent;
   nsCOMPtr<nsIDOMGeoPosition> mGeoPosition;
-};
-
-class GeolocationCoordinates final : public nsISupports, public nsWrapperCache {
-  ~GeolocationCoordinates();
-
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(GeolocationCoordinates)
-
- public:
-  GeolocationCoordinates(GeolocationPosition* aPosition,
-                         nsIDOMGeoPositionCoords* aCoords);
-
-  GeolocationPosition* GetParentObject() const;
-
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
-
-  double Latitude() const;
-
-  double Longitude() const;
-
-  Nullable<double> GetAltitude() const;
-
-  double Accuracy() const;
-
-  Nullable<double> GetAltitudeAccuracy() const;
-
-  Nullable<double> GetHeading() const;
-
-  Nullable<double> GetSpeed() const;
-
- private:
-  RefPtr<GeolocationPosition> mPosition;
-  nsCOMPtr<nsIDOMGeoPositionCoords> mCoords;
 };
 
 }  

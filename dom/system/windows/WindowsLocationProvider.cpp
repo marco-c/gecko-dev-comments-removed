@@ -5,7 +5,7 @@
 
 
 #include "WindowsLocationProvider.h"
-#include "nsGeoPosition.h"
+#include "GeolocationPosition.h"
 #include "nsComponentManagerUtils.h"
 #include "prtime.h"
 #include "MLSFallback.h"

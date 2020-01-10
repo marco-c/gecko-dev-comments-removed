@@ -4,7 +4,7 @@
 
 
 
-#include "nsGeolocation.h"
+#include "Geolocation.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CycleCollectedJSContext.h"  

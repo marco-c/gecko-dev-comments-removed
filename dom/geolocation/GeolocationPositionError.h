@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PositionError_h
-#define mozilla_dom_PositionError_h
+#ifndef mozilla_dom_GeolocationPositionError_h
+#define mozilla_dom_GeolocationPositionError_h
 
 #include "nsWrapperCache.h"
 #include "nsISupportsImpl.h"

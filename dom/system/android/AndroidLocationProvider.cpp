@@ -4,8 +4,8 @@
 
 
 
-#include "nsGeolocation.h"
-#include "nsGeoPosition.h"
+#include "Geolocation.h"
+#include "GeolocationPosition.h"
 #include "AndroidLocationProvider.h"
 #include "GeneratedJNIWrappers.h"
 

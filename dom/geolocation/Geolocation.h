@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsGeoLocation_h
-#define nsGeoLocation_h
+#ifndef mozilla_dom_Geolocation_h
+#define mozilla_dom_Geolocation_h
 
 
 #undef CreateEvent
@@ -20,7 +20,8 @@
 
 #include "nsCycleCollectionParticipant.h"
 
-#include "nsGeoPosition.h"
+#include "GeolocationPosition.h"
+#include "GeolocationCoordinates.h"
 #include "nsIDOMGeoPosition.h"
 #include "nsIDOMGeoPositionCallback.h"
 #include "nsIDOMGeoPositionErrorCallback.h"
