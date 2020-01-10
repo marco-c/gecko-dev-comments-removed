@@ -253,8 +253,6 @@ pub enum KeywordSize {
     XLarge,
     #[css(keyword = "xx-large")]
     XXLarge,
-    
-    
     #[css(keyword = "xxx-large")]
     XXXLarge,
 }
