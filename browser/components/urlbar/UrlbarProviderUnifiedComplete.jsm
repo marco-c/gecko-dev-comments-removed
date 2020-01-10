@@ -37,9 +37,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 );
 
 
-const TITLE_TAGS_SEPARATOR = " \u2013 ";
-
-
 
 
 class ProviderUnifiedComplete extends UrlbarProvider {
@@ -210,7 +207,6 @@ function convertResultToMatches(context, result, urls) {
       continue;
     }
     urls.add(url);
-    
     let style = result.getStyleAt(i);
     let match = makeUrlbarResult(context.tokens, {
       url,
@@ -388,7 +384,7 @@ function makeUrlbarResult(tokens, info) {
     source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
     if (info.style.includes("tag")) {
       
-      [comment, tags] = info.comment.split(TITLE_TAGS_SEPARATOR);
+      [comment, tags] = info.comment.split(UrlbarUtils.TITLE_TAGS_SEPARATOR);
       
       
       tags = tags

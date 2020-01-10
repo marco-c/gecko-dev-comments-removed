@@ -19,11 +19,6 @@ const QUERYTYPE_AUTOFILL_URL = 2;
 const QUERYTYPE_ADAPTIVE = 3;
 
 
-
-
-const TITLE_TAGS_SEPARATOR = " \u2013 ";
-
-
 const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
 const TELEMETRY_6_FIRST_RESULTS = "PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS";
 
@@ -2425,7 +2420,7 @@ Search.prototype = {
 
     
     if (showTags) {
-      title += TITLE_TAGS_SEPARATOR + tags;
+      title += UrlbarUtils.TITLE_TAGS_SEPARATOR + tags;
     }
 
     
