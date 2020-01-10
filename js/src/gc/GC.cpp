@@ -7110,7 +7110,7 @@ void GCRuntime::maybeCallGCCallback(JSGCStatus status) {
   if (gcCallbackDepth == 0) {
     
     for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-      zone->gcScheduled_ = zone->gcScheduledSaved_;
+      zone->gcScheduled_ = zone->gcScheduled_ || zone->gcScheduledSaved_;
     }
   }
 }
