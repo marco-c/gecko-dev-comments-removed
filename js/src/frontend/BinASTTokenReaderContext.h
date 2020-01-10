@@ -157,33 +157,6 @@ struct HuffmanKey {
 };
 
 
-struct FlatHuffmanKey {
-  explicit FlatHuffmanKey(HuffmanKey key);
-  explicit FlatHuffmanKey(const HuffmanKey* key);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  const uint32_t representation_;
-
-  
-  using Lookup = FlatHuffmanKey;
-  using Key = Lookup;
-  static HashNumber hash(const Lookup& lookup) {
-    return mozilla::DefaultHasher<uint32_t>::hash(lookup.representation_);
-  }
-  static bool match(const Key& key, const Lookup& lookup) {
-    return mozilla::DefaultHasher<uint32_t>::match(key.representation_,
-                                                   lookup.representation_);
-  }
-};
-
-
 template <typename T>
 struct HuffmanEntry {
   HuffmanEntry(HuffmanKey key, T&& value) : key_(key), value_(value) {}
@@ -1229,12 +1202,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
                                                    uint32_t& len);
 
  private:
-  
-  
-  js::HashMap<FlatHuffmanKey, BinASTVariant, DefaultHasher<uint32_t>,
-              SystemAllocPolicy>
-      variantsTable_;
-
   enum class MetadataOwnership { Owned, Unowned };
   MetadataOwnership metadataOwned_ = MetadataOwnership::Owned;
   BinASTSourceMetadata* metadata_;
