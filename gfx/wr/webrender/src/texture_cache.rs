@@ -1190,7 +1190,7 @@ impl TextureCache {
     
     pub fn is_allowed_in_shared_cache(
         &self,
-        _filter: TextureFilter,
+        filter: TextureFilter,
         descriptor: &ImageDescriptor,
     ) -> bool {
         let mut allowed_in_shared_cache = true;
@@ -1200,7 +1200,17 @@ impl TextureCache {
         
         
         if descriptor.size.width > TEXTURE_REGION_DIMENSIONS ||
-           descriptor.size.height > TEXTURE_REGION_DIMENSIONS {
+           descriptor.size.height > TEXTURE_REGION_DIMENSIONS
+        {
+            allowed_in_shared_cache = false;
+        }
+
+        
+        
+        
+        if filter == TextureFilter::Nearest &&
+           descriptor.format.bytes_per_pixel() <= 2
+        {
             allowed_in_shared_cache = false;
         }
 
