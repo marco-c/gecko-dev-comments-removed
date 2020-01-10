@@ -83,6 +83,7 @@ const NOT_REMOTE = null;
 
 
 const WEB_REMOTE_TYPE = "web";
+const FISSION_WEB_REMOTE_TYPE_PREFIX = "webIsolated=";
 const FILE_REMOTE_TYPE = "file";
 const EXTENSION_REMOTE_TYPE = "extension";
 const PRIVILEGEDABOUT_REMOTE_TYPE = "privilegedabout";
@@ -124,7 +125,7 @@ function validatedWebRemoteType(
   
   if (aRemoteSubframes) {
     let targetPrincipal = sm.createContentPrincipal(aTargetUri, {});
-    return "webIsolated=" + targetPrincipal.siteOrigin;
+    return FISSION_WEB_REMOTE_TYPE_PREFIX + targetPrincipal.siteOrigin;
   }
 
   if (!aPreferredRemoteType) {
@@ -798,6 +799,17 @@ var E10SUtils = {
       }
     }
     return [tabPid, ...pids];
+  },
+
+  
+
+
+
+  isWebRemoteType(aBrowser) {
+    if (aBrowser.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes) {
+      return aBrowser.remoteType.startsWith(FISSION_WEB_REMOTE_TYPE_PREFIX);
+    }
+    return aBrowser.remoteType == WEB_REMOTE_TYPE;
   },
 };
 
