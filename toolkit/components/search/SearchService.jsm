@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   getVerificationHash: "resource://gre/modules/SearchEngine.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
+  RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
@@ -625,6 +626,41 @@ SearchService.prototype = {
     return this._initRV;
   },
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _getRemoteSettings(ignoreListSettings, firstTime = true) {
+    try {
+      return ignoreListSettings.get({verifySignature: true});
+    } catch (ex) {
+      if (ex instanceof RemoteSettingsClient.InvalidSignatureError && firstTime) {
+        
+        const collection = await ignoreListSettings.openCollection();
+        await collection.clear();
+        await collection.db.close();
+        
+        return this._getRemoteSettings(ignoreListSettings, false);
+      }
+      
+      
+      Cu.reportError(ex);
+      return [];
+    }
+  },
+
   
 
 
@@ -637,7 +673,7 @@ SearchService.prototype = {
   async _setupRemoteSettings() {
     const ignoreListSettings = RemoteSettings(SearchUtils.SETTINGS_IGNORELIST_KEY);
     
-    const current = await ignoreListSettings.get();
+    const current = await this._getRemoteSettings(ignoreListSettings);
 
     
     this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
