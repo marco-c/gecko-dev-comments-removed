@@ -1540,6 +1540,15 @@ class HTMLEditor final : public TextEditor,
 
   Element* GetParentListElementAtSelection() const;
 
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

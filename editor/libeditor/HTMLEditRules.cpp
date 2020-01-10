@@ -3981,9 +3981,12 @@ nsresult HTMLEditRules::WillMakeList(const nsAString* aListType,
 
   *aHandled = true;
 
-  rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
@@ -4448,9 +4451,12 @@ nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
   *aCancel = false;
   *aHandled = true;
 
-  nsresult rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
@@ -4483,7 +4489,8 @@ nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
       
       bool bOutOfList;
       do {
-        rv = PopListItem(MOZ_KnownLive(*curNode->AsContent()), &bOutOfList);
+        nsresult rv =
+            PopListItem(MOZ_KnownLive(*curNode->AsContent()), &bOutOfList);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -4491,7 +4498,7 @@ nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
           !bOutOfList);  
     } else if (HTMLEditUtils::IsList(curNode)) {
       
-      rv = RemoveListStructure(MOZ_KnownLive(*curNode->AsElement()));
+      nsresult rv = RemoveListStructure(MOZ_KnownLive(*curNode->AsElement()));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -4548,19 +4555,23 @@ nsresult HTMLEditRules::WillMakeBasicBlock(const nsAString& aBlockType,
 nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  nsresult rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
   AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
   AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
-  rv = MOZ_KnownLive(HTMLEditorRef())
-           .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
-               arrayOfNodes, EditSubAction::eCreateOrRemoveBlock,
-               HTMLEditor::CollectNonEditableNodes::Yes);
+  nsresult rv =
+      MOZ_KnownLive(HTMLEditorRef())
+          .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
+              arrayOfNodes, EditSubAction::eCreateOrRemoveBlock,
+              HTMLEditor::CollectNonEditableNodes::Yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4776,9 +4787,12 @@ nsresult HTMLEditRules::WillCSSIndent(bool* aCancel, bool* aHandled) {
   *aCancel = false;
   *aHandled = true;
 
-  rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
@@ -5078,9 +5092,12 @@ nsresult HTMLEditRules::WillHTMLIndent(bool* aCancel, bool* aHandled) {
   *aCancel = false;
   *aHandled = true;
 
-  rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
@@ -5403,9 +5420,12 @@ nsresult HTMLEditRules::WillOutdent(bool* aCancel, bool* aHandled) {
   *aCancel = false;
   *aHandled = true;
 
-  nsresult rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
@@ -5447,7 +5467,7 @@ nsresult HTMLEditRules::WillOutdent(bool* aCancel, bool* aHandled) {
       afterRememberedLeftBQ.AdvanceOffset();
       IgnoredErrorResult error;
       SelectionRefPtr()->Collapse(afterRememberedLeftBQ, error);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_WARN_IF(!CanHandleEditAction())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       NS_WARNING_ASSERTION(
@@ -6087,9 +6107,12 @@ nsresult HTMLEditRules::WillAlign(const nsAString& aAlignType, bool* aCancel,
   }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WillInsert() failed");
 
-  rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   *aHandled = true;
@@ -6854,19 +6877,14 @@ nsresult HTMLEditRules::ExpandSelectionForDeletion() {
   return error.StealNSResult();
 }
 
-nsresult HTMLEditRules::NormalizeSelection() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   
   
   
   
   
-
-  
-  if (SelectionRefPtr()->IsCollapsed()) {
-    return NS_OK;
-  }
 
   
   
@@ -6897,7 +6915,7 @@ nsresult HTMLEditRules::NormalizeSelection() {
   WSType wsType;
 
   
-  WSRunObject wsEndObj(&HTMLEditorRef(), endPoint);
+  WSRunObject wsEndObj(this, endPoint);
   
   
   wsEndObj.PriorVisibleNode(endPoint, &wsType);
@@ -6906,15 +6924,14 @@ nsresult HTMLEditRules::NormalizeSelection() {
     
     if (wsEndObj.mStartReason == WSType::otherBlock) {
       
-      nsINode* child =
-          HTMLEditorRef().GetRightmostChild(wsEndObj.mStartReasonNode, true);
+      nsINode* child = GetRightmostChild(wsEndObj.mStartReasonNode, true);
       if (child) {
         newEndPoint.SetAfter(child);
       }
       
     } else if (wsEndObj.mStartReason == WSType::thisBlock) {
       
-      nsINode* child = HTMLEditorRef().GetPreviousEditableHTMLNode(endPoint);
+      nsINode* child = GetPreviousEditableHTMLNode(endPoint);
       if (child) {
         newEndPoint.SetAfter(child);
       }
@@ -6926,7 +6943,7 @@ nsresult HTMLEditRules::NormalizeSelection() {
   }
 
   
-  WSRunObject wsStartObj(&HTMLEditorRef(), startPoint);
+  WSRunObject wsStartObj(this, startPoint);
   
   
   wsStartObj.NextVisibleNode(startPoint, &wsType);
@@ -6935,15 +6952,14 @@ nsresult HTMLEditRules::NormalizeSelection() {
     
     if (wsStartObj.mEndReason == WSType::otherBlock) {
       
-      nsINode* child =
-          HTMLEditorRef().GetLeftmostChild(wsStartObj.mEndReasonNode, true);
+      nsINode* child = GetLeftmostChild(wsStartObj.mEndReasonNode, true);
       if (child) {
         newStartPoint.Set(child);
       }
       
     } else if (wsStartObj.mEndReason == WSType::thisBlock) {
       
-      nsINode* child = HTMLEditorRef().GetNextEditableHTMLNode(startPoint);
+      nsINode* child = GetNextEditableHTMLNode(startPoint);
       if (child) {
         newStartPoint.Set(child);
       }
@@ -6980,7 +6996,7 @@ nsresult HTMLEditRules::NormalizeSelection() {
   ErrorResult error;
   MOZ_KnownLive(SelectionRefPtr())
       ->SetBaseAndExtentInLimiter(newStartPoint, newEndPoint, error);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  if (NS_WARN_IF(Destroyed())) {
     error.SuppressException();
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -10823,9 +10839,12 @@ nsresult HTMLEditRules::WillAbsolutePosition(bool* aCancel, bool* aHandled) {
     return NS_OK;
   }
 
-  rv = NormalizeSelection();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   rv = PrepareToMakeElementAbsolutePosition(

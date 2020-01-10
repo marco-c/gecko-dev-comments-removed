@@ -777,15 +777,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ExpandSelectionForDeletion();
 
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult NormalizeSelection();
-
   void GetDefinitionListItemTypes(Element* aElement, bool* aDT,
                                   bool* aDD) const;
   MOZ_CAN_RUN_SCRIPT
