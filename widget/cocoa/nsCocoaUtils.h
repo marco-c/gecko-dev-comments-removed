@@ -264,8 +264,27 @@ class nsCocoaUtils {
 
 
 
+
+
+
   static nsresult CreateNSImageFromImageContainer(imgIContainer* aImage, uint32_t aWhichFrame,
-                                                  NSImage** aResult, CGFloat scaleFactor);
+                                                  NSImage** aResult, CGFloat scaleFactor,
+                                                  bool* aIsEntirelyBlack = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static nsresult CreateDualRepresentationNSImageFromImageContainer(
+      imgIContainer* aImage, uint32_t aWhichFrame, NSImage** aResult,
+      bool* aIsEntirelyBlack = nullptr);
 
   
 
