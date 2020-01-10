@@ -7,9 +7,8 @@
 
 
 
+assert.throws(SyntaxError, function() {
+            eval("try{};catch(){}");
+});
 
-
-
-$DONOTEVALUATE();
-
-try{};catch(){}
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var o = JSON;
+var desc = Object.getOwnPropertyDescriptor(o, "parse");
+
+assert.sameValue(desc.configurable, true, 'desc.configurable');
+
+reportCompare(0, 0);

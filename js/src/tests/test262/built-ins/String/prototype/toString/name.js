@@ -19,12 +19,10 @@
 
 
 
+assert.sameValue(String.prototype.toString.name, "toString");
 
-verifyProperty(String.prototype.toString, 'name', {
-  value: 'toString',
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+verifyNotEnumerable(String.prototype.toString, "name");
+verifyNotWritable(String.prototype.toString, "name");
+verifyConfigurable(String.prototype.toString, "name");
 
 reportCompare(0, 0);

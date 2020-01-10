@@ -25,16 +25,11 @@
 
 
 
-
 var iter = {};
-
 var returnCount = 0;
-var nextCount = 0;
-
 iter[Symbol.iterator] = function() {
   return {
     next: function() {
-      nextCount += 1;
       return {
         done: false
       };
@@ -46,14 +41,13 @@ iter[Symbol.iterator] = function() {
   };
 };
 Object.defineProperty(Promise, 'resolve', {
-  get() {
+  get: function() {
     throw new Test262Error();
   }
 });
 
 Promise.all(iter);
 
-assert.sameValue(nextCount, 0);
-assert.sameValue(returnCount, 0);
+assert.sameValue(returnCount, 1);
 
 reportCompare(0, 0);

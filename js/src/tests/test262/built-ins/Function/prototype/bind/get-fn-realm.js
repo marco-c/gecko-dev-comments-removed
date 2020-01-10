@@ -16,13 +16,10 @@
 
 
 
-
-
 var other = $262.createRealm().global;
 var C = new other.Function();
-C.prototype = null;
-var B = C.bind();
+var B = Function.prototype.bind.call(C);
 
-assert.sameValue(Object.getPrototypeOf(new B()), other.Object.prototype);
+assert.sameValue(Object.getPrototypeOf(new B()), C.prototype);
 
 reportCompare(0, 0);

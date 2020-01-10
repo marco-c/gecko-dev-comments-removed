@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var f = JSON.parse;
+
+assert.sameValue(typeof(f), "function", 'typeof(f)');
+assert.sameValue(f.length, 2, 'f.length');
+
+reportCompare(0, 0);

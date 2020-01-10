@@ -19,12 +19,10 @@
 
 
 
+assert.sameValue(String.prototype.valueOf.name, "valueOf");
 
-verifyProperty(String.prototype.valueOf, 'name', {
-  value: 'valueOf',
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+verifyNotEnumerable(String.prototype.valueOf, "name");
+verifyNotWritable(String.prototype.valueOf, "name");
+verifyConfigurable(String.prototype.valueOf, "name");
 
 reportCompare(0, 0);

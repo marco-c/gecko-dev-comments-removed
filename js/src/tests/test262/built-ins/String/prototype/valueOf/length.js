@@ -22,12 +22,10 @@
 
 
 
+assert.sameValue(String.prototype.valueOf.length, 0);
 
-verifyProperty(String.prototype.valueOf, 'length', {
-  value: 0,
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+verifyNotEnumerable(String.prototype.valueOf, "length");
+verifyNotWritable(String.prototype.valueOf, "length");
+verifyConfigurable(String.prototype.valueOf, "length");
 
 reportCompare(0, 0);

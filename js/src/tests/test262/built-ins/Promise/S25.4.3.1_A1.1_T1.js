@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+var global = this;
+
+if (Promise !== global.Promise) {
+  $ERROR("Expected Promise === global.Promise.");
+}
+
+reportCompare(0, 0);

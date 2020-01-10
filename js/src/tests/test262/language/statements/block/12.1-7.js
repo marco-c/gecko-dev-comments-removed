@@ -7,9 +7,8 @@
 
 
 
+assert.throws(SyntaxError, function() {
+            eval("do{};while()");
+});
 
-
-
-$DONOTEVALUATE();
-
-do{};while()
+reportCompare(0, 0);

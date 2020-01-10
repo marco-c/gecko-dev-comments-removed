@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Promise.call("non-object", function() {});
+});
+
+reportCompare(0, 0);

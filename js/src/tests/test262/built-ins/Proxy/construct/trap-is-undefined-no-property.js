@@ -13,37 +13,21 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 var calls = 0;
-var _NewTarget;
 
-var Target = new Proxy(function() {
-  throw new Test262Error('target should not be called');
-}, {
-  construct: function(_Target, args, NewTarget) {
-    calls += 1;
-    _NewTarget = NewTarget;
-    return {
-      sum: args[0] + args[1]
-    };
-  }
-})
+function NewTarget() {}
+
+function Target(a, b) {
+  assert.sameValue(new.target, NewTarget);
+  calls += 1;
+  return {
+    sum: a + b
+  };
+}
 
 var P = new Proxy(Target, {});
-var NewTarget = function() {};
-var obj = Reflect.construct(P, [3, 4], NewTarget);
-
-assert.sameValue(calls, 1, "construct is missing: [[Construct]] is invoked once");
-assert.sameValue(_NewTarget, NewTarget, "construct is missing: NewTarget is passed to [[Construct]]");
-assert.sameValue(obj.sum, 7, "construct is missing: result of [[Construct]] is returned");
+var obj = Reflect.construct(P, [1, 2], NewTarget);
+assert.sameValue(obj.sum, 3, "`construct` trap is missing");
+assert.sameValue(calls, 1, "target is called once");
 
 reportCompare(0, 0);

@@ -9,9 +9,8 @@
 
 
 
+assert.throws(SyntaxError, function() {
+            eval("if{};else if{};else{}");
+});
 
-
-
-$DONOTEVALUATE();
-
-if{};else if{};else{}
+reportCompare(0, 0);

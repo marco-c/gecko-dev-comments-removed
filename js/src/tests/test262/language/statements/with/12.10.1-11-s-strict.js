@@ -1,0 +1,18 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+            eval("with ({}) { throw new Error();}");
+});
+
+reportCompare(0, 0);

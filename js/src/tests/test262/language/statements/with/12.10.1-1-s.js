@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+    
+    
+    eval("\
+          function f() {\
+            \'use strict\';\
+            var o = {}; \
+            with (o) {};\
+          }\
+        ");
+});
+
+reportCompare(0, 0);

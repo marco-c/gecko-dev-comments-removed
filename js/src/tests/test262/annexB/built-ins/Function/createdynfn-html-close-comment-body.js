@@ -17,6 +17,6 @@
 
 
 
-Function("\n-->");
+Function("-->");
 
 reportCompare(0, 0);

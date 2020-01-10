@@ -13,18 +13,11 @@
 
 
 
-
-
-
-
 const validOptions = [
   [undefined, "long"],
   ["long", "long"],
   ["short", "short"],
-  ["narrow", "narrow"],
   [{ toString() { return "short"; } }, "short"],
-  [{ toString() { return "long"; } }, "long"],
-  [{ toString() { return "narrow"; } }, "narrow"],
 ];
 
 for (const [validOption, expected] of validOptions) {
@@ -32,5 +25,13 @@ for (const [validOption, expected] of validOptions) {
   const resolvedOptions = lf.resolvedOptions();
   assert.sameValue(resolvedOptions.style, expected);
 }
+
+const lf = new Intl.ListFormat([], {"style": "narrow", "type": "unit"});
+const resolvedOptions = lf.resolvedOptions();
+assert.sameValue(resolvedOptions.style, "narrow");
+
+assert.throws(RangeError, () => lf = new Intl.ListFormat([], {"style": "narrow"}));
+assert.throws(RangeError, () => lf = new Intl.ListFormat([], {"style": "narrow", "type": "conjuction"}));
+assert.throws(RangeError, () => lf = new Intl.ListFormat([], {"style": "narrow", "type": "disjuction"}));
 
 reportCompare(0, 0);
