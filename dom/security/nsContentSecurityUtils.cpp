@@ -398,10 +398,15 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       fileName.get(), NS_ConvertUTF16toUTF8(aScript).get());
 #endif
 
+#if defined(RELEASE_OR_BETA) && !defined(EARLY_BETA_OR_EARLIER)
   
   
   
-  return !NS_IsMainThread();
+  
+  return false;
+#else
+  return true;
+#endif
 }
 
 
