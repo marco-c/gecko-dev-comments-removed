@@ -961,7 +961,12 @@ bool js::GCMarker::mark(T* thing) {
 
 
 
+void BaseScript::traceChildren(JSTracer* trc) {}
+
 void LazyScript::traceChildren(JSTracer* trc) {
+  
+  BaseScript::traceChildren(trc);
+
   if (trc->traceWeakEdges()) {
     TraceNullableEdge(trc, &script_, "script");
   }

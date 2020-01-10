@@ -5129,6 +5129,9 @@ void JSScript::traceChildren(JSTracer* trc) {
   
   
 
+  
+  BaseScript::traceChildren(trc);
+
   MOZ_ASSERT_IF(trc->isMarkingTracer() &&
                     GCMarker::fromTracer(trc)->shouldCheckCompartments(),
                 zone()->isCollecting());
