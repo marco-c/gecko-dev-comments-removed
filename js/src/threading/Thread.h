@@ -84,9 +84,7 @@ class Thread {
       typename = typename mozilla::EnableIf<
           mozilla::IsSame<DerefO, Options>::value, void*>::Type>
   explicit Thread(O&& options = Options())
-      : idMutex_(mutexid::ThreadId),
-        id_(Id()),
-        options_(std::forward<O>(options)) {
+      : id_(Id()), options_(std::forward<O>(options)) {
     MOZ_ASSERT(js::IsInitialized());
   }
 
@@ -106,6 +104,9 @@ class Thread {
     if (!trampoline) {
       oom.crash("js::Thread::init");
     }
+
+    
+    LockGuard<Mutex> lock(trampoline->createMutex);
     return create(Trampoline::Start, trampoline);
   }
 
@@ -144,11 +145,6 @@ class Thread {
   
   Thread(const Thread&) = delete;
   void operator=(const Thread&) = delete;
-
-  bool joinable(LockGuard<Mutex>& lock);
-
-  
-  Mutex idMutex_;
 
   
   Id id_;
@@ -203,6 +199,12 @@ class ThreadTrampoline {
   
   mozilla::Tuple<typename mozilla::Decay<Args>::Type...> args;
 
+  
+  Mutex createMutex;
+
+  
+  friend class js::Thread;
+
  public:
   
   
@@ -210,7 +212,9 @@ class ThreadTrampoline {
   
   template <typename G, typename... ArgsT>
   explicit ThreadTrampoline(G&& aG, ArgsT&&... aArgsT)
-      : f(std::forward<F>(aG)), args(std::forward<Args>(aArgsT)...) {}
+      : f(std::forward<F>(aG)),
+        args(std::forward<Args>(aArgsT)...),
+        createMutex(mutexid::ThreadId) {}
 
   static THREAD_RETURN_TYPE THREAD_CALL_API Start(void* aPack) {
     auto* pack = static_cast<ThreadTrampoline<F, Args...>*>(aPack);
@@ -221,6 +225,10 @@ class ThreadTrampoline {
 
   template <size_t... Indices>
   void callMain(std::index_sequence<Indices...>) {
+    
+    
+    createMutex.lock();
+    createMutex.unlock();
     f(mozilla::Get<Indices>(args)...);
   }
 };
