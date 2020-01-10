@@ -371,6 +371,7 @@ PeerConnectionImpl::~PeerConnectionImpl() {
   
   
   
+  ShutdownMedia();
 }
 
 nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
@@ -469,27 +470,6 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
     return NS_ERROR_FAILURE;
   }
 
-  mMedia = new PeerConnectionMedia(this);
-
-  
-  mMedia->SignalIceGatheringStateChange.connect(
-      this, &PeerConnectionImpl::IceGatheringStateChange);
-  mMedia->SignalUpdateDefaultCandidate.connect(
-      this, &PeerConnectionImpl::UpdateDefaultCandidate);
-  mMedia->SignalIceConnectionStateChange.connect(
-      this, &PeerConnectionImpl::IceConnectionStateChange);
-
-  mMedia->SignalCandidate.connect(this, &PeerConnectionImpl::CandidateReady);
-
-  
-  res = mMedia->Init();
-  if (NS_FAILED(res)) {
-    CSFLogError(LOGTAG, "%s: Couldn't initialize media object", __FUNCTION__);
-    return res;
-  }
-
-  PeerConnectionCtx::GetInstance()->mPeerConnections[mHandle] = this;
-
   mJsepSession =
       MakeUnique<JsepSessionImpl>(mName, MakeUnique<PCUuidGenerator>());
 
@@ -522,6 +502,27 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
                 mJsepSession->GetLastError().c_str());
     return res;
   }
+
+  mMedia = new PeerConnectionMedia(this);
+
+  
+  res = mMedia->Init();
+  if (NS_FAILED(res)) {
+    CSFLogError(LOGTAG, "%s: Couldn't initialize media object", __FUNCTION__);
+    ShutdownMedia();
+    return res;
+  }
+
+  
+  mMedia->SignalIceGatheringStateChange.connect(
+      this, &PeerConnectionImpl::IceGatheringStateChange);
+  mMedia->SignalUpdateDefaultCandidate.connect(
+      this, &PeerConnectionImpl::UpdateDefaultCandidate);
+  mMedia->SignalIceConnectionStateChange.connect(
+      this, &PeerConnectionImpl::IceConnectionStateChange);
+  mMedia->SignalCandidate.connect(this, &PeerConnectionImpl::CandidateReady);
+
+  PeerConnectionCtx::GetInstance()->mPeerConnections[mHandle] = this;
 
   return NS_OK;
 }
