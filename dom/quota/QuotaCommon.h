@@ -86,12 +86,12 @@ namespace quota {
 
 
 #ifdef NIGHTLY_BUILD
-extern const nsLiteralCString kInternalError;
-extern const nsLiteralCString kExternalError;
+extern const nsLiteralCString kQuotaInternalError;
+extern const nsLiteralCString kQuotaExternalError;
 #else
 
-#  define kInternalError
-#  define kExternalError
+#  define kQuotaInternalError
+#  define kQuotaExternalError
 #endif
 
 class BackgroundThreadObject {
