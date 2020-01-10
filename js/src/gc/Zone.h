@@ -12,6 +12,7 @@
 #include "mozilla/SegmentedVector.h"
 
 #include "gc/FindSCCs.h"
+#include "gc/NurseryAwareHashMap.h"
 #include "gc/ZoneAllocator.h"
 #include "js/GCHashTable.h"
 #include "vm/MallocProvider.h"
@@ -48,6 +49,10 @@ template <typename T>
 class ZoneCellIter;
 
 }  
+
+using StringWrapperMap =
+    NurseryAwareHashMap<JSString*, JSString*, DefaultHasher<JSString*>,
+                        ZoneAllocPolicy>;
 
 class MOZ_NON_TEMPORARY_CLASS ExternalStringCache {
   static const size_t NumEntries = 4;
@@ -306,7 +311,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
 #endif
 
-  void sweepAfterMinorGC();
+  void sweepAfterMinorGC(JSTracer* trc);
   void sweepBreakpoints(js::FreeOp* fop);
   void sweepUniqueIds();
   void sweepWeakMaps();
@@ -381,8 +386,28 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   js::MainThreadOrGCTaskData<CompartmentVector> compartments_;
 
+  
+  js::MainThreadOrGCTaskData<js::StringWrapperMap> crossZoneStringWrappers_;
+
  public:
   CompartmentVector& compartments() { return compartments_.ref(); }
+
+  js::StringWrapperMap& crossZoneStringWrappers() {
+    return crossZoneStringWrappers_.ref();
+  }
+  const js::StringWrapperMap& crossZoneStringWrappers() const {
+    return crossZoneStringWrappers_.ref();
+  }
+
+  void dropStringWrappersOnGC();
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkAllCrossCompartmentWrappersAfterMovingGC();
+  void checkStringWrappersAfterMovingGC();
+#endif
+
+  void sweepAllCrossCompartmentWrappers();
+  static void fixupAllCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
 
   
   using GrayRootVector =
@@ -421,6 +446,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::gc::WeakKeyTable& gcWeakKeys() { return gcWeakKeys_.ref(); }
   js::gc::WeakKeyTable& gcNurseryWeakKeys() { return gcNurseryWeakKeys_.ref(); }
 
+ private:
+  void sweepWeakKeysAfterMinorGC();
+
+ public:
   
   
   NodeSet& gcSweepGroupEdges() {
