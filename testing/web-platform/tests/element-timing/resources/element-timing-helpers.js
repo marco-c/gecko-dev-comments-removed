@@ -1,10 +1,11 @@
 
 
-function checkElement(entry, expectedName, expectedIdentifier, beforeRender) {
+function checkElement(entry, expectedName, expectedIdentifier, expectedID, beforeRender) {
   assert_equals(entry.entryType, 'element');
   assert_equals(entry.name, expectedName);
   assert_equals(entry.identifier, expectedIdentifier);
   assert_equals(entry.duration, 0);
+  assert_equals(entry.id, expectedID);
   assert_greater_than_equal(entry.startTime, beforeRender);
   assert_greater_than_equal(performance.now(), entry.startTime);
   const rt_entries = performance.getEntriesByName(expectedName, 'resource');
