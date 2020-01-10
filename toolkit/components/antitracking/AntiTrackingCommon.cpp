@@ -1313,8 +1313,34 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     return false;
   }
 
-  nsGlobalWindowOuter* topWindow = nsGlobalWindowOuter::Cast(
-      aWindow->GetBrowsingContext()->Top()->GetDOMWindow());
+  BrowsingContext* topBC = aWindow->GetBrowsingContext()->Top();
+  nsGlobalWindowOuter* topWindow = nullptr;
+  if (topBC->IsInProcess()) {
+    topWindow = nsGlobalWindowOuter::Cast(topBC->GetDOMWindow());
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsGlobalWindowOuter* outerWindow =
+        nsGlobalWindowOuter::Cast(aWindow->GetOuterWindow());
+    if (!outerWindow) {
+      LOG(("Our window has no outer window"));
+      return false;
+    }
+
+    nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow =
+        outerWindow->GetInProcessTop();
+    topWindow = nsGlobalWindowOuter::Cast(topOuterWindow);
+  }
+
   if (NS_WARN_IF(!topWindow)) {
     LOG(("No top outer window"));
     return false;
