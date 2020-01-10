@@ -838,25 +838,6 @@ function stopOCSPResponder(responder) {
 }
 
 
-var FakeTransportSecurityInfo = function(certificate) {
-  this.serverCert = certificate;
-};
-
-FakeTransportSecurityInfo.prototype = {
-  serverCert: null,
-  cipherName: null,
-  keyLength: 2048,
-  isDomainMismatch: false,
-  isNotValidAtThisTime: false,
-  isUntrusted: false,
-  isExtendedValidation: false,
-  getInterface(aIID) {
-    return this.QueryInterface(aIID);
-  },
-  QueryInterface: ChromeUtils.generateQI(["nsITransportSecurityInfo"]),
-};
-
-
 
 
 
