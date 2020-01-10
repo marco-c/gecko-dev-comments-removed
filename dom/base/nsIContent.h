@@ -445,29 +445,6 @@ class nsIContent : public nsINode {
 
   mozilla::dom::HTMLSlotElement* GetAssignedSlotByMode() const;
 
-  nsIContent* GetXBLInsertionParent() const {
-    nsIContent* ip = GetXBLInsertionPoint();
-    return ip ? ip->GetParent() : nullptr;
-  }
-
-  
-
-
-
-
-
-  nsIContent* GetXBLInsertionPoint() const {
-    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
-    return slots ? slots->mXBLInsertionPoint.get() : nullptr;
-  }
-
-  
-
-
-
-
-  void SetXBLInsertionPoint(nsIContent* aContent);
-
   
 
 
@@ -763,11 +740,6 @@ class nsIContent : public nsINode {
 
 
     RefPtr<mozilla::dom::Element> mBindingParent;
-
-    
-
-
-    nsCOMPtr<nsIContent> mXBLInsertionPoint;
 
     
 
