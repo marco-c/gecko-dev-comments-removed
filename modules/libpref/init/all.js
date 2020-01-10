@@ -1611,7 +1611,7 @@ pref("network.http.referer.referrerLengthLimit", 4096);
 
 
 
-pref("network.http.sendOriginHeader", 0);
+pref("network.http.sendOriginHeader", 2);
 
 
 pref("network.http.redirection-limit", 20);
