@@ -607,9 +607,7 @@ menuitem.bookmark-item {
 .tab-drop-indicator {
   list-style-image: url(chrome://browser/skin/tabbrowser/tabDragIndicator.png);
   margin-bottom: -9px;
-  
-
-  z-index: 4;
+  z-index: 3;
 }
 
 
