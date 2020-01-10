@@ -20,7 +20,7 @@ this.EXPORTED_SYMBOLS = ["capture"];
 
 const CONTEXT_2D = "2d";
 const BG_COLOUR = "rgb(255,255,255)";
-const MAX_SKIA_DIMENSIONS = 32767;
+const MAX_CANVAS_DIMENSION = 32767;
 const PNG_MIME = "image/png";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -64,56 +64,80 @@ capture.Format = {
 
 
 
-capture.canvas = function(
+
+
+
+capture.canvas = async function(
   win,
+  browsingContext,
   left,
   top,
   width,
   height,
-  { canvas = null, flags = null, dX = 0, dY = 0 } = {}
+  { canvas = null, flags = null, dX = 0, dY = 0, readback = false } = {}
 ) {
   const scale = win.devicePixelRatio;
 
+  let canvasHeight = height * scale;
+  let canvasWidth = width * scale;
+
+  
+  
+  
+  if (canvasWidth > MAX_CANVAS_DIMENSION) {
+    logger.warn(
+      "Limiting screen capture width to maximum allowed " +
+        MAX_CANVAS_DIMENSION +
+        " pixels"
+    );
+    width = Math.floor(MAX_CANVAS_DIMENSION / scale);
+    canvasWidth = width * scale;
+  }
+
+  if (canvasHeight > MAX_CANVAS_DIMENSION) {
+    logger.warn(
+      "Limiting screen capture height to maximum allowed " +
+        MAX_CANVAS_DIMENSION +
+        " pixels"
+    );
+    height = Math.floor(MAX_CANVAS_DIMENSION / scale);
+    canvasHeight = height * scale;
+  }
+
   if (canvas === null) {
-    let canvasWidth = width * scale;
-    let canvasHeight = height * scale;
-
-    if (canvasWidth > MAX_SKIA_DIMENSIONS) {
-      logger.warn(
-        "Reducing screenshot width because it exceeds " +
-          MAX_SKIA_DIMENSIONS +
-          " pixels"
-      );
-      canvasWidth = MAX_SKIA_DIMENSIONS;
-    }
-
-    if (canvasHeight > MAX_SKIA_DIMENSIONS) {
-      logger.warn(
-        "Reducing screenshot height because it exceeds " +
-          MAX_SKIA_DIMENSIONS +
-          " pixels"
-      );
-      canvasHeight = MAX_SKIA_DIMENSIONS;
-    }
-
     canvas = win.document.createElementNS(XHTML_NS, "canvas");
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
   }
 
-  let ctx = canvas.getContext(CONTEXT_2D);
-  if (flags === null) {
-    flags = ctx.DRAWWINDOW_DRAW_CARET;
+  const ctx = canvas.getContext(CONTEXT_2D);
+
+  if (readback) {
+    if (flags === null) {
+      flags =
+        ctx.DRAWWINDOW_DRAW_CARET |
+        ctx.DRAWWINDOW_DRAW_VIEW |
+        ctx.DRAWWINDOW_USE_WIDGET_LAYERS;
+    }
+
+    
+    ctx.scale(scale, scale);
+    ctx.drawWindow(win, left + dX, top + dY, width, height, BG_COLOUR, flags);
+  } else {
+    let rect = new DOMRect(left, top, width, height);
+    let snapshot = await browsingContext.currentWindowGlobal.drawSnapshot(
+      rect,
+      scale,
+      BG_COLOUR
+    );
+
+    ctx.drawImage(snapshot, 0, 0);
 
     
     
     
-    
-    
+    snapshot.close();
   }
-
-  ctx.scale(scale, scale);
-  ctx.drawWindow(win, left + dX, top + dY, width, height, BG_COLOUR, flags);
 
   return canvas;
 };

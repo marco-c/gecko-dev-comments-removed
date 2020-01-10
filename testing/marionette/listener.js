@@ -1652,18 +1652,16 @@ function switchToFrame(msg) {
 
 
 
-function getScreenshotRect({ id, full = true, scroll = true } = {}) {
+function getScreenshotRect({ el, full = true, scroll = true } = {}) {
   let win = curContainer.frame;
 
   let rect;
 
-  if (id) {
-    let webEl = WebElement.fromUUID(id, "content");
-    let el = seenEls.get(webEl, win);
+  if (el) {
     if (scroll) {
       element.scrollIntoView(el);
     }
-    rect = el.getBoundingClientRect();
+    rect = getElementRect(el);
   } else if (full) {
     let clientRect = win.document.documentElement.getBoundingClientRect();
     rect = new DOMRect(0, 0, clientRect.width, clientRect.height);
