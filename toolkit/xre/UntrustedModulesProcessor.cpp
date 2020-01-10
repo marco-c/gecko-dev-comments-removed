@@ -88,7 +88,7 @@ class MOZ_RAII BackgroundPriorityRegion final {
 
 
 RefPtr<UntrustedModulesProcessor> UntrustedModulesProcessor::Create() {
-#if defined(NIGHTLY_BUILD)
+#if defined(EARLY_BETA_OR_EARLIER)
   if (!XRE_IsParentProcess()) {
     
     return nullptr;
