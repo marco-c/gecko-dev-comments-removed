@@ -42,6 +42,7 @@ bool ProxyAccessible::GetCOMInterface(void** aOutAccessible) const {
     
     VARIANT realId = {{{VT_I4}}};
     realId.ulVal = wrap->GetExistingID();
+    MOZ_DIAGNOSTIC_ASSERT(realId.ulVal != CHILDID_SELF);
     thisPtr->mCOMProxy = wrap->GetIAccessibleFor(realId, &isDefunct);
   }
 
