@@ -21,11 +21,19 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
+
 class NodePicker extends EventEmitter {
-  constructor(highlighter, walker) {
+  constructor(target, selection) {
     super();
-    this.highlighter = highlighter;
-    this.walker = walker;
+
+    this.target = target;
+    this.selection = selection;
+
+    
+    this.isPicking = false;
+
+    
+    this._currentInspectorFronts = [];
 
     this.cancel = this.cancel.bind(this);
     this.start = this.start.bind(this);
@@ -44,8 +52,24 @@ class NodePicker extends EventEmitter {
 
 
 
+
+  async getAllInspectorFronts() {
+    
+    
+    
+    const inspectorFront = await this.target.getFront("inspector");
+    return [inspectorFront];
+  }
+
+  
+
+
+
+
+
+
   togglePicker(doFocus) {
-    if (this.highlighter.isPicking) {
+    if (this.isPicking) {
       return this.stop();
     }
     return this.start(doFocus);
@@ -61,37 +85,49 @@ class NodePicker extends EventEmitter {
 
 
 
-
   async start(doFocus) {
-    if (this.highlighter.isPicking) {
-      return null;
+    if (this.isPicking) {
+      return;
     }
-    this.emit("picker-starting");
-    this.walker.on("picker-node-hovered", this._onHovered);
-    this.walker.on("picker-node-picked", this._onPicked);
-    this.walker.on("picker-node-previewed", this._onPreviewed);
-    this.walker.on("picker-node-canceled", this._onCanceled);
+    this.isPicking = true;
 
-    const picked = await this.highlighter.pick(doFocus);
+    this.emit("picker-starting");
+
+    this._currentInspectorFronts = await this.getAllInspectorFronts();
+
+    for (const { walker, highlighter } of this._currentInspectorFronts) {
+      walker.on("picker-node-hovered", this._onHovered);
+      walker.on("picker-node-picked", this._onPicked);
+      walker.on("picker-node-previewed", this._onPreviewed);
+      walker.on("picker-node-canceled", this._onCanceled);
+
+      await highlighter.pick(doFocus);
+    }
+
     this.emit("picker-started");
-    return picked;
   }
 
   
 
 
 
-
-
   async stop() {
-    if (!this.highlighter.isPicking) {
+    if (!this.isPicking) {
       return;
     }
-    await this.highlighter.cancelPick();
-    this.walker.off("picker-node-hovered", this._onHovered);
-    this.walker.off("picker-node-picked", this._onPicked);
-    this.walker.off("picker-node-previewed", this._onPreviewed);
-    this.walker.off("picker-node-canceled", this._onCanceled);
+    this.isPicking = false;
+
+    for (const { walker, highlighter } of this._currentInspectorFronts) {
+      await highlighter.cancelPick();
+
+      walker.off("picker-node-hovered", this._onHovered);
+      walker.off("picker-node-picked", this._onPicked);
+      walker.off("picker-node-previewed", this._onPreviewed);
+      walker.off("picker-node-canceled", this._onCanceled);
+    }
+
+    this._currentInspectorFronts = [];
+
     this.emit("picker-stopped");
   }
 
@@ -107,11 +143,15 @@ class NodePicker extends EventEmitter {
 
 
 
+
+
   _onHovered(data) {
     this.emit("picker-node-hovered", data.node);
   }
 
   
+
+
 
 
 
@@ -121,6 +161,8 @@ class NodePicker extends EventEmitter {
   }
 
   
+
+
 
 
 
