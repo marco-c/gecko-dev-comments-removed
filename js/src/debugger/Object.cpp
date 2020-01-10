@@ -11,6 +11,7 @@
 #include "mozilla/Result.h"  
 #include "mozilla/Vector.h"  
 
+#include <algorithm>
 #include <string.h>     
 #include <type_traits>  
 #include <utility>      
@@ -983,7 +984,7 @@ bool DebuggerObject::CallData::applyMethod() {
     if (!GetLengthProperty(cx, argsobj, &argc)) {
       return false;
     }
-    argc = unsigned(Min(argc, ARGS_LENGTH_MAX));
+    argc = unsigned(std::min(argc, ARGS_LENGTH_MAX));
 
     if (!nargs.growBy(argc) || !GetElements(cx, argsobj, argc, nargs.begin())) {
       return false;

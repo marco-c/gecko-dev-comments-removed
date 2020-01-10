@@ -11,6 +11,8 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MathAlgorithms.h"
 
+#include <algorithm>
+
 #include "jit/arm/Architecture-arm.h"
 #include "jit/arm/disasm/Disasm-arm.h"
 #include "jit/CompactBuffer.h"
@@ -1764,8 +1766,8 @@ class Assembler : public AssemblerShared {
     dtmDelta = dtmDelta ? dtmDelta : 1;
     
     
-    int low = Min(dtmLastReg, vdtmFirstReg);
-    int high = Max(dtmLastReg, vdtmFirstReg);
+    int low = std::min(dtmLastReg, vdtmFirstReg);
+    int high = std::max(dtmLastReg, vdtmFirstReg);
     
     int len = high - low + 1;
     
@@ -1777,7 +1779,7 @@ class Assembler : public AssemblerShared {
     int adjustHigh = dtmLoadStore == IsStore ? -1 : 0;
     while (len > 0) {
       
-      int curLen = Min(len, 16);
+      int curLen = std::min(len, 16);
       
       
       int curStart = (dtmLoadStore == IsStore) ? high - curLen + 1 : low;
@@ -2229,7 +2231,7 @@ static inline uint32_t GetIntArgStackDisp(uint32_t usedIntArgs,
   MOZ_ASSERT(UseHardFpABI());
   MOZ_ASSERT(usedIntArgs >= NumIntArgRegs);
   uint32_t doubleSlots =
-      Max(0, (int32_t)usedFloatArgs - (int32_t)NumFloatArgRegs);
+      std::max(0, (int32_t)usedFloatArgs - (int32_t)NumFloatArgRegs);
   doubleSlots *= 2;
   int intSlots = usedIntArgs - NumIntArgRegs;
   return (intSlots + doubleSlots + *padding) * sizeof(intptr_t);
