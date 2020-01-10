@@ -26,6 +26,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/Mutex.h"
 
 namespace mozilla {
@@ -46,6 +47,8 @@ TLSFilterTransaction::TLSFilterTransaction(nsAHttpTransaction* aWrapped,
       mSegmentReader(aReader),
       mSegmentWriter(aWriter),
       mFilterReadCode(NS_ERROR_NOT_INITIALIZED),
+      mFilterReadAmount(0),
+      mInOnReadSegment(false),
       mForce(false),
       mReadSegmentReturnValue(NS_OK),
       mCloseReason(NS_ERROR_UNEXPECTED),
@@ -100,6 +103,11 @@ TLSFilterTransaction::TLSFilterTransaction(nsAHttpTransaction* aWrapped,
 
 TLSFilterTransaction::~TLSFilterTransaction() {
   LOG(("TLSFilterTransaction dtor %p\n", this));
+
+  
+  
+  mInOnReadSegment = true;
+
   Cleanup();
 }
 
@@ -199,6 +207,11 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
 
   EnsureBuffer(mEncryptedText, aCount + 4096, 0, mEncryptedTextSize);
 
+  
+  
+  AutoRestore<bool> inOnReadSegment(mInOnReadSegment);
+  mInOnReadSegment = true;
+
   while (aCount > 0) {
     int32_t written = PR_Write(mFD, aData, aCount);
     LOG(("TLSFilterTransaction %p OnReadSegment PRWrite(%d) = %d %d\n", this,
@@ -240,7 +253,8 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
       
       Connection()->TransactionHasDataToWrite(this);
       return NS_OK;
-    } else if (NS_FAILED(rv)) {
+    }
+    if (NS_FAILED(rv)) {
       return rv;
     }
   }
@@ -262,6 +276,19 @@ int32_t TLSFilterTransaction::FilterOutput(const char* aBuf, int32_t aAmount) {
                mEncryptedTextSize);
   memcpy(&mEncryptedText[mEncryptedTextUsed], aBuf, aAmount);
   mEncryptedTextUsed += aAmount;
+
+  LOG(("TLSFilterTransaction::FilterOutput %p %d buffered=%u mSegmentReader=%p",
+       this, aAmount, mEncryptedTextUsed, mSegmentReader));
+
+  if (!mInOnReadSegment) {
+    
+    
+    
+    
+    uint32_t notUsed;
+    Unused << OnReadSegment("", 0, &notUsed);
+  }
+
   return aAmount;
 }
 
@@ -289,10 +316,22 @@ nsresult TLSFilterTransaction::OnWriteSegment(char* aData, uint32_t aCount,
   
   
   mFilterReadCode = NS_OK;
+  mFilterReadAmount = 0;
   int32_t bytesRead = PR_Read(mFD, aData, aCount);
   if (bytesRead == -1) {
     PRErrorCode code = PR_GetError();
     if (code == PR_WOULD_BLOCK_ERROR) {
+      LOG(
+          ("TLSFilterTransaction::OnWriteSegment %p PR_Read would block, "
+           "actual read: %d\n",
+           this, mFilterReadAmount));
+
+      if (mFilterReadAmount == 0 && NS_SUCCEEDED(mFilterReadCode)) {
+        
+        
+        
+        mFilterReadCode = NS_BASE_STREAM_WOULD_BLOCK;
+      }
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
     
@@ -336,6 +375,8 @@ int32_t TLSFilterTransaction::FilterInput(char* aBuf, int32_t aAmount) {
     if (mReadSegmentReturnValue == NS_BASE_STREAM_WOULD_BLOCK) {
       mNudgeCounter = 0;
     }
+
+    mFilterReadAmount += outCountRead;
   }
   if (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK) {
     PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
@@ -357,6 +398,10 @@ nsresult TLSFilterTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
   mReadSegmentReturnValue = NS_OK;
   mSegmentReader = aReader;
   nsresult rv = mTransaction->ReadSegments(this, aCount, outCountRead);
+
+  
+  
+
   LOG(("TLSFilterTransaction %p called trans->ReadSegments rv=%" PRIx32 " %d\n",
        this, static_cast<uint32_t>(rv), *outCountRead));
   if (NS_SUCCEEDED(rv) &&

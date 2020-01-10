@@ -186,6 +186,10 @@ class TLSFilterTransaction final : public nsAHttpTransaction,
   nsAHttpSegmentWriter* mSegmentWriter;
 
   nsresult mFilterReadCode;
+  int32_t mFilterReadAmount;
+  
+  
+  bool mInOnReadSegment;
   bool mForce;
   nsresult mReadSegmentReturnValue;
   

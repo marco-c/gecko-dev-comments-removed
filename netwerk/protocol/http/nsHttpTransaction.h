@@ -119,6 +119,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void EnableKeepAlive() { mCaps |= NS_HTTP_ALLOW_KEEPALIVE; }
   void MakeSticky() { mCaps |= NS_HTTP_STICKY_CONNECTION; }
+  void MakeNonSticky() override { mCaps &= ~NS_HTTP_STICKY_CONNECTION; }
 
   
   void SetPriority(int32_t priority) { mPriority = priority; }
