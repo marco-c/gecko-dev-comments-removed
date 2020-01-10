@@ -2,7 +2,7 @@
 
 
 
-#include "MediaHardwareKeysManager.h"
+#include "MediaControlKeysManager.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"

@@ -4,7 +4,7 @@
 
 
 
-#include "MediaHardwareKeysEvent.h"
+#include "MediaControlKeysEvent.h"
 
 #include "MediaControlService.h"
 #include "mozilla/Logging.h"

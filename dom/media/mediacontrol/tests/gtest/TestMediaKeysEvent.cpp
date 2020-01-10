@@ -3,7 +3,7 @@
 
 
 #include "gtest/gtest.h"
-#include "MediaHardwareKeysEvent.h"
+#include "MediaControlKeysEvent.h"
 
 using namespace mozilla::dom;
 
