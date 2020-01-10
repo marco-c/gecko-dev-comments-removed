@@ -254,6 +254,7 @@ class BrowserParent final : public PBrowserParent,
     mBrowserDOMWindow = aBrowserDOMWindow;
   }
 
+  void SetHasContentOpener(bool aHasContentOpener);
 
   void SwapFrameScriptsFrom(nsTArray<FrameScriptInfo>& aFrameScripts) {
     aFrameScripts.SwapElements(mDelayedFrameScripts);
@@ -740,6 +741,8 @@ class BrowserParent final : public PBrowserParent,
 
   void Deprioritize();
 
+  bool GetHasContentOpener();
+
   bool StartApzAutoscroll(float aAnchorX, float aAnchorY, nsViewID aScrollId,
                           uint32_t aPresShellId);
   void StopApzAutoscroll(nsViewID aScrollId, uint32_t aPresShellId);
@@ -944,6 +947,8 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mTabSetsCursor;
+
+  bool mHasContentOpener;
 
   
   
