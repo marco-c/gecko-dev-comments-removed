@@ -64,6 +64,9 @@
 
 
 
+
+
+
 #ifndef XXHASH_H_5627135585666179
 #define XXHASH_H_5627135585666179 1
 
@@ -77,6 +80,8 @@ extern "C" {
 
 #include <stddef.h>   
 typedef enum { XXH_OK=0, XXH_ERROR } XXH_errorcode;
+
+
 
 
 
@@ -107,7 +112,15 @@ typedef enum { XXH_OK=0, XXH_ERROR } XXH_errorcode;
 #    define XXH_PUBLIC_API static
 #  endif
 #else
-#  define XXH_PUBLIC_API
+#  if defined(WIN32) && defined(_MSC_VER) && (defined(XXH_IMPORT) || defined(XXH_EXPORT))
+#    ifdef XXH_EXPORT
+#      define XXH_PUBLIC_API __declspec(dllexport)
+#    elif XXH_IMPORT
+#      define XXH_PUBLIC_API __declspec(dllimport)
+#    endif
+#  else
+#    define XXH_PUBLIC_API
+#  endif
 #endif 
 
 
@@ -150,8 +163,8 @@ typedef enum { XXH_OK=0, XXH_ERROR } XXH_errorcode;
 
 
 #define XXH_VERSION_MAJOR    0
-#define XXH_VERSION_MINOR    6
-#define XXH_VERSION_RELEASE  5
+#define XXH_VERSION_MINOR    7
+#define XXH_VERSION_RELEASE  2
 #define XXH_VERSION_NUMBER  (XXH_VERSION_MAJOR *100*100 + XXH_VERSION_MINOR *100 + XXH_VERSION_RELEASE)
 XXH_PUBLIC_API unsigned XXH_versionNumber (void);
 
@@ -159,14 +172,52 @@ XXH_PUBLIC_API unsigned XXH_versionNumber (void);
 
 
 
-typedef unsigned int XXH32_hash_t;
+#if !defined (__VMS) \
+  && (defined (__cplusplus) \
+  || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) ) )
+#   include <stdint.h>
+    typedef uint32_t XXH32_hash_t;
+#else
+#   include <limits.h>
+#   if UINT_MAX == 0xFFFFFFFFUL
+      typedef unsigned int XXH32_hash_t;
+#   else
+#     if ULONG_MAX == 0xFFFFFFFFUL
+        typedef unsigned long XXH32_hash_t;
+#     else
+#       error "unsupported platform : need a 32-bit type"
+#     endif
+#   endif
+#endif
 
 
 
 
 
 
-XXH_PUBLIC_API XXH32_hash_t XXH32 (const void* input, size_t length, unsigned int seed);
+XXH_PUBLIC_API XXH32_hash_t XXH32 (const void* input, size_t length, XXH32_hash_t seed);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 typedef struct XXH32_state_s XXH32_state_t;   
@@ -174,15 +225,9 @@ XXH_PUBLIC_API XXH32_state_t* XXH32_createState(void);
 XXH_PUBLIC_API XXH_errorcode  XXH32_freeState(XXH32_state_t* statePtr);
 XXH_PUBLIC_API void XXH32_copyState(XXH32_state_t* dst_state, const XXH32_state_t* src_state);
 
-XXH_PUBLIC_API XXH_errorcode XXH32_reset  (XXH32_state_t* statePtr, unsigned int seed);
+XXH_PUBLIC_API XXH_errorcode XXH32_reset  (XXH32_state_t* statePtr, XXH32_hash_t seed);
 XXH_PUBLIC_API XXH_errorcode XXH32_update (XXH32_state_t* statePtr, const void* input, size_t length);
 XXH_PUBLIC_API XXH32_hash_t  XXH32_digest (const XXH32_state_t* statePtr);
-
-
-
-
-
-
 
 
 
@@ -206,24 +251,26 @@ XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t* dst, XXH32_hash_t
 XXH_PUBLIC_API XXH32_hash_t XXH32_hashFromCanonical(const XXH32_canonical_t* src);
 
 
-
-
-
-
-
-
 #ifndef XXH_NO_LONG_LONG
 
 
 
-typedef unsigned long long XXH64_hash_t;
+#if !defined (__VMS) \
+  && (defined (__cplusplus) \
+  || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) ) )
+#   include <stdint.h>
+    typedef uint64_t XXH64_hash_t;
+#else
+    
+    typedef unsigned long long XXH64_hash_t;
+#endif
 
 
 
 
 
 
-XXH_PUBLIC_API XXH64_hash_t XXH64 (const void* input, size_t length, unsigned long long seed);
+XXH_PUBLIC_API XXH64_hash_t XXH64 (const void* input, size_t length, XXH64_hash_t seed);
 
 
 typedef struct XXH64_state_s XXH64_state_t;   
@@ -231,7 +278,7 @@ XXH_PUBLIC_API XXH64_state_t* XXH64_createState(void);
 XXH_PUBLIC_API XXH_errorcode  XXH64_freeState(XXH64_state_t* statePtr);
 XXH_PUBLIC_API void XXH64_copyState(XXH64_state_t* dst_state, const XXH64_state_t* src_state);
 
-XXH_PUBLIC_API XXH_errorcode XXH64_reset  (XXH64_state_t* statePtr, unsigned long long seed);
+XXH_PUBLIC_API XXH_errorcode XXH64_reset  (XXH64_state_t* statePtr, XXH64_hash_t seed);
 XXH_PUBLIC_API XXH_errorcode XXH64_update (XXH64_state_t* statePtr, const void* input, size_t length);
 XXH_PUBLIC_API XXH64_hash_t  XXH64_digest (const XXH64_state_t* statePtr);
 
@@ -239,6 +286,8 @@ XXH_PUBLIC_API XXH64_hash_t  XXH64_digest (const XXH64_state_t* statePtr);
 typedef struct { unsigned char digest[8]; } XXH64_canonical_t;
 XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH64_canonical_t* dst, XXH64_hash_t hash);
 XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src);
+
+
 #endif  
 
 
@@ -256,73 +305,283 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src
 
 
 
-#if !defined (__VMS) \
-  && (defined (__cplusplus) \
-  || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) ) )
-#   include <stdint.h>
-
 struct XXH32_state_s {
-   uint32_t total_len_32;
-   uint32_t large_len;
-   uint32_t v1;
-   uint32_t v2;
-   uint32_t v3;
-   uint32_t v4;
-   uint32_t mem32[4];
-   uint32_t memsize;
-   uint32_t reserved;   
+   XXH32_hash_t total_len_32;
+   XXH32_hash_t large_len;
+   XXH32_hash_t v1;
+   XXH32_hash_t v2;
+   XXH32_hash_t v3;
+   XXH32_hash_t v4;
+   XXH32_hash_t mem32[4];
+   XXH32_hash_t memsize;
+   XXH32_hash_t reserved;   
 };   
 
+#ifndef XXH_NO_LONG_LONG  
 struct XXH64_state_s {
-   uint64_t total_len;
-   uint64_t v1;
-   uint64_t v2;
-   uint64_t v3;
-   uint64_t v4;
-   uint64_t mem64[4];
-   uint32_t memsize;
-   uint32_t reserved[2];          
+   XXH64_hash_t total_len;
+   XXH64_hash_t v1;
+   XXH64_hash_t v2;
+   XXH64_hash_t v3;
+   XXH64_hash_t v4;
+   XXH64_hash_t mem64[4];
+   XXH32_hash_t memsize;
+   XXH32_hash_t reserved32;  
+   XXH64_hash_t reserved64;  
+};   
+#endif   
+
+
+
+
+
+
+#ifndef XXH_NO_LONG_LONG
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef XXH_NAMESPACE
+#  define XXH3_64bits XXH_NAME2(XXH_NAMESPACE, XXH3_64bits)
+#  define XXH3_64bits_withSecret XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_withSecret)
+#  define XXH3_64bits_withSeed XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_withSeed)
+
+#  define XXH3_createState XXH_NAME2(XXH_NAMESPACE, XXH3_createState)
+#  define XXH3_freeState XXH_NAME2(XXH_NAMESPACE, XXH3_freeState)
+#  define XXH3_copyState XXH_NAME2(XXH_NAMESPACE, XXH3_copyState)
+
+#  define XXH3_64bits_reset XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_reset)
+#  define XXH3_64bits_reset_withSeed XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_reset_withSeed)
+#  define XXH3_64bits_reset_withSecret XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_reset_withSecret)
+#  define XXH3_64bits_update XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_update)
+#  define XXH3_64bits_digest XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_digest)
+#endif
+
+
+
+
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits(const void* data, size_t len);
+
+
+
+
+
+
+
+
+
+
+#define XXH3_SECRET_SIZE_MIN 136
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSecret(const void* data, size_t len, const void* secret, size_t secretSize);
+
+
+
+
+
+
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSeed(const void* data, size_t len, XXH64_hash_t seed);
+
+
+
+
+#if defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)   
+#  include <stdalign.h>
+#  define XXH_ALIGN(n)      alignas(n)
+#elif defined(__GNUC__)
+#  define XXH_ALIGN(n)      __attribute__ ((aligned(n)))
+#elif defined(_MSC_VER)
+#  define XXH_ALIGN(n)      __declspec(align(n))
+#else
+#  define XXH_ALIGN(n)
+#endif
+
+typedef struct XXH3_state_s XXH3_state_t;
+
+#define XXH3_SECRET_DEFAULT_SIZE 192   /* minimum XXH3_SECRET_SIZE_MIN */
+#define XXH3_INTERNALBUFFER_SIZE 256
+struct XXH3_state_s {
+   XXH_ALIGN(64) XXH64_hash_t acc[8];
+   XXH_ALIGN(64) unsigned char customSecret[XXH3_SECRET_DEFAULT_SIZE];  
+   XXH_ALIGN(64) unsigned char buffer[XXH3_INTERNALBUFFER_SIZE];
+   XXH32_hash_t bufferedSize;
+   XXH32_hash_t nbStripesPerBlock;
+   XXH32_hash_t nbStripesSoFar;
+   XXH32_hash_t secretLimit;
+   XXH32_hash_t reserved32;
+   XXH32_hash_t reserved32_2;
+   XXH64_hash_t totalLen;
+   XXH64_hash_t seed;
+   XXH64_hash_t reserved64;
+   const unsigned char* secret;    
 };   
 
-# else
 
-struct XXH32_state_s {
-   unsigned total_len_32;
-   unsigned large_len;
-   unsigned v1;
-   unsigned v2;
-   unsigned v3;
-   unsigned v4;
-   unsigned mem32[4];
-   unsigned memsize;
-   unsigned reserved;   
-};   
 
-#   ifndef XXH_NO_LONG_LONG  
-struct XXH64_state_s {
-   unsigned long long total_len;
-   unsigned long long v1;
-   unsigned long long v2;
-   unsigned long long v3;
-   unsigned long long v4;
-   unsigned long long mem64[4];
-   unsigned memsize;
-   unsigned reserved[2];     
-};   
-#    endif
 
-# endif
+
+
+XXH_PUBLIC_API XXH3_state_t* XXH3_createState(void);
+XXH_PUBLIC_API XXH_errorcode XXH3_freeState(XXH3_state_t* statePtr);
+XXH_PUBLIC_API void XXH3_copyState(XXH3_state_t* dst_state, const XXH3_state_t* src_state);
+
+
+
+
+
+XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset(XXH3_state_t* statePtr);
+
+
+
+XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSeed(XXH3_state_t* statePtr, XXH64_hash_t seed);
+
+
+
+
+XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSecret(XXH3_state_t* statePtr, const void* secret, size_t secretSize);
+
+XXH_PUBLIC_API XXH_errorcode XXH3_64bits_update (XXH3_state_t* statePtr, const void* input, size_t length);
+XXH_PUBLIC_API XXH64_hash_t  XXH3_64bits_digest (const XXH3_state_t* statePtr);
+
+
+
+
+#ifdef XXH_NAMESPACE
+#  define XXH128 XXH_NAME2(XXH_NAMESPACE, XXH128)
+#  define XXH3_128bits XXH_NAME2(XXH_NAMESPACE, XXH3_128bits)
+#  define XXH3_128bits_withSeed XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_withSeed)
+#  define XXH3_128bits_withSecret XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_withSecret)
+
+#  define XXH3_128bits_reset XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_reset)
+#  define XXH3_128bits_reset_withSeed XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_reset_withSeed)
+#  define XXH3_128bits_reset_withSecret XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_reset_withSecret)
+#  define XXH3_128bits_update XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_update)
+#  define XXH3_128bits_digest XXH_NAME2(XXH_NAMESPACE, XXH3_128bits_digest)
+
+#  define XXH128_isEqual XXH_NAME2(XXH_NAMESPACE, XXH128_isEqual)
+#  define XXH128_cmp     XXH_NAME2(XXH_NAMESPACE, XXH128_cmp)
+#  define XXH128_canonicalFromHash XXH_NAME2(XXH_NAMESPACE, XXH128_canonicalFromHash)
+#  define XXH128_hashFromCanonical XXH_NAME2(XXH_NAMESPACE, XXH128_hashFromCanonical)
+#endif
+
+typedef struct {
+    XXH64_hash_t low64;
+    XXH64_hash_t high64;
+} XXH128_hash_t;
+
+XXH_PUBLIC_API XXH128_hash_t XXH128(const void* data, size_t len, XXH64_hash_t seed);
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits(const void* data, size_t len);
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_withSeed(const void* data, size_t len, XXH64_hash_t seed);  
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_withSecret(const void* data, size_t len, const void* secret, size_t secretSize);
+
+XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset(XXH3_state_t* statePtr);
+XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset_withSeed(XXH3_state_t* statePtr, XXH64_hash_t seed);
+XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset_withSecret(XXH3_state_t* statePtr, const void* secret, size_t secretSize);
+
+XXH_PUBLIC_API XXH_errorcode XXH3_128bits_update (XXH3_state_t* statePtr, const void* input, size_t length);
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_digest (const XXH3_state_t* statePtr);
+
+
+
+
+
+
+XXH_PUBLIC_API int XXH128_isEqual(XXH128_hash_t h1, XXH128_hash_t h2);
+
+
+
+
+
+XXH_PUBLIC_API int XXH128_cmp(const void* h128_1, const void* h128_2);
+
+
+
+typedef struct { unsigned char digest[16]; } XXH128_canonical_t;
+XXH_PUBLIC_API void XXH128_canonicalFromHash(XXH128_canonical_t* dst, XXH128_hash_t hash);
+XXH_PUBLIC_API XXH128_hash_t XXH128_hashFromCanonical(const XXH128_canonical_t* src);
+
+
+#endif
+
+
+
 
 
 #if defined(XXH_INLINE_ALL) || defined(XXH_PRIVATE_API)
-#  include "xxhash.c"   
+#  include "xxhash.c"   /* include xxhash function bodies as `static`, for inlining */
 #endif
 
-#endif 
+
+
+#endif
 
 
 #if defined (__cplusplus)
 }
 #endif
 
-#endif 
+#endif
