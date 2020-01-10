@@ -36,7 +36,7 @@ ChildProcessInfo::ChildProcessInfo(
   static bool gFirst = false;
   if (!gFirst) {
     gFirst = true;
-    gChildrenAreDebugging = !!getenv("WAIT_AT_START");
+    gChildrenAreDebugging = !!getenv("MOZ_REPLAYING_WAIT_AT_START");
   }
 
   LaunchSubprocess(aRecordingProcessData);
@@ -51,7 +51,6 @@ ChildProcessInfo::~ChildProcessInfo() {
 
 void ChildProcessInfo::OnIncomingMessage(const Message& aMsg) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  mLastMessageTime = TimeStamp::Now();
 
   switch (aMsg.mType) {
     case MessageType::BeginFatalError:
@@ -85,6 +84,9 @@ void ChildProcessInfo::OnIncomingMessage(const Message& aMsg) {
     case MessageType::ResetMiddlemanCalls:
       ResetMiddlemanCalls(GetId());
       break;
+    case MessageType::PingResponse:
+      OnPingResponse(static_cast<const PingResponseMessage&>(aMsg));
+      break;
     default:
       break;
   }
@@ -100,7 +102,6 @@ void ChildProcessInfo::SendMessage(Message&& aMsg) {
     mPaused = false;
   }
 
-  mLastMessageTime = TimeStamp::Now();
   mChannel->SendMessage(std::move(aMsg));
 }
 
@@ -171,8 +172,6 @@ void ChildProcessInfo::LaunchSubprocess(
   } else {
     dom::ContentChild::GetSingleton()->SendCreateReplayingProcess(channelId);
   }
-
-  mLastMessageTime = TimeStamp::Now();
 
   SendGraphicsMemoryToChild();
 
@@ -260,21 +259,107 @@ static Message::UniquePtr ExtractChildMessage(ChildProcessInfo** aProcess) {
 
 
 
-static bool gHasPendingMessageRunnable;
 
 
 
-static const size_t HangSeconds = 30;
+
+
+
+
+
+
+
+
+
+
+
+
+static const size_t PingIntervalSeconds = 2;
+static const size_t MaxStalledPings = 10;
+
+bool ChildProcessInfo::IsHanged() {
+  if (mPings.length() < MaxStalledPings) {
+    return false;
+  }
+
+  size_t firstIndex = mPings.length() - MaxStalledPings;
+  uint64_t firstValue = mPings[firstIndex].mProgress;
+  if (!firstValue) {
+    
+    return true;
+  }
+
+  for (size_t i = firstIndex; i < mPings.length(); i++) {
+    if (mPings[i].mProgress && mPings[i].mProgress != firstValue) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void ChildProcessInfo::ResetPings(bool aMightRewind) {
+  mMightRewind = aMightRewind;
+  mPings.clear();
+  mLastPingTime = TimeStamp::Now();
+}
+
+static uint32_t gNumPings;
+
+void ChildProcessInfo::MaybePing() {
+  if (IsRecording() || IsPaused() || gChildrenAreDebugging) {
+    return;
+  }
+
+  TimeStamp now = TimeStamp::Now();
+
+  
+  
+  
+  if (mSentTerminateMessage || mMightRewind) {
+    size_t TerminateSeconds = PingIntervalSeconds * MaxStalledPings;
+    if (now >= mLastPingTime + TimeDuration::FromSeconds(TerminateSeconds)) {
+      OnCrash(mMightRewind
+              ? "Rewinding child process non-responsive"
+              : "Child process non-responsive");
+    }
+    return;
+  }
+
+  if (now < mLastPingTime + TimeDuration::FromSeconds(PingIntervalSeconds)) {
+    return;
+  }
+
+  if (IsHanged()) {
+    
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::RecordReplayHang, true);
+    SendMessage(TerminateMessage());
+    mSentTerminateMessage = true;
+  } else {
+    uint32_t id = ++gNumPings;
+    mPings.emplaceBack(id);
+    SendMessage(PingMessage(id));
+  }
+
+  mLastPingTime = now;
+}
+
+void ChildProcessInfo::OnPingResponse(const PingResponseMessage& aMsg) {
+  for (size_t i = 0; i < mPings.length(); i++) {
+    if (mPings[i].mId == aMsg.mId) {
+      mPings[i].mProgress = aMsg.mProgress;
+      break;
+    }
+  }
+}
 
 void ChildProcessInfo::WaitUntilPaused() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  if (IsPaused()) {
-    return;
-  }
+  while (!IsPaused()) {
+    MaybePing();
 
-  bool sentTerminateMessage = false;
-  while (true) {
     Maybe<MonitorAutoLock> lock;
     lock.emplace(*gMonitor);
 
@@ -287,41 +372,19 @@ void ChildProcessInfo::WaitUntilPaused() {
     if (msg) {
       lock.reset();
       OnIncomingMessage(*msg);
-      if (IsPaused()) {
-        return;
-      }
     } else if (HasCrashed()) {
       
-      return;
-    } else if (gChildrenAreDebugging || IsRecording()) {
-      
-      
-      
-      gMonitor->Wait();
+      break;
     } else {
-      TimeStamp deadline =
-          mLastMessageTime + TimeDuration::FromSeconds(HangSeconds);
-      if (TimeStamp::Now() < deadline) {
-        gMonitor->WaitUntil(deadline);
-      } else {
-        MonitorAutoUnlock unlock(*gMonitor);
-        if (!sentTerminateMessage) {
-          
-          
-          
-          CrashReporter::AnnotateCrashReport(
-              CrashReporter::Annotation::RecordReplayHang, true);
-          SendMessage(TerminateMessage());
-          sentTerminateMessage = true;
-        } else {
-          
-          
-          OnCrash("Child process non-responsive");
-        }
-      }
+      TimeStamp deadline = TimeStamp::Now() + TimeDuration::FromSeconds(PingIntervalSeconds);
+      gMonitor->WaitUntil(deadline);
     }
   }
 }
+
+
+
+static bool gHasPendingMessageRunnable;
 
 
 

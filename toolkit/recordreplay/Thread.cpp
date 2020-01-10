@@ -526,5 +526,19 @@ void Thread::Notify(size_t aId) {
   DirectWrite(GetById(aId)->mNotifyfd, &data, 1);
 }
 
+
+size_t Thread::TotalEventProgress() {
+  size_t result = 0;
+  for (size_t id = MainThreadId; id <= MaxRecordedThreadId; id++) {
+    Thread* thread = GetById(id);
+
+    
+    
+    
+    result += thread->mEvents->StreamPosition();
+  }
+  return result;
+}
+
 }  
 }  

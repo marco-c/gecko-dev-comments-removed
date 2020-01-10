@@ -36,7 +36,6 @@ const {
   positionEquals,
   positionSubsumes,
   setInterval,
-  setTimeout,
 } = sandbox;
 
 const InvalidCheckpointId = 0;
@@ -180,6 +179,8 @@ ChildProcess.prototype = {
   
   
   
+  
+  
   sendManifest(manifest) {
     assert(!this.crashed);
     assert(this.paused);
@@ -187,26 +188,10 @@ ChildProcess.prototype = {
     this.manifest = manifest;
     this.manifestSendTime = Date.now();
 
-    dumpv(`SendManifest #${this.id} ${stringify(manifest.contents)}`);
-    RecordReplayControl.sendManifest(this.id, manifest.contents);
+    const { contents, mightRewind } = manifest;
 
-    
-    
-    
-    
-    if (this != gMainChild) {
-      
-      
-      let waitDuration = 30 * 1000;
-      if (manifest.expectedDuration) {
-        waitDuration += manifest.expectedDuration;
-      }
-      setTimeout(() => {
-        if (!this.crashed && this.manifest == manifest) {
-          this.waitUntilPaused();
-        }
-      }, waitDuration);
-    }
+    dumpv(`SendManifest #${this.id} ${stringify(contents)}`);
+    RecordReplayControl.sendManifest(this.id, contents, mightRewind);
   },
 
   
@@ -221,6 +206,9 @@ ChildProcess.prototype = {
       }
       if (response.exception) {
         ThrowError(response.exception);
+      }
+      if (response.restoredSnapshot) {
+        assert(this.manifest.mightRewind);
       }
     }
     this.paused = true;
@@ -387,6 +375,9 @@ function asyncManifestWorklist(lowPriority) {
 
 
 
+
+
+
 function sendAsyncManifest(manifest) {
   pokeChildrenSoon();
   return new Promise(resolve => {
@@ -484,6 +475,7 @@ function processAsyncManifest(child) {
     },
     destination: manifest.destination,
     expectedDuration: manifest.expectedDuration,
+    mightRewind: manifest.mightRewind,
   });
 
   return true;
@@ -644,6 +636,7 @@ function maybeReachPoint(child, endpoint, snapshot) {
         child.divergedFromRecording = false;
       },
       destination: child.lastSnapshot(),
+      mightRewind: true,
     });
   }
 }
@@ -743,9 +736,17 @@ const gBreakpoints = [];
 
 
 
-function findScanChild(checkpoint) {
+function findScanChild(checkpoint, requireComplete) {
   for (const child of gReplayingChildren) {
     if (child && child.scannedCheckpoints.has(checkpoint)) {
+      if (
+        requireComplete &&
+        !child.paused &&
+        child.manifest.contents.kind == "scanRecording" &&
+        child.lastPausePoint.checkpoint == checkpoint
+      ) {
+        continue;
+      }
       return child;
     }
   }
@@ -808,7 +809,7 @@ function unscannedRegions() {
   }
 
   forAllSavedCheckpoints(checkpoint => {
-    if (!findScanChild(checkpoint)) {
+    if (!findScanChild(checkpoint,  true)) {
       addRegion(checkpoint, nextSavedCheckpoint(checkpoint));
     }
   });
@@ -1051,6 +1052,7 @@ async function queuePauseData({
     snapshot,
     expectedDuration: 250,
     lowPriority: true,
+    mightRewind: true,
   });
 }
 
@@ -1168,7 +1170,6 @@ function sendActiveChildToPausePoint() {
               requests: gDebuggerRequests.map(r => r.request),
             },
             onFinished(finishData) {
-              assert(!finishData.restoredSnapshot);
               if (finishData.divergedFromRecording) {
                 child.divergedFromRecording = true;
               }
@@ -1591,6 +1592,7 @@ async function evaluateLogpoint({ point, text, condition, callback }) {
     point,
     expectedDuration: 250,
     lowPriority: true,
+    mightRewind: true,
   };
   sendAsyncManifest(manifest);
 }
@@ -1835,9 +1837,9 @@ function ensureFlushed() {
 
 const CheckFlushMs = 1000;
 
-
-
 setInterval(() => {
+  
+  
   const elapsed = Date.now() - gLastFlushTime;
   if (
     elapsed > CheckFlushMs &&
@@ -1846,7 +1848,14 @@ setInterval(() => {
   ) {
     ensureFlushed();
   }
-}, CheckFlushMs);
+
+  
+  for (const child of gReplayingChildren) {
+    if (child) {
+      RecordReplayControl.maybePing(child.id);
+    }
+  }
+}, 1000);
 
 
 function BeforeSaveRecording() {
@@ -2062,6 +2071,7 @@ const gControl = {
       onFinished(finishData) {
         data = finishData;
       },
+      mightRewind: true,
     });
     gActiveChild.waitUntilPaused();
 
@@ -2095,7 +2105,7 @@ const gControl = {
       },
     });
     gMainChild.waitUntilPaused();
-    assert(!data.restoredSnapshot && !data.divergedFromRecording);
+    assert(!data.divergedFromRecording);
     return data.response;
   },
 

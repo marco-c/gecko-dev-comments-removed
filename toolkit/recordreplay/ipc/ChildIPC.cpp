@@ -104,6 +104,18 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
           [=]() { gDebuggerRunsInMiddleman = true; });
       break;
     }
+    case MessageType::Ping: {
+      
+      
+      
+      
+      
+      
+      const PingMessage& nmsg = (const PingMessage&)*aMsg;
+      uint64_t total = *ExecutionProgressCounter() + Thread::TotalEventProgress();
+      gChannel->SendMessage(PingResponseMessage(nmsg.mId, total));
+      break;
+    }
     case MessageType::Terminate: {
       
       

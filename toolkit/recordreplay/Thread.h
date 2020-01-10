@@ -307,6 +307,10 @@ class Thread {
   
   
   bool ShouldIdle() { return mShouldIdle; }
+
+  
+  
+  static size_t TotalEventProgress();
 };
 
 

@@ -154,9 +154,6 @@ class ChildProcessInfo {
   Channel* mChannel = nullptr;
 
   
-  TimeStamp mLastMessageTime;
-
-  
   bool mRecording = false;
 
   
@@ -167,11 +164,33 @@ class ChildProcessInfo {
   bool mHasBegunFatalError = false;
   bool mHasFatalError = false;
 
+  
+  bool mMightRewind = false;
+
+  
+  
+  bool mSentTerminateMessage = false;
+
+  
+  TimeStamp mLastPingTime;
+
+  struct PingInfo {
+    uint32_t mId;
+    uint64_t mProgress;
+
+    explicit PingInfo(uint32_t aId) : mId(aId), mProgress(0) {}
+  };
+
+  
+  InfallibleVector<PingInfo> mPings;
+
   void OnIncomingMessage(const Message& aMsg);
 
   static void MaybeProcessPendingMessageRunnable();
   void ReceiveChildMessageOnMainThread(Message::UniquePtr aMsg);
 
+  bool IsHanged();
+  void OnPingResponse(const PingResponseMessage& aMsg);
   void OnCrash(const char* aWhy);
   void LaunchSubprocess(
       const Maybe<RecordingProcessData>& aRecordingProcessData);
@@ -195,6 +214,9 @@ class ChildProcessInfo {
   void WaitUntilPaused();
 
   static void SetIntroductionMessage(IntroductionMessage* aMessage);
+
+  void ResetPings(bool aMightRewind);
+  void MaybePing();
 };
 
 }  
