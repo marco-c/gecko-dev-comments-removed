@@ -435,12 +435,6 @@ To see more help for a specific command, run:
         handler = getattr(args, 'mach_handler')
 
         
-        
-        if args.print_command:
-            print(handler.name)
-            sys.exit(0)
-
-        
         if args.logfile:
             self.log_manager.add_json_handler(args.logfile)
 
