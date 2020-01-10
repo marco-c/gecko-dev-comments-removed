@@ -29,7 +29,7 @@ use cranelift_codegen::isa::{CallConv, TargetFrontendConfig, TargetIsa};
 use cranelift_codegen::packed_option::PackedOption;
 use cranelift_wasm::{
     FuncEnvironment, FuncIndex, GlobalIndex, GlobalVariable, MemoryIndex, ReturnMode,
-    SignatureIndex, TableIndex, WasmResult,
+    SignatureIndex, TableIndex, WasmError, WasmResult,
 };
 
 use crate::bindings;
@@ -436,7 +436,11 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
     }
 
     fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> WasmResult<ir::Heap> {
-        assert_eq!(index.index(), 0, "Only one WebAssembly memory supported");
+        
+        if index.index() != 0 {
+            return Err(WasmError::Unsupported("only one wasm memory supported"));
+        }
+
         
         let base_addr = self.get_vmctx_gv(func);
         
@@ -553,7 +557,9 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         let wsig = self.env.signature(sig_index);
 
         
-        assert_eq!(table_index.index(), 0);
+        if table_index.index() != 0 {
+            return Err(WasmError::Unsupported("only one wasm table supported"));
+        }
         let wtable = self.get_table(pos.func, table_index);
 
         
