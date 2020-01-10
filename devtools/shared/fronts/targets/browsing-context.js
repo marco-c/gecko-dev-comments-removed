@@ -15,8 +15,8 @@ const { TargetMixin } = require("./target-mixin");
 class BrowsingContextTargetFront extends TargetMixin(
   FrontClassWithSpec(browsingContextTargetSpec)
 ) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     

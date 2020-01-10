@@ -241,11 +241,11 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     
     
     if (form.actor.includes("contentProcessTarget")) {
-      front = new ContentProcessTargetFront(this._client);
+      front = new ContentProcessTargetFront(this._client, null, this);
     } else {
       
       
-      front = new BrowsingContextTargetFront(this._client);
+      front = new BrowsingContextTargetFront(this._client, null, this);
     }
     
     
@@ -268,7 +268,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     if (front) {
       return front;
     }
-    front = new ProcessDescriptorFront(this._client);
+    front = new ProcessDescriptorFront(this._client, null, this);
     front.form(form);
     front.actorID = form.actor;
     this.manage(front);
@@ -339,9 +339,9 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     
     
     if (filter && filter.tab && filter.tab.tagName == "tab") {
-      front = new LocalTabTargetFront(this._client, filter.tab);
+      front = new LocalTabTargetFront(this._client, null, this, filter.tab);
     } else {
-      front = new BrowsingContextTargetFront(this._client);
+      front = new BrowsingContextTargetFront(this._client, null, this);
     }
     
     

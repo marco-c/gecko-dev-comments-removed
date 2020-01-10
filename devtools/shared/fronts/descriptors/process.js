@@ -18,8 +18,8 @@ const {
 } = require("devtools/shared/protocol");
 
 class ProcessDescriptorFront extends FrontClassWithSpec(processDescriptorSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
     this.isParent = false;
     this._processTargetFront = null;
     this._targetFrontPromise = null;
@@ -41,9 +41,9 @@ class ProcessDescriptorFront extends FrontClassWithSpec(processDescriptorSpec) {
     if (form.actor.includes("parentProcessTarget")) {
       
       
-      front = new BrowsingContextTargetFront(this._client);
+      front = new BrowsingContextTargetFront(this._client, null, this);
     } else {
-      front = new ContentProcessTargetFront(this._client);
+      front = new ContentProcessTargetFront(this._client, null, this);
     }
     
     
