@@ -210,23 +210,17 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     nsString mHeader;
   };
 
-  
-  class CurrentLineContent {
-   public:
-    
-    void MaybeReplaceNbsps(int32_t aFlags);
-
-    nsString mValue;
-  };
-
   class CurrentLine {
    public:
     void ResetContentAndIndentationHeader();
 
+    
+    void MaybeReplaceNbspsInContent(int32_t aFlags);
+
     void CreateQuotesAndIndent(nsAString& aResult) const;
 
     bool HasContentOrIndentationHeader() const {
-      return !mContent.mValue.IsEmpty() || !mIndentation.mHeader.IsEmpty();
+      return !mContent.IsEmpty() || !mIndentation.mHeader.IsEmpty();
     }
 
     
@@ -240,7 +234,8 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     
     int32_t mCiteQuoteLevel = 0;
 
-    CurrentLineContent mContent;
+    
+    nsString mContent;
   };
 
   CurrentLine mCurrentLine;
