@@ -321,7 +321,7 @@ SpecialPowersObserverAPI.prototype = {
 
 
   
-  receiveMessage(aMessage) {
+  _receiveMessage(aMessage) {
     
     
     
