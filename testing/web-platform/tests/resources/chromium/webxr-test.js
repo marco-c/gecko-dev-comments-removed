@@ -282,8 +282,21 @@ class MockRuntime {
   }
 
   simulateVisibilityChange(visibilityState) {
-    
-    
+    let mojoState = null;
+    switch(visibilityState) {
+      case "visible":
+        mojoState = device.mojom.XRVisibilityState.VISIBLE;
+        break;
+      case "visible-blurred":
+        mojoState = device.mojom.XRVisibilityState.VISIBLE_BLURRED;
+        break;
+      case "hidden":
+        mojoState = device.mojom.XRVisibilityState.HIDDEN;
+        break;
+    }
+    if (mojoState) {
+      this.sessionClient_.onVisibilityStateChanged(mojoState);
+    }
   }
 
   setBoundsGeometry(bounds) {
