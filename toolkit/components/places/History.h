@@ -30,6 +30,7 @@ namespace places {
 
 struct VisitData;
 class ConcurrentStatementsHolder;
+class VisitedQuery;
 
 
 #define RECENTLY_VISITED_URIS_SIZE 64
@@ -64,10 +65,7 @@ class History final : public BaseHistory,
 
   History();
 
-  
-
-
-  nsresult GetIsVisitedStatement(mozIStorageCompletionCallback* aCallback);
+  nsresult QueueVisitedStatement(RefPtr<VisitedQuery>);
 
   
 
