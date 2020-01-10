@@ -17,7 +17,6 @@ module.exports = {
     "jsx-a11y", 
     
     
-    "fetch-options", 
   ],
   "settings": {
     "react": {
