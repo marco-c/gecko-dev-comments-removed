@@ -1,17 +1,16 @@
 
 
 
+
 "use strict";
 
+const promise = require("promise");
 const {
   FrontClassWithSpec,
   types,
   registerFront,
 } = require("devtools/shared/protocol.js");
-
 const { nodeSpec, nodeListSpec } = require("devtools/shared/specs/node");
-
-const promise = require("promise");
 const { SimpleStringFront } = require("devtools/shared/fronts/string");
 
 loader.lazyRequireGetter(
@@ -114,8 +113,8 @@ class AttributeModificationList {
 
 
 class NodeFront extends FrontClassWithSpec(nodeSpec) {
-  constructor(conn, form) {
-    super(conn, form);
+  constructor(conn, targetFront, parentFront) {
+    super(conn, targetFront, parentFront);
     
     this._parent = null;
     

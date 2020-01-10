@@ -325,15 +325,14 @@ types.addActorType = function(name) {
           lazyLoadFront(name);
         }
 
+        const parentFront = ctx.marshallPool();
+        const targetFront = parentFront.targetFront;
+
         
         
         const Class = type.frontClass;
-        front = new Class(ctx.conn);
+        front = new Class(ctx.conn, targetFront, parentFront);
         front.actorID = actorID;
-        const parentFront = ctx.marshallPool();
-        
-        
-        front.targetFront = parentFront.targetFront;
         parentFront.manage(front);
       }
 
@@ -502,16 +501,14 @@ function getFront(client, typeName, form, target = null) {
   const type = types.getType(typeName);
   if (!type) {
     throw new Error(`No spec for front type '${typeName}'.`);
-  }
-  if (!type.frontClass) {
+  } else if (!type.frontClass) {
     lazyLoadFront(typeName);
   }
+
   
   
   const Class = type.frontClass;
-  const instance = new Class(client);
-  
-  instance.targetFront = target;
+  const instance = new Class(client, target, target);
   const { formAttributeName } = instance;
   if (!formAttributeName) {
     throw new Error(`Can't find the form attribute name for ${typeName}`);

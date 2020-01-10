@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -23,8 +24,8 @@ loader.lazyRequireGetter(
 
 
 class PageStyleFront extends FrontClassWithSpec(pageStyleSpec) {
-  constructor(conn) {
-    super(conn);
+  constructor(conn, targetFront, parentFront) {
+    super(conn, targetFront, parentFront);
     this.inspector = this.parent();
   }
 
@@ -84,8 +85,8 @@ registerFront(PageStyleFront);
 
 
 class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     this.before("location-changed", this._locationChangedPre.bind(this));
   }

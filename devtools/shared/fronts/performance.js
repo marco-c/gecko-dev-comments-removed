@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { Cu } = require("chrome");
@@ -21,8 +22,8 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(this, "getSystemInfo", "devtools/shared/system", true);
 
 class PerformanceFront extends FrontClassWithSpec(performanceSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
     this._queuedRecordings = [];
     this._onRecordingStartedEvent = this._onRecordingStartedEvent.bind(this);
     this.flushQueuedRecordings = this.flushQueuedRecordings.bind(this);

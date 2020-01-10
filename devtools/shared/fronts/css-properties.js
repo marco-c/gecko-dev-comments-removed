@@ -1,14 +1,14 @@
 
 
 
+
 "use strict";
 
-loader.lazyRequireGetter(
-  this,
-  "CSS_PROPERTIES_DB",
-  "devtools/shared/css/properties-db",
-  true
-);
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 
 loader.lazyRequireGetter(
   this,
@@ -16,12 +16,18 @@ loader.lazyRequireGetter(
   "devtools/shared/css/color-db",
   true
 );
-
-const {
-  FrontClassWithSpec,
-  registerFront,
-} = require("devtools/shared/protocol");
-const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
+loader.lazyRequireGetter(
+  this,
+  "CSS_PROPERTIES_DB",
+  "devtools/shared/css/properties-db",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "CSS_TYPES",
+  "devtools/shared/css/constants",
+  true
+);
 
 
 
@@ -38,23 +44,6 @@ var IS_VARIABLE_TOKEN = new RegExp(
   "i"
 );
 
-loader.lazyRequireGetter(
-  this,
-  "CSS_TYPES",
-  "devtools/shared/css/constants",
-  true
-);
-
-
-
-
-
-
-
-function isCssVariable(input) {
-  return !!input.match(IS_VARIABLE_TOKEN);
-}
-
 var cachedCssProperties = new WeakMap();
 
 
@@ -64,26 +53,12 @@ var cachedCssProperties = new WeakMap();
 
 
 class CssPropertiesFront extends FrontClassWithSpec(cssPropertiesSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront) {
+    super(client, targetFront);
 
     
     this.formAttributeName = "cssPropertiesActor";
   }
-}
-
-
-
-
-
-
-
-
-function hasFeature(featureSet, feature) {
-  if (feature in featureSet) {
-    return featureSet[feature];
-  }
-  return false;
 }
 
 
@@ -208,6 +183,30 @@ CssProperties.prototype = {
     return this.cssColor4ColorFunction;
   },
 };
+
+
+
+
+
+
+
+function isCssVariable(input) {
+  return !!input.match(IS_VARIABLE_TOKEN);
+}
+
+
+
+
+
+
+
+
+function hasFeature(featureSet, feature) {
+  if (feature in featureSet) {
+    return featureSet[feature];
+  }
+  return false;
+}
 
 
 

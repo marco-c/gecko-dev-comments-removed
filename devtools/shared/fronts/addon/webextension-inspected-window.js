@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -18,8 +19,8 @@ const {
 class WebExtensionInspectedWindowFront extends FrontClassWithSpec(
   webExtensionInspectedWindowSpec
 ) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "webExtensionInspectedWindowActor";

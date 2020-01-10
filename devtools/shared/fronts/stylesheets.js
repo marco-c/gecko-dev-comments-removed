@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -31,8 +32,8 @@ loader.lazyRequireGetter(
 
 
 class MediaRuleFront extends FrontClassWithSpec(mediaRuleSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     this._onMatchesChange = this._onMatchesChange.bind(this);
     this.on("matches-change", this._onMatchesChange);
@@ -74,8 +75,8 @@ registerFront(MediaRuleFront);
 
 
 class StyleSheetFront extends FrontClassWithSpec(styleSheetSpec) {
-  constructor(conn, form) {
-    super(conn, form);
+  constructor(conn, targetFront, parentFront) {
+    super(conn, targetFront, parentFront);
 
     this._onPropertyChange = this._onPropertyChange.bind(this);
     this.on("property-change", this._onPropertyChange);
@@ -151,8 +152,8 @@ registerFront(StyleSheetFront);
 
 
 class StyleSheetsFront extends FrontClassWithSpec(styleSheetsSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "styleSheetsActor";

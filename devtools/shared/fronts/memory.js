@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { memorySpec } = require("devtools/shared/specs/memory");
@@ -22,8 +23,8 @@ loader.lazyRequireGetter(
 );
 
 class MemoryFront extends FrontClassWithSpec(memorySpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
     this._client = client;
     this.heapSnapshotFileActorID = null;
 

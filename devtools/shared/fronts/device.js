@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { Cu } = require("chrome");
@@ -12,8 +13,8 @@ const {
 const defer = require("devtools/shared/defer");
 
 class DeviceFront extends FrontClassWithSpec(deviceSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "deviceActor";

@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -13,8 +14,8 @@ const { promisesSpec } = require("devtools/shared/specs/promises");
 
 
 class PromisesFront extends FrontClassWithSpec(promisesSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "promisesActor";

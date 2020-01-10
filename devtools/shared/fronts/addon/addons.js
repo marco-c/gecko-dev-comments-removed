@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { addonsSpec } = require("devtools/shared/specs/addon/addons");
@@ -10,8 +11,8 @@ const {
 } = require("devtools/shared/protocol");
 
 class AddonsFront extends FrontClassWithSpec(addonsSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "addonsActor";

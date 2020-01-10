@@ -36,13 +36,22 @@ function defer() {
 
 
 
+
+
+
+
+
+
 class Front extends Pool {
-  constructor(conn = null) {
+  constructor(conn = null, targetFront = null, parentFront = null) {
     super(conn);
     this.actorID = null;
     
     
-    this.targetFront = null;
+    this.targetFront = targetFront;
+    
+    
+    this.parentFront = parentFront;
     this._requests = [];
 
     
@@ -75,6 +84,7 @@ class Front extends Pool {
     this.clearEvents();
     this.actorID = null;
     this.targetFront = null;
+    this.parentFront = null;
     this._frontListeners = null;
     this._beforeListeners = null;
   }

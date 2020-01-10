@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -14,8 +15,8 @@ const {
 } = require("devtools/shared/specs/highlighters");
 
 class HighlighterFront extends FrontClassWithSpec(highlighterSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     this.isNodeFrontHighlighted = false;
     this.isPicking = false;
@@ -102,8 +103,8 @@ exports.HighlighterFront = HighlighterFront;
 registerFront(HighlighterFront);
 
 class CustomHighlighterFront extends FrontClassWithSpec(customHighlighterSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     this._isShown = false;
   }

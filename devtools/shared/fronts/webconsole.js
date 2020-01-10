@@ -21,12 +21,9 @@ const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
 
 
 
-
-
-
 class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
     this._client = client;
     this.traits = {};
     this._longStrings = {};

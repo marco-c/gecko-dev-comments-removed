@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -13,8 +14,8 @@ const { emulationSpec } = require("devtools/shared/specs/emulation");
 
 
 class EmulationFront extends FrontClassWithSpec(emulationSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "emulationActor";

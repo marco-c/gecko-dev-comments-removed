@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -21,8 +22,8 @@ for (const childSpec of Object.values(childSpecs)) {
 }
 
 class StorageFront extends FrontClassWithSpec(storageSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "storageActor";

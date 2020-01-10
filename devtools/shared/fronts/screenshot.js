@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { screenshotSpec } = require("devtools/shared/specs/screenshot");
@@ -11,8 +12,8 @@ const {
 } = require("devtools/shared/protocol");
 
 class ScreenshotFront extends FrontClassWithSpec(screenshotSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "screenshotActor";

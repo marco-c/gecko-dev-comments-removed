@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -14,8 +15,8 @@ const { webSocketSpec } = require("devtools/shared/specs/websocket");
 
 
 class WebSocketFront extends FrontClassWithSpec(webSocketSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     this._onWebSocketOpened = this._onWebSocketOpened.bind(this);
     this._onWebSocketClosed = this._onWebSocketClosed.bind(this);

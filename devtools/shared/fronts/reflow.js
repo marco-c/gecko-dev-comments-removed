@@ -19,8 +19,8 @@ const {
 
 
 class ReflowFront extends FrontClassWithSpec(reflowSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "reflowActor";

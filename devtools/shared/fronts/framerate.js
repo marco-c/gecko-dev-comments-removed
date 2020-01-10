@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -13,8 +14,8 @@ const { framerateSpec } = require("devtools/shared/specs/framerate");
 
 
 class FramerateFront extends FrontClassWithSpec(framerateSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "framerateActor";

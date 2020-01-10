@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -13,8 +14,8 @@ const {
 } = require("devtools/shared/specs/animation");
 
 class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
-  constructor(conn, form) {
-    super(conn, form);
+  constructor(conn, targetFront, parentFront) {
+    super(conn, targetFront, parentFront);
 
     this.state = {};
     this.before("changed", this.onChanged.bind(this));
@@ -200,8 +201,8 @@ exports.AnimationPlayerFront = AnimationPlayerFront;
 registerFront(AnimationPlayerFront);
 
 class AnimationsFront extends FrontClassWithSpec(animationsSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "animationsActor";

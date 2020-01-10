@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -10,8 +11,8 @@ const {
 const { perfSpec } = require("devtools/shared/specs/perf");
 
 class PerfFront extends FrontClassWithSpec(perfSpec) {
-  constructor(client) {
-    super(client);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     this.formAttributeName = "perfActor";
