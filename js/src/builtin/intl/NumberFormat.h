@@ -162,15 +162,22 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
   UNumberFormatter* toFormatter(JSContext* cx, const char* locale);
 
-  enum class CurrencyDisplay { Code, Name, Symbol };
-
   
 
 
 
 
 
-  MOZ_MUST_USE bool currency(CurrencyDisplay display, JSLinearString* currency);
+  MOZ_MUST_USE bool currency(JSLinearString* currency);
+
+  enum class CurrencyDisplay { Code, Name, Symbol, NarrowSymbol };
+
+  
+
+
+
+
+  MOZ_MUST_USE bool currencyDisplay(CurrencyDisplay display);
 
   
 

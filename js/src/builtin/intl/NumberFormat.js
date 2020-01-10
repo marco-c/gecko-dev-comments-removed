@@ -467,7 +467,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
 
     
     var currencyDisplay = GetOption(options, "currencyDisplay", "string",
-                                    ["code", "symbol", "name"], "symbol");
+                                    ["code", "symbol", "narrowSymbol", "name"], "symbol");
     if (style === "currency")
         lazyNumberFormatData.currencyDisplay = currencyDisplay;
 
