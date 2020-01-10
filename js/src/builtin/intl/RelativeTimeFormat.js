@@ -20,12 +20,16 @@ var relativeTimeFormatInternalProperties = {
         addSpecialMissingLanguageTags(locales);
         return (this._availableLocales = locales);
     },
-    relevantExtensionKeys: [],
+    relevantExtensionKeys: ["nu"],
 };
 
 function relativeTimeFormatLocaleData() {
-    
-    return {};
+    return {
+        nu: getNumberingSystems,
+        default: {
+            nu: intl_numberingSystem,
+        },
+    };
 }
 
 
@@ -49,8 +53,9 @@ function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
     internalProps.locale = r.locale;
 
     
-    assert(r.locale === r.dataLocale,
-           "resolved locale matches the resolved data-locale when no extension-keys are present");
+    internalProps.numberingSystem = r.nu;
+
+    
 
     
     internalProps.style = lazyRelativeTimeFormatData.style;
@@ -252,6 +257,7 @@ function Intl_RelativeTimeFormat_resolvedOptions() {
         locale: internals.locale,
         style: internals.style,
         numeric: internals.numeric,
+        numberingSystem: internals.numberingSystem,
     };
 
     
