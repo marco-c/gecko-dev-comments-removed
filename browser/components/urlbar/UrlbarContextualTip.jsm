@@ -31,6 +31,7 @@ class UrlbarContextualTip {
 
 
 
+
   constructor(view) {
     this.document = view.document;
     this.view = view;
@@ -99,8 +100,19 @@ class UrlbarContextualTip {
 
 
 
+
+
+
+
+
+
+
   set(details) {
-    let { title, buttonTitle, linkTitle } = details;
+    let { iconStyle, title, buttonTitle, linkTitle } = details;
+
+    if (iconStyle) {
+      this._elements.icon.setAttribute("style", iconStyle);
+    }
 
     this._elements.title.textContent = title;
 

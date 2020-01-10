@@ -65,6 +65,13 @@ class UrlbarView {
 
 
 
+
+
+
+
+
+
+
   setContextualTip(details) {
     if (!this.contextualTip) {
       this.contextualTip = new UrlbarContextualTip(this);

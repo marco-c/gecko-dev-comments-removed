@@ -15,6 +15,11 @@ var { ExtensionPreferencesManager } = ChromeUtils.import(
 );
 var { getSettingsAPI } = ExtensionPreferencesManager;
 
+var { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
+var { IconDetails } = ExtensionParent;
+
 ExtensionPreferencesManager.addSetting("openViewOnFocus", {
   prefNames: ["browser.urlbar.openViewOnFocus"],
   setCallback(value) {
@@ -32,6 +37,7 @@ ExtensionPreferencesManager.addSetting("engagementTelemetry", {
 
 
 
+
 let idOfExtUsingContextualTip = null;
 
 this.urlbar = class extends ExtensionAPI {
@@ -42,6 +48,41 @@ this.urlbar = class extends ExtensionAPI {
       }
       idOfExtUsingContextualTip = null;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _getStyleFromIconsObject(icons) {
+    let getIcon = (icon, theme) => {
+      if (typeof icon === "object") {
+        return IconDetails.escapeUrl(icon[theme]);
+      }
+      return IconDetails.escapeUrl(icon);
+    };
+
+    let getStyle = (name, icon) => {
+      return `
+        --webextension-${name}: url("${getIcon(icon, "default")}");
+        --webextension-${name}-light: url("${getIcon(icon, "light")}");
+        --webextension-${name}-dark: url("${getIcon(icon, "dark")}");
+      `;
+    };
+
+    let icon16 = IconDetails.getPreferredIcon(icons, this.extension, 16).icon;
+    let icon32 = IconDetails.getPreferredIcon(icons, this.extension, 32).icon;
+    return `
+      ${getStyle("contextual-tip-icon", icon16)}
+      ${getStyle("contextual-tip-icon-2x", icon32)}
+    `;
   }
 
   
@@ -176,10 +217,44 @@ this.urlbar = class extends ExtensionAPI {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
           set: details => {
             this._registerExtensionToUseContextualTip();
+
             const mostRecentWindow = windowTracker.getTopNormalWindow(context);
-            mostRecentWindow.gURLBar.view.setContextualTip(details);
+
+            const iconPathFromDetails = details.icon
+              ? details.icon.defaultIcon
+              : null;
+            const iconPathFromExtensionManifest =
+              context.extension.manifest.icons;
+            const icons = IconDetails.normalize(
+              {
+                path: iconPathFromDetails || iconPathFromExtensionManifest,
+                iconType: "contextualTip",
+                themeIcons: details.icon ? details.icon.themeIcons : null,
+              },
+              context.extension
+            );
+
+            const iconStyle = this._getStyleFromIconsObject(icons);
+
+            mostRecentWindow.gURLBar.view.setContextualTip({
+              iconStyle,
+              title: details.title,
+              buttonTitle: details.buttonTitle,
+              linkTitle: details.linkTitle,
+            });
           },
 
           
