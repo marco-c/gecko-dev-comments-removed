@@ -48,6 +48,8 @@ add_task(async function() {
 
   
   await selectSource(dbg, "long.js");
+  await waitForRequestsToSettle(dbg);
+
   await reload(dbg, "long.js");
   await waitForSelectedSource(dbg, "long.js");
 

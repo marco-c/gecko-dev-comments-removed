@@ -22,7 +22,7 @@ add_task(async function() {
   is(res, 3, "simple() successfully completed");
 
   info("Reload and invoke again");
-  reload(dbg, "simple3");
+  await reload(dbg, "simple3");
   res = await invokeInTab("simple");
   is(res, 3, "simple() successfully completed");
 });

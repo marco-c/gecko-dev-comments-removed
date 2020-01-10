@@ -26,7 +26,6 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
 
       threadClient.once("paused", function(packet) {
         
-        Assert.equal(packet.type, "paused");
         Assert.equal(packet.why.type, "breakpoint");
         
         Assert.equal(debuggee.a, undefined);
@@ -44,7 +43,6 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
 
         threadClient.once("paused", function(packet) {
           
-          Assert.equal(packet.type, "paused");
           Assert.equal(packet.why.type, "breakpoint");
           
           Assert.equal(debuggee.a.b, 1);

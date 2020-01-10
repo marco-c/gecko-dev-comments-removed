@@ -49,6 +49,8 @@ add_task(async function() {
   ok(true, "paused at unmapped breakpoint");
   await waitForState(dbg, state => dbg.selectors.getBreakpointCount(state) == 2);
   ok(true, "unmapped breakpoints shown in UI");
+  await waitForRequestsToSettle(dbg);
+  await toolbox.destroy();
 });
 
 
@@ -87,4 +89,5 @@ add_task(async function() {
         && bps[0].location.line == 15;
   });
   ok(true, "removed old breakpoint during sync");
+  await waitForRequestsToSettle(dbg);
 });

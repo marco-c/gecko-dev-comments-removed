@@ -9,7 +9,7 @@
 
 
 
-add_task(threadClientTest(({ threadClient, debuggee }) => {
+add_task(threadClientTest(({ threadClient, client, debuggee }) => {
   return new Promise(resolve => {
     threadClient.once("paused", async function(packet) {
       const source = await getSourceById(
@@ -23,16 +23,17 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
       };
 
       threadClient.setBreakpoint(location, {});
+      await client.waitForRequestsToSettle();
 
-      threadClient.once("paused", function(packet) {
+      threadClient.once("paused", async function(packet) {
         
-        Assert.equal(packet.type, "paused");
         Assert.equal(packet.why.type, "breakpoint");
         
         Assert.equal(debuggee.i, 0);
 
         
         threadClient.removeBreakpoint(location);
+        await client.waitForRequestsToSettle();
 
         const location2 = {
           sourceUrl: source.url,
@@ -40,26 +41,27 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
           column: 12,
         };
         threadClient.setBreakpoint(location2, {});
+        await client.waitForRequestsToSettle();
 
-        threadClient.once("paused", function(packet) {
+        threadClient.once("paused", async function(packet) {
           
-          Assert.equal(packet.type, "paused");
           Assert.equal(packet.why.type, "breakpoint");
           
           Assert.equal(debuggee.i, 1);
 
           
           threadClient.removeBreakpoint(location2);
+          await client.waitForRequestsToSettle();
 
           threadClient.resume().then(resolve);
         });
 
         
-        threadClient.resume();
+        await threadClient.resume();
       });
 
       
-      threadClient.resume();
+      await threadClient.resume();
     });
 
     

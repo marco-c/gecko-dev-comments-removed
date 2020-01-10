@@ -8,7 +8,7 @@
 
 
 
-add_task(threadClientTest(({ threadClient, debuggee }) => {
+add_task(threadClientTest(({ threadClient, client, debuggee }) => {
   return new Promise((resolve) => {
     threadClient.once("paused", async function(packet) {
       const source = await getSourceById(
@@ -17,7 +17,7 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
       );
       const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
 
-      threadClient.resume();
+      await threadClient.resume();
 
       
       threadClient.once("paused", function(packet) {
@@ -26,6 +26,7 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
       });
 
       threadClient.setBreakpoint(location, {});
+      await client.waitForRequestsToSettle();
       executeSoon(resolve);
     });
 

@@ -22,10 +22,11 @@ add_task(async function() {
 
   
   await clickElement(dbg, "frame", 2);
+  await waitForRequestsToSettle(dbg);
   await waitForSelectedSource(dbg, "simple1.js");
 
   
-  resume(dbg);
+  await resume(dbg);
 
   
   await selectSource(dbg, "simple2.js");
