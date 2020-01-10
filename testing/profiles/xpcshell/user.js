@@ -14,6 +14,8 @@ user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
 
 user_pref("services.settings.server", "http://localhost/remote-settings-dummy/v1");
 
+user_pref("security.remote_settings.intermediates.enabled", false);
+
 
 
 

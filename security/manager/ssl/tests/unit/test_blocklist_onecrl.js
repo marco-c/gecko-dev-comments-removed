@@ -1,11 +1,19 @@
 "use strict";
 
-const { BlocklistClients } = ChromeUtils.import("resource://services-common/blocklist-clients.js");
+const { AddonTestUtils } = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 const { Utils } = ChromeUtils.import("resource://services-settings/Utils.jsm");
 const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
-const { OneCRLBlocklistClient } = BlocklistClients.initialize();
-const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { RemoteSecuritySettings } = ChromeUtils.import("resource://gre/modules/psm/RemoteSecuritySettings.jsm");
+const { OneCRLBlocklistClient } = RemoteSecuritySettings.init();
 
+const global = this;
+
+function run_test() {
+  
+  AddonTestUtils.init(global);
+  AddonTestUtils.createAppInfo("XPCShell", "xpcshell@tests.mozilla.org", "1", "");
+  AddonTestUtils.promiseStartupManager().then(run_next_test);
+}
 
 add_task(async function test_uses_a_custom_signer() {
   Assert.notEqual(OneCRLBlocklistClient.signerName, RemoteSettings("not-specified").signerName);
@@ -16,16 +24,7 @@ add_task(async function test_has_initial_dump() {
 });
 
 add_task(async function test_default_jexl_filter_is_used() {
-  const countInDump = (await OneCRLBlocklistClient.get()).length;
-
-  
-  
-  const collection = await OneCRLBlocklistClient.openCollection();
-  await collection.create({ filter_expression: "1 == 2" }); 
-  await collection.create({ filter_expression: "1 == 1" });
-await collection.db.saveLastModified(42); 
-
-  Assert.equal((await OneCRLBlocklistClient.get()).length, countInDump + 1);
+  Assert.deepEqual(OneCRLBlocklistClient.filterFunc, RemoteSettings("not-specified").filterFunc);
 });
 
 add_task({

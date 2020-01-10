@@ -12,8 +12,23 @@
 
 
 
-const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
-const { BlocklistClients } = ChromeUtils.import("resource://services-common/blocklist-clients.js");
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
+const { RemoteSecuritySettings } = ChromeUtils.import("resource://gre/modules/psm/RemoteSecuritySettings.jsm");
+
+
+var id = "xpcshell@tests.mozilla.org";
+var appName = "XPCShell";
+var version = "1";
+var platformVersion = "1.9.2";
+ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
+ 
+updateAppInfo({
+  name: appName,
+  ID: id,
+  version,
+  platformVersion: platformVersion ? platformVersion : "1.0",
+  crashReporter: true,
+});
 
 
 
@@ -105,7 +120,7 @@ function load_cert(cert, trust) {
 }
 
 async function update_blocklist() {
-  const { OneCRLBlocklistClient } = BlocklistClients.initialize();
+  const { OneCRLBlocklistClient } = RemoteSecuritySettings.init();
 
   const fakeEvent = {
     current: certBlocklist, 

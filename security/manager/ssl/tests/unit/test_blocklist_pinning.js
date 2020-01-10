@@ -1,15 +1,13 @@
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {BlocklistClients} = ChromeUtils.import("resource://services-common/blocklist-clients.js");
 const { Utils } = ChromeUtils.import("resource://services-settings/Utils.jsm");
 const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
-const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { RemoteSecuritySettings } = ChromeUtils.import("resource://gre/modules/psm/RemoteSecuritySettings.jsm");
 
 const sss = Cc["@mozilla.org/ssservice;1"]
   .getService(Ci.nsISiteSecurityService);
 
-const { PinningBlocklistClient } = BlocklistClients.initialize();
+const { PinningBlocklistClient } = RemoteSecuritySettings.init();
 
 
 add_task(async function test_uses_a_custom_signer() {
@@ -25,16 +23,7 @@ add_task(async function test_pinning_has_initial_dump() {
 });
 
 add_task(async function test_default_jexl_filter_is_used() {
-  const countInDump = (await PinningBlocklistClient.get()).length;
-
-  
-  
-  const collection = await PinningBlocklistClient.openCollection();
-  await collection.create({ filter_expression: "1 == 2" }); 
-  await collection.create({ filter_expression: "1 == 1" });
-  await collection.db.saveLastModified(42); 
-
-  Assert.equal((await PinningBlocklistClient.get()).length, countInDump + 1);
+  Assert.deepEqual(PinningBlocklistClient.filterFunc, RemoteSettings("not-specified").filterFunc);
 });
 
 add_task(async function test_no_pins_by_default() {
@@ -164,6 +153,8 @@ add_task(async function test_bad_entries() {
       "expires": new Date().getTime() + 1000000,
     }, 
   ];
+  
+  
   await PinningBlocklistClient.emit("sync", { data: { current }});
 
   ok(!sss.isSecureURI(sss.HEADER_HPKP,
