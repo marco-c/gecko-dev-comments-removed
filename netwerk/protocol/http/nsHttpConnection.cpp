@@ -1811,6 +1811,16 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
     mSpdySession = nullptr;
   }
 
+  if (!mTransaction && mTLSFilter) {
+    
+    
+    
+    
+    
+    
+    mTLSFilter->Close(reason);
+  }
+
   if (mTransaction) {
     mHttp1xTransactionCount += mTransaction->Http1xTransactionCount();
 
