@@ -324,9 +324,7 @@ static MOZ_ALWAYS_INLINE void SetMemCheckKind(void* ptr, size_t bytes,
 
 namespace js {
 
-
-static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
-                                MemCheckKind kind) {
+static inline void PoisonImpl(void* ptr, uint8_t value, size_t num) {
   
   
   
@@ -351,7 +349,12 @@ static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
 #else   
   memset(ptr, value, num);
 #endif  
+}
 
+
+static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
+                                MemCheckKind kind) {
+  PoisonImpl(ptr, value, num);
   SetMemCheckKind(ptr, num, kind);
 }
 
@@ -365,9 +368,10 @@ static inline void Poison(void* ptr, uint8_t value, size_t num,
                           MemCheckKind kind) {
 #if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
   if (!js::gDisablePoisoning) {
-    AlwaysPoison(ptr, value, num, kind);
+    PoisonImpl(ptr, value, num);
   }
 #endif
+  SetMemCheckKind(ptr, num, kind);
 }
 
 
@@ -376,6 +380,8 @@ static inline void DebugOnlyPoison(void* ptr, uint8_t value, size_t num,
                                    MemCheckKind kind) {
 #if defined(DEBUG)
   Poison(ptr, value, num, kind);
+#else
+  SetMemCheckKind(ptr, num, kind);
 #endif
 }
 
