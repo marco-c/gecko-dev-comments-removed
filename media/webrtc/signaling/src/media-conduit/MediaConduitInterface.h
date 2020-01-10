@@ -546,10 +546,13 @@ class AudioSessionConduit : public MediaSessionConduit {
 
 
 
+
+
   virtual MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
                                               int32_t samplingFreqHz,
                                               int32_t capture_delay,
-                                              int& lengthSamples) = 0;
+                                              size_t& numChannels,
+                                              size_t& lengthSamples) = 0;
 
   
 

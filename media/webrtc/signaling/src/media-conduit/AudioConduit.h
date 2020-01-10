@@ -148,10 +148,13 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
 
 
+
+
   MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
                                       int32_t samplingFreqHz,
                                       int32_t capture_delay,
-                                      int& lengthSamples) override;
+                                      size_t& numChannels,
+                                      size_t& lengthSamples) override;
 
   
 

@@ -1320,11 +1320,12 @@ class MediaPipelineReceiveAudio::PipelineListener
     
 
     while (mPlayedTicks < aDesiredTime) {
-      const int scratchBufferLength =
+      constexpr size_t scratchBufferLength =
           AUDIO_SAMPLE_BUFFER_MAX_BYTES / sizeof(int16_t);
       int16_t scratchBuffer[scratchBufferLength];
 
-      int samplesLength = scratchBufferLength;
+      size_t channelCount = 0;
+      size_t samplesLength = scratchBufferLength;
 
       
       MediaConduitErrorCode err =
@@ -1332,7 +1333,7 @@ class MediaPipelineReceiveAudio::PipelineListener
               ->GetAudioFrame(scratchBuffer, mRate,
                               0,  
                                   
-                              samplesLength);
+                              channelCount, samplesLength);
 
       if (err != kMediaConduitNoError) {
         
@@ -1341,6 +1342,7 @@ class MediaPipelineReceiveAudio::PipelineListener
                  " (desired %" PRId64 " -> %f)",
                  err, mPlayedTicks, aDesiredTime,
                  mSource->TrackTimeToSeconds(aDesiredTime)));
+        channelCount = 1;
         
         samplesLength = samplesPer10ms;
         PodArrayZero(scratchBuffer);
@@ -1349,16 +1351,12 @@ class MediaPipelineReceiveAudio::PipelineListener
       MOZ_RELEASE_ASSERT(samplesLength <= scratchBufferLength);
 
       MOZ_LOG(gMediaPipelineLog, LogLevel::Debug,
-              ("Audio conduit returned buffer of length %u", samplesLength));
+              ("Audio conduit returned buffer of length %zu", samplesLength));
 
       RefPtr<SharedBuffer> samples =
           SharedBuffer::Create(samplesLength * sizeof(uint16_t));
       int16_t* samplesData = static_cast<int16_t*>(samples->Data());
       AudioSegment segment;
-      
-      
-      
-      uint32_t channelCount = samplesLength / samplesPer10ms;
       AutoTArray<int16_t*, 2> channels;
       AutoTArray<const int16_t*, 2> outputChannels;
       size_t frames = samplesLength / channelCount;
