@@ -2,8 +2,6 @@
 
 
 
-import {recordTelemetryEvent} from "chrome://browser/content/aboutlogins/aboutLoginsUtils.js";
-
 let gElements = {};
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -20,8 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
   gElements.newLoginButton.addEventListener("click", () => {
     gElements.loginItem.setLogin({});
     gElements.loginList.clearSelection();
-
-    recordTelemetryEvent({object: "new_login", method: "new"});
   });
 
   document.dispatchEvent(new CustomEvent("AboutLoginsInit", {bubbles: true}));

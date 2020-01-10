@@ -2,7 +2,6 @@
 
 
 
-import {recordTelemetryEvent} from "chrome://browser/content/aboutlogins/aboutLoginsUtils.js";
 import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
 export default class CopyToClipboardButton extends ReflectedFluentElement {
@@ -61,10 +60,6 @@ export default class CopyToClipboardButton extends ReflectedFluentElement {
         this.removeAttribute("copied");
       }, CopyToClipboardButton.BUTTON_RESET_TIMEOUT);
     }, () => copyButton.disabled = false);
-
-    if (this.dataset.telemetryObject) {
-      recordTelemetryEvent({object: this.dataset.telemetryObject, method: "copy"});
-    }
   }
 
   set relatedInput(val) {
