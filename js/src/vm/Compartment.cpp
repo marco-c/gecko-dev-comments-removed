@@ -419,20 +419,26 @@ bool Compartment::wrap(JSContext* cx, MutableHandle<GCVector<Value>> vec) {
   return true;
 }
 
-void Compartment::traceOutgoingCrossCompartmentWrappers(JSTracer* trc) {
+void Compartment::traceWrapperTargetsInCollectedZones(JSTracer* trc) {
+  
+  
+  
+
   MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
   MOZ_ASSERT(!zone()->isCollectingFromAnyThread() ||
              trc->runtime()->gc.isHeapCompacting());
 
-  for (ObjectWrapperEnum e(this); !e.empty(); e.popFront()) {
-    JSObject* obj = e.front().value().unbarrieredGet();
-    ProxyObject* wrapper = &obj->as<ProxyObject>();
+  for (WrappedObjectCompartmentEnum c(this); !c.empty(); c.popFront()) {
+    Zone* zone = c.front()->zone();
+    if (!zone->isCollecting()) {
+      continue;
+    }
 
-    
-
-
-
-    ProxyObject::traceEdgeToTarget(trc, wrapper);
+    for (ObjectWrapperEnum e(this, c); !e.empty(); e.popFront()) {
+      JSObject* obj = e.front().value().unbarrieredGet();
+      ProxyObject* wrapper = &obj->as<ProxyObject>();
+      ProxyObject::traceEdgeToTarget(trc, wrapper);
+    }
   }
 }
 
@@ -441,9 +447,13 @@ void Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc) {
   gcstats::AutoPhase ap(trc->runtime()->gc.stats(),
                         gcstats::PhaseKind::MARK_CCWS);
   MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
-  for (CompartmentsIter c(trc->runtime()); !c.done(); c.next()) {
-    if (!c->zone()->isCollecting()) {
-      c->traceOutgoingCrossCompartmentWrappers(trc);
+  for (ZonesIter zone(trc->runtime(), SkipAtoms); !zone.done(); zone.next()) {
+    if (zone->isCollecting()) {
+      continue;
+    }
+
+    for (CompartmentsInZoneIter c(zone); !c.done(); c.next()) {
+      c->traceWrapperTargetsInCollectedZones(trc);
     }
   }
   DebugAPI::traceCrossCompartmentEdges(trc);
@@ -456,10 +466,6 @@ void Compartment::sweepAfterMinorGC(JSTracer* trc) {
     r->sweepAfterMinorGC();
   }
 }
-
-
-
-
 
 
 void Compartment::sweepCrossCompartmentObjectWrappers() {
@@ -476,7 +482,7 @@ void Compartment::fixupCrossCompartmentObjectWrappersAfterMovingGC(
 
   
   
-  traceOutgoingCrossCompartmentWrappers(trc);
+  traceWrapperTargetsInCollectedZones(trc);
 }
 
 void Compartment::fixupAfterMovingGC(JSTracer* trc) {

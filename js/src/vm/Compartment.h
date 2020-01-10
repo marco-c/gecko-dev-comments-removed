@@ -412,7 +412,7 @@ class JS::Compartment {
 
 
 
-  void traceOutgoingCrossCompartmentWrappers(JSTracer* trc);
+  void traceWrapperTargetsInCollectedZones(JSTracer* trc);
   static void traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc);
 
   void sweepRealms(JSFreeOp* fop, bool keepAtleastOne, bool destroyingRuntime);
