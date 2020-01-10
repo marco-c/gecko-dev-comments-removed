@@ -3355,21 +3355,31 @@ void ICStubCompilerBase::pushCallArguments(MacroAssembler& masm,
   MOZ_ASSERT(!regs.has(argcReg));
 
   
-  Register count = regs.takeAny();
-  masm.move32(argcReg, count);
-  masm.add32(Imm32(2 + isConstructing), count);
-
-  
   Register argPtr = regs.takeAny();
   masm.moveStackPtrTo(argPtr);
 
   
   
-  masm.addPtr(Imm32(STUB_FRAME_SIZE), argPtr);
+  size_t valueOffset = STUB_FRAME_SIZE;
 
   
-  Label loop, done;
-  masm.branchTest32(Assembler::Zero, count, count, &done);
+  
+
+  size_t numNonArgValues = 2 + isConstructing;
+  for (size_t i = 0; i < numNonArgValues; i++) {
+    masm.pushValue(Address(argPtr, valueOffset));
+    valueOffset += sizeof(Value);
+  }
+
+  
+  Label done;
+  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &done);
+
+  
+  Label loop;
+  Register count = regs.takeAny();
+  masm.addPtr(Imm32(valueOffset), argPtr);
+  masm.move32(argcReg, count);
   masm.bind(&loop);
   {
     masm.pushValue(Address(argPtr, 0));
