@@ -692,27 +692,32 @@ JSObject* mozJSComponentLoader::PrepareObjectForLocation(
   
   
   
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
-  nsCOMPtr<nsIFile> testFile;
-  if (NS_SUCCEEDED(rv)) {
-    fileURL->GetFile(getter_AddRefs(testFile));
-  }
+  {
+    
+    
+    
+    nsresult rv = NS_OK;
+    nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
+    nsCOMPtr<nsIFile> testFile;
+    if (NS_SUCCEEDED(rv)) {
+      fileURL->GetFile(getter_AddRefs(testFile));
+    }
 
-  if (testFile) {
-    *aRealFile = true;
+    if (testFile) {
+      *aRealFile = true;
 
-    if (XRE_IsParentProcess()) {
-      RootedObject locationObj(aCx);
+      if (XRE_IsParentProcess()) {
+        RootedObject locationObj(aCx);
 
-      rv = nsXPConnect::XPConnect()->WrapNative(aCx, thisObj, aComponentFile,
-                                                NS_GET_IID(nsIFile),
-                                                locationObj.address());
-      NS_ENSURE_SUCCESS(rv, nullptr);
-      NS_ENSURE_TRUE(locationObj, nullptr);
+        rv = nsXPConnect::XPConnect()->WrapNative(aCx, thisObj, aComponentFile,
+                                                  NS_GET_IID(nsIFile),
+                                                  locationObj.address());
+        NS_ENSURE_SUCCESS(rv, nullptr);
+        NS_ENSURE_TRUE(locationObj, nullptr);
 
-      if (!JS_DefineProperty(aCx, thisObj, "__LOCATION__", locationObj, 0)) {
-        return nullptr;
+        if (!JS_DefineProperty(aCx, thisObj, "__LOCATION__", locationObj, 0)) {
+          return nullptr;
+        }
       }
     }
   }

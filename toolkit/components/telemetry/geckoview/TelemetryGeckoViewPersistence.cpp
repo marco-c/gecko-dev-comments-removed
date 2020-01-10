@@ -243,8 +243,8 @@ void MainThreadParsePersistedProbes(const nsACString& aProbeData) {
   ANDROID_LOG("MainThreadParsePersistedProbes");
 
   
-  JSObject* cleanGlobal =
-      SimpleGlobalObject::Create(SimpleGlobalObject::GlobalType::BindingDetail);
+  JS::Rooted<JSObject*> cleanGlobal(mozilla::dom::RootingCx(),
+                                    SimpleGlobalObject::Create(SimpleGlobalObject::GlobalType::BindingDetail));
   if (!cleanGlobal) {
     ANDROID_LOG(
         "MainThreadParsePersistedProbes - Failed to create a JS global object");

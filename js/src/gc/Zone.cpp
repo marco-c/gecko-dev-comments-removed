@@ -627,6 +627,10 @@ void* ZoneAllocator::onOutOfMemory(js::AllocFunction allocFunc,
   if (!js::CurrentThreadCanAccessRuntime(runtime_)) {
     return nullptr;
   }
+  
+  
+  
+  JS::AutoSuppressGCAnalysis suppress;
   return runtimeFromMainThread()->onOutOfMemory(allocFunc, arena, nbytes,
                                                 reallocPtr);
 }

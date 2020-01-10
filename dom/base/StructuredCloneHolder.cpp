@@ -346,20 +346,22 @@ JSObject* StructuredCloneHolder::ReadFullySerializableObjects(
     if (!nsJSPrincipals::ReadKnownPrincipalType(aCx, aReader, aTag, &prin)) {
       return nullptr;
     }
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> principal =
-        already_AddRefed<nsIPrincipal>(nsJSPrincipals::get(prin));
 
     JS::RootedValue result(aCx);
-    nsresult rv = nsContentUtils::WrapNative(
-        aCx, principal, &NS_GET_IID(nsIPrincipal), &result);
-    if (NS_FAILED(rv)) {
-      xpc::Throw(aCx, NS_ERROR_DOM_DATA_CLONE_ERR);
-      return nullptr;
-    }
+    {
+      
+      
+      
+      nsCOMPtr<nsIPrincipal> principal =
+        already_AddRefed<nsIPrincipal>(nsJSPrincipals::get(prin));
 
+      nsresult rv = nsContentUtils::WrapNative(
+        aCx, principal, &NS_GET_IID(nsIPrincipal), &result);
+      if (NS_FAILED(rv)) {
+        xpc::Throw(aCx, NS_ERROR_DOM_DATA_CLONE_ERR);
+        return nullptr;
+      }
+    }
     return result.toObjectOrNull();
   }
 
@@ -436,17 +438,17 @@ JSObject* ReadBlob(JSContext* aCx, uint32_t aIndex,
   }
 #endif
   MOZ_ASSERT(aIndex < aHolder->BlobImpls().Length());
-  RefPtr<BlobImpl> blobImpl = aHolder->BlobImpls()[aIndex];
-
-  MOZ_ALWAYS_SUCCEEDS(blobImpl->SetMutable(false));
-
-  
-  
-  
-  
-  
   JS::Rooted<JS::Value> val(aCx);
   {
+    
+    
+    
+    
+    
+    RefPtr<BlobImpl> blobImpl = aHolder->BlobImpls()[aIndex];
+
+    MOZ_ALWAYS_SUCCEEDS(blobImpl->SetMutable(false));
+
     RefPtr<Blob> blob = Blob::Create(aHolder->ParentDuringRead(), blobImpl);
     if (!ToJSValue(aCx, blob, &val)) {
       return nullptr;
@@ -831,13 +833,15 @@ JSObject* ReadInputStream(JSContext* aCx, uint32_t aIndex,
   }
 #endif
   MOZ_ASSERT(aIndex < aHolder->InputStreams().Length());
-  nsCOMPtr<nsIInputStream> inputStream = aHolder->InputStreams()[aIndex];
-
   JS::RootedValue result(aCx);
-  nsresult rv = nsContentUtils::WrapNative(
+  {
+    nsCOMPtr<nsIInputStream> inputStream = aHolder->InputStreams()[aIndex];
+
+    nsresult rv = nsContentUtils::WrapNative(
       aCx, inputStream, &NS_GET_IID(nsIInputStream), &result);
-  if (NS_FAILED(rv)) {
-    return nullptr;
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
   }
 
   return &result.toObject();
@@ -889,10 +893,14 @@ JSObject* StructuredCloneHolder::CustomReadHandler(
            StructuredCloneScope::SameProcessDifferentThread)) {
     
     
-    nsCOMPtr<nsIGlobalObject> parent = do_QueryInterface(mParent);
-    
-    return ImageBitmap::ReadStructuredClone(aCx, aReader, parent, GetSurfaces(),
-                                            aIndex);
+    JS::RootedObject result(aCx);
+    {
+      nsCOMPtr<nsIGlobalObject> parent = do_QueryInterface(mParent);
+      
+      result = ImageBitmap::ReadStructuredClone(aCx, aReader, parent,
+                                                GetSurfaces(), aIndex);
+    }
+    return result;
   }
 
   if (aTag == SCTAG_DOM_STRUCTURED_CLONE_HOLDER) {

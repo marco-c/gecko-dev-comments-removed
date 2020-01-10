@@ -270,6 +270,12 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObjectInternal(V& obj, U& value,
     
     
     
+    JS::AutoSuppressGCAnalysis suppress;
+
+    
+    
+    
+    
     
     obj = unwrappedObj;
     
@@ -1516,12 +1522,16 @@ bool WrapObject(JSContext* cx, const WindowProxyHolder& p,
 template <typename T>
 static inline JSObject* WrapNativeISupports(JSContext* cx, T* p,
                                             nsWrapperCache* cache) {
-  xpcObjectHelper helper(ToSupports(p), cache);
-  JS::Rooted<JSObject*> scope(cx, JS::CurrentGlobalOrNull(cx));
-  JS::Rooted<JS::Value> v(cx);
-  return XPCOMObjectToJsval(cx, scope, helper, nullptr, false, &v)
-             ? v.toObjectOrNull()
-             : nullptr;
+  JS::Rooted<JSObject*> retval(cx);
+  {
+    xpcObjectHelper helper(ToSupports(p), cache);
+    JS::Rooted<JSObject*> scope(cx, JS::CurrentGlobalOrNull(cx));
+    JS::Rooted<JS::Value> v(cx);
+    retval = XPCOMObjectToJsval(cx, scope, helper, nullptr, false, &v)
+      ? v.toObjectOrNull()
+      : nullptr;
+  }
+  return retval;
 }
 
 
