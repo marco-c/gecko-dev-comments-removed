@@ -283,7 +283,17 @@ var gSyncPane = {
     });
   },
 
-  _chooseWhatToSync(isAlreadySyncing) {
+  async _chooseWhatToSync(isAlreadySyncing) {
+    
+    
+    
+    if (!isAlreadySyncing) {
+      try {
+        await Weave.Service.updateLocalEnginesState();
+      } catch (err) {
+        console.error("Error updating the local engines state", err);
+      }
+    }
     let params = {};
     if (isAlreadySyncing) {
       
