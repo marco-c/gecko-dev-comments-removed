@@ -51,7 +51,14 @@ add_task(async function testLocalRuntime() {
     await pushPref("browser.privatebrowsing.autostart", privateBrowsingEnabled);
 
     const { document, tab, window } = await openAboutDebugging({
-      enableWorkerUpdates: true,
+      
+      
+      
+      
+      
+      
+      
+      enableWorkerUpdates: false,
     });
     await selectThisFirefoxPage(document, window.AboutDebugging.store);
     assertWarningMessage(document, expectedMessage);
@@ -91,7 +98,7 @@ add_task(async function testRemoteRuntime() {
     );
 
     const { document, tab, window } = await openAboutDebugging({
-      enableWorkerUpdates: true,
+      enableWorkerUpdates: false,
     });
     await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
