@@ -5,22 +5,26 @@
 package org.mozilla.gecko.preferences;
 
 import android.content.Context;
-import android.preference.Preference;
+import android.support.annotation.Nullable;
+import android.support.v7.util.DiffUtil;
+import android.support.v7.util.ListUpdateCallback;
 import android.util.AttributeSet;
-import android.util.Log;
 
 import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.TelemetryContract.Method;
+import org.mozilla.gecko.search.SearchEngineDiffCallback;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.gecko.util.ThreadUtils;
 
-public class SearchPreferenceCategory extends CustomListCategory implements BundleEventListener {
+import java.util.ArrayList;
+import java.util.List;
+
+public class SearchPreferenceCategory extends CustomListCategory implements BundleEventListener, ListUpdateCallback {
     public static final String LOGTAG = "SearchPrefCategory";
+    private List<SearchEnginePreference> enginesList = new ArrayList<>();
 
     public SearchPreferenceCategory(Context context) {
         super(context);
@@ -75,41 +79,62 @@ public class SearchPreferenceCategory extends CustomListCategory implements Bund
                               final EventCallback callback) {
         if (event.equals("SearchEngines:Data")) {
             
-            final GeckoBundle[] engines = data.getBundleArray("searchEngines");
+            GeckoBundle[] engines = data.getBundleArray("searchEngines");
+            List<SearchEnginePreference> newEngineList = new ArrayList<>();
 
-            
-            this.removeAll();
-
-            
-            for (int i = 0; i < engines.length; i++) {
-                final GeckoBundle engine = engines[i];
-                final SearchEnginePreference enginePreference =
+            for (GeckoBundle engine: engines) {
+                SearchEnginePreference enginePreference =
                         new SearchEnginePreference(getContext(), this);
                 enginePreference.setSearchEngineFromBundle(engine);
-                enginePreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        SearchEnginePreference sPref = (SearchEnginePreference) preference;
-                        
-                        sPref.showDialog();
-                        return true;
-                    }
+                enginePreference.setOnPreferenceClickListener(preference -> {
+                    SearchEnginePreference sPref = (SearchEnginePreference) preference;
+                    
+                    sPref.showDialog();
+                    return true;
                 });
 
-                addPreference(enginePreference);
+                newEngineList.add(enginePreference);
+            }
 
-                if (i != 0) {
-                    continue;
-                }
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new SearchEngineDiffCallback(enginesList, newEngineList));
+            enginesList = newEngineList;
+            diffResult.dispatchUpdatesTo(this);
+        }
+    }
 
-                
-                
-                
-                
-                enginePreference.setIsDefault(true);
-                mDefaultReference = enginePreference;
+    @Override
+    public void onInserted(int pos, int count) {
+        for (int ix = pos; ix < (pos + count); ++ix) {
+
+            addPreference(enginesList.get(ix));
+
+            
+            
+            
+            
+            if (ix == 0) {
+                enginesList.get(ix).setIsDefault(true);
+                mDefaultReference = enginesList.get(ix);
             }
         }
+    }
+
+
+    
+    
+    @Override
+    public void onRemoved(int pos, int count) {
+
+    }
+
+    @Override
+    public void onMoved(int i, int i1) {
+
+    }
+
+    @Override
+    public void onChanged(int i, int i1, @Nullable Object o) {
+
     }
 
     
