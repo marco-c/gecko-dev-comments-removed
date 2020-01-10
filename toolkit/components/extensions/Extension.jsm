@@ -2173,12 +2173,24 @@ class Extension extends ExtensionData {
 
       
       
-      if (
-        !allowPrivateBrowsingByDefault &&
-        this.manifest.incognito !== "not_allowed" &&
-        !this.permissions.has(PRIVATE_ALLOWED_PERMISSION)
-      ) {
-        if (this.isPrivileged && !this.addonData.temporarilyInstalled) {
+      if (!allowPrivateBrowsingByDefault) {
+        let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
+        if (this.manifest.incognito === "not_allowed") {
+          
+          
+          
+          if (isAllowed) {
+            ExtensionPermissions.remove(this.id, {
+              permissions: [PRIVATE_ALLOWED_PERMISSION],
+              origins: [],
+            });
+            this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
+          }
+        } else if (
+          !isAllowed &&
+          this.isPrivileged &&
+          !this.addonData.temporarilyInstalled
+        ) {
           
           
           ExtensionPermissions.add(this.id, {
