@@ -71,6 +71,22 @@ nsresult ScriptLoadHandler::DecodeRawDataHelper(const uint8_t* aData,
       MakeSpan(scriptText.begin() + haveRead, needed.value()), aEndOfStream);
   MOZ_ASSERT(written <= needed.value());
 
+  
+  
+  
+  using namespace mozilla::Telemetry;
+  if (aEndOfStream && haveRead) {
+    
+    Accumulate(DOM_SCRIPT_LOAD_INCREMENTAL_RATIO, 100 * haveRead / (haveRead + written));
+    
+    
+    double ms = (TimeStamp::Now() - mFirstOnIncrementalData).ToMilliseconds();
+    Accumulate(DOM_SCRIPT_LOAD_INCREMENTAL_AVG_TRANSFER_RATE, haveRead / ms);
+  }
+  if (!aEndOfStream && !haveRead) {
+    mFirstOnIncrementalData = TimeStamp::Now();
+  }
+
   haveRead += written;
   MOZ_ASSERT(haveRead <= capacity.value(),
              "mDecoder produced more data than expected");
