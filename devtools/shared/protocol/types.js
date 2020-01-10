@@ -316,6 +316,15 @@ types.addActorType = function(name) {
       const actorID = typeof v === "string" ? v : v.actor;
       
       let front = ctx.conn.getFrontByID(actorID);
+
+      
+      
+      
+      let form = null;
+      if (detail != "actorid") {
+        form = identityWrite(v);
+      }
+
       if (!front) {
         
         
@@ -333,14 +342,10 @@ types.addActorType = function(name) {
         const Class = type.frontClass;
         front = new Class(ctx.conn, targetFront, parentFront);
         front.actorID = actorID;
-        parentFront.manage(front);
-      }
 
-      
-      
-      if (detail != "actorid") {
-        v = identityWrite(v);
-        front.form(v, ctx);
+        parentFront.manage(front, form, ctx);
+      } else if (form) {
+        front.form(form, ctx);
       }
 
       return front;

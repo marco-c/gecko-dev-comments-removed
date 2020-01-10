@@ -76,7 +76,7 @@ class Front extends Pool {
     this._beforeListeners = null;
   }
 
-  async manage(front) {
+  async manage(front, form, ctx) {
     if (!front.actorID) {
       throw new Error(
         "Can't manage front without an actor ID.\n" +
@@ -89,6 +89,15 @@ class Front extends Pool {
 
     if (typeof front.initialize == "function") {
       await front.initialize();
+    }
+
+    
+    
+    
+    
+    
+    if (form) {
+      front.form(form, ctx);
     }
 
     
