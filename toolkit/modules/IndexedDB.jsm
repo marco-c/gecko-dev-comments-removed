@@ -247,6 +247,9 @@ class Transaction {
       transaction.onerror = () => {
         reject(transaction.error);
       };
+      transaction.onabort = () => {
+        reject(transaction.error);
+      };
     });
   }
 
