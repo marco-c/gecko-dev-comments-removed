@@ -65,7 +65,11 @@ async function overflowTabs() {
       index: 0,
     });
   }
-  await window.promiseDocumentFlushed(() => {});
+
+  
+  await new Promise(resolve => {
+    arrowScrollbox.addEventListener("scrollend", resolve, { once: true });
+  });
 }
 
 function getLastCloseButton() {
