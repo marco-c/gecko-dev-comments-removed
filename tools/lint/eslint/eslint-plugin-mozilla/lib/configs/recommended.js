@@ -82,7 +82,6 @@ module.exports = {
   
   "plugins": [
     "fetch-options",
-    "mozilla",
     "no-unsanitized",
     "prettier",
   ],
