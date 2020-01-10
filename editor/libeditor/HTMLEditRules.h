@@ -697,14 +697,6 @@ class HTMLEditRules : public TextEditRules {
   template <typename PT, typename CT>
   nsIContent* FindNearEditableNode(const EditorDOMPointBase<PT, CT>& aPoint,
                                    nsIEditor::EDirection aDirection);
-  
-
-
-
-
-
-
-  bool InDifferentTableElements(nsINode* aNode1, nsINode* aNode2);
 
   
 

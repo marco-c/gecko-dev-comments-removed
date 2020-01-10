@@ -2818,7 +2818,7 @@ nsresult HTMLEditRules::WillDeleteSelection(
 
       
       if (leftNode && rightNode &&
-          InDifferentTableElements(leftNode, rightNode)) {
+          HTMLEditor::NodesInDifferentTableElements(*leftNode, *rightNode)) {
         return NS_OK;
       }
 
@@ -2920,7 +2920,7 @@ nsresult HTMLEditRules::WillDeleteSelection(
       }
 
       
-      if (InDifferentTableElements(leftNode, rightNode)) {
+      if (HTMLEditor::NodesInDifferentTableElements(*leftNode, *rightNode)) {
         *aCancel = true;
         return NS_OK;
       }
@@ -4175,7 +4175,8 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
 
     
     
-    if (curList && InDifferentTableElements(curList, curNode)) {
+    if (curList &&
+        HTMLEditor::NodesInDifferentTableElements(*curList, curNode)) {
       curList = nullptr;
     }
 
@@ -5371,7 +5372,8 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
     
     
     
-    if (curQuote && InDifferentTableElements(curQuote, curNode)) {
+    if (curQuote &&
+        HTMLEditor::NodesInDifferentTableElements(*curQuote, *curNode)) {
       curQuote = nullptr;
     }
 
@@ -9763,7 +9765,8 @@ nsIContent* HTMLEditRules::FindNearEditableNode(
   }
 
   
-  if (InDifferentTableElements(nearNode, aPoint.GetContainer())) {
+  if (HTMLEditor::NodesInDifferentTableElements(*nearNode,
+                                                *aPoint.GetContainer())) {
     return nullptr;
   }
 
@@ -9771,18 +9774,22 @@ nsIContent* HTMLEditRules::FindNearEditableNode(
   return nearNode;
 }
 
-bool HTMLEditRules::InDifferentTableElements(nsINode* aNode1, nsINode* aNode2) {
-  MOZ_ASSERT(aNode1 && aNode2);
 
-  while (aNode1 && !HTMLEditUtils::IsTableElement(aNode1)) {
-    aNode1 = aNode1->GetParentNode();
+bool HTMLEditor::NodesInDifferentTableElements(nsINode& aNode1,
+                                               nsINode& aNode2) {
+  nsINode* parentNode1;
+  for (parentNode1 = &aNode1;
+       parentNode1 && !HTMLEditUtils::IsTableElement(parentNode1);
+       parentNode1 = parentNode1->GetParentNode()) {
   }
-
-  while (aNode2 && !HTMLEditUtils::IsTableElement(aNode2)) {
-    aNode2 = aNode2->GetParentNode();
+  nsINode* parentNode2;
+  for (parentNode2 = &aNode2;
+       parentNode2 && !HTMLEditUtils::IsTableElement(parentNode2);
+       parentNode2 = parentNode2->GetParentNode()) {
   }
-
-  return aNode1 != aNode2;
+  
+  
+  return parentNode1 != parentNode2;
 }
 
 nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
