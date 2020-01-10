@@ -1017,7 +1017,7 @@ var hoistNonReactStatics = createCommonjsModule(function (module, exports) {
 (function (global, factory) {
     module.exports = factory();
 }(commonjsGlobal, (function () {
-    
+
     var REACT_STATICS = {
         childContextTypes: true,
         contextTypes: true,
@@ -1029,7 +1029,7 @@ var hoistNonReactStatics = createCommonjsModule(function (module, exports) {
         propTypes: true,
         type: true
     };
-    
+
     var KNOWN_STATICS = {
         name: true,
         length: true,
@@ -1039,30 +1039,30 @@ var hoistNonReactStatics = createCommonjsModule(function (module, exports) {
         arguments: true,
         arity: true
     };
-    
+
     var defineProperty = Object.defineProperty;
     var getOwnPropertyNames = Object.getOwnPropertyNames;
     var getOwnPropertySymbols = Object.getOwnPropertySymbols;
     var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
     var getPrototypeOf = Object.getPrototypeOf;
     var objectPrototype = getPrototypeOf && getPrototypeOf(Object);
-    
+
     return function hoistNonReactStatics(targetComponent, sourceComponent, blacklist) {
         if (typeof sourceComponent !== 'string') { 
-            
+
             if (objectPrototype) {
                 var inheritedComponent = getPrototypeOf(sourceComponent);
                 if (inheritedComponent && inheritedComponent !== objectPrototype) {
                     hoistNonReactStatics(targetComponent, inheritedComponent, blacklist);
                 }
             }
-            
+
             var keys = getOwnPropertyNames(sourceComponent);
-            
+
             if (getOwnPropertySymbols) {
                 keys = keys.concat(getOwnPropertySymbols(sourceComponent));
             }
-            
+
             for (var i = 0; i < keys.length; ++i) {
                 var key = keys[i];
                 if (!REACT_STATICS[key] && !KNOWN_STATICS[key] && (!blacklist || !blacklist[key])) {
@@ -1072,10 +1072,10 @@ var hoistNonReactStatics = createCommonjsModule(function (module, exports) {
                     } catch (e) {}
                 }
             }
-            
+
             return targetComponent;
         }
-        
+
         return targetComponent;
     };
 })));
@@ -1533,7 +1533,7 @@ var freeGlobal = typeof global == 'object' && global && global.Object === Object
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
 
-var root = freeGlobal || freeSelf || Function('return this')();
+var root = freeGlobal || freeSelf || globalThis;
 
 
 var Symbol$1 = root.Symbol;
