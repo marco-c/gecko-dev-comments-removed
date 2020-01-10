@@ -78,8 +78,17 @@ Accessible* OuterDocAccessible::ChildAtPoint(int32_t aX, int32_t aY,
   Accessible* child = GetChildAt(0);
   NS_ENSURE_TRUE(child, nullptr);
 
-  if (aWhichChild == eDeepestChild)
+  if (aWhichChild == eDeepestChild) {
+#if defined(XP_WIN)
+    
+    
+    
+    
+    return nullptr;
+#else
     return child->ChildAtPoint(aX, aY, eDeepestChild);
+#endif  
+  }
   return child;
 }
 
