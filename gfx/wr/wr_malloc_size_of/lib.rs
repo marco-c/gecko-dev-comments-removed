@@ -54,7 +54,7 @@ impl MallocSizeOfOps {
         
         
         
-        return ptr as *const usize as usize <= 256;
+        ptr as *const usize as usize <= 256
     }
 
     
