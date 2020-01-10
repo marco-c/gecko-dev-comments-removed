@@ -7,9 +7,8 @@
 #ifndef ThreadInfo_h
 #define ThreadInfo_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
-#include "nsISupportsImpl.h"
-#include "nsString.h"
 
 
 
@@ -17,32 +16,43 @@
 
 class ThreadInfo final {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ThreadInfo)
-
   ThreadInfo(
       const char* aName, int aThreadId, bool aIsMainThread,
       const mozilla::TimeStamp& aRegisterTime = mozilla::TimeStamp::Now())
       : mName(aName),
         mRegisterTime(aRegisterTime),
         mThreadId(aThreadId),
-        mIsMainThread(aIsMainThread) {
+        mIsMainThread(aIsMainThread),
+        mRefCnt(0) {
     
     MOZ_ASSERT(aThreadId >= 0, "native thread ID is < 0");
     MOZ_ASSERT(aThreadId <= INT32_MAX, "native thread ID is > INT32_MAX");
   }
 
-  const char* Name() const { return mName.get(); }
+  
+  
+  MFBT_API void AddRef() const { ++mRefCnt; }
+  MFBT_API void Release() const {
+    MOZ_ASSERT(int32_t(mRefCnt) > 0);
+    if (--mRefCnt == 0) {
+      delete this;
+    }
+  }
+
+  const char* Name() const { return mName.c_str(); }
   mozilla::TimeStamp RegisterTime() const { return mRegisterTime; }
   int ThreadId() const { return mThreadId; }
   bool IsMainThread() const { return mIsMainThread; }
 
  private:
-  ~ThreadInfo() {}
-
-  const nsCString mName;
+  const std::string mName;
   const mozilla::TimeStamp mRegisterTime;
   const int mThreadId;
   const bool mIsMainThread;
+
+  mutable mozilla::Atomic<int32_t, mozilla::MemoryOrdering::ReleaseAcquire,
+                          mozilla::recordreplay::Behavior::DontPreserve>
+      mRefCnt;
 };
 
 #endif  

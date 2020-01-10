@@ -34,33 +34,61 @@
 #include "BaseProfiler.h"
 
 #include "mozilla/Logging.h"
+#include "mozilla/PlatformMutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
-#include "nsString.h"
 
 #include <functional>
 #include <stdint.h>
+#include <string>
 
-extern mozilla::LazyLogModule gProfilerLog;
-
-
-
-#define LOG_TEST MOZ_LOG_TEST(gProfilerLog, mozilla::LogLevel::Info)
-#define LOG(arg, ...)                            \
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Info, \
-          ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__))
+bool BaseProfilerLogTest(int aLevelToTest);
 
 
 
-#define DEBUG_LOG_TEST MOZ_LOG_TEST(gProfilerLog, mozilla::LogLevel::Debug)
-#define DEBUG_LOG(arg, ...)                       \
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Debug, \
-          ("[%d] " arg, profiler_current_process_id(), ##__VA_ARGS__))
+#define LOG_TEST BaseProfilerLogTest(3)
+#define LOG(arg, ...)                                              \
+  do {                                                             \
+    if (LOG_TEST) {                                                \
+      printf("[I %d/%d] " arg "\n", profiler_current_process_id(), \
+             profiler_current_thread_id(), ##__VA_ARGS__);         \
+    }                                                              \
+  } while (0)
+
+
+
+#define DEBUG_LOG_TEST BaseProfilerLogTest(4)
+#define DEBUG_LOG(arg, ...)                                        \
+  do {                                                             \
+    if (DEBUG_LOG_TEST) {                                          \
+      printf("[D %d/%d] " arg "\n", profiler_current_process_id(), \
+             profiler_current_thread_id(), ##__VA_ARGS__);         \
+    }                                                              \
+  } while (0)
+
+
+
+#define VERBOSE_LOG_TEST BaseProfilerLogTest(5)
+#define VERBOSE_LOG(arg, ...)                                      \
+  do {                                                             \
+    if (VERBOSE_LOG_TEST) {                                        \
+      printf("[V %d/%d] " arg "\n", profiler_current_process_id(), \
+             profiler_current_thread_id(), ##__VA_ARGS__);         \
+    }                                                              \
+  } while (0)
+
+
+
+class PSMutex : private mozilla::detail::MutexImpl {
+ public:
+  PSMutex()
+      : mozilla::detail::MutexImpl(
+            mozilla::recordreplay::Behavior::DontPreserve) {}
+  void Lock() { mozilla::detail::MutexImpl::lock(); }
+  void Unlock() { mozilla::detail::MutexImpl::unlock(); }
+};
 
 typedef uint8_t* Address;
-
-
-
 
 class PlatformData;
 
@@ -73,11 +101,6 @@ struct PlatformDataDestructor {
 typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
     UniquePlatformData;
 UniquePlatformData AllocPlatformData(int aThreadId);
-
-namespace mozilla {
-class JSONWriter;
-}
-void AppendSharedLibraries(mozilla::JSONWriter& aWriter);
 
 
 uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
@@ -96,10 +119,10 @@ enum class JSSamplingFlags {
 };
 
 
-void profiler_received_exit_profile(const nsCString& aExitProfile);
+void profiler_received_exit_profile(const std::string& aExitProfile);
 
 
 
-mozilla::Vector<nsCString> profiler_move_exit_profiles();
+mozilla::Vector<std::string> profiler_move_exit_profiles();
 
 #endif 

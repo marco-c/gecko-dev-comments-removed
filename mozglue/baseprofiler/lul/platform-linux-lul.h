@@ -8,6 +8,8 @@
 
 #include "platform.h"
 
+#include "BaseProfiler.h"
+
 
 
 

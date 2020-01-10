@@ -52,17 +52,6 @@ class ProfileBuffer final {
   
   
   
-  void AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
-                          JSContext* aContext,
-                          JITFrameInfo& aJITFrameInfo) const;
-
-  
-  
-  
-  
-  
-  
-  
   
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime,
@@ -163,8 +152,6 @@ class ProfileBufferCollector final : public ProfilerStackCollector {
   }
 
   virtual void CollectNativeLeafAddr(void* aAddr) override;
-  virtual void CollectJitReturnAddr(void* aAddr) override;
-  virtual void CollectWasmFrame(const char* aLabel) override;
   virtual void CollectProfilingStackFrame(
       const js::ProfilingStackFrame& aFrame) override;
 
