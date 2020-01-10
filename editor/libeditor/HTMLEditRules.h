@@ -87,18 +87,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   nsresult GetParagraphState(bool* aMixed, nsAString& outFormat);
 
-  
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult MakeSureElemStartsAndEndsOnCR(nsINode& aNode);
-
   void DidCreateNode(Element& aNewElement);
   void DidInsertNode(nsIContent& aNode);
   void WillDeleteNode(nsINode& aChild);
@@ -326,21 +314,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_MUST_USE nsresult RemoveAlignment(nsINode& aNode,
                                         const nsAString& aAlignType,
                                         bool aDescendantsOnly);
-
-  
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
-                                                     bool aStarts);
 
   
 

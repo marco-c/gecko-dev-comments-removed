@@ -2462,6 +2462,22 @@ class HTMLEditor final : public TextEditor,
       const nsTArray<OwningNonNull<nsINode>>& aNodeArray,
       nsTArray<bool>& aTransitionArray);
 
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  EnsureHardLineBeginsWithFirstChildOf(dom::Element& aRemovingContainerElement);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  EnsureHardLineEndsWithLastChildOf(dom::Element& aRemovingContainerElement);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

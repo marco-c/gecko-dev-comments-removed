@@ -553,16 +553,25 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
                                      EmptyString());
   }
 
-  if (aElement.IsHTMLElement(nsGkAtoms::div) &&
-      !HasStyleOrIdOrClass(&aElement)) {
-    RefPtr<HTMLEditRules> htmlRules = static_cast<HTMLEditRules*>(mRules.get());
-    NS_ENSURE_TRUE(htmlRules, NS_ERROR_FAILURE);
-    nsresult rv = htmlRules->MakeSureElemStartsAndEndsOnCR(aElement);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = RemoveContainerWithTransaction(aElement);
-    NS_ENSURE_SUCCESS(rv, rv);
+  if (!aElement.IsHTMLElement(nsGkAtoms::div) ||
+      HasStyleOrIdOrClass(&aElement)) {
+    return NS_OK;
   }
-  return NS_OK;
+
+  
+  
+  nsresult rv = EnsureHardLineBeginsWithFirstChildOf(aElement);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  rv = EnsureHardLineEndsWithLastChildOf(aElement);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  rv = RemoveContainerWithTransaction(aElement);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "RemoveContainerWithTransaction() failed");
+  return rv;
 }
 
 NS_IMETHODIMP
