@@ -259,9 +259,6 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
   
   
   if (aEmbedder) {
-    nsCOMPtr<nsIDocShell> container =
-        do_QueryInterface(aEmbedder->OwnerDoc()->GetContainer());
-
     
     
     
@@ -276,7 +273,8 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
                             "cannot be in bfcache");
 
       RefPtr<BrowsingContext> kungFuDeathGrip(this);
-      RefPtr<BrowsingContext> newParent(container->GetBrowsingContext());
+      RefPtr<BrowsingContext> newParent(
+          aEmbedder->OwnerDoc()->GetBrowsingContext());
       mParent->mChildren.RemoveElement(this);
       if (newParent) {
         newParent->mChildren.AppendElement(this);
@@ -286,18 +284,9 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
 
     nsCOMPtr<nsPIDOMWindowInner> inner =
         do_QueryInterface(aEmbedder->GetOwnerGlobal());
-    if (inner) {
-      RefPtr<WindowGlobalChild> wgc = inner->GetWindowGlobalChild();
-
-      
-      
-      
-      if (RefPtr<WindowGlobalParent> wgp = wgc->GetParentActor()) {
-        Canonical()->SetEmbedderWindowGlobal(wgp);
-      } else {
-        wgc->SendDidEmbedBrowsingContext(this);
-      }
-    }
+    SetEmbedderInnerWindowId(inner ? inner->WindowID() : 0);
+  } else {
+    SetEmbedderInnerWindowId(0);
   }
 
   mEmbedderElement = aEmbedder;
@@ -1026,9 +1015,8 @@ bool BrowsingContext::Transaction::Validate(BrowsingContext* aBrowsingContext,
   return true;
 }
 
-bool BrowsingContext::Transaction::Validate(BrowsingContext* aBrowsingContext,
-                                            ContentParent* aSource,
-                                            uint64_t aEpoch) {
+bool BrowsingContext::Transaction::ValidateEpochs(
+    BrowsingContext* aBrowsingContext, uint64_t aEpoch) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess(),
                         "Should only be called in content process");
 
@@ -1039,7 +1027,11 @@ bool BrowsingContext::Transaction::Validate(BrowsingContext* aBrowsingContext,
   }
 #include "mozilla/dom/BrowsingContextFieldList.h"
 
-  return Validate(aBrowsingContext, aSource);
+  
+  
+  
+  mValidated = true;
+  return true;
 }
 
 void BrowsingContext::Transaction::Apply(BrowsingContext* aBrowsingContext) {
@@ -1122,6 +1114,60 @@ void BrowsingContext::DidSetMuted() {
       win->RefreshMediaElementsVolume();
     }
   });
+}
+
+bool BrowsingContext::MaySetEmbedderInnerWindowId(const uint64_t& aValue,
+                                                  ContentParent* aSource) {
+  
+  
+  if (aValue == 0) {
+    return true;
+  }
+
+  
+  
+  RefPtr<BrowsingContext> impliedParent;
+  if (!aSource) {
+    nsGlobalWindowInner* innerWindow =
+        nsGlobalWindowInner::GetInnerWindowWithId(aValue);
+    if (NS_WARN_IF(!innerWindow)) {
+      return false;
+    }
+
+    impliedParent = innerWindow->GetBrowsingContext();
+  }
+
+  
+  
+  if (XRE_IsParentProcess()) {
+    RefPtr<WindowGlobalParent> wgp =
+        WindowGlobalParent::GetByInnerWindowId(aValue);
+    if (NS_WARN_IF(!wgp)) {
+      return false;
+    }
+
+    
+    if (impliedParent) {
+      MOZ_ASSERT(impliedParent == wgp->BrowsingContext());
+    }
+    impliedParent = wgp->BrowsingContext();
+
+    
+    if (aSource &&
+        !impliedParent->Canonical()->IsOwnedByProcess(aSource->ChildID()) &&
+        aSource->ChildID() !=
+            impliedParent->Canonical()->GetInFlightProcessId()) {
+      return false;
+    }
+  }
+
+  
+  MOZ_ASSERT(impliedParent);
+  if (NS_WARN_IF(mParent && mParent != impliedParent)) {
+    return false;
+  }
+
+  return true;
 }
 
 }  

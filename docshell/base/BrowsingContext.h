@@ -379,9 +379,12 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
     
     
     
-    MOZ_MUST_USE bool Validate(BrowsingContext* aOwner, ContentParent* aSource,
-                               uint64_t aEpoch);
     MOZ_MUST_USE bool Validate(BrowsingContext* aOwner, ContentParent* aSource);
+
+    
+    
+    
+    MOZ_MUST_USE bool ValidateEpochs(BrowsingContext* aOwner, uint64_t aEpoch);
 
     
     
@@ -521,6 +524,9 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   void DidSetMuted();
+
+  bool MaySetEmbedderInnerWindowId(const uint64_t& aValue,
+                                   ContentParent* aSource);
 
   
   const Type mType;
