@@ -176,12 +176,6 @@ size_t encoding_mem_convert_latin1_to_utf8(const char* src, size_t src_len,
 
 
 
-
-
-
-
-
-
 void encoding_mem_convert_latin1_to_utf8_partial(const char* src,
                                                  size_t* src_len, char* dst,
                                                  size_t* dst_len);
@@ -298,6 +292,7 @@ size_t encoding_mem_convert_utf16_to_utf8(const char16_t* src, size_t src_len,
 
 
 
+
 void encoding_mem_convert_utf16_to_utf8_partial(const char16_t* src,
                                                 size_t* src_len, char* dst,
                                                 size_t* dst_len);
@@ -360,6 +355,34 @@ size_t encoding_mem_convert_utf8_to_latin1_lossy(const char* src,
 
 size_t encoding_mem_convert_utf8_to_utf16(const char* src, size_t src_len,
                                           char16_t* dst, size_t dst_len);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+size_t encoding_mem_convert_utf8_to_utf16_without_replacement(const char* src,
+                                                              size_t src_len,
+                                                              char16_t* dst,
+                                                              size_t dst_len);
 
 
 
@@ -647,6 +670,32 @@ bool encoding_mem_is_utf8_latin1(const char* buffer, size_t len);
 
 
 size_t encoding_mem_utf16_valid_up_to(const char16_t* buffer, size_t len);
+
+
+
+
+
+
+
+
+
+
+
+
+size_t encoding_mem_utf8_latin1_up_to(const char* buffer, size_t len);
+
+
+
+
+
+
+
+
+
+
+
+
+size_t encoding_mem_str_latin1_up_to(const char* buffer, size_t len);
 
 #ifdef __cplusplus
 }  

@@ -375,6 +375,40 @@ pub unsafe extern "C" fn encoding_mem_convert_str_to_utf16(
 
 
 
+#[no_mangle]
+pub unsafe extern "C" fn encoding_mem_convert_utf8_to_utf16_without_replacement(
+    src: *const u8,
+    src_len: usize,
+    dst: *mut u16,
+    dst_len: usize,
+) -> usize {
+    encoding_rs::mem::convert_utf8_to_utf16_without_replacement(
+        ::std::slice::from_raw_parts(src, src_len),
+        ::std::slice::from_raw_parts_mut(dst, dst_len),
+    ).unwrap_or(::std::usize::MAX)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -648,6 +682,36 @@ pub unsafe extern "C" fn encoding_mem_convert_utf16_to_latin1_lossy(
 #[no_mangle]
 pub unsafe extern "C" fn encoding_mem_utf16_valid_up_to(buffer: *const u16, len: usize) -> usize {
     encoding_rs::mem::utf16_valid_up_to(::std::slice::from_raw_parts(buffer, len))
+}
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn encoding_mem_utf8_latin1_up_to(buffer: *const u8, len: usize) -> usize {
+    encoding_rs::mem::utf8_latin1_up_to(::std::slice::from_raw_parts(buffer, len))
+}
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn encoding_mem_str_latin1_up_to(buffer: *const u8, len: usize) -> usize {
+    encoding_rs::mem::str_latin1_up_to(::std::str::from_utf8_unchecked(
+        ::std::slice::from_raw_parts(buffer, len),
+    ))
 }
 
 

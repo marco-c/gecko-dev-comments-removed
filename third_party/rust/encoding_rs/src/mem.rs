@@ -21,6 +21,9 @@
 
 
 
+
+
+
 use std::borrow::Cow;
 
 use super::in_inclusive_range16;
@@ -1538,14 +1541,14 @@ pub fn convert_str_to_utf16(src: &str, dst: &mut [u16]) -> usize {
             if byte < 0xE0 {
                 if byte >= 0x80 {
                     
-                    let second = bytes[read + 1];
+                    let second = unsafe { *(bytes.get_unchecked(read + 1)) };
                     let point = ((u16::from(byte) & 0x1F) << 6) | (u16::from(second) & 0x3F);
-                    dst[written] = point;
+                    unsafe { *(dst.get_unchecked_mut(written)) = point };
                     read += 2;
                     written += 1;
                 } else {
                     
-                    dst[written] = u16::from(byte);
+                    unsafe { *(dst.get_unchecked_mut(written)) = u16::from(byte) };
                     read += 1;
                     written += 1;
                     
@@ -1557,25 +1560,27 @@ pub fn convert_str_to_utf16(src: &str, dst: &mut [u16]) -> usize {
                 }
             } else if byte < 0xF0 {
                 
-                let second = bytes[read + 1];
-                let third = bytes[read + 2];
+                let second = unsafe { *(bytes.get_unchecked(read + 1)) };
+                let third = unsafe { *(bytes.get_unchecked(read + 2)) };
                 let point = ((u16::from(byte) & 0xF) << 12)
                     | ((u16::from(second) & 0x3F) << 6)
                     | (u16::from(third) & 0x3F);
-                dst[written] = point;
+                unsafe { *(dst.get_unchecked_mut(written)) = point };
                 read += 3;
                 written += 1;
             } else {
                 
-                let second = bytes[read + 1];
-                let third = bytes[read + 2];
-                let fourth = bytes[read + 3];
+                let second = unsafe { *(bytes.get_unchecked(read + 1)) };
+                let third = unsafe { *(bytes.get_unchecked(read + 2)) };
+                let fourth = unsafe { *(bytes.get_unchecked(read + 3)) };
                 let point = ((u32::from(byte) & 0x7) << 18)
                     | ((u32::from(second) & 0x3F) << 12)
                     | ((u32::from(third) & 0x3F) << 6)
                     | (u32::from(fourth) & 0x3F);
-                dst[written] = (0xD7C0 + (point >> 10)) as u16;
-                dst[written + 1] = (0xDC00 + (point & 0x3FF)) as u16;
+                unsafe { *(dst.get_unchecked_mut(written)) = (0xD7C0 + (point >> 10)) as u16 };
+                unsafe {
+                    *(dst.get_unchecked_mut(written + 1)) = (0xDC00 + (point & 0x3FF)) as u16
+                };
                 read += 4;
                 written += 2;
             }
@@ -1589,6 +1594,30 @@ pub fn convert_str_to_utf16(src: &str, dst: &mut [u16]) -> usize {
             continue 'inner;
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn convert_utf8_to_utf16_without_replacement(src: &[u8], dst: &mut [u16]) -> Option<usize> {
+    assert!(
+        dst.len() >= src.len(),
+        "Destination must not be shorter than the source."
+    );
+    let (read, written) = convert_utf8_to_utf16_up_to_invalid(src, dst);
+    if read == src.len() {
+        return Some(written);
+    }
+    None
 }
 
 
@@ -1625,12 +1654,12 @@ pub fn convert_utf16_to_utf8_partial(src: &[u16], dst: &mut [u8]) -> (usize, usi
     
     
     
-    let (read, written) = convert_utf16_to_utf16_partial_inner(src, dst);
+    let (read, written) = convert_utf16_to_utf8_partial_inner(src, dst);
     if unsafe { likely(read == src.len()) } {
         return (read, written);
     }
     let (tail_read, tail_written) =
-        convert_utf16_to_utf16_partial_tail(&src[read..], &mut dst[written..]);
+        convert_utf16_to_utf8_partial_tail(&src[read..], &mut dst[written..]);
     (read + tail_read, written + tail_written)
 }
 
@@ -1727,7 +1756,6 @@ pub fn convert_latin1_to_utf16(src: &[u8], dst: &mut [u16]) {
         unpack_latin1(src.as_ptr(), dst.as_mut_ptr(), src.len());
     }
 }
-
 
 
 
@@ -2016,6 +2044,19 @@ pub fn encode_latin1_lossy<'a>(string: &'a str) -> Cow<'a, [u8]> {
 
 pub fn utf16_valid_up_to(buffer: &[u16]) -> usize {
     utf16_valid_up_to_impl(buffer)
+}
+
+
+
+
+pub fn utf8_latin1_up_to(buffer: &[u8]) -> usize {
+    is_utf8_latin1_impl(buffer).unwrap_or(buffer.len())
+}
+
+
+
+pub fn str_latin1_up_to(buffer: &str) -> usize {
+    is_str_latin1_impl(buffer).unwrap_or(buffer.len())
 }
 
 
@@ -2442,7 +2483,7 @@ mod tests {
             0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16,
             0x2603u16, 0x00B6u16, 0xD83Du16,
         ];
-        assert_eq!(utf16_valid_up_to(&lone_high_at_end[..]), 15);;
+        assert_eq!(utf16_valid_up_to(&lone_high_at_end[..]), 15);
     }
 
     #[test]
@@ -3234,4 +3275,61 @@ mod tests {
         assert_eq!(encode_latin1_lossy("a\u{E4}"), &(b"a\xE4")[..]);
     }
 
+    #[test]
+    fn test_convert_utf8_to_utf16_without_replacement() {
+        let mut buf = [0u16; 5];
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"ab", &mut buf[..2]),
+            Some(2)
+        );
+        assert_eq!(buf[0], u16::from(b'a'));
+        assert_eq!(buf[1], u16::from(b'b'));
+        assert_eq!(buf[2], 0);
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xC3\xA4c", &mut buf[..3]),
+            Some(2)
+        );
+        assert_eq!(buf[0], 0xE4);
+        assert_eq!(buf[1], u16::from(b'c'));
+        assert_eq!(buf[2], 0);
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xE2\x98\x83", &mut buf[..3]),
+            Some(1)
+        );
+        assert_eq!(buf[0], 0x2603);
+        assert_eq!(buf[1], u16::from(b'c'));
+        assert_eq!(buf[2], 0);
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xE2\x98\x83d", &mut buf[..4]),
+            Some(2)
+        );
+        assert_eq!(buf[0], 0x2603);
+        assert_eq!(buf[1], u16::from(b'd'));
+        assert_eq!(buf[2], 0);
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xE2\x98\x83\xC3\xA4", &mut buf[..5]),
+            Some(2)
+        );
+        assert_eq!(buf[0], 0x2603);
+        assert_eq!(buf[1], 0xE4);
+        assert_eq!(buf[2], 0);
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xF0\x9F\x93\x8E", &mut buf[..4]),
+            Some(2)
+        );
+        assert_eq!(buf[0], 0xD83D);
+        assert_eq!(buf[1], 0xDCCE);
+        assert_eq!(buf[2], 0);
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xF0\x9F\x93\x8Ee", &mut buf[..5]),
+            Some(3)
+        );
+        assert_eq!(buf[0], 0xD83D);
+        assert_eq!(buf[1], 0xDCCE);
+        assert_eq!(buf[2], u16::from(b'e'));
+        assert_eq!(
+            convert_utf8_to_utf16_without_replacement(b"\xF0\x9F\x93", &mut buf[..5]),
+            None
+        );
+    }
 }
