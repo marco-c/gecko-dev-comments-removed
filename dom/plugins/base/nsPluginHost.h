@@ -96,12 +96,6 @@ class nsPluginHost final : public nsIPluginHost,
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
-  nsresult LoadPlugins();
-  nsresult UnloadPlugins();
-
-  nsresult SetUpPluginInstance(const nsACString& aMimeType, nsIURI* aURL,
-                               nsPluginInstanceOwner* aOwner);
-
   
   enum PluginFilter {
     eExcludeNone = nsIPluginHost::EXCLUDE_NONE,
@@ -119,11 +113,6 @@ class nsPluginHost final : public nsIPluginHost,
 
   void GetPlugins(nsTArray<nsCOMPtr<nsIInternalPluginTag>>& aPluginArray,
                   bool aIncludeDisabled = false);
-
-  nsresult FindPluginsForContent(
-      uint32_t aPluginEpoch, nsTArray<mozilla::plugins::PluginTag>* aPlugins,
-      nsTArray<mozilla::plugins::FakePluginTag>* aFakePlugins,
-      uint32_t* aNewPluginEpoch);
 
   nsresult GetURL(nsISupports* pluginInst, const char* url, const char* target,
                   nsNPAPIPluginStreamListener* streamListener,
@@ -243,6 +232,12 @@ class nsPluginHost final : public nsIPluginHost,
       nsTArray<mozilla::plugins::FakePluginTag>& aFakePlugins);
 
  private:
+  nsresult LoadPlugins();
+  nsresult UnloadPlugins();
+
+  nsresult SetUpPluginInstance(const nsACString& aMimeType, nsIURI* aURL,
+                               nsPluginInstanceOwner* aOwner);
+
   friend class nsPluginUnloadRunnable;
   friend class mozilla::plugins::BlocklistPromiseHandler;
 
@@ -305,6 +300,8 @@ class nsPluginHost final : public nsIPluginHost,
   void RegisterWithCategoryManager(const nsCString& aMimeType,
                                    nsRegisterType aType);
 
+  bool ShouldAddPlugin(const nsPluginInfo& aInfo);
+
   void AddPluginTag(nsPluginTag* aPluginTag);
 
   void UpdatePluginBlocklistState(nsPluginTag* aPluginTag,
@@ -321,11 +318,20 @@ class nsPluginHost final : public nsIPluginHost,
 
   bool IsRunningPlugin(nsPluginTag* aPluginTag);
 
+  nsresult EnsurePluginReg();
+
+  
+  nsresult ReadPluginInfo();
+
   
   nsresult WritePluginInfo();
 
   
-  nsresult ReadPluginInfo();
+  nsresult ReadPluginInfoFromDisk();
+
+  
+  nsresult ReadFlashInfo();
+  nsresult WriteFlashInfo();
 
   
   
@@ -374,10 +380,14 @@ class nsPluginHost final : public nsIPluginHost,
   bool mPluginsDisabled;
 
   
+  bool mFlashOnly;
+
+  
   
   
   nsTArray<RefPtr<nsNPAPIPluginInstance>> mInstances;
 
+  
   nsCOMPtr<nsIFile> mPluginRegFile;
 #ifdef XP_WIN
   RefPtr<nsPluginDirServiceProvider> mPrivateDirServiceProvider;
