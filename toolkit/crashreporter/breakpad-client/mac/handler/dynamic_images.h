@@ -114,8 +114,7 @@ class DynamicImage {
                string file_path,
                uintptr_t image_mod_date,
                mach_port_t task,
-               cpu_type_t cpu_type,
-               cpu_subtype_t cpu_subtype)
+               cpu_type_t cpu_type)
     : header_(header, header + header_size),
       header_size_(header_size),
       load_address_(load_address),
@@ -126,8 +125,7 @@ class DynamicImage {
       file_path_(file_path),
       file_mod_date_(image_mod_date),
       task_(task),
-      cpu_type_(cpu_type),
-      cpu_subtype_ (cpu_subtype) {
+      cpu_type_(cpu_type) {
     CalculateMemoryAndVersionInfo();
   }
 
@@ -156,9 +154,6 @@ class DynamicImage {
 
   
   cpu_type_t GetCPUType() {return cpu_type_;}
-
-  
-  cpu_type_t GetCPUSubtype() {return cpu_subtype_;}
 
   
   uint32_t GetFileType();
@@ -200,7 +195,6 @@ class DynamicImage {
 
   mach_port_t             task_;
   cpu_type_t              cpu_type_;        
-  cpu_subtype_t           cpu_subtype_;     
 };
 
 
