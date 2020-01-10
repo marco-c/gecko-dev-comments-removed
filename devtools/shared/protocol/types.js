@@ -317,6 +317,7 @@ types.addActorType = function(name) {
       let front = ctx.conn.getActor(actorID);
       if (!front) {
         
+
         
         
         
@@ -329,11 +330,7 @@ types.addActorType = function(name) {
         const Class = type.frontClass;
         front = new Class(ctx.conn);
         front.actorID = actorID;
-        const parentFront = ctx.marshallPool();
-        
-        
-        front.targetFront = parentFront.targetFront;
-        parentFront.manage(front);
+        ctx.marshallPool().manage(front);
       }
 
       
@@ -494,10 +491,7 @@ exports.registerFront = function(cls) {
 
 
 
-
-
-
-function getFront(client, typeName, form, target = null) {
+function getFront(client, typeName, form) {
   const type = types.getType(typeName);
   if (!type) {
     throw new Error(`No spec for front type '${typeName}'.`);
@@ -509,8 +503,6 @@ function getFront(client, typeName, form, target = null) {
   
   const Class = type.frontClass;
   const instance = new Class(client);
-  
-  instance.targetFront = target;
   const { formAttributeName } = instance;
   if (!formAttributeName) {
     throw new Error(`Can't find the form attribute name for ${typeName}`);
