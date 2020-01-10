@@ -79,15 +79,16 @@ class nsCSSPropertyIDSet {
   static constexpr size_t CompositorAnimatableDisplayItemCount() {
     
     
-    
-    
-    return COMPOSITOR_ANIMATABLE_PROPERTY_LIST_LENGTH - 3;
+    return COMPOSITOR_ANIMATABLE_PROPERTY_LIST_LENGTH - 7;
   }
 
   static constexpr nsCSSPropertyIDSet TransformLikeProperties() {
     
-    return nsCSSPropertyIDSet{eCSSProperty_transform, eCSSProperty_translate,
-                              eCSSProperty_rotate, eCSSProperty_scale};
+    return nsCSSPropertyIDSet{
+        eCSSProperty_transform,     eCSSProperty_translate,
+        eCSSProperty_rotate,        eCSSProperty_scale,
+        eCSSProperty_offset_path,   eCSSProperty_offset_distance,
+        eCSSProperty_offset_rotate, eCSSProperty_offset_anchor};
   }
 
   static constexpr nsCSSPropertyIDSet OpacityProperties() {

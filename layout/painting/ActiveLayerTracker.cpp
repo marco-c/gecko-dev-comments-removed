@@ -75,8 +75,10 @@ class LayerActivity {
       case eCSSProperty_translate:
       case eCSSProperty_rotate:
       case eCSSProperty_scale:
-        
-        
+      case eCSSProperty_offset_path:
+      case eCSSProperty_offset_distance:
+      case eCSSProperty_offset_rotate:
+      case eCSSProperty_offset_anchor:
         
         return ACTIVITY_TRANSFORM;
       case eCSSProperty_left:
