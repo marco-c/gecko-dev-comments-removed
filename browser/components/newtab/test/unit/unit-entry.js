@@ -128,6 +128,10 @@ const TEST_GLOBAL = {
     reportError() {},
   },
   dump() {},
+  EveryWindow: {
+    registerCallback: (id, init, uninit) => {},
+    unregisterCallback: id => {},
+  },
   fetch() {},
   
   Image: function() {}, 

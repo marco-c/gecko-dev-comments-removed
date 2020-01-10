@@ -14,6 +14,17 @@ ChromeUtils.defineModuleGetter(
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "L10nRegistry",
+  "resource://gre/modules/L10nRegistry.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "FileSource",
+  "resource://gre/modules/L10nRegistry.jsm"
+);
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 const POPUP_NOTIFICATION_ID = "contextual-feature-recommendation";
 const ANIMATION_BUTTON_ID = "cfr-notification-footer-animation-button";
@@ -30,6 +41,12 @@ const CATEGORY_ICONS = {
   cfrAddons: "webextensions-icon",
   cfrFeatures: "recommendations-icon",
 };
+
+
+
+
+
+const RS_DOWNLOADED_FILE_SUBDIR = "settings/main/ms-language-packs";
 
 
 
@@ -68,12 +85,7 @@ class PageAction {
     this._showPopupOnClick = this._showPopupOnClick.bind(this);
     this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
-    this._l10n = new DOMLocalization([
-      "browser/newtab/asrouter.ftl",
-      "browser/branding/brandings.ftl",
-      "browser/branding/sync-brand.ftl",
-      "branding/brand.ftl",
-    ]);
+    this._l10n = this._createDOML10n();
 
     
     this.stateTransitionTimeoutIDs = [];
@@ -102,6 +114,52 @@ class PageAction {
         event: "IMPRESSION",
       });
     }
+  }
+
+  
+
+
+
+
+  _createDOML10n() {
+    async function* generateBundles(resourceIds) {
+      const appLocale = Services.locale.appLocaleAsBCP47;
+      const appLocales = Services.locale.appLocalesAsBCP47;
+      const l10nFluentDir = OS.Path.join(
+        OS.Constants.Path.localProfileDir,
+        RS_DOWNLOADED_FILE_SUBDIR
+      );
+      const fs = new FileSource("cfr", [appLocale], `file://${l10nFluentDir}/`);
+      
+      
+      const resource = await fs.fetchFile(appLocale, "asrouter.ftl");
+      if (resource) {
+        
+        
+        
+        
+        for await (let bundle of L10nRegistry.generateBundles(
+          [appLocale],
+          resourceIds.slice(1)
+        )) {
+          
+          bundle.addResource(resource, true);
+          yield bundle;
+        }
+      } else {
+        yield* L10nRegistry.generateBundles(appLocales, resourceIds);
+      }
+    }
+
+    return new DOMLocalization(
+      [
+        "browser/newtab/asrouter.ftl",
+        "browser/branding/brandings.ftl",
+        "browser/branding/sync-brand.ftl",
+        "branding/brand.ftl",
+      ],
+      generateBundles
+    );
   }
 
   async showAddressBarNotifier(recommendation, shouldExpand = false) {

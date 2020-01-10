@@ -720,11 +720,25 @@ this.ActivityStream = class ActivityStream {
 
     
     for (const pref of PREFS_CONFIG.keys()) {
+      
       const prefConfig = PREFS_CONFIG.get(pref);
       if (!prefConfig.getValue) {
         continue;
       }
 
+      
+      
+      try {
+        const existingDefault = this._defaultPrefs.get(pref);
+        if (existingDefault !== undefined && prefConfig.value === undefined) {
+          prefConfig.getValue = () => existingDefault;
+        }
+      } catch (ex) {
+        
+        
+      }
+
+      
       const newValue = prefConfig.getValue({
         geo: this.geo,
         locale: this.locale,
