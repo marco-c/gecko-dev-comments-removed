@@ -1103,6 +1103,18 @@ this.LoginHelper = {
       throw e;
     }
   },
+
+  createLoginAlreadyExistsError(guid) {
+    
+    
+    let guidSupportsString = Cc[
+      "@mozilla.org/supports-string;1"
+    ].createInstance(Ci.nsISupportsString);
+    guidSupportsString.data = guid;
+    return Components.Exception("This login already exists.", {
+      data: guidSupportsString,
+    });
+  },
 };
 
 LoginHelper.init();

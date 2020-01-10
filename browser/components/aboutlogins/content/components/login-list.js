@@ -211,6 +211,22 @@ export default class LoginList extends HTMLElement {
           return;
         }
 
+        
+        
+        
+        if (
+          Object.keys(event.detail).length == 1 &&
+          event.detail.hasOwnProperty("guid")
+        ) {
+          window.dispatchEvent(
+            new CustomEvent("AboutLoginsLoginSelected", {
+              detail: this._logins[event.detail.guid].login,
+              cancelable: true,
+            })
+          );
+          return;
+        }
+
         let listItem = this._list.querySelector(
           `.login-list-item[data-guid="${event.detail.guid}"]`
         );
