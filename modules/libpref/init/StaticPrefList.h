@@ -745,6 +745,19 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "browser.cache.memory.capacity",
+   browser_cache_memory_capacity,
+  RelaxedAtomicInt32,
+#ifdef ANDROID
+  1024  
+#else
+  -1    
+#endif
+)
+
+
+VARCACHE_PREF(
+  Live,
   "browser.contentblocking.allowlist.storage.enabled",
   browser_contentblocking_allowlist_storage_enabled,
   bool, false
