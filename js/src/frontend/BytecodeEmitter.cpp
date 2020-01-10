@@ -63,8 +63,8 @@
 #include "vm/Opcodes.h"   
 #include "wasm/AsmJS.h"   
 
-#include "debugger/DebugAPI-inl.h" 
-#include "vm/JSObject-inl.h"  
+#include "debugger/DebugAPI-inl.h"  
+#include "vm/JSObject-inl.h"        
 
 using namespace js;
 using namespace js::frontend;
@@ -242,7 +242,7 @@ bool BytecodeEmitter::emitCheck(JSOp op, ptrdiff_t delta,
   if (!bytecodeSection().code().growByUninitialized(delta)) {
     return false;
   }
-  
+
   if (BytecodeOpHasTypeSet(op)) {
     bytecodeSection().incrementNumTypeSets();
   }
@@ -914,7 +914,8 @@ bool BytecodeEmitter::emitIndexOp(JSOp op, uint32_t index) {
   return true;
 }
 
-bool BytecodeEmitter::emitAtomOp(JSAtom* atom, JSOp op, ShouldInstrument shouldInstrument) {
+bool BytecodeEmitter::emitAtomOp(JSAtom* atom, JSOp op,
+                                 ShouldInstrument shouldInstrument) {
   MOZ_ASSERT(atom);
 
   
@@ -2807,7 +2808,7 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
         if (!eoe.skipObjAndKeyAndRhs()) {
           return false;
         }
-        if (!eoe.emitAssignment(ElemOpEmitter::EmitSetFunctionName::No)) {
+        if (!eoe.emitAssignment()) {
           
           return false;
         }
@@ -4087,9 +4088,7 @@ bool BytecodeEmitter::emitSingleDeclaration(ListNode* declList, NameNode* decl,
 }
 
 bool BytecodeEmitter::emitAssignmentRhs(ParseNode* rhs,
-                                        HandleAtom anonFunctionName,
-                                        bool* emitSetFunName) {
-  *emitSetFunName = false;
+                                        HandleAtom anonFunctionName) {
   if (rhs->isDirectRHSAnonFunction()) {
     if (anonFunctionName) {
       return emitAnonymousFunctionWithName(rhs, anonFunctionName);
@@ -4151,8 +4150,6 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   JSOp compoundOp = CompoundAssignmentParseNodeKindToJSOp(kind);
   bool isCompound = compoundOp != JSOP_NOP;
   bool isInit = kind == ParseNodeKind::InitExpr;
-  ElemOpEmitter::EmitSetFunctionName emitSetFunName =
-      ElemOpEmitter::EmitSetFunctionName::No;
 
   MOZ_ASSERT_IF(isInit, lhs->isKind(ParseNodeKind::DotExpr) ||
                             lhs->isKind(ParseNodeKind::ElemExpr));
@@ -4171,14 +4168,10 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
     }
 
     if (rhs) {
-      bool emitSetFunctionName;
-      if (!emitAssignmentRhs(rhs, name, &emitSetFunctionName)) {
+      if (!emitAssignmentRhs(rhs, name)) {
         
         return false;
       }
-      
-      
-      MOZ_ASSERT(!emitSetFunctionName);
     } else {
       uint8_t offset = noe.emittedBindOp() ? 2 : 1;
       
@@ -4362,14 +4355,10 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   
   
   if (rhs) {
-    bool emitSetFunctionName;
-    if (!emitAssignmentRhs(rhs, anonFunctionName, &emitSetFunctionName)) {
+    if (!emitAssignmentRhs(rhs, anonFunctionName)) {
       
       return false;
     }
-    emitSetFunName = emitSetFunctionName
-                         ? ElemOpEmitter::EmitSetFunctionName::Yes
-                         : ElemOpEmitter::EmitSetFunctionName::No;
   } else {
     
     if (!emitAssignmentRhs(offset)) {
@@ -4405,7 +4394,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
       
       break;
     case ParseNodeKind::ElemExpr: {
-      if (!eoe->emitAssignment(emitSetFunName)) {
+      if (!eoe->emitAssignment()) {
         
         return false;
       }
@@ -5766,9 +5755,8 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
     }
 
     uint32_t innerScriptLine, innerScriptColumn;
-    parser->errorReporter().lineAndColumnAt(funNode->pn_pos.begin,
-                                            &innerScriptLine,
-                                            &innerScriptColumn);
+    parser->errorReporter().lineAndColumnAt(
+        funNode->pn_pos.begin, &innerScriptLine, &innerScriptColumn);
     BytecodeEmitter bce2(this, parser, funbox, innerScript,
                           nullptr, innerScriptLine,
                          innerScriptColumn, nestedMode, fieldInitializers);
@@ -6105,7 +6093,7 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
       return false;
     }
   } else if (top + BytecodeOffsetDiff(JSOP_RETURN_LENGTH) !=
-             bytecodeSection().offset() ||
+                 bytecodeSection().offset() ||
              
              
              instrumentationKinds) {
@@ -8909,7 +8897,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationSlow(
     const std::function<bool(uint32_t)>& pushOperandsCallback) {
   MOZ_ASSERT(instrumentationKinds);
 
-  if (!(instrumentationKinds & (uint32_t) kind)) {
+  if (!(instrumentationKinds & (uint32_t)kind)) {
     return true;
   }
 
@@ -9009,30 +8997,27 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationForOpcodeSlow(
     case JSOP_GETPROP:
     case JSOP_CALLPROP:
     case JSOP_LENGTH:
-      return emitInstrumentationSlow(InstrumentationKind::GetProperty,
-                                     [=](uint32_t pushed) {
-          return emitDupAt(pushed) && emitAtomOp(atomIndex, JSOP_STRING);
-        });
+      return emitInstrumentationSlow(
+          InstrumentationKind::GetProperty, [=](uint32_t pushed) {
+            return emitDupAt(pushed) && emitAtomOp(atomIndex, JSOP_STRING);
+          });
     case JSOP_SETPROP:
     case JSOP_STRICTSETPROP:
-      return emitInstrumentationSlow(InstrumentationKind::SetProperty,
-                                     [=](uint32_t pushed) {
-          return emitDupAt(pushed + 1) &&
-                 emitAtomOp(atomIndex, JSOP_STRING) &&
-                 emitDupAt(pushed + 2);
-        });
+      return emitInstrumentationSlow(
+          InstrumentationKind::SetProperty, [=](uint32_t pushed) {
+            return emitDupAt(pushed + 1) &&
+                   emitAtomOp(atomIndex, JSOP_STRING) && emitDupAt(pushed + 2);
+          });
     case JSOP_GETELEM:
     case JSOP_CALLELEM:
-      return emitInstrumentationSlow(InstrumentationKind::GetElement,
-                                     [=](uint32_t pushed) {
-          return emitDupAt(pushed + 1, 2);
-        });
+      return emitInstrumentationSlow(
+          InstrumentationKind::GetElement,
+          [=](uint32_t pushed) { return emitDupAt(pushed + 1, 2); });
     case JSOP_SETELEM:
     case JSOP_STRICTSETELEM:
-      return emitInstrumentationSlow(InstrumentationKind::SetElement,
-                                     [=](uint32_t pushed) {
-          return emitDupAt(pushed + 2, 3);
-        });
+      return emitInstrumentationSlow(
+          InstrumentationKind::SetElement,
+          [=](uint32_t pushed) { return emitDupAt(pushed + 2, 3); });
     default:
       return true;
   }

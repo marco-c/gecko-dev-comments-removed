@@ -519,11 +519,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitDeclarationList(ListNode* declList);
   MOZ_MUST_USE bool emitSingleDeclaration(ListNode* declList, NameNode* decl,
                                           ParseNode* initializer);
-  
-  
   MOZ_MUST_USE bool emitAssignmentRhs(ParseNode* rhs,
-                                      HandleAtom anonFunctionName,
-                                      bool* emitSetFunName);
+                                      HandleAtom anonFunctionName);
   MOZ_MUST_USE bool emitAssignmentRhs(uint8_t offset);
 
   MOZ_MUST_USE bool emitNewInit();
