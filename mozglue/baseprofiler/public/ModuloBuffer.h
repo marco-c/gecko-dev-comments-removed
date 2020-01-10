@@ -68,6 +68,34 @@ class ModuloBuffer {
   ModuloBuffer(Byte* aExternalBuffer, PowerOfTwo<Length> aLength)
       : mMask(aLength.Mask()), mBuffer(WrapNotNull(aExternalBuffer)) {}
 
+  
+  ModuloBuffer(const ModuloBuffer& aOther) = delete;
+  ModuloBuffer& operator=(const ModuloBuffer& aOther) = delete;
+
+  
+  
+  
+  
+  
+  
+  ModuloBuffer(ModuloBuffer&& aOther)
+      : mMask(std::move(aOther.mMask)),
+        mBuffer(std::move(aOther.mBuffer)),
+        mBufferDeleter(std::move(aOther.mBufferDeleter)) {
+    
+    
+    
+    
+    if (aOther.mBufferDeleter) {
+      
+      aOther.mBufferDeleter = nullptr;
+    }
+  }
+
+  
+  ModuloBuffer& operator=(ModuloBuffer&& aOther) = delete;
+
+  
   ~ModuloBuffer() {
     if (mBufferDeleter) {
       mBufferDeleter(mBuffer);
@@ -429,7 +457,9 @@ class ModuloBuffer {
   const PowerOfTwoMask<Offset> mMask;
 
   
-  NotNull<Byte*> mBuffer;
+  
+  
+  const NotNull<Byte* const> mBuffer;
 
   
   std::function<void(Byte*)> mBufferDeleter;
