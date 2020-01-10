@@ -2328,6 +2328,17 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
+  static bool HasAnimationOfTransformAndMotionPath(const nsIFrame* aFrame);
+
+  
+
+
+
   static bool HasEffectiveAnimation(const nsIFrame* aFrame,
                                     nsCSSPropertyID aProperty);
 
