@@ -78,8 +78,14 @@ impl Tree {
 
     
     #[inline]
-    pub fn deletions(&self) -> impl Iterator<Item = &Guid> {
-        self.deleted_guids.iter()
+    pub fn deletions(&self) -> &HashSet<Guid> {
+        &self.deleted_guids
+    }
+
+    
+    #[inline]
+    pub fn exists(&self, guid: &Guid) -> bool {
+        self.entry_index_by_guid.contains_key(guid)
     }
 
     
@@ -1426,6 +1432,13 @@ pub struct Node<'t>(&'t Tree, &'t TreeEntry);
 
 impl<'t> Node<'t> {
     
+    #[inline]
+    pub fn item(&self) -> &'t Item {
+        &self.1.item
+    }
+
+    
+    #[inline]
     pub fn content(&self) -> Option<&'t Content> {
         self.1.content.as_ref()
     }
@@ -1528,7 +1541,7 @@ impl<'t> Node<'t> {
     }
 
     fn to_ascii_fragment(&self, prefix: &str) -> String {
-        match self.1.item.kind {
+        match self.item().kind {
             Kind::Folder => {
                 let children_prefix = format!("{}| ", prefix);
                 let children = self
@@ -1541,13 +1554,13 @@ impl<'t> Node<'t> {
                     "📂"
                 };
                 if children.is_empty() {
-                    format!("{}{} {}", prefix, kind, self.1.item)
+                    format!("{}{} {}", prefix, kind, self.item())
                 } else {
                     format!(
                         "{}{} {}\n{}",
                         prefix,
                         kind,
-                        self.1.item,
+                        self.item(),
                         children.join("\n")
                     )
                 }
@@ -1558,7 +1571,7 @@ impl<'t> Node<'t> {
                 } else {
                     "🔖"
                 };
-                format!("{}{} {}", prefix, kind, self.1.item)
+                format!("{}{} {}", prefix, kind, self.item())
             }
         }
     }
@@ -1573,21 +1586,22 @@ impl<'t> Node<'t> {
     
     #[inline]
     pub fn is_built_in_root(&self) -> bool {
-        self.1.item.guid.is_built_in_root()
+        self.item().guid.is_built_in_root()
     }
 }
 
 impl<'t> Deref for Node<'t> {
     type Target = Item;
 
+    #[inline]
     fn deref(&self) -> &Item {
-        &self.1.item
+        self.item()
     }
 }
 
 impl<'t> fmt::Display for Node<'t> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.1.item.fmt(f)
+        self.item().fmt(f)
     }
 }
 

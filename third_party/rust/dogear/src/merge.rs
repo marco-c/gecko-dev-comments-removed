@@ -50,21 +50,11 @@ pub struct StructureCounts {
     
     
     pub merged_nodes: usize,
-    
-    pub merged_deletions: usize,
 }
 
 
 
 type MatchingDupes<'t> = (HashMap<Guid, Node<'t>>, HashMap<Guid, Node<'t>>);
-
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct Deletion<'t> {
-    pub guid: &'t Guid,
-    pub local_level: i64,
-    pub should_upload_tombstone: bool,
-}
 
 
 #[derive(Clone, Copy, Debug)]
@@ -172,14 +162,12 @@ impl<'t, D: Driver, A: AbortSignal> Merger<'t, D, A> {
             self.signal.err_if_aborted()?;
             if !self.mentions(guid) {
                 self.delete_remotely.insert(guid.clone());
-                self.structure_counts.merged_deletions += 1;
             }
         }
         for guid in self.remote_tree.deletions() {
             self.signal.err_if_aborted()?;
             if !self.mentions(guid) {
                 self.delete_locally.insert(guid.clone());
-                self.structure_counts.merged_deletions += 1;
             }
         }
 
@@ -283,7 +271,6 @@ impl<'t, D: Driver, A: AbortSignal> Merger<'t, D, A> {
                 self.merged_guids.insert(new_guid.clone());
                 
                 self.delete_remotely.insert(remote_node.guid.clone());
-                self.structure_counts.merged_deletions += 1;
             }
             new_guid
         };
@@ -353,7 +340,6 @@ impl<'t, D: Driver, A: AbortSignal> Merger<'t, D, A> {
                 self.merged_guids.insert(new_guid.clone());
                 
                 self.delete_remotely.insert(remote_node.guid.clone());
-                self.structure_counts.merged_deletions += 1;
             }
             new_guid
         };
@@ -1431,7 +1417,6 @@ impl<'t, D: Driver, A: AbortSignal> Merger<'t, D, A> {
                 }
             }
         }
-        self.structure_counts.merged_deletions += 1;
         Ok(StructureChange::Deleted)
     }
 
@@ -1494,7 +1479,6 @@ impl<'t, D: Driver, A: AbortSignal> Merger<'t, D, A> {
                 }
             }
         }
-        self.structure_counts.merged_deletions += 1;
         Ok(StructureChange::Deleted)
     }
 
@@ -1793,65 +1777,127 @@ impl<'t> MergedRoot<'t> {
 
     
     
-    pub fn completion_ops(&self) -> CompletionOps<'_> {
+    
+    pub fn completion_ops_with_signal(
+        &self,
+        signal: &impl AbortSignal,
+    ) -> Result<CompletionOps<'_>> {
         let mut ops = CompletionOps::default();
-        accumulate(&mut ops, self.node(), 1, false);
-        for guid in self.delete_locally.iter() {
-            if self.local_tree.mentions(guid) && self.remote_tree.mentions(guid) {
-                
-                
-                
-                
-                let flag_as_merged = FlagAsMerged(guid);
-                ops.flag_as_merged.push(flag_as_merged);
+        accumulate(signal, &mut ops, self.node(), 1, false)?;
+
+        
+        
+        for guid in self
+            .local_tree
+            .deletions()
+            .difference(&self.delete_remotely)
+        {
+            
+            
+            
+            signal.err_if_aborted()?;
+            ops.delete_local_tombstones.push(DeleteLocalTombstone(guid));
+            if self.remote_tree.is_deleted(guid) {
+                ops.set_remote_merged.push(SetRemoteMerged(guid));
             }
         }
-        ops
+        for guid in self
+            .remote_tree
+            .deletions()
+            .difference(&self.delete_locally)
+            .filter(|guid| !self.local_tree.exists(guid))
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            signal.err_if_aborted()?;
+            ops.set_remote_merged.push(SetRemoteMerged(guid));
+            if self.local_tree.is_deleted(guid) {
+                ops.delete_local_tombstones.push(DeleteLocalTombstone(guid));
+            }
+        }
+
+        
+        for guid in self.deletions() {
+            signal.err_if_aborted()?;
+            match (
+                self.local_tree.node_for_guid(guid),
+                self.remote_tree.node_for_guid(guid),
+            ) {
+                (Some(local_node), Some(remote_node)) => {
+                    
+                    
+                    ops.delete_local_items.push(DeleteLocalItem(local_node));
+                    ops.insert_local_tombstones
+                        .push(InsertLocalTombstone(remote_node));
+                    ops.upload_tombstones.push(UploadTombstone(guid));
+                }
+                (Some(local_node), None) => {
+                    
+                    
+                    
+                    
+                    ops.delete_local_items.push(DeleteLocalItem(local_node));
+                    if self.remote_tree.is_deleted(guid) {
+                        ops.set_remote_merged.push(SetRemoteMerged(guid));
+                    }
+                }
+                (None, Some(remote_node)) => {
+                    
+                    
+                    
+                    if !self.local_tree.is_deleted(guid) {
+                        ops.insert_local_tombstones
+                            .push(InsertLocalTombstone(remote_node));
+                    }
+                    ops.upload_tombstones.push(UploadTombstone(guid));
+                }
+                (None, None) => {
+                    
+                    
+                    if self.local_tree.is_deleted(guid) {
+                        ops.delete_local_tombstones.push(DeleteLocalTombstone(guid));
+                    }
+                    if self.remote_tree.is_deleted(guid) {
+                        ops.set_remote_merged.push(SetRemoteMerged(guid));
+                    }
+                }
+            }
+        }
+
+        Ok(ops)
     }
 
     
     #[inline]
-    pub fn deletions(&self) -> impl Iterator<Item = Deletion<'_>> {
-        self.local_deletions().chain(self.remote_deletions())
+    pub fn completion_ops(&self) -> CompletionOps<'_> {
+        self.completion_ops_with_signal(&DefaultAbortSignal)
+            .unwrap()
+    }
+
+    
+    #[inline]
+    pub fn deletions(&self) -> impl Iterator<Item = &Guid> {
+        self.delete_locally.union(&self.delete_remotely)
     }
 
     
     
-    pub fn local_deletions(&self) -> impl Iterator<Item = Deletion<'_>> {
-        self.delete_locally.iter().filter_map(move |guid| {
-            if self.delete_remotely.contains(guid) {
-                None
-            } else {
-                let local_level = self
-                    .local_tree
-                    .node_for_guid(guid)
-                    .map_or(-1, |node| node.level());
-                
-                
-                
-                Some(Deletion {
-                    guid,
-                    local_level,
-                    should_upload_tombstone: false,
-                })
-            }
-        })
+    #[inline]
+    pub fn local_deletions(&self) -> impl Iterator<Item = &Guid> {
+        self.delete_locally.difference(&self.delete_remotely)
     }
 
     
     
-    pub fn remote_deletions(&self) -> impl Iterator<Item = Deletion<'_>> {
-        self.delete_remotely.iter().map(move |guid| {
-            let local_level = self
-                .local_tree
-                .node_for_guid(guid)
-                .map_or(-1, |node| node.level());
-            Deletion {
-                guid,
-                local_level,
-                should_upload_tombstone: true,
-            }
-        })
+    #[inline]
+    pub fn remote_deletions(&self) -> impl Iterator<Item = &Guid> {
+        self.delete_remotely.iter()
     }
 
     
@@ -1869,10 +1915,14 @@ pub struct CompletionOps<'t> {
     pub change_guids: Vec<ChangeGuid<'t>>,
     pub apply_remote_items: Vec<ApplyRemoteItem<'t>>,
     pub apply_new_local_structure: Vec<ApplyNewLocalStructure<'t>>,
-    pub flag_for_upload: Vec<FlagForUpload<'t>>,
-    pub skip_upload: Vec<SkipUpload<'t>>,
-    pub flag_as_merged: Vec<FlagAsMerged<'t>>,
-    pub upload: Vec<Upload<'t>>,
+    pub set_local_unmerged: Vec<SetLocalUnmerged<'t>>,
+    pub set_local_merged: Vec<SetLocalMerged<'t>>,
+    pub set_remote_merged: Vec<SetRemoteMerged<'t>>,
+    pub delete_local_tombstones: Vec<DeleteLocalTombstone<'t>>,
+    pub insert_local_tombstones: Vec<InsertLocalTombstone<'t>>,
+    pub delete_local_items: Vec<DeleteLocalItem<'t>>,
+    pub upload_items: Vec<UploadItem<'t>>,
+    pub upload_tombstones: Vec<UploadTombstone<'t>>,
 }
 
 impl<'t> CompletionOps<'t> {
@@ -1882,10 +1932,31 @@ impl<'t> CompletionOps<'t> {
         self.change_guids.is_empty()
             && self.apply_remote_items.is_empty()
             && self.apply_new_local_structure.is_empty()
-            && self.flag_for_upload.is_empty()
-            && self.skip_upload.is_empty()
-            && self.flag_as_merged.is_empty()
-            && self.upload.is_empty()
+            && self.set_local_unmerged.is_empty()
+            && self.set_local_merged.is_empty()
+            && self.set_remote_merged.is_empty()
+            && self.delete_local_tombstones.is_empty()
+            && self.insert_local_tombstones.is_empty()
+            && self.delete_local_items.is_empty()
+            && self.upload_items.is_empty()
+            && self.upload_tombstones.is_empty()
+    }
+
+    
+    pub fn summarize(&self) -> Vec<String> {
+        std::iter::empty()
+            .chain(to_strings(&self.change_guids))
+            .chain(to_strings(&self.apply_remote_items))
+            .chain(to_strings(&self.apply_new_local_structure))
+            .chain(to_strings(&self.set_local_unmerged))
+            .chain(to_strings(&self.set_local_merged))
+            .chain(to_strings(&self.set_remote_merged))
+            .chain(to_strings(&self.delete_local_tombstones))
+            .chain(to_strings(&self.insert_local_tombstones))
+            .chain(to_strings(&self.delete_local_items))
+            .chain(to_strings(&self.upload_items))
+            .chain(to_strings(&self.upload_tombstones))
+            .collect()
     }
 }
 
@@ -1982,46 +2053,46 @@ impl<'t> fmt::Display for ApplyNewLocalStructure<'t> {
 
 
 #[derive(Clone, Copy, Debug)]
-pub struct FlagForUpload<'t> {
+pub struct SetLocalUnmerged<'t> {
     pub merged_node: &'t MergedNode<'t>,
 }
 
-impl<'t> fmt::Display for FlagForUpload<'t> {
+impl<'t> fmt::Display for SetLocalUnmerged<'t> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Flag {} for upload", self.merged_node.guid)
+        write!(f, "Flag local {} as unmerged", self.merged_node.guid)
     }
 }
 
 
 
 #[derive(Clone, Copy, Debug)]
-pub struct SkipUpload<'t> {
+pub struct SetLocalMerged<'t> {
     pub merged_node: &'t MergedNode<'t>,
 }
 
-impl<'t> fmt::Display for SkipUpload<'t> {
+impl<'t> fmt::Display for SetLocalMerged<'t> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Don't upload {}", self.merged_node.guid)
+        write!(f, "Flag local {} as merged", self.merged_node.guid)
     }
 }
 
 
 #[derive(Clone, Copy, Debug)]
-pub struct Upload<'t> {
+pub struct UploadItem<'t> {
     pub merged_node: &'t MergedNode<'t>,
 }
 
-impl<'t> fmt::Display for Upload<'t> {
+impl<'t> fmt::Display for UploadItem<'t> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Upload {}", self.merged_node.guid)
+        write!(f, "Upload item {}", self.merged_node.guid)
     }
 }
 
 
 #[derive(Clone, Copy, Debug)]
-pub struct FlagAsMerged<'t>(&'t Guid);
+pub struct UploadTombstone<'t>(&'t Guid);
 
-impl<'t> FlagAsMerged<'t> {
+impl<'t> UploadTombstone<'t> {
     
     #[inline]
     pub fn guid(self) -> &'t Guid {
@@ -2029,21 +2100,95 @@ impl<'t> FlagAsMerged<'t> {
     }
 }
 
-impl<'t> fmt::Display for FlagAsMerged<'t> {
+impl<'t> fmt::Display for UploadTombstone<'t> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Flag {} as merged", self.guid())
+        write!(f, "Upload tombstone {}", self.0)
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct SetRemoteMerged<'t>(&'t Guid);
+
+impl<'t> SetRemoteMerged<'t> {
+    
+    #[inline]
+    pub fn guid(self) -> &'t Guid {
+        self.0
+    }
+}
+
+impl<'t> fmt::Display for SetRemoteMerged<'t> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Flag remote {} as merged", self.guid())
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct InsertLocalTombstone<'t>(Node<'t>);
+
+impl<'t> InsertLocalTombstone<'t> {
+    
+    #[inline]
+    pub fn remote_node(&self) -> Node<'t> {
+        self.0
+    }
+}
+
+impl<'t> fmt::Display for InsertLocalTombstone<'t> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Insert local tombstone {}", self.0.guid)
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct DeleteLocalTombstone<'t>(&'t Guid);
+
+impl<'t> DeleteLocalTombstone<'t> {
+    
+    #[inline]
+    pub fn guid(self) -> &'t Guid {
+        self.0
+    }
+}
+
+impl<'t> fmt::Display for DeleteLocalTombstone<'t> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Delete local tombstone {}", self.0)
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct DeleteLocalItem<'t>(Node<'t>);
+
+impl<'t> DeleteLocalItem<'t> {
+    
+    #[inline]
+    pub fn local_node(&self) -> Node<'t> {
+        self.0
+    }
+}
+
+impl<'t> fmt::Display for DeleteLocalItem<'t> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Delete local item {}", self.0.guid)
     }
 }
 
 
 
-fn accumulate<'t>(
+fn accumulate<'t, A: AbortSignal>(
+    signal: &A,
     ops: &mut CompletionOps<'t>,
     merged_node: &'t MergedNode<'t>,
     level: usize,
     is_tagging: bool,
-) {
+) -> Result<()> {
     for (position, merged_child_node) in merged_node.merged_children.iter().enumerate() {
+        signal.err_if_aborted()?;
         let is_tagging = if merged_child_node.guid == TAGS_GUID {
             true
         } else {
@@ -2094,17 +2239,17 @@ fn accumulate<'t>(
         match (local_needs_merge, should_upload) {
             (false, true) => {
                 
-                let flag_for_upload = FlagForUpload {
+                let set_local_unmerged = SetLocalUnmerged {
                     merged_node: merged_child_node,
                 };
-                ops.flag_for_upload.push(flag_for_upload);
+                ops.set_local_unmerged.push(set_local_unmerged);
             }
             (true, false) => {
                 
-                let skip_upload = SkipUpload {
+                let set_local_merged = SetLocalMerged {
                     merged_node: merged_child_node,
                 };
-                ops.skip_upload.push(skip_upload);
+                ops.set_local_merged.push(set_local_merged);
             }
             _ => {}
         }
@@ -2112,7 +2257,7 @@ fn accumulate<'t>(
             
             
             
-            ops.upload.push(Upload {
+            ops.upload_items.push(UploadItem {
                 merged_node: merged_child_node,
             });
         }
@@ -2122,10 +2267,16 @@ fn accumulate<'t>(
                 
                 
                 
-                let flag_as_merged = FlagAsMerged(&remote_child_node.guid);
-                ops.flag_as_merged.push(flag_as_merged);
+                let set_remote_merged = SetRemoteMerged(&remote_child_node.guid);
+                ops.set_remote_merged.push(set_remote_merged);
             }
         }
-        accumulate(ops, merged_child_node, level + 1, is_tagging);
+        accumulate(signal, ops, merged_child_node, level + 1, is_tagging)?;
     }
+    Ok(())
+}
+
+
+pub(crate) fn to_strings<'a, T: ToString>(items: &'a [T]) -> impl Iterator<Item = String> + 'a {
+    items.iter().map(ToString::to_string)
 }
