@@ -24,6 +24,8 @@ addEventListener("fetch", function(evt) {
         headers: {
           "Content-Disposition": 'attachment; filename="fake_download.bin"',
           
+          "Content-Type": "application/octet-stream",
+          
           "Content-Encoding": "gzip",
         },
       });

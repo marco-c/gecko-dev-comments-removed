@@ -140,7 +140,7 @@ inline LauncherVoidResult ShellExecuteByExplorer(const _bstr_t& aPath,
 #endif  
 
   
-  hr = shellDisp->ShellExecute(aPath, aArgs, aVerb, aWorkingDir, aShowCmd);
+  hr = shellDisp->ShellExecute(aPath, aArgs, aWorkingDir, aVerb, aShowCmd);
   if (FAILED(hr)) {
     return LAUNCHER_ERROR_FROM_HRESULT(hr);
   }
