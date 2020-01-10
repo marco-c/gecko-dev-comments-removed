@@ -387,7 +387,7 @@ static void* ThreadEntry(void* aArg) {
 
 SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                              double aIntervalMilliseconds)
-    : Sampler(aLock),
+    : mSampler(aLock),
       mActivityGeneration(aActivityGeneration),
       mIntervalMicroseconds(
           std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))) {
@@ -451,7 +451,7 @@ void SamplerThread::Stop(PSLockRef aLock) {
   
   
   
-  Sampler::Disable(aLock);
+  mSampler.Disable(aLock);
 }
 
 

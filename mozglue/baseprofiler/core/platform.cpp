@@ -1885,7 +1885,7 @@ class Sampler {
 
 
 
-class SamplerThread : public Sampler {
+class SamplerThread {
  public:
   
   SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
@@ -1902,6 +1902,9 @@ class SamplerThread : public Sampler {
   
   
   void SleepMicro(uint32_t aMicroseconds);
+
+  
+  Sampler mSampler;
 
   
   const uint32_t mActivityGeneration;
@@ -2010,7 +2013,7 @@ void SamplerThread::Run() {
           }
 
           now = TimeStamp::NowUnfuzzed();
-          SuspendAndSampleAndResumeThread(
+          mSampler.SuspendAndSampleAndResumeThread(
               lock, *registeredThread, [&](const Registers& aRegs) {
                 DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
                                  now, aRegs);
