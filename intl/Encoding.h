@@ -15,6 +15,7 @@
 #define mozilla_Encoding_h
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Span.h"
 #include "mozilla/Tuple.h"
@@ -243,6 +244,17 @@ class Encoding final {
   inline bool CanEncodeEverything() const {
     return encoding_can_encode_everything(this);
   }
+
+  
+
+
+
+
+
+
+
+
+  inline bool IsSingleByte() const { return encoding_is_single_byte(this); }
 
   
 
@@ -1010,6 +1022,35 @@ class Decoder final {
     uint32_t result = decoder_decode_to_utf16_without_replacement(
         this, aSrc.Elements(), &srcRead, aDst.Elements(), &dstWritten, aLast);
     return MakeTuple(result, srcRead, dstWritten);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  inline mozilla::Maybe<size_t> Latin1ByteCompatibleUpTo(
+      Span<const uint8_t> aBuffer) const {
+    size_t upTo = decoder_latin1_byte_compatible_up_to(
+        this, aBuffer.Elements(), aBuffer.Length());
+    if (upTo == MaxValue<size_t>::value) {
+      return mozilla::Nothing();
+    }
+    return mozilla::Some(upTo);
   }
 
  private:
