@@ -950,15 +950,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const thread = this;
     return function() {
       
-
       const location = thread.sources.getFrameLocation(this);
 
       
-      
-      
-      
-      
-      if (location.url == null || thread.sources.isBlackBoxed(location.url)) {
+      if (thread.sources.isBlackBoxed(location.url)) {
         return undefined;
       }
 
