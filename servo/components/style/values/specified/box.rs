@@ -37,6 +37,19 @@ fn moz_box_display_values_enabled(context: &ParserContext) -> bool {
         }
 }
 
+#[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
+fn parse_unimplemented_in_servo_2020(_context: &ParserContext) -> bool {
+    true
+}
+
+#[cfg(feature = "servo-layout-2020")]
+fn parse_unimplemented_in_servo_2020(_context: &ParserContext) -> bool {
+    servo_config::prefs::pref_map()
+        .get("layout.2020.unimplemented")
+        .as_bool()
+        .unwrap_or(false)
+}
+
 
 
 
@@ -72,20 +85,34 @@ pub enum Display {
     #[cfg(feature = "gecko")]
     FlowRoot,
     Inline,
+    #[parse(condition = "parse_unimplemented_in_servo_2020")]
     InlineBlock,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     ListItem,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     Table,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     InlineTable,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableRowGroup,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableColumn,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableColumnGroup,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableHeaderGroup,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableFooterGroup,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableRow,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableCell,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     TableCaption,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     #[parse(aliases = "-webkit-flex")]
     Flex,
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     #[parse(aliases = "-webkit-inline-flex")]
     InlineFlex,
     #[cfg(feature = "gecko")]
@@ -151,11 +178,24 @@ impl Display {
     }
 
     
+    #[cfg(feature = "servo")]
+    #[inline]
+    pub fn is_atomic_inline_level(&self) -> bool {
+        match *self {
+            Display::InlineBlock => true,
+            #[cfg(feature = "servo-layout-2013")]
+            Display::InlineFlex | Display::InlineTable => true,
+            _ => false,
+        }
+    }
+
+    
     
     
     
     pub fn is_item_container(&self) -> bool {
         match *self {
+            #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
             Display::Flex | Display::InlineFlex => true,
             #[cfg(feature = "gecko")]
             Display::Grid | Display::InlineGrid => true,
@@ -204,7 +244,9 @@ impl Display {
     pub fn equivalent_block_display(&self, _is_root_element: bool) -> Self {
         match *self {
             
+            #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
             Display::InlineTable => Display::Table,
+            #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
             Display::InlineFlex => Display::Flex,
 
             #[cfg(feature = "gecko")]
@@ -218,9 +260,9 @@ impl Display {
             Display::Contents | Display::ListItem if _is_root_element => Display::Block,
 
             
-            Display::None | Display::Block | Display::Flex | Display::ListItem | Display::Table => {
-                *self
-            },
+            Display::None | Display::Block => *self,
+            #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
+            Display::Flex | Display::ListItem | Display::Table => *self,
 
             #[cfg(feature = "gecko")]
             Display::Contents | Display::FlowRoot | Display::Grid | Display::WebkitBox => *self,
