@@ -78,12 +78,11 @@ class LCovSource {
 
 class LCovRealm {
  public:
-  LCovRealm();
+  explicit LCovRealm(JS::Realm* realm);
   ~LCovRealm();
 
   
-  void collectCodeCoverageInfo(JS::Realm* realm, JSScript* topLevel,
-                               const char* name);
+  void collectCodeCoverageInfo(JSScript* script, const char* name);
 
   
   
@@ -91,10 +90,10 @@ class LCovRealm {
 
  private:
   
-  bool writeRealmName(JS::Realm* realm);
+  void writeRealmName(JS::Realm* realm);
 
   
-  LCovSource* lookupOrAdd(JS::Realm* realm, const char* name);
+  LCovSource* lookupOrAdd(const char* name);
 
  private:
   typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>>

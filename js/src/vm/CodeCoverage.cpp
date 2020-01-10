@@ -464,8 +464,13 @@ bool LCovSource::writeScript(JSScript* script) {
   return true;
 }
 
-LCovRealm::LCovRealm() : alloc_(4096), outTN_(&alloc_), sources_(nullptr) {
+LCovRealm::LCovRealm(JS::Realm* realm)
+    : alloc_(4096), outTN_(&alloc_), sources_(nullptr) {
   MOZ_ASSERT(alloc_.isEmpty());
+
+  
+  
+  writeRealmName(realm);
 }
 
 LCovRealm::~LCovRealm() {
@@ -474,8 +479,7 @@ LCovRealm::~LCovRealm() {
   }
 }
 
-void LCovRealm::collectCodeCoverageInfo(JS::Realm* realm, JSScript* script,
-                                        const char* name) {
+void LCovRealm::collectCodeCoverageInfo(JSScript* script, const char* name) {
   
   if (outTN_.hadOutOfMemory()) {
     return;
@@ -486,7 +490,7 @@ void LCovRealm::collectCodeCoverageInfo(JS::Realm* realm, JSScript* script,
   }
 
   
-  LCovSource* source = lookupOrAdd(realm, name);
+  LCovSource* source = lookupOrAdd(name);
   if (!source) {
     return;
   }
@@ -498,14 +502,9 @@ void LCovRealm::collectCodeCoverageInfo(JS::Realm* realm, JSScript* script,
   }
 }
 
-LCovSource* LCovRealm::lookupOrAdd(JS::Realm* realm, const char* name) {
-  
+LCovSource* LCovRealm::lookupOrAdd(const char* name) {
   
   if (!sources_) {
-    if (!writeRealmName(realm)) {
-      return nullptr;
-    }
-
     LCovSourceVector* raw = alloc_.pod_malloc<LCovSourceVector>();
     if (!raw) {
       outTN_.reportOutOfMemory();
@@ -565,7 +564,7 @@ void LCovRealm::exportInto(GenericPrinter& out, bool* isEmpty) const {
   }
 }
 
-bool LCovRealm::writeRealmName(JS::Realm* realm) {
+void LCovRealm::writeRealmName(JS::Realm* realm) {
   JSContext* cx = TlsContext.get();
 
   
@@ -595,8 +594,6 @@ bool LCovRealm::writeRealmName(JS::Realm* realm) {
   } else {
     outTN_.printf("Realm_%p%p\n", (void*)size_t('_'), realm);
   }
-
-  return !outTN_.hadOutOfMemory();
 }
 
 bool gLCovIsEnabled = false;

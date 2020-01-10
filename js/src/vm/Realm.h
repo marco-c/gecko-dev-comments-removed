@@ -407,7 +407,7 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  js::coverage::LCovRealm lcovOutput;
+  js::UniquePtr<js::coverage::LCovRealm> lcovRealm = nullptr;
 
   js::RegExpRealm regExps;
 
@@ -755,6 +755,9 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   bool ensureDelazifyScriptsForDebugger(JSContext* cx);
+
+  
+  void collectCodeCoverageInfo(JSScript* script, const char* name);
 
   
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
