@@ -11,6 +11,7 @@ const {
 const {
   openToolboxAndLog,
   closeToolboxAndLog,
+  garbageCollect,
   runTest,
   testSetup,
   testTeardown,
@@ -28,6 +29,11 @@ module.exports = async function() {
   await collapseExpandAllAndLog(toolbox);
 
   await closeToolboxAndLog("custom.inspector", toolbox);
+
+  
+  
+  await new Promise(r => setTimeout(r, 1000));
+  await garbageCollect();
 
   await testTeardown();
 };
