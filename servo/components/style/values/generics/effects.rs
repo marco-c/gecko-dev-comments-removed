@@ -52,34 +52,34 @@ pub use self::GenericBoxShadow as BoxShadow;
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericFilter<Angle, Factor, Length, Shadow, U> {
+pub enum GenericFilter<Angle, NonNegativeFactor, ZeroToOneFactor, Length, Shadow, U> {
     
     #[css(function)]
     Blur(Length),
     
     #[css(function)]
-    Brightness(Factor),
+    Brightness(NonNegativeFactor),
     
     #[css(function)]
-    Contrast(Factor),
+    Contrast(NonNegativeFactor),
     
     #[css(function)]
-    Grayscale(Factor),
+    Grayscale(ZeroToOneFactor),
     
     #[css(function)]
     HueRotate(Angle),
     
     #[css(function)]
-    Invert(Factor),
+    Invert(ZeroToOneFactor),
     
     #[css(function)]
-    Opacity(Factor),
+    Opacity(ZeroToOneFactor),
     
     #[css(function)]
-    Saturate(Factor),
+    Saturate(NonNegativeFactor),
     
     #[css(function)]
-    Sepia(Factor),
+    Sepia(ZeroToOneFactor),
     
     #[css(function)]
     DropShadow(Shadow),
