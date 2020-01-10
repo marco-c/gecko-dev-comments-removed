@@ -929,11 +929,15 @@ async function setupTestFromUrl(url) {
 
 
 
+
+
+
 function threadFrontTest(test, options = {}) {
-  let { principal, doNotRunWorker } = options;
-  if (!principal) {
-    principal = systemPrincipal;
-  }
+  const {
+    principal = systemPrincipal,
+    doNotRunWorker = false,
+    wantXrays = true,
+  } = options;
 
   async function runThreadFrontTestWithServer(server, test) {
     
@@ -942,7 +946,7 @@ function threadFrontTest(test, options = {}) {
     
     
     
-    const debuggee = Cu.Sandbox(principal, { freshZone: true });
+    const debuggee = Cu.Sandbox(principal, { freshZone: true, wantXrays });
     const scriptName = "debuggee.js";
     debuggee.__name = scriptName;
     server.addTestGlobal(debuggee);

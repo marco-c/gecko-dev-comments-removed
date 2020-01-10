@@ -299,7 +299,7 @@ async function run_tests_in_principal(
   
   await testPrincipal(options, null, debuggeeHasXrays);
 
-  if (debuggeePrincipal === null) {
+  if (debuggeePrincipal.isNullPrincipal) {
     
     await testPrincipal(
       options,
