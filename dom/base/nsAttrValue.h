@@ -314,6 +314,7 @@ class nsAttrValue {
 
 
 
+
   bool ParseHTMLDimension(const nsAString& aInput) {
     return DoParseHTMLDimension(aInput, false);
   }

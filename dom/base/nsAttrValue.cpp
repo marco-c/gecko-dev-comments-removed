@@ -1336,22 +1336,30 @@ bool nsAttrValue::DoParseHTMLDimension(const nsAString& aInput,
   
   
 
-  
+  Maybe<double> doubleValue;
   
   if (position != end && *position == char16_t('.')) {
     canonical = false;  
+                        
     ++position;
+    
+    
+    
+    doubleValue.emplace(value.value());
+    double divisor = 1.0f;
     
     
     
     while (position != end && *position >= char16_t('0') &&
            *position <= char16_t('9')) {
-      
+      divisor = divisor * 10.0f;
+      doubleValue.ref() += (*position - char16_t('0')) / divisor;
       ++position;
     }
   }
 
-  if (aEnsureNonzero && value.value() == 0) {
+  if (aEnsureNonzero && value.value() == 0 &&
+      (!doubleValue || *doubleValue == 0.0f)) {
     
     return false;
   }
@@ -1361,6 +1369,8 @@ bool nsAttrValue::DoParseHTMLDimension(const nsAString& aInput,
   if (position != end && *position == char16_t('%')) {
     type = ePercent;
     ++position;
+  } else if (doubleValue) {
+    type = eDoubleValue;
   } else {
     type = eInteger;
   }
@@ -1369,7 +1379,12 @@ bool nsAttrValue::DoParseHTMLDimension(const nsAString& aInput,
     canonical = false;
   }
 
-  SetIntValueAndType(value.value(), type, canonical ? nullptr : &aInput);
+  if (doubleValue) {
+    MOZ_ASSERT(!canonical, "We set it false above!");
+    SetDoubleValueAndType(*doubleValue, type, &aInput);
+  } else {
+    SetIntValueAndType(value.value(), type, canonical ? nullptr : &aInput);
+  }
 
 #ifdef DEBUG
   nsAutoString str;
