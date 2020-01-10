@@ -28,6 +28,9 @@
 #  include <pthread.h>
 #endif  
 
+#include <cstdint>
+#include <type_traits>
+
 namespace mozilla {
 #ifdef MOZILLA_INTERNAL_API
 namespace dom {
