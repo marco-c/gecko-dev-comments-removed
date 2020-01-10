@@ -60,8 +60,8 @@ function getSourceLineOffsets(source) {
 
     
     let end = offset;
+    
     for (const c of line) {
-      
       end++;
     }
     const textEnd = end;
