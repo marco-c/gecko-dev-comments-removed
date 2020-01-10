@@ -243,23 +243,25 @@ impl TextRunPrimitive {
         let mut device_font_size = specified_font.size.scale_by(surface.device_pixel_scale.0 * raster_scale);
 
         
-        let transform_glyphs = if raster_space != RasterSpace::Screen {
-            
-            false
-        } else if transform.has_perspective_component() || !transform.has_2d_inverse() {
-            
-            false
+        
+        
+        let (transform_glyphs, oversized) = if raster_space != RasterSpace::Screen ||
+            transform.has_perspective_component() || !transform.has_2d_inverse() {
+            (false, device_font_size.to_f64_px() > FONT_SIZE_LIMIT)
         } else if transform.exceeds_2d_scale(FONT_SIZE_LIMIT / device_font_size.to_f64_px()) {
+            (false, true)
+        } else {
+            (true, false)
+        };
+
+        if oversized {
             
             
             
             let max_scale = (FONT_SIZE_LIMIT / device_font_size.to_f64_px()) as f32;
             raster_space = RasterSpace::Local(max_scale * raster_scale);
             device_font_size = device_font_size.scale_by(max_scale);
-            false
-        } else {
-            true
-        };
+        }
 
         
         let font_transform = if transform_glyphs {
@@ -316,6 +318,15 @@ impl TextRunPrimitive {
             !transform_glyphs
         {
             self.used_font.disable_subpixel_aa();
+
+            
+            
+            
+            
+            
+            if oversized {
+                self.used_font.disable_subpixel_position();
+            }
         }
 
         cache_dirty
