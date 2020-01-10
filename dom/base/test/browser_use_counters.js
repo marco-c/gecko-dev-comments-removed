@@ -52,30 +52,6 @@ add_task(async function() {
   );
 
   
-  await check_use_counter_iframe(
-    "file_use_counter_style.html",
-    "CSS_PROPERTY_BackgroundImage"
-  );
-
-  
-  await check_use_counter_iframe(
-    "file_use_counter_style.html",
-    "CSS_PROPERTY_Padding"
-  );
-
-  
-  await check_use_counter_iframe(
-    "file_use_counter_style.html",
-    "CSS_PROPERTY_MozTransform"
-  );
-
-  
-  await check_use_counter_iframe(
-    "file_use_counter_style.html",
-    "CSS_PROPERTY_WebkitPaddingStart"
-  );
-
-  
   
   
   
@@ -100,18 +76,18 @@ add_task(async function() {
   
   await check_use_counter_img(
     "file_use_counter_svg_getElementById.svg",
-    "CSS_PROPERTY_Fill"
+    "PROPERTY_FILL"
   );
   await check_use_counter_img(
     "file_use_counter_svg_currentScale.svg",
-    "CSS_PROPERTY_Fill"
+    "PROPERTY_FILL"
   );
 
   
   
   await check_use_counter_direct(
     "file_use_counter_svg_fill_pattern.svg",
-    "CSS_PROPERTY_FillOpacity",
+    "PROPERTY_FILLOPACITY",
      true
   );
 
@@ -119,9 +95,8 @@ add_task(async function() {
   
   await check_use_counter_direct(
     "file_use_counter_svg_fill_pattern_internal.svg",
-    "CSS_PROPERTY_FillOpacity"
+    "PROPERTY_FILLOPACITY"
   );
-
   
   
   
