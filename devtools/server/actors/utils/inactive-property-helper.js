@@ -149,6 +149,34 @@ class InactivePropertyHelper {
         msgId: "inactive-css-not-inline-or-tablecell",
         numFixProps: 2,
       },
+      
+      {
+        invalidProperties: [
+          "max-width",
+          "min-width",
+          "width",
+        ],
+        when: () => this.nonReplacedInlineBox
+          || this.tableRow
+          || this.rowGroup,
+        fixId: "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix",
+        msgId: "inactive-css-property-because-of-display",
+        numFixProps: 2,
+      },
+      
+      {
+        invalidProperties: [
+          "max-height",
+          "min-height",
+          "height",
+        ],
+        when: () => this.nonReplacedInlineBox
+          || this.tableColumn
+          || this.columnGroup,
+        fixId: "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix",
+        msgId: "inactive-css-property-because-of-display",
+        numFixProps: 1,
+      },
     ];
   }
 
@@ -160,6 +188,8 @@ class InactivePropertyHelper {
   }
 
   
+
+
 
 
 
@@ -226,7 +256,15 @@ class InactivePropertyHelper {
       return false;
     });
 
+    
+    
+    let display;
+    try {
+      display = this.style ? this.style.display : null;
+    } catch (e) {}
+
     return {
+      display,
       fixId,
       msgId,
       numFixProps,
@@ -294,6 +332,9 @@ class InactivePropertyHelper {
 
 
   checkStyleForNode(node, propName, values) {
+    if (!this.style) {
+      return false;
+    }
     return values.some(value => this.style[propName] === value);
   }
 
@@ -348,6 +389,102 @@ class InactivePropertyHelper {
   
 
 
+  get tableRow() {
+    return this.style && this.style.display === "table-row";
+  }
+
+  
+
+
+  get rowGroup() {
+    return this.style && (
+      this.style.display === "table-row-group" ||
+      this.style.display === "table-header-group" ||
+      this.style.display === "table-footer-group"
+    );
+  }
+
+  
+
+
+  get tableColumn() {
+    return this.style && this.style.display === "table-column";
+  }
+
+  
+
+
+  get columnGroup() {
+    return this.style && this.style.display === "table-column-group";
+  }
+
+  
+
+
+  get nonReplacedInlineBox() {
+    return this.nonReplaced && this.style && this.style.display === "inline";
+  }
+
+  
+
+
+
+  get nonReplaced() {
+    return !this.replaced;
+  }
+
+  
+
+
+
+
+  get replaced() {
+    
+    
+    if (this.nodeNameOneOf([
+      "br", "button", "canvas", "embed", "hr", "iframe", "math",
+      "object", "picture", "svg", "video",
+    ])) {
+      return true;
+    }
+
+    
+    
+    if (this.nodeName === "audio" && this.node.getAttribute("controls")) {
+      return true;
+    }
+
+    
+    if (this.nodeName === "img" && this.node.complete) {
+      return true;
+    }
+
+    return false;
+  }
+
+  
+
+
+
+
+  get nodeName() {
+    return this.node.nodeName;
+  }
+
+  
+
+
+
+
+
+
+  nodeNameOneOf(values) {
+    return values.includes(this.nodeName);
+  }
+
+  
+
+
 
 
 
@@ -387,16 +524,17 @@ class InactivePropertyHelper {
 
   getParentGridElement(node) {
     if (node.nodeType === node.ELEMENT_NODE) {
-      const display = this.style.display;
+      const display = this.style ? this.style.display : null;
 
       if (!display || display === "none" || display === "contents") {
         
         return null;
       }
-      const position = this.style.position;
+      const position = this.style ? this.style.position : null;
+      const cssFloat = this.style ? this.style.cssFloat : null;
       if (position === "absolute" ||
           position === "fixed" ||
-          this.style.cssFloat !== "none") {
+          cssFloat !== "none") {
         
         return null;
       }
