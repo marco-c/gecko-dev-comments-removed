@@ -2548,6 +2548,26 @@ bool nsPIDOMWindowInner::HasOpenWebSockets() const {
          (mTopInnerWindow && mTopInnerWindow->mNumOfOpenWebSockets);
 }
 
+bool nsPIDOMWindowInner::IsCurrentInnerWindow() const {
+  auto* bc = GetBrowsingContext();
+  MOZ_ASSERT(bc);
+
+  nsCOMPtr<nsPIDOMWindowOuter> outer;
+  
+  
+  
+  
+  
+  
+  
+  if (!bc->IsDiscarded()) {
+    outer = bc->GetDOMWindow();
+  } else {
+    outer = mOuterWindow;
+  }
+  return outer && outer->GetCurrentInnerWindow() == this;
+}
+
 void nsPIDOMWindowInner::SetAudioCapture(bool aCapture) {
   RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
   if (service) {

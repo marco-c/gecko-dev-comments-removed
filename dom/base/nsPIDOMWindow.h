@@ -160,7 +160,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  inline bool IsCurrentInnerWindow() const;
+  bool IsCurrentInnerWindow() const;
 
   
   
