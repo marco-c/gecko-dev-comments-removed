@@ -7,6 +7,10 @@ export default class ReflectedFluentElement extends HTMLElement {
     return this.constructor.reflectedFluentIDs.includes(attr.name);
   }
 
+  connectedCallback() {
+    this.reflectFluentStrings();
+  }
+
   
 
 
