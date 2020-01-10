@@ -142,6 +142,14 @@ let HomePage = {
 
 
 
+  getOriginalDefault() {
+    return kDefaultHomePage;
+  },
+
+  
+
+
+
   get overridden() {
     return Services.prefs.prefHasUserValue(kPrefName);
   },
