@@ -645,17 +645,22 @@ class HeapSize {
 
   size_t gcBytes() const { return gcBytes_; }
 
-  void addGCArena() {
-    gcBytes_ += ArenaSize;
+  void addGCArena() { addBytes(ArenaSize); }
+  void removeGCArena() { removeBytes(ArenaSize); }
+
+  void addBytes(size_t nbytes) {
+    mozilla::DebugOnly<size_t> initialBytes(gcBytes_);
+    MOZ_ASSERT(initialBytes + nbytes > initialBytes);
+    gcBytes_ += nbytes;
     if (parent_) {
-      parent_->addGCArena();
+      parent_->addBytes(nbytes);
     }
   }
-  void removeGCArena() {
-    MOZ_ASSERT(gcBytes_ >= ArenaSize);
-    gcBytes_ -= ArenaSize;
+  void removeBytes(size_t nbytes) {
+    MOZ_ASSERT(gcBytes_ >= nbytes);
+    gcBytes_ -= nbytes;
     if (parent_) {
-      parent_->removeGCArena();
+      parent_->removeBytes(nbytes);
     }
   }
 
@@ -667,22 +672,28 @@ class HeapSize {
 };
 
 
-
-class ZoneHeapThreshold {
-  
-  GCLockData<float> gcHeapGrowthFactor_;
-
+class ZoneThreshold {
+ protected:
   
   mozilla::Atomic<size_t, mozilla::Relaxed,
                   mozilla::recordreplay::Behavior::DontPreserve>
       gcTriggerBytes_;
 
  public:
-  ZoneHeapThreshold() : gcHeapGrowthFactor_(3.0f), gcTriggerBytes_(0) {}
-
-  float gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
   size_t gcTriggerBytes() const { return gcTriggerBytes_; }
   float eagerAllocTrigger(bool highFrequencyGC) const;
+};
+
+
+
+class ZoneHeapThreshold : public ZoneThreshold {
+  
+  GCLockData<float> gcHeapGrowthFactor_;
+
+ public:
+  ZoneHeapThreshold() : gcHeapGrowthFactor_(3.0f) {}
+
+  float gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
 
   void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
                      const GCSchedulingTunables& tunables,
@@ -695,6 +706,19 @@ class ZoneHeapThreshold {
       const GCSchedulingState& state);
   static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
                                         JSGCInvocationKind gckind,
+                                        const GCSchedulingTunables& tunables,
+                                        const AutoLockGC& lock);
+};
+
+
+
+class ZoneMallocThreshold : public ZoneThreshold {
+ public:
+  void updateAfterGC(size_t lastBytes, const GCSchedulingTunables& tunables,
+                     const GCSchedulingState& state, const AutoLockGC& lock);
+
+ private:
+  static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
                                         const GCSchedulingTunables& tunables,
                                         const AutoLockGC& lock);
 };

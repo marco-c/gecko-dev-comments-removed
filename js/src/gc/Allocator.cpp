@@ -371,8 +371,9 @@ bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
   
   
   
+  Zone* zone = cx->zone();
   if (isIncrementalGCInProgress() &&
-      cx->zone()->totalBytes() > cx->zone()->threshold.gcTriggerBytes()) {
+      zone->zoneSize.gcBytes() > zone->threshold.gcTriggerBytes()) {
     PrepareZoneForGC(cx->zone());
     gc(GC_NORMAL, JS::GCReason::INCREMENTAL_TOO_SLOW);
   }

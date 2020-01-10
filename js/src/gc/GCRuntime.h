@@ -260,11 +260,16 @@ class GCRuntime {
   MOZ_MUST_USE bool triggerGC(JS::GCReason reason);
   
   
+  
   void maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes = 0);
+  
+  void maybeMallocTriggerZoneGC(Zone* zone);
   
   bool triggerZoneGC(Zone* zone, JS::GCReason reason, size_t usedBytes,
                      size_t thresholdBytes);
   void maybeGC(Zone* zone);
+  bool checkEagerAllocTrigger(const HeapSize& size,
+                              const ZoneThreshold& threshold);
   
   bool gcIfRequested();
   void gc(JSGCInvocationKind gckind, JS::GCReason reason);

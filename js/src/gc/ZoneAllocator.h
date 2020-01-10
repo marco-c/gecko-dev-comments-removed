@@ -21,7 +21,7 @@ class Zone;
 namespace js {
 
 namespace gc {
-void MaybeAllocTriggerZoneGC(JSRuntime* rt, ZoneAllocator* zoneAlloc);
+void MaybeMallocTriggerZoneGC(JSRuntime* rt, ZoneAllocator* zoneAlloc);
 }
 
 
@@ -51,8 +51,7 @@ class ZoneAllocator : public JS::shadow::Zone,
   }
   void adoptMallocBytes(ZoneAllocator* other) {
     gcMallocCounter.adopt(other->gcMallocCounter);
-    gcMallocBytes += other->gcMallocBytes;
-    other->gcMallocBytes = 0;
+    gcMallocBytes.adopt(other->gcMallocBytes);
 #ifdef DEBUG
     gcMallocTracker.adopt(other->gcMallocTracker);
 #endif
@@ -66,6 +65,7 @@ class ZoneAllocator : public JS::shadow::Zone,
 
   void updateAllGCMallocCountersOnGCStart();
   void updateAllGCMallocCountersOnGCEnd(const js::AutoLockGC& lock);
+  void updateAllGCThresholds(gc::GCRuntime& gc, const js::AutoLockGC& lock);
   js::gc::TriggerKind shouldTriggerGCForTooMuchMalloc();
 
   
@@ -73,10 +73,8 @@ class ZoneAllocator : public JS::shadow::Zone,
   void addCellMemory(js::gc::Cell* cell, size_t nbytes, js::MemoryUse use) {
     MOZ_ASSERT(cell);
     MOZ_ASSERT(nbytes);
-    mozilla::DebugOnly<size_t> initialBytes(gcMallocBytes);
-    MOZ_ASSERT(initialBytes + nbytes > initialBytes);
+    gcMallocBytes.addBytes(nbytes);
 
-    gcMallocBytes += nbytes;
     
 
 #ifdef DEBUG
@@ -87,9 +85,7 @@ class ZoneAllocator : public JS::shadow::Zone,
   void removeCellMemory(js::gc::Cell* cell, size_t nbytes, js::MemoryUse use) {
     MOZ_ASSERT(cell);
     MOZ_ASSERT(nbytes);
-    MOZ_ASSERT(gcMallocBytes >= nbytes);
-
-    gcMallocBytes -= nbytes;
+    gcMallocBytes.removeBytes(nbytes);
 
 #ifdef DEBUG
     gcMallocTracker.untrackMemory(cell, nbytes, use);
@@ -113,36 +109,29 @@ class ZoneAllocator : public JS::shadow::Zone,
 
   void incPolicyMemory(js::ZoneAllocPolicy* policy, size_t nbytes) {
     MOZ_ASSERT(nbytes);
-    mozilla::DebugOnly<size_t> initialBytes(gcMallocBytes);
-    MOZ_ASSERT(initialBytes + nbytes > initialBytes);
-
-    gcMallocBytes += nbytes;
+    gcMallocBytes.addBytes(nbytes);
 
 #ifdef DEBUG
     gcMallocTracker.incPolicyMemory(policy, nbytes);
 #endif
 
-    maybeAllocTriggerZoneGC();
+    maybeMallocTriggerZoneGC();
   }
   void decPolicyMemory(js::ZoneAllocPolicy* policy, size_t nbytes) {
     MOZ_ASSERT(nbytes);
-    MOZ_ASSERT(gcMallocBytes >= nbytes);
-
-    gcMallocBytes -= nbytes;
+    gcMallocBytes.removeBytes(nbytes);
 
 #ifdef DEBUG
     gcMallocTracker.decPolicyMemory(policy, nbytes);
 #endif
   }
 
-  size_t totalBytes() const { return zoneSize.gcBytes() + gcMallocBytes; }
-
   
-  void maybeAllocTriggerZoneGC() {
+  void maybeMallocTriggerZoneGC() {
     JSRuntime* rt = runtimeFromAnyThread();
-    if (totalBytes() >= threshold.gcTriggerBytes() &&
+    if (gcMallocBytes.gcBytes() >= threshold.gcTriggerBytes() &&
         rt->heapState() == JS::HeapState::Idle) {
-      gc::MaybeAllocTriggerZoneGC(rt, this);
+      gc::MaybeMallocTriggerZoneGC(rt, this);
     }
   }
 
@@ -180,12 +169,15 @@ class ZoneAllocator : public JS::shadow::Zone,
   
   js::gc::MemoryCounter gcMallocCounter;
 
+ public:
   
   
-  mozilla::Atomic<size_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      gcMallocBytes;
+  js::gc::HeapSize gcMallocBytes;
 
+  
+  js::gc::ZoneMallocThreshold gcMallocThreshold;
+
+ private:
 #ifdef DEBUG
   
   
