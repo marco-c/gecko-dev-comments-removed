@@ -440,13 +440,6 @@ class TextEventDispatcher final {
   
   bool mHasFocus;
 
-  
-  
-  static bool sDispatchKeyEventsDuringComposition;
-  
-  
-  static bool sDispatchKeyPressEventsOnlySystemGroupInContent;
-
   nsresult BeginInputTransactionInternal(TextEventDispatcherListener* aListener,
                                          InputTransactionType aType);
 

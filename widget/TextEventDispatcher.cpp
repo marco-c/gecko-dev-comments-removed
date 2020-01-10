@@ -4,6 +4,7 @@
 
 
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "nsIDocShell.h"
@@ -19,11 +20,6 @@ namespace widget {
 
 
 
-
-bool TextEventDispatcher::sDispatchKeyEventsDuringComposition = false;
-bool TextEventDispatcher::sDispatchKeyPressEventsOnlySystemGroupInContent =
-    false;
-
 TextEventDispatcher::TextEventDispatcher(nsIWidget* aWidget)
     : mWidget(aWidget),
       mDispatchingEvent(0),
@@ -32,19 +28,6 @@ TextEventDispatcher::TextEventDispatcher(nsIWidget* aWidget)
       mIsHandlingComposition(false),
       mHasFocus(false) {
   MOZ_RELEASE_ASSERT(mWidget, "aWidget must not be nullptr");
-
-  static bool sInitialized = false;
-  if (!sInitialized) {
-    Preferences::AddBoolVarCache(
-        &sDispatchKeyEventsDuringComposition,
-        "dom.keyboardevent.dispatch_during_composition", true);
-    Preferences::AddBoolVarCache(
-        &sDispatchKeyPressEventsOnlySystemGroupInContent,
-        "dom.keyboardevent.keypress."
-        "dispatch_non_printable_keys_only_system_group_in_content",
-        true);
-    sInitialized = true;
-  }
 
   ClearNotificationRequests();
 }
@@ -543,7 +526,8 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
     
     
     
-    if (!sDispatchKeyEventsDuringComposition || aMessage == eKeyPress) {
+    if (!StaticPrefs::dom_keyboardevent_dispatch_during_composition() ||
+        aMessage == eKeyPress) {
       return false;
     }
     
@@ -658,7 +642,8 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
     }
   }
 
-  if (sDispatchKeyPressEventsOnlySystemGroupInContent &&
+  if (StaticPrefs::
+          dom_keyboardevent_keypress_dispatch_non_printable_keys_only_system_group_in_content() &&
       keyEvent.mMessage == eKeyPress &&
       !keyEvent.ShouldKeyPressEventBeFiredOnContent()) {
     

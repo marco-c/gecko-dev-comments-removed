@@ -288,16 +288,6 @@ pref("dom.serviceWorkers.testUpdateOverOneDay", false);
 
 
 
-pref("dom.keyboardevent.dispatch_during_composition", true);
-
-
-
-
-pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", true);
-
-
-
-
 
 
 

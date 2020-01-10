@@ -807,8 +807,6 @@ pref("webchannel.allowObject.urlWhitelist", "https://accounts.firefox.com https:
 
 pref("media.openUnsupportedTypeWithExternalApp", true);
 
-pref("dom.keyboardevent.dispatch_during_composition", true);
-
 
 pref("media.navigator.permission.device", true);
 
