@@ -6040,6 +6040,43 @@ AttachDecision CompareIRGenerator::tryAttachBoolStringOrNumber(
   return AttachDecision::Attach;
 }
 
+AttachDecision CompareIRGenerator::tryAttachBigIntNumber(ValOperandId lhsId,
+                                                         ValOperandId rhsId) {
+  
+  if (!(lhsVal_.isBigInt() && (rhsVal_.isNumber() || rhsVal_.isBoolean())) &&
+      !(rhsVal_.isBigInt() && (lhsVal_.isNumber() || lhsVal_.isBoolean()))) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  MOZ_ASSERT(op_ != JSOP_STRICTEQ && op_ != JSOP_STRICTNE);
+
+  auto createGuards = [&](HandleValue v, ValOperandId vId) {
+    if (v.isBoolean()) {
+      Int32OperandId boolId = writer.guardToBoolean(vId);
+      return writer.guardAndGetNumberFromBoolean(boolId);
+    }
+    MOZ_ASSERT(v.isNumber());
+    return writer.guardIsNumber(vId);
+  };
+
+  if (lhsVal_.isBigInt()) {
+    BigIntOperandId bigIntId = writer.guardToBigInt(lhsId);
+    NumberOperandId numId = createGuards(rhsVal_, rhsId);
+
+    writer.compareBigIntNumberResult(op_, bigIntId, numId);
+  } else {
+    NumberOperandId numId = createGuards(lhsVal_, lhsId);
+    BigIntOperandId bigIntId = writer.guardToBigInt(rhsId);
+
+    writer.compareNumberBigIntResult(op_, numId, bigIntId);
+  }
+  writer.returnFromIC();
+
+  trackAttached("BigIntNumber");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CompareIRGenerator::tryAttachStub() {
   MOZ_ASSERT(cacheKind_ == CacheKind::Compare);
   MOZ_ASSERT(IsEqualityOp(op_) || IsRelationalOp(op_));
@@ -6055,8 +6092,6 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   ValOperandId lhsId(writer.setInputOperandId(lhsIndex));
   ValOperandId rhsId(writer.setInputOperandId(rhsIndex));
 
-  
-  
   
   
   
@@ -6100,6 +6135,8 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
 
   TRY_ATTACH(tryAttachStringNumber(lhsId, rhsId));
   TRY_ATTACH(tryAttachBoolStringOrNumber(lhsId, rhsId));
+
+  TRY_ATTACH(tryAttachBigIntNumber(lhsId, rhsId));
 
   trackAttached(IRGenerator::NotAttached);
   return AttachDecision::NoAction;
