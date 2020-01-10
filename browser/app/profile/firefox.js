@@ -2339,4 +2339,11 @@ pref("devtools.popup.disable_autohide", false);
 pref("devtools.toolbox.content-frame", true);
 
 
+pref("devtools.whatsnew.enabled", true);
+
+
+
+pref("devtools.whatsnew.feature-enabled", true);
+
+
 pref("first-startup.timeout", 30000);

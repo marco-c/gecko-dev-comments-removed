@@ -23,6 +23,10 @@ const TEST_STARTING_ORDER = [
 ];
 
 add_task(async function() {
+  
+  
+  await pushPref("devtools.whatsnew.enabled", false);
+
   const extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
     manifest: {

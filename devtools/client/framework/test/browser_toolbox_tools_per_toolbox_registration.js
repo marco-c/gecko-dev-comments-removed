@@ -47,7 +47,9 @@ function toolboxRegister(aToolbox) {
 
   toolbox.addAdditionalTool({
     id: TOOL_ID,
-    label: "per-toolbox Test Tool",
+    
+    
+    label: "Test Tool",
     inMenu: true,
     isTargetSupported: () => true,
     build: function() {
@@ -78,6 +80,10 @@ function testToolRegistered() {
   
   const doc = toolbox.doc;
   const tab = doc.getElementById("toolbox-tab-" + TOOL_ID);
+
+  
+  
+  
   ok(tab, "new tool's tab exists in toolbox UI");
 
   const panel = doc.getElementById("toolbox-panel-" + TOOL_ID);
