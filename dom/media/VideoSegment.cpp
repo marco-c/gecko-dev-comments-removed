@@ -8,7 +8,6 @@
 #include "gfx2DGlue.h"
 #include "ImageContainer.h"
 #include "Layers.h"
-#include "VideoUtils.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
@@ -77,10 +76,6 @@ already_AddRefed<Image> VideoFrame::CreateBlackImage(
   data.mPicY = 0;
   data.mPicSize = gfx::IntSize(aSize.width, aSize.height);
   data.mStereoMode = StereoMode::MONO;
-  data.mYUVColorSpace = gfx::YUVColorSpace::BT601;
-  
-  
-  data.mColorRange = gfx::ColorRange::LIMITED;
 
   
   if (!image->CopyData(data)) {

@@ -25,11 +25,6 @@ static bool SetImageToBlackPixel(PlanarYCbCrImage* aImage) {
   data.mCrChannel = blackPixel + 2;
   data.mYStride = data.mCbCrStride = 1;
   data.mPicSize = data.mYSize = data.mCbCrSize = gfx::IntSize(1, 1);
-  data.mYUVColorSpace = gfx::YUVColorSpace::BT601;
-  
-  
-  data.mColorRange = gfx::ColorRange::LIMITED;
-
   return aImage->CopyData(data);
 }
 

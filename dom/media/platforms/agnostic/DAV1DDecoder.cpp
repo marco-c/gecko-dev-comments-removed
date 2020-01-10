@@ -194,17 +194,15 @@ already_AddRefed<VideoData> DAV1DDecoder::ConstructImage(
         b.mYUVColorSpace = YUVColorSpace::BT601;
         break;
       case DAV1D_MC_BT709:
+      default:
+        
         b.mYUVColorSpace = YUVColorSpace::BT709;
         break;
-      default:
-        break;
     }
+  } else {
+    
+    b.mYUVColorSpace = YUVColorSpace::BT709;
   }
-  if (b.mYUVColorSpace == YUVColorSpace::UNKNOWN) {
-    b.mYUVColorSpace = DefaultColorSpace({aPicture.p.w, aPicture.p.h});
-  }
-  b.mColorRange = aPicture.seq_hdr->color_range ? gfx::ColorRange::FULL
-                                                : gfx::ColorRange::LIMITED;
 
   b.mPlanes[0].mData = static_cast<uint8_t*>(aPicture.data[0]);
   b.mPlanes[0].mStride = aPicture.stride[0];

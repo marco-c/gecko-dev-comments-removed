@@ -251,7 +251,7 @@ class VideoInfo : public TrackInfo {
 
   
   
-  gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
+  bool mFullRange = false;
 
  private:
   
