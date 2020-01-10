@@ -190,25 +190,6 @@ void MediaKeySystemAccessManager::Request(
     aPromise->MaybeResolve(access);
     diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(), aKeySystem,
                                           true, __func__);
-
-    
-    if (warnings.Get("MediaEMENoCapabilitiesDeprecatedWarning")) {
-      Telemetry::Accumulate(
-          Telemetry::HistogramID::MEDIA_EME_REQUEST_DEPRECATED_WARNINGS, 1);
-      EME_LOG(
-          "MEDIA_EME_REQUEST_DEPRECATED_WARNINGS "
-          "MediaEMENoCapabilitiesDeprecatedWarning");
-    } else if (warnings.Get("MediaEMENoCodecsDeprecatedWarning")) {
-      Telemetry::Accumulate(
-          Telemetry::HistogramID::MEDIA_EME_REQUEST_DEPRECATED_WARNINGS, 2);
-      EME_LOG(
-          "MEDIA_EME_REQUEST_DEPRECATED_WARNINGS "
-          "MediaEMENoCodecsDeprecatedWarning");
-    } else {
-      Telemetry::Accumulate(
-          Telemetry::HistogramID::MEDIA_EME_REQUEST_DEPRECATED_WARNINGS, 0);
-      EME_LOG("MEDIA_EME_REQUEST_DEPRECATED_WARNINGS No warnings");
-    }
     return;
   }
   
