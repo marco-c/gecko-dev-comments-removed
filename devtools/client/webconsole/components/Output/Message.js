@@ -154,6 +154,13 @@ class Message extends Component {
 
     
     
+    const window = e.target.ownerDocument.defaultView;
+    if (window.getSelection && window.getSelection().type === "Range") {
+      return;
+    }
+
+    
+    
     if (onToggle) {
       onToggle(messageId, e);
     } else if (open) {

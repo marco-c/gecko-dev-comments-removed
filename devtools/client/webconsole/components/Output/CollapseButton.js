@@ -23,6 +23,8 @@ function CollapseButton(props) {
       
       
       e.preventDefault();
+      
+      e.target.ownerDocument.defaultView.getSelection().removeAllRanges();
     },
     title: title,
   });
