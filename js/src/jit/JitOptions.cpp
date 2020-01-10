@@ -261,8 +261,12 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
+  
+  
+  
   SET_DEFAULT(wasmBatchBaselineThreshold, 10000);
   SET_DEFAULT(wasmBatchIonThreshold, 1100);
+  SET_DEFAULT(wasmBatchCraneliftThreshold, 5000);
 
 #ifdef JS_TRACE_LOGGING
   
