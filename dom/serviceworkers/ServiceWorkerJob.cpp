@@ -169,7 +169,11 @@ void ServiceWorkerJob::Finish(ErrorResult& aRv) {
     NS_ConvertUTF8toUTF16 scope(mScope);
 
     
-    aRv.ThrowTypeError<MSG_SW_INSTALL_ERROR>(scriptSpec, scope);
+    
+    
+    
+    ErrorResult& rv = aRv;
+    rv.ThrowTypeError<MSG_SW_INSTALL_ERROR>(scriptSpec, scope);
   }
 
   

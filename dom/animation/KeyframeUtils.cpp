@@ -367,8 +367,8 @@ static void GetKeyframeListFromKeyframeSequence(JSContext* aCx,
   
   
   if (!HasValidOffsets(aResult)) {
-    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
     aResult.Clear();
+    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
     return;
   }
 }
@@ -1058,8 +1058,8 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   
   
   if (!HasValidOffsets(aResult)) {
-    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
     aResult.Clear();
+    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
     return;
   }
 
