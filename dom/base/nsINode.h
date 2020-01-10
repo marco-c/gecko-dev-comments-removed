@@ -429,6 +429,13 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  bool IsShadowIncludingInclusiveDescendantOf(const nsINode* aNode) const;
+
+  
+
+
+
+
   inline mozilla::dom::DocumentFragment* AsDocumentFragment();
   inline const mozilla::dom::DocumentFragment* AsDocumentFragment() const;
 

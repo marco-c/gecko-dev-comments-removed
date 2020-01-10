@@ -222,8 +222,7 @@ nsresult mozInlineSpellStatus::InitForNavigation(
   }
   
   if (root && aOldAnchorNode &&
-      !nsContentUtils::ContentIsShadowIncludingDescendantOf(aOldAnchorNode,
-                                                            root)) {
+      !aOldAnchorNode->IsShadowIncludingInclusiveDescendantOf(root)) {
     *aContinue = false;
     return NS_OK;
   }
@@ -1271,10 +1270,8 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
     
     nsINode* rootNode = aWordUtil.GetRootNode();
     if (!beginNode->IsInComposedDoc() || !endNode->IsInComposedDoc() ||
-        !nsContentUtils::ContentIsShadowIncludingDescendantOf(beginNode,
-                                                              rootNode) ||
-        !nsContentUtils::ContentIsShadowIncludingDescendantOf(endNode,
-                                                              rootNode)) {
+        !beginNode->IsShadowIncludingInclusiveDescendantOf(rootNode) ||
+        !endNode->IsShadowIncludingInclusiveDescendantOf(rootNode)) {
       
       return NS_OK;
     }
@@ -1627,7 +1624,7 @@ nsresult mozInlineSpellChecker::AddRange(Selection* aSpellCheckSelection,
   if (!SpellCheckSelectionIsFull()) {
     IgnoredErrorResult err;
     aSpellCheckSelection->AddRangeAndSelectFramesAndNotifyListeners(*aRange,
-                                                                    err);
+        err);
     if (err.Failed()) {
       rv = err.StealNSResult();
     } else {

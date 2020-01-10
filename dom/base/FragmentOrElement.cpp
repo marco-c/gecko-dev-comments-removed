@@ -990,8 +990,8 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
           
           
           if (targetInKnownToBeHandledScope &&
-              nsContentUtils::ContentIsShadowIncludingDescendantOf(
-                  this, targetInKnownToBeHandledScope->SubtreeRoot())) {
+              IsShadowIncludingInclusiveDescendantOf(
+                  targetInKnownToBeHandledScope->SubtreeRoot())) {
             
             
             

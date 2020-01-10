@@ -348,13 +348,6 @@ class nsContentUtils {
 
 
 
-  static bool ContentIsShadowIncludingDescendantOf(
-      const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor);
-
-  
-
-
-
 
   static bool ContentIsCrossDocDescendantOf(nsINode* aPossibleDescendant,
                                             nsINode* aPossibleAncestor);
