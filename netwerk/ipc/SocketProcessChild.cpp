@@ -195,7 +195,7 @@ void SocketProcessChild::DestroySocketProcessBridgeParent(ProcessId aId) {
 }
 
 PWebrtcTCPSocketChild* SocketProcessChild::AllocPWebrtcTCPSocketChild(
-    const PBrowserOrId& browser) {
+    const Maybe<TabId>& tabId) {
   
   
   MOZ_ASSERT_UNREACHABLE(

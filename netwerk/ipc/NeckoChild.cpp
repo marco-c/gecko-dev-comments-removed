@@ -96,7 +96,7 @@ bool NeckoChild::DeallocPStunAddrsRequestChild(PStunAddrsRequestChild* aActor) {
 }
 
 PWebrtcTCPSocketChild* NeckoChild::AllocPWebrtcTCPSocketChild(
-    const TabId& tabId) {
+    const Maybe<TabId>& tabId) {
   
   
   MOZ_ASSERT_UNREACHABLE(
