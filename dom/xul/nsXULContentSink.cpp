@@ -340,15 +340,6 @@ nsresult XULContentSinkImpl::NormalizeAttributeString(
   return NS_OK;
 }
 
-nsresult XULContentSinkImpl::CreateElement(mozilla::dom::NodeInfo* aNodeInfo,
-                                           nsXULPrototypeElement** aResult) {
-  nsXULPrototypeElement* element = new nsXULPrototypeElement();
-  element->mNodeInfo = aNodeInfo;
-
-  *aResult = element;
-  return NS_OK;
-}
-
 
 
 NS_IMETHODIMP
@@ -627,8 +618,6 @@ nsresult XULContentSinkImpl::OpenRoot(const char16_t** aAttributes,
   NS_ASSERTION(mState == eInProlog, "how'd we get here?");
   if (mState != eInProlog) return NS_ERROR_UNEXPECTED;
 
-  nsresult rv;
-
   if (aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XHTML) ||
       aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XUL)) {
     MOZ_LOG(gContentSinkLog, LogLevel::Error,
@@ -638,25 +627,11 @@ nsresult XULContentSinkImpl::OpenRoot(const char16_t** aAttributes,
   }
 
   
-  nsXULPrototypeElement* element;
-  rv = CreateElement(aNodeInfo, &element);
-
-  if (NS_FAILED(rv)) {
-    if (MOZ_LOG_TEST(gContentSinkLog, LogLevel::Error)) {
-      nsAutoString anodeC;
-      aNodeInfo->GetName(anodeC);
-      MOZ_LOG(gContentSinkLog, LogLevel::Error,
-              ("xul: unable to create element '%s' at line %d",
-               NS_ConvertUTF16toUTF8(anodeC).get(),
-               -1));  
-    }
-
-    return rv;
-  }
+  nsXULPrototypeElement* element = new nsXULPrototypeElement(aNodeInfo);
 
   
   
-  rv = mContextStack.Push(element, mState);
+  nsresult rv = mContextStack.Push(element, mState);
   if (NS_FAILED(rv)) {
     element->Release();
     return rv;
@@ -674,27 +649,12 @@ nsresult XULContentSinkImpl::OpenTag(const char16_t** aAttributes,
                                      const uint32_t aAttrLen,
                                      const uint32_t aLineNumber,
                                      mozilla::dom::NodeInfo* aNodeInfo) {
-  nsresult rv;
-
   
-  nsXULPrototypeElement* element;
-  rv = CreateElement(aNodeInfo, &element);
-
-  if (NS_FAILED(rv)) {
-    if (MOZ_LOG_TEST(gContentSinkLog, LogLevel::Error)) {
-      nsAutoString anodeC;
-      aNodeInfo->GetName(anodeC);
-      MOZ_LOG(gContentSinkLog, LogLevel::Error,
-              ("xul: unable to create element '%s' at line %d",
-               NS_ConvertUTF16toUTF8(anodeC).get(), aLineNumber));
-    }
-
-    return rv;
-  }
+  nsXULPrototypeElement* element = new nsXULPrototypeElement(aNodeInfo);
 
   
   nsPrototypeArray* children = nullptr;
-  rv = mContextStack.GetTopChildren(&children);
+  nsresult rv = mContextStack.GetTopChildren(&children);
   if (NS_FAILED(rv)) {
     delete element;
     return rv;
