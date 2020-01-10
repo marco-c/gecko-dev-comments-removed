@@ -7,3 +7,10 @@
   
   flex-direction: column;
 }
+
+.popup-notification-panel > popupnotification:not([hidden]) {
+  
+
+
+  display: block;
+}
