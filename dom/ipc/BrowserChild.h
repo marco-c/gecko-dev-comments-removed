@@ -146,63 +146,8 @@ class ContentListener final : public nsIDOMEventListener {
 
 
 
-class BrowserChildBase : public nsISupports,
-                         public nsMessageManagerScriptExecutor,
-                         public ipc::MessageManagerCallback {
- protected:
-  typedef mozilla::widget::PuppetWidget PuppetWidget;
-
- public:
-  BrowserChildBase();
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BrowserChildBase)
-
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
-    return mBrowserChildMessageManager->WrapObject(aCx, aGivenProto);
-  }
-
-  virtual nsIWebNavigation* WebNavigation() const = 0;
-  virtual PuppetWidget* WebWidget() = 0;
-  nsIPrincipal* GetPrincipal() { return mPrincipal; }
-  virtual bool DoUpdateZoomConstraints(
-      const uint32_t& aPresShellId,
-      const mozilla::layers::ScrollableLayerGuid::ViewID& aViewId,
-      const Maybe<mozilla::layers::ZoomConstraints>& aConstraints) = 0;
-
-  virtual ScreenIntSize GetInnerSize() = 0;
-
-  
-  already_AddRefed<Document> GetTopLevelDocument() const;
-
-  
-  PresShell* GetTopLevelPresShell() const;
-
- protected:
-  virtual ~BrowserChildBase();
-
-  
-  
-  
-  
-  
-  void DispatchMessageManagerMessage(const nsAString& aMessageName,
-                                     const nsAString& aJSONData);
-
-  void ProcessUpdateFrame(const mozilla::layers::RepaintRequest& aRequest);
-
-  bool UpdateFrameHandler(const mozilla::layers::RepaintRequest& aRequest);
-
- protected:
-  RefPtr<BrowserChildMessageManager> mBrowserChildMessageManager;
-  nsCOMPtr<nsIWebBrowserChrome3> mWebBrowserChrome;
-};
-
-
-
-
-
-class BrowserChild final : public BrowserChildBase,
+class BrowserChild final : public nsMessageManagerScriptExecutor,
+                           public ipc::MessageManagerCallback,
                            public PBrowserChild,
                            public nsIWebBrowserChrome2,
                            public nsIEmbeddingSiteWindow,
@@ -216,6 +161,7 @@ class BrowserChild final : public BrowserChildBase,
                            public TabContext,
                            public nsITooltipListener,
                            public mozilla::ipc::IShmemAllocator {
+  typedef mozilla::widget::PuppetWidget PuppetWidget;
   typedef mozilla::dom::ClonedMessageData ClonedMessageData;
   typedef mozilla::dom::CoalescedMouseData CoalescedMouseData;
   typedef mozilla::dom::CoalescedWheelData CoalescedWheelData;
@@ -260,7 +206,7 @@ class BrowserChild final : public BrowserChildBase,
     return mUniqueId;
   }
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIWEBBROWSERCHROME
   NS_DECL_NSIWEBBROWSERCHROME2
   NS_DECL_NSIEMBEDDINGSITEWINDOW
@@ -273,10 +219,21 @@ class BrowserChild final : public BrowserChildBase,
   NS_DECL_NSIWEBPROGRESSLISTENER2
   NS_DECL_NSITOOLTIPLISTENER
 
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(BrowserChild,
-                                                         BrowserChildBase)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(BrowserChild,
+                                                         nsIBrowserChild)
 
   FORWARD_SHMEM_ALLOCATOR_TO(PBrowserChild)
+
+  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+    return mBrowserChildMessageManager->WrapObject(aCx, aGivenProto);
+  }
+
+  nsIPrincipal* GetPrincipal() { return mPrincipal; }
+  
+  already_AddRefed<Document> GetTopLevelDocument() const;
+
+  
+  PresShell* GetTopLevelPresShell() const;
 
   BrowserChildMessageManager* GetMessageManager() {
     return mBrowserChildMessageManager;
@@ -297,9 +254,9 @@ class BrowserChild final : public BrowserChildBase,
                                       JS::Handle<JSObject*> aCpows,
                                       nsIPrincipal* aPrincipal) override;
 
-  virtual bool DoUpdateZoomConstraints(
+  bool DoUpdateZoomConstraints(
       const uint32_t& aPresShellId, const ViewID& aViewId,
-      const Maybe<ZoomConstraints>& aConstraints) override;
+      const Maybe<ZoomConstraints>& aConstraints);
 
   mozilla::ipc::IPCResult RecvLoadURL(const nsCString& aURI,
                                       const ShowInfo& aInfo);
@@ -455,9 +412,9 @@ class BrowserChild final : public BrowserChildBase,
 
   bool DeallocPFilePickerChild(PFilePickerChild* aActor);
 
-  virtual nsIWebNavigation* WebNavigation() const override { return mWebNav; }
+  nsIWebNavigation* WebNavigation() const { return mWebNav; }
 
-  virtual PuppetWidget* WebWidget() override { return mPuppetWidget; }
+  PuppetWidget* WebWidget() { return mPuppetWidget; }
 
   bool IsTransparent() const { return mIsTransparent; }
 
@@ -588,7 +545,7 @@ class BrowserChild final : public BrowserChildBase,
   const mozilla::layers::CompositorOptions& GetCompositorOptions() const;
   bool AsyncPanZoomEnabled() const;
 
-  virtual ScreenIntSize GetInnerSize() override;
+  ScreenIntSize GetInnerSize();
 
   
   void DoFakeShow(const ShowInfo& aShowInfo);
@@ -760,6 +717,18 @@ class BrowserChild final : public BrowserChildBase,
       GetContentBlockingLogResolver&& aResolve);
 
  private:
+  
+  
+  
+  
+  
+  void DispatchMessageManagerMessage(const nsAString& aMessageName,
+                                     const nsAString& aJSONData);
+
+  void ProcessUpdateFrame(const mozilla::layers::RepaintRequest& aRequest);
+
+  bool UpdateFrameHandler(const mozilla::layers::RepaintRequest& aRequest);
+
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
                        const ScrollableLayerGuid& aGuid);
 
@@ -830,6 +799,8 @@ class BrowserChild final : public BrowserChildBase,
 
   class DelayedDeleteRunnable;
 
+  RefPtr<BrowserChildMessageManager> mBrowserChildMessageManager;
+  nsCOMPtr<nsIWebBrowserChrome3> mWebBrowserChrome;
   TextureFactoryIdentifier mTextureFactoryIdentifier;
   RefPtr<nsWebBrowser> mWebBrowser;
   nsCOMPtr<nsIWebNavigation> mWebNav;
