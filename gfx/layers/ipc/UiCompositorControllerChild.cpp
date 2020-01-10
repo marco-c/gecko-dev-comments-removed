@@ -183,14 +183,16 @@ void UiCompositorControllerChild::Destroy() {
     return;
   }
 
-  if (mIsOpen) {
-    
-
+  if (mWidget) {
     
     
     RefPtr<nsIWidget> widget = mWidget.forget();
     NS_ReleaseOnMainThreadSystemGroup("UiCompositorControllerChild::mWidget",
                                       widget.forget());
+  }
+
+  if (mIsOpen) {
+    
     PUiCompositorControllerChild::Close();
     mIsOpen = false;
   }
