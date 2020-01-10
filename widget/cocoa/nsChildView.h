@@ -56,7 +56,6 @@ class NativeLayerRootCA;
 class NativeLayerCA;
 }  
 namespace widget {
-class RectTextureImage;
 class WidgetRenderingContext;
 }  
 }  
@@ -76,27 +75,6 @@ class WidgetRenderingContext;
 @end
 
 @interface NSView (Undocumented)
-
-
-
-
-
-
-
-
-
-
-
-- (void)_drawTitleBar:(NSRect)aRect;
-
-
-
-
-
-
-
-
-- (NSRect)_dirtyRect;
 
 
 
@@ -160,13 +138,6 @@ class WidgetRenderingContext;
   BOOL mExpectingWheelStop;
 
   
-  
-  
-  
-  
-  BOOL mNeedsGLUpdate;
-
-  
   BOOL mIsUpdatingLayer;
 
   
@@ -175,10 +146,6 @@ class WidgetRenderingContext;
   
   
   nsIDragService* mDragService;
-
-  
-  
-  NSOpenGLContext* mGLContext;
 
   
   
@@ -213,24 +180,9 @@ class WidgetRenderingContext;
 
   
   
-  
-  CGImageRef mTopLeftCornerMask;
-
-  
-  
   NSView* mVibrancyViewsContainer;      
   NSView* mNonDraggableViewsContainer;  
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   PixelHostingView* mPixelHostingView;
@@ -256,12 +208,6 @@ class WidgetRenderingContext;
 - (void)sendMouseEnterOrExitEvent:(NSEvent*)aEvent
                             enter:(BOOL)aEnter
                          exitFrom:(mozilla::WidgetMouseEvent::ExitFrom)aExitFrom;
-
-- (void)updateGLContext;
-- (void)_surfaceNeedsUpdate:(NSNotification*)notification;
-
-- (bool)preRender:(NSOpenGLContext*)aGLContext;
-- (void)postRender:(NSOpenGLContext*)aGLContext;
 
 
 
@@ -473,8 +419,6 @@ class nsChildView final : public nsBaseWidget {
   bool PaintWindow(LayoutDeviceIntRegion aRegion);
   bool PaintWindowInDrawTarget(mozilla::gfx::DrawTarget* aDT, const LayoutDeviceIntRegion& aRegion,
                                const mozilla::gfx::IntSize& aSurfaceSize);
-  bool PaintWindowInContext(CGContextRef aContext, const LayoutDeviceIntRegion& aRegion,
-                            mozilla::gfx::IntSize aSurfaceSize);
 
   void PaintWindowInContentLayer();
   void HandleMainThreadCATransaction();
@@ -484,21 +428,12 @@ class nsChildView final : public nsBaseWidget {
 #endif
 
   virtual void CreateCompositor() override;
-  virtual void PrepareWindowEffects() override;
-  virtual void CleanupWindowEffects() override;
 
   virtual bool WidgetPaintsBackground() override { return true; }
 
-  virtual void AddWindowOverlayWebRenderCommands(
-      mozilla::layers::WebRenderBridgeChild* aWrBridge, mozilla::wr::DisplayListBuilder& aBuilder,
-      mozilla::wr::IpcResourceUpdateQueue& aResourceUpdates) override;
-
   virtual bool PreRender(mozilla::widget::WidgetRenderingContext* aContext) override;
-  bool PreRenderImpl(mozilla::widget::WidgetRenderingContext* aContext);
   virtual void PostRender(mozilla::widget::WidgetRenderingContext* aContext) override;
   virtual RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
-  virtual void DrawWindowOverlay(mozilla::widget::WidgetRenderingContext* aManager,
-                                 LayoutDeviceIntRect aRect) override;
 
   virtual void UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries) override;
 
@@ -546,12 +481,6 @@ class nsChildView final : public nsBaseWidget {
     return nsCocoaUtils::DevPixelsToCocoaPoints(aRect, BackingScaleFactor());
   }
 
-  already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(
-      LayoutDeviceIntRegion& aInvalidRegion, mozilla::layers::BufferMode* aBufferMode) override;
-  void EndRemoteDrawing() override;
-  void CleanupRemoteDrawing() override;
-  bool InitCompositor(mozilla::layers::Compositor* aCompositor) override;
-
   virtual MOZ_MUST_USE nsresult StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
                                                int32_t aPanelX, int32_t aPanelY,
                                                nsString& aCommitted) override;
@@ -570,7 +499,6 @@ class nsChildView final : public nsBaseWidget {
   nsresult SetPrefersReducedMotionOverrideForTest(bool aValue) override;
   nsresult ResetPrefersReducedMotionOverrideForTest() override;
 
-  
   
   
   
@@ -603,19 +531,6 @@ class nsChildView final : public nsBaseWidget {
   void ConfigureAPZCTreeManager() override;
   void ConfigureAPZControllerThread() override;
 
-  void DoRemoteComposition(const LayoutDeviceIntRect& aRenderRect);
-
-  
-  void DrawWindowOverlay(mozilla::layers::GLManager* aManager, LayoutDeviceIntRect aRect);
-  void MaybeDrawRoundedCorners(mozilla::layers::GLManager* aManager,
-                               const LayoutDeviceIntRect& aRect);
-  void MaybeDrawTitlebar(mozilla::layers::GLManager* aManager);
-
-  
-  
-  void UpdateTitlebarCGContext();
-
-  LayoutDeviceIntRect RectContainingTitlebarControls();
   void UpdateVibrancy(const nsTArray<ThemeGeometry>& aThemeGeometries);
   mozilla::VibrancyManager& EnsureVibrancyManager();
 
@@ -648,35 +563,6 @@ class nsChildView final : public nsBaseWidget {
   
   mozilla::Mutex mViewTearDownLock;
 
-  mozilla::Mutex mEffectsLock;
-
-  
-  
-  bool mHasRoundedBottomCorners;
-  int mDevPixelCornerRadius;
-  bool mIsCoveringTitlebar;
-  bool mIsFullscreen;
-  bool mIsOpaque;
-  LayoutDeviceIntRect mTitlebarRect;
-
-  
-  
-  LayoutDeviceIntRegion mUpdatedTitlebarRegion;
-  CGContextRef mTitlebarCGContext;
-
-  
-  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mCornerMaskImage;
-  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mTitlebarImage;
-  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mBasicCompositorImage;
-
-  
-  mozilla::Maybe<mozilla::wr::ImageKey> mTitlebarImageKey;
-  mozilla::gfx::IntSize mTitlebarImageSize;
-
-  
-  
-  nsIntRegion mDirtyTitlebarRegion;
-
   mozilla::ViewRegion mNonDraggableRegion;
 
   
@@ -691,14 +577,8 @@ class nsChildView final : public nsBaseWidget {
 
   bool mPluginFocused;
 
-  
-  
-  
-  mozilla::UniquePtr<GLPresenter> mGLPresenter;
-
   RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
 
-  
   
   
   
@@ -711,10 +591,6 @@ class nsChildView final : public nsBaseWidget {
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
-
-  
-  
-  RefPtr<mozilla::gfx::DrawTarget> mBackingSurface;
 
   
   
@@ -743,8 +619,6 @@ class nsChildView final : public nsBaseWidget {
   bool mCurrentPanGestureBelongsToSwipe;
 
   static uint32_t sLastInputEventCount;
-
-  void ReleaseTitlebarCGContext();
 
   
   
