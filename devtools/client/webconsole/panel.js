@@ -67,12 +67,7 @@ WebConsolePanel.prototype = {
       const chromeWindow = iframe.ownerDocument.defaultView;
 
       
-      this.hud = new WebConsole(
-        this.target,
-        webConsoleUIWindow,
-        chromeWindow,
-        this
-      );
+      this.hud = new WebConsole(this.target, webConsoleUIWindow, chromeWindow);
       await this.hud.init();
 
       

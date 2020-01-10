@@ -8,12 +8,6 @@ var Services = require("Services");
 loader.lazyRequireGetter(this, "Tools", "devtools/client/definitions", true);
 loader.lazyRequireGetter(
   this,
-  "gDevTools",
-  "devtools/client/framework/devtools",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "DebuggerClient",
   "devtools/shared/client/debugger-client",
   true
@@ -28,19 +22,11 @@ loader.lazyRequireGetter(
 const BC_WINDOW_FEATURES =
   "chrome,titlebar,toolbar,centerscreen,resizable,dialog=no";
 
-function HUDService() {
-  this.consoles = new Map();
-}
+function HUDService() {}
 
 HUDService.prototype = {
-  _browserConsoleID: null,
+  _browserConsole: null,
   _browserConsoleInitializing: null,
-
-  
-
-
-
-  consoles: null,
 
   _browerConsoleSessionState: false,
 
@@ -50,15 +36,6 @@ HUDService.prototype = {
 
   getBrowserConsoleSessionState() {
     return this._browerConsoleSessionState;
-  },
-
-  
-
-
-
-
-  currentContext() {
-    return Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   },
 
   
@@ -76,8 +53,10 @@ HUDService.prototype = {
 
   async openBrowserConsole(target, win, fissionSupport = false) {
     const hud = new BrowserConsole(target, win, win, this, fissionSupport);
-    this._browserConsoleID = hud.hudId;
-    this.consoles.set(hud.hudId, hud);
+    this._browserConsole = hud;
+    hud.once("destroyed", () => {
+      this._browserConsole = null;
+    });
     await hud.init();
     return hud;
   },
@@ -85,19 +64,9 @@ HUDService.prototype = {
   
 
 
-
-
-
-  getHudReferenceById(id) {
-    return this.consoles.get(id);
-  },
-
-  
-
-
   async toggleBrowserConsole() {
-    if (this._browserConsoleID) {
-      const hud = this.getHudReferenceById(this._browserConsoleID);
+    if (this._browserConsole) {
+      const hud = this._browserConsole;
       return hud.destroy();
     }
 
@@ -201,7 +170,7 @@ HUDService.prototype = {
 
 
   getBrowserConsole() {
-    return this.getHudReferenceById(this._browserConsoleID);
+    return this._browserConsole;
   },
 };
 
