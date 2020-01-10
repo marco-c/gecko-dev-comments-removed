@@ -15,6 +15,7 @@
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/GeneratedImageContent.h"
 #include "mozilla/dom/HTMLDetailsElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
@@ -1742,13 +1743,8 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   container->SetIsNativeAnonymousRoot();
   container->SetPseudoElementType(aPseudoElement);
 
-  
-  
-  
-  Document* bindDocument =
-      aOriginatingElement.HasFlag(NODE_IS_IN_SHADOW_TREE) ? nullptr : mDocument;
-  rv = container->BindToTree(bindDocument, &aOriginatingElement,
-                             &aOriginatingElement);
+  BindContext context(aOriginatingElement, BindContext::ForNativeAnonymous);
+  rv = container->BindToTree(context, aOriginatingElement);
   if (NS_FAILED(rv)) {
     container->UnbindFromTree();
     return;
@@ -3857,6 +3853,7 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
     return rv;
   }
 
+  MOZ_ASSERT(aParent->IsElement());
   for (const auto& info : aContent) {
     
     nsIContent* content = info.mContent;
@@ -3864,12 +3861,9 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
 
     bool anonContentIsEditable = content->HasFlag(NODE_IS_EDITABLE);
 
-    
-    
-    
-    Document* bindDocument =
-        aParent->HasFlag(NODE_IS_IN_SHADOW_TREE) ? nullptr : mDocument;
-    rv = content->BindToTree(bindDocument, aParent, aParent);
+    BindContext context(*aParent->AsElement(), BindContext::ForNativeAnonymous);
+    rv = content->BindToTree(context, *aParent);
+
     
     
     

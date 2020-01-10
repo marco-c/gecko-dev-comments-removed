@@ -1123,6 +1123,28 @@ void nsIContent::SetXBLInsertionPoint(nsIContent* aContent) {
   }
 }
 
+#ifdef DEBUG
+void nsIContent::AssertAnonymousSubtreeRelatedInvariants() const {
+  NS_ASSERTION(!IsRootOfNativeAnonymousSubtree() ||
+                   (GetParent() && GetBindingParent() == GetParent()),
+               "root of native anonymous subtree must have parent equal "
+               "to binding parent");
+  NS_ASSERTION(!GetParent() ||
+                   ((GetBindingParent() == GetParent()) ==
+                    HasFlag(NODE_IS_ANONYMOUS_ROOT)) ||
+                   
+                   
+                   
+                   
+                   
+                   (GetBindingParent() &&
+                    (GetBindingParent() == GetParent()->GetBindingParent()) ==
+                        HasFlag(NODE_IS_ANONYMOUS_ROOT)),
+               "For nodes with parent, flag and GetBindingParent() check "
+               "should match");
+}
+#endif
+
 void FragmentOrElement::GetTextContentInternal(nsAString& aTextContent,
                                                OOMReporter& aError) {
   if (!nsContentUtils::GetNodeTextContent(this, true, aTextContent, fallible)) {
