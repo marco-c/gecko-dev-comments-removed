@@ -3313,7 +3313,7 @@ static inline void CheckIsMarkedThing(T* thingp) {
   
   
   JSContext* cx = TlsContext.get();
-  if (cx->gcSweeping) {
+  if (cx->gcSweeping || cx->gcMarking) {
     Zone* zone = thing->zoneFromAnyThread();
     MOZ_ASSERT_IF(cx->gcSweepingZone,
                   cx->gcSweepingZone == zone || zone->isAtomsZone());
