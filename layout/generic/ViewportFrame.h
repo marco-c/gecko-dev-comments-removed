@@ -81,6 +81,10 @@ class ViewportFrame : public nsContainerFrame {
 
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
+  
+  
+  nsSize AdjustViewportSizeForFixedPosition(const nsRect& aViewportRect) const;
+
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
