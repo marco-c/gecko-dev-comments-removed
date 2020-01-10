@@ -105,6 +105,12 @@ void WebGLBuffer::BufferData(GLenum target, uint64_t size, const void* data,
       mContext->ErrorOutOfMemory("Failed to alloc index cache.");
       return;
     }
+    
+    
+    
+    
+    
+    
     memcpy(newIndexCache.get(), data, size);
     uploadData = newIndexCache.get();
   }
