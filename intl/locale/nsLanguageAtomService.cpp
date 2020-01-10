@@ -58,7 +58,8 @@ static constexpr struct {
     {"Gujr", nsGkAtoms::x_gujr},
     {"Guru", nsGkAtoms::x_guru},
     {"Hang", nsGkAtoms::ko},
-    {"Hani", nsGkAtoms::Japanese},
+    
+    
     {"Hans", nsGkAtoms::Chinese},
     
     
@@ -172,25 +173,46 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
     
     Locale loc(langStr);
     if (loc.IsWellFormed()) {
+      
       if (loc.GetScript().IsEmpty()) {
         loc.AddLikelySubtags();
       }
+      
+      
       if (loc.GetScript().EqualsLiteral("Hant")) {
         if (loc.GetRegion().EqualsLiteral("HK")) {
           return nsGkAtoms::HongKongChinese;
         }
         return nsGkAtoms::Taiwanese;
-      } else {
-        size_t foundIndex;
-        const nsCString& script = loc.GetScript();
-        if (BinarySearchIf(
-                kScriptLangGroup, 0, ArrayLength(kScriptLangGroup),
-                [script](const auto& entry) -> int {
-                  return script.Compare(entry.mTag);
-                },
-                &foundIndex)) {
-          return kScriptLangGroup[foundIndex].mAtom;
+      }
+      
+      size_t foundIndex;
+      const nsCString& script = loc.GetScript();
+      if (BinarySearchIf(
+              kScriptLangGroup, 0, ArrayLength(kScriptLangGroup),
+              [script](const auto& entry) -> int {
+                return script.Compare(entry.mTag);
+              },
+              &foundIndex)) {
+        return kScriptLangGroup[foundIndex].mAtom;
+      }
+      
+      
+      
+      if (loc.GetLanguage().EqualsLiteral("zh")) {
+        if (loc.GetRegion().EqualsLiteral("HK")) {
+          return nsGkAtoms::HongKongChinese;
         }
+        if (loc.GetRegion().EqualsLiteral("TW")) {
+          return nsGkAtoms::Taiwanese;
+        }
+        return nsGkAtoms::Chinese;
+      }
+      if (loc.GetLanguage().EqualsLiteral("ja")) {
+        return nsGkAtoms::Japanese;
+      }
+      if (loc.GetLanguage().EqualsLiteral("ko")) {
+        return nsGkAtoms::ko;
       }
     }
   }
