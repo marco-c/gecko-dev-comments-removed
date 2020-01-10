@@ -131,18 +131,6 @@ static const int32_t INPUT_RESULT_HANDLED =
 static const int32_t INPUT_RESULT_HANDLED_CONTENT =
     java::PanZoomController::INPUT_RESULT_HANDLED_CONTENT;
 
-
-
-
-
-
-
-
-
-
-static int32_t gLastWidth = 0;
-static int32_t gLastHeight = 0;
-
 template <typename Lambda, bool IsStatic, typename InstanceType, class Impl>
 class nsWindow::WindowEvent : public Runnable {
   bool IsStaleCall() {
@@ -1510,7 +1498,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     mParent = parent;
   }
 
-  Resize(gLastWidth, gLastHeight, false);
+  
+  
+  
+  
+  Resize(0, 0, false);
 
   CreateLayerManager();
 
@@ -1710,8 +1702,8 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
 
   mBounds.x = NSToIntRound(aX);
   mBounds.y = NSToIntRound(aY);
-  mBounds.width = gLastWidth = NSToIntRound(aWidth);
-  mBounds.height = gLastHeight = NSToIntRound(aHeight);
+  mBounds.width = NSToIntRound(aWidth);
+  mBounds.height = NSToIntRound(aHeight);
 
   if (needSizeDispatch) {
     OnSizeChanged(gfx::IntSize::Truncate(aWidth, aHeight));
