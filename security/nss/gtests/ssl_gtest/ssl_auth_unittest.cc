@@ -583,14 +583,27 @@ TEST_F(TlsConnectStreamTls13, PostHandshakeAuthWithSessionTicketsEnabled) {
   EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert1->derCert, &cert2->derCert));
 }
 
-
-
-
-
-
-TEST_P(TlsConnectStream, DISABLED_ClientAuthRequiredRejected) {
+TEST_P(TlsConnectGenericPre13, ClientAuthRequiredRejected) {
   server_->RequestClientAuth(true);
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertBadCertificate);
+  client_->CheckErrorCode(SSL_ERROR_BAD_CERT_ALERT);
+  server_->CheckErrorCode(SSL_ERROR_NO_CERTIFICATE);
+}
+
+
+
+TEST_P(TlsConnectTls13, ClientAuthRequiredRejected) {
+  server_->RequestClientAuth(true);
+  StartConnect();
+  client_->Handshake();  
+  server_->Handshake();  
+  client_->Handshake();  
+  ASSERT_EQ(TlsAgent::STATE_CONNECTED, client_->state());
+  ExpectAlert(server_, kTlsAlertCertificateRequired);
+  server_->Handshake();  
+  server_->CheckErrorCode(SSL_ERROR_NO_CERTIFICATE);
+  client_->Handshake();  
+  client_->CheckErrorCode(SSL_ERROR_RX_CERTIFICATE_REQUIRED_ALERT);
 }
 
 TEST_P(TlsConnectGeneric, ClientAuthRequestedRejected) {

@@ -982,6 +982,47 @@ TEST_F(TlsConnectStreamTls13, BadAntiReplayArgs) {
   EXPECT_EQ(SECSuccess, SSL_SetAntiReplayContext(client_->ssl_fd(), nullptr));
 }
 
+
+TEST_P(TlsConnectTls13, ZeroRttDifferentCompatibleCipher) {
+  EnsureTlsSetup();
+  server_->EnableSingleCipher(TLS_AES_128_GCM_SHA256);
+  SetupForZeroRtt();
+  client_->Set0RttEnabled(true);
+  server_->Set0RttEnabled(true);
+  
+  
+  server_->EnableSingleCipher(TLS_CHACHA20_POLY1305_SHA256);
+  ExpectResumption(RESUME_TICKET);
+
+  StartConnect();
+  ZeroRttSendReceive(true, false);
+
+  Handshake();
+  ExpectEarlyDataAccepted(false);
+  CheckConnected();
+  SendReceive();
+}
+
+
+TEST_P(TlsConnectTls13, ZeroRttDifferentIncompatibleCipher) {
+  EnsureTlsSetup();
+  server_->EnableSingleCipher(TLS_AES_256_GCM_SHA384);
+  SetupForZeroRtt();
+  client_->Set0RttEnabled(true);
+  server_->Set0RttEnabled(true);
+  
+  server_->EnableSingleCipher(TLS_CHACHA20_POLY1305_SHA256);
+  ExpectResumption(RESUME_NONE);
+
+  StartConnect();
+  ZeroRttSendReceive(true, false);
+
+  Handshake();
+  ExpectEarlyDataAccepted(false);
+  CheckConnected();
+  SendReceive();
+}
+
 #ifndef NSS_DISABLE_TLS_1_3
 INSTANTIATE_TEST_CASE_P(Tls13ZeroRttReplayTest, TlsZeroRttReplayTest,
                         TlsConnectTestBase::kTlsVariantsAll);
