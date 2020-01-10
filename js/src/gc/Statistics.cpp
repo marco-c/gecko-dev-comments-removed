@@ -1051,9 +1051,14 @@ void Statistics::endGC() {
   runtime->addTelemetry(JS_TELEMETRY_GC_MMU_50, mmu50 * 100);
 
   
+  
   if (!runtime->parentRuntime && timeSinceLastGC) {
     runtime->addTelemetry(JS_TELEMETRY_GC_TIME_BETWEEN_S,
                           timeSinceLastGC.ToSeconds());
+    if (!nonincremental()) {
+      runtime->addTelemetry(JS_TELEMETRY_GC_SLICE_COUNT,
+                            slices_.length());
+    }
   }
 
   thresholdTriggered = false;
