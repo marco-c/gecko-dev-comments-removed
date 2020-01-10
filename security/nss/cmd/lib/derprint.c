@@ -509,7 +509,7 @@ prettyPrintItem(FILE *out, const unsigned char *data, const unsigned char *end,
         
 
 
-        if ((data + slen) > end) {
+        if ((data + slen) < data || (data + slen) > end) {
             PORT_SetError(SEC_ERROR_BAD_DER);
             return -1;
         }

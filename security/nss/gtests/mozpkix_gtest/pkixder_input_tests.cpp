@@ -191,8 +191,10 @@ TEST_F(pkixder_input_tests, ReadByteWrapAroundPointer)
   
   
   
-  const uint8_t* der = nullptr;
-  --der;
+  uintptr_t derint = -1;
+  auto der = reinterpret_cast<const uint8_t*>(derint);
+  ASSERT_EQ(sizeof(der), sizeof(derint))
+      << "underflow of pointer might not work";
   Input buf;
   ASSERT_EQ(Success, buf.Init(der, 0));
   Reader input(buf);
