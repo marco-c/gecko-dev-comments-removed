@@ -106,7 +106,7 @@ otherwise install OpenSSL and ensure that it's on your $PATH.""")
 
 
 def check_environ(product):
-    if product not in ("firefox", "servo"):
+    if product not in ("chrome", "firefox", "servo"):
         config_builder = serve.build_config(os.path.join(wpt_root, "config.json"))
         
         config_builder.ssl = {"type": "none"}
@@ -283,15 +283,6 @@ class Chrome(BrowserSetup):
         if kwargs["browser_channel"] == "dev":
             logger.info("Automatically turning on experimental features for Chrome Dev")
             kwargs["binary_args"].append("--enable-experimental-web-platform-features")
-
-        
-        kwargs["binary_args"].append("--autoplay-policy=no-user-gesture-required")
-
-        
-        kwargs["binary_args"] += ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
-
-        
-        kwargs["binary_args"].append("--short-reporting-delay")
 
 
 class ChromeAndroid(BrowserSetup):
