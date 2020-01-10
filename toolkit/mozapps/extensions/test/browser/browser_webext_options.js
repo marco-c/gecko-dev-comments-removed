@@ -6,6 +6,12 @@ ChromeUtils.import("resource://testing-common/ContentTask.jsm", {});
 
 
 
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
+
+
 
 
 

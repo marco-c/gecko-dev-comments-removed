@@ -173,6 +173,7 @@ add_task(async function testInlineOptions() {
   await extension.unload();
 });
 
+
 add_task(async function testCardRerender() {
   let id = "rerender@mochi.test";
   let extension = ExtensionTestUtils.loadExtension({

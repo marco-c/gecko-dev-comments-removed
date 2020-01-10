@@ -7,6 +7,12 @@ const {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionPa
 
 
 
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
+
+
 function waitOptionsBrowserInserted() {
   return new Promise(resolve => {
     async function listener(eventName, browser) {

@@ -9,6 +9,13 @@ let {ExtensionTestCommon} = ChromeUtils.import("resource://testing-common/Extens
 
 ChromeUtils.import("resource://testing-common/ContentTask.jsm", {});
 
+
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 var gAddon;
 var gOtherAddon;
 var gManagerWindow;
