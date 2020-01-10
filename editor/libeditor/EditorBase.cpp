@@ -2158,8 +2158,23 @@ void EditorBase::NotifyEditorObservers(
       mIsInEditSubAction = false;
 
       if (mTextInputListener) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
         RefPtr<TextInputListener> listener = mTextInputListener;
-        listener->OnEditActionHandled();
+        nsresult rv =
+            listener->OnEditActionHandled(MOZ_KnownLive(*AsTextEditor()));
+        MOZ_RELEASE_ASSERT(rv != NS_ERROR_OUT_OF_MEMORY,
+                           "Setting value failed due to out of memory");
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rv),
+            "TextInputListener::OnEditActionHandled() failed but ignored");
       }
 
       if (mIMEContentObserver) {

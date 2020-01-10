@@ -796,6 +796,8 @@ nsresult TextInputSelectionController::CheckVisibilityContent(
 TextInputListener::TextInputListener(nsITextControlElement* aTxtCtrlElement)
     : mFrame(nullptr),
       mTxtCtrlElement(aTxtCtrlElement),
+      mTextControlState(aTxtCtrlElement ? aTxtCtrlElement->GetTextControlState()
+                                        : nullptr),
       mSelectionWasCollapsed(true),
       mHadUndoItems(false),
       mHadRedoItems(false),
@@ -985,40 +987,33 @@ TextInputListener::HandleEvent(Event* aEvent) {
   return NS_OK;
 }
 
-void TextInputListener::OnEditActionHandled() {
-  if (!mFrame) {
+nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
+  if (mFrame) {
+    AutoWeakFrame weakFrame = mFrame;
+
+    nsITextControlFrame* frameBase = do_QueryFrame(mFrame);
+    nsTextControlFrame* frame = static_cast<nsTextControlFrame*>(frameBase);
+    NS_ASSERTION(frame, "Where is our frame?");
     
     
-    return;
-  }
-
-  AutoWeakFrame weakFrame = mFrame;
-
-  nsITextControlFrame* frameBase = do_QueryFrame(mFrame);
-  nsTextControlFrame* frame = static_cast<nsTextControlFrame*>(frameBase);
-  NS_ASSERTION(frame, "Where is our frame?");
-  
-  
-  
-  RefPtr<TextEditor> textEditor = frame->GetTextEditor();
-
-  
-  size_t numUndoItems = textEditor->NumberOfUndoItems();
-  size_t numRedoItems = textEditor->NumberOfRedoItems();
-  if ((numUndoItems && !mHadUndoItems) || (!numUndoItems && mHadUndoItems) ||
-      (numRedoItems && !mHadRedoItems) || (!numRedoItems && mHadRedoItems)) {
     
-    UpdateTextInputCommands(NS_LITERAL_STRING("undo"));
+    size_t numUndoItems = aTextEditor.NumberOfUndoItems();
+    size_t numRedoItems = aTextEditor.NumberOfRedoItems();
+    if ((numUndoItems && !mHadUndoItems) || (!numUndoItems && mHadUndoItems) ||
+        (numRedoItems && !mHadRedoItems) || (!numRedoItems && mHadRedoItems)) {
+      
+      UpdateTextInputCommands(NS_LITERAL_STRING("undo"));
 
-    mHadUndoItems = numUndoItems != 0;
-    mHadRedoItems = numRedoItems != 0;
+      mHadUndoItems = numUndoItems != 0;
+      mHadRedoItems = numRedoItems != 0;
+    }
+
+    if (weakFrame.IsAlive()) {
+      HandleValueChanged(frame);
+    }
   }
 
-  if (!weakFrame.IsAlive()) {
-    return;
-  }
-
-  HandleValueChanged(frame);
+  return mTextControlState ? mTextControlState->OnEditActionHandled() : NS_OK;
 }
 
 void TextInputListener::HandleValueChanged(nsTextControlFrame* aFrame) {
@@ -1155,9 +1150,100 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     }
   }
 
+  
+
+
+
+  void WillSetValueWithTextEditor() {
+    MOZ_ASSERT(Is(TextControlAction::SetValue));
+    MOZ_ASSERT(mTextControlState.mBoundFrame);
+    mTextControlFrame = mTextControlState.mBoundFrame;
+    
+    
+    
+    if (mSetValueFlags & TextControlState::eSetValue_BySetUserInput) {
+      return;
+    }
+    
+    
+    
+    mTextInputListener->SettingValue(true);
+    mTextInputListener->SetValueChanged(mSetValueFlags &
+                                        TextControlState::eSetValue_Notify);
+    mEditActionHandled = false;
+  }
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnEditActionHandled() {
+    MOZ_ASSERT(!mEditActionHandled);
+    mEditActionHandled = true;
+    if (!Is(TextControlAction::SetValue)) {
+      return NS_OK;
+    }
+    if (!(mSetValueFlags & TextControlState::eSetValue_BySetUserInput)) {
+      mTextInputListener->SetValueChanged(true);
+      mTextInputListener->SettingValue(
+          mParent && mParent->IsHandling(TextControlAction::SetValue));
+      if (!(mSetValueFlags & TextControlState::eSetValue_Notify)) {
+        
+        
+        mTextControlState.ValueWasChanged(true);
+      }
+    }
+    if (!IsOriginalTextControlFrameAlive()) {
+      return SetValueWithoutTextEditorAgain() ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    }
+    
+    
+    nsITextControlFrame* textControlFrame =
+        do_QueryFrame(mTextControlFrame.GetFrame());
+    return static_cast<nsTextControlFrame*>(textControlFrame)
+                   ->CacheValue(mSettingValue, fallible)
+               ? NS_OK
+               : NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValueWithoutTextEditorAgain() {
+    MOZ_ASSERT(!IsOriginalTextControlFrameAlive());
+    
+    
+    
+    
+    
+    if (mTextControlState.mBoundFrame) {
+      return true;
+    }
+    
+    
+    
+    ErrorResult error;
+    AutoTextControlHandlingState handlingSetValueWithoutEditor(
+        mTextControlState, TextControlAction::SetValue, mSettingValue,
+        mOldValue, mSetValueFlags & TextControlState::eSetValue_Notify, error);
+    if (error.Failed()) {
+      MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
+      error.SuppressException();
+      return false;
+    }
+    return mTextControlState.SetValueWithoutTextEditor(
+        handlingSetValueWithoutEditor);
+  }
+
   bool IsTextControlStateDestroyed() const {
     return mTextControlStateDestroyed;
   }
+  bool IsOriginalTextControlFrameAlive() const {
+    return const_cast<AutoTextControlHandlingState*>(this)
+        ->mTextControlFrame.IsAlive();
+  }
+  bool HasEditActionHandled() const { return mEditActionHandled; }
   bool Is(TextControlAction aTextControlAction) const {
     return mTextControlAction == aTextControlAction;
   }
@@ -1209,6 +1295,10 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   
   
   
+  AutoWeakFrame mTextControlFrame;
+  
+  
+  
   nsCOMPtr<nsITextControlElement> const mTextCtrlElement;
   
   
@@ -1218,6 +1308,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   uint32_t mSetValueFlags = 0;
   TextControlAction const mTextControlAction;
   bool mTextControlStateDestroyed = false;
+  bool mEditActionHandled = false;
 };
 
 
@@ -1302,6 +1393,10 @@ void TextControlState::DeleteOrCacheForReuse() {
     return;
   }
   delete this;
+}
+
+nsresult TextControlState::OnEditActionHandled() {
+  return mHandlingState ? mHandlingState->OnEditActionHandled() : NS_OK;
 }
 
 Element* TextControlState::GetRootNode() {
@@ -2525,38 +2620,12 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
     AutoWeakFrame weakFrame(mBoundFrame);
 
-    SetValueWithTextEditor(handlingSetValue);
-
-    if (!weakFrame.IsAlive()) {
-      
-      
-      
-      
-      
-      if (mBoundFrame) {
-        return true;
-      }
-      
-      
-      
-      ErrorResult error;
-      AutoTextControlHandlingState handlingSetValueWithoutEditor(
-          *this, TextControlAction::SetValue,
-          handlingSetValue.GetSettingValue(), handlingSetValue.GetOldValue(),
-          handlingSetValue.GetSetValueFlags() & eSetValue_Notify, error);
-      if (error.Failed()) {
-        MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
-        error.SuppressException();
-        return false;
-      }
-      return SetValueWithoutTextEditor(handlingSetValueWithoutEditor);
+    if (!SetValueWithTextEditor(handlingSetValue)) {
+      return false;
     }
 
-    
-    
-    if (!mBoundFrame->CacheValue(handlingSetValue.GetSettingValue(),
-                                 fallible)) {
-      return false;
+    if (!weakFrame.IsAlive()) {
+      return true;
     }
   } else if (!SetValueWithoutTextEditor(handlingSetValue)) {
     return false;
@@ -2574,7 +2643,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
   return true;
 }
 
-void TextControlState::SetValueWithTextEditor(
+bool TextControlState::SetValueWithTextEditor(
     AutoTextControlHandlingState& aHandlingSetValue) {
   MOZ_ASSERT(aHandlingSetValue.Is(TextControlAction::SetValue));
   MOZ_ASSERT(mTextEditor);
@@ -2603,18 +2672,16 @@ void TextControlState::SetValueWithTextEditor(
     mBoundFrame->GetText(currentValue);
   }
 
-  AutoWeakFrame weakFrame(mBoundFrame);
-
   
   if (currentValue == aHandlingSetValue.GetSettingValue()) {
-    return;
+    return true;
   }
 
   RefPtr<TextEditor> textEditor = mTextEditor;
 
   nsCOMPtr<Document> document = textEditor->GetDocument();
   if (NS_WARN_IF(!document)) {
-    return;
+    return true;
   }
 
   
@@ -2627,13 +2694,11 @@ void TextControlState::SetValueWithTextEditor(
   Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
   SelectionBatcher selectionBatcher(selection);
 
-  if (NS_WARN_IF(!weakFrame.IsAlive())) {
-    return;
-  }
-
   
   
   AutoRestoreEditorState restoreState(textEditor);
+
+  aHandlingSetValue.WillSetValueWithTextEditor();
 
   if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
     
@@ -2646,22 +2711,15 @@ void TextControlState::SetValueWithTextEditor(
     
     
     
-    DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(
+    nsresult rv = textEditor->ReplaceTextAsAction(
         aHandlingSetValue.GetSettingValue(), nullptr, nullptr);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to set the new value");
-    return;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "TextEditor::ReplaceTextAsAction() failed");
+    return rv != NS_ERROR_OUT_OF_MEMORY;
   }
 
   
   
-  
-  
-  
-  mTextListener->SettingValue(true);
-  bool notifyValueChanged =
-      !!(aHandlingSetValue.GetSetValueFlags() & eSetValue_Notify);
-  mTextListener->SetValueChanged(notifyValueChanged);
-
   AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
 
   if (aHandlingSetValue.GetSetValueFlags() & eSetValue_ForXUL) {
@@ -2693,49 +2751,57 @@ void TextControlState::SetValueWithTextEditor(
       
       
       
-      DebugOnly<nsresult> rv = textEditor->DeleteSelectionAsAction(
+      nsresult rv = textEditor->DeleteSelectionAsAction(
           nsIEditor::eNone, nsIEditor::eStrip, nullptr);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove the text");
-    } else {
-      
-      
-      
-      DebugOnly<nsresult> rv =
-          textEditor->InsertTextAsAction(insertValue, nullptr);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the new value");
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "TextEditor::DeleteSelectionAsAction() failed");
+      return rv != NS_ERROR_OUT_OF_MEMORY;
     }
-  } else {
     
     
     
-    AutoDisableUndo disableUndo(textEditor);
-    if (selection) {
-      
-      
-      
-      
-      
-      selection->RemoveAllRangesTemporarily();
-    }
-
-    
-    
-    textEditor->SetTextAsAction(aHandlingSetValue.GetSettingValue(), nullptr);
-
-    
-    
-    
-    
-    aHandlingSetValue.GetTextInputListener()->HandleValueChanged();
+    nsresult rv = textEditor->InsertTextAsAction(insertValue, nullptr);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "TextEditor::InsertTextAsAction() failed");
+    return rv != NS_ERROR_OUT_OF_MEMORY;
   }
 
-  aHandlingSetValue.GetTextInputListener()->SetValueChanged(true);
-  aHandlingSetValue.GetTextInputListener()->SettingValue(false);
-  if (!notifyValueChanged) {
+  
+  
+  
+  AutoDisableUndo disableUndo(textEditor);
+  if (selection) {
     
     
-    ValueWasChanged(true);
+    
+    
+    
+    selection->RemoveAllRangesTemporarily();
   }
+
+  
+  
+  nsresult rv =
+      textEditor->SetTextAsAction(aHandlingSetValue.GetSettingValue(), nullptr);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "TextEditor::SetTextAsAction() failed");
+
+  
+  
+  
+  
+  if (!aHandlingSetValue.HasEditActionHandled()) {
+    nsresult rvOnEditActionHandled =
+        MOZ_KnownLive(aHandlingSetValue.GetTextInputListener())
+            ->OnEditActionHandled(*textEditor);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvOnEditActionHandled),
+                         "TextInputListener::OnEditActionHandled() failed");
+    if (rv != NS_ERROR_OUT_OF_MEMORY) {
+      rv = rvOnEditActionHandled;
+    }
+  }
+
+  return rv != NS_ERROR_OUT_OF_MEMORY;
 }
 
 bool TextControlState::SetValueWithoutTextEditor(

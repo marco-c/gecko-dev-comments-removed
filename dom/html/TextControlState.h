@@ -172,6 +172,12 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   PrepareEditor(const nsAString* aValue = nullptr);
   void InitializeKeyboardEventListeners();
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnEditActionHandled();
+
   enum SetValueFlags {
     
     eSetValue_Internal = 1 << 0,
@@ -413,7 +419,9 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void SetValueWithTextEditor(
+
+
+  MOZ_CAN_RUN_SCRIPT bool SetValueWithTextEditor(
       AutoTextControlHandlingState& aHandlingState);
 
   
