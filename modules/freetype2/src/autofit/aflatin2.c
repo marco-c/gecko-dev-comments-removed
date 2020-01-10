@@ -38,13 +38,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_aflatin2
+#define FT_COMPONENT  aflatin2
 
 
   FT_LOCAL_DEF( FT_Error )
@@ -265,7 +265,7 @@
             
             
             
-            if ( last == first )
+            if ( last <= first )
                 continue;
 
             if ( AF_LATIN_IS_TOP_BLUE( bb ) )
@@ -299,6 +299,7 @@
         
         
         
+        if ( best_point >= 0 )
         {
           FT_Pos  best_x = points[best_point].x;
           FT_Int  start, end, prev, next;
@@ -632,7 +633,7 @@
     
     
     axis->extra_light =
-      (FT_Bool)( FT_MulFix( axis->standard_width, scale ) < 32 + 8 );
+      FT_BOOL( FT_MulFix( axis->standard_width, scale ) < 32 + 8 );
 
     if ( dim == AF_DIMENSION_VERT )
     {
@@ -1127,20 +1128,20 @@
       segment_length_threshold = 0;
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     edge_distance_threshold = FT_MulFix( laxis->edge_distance_threshold,
                                          scale );
@@ -1231,16 +1232,16 @@
 
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
 
     
     
@@ -1302,9 +1303,9 @@
 
           
           
-          is_serif = (FT_Bool)( seg->serif               &&
-                                seg->serif->edge         &&
-                                seg->serif->edge != edge );
+          is_serif = FT_BOOL( seg->serif               &&
+                              seg->serif->edge         &&
+                              seg->serif->edge != edge );
 
           if ( ( seg->link && seg->link->edge ) || is_serif )
           {

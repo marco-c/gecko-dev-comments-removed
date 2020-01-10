@@ -20,7 +20,6 @@
 #include FT_INTERNAL_OBJECTS_H
 #include "pshrec.h"
 #include "pshalgo.h"
-#include "pshpic.h"
 
 
   
@@ -111,7 +110,7 @@
     0x10000L,
     0x20000L,
 
-    &PSHINTER_INTERFACE_GET,              
+    &pshinter_interface,        
 
     (FT_Module_Constructor)ps_hinter_init,  
     (FT_Module_Destructor) ps_hinter_done,  

@@ -25,13 +25,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_synth
+#define FT_COMPONENT  synth
 
 
   

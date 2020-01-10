@@ -43,16 +43,15 @@
 
 #include "tterrors.h"
 
-#include "ttpic.h"
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttdriver
+#define FT_COMPONENT  ttdriver
 
 
   
@@ -165,37 +164,41 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   tt_get_kerning( FT_Face     ttface,          
                   FT_UInt     left_glyph,
@@ -385,31 +388,35 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   tt_glyph_load( FT_GlyphSlot  ttslot,      
                  FT_Size       ttsize,      
@@ -491,17 +498,19 @@
   FT_DEFINE_SERVICE_MULTIMASTERSREC(
     tt_service_gx_multi_masters,
 
-    (FT_Get_MM_Func)        NULL,                   
-    (FT_Set_MM_Design_Func) NULL,                   
-    (FT_Set_MM_Blend_Func)  TT_Set_MM_Blend,        
-    (FT_Get_MM_Blend_Func)  TT_Get_MM_Blend,        
-    (FT_Get_MM_Var_Func)    TT_Get_MM_Var,          
-    (FT_Set_Var_Design_Func)TT_Set_Var_Design,      
-    (FT_Get_Var_Design_Func)TT_Get_Var_Design,      
-    (FT_Set_Instance_Func)  TT_Set_Named_Instance,  
+    (FT_Get_MM_Func)             NULL,                  
+    (FT_Set_MM_Design_Func)      NULL,                  
+    (FT_Set_MM_Blend_Func)       TT_Set_MM_Blend,       
+    (FT_Get_MM_Blend_Func)       TT_Get_MM_Blend,       
+    (FT_Get_MM_Var_Func)         TT_Get_MM_Var,         
+    (FT_Set_Var_Design_Func)     TT_Set_Var_Design,     
+    (FT_Get_Var_Design_Func)     TT_Get_Var_Design,     
+    (FT_Set_Instance_Func)       TT_Set_Named_Instance, 
+    (FT_Set_MM_WeightVector_Func)NULL,                  
+    (FT_Get_MM_WeightVector_Func)NULL,                  
 
-    (FT_Get_Var_Blend_Func) tt_get_var_blend,       
-    (FT_Done_Blend_Func)    tt_done_blend           
+    (FT_Get_Var_Blend_Func)      tt_get_var_blend,      
+    (FT_Done_Blend_Func)         tt_done_blend          
   )
 
   FT_DEFINE_SERVICE_METRICSVARIATIONSREC(
@@ -548,19 +557,19 @@
     tt_services,
 
     FT_SERVICE_ID_FONT_FORMAT,        FT_FONT_FORMAT_TRUETYPE,
-    FT_SERVICE_ID_MULTI_MASTERS,      &TT_SERVICE_GX_MULTI_MASTERS_GET,
-    FT_SERVICE_ID_METRICS_VARIATIONS, &TT_SERVICE_METRICS_VARIATIONS_GET,
+    FT_SERVICE_ID_MULTI_MASTERS,      &tt_service_gx_multi_masters,
+    FT_SERVICE_ID_METRICS_VARIATIONS, &tt_service_metrics_variations,
     FT_SERVICE_ID_TRUETYPE_ENGINE,    &tt_service_truetype_engine,
-    FT_SERVICE_ID_TT_GLYF,            &TT_SERVICE_TRUETYPE_GLYF_GET,
-    FT_SERVICE_ID_PROPERTIES,         &TT_SERVICE_PROPERTIES_GET )
+    FT_SERVICE_ID_TT_GLYF,            &tt_service_truetype_glyf,
+    FT_SERVICE_ID_PROPERTIES,         &tt_service_properties )
 #else
   FT_DEFINE_SERVICEDESCREC4(
     tt_services,
 
     FT_SERVICE_ID_FONT_FORMAT,     FT_FONT_FORMAT_TRUETYPE,
     FT_SERVICE_ID_TRUETYPE_ENGINE, &tt_service_truetype_engine,
-    FT_SERVICE_ID_TT_GLYF,         &TT_SERVICE_TRUETYPE_GLYF_GET,
-    FT_SERVICE_ID_PROPERTIES,      &TT_SERVICE_PROPERTIES_GET )
+    FT_SERVICE_ID_TT_GLYF,         &tt_service_truetype_glyf,
+    FT_SERVICE_ID_PROPERTIES,      &tt_service_properties )
 #endif
 
 
@@ -574,26 +583,15 @@
     SFNT_Service         sfnt;
 
 
-    
-#ifdef FT_CONFIG_OPTION_PIC
-    if ( !driver )
-      return NULL;
-    library = driver->library;
-    if ( !library )
-      return NULL;
-#endif
-
-    result = ft_service_list_lookup( TT_SERVICES_GET, tt_interface );
+    result = ft_service_list_lookup( tt_services, tt_interface );
     if ( result )
       return result;
 
-#ifndef FT_CONFIG_OPTION_PIC
     if ( !driver )
       return NULL;
     library = driver->library;
     if ( !library )
       return NULL;
-#endif
 
     
     sfntd = FT_Get_Module( library, "sfnt" );

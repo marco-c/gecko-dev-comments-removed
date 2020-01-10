@@ -16,79 +16,79 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_smooth
+#define FT_COMPONENT  smooth
 
 
 #ifdef STANDALONE_
@@ -222,10 +222,10 @@ typedef ptrdiff_t  FT_PtrDist;
 #endif
 
 #define FT_THROW( e )                               \
-          ( FT_Throw( FT_ERR_CAT( ErrRaster, e ),   \
+          ( FT_Throw( FT_ERR_CAT( ErrRaster_, e ),  \
                       __LINE__,                     \
                       __FILE__ )                  | \
-            FT_ERR_CAT( ErrRaster, e )            )
+            FT_ERR_CAT( ErrRaster_, e )           )
 
 #else 
 
@@ -278,8 +278,6 @@ typedef ptrdiff_t  FT_PtrDist;
 #include FT_OUTLINE_H
 
 #include "ftsmerrs.h"
-
-#include "ftspic.h"
 
 #define Smooth_Err_Invalid_Mode     Smooth_Err_Cannot_Render_Glyph
 #define Smooth_Err_Memory_Overflow  Smooth_Err_Out_Of_Memory
@@ -396,9 +394,9 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
   
-  
-  
-  
+
+
+
 
   
   
@@ -517,9 +515,9 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
   
-  
-  
-  
+
+
+
   static void
   gray_record_cell( RAS_ARG )
   {
@@ -562,9 +560,9 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
   
-  
-  
-  
+
+
+
   static void
   gray_set_cell( RAS_ARG_ TCoord  ex,
                           TCoord  ey )
@@ -599,9 +597,9 @@ typedef ptrdiff_t  FT_PtrDist;
 #ifndef FT_LONG64
 
   
-  
-  
-  
+
+
+
   static void
   gray_render_scanline( RAS_ARG_ TCoord  ey,
                                  TPos    x1,
@@ -697,9 +695,9 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
   
-  
-  
-  
+
+
+
   static void
   gray_render_line( RAS_ARG_ TPos  to_x,
                              TPos  to_y )
@@ -838,9 +836,9 @@ typedef ptrdiff_t  FT_PtrDist;
 #else
 
   
-  
-  
-  
+
+
+
   static void
   gray_render_line( RAS_ARG_ TPos  to_x,
                              TPos  to_y )
@@ -1331,39 +1329,42 @@ typedef ptrdiff_t  FT_PtrDist;
 #ifdef STANDALONE_
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static int
   FT_Outline_Decompose( const FT_Outline*        outline,
                         const FT_Outline_Funcs*  func_interface,
@@ -1610,81 +1611,6 @@ typedef ptrdiff_t  FT_PtrDist;
     return FT_THROW( Invalid_Outline );
   }
 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  static void
-  FT_Outline_Get_CBox( const FT_Outline*  outline,
-                       FT_BBox           *acbox )
-  {
-    TPos  xMin, yMin, xMax, yMax;
-
-
-    if ( outline && acbox )
-    {
-      if ( outline->n_points == 0 )
-      {
-        xMin = 0;
-        yMin = 0;
-        xMax = 0;
-        yMax = 0;
-      }
-      else
-      {
-        FT_Vector*  vec   = outline->points;
-        FT_Vector*  limit = vec + outline->n_points;
-
-
-        xMin = xMax = vec->x;
-        yMin = yMax = vec->y;
-        vec++;
-
-        for ( ; vec < limit; vec++ )
-        {
-          TPos  x, y;
-
-
-          x = vec->x;
-          if ( x < xMin ) xMin = x;
-          if ( x > xMax ) xMax = x;
-
-          y = vec->y;
-          if ( y < yMin ) yMin = y;
-          if ( y > yMax ) yMax = y;
-        }
-      }
-      acbox->xMin = xMin;
-      acbox->xMax = xMax;
-      acbox->yMin = yMin;
-      acbox->yMax = yMax;
-    }
-  }
-
 #endif 
 
 
@@ -1702,19 +1628,20 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
   static int
-  gray_convert_glyph_inner( RAS_ARG )
+  gray_convert_glyph_inner( RAS_ARG,
+                            int  continued )
   {
-
     volatile int  error = 0;
 
-#ifdef FT_CONFIG_OPTION_PIC
-      FT_Outline_Funcs func_interface;
-      Init_Class_func_interface(&func_interface);
-#endif
 
     if ( ft_setjmp( ras.jump_buffer ) == 0 )
     {
+      if ( continued )
+        FT_Trace_Disable();
       error = FT_Outline_Decompose( &ras.outline, &func_interface, &ras );
+      if ( continued )
+        FT_Trace_Enable();
+
       if ( !ras.invalid )
         gray_record_cell( RAS_VAR );
 
@@ -1741,8 +1668,6 @@ typedef ptrdiff_t  FT_PtrDist;
   {
     const TCoord  yMin = ras.min_ey;
     const TCoord  yMax = ras.max_ey;
-    const TCoord  xMin = ras.min_ex;
-    const TCoord  xMax = ras.max_ex;
 
     TCell    buffer[FT_MAX_GRAY_POOL];
     size_t   height = (size_t)( yMax - yMin );
@@ -1750,6 +1675,8 @@ typedef ptrdiff_t  FT_PtrDist;
     TCoord   y;
     TCoord   bands[32];  
     TCoord*  band;
+
+    int  continued = 0;
 
 
     
@@ -1774,8 +1701,8 @@ typedef ptrdiff_t  FT_PtrDist;
       ras.max_ey = FT_MIN( y, yMax );
 
       band    = bands;
-      band[1] = xMin;
-      band[0] = xMax;
+      band[1] = ras.min_ey;
+      band[0] = ras.max_ey;
 
       do
       {
@@ -1787,10 +1714,11 @@ typedef ptrdiff_t  FT_PtrDist;
 
         ras.num_cells = 0;
         ras.invalid   = 1;
-        ras.min_ex    = band[1];
-        ras.max_ex    = band[0];
+        ras.min_ey    = band[1];
+        ras.max_ey    = band[0];
 
-        error = gray_convert_glyph_inner( RAS_VAR );
+        error     = gray_convert_glyph_inner( RAS_VAR, continued );
+        continued = 1;
 
         if ( !error )
         {
@@ -1827,7 +1755,7 @@ typedef ptrdiff_t  FT_PtrDist;
   {
     const FT_Outline*  outline    = (const FT_Outline*)params->source;
     const FT_Bitmap*   target_map = params->target;
-    FT_BBox            cbox, clip;
+    FT_BBox            clip;
 
 #ifndef FT_STATIC_RASTER
     gray_TWorker  worker[1];
@@ -1890,21 +1818,11 @@ typedef ptrdiff_t  FT_PtrDist;
       ras.render_span_data = NULL;
     }
 
-    FT_Outline_Get_CBox( outline, &cbox );
-
     
-    if ( cbox.xMin < -0x1000000L || cbox.xMax > 0x1000000L ||
-         cbox.yMin < -0x1000000L || cbox.yMax > 0x1000000L )
-      return FT_THROW( Invalid_Outline );
-
-    
-    cbox.xMin = cbox.xMin >> 6;
-    cbox.yMin = cbox.yMin >> 6;
-    cbox.xMax = ( cbox.xMax + 63 ) >> 6;
-    cbox.yMax = ( cbox.yMax + 63 ) >> 6;
-
-    
-    if ( !( params->flags & FT_RASTER_FLAG_DIRECT ) )
+    if ( params->flags & FT_RASTER_FLAG_DIRECT &&
+         params->flags & FT_RASTER_FLAG_CLIP   )
+      clip = params->clip_box;
+    else
     {
       
       clip.xMin = 0;
@@ -1912,21 +1830,12 @@ typedef ptrdiff_t  FT_PtrDist;
       clip.xMax = (FT_Pos)target_map->width;
       clip.yMax = (FT_Pos)target_map->rows;
     }
-    else if ( params->flags & FT_RASTER_FLAG_CLIP )
-      clip = params->clip_box;
-    else
-    {
-      clip.xMin = -32768L;
-      clip.yMin = -32768L;
-      clip.xMax =  32767L;
-      clip.yMax =  32767L;
-    }
 
     
-    ras.min_ex = FT_MAX( cbox.xMin, clip.xMin );
-    ras.min_ey = FT_MAX( cbox.yMin, clip.yMin );
-    ras.max_ex = FT_MIN( cbox.xMax, clip.xMax );
-    ras.max_ey = FT_MIN( cbox.yMax, clip.yMax );
+    ras.min_ex = clip.xMin;
+    ras.min_ey = clip.yMin;
+    ras.max_ex = clip.xMax;
+    ras.max_ey = clip.yMax;
 
     if ( ras.max_ex <= ras.min_ex || ras.max_ey <= ras.min_ey )
       return 0;

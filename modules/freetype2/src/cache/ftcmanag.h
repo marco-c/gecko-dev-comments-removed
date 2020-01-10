@@ -17,31 +17,31 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -73,11 +73,11 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
 #define FTC_MAX_FACES_DEFAULT  2
@@ -111,26 +111,27 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL( void )
   FTC_Manager_Compress( FTC_Manager  manager );
 

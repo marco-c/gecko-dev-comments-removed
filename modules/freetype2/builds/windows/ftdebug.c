@@ -17,31 +17,32 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #include <ft2build.h>
+#include FT_FREETYPE_H
 #include FT_INTERNAL_DEBUG_H
 
 
@@ -99,19 +100,38 @@
             int          line,
             const char*  file )
   {
+#if 0
+    
+    fprintf( stderr,
+             "%s:%d: error 0x%02x: %s\n",
+             file,
+             line,
+             error,
+             FT_Error_String( error ) );
+#else
     FT_UNUSED( error );
     FT_UNUSED( line );
     FT_UNUSED( file );
+#endif
 
     return 0;
   }
 
+#endif 
+
 
 #ifdef FT_DEBUG_LEVEL_TRACE
 
+  
+  
+  static int  ft_trace_levels_enabled[trace_count];
 
   
-  int  ft_trace_levels[trace_count];
+  static int  ft_trace_levels_disabled[trace_count];
+
+  
+  
+  int*  ft_trace_levels;
 
   
 #define FT_TRACE_DEF( x )  #x ,
@@ -126,23 +146,65 @@
 
 
   
+
+  FT_BASE_DEF( FT_Int )
+  FT_Trace_Get_Count( void )
+  {
+    return trace_count;
+  }
+
+
   
+
+  FT_BASE_DEF( const char * )
+  FT_Trace_Get_Name( FT_Int  idx )
+  {
+    int  max = FT_Trace_Get_Count();
+
+
+    if ( idx < max )
+      return ft_trace_toggles[idx];
+    else
+      return NULL;
+  }
+
+
   
+
+  FT_BASE_DEF( void )
+  FT_Trace_Disable( void )
+  {
+    ft_trace_levels = ft_trace_levels_disabled;
+  }
+
+
   
+
+  FT_BASE_DEF( void )
+  FT_Trace_Enable( void )
+  {
+    ft_trace_levels = ft_trace_levels_enabled;
+  }
+
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE_DEF( void )
   ft_debug_init( void )
   {
@@ -171,8 +233,8 @@
 
         if ( *p == ':' && p > q )
         {
-          int  n, i, len = (int)( p - q );
-          int  level = -1, found = -1;
+          FT_Int  n, i, len = (FT_Int)( p - q );
+          FT_Int  level = -1, found = -1;
 
 
           for ( n = 0; n < trace_count; n++ )
@@ -208,14 +270,16 @@
             {
               
               for ( n = 0; n < trace_count; n++ )
-                ft_trace_levels[n] = level;
+                ft_trace_levels_enabled[n] = level;
             }
             else
-              ft_trace_levels[found] = level;
+              ft_trace_levels_enabled[found] = level;
           }
         }
       }
     }
+
+    ft_trace_levels = ft_trace_levels_enabled;
   }
 
 
@@ -229,7 +293,37 @@
   }
 
 
-#endif 
+  FT_BASE_DEF( FT_Int )
+  FT_Trace_Get_Count( void )
+  {
+    return 0;
+  }
+
+
+  FT_BASE_DEF( const char * )
+  FT_Trace_Get_Name( FT_Int  idx )
+  {
+    FT_UNUSED( idx );
+
+    return NULL;
+  }
+
+
+  FT_BASE_DEF( void )
+  FT_Trace_Disable( void )
+  {
+    
+  }
+
+
+  
+
+  FT_BASE_DEF( void )
+  FT_Trace_Enable( void )
+  {
+    
+  }
+
 
 #endif 
 

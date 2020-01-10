@@ -17,88 +17,98 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
 
+  
+  
   
   
   
@@ -157,6 +167,8 @@
   
   
 #ifndef FT_ERRORDEF
+
+#define FT_INCLUDE_ERR_PROTOS
 
 #define FT_ERRORDEF( e, v, s )  e = v,
 #define FT_ERROR_START_LIST     enum {
@@ -219,6 +231,53 @@
 #ifndef FT2_BUILD_LIBRARY
 #undef FT_ERR_PREFIX
 #endif
+
+  
+  
+  
+  
+  
+#ifdef FT_INCLUDE_ERR_PROTOS
+#undef FT_INCLUDE_ERR_PROTOS
+
+#ifndef FT_ERR_PROTOS_DEFINED
+#define FT_ERR_PROTOS_DEFINED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( const char* )
+  FT_Error_String( FT_Error  error_code );
+
+
+#endif 
+
+#endif 
 
 #endif 
 

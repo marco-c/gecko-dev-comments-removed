@@ -18,14 +18,14 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 
 
 #ifndef FTSTDLIB_H_
@@ -38,22 +38,22 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #include <limits.h>
@@ -69,10 +69,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #include <string.h>
@@ -93,10 +93,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #include <stdio.h>
@@ -111,10 +111,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #include <stdlib.h>
@@ -123,10 +123,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #define ft_scalloc   calloc
@@ -136,10 +136,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #define ft_strtol  strtol
@@ -147,15 +147,15 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #include <setjmp.h>
 
-#define ft_jmp_buf     jmp_buf  /* note: this cannot be a typedef since */
+#define ft_jmp_buf     jmp_buf  /* note: this cannot be a typedef since  */
                                 
                                 
 

@@ -23,7 +23,7 @@
 #include FT_INTERNAL_OBJECTS_H
 
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_gloader
+#define FT_COMPONENT  gloader
 
 
   
@@ -39,30 +39,30 @@
   
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -104,7 +104,7 @@
   FT_BASE_DEF( void )
   FT_GlyphLoader_Reset( FT_GlyphLoader  loader )
   {
-    FT_Memory memory = loader->memory;
+    FT_Memory  memory = loader->memory;
 
 
     FT_FREE( loader->base.outline.points );
@@ -129,7 +129,7 @@
   {
     if ( loader )
     {
-      FT_Memory memory = loader->memory;
+      FT_Memory  memory = loader->memory;
 
 
       FT_GlyphLoader_Reset( loader );
@@ -358,48 +358,6 @@
 
     
     FT_GlyphLoader_Prepare( loader );
-  }
-
-
-  FT_BASE_DEF( FT_Error )
-  FT_GlyphLoader_CopyPoints( FT_GlyphLoader  target,
-                             FT_GlyphLoader  source )
-  {
-    FT_Error  error;
-    FT_UInt   num_points   = (FT_UInt)source->base.outline.n_points;
-    FT_UInt   num_contours = (FT_UInt)source->base.outline.n_contours;
-
-
-    error = FT_GlyphLoader_CheckPoints( target, num_points, num_contours );
-    if ( !error )
-    {
-      FT_Outline*  out = &target->base.outline;
-      FT_Outline*  in  = &source->base.outline;
-
-
-      FT_ARRAY_COPY( out->points, in->points,
-                     num_points );
-      FT_ARRAY_COPY( out->tags, in->tags,
-                     num_points );
-      FT_ARRAY_COPY( out->contours, in->contours,
-                     num_contours );
-
-      
-      if ( target->use_extra && source->use_extra )
-      {
-        FT_ARRAY_COPY( target->base.extra_points, source->base.extra_points,
-                       num_points );
-        FT_ARRAY_COPY( target->base.extra_points2, source->base.extra_points2,
-                       num_points );
-      }
-
-      out->n_points   = (short)num_points;
-      out->n_contours = (short)num_contours;
-
-      FT_GlyphLoader_Adjust_Points( target );
-    }
-
-    return error;
   }
 
 

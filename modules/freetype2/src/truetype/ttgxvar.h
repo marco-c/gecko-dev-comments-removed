@@ -30,14 +30,14 @@ FT_BEGIN_HEADER
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef struct  GX_AVarCorrespondenceRec_
   {
     FT_Fixed  fromCoord;
@@ -47,14 +47,14 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef struct  GX_AVarSegmentRec_
   {
     FT_UShort              pairCount;
@@ -115,13 +115,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  GX_HVVarTableRec_
   {
     GX_ItemVarStoreRec    itemStore;        
@@ -192,13 +192,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  GX_MVarTableRec_
   {
     FT_UShort  valueCount;
@@ -210,94 +210,94 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  GX_BlendRec_
   {
     FT_UInt         num_axis;
@@ -337,13 +337,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef enum  GX_TupleCountFlags_
   {
     GX_TC_TUPLES_SHARE_POINT_NUMBERS = 0x8000,
@@ -354,14 +354,14 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef enum  GX_TupleIndexFlags_
   {
     GX_TI_EMBEDDED_TUPLE_COORD  = 0x8000,

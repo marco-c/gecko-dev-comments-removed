@@ -124,36 +124,7 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -293,10 +264,58 @@ FT_BEGIN_HEADER
 
 
 
+
 #define FT_LCD_FILTER_FIVE_TAPS  5
 
   typedef FT_Byte  FT_LcdFiveTapFilter[FT_LCD_FILTER_FIVE_TAPS];
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( FT_Error )
+  FT_Library_SetLcdGeometry( FT_Library  library,
+                             FT_Vector   sub[3] );
 
   
 

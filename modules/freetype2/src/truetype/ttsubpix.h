@@ -30,10 +30,10 @@ FT_BEGIN_HEADER
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
 
   
-  
-  
-  
-  
+
+
+
+
 #define SPH_FDEF_INLINE_DELTA_1       0x0000001
 #define SPH_FDEF_INLINE_DELTA_2       0x0000002
 #define SPH_FDEF_DIAGONAL_STROKE      0x0000004
@@ -46,10 +46,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 #define SPH_TWEAK_ALLOW_X_DMOVE                   0x0000001UL
 #define SPH_TWEAK_ALWAYS_DO_DELTAP                0x0000002UL
 #define SPH_TWEAK_ALWAYS_SKIP_DELTAP              0x0000004UL

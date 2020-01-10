@@ -168,6 +168,7 @@ FT_BEGIN_HEADER
 
 
 
+
   typedef FT_Pointer  FTC_FaceID;
 
 
@@ -227,83 +228,89 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct FTC_ManagerRec_*  FTC_Manager;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct FTC_NodeRec_*  FTC_Node;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_Manager_New( FT_Library          library,
                    FT_UInt             max_faces,
@@ -315,76 +322,81 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FTC_Manager_Reset( FTC_Manager  manager );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FTC_Manager_Done( FTC_Manager  manager );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_Manager_LookupFace( FTC_Manager  manager,
                           FTC_FaceID   face_id,
@@ -392,36 +404,41 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FTC_ScalerRec_
   {
     FTC_FaceID  face_id;
@@ -435,53 +452,55 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct FTC_ScalerRec_*  FTC_Scaler;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_Manager_LookupSize( FTC_Manager  manager,
                           FTC_Scaler   scaler,
@@ -489,20 +508,22 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FTC_Node_Unref( FTC_Node     node,
                   FTC_Manager  manager );
@@ -681,82 +702,86 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
   typedef struct FTC_ImageCacheRec_*  FTC_ImageCache;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_ImageCache_New( FTC_Manager      manager,
                       FTC_ImageCache  *acache );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_ImageCache_Lookup( FTC_ImageCache  cache,
                          FTC_ImageType   type,
@@ -766,53 +791,56 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_ImageCache_LookupScaler( FTC_ImageCache  cache,
                                FTC_Scaler      scaler,
@@ -823,52 +851,59 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef struct FTC_SBitRec_*  FTC_SBit;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FTC_SBitRec_
   {
     FT_Byte   width;
@@ -888,86 +923,92 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   typedef struct FTC_SBitCacheRec_*  FTC_SBitCache;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_SBitCache_New( FTC_Manager     manager,
                      FTC_SBitCache  *acache );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_SBitCache_Lookup( FTC_SBitCache    cache,
                         FTC_ImageType    type,
@@ -977,52 +1018,57 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FTC_SBitCache_LookupScaler( FTC_SBitCache  cache,
                               FTC_Scaler     scaler,

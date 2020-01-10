@@ -42,13 +42,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_bdfdriver
+#define FT_COMPONENT  bdfdriver
 
 
   typedef struct  BDF_CMapRec_
@@ -99,14 +99,17 @@
 
     min = 0;
     max = cmap->num_encodings;
+    mid = ( min + max ) >> 1;
 
     while ( min < max )
     {
       FT_ULong  code;
 
 
-      mid  = ( min + max ) >> 1;
-      code = (FT_ULong)encodings[mid].enc;
+      if ( mid > max || mid < min )
+        mid = ( min + max ) >> 1;
+
+      code = encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -120,6 +123,9 @@
         max = mid;
       else
         min = mid + 1;
+
+      
+      mid += charcode - code;
     }
 
     return result;
@@ -139,14 +145,17 @@
 
     min = 0;
     max = cmap->num_encodings;
+    mid = ( min + max ) >> 1;
 
     while ( min < max )
     {
       FT_ULong  code; 
 
 
-      mid  = ( min + max ) >> 1;
-      code = (FT_ULong)encodings[mid].enc;
+      if ( mid > max || mid < min )
+        mid = ( min + max ) >> 1;
+
+      code = encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -160,12 +169,15 @@
         max = mid;
       else
         min = mid + 1;
+
+      
+      mid += charcode - code;
     }
 
     charcode = 0;
     if ( min < cmap->num_encodings )
     {
-      charcode = (FT_ULong)encodings[min].enc;
+      charcode = encodings[min].enc;
       result   = encodings[min].glyph + 1;
     }
 
@@ -401,8 +413,7 @@
       bdfface->face_index = 0;
 
       bdfface->face_flags |= FT_FACE_FLAG_FIXED_SIZES |
-                             FT_FACE_FLAG_HORIZONTAL  |
-                             FT_FACE_FLAG_FAST_GLYPHS;
+                             FT_FACE_FLAG_HORIZONTAL;
 
       prop = bdf_get_font_property( font, "SPACING" );
       if ( prop && prop->format == BDF_ATOM                             &&

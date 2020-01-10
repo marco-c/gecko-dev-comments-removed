@@ -28,14 +28,14 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef struct  FT_SubGlyphRec_
   {
     FT_Int     index;
@@ -137,11 +137,6 @@ FT_BEGIN_HEADER
   
   FT_BASE( void )
   FT_GlyphLoader_Add( FT_GlyphLoader  loader );
-
-  
-  FT_BASE( FT_Error )
-  FT_GlyphLoader_CopyPoints( FT_GlyphLoader  target,
-                             FT_GlyphLoader  source );
 
  
 

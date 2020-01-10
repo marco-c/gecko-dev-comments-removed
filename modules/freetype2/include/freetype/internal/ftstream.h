@@ -96,13 +96,13 @@ FT_BEGIN_HEADER
   
   
   
-#define FT_FIELD_SIZE( f ) \
+#define FT_FIELD_SIZE( f )                          \
           (FT_Byte)sizeof ( ((FT_STRUCTURE*)0)->f )
 
-#define FT_FIELD_SIZE_DELTA( f ) \
+#define FT_FIELD_SIZE_DELTA( f )                       \
           (FT_Byte)sizeof ( ((FT_STRUCTURE*)0)->f[0] )
 
-#define FT_FIELD_OFFSET( f ) \
+#define FT_FIELD_OFFSET( f )                         \
           (FT_UShort)( offsetof( FT_STRUCTURE, f ) )
 
 #define FT_FRAME_FIELD( frame_op, field ) \
@@ -148,10 +148,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 #define FT_BYTE_( p, i )  ( ((const FT_Byte*)(p))[(i)] )
 
@@ -163,6 +163,10 @@ FT_BEGIN_HEADER
 
 #define FT_BYTE_U16( p, i, s )  ( FT_UINT16( FT_BYTE_( p, i ) ) << (s) )
 #define FT_BYTE_U32( p, i, s )  ( FT_UINT32( FT_BYTE_( p, i ) ) << (s) )
+
+
+  
+
 
 
 #define FT_PEEK_SHORT( p )  FT_INT16( FT_BYTE_U16( p, 0, 8 ) | \
@@ -213,6 +217,9 @@ FT_BEGIN_HEADER
                                           FT_BYTE_U32( p, 1,  8 ) | \
                                           FT_BYTE_U32( p, 0,  0 ) )
 
+  
+
+
 
 #define FT_NEXT_CHAR( buffer )       \
           ( (signed char)*buffer++ )
@@ -259,9 +266,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
+
+
+
+
 #if 0
 #define FT_GET_MACRO( type )    FT_NEXT_ ## type ( stream->cursor )
 
@@ -299,9 +310,17 @@ FT_BEGIN_HEADER
 #define FT_GET_ULONG_LE()   FT_GET_MACRO( FT_Stream_GetULongLE, FT_ULong )
 #endif
 
+
 #define FT_READ_MACRO( func, type, var )        \
           ( var = (type)func( stream, &error ), \
             error != FT_Err_Ok )
+
+  
+
+
+
+
+
 
 #define FT_READ_BYTE( var )       FT_READ_MACRO( FT_Stream_ReadChar, FT_Byte, var )
 #define FT_READ_CHAR( var )       FT_READ_MACRO( FT_Stream_ReadChar, FT_Char, var )
@@ -393,6 +412,8 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
   FT_BASE( FT_Error )
   FT_Stream_EnterFrame( FT_Stream  stream,
                         FT_ULong   count );
@@ -401,6 +422,9 @@ FT_BEGIN_HEADER
   FT_BASE( void )
   FT_Stream_ExitFrame( FT_Stream  stream );
 
+
+  
+  
   
   
   
@@ -419,6 +443,7 @@ FT_BEGIN_HEADER
   FT_BASE( void )
   FT_Stream_ReleaseFrame( FT_Stream  stream,
                           FT_Byte**  pbytes );
+
 
   
   FT_BASE( FT_Char )

@@ -29,15 +29,15 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
 #undef  FT_SET_ERROR
 #define FT_SET_ERROR( expression ) \
           ( ( error = (expression) ) != 0 )
@@ -256,17 +256,16 @@ extern "C++"
 
 
 
-
 #define FT_ARRAY_MAX( ptr )           ( FT_INT_MAX / sizeof ( *(ptr) ) )
 
 #define FT_ARRAY_CHECK( ptr, count )  ( (count) <= FT_ARRAY_MAX( ptr ) )
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 #define FT_MEM_NEW_ARRAY( ptr, count )                              \
           FT_ASSIGNP_INNER( ptr, ft_mem_realloc( memory,            \

@@ -17,12 +17,12 @@
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
 
 #include <ft2build.h>
@@ -39,13 +39,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttpost
+#define FT_COMPONENT  ttpost
 
 
   
@@ -460,27 +460,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_get_ps_name( TT_Face      face,
                        FT_UInt      idx,

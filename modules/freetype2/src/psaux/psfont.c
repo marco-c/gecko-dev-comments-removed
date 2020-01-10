@@ -331,7 +331,7 @@
     }
 
     
-    font->hinted = (FT_Bool)( font->renderingFlags & CF2_FlagsHinted );
+    font->hinted = FT_BOOL( font->renderingFlags & CF2_FlagsHinted );
 
     
     
@@ -366,7 +366,7 @@
     if ( font->stemDarkened != ( font->renderingFlags & CF2_FlagsDarkened ) )
     {
       font->stemDarkened =
-        (FT_Bool)( font->renderingFlags & CF2_FlagsDarkened );
+        FT_BOOL( font->renderingFlags & CF2_FlagsDarkened );
 
       
       needExtraSetup = TRUE;

@@ -32,20 +32,20 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_cidobjs
+#define FT_COMPONENT  cidobjs
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   FT_LOCAL_DEF( void )
   cid_slot_done( FT_GlyphSlot  slot )
@@ -86,10 +86,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   static PSH_Globals_Funcs
@@ -175,22 +175,23 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   cid_face_done( FT_Face  cidface )         
   {
@@ -253,28 +254,33 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   cid_face_init( FT_Stream      stream,
                  FT_Face        cidface,        
@@ -450,19 +456,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   cid_driver_init( FT_Module  module )
   {
@@ -506,16 +513,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   cid_driver_done( FT_Module  driver )
   {

@@ -16,13 +16,13 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
 
 #include <ft2build.h>
@@ -35,36 +35,38 @@
 
 
   
-  
-  
-  
-  
 
-  
-  
-  
-  
-  
-  
-  
+
+
 
 
   
+
+
+
+
+
+
+
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void* )
   ft_alloc( FT_Memory  memory,
             long       size )
@@ -76,25 +78,29 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void* )
   ft_realloc( FT_Memory  memory,
               long       cur_size,
@@ -109,18 +115,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void )
   ft_free( FT_Memory  memory,
            void*      block )
@@ -132,21 +140,21 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 #ifndef FT_CONFIG_OPTION_DISABLE_STREAM_SUPPORT
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_io
+#define FT_COMPONENT  io
 
   
   
@@ -154,16 +162,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void )
   ft_ansi_stream_close( FT_Stream  stream )
   {
@@ -176,27 +185,31 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( unsigned long )
   ft_ansi_stream_io( FT_Stream       stream,
                      unsigned long   offset,

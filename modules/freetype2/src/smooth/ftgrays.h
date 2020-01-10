@@ -28,19 +28,18 @@
 #include "ftimage.h"
 #else
 #include <ft2build.h>
-#include FT_CONFIG_CONFIG_H 
 #include FT_IMAGE_H
 #endif
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 #ifndef FT_EXPORT_VAR
 #define FT_EXPORT_VAR( x )  extern  x
 #endif

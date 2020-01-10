@@ -37,26 +37,26 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 #define PS_GLOBALS_MAX_BLUE_ZONES  16
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 #define PS_GLOBALS_MAX_STD_WIDTHS  16
 
 

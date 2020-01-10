@@ -26,13 +26,9 @@
 #include "ftccback.h"
 #include "ftcerror.h"
 
-#ifdef FT_CONFIG_OPTION_PIC
-#error "cache system does not support PIC yet"
-#endif
-
 
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_cache
+#define FT_COMPONENT  cache
 
 
   static FT_Error

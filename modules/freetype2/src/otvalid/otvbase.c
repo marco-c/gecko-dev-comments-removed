@@ -21,13 +21,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_otvbase
+#define FT_COMPONENT  otvbase
 
 
   static void

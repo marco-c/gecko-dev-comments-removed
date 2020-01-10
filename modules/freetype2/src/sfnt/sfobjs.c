@@ -42,13 +42,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_sfobjs
+#define FT_COMPONENT  sfobjs
 
 
 
@@ -918,7 +918,9 @@
     
     stream = face->root.stream;
 
-    FT_TRACE2(( "sfnt_init_face: %08p, %d\n", face, face_instance_index ));
+    FT_TRACE2(( "sfnt_init_face: %08p (index %d)\n",
+                face,
+                face_instance_index ));
 
     face_index = FT_ABS( face_instance_index ) & 0xFFFF;
 
@@ -1342,6 +1344,13 @@
       LOAD_( eblc );
 
     
+    if ( sfnt->load_cpal )
+    {
+      LOAD_( cpal );
+      LOAD_( colr );
+    }
+
+    
     LOAD_( pclt );
     LOAD_( gasp );
     LOAD_( kern );
@@ -1390,11 +1399,12 @@
 
 
       
-      
-      
-      
+
+
+
       if ( face->sbit_table_type == TT_SBIT_TABLE_TYPE_CBLC ||
-           face->sbit_table_type == TT_SBIT_TABLE_TYPE_SBIX )
+           face->sbit_table_type == TT_SBIT_TABLE_TYPE_SBIX ||
+           face->colr                                       )
         flags |= FT_FACE_FLAG_COLOR;      
 
       if ( has_outline == TRUE )
@@ -1439,9 +1449,9 @@
       root->face_flags = flags;
 
       
-      
-      
-      
+
+
+
 
       flags = 0;
       if ( has_outline == TRUE && face->os2.version != 0xFFFFU )
@@ -1472,13 +1482,13 @@
       root->style_flags |= flags;
 
       
-      
-      
-      
-      
-      
-      
-      
+
+
+
+
+
+
+
 
       tt_face_build_cmaps( face );  
 
@@ -1521,7 +1531,8 @@
           error = FT_CMap_New( (FT_CMap_Class)&tt_cmap_unicode_class_rec,
                                NULL, &cmaprec, NULL );
           if ( error                                      &&
-               FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) )
+               FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) &&
+               FT_ERR_NEQ( error, Unimplemented_Feature ) )
             goto Exit;
           error = FT_Err_Ok;
 
@@ -1616,9 +1627,9 @@
 
 
       
-      
-      
-      
+
+
+
       if ( FT_IS_SCALABLE( root ) )
       {
         
@@ -1631,58 +1642,72 @@
 
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
-        
-        
 
-        root->ascender  = face->horizontal.Ascender;
-        root->descender = face->horizontal.Descender;
 
-        root->height = root->ascender - root->descender +
-                       face->horizontal.Line_Gap;
 
-        if ( !( root->ascender || root->descender ) )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        if ( face->os2.version != 0xFFFFU && face->os2.fsSelection & 128 )
         {
-          if ( face->os2.version != 0xFFFFU )
+          root->ascender  = face->os2.sTypoAscender;
+          root->descender = face->os2.sTypoDescender;
+          root->height    = root->ascender - root->descender +
+                            face->os2.sTypoLineGap;
+        }
+        else
+        {
+          root->ascender  = face->horizontal.Ascender;
+          root->descender = face->horizontal.Descender;
+          root->height    = root->ascender - root->descender +
+                            face->horizontal.Line_Gap;
+
+          if ( !( root->ascender || root->descender ) )
           {
-            if ( face->os2.sTypoAscender || face->os2.sTypoDescender )
+            if ( face->os2.version != 0xFFFFU )
             {
-              root->ascender  = face->os2.sTypoAscender;
-              root->descender = face->os2.sTypoDescender;
-
-              root->height = root->ascender - root->descender +
-                             face->os2.sTypoLineGap;
-            }
-            else
-            {
-              root->ascender  =  (FT_Short)face->os2.usWinAscent;
-              root->descender = -(FT_Short)face->os2.usWinDescent;
-
-              root->height = root->ascender - root->descender;
+              if ( face->os2.sTypoAscender || face->os2.sTypoDescender )
+              {
+                root->ascender  = face->os2.sTypoAscender;
+                root->descender = face->os2.sTypoDescender;
+                root->height    = root->ascender - root->descender +
+                                  face->os2.sTypoLineGap;
+              }
+              else
+              {
+                root->ascender  =  (FT_Short)face->os2.usWinAscent;
+                root->descender = -(FT_Short)face->os2.usWinDescent;
+                root->height    =  root->ascender - root->descender;
+              }
             }
           }
         }
@@ -1737,6 +1762,13 @@
       
       if ( sfnt->free_eblc )
         sfnt->free_eblc( face );
+
+      
+      if ( sfnt->free_cpal )
+      {
+        sfnt->free_cpal( face );
+        sfnt->free_colr( face );
+      }
     }
 
 #ifdef TT_CONFIG_OPTION_BDF
@@ -1792,10 +1824,17 @@
     FT_FREE( face->sbit_strike_map );
     face->root.num_fixed_sizes = 0;
 
-#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     FT_FREE( face->postscript_name );
+
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     FT_FREE( face->var_postscript_prefix );
 #endif
+
+    
+    FT_FREE( face->palette_data.palette_name_ids );
+    FT_FREE( face->palette_data.palette_flags );
+    FT_FREE( face->palette_data.palette_entry_name_ids );
+    FT_FREE( face->palette );
 
     face->sfnt = NULL;
   }

@@ -35,57 +35,57 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
   
 
 
   
-  
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  PS_FontInfoRec_
   {
     FT_String*  version;
@@ -102,39 +102,38 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct PS_FontInfoRec_*  PS_FontInfo;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef PS_FontInfoRec  T1_FontInfo;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
   typedef struct  PS_PrivateRec_
   {
     FT_Int     unique_id;
@@ -177,55 +176,54 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct PS_PrivateRec_*  PS_Private;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef PS_PrivateRec  T1_Private;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef enum  T1_Blend_Flags_
   {
     
@@ -331,13 +329,22 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  CID_FaceDictRec_
   {
     PS_PrivateRec  private_dict;
@@ -345,8 +352,8 @@ FT_BEGIN_HEADER
     FT_UInt        len_buildchar;
     FT_Fixed       forcebold_threshold;
     FT_Pos         stroke_width;
-    FT_Fixed       expansion_factor;
-
+    FT_Fixed       expansion_factor;   
+                                       
     FT_Byte        paint_type;
     FT_Byte        font_type;
     FT_Matrix      font_matrix;
@@ -360,37 +367,37 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct CID_FaceDictRec_*  CID_FaceDict;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
   typedef CID_FaceDictRec  CID_FontDict;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  CID_FaceInfoRec_
   {
     FT_String*      cid_font_name;
@@ -422,31 +429,29 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct CID_FaceInfoRec_*  CID_FaceInfo;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef CID_FaceInfoRec  CID_Info;
 
 
   
-
 
 
 
@@ -539,24 +544,23 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef enum  T1_EncodingType_
   {
     T1_ENCODING_TYPE_NONE = 0,
@@ -569,65 +573,65 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef enum  PS_Dict_Keys_
   {
     

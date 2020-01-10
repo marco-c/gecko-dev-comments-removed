@@ -16,16 +16,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
 
 
 #include <ft2build.h>
@@ -36,16 +36,15 @@
 #include FT_BITMAP_H
 #include FT_INTERNAL_OBJECTS_H
 
-#include "basepic.h"
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_glyph
+#define FT_COMPONENT  glyph
 
 
   
@@ -77,7 +76,7 @@
     
     if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
     {
-      glyph->bitmap = slot->bitmap;
+      glyph->bitmap          = slot->bitmap;
       slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
     }
     else
@@ -359,37 +358,28 @@
 
   
 
-  FT_EXPORT_DEF( FT_Error )
-  FT_Get_Glyph( FT_GlyphSlot  slot,
-                FT_Glyph     *aglyph )
+  FT_EXPORT( FT_Error )
+  FT_New_Glyph( FT_Library       library,
+                FT_Glyph_Format  format,
+                FT_Glyph        *aglyph )
   {
-    FT_Library  library;
-    FT_Error    error;
-    FT_Glyph    glyph;
-
     const FT_Glyph_Class*  clazz = NULL;
 
-
-    if ( !slot )
-      return FT_THROW( Invalid_Slot_Handle );
-
-    library = slot->library;
-
-    if ( !aglyph )
+    if ( !library || !aglyph )
       return FT_THROW( Invalid_Argument );
 
     
-    if ( slot->format == FT_GLYPH_FORMAT_BITMAP )
-      clazz = FT_BITMAP_GLYPH_CLASS_GET;
+    if ( format == FT_GLYPH_FORMAT_BITMAP )
+      clazz = &ft_bitmap_glyph_class;
 
     
-    else if ( slot->format == FT_GLYPH_FORMAT_OUTLINE )
-      clazz = FT_OUTLINE_GLYPH_CLASS_GET;
+    else if ( format == FT_GLYPH_FORMAT_OUTLINE )
+      clazz = &ft_outline_glyph_class;
 
     else
     {
       
-      FT_Renderer  render = FT_Lookup_Renderer( library, slot->format, 0 );
+      FT_Renderer  render = FT_Lookup_Renderer( library, format, 0 );
 
 
       if ( render )
@@ -397,13 +387,31 @@
     }
 
     if ( !clazz )
-    {
-      error = FT_THROW( Invalid_Glyph_Format );
-      goto Exit;
-    }
+      return FT_THROW( Invalid_Glyph_Format );
 
     
-    error = ft_new_glyph( library, clazz, &glyph );
+    return ft_new_glyph( library, clazz, aglyph );
+  }
+
+
+  
+
+  FT_EXPORT_DEF( FT_Error )
+  FT_Get_Glyph( FT_GlyphSlot  slot,
+                FT_Glyph     *aglyph )
+  {
+    FT_Error  error;
+    FT_Glyph  glyph;
+
+
+    if ( !slot )
+      return FT_THROW( Invalid_Slot_Handle );
+
+    if ( !aglyph )
+      return FT_THROW( Invalid_Argument );
+
+    
+    error = FT_New_Glyph( slot->library, slot->format, &glyph );
     if ( error )
       goto Exit;
 
@@ -427,7 +435,7 @@
     glyph->advance.y = slot->advance.y * 1024;
 
     
-    error = clazz->glyph_init( glyph, slot );
+    error = glyph->clazz->glyph_init( glyph, slot );
 
   Exit2:
     
@@ -505,8 +513,8 @@
     {
       acbox->xMin = FT_PIX_FLOOR( acbox->xMin );
       acbox->yMin = FT_PIX_FLOOR( acbox->yMin );
-      acbox->xMax = FT_PIX_CEIL( acbox->xMax );
-      acbox->yMax = FT_PIX_CEIL( acbox->yMax );
+      acbox->xMax = FT_PIX_CEIL_LONG( acbox->xMax );
+      acbox->yMax = FT_PIX_CEIL_LONG( acbox->yMax );
     }
 
     
@@ -536,7 +544,6 @@
     FT_BitmapGlyph            bitmap = NULL;
     const FT_Glyph_Class*     clazz;
 
-    
     FT_Library                library;
 
 
@@ -553,7 +560,7 @@
       goto Bad;
 
     
-    if ( clazz == FT_BITMAP_GLYPH_CLASS_GET )
+    if ( clazz == &ft_bitmap_glyph_class )
       goto Exit;
 
     if ( !clazz->glyph_prepare )
@@ -569,7 +576,7 @@
     dummy.format   = clazz->glyph_format;
 
     
-    error = ft_new_glyph( library, FT_BITMAP_GLYPH_CLASS_GET, &b );
+    error = ft_new_glyph( library, &ft_bitmap_glyph_class, &b );
     if ( error )
       goto Exit;
     bitmap = (FT_BitmapGlyph)b;

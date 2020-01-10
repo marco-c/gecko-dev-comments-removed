@@ -17,11 +17,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
 #ifndef FTLIST_H_
@@ -42,170 +42,184 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_ListNode )
   FT_List_Find( FT_List  list,
                 void*    data );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FT_List_Add( FT_List      list,
                FT_ListNode  node );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FT_List_Insert( FT_List      list,
                   FT_ListNode  node );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FT_List_Remove( FT_List      list,
                   FT_ListNode  node );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FT_List_Up( FT_List      list,
               FT_ListNode  node );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*FT_List_Iterator)( FT_ListNode  node,
                        void*        user );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FT_List_Iterate( FT_List           list,
                    FT_List_Iterator  iterator,
@@ -213,23 +227,26 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*FT_List_Destructor)( FT_Memory  memory,
                          void*      data,
@@ -237,28 +254,32 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( void )
   FT_List_Finalize( FT_List             list,
                     FT_List_Destructor  destroy,

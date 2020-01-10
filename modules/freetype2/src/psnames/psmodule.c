@@ -41,7 +41,6 @@
 #include "pstables.h"
 
 #include "psnamerr.h"
-#include "pspic.h"
 
 
 #ifdef FT_CONFIG_OPTION_POSTSCRIPT_NAMES
@@ -393,7 +392,9 @@
         
         if ( count < num_glyphs / 2 )
         {
-          (void)FT_RENEW_ARRAY( table->maps, num_glyphs, count );
+          (void)FT_RENEW_ARRAY( table->maps,
+                                num_glyphs + EXTRA_GLYPH_LIST_SIZE,
+                                count );
           error = FT_Err_Ok;
         }
 
@@ -577,28 +578,16 @@
   FT_DEFINE_SERVICEDESCREC1(
     pscmaps_services,
 
-    FT_SERVICE_ID_POSTSCRIPT_CMAPS, &PSCMAPS_INTERFACE_GET )
+    FT_SERVICE_ID_POSTSCRIPT_CMAPS, &pscmaps_interface )
 
 
   static FT_Pointer
   psnames_get_service( FT_Module    module,
                        const char*  service_id )
   {
-    
-#ifdef FT_CONFIG_OPTION_PIC
-    FT_Library  library;
-
-
-    if ( !module )
-      return NULL;
-    library = module->library;
-    if ( !library )
-      return NULL;
-#else
     FT_UNUSED( module );
-#endif
 
-    return ft_service_list_lookup( PSCMAPS_SERVICES_GET, service_id );
+    return ft_service_list_lookup( pscmaps_services, service_id );
   }
 
 #endif 
@@ -621,7 +610,7 @@
     0x20000L,   
 
     PUT_PS_NAMES_SERVICE(
-      (void*)&PSCMAPS_INTERFACE_GET ),   
+      (void*)&pscmaps_interface ),   
 
     (FT_Module_Constructor)NULL,                                       
     (FT_Module_Destructor) NULL,                                       

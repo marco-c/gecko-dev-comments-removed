@@ -35,58 +35,58 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct T1_SizeRec_*  T1_Size;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct T1_GlyphSlotRec_*  T1_GlyphSlot;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct T1_CharMapRec_*   T1_CharMap;
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  T1_SizeRec_
   {
     FT_SizeRec  root;
@@ -106,13 +106,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  T1_GlyphSlotRec_
   {
     FT_GlyphSlotRec  root;

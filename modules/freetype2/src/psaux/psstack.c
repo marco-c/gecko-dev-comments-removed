@@ -258,6 +258,9 @@
       return;
     }
 
+    
+    
+    
     if ( shift < 0 )
       shift = -( ( -shift ) % count );
     else

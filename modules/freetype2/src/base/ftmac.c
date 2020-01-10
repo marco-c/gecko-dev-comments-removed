@@ -955,16 +955,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT_DEF( FT_Error )
   FT_New_Face( FT_Library   library,
                const char*  pathname,
@@ -996,16 +996,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT_DEF( FT_Error )
   FT_New_Face_From_FSRef( FT_Library    library,
                           const FSRef*  ref,
@@ -1041,15 +1042,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT_DEF( FT_Error )
   FT_New_Face_From_FSSpec( FT_Library     library,
                            const FSSpec*  spec,

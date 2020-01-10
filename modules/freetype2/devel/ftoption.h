@@ -26,44 +26,46 @@
 FT_BEGIN_HEADER
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -76,32 +78,38 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
 
 
@@ -121,45 +129,45 @@ FT_BEGIN_HEADER
 
 
 
+  
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #undef FT_CONFIG_OPTION_FORCE_INT64
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_INLINE_MULFIX
 
 
@@ -214,19 +222,27 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_USE_BZIP2
 
 
@@ -242,17 +258,25 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_USE_PNG
+
+
+
+
 
 
 
@@ -307,7 +331,6 @@ FT_BEGIN_HEADER
 
 
 
-
 #define FT_CONFIG_OPTION_ADOBE_GLYPH_LIST
 
 
@@ -340,21 +363,19 @@ FT_BEGIN_HEADER
 
 
 
-
-
 #ifdef FT_CONFIG_OPTION_MAC_FONTS
 #define FT_CONFIG_OPTION_GUESSING_EMBEDDED_RFORK
 #endif
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_INCREMENTAL
 
 
@@ -367,34 +388,39 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 #define FT_MAX_MODULES  32
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_DEBUG_LEVEL_ERROR
 #define FT_DEBUG_LEVEL_TRACE
+
+
+
+
+
+
 
 
 
@@ -468,31 +494,15 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -506,12 +516,21 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #define TT_CONFIG_OPTION_EMBEDDED_BITMAPS
+
+
+
+
+
+
+
+
+#define TT_CONFIG_OPTION_COLOR_LAYERS
 
 
 
@@ -541,6 +560,7 @@ FT_BEGIN_HEADER
 
 
 #define TT_CONFIG_OPTION_SFNT_NAMES
+
 
 
 
@@ -631,35 +651,43 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
 #define TT_CONFIG_OPTION_SUBPIXEL_HINTING     ( 1 | 2 )
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #undef TT_CONFIG_OPTION_COMPONENT_OFFSET_SCALED
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 #define TT_CONFIG_OPTION_GX_VAR_SUPPORT
 
 
@@ -699,60 +727,58 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
 #define T1_MAX_DICT_DEPTH  5
 
 
   
-  
-  
-  
-  
+
+
+
+
 #define T1_MAX_SUBRS_CALLS  16
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 #define T1_MAX_CHARSTRINGS_OPERANDS  256
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 #undef T1_CONFIG_OPTION_NO_AFM
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
 #undef T1_CONFIG_OPTION_NO_MM_SUPPORT
 
 
   
-  
-  
-  
-  
-  
-  
-#define T1_CONFIG_OPTION_OLD_ENGINE
 
+
+
+
+
+
+#define T1_CONFIG_OPTION_OLD_ENGINE
 
 
 
@@ -788,12 +814,12 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 #define CFF_CONFIG_OPTION_OLD_ENGINE
 
 
@@ -844,7 +870,13 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
 #define AF_CONFIG_OPTION_INDIC
+
+
+
 
 
 
@@ -865,6 +897,29 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  
 
 
 

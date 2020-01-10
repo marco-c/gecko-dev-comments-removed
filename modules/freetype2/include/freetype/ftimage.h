@@ -17,11 +17,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
 #ifndef FTIMAGE_H_
@@ -38,39 +38,41 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef signed long  FT_Pos;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Vector_
   {
     FT_Pos  x;
@@ -80,38 +82,40 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_BBox_
   {
     FT_Pos  xMin, yMin;
@@ -121,62 +125,59 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef enum  FT_Pixel_Mode_
   {
     FT_PIXEL_MODE_NONE = 0,
@@ -203,61 +204,60 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Bitmap_
   {
     unsigned int    rows;
@@ -273,64 +273,67 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Outline_
   {
     short       n_contours;      
@@ -353,77 +356,75 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_OUTLINE_NONE             0x0
 #define FT_OUTLINE_OWNER            0x1
 #define FT_OUTLINE_EVEN_ODD_FILL    0x2
@@ -448,20 +449,25 @@ FT_BEGIN_HEADER
 
   
 
-#define FT_CURVE_TAG( flag )  ( flag & 3 )
+#define FT_CURVE_TAG( flag )  ( flag & 0x03 )
 
-#define FT_CURVE_TAG_ON            1
-#define FT_CURVE_TAG_CONIC         0
-#define FT_CURVE_TAG_CUBIC         2
+  
+#define FT_CURVE_TAG_ON            0x01
+#define FT_CURVE_TAG_CONIC         0x00
+#define FT_CURVE_TAG_CUBIC         0x02
 
-#define FT_CURVE_TAG_HAS_SCANMODE  4
+#define FT_CURVE_TAG_HAS_SCANMODE  0x04
 
-#define FT_CURVE_TAG_TOUCH_X       8  /* reserved for the TrueType hinter */
-#define FT_CURVE_TAG_TOUCH_Y      16  /* reserved for the TrueType hinter */
+#define FT_CURVE_TAG_TOUCH_X       0x08  /* reserved for TrueType hinter */
+#define FT_CURVE_TAG_TOUCH_Y       0x10  /* reserved for TrueType hinter */
 
 #define FT_CURVE_TAG_TOUCH_BOTH    ( FT_CURVE_TAG_TOUCH_X | \
                                      FT_CURVE_TAG_TOUCH_Y )
+  
 
+
+  
+  
 #define FT_Curve_Tag_On       FT_CURVE_TAG_ON
 #define FT_Curve_Tag_Conic    FT_CURVE_TAG_CONIC
 #define FT_Curve_Tag_Cubic    FT_CURVE_TAG_CUBIC
@@ -470,25 +476,27 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Outline_MoveToFunc)( const FT_Vector*  to,
                             void*             user );
@@ -497,25 +505,27 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Outline_LineToFunc)( const FT_Vector*  to,
                             void*             user );
@@ -524,29 +534,32 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Outline_ConicToFunc)( const FT_Vector*  control,
                              const FT_Vector*  to,
@@ -556,29 +569,33 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Outline_CubicToFunc)( const FT_Vector*  control1,
                              const FT_Vector*  control2,
@@ -589,42 +606,48 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Outline_Funcs_
   {
     FT_Outline_MoveToFunc   move_to;
@@ -639,32 +662,31 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef FT_IMAGE_TAG
 #define FT_IMAGE_TAG( value, _x1, _x2, _x3, _x4 )  \
           value = ( ( (unsigned long)_x1 << 24 ) | \
@@ -675,43 +697,42 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef enum  FT_Glyph_Format_
   {
     FT_IMAGE_TAG( FT_GLYPH_FORMAT_NONE, 0, 0, 0, 0 ),
@@ -745,86 +766,88 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef struct FT_RasterRec_*  FT_Raster;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Span_
   {
     short           x;
@@ -835,31 +858,35 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*FT_SpanFunc)( int             y,
                   int             count,
@@ -870,13 +897,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef int
   (*FT_Raster_BitTest_Func)( int    y,
                              int    x,
@@ -884,13 +911,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef void
   (*FT_Raster_BitSet_Func)( int    y,
                             int    x,
@@ -898,45 +925,40 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_RASTER_FLAG_DEFAULT  0x0
 #define FT_RASTER_FLAG_AA       0x1
 #define FT_RASTER_FLAG_DIRECT   0x2
@@ -951,49 +973,54 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Raster_Params_
   {
     const FT_Bitmap*        target;
@@ -1010,29 +1037,31 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Raster_NewFunc)( void*       memory,
                         FT_Raster*  raster );
@@ -1041,16 +1070,17 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*FT_Raster_DoneFunc)( FT_Raster  raster );
 
@@ -1058,31 +1088,33 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*FT_Raster_ResetFunc)( FT_Raster       raster,
                           unsigned char*  pool_base,
@@ -1092,23 +1124,25 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Raster_SetModeFunc)( FT_Raster      raster,
                             unsigned long  mode,
@@ -1118,39 +1152,35 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef int
   (*FT_Raster_RenderFunc)( FT_Raster                raster,
                            const FT_Raster_Params*  params );
@@ -1159,24 +1189,29 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Raster_Funcs_
   {
     FT_Glyph_Format        glyph_format;

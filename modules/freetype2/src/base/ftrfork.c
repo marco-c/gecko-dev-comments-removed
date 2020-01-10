@@ -28,11 +28,11 @@
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_STREAM_H
 #include FT_INTERNAL_RFORK_H
-#include "basepic.h"
+
 #include "ftbase.h"
 
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_raccess
+#define FT_COMPONENT  raccess
 
 
   
@@ -438,7 +438,7 @@
 
   static FT_Error
   raccess_guess_linux_double_from_file_name( FT_Library  library,
-                                             char *      file_name,
+                                             char*       file_name,
                                              FT_Long    *result_offset );
 
   static char *
@@ -468,10 +468,10 @@
       if ( errors[i] )
         continue;
 
-      errors[i] = (FT_RACCESS_GUESS_TABLE_GET[i].func)( library,
-                                                 stream, base_name,
-                                                 &(new_names[i]),
-                                                 &(offsets[i]) );
+      errors[i] = ft_raccess_guess_table[i].func( library,
+                                                  stream, base_name,
+                                                  &(new_names[i]),
+                                                  &(offsets[i]) );
     }
 
     return;
@@ -488,7 +488,7 @@
     if ( rule_index >= FT_RACCESS_N_RULES )
       return FT_RFork_Rule_invalid;
 
-    return FT_RACCESS_GUESS_TABLE_GET[rule_index].type;
+    return ft_raccess_guess_table[rule_index].type;
   }
 
 
@@ -847,7 +847,7 @@
   {
     FT_Open_Args  args2;
     FT_Stream     stream2;
-    char *        nouse = NULL;
+    char*         nouse = NULL;
     FT_Error      error;
 
 
@@ -910,8 +910,8 @@
 
 
   
-  
-  
+
+
 
   FT_BASE_DEF( void )
   FT_Raccess_Guess( FT_Library  library,

@@ -28,13 +28,13 @@
 #ifdef TT_CONFIG_OPTION_BDF
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttbdf
+#define FT_COMPONENT  ttbdf
 
 
   FT_LOCAL_DEF( void )
@@ -45,7 +45,7 @@
 
     if ( bdf->loaded )
     {
-      FT_Stream  stream = FT_FACE(face)->stream;
+      FT_Stream  stream = FT_FACE( face )->stream;
 
 
       if ( bdf->table )
@@ -142,7 +142,7 @@
                          BDF_PropertyRec  *aprop )
   {
     TT_BDF     bdf   = &face->bdf;
-    FT_Size    size  = FT_FACE(face)->size;
+    FT_Size    size  = FT_FACE( face )->size;
     FT_Error   error = FT_Err_Ok;
     FT_Byte*   p;
     FT_UInt    count;

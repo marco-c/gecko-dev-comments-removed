@@ -24,7 +24,6 @@
 #include "ttgxvar.c"    
 #include "ttinterp.c"
 #include "ttobjs.c"     
-#include "ttpic.c"
 #include "ttpload.c"    
 #include "ttsubpix.c"
 

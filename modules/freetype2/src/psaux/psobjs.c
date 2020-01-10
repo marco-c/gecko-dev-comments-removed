@@ -30,13 +30,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_psobjs
+#define FT_COMPONENT  psobjs
 
 
   
@@ -48,25 +48,28 @@
   
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   ps_table_new( PS_Table   table,
                 FT_Int     count,
@@ -145,27 +148,31 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   ps_table_add( PS_Table  table,
                 FT_Int    idx,
@@ -217,21 +224,22 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   ps_table_done( PS_Table  table )
   {
@@ -499,11 +507,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
   FT_LOCAL_DEF( void )
@@ -1100,18 +1108,22 @@
       {
       case T1_FIELD_TYPE_BOOL:
         val = ps_tobool( &cur, limit );
+        FT_TRACE4(( " %s", val ? "true" : "false" ));
         goto Store_Integer;
 
       case T1_FIELD_TYPE_FIXED:
         val = PS_Conv_ToFixed( &cur, limit, 0 );
+        FT_TRACE4(( " %f", (double)val / 65536 ));
         goto Store_Integer;
 
       case T1_FIELD_TYPE_FIXED_1000:
         val = PS_Conv_ToFixed( &cur, limit, 3 );
+        FT_TRACE4(( " %f", (double)val / 65536 / 1000 ));
         goto Store_Integer;
 
       case T1_FIELD_TYPE_INTEGER:
         val = PS_Conv_ToInt( &cur, limit );
+        FT_TRACE4(( " %ld", val ));
         
 
       Store_Integer:
@@ -1188,6 +1200,13 @@
           FT_MEM_COPY( string, cur, len );
           string[len] = 0;
 
+#ifdef FT_DEBUG_LEVEL_TRACE
+          if ( token.type == T1_TOKEN_TYPE_STRING )
+            FT_TRACE4(( " (%s)", string ));
+          else
+            FT_TRACE4(( " /%s", string ));
+#endif
+
           *(FT_String**)q = string;
         }
         break;
@@ -1213,6 +1232,12 @@
           bbox->yMin = FT_RoundFix( temp[1] );
           bbox->xMax = FT_RoundFix( temp[2] );
           bbox->yMax = FT_RoundFix( temp[3] );
+
+          FT_TRACE4(( " [%d %d %d %d]",
+                      bbox->xMin / 65536,
+                      bbox->yMin / 65536,
+                      bbox->xMax / 65536,
+                      bbox->yMax / 65536 ));
         }
         break;
 
@@ -1251,6 +1276,7 @@
             skip_spaces( &cur, limit );
           }
 
+          FT_TRACE4(( " [" ));
           for ( i = 0; i < max_objects; i++ )
           {
             FT_BBox*  bbox = (FT_BBox*)objects[i];
@@ -1260,7 +1286,14 @@
             bbox->yMin = FT_RoundFix( temp[i +     max_objects] );
             bbox->xMax = FT_RoundFix( temp[i + 2 * max_objects] );
             bbox->yMax = FT_RoundFix( temp[i + 3 * max_objects] );
+
+            FT_TRACE4(( " [%d %d %d %d]",
+                        bbox->xMin / 65536,
+                        bbox->yMin / 65536,
+                        bbox->xMax / 65536,
+                        bbox->yMax / 65536 ));
           }
+          FT_TRACE4(( "]" ));
 
           FT_FREE( temp );
         }
@@ -1333,6 +1366,8 @@
       *(FT_Byte*)( (FT_Byte*)objects[0] + field->count_offset ) =
         (FT_Byte)num_elements;
 
+    FT_TRACE4(( " [" ));
+
     
     token = elements;
     for ( ; num_elements > 0; num_elements--, token++ )
@@ -1350,6 +1385,8 @@
 
       fieldrec.offset += fieldrec.size;
     }
+
+    FT_TRACE4(( "]" ));
 
 #if 0  
     if ( pflags )
@@ -1410,6 +1447,8 @@
                                           bytes,
                                           max_bytes );
 
+    parser->cursor = cur;
+
     if ( delimiters )
     {
       if ( cur < parser->limit && *cur != '>' )
@@ -1419,10 +1458,8 @@
         goto Exit;
       }
 
-      cur++;
+      parser->cursor++;
     }
-
-    parser->cursor = cur;
 
   Exit:
     return error;
@@ -1510,25 +1547,30 @@
   
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   t1_builder_init( T1_Builder    builder,
                    FT_Face       face,
@@ -1573,18 +1615,19 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   t1_builder_done( T1_Builder  builder )
   {
@@ -1770,25 +1813,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   cff_builder_init( CFF_Builder*   builder,
                     TT_Face        face,
@@ -1842,18 +1890,19 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   cff_builder_done( CFF_Builder*  builder )
   {
@@ -1995,6 +2044,14 @@
 
     
     
+    if ( outline->n_contours && first == outline->n_points )
+    {
+      outline->n_contours--;
+      return;
+    }
+
+    
+    
     if ( outline->n_points > 1 )
     {
       FT_Vector*  p1      = outline->points + first;
@@ -2034,25 +2091,30 @@
   
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   ps_builder_init( PS_Builder*  ps_builder,
                    void*        builder,
@@ -2117,18 +2179,19 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   ps_builder_done( PS_Builder*  builder )
   {
@@ -2337,22 +2400,25 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   ps_decoder_init( PS_Decoder*  ps_decoder,
                    void*        decoder,

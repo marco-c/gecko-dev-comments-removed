@@ -16,36 +16,36 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
-  
+
+
 
 #ifdef STANDALONE_
 
@@ -65,82 +65,81 @@
 #include <ft2build.h>
 #include "ftraster.h"
 #include FT_INTERNAL_CALC_H   
-
-#include "rastpic.h"
+#include FT_OUTLINE_H         
 
 #endif 
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -164,13 +163,13 @@
   
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_raster
+#define FT_COMPONENT  raster
 
 
 #ifdef STANDALONE_
@@ -452,9 +451,9 @@
 #define CEILING( x )  ( ( (x) + ras.precision - 1 ) & -ras.precision )
 #define TRUNC( x )    ( (Long)(x) >> ras.precision_bits )
 #define FRAC( x )     ( (x) & ( ras.precision - 1 ) )
-#define SCALED( x )   ( ( (x) < 0 ? -( -(x) << ras.scale_shift )   \
-                                  :  (  (x) << ras.scale_shift ) ) \
-                        - ras.precision_half )
+
+  
+#define SCALED( x )   ( (x) * ras.precision_scale - ras.precision_half )
 
 #define IS_BOTTOM_OVERSHOOT( x ) \
           (Bool)( CEILING( x ) - x >= ras.precision_half )
@@ -476,12 +475,9 @@
     Int         precision_bits;     
     Int         precision;
     Int         precision_half;
-    Int         precision_shift;
+    Int         precision_scale;
     Int         precision_step;
     Int         precision_jitter;
-
-    Int         scale_shift;        
-                                    
 
     PLong       buff;               
     PLong       sizeBuff;           
@@ -495,8 +491,7 @@
     TPoint*     arc;                
 
     UShort      bWidth;             
-    PByte       bTarget;            
-    PByte       gTarget;            
+    PByte       bOrigin;            
 
     Long        lastX, lastY;
     Long        minY, maxY;
@@ -519,8 +514,6 @@
     FT_Outline  outline;
 
     Long        traceOfs;           
-    Long        traceG;             
-
     Short       traceIncr;          
 
     
@@ -573,17 +566,18 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Set_High_Precision( RAS_ARGS Int  High )
   {
@@ -625,29 +619,31 @@
     FT_TRACE6(( "Set_High_Precision(%s)\n", High ? "true" : "false" ));
 
     ras.precision       = 1 << ras.precision_bits;
-    ras.precision_half  = ras.precision / 2;
-    ras.precision_shift = ras.precision_bits - Pixel_Bits;
+    ras.precision_half  = ras.precision >> 1;
+    ras.precision_scale = ras.precision >> Pixel_Bits;
   }
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   New_Profile( RAS_ARGS TStates  aState,
                         Bool     overshoot )
@@ -707,20 +703,21 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   End_Profile( RAS_ARGS Bool  overshoot )
   {
@@ -779,20 +776,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Insert_Y_Turn( RAS_ARGS Int  y )
   {
@@ -835,16 +832,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   static Bool
   Finalize_Profile_Table( RAS_ARG )
   {
@@ -895,21 +892,21 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Split_Conic( TPoint*  base )
   {
@@ -934,19 +931,19 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Split_Cubic( TPoint*  base )
   {
@@ -976,30 +973,36 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Line_Up( RAS_ARGS Long  x1,
                     Long  y1,
@@ -1115,30 +1118,36 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Line_Down( RAS_ARGS Long  x1,
                       Long  y1,
@@ -1166,26 +1175,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Bezier_Up( RAS_ARGS Int        degree,
                       TSplitter  splitter,
@@ -1299,26 +1312,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Bezier_Down( RAS_ARGS Int        degree,
                         TSplitter  splitter,
@@ -1348,24 +1365,26 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Line_To( RAS_ARGS Long  x,
                     Long  y )
@@ -1442,28 +1461,32 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Conic_To( RAS_ARGS Long  cx,
                      Long  cy,
@@ -1559,32 +1582,38 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Cubic_To( RAS_ARGS Long  cx1,
                      Long  cy1,
@@ -1706,26 +1735,29 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Decompose_Curve( RAS_ARGS UShort  first,
                             UShort  last,
@@ -1935,21 +1967,22 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Bool
   Convert_Glyph( RAS_ARGS Int  flipped )
   {
@@ -2029,11 +2062,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Init_Linked( TProfileList*  l )
   {
@@ -2042,11 +2075,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   InsNew( PProfileList  list,
           PProfile      profile )
@@ -2073,11 +2106,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   DelOld( PProfileList  list,
           PProfile      profile )
@@ -2106,13 +2139,13 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   static void
   Sort( PProfileList  list )
   {
@@ -2164,13 +2197,13 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
   static void
   Vertical_Sweep_Init( RAS_ARGS Short*  min,
@@ -2183,8 +2216,6 @@
 
     ras.traceIncr = (Short)-pitch;
     ras.traceOfs  = -*min * pitch;
-    if ( pitch > 0 )
-      ras.traceOfs += (Long)( ras.target.rows - 1 ) * pitch;
   }
 
 
@@ -2215,13 +2246,18 @@
 
     
 
-    e1 = TRUNC( CEILING( x1 ) );
+    e1 = CEILING( x1 );
+    e2 = FLOOR( x2 );
 
+    
+    
     if ( dropOutControl != 2                             &&
-         x2 - x1 - ras.precision <= ras.precision_jitter )
+         x2 - x1 - ras.precision <= ras.precision_jitter &&
+         e1 != x1 && e2 != x2                            )
       e2 = e1;
-    else
-      e2 = TRUNC( FLOOR( x2 ) );
+
+    e1 = TRUNC( e1 );
+    e2 = TRUNC( e2 );
 
     if ( e2 >= 0 && e1 < ras.bWidth )
     {
@@ -2242,7 +2278,7 @@
       f1 = (Byte)  ( 0xFF >> ( e1 & 7 ) );
       f2 = (Byte) ~( 0x7F >> ( e2 & 7 ) );
 
-      target = ras.bTarget + ras.traceOfs + c1;
+      target = ras.bOrigin + ras.traceOfs + c1;
       c2 -= c1;
 
       if ( c2 > 0 )
@@ -2252,12 +2288,9 @@
         
         
         
-        c2--;
-        while ( c2 > 0 )
-        {
+        while ( --c2 > 0 )
           *(++target) = 0xFF;
-          c2--;
-        }
+
         target[1] |= f2;
       }
       else
@@ -2400,7 +2433,7 @@
         f1 = (Short)( e1 &  7 );
 
         if ( e1 >= 0 && e1 < ras.bWidth                      &&
-             ras.bTarget[ras.traceOfs + c1] & ( 0x80 >> f1 ) )
+             ras.bOrigin[ras.traceOfs + c1] & ( 0x80 >> f1 ) )
           goto Exit;
       }
       else
@@ -2416,7 +2449,7 @@
       c1 = (Short)( e1 >> 3 );
       f1 = (Short)( e1 & 7 );
 
-      ras.bTarget[ras.traceOfs + c1] |= (char)( 0x80 >> f1 );
+      ras.bOrigin[ras.traceOfs + c1] |= (char)( 0x80 >> f1 );
     }
 
   Exit:
@@ -2432,13 +2465,13 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
   static void
   Horizontal_Sweep_Init( RAS_ARGS Short*  min,
@@ -2483,19 +2516,14 @@
         {
           Byte   f1;
           PByte  bits;
-          PByte  p;
 
 
           FT_TRACE7(( " -> y=%d (drop-out)", e1 ));
 
-          bits = ras.bTarget + ( y >> 3 );
+          bits = ras.bOrigin + ( y >> 3 ) - e1 * ras.target.pitch;
           f1   = (Byte)( 0x80 >> ( y & 7 ) );
-          p    = bits - e1 * ras.target.pitch;
 
-          if ( ras.target.pitch > 0 )
-            p += (Long)( ras.target.rows - 1 ) * ras.target.pitch;
-
-          p[0] |= f1;
+          bits[0] |= f1;
         }
       }
 
@@ -2597,12 +2625,8 @@
 
         e1 = TRUNC( e1 );
 
-        bits = ras.bTarget + ( y >> 3 );
+        bits = ras.bOrigin + ( y >> 3 ) - e1 * ras.target.pitch;
         f1   = (Byte)( 0x80 >> ( y & 7 ) );
-
-        bits -= e1 * ras.target.pitch;
-        if ( ras.target.pitch > 0 )
-          bits += (Long)( ras.target.rows - 1 ) * ras.target.pitch;
 
         if ( e1 >= 0                     &&
              (ULong)e1 < ras.target.rows &&
@@ -2619,12 +2643,8 @@
     {
       FT_TRACE7(( " -> y=%d (drop-out)", e1 ));
 
-      bits  = ras.bTarget + ( y >> 3 );
+      bits  = ras.bOrigin + ( y >> 3 ) - e1 * ras.target.pitch;
       f1    = (Byte)( 0x80 >> ( y & 7 ) );
-      bits -= e1 * ras.target.pitch;
-
-      if ( ras.target.pitch > 0 )
-        bits += (Long)( ras.target.rows - 1 ) * ras.target.pitch;
 
       bits[0] |= f1;
     }
@@ -2643,10 +2663,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   static Bool
   Draw_Sweep( RAS_ARG )
@@ -2888,20 +2908,109 @@
   }
 
 
+#ifdef STANDALONE_
+
   
+
+
+
+
+
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void
+  FT_Outline_Get_CBox( const FT_Outline*  outline,
+                       FT_BBox           *acbox )
+  {
+    Long  xMin, yMin, xMax, yMax;
+
+
+    if ( outline && acbox )
+    {
+      if ( outline->n_points == 0 )
+      {
+        xMin = 0;
+        yMin = 0;
+        xMax = 0;
+        yMax = 0;
+      }
+      else
+      {
+        FT_Vector*  vec   = outline->points;
+        FT_Vector*  limit = vec + outline->n_points;
+
+
+        xMin = xMax = vec->x;
+        yMin = yMax = vec->y;
+        vec++;
+
+        for ( ; vec < limit; vec++ )
+        {
+          Long  x, y;
+
+
+          x = vec->x;
+          if ( x < xMin ) xMin = x;
+          if ( x > xMax ) xMax = x;
+
+          y = vec->y;
+          if ( y < yMin ) yMin = y;
+          if ( y > yMax ) yMax = y;
+        }
+      }
+      acbox->xMin = xMin;
+      acbox->xMax = xMax;
+      acbox->yMin = yMin;
+      acbox->yMax = yMax;
+    }
+  }
+
+#endif 
+
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static int
   Render_Single_Pass( RAS_ARGS Bool  flipped )
   {
@@ -2964,16 +3073,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   Render_Glyph( RAS_ARG )
   {
@@ -2982,7 +3091,6 @@
 
     Set_High_Precision( RAS_VARS ras.outline.flags &
                                  FT_OUTLINE_HIGH_PRECISION );
-    ras.scale_shift = ras.precision_shift;
 
     if ( ras.outline.flags & FT_OUTLINE_IGNORE_DROPOUTS )
       ras.dropOutControl = 2;
@@ -3013,7 +3121,10 @@
     ras.band_stack[0].y_max = (Short)( ras.target.rows - 1 );
 
     ras.bWidth  = (UShort)ras.target.width;
-    ras.bTarget = (Byte*)ras.target.buffer;
+    ras.bOrigin = (Byte*)ras.target.buffer;
+
+    if ( ras.target.pitch > 0 )
+      ras.bOrigin += (Long)( ras.target.rows - 1 ) * ras.target.pitch;
 
     if ( ( error = Render_Single_Pass( RAS_VARS 0 ) ) != 0 )
       return error;
@@ -3184,20 +3295,6 @@
 
     if ( !target_map->buffer )
       return FT_THROW( Invalid );
-
-    
-    {
-      FT_Vector*  vec   = outline->points;
-      FT_Vector*  limit = vec + outline->n_points;
-
-
-      for ( ; vec < limit; vec++ )
-      {
-        if ( vec->x < -0x1000000L || vec->x > 0x1000000L ||
-             vec->y < -0x1000000L || vec->y > 0x1000000L )
-         return FT_THROW( Invalid );
-      }
-    }
 
     ras.outline = *outline;
     ras.target  = *target_map;

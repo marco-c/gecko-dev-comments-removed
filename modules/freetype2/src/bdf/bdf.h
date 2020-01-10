@@ -52,10 +52,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #define BDF_CORRECT_METRICS  0x01 /* Correct invalid metrics when loading. */
@@ -94,10 +94,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #define BDF_ATOM      1
@@ -124,10 +124,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   typedef struct  bdf_bbx_t_
@@ -147,7 +147,7 @@ FT_BEGIN_HEADER
   typedef struct  bdf_glyph_t_
   {
     char*           name;        
-    long            encoding;    
+    unsigned long   encoding;    
     unsigned short  swidth;      
     unsigned short  dwidth;      
     bdf_bbx_t       bbx;         
@@ -156,20 +156,6 @@ FT_BEGIN_HEADER
     unsigned short  bytes;       
 
   } bdf_glyph_t;
-
-
-  typedef struct  bdf_glyphlist_t_
-  {
-    unsigned short  pad;          
-    unsigned short  bpp;          
-    long            start;        
-    long            end;          
-    bdf_glyph_t*    glyphs;       
-    unsigned long   glyphs_size;  
-    unsigned long   glyphs_used;  
-    bdf_bbx_t       bbx;          
-
-  } bdf_glyphlist_t;
 
 
   typedef struct  bdf_font_t_
@@ -185,7 +171,7 @@ FT_BEGIN_HEADER
 
     unsigned short   monowidth;      
 
-    long             default_char;   
+    unsigned long    default_char;   
 
     long             font_ascent;    
     long             font_descent;   
@@ -205,16 +191,8 @@ FT_BEGIN_HEADER
     char*            comments;       
     unsigned long    comments_len;   
 
-    bdf_glyphlist_t  overflow;       
-
     void*            internal;       
 
-    
-    
-    unsigned long    nmod[34816];    
-    unsigned long    umod[34816];    
-                                     
-    unsigned short   modified;       
     unsigned short   bpp;            
 
     FT_Memory        memory;
@@ -227,10 +205,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
@@ -248,10 +226,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   FT_LOCAL( FT_Error )
   bdf_load_font( FT_Stream       stream,

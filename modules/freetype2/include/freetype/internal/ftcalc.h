@@ -28,10 +28,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 #ifndef  FT_CONFIG_OPTION_NO_ASSEMBLER
   
@@ -247,28 +247,31 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( FT_Long )
   FT_MulDiv_No_Round( FT_Long  a,
                       FT_Long  b,
@@ -282,11 +285,25 @@ FT_BEGIN_HEADER
 
 
 
-
   FT_BASE( void )
   FT_Matrix_Multiply_Scaled( const FT_Matrix*  a,
                              FT_Matrix        *b,
                              FT_Long           scaling );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  FT_BASE( FT_Bool )
+  FT_Matrix_Check( const FT_Matrix*  matrix );
 
 
   
@@ -341,6 +358,7 @@ FT_BEGIN_HEADER
 
 
 #ifndef  FT_CONFIG_OPTION_NO_ASSEMBLER
+
 #if defined( __GNUC__ )                                          && \
     ( __GNUC__ > 3 || ( __GNUC__ == 3 && __GNUC_MINOR__ >= 4 ) )
 
@@ -352,9 +370,34 @@ FT_BEGIN_HEADER
 
 #define FT_MSB( x )  ( 31 - __builtin_clzl( x ) )
 
+#endif 
+
+
+#elif defined( _MSC_VER ) && ( _MSC_VER >= 1400 )
+
+#if FT_SIZEOF_INT == 4
+
+#include <intrin.h>
+
+  static __inline FT_Int32
+  FT_MSB_i386( FT_UInt32  x )
+  {
+    unsigned long  where;
+
+
+    
+    _BitScanReverse( &where, x );
+
+    return (FT_Int32)where;
+  }
+
+#define FT_MSB( x )  ( FT_MSB_i386( x ) )
+
 #endif
 
 #endif 
+
+
 #endif 
 
 #ifndef FT_MSB
@@ -377,22 +420,23 @@ FT_BEGIN_HEADER
 #if 0
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( FT_Int32 )
   FT_SqrtFixed( FT_Int32  x );
 
@@ -417,6 +461,15 @@ FT_BEGIN_HEADER
 
 
 
+#define ADD_INT( a, b )                           \
+          (FT_Int)( (FT_UInt)(a) + (FT_UInt)(b) )
+#define SUB_INT( a, b )                           \
+          (FT_Int)( (FT_UInt)(a) - (FT_UInt)(b) )
+#define MUL_INT( a, b )                           \
+          (FT_Int)( (FT_UInt)(a) * (FT_UInt)(b) )
+#define NEG_INT( a )                              \
+          (FT_Int)( (FT_UInt)0 - (FT_UInt)(a) )
+
 #define ADD_LONG( a, b )                             \
           (FT_Long)( (FT_ULong)(a) + (FT_ULong)(b) )
 #define SUB_LONG( a, b )                             \
@@ -434,6 +487,19 @@ FT_BEGIN_HEADER
           (FT_Int32)( (FT_UInt32)(a) * (FT_UInt32)(b) )
 #define NEG_INT32( a )                                  \
           (FT_Int32)( (FT_UInt32)0 - (FT_UInt32)(a) )
+
+#ifdef FT_LONG64
+
+#define ADD_INT64( a, b )                               \
+          (FT_Int64)( (FT_UInt64)(a) + (FT_UInt64)(b) )
+#define SUB_INT64( a, b )                               \
+          (FT_Int64)( (FT_UInt64)(a) - (FT_UInt64)(b) )
+#define MUL_INT64( a, b )                               \
+          (FT_Int64)( (FT_UInt64)(a) * (FT_UInt64)(b) )
+#define NEG_INT64( a )                                  \
+          (FT_Int64)( (FT_UInt64)0 - (FT_UInt64)(a) )
+
+#endif 
 
 
 FT_END_HEADER

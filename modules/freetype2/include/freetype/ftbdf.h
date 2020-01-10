@@ -33,21 +33,21 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -93,7 +93,7 @@ FT_BEGIN_HEADER
   typedef struct BDF_PropertyRec_*  BDF_Property;
 
 
- 
+  
 
 
 
@@ -128,7 +128,7 @@ FT_BEGIN_HEADER
   } BDF_PropertyRec;
 
 
- 
+  
 
 
 
@@ -160,7 +160,10 @@ FT_BEGIN_HEADER
                          const char*  *acharset_registry );
 
 
- 
+  
+
+
+
 
 
 

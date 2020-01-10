@@ -22,13 +22,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_otvgpos
+#define FT_COMPONENT  otvgpos
 
 
   static void

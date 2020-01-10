@@ -35,59 +35,59 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct CID_DriverRec_*  CID_Driver;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct CID_SizeRec_*  CID_Size;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct CID_GlyphSlotRec_*  CID_GlyphSlot;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct CID_CharMapRec_*  CID_CharMap;
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   typedef struct  CID_SizeRec_

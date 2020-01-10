@@ -32,13 +32,13 @@
 #define Fix2Int( f )  ( (FT_Int)(FT_Short)( (f) >> 16 ) )
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_t1decode
+#define FT_COMPONENT  t1decode
 
 
   typedef enum  T1_Operator_
@@ -110,23 +110,25 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Int )
   t1_lookup_glyph_by_stdcharcode_ps( PS_Decoder*  decoder,
                                      FT_Int       charcode )
@@ -159,24 +161,27 @@
 
 
 #ifdef T1_CONFIG_OPTION_OLD_ENGINE
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Int
   t1_lookup_glyph_by_stdcharcode( T1_Decoder  decoder,
                                   FT_Int      charcode )
@@ -218,29 +223,35 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   t1operator_seac( T1_Decoder  decoder,
                    FT_Pos      asb,
@@ -400,23 +411,26 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   t1_decoder_parse_charstrings( T1_Decoder  decoder,
                                 FT_Byte*    charstring_base,
@@ -466,9 +480,6 @@
     if ( decoder->buildchar && decoder->len_buildchar > 0 )
       FT_ARRAY_ZERO( decoder->buildchar, decoder->len_buildchar );
 
-    FT_TRACE4(( "\n"
-                "Start charstring\n" ));
-
     zone->base           = charstring_base;
     limit = zone->limit  = charstring_base + charstring_len;
     ip    = zone->cursor = zone->base;
@@ -504,10 +515,10 @@
 #endif
 
       
-      
-      
-      
-      
+
+
+
+
 
       
       switch ( *ip++ )
@@ -711,10 +722,10 @@
       }
 
       
-      
-      
-      
-      
+
+
+
+
       if ( op == op_none )
       {
         if ( top - decoder->stack >= T1_MAX_CHARSTRINGS_OPERANDS )
@@ -753,15 +764,16 @@
         arg_cnt = Fix2Int( top[0] );
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
 
         if ( arg_cnt > top - decoder->stack )
           goto Stack_Underflow;
@@ -1223,7 +1235,10 @@
           
           
           if ( builder->metrics_only )
+          {
+            FT_TRACE4(( "\n" ));
             return FT_Err_Ok;
+          }
 
           break;
 
@@ -1255,7 +1270,10 @@
           
           
           if ( builder->metrics_only )
+          {
+            FT_TRACE4(( "\n" ));
             return FT_Err_Ok;
+          }
 
           break;
 
@@ -1638,26 +1656,31 @@
     return FT_THROW( Stack_Underflow );
   }
 
+
 #else 
 
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   t1_decoder_parse_metrics( T1_Decoder  decoder,
                             FT_Byte*    charstring_base,
@@ -1680,9 +1703,6 @@
 
     builder->parse_state = T1_Parse_Start;
 
-    FT_TRACE4(( "\n"
-                "Start charstring: get width\n" ));
-
     zone->base           = charstring_base;
     limit = zone->limit  = charstring_base + charstring_len;
     ip    = zone->cursor = zone->base;
@@ -1704,10 +1724,10 @@
 #endif
 
       
-      
-      
-      
-      
+
+
+
+
 
       
       switch ( *ip++ )
@@ -1818,10 +1838,10 @@
       }
 
       
-      
-      
-      
-      
+
+
+
+
       if ( op == op_none )
       {
         if ( top - decoder->stack >= T1_MAX_CHARSTRINGS_OPERANDS )
@@ -1875,6 +1895,7 @@
           
           
           
+          FT_TRACE4(( "\n" ));
           return FT_Err_Ok;
 
         case op_sbw:
@@ -1893,6 +1914,7 @@
           
           
           
+          FT_TRACE4(( "\n" ));
           return FT_Err_Ok;
 
         default:
@@ -1917,6 +1939,7 @@
   Stack_Underflow:
     return FT_THROW( Stack_Underflow );
   }
+
 #endif 
 
 

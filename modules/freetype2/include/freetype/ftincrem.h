@@ -82,6 +82,7 @@ FT_BEGIN_HEADER
 
 
 
+
   typedef struct FT_IncrementalRec_*  FT_Incremental;
 
 

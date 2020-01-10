@@ -22,7 +22,6 @@
 #include FT_OUTLINE_H
 #include "ftrend1.h"
 #include "ftraster.h"
-#include "rastpic.h"
 
 #include "rasterrs.h"
 
@@ -128,7 +127,11 @@
       slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
     }
 
-    ft_glyphslot_preset_bitmap( slot, mode, origin );
+    if ( ft_glyphslot_preset_bitmap( slot, mode, origin ) )
+    {
+      error = FT_THROW( Raster_Overflow );
+      goto Exit;
+    }
 
     
     if ( FT_ALLOC_MULT( bitmap->buffer, bitmap->rows, bitmap->pitch ) )
@@ -197,7 +200,7 @@
     (FT_Renderer_GetCBoxFunc)  ft_raster1_get_cbox,   
     (FT_Renderer_SetModeFunc)  ft_raster1_set_mode,   
 
-    (FT_Raster_Funcs*)&FT_STANDARD_RASTER_GET         
+    (FT_Raster_Funcs*)&ft_standard_raster             
   )
 
 

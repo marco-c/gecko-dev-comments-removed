@@ -42,42 +42,42 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
 #define FT_VALIDATE_feat_INDEX     0
 #define FT_VALIDATE_mort_INDEX     1
@@ -112,7 +112,7 @@ FT_BEGIN_HEADER
           ( FT_VALIDATE_GX_START << FT_VALIDATE_##tag##_INDEX )
 
 
- 
+  
 
 
 
@@ -181,7 +181,7 @@ FT_BEGIN_HEADER
                           FT_VALIDATE_lcar )
 
 
- 
+  
 
 
 
@@ -229,8 +229,7 @@ FT_BEGIN_HEADER
                           FT_UInt   table_length );
 
 
- 
-
+  
 
 
 
@@ -254,8 +253,7 @@ FT_BEGIN_HEADER
                       FT_Bytes  table );
 
 
- 
-
+  
 
 
 
@@ -281,7 +279,7 @@ FT_BEGIN_HEADER
 #define FT_VALIDATE_CKERN  ( FT_VALIDATE_MS | FT_VALIDATE_APPLE )
 
 
- 
+  
 
 
 
@@ -322,7 +320,7 @@ FT_BEGIN_HEADER
                            FT_Bytes  *ckern_table );
 
 
- 
+  
 
 
 

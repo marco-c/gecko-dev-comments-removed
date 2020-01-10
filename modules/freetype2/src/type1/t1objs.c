@@ -37,20 +37,20 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_t1objs
+#define FT_COMPONENT  t1objs
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   static PSH_Globals_Funcs
@@ -134,10 +134,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   FT_LOCAL_DEF( void )
   T1_GlyphSlot_Done( FT_GlyphSlot  slot )
@@ -178,23 +178,24 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   T1_Face_Done( FT_Face  t1face )         
   {
@@ -275,28 +276,33 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   T1_Face_Init( FT_Stream      stream,
                 FT_Face        t1face,          
@@ -340,6 +346,10 @@
     error = T1_Open_Face( face );
     if ( error )
       goto Exit;
+
+    FT_TRACE2(( "T1_Face_Init: %08p (index %d)\n",
+                face,
+                face_index ));
 
     
     if ( face_index < 0 )
@@ -516,7 +526,8 @@
 
         error = FT_CMap_New( cmap_classes->unicode, NULL, &charmap, NULL );
         if ( error                                      &&
-             FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) )
+             FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) &&
+             FT_ERR_NEQ( error, Unimplemented_Feature ) )
           goto Exit;
         error = FT_Err_Ok;
 
@@ -565,19 +576,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   T1_Driver_Init( FT_Module  module )
   {
@@ -621,16 +633,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   T1_Driver_Done( FT_Module  driver )
   {

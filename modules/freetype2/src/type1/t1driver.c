@@ -44,15 +44,15 @@
 
 
   
-  
-  
-  
-  
-  
-#undef  FT_COMPONENT
-#define FT_COMPONENT  trace_t1driver
 
- 
+
+
+
+
+#undef  FT_COMPONENT
+#define FT_COMPONENT  t1driver
+
+  
 
 
 
@@ -122,17 +122,19 @@
 #ifndef T1_CONFIG_OPTION_NO_MM_SUPPORT
   static const FT_Service_MultiMastersRec  t1_service_multi_masters =
   {
-    (FT_Get_MM_Func)        T1_Get_Multi_Master,   
-    (FT_Set_MM_Design_Func) T1_Set_MM_Design,      
-    (FT_Set_MM_Blend_Func)  T1_Set_MM_Blend,       
-    (FT_Get_MM_Blend_Func)  T1_Get_MM_Blend,       
-    (FT_Get_MM_Var_Func)    T1_Get_MM_Var,         
-    (FT_Set_Var_Design_Func)T1_Set_Var_Design,     
-    (FT_Get_Var_Design_Func)T1_Get_Var_Design,     
-    (FT_Set_Instance_Func)  T1_Reset_MM_Blend,     
+    (FT_Get_MM_Func)             T1_Get_Multi_Master,    
+    (FT_Set_MM_Design_Func)      T1_Set_MM_Design,       
+    (FT_Set_MM_Blend_Func)       T1_Set_MM_Blend,        
+    (FT_Get_MM_Blend_Func)       T1_Get_MM_Blend,        
+    (FT_Get_MM_Var_Func)         T1_Get_MM_Var,          
+    (FT_Set_Var_Design_Func)     T1_Set_Var_Design,      
+    (FT_Get_Var_Design_Func)     T1_Get_Var_Design,      
+    (FT_Set_Instance_Func)       T1_Reset_MM_Blend,      
+    (FT_Set_MM_WeightVector_Func)T1_Set_MM_WeightVector, 
+    (FT_Get_MM_WeightVector_Func)T1_Get_MM_WeightVector, 
 
-    (FT_Get_Var_Blend_Func) NULL,                  
-    (FT_Done_Blend_Func)    T1_Done_Blend          
+    (FT_Get_Var_Blend_Func)      NULL,                   
+    (FT_Done_Blend_Func)         T1_Done_Blend           
   };
 #endif
 
@@ -270,9 +272,12 @@
       break;
 
     case PS_DICT_FONT_NAME:
-      retval = ft_strlen( type1->font_name ) + 1;
-      if ( value && value_len >= retval )
-        ft_memcpy( value, (void *)( type1->font_name ), retval );
+      if ( type1->font_name )
+      {
+        retval = ft_strlen( type1->font_name ) + 1;
+        if ( value && value_len >= retval )
+          ft_memcpy( value, (void *)( type1->font_name ), retval );
+      }
       break;
 
     case PS_DICT_UNIQUE_ID:
@@ -362,7 +367,7 @@
             ok = 1;
         }
 
-        if ( ok )
+        if ( ok && type1->subrs )
         {
           retval = type1->subrs_len[idx] + 1;
           if ( value && value_len >= retval )
@@ -559,33 +564,49 @@
       break;
 
     case PS_DICT_VERSION:
-      retval = ft_strlen( type1->font_info.version ) + 1;
-      if ( value && value_len >= retval )
-        ft_memcpy( value, (void *)( type1->font_info.version ), retval );
+      if ( type1->font_info.version )
+      {
+        retval = ft_strlen( type1->font_info.version ) + 1;
+        if ( value && value_len >= retval )
+          ft_memcpy( value, (void *)( type1->font_info.version ), retval );
+      }
       break;
 
     case PS_DICT_NOTICE:
-      retval = ft_strlen( type1->font_info.notice ) + 1;
-      if ( value && value_len >= retval )
-        ft_memcpy( value, (void *)( type1->font_info.notice ), retval );
+      if ( type1->font_info.notice )
+      {
+        retval = ft_strlen( type1->font_info.notice ) + 1;
+        if ( value && value_len >= retval )
+          ft_memcpy( value, (void *)( type1->font_info.notice ), retval );
+      }
       break;
 
     case PS_DICT_FULL_NAME:
-      retval = ft_strlen( type1->font_info.full_name ) + 1;
-      if ( value && value_len >= retval )
-        ft_memcpy( value, (void *)( type1->font_info.full_name ), retval );
+      if ( type1->font_info.full_name )
+      {
+        retval = ft_strlen( type1->font_info.full_name ) + 1;
+        if ( value && value_len >= retval )
+          ft_memcpy( value, (void *)( type1->font_info.full_name ), retval );
+      }
       break;
 
     case PS_DICT_FAMILY_NAME:
-      retval = ft_strlen( type1->font_info.family_name ) + 1;
-      if ( value && value_len >= retval )
-        ft_memcpy( value, (void *)( type1->font_info.family_name ), retval );
+      if ( type1->font_info.family_name )
+      {
+        retval = ft_strlen( type1->font_info.family_name ) + 1;
+        if ( value && value_len >= retval )
+          ft_memcpy( value, (void *)( type1->font_info.family_name ),
+                     retval );
+      }
       break;
 
     case PS_DICT_WEIGHT:
-      retval = ft_strlen( type1->font_info.weight ) + 1;
-      if ( value && value_len >= retval )
-        ft_memcpy( value, (void *)( type1->font_info.weight ), retval );
+      if ( type1->font_info.weight )
+      {
+        retval = ft_strlen( type1->font_info.weight ) + 1;
+        if ( value && value_len >= retval )
+          ft_memcpy( value, (void *)( type1->font_info.weight ), retval );
+      }
       break;
 
     case PS_DICT_ITALIC_ANGLE:
@@ -666,37 +687,41 @@
 #ifndef T1_CONFIG_OPTION_NO_AFM
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   Get_Kerning( FT_Face     t1face,        
                FT_UInt     left_glyph,

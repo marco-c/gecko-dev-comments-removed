@@ -26,10 +26,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #ifndef FTCIMAGE_H_

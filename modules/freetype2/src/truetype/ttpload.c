@@ -32,32 +32,34 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttpload
+#define FT_COMPONENT  ttpload
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_loca( TT_Face    face,
                      FT_Stream  stream )
@@ -298,22 +300,24 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_cvt( TT_Face    face,
                     FT_Stream  stream )
@@ -379,22 +383,24 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_fpgm( TT_Face    face,
                      FT_Stream  stream )
@@ -441,22 +447,24 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_prep( TT_Face    face,
                      FT_Stream  stream )
@@ -502,21 +510,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_hdmx( TT_Face    face,
@@ -611,10 +621,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
   FT_LOCAL_DEF( FT_Byte* )
   tt_face_get_device_metrics( TT_Face  face,
                               FT_UInt  ppem,

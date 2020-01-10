@@ -235,7 +235,7 @@ Free_VecPooled( APTR  poolHeader,
   
   
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_io
+#define FT_COMPONENT  io
 
   
   

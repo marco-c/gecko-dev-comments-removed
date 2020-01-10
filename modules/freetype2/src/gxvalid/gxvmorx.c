@@ -29,13 +29,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_gxvmorx
+#define FT_COMPONENT  gxvmorx
 
 
   static void

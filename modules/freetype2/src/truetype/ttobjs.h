@@ -29,39 +29,39 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct TT_DriverRec_*  TT_Driver;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_GlyphSlot  TT_GlyphSlot;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  TT_GraphicsState_
   {
     FT_UShort      rp0;
@@ -114,24 +114,24 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
 
 #define TT_MAX_CODE_RANGES  3
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
   typedef enum  TT_CodeRange_Tag_
   {
     tt_coderange_none = 0,
@@ -153,9 +153,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   typedef struct  TT_DefRecord_
   {
     FT_Int    range;          
@@ -170,9 +170,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   typedef struct  TT_Transform_
   {
     FT_Fixed    xx, xy;     
@@ -183,71 +183,71 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
+
   typedef struct  TT_Size_Metrics_
   {
     
@@ -269,9 +269,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   typedef struct  TT_SizeRec_
   {
     FT_SizeRec         root;
@@ -325,9 +325,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   typedef struct  TT_DriverRec_
   {
     FT_DriverRec  root;
@@ -349,9 +349,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   FT_LOCAL( FT_Error )
   tt_face_init( FT_Stream      stream,
                 FT_Face        ttface,      
@@ -364,9 +364,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   FT_LOCAL( FT_Error )
   tt_size_init( FT_Size  ttsize );          
 
@@ -395,9 +395,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   FT_LOCAL( FT_Error )
   tt_driver_init( FT_Module  ttdriver );    
 
@@ -406,9 +406,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   FT_LOCAL( FT_Error )
   tt_slot_init( FT_GlyphSlot  slot );
 

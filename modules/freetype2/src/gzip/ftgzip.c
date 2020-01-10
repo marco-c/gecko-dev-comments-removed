@@ -41,10 +41,6 @@
 
 #ifdef FT_CONFIG_OPTION_USE_ZLIB
 
-#ifdef FT_CONFIG_OPTION_PIC
-#error "gzip code does not support PIC yet"
-#endif
-
 #ifdef FT_CONFIG_OPTION_SYSTEM_ZLIB
 
 #include <zlib.h>
@@ -735,7 +731,7 @@
 
     
 
-    if ( !memory || ! output_len || !output )
+    if ( !memory || !output_len || !output )
       return FT_THROW( Invalid_Argument );
 
     

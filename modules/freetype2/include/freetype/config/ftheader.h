@@ -56,42 +56,42 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -453,12 +453,10 @@
 
 
 
-
 #define FT_BDF_H  <freetype/ftbdf.h>
 
 
   
-
 
 
 
@@ -758,6 +756,18 @@
 
 
 #define FT_ADVANCES_H  <freetype/ftadvanc.h>
+
+
+  
+
+
+
+
+
+
+
+
+#define FT_COLOR_H  <freetype/ftcolor.h>
 
 
   

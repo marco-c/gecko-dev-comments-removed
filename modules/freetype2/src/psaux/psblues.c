@@ -45,13 +45,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_cf2blues
+#define FT_COMPONENT  cf2blues
 
 
   

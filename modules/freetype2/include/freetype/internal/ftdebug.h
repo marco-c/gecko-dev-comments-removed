@@ -43,11 +43,11 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 #ifdef FT_DEBUG_LEVEL_TRACE
 
@@ -63,7 +63,8 @@ FT_BEGIN_HEADER
 
 
   
-  extern int  ft_trace_levels[trace_count];
+  
+  extern int*  ft_trace_levels;
 
 #undef FT_TRACE_DEF
 
@@ -71,23 +72,27 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
 
 #ifdef FT_DEBUG_LEVEL_TRACE
 
-#define FT_TRACE( level, varformat )                      \
-          do                                              \
-          {                                               \
-            if ( ft_trace_levels[FT_COMPONENT] >= level ) \
-              FT_Message varformat;                       \
+  
+#define FT_TRACE_COMP( x )   FT_TRACE_COMP_( x )
+#define FT_TRACE_COMP_( x )  trace_ ## x
+
+#define FT_TRACE( level, varformat )                                       \
+          do                                                               \
+          {                                                                \
+            if ( ft_trace_levels[FT_TRACE_COMP( FT_COMPONENT )] >= level ) \
+              FT_Message varformat;                                        \
           } while ( 0 )
 
 #else 
@@ -98,61 +103,84 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( FT_Int )
   FT_Trace_Get_Count( void );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( const char* )
   FT_Trace_Get_Name( FT_Int  idx );
 
 
   
+
+
+
+
+
+
+
+
+  FT_BASE( void )
+  FT_Trace_Disable( void );
+
+
   
+
+
+
+
+
+
+
+
+  FT_BASE( void )
+  FT_Trace_Enable( void );
+
+
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 
 #define FT_TRACE0( varformat )  FT_TRACE( 0, varformat )
 #define FT_TRACE1( varformat )  FT_TRACE( 1, varformat )
@@ -165,12 +193,12 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
 #ifdef FT_DEBUG_LEVEL_ERROR
 
@@ -184,11 +212,11 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 #ifdef FT_DEBUG_LEVEL_ERROR
 
@@ -216,10 +244,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 #ifdef FT_DEBUG_LEVEL_ERROR
 

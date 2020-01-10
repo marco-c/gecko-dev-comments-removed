@@ -29,11 +29,11 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
   
@@ -117,31 +117,37 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  FT_Renderer_Class_
   {
     FT_Module_Class            root;
@@ -159,63 +165,69 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Renderer )
   FT_Get_Renderer( FT_Library       library,
                    FT_Glyph_Format  format );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FT_Set_Renderer( FT_Library     library,
                    FT_Renderer    renderer,

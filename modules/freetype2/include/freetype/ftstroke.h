@@ -27,7 +27,7 @@
 FT_BEGIN_HEADER
 
 
- 
+  
 
 
 
@@ -81,7 +81,7 @@ FT_BEGIN_HEADER
 
 
 
- 
+  
 
 
 
@@ -93,9 +93,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
-
 
 
 
@@ -150,8 +147,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -310,7 +305,6 @@ FT_BEGIN_HEADER
 
 
 
-
   FT_EXPORT( void )
   FT_Stroker_Set( FT_Stroker           stroker,
                   FT_Fixed             radius,
@@ -320,7 +314,6 @@ FT_BEGIN_HEADER
 
 
   
-
 
 
 
@@ -611,8 +604,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   FT_EXPORT( void )
   FT_Stroker_ExportBorder( FT_Stroker        stroker,
                            FT_StrokerBorder  border,
@@ -643,7 +634,6 @@ FT_BEGIN_HEADER
 
 
 
-
   FT_EXPORT( FT_Error )
   FT_Stroker_GetCounts( FT_Stroker  stroker,
                         FT_UInt    *anum_points,
@@ -651,7 +641,6 @@ FT_BEGIN_HEADER
 
 
   
-
 
 
 
@@ -721,7 +710,6 @@ FT_BEGIN_HEADER
 
 
 
-
   FT_EXPORT( FT_Error )
   FT_Glyph_Stroke( FT_Glyph    *pglyph,
                    FT_Stroker   stroker,
@@ -729,7 +717,6 @@ FT_BEGIN_HEADER
 
 
   
-
 
 
 

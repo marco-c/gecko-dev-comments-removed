@@ -52,9 +52,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   FT_LOCAL( FT_Error )
   cff_face_init( FT_Stream      stream,
                  FT_Face        face,           
@@ -67,9 +67,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   FT_LOCAL( FT_Error )
   cff_driver_init( FT_Module  module );         
 

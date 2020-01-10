@@ -31,13 +31,13 @@
 #include FT_SERVICE_FONT_FORMAT_H
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_winfnt
+#define FT_COMPONENT  winfnt
 
 
   static const FT_Frame_Field  winmz_header_fields[] =
@@ -1131,7 +1131,7 @@
     winfnt_get_header       
   };
 
- 
+  
 
 
 

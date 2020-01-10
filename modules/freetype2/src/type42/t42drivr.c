@@ -17,23 +17,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #include "t42drivr.h"
@@ -47,7 +47,7 @@
 #include FT_SERVICE_POSTSCRIPT_INFO_H
 
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_t42
+#define FT_COMPONENT  t42
 
 
   

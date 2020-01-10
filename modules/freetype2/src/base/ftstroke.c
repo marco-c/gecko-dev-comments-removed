@@ -24,15 +24,10 @@
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_OBJECTS_H
 
-#include "basepic.h"
-
 
   
   
-  
-#ifndef FT_CONFIG_OPTION_PIC
   FT_CALLBACK_TABLE const FT_Glyph_Class  ft_outline_glyph_class;
-#endif
 
 
   
@@ -372,6 +367,7 @@
       
       border->num_points    = --count;
       border->points[start] = border->points[count];
+      border->tags[start]   = border->tags[count];
 
       if ( reverse )
       {
@@ -437,7 +433,7 @@
     else
     {
       
-      if ( border->num_points > 0                                          &&
+      if ( border->num_points > (FT_UInt)border->start                     &&
            FT_IS_SMALL( border->points[border->num_points - 1].x - to->x ) &&
            FT_IS_SMALL( border->points[border->num_points - 1].y - to->y ) )
         return error;
@@ -2306,17 +2302,12 @@
     FT_Error  error = FT_ERR( Invalid_Argument );
     FT_Glyph  glyph = NULL;
 
-    
-    FT_Library  library = stroker->library;
-
-    FT_UNUSED( library );
-
 
     if ( !pglyph )
       goto Exit;
 
     glyph = *pglyph;
-    if ( !glyph || glyph->clazz != FT_OUTLINE_GLYPH_CLASS_GET )
+    if ( !glyph || glyph->clazz != &ft_outline_glyph_class )
       goto Exit;
 
     {
@@ -2386,17 +2377,12 @@
     FT_Error  error = FT_ERR( Invalid_Argument );
     FT_Glyph  glyph = NULL;
 
-    
-    FT_Library  library = stroker->library;
-
-    FT_UNUSED( library );
-
 
     if ( !pglyph )
       goto Exit;
 
     glyph = *pglyph;
-    if ( !glyph || glyph->clazz != FT_OUTLINE_GLYPH_CLASS_GET )
+    if ( !glyph || glyph->clazz != &ft_outline_glyph_class )
       goto Exit;
 
     {

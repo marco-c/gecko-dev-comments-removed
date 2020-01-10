@@ -34,13 +34,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  CFF_SizeRec_
   {
     FT_SizeRec  root;
@@ -50,13 +50,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  CFF_GlyphSlotRec_
   {
     FT_GlyphSlotRec  root;
@@ -71,13 +71,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  CFF_InternalRec_
   {
     PSH_Globals  topfont;
@@ -87,9 +87,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   typedef struct  CFF_Transform_
   {
     FT_Fixed    xx, xy;     

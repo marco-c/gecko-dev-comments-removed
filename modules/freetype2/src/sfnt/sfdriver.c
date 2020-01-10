@@ -25,12 +25,16 @@
 #include "sfdriver.h"
 #include "ttload.h"
 #include "sfobjs.h"
-#include "sfntpic.h"
 
 #include "sferrors.h"
 
 #ifdef TT_CONFIG_OPTION_EMBEDDED_BITMAPS
 #include "ttsbit.h"
+#endif
+
+#ifdef TT_CONFIG_OPTION_COLOR_LAYERS
+#include "ttcolr.h"
+#include "ttcpal.h"
 #endif
 
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
@@ -58,13 +62,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_sfdriver
+#define FT_COMPONENT  sfdriver
 
 
   
@@ -462,12 +466,10 @@
 
   
 #define IS_WIN( n )  ( (n)->platformID == 3                             && \
-                       ( (n)->encodingID == 1 || (n)->encodingID == 0 ) && \
-                       (n)->languageID == 0x409                         )
+                       ( (n)->encodingID == 1 || (n)->encodingID == 0 ) )
 
 #define IS_APPLE( n )  ( (n)->platformID == 1 && \
-                         (n)->encodingID == 0 && \
-                         (n)->languageID == 0 )
+                         (n)->encodingID == 0 )
 
   static char*
   get_win_string( FT_Memory       memory,
@@ -491,42 +493,40 @@
 
     if ( FT_STREAM_SEEK( entry->stringOffset ) ||
          FT_FRAME_ENTER( entry->stringLength ) )
-    {
-      FT_FREE( result );
-      entry->stringLength = 0;
-      entry->stringOffset = 0;
-      FT_FREE( entry->string );
-
-      return NULL;
-    }
+      goto get_win_string_error;
 
     r = (FT_String*)result;
     p = (FT_Char*)stream->cursor;
 
     for ( len = entry->stringLength / 2; len > 0; len--, p += 2 )
     {
-      if ( p[0] == 0 )
+      if ( p[0] == 0 && char_type( p[1] ) )
+        *r++ = p[1];
+      else
       {
-        if ( char_type( p[1] ) )
-          *r++ = p[1];
-        else
-        {
-          if ( report_invalid_characters )
-          {
-            FT_TRACE0(( "get_win_string:"
-                        " Character `%c' (0x%X) invalid in PS name string\n",
-                        p[1], p[1] ));
-            
-            *r++ = p[1];
-          }
-        }
+        if ( report_invalid_characters )
+          FT_TRACE0(( "get_win_string:"
+                      " Character 0x%X invalid in PS name string\n",
+                      ((unsigned)p[0])*256 + (unsigned)p[1] ));
+        break;
       }
     }
-    *r = '\0';
+    if ( !len )
+      *r = '\0';
 
     FT_FRAME_EXIT();
 
-    return result;
+    if ( !len )
+      return result;
+
+  get_win_string_error:
+    FT_FREE( result );
+
+    entry->stringLength = 0;
+    entry->stringOffset = 0;
+    FT_FREE( entry->string );
+
+    return NULL;
   }
 
 
@@ -552,14 +552,7 @@
 
     if ( FT_STREAM_SEEK( entry->stringOffset ) ||
          FT_FRAME_ENTER( entry->stringLength ) )
-    {
-      FT_FREE( result );
-      entry->stringOffset = 0;
-      entry->stringLength = 0;
-      FT_FREE( entry->string );
-
-      return NULL;
-    }
+      goto get_apple_string_error;
 
     r = (FT_String*)result;
     p = (FT_Char*)stream->cursor;
@@ -571,20 +564,28 @@
       else
       {
         if ( report_invalid_characters )
-        {
           FT_TRACE0(( "get_apple_string:"
                       " Character `%c' (0x%X) invalid in PS name string\n",
                       *p, *p ));
-          
-          *r++ = *p;
-        }
+        break;
       }
     }
-    *r = '\0';
+    if ( !len )
+      *r = '\0';
 
     FT_FRAME_EXIT();
 
-    return result;
+    if ( !len )
+      return result;
+
+  get_apple_string_error:
+    FT_FREE( result );
+
+    entry->stringOffset = 0;
+    entry->stringLength = 0;
+    FT_FREE( entry->string );
+
+    return NULL;
   }
 
 
@@ -607,10 +608,10 @@
 
       if ( name->nameID == id && name->stringLength > 0 )
       {
-        if ( IS_WIN( name ) )
+        if ( IS_WIN( name ) && ( name->languageID == 0x409 || *win == -1 ) )
           *win = n;
 
-        if ( IS_APPLE( name ) )
+        if ( IS_APPLE( name ) && ( name->languageID == 0 || *apple == -1 ) )
           *apple = n;
       }
     }
@@ -673,7 +674,7 @@
     if ( fixed < 0 )
     {
       *p++ = '-';
-      fixed = -fixed;
+      fixed = NEG_INT( fixed );
     }
 
     int_part  = ( fixed >> 16 ) & 0xFFFF;
@@ -828,12 +829,19 @@
                                  face->name_table.names + win,
                                  sfnt_is_alphanumeric,
                                  0 );
-      else
+      if ( !result && apple != -1 )
         result = get_apple_string( face->root.memory,
                                    face->name_table.stream,
                                    face->name_table.names + apple,
                                    sfnt_is_alphanumeric,
                                    0 );
+
+      if ( !result )
+      {
+        FT_TRACE0(( "sfnt_get_var_ps_name:"
+                    " No valid PS name prefix for font instances found\n" ));
+        return NULL;
+      }
 
       len = ft_strlen( result );
 
@@ -1052,7 +1060,7 @@
                                face->name_table.names + win,
                                sfnt_is_postscript,
                                1 );
-    else
+    if ( !result && apple != -1 )
       result = get_apple_string( face->root.memory,
                                  face->name_table.stream,
                                  face->name_table.names + apple,
@@ -1139,34 +1147,34 @@
   FT_DEFINE_SERVICEDESCREC5(
     sfnt_services,
 
-    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
-    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
-    FT_SERVICE_ID_GLYPH_DICT,           &SFNT_SERVICE_GLYPH_DICT_GET,
-    FT_SERVICE_ID_BDF,                  &SFNT_SERVICE_BDF_GET,
-    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+    FT_SERVICE_ID_SFNT_TABLE,           &sfnt_service_sfnt_table,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &sfnt_service_ps_name,
+    FT_SERVICE_ID_GLYPH_DICT,           &sfnt_service_glyph_dict,
+    FT_SERVICE_ID_BDF,                  &sfnt_service_bdf,
+    FT_SERVICE_ID_TT_CMAP,              &tt_service_get_cmap_info )
 #elif defined TT_CONFIG_OPTION_POSTSCRIPT_NAMES
   FT_DEFINE_SERVICEDESCREC4(
     sfnt_services,
 
-    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
-    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
-    FT_SERVICE_ID_GLYPH_DICT,           &SFNT_SERVICE_GLYPH_DICT_GET,
-    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+    FT_SERVICE_ID_SFNT_TABLE,           &sfnt_service_sfnt_table,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &sfnt_service_ps_name,
+    FT_SERVICE_ID_GLYPH_DICT,           &sfnt_service_glyph_dict,
+    FT_SERVICE_ID_TT_CMAP,              &tt_service_get_cmap_info )
 #elif defined TT_CONFIG_OPTION_BDF
   FT_DEFINE_SERVICEDESCREC4(
     sfnt_services,
 
-    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
-    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
-    FT_SERVICE_ID_BDF,                  &SFNT_SERVICE_BDF_GET,
-    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+    FT_SERVICE_ID_SFNT_TABLE,           &sfnt_service_sfnt_table,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &sfnt_service_ps_name,
+    FT_SERVICE_ID_BDF,                  &sfnt_service_bdf,
+    FT_SERVICE_ID_TT_CMAP,              &tt_service_get_cmap_info )
 #else
   FT_DEFINE_SERVICEDESCREC3(
     sfnt_services,
 
-    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
-    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
-    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+    FT_SERVICE_ID_SFNT_TABLE,           &sfnt_service_sfnt_table,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &sfnt_service_ps_name,
+    FT_SERVICE_ID_TT_CMAP,              &tt_service_get_cmap_info )
 #endif
 
 
@@ -1174,21 +1182,9 @@
   sfnt_get_interface( FT_Module    module,
                       const char*  module_interface )
   {
-    
-#ifdef FT_CONFIG_OPTION_PIC
-    FT_Library  library;
-
-
-    if ( !module )
-      return NULL;
-    library = module->library;
-    if ( !library )
-      return NULL;
-#else
     FT_UNUSED( module );
-#endif
 
-    return ft_service_list_lookup( SFNT_SERVICES_GET, module_interface );
+    return ft_service_list_lookup( sfnt_services, module_interface );
   }
 
 
@@ -1196,6 +1192,12 @@
 #define PUT_EMBEDDED_BITMAPS( a )  a
 #else
 #define PUT_EMBEDDED_BITMAPS( a )  NULL
+#endif
+
+#ifdef TT_CONFIG_OPTION_COLOR_LAYERS
+#define PUT_COLOR_LAYERS( a )  a
+#else
+#define PUT_COLOR_LAYERS( a )  NULL
 #endif
 
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
@@ -1256,9 +1258,24 @@
                             
 
     PUT_EMBEDDED_BITMAPS( tt_face_set_sbit_strike     ),
-                            
+                   
     PUT_EMBEDDED_BITMAPS( tt_face_load_strike_metrics ),
-                    
+                   
+
+    PUT_COLOR_LAYERS( tt_face_load_cpal ),
+                            
+    PUT_COLOR_LAYERS( tt_face_load_colr ),
+                            
+    PUT_COLOR_LAYERS( tt_face_free_cpal ),
+                            
+    PUT_COLOR_LAYERS( tt_face_free_colr ),
+                            
+    PUT_COLOR_LAYERS( tt_face_palette_set ),
+                            
+    PUT_COLOR_LAYERS( tt_face_get_colr_layer ),
+                            
+    PUT_COLOR_LAYERS( tt_face_colr_blend_layer ),
+                            
 
     tt_face_get_metrics,    
 
@@ -1277,7 +1294,7 @@
     0x10000L,   
     0x20000L,   
 
-    (const void*)&SFNT_INTERFACE_GET,  
+    (const void*)&sfnt_interface,  
 
     (FT_Module_Constructor)NULL,               
     (FT_Module_Destructor) NULL,               

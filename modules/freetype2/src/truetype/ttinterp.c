@@ -40,13 +40,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttinterp
+#define FT_COMPONENT  ttinterp
 
 
 #define NO_SUBPIXEL_HINTING                                                  \
@@ -83,9 +83,9 @@
 
 
   
-  
-  
-  
+
+
+
 #define BOUNDS( x, n )   ( (FT_UInt)(x)  >= (FT_UInt)(n)  )
 #define BOUNDSL( x, n )  ( (FT_ULong)(x) >= (FT_ULong)(n) )
 
@@ -98,29 +98,32 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   TT_Goto_CodeRange( TT_ExecContext  exec,
                      FT_Int          range,
@@ -149,23 +152,27 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   TT_Set_CodeRange( TT_ExecContext  exec,
                     FT_Int          range,
@@ -180,19 +187,21 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   TT_Clear_CodeRange( TT_ExecContext  exec,
                       FT_Int          range )
@@ -205,28 +214,30 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   TT_Done_Context( TT_ExecContext  exec )
   {
@@ -258,22 +269,24 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   Init_Context( TT_ExecContext  exec,
                 FT_Memory       memory )
@@ -314,29 +327,34 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   Update_Max( FT_Memory  memory,
               FT_ULong*  size,
@@ -360,27 +378,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   TT_Load_Context( TT_ExecContext  exec,
                    TT_Face         face,
@@ -468,22 +489,24 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   TT_Save_Context( TT_ExecContext  exec,
                    TT_Size         size )
@@ -506,26 +529,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   TT_Run_Context( TT_ExecContext  exec )
   {
@@ -610,21 +627,21 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #undef  PACK
@@ -1129,73 +1146,73 @@
     "8 PushW[6]",
     "8 PushW[7]",
 
-    "8 MDRP[00]",
-    "8 MDRP[01]",
-    "8 MDRP[02]",
-    "8 MDRP[03]",
-    "8 MDRP[04]",
-    "8 MDRP[05]",
-    "8 MDRP[06]",
-    "8 MDRP[07]",
-    "8 MDRP[08]",
-    "8 MDRP[09]",
-    "8 MDRP[10]",
-    "8 MDRP[11]",
-    "8 MDRP[12]",
-    "8 MDRP[13]",
-    "8 MDRP[14]",
-    "8 MDRP[15]",
+    "7 MDRP[G]",
+    "7 MDRP[B]",
+    "7 MDRP[W]",
+    "7 MDRP[?]",
+    "8 MDRP[rG]",
+    "8 MDRP[rB]",
+    "8 MDRP[rW]",
+    "8 MDRP[r?]",
+    "8 MDRP[mG]",
+    "8 MDRP[mB]",
+    "8 MDRP[mW]",
+    "8 MDRP[m?]",
+    "9 MDRP[mrG]",
+    "9 MDRP[mrB]",
+    "9 MDRP[mrW]",
+    "9 MDRP[mr?]",
 
-    "8 MDRP[16]",
-    "8 MDRP[17]",
-    "8 MDRP[18]",
-    "8 MDRP[19]",
-    "8 MDRP[20]",
-    "8 MDRP[21]",
-    "8 MDRP[22]",
-    "8 MDRP[23]",
-    "8 MDRP[24]",
-    "8 MDRP[25]",
-    "8 MDRP[26]",
-    "8 MDRP[27]",
-    "8 MDRP[28]",
-    "8 MDRP[29]",
-    "8 MDRP[30]",
-    "8 MDRP[31]",
+    "8 MDRP[pG]",
+    "8 MDRP[pB]",
+    "8 MDRP[pW]",
+    "8 MDRP[p?]",
+    "9 MDRP[prG]",
+    "9 MDRP[prB]",
+    "9 MDRP[prW]",
+    "9 MDRP[pr?]",
+    "9 MDRP[pmG]",
+    "9 MDRP[pmB]",
+    "9 MDRP[pmW]",
+    "9 MDRP[pm?]",
+    "A MDRP[pmrG]",
+    "A MDRP[pmrB]",
+    "A MDRP[pmrW]",
+    "A MDRP[pmr?]",
 
-    "8 MIRP[00]",
-    "8 MIRP[01]",
-    "8 MIRP[02]",
-    "8 MIRP[03]",
-    "8 MIRP[04]",
-    "8 MIRP[05]",
-    "8 MIRP[06]",
-    "8 MIRP[07]",
-    "8 MIRP[08]",
-    "8 MIRP[09]",
-    "8 MIRP[10]",
-    "8 MIRP[11]",
-    "8 MIRP[12]",
-    "8 MIRP[13]",
-    "8 MIRP[14]",
-    "8 MIRP[15]",
+    "7 MIRP[G]",
+    "7 MIRP[B]",
+    "7 MIRP[W]",
+    "7 MIRP[?]",
+    "8 MIRP[rG]",
+    "8 MIRP[rB]",
+    "8 MIRP[rW]",
+    "8 MIRP[r?]",
+    "8 MIRP[mG]",
+    "8 MIRP[mB]",
+    "8 MIRP[mW]",
+    "8 MIRP[m?]",
+    "9 MIRP[mrG]",
+    "9 MIRP[mrB]",
+    "9 MIRP[mrW]",
+    "9 MIRP[mr?]",
 
-    "8 MIRP[16]",
-    "8 MIRP[17]",
-    "8 MIRP[18]",
-    "8 MIRP[19]",
-    "8 MIRP[20]",
-    "8 MIRP[21]",
-    "8 MIRP[22]",
-    "8 MIRP[23]",
-    "8 MIRP[24]",
-    "8 MIRP[25]",
-    "8 MIRP[26]",
-    "8 MIRP[27]",
-    "8 MIRP[28]",
-    "8 MIRP[29]",
-    "8 MIRP[30]",
-    "8 MIRP[31]"
+    "8 MIRP[pG]",
+    "8 MIRP[pB]",
+    "8 MIRP[pW]",
+    "8 MIRP[p?]",
+    "9 MIRP[prG]",
+    "9 MIRP[prB]",
+    "9 MIRP[prW]",
+    "9 MIRP[pr?]",
+    "9 MIRP[pmG]",
+    "9 MIRP[pmB]",
+    "9 MIRP[pmW]",
+    "9 MIRP[pm?]",
+    "A MIRP[pmrG]",
+    "A MIRP[pmrB]",
+    "A MIRP[pmrW]",
+    "A MIRP[pmr?]"
   };
 
 #endif 
@@ -1449,17 +1466,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   static FT_Long
   Current_Ratio( TT_ExecContext  exc )
   {
@@ -1502,10 +1519,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   FT_CALLBACK_DEF( FT_F26Dot6 )
@@ -1547,7 +1564,7 @@
             FT_ULong        idx,
             FT_F26Dot6      value )
   {
-    exc->cvt[idx] += value;
+    exc->cvt[idx] = ADD_LONG( exc->cvt[idx], value );
   }
 
 
@@ -1556,25 +1573,26 @@
                       FT_ULong        idx,
                       FT_F26Dot6      value )
   {
-    exc->cvt[idx] += FT_DivFix( value, Current_Ratio( exc ) );
+    exc->cvt[idx] = ADD_LONG( exc->cvt[idx],
+                              FT_DivFix( value, Current_Ratio( exc ) ) );
   }
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Short
   GetShortIns( TT_ExecContext  exc )
   {
@@ -1586,21 +1604,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Bool
   Ins_Goto_CodeRange( TT_ExecContext  exc,
                       FT_Int          aRange,
@@ -1643,26 +1663,29 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Direct_Move( TT_ExecContext  exc,
                TT_GlyphZone    zone,
@@ -1729,22 +1752,25 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Direct_Move_Orig( TT_ExecContext  exc,
                     TT_GlyphZone    zone,
@@ -1773,14 +1799,14 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 
 
   static void
@@ -1828,13 +1854,13 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
 
   static void
@@ -1862,27 +1888,29 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_None( TT_ExecContext  exc,
               FT_F26Dot6      distance,
@@ -1910,21 +1938,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_To_Grid( TT_ExecContext  exc,
                  FT_F26Dot6      distance,
@@ -1954,21 +1984,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_To_Half_Grid( TT_ExecContext  exc,
                       FT_F26Dot6      distance,
@@ -2000,21 +2032,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_Down_To_Grid( TT_ExecContext  exc,
                       FT_F26Dot6      distance,
@@ -2043,21 +2077,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_Up_To_Grid( TT_ExecContext  exc,
                     FT_F26Dot6      distance,
@@ -2087,21 +2123,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_To_Double_Grid( TT_ExecContext  exc,
                         FT_F26Dot6      distance,
@@ -2131,27 +2169,29 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_Super( TT_ExecContext  exc,
                FT_F26Dot6      distance,
@@ -2184,25 +2224,27 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Round_Super_45( TT_ExecContext  exc,
                   FT_F26Dot6      distance,
@@ -2235,16 +2277,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   static void
   Compute_Round( TT_ExecContext  exc,
                  FT_Byte         round_mode )
@@ -2287,18 +2330,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   SetSuperRound( TT_ExecContext  exc,
                  FT_F2Dot14      GridPeriod,
@@ -2356,21 +2401,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Project( TT_ExecContext  exc,
            FT_Pos          dx,
@@ -2383,21 +2430,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Dual_Project( TT_ExecContext  exc,
                 FT_Pos          dx,
@@ -2410,21 +2459,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Project_x( TT_ExecContext  exc,
              FT_Pos          dx,
@@ -2438,21 +2489,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_F26Dot6
   Project_y( TT_ExecContext  exc,
              FT_Pos          dx,
@@ -2466,14 +2519,14 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   static void
   Compute_Funcs( TT_ExecContext  exc )
   {
@@ -2529,27 +2582,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Bool
   Normalize( FT_F26Dot6      Vx,
              FT_F26Dot6      Vy,
@@ -2578,10 +2634,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #define ARRAY_BOUND_ERROR                         \
@@ -2593,11 +2649,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MPPEM( TT_ExecContext  exc,
              FT_Long*        args )
@@ -2607,11 +2663,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MPS( TT_ExecContext  exc,
            FT_Long*        args )
@@ -2634,11 +2690,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_DUP( FT_Long*  args )
   {
@@ -2647,11 +2703,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_POP( void )
   {
@@ -2660,11 +2716,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_CLEAR( TT_ExecContext  exc )
   {
@@ -2673,11 +2729,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SWAP( FT_Long*  args )
   {
@@ -2691,11 +2747,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_DEPTH( TT_ExecContext  exc,
              FT_Long*        args )
@@ -2705,11 +2761,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_LT( FT_Long*  args )
   {
@@ -2718,11 +2774,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_LTEQ( FT_Long*  args )
   {
@@ -2731,11 +2787,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_GT( FT_Long*  args )
   {
@@ -2744,11 +2800,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_GTEQ( FT_Long*  args )
   {
@@ -2757,11 +2813,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_EQ( FT_Long*  args )
   {
@@ -2770,11 +2826,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_NEQ( FT_Long*  args )
   {
@@ -2783,11 +2839,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ODD( TT_ExecContext  exc,
            FT_Long*        args )
@@ -2797,11 +2853,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_EVEN( TT_ExecContext  exc,
             FT_Long*        args )
@@ -2811,11 +2867,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_AND( FT_Long*  args )
   {
@@ -2824,11 +2880,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_OR( FT_Long*  args )
   {
@@ -2837,11 +2893,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_NOT( FT_Long*  args )
   {
@@ -2850,11 +2906,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ADD( FT_Long*  args )
   {
@@ -2863,11 +2919,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SUB( FT_Long*  args )
   {
@@ -2876,11 +2932,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_DIV( TT_ExecContext  exc,
            FT_Long*        args )
@@ -2893,11 +2949,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MUL( FT_Long*  args )
   {
@@ -2906,11 +2962,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ABS( FT_Long*  args )
   {
@@ -2920,11 +2976,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_NEG( FT_Long*  args )
   {
@@ -2933,11 +2989,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FLOOR( FT_Long*  args )
   {
@@ -2946,11 +3002,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_CEILING( FT_Long*  args )
   {
@@ -2959,11 +3015,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_RS( TT_ExecContext  exc,
           FT_Long*        args )
@@ -3005,11 +3061,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_WS( TT_ExecContext  exc,
           FT_Long*        args )
@@ -3028,11 +3084,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_WCVTP( TT_ExecContext  exc,
              FT_Long*        args )
@@ -3051,11 +3107,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_WCVTF( TT_ExecContext  exc,
              FT_Long*        args )
@@ -3074,11 +3130,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_RCVT( TT_ExecContext  exc,
             FT_Long*        args )
@@ -3099,11 +3155,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_AA( void )
   {
@@ -3112,13 +3168,13 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   static void
   Ins_DEBUG( TT_ExecContext  exc )
   {
@@ -3127,11 +3183,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ROUND( TT_ExecContext  exc,
              FT_Long*        args )
@@ -3144,11 +3200,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_NROUND( TT_ExecContext  exc,
               FT_Long*        args )
@@ -3161,11 +3217,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MAX( FT_Long*  args )
   {
@@ -3175,11 +3231,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MIN( FT_Long*  args )
   {
@@ -3189,11 +3245,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MINDEX( TT_ExecContext  exc,
               FT_Long*        args )
@@ -3222,11 +3278,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_CINDEX( TT_ExecContext  exc,
               FT_Long*        args )
@@ -3248,11 +3304,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ROLL( FT_Long*  args )
   {
@@ -3270,18 +3326,18 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SLOOP( TT_ExecContext  exc,
              FT_Long*        args )
@@ -3324,11 +3380,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_IF( TT_ExecContext  exc,
           FT_Long*        args )
@@ -3368,11 +3424,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ELSE( TT_ExecContext  exc )
   {
@@ -3401,11 +3457,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_EIF( void )
   {
@@ -3414,11 +3470,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_JMPR( TT_ExecContext  exc,
             FT_Long*        args )
@@ -3449,11 +3505,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_JROT( TT_ExecContext  exc,
             FT_Long*        args )
@@ -3464,11 +3520,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_JROF( TT_ExecContext  exc,
             FT_Long*        args )
@@ -3479,18 +3535,18 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FDEF( TT_ExecContext  exc,
             FT_Long*        args )
@@ -3789,11 +3845,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ENDF( TT_ExecContext  exc )
   {
@@ -3838,11 +3894,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_CALL( TT_ExecContext  exc,
             FT_Long*        args )
@@ -3927,11 +3983,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_LOOPCALL( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -4020,11 +4076,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_IDEF( TT_ExecContext  exc,
             FT_Long*        args )
@@ -4095,18 +4151,18 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_NPUSHB( TT_ExecContext  exc,
               FT_Long*        args )
@@ -4130,11 +4186,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_NPUSHW( TT_ExecContext  exc,
               FT_Long*        args )
@@ -4161,11 +4217,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_PUSHB( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4187,11 +4243,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_PUSHW( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4217,10 +4273,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   static FT_Bool
@@ -4275,19 +4331,19 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Ins_SxyTCA( TT_ExecContext  exc )
   {
@@ -4319,11 +4375,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SPVTL( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4340,11 +4396,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SFVTL( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4360,11 +4416,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SFVTPV( TT_ExecContext  exc )
   {
@@ -4374,11 +4430,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SPVFS( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4401,11 +4457,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SFVFS( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4426,11 +4482,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_GPV( TT_ExecContext  exc,
            FT_Long*        args )
@@ -4441,11 +4497,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_GFV( TT_ExecContext  exc,
            FT_Long*        args )
@@ -4456,11 +4512,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SRP0( TT_ExecContext  exc,
             FT_Long*        args )
@@ -4470,11 +4526,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SRP1( TT_ExecContext  exc,
             FT_Long*        args )
@@ -4484,11 +4540,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SRP2( TT_ExecContext  exc,
             FT_Long*        args )
@@ -4498,11 +4554,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SMD( TT_ExecContext  exc,
            FT_Long*        args )
@@ -4512,11 +4568,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SCVTCI( TT_ExecContext  exc,
               FT_Long*        args )
@@ -4526,11 +4582,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SSWCI( TT_ExecContext  exc,
              FT_Long*        args )
@@ -4540,11 +4596,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SSW( TT_ExecContext  exc,
            FT_Long*        args )
@@ -4555,11 +4611,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FLIPON( TT_ExecContext  exc )
   {
@@ -4568,11 +4624,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FLIPOFF( TT_ExecContext  exc )
   {
@@ -4581,11 +4637,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SANGW( void )
   {
@@ -4594,11 +4650,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SDB( TT_ExecContext  exc,
            FT_Long*        args )
@@ -4608,11 +4664,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SDS( TT_ExecContext  exc,
            FT_Long*        args )
@@ -4625,11 +4681,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_RTHG( TT_ExecContext  exc )
   {
@@ -4639,11 +4695,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_RTG( TT_ExecContext  exc )
   {
@@ -4653,10 +4709,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
   static void
   Ins_RTDG( TT_ExecContext  exc )
   {
@@ -4666,10 +4722,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
   static void
   Ins_RUTG( TT_ExecContext  exc )
   {
@@ -4679,11 +4735,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_RDTG( TT_ExecContext  exc )
   {
@@ -4693,11 +4749,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ROFF( TT_ExecContext  exc )
   {
@@ -4707,11 +4763,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SROUND( TT_ExecContext  exc,
               FT_Long*        args )
@@ -4724,11 +4780,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_S45ROUND( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -4741,14 +4797,14 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   static void
   Ins_GC( TT_ExecContext  exc,
           FT_Long*        args )
@@ -4778,15 +4834,15 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
   static void
   Ins_SCFS( TT_ExecContext  exc,
             FT_Long*        args )
@@ -4816,20 +4872,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Ins_MD( TT_ExecContext  exc,
           FT_Long*        args )
@@ -4903,11 +4959,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SDPVTL( TT_ExecContext  exc,
               FT_Long*        args )
@@ -4986,11 +5042,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SZP0( TT_ExecContext  exc,
             FT_Long*        args )
@@ -5016,11 +5072,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SZP1( TT_ExecContext  exc,
             FT_Long*        args )
@@ -5046,11 +5102,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SZP2( TT_ExecContext  exc,
             FT_Long*        args )
@@ -5076,11 +5132,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SZPS( TT_ExecContext  exc,
             FT_Long*        args )
@@ -5111,11 +5167,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_INSTCTRL( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -5173,11 +5229,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SCANCTRL( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -5220,11 +5276,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SCANTYPE( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -5235,18 +5291,18 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FLIPPT( TT_ExecContext  exc )
   {
@@ -5296,11 +5352,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FLIPRGON( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -5334,11 +5390,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_FLIPRGOFF( TT_ExecContext  exc,
                  FT_Long*        args )
@@ -5451,11 +5507,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SHP( TT_ExecContext  exc )
   {
@@ -5508,15 +5564,15 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
   static void
   Ins_SHC( TT_ExecContext  exc,
            FT_Long*        args )
@@ -5564,11 +5620,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SHZ( TT_ExecContext  exc,
            FT_Long*        args )
@@ -5612,11 +5668,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_SHPIX( TT_ExecContext  exc,
              FT_Long*        args )
@@ -5772,11 +5828,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MSIRP( TT_ExecContext  exc,
              FT_Long*        args )
@@ -5847,11 +5903,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MDAP( TT_ExecContext  exc,
             FT_Long*        args )
@@ -5901,11 +5957,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MIAP( TT_ExecContext  exc,
             FT_Long*        args )
@@ -6021,11 +6077,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MDRP( TT_ExecContext  exc,
             FT_Long*        args )
@@ -6165,11 +6221,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_MIRP( TT_ExecContext  exc,
             FT_Long*        args )
@@ -6188,6 +6244,8 @@
     FT_Int      B2           = 0;
     FT_Bool     reverse_move = FALSE;
 #endif 
+
+    FT_F26Dot6  delta;
 
 
     minimum_distance    = exc->GS.minimum_distance;
@@ -6221,8 +6279,11 @@
 
     
 
-    if ( FT_ABS( cvt_dist - exc->GS.single_width_value ) <
-         exc->GS.single_width_cutin )
+    delta = SUB_LONG( cvt_dist, exc->GS.single_width_value );
+    if ( delta < 0 )
+      delta = NEG_LONG( delta );
+
+    if ( delta < exc->GS.single_width_cutin )
     {
       if ( cvt_dist >= 0 )
         cvt_dist =  exc->GS.single_width_value;
@@ -6251,7 +6312,7 @@
     if ( exc->GS.auto_flip )
     {
       if ( ( org_dist ^ cvt_dist ) < 0 )
-        cvt_dist = -cvt_dist;
+        cvt_dist = NEG_LONG( cvt_dist );
     }
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
@@ -6276,9 +6337,6 @@
 
       if ( exc->GS.gep0 == exc->GS.gep1 )
       {
-        FT_F26Dot6  delta;
-
-
         
         
         
@@ -6313,9 +6371,6 @@
            exc->ignore_x_mode           &&
            exc->GS.gep0 == exc->GS.gep1 )
       {
-        FT_F26Dot6  delta;
-
-
         delta = SUB_LONG( cvt_dist, org_dist );
         if ( delta < 0 )
           delta = NEG_LONG( delta );
@@ -6413,11 +6468,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ALIGNRP( TT_ExecContext  exc )
   {
@@ -6476,11 +6531,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ISECT( TT_ExecContext  exc,
              FT_Long*        args )
@@ -6572,11 +6627,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_ALIGNPTS( TT_ExecContext  exc,
                 FT_Long*        args )
@@ -6604,11 +6659,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
   
 
@@ -6764,11 +6819,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_UTP( TT_ExecContext  exc,
            FT_Long*        args )
@@ -6933,11 +6988,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_IUP( TT_ExecContext  exc )
   {
@@ -7061,11 +7116,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_DELTAP( TT_ExecContext  exc,
               FT_Long*        args )
@@ -7228,11 +7283,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
   static void
   Ins_DELTAC( TT_ExecContext  exc,
               FT_Long*        args )
@@ -7306,26 +7361,26 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   Ins_GETINFO( TT_ExecContext  exc,
                FT_Long*        args )
@@ -7338,10 +7393,10 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
     
-    
-    
-    
-    
+
+
+
+
     if ( SUBPIXEL_HINTING_INFINALITY &&
          ( args[0] & 1 ) != 0        &&
          exc->subpixel_hinting       )
@@ -7363,38 +7418,39 @@
         K = driver->interpreter_version;
 
     
-    
-    
-    
-    
+
+
+
+
     if ( ( args[0] & 2 ) != 0 && exc->tt_metrics.rotated )
       K |= 1 << 8;
 
     
-    
-    
-    
-    
+
+
+
+
     if ( ( args[0] & 4 ) != 0 && exc->tt_metrics.stretched )
       K |= 1 << 9;
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     
-    
-    
-    
-    
-    
+
+
+
+
+
+
     if ( (args[0] & 8 ) != 0 && exc->face->blend )
       K |= 1 << 10;
 #endif
 
     
-    
-    
-    
-    
-    
+
+
+
+
+
     if ( ( args[0] & 32 ) != 0 && exc->grayscale )
       K |= 1 << 12;
 
@@ -7406,49 +7462,53 @@
     if ( SUBPIXEL_HINTING_MINIMAL && exc->subpixel_hinting_lean )
     {
       
-      
-      
-      
-      
-      
+
+
+
+
+
+
       if ( ( args[0] & 64 ) != 0 )
         K |= 1 << 13;
 
       
-      
-      
-      
-      
+
+
+
+
       if ( ( args[0] & 256 ) != 0 && exc->vertical_lcd_lean )
         K |= 1 << 15;
 
       
-      
-      
-      
-      
-      
+
+
+
+
+
+
       if ( ( args[0] & 1024 ) != 0 )
         K |= 1 << 17;
 
       
-      
-      
-      
-      
-      
-      
+
+
+
+
+
+
+
       if ( ( args[0] & 2048 ) != 0 && exc->subpixel_hinting_lean )
         K |= 1 << 18;
 
       
-      
-      
-      
-      
-      
-      
-      
+
+
+
+
+
+
+
+
       if ( ( args[0] & 4096 ) != 0 && exc->grayscale_cleartype )
         K |= 1 << 19;
     }
@@ -7463,66 +7523,72 @@
       if ( exc->rasterizer_version >= 37 )
       {
         
-        
-        
-        
-        
+
+
+
+
         if ( ( args[0] & 64 ) != 0 && exc->subpixel_hinting )
           K |= 1 << 13;
 
         
-        
-        
-        
-        
-        
+
+
+
+
+
+
         if ( ( args[0] & 128 ) != 0 && exc->compatible_widths )
           K |= 1 << 14;
 
         
-        
-        
-        
-        
-        
+
+
+
+
+
+
         if ( ( args[0] & 256 ) != 0 && exc->vertical_lcd )
           K |= 1 << 15;
 
         
-        
-        
-        
-        
-        
+
+
+
+
+
+
         if ( ( args[0] & 512 ) != 0 && exc->bgr )
           K |= 1 << 16;
 
         if ( exc->rasterizer_version >= 38 )
         {
           
-          
-          
-          
-          
-          
+
+
+
+
+
+
           if ( ( args[0] & 1024 ) != 0 && exc->subpixel_positioned )
             K |= 1 << 17;
 
           
-          
-          
-          
-          
-          
+
+
+
+
+
+
           if ( ( args[0] & 2048 ) != 0 && exc->symmetrical_smoothing )
             K |= 1 << 18;
 
           
-          
-          
-          
-          
-          
+
+
+
+
+
+
           if ( ( args[0] & 4096 ) != 0 && exc->gray_cleartype )
             K |= 1 << 19;
         }
@@ -7538,15 +7604,15 @@
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
   static void
   Ins_GETVARIATION( TT_ExecContext  exc,
                     FT_Long*        args )
@@ -7577,14 +7643,14 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   static void
   Ins_GETDATA( FT_Long*  args )
   {
@@ -7633,33 +7699,33 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -7801,7 +7867,7 @@
         
         FT_TRACE6(( "  " ));
         FT_TRACE7(( "%06d ", exc->IP ));
-        FT_TRACE6(( opcode_name[exc->opcode] + 2 ));
+        FT_TRACE6(( "%s", opcode_name[exc->opcode] + 2 ));
         FT_TRACE7(( "%*s", *opcode_name[exc->opcode] == 'A'
                               ? 2
                               : 12 - ( *opcode_name[exc->opcode] - '0' ),

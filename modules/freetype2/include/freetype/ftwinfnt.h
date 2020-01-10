@@ -33,21 +33,21 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   
@@ -174,13 +174,13 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct  FT_WinFNT_HeaderRec_
   {
     FT_UShort  version;
@@ -224,17 +224,19 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef struct FT_WinFNT_HeaderRec_*  FT_WinFNT_Header;
 
 
   
+
+
 
 
 

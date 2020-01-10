@@ -37,35 +37,36 @@
 #endif
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttobjs
+#define FT_COMPONENT  ttobjs
 
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   tt_glyphzone_done( TT_GlyphZone  zone )
   {
@@ -88,26 +89,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_glyphzone_new( FT_Memory     memory,
                     FT_UShort     maxPoints,
@@ -567,31 +572,36 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_init( FT_Stream      stream,
                 FT_Face        ttface,      
@@ -744,16 +754,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   tt_face_done( FT_Face  ttface )           
   {
@@ -800,29 +811,31 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_size_run_fpgm( TT_Size  size,
                     FT_Bool  pedantic )
@@ -900,21 +913,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_size_run_prep( TT_Size  size,
                     FT_Bool  pedantic )
@@ -1161,8 +1176,14 @@
 
       
       
+      FT_TRACE6(( "CVT values:\n" ));
       for ( i = 0; i < size->cvt_size; i++ )
+      {
         size->cvt[i] = FT_MulFix( face->cvt[i], size->ttmetrics.scale );
+        FT_TRACE6(( "  %3d: %d (%f)\n",
+                    i, face->cvt[i], size->cvt[i] / 64.0 ));
+      }
+      FT_TRACE6(( "\n" ));
 
       
       for ( i = 0; i < (FT_UInt)size->twilight.n_points; i++ )
@@ -1192,19 +1213,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_size_init( FT_Size  ttsize )           
   {
@@ -1225,16 +1247,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   tt_size_done( FT_Size  ttsize )           
   {
@@ -1250,21 +1273,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_size_reset( TT_Size  size,
                  FT_Bool  only_height )
@@ -1359,19 +1384,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_driver_init( FT_Module  ttdriver )     
   {
@@ -1399,16 +1425,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   tt_driver_done( FT_Module  ttdriver )     
   {
@@ -1417,19 +1444,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_slot_init( FT_GlyphSlot  slot )
   {

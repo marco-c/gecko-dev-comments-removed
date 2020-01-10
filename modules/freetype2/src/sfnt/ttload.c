@@ -27,31 +27,33 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttload
+#define FT_COMPONENT  ttload
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( TT_Table  )
   tt_face_lookup_table( TT_Face   face,
                         FT_ULong  tag  )
@@ -102,26 +104,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_goto_table( TT_Face    face,
                       FT_ULong   tag,
@@ -310,27 +316,30 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_font_dir( TT_Face    face,
                          FT_Stream  stream )
@@ -497,45 +506,50 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_any( TT_Face    face,
                     FT_ULong   tag,
@@ -587,21 +601,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Error
   tt_face_load_generic_header( TT_Face    face,
                                FT_Stream  stream,
@@ -622,10 +638,10 @@
         FT_FRAME_LONG  ( Magic_Number ),
         FT_FRAME_USHORT( Flags ),
         FT_FRAME_USHORT( Units_Per_EM ),
-        FT_FRAME_LONG  ( Created[0] ),
-        FT_FRAME_LONG  ( Created[1] ),
-        FT_FRAME_LONG  ( Modified[0] ),
-        FT_FRAME_LONG  ( Modified[1] ),
+        FT_FRAME_ULONG ( Created[0] ),
+        FT_FRAME_ULONG ( Created[1] ),
+        FT_FRAME_ULONG ( Modified[0] ),
+        FT_FRAME_ULONG ( Modified[1] ),
         FT_FRAME_SHORT ( xMin ),
         FT_FRAME_SHORT ( yMin ),
         FT_FRAME_SHORT ( xMax ),
@@ -677,21 +693,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_maxp( TT_Face    face,
                      FT_Stream  stream )
@@ -785,21 +803,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_name( TT_Face    face,
                      FT_Stream  stream )
@@ -982,16 +1002,17 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( void )
   tt_face_free_name( TT_Face  face )
   {
@@ -1031,22 +1052,24 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_cmap( TT_Face    face,
@@ -1069,21 +1092,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_os2( TT_Face    face,
                     FT_Stream  stream )
@@ -1229,21 +1254,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_post( TT_Face    face,
                      FT_Stream  stream )
@@ -1289,21 +1316,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_pclt( TT_Face    face,
                      FT_Stream  stream )
@@ -1350,21 +1379,23 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_gasp( TT_Face    face,
                      FT_Stream  stream )

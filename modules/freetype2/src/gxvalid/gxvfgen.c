@@ -55,8 +55,8 @@
 
 
   
-  
-  
+
+
 
   
 
@@ -66,8 +66,8 @@
 #define FEATREG_MAX_SETTING  12
 
   
-  
-  
+
+
 
 
 #include <stdio.h>

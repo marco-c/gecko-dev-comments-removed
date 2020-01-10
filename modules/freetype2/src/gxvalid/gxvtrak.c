@@ -30,13 +30,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_gxvtrak
+#define FT_COMPONENT  gxvtrak
 
 
   

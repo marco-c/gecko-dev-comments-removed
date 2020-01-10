@@ -24,7 +24,7 @@
 #include "pfrerror.h"
 
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_pfr
+#define FT_COMPONENT  pfr
 
 
   
@@ -360,8 +360,8 @@
 
 
         
-        
-        
+
+
         PFR_CHECK( 1 );
         format     = PFR_NEXT_BYTE( p );
         format_low = format & 15;
@@ -427,8 +427,8 @@
         }
 
         
-        
-        
+
+
         cur = pos;
         for ( n = 0; n < args_count; n++ )
         {
@@ -514,8 +514,8 @@
         FT_TRACE7(( "\n" ));
 
         
-        
-        
+
+
         switch ( format >> 4 )
         {
         case 0:                                       

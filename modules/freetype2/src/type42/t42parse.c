@@ -24,13 +24,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_t42
+#define FT_COMPONENT  t42
 
 
   static void
@@ -150,18 +150,18 @@
     parser->in_memory = 0;
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
 
     if ( FT_STREAM_SEEK( 0L ) ||
          FT_FRAME_ENTER( 17 ) )
@@ -283,6 +283,13 @@
     matrix->yx = temp[1];
     matrix->xy = temp[2];
     matrix->yy = temp[3];
+
+    if ( !FT_Matrix_Check( matrix ) )
+    {
+      FT_ERROR(( "t42_parse_font_matrix: invalid font matrix\n" ));
+      parser->root.error = FT_THROW( Invalid_File_Format );
+      return;
+    }
 
     
     offset->x = temp[4] >> 16;
@@ -588,6 +595,14 @@
 
       else if ( *cur == '<' )
       {
+        if ( string_buf && !allocated )
+        {
+          FT_ERROR(( "t42_parse_sfnts: "
+                     "can't handle mixed binary and hex strings\n" ));
+          error = FT_THROW( Invalid_File_Format );
+          goto Fail;
+        }
+
         T1_Skip_PS_Token( parser );
         if ( parser->root.error )
           goto Exit;

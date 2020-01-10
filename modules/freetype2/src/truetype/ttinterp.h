@@ -27,9 +27,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
 #define TT_Round_Off             5
 #define TT_Round_To_Half_Grid    0
 #define TT_Round_To_Grid         1
@@ -41,12 +41,12 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
   
   typedef FT_F26Dot6
@@ -85,9 +85,9 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
+
+
+
   typedef struct  TT_CallRec_
   {
     FT_Int   Caller_Range;
@@ -102,10 +102,10 @@ FT_BEGIN_HEADER
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
 
   
-  
-  
-  
-  
+
+
+
+
 
 #define SPH_MAX_NAME_SIZE      32
 #define SPH_MAX_CLASS_MEMBERS  100
@@ -142,10 +142,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
   typedef struct  TT_ExecContextRec_
   {
     TT_Face            face;
@@ -465,25 +465,26 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( TT_ExecContext )
   TT_New_Context( TT_Driver  driver );
 
@@ -507,26 +508,27 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   TT_RunIns( TT_ExecContext  exec );
 

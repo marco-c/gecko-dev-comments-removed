@@ -27,13 +27,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttkern
+#define FT_COMPONENT  ttkern
 
 
 #undef  TT_KERN_INDEX

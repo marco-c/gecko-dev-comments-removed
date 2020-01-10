@@ -17,21 +17,19 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #ifndef FTCONFIG_H_
@@ -46,15 +44,14 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 
 
 #define HAVE_UNISTD_H  1
@@ -77,23 +74,23 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 #if defined( __APPLE__ ) || ( defined( __MWERKS__ ) && defined( macintosh ) )
   
   
@@ -126,32 +123,32 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
   
 
 
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
   typedef signed short  FT_Int16;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef unsigned short  FT_UInt16;
 
   
@@ -161,49 +158,49 @@ FT_BEGIN_HEADER
 #if 0
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef signed XXX  FT_Int32;
 
 
   
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   typedef unsigned XXX  FT_UInt32;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef signed XXX  FT_Int64;
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   typedef unsigned XXX  FT_UInt64;
 
   
@@ -259,12 +256,12 @@ FT_BEGIN_HEADER
 #define FT_UINT64  unsigned long long int
 
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 #elif !defined( __STDC__ ) || defined( FT_CONFIG_OPTION_FORCE_INT64 )
 
 #if defined( __STDC_VERSION__ ) && __STDC_VERSION__ >= 199901L
@@ -273,7 +270,7 @@ FT_BEGIN_HEADER
 #define FT_INT64   long long int
 #define FT_UINT64  unsigned long long int
 
-#elif defined( _MSC_VER ) && _MSC_VER >= 900  
+#elif defined( _MSC_VER ) && _MSC_VER >= 900 
 
   
 #define FT_LONG64
@@ -327,10 +324,10 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
 #define FT_BEGIN_STMNT  do {
@@ -437,14 +434,19 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
 #ifndef FT_EXPORT
 
 #ifdef FT2_BUILD_LIBRARY
 
-#if defined( _WIN32 ) && ( defined( _DLL ) || defined( DLL_EXPORT ) )
+#if defined( _WIN32 ) && defined( DLL_EXPORT )
 #define FT_EXPORT( x )  __declspec( dllexport )  x
 #elif defined( __GNUC__ ) && __GNUC__ >= 4
 #define FT_EXPORT( x )  __attribute__(( visibility( "default" ) ))  x
+#elif defined( __SUNPRO_C ) && __SUNPRO_C >= 0x550
+#define FT_EXPORT( x )  __global  x
 #elif defined( __cplusplus )
 #define FT_EXPORT( x )  extern "C"  x
 #else
@@ -453,7 +455,7 @@ FT_BEGIN_HEADER
 
 #else
 
-#if defined( FT2_DLLIMPORT )
+#if defined( _WIN32 ) && defined( DLL_IMPORT )
 #define FT_EXPORT( x )  __declspec( dllimport )  x
 #elif defined( __cplusplus )
 #define FT_EXPORT( x )  extern "C"  x
@@ -486,6 +488,7 @@ FT_BEGIN_HEADER
 #endif
 
 #endif 
+
 
   
   

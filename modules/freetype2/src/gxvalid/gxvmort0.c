@@ -30,13 +30,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_gxvmort
+#define FT_COMPONENT  gxvmort
 
 
   static const char* GXV_Mort_IndicScript_Msg[] =

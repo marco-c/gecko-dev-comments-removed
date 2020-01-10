@@ -80,77 +80,57 @@ FT_BEGIN_HEADER
     FT_RFork_Rule          type;
   } ft_raccess_guess_rec;
 
-#ifndef FT_CONFIG_OPTION_PIC
 
-  
 #define CONST_FT_RFORK_RULE_ARRAY_BEGIN( name, type )  \
           static const type name[] = {
 #define CONST_FT_RFORK_RULE_ARRAY_ENTRY( func_suffix, type_suffix )  \
           { raccess_guess_ ## func_suffix,                           \
             FT_RFork_Rule_ ## type_suffix },
+  
 #define CONST_FT_RFORK_RULE_ARRAY_END  };
 
-#else 
-
-  
-#define CONST_FT_RFORK_RULE_ARRAY_BEGIN( name, type )  \
-          void                                         \
-          FT_Init_Table_ ## name( type*  storage )     \
-          {                                            \
-            type*  local = storage;                    \
-                                                       \
-                                                       \
-            int  i = 0;
-#define CONST_FT_RFORK_RULE_ARRAY_ENTRY( func_suffix, type_suffix )  \
-          local[i].func = raccess_guess_ ## func_suffix;             \
-          local[i].type = FT_RFork_Rule_ ## type_suffix;             \
-          i++;
-#define CONST_FT_RFORK_RULE_ARRAY_END  }
-
-#endif 
-
 #endif 
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( void )
   FT_Raccess_Guess( FT_Library  library,
                     FT_Stream   stream,
@@ -161,36 +141,36 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( FT_Error )
   FT_Raccess_Get_HeaderInfo( FT_Library  library,
                              FT_Stream   stream,
@@ -200,54 +180,53 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_BASE( FT_Error )
   FT_Raccess_Get_DataOffsets( FT_Library  library,
                               FT_Stream   stream,

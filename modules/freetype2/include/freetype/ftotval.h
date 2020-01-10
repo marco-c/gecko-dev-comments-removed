@@ -44,30 +44,30 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -113,7 +113,8 @@ FT_BEGIN_HEADER
                           FT_VALIDATE_JSTF | \
                           FT_VALIDATE_MATH )
 
- 
+
+  
 
 
 
@@ -169,7 +170,8 @@ FT_BEGIN_HEADER
                         FT_Bytes  *GSUB_table,
                         FT_Bytes  *JSTF_table );
 
- 
+
+  
 
 
 
@@ -192,6 +194,7 @@ FT_BEGIN_HEADER
   FT_EXPORT( void )
   FT_OpenType_Free( FT_Face   face,
                     FT_Bytes  table );
+
 
   
 

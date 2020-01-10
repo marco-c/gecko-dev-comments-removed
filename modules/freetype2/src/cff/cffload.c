@@ -197,13 +197,13 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_cffload
+#define FT_COMPONENT  cffload
 
 
   
@@ -1398,7 +1398,14 @@
     FT_UInt       master;
 
 
-    FT_ASSERT( lenNDV == 0 || NDV );
+    
+    if ( !( lenNDV == 0 || NDV ) )
+    {
+      FT_TRACE4(( " cff_blend_build_vector:"
+                  " Malformed Normalize Design Vector data\n" ));
+      error = FT_THROW( Invalid_File_Format );
+      goto Exit;
+    }
 
     blend->builtBV = FALSE;
 

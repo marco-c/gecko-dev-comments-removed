@@ -29,42 +29,45 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Init_Face_Func)( FT_Stream      stream,
                         TT_Face        face,
@@ -74,35 +77,39 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_Face_Func)( FT_Stream      stream,
                         TT_Face        face,
@@ -112,63 +119,63 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*TT_Done_Face_Func)( TT_Face  face );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_Any_Func)( TT_Face    face,
                        FT_ULong   tag,
@@ -178,33 +185,38 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Find_SBit_Image_Func)( TT_Face          face,
                               FT_UInt          glyph_index,
@@ -215,32 +227,35 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_SBit_Metrics_Func)( FT_Stream        stream,
                                 TT_SBit_Range    range,
@@ -248,44 +263,44 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_SBit_Image_Func)( TT_Face              face,
                               FT_ULong             strike_index,
@@ -297,25 +312,28 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Set_SBit_Strike_Func)( TT_Face          face,
                               FT_Size_Request  req,
@@ -323,25 +341,28 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_Strike_Metrics_Func)( TT_Face           face,
                                   FT_ULong          strike_index,
@@ -349,24 +370,26 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Get_PS_Name_Func)( TT_Face      face,
                           FT_UInt      idx,
@@ -374,24 +397,27 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_Metrics_Func)( TT_Face    face,
                            FT_Stream  stream,
@@ -399,27 +425,30 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*TT_Get_Metrics_Func)( TT_Face     face,
                           FT_Bool     vertical,
@@ -429,26 +458,133 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  typedef FT_Error
+  (*TT_Set_Palette_Func)( TT_Face  face,
+                          FT_UInt  idx );
+
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  typedef FT_Bool
+  (*TT_Get_Colr_Layer_Func)( TT_Face            face,
+                             FT_UInt            base_glyph,
+                             FT_UInt           *aglyph_index,
+                             FT_UInt           *acolor_index,
+                             FT_LayerIterator*  iterator );
+
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  typedef FT_Error
+  (*TT_Blend_Colr_Func)( TT_Face       face,
+                         FT_UInt       color_index,
+                         FT_GlyphSlot  base_glyph,
+                         FT_GlyphSlot  new_glyph );
+
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Get_Name_Func)( TT_Face      face,
                        FT_UShort    nameid,
@@ -456,29 +592,33 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Bool
   (*TT_Get_Name_ID_Func)( TT_Face    face,
                           FT_UShort  nameid,
@@ -487,46 +627,54 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef FT_Error
   (*TT_Load_Table_Func)( TT_Face    face,
                          FT_Stream  stream );
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   typedef void
   (*TT_Free_Table_Func)( TT_Face  face );
 
 
   
+
+
+
+
+
 
 
 
@@ -548,17 +696,17 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  SFNT_Interface_
   {
     TT_Loader_GotoTableFunc      goto_table;
@@ -616,6 +764,14 @@ FT_BEGIN_HEADER
     TT_Set_SBit_Strike_Func      set_sbit_strike;
     TT_Load_Strike_Metrics_Func  load_strike_metrics;
 
+    TT_Load_Table_Func           load_cpal;
+    TT_Load_Table_Func           load_colr;
+    TT_Free_Table_Func           free_cpal;
+    TT_Free_Table_Func           free_colr;
+    TT_Set_Palette_Func          set_palette;
+    TT_Get_Colr_Layer_Func       get_colr_layer;
+    TT_Blend_Colr_Func           colr_blend;
+
     TT_Get_Metrics_Func          get_metrics;
 
     TT_Get_Name_Func             get_name;
@@ -627,7 +783,6 @@ FT_BEGIN_HEADER
   
   typedef SFNT_Interface*   SFNT_Service;
 
-#ifndef FT_CONFIG_OPTION_PIC
 
 #define FT_DEFINE_SFNT_INTERFACE(        \
           class_,                        \
@@ -659,6 +814,13 @@ FT_BEGIN_HEADER
           free_eblc_,                    \
           set_sbit_strike_,              \
           load_strike_metrics_,          \
+          load_cpal_,                    \
+          load_colr_,                    \
+          free_cpal_,                    \
+          free_colr_,                    \
+          set_palette_,                  \
+          get_colr_layer_,               \
+          colr_blend_,                   \
           get_metrics_,                  \
           get_name_,                     \
           get_name_id_ )                 \
@@ -692,89 +854,18 @@ FT_BEGIN_HEADER
     free_eblc_,                          \
     set_sbit_strike_,                    \
     load_strike_metrics_,                \
+    load_cpal_,                          \
+    load_colr_,                          \
+    free_cpal_,                          \
+    free_colr_,                          \
+    set_palette_,                        \
+    get_colr_layer_,                     \
+    colr_blend_,                         \
     get_metrics_,                        \
     get_name_,                           \
     get_name_id_                         \
   };
 
-#else 
-
-#define FT_INTERNAL( a, a_ )  \
-          clazz->a = a_;
-
-#define FT_DEFINE_SFNT_INTERFACE(                       \
-          class_,                                       \
-          goto_table_,                                  \
-          init_face_,                                   \
-          load_face_,                                   \
-          done_face_,                                   \
-          get_interface_,                               \
-          load_any_,                                    \
-          load_head_,                                   \
-          load_hhea_,                                   \
-          load_cmap_,                                   \
-          load_maxp_,                                   \
-          load_os2_,                                    \
-          load_post_,                                   \
-          load_name_,                                   \
-          free_name_,                                   \
-          load_kern_,                                   \
-          load_gasp_,                                   \
-          load_pclt_,                                   \
-          load_bhed_,                                   \
-          load_sbit_image_,                             \
-          get_psname_,                                  \
-          free_psnames_,                                \
-          get_kerning_,                                 \
-          load_font_dir_,                               \
-          load_hmtx_,                                   \
-          load_eblc_,                                   \
-          free_eblc_,                                   \
-          set_sbit_strike_,                             \
-          load_strike_metrics_,                         \
-          get_metrics_,                                 \
-          get_name_,                                    \
-          get_name_id_ )                                \
-  void                                                  \
-  FT_Init_Class_ ## class_( FT_Library       library,   \
-                            SFNT_Interface*  clazz )    \
-  {                                                     \
-    FT_UNUSED( library );                               \
-                                                        \
-    clazz->goto_table          = goto_table_;           \
-    clazz->init_face           = init_face_;            \
-    clazz->load_face           = load_face_;            \
-    clazz->done_face           = done_face_;            \
-    clazz->get_interface       = get_interface_;        \
-    clazz->load_any            = load_any_;             \
-    clazz->load_head           = load_head_;            \
-    clazz->load_hhea           = load_hhea_;            \
-    clazz->load_cmap           = load_cmap_;            \
-    clazz->load_maxp           = load_maxp_;            \
-    clazz->load_os2            = load_os2_;             \
-    clazz->load_post           = load_post_;            \
-    clazz->load_name           = load_name_;            \
-    clazz->free_name           = free_name_;            \
-    clazz->load_kern           = load_kern_;            \
-    clazz->load_gasp           = load_gasp_;            \
-    clazz->load_pclt           = load_pclt_;            \
-    clazz->load_bhed           = load_bhed_;            \
-    clazz->load_sbit_image     = load_sbit_image_;      \
-    clazz->get_psname          = get_psname_;           \
-    clazz->free_psnames        = free_psnames_;         \
-    clazz->get_kerning         = get_kerning_;          \
-    clazz->load_font_dir       = load_font_dir_;        \
-    clazz->load_hmtx           = load_hmtx_;            \
-    clazz->load_eblc           = load_eblc_;            \
-    clazz->free_eblc           = free_eblc_;            \
-    clazz->set_sbit_strike     = set_sbit_strike_;      \
-    clazz->load_strike_metrics = load_strike_metrics_;  \
-    clazz->get_metrics         = get_metrics_;          \
-    clazz->get_name            = get_name_;             \
-    clazz->get_name_id         = get_name_id_;          \
-  }
-
-#endif 
 
 FT_END_HEADER
 

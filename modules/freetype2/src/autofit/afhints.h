@@ -252,6 +252,12 @@ FT_BEGIN_HEADER
     AF_Point   next;     
     AF_Point   prev;     
 
+#ifdef FT_DEBUG_AUTOFIT
+    
+    AF_Edge    before[2];
+    AF_Edge    after[2];
+#endif
+
   } AF_PointRec;
 
 

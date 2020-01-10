@@ -37,7 +37,6 @@
 #include "cffobjs.h"
 #include "cffload.h"
 #include "cffcmap.h"
-#include "cffpic.h"
 
 #include "cfferrs.h"
 
@@ -46,20 +45,20 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_cffobjs
+#define FT_COMPONENT  cffobjs
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   static PSH_Globals_Funcs
@@ -342,10 +341,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   FT_LOCAL_DEF( void )
   cff_slot_done( FT_GlyphSlot  slot )
@@ -384,10 +383,10 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
   static FT_String*
   cff_strcpy( FT_Memory         memory,
@@ -652,7 +651,7 @@
         FT_ERROR(( "cff_face_init:"
                    " cannot open CFF & CEF fonts\n"
                    "              "
-                   " without the `PSNames' module\n" ));
+                   " without the `psnames' module\n" ));
         error = FT_THROW( Missing_Module );
         goto Exit;
       }
@@ -966,9 +965,9 @@
           cffface->style_name = cff_strcpy( memory, (char *)"Regular" );
 
         
-        
-        
-        
+
+
+
         flags = FT_FACE_FLAG_SCALABLE   | 
                 FT_FACE_FLAG_HORIZONTAL | 
                 FT_FACE_FLAG_HINTER;      
@@ -990,9 +989,9 @@
         cffface->face_flags |= flags;
 
         
-        
-        
-        
+
+
+
         flags = 0;
 
         if ( dict->italic_angle )
@@ -1029,9 +1028,9 @@
         cffface->face_flags |= FT_FACE_FLAG_CID_KEYED;
 
       
-      
-      
-      
+
+
+
 
       
       
@@ -1070,10 +1069,11 @@
 
         nn = (FT_UInt)cffface->num_charmaps;
 
-        error = FT_CMap_New( &CFF_CMAP_UNICODE_CLASS_REC_GET, NULL,
+        error = FT_CMap_New( &cff_cmap_unicode_class_rec, NULL,
                              &cmaprec, NULL );
         if ( error                                      &&
-             FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) )
+             FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) &&
+             FT_ERR_NEQ( error, Unimplemented_Feature ) )
           goto Exit;
         error = FT_Err_Ok;
 
@@ -1094,19 +1094,19 @@
           {
             cmaprec.encoding_id = TT_ADOBE_ID_STANDARD;
             cmaprec.encoding    = FT_ENCODING_ADOBE_STANDARD;
-            clazz               = &CFF_CMAP_ENCODING_CLASS_REC_GET;
+            clazz               = &cff_cmap_encoding_class_rec;
           }
           else if ( encoding->offset == 1 )
           {
             cmaprec.encoding_id = TT_ADOBE_ID_EXPERT;
             cmaprec.encoding    = FT_ENCODING_ADOBE_EXPERT;
-            clazz               = &CFF_CMAP_ENCODING_CLASS_REC_GET;
+            clazz               = &cff_cmap_encoding_class_rec;
           }
           else
           {
             cmaprec.encoding_id = TT_ADOBE_ID_CUSTOM;
             cmaprec.encoding    = FT_ENCODING_ADOBE_CUSTOM;
-            clazz               = &CFF_CMAP_ENCODING_CLASS_REC_GET;
+            clazz               = &cff_cmap_encoding_class_rec;
           }
 
           error = FT_CMap_New( clazz, NULL, &cmaprec, NULL );

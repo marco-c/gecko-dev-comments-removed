@@ -33,23 +33,24 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
 
 
 
@@ -94,7 +95,11 @@ FT_BEGIN_HEADER
                       FT_Fixed  *ametrics_y_scale );
 
 
- 
+  
+
+
+
+
 
 
 
@@ -132,7 +137,10 @@ FT_BEGIN_HEADER
                       FT_Vector  *avector );
 
 
- 
+  
+
+
+
 
 
 

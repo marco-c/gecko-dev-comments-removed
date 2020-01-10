@@ -17,11 +17,11 @@
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 
 
 #include <ft2build.h>
@@ -62,25 +62,27 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static int
   BBox_Move_To( FT_Vector*  to,
                 TBBox_Rec*  user )
@@ -94,25 +96,27 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static int
   BBox_Line_To( FT_Vector*  to,
                 TBBox_Rec*  user )
@@ -124,27 +128,32 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static void
   BBox_Conic_Check( FT_Pos   y1,
                     FT_Pos   y2,
@@ -169,31 +178,34 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static int
   BBox_Conic_To( FT_Vector*  control,
                  FT_Vector*  to,
@@ -223,29 +235,35 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static FT_Pos
   cubic_peak( FT_Pos  q1,
               FT_Pos  q2,
@@ -362,33 +380,37 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static int
   BBox_Cubic_To( FT_Vector*  control1,
                  FT_Vector*  control2,
@@ -490,12 +512,6 @@
       FT_Error   error;
       TBBox_Rec  user;
 
-#ifdef FT_CONFIG_OPTION_PIC
-      FT_Outline_Funcs  bbox_interface;
-
-
-      Init_Class_bbox_interface( &bbox_interface );
-#endif
 
       user.bbox = bbox;
 
