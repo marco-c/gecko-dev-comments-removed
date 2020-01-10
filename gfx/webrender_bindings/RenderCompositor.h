@@ -96,7 +96,7 @@ class RenderCompositor {
   virtual uint32_t GetMaxPartialPresentRects() { return 0; }
 
   
-  virtual bool SurfaceIsYFlipped() { return false; }
+  virtual bool SurfaceOriginIsTopLeft() { return false; }
 
  protected:
   
