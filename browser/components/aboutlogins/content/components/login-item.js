@@ -51,11 +51,15 @@ export default class LoginItem extends HTMLElement {
 
     this._originInput.addEventListener("blur", this);
     this._cancelButton.addEventListener("click", this);
+    this._copyPasswordButton.addEventListener("click", this);
+    this._copyUsernameButton.addEventListener("click", this);
     this._deleteButton.addEventListener("click", this);
     this._editButton.addEventListener("click", this);
     this._openSiteButton.addEventListener("click", this);
     this._originInput.addEventListener("click", this);
     this._saveChangesButton.addEventListener("click", this);
+    window.addEventListener("AboutLoginsCreateLogin", this);
+    window.addEventListener("AboutLoginsInitialLoginSelected", this);
     window.addEventListener("AboutLoginsLoginSelected", this);
   }
 
@@ -73,6 +77,14 @@ export default class LoginItem extends HTMLElement {
 
   handleEvent(event) {
     switch (event.type) {
+      case "AboutLoginsCreateLogin": {
+        this.setLogin({});
+        break;
+      }
+      case "AboutLoginsInitialLoginSelected": {
+        this.setLogin(event.detail, {skipFocusChange: true});
+        break;
+      }
       case "AboutLoginsLoginSelected": {
         this.setLogin(event.detail);
         break;
@@ -101,17 +113,15 @@ export default class LoginItem extends HTMLElement {
         
         event.preventDefault();
         if (classList.contains("cancel-button")) {
-          if (this._login.guid) {
+          let wasExistingLogin = !!this._login.guid;
+          if (wasExistingLogin) {
             this.setLogin(this._login);
           } else {
-            
-            
-            this._toggleEditing();
-            this.render();
+            window.dispatchEvent(new CustomEvent("AboutLoginsClearSelection"));
           }
 
           recordTelemetryEvent({
-            object: this._login.guid ? "existing_login" : "new_login",
+            object: wasExistingLogin ? "existing_login" : "new_login",
             method: "cancel",
           });
           return;
@@ -198,7 +208,10 @@ export default class LoginItem extends HTMLElement {
 
 
 
-  setLogin(login) {
+
+
+
+  setLogin(login, {skipFocusChange} = {}) {
     this._login = login;
 
     this._form.reset();
@@ -212,7 +225,9 @@ export default class LoginItem extends HTMLElement {
 
     this._revealCheckbox.checked = false;
 
-    this._editButton.focus();
+    if (!skipFocusChange) {
+      this._editButton.focus();
+    }
     this.render();
   }
 
