@@ -14,7 +14,6 @@ module.exports = {
     "^devtools/shared/plural-form": `${__dirname}/fixtures/plural-form`,
     "^chrome": `${__dirname}/fixtures/Chrome`,
     "^Services": `${__dirname}/fixtures/Services`,
-    "^devtools/client/shared/unicode-url": `${__dirname}/fixtures/unicode-url`,
     
     "^devtools\\/(.*)": `${__dirname}/../../../../$1`,
   },
