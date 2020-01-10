@@ -527,7 +527,13 @@ class FunctionBox : public ObjectBox, public SharedContext {
 
   
   
-  void cleanupMemory() { lazyScriptData().reset(); }
+  void cleanupMemory() { clearDeferredAllocationInfo(); }
+
+  
+  void clearDeferredAllocationInfo() {
+    lazyScriptData().reset();
+    functionCreationData().reset();
+  }
 
   JSFunction* function() const { return &object()->as<JSFunction>(); }
 

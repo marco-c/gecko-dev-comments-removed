@@ -245,9 +245,6 @@ ParseContext::ParseContext(JSContext* cx, ParseContext*& parent,
     
     
     
-    
-    
-    
     if (parseInfo.treeHolder.isDeferred() &&
         !this->functionBox()->useAsmOrInsideUseAsm()) {
       tree.emplace(parseInfo.treeHolder);

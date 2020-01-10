@@ -6075,24 +6075,6 @@ static bool CheckFunction(ModuleValidator<Unit>& m) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  FunctionTree* tree = m.parser().getTreeHolder().getCurrentParent();
-  if (tree) {
-    if (!m.parser().publishDeferredItems(tree)) {
-      return false;
-    }
-
-    tree->visitRecursively(m.cx(), &m.parser(),
-                           [](ParserBase* parser, FunctionTree* tree) {
-                             tree->setFunctionBox(nullptr);
-                             return true;
-                           });
-  }
-
   if (!CheckFunctionHead(m, funNode)) {
     return false;
   }
@@ -7135,6 +7117,11 @@ static bool DoCompileAsmJS(JSContext* cx, AsmJSParser<Unit>& parser,
   
   MOZ_ASSERT(funbox->isInterpreted());
   funbox->clobberFunction(moduleFun);
+
+  
+  
+  
+  funbox->clearDeferredAllocationInfo();
 
   
   
