@@ -5,6 +5,7 @@
 
 
 #include "ScriptTrace.h"
+#include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
 namespace dom {
@@ -12,14 +13,7 @@ namespace script {
 
 static nsresult TestingDispatchEvent(nsIScriptElement* aScriptElement,
                                      const nsAString& aEventType) {
-  static bool sExposeTestInterfaceEnabled = false;
-  static bool sExposeTestInterfacePrefCached = false;
-  if (!sExposeTestInterfacePrefCached) {
-    sExposeTestInterfacePrefCached = true;
-    Preferences::AddBoolVarCache(&sExposeTestInterfaceEnabled,
-                                 "dom.expose_test_interfaces", false);
-  }
-  if (!sExposeTestInterfaceEnabled) {
+  if (!StaticPrefs::dom_expose_test_interfaces()) {
     return NS_OK;
   }
 
