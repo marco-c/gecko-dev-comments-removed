@@ -809,8 +809,19 @@ NS_IMETHODIMP nsExternalHelperAppService::DoContent(
     nsIInterfaceRequestor* aContentContext, bool aForceSave,
     nsIInterfaceRequestor* aWindowContext,
     nsIStreamListener** aStreamListener) {
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(aContentContext);
-  RefPtr<BrowsingContext> bc = window ? window->GetBrowsingContext() : nullptr;
+  
+  
+  
+  
+  
+  RefPtr<BrowsingContext> bc;
+  nsCOMPtr<nsIDOMWindow> domWindow = do_GetInterface(aContentContext);
+  if (nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_QueryInterface(domWindow)) {
+    bc = outerWindow->GetBrowsingContext();
+  } else if (nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+                 do_QueryInterface(domWindow)) {
+    bc = innerWindow->GetBrowsingContext();
+  }
 
   if (XRE_IsContentProcess()) {
     return DoContentContentProcessHelper(aMimeContentType, aRequest, bc,
