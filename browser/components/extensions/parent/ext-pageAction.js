@@ -22,33 +22,16 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/ExtensionPopups.jsm"
 );
 
-var { DefaultWeakMap } = ExtensionUtils;
-
-var { PageActionBase } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionActions.jsm"
+var { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
 );
+
+var { IconDetails, StartupCache } = ExtensionParent;
+
+var { DefaultWeakMap } = ExtensionUtils;
 
 
 let pageActionMap = new WeakMap();
-
-class PageAction extends PageActionBase {
-  constructor(extension, buttonDelegate) {
-    let tabContext = new TabContext(tab => this.getContextData(null));
-    super(tabContext, extension);
-    this.buttonDelegate = buttonDelegate;
-  }
-
-  updateOnChange(target) {
-    this.buttonDelegate.updateButton(target.ownerGlobal);
-  }
-
-  getTab(tabId) {
-    if (tabId !== null) {
-      return tabTracker.getTab(tabId);
-    }
-    return null;
-  }
-}
 
 this.pageAction = class extends ExtensionAPI {
   static for(extension) {
@@ -59,17 +42,56 @@ this.pageAction = class extends ExtensionAPI {
     let { extension } = this;
     let options = extension.manifest.page_action;
 
-    this.action = new PageAction(extension, this);
-    await this.action.loadIconData();
-
     let widgetId = makeWidgetId(extension.id);
     this.id = widgetId + "-page-action";
 
     this.tabManager = extension.tabManager;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let show, showMatches, hideMatches;
+    let show_matches = options.show_matches || [];
+    let hide_matches = options.hide_matches || [];
+    if (!show_matches.length) {
+      
+      show = false;
+    } else {
+      
+      const { restrictSchemes } = extension;
+      showMatches = new MatchPatternSet(show_matches, { restrictSchemes });
+      hideMatches = new MatchPatternSet(hide_matches, { restrictSchemes });
+    }
+
+    this.defaults = {
+      show,
+      showMatches,
+      hideMatches,
+      title: options.default_title || extension.name,
+      popup: options.default_popup || "",
+      pinned: options.pinned,
+    };
+
     this.browserStyle = options.browser_style;
 
+    this.tabContext = new TabContext(tab => this.defaults);
+
+    this.tabContext.on("location-change", this.handleLocationChange.bind(this)); 
+
     pageActionMap.set(extension, this);
+
+    this.defaults.icon = await StartupCache.get(
+      extension,
+      ["pageAction", "default_icon"],
+      () => this.normalize({ path: options.default_icon || "" })
+    );
 
     this.lastValues = new DefaultWeakMap(() => ({}));
 
@@ -100,10 +122,10 @@ this.pageAction = class extends ExtensionAPI {
         new PageActions.Action({
           id: widgetId,
           extensionID: extension.id,
-          title: this.action.getProperty(null, "title"),
-          iconURL: this.action.getProperty(null, "title"),
-          pinnedToUrlbar: this.action.getPinned(),
-          disabled: !this.action.getProperty(null, "enabled"),
+          title: this.defaults.title,
+          iconURL: this.defaults.icon,
+          pinnedToUrlbar: this.defaults.pinned,
+          disabled: !this.defaults.show,
           onCommand: (event, buttonNode) => {
             this.lastClickInfo = {
               button: event.button || 0,
@@ -129,10 +151,10 @@ this.pageAction = class extends ExtensionAPI {
 
       
       
-      if (this.action.getProperty(null, "enabled") === undefined) {
+      if (show === undefined) {
         for (let window of windowTracker.browserWindows()) {
           let tab = window.gBrowser.selectedTab;
-          if (this.action.isShownForTab(tab)) {
+          if (this.isShown(tab)) {
             this.updateButton(window);
           }
         }
@@ -142,7 +164,8 @@ this.pageAction = class extends ExtensionAPI {
 
   onShutdown(isAppShutdown) {
     pageActionMap.delete(this.extension);
-    this.action.onShutdown();
+
+    this.tabContext.shutdown();
 
     
     
@@ -156,13 +179,44 @@ this.pageAction = class extends ExtensionAPI {
 
   
   
+  getProperty(tab, prop) {
+    return this.tabContext.get(tab)[prop];
+  }
+
+  
+  
+  
+  
+  
+  setProperty(tab, prop, value) {
+    if (value != null) {
+      this.tabContext.get(tab)[prop] = value;
+    } else {
+      delete this.tabContext.get(tab)[prop];
+    }
+
+    if (tab.selected) {
+      this.updateButton(tab.ownerGlobal);
+    }
+  }
+
+  normalize(details, context = null) {
+    let icon = IconDetails.normalize(details, this.extension, context);
+    if (!Object.keys(icon).length) {
+      icon = null;
+    }
+    return icon;
+  }
+
+  
+  
   
   
   
   
   updateButton(window) {
     let tab = window.gBrowser.selectedTab;
-    let tabData = this.action.getContextData(tab);
+    let tabData = this.tabContext.get(tab);
     let last = this.lastValues.get(window);
 
     window.requestAnimationFrame(() => {
@@ -178,11 +232,10 @@ this.pageAction = class extends ExtensionAPI {
         last.title = title;
       }
 
-      let enabled =
-        tabData.enabled != null ? tabData.enabled : tabData.patternMatching;
-      if (last.enabled !== enabled) {
-        this.browserPageAction.setDisabled(!enabled, window);
-        last.enabled = enabled;
+      let show = tabData.show != null ? tabData.show : tabData.patternMatching;
+      if (last.show !== show) {
+        this.browserPageAction.setDisabled(!show, window);
+        last.show = show;
       }
 
       let icon = tabData.icon;
@@ -194,6 +247,28 @@ this.pageAction = class extends ExtensionAPI {
   }
 
   
+  
+  
+  
+  
+  isShown(tab) {
+    let tabData = this.tabContext.get(tab);
+
+    
+    if (tabData.show !== undefined) {
+      return tabData.show;
+    }
+
+    
+    if (tabData.patternMatching === undefined) {
+      let uri = tab.linkedBrowser.currentURI;
+      tabData.patternMatching =
+        tabData.showMatches.matches(uri) && !tabData.hideMatches.matches(uri);
+    }
+    return tabData.patternMatching;
+  }
+
+  
 
 
 
@@ -202,7 +277,7 @@ this.pageAction = class extends ExtensionAPI {
 
 
   triggerAction(window) {
-    if (this.action.isShownForTab(window.gBrowser.selectedTab)) {
+    if (this.isShown(window.gBrowser.selectedTab)) {
       this.lastClickInfo = { button: 0, modifiers: [] };
       this.handleClick(window);
     }
@@ -240,7 +315,7 @@ this.pageAction = class extends ExtensionAPI {
 
     ExtensionTelemetry.pageActionPopupOpen.stopwatchStart(extension, this);
     let tab = window.gBrowser.selectedTab;
-    let popupURL = this.action.getProperty(tab, "popup");
+    let popupURL = this.tabContext.get(tab).popup;
 
     this.tabManager.addActiveTabPermission(tab);
 
@@ -285,15 +360,48 @@ this.pageAction = class extends ExtensionAPI {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleLocationChange(eventType, tab, fromBrowse) {
+    if (fromBrowse === true) {
+      
+      this.tabContext.clear(tab);
+    } else if (fromBrowse === false) {
+      
+      let tabData = this.tabContext.get(tab);
+      if (tabData.patternMatching !== undefined) {
+        tabData.patternMatching = undefined;
+      }
+    }
+
+    if (tab.selected) {
+      
+      
+      this.isShown(tab);
+      this.updateButton(tab.ownerGlobal);
+    }
+  }
+
   getAPI(context) {
-    const { extension } = context;
+    let { extension } = context;
+
     const { tabManager } = extension;
-    const { action } = this;
+    const pageAction = this;
 
     return {
       pageAction: {
-        ...action.api(context),
-
         onClicked: new EventManager({
           context,
           name: "pageAction.onClicked",
@@ -305,16 +413,73 @@ this.pageAction = class extends ExtensionAPI {
               );
             };
 
-            this.on("click", listener);
+            pageAction.on("click", listener);
             return () => {
-              this.off("click", listener);
+              pageAction.off("click", listener);
             };
           },
         }).api(),
 
-        openPopup: () => {
+        show(tabId) {
+          let tab = tabTracker.getTab(tabId);
+          pageAction.setProperty(tab, "show", true);
+        },
+
+        hide(tabId) {
+          let tab = tabTracker.getTab(tabId);
+          pageAction.setProperty(tab, "show", false);
+        },
+
+        isShown(details) {
+          let tab = tabTracker.getTab(details.tabId);
+          return pageAction.isShown(tab);
+        },
+
+        setTitle(details) {
+          let tab = tabTracker.getTab(details.tabId);
+          pageAction.setProperty(tab, "title", details.title);
+        },
+
+        getTitle(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          let title = pageAction.getProperty(tab, "title");
+          return Promise.resolve(title);
+        },
+
+        setIcon(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          let icon = pageAction.normalize(details, context);
+
+          pageAction.setProperty(tab, "icon", icon);
+        },
+
+        setPopup(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          
+          
+          
+          
+          
+          let url = details.popup && context.uri.resolve(details.popup);
+          if (url && !context.checkLoadURL(url)) {
+            return Promise.reject({ message: `Access denied for URL ${url}` });
+          }
+          pageAction.setProperty(tab, "popup", url);
+        },
+
+        getPopup(details) {
+          let tab = tabTracker.getTab(details.tabId);
+
+          let popup = pageAction.getProperty(tab, "popup");
+          return Promise.resolve(popup);
+        },
+
+        openPopup: function() {
           let window = windowTracker.topWindow;
-          this.triggerAction(window);
+          pageAction.triggerAction(window);
         },
       },
     };
