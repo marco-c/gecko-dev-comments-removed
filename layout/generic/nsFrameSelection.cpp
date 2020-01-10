@@ -1677,7 +1677,7 @@ void nsFrameSelection::CommonPageMove(bool aForward, bool aExtend,
     }
   }
 
-  if (scrollableFrame && scrolledFrame == frameToClick) {
+  if (scrollableFrame) {
     
     
     if (aForward) {
