@@ -24,6 +24,8 @@ let sdr = Cc["@mozilla.org/security/sdr;1"].getService(Ci.nsISecretDecoderRing);
 
 const gClientAuthDialogs = {
   _state: DialogState.ASSERT_NOT_CALLED,
+  _rememberClientAuthCertificate: false,
+  _chooseCertificateCalled: false,
 
   set state(newState) {
     info(`old state: ${this._state}`);
@@ -35,8 +37,25 @@ const gClientAuthDialogs = {
     return this._state;
   },
 
+  set rememberClientAuthCertificate(value) {
+    this._rememberClientAuthCertificate = value;
+  },
+
+  get rememberClientAuthCertificate() {
+    return this._rememberClientAuthCertificate;
+  },
+
+  get chooseCertificateCalled() {
+    return this._chooseCertificateCalled;
+  },
+
+  set chooseCertificateCalled(value) {
+    this._chooseCertificateCalled = value;
+  },
+
   chooseCertificate(ctx, hostname, port, organization, issuerOrg, certList,
                     selectedIndex) {
+    this.chooseCertificateCalled = true;
     Assert.notEqual(this.state, DialogState.ASSERT_NOT_CALLED,
                     "chooseCertificate() should be called only when expected");
 
@@ -44,7 +63,7 @@ const gClientAuthDialogs = {
     Assert.notEqual(caud, null,
                     "nsIClientAuthUserDecision should be queryable from the " +
                     "given context");
-    caud.rememberClientAuthCertificate = false;
+    caud.rememberClientAuthCertificate = this.rememberClientAuthCertificate;
 
     Assert.equal(hostname, "requireclientcert.example.com",
                  "Hostname should be 'requireclientcert.example.com'");
@@ -92,32 +111,46 @@ add_task(async function setup() {
 
 
 
-async function testHelper(prefValue, expectedURL) {
+
+
+async function testHelper(prefValue, expectedURL, options = undefined) {
+  gClientAuthDialogs.chooseCertificateCalled = false;
   await SpecialPowers.pushPrefEnv({"set": [
     ["security.default_personal_cert", prefValue],
   ]});
 
-  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser,
+  let win = await BrowserTestUtils.openNewBrowserWindow(options);
+
+  await BrowserTestUtils.loadURI(win.gBrowser.selectedBrowser,
                                  "https://requireclientcert.example.com:443");
 
   
   
   let loadedURL = await Promise.race([
-    BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser),
-    BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser),
+    BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser),
+    BrowserTestUtils.waitForErrorPage(win.gBrowser.selectedBrowser),
   ]);
   Assert.equal(expectedURL, loadedURL, "Expected and actual URLs should match");
+  Assert.equal(gClientAuthDialogs.chooseCertificateCalled,
+               prefValue == "Ask Every Time",
+               "chooseCertificate should have been called if we were expecting it to be called");
+
+  await win.close();
 
   
-  sdr.logoutAndTeardown();
+  
+  
+  sdr.logout();
 }
 
 
 
 add_task(async function testCertChosenAutomatically() {
   gClientAuthDialogs.state = DialogState.ASSERT_NOT_CALLED;
-  await testHelper("Select Automatically",
-                    "https://requireclientcert.example.com/");
+  await testHelper("Select Automatically", "https://requireclientcert.example.com/");
+  
+  
+  sdr.logoutAndTeardown();
 });
 
 
@@ -125,11 +158,33 @@ add_task(async function testCertChosenAutomatically() {
 add_task(async function testCertNotChosenByUser() {
   gClientAuthDialogs.state = DialogState.RETURN_CERT_NOT_SELECTED;
   await testHelper("Ask Every Time", undefined);
+  sdr.logoutAndTeardown();
 });
 
 
 add_task(async function testCertChosenByUser() {
   gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
-  await testHelper("Ask Every Time",
-                    "https://requireclientcert.example.com/");
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
+  sdr.logoutAndTeardown();
+});
+
+
+
+
+
+
+
+
+
+add_task(async function testClearPrivateBrowsingState() {
+  gClientAuthDialogs.rememberClientAuthCertificate = true;
+  gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/", {private: true});
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/", {private: true});
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
+  
+  
+  
+  
+  sdr.logoutAndTeardown();
 });
