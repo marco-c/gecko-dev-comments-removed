@@ -232,6 +232,14 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   std::set<std::string> mRegisteredMDNSHostnames;
 
+  
+  struct PendingIceCandidate {
+    std::vector<std::string> mTokenizedCandidate;
+    std::string mTransportId;
+    std::string mUfrag;
+  };
+  std::map<std::string, std::list<PendingIceCandidate>> mQueriedMDNSHostnames;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PeerConnectionMedia)
 };
 
