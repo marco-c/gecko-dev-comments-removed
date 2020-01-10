@@ -831,6 +831,13 @@ impl Tile {
         
         
         
+        if !self.is_valid && !supports_dirty_rects {
+            self.dirty_rect = self.rect;
+        }
+
+        
+        
+        
         
         
         let is_simple_prim =
