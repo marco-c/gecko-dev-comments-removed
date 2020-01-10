@@ -2699,18 +2699,43 @@ var SessionStoreInternal = {
     let resultPrincipal = Services.scriptSecurityManager.getChannelResultPrincipal(
       channel
     );
+
+    const isCOOPSwitch =
+      E10SUtils.useCrossOriginOpenerPolicy() &&
+      switchRequestor.hasCrossOriginOpenerPolicyMismatch();
+
+    let preferredRemoteType = currentRemoteType;
+    if (
+      switchRequestor.crossOriginOpenerPolicy ==
+      Ci.nsILoadInfo.OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP
+    ) {
+      
+      
+      
+      preferredRemoteType =
+        E10SUtils.WEB_REMOTE_COOP_COEP_TYPE_PREFIX + resultPrincipal.siteOrigin;
+    } else if (isCOOPSwitch) {
+      
+      
+      preferredRemoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
+    }
+    debug(
+      `[process-switch]: currentRemoteType (${currentRemoteType}) preferredRemoteType: ${preferredRemoteType}`
+    );
+
     let remoteType = E10SUtils.getRemoteTypeForPrincipal(
       resultPrincipal,
       true,
       useRemoteSubframes,
-      currentRemoteType,
+      preferredRemoteType,
       currentPrincipal
     );
-    if (
-      currentRemoteType == remoteType &&
-      (!E10SUtils.useCrossOriginOpenerPolicy() ||
-        !switchRequestor.hasCrossOriginOpenerPolicyMismatch())
-    ) {
+
+    debug(
+      `[process-switch]: ${currentRemoteType}, ${remoteType}, ${isCOOPSwitch}`
+    );
+
+    if (currentRemoteType == remoteType && !isCOOPSwitch) {
       debug(`[process-switch]: type (${remoteType}) is compatible - ignoring`);
       return;
     }
@@ -2722,10 +2747,6 @@ var SessionStoreInternal = {
       debug(`[process-switch]: non-remote source/target - ignoring`);
       return;
     }
-
-    const isCOOPSwitch =
-      E10SUtils.useCrossOriginOpenerPolicy() &&
-      switchRequestor.hasCrossOriginOpenerPolicyMismatch();
 
     
     

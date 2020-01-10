@@ -7289,6 +7289,23 @@ nsHttpChannel::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsHttpChannel::GetCrossOriginOpenerPolicy(
+    nsILoadInfo::CrossOriginOpenerPolicy* aPolicy) {
+  MOZ_ASSERT(aPolicy);
+  if (!aPolicy) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  
+  
+  
+  if (!mComputedCrossOriginOpenerPolicy.isSome()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  *aPolicy = mComputedCrossOriginOpenerPolicy.value();
+  return NS_OK;
+}
+
 nsresult nsHttpChannel::StartCrossProcessRedirect() {
   nsresult rv;
 
@@ -7379,7 +7396,8 @@ nsresult nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch() {
   nsILoadInfo::CrossOriginOpenerPolicy documentPolicy = ctx->GetOpenerPolicy();
   nsILoadInfo::CrossOriginOpenerPolicy resultPolicy =
       nsILoadInfo::OPENER_POLICY_NULL;
-  Unused << GetCrossOriginOpenerPolicy(documentPolicy, &resultPolicy);
+  Unused << ComputeCrossOriginOpenerPolicy(documentPolicy, &resultPolicy);
+  mComputedCrossOriginOpenerPolicy.emplace(resultPolicy);
 
   
   
