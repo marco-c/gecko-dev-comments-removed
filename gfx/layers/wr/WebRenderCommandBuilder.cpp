@@ -2103,14 +2103,6 @@ static bool PaintItemByDrawTarget(nsDisplayItem* aItem, gfx::DrawTarget* aDT,
   return isInvalidated;
 }
 
-
-
-
-
-
-
-
-
 already_AddRefed<WebRenderFallbackData>
 WebRenderCommandBuilder::GenerateFallbackData(
     nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
@@ -2191,10 +2183,6 @@ WebRenderCommandBuilder::GenerateFallbackData(
   
   aImageRect = visibleRect / layerScale;
 
-  
-  
-  visibleRect -= dtRect.TopLeft();
-
   nsDisplayItemGeometry* geometry = fallbackData->mGeometry;
 
   bool needPaint = true;
@@ -2268,14 +2256,16 @@ WebRenderCommandBuilder::GenerateFallbackData(
       RefPtr<gfx::DrawTarget> dummyDt = gfx::Factory::CreateDrawTarget(
           gfx::BackendType::SKIA, gfx::IntSize(1, 1), format);
       RefPtr<gfx::DrawTarget> dt = gfx::Factory::CreateRecordingDrawTarget(
-          recorder, dummyDt, visibleRect.ToUnknownRect());
+          recorder, dummyDt, dtRect.ToUnknownRect());
       if (!fallbackData->mBasicLayerManager) {
         fallbackData->mBasicLayerManager =
             new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
       }
+      
+      
       bool isInvalidated = PaintItemByDrawTarget(
-          aItem, dt, (dtRect/layerScale).TopLeft(),
-           dt->GetRect(), aDisplayListBuilder,
+          aItem, dt, LayoutDevicePoint(0, 0),
+           visibleRect.ToUnknownRect(), aDisplayListBuilder,
           fallbackData->mBasicLayerManager, scale, highlight);
       if (!isInvalidated) {
         if (!aItem->GetBuildingRect().IsEqualInterior(
@@ -2285,10 +2275,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
           isInvalidated = true;
         }
       }
-
-      
-      
-      recorder->FlushItem((dtRect - dtRect.TopLeft()).ToUnknownRect());
+      recorder->FlushItem(visibleRect.ToUnknownRect());
       recorder->Finish();
 
       if (!validFonts) {
@@ -2347,6 +2334,8 @@ WebRenderCommandBuilder::GenerateFallbackData(
             fallbackData->mBasicLayerManager =
                 new BasicLayerManager(mManager->GetWidget());
           }
+          
+          
           isInvalidated = PaintItemByDrawTarget(
               aItem, dt,
                aImageRect.TopLeft(),
