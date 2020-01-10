@@ -1,5 +1,19 @@
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const CDP = require("chrome-remote-interface");
 
 async function demo() {
@@ -7,13 +21,28 @@ async function demo() {
   try {
     client = await CDP();
     const {Log, Network, Page, Runtime} = client;
-    let { result } = await Runtime.evaluate({expression: "this.obj = {foo:true}; this.obj"});
-    console.log("1", result);
-    ({ result } = await Runtime.evaluate({expression: "this.obj"}));
-    console.log("2", result);
-    ({ result } = await Runtime.evaluate({expression: "this.obj.foo"}));
-    console.log("3", result);
 
+    
+    
+    Runtime.enable();
+    const { context } = await Runtime.executionContextCreated();
+    const contextId = context.id;
+
+    let { result } = await Runtime.evaluate({
+      expression: "this.obj = {foo:true}; this.obj",
+      contextId,
+    });
+    console.log("1", result);
+    ({ result } = await Runtime.evaluate({
+      expression: "this.obj",
+      contextId,
+    }));
+    console.log("2", result);
+    ({ result } = await Runtime.evaluate({
+      expression: "this.obj.foo",
+      contextId,
+    }));
+    console.log("3", result);
 
     
     Log.enable();
@@ -26,8 +55,9 @@ async function demo() {
     
     await Page.enable();
 
+    const onLoad = Page.loadEventFired();
     await Page.navigate({url: "data:text/html,test-page<script>console.log('foo');</script><script>'</script>"});
-    await Page.loadEventFired();
+    await onLoad;
   } catch (e) {
     console.error(e);
   } finally {
