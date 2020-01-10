@@ -2911,89 +2911,34 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
   PR_PL(("----\n"));
 
-  
-  
-  
-  
-  
-  if (!printData->mIsParentAFrameSet ||
-      printRangeType == nsIPrintSettings::kRangeSelection) {
+  bool treatAsNonFrameset = !printData->mIsParentAFrameSet ||
+                            printRangeType == nsIPrintSettings::kRangeSelection;
+
+  if (treatAsNonFrameset &&
+      (printRangeType == nsIPrintSettings::kRangeAllPages ||
+       printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange)) {
+    SetPrintPO(printData->mPrintObject.get(), true);
+
     
-    if (printRangeType == nsIPrintSettings::kRangeAllPages ||
-        printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange) {
-      SetPrintPO(printData->mPrintObject.get(), true);
-
-      
-      
-      if (printData->mPrintObject->mKids.Length() > 0) {
-        for (const UniquePtr<nsPrintObject>& po :
-             printData->mPrintObject->mKids) {
-          NS_ASSERTION(po, "nsPrintObject can't be null!");
-          SetPrintAsIs(po.get());
-        }
-
-        
-        printData->mPrintFrameType = nsIPrintSettings::kFramesAsIs;
+    
+    if (printData->mPrintObject->mKids.Length() > 0) {
+      for (const UniquePtr<nsPrintObject>& po :
+           printData->mPrintObject->mKids) {
+        NS_ASSERTION(po, "nsPrintObject can't be null!");
+        SetPrintAsIs(po.get());
       }
-      PR_PL(("PrintFrameType:     %s \n",
-             gPrintFrameTypeStr[printData->mPrintFrameType]));
-      PR_PL(
-          ("HowToEnableFrameUI: %s \n", gFrameHowToEnableStr[printHowEnable]));
-      PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
-      return NS_OK;
-    }
 
-    
-    
-    if (printRangeType == nsIPrintSettings::kRangeSelection) {
       
-      if (printData->mCurrentFocusWin) {
-        
-        nsPrintObject* po = FindPrintObjectByDOMWin(
-            printData->mPrintObject.get(), printData->mCurrentFocusWin);
-        if (po) {
-          
-          SetPrintAsIs(po);
-
-          
-          SetPrintPO(po, true);
-
-          
-          
-          
-          
-          
-          
-          
-          nsPIDOMWindowOuter* domWin =
-              po->mDocument->GetOriginalDocument()->GetWindow();
-          if (!IsThereARangeSelection(domWin)) {
-            printRangeType = nsIPrintSettings::kRangeAllPages;
-            printData->mPrintSettings->SetPrintRange(printRangeType);
-          }
-          PR_PL(("PrintFrameType:     %s \n",
-                 gPrintFrameTypeStr[printData->mPrintFrameType]));
-          PR_PL(("HowToEnableFrameUI: %s \n",
-                 gFrameHowToEnableStr[printHowEnable]));
-          PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
-          return NS_OK;
-        }
-      } else {
-        for (uint32_t i = 0; i < printData->mPrintDocList.Length(); i++) {
-          nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
-          NS_ASSERTION(po, "nsPrintObject can't be null!");
-          nsCOMPtr<nsPIDOMWindowOuter> domWin = po->mDocShell->GetWindow();
-          if (IsThereARangeSelection(domWin)) {
-            printData->mCurrentFocusWin = domWin.forget();
-            SetPrintPO(po, true);
-            break;
-          }
-        }
-        return NS_OK;
-      }
+      printData->mPrintFrameType = nsIPrintSettings::kFramesAsIs;
     }
+    PR_PL(("PrintFrameType:     %s \n",
+           gPrintFrameTypeStr[printData->mPrintFrameType]));
+    PR_PL(("HowToEnableFrameUI: %s \n", gFrameHowToEnableStr[printHowEnable]));
+    PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
+    return NS_OK;
   }
 
+  
   
   if (printRangeType == nsIPrintSettings::kRangeSelection) {
     
@@ -3015,7 +2960,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
         
         
         
-        nsCOMPtr<nsPIDOMWindowOuter> domWin =
+        nsPIDOMWindowOuter* domWin =
             po->mDocument->GetOriginalDocument()->GetWindow();
         if (!IsThereARangeSelection(domWin)) {
           printRangeType = nsIPrintSettings::kRangeAllPages;
@@ -3028,6 +2973,18 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
         PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
         return NS_OK;
       }
+    } else if (treatAsNonFrameset) {
+      for (uint32_t i = 0; i < printData->mPrintDocList.Length(); i++) {
+        nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
+        NS_ASSERTION(po, "nsPrintObject can't be null!");
+        nsCOMPtr<nsPIDOMWindowOuter> domWin = po->mDocShell->GetWindow();
+        if (IsThereARangeSelection(domWin)) {
+          printData->mCurrentFocusWin = domWin.forget();
+          SetPrintPO(po, true);
+          break;
+        }
+      }
+      return NS_OK;
     }
   }
 
