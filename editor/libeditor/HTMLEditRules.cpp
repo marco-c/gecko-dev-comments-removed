@@ -10048,7 +10048,7 @@ nsresult HTMLEditRules::ConfirmSelectionInBody() {
   
   nsINode* temp = selectionStartPoint.GetContainer();
   while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
-    temp = temp->GetParentOrHostNode();
+    temp = temp->GetParentOrShadowHostNode();
   }
 
   
@@ -10074,7 +10074,7 @@ nsresult HTMLEditRules::ConfirmSelectionInBody() {
   
   temp = selectionEndPoint.GetContainer();
   while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
-    temp = temp->GetParentOrHostNode();
+    temp = temp->GetParentOrShadowHostNode();
   }
 
   

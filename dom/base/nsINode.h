@@ -884,11 +884,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsINode* GetParentNode() const { return mParent; }
 
-  
-
-
-
-  nsINode* GetParentOrHostNode() const;
+  nsINode* GetParentOrShadowHostNode() const;
 
   enum FlattenedParentType { eNotForStyle, eForStyle };
 
