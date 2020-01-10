@@ -5,7 +5,7 @@
 
 
 
-const TEST_URI = "data:text/html;charset=utf-8,default-test-page";
+const TEST_URL = toDataURL("default-test-page");
 
 add_task(async function() {
   
@@ -16,7 +16,7 @@ add_task(async function() {
   
   
   
-  const tab = gBrowser.addTab(TEST_URI, {
+  const tab = gBrowser.addTab(TEST_URL, {
     skipAnimation: true,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
@@ -25,7 +25,7 @@ add_task(async function() {
 
   let targets = await getTargets(CDP);
   ok(
-    targets.some(target => target.url == TEST_URI),
+    targets.some(target => target.url == TEST_URL),
     "Found the tab in target list"
   );
 
@@ -33,7 +33,7 @@ add_task(async function() {
 
   targets = await getTargets(CDP);
   ok(
-    !targets.some(target => target.url == TEST_URI),
+    !targets.some(target => target.url == TEST_URL),
     "Tab has been removed from the target list"
   );
 

@@ -5,8 +5,6 @@
 
 
 
-const TEST_URI = "data:text/html;charset=utf-8,<input type=text>";
-
 
 const KEYCODES = {
   a: 65,
@@ -37,7 +35,7 @@ add_task(async function() {
     SpecialPowers.pushPrefEnv(options, resolve);
   });
 
-  const { client, tab } = await setupTestForUri(TEST_URI);
+  const { client, tab } = await setupTestForUri(toDataURL("<input>"));
   is(gBrowser.selectedTab, tab, "Selected tab is the target tab");
 
   const { Input } = client;
