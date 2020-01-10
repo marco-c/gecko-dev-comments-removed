@@ -107,6 +107,8 @@ class WindowGlobalParent final : public WindowGlobalActor,
                                                   uint64_t aPendingSwitchId,
                                                   ErrorResult& aRv);
 
+  already_AddRefed<Promise> GetSecurityInfo(ErrorResult& aRv);
+
   
   
   WindowGlobalParent(const WindowGlobalInit& aInit, bool aInProcess);
