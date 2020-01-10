@@ -69,14 +69,31 @@ const ABUSE_REASONS = (window.ABUSE_REPORT_REASONS = {
   },
 });
 
+
+
+
+const REASON_L10N_STRING_MAPPING = {
+  "abuse-report-damage-reason": "abuse-report-damage-reason-v2",
+  "abuse-report-spam-reason": "abuse-report-spam-reason-v2",
+  "abuse-report-settings-reason": "abuse-report-settings-reason-v2",
+  "abuse-report-deceptive-reason": "abuse-report-deceptive-reason-v2",
+  "abuse-report-broken-reason-extension":
+    "abuse-report-broken-reason-extension-v2",
+  "abuse-report-broken-reason-theme": "abuse-report-broken-reason-theme-v2",
+  "abuse-report-policy-reason": "abuse-report-policy-reason-v2",
+  "abuse-report-unwanted-reason": "abuse-report-unwanted-reason-v2",
+};
+
 function getReasonL10nId(reason, addonType) {
-  let l10nId = `abuse-report-${reason}-reason`;
+  let reasonId = `abuse-report-${reason}-reason`;
   
   
   if (ABUSE_REASONS[reason].hasAddonTypeL10nId) {
-    l10nId += `-${addonType}`;
+    reasonId += `-${addonType}`;
   }
-  return l10nId;
+  
+  
+  return REASON_L10N_STRING_MAPPING[reasonId] || reasonId;
 }
 
 function getSuggestionsTemplate({ addonType, reason, supportURL }) {
