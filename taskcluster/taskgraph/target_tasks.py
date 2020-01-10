@@ -203,10 +203,17 @@ def target_tasks_ash(full_task_graph, parameters, graph_config):
         
         if platform == 'linux64-asan' and attr['build_type'] == 'debug':
             return False
-        
+
         if attr.get('unittest_suite'):
+            
             if not attr.get('e10s'):
                 return False
+
+            
+            for p in ('-qr',):
+                if p in attr['test_platform']:
+                    return False
+
         
         if attr['kind'] == 'upload-symbols':
             return False
