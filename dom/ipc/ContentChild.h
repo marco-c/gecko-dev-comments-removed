@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_ContentChild_h
 #define mozilla_dom_ContentChild_h
@@ -50,17 +50,17 @@ class BenchmarkStorageChild;
 using mozilla::loader::PScriptCacheChild;
 
 #if !defined(XP_WIN)
-// Returns whether or not the currently running build is an unpackaged
-// developer build. This check is implemented by looking for omni.ja in the
-// the obj/dist dir. We use this routine to detect when the build dir will
-// use symlinks to the repo and object dir. On Windows, dev builds don't
-// use symlinks.
+
+
+
+
+
 bool IsDevelopmentBuild();
-#endif /* !XP_WIN */
+#endif 
 
 namespace ipc {
 class URIParams;
-}  // namespace ipc
+}  
 
 namespace dom {
 
@@ -323,7 +323,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvNotifyVisited(nsTArray<VisitedQueryResult>&&);
 
-  // auto remove when alertfinished is received.
+  
   nsresult AddRemoteAlertObserver(const nsString& aData,
                                   nsIObserver* aObserver);
 
@@ -366,8 +366,8 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvGeolocationUpdate(nsIDOMGeoPosition* aPosition);
 
-  // MOZ_CAN_RUN_SCRIPT_BOUNDARY because we don't have MOZ_CAN_RUN_SCRIPT bits
-  // in IPC code yet.
+  
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvGeolocationError(const uint16_t& errorCode);
 
@@ -404,8 +404,8 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvRemoteType(const nsString& aRemoteType);
 
-  // Call RemoteTypePrefix() on the result to remove URIs if you want to use
-  // this for telemetry.
+  
+  
   const nsAString& GetRemoteType() const;
 
   mozilla::ipc::IPCResult RecvInitServiceWorkers(
@@ -487,8 +487,8 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvNetworkLinkTypeChange(const uint32_t& aType);
   uint32_t NetworkLinkType() const { return mNetworkLinkType; }
 
-  // Get the directory for IndexedDB files. We query the parent for this and
-  // cache the value
+  
+  
   nsString& GetIndexedDBPath();
 
   ContentParentId GetID() const { return mID; }
@@ -535,13 +535,13 @@ class ContentChild final : public PContentChild,
   bool DeallocPContentPermissionRequestChild(
       PContentPermissionRequestChild* actor);
 
-  // Windows specific - set up audio session
+  
   mozilla::ipc::IPCResult RecvSetAudioSessionData(const nsID& aId,
                                                   const nsString& aDisplayName,
                                                   const nsString& aIconPath);
 
-  // GetFiles for WebKit/Blink FileSystem API and Directory API must run on the
-  // parent process.
+  
+  
   void CreateGetFilesRequest(const nsAString& aDirectoryPath,
                              bool aRecursiveFlag, nsID& aUUID,
                              GetFilesHelperChild* aChild);
@@ -596,20 +596,20 @@ class ContentChild final : public PContentChild,
 
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   bool SendGetA11yContentId();
-#endif  // defined(XP_WIN) && defined(ACCESSIBILITY)
+#endif  
 
-  // Get a reference to the font list passed from the chrome process,
-  // for use during gfx initialization.
+  
+  
   nsTArray<mozilla::dom::SystemFontListEntry>& SystemFontList() {
     return mFontList;
   }
 
-  // PURLClassifierChild
+  
   PURLClassifierChild* AllocPURLClassifierChild(const Principal& aPrincipal,
                                                 bool* aSuccess);
   bool DeallocPURLClassifierChild(PURLClassifierChild* aActor);
 
-  // PURLClassifierLocalChild
+  
   PURLClassifierLocalChild* AllocPURLClassifierLocalChild(
       const URIParams& aUri,
       const nsTArray<IPCURLClassifierFeature>& aFeatures);
@@ -624,14 +624,21 @@ class ContentChild final : public PContentChild,
   bool DeallocPSessionStorageObserverChild(
       PSessionStorageObserverChild* aActor);
 
+  PSHEntryChild* AllocPSHEntryChild(const PSHEntryOrSharedID& aEntryOrSharedID);
+  void DeallocPSHEntryChild(PSHEntryChild*);
+
+  PSHistoryChild* AllocPSHistoryChild(BrowsingContext* aContext);
+
+  void DeallocPSHistoryChild(PSHistoryChild* aActor);
+
   nsTArray<LookAndFeelInt>& LookAndFeelCache() { return mLookAndFeelCache; }
 
-  /**
-   * Helper function for protocols that use the GPU process when available.
-   * Overrides FatalError to just be a warning when communicating with the
-   * GPU process since we don't want to crash the content process when the
-   * GPU process crashes.
-   */
+  
+
+
+
+
+
   static void FatalErrorIfNotUsingGPUProcess(const char* const aErrorMsg,
                                              base::ProcessId aOtherPid);
 
@@ -673,7 +680,7 @@ class ContentChild final : public PContentChild,
   void HoldBrowsingContextGroup(BrowsingContextGroup* aBCG);
   void ReleaseBrowsingContextGroup(BrowsingContextGroup* aBCG);
 
-  // See `BrowsingContext::mEpochs` for an explanation of this field.
+  
   uint64_t GetBrowsingContextFieldEpoch() const {
     return mBrowsingContextFieldEpoch;
   }
@@ -682,11 +689,13 @@ class ContentChild final : public PContentChild,
     return mBrowsingContextFieldEpoch;
   }
 
+  mozilla::ipc::IPCResult RecvDestroySHEntrySharedState(const uint64_t& aID);
+
 #ifdef NIGHTLY_BUILD
-  // Fetch the current number of pending input events.
-  //
-  // NOTE: This method performs an atomic read, and is safe to call from all
-  // threads.
+  
+  
+  
+  
   uint32_t GetPendingInputEvents() { return mPendingInputEvents; }
 #endif
 
@@ -763,32 +772,32 @@ class ContentChild final : public PContentChild,
 
   nsTArray<nsString> mAvailableDictionaries;
 
-  // Temporary storage for a list of available fonts, passed from the
-  // parent process and used to initialize gfx in the child. Currently used
-  // only on MacOSX and Linux.
+  
+  
+  
   nsTArray<mozilla::dom::SystemFontListEntry> mFontList;
-  // Temporary storage for nsXPLookAndFeel flags.
+  
   nsTArray<LookAndFeelInt> mLookAndFeelCache;
 
-  /**
-   * An ID unique to the process containing our corresponding
-   * content parent.
-   *
-   * We expect our content parent to set this ID immediately after opening a
-   * channel to us.
-   */
+  
+
+
+
+
+
+
   ContentParentId mID;
 
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
-  /**
-   * The thread ID of the main thread in the chrome process.
-   */
+  
+
+
   uint32_t mMainChromeTid;
 
-  /**
-   * This is an a11y-specific unique id for the content process that is
-   * generated by the chrome process.
-   */
+  
+
+
+
   uint32_t mMsaaID;
 #endif
 
@@ -817,9 +826,9 @@ class ContentChild final : public PContentChild,
   nsCOMPtr<nsIFile> mProfileDir;
 #endif
 
-  // Hashtable to keep track of the pending GetFilesHelper objects.
-  // This GetFilesHelperChild objects are removed when RecvGetFilesResponse is
-  // received.
+  
+  
+  
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelperChild> mGetFilesPendingRequests;
 
   nsClassHashtable<nsUint64HashKey, AnonymousTemporaryFileCallback>
@@ -828,8 +837,8 @@ class ContentChild final : public PContentChild,
   mozilla::Atomic<bool> mShuttingDown;
 
 #ifdef NIGHTLY_BUILD
-  // NOTE: This member is atomic because it can be accessed from
-  // off-main-thread.
+  
+  
   mozilla::Atomic<uint32_t> mPendingInputEvents;
 #endif
 
@@ -837,13 +846,13 @@ class ContentChild final : public PContentChild,
 
   nsTArray<RefPtr<BrowsingContextGroup>> mBrowsingContextGroupHolder;
 
-  // See `BrowsingContext::mEpochs` for an explanation of this field.
+  
   uint64_t mBrowsingContextFieldEpoch = 0;
 
   DISALLOW_EVIL_CONSTRUCTORS(ContentChild);
 };
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_dom_ContentChild_h
+#endif  

@@ -55,6 +55,8 @@
 #include "mozilla/dom/PushNotifier.h"
 #include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
+#include "mozilla/dom/SHEntryChild.h"
+#include "mozilla/dom/SHistoryChild.h"
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/URLClassifierChild.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -3476,6 +3478,40 @@ bool ContentChild::DeallocPSessionStorageObserverChild(
   return true;
 }
 
+PSHEntryChild* ContentChild::AllocPSHEntryChild(
+    const PSHEntryOrSharedID& aEntryOrSharedID) {
+  
+  
+  
+  RefPtr<SHEntryChild> child;
+  if (aEntryOrSharedID.type() == PSHEntryOrSharedID::Tuint64_t) {
+    child = new SHEntryChild(aEntryOrSharedID.get_uint64_t());
+  } else {
+    child = new SHEntryChild(
+        static_cast<const SHEntryChild*>(aEntryOrSharedID.get_PSHEntryChild()));
+  }
+  return child.forget().take();
+}
+
+void ContentChild::DeallocPSHEntryChild(PSHEntryChild* aActor) {
+  
+  
+  RefPtr<SHEntryChild> child(dont_AddRef(static_cast<SHEntryChild*>(aActor)));
+}
+
+PSHistoryChild* ContentChild::AllocPSHistoryChild(BrowsingContext* aContext) {
+  
+  
+  
+  return do_AddRef(new SHistoryChild(aContext)).take();
+}
+
+void ContentChild::DeallocPSHistoryChild(PSHistoryChild* aActor) {
+  
+  
+  RefPtr<SHistoryChild> child(dont_AddRef(static_cast<SHistoryChild*>(aActor)));
+}
+
 mozilla::ipc::IPCResult ContentChild::RecvActivate(PBrowserChild* aTab) {
   BrowserChild* tab = static_cast<BrowserChild*>(aTab);
   return tab->RecvActivate();
@@ -3713,6 +3749,12 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateMediaAction(
   if (window) {
     window->UpdateMediaAction(aAction);
   }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvDestroySHEntrySharedState(
+    const uint64_t& aID) {
+  SHEntryChildShared::Remove(aID);
   return IPC_OK();
 }
 

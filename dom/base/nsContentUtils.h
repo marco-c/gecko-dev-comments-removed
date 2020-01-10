@@ -3097,6 +3097,13 @@ class nsContentUtils {
 
 
 
+
+  static uint64_t GenerateProcessSpecificId(uint64_t aId);
+
+  
+
+
+
   static uint64_t GenerateWindowId();
 
   

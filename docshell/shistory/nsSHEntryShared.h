@@ -27,27 +27,117 @@ class nsILayoutHistoryState;
 class nsDocShellEditorData;
 class nsIMutableArray;
 
+
+
+
+
+
+
+
+
+
+
 namespace mozilla {
 namespace dom {
 class Document;
-}
+
+
+
+
+
+class SHEntrySharedParentState {
+ public:
+  explicit SHEntrySharedParentState(uint64_t aID);
+
+  uint64_t GetID() const { return mID; }
+
+ protected:
+  friend class nsSHEntry;
+
+  virtual ~SHEntrySharedParentState();
+  NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(SHEntrySharedParentState,
+                                                  Destroy())
+
+  virtual void Destroy() { delete this; }
+
+  void CopyFrom(SHEntrySharedParentState* aSource);
+
+  
+  
+  nsID mDocShellID;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
+  nsCOMPtr<nsIPrincipal> mStoragePrincipalToInherit;
+  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCString mContentType;
+
+  nsIntRect mViewerBounds;
+
+  uint32_t mCacheKey;
+  uint32_t mLastTouched;
+
+  
+  
+  uint64_t mID;
+  nsWeakPtr mSHistory;
+
+  bool mIsFrameNavigation;
+  bool mSticky;
+  bool mDynamicallyCreated;
+
+  
+  bool mExpired;
+};
+
+
+
+
+
+class SHEntrySharedChildState {
+ protected:
+  SHEntrySharedChildState();
+
+  void CopyFrom(SHEntrySharedChildState* aSource);
+
+ public:
+  
+  
+  nsCOMArray<nsIDocShellTreeItem> mChildShells;
+
+  
+  
+  nsCOMPtr<nsIContentViewer> mContentViewer;
+  RefPtr<mozilla::dom::Document> mDocument;
+  
+  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
+  nsCOMPtr<nsISupports> mWindowState;
+  
+  nsCOMPtr<nsIMutableArray> mRefreshURIList;
+  nsExpirationState mExpirationState;
+  nsAutoPtr<nsDocShellEditorData> mEditorData;
+
+  
+  bool mSaveLayoutState;
+};
+
+}  
 }  
 
 
 
 
 
-
-
 class nsSHEntryShared final : public nsIBFCacheEntry,
-                              public nsStubMutationObserver {
+                              public nsStubMutationObserver,
+                              public mozilla::dom::SHEntrySharedParentState,
+                              public mozilla::dom::SHEntrySharedChildState {
  public:
   static void EnsureHistoryTracker();
   static void Shutdown();
 
-  nsSHEntryShared();
+  explicit nsSHEntryShared(uint64_t aID);
 
-  NS_DECL_ISUPPORTS
+  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIBFCACHEENTRY
 
   
@@ -59,54 +149,19 @@ class nsSHEntryShared final : public nsIBFCacheEntry,
 
   nsExpirationState* GetExpirationState() { return &mExpirationState; }
 
+  static already_AddRefed<nsSHEntryShared> Duplicate(nsSHEntryShared* aEntry,
+                                                     uint64_t aNewSharedID);
+
  private:
   ~nsSHEntryShared();
 
-  friend class nsSHEntry;
-
-  static already_AddRefed<nsSHEntryShared> Duplicate(nsSHEntryShared* aEntry);
+  friend class nsLegacySHEntry;
 
   void RemoveFromExpirationTracker();
   void SyncPresentationState();
   void DropPresentationState();
 
   nsresult SetContentViewer(nsIContentViewer* aViewer);
-
-  
-
-  
-  
-  nsID mDocShellID;
-  nsCOMArray<nsIDocShellTreeItem> mChildShells;
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
-  nsCOMPtr<nsIPrincipal> mStoragePrincipalToInherit;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
-  nsCString mContentType;
-
-  uint32_t mCacheKey;
-  uint32_t mLastTouched;
-
-  
-  
-  uint64_t mID;
-  nsCOMPtr<nsIContentViewer> mContentViewer;
-  RefPtr<mozilla::dom::Document> mDocument;
-  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
-  nsCOMPtr<nsISupports> mWindowState;
-  nsIntRect mViewerBounds;
-  nsCOMPtr<nsIMutableArray> mRefreshURIList;
-  nsExpirationState mExpirationState;
-  nsAutoPtr<nsDocShellEditorData> mEditorData;
-  nsWeakPtr mSHistory;
-
-  bool mIsFrameNavigation;
-  bool mSaveLayoutState;
-  bool mSticky;
-  bool mDynamicallyCreated;
-
-  
-  bool mExpired;
 };
 
 #endif

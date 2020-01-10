@@ -23,9 +23,15 @@ class nsDocShell;
 class nsSHistoryObserver;
 class nsISHEntry;
 
-class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
-                         public nsISHistory,
-                         public nsSupportsWeakReference {
+namespace mozilla {
+namespace dom {
+class LoadSHEntryResult;
+}
+}  
+
+class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
+                   public nsISHistory,
+                   public nsSupportsWeakReference {
  public:
   
   class HistoryTracker final : public nsExpirationTracker<nsSHEntryShared, 3> {
@@ -62,11 +68,6 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHISTORY
 
-  nsresult Reload(uint32_t aReloadFlags);
-  virtual nsresult LoadURI(nsISHEntry* aFrameEntry,
-                           mozilla::dom::BrowsingContext* aFrameBc,
-                           nsDocShellLoadState* aLoadState);
-
   
   static nsresult Startup();
   static void Shutdown();
@@ -79,7 +80,7 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   static uint32_t GetMaxTotalViewers() { return sHistoryMaxTotalViewers; }
 
   
-  static nsISHEntry* GetRootSHEntry(nsISHEntry* aEntry);
+  static already_AddRefed<nsISHEntry> GetRootSHEntry(nsISHEntry* aEntry);
 
   
   
@@ -117,9 +118,12 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
                                      WalkHistoryEntriesFunc aCallback,
                                      void* aData);
 
- private:
-  virtual ~nsSHistory();
-  friend class nsSHistoryObserver;
+  nsTArray<nsCOMPtr<nsISHEntry>>& Entries() { return mEntries; }
+
+  nsresult AddEntry(nsISHEntry* aSHEntry, bool aPersist,
+                    int32_t* aEntriesPurged);
+  void RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,
+                     bool* aDidRemove);
 
   
   
@@ -128,14 +132,34 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   
   static const int32_t VIEWER_WINDOW = 3;
 
+  struct LoadEntryResult {
+    RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
+    RefPtr<nsDocShellLoadState> mLoadState;
+  };
+
+  nsresult Reload(uint32_t aReloadFlags, LoadEntryResult& aLoadResult);
+  nsresult ReloadCurrentEntry(LoadEntryResult& aLoadResult);
+  nsresult GotoIndex(int32_t aIndex, LoadEntryResult& aLoadResult);
+
+  void WindowIndices(int32_t aIndex, int32_t* aOutStartIndex,
+                     int32_t* aOutEndIndex);
+
+ protected:
+  virtual ~nsSHistory();
+
+ private:
+  friend class nsSHistoryObserver;
+
   nsresult LoadDifferingEntries(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
                                 mozilla::dom::BrowsingContext* aRootBC,
-                                long aLoadType, bool& aDifferenceFound);
-  virtual nsresult InitiateLoad(nsISHEntry* aFrameEntry,
-                                mozilla::dom::BrowsingContext* aFrameBC,
-                                long aLoadType);
+                                long aLoadType, bool& aDifferenceFound,
+                                LoadEntryResult& aLoadResult);
+  nsresult InitiateLoad(nsISHEntry* aFrameEntry,
+                        mozilla::dom::BrowsingContext* aFrameBC, long aLoadType,
+                        LoadEntryResult& aLoadResult);
 
-  nsresult LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd);
+  nsresult LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd,
+                     LoadEntryResult& aLoad);
 
 #ifdef DEBUG
   nsresult PrintHistory();
@@ -158,7 +182,8 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   static uint32_t CalcMaxTotalViewers();
 
   nsresult LoadNextPossibleEntry(int32_t aNewIndex, long aLoadType,
-                                 uint32_t aHistCmd);
+                                 uint32_t aHistCmd,
+                                 LoadEntryResult& aLoadResult);
 
   
   
@@ -166,17 +191,18 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   bool RemoveDuplicate(int32_t aIndex, bool aKeepNext);
 
   
+  int32_t Length() { return int32_t(mEntries.Length()); }
+
+ protected:
+  bool mIsRemote;
+
+ private:
+  
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
   nsTArray<nsCOMPtr<nsISHEntry>> mEntries;  
   int32_t mIndex;                           
   int32_t mRequestedIndex;                  
-
-  void WindowIndices(int32_t aIndex, int32_t* aOutStartIndex,
-                     int32_t* aOutEndIndex);
-
-  
-  int32_t Length() { return int32_t(mEntries.Length()); }
 
   
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;
