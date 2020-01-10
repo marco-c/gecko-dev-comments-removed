@@ -23,6 +23,7 @@
 #include "TextureD3D11.h"
 #include "gfxConfig.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "FxROutputHandler.h"
 
 namespace mozilla {
 namespace layers {
@@ -414,6 +415,17 @@ void MLGSwapChainD3D11::Present() {
 
   
   mParent->InsertPresentWaitQuery();
+
+  if (mWidget->AsWindows()->HasFxrOutputHandler()) {
+    
+    
+    FxROutputHandler* fxrHandler = mWidget->AsWindows()->GetFxrOutputHandler();
+    if (fxrHandler->TryInitialize(mSwapChain, mDevice)) {
+      RefPtr<ID3D11DeviceContext> context;
+      mDevice->GetImmediateContext(getter_AddRefs(context));
+      fxrHandler->UpdateOutput(context);
+    }
+  }
 
   HRESULT hr;
   if (mCanUsePartialPresents && mSwapChain1) {

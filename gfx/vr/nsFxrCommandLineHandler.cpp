@@ -9,6 +9,7 @@
 #endif
 
 #include "nsFxrCommandLineHandler.h"
+#include "FxRWindowManager.h"
 
 #include "nsICommandLine.h"
 #include "nsIWindowWatcher.h"
@@ -27,6 +28,9 @@
 #include "VRShMem.h"
 
 NS_IMPL_ISUPPORTS(nsFxrCommandLineHandler, nsICommandLineHandler)
+
+
+
 
 
 
@@ -77,6 +81,9 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
 
     MOZ_ASSERT(result == NS_OK);
 
+    nsPIDOMWindowOuter* newWindowOuter = nsPIDOMWindowOuter::From(newWindow);
+    FxRWindowManager::GetInstance()->AddWindow(newWindowOuter);
+
     
     mozilla::gfx::VRShMem shmem(nullptr, true );
     if (shmem.JoinShMem()) {
@@ -84,8 +91,7 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
       shmem.PullWindowState(windowState);
 
       nsCOMPtr<nsIWidget> newWidget =
-          mozilla::widget::WidgetUtils::DOMWindowToWidget(
-              nsPIDOMWindowOuter::From(newWindow));
+          mozilla::widget::WidgetUtils::DOMWindowToWidget(newWindowOuter);
       HWND hwndWidget = (HWND)newWidget->GetNativeData(NS_NATIVE_WINDOW);
 
       
@@ -100,7 +106,9 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
       
       newWidget->RequestFxrOutput();
     } else {
+#ifndef NIGHTLY_BUILD
       MOZ_CRASH("failed to start with --fxr");
+#endif
     }
   }
 
