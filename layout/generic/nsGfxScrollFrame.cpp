@@ -5331,7 +5331,7 @@ nsIFrame* ScrollFrameHelper::GetFrameForDir() const {
     Element* root = document->GetRootElement();
 
     
-    if (document && document->IsHTMLOrXHTML()) {
+    if (document->IsHTMLOrXHTML()) {
       Element* bodyElement = document->GetBodyElement();
       if (bodyElement) {
         root = bodyElement;  
