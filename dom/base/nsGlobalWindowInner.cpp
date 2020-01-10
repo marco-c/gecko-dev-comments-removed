@@ -4486,6 +4486,7 @@ Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
     
     
     
+    
     if (access == StorageAccess::eDeny &&
         rejectedReason !=
             nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN) {
