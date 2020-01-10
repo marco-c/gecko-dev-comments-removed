@@ -301,6 +301,10 @@ StyleSheetInfo::StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet)
       mSourceURL(aCopy.mSourceURL),
       mContents(Servo_StyleSheet_Clone(aCopy.mContents.get(), aPrimarySheet)
                     .Consume()),
+      
+      
+      
+      mSharedMemory(aCopy.mSharedMemory),
       mURLData(aCopy.mURLData)
 #ifdef DEBUG
       ,
@@ -315,6 +319,9 @@ StyleSheetInfo::StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet)
 
 StyleSheetInfo::~StyleSheetInfo() {
   MOZ_COUNT_DTOR(StyleSheetInfo);
+
+  
+  mContents = nullptr;
 }
 
 StyleSheetInfo* StyleSheetInfo::CloneFor(StyleSheet* aPrimarySheet) {
@@ -327,9 +334,13 @@ MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoStyleSheetMallocEnclosingSizeOf)
 size_t StyleSheetInfo::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
-  n += Servo_StyleSheet_SizeOfIncludingThis(
-      ServoStyleSheetMallocSizeOf, ServoStyleSheetMallocEnclosingSizeOf,
-      mContents);
+  
+  
+  if (!mSharedMemory) {
+    n += Servo_StyleSheet_SizeOfIncludingThis(
+        ServoStyleSheetMallocSizeOf, ServoStyleSheetMallocEnclosingSizeOf,
+        mContents);
+  }
 
   return n;
 }
@@ -1212,10 +1223,17 @@ StyleOrigin StyleSheet::GetOrigin() const {
   return Servo_StyleSheet_GetOrigin(Inner().mContents);
 }
 
-void StyleSheet::SetSharedContents(const ServoCssRules* aSharedRules) {
+void StyleSheet::SetSharedContents(nsLayoutStylesheetCache::Shm* aSharedMemory,
+                                   const ServoCssRules* aSharedRules) {
+  MOZ_ASSERT(aSharedMemory);
   MOZ_ASSERT(!IsComplete());
 
   SetURLExtraData();
+
+  
+  
+  
+  Inner().mSharedMemory = aSharedMemory;
 
   Inner().mContents =
       Servo_StyleSheet_FromSharedData(Inner().mURLData, aSharedRules).Consume();

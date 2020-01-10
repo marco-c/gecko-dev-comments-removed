@@ -33,6 +33,16 @@ enum FailureAction { eCrash = 0, eLogToConsole };
 }  
 }  
 
+
+
+struct nsLayoutStylesheetCacheShm final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsLayoutStylesheetCacheShm)
+  base::SharedMemory mShm;
+
+ private:
+  ~nsLayoutStylesheetCacheShm() = default;
+};
+
 class nsLayoutStylesheetCache final : public nsIObserver,
                                       public nsIMemoryReporter {
  public:
@@ -78,7 +88,7 @@ class nsLayoutStylesheetCache final : public nsIObserver,
   
   
   uintptr_t GetSharedMemoryAddress() {
-    return sSharedMemory ? uintptr_t(sSharedMemory->memory()) : 0;
+    return mSharedMemory ? uintptr_t(mSharedMemory->mShm.memory()) : 0;
   }
 
   
@@ -114,8 +124,9 @@ class nsLayoutStylesheetCache final : public nsIObserver,
       mozilla::css::FailureAction aFailureAction);
   void LoadSheetFromSharedMemory(const char* aURL,
                                  RefPtr<mozilla::StyleSheet>* aSheet,
-                                 mozilla::css::SheetParsingMode,
-                                 Header*, mozilla::UserAgentStyleSheetID);
+                                 mozilla::css::SheetParsingMode aParsingMode,
+                                 Shm* aSharedMemory, Header* aHeader,
+                                 mozilla::UserAgentStyleSheetID aSheetID);
   void BuildPreferenceSheet(RefPtr<mozilla::StyleSheet>* aSheet,
                             const mozilla::PreferenceSheet::Prefs&);
 
@@ -134,11 +145,15 @@ class nsLayoutStylesheetCache final : public nsIObserver,
   RefPtr<mozilla::StyleSheet> mUserContentSheet;
 
   
-  static mozilla::StaticAutoPtr<base::SharedMemory> sSharedMemory;
+  RefPtr<Shm> mSharedMemory;
 
   
   
-  static size_t sUsedSharedMemory;
+  size_t mUsedSharedMemory;
+
+  
+  
+  static mozilla::StaticRefPtr<Shm> sSharedMemory;
 };
 
 #endif

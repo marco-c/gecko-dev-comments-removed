@@ -81,6 +81,12 @@ struct StyleSheetInfo final {
   
   
   
+  RefPtr<nsLayoutStylesheetCacheShm> mSharedMemory;
+
+  
+  
+  
+  
   
   
   

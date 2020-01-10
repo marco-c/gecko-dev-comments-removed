@@ -169,6 +169,8 @@ void nsLayoutStylesheetCache::Shutdown() {
   }
   
   
+  
+  sSharedMemory = nullptr;
 }
 
 void nsLayoutStylesheetCache::SetUserContentCSSURL(nsIURI* aURI) {
@@ -190,7 +192,7 @@ nsLayoutStylesheetCache::CollectReports(nsIHandleReportCallback* aHandleReport,
   if (XRE_IsParentProcess()) {
     MOZ_COLLECT_REPORT(
         "explicit/layout/style-sheet-cache/shared", KIND_NONHEAP, UNITS_BYTES,
-        sSharedMemory ? sUsedSharedMemory : 0,
+        mSharedMemory ? mUsedSharedMemory : 0,
         "Memory used for built-in style sheets that are shared to "
         "child processes.");
   }
@@ -220,7 +222,7 @@ size_t nsLayoutStylesheetCache::SizeOfIncludingThis(
   return n;
 }
 
-nsLayoutStylesheetCache::nsLayoutStylesheetCache() {
+nsLayoutStylesheetCache::nsLayoutStylesheetCache() : mUsedSharedMemory(0) {
   nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
   NS_ASSERTION(obsSvc, "No global observer service?");
 
@@ -253,12 +255,14 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() {
   
   if (StaticPrefs::layout_css_shared_memory_ua_sheets_enabled()) {
     if (XRE_IsParentProcess()) {
+      MOZ_ASSERT(!sSharedMemory);
       
       InitSharedSheetsInParent();
     } else if (sSharedMemory) {
       
       
-      MOZ_ASSERT(sSharedMemory->memory(),
+      mSharedMemory = sSharedMemory.forget();
+      MOZ_ASSERT(!mSharedMemory || mSharedMemory->mShm.memory(),
                  "nsLayoutStylesheetCache::SetSharedMemory should have mapped "
                  "the shared memory");
     }
@@ -277,14 +281,14 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() {
   
   
   
-  if (sSharedMemory) {
-    if (auto header = static_cast<Header*>(sSharedMemory->memory())) {
+  if (mSharedMemory) {
+    if (auto header = static_cast<Header*>(mSharedMemory->mShm.memory())) {
       MOZ_RELEASE_ASSERT(header->mMagic == Header::kMagic);
 
 #define STYLE_SHEET(identifier_, url_, shared_)                           \
   if (shared_) {                                                          \
     LoadSheetFromSharedMemory(url_, &m##identifier_##Sheet,               \
-                              eAgentSheetFeatures, header, \
+                              eAgentSheetFeatures, mSharedMemory, header, \
                               UserAgentStyleSheetID::identifier_);        \
   }
 #include "mozilla/UserAgentStyleSheetList.h"
@@ -295,7 +299,7 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() {
 
 void nsLayoutStylesheetCache::LoadSheetFromSharedMemory(
     const char* aURL, RefPtr<StyleSheet>* aSheet, SheetParsingMode aParsingMode,
-    Header* aHeader, UserAgentStyleSheetID aSheetID) {
+    Shm* aSharedMemory, Header* aHeader, UserAgentStyleSheetID aSheetID) {
   auto i = size_t(aSheetID);
 
   auto sheet =
@@ -306,7 +310,7 @@ void nsLayoutStylesheetCache::LoadSheetFromSharedMemory(
 
   sheet->SetPrincipal(nsContentUtils::GetSystemPrincipal());
   sheet->SetURIs(uri, uri, uri);
-  sheet->SetSharedContents(aHeader->mSheets[i]);
+  sheet->SetSharedContents(aSharedMemory, aHeader->mSheets[i]);
   sheet->SetComplete();
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
@@ -319,10 +323,10 @@ void nsLayoutStylesheetCache::LoadSheetFromSharedMemory(
 
 void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_RELEASE_ASSERT(!sSharedMemory);
 
-  auto shm = MakeUnique<base::SharedMemory>();
-  if (NS_WARN_IF(!shm->CreateFreezeable(kSharedMemorySize))) {
+  mSharedMemory = new Shm();
+  if (NS_WARN_IF(!mSharedMemory->mShm.CreateFreezeable(kSharedMemorySize))) {
+    mSharedMemory = nullptr;
     return;
   }
 
@@ -358,7 +362,7 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
     address = reinterpret_cast<void*>(uintptr_t(p) + kOffset);
   }
 
-  bool parentMapped = shm->Map(kSharedMemorySize, address);
+  bool parentMapped = mSharedMemory->mShm.Map(kSharedMemorySize, address);
   Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_PARENT,
                         parentMapped);
 
@@ -366,11 +370,12 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
     
     
     
-    if (NS_WARN_IF(!shm->Map(kSharedMemorySize))) {
+    if (NS_WARN_IF(!mSharedMemory->mShm.Map(kSharedMemorySize))) {
+      mSharedMemory = nullptr;
       return;
     }
   }
-  address = shm->memory();
+  address = mSharedMemory->mShm.memory();
 
   auto header = static_cast<Header*>(address);
   header->mMagic = Header::kMagic;
@@ -397,7 +402,8 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
 
   
   
-  if (NS_WARN_IF(!shm->Freeze())) {
+  if (NS_WARN_IF(!mSharedMemory->mShm.Freeze())) {
+    mSharedMemory = nullptr;
     return;
   }
 
@@ -406,7 +412,7 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   
   
   
-  bool parentRemapped = shm->Map(kSharedMemorySize, address);
+  bool parentRemapped = mSharedMemory->mShm.Map(kSharedMemorySize, address);
   Telemetry::Accumulate(
       Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_PARENT_AFTER_FREEZE,
       parentRemapped);
@@ -419,11 +425,9 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   
   
   size_t pageSize = ipc::SharedMemory::SystemPageSize();
-  sUsedSharedMemory =
+  mUsedSharedMemory =
       (Servo_SharedMemoryBuilder_GetLength(builder.get()) + pageSize - 1) &
       ~(pageSize - 1);
-
-  sSharedMemory = shm.release();
 }
 
 nsLayoutStylesheetCache::~nsLayoutStylesheetCache() {
@@ -669,24 +673,23 @@ void nsLayoutStylesheetCache::BuildPreferenceSheet(
              "Too late, nsLayoutStylesheetCache already created!");
   MOZ_ASSERT(!sSharedMemory, "Shouldn't call this more than once");
 
-  auto shm = MakeUnique<base::SharedMemory>();
-  if (!shm->SetHandle(aHandle,  true)) {
-    return;
-  }
-
-  bool contentMapped =
-      shm->Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress));
-  Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_CHILD,
-                        contentMapped);
-  if (contentMapped) {
-    sSharedMemory = shm.release();
+  RefPtr<Shm> shm = new Shm();
+  if (shm->mShm.SetHandle(aHandle,  true)) {
+    bool contentMapped =
+        shm->mShm.Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress));
+    Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_CHILD,
+                          contentMapped);
+    if (contentMapped) {
+      sSharedMemory = shm.forget();
+    }
   }
 }
 
 bool nsLayoutStylesheetCache::ShareToProcess(
     base::ProcessId aProcessId, base::SharedMemoryHandle* aHandle) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  return sSharedMemory && sSharedMemory->ShareToProcess(aProcessId, aHandle);
+  return mSharedMemory &&
+         mSharedMemory->mShm.ShareToProcess(aProcessId, aHandle);
 }
 
 mozilla::StaticRefPtr<nsLayoutStylesheetCache>
@@ -696,5 +699,4 @@ mozilla::StaticRefPtr<mozilla::css::Loader> nsLayoutStylesheetCache::gCSSLoader;
 
 mozilla::StaticRefPtr<nsIURI> nsLayoutStylesheetCache::gUserContentSheetURL;
 
-StaticAutoPtr<base::SharedMemory> nsLayoutStylesheetCache::sSharedMemory;
-size_t nsLayoutStylesheetCache::sUsedSharedMemory;
+StaticRefPtr<nsLayoutStylesheetCacheShm> nsLayoutStylesheetCache::sSharedMemory;
