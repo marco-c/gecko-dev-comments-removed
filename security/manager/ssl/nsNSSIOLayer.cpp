@@ -1892,6 +1892,74 @@ SECStatus nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
   return runnable->mRV;
 }
 
+
+
+
+
+UniqueCERTCertList FindNonCACertificatesWithPrivateKeys() {
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+          ("FindNonCACertificatesWithPrivateKeys"));
+  UniqueCERTCertList certsWithPrivateKeys(CERT_NewCertList());
+  if (!certsWithPrivateKeys) {
+    return nullptr;
+  }
+
+  AutoSECMODListReadLock secmodLock;
+  SECMODModuleList* list = SECMOD_GetDefaultModuleList();
+  while (list) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("  module '%s'", list->module->commonName));
+    for (int i = 0; i < list->module->slotCount; i++) {
+      PK11SlotInfo* slot = list->module->slots[i];
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("    slot '%s'", PK11_GetSlotName(slot)));
+      
+      if (PK11_Authenticate(slot, true, nullptr) != SECSuccess) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("    (couldn't authenticate)"));
+        continue;
+      }
+      UniqueSECKEYPrivateKeyList privateKeys(
+          PK11_ListPrivKeysInSlot(slot, nullptr, nullptr));
+      if (!privateKeys) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("      (no private keys)"));
+        continue;
+      }
+      for (SECKEYPrivateKeyListNode* node = PRIVKEY_LIST_HEAD(privateKeys);
+           !PRIVKEY_LIST_END(node, privateKeys);
+           node = PRIVKEY_LIST_NEXT(node)) {
+        UniqueCERTCertList certs(PK11_GetCertsMatchingPrivateKey(node->key));
+        if (!certs) {
+          MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                  ("      PK11_GetCertsMatchingPrivateKey encountered an error "
+                   "- returning"));
+          return nullptr;
+        }
+        if (CERT_LIST_EMPTY(certs)) {
+          MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("      (no certs for key)"));
+          continue;
+        }
+        for (CERTCertListNode* n = CERT_LIST_HEAD(certs);
+             !CERT_LIST_END(n, certs); n = CERT_LIST_NEXT(n)) {
+          if (!CERT_IsCACert(n->cert, nullptr)) {
+            MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                    ("      found '%s'", n->cert->subjectName));
+            UniqueCERTCertificate cert(CERT_DupCertificate(n->cert));
+            if (CERT_AddCertToListTail(certsWithPrivateKeys.get(),
+                                       cert.get()) == SECSuccess) {
+              Unused << cert.release();
+            }
+          }
+        }
+      }
+    }
+    list = list->next;
+  }
+  if (CERT_LIST_EMPTY(certsWithPrivateKeys)) {
+    return nullptr;
+  }
+  return certsWithPrivateKeys;
+}
+
 void ClientAuthDataRunnable::RunOnTargetThread() {
   
   
@@ -1900,13 +1968,13 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
   UniqueCERTCertificate cert;
   UniqueSECKEYPrivateKey privKey;
   void* wincx = mSocketInfo;
-  nsresult rv;
+
+  mRV = SECFailure;
+  *mPRetCert = nullptr;
+  *mPRetKey = nullptr;
+  mErrorCodeToReport = SEC_ERROR_LIBRARY_FAILURE;
 
   if (NS_FAILED(CheckForSmartCardChanges())) {
-    mRV = SECFailure;
-    *mPRetCert = nullptr;
-    *mPRetKey = nullptr;
-    mErrorCodeToReport = SEC_ERROR_LIBRARY_FAILURE;
     return;
   }
 
@@ -1918,13 +1986,13 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
   if (socketClientCert) {
     cert.reset(socketClientCert->GetCert());
     if (!cert) {
-      goto loser;
+      return;
     }
 
     
     privKey.reset(PK11_FindKeyByAnyCert(cert.get(), wincx));
     if (!privKey) {
-      goto loser;
+      return;
     }
 
     *mPRetCert = cert.release();
@@ -1933,26 +2001,17 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     return;
   }
 
+  UniqueCERTCertList certList(FindNonCACertificatesWithPrivateKeys());
+  if (!certList) {
+    return;
+  }
+
   mRV = SECSuccess;
 
   
   if (nsGetUserCertChoice() == UserCertChoice::Auto) {
     
-
-    
-    UniqueCERTCertList certList(CERT_FindUserCertsByUsage(
-        CERT_GetDefaultCertDB(), certUsageSSLClient, false, true, wincx));
-    if (!certList) {
-      goto loser;
-    }
-
-    
-    if (CERT_LIST_END(CERT_LIST_HEAD(certList), certList)) {
-      goto loser;
-    }
-
     UniqueCERTCertificate lowPrioNonrepCert;
-
     
     for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
          !CERT_LIST_END(node, certList); node = CERT_LIST_NEXT(node)) {
@@ -1998,9 +2057,9 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     nsCString rememberedDBKey;
     if (cars) {
       bool found;
-      rv = cars->HasRememberedDecision(hostname,
-                                       mSocketInfo->GetOriginAttributes(),
-                                       mServerCert, rememberedDBKey, &found);
+      nsresult rv = cars->HasRememberedDecision(
+          hostname, mSocketInfo->GetOriginAttributes(), mServerCert,
+          rememberedDBKey, &found);
       if (NS_SUCCEEDED(rv) && found) {
         hasRemembered = true;
       }
@@ -2010,7 +2069,7 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
       nsCOMPtr<nsIX509CertDB> certdb = do_GetService(NS_X509CERTDB_CONTRACTID);
       if (certdb) {
         nsCOMPtr<nsIX509Cert> foundCert;
-        rv =
+        nsresult rv =
             certdb->FindCertByDBKey(rememberedDBKey, getter_AddRefs(foundCert));
         if (NS_SUCCEEDED(rv) && foundCert) {
           nsNSSCertificate* objCert =
@@ -2029,20 +2088,6 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     if (!hasRemembered) {
       
       nsCOMPtr<nsIClientAuthDialogs> dialogs;
-
-      
-      
-      UniqueCERTCertList certList(CERT_FindUserCertsByUsage(
-          CERT_GetDefaultCertDB(), certUsageSSLClient, false, false, wincx));
-      if (!certList) {
-        goto loser;
-      }
-
-      if (CERT_LIST_END(CERT_LIST_HEAD(certList), certList)) {
-        
-        goto loser;
-      }
-
       UniquePORTString corg(CERT_GetOrgName(&mServerCert->subject));
       nsAutoCString org(corg.get());
 
@@ -2061,7 +2106,7 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
           goto loser;
         }
 
-        rv = certArray->AppendElement(tempCert);
+        nsresult rv = certArray->AppendElement(tempCert);
         if (NS_FAILED(rv)) {
           goto loser;
         }
@@ -2069,9 +2114,9 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
 
       
       
-      rv = getNSSDialogs(getter_AddRefs(dialogs),
-                         NS_GET_IID(nsIClientAuthDialogs),
-                         NS_CLIENTAUTHDIALOGS_CONTRACTID);
+      nsresult rv = getNSSDialogs(getter_AddRefs(dialogs),
+                                  NS_GET_IID(nsIClientAuthDialogs),
+                                  NS_CLIENTAUTHDIALOGS_CONTRACTID);
 
       if (NS_FAILED(rv)) {
         goto loser;
