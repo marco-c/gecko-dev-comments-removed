@@ -374,6 +374,7 @@ class ExpectedUpdater(object):
         else:
             return
 
+        
         log_file.seek(0)
         self.update_from_raw_log(log_file)
 
