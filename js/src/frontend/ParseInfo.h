@@ -21,7 +21,7 @@
 namespace js {
 namespace frontend {
 
-class BigIntLiteral;
+class ParserBase;
 
 
 
@@ -31,21 +31,12 @@ struct MOZ_RAII ParseInfo {
   LifoAllocScope& allocScope;
   FunctionTreeHolder treeHolder;
 
-  using DeferredAllocationType = mozilla::Variant<BigIntLiteral*>;
-  using DeferredAllocationVector = js::Vector<DeferredAllocationType>;
-
-  
-  
-  
-  DeferredAllocationVector deferredAllocations;
-
   ParseInfo(JSContext* cx, LifoAllocScope& alloc)
       : usedNames(cx),
         allocScope(alloc),
         treeHolder(cx, cx->realm()->behaviors().deferredParserAlloc()
                            ? FunctionTreeHolder::Mode::Deferred
-                           : FunctionTreeHolder::Mode::Eager),
-        deferredAllocations(cx) {}
+                           : FunctionTreeHolder::Mode::Eager) {}
 };
 
 }  
