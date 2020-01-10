@@ -345,7 +345,7 @@ static double CodesizeCutoff(SystemClass cls) {
 
 
 
-static double EffectiveCores(SystemClass cls, uint32_t cores) {
+static double EffectiveCores(uint32_t cores) {
   if (cores <= 3) {
     return pow(cores, 0.9);
   }
@@ -393,7 +393,7 @@ static bool TieringBeneficial(uint32_t codeSize) {
   
 
   double cutoffSize = CodesizeCutoff(cls);
-  double effectiveCores = EffectiveCores(cls, cores);
+  double effectiveCores = EffectiveCores(cores);
 
   if ((codeSize / effectiveCores) < cutoffSize) {
     return false;
