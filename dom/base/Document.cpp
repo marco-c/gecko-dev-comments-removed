@@ -1855,11 +1855,11 @@ Document::~Document() {
   delete mSubDocuments;
   mSubDocuments = nullptr;
 
+  nsAutoScriptBlocker scriptBlocker;
+
   
   
   DestroyElementMaps();
-
-  nsAutoScriptBlocker scriptBlocker;
 
   
   InvalidateChildNodes();
@@ -2379,14 +2379,14 @@ void Document::DisconnectNodeTree() {
   delete mSubDocuments;
   mSubDocuments = nullptr;
 
-  
-  
-  DestroyElementMaps();
-
   bool oldVal = mInUnlinkOrDeletion;
   mInUnlinkOrDeletion = true;
   {  
     MOZ_AUTO_DOC_UPDATE(this, true);
+
+    
+    
+    DestroyElementMaps();
 
     
     InvalidateChildNodes();
@@ -6365,7 +6365,9 @@ nsresult Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
 }
 
 void Document::RemoveChildNode(nsIContent* aKid, bool aNotify) {
+  Maybe<mozAutoDocUpdate> updateBatch;
   if (aKid->IsElement()) {
+    updateBatch.emplace(this, aNotify);
     
     DestroyElementMaps();
   }
