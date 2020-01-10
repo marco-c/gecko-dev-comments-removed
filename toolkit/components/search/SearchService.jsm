@@ -2541,16 +2541,18 @@ SearchService.prototype = {
 
     
     
-    [
-      "searchUrlGetParams",
-      "searchUrlPostParams",
-      "suggestUrlGetParams",
-      "suggestUrlPostParams",
-    ].forEach(key => {
-      if (key in config) {
-        params[key] = new URLSearchParams(config[key]).toString();
-      }
-    });
+    if ("params" in config) {
+      [
+        "searchUrlGetParams",
+        "searchUrlPostParams",
+        "suggestUrlGetParams",
+        "suggestUrlPostParams",
+      ].forEach(key => {
+        if (key in config.params) {
+          params[key] = new URLSearchParams(config.params[key]).toString();
+        }
+      });
+    }
 
     if ("telemetryId" in config) {
       params.telemetryId = config.telemetryId;
