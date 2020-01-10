@@ -9,6 +9,9 @@ const {
   translatePreferencesToState,
   translatePreferencesFromState,
 } = require("devtools/client/performance-new/preference-management");
+const {
+  getEnvironmentVariable,
+} = require("devtools/client/performance-new/browser");
 
 
 
@@ -100,11 +103,29 @@ exports.changeEntries = entries =>
 
 
 
-exports.changeFeatures = features =>
-  _dispatchAndUpdatePreferences({
-    type: "CHANGE_FEATURES",
-    features,
-  });
+exports.changeFeatures = features => {
+  return (dispatch, getState) => {
+    let promptEnvRestart = null;
+    if (selectors.getIsPopup(getState())) {
+      
+      
+      if (
+        !getEnvironmentVariable("JS_TRACE_LOGGING") &&
+        features.includes("jstracer")
+      ) {
+        promptEnvRestart = "JS_TRACE_LOGGING";
+      }
+    }
+
+    dispatch(
+      _dispatchAndUpdatePreferences({
+        type: "CHANGE_FEATURES",
+        features,
+        promptEnvRestart,
+      })
+    );
+  };
+};
 
 
 

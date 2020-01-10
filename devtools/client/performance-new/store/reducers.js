@@ -164,6 +164,21 @@ function initializedValues(state = null, action) {
 
 
 
+
+
+function promptEnvRestart(state = null, action) {
+  switch (action.type) {
+    case "CHANGE_FEATURES":
+      return action.promptEnvRestart;
+    default:
+      return state;
+  }
+}
+
+
+
+
+
 module.exports = combineReducers({
   
   
@@ -177,4 +192,5 @@ module.exports = combineReducers({
   threads,
   objdirs,
   initializedValues,
+  promptEnvRestart,
 });

@@ -88,6 +88,7 @@ export interface State {
   threads: string[];
   objdirs: string[];
   initializedValues: InitializedValues | null;
+  promptEnvRestart: null | string
 }
 
 export type Selector<T> = (state: State) => T;
@@ -136,6 +137,19 @@ export type ReceiveProfile = (
 ) => void;
 
 export type SetRecordingPreferences = (settings: object) => void;
+
+
+
+
+
+export type RestartBrowserWithEnvironmentVariable =
+    (envName: string, value: string) => void;
+
+
+
+
+
+export type GetEnvironmentVariable = (envName: string) => string;
 
 
 
@@ -202,6 +216,7 @@ export type Action =
   | {
       type: "CHANGE_FEATURES";
       features: string[];
+      promptEnvRestart: string | null
     }
   | {
       type: "CHANGE_THREADS";

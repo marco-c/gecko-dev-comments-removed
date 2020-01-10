@@ -19,6 +19,8 @@
 
 
 
+
+
 const getRecordingState = state => state.recordingState;
 
 
@@ -90,6 +92,9 @@ const getIsPopup = state => getInitializedValues(state).isPopup;
 const getSymbolTableGetter = state =>
   getInitializedValues(state).getSymbolTableGetter;
 
+
+const getPromptEnvRestart = state => state.promptEnvRestart;
+
 module.exports = {
   getRecordingState,
   getRecordingUnexpectedlyStopped,
@@ -107,4 +112,5 @@ module.exports = {
   getSetRecordingPreferencesFn,
   getIsPopup,
   getSymbolTableGetter,
+  getPromptEnvRestart,
 };

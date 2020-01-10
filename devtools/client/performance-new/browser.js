@@ -25,6 +25,8 @@
 
 
 
+
+
 function requireLazy(callback) {
   
   let cache;
@@ -39,6 +41,8 @@ function requireLazy(callback) {
 const lazyServices = requireLazy(() =>
   require("resource://gre/modules/Services.jsm")
 );
+
+const lazyChrome = requireLazy(() => require("chrome"));
 
 const lazyOS = requireLazy(() => require("resource://gre/modules/osfile.jsm"));
 
@@ -488,9 +492,42 @@ function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
   };
 }
 
+
+
+
+
+
+function restartBrowserWithEnvironmentVariable(envName, value) {
+  const { Services } = lazyServices();
+  const { Cc, Ci } = lazyChrome();
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  env.set(envName, value);
+
+  Services.startup.quit(
+    Services.startup.eForceQuit | Services.startup.eRestart
+  );
+}
+
+
+
+
+
+
+function getEnvironmentVariable(envName) {
+  const { Cc, Ci } = lazyChrome();
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  return env.get(envName);
+}
+
 module.exports = {
   receiveProfile,
   getRecordingPreferencesFromDebuggee,
   setRecordingPreferencesOnDebuggee,
   createMultiModalGetSymbolTableFn,
+  restartBrowserWithEnvironmentVariable,
+  getEnvironmentVariable,
 };

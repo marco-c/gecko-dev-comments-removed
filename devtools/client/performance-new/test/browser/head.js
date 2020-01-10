@@ -6,6 +6,11 @@
 
 
 
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+
+
+
+
 function tick() {
   return new Promise(resolve => requestAnimationFrame(resolve));
 }
@@ -89,6 +94,7 @@ function getElementByXPath(document, path) {
 
 
 
+
 async function getElementFromPopupByText(text) {
   const xpath = `//*[contains(text(), '${text}')]`;
   return waitUntil(() => {
@@ -98,6 +104,24 @@ async function getElementFromPopupByText(text) {
     }
     return null;
   }, `Trying to find the element with the text "${text}".`);
+}
+
+
+
+
+
+
+
+function maybeGetElementFromPopupByText(text) {
+  info(`Immediately trying to find the element with the text "${text}".`);
+  const xpath = `//*[contains(text(), '${text}')]`;
+  const iframe = document.getElementById("PanelUI-profilerIframe");
+  if (!iframe) {
+    throw new Error(
+      "This function assumes the profiler iframe is already present."
+    );
+  }
+  return getElementByXPath(iframe.contentDocument, xpath);
 }
 
 
@@ -212,4 +236,37 @@ async function checkTabLoadedProfile({
         return false;
     }
   });
+}
+
+
+
+
+async function closePopup() {
+  const iframe = document.querySelector("#PanelUI-profilerIframe");
+
+  if (!iframe) {
+    throw new Error(
+      "Could not find the profiler iframe when attempting to close the popup. Was it " +
+        "already closed?"
+    );
+  }
+
+  const panel = iframe.closest("panel");
+  if (!panel) {
+    throw new Error(
+      "Could not find the closest panel to the profiler's iframe."
+    );
+  }
+
+  info("Hide the profiler popup.");
+  panel.hidePopup();
+
+  info("Wait for the profiler popup to be completely hidden.");
+  while (true) {
+    if (!iframe.ownerDocument.contains(iframe)) {
+      info("The iframe was removed.");
+      return;
+    }
+    await tick();
+  }
 }
