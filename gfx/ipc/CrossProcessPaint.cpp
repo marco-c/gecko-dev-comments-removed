@@ -86,8 +86,8 @@ PaintFragment PaintFragment::Record(nsIDocShell* aDocShell,
   
   RefPtr<DrawEventRecorderMemory> recorder =
       MakeAndAddRef<DrawEventRecorderMemory>(nullptr);
-  RefPtr<DrawTarget> dt =
-      Factory::CreateRecordingDrawTarget(recorder, referenceDt, surfaceSize);
+  RefPtr<DrawTarget> dt = Factory::CreateRecordingDrawTarget(
+      recorder, referenceDt, IntRect(IntPoint(0, 0), surfaceSize));
 
   
   {
