@@ -4274,7 +4274,9 @@ nsresult QuotaManager::LoadQuota() {
       NS_WARN_IF(NS_FAILED(LoadQuotaFromCache()))) {
     
     
+#ifdef NIGHTLY_BUILD
     nsresult statusKeeper = NS_OK;
+#endif
 
     for (const PersistenceType type : kBestEffortPersistenceTypes) {
       if (NS_WARN_IF(IsShuttingDown())) {
