@@ -97,6 +97,12 @@ class ProfileBuffer final {
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
+  void CollectOverheadStats(TimeDuration aSamplingTime, TimeDuration aLocking,
+                            TimeDuration aCleaning, TimeDuration aCounters,
+                            TimeDuration aThreads);
+
+  ProfilerBufferInfo GetProfilerBufferInfo() const;
+
  private:
   
   
@@ -128,6 +134,24 @@ class ProfileBuffer final {
 
   
   ProfilerMarkerLinkedList mStoredMarkers;
+
+ private:
+  
+  double mFirstSamplingTimeNs = 0.0;
+  
+  double mLastSamplingTimeNs = 0.0;
+  
+  ProfilerStats mIntervalsNs;
+  
+  ProfilerStats mOverheadsNs;
+  
+  ProfilerStats mLockingsNs;
+  
+  ProfilerStats mCleaningsNs;
+  
+  ProfilerStats mCountersNs;
+  
+  ProfilerStats mThreadsNs;
 };
 
 

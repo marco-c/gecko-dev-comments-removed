@@ -484,10 +484,42 @@ using UniqueProfilerBacktrace =
 
 MFBT_API UniqueProfilerBacktrace profiler_get_backtrace();
 
+struct ProfilerStats {
+  unsigned n = 0;
+  double sum = 0;
+  double min = std::numeric_limits<double>::max();
+  double max = 0;
+  void Count(double v) {
+    ++n;
+    sum += v;
+    if (v < min) {
+      min = v;
+    }
+    if (v > max) {
+      max = v;
+    }
+  }
+};
+
 struct ProfilerBufferInfo {
+  
   uint64_t mRangeStart;
+  
   uint64_t mRangeEnd;
+  
   uint32_t mEntryCount;
+  
+  ProfilerStats mIntervalsNs;
+  
+  ProfilerStats mOverheadsNs;
+  
+  ProfilerStats mLockingsNs;
+  
+  ProfilerStats mCleaningsNs;
+  
+  ProfilerStats mCountersNs;
+  
+  ProfilerStats mThreadsNs;
 };
 
 
