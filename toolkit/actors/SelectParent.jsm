@@ -24,6 +24,19 @@ const PROPERTIES_RESET_WHEN_ACTIVE = [
   "text-shadow",
 ];
 
+
+
+const SUPPORTED_PROPERTIES = [
+  "direction",
+  "color",
+  "background-color",
+  "text-shadow",
+  "font-family",
+  "font-weight",
+  "font-size",
+  "font-style",
+];
+
 const customStylingEnabled = Services.prefs.getBoolPref(
   "dom.forms.select.customstyling"
 );
@@ -94,17 +107,6 @@ var SelectParentHelper = {
       selectStyle["background-color"] = uaStyle["background-color"];
     }
 
-    
-    
-    if (
-      customStylingEnabled &&
-      selectStyle["background-color"] != uaStyle["background-color"]
-    ) {
-      let color = selectStyle["background-color"];
-      selectStyle["background-image"] = `linear-gradient(${color}, ${color});`;
-      selectBackgroundSet = true;
-    }
-
     if (selectStyle.color == selectStyle["background-color"]) {
       selectStyle.color = uaStyle.color;
     }
@@ -119,22 +121,41 @@ var SelectParentHelper = {
         );
       }
 
-      let ruleBody = "";
-      for (let property in selectStyle) {
-        if (property == "background-color" || property == "direction") {
+      let addedRule = false;
+      for (let property of SUPPORTED_PROPERTIES) {
+        if (property == "direction") {
           continue;
         } 
-        if (selectStyle[property] != uaStyle[property]) {
-          ruleBody += `${property}: ${selectStyle[property]};`;
+        if (
+          !selectStyle[property] ||
+          selectStyle[property] == uaStyle[property]
+        ) {
+          continue;
         }
+        if (!addedRule) {
+          sheet.insertRule("#ContentSelectDropdown > menupopup {}", 0);
+          addedRule = true;
+        }
+        sheet.cssRules[0].style[property] = selectStyle[property];
       }
-      if (ruleBody) {
-        sheet.insertRule(
-          `#ContentSelectDropdown > menupopup {
-          ${ruleBody}
-        }`,
-          0
-        );
+      
+      
+      
+      if (
+        customStylingEnabled &&
+        selectStyle["background-color"] != uaStyle["background-color"]
+      ) {
+        
+        
+        
+        let parsedColor = sheet.cssRules[0].style["background-color"];
+        sheet.cssRules[0].style["background-color"] = "";
+        sheet.cssRules[0].style[
+          "background-image"
+        ] = `linear-gradient(${parsedColor}, ${parsedColor})`;
+        selectBackgroundSet = true;
+      }
+      if (addedRule) {
         sheet.insertRule(
           `#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
             color: inherit;
@@ -416,29 +437,30 @@ var SelectParentHelper = {
       }
 
       if (customStylingEnabled) {
-        let ruleBody = "";
-        for (let property in style) {
+        let addedRule = false;
+        for (const property of SUPPORTED_PROPERTIES) {
           if (property == "direction" || property == "font-size") {
             continue;
           } 
-          if (style[property] == selectStyle[property]) {
+          if (!style[property] || style[property] == selectStyle[property]) {
             continue;
           }
           if (PROPERTIES_RESET_WHEN_ACTIVE.includes(property)) {
-            ruleBody += `${property}: ${style[property]};`;
+            if (!addedRule) {
+              sheet.insertRule(
+                `#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
+              }`,
+                0
+              );
+              addedRule = true;
+            }
+            sheet.cssRules[0].style[property] = style[property];
           } else {
             item.style.setProperty(property, style[property]);
           }
         }
 
-        if (ruleBody) {
-          sheet.insertRule(
-            `#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
-            ${ruleBody}
-          }`,
-            0
-          );
-
+        if (addedRule) {
           if (
             style["text-shadow"] != "none" &&
             style["text-shadow"] != selectStyle["text-shadow"]
