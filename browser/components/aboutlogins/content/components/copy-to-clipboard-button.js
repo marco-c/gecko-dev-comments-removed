@@ -2,8 +2,8 @@
 
 
 
-import {recordTelemetryEvent} from "chrome://browser/content/aboutlogins/aboutLoginsUtils.js";
-import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
+import {recordTelemetryEvent} from "../aboutLoginsUtils.js";
+import ReflectedFluentElement from "./reflected-fluent-element.js";
 
 export default class CopyToClipboardButton extends ReflectedFluentElement {
   static get BUTTON_RESET_TIMEOUT() {

@@ -2,7 +2,7 @@
 
 
 
-import {recordTelemetryEvent} from "chrome://browser/content/aboutlogins/aboutLoginsUtils.js";
+import {recordTelemetryEvent} from "aboutLoginsUtils.js";
 
 let gElements = {};
 
