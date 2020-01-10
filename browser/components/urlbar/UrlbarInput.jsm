@@ -860,8 +860,13 @@ class UrlbarInput {
 
 
 
-  search(value) {
-    this.window.focusAndSelectUrlBar();
+
+
+
+  search(value, { focus = true } = {}) {
+    if (focus) {
+      this.window.focusAndSelectUrlBar();
+    }
 
     
     if (Object.values(UrlbarTokenizer.RESTRICT).includes(value)) {
