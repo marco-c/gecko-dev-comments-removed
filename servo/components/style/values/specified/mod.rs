@@ -410,17 +410,6 @@ impl Parse for NonNegativeNumberOrPercentage {
 )]
 pub struct Opacity(Number);
 
-impl Opacity {
-    
-    #[inline]
-    pub fn parse_number<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        Number::parse(context, input).map(Opacity)
-    }
-}
-
 impl Parse for Opacity {
     
     
