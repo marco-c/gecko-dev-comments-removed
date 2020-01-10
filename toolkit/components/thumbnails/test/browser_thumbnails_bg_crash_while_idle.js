@@ -1,33 +1,29 @@
 
 
 
-function* runTests() {
+add_task(async function thumbnails_bg_crash_while_idle() {
   
   let goodUrl = bgTestPageURL();
-  yield bgCapture(goodUrl);
+  await bgCapture(goodUrl);
   ok(thumbnailExists(goodUrl), "Thumbnail should be cached after capture");
   removeThumbnail(goodUrl);
 
   
   info("Crashing the thumbnail content process.");
-  let crash = yield BrowserTestUtils.crashFrame(
+  let crash = await BrowserTestUtils.crashFrame(
     BackgroundPageThumbs._thumbBrowser,
     false
   );
   ok(crash.CrashTime, "Saw a crash from this test");
 
   
-  bgCapture(goodUrl, {
+  await bgCapture(goodUrl, {
     onDone: () => {
       ok(
         thumbnailExists(goodUrl),
         "We should have recovered and handled new capture requests"
       );
       removeThumbnail(goodUrl);
-      
-      next();
     },
   });
-
-  yield true;
-}
+});

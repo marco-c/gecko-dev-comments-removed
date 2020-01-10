@@ -5,16 +5,23 @@
 
 
 
-function* runTests() {
+add_task(async function thumbnails_bg_bug726727() {
   
-  let tab = BrowserTestUtils.addTab(gBrowser, "http://127.0.0.1:1/");
-  let browser = tab.linkedBrowser;
-  yield BrowserTestUtils.waitForContentEvent(browser, "DOMContentLoaded");
-
-  yield new Promise(resolve => {
-    PageThumbs.shouldStoreThumbnail(browser).then(aResult => {
-      ok(!aResult, "we're not going to capture an error page");
-      resolve();
-    });
-  });
-}
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+    },
+    async browser => {
+      let errorPageLoaded = BrowserTestUtils.browserLoaded(
+        browser,
+        false,
+        null,
+        true
+      );
+      BrowserTestUtils.loadURI(browser, "http://127.0.0.1:1");
+      await errorPageLoaded;
+      let result = await PageThumbs.shouldStoreThumbnail(browser);
+      ok(!result, "we're not going to capture an error page");
+    }
+  );
+});

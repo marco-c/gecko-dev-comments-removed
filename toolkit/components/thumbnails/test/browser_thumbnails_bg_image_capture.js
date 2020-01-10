@@ -9,16 +9,15 @@ const BASE_URL =
 
 
 
-function* runTests() {
+add_task(async function thumbnails_bg_image_capture() {
   
   
   const emptyUrl = "data:text/plain,";
-  yield bgCapture(emptyUrl, {
+  await bgCapture(emptyUrl, {
     isImage: true,
     onDone: (url, reason) => {
       
       is(reason, 6, "Should have the right failure reason");
-      next();
     },
   });
 
@@ -43,23 +42,16 @@ function* runTests() {
     },
   ]) {
     dontExpireThumbnailURLs([url]);
-    const capturedPromise = new Promise(resolve => {
-      bgAddPageThumbObserver(url).then(() => {
-        ok(true, `page-thumbnail created for ${url}`);
-        resolve();
-      });
-    });
-    yield bgCapture(url);
-    yield capturedPromise;
+    const capturedPromise = bgAddPageThumbObserver(url);
+    await bgCapture(url);
+    await capturedPromise;
     ok(thumbnailExists(url), "The image thumbnail should exist after capture");
 
     const thumb = PageThumbs.getThumbnailURL(url);
     const htmlns = "http://www.w3.org/1999/xhtml";
     const img = document.createElementNS(htmlns, "img");
-    yield new Promise(resolve => {
-      img.onload = () => resolve();
-      img.src = thumb;
-    });
+    img.src = thumb;
+    await BrowserTestUtils.waitForEvent(img, "load");
 
     
     const expectedWidth = Math.min(448, width);
@@ -100,4 +92,4 @@ function* runTests() {
 
     removeThumbnail(url);
   }
-}
+});

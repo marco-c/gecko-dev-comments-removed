@@ -5,23 +5,6 @@
 
 
 
-function* runTests() {
-  
-  let tests = [
-    simpleCaptureTest,
-    capIfStaleErrorResponseUpdateTest,
-    capIfStaleGoodResponseUpdateTest,
-    regularCapErrorResponseUpdateTest,
-    regularCapGoodResponseUpdateTest,
-  ];
-  for (let test of tests) {
-    info("Running subtest " + test.name);
-    for (let iterator of test()) {
-      yield iterator;
-    }
-  }
-}
-
 function ensureThumbnailStale(url) {
   
   
@@ -42,34 +25,38 @@ function getThumbnailModifiedTime(url) {
 
 
 
-function* simpleCaptureTest() {
-  let numNotifications = 0;
+
+add_task(async function thumbnails_captureAndStoreIfStale_normal() {
   const URL =
     "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?simple";
 
-  function observe(subject, topic, data) {
-    is(topic, "page-thumbnail:create", "got expected topic");
-    is(data, URL, "data is our test URL");
-    if (++numNotifications == 2) {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      let numNotifications = 0;
+
+      let observed = TestUtils.topicObserved(
+        "page-thumbnail:create",
+        (subject, data) => {
+          is(data, URL, "data is our test URL");
+
+          
+          
+          if (++numNotifications == 2) {
+            return true;
+          }
+
+          return false;
+        }
+      );
+      await PageThumbs.captureAndStore(browser);
       
-      Services.obs.removeObserver(observe, "page-thumbnail:create");
-      gBrowser.removeTab(gBrowser.selectedTab);
-      next();
-    }
-  }
+      is(numNotifications, 1, "got notification of item being created.");
 
-  Services.obs.addObserver(observe, "page-thumbnail:create");
-  
-  yield addTab(URL);
-  let browser = gBrowser.selectedBrowser;
-
-  
-  PageThumbs.captureAndStore(browser).then(function() {
-    
-    is(numNotifications, 1, "got notification of item being created.");
-    
-    
-    PageThumbs.captureAndStoreIfStale(browser).then(function() {
+      await PageThumbs.captureAndStoreIfStale(browser);
       is(
         numNotifications,
         1,
@@ -77,105 +64,148 @@ function* simpleCaptureTest() {
       );
 
       ensureThumbnailStale(URL);
-      
-      PageThumbs.captureAndStoreIfStale(browser);
-      
-      
-    });
-  });
-  yield undefined; 
-}
+      await PageThumbs.captureAndStoreIfStale(browser);
+      await observed;
+    }
+  );
+});
 
 
 
 
-function* capIfStaleErrorResponseUpdateTest() {
+
+add_task(async function thumbnails_captureAndStoreIfStale_error_response() {
   const URL =
     "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
-  yield addTab(URL);
 
-  yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
-  
-  
-  
-  
-  ensureThumbnailStale(URL);
-  yield navigateTo(URL);
-  
-  
-  
-  let now = Date.now() - 1000;
-  PageThumbs.captureAndStoreIfStale(gBrowser.selectedBrowser).then(() => {
-    PageThumbsStorageService.getFilePathForURL(URL);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      await captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
 
-    ok(getThumbnailModifiedTime(URL) < now, "modified time should be < now");
-    retrieveImageDataForURL(URL, function([r, g, b]) {
+      
+      
+      
+      
+      ensureThumbnailStale(URL);
+      BrowserTestUtils.loadURI(browser, URL);
+      await BrowserTestUtils.browserLoaded(browser);
+
+      
+      
+      
+      let now = Date.now() - 1000;
+      await PageThumbs.captureAndStoreIfStale(gBrowser.selectedBrowser);
+
+      ok(getThumbnailModifiedTime(URL) < now, "modified time should be < now");
+      let [r, g, b] = await retrieveImageDataForURL(URL);
       is("" + [r, g, b], "" + [0, 255, 0], "thumbnail is still green");
-      gBrowser.removeTab(gBrowser.selectedTab);
-      next();
-    });
-  });
-  yield undefined; 
-}
+    }
+  );
+});
 
 
 
 
 
-function* capIfStaleGoodResponseUpdateTest() {
+
+add_task(async function thumbnails_captureAndStoreIfStale_non_error_response() {
   const URL =
     "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
-  yield addTab(URL);
-  let browser = gBrowser.selectedBrowser;
 
-  yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
-  
-  
-  
-  ensureThumbnailStale(URL);
-  yield navigateTo(URL);
-  
-  
-  
-  let now = Date.now() - 1000;
-  PageThumbs.captureAndStoreIfStale(browser).then(() => {
-    ok(getThumbnailModifiedTime(URL) >= now, "modified time should be >= now");
-    
-    
-    retrieveImageDataForURL(URL, function([r, g, b]) {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      await captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
+      
+      
+      
+      ensureThumbnailStale(URL);
+      BrowserTestUtils.loadURI(browser, URL);
+      await BrowserTestUtils.browserLoaded(browser);
+
+      
+      
+      
+      let now = Date.now() - 1000;
+      await PageThumbs.captureAndStoreIfStale(browser);
+      Assert.greater(
+        getThumbnailModifiedTime(URL),
+        now,
+        "modified time should be >= now"
+      );
+      let [r, g, b] = await retrieveImageDataForURL(URL);
       is("" + [r, g, b], "" + [255, 0, 0], "thumbnail is now red");
-      next();
-    });
-  });
-  yield undefined; 
-}
+    }
+  );
+});
 
 
 
 
-function* regularCapErrorResponseUpdateTest() {
+
+add_task(async function thumbnails_captureAndStore_error_response() {
   const URL =
     "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
-  yield addTab(URL);
-  yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
-  gBrowser.removeTab(gBrowser.selectedTab);
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      await captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
+    }
+  );
+
   
   
-  yield addTab(URL);
-  yield captureAndCheckColor(0, 255, 0, "we still have a green thumbnail");
-}
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      await captureAndCheckColor(0, 255, 0, "we still have a green thumbnail");
+    }
+  );
+});
 
 
 
 
-function* regularCapGoodResponseUpdateTest() {
+
+add_task(async function thumbnails_captureAndStore_ok_response() {
   const URL =
     "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
-  yield addTab(URL);
-  yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
-  gBrowser.removeTab(gBrowser.selectedTab);
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      await captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
+    }
+  );
+
   
   
-  yield addTab(URL);
-  yield captureAndCheckColor(255, 0, 0, "we now  have a red thumbnail");
-}
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: URL,
+    },
+    async browser => {
+      await captureAndCheckColor(255, 0, 0, "we now have a red thumbnail");
+    }
+  );
+});

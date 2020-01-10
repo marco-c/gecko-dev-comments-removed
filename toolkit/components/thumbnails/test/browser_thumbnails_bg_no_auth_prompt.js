@@ -9,16 +9,18 @@
 
 
 
-function* runTests() {
+
+
+add_task(async function thumbnails_bg_no_auth_prompt() {
   let url =
     "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/authenticate.sjs?user=anyone";
   ok(!thumbnailExists(url), "Thumbnail file should not already exist.");
 
-  let capturedURL = yield bgCapture(url);
+  let [capturedURL] = await bgCapture(url);
   is(capturedURL, url, "Captured URL should be URL passed to capture.");
   ok(
     thumbnailExists(url),
     "Thumbnail file should exist even though it requires auth."
   );
   removeThumbnail(url);
-}
+});

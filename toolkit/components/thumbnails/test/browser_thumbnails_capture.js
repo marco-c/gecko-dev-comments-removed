@@ -5,16 +5,33 @@
 
 
 
-function* runTests() {
+add_task(async function thumbnails_capture() {
   
-  yield addTab("data:text/html,<body bgcolor=ff0000></body>");
-  yield captureAndCheckColor(255, 0, 0, "we have a red thumbnail");
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "data:text/html,<body bgcolor=ff0000></body>",
+    },
+    async browser => {
+      await captureAndCheckColor(255, 0, 0, "we have a red thumbnail");
 
-  
-  yield navigateTo("data:text/html,<body bgcolor=00ff00></body>");
-  yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
+      
+      let loaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.loadURI(
+        browser,
+        "data:text/html,<body bgcolor=00ff00></body>"
+      );
+      await loaded;
+      await captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
 
-  
-  yield navigateTo("data:text/html,<body bgcolor=0000ff></body>");
-  yield captureAndCheckColor(0, 0, 255, "we have a blue thumbnail");
-}
+      
+      loaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.loadURI(
+        browser,
+        "data:text/html,<body bgcolor=0000ff></body>"
+      );
+      await loaded;
+      await captureAndCheckColor(0, 0, 255, "we have a blue thumbnail");
+    }
+  );
+});

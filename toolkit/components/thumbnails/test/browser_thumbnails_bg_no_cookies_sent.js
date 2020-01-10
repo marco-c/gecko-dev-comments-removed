@@ -1,47 +1,49 @@
 
 
 
-function* runTests() {
+add_task(async function thumbnails_bg_no_cookies_sent() {
   
   let url = bgTestPageURL({ setGreenCookie: true });
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  let browser = tab.linkedBrowser;
 
-  
-  yield ContentTask.spawn(browser, null, function() {
-    Assert.notEqual(
-      content.document.documentElement.style.backgroundColor,
-      "rgb(0, 255, 0)",
-      "The page shouldn't be green yet."
-    );
-  });
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url,
+    },
+    async browser => {
+      
+      await ContentTask.spawn(browser, null, function() {
+        Assert.notEqual(
+          content.document.documentElement.style.backgroundColor,
+          "rgb(0, 255, 0)",
+          "The page shouldn't be green yet."
+        );
+      });
 
-  
-  
-  browser.reload();
-  yield BrowserTestUtils.browserLoaded(browser);
-  yield ContentTask.spawn(browser, null, function() {
-    Assert.equal(
-      content.document.documentElement.style.backgroundColor,
-      "rgb(0, 255, 0)",
-      "The page should be green now."
-    );
-  });
+      
+      
+      browser.reload();
+      await BrowserTestUtils.browserLoaded(browser);
+      await ContentTask.spawn(browser, null, function() {
+        Assert.equal(
+          content.document.documentElement.style.backgroundColor,
+          "rgb(0, 255, 0)",
+          "The page should be green now."
+        );
+      });
 
-  
-  
-  yield bgCapture(url);
-  ok(thumbnailExists(url), "Thumbnail file should exist after capture.");
+      
+      
+      await bgCapture(url);
+      ok(thumbnailExists(url), "Thumbnail file should exist after capture.");
 
-  retrieveImageDataForURL(url, function([r, g, b]) {
-    isnot(
-      [r, g, b].toString(),
-      [0, 255, 0].toString(),
-      "The captured page should not be green."
-    );
-    gBrowser.removeTab(tab);
-    removeThumbnail(url);
-    next();
-  });
-  yield true;
-}
+      let [r, g, b] = await retrieveImageDataForURL(url);
+      isnot(
+        [r, g, b].toString(),
+        [0, 255, 0].toString(),
+        "The captured page should not be green."
+      );
+      removeThumbnail(url);
+    }
+  );
+});
