@@ -3,10 +3,9 @@
 
 "use strict";
 
-const TAB_URL = (URL_ROOT + "resources/service-workers/simple-unicode.html").replace(
-  "example.com",
-  "xn--hxajbheg2az3al.xn--jxalpdlp"
-);
+const TAB_URL = (
+  URL_ROOT + "resources/service-workers/simple-unicode.html"
+).replace("example.com", "xn--hxajbheg2az3al.xn--jxalpdlp");
 
 
 
