@@ -36,14 +36,29 @@ export interface Toolbox {
 
 
 
+
+type MaybePromise<T> = Promise<T> | T;
+
+
+
+
+
+
+
+
+
 export interface PerfFront {
-  startProfiler: any;
-  getProfileAndStopProfiler: any;
-  stopProfilerAndDiscardProfile: any;
-  getSymbolTable: any;
-  isActive: any;
-  isSupportedPlatform: any;
-  isLockedForPrivateBrowsing: any;
+  startProfiler: (options: RecordingStateFromPreferences) => MaybePromise<boolean>;
+  getProfileAndStopProfiler: () => Promise<any>;
+  stopProfilerAndDiscardProfile: () => MaybePromise<void>;
+  getSymbolTable: (path: string, breakpadId: string) => Promise<[number[], number[], number[]]>;
+  isActive: () => MaybePromise<boolean>;
+  isSupportedPlatform: () => MaybePromise<boolean>;
+  isLockedForPrivateBrowsing: () => MaybePromise<boolean>;
+  
+
+
+  getSupportedFeatures: () => MaybePromise<string[]>
 }
 
 
@@ -136,7 +151,7 @@ export type ReceiveProfile = (
   getSymbolTableCallback: GetSymbolTableCallback
 ) => void;
 
-export type SetRecordingPreferences = (settings: object) => void;
+export type SetRecordingPreferences = (settings: RecordingStateFromPreferences) => MaybePromise<void>;
 
 
 

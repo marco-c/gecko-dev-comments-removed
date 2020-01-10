@@ -140,6 +140,10 @@ class MockPerfFront extends EventEmitter {
   isLockedForPrivateBrowsing() {
     return this.mockIsLocked;
   }
+
+  getSupportedFeatures() {
+    return ["js", "stackwalk", "responsiveness", "screenshots"];
+  }
 }
 
 
@@ -215,6 +219,8 @@ function createPerfComponent() {
         recordingPreferences: getDefaultRecordingPreferences(),
         setRecordingPreferences: recordingPreferencesMock,
         getSymbolTableGetter: () => noop,
+        isPopup: false,
+        supportedFeatures: perfFrontMock.getSupportedFeatures(),
       })
     );
 

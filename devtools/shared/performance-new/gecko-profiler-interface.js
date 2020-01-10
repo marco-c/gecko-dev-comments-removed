@@ -219,6 +219,18 @@ class ActorReadyGeckoProfilerInterface {
         break;
     }
   }
+
+  
+
+
+
+
+  getSupportedFeatures() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return [];
+    }
+    return Services.profiler.GetFeatures();
+  }
 }
 
 exports.ActorReadyGeckoProfilerInterface = ActorReadyGeckoProfilerInterface;
