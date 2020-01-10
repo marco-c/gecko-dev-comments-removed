@@ -38,6 +38,10 @@ class DOMParser final : public nsISupports, public nsWrapperCache {
                                              ErrorResult& aRv);
 
   
+  already_AddRefed<Document> ParseFromSafeString(const nsAString& aStr,
+                                                 SupportedType aType,
+                                                 ErrorResult& aRv);
+  
   
   already_AddRefed<Document> ParseFromBuffer(Span<const uint8_t> aBuf,
                                              SupportedType aType,

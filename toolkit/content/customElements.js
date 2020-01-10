@@ -486,7 +486,7 @@
 
 
       static parseXULToFragment(str, entities = []) {
-        let doc = gXULDOMParser.parseFromString(
+        let doc = gXULDOMParser.parseFromSafeString(
           `
       ${
         entities.length
