@@ -56,16 +56,13 @@ class Page extends Domain {
 
 
   async captureScreenshot(options = {}) {
-    const { format = "png" } = options;
+    const { format = "png", quality = 80 } = options;
 
     if (options.clip) {
       throw new UnsupportedError("clip not supported");
     }
     if (options.fromSurface) {
       throw new UnsupportedError("fromSurface not supported");
-    }
-    if (options.quality) {
-      throw new UnsupportedError("quality not supported");
     }
 
     const MAX_CANVAS_DIMENSION = 32767;
@@ -119,7 +116,7 @@ class Page extends Domain {
     
     snapshot.close();
 
-    const url = canvas.toDataURL(`image/${format}`);
+    const url = canvas.toDataURL(`image/${format}`, quality / 100);
     if (!url.startsWith(`data:image/${format}`)) {
       throw new UnsupportedError(`Unsupported MIME type: image/${format}`);
     }
