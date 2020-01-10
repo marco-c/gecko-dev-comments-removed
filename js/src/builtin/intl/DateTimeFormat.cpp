@@ -15,6 +15,7 @@
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/ICUStubs.h"
 #include "builtin/intl/ScopedICUObject.h"
 #include "builtin/intl/SharedIntlData.h"
 #include "builtin/intl/TimeZoneDataGenerated.h"
@@ -23,13 +24,6 @@
 #include "js/Date.h"
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
-#include "unicode/ucal.h"
-#include "unicode/udat.h"
-#include "unicode/udatpg.h"
-#include "unicode/uenum.h"
-#include "unicode/ufieldpositer.h"
-#include "unicode/uloc.h"
-#include "unicode/utypes.h"
 #include "vm/DateTime.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
@@ -116,10 +110,6 @@ static bool DateTimeFormat(JSContext* cx, const CallArgs& args, bool construct,
   if (!dateTimeFormat) {
     return false;
   }
-
-  dateTimeFormat->setFixedSlot(DateTimeFormatObject::INTERNALS_SLOT,
-                               NullValue());
-  dateTimeFormat->setDateFormat(nullptr);
 
   RootedValue thisValue(
       cx, construct ? ObjectValue(*dateTimeFormat) : args.thisv());

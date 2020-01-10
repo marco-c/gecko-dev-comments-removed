@@ -12,15 +12,12 @@
 #include "mozilla/FloatingPoint.h"
 
 #include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/ICUStubs.h"
 #include "builtin/intl/NumberFormat.h"
 #include "builtin/intl/ScopedICUObject.h"
 #include "gc/FreeOp.h"
 #include "js/CharacterEncoding.h"
 #include "js/PropertySpec.h"
-#include "unicode/udisplaycontext.h"
-#include "unicode/uloc.h"
-#include "unicode/ureldatefmt.h"
-#include "unicode/utypes.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
 #include "vm/StringType.h"
@@ -108,10 +105,6 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
   if (!relativeTimeFormat) {
     return false;
   }
-
-  relativeTimeFormat->setFixedSlot(RelativeTimeFormatObject::INTERNALS_SLOT,
-                                   NullValue());
-  relativeTimeFormat->setRelativeDateTimeFormatter(nullptr);
 
   HandleValue locales = args.get(0);
   HandleValue options = args.get(1);
