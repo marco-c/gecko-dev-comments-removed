@@ -211,12 +211,14 @@ this.LoginManagerContextMenu = {
 
 
   _fillTargetField(login, inputElementIdentifier, browser, formOrigin) {
-    LoginManagerParent.fillForm({
-      browser,
-      inputElementIdentifier,
-      loginFormOrigin: formOrigin,
-      login,
-    }).catch(Cu.reportError);
+    LoginManagerParent.getLoginManagerParent()
+      .fillForm({
+        browser,
+        inputElementIdentifier,
+        loginFormOrigin: formOrigin,
+        login,
+      })
+      .catch(Cu.reportError);
   },
 
   

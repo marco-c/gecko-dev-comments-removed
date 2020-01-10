@@ -561,9 +561,9 @@ class ContextMenuChild extends JSWindowActorChild {
     } = doc;
     docLocation = docLocation && docLocation.spec;
     let frameOuterWindowID = WebNavigationFrames.getFrameId(doc.defaultView);
-    let loginFillInfo = LoginManagerContent.getFieldContext(
-      aEvent.composedTarget
-    );
+    let loginFillInfo = LoginManagerContent.forWindow(
+      doc.defaultView
+    ).getFieldContext(aEvent.composedTarget);
 
     
     let parentAllowsMixedContent = !!this.docShell.mixedContentChannel;

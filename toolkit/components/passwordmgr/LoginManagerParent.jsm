@@ -52,29 +52,46 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 const EXPORTED_SYMBOLS = ["LoginManagerParent"];
 
-this.LoginManagerParent = {
+let gLoginManagerParentSingleton = null;
+
+
+
+
+
+
+
+
+let gGeneratedPasswordsByPrincipalOrigin = new Map();
+
+
+
+
+
+
+
+
+
+let gRecipeManager = null;
+
+class LoginManagerParent {
+  constructor() {
+    
+    
+    this._lastMPLoginCancelled = Math.NEGATIVE_INFINITY;
+  }
+
   
+  static getGeneratedPasswordsByPrincipalOrigin() {
+    return gGeneratedPasswordsByPrincipalOrigin;
+  }
 
-
-
-
-
-
-  _generatedPasswordsByPrincipalOrigin: new Map(),
-
-  
-
-
-
-
-
-
-
-  _recipeManager: null,
-
-  
-  
-  _lastMPLoginCancelled: Math.NEGATIVE_INFINITY,
+  static getLoginManagerParent() {
+    
+    if (!gLoginManagerParentSingleton) {
+      gLoginManagerParentSingleton = new LoginManagerParent();
+    }
+    return gLoginManagerParentSingleton;
+  }
 
   
 
@@ -134,7 +151,11 @@ this.LoginManagerParent = {
       formOrigin,
       formActionOrigin
     );
-  },
+  }
+
+  static receiveMessage(msg) {
+    LoginManagerParent.getLoginManagerParent().receiveMessage(msg);
+  }
 
   
   
@@ -155,7 +176,7 @@ this.LoginManagerParent = {
 
       case "PasswordManager:findRecipes": {
         let formHost = new URL(data.formOrigin).host;
-        return this._recipeManager.getRecipesForHost(formHost);
+        return gRecipeManager.getRecipesForHost(formHost);
       }
 
       case "PasswordManager:onFormSubmit": {
@@ -190,7 +211,7 @@ this.LoginManagerParent = {
     }
 
     return undefined;
-  },
+  }
 
   
   observe(subject, topic, data) {
@@ -199,7 +220,7 @@ this.LoginManagerParent = {
       (topic == "passwordmgr-storage-changed" && data == "removeLogin")
     ) {
       let { origin, guid } = subject;
-      let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(origin);
+      let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(origin);
 
       
       
@@ -215,7 +236,7 @@ this.LoginManagerParent = {
         generatedPW.storageGUID = null;
       }
     }
-  },
+  }
 
   
 
@@ -227,7 +248,7 @@ this.LoginManagerParent = {
       let formHost;
       try {
         formHost = new URL(loginFormOrigin).host;
-        let recipeManager = await this.recipeParentPromise;
+        let recipeManager = await LoginManagerParent.recipeParentPromise;
         recipes = recipeManager.getRecipesForHost(formHost);
       } catch (ex) {
         
@@ -244,7 +265,7 @@ this.LoginManagerParent = {
       logins: jsLogins,
       recipes,
     });
-  },
+  }
 
   
 
@@ -261,7 +282,7 @@ this.LoginManagerParent = {
       let formHost;
       try {
         formHost = new URL(formOrigin).host;
-        let recipeManager = await this.recipeParentPromise;
+        let recipeManager = await LoginManagerParent.recipeParentPromise;
         recipes = recipeManager.getRecipesForHost(formHost);
       } catch (ex) {
         
@@ -351,7 +372,7 @@ this.LoginManagerParent = {
       logins: jsLogins,
       recipes,
     });
-  },
+  }
 
   doAutocompleteSearch(
     {
@@ -448,14 +469,14 @@ this.LoginManagerParent = {
         logins: jsLogins,
       }
     );
-  },
+  }
 
   
 
 
-  get _browsingContextGlobal() {
+  static get _browsingContextGlobal() {
     return BrowsingContext;
-  },
+  }
 
   getGeneratedPassword(browsingContextId) {
     if (
@@ -474,7 +495,7 @@ this.LoginManagerParent = {
       browsingContext.currentWindowGlobal.documentPrincipal.origin;
     
     
-    let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
+    let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(
       framePrincipalOrigin
     );
     if (generatedPW) {
@@ -493,12 +514,9 @@ this.LoginManagerParent = {
       storageGUID: null,
       value: PasswordGenerator.generatePassword(),
     };
-    this._generatedPasswordsByPrincipalOrigin.set(
-      framePrincipalOrigin,
-      generatedPW
-    );
+    gGeneratedPasswordsByPrincipalOrigin.set(framePrincipalOrigin, generatedPW);
     return generatedPW.value;
-  },
+  }
 
   _getPrompter(browser, openerTopWindowID) {
     let prompterSvc = Cc[
@@ -519,7 +537,7 @@ this.LoginManagerParent = {
     }
 
     return prompterSvc;
-  },
+  }
 
   onFormSubmit(
     browser,
@@ -585,7 +603,7 @@ this.LoginManagerParent = {
       formActionOrigin,
     });
 
-    let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(origin);
+    let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(origin);
     let autoSavedStorageGUID = "";
     if (generatedPW && generatedPW.storageGUID) {
       autoSavedStorageGUID = generatedPW.storageGUID;
@@ -700,7 +718,7 @@ this.LoginManagerParent = {
     
     let prompter = this._getPrompter(browser, openerTopWindowID);
     prompter.promptToSavePassword(formLogin, dismissedPrompt);
-  },
+  }
 
   _onGeneratedPasswordFilledOrEdited({
     browsingContextId,
@@ -742,7 +760,7 @@ this.LoginManagerParent = {
 
     let framePrincipalOrigin =
       browsingContext.currentWindowGlobal.documentPrincipal.origin;
-    let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
+    let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(
       framePrincipalOrigin
     );
 
@@ -916,22 +934,21 @@ this.LoginManagerParent = {
       true, 
       shouldAutoSaveLogin 
     );
-  },
-};
-
-XPCOMUtils.defineLazyGetter(
-  LoginManagerParent,
-  "recipeParentPromise",
-  function() {
-    const { LoginRecipesParent } = ChromeUtils.import(
-      "resource://gre/modules/LoginRecipes.jsm"
-    );
-    this._recipeManager = new LoginRecipesParent({
-      defaults: Services.prefs.getStringPref("signon.recipes.path"),
-    });
-    return this._recipeManager.initializationPromise;
   }
-);
+
+  static get recipeParentPromise() {
+    if (!gRecipeManager) {
+      const { LoginRecipesParent } = ChromeUtils.import(
+        "resource://gre/modules/LoginRecipes.jsm"
+      );
+      gRecipeManager = new LoginRecipesParent({
+        defaults: Services.prefs.getStringPref("signon.recipes.path"),
+      });
+    }
+
+    return gRecipeManager.initializationPromise;
+  }
+}
 
 XPCOMUtils.defineLazyPreferenceGetter(
   LoginManagerParent,
