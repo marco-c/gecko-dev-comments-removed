@@ -90,14 +90,13 @@ class ObjectGroup : public gc::TenuredCell {
 
  private:
   
-  const JSClass* clasp_;  
+  const JSClass* const clasp_;  
 
   
   GCPtr<TaggedProto> proto_;  
 
   
-  JS::Realm* realm_;
-  ;  
+  JS::Realm* realm_;  
 
   
   ObjectGroupFlags flags_;  
