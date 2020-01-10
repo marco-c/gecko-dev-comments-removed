@@ -1612,7 +1612,6 @@
       var aFocusUrlBar;
       var aName;
       var aCsp;
-      var aSkipLoad;
       if (
         arguments.length == 2 &&
         typeof arguments[1] == "object" &&
@@ -1643,7 +1642,6 @@
         aFocusUrlBar = params.focusUrlBar;
         aName = params.name;
         aCsp = params.csp;
-        aSkipLoad = params.skipLoad;
       }
 
       
@@ -1684,7 +1682,6 @@
         focusUrlBar: aFocusUrlBar,
         name: aName,
         csp: aCsp,
-        skipLoad: aSkipLoad,
       });
       if (!bgLoad) {
         this.selectedTab = tab;
@@ -2097,7 +2094,6 @@
       sameProcessAsFrameLoader,
       uriIsAboutBlank,
       userContextId,
-      skipLoad,
     } = {}) {
       let b = document.createXULElement("browser");
       
@@ -2214,7 +2210,7 @@
 
       
       
-      if (!uriIsAboutBlank || skipLoad) {
+      if (!uriIsAboutBlank) {
         b.setAttribute("nodefaultsrc", "true");
       }
 
@@ -2581,7 +2577,6 @@
         recordExecution,
         replayExecution,
         csp,
-        skipLoad,
       } = {}
     ) {
       
@@ -2815,7 +2810,6 @@
             name,
             recordExecution,
             replayExecution,
-            skipLoad,
           });
         }
 
@@ -2909,8 +2903,7 @@
       
       if (
         !usingPreloadedContent &&
-        (!uriIsAboutBlank || !allowInheritPrincipal) &&
-        !skipLoad
+        (!uriIsAboutBlank || !allowInheritPrincipal)
       ) {
         
         

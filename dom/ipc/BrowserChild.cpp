@@ -1445,12 +1445,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvActivate() {
   
   
   RefPtr<PresShell> presShell = GetTopLevelPresShell();
-  NS_ASSERTION(presShell, "Need a PresShell to activate!");
+  MOZ_ASSERT(presShell);
   Unused << presShell;
 
-  if (presShell) {
-    mWebBrowser->FocusActivate();
-  }
+  mWebBrowser->FocusActivate();
   return IPC_OK();
 }
 

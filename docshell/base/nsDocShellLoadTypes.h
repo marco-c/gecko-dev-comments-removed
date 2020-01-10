@@ -28,9 +28,8 @@
 
 
 
-#  define EXTRA_LOAD_FLAGS                     \
-    (nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD | \
-     nsIWebNavigation::LOAD_FLAGS_ALLOW_POPUPS | 0xffff0000)
+#  define EXTRA_LOAD_FLAGS \
+    (LOAD_FLAGS_FIRST_LOAD | LOAD_FLAGS_ALLOW_POPUPS | 0xffff0000)
 
 
 
