@@ -1892,6 +1892,10 @@ static bool EmitLazyScript(JSContext* cx, FunctionBox* funbox,
   function->initLazyScript(lazy);
   funbox->setIsInterpretedLazy(true);
 
+  if (data.fieldInitializers) {
+    lazy->setFieldInitializers(*data.fieldInitializers);
+  }
+
   
   
   funbox->lazyScriptData().reset();
