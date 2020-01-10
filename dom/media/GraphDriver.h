@@ -130,8 +130,6 @@ class GraphDriver {
 
   virtual void Start() = 0;
   
-  virtual void Revive() = 0;
-  
   virtual void Shutdown() = 0;
   
 
@@ -234,7 +232,6 @@ class ThreadedDriver : public GraphDriver {
   void WaitForNextIteration() override;
   void WakeUp() override;
   void Start() override;
-  void Revive() override;
   void Shutdown() override;
   
 
@@ -323,7 +320,7 @@ struct StreamAndPromiseForOperation {
   dom::AudioContextOperationFlags mFlags;
 };
 
-enum class AsyncCubebOperation { INIT, REVIVE, SHUTDOWN };
+enum class AsyncCubebOperation { INIT, SHUTDOWN };
 enum class AudioInputType { Unknown, Voice };
 
 
@@ -361,7 +358,6 @@ class AudioCallbackDriver : public GraphDriver,
   virtual ~AudioCallbackDriver();
 
   void Start() override;
-  void Revive() override;
   void WaitForNextIteration() override;
   void WakeUp() override;
   void Shutdown() override;

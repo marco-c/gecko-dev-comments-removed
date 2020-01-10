@@ -1685,23 +1685,9 @@ void MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG) {
       
       
       
-      
-      if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
-          mRealtime && !mForceShutDown) {
-        LifecycleStateRef() = LIFECYCLE_RUNNING;
-        
-        
-        
-        {
-          LOG(LogLevel::Debug,
-              ("%p: Reviving this graph! %s", this,
-               CurrentDriver()->AsAudioCallbackDriver() ? "AudioCallbackDriver"
-                                                        : "SystemClockDriver"));
-          RefPtr<GraphDriver> driver = CurrentDriver();
-          MonitorAutoUnlock unlock(mMonitor);
-          driver->Revive();
-        }
-      }
+      MOZ_DIAGNOSTIC_ASSERT(mForceShutDown ||
+                            LifecycleStateRef() <
+                                LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP);
     }
 
     if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {

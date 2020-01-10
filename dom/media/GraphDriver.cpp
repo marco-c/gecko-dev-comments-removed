@@ -230,22 +230,6 @@ void ThreadedDriver::Start() {
   }
 }
 
-void ThreadedDriver::Revive() {
-  MOZ_ASSERT(NS_IsMainThread() && !ThreadRunning());
-  
-  
-  LOG(LogLevel::Debug, ("AudioCallbackDriver reviving."));
-  
-  
-  MonitorAutoLock mon(mGraphImpl->GetMonitor());
-  if (NextDriver()) {
-    SwitchToNextDriver();
-  } else {
-    nsCOMPtr<nsIRunnable> event = new MediaStreamGraphInitThreadRunnable(this);
-    mThread->EventTarget()->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
-  }
-}
-
 void ThreadedDriver::Shutdown() {
   NS_ASSERTION(NS_IsMainThread(), "Must be called on main thread");
   
@@ -441,19 +425,6 @@ AsyncCubebTask::Run() {
         return NS_ERROR_FAILURE;
       }
       mDriver->CompleteAudioContextOperations(mOperation);
-      break;
-    }
-    case AsyncCubebOperation::REVIVE: {
-      LOG(LogLevel::Debug, ("%p: AsyncCubebOperation::REVIVE driver=%p",
-                            mDriver->GraphImpl(), mDriver.get()));
-      if (mDriver->IsStarted()) {
-        mDriver->Stop();
-      }
-      if (!mDriver->StartStream()) {
-        LOG(LogLevel::Warning,
-            ("%p: AsyncCubebOperation couldn't start the driver=%p.",
-             mDriver->GraphImpl(), mDriver.get()));
-      }
       break;
     }
     case AsyncCubebOperation::SHUTDOWN: {
@@ -741,22 +712,6 @@ void AudioCallbackDriver::Stop() {
     NS_WARNING("Could not stop cubeb stream for MSG.");
   }
   mStarted = false;
-}
-
-void AudioCallbackDriver::Revive() {
-  MOZ_ASSERT(NS_IsMainThread() && !ThreadRunning());
-  
-  
-  LOG(LogLevel::Debug, ("%p: AudioCallbackDriver reviving.", GraphImpl()));
-  
-  MonitorAutoLock mon(GraphImpl()->GetMonitor());
-  if (NextDriver()) {
-    SwitchToNextDriver();
-  } else {
-    RefPtr<AsyncCubebTask> reviveEvent =
-        new AsyncCubebTask(this, AsyncCubebOperation::REVIVE);
-    reviveEvent->Dispatch();
-  }
 }
 
 void AudioCallbackDriver::RemoveMixerCallback() {
