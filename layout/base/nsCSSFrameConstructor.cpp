@@ -10170,9 +10170,18 @@ void nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
   nsIFrame* prevFrame = nullptr;
   nsIFrame* frame = aParentFrameList;
 
+  
+  
+  
   while (frame) {
     nsIFrame* nextFrame = frame->GetNextSibling();
 
+    
+    if (frame->Style()->GetPseudoType() == PseudoStyleType::marker) {
+      prevFrame = frame;
+      frame = nextFrame;
+      continue;
+    }
     LayoutFrameType frameType = frame->Type();
     if (LayoutFrameType::Text == frameType) {
       
