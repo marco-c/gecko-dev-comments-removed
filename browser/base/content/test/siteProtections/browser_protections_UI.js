@@ -15,6 +15,11 @@ add_task(async function setup() {
       ["browser.protections_panel.enabled", true],
       
       ["browser.protections_panel.toast.timeout", 100],
+      
+      
+      ["browser.contentblocking.report.monitor.enabled", false],
+      ["browser.contentblocking.report.lockwise.enabled", false],
+      ["browser.contentblocking.report.proxy.enabled", false],
     ],
   });
 });
@@ -169,6 +174,15 @@ add_task(async function testShowFullReportLink() {
   let newTab = await newTabPromise;
 
   ok(true, "about:protections has been opened successfully");
+
+  
+  
+  await ContentTask.spawn(newTab.linkedBrowser, {}, async function() {
+    await ContentTaskUtils.waitForCondition(() => {
+      let bars = content.document.querySelectorAll(".graph-bar");
+      return bars.length;
+    }, "The graph has been built");
+  });
 
   BrowserTestUtils.removeTab(newTab);
   BrowserTestUtils.removeTab(tab);

@@ -194,7 +194,10 @@ add_task(async function test_aboutURL() {
         !(flags & Ci.nsIAboutModule.HIDE_FROM_ABOUTABOUT) &&
         !networkURLs.includes(aboutType) &&
         
-        aboutType !== "newtab"
+        aboutType !== "newtab" &&
+        
+        
+        aboutType !== "protections"
       ) {
         aboutURLs.push(aboutType);
       }
