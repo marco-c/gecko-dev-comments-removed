@@ -645,6 +645,9 @@ void Http3Session::ResetRecvd(uint64_t aStreamId, Http3AppError aError) {
     CloseStream(stream, NS_ERROR_NET_RESET);
   } else if (aError.tag == Http3AppError::Tag::RequestRejected) {
     
+    
+    
+    stream->Transaction()->DoNotRemoveAltSvc();
     CloseStream(stream, NS_ERROR_NET_RESET);
   } else {
     if (stream->RecvdData()) {
