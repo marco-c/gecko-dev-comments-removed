@@ -5,6 +5,9 @@ setJitCompilerOption("ion.warmup.trigger", max - 10);
 setJitCompilerOption("ion.full.warmup.trigger", max - 10);
 
 
+gczeal(0);
+
+
 
 
 

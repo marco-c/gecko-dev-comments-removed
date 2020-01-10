@@ -11,6 +11,9 @@ if (getJitCompilerOptions()["ion.forceinlineCaches"])
     setJitCompilerOption("ion.forceinlineCaches", 0);
 
 
+gczeal(0);
+
+
 
 var resumeHere = function (i) { if (i >= 99) bailout(); };
 

@@ -11,6 +11,9 @@ if (getJitCompilerOptions()["ion.warmup.trigger"] <= 20)
     setJitCompilerOption("ion.warmup.trigger", 20);
 
 
+gczeal(0);
+
+
 
 
 function f(a, b, c, d) { }

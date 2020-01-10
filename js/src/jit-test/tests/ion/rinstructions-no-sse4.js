@@ -6,6 +6,9 @@
 setJitCompilerOption("baseline.warmup.trigger", 10);
 setJitCompilerOption("ion.warmup.trigger", 20);
 
+
+gczeal(0);
+
 const max = 200;
 
 

@@ -11,6 +11,9 @@ if (!opts['ion.enable'] || !opts['baseline.enable'] ||
     crash("Cannot test assertRecoveredOnBailout");
 }
 
+
+gczeal(0);
+
 function g() {
     return inIon();
 }
