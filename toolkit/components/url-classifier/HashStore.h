@@ -207,14 +207,15 @@ class HashStore {
   
   
   
-  nsresult AugmentAdds(const nsTArray<uint32_t>& aPrefixes);
+  nsresult AugmentAdds(const nsTArray<uint32_t>& aPrefixes,
+                       const nsTArray<nsCString>& aCompletes);
 
   ChunkSet& AddChunks();
   ChunkSet& SubChunks();
   AddPrefixArray& AddPrefixes() { return mAddPrefixes; }
   SubPrefixArray& SubPrefixes() { return mSubPrefixes; }
-  AddCompleteArray& AddCompletes();
-  SubCompleteArray& SubCompletes();
+  AddCompleteArray& AddCompletes() { return mAddCompletes; }
+  SubCompleteArray& SubCompletes() { return mSubCompletes; }
 
   
   
@@ -236,9 +237,6 @@ class HashStore {
   
   nsresult WriteFile();
 
-  
-  void ClearCompletes();
-
  private:
   nsresult Reset();
 
@@ -255,16 +253,15 @@ class HashStore {
 
   nsresult ReadAddPrefixes();
   nsresult ReadSubPrefixes();
+  nsresult ReadAddCompletes();
 
-  nsresult WriteAddPrefixes(nsIOutputStream* aOut);
+  nsresult WriteAddPrefixChunks(nsIOutputStream* aOut);
   nsresult WriteSubPrefixes(nsIOutputStream* aOut);
+  nsresult WriteAddCompleteChunks(nsIOutputStream* aOut);
 
   nsresult ProcessSubs();
 
   nsresult PrepareForUpdate();
-
-  bool AlreadyReadChunkNumbers() const;
-  bool AlreadyReadCompletions() const;
 
   
   
