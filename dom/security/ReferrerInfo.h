@@ -27,6 +27,7 @@ class nsIURI;
 class nsIChannel;
 class nsILoadInfo;
 class nsINode;
+class nsIPrincipal;
 
 namespace mozilla {
 namespace net {
@@ -77,6 +78,16 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
+
+
+
+  static already_AddRefed<nsIReferrerInfo> CreateForFetch(
+      nsIPrincipal* aPrincipal, Document* aDoc);
+
+  
+
+
+
   static bool IsReferrerSchemeAllowed(nsIURI* aReferrer);
 
   
@@ -105,7 +116,7 @@ class ReferrerInfo : public nsIReferrerInfo {
                                            nsIURI* aURI = nullptr,
                                            bool privateBrowsing = false);
 
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREFERRERINFO
   NS_DECL_NSISERIALIZABLE
 

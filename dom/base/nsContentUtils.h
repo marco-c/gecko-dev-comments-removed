@@ -2854,25 +2854,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-
-
-
-  static nsresult SetFetchReferrerURIWithPolicy(
-      nsIPrincipal* aPrincipal, Document* aDoc, nsIHttpChannel* aChannel,
-      mozilla::net::ReferrerPolicy aReferrerPolicy);
-
-  
-
-
-
-
-
-
   static mozilla::net::ReferrerPolicy GetReferrerPolicyFromChannel(
       nsIChannel* aChannel);
 
