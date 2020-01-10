@@ -2983,6 +2983,13 @@ class nsLayoutUtils {
   static mozilla::Maybe<mozilla::MotionPathData> ResolveMotionPath(
       const nsIFrame* aFrame);
 
+  
+
+
+
+
+  static bool FrameIsScrolledOutOfViewInCrossProcess(const nsIFrame* aFrame);
+
  private:
   
 

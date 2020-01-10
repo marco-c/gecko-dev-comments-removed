@@ -10894,7 +10894,11 @@ static bool IsFrameScrolledOutOfView(const nsIFrame* aTarget,
           nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT |
               nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
   if (!scrollableFrame) {
-    return false;
+    
+    
+    
+    
+    return nsLayoutUtils::FrameIsScrolledOutOfViewInCrossProcess(aTarget);
   }
 
   nsIFrame* scrollableParent = do_QueryFrame(scrollableFrame);

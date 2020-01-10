@@ -1,3 +1,13 @@
+add_task(async function setup_pref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["layout.throttled_frame_rate", 60],
+    ],
+  });
+});
+
 add_task(async function test_main() {
   function httpURL(filename) {
     let chromeURL = getRootDirectory(gTestPath) + filename;
@@ -27,11 +37,21 @@ add_task(async function test_main() {
         });
       },
     },
+    { url: httpURL("helper_fission_animation_styling_in_oopif.html") },
     
   ];
   if (isWebRender) {
     subtests = subtests.concat([
       
+    ]);
+  } else {
+    subtests = subtests.concat([
+      
+      {
+        url: httpURL(
+          "helper_fission_animation_styling_in_transformed_oopif.html"
+        ),
+      },
     ]);
   }
 

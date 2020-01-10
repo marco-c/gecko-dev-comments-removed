@@ -10085,3 +10085,46 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
   return Some(
       MotionPathData{point - anchorPoint.ToUnknownPoint(), angle, shift});
 }
+
+
+bool nsLayoutUtils::FrameIsScrolledOutOfViewInCrossProcess(
+    const nsIFrame* aFrame) {
+  
+  nsPresContext* topContextInProcess =
+      aFrame->PresContext()->GetToplevelContentDocumentPresContext();
+  if (!topContextInProcess) {
+    
+    return false;
+  }
+
+  if (topContextInProcess->Document()->IsTopLevelContentDocument()) {
+    
+    return false;
+  }
+
+  nsIDocShell* docShell = topContextInProcess->GetDocShell();
+  BrowserChild* browserChild = BrowserChild::GetFrom(docShell);
+  if (!browserChild) {
+    
+    return false;
+  }
+
+  if (!browserChild->GetEffectsInfo().IsVisible()) {
+    
+    return true;
+  }
+
+  nsIFrame* rootFrame = topContextInProcess->PresShell()->GetRootFrame();
+  nsRect transformedToIFrame = nsLayoutUtils::TransformFrameRectToAncestor(
+      aFrame, aFrame->GetRectRelativeToSelf(), rootFrame);
+
+  LayoutDeviceRect rectInLayoutDevicePixel = LayoutDeviceRect::FromAppUnits(
+      transformedToIFrame, topContextInProcess->AppUnitsPerDevPixel());
+
+  ScreenRect transformedToRoot = ViewAs<ScreenPixel>(
+      browserChild->GetChildToParentConversionMatrix().TransformBounds(
+          rectInLayoutDevicePixel),
+      PixelCastJustification::ContentProcessIsLayerInUiProcess);
+
+  return !browserChild->GetRemoteDocumentRect().Intersects(transformedToRoot);
+}
