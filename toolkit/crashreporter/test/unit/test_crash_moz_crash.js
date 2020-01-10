@@ -1,15 +1,17 @@
 function run_test() {
   
-  do_crash(function() {
-             crashType = CrashTestUtils.CRASH_MOZ_CRASH;
-             crashReporter.annotateCrashReport("TestKey", "TestValue");
-           },
-           function(mdump, extra) {
-             Assert.equal(extra.TestKey, "TestValue");
-             Assert.equal(false, "OOMAllocationSize" in extra);
-             Assert.equal(false, "JSOutOfMemory" in extra);
-             Assert.equal(false, "JSLargeAllocationFailure" in extra);
-           },
-          
-          true);
+  do_crash(
+    function() {
+      crashType = CrashTestUtils.CRASH_MOZ_CRASH;
+      crashReporter.annotateCrashReport("TestKey", "TestValue");
+    },
+    function(mdump, extra) {
+      Assert.equal(extra.TestKey, "TestValue");
+      Assert.equal(false, "OOMAllocationSize" in extra);
+      Assert.equal(false, "JSOutOfMemory" in extra);
+      Assert.equal(false, "JSLargeAllocationFailure" in extra);
+    },
+    
+    true
+  );
 }

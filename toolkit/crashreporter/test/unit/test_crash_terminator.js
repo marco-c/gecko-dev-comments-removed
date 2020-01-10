@@ -6,7 +6,9 @@
 
 
 function setup_crash() {
-  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
+  );
 
   Services.prefs.setBoolPref("toolkit.terminator.testing", true);
   Services.prefs.setIntPref("toolkit.asyncshutdown.crash_timeout", 10);
@@ -14,8 +16,9 @@ function setup_crash() {
   
   
   
-  let terminator = Cc["@mozilla.org/toolkit/shutdown-terminator;1"].
-    createInstance(Ci.nsIObserver);
+  let terminator = Cc[
+    "@mozilla.org/toolkit/shutdown-terminator;1"
+  ].createInstance(Ci.nsIObserver);
   terminator.observe(null, "profile-after-change", null);
 
   
@@ -26,7 +29,6 @@ function setup_crash() {
   dump("Waiting (actively) for the crash\n");
   Services.tm.spinEventLoopUntil(() => false);
 }
-
 
 function after_crash(mdump, extra) {
   info("Crash signature: " + JSON.stringify(extra, null, "\t"));

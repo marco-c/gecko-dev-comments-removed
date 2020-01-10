@@ -3,9 +3,9 @@ function run_test() {
   
   do_crash(
     function() {
-        CrashTestUtils.TryOverrideExceptionHandler();
+      CrashTestUtils.TryOverrideExceptionHandler();
     },
-    function(mdump, extra) {
-    },
-    true);
+    function(mdump, extra) {},
+    true
+  );
 }

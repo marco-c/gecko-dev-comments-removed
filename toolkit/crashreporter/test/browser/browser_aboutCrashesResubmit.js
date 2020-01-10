@@ -20,7 +20,11 @@ function check_crash_list(crashes) {
   const crashIdNodes = Array.from(doc.getElementsByClassName("crash-id"));
   const pageCrashIds = new Set(crashIdNodes.map(node => node.textContent));
   const crashIds = new Set(crashes.map(crash => crash.id));
-  Assert.deepEqual(pageCrashIds, crashIds, "about:crashes lists the correct crash reports.");
+  Assert.deepEqual(
+    pageCrashIds,
+    crashIds,
+    "about:crashes lists the correct crash reports."
+  );
 }
 
 
@@ -53,10 +57,21 @@ function check_submit_pending(tab, crashes) {
 
       
       let result = JSON.parse(content.document.documentElement.textContent);
-      Assert.equal(result.upload_file_minidump, "MDMP", "minidump file sent properly");
-      Assert.equal(result.memory_report, "Let's pretend this is a memory report",
-         "memory report sent properly");
-      Assert.equal(+result.Throttleable, 0, "correctly sent as non-throttleable");
+      Assert.equal(
+        result.upload_file_minidump,
+        "MDMP",
+        "minidump file sent properly"
+      );
+      Assert.equal(
+        result.memory_report,
+        "Let's pretend this is a memory report",
+        "memory report sent properly"
+      );
+      Assert.equal(
+        +result.Throttleable,
+        0,
+        "correctly sent as non-throttleable"
+      );
       
       
       delete result.upload_file_minidump;
@@ -71,19 +86,26 @@ function check_submit_pending(tab, crashes) {
       CrashID = id;
       CrashURL = url;
       for (let x in result) {
-        if (x in SubmittedCrash.extra)
-          is(result[x], SubmittedCrash.extra[x],
-             "submitted value for " + x + " matches expected");
-        else
+        if (x in SubmittedCrash.extra) {
+          is(
+            result[x],
+            SubmittedCrash.extra[x],
+            "submitted value for " + x + " matches expected"
+          );
+        } else {
           ok(false, "property " + x + " missing from submitted data!");
+        }
       }
       for (let y in SubmittedCrash.extra) {
-        if (!(y in result))
+        if (!(y in result)) {
           ok(false, "property " + y + " missing from result data!");
+        }
       }
 
       
-      BrowserTestUtils.waitForEvent(browser, "pageshow", true).then(csp_pageshow);
+      BrowserTestUtils.waitForEvent(browser, "pageshow", true).then(
+        csp_pageshow
+      );
 
       
       browser.goBack();
@@ -96,16 +118,33 @@ function check_submit_pending(tab, crashes) {
   }
   browser.addEventListener("CrashSubmitSucceeded", csp_onsuccess, true);
   browser.addEventListener("CrashSubmitFailed", csp_fail, true);
-  BrowserTestUtils.browserLoaded(browser, false, (url) => url !== "about:crashes").then(csp_onload);
+  BrowserTestUtils.browserLoaded(
+    browser,
+    false,
+    url => url !== "about:crashes"
+  ).then(csp_onload);
   function csp_pageshow() {
-    ContentTask.spawn(browser, { CrashID, CrashURL }, function({ CrashID, CrashURL }) {
-                  Assert.equal(content.location.href, "about:crashes", "navigated back successfully");
-                  const link = content.document.getElementById(CrashID).getElementsByClassName("crash-link")[0];
-                  Assert.notEqual(link, null, "crash report link changed correctly");
-                  if (link) {
-                    Assert.equal(link.href, CrashURL, "crash report link points to correct href");
-                  }
-                }).then(cleanup_and_finish);
+    ContentTask.spawn(browser, { CrashID, CrashURL }, function({
+      CrashID,
+      CrashURL,
+    }) {
+      Assert.equal(
+        content.location.href,
+        "about:crashes",
+        "navigated back successfully"
+      );
+      const link = content.document
+        .getElementById(CrashID)
+        .getElementsByClassName("crash-link")[0];
+      Assert.notEqual(link, null, "crash report link changed correctly");
+      if (link) {
+        Assert.equal(
+          link.href,
+          CrashURL,
+          "crash report link points to correct href"
+        );
+      }
+    }).then(cleanup_and_finish);
   }
 
   
@@ -117,7 +156,9 @@ function check_submit_pending(tab, crashes) {
   }
 
   ContentTask.spawn(browser, SubmittedCrash.id, id => {
-    const submitButton = content.document.getElementById(id).getElementsByClassName("submit-button")[0];
+    const submitButton = content.document
+      .getElementById(id)
+      .getElementsByClassName("submit-button")[0];
     submitButton.click();
   });
 }
@@ -129,23 +170,25 @@ function test() {
   crD.append("Crash Reports");
   const crashes = add_fake_crashes(crD, 1);
   
-  crashes.push(addPendingCrashreport(
-    crD,
-    crashes[crashes.length - 1].date + 60000,
-    {
-      "ServerURL": "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs",
-      "ProductName": "Test App",
-      "Foo": "ABC=XYZ", 
-    },
-  ));
+  crashes.push(
+    addPendingCrashreport(crD, crashes[crashes.length - 1].date + 60000, {
+      ServerURL:
+        "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs",
+      ProductName: "Test App",
+      Foo: "ABC=XYZ", 
+    })
+  );
   crashes.sort((a, b) => b.date - a.date);
 
   
-  Services.prefs.setCharPref("breakpad.reportURL",
-                             "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs?id=");
+  Services.prefs.setCharPref(
+    "breakpad.reportURL",
+    "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs?id="
+  );
 
-  BrowserTestUtils.openNewForegroundTab(gBrowser, "about:crashes").then((tab) => {
-    ContentTask.spawn(tab.linkedBrowser, crashes, check_crash_list)
-               .then(() => check_submit_pending(tab, crashes));
+  BrowserTestUtils.openNewForegroundTab(gBrowser, "about:crashes").then(tab => {
+    ContentTask.spawn(tab.linkedBrowser, crashes, check_crash_list).then(() =>
+      check_submit_pending(tab, crashes)
+    );
   });
 }

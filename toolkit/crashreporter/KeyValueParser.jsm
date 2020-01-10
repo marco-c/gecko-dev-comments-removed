@@ -2,8 +2,7 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 var EXPORTED_SYMBOLS = [
   "parseKeyValuePairsFromLines",
@@ -15,16 +14,17 @@ var EXPORTED_SYMBOLS = [
 var parseKeyValuePairsFromLines = function(lines) {
   let data = {};
   for (let line of lines) {
-    if (line == "")
+    if (line == "") {
       continue;
+    }
 
     
     let eq = line.indexOf("=");
     if (eq != -1) {
-      let [key, value] = [line.substring(0, eq),
-                          line.substring(eq + 1)];
-      if (key && value)
+      let [key, value] = [line.substring(0, eq), line.substring(eq + 1)];
+      if (key && value) {
         data[key] = value.replace(/\\n/g, "\n").replace(/\\\\/g, "\\");
+      }
     }
   }
   return data;
@@ -37,12 +37,19 @@ function parseKeyValuePairs(text) {
 
 
 function parseKeyValuePairsFromFile(file) {
-  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].
-                createInstance(Ci.nsIFileInputStream);
+  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
   fstream.init(file, -1, 0, 0);
-  let is = Cc["@mozilla.org/intl/converter-input-stream;1"].
-           createInstance(Ci.nsIConverterInputStream);
-  is.init(fstream, "UTF-8", 1024, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+  let is = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(
+    Ci.nsIConverterInputStream
+  );
+  is.init(
+    fstream,
+    "UTF-8",
+    1024,
+    Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER
+  );
   let str = {};
   let contents = "";
   while (is.readString(4096, str) != 0) {

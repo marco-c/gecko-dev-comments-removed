@@ -2,11 +2,9 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-var EXPORTED_SYMBOLS = [
-  "CrashReports",
-];
+var EXPORTED_SYMBOLS = ["CrashReports"];
 
 var CrashReports = {
   pendingDir: null,
@@ -17,17 +15,17 @@ var CrashReports = {
 
     try {
       
-      if (!/^https?:/i.test(Services.prefs.getCharPref("breakpad.reportURL")))
+      if (!/^https?:/i.test(Services.prefs.getCharPref("breakpad.reportURL"))) {
         return reports;
-    } catch (e) { }
+      }
+    } catch (e) {}
 
     if (this.submittedDir.exists() && this.submittedDir.isDirectory()) {
       let entries = this.submittedDir.directoryEntries;
       while (entries.hasMoreElements()) {
         let file = entries.nextFile;
         let leaf = file.leafName;
-        if (leaf.startsWith("bp-") &&
-            leaf.endsWith(".txt")) {
+        if (leaf.startsWith("bp-") && leaf.endsWith(".txt")) {
           let entry = {
             id: leaf.slice(0, -4),
             date: file.lastModifiedTime,
@@ -57,7 +55,7 @@ var CrashReports = {
     }
 
     
-    return reports.sort( (a, b) => b.date - a.date);
+    return reports.sort((a, b) => b.date - a.date);
   },
 };
 
