@@ -7,30 +7,75 @@
 #ifndef debugger_Debugger_h
 #define debugger_Debugger_h
 
-#include "mozilla/DoublyLinkedList.h"
-#include "mozilla/GuardObjects.h"
-#include "mozilla/LinkedList.h"
-#include "mozilla/Range.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/Vector.h"
+#include "mozilla/Assertions.h"        
+#include "mozilla/Attributes.h"        
+#include "mozilla/DoublyLinkedList.h"  
+#include "mozilla/HashTable.h"         
+#include "mozilla/LinkedList.h"        
+#include "mozilla/Maybe.h"             
+#include "mozilla/Move.h"              
+#include "mozilla/Range.h"             
+#include "mozilla/Result.h"            
+#include "mozilla/TimeStamp.h"         
+#include "mozilla/Variant.h"           
 
-#include "debugger/DebugAPI.h"
-#include "ds/TraceableFifo.h"
-#include "gc/Barrier.h"
-#include "gc/WeakMap.h"
-#include "js/Debug.h"
-#include "js/GCVariant.h"
-#include "js/HashTable.h"
-#include "js/Promise.h"
-#include "js/Result.h"
-#include "js/RootingAPI.h"
-#include "js/Utility.h"
-#include "js/Wrapper.h"
-#include "proxy/DeadObjectProxy.h"
-#include "vm/GeneratorObject.h"
-#include "vm/Realm.h"
-#include "vm/SavedStacks.h"
-#include "vm/Stack.h"
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include "jsapi.h"    
+#include "jstypes.h"  
+
+#include "NamespaceImports.h"       
+#include "debugger/DebugAPI.h"      
+#include "debugger/Object.h"        
+#include "ds/TraceableFifo.h"       
+#include "gc/Barrier.h"             
+#include "gc/Marking.h"             
+#include "gc/Rooting.h"             
+#include "gc/Tracer.h"              
+#include "gc/WeakMap.h"             
+#include "gc/ZoneAllocator.h"       
+#include "js/GCAPI.h"               
+#include "js/Proxy.h"               
+#include "js/Wrapper.h"             
+#include "proxy/DeadObjectProxy.h"  
+#include "vm/GeneratorObject.h"     
+#include "vm/GlobalObject.h"        
+#include "vm/JSContext.h"           
+#include "vm/JSObject.h"            
+#include "vm/JSScript.h"            
+#include "vm/NativeObject.h"        
+#include "vm/Runtime.h"             
+#include "vm/SavedFrame.h"          
+#include "vm/Stack.h"               
+#include "vm/StringType.h"          
+#include "wasm/WasmJS.h"            
+
+class JSFunction;
+
+namespace JS {
+class AutoStableStringChars;
+class Compartment;
+class Realm;
+class Zone;
+} 
+
+namespace js {
+class AutoRealm;
+class CrossCompartmentKey;
+class Debugger;
+class DebuggerEnvironment;
+class FreeOp;
+class PromiseObject;
+namespace gc {
+struct Cell;
+}
+namespace wasm {
+class Instance;
+}
+template <typename T>
+struct GCManagedDeletePolicy;
+} 
 
 
 
@@ -48,7 +93,6 @@ class DebuggerSource;
 class DebuggerMemory;
 class ScriptedOnStepHandler;
 class ScriptedOnPopHandler;
-class WasmInstanceObject;
 
 
 

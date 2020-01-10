@@ -7,9 +7,11 @@
 #ifndef debugger_Frame_inl_h
 #define debugger_Frame_inl_h
 
-#include "debugger/Frame.h"
+#include "debugger/Frame.h"  
 
-#include "vm/GeneratorObject.h"
+#include "mozilla/Assertions.h"  
+
+#include "NamespaceImports.h"  
 
 inline bool js::DebuggerFrame::hasGenerator() const {
   return !getReservedSlot(GENERATOR_INFO_SLOT).isUndefined();

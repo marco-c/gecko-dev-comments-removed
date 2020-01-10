@@ -7,7 +7,12 @@
 #ifndef debugger_Debugger_inl_h
 #define debugger_Debugger_inl_h
 
-#include "debugger/Debugger.h"
+#include "debugger/Debugger.h"  
+
+#include "mozilla/Assertions.h"  
+
+#include "vm/JSObject.h"      
+#include "vm/NativeObject.h"  
 
  inline js::Debugger* js::Debugger::fromJSObject(
     const JSObject* obj) {

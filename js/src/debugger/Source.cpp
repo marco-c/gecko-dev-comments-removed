@@ -6,13 +6,40 @@
 
 #include "debugger/Source.h"
 
-#include "debugger/Script.h"
-#include "js/Class.h"
-#include "js/StableStringChars.h"
-#include "wasm/WasmInstance.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Variant.h"     
 
-#include "vm/JSObject-inl.h"
-#include "vm/NativeObject-inl.h"
+#include <stdint.h>  
+#include <string.h>  
+#include <utility>   
+
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
+
+#include "debugger/Debugger.h"  
+#include "debugger/Script.h"    
+#include "gc/Tracer.h"  
+#include "js/StableStringChars.h"  
+#include "vm/BytecodeUtil.h"       
+#include "vm/JSContext.h"          
+#include "vm/JSObject.h"           
+#include "vm/JSScript.h"           
+#include "vm/ObjectGroup.h"        
+#include "vm/StringType.h"         
+#include "vm/TypedArrayObject.h"   
+#include "wasm/WasmCode.h"         
+#include "wasm/WasmDebug.h"        
+#include "wasm/WasmInstance.h"     
+#include "wasm/WasmJS.h"           
+#include "wasm/WasmTypes.h"        
+
+#include "vm/JSObject-inl.h"      
+#include "vm/NativeObject-inl.h"  
+
+namespace js {
+class GlobalObject;
+}
 
 using namespace js;
 

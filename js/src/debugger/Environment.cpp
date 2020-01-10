@@ -6,15 +6,43 @@
 
 #include "debugger/Environment-inl.h"
 
-#include "mozilla/Assertions.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Vector.h"      
 
-#include "debugger/Debugger.h"
-#include "debugger/Object.h"
-#include "frontend/BytecodeCompiler.h"
-#include "vm/Realm.h"
+#include <string.h>  
+#include <utility>   
 
-#include "vm/Compartment-inl.h"
-#include "vm/EnvironmentObject-inl.h"
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
+
+#include "debugger/Debugger.h"          
+#include "debugger/Object.h"            
+#include "frontend/BytecodeCompiler.h"  
+#include "gc/Rooting.h"                 
+#include "gc/Tracer.h"       
+#include "js/HeapAPI.h"      
+#include "vm/Compartment.h"  
+#include "vm/EnvironmentObject.h"  
+#include "vm/JSAtom.h"             
+#include "vm/JSContext.h"          
+#include "vm/JSFunction.h"         
+#include "vm/JSObject.h"           
+#include "vm/NativeObject.h"       
+#include "vm/ObjectGroup.h"        
+#include "vm/Realm.h"              
+#include "vm/Scope.h"              
+#include "vm/StringType.h"         
+
+#include "vm/Compartment-inl.h"        
+#include "vm/EnvironmentObject-inl.h"  
+#include "vm/JSObject-inl.h"           
+#include "vm/ObjectOperations-inl.h"   
+#include "vm/Realm-inl.h"              
+
+namespace js {
+class GlobalObject;
+}
 
 using namespace js;
 

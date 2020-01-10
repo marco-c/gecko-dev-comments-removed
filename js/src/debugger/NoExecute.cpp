@@ -5,9 +5,22 @@
 
 
 #include "debugger/NoExecute.h"
-#include "mozilla/Sprintf.h"
 
-#include "vm/Realm-inl.h"
+#include "mozilla/Sprintf.h"  
+
+#include <stdio.h>  
+
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
+
+#include "debugger/Debugger.h"  
+#include "gc/Barrier.h"         
+#include "js/Promise.h"         
+#include "vm/JSContext.h"       
+#include "vm/JSScript.h"        
+#include "vm/Realm.h"           
+
+#include "vm/Realm-inl.h"  
 
 using namespace js;
 

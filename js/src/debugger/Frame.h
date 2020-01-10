@@ -7,23 +7,29 @@
 #ifndef debugger_Frame_h
 #define debugger_Frame_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Range.h"
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
+#include "mozilla/Result.h"      
 
-#include "jsapi.h"
+#include <stddef.h>  
 
-#include "debugger/Debugger.h"
-#include "gc/Rooting.h"
-#include "js/Class.h"
-#include "js/PropertySpec.h"
-#include "js/Result.h"
-#include "js/RootingAPI.h"
-#include "js/TypeDecls.h"
-#include "vm/GlobalObject.h"
-#include "vm/NativeObject.h"
+#include "jsapi.h"  
+
+#include "NamespaceImports.h"   
+#include "debugger/DebugAPI.h"  
+#include "debugger/Debugger.h"  
+#include "gc/Barrier.h"         
+#include "gc/Rooting.h"         
+#include "vm/JSObject.h"        
+#include "vm/NativeObject.h"    
+#include "vm/Stack.h"           
 
 namespace js {
+
+class AbstractGeneratorObject;
+class FreeOp;
+class GlobalObject;
 
 
 

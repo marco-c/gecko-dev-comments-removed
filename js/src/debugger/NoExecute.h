@@ -7,16 +7,17 @@
 #ifndef debugger_NoExecute_h
 #define debugger_NoExecute_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 
-#include "debugger/Debugger.h"
-#include "js/Promise.h"
-#include "vm/JSContext.h"
-#include "vm/Realm.h"
+#include "jsapi.h"
+
+#include "NamespaceImports.h"  
+#include "js/Promise.h"        
 
 namespace js {
 
+class Debugger;
 class LeaveDebuggeeNoExecute;
 
 

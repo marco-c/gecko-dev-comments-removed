@@ -6,14 +6,51 @@
 
 #include "debugger/Script-inl.h"
 
-#include "debugger/Debugger.h"
-#include "debugger/DebugScript.h"
-#include "debugger/Source.h"
-#include "wasm/WasmInstance.h"
+#include "mozilla/Maybe.h"   
+#include "mozilla/Span.h"    
+#include "mozilla/Vector.h"  
 
-#include "vm/BytecodeUtil-inl.h"
-#include "vm/JSObject-inl.h"
-#include "vm/JSScript-inl.h"
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include "jsapi.h"             
+#include "jsfriendapi.h"       
+#include "jsnum.h"             
+#include "NamespaceImports.h"  
+
+#include "builtin/Array.h"         
+#include "debugger/Debugger.h"     
+#include "debugger/DebugScript.h"  
+#include "debugger/Source.h"       
+#include "gc/Barrier.h"            
+#include "gc/GC.h"                 
+#include "gc/Rooting.h"            
+#include "gc/Tracer.h"         
+#include "gc/Zone.h"           
+#include "gc/ZoneAllocator.h"  
+#include "js/HeapAPI.h"        
+#include "js/Wrapper.h"        
+#include "vm/ArrayObject.h"    
+#include "vm/BytecodeUtil.h"   
+#include "vm/GlobalObject.h"   
+#include "vm/JSContext.h"      
+#include "vm/JSFunction.h"     
+#include "vm/JSObject.h"       
+#include "vm/ObjectGroup.h"    
+#include "vm/ObjectOperations.h"  
+#include "vm/Realm.h"             
+#include "vm/Runtime.h"           
+#include "vm/StringType.h"        
+#include "wasm/WasmDebug.h"       
+#include "wasm/WasmInstance.h"    
+#include "wasm/WasmTypes.h"       
+
+#include "vm/BytecodeUtil-inl.h"      
+#include "vm/JSAtom-inl.h"            
+#include "vm/JSObject-inl.h"          
+#include "vm/JSScript-inl.h"          
+#include "vm/ObjectOperations-inl.h"  
+#include "vm/Realm-inl.h"             
 
 using namespace js;
 

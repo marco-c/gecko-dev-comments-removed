@@ -9,12 +9,14 @@
 
 #include "jsapi.h"
 
-#include "debugger/Debugger.h"
-#include "js/Class.h"
-#include "js/RootingAPI.h"
-#include "js/TypeDecls.h"
-#include "vm/GlobalObject.h"
-#include "vm/NativeObject.h"
+#include "NamespaceImports.h"   
+#include "debugger/Debugger.h"  
+#include "gc/Rooting.h"         
+#include "vm/NativeObject.h"    
+
+namespace js {
+class GlobalObject;
+}
 
 namespace js {
 

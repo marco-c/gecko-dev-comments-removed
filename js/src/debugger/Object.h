@@ -7,27 +7,30 @@
 #ifndef debugger_Object_h
 #define debugger_Object_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Range.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
+#include "mozilla/Result.h"      
 
-#include "jsapi.h"
+#include "jsapi.h"             
+#include "NamespaceImports.h"  
 
-#include "builtin/Promise.h"
-#include "debugger/Debugger.h"
-#include "gc/Rooting.h"
-#include "js/Class.h"
-#include "js/Promise.h"
-#include "js/PropertySpec.h"
-#include "js/Result.h"
-#include "js/RootingAPI.h"
-#include "js/TypeDecls.h"
-#include "vm/GlobalObject.h"
-#include "vm/JSContext.h"
-#include "vm/NativeObject.h"
+#include "gc/Rooting.h"       
+#include "js/Promise.h"       
+#include "js/Proxy.h"         
+#include "vm/JSObject.h"      
+#include "vm/NativeObject.h"  
+
+class JSAtom;
 
 namespace js {
+
+class Completion;
+class Debugger;
+class EvalOptions;
+class GlobalObject;
+class PromiseObject;
 
 enum { JSSLOT_DEBUGOBJECT_OWNER, JSSLOT_DEBUGOBJECT_COUNT };
 
