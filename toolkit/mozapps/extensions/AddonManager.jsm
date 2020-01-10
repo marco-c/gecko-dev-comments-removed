@@ -2300,7 +2300,12 @@ var AddonManagerInternal = {
     }
 
     try {
-      if (topBrowser.ownerGlobal.fullScreen) {
+      
+      
+      if (topBrowser.ownerDocument.fullscreenElement) {
+        
+        
+        
         
         
         
