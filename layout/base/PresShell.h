@@ -1615,6 +1615,27 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+  void RootScrollFrameAdjusted(nscoord aYAdjustment) {
+    if (mLastAnchorScrolledTo) {
+      mLastAnchorScrollPositionY += aYAdjustment;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
