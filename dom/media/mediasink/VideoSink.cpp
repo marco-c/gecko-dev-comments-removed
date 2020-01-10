@@ -253,7 +253,9 @@ void VideoSink::SetPlaying(bool aPlaying) {
     
     mUpdateScheduler.Reset();
     
-    RenderVideoFrames(1);
+    TimeStamp nowTime;
+    const auto clockTime = mAudioSink->GetPosition(&nowTime);
+    RenderVideoFrames(1, clockTime.ToMicroseconds(), nowTime);
     if (mContainer) {
       mContainer->ClearCachedResources();
     }
@@ -495,21 +497,19 @@ void VideoSink::RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime,
       continue;
     }
 
-    TimeStamp t;
-    if (aMaxFrames > 1) {
-      MOZ_ASSERT(!aClockTimeStamp.IsNull());
-      int64_t delta = frame->mTime.ToMicroseconds() - aClockTime;
-      t = aClockTimeStamp +
-          TimeDuration::FromMicroseconds(delta / params.mPlaybackRate);
-      if (!lastFrameTime.IsNull() && t <= lastFrameTime) {
-        
-        
-        
-        
-        continue;
-      }
-      lastFrameTime = t;
+    MOZ_ASSERT(!aClockTimeStamp.IsNull());
+    int64_t delta = frame->mTime.ToMicroseconds() - aClockTime;
+    TimeStamp t = aClockTimeStamp +
+                  TimeDuration::FromMicroseconds(delta / params.mPlaybackRate);
+    if (!lastFrameTime.IsNull() && t <= lastFrameTime) {
+      
+      
+      
+      
+      continue;
     }
+    MOZ_ASSERT(!t.IsNull());
+    lastFrameTime = t;
 
     ImageContainer::NonOwningImage* img = images.AppendElement();
     img->mTimeStamp = t;
