@@ -232,6 +232,17 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
 #ifdef ACCESSIBILITY
   mEmbedderAccessibleDoc = static_cast<a11y::DocAccessibleParent*>(aDoc);
   mEmbedderAccessibleID = aID;
+  if (auto embeddedBrowser = GetBrowserParent()) {
+    a11y::DocAccessibleParent* childDocAcc =
+        embeddedBrowser->GetTopLevelDocAccessible();
+    if (childDocAcc && !childDocAcc->IsShutdown()) {
+      
+      
+      
+      mEmbedderAccessibleDoc->AddChildDoc(childDocAcc, aID,
+                                           false);
+    }
+  }
 #endif
   return IPC_OK();
 }
