@@ -604,9 +604,23 @@ menuitem.bookmark-item {
 }
 
 
+.tab-drop-indicator {
+  list-style-image: url(chrome://browser/skin/tabbrowser/tabDragIndicator.png);
+  margin-bottom: -9px;
+  
+
+  z-index: 4;
+}
+
+
 
 .alltabs-item[selected="true"] {
   font-weight: bold;
+}
+
+
+#PlacesToolbarDropIndicator {
+  list-style-image: url(chrome://browser/skin/places/toolbarDropMarker.png);
 }
 
 toolbarbutton.bookmark-item[dragover="true"][open="true"] {

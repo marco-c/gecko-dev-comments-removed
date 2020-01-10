@@ -615,19 +615,6 @@
 
 
 
-.tab-drop-indicator-box {
-  -moz-box-align: center;
-}
-
-.tab-drop-indicator {
-  list-style-image: url(chrome://browser/skin/tabbrowser/tab-drag-indicator.svg);
-  
-
-  z-index: 3;
-}
-
-
-
 .titlebar-spacer[type="pre-tabs"],
 .titlebar-spacer[type="post-tabs"] {
   width: 40px;
