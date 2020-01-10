@@ -60,6 +60,7 @@ class gfxFT2FontBase : public gfxFont {
   Metrics mMetrics;
   int mFTLoadFlags;
   bool mEmbolden;
+  gfxFloat mFTSize;
 
   
   

@@ -37,7 +37,8 @@ gfxFT2FontBase::gfxFT2FontBase(
       mSpaceGlyph(0),
       mFTLoadFlags(aLoadFlags | FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH |
                    FT_LOAD_COLOR),
-      mEmbolden(aEmbolden) {
+      mEmbolden(aEmbolden),
+      mFTSize(1.0) {
   cairo_scaled_font_reference(mScaledFont);
 }
 
@@ -47,9 +48,8 @@ FT_Face gfxFT2FontBase::LockFTFace() {
   if (!mFTFace->Lock(this)) {
     FT_Set_Transform(mFTFace->GetFace(), nullptr, nullptr);
 
-    gfxFloat size = std::max(GetAdjustedSize(), 1.0);
-    FT_Set_Char_Size(mFTFace->GetFace(), FT_F26Dot6(size * 64.0 + 0.5),
-                     FT_F26Dot6(size * 64.0 + 0.5), 0, 0);
+    FT_F26Dot6 charSize = NS_lround(mFTSize * 64.0);
+    FT_Set_Char_Size(mFTFace->GetFace(), charSize, charSize, 0, 0);
   }
   return mFTFace->GetFace();
 }
@@ -174,6 +174,38 @@ uint32_t gfxFT2FontBase::GetCharWidth(char aChar, gfxFloat* aWidth) {
   }
 }
 
+
+
+
+
+static double FindClosestSize(FT_Face aFace, double aSize) {
+  
+  
+  
+  
+  if (aSize < 1.0) {
+    aSize = 1.0;
+  }
+  if (FT_IS_SCALABLE(aFace)) {
+    return aSize;
+  }
+  double bestDist = DBL_MAX;
+  FT_Int bestSize = -1;
+  for (FT_Int i = 0; i < aFace->num_fixed_sizes; i++) {
+    double dist = aFace->available_sizes[i].y_ppem / 64.0 - aSize;
+    
+    
+    if (bestDist < 0 ? dist >= bestDist : fabs(dist) <= bestDist) {
+      bestDist = dist;
+      bestSize = i;
+    }
+  }
+  if (bestSize < 0) {
+    return aSize;
+  }
+  return aFace->available_sizes[bestSize].y_ppem / 64.0;
+}
+
 void gfxFT2FontBase::InitMetrics() {
   mFUnitsConvFactor = 0.0;
 
@@ -183,6 +215,12 @@ void gfxFT2FontBase::InitMetrics() {
     mSpaceGlyph = GetGlyph(' ');
     return;
   }
+
+  
+  
+  
+  
+  mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
 
   
   
@@ -507,6 +545,10 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
 
   
   
+  gfxFloat extentsScale = GetAdjustedSize() / mFTSize;
+
+  
+  
   
   FT_Fixed advance;
   if (face.get()->glyph->format == FT_GLYPH_FORMAT_OUTLINE &&
@@ -516,17 +558,21 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
     advance = face.get()->glyph->advance.x << 10;  
   }
   advance += GetEmboldenAdvance(face.get(), advance);
+  
+  
+  
+  
   if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
     advance = (advance + 0x8000) & 0xffff0000u;
   }
-  *aAdvance = advance;
+  *aAdvance = NS_lround(advance * extentsScale);
 
   if (aHeight) {
     FT_F26Dot6 height = -face.get()->glyph->metrics.horiBearingY;
     if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
       height &= -64;
     }
-    *aHeight = height;
+    *aHeight = NS_lround(height * extentsScale);
   }
   return true;
 }
