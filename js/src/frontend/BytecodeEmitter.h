@@ -129,6 +129,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
 
   
+  bool hasCallSiteObj = false;
+
+  
   bool hasSingletons = false;
 
   
