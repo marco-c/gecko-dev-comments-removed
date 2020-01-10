@@ -8,22 +8,20 @@
 
 
 use api::{ColorF, BorderStyle, PipelineId, PremultipliedColorF};
-use api::{DocumentLayer, ImageFormat, LineOrientation};
+use api::{ImageFormat, LineOrientation};
 use api::units::*;
 use crate::batch::{AlphaBatchBuilder, AlphaBatchContainer, BatchTextures, ClipBatcher, resolve_image, BatchBuilder};
 use crate::clip::ClipStore;
 use crate::clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX};
-use crate::debug_render::DebugItem;
 use crate::device::{Texture};
 use crate::frame_builder::FrameGlobalResources;
 use crate::gpu_cache::{GpuCache, GpuCacheAddress};
 use crate::gpu_types::{BorderInstance, SvgFilterInstance, BlurDirection, BlurInstance, PrimitiveHeaders, ScalingInstance};
-use crate::gpu_types::{TransformData, TransformPalette, ZBufferIdGenerator};
+use crate::gpu_types::{TransformPalette, ZBufferIdGenerator};
 use crate::internal_types::{CacheTextureId, FastHashMap, LayerIndex, SavedTargetIndex, Swizzle, TextureSource};
-use crate::picture::{RecordedDirtyRegion, SurfaceInfo};
+use crate::picture::SurfaceInfo;
 use crate::prim_store::gradient::GRADIENT_FP_STOPS;
 use crate::prim_store::{PrimitiveStore, DeferredResolve, PrimitiveScratchBuffer, PrimitiveVisibilityMask};
-use crate::profiler::FrameProfileCounters;
 use crate::render_backend::{DataStores, FrameId};
 use crate::render_task::{BlitSource, RenderTargetKind, RenderTask, RenderTaskKind, RenderTaskAddress, RenderTaskData};
 use crate::render_task::{ClearMode, RenderTaskLocation, ScalingTask, SvgFilterInfo};
@@ -1685,59 +1683,6 @@ impl RenderPass {
                 );
             }
         }
-    }
-}
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct Frame {
-    
-    pub content_origin: DeviceIntPoint,
-    
-    pub device_rect: DeviceIntRect,
-    pub background_color: Option<ColorF>,
-    pub layer: DocumentLayer,
-    pub passes: Vec<RenderPass>,
-    #[cfg_attr(any(feature = "capture", feature = "replay"), serde(default = "FrameProfileCounters::new", skip))]
-    pub profile_counters: FrameProfileCounters,
-
-    pub transform_palette: Vec<TransformData>,
-    pub render_tasks: RenderTaskGraph,
-    pub prim_headers: PrimitiveHeaders,
-
-    
-    pub gpu_cache_frame_id: FrameId,
-
-    
-    
-    
-    
-    pub deferred_resolves: Vec<DeferredResolve>,
-
-    
-    
-    pub has_texture_cache_tasks: bool,
-
-    
-    
-    pub has_been_rendered: bool,
-
-    
-    
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub recorded_dirty_regions: Vec<RecordedDirtyRegion>,
-
-    
-    pub debug_items: Vec<DebugItem>,
-}
-
-impl Frame {
-    
-    
-    pub fn must_be_drawn(&self) -> bool {
-        self.has_texture_cache_tasks && !self.has_been_rendered
     }
 }
 
