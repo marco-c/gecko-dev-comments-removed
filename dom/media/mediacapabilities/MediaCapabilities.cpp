@@ -235,6 +235,7 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
 
     RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
     double frameRate = videoContainer->ExtendedType().GetFramerate().ref();
+    
     promises.AppendElement(InvokeAsync(
         taskQueue, __func__,
         [taskQueue, frameRate, compositor,
@@ -375,6 +376,7 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
                     return p;
                   });
         }));
+    
   }
 
   auto holder = MakeRefPtr<

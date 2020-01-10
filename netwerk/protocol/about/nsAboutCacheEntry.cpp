@@ -337,7 +337,8 @@ nsresult nsAboutCacheEntry::Channel::WriteCacheEntryDescription(
 
   
   
-  if (NS_SUCCEEDED(rv) && !(uri->SchemeIs("javascript") || uri->SchemeIs("data"))) {
+  if (NS_SUCCEEDED(rv) &&
+      !(uri->SchemeIs("javascript") || uri->SchemeIs("data"))) {
     buffer.AppendLiteral("<a href=\"");
     buffer.Append(escapedStr);
     buffer.AppendLiteral("\">");

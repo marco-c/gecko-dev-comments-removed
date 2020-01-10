@@ -9,9 +9,9 @@
 
 #include <stdint.h>  
 #include "Layers.h"
-#include "gfxContext.h"           
-#include "mozilla/Attributes.h"   
-#include "mozilla/LinkedList.h"   
+#include "gfxContext.h"          
+#include "mozilla/Attributes.h"  
+#include "mozilla/LinkedList.h"  
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/WidgetUtils.h"  
 #include "mozilla/gfx/Rect.h"     

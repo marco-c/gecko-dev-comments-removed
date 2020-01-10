@@ -13,8 +13,8 @@
 #include "InputBlockState.h"         
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_ui.h"
-#include "nsDebug.h"                 
-#include "nsMathUtils.h"             
+#include "nsDebug.h"      
+#include "nsMathUtils.h"  
 
 #define GEL_LOG(...)
 

@@ -1384,10 +1384,9 @@ void gfxWindowsPlatform::InitializeAdvancedLayersConfig() {
   }
 
   FeatureState& al = gfxConfig::GetFeature(Feature::ADVANCED_LAYERS);
-  al.SetDefaultFromPref(
-      StaticPrefs::GetPrefName_layers_mlgpu_enabled(),
-      true ,
-      StaticPrefs::GetPrefDefault_layers_mlgpu_enabled());
+  al.SetDefaultFromPref(StaticPrefs::GetPrefName_layers_mlgpu_enabled(),
+                        true ,
+                        StaticPrefs::GetPrefDefault_layers_mlgpu_enabled());
 
   
   
@@ -1544,9 +1543,9 @@ void gfxWindowsPlatform::InitializeD2DConfig() {
     return;
   }
 
-  d2d1.SetDefaultFromPref(
-      StaticPrefs::GetPrefName_gfx_direct2d_disabled(), false,
-      StaticPrefs::GetPrefDefault_gfx_direct2d_disabled());
+  d2d1.SetDefaultFromPref(StaticPrefs::GetPrefName_gfx_direct2d_disabled(),
+                          false,
+                          StaticPrefs::GetPrefDefault_gfx_direct2d_disabled());
 
   nsCString message;
   nsCString failureId;

@@ -60,8 +60,8 @@ struct gfxFontFaceSrc {
   
   uint32_t mFormatFlags;
 
-  nsCString mLocalName;        
-  RefPtr<gfxFontSrcURI> mURI;  
+  nsCString mLocalName;                          
+  RefPtr<gfxFontSrcURI> mURI;                    
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;       
   RefPtr<gfxFontSrcPrincipal> mOriginPrincipal;  
 

@@ -7,7 +7,7 @@
 #ifndef GFX_FRAMEMETRICS_H
 #define GFX_FRAMEMETRICS_H
 
-#include <stdint.h>  
+#include <stdint.h>                 
 #include "Units.h"                  
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/HashFunctions.h"  

@@ -54,8 +54,8 @@
 #include "mozilla/StaticPrefs_slider.h"
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/StaticPrefs_toolkit.h"
-#include "mozilla/Telemetry.h"               
-#include "mozilla/TimeStamp.h"               
+#include "mozilla/Telemetry.h"  
+#include "mozilla/TimeStamp.h"  
 #include "mozilla/dom/CheckerboardReportService.h"  
 
 #include "mozilla/dom/Touch.h"              

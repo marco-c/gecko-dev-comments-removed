@@ -14,10 +14,10 @@
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_test.h"
-#include "mozilla/TextEvents.h"             
-#include "mozilla/TouchEvents.h"            
-#include "mozilla/WheelHandlingHelper.h"    
-                                            
+#include "mozilla/TextEvents.h"           
+#include "mozilla/TouchEvents.h"          
+#include "mozilla/WheelHandlingHelper.h"  
+                                          
 
 namespace mozilla {
 namespace layers {

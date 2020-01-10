@@ -474,7 +474,8 @@ class MergeState {
         }  
 
         if (destItem->IsGlassItem()) {
-          if (destItem != oldItem || destItem != mBuilder->Builder()->GetGlassDisplayItem()) {
+          if (destItem != oldItem ||
+              destItem != mBuilder->Builder()->GetGlassDisplayItem()) {
             mBuilder->Builder()->SetGlassDisplayItem(destItem);
           }
         }

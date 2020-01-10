@@ -131,9 +131,9 @@ void WebRenderBridgeChild::EndTransaction(
   }
 
   this->SendSetDisplayList(
-    std::move(aRenderRoots), mDestroyedActors, GetFwdTransactionId(),
-    aTransactionId, aContainsSVGGroup, aVsyncId, aVsyncStartTime,
-    aRefreshStartTime, aTxnStartTime, aTxnURL, fwdTime, payloads);
+      std::move(aRenderRoots), mDestroyedActors, GetFwdTransactionId(),
+      aTransactionId, aContainsSVGGroup, aVsyncId, aVsyncStartTime,
+      aRefreshStartTime, aTxnStartTime, aTxnURL, fwdTime, payloads);
 
   
   

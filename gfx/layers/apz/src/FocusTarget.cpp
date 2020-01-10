@@ -12,8 +12,8 @@
 #include "mozilla/EventDispatcher.h"         
 #include "mozilla/PresShell.h"               
 #include "mozilla/StaticPrefs_apz.h"
-#include "nsIContentInlines.h"               
-#include "nsLayoutUtils.h"                   
+#include "nsIContentInlines.h"  
+#include "nsLayoutUtils.h"      
 
 #define ENABLE_FT_LOGGING 0
 

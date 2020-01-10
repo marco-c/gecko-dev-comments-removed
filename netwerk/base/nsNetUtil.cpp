@@ -2902,8 +2902,9 @@ nsresult NS_ShouldSecureUpgrade(
       return rv;
     }
 
-    nsresult rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, flags,
-                          aOriginAttributes, nullptr, &hstsSource, &isStsHost);
+    nsresult rv =
+        sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, flags,
+                         aOriginAttributes, nullptr, &hstsSource, &isStsHost);
 
     
     

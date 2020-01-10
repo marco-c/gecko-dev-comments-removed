@@ -3118,7 +3118,8 @@ void gfxPlatform::InitWebRenderConfig() {
 #endif
 
   
-  gfxVars::SetUseGLSwizzle(IsFeatureSupported(nsIGfxInfo::FEATURE_GL_SWIZZLE, true));
+  gfxVars::SetUseGLSwizzle(
+      IsFeatureSupported(nsIGfxInfo::FEATURE_GL_SWIZZLE, true));
 
   
   

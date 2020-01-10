@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
       argc -= 2;
     }
 #if !defined(NO_SIGN_VERIFY)
-#if (!defined(MAR_NSS) && defined(XP_WIN)) || defined(XP_MACOSX)
+#  if (!defined(MAR_NSS) && defined(XP_WIN)) || defined(XP_MACOSX)
     
 
 
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
       argv += 2;
       argc -= 2;
     }
-#endif
+#  endif
     
     else if (argv[1][0] == '-' && argv[1][1] == 'd') {
       NSSConfigDir = argv[2];
