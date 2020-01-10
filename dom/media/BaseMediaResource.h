@@ -73,10 +73,6 @@ class BaseMediaResource : public MediaResource,
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
 
   
-  
-  virtual bool HadCrossOriginRedirects() = 0;
-
-  
 
 
 

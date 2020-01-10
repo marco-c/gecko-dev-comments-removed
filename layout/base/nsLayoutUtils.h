@@ -2165,9 +2165,6 @@ class nsLayoutUtils {
     nsCOMPtr<imgIRequest> mImageRequest;
     
 
-    bool mHadCrossOriginRedirects;
-    
-
     bool mIsWriteOnly;
     
 

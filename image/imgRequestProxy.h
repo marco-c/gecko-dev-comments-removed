@@ -237,13 +237,9 @@ class imgRequestProxy : public imgIRequest,
 
 class imgRequestProxyStatic : public imgRequestProxy {
  public:
-  imgRequestProxyStatic(Image* aImage, nsIPrincipal* aPrincipal,
-                        bool hadCrossOriginRedirects);
+  imgRequestProxyStatic(Image* aImage, nsIPrincipal* aPrincipal);
 
   NS_IMETHOD GetImagePrincipal(nsIPrincipal** aPrincipal) override;
-
-  NS_IMETHOD GetHadCrossOriginRedirects(
-      bool* aHadCrossOriginRedirects) override;
 
  protected:
   imgRequestProxy* NewClonedProxy() override;
@@ -251,7 +247,6 @@ class imgRequestProxyStatic : public imgRequestProxy {
   
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  const bool mHadCrossOriginRedirects;
 };
 
 #endif  
