@@ -46,7 +46,6 @@ namespace css {
 class StyleRule;
 }  
 namespace dom {
-class BoxObject;
 class HTMLIFrameElement;
 class PrototypeDocumentContentSink;
 enum class CallerType : uint32_t;
@@ -328,7 +327,8 @@ class nsXULElement : public nsStyledElement {
   virtual nsresult PreHandleEvent(
       mozilla::EventChainVisitor& aVisitor) override;
   
-  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
+                              nsIContent* aBindingParent) override;
   virtual void UnbindFromTree(bool aNullParent) override;
   virtual void DestroyContent() override;
   virtual void DoneAddingChildren(bool aHaveNotified) override;
@@ -349,7 +349,7 @@ class nsXULElement : public nsStyledElement {
                                 bool aIsTrustedEvent) override;
   void ClickWithInputSource(uint16_t aInputSource, bool aIsTrustedEvent);
 
-  Element* GetBindingParent() const final { return mBindingParent; }
+  nsIContent* GetBindingParent() const final { return mBindingParent; }
 
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
   virtual bool IsFocusableInternal(int32_t* aTabIndex,
@@ -368,7 +368,7 @@ class nsXULElement : public nsStyledElement {
   
   
   
-  void SetXULBindingParent(Element* aBindingParent) {
+  void SetXULBindingParent(nsIContent* aBindingParent) {
     mBindingParent = aBindingParent;
   }
 
@@ -510,10 +510,6 @@ class nsXULElement : public nsStyledElement {
     SetXULBoolAttr(nsGkAtoms::allowevents, aAllowEvents);
   }
   nsIControllers* GetControllers(mozilla::ErrorResult& rv);
-  
-  
-  already_AddRefed<mozilla::dom::BoxObject> GetBoxObject(
-      mozilla::ErrorResult& rv);
   void Click(mozilla::dom::CallerType aCallerType);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoCommand();
   
@@ -541,7 +537,7 @@ class nsXULElement : public nsStyledElement {
 
 
 
-  RefPtr<Element> mBindingParent;
+  nsCOMPtr<nsIContent> mBindingParent;
 
   
 

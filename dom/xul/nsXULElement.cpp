@@ -12,7 +12,6 @@
 #include "nsIDOMEventListener.h"
 #include "nsIDOMXULCommandDispatcher.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventListenerManager.h"
@@ -41,8 +40,6 @@
 #include "nsStyleConsts.h"
 #include "nsString.h"
 #include "nsXULControllers.h"
-#include "nsIBoxObject.h"
-#include "nsPIBoxObject.h"
 #include "XULDocument.h"
 #include "nsXULPopupListener.h"
 #include "nsContentUtils.h"
@@ -81,7 +78,6 @@
 #include "XULTreeElement.h"
 
 #include "mozilla/dom/XULElementBinding.h"
-#include "mozilla/dom/BoxObject.h"
 #include "mozilla/dom/XULBroadcastManager.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/MutationEventBinding.h"
@@ -621,7 +617,7 @@ void nsXULElement::UpdateEditableState(bool aNotify) {
 
 class XULInContentErrorReporter : public Runnable {
  public:
-  explicit XULInContentErrorReporter(Document& aDocument)
+  explicit XULInContentErrorReporter(Document* aDocument)
       : mozilla::Runnable("XULInContentErrorReporter"), mDocument(aDocument) {}
 
   NS_IMETHOD Run() override {
@@ -630,7 +626,7 @@ class XULInContentErrorReporter : public Runnable {
   }
 
  private:
-  OwningNonNull<Document> mDocument;
+  nsCOMPtr<Document> mDocument;
 };
 
 static bool NeedTooltipSupport(const nsXULElement& aXULElement) {
@@ -644,25 +640,20 @@ static bool NeedTooltipSupport(const nsXULElement& aXULElement) {
          aXULElement.GetBoolAttr(nsGkAtoms::tooltiptext);
 }
 
-nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
-  nsresult rv = nsStyledElement::BindToTree(aContext, aParent);
+nsresult nsXULElement::BindToTree(Document* aDocument, nsIContent* aParent,
+                                  nsIContent* aBindingParent) {
+  if (!aBindingParent && aDocument && !aDocument->IsLoadedAsInteractiveData() &&
+      !aDocument->AllowXULXBL() &&
+      !aDocument->HasWarnedAbout(Document::eImportXULIntoContent)) {
+    nsContentUtils::AddScriptRunner(new XULInContentErrorReporter(aDocument));
+  }
+
+  nsresult rv = nsStyledElement::BindToTree(aDocument, aParent, aBindingParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  Document& doc = aContext.OwnerDoc();
-
-  
-  if (!aContext.GetBindingParent() && IsInUncomposedDoc() &&
-      !doc.IsLoadedAsInteractiveData() && !doc.AllowXULXBL() &&
-      !doc.HasWarnedAbout(Document::eImportXULIntoContent)) {
-    nsContentUtils::AddScriptRunner(new XULInContentErrorReporter(doc));
-  }
-
-  if (!IsInComposedDoc()) {
-    return rv;
-  }
-
+  Document* doc = GetComposedDoc();
 #ifdef DEBUG
-  if (!doc.AllowXULXBL() && !doc.IsUnstyledDocument()) {
+  if (doc && !doc->AllowXULXBL() && !doc->IsUnstyledDocument()) {
     
     
     
@@ -682,22 +673,23 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 #endif
 
-  if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
+  if (doc && NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
     
     nsXBLService::AttachGlobalKeyHandler(this);
   }
 
-  if (NeedTooltipSupport(*this)) {
+  if (doc && NeedTooltipSupport(*this)) {
     AddTooltipSupport();
   }
 
-  if (XULBroadcastManager::MayNeedListener(*this)) {
-    if (!doc.HasXULBroadcastManager()) {
-      doc.InitializeXULBroadcastManager();
+  if (doc && XULBroadcastManager::MayNeedListener(*this)) {
+    if (!doc->HasXULBroadcastManager()) {
+      doc->InitializeXULBroadcastManager();
     }
-    XULBroadcastManager* broadcastManager = doc.GetXULBroadcastManager();
+    XULBroadcastManager* broadcastManager = doc->GetXULBroadcastManager();
     broadcastManager->AddListener(this);
   }
+
   return rv;
 }
 
@@ -1134,11 +1126,6 @@ nsIControllers* nsXULElement::GetControllers(ErrorResult& rv) {
   }
 
   return Controllers();
-}
-
-already_AddRefed<BoxObject> nsXULElement::GetBoxObject(ErrorResult& rv) {
-  
-  return OwnerDoc()->GetBoxObjectFor(this, rv);
 }
 
 void nsXULElement::Click(CallerType aCallerType) {

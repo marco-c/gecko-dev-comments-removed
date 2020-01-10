@@ -17,7 +17,6 @@
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Attr.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Flex.h"
 #include "mozilla/dom/Grid.h"
 #include "mozilla/dom/ScriptLoader.h"
@@ -94,7 +93,6 @@
 #include "nsBindingManager.h"
 #include "nsXBLBinding.h"
 #include "nsPIDOMWindow.h"
-#include "nsPIBoxObject.h"
 #include "mozilla/dom/DOMRect.h"
 #include "nsSVGUtils.h"
 #include "nsLayoutUtils.h"
@@ -1576,97 +1574,126 @@ void Element::GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements) {
   }
 }
 
-nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
-  MOZ_ASSERT(aParent.IsContent() || aParent.IsDocument(),
-             "Must have content or document parent!");
-  MOZ_ASSERT(aParent.OwnerDoc() == OwnerDoc(),
+nsresult Element::BindToTree(Document* aDocument, nsIContent* aParent,
+                             nsIContent* aBindingParent) {
+  MOZ_ASSERT(aParent || aDocument, "Must have document if no parent!");
+  MOZ_ASSERT((NODE_FROM(aParent, aDocument)->OwnerDoc() == OwnerDoc()),
              "Must have the same owner document");
-  MOZ_ASSERT(OwnerDoc() == &aContext.OwnerDoc(), "These should match too");
-  MOZ_ASSERT(!IsInUncomposedDoc(), "Already have a document.  Unbind first!");
+  MOZ_ASSERT(!aParent || aDocument == aParent->GetUncomposedDoc(),
+             "aDocument must be current doc of aParent");
   MOZ_ASSERT(!IsInComposedDoc(), "Already have a document.  Unbind first!");
+  MOZ_ASSERT(!IsInUncomposedDoc(), "Already have a document.  Unbind first!");
   
   
-  MOZ_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
+  MOZ_ASSERT(!GetParent() || aParent == GetParent(),
              "Already have a parent.  Unbind first!");
-  MOZ_ASSERT(
-      !GetBindingParent() ||
-          aContext.GetBindingParent() == GetBindingParent() ||
-          (!aContext.GetBindingParent() && aParent.IsContent() &&
-           aParent.AsContent()->GetBindingParent() == GetBindingParent()),
-      "Already have a binding parent.  Unbind first!");
-  MOZ_ASSERT(aContext.GetBindingParent() != this,
+  MOZ_ASSERT(!GetBindingParent() || aBindingParent == GetBindingParent() ||
+                 (!aBindingParent && aParent &&
+                  aParent->GetBindingParent() == GetBindingParent()),
+             "Already have a binding parent.  Unbind first!");
+  MOZ_ASSERT(aBindingParent != this,
              "Content must not be its own binding parent");
-  MOZ_ASSERT(!IsRootOfNativeAnonymousSubtree() ||
-                 aContext.GetBindingParent() == &aParent,
+  MOZ_ASSERT(!IsRootOfNativeAnonymousSubtree() || aBindingParent == aParent,
              "Native anonymous content must have its parent as its "
              "own binding parent");
-  MOZ_ASSERT(aContext.GetBindingParent() || !aParent.IsContent() ||
-                 aContext.GetBindingParent() ==
-                     aParent.AsContent()->GetBindingParent(),
+  MOZ_ASSERT(aBindingParent || !aParent ||
+                 aBindingParent == aParent->GetBindingParent(),
              "We should be passed the right binding parent");
 
 #ifdef MOZ_XUL
   
-  if (nsXULElement* xulElem = nsXULElement::FromNode(this)) {
-    xulElem->SetXULBindingParent(aContext.GetBindingParent());
+  nsXULElement* xulElem = nsXULElement::FromNode(this);
+  if (xulElem) {
+    xulElem->SetXULBindingParent(aBindingParent);
   } else
 #endif
   {
-    if (Element* bindingParent = aContext.GetBindingParent()) {
-      ExtendedDOMSlots()->mBindingParent = bindingParent;
+    if (aBindingParent) {
+      nsExtendedDOMSlots* slots = ExtendedDOMSlots();
+
+      slots->mBindingParent = aBindingParent;  
     }
   }
 
   const bool hadParent = !!GetParentNode();
+  const bool wasInShadowTree = IsInShadowTree();
 
-  NS_ASSERTION(!aContext.GetBindingParent() ||
-                   IsRootOfNativeAnonymousSubtree() ||
+  NS_ASSERTION(!aBindingParent || IsRootOfNativeAnonymousSubtree() ||
                    !HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE) ||
-                   aParent.IsInNativeAnonymousSubtree(),
+                   (aParent && aParent->IsInNativeAnonymousSubtree()),
                "Trying to re-bind content from native anonymous subtree to "
                "non-native anonymous parent!");
-  if (aParent.IsInNativeAnonymousSubtree()) {
-    SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
-  }
-  if (aParent.HasFlag(NODE_HAS_BEEN_IN_UA_WIDGET)) {
-    SetFlags(NODE_HAS_BEEN_IN_UA_WIDGET);
-  }
-  if (HasFlag(NODE_IS_ANONYMOUS_ROOT)) {
-    aParent.SetMayHaveAnonymousChildren();
+  if (aParent) {
+    if (aParent->IsInNativeAnonymousSubtree()) {
+      SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
+    }
+    if (aParent->HasFlag(NODE_HAS_BEEN_IN_UA_WIDGET)) {
+      SetFlags(NODE_HAS_BEEN_IN_UA_WIDGET);
+    }
+    if (HasFlag(NODE_IS_ANONYMOUS_ROOT)) {
+      aParent->SetMayHaveAnonymousChildren();
+    }
+    if (aParent->IsInShadowTree()) {
+      ClearSubtreeRootPointer();
+      SetFlags(NODE_IS_IN_SHADOW_TREE);
+      MOZ_ASSERT(aParent->GetContainingShadow());
+      ExtendedDOMSlots()->mContainingShadow = aParent->GetContainingShadow();
+    }
   }
 
+  MOZ_ASSERT_IF(wasInShadowTree, IsInShadowTree());
+
   
-  mParent = &aParent;
-  if (!hadParent && aParent.IsContent()) {
-    SetParentIsContent(true);
-    NS_ADDREF(mParent);
+  if (aParent) {
+    if (!GetParent()) {
+      NS_ADDREF(aParent);
+    }
+    mParent = aParent;
+  } else {
+    mParent = aDocument;
   }
-  MOZ_ASSERT(!!GetParent() == aParent.IsContent());
+  SetParentIsContent(aParent);
+
+  
 
   MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
 
   
-  if (aParent.IsInUncomposedDoc() || aParent.IsInShadowTree()) {
+  if (aDocument) {
+    
+    
+    
+    
+    
+    
+    
+    
+
     
     
     ClearSubtreeRootPointer();
-    SetIsConnected(aParent.IsInComposedDoc());
 
-    if (aParent.IsInUncomposedDoc()) {
-      SetIsInDocument();
-    } else {
-      SetFlags(NODE_IS_IN_SHADOW_TREE);
-      MOZ_ASSERT(aParent.IsContent() &&
-                 aParent.AsContent()->GetContainingShadow());
-      ExtendedDOMSlots()->mContainingShadow =
-          aParent.AsContent()->GetContainingShadow();
-    }
+    
+    SetIsInDocument();
+    SetIsConnected(true);
+
+    
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
+  } else if (IsInShadowTree()) {
+    SetIsConnected(aParent->IsInComposedDoc());
+    
+    
+    
+    
+    
+    
+    
     
     UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else {
     
     
-    SetSubtreeRootPointer(aParent.SubtreeRoot());
+    SetSubtreeRootPointer(aParent->SubtreeRoot());
   }
 
   if (IsInComposedDoc()) {
@@ -1686,7 +1713,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   if (IsHTMLElement()) {
-    SetDirOnBind(this, nsIContent::FromNode(aParent));
+    SetDirOnBind(this, aParent);
   }
 
   UpdateEditableState(false);
@@ -1695,7 +1722,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
     nsXBLBinding* binding =
-        aContext.OwnerDoc().BindingManager()->GetBindingWithContent(this);
+        OwnerDoc()->BindingManager()->GetBindingWithContent(this);
 
     if (binding) {
       binding->BindAnonymousContent(binding->GetAnonymousContent(), this);
@@ -1706,7 +1733,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   nsresult rv;
   for (nsIContent* child = GetFirstChild(); child;
        child = child->GetNextSibling()) {
-    rv = child->BindToTree(aContext, *this);
+    rv = child->BindToTree(aDocument, this, aBindingParent);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1717,7 +1744,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   
   
-  if (HasID() && aContext.SubtreeRootChanges()) {
+  if (HasID() && !wasInShadowTree) {
     AddToIdTable(DoGetID());
   }
 
@@ -1739,14 +1766,14 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   
-  if (aParent.IsInUncomposedDoc() && MayHaveAnimations()) {
+  if (aDocument && MayHaveAnimations()) {
     PseudoStyleType pseudoType = GetPseudoElementType();
     if ((pseudoType == PseudoStyleType::NotPseudo ||
          pseudoType == PseudoStyleType::before ||
          pseudoType == PseudoStyleType::after ||
          pseudoType == PseudoStyleType::marker) &&
         EffectSet::GetEffectSet(this, pseudoType)) {
-      if (nsPresContext* presContext = aContext.OwnerDoc().GetPresContext()) {
+      if (nsPresContext* presContext = aDocument->GetPresContext()) {
         presContext->EffectCompositor()->RequestRestyle(
             this, pseudoType, EffectCompositor::RestyleType::Standard,
             EffectCompositor::CascadeLevel::Animations);
@@ -1757,16 +1784,11 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   
-  MOZ_ASSERT(OwnerDoc() == aParent.OwnerDoc(), "Bound to wrong document");
-  MOZ_ASSERT(IsInComposedDoc() == aContext.InComposedDoc());
-  MOZ_ASSERT(IsInUncomposedDoc() == aContext.InUncomposedDoc());
-  MOZ_ASSERT(&aParent == GetParentNode(), "Bound to wrong parent node");
-  MOZ_ASSERT(aContext.GetBindingParent() == GetBindingParent(),
+  MOZ_ASSERT(aDocument == GetUncomposedDoc(), "Bound to wrong document");
+  MOZ_ASSERT(aParent == GetParent(), "Bound to wrong parent");
+  MOZ_ASSERT(aBindingParent == GetBindingParent(),
              "Bound to wrong binding parent");
-  MOZ_ASSERT(aParent.IsInUncomposedDoc() == IsInUncomposedDoc());
-  MOZ_ASSERT(aParent.IsInComposedDoc() == IsInComposedDoc());
-  MOZ_ASSERT(aParent.IsInShadowTree() == IsInShadowTree());
-  MOZ_ASSERT(aParent.SubtreeRoot() == SubtreeRoot());
+
   return NS_OK;
 }
 
@@ -1941,8 +1963,6 @@ void Element::UnbindFromTree(bool aNullParent) {
                                               false);
       }
     }
-
-    document->ClearBoxObjectFor(this);
 
     
     

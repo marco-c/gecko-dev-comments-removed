@@ -28,7 +28,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
@@ -84,7 +83,6 @@
 #include "nsNameSpaceManager.h"
 #include "nsNodeInfoManager.h"
 #include "nsNodeUtils.h"
-#include "nsPIBoxObject.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
 #include "nsString.h"
@@ -1224,6 +1222,7 @@ nsresult nsINode::InsertChildBefore(nsIContent* aKid,
   nsMutationGuard::DidMutate();
 
   
+  Document* doc = GetUncomposedDoc();
   mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
 
   if (OwnerDoc() != aKid->OwnerDoc()) {
@@ -1249,8 +1248,8 @@ nsresult nsINode::InsertChildBefore(nsIContent* aKid,
 
   
   bool wasInNACScope = ShouldUseNACScope(aKid);
-  BindContext context(*this);
-  nsresult rv = aKid->BindToTree(context, *this);
+  nsresult rv = aKid->BindToTree(doc, parent,
+                                 parent ? parent->GetBindingParent() : nullptr);
   if (NS_SUCCEEDED(rv) && !wasInNACScope && ShouldUseNACScope(aKid)) {
     MOZ_ASSERT(ShouldUseNACScope(this),
                "Why does the kid need to use an the anonymous content scope?");
