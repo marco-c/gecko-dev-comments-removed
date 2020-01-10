@@ -1223,6 +1223,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
       currentPerformanceCounter = mCurrentPerformanceCounter;
 
       event->Run();
+      mEvents->DidRunEvent();
 
       mozilla::TimeDuration duration;
       
