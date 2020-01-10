@@ -24,7 +24,7 @@ static void resc_finalize(FreeOp* fop, JSObject* obj) {
   MOZ_ASSERT(fop->onMainThread());
   RegExpStatics* res =
       static_cast<RegExpStatics*>(obj->as<RegExpStaticsObject>().getPrivate());
-  fop->delete_(res);
+  fop->delete_(obj, res, MemoryUse::RegExpStatics);
 }
 
 static void resc_trace(JSTracer* trc, JSObject* obj) {
@@ -60,7 +60,9 @@ RegExpStaticsObject* RegExpStatics::create(JSContext* cx) {
   if (!res) {
     return nullptr;
   }
-  obj->setPrivate(static_cast<void*>(res));
+  
+  
+  InitObjectPrivate(obj, res, MemoryUse::RegExpStatics);
   return obj;
 }
 
