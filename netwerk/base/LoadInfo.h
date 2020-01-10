@@ -34,13 +34,14 @@ class XMLHttpRequestMainThread;
 
 namespace net {
 class LoadInfoArgs;
+class LoadInfo;
 }  
 
 namespace ipc {
 
-nsresult LoadInfoArgsToLoadInfo(
-    const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-    nsINode* aLoadingContext, nsILoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(const Maybe<net::LoadInfoArgs>& aLoadInfoArgs,
+                                nsINode* aLoadingContext,
+                                net::LoadInfo** outLoadInfo);
 }  
 
 namespace net {
@@ -164,7 +165,7 @@ class LoadInfo final : public nsILoadInfo {
 
   friend nsresult mozilla::ipc::LoadInfoArgsToLoadInfo(
       const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-      nsINode* aLoadingContext, nsILoadInfo** outLoadInfo);
+      nsINode* aLoadingContext, net::LoadInfo** outLoadInfo);
 
   ~LoadInfo() = default;
 
