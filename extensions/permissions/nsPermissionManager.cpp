@@ -34,6 +34,9 @@
 #include "nsIEffectiveTLDService.h"
 #include "nsPIDOMWindow.h"
 #include "mozilla/dom/Document.h"
+#ifdef ANDROID
+#  include "mozilla/jni/Utils.h"  
+#endif
 #include "mozilla/net/NeckoMessageUtils.h"
 #include "mozilla/Preferences.h"
 #include "nsReadLine.h"
@@ -126,6 +129,19 @@ static const nsLiteralCString kPreloadPermissions[] = {
     NS_LITERAL_CSTRING("trackingprotection-pb"),
 
     USER_INTERACTION_PERM};
+
+
+
+
+#ifdef ANDROID
+static const nsLiteralCString kGeckoViewRestrictedPermissions[] = {
+    NS_LITERAL_CSTRING("MediaManagerVideo"),
+    NS_LITERAL_CSTRING("geolocation"),
+    NS_LITERAL_CSTRING("desktop-notification"),
+    NS_LITERAL_CSTRING("persistent-storage"),
+    NS_LITERAL_CSTRING("trackingprotection"),
+    NS_LITERAL_CSTRING("trackingprotection-pb")};
+#endif
 
 
 
@@ -683,9 +699,15 @@ static bool IsExpandedPrincipal(nsIPrincipal* aPrincipal) {
 
 
 
-static bool IsPersistentExpire(uint32_t aExpire) {
-  return aExpire != nsIPermissionManager::EXPIRE_SESSION &&
-         aExpire != nsIPermissionManager::EXPIRE_POLICY;
+static bool IsPersistentExpire(uint32_t aExpire, const nsACString& aType) {
+  bool res = (aExpire != nsIPermissionManager::EXPIRE_SESSION &&
+              aExpire != nsIPermissionManager::EXPIRE_POLICY);
+#ifdef ANDROID
+  for (const auto& perm : kGeckoViewRestrictedPermissions) {
+    res = res && !perm.Equals(aType);
+  }
+#endif
+  return res;
 }
 
 static void UpdateAutoplayTelemetry(const nsACString& aType,
@@ -1852,7 +1874,8 @@ nsresult nsPermissionManager::AddInternal(
         sPreloadPermissionCount++;
       }
 
-      if (aDBOperation == eWriteToDB && IsPersistentExpire(aExpireType)) {
+      if (aDBOperation == eWriteToDB &&
+          IsPersistentExpire(aExpireType, aType)) {
         UpdateDB(op, mStmtInsert, id, origin, aType, aPermission, aExpireType,
                  aExpireTime, aModificationTime);
       }
@@ -1945,12 +1968,14 @@ nsresult nsPermissionManager::AddInternal(
       entry->GetPermissions()[index].mExpireTime = aExpireTime;
       entry->GetPermissions()[index].mModificationTime = aModificationTime;
 
-      if (aDBOperation == eWriteToDB && IsPersistentExpire(aExpireType))
+      if (aDBOperation == eWriteToDB &&
+          IsPersistentExpire(aExpireType, aType)) {
         
         
         
         UpdateDB(op, mStmtUpdate, id, EmptyCString(), EmptyCString(),
                  aPermission, aExpireType, aExpireTime, aModificationTime);
+      }
 
       if (aNotifyOperation == eNotify) {
         NotifyObserversWithPermission(aPrincipal, mTypeArray[typeIndex],
@@ -1996,7 +2021,8 @@ nsresult nsPermissionManager::AddInternal(
       entry->GetPermissions()[index].mModificationTime = aModificationTime;
 
       
-      if (aDBOperation == eWriteToDB && IsPersistentExpire(aExpireType)) {
+      if (aDBOperation == eWriteToDB &&
+          IsPersistentExpire(aExpireType, aType)) {
         UpdateDB(eOperationAdding, mStmtInsert, id, origin, aType, aPermission,
                  aExpireType, aExpireTime, aModificationTime);
       }
