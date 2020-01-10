@@ -2637,8 +2637,19 @@ static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
   
   
 
+#if defined(XP_WIN)
   
   *aOutGuardedByQualifiedPref = false;
+#elif defined(NIGHTLY_BUILD)
+  
+  
+  
+#else
+  
+  aFeature.Disable(
+      FeatureStatus::BlockedReleaseChannelNvidia, "Release channel and Nvidia",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_NVIDIA"));
+#endif
 }
 
 static void UpdateWRQualificationForAMD(FeatureState& aFeature,

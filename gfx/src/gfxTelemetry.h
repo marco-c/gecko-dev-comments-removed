@@ -42,6 +42,7 @@ enum class FeatureStatus {
   BlockedOverride,
   BlockedReleaseChannelIntel,
   BlockedReleaseChannelAMD,
+  BlockedReleaseChannelNvidia,
   BlockedReleaseChannelBattery,
 
   
