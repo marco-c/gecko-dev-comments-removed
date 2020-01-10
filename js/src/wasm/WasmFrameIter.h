@@ -187,7 +187,7 @@ class ProfilingFrameIterator {
 
   
   
-  ProfilingFrameIterator(const jit::JitActivation& activation, const Frame* fp);
+  explicit ProfilingFrameIterator(const Frame* fp);
 
   
   
