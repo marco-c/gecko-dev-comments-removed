@@ -1769,7 +1769,8 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (NS_SUBTREE_DIRTY(this) || aReflowInput.ShouldReflowAllKids() ||
-      IsGeometryDirty() || isPaginated || aReflowInput.IsBResize()) {
+      IsGeometryDirty() || isPaginated || aReflowInput.IsBResize() ||
+      NeedToCollapse()) {
     if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE ||
         
         
@@ -1908,8 +1909,13 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
   LogicalMargin borderPadding = GetChildAreaOffset(wm, &aReflowInput);
   SetColumnDimensions(aDesiredSize.BSize(wm), wm, borderPadding,
                       aDesiredSize.PhysicalSize());
-  if (NeedToCollapse() &&
-      (NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableISize())) {
+  NS_ASSERTION(NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableISize(),
+               "reflow branch removed unconstrained available isizes");
+  if (NeedToCollapse()) {
+    
+    
+    
+    
     AdjustForCollapsingRowsCols(aDesiredSize, wm, borderPadding);
   }
 
@@ -2904,7 +2910,8 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   aOverflowAreas.Clear();
 
   bool reflowAllKids = aReflowInput.reflowInput.ShouldReflowAllKids() ||
-                       mBits.mResizedColumns || IsGeometryDirty();
+                       mBits.mResizedColumns || IsGeometryDirty() ||
+                       NeedToCollapse();
 
   RowGroupArray rowGroups;
   nsTableRowGroupFrame *thead, *tfoot;
