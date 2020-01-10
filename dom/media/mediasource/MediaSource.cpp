@@ -427,18 +427,6 @@ bool MediaSource::IsTypeSupported(const GlobalObject& aOwner,
   return NS_SUCCEEDED(rv);
 }
 
-
-bool MediaSource::Enabled(JSContext* cx, JSObject* aGlobal) {
-  
-  return StaticPrefs::media_mediasource_enabled();
-}
-
-
-bool MediaSource::ExperimentalEnabled(JSContext* cx, JSObject* aGlobal) {
-  
-  return StaticPrefs::media_mediasource_experimental_enabled();
-}
-
 void MediaSource::SetLiveSeekableRange(double aStart, double aEnd,
                                        ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
