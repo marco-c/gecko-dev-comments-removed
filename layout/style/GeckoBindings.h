@@ -295,7 +295,7 @@ void Gecko_nsFont_Destroy(nsFont* dst);
 
 gfxFontFeatureValueSet* Gecko_ConstructFontFeatureValueSet();
 
-nsTArray<unsigned int>* Gecko_AppendFeatureValueHashEntry(
+nsTArray<uint32_t>* Gecko_AppendFeatureValueHashEntry(
     gfxFontFeatureValueSet* value_set, nsAtom* family, uint32_t alternate,
     nsAtom* name);
 

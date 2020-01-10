@@ -349,7 +349,7 @@ static void LookupAlternateValues(gfxFontFeatureValueSet& aFeatureLookup,
       
       aFeatureLookup.GetFontFeatureValuesFor(
           aFamily, NS_FONT_VARIANT_ALTERNATES_CHARACTER_VARIANT,
-          nsDependentAtomString(ident.AsAtom()), values);
+          ident.AsAtom(), values);
       
       if (values.IsEmpty()) {
         continue;
@@ -375,7 +375,7 @@ static void LookupAlternateValues(gfxFontFeatureValueSet& aFeatureLookup,
       
       aFeatureLookup.GetFontFeatureValuesFor(
           aFamily, NS_FONT_VARIANT_ALTERNATES_STYLESET,
-          nsDependentAtomString(ident.AsAtom()), values);
+          ident.AsAtom(), values);
 
       
       feature.mValue = 1;
@@ -415,8 +415,7 @@ static void LookupAlternateValues(gfxFontFeatureValueSet& aFeatureLookup,
   }
 
   AutoTArray<uint32_t, 4> values;
-  aFeatureLookup.GetFontFeatureValuesFor(aFamily, constant,
-                                         nsDependentAtomString(name), values);
+  aFeatureLookup.GetFontFeatureValuesFor(aFamily, constant, name, values);
   if (values.IsEmpty()) {
     return;
   }

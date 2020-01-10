@@ -27,6 +27,8 @@ inline bool operator==(const gfxFontFeature& a, const gfxFontFeature& b) {
   return (a.mTag == b.mTag) && (a.mValue == b.mValue);
 }
 
+class nsAtom;
+
 class gfxFontFeatureValueSet final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFeatureValueSet)
@@ -48,13 +50,13 @@ class gfxFontFeatureValueSet final {
   
   bool GetFontFeatureValuesFor(const nsACString& aFamily,
                                uint32_t aVariantProperty,
-                               const nsAString& aName,
+                               nsAtom* aName,
                                nsTArray<uint32_t>& aValues);
 
   
   
   nsTArray<uint32_t>* AppendFeatureValueHashEntry(const nsACString& aFamily,
-                                                  const nsAString& aName,
+                                                  nsAtom* aName,
                                                   uint32_t aAlternate);
 
  private:
@@ -64,11 +66,11 @@ class gfxFontFeatureValueSet final {
   struct FeatureValueHashKey {
     nsCString mFamily;
     uint32_t mPropVal;
-    nsString mName;
+    RefPtr<nsAtom> mName;
 
     FeatureValueHashKey() : mPropVal(0) {}
     FeatureValueHashKey(const nsACString& aFamily, uint32_t aPropVal,
-                        const nsAString& aName)
+                        nsAtom* aName)
         : mFamily(aFamily), mPropVal(aPropVal), mName(aName) {}
     FeatureValueHashKey(const FeatureValueHashKey& aKey)
         : mFamily(aKey.mFamily), mPropVal(aKey.mPropVal), mName(aKey.mName) {}
