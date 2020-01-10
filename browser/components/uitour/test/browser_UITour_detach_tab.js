@@ -54,21 +54,22 @@ var tests = [
       gBrowser.selectedBrowser,
       myDocIdentifier,
       contentMyDocIdentifier => {
-        let onPageShow = () => {
+        let onVisibilityChange = () => {
           if (!content.document.hidden) {
             let win = Cu.waiveXrays(content);
             win.Mozilla.UITour.showHighlight("appMenu");
           }
         };
-        content.window.addEventListener("pageshow", onPageShow, {
-          mozSystemGroup: true,
-        });
+        content.document.addEventListener(
+          "visibilitychange",
+          onVisibilityChange
+        );
         content.document.myExpando = contentMyDocIdentifier;
       }
     );
     gContentAPI.showHighlight("appMenu");
 
-    await elementVisiblePromise(highlight, "old window highlight");
+    await elementVisiblePromise(highlight);
 
     gContentWindow = gBrowser.replaceTabWithWindow(gBrowser.selectedTab);
     await browserStartupDeferred.promise;
@@ -77,7 +78,7 @@ var tests = [
     let newWindowHighlight = gContentWindow.document.getElementById(
       "UITourHighlight"
     );
-    await elementVisiblePromise(newWindowHighlight, "new window highlight");
+    await elementVisiblePromise(newWindowHighlight);
 
     let selectedTab = gContentWindow.gBrowser.selectedTab;
     await ContentTask.spawn(

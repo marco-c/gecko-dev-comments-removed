@@ -1806,10 +1806,8 @@ class Document : public nsINode,
   void DispatchContentLoadedEvents();
 
   void DispatchPageTransition(EventTarget* aDispatchTarget,
-                              const nsAString& aType,
-                              bool aInFrameSwap,
-                              bool aPersisted,
-                              bool aOnlySystemGroup);
+                              const nsAString& aType, bool aPersisted,
+                              bool aOnlySystemGroup = false);
 
   
   
@@ -3458,10 +3456,6 @@ class Document : public nsINode,
       const nsTArray<nsString>& aParams = nsTArray<nsString>()) const;
 
   
-  
-  void UpdateVisibilityState();
-
-  
   void PostVisibilityUpdateEvent();
 
   bool IsSyntheticDocument() const { return mIsSyntheticDocument; }
@@ -4232,6 +4226,10 @@ class Document : public nsINode,
   Element* GetTitleElement();
 
   void RecordNavigationTiming(ReadyState aReadyState);
+
+  
+  
+  void UpdateVisibilityState();
 
   
   dom::VisibilityState ComputeVisibilityState() const;
