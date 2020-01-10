@@ -9,6 +9,7 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/HTMLFormSubmission.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIForm.h"
@@ -32,7 +33,6 @@ class EventChainPreVisitor;
 namespace dom {
 class HTMLFormControlsCollection;
 class HTMLImageElement;
-class FormData;
 
 class HTMLFormElement final : public nsGenericHTMLElement,
                               public nsIWebProgressListener,
@@ -282,8 +282,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-
-  nsresult ConstructEntryList(FormData* aFormData);
+  nsresult WalkFormElements(HTMLFormSubmission* aFormSubmission);
 
   
 
@@ -612,11 +611,8 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
   bool mEverTriedInvalidSubmit;
-  
-  bool mIsConstructingEntryList;
 
  private:
-  NotNull<const Encoding*> GetSubmitEncoding();
   ~HTMLFormElement();
 };
 
