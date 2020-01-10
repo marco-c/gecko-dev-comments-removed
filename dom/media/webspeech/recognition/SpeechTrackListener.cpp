@@ -78,11 +78,11 @@ void SpeechTrackListener::ConvertAndDispatchAudioChunk(int aDuration,
   mRecognition->FeedAudioData(samples.forget(), aDuration, this, aTrackRate);
 }
 
-void SpeechTrackListener::NotifyEnded() {
+void SpeechTrackListener::NotifyEnded(MediaStreamGraph* aGraph) {
   
 }
 
-void SpeechTrackListener::NotifyRemoved() {
+void SpeechTrackListener::NotifyRemoved(MediaStreamGraph* aGraph) {
   mRemovedHolder.ResolveIfExists(true, __func__);
 }
 

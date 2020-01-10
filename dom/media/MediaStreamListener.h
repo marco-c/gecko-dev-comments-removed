@@ -79,7 +79,8 @@ class MediaStreamTrackListener {
 
 
 
-  virtual void NotifyEnabledStateChanged(bool aEnabled) {}
+  virtual void NotifyEnabledStateChanged(MediaStreamGraph* aGraph,
+                                         bool aEnabled) {}
 
   
 
@@ -91,13 +92,13 @@ class MediaStreamTrackListener {
   
 
 
-  virtual void NotifyEnded() {}
+  virtual void NotifyEnded(MediaStreamGraph* aGraph) {}
 
   
 
 
 
-  virtual void NotifyRemoved() {}
+  virtual void NotifyRemoved(MediaStreamGraph* aGraph) {}
 
  protected:
   virtual ~MediaStreamTrackListener() {}
