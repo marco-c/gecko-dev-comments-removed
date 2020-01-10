@@ -2,22 +2,25 @@
 
 
 
-
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["HomePage"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 const kPrefName = "browser.startup.homepage";
 const kDefaultHomePage = "about:home";
+const kExtensionControllerPref =
+  "browser.startup.homepage_override.extensionControlled";
+const kHomePageIgnoreListId = "homepage-urls";
 
 function getHomepagePref(useDefault) {
   let homePage;
@@ -47,7 +50,55 @@ function getHomepagePref(useDefault) {
   return homePage;
 }
 
+
+
+
+
+
+
 let HomePage = {
+  
+  
+  _ignoreList: [],
+
+  
+  
+  _initializationPromise: null,
+
+  
+
+
+
+
+
+  async init() {
+    if (this._initializationPromise) {
+      await this._initializationPromise;
+      return;
+    }
+
+    
+    this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
+
+    this._initializationPromise = IgnoreLists.getAndSubscribe(
+      this._ignoreListListener
+    );
+
+    const current = await this._initializationPromise;
+
+    await this._handleIgnoreListUpdated({ data: { current } });
+  },
+
+  
+
+
+
+
+
+
+
+
+
   get(aWindow) {
     let homePages = getHomepagePref();
     if (
@@ -57,7 +108,7 @@ let HomePage = {
       
       
       let extensionControlled = Services.prefs.getBoolPref(
-        "browser.startup.homepage_override.extensionControlled",
+        kExtensionControllerPref,
         false
       );
       let privateAllowed = Services.prefs.getBoolPref(
@@ -77,31 +128,88 @@ let HomePage = {
     return homePages;
   },
 
+  
+
+
+
   getDefault() {
     return getHomepagePref(true);
   },
+
+  
+
+
 
   get overridden() {
     return Services.prefs.prefHasUserValue(kPrefName);
   },
 
+  
+
+
+
   get locked() {
     return Services.prefs.prefIsLocked(kPrefName);
   },
+
+  
+
+
 
   get isDefault() {
     return HomePage.get() === kDefaultHomePage;
   },
 
+  
+
+
+
+
+
+
   set(value) {
     Services.prefs.setStringPref(kPrefName, value);
   },
+
+  
+
+
 
   clear() {
     Services.prefs.clearUserPref(kPrefName);
   },
 
+  
+
+
   reset() {
     Services.prefs.setStringPref(kPrefName, kDefaultHomePage);
+  },
+
+  
+
+
+
+
+
+
+  _handleIgnoreListUpdated({ data: { current } }) {
+    for (const entry of current) {
+      if (entry.id == kHomePageIgnoreListId) {
+        this._ignoreList = [...entry.matches];
+      }
+    }
+
+    
+    
+    if (this.overridden) {
+      let homePages = getHomepagePref().toLowerCase();
+      if (
+        this._ignoreList.some(code => homePages.includes(code.toLowerCase()))
+      ) {
+        this.clear();
+        Services.prefs.clearUserPref(kExtensionControllerPref);
+      }
+    }
   },
 };
