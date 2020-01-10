@@ -42,6 +42,9 @@ class ID3Parser {
     uint32_t Size() const;
 
     
+    bool HasSizeBeenSet() const;
+
+    
     uint8_t FooterSize() const;
 
     
@@ -70,7 +73,7 @@ class ID3Parser {
     
     
     
-    uint32_t mSize;
+    Maybe<uint32_t> mSize;
 
     
     
