@@ -44,7 +44,7 @@ const uint8_t MAX_CODE_BIT_LENGTH = 20;
 const uint8_t MAX_PREFIX_BIT_LENGTH = 32;
 
 
-const uint8_t BIT_BUFFER_LENGTH = 64;
+const uint8_t BIT_BUFFER_SIZE = 64;
 
 
 const uint8_t BIT_BUFFER_READ_UNIT = 8;
@@ -1018,15 +1018,16 @@ JS::Result<Ok> BinASTTokenReaderContext::readHuffmanPrelude() {
   return reader.run(HUFFMAN_STACK_INITIAL_CAPACITY);
 }
 
-BinASTTokenReaderContext::BitBuffer::BitBuffer() : bits(0), length(0) {
-  static_assert(sizeof(bits) * 8 == BIT_BUFFER_LENGTH,
-                "Expecting bitBuffer to match BIT_BUFFER_LENGTH");
+BinASTTokenReaderContext::BitBuffer::BitBuffer() : bits(0), bitLength(0) {
+  static_assert(sizeof(bits) * 8 == BIT_BUFFER_SIZE,
+                "Expecting bitBuffer to match BIT_BUFFER_SIZE");
 }
 
 template <Compression C>
 HuffmanLookup BinASTTokenReaderContext::BitBuffer::getHuffmanLookup() {
   
-  const uint8_t bitLength = std::min<uint8_t>(length, MAX_PREFIX_BIT_LENGTH);
+  const uint8_t bitLength =
+      std::min<uint8_t>(this->bitLength, MAX_PREFIX_BIT_LENGTH);
   const uint32_t bitsPrefix = bits & (uint64_t)0x00000000FFFFFFFF;
   return HuffmanLookup(bitsPrefix, bitLength);
 }
@@ -1037,33 +1038,59 @@ BinASTTokenReaderContext::BitBuffer::advanceBitBuffer(
     BinASTTokenReaderContext& owner, const uint8_t bitLength) {
   
   
-  MOZ_ASSERT(bitLength <= this->length);
-  this->length -= bitLength;
+  MOZ_ASSERT(bitLength <= this->bitLength);
+
   
   
   
-  this->bits <<= bitLength;
-  if (length <= MAX_PREFIX_BIT_LENGTH) {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  this->bitLength -= bitLength;
+
+  if (this->bitLength <= MAX_PREFIX_BIT_LENGTH) {
     
     
     
-    while (length <= BIT_BUFFER_LENGTH - BIT_BUFFER_READ_UNIT) {
+
+    while (this->bitLength <= BIT_BUFFER_SIZE - BIT_BUFFER_READ_UNIT) {
       
       uint8_t byte;
-      uint32_t byteLen = 1;
-      MOZ_TRY((owner.readBuf<C, EndOfFilePolicy::BestEffort>(&byte, byteLen)));
-      if (byteLen < 1) {
+      uint32_t readLen = 1;
+      MOZ_TRY((owner.readBuf<C, EndOfFilePolicy::BestEffort>(&byte, readLen)));
+      if (readLen < 1) {
         
         break;
       }
 
       
       
-      MOZ_ASSERT(bits <= 0x00FFFFFFFFFFFFFF);
+      const uint8_t reversedByte =
+          (byte & 0b10000000) >> 7 | (byte & 0b01000000) >> 5 |
+          (byte & 0b00100000) >> 3 | (byte & 0b00010000) >> 1 |
+          (byte & 0b00001000) << 1 | (byte & 0b00000100) << 3 |
+          (byte & 0b00000010) << 5 | (byte & 0b00000001) << 7;
+
+      
+      
+      
       this->bits <<= BIT_BUFFER_READ_UNIT;
-      this->bits += byte;
-      this->length += BIT_BUFFER_READ_UNIT;
-      MOZ_ASSERT(bits >> this->length == 0);
+
+      
+      
+      this->bits += reversedByte;
+      this->bitLength += BIT_BUFFER_READ_UNIT;
+      MOZ_ASSERT(bits >> this->bitLength == 0);
+
+      
     }
   }
 
@@ -1314,9 +1341,6 @@ HuffmanEntry<const T*> HuffmanTableImpl<T, N>::lookup(HuffmanLookup key) const {
 
     const uint32_t keyBits = key.leadingBits(iter.key.bitLength);
     if (keyBits == iter.key.bits) {
-      
-      
-      
       
       return HuffmanEntry<const T*>(iter.key.bits, iter.key.bitLength,
                                     &iter.value);
