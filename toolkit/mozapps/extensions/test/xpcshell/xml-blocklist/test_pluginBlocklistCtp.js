@@ -75,6 +75,7 @@ add_task(async function setup() {
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref("extensions.blocklist.url");
     Services.prefs.clearUserPref("extensions.blocklist.enabled");
+    Services.prefs.clearUserPref("plugins.click_to_play");
   });
 });
 
@@ -153,6 +154,7 @@ add_task(async function test_disable_blocklist() {
 
   
   
+  Services.prefs.setBoolPref("plugins.click_to_play", true);
   let previousEnabledState = plugin.enabledState;
   plugin.enabledState = Ci.nsIPluginTag.STATE_CLICKTOPLAY;
   Assert.equal(gPluginHost.getStateForType("application/x-test"), Ci.nsIPluginTag.STATE_CLICKTOPLAY);
