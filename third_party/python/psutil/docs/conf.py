@@ -110,7 +110,7 @@ language = None
 
 
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'DEVGUIDE.rst']
 
 
 

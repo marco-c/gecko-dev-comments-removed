@@ -15,10 +15,14 @@ from ._common import sdiskusage
 from ._common import usage_percent
 from ._compat import PY3
 from ._compat import unicode
-from ._exceptions import TimeoutExpired
 
 
 __all__ = ['pid_exists', 'wait_pid', 'disk_usage', 'get_terminal_map']
+
+
+
+
+TimeoutExpired = None
 
 
 def pid_exists(pid):
@@ -156,7 +160,7 @@ def disk_usage(path):
     
     
     
-    usage_percent_user = usage_percent(used, total_user, _round=1)
+    usage_percent_user = usage_percent(used, total_user, round_=1)
 
     
     

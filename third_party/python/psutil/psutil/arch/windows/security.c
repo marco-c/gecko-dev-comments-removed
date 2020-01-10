@@ -9,128 +9,37 @@
 
 #include <windows.h>
 #include <Python.h>
+#include "../../_psutil_common.h"
 
 
-
-
-
-HANDLE
-psutil_token_from_handle(HANDLE hProcess) {
-    HANDLE hToken = NULL;
-
-    if (! OpenProcessToken(hProcess, TOKEN_QUERY, &hToken))
-        return PyErr_SetFromWindowsErr(0);
-    return hToken;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int
-psutil_has_system_privilege(HANDLE hProcess) {
-    DWORD i;
-    DWORD dwSize = 0;
-    DWORD dwRetval = 0;
-    TCHAR privName[256];
-    DWORD dwNameSize = 256;
-    
-    BYTE *pBuffer = NULL;
-    TOKEN_PRIVILEGES *tp = NULL;
-    HANDLE hToken = psutil_token_from_handle(hProcess);
-
-    if (NULL == hToken)
-        return -1;
-    
-    if (! GetTokenInformation(hToken, TokenPrivileges, NULL, 0, &dwSize)) {
-        dwRetval = GetLastError();
-        
-        if (dwRetval != ERROR_INSUFFICIENT_BUFFER ) {
-            PyErr_SetFromWindowsErr(dwRetval);
-            return 0;
-        }
-    }
-
-    
-    
-    pBuffer = (BYTE *) malloc(dwSize);
-    if (pBuffer == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    if (! GetTokenInformation(hToken, TokenPrivileges, pBuffer,
-                              dwSize, &dwSize))
-    {
-        PyErr_SetFromWindowsErr(0);
-        free(pBuffer);
-        return -1;
-    }
-
-    
-    tp = (TOKEN_PRIVILEGES *)pBuffer;
-
-    
-    for (i = 0; i < tp->PrivilegeCount; i++) {
-        
-        strcpy(privName, "");
-        dwNameSize = sizeof(privName) / sizeof(TCHAR);
-        if (! LookupPrivilegeName(NULL,
-                                  &tp->Privileges[i].Luid,
-                                  (LPTSTR)privName,
-                                  &dwNameSize))
-        {
-            PyErr_SetFromWindowsErr(0);
-            free(pBuffer);
-            return -1;
-        }
-
-        
-        if (! lstrcmpi(privName, TEXT("SeTcbPrivilege"))) {
-            free(pBuffer);
-            return 1;
-        }
-    }
-
-    free(pBuffer);
-    return 0;
-}
-
-
-BOOL
+static BOOL
 psutil_set_privilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege) {
     TOKEN_PRIVILEGES tp;
     LUID luid;
     TOKEN_PRIVILEGES tpPrevious;
     DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
 
-    if (!LookupPrivilegeValue( NULL, Privilege, &luid )) return FALSE;
+    if (! LookupPrivilegeValue(NULL, Privilege, &luid)) {
+        PyErr_SetFromOSErrnoWithSyscall("LookupPrivilegeValue");
+        return 1;
+    }
 
     
     tp.PrivilegeCount = 1;
     tp.Privileges[0].Luid = luid;
     tp.Privileges[0].Attributes = 0;
 
-    AdjustTokenPrivileges(
-        hToken,
-        FALSE,
-        &tp,
-        sizeof(TOKEN_PRIVILEGES),
-        &tpPrevious,
-        &cbPrevious
-    );
-
-    if (GetLastError() != ERROR_SUCCESS) return FALSE;
+    if (! AdjustTokenPrivileges(
+            hToken,
+            FALSE,
+            &tp,
+            sizeof(TOKEN_PRIVILEGES),
+            &tpPrevious,
+            &cbPrevious))
+    {
+        PyErr_SetFromOSErrnoWithSyscall("AdjustTokenPrivileges");
+        return 1;
+    }
 
     
     tpPrevious.PrivilegeCount = 1;
@@ -142,84 +51,88 @@ psutil_set_privilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege) {
         tpPrevious.Privileges[0].Attributes ^=
             (SE_PRIVILEGE_ENABLED & tpPrevious.Privileges[0].Attributes);
 
-    AdjustTokenPrivileges(
-        hToken,
-        FALSE,
-        &tpPrevious,
-        cbPrevious,
-        NULL,
-        NULL
-    );
+    if (! AdjustTokenPrivileges(
+            hToken,
+            FALSE,
+            &tpPrevious,
+            cbPrevious,
+            NULL,
+            NULL))
+    {
+        PyErr_SetFromOSErrnoWithSyscall("AdjustTokenPrivileges");
+        return 1;
+    }
 
-    if (GetLastError() != ERROR_SUCCESS) return FALSE;
-
-    return TRUE;
+    return 0;
 }
+
+
+static HANDLE
+psutil_get_thisproc_token() {
+    HANDLE hToken = NULL;
+    HANDLE me = GetCurrentProcess();
+
+    if (! OpenProcessToken(
+            me, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    {
+        if (GetLastError() == ERROR_NO_TOKEN)
+        {
+            if (! ImpersonateSelf(SecurityImpersonation)) {
+                PyErr_SetFromOSErrnoWithSyscall("ImpersonateSelf");
+                return NULL;
+            }
+            if (! OpenProcessToken(
+                    me, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+            {
+                PyErr_SetFromOSErrnoWithSyscall("OpenProcessToken");
+                return NULL;
+            }
+        }
+        else {
+            PyErr_SetFromOSErrnoWithSyscall("OpenProcessToken");
+            return NULL;
+        }
+    }
+
+    return hToken;
+}
+
+
+static void
+psutil_print_err() {
+    char *msg = "psutil module couldn't set SE DEBUG mode for this process; " \
+        "please file an issue against psutil bug tracker";
+    psutil_debug(msg);
+    if (GetLastError() != ERROR_ACCESS_DENIED)
+        PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1);
+    PyErr_Clear();
+}
+
+
+
+
+
+
+
 
 
 int
 psutil_set_se_debug() {
     HANDLE hToken;
-    if (! OpenThreadToken(GetCurrentThread(),
-                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                          FALSE,
-                          &hToken)
-       ) {
-        if (GetLastError() == ERROR_NO_TOKEN) {
-            if (!ImpersonateSelf(SecurityImpersonation)) {
-                CloseHandle(hToken);
-                return 0;
-            }
-            if (!OpenThreadToken(GetCurrentThread(),
-                                 TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                                 FALSE,
-                                 &hToken)
-               ) {
-                RevertToSelf();
-                CloseHandle(hToken);
-                return 0;
-            }
-        }
+    int err = 1;
+
+    if ((hToken = psutil_get_thisproc_token()) == NULL) {
+        
+        psutil_print_err();
+        return 0;
     }
 
-    
-    if (! psutil_set_privilege(hToken, SE_DEBUG_NAME, TRUE)) {
-        RevertToSelf();
-        CloseHandle(hToken);
-        return 0;
+    if (psutil_set_privilege(hToken, SE_DEBUG_NAME, TRUE) != 0) {
+        
+        psutil_print_err();
     }
 
     RevertToSelf();
     CloseHandle(hToken);
-    return 1;
-}
-
-
-int
-psutil_unset_se_debug() {
-    HANDLE hToken;
-    if (! OpenThreadToken(GetCurrentThread(),
-                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                          FALSE,
-                          &hToken)
-       ) {
-        if (GetLastError() == ERROR_NO_TOKEN) {
-            if (! ImpersonateSelf(SecurityImpersonation))
-                return 0;
-            if (!OpenThreadToken(GetCurrentThread(),
-                                 TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                                 FALSE,
-                                 &hToken))
-            {
-                return 0;
-            }
-        }
-    }
-
-    
-    if (! psutil_set_privilege(hToken, SE_DEBUG_NAME, FALSE))
-        return 0;
-
-    CloseHandle(hToken);
-    return 1;
+    return 0;
 }
