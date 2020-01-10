@@ -1317,7 +1317,7 @@ or run without that action (ie: --no-{action})"
         """
         
         
-        rust_size = os.path.join(self.query_abs_dirs()['abs_src_dir'],
+        rust_size = os.path.join(os.environ['MOZ_FETCHES_DIR'],
                                  'rust-size', 'rust-size')
         size_prog = self.which(rust_size)
         if not size_prog:
