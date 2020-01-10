@@ -172,6 +172,7 @@ let gWindows = new WeakMap();
 function FinderHighlighter(finder) {
   this._highlightAll = Services.prefs.getBoolPref(kHighlightAllPref);
   this._modal = Services.prefs.getBoolPref(kModalHighlightPref);
+  this._useSubFrames = false;
   this.finder = finder;
 }
 
@@ -241,12 +242,14 @@ FinderHighlighter.prototype = {
 
 
 
-  async highlight(highlight, word, linksOnly, drawOutline) {
+
+  async highlight(highlight, word, linksOnly, drawOutline, useSubFrames) {
     let window = this.finder._getWindow();
     let dict = this.getForWindow(window);
     let controller = this.finder._getSelectionController(window);
     let doc = window.document;
     this._found = false;
+    this._useSubFrames = useSubFrames;
 
     if (!controller || !doc || !doc.documentElement) {
       
@@ -264,6 +267,7 @@ FinderHighlighter.prototype = {
         finder: this.finder,
         listener: this,
         useCache: true,
+        useSubFrames,
         window,
       };
       if (
@@ -484,6 +488,7 @@ FinderHighlighter.prototype = {
       return;
     }
 
+    this._useSubFrames = data.useSubFrames;
     if (!this._modal) {
       if (this._highlightAll) {
         dict.previousFoundRange = dict.currentFoundRange;
@@ -503,7 +508,8 @@ FinderHighlighter.prototype = {
             true,
             params.word,
             params.linksOnly,
-            params.drawOutline
+            params.drawOutline,
+            data.useSubFrames
           );
         }
       }
@@ -526,7 +532,13 @@ FinderHighlighter.prototype = {
     }
 
     if (this._highlightAll) {
-      this.highlight(true, data.searchString, data.linksOnly, data.drawOutline);
+      this.highlight(
+        true,
+        data.searchString,
+        data.linksOnly,
+        data.drawOutline,
+        data.useSubFrames
+      );
     }
   },
 
