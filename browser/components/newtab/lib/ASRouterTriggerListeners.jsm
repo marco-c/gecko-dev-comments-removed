@@ -366,6 +366,12 @@ this.ASRouterTriggerListeners = new Map([
       },
 
       observe(aSubject, aTopic, aData) {
+        if (aSubject.currentURI.asciiHost === "accounts.firefox.com") {
+          
+          
+          
+          return;
+        }
         this._triggerHandler(aSubject, { id: "newSavedLogin" });
       },
     },
