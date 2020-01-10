@@ -6,7 +6,10 @@
 
 "use strict";
 
-const { formatDisplayName } = require("devtools/server/actors/frame");
+const {
+  logEvent,
+  getThrownMessage,
+} = require("devtools/server/actors/utils/logEvent");
 
 
 
@@ -128,20 +131,6 @@ BreakpointActor.prototype = {
   },
 
   
-  getThrownMessage(completion) {
-    try {
-      if (completion.throw.getOwnPropertyDescriptor) {
-        return completion.throw.getOwnPropertyDescriptor("message").value;
-      } else if (completion.toString) {
-        return completion.toString();
-      }
-    } catch (ex) {
-      
-    }
-    return "Unknown exception";
-  },
-
-  
 
 
 
@@ -162,7 +151,7 @@ BreakpointActor.prototype = {
         
         return {
           result: true,
-          message: this.getThrownMessage(completion),
+          message: getThrownMessage(completion),
         };
       } else if (completion.yield) {
         assert(false, "Shouldn't ever get yield completions from an eval");
@@ -232,38 +221,12 @@ BreakpointActor.prototype = {
     }
 
     if (logValue) {
-      const displayName = formatDisplayName(frame);
-      const completion = frame.evalWithBindings(`[${logValue}]`, {
-        displayName,
+      return logEvent({
+        threadActor: this.threadActor,
+        frame,
+        level: "logPoint",
+        expression: `[${logValue}]`,
       });
-      let value;
-      let level = "logPoint";
-
-      if (!completion) {
-        
-        value = ["Log value evaluation incomplete"];
-      } else if ("return" in completion) {
-        value = completion.return;
-      } else {
-        value = [this.getThrownMessage(completion)];
-        level = "logPointError";
-      }
-
-      if (value && typeof value.unsafeDereference === "function") {
-        value = value.unsafeDereference();
-      }
-
-      const message = {
-        filename: sourceActor.url,
-        lineNumber: line,
-        columnNumber: column,
-        arguments: value,
-        level,
-      };
-      this.threadActor._parent._consoleActor.onConsoleAPICall(message);
-
-      
-      return undefined;
     }
 
     return this.threadActor._pauseAndRespond(frame, reason);
