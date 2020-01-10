@@ -5,6 +5,7 @@
 
 
 #include "URLSearchParams.h"
+#include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/URLSearchParamsBinding.h"
 #include "mozilla/Encoding.h"
 #include "nsDOMString.h"
@@ -422,30 +423,6 @@ void URLSearchParams::Sort(ErrorResult& aRv) {
   }
 }
 
-
-inline bool ReadString(JSStructuredCloneReader* aReader, nsString& aString) {
-  MOZ_ASSERT(aReader);
-
-  bool read;
-  uint32_t nameLength, zero;
-  read = JS_ReadUint32Pair(aReader, &nameLength, &zero);
-  if (!read) {
-    return false;
-  }
-  MOZ_ASSERT(zero == 0);
-  if (NS_WARN_IF(!aString.SetLength(nameLength, fallible))) {
-    return false;
-  }
-  size_t charSize = sizeof(nsString::char_type);
-  read = JS_ReadBytes(aReader, (void*)aString.BeginWriting(),
-                      nameLength * charSize);
-  if (!read) {
-    return false;
-  }
-
-  return true;
-}
-
 nsresult URLParams::Sort() {
   
   
@@ -476,23 +453,14 @@ nsresult URLParams::Sort() {
   return NS_OK;
 }
 
-inline bool WriteString(JSStructuredCloneWriter* aWriter,
-                        const nsString& aString) {
-  MOZ_ASSERT(aWriter);
-
-  size_t charSize = sizeof(nsString::char_type);
-  return JS_WriteUint32Pair(aWriter, aString.Length(), 0) &&
-         JS_WriteBytes(aWriter, aString.get(), aString.Length() * charSize);
-}
-
 bool URLParams::WriteStructuredClone(JSStructuredCloneWriter* aWriter) const {
   const uint32_t& nParams = mParams.Length();
   if (!JS_WriteUint32Pair(aWriter, nParams, 0)) {
     return false;
   }
   for (uint32_t i = 0; i < nParams; ++i) {
-    if (!WriteString(aWriter, mParams[i].mKey) ||
-        !WriteString(aWriter, mParams[i].mValue)) {
+    if (!StructuredCloneHolder::WriteString(aWriter, mParams[i].mKey) ||
+        !StructuredCloneHolder::WriteString(aWriter, mParams[i].mValue)) {
       return false;
     }
   }
@@ -511,7 +479,8 @@ bool URLParams::ReadStructuredClone(JSStructuredCloneReader* aReader) {
   }
   MOZ_ASSERT(zero == 0);
   for (uint32_t i = 0; i < nParams; ++i) {
-    if (!ReadString(aReader, key) || !ReadString(aReader, value)) {
+    if (!StructuredCloneHolder::ReadString(aReader, key) ||
+        !StructuredCloneHolder::ReadString(aReader, value)) {
       return false;
     }
     Append(key, value);

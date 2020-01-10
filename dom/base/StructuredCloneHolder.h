@@ -259,6 +259,11 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
                                             JSStructuredCloneWriter* aWriter,
                                             JS::Handle<JSObject*> aObj);
 
+  
+  static bool ReadString(JSStructuredCloneReader* aReader, nsString& aString);
+  static bool WriteString(JSStructuredCloneWriter* aWriter,
+                          const nsString& aString);
+
   static const JSStructuredCloneCallbacks sCallbacks;
 
  protected:
