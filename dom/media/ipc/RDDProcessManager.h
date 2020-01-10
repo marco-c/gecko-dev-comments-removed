@@ -19,6 +19,8 @@ class RDDChild;
 
 
 class RDDProcessManager final : public RDDProcessHost::Listener {
+  friend class RDDChild;
+
  public:
   static void Initialize();
   static void Shutdown();
