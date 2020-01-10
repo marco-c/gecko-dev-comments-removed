@@ -4677,9 +4677,6 @@ pref("widget.window-transforms.disabled", false);
 pref("layers.shared-buffer-provider.enabled", true);
 
 
-pref("layers.force-active", false);
-
-
 pref("geo.wifi.xhr.timeout", 60000);
 
 
