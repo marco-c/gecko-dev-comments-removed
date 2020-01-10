@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 ft=cpp : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef webrtc_tcp_socket_h__
 #define webrtc_tcp_socket_h__
@@ -62,7 +62,7 @@ class WebrtcTCPSocket : public nsIHttpUpgradeListener,
  protected:
   virtual ~WebrtcTCPSocket();
 
-  
+  // protected for gtests
   virtual void InvokeOnClose(nsresult aReason);
   virtual void InvokeOnConnected();
   virtual void InvokeOnRead(nsTArray<uint8_t>&& aReadData);
@@ -81,8 +81,8 @@ class WebrtcTCPSocket : public nsIHttpUpgradeListener,
 
   nsresult DoProxyConfigLookup();
   nsresult OpenWithHttpProxy();
-  nsresult OpenWithoutHttpProxy(nsIProxyInfo* aSocksProxyInfo);
-  nsresult FinishOpen();
+  void OpenWithoutHttpProxy(nsIProxyInfo* aSocksProxyInfo);
+  void FinishOpen();
   void EnqueueWrite_s(nsTArray<uint8_t>&& aWriteData);
 
   void CloseWithReason(nsresult aReason);
@@ -91,7 +91,7 @@ class WebrtcTCPSocket : public nsIHttpUpgradeListener,
   std::list<WebrtcTCPData> mWriteQueue;
   nsCOMPtr<nsIAuthPromptProvider> mAuthProvider;
 
-  
+  // Indicates that the channel is CONNECTed
   nsCOMPtr<nsISocketTransport> mTransport;
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
@@ -100,7 +100,7 @@ class WebrtcTCPSocket : public nsIHttpUpgradeListener,
   nsCOMPtr<nsICancelable> mProxyRequest;
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // webrtc_tcp_socket_h__
