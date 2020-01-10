@@ -50,6 +50,7 @@ typedef struct _nsCocoaWindowList {
   BOOL mDrawTitle;
   BOOL mBrightTitlebarForeground;
   BOOL mUseMenuStyle;
+  BOOL mIsAnimationSuppressed;
 
   nsTouchBar* mTouchBar;
 }
@@ -78,6 +79,9 @@ typedef struct _nsCocoaWindowList {
 - (void)setBeingShown:(BOOL)aValue;
 - (BOOL)isBeingShown;
 - (BOOL)isVisibleOrBeingShown;
+
+- (void)setIsAnimationSuppressed:(BOOL)aValue;
+- (BOOL)isAnimationSuppressed;
 
 
 
