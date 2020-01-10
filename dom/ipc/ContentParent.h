@@ -1398,8 +1398,6 @@ const nsDependentSubstring RemoteTypePrefix(
 
 bool IsWebRemoteType(const nsAString& aContentProcessType);
 
-bool IsWebCoopCoepRemoteType(const nsAString& aContentProcessType);
-
 }  
 }  
 
