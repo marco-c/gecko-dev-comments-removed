@@ -53,6 +53,11 @@ BreakpointActorMap.prototype = {
     return this._actors[key];
   },
 
+  get(location) {
+    const key = this._locationKey(location);
+    return this._actors[key];
+  },
+
   
 
 

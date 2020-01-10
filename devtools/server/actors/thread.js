@@ -944,6 +944,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return frame !== startFrame || meta.isStepStart;
   },
 
+  atBreakpointLocation(frame) {
+    const location = this.sources.getFrameLocation(frame);
+    return !!this.breakpointActorMap.get(location);
+  },
+
   createCompletionGrip: function(packet, completion) {
     if (!completion) {
       return packet;
@@ -1760,8 +1765,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   onDebuggerStatement: function(frame) {
     const location = this.sources.getFrameLocation(frame);
-    const url = location.sourceActor.url;
 
+    
     
     
     
@@ -1769,7 +1774,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (
       !this.hasMoved(frame, "debuggerStatement") ||
       this.skipBreakpoints ||
-      this.sources.isBlackBoxed(url)
+      this.sources.isBlackBoxed(location.sourceUrl) ||
+      this.atBreakpointLocation(frame)
     ) {
       return undefined;
     }
