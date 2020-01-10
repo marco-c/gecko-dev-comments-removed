@@ -97,10 +97,7 @@ mod checks;
 
 
 
-
-
-pub const SHARING_CACHE_SIZE: usize = 31;
-const SHARING_CACHE_BACKING_STORE_SIZE: usize = SHARING_CACHE_SIZE + 1;
+pub const SHARING_CACHE_SIZE: usize = 32;
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -426,7 +423,7 @@ impl<E: TElement> StyleSharingTarget<E> {
 }
 
 struct SharingCacheBase<Candidate> {
-    entries: LRUCache<[Entry<Candidate>; SHARING_CACHE_BACKING_STORE_SIZE]>,
+    entries: LRUCache<[Entry<Candidate>; SHARING_CACHE_SIZE]>,
 }
 
 impl<Candidate> Default for SharingCacheBase<Candidate> {
