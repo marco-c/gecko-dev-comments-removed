@@ -2598,10 +2598,6 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 
 
 
-pref("security.view-source.reachable-from-inner-protocol", false);
-
-
-
 #if !defined(RELEASE_OR_BETA) && !defined(ANDROID)
   pref("security.strict_security_checks.enabled", true);
 #else
