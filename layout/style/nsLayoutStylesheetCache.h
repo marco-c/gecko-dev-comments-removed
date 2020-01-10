@@ -96,7 +96,7 @@ class nsLayoutStylesheetCache final : public nsIObserver,
   
   
   
-  static constexpr size_t kSharedMemorySize = 1024 * 400;
+  static constexpr size_t kSharedMemorySize = 1024 * 450;
 
  private:
   
