@@ -841,23 +841,22 @@ class BlocksRingBuffer {
     {  
       baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
       if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
-        Length bytes = std::forward<CallbackBytes>(aCallbackBytes)();
-        
-        
-        
+        const Length entryBytes = std::forward<CallbackBytes>(aCallbackBytes)();
+        const Length bufferBytes =
+            mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value();
         MOZ_RELEASE_ASSERT(
-            bytes < mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() / 2);
+            entryBytes <= bufferBytes - BufferWriter::ULEB128Size(entryBytes),
+            "Entry would wrap and overwrite itself");
         
-        const Length blockBytes = EntryWriter::BlockSizeForEntrySize(bytes);
+        const Length blockBytes =
+            EntryWriter::BlockSizeForEntrySize(entryBytes);
         
         const BlockIndex blockIndex = mNextWriteIndex;
         
         const Index blockEnd = Index(blockIndex) + blockBytes;
         
         mNextWriteIndex = BlockIndex(blockEnd);
-        while (blockEnd >
-               Index(mFirstReadIndex) +
-                   mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value()) {
+        while (blockEnd > Index(mFirstReadIndex) + bufferBytes) {
           
           EntryReader reader = ReaderInBlockAt(mFirstReadIndex);
           
@@ -871,7 +870,7 @@ class BlocksRingBuffer {
         }
         mMaybeUnderlyingBuffer->mPushedBlockCount += 1;
         
-        EntryWriter entryWriter(*this, blockIndex, bytes);
+        EntryWriter entryWriter(*this, blockIndex, entryBytes);
         return std::forward<Callback>(aCallback)(&entryWriter);
       }
     }  
@@ -951,9 +950,11 @@ class BlocksRingBuffer {
       return BlockIndex{};
     }
 
-    
-    MOZ_RELEASE_ASSERT(bytesToCopy <=
-                       mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value());
+    const Length bufferBytes =
+        mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value();
+
+    MOZ_RELEASE_ASSERT(bytesToCopy <= bufferBytes,
+                       "Entry would wrap and overwrite itself");
 
     
     const Index dstStartIndex = Index(mNextWriteIndex);
@@ -962,9 +963,7 @@ class BlocksRingBuffer {
     
     mNextWriteIndex = BlockIndex(dstEndIndex);
 
-    while (dstEndIndex >
-           Index(mFirstReadIndex) +
-               mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value()) {
+    while (dstEndIndex > Index(mFirstReadIndex) + bufferBytes) {
       
       EntryReader reader = ReaderInBlockAt(mFirstReadIndex);
       
@@ -1086,10 +1085,11 @@ class BlocksRingBuffer {
     BufferReader br =
         mMaybeUnderlyingBuffer->mBuffer.ReaderAt(Index(aBlockIndex));
     Length entryBytes = br.ReadULEB128<Length>();
-    
-    MOZ_ASSERT(entryBytes > 0);
-    MOZ_ASSERT(entryBytes <
-               mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() / 2);
+    MOZ_ASSERT(entryBytes > 0, "Empty entries are not allowed");
+    MOZ_ASSERT(
+        entryBytes < mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() -
+                         BufferReader::ULEB128Size(entryBytes),
+        "Entry would wrap and overwrite itself");
     
     MOZ_ASSERT(Index(aBlockIndex) + BufferReader::ULEB128Size(entryBytes) +
                    entryBytes <=
@@ -1187,23 +1187,35 @@ class BlocksRingBuffer {
 
   struct UnderlyingBuffer {
     
-    explicit UnderlyingBuffer(PowerOfTwo<Length> aLength) : mBuffer(aLength) {}
+    explicit UnderlyingBuffer(PowerOfTwo<Length> aLength) : mBuffer(aLength) {
+      MOZ_ASSERT(aLength.Value() > ULEB128MaxSize<Length>(),
+                 "Buffer should be able to contain more than a block size");
+    }
 
     
     UnderlyingBuffer(UniquePtr<Buffer::Byte[]> aExistingBuffer,
                      PowerOfTwo<Length> aLength)
-        : mBuffer(std::move(aExistingBuffer), aLength) {}
+        : mBuffer(std::move(aExistingBuffer), aLength) {
+      MOZ_ASSERT(aLength.Value() > ULEB128MaxSize<Length>(),
+                 "Buffer should be able to contain more than a block size");
+    }
 
     
     UnderlyingBuffer(Buffer::Byte* aExternalBuffer, PowerOfTwo<Length> aLength)
-        : mBuffer(aExternalBuffer, aLength) {}
+        : mBuffer(aExternalBuffer, aLength) {
+      MOZ_ASSERT(aLength.Value() > ULEB128MaxSize<Length>(),
+                 "Buffer should be able to contain more than a block size");
+    }
 
     
     template <typename EntryDestructor>
     explicit UnderlyingBuffer(PowerOfTwo<Length> aLength,
                               EntryDestructor&& aEntryDestructor)
         : mBuffer(aLength),
-          mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {}
+          mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {
+      MOZ_ASSERT(aLength.Value() > ULEB128MaxSize<Length>(),
+                 "Buffer should be able to contain more than a block size");
+    }
 
     
     template <typename EntryDestructor>
@@ -1211,7 +1223,10 @@ class BlocksRingBuffer {
                               PowerOfTwo<Length> aLength,
                               EntryDestructor&& aEntryDestructor)
         : mBuffer(std::move(aExistingBuffer), aLength),
-          mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {}
+          mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {
+      MOZ_ASSERT(aLength.Value() > ULEB128MaxSize<Length>(),
+                 "Buffer should be able to contain more than a block size");
+    }
 
     
     template <typename EntryDestructor>
@@ -1219,7 +1234,10 @@ class BlocksRingBuffer {
                               PowerOfTwo<Length> aLength,
                               EntryDestructor&& aEntryDestructor)
         : mBuffer(aExternalBuffer, aLength),
-          mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {}
+          mEntryDestructor(std::forward<EntryDestructor>(aEntryDestructor)) {
+      MOZ_ASSERT(aLength.Value() > ULEB128MaxSize<Length>(),
+                 "Buffer should be able to contain more than a block size");
+    }
 
     
     UnderlyingBuffer(UnderlyingBuffer&&) = default;
