@@ -261,15 +261,14 @@ bool ParseContext::init() {
     
     
     
-    RootedFunction fun(cx, functionBox()->function());
-    if (fun->isNamedLambda()) {
+    if (functionBox()->isNamedLambda()) {
       if (!namedLambdaScope_->init(this)) {
         return false;
       }
       AddDeclaredNamePtr p =
-          namedLambdaScope_->lookupDeclaredNameForAdd(fun->explicitName());
+          namedLambdaScope_->lookupDeclaredNameForAdd(functionBox()->explicitName());
       MOZ_ASSERT(!p);
-      if (!namedLambdaScope_->addDeclaredName(this, p, fun->explicitName(),
+      if (!namedLambdaScope_->addDeclaredName(this, p, functionBox()->explicitName(),
                                               DeclarationKind::Const,
                                               DeclaredNameInfo::npos)) {
         return false;
