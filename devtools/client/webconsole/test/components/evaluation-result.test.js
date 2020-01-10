@@ -14,9 +14,9 @@ const { setupStore } = require("devtools/client/webconsole/test/helpers");
 
 
 const EvaluationResult = createFactory(
-  require("devtools/client/webconsole/components/message-types/EvaluationResult")
+  require("devtools/client/webconsole/components/Output/message-types/EvaluationResult")
 );
-const { INDENT_WIDTH } = require("devtools/client/webconsole/components/MessageIndent");
+const { INDENT_WIDTH } = require("devtools/client/webconsole/components/Output/MessageIndent");
 
 
 const {
