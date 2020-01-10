@@ -747,9 +747,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   inline void MaybeClearInnerWindow(nsGlobalWindowInner* aExpectedInner);
 
   
-  static nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
-
-  
   nsPIDOMWindowOuter* GetInProcessParentInternal();
 
  public:

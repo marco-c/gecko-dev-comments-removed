@@ -891,13 +891,21 @@ class WorkerPrivate : public RelativeTimeline {
 
   const nsAString& Id();
 
+  const nsID& AgentClusterId() const { return mAgentClusterId; }
+
+  bool CanShareMemory(const nsID& aAgentClusterId);
+
+  nsILoadInfo::CrossOriginOpenerPolicy AgentClusterOpenerPolicy() {
+    return mAgentClusterOpenerPolicy;
+  }
+
  private:
-  WorkerPrivate(WorkerPrivate* aParent, const nsAString& aScriptURL,
-                bool aIsChromeWorker, WorkerType aWorkerType,
-                const nsAString& aWorkerName,
-                const nsACString& aServiceWorkerScope,
-                WorkerLoadInfo& aLoadInfo, nsString&& aId,
-                const nsID& aAgentClusterId);
+  WorkerPrivate(
+      WorkerPrivate* aParent, const nsAString& aScriptURL, bool aIsChromeWorker,
+      WorkerType aWorkerType, const nsAString& aWorkerName,
+      const nsACString& aServiceWorkerScope, WorkerLoadInfo& aLoadInfo,
+      nsString&& aId, const nsID& aAgentClusterId,
+      const nsILoadInfo::CrossOriginOpenerPolicy aAgentClusterOpenerPolicy);
 
   ~WorkerPrivate();
 
@@ -985,8 +993,6 @@ class WorkerPrivate : public RelativeTimeline {
   
   
   void DispatchCancelingRunnable();
-
-  const nsID& AgentClusterId() const { return mAgentClusterId; }
 
   class EventTarget;
   friend class EventTarget;
@@ -1207,6 +1213,10 @@ class WorkerPrivate : public RelativeTimeline {
   RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
 
   nsString mId;
+
+  
+  
+  const nsILoadInfo::CrossOriginOpenerPolicy mAgentClusterOpenerPolicy;
 };
 
 class AutoSyncLoopHolder {
