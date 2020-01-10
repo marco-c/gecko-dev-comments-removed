@@ -80,13 +80,11 @@ nsSVGOuterSVGFrame::nsSVGOuterSVGFrame(ComputedStyle* aStyle,
 
 static inline bool DependsOnIntrinsicSize(const nsIFrame* aEmbeddingFrame) {
   const nsStylePosition* pos = aEmbeddingFrame->StylePosition();
-  const auto& width = pos->mWidth;
-  const auto& height = pos->mHeight;
 
   
   
   
-  return !width.ConvertsToLength() || !height.ConvertsToLength();
+  return !pos->mWidth.ConvertsToLength() || !pos->mHeight.ConvertsToLength();
 }
 
 
