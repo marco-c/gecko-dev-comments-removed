@@ -25,9 +25,14 @@ class nsMacUtilsImpl final : public nsIMacUtils {
 
   nsMacUtilsImpl() {}
 
+  
+  
+  
+  static nsresult GetRepoDir(nsIFile** aRepoDir);
+  static nsresult GetObjDir(nsIFile** aObjDir);
+
 #if defined(MOZ_SANDBOX)
   static bool GetAppPath(nsCString& aAppPath);
-
 #  ifdef DEBUG
   static nsresult GetBloatLogDir(nsCString& aDirectoryPath);
   static nsresult GetDirectoryPath(const char* aPath,
