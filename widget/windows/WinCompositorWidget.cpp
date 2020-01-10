@@ -29,7 +29,6 @@ WinCompositorWidget::WinCompositorWidget(
     const WinCompositorWidgetInitData& aInitData,
     const layers::CompositorOptions& aOptions)
     : CompositorWidget(aOptions),
-      mSetParentCompleted(false),
       mWidgetKey(aInitData.widgetKey()),
       mWnd(reinterpret_cast<HWND>(aInitData.hWnd())),
       mCompositorWnds(nullptr, nullptr),
@@ -341,25 +340,12 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
   }
 
   
-  
-  
-  
-  
-  if (!mSetParentCompleted) {
-    
+  if (!::SetWindowPos(mCompositorWnds.mCompositorWnd, nullptr, 0, 0, size.width,
+                      size.height,
+                      SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOCOPYBITS |
+                          SWP_NOOWNERZORDER | SWP_NOZORDER)) {
     return;
   }
-
-  MOZ_ASSERT(mWnd == ::GetParent(mCompositorWnds.mCompositorWnd));
-
-  
-  if (!::SetWindowPos(
-          mCompositorWnds.mCompositorWnd, nullptr, 0, 0, size.width,
-          size.height,
-          SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOZORDER)) {
-    return;
-  }
-
   mLastCompositorWndSize = size;
 }
 
