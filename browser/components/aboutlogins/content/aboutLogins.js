@@ -61,8 +61,11 @@ window.addEventListener("AboutLoginsChromeToContent", event => {
       break;
     }
     case "LoginRemoved": {
-      gElements.loginList.loginRemoved(event.detail.value);
+      
+      
+      
       gElements.loginItem.loginRemoved(event.detail.value);
+      gElements.loginList.loginRemoved(event.detail.value);
       numberOfLogins--;
       updateNoLogins();
       break;
