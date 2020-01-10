@@ -192,7 +192,6 @@ HTMLEditRules::HTMLEditRules()
       mInitialized(false),
       mListenerEnabled(false),
       mReturnInEmptyLIKillsList(false),
-      mDidExplicitlySetInterline(false),
       mDidRangedDelete(false),
       mDidEmptyParentBlocksRemoved(false),
       mRestoreContentEditableCount(false),
@@ -205,7 +204,6 @@ void HTMLEditRules::InitFields() {
   mHTMLEditor = nullptr;
   mDocChangeRange = nullptr;
   mReturnInEmptyLIKillsList = true;
-  mDidExplicitlySetInterline = false;
   mDidRangedDelete = false;
   mDidEmptyParentBlocksRemoved = false;
   mRestoreContentEditableCount = false;
@@ -326,8 +324,6 @@ nsresult HTMLEditRules::BeforeEdit() {
   if (!mInitialized) {
     return NS_OK;  
   }
-
-  mDidExplicitlySetInterline = false;
 
 #ifdef DEBUG
   mIsHandling = true;
@@ -675,7 +671,9 @@ nsresult HTMLEditRules::AfterEditInner() {
   }
 
   
-  if (!mDidExplicitlySetInterline) {
+  if (!HTMLEditorRef()
+           .TopLevelEditSubActionDataRef()
+           .mDidExplicitlySetInterLine) {
     CheckInterlinePosition();
   }
 
@@ -2640,7 +2638,9 @@ nsresult HTMLEditRules::WillDeleteSelection(
           SelectionRefPtr()->SetInterlinePosition(false, ignoredError);
           NS_WARNING_ASSERTION(!ignoredError.Failed(),
                                "Failed to unset interline position");
-          mDidExplicitlySetInterline = true;
+          HTMLEditorRef()
+              .TopLevelEditSubActionDataRef()
+              .mDidExplicitlySetInterLine = true;
           *aHandled = true;
 
           
@@ -3928,9 +3928,7 @@ nsresult HTMLEditRules::DidDeleteSelection() {
   }
 
   
-  nsresult rv = TextEditRules::DidDeleteSelection(
-      mDidExplicitlySetInterline ? SetSelectionInterLinePosition::No
-                                 : SetSelectionInterLinePosition::Yes);
+  nsresult rv = TextEditRules::DidDeleteSelection();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "TextEditRules::DidDeleteSelection() failed");
   return rv;

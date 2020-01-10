@@ -615,8 +615,15 @@ class EditorBase : public nsIEditor,
     
     bool mDidDeleteSelection;
 
+    
+    
+    bool mDidExplicitlySetInterLine;
+
    private:
-    void Clear() { mDidDeleteSelection = false; }
+    void Clear() {
+      mDidDeleteSelection = false;
+      mDidExplicitlySetInterLine = false;
+    }
 
     TopLevelEditSubActionData() = default;
     TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;

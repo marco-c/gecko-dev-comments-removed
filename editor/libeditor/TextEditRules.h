@@ -214,12 +214,7 @@ class TextEditRules {
 
 
 
-  enum class SetSelectionInterLinePosition {
-    Yes,
-    No,
-  };
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidDeleteSelection(
-      SetSelectionInterLinePosition aSetSelectionInterLinePosition);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidDeleteSelection();
 
   nsresult WillSetTextProperty(bool* aCancel, bool* aHandled);
 
