@@ -2047,6 +2047,9 @@ class BreakpointSite {
   BreakpointList breakpoints;
   size_t enabledCount; 
 
+  gc::Cell* owningCellUnbarriered();
+  size_t allocSize();
+
  protected:
   virtual void recompile(FreeOp* fop) = 0;
   bool isEnabled() const { return enabledCount > 0; }
