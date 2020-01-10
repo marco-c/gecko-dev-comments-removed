@@ -197,17 +197,6 @@ BrowserHost::GetHasLayers(bool* aHasLayers) {
 
 
 NS_IMETHODIMP
-BrowserHost::ForceRepaint(void) {
-  if (!mRoot) {
-    return NS_OK;
-  }
-  VisitAll(
-      [](BrowserParent* aBrowserParent) { aBrowserParent->ForceRepaint(); });
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
 BrowserHost::NotifyResolutionChanged(void) {
   if (!mRoot) {
     return NS_OK;

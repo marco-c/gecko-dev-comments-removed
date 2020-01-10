@@ -3315,18 +3315,6 @@ void BrowserParent::PreserveLayers(bool aPreserveLayers) {
   mPreserveLayers = aPreserveLayers;
 }
 
-void BrowserParent::ForceRepaint() {
-  if (!mActiveInPriorityManager) {
-    
-    
-    
-    mActiveInPriorityManager = true;
-    ProcessPriorityManager::TabActivityChanged(this, true);
-  }
-
-  SetRenderLayersInternal(true );
-}
-
 void BrowserParent::NotifyResolutionChanged() {
   if (!mIsDestroyed) {
     
