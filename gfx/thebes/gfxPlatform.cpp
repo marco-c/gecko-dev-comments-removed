@@ -990,7 +990,7 @@ void gfxPlatform::Init() {
   gLastUsedFrameRate = ForceSoftwareVsync() ? GetSoftwareVsyncRate() : -1;
   Preferences::RegisterCallback(
       FrameRatePrefChanged,
-      nsDependentCString(StaticPrefs::GetLayoutFrameRatePrefName()));
+      nsDependentCString(StaticPrefs::Getlayout_frame_ratePrefName()));
   
   ReInitFrameRate();
 
@@ -3150,18 +3150,18 @@ bool gfxPlatform::IsInLayoutAsapMode() {
   
   
   
-  return StaticPrefs::LayoutFrameRate() == 0;
+  return StaticPrefs::layout_frame_rate() == 0;
 }
 
 
 bool gfxPlatform::ForceSoftwareVsync() {
-  return StaticPrefs::LayoutFrameRate() > 0 ||
+  return StaticPrefs::layout_frame_rate() > 0 ||
          recordreplay::IsRecordingOrReplaying();
 }
 
 
 int gfxPlatform::GetSoftwareVsyncRate() {
-  int preferenceRate = StaticPrefs::LayoutFrameRate();
+  int preferenceRate = StaticPrefs::layout_frame_rate();
   if (preferenceRate <= 0) {
     return gfxPlatform::GetDefaultFrameRate();
   }

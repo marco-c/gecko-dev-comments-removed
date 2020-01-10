@@ -543,14 +543,14 @@ bool nsLayoutUtils::IsAnimationLoggingEnabled() {
 
 bool nsLayoutUtils::AreRetainedDisplayListsEnabled() {
 #ifdef MOZ_WIDGET_ANDROID
-  return StaticPrefs::LayoutRetainDisplayList();
+  return StaticPrefs::layout_display_list_retain();
 #else
   if (XRE_IsContentProcess()) {
-    return StaticPrefs::LayoutRetainDisplayList();
+    return StaticPrefs::layout_display_list_retain();
   }
 
   if (XRE_IsE10sParentProcess()) {
-    return StaticPrefs::LayoutRetainDisplayListChrome();
+    return StaticPrefs::layout_display_list_retain_chrome();
   }
 
   
@@ -1292,7 +1292,7 @@ bool nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
       GetHighResolutionDisplayPort(aContent, &newDisplayPort);
   MOZ_ASSERT(hasDisplayPort);
 
-  if (StaticPrefs::LayoutUseContainersForRootFrames()) {
+  if (StaticPrefs::layout_scroll_root_frame_containers()) {
     nsIFrame* rootScrollFrame = aPresShell->GetRootScrollFrame();
     if (rootScrollFrame && aContent == rootScrollFrame->GetContent() &&
         nsLayoutUtils::UsesAsyncScrolling(rootScrollFrame)) {
@@ -3962,7 +3962,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       
       
       if (shouldAttemptPartialUpdate) {
-        if (StaticPrefs::LayoutVerifyRetainDisplayList()) {
+        if (StaticPrefs::layout_display_list_retain_verify()) {
           beforeMergeChecker.Set(list, "BM");
         }
 
@@ -3986,7 +3986,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       bool doFullRebuild =
           updateState == PartialUpdateResult::Failed || afterMergeChecker;
 
-      if (StaticPrefs::LayoutDisplayListBuildTwice()) {
+      if (StaticPrefs::layout_display_list_build_twice()) {
         
         
         metrics->StartBuild();
@@ -9319,14 +9319,14 @@ Maybe<ScrollMetadata> nsLayoutUtils::GetRootMetadata(
   
   
   
-  bool addMetrics = StaticPrefs::LayoutUseContainersForRootFrames() ||
+  bool addMetrics = StaticPrefs::layout_scroll_root_frame_containers() ||
                     (XRE_IsParentProcess() && !presShell->GetRootScrollFrame());
 
   
   
   bool ensureMetricsForRootId =
       nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
-      !StaticPrefs::LayoutUseContainersForRootFrames() &&
+      !StaticPrefs::layout_scroll_root_frame_containers() &&
       aBuilder->IsPaintingToWindow() && !presContext->GetParentPresContext();
 
   nsIContent* content = nullptr;

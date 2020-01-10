@@ -470,7 +470,7 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
                         new DisplayPortPropertyData(displayport, aPriority),
                         nsINode::DeleteProperty<DisplayPortPropertyData>);
 
-  if (StaticPrefs::LayoutUseContainersForRootFrames()) {
+  if (StaticPrefs::layout_scroll_root_frame_containers()) {
     nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
     if (rootScrollFrame && aElement == rootScrollFrame->GetContent() &&
         nsLayoutUtils::UsesAsyncScrolling(rootScrollFrame)) {
@@ -555,24 +555,6 @@ nsDOMWindowUtils::SetDisplayPortBaseForElement(int32_t aX, int32_t aY,
   }
 
   nsLayoutUtils::SetDisplayPortBase(aElement, nsRect(aX, aY, aWidth, aHeight));
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::GetScrollbarSizes(Element* aElement,
-                                    uint32_t* aOutVerticalScrollbarWidth,
-                                    uint32_t* aOutHorizontalScrollbarHeight) {
-  nsIScrollableFrame* scrollFrame =
-      nsLayoutUtils::FindScrollableFrameFor(aElement);
-  if (!scrollFrame) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  CSSIntMargin scrollbarSizes = RoundedToInt(
-      CSSMargin::FromAppUnits(scrollFrame->GetActualScrollbarSizes()));
-  *aOutVerticalScrollbarWidth = scrollbarSizes.LeftRight();
-  *aOutHorizontalScrollbarHeight = scrollbarSizes.TopBottom();
 
   return NS_OK;
 }

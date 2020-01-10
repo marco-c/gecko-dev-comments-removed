@@ -298,7 +298,7 @@ static int32_t CalculateCompositionFrameRate() {
       StaticPrefs::layers_offmainthreadcomposition_frame_rate();
   if (compositionFrameRatePref < 0) {
     
-    int32_t layoutFrameRatePref = StaticPrefs::LayoutFrameRate();
+    int32_t layoutFrameRatePref = StaticPrefs::layout_frame_rate();
     if (layoutFrameRatePref < 0) {
       
       

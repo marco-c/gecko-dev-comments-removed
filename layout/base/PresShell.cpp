@@ -25,7 +25,6 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/PresShellInlines.h"
-#include "mozilla/RangeUtils.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/TextEvents.h"
@@ -3395,7 +3394,7 @@ static void ScrollToShowRect(PresShell* aPresShell,
     bool smoothScroll = (aScrollFlags & ScrollFlags::ScrollSmooth) ||
                         ((aScrollFlags & ScrollFlags::ScrollSmoothAuto) &&
                          autoBehaviorIsSmooth);
-    if (StaticPrefs::ScrollBehaviorEnabled() && smoothScroll) {
+    if (StaticPrefs::layout_css_scroll_behavior_enabled() && smoothScroll) {
       scrollMode = ScrollMode::SmoothMsd;
     }
     nsIFrame* frame = do_QueryFrame(aFrameAsScrollable);
@@ -4658,7 +4657,7 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
         
         bool before, after;
         nsresult rv =
-            RangeUtils::CompareNodeToRange(content, aRange, &before, &after);
+            nsRange::CompareNodeToRange(content, aRange, &before, &after);
         if (NS_SUCCEEDED(rv) && !before && !after) {
           itemToInsert = i;
           bool snap;
@@ -5105,7 +5104,7 @@ void PresShell::AddCanvasBackgroundColorItem(
   bool forceUnscrolledItem =
       nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
   if ((aFlags & AddCanvasBackgroundColorFlags::AddForSubDocument) &&
-      StaticPrefs::LayoutUseContainersForRootFrames()) {
+      StaticPrefs::layout_scroll_root_frame_containers()) {
     
     
     

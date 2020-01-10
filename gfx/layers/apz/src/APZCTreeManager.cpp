@@ -3322,7 +3322,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
   
   bool scrollbarSubjectToResolution =
       aMetrics.IsRootContent() &&
-      StaticPrefs::LayoutUseContainersForRootFrames();
+      StaticPrefs::layout_scroll_root_frame_containers();
 
   
   
