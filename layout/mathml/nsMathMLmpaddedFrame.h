@@ -86,8 +86,8 @@ class nsMathMLmpaddedFrame final : public nsMathMLContainerFrame {
   
   void ProcessAttributes();
 
-  static bool ParseAttribute(nsString& aString, int32_t& aSign,
-                             nsCSSValue& aCSSValue, int32_t& aPseudoUnit);
+  bool ParseAttribute(nsString& aString, int32_t& aSign, nsCSSValue& aCSSValue,
+                      int32_t& aPseudoUnit);
 
   void UpdateValue(int32_t aSign, int32_t aPseudoUnit,
                    const nsCSSValue& aCSSValue,

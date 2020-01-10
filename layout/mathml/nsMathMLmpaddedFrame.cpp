@@ -208,7 +208,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString, int32_t& aSign,
 
     
     if (nsMathMLElement::ParseNamedSpaceValue(
-            unit, aCSSValue, nsMathMLElement::PARSE_ALLOW_NEGATIVE)) {
+            unit, aCSSValue, nsMathMLElement::PARSE_ALLOW_NEGATIVE,
+            *mContent->OwnerDoc())) {
       
       floatValue *= aCSSValue.GetFloatValue();
       aCSSValue.SetFloatValue(floatValue, eCSSUnit_EM);
