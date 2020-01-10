@@ -510,6 +510,9 @@ class H264 {
   
   static bool DecodeRecoverySEI(const mozilla::MediaByteBuffer* aSEI,
                                 SEIRecoveryData& aDest);
+  
+  
+  static bool DecodeISlice(const mozilla::MediaByteBuffer* aSlice);
 };
 
 }  

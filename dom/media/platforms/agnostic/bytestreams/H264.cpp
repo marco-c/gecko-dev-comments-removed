@@ -985,16 +985,8 @@ uint32_t H264::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
         return FrameType::I_FRAME;
       }
     } else if (nalType == H264_NAL_SLICE) {
-      
-      
       RefPtr<mozilla::MediaByteBuffer> decodedNAL = DecodeNALUnit(p, nalLen);
-      BitReader br(decodedNAL);
-      
-      br.ReadUE();
-      
-      
-      const uint32_t sliceType = br.ReadUE() % 5;
-      if (sliceType == SLICE_TYPES::I_SLICE || sliceType == SI_SLICE) {
+      if (DecodeISlice(decodedNAL)) {
         return FrameType::I_FRAME;
       }
     }
@@ -1185,6 +1177,23 @@ static inline Result<Ok, nsresult> ReadSEIInt(BufferReader& aBr,
   }
   aOutput += tmpByte;  
   return Ok();
+}
+
+
+bool H264::DecodeISlice(const mozilla::MediaByteBuffer* aSlice) {
+  if (!aSlice) {
+    return false;
+  }
+
+  
+  
+  BitReader br(aSlice);
+  
+  br.ReadUE();
+  
+  
+  const uint32_t sliceType = br.ReadUE() % 5;
+  return sliceType == SLICE_TYPES::I_SLICE || sliceType == SI_SLICE;
 }
 
 
