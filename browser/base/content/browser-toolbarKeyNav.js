@@ -21,9 +21,15 @@
 
 
 
+
+
+
 ToolbarKeyboardNavigator = {
   
   kToolbars: [CustomizableUI.AREA_NAVBAR, CustomizableUI.AREA_BOOKMARKS],
+  
+  
+  kSearchClearTimeout: 1000,
 
   _isButton(aElem) {
     return (
@@ -195,6 +201,20 @@ ToolbarKeyboardNavigator = {
   _onKeyDown(aEvent) {
     let focus = document.activeElement;
     if (
+      aEvent.key != " " &&
+      aEvent.key.length == 1 &&
+      this._isButton(focus) &&
+      
+      
+      !focus.closest("panel")
+    ) {
+      this._onSearchChar(aEvent.currentTarget, aEvent.key);
+      return;
+    }
+    
+    this._clearSearch();
+
+    if (
       aEvent.altKey ||
       aEvent.controlKey ||
       aEvent.metaKey ||
@@ -217,6 +237,83 @@ ToolbarKeyboardNavigator = {
         return;
     }
     aEvent.preventDefault();
+  },
+
+  _clearSearch() {
+    this._searchText = "";
+    if (this._clearSearchTimeout) {
+      clearTimeout(this._clearSearchTimeout);
+      this._clearSearchTimeout = null;
+    }
+  },
+
+  _onSearchChar(aToolbar, aChar) {
+    if (this._clearSearchTimeout) {
+      
+      clearTimeout(this._clearSearchTimeout);
+    }
+    
+    let char = aChar.toLowerCase();
+    
+    
+    
+    
+    if (!this._searchText) {
+      this._searchText = char;
+    } else if (this._searchText != char) {
+      this._searchText += char;
+    }
+    
+    this._clearSearchTimeout = setTimeout(
+      this._clearSearch.bind(this),
+      this.kSearchClearTimeout
+    );
+
+    let oldFocus = document.activeElement;
+    let walker = this._getWalker(aToolbar);
+    
+    walker.currentNode = oldFocus;
+    for (
+      let newFocus = walker.nextNode();
+      newFocus;
+      newFocus = walker.nextNode()
+    ) {
+      if (this._doesSearchMatch(newFocus)) {
+        this._focusButton(newFocus);
+        return;
+      }
+    }
+    
+    walker.currentNode = walker.root;
+    for (
+      let newFocus = walker.firstChild();
+      newFocus && newFocus != oldFocus;
+      newFocus = walker.nextNode()
+    ) {
+      if (this._doesSearchMatch(newFocus)) {
+        this._focusButton(newFocus);
+        return;
+      }
+    }
+  },
+
+  _doesSearchMatch(aElem) {
+    if (!this._isButton(aElem)) {
+      return false;
+    }
+    for (let attrib of ["aria-label", "label", "tooltiptext"]) {
+      let label = aElem.getAttribute(attrib);
+      if (!label) {
+        continue;
+      }
+      
+      
+      label = label.toLowerCase();
+      if (label.startsWith(this._searchText)) {
+        return true;
+      }
+    }
+    return false;
   },
 
   _onKeyPress(aEvent) {
