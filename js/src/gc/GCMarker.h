@@ -449,7 +449,7 @@ class GCMarker : public JSTracer {
   MainThreadOrGCTaskData<js::gc::Arena*> delayedMarkingList;
 
   
-  MainThreadData<bool> delayedMarkingWorkAdded;
+  MainThreadOrGCTaskData<bool> delayedMarkingWorkAdded;
 
   
 
@@ -462,7 +462,7 @@ class GCMarker : public JSTracer {
 
 #ifdef DEBUG
   
-  MainThreadData<size_t> markLaterArenas;
+  MainThreadOrGCTaskData<size_t> markLaterArenas;
 
   
   MainThreadOrGCTaskData<bool> started;
