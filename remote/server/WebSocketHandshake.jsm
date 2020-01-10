@@ -4,16 +4,13 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["WebSocketServer"];
+var EXPORTED_SYMBOLS = ["WebSocketHandshake"];
 
 
 
 const CC = Components.Constructor;
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { Stream } = ChromeUtils.import(
-  "chrome://remote/content/server/Stream.jsm"
-);
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -30,51 +27,7 @@ const CryptoHash = CC(
 const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
 
 
-const HEADER_MAX_LEN = 8000;
 
-
-
-
-
-
-
-
-
-function readLine(input) {
-  return new Promise((resolve, reject) => {
-    let line = "";
-    const wait = () => {
-      input.asyncWait(
-        stream => {
-          try {
-            const amountToRead = HEADER_MAX_LEN - line.length;
-            line += Stream.delimitedRead(input, "\n", amountToRead);
-
-            if (line.endsWith("\n")) {
-              resolve(line.trimRight());
-              return;
-            }
-
-            if (line.length >= HEADER_MAX_LEN) {
-              throw new Error(
-                `Failed to read HTTP header longer than ${HEADER_MAX_LEN} bytes`
-              );
-            }
-
-            wait();
-          } catch (ex) {
-            reject(ex);
-          }
-        },
-        0,
-        0,
-        threadManager.currentThread
-      );
-    };
-
-    wait();
-  });
-}
 
 
 
@@ -109,38 +62,6 @@ function writeString(output, data) {
     wait();
   });
 }
-
-
-
-
-
-
-const readHttpRequest = async function(input) {
-  let requestLine = "";
-  const headers = new Map();
-
-  while (true) {
-    const line = await readLine(input);
-    if (line.length == 0) {
-      break;
-    }
-
-    if (!requestLine) {
-      requestLine = line;
-    } else {
-      const colon = line.indexOf(":");
-      if (colon == -1) {
-        throw new Error(`Malformed HTTP header: ${line}`);
-      }
-
-      const name = line.slice(0, colon).toLowerCase();
-      const value = line.slice(colon + 1).trim();
-      headers.set(name, value);
-    }
-  }
-
-  return { requestLine, headers };
-};
 
 
 function writeHttpResponse(output, response) {
@@ -251,18 +172,6 @@ async function createWebSocket(transport, input, output) {
 }
 
 
-
-
-
-
-
-async function accept(transport, input, output) {
-  const request = await readHttpRequest(input);
-  await serverHandshake(request, output);
-  return createWebSocket(transport, input, output);
-}
-
-
 async function upgrade(request, response) {
   
   response._powerSeized = true;
@@ -282,4 +191,4 @@ async function upgrade(request, response) {
   return createWebSocket(transport, input, output);
 }
 
-const WebSocketServer = { accept, upgrade };
+const WebSocketHandshake = { upgrade };
