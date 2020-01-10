@@ -372,7 +372,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  already_AddRefed<Element> GetAbsolutelyPositionedSelectionContainer();
+  already_AddRefed<Element> GetAbsolutelyPositionedSelectionContainer() const;
 
   Element* GetPositionedElement() const { return mAbsolutelyPositionedObject; }
 
@@ -788,14 +788,14 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTableCellContentsWithTransaction();
 
-  void IsNextCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
-                                  bool* outIsSpace, bool* outIsNBSP,
-                                  nsIContent** outNode = nullptr,
-                                  int32_t* outOffset = 0);
-  void IsPrevCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
-                                  bool* outIsSpace, bool* outIsNBSP,
-                                  nsIContent** outNode = nullptr,
-                                  int32_t* outOffset = 0);
+  static void IsNextCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
+                                         bool* outIsSpace, bool* outIsNBSP,
+                                         nsIContent** outNode = nullptr,
+                                         int32_t* outOffset = 0);
+  static void IsPrevCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
+                                         bool* outIsSpace, bool* outIsNBSP,
+                                         nsIContent** outNode = nullptr,
+                                         int32_t* outOffset = 0);
 
   
 
@@ -1039,20 +1039,20 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsIContent* GetNextEditableHTMLNode(nsINode& aNode) {
+  nsIContent* GetNextEditableHTMLNode(nsINode& aNode) const {
     return GetNextEditableHTMLNodeInternal(aNode, false);
   }
-  nsIContent* GetNextEditableHTMLNodeInBlock(nsINode& aNode) {
+  nsIContent* GetNextEditableHTMLNodeInBlock(nsINode& aNode) const {
     return GetNextEditableHTMLNodeInternal(aNode, true);
   }
   template <typename PT, typename CT>
   nsIContent* GetNextEditableHTMLNode(
-      const EditorDOMPointBase<PT, CT>& aPoint) {
+      const EditorDOMPointBase<PT, CT>& aPoint) const {
     return GetNextEditableHTMLNodeInternal(aPoint, false);
   }
   template <typename PT, typename CT>
   nsIContent* GetNextEditableHTMLNodeInBlock(
-      const EditorDOMPointBase<PT, CT>& aPoint) {
+      const EditorDOMPointBase<PT, CT>& aPoint) const {
     return GetNextEditableHTMLNodeInternal(aPoint, true);
   }
 
@@ -1061,10 +1061,10 @@ class HTMLEditor final : public TextEditor,
 
 
   nsIContent* GetNextEditableHTMLNodeInternal(nsINode& aNode,
-                                              bool aNoBlockCrossing);
+                                              bool aNoBlockCrossing) const;
   template <typename PT, typename CT>
   nsIContent* GetNextEditableHTMLNodeInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aNoBlockCrossing);
+      const EditorDOMPointBase<PT, CT>& aPoint, bool aNoBlockCrossing) const;
 
   bool IsFirstEditableChild(nsINode* aNode);
   bool IsLastEditableChild(nsINode* aNode);
