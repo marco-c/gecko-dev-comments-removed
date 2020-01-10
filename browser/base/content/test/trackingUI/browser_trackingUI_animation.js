@@ -51,13 +51,17 @@ add_task(async function testShieldAnimation() {
     promiseTabLoadEvent(tab, TRACKING_PAGE),
     waitForContentBlockingEvent(2, tab.linkedBrowser.ownerGlobal),
   ]);
+
+  
+  
+  
   ok(
-    BrowserTestUtils.is_visible(noAnimationIcon),
-    "the default icon is shown when animations are disabled"
+    BrowserTestUtils.is_hidden(noAnimationIcon),
+    "the default icon is hidden when animations are disabled"
   );
   ok(
-    BrowserTestUtils.is_hidden(animationIcon),
-    "the animated icon is hidden when animations are disabled"
+    BrowserTestUtils.is_visible(animationIcon),
+    "the animated icon is shown when animations are disabled"
   );
 
   gBrowser.removeCurrentTab();
