@@ -198,13 +198,19 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  getHighlighter: function(autohide) {
+
+
+  getHighlighter: function(autohide, useNewBoxModelHighlighter) {
     if (this._highlighterPromise) {
       return this._highlighterPromise;
     }
 
     this._highlighterPromise = this.getWalker().then(walker => {
-      const highlighter = HighlighterActor(this, autohide);
+      const highlighter = HighlighterActor(
+        this,
+        autohide,
+        useNewBoxModelHighlighter
+      );
       this.manage(highlighter);
       return highlighter;
     });
