@@ -7212,8 +7212,7 @@ void Document::EndLoad() {
 
 #if defined(DEBUG) && !defined(ANDROID)
   
-  
-  if (!mParserAborted && !IsXULDocument()) {
+  if (!mParserAborted) {
     AssertAboutPageHasCSP(this);
   }
 #endif
