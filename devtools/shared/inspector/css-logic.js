@@ -31,7 +31,6 @@ loader.lazyRequireGetter(
   "devtools/shared/indentation",
   true
 );
-const { getRootBindingParent } = require("devtools/shared/layout/utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const styleInspectorL10N = new LocalizationHelper(
   "devtools/shared/locales/styleinspector.properties"
@@ -541,25 +540,6 @@ exports.hasVisitedState = hasVisitedState;
 
 
 
-function getShadowRoot(node) {
-  const doc = node.ownerDocument;
-  if (!doc) {
-    return null;
-  }
-
-  const parent = doc.getBindingParent(node);
-  const shadowRoot = parent && parent.openOrClosedShadowRoot;
-  if (shadowRoot) {
-    return shadowRoot;
-  }
-
-  return null;
-}
-
-
-
-
-
 function positionInNodeList(element, nodeList) {
   for (let i = 0; i < nodeList.length; i++) {
     if (element === nodeList[i]) {
@@ -575,7 +555,11 @@ function positionInNodeList(element, nodeList) {
 
 
 function findNodeAndContainer(node) {
-  const shadowRoot = getShadowRoot(node);
+  const shadowRoot = node.containingShadowRoot;
+  while (node && node.isNativeAnonymous) {
+    node = node.parentNode;
+  }
+
   if (shadowRoot) {
     
     
@@ -587,10 +571,9 @@ function findNodeAndContainer(node) {
 
   
   
-  const bindingParent = getRootBindingParent(node);
   return {
-    containingDocOrShadow: bindingParent.ownerDocument,
-    node: bindingParent,
+    containingDocOrShadow: node.ownerDocument,
+    node,
   };
 }
 
@@ -670,7 +653,7 @@ exports.findCssSelector = findCssSelector;
 
 
 function getSelectorParent(node) {
-  const shadowRoot = getShadowRoot(node);
+  const shadowRoot = node.containingShadowRoot;
   if (shadowRoot) {
     
     return shadowRoot.host;

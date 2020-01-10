@@ -441,93 +441,9 @@ exports.isNodeConnected = isNodeConnected;
 
 
 
-
-
-function getRootBindingParent(node) {
-  let parent;
-  const doc = node.ownerDocument;
-  if (!doc) {
-    return node;
-  }
-  while ((parent = doc.getBindingParent(node))) {
-    node = parent;
-  }
-  return node;
-}
-exports.getRootBindingParent = getRootBindingParent;
-
-function getBindingParent(node) {
-  const doc = node.ownerDocument;
-  if (!doc) {
-    return null;
-  }
-
-  
-  const parent = doc.getBindingParent(node);
-  if (!parent) {
-    return null;
-  }
-
-  return parent;
-}
-exports.getBindingParent = getBindingParent;
-
-
-
-
-
-
-
-
-
-const isAnonymous = node => getRootBindingParent(node) !== node;
+const isAnonymous = node => node.isNativeAnonymous;
 exports.isAnonymous = isAnonymous;
-
-
-
-
-
-
-
-
-const hasBindingParent = node => !!getBindingParent(node);
-
-
-
-
-
-
-
-
-
-
-
-const isNativeAnonymous = node =>
-  hasBindingParent(node) && !isShadowAnonymous(node);
-
-exports.isNativeAnonymous = isNativeAnonymous;
-
-
-
-
-
-
-
-
-function isShadowAnonymous(node) {
-  const parent = getBindingParent(node);
-  if (!parent) {
-    return false;
-  }
-
-  
-  
-  return (
-    parent.openOrClosedShadowRoot &&
-    parent.openOrClosedShadowRoot.contains(node)
-  );
-}
-exports.isShadowAnonymous = isShadowAnonymous;
+exports.isNativeAnonymous = isAnonymous;
 
 
 
@@ -548,10 +464,7 @@ exports.isTemplateElement = isTemplateElement;
 
 
 
-function isShadowRoot(node) {
-  const isFragment = node.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-  return isFragment && !!node.host;
-}
+const isShadowRoot = node => node.containingShadowRoot == node;
 exports.isShadowRoot = isShadowRoot;
 
 
@@ -592,7 +505,7 @@ function isDirectShadowHostChild(node) {
     isMarkerPseudoElement(node) ||
     isBeforePseudoElement(node) ||
     isAfterPseudoElement(node) ||
-    isNativeAnonymous(node)
+    node.isNativeAnonymous
   ) {
     return false;
   }
