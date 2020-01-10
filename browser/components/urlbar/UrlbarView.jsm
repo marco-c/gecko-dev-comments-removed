@@ -442,10 +442,12 @@ class UrlbarView {
     }
     this._updateResults(queryContext);
 
-    let isFirstPreselectedResult = false;
+    let isHeuristicResult = false;
     if (queryContext.lastResultCount == 0) {
-      if (queryContext.preselected) {
-        isFirstPreselectedResult = true;
+      let firstResult = queryContext.results[0];
+
+      if (firstResult.heuristic) {
+        isHeuristicResult = true;
         this._selectElement(this._getFirstSelectableElement(), {
           updateInput: false,
           setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
@@ -469,12 +471,12 @@ class UrlbarView {
 
       
       
-      this.input.maybeClearAutofillPlaceholder(queryContext.results[0]);
+      this.input.maybeClearAutofillPlaceholder(firstResult);
     }
 
     this._openPanel();
 
-    if (isFirstPreselectedResult) {
+    if (isHeuristicResult) {
       
       
       

@@ -318,6 +318,13 @@ class UrlbarProviderExtension extends UrlbarProvider {
         extResult.payload || {}
       )
     );
+    if (extResult.heuristic && this.behavior == "restricting") {
+      
+      
+      
+      
+      result.heuristic = extResult.heuristic;
+    }
     if (extResult.suggestedIndex !== undefined) {
       result.suggestedIndex = extResult.suggestedIndex;
     }

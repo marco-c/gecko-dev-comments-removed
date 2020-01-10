@@ -219,27 +219,23 @@ function convertResultToMatches(context, result, urls) {
       continue;
     }
     
-    if (isHeuristic) {
-      if (style.includes("autofill") && result.defaultIndex == 0) {
-        let autofillValue = result.getValueAt(i);
-        if (
-          autofillValue
-            .toLocaleLowerCase()
-            .startsWith(context.searchString.toLocaleLowerCase())
-        ) {
-          match.autofill = {
-            value:
-              context.searchString +
-              autofillValue.substring(context.searchString.length),
-            selectionStart: context.searchString.length,
-            selectionEnd: autofillValue.length,
-          };
-        }
+    if (isHeuristic && style.includes("autofill") && result.defaultIndex == 0) {
+      let autofillValue = result.getValueAt(i);
+      if (
+        autofillValue
+          .toLocaleLowerCase()
+          .startsWith(context.searchString.toLocaleLowerCase())
+      ) {
+        match.autofill = {
+          value:
+            context.searchString +
+            autofillValue.substring(context.searchString.length),
+          selectionStart: context.searchString.length,
+          selectionEnd: autofillValue.length,
+        };
       }
-
-      context.preselected = true;
-      match.heuristic = true;
     }
+    match.heuristic = isHeuristic;
     matches.push(match);
   }
   return { matches, done };

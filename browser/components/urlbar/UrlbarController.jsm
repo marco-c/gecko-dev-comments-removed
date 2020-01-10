@@ -404,7 +404,7 @@ class UrlbarController {
       case "resultsadded": {
         
         if (
-          (result == context.results[0] && context.preselected) ||
+          (result == context.results[0] && result.heuristic) ||
           result.autofill
         ) {
           if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
