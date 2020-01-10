@@ -721,6 +721,10 @@ struct ScrollSnapInfo {
   bool operator==(const ScrollSnapInfo& aOther) const {
     return mScrollSnapStrictnessX == aOther.mScrollSnapStrictnessX &&
            mScrollSnapStrictnessY == aOther.mScrollSnapStrictnessY &&
+           mScrollSnapIntervalX == aOther.mScrollSnapIntervalX &&
+           mScrollSnapIntervalY == aOther.mScrollSnapIntervalY &&
+           mScrollSnapDestination == aOther.mScrollSnapDestination &&
+           mScrollSnapCoordinates == aOther.mScrollSnapCoordinates &&
            mSnapPositionX == aOther.mSnapPositionX &&
            mSnapPositionY == aOther.mSnapPositionY &&
            mXRangeWiderThanSnapport == aOther.mXRangeWiderThanSnapport &&
@@ -749,6 +753,18 @@ struct ScrollSnapInfo {
       mozilla::StyleScrollSnapStrictness::None;
   mozilla::StyleScrollSnapStrictness mScrollSnapStrictnessY =
       mozilla::StyleScrollSnapStrictness::None;
+
+  
+  Maybe<nscoord> mScrollSnapIntervalX;
+  Maybe<nscoord> mScrollSnapIntervalY;
+
+  
+  
+  nsPoint mScrollSnapDestination;
+
+  
+  
+  nsTArray<nsPoint> mScrollSnapCoordinates;
 
   
   nsTArray<nscoord> mSnapPositionX;
