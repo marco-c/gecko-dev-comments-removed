@@ -2112,9 +2112,6 @@ pref("network.preload", false);
 
 
 
-pref("network.auth.force-generic-ntlm-v1", false);
-
-
 
 pref("network.negotiate-auth.trusted-uris", "");
 
