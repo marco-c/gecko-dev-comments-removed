@@ -48,6 +48,10 @@ class StackTracePanel extends Component {
 
   componentWillReceiveProps(nextProps) {
     const { request, connector } = nextProps;
+    
+    if (this.props.request && this.props.request.actor === request.actor) {
+      return;
+    }
     fetchNetworkUpdatePacket(connector.requestData, request, ["stackTrace"]);
   }
 
