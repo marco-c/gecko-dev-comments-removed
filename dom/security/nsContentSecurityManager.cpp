@@ -51,8 +51,6 @@ static nsLiteralCString evalWhitelist[] = {
     
     NS_LITERAL_CSTRING("chrome://global/content/bindings/autocomplete.xml"),
     
-    NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/lodash.js"),
-    
     NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/jszip.js"),
     
     NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/jsol.js"),
