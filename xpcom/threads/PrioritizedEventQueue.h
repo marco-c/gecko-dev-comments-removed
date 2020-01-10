@@ -18,6 +18,9 @@
 class nsIRunnable;
 
 namespace mozilla {
+namespace ipc {
+class IdleSchedulerChild;
+}
 
 
 
@@ -40,22 +43,16 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
  public:
   static const bool SupportsPrioritization = true;
 
-  explicit PrioritizedEventQueue(already_AddRefed<nsIIdlePeriod> aIdlePeriod)
-      : mHighQueue(MakeUnique<EventQueue>(EventQueuePriority::High)),
-        mInputQueue(MakeUnique<EventQueue>(EventQueuePriority::Input)),
-        mMediumHighQueue(
-            MakeUnique<EventQueue>(EventQueuePriority::MediumHigh)),
-        mNormalQueue(MakeUnique<EventQueue>(EventQueuePriority::Normal)),
-        mDeferredTimersQueue(
-            MakeUnique<EventQueue>(EventQueuePriority::DeferredTimers)),
-        mIdleQueue(MakeUnique<EventQueue>(EventQueuePriority::Idle)),
-        mIdlePeriod(aIdlePeriod) {}
+  explicit PrioritizedEventQueue(already_AddRefed<nsIIdlePeriod> aIdlePeriod);
+
+  virtual ~PrioritizedEventQueue();
 
   void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                 EventQueuePriority aPriority,
                 const MutexAutoLock& aProofOfLock) final;
   already_AddRefed<nsIRunnable> GetEvent(
       EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock) final;
+  void DidRunEvent(const MutexAutoLock& aProofOfLock);
 
   bool IsEmpty(const MutexAutoLock& aProofOfLock) final;
   size_t Count(const MutexAutoLock& aProofOfLock) const final;
@@ -100,12 +97,50 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
     return n;
   }
 
+  void SetIdleToken(uint64_t aId, TimeDuration aDuration);
+
+  bool IsActive() { return mActive; }
+
+  void EnsureIsActive() {
+    if (!mActive) {
+      SetActive();
+    }
+  }
+
+  void EnsureIsPaused() {
+    if (mActive) {
+      SetPaused();
+    }
+  }
+
  private:
   EventQueuePriority SelectQueue(bool aUpdateState,
                                  const MutexAutoLock& aProofOfLock);
 
   
-  mozilla::TimeStamp GetIdleDeadline();
+  mozilla::TimeStamp GetLocalIdleDeadline(bool& aShuttingDown);
+
+  
+  
+  void SetActive();
+  
+  
+  void SetPaused();
+
+  
+  TimeStamp GetIdleToken(TimeStamp aLocalIdlePeriodHint);
+
+  
+  
+  void RequestIdleToken(TimeStamp aLocalIdlePeriodHint);
+
+  
+  
+  bool HasIdleRequest() { return mIdleRequestId != 0; }
+
+  
+  
+  void ClearIdleToken();
 
   UniquePtr<EventQueue> mHighQueue;
   UniquePtr<EventQueue> mInputQueue;
@@ -150,6 +185,21 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
     STATE_ENABLED
   };
   InputEventQueueState mInputQueueState = STATE_DISABLED;
+
+  
+  
+  
+  
+  TimeStamp mIdleToken;
+
+  
+  uint64_t mIdleRequestId = 0;
+
+  RefPtr<ipc::IdleSchedulerChild> mIdleScheduler;
+  bool mIdleSchedulerInitialized = false;
+
+  
+  bool mActive = true;
 };
 
 }  
