@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { DebuggerServer } = require("devtools/server/main");
+const { DebuggerServer } = require("devtools/server/debugger-server");
 const promise = require("promise");
 const {
   longStringSpec,

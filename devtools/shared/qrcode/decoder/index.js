@@ -1364,7 +1364,7 @@ Decoder.decode = function(bits) {
 
 var Services = require("Services");
 
-var DebuggerServer = require("devtools/server/main").DebuggerServer;
+var DebuggerServer = require("devtools/server/debugger-server").DebuggerServer;
 
 var window = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
 

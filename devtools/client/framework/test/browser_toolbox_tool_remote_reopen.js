@@ -5,7 +5,7 @@
 
 "use strict";
 
-const { DebuggerServer } = require("devtools/server/main");
+const { DebuggerServer } = require("devtools/server/debugger-server");
 
 
 requestLongerTimeout(2);

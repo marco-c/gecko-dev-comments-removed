@@ -9,7 +9,7 @@
 
 
 
-var { DebuggerServer } = require("devtools/server/main");
+var { DebuggerServer } = require("devtools/server/debugger-server");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 const TAB1_URL = EXAMPLE_URL + "doc_empty-tab-01.html";

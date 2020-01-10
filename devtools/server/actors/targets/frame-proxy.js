@@ -12,7 +12,7 @@
 
 
 
-const { DebuggerServer } = require("devtools/server/main");
+const { DebuggerServer } = require("devtools/server/debugger-server");
 loader.lazyImporter(
   this,
   "PlacesUtils",

@@ -35,7 +35,7 @@ function setupServer(mm) {
   gLoader = new DevToolsLoader({
     invisibleToDebugger: true,
   });
-  const { DebuggerServer } = gLoader.require("devtools/server/main");
+  const { DebuggerServer } = gLoader.require("devtools/server/debugger-server");
 
   DebuggerServer.init();
   
@@ -64,7 +64,7 @@ function init(msg) {
 
   
   
-  const { DebuggerServer } = loader.require("devtools/server/main");
+  const { DebuggerServer } = loader.require("devtools/server/debugger-server");
   const conn = DebuggerServer.connectToParent(prefix, mm);
   conn.parentMessageManager = mm;
 
