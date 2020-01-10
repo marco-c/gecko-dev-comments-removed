@@ -310,6 +310,10 @@ class SharedPrefMap {
     
     
     uint8_t mDefaultChanged : 1;
+    
+    
+    
+    uint8_t mIsSkippedByIteration : 1;
   };
 
  public:
@@ -340,6 +344,7 @@ class SharedPrefMap {
     bool HasUserValue() const { return mEntry->mHasUserValue; }
     bool IsLocked() const { return mEntry->mIsLocked; }
     bool IsSticky() const { return mEntry->mIsSticky; }
+    bool IsSkippedByIteration() const { return mEntry->mIsSkippedByIteration; }
 
     bool GetBoolValue(PrefValueKind aKind = PrefValueKind::User) const {
       MOZ_ASSERT(Type() == PrefType::Bool);
@@ -395,7 +400,9 @@ class SharedPrefMap {
     
     
     Pref& operator++() {
-      mEntry++;
+      do {
+        mEntry++;
+      } while (mEntry->mIsSkippedByIteration && Index() < mMap->Count());
       return *this;
     }
 
@@ -559,6 +566,7 @@ class MOZ_RAII SharedPrefMapBuilder {
     uint8_t mIsSticky : 1;
     uint8_t mIsLocked : 1;
     uint8_t mDefaultChanged : 1;
+    uint8_t mIsSkippedByIteration : 1;
   };
 
   void Add(const char* aKey, const Flags& aFlags, bool aDefaultValue,
@@ -798,6 +806,7 @@ class MOZ_RAII SharedPrefMapBuilder {
     uint8_t mIsSticky : 1;
     uint8_t mIsLocked : 1;
     uint8_t mDefaultChanged : 1;
+    uint8_t mIsSkippedByIteration : 1;
   };
 
   
