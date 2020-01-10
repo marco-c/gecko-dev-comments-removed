@@ -18,22 +18,6 @@ struct already_AddRefed;
 
 
 
-#if (defined(DEBUG) || defined(NIGHTLY_BUILD)) && !defined(MOZ_ASAN)
-#  define STRING_BUFFER_CANARY 1
-#endif
-
-#ifdef STRING_BUFFER_CANARY
-enum nsStringBufferCanary : uint32_t {
-  CANARY_OK = 0xaf57c8fa,
-  CANARY_POISON = 0x534dc0f5
-};
-#endif
-
-
-
-
-
-
 
 
 
@@ -44,10 +28,6 @@ class nsStringBuffer {
 
   std::atomic<uint32_t> mRefCount;
   uint32_t mStorageSize;
-
-#ifdef STRING_BUFFER_CANARY
-  uint32_t mCanary;
-#endif
 
  public:
   
@@ -96,11 +76,7 @@ class nsStringBuffer {
 
 
   static nsStringBuffer* FromData(void* aData) {
-    nsStringBuffer* sb = reinterpret_cast<nsStringBuffer*>(aData) - 1;
-#ifdef STRING_BUFFER_CANARY
-    if (MOZ_UNLIKELY(sb->mCanary != CANARY_OK)) sb->FromDataCanaryCheckFailed();
-#endif
-    return sb;
+    return reinterpret_cast<nsStringBuffer*>(aData) - 1;
   }
 
   
@@ -194,15 +170,6 @@ class nsStringBuffer {
 
   size_t SizeOfIncludingThisEvenIfShared(
       mozilla::MallocSizeOf aMallocSizeOf) const;
-
-#ifdef STRING_BUFFER_CANARY
-  
-
-
-
-
-  void FromDataCanaryCheckFailed() const;
-#endif
 };
 
 #endif 
