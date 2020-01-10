@@ -16,6 +16,29 @@ ChromeUtils.defineModuleGetter(this, "ActorManagerParent",
 const PREF_PDFJS_ENABLED_CACHE_STATE = "pdfjs.enabledCache.state";
 
 let ACTORS = {
+  BrowserTab: {
+    parent: {
+      moduleURI: "resource:///actors/BrowserTabParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/BrowserTabChild.jsm",
+
+      events: {
+        "DOMWindowCreated": {},
+        "MozAfterPaint": {},
+        "MozDOMPointerLock:Entered": {},
+        "MozDOMPointerLock:Exited": {},
+      },
+      messages: [
+        "Browser:Reload",
+        "Browser:AppTab",
+        "Browser:HasSiblings",
+        "MixedContent:ReenableProtection",
+        "UpdateCharacterSet",
+      ],
+    },
+  },
+
   ContextMenu: {
     parent: {
       moduleURI: "resource:///actors/ContextMenuParent.jsm",
@@ -26,6 +49,18 @@ let ACTORS = {
       events: {
         "contextmenu": { mozSystemGroup: true },
       },
+    },
+
+    allFrames: true,
+  },
+
+  SwitchDocumentDirection: {
+    child: {
+      moduleURI: "resource:///actors/SwitchDocumentDirectionChild.jsm",
+
+      messages: [
+        "SwitchDocumentDirection",
+      ],
     },
 
     allFrames: true,
@@ -95,30 +130,6 @@ let LEGACY_ACTORS = {
       allFrames: true,
       messages: [
         "DeceptiveBlockedDetails",
-      ],
-    },
-  },
-
-  BrowserTab: {
-    child: {
-      module: "resource:///actors/BrowserTabChild.jsm",
-      group: "browsers",
-
-      events: {
-        "DOMWindowCreated": {once: true},
-        "MozAfterPaint": {once: true},
-        "MozDOMPointerLock:Entered": {},
-        "MozDOMPointerLock:Exited": {},
-      },
-
-      messages: [
-        "AllowScriptsToClose",
-        "Browser:AppTab",
-        "Browser:HasSiblings",
-        "Browser:Reload",
-        "MixedContent:ReenableProtection",
-        "SwitchDocumentDirection",
-        "UpdateCharacterSet",
       ],
     },
   },
@@ -1259,15 +1270,15 @@ BrowserGlue.prototype = {
 
     let message;
     if (reason == "unused") {
-      message = resetBundle.formatStringFromName("resetUnusedProfile.message", [productName]);
+      message = resetBundle.formatStringFromName("resetUnusedProfile.message", [productName], 1);
     } else if (reason == "uninstall") {
-      message = resetBundle.formatStringFromName("resetUninstalled.message", [productName]);
+      message = resetBundle.formatStringFromName("resetUninstalled.message", [productName], 1);
     } else {
       throw new Error(`Unknown reason (${reason}) given to _resetProfileNotification.`);
     }
     let buttons = [
       {
-        label:     resetBundle.formatStringFromName("refreshProfile.resetButton.label", [productName]),
+        label:     resetBundle.formatStringFromName("refreshProfile.resetButton.label", [productName], 1),
         accessKey: resetBundle.GetStringFromName("refreshProfile.resetButton.accesskey"),
         callback() {
           ResetProfile.openConfirmationDialog(win);
@@ -2175,7 +2186,7 @@ BrowserGlue.prototype = {
     var applicationName = gBrandBundle.GetStringFromName("brandShortName");
     var placesBundle = Services.strings.createBundle("chrome://browser/locale/places/places.properties");
     var title = placesBundle.GetStringFromName("lockPrompt.title");
-    var text = placesBundle.formatStringFromName("lockPrompt.text", [applicationName]);
+    var text = placesBundle.formatStringFromName("lockPrompt.text", [applicationName], 1);
     var buttonText = placesBundle.GetStringFromName("lockPromptInfoButton.label");
     var accessKey = placesBundle.GetStringFromName("lockPromptInfoButton.accessKey");
 
@@ -2208,7 +2219,7 @@ BrowserGlue.prototype = {
     let productName = gBrandBundle.GetStringFromName("brandShortName");
     let title = bundle.GetStringFromName("syncStartNotification.title");
     let body = bundle.formatStringFromName("syncStartNotification.body2",
-                                            [productName]);
+                                            [productName], 1);
 
     let clickCallback = (subject, topic, data) => {
       if (topic != "alertclickcallback")
@@ -2788,7 +2799,7 @@ BrowserGlue.prototype = {
         
         
         if (deviceName) {
-          title = bundle.formatStringFromName("tabArrivingNotificationWithDevice.title", [deviceName]);
+          title = bundle.formatStringFromName("tabArrivingNotificationWithDevice.title", [deviceName], 1);
         } else {
           title = bundle.GetStringFromName("tabArrivingNotification.title");
         }
@@ -2801,7 +2812,7 @@ BrowserGlue.prototype = {
           body = win.gURLBar.trimValue(body);
         }
         if (wasTruncated) {
-          body = bundle.formatStringFromName("singleTabArrivingWithTruncatedURL.body", [body]);
+          body = bundle.formatStringFromName("singleTabArrivingWithTruncatedURL.body", [body], 1);
         }
       } else {
         title = bundle.GetStringFromName("multipleTabsArrivingNotification.title");
@@ -2876,7 +2887,7 @@ BrowserGlue.prototype = {
     let title = accountsBundle.GetStringFromName("deviceConnectedTitle");
     let body = accountsBundle.formatStringFromName("deviceConnectedBody" +
                                                    (deviceName ? "" : ".noDeviceName"),
-                                                   [deviceName]);
+                                                   [deviceName], 1);
 
     let clickCallback = async (subject, topic, data) => {
       if (topic != "alertclickcallback")

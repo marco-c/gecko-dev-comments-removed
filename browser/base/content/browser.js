@@ -502,7 +502,7 @@ var gNavigatorBundle = {
     return gBrowserBundle.GetStringFromName(key);
   },
   getFormattedString(key, array) {
-    return gBrowserBundle.formatStringFromName(key, array);
+    return gBrowserBundle.formatStringFromName(key, array, array.length);
   },
 };
 
@@ -1705,7 +1705,6 @@ var gBrowserInit = {
     }
 
     FullScreen.init();
-    PointerLock.init();
 
     if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
       MenuTouchModeObserver.init();
@@ -1774,17 +1773,12 @@ var gBrowserInit = {
   _setInitialFocus() {
     let initiallyFocusedElement = document.commandDispatcher.focusedElement;
 
-    let firstBrowserPaintDeferred = {};
-    firstBrowserPaintDeferred.promise = new Promise(resolve => {
-      firstBrowserPaintDeferred.resolve = resolve;
+    this._firstBrowserPaintDeferred = {};
+    this._firstBrowserPaintDeferred.promise = new Promise(resolve => {
+      this._firstBrowserPaintDeferred.resolve = resolve;
     });
 
     let mm = window.messageManager;
-    mm.addMessageListener("Browser:FirstPaint", function onFirstPaint() {
-      mm.removeMessageListener("Browser:FirstPaint", onFirstPaint);
-      firstBrowserPaintDeferred.resolve();
-    });
-
     let initialBrowser = gBrowser.selectedBrowser;
     mm.addMessageListener("Browser:FirstNonBlankPaint",
                           function onFirstNonBlankPaint() {
@@ -1807,7 +1801,7 @@ var gBrowserInit = {
       if (gBrowser.selectedBrowser.isRemoteBrowser) {
         
         
-        firstBrowserPaintDeferred.promise.then(() => {
+        this._firstBrowserPaintDeferred.promise.then(() => {
           
           
           if (document.commandDispatcher.focusedElement == initiallyFocusedElement) {
@@ -3484,10 +3478,8 @@ function BrowserReloadWithFlags(reloadFlags) {
   }
 
   function sendReloadMessage(tab) {
-    tab.linkedBrowser
-         .messageManager
-         .sendAsyncMessage("Browser:Reload",
-                           { flags: reloadFlags, handlingUserInput });
+    tab.linkedBrowser.sendMessageToActor("Browser:Reload",
+                                         { flags: reloadFlags, handlingUserInput }, "BrowserTab");
   }
 }
 
@@ -4131,7 +4123,7 @@ const BrowserSearch = {
     let placeholder;
     if (name) {
       placeholder = gBrowserBundle.formatStringFromName("urlbar.placeholder",
-        [name]);
+        [name], 1);
     } else {
       placeholder = gURLBar.getAttribute("defaultPlaceholder");
     }
@@ -7737,7 +7729,7 @@ function ReportFalseDeceptiveSite() {
         Services.prompt.alert(window,
                               bundle.GetStringFromName("errorReportFalseDeceptiveTitle"),
                               bundle.formatStringFromName("errorReportFalseDeceptiveMessage",
-                                                          [message.data.blockedInfo.provider]));
+                                                          [message.data.blockedInfo.provider], 1));
         }
     };
     mm.addMessageListener("DeceptiveBlockedDetails:Result", onMessage);
@@ -8488,7 +8480,7 @@ TabModalPromptBox.prototype = {
       let spacer = document.createXULElement("spacer");
       allowFocusRow.appendChild(spacer);
       let label = gTabBrowserBundle.formatStringFromName("tabs.allowTabFocusByPromptForSite",
-                                                      [hostForAllowFocusCheckbox]);
+                                                      [hostForAllowFocusCheckbox], 1);
       allowFocusCheckbox.setAttribute("label", label);
       allowFocusRow.appendChild(allowFocusCheckbox);
       newPrompt.ui.rows.append(allowFocusRow);

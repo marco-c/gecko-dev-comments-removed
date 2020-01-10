@@ -8,7 +8,6 @@
 
 {
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 let LazyModules = {};
 
@@ -600,7 +599,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
 
   set characterSet(val) {
     if (this.isRemoteBrowser) {
-      this.messageManager.sendAsyncMessage("UpdateCharacterSet", { value: val });
+      this.sendMessageToActor("UpdateCharacterSet", { value: val }, "BrowserTab");
       this._characterSet = val;
     } else {
       this.docShell.charset = val;
@@ -1538,8 +1537,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       
       this._autoScrollPopup.setAttribute("transparent", !/BeOS|OS\/2/.test(navigator.appVersion));
       
-      this._autoScrollPopup.setAttribute("translucent",
-        AppConstants.platform == "win" || AppConstants.platform == "macosx");
+      this._autoScrollPopup.setAttribute("translucent", /Win|Mac/.test(navigator.platform));
     }
 
     this._autoScrollPopup.setAttribute("scrolldir", scrolldir);
@@ -1861,6 +1859,41 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     return this.docShell ?
       this.docShell.getContentBlockingLog() :
       Promise.reject("docshell isn't available");
+  }
+
+  
+  
+  
+  
+  sendMessageToActor(messageName, args, actorName, all) {
+    if (!this.frameLoader) {
+      return;
+    }
+
+    let windowGlobal = this.browsingContext.currentWindowGlobal;
+    if (!windowGlobal) {
+      
+      if (messageName == "Browser:AppTab") {
+        setTimeout(() => { this.sendMessageToActor(messageName, args, actorName); }, 0);
+      }
+      return;
+    }
+
+    function sendToChildren(browsingContext, checkRoot) {
+      let windowGlobal = browsingContext.currentWindowGlobal;
+      if (windowGlobal && (!checkRoot || windowGlobal.isProcessRoot)) {
+        windowGlobal.getActor(actorName).sendAsyncMessage(messageName, args);
+      }
+
+      if (all) {
+        let contexts = browsingContext.getChildren();
+        for (let context of contexts) {
+          sendToChildren(context, true);
+        }
+      }
+    }
+
+    sendToChildren(this.browsingContext, false);
   }
 }
 
