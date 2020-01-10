@@ -383,6 +383,16 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
   nsresult DispatchToMain(already_AddRefed<nsIRunnable>&& aRunnable);
 
+  
+
+
+  inline void OnNewContent(mozilla::Span<const char16_t> aData);
+
+  
+
+
+  inline void OnContentComplete();
+
   nsCOMPtr<nsIRequest> mRequest;
   nsCOMPtr<nsIRequestObserver> mObserver;
 
@@ -599,6 +609,19 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
   bool mSkipContentSniffing;
+
+  
+
+
+
+
+
+  nsCOMPtr<nsIURI> mURIToSendToDevtools;
+
+  
+
+
+  nsString mUUIDForDevtools;
 };
 
 #endif  
