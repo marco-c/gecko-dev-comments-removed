@@ -191,7 +191,6 @@ void MediaStreamGraphImpl::UpdateCurrentTimeForStreams(
         mProcessedTime >= stream->StreamTimeToGraphTime(
                               stream->GetStreamTracks().GetLatestTrackEnd())) {
       stream->mNotifiedFinished = true;
-      SetStreamOrderDirty();
     }
   }
 }
@@ -1981,10 +1980,6 @@ void MediaStream::FinishOnGraphThread() {
   }
 #endif
   mFinished = true;
-
-  
-  
-  GraphImpl()->SetStreamOrderDirty();
 }
 
 StreamTracks::Track* MediaStream::FindTrack(TrackID aID) const {
