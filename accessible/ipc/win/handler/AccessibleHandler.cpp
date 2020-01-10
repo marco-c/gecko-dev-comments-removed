@@ -26,6 +26,7 @@
 
 #include "AccessibleHypertext.h"
 #include "AccessibleHypertext2.h"
+#include "AccessibleRole.h"
 #include "Accessible2_i.c"
 #include "Accessible2_2_i.c"
 #include "Accessible2_3_i.c"
@@ -401,6 +402,26 @@ AccessibleHandler::QueryHandlerInterface(IUnknown* aProxyUnknown, REFIID aIid,
   if (aIid == IID_IEnumVARIANT && mCachedData.mGeckoBackChannel) {
     if (mCachedData.mDynamicData.mChildCount == 0) {
       return E_NOINTERFACE;
+    }
+    if (mCachedData.mDynamicData.mIA2Role == IA2_ROLE_INTERNAL_FRAME &&
+        mCachedData.mDynamicData.mChildCount == 1) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return S_FALSE;
     }
     RefPtr<IEnumVARIANT> childEnum(
         new HandlerChildEnumerator(this, mCachedData.mGeckoBackChannel));
