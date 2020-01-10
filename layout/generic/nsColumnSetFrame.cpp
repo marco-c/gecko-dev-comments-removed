@@ -851,60 +851,58 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       NS_ASSERTION(!kidNextInFlow, "next in flow should have been deleted");
       child = nullptr;
       break;
-    } else {
-      
-      
-      
-      
-      if (!kidNextInFlow) {
-        NS_ASSERTION(aStatus.NextInFlowNeedsReflow(),
-                     "We have to create a continuation, but the block doesn't "
-                     "want us to reflow it?");
+    }
 
-        
-        kidNextInFlow = CreateNextInFlow(child);
-      }
+    
+    
+    
+    
+    if (!kidNextInFlow) {
+      NS_ASSERTION(aStatus.NextInFlowNeedsReflow(),
+                   "We have to create a continuation, but the block doesn't "
+                   "want us to reflow it?");
 
       
-      
-      if (aStatus.IsOverflowIncomplete()) {
-        if (!(kidNextInFlow->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
-          aStatus.SetNextInFlowNeedsReflow();
-          reflowNext = true;
-          kidNextInFlow->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-        }
-      } else if (kidNextInFlow->GetStateBits() &
-                 NS_FRAME_IS_OVERFLOW_CONTAINER) {
+      kidNextInFlow = CreateNextInFlow(child);
+    }
+
+    
+    
+    if (aStatus.IsOverflowIncomplete()) {
+      if (!(kidNextInFlow->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
         aStatus.SetNextInFlowNeedsReflow();
         reflowNext = true;
-        kidNextInFlow->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
+        kidNextInFlow->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
       }
+    } else if (kidNextInFlow->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) {
+      aStatus.SetNextInFlowNeedsReflow();
+      reflowNext = true;
+      kidNextInFlow->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
+    }
 
-      if ((contentBEnd > aReflowInput.ComputedMaxBSize() ||
-           contentBEnd > aReflowInput.ComputedBSize() ||
-           (StaticPrefs::layout_css_column_span_enabled() &&
-            contentBEnd > aReflowInput.mCBReflowInput->ComputedMaxBSize())) &&
-          aConfig.mIsBalancing) {
-        
-        
-        
-        colData.mHasExcessBSize = true;
-      }
+    if ((contentBEnd > aReflowInput.ComputedMaxBSize() ||
+         contentBEnd > aReflowInput.ComputedBSize() ||
+         (StaticPrefs::layout_css_column_span_enabled() &&
+          contentBEnd > aReflowInput.mCBReflowInput->ComputedMaxBSize())) &&
+        aConfig.mIsBalancing) {
+      
+      
+      
+      colData.mHasExcessBSize = true;
+    }
 
-      if (columnCount >= aConfig.mBalanceColCount - 1) {
-        
-        aStatus.SetNextInFlowNeedsReflow();
-        kidNextInFlow->MarkSubtreeDirty();
-        
-        
-        const nsFrameList& continuationColumns =
-            mFrames.RemoveFramesAfter(child);
-        if (continuationColumns.NotEmpty()) {
-          SetOverflowFrames(continuationColumns);
-        }
-        child = nullptr;
-        break;
+    if (columnCount >= aConfig.mBalanceColCount - 1) {
+      
+      aStatus.SetNextInFlowNeedsReflow();
+      kidNextInFlow->MarkSubtreeDirty();
+      
+      
+      const nsFrameList& continuationColumns = mFrames.RemoveFramesAfter(child);
+      if (continuationColumns.NotEmpty()) {
+        SetOverflowFrames(continuationColumns);
       }
+      child = nullptr;
+      break;
     }
 
     if (PresContext()->HasPendingInterrupt()) {
