@@ -1286,7 +1286,7 @@ void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
         NS_WARNING("Multiple glass backgrounds found?");
       } else
 #endif
-      if (!mHasGlassItemDuringPartial) {
+          if (!mHasGlassItemDuringPartial) {
         mHasGlassItemDuringPartial = true;
         aItem->SetIsGlassItem();
       }
@@ -1300,7 +1300,7 @@ void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
       NS_WARNING("Multiple glass backgrounds found?");
     } else
 #endif
-    if (!mGlassDisplayItem) {
+        if (!mGlassDisplayItem) {
       mGlassDisplayItem = aItem;
       mGlassDisplayItem->SetIsGlassItem();
     }
@@ -8639,22 +8639,26 @@ void nsDisplayTransform::UpdateBounds(nsDisplayListBuilder* aBuilder) {
     return;
   }
 
-  if (!Combines3DTransformWithAncestors()) {
-    if (mFrame->Extend3DContext()) {
+  if (mFrame->Extend3DContext()) {
+    if (!Combines3DTransformWithAncestors()) {
       
       
       UpdateBoundsFor3D(aBuilder);
     } else {
       
-      mBounds = TransformUntransformedBounds(aBuilder, GetTransform());
+      mBounds = nsRect();
     }
 
     return;
   }
 
+  MOZ_ASSERT(!mFrame->Extend3DContext());
+
   
-  MOZ_ASSERT(mFrame->Combines3DTransformWithAncestors());
-  mBounds = nsRect();
+  
+
+  
+  mBounds = TransformUntransformedBounds(aBuilder, GetTransform());
 }
 
 void nsDisplayTransform::UpdateBoundsFor3D(nsDisplayListBuilder* aBuilder) {
