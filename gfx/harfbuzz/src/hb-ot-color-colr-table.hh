@@ -48,7 +48,7 @@ struct LayerRecord
   }
 
   protected:
-  GlyphID	glyphId;	
+  HBGlyphID	glyphId;	
   Index		colorIdx;	
 
 
@@ -75,7 +75,7 @@ struct BaseGlyphRecord
   }
 
   public:
-  GlyphID	glyphId;	
+  HBGlyphID	glyphId;	
   HBUINT16	firstLayerIdx;	
 
 

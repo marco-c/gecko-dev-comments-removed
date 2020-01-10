@@ -44,7 +44,7 @@ struct InstanceRecord
 {
   friend struct fvar;
 
-  hb_array_t<const Fixed> get_coordinates (unsigned int axis_count) const
+  hb_array_t<const HBFixed> get_coordinates (unsigned int axis_count) const
   { return coordinatesZ.as_array (axis_count); }
 
   bool sanitize (hb_sanitize_context_t *c, unsigned int axis_count) const
@@ -58,7 +58,7 @@ struct InstanceRecord
   NameID	subfamilyNameID;
 
   HBUINT16	flags;		
-  UnsizedArrayOf<Fixed>
+  UnsizedArrayOf<HBFixed>
 		coordinatesZ;	
   
   
@@ -83,9 +83,9 @@ struct AxisRecord
 
   public:
   Tag		axisTag;	
-  Fixed		minValue;	
-  Fixed		defaultValue;	
-  Fixed		maxValue;	
+  HBFixed		minValue;	
+  HBFixed		defaultValue;	
+  HBFixed		maxValue;	
   HBUINT16	flags;		
   NameID	axisNameID;	
 
@@ -199,7 +199,7 @@ struct fvar
     for (unsigned int i = 0; i < count; i++)
       if (axes[i].axisTag == tag)
       {
-        if (axis_index)
+	if (axis_index)
 	  *axis_index = i;
 	get_axis_deprecated (i, info);
 	return true;
@@ -280,16 +280,16 @@ struct fvar
     if (unlikely (!instance))
     {
       if (coords_length)
-        *coords_length = 0;
+	*coords_length = 0;
       return 0;
     }
 
     if (coords_length && *coords_length)
     {
-      hb_array_t<const Fixed> instanceCoords = instance->get_coordinates (axisCount)
+      hb_array_t<const HBFixed> instanceCoords = instance->get_coordinates (axisCount)
 							 .sub_array (0, *coords_length);
       for (unsigned int i = 0; i < instanceCoords.length; i++)
-        coords[i] = instanceCoords.arrayZ[i].to_float ();
+	coords[i] = instanceCoords.arrayZ[i].to_float ();
     }
     return axisCount;
   }

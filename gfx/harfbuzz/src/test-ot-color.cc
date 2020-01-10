@@ -330,8 +330,8 @@ main (int argc, char **argv)
 
     
     if (!hb_ot_color_has_layers (face) &&
-        !hb_ot_color_has_png (face) &&
-        !hb_ot_color_has_svg (face))
+	!hb_ot_color_has_png (face) &&
+	!hb_ot_color_has_svg (face))
       dump_glyphs (cairo_face, upem, num_glyphs, face_index);
 
     hb_font_destroy (font);

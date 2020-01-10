@@ -65,7 +65,7 @@ struct FontDescriptor
   protected:
   Tag		tag;		
   union {
-  Fixed		value;		
+  HBFixed		value;		
   HBUINT32	nalfType;	
   } u;
   public:
@@ -108,7 +108,7 @@ struct fdsc
   }
 
   protected:
-  Fixed		version;	
+  HBFixed		version;	
 
   LArrayOf<FontDescriptor>
 		descriptors;	

@@ -41,7 +41,7 @@ struct hb_dispatch_context_t
   private:
   
   const Context* thiz () const { return static_cast<const Context *> (this); }
-        Context* thiz ()       { return static_cast<      Context *> (this); }
+	Context* thiz ()       { return static_cast<      Context *> (this); }
   public:
   static constexpr unsigned max_debug_depth = MaxDebugDepth;
   typedef Return return_t;

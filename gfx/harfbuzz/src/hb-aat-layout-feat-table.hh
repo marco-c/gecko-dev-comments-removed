@@ -206,7 +206,7 @@ struct feat
   SortedUnsizedArrayOf<FeatureName>
 		namesZ;		
   public:
-  DEFINE_SIZE_STATIC (24);
+  DEFINE_SIZE_ARRAY (12, namesZ);
 };
 
 } 

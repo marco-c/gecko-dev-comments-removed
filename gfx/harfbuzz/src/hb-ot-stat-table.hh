@@ -77,7 +77,7 @@ struct AxisValueFormat1
   NameID	valueNameID;	
 
 
-  Fixed		value;		
+  HBFixed		value;		
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -102,10 +102,10 @@ struct AxisValueFormat2
   NameID	valueNameID;	
 
 
-  Fixed		nominalValue;	
-  Fixed		rangeMinValue;	
+  HBFixed		nominalValue;	
+  HBFixed		rangeMinValue;	
 
-  Fixed		rangeMaxValue;	
+  HBFixed		rangeMaxValue;	
 
   public:
   DEFINE_SIZE_STATIC (20);
@@ -131,8 +131,8 @@ struct AxisValueFormat3
   NameID	valueNameID;	
 
 
-  Fixed		value;		
-  Fixed		linkedValue;	
+  HBFixed		value;		
+  HBFixed		linkedValue;	
 
   public:
   DEFINE_SIZE_STATIC (16);
@@ -150,7 +150,7 @@ struct AxisValueRecord
   HBUINT16	axisIndex;	
 
 
-  Fixed		value;		
+  HBFixed		value;		
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -304,7 +304,7 @@ struct STAT
 
 
   protected:
-  FixedVersion<>version;        
+  FixedVersion<>version;	
 
   HBUINT16	designAxisSize;	
   HBUINT16	designAxisCount;

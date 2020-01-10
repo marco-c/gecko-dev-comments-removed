@@ -423,7 +423,7 @@ struct MathGlyphVariantRecord
   }
 
   protected:
-  GlyphID variantGlyph;       
+  HBGlyphID variantGlyph;       
   HBUINT16  advanceMeasurement; 
 
 
@@ -471,7 +471,7 @@ struct MathGlyphPartRecord
   }
 
   protected:
-  GlyphID   glyph;		  
+  HBGlyphID   glyph;		  
   HBUINT16    startConnectorLength; 
 
 

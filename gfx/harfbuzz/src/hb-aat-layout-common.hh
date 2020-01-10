@@ -93,8 +93,8 @@ struct LookupSegmentSingle
     return_trace (c->check_struct (this) && value.sanitize (c, base));
   }
 
-  GlyphID	last;		
-  GlyphID	first;		
+  HBGlyphID	last;		
+  HBGlyphID	first;		
   T		value;		
   public:
   DEFINE_SIZE_STATIC (4 + T::static_size);
@@ -162,8 +162,8 @@ struct LookupSegmentArray
 		  valuesZ.sanitize (c, base, last - first + 1, hb_forward<Ts> (ds)...));
   }
 
-  GlyphID	last;		
-  GlyphID	first;		
+  HBGlyphID	last;		
+  HBGlyphID	first;		
   NNOffsetTo<UnsizedArrayOf<T>>
 		valuesZ;	
 
@@ -222,7 +222,7 @@ struct LookupSingle
     return_trace (c->check_struct (this) && value.sanitize (c, base));
   }
 
-  GlyphID	glyph;		
+  HBGlyphID	glyph;		
   T		value;		
   public:
   DEFINE_SIZE_STATIC (2 + T::static_size);
@@ -284,7 +284,7 @@ struct LookupFormat8
 
   protected:
   HBUINT16	format;		
-  GlyphID	firstGlyph;	
+  HBGlyphID	firstGlyph;	
   HBUINT16	glyphCount;	
 
   UnsizedArrayOf<T>
@@ -326,7 +326,7 @@ struct LookupFormat10
   protected:
   HBUINT16	format;		
   HBUINT16	valueSize;	
-  GlyphID	firstGlyph;	
+  HBGlyphID	firstGlyph;	
   HBUINT16	glyphCount;	
 
   UnsizedArrayOf<HBUINT8>
@@ -658,7 +658,7 @@ struct ClassTable
     return_trace (c->check_struct (this) && classArray.sanitize (c));
   }
   protected:
-  GlyphID		firstGlyph;	
+  HBGlyphID		firstGlyph;	
   ArrayOf<HBUCHAR>	classArray;	
 
   public:
@@ -678,7 +678,7 @@ struct ObsoleteTypes
 				     const void *base,
 				     const T *array)
   {
-    return (offset - ((const char *) array - (const char *) base)) / sizeof (T);
+    return (offset - ((const char *) array - (const char *) base)) / T::static_size;
   }
   template <typename T>
   static unsigned int byteOffsetToIndex (unsigned int offset,

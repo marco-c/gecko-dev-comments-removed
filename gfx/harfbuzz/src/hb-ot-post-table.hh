@@ -262,7 +262,7 @@ struct post
 
 
 
-  Fixed		italicAngle;		
+  HBFixed		italicAngle;		
 
 
 
