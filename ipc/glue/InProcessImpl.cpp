@@ -76,11 +76,6 @@ void InProcessParent::Startup() {
   parent->SetOtherProcessId(base::GetCurrentProcId());
 
   
-  
-  parent.get()->AddRef();
-  child.get()->AddRef();
-
-  
   InProcessParent::sSingleton = parent.forget();
   InProcessChild::sSingleton = child.forget();
 }
@@ -118,16 +113,6 @@ void InProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 void InProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
   InProcessParent::Shutdown();
-}
-
-void InProcessParent::ActorDealloc() {
-  MOZ_ASSERT(!InProcessParent::sSingleton);
-  Release();  
-}
-
-void InProcessChild::ActorDealloc() {
-  MOZ_ASSERT(!InProcessChild::sSingleton);
-  Release();  
 }
 
 

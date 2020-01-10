@@ -28,12 +28,12 @@ class InProcessParent;
 
 
 
-class InProcessChild : public PInProcessChild {
+class InProcessChild final : public PInProcessChild {
  public:
   friend class InProcessParent;
   friend class PInProcessChild;
 
-  NS_INLINE_DECL_REFCOUNTING(InProcessChild)
+  NS_INLINE_DECL_REFCOUNTING(InProcessChild, final)
 
   
   static InProcessChild* Singleton();
@@ -47,7 +47,6 @@ class InProcessChild : public PInProcessChild {
   
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-  virtual void ActorDealloc() override;
   ~InProcessChild() = default;
 
   static StaticRefPtr<InProcessChild> sSingleton;

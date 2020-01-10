@@ -28,7 +28,7 @@ class InProcessChild;
 
 
 
-class InProcessParent : public nsIObserver, public PInProcessParent {
+class InProcessParent final : public nsIObserver, public PInProcessParent {
  public:
   friend class InProcessChild;
   friend class PInProcessParent;
@@ -47,7 +47,6 @@ class InProcessParent : public nsIObserver, public PInProcessParent {
  private:
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-  virtual void ActorDealloc() override;
   ~InProcessParent() = default;
 
   static void Startup();
