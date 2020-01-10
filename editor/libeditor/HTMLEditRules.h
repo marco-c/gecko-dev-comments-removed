@@ -466,23 +466,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult ReturnInHeader(Element& aHeader, nsINode& aNode,
-                                       int32_t aOffset);
-
-  
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ReturnInListItem(Element& aListItem, nsINode& aNode,
                                          int32_t aOffset);

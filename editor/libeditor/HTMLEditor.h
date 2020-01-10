@@ -1812,6 +1812,23 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
   HandleInsertParagraphInParagraph(Element& aParentDivOrP);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  HandleInsertParagraphInHeadingElement(Element& aHeader, nsINode& aNode,
+                                        int32_t aOffset);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
