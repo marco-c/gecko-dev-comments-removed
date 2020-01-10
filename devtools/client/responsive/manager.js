@@ -423,11 +423,18 @@ ResponsiveUI.prototype = {
     
     
     
-    const fullZoom = this.tab.linkedBrowser.fullZoom;
-    const textZoom = this.tab.linkedBrowser.textZoom;
+    const rdmContent = this.tab.linkedBrowser;
+    const rdmViewport = ui.toolWindow;
 
-    ui.toolWindow.docShell.contentViewer.fullZoom = 1;
-    ui.toolWindow.docShell.contentViewer.textZoom = 1;
+    const fullZoom = rdmContent.fullZoom;
+    const textZoom = rdmContent.textZoom;
+
+    rdmViewport.docShell.contentViewer.fullZoom = 1;
+    rdmViewport.docShell.contentViewer.textZoom = 1;
+
+    
+    
+    rdmContent.addEventListener("FullZoomChange", this);
 
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
 
@@ -445,14 +452,14 @@ ResponsiveUI.prototype = {
     
     if (Services.prefs.getBoolPref(SHOW_SETTING_TOOLTIP_PREF)) {
       this.settingOnboardingTooltip = new SettingOnboardingTooltip(
-        ui.toolWindow.document
+        rdmViewport.document
       );
     }
 
     
     
-    this.tab.linkedBrowser.fullZoom = fullZoom;
-    this.tab.linkedBrowser.textZoom = textZoom;
+    rdmContent.fullZoom = fullZoom;
+    rdmContent.textZoom = textZoom;
 
     
     message.post(this.toolWindow, "post-init");
@@ -492,6 +499,7 @@ ResponsiveUI.prototype = {
       await this.inited;
     }
 
+    this.tab.linkedBrowser.removeEventListener("FullZoomChange", this);
     this.tab.removeEventListener("TabClose", this);
     this.tab.removeEventListener("BeforeTabRemotenessChange", this);
     this.browserWindow.removeEventListener("unload", this);
@@ -589,11 +597,15 @@ ResponsiveUI.prototype = {
   },
 
   handleEvent(event) {
-    const { browserWindow, tab } = this;
+    const { browserWindow, tab, toolWindow } = this;
 
     switch (event.type) {
       case "message":
         this.handleMessage(event);
+        break;
+      case "FullZoomChange":
+        const zoom = tab.linkedBrowser.fullZoom;
+        toolWindow.setViewportZoom(zoom);
         break;
       case "BeforeTabRemotenessChange":
       case "TabClose":
