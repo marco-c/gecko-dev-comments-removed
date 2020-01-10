@@ -9,7 +9,7 @@
 
 #include "AudioChannelService.h"
 #include "AudioNode.h"
-#include "AudioChannelAgent.h"
+#include "nsIAudioChannelAgent.h"
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {
@@ -77,18 +77,10 @@ class AudioDestinationNode final : public AudioNode,
   virtual ~AudioDestinationNode();
 
  private:
-  
-  
-  
-  
-  bool IsCapturingAudio() const;
-  void StartAudioCapturingStream();
-  void StopAudioCapturingStream();
-
   SelfReference<AudioDestinationNode> mOfflineRenderingRef;
   uint32_t mFramesToProduce;
 
-  RefPtr<AudioChannelAgent> mAudioChannelAgent;
+  nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
   RefPtr<MediaInputPort> mCaptureStreamPort;
 
   RefPtr<Promise> mOfflineRenderingPromise;
@@ -96,6 +88,7 @@ class AudioDestinationNode final : public AudioNode,
   bool mIsOffline;
   bool mAudioChannelSuspended;
 
+  bool mCaptured;
   AudioChannelService::AudibleState mAudible;
 
   

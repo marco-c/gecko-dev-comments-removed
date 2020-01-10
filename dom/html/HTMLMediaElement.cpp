@@ -984,6 +984,7 @@ class HTMLMediaElement::AudioChannelAgentCallback final
       : mOwner(aOwner),
         mAudioChannelVolume(1.0),
         mPlayingThroughTheAudioChannel(false),
+        mAudioCapturedByWindow(false),
         mSuspended(nsISuspendedTypes::NONE_SUSPENDED),
         mIsOwnerAudible(IsOwnerAudible()),
         mIsShutDown(false) {
@@ -1093,7 +1094,11 @@ class HTMLMediaElement::AudioChannelAgentCallback final
 
   NS_IMETHODIMP WindowAudioCaptureChanged(bool aCapture) override {
     MOZ_ASSERT(mAudioChannelAgent);
-    AudioCaptureStreamChangeIfNeeded();
+
+    if (mAudioCapturedByWindow != aCapture) {
+      mAudioCapturedByWindow = aCapture;
+      AudioCaptureStreamChangeIfNeeded();
+    }
     return NS_OK;
   }
 
@@ -1103,9 +1108,11 @@ class HTMLMediaElement::AudioChannelAgentCallback final
       return;
     }
 
-    MOZ_ASSERT(mAudioChannelAgent);
-    bool isCapturing = mAudioChannelAgent->IsWindowAudioCapturingEnabled();
-    mOwner->AudioCaptureStreamChange(isCapturing);
+    if (!mOwner->HasAudio()) {
+      return;
+    }
+
+    mOwner->AudioCaptureStreamChange(mAudioCapturedByWindow);
   }
 
   void NotifyAudioPlaybackChanged(AudibleChangedReasons aReason) {
@@ -1187,13 +1194,15 @@ class HTMLMediaElement::AudioChannelAgentCallback final
   void StartAudioChannelAgent() {
     MOZ_ASSERT(mAudioChannelAgent);
     MOZ_ASSERT(!mAudioChannelAgent->IsPlayingStarted());
-    if (NS_WARN_IF(NS_FAILED(
-            mAudioChannelAgent->NotifyStartedPlaying(IsOwnerAudible())))) {
+    AudioPlaybackConfig config;
+    if (NS_WARN_IF(NS_FAILED(mAudioChannelAgent->NotifyStartedPlaying(
+            &config, IsOwnerAudible())))) {
       return;
     }
 
     NotifyMediaStarted(mAudioChannelAgent->WindowID());
-    mAudioChannelAgent->PullInitialUpdate();
+    WindowVolumeChanged(config.mVolume, config.mMuted);
+    WindowSuspendChanged(config.mSuspend);
   }
 
   void StopAudioChanelAgent() {
@@ -1201,9 +1210,6 @@ class HTMLMediaElement::AudioChannelAgentCallback final
     MOZ_ASSERT(mAudioChannelAgent->IsPlayingStarted());
     mAudioChannelAgent->NotifyStoppedPlaying();
     NotifyMediaStopped(mAudioChannelAgent->WindowID());
-    
-    
-    mOwner->AudioCaptureStreamChange(false);
   }
 
   void SetSuspended(SuspendTypes aSuspend) {
@@ -1399,6 +1405,8 @@ class HTMLMediaElement::AudioChannelAgentCallback final
   float mAudioChannelVolume;
   
   bool mPlayingThroughTheAudioChannel;
+  
+  bool mAudioCapturedByWindow;
   
   
   
