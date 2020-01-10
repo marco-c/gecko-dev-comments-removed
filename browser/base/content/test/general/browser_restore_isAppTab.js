@@ -48,7 +48,7 @@ var restart = async function(browser) {
   
   await TabStateFlusher.flush(browser);
 
-  await BrowserTestUtils.crashFrame(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   let tab = gBrowser.getTabForBrowser(browser);
   SessionStore.reviveCrashedTab(tab);
