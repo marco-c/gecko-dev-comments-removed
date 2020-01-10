@@ -66,19 +66,18 @@ static nsSize GetSize(const Document* aDocument) {
   return pc->GetVisibleArea().Size();
 }
 
-static bool IsDeviceSizePageSize(const Document* aDocument) {
-  nsIDocShell* docShell = aDocument->GetDocShell();
-  if (!docShell) {
-    return false;
-  }
-  return docShell->GetDeviceSizeIsPageSize();
-}
-
 
 static nsSize GetDeviceSize(const Document* aDocument) {
-  if (nsContentUtils::ShouldResistFingerprinting(aDocument) ||
-      IsDeviceSizePageSize(aDocument)) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return GetSize(aDocument);
+  }
+
+  
+  
+  Maybe<CSSIntSize> deviceSize =
+      nsGlobalWindowOuter::GetRDMDeviceSize(*aDocument);
+  if (deviceSize.isSome()) {
+    return CSSPixel::ToAppUnits(deviceSize.value());
   }
 
   nsPresContext* pc = aDocument->GetPresContext();
