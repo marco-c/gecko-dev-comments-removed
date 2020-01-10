@@ -86,6 +86,22 @@ nsresult nsScreen::GetRect(nsRect& aRect) {
     return GetWindowInnerRect(aRect);
   }
 
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
+  if (owner) {
+    mozilla::dom::Document* doc = owner->GetExtantDoc();
+    if (doc) {
+      Maybe<mozilla::CSSIntSize> deviceSize =
+          nsGlobalWindowOuter::GetRDMDeviceSize(*doc);
+      if (deviceSize.isSome()) {
+        const mozilla::CSSIntSize& size = deviceSize.value();
+        aRect.SetRect(0, 0, size.width, size.height);
+        return NS_OK;
+      }
+    }
+  }
+
   nsDeviceContext* context = GetDeviceContext();
 
   if (!context) {
@@ -115,13 +131,18 @@ nsresult nsScreen::GetAvailRect(nsRect& aRect) {
 
   
   
-  if (IsInRDMPane()) {
-    mozilla::CSSIntSize size;
-    if (NS_SUCCEEDED(GetRDMScreenSize(size))) {
-      aRect.SetRect(0, 0, size.width, size.height);
-      return NS_OK;
+  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
+  if (owner) {
+    mozilla::dom::Document* doc = owner->GetExtantDoc();
+    if (doc) {
+      Maybe<mozilla::CSSIntSize> deviceSize =
+          nsGlobalWindowOuter::GetRDMDeviceSize(*doc);
+      if (deviceSize.isSome()) {
+        const mozilla::CSSIntSize& size = deviceSize.value();
+        aRect.SetRect(0, 0, size.width, size.height);
+        return NS_OK;
+      }
     }
-    return NS_ERROR_FAILURE;
   }
 
   nsDeviceContext* context = GetDeviceContext();
@@ -148,27 +169,6 @@ nsresult nsScreen::GetAvailRect(nsRect& aRect) {
   aRect.SetWidth(nsPresContext::AppUnitsToIntCSSPixels(aRect.Width()));
 
   return NS_OK;
-}
-
-nsresult nsScreen::GetRDMScreenSize(mozilla::CSSIntSize& aSize) {
-  
-  
-  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
-  if (owner) {
-    nsIDocShell* docShell = owner->GetDocShell();
-    if (docShell) {
-      RefPtr<nsPresContext> presContext = docShell->GetPresContext();
-      if (presContext) {
-        nsRect rect;
-        GetWindowInnerRect(rect);
-        float zoom = presContext->GetDeviceFullZoom();
-        aSize.width = std::round(rect.Width() * zoom);
-        aSize.height = std::round(rect.Height() * zoom);
-        return NS_OK;
-      }
-    }
-  }
-  return NS_ERROR_FAILURE;
 }
 
 mozilla::dom::ScreenOrientation* nsScreen::Orientation() const {
@@ -284,16 +284,6 @@ void nsScreen::MozUnlockOrientation() {
   mScreenOrientation->UnlockDeviceOrientation();
 }
 
-bool nsScreen::IsDeviceSizePageSize() {
-  if (nsPIDOMWindowInner* owner = GetOwner()) {
-    nsIDocShell* docShell = owner->GetDocShell();
-    if (docShell) {
-      return docShell->GetDeviceSizeIsPageSize();
-    }
-  }
-  return false;
-}
-
 
 JSObject* nsScreen::WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) {
@@ -319,16 +309,4 @@ bool nsScreen::ShouldResistFingerprinting() const {
     resist = nsContentUtils::ShouldResistFingerprinting(owner->GetDocShell());
   }
   return resist;
-}
-
-bool nsScreen::IsInRDMPane() const {
-  bool isInRDM = false;
-  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
-
-  if (owner) {
-    Document* doc = owner->GetExtantDoc();
-    isInRDM = doc && doc->InRDMPane();
-  }
-
-  return isInRDM;
 }
