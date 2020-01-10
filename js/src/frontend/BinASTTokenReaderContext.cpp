@@ -181,6 +181,12 @@ class HuffmanPreludeReader {
     using Table = HuffmanTableIndexedSymbolsLiteralString;
     explicit String(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<String> ");
+      symbol->dump();
+    }
+#endif  
   };
   using IdentifierName = String;
   using PropertyKey = String;
@@ -192,6 +198,16 @@ class HuffmanPreludeReader {
     using Table = HuffmanTableIndexedSymbolsOptionalLiteralString;
     explicit MaybeString(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<String> ");
+      if (symbol) {
+        symbol->dump();
+      } else {
+        fprintf(stderr, "(null)\n");
+      }
+    }
+#endif  
   };
   using MaybeIdentifierName = MaybeString;
   using MaybePropertyKey = MaybeString;
@@ -202,6 +218,11 @@ class HuffmanPreludeReader {
     using Table = HuffmanTableExplicitSymbolsF64;
     explicit Number(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<Number> %f\n", symbol);
+    }
+#endif  
   };
 
   
@@ -210,6 +231,11 @@ class HuffmanPreludeReader {
     using Table = HuffmanTableExplicitSymbolsU32;
     explicit UnsignedLong(const NormalizedInterfaceAndField identity)
         : EntryExplicit(identity) {}
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<UnsignedLong> %d\n", symbol);
+    }
+#endif  
   };
 
   
@@ -219,6 +245,11 @@ class HuffmanPreludeReader {
 
     explicit Boolean(const NormalizedInterfaceAndField identity)
         : EntryIndexed(identity) {}
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<Boolean> %s\n", symbol ? "true" : "false");
+    }
+#endif  
   };
 
   
@@ -229,10 +260,18 @@ class HuffmanPreludeReader {
 
   
   struct Interface : EntryIndexed {
+    using SymbolType = BinASTKind;
+
     
     const BinASTKind kind;
     Interface(const NormalizedInterfaceAndField identity, BinASTKind kind)
         : EntryIndexed(identity), kind(kind) {}
+
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<Interface> %s\n", describeBinASTKind(symbol));
+    }
+#endif  
 
     
     
@@ -251,6 +290,12 @@ class HuffmanPreludeReader {
     using Table = HuffmanTableIndexedSymbolsMaybeInterface;
     
     const BinASTKind kind;
+
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<MaybeInterface> %s\n", describeBinASTKind(symbol));
+    }
+#endif  
 
     MaybeInterface(const NormalizedInterfaceAndField identity, BinASTKind kind)
         : EntryIndexed(identity), kind(kind) {}
@@ -280,6 +325,12 @@ class HuffmanPreludeReader {
 
     
     using Table = HuffmanTableExplicitSymbolsListLength;
+
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<List> %d\n", symbol);
+    }
+#endif  
 
     
     
@@ -313,6 +364,12 @@ class HuffmanPreludeReader {
 
     
     const BinASTSum contents;
+
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<Sum> %s\n", describeBinASTKind(symbol));
+    }
+#endif  
 
     Sum(const NormalizedInterfaceAndField identity, const BinASTSum contents)
         : EntryIndexed(identity), contents(contents) {}
@@ -349,6 +406,12 @@ class HuffmanPreludeReader {
     
     const BinASTSum contents;
 
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<MaybeSum> %s\n", describeBinASTKind(symbol));
+    }
+#endif  
+
     MaybeSum(const NormalizedInterfaceAndField identity,
              const BinASTSum contents)
         : EntryIndexed(identity), contents(contents) {}
@@ -380,6 +443,12 @@ class HuffmanPreludeReader {
   struct StringEnum : EntryIndexed {
     using SymbolType = BinASTVariant;
     using Table = HuffmanTableIndexedSymbolsStringEnum;
+
+#ifdef DEBUG
+    static void dump(SymbolType symbol) {
+      fprintf(stderr, "<StringEnum> %s\n", describeBinASTVariant(symbol));
+    }
+#endif  
 
     
     const BinASTStringEnum contents;
@@ -577,6 +646,12 @@ class HuffmanPreludeReader {
     uint32_t code = 0;
     MOZ_TRY(table.impl.init(cx_, numberOfSymbols));
 
+    fprintf(
+        stderr,
+        "readMultipleValuesTableAndAssignCode explicit: %s with %d values \n",
+        describeBinASTInterfaceAndField(entry.identity.identity),
+        numberOfSymbols);
+
     for (size_t i = 0; i < numberOfSymbols; ++i) {
       const auto bitLength = auxStorageLength[i].bitLength;
       const auto nextBitLength =
@@ -592,6 +667,11 @@ class HuffmanPreludeReader {
       
       BINJS_MOZ_TRY_DECL(
           symbol, readSymbol<Entry>(entry, i));  
+      fprintf(
+          stderr,
+          "readMultipleValuesTableAndAssignCode explicit: code %d (%d bits) =>",
+          code, bitLength);
+      Entry::dump(symbol);
       MOZ_TRY(table.impl.addSymbol(code, bitLength, std::move(symbol)));
 
       
@@ -648,13 +728,20 @@ class HuffmanPreludeReader {
 
     
     uint32_t code = 0;
-    MOZ_TRY(table.impl.init(cx_, auxStorageLength.length()));
+    MOZ_TRY(table.impl.init(cx_, auxStorageLength.length() - 1));
+
+    fprintf(
+        stderr,
+        "readMultipleValuesTableAndAssignCode implicit: %s with %zu values \n",
+        describeBinASTInterfaceAndField(entry.identity.identity),
+        table.impl.length());
 
     for (size_t i = 0; i < auxStorageLength.length() - 1; ++i) {
       const auto bitLength = auxStorageLength[i].bitLength;
       const auto nextBitLength =
           auxStorageLength[i + 1].bitLength;  
                                               
+      MOZ_ASSERT(bitLength > 0);
       MOZ_ASSERT(bitLength <= nextBitLength);
 
       
@@ -663,6 +750,7 @@ class HuffmanPreludeReader {
           readSymbol<Entry>(
               entry,
               auxStorageLength[i].index));  
+
       MOZ_TRY(table.impl.addSymbol(code, bitLength, std::move(symbol)));
 
       
