@@ -1029,18 +1029,10 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
                  sampler->GetGuid(*zoomedMetrics) == sampler->GetGuid(wrapper))
                     ? AsyncTransformComponents{AsyncTransformComponent::eLayout}
                     : LayoutAndVisual;
+
             AsyncTransform asyncTransformWithoutOverscroll =
                 sampler->GetCurrentAsyncTransform(wrapper,
                                                   asyncTransformComponents);
-            nsTArray<CompositionPayload> payloads =
-                sampler->NotifyScrollSampling(wrapper);
-            
-            
-            
-            if (!payloads.IsEmpty()) {
-              mLayerManager->RegisterPayload(payloads.ElementAt(0));
-            }
-
             AsyncTransformComponentMatrix overscrollTransform =
                 sampler->GetOverscrollTransform(wrapper);
             AsyncTransformComponentMatrix asyncTransform =
