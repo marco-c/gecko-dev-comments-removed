@@ -403,19 +403,6 @@ test_description_schema = Schema({
             'test-platform',
             bool),
 
-        
-        Required('chunking-args'): Any(
-            
-            'this-chunk',
-            
-            'test-suite-suffix',
-        ),
-
-        
-        
-        
-        Optional('chunk-suffix'): basestring,
-
         Required('requires-signed-builds'): optionally_keyed_by(
             'test-platform',
             bool),
@@ -570,7 +557,6 @@ def set_defaults(config, tests):
         test['mozharness'].setdefault('tooltool-downloads', 'public')
         test['mozharness'].setdefault('set-moz-node-path', False)
         test['mozharness'].setdefault('chunked', False)
-        test['mozharness'].setdefault('chunking-args', 'this-chunk')
         yield test
 
 
