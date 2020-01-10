@@ -1706,6 +1706,11 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
         mozilla::dom::Performance* perf = innerWindow->GetPerformance();
         if (perf) {
           timeStamp = perf->GetDOMTiming()->TimeStampToDOMHighRes(aNowTime);
+          
+          
+          
+          
+          timeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(timeStamp, 0, TimerPrecisionType::RFPOnly);
         }
         
       }
@@ -1720,11 +1725,6 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
         CallbackDebuggerNotificationGuard guard(
             global, DebuggerNotificationType::RequestAnimationFrameCallback);
 
-        
-        
-        
-        
-        timeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(timeStamp, 0, TimerPrecisionType::RFPOnly);
         
         
         
