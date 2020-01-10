@@ -426,8 +426,12 @@ bool ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope,
     if (JSID_IS_VOID(id)) {
       
       
+      
+      RootedString funName(cx);
       JSFunction* fun = JS_GetObjectFunction(funObj);
-      RootedString funName(cx, JS_GetFunctionId(fun));
+      if (fun) {
+        funName = JS_GetFunctionId(fun);
+      }
       if (!funName) {
         funName = JS_AtomizeAndPinString(cx, "");
       }
