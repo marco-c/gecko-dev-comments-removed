@@ -23,6 +23,11 @@ function CollapseButton(props) {
     "aria-label": title,
     className: "arrow collapse-button",
     onClick,
+    onMouseDown: (e) => {
+      
+      
+      e.preventDefault();
+    },
     title: title,
   });
 }

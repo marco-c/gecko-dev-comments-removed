@@ -107,6 +107,9 @@ class Message extends Component {
   }
 
   toggleMessage(e) {
+    
+    
+    e.stopPropagation();
     const { open, dispatch, messageId, onToggle } = this.props;
 
     
