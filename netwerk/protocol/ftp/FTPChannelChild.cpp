@@ -762,13 +762,13 @@ FTPChannelChild::DivertToParent(ChannelDiverterChild** aChild) {
     return mStatus;
   }
 
+  
+  mDivertingToParent = true;
+
   nsresult rv = Suspend();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
-  
-  mDivertingToParent = true;
 
   PChannelDiverterChild* diverter =
       gNeckoChild->SendPChannelDiverterConstructor(this);
