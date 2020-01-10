@@ -49,11 +49,26 @@ window.onload = function() {
     }
   }
 
+  var tabListTree = document.getElementById("tabList");
+  tabListTree.addEventListener("click", onListClick);
+  tabListTree.addEventListener("keydown", onListKeyDown);
+
+  var errorCancelButton = document.getElementById("errorCancel");
+  
+  
+  
+  if (errorCancelButton) {
+    errorCancelButton.addEventListener("command", startNewSession);
+  }
+
+  var errorTryAgainButton = document.getElementById("errorTryAgain");
+  errorTryAgainButton.addEventListener("command", restoreSession);
+
   
   
   var sessionData = document.getElementById("sessionData");
   if (!sessionData.value) {
-    document.getElementById("errorTryAgain").disabled = true;
+    errorTryAgainButton.disabled = true;
     return;
   }
 
@@ -66,7 +81,7 @@ window.onload = function() {
 
   initTreeView();
 
-  document.getElementById("errorTryAgain").focus();
+  errorTryAgainButton.focus();
 };
 
 function isTreeViewVisible() {
