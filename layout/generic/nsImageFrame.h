@@ -337,6 +337,12 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
 
+  void UpdateImage(imgIRequest* aRequest, imgIContainer* aImage);
+
+  
+
+
+
   nsRect SourceRectToDest(const nsIntRect& aRect);
 
   

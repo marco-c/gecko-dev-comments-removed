@@ -293,13 +293,8 @@ void nsImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsAtomicContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
-void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
-  nsAtomicContainerFrame::DidSetComputedStyle(aOldComputedStyle);
-
-  if (!mImage) {
-    
-    return;
-  }
+void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
+  nsAtomicContainerFrame::DidSetComputedStyle(aOldStyle);
 
   auto newOrientation = StyleVisibility()->mImageOrientation;
 
@@ -307,14 +302,19 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   
   
   bool shouldUpdateOrientation =
-      !aOldComputedStyle ||
-      aOldComputedStyle->StyleVisibility()->mImageOrientation != newOrientation;
+      mImage &&
+      (!aOldStyle ||
+       aOldStyle->StyleVisibility()->mImageOrientation != newOrientation);
 
   if (shouldUpdateOrientation) {
     nsCOMPtr<imgIContainer> image(mImage->Unwrap());
     mImage = nsLayoutUtils::OrientImage(image, newOrientation);
 
     UpdateIntrinsicSize(mImage);
+    UpdateIntrinsicRatio(mImage);
+  } else if (!aOldStyle ||
+             aOldStyle->StylePosition()->mAspectRatio !=
+                 StylePosition()->mAspectRatio) {
     UpdateIntrinsicRatio(mImage);
   }
 }
@@ -419,7 +419,8 @@ void nsImageFrame::SetupForContentURLRequest() {
   }
 }
 
-static void ScaleIntrinsicSizeForDensity(nsIContent& aContent, nsSize& aSize) {
+static void ScaleIntrinsicSizeForDensity(nsIContent& aContent,
+                                         IntrinsicSize& aSize) {
   auto* image = HTMLImageElement::FromNode(aContent);
   if (!image) {
     return;
@@ -436,61 +437,75 @@ static void ScaleIntrinsicSizeForDensity(nsIContent& aContent, nsSize& aSize) {
     return;
   }
 
-  if (aSize.width != -1) {
-    aSize.width = NSToCoordRound(double(aSize.width) / density);
+  if (aSize.width) {
+    aSize.width = Some(NSToCoordRound(double(*aSize.width) / density));
   }
-  if (aSize.height != -1) {
-    aSize.height = NSToCoordRound(double(aSize.height) / density);
+  if (aSize.height) {
+    aSize.height = Some(NSToCoordRound(double(*aSize.height) / density));
   }
+}
+
+static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
+                                          nsImageFrame::Kind aKind,
+                                          const nsImageFrame& aFrame) {
+  const ComputedStyle& style = *aFrame.Style();
+  if (style.StyleDisplay()->IsContainSize()) {
+    return IntrinsicSize(0, 0);
+  }
+
+  nsSize size;
+  if (aImage && NS_SUCCEEDED(aImage->GetIntrinsicSize(&size))) {
+    IntrinsicSize intrinsicSize;
+    intrinsicSize.width = size.width == -1 ? Nothing() : Some(size.width);
+    intrinsicSize.height = size.height == -1 ? Nothing() : Some(size.height);
+    if (aKind == nsImageFrame::Kind::ImageElement) {
+      ScaleIntrinsicSizeForDensity(*aFrame.GetContent(), intrinsicSize);
+    }
+    return intrinsicSize;
+  }
+
+  if (aFrame.ShouldShowBrokenImageIcon()) {
+    nscoord edgeLengthToUse = nsPresContext::CSSPixelsToAppUnits(
+        ICON_SIZE + (2 * (ICON_PADDING + ALT_BORDER_WIDTH)));
+    return IntrinsicSize(edgeLengthToUse, edgeLengthToUse);
+  }
+
+  if (style.StylePosition()->mAspectRatio != 0.0f) {
+    return IntrinsicSize();
+  }
+
+  return IntrinsicSize(0, 0);
 }
 
 bool nsImageFrame::UpdateIntrinsicSize(imgIContainer* aImage) {
-  MOZ_ASSERT(aImage, "null image");
-  if (!aImage) return false;
-
   IntrinsicSize oldIntrinsicSize = mIntrinsicSize;
-  mIntrinsicSize = IntrinsicSize();
-
-  
-  
-  nsSize intrinsicSize;
-  if (!StyleDisplay()->IsContainSize() &&
-      NS_SUCCEEDED(aImage->GetIntrinsicSize(&intrinsicSize))) {
-    if (mKind == Kind::ImageElement) {
-      ScaleIntrinsicSizeForDensity(*mContent, intrinsicSize);
-    }
-    
-    
-    
-    
-    if (intrinsicSize.width != -1)
-      mIntrinsicSize.width.emplace(intrinsicSize.width);
-    if (intrinsicSize.height != -1)
-      mIntrinsicSize.height.emplace(intrinsicSize.height);
-  } else {
-    
-    
-    
-    
-    mIntrinsicSize = IntrinsicSize(0, 0);
-  }
-
+  mIntrinsicSize = ComputeIntrinsicSize(mImage, mKind, *this);
   return mIntrinsicSize != oldIntrinsicSize;
 }
 
+static AspectRatio ComputeAspectRatio(imgIContainer* aImage,
+                                      const nsImageFrame& aFrame) {
+  const ComputedStyle& style = *aFrame.Style();
+  if (style.StyleDisplay()->IsContainSize()) {
+    return AspectRatio();
+  }
+  if (style.StylePosition()->mAspectRatio != 0.0f) {
+    return AspectRatio(style.StylePosition()->mAspectRatio);
+  }
+  if (aImage) {
+    if (Maybe<AspectRatio> fromImage = aImage->GetIntrinsicRatio()) {
+      return *fromImage;
+    }
+  }
+  if (aFrame.ShouldShowBrokenImageIcon()) {
+    return AspectRatio(1.0f);
+  }
+  return AspectRatio();
+}
+
 bool nsImageFrame::UpdateIntrinsicRatio(imgIContainer* aImage) {
-  MOZ_ASSERT(aImage, "null image");
-
-  if (!aImage) return false;
-
-  
-  
-  
   AspectRatio oldIntrinsicRatio = mIntrinsicRatio;
-  mIntrinsicRatio = StyleDisplay()->IsContainSize()
-                        ? AspectRatio()
-                        : aImage->GetIntrinsicRatio().valueOr(AspectRatio());
-
+  mIntrinsicRatio = ComputeAspectRatio(aImage, *this);
   return mIntrinsicRatio != oldIntrinsicRatio;
 }
 
@@ -682,30 +697,32 @@ nsresult nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
     return NS_OK;
   }
 
-  bool intrinsicSizeChanged = false;
+  UpdateImage(aRequest, aImage);
+  return NS_OK;
+}
+
+void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
+  MOZ_ASSERT(aRequest);
   if (SizeIsAvailable(aRequest)) {
     
     
     mImage = nsLayoutUtils::OrientImage(aImage,
                                         StyleVisibility()->mImageOrientation);
-
-    intrinsicSizeChanged = UpdateIntrinsicSize(mImage);
-    intrinsicSizeChanged = UpdateIntrinsicRatio(mImage) || intrinsicSizeChanged;
+    MOZ_ASSERT(mImage);
   } else {
     
     mImage = mPrevImage = nullptr;
-
-    
-    mIntrinsicSize = IntrinsicSize(0, 0);
-    mIntrinsicRatio = AspectRatio();
-    intrinsicSizeChanged = true;
   }
-
+  
+  
+  bool intrinsicSizeChanged =
+      UpdateIntrinsicSize(mImage) | UpdateIntrinsicRatio(mImage);
   if (!GotInitialReflow()) {
-    return NS_OK;
+    return;
   }
 
-  MarkNeedsDisplayItemRebuild();
+  
+  InvalidateFrame();
 
   if (intrinsicSizeChanged) {
     
@@ -719,8 +736,6 @@ nsresult nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
       MaybeDecodeForPredictedSize();
     }
   }
-
-  return NS_OK;
 }
 
 nsresult nsImageFrame::OnFrameUpdate(imgIRequest* aRequest,
@@ -802,39 +817,7 @@ void nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest,
   aRequest->GetImage(getter_AddRefs(image));
   NS_ASSERTION(image || NS_FAILED(aStatus),
                "Successful load with no container?");
-
-  
-  bool intrinsicSizeChanged = true;
-  if (NS_SUCCEEDED(aStatus) && image && SizeIsAvailable(aRequest)) {
-    
-    mImage =
-        nsLayoutUtils::OrientImage(image, StyleVisibility()->mImageOrientation);
-
-    intrinsicSizeChanged = UpdateIntrinsicSize(mImage);
-    intrinsicSizeChanged = UpdateIntrinsicRatio(mImage) || intrinsicSizeChanged;
-  } else {
-    
-    mImage = mPrevImage = nullptr;
-
-    
-    mIntrinsicSize = IntrinsicSize(0, 0);
-    mIntrinsicRatio = AspectRatio();
-  }
-
-  if (GotInitialReflow()) {
-    if (intrinsicSizeChanged) {
-      if (!(mState & IMAGE_SIZECONSTRAINED)) {
-        PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
-                                      NS_FRAME_IS_DIRTY);
-      } else {
-        
-        
-        MaybeDecodeForPredictedSize();
-      }
-    }
-    
-    InvalidateFrame();
-  }
+  UpdateImage(aRequest, image);
 }
 
 void nsImageFrame::MaybeDecodeForPredictedSize() {
@@ -915,19 +898,8 @@ void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
     return;
   }
 
-  if (mImage) {
-    UpdateIntrinsicSize(mImage);
-    UpdateIntrinsicRatio(mImage);
-    return;
-  }
-
-  
-  if (ShouldShowBrokenImageIcon()) {
-    nscoord edgeLengthToUse = nsPresContext::CSSPixelsToAppUnits(
-        ICON_SIZE + (2 * (ICON_PADDING + ALT_BORDER_WIDTH)));
-    mIntrinsicSize = IntrinsicSize(edgeLengthToUse, edgeLengthToUse);
-    mIntrinsicRatio = AspectRatio(1.0f);
-  }
+  UpdateIntrinsicSize(mImage);
+  UpdateIntrinsicRatio(mImage);
 }
 
 
