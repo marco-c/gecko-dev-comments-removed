@@ -29,41 +29,15 @@ JSObject* PerformanceNavigationTiming::WrapObject(
       rawValue, mPerformance->GetRandomTimelineSeed())
 
 DOMHighResTimeStamp PerformanceNavigationTiming::UnloadEventStart() const {
-  DOMHighResTimeStamp rawValue = 0;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (mTimingData->AllRedirectsSameOrigin()) {  
-    
-
-
-
-
-
-    rawValue = mPerformance->GetDOMTiming()->GetUnloadEventStartHighRes();
-  }
+  DOMHighResTimeStamp rawValue =
+      mPerformance->GetDOMTiming()->GetUnloadEventStartHighRes();
 
   REDUCE_TIME_PRECISION;
 }
 
 DOMHighResTimeStamp PerformanceNavigationTiming::UnloadEventEnd() const {
-  DOMHighResTimeStamp rawValue = 0;
-
-  
-  if (mTimingData->AllRedirectsSameOrigin()) {
-    rawValue = mPerformance->GetDOMTiming()->GetUnloadEventEndHighRes();
-  }
+  DOMHighResTimeStamp rawValue =
+      mPerformance->GetDOMTiming()->GetUnloadEventEndHighRes();
 
   REDUCE_TIME_PRECISION;
 }
