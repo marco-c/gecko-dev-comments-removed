@@ -90,12 +90,12 @@ void PlatformUIThread::Stop() {
 
 void PlatformUIThread::Run() {
   RTC_CHECK(InternalInit());  
-  do {
-    
-    
-    
-    run_function_deprecated_(obj_);
+  
+  
+  
+  run_function_deprecated_(obj_);
 
+  do {
     
     if (MsgWaitForMultipleObjectsEx(0, nullptr, INFINITE, QS_ALLINPUT,
                                     MWMO_ALERTABLE | MWMO_INPUTAVAILABLE) ==
