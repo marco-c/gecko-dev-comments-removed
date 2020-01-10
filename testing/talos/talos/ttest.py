@@ -130,11 +130,6 @@ class TTest(object):
         setup.env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
 
         
-        if browser_config.get('mitmproxy', False):
-            LOG.info('Using mitmproxy so setting MOZ_DISABLE_NONLOCAL_CONNECTIONS to 0')
-            setup.env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '0'
-
-        
         test_results = results.TestResults(
             test_config,
             global_counters,
