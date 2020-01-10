@@ -1677,36 +1677,23 @@ already_AddRefed<nsIURI> SVGObserverUtils::GetBaseURLForLocalRef(
 
   
   
-  nsCOMPtr<nsIURI> baseURI = content->OwnerDoc()->GetDocumentURI();
-
-  nsCOMPtr<nsIURI> originalURI;
-  
-  
   
   
   
   
   if (SVGUseElement* use = content->GetContainingSVGUseShadowHost()) {
-    originalURI = use->GetSourceDocURI();
-  } else if (content->IsInAnonymousSubtree()) {
-    nsIContent* bindingParent = content->GetBindingParent();
-
-    if (bindingParent) {
-      MOZ_ASSERT(content->IsInNativeAnonymousSubtree(),
-                 "a non-native anonymous tree which is not from "
-                 "an XBL binding?");
+    if (nsIURI* originalURI = use->GetSourceDocURI()) {
+      bool isEqualsExceptRef = false;
+      aDocURI->EqualsExceptRef(originalURI, &isEqualsExceptRef);
+      if (isEqualsExceptRef) {
+        return do_AddRef(originalURI);
+      }
     }
   }
 
-  if (originalURI) {
-    bool isEqualsExceptRef = false;
-    aDocURI->EqualsExceptRef(originalURI, &isEqualsExceptRef);
-    if (isEqualsExceptRef) {
-      return originalURI.forget();
-    }
-  }
-
-  return baseURI.forget();
+  
+  
+  return do_AddRef(content->OwnerDoc()->GetDocumentURI());
 }
 
 already_AddRefed<URLAndReferrerInfo> SVGObserverUtils::GetFilterURI(
