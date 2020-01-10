@@ -2,6 +2,7 @@
 
 
 
+use peek_poke::PeekPoke;
 use std::cmp;
 use std::hash::{Hash, Hasher};
 
@@ -37,7 +38,7 @@ impl PremultipliedColorF {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub struct ColorF {
     pub r: f32,
     pub g: f32,
