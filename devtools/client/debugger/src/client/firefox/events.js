@@ -64,6 +64,11 @@ async function paused(threadFront: ThreadFront, packet: PausedPacket) {
   
   
   
+  await actions.ensureHasThread(threadFront.actor);
+
+  
+  
+  
   const { why } = packet;
   if (why.type === "interrupted" && !packet.why.onNext) {
     isInterrupted = true;

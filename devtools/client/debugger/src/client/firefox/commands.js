@@ -315,10 +315,12 @@ function autocomplete(
 }
 
 function navigate(url: string): Promise<*> {
+  targets = { worker: {}, contentProcess: {} };
   return currentTarget.navigateTo({ url });
 }
 
 function reload(): Promise<*> {
+  targets = { worker: {}, contentProcess: {} };
   return currentTarget.reload();
 }
 
@@ -447,6 +449,12 @@ async function fetchSources(): Promise<Array<GeneratedSourceData>> {
   return sources;
 }
 
+async function fetchThreadSources(
+  thread: string
+): Promise<Array<GeneratedSourceData>> {
+  return getSources(lookupThreadFront(thread));
+}
+
 
 
 
@@ -483,25 +491,12 @@ async function updateThreads(type: ThreadType) {
     observeAsmJS: true,
   };
 
-  const oldActors = Object.keys(targets[type]);
-
   await updateTargets(type, {
     currentTarget,
     debuggerClient,
     targets,
     options,
   });
-
-  
-  
-  
-  
-  for (const entry of Object.entries(targets[type])) {
-    const [actor, { threadFront }] = (entry: any);
-    if (!oldActors.includes(actor)) {
-      getSources(threadFront).catch(e => console.error(e));
-    }
-  }
 
   return Object.entries(targets[type]).map(([actor, target]) =>
     createThread((actor: any), (target: any))
@@ -596,6 +591,7 @@ const clientCommands = {
   pauseOnExceptions,
   toggleEventLogging,
   fetchSources,
+  fetchThreadSources,
   checkIfAlreadyPaused,
   registerSourceActor,
   fetchThreads,
