@@ -1559,29 +1559,8 @@ bool BigInt::literalIsZero(const Range<const CharT> chars) {
 
 template bool BigInt::literalIsZero(const Range<const char16_t> chars);
 
-
-static bool IsInteger(double d) {
-  
-  
-  if (!mozilla::IsFinite(d)) {
-    return false;
-  }
-
-  
-  double i = JS::ToInteger(d);
-
-  
-  if (i != d) {
-    return false;
-  }
-
-  
-  return true;
-}
-
 BigInt* BigInt::createFromDouble(JSContext* cx, double d) {
-  MOZ_ASSERT(::IsInteger(d),
-             "Only integer-valued doubles can convert to BigInt");
+  MOZ_ASSERT(IsInteger(d), "Only integer-valued doubles can convert to BigInt");
 
   if (d == 0) {
     return zero(cx);
@@ -1701,7 +1680,7 @@ BigInt* BigInt::createFromInt64(JSContext* cx, int64_t n) {
 BigInt* js::NumberToBigInt(JSContext* cx, double d) {
   
   
-  if (!::IsInteger(d)) {
+  if (!IsInteger(d)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_NUMBER_TO_BIGINT);
     return nullptr;
