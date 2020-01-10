@@ -322,6 +322,9 @@ void js::Nursery::disable() {
     return;
   }
 
+  
+  
+  decommitTask.join();
   freeChunksFrom(0);
   capacity_ = 0;
 
@@ -363,6 +366,11 @@ bool js::Nursery::isEmpty() const {
 void js::Nursery::enterZealMode() {
   if (isEnabled()) {
     if (isSubChunkMode()) {
+      
+      
+      
+      decommitTask.join();
+
       
       
       chunk(0).poisonRange(capacity_, NurseryChunkUsableSize - capacity_,
