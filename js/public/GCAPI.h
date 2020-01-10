@@ -127,7 +127,7 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_SLICE_TIME_BUDGET = 9,
+  JSGC_SLICE_TIME_BUDGET_MS = 9,
 
   
 

@@ -430,7 +430,7 @@ class GCRuntime {
   uint64_t majorGCCount() const { return majorGCNumber; }
   void incMajorGcNumber() { ++majorGCNumber; }
 
-  int64_t defaultSliceBudget() const { return defaultTimeBudget_; }
+  int64_t defaultSliceBudgetMS() const { return defaultTimeBudgetMS_; }
 
   bool isIncrementalGc() const { return isIncremental; }
   bool isFullGc() const { return isFull; }
@@ -937,7 +937,7 @@ class GCRuntime {
 
 
 
-  MainThreadData<int64_t> defaultTimeBudget_;
+  MainThreadData<int64_t> defaultTimeBudgetMS_;
 
   
 

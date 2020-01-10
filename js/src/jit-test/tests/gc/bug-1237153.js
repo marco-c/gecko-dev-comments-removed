@@ -1,2 +1,2 @@
 
-gcparam("sliceTimeBudget", -1);
+gcparam("sliceTimeBudgetMS", -1);
