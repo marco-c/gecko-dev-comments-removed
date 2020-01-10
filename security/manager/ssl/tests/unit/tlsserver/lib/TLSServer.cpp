@@ -388,7 +388,8 @@ int DoCallback() {
 SECStatus ConfigSecureServerWithNamedCert(
     PRFileDesc* fd, const char* certName,
      UniqueCERTCertificate* certOut,
-     SSLKEAType* keaOut) {
+     SSLKEAType* keaOut,
+     SSLExtraServerCertData* extraData) {
   UniqueCERTCertificate cert(PK11_FindCertFromNickname(certName, nullptr));
   if (!cert) {
     PrintPRError("PK11_FindCertFromNickname failed");
@@ -448,20 +449,34 @@ SECStatus ConfigSecureServerWithNamedCert(
     return SECFailure;
   }
 
-  SSLKEAType certKEA = NSS_FindCertKEAType(cert.get());
+  if (extraData) {
+    SSLExtraServerCertData dataCopy = {ssl_auth_null, nullptr, nullptr,
+                                       nullptr,       nullptr, nullptr};
+    memcpy(&dataCopy, extraData, sizeof(dataCopy));
+    dataCopy.certChain = certList.get();
 
-  if (SSL_ConfigSecureServerWithCertChain(fd, cert.get(), certList.get(),
-                                          key.get(), certKEA) != SECSuccess) {
-    PrintPRError("SSL_ConfigSecureServer failed");
-    return SECFailure;
+    if (SSL_ConfigServerCert(fd, cert.get(), key.get(), &dataCopy,
+                             sizeof(dataCopy)) != SECSuccess) {
+      PrintPRError("SSL_ConfigServerCert failed");
+      return SECFailure;
+    }
+
+  } else {
+    
+    SSLKEAType certKEA = NSS_FindCertKEAType(cert.get());
+    if (SSL_ConfigSecureServerWithCertChain(fd, cert.get(), certList.get(),
+                                            key.get(), certKEA) != SECSuccess) {
+      PrintPRError("SSL_ConfigSecureServer failed");
+      return SECFailure;
+    }
+
+    if (keaOut) {
+      *keaOut = certKEA;
+    }
   }
 
   if (certOut) {
     *certOut = std::move(cert);
-  }
-
-  if (keaOut) {
-    *keaOut = certKEA;
   }
 
   SSL_OptionSet(fd, SSL_NO_CACHE, false);
@@ -585,7 +600,8 @@ int StartServer(int argc, char* argv[], SSLSNISocketConfig sniSocketConfig,
   
   
   if (ConfigSecureServerWithNamedCert(modelSocket.get(), DEFAULT_CERT_NICKNAME,
-                                      nullptr, nullptr) != SECSuccess) {
+                                      nullptr, nullptr,
+                                      nullptr) != SECSuccess) {
     return 1;
   }
 
