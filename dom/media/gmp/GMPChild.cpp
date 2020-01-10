@@ -44,6 +44,10 @@ using namespace mozilla::ipc;
 #  endif
 #endif
 
+#ifdef XP_LINUX
+#  include "dlfcn.h"
+#endif
+
 namespace mozilla {
 
 #undef LOG
@@ -63,7 +67,14 @@ GMPChild::GMPChild()
   nsDebugImpl::SetMultiprocessMode("GMP");
 }
 
-GMPChild::~GMPChild() { LOGD("GMPChild dtor"); }
+GMPChild::~GMPChild() {
+  LOGD("GMPChild dtor");
+#ifdef XP_LINUX
+  for (auto& libHandle : mLibHandles) {
+    dlclose(libHandle);
+  }
+#endif
+}
 
 static bool GetFileBase(const nsAString& aPluginPath,
                         nsCOMPtr<nsIFile>& aLibDirectory,
@@ -254,17 +265,20 @@ GMPErr GMPChild::GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI,
 }
 
 mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
+  
+  
 #ifdef XP_WIN
-  
-  
   
   constexpr static const char16_t* whitelist[] = {
       u"dxva2.dll",        
       u"evr.dll",          
+      u"freebl3.dll",      
       u"mfplat.dll",       
                            
       u"msmpeg2vdec.dll",  
+      u"nss3.dll",         
       u"psapi.dll",        
+      u"softokn3.dll",     
   };
   constexpr static bool (*IsASCII)(const char16_t*) =
       IsAsciiNullTerminated<char16_t>;
@@ -281,6 +295,26 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
               .EqualsASCII(lib.Data(), lib.Length())) {
         LoadLibraryW(char16ptr_t(whiteListedLib));
         break;
+      }
+    }
+  }
+#elif defined(XP_LINUX)
+  constexpr static const char* whitelist[] = {
+      "libfreeblpriv3.so",
+      "libsoftokn3.so",
+  };
+
+  nsTArray<nsCString> libs;
+  SplitAt(", ", aLibs, libs);
+  for (const nsCString& lib : libs) {
+    for (const char* whiteListedLib : whitelist) {
+      if (lib.EqualsASCII(whiteListedLib)) {
+        auto libHandle = dlopen(whiteListedLib, RTLD_NOW | RTLD_GLOBAL);
+        if (libHandle) {
+          mLibHandles.AppendElement(libHandle);
+        } else {
+          MOZ_CRASH("Couldn't load lib needed by NSS");
+        }
       }
     }
   }

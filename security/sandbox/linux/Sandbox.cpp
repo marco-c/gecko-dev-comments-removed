@@ -640,9 +640,11 @@ void SetMediaPluginSandbox(const char* aFilePath) {
   auto files = new SandboxOpenedFiles();
   files->Add(std::move(plugin));
   files->Add("/dev/urandom", true);
+  files->Add("/etc/ld.so.cache");  
   files->Add("/sys/devices/system/cpu/cpu0/tsc_freq_khz");
   files->Add("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
   files->Add("/proc/cpuinfo");  
+  files->Add("/proc/sys/crypto/fips_enabled");  
 #ifdef __i386__
   files->Add("/proc/self/auxv");  
 #endif

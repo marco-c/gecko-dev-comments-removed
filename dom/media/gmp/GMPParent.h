@@ -181,7 +181,7 @@ class GMPParent final
   nsCString mDisplayName;  
   nsCString mDescription;  
   nsCString mVersion;
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_LINUX)
   nsCString mLibs;
 #endif
   nsString mAdapter;

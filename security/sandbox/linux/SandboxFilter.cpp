@@ -1372,7 +1372,13 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
         return Trap(OpenTrap, mFiles);
 
       case __NR_brk:
+      
+      
+      
+      CASES_FOR_getuid:
+      CASES_FOR_getgid:
       CASES_FOR_geteuid:
+      CASES_FOR_getegid:
         return Allow();
       case __NR_sched_get_priority_min:
       case __NR_sched_get_priority_max:
