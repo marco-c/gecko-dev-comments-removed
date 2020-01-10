@@ -606,7 +606,7 @@ _ContextualIdentityService.prototype = {
     
     let cookiesUserContextIds = new Set();
 
-    for (let cookie of Services.cookies.enumerator) {
+    for (let cookie of Services.cookies.cookies) {
       
       if (
         cookie.originAttributes.userContextId >= minUserContextId &&

@@ -28,7 +28,7 @@ function* do_run_test() {
 
   
   
-  Services.cookiemgr.sessionEnumerator;
+  Services.cookiemgr.sessionCookies;
 
   
   

@@ -24,7 +24,7 @@ function* do_run_test() {
 
   
   
-  Services.cookiemgr.sessionEnumerator;
+  Services.cookiemgr.sessionCookies;
 
   
   do_close_profile(test_generator);
