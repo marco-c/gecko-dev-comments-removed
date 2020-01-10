@@ -54,8 +54,15 @@ class KnowsCompositorVideo : public layers::KnowsCompositor {
       return nullptr;
     }
 
+    
+    
+    TextureFactoryIdentifier ident = aIdentifier;
+    if (XRE_IsRDDProcess()) {
+      ident.mSyncHandle = 0;
+    }
+
     RefPtr<KnowsCompositorVideo> knowsCompositor = new KnowsCompositorVideo();
-    knowsCompositor->IdentifyTextureHost(aIdentifier);
+    knowsCompositor->IdentifyTextureHost(ident);
     return knowsCompositor.forget();
   }
 
@@ -283,7 +290,6 @@ RemoteVideoDecoderParent::RemoteVideoDecoderParent(
     
     
     
-    
     mKnowsCompositor =
         KnowsCompositorVideo::TryCreateForIdentifier(*aIdentifier);
   }
@@ -316,7 +322,7 @@ RemoteVideoDecoderParent::RemoteVideoDecoderParent(
 
 #ifdef MOZ_AV1
   if (AOMDecoder::IsAV1(params.mConfig.mMimeType)) {
-    if (StaticPrefs::media_av1_use_dav1d()) {
+    if (StaticPrefs::MediaAv1UseDav1d()) {
       mDecoder = new DAV1DDecoder(params);
     } else {
       mDecoder = new AOMDecoder(params);
