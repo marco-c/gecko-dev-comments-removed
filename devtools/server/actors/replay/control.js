@@ -1019,21 +1019,9 @@ async function queuePauseData({
 
   await waitForFlushed(point.checkpoint);
 
-  sendAsyncManifest({
+  await sendAsyncManifest({
     shouldSkip() {
       if (maybeGetPauseData(point)) {
-        return true;
-      }
-
-      
-      
-      
-      if (
-        point.position &&
-        gLogpoints.some(({ position }) =>
-          positionSubsumes(position, point.position)
-        )
-      ) {
         return true;
       }
 
@@ -1559,53 +1547,98 @@ function simulateNearbyNavigation() {
 
 const gLogpoints = [];
 
-async function evaluateLogpoint({ point, text, condition, callback }) {
+async function evaluateLogpoint({
+  point,
+  text,
+  condition,
+  callback,
+  snapshot,
+  fast,
+}) {
   assert(point);
-  if (!condition) {
-    callback(point, ["Loading..."]);
-  }
-  let skipPauseData = false;
-  const manifest = {
+  await sendAsyncManifest({
     shouldSkip: () => false,
     contents() {
-      return { kind: "hitLogpoint", text, condition, skipPauseData };
+      return { kind: "hitLogpoint", text, condition, fast };
     },
-    onFinished(child, { pauseData, result, resultData, restoredSnapshot }) {
+    onFinished(child, { result, resultData, restoredSnapshot }) {
       if (restoredSnapshot) {
-        if (!skipPauseData) {
-          
-          skipPauseData = true;
-          sendAsyncManifest(manifest);
-        } else {
-          callback(point, ["Recording divergence evaluating logpoint"]);
-        }
+        callback(point, ["Recording divergence evaluating logpoint"]);
       } else {
         if (result) {
-          if (!skipPauseData) {
-            addPauseData(point, pauseData,  true);
-          }
           callback(point, result, resultData);
         }
-        child.divergedFromRecording = true;
+        if (!fast) {
+          child.divergedFromRecording = true;
+        }
       }
     },
     point,
+    snapshot,
     expectedDuration: 250,
     lowPriority: true,
     mightRewind: true,
-  };
-  sendAsyncManifest(manifest);
+  });
 }
 
 
 
 async function findLogpointHits(
   checkpoint,
-  { position, text, condition, callback }
+  { position, text, condition, messageCallback, validCallback }
 ) {
+  if (!validCallback()) {
+    return;
+  }
+
   const hits = await findHits(checkpoint, position);
+  hits.sort((a, b) => pointPrecedes(b, a));
+
+  
+  if (!condition) {
+    for (const point of hits) {
+      messageCallback(point, ["Loading..."]);
+    }
+  }
+
   for (const point of hits) {
-    evaluateLogpoint({ point, text, condition, callback });
+    
+    
+    
+    
+    const fast = getPreference("fastLogpoints");
+
+    
+    
+    const snapshot = !fast && checkpointExecutionPoint(point.checkpoint);
+
+    
+    
+    
+    
+    await evaluateLogpoint({
+      point,
+      text,
+      condition,
+      callback: messageCallback,
+      snapshot,
+      fast,
+    });
+
+    if (!validCallback()) {
+      return;
+    }
+  }
+
+  
+  
+  
+  for (const point of hits) {
+    await queuePauseData({ point, trackCached: true });
+
+    if (!validCallback()) {
+      return;
+    }
   }
 }
 
@@ -1646,6 +1679,7 @@ async function findEventLogpointHits(checkpoint, event, callback) {
     if (info.event == event) {
       const point = await findEventFrameEntry(info.checkpoint, info.progress);
       if (point) {
+        callback(point, ["Loading..."]);
         evaluateLogpoint({ point, text: "arguments[0]", callback });
       }
     }
