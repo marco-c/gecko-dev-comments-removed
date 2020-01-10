@@ -2461,8 +2461,10 @@ class nsContentUtils {
 
 
 
-  static bool IsPatternMatching(nsAString& aValue, nsAString& aPattern,
-                                const Document* aDocument);
+
+  static mozilla::Maybe<bool> IsPatternMatching(nsAString& aValue,
+                                                nsAString& aPattern,
+                                                const Document* aDocument);
 
   
 
