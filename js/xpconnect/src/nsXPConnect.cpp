@@ -973,7 +973,8 @@ static nsresult WriteScriptOrFunction(nsIObjectOutputStream* stream,
   }
   rv = stream->Write32(size);
   if (NS_SUCCEEDED(rv)) {
-    rv = stream->WriteBytes(reinterpret_cast<char*>(buffer.begin()), size);
+    
+    rv = stream->WriteBytes(MakeSpan(buffer.begin(), size));
   }
 
   return rv;
