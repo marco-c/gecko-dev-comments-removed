@@ -299,7 +299,7 @@ CssRuleView.prototype = {
     return this._elementStyle ? this._elementStyle.rules : [];
   },
 
-  get target() {
+  get currentTarget() {
     return this.inspector.toolbox.target;
   },
 
@@ -388,17 +388,17 @@ CssRuleView.prototype = {
     
     
     
-    this._emulationFront = await this.target.getFront("emulation");
+    this._emulationFront = await this.currentTarget.getFront("emulation");
 
     
     
     
     if (
-      (await this.target.actorHasMethod(
+      (await this.currentTarget.actorHasMethod(
         "emulation",
         "getIsPrintSimulationEnabled"
       )) &&
-      !this.target.chrome
+      !this.currentTarget.chrome
     ) {
       this.printSimulationButton.removeAttribute("hidden");
 
