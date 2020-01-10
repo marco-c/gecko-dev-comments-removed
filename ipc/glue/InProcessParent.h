@@ -44,9 +44,6 @@ class InProcessParent : public nsIObserver, public PInProcessParent {
   
   static IProtocol* ChildActorFor(IProtocol* aActor);
 
- protected:
-  bool DeallocPWindowGlobalParent(mozilla::dom::PWindowGlobalParent* aActor);
-
  private:
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;

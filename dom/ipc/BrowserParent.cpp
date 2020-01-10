@@ -1242,16 +1242,9 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   
   auto wgp = MakeRefPtr<WindowGlobalParent>(aInit,  false);
 
-  
-  BindPWindowGlobalEndpoint(std::move(aEndpoint), do_AddRef(wgp).take());
+  BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
   wgp->Init(aInit);
   return IPC_OK();
-}
-
-bool BrowserParent::DeallocPWindowGlobalParent(PWindowGlobalParent* aActor) {
-  
-  static_cast<WindowGlobalParent*>(aActor)->Release();
-  return true;
 }
 
 IPCResult BrowserParent::RecvPBrowserBridgeConstructor(

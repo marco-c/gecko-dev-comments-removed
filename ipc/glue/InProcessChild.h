@@ -43,9 +43,6 @@ class InProcessChild : public PInProcessChild {
   
   static IProtocol* ParentActorFor(IProtocol* aActor);
 
- protected:
-  bool DeallocPWindowGlobalChild(mozilla::dom::PWindowGlobalChild* aActor);
-
  private:
   
   

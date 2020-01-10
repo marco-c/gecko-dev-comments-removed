@@ -101,22 +101,20 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
     
     ManagedEndpoint<PWindowGlobalParent> endpoint =
-        ipChild->OpenPWindowGlobalEndpoint(do_AddRef(wgc).take());
+        ipChild->OpenPWindowGlobalEndpoint(wgc);
 
     auto wgp = MakeRefPtr<WindowGlobalParent>(init,  true);
 
     
-    ipParent->BindPWindowGlobalEndpoint(std::move(endpoint),
-                                        do_AddRef(wgp).take());
+    ipParent->BindPWindowGlobalEndpoint(std::move(endpoint), wgp);
     wgp->Init(init);
   } else {
     RefPtr<BrowserChild> browserChild =
         BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(aWindow));
     MOZ_ASSERT(browserChild);
 
-    
     ManagedEndpoint<PWindowGlobalParent> endpoint =
-        browserChild->OpenPWindowGlobalEndpoint(do_AddRef(wgc).take());
+        browserChild->OpenPWindowGlobalEndpoint(wgc);
 
     browserChild->SendNewWindowGlobal(std::move(endpoint), init);
   }
