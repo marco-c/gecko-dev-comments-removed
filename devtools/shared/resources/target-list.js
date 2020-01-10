@@ -211,11 +211,12 @@ class TargetList {
     const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
       BROWSERTOOLBOX_FISSION_ENABLED
     );
-    const isParentProcessToolboxOrBrowserConsole =
-      this.targetFront.chrome && !this.targetFront.isAddon;
-    return (
-      fissionBrowserToolboxEnabled && isParentProcessToolboxOrBrowserConsole
-    );
+    
+    
+    
+    
+    
+    return fissionBrowserToolboxEnabled && this.targetFront.isParentProcess;
   }
 
   
