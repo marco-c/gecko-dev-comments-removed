@@ -468,6 +468,12 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  void NotifyEditingHostMaybeChanged();
+
+  
+
+
+
 
 
 

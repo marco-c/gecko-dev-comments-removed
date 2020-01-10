@@ -10,6 +10,7 @@
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/MappedDeclarations.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MouseEvents.h"
@@ -2450,8 +2451,10 @@ void nsGenericHTMLElement::ChangeEditableState(int32_t aChange) {
     return;
   }
 
+  Document::EditingState previousEditingState = Document::EditingState::eOff;
   if (aChange != 0) {
     document->ChangeContentEditableCount(this, aChange);
+    previousEditingState = document->GetEditingState();
   }
 
   if (document->HasFlag(NODE_IS_EDITABLE)) {
@@ -2463,6 +2466,18 @@ void nsGenericHTMLElement::ChangeEditableState(int32_t aChange) {
   
   nsAutoScriptBlocker scriptBlocker;
   MakeContentDescendantsEditable(this, document);
+
+  
+  
+  
+  
+  if (document && aChange > 0 &&
+      previousEditingState == Document::EditingState::eContentEditable) {
+    if (HTMLEditor* htmlEditor =
+            nsContentUtils::GetHTMLEditor(document->GetPresContext())) {
+      htmlEditor->NotifyEditingHostMaybeChanged();
+    }
+  }
 }
 
 
