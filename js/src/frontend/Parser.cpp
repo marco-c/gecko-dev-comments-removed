@@ -22,6 +22,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Range.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Unused.h"
@@ -1748,6 +1749,12 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
 
   
   
+  
+  auto cleanupGuard =
+      mozilla::MakeScopeExit([funbox]() { funbox->lazyScriptData().reset(); });
+
+  
+  
   funbox->lazyScriptData().emplace(cx_);
   if (!funbox->lazyScriptData()->init(cx_, pc_->closedOverBindingsForLazy(),
                                       pc_->innerFunctionBoxesForLazy,
@@ -1757,6 +1764,7 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
 
   
   if (getTreeHolder().isDeferred()) {
+    cleanupGuard.release();
     return true;
   }
 
