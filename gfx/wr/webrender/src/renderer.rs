@@ -68,7 +68,7 @@ use crate::internal_types::{CacheTextureId, DebugOutput, FastHashMap, FastHashSe
 use crate::internal_types::{TextureCacheAllocationKind, TextureCacheUpdate, TextureUpdateList, TextureUpdateSource};
 use crate::internal_types::{RenderTargetInfo, SavedTargetIndex, Swizzle};
 use malloc_size_of::MallocSizeOfOps;
-use crate::picture::{RecordedDirtyRegion, TILE_SIZE_LARGE, TILE_SIZE_SMALL};
+use crate::picture::{RecordedDirtyRegion, TILE_SIZE_WIDTH, TILE_SIZE_HEIGHT};
 use crate::prim_store::DeferredResolve;
 use crate::profiler::{BackendProfileCounters, FrameProfileCounters, TimeProfileCounter,
                GpuProfileTag, RendererProfileCounters, RendererProfileTimers};
@@ -1890,7 +1890,6 @@ impl Renderer {
         }
         let max_texture_size = device.max_texture_size();
         let max_texture_layers = device.max_texture_layers();
-        let is_android_emulator = device.renderer_name().contains("Android Emulator");
 
         register_thread_with_profiler("Compositor".to_owned());
 
@@ -2151,17 +2150,8 @@ impl Renderer {
             }
 
             let picture_tile_sizes = &[
-                TILE_SIZE_LARGE,
-                TILE_SIZE_SMALL,
+                DeviceIntSize::new(TILE_SIZE_WIDTH, TILE_SIZE_HEIGHT),
             ];
-
-            
-            
-            
-            
-            
-            
-            let min_picture_cache_slices = if is_android_emulator { 16 } else { 1 };
 
             let texture_cache = TextureCache::new(
                 max_texture_size,
@@ -2174,7 +2164,6 @@ impl Renderer {
                 start_size,
                 color_cache_formats,
                 swizzle_settings,
-                min_picture_cache_slices,
             );
 
             let glyph_cache = GlyphCache::new(max_glyph_cache_size);
