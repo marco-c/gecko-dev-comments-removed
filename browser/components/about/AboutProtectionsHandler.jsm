@@ -12,6 +12,11 @@ const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -30,12 +35,18 @@ let idToTextMap = new Map([
 var AboutProtectionsHandler = {
   _inited: false,
   _topics: [
+    
     "OpenAboutLogins",
     "OpenContentBlockingPreferences",
     "OpenSyncPreferences",
+    
     "FetchContentBlockingEvents",
     "FetchUserLoginsData",
+    
+    "GetEnabledLockwiseCard",
   ],
+
+  PREF_LOCKWISE_CARD_ENABLED: "browser.contentblocking.report.lockwise.enabled",
 
   init() {
     this.receiveMessage = this.receiveMessage.bind(this);
@@ -64,18 +75,40 @@ var AboutProtectionsHandler = {
 
 
 
-  getLoginData() {
-    const logins = Services.logins.countLogins("", "", "");
+  async getLoginData() {
+    const loginCount = Services.logins.countLogins("", "", "");
+    let syncedDevices = [];
+    const isLoggedWithFxa = await fxAccounts.accountStatus();
 
-    const isLoggedIn = logins > 0;
+    if (isLoggedWithFxa) {
+      syncedDevices = await fxAccounts.getDeviceList();
+    }
+
     return {
-      isLoggedIn,
-      numberOfLogins: logins,
-      numberOfSyncedDevices: 0,
+      isLoggedIn: loginCount > 0 || syncedDevices.length > 0,
+      numberOfLogins: loginCount,
+      numberOfSyncedDevices: syncedDevices.length,
     };
   },
 
-  receiveMessage(aMessage) {
+  
+
+
+
+
+
+
+
+
+
+  sendMessage(target, message, payload) {
+    
+    if (target.browser) {
+      target.sendAsyncMessage(message, payload);
+    }
+  },
+
+  async receiveMessage(aMessage) {
     let win = aMessage.target.browser.ownerGlobal;
     switch (aMessage.name) {
       case "OpenAboutLogins":
@@ -110,19 +143,27 @@ var AboutProtectionsHandler = {
             }
           }
           dataToSend.largest = largest;
-          if (aMessage.target.browser) {
-            aMessage.target.sendAsyncMessage(
-              "SendContentBlockingRecords",
-              dataToSend
-            );
-          }
+          this.sendMessage(
+            aMessage.target,
+            "SendContentBlockingRecords",
+            dataToSend
+          );
         });
         break;
       case "FetchUserLoginsData":
-        aMessage.target.sendAsyncMessage(
+        this.sendMessage(
+          aMessage.target,
           "SendUserLoginsData",
-          this.getLoginData()
+          await this.getLoginData()
         );
+        break;
+      case "GetEnabledLockwiseCard":
+        const enabled = Services.prefs.getBoolPref(
+          this.PREF_LOCKWISE_CARD_ENABLED
+        );
+        this.sendMessage(aMessage.target, "SendEnabledLockWiseCardPref", {
+          isEnabled: enabled,
+        });
         break;
     }
   },

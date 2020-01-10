@@ -1615,6 +1615,9 @@ pref("browser.contentblocking.rejecttrackers.reportBreakage.enabled", true);
 pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-issues.herokuapp.com/new");
 
 
+pref("browser.contentblocking.report.lockwise.enabled", true);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.protections_panel.enabled", true);
 #endif

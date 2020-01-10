@@ -28,6 +28,9 @@ document.addEventListener("DOMContentLoaded", e => {
     RPMSendAsyncMessage("OpenContentBlockingPreferences");
   });
 
+  
+  RPMSendAsyncMessage("GetEnabledLockwiseCard");
+
   let createGraph = data => {
     
     
@@ -115,6 +118,14 @@ document.addEventListener("DOMContentLoaded", e => {
   });
 
   
-  const lockwiseCard = new LockwiseCard(document);
-  lockwiseCard.init();
+  RPMAddMessageListener("SendEnabledLockWiseCardPref", message => {
+    if (message.data.isEnabled) {
+      const lockwiseCard = new LockwiseCard(document);
+      lockwiseCard.init();
+    }
+
+    
+    const lockwiseUI = document.querySelector(".lockwise-card");
+    lockwiseUI.dataset.enabled = message.data.isEnabled;
+  });
 });

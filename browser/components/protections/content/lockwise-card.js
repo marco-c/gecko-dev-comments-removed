@@ -28,8 +28,13 @@ export default class LockwiseCard {
 
     RPMAddMessageListener("SendUserLoginsData", ({ data }) => {
       
-      
       this.buildContent(data);
+
+      
+      const lockwiseCard = this.doc.querySelector(
+        ".report-card.lockwise-card.hidden"
+      );
+      lockwiseCard.classList.remove("hidden");
     });
 
     
