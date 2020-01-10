@@ -165,6 +165,7 @@ public final class GeckoRuntime implements Parcelable {
     private final WebExtensionEventDispatcher mWebExtensionDispatcher;
     private StorageController mStorageController;
     private final WebExtensionController mWebExtensionController;
+    private WebPushController mPushController;
 
     private GeckoRuntime() {
         mWebExtensionDispatcher = new WebExtensionEventDispatcher();
@@ -646,6 +647,24 @@ public final class GeckoRuntime implements Parcelable {
             mStorageController = new StorageController();
         }
         return mStorageController;
+    }
+
+    
+
+
+
+
+
+
+    @UiThread
+    public @NonNull WebPushController getWebPushController() {
+        ThreadUtils.assertOnUiThread();
+
+        if (mPushController == null) {
+            mPushController = new WebPushController();
+        }
+
+        return mPushController;
     }
 
     @Override 
