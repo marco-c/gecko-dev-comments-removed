@@ -54,7 +54,7 @@ void CacheChild::ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
                            nsISupports* aParent, const CacheOpArgs& aArgs) {
   mNumChildActors += 1;
   MOZ_ALWAYS_TRUE(SendPCacheOpConstructor(
-      new CacheOpChild(GetWorkerHolder(), aGlobal, aParent, aPromise), aArgs));
+      new CacheOpChild(GetWorkerRef(), aGlobal, aParent, aPromise), aArgs));
 }
 
 void CacheChild::StartDestroyFromListener() {
@@ -108,7 +108,7 @@ void CacheChild::ActorDestroy(ActorDestroyReason aReason) {
     MOZ_DIAGNOSTIC_ASSERT(!mListener);
   }
 
-  RemoveWorkerHolder();
+  RemoveWorkerRef();
 }
 
 PCacheOpChild* CacheChild::AllocPCacheOpChild(const CacheOpArgs& aOpArgs) {

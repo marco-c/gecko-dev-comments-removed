@@ -9,7 +9,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/cache/ActorUtils.h"
 #include "mozilla/dom/cache/CacheTypes.h"
-#include "mozilla/dom/cache/CacheWorkerHolder.h"
+#include "mozilla/dom/cache/CacheWorkerRef.h"
 #include "mozilla/dom/cache/ReadStream.h"
 #include "mozilla/ipc/FileDescriptorSetChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
@@ -110,7 +110,7 @@ void CacheStreamControlChild::OpenStream(const nsID& aId,
   
   
   
-  RefPtr<CacheWorkerHolder> holder = GetWorkerHolder();
+  RefPtr<CacheWorkerRef> holder = GetWorkerRef();
 
   SendOpenStream(aId)->Then(
       GetCurrentThreadSerialEventTarget(), __func__,
@@ -145,7 +145,7 @@ void CacheStreamControlChild::AssertOwningThread() {
 void CacheStreamControlChild::ActorDestroy(ActorDestroyReason aReason) {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlChild);
   CloseAllReadStreamsWithoutReporting();
-  RemoveWorkerHolder();
+  RemoveWorkerRef();
 }
 
 mozilla::ipc::IPCResult CacheStreamControlChild::RecvClose(const nsID& aId) {
