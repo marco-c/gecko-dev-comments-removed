@@ -9,7 +9,7 @@
 #include "builtin/streams/TeeState.h"
 
 #include "builtin/Promise.h"  
-#include "builtin/Stream.h"   
+#include "builtin/streams/ReadableStream.h"  
 #include "js/Class.h"         
 #include "js/RootingAPI.h"    
 #include "vm/JSContext.h"     
