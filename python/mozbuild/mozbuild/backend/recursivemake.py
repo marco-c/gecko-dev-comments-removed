@@ -515,13 +515,16 @@ class RecursiveMakeBackend(CommonBackend):
             self._process_defines(obj, backend_file)
 
         elif isinstance(obj, GeneratedFile):
-            if obj.required_for_compile:
+            if obj.required_before_compile:
                 tier = 'export'
+            elif obj.required_during_compile:
+                tier = None
             elif obj.localized:
                 tier = 'libs'
             else:
                 tier = 'misc'
-            self._no_skip[tier].add(backend_file.relobjdir)
+            if tier:
+                self._no_skip[tier].add(backend_file.relobjdir)
 
             
             
@@ -586,8 +589,9 @@ class RecursiveMakeBackend(CommonBackend):
                 
                 
                 
-                if tier != 'export' or not self.environment.is_artifact_build:
-                    if not needs_AB_rCD:
+                if not (obj.required_before_compile or obj.required_during_compile) or \
+                        not self.environment.is_artifact_build:
+                    if tier and not needs_AB_rCD:
                         
                         
                         backend_file.write('%s:: %s\n' % (tier, stub_file))
