@@ -1312,6 +1312,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchLatin1String(Register string, Label* label);
   inline void branchTwoByteString(Register string, Label* label);
 
+  inline void branchIfNegativeBigInt(Register bigInt, Label* label);
+
   inline void branchTestFunctionFlags(Register fun, uint32_t flags,
                                       Condition cond, Label* label);
 
@@ -2542,10 +2544,22 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void addToCharPtr(Register chars, Register index, CharEncoding encoding);
 
+ private:
+  void loadBigIntDigits(Register bigInt, Register digits);
+
+ public:
   
 
 
   void loadBigInt64(Register bigInt, Register64 dest);
+
+  
+
+
+
+
+
+  void loadFirstBigIntDigitOrZero(Register bigInt, Register dest);
 
   
 
