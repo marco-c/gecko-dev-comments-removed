@@ -640,13 +640,28 @@ class HeapSize {
                   mozilla::recordreplay::Behavior::DontPreserve>
       gcBytes_;
 
+  
+
+
+
+
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      retainedBytes_;
+
  public:
   explicit HeapSize(HeapSize* parent) : parent_(parent), gcBytes_(0) {}
 
   size_t gcBytes() const { return gcBytes_; }
+  size_t retainedBytes() const { return retainedBytes_; }
+
+  void updateOnGCStart() { retainedBytes_ = size_t(gcBytes_); }
 
   void addGCArena() { addBytes(ArenaSize); }
-  void removeGCArena() { removeBytes(ArenaSize); }
+  void removeGCArena() {
+    MOZ_ASSERT(retainedBytes_ >= ArenaSize);
+    removeBytes(ArenaSize, true );
+  }
 
   void addBytes(size_t nbytes) {
     mozilla::DebugOnly<size_t> initialBytes(gcBytes_);
@@ -656,18 +671,26 @@ class HeapSize {
       parent_->addBytes(nbytes);
     }
   }
-  void removeBytes(size_t nbytes) {
+  void removeBytes(size_t nbytes, bool wasSwept) {
+    if (wasSwept) {
+      
+      
+      retainedBytes_ = nbytes <= retainedBytes_ ? retainedBytes_ - nbytes : 0;
+    }
     MOZ_ASSERT(gcBytes_ >= nbytes);
     gcBytes_ -= nbytes;
     if (parent_) {
-      parent_->removeBytes(nbytes);
+      parent_->removeBytes(nbytes, wasSwept);
     }
   }
 
   
-  void adopt(HeapSize& other) {
-    gcBytes_ += other.gcBytes_;
-    other.gcBytes_ = 0;
+  void adopt(HeapSize& source) {
+    
+    
+    gcBytes_ += source.gcBytes_;
+    source.retainedBytes_ = 0;
+    source.gcBytes_ = 0;
   }
 };
 

@@ -524,6 +524,12 @@ struct JSContext : public JS::RootingContext,
 
   js::ContextData<int32_t> suppressGC;
 
+  
+  
+  
+  
+  js::ContextData<bool> gcSweeping;
+
 #ifdef DEBUG
   
   js::ContextData<bool> ionCompiling;
@@ -537,12 +543,6 @@ struct JSContext : public JS::RootingContext,
   
   
   js::ContextData<bool> performingGC;
-
-  
-  
-  
-  
-  js::ContextData<bool> gcSweeping;
 
   
   js::ContextData<size_t> isTouchingGrayThings;
