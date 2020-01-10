@@ -10,7 +10,8 @@
 
 #include <stdint.h>  
 
-#include "builtin/streams/ClassSpecMacro.h"  
+#include "builtin/streams/ClassSpecMacro.h"           
+#include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/QueueWithSizes.h"  
 #include "gc/Heap.h"
 #include "js/ArrayBuffer.h"  
@@ -118,34 +119,6 @@ inline static MOZ_MUST_USE T* TargetFromHandler(CallArgs& args) {
   return &func.getExtendedSlot(StreamHandlerFunctionSlot_Target)
               .toObject()
               .as<T>();
-}
-
-inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
-                                             HandlePropertyName P,
-                                             HandleValue arg,
-                                             MutableHandleValue rval);
-
-static MOZ_MUST_USE JSObject* PromiseRejectedWithPendingError(JSContext* cx) {
-  RootedValue exn(cx);
-  if (!cx->isExceptionPending() || !GetAndClearException(cx, &exn)) {
-    
-    
-    
-    
-    return nullptr;
-  }
-  return PromiseObject::unforgeableReject(cx, exn);
-}
-
-static MOZ_MUST_USE bool ReturnPromiseRejectedWithPendingError(
-    JSContext* cx, const CallArgs& args) {
-  JSObject* promise = PromiseRejectedWithPendingError(cx);
-  if (!promise) {
-    return false;
-  }
-
-  args.rval().setObject(*promise);
-  return true;
 }
 
 #if 0  
@@ -431,12 +404,6 @@ ReadableStream* ReadableStream::createExternalSourceStream(
 
   return stream;
 }
-
-static MOZ_MUST_USE bool MakeSizeAlgorithmFromSizeFunction(JSContext* cx,
-                                                           HandleValue size);
-
-static MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
-    JSContext* cx, HandleValue highWaterMarkVal, double* highWaterMark);
 
 static MOZ_MUST_USE bool
 SetUpReadableStreamDefaultControllerFromUnderlyingSource(
@@ -1305,10 +1272,6 @@ static MOZ_MUST_USE bool ReadableStreamTee(
 
 
 
-inline static MOZ_MUST_USE bool AppendToListAtSlot(
-    JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot,
-    HandleObject obj);
-
 
 
 
@@ -1350,8 +1313,8 @@ static MOZ_MUST_USE JSObject* ReadableStreamAddReadOrReadIntoRequest(
   
   
   
-  if (!AppendToListAtSlot(cx, unwrappedReader,
-                          ReadableStreamReader::Slot_Requests, promise)) {
+  if (!AppendToListInFixedSlot(cx, unwrappedReader,
+                               ReadableStreamReader::Slot_Requests, promise)) {
     return nullptr;
   }
 
@@ -2476,9 +2439,6 @@ static const JSFunctionSpec ReadableStreamDefaultController_methods[] = {
 JS_STREAMS_CLASS_SPEC(ReadableStreamDefaultController, 0, SlotCount,
                       ClassSpec::DontDefineConstructor, 0, JS_NULL_CLASS_OPS);
 
-static MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx, HandleValue F,
-                                          HandleValue V, HandleValue arg);
-
 static void ReadableStreamControllerClearAlgorithms(
     Handle<ReadableStreamController*> controller);
 
@@ -3264,11 +3224,6 @@ static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
   return true;
 }
 
-static MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
-    JSContext* cx, HandleValue underlyingObject,
-    const char* methodNameForErrorMessage, HandlePropertyName methodName,
-    MutableHandleValue method);
-
 
 
 
@@ -3773,9 +3728,10 @@ static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
 
     
     
-    if (!AppendToListAtSlot(cx, unwrappedController,
-                            ReadableByteStreamController::Slot_PendingPullIntos,
-                            pullIntoDescriptor)) {
+    if (!AppendToListInFixedSlot(
+            cx, unwrappedController,
+            ReadableByteStreamController::Slot_PendingPullIntos,
+            pullIntoDescriptor)) {
       return nullptr;
     }
   }
@@ -4001,194 +3957,6 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerInvalidateBYOBRequest(
 
 
 
-
-
-
-
-
-
-inline static MOZ_MUST_USE bool AppendToListAtSlot(
-    JSContext* cx, HandleNativeObject unwrappedContainer, uint32_t slot,
-    HandleObject obj) {
-  Rooted<ListObject*> list(
-      cx, &unwrappedContainer->getFixedSlot(slot).toObject().as<ListObject>());
-
-  AutoRealm ar(cx, list);
-  RootedValue val(cx, ObjectValue(*obj));
-  if (!cx->compartment()->wrap(cx, &val)) {
-    return false;
-  }
-  return list->append(cx, val);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
-    JSContext* cx, HandleValue underlyingObject,
-    const char* methodNameForErrorMessage, HandlePropertyName methodName,
-    MutableHandleValue method) {
-  
-  MOZ_ASSERT(!underlyingObject.isUndefined());
-
-  
-  
-  
-
-  
-  if (!GetProperty(cx, underlyingObject, methodName, method)) {
-    return false;
-  }
-
-  
-  if (!method.isUndefined()) {
-    
-    
-    if (!IsCallable(method)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_NOT_FUNCTION, methodNameForErrorMessage);
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-
-  
-  
-  return true;
-}
-
-
-
-
-
-inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
-                                             HandlePropertyName P,
-                                             HandleValue arg,
-                                             MutableHandleValue rval) {
-  cx->check(O, P, arg);
-
-  
-  MOZ_ASSERT(!O.isUndefined());
-
-  
-  
-  
-  RootedValue method(cx);
-  if (!GetProperty(cx, O, P, &method)) {
-    return false;
-  }
-
-  
-  if (method.isUndefined()) {
-    return true;
-  }
-
-  
-  return Call(cx, method, O, arg, rval);
-}
-
-
-
-
-
-static MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx, HandleValue F,
-                                          HandleValue V, HandleValue arg) {
-  cx->check(F, V, arg);
-
-  
-  MOZ_ASSERT(IsCallable(F));
-
-  
-  MOZ_ASSERT(!V.isUndefined());
-
-  
-  
-  RootedValue rval(cx);
-  if (!Call(cx, F, V, arg, &rval)) {
-    
-    
-    return PromiseRejectedWithPendingError(cx);
-  }
-
-  
-  return PromiseObject::unforgeableResolve(cx, rval);
-}
-
-
-
-
-static MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
-    JSContext* cx, HandleValue highWaterMarkVal, double* highWaterMark) {
-  
-  if (!ToNumber(cx, highWaterMarkVal, highWaterMark)) {
-    return false;
-  }
-
-  
-  
-  if (mozilla::IsNaN(*highWaterMark) || *highWaterMark < 0) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_STREAM_INVALID_HIGHWATERMARK);
-    return false;
-  }
-
-  
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE bool MakeSizeAlgorithmFromSizeFunction(JSContext* cx,
-                                                           HandleValue size) {
-  
-  if (size.isUndefined()) {
-    
-    return true;
-  }
-
-  
-  if (!IsCallable(size)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_FUNCTION,
-                              "ReadableStream argument options.size");
-    return false;
-  }
-
-  
-  
-  
-  
-  return true;
-}
 
 
 
