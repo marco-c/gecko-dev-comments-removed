@@ -118,7 +118,11 @@ function init_all() {
       "preferences";
     helpButton.setAttribute("href", helpUrl);
 
-    document.getElementById("addonsButton").addEventListener("click", () => {
+    document.getElementById("addonsButton").addEventListener("click", e => {
+      if (e.button >= 2) {
+        
+        return;
+      }
       let mainWindow = window.docShell.rootTreeItem.domWindow;
       mainWindow.BrowserOpenAddonsMgr();
       AMTelemetry.recordLinkEvent({
