@@ -3271,6 +3271,14 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
                 scrollTargetNode->IsAncestorOf(aNode), nullptr);
           });
     }
+  } else if (IsFixedToRootContent(aNode)) {
+    ParentLayerPoint translation = ViewAs<ParentLayerPixel>(
+        AsyncCompositionManager::ComputeFixedMarginsOffset(
+            mFixedLayerMargins, aNode->GetFixedPosSides()),
+        PixelCastJustification::ScreenIsParentLayerForRoot);
+    return aNode->GetTransform() *
+           CompleteAsyncTransform(
+               AsyncTransformComponentMatrix::Translation(translation));
   }
   
   return aNode->GetTransform() * AsyncTransformMatrix();
