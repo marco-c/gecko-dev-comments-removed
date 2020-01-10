@@ -70,14 +70,41 @@ async function test_trailhead_branch(
 
 add_task(async function test_trailhead_branches() {
   await test_trailhead_branch(
-    "join-privacy",
+    "join-dynamic",
     
     [
       ".trailhead.joinCohort",
+      "button[data-l10n-id=onboarding-data-sync-button2]",
+      "button[data-l10n-id=onboarding-firefox-monitor-button]",
       "button[data-l10n-id=onboarding-browse-privately-button]",
-      "button[data-l10n-id=onboarding-tracking-protection-button2]",
-      "button[data-l10n-id=onboarding-lockwise-passwords-button2]",
     ]
+  );
+
+  
+  await pushPrefs(["services.sync.username", "someone@foo.com"]);
+  await test_trailhead_branch(
+    "join-dynamic",
+    
+    [
+      ".trailhead.joinCohort",
+      "button[data-l10n-id=onboarding-firefox-monitor-button]",
+      "button[data-l10n-id=onboarding-browse-privately-button]",
+    ],
+    
+    ["button[data-l10n-id=onboarding-data-sync-button2]"]
+  );
+
+  
+  await pushPrefs(["services.sync.clients.devices.mobile", 1]);
+  await test_trailhead_branch(
+    "join-dynamic",
+    
+    [
+      ".trailhead.joinCohort",
+      "button[data-l10n-id=onboarding-firefox-monitor-button]",
+    ],
+    
+    ["button[data-l10n-id=onboarding-mobile-phone-button"]
   );
 
   await test_trailhead_branch(
@@ -136,29 +163,6 @@ add_task(async function test_trailhead_branches() {
       "p[data-l10n-id=onboarding-benefit-products-text]",
       "button[data-l10n-id=onboarding-join-form-continue]",
       "button[data-l10n-id=onboarding-join-form-signin]",
-    ]
-  );
-
-  await test_trailhead_branch(
-    "cards-multidevice",
-    
-    [
-      "button[data-l10n-id=onboarding-mobile-phone-button]",
-      "button[data-l10n-id=onboarding-pocket-anywhere-button]",
-      "button[data-l10n-id=onboarding-send-tabs-button]",
-    ],
-    
-    ["#trailheadDialog"]
-  );
-
-  await test_trailhead_branch(
-    "join-payoff",
-    
-    [
-      ".trailhead.joinCohort",
-      "button[data-l10n-id=onboarding-firefox-monitor-button]",
-      "button[data-l10n-id=onboarding-facebook-container-button]",
-      "button[data-l10n-id=onboarding-firefox-send-button]",
     ]
   );
 

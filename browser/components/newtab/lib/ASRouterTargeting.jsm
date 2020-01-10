@@ -224,6 +224,18 @@ const QueryCache = {
 
 
 
+function sortMessagesByOrder(messages) {
+  return messages.sort((a, b) => a.order - b.order);
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -462,7 +474,18 @@ const TargetingGetters = {
     return TrackingDBService.sumAllEvents();
   },
   get attachedFxAOAuthClients() {
-    return this.usesFirefoxSync ? fxAccounts.listAttachedOAuthClients() : [];
+    
+    
+    return this.usesFirefoxSync
+      ? new Promise(resolve => {
+          fxAccounts
+            .listAttachedOAuthClients()
+            .then(clients => {
+              resolve(clients);
+            })
+            .catch(() => resolve([]));
+        })
+      : [];
   },
   get platformName() {
     return AppConstants.platform;
@@ -568,8 +591,10 @@ this.ASRouterTargeting = {
     return result;
   },
 
-  _getSortedMessages(messages) {
-    const weightSortedMessages = sortMessagesByWeightedRank([...messages]);
+  _getSortedMessages(messages, ordered) {
+    const weightSortedMessages = ordered
+      ? sortMessagesByOrder(messages)
+      : sortMessagesByWeightedRank([...messages]);
     const sortedMessages = sortMessagesByTargeting(weightSortedMessages);
     return sortMessagesByPriority(sortedMessages);
   },
@@ -601,8 +626,15 @@ this.ASRouterTargeting = {
 
 
 
-  async findMatchingMessage({ messages, trigger, context, onError }) {
-    const sortedMessages = this._getSortedMessages(messages);
+
+  async findMatchingMessage({
+    messages,
+    trigger,
+    context,
+    onError,
+    ordered = false,
+  }) {
+    const sortedMessages = this._getSortedMessages(messages, ordered);
     const combinedContext = this._getCombinedContext(trigger, context);
 
     for (const candidate of sortedMessages) {
@@ -625,8 +657,15 @@ this.ASRouterTargeting = {
 
 
 
-  async findAllMatchingMessages({ messages, trigger, context, onError }) {
-    const sortedMessages = this._getSortedMessages(messages);
+
+  async findAllMatchingMessages({
+    messages,
+    trigger,
+    context,
+    onError,
+    ordered = false,
+  }) {
+    const sortedMessages = this._getSortedMessages(messages, ordered);
     const combinedContext = this._getCombinedContext(trigger, context);
     const matchingMessages = [];
 
