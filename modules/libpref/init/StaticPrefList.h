@@ -4925,6 +4925,19 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
+
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "media.eme.encrypted-media-encryption-scheme.enabled",
+  media_eme_encrypted_media_encryption_scheme_enabled,
+  bool, false
+)
+
 VARCACHE_PREF(
   Live,
   "media.clearkey.persistent-license.enabled",
