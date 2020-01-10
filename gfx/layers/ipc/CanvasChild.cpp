@@ -201,7 +201,7 @@ void CanvasChild::EndTransaction() {
 
 bool CanvasChild::ShouldBeCleanedUp() const {
   
-  if (!mRecorder->IsEmpty()) {
+  if (!mRecorder->hasOneRef()) {
     return false;
   }
 

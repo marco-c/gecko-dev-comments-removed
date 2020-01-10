@@ -51,11 +51,6 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
     mStoredSurfaces.clear();
   }
 
-  bool IsEmpty() {
-    
-    return mStoredObjects.empty() && mScaledFonts.empty();
-  }
-
   void ClearResources() {
     mStoredObjects.clear();
     mStoredFontData.clear();
