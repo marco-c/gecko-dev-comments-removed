@@ -10,6 +10,13 @@ const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { PrivateBrowsingUtils } = ChromeUtils.import(
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
+const { SessionStore } = ChromeUtils.import(
+  "resource:///modules/sessionstore/SessionStore.jsm"
+);
+const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "BrowserUtils",
@@ -19,10 +26,11 @@ ChromeUtils.defineModuleGetter(
 var AboutNetErrorHandler = {
   _inited: false,
   _topics: [
+    "Browser:EnableOnlineMode",
     "Browser:OpenCaptivePortalPage",
     "Browser:PrimeMitm",
     "Browser:ResetEnterpriseRootsPref",
-    "RecordCertErrorLoad",
+    "Browser:SSLErrorGoBack",
   ],
 
   init() {
@@ -64,6 +72,11 @@ var AboutNetErrorHandler = {
 
   receiveMessage(msg) {
     switch (msg.name) {
+      case "Browser:EnableOnlineMode":
+        
+        Services.io.offline = false;
+        msg.target.browser.reload();
+        break;
       case "Browser:OpenCaptivePortalPage":
         Services.obs.notifyObservers(null, "ensure-captive-portal-tab");
         break;
@@ -74,19 +87,48 @@ var AboutNetErrorHandler = {
         Services.prefs.clearUserPref("security.enterprise_roots.enabled");
         Services.prefs.clearUserPref("security.enterprise_roots.auto-enabled");
         break;
-      case "RecordCertErrorLoad":
-        Services.telemetry.recordEvent(
-          "security.ui.certerror",
-          "load",
-          "aboutcerterror",
-          msg.data.errorCode,
-          {
-            has_sts: msg.data.has_sts.toString(),
-            is_frame: msg.data.is_frame.toString(),
-          }
-        );
+      case "Browser:SSLErrorGoBack":
+        this.goBackFromErrorPage(msg.target.browser.ownerGlobal);
         break;
     }
+  },
+
+  
+
+
+
+
+
+
+
+  goBackFromErrorPage(win) {
+    let state = JSON.parse(SessionStore.getTabState(win.gBrowser.selectedTab));
+    if (state.index == 1) {
+      
+      
+      win.gBrowser.loadURI(this.getDefaultHomePage(win), {
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+    } else {
+      win.gBrowser.goBack();
+    }
+  },
+
+  
+
+
+
+  getDefaultHomePage(win) {
+    let url = win.BROWSER_NEW_TAB_URL;
+    if (PrivateBrowsingUtils.isWindowPrivate(win)) {
+      return url;
+    }
+    url = HomePage.getDefault();
+    
+    if (url.includes("|")) {
+      url = url.split("|")[0];
+    }
+    return url;
   },
 
   

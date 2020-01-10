@@ -41,19 +41,7 @@ function isCaptive() {
 }
 
 function retryThis(buttonEl) {
-  
-  
-
-  
-  
-  
-  try {
-    location.reload();
-  } catch (e) {
-    
-    
-  }
-
+  RPMSendAsyncMessage("Browser:EnableOnlineMode");
   buttonEl.disabled = true;
 }
 
@@ -409,19 +397,36 @@ function initPageCertError() {
     document.querySelector(".exceptionDialogButtonContainer").hidden = true;
   }
 
-  let failedCertInfo = document.getFailedCertSecurityInfo();
-  RPMSendAsyncMessage("RecordCertErrorLoad", {
-    
-    errorCode: failedCertInfo.errorCodeString.substring(0, 40),
-    has_sts: getCSSClass() == "badStsCert",
-    is_frame: window.parent != window,
-  });
-
-  let certErrorButtons = ["advancedButton", "copyToClipboard"];
-  for (let button of certErrorButtons) {
-    let elem = document.getElementById(button);
-    elem.addEventListener("click", onClickHandler);
+  let els = document.querySelectorAll("[data-telemetry-id]");
+  for (let el of els) {
+    el.addEventListener("click", recordClickTelemetry);
   }
+
+  document
+    .getElementById("returnButton")
+    .addEventListener("click", onReturnButtonClick);
+  document
+    .getElementById("advancedPanelReturnButton")
+    .addEventListener("click", onReturnButtonClick);
+  document
+    .getElementById("copyToClipboardTop")
+    .addEventListener("click", copyPEMToClipboard);
+  document
+    .getElementById("copyToClipboardBottom")
+    .addEventListener("click", copyPEMToClipboard);
+
+  let failedCertInfo = document.getFailedCertSecurityInfo();
+  let errorCode = failedCertInfo.errorCodeString.substring(0, 40);
+  RPMRecordTelemetryEvent(
+    "security.ui.certerror",
+    "load",
+    "aboutcerterror",
+    errorCode,
+    {
+      has_sts: (getCSSClass() == "badStsCert").toString(),
+      is_frame: (window.parent != window).toString(),
+    }
+  );
 
   setCertErrorDetails();
   setTechnicalDetailsOnCertError();
@@ -431,19 +436,33 @@ function initPageCertError() {
   document.dispatchEvent(event);
 }
 
-async function onClickHandler(e) {
-  switch (e.target.id) {
-    case "advancedButton":
-      setCertErrorDetails();
-      break;
-    case "copyToClipboard":
-      let details = await getCertErrorInfo();
-      navigator.clipboard.writeText(details);
-      break;
-  }
+function recordClickTelemetry(e) {
+  let target = e.originalTarget;
+  let telemetryId = target.dataset.telemetryId;
+  let failedCertInfo = document.getFailedCertSecurityInfo();
+  let errorCode = failedCertInfo.errorCodeString.substring(0, 40);
+  RPMRecordTelemetryEvent(
+    "security.ui.certerror",
+    "click",
+    telemetryId,
+    errorCode,
+    {
+      has_sts: (getCSSClass() == "badStsCert").toString(),
+      is_frame: (window.parent != window).toString(),
+    }
+  );
 }
 
-async function getCertErrorInfo() {
+function onReturnButtonClick(e) {
+  RPMSendAsyncMessage("Browser:SSLErrorGoBack");
+}
+
+async function copyPEMToClipboard(e) {
+  let details = await getFailedCertificatesAsPEMString();
+  navigator.clipboard.writeText(details);
+}
+
+async function getFailedCertificatesAsPEMString() {
   let location = document.location.href;
   let failedCertInfo = document.getFailedCertSecurityInfo();
   let errorMessage = failedCertInfo.errorMessage;
@@ -502,7 +521,7 @@ async function setCertErrorDetails(event) {
   }
 
   let div = document.getElementById("certificateErrorText");
-  div.textContent = await getCertErrorInfo();
+  div.textContent = await getFailedCertificatesAsPEMString();
   let learnMoreLink = document.getElementById("learnMoreLink");
   let baseURL = RPMGetFormatURLPref("app.support.baseURL");
   learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
@@ -968,6 +987,7 @@ function handleErrorCodeClick(event) {
   let debugInfo = document.getElementById("certificateErrorDebugInformation");
   debugInfo.style.display = "block";
   debugInfo.scrollIntoView({ block: "start", behavior: "smooth" });
+  recordClickTelemetry(event);
 }
 
 
