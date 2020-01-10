@@ -1403,6 +1403,13 @@ Element* TextServicesDocument::GetDocumentContentRootNode() const {
   }
 
   if (mDocument->IsHTMLOrXHTML()) {
+    Element* rootElement = mDocument->GetRootElement();
+    if (rootElement && rootElement->IsXULElement()) {
+      
+      
+      
+      return mDocument->GetDocumentElement();
+    }
     
     return mDocument->GetBody();
   }
