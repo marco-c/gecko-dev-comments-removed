@@ -191,7 +191,7 @@ var ensureKnownRegion = async function(ss) {
 
 
 
-function storeRegion(region) {
+async function storeRegion(region) {
   let isTimezoneUS = isUSTimezone();
   
   
@@ -214,7 +214,7 @@ function storeRegion(region) {
   }
   
   
-  let platformCC = Services.sysinfo.get("countryCode");
+  let platformCC = await Services.sysinfo.countryCode;
   if (platformCC) {
     let probeUSMismatched, probeNonUSMismatched;
     switch (Services.appinfo.OS) {
@@ -300,7 +300,7 @@ function fetchRegion(ss) {
       
       
       if (result) {
-        storeRegion(result);
+        storeRegion(result).catch(Cu.reportError);
       }
       Services.telemetry
         .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT")
