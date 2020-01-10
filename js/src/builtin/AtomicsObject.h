@@ -18,15 +18,11 @@
 
 namespace js {
 
-class GlobalObject;
 class SharedArrayRawBuffer;
 
 class AtomicsObject : public NativeObject {
  public:
   static const JSClass class_;
-  static JSObject* initClass(JSContext* cx, Handle<GlobalObject*> global);
-  static MOZ_MUST_USE bool toString(JSContext* cx, unsigned int argc,
-                                    Value* vp);
 };
 
 MOZ_MUST_USE bool atomics_compareExchange(JSContext* cx, unsigned argc,
@@ -140,8 +136,6 @@ class FutexThread {
   
   ThreadData<bool> canWait_;
 };
-
-JSObject* InitAtomicsClass(JSContext* cx, Handle<GlobalObject*> global);
 
 
 MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
