@@ -4968,12 +4968,6 @@ pref("dom.vr.display.rafMaxDuration", 50);
 
 
 
-
-pref("ui.touch_activation.delay_ms", 100);
-
-
-
-
 pref("ui.touch_activation.duration_ms", 10);
 
 
