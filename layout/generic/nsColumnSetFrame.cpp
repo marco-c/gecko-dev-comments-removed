@@ -305,12 +305,17 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   
   nscoord computedBSize =
       GetEffectiveComputedBSize(aReflowInput, consumedBSize);
-  nscoord colBSize = GetAvailableContentBSize(aReflowInput);
 
-  if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-    colBSize = aReflowInput.ComputedBSize();
-  } else if (aReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
-    colBSize = std::min(colBSize, aReflowInput.ComputedMaxBSize());
+  nscoord colBSize;
+  if (StaticPrefs::layout_css_column_span_enabled()) {
+    colBSize = aReflowInput.AvailableBSize();
+  } else {
+    colBSize = GetAvailableContentBSize(aReflowInput);
+    if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
+      colBSize = aReflowInput.ComputedBSize();
+    } else if (aReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
+      colBSize = std::min(colBSize, aReflowInput.ComputedMaxBSize());
+    }
   }
 
   nscoord colGap =
