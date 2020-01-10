@@ -2648,8 +2648,7 @@ class CompartmentPrivate {
 
     
     return !wantXrays && !isWebExtensionContentScript &&
-           !isContentXBLCompartment && !isUAWidgetCompartment &&
-           !universalXPConnectEnabled &&
+           !isUAWidgetCompartment && !universalXPConnectEnabled &&
            mScope->XBLScopeStateMatches(principal);
   }
 
@@ -2676,10 +2675,6 @@ class CompartmentPrivate {
   
   
   bool allowCPOWs;
-
-  
-  
-  bool isContentXBLCompartment;
 
   
   bool isUAWidgetCompartment;

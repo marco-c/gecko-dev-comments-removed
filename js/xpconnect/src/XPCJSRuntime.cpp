@@ -197,7 +197,6 @@ CompartmentPrivate::CompartmentPrivate(
       allowWaivers(true),
       isWebExtensionContentScript(false),
       allowCPOWs(false),
-      isContentXBLCompartment(false),
       isUAWidgetCompartment(false),
       hasExclusiveExpandos(false),
       universalXPConnectEnabled(false),
@@ -498,11 +497,7 @@ Scriptability& Scriptability::Get(JSObject* aScope) {
   return RealmPrivate::Get(aScope)->scriptability;
 }
 
-bool IsContentXBLCompartment(JS::Compartment* compartment) {
-  
-  CompartmentPrivate* priv = CompartmentPrivate::Get(compartment);
-  return priv && priv->isContentXBLCompartment;
-}
+bool IsContentXBLCompartment(JS::Compartment* compartment) { return false; }
 
 bool IsContentXBLScope(JS::Realm* realm) {
   return IsContentXBLCompartment(JS::GetCompartmentForRealm(realm));
