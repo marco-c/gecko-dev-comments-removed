@@ -7,6 +7,7 @@
 #include "DOMSecurityManager.h"
 #include "nsCSPContext.h"
 #include "nsContentSecurityUtils.h"
+#include "mozilla/dom/FramingChecker.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 
 #include "nsIMultiPartChannel.h"
@@ -83,7 +84,17 @@ DOMSecurityManager::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
 
-  nsresult rv = ParseCSPAndEnforceFrameAncestorCheck(channel);
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsresult rv =
+      ParseCSPAndEnforceFrameAncestorCheck(channel, getter_AddRefs(csp));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  
+  rv = EnforeXFrameOptionsCheck(channel, csp);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -92,7 +103,7 @@ DOMSecurityManager::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 nsresult DOMSecurityManager::ParseCSPAndEnforceFrameAncestorCheck(
-    nsIChannel* aChannel) {
+    nsIChannel* aChannel, nsIContentSecurityPolicy** aOutCSP) {
   MOZ_ASSERT(aChannel);
 
   
@@ -176,5 +187,19 @@ nsresult DOMSecurityManager::ParseCSPAndEnforceFrameAncestorCheck(
     aChannel->Cancel(NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION);
   }
 
+  
+  csp.forget(aOutCSP);
+
+  return NS_OK;
+}
+
+nsresult DOMSecurityManager::EnforeXFrameOptionsCheck(
+    nsIChannel* aChannel, nsIContentSecurityPolicy* aCsp) {
+  MOZ_ASSERT(aChannel);
+
+  if (!FramingChecker::CheckFrameOptions(aChannel, aCsp)) {
+    
+    aChannel->Cancel(NS_ERROR_XFO_VIOLATION);
+  }
   return NS_OK;
 }

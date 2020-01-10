@@ -6,6 +6,8 @@
 
 
 
+
+
 add_task(async function test() {
   
   
@@ -20,67 +22,81 @@ add_task(async function test() {
     { gBrowser, url: "about:plugins" },
     async function(newBrowser) {
       
-      await ContentTask.spawn(newBrowser, null, testXFOFrameInChrome);
+      
+      await ContentTask.spawn(newBrowser, null, async function() {
+        
+        
+        var deferred = {};
+        deferred.promise = new Promise(resolve => {
+          deferred.resolve = resolve;
+        });
+
+        var frame = content.document.createElement("iframe");
+        frame.src =
+          "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
+        frame.addEventListener(
+          "load",
+          function() {
+            
+            var testFrame = this.contentDocument.getElementById("test");
+            is(testFrame.tagName, "H1", "wrong element type");
+            is(testFrame.textContent, "deny", "wrong textContent");
+            deferred.resolve();
+          },
+          { capture: true, once: true }
+        );
+        content.document.body.appendChild(frame);
+        return deferred.promise;
+      });
 
       
+      
+      var observerDeferred = {};
+      observerDeferred.promise = new Promise(resolve => {
+        observerDeferred.resolve = resolve;
+      });
+
+      SpecialPowers.registerObservers("xfo-on-violate-policy");
+
+      function examiner() {
+        SpecialPowers.addObserver(this, "specialpowers-xfo-on-violate-policy");
+      }
+      examiner.prototype = {
+        observe(subject, topic, data) {
+          var asciiSpec = SpecialPowers.getPrivilegedProps(
+            SpecialPowers.do_QueryInterface(subject, "nsIURI"),
+            "asciiSpec"
+          );
+          is(
+            asciiSpec,
+            "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny",
+            "correct subject"
+          );
+          is(topic, "specialpowers-xfo-on-violate-policy", "correct topic");
+          is(data, "DENY", "correct data");
+
+          myExaminer.remove();
+          observerDeferred.resolve();
+        },
+        remove() {
+          SpecialPowers.removeObserver(
+            this,
+            "specialpowers-xfo-on-violate-policy"
+          );
+        },
+      };
+      let myExaminer = new examiner();
+
       await BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
       await BrowserTestUtils.browserLoaded(newBrowser);
 
-      await ContentTask.spawn(newBrowser, null, testXFOFrameInContent);
+      await ContentTask.spawn(newBrowser, null, function() {
+        var frame = content.document.createElement("iframe");
+        frame.src =
+          "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
+        content.document.body.appendChild(frame);
+      });
+      await observerDeferred.promise;
     }
   );
 });
-
-function testXFOFrameInChrome() {
-  
-  
-  var deferred = {};
-  deferred.promise = new Promise(resolve => {
-    deferred.resolve = resolve;
-  });
-
-  var frame = content.document.createElement("iframe");
-  frame.src =
-    "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
-  frame.addEventListener(
-    "load",
-    function() {
-      
-      var test = this.contentDocument.getElementById("test");
-      is(test.tagName, "H1", "wrong element type");
-      is(test.textContent, "deny", "wrong textContent");
-      deferred.resolve();
-    },
-    { capture: true, once: true }
-  );
-
-  content.document.body.appendChild(frame);
-  return deferred.promise;
-}
-
-function testXFOFrameInContent() {
-  
-  
-  var deferred = {};
-  deferred.promise = new Promise(resolve => {
-    deferred.resolve = resolve;
-  });
-
-  var frame = content.document.createElement("iframe");
-  frame.src =
-    "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
-  frame.addEventListener(
-    "load",
-    function() {
-      
-      var test = this.contentDocument.getElementById("test");
-      Assert.equal(test, null, "should be about:blank");
-
-      deferred.resolve();
-    },
-    { capture: true, once: true }
-  );
-
-  content.document.body.appendChild(frame);
-  return deferred.promise;
-}
