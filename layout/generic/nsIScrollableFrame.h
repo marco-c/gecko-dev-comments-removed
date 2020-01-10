@@ -71,7 +71,16 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+
+
+
   virtual mozilla::ScrollStyles GetScrollStyles() const = 0;
+
+  
+
+
+  virtual mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
+      const = 0;
 
   enum { HORIZONTAL = 0x01, VERTICAL = 0x02 };
   

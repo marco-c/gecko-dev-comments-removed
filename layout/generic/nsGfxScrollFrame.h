@@ -62,6 +62,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   ~ScrollFrameHelper();
 
   mozilla::ScrollStyles GetScrollStylesFromFrame() const;
+  mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo() const;
 
   
   
@@ -874,6 +875,10 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   virtual mozilla::ScrollStyles GetScrollStyles() const override {
     return mHelper.GetScrollStylesFromFrame();
   }
+  virtual mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
+      const override {
+    return mHelper.GetOverscrollBehaviorInfo();
+  }
   virtual uint32_t GetScrollbarVisibility() const override {
     return mHelper.GetScrollbarVisibility();
   }
@@ -1361,6 +1366,10 @@ class nsXULScrollFrame final : public nsBoxFrame,
   }
   virtual mozilla::ScrollStyles GetScrollStyles() const override {
     return mHelper.GetScrollStylesFromFrame();
+  }
+  virtual mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
+      const override {
+    return mHelper.GetOverscrollBehaviorInfo();
   }
   virtual uint32_t GetScrollbarVisibility() const override {
     return mHelper.GetScrollbarVisibility();

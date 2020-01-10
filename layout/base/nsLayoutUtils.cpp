@@ -9006,10 +9006,8 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
     }
 
     metadata.SetSnapInfo(scrollableFrame->GetScrollSnapInfo());
-
-    ScrollStyles scrollStyles = scrollableFrame->GetScrollStyles();
-    metadata.SetOverscrollBehavior(OverscrollBehaviorInfo::FromStyleConstants(
-        scrollStyles.mOverscrollBehaviorX, scrollStyles.mOverscrollBehaviorY));
+    metadata.SetOverscrollBehavior(
+        scrollableFrame->GetOverscrollBehaviorInfo());
   }
 
   
