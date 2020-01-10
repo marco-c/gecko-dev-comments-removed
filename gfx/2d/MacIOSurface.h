@@ -137,6 +137,9 @@ class MacIOSurface final
     mColorSpace = aColorSpace;
   }
   mozilla::gfx::YUVColorSpace GetYUVColorSpace() const { return mColorSpace; }
+  bool IsFullRange() const {
+    return GetPixelFormat() == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange;
+  }
 
   
   
