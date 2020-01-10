@@ -220,7 +220,9 @@ class Base(unittest.TestCase):
         self._temp_files.append(test_defaults)
 
         rv = TestMetadata(all_tests.name, "/firefox/", test_defaults=test_defaults.name)
-        rv._wpt_loaded = True  
+        
+        rv._wpt_loaded = True
+        rv._puppeteer_loaded = True
         return rv
 
 
