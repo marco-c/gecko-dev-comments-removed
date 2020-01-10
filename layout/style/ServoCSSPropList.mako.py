@@ -69,10 +69,6 @@ LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     "column-rule-width",
 
     
-    "grid-auto-columns",
-    "grid-auto-rows",
-
-    
     "max-block-size",
     "max-height",
     "max-inline-size",
