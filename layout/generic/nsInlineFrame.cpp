@@ -756,8 +756,7 @@ nsIFrame* nsInlineFrame::PullOneFrame(nsPresContext* aPresContext,
         
         
         
-        ReparentFloatsForInlineChild(irs.mLineContainer, frame, false,
-                                     ReparentingDirection::Backwards);
+        ReparentFloatsForInlineChild(irs.mLineContainer, frame, false);
       }
       nextInFlow->mFrames.RemoveFirstChild();
       
