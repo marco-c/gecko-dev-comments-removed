@@ -32,13 +32,6 @@ class PrintPreviewUserEventSuppressor;
 
 
 
-
-
-
-
-
-
-
 class nsPrintData {
   typedef mozilla::PrintPreviewUserEventSuppressor
       PrintPreviewUserEventSuppressor;
@@ -77,9 +70,8 @@ class nsPrintData {
   bool mIsIFrameSelected;
   bool mIsParentAFrameSet;
   bool mOnStartSent;
-  bool mIsAborted;            
-  bool mPreparingForPrint;    
-  bool mDocWasToBeDestroyed;  
+  bool mIsAborted;          
+  bool mPreparingForPrint;  
   bool mShrinkToFit;
   int32_t mNumPrintablePages;
   int32_t mNumPagesPrinted;
