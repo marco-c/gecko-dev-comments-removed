@@ -6370,35 +6370,57 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
   
   
   
+  if (RefPtr<DocumentChannelChild> docChannel = do_QueryObject(aOldChannel)) {
+    nsCOMPtr<nsIURI> previousURI;
+    uint32_t previousFlags = 0;
+    ExtractLastVisit(aOldChannel, getter_AddRefs(previousURI), &previousFlags);
 
-  
-  nsCOMPtr<nsIURI> previousURI;
-  uint32_t previousFlags = 0;
-  ExtractLastVisit(aOldChannel, getter_AddRefs(previousURI), &previousFlags);
-
-  if (aRedirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL ||
-      ChannelIsPost(aOldChannel)) {
-    
-    
-    
-    
-    
-    
+    for (auto redirect : docChannel->GetRedirectChain()) {
+      if (!redirect.isPost()) {
+        AddURIVisit(redirect.uri(), previousURI, previousFlags,
+                    redirect.responseStatus());
+        previousURI = redirect.uri();
+        previousFlags = redirect.redirectFlags();
+      }
+    }
     SaveLastVisit(aNewChannel, previousURI, previousFlags);
   } else {
     
-    uint32_t responseStatus = 0;
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aOldChannel);
-    if (httpChannel) {
-      Unused << httpChannel->GetResponseStatus(&responseStatus);
+    
+    
+    
+    
+    
+
+    
+    nsCOMPtr<nsIURI> previousURI;
+    uint32_t previousFlags = 0;
+    ExtractLastVisit(aOldChannel, getter_AddRefs(previousURI), &previousFlags);
+
+    if (aRedirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL ||
+        ChannelIsPost(aOldChannel)) {
+      
+      
+      
+      
+      
+      
+      SaveLastVisit(aNewChannel, previousURI, previousFlags);
+    } else {
+      
+      uint32_t responseStatus = 0;
+      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aOldChannel);
+      if (httpChannel) {
+        Unused << httpChannel->GetResponseStatus(&responseStatus);
+      }
+
+      
+      AddURIVisit(oldURI, previousURI, previousFlags, responseStatus);
+
+      
+      
+      SaveLastVisit(aNewChannel, oldURI, aRedirectFlags);
     }
-
-    
-    AddURIVisit(oldURI, previousURI, previousFlags, responseStatus);
-
-    
-    
-    SaveLastVisit(aNewChannel, oldURI, aRedirectFlags);
   }
 
   

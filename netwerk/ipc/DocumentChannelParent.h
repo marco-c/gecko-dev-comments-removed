@@ -191,6 +191,8 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
 
   RefPtr<mozilla::dom::BrowserParent> mBrowserParent;
 
+  nsTArray<DocumentChannelRedirect> mRedirects;
+
   
   
   
@@ -207,8 +209,6 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
   
   
   bool mOldApplyConversion = false;
-  
-  bool mDidUpstreamRedirect = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentChannelParent,
