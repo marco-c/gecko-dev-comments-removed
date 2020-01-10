@@ -298,7 +298,14 @@ var webrtcUI = {
         break;
       }
       case "webrtc:Request":
-        prompt(aMessage.target, aMessage.data);
+        if (aMessage.target.fxrPermissionPrompt) {
+          
+          
+          
+          aMessage.target.fxrPermissionPrompt(aMessage.data);
+        } else {
+          prompt(aMessage.target, aMessage.data);
+        }
         break;
       case "webrtc:StopRecording":
         stopRecording(aMessage.target, aMessage.data);

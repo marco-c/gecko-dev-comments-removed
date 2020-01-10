@@ -6,6 +6,7 @@
 
 
 
+
 let homeURL = "https://webxr.today/";
 
 let privacyPolicyURL = "https://www.mozilla.org/en-US/privacy/firefox/";
@@ -15,6 +16,12 @@ let licenseURL =
 
 
 let browser = null;
+
+
+let currentPermissionRequest = null;
+
+
+let pendingPermissionRequests = [];
 
 
 let urlInput = null;
@@ -78,6 +85,10 @@ function setupBrowser() {
     browser.loadUrlWithSystemPrincipal = function(url) {
       this.loadURI(url, { triggeringPrincipal: gSystemPrincipal });
     };
+
+    
+    
+    browser.fxrPermissionPrompt = permissionPrompt;
 
     urlInput.value = homeURL;
     browser.loadUrlWithSystemPrincipal(homeURL);
@@ -203,6 +214,10 @@ function setupUrlBar() {
   });
 }
 
+
+
+
+
 function openSettings() {
   let browserSettingsUI = document.createXULElement("browser");
   browserSettingsUI.setAttribute("type", "chrome");
@@ -232,4 +247,36 @@ function showLicenseInfo() {
 function showReportIssue() {
   closeSettings();
   browser.loadUrlWithSystemPrincipal(reportIssueURL);
+}
+
+
+
+
+
+function permissionPrompt(aRequest) {
+  let newPrompt;
+  if (aRequest instanceof Ci.nsIContentPermissionRequest) {
+    newPrompt = new FxrContentPrompt(aRequest, this, finishPrompt);
+  } else {
+    newPrompt = new FxrWebRTCPrompt(aRequest, this, finishPrompt);
+  }
+
+  if (currentPermissionRequest) {
+    
+    
+    pendingPermissionRequests.push(newPrompt);
+  } else {
+    currentPermissionRequest = newPrompt;
+    currentPermissionRequest.showPrompt();
+  }
+}
+
+function finishPrompt() {
+  if (pendingPermissionRequests.length) {
+    
+    currentPermissionRequest = pendingPermissionRequests.shift();
+    currentPermissionRequest.showPrompt();
+  } else {
+    currentPermissionRequest = null;
+  }
 }

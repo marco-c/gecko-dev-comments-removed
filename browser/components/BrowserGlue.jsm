@@ -4105,6 +4105,14 @@ ContentPermissionPrompt.prototype = {
 
 
   prompt(request) {
+    if (request.element && request.element.fxrPermissionPrompt) {
+      
+      
+      
+      request.element.fxrPermissionPrompt(request);
+      return;
+    }
+
     let type;
     try {
       
