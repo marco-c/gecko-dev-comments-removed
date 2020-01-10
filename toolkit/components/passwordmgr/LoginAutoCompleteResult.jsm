@@ -405,6 +405,10 @@ LoginAutoComplete.prototype = {
 
   startSearch(aSearchString, aPreviousResult, aElement, aCallback) {
     let { isNullPrincipal } = aElement.nodePrincipal;
+    if (aElement.nodePrincipal.schemeIs("about")) {
+      
+      return;
+    }
     
     let isSecure = !isNullPrincipal;
     
