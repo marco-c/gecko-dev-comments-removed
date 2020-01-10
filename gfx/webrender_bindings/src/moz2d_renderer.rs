@@ -380,7 +380,7 @@ impl<'a> CachedReader<'a> {
 
 
 
-fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u8> {
+fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], mut dirty_rect: Box2d) -> Vec<u8> {
 
     let mut result = BlobWriter::new();
     dlog!("dirty rect: {:?}", dirty_rect);
@@ -394,6 +394,11 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u
 
     
     assert_eq!(old_reader.reader.origin, new_reader.origin);
+
+    dirty_rect.x1 += new_reader.origin.x;
+    dirty_rect.y1 += new_reader.origin.y;
+    dirty_rect.x2 += new_reader.origin.x;
+    dirty_rect.y2 += new_reader.origin.y;
 
     
     
@@ -548,8 +553,9 @@ fn rasterize_blob(job: Job) -> (BlobImageRequest, BlobImageResult) {
     let result = unsafe {
         if wr_moz2d_render_cb(
             ByteSlice::new(&job.commands[..]),
+            descriptor.rect.size.width,
+            descriptor.rect.size.height,
             descriptor.format,
-            &descriptor.rect,
             &job.visible_rect,
             job.tile_size.as_ref(),
             job.request.tile.as_ref(),

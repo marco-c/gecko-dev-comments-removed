@@ -380,6 +380,10 @@ impl ClipNodeInfo {
                         rect.size,
                     );
 
+                    
+                    
+                    let device_image_rect = DeviceIntRect::from_size(props.descriptor.size);
+
                     for Repetition { origin, .. } in repetitions {
                         let layout_image_rect = LayoutRect {
                             origin,
@@ -388,7 +392,7 @@ impl ClipNodeInfo {
                         let tiles = image::tiles(
                             &layout_image_rect,
                             &visible_rect,
-                            &props.visible_rect,
+                            &device_image_rect,
                             tile_size as i32,
                         );
                         for tile in tiles {
