@@ -175,24 +175,25 @@ void DocumentL10n::TriggerInitialDocumentTranslation() {
       
       
       mReady->MaybeResolveWithUndefined();
+      ConnectRoot(*elem, rv);
       InitialDocumentTranslationCompleted();
-    } else {
-      
-      
-      
-      AutoEntryScript aes(mGlobal,
-                          "DocumentL10n InitialDocumentTranslationCompleted");
-      RefPtr<Promise> promise = Promise::All(aes.cx(), promises, rv);
-      if (NS_WARN_IF(!promise || rv.Failed())) {
-        mReady->MaybeRejectWithUndefined();
-        InitialDocumentTranslationCompleted();
-        return;
-      }
-
-      RefPtr<PromiseNativeHandler> l10nReadyHandler =
-          new L10nReadyHandler(mReady, this);
-      promise->AppendNativeHandler(l10nReadyHandler);
+      return;
     }
+    
+    
+    
+    AutoEntryScript aes(mGlobal,
+                        "DocumentL10n InitialDocumentTranslationCompleted");
+    RefPtr<Promise> promise = Promise::All(aes.cx(), promises, rv);
+    if (NS_WARN_IF(!promise || rv.Failed())) {
+      mReady->MaybeRejectWithUndefined();
+      InitialDocumentTranslationCompleted();
+      return;
+    }
+
+    RefPtr<PromiseNativeHandler> l10nReadyHandler =
+        new L10nReadyHandler(mReady, this);
+    promise->AppendNativeHandler(l10nReadyHandler);
   } else {
     
 
