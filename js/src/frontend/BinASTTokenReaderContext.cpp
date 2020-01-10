@@ -444,6 +444,9 @@ class HuffmanPreludeReader {
 
     switch (tag) {
 #define EMIT_FIELD(TAG_NAME, FIELD_NAME, FIELD_INDEX, FIELD_TYPE, _)    \
+  fprintf(stderr, "pushFields %s\n",                                    \
+          describeBinASTInterfaceAndField(                              \
+              BinASTInterfaceAndField::TAG_NAME##__##FIELD_NAME));      \
   MOZ_TRY(                                                              \
       pushValue(NormalizedInterfaceAndField(                            \
                     BinASTInterfaceAndField::TAG_NAME##__##FIELD_NAME), \
@@ -680,33 +683,31 @@ class HuffmanPreludeReader {
         : cx_(cx_), owner(owner), identity(identity) {}
 
     MOZ_MUST_USE JS::Result<Ok> operator()(const List& list) {
+      fprintf(stderr, "PushEntryMatcher visiting List %s\n",
+              describeBinASTList(list.contents));
       auto& table = owner.dictionary.tableForListLength(list.contents);
-      if (!table.is<HuffmanTableUnreachable>()) {
+      if (table.is<HuffmanTableUnreachable>()) {
         
         
-        return Ok();
-      }
-      
-      
-      table = {mozilla::VariantType<HuffmanTableInitializing>{}};
+        table = {mozilla::VariantType<HuffmanTableInitializing>{}};
 
-      
-      MOZ_TRY((owner.readTable<HuffmanTableListLength, List>(table, list)));
+        
+        MOZ_TRY((owner.readTable<HuffmanTableListLength, List>(table, list)));
+      }
 
       
       
       
       
       auto& lengthTable = table.as<HuffmanTableExplicitSymbolsListLength>();
-      bool isEmpty = true;
+      uint32_t length = 0;
       for (const auto& iter : lengthTable.impl) {
-        if (iter.value != 0) {
-          isEmpty = false;
-          break;
-        }
+        length += iter.value;
       }
 
-      if (isEmpty) {
+      if (length == 0) {
+        fprintf(stderr, "PushEntryMatcher: List empty %s\n",
+                describeBinASTList(list.contents));
         return Ok();
       }
 
@@ -714,6 +715,11 @@ class HuffmanPreludeReader {
       
       
       
+
+#ifdef DEBUG
+      fprintf(stderr, "PushEntryMatcher: Proceeding with List contents of %s\n",
+              describeBinASTInterfaceAndField(identity.identity));
+#endif  
 
       
       
@@ -734,6 +740,11 @@ class HuffmanPreludeReader {
     }
 
     MOZ_MUST_USE JS::Result<Ok> operator()(const Interface& interface) {
+#ifdef DEBUG
+      fprintf(stderr, "PushEntryMatcher: Visiting interface %s\n",
+              describeBinASTInterfaceAndField(interface.identity.identity));
+#endif  
+
       
       
       auto& table = owner.dictionary.tableForField(identity);
@@ -755,6 +766,8 @@ class HuffmanPreludeReader {
     
     template <class Entry>
     MOZ_MUST_USE JS::Result<Ok> operator()(const Entry& entry) {
+      fprintf(stderr, "PushEntryMatcher: Entry %s\n",
+              describeBinASTInterfaceAndField(entry.identity.identity));
       
       
       auto& table = owner.dictionary.tableForField(identity);
@@ -766,13 +779,15 @@ class HuffmanPreludeReader {
       
       
       table = {mozilla::VariantType<HuffmanTableInitializing>{}};
-#ifdef DEBUG
-      fprintf(stderr, "pushing entry %s\n",
-              describeBinASTInterfaceAndField(entry.identity.identity));
-#endif  
 
       
       
+#ifdef DEBUG
+      fprintf(stderr, "pushing entry %s (%zu entries)\n",
+              describeBinASTInterfaceAndField(entry.identity.identity),
+              owner.stack.length() + 1);
+#endif  
+
       BINJS_TRY(owner.stack.append(entry));
       return Ok();
     }
