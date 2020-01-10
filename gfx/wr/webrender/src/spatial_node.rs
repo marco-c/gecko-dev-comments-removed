@@ -39,6 +39,10 @@ pub struct SpatialNode {
     pub content_transform: ScaleOffset,
 
     
+    
+    pub snapping_transform: Option<ScaleOffset>,
+
+    
     pub coordinate_system_id: CoordinateSystemId,
 
     
@@ -111,6 +115,7 @@ impl SpatialNode {
         SpatialNode {
             viewport_transform: ScaleOffset::identity(),
             content_transform: ScaleOffset::identity(),
+            snapping_transform: None,
             coordinate_system_id: CoordinateSystemId(0),
             transform_kind: TransformedRectKind::AxisAligned,
             parent: parent_index,
@@ -633,6 +638,55 @@ impl SpatialNode {
             SpatialNodeType::ScrollFrame(info) if info.external_id == Some(external_id) => true,
             _ => false,
         }
+    }
+
+    
+    pub fn update_snapping(
+        &mut self,
+        parent: Option<&SpatialNode>,
+    ) {
+        
+        self.snapping_transform = None;
+
+        
+        
+        
+        
+        let parent_scale_offset = match parent {
+            Some(parent) => {
+                match parent.snapping_transform {
+                    Some(scale_offset) => scale_offset,
+                    None => return,
+                }
+            },
+            _ => ScaleOffset::identity(),
+        };
+
+        let scale_offset = match self.node_type {
+            SpatialNodeType::ReferenceFrame(ref info) => {
+                match info.source_transform {
+                    PropertyBinding::Value(ref value) => {
+                        
+                        
+                        match ScaleOffset::from_transform(value) {
+                            Some(scale_offset) => {
+                                let origin_offset = info.origin_in_parent_reference_frame;
+                                ScaleOffset::from_offset(origin_offset.to_untyped())
+                                    .accumulate(&scale_offset)
+                            }
+                            None => return,
+                        }
+                    }
+
+                    
+                    
+                    PropertyBinding::Binding(..) => ScaleOffset::identity(),
+                }
+            }
+            _ => ScaleOffset::identity(),
+        };
+
+        self.snapping_transform = Some(parent_scale_offset.accumulate(&scale_offset));
     }
 
     
