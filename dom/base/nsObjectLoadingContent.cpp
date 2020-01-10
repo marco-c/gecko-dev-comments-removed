@@ -2952,18 +2952,10 @@ bool nsObjectLoadingContent::ShouldBlockContent() {
 bool nsObjectLoadingContent::ShouldPlay(FallbackType& aReason) {
   nsresult rv;
 
-  if (BrowserTabsRemoteAutostart()) {
-    bool shouldLoadInParent =
-        nsPluginHost::ShouldLoadTypeInParent(mContentType);
-    bool inParent = XRE_IsParentProcess();
-
-    if (shouldLoadInParent != inParent) {
-      
-      
-      
-      aReason = eFallbackDisabled;
-      return false;
-    }
+  if (BrowserTabsRemoteAutostart() && XRE_IsParentProcess()) {
+    
+    aReason = eFallbackDisabled;
+    return false;
   }
 
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
