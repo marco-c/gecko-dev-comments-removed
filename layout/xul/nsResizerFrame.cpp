@@ -516,7 +516,7 @@ nsResizerFrame::Direction nsResizerFrame::GetDirection() {
     
     
     WritingMode wm = GetWritingMode();
-    if (!(wm.IsVertical() ? wm.IsVerticalLR() : wm.IsBidiLTR())) {
+    if (!wm.IsPhysicalLTR()) {
       Direction direction = directions[index];
       direction.mHorizontal *= -1;
       return direction;
