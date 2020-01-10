@@ -4462,6 +4462,12 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
   NS_ENSURE_TRUE(!(aFlags & RenderDocumentFlags::IsUntrusted),
                  NS_ERROR_NOT_IMPLEMENTED);
 
+  nsRootPresContext* rootPresContext = mPresContext->GetRootPresContext();
+  if (rootPresContext) {
+    rootPresContext->FlushWillPaintObservers();
+    if (mIsDestroying) return NS_OK;
+  }
+
   nsAutoScriptBlocker blockScripts;
 
   
@@ -8830,6 +8836,17 @@ void PresShell::WillPaint() {
   if (!mIsActive || mPaintingSuppressed || !IsVisible()) {
     return;
   }
+
+  nsRootPresContext* rootPresContext = mPresContext->GetRootPresContext();
+  if (!rootPresContext) {
+    
+    
+    
+    return;
+  }
+
+  rootPresContext->FlushWillPaintObservers();
+  if (mIsDestroying) return;
 
   
   

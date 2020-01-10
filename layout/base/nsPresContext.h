@@ -1354,6 +1354,18 @@ class nsRootPresContext final : public nsPresContext {
 
   virtual bool IsRoot() override { return true; }
 
+  
+
+
+
+
+  void AddWillPaintObserver(nsIRunnable* aRunnable);
+
+  
+
+
+  void FlushWillPaintObservers();
+
   virtual size_t SizeOfExcludingThis(
       mozilla::MallocSizeOf aMallocSizeOf) const override;
 
@@ -1367,10 +1379,28 @@ class nsRootPresContext final : public nsPresContext {
 
   void CancelApplyPluginGeometryTimer();
 
+  class RunWillPaintObservers : public mozilla::Runnable {
+   public:
+    explicit RunWillPaintObservers(nsRootPresContext* aPresContext)
+        : Runnable("nsPresContextType::RunWillPaintObservers"),
+          mPresContext(aPresContext) {}
+    void Revoke() { mPresContext = nullptr; }
+    NS_IMETHOD Run() override {
+      if (mPresContext) {
+        mPresContext->FlushWillPaintObservers();
+      }
+      return NS_OK;
+    }
+    
+    nsRootPresContext* MOZ_NON_OWNING_REF mPresContext;
+  };
+
   friend class nsPresContext;
 
   nsCOMPtr<nsITimer> mApplyPluginGeometryTimer;
   nsTHashtable<nsRefPtrHashKey<nsIContent>> mRegisteredPlugins;
+  nsTArray<nsCOMPtr<nsIRunnable>> mWillPaintObservers;
+  nsRevocableEventPtr<RunWillPaintObservers> mWillPaintFallbackEvent;
 };
 
 #ifdef MOZ_REFLOW_PERF
