@@ -16,6 +16,7 @@
 #include "builtin/Promise.h"  
 #include "builtin/Stream.h"   
 #include "builtin/streams/ReadableStream.h"  
+#include "builtin/streams/ReadableStreamInternals.h"  
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         
 #include "vm/Interpreter.h"   
