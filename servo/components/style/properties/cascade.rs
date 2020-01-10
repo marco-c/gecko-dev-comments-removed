@@ -362,19 +362,9 @@ fn should_ignore_declaration_when_ignoring_document_colors(
     
     
     
-    
-    
-    
-    
-    
-    
     {
         let background_color = match **declaration {
             PropertyDeclaration::BackgroundColor(ref color) => color,
-            
-            
-            
-            PropertyDeclaration::BackgroundImage(..) => return !static_prefs::pref!("browser.display.permit_backplate"),
             _ => return true,
         };
 
@@ -436,11 +426,11 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         longhand_id: LonghandId,
         declaration: &PropertyDeclaration,
     ) {
-        // We could (and used to) use a pattern match here, but that bloats this
-        // function to over 100K of compiled code!
-        //
-        // To improve i-cache behavior, we outline the individual functions and
-        // use virtual dispatch instead.
+        
+        
+        
+        
+        
         let discriminant = longhand_id as usize;
         (CASCADE_PROPERTY[discriminant])(declaration, &mut self.context);
     }
@@ -496,9 +486,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 continue;
             }
 
-            // Only a few properties are allowed to depend on the visited state
-            // of links.  When cascading visited styles, we can save time by
-            // only processing these properties.
+            
+            
+            
             if matches!(self.cascade_mode, CascadeMode::Visited { .. }) &&
                 !physical_longhand_id.is_visited_dependent()
             {
@@ -507,9 +497,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
             let mut declaration = self.substitute_variables_if_needed(declaration);
 
-            // When document colors are disabled, skip properties that are
-            // marked as ignored in that mode, unless they come from a UA or
-            // user style sheet.
+            
+            
+            
             if ignore_colors {
                 let should_ignore = should_ignore_declaration_when_ignoring_document_colors(
                     self.context.builder.device,
@@ -525,9 +515,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
             let css_wide_keyword = declaration.get_css_wide_keyword();
             if let Some(CSSWideKeyword::Revert) = css_wide_keyword {
-                // We intentionally don't want to insert it into `self.seen`,
-                // `reverted` takes care of rejecting other declarations as
-                // needed.
+                
+                
+                
                 for origin in origin.following_including() {
                     self.reverted
                         .borrow_mut_for_origin(&origin)
@@ -551,9 +541,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 continue;
             }
 
-            // FIXME(emilio): We should avoid generating code for logical
-            // longhands and just use the physical ones, then rename
-            // physical_longhand_id to just longhand_id.
+            
+            
+            
             self.apply_declaration(longhand_id, &*declaration);
         }
 
@@ -609,8 +599,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
         let writing_mode = self.context.builder.writing_mode;
 
-        // We could call apply_declarations directly, but that'd cause
-        // another instantiation of this function which is not great.
+        
+        
         let style = cascade_rules(
             self.context.builder.device,
             self.context.builder.pseudo,
@@ -622,11 +612,11 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             self.context.font_metrics_provider,
             CascadeMode::Visited { writing_mode },
             self.context.quirks_mode,
-            // The rule cache doesn't care about caching :visited
-            // styles, we cache the unvisited style instead. We still do
-            // need to set the caching dependencies properly if present
-            // though, so the cache conditions need to match.
-            /* rule_cache = */ None,
+            
+            
+            
+            
+             None,
             &mut *self.context.rule_cache_conditions.borrow_mut(),
             element,
         );
@@ -674,12 +664,12 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         true
     }
 
-    /// The default font type (which is stored in FontFamilyList's
-    /// `mDefaultFontType`) depends on the current lang group and generic font
-    /// family, so we may need to recompute it if or the family changed.
-    ///
-    /// Also, we prioritize non-document fonts here if we need to (see the pref
-    /// `browser.display.use_document_fonts`).
+    
+    
+    
+    
+    
+    
     #[inline]
     #[cfg(feature = "gecko")]
     fn recompute_default_font_family_type_if_needed(&mut self) {
