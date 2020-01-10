@@ -15,6 +15,8 @@
 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
+#include "builtin/streams/WritableStream.h"           
+#include "builtin/streams/WritableStreamOperations.h"  
 #include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/CallArgs.h"                              
 #include "js/Class.h"                        
@@ -36,6 +38,8 @@ using js::ClassSpec;
 using js::GetErrorMessage;
 using js::ReturnPromiseRejectedWithPendingError;
 using js::UnwrapAndTypeCheckThis;
+using js::WritableStream;
+using js::WritableStreamCloseQueuedOrInFlight;
 using js::WritableStreamDefaultWriter;
 using js::WritableStreamDefaultWriterGetDesiredSize;
 using js::WritableStreamDefaultWriterWrite;
@@ -151,6 +155,55 @@ static MOZ_MUST_USE bool WritableStream_ready(JSContext* cx, unsigned argc,
 
 
 
+static MOZ_MUST_USE bool WritableStream_close(JSContext* cx, unsigned argc,
+                                              Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+      cx,
+      UnwrapAndTypeCheckThis<WritableStreamDefaultWriter>(cx, args, "close"));
+  if (!unwrappedWriter) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  
+  
+  if (!unwrappedWriter->hasStream()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAMWRITER_NOT_OWNED, "write");
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  WritableStream* unwrappedStream = UnwrapStreamFromWriter(cx, unwrappedWriter);
+  if (!unwrappedStream) {
+    return false;
+  }
+
+  
+  
+  if (WritableStreamCloseQueuedOrInFlight(unwrappedStream)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAM_CLOSE_CLOSING_OR_CLOSED);
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  JSObject* promise = WritableStreamDefaultWriterClose(cx, unwrappedWriter);
+  if (!promise) {
+    return false;
+  }
+  cx->check(promise);
+
+  args.rval().setObject(*promise);
+  return true;
+}
+
+
+
+
 static MOZ_MUST_USE bool WritableStream_write(JSContext* cx, unsigned argc,
                                               Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -190,6 +243,7 @@ static const JSPropertySpec WritableStreamDefaultWriter_properties[] = {
     JS_PSG("ready", WritableStream_ready, 0), JS_PS_END};
 
 static const JSFunctionSpec WritableStreamDefaultWriter_methods[] = {
+    JS_FN("close", WritableStream_close, 0, 0),
     JS_FN("write", WritableStream_write, 1, 0), JS_FS_END};
 
 JS_STREAMS_CLASS_SPEC(WritableStreamDefaultWriter, 0, SlotCount,
