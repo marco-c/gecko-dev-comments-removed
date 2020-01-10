@@ -9,12 +9,13 @@
 
 #ifndef MOZ_BASE_PROFILER
 
-#  define PROFILER_DEFINE_COUNT_TOTAL(label, category, description)
-#  define PROFILER_DEFINE_COUNT(label, category, description)
-#  define PROFILER_DEFINE_STATIC_COUNT_TOTAL(label, category, description)
-#  define AUTO_PROFILER_TOTAL(label, count)
-#  define AUTO_PROFILER_COUNT(label)
-#  define AUTO_PROFILER_STATIC_COUNT(label, count)
+#  define BASE_PROFILER_DEFINE_COUNT_TOTAL(label, category, description)
+#  define BASE_PROFILER_DEFINE_COUNT(label, category, description)
+#  define BASE_PROFILER_DEFINE_STATIC_COUNT_TOTAL(label, category, description)
+#  define AUTO_BASE_PROFILER_COUNT_TOTAL(label, count)
+#  define AUTO_BASE_PROFILER_COUNT(label)
+#  define AUTO_BASE_PROFILER_STATIC_COUNT(label, count)
+#  define AUTO_BASE_PROFILER_FORCE_ALLOCATION(label)
 
 #else
 
@@ -189,24 +190,25 @@ class ProfilerCounterTotal final : public BaseProfilerCount {
 
 
 
-#  define PROFILER_DEFINE_COUNT_TOTAL(label, category, description) \
-    ProfilerAtomicSigned profiler_count_##label(0);                 \
-    ProfilerAtomicUnsigned profiler_number_##label(0);              \
-    const char profiler_category_##label[] = category;              \
-    const char profiler_description_##label[] = description;        \
+#  define BASE_PROFILER_DEFINE_COUNT_TOTAL(label, category, description) \
+    ProfilerAtomicSigned profiler_count_##label(0);                      \
+    ProfilerAtomicUnsigned profiler_number_##label(0);                   \
+    const char profiler_category_##label[] = category;                   \
+    const char profiler_description_##label[] = description;             \
     mozilla::UniquePtr<BaseProfilerCount> AutoCount_##label;
 
 
 
-#  define PROFILER_DEFINE_COUNT(label, category, description) \
-    ProfilerAtomicSigned profiler_count_##label(0);           \
-    const char profiler_category_##label[] = category;        \
-    const char profiler_description_##label[] = description;  \
+#  define BASE_PROFILER_DEFINE_COUNT(label, category, description) \
+    ProfilerAtomicSigned profiler_count_##label(0);                \
+    const char profiler_category_##label[] = category;             \
+    const char profiler_description_##label[] = description;       \
     mozilla::UniquePtr<BaseProfilerCount> AutoCount_##label;
 
 
 
-#  define PROFILER_DEFINE_STATIC_COUNT_TOTAL(label, category, description)  \
+#  define BASE_PROFILER_DEFINE_STATIC_COUNT_TOTAL(label, category,          \
+                                                  description)              \
     ProfilerAtomicSigned profiler_count_##label(0);                         \
     ProfilerAtomicUnsigned profiler_number_##label(0);                      \
     BaseProfilerCount AutoCount_##label(#label, &profiler_count_##label,    \
@@ -218,7 +220,7 @@ class ProfilerCounterTotal final : public BaseProfilerCount {
 
 
 
-#  define AUTO_PROFILER_COUNT_TOTAL(label, count)                           \
+#  define AUTO_BASE_PROFILER_COUNT_TOTAL(label, count)                      \
     do {                                                                    \
       profiler_number_##label++; /* do this first*/                         \
       profiler_count_##label += count;                                      \
@@ -233,7 +235,7 @@ class ProfilerCounterTotal final : public BaseProfilerCount {
       }                                                                     \
     } while (0)
 
-#  define AUTO_PROFILER_COUNT(label, count)                                 \
+#  define AUTO_BASE_PROFILER_COUNT(label, count)                            \
     do {                                                                    \
       profiler_count_##label += count; /* do this first*/                   \
       if (!AutoCount_##label) {                                             \
@@ -247,14 +249,14 @@ class ProfilerCounterTotal final : public BaseProfilerCount {
       }                                                                     \
     } while (0)
 
-#  define AUTO_PROFILER_STATIC_COUNT(label, count)  \
-    do {                                            \
-      profiler_number_##label++; /* do this first*/ \
-      profiler_count_##label += count;              \
+#  define AUTO_BASE_PROFILER_STATIC_COUNT(label, count) \
+    do {                                                \
+      profiler_number_##label++; /* do this first*/     \
+      profiler_count_##label += count;                  \
     } while (0)
 
 
-#  define AUTO_PROFILER_FORCE_ALLOCATION(label)                             \
+#  define AUTO_BASE_PROFILER_FORCE_ALLOCATION(label)                        \
     do {                                                                    \
       if (!AutoCount_##label) {                                             \
         /* Ignore that we could call this twice in theory, and that we leak \
