@@ -1695,6 +1695,7 @@ void EventStateManager::StopTrackingDragGesture(bool aClearInChildProcesses) {
   
   
   
+  
   if (aClearInChildProcesses) {
     nsCOMPtr<nsIDragService> dragService =
         do_GetService("@mozilla.org/widget/dragservice;1");
@@ -1854,6 +1855,7 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
   nsCOMPtr<nsIContent> eventContent, targetContent;
   nsCOMPtr<nsIPrincipal> principal;
   nsCOMPtr<nsIContentSecurityPolicy> csp;
+  bool allowEmptyDataTransfer = false;
   mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(eventContent));
   if (eventContent) {
     
@@ -1875,9 +1877,10 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       }
     }
     DetermineDragTargetAndDefaultData(
-        window, eventContent, dataTransfer, getter_AddRefs(selection),
-        getter_AddRefs(remoteDragStartData), getter_AddRefs(targetContent),
-        getter_AddRefs(principal), getter_AddRefs(csp));
+        window, eventContent, dataTransfer, &allowEmptyDataTransfer,
+        getter_AddRefs(selection), getter_AddRefs(remoteDragStartData),
+        getter_AddRefs(targetContent), getter_AddRefs(principal),
+        getter_AddRefs(csp));
   }
 
   
@@ -1942,9 +1945,9 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
   }
 
   if (status != nsEventStatus_eConsumeNoDefault) {
-    bool dragStarted =
-        DoDefaultDragStart(aPresContext, event, dataTransfer, targetContent,
-                           selection, remoteDragStartData, principal, csp);
+    bool dragStarted = DoDefaultDragStart(
+        aPresContext, event, dataTransfer, allowEmptyDataTransfer,
+        targetContent, selection, remoteDragStartData, principal, csp);
     if (dragStarted) {
       sActiveESM = nullptr;
       MaybeFirePointerCancel(aEvent);
@@ -1962,11 +1965,12 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
 
 void EventStateManager::DetermineDragTargetAndDefaultData(
     nsPIDOMWindowOuter* aWindow, nsIContent* aSelectionTarget,
-    DataTransfer* aDataTransfer, Selection** aSelection,
-    RemoteDragStartData** aRemoteDragStartData, nsIContent** aTargetNode,
-    nsIPrincipal** aPrincipal, nsIContentSecurityPolicy** aCsp) {
+    DataTransfer* aDataTransfer, bool* aAllowEmptyDataTransfer,
+    Selection** aSelection, RemoteDragStartData** aRemoteDragStartData,
+    nsIContent** aTargetNode, nsIPrincipal** aPrincipal,
+    nsIContentSecurityPolicy** aCsp) {
   *aTargetNode = nullptr;
-
+  *aAllowEmptyDataTransfer = false;
   nsCOMPtr<nsIContent> dragDataNode;
 
   nsIContent* editingElement = aSelectionTarget->IsEditable()
@@ -1982,6 +1986,7 @@ void EventStateManager::DetermineDragTargetAndDefaultData(
       mGestureDownDragStartData->AddInitialDnDDataTo(aDataTransfer, aPrincipal,
                                                      aCsp);
       mGestureDownDragStartData.forget(aRemoteDragStartData);
+      *aAllowEmptyDataTransfer = true;
     }
   } else {
     mGestureDownDragStartData = nullptr;
@@ -2021,6 +2026,9 @@ void EventStateManager::DetermineDragTargetAndDefaultData(
     while (dragContent) {
       if (auto htmlElement = nsGenericHTMLElement::FromNode(dragContent)) {
         if (htmlElement->Draggable()) {
+          
+          
+          *aAllowEmptyDataTransfer = true;
           break;
         }
       } else {
@@ -2057,7 +2065,8 @@ void EventStateManager::DetermineDragTargetAndDefaultData(
 
 bool EventStateManager::DoDefaultDragStart(
     nsPresContext* aPresContext, WidgetDragEvent* aDragEvent,
-    DataTransfer* aDataTransfer, nsIContent* aDragTarget, Selection* aSelection,
+    DataTransfer* aDataTransfer, bool aAllowEmptyDataTransfer,
+    nsIContent* aDragTarget, Selection* aSelection,
     RemoteDragStartData* aDragStartData, nsIPrincipal* aPrincipal,
     nsIContentSecurityPolicy* aCsp) {
   nsCOMPtr<nsIDragService> dragService =
@@ -2081,7 +2090,7 @@ bool EventStateManager::DoDefaultDragStart(
   if (aDataTransfer) {
     count = aDataTransfer->MozItemCount();
   }
-  if (!count) {
+  if (!aAllowEmptyDataTransfer && !count) {
     return false;
   }
 
