@@ -306,7 +306,9 @@ already_AddRefed<FormData> FormData::Constructor(
 
     
     
-    formData = formData->Clone();
+    if (StaticPrefs::dom_formdata_event_enabled()) {
+      formData = formData->Clone();
+    }
   }
 
   return formData.forget();
