@@ -56,11 +56,10 @@ class Page extends Domain {
 
 
   async captureScreenshot(options = {}) {
+    const { format = "png" } = options;
+
     if (options.clip) {
       throw new UnsupportedError("clip not supported");
-    }
-    if (options.format) {
-      throw new UnsupportedError("format not supported");
     }
     if (options.fromSurface) {
       throw new UnsupportedError("fromSurface not supported");
@@ -120,7 +119,10 @@ class Page extends Domain {
     
     snapshot.close();
 
-    const url = canvas.toDataURL();
+    const url = canvas.toDataURL(`image/${format}`);
+    if (!url.startsWith(`data:image/${format}`)) {
+      throw new UnsupportedError(`Unsupported MIME type: image/${format}`);
+    }
 
     
     const data = url.substring(url.indexOf(",") + 1);
