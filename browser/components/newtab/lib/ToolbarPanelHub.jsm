@@ -205,20 +205,30 @@ class _ToolbarPanelHub {
   
 
 
-  _attachClickListener(win, element, message) {
-    element.addEventListener("click", () => {
-      this._handleUserAction({
-        target: win,
+  _dispatchUserAction(win, message) {
+    this._handleUserAction({
+      target: win,
+      data: {
+        type: message.content.cta_type,
         data: {
-          type: message.content.cta_type,
-          data: {
-            args: message.content.cta_url,
-            where: "tabshifted",
-          },
+          args: message.content.cta_url,
+          where: "tabshifted",
         },
-      });
+      },
+    });
 
-      this.sendUserEventTelemetry(win, "CLICK", message);
+    this.sendUserEventTelemetry(win, "CLICK", message);
+  }
+
+  
+
+
+  _attachClickListener(win, element, message) {
+    
+    
+    
+    element.addEventListener("mouseup", () => {
+      this._dispatchUserAction(win, message);
     });
   }
 
@@ -245,8 +255,7 @@ class _ToolbarPanelHub {
     }
 
     const wrapperEl = this._createElement(doc, "button");
-    
-    wrapperEl.doCommand = () => {};
+    wrapperEl.doCommand = () => this._dispatchUserAction(win, message);
     wrapperEl.classList.add("whatsNew-message-body");
     messageEl.appendChild(wrapperEl);
 
@@ -266,8 +275,7 @@ class _ToolbarPanelHub {
         classList: "text-link",
         content: content.link_text,
       });
-      
-      anchorEl.doCommand = () => {};
+      anchorEl.doCommand = () => this._dispatchUserAction(win, message);
       wrapperEl.appendChild(anchorEl);
     }
 
