@@ -283,6 +283,12 @@ static inline const char* TypeIdString(jsid id) {
 class TypeNewScript {
  private:
   
+  struct InitializerList {
+    size_t length;
+    TypeNewScriptInitializer entries[1];
+  };
+
+  
   HeapPtr<JSFunction*> function_ = {};
 
   
@@ -303,7 +309,7 @@ class TypeNewScript {
   
   
   
-  TypeNewScriptInitializer* initializerList = nullptr;
+  InitializerList* initializerList = nullptr;
 
   
   
@@ -356,9 +362,13 @@ class TypeNewScript {
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
+  size_t gcMallocBytes() const;
+
   static size_t offsetOfPreliminaryObjects() {
     return offsetof(TypeNewScript, preliminaryObjects);
   }
+
+  static size_t sizeOfInitializerList(size_t length);
 };
 
 inline bool ObjectGroup::hasUnanalyzedPreliminaryObjects() {
