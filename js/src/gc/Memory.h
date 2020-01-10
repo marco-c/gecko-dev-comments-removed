@@ -33,12 +33,12 @@ void UnmapPages(void* p, size_t size);
 
 
 
-bool MarkPagesUnused(void* p, size_t size);
+bool MarkPagesUnusedSoft(void* p, size_t size);
 
 
 
 
-void MarkPagesInUse(void* p, size_t size);
+void MarkPagesInUseSoft(void* p, size_t size);
 
 
 size_t GetPageFaultCount();
