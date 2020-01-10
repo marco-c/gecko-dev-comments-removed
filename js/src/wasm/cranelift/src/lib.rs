@@ -13,14 +13,16 @@
 
 
 
+#[cfg(feature = "cranelift_x86")]
 #[macro_use]
 extern crate target_lexicon;
+
 #[macro_use]
 extern crate log;
 
 mod bindings; 
 mod compile; 
-mod cpu; 
+mod isa; 
 mod utils; 
 mod wasm2clif; 
 

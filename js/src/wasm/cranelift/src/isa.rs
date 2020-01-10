@@ -21,8 +21,6 @@
 
 
 
-use std::str::FromStr;
-
 use cranelift_codegen::isa;
 use cranelift_codegen::settings::{self, Configurable};
 
@@ -39,51 +37,6 @@ impl From<settings::SetError> for BasicError {
     fn from(err: settings::SetError) -> BasicError {
         BasicError::new(err.to_string())
     }
-}
-
-
-
-
-
-
-
-
-pub fn make_isa(env: &StaticEnvironment) -> DashResult<Box<dyn isa::TargetIsa>> {
-    
-    let shared_flags = make_shared_flags().expect("Cranelift configuration error");
-
-    
-    let mut ib = isa::lookup(triple!("x86_64-unknown-unknown")).map_err(BasicError::from)?;
-
-    if !env.hasSse2 {
-        return Err("SSE2 is mandatory for Baldrdash!".into());
-    }
-    if env.hasSse3 {
-        ib.enable("has_sse3").map_err(BasicError::from)?;
-    }
-    if env.hasSse41 {
-        ib.enable("has_sse41").map_err(BasicError::from)?;
-    }
-    if env.hasSse42 {
-        ib.enable("has_sse42").map_err(BasicError::from)?;
-    }
-    if env.hasPopcnt {
-        ib.enable("has_popcnt").map_err(BasicError::from)?;
-    }
-    if env.hasAvx {
-        ib.enable("has_avx").map_err(BasicError::from)?;
-    }
-    if env.hasBmi1 {
-        ib.enable("has_bmi1").map_err(BasicError::from)?;
-    }
-    if env.hasBmi2 {
-        ib.enable("has_bmi2").map_err(BasicError::from)?;
-    }
-    if env.hasLzcnt {
-        ib.enable("has_lzcnt").map_err(BasicError::from)?;
-    }
-
-    Ok(ib.finish(shared_flags))
 }
 
 
@@ -124,4 +77,56 @@ fn make_shared_flags() -> settings::SetResult<settings::Flags> {
     sb.set("jump_tables_enabled", "true")?;
 
     Ok(settings::Flags::new(sb))
+}
+
+#[cfg(feature = "cranelift_x86")]
+fn make_isa_specific(env: &StaticEnvironment) -> DashResult<isa::Builder> {
+    use std::str::FromStr; 
+
+    let mut ib = isa::lookup(triple!("x86_64-unknown-unknown")).map_err(BasicError::from)?;
+
+    if !env.hasSse2 {
+        return Err("SSE2 is mandatory for Baldrdash!".into());
+    }
+
+    if env.hasSse3 {
+        ib.enable("has_sse3").map_err(BasicError::from)?;
+    }
+    if env.hasSse41 {
+        ib.enable("has_sse41").map_err(BasicError::from)?;
+    }
+    if env.hasSse42 {
+        ib.enable("has_sse42").map_err(BasicError::from)?;
+    }
+    if env.hasPopcnt {
+        ib.enable("has_popcnt").map_err(BasicError::from)?;
+    }
+    if env.hasAvx {
+        ib.enable("has_avx").map_err(BasicError::from)?;
+    }
+    if env.hasBmi1 {
+        ib.enable("has_bmi1").map_err(BasicError::from)?;
+    }
+    if env.hasBmi2 {
+        ib.enable("has_bmi2").map_err(BasicError::from)?;
+    }
+    if env.hasLzcnt {
+        ib.enable("has_lzcnt").map_err(BasicError::from)?;
+    }
+
+    Ok(ib)
+}
+
+
+#[cfg(not(feature = "cranelift_x86"))]
+fn make_isa_specific(_env: &StaticEnvironment) -> DashResult<isa::Builder> {
+    Err("Platform not supported yet!".into())
+}
+
+
+pub fn make_isa(env: &StaticEnvironment) -> DashResult<Box<dyn isa::TargetIsa>> {
+    
+    let shared_flags = make_shared_flags().map_err(BasicError::from)?;
+    let ib = make_isa_specific(env)?;
+    Ok(ib.finish(shared_flags))
 }
