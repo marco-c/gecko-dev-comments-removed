@@ -487,6 +487,11 @@ public class BrowserApp extends GeckoApp
         
         
         if (event.getAction() != KeyEvent.ACTION_DOWN) {
+            
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                return false;
+            }
+
             if (mSuppressNextKeyUp && event.getAction() == KeyEvent.ACTION_UP) {
                 mSuppressNextKeyUp = false;
                 return true;
