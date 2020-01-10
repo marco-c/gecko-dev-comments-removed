@@ -981,10 +981,14 @@ nsContextMenu.prototype = {
   initPasswordManagerItems() {
     let loginFillInfo =
       gContextMenuContentData && gContextMenuContentData.loginFillInfo;
+    let documentURI = gContextMenuContentData.documentURIObject;
 
     
     
-    let showFill = loginFillInfo && loginFillInfo.passwordField.found;
+    let showFill =
+      loginFillInfo &&
+      loginFillInfo.passwordField.found &&
+      !documentURI.schemeIs("about");
 
     
     
@@ -1020,7 +1024,6 @@ nsContextMenu.prototype = {
       return;
     }
 
-    let documentURI = gContextMenuContentData.documentURIObject;
     let formOrigin = LoginHelper.getLoginOrigin(documentURI.spec);
     let fragment = LoginManagerContextMenu.addLoginsToMenu(
       this.targetIdentifier,
