@@ -189,6 +189,8 @@ var whitelist = [
   
   { file: "resource://gre/modules/Manifest.jsm" },
   
+  { file: "resource://gre/modules/accessibility/AccessFu.jsm" },
+  
   { file: "chrome://global/content/test-ipc.xul" },
   
   { file: "resource://gre/modules/Promise.jsm" },
