@@ -96,6 +96,90 @@ function verifyLogins(expectedLogins = []) {
 
 
 
+async function submitFormAndGetResults(
+  browser,
+  formAction = "",
+  selectorValues,
+  responseSelectors
+) {
+  function contentSubmitForm([contentFormAction, contentSelectorValues]) {
+    let doc = content.document;
+    let form = doc.querySelector("form");
+    if (contentFormAction) {
+      form.action = contentFormAction;
+    }
+    for (let [sel, value] of Object.entries(contentSelectorValues)) {
+      try {
+        doc.querySelector(sel).setUserInput(value);
+      } catch (ex) {
+        throw new Error(`submitForm: Couldn't set value of field at: ${sel}`);
+      }
+    }
+    form.submit();
+  }
+  await ContentTask.spawn(
+    browser,
+    [formAction, selectorValues],
+    contentSubmitForm
+  );
+  let result = await getFormSubmitResponseResult(
+    browser,
+    formAction,
+    responseSelectors
+  );
+  return result;
+}
+
+
+
+
+
+
+
+
+
+async function getFormSubmitResponseResult(
+  browser,
+  resultURL = "/formsubmit.sjs",
+  { username = "#user", password = "#pass" } = {}
+) {
+  
+  let fieldValues = await ContentTask.spawn(
+    browser,
+    {
+      resultURL,
+      usernameSelector: username,
+      passwordSelector: password,
+    },
+    async function({ resultURL, usernameSelector, passwordSelector }) {
+      await ContentTaskUtils.waitForCondition(() => {
+        return (
+          content.location.pathname.endsWith(resultURL) &&
+          content.document.readyState == "complete"
+        );
+      }, `Wait for form submission load (${resultURL})`);
+      let username = content.document.querySelector(usernameSelector)
+        .textContent;
+      let password = content.document.querySelector(passwordSelector)
+        .textContent;
+      return {
+        username,
+        password,
+      };
+    }
+  );
+  return fieldValues;
+}
+
+
+
+
+
+
+
+
+
+
 function testSubmittingLoginForm(
   aPageFile,
   aTaskFn,
@@ -108,23 +192,9 @@ function testSubmittingLoginForm(
     },
     async function(browser) {
       ok(true, "loaded " + aPageFile);
-      let fieldValues = await ContentTask.spawn(
+      let fieldValues = await getFormSubmitResponseResult(
         browser,
-        undefined,
-        async function() {
-          await ContentTaskUtils.waitForCondition(() => {
-            return (
-              content.location.pathname.endsWith("/formsubmit.sjs") &&
-              content.document.readyState == "complete"
-            );
-          }, "Wait for form submission load (formsubmit.sjs)");
-          let username = content.document.getElementById("user").textContent;
-          let password = content.document.getElementById("pass").textContent;
-          return {
-            username,
-            password,
-          };
-        }
+        "/formsubmit.sjs"
       );
       ok(true, "form submission loaded");
       if (aTaskFn) {
