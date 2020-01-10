@@ -49,11 +49,7 @@ bool IsValidKeyPathString(const nsAString& aKeyPath) {
 
   
   
-  if (!aKeyPath.IsEmpty() && aKeyPath.CharAt(aKeyPath.Length() - 1) == '.') {
-    return false;
-  }
-
-  return true;
+  return aKeyPath.IsEmpty() || aKeyPath.CharAt(aKeyPath.Length() - 1) != '.';
 }
 
 enum KeyExtractionOptions { DoNotCreateProperties, CreateProperties };
