@@ -1052,10 +1052,10 @@ nsresult nsSiteSecurityService::ProcessPKPHeader(
   CertVerifier::Flags flags = CertVerifier::FLAG_LOCAL_ONLY |
                               CertVerifier::FLAG_TLS_IGNORE_STATUS_REQUEST;
   if (certVerifier->VerifySSLServerCert(nssCert,
-                                        nullptr,       
-                                        nullptr,       
-                                        now, nullptr,  
-                                        host,          
+                                        Maybe<nsTArray<uint8_t>>(), 
+                                        Maybe<nsTArray<uint8_t>>(), 
+                                        now, nullptr,               
+                                        host,                       
                                         certList,
                                         false,  
                                         flags, aOriginAttributes) !=
