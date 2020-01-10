@@ -61,6 +61,10 @@ class UrlbarResult {
 
     
     
+    this.suggestedIndex = -1;
+
+    
+    
     this.heuristic = false;
 
     

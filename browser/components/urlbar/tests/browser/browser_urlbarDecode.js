@@ -8,11 +8,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarResult: "resource:///modules/UrlbarResult.jsm",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
-});
-
 add_task(async function injectJSON() {
   let inputStrs = [
     'http://example.com/ ", "url": "bar',

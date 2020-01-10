@@ -57,53 +57,71 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
     
     
-    let heuristicMatch = context.results.find(r => r.heuristic);
+    let heuristicResult = context.results.find(r => r.heuristic);
     let buckets =
       context.preselected &&
-      heuristicMatch &&
-      heuristicMatch.type == UrlbarUtils.RESULT_TYPE.SEARCH
+      heuristicResult &&
+      heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH
         ? UrlbarPrefs.get("matchBucketsSearch")
         : UrlbarPrefs.get("matchBuckets");
     logger.debug(`Buckets: ${buckets}`);
-    let sortedMatches = [];
+    
+    
+    
+    let reshuffleResults = context.results
+      .filter(r => r.suggestedIndex != -1)
+      .sort((a, b) => a.suggestedIndex - b.suggestedIndex);
+    let sortedResults = [];
+    
     let handled = new Set();
-    for (let [group, count] of buckets) {
+    for (let [group, slots] of buckets) {
       
-      for (let match of context.results) {
-        if (count == 0) {
+      for (let result of context.results) {
+        if (slots == 0) {
           
           break;
         }
-        if (handled.has(match)) {
+        if (handled.has(result)) {
           
           continue;
         }
 
-        
         if (
           group == UrlbarUtils.RESULT_GROUP.HEURISTIC &&
-          match == heuristicMatch &&
+          result == heuristicResult &&
           context.preselected
         ) {
-          sortedMatches.unshift(match);
-          handled.add(match);
-          context.maxResults -= UrlbarUtils.getSpanForResult(match) - 1;
-          count--;
-        } else if (group == RESULT_TYPE_TO_GROUP.get(match.type)) {
-          sortedMatches.push(match);
-          handled.add(match);
-          context.maxResults -= UrlbarUtils.getSpanForResult(match) - 1;
-          count--;
-        } else if (!RESULT_TYPE_TO_GROUP.has(match.type)) {
+          
+          sortedResults.unshift(result);
+          handled.add(result);
+          context.maxResults -= UrlbarUtils.getSpanForResult(result) - 1;
+          slots--;
+        } else if (group == RESULT_TYPE_TO_GROUP.get(result.type)) {
+          
+          
+          if (result.suggestedIndex == -1) {
+            sortedResults.push(result);
+          }
+          handled.add(result);
+          context.maxResults -= UrlbarUtils.getSpanForResult(result) - 1;
+          slots--;
+        } else if (!RESULT_TYPE_TO_GROUP.has(result.type)) {
           let errorMsg = `Result type ${
-            match.type
+            result.type
           } is not mapped to a match group.`;
           logger.error(errorMsg);
           Cu.reportError(errorMsg);
         }
       }
     }
-    context.results = sortedMatches;
+    for (let result of reshuffleResults) {
+      if (sortedResults.length >= result.suggestedIndex) {
+        sortedResults.splice(result.suggestedIndex, 0, result);
+      } else {
+        sortedResults.push(result);
+      }
+    }
+    context.results = sortedResults;
   }
 }
 
