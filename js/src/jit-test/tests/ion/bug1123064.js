@@ -3,7 +3,7 @@
 function toint32() {
 
     
-    var ToInteger = getSelfHostedValue("ToInteger");
+    var ToInteger = getSelfHostedValue("ToIntegerPositiveZero");
 
     
     var result = ToInteger(1);
