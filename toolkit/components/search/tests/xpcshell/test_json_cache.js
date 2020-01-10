@@ -7,7 +7,8 @@
 
 "use strict";
 
-var {getAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {getAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
 
 var cacheTemplate, appPluginsPath, profPlugins;
 
@@ -30,6 +31,22 @@ function run_test() {
 
   
   cacheTemplate.visibleDefaultEngines = getDefaultEngineList(false);
+
+  
+  
+  if (AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")) {
+    let esrOverrides = {
+      "google-b-d": "google-b-e",
+      "google-b-1-d": "google-b-1-e",
+    };
+
+    for (let engine in esrOverrides) {
+      let index = cacheTemplate.visibleDefaultEngines.indexOf(engine);
+      if (index > -1) {
+        cacheTemplate.visibleDefaultEngines[index] = esrOverrides[engine];
+      }
+    }
+  }
 
   run_next_test();
 }
