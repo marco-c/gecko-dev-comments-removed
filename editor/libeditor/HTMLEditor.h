@@ -144,7 +144,7 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD DeleteNode(nsINode* aNode) override;
 
-  NS_IMETHOD InsertLineBreak() override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD InsertLineBreak() override;
 
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult HandleKeyPressEvent(
@@ -214,7 +214,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult InsertParagraphSeparatorAsAction(nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertParagraphSeparatorAsAction(nsIPrincipal* aPrincipal = nullptr);
 
   MOZ_CAN_RUN_SCRIPT nsresult
   InsertElementAtSelectionAsAction(Element* aElement, bool aDeleteSelection,
@@ -1850,6 +1851,13 @@ class HTMLEditor final : public TextEditor,
 
   Element* GetNearestAncestorListItemElement(nsIContent& aContent) const;
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  InsertParagraphSeparatorAsSubAction();
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
@@ -1858,12 +1866,6 @@ class HTMLEditor final : public TextEditor,
 
  protected:  
   virtual ~HTMLEditor();
-
-  
-
-
-
-  nsresult InsertParagraphSeparatorAsSubAction();
 
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectAllInternal() override;

@@ -771,17 +771,6 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return MOZ_KnownLive(HTMLEditorRef())
           .WillInsertText(aInfo.mEditSubAction, aCancel, aHandled,
                           aInfo.inString, aInfo.outString, aInfo.maxLength);
-    case EditSubAction::eInsertParagraphSeparator: {
-      TextEditorRef().UndefineCaretBidiLevel();
-      EditActionResult result = WillInsertParagraphSeparator();
-      if (NS_WARN_IF(result.Failed())) {
-        return result.Rv();
-      }
-      *aCancel = result.Canceled();
-      *aHandled = result.Handled();
-      MOZ_ASSERT(!result.Ignored());
-      return NS_OK;
-    }
     case EditSubAction::eDeleteSelectedContent:
       return WillDeleteSelection(aInfo.collapsedAction, aInfo.stripWrappers,
                                  aCancel, aHandled);
@@ -827,6 +816,7 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return WillRelativeChangeZIndex(1, aCancel, aHandled);
     case EditSubAction::eCreateOrRemoveBlock:
     case EditSubAction::eInsertHTMLSource:
+    case EditSubAction::eInsertParagraphSeparator:
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
@@ -847,7 +837,6 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
   switch (aInfo.mEditSubAction) {
     case EditSubAction::eInsertText:
     case EditSubAction::eInsertLineBreak:
-    case EditSubAction::eInsertParagraphSeparator:
     case EditSubAction::eInsertTextComingFromIME:
       return NS_OK;
     case EditSubAction::eDeleteSelectedContent:
@@ -871,6 +860,7 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
       return NS_OK;
     case EditSubAction::eCreateOrRemoveBlock:
     case EditSubAction::eInsertHTMLSource:
+    case EditSubAction::eInsertParagraphSeparator:
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
@@ -1739,15 +1729,32 @@ bool HTMLEditor::CanContainParagraph(Element& aElement) const {
   return false;
 }
 
-EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
+  if (!mRules) {
+    return EditActionIgnored(NS_ERROR_NOT_INITIALIZED);
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  NS_WARNING_ASSERTION(result.Succeeded(),
+                       "CanHandleHTMLEditSubAction() failed");
+  if (result.Failed() || result.Canceled()) {
+    return result;
+  }
+
+  
+  
+  AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName);
+
+  AutoEditSubActionNotifier startToHandleEditSubAction(
+      *this, EditSubAction::eInsertParagraphSeparator, nsIEditor::eNext);
+
+  UndefineCaretBidiLevel();
 
   
   if (!SelectionRefPtr()->IsCollapsed()) {
     nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eStrip);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+        DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eStrip);
+    if (NS_WARN_IF(Destroyed())) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1756,7 +1763,7 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   }
 
   
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef()).WillInsert();
+  nsresult rv = WillInsert();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
   }
@@ -1770,8 +1777,7 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
       return EditActionIgnored(NS_ERROR_FAILURE);
     }
 
-    EditActionResult result =
-        MOZ_KnownLive(HTMLEditorRef()).SplitMailCiteElements(pointToSplit);
+    EditActionResult result = SplitMailCiteElements(pointToSplit);
     if (NS_WARN_IF(result.Failed())) {
       return result;
     }
@@ -1793,15 +1799,15 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
   
-  if (!HTMLEditorRef().IsModifiableNode(*atStartOfSelection.GetContainer())) {
+  if (!IsModifiableNode(*atStartOfSelection.GetContainer())) {
     return EditActionCanceled();
   }
 
   
   
   
-  RefPtr<Element> host = HTMLEditorRef().GetActiveEditingHost();
-  if (NS_WARN_IF(!host)) {
+  RefPtr<Element> editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
     return EditActionIgnored(NS_ERROR_FAILURE);
   }
 
@@ -1809,9 +1815,9 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   
   
   RefPtr<Element> blockParent =
-      HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), host);
+      HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), editingHost);
 
-  ParagraphSeparator separator = HTMLEditorRef().GetDefaultParagraphSeparator();
+  ParagraphSeparator separator = GetDefaultParagraphSeparator();
   bool insertBRElement;
   
   
@@ -1822,9 +1828,9 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   
   
   
-  else if (host == blockParent) {
+  else if (editingHost == blockParent) {
     insertBRElement = separator == ParagraphSeparator::br ||
-                      !HTMLEditorRef().CanContainParagraph(*host);
+                      !CanContainParagraph(*editingHost);
   }
   
   
@@ -1837,34 +1843,33 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   else {
     insertBRElement = true;
     for (Element* blockAncestor = blockParent; blockAncestor && insertBRElement;
-         blockAncestor = HTMLEditor::GetBlockNodeParent(blockAncestor, host)) {
-      insertBRElement = !HTMLEditorRef().CanContainParagraph(*blockAncestor);
+         blockAncestor =
+             HTMLEditor::GetBlockNodeParent(blockAncestor, editingHost)) {
+      insertBRElement = !CanContainParagraph(*blockAncestor);
     }
   }
 
   
   
   if (insertBRElement) {
-    nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef()).InsertBRElement(atStartOfSelection);
+    nsresult rv = InsertBRElement(atStartOfSelection);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditActionIgnored(rv);
     }
     return EditActionHandled();
   }
 
-  if (host == blockParent && separator != ParagraphSeparator::br) {
+  if (editingHost == blockParent && separator != ParagraphSeparator::br) {
     
     MOZ_ASSERT(separator == ParagraphSeparator::div ||
                separator == ParagraphSeparator::p);
     
     
     
-    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .FormatBlockContainerWithTransaction(MOZ_KnownLive(
-                          HTMLEditor::ToParagraphSeparatorTagName(separator)));
+    nsresult rv = FormatBlockContainerWithTransaction(
+        MOZ_KnownLive(HTMLEditor::ToParagraphSeparatorTagName(separator)));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
-        NS_WARN_IF(!CanHandleEditAction())) {
+        NS_WARN_IF(Destroyed())) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
     
@@ -1885,13 +1890,13 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
     blockParent =
-        HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), host);
+        HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), editingHost);
     if (NS_WARN_IF(!blockParent)) {
       return EditActionIgnored(NS_ERROR_UNEXPECTED);
     }
-    if (NS_WARN_IF(blockParent == host)) {
+    if (NS_WARN_IF(blockParent == editingHost)) {
       
-      rv = MOZ_KnownLive(HTMLEditorRef()).InsertBRElement(atStartOfSelection);
+      rv = InsertBRElement(atStartOfSelection);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return EditActionIgnored(rv);
       }
@@ -1904,23 +1909,20 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     
     
     
-    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
-        blockParent;
+    TopLevelEditSubActionDataRef().mNewBlockElement = blockParent;
   }
 
   
   
   
   
-  if (HTMLEditorRef().IsEmptyBlockElement(*blockParent,
-                                          HTMLEditor::IgnoreSingleBR::No)) {
+  if (IsEmptyBlockElement(*blockParent, IgnoreSingleBR::No)) {
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     EditorDOMPoint endOfBlockParent;
     endOfBlockParent.SetToEndOf(blockParent);
     RefPtr<Element> brElement =
-        MOZ_KnownLive(HTMLEditorRef())
-            .InsertBRElementWithTransaction(endOfBlockParent);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+        InsertBRElementWithTransaction(endOfBlockParent);
+    if (NS_WARN_IF(Destroyed())) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_WARN_IF(!brElement)) {
@@ -1928,35 +1930,31 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     }
   }
 
-  RefPtr<Element> listItem =
-      HTMLEditorRef().GetNearestAncestorListItemElement(*blockParent);
-  if (listItem && listItem != host) {
-    nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .HandleInsertParagraphInListItemElement(
-                *listItem, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
-                atStartOfSelection.Offset());
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "Failed to insert break into list item");
-    return EditActionHandled();
-  }
-
-  if (HTMLEditUtils::IsHeader(*blockParent)) {
-    
-    nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .HandleInsertParagraphInHeadingElement(
-                *blockParent, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
-                atStartOfSelection.Offset());
+  RefPtr<Element> listItem = GetNearestAncestorListItemElement(*blockParent);
+  if (listItem && listItem != editingHost) {
+    nsresult rv = HandleInsertParagraphInListItemElement(
+        *listItem, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
+        atStartOfSelection.Offset());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
-        "Failed to handle insertParagraph in the heading element");
+        "HandleInsertParagraphInListItemElement() failed, but ignored");
+    return EditActionHandled();
+  }
+
+  if (HTMLEditUtils::IsHeader(*blockParent)) {
+    
+    nsresult rv = HandleInsertParagraphInHeadingElement(
+        *blockParent, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
+        atStartOfSelection.Offset());
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HandleInsertParagraphInHeadingElement() failed, but ignored");
     return EditActionHandled();
   }
 
@@ -1973,9 +1971,7 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
        blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     
-    EditActionResult result =
-        MOZ_KnownLive(HTMLEditorRef())
-            .HandleInsertParagraphInParagraph(*blockParent);
+    EditActionResult result = HandleInsertParagraphInParagraph(*blockParent);
     if (NS_WARN_IF(result.Failed())) {
       return result;
     }
@@ -1988,12 +1984,12 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     }
     
     MOZ_ASSERT(!result.Canceled(),
-               "HandleInsertParagraphInParagraph canceled this edit action, "
+               "HandleInsertParagraphInParagraph() canceled this edit action, "
                "WillInsertBreak() needs to handle such case");
   }
 
   
-  rv = MOZ_KnownLive(HTMLEditorRef()).InsertBRElement(atStartOfSelection);
+  rv = InsertBRElement(atStartOfSelection);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditActionIgnored(rv);
   }
