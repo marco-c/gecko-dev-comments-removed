@@ -606,7 +606,6 @@ with modules["DOM"]:
     errors["NS_ERROR_DOM_DATA_CLONE_ERR"] = FAILURE(25)
     
     errors["NS_ERROR_TYPE_ERR"] = FAILURE(26)
-    errors["NS_ERROR_RANGE_ERR"] = FAILURE(27)
     
     errors["NS_ERROR_DOM_ENCODING_NOT_SUPPORTED_ERR"] = FAILURE(28)
     errors["NS_ERROR_DOM_INVALID_POINTER_ERR"] = FAILURE(29)
