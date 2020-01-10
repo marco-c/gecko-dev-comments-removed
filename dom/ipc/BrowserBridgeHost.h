@@ -56,6 +56,8 @@ class BrowserBridgeHost : public RemoteBrowser {
  private:
   virtual ~BrowserBridgeHost() = default;
 
+  already_AddRefed<nsIWidget> GetWidget() const;
+
   
   RefPtr<BrowserBridgeChild> mBridge;
   EffectsInfo mEffectsInfo;
