@@ -309,10 +309,16 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
 
   
   
+  OriginAttributes attrs = embedderBrowser->OriginAttributesRef();
+  RefPtr<nsIPrincipal> principal = embedderBrowser->GetContentPrincipal();
+  if (principal) {
+    attrs.SetFirstPartyDomain(
+        true, principal->OriginAttributesRef().mFirstPartyDomain);
+  }
+
   nsCOMPtr<nsIPrincipal> initialPrincipal =
-      NullPrincipal::CreateWithInheritedAttributes(
-          embedderBrowser->OriginAttributesRef(),
-           false);
+      NullPrincipal::CreateWithInheritedAttributes(attrs,
+                                                    false);
   WindowGlobalInit windowInit =
       WindowGlobalActor::AboutBlankInitializer(target, initialPrincipal);
 

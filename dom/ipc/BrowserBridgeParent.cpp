@@ -35,10 +35,18 @@ nsresult BrowserBridgeParent::InitWithProcess(
 
   
   
+  
   MutableTabContext tabContext;
+  OriginAttributes attrs;
+  attrs = Manager()->OriginAttributesRef();
+  RefPtr<nsIPrincipal> principal = Manager()->GetContentPrincipal();
+  if (principal) {
+    attrs.SetFirstPartyDomain(
+        true, principal->OriginAttributesRef().mFirstPartyDomain);
+  }
+
   tabContext.SetTabContext(false, Manager()->ChromeOuterWindowID(),
-                           Manager()->ShowFocusRings(),
-                           Manager()->OriginAttributesRef(), aPresentationURL,
+                           Manager()->ShowFocusRings(), attrs, aPresentationURL,
                            Manager()->GetMaxTouchPoints());
 
   

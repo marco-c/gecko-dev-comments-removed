@@ -51,6 +51,11 @@ void TabContext::SetPrivateBrowsingAttributes(bool aIsPrivateBrowsing) {
   mOriginAttributes.SyncAttributesWithPrivateBrowsing(aIsPrivateBrowsing);
 }
 
+void TabContext::SetFirstPartyDomainAttributes(
+    const nsAString& aFirstPartyDomain) {
+  mOriginAttributes.SetFirstPartyDomain(true, aFirstPartyDomain);
+}
+
 bool TabContext::UpdateTabContextAfterSwap(const TabContext& aContext) {
   
   MOZ_ASSERT(mInitialized);

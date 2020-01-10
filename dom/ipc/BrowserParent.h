@@ -193,6 +193,9 @@ class BrowserParent final : public PBrowserParent,
   ShowInfo GetShowInfo();
 
   
+  already_AddRefed<nsIPrincipal> GetContentPrincipal() const;
+
+  
 
 
 
