@@ -6808,29 +6808,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  const bool shouldDrawBackplate =
-      StaticPrefs::browser_display_permit_backplate() &&
-      ((PresContext()->PrefSheetPrefs().mUseAccessibilityTheme &&
-        StaticPrefs::browser_display_document_color_use() == 0) ||
-       (StaticPrefs::browser_display_document_color_use() == 2 &&
-        !PresContext()->IsChrome()));
-
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsLineBox* cursor = (hasDescendantPlaceHolders || textOverflow.isSome() ||
-                       shouldDrawBackplate)
+  nsLineBox* cursor = (hasDescendantPlaceHolders || textOverflow.isSome())
                           ? nullptr
                           : GetFirstLineContaining(aBuilder->GetDirtyRect().y);
   LineIterator line_end = LinesEnd();
@@ -6859,14 +6838,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     uint32_t lineCount = 0;
     nscoord lastY = INT32_MIN;
     nscoord lastYMost = INT32_MIN;
-    nsRect curBackplateArea;
-    
-    
-    
-    
-    
-    
-    uint16_t backplateIndex = 0;
     for (LineIterator line = LinesBegin(); line != line_end; ++line) {
       const nsRect lineArea = line->GetVisualOverflowArea();
       const bool lineInLine = line->IsInline();
@@ -6876,46 +6847,18 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                     lineCount, depth, drawnLines);
       }
 
-      if (!lineInLine && !curBackplateArea.IsEmpty()) {
-        
-        
-        
-        MOZ_ASSERT(shouldDrawBackplate,
-                   "if this master switch is off, curBackplateArea "
-                   "must be empty and we shouldn't get here");
-        aLists.BorderBackground()->AppendNewToTop<nsDisplaySolidColor>(
-            aBuilder, this, curBackplateArea,
-            PresContext()->DefaultBackgroundColor(), backplateIndex);
-        backplateIndex++;
-
-        curBackplateArea = nsRect();
-      }
-
       if (!lineArea.IsEmpty()) {
         if (lineArea.y < lastY || lineArea.YMost() < lastYMost) {
           nonDecreasingYs = false;
         }
         lastY = lineArea.y;
         lastYMost = lineArea.YMost();
-        if (lineInLine && shouldDrawBackplate) {
-          nsRect lineBackplate = lineArea + aBuilder->ToReferenceFrame(this);
-          if (curBackplateArea.IsEmpty()) {
-            curBackplateArea = lineBackplate;
-          } else {
-            curBackplateArea.OrWith(lineBackplate);
-          }
-        }
       }
       lineCount++;
     }
 
     if (nonDecreasingYs && lineCount >= MIN_LINES_NEEDING_CURSOR) {
       SetupLineCursor();
-    }
-    if (!curBackplateArea.IsEmpty()) {
-      aLists.BorderBackground()->AppendNewToTop<nsDisplaySolidColor>(
-          aBuilder, this, curBackplateArea,
-          PresContext()->DefaultBackgroundColor(), backplateIndex);
     }
   }
 
