@@ -638,7 +638,7 @@ class gfxUserFontEntry : public gfxFontEntry {
  protected:
   const uint8_t* SanitizeOpenTypeData(const uint8_t* aData, uint32_t aLength,
                                       uint32_t& aSaneLength,
-                                      gfxUserFontType aFontType);
+                                      gfxUserFontType& aFontType);
 
   
   void LoadNextSrc();
