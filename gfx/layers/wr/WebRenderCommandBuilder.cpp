@@ -1217,35 +1217,16 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
   nsDisplayItem* startOfCurrentGroup = item;
   while (item) {
     if (IsItemProbablyActive(item, mDisplayListBuilder)) {
-      currentGroup->EndGroup(aCommandBuilder->mManager, aDisplayListBuilder,
-                             aBuilder, aResources, this, startOfCurrentGroup,
-                             item);
-
-      {
-        MOZ_ASSERT(item->GetType() != DisplayItemType::TYPE_RENDER_ROOT);
-        auto spaceAndClipChain = mClipManager.SwitchItem(item);
-        wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
-
-        sIndent++;
-        
-        
-        RenderRootStateManager* manager =
-            aCommandBuilder->mManager->GetRenderRootStateManager(
-                aBuilder.GetRenderRoot());
-        bool createdWRCommands = item->CreateWebRenderCommands(
-            aBuilder, aResources, aSc, manager, mDisplayListBuilder);
-        sIndent--;
-        MOZ_RELEASE_ASSERT(
-            createdWRCommands,
-            "active transforms should always succeed at creating "
-            "WebRender commands");
-      }
-
+      
       RefPtr<WebRenderGroupData> groupData =
           aCommandBuilder->CreateOrRecycleWebRenderUserData<WebRenderGroupData>(
               item, aBuilder.GetRenderRoot());
 
       
+      
+      
+      
+
       
       
       
@@ -1281,6 +1262,30 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
       groupData->mFollowingGroup.mVisibleRect = currentGroup->mVisibleRect;
       groupData->mFollowingGroup.mLastVisibleRect = currentGroup->mLastVisibleRect;
       groupData->mFollowingGroup.mPreservedRect = currentGroup->mPreservedRect;
+
+      currentGroup->EndGroup(aCommandBuilder->mManager, aDisplayListBuilder,
+                             aBuilder, aResources, this, startOfCurrentGroup,
+                             item);
+
+      {
+        MOZ_ASSERT(item->GetType() != DisplayItemType::TYPE_RENDER_ROOT);
+        auto spaceAndClipChain = mClipManager.SwitchItem(item);
+        wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
+
+        sIndent++;
+        
+        
+        RenderRootStateManager* manager =
+            aCommandBuilder->mManager->GetRenderRootStateManager(
+                aBuilder.GetRenderRoot());
+        bool createdWRCommands = item->CreateWebRenderCommands(
+            aBuilder, aResources, aSc, manager, mDisplayListBuilder);
+        sIndent--;
+        MOZ_RELEASE_ASSERT(
+            createdWRCommands,
+            "active transforms should always succeed at creating "
+            "WebRender commands");
+      }
 
       currentGroup = &groupData->mFollowingGroup;
 
