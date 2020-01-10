@@ -17,7 +17,7 @@ var hash = Cc["@mozilla.org/security/hash;1"]
            .createInstance(Ci.nsICryptoHash);
 
 
-Cu.importGlobalProperties(["caches", "File", "fetch"]);
+Cu.importGlobalProperties(["caches", "fetch"]);
 
 
 function create_test_profile(zipFileName) {
@@ -81,4 +81,3 @@ function getCacheDir() {
 
   return cacheDir;
 }
-

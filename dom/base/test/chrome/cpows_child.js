@@ -1,7 +1,6 @@
 
 dump("loaded child cpow test\n");
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
 var is_remote;
 
 (function start() {

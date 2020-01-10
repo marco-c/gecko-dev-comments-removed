@@ -2,8 +2,6 @@
 
 
 
-Cu.importGlobalProperties(["DOMParser"]);
-
 var {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var server = new HttpServer();

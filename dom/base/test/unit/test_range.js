@@ -2,8 +2,6 @@
 
 
 
-Cu.importGlobalProperties(["NodeFilter"]);
-
 const UNORDERED_TYPE = 8; 
 
 

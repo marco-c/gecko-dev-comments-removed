@@ -3,8 +3,6 @@
 
 
 
-Cu.importGlobalProperties(["NodeFilter"]);
-
 function run_test() {
   test_treeWalker_currentNode();
 }
@@ -23,4 +21,3 @@ function test_treeWalker_currentNode() {
   walker.currentNode = body.firstChild;
   walker.nextNode();
 }
-
