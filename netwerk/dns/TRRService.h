@@ -35,6 +35,7 @@ class TRRService : public nsIObserver,
   bool AllowRFC1918() { return mRfc1918; }
   bool UseGET() { return mUseGET; }
   bool EarlyAAAA() { return mEarlyAAAA; }
+  bool CheckIPv6Connectivity() { return mCheckIPv6Connectivity; }
   bool DisableIPv6() { return mDisableIPv6; }
   bool DisableECS() { return mDisableECS; }
   nsresult GetURI(nsCString& result);
@@ -85,8 +86,9 @@ class TRRService : public nsIObserver,
       mCaptiveIsPassed;           
   Atomic<bool, Relaxed> mUseGET;  
   Atomic<bool, Relaxed> mEarlyAAAA;  
-  Atomic<bool, Relaxed> mDisableIPv6;  
-  Atomic<bool, Relaxed> mDisableECS;   
+  Atomic<bool, Relaxed> mCheckIPv6Connectivity;  
+  Atomic<bool, Relaxed> mDisableIPv6;            
+  Atomic<bool, Relaxed> mDisableECS;  
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
 

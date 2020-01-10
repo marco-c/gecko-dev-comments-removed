@@ -5535,6 +5535,8 @@ pref("network.trr.request-timeout", 1500);
 
 pref("network.trr.early-AAAA", false);
 
+pref("network.trr.skip-AAAA-when-not-supported", true);
+
 pref("network.trr.disable-ECS", true);
 
 pref("network.trr.max-fails", 5);
