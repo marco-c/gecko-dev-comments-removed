@@ -12,7 +12,7 @@ const DIRPATH = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
   ""
 );
-const parentPATH = DIRPATH + "test_deck_has_out_of_process_iframe.xul";
+const parentPATH = DIRPATH + "test_deck_has_out_of_process_iframe.xhtml";
 const iframePATH = DIRPATH + "target.html";
 
 
