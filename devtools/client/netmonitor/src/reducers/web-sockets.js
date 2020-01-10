@@ -5,9 +5,13 @@
 "use strict";
 
 const {
+  SELECT_REQUEST,
   WS_ADD_FRAME,
   WS_SELECT_FRAME,
   WS_OPEN_FRAME_DETAILS,
+  WS_CLEAR_FRAMES,
+  WS_TOGGLE_FRAME_FILTER_TYPE,
+  WS_SET_REQUEST_FILTER_TEXT,
 } = require("../constants");
 
 
@@ -18,24 +22,45 @@ function WebSockets() {
   return {
     
     frames: new Map(),
+    frameFilterText: "",
+    
+    frameFilterType: "all",
     selectedFrame: null,
     frameDetailsOpen: false,
+    currentChannelId: null,
   };
 }
+
+
+
+
+
+function setChannelId(state, action) {
+  return {
+    ...state,
+    currentChannelId: action.httpChannelId,
+    
+    frameFilterText: "",
+  };
+}
+
+
 
 
 function addFrame(state, action) {
+  const { httpChannelId } = action;
   const nextState = { ...state };
 
   const newFrame = {
-    httpChannelId: action.httpChannelId,
+    httpChannelId,
     ...action.data,
   };
 
-  nextState.frames = mapSet(state.frames, newFrame.httpChannelId, newFrame);
-
+  nextState.frames = mapSet(nextState.frames, newFrame.httpChannelId, newFrame);
   return nextState;
 }
+
+
 
 
 function selectFrame(state, action) {
@@ -46,10 +71,52 @@ function selectFrame(state, action) {
   };
 }
 
+
+
+
 function openFrameDetails(state, action) {
   return {
     ...state,
     frameDetailsOpen: action.open,
+  };
+}
+
+
+
+
+function clearFrames(state) {
+  const nextState = { ...state };
+  nextState.frames = new Map(nextState.frames);
+  nextState.frames.delete(nextState.currentChannelId);
+
+  return {
+    ...WebSockets(),
+    
+    frames: nextState.frames,
+    
+    currentChannelId: nextState.currentChannelId,
+    frameFilterType: nextState.frameFilterType,
+    frameFilterText: nextState.frameFilterText,
+  };
+}
+
+
+
+
+function toggleFrameFilterType(state, action) {
+  return {
+    ...state,
+    frameFilterType: action.filter,
+  };
+}
+
+
+
+
+function setFrameFilterText(state, action) {
+  return {
+    ...state,
+    frameFilterText: action.text,
   };
 }
 
@@ -73,12 +140,20 @@ function mapSet(map, key, value) {
 
 function webSockets(state = WebSockets(), action) {
   switch (action.type) {
+    case SELECT_REQUEST:
+      return setChannelId(state, action);
     case WS_ADD_FRAME:
       return addFrame(state, action);
     case WS_SELECT_FRAME:
       return selectFrame(state, action);
     case WS_OPEN_FRAME_DETAILS:
       return openFrameDetails(state, action);
+    case WS_CLEAR_FRAMES:
+      return clearFrames(state);
+    case WS_TOGGLE_FRAME_FILTER_TYPE:
+      return toggleFrameFilterType(state, action);
+    case WS_SET_REQUEST_FILTER_TEXT:
+      return setFrameFilterText(state, action);
     default:
       return state;
   }
