@@ -1332,9 +1332,8 @@ void gfxTextRun::SortGlyphRuns() {
     
     
     MOZ_ASSERT(run.mFont != nullptr);
-    if (!prevRun ||
-        !prevRun->Matches(run.mFont, run.mOrientation, run.mIsCJK,
-                          run.mMatchType)) {
+    if (!prevRun || !prevRun->Matches(run.mFont, run.mOrientation, run.mIsCJK,
+                                      run.mMatchType)) {
       
       
       MOZ_ASSERT(prevRun == nullptr ||
