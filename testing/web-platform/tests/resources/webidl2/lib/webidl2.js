@@ -103,10 +103,10 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_webidl2_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  __webpack_require__.d(__webpack_exports__, "parse", function() { return _lib_webidl2_js__WEBPACK_IMPORTED_MODULE_0__["parse"]; });
 
- var _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
+ var _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(29);
  __webpack_require__.d(__webpack_exports__, "write", function() { return _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__["write"]; });
 
- var _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
+ var _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
  __webpack_require__.d(__webpack_exports__, "validate", function() { return _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__["validate"]; });
 
 
@@ -128,10 +128,10 @@ __webpack_require__.r(__webpack_exports__);
  var _productions_typedef_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(17);
  var _productions_callback_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(18);
  var _productions_interface_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(19);
- var _productions_mixin_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(25);
- var _productions_dictionary_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(26);
- var _productions_namespace_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(28);
- var _productions_callback_interface_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(29);
+ var _productions_mixin_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(24);
+ var _productions_dictionary_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(25);
+ var _productions_namespace_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(27);
+ var _productions_callback_interface_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(28);
 
 
 
@@ -299,7 +299,6 @@ const nonRegexTerminals = [
   "async",
   "boolean",
   "byte",
-  "constructor",
   "double",
   "false",
   "float",
@@ -507,8 +506,7 @@ function lastLine(text) {
 
 
 
-
-function error(source, position, current, message, kind, { level = "error", autofix } = {}) {
+function error(source, position, current, message, kind, { level = "error" } = {}) {
   
 
 
@@ -558,7 +556,6 @@ function error(source, position, current, message, kind, { level = "error", auto
     line,
     sourceName: source.name,
     level,
-    autofix,
     input: subsequentText,
     tokens: subsequentTokens
   };
@@ -667,15 +664,12 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "type_with_extended_attributes", function() { return type_with_extended_attributes; });
  __webpack_require__.d(__webpack_exports__, "return_type", function() { return return_type; });
  __webpack_require__.d(__webpack_exports__, "stringifier", function() { return stringifier; });
- __webpack_require__.d(__webpack_exports__, "autofixAddExposedWindow", function() { return autofixAddExposedWindow; });
  var _type_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
  var _argument_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var _token_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(13);
  var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(11);
  var _operation_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(14);
  var _attribute_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
- var _tokeniser_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(2);
-
 
 
 
@@ -842,29 +836,6 @@ function stringifier(tokeniser) {
     _operation_js__WEBPACK_IMPORTED_MODULE_4__["Operation"].parse(tokeniser, { special }) ||
     tokeniser.error("Unterminated stringifier");
   return member;
-}
-
-
-
-
-
-function autofixAddExposedWindow(def) {
-  return () => {
-    if (def.extAttrs.length){
-      const tokeniser = new _tokeniser_js__WEBPACK_IMPORTED_MODULE_6__["Tokeniser"]("Exposed=Window,");
-      const exposed = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__["SimpleExtendedAttribute"].parse(tokeniser);
-      exposed.tokens.separator = tokeniser.consume(",");
-      const existing = def.extAttrs[0];
-      if (!/^\s/.test(existing.tokens.name.trivia)) {
-        existing.tokens.name.trivia = ` ${existing.tokens.name.trivia}`;
-      }
-      def.extAttrs.unshift(exposed);
-    } else {
-      def.extAttrs = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__["ExtendedAttributes"].parse(new _tokeniser_js__WEBPACK_IMPORTED_MODULE_6__["Tokeniser"]("[Exposed=Window]"));
-      def.extAttrs.tokens.open.trivia = def.tokens.base.trivia;
-      def.tokens.base.trivia = " ";
-    }
-  };
 }
 
 
@@ -1094,15 +1065,25 @@ class Base {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "dictionaryWithinUnion", function() { return dictionaryWithinUnion; });
  __webpack_require__.d(__webpack_exports__, "idlTypeIncludesDictionary", function() { return idlTypeIncludesDictionary; });
+ __webpack_require__.d(__webpack_exports__, "referencesTypedef", function() { return referencesTypedef; });
+
+
+
+function* dictionaryWithinUnion(subtypes, defs) {
+  for (const subtype of subtypes) {
+    const def = defs.unique.get(subtype.idlType);
+    if (def && def.type === "dictionary") {
+      yield subtype;
+    }
+  }
+}
 
 
 
 
-
-
-
-function idlTypeIncludesDictionary(idlType, defs, { useNullableInner } = {}) {
+function idlTypeIncludesDictionary(idlType, defs) {
   if (!idlType.union) {
     const def = defs.unique.get(idlType.idlType);
     if (!def) {
@@ -1122,7 +1103,7 @@ function idlTypeIncludesDictionary(idlType, defs, { useNullableInner } = {}) {
         return idlType;
       }
     }
-    if (def.type === "dictionary" && (useNullableInner || !idlType.nullable)) {
+    if (def.type === "dictionary") {
       return idlType;
     }
   }
@@ -1135,6 +1116,14 @@ function idlTypeIncludesDictionary(idlType, defs, { useNullableInner } = {}) {
       return subtype;
     }
   }
+}
+
+
+
+
+function referencesTypedef(idlType, defs) {
+  const result = defs.unique.get(idlType.idlType);
+  return result && result.type === "typedef";
 }
 
 
@@ -1200,27 +1189,17 @@ class Argument extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
 
   *validate(defs) {
     yield* this.idlType.validate(defs);
-    if (Object(_validators_helpers_js__WEBPACK_IMPORTED_MODULE_6__["idlTypeIncludesDictionary"])(this.idlType, defs, { useNullableInner: true })) {
+    if (Object(_validators_helpers_js__WEBPACK_IMPORTED_MODULE_6__["idlTypeIncludesDictionary"])(this.idlType, defs)) {
+      if (this.optional && !this.default) {
+        const message = `Optional dictionary arguments must have a default value of \`{}\`.`;
+        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_5__["validationError"])(this.source, this.tokens.name, this, message);
+      }
       if (this.idlType.nullable) {
         const message = `Dictionary arguments cannot be nullable.`;
         yield Object(_error_js__WEBPACK_IMPORTED_MODULE_5__["validationError"])(this.source, this.tokens.name, this, message);
-      } else if (this.optional && !this.default) {
-        const message = `Optional dictionary arguments must have a default value of \`{}\`.`;
-        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_5__["validationError"])(this.source, this.tokens.name, this, message, {
-          autofix: autofixOptionalDictionaryDefaultValue(this)
-        });
       }
     }
   }
-}
-
-
-
-
-function autofixOptionalDictionaryDefaultValue(arg) {
-  return () => {
-    arg.default = _default_js__WEBPACK_IMPORTED_MODULE_1__["Default"].parse(new _tokeniser_js__WEBPACK_IMPORTED_MODULE_4__["Tokeniser"](" = {}"));
-  };
 }
 
 
@@ -1280,7 +1259,6 @@ class Default extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "SimpleExtendedAttribute", function() { return SimpleExtendedAttribute; });
  __webpack_require__.d(__webpack_exports__, "ExtendedAttributes", function() { return ExtendedAttributes; });
  var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
  var _array_base_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(12);
@@ -1737,8 +1715,6 @@ __webpack_require__.r(__webpack_exports__);
  var _helpers_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
  var _error_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(3);
  var _validators_interface_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(23);
- var _constructor_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(24);
-
 
 
 
@@ -1771,7 +1747,6 @@ class Interface extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] 
       inheritable: !partial,
       allowedMembers: [
         [_constant_js__WEBPACK_IMPORTED_MODULE_3__["Constant"].parse],
-        [_constructor_js__WEBPACK_IMPORTED_MODULE_8__["Constructor"].parse],
         [static_member],
         [_helpers_js__WEBPACK_IMPORTED_MODULE_5__["stringifier"]],
         [_iterable_js__WEBPACK_IMPORTED_MODULE_4__["IterableLike"].parse],
@@ -1797,9 +1772,7 @@ To fix, add, for example, \`[Exposed=Window]\`. Please also consider carefully \
 if your interface should also be exposed in a Worker scope. Refer to the \
 [WebIDL spec section on Exposed](https://heycam.github.io/webidl/#Exposed) \
 for more information.`;
-      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_6__["validationError"])(this.source, this.tokens.name, this, message, {
-        autofix: Object(_helpers_js__WEBPACK_IMPORTED_MODULE_5__["autofixAddExposedWindow"])(this)
-      });
+      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_6__["validationError"])(this.source, this.tokens.name, this, message);
     }
 
     yield* super.validate(defs);
@@ -2062,43 +2035,6 @@ function* checkInterfaceMemberDuplication(defs, i) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Constructor", function() { return Constructor; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
-
-
-
-class Constructor extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-  static parse(tokeniser) {
-    const base = tokeniser.consume("constructor");
-    if (!base) {
-      return;
-    }
-    const tokens = { base };
-    tokens.open = tokeniser.consume("(") || tokeniser.error("No argument list in constructor");
-    const args = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["argument_list"])(tokeniser);
-    tokens.close = tokeniser.consume(")") || tokeniser.error("Unterminated constructor");
-    tokens.termination = tokeniser.consume(";") || tokeniser.error("No semicolon after constructor");
-    const ret = new Constructor({ tokens });
-    ret.arguments = args;
-    return ret;
-  }
-
-  get type() {
-    return "constructor";
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Mixin", function() { return Mixin; });
  var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
  var _constant_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(21);
@@ -2146,7 +2082,7 @@ class Mixin extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Dictionary", function() { return Dictionary; });
  var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
- var _field_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
+ var _field_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
 
 
 
@@ -2235,8 +2171,6 @@ __webpack_require__.r(__webpack_exports__);
  var _attribute_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
  var _operation_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(14);
  var _error_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(5);
-
 
 
 
@@ -2272,9 +2206,7 @@ To fix, add, for example, [Exposed=Window]. Please also consider carefully \
 if your namespace should also be exposed in a Worker scope. Refer to the \
 [WebIDL spec section on Exposed](https://heycam.github.io/webidl/#Exposed) \
 for more information.`;
-      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_3__["validationError"])(this.source, this.tokens.name, this, message, {
-        autofix: Object(_helpers_js__WEBPACK_IMPORTED_MODULE_4__["autofixAddExposedWindow"])(this)
-      });
+      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_3__["validationError"])(this.source, this.tokens.name, this, message);
     }
     yield* super.validate(defs);
   }
@@ -2484,17 +2416,6 @@ function write(ast, { templates: ts = templates } = {}) {
     ]), { data: it, parent });
   }
 
-  function constructor(it, parent) {
-    return ts.definition(ts.wrap([
-      extended_attributes(it.extAttrs),
-      token(it.tokens.base),
-      token(it.tokens.open),
-      ts.wrap(it.arguments.map(argument)),
-      token(it.tokens.close),
-      token(it.tokens.termination)
-    ]), { data: it, parent });
-  }
-
   function inheritance(inh) {
     if (!inh.tokens.inheritance) {
       return "";
@@ -2617,7 +2538,6 @@ function write(ast, { templates: ts = templates } = {}) {
     namespace: container,
     operation,
     attribute,
-    constructor,
     dictionary: container,
     field,
     const: const_,
