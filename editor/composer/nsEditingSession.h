@@ -30,7 +30,6 @@ class nsITimer;
 class nsIChannel;
 class nsIControllers;
 class nsIDocShell;
-class nsIEditor;
 class nsIWebProgress;
 
 namespace mozilla {
@@ -53,6 +52,18 @@ class nsEditingSession final : public nsIEditingSession,
   
   NS_DECL_NSIEDITINGSESSION
 
+  
+
+
+
+  nsresult DetachFromWindow(nsPIDOMWindowOuter* aWindow);
+
+  
+
+
+
+  nsresult ReattachToWindow(nsPIDOMWindowOuter* aWindow);
+
  protected:
   virtual ~nsEditingSession();
 
@@ -64,6 +75,17 @@ class nsEditingSession final : public nsIEditingSession,
 
   nsresult SetContextOnControllerById(nsIControllers* aControllers,
                                       nsISupports* aContext, uint32_t aID);
+
+  
+
+
+  nsresult SetEditorOnControllers(nsPIDOMWindowOuter& aWindow,
+                                  mozilla::HTMLEditor* aEditor);
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow);
 
   nsresult PrepareForEditing(nsPIDOMWindowOuter* aWindow);
 

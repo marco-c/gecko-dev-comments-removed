@@ -163,7 +163,7 @@ nsEditingSession::MakeWindowEditable(mozIDOMWindowProxy* aWindow,
 
   
   if (!aDoAfterUriLoad) {
-    rv = SetupEditorOnWindow(aWindow);
+    rv = SetupEditorOnWindow(MOZ_KnownLive(*window));
 
     
     
@@ -266,20 +266,8 @@ bool IsSupportedTextType(const char* aMIMEType) {
   return false;
 }
 
-
-
-
-
-
-
-NS_IMETHODIMP
-nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
+nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   mDoneSetup = true;
-
-  NS_ENSURE_TRUE(aWindow, NS_ERROR_FAILURE);
-  auto* window = nsPIDOMWindowOuter::From(aWindow);
-
-  nsresult rv;
 
   
   
@@ -288,7 +276,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   nsAutoCString mimeCType;
 
   
-  if (RefPtr<Document> doc = window->GetDoc()) {
+  if (RefPtr<Document> doc = aWindow.GetDoc()) {
     nsAutoString mimeType;
     doc->GetContentType(mimeType);
     AppendUTF16toUTF8(mimeType, mimeCType);
@@ -348,8 +336,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   
   
   
-  rv = mComposerCommandsUpdater->Init(window);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mComposerCommandsUpdater->Init(aWindow);
 
   if (mEditorStatus != eEditorCreationInProgress) {
     RefPtr<ComposerCommandsUpdater> updater = mComposerCommandsUpdater;
@@ -366,7 +353,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
 
   
   
-  nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
+  nsCOMPtr<nsIDocShell> docShell = aWindow.GetDocShell();
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
   RefPtr<PresShell> presShell = docShell->GetPresShell();
   if (NS_WARN_IF(!presShell)) {
@@ -401,14 +388,14 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
         do_GetWeakReference(static_cast<nsIEditor*>(htmlEditor.get()));
   }
   
-  rv = docShell->SetHTMLEditor(htmlEditor);
+  nsresult rv = docShell->SetHTMLEditor(htmlEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (needHTMLController) {
     
     rv = SetupEditorCommandController(
-        nsBaseCommandController::CreateHTMLEditorController, aWindow,
+        nsBaseCommandController::CreateHTMLEditorController, &aWindow,
         static_cast<nsIEditor*>(htmlEditor), &mHTMLCommandControllerId);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -523,7 +510,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   if (mComposerCommandsUpdater && htmlEditor) {
     
     
-    SetEditorOnControllers(aWindow, nullptr);
+    SetEditorOnControllers(*window, nullptr);
   }
 
   
@@ -879,7 +866,8 @@ nsresult nsEditingSession::EndDocumentLoad(nsIWebProgress* aWebProgress,
     mEditorStatus = eEditorErrorFileNotFound;
   }
 
-  nsIDocShell* docShell = nsPIDOMWindowOuter::From(domWindow)->GetDocShell();
+  auto* window = nsPIDOMWindowOuter::From(domWindow);
+  nsIDocShell* docShell = window->GetDocShell();
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);  
 
   
@@ -910,7 +898,7 @@ nsresult nsEditingSession::EndDocumentLoad(nsIWebProgress* aWebProgress,
 
       if (needsSetup) {
         mCanCreateEditor = false;
-        rv = SetupEditorOnWindow(domWindow);
+        rv = SetupEditorOnWindow(MOZ_KnownLive(*window));
         if (NS_FAILED(rv)) {
           
           if (mLoadBlankDocTimer) {
@@ -1087,24 +1075,13 @@ nsresult nsEditingSession::SetupEditorCommandController(
   return SetContextOnControllerById(controllers, aContext, *aControllerId);
 }
 
-
-
-
-
-
-
-NS_IMETHODIMP
-nsEditingSession::SetEditorOnControllers(mozIDOMWindowProxy* aWindow,
-                                         nsIEditor* aEditor) {
-  NS_ENSURE_TRUE(aWindow, NS_ERROR_NULL_POINTER);
-
-  auto* piWindow = nsPIDOMWindowOuter::From(aWindow);
-
+nsresult nsEditingSession::SetEditorOnControllers(nsPIDOMWindowOuter& aWindow,
+                                                  HTMLEditor* aEditor) {
   nsCOMPtr<nsIControllers> controllers;
-  nsresult rv = piWindow->GetControllers(getter_AddRefs(controllers));
+  nsresult rv = aWindow.GetControllers(getter_AddRefs(controllers));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsISupports> editorAsISupports = static_cast<nsISupports*>(aEditor);
+  nsCOMPtr<nsISupports> editorAsISupports = static_cast<nsIEditor*>(aEditor);
   if (mBaseCommandControllerId) {
     rv = SetContextOnControllerById(controllers, editorAsISupports,
                                     mBaseCommandControllerId);
@@ -1209,7 +1186,7 @@ void nsEditingSession::RestoreAnimationMode(nsPIDOMWindowOuter* aWindow) {
   presContext->SetImageAnimationMode(mImageAnimationMode);
 }
 
-nsresult nsEditingSession::DetachFromWindow(mozIDOMWindowProxy* aWindow) {
+nsresult nsEditingSession::DetachFromWindow(nsPIDOMWindowOuter* aWindow) {
   NS_ENSURE_TRUE(mDoneSetup, NS_OK);
 
   NS_ASSERTION(mComposerCommandsUpdater,
@@ -1221,14 +1198,12 @@ nsresult nsEditingSession::DetachFromWindow(mozIDOMWindowProxy* aWindow) {
     mLoadBlankDocTimer = nullptr;
   }
 
-  auto* window = nsPIDOMWindowOuter::From(aWindow);
-
   
   
-  RemoveEditorControllers(window);
-  RemoveWebProgressListener(window);
-  RestoreJSAndPlugins(window);
-  RestoreAnimationMode(window);
+  RemoveEditorControllers(aWindow);
+  RemoveWebProgressListener(aWindow);
+  RestoreJSAndPlugins(aWindow);
+  RestoreAnimationMode(aWindow);
 
   
   
@@ -1237,7 +1212,7 @@ nsresult nsEditingSession::DetachFromWindow(mozIDOMWindowProxy* aWindow) {
   return NS_OK;
 }
 
-nsresult nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow) {
+nsresult nsEditingSession::ReattachToWindow(nsPIDOMWindowOuter* aWindow) {
   NS_ENSURE_TRUE(mDoneSetup, NS_OK);
   NS_ENSURE_TRUE(aWindow, NS_ERROR_FAILURE);
 
@@ -1248,8 +1223,7 @@ nsresult nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow) {
   
   nsresult rv;
 
-  auto* window = nsPIDOMWindowOuter::From(aWindow);
-  nsIDocShell* docShell = window->GetDocShell();
+  nsIDocShell* docShell = aWindow->GetDocShell();
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
   mDocShell = do_GetWeakReference(docShell);
 
@@ -1263,7 +1237,7 @@ nsresult nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow) {
   mEditorStatus = eEditorCreationInProgress;
 
   
-  rv = PrepareForEditing(window);
+  rv = PrepareForEditing(aWindow);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1278,7 +1252,7 @@ nsresult nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mComposerCommandsUpdater) {
-    mComposerCommandsUpdater->Init(window);
+    mComposerCommandsUpdater->Init(*aWindow);
   }
 
   
@@ -1307,7 +1281,7 @@ nsresult nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = SetEditorOnControllers(aWindow, htmlEditor);
+  rv = SetEditorOnControllers(*aWindow, htmlEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef DEBUG

@@ -48,7 +48,7 @@ class ComposerCommandsUpdater final : public nsIDocumentStateListener,
   
   NS_DECL_NSITRANSACTIONLISTENER
 
-  nsresult Init(nsPIDOMWindowOuter* aDOMWindow);
+  void Init(nsPIDOMWindowOuter& aDOMWindow);
 
   
 
