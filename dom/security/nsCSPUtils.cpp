@@ -877,6 +877,25 @@ bool nsCSPNonceSrc::permits(nsIURI* aUri, const nsAString& aNonce,
                  NS_ConvertUTF16toUTF8(aNonce).get()));
   }
 
+  if (aReportOnly && aWasRedirected && aNonce.IsEmpty()) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_ASSERT(aParserCreated == false,
+               "Skipping nonce-check is only allowed for Preloads");
+    return true;
+  }
+
   
   return mNonce.Equals(aNonce);
 }
