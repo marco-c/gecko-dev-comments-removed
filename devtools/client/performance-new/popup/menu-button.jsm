@@ -74,6 +74,15 @@ function getIframeFromEvent(event) {
 
 
 
+const updateButtonColorForElement = buttonElement => () => {
+  const isRunning = Services.profiler.IsActive();
+
+  
+  buttonElement.style.fill = isRunning ? "#0060df" : "";
+};
+
+
+
 
 
 function initialize() {
@@ -112,33 +121,20 @@ function initialize() {
     },
     onBeforeCreated: (document) => {
       setMenuItemChecked(document, true);
-      observer = {
-        observe(subject, topic, data) {
-          switch (topic) {
-            case "profiler-started": {
-              const button = document.querySelector("#profiler-button");
-              if (button) {
-                
-                button.style.fill = "#0060df";
-              }
-              break;
-            }
-            case "profiler-stopped": {
-              const button = document.querySelector("#profiler-button");
-              if (button) {
-                button.style.fill = "";
-              }
-              break;
-            }
-          }
-        },
-      };
+    },
+    onCreated: (buttonElement) => {
+      observer = updateButtonColorForElement(buttonElement);
       Services.obs.addObserver(observer, "profiler-started");
       Services.obs.addObserver(observer, "profiler-stopped");
+
+      
+      
+      observer();
     },
     onDestroyed: () => {
       Services.obs.removeObserver(observer, "profiler-started");
       Services.obs.removeObserver(observer, "profiler-stopped");
+      observer = null;
     },
   };
   CustomizableUI.createWidget(item);
