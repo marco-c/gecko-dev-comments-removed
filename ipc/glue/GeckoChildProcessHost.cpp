@@ -84,6 +84,8 @@ using mozilla::MonitorAutoLock;
 using mozilla::Preferences;
 using mozilla::StaticMutexAutoLock;
 using mozilla::ipc::GeckoChildProcessHost;
+using mozilla::ipc::LaunchError;
+using mozilla::ipc::ProcessHandlePromise;
 
 namespace mozilla {
 MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPRFileDesc, PRFileDesc,
@@ -192,14 +194,14 @@ void GeckoChildProcessHost::Destroy() {
   MOZ_RELEASE_ASSERT(!mDestroying);
   
   RemoveFromProcessList();
-  RefPtr<HandlePromise> whenReady = mHandlePromise;
+  RefPtr<ProcessHandlePromise> whenReady = mHandlePromise;
 
   if (!whenReady) {
     
-    whenReady = HandlePromise::CreateAndReject(LaunchError{}, __func__);
+    whenReady = ProcessHandlePromise::CreateAndReject(LaunchError{}, __func__);
   }
 
-  using Value = HandlePromise::ResolveOrRejectValue;
+  using Value = ProcessHandlePromise::ResolveOrRejectValue;
   mDestroying = true;
   whenReady->Then(XRE_GetIOMessageLoop()->SerialEventTarget(), __func__,
                   [this](const Value&) { delete this; });
@@ -401,7 +403,7 @@ bool GeckoChildProcessHost::AsyncLaunch(std::vector<std::string> aExtraOpts) {
   MessageLoop* ioLoop = XRE_GetIOMessageLoop();
 
   MOZ_ASSERT(mHandlePromise == nullptr);
-  mHandlePromise = new HandlePromise::Private(__func__);
+  mHandlePromise = new ProcessHandlePromise::Private(__func__);
 
   
   
@@ -1363,7 +1365,7 @@ void GeckoChildProcessHost::OnChannelError() {
   
 }
 
-RefPtr<GeckoChildProcessHost::HandlePromise>
+RefPtr<ProcessHandlePromise>
 GeckoChildProcessHost::WhenProcessHandleReady() {
   MOZ_ASSERT(mHandlePromise != nullptr);
   return mHandlePromise;

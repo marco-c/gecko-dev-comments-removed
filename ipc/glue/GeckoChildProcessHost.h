@@ -38,6 +38,10 @@ typedef _MacSandboxInfo MacSandboxInfo;
 namespace mozilla {
 namespace ipc {
 
+struct LaunchError {};
+typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
+    ProcessHandlePromise;
+
 class GeckoChildProcessHost : public ChildProcessHost,
                               public LinkedListElement<GeckoChildProcessHost> {
  protected:
@@ -94,14 +98,9 @@ class GeckoChildProcessHost : public ChildProcessHost,
   virtual void OnChannelError() override;
   virtual void GetQueuedMessages(std::queue<IPC::Message>& queue) override;
 
-  struct LaunchError {};
-  template <typename T>
-  using LaunchPromise = mozilla::MozPromise<T, LaunchError,  false>;
-  using HandlePromise = LaunchPromise<base::ProcessHandle>;
-
   
   
-  RefPtr<HandlePromise> WhenProcessHandleReady();
+  RefPtr<ProcessHandlePromise> WhenProcessHandleReady();
 
   virtual void InitializeChannel();
 
@@ -211,7 +210,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
 #if defined(OS_MACOSX)
   task_t mChildTask;
 #endif
-  RefPtr<HandlePromise::Private> mHandlePromise;
+  RefPtr<ProcessHandlePromise::Private> mHandlePromise;
 
   bool OpenPrivilegedHandle(base::ProcessId aPid);
 
