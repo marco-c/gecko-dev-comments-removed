@@ -155,6 +155,7 @@ async function exportAllToFile(hud, message) {
   ]);
   MockFilePicker.setFiles([nsiFile]);
   exportFile.click();
+  info("Exporting to file");
 
   
   await waitFor(() => OS.File.exists(nsiFile.path));

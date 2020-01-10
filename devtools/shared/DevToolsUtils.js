@@ -785,17 +785,21 @@ exports.openFileStream = function(filePath) {
 
 
 
-exports.saveFileStream = function(filePath, istream) {
-  return new Promise((resolve, reject) => {
-    const ostream = FileUtils.openSafeFileOutputStream(filePath);
-    NetUtil.asyncCopy(istream, ostream, status => {
-      if (!components.isSuccessCode(status)) {
-        reject(new Error(`Could not save "${filePath}"`));
-        return;
-      }
-      FileUtils.closeSafeFileOutputStream(ostream);
-      resolve();
-    });
+
+
+
+
+
+exports.saveAs = async function(parentWindow, dataArray, fileName = "") {
+  let returnFile;
+  try {
+    returnFile = await exports.showSaveFileDialog(parentWindow, fileName);
+  } catch (ex) {
+    return;
+  }
+
+  await OS.File.writeAtomic(returnFile.path, dataArray, {
+    tmpPath: returnFile.path + ".tmp",
   });
 };
 
