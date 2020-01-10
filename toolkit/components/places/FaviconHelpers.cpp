@@ -836,6 +836,33 @@ AsyncAssociateIconToPage::Run() {
   
   
   
+  
+  
+  
+  
+  if (mPage.id > 0) {
+    nsCOMPtr<mozIStorageStatement> stmt;
+    stmt = DB->GetStatement(
+        "DELETE FROM moz_icons_to_pages "
+        "WHERE icon_id IN ( "
+        "  SELECT icon_id FROM moz_icons_to_pages "
+        "  JOIN moz_icons i ON icon_id = i.id "
+        "  WHERE page_id = :page_id "
+        "  AND expire_ms < strftime('%s','now','localtime','start of day','-7 days','utc') * 1000 "
+        ") AND page_id = :page_id ");
+    NS_ENSURE_STATE(stmt);
+    mozStorageStatementScoper scoper(stmt);
+    rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), mPage.id);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = stmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  
+  
+  
   if (!mIcon.rootIcon || !mIcon.host.Equals(mPage.host)) {
     
     
@@ -846,24 +873,7 @@ AsyncAssociateIconToPage::Run() {
     
     
     
-    if (mPage.id != 0) {
-      nsCOMPtr<mozIStorageStatement> stmt;
-      stmt = DB->GetStatement(
-          "DELETE FROM moz_icons_to_pages "
-          "WHERE icon_id IN ( "
-          "SELECT icon_id FROM moz_icons_to_pages "
-          "JOIN moz_icons i ON icon_id = i.id "
-          "WHERE page_id = :page_id "
-          "AND expire_ms < strftime('%s','now','localtime','start of day','-7 "
-          "days','utc') * 1000 "
-          ") AND page_id = :page_id ");
-      NS_ENSURE_STATE(stmt);
-      mozStorageStatementScoper scoper(stmt);
-      rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), mPage.id);
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = stmt->Execute();
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
+    if (mPage.id == 0) {
       
       nsCOMPtr<mozIStorageStatement> stmt;
       stmt = DB->GetStatement(
