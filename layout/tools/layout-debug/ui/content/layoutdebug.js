@@ -141,6 +141,51 @@ for (let name of COMMANDS) {
   };
 }
 
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+function autoCloseIfNeeded(aCrash) {
+  if (!gArgs.autoclose) {
+    return;
+  }
+  setTimeout(function() {
+    if (aCrash) {
+      let browser = document.createElementNS(XUL_NS, "browser");
+      
+      
+      
+      document.documentElement.appendChild(browser);
+      browser.loadURI("about:crashparent", {
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+      return;
+    }
+    if (gArgs.profile && Services.profiler) {
+      dumpProfile();
+    } else {
+      Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
+    }
+  }, gArgs.delay * 1000);
+}
+
+const TabCrashedObserver = {
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "ipc:content-shutdown":
+        subject.QueryInterface(Ci.nsIPropertyBag2);
+        if (!subject.get("abnormal")) {
+          return;
+        }
+        break;
+      case "oop-frameloader-crashed":
+        break;
+    }
+    autoCloseIfNeeded(true);
+  },
+};
+
+Services.obs.addObserver(TabCrashedObserver, "ipc:content-shutdown");
+Services.obs.addObserver(TabCrashedObserver, "oop-frameloader-crashed");
+
 function nsLDBBrowserContentListener() {
   this.init();
 }
@@ -174,19 +219,14 @@ nsLDBBrowserContentListener.prototype = {
       this.setButtonEnabled(this.mStopButton, false);
       this.mStatusText.value = gURLBar.value + " loaded";
       this.mLoading = false;
-      if (gArgs.autoclose && gBrowser.currentURI.spec != "about:blank") {
+
+      if (gBrowser.currentURI.spec != "about:blank") {
         
         
         
         
         
-        setTimeout(function() {
-          if (gArgs.profile && Services.profiler) {
-            dumpProfile();
-          } else {
-            Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
-          }
-        }, gArgs.delay * 1000);
+        autoCloseIfNeeded(false);
       }
     }
   },
