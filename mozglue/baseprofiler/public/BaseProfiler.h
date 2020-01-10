@@ -18,6 +18,24 @@
 
 
 
+
+
+
+
+#ifdef MOZ_GECKO_PROFILER
+
+
+#  if 0
+#    define MOZ_BASE_PROFILER
+#  else
+
+
+
+#  endif
+#endif  
+
+
+
 #include "mozilla/BaseProfilerCounts.h"
 
 #ifndef MOZ_BASE_PROFILER
