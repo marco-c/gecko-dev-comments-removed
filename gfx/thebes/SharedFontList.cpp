@@ -192,11 +192,14 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
   }
 
   Pointer* facePtrs = Faces(aList);
+  if (!facePtrs) {
+    return;
+  }
 
   
   
   if (NumFaces() == 1) {
-    MOZ_ASSERT(!facePtrs->IsNull());
+    MOZ_ASSERT(!facePtrs[0].IsNull());
     aFaceList.AppendElement(static_cast<Face*>(facePtrs[0].ToPtr(aList)));
     return;
   }
@@ -310,6 +313,9 @@ void Family::SearchAllFontsForChar(FontList* aList,
   uint32_t numFaces = NumFaces();
   uint32_t charMapsLoaded = 0;  
   Pointer* facePtrs = Faces(aList);
+  if (!facePtrs) {
+    return;
+  }
   for (uint32_t i = 0; i < numFaces; i++) {
     Face* face = static_cast<Face*>(facePtrs[i].ToPtr(aList));
     if (!face) {
