@@ -19,7 +19,7 @@ from mozboot.linux_common import (
 
 
 if sys.version_info < (3,):
-    input = raw_input
+    input = raw_input  
 
 
 class SolusBootstrapper(NodeInstall, StyloInstall, SccacheInstall,

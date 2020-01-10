@@ -56,10 +56,10 @@ from manifestparser.filters import (
 try:
     from marionette_driver.addons import Addons
     from marionette_harness import Marionette
-except ImportError as e:
+except ImportError as e:  
     
     def reraise(*args, **kwargs):
-        raise(e)
+        raise(e)  
     Marionette = reraise
 
 from leaks import ShutdownLeaks, LSANLeaks

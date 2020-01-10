@@ -10,7 +10,7 @@ from mozilla.prettyprinters import ptr_pretty_printer
 
 try:
     chr(10000)  
-except ValueError as exc:  
+except ValueError:  
     chr = unichr  
 
 
