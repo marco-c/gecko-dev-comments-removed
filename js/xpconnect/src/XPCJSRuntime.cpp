@@ -3023,14 +3023,15 @@ js::UniquePtr<EdgeRange> ReflectorNode::edges(JSContext* cx,
   
   nsISupports* supp = UnwrapDOMObjectToISupports(&get());
   if (supp) {
-    nsCOMPtr<nsINode> node;
-    UNWRAP_OBJECT(Node, &get(), node);
-    if (node) {
+    nsINode* node;
+    
+    
+    if (NS_SUCCEEDED(UNWRAP_NON_WRAPPER_OBJECT(Node, &get(), node))) {
       char16_t* edgeName = nullptr;
       if (wantNames) {
         edgeName = NS_xstrdup(u"Reflected Node");
       }
-      if (!range->addEdge(Edge(edgeName, node.get()))) {
+      if (!range->addEdge(Edge(edgeName, node))) {
         return nullptr;
       }
     }
