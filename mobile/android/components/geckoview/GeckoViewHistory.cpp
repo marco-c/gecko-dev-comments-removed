@@ -44,11 +44,6 @@ enum class GeckoViewVisitFlags : int32_t {
 
 static const uint32_t GET_VISITS_WAIT_MS = 250;
 
-static inline Document* OwnerDocForLink(Link* aLink) {
-  Element* element = aLink->GetElement();
-  return element ? element->OwnerDoc() : nullptr;
-}
-
 GeckoViewHistory::GeckoViewHistory() {}
 
 NS_IMPL_ISUPPORTS(GeckoViewHistory, IHistory, nsITimerCallback, nsINamed)
@@ -241,7 +236,7 @@ GeckoViewHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
 
     if (trackedURI.mVisited) {
       
-      DispatchNotifyVisited(aURI, OwnerDocForLink(aLink));
+      DispatchNotifyVisited(aURI, GetLinkDocument(*aLink));
     }
   } else {
     
@@ -471,7 +466,7 @@ GeckoViewHistory::NotifyVisited(nsIURI* aURI) {
     nsTObserverArray<Link*>::BackwardIterator iter(trackedURI.mLinks);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
-      Document* doc = OwnerDocForLink(link);
+      Document* doc = GetLinkDocument(*link);
       if (seen.Contains(doc)) {
         continue;
       }
@@ -687,7 +682,7 @@ void GeckoViewHistory::DispatchNotifyVisited(nsIURI* aURI,
           nsTObserverArray<Link*>::BackwardIterator iter(trackedURI.mLinks);
           while (iter.HasMore()) {
             Link* link = iter.GetNext();
-            if (OwnerDocForLink(link) == doc) {
+            if (GetLinkDocument(*link) == doc) {
               link->SetLinkState(eLinkState_Visited);
               iter.Remove();
             }
