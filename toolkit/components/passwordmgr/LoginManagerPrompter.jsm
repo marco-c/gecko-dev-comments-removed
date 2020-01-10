@@ -1272,8 +1272,7 @@ LoginManagerPrompter.prototype = {
     
     var ok = Services.prompt.select(this._chromeWindow,
                                     dialogTitle, dialogText,
-                                    usernames.length, usernames,
-                                    selectedIndex);
+                                    usernames, selectedIndex);
     if (ok) {
       
       var selectedLogin = logins[selectedIndex.value];
