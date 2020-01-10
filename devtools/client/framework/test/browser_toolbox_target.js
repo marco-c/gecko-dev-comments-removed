@@ -43,7 +43,6 @@ add_task(async function() {
   );
 
   const onToolboxDestroyed = gDevTools.once("toolbox-destroyed");
-  const onTabDetached = toolbox.target.once("tabDetached");
 
   info("Removing the iframes");
   toolboxIframe.remove();
@@ -53,14 +52,6 @@ add_task(async function() {
   info("Waiting for toolbox-destroyed");
   await onToolboxDestroyed;
   info("Toolbox destroyed");
-
-  
-  
-  
-  
-  
-  
-  await onTabDetached;
 
   iframe.remove();
 });

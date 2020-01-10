@@ -53,6 +53,8 @@ add_task(async function() {
       );
     })
   );
+
+  await client.close();
 });
 
 
@@ -82,6 +84,8 @@ add_task(async function() {
       );
     })
   );
+
+  await client.close();
 });
 
 
@@ -113,6 +117,8 @@ add_task(async function() {
         );
       })
   );
+
+  await client.close();
 });
 
 
@@ -139,4 +145,6 @@ add_task(async function() {
       );
     })
   );
+
+  await client.close();
 });

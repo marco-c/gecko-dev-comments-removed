@@ -157,8 +157,29 @@ registerCleanupFunction(() => {
 });
 
 registerCleanupFunction(async function cleanup() {
+  
+  
   while (gBrowser.tabs.length > 1) {
     await closeTabAndToolbox(gBrowser.selectedTab);
+  }
+
+  
+  
+  
+  await waitForTick();
+
+  
+  const { DebuggerServer } = require("devtools/server/debugger-server");
+  ok(
+    !DebuggerServer.hasConnection(),
+    "The main process DebuggerServer has no pending connection when the test ends"
+  );
+  
+  
+  if (DebuggerServer.hasConnection()) {
+    for (const conn of Object.values(DebuggerServer._connections)) {
+      conn.close();
+    }
   }
 });
 
