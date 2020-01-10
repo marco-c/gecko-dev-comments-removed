@@ -23,7 +23,7 @@ if MYPY:
 
 def update(tests_root,  
            manifest,  
-           manifest_path,  
+           manifest_path=None,  
            working_copy=True,  
            cache_root=None,  
            rebuild=False  
