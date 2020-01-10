@@ -200,14 +200,14 @@ class nsDocShellLoadState final {
   void SetOriginalURIString(const nsCString& aOriginalURI) {
     mOriginalURIString.emplace(aOriginalURI);
   }
-  const Maybe<nsCString>& GetOriginalURIString() const {
+  const mozilla::Maybe<nsCString>& GetOriginalURIString() const {
     return mOriginalURIString;
   }
 
   void SetCancelContentJSEpoch(int32_t aCancelEpoch) {
     mCancelContentJSEpoch.emplace(aCancelEpoch);
   }
-  const Maybe<int32_t>& GetCancelContentJSEpoch() const {
+  const mozilla::Maybe<int32_t>& GetCancelContentJSEpoch() const {
     return mCancelContentJSEpoch;
   }
 
@@ -361,11 +361,11 @@ class nsDocShellLoadState final {
   
   
   
-  Maybe<nsCString> mOriginalURIString;
+  mozilla::Maybe<nsCString> mOriginalURIString;
 
   
   
-  Maybe<int32_t> mCancelContentJSEpoch;
+  mozilla::Maybe<int32_t> mCancelContentJSEpoch;
 };
 
 #endif 
