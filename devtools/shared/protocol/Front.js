@@ -105,7 +105,14 @@ class Front extends Pool {
   }
 
   
-  
+
+
+
+
+
+
+
+
   onFront(typeName, callback) {
     
     for (const front of this.poolChildren()) {
@@ -115,6 +122,18 @@ class Front extends Pool {
     }
     
     this._frontListeners.on(typeName, callback);
+  }
+
+  
+
+
+
+
+
+
+
+  offFront(typeName, callback) {
+    this._frontListeners.off(typeName, callback);
   }
 
   
