@@ -33,26 +33,35 @@ pub struct CompositeTile {
     pub surface: CompositeTileSurface,
     pub rect: DeviceRect,
     pub clip_rect: DeviceRect,
+    pub dirty_rect: DeviceRect,
     pub z_id: ZBufferId,
 }
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct CompositeConfig {
+pub struct CompositeState {
     pub opaque_tiles: Vec<CompositeTile>,
     pub alpha_tiles: Vec<CompositeTile>,
     pub clear_tiles: Vec<CompositeTile>,
     pub z_generator: ZBufferIdGenerator,
+    
+    
+    
+    
+    
+    
+    pub dirty_rects_are_valid: bool,
 }
 
-impl CompositeConfig {
+impl CompositeState {
     pub fn new() -> Self {
-        CompositeConfig {
+        CompositeState {
             opaque_tiles: Vec::new(),
             alpha_tiles: Vec::new(),
             clear_tiles: Vec::new(),
             z_generator: ZBufferIdGenerator::new(0),
+            dirty_rects_are_valid: true,
         }
     }
 }

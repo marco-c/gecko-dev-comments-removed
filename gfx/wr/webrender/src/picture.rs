@@ -37,7 +37,7 @@ use smallvec::SmallVec;
 use std::{mem, u8, marker};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
-use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper, subtract_rect};
+use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper};
 use crate::filterdata::{FilterDataHandle};
 
 
@@ -426,7 +426,7 @@ pub struct Tile {
     
     
     
-    world_dirty_rect: WorldRect,
+    pub world_dirty_rect: WorldRect,
     
     background_color: Option<ColorF>,
 }
@@ -1753,10 +1753,8 @@ impl TileCacheInstance {
     
     pub fn post_update(
         &mut self,
-        resource_cache: &mut ResourceCache,
-        gpu_cache: &mut GpuCache,
         frame_context: &FrameVisibilityContext,
-        scratch: &mut PrimitiveScratchBuffer,
+        frame_state: &mut FrameVisibilityState,
     ) {
         self.tiles_to_draw.clear();
         self.dirty_region.clear();
@@ -1774,6 +1772,7 @@ impl TileCacheInstance {
         let root_transform_changed = root_transform != self.root_transform;
         if root_transform_changed {
             self.root_transform = root_transform;
+            frame_state.composite_state.dirty_rects_are_valid = false;
         }
 
         
@@ -1828,9 +1827,9 @@ impl TileCacheInstance {
         };
 
         let mut state = TilePostUpdateState {
-            resource_cache,
-            gpu_cache,
-            scratch,
+            resource_cache: frame_state.resource_cache,
+            gpu_cache: frame_state.gpu_cache,
+            scratch: frame_state.scratch,
             dirty_region: &mut self.dirty_region,
         };
 
@@ -1840,57 +1839,14 @@ impl TileCacheInstance {
                 &ctx,
                 &mut state,
             ) {
-                
-                
-                
-                if !root_transform_changed && !tile.dirty_rect.is_empty() {
-                    state.scratch.dirty_rects.push(
-                        (tile.world_dirty_rect * frame_context.global_device_pixel_scale).to_i32()
-                    );
-                }
-
                 self.tiles_to_draw.push(*key);
             }
         }
 
         
         
-        
-        if root_transform_changed {
-            scratch.dirty_rects.push(
-                (frame_context.global_screen_world_rect * frame_context.global_device_pixel_scale).to_i32()
-            );
-        } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let world_clip_rect = ctx.pic_to_world_mapper
-                .map(&self.local_clip_rect)
-                .expect("bug - unable to map picture clip rect to world");
-            let mut non_cached_rects = Vec::new();
-            subtract_rect(
-                &ctx.global_screen_world_rect,
-                &world_clip_rect,
-                &mut non_cached_rects,
-            );
-            for rect in non_cached_rects {
-                scratch.dirty_rects.push(
-                    (rect * frame_context.global_device_pixel_scale).to_i32()
-                );
-            }
-        }
-
-        
-        
         if frame_context.config.testing {
-            scratch.recorded_dirty_regions.push(self.dirty_region.record());
+            frame_state.scratch.recorded_dirty_regions.push(self.dirty_region.record());
         }
     }
 }
