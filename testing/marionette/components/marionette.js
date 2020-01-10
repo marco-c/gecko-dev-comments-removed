@@ -186,6 +186,9 @@ const RECOMMENDED_PREFS = new Map([
   ["dom.max_script_run_time", 0],
 
   
+  ["dom.push.connection.enabled", false],
+
+  
   
   
   
@@ -240,6 +243,9 @@ const RECOMMENDED_PREFS = new Map([
 
   
   ["network.sntp.pools", "%(server)s"],
+
+  
+  ["privacy.trackingprotection.enabled", false],
 
   
   ["security.certerrors.mitm.priming.enabled", false],

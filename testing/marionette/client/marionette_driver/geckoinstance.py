@@ -60,6 +60,9 @@ class GeckoInstance(object):
         "dom.max_script_run_time": 0,
 
         
+        "dom.push.connection.enabled": False,
+
+        
         
         "extensions.autoDisableScopes": 0,
         "extensions.enabledScopes": 5,
@@ -115,6 +118,9 @@ class GeckoInstance(object):
         "network.manage-offline-status": False,
         
         "network.sntp.pools": "%(server)s",
+
+        
+        "privacy.trackingprotection.enabled": False,
 
         
         "security.certerrors.mitm.priming.enabled": False,
