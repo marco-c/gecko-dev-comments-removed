@@ -137,8 +137,6 @@ static constexpr Register64 AtomicVal2Reg64(ecx, ebx);
 
 
 
-static constexpr Register64 AtomicReturnReg64(edx, eax);
-
 #else
 #  error "Unsupported platform"
 #endif
@@ -432,9 +430,10 @@ static uint32_t GenCmpxchg(MacroAssembler& masm, Scalar::Type size,
 #if defined(JS_CODEGEN_X86)
       MOZ_ASSERT(AtomicValReg64 == Register64(edx, eax));
       MOZ_ASSERT(AtomicVal2Reg64 == Register64(ecx, ebx));
-      masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(addr));
 
-      MOZ_ASSERT(AtomicReturnReg64 == Register64(edx, eax));
+      
+      
+      masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(addr));
 #else
       masm.compareExchange64(sync, addr, AtomicValReg64, AtomicVal2Reg64,
                              AtomicReturnReg64);
