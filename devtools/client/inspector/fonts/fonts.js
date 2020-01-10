@@ -27,6 +27,7 @@ const {
   resetFontEditor,
   setEditorDisabled,
   updateAxis,
+  updateCustomInstance,
   updateFontEditor,
   updateFontProperty,
 } = require("./actions/font-editor");
@@ -75,6 +76,7 @@ class FontInspector {
     
     this.writers = new Map();
 
+    this.snapshotChanges = debounce(this.snapshotChanges, 100, this);
     this.syncChanges = debounce(this.syncChanges, 100, this);
     this.onInstanceChange = this.onInstanceChange.bind(this);
     this.onNewNode = this.onNewNode.bind(this);
@@ -685,6 +687,9 @@ class FontInspector {
 
   onAxisUpdate(tag, value) {
     this.store.dispatch(updateAxis(tag, value));
+    this.store.dispatch(applyInstance(CUSTOM_INSTANCE_NAME, null));
+    this.snapshotChanges();
+
     const writer = this.getWriterForProperty(tag);
     writer(value.toString());
   }
@@ -940,6 +945,15 @@ class FontInspector {
     this.inspector.emit("fonteditor-updated");
     
     this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
+  }
+
+  
+
+
+
+
+  snapshotChanges() {
+    this.store.dispatch(updateCustomInstance());
   }
 
   async update() {

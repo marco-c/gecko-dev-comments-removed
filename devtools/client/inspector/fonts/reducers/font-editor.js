@@ -12,12 +12,11 @@ const {
   RESET_EDITOR,
   SET_FONT_EDITOR_DISABLED,
   UPDATE_AXIS_VALUE,
+  UPDATE_CUSTOM_INSTANCE,
   UPDATE_EDITOR_STATE,
   UPDATE_PROPERTY_VALUE,
   UPDATE_WARNING_MESSAGE,
 } = require("../actions/index");
-
-const CUSTOM_INSTANCE_NAME = getStr("fontinspector.customInstanceName");
 
 const INITIAL_STATE = {
   
@@ -30,7 +29,7 @@ const INITIAL_STATE = {
   fonts: [],
   
   instance: {
-    name: CUSTOM_INSTANCE_NAME,
+    name: getStr("fontinspector.customInstanceName"),
     values: [],
   },
   
@@ -66,17 +65,16 @@ const reducers = {
   [UPDATE_AXIS_VALUE](state, { axis, value }) {
     const newState = { ...state };
     newState.axes[axis] = value;
+    return newState;
+  },
 
-    
-    
+  
+  
+  [UPDATE_CUSTOM_INSTANCE](state) {
+    const newState = { ...state };
     newState.customInstanceValues = Object.keys(state.axes).map(axis => {
       return { axis: [axis], value: state.axes[axis] };
     });
-
-    
-    
-    newState.instance.name = CUSTOM_INSTANCE_NAME;
-
     return newState;
   },
 
