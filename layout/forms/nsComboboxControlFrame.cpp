@@ -1237,19 +1237,27 @@ void nsComboboxDisplayFrame::Reflow(nsPresContext* aPresContext,
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   ReflowInput state(aReflowInput);
+  WritingMode wm = aReflowInput.GetWritingMode();
+  LogicalMargin bp = state.ComputedLogicalBorderPadding();
   if (state.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
     float inflation = nsLayoutUtils::FontSizeInflationFor(mComboBox);
     
     
     
     
-    auto lh = ReflowInput::CalcLineHeight(mComboBox->GetContent(),
-                                          mComboBox->Style(), aPresContext,
-                                          NS_UNCONSTRAINEDSIZE, inflation);
+    nscoord lh = ReflowInput::CalcLineHeight(mComboBox->GetContent(),
+                                             mComboBox->Style(), aPresContext,
+                                             NS_UNCONSTRAINEDSIZE, inflation);
+    if (!mComboBox->StyleText()->mLineHeight.IsNormal()) {
+      
+      
+      
+      
+      lh = std::max(0, lh - bp.BStartEnd(wm));
+    }
     state.SetComputedBSize(lh);
   }
-  WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord inlineBp = state.ComputedLogicalBorderPadding().IStartEnd(wm);
+  nscoord inlineBp = bp.IStartEnd(wm);
   nscoord computedISize = mComboBox->mDisplayISize - inlineBp;
 
   
