@@ -5635,7 +5635,7 @@ bool nsDisplayBorder::IsInvisibleInRect(const nsRect& aRect) const {
   nsRect paddingRect = GetPaddingRect();
   const nsStyleBorder* styleBorder;
   if (paddingRect.Contains(aRect) &&
-      !(styleBorder = mFrame->StyleBorder())->IsBorderImageLoaded() &&
+      !(styleBorder = mFrame->StyleBorder())->IsBorderImageSizeAvailable() &&
       !nsLayoutUtils::HasNonZeroCorner(styleBorder->mBorderRadius)) {
     
     

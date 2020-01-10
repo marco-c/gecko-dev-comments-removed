@@ -349,7 +349,7 @@ struct nsStyleImage {
 
 
 
-  bool IsLoaded() const;
+  bool IsSizeAvailable() const;
   
 
 
@@ -766,8 +766,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
         (HasVisibleStyle(aSide) ? mBorder.Side(aSide) : 0);
   }
 
-  inline bool IsBorderImageLoaded() const {
-    return mBorderImageSource.IsLoaded();
+  inline bool IsBorderImageSizeAvailable() const {
+    return mBorderImageSource.IsSizeAvailable();
   }
 
   nsMargin GetImageOutset() const;
