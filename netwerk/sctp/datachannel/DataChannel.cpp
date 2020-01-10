@@ -1450,16 +1450,21 @@ void DataChannelConnection::HandleOpenRequestMessage(
             channel.get()));
   channel->AnnounceOpen();
 
-  int error = SendOpenAckMessage(stream);
+  
+  
+  const auto error = SendOpenAckMessage(channel->mStream);
   if (error) {
     DC_ERROR(("SendOpenRequest failed, error = %d", error));
-    
-    CloseInt(channel);
-    
+    Dispatch(NS_NewRunnableFunction(
+        "DataChannelConnection::HandleOpenRequestMessage",
+        [channel, connection = RefPtr<DataChannelConnection>(this)]() {
+          MutexAutoLock mLock(connection->mLock);
+          
+          connection->CloseInt(channel);
+        }));
     return;
   }
-
-  DeliverQueuedData(stream);
+  DeliverQueuedData(channel->mStream);
 }
 
 
