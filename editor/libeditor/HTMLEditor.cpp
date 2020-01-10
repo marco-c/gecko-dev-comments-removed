@@ -2091,27 +2091,10 @@ nsresult HTMLEditor::RemoveListAsAction(const nsAString& aListType,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
-  RefPtr<TextEditRules> rules(mRules);
-
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
-  AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eRemoveList, nsIEditor::eNext);
-
-  EditSubActionInfo subActionInfo(EditSubAction::eRemoveList);
-  bool cancel, handled;
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (cancel || NS_FAILED(rv)) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-
-  
-
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  nsresult rv = RemoveListAtSelectionAsSubAction();
+  NS_WARNING_ASSERTION(NS_FAILED(rv),
+                       "RemoveListAtSelectionAsSubAction() failed");
+  return rv;
 }
 
 nsresult HTMLEditor::FormatBlockContainerAsSubAction(nsAtom& aTagName) {

@@ -262,8 +262,8 @@ class HTMLEditor final : public TextEditor,
   nsresult AlignAsAction(const nsAString& aAlignType,
                          nsIPrincipal* aPrincipal = nullptr);
 
-  nsresult RemoveListAsAction(const nsAString& aListType,
-                              nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult RemoveListAsAction(
+      const nsAString& aListType, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -2315,6 +2315,13 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   DestroyListStructureRecursively(Element& aListElement);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult RemoveListAtSelectionAsSubAction();
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
