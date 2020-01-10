@@ -3949,12 +3949,9 @@ public class Tokenizer implements Locator {
                                     tokenHandler.characters(
                                             Tokenizer.LT_SOLIDUS, 0, 2);
                                     emitStrBuf();
-                                    if (c == '\u0000') {
-                                        emitReplacementCharacter(buf, pos);
-                                    } else {
-                                        cstart = pos; 
-                                        
-                                    }
+                                    cstart = pos; 
+                                                  
+                                    reconsume = true;
                                     state = transition(state, returnState, reconsume, pos);
                                     continue stateloop;
                             }
