@@ -814,13 +814,21 @@ class AddonOptions extends HTMLElement {
   }
 
   update(card, addon, updateInstall) {
-    for (let el of this.querySelectorAll("panel-item")) {
+    for (let el of this.items) {
       this.setElementState(el, card, addon, updateInstall);
     }
 
     
     
     this.updateSeparatorsVisibility();
+  }
+
+  get items() {
+    return this.querySelectorAll("panel-item");
+  }
+
+  get visibleItems() {
+    return Array.from(this.items).filter(item => !item.hidden);
   }
 }
 customElements.define("addon-options", AddonOptions);
@@ -1860,9 +1868,14 @@ class AddonCard extends HTMLElement {
     this.options.update(this, addon, this.updateInstall);
 
     
-    card
-      .querySelector(".more-options-button")
-      .classList.toggle("more-options-button-badged", !!this.updateInstall);
+    let moreOptionsButton = card.querySelector(".more-options-button");
+    moreOptionsButton.classList.toggle(
+      "more-options-button-badged",
+      !!this.updateInstall
+    );
+
+    
+    moreOptionsButton.hidden = this.options.visibleItems.length === 0;
 
     
     if (
