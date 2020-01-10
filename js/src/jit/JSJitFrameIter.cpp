@@ -148,6 +148,22 @@ uint8_t* JSJitFrameIter::prevFp() const {
 void JSJitFrameIter::operator++() {
   MOZ_ASSERT(!isEntry());
 
+  
+  
+  
+  
+  
+  if (current()->prevType() == FrameType::BaselineJS) {
+    uint32_t frameSize = prevFrameLocalSize();
+    if (isExitFrame() && exitFrame()->isWrapperExit()) {
+      const VMFunctionData* data = exitFrame()->footer()->function();
+      frameSize -= data->explicitStackSlots() * sizeof(void*);
+    }
+    baselineFrameSize_ = mozilla::Some(frameSize);
+  } else {
+    baselineFrameSize_ = mozilla::Nothing();
+  }
+
   frameSize_ = prevFrameLocalSize();
   cachedSafepointIndex_ = nullptr;
 
@@ -161,6 +177,9 @@ void JSJitFrameIter::operator++() {
   type_ = current()->prevType();
   resumePCinCurrentFrame_ = current()->returnAddress();
   current_ = prevFp();
+
+  MOZ_ASSERT_IF(isBaselineJS(),
+                baselineFrame()->frameSize() == *baselineFrameSize_);
 }
 
 uintptr_t* JSJitFrameIter::spillBase() const {

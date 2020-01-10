@@ -7,6 +7,8 @@
 #ifndef jit_JSJitFrameIter_h
 #define jit_JSJitFrameIter_h
 
+#include "mozilla/Maybe.h"
+
 #include "jstypes.h"
 
 #include "jit/IonCode.h"
@@ -108,6 +110,10 @@ class JSJitFrameIter {
   FrameType type_;
   uint8_t* resumePCinCurrentFrame_;
   size_t frameSize_;
+
+  
+  
+  mozilla::Maybe<uint32_t> baselineFrameSize_;
 
  private:
   mutable const SafepointIndex* cachedSafepointIndex_;
