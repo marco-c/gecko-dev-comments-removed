@@ -224,6 +224,11 @@ class nsSVGIntegrationUtils final {
   
 
 
+  static bool CanCreateWebRenderFiltersForFrame(nsIFrame* aFrame);
+
+  
+
+
 
 
 
