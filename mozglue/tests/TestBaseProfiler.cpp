@@ -9,6 +9,7 @@
 #ifdef MOZ_BASE_PROFILER
 
 #  include "mozilla/leb128iterator.h"
+#  include "mozilla/ModuloBuffer.h"
 #  include "mozilla/PowerOfTwo.h"
 
 #  include "mozilla/Attributes.h"
@@ -250,6 +251,122 @@ void TestLEB128() {
   printf("TestLEB128 done\n");
 }
 
+void TestModuloBuffer() {
+  printf("TestModuloBuffer...\n");
+
+  
+  using MB = ModuloBuffer<>;
+
+  
+  constexpr uint32_t MBSize = 8;
+  MB mb(MakePowerOfTwo32<MBSize>());
+
+  MOZ_RELEASE_ASSERT(mb.BufferLength().Value() == MBSize);
+
+  
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) == mb.ReaderAt(2));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) != mb.ReaderAt(3));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) < mb.ReaderAt(3));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) <= mb.ReaderAt(2));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) <= mb.ReaderAt(3));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(3) > mb.ReaderAt(2));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) >= mb.ReaderAt(2));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(3) >= mb.ReaderAt(2));
+
+  
+  
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(2) != mb.ReaderAt(MBSize + 2));
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(MBSize + 2) != mb.ReaderAt(2));
+
+  
+  static_assert(std::is_same<decltype(*mb.ReaderAt(0)), const MB::Byte&>::value,
+                "Dereferencing from a reader should return const Byte*");
+  static_assert(std::is_same<decltype(*mb.WriterAt(0)), MB::Byte&>::value,
+                "Dereferencing from a writer should return Byte*");
+  
+  MOZ_RELEASE_ASSERT(&*mb.ReaderAt(MBSize - 1) ==
+                     &*mb.ReaderAt(0) + (MBSize - 1));
+  
+  MOZ_RELEASE_ASSERT(&*mb.ReaderAt(MBSize) == &*mb.ReaderAt(0));
+  MOZ_RELEASE_ASSERT(&*mb.ReaderAt(MBSize + MBSize - 1) ==
+                     &*mb.ReaderAt(MBSize - 1));
+  MOZ_RELEASE_ASSERT(&*mb.ReaderAt(MBSize + MBSize) == &*mb.ReaderAt(0));
+  
+  MOZ_RELEASE_ASSERT(&*mb.ReaderAt(uint32_t(-1)) == &*mb.ReaderAt(MBSize - 1));
+  MOZ_RELEASE_ASSERT(&*mb.ReaderAt(static_cast<MB::Index>(-1)) ==
+                     &*mb.ReaderAt(MBSize - 1));
+
+  
+  MB::Reader arit = mb.ReaderAt(0);
+  MOZ_RELEASE_ASSERT(++arit == mb.ReaderAt(1));
+  MOZ_RELEASE_ASSERT(arit == mb.ReaderAt(1));
+
+  MOZ_RELEASE_ASSERT(--arit == mb.ReaderAt(0));
+  MOZ_RELEASE_ASSERT(arit == mb.ReaderAt(0));
+
+  MOZ_RELEASE_ASSERT(arit + 3 == mb.ReaderAt(3));
+  MOZ_RELEASE_ASSERT(arit == mb.ReaderAt(0));
+
+  
+  const bool checkPlusEq = ((arit += 3) == mb.ReaderAt(3));
+  MOZ_RELEASE_ASSERT(checkPlusEq);
+  MOZ_RELEASE_ASSERT(arit == mb.ReaderAt(3));
+
+  MOZ_RELEASE_ASSERT((arit - 2) == mb.ReaderAt(1));
+  MOZ_RELEASE_ASSERT(arit == mb.ReaderAt(3));
+
+  const bool checkMinusEq = ((arit -= 2) == mb.ReaderAt(1));
+  MOZ_RELEASE_ASSERT(checkMinusEq);
+  MOZ_RELEASE_ASSERT(arit == mb.ReaderAt(1));
+
+  
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(3) - mb.ReaderAt(1) == 2);
+  MOZ_RELEASE_ASSERT(mb.ReaderAt(1) - mb.ReaderAt(3) == MB::Index(-2));
+
+  
+  MB::Writer it = mb.WriterAt(0);
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == 0);
+
+  
+  it.WriteObject('x');
+  it.WriteObject('y');
+
+  
+  it -= 2;
+  
+  MOZ_RELEASE_ASSERT(it.PeekObject<char>() == 'x');
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == 0);
+  
+  MOZ_RELEASE_ASSERT(it.ReadObject<char>() == 'x');
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == 1);
+  MOZ_RELEASE_ASSERT(it.PeekObject<char>() == 'y');
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == 1);
+  MOZ_RELEASE_ASSERT(it.ReadObject<char>() == 'y');
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == 2);
+
+  
+  MB::Reader it2(it);
+  MOZ_RELEASE_ASSERT(it2.CurrentIndex() == 2);
+  
+  it2 = it;
+  MOZ_RELEASE_ASSERT(it2.CurrentIndex() == 2);
+
+  
+  it.WriteObject(int32_t(123));
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == 6);
+  
+  it.WriteObject(int32_t(456));
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == MBSize + 2);
+  
+  MOZ_RELEASE_ASSERT(it.ReadObject<int32_t>() == 123);
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == MBSize + 6);
+  
+  MOZ_RELEASE_ASSERT(it.ReadObject<int32_t>() == 456);
+  MOZ_RELEASE_ASSERT(it.CurrentIndex() == MBSize + MBSize + 2);
+
+  printf("TestModuloBuffer done\n");
+}
+
 
 static constexpr size_t NextDepth(size_t aDepth) {
   constexpr size_t MAX_DEPTH = 128;
@@ -286,6 +403,7 @@ void TestProfiler() {
   TestPowerOfTwoMask();
   TestPowerOfTwo();
   TestLEB128();
+  TestModuloBuffer();
 
   {
     printf("profiler_init()...\n");
