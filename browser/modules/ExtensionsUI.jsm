@@ -523,7 +523,7 @@ var ExtensionsUI = {
     });
   },
 
-  showInstallNotification(target, addon) {
+  async showInstallNotification(target, addon) {
     let { window } = getTabBrowser(target);
 
     let brandBundle = window.document.getElementById("bundle_brand");
@@ -534,11 +534,15 @@ var ExtensionsUI = {
       "<>",
       appName,
     ]);
+    const permissionName = "internal:privateBrowsingAllowed";
+    const { permissions } = await ExtensionPermissions.get(addon.id);
+    const hasIncognito = permissions.includes(permissionName);
+
     return new Promise(resolve => {
       
       function setCheckbox(win) {
         let checkbox = win.document.getElementById("addon-incognito-checkbox");
-        checkbox.checked = false;
+        checkbox.checked = hasIncognito;
         checkbox.hidden = !(
           addon.permissions &
           AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS
@@ -548,25 +552,40 @@ var ExtensionsUI = {
 
       async function actionResolve(win) {
         let checkbox = win.document.getElementById("addon-incognito-checkbox");
+
+        if (checkbox.checked == hasIncognito) {
+          resolve();
+          return;
+        }
+
+        let incognitoPermission = {
+          permissions: [permissionName],
+          origins: [],
+        };
+
+        let value;
+        
+        
         if (checkbox.checked) {
-          let perms = {
-            permissions: ["internal:privateBrowsingAllowed"],
-            origins: [],
-          };
-          await ExtensionPermissions.add(addon.id, perms);
+          await ExtensionPermissions.add(addon.id, incognitoPermission);
+          value = "on";
+        } else if (hasIncognito) {
+          await ExtensionPermissions.remove(addon.id, incognitoPermission);
+          value = "off";
+        }
+        if (value !== undefined) {
           AMTelemetry.recordActionEvent({
             addon,
             object: "doorhanger",
             action: "privateBrowsingAllowed",
             view: "postInstall",
-            value: "on",
+            value,
           });
-
-          
-          
-          if (addon.isActive) {
-            await addon.reload();
-          }
+        }
+        
+        
+        if (addon.isActive) {
+          await addon.reload();
         }
 
         resolve();
