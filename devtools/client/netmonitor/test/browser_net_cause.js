@@ -16,8 +16,7 @@ const EXPECTED_REQUESTS = [
     url: CAUSE_URL,
     causeType: "document",
     causeUri: null,
-    
-    stack: true,
+    stack: false,
   },
   {
     method: "GET",
