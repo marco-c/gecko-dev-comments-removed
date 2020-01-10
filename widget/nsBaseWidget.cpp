@@ -72,6 +72,7 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Move.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsRefPtrHashtable.h"
 #include "TouchEvents.h"
@@ -517,30 +518,13 @@ nsIWidget* nsBaseWidget::GetSheetWindowParent(void) { return nullptr; }
 float nsBaseWidget::GetDPI() { return 96.0f; }
 
 CSSToLayoutDeviceScale nsIWidget::GetDefaultScale() {
-  double devPixelsPerCSSPixel = DefaultScaleOverride();
+  double devPixelsPerCSSPixel = StaticPrefs::layout_css_devPixelsPerPx();
 
   if (devPixelsPerCSSPixel <= 0.0) {
     devPixelsPerCSSPixel = GetDefaultScaleInternal();
   }
 
   return CSSToLayoutDeviceScale(devPixelsPerCSSPixel);
-}
-
-
-double nsIWidget::DefaultScaleOverride() {
-  
-  
-  
-  static float devPixelsPerCSSPixel = -1.0f;
-
-  static bool valueCached = false;
-  if (!valueCached) {
-    Preferences::AddFloatVarCache(&devPixelsPerCSSPixel,
-                                  "layout.css.devPixelsPerPx", -1.0f);
-    valueCached = true;
-  }
-
-  return devPixelsPerCSSPixel;
 }
 
 

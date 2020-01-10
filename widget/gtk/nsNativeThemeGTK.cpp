@@ -73,7 +73,7 @@ static int gLastGdkError;
 static inline gint GetMonitorScaleFactor(nsIFrame* aFrame) {
   
   
-  double scale = nsIWidget::DefaultScaleOverride();
+  double scale = StaticPrefs::layout_css_devPixelsPerPx();
   if (scale <= 0) {
     nsIWidget* rootWidget = aFrame->PresContext()->GetRootWidget();
     if (rootWidget) {
