@@ -11,6 +11,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/layers/NativeLayer.h"
 
 class nsIWidget;
 class nsBaseWidget;
@@ -122,6 +123,10 @@ class CompositorWidget {
 
 
   virtual void DoCompositorCleanup() {}
+
+  virtual RefPtr<layers::NativeLayerRoot> GetNativeLayerRoot() {
+    return nullptr;
+  }
 
   
 
