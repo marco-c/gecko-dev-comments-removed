@@ -422,35 +422,48 @@ var BrowserTestUtils = {
     let loadEvent = maybeErrorPage ? "DOMContentLoaded" : "load";
     let eventName = `BrowserTestUtils:ContentEvent:${loadEvent}`;
 
-    return new Promise(resolve => {
-      browser.addEventListener(
-        eventName,
-        function listener(event) {
-          let { browsingContext, internalURL, visibleURL } = event.detail;
+    return new Promise((resolve, reject) => {
+      function listener(event) {
+        switch (event.type) {
+          case eventName: {
+            let { browsingContext, internalURL, visibleURL } = event.detail;
 
-          
-          
-          if (!internalURL) {
-            return;
+            
+            
+            if (!internalURL) {
+              return;
+            }
+
+            
+            let subframe = browsingContext !== browsingContext.top;
+            if (subframe && !includeSubFrames) {
+              return;
+            }
+
+            
+            
+            if (!isWanted(maybeErrorPage ? visibleURL : internalURL)) {
+              return;
+            }
+
+            resolve(internalURL);
+            break;
           }
 
-          
-          let subframe = browsingContext !== browsingContext.top;
-          if (subframe && !includeSubFrames) {
-            return;
-          }
+          case "unload":
+            reject();
+            break;
 
-          
-          
-          if (!isWanted(maybeErrorPage ? visibleURL : internalURL)) {
+          default:
             return;
-          }
+        }
 
-          browser.removeEventListener(eventName, listener, true);
-          resolve(internalURL);
-        },
-        true
-      );
+        browser.removeEventListener(eventName, listener, true);
+        browser.ownerGlobal.removeEventListener("unload", listener);
+      }
+
+      browser.addEventListener(eventName, listener, true);
+      browser.ownerGlobal.addEventListener("unload", listener);
     });
   },
 
@@ -698,68 +711,77 @@ var BrowserTestUtils = {
       throw new Error("url should be specified if anyWindow is true");
     }
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let observe = async (win, topic, data) => {
         if (topic != "domwindowopened") {
           return;
         }
 
-        if (!anyWindow) {
-          Services.ww.unregisterNotification(observe);
-        }
-
-        
-        
-        let promises = [
-          this.waitForEvent(win, "focus", true),
-          this.waitForEvent(win, "activate"),
-        ];
-
-        if (url) {
-          await this.waitForEvent(win, "DOMContentLoaded");
-
-          if (win.document.documentURI != AppConstants.BROWSER_CHROME_URL) {
-            return;
+        try {
+          if (!anyWindow) {
+            Services.ww.unregisterNotification(observe);
           }
-        }
 
-        promises.push(
-          TestUtils.topicObserved(
-            "browser-delayed-startup-finished",
-            subject => subject == win
-          )
-        );
+          
+          
+          let promises = [
+            this.waitForEvent(win, "focus", true),
+            this.waitForEvent(win, "activate"),
+          ];
 
-        if (url) {
-          let browser = win.gBrowser.selectedBrowser;
+          if (url) {
+            await this.waitForEvent(win, "DOMContentLoaded");
 
-          if (
-            win.gMultiProcessBrowser &&
-            !E10SUtils.canLoadURIInRemoteType(
-              url,
-              win.gFissionBrowser,
-              browser.remoteType,
-              browser.remoteType 
+            if (win.document.documentURI != AppConstants.BROWSER_CHROME_URL) {
+              return;
+            }
+          }
+
+          promises.push(
+            TestUtils.topicObserved(
+              "browser-delayed-startup-finished",
+              subject => subject == win
             )
-          ) {
-            await this.waitForEvent(browser, "XULFrameLoaderCreated");
+          );
+
+          if (url) {
+            let browser = win.gBrowser.selectedBrowser;
+
+            if (
+              win.gMultiProcessBrowser &&
+              !E10SUtils.canLoadURIInRemoteType(
+                url,
+                win.gFissionBrowser,
+                browser.remoteType,
+                browser.remoteType 
+              )
+            ) {
+              await this.waitForEvent(browser, "XULFrameLoaderCreated");
+            }
+
+            let loadPromise = this.browserLoaded(
+              browser,
+              false,
+              url,
+              maybeErrorPage
+            );
+            promises.push(loadPromise);
           }
 
-          let loadPromise = this.browserLoaded(
-            browser,
-            false,
-            url,
-            maybeErrorPage
-          );
-          promises.push(loadPromise);
-        }
+          await Promise.all(promises);
 
-        await Promise.all(promises);
-
-        if (anyWindow) {
-          Services.ww.unregisterNotification(observe);
+          if (anyWindow) {
+            Services.ww.unregisterNotification(observe);
+          }
+          resolve(win);
+        } catch (err) {
+          
+          
+          
+          if (!anyWindow) {
+            reject(err);
+          }
         }
-        resolve(win);
       };
       Services.ww.registerNotification(observe);
     });
