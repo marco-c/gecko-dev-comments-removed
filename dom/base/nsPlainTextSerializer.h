@@ -88,7 +88,11 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   nsresult GetAttributeValue(nsAtom* aName, nsString& aValueRet) const;
   void AddToLine(const char16_t* aStringToAdd, int32_t aLength);
-  void EndLine(bool softlinebreak, bool aBreakBySpace = false);
+
+  
+  
+  void EndLine(bool aSoftLineBreak, bool aBreakBySpace = false);
+
   void EnsureVerticalSpace(int32_t noOfRows);
 
   void Write(const nsAString& aString);

@@ -1360,10 +1360,10 @@ static bool IsSignatureSeparator(const nsAString& aString) {
 
 
 
-void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
+void nsPlainTextSerializer::EndLine(bool aSoftLineBreak, bool aBreakBySpace) {
   uint32_t currentlinelength = mCurrentLine.mContent.mValue.Length();
 
-  if (aSoftlinebreak && 0 == currentlinelength) {
+  if (aSoftLineBreak && 0 == currentlinelength) {
     
     return;
   }
@@ -1375,11 +1375,11 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
 
 
   if (!mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) &&
-      (aSoftlinebreak || !IsSignatureSeparator(mCurrentLine.mContent.mValue))) {
+      (aSoftLineBreak || !IsSignatureSeparator(mCurrentLine.mContent.mValue))) {
     mCurrentLine.mContent.mValue.Trim(" ", false, true, false);
   }
 
-  if (aSoftlinebreak &&
+  if (aSoftLineBreak &&
       mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed) &&
       (mCurrentLine.mIndentation.mWidth == 0)) {
     
@@ -1396,7 +1396,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
     }
   }
 
-  if (aSoftlinebreak) {
+  if (aSoftLineBreak) {
     mEmptyLines = 0;
   } else {
     
