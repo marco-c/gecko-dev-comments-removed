@@ -12,6 +12,17 @@
 #include "mozilla/Array.h"
 #include "MainThreadUtils.h"
 
+#include <functional>
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -79,6 +90,27 @@ class PointerClearer : public ShutdownObserver {
   SmartPtr* mPtr;
 };
 
+class FunctionInvoker : public ShutdownObserver {
+ public:
+  template <typename CallableT>
+  explicit FunctionInvoker(CallableT&& aCallable)
+      : mCallable(std::forward<CallableT>(aCallable)) {}
+
+  virtual void Shutdown() override {
+    if (!mCallable) {
+      return;
+    }
+
+    mCallable();
+  }
+
+ private:
+  std::function<void()> mCallable;
+};
+
+void InsertIntoShutdownList(ShutdownObserver* aShutdownObserver,
+                            ShutdownPhase aPhase);
+
 typedef LinkedList<ShutdownObserver> ShutdownList;
 extern Array<StaticAutoPtr<ShutdownList>,
              static_cast<size_t>(ShutdownPhase::ShutdownPhase_Length)>
@@ -95,19 +127,19 @@ inline void ClearOnShutdown(
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPhase != ShutdownPhase::ShutdownPhase_Length);
 
-  
-  if (!(static_cast<size_t>(sCurrentShutdownPhase) <
-        static_cast<size_t>(aPhase))) {
-    MOZ_ASSERT(false, "ClearOnShutdown for phase that already was cleared");
-    *aPtr = nullptr;
-    return;
-  }
+  InsertIntoShutdownList(new PointerClearer<SmartPtr>(aPtr), aPhase);
+}
 
-  if (!(sShutdownObservers[static_cast<size_t>(aPhase)])) {
-    sShutdownObservers[static_cast<size_t>(aPhase)] = new ShutdownList();
-  }
-  sShutdownObservers[static_cast<size_t>(aPhase)]->insertBack(
-      new PointerClearer<SmartPtr>(aPtr));
+template <typename CallableT>
+inline void RunOnShutdown(CallableT&& aCallable,
+                          ShutdownPhase aPhase = ShutdownPhase::ShutdownFinal) {
+  using namespace ClearOnShutdown_Internal;
+
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aPhase != ShutdownPhase::ShutdownPhase_Length);
+
+  InsertIntoShutdownList(
+      new FunctionInvoker(std::forward<CallableT>(aCallable)), aPhase);
 }
 
 
