@@ -16,9 +16,7 @@ const protocol = require("devtools/shared/protocol");
 const {
   webExtensionSpec,
 } = require("devtools/shared/specs/addon/webextension");
-const {
-  WebExtensionTargetActorProxy,
-} = require("devtools/server/actors/targets/webextension-proxy");
+const { DebuggerServer } = require("devtools/server/debugger-server");
 
 loader.lazyImporter(
   this,
@@ -52,30 +50,15 @@ loader.lazyImporter(
 
 const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
   initialize(conn, addon) {
-    this.conn = conn;
+    protocol.Actor.prototype.initialize.call(this, conn);
     this.addon = addon;
     this.addonId = addon.id;
     this._childFormPromise = null;
 
+    
+    this._extensionFrameDisconnect = this._extensionFrameDisconnect.bind(this);
+    this._onChildExit = this._onChildExit.bind(this);
     AddonManager.addAddonListener(this);
-  },
-
-  destroy() {
-    AddonManager.removeAddonListener(this);
-
-    this.addon = null;
-    this._childFormPromise = null;
-
-    if (this._destroyProxy) {
-      this._destroyProxy();
-      delete this._destroyProxy;
-    }
-  },
-
-  reload() {
-    return this.addon.reload().then(() => {
-      return {};
-    });
   },
 
   form() {
@@ -103,25 +86,57 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
   },
 
   connect() {
-    if (this._childFormPormise) {
-      return this._childFormPromise;
+    if (this._childTargetPromise) {
+      return this._childTargetPromise;
     }
 
-    const proxy = new WebExtensionTargetActorProxy(this.conn, this);
-    this._childFormPromise = proxy.connect().then(form => {
+    this._childTargetPromise = (async () => {
+      const form = await this._extensionFrameConnect();
       
       
       return Object.assign(form, {
         iconURL: this.addon.iconURL,
         id: this.addon.id,
         
-        isOOP: proxy.isOOP,
+        isOOP: this.isOOP,
         name: this.addon.name,
       });
-    });
-    this._destroyProxy = () => proxy.destroy();
+    })();
 
-    return this._childFormPromise;
+    return this._childTargetPromise;
+  },
+
+  async _extensionFrameConnect() {
+    if (this._browser) {
+      throw new Error(
+        "This actor is already connected to the extension process"
+      );
+    }
+
+    this._browser = await ExtensionParent.DebugUtils.getExtensionProcessBrowser(
+      this
+    );
+
+    this._form = await DebuggerServer.connectToFrame(
+      this.conn,
+      this._browser,
+      this._extensionFrameDisconnect,
+      { addonId: this.addonId }
+    );
+
+    this._childActorID = this._form.actor;
+
+    
+    this._mm.addMessageListener("debug:webext_child_exit", this._onChildExit);
+
+    return this._form;
+  },
+
+  
+  reload() {
+    return this.addon.reload().then(() => {
+      return {};
+    });
   },
 
   
@@ -164,16 +179,49 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
   },
 
   
+  get isOOP() {
+    return this._browser ? this._browser.isRemoteBrowser : undefined;
+  },
 
-  onProxyDestroy() {
-    
-    
-    this._childFormPromise = null;
-    delete this._destroyProxy;
+  
+  get _mm() {
+    return (
+      this._browser &&
+      (this._browser.messageManager || this._browser.frameLoader.messageManager)
+    );
+  },
+
+  _extensionFrameDisconnect() {
+    this._childTargetPromise = null;
+
+    if (this._mm) {
+      this._mm.removeMessageListener(
+        "debug:webext_child_exit",
+        this._onChildExit
+      );
+
+      this._mm.sendAsyncMessage("debug:webext_parent_exit", {
+        actor: this._childActorID,
+      });
+
+      ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(this);
+    }
+
+    this._browser = null;
+    this._childActorID = null;
   },
 
   
 
+
+  _onChildExit(msg) {
+    if (msg.json.actor !== this._childActorID) {
+      return;
+    }
+    this._extensionFrameDisconnect();
+  },
+
+  
   onInstalled(addon) {
     if (addon.id != this.addonId) {
       return;
@@ -188,7 +236,14 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
       return;
     }
 
-    this.destroy();
+    this._extensionFrameDisconnect();
+  },
+
+  destroy() {
+    AddonManager.removeAddonListener(this);
+    this._extensionFrameDisconnect();
+    this.addon = null;
+    protocol.Actor.prototype.destroy.call(this);
   },
 });
 
