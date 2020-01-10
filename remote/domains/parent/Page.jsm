@@ -120,7 +120,12 @@ class Page extends Domain {
     
     snapshot.close();
 
-    return canvas.toDataURL();
+    const url = canvas.toDataURL();
+
+    
+    const data = url.substring(url.indexOf(",") + 1);
+
+    return { data };
   }
 
   async enable() {
