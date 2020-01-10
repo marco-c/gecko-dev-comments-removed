@@ -1307,13 +1307,13 @@ static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
   int32_t docWrapperChildId = AccessibleWrap::GetChildIDFor(wrapper);
   
   
-  if (aDoc->IsTopLevel()) {
+  if (aDoc->IsTopLevelInContentProcess()) {
     wrapper->GetNativeInterface(getter_AddRefs(comProxy));
   } else {
     auto tab = static_cast<dom::BrowserParent*>(aDoc->Manager());
     MOZ_ASSERT(tab);
     DocAccessibleParent* topLevelDoc = tab->GetTopLevelDocAccessible();
-    MOZ_ASSERT(topLevelDoc && topLevelDoc->IsTopLevel());
+    MOZ_ASSERT(topLevelDoc && topLevelDoc->IsTopLevelInContentProcess());
     VARIANT docId = {{{VT_I4}}};
     docId.lVal = docWrapperChildId;
     RefPtr<IDispatch> disp = GetProxiedAccessibleInSubtree(topLevelDoc, docId);
