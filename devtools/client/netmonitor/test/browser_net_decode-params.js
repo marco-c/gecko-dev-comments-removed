@@ -18,7 +18,7 @@ add_task(async function() {
   await performRequests(monitor, tab, 1);
 
   
-  wait = waitUntil(
+  const wait = waitUntil(
     () => document.querySelectorAll(".tabpanel-summary-label")[0]
   );
   EventUtils.sendMouseEvent(

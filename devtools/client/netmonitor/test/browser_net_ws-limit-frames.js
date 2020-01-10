@@ -30,7 +30,7 @@ add_task(async function() {
   is(requests.length, 1, "There should be one request");
 
   
-  wait = waitForDOM(document, "#messages-panel .truncated-message");
+  const wait = waitForDOM(document, "#messages-panel .truncated-message");
 
   
   EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);

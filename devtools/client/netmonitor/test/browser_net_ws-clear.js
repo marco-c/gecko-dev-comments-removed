@@ -30,7 +30,7 @@ add_task(async function() {
   is(requests.length, 2, "There should be two requests");
 
   
-  wait = waitForDOM(
+  let wait = waitForDOM(
     document,
     "#messages-panel .ws-frames-list-table .ws-frame-list-item",
     4
