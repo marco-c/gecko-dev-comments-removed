@@ -876,9 +876,8 @@ static bool LaunchProgram(const XP_CHAR* aProgramPath,
 
 
 
-
 static bool LaunchCrashHandlerService(XP_CHAR* aProgramPath,
-                                      XP_CHAR* aMinidumpPath, bool aSucceeded) {
+                                      XP_CHAR* aMinidumpPath) {
   static XP_CHAR extrasPath[XP_PATH_MAX];
   size_t size = XP_PATH_MAX;
 
@@ -896,15 +895,13 @@ static bool LaunchCrashHandlerService(XP_CHAR* aProgramPath,
           "/system/bin/am", "/system/bin/am", androidStartServiceCommand,
           "--user", androidUserSerial, "-a", "org.mozilla.gecko.ACTION_CRASHED",
           "-n", aProgramPath, "--es", "minidumpPath", aMinidumpPath, "--es",
-          "extrasPath", extrasPath, "--ez", "minidumpSuccess",
-          aSucceeded ? "true" : "false", "--ez", "fatal", "true", (char*)0);
+          "extrasPath", extrasPath, "--ez", "fatal", "true", (char*)0);
     } else {
       Unused << execlp(
           "/system/bin/am", "/system/bin/am", androidStartServiceCommand, "-a",
           "org.mozilla.gecko.ACTION_CRASHED", "-n", aProgramPath, "--es",
           "minidumpPath", aMinidumpPath, "--es", "extrasPath", extrasPath,
-          "--ez", "minidumpSuccess", aSucceeded ? "true" : "false", "--ez",
-          "fatal", "true", (char*)0);
+          "--ez", "fatal", "true", (char*)0);
     }
     _exit(1);
 
@@ -1185,8 +1182,7 @@ bool MinidumpCallback(
   }
 
 #if defined(MOZ_WIDGET_ANDROID)  
-  returnValue =
-      LaunchCrashHandlerService(crashReporterPath, minidumpPath, succeeded);
+  returnValue = LaunchCrashHandlerService(crashReporterPath, minidumpPath);
 #else  
   returnValue = LaunchProgram(crashReporterPath, minidumpPath);
 #  ifdef XP_WIN

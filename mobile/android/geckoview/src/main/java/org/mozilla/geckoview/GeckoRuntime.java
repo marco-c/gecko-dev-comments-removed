@@ -88,14 +88,6 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-    public static final String EXTRA_MINIDUMP_SUCCESS = "minidumpSuccess";
-
-    
-
-
-
-
-
 
     public static final String EXTRA_CRASH_FATAL = "fatal";
 
@@ -208,7 +200,6 @@ public final class GeckoRuntime implements Parcelable {
                         context, crashHandler);
                 i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
                 i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
-                i.putExtra(EXTRA_MINIDUMP_SUCCESS, true);
                 i.putExtra(EXTRA_CRASH_FATAL, message.getBoolean(EXTRA_CRASH_FATAL, true));
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
