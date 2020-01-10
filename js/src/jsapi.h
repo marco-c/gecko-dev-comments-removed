@@ -191,7 +191,10 @@ typedef JSObject* (*JSWrapObjectCallback)(JSContext* cx,
 
 
 
+
+
 typedef void (*JSPreWrapCallback)(JSContext* cx, JS::HandleObject scope,
+                                  JS::HandleObject origObj,
                                   JS::HandleObject obj,
                                   JS::HandleObject objectPassedToWrap,
                                   JS::MutableHandleObject retObj);
