@@ -76,27 +76,18 @@ JSObject* SpeechSynthesis::WrapObject(JSContext* aCx,
 }
 
 bool SpeechSynthesis::Pending() const {
-  switch (mSpeechQueue.Length()) {
-    case 0:
-      return false;
-
-    case 1:
-      return mSpeechQueue.ElementAt(0)->GetState() ==
-             SpeechSynthesisUtterance::STATE_PENDING;
-
-    default:
-      return true;
-  }
+  
+  
+  
+  return mSpeechQueue.Length() > 1 ||
+         (mSpeechQueue.Length() == 1 &&
+          (!mCurrentTask || mCurrentTask->IsPending()));
 }
 
 bool SpeechSynthesis::Speaking() const {
-  if (!mSpeechQueue.IsEmpty() && mSpeechQueue.ElementAt(0)->GetState() ==
-                                     SpeechSynthesisUtterance::STATE_SPEAKING) {
-    return true;
-  }
-
   
-  return nsSynthVoiceRegistry::GetInstance()->IsSpeaking();
+  return (!mSpeechQueue.IsEmpty() && HasSpeakingTask()) ||
+         nsSynthVoiceRegistry::GetInstance()->IsSpeaking();
 }
 
 bool SpeechSynthesis::Paused() const {
@@ -126,13 +117,7 @@ void SpeechSynthesis::Speak(SpeechSynthesisUtterance& aUtterance) {
     return;
   }
 
-  if (aUtterance.mState != SpeechSynthesisUtterance::STATE_NONE) {
-    
-    return;
-  }
-
   mSpeechQueue.AppendElement(&aUtterance);
-  aUtterance.mState = SpeechSynthesisUtterance::STATE_PENDING;
 
   
   
@@ -173,8 +158,7 @@ void SpeechSynthesis::AdvanceQueue() {
 }
 
 void SpeechSynthesis::Cancel() {
-  if (!mSpeechQueue.IsEmpty() && mSpeechQueue.ElementAt(0)->GetState() ==
-                                     SpeechSynthesisUtterance::STATE_SPEAKING) {
+  if (!mSpeechQueue.IsEmpty() && HasSpeakingTask()) {
     
     
     mSpeechQueue.RemoveElementsAt(1, mSpeechQueue.Length() - 1);
@@ -192,9 +176,7 @@ void SpeechSynthesis::Pause() {
     return;
   }
 
-  if (mCurrentTask && !mSpeechQueue.IsEmpty() &&
-      mSpeechQueue.ElementAt(0)->GetState() ==
-          SpeechSynthesisUtterance::STATE_SPEAKING) {
+  if (!mSpeechQueue.IsEmpty() && HasSpeakingTask()) {
     mCurrentTask->Pause();
   } else {
     mHoldQueue = true;
