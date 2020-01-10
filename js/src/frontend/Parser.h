@@ -207,8 +207,8 @@ class SourceParseContext : public ParseContext {
   template <typename ParseHandler, typename Unit>
   SourceParseContext(GeneralParser<ParseHandler, Unit>* prs, SharedContext* sc,
                      Directives* newDirectives)
-      : ParseContext(prs->cx_, prs->pc_, sc, prs->tokenStream, prs->usedNames_,
-                     prs->getTreeHolder(), newDirectives,
+      : ParseContext(prs->cx_, prs->pc_, sc, prs->tokenStream,
+                     prs->getParseInfo(), newDirectives,
                      mozilla::IsSame<ParseHandler, FullParseHandler>::value) {}
 };
 
@@ -255,7 +255,7 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
   LifoAlloc& alloc_;
 
   
-  ParseInfo& compileInfo_;
+  ParseInfo& parseInfo_;
 
   
   TraceListNode* traceListHead_;
@@ -289,6 +289,8 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
   void cleanupTraceList();
 
  public:
+  ParseInfo& getParseInfo() { return parseInfo_; }
+
   
   ObjectBox* newObjectBox(JSObject* obj);
 
