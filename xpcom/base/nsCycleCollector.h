@@ -67,9 +67,4 @@ void nsCycleCollector_shutdown(bool aDoCollect = true);
 void nsCycleCollector_registerJSContext(mozilla::CycleCollectedJSContext* aCx);
 void nsCycleCollector_forgetJSContext();
 
-
-void nsCycleCollector_registerNonPrimaryContext(
-    mozilla::CycleCollectedJSContext* aCx);
-void nsCycleCollector_forgetNonPrimaryContext();
-
 #endif  

@@ -700,16 +700,6 @@ inline bool IsInAutomation() {
   return sAutomationPrefIsSet && AreNonLocalConnectionsDisabled();
 }
 
-void CreateCooperativeContext();
-
-void DestroyCooperativeContext();
-
-
-void YieldCooperativeContext();
-
-
-void ResumeCooperativeContext();
-
 
 
 

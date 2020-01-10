@@ -62,7 +62,7 @@ const char XPC_SCRIPT_ERROR_CONTRACTID[] = "@mozilla.org/scripterror;1";
 
 
 
-static XPCJSContext* gPrimaryContext;
+static XPCJSContext* gContext;
 
 nsXPConnect::nsXPConnect() : mShuttingDown(false) {
   XPCJSContext::InitTLS();
@@ -72,16 +72,16 @@ nsXPConnect::nsXPConnect() : mShuttingDown(false) {
                                   profiler_unregister_thread);
 #endif
 
-  XPCJSContext* xpccx = XPCJSContext::NewXPCJSContext(nullptr);
+  XPCJSContext* xpccx = XPCJSContext::NewXPCJSContext();
   if (!xpccx) {
     MOZ_CRASH("Couldn't create XPCJSContext.");
   }
-  gPrimaryContext = xpccx;
+  gContext = xpccx;
   mRuntime = xpccx->Runtime();
 }
 
 nsXPConnect::~nsXPConnect() {
-  MOZ_ASSERT(XPCJSContext::Get() == gPrimaryContext);
+  MOZ_ASSERT(XPCJSContext::Get() == gContext);
 
   mRuntime->DeleteSingletonScopes();
 
@@ -109,7 +109,7 @@ nsXPConnect::~nsXPConnect() {
   
   XPC_LOG_FINISH();
 
-  delete gPrimaryContext;
+  delete gContext;
 
   MOZ_ASSERT(gSelf == this);
   gSelf = nullptr;
@@ -1195,24 +1195,6 @@ bool ThreadSafeIsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* obj) {
 
 }  
 }  
-
-void xpc::CreateCooperativeContext() {
-  MOZ_ASSERT(gPrimaryContext);
-  XPCJSContext::NewXPCJSContext(gPrimaryContext);
-}
-
-void xpc::DestroyCooperativeContext() {
-  MOZ_ASSERT(XPCJSContext::Get() != gPrimaryContext);
-  delete XPCJSContext::Get();
-}
-
-void xpc::YieldCooperativeContext() {
-  JS_YieldCooperativeContext(XPCJSContext::Get()->Context());
-}
-
-void xpc::ResumeCooperativeContext() {
-  JS_ResumeCooperativeContext(XPCJSContext::Get()->Context());
-}
 
 void xpc::CacheAutomationPref(bool* aMirror) {
   

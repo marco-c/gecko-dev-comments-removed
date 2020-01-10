@@ -331,26 +331,6 @@ extern JS_PUBLIC_API JSContext* JS_NewContext(
 
 
 
-
-
-
-
-extern JS_PUBLIC_API void JS_YieldCooperativeContext(JSContext* cx);
-
-
-
-extern JS_PUBLIC_API void JS_ResumeCooperativeContext(JSContext* cx);
-
-
-
-
-
-extern JS_PUBLIC_API JSContext* JS_NewCooperativeContext(
-    JSContext* siblingContext);
-
-
-
-
 extern JS_PUBLIC_API void JS_DestroyContext(JSContext* cx);
 
 JS_PUBLIC_API void* JS_GetContextPrivate(JSContext* cx);
