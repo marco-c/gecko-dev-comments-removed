@@ -2029,9 +2029,16 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
         default:
         case StyleVerticalAlignKeyword::Baseline:
           if (lineWM.IsVertical() && !lineWM.IsSideways()) {
+            
+            
+            
             if (frameSpan) {
+              nscoord borderBoxBSize = pfd->mBounds.BSize(lineWM);
+              nscoord bStartBP = pfd->mBorderPadding.BStart(lineWM);
+              nscoord bEndBP = pfd->mBorderPadding.BEnd(lineWM);
+              nscoord contentBoxBSize = borderBoxBSize - bStartBP - bEndBP;
               pfd->mBounds.BStart(lineWM) =
-                  revisedBaselineBCoord - pfd->mBounds.BSize(lineWM) / 2;
+                  revisedBaselineBCoord - contentBoxBSize / 2 - bStartBP;
             } else {
               pfd->mBounds.BStart(lineWM) = revisedBaselineBCoord -
                                             logicalBSize / 2 +
