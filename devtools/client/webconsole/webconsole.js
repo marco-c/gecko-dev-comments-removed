@@ -386,14 +386,6 @@ class WebConsole {
         this.ui.destroy();
       }
 
-      if (!this.isBrowserConsole) {
-        try {
-          await this.target.focus();
-        } catch (ex) {
-          
-        }
-      }
-
       if (this._parserService) {
         this._parserService.stop();
         this._parserService = null;

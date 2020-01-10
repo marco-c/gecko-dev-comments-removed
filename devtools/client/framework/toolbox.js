@@ -765,6 +765,15 @@ Toolbox.prototype = {
 
       
       
+      
+      await this.target.reconfigure({
+        options: {
+          restoreFocus: true,
+        },
+      });
+
+      
+      
       const performanceFrontConnection = this.initPerformance();
 
       
