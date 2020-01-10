@@ -2672,6 +2672,21 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPointWR(
                                   mTreeLock);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   return hit;
 }
 
@@ -2858,6 +2873,8 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPoint(
                                         mTreeLock);
           return hit;
         }
+      } else if (IsFixedToRootContent(n)) {
+        hit.mFixedPosSides = n->GetFixedPosSides();
       }
     }
 

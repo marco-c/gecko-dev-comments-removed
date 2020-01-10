@@ -564,6 +564,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     
     HitTestingTreeNodeAutoLock mScrollbarNode;
+    
+    
+    SideBits mFixedPosSides;
 
     HitTestResult() = default;
     
