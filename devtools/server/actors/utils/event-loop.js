@@ -5,6 +5,7 @@
 "use strict";
 
 const xpcInspector = require("xpcInspector");
+const { Cu } = require("chrome");
 
 
 
@@ -131,7 +132,7 @@ EventLoop.prototype = {
         })
         
         
-        .filter(window => window.top === window)
+        .filter(window => !Cu.isDeadWrapper(window) && window.top === window)
     );
   },
 
