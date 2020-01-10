@@ -515,9 +515,9 @@ class PropertyUpdate(object):
                 update_properties |= set(dependent_props)
             for condition in current_conditions:
                 if ((not condition.variables.issubset(update_properties) and
-                    not run_info_by_condition[condition])):
-                        conditions.append((condition.condition_node,
-                                            self.from_ini_value(condition.value)))
+                     not run_info_by_condition[condition])):
+                    conditions.append((condition.condition_node,
+                                       self.from_ini_value(condition.value)))
 
             new_conditions, errors = self._update_conditions_full(property_tree,
                                                                   prev_default=prev_default)
@@ -678,8 +678,9 @@ class ExpectedUpdate(PropertyUpdate):
         
         
         
-        if (not self.update_intermittent or self.remove_intermittent
-            or not result.known_intermittent):
+        if (not self.update_intermittent or
+            self.remove_intermittent or
+            not result.known_intermittent):
             return result.status
         return result.status + result.known_intermittent
 
