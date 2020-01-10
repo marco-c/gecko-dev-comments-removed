@@ -1552,9 +1552,10 @@ pref("media.gmp-provider.enabled", true);
 pref("network.cookie.cookieBehavior", 4 );
 
 pref("privacy.trackingprotection.fingerprinting.enabled", true);
+#endif
+
 
 pref("privacy.trackingprotection.cryptomining.enabled", true);
-#endif
 
 pref("browser.contentblocking.allowlist.storage.enabled", true);
 
