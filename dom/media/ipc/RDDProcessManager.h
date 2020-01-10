@@ -61,6 +61,9 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   
   bool AttemptedRDDProcess() const { return mNumProcessAttempts > 0; }
 
+  
+  RDDProcessHost* Process() { return mProcess; }
+
  private:
   
   void OnXPCOMShutdown();

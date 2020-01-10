@@ -176,6 +176,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   bool AttemptedGPUProcess() const { return mNumProcessAttempts > 0; }
 
+  
+  GPUProcessHost* Process() { return mProcess; }
+
  private:
   
   void OnXPCOMShutdown();
