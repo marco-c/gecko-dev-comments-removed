@@ -503,11 +503,12 @@ pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
   pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
 #endif
 
+
+
+pref("security.allow_eval_with_system_principal", false);
+pref("security.allow_eval_in_parent_process", false);
+
 #ifdef NIGHTLY_BUILD
-  
-  
-  pref("security.allow_eval_with_system_principal", false);
-  pref("security.allow_eval_in_parent_process", false);
   pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
 #else
   
