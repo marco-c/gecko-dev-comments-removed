@@ -52,11 +52,11 @@ add_task(async function test_sanitize() {
     testSanitize("Website | Page!", "Website | Page!");
     testSanitize("Directory Listing: /a/b/", "Directory Listing  _a_b_");
   } else {
-    testSanitize(kSpecialChars, kSpecialChars);
-    testSanitize(" :: Website :: ", ":: Website ::");
+    testSanitize(kSpecialChars, kSpecialChars.replace(/[:]/g, " "));
+    testSanitize(" :: Website :: ", "Website");
     testSanitize("* Website!", "* Website!");
     testSanitize("Website | Page!", "Website | Page!");
-    testSanitize("Directory Listing: /a/b/", "Directory Listing: _a_b_");
+    testSanitize("Directory Listing: /a/b/", "Directory Listing  _a_b_");
   }
 
   
@@ -79,6 +79,9 @@ add_task(async function test_sanitize() {
   
   testSanitize("\u200e \u202b\u202c\u202d\u202etest\x7f\u200f", "test");
   testSanitize("AB\x7f\u202a\x7f\u202a\x7fCD", "AB CD");
+
+  
+  testSanitize("foo:bar", "foo bar");
 });
 
 add_task(async function test_splitBaseNameAndExtension() {
