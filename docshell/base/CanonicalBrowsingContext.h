@@ -8,6 +8,7 @@
 #define mozilla_dom_CanonicalBrowsingContext_h
 
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/MediaController.h"
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -77,6 +78,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void NotifyMediaMutedChanged(bool aMuted);
+
+  
+  
+  void UpdateMediaAction(MediaControlActions aAction);
 
   
   
