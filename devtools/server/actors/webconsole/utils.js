@@ -94,7 +94,13 @@ var WebConsoleUtils = {
 
 
   getInnerWindowId: function(window) {
-    return window.windowUtils.currentInnerWindowID;
+    
+    
+    try {
+      return window.windowUtils.currentInnerWindowID;
+    } catch (e) {
+      return null;
+    }
   },
 
   
@@ -107,6 +113,10 @@ var WebConsoleUtils = {
 
   getInnerWindowIDsForFrames: function(window) {
     const innerWindowID = this.getInnerWindowId(window);
+    if (innerWindowID === null) {
+      return [];
+    }
+
     let ids = [innerWindowID];
 
     if (window.frames) {
