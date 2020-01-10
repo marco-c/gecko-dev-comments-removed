@@ -60,7 +60,7 @@ bool jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo) {
   if (!success) {
     MOZ_ASSERT(cx->isExceptionPending());
     JSScript* script = frame.script();
-    probes::ExitScript(cx, script, script->functionNonDelazifying(),
+    probes::ExitScript(cx, script, script->function(),
                         false);
   }
 
@@ -149,7 +149,7 @@ bool jit::InvalidationBailout(InvalidationBailoutStack* sp,
     
     
     JSScript* script = frame.script();
-    probes::ExitScript(cx, script, script->functionNonDelazifying(),
+    probes::ExitScript(cx, script, script->function(),
                         false);
 
 #ifdef JS_JITSPEW

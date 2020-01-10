@@ -217,7 +217,7 @@ bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
   
   
   
-  if (JSFunction* fun = script->functionNonDelazifying()) {
+  if (JSFunction* fun = script->function()) {
     ICStub* stub =
         alloc.newStub<ICTypeMonitor_Fallback>(Kind::TypeMonitor, nullptr, 0);
     if (!addPrologueIC(stub)) {
@@ -893,7 +893,7 @@ static void TypeMonitorMagicValue(JSContext* cx, ICTypeMonitor_Fallback* stub,
   
   
   MOZ_ASSERT(value.whyMagic() == JS_UNINITIALIZED_LEXICAL);
-  MOZ_ASSERT(script->functionNonDelazifying() || script->isForEval());
+  MOZ_ASSERT(script->function() || script->isForEval());
   MOZ_ASSERT(stub->monitorsThis() || *GetNextPc(pc) == JSOP_CHECKTHIS ||
              *GetNextPc(pc) == JSOP_CHECKTHISREINIT ||
              *GetNextPc(pc) == JSOP_CHECKRETURN);

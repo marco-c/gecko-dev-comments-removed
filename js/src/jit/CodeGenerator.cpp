@@ -3723,7 +3723,7 @@ void CodeGenerator::visitIsConstructing(LIsConstructing* lir) {
   masm.loadPtr(calleeToken, output);
 
   
-  MOZ_ASSERT(current->mir()->info().script()->functionNonDelazifying());
+  MOZ_ASSERT(current->mir()->info().script()->function());
 
   
   

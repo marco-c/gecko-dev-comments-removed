@@ -580,11 +580,7 @@ class BaselineCompilerHandler {
   JSScript* script() const { return script_; }
   JSScript* maybeScript() const { return script_; }
 
-  JSFunction* function() const {
-    
-    
-    return script_->functionNonDelazifying();
-  }
+  JSFunction* function() const { return script_->function(); }
   JSFunction* maybeFunction() const { return function(); }
 
   ModuleObject* module() const { return script_->module(); }

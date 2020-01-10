@@ -728,7 +728,7 @@ class JSFunction : public js::NativeObject {
   
   JSFunction* maybeCanonicalFunction() const {
     if (hasScript()) {
-      return nonLazyScript()->functionNonDelazifying();
+      return nonLazyScript()->function();
     }
     if (hasLazyScript()) {
       return lazyScript()->functionNonDelazifying();

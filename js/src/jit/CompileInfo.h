@@ -192,7 +192,7 @@ class CompileInfo {
     
     
     if (fun_) {
-      fun_ = fun_->nonLazyScript()->functionNonDelazifying();
+      fun_ = fun_->nonLazyScript()->function();
       MOZ_ASSERT(fun_->isTenured());
     }
 

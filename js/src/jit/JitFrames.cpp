@@ -664,7 +664,7 @@ void HandleException(ResumeFromException* rfe) {
         
 
         JSScript* script = frames.script();
-        probes::ExitScript(cx, script, script->functionNonDelazifying(),
+        probes::ExitScript(cx, script, script->function(),
                             false);
         if (!frames.more()) {
           TraceLogStopEvent(logger, TraceLogger_IonMonkey);
@@ -697,7 +697,7 @@ void HandleException(ResumeFromException* rfe) {
 
       
       JSScript* script = frame.script();
-      probes::ExitScript(cx, script, script->functionNonDelazifying(),
+      probes::ExitScript(cx, script, script->function(),
                           false);
 
       if (rfe->kind == ResumeFromException::RESUME_FORCED_RETURN) {

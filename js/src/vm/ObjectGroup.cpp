@@ -236,7 +236,7 @@ bool ObjectGroup::useSingletonForAllocationSite(JSScript* script,
 
 
 
-  if (script->functionNonDelazifying() && !script->treatAsRunOnce()) {
+  if (script->function() && !script->treatAsRunOnce()) {
     return false;
   }
 

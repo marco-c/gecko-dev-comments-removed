@@ -2731,7 +2731,8 @@ class JSScript : public js::BaseScript {
 
   
   
-  JSFunction* functionNonDelazifying() const {
+  
+  JSFunction* function() const {
     if (bodyScope()->is<js::FunctionScope>()) {
       return bodyScope()->as<js::FunctionScope>().canonicalFunction();
     }
@@ -2801,7 +2802,7 @@ class JSScript : public js::BaseScript {
 
 
 
-  bool isTopLevel() { return code() && !functionNonDelazifying(); }
+  bool isTopLevel() { return code() && !function(); }
 
   
   inline bool ensureHasJitScript(JSContext* cx, js::jit::AutoKeepJitScripts&);
@@ -3053,13 +3054,6 @@ class JSScript : public js::BaseScript {
 
   inline JSFunction* getFunction(size_t index);
   inline JSFunction* getFunction(jsbytecode* pc);
-
-  JSFunction* function() const {
-    if (functionNonDelazifying()) {
-      return functionNonDelazifying();
-    }
-    return nullptr;
-  }
 
   inline js::RegExpObject* getRegExp(size_t index);
   inline js::RegExpObject* getRegExp(jsbytecode* pc);
