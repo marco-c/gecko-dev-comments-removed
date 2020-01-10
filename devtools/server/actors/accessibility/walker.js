@@ -134,19 +134,22 @@ function isStale(accessible) {
 
 
 
-function getAudit(acc, report, progress) {
+
+
+
+function getAudit(acc, options, report, progress) {
   if (acc.isDefunct) {
     return;
   }
 
   
-  report.set(acc, acc.audit().then(result => {
+  report.set(acc, acc.audit(options).then(result => {
     report.set(acc, result);
     progress.increment();
   }));
 
   for (const child of acc.children()) {
-    getAudit(child, report, progress);
+    getAudit(child, options, report, progress);
   }
 }
 
@@ -448,11 +451,15 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  async audit() {
+
+
+
+
+  async audit(options) {
     const doc = await this.getDocument();
     const report = new Map();
     this._auditProgress = new AuditProgress(this);
-    getAudit(doc, report, this._auditProgress);
+    getAudit(doc, options, report, this._auditProgress);
     this._auditProgress.setTotal(report.size);
     await Promise.all(report.values());
 
@@ -474,13 +481,17 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  startAudit() {
+
+
+
+
+  startAudit(options) {
     
     if (this._auditing) {
       return;
     }
 
-    this._auditing = this.audit()
+    this._auditing = this.audit(options)
       
       
       .then(ancestries => this.emit("audit-event", {

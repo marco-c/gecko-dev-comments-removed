@@ -428,33 +428,53 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return contrastRatio;
   },
 
+  _getAuditByType(type) {
+    switch (type) {
+      case AUDIT_TYPE.CONTRAST:
+        return this._getContrastRatio();
+      default:
+        return null;
+    }
+  },
+
   
 
 
 
 
 
-  audit() {
+
+
+
+
+  audit(options = {}) {
     if (this._auditing) {
       return this._auditing;
+    }
+
+    const { types } = options;
+    let auditTypes = Object.values(AUDIT_TYPE);
+    if (types && types.length > 0) {
+      auditTypes = auditTypes.filter(auditType => types.includes(auditType));
     }
 
     
     
     
-    this._auditing = Promise.all([
-      this._getContrastRatio(),
-    ]).then(([
-      contrastRatio,
-    ]) => {
-      let audit = null;
-      if (!this.isDefunct && !this.isDestroyed) {
-        audit = {
-          [AUDIT_TYPE.CONTRAST]: contrastRatio,
-        };
-        this._lastAudit = audit;
-        events.emit(this, "audited", audit);
+    this._auditing = Promise.all(
+      auditTypes.map(auditType => this._getAuditByType(auditType))
+    ).then(results => {
+      if (this.isDefunct || this.isDestroyed) {
+        return null;
       }
+
+      const audit = results.reduce((auditResults, result, index) => {
+        auditResults[auditTypes[index]] = result;
+        return auditResults;
+      }, {});
+      this._lastAudit = this._lastAudit || {};
+      Object.assign(this._lastAudit, audit);
+      events.emit(this, "audited", audit);
 
       return audit;
     }).catch(error => {
