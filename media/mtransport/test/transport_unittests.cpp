@@ -12,6 +12,12 @@
 #include <algorithm>
 #include <functional>
 
+#ifdef XP_MACOSX
+
+#  include <CoreFoundation/CFAvailability.h>
+#  include <Security/CipherSuite.h>
+#endif
+
 #include "mozilla/UniquePtr.h"
 
 #include "sigslot.h"

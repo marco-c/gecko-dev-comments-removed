@@ -12,6 +12,12 @@
 #include <queue>
 #include <set>
 
+#ifdef XP_MACOSX
+
+#  include <CoreFoundation/CFAvailability.h>
+#  include <Security/CipherSuite.h>
+#endif
+
 #include "sigslot.h"
 
 #include "mozilla/RefPtr.h"
