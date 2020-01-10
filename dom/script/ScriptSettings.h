@@ -407,10 +407,23 @@ class AutoIncumbentScript : protected ScriptSettingsStackEntry {
 
 
 
-class AutoNoJSAPI : protected ScriptSettingsStackEntry {
+class AutoNoJSAPI : protected ScriptSettingsStackEntry,
+                    protected JSAutoNullableRealm {
  public:
-  explicit AutoNoJSAPI();
+  AutoNoJSAPI() : AutoNoJSAPI(danger::GetJSContext()) {}
   ~AutoNoJSAPI();
+
+ private:
+  
+  
+  explicit AutoNoJSAPI(JSContext* aCx);
+
+  
+  
+  
+  
+  
+  JSContext* mCx;
 };
 
 }  
