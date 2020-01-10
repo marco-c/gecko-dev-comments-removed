@@ -243,8 +243,18 @@ void DocumentChannelChild::ShutdownListeners(nsresult aStatusCode) {
   }
 }
 
-IPCResult DocumentChannelChild::RecvCancelForProcessSwitch() {
-  ShutdownListeners(NS_BINDING_ABORTED);
+IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
+    const nsresult& aStatus) {
+  MOZ_ASSERT(NS_FAILED(aStatus));
+  
+  
+  
+  if (mLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, aStatus);
+    mLoadGroup = nullptr;
+  }
+
+  ShutdownListeners(aStatus);
   return IPC_OK();
 }
 
