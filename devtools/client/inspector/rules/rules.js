@@ -402,18 +402,8 @@ CssRuleView.prototype = {
     
     this._emulationFront = await this.currentTarget.getFront("emulation");
 
-    
-    
-    
-    if (
-      (await this.currentTarget.actorHasMethod(
-        "emulation",
-        "getIsPrintSimulationEnabled"
-      )) &&
-      !this.currentTarget.chrome
-    ) {
+    if (!this.currentTarget.chrome) {
       this.printSimulationButton.removeAttribute("hidden");
-
       this.printSimulationButton.addEventListener(
         "click",
         this._onTogglePrintSimulation

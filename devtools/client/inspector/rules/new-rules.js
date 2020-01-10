@@ -164,16 +164,7 @@ class RulesView {
     
     this.emulationFront = await target.getFront("emulation");
 
-    
-    
-    
-    if (
-      (await target.actorHasMethod(
-        "emulation",
-        "getIsPrintSimulationEnabled"
-      )) &&
-      !target.chrome
-    ) {
+    if (!target.chrome) {
       this.store.dispatch(updatePrintSimulationHidden(false));
     } else {
       this.store.dispatch(updatePrintSimulationHidden(true));
