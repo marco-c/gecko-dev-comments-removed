@@ -633,6 +633,10 @@ static inline int32_t GetBytecodeInteger(jsbytecode* pc) {
 
 inline bool BytecodeOpHasIC(JSOp op) { return CodeSpec[op].format & JOF_IC; }
 
+inline bool BytecodeOpHasTypeSet(JSOp op) {
+  return CodeSpec[op].format & JOF_TYPESET;
+}
+
 
 
 

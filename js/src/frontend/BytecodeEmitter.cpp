@@ -242,10 +242,8 @@ bool BytecodeEmitter::emitCheck(JSOp op, ptrdiff_t delta,
   if (!bytecodeSection().code().growByUninitialized(delta)) {
     return false;
   }
-
   
-  
-  if (CodeSpec[op].format & JOF_TYPESET) {
+  if (BytecodeOpHasTypeSet(op)) {
     bytecodeSection().incrementNumTypeSets();
   }
 

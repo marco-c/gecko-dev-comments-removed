@@ -22,6 +22,7 @@
 #include "jit/RematerializedFrame.h"
 #include "js/Utility.h"
 #include "vm/ArgumentsObject.h"
+#include "vm/BytecodeUtil.h"
 #include "vm/TraceLogging.h"
 
 #include "jit/JitFrames-inl.h"
@@ -1134,7 +1135,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     } else {
       
       
-      if (resumeAfter && (CodeSpec[op].format & JOF_TYPESET)) {
+      if (resumeAfter && BytecodeOpHasTypeSet(op)) {
         builder.setMonitorPC(pc);
       }
       jsbytecode* resumePC = GetResumePC(script, pc, resumeAfter);
@@ -1326,7 +1327,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   
   
-  if (CodeSpec[*pc].format & JOF_TYPESET) {
+  if (BytecodeOpHasTypeSet(JSOp(*pc))) {
     ICFallbackStub* fallbackStub = icEntry.fallbackStub();
     if (!fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(
             cx, script)) {
@@ -1869,7 +1870,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
 
   
   if (jsbytecode* monitorPC = bailoutInfo->monitorPC) {
-    MOZ_ASSERT(CodeSpec[*monitorPC].format & JOF_TYPESET);
+    MOZ_ASSERT(BytecodeOpHasTypeSet(JSOp(*monitorPC)));
     MOZ_ASSERT(GetNextPc(monitorPC) == topFrame->interpreterPC());
 
     RootedScript script(cx, topFrame->script());
