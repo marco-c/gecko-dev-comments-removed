@@ -2329,14 +2329,7 @@ void js::AttachFinishedCompressions(JSRuntime* runtime,
   }
 }
 
-void js::RunPendingSourceCompressions(JSContext* cx) {
-  
-  
-  JS_GC(cx);
-  JS_GC(cx);
-
-  JSRuntime* runtime = cx->runtime();
-
+void js::RunPendingSourceCompressions(JSRuntime* runtime) {
   AutoLockHelperThreadState lock;
 
   if (!HelperThreadState().threads) {
