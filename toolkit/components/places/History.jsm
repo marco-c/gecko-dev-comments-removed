@@ -908,6 +908,9 @@ var clear = async function(db) {
                         WHERE frecency > 0`);
   });
 
+  
+  PlacesUtils.history.clearEmbedVisits();
+
   let observers = PlacesUtils.history.getObservers();
   notify(observers, "onClearHistory");
   
@@ -1274,57 +1277,62 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
     }
   );
 
-  if (!visitsToRemove.length) {
+  try {
+    if (!visitsToRemove.length) {
+      
+      return false;
+    }
+
+    let pages = [];
+    await db.executeTransaction(async function() {
+      
+      for (let chunk of PlacesUtils.chunkArray(
+        visitsToRemove,
+        db.variableLimit
+      )) {
+        await db.execute(
+          `DELETE FROM moz_historyvisits
+           WHERE id IN (${sqlBindPlaceholders(chunk)})`,
+          chunk
+        );
+      }
+
+      
+      for (let chunk of PlacesUtils.chunkArray(
+        [...pagesToInspect],
+        db.variableLimit
+      )) {
+        await db.execute(
+          `SELECT id, url, url_hash, guid,
+            (foreign_count != 0) AS has_foreign,
+            (last_visit_date NOTNULL) as has_visits
+           FROM moz_places
+           WHERE id IN (${sqlBindPlaceholders(chunk)})`,
+          chunk,
+          row => {
+            let page = {
+              id: row.getResultByName("id"),
+              guid: row.getResultByName("guid"),
+              hasForeign: row.getResultByName("has_foreign"),
+              hasVisits: row.getResultByName("has_visits"),
+              url: new URL(row.getResultByName("url")),
+              hash: row.getResultByName("url_hash"),
+            };
+            pages.push(page);
+          }
+        );
+      }
+
+      
+      await cleanupPages(db, pages);
+    });
+
+    notifyCleanup(db, pages, transition);
+    notifyOnResult(onResultData, onResult); 
+  } finally {
     
-    return false;
+    PlacesUtils.history.clearEmbedVisits();
   }
-
-  let pages = [];
-  await db.executeTransaction(async function() {
-    
-    for (let chunk of PlacesUtils.chunkArray(
-      visitsToRemove,
-      db.variableLimit
-    )) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE id IN (${sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
-
-    
-    for (let chunk of PlacesUtils.chunkArray(
-      [...pagesToInspect],
-      db.variableLimit
-    )) {
-      await db.execute(
-        `SELECT id, url, url_hash, guid,
-          (foreign_count != 0) AS has_foreign,
-          (last_visit_date NOTNULL) as has_visits
-         FROM moz_places
-         WHERE id IN (${sqlBindPlaceholders(chunk)})`,
-        chunk,
-        row => {
-          let page = {
-            id: row.getResultByName("id"),
-            guid: row.getResultByName("guid"),
-            hasForeign: row.getResultByName("has_foreign"),
-            hasVisits: row.getResultByName("has_visits"),
-            url: new URL(row.getResultByName("url")),
-            hash: row.getResultByName("url_hash"),
-          };
-          pages.push(page);
-        }
-      );
-    }
-
-    
-    await cleanupPages(db, pages);
-  });
-
-  notifyCleanup(db, pages, transition);
-  notifyOnResult(onResultData, onResult); 
 
   return !!visitsToRemove.length;
 };
@@ -1415,22 +1423,26 @@ var removeByFilter = async function(db, filter, onResult = null) {
     return false;
   }
 
-  await db.executeTransaction(async function() {
-    
-    let pageIds = pages.map(p => p.id);
-    for (let chunk of PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE place_id IN(${sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
-    
-    await cleanupPages(db, pages);
-  });
+  try {
+    await db.executeTransaction(async function() {
+      
+      let pageIds = pages.map(p => p.id);
+      for (let chunk of PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
+        await db.execute(
+          `DELETE FROM moz_historyvisits
+           WHERE place_id IN(${sqlBindPlaceholders(chunk)})`,
+          chunk
+        );
+      }
+      
+      await cleanupPages(db, pages);
+    });
 
-  notifyCleanup(db, pages);
-  notifyOnResult(onResultData, onResult);
+    notifyCleanup(db, pages);
+    notifyOnResult(onResultData, onResult);
+  } finally {
+    PlacesUtils.history.clearEmbedVisits();
+  }
 
   return hasPagesToRemove;
 };
@@ -1491,28 +1503,33 @@ var remove = async function(db, { guids, urls }, onResult = null) {
     await db.execute(query, chunk, onRow);
   }
 
-  if (!pages.length) {
-    
-    return false;
-  }
-
-  await db.executeTransaction(async function() {
-    
-    let pageIds = pages.map(p => p.id);
-    for (let chunk of PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE place_id IN (${sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
+  try {
+    if (!pages.length) {
+      
+      return false;
     }
 
-    
-    await cleanupPages(db, pages);
-  });
+    await db.executeTransaction(async function() {
+      
+      let pageIds = pages.map(p => p.id);
+      for (let chunk of PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
+        await db.execute(
+          `DELETE FROM moz_historyvisits
+           WHERE place_id IN (${sqlBindPlaceholders(chunk)})`,
+          chunk
+        );
+      }
 
-  notifyCleanup(db, pages);
-  notifyOnResult(onResultData, onResult); 
+      
+      await cleanupPages(db, pages);
+    });
+
+    notifyCleanup(db, pages);
+    notifyOnResult(onResultData, onResult); 
+  } finally {
+    
+    PlacesUtils.history.clearEmbedVisits();
+  }
 
   return hasPagesToRemove;
 };
