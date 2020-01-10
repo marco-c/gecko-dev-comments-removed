@@ -5091,8 +5091,6 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   if (isSpecialized) {
     
     calleeOffset = writer.guardSpecificFunction(calleeObjId, calleeFunc);
-    
-    writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
   } else {
     
     writer.guardClass(calleeObjId, GuardClassKind::JSFunction);

@@ -2928,7 +2928,9 @@ void MacroAssembler::branchIfNotInterpretedConstructor(Register fun,
                                                        Register scratch,
                                                        Label* label) {
   
-  branchTestFunctionFlags(fun, JSFunction::INTERPRETED, Assembler::Zero, label);
+  branchTestFunctionFlags(
+      fun, JSFunction::INTERPRETED | JSFunction::INTERPRETED_LAZY,
+      Assembler::Zero, label);
 
   
   branchTestFunctionFlags(fun, JSFunction::CONSTRUCTOR, Assembler::Zero, label);

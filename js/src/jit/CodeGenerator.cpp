@@ -4971,8 +4971,13 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   if (call->mir()->isConstructing()) {
     masm.branchIfNotInterpretedConstructor(calleereg, nargsreg, &invoke);
   } else {
-    masm.branchIfFunctionHasNoJitEntry(calleereg,  false,
-                                       &invoke);
+    
+    if (call->mir()->needsArgCheck()) {
+      masm.branchIfFunctionHasNoJitEntry(calleereg,  false,
+                                         &invoke);
+    } else {
+      masm.branchIfFunctionHasNoScript(calleereg, &invoke);
+    }
     masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor,
                             calleereg, objreg, &invoke);
   }
@@ -5098,14 +5103,6 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
 
   MOZ_ASSERT_IF(target->isClassConstructor(), call->isConstructing());
 
-  Label uncompiled;
-  if (!target->isNativeWithJitEntry()) {
-    
-    
-    masm.branchIfFunctionHasNoJitEntry(calleereg, call->isConstructing(),
-                                       &uncompiled);
-  }
-
   if (call->mir()->maybeCrossRealm()) {
     masm.switchToObjectRealm(calleereg, objreg);
   }
@@ -5113,7 +5110,22 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
   if (call->mir()->needsArgCheck()) {
     masm.loadJitCodeRaw(calleereg, objreg);
   } else {
+    
+    
+    
+    
+    
+    
+
+    Label uncompiled, end;
+    masm.branchIfFunctionHasNoScript(calleereg, &uncompiled);
     masm.loadJitCodeNoArgCheck(calleereg, objreg);
+    masm.jump(&end);
+
+    
+    masm.bind(&uncompiled);
+    masm.loadJitCodeRaw(calleereg, objreg);
+    masm.bind(&end);
   }
 
   
@@ -5140,24 +5152,6 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
   
   int prefixGarbage = sizeof(JitFrameLayout) - sizeof(void*);
   masm.adjustStack(prefixGarbage - unusedStack);
-
-  if (uncompiled.used()) {
-    Label end;
-    masm.jump(&end);
-
-    
-    masm.bind(&uncompiled);
-    if (call->isConstructing() && target->nargs() > call->numActualArgs()) {
-      emitCallInvokeFunctionShuffleNewTarget(call, calleereg, target->nargs(),
-                                             unusedStack);
-    } else {
-      emitCallInvokeFunction(call, calleereg, call->isConstructing(),
-                             call->ignoresReturnValue(), call->numActualArgs(),
-                             unusedStack);
-    }
-
-    masm.bind(&end);
-  }
 
   
   

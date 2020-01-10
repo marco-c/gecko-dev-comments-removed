@@ -493,17 +493,8 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterResultShared(
   AutoScratchRegister scratch(allocator, masm);
 
   
-  {
-    FailurePath* failure;
-    if (!addFailurePath(&failure)) {
-      return false;
-    }
-
-    masm.loadPtr(getterAddr, callee);
-    masm.branchIfFunctionHasNoJitEntry(callee,  false,
-                                       failure->label());
-    masm.loadJitCodeRaw(callee, code);
-  }
+  masm.loadPtr(getterAddr, callee);
+  masm.loadJitCodeRaw(callee, code);
 
   allocator.discardStack(masm);
 
@@ -1548,17 +1539,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetter() {
   bool isSameRealm = reader.readBool();
 
   
-  
-  {
-    FailurePath* failure;
-    if (!addFailurePath(&failure)) {
-      return false;
-    }
-
-    masm.loadPtr(setterAddr, scratch1);
-    masm.branchIfFunctionHasNoJitEntry(scratch1,  false,
-                                       failure->label());
-  }
+  masm.loadPtr(setterAddr, scratch1);
 
   allocator.discardStack(masm);
 
