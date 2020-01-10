@@ -2555,29 +2555,47 @@ bool nsINode::Contains(const nsINode* aOther) const {
   if (aOther == this) {
     return true;
   }
+
   if (!aOther || OwnerDoc() != aOther->OwnerDoc() ||
       IsInUncomposedDoc() != aOther->IsInUncomposedDoc() ||
-      !aOther->IsContent() || !GetFirstChild()) {
+      !aOther->IsContent() || !HasChildren()) {
     return false;
   }
 
-  const nsIContent* other = static_cast<const nsIContent*>(aOther);
-  if (this == OwnerDoc()) {
+  if (IsDocument()) {
     
     
     
-    return !other->IsInAnonymousSubtree();
+    return !aOther->IsInAnonymousSubtree();
   }
 
   if (!IsElement() && !IsDocumentFragment()) {
     return false;
   }
 
-  if (AsContent()->GetBindingParent() != other->GetBindingParent()) {
+  if (IsInShadowTree() != aOther->IsInShadowTree() ||
+      IsInNativeAnonymousSubtree() != aOther->IsInNativeAnonymousSubtree()) {
     return false;
   }
 
-  return other->IsInclusiveDescendantOf(this);
+  if (IsInNativeAnonymousSubtree()) {
+    if (GetClosestNativeAnonymousSubtreeRoot() !=
+        aOther->GetClosestNativeAnonymousSubtreeRoot()) {
+      return false;
+    }
+  }
+
+  if (IsInShadowTree()) {
+    ShadowRoot* otherRoot = aOther->GetContainingShadow();
+    if (IsShadowRoot()) {
+      return otherRoot == this;
+    }
+    if (otherRoot != GetContainingShadow()) {
+      return false;
+    }
+  }
+
+  return aOther->IsInclusiveDescendantOf(this);
 }
 
 uint32_t nsINode::Length() const {
