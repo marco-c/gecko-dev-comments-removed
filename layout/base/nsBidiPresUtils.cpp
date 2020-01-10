@@ -1019,6 +1019,8 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
           
           frame->AdjustOffsetsForBidi(0, 0);
           
+          
+          lastRealFrame = frameInfo;
           continue;
         }
         nsLineList::iterator currentLine = aBpd->mCurrentResolveLine.GetLine();
