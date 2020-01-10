@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+
+class L10N {
+  getStr(str) {
+    switch (str) {
+      default:
+        return str;
+    }
+  }
+
+  getFormatStr(str) {
+    return this.getStr(str);
+  }
+}
+
+module.exports = {
+  L10N: new L10N(),
+};
