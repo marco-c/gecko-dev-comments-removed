@@ -27,5 +27,6 @@ addAccessibleTask(
     
     await setHidden(browser);
     testAccessibleTree(container, { SECTION: [{ ENTRY: [] }] });
-  }
+  },
+  { iframe: true }
 );
