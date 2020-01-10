@@ -43,10 +43,10 @@ class JSStringPtr(Common):
 
     def chars(self):
         d = self.value['d']
-        flags = d['flags_']
-        if 'length_' in d.type:
-            length = d['length_']
-        else:
+        flags = self.value['flags_']
+        try:
+            length = self.value['length_']
+        except gdb.error:
             
             
             length = flags >> 32
