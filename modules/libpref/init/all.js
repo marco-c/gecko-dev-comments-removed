@@ -4245,29 +4245,6 @@ pref("layers.acceleration.draw-fps", false);
   pref("layers.deaa.enabled", false);
 #endif
 
-pref("layers.dump", false);
-#ifdef MOZ_DUMP_PAINTING
-  
-  pref("layers.dump-texture", false);
-  pref("layers.dump-decision", false);
-  pref("layers.dump-client-layers", false);
-  pref("layers.dump-host-layers", false);
-#endif
-pref("layers.draw-borders", false);
-pref("layers.draw-tile-borders", false);
-pref("layers.draw-bigimage-borders", false);
-pref("layers.child-process-shutdown", true);
-
-pref("layers.max-active", -1);
-
-
-
-
-
-pref("layers.offmainthreadcomposition.frame-rate", -1);
-
-pref("layers.single-tile.enabled", true);
-
 #ifdef MOZ_X11
   #ifdef MOZ_WIDGET_GTK
     pref("gfx.xrender.enabled",false);
