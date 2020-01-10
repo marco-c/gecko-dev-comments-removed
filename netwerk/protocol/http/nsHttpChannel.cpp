@@ -9745,10 +9745,12 @@ void nsHttpChannel::SetOriginHeader() {
   nsCOMPtr<nsIURI> referrer;
   mLoadInfo->TriggeringPrincipal()->GetURI(getter_AddRefs(referrer));
 
-  nsAutoCString origin("null");
-  if (referrer && dom::ReferrerInfo::IsReferrerSchemeAllowed(referrer)) {
-    nsContentUtils::GetASCIIOrigin(referrer, origin);
+  if (!referrer || !dom::ReferrerInfo::IsReferrerSchemeAllowed(referrer)) {
+    return;
   }
+
+  nsAutoCString origin("null");
+  nsContentUtils::GetASCIIOrigin(referrer, origin);
 
   
   
@@ -9772,7 +9774,7 @@ void nsHttpChannel::SetOriginHeader() {
     }
   }
 
-  if (referrer && ReferrerInfo::ShouldSetNullOriginHeader(this, referrer)) {
+  if (ReferrerInfo::ShouldSetNullOriginHeader(this, referrer)) {
     origin.AssignLiteral("null");
   }
 
