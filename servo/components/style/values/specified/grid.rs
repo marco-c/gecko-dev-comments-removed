@@ -169,8 +169,7 @@ impl TrackRepeat<LengthPercentage, Integer> {
                     let mut current_names;
 
                     loop {
-                        current_names =
-                            input.try(parse_line_names).unwrap_or_default();
+                        current_names = input.try(parse_line_names).unwrap_or_default();
                         if let Ok(track_size) = input.try(|i| TrackSize::parse(context, i)) {
                             if !track_size.is_fixed() {
                                 if is_auto {
@@ -193,11 +192,7 @@ impl TrackRepeat<LengthPercentage, Integer> {
                                 
                                 
                                 
-                                names.push(
-                                    input
-                                        .try(parse_line_names)
-                                        .unwrap_or_default()
-                                );
+                                names.push(input.try(parse_line_names).unwrap_or_default());
                                 break;
                             }
                         } else {
@@ -239,11 +234,7 @@ impl Parse for TrackList<LengthPercentage, Integer> {
         
         let mut at_least_one_not_fixed = false;
         loop {
-            current_names.extend_from_slice(
-                &mut input
-                    .try(parse_line_names)
-                    .unwrap_or_default()
-            );
+            current_names.extend_from_slice(&mut input.try(parse_line_names).unwrap_or_default());
             if let Ok(track_size) = input.try(|i| TrackSize::parse(context, i)) {
                 if !track_size.is_fixed() {
                     at_least_one_not_fixed = true;
