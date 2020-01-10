@@ -90,7 +90,8 @@ class BookmarksObserver extends Observer {
 
 
 
-  onItemRemoved(id, folderId, index, type, uri, guid, parentGuid, source) { 
+  
+  onItemRemoved(id, folderId, index, type, uri, guid, parentGuid, source) {
     if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK &&
         source !== PlacesUtils.bookmarks.SOURCES.IMPORT &&
         source !== PlacesUtils.bookmarks.SOURCES.RESTORE &&

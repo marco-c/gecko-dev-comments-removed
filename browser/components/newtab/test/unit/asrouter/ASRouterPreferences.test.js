@@ -76,7 +76,8 @@ describe("ASRouterPreferences", () => {
     it("should clear cached values for ._initialized, .devtoolsEnabled", () => {
       ASRouterPreferences.init();
       
-      const result = [ASRouterPreferences.providers, ASRouterPreferences.devtoolsEnabled]; 
+      
+      const result = [ASRouterPreferences.providers, ASRouterPreferences.devtoolsEnabled];
       assert.isNotNull(ASRouterPreferences._providers, "providers should not be null");
       assert.isNotNull(ASRouterPreferences._devtoolsEnabled, "devtolosEnabled should not be null");
 

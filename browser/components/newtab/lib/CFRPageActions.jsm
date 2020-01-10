@@ -373,7 +373,8 @@ class PageAction {
       footerLink.onclick = () => this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "LEARN_MORE"});
 
       primaryActionCallback = async () => {
-        primary.action.data.url = await CFRPageActions._fetchLatestAddonVersion(content.addon.id); 
+        
+        primary.action.data.url = await CFRPageActions._fetchLatestAddonVersion(content.addon.id);
         this._blockMessage(id);
         this.dispatchUserAction(primary.action);
         this.hideAddressBarNotifier();

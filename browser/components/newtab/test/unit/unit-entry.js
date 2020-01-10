@@ -7,7 +7,8 @@ enzyme.configure({adapter: new Adapter()});
 
 
 const origConsoleError = console.error; 
-console.error = function(msg, ...args) { 
+ 
+console.error = function(msg, ...args) {
   
   origConsoleError.apply(console, [msg, ...args]);
 

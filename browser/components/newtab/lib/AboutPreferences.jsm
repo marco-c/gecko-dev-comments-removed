@@ -100,10 +100,6 @@ this.AboutPreferences = class AboutPreferences {
     
     let sectionsCopy = JSON.parse(JSON.stringify(sections));
     sectionsCopy.forEach(obj => {
-      if (obj.id === "highlights") {
-        obj.shouldHidePref = true;
-      }
-
       if (obj.id === "topstories") {
         obj.rowsPref = "";
       }
@@ -273,12 +269,25 @@ this.AboutPreferences = class AboutPreferences {
         }
       }
 
+      const subChecks = [];
+      const fullName = `browser.newtabpage.activity-stream.${sectionData.pref.feed}`;
+      const pref = Preferences.get(fullName);
+
       
       nestedPrefs.forEach(nested => {
         const subcheck = createAppend("checkbox", detailVbox);
         subcheck.classList.add("indent");
         subcheck.setAttribute("label", formatString(nested.titleString));
         linkPref(subcheck, nested.name, "bool");
+        subChecks.push(subcheck);
+        subcheck.disabled = !pref._value;
+      });
+
+      
+      pref.on("change", () => {
+        subChecks.forEach(subcheck => {
+          subcheck.disabled = !pref._value;
+        });
       });
     });
 

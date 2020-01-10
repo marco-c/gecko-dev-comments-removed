@@ -214,8 +214,9 @@ this.RecipeExecutor = class RecipeExecutor {
       return null;
     }
 
+    if (
     
-    if (((config.op === "==") && (item[config.field] == rhs)) ||
+      ((config.op === "==") && (item[config.field] == rhs)) ||
         
         ((config.op === "!=") && (item[config.field] != rhs)) ||
         ((config.op === "<") && (item[config.field] < rhs)) ||

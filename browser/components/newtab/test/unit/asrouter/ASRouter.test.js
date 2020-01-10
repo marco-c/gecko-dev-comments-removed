@@ -1377,10 +1377,12 @@ describe("ASRouter", () => {
           
           const providers = [...state.providers, provider];
           
-          const messageImpressions = Object.assign({}, state.messageImpressions); 
+          
+          const messageImpressions = Object.assign({}, state.messageImpressions);
           messageImpressions.foo = fooMessageImpressions;
           
-          const providerImpressions = Object.assign({}, state.providerImpressions); 
+          
+          const providerImpressions = Object.assign({}, state.providerImpressions);
           providerImpressions.bar = barProviderImpressions;
           return {providers, messageImpressions, providerImpressions};
         });

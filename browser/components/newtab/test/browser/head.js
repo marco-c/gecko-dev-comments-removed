@@ -12,7 +12,8 @@ function pushPrefs(...prefs) {
   return SpecialPowers.pushPrefEnv({set: prefs});
 }
 
-async function setDefaultTopSites() { 
+
+async function setDefaultTopSites() {
   
   await pushPrefs(["browser.newtabpage.activity-stream.default.sites",
     "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/"]);
@@ -22,7 +23,8 @@ async function setDefaultTopSites() {
   await pushPrefs(["browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", true]);
 }
 
-async function clearHistoryAndBookmarks() { 
+
+async function clearHistoryAndBookmarks() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
   QueryCache.expireAll();
@@ -53,7 +55,8 @@ function refreshHighlightsFeed() {
 
 
 
-async function addHighlightsBookmarks(count) { 
+
+async function addHighlightsBookmarks(count) {
   const bookmarks = new Array(count).fill(null).map((entry, i) => ({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     title: "foo",
@@ -107,7 +110,8 @@ function addContentHelpers() {
 
 
 
-function test_newtab(testInfo) { 
+
+function test_newtab(testInfo) {
   
   let {before, test: contentTask, after} = testInfo;
   if (!before) {

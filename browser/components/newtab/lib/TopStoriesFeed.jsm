@@ -665,8 +665,13 @@ this.TopStoriesFeed = class TopStoriesFeed {
   }
 
   lazyLoadTopStories(dsPref) {
+    let _dsPref = dsPref;
+    if (!_dsPref) {
+      _dsPref = this.store.getState().Prefs.values[DISCOVERY_STREAM_PREF];
+    }
+
     try {
-      this.discoveryStreamEnabled = JSON.parse(dsPref).enabled;
+      this.discoveryStreamEnabled = JSON.parse(_dsPref).enabled;
     } catch (e) {
       
       this.discoveryStreamEnabled = false;
@@ -685,8 +690,8 @@ this.TopStoriesFeed = class TopStoriesFeed {
 
   handleDisabled(action) {
     switch (action.type) {
-      case at.PREFS_INITIAL_VALUES:
-        this.lazyLoadTopStories(action.data[DISCOVERY_STREAM_PREF]);
+      case at.INIT:
+        this.lazyLoadTopStories();
         break;
       case at.PREF_CHANGED:
         if (action.data.name === DISCOVERY_STREAM_PREF) {
@@ -706,10 +711,8 @@ this.TopStoriesFeed = class TopStoriesFeed {
     }
     switch (action.type) {
       
-      
-      
-      case at.PREFS_INITIAL_VALUES:
-        this.lazyLoadTopStories(action.data[DISCOVERY_STREAM_PREF]);
+      case at.INIT:
+        this.lazyLoadTopStories();
         break;
       case at.SYSTEM_TICK:
         let stories;
