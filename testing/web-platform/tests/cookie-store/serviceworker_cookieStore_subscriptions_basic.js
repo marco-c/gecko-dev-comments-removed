@@ -18,16 +18,6 @@ self.addEventListener('install', (event) => {
 });
 
 
-
-async function async_cleanup(cleanup_function) {
-  try {
-    await cleanup_function();
-  } catch (e) {
-    
-  }
-}
-
-
 const kServiceWorkerActivatedPromise = new Promise(resolve => {
   self.addEventListener('activate', event => { resolve(); });
 });
@@ -53,6 +43,9 @@ promise_test(async testCase => {
   });
 
   await cookieStore.set('cookie-name', 'cookie-value');
+  testCase.add_cleanup(async () => {
+    await cookieStore.delete('cookie-name');
+  });
 
   const event = await cookie_change_received_promise;
   assert_equals(event.type, 'cookiechange');
@@ -62,8 +55,6 @@ promise_test(async testCase => {
   assert_equals(event.deleted.length, 0);
   assert_true(event instanceof ExtendableCookieChangeEvent);
   assert_true(event instanceof ExtendableEvent);
-
-  await async_cleanup(() => cookieStore.delete('cookie-name'));
 }, 'cookiechange dispatched with cookie change that matches subscription ' +
    'to event handler registered with addEventListener');
 

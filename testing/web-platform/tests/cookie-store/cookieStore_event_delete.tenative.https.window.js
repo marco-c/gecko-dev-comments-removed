@@ -1,17 +1,10 @@
 'use strict';
 
-
-
-async function async_cleanup(cleanup_function) {
-  try {
-    await cleanup_function();
-  } catch (e) {
-    
-  }
-}
-
 promise_test(async testCase => {
   await cookieStore.set('cookie-name', 'cookie-value');
+  testCase.add_cleanup(async () => {
+    await cookieStore.delete('cookie-name');
+  });
 
   const eventPromise = new Promise((resolve) => {
     cookieStore.onchange = resolve;
@@ -26,6 +19,4 @@ promise_test(async testCase => {
       event.deleted[0].value, undefined,
       'Cookie change events for deletions should not have cookie values');
   assert_equals(event.changed.length, 0);
-
-  await async_cleanup(() => cookieStore.delete('cookie-name'));
 }, 'cookieStore fires change event for cookie deleted by cookieStore.delete()');

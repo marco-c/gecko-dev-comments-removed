@@ -1,19 +1,18 @@
 'use strict';
 
-
-
-async function async_cleanup(cleanup_function) {
-  try {
-    await cleanup_function();
-  } catch (e) {
-    
-  }
-}
-
 promise_test(async testCase => {
   await cookieStore.set('cookie-name', 'cookie-value');
+  testCase.add_cleanup(async () => {
+    await cookieStore.delete('cookie-name');
+  });
   await cookieStore.set('cookie-name-2', 'cookie-value-2');
+  testCase.add_cleanup(async () => {
+    await cookieStore.delete('cookie-name-2');
+  });
   await cookieStore.set('cookie-name-3', 'cookie-value-3');
+  testCase.add_cleanup(async () => {
+    await cookieStore.delete('cookie-name-3');
+  });
 
   const cookies = await cookieStore.getAll();
   cookies.sort((a, b) => a.name.localeCompare(b.name));
@@ -24,8 +23,4 @@ promise_test(async testCase => {
   assert_equals(cookies[1].value, 'cookie-value-2');
   assert_equals(cookies[2].name, 'cookie-name-3');
   assert_equals(cookies[2].value, 'cookie-value-3');
-
-  await async_cleanup(() => cookieStore.delete('cookie-name'));
-  await async_cleanup(() => cookieStore.delete('cookie-name-2'));
-  await async_cleanup(() => cookieStore.delete('cookie-name-3'));
 }, 'cookieStore.getAll returns multiple cookies written by cookieStore.set');

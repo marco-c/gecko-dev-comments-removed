@@ -17,16 +17,6 @@ self.addEventListener('install', (event) => {
 });
 
 
-
-async function async_cleanup(cleanup_function) {
-  try {
-    await cleanup_function();
-  } catch (e) {
-    
-  }
-}
-
-
 const kServiceWorkerActivatedPromise = new Promise(resolve => {
   self.addEventListener('activate', event => { resolve(); });
 });
