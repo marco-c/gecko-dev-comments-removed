@@ -25,37 +25,45 @@
 
 var EXPORTED_SYMBOLS = ["ContextObserver"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {EventEmitter} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { EventEmitter } = ChromeUtils.import(
+  "resource://gre/modules/EventEmitter.jsm"
+);
 
 class ContextObserver {
   constructor(chromeEventHandler) {
     this.chromeEventHandler = chromeEventHandler;
     EventEmitter.decorate(this);
 
-    this.chromeEventHandler.addEventListener("DOMWindowCreated", this,
-      {mozSystemGroup: true});
+    this.chromeEventHandler.addEventListener("DOMWindowCreated", this, {
+      mozSystemGroup: true,
+    });
 
     
-    this.chromeEventHandler.addEventListener("pageshow", this,
-      {mozSystemGroup: true});
-    this.chromeEventHandler.addEventListener("pagehide", this,
-      {mozSystemGroup: true});
+    this.chromeEventHandler.addEventListener("pageshow", this, {
+      mozSystemGroup: true,
+    });
+    this.chromeEventHandler.addEventListener("pagehide", this, {
+      mozSystemGroup: true,
+    });
 
     Services.obs.addObserver(this, "inner-window-destroyed");
   }
 
   destructor() {
-    this.chromeEventHandler.removeEventListener("DOMWindowCreated", this,
-      {mozSystemGroup: true});
-    this.chromeEventHandler.removeEventListener("pageshow", this,
-      {mozSystemGroup: true});
-    this.chromeEventHandler.removeEventListener("pagehide", this,
-      {mozSystemGroup: true});
+    this.chromeEventHandler.removeEventListener("DOMWindowCreated", this, {
+      mozSystemGroup: true,
+    });
+    this.chromeEventHandler.removeEventListener("pageshow", this, {
+      mozSystemGroup: true,
+    });
+    this.chromeEventHandler.removeEventListener("pagehide", this, {
+      mozSystemGroup: true,
+    });
     Services.obs.removeObserver(this, "inner-window-destroyed");
   }
 
-  handleEvent({type, target, persisted}) {
+  handleEvent({ type, target, persisted }) {
     const window = target.defaultView;
     if (window.top != this.chromeEventHandler.ownerGlobal) {
       
@@ -65,31 +73,31 @@ class ContextObserver {
     const frameId = windowUtils.outerWindowID;
     const id = windowUtils.currentInnerWindowID;
     switch (type) {
-    case "DOMWindowCreated":
-      
-      
-      
-      this.emit("context-destroyed", { frameId });
-      this.emit("frame-navigated", { frameId, window });
-      this.emit("context-created", { id, window });
-      break;
-    case "pageshow":
-      
-      if (!persisted) {
-        return;
-      }
-      
-      
-      this.emit("context-created", { id, window });
-      break;
+      case "DOMWindowCreated":
+        
+        
+        
+        this.emit("context-destroyed", { frameId });
+        this.emit("frame-navigated", { frameId, window });
+        this.emit("context-created", { id, window });
+        break;
+      case "pageshow":
+        
+        if (!persisted) {
+          return;
+        }
+        
+        
+        this.emit("context-created", { id, window });
+        break;
 
-    case "pagehide":
-      
-      if (!persisted) {
-        return;
-      }
-      this.emit("context-destroyed", { id });
-      break;
+      case "pagehide":
+        
+        if (!persisted) {
+          return;
+        }
+        this.emit("context-destroyed", { id });
+        break;
     }
   }
 
@@ -99,5 +107,3 @@ class ContextObserver {
     this.emit("context-destroyed", { id: innerWindowID });
   }
 }
-
-

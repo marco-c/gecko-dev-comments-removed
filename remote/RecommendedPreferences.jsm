@@ -18,6 +18,7 @@ const RecommendedPreferences = {
 
   
   
-  "browser.contentblocking.features.standard": "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
+  "browser.contentblocking.features.standard":
+    "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
   "network.cookie.cookieBehavior": 0,
 };
