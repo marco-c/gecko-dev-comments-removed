@@ -339,7 +339,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   
-  bool NeedsToFlush() const;
+  bool NeedsToFlushStyle() const;
 
   static ComputedStyleMap* GetComputedStyleMap();
 

@@ -766,7 +766,7 @@ void nsComputedDOMStyle::SetFrameComputedStyle(mozilla::ComputedStyle* aStyle,
   mPresShellId = mPresShell->GetPresShellId();
 }
 
-bool nsComputedDOMStyle::NeedsToFlush() const {
+bool nsComputedDOMStyle::NeedsToFlushStyle() const {
   
   if (ElementNeedsRestyle(mElement, mPseudo)) {
     return true;
@@ -800,7 +800,7 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
   
 
   
-  const bool needsToFlush = aNeedsLayoutFlush || NeedsToFlush();
+  const bool needsToFlush = aNeedsLayoutFlush || NeedsToFlushStyle();
   if (needsToFlush) {
     
     
