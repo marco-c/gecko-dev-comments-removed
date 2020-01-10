@@ -2873,6 +2873,13 @@ class HTTP {
       if (this.timeout) {
         _timeoutId = setTimeout(() => {
           hasTimedout = true;
+
+          if (options && options.headers) {
+            options = { ...options,
+              headers: (0, _utils.replaceKey)(options.headers, "authorization", "**** (suppressed)")
+            };
+          }
+
           reject(new _errors.NetworkTimeoutError(url, options));
         }, this.timeout);
       }
@@ -3255,6 +3262,7 @@ exports.partition = partition;
 exports.delay = delay;
 exports.pMap = pMap;
 exports.omit = omit;
+exports.replaceKey = replaceKey;
 exports.toDataBody = toDataBody;
 exports.qsify = qsify;
 exports.checkVersion = checkVersion;
@@ -3338,6 +3346,23 @@ function omit(obj, ...keys) {
       acc[key] = obj[key];
     }
 
+    return acc;
+  }, {});
+}
+
+
+
+
+
+
+
+
+
+
+
+function replaceKey(obj, key, value) {
+  return Object.keys(obj).reduce((acc, k) => {
+    acc[k] = k.toLowerCase() == key.toLowerCase() ? value : obj[k];
     return acc;
   }, {});
 }
@@ -3579,9 +3604,18 @@ function extractFileInfo(dataURL) {
     array.push(binary.charCodeAt(i));
   }
 
-  const blob = new Blob([new Uint8Array(array)], {
-    type
-  });
+  let blob;
+
+  if (typeof Blob !== "undefined") {
+    
+    blob = new Blob([new Uint8Array(array)], {
+      type
+    });
+  } else {
+    
+    blob = Buffer.from(array);
+  }
+
   return {
     blob,
     name
