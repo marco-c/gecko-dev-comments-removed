@@ -66,7 +66,7 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
   RefPtr<IDBIndex> mSourceIndex;
 
   
-  IDBTransaction* mTransaction;
+  IDBTransaction* const mTransaction;
 
   
   JS::Heap<JS::Value> mCachedKey;

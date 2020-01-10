@@ -210,7 +210,7 @@ class BackgroundFactoryRequestChild final
   friend class PermissionRequestChild;
   friend class PermissionRequestParent;
 
-  RefPtr<IDBFactory> mFactory;
+  const RefPtr<IDBFactory> mFactory;
 
   
   
