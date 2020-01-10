@@ -2104,16 +2104,6 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   return NS_OK;
 }
 
-void HttpChannelParent::CancelChildCrossProcessRedirect() {
-  MOZ_ASSERT(!mDoingCrossProcessRedirect, "Already redirected");
-  MOZ_ASSERT(NS_IsMainThread());
-
-  mDoingCrossProcessRedirect = true;
-  if (!mIPCClosed) {
-    Unused << SendCancelRedirected();
-  }
-}
-
 NS_IMETHODIMP
 HttpChannelParent::CompleteRedirect(bool succeeded) {
   LOG(("HttpChannelParent::CompleteRedirect [this=%p succeeded=%d]\n", this,
@@ -2632,7 +2622,13 @@ HttpChannelParent::OnRedirectResult(bool succeeded) {
 
 nsresult HttpChannelParent::TriggerCrossProcessSwitch(nsIHttpChannel* aChannel,
                                                       uint64_t aIdentifier) {
-  CancelChildCrossProcessRedirect();
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  MOZ_ASSERT(!mDoingCrossProcessRedirect, "Already redirected");
+  mDoingCrossProcessRedirect = true;
 
   nsCOMPtr<nsIChannel> channel = aChannel;
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(channel);
@@ -2662,6 +2658,12 @@ nsresult HttpChannelParent::TriggerCrossProcessSwitch(nsIHttpChannel* aChannel,
       GetMainThreadSerialEventTarget(), __func__,
       [=](uint64_t cpId) {
         nsresult rv;
+
+        
+        
+        if (!self->mIPCClosed) {
+          Unused << self->SendCancelRedirected();
+        }
 
         
         nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
@@ -2732,8 +2734,14 @@ nsresult HttpChannelParent::TriggerCrossProcessSwitch(nsIHttpChannel* aChannel,
                   self->CrossProcessRedirectDone(NS_ERROR_FAILURE, Nothing());
                 });
       },
-      [httpChannel](nsresult aStatus) {
+      [=](nsresult aStatus) {
         MOZ_ASSERT(NS_FAILED(aStatus), "Status should be error");
+
+        
+        
+        if (!self->mIPCClosed) {
+          Unused << self->SendCancelRedirected();
+        }
         httpChannel->OnRedirectVerifyCallback(aStatus);
       });
 
