@@ -58,12 +58,6 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(this, "l10n", "devtools/client/responsive/utils/l10n");
 loader.lazyRequireGetter(
   this,
-  "EmulationFront",
-  "devtools/shared/fronts/emulation",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "PriorityLevels",
   "devtools/client/shared/components/NotificationBox",
   true
@@ -561,21 +555,12 @@ ResponsiveUI.prototype = {
   async connectToServer() {
     
     
-    
-    
     DebuggerServer.init();
     DebuggerServer.registerAllActors();
     this.client = new DebuggerClient(DebuggerServer.connectPipe());
     await this.client.connect();
     const targetFront = await this.client.mainRoot.getTab();
-    this.emulationFront = new EmulationFront(this.client);
-    
-    
-    
-    
-    this.emulationFront.actorID =
-      targetFront.targetForm[this.emulationFront.formAttributeName];
-    this.emulationFront.manage(this.emulationFront);
+    this.emulationFront = await targetFront.getFront("emulation");
   },
 
   
