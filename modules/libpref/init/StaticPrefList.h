@@ -4740,6 +4740,14 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  Live,
+  "layout.css.backdrop-filter.enabled",
+  layout_css_backdrop_filter_enabled,
+  bool, false
+)
+
+
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE true
 #else

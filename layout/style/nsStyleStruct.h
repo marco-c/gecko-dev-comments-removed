@@ -2532,6 +2532,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects {
 
   mozilla::StyleOwnedSlice<mozilla::StyleFilter> mFilters;
   mozilla::StyleOwnedSlice<mozilla::StyleBoxShadow> mBoxShadow;
+  mozilla::StyleOwnedSlice<mozilla::StyleFilter> mBackdropFilters;
   nsRect mClip;  
   float mOpacity;
   uint8_t mClipFlags;     
