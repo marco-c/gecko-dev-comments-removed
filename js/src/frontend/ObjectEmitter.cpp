@@ -618,7 +618,8 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
 
 bool ClassEmitter::emitInitConstructor(bool needsHomeObject) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start);
-  MOZ_ASSERT(classState_ == ClassState::Class);
+  MOZ_ASSERT(classState_ == ClassState::Class ||
+             classState_ == ClassState::FieldInitializersEnd);
 
   
 
@@ -647,7 +648,8 @@ bool ClassEmitter::emitInitConstructor(bool needsHomeObject) {
 bool ClassEmitter::emitInitDefaultConstructor(const Maybe<uint32_t>& classStart,
                                               const Maybe<uint32_t>& classEnd) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start);
-  MOZ_ASSERT(classState_ == ClassState::Class);
+  MOZ_ASSERT(classState_ == ClassState::Class ||
+             classState_ == ClassState::FieldInitializersEnd);
 
   if (classStart && classEnd) {
     
@@ -753,11 +755,73 @@ bool ClassEmitter::initProtoAndCtor() {
   return true;
 }
 
+bool ClassEmitter::prepareForFieldInitializers(size_t numFields) {
+  MOZ_ASSERT(classState_ == ClassState::Class);
+
+  
+  
+  
+  initializersAssignment_.emplace(bce_, bce_->cx->names().dotInitializers,
+                                  NameOpEmitter::Kind::Initialize);
+  if (!initializersAssignment_->prepareForRhs()) {
+    return false;
+  }
+
+  if (!bce_->emitUint32Operand(JSOP_NEWARRAY, numFields)) {
+    
+    return false;
+  }
+
+  MOZ_ASSERT(fieldIndex_ == 0);
+#ifdef DEBUG
+  classState_ = ClassState::FieldInitializers;
+  numFields_ = numFields;
+#endif
+  return true;
+}
+
+bool ClassEmitter::emitStoreFieldInitializer() {
+  MOZ_ASSERT(classState_ == ClassState::FieldInitializers);
+  MOZ_ASSERT(fieldIndex_ < numFields_);
+  
+
+  if (!bce_->emitUint32Operand(JSOP_INITELEM_ARRAY, fieldIndex_)) {
+    
+    return false;
+  }
+
+  fieldIndex_++;
+  return true;
+}
+
+bool ClassEmitter::emitFieldInitializersEnd() {
+  MOZ_ASSERT(propertyState_ == PropertyState::Start ||
+             propertyState_ == PropertyState::Init);
+  MOZ_ASSERT(classState_ == ClassState::FieldInitializers);
+  MOZ_ASSERT(fieldIndex_ == numFields_);
+
+  if (!initializersAssignment_->emitAssignment()) {
+    
+    return false;
+  }
+  initializersAssignment_.reset();
+
+  if (!bce_->emit1(JSOP_POP)) {
+    
+    return false;
+  }
+
+#ifdef DEBUG
+  classState_ = ClassState::FieldInitializersEnd;
+#endif
+  return true;
+}
+
 bool ClassEmitter::emitEnd(Kind kind) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
-  MOZ_ASSERT(classState_ == ClassState::InitConstructor);
-
+  MOZ_ASSERT(classState_ == ClassState::InitConstructor ||
+             classState_ == ClassState::FieldInitializersEnd);
   
 
   if (!bce_->emit1(JSOP_POP)) {

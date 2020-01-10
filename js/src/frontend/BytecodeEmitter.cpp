@@ -8070,7 +8070,9 @@ bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj) {
   return true;
 }
 
-bool BytecodeEmitter::emitCreateFieldInitializers(ListNode* obj) {
+bool BytecodeEmitter::emitCreateFieldInitializers(ClassEmitter& ce,
+                                                  ListNode* obj) {
+  
   FieldInitializers fieldInitializers = setupFieldInitializers(obj);
   MOZ_ASSERT(fieldInitializers.valid);
   size_t numFields = fieldInitializers.numFieldInitializers;
@@ -8079,49 +8081,27 @@ bool BytecodeEmitter::emitCreateFieldInitializers(ListNode* obj) {
     return true;
   }
 
-  
-  
-  
-
-  NameOpEmitter noe(this, cx->names().dotInitializers,
-                    NameOpEmitter::Kind::Initialize);
-  if (!noe.prepareForRhs()) {
-    return false;
-  }
-
-  if (!emitUint32Operand(JSOP_NEWARRAY, numFields)) {
+  if (!ce.prepareForFieldInitializers(numFields)) {
     
     return false;
   }
 
-  size_t curFieldIndex = 0;
   for (ParseNode* propdef : obj->contents()) {
     if (propdef->is<ClassField>()) {
-      FunctionNode* initializer = propdef->as<ClassField>().initializer();
-      if (initializer == nullptr) {
-        continue;
+      if (FunctionNode* initializer = propdef->as<ClassField>().initializer()) {
+        if (!emitTree(initializer)) {
+          
+          return false;
+        }
+        if (!ce.emitStoreFieldInitializer()) {
+          
+          return false;
+        }
       }
-
-      if (!emitTree(initializer)) {
-        
-        return false;
-      }
-
-      if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldIndex)) {
-        
-        return false;
-      }
-
-      curFieldIndex++;
     }
   }
 
-  if (!noe.emitAssignment()) {
-    
-    return false;
-  }
-
-  if (!emit1(JSOP_POP)) {
+  if (!ce.emitFieldInitializersEnd()) {
     
     return false;
   }
@@ -8800,7 +8780,7 @@ bool BytecodeEmitter::emitClass(
         }
 
         
-        if (!emitCreateFieldInitializers(classMembers)) {
+        if (!emitCreateFieldInitializers(ce, classMembers)) {
           return false;
         }
       }

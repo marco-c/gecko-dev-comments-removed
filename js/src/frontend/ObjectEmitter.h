@@ -15,6 +15,7 @@
 
 #include "frontend/BytecodeOffset.h"  
 #include "frontend/EmitterScope.h"    
+#include "frontend/NameOpEmitter.h"   
 #include "frontend/TDZCheckCache.h"   
 #include "js/RootingAPI.h"            
 #include "vm/BytecodeUtil.h"          
@@ -545,6 +546,23 @@ class MOZ_RAII AutoSaveLocalStrictMode {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   enum class Kind {
@@ -640,6 +658,21 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   enum class ClassState {
     
     Start,
@@ -654,14 +687,24 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
     InitConstructor,
 
     
+    
+    FieldInitializers,
+
+    
+    FieldInitializersEnd,
+
+    
     End,
   };
   ClassState classState_ = ClassState::Start;
+  size_t numFields_ = 0;
 #endif
 
   JS::Rooted<JSAtom*> name_;
   JS::Rooted<JSAtom*> nameForAnonymousClass_;
   bool hasNameOnStack_ = false;
+  mozilla::Maybe<NameOpEmitter> initializersAssignment_;
+  size_t fieldIndex_ = 0;
 
  public:
   explicit ClassEmitter(BytecodeEmitter* bce);
@@ -697,6 +740,10 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   MOZ_MUST_USE bool emitInitDefaultConstructor(
       const mozilla::Maybe<uint32_t>& classStart,
       const mozilla::Maybe<uint32_t>& classEnd);
+
+  MOZ_MUST_USE bool prepareForFieldInitializers(size_t numFields);
+  MOZ_MUST_USE bool emitStoreFieldInitializer();
+  MOZ_MUST_USE bool emitFieldInitializersEnd();
 
   MOZ_MUST_USE bool emitEnd(Kind kind);
 
