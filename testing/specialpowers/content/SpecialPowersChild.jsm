@@ -285,7 +285,7 @@ class SpecialPowersChild extends JSWindowActorChild {
           
           let { name, passed, stack, diag } = message.data;
 
-          let {SimpleTest} = this;
+          let { SimpleTest } = this;
           if (SimpleTest) {
             SimpleTest.record(
               passed,
