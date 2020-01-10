@@ -7,6 +7,20 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarView: "resource:///modules/UrlbarView.jsm",
+});
+
+add_task(async function init() {
+  
+  
+  let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
+  UrlbarView.removeStaleRowsTimeout = 1000;
+  registerCleanupFunction(() => {
+    UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
+  });
+});
+
 
 
 add_task(async function viewContainsStaleRows() {
@@ -62,6 +76,7 @@ add_task(async function viewContainsStaleRows() {
   
   
   EventUtils.synthesizeKey("x");
+  info("Waiting for 'stale' attribute to be removed... ");
   await mutationPromise;
 
   
@@ -69,6 +84,7 @@ add_task(async function viewContainsStaleRows() {
   EventUtils.synthesizeKey("KEY_ArrowDown");
 
   
+  info("Waiting for the search to stop... ");
   await gURLBar.lastQueryContextPromise;
 
   
@@ -227,6 +243,7 @@ add_task(async function staleReplacedWithFresh() {
   
   
   EventUtils.synthesizeKey("t");
+  info("Waiting for the 'test2' row... ");
   await mutationPromise;
 
   
@@ -234,6 +251,7 @@ add_task(async function staleReplacedWithFresh() {
   EventUtils.synthesizeKey("KEY_ArrowDown");
 
   
+  info("Waiting for the search to stop... ");
   await gURLBar.lastQueryContextPromise;
 
   

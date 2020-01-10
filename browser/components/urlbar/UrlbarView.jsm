@@ -18,6 +18,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
+const DEFAULT_REMOVE_STALE_ROWS_TIMEOUT = 400;
+
+
+
 
 class UrlbarView {
   
@@ -719,7 +723,7 @@ class UrlbarView {
     this._removeStaleRowsTimer = this.window.setTimeout(() => {
       this._removeStaleRowsTimer = null;
       this._removeStaleRows();
-    }, 400);
+    }, UrlbarView.removeStaleRowsTimeout);
   }
 
   _cancelRemoveStaleRowsTimer() {
@@ -949,3 +953,5 @@ class UrlbarView {
     this.close();
   }
 }
+
+UrlbarView.removeStaleRowsTimeout = DEFAULT_REMOVE_STALE_ROWS_TIMEOUT;
