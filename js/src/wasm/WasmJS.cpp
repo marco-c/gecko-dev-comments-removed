@@ -35,7 +35,6 @@
 #include "js/PropertySpec.h"  
 #include "util/StringBuffer.h"
 #include "util/Text.h"
-#include "vm/ErrorObject.h"
 #include "vm/Interpreter.h"
 #include "vm/StringType.h"
 #include "wasm/WasmBaselineCompile.h"
