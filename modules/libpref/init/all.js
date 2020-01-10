@@ -1122,9 +1122,6 @@ pref("nglayout.debug.paint_flashing_chrome", false);
 pref("nglayout.debug.widget_update_flashing", false);
 
 
-pref("nglayout.debug.invalidation", false);
-
-
 pref("layout.framevisibility.enabled", true);
 
 pref("layout.framevisibility.numscrollportwidths", 0);

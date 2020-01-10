@@ -184,8 +184,6 @@ typedef ScrollableLayerGuid::ViewID ViewID;
 typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
 
 
-bool nsLayoutUtils::sInvalidationDebuggingIsEnabled;
-
 bool nsLayoutUtils::sInterruptibleReflowEnabled;
 
 bool nsLayoutUtils::sSVGTransformBoxEnabled;
@@ -7967,8 +7965,6 @@ size_t nsLayoutUtils::SizeOfTextRunsForFrames(nsIFrame* aFrame,
 
 
 void nsLayoutUtils::Initialize() {
-  Preferences::AddBoolVarCache(&sInvalidationDebuggingIsEnabled,
-                               "nglayout.debug.invalidation");
   Preferences::AddBoolVarCache(&sInterruptibleReflowEnabled,
                                "layout.interruptible-reflow.enabled");
   Preferences::AddBoolVarCache(&sSVGTransformBoxEnabled,

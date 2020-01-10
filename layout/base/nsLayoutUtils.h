@@ -12,6 +12,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/TypedEnumBits.h"
 #include "nsBoundingMetrics.h"
 #include "nsChangeHint.h"
@@ -2456,10 +2457,8 @@ class nsLayoutUtils {
   
 
 
-
-
   static bool InvalidationDebuggingIsEnabled() {
-    return sInvalidationDebuggingIsEnabled ||
+    return mozilla::StaticPrefs::nglayout_debug_invalidation() ||
            getenv("MOZ_DUMP_INVALIDATION") != 0;
   }
 
@@ -2999,7 +2998,6 @@ class nsLayoutUtils {
       const nsIFrame* aFrame);
 
  private:
-  static bool sInvalidationDebuggingIsEnabled;
   static bool sInterruptibleReflowEnabled;
   static bool sSVGTransformBoxEnabled;
   static uint32_t sIdlePeriodDeadlineLimit;
