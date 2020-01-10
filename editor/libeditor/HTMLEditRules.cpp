@@ -4003,8 +4003,6 @@ nsresult HTMLEditRules::WillMakeList(const nsAString* aListType,
   
   
 
-  *aHandled = true;
-
   if (!SelectionRefPtr()->IsCollapsed()) {
     nsresult rv = MOZ_KnownLive(HTMLEditorRef())
                       .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
@@ -4016,36 +4014,41 @@ nsresult HTMLEditRules::WillMakeList(const nsAString* aListType,
   
   
   
-  rv = MakeList(listType, aEntireList, aBulletType, aCancel, *itemType);
-  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
-      NS_WARN_IF(!CanHandleEditAction())) {
+  EditActionResult result =
+      MOZ_KnownLive(HTMLEditorRef())
+          .ChangeSelectedHardLinesToList(listType, aEntireList, aBulletType,
+                                         *itemType);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (NS_WARN_IF(result.Failed())) {
+    return result.Rv();
   }
+  *aCancel = result.Canceled();
+  *aHandled = result.Handled();
   return NS_OK;
 }
 
-nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
-                                 const nsAString* aBulletType, bool* aCancel,
-                                 nsAtom& aItemType) {
-  AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
+EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
+    nsAtom& aListElementTagName, bool aSelectAllOfCurrentList,
+    const nsAString* aBulletType, nsAtom& aListItemElementTagName) {
+  MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
+
+  AutoSelectionRestorer restoreSelectionLater(*this);
 
   AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
   Element* parentListElement =
-      aEntireList ? HTMLEditorRef().GetParentListElementAtSelection() : nullptr;
+      aSelectAllOfCurrentList ? GetParentListElementAtSelection() : nullptr;
   if (parentListElement) {
     arrayOfNodes.AppendElement(OwningNonNull<nsINode>(*parentListElement));
   } else {
-    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
     nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
-                arrayOfNodes, EditSubAction::eCreateOrChangeList,
-                HTMLEditor::CollectNonEditableNodes::No);
+        SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
+            arrayOfNodes, EditSubAction::eCreateOrChangeList,
+            CollectNonEditableNodes::No);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return EditActionResult(rv);
     }
   }
 
@@ -4053,8 +4056,7 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
   bool bOnlyBreaks = true;
   for (auto& curNode : arrayOfNodes) {
     
-    if (!TextEditUtils::IsBreak(curNode) &&
-        !HTMLEditorRef().IsEmptyInineNode(curNode)) {
+    if (!TextEditUtils::IsBreak(curNode) && !IsEmptyInineNode(curNode)) {
       bOnlyBreaks = false;
       break;
     }
@@ -4066,94 +4068,82 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
     
     if (bOnlyBreaks) {
       for (auto& node : arrayOfNodes) {
-        nsresult rv =
-            MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*node);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+        nsresult rv = DeleteNodeWithTransaction(*node);
+        if (NS_WARN_IF(Destroyed())) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+          return EditActionResult(rv);
         }
       }
     }
 
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
-      return NS_ERROR_FAILURE;
+      return EditActionResult(NS_ERROR_FAILURE);
     }
 
     EditorDOMPoint atStartOfSelection(firstRange->StartRef());
     if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-      return NS_ERROR_FAILURE;
+      return EditActionResult(NS_ERROR_FAILURE);
     }
 
     
-    if (!HTMLEditorRef().CanContainTag(*atStartOfSelection.GetContainer(),
-                                       aListType)) {
-      *aCancel = true;
-      return NS_OK;
+    if (!CanContainTag(*atStartOfSelection.GetContainer(),
+                       aListElementTagName)) {
+      return EditActionCanceled();
     }
 
     SplitNodeResult splitAtSelectionStartResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .MaybeSplitAncestorsForInsertWithTransaction(aListType,
-                                                         atStartOfSelection);
+        MaybeSplitAncestorsForInsertWithTransaction(aListElementTagName,
+                                                    atStartOfSelection);
     if (NS_WARN_IF(splitAtSelectionStartResult.Failed())) {
-      return splitAtSelectionStartResult.Rv();
+      return EditActionResult(splitAtSelectionStartResult.Rv());
     }
-    RefPtr<Element> theList =
-        MOZ_KnownLive(HTMLEditorRef())
-            .CreateNodeWithTransaction(
-                aListType, splitAtSelectionStartResult.SplitPoint());
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
+    RefPtr<Element> theList = CreateNodeWithTransaction(
+        aListElementTagName, splitAtSelectionStartResult.SplitPoint());
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_WARN_IF(!theList)) {
-      return NS_ERROR_FAILURE;
+      return EditActionResult(NS_ERROR_FAILURE);
     }
 
-    RefPtr<Element> theListItem =
-        MOZ_KnownLive(HTMLEditorRef())
-            .CreateNodeWithTransaction(aItemType, EditorDOMPoint(theList, 0));
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
+    RefPtr<Element> theListItem = CreateNodeWithTransaction(
+        aListItemElementTagName, EditorDOMPoint(theList, 0));
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_WARN_IF(!theListItem)) {
-      return NS_ERROR_FAILURE;
+      return EditActionResult(NS_ERROR_FAILURE);
     }
 
     
-    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
-        theListItem;
+    TopLevelEditSubActionDataRef().mNewBlockElement = theListItem;
     
     restoreSelectionLater.Abort();
     ErrorResult error;
     SelectionRefPtr()->Collapse(EditorRawDOMPoint(theListItem, 0), error);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    if (NS_WARN_IF(Destroyed())) {
       error.SuppressException();
-      return NS_ERROR_EDITOR_DESTROYED;
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
     }
-    if (NS_WARN_IF(!error.Failed())) {
-      return error.StealNSResult();
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+    return EditActionResult(error.StealNSResult());
   }
 
   
   
   if (arrayOfNodes.Length() == 1) {
     if (Element* deepestDivBlockquoteOrListElement =
-            HTMLEditorRef()
-                .GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
-                    arrayOfNodes[0])) {
+            GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
+                arrayOfNodes[0])) {
       if (deepestDivBlockquoteOrListElement->IsAnyOfHTMLElements(
               nsGkAtoms::div, nsGkAtoms::blockquote)) {
         arrayOfNodes.Clear();
-        HTMLEditorRef().CollectChildren(
-            *deepestDivBlockquoteOrListElement, arrayOfNodes, 0,
-            HTMLEditor::CollectListChildren::No,
-            HTMLEditor::CollectTableChildren::No,
-            HTMLEditor::CollectNonEditableNodes::Yes);
+        CollectChildren(*deepestDivBlockquoteOrListElement, arrayOfNodes, 0,
+                        CollectListChildren::No, CollectTableChildren::No,
+                        CollectNonEditableNodes::Yes);
       } else {
         arrayOfNodes.ReplaceElementAt(
             0, OwningNonNull<nsINode>(*deepestDivBlockquoteOrListElement));
@@ -4169,9 +4159,8 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
 
   for (uint32_t i = 0; i < listCount; i++) {
     
-    RefPtr<Element> newBlock;
     if (NS_WARN_IF(!arrayOfNodes[i]->IsContent())) {
-      return NS_ERROR_FAILURE;
+      return EditActionResult(NS_ERROR_FAILURE);
     }
     OwningNonNull<nsIContent> curNode = *arrayOfNodes[i]->AsContent();
 
@@ -4185,18 +4174,16 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
     
     
     
-    if (HTMLEditorRef().IsEditable(curNode) &&
-        (TextEditUtils::IsBreak(curNode) ||
-         HTMLEditorRef().IsEmptyInineNode(curNode))) {
-      nsresult rv =
-          MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*curNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return NS_ERROR_EDITOR_DESTROYED;
+    if (IsEditable(curNode) &&
+        (curNode->IsHTMLElement(nsGkAtoms::br) || IsEmptyInineNode(curNode))) {
+      nsresult rv = DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+        return EditActionResult(rv);
       }
-      if (TextEditUtils::IsBreak(curNode)) {
+      if (curNode->IsHTMLElement(nsGkAtoms::br)) {
         prevListItem = nullptr;
       }
       continue;
@@ -4204,106 +4191,99 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
 
     if (HTMLEditUtils::IsList(curNode)) {
       
+      
+      
       if (curList && !EditorUtils::IsDescendantOf(*curNode, *curList)) {
-        
-        
-        
-        
-        nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                          .MoveNodeToEndWithTransaction(*curNode, *curList);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+        nsresult rv = MoveNodeToEndWithTransaction(*curNode, *curList);
+        if (NS_WARN_IF(Destroyed())) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+          return EditActionResult(rv);
         }
         CreateElementResult convertListTypeResult =
-            MOZ_KnownLive(HTMLEditorRef())
-                .ChangeListElementType(MOZ_KnownLive(*curNode->AsElement()),
-                                       aListType, aItemType);
+            ChangeListElementType(MOZ_KnownLive(*curNode->AsElement()),
+                                  aListElementTagName, aListItemElementTagName);
         if (NS_WARN_IF(convertListTypeResult.Failed())) {
-          return convertListTypeResult.Rv();
+          return EditActionResult(convertListTypeResult.Rv());
         }
-        rv = MOZ_KnownLive(HTMLEditorRef())
-                 .RemoveBlockContainerWithTransaction(
-                     MOZ_KnownLive(*convertListTypeResult.GetNewNode()));
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+        rv = RemoveBlockContainerWithTransaction(
+            MOZ_KnownLive(*convertListTypeResult.GetNewNode()));
+        if (NS_WARN_IF(Destroyed())) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+          return EditActionResult(rv);
         }
-        newBlock = convertListTypeResult.forget();
-      } else {
-        
-        CreateElementResult convertListTypeResult =
-            MOZ_KnownLive(HTMLEditorRef())
-                .ChangeListElementType(MOZ_KnownLive(*curNode->AsElement()),
-                                       aListType, aItemType);
-        if (NS_WARN_IF(convertListTypeResult.Failed())) {
-          return convertListTypeResult.Rv();
-        }
-        curList = convertListTypeResult.forget();
+        prevListItem = nullptr;
+        continue;
       }
+
+      
+      
+      CreateElementResult convertListTypeResult =
+          ChangeListElementType(MOZ_KnownLive(*curNode->AsElement()),
+                                aListElementTagName, aListItemElementTagName);
+      if (NS_WARN_IF(convertListTypeResult.Failed())) {
+        return EditActionResult(convertListTypeResult.Rv());
+      }
+      curList = convertListTypeResult.forget();
       prevListItem = nullptr;
       continue;
     }
 
     EditorDOMPoint atCurNode(curNode);
     if (NS_WARN_IF(!atCurNode.IsSet())) {
-      return NS_ERROR_FAILURE;
+      return EditActionResult(NS_ERROR_FAILURE);
     }
     MOZ_ASSERT(atCurNode.IsSetAndValid());
     if (HTMLEditUtils::IsListItem(curNode)) {
-      if (!atCurNode.IsContainerHTMLElement(&aListType)) {
+      
+      
+      if (!atCurNode.IsContainerHTMLElement(&aListElementTagName)) {
+        
         
         
         if (!curList || EditorUtils::IsDescendantOf(*curNode, *curList)) {
           if (NS_WARN_IF(!atCurNode.GetContainerAsContent())) {
-            return NS_ERROR_FAILURE;
+            return EditActionResult(NS_ERROR_FAILURE);
           }
           ErrorResult error;
           nsCOMPtr<nsIContent> newLeftNode =
-              MOZ_KnownLive(HTMLEditorRef())
-                  .SplitNodeWithTransaction(atCurNode, error);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
+              SplitNodeWithTransaction(atCurNode, error);
+          if (NS_WARN_IF(Destroyed())) {
             error.SuppressException();
-            return NS_ERROR_EDITOR_DESTROYED;
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
           if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
+            return EditActionResult(error.StealNSResult());
           }
-          newBlock = newLeftNode ? newLeftNode->AsElement() : nullptr;
-          curList =
-              MOZ_KnownLive(HTMLEditorRef())
-                  .CreateNodeWithTransaction(
-                      aListType, EditorDOMPoint(atCurNode.GetContainer()));
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
+          curList = CreateNodeWithTransaction(
+              aListElementTagName, EditorDOMPoint(atCurNode.GetContainer()));
+          if (NS_WARN_IF(Destroyed())) {
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
           if (NS_WARN_IF(!curList)) {
-            return NS_ERROR_FAILURE;
+            return EditActionResult(NS_ERROR_FAILURE);
           }
         }
         
-        nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                          .MoveNodeToEndWithTransaction(*curNode, *curList);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+        nsresult rv = MoveNodeToEndWithTransaction(*curNode, *curList);
+        if (NS_WARN_IF(Destroyed())) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+          return EditActionResult(rv);
         }
         
-        if (!curNode->IsHTMLElement(&aItemType)) {
-          newBlock = MOZ_KnownLive(HTMLEditorRef())
-                         .ReplaceContainerWithTransaction(
-                             MOZ_KnownLive(*curNode->AsElement()), aItemType);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
+        if (!curNode->IsHTMLElement(&aListItemElementTagName)) {
+          RefPtr<Element> newListItemElement = ReplaceContainerWithTransaction(
+              MOZ_KnownLive(*curNode->AsElement()), aListItemElementTagName);
+          if (NS_WARN_IF(Destroyed())) {
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
-          if (NS_WARN_IF(!newBlock)) {
-            return NS_ERROR_FAILURE;
+          if (NS_WARN_IF(!newListItemElement)) {
+            return EditActionResult(NS_ERROR_FAILURE);
           }
         }
       } else {
@@ -4311,100 +4291,114 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
         
         if (!curList) {
           curList = atCurNode.GetContainerAsElement();
-        } else if (atCurNode.GetContainer() != curList) {
-          
-          nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                            .MoveNodeToEndWithTransaction(*curNode, *curList);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
+          NS_WARNING_ASSERTION(
+              HTMLEditUtils::IsList(curList),
+              "Current list item parent is not a list element");
+        }
+        
+        
+        else if (atCurNode.GetContainer() != curList) {
+          nsresult rv = MoveNodeToEndWithTransaction(*curNode, *curList);
+          if (NS_WARN_IF(Destroyed())) {
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
           if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
+            return EditActionResult(rv);
           }
         }
-        if (!curNode->IsHTMLElement(&aItemType)) {
-          newBlock = MOZ_KnownLive(HTMLEditorRef())
-                         .ReplaceContainerWithTransaction(
-                             MOZ_KnownLive(*curNode->AsElement()), aItemType);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
+        
+        
+        if (!curNode->IsHTMLElement(&aListItemElementTagName)) {
+          RefPtr<Element> newListItemElement = ReplaceContainerWithTransaction(
+              MOZ_KnownLive(*curNode->AsElement()), aListItemElementTagName);
+          if (NS_WARN_IF(Destroyed())) {
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
-          if (NS_WARN_IF(!newBlock)) {
-            return NS_ERROR_FAILURE;
+          if (NS_WARN_IF(!newListItemElement)) {
+            return EditActionResult(NS_ERROR_FAILURE);
           }
         }
       }
-      nsCOMPtr<Element> curElement = do_QueryInterface(curNode);
+      Element* curElement = Element::FromNode(curNode);
       if (NS_WARN_IF(!curElement)) {
-        return NS_ERROR_FAILURE;
+        return EditActionResult(NS_ERROR_FAILURE);
       }
+      
+      
+      
       if (aBulletType && !aBulletType->IsEmpty()) {
-        nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                          .SetAttributeWithTransaction(
-                              *curElement, *nsGkAtoms::type, *aBulletType);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+        nsresult rv = SetAttributeWithTransaction(
+            MOZ_KnownLive(*curElement), *nsGkAtoms::type, *aBulletType);
+        if (NS_WARN_IF(Destroyed())) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+          return EditActionResult(rv);
         }
-      } else {
-        nsresult rv =
-            MOZ_KnownLive(HTMLEditorRef())
-                .RemoveAttributeWithTransaction(*curElement, *nsGkAtoms::type);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
+        continue;
+      }
+
+      
+      if (!curElement->HasAttr(nsGkAtoms::type)) {
+        continue;
+      }
+      nsresult rv = RemoveAttributeWithTransaction(MOZ_KnownLive(*curElement),
+                                                   *nsGkAtoms::type);
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionResult(rv);
       }
       continue;
     }
 
+    MOZ_ASSERT(!HTMLEditUtils::IsList(curNode) &&
+               !HTMLEditUtils::IsListItem(curNode));
+
+    
+    
     
     
     if (curNode->IsHTMLElement(nsGkAtoms::div)) {
       prevListItem = nullptr;
-      HTMLEditorRef().CollectChildren(*curNode, arrayOfNodes, i + 1,
-                                      HTMLEditor::CollectListChildren::Yes,
-                                      HTMLEditor::CollectTableChildren::Yes,
-                                      HTMLEditor::CollectNonEditableNodes::Yes);
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .RemoveContainerWithTransaction(
-                            MOZ_KnownLive(*curNode->AsElement()));
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return NS_ERROR_EDITOR_DESTROYED;
+      CollectChildren(*curNode, arrayOfNodes, i + 1, CollectListChildren::Yes,
+                      CollectTableChildren::Yes, CollectNonEditableNodes::Yes);
+      nsresult rv =
+          RemoveContainerWithTransaction(MOZ_KnownLive(*curNode->AsElement()));
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+        return EditActionResult(rv);
       }
       listCount = arrayOfNodes.Length();
       continue;
     }
 
     
+    
     if (!curList) {
       SplitNodeResult splitCurNodeResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .MaybeSplitAncestorsForInsertWithTransaction(aListType,
-                                                           atCurNode);
+          MaybeSplitAncestorsForInsertWithTransaction(aListElementTagName,
+                                                      atCurNode);
       if (NS_WARN_IF(splitCurNodeResult.Failed())) {
-        return splitCurNodeResult.Rv();
+        return EditActionResult(splitCurNodeResult.Rv());
       }
-      curList = MOZ_KnownLive(HTMLEditorRef())
-                    .CreateNodeWithTransaction(aListType,
-                                               splitCurNodeResult.SplitPoint());
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return NS_ERROR_EDITOR_DESTROYED;
+      prevListItem = nullptr;
+      curList = CreateNodeWithTransaction(aListElementTagName,
+                                          splitCurNodeResult.SplitPoint());
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_WARN_IF(!curList)) {
-        return NS_ERROR_FAILURE;
+        return EditActionResult(NS_ERROR_FAILURE);
       }
       
-      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = curList;
       
-      prevListItem = nullptr;
+      
+      
+      TopLevelEditSubActionDataRef().mNewBlockElement = curList;
 
       
       
@@ -4412,67 +4406,72 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
     }
 
     
-    nsCOMPtr<Element> listItem;
-    if (!HTMLEditUtils::IsListItem(curNode)) {
-      if (HTMLEditor::NodeIsInlineStatic(curNode) && prevListItem) {
-        
-        
-        nsresult rv =
-            MOZ_KnownLive(HTMLEditorRef())
-                .MoveNodeToEndWithTransaction(*curNode, *prevListItem);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      } else {
-        
-        if (curNode->IsHTMLElement(nsGkAtoms::p)) {
-          listItem = MOZ_KnownLive(HTMLEditorRef())
-                         .ReplaceContainerWithTransaction(
-                             MOZ_KnownLive(*curNode->AsElement()), aItemType);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          if (NS_WARN_IF(!listItem)) {
-            return NS_ERROR_FAILURE;
-          }
-        } else {
-          listItem = MOZ_KnownLive(HTMLEditorRef())
-                         .InsertContainerWithTransaction(*curNode, aItemType);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          if (NS_WARN_IF(!listItem)) {
-            return NS_ERROR_FAILURE;
-          }
-        }
-        if (HTMLEditor::NodeIsInlineStatic(curNode)) {
-          prevListItem = listItem;
-        } else {
-          prevListItem = nullptr;
-        }
-      }
-    } else {
-      listItem = curNode->AsElement();
-    }
-
-    if (listItem) {
-      
-      
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .MoveNodeToEndWithTransaction(*listItem, *curList);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return NS_ERROR_EDITOR_DESTROYED;
+    
+    if (HTMLEditor::NodeIsInlineStatic(curNode) && prevListItem) {
+      nsresult rv = MoveNodeToEndWithTransaction(*curNode, *prevListItem);
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+        return EditActionResult(rv);
       }
+      continue;
     }
+
+    
+    
+    
+    
+    
+    if (curNode->IsHTMLElement(nsGkAtoms::p)) {
+      RefPtr<Element> newListItemElement = ReplaceContainerWithTransaction(
+          MOZ_KnownLive(*curNode->AsElement()), aListItemElementTagName);
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(!newListItemElement)) {
+        return EditActionResult(NS_ERROR_FAILURE);
+      }
+      prevListItem = nullptr;
+      nsresult rv = MoveNodeToEndWithTransaction(*newListItemElement, *curList);
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionResult(rv);
+      }
+      
+      continue;
+    }
+
+    
+    
+    RefPtr<Element> newListItemElement =
+        InsertContainerWithTransaction(*curNode, aListItemElementTagName);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(!newListItemElement)) {
+      return EditActionResult(NS_ERROR_FAILURE);
+    }
+    
+    
+    if (HTMLEditor::NodeIsInlineStatic(curNode)) {
+      prevListItem = newListItemElement;
+    } else {
+      prevListItem = nullptr;
+    }
+    nsresult rv = MoveNodeToEndWithTransaction(*newListItemElement, *curList);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditActionResult(rv);
+    }
+    
   }
 
-  return NS_OK;
+  return EditActionHandled();
 }
 
 nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
