@@ -11,6 +11,7 @@
 #include <deque>
 #include <forward_list>
 #include <functional>
+#include <initializer_list>
 #include <iterator>
 #include <list>
 #include <map>
@@ -21,6 +22,7 @@
 #include <vector>
 
 #include "base/logging.h"
+#include "base/optional.h"
 
 namespace base {
 
@@ -41,6 +43,79 @@ void IterateAndEraseIf(Container& container, Predicate pred) {
 
 
 
+template <typename Container>
+constexpr auto size(const Container& c) -> decltype(c.size()) {
+  return c.size();
+}
+
+template <typename T, size_t N>
+constexpr size_t size(const T (&array)[N]) noexcept {
+  return N;
+}
+
+
+
+template <typename Container>
+constexpr auto empty(const Container& c) -> decltype(c.empty()) {
+  return c.empty();
+}
+
+template <typename T, size_t N>
+constexpr bool empty(const T (&array)[N]) noexcept {
+  return false;
+}
+
+template <typename T>
+constexpr bool empty(std::initializer_list<T> il) noexcept {
+  return il.size() == 0;
+}
+
+
+
+template <typename Container>
+constexpr auto data(Container& c) -> decltype(c.data()) {
+  return c.data();
+}
+
+
+
+
+
+
+
+
+template <typename CharT, typename Traits, typename Allocator>
+CharT* data(std::basic_string<CharT, Traits, Allocator>& str) {
+  return std::addressof(str[0]);
+}
+
+template <typename Container>
+constexpr auto data(const Container& c) -> decltype(c.data()) {
+  return c.data();
+}
+
+template <typename T, size_t N>
+constexpr T* data(T (&array)[N]) noexcept {
+  return array;
+}
+
+template <typename T>
+constexpr const T* data(std::initializer_list<T> il) noexcept {
+  return il.begin();
+}
+
+
+
+template <class A>
+const typename A::container_type& GetUnderlyingContainer(const A& adapter) {
+  struct ExposedAdapter : A {
+    using A::c;
+  };
+  return adapter.*&ExposedAdapter::c;
+}
+
+
+
 
 template<class T>
 void STLClearObject(T* obj) {
@@ -57,23 +132,6 @@ typename std::iterator_traits<
     typename Container::const_iterator>::difference_type
 STLCount(const Container& container, const T& val) {
   return std::count(container.begin(), container.end(), val);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline char* string_as_array(std::string* str) {
-  
-  return str->empty() ? NULL : &*str->begin();
 }
 
 
@@ -114,11 +172,7 @@ bool ContainsValue(const Collection& collection, const Value& value) {
 
 template <typename Container>
 bool STLIsSorted(const Container& cont) {
-  
-  
-  return std::adjacent_find(cont.rbegin(), cont.rend(),
-                            std::less<typename Container::value_type>())
-      == cont.rend();
+  return std::is_sorted(std::begin(cont), std::end(cont));
 }
 
 
@@ -305,6 +359,46 @@ template <class Key,
 void EraseIf(std::unordered_multiset<Key, Hash, KeyEqual, Allocator>& container,
              Predicate pred) {
   internal::IterateAndEraseIf(container, pred);
+}
+
+
+
+
+
+
+
+template <class Collection>
+class IsNotIn {
+ public:
+  explicit IsNotIn(const Collection& collection)
+      : i_(collection.begin()), end_(collection.end()) {}
+
+  bool operator()(const typename Collection::value_type& x) {
+    while (i_ != end_ && *i_ < x)
+      ++i_;
+    if (i_ == end_)
+      return true;
+    if (*i_ == x) {
+      ++i_;
+      return false;
+    }
+    return true;
+  }
+
+ private:
+  typename Collection::const_iterator i_;
+  const typename Collection::const_iterator end_;
+};
+
+
+template <class T>
+T* OptionalOrNullptr(base::Optional<T>& optional) {
+  return optional.has_value() ? &optional.value() : nullptr;
+}
+
+template <class T>
+const T* OptionalOrNullptr(const base::Optional<T>& optional) {
+  return optional.has_value() ? &optional.value() : nullptr;
 }
 
 }  

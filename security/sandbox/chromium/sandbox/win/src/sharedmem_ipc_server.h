@@ -49,8 +49,10 @@ class SharedMemIPCServer {
   
   
   
-  SharedMemIPCServer(HANDLE target_process, DWORD target_process_id,
-                     ThreadProvider* thread_provider, Dispatcher* dispatcher);
+  SharedMemIPCServer(HANDLE target_process,
+                     DWORD target_process_id,
+                     ThreadProvider* thread_provider,
+                     Dispatcher* dispatcher);
 
   ~SharedMemIPCServer();
 
@@ -65,14 +67,14 @@ class SharedMemIPCServer {
   
   
   
-  static void __stdcall ThreadPingEventReady(void* context,
-                                             unsigned char);
+  static void __stdcall ThreadPingEventReady(void* context, unsigned char);
 
   
   
   bool MakeEvents(base::win::ScopedHandle* server_ping,
                   base::win::ScopedHandle* server_pong,
-                  HANDLE* client_ping, HANDLE* client_pong);
+                  HANDLE* client_ping,
+                  HANDLE* client_pong);
 
   
   
@@ -104,7 +106,8 @@ class SharedMemIPCServer {
 
   
   static bool InvokeCallback(const ServerControl* service_context,
-                             void* ipc_buffer, CrossCallReturn* call_result);
+                             void* ipc_buffer,
+                             CrossCallReturn* call_result);
 
   
   

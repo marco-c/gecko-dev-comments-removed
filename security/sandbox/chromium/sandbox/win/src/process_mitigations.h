@@ -6,6 +6,7 @@
 #define SANDBOX_SRC_WIN_PROCESS_MITIGATIONS_H_
 
 #include <windows.h>
+
 #include <stddef.h>
 
 #include "sandbox/win/src/security_level.h"
@@ -28,6 +29,7 @@ MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags);
 
 
 
+
 void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
                                        DWORD64* policy_flags,
                                        size_t* size);
@@ -36,6 +38,9 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
 bool ApplyProcessMitigationsToSuspendedProcess(HANDLE process,
                                                MitigationFlags flags);
+
+
+MitigationFlags GetAllowedPostStartupProcessMitigations();
 
 
 bool CanSetProcessMitigationsPostStartup(MitigationFlags flags);
@@ -49,4 +54,3 @@ bool CanSetMitigationsPerThread(MitigationFlags flags);
 }  
 
 #endif  
-

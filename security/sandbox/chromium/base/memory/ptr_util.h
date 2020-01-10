@@ -18,13 +18,6 @@ std::unique_ptr<T> WrapUnique(T* ptr) {
   return std::unique_ptr<T>(ptr);
 }
 
-
-template <typename T, typename... Args>
-auto MakeUnique(Args&&... args)
-    -> decltype(std::make_unique<T>(std::forward<Args>(args)...)) {
-  return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
 }  
 
 #endif  

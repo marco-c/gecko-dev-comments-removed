@@ -2,28 +2,17 @@
 
 
 
-#include <type_traits>
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef BASE_MEMORY_ALIGNED_MEMORY_H_
 #define BASE_MEMORY_ALIGNED_MEMORY_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
+#include <type_traits>
+
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
+#include "build/build_config.h"
 
 #if defined(COMPILER_MSVC)
 #include <malloc.h>
@@ -31,7 +20,21 @@
 #include <stdlib.h>
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
 namespace base {
+
+
 
 
 BASE_EXPORT void* AlignedAlloc(size_t size, size_t alignment);

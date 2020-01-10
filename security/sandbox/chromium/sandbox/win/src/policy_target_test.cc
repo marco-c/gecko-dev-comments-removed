@@ -20,17 +20,18 @@
 
 namespace sandbox {
 
-#define BINDNTDLL(name) \
-    name ## Function name = reinterpret_cast<name ## Function>( \
+#define BINDNTDLL(name)                                   \
+  name##Function name = reinterpret_cast<name##Function>( \
       ::GetProcAddress(::GetModuleHandle(L"ntdll.dll"), #name))
 
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_token(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_token(int argc, wchar_t** argv) {
   HANDLE thread_token;
   
-  if (!::OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE |
-                             TOKEN_DUPLICATE, FALSE, &thread_token))
+  if (!::OpenThreadToken(GetCurrentThread(),
+                         TOKEN_IMPERSONATE | TOKEN_DUPLICATE, false,
+                         &thread_token))
     return ::GetLastError();
 
   ::RevertToSelf();
@@ -38,7 +39,7 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_token(int argc, wchar_t **argv) {
 
   int ret = SBOX_TEST_FAILED;
   if (::OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE | TOKEN_DUPLICATE,
-                        FALSE, &thread_token)) {
+                        false, &thread_token)) {
     ret = SBOX_TEST_SUCCEEDED;
     ::CloseHandle(thread_token);
   }
@@ -48,14 +49,15 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_token(int argc, wchar_t **argv) {
 
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_steal(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_steal(int argc, wchar_t** argv) {
   static HANDLE thread_token;
   if (!SandboxFactory::GetTargetServices()->GetState()->RevertedToSelf()) {
-    if (!::OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE |
-                               TOKEN_DUPLICATE, FALSE, &thread_token))
+    if (!::OpenThreadToken(GetCurrentThread(),
+                           TOKEN_IMPERSONATE | TOKEN_DUPLICATE, false,
+                           &thread_token))
       return ::GetLastError();
   } else {
-    if (!::SetThreadToken(NULL, thread_token))
+    if (!::SetThreadToken(nullptr, thread_token))
       return ::GetLastError();
 
     
@@ -67,17 +69,18 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_steal(int argc, wchar_t **argv) {
 }
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_token2(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_token2(int argc, wchar_t** argv) {
   HANDLE thread_token;
   
-  if (!::OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE |
-                             TOKEN_DUPLICATE, FALSE, &thread_token))
+  if (!::OpenThreadToken(GetCurrentThread(),
+                         TOKEN_IMPERSONATE | TOKEN_DUPLICATE, false,
+                         &thread_token))
     return ::GetLastError();
   ::CloseHandle(thread_token);
 
   
   if (!OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE | TOKEN_DUPLICATE,
-                       TRUE, &thread_token))
+                       true, &thread_token))
     return ::GetLastError();
   ::CloseHandle(thread_token);
   return SBOX_TEST_SUCCEEDED;
@@ -85,7 +88,7 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_token2(int argc, wchar_t **argv) {
 
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_token3(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_token3(int argc, wchar_t** argv) {
   BINDNTDLL(NtOpenThreadTokenEx);
   if (!NtOpenThreadTokenEx)
     return SBOX_TEST_FAILED_TO_EXECUTE_COMMAND;
@@ -94,7 +97,7 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_token3(int argc, wchar_t **argv) {
   
   NTSTATUS status = NtOpenThreadTokenEx(GetCurrentThread(),
                                         TOKEN_IMPERSONATE | TOKEN_DUPLICATE,
-                                        FALSE, 0, &thread_token);
+                                        false, 0, &thread_token);
   if (status == STATUS_NO_TOKEN)
     return ERROR_NO_TOKEN;
   if (!NT_SUCCESS(status))
@@ -104,7 +107,7 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_token3(int argc, wchar_t **argv) {
 
   
   status = NtOpenThreadTokenEx(GetCurrentThread(),
-                               TOKEN_IMPERSONATE | TOKEN_DUPLICATE, TRUE, 0,
+                               TOKEN_IMPERSONATE | TOKEN_DUPLICATE, true, 0,
                                &thread_token);
   if (!NT_SUCCESS(status))
     return SBOX_TEST_FAILED;
@@ -114,9 +117,9 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_token3(int argc, wchar_t **argv) {
 }
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_thread(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_thread(int argc, wchar_t** argv) {
   DWORD thread_id = ::GetCurrentThreadId();
-  HANDLE thread = ::OpenThread(SYNCHRONIZE, FALSE, thread_id);
+  HANDLE thread = ::OpenThread(SYNCHRONIZE, false, thread_id);
   if (!thread)
     return ::GetLastError();
   if (!::CloseHandle(thread))
@@ -132,17 +135,17 @@ DWORD WINAPI PolicyTargetTest_thread_main(void* param) {
 }
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_thread2(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_thread2(int argc, wchar_t** argv) {
   
   DWORD thread_id;
-  HANDLE thread = ::CreateThread(NULL, 0, &PolicyTargetTest_thread_main, 0, 0,
-                                 &thread_id);
+  HANDLE thread = ::CreateThread(nullptr, 0, &PolicyTargetTest_thread_main, 0,
+                                 0, &thread_id);
   if (!thread)
     return ::GetLastError();
   if (!::CloseHandle(thread))
     return ::GetLastError();
 
-  thread = ::OpenThread(SYNCHRONIZE, FALSE, thread_id);
+  thread = ::OpenThread(SYNCHRONIZE, false, thread_id);
   if (!thread)
     return ::GetLastError();
 
@@ -153,7 +156,7 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_thread2(int argc, wchar_t **argv) {
 }
 
 
-SBOX_TESTS_COMMAND int PolicyTargetTest_process(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int PolicyTargetTest_process(int argc, wchar_t** argv) {
   
   STARTUPINFO startup_info = {0};
   startup_info.cb = sizeof(startup_info);
@@ -161,8 +164,9 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_process(int argc, wchar_t **argv) {
   
   
   base::string16 writable_cmdline_str(L"foo.exe");
-  if (!::CreateProcessW(L"foo.exe", &writable_cmdline_str[0], NULL, NULL, FALSE,
-                        0, NULL, NULL, &startup_info, &temp_process_info))
+  if (!::CreateProcessW(L"foo.exe", &writable_cmdline_str[0], nullptr, nullptr,
+                        false, 0, nullptr, nullptr, &startup_info,
+                        &temp_process_info))
     return SBOX_TEST_SUCCEEDED;
   base::win::ScopedProcessInformation process_info(temp_process_info);
   return SBOX_TEST_FAILED;
@@ -201,17 +205,17 @@ TEST(PolicyTargetTest, OpenThreadTokenEx) {
 
 TEST(PolicyTargetTest, OpenThread) {
   TestRunner runner;
-  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"PolicyTargetTest_thread")) <<
-      "Opens the current thread";
+  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"PolicyTargetTest_thread"))
+      << "Opens the current thread";
 
-  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"PolicyTargetTest_thread2")) <<
-      "Creates a new thread and opens it";
+  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"PolicyTargetTest_thread2"))
+      << "Creates a new thread and opens it";
 }
 
 TEST(PolicyTargetTest, OpenProcess) {
   TestRunner runner;
-  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"PolicyTargetTest_process")) <<
-      "Opens a process";
+  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"PolicyTargetTest_process"))
+      << "Opens a process";
 }
 
 TEST(PolicyTargetTest, PolicyBaseNoJobLifetime) {
@@ -235,11 +239,11 @@ TEST(PolicyTargetTest, DesktopPolicy) {
   temp_policy->CreateAlternateDesktop(false);
   temp_policy = nullptr;
 
-  ASSERT_TRUE(broker != NULL);
+  ASSERT_TRUE(broker);
 
   
   wchar_t prog_name[MAX_PATH];
-  GetModuleFileNameW(NULL, prog_name, MAX_PATH);
+  GetModuleFileNameW(nullptr, prog_name, MAX_PATH);
 
   base::string16 arguments(L"\"");
   arguments += prog_name;
@@ -273,8 +277,8 @@ TEST(PolicyTargetTest, DesktopPolicy) {
   EXPECT_NE(::GetThreadDesktop(target.thread_id()),
             ::GetThreadDesktop(::GetCurrentThreadId()));
 
-  HDESK desk = ::OpenDesktop(desktop_name.c_str(), 0, FALSE, DESKTOP_ENUMERATE);
-  EXPECT_TRUE(NULL != desk);
+  HDESK desk = ::OpenDesktop(desktop_name.c_str(), 0, false, DESKTOP_ENUMERATE);
+  EXPECT_TRUE(desk);
   EXPECT_TRUE(::CloseDesktop(desk));
   EXPECT_TRUE(::TerminateProcess(target.process_handle(), 0));
 
@@ -286,8 +290,8 @@ TEST(PolicyTargetTest, DesktopPolicy) {
   temp_policy = nullptr;
 
   
-  desk = ::OpenDesktop(desktop_name.c_str(), 0, FALSE, DESKTOP_ENUMERATE);
-  EXPECT_TRUE(NULL == desk);
+  desk = ::OpenDesktop(desktop_name.c_str(), 0, false, DESKTOP_ENUMERATE);
+  EXPECT_FALSE(desk);
 }
 
 
@@ -302,11 +306,11 @@ TEST(PolicyTargetTest, WinstaPolicy) {
   temp_policy->CreateAlternateDesktop(true);
   temp_policy = nullptr;
 
-  ASSERT_TRUE(broker != NULL);
+  ASSERT_TRUE(broker);
 
   
   wchar_t prog_name[MAX_PATH];
-  GetModuleFileNameW(NULL, prog_name, MAX_PATH);
+  GetModuleFileNameW(nullptr, prog_name, MAX_PATH);
 
   base::string16 arguments(L"\"");
   arguments += prog_name;
@@ -348,9 +352,9 @@ TEST(PolicyTargetTest, WinstaPolicy) {
   
   desktop_name = desktop_name.substr(desktop_name.find_first_of(L'\\') + 1);
 
-  HDESK desk = ::OpenDesktop(desktop_name.c_str(), 0, FALSE, DESKTOP_ENUMERATE);
+  HDESK desk = ::OpenDesktop(desktop_name.c_str(), 0, false, DESKTOP_ENUMERATE);
   
-  EXPECT_FALSE(NULL != desk);
+  EXPECT_FALSE(desk);
   EXPECT_TRUE(::TerminateProcess(target.process_handle(), 0));
 
   ::WaitForSingleObject(target.process_handle(), INFINITE);
@@ -397,7 +401,7 @@ TEST(PolicyTargetTest, BothLocalAndAlternateWinstationDesktop) {
 
 TEST(PolicyTargetTest, ShareHandleTest) {
   BrokerServices* broker = GetBroker();
-  ASSERT_TRUE(broker != NULL);
+  ASSERT_TRUE(broker);
 
   base::StringPiece contents = "Hello World";
   std::string name = "TestSharedMemory";
@@ -415,7 +419,7 @@ TEST(PolicyTargetTest, ShareHandleTest) {
 
   
   wchar_t prog_name[MAX_PATH];
-  GetModuleFileNameW(NULL, prog_name, MAX_PATH);
+  GetModuleFileNameW(nullptr, prog_name, MAX_PATH);
 
   scoped_refptr<TargetPolicy> policy = broker->CreatePolicy();
   policy->AddHandleToShare(read_only_view.handle().GetHandle());
@@ -423,7 +427,7 @@ TEST(PolicyTargetTest, ShareHandleTest) {
   base::string16 arguments(L"\"");
   arguments += prog_name;
   arguments += L"\" -child 0 shared_memory_handle ";
-  arguments += base::UintToString16(
+  arguments += base::NumberToString16(
       base::win::HandleToUint32(read_only_view.handle().GetHandle()));
 
   
@@ -451,6 +455,31 @@ TEST(PolicyTargetTest, ShareHandleTest) {
   EXPECT_TRUE(::TerminateProcess(target.process_handle(), 0));
 
   ::WaitForSingleObject(target.process_handle(), INFINITE);
+}
+
+
+SBOX_TESTS_COMMAND int PolicyTargetTest_SetEffectiveToken(int argc,
+                                                          wchar_t** argv) {
+  return SBOX_TEST_SUCCEEDED;
+}
+
+
+
+TEST(PolicyTargetTest, SetEffectiveToken) {
+  TestRunner runner;
+  HANDLE token;
+
+  
+  EXPECT_TRUE(
+      ::OpenProcessToken(::GetCurrentProcess(), TOKEN_ALL_ACCESS, &token));
+
+  
+  base::win::ScopedHandle token_guard(token);
+
+  
+  runner.GetPolicy()->SetEffectiveToken(token_guard.Get());
+  EXPECT_EQ(SBOX_TEST_SUCCEEDED,
+            runner.RunTest(L"PolicyTargetTest_SetEffectiveToken"));
 }
 
 }  

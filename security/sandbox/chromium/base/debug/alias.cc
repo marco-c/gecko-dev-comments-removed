@@ -8,16 +8,9 @@
 namespace base {
 namespace debug {
 
-#if defined(COMPILER_MSVC)
-#pragma optimize("", off)
-#endif
 
-void Alias(const void* var) {
-}
 
-#if defined(COMPILER_MSVC)
-#pragma optimize("", on)
-#endif
+NOINLINE void Alias(const void* var) {}
 
 }  
 }  

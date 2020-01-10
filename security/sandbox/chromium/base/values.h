@@ -14,6 +14,10 @@
 
 
 
+
+
+
+
 #ifndef BASE_VALUES_H_
 #define BASE_VALUES_H_
 
@@ -28,11 +32,9 @@
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/compiler_specific.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/span.h"
 #include "base/macros.h"
-#include "base/memory/manual_constructor.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
 #include "base/value_iterators.h"
@@ -47,10 +49,39 @@ class Value;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BASE_EXPORT Value {
  public:
-  using BlobStorage = std::vector<char>;
-  using DictStorage = base::flat_map<std::string, std::unique_ptr<Value>>;
+  using BlobStorage = std::vector<uint8_t>;
+  using DictStorage = flat_map<std::string, std::unique_ptr<Value>>;
   using ListStorage = std::vector<Value>;
 
   enum class Type {
@@ -73,6 +104,10 @@ class BASE_EXPORT Value {
   static std::unique_ptr<Value> CreateWithCopiedBuffer(const char* buffer,
                                                        size_t size);
 
+  
+  static Value FromUniquePtrValue(std::unique_ptr<Value> val);
+  static std::unique_ptr<Value> ToUniquePtrValue(Value val);
+
   Value(Value&& that) noexcept;
   Value() noexcept;  
 
@@ -89,16 +124,14 @@ class BASE_EXPORT Value {
   
   
   
-  
-  
   explicit Value(const char* in_string);
-  explicit Value(const std::string& in_string);
-  explicit Value(std::string&& in_string) noexcept;
-  explicit Value(const char16* in_string);
-  explicit Value(const string16& in_string);
   explicit Value(StringPiece in_string);
+  explicit Value(std::string&& in_string) noexcept;
+  explicit Value(const char16* in_string16);
+  explicit Value(StringPiece16 in_string16);
 
-  explicit Value(const BlobStorage& in_blob);
+  explicit Value(const std::vector<char>& in_blob);
+  explicit Value(base::span<const uint8_t> in_blob);
   explicit Value(BlobStorage&& in_blob) noexcept;
 
   explicit Value(const DictStorage& in_dict);
@@ -115,11 +148,9 @@ class BASE_EXPORT Value {
   static const char* GetTypeName(Type type);
 
   
-  Type GetType() const { return type_; }  
   Type type() const { return type_; }
 
   
-  bool IsType(Type type) const { return type == type_; }
   bool is_none() const { return type() == Type::NONE; }
   bool is_bool() const { return type() == Type::BOOLEAN; }
   bool is_int() const { return type() == Type::INTEGER; }
@@ -165,6 +196,16 @@ class BASE_EXPORT Value {
   
   
   
+  base::Optional<bool> FindBoolKey(StringPiece key) const;
+  base::Optional<int> FindIntKey(StringPiece key) const;
+  base::Optional<double> FindDoubleKey(StringPiece key) const;
+
+  
+  const std::string* FindStringKey(StringPiece key) const;
+
+  
+  
+  
   
   
   
@@ -175,6 +216,18 @@ class BASE_EXPORT Value {
   
   Value* SetKey(const char* key, Value value);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  bool RemoveKey(StringPiece key);
+
+  
+  
   
   
   
@@ -198,6 +251,9 @@ class BASE_EXPORT Value {
 
   
   
+  
+  
+  
   Value* FindPathOfType(std::initializer_list<StringPiece> path, Type type);
   Value* FindPathOfType(span<const StringPiece> path, Type type);
   const Value* FindPathOfType(std::initializer_list<StringPiece> path,
@@ -217,8 +273,28 @@ class BASE_EXPORT Value {
   
   
   
+  
+  
+  
   Value* SetPath(std::initializer_list<StringPiece> path, Value value);
   Value* SetPath(span<const StringPiece> path, Value value);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool RemovePath(std::initializer_list<StringPiece> path);
+  bool RemovePath(span<const StringPiece> path);
 
   using dict_iterator_proxy = detail::dict_iterator_proxy;
   using const_dict_iterator_proxy = detail::const_dict_iterator_proxy;
@@ -230,6 +306,20 @@ class BASE_EXPORT Value {
   
   dict_iterator_proxy DictItems();
   const_dict_iterator_proxy DictItems() const;
+
+  
+  
+  size_t DictSize() const;
+  bool DictEmpty() const;
+
+  
+  
+  
+  
+  
+  
+  
+  void MergeDictionary(const Value* dictionary);
 
   
   
@@ -280,22 +370,102 @@ class BASE_EXPORT Value {
   
   bool Equals(const Value* other) const;
 
+  
+  
+  size_t EstimateMemoryUsage() const;
+
  protected:
   
   
-  Type type_;
+  static constexpr uint16_t kMagicIsAlive = 0x2f19;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   union {
-    bool bool_value_;
-    int int_value_;
-    double double_value_;
-    ManualConstructor<std::string> string_value_;
-    ManualConstructor<BlobStorage> binary_value_;
-    ManualConstructor<DictStorage> dict_;
-    ManualConstructor<ListStorage> list_;
+    struct {
+      
+      
+      Type type_ : 8;
+
+      
+      
+      uint16_t is_alive_ = kMagicIsAlive;
+    };
+    struct {
+      Type bool_type_ : 8;
+      uint16_t bool_is_alive_;
+      bool bool_value_;
+    };
+    struct {
+      Type int_type_ : 8;
+      uint16_t int_is_alive_;
+      int int_value_;
+    };
+    struct {
+      Type double_type_ : 8;
+      uint16_t double_is_alive_;
+      
+      
+      
+      double double_value_;
+    };
+    struct {
+      Type string_type_ : 8;
+      uint16_t string_is_alive_;
+      std::string string_value_;
+    };
+    struct {
+      Type binary_type_ : 8;
+      uint16_t binary_is_alive_;
+      BlobStorage binary_value_;
+    };
+    struct {
+      Type dict_type_ : 8;
+      uint16_t dict_is_alive_;
+      DictStorage dict_;
+    };
+    struct {
+      Type list_type_ : 8;
+      uint16_t list_is_alive_;
+      ListStorage list_;
+    };
   };
 
  private:
+  friend class ValuesTest_SizeOfValue_Test;
   void InternalMoveConstructFrom(Value&& that);
   void InternalCleanup();
 
@@ -322,10 +492,10 @@ class BASE_EXPORT DictionaryValue : public Value {
   bool HasKey(StringPiece key) const;
 
   
-  size_t size() const { return dict_->size(); }
+  size_t size() const { return dict_.size(); }
 
   
-  bool empty() const { return dict_->empty(); }
+  bool empty() const { return dict_.empty(); }
 
   
   void Clear();
@@ -364,15 +534,6 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   Value* SetWithoutPathExpansion(StringPiece key,
                                  std::unique_ptr<Value> in_value);
-
-  
-  
-  DictionaryValue* SetDictionaryWithoutPathExpansion(
-      StringPiece path,
-      std::unique_ptr<DictionaryValue> in_value);
-  
-  ListValue* SetListWithoutPathExpansion(StringPiece path,
-                                         std::unique_ptr<ListValue> in_value);
 
   
   
@@ -456,8 +617,10 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   
   
+  
   bool Remove(StringPiece path, std::unique_ptr<Value>* out_value);
 
+  
   
   
   bool RemoveWithoutPathExpansion(StringPiece key,
@@ -465,18 +628,14 @@ class BASE_EXPORT DictionaryValue : public Value {
 
   
   
+  
   bool RemovePath(StringPiece path, std::unique_ptr<Value>* out_value);
+
+  using Value::RemovePath;  
 
   
   
   std::unique_ptr<DictionaryValue> DeepCopyWithoutEmptyChildren() const;
-
-  
-  
-  
-  
-  
-  void MergeDictionary(const DictionaryValue* dictionary);
 
   
   void Swap(DictionaryValue* other);
@@ -490,7 +649,7 @@ class BASE_EXPORT DictionaryValue : public Value {
     Iterator(const Iterator& other);
     ~Iterator();
 
-    bool IsAtEnd() const { return it_ == target_.dict_->end(); }
+    bool IsAtEnd() const { return it_ == target_.dict_.end(); }
     void Advance() { ++it_; }
 
     const std::string& key() const { return it_->first; }
@@ -503,12 +662,12 @@ class BASE_EXPORT DictionaryValue : public Value {
 
   
   
-  iterator begin() { return dict_->begin(); }
-  iterator end() { return dict_->end(); }
+  iterator begin() { return dict_.begin(); }
+  iterator end() { return dict_.end(); }
 
   
-  const_iterator begin() const { return dict_->begin(); }
-  const_iterator end() const { return dict_->end(); }
+  const_iterator begin() const { return dict_.begin(); }
+  const_iterator end() const { return dict_.end(); }
 
   
   
@@ -537,15 +696,11 @@ class BASE_EXPORT ListValue : public Value {
 
   
   
-  size_t GetSize() const { return list_->size(); }
+  size_t GetSize() const { return list_.size(); }
 
   
   
-  size_t capacity() const { return list_->capacity(); }
-
-  
-  
-  bool empty() const { return list_->empty(); }
+  bool empty() const { return list_.empty(); }
 
   
   
@@ -582,9 +737,6 @@ class BASE_EXPORT ListValue : public Value {
   
   bool GetString(size_t index, std::string* out_value) const;
   bool GetString(size_t index, string16* out_value) const;
-  
-  bool GetBinary(size_t index, const Value** out_value) const;
-  bool GetBinary(size_t index, Value** out_value);
 
   bool GetDictionary(size_t index, const DictionaryValue** out_value) const;
   bool GetDictionary(size_t index, DictionaryValue** out_value);
@@ -652,14 +804,14 @@ class BASE_EXPORT ListValue : public Value {
 
   
   
-  iterator begin() { return list_->begin(); }
+  iterator begin() { return list_.begin(); }
   
-  iterator end() { return list_->end(); }
+  iterator end() { return list_.end(); }
 
   
-  const_iterator begin() const { return list_->begin(); }
+  const_iterator begin() const { return list_.begin(); }
   
-  const_iterator end() const { return list_->end(); }
+  const_iterator end() const { return list_.end(); }
 
   
   

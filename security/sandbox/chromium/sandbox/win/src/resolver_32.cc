@@ -46,32 +46,33 @@ struct InternalThunk {
     opcodes_6 = 0xc35a;
     extra_argument = 0;
     interceptor_function = 0;
-  };
-  ULONG opcodes_1;         
-  ULONG opcodes_2;         
-  ULONG opcodes_3;         
-  ULONG opcodes_4;         
+  }
+  ULONG opcodes_1;  
+  ULONG opcodes_2;  
+  ULONG opcodes_3;  
+  ULONG opcodes_4;  
   ULONG extra_argument;
-  ULONG opcodes_5;         
+  ULONG opcodes_5;  
   ULONG interceptor_function;
-  USHORT opcodes_6;         
+  USHORT opcodes_6;  
 };
 #pragma pack(pop)
 
-};  
+}  
 
 namespace sandbox {
 
-bool ResolverThunk::SetInternalThunk(void* storage, size_t storage_bytes,
+bool ResolverThunk::SetInternalThunk(void* storage,
+                                     size_t storage_bytes,
                                      const void* original_function,
                                      const void* interceptor) {
   if (storage_bytes < sizeof(InternalThunk))
     return false;
 
-  InternalThunk* thunk = new(storage) InternalThunk;
+  InternalThunk* thunk = new (storage) InternalThunk;
 
 #pragma warning(push)
-#pragma warning(disable: 4311)
+#pragma warning(disable : 4311)
   
   thunk->interceptor_function = reinterpret_cast<ULONG>(interceptor);
   thunk->extra_argument = reinterpret_cast<ULONG>(original_function);

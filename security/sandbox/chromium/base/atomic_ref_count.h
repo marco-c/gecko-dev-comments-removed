@@ -19,11 +19,13 @@ class AtomicRefCount {
       : ref_count_(initial_value) {}
 
   
-  void Increment() { Increment(1); }
+  
+  int Increment() { return Increment(1); }
 
   
-  void Increment(int increment) {
-    ref_count_.fetch_add(increment, std::memory_order_relaxed);
+  
+  int Increment(int increment) {
+    return ref_count_.fetch_add(increment, std::memory_order_relaxed);
   }
 
   

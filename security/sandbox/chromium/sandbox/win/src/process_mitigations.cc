@@ -18,19 +18,46 @@
 
 namespace {
 
-
-typedef BOOL (WINAPI *SetProcessDEPPolicyFunction)(DWORD dwFlags);
-
-typedef BOOL (WINAPI *SetProcessMitigationPolicyFunction)(
-    PROCESS_MITIGATION_POLICY mitigation_policy,
-    PVOID buffer,
-    SIZE_T length);
+using SetProcessDEPPolicyFunction = decltype(&SetProcessDEPPolicy);
 
 
 using SetDefaultDllDirectoriesFunction = decltype(&SetDefaultDllDirectories);
 
 
+using SetProcessMitigationPolicyFunction =
+    decltype(&SetProcessMitigationPolicy);
+using GetProcessMitigationPolicyFunction =
+    decltype(&GetProcessMitigationPolicy);
 using SetThreadInformationFunction = decltype(&SetThreadInformation);
+
+
+
+const ULONG64* GetSupportedMitigations() {
+  static ULONG64 mitigations[2] = {};
+
+  
+  if (!mitigations[0] && !mitigations[1]) {
+    GetProcessMitigationPolicyFunction get_process_mitigation_policy =
+        reinterpret_cast<GetProcessMitigationPolicyFunction>(::GetProcAddress(
+            ::GetModuleHandleA("kernel32.dll"), "GetProcessMitigationPolicy"));
+    if (get_process_mitigation_policy) {
+      
+      
+      
+      size_t mits_size =
+          (base::win::GetVersion() >= base::win::VERSION_WIN10_RS2)
+              ? (sizeof(mitigations[0]) * 2)
+              : sizeof(mitigations[0]);
+      if (!get_process_mitigation_policy(::GetCurrentProcess(),
+                                         ProcessMitigationOptionsMask,
+                                         &mitigations, mits_size)) {
+        NOTREACHED();
+      }
+    }
+  }
+
+  return &mitigations[0];
+}
 
 }  
 
@@ -50,7 +77,16 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
 
     
     if (set_default_dll_directories) {
-      if (!set_default_dll_directories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS) &&
+#if defined(COMPONENT_BUILD)
+      const DWORD directory_flags = LOAD_LIBRARY_SEARCH_DEFAULT_DIRS;
+#else
+      
+      
+      
+      const DWORD directory_flags =
+          LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_SEARCH_USER_DIRS;
+#endif
+      if (!set_default_dll_directories(directory_flags) &&
           ERROR_ACCESS_DENIED != ::GetLastError()) {
         return false;
       }
@@ -59,17 +95,17 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
 
   
   if (flags & MITIGATION_HEAP_TERMINATE) {
-    if (!::HeapSetInformation(NULL, HeapEnableTerminationOnCorruption,
-                              NULL, 0) &&
+    if (!::HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption,
+                              nullptr, 0) &&
         ERROR_ACCESS_DENIED != ::GetLastError()) {
       return false;
     }
   }
 
   if (flags & MITIGATION_HARDEN_TOKEN_IL_POLICY) {
-      DWORD error = HardenProcessIntegrityLevelPolicy();
-      if ((error != ERROR_SUCCESS) && (error != ERROR_ACCESS_DENIED))
-        return false;
+    DWORD error = HardenProcessIntegrityLevelPolicy();
+    if ((error != ERROR_SUCCESS) && (error != ERROR_ACCESS_DENIED))
+      return false;
   }
 
 #if !defined(_WIN64)  
@@ -84,7 +120,7 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
             ::GetProcAddress(module, "SetProcessDEPPolicy"));
     if (set_process_dep_policy) {
       if (!set_process_dep_policy(dep_flags) &&
-        ERROR_ACCESS_DENIED != ::GetLastError()) {
+          ERROR_ACCESS_DENIED != ::GetLastError()) {
         return false;
       }
     } else
@@ -106,8 +142,8 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
   if (flags & MITIGATION_RELOCATE_IMAGE) {
     PROCESS_MITIGATION_ASLR_POLICY policy = {};
     policy.EnableForceRelocateImages = true;
-    policy.DisallowStrippedImages = (flags &
-        MITIGATION_RELOCATE_IMAGE_REQUIRED) ==
+    policy.DisallowStrippedImages =
+        (flags & MITIGATION_RELOCATE_IMAGE_REQUIRED) ==
         MITIGATION_RELOCATE_IMAGE_REQUIRED;
 
     if (!set_process_mitigation_policy(ProcessASLRPolicy, &policy,
@@ -259,7 +295,7 @@ bool ApplyMitigationsToCurrentThread(MitigationFlags flags) {
     SetThreadInformationFunction set_thread_info_function =
         reinterpret_cast<SetThreadInformationFunction>(
             dll.GetFunctionPointer("SetThreadInformation"));
-    if (set_thread_info_function == nullptr)
+    if (!set_thread_info_function)
       return false;
 
     
@@ -278,7 +314,14 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
                                        size_t* size) {
   base::win::Version version = base::win::GetVersion();
 
-  *policy_flags = 0;
+  
+  
+  
+  DWORD64* policy_value_1 = &policy_flags[0];
+  DWORD64* policy_value_2 = &policy_flags[1];
+  *policy_value_1 = 0;
+  *policy_value_2 = 0;
+
 #if defined(_WIN64)
   *size = sizeof(*policy_flags);
 #elif defined(_M_IX86)
@@ -291,113 +334,157 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 #error This platform is not supported.
 #endif
 
-  
+
 #if !defined(_WIN64)
   if (flags & MITIGATION_DEP) {
-    *policy_flags |= PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE;
+    *policy_value_1 |= PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE;
     if (!(flags & MITIGATION_DEP_NO_ATL_THUNK))
-      *policy_flags |= PROCESS_CREATION_MITIGATION_POLICY_DEP_ATL_THUNK_ENABLE;
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_DEP_ATL_THUNK_ENABLE;
   }
 
   if (flags & MITIGATION_SEHOP)
-    *policy_flags |= PROCESS_CREATION_MITIGATION_POLICY_SEHOP_ENABLE;
+    *policy_value_1 |= PROCESS_CREATION_MITIGATION_POLICY_SEHOP_ENABLE;
 #endif
 
   
   if (version < base::win::VERSION_WIN8)
     return;
 
-  if (flags & MITIGATION_RELOCATE_IMAGE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_FORCE_RELOCATE_IMAGES_ALWAYS_ON;
-    if (flags & MITIGATION_RELOCATE_IMAGE_REQUIRED) {
-      *policy_flags |=
-          PROCESS_CREATION_MITIGATION_POLICY_FORCE_RELOCATE_IMAGES_ALWAYS_ON_REQ_RELOCS;
+  
+  
+  
+
+  
+  
+  if (version >= base::win::VERSION_WIN8) {
+    if (flags & MITIGATION_RELOCATE_IMAGE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_FORCE_RELOCATE_IMAGES_ALWAYS_ON;
+      if (flags & MITIGATION_RELOCATE_IMAGE_REQUIRED) {
+        *policy_value_1 |=
+            PROCESS_CREATION_MITIGATION_POLICY_FORCE_RELOCATE_IMAGES_ALWAYS_ON_REQ_RELOCS;
+      }
+    }
+
+    if (flags & MITIGATION_HEAP_TERMINATE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_HEAP_TERMINATE_ALWAYS_ON;
+    }
+
+    if (flags & MITIGATION_BOTTOM_UP_ASLR) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_BOTTOM_UP_ASLR_ALWAYS_ON;
+    }
+
+    if (flags & MITIGATION_HIGH_ENTROPY_ASLR) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_HIGH_ENTROPY_ASLR_ALWAYS_ON;
+    }
+
+    if (flags & MITIGATION_STRICT_HANDLE_CHECKS) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECKS_ALWAYS_ON;
+    }
+
+    if (flags & MITIGATION_WIN32K_DISABLE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE_ALWAYS_ON;
+    }
+
+    if (flags & MITIGATION_EXTENSION_POINT_DISABLE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_EXTENSION_POINT_DISABLE_ALWAYS_ON;
     }
   }
 
-  if (flags & MITIGATION_HEAP_TERMINATE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_HEAP_TERMINATE_ALWAYS_ON;
-  }
+  
+  
+  if (version >= base::win::VERSION_WIN8_1) {
+    if (flags & MITIGATION_DYNAMIC_CODE_DISABLE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_PROHIBIT_DYNAMIC_CODE_ALWAYS_ON;
+    }
 
-  if (flags & MITIGATION_BOTTOM_UP_ASLR) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_BOTTOM_UP_ASLR_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_HIGH_ENTROPY_ASLR) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_HIGH_ENTROPY_ASLR_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_STRICT_HANDLE_CHECKS) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECKS_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_WIN32K_DISABLE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_EXTENSION_POINT_DISABLE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_EXTENSION_POINT_DISABLE_ALWAYS_ON;
-  }
-
-  if (version < base::win::VERSION_WIN8_1)
-    return;
-
-  if (flags & MITIGATION_DYNAMIC_CODE_DISABLE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_PROHIBIT_DYNAMIC_CODE_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_CONTROL_FLOW_GUARD_DISABLE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_CONTROL_FLOW_GUARD_ALWAYS_OFF;
-  }
-
-  if (version < base::win::VERSION_WIN10)
-    return;
-
-  if (flags & MITIGATION_NONSYSTEM_FONT_DISABLE) {
-    *policy_flags |= PROCESS_CREATION_MITIGATION_POLICY_FONT_DISABLE_ALWAYS_ON;
+    if (flags & MITIGATION_CONTROL_FLOW_GUARD_DISABLE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_CONTROL_FLOW_GUARD_ALWAYS_OFF;
+    }
   }
 
   
-  if (version < base::win::VERSION_WIN10_TH2)
-    return;
-
-  if (flags & MITIGATION_FORCE_MS_SIGNED_BINS) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_IMAGE_LOAD_NO_REMOTE) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE_ALWAYS_ON;
-  }
-
-  if (flags & MITIGATION_IMAGE_LOAD_NO_LOW_LABEL) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL_ALWAYS_ON;
+  
+  if (version >= base::win::VERSION_WIN10) {
+    if (flags & MITIGATION_NONSYSTEM_FONT_DISABLE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_FONT_DISABLE_ALWAYS_ON;
+    }
   }
 
   
-  if (version < base::win::VERSION_WIN10_RS1)
-    return;
+  
+  if (version >= base::win::VERSION_WIN10_TH2) {
+    if (flags & MITIGATION_FORCE_MS_SIGNED_BINS) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON;
+    }
 
-  if (flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_PROHIBIT_DYNAMIC_CODE_ALWAYS_ON_ALLOW_OPT_OUT;
+    if (flags & MITIGATION_IMAGE_LOAD_NO_REMOTE) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE_ALWAYS_ON;
+    }
+
+    if (flags & MITIGATION_IMAGE_LOAD_NO_LOW_LABEL) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL_ALWAYS_ON;
+    }
   }
 
-  if (flags & MITIGATION_IMAGE_LOAD_PREFER_SYS32) {
-    *policy_flags |=
-        PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_PREFER_SYSTEM32_ALWAYS_ON;
+  
+  
+  if (version >= base::win::VERSION_WIN10_RS1) {
+    if (flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_PROHIBIT_DYNAMIC_CODE_ALWAYS_ON_ALLOW_OPT_OUT;
+    }
+
+    if (flags & MITIGATION_IMAGE_LOAD_PREFER_SYS32) {
+      *policy_value_1 |=
+          PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_PREFER_SYSTEM32_ALWAYS_ON;
+    }
   }
+
+  
+  
+  if (version >= base::win::VERSION_WIN10_RS3) {
+    
+    
+    
+    
+    
+    
+    
+    if (flags & MITIGATION_RESTRICT_INDIRECT_BRANCH_PREDICTION) {
+      *policy_value_2 |=
+          PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_INDIRECT_BRANCH_PREDICTION_ALWAYS_ON;
+    }
+  }
+
+  
+  
+
+  const ULONG64* supported = GetSupportedMitigations();
+
+  *policy_value_1 = *policy_value_1 & supported[0];
+  *policy_value_2 = *policy_value_2 & supported[1];
+
+  
+  
+  if (*policy_value_2 && version >= base::win::VERSION_WIN10_RS2) {
+    *size = sizeof(*policy_flags) * 2;
+  }
+
+  return;
 }
 
 MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags) {
@@ -405,14 +492,12 @@ MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags) {
 
   
   if (version < base::win::VERSION_WIN8) {
-    return flags & (MITIGATION_BOTTOM_UP_ASLR |
-                    MITIGATION_DLL_SEARCH_ORDER |
+    return flags & (MITIGATION_BOTTOM_UP_ASLR | MITIGATION_DLL_SEARCH_ORDER |
                     MITIGATION_HEAP_TERMINATE);
   }
 
   
-  return flags & (MITIGATION_BOTTOM_UP_ASLR |
-                  MITIGATION_DLL_SEARCH_ORDER);
+  return flags & (MITIGATION_BOTTOM_UP_ASLR | MITIGATION_DLL_SEARCH_ORDER);
 }
 
 bool ApplyProcessMitigationsToSuspendedProcess(HANDLE process,
@@ -442,26 +527,36 @@ bool ApplyProcessMitigationsToSuspendedProcess(HANDLE process,
   return true;
 }
 
+MitigationFlags GetAllowedPostStartupProcessMitigations() {
+  return MITIGATION_HEAP_TERMINATE |
+         MITIGATION_DEP |
+         MITIGATION_DEP_NO_ATL_THUNK |
+         MITIGATION_RELOCATE_IMAGE |
+         MITIGATION_RELOCATE_IMAGE_REQUIRED |
+         MITIGATION_BOTTOM_UP_ASLR |
+         MITIGATION_STRICT_HANDLE_CHECKS |
+         MITIGATION_EXTENSION_POINT_DISABLE |
+         MITIGATION_DLL_SEARCH_ORDER |
+         MITIGATION_HARDEN_TOKEN_IL_POLICY |
+         MITIGATION_WIN32K_DISABLE |
+         MITIGATION_DYNAMIC_CODE_DISABLE |
+         MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT |
+         MITIGATION_FORCE_MS_SIGNED_BINS |
+         MITIGATION_NONSYSTEM_FONT_DISABLE |
+         MITIGATION_IMAGE_LOAD_NO_REMOTE |
+         MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
+         MITIGATION_IMAGE_LOAD_PREFER_SYS32;
+}
+
 bool CanSetProcessMitigationsPostStartup(MitigationFlags flags) {
   
-  return !(
-      flags &
-      ~(MITIGATION_HEAP_TERMINATE | MITIGATION_DEP |
-        MITIGATION_DEP_NO_ATL_THUNK | MITIGATION_RELOCATE_IMAGE |
-        MITIGATION_RELOCATE_IMAGE_REQUIRED | MITIGATION_BOTTOM_UP_ASLR |
-        MITIGATION_STRICT_HANDLE_CHECKS | MITIGATION_EXTENSION_POINT_DISABLE |
-        MITIGATION_DLL_SEARCH_ORDER | MITIGATION_HARDEN_TOKEN_IL_POLICY |
-        MITIGATION_WIN32K_DISABLE | MITIGATION_DYNAMIC_CODE_DISABLE |
-        MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT |
-        MITIGATION_FORCE_MS_SIGNED_BINS | MITIGATION_NONSYSTEM_FONT_DISABLE |
-        MITIGATION_IMAGE_LOAD_NO_REMOTE | MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
-        MITIGATION_IMAGE_LOAD_PREFER_SYS32));
+  return !(flags & ~GetAllowedPostStartupProcessMitigations());
 }
 
 bool CanSetProcessMitigationsPreStartup(MitigationFlags flags) {
   
-  return !(flags & (MITIGATION_STRICT_HANDLE_CHECKS |
-                    MITIGATION_DLL_SEARCH_ORDER));
+  return !(flags &
+           (MITIGATION_STRICT_HANDLE_CHECKS | MITIGATION_DLL_SEARCH_ORDER));
 }
 
 bool CanSetMitigationsPerThread(MitigationFlags flags) {
@@ -473,4 +568,3 @@ bool CanSetMitigationsPerThread(MitigationFlags flags) {
 }
 
 }  
-

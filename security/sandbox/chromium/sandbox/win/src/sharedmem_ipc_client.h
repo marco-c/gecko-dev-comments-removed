@@ -69,8 +69,8 @@ enum ChannelState {
 };
 
 
-const DWORD kIPCWaitTimeOut1 = 1000;   
-const DWORD kIPCWaitTimeOut2 =   50;   
+const DWORD kIPCWaitTimeOut1 = 1000;  
+const DWORD kIPCWaitTimeOut2 = 50;    
 
 
 struct ChannelControl {

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef BASE_METRICS_HISTOGRAM_FUNCTIONS_H_
+#define BASE_METRICS_HISTOGRAM_FUNCTIONS_H_
+
+namespace base {
+
+BASE_EXPORT void UmaHistogramSparse(const std::string& name, int sample) {}
+
+}  
+
+#endif  

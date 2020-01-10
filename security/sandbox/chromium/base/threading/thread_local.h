@@ -46,47 +46,84 @@
 
 
 
-
 #ifndef BASE_THREADING_THREAD_LOCAL_H_
 #define BASE_THREADING_THREAD_LOCAL_H_
 
+#include <memory>
+
+#include "base/logging.h"
 #include "base/macros.h"
+#include "base/threading/thread_local_internal.h"
 #include "base/threading/thread_local_storage.h"
 
 namespace base {
 
-template <typename Type>
+template <typename T>
 class ThreadLocalPointer {
  public:
   ThreadLocalPointer() = default;
   ~ThreadLocalPointer() = default;
 
-  Type* Get() {
-    return static_cast<Type*>(slot_.Get());
-  }
+  T* Get() const { return static_cast<T*>(slot_.Get()); }
 
-  void Set(Type* ptr) {
+  void Set(T* ptr) {
     slot_.Set(const_cast<void*>(static_cast<const void*>(ptr)));
   }
 
  private:
   ThreadLocalStorage::Slot slot_;
 
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalPointer<Type>);
+  DISALLOW_COPY_AND_ASSIGN(ThreadLocalPointer<T>);
 };
+
+
+
+
+
+
+
+
+
+
+#if DCHECK_IS_ON()
+template <typename T>
+using ThreadLocalOwnedPointer = internal::CheckedThreadLocalOwnedPointer<T>;
+#else   
+template <typename T>
+class ThreadLocalOwnedPointer {
+ public:
+  ThreadLocalOwnedPointer() = default;
+
+  ~ThreadLocalOwnedPointer() {
+    
+    
+    Set(nullptr);
+  }
+
+  T* Get() const { return static_cast<T*>(slot_.Get()); }
+
+  void Set(std::unique_ptr<T> ptr) {
+    delete Get();
+    slot_.Set(const_cast<void*>(static_cast<const void*>(ptr.release())));
+  }
+
+ private:
+  static void DeleteTlsPtr(void* ptr) { delete static_cast<T*>(ptr); }
+
+  ThreadLocalStorage::Slot slot_{&DeleteTlsPtr};
+
+  DISALLOW_COPY_AND_ASSIGN(ThreadLocalOwnedPointer<T>);
+};
+#endif  
 
 class ThreadLocalBoolean {
  public:
   ThreadLocalBoolean() = default;
   ~ThreadLocalBoolean() = default;
 
-  bool Get() {
-    return tlp_.Get() != nullptr;
-  }
+  bool Get() const { return tlp_.Get() != nullptr; }
 
-  void Set(bool val) {
-    tlp_.Set(val ? this : nullptr);
-  }
+  void Set(bool val) { tlp_.Set(val ? this : nullptr); }
 
  private:
   ThreadLocalPointer<void> tlp_;

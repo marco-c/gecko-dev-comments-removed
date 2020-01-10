@@ -110,7 +110,7 @@
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
-#include "base/macros.h"
+#include "base/stl_util.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
@@ -127,31 +127,37 @@
 
 
 
-#if defined(OS_POSIX)
-#define PRIsFP "s"
-#elif defined(OS_WIN)
-#define PRIsFP "ls"
+#if defined(OS_WIN)
+#define PRFilePath "ls"
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#define PRFilePath "s"
+#endif  
+
+
+#if defined(OS_WIN)
+#define FILE_PATH_LITERAL(x) L##x
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#define FILE_PATH_LITERAL(x) x
 #endif  
 
 namespace base {
 
 class Pickle;
 class PickleIterator;
-class PickleSizer;
 
 
 
 class BASE_EXPORT FilePath {
  public:
-#if defined(OS_POSIX)
+#if defined(OS_WIN)
+  
+  
+  typedef base::string16 StringType;
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   
   
   
   typedef std::string StringType;
-#elif defined(OS_WIN)
-  
-  
-  typedef std::wstring StringType;
 #endif  
 
   typedef BasicStringPiece<StringType> StringPieceType;
@@ -223,6 +229,7 @@ class BASE_EXPORT FilePath {
   
   
   
+  
   bool IsParent(const FilePath& child) const;
 
   
@@ -235,6 +242,7 @@ class BASE_EXPORT FilePath {
   
   bool AppendRelativePath(const FilePath& child, FilePath* path) const;
 
+  
   
   
   
@@ -293,6 +301,10 @@ class BASE_EXPORT FilePath {
   
   
   FilePath AddExtension(StringPieceType extension) const WARN_UNUSED_RESULT;
+
+  
+  
+  FilePath AddExtensionASCII(StringPiece extension) const WARN_UNUSED_RESULT;
 
   
   
@@ -384,7 +396,6 @@ class BASE_EXPORT FilePath {
   
   static FilePath FromUTF16Unsafe(StringPiece16 utf16);
 
-  void GetSizeForPickle(PickleSizer* sizer) const;
   void WriteToPickle(Pickle* pickle) const;
   bool ReadFromPickle(PickleIterator* iter);
 
@@ -455,16 +466,6 @@ BASE_EXPORT std::ostream& operator<<(std::ostream& out,
                                      const FilePath& file_path);
 
 }  
-
-
-
-#if defined(OS_POSIX)
-#define FILE_PATH_LITERAL(x) x
-#define PRFilePath "s"
-#elif defined(OS_WIN)
-#define FILE_PATH_LITERAL(x) L ## x
-#define PRFilePath "ls"
-#endif  
 
 namespace std {
 

@@ -20,7 +20,7 @@ bool SetupBasicInterceptions(InterceptionManager* manager,
 
 
 
-bool SetupNtdllImports(TargetProcess *child);
+bool SetupNtdllImports(TargetProcess* child);
 
 }  
 

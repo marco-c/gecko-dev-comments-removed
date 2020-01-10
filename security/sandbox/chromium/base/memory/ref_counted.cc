@@ -21,12 +21,28 @@ bool RefCountedThreadSafeBase::HasOneRef() const {
   return ref_count_.IsOne();
 }
 
-RefCountedThreadSafeBase::~RefCountedThreadSafeBase() {
+bool RefCountedThreadSafeBase::HasAtLeastOneRef() const {
+  return !ref_count_.IsZero();
+}
+
 #if DCHECK_IS_ON()
+RefCountedThreadSafeBase::~RefCountedThreadSafeBase() {
   DCHECK(in_dtor_) << "RefCountedThreadSafe object deleted without "
                       "calling Release()";
-#endif
 }
+#endif
+
+
+
+
+#if defined(ARCH_CPU_64_BITS)
+void RefCountedBase::AddRefImpl() const {
+  
+  
+  
+  CHECK(++ref_count_ > 0);
+}
+#endif
 
 #if !defined(ARCH_CPU_X86_FAMILY)
 bool RefCountedThreadSafeBase::Release() const {
@@ -34,6 +50,9 @@ bool RefCountedThreadSafeBase::Release() const {
 }
 void RefCountedThreadSafeBase::AddRef() const {
   AddRefImpl();
+}
+void RefCountedThreadSafeBase::AddRefWithCheck() const {
+  AddRefWithCheckImpl();
 }
 #endif
 

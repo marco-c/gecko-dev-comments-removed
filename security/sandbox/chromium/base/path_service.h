@@ -91,7 +91,4 @@ class BASE_EXPORT PathService {
 
 }  
 
-
-using base::PathService;
-
 #endif  

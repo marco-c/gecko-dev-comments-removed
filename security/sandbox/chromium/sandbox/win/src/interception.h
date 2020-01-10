@@ -156,7 +156,7 @@ class InterceptionManager {
   
   
   static inline size_t RoundUpToMultiple(size_t value, size_t alignment) {
-    return ((value + alignment -1) / alignment) * alignment;
+    return ((value + alignment - 1) / alignment) * alignment;
   }
 
   
@@ -176,14 +176,16 @@ class InterceptionManager {
   
   
   bool SetupDllInfo(const InterceptionData& data,
-                    void** buffer, size_t* buffer_bytes) const;
+                    void** buffer,
+                    size_t* buffer_bytes) const;
 
   
   
   
   
   
-  bool SetupInterceptionInfo(const InterceptionData& data, void** buffer,
+  bool SetupInterceptionInfo(const InterceptionData& data,
+                             void** buffer,
                              size_t* buffer_bytes,
                              DllPatchInfo* dll_info) const;
 
@@ -194,7 +196,8 @@ class InterceptionManager {
   
   
   
-  ResultCode CopyDataToChild(const void* local_buffer, size_t buffer_bytes,
+  ResultCode CopyDataToChild(const void* local_buffer,
+                             size_t buffer_bytes,
                              void** remote_buffer) const;
 
   
@@ -235,30 +238,29 @@ class InterceptionManager {
 
 #if SANDBOX_EXPORTS
 #if defined(_WIN64)
-#define MAKE_SERVICE_NAME(service, params) "Target" # service "64"
+#define MAKE_SERVICE_NAME(service, params) "Target" #service "64"
 #else
-#define MAKE_SERVICE_NAME(service, params) "_Target" # service "@" # params
+#define MAKE_SERVICE_NAME(service, params) "_Target" #service "@" #params
 #endif
 
-#define ADD_NT_INTERCEPTION(service, id, num_params) \
-  AddToPatchedFunctions(kNtdllName, #service, \
+#define ADD_NT_INTERCEPTION(service, id, num_params)        \
+  AddToPatchedFunctions(kNtdllName, #service,               \
                         sandbox::INTERCEPTION_SERVICE_CALL, \
                         MAKE_SERVICE_NAME(service, num_params), id)
 
-#define INTERCEPT_NT(manager, service, id, num_params) \
-  ((&Target##service) ? \
-    manager->ADD_NT_INTERCEPTION(service, id, num_params) : false)
+#define INTERCEPT_NT(manager, service, id, num_params)                        \
+  ((&Target##service) ? manager->ADD_NT_INTERCEPTION(service, id, num_params) \
+                      : false)
 
 
 
 
 
-#define INTERCEPT_EAT(manager, dll, function, id, num_params) \
-  ((&Target##function) ? \
-    manager->AddToPatchedFunctions(dll, #function, sandbox::INTERCEPTION_EAT, \
-                                   MAKE_SERVICE_NAME(function, num_params), \
-                                   id) : \
-    false)
+#define INTERCEPT_EAT(manager, dll, function, id, num_params)             \
+  ((&Target##function) ? manager->AddToPatchedFunctions(                  \
+                             dll, #function, sandbox::INTERCEPTION_EAT,   \
+                             MAKE_SERVICE_NAME(function, num_params), id) \
+                       : false)
 #else  
 #if defined(_WIN64)
 #define MAKE_SERVICE_NAME(service) &Target##service##64
@@ -266,10 +268,10 @@ class InterceptionManager {
 #define MAKE_SERVICE_NAME(service) &Target##service
 #endif
 
-#define ADD_NT_INTERCEPTION(service, id, num_params) \
-  AddToPatchedFunctions(kNtdllName, #service, \
-                        sandbox::INTERCEPTION_SERVICE_CALL, \
-                        (void*)MAKE_SERVICE_NAME(service), id)
+#define ADD_NT_INTERCEPTION(service, id, num_params)            \
+  AddToPatchedFunctions(                                        \
+      kNtdllName, #service, sandbox::INTERCEPTION_SERVICE_CALL, \
+      reinterpret_cast<void*>(MAKE_SERVICE_NAME(service)), id)
 
 #define INTERCEPT_NT(manager, service, id, num_params) \
   manager->ADD_NT_INTERCEPTION(service, id, num_params)
@@ -279,8 +281,9 @@ class InterceptionManager {
 
 
 #define INTERCEPT_EAT(manager, dll, function, id, num_params) \
-  manager->AddToPatchedFunctions(dll, #function, sandbox::INTERCEPTION_EAT, \
-                                 (void*)MAKE_SERVICE_NAME(function), id)
+  manager->AddToPatchedFunctions(                             \
+      dll, #function, sandbox::INTERCEPTION_EAT,              \
+      reinterpret_cast<void*>(MAKE_SERVICE_NAME(function)), id)
 #endif  
 
 }  

@@ -6,10 +6,12 @@
 #define SANDBOX_WIN_SRC_TARGET_PROCESS_H_
 
 #include <windows.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
+#include <vector>
 
 #include "base/macros.h"
 #include "base/environment.h"
@@ -24,12 +26,13 @@ namespace win {
 
 class StartupInformation;
 
-};  
-};  
+}  
+}  
 
 namespace sandbox {
 
 class SharedMemIPCServer;
+class Sid;
 class ThreadProvider;
 
 
@@ -37,11 +40,11 @@ class ThreadProvider;
 class TargetProcess {
  public:
   
-  
   TargetProcess(base::win::ScopedHandle initial_token,
                 base::win::ScopedHandle lockdown_token,
                 HANDLE job,
-                ThreadProvider* thread_pool);
+                ThreadProvider* thread_pool,
+                const std::vector<Sid>& impersonation_capabilities);
   ~TargetProcess();
 
   
@@ -77,14 +80,10 @@ class TargetProcess {
                   DWORD* win_error);
 
   
-  HANDLE Process() const {
-    return sandbox_process_info_.process_handle();
-  }
+  HANDLE Process() const { return sandbox_process_info_.process_handle(); }
 
   
-  HANDLE Job() const {
-    return job_;
-  }
+  HANDLE Job() const { return job_; }
 
   
   
@@ -93,19 +92,13 @@ class TargetProcess {
   }
 
   
-  const wchar_t* Name() const {
-    return exe_name_.get();
-  }
+  const wchar_t* Name() const { return exe_name_.get(); }
 
   
-  DWORD ProcessId() const {
-    return sandbox_process_info_.process_id();
-  }
+  DWORD ProcessId() const { return sandbox_process_info_.process_id(); }
 
   
-  HANDLE MainThread() const {
-    return sandbox_process_info_.thread_handle();
-  }
+  HANDLE MainThread() const { return sandbox_process_info_.thread_handle(); }
 
   
   ResultCode TransferVariable(const char* name, void* address, size_t size);
@@ -131,6 +124,8 @@ class TargetProcess {
   void* base_address_;
   
   std::unique_ptr<wchar_t, base::FreeDeleter> exe_name_;
+  
+  std::vector<Sid> impersonation_capabilities_;
 
   
   friend TargetProcess* MakeTestTargetProcess(HANDLE process,
@@ -142,7 +137,6 @@ class TargetProcess {
 
 
 TargetProcess* MakeTestTargetProcess(HANDLE process, HMODULE base_address);
-
 
 }  
 

@@ -5,6 +5,8 @@
 #ifndef BASE_WIN_CURRENT_MODULE_H_
 #define BASE_WIN_CURRENT_MODULE_H_
 
+#include <windows.h>
+
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 

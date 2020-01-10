@@ -13,10 +13,19 @@
 #include "base/base_export.h"
 #include "base/hash.h"
 #include "base/logging.h"
+#include "base/token.h"
 
 namespace base {
 
 struct UnguessableTokenHash;
+
+
+
+
+
+
+
+
 
 
 
@@ -40,6 +49,12 @@ class BASE_EXPORT UnguessableToken {
   
   
   
+  static const UnguessableToken& Null();
+
+  
+  
+  
+  
   
   static UnguessableToken Deserialize(uint64_t high, uint64_t low);
 
@@ -50,27 +65,28 @@ class BASE_EXPORT UnguessableToken {
   
   uint64_t GetHighForSerialization() const {
     DCHECK(!is_empty());
-    return high_;
+    return token_.high();
   }
 
   
   uint64_t GetLowForSerialization() const {
     DCHECK(!is_empty());
-    return low_;
+    return token_.low();
   }
 
-  bool is_empty() const { return high_ == 0 && low_ == 0; }
+  bool is_empty() const { return token_.is_zero(); }
 
-  std::string ToString() const;
+  
+  std::string ToString() const { return token_.ToString(); }
 
   explicit operator bool() const { return !is_empty(); }
 
   bool operator<(const UnguessableToken& other) const {
-    return std::tie(high_, low_) < std::tie(other.high_, other.low_);
+    return token_ < other.token_;
   }
 
   bool operator==(const UnguessableToken& other) const {
-    return high_ == other.high_ && low_ == other.low_;
+    return token_ == other.token_;
   }
 
   bool operator!=(const UnguessableToken& other) const {
@@ -79,12 +95,9 @@ class BASE_EXPORT UnguessableToken {
 
  private:
   friend struct UnguessableTokenHash;
-  UnguessableToken(uint64_t high, uint64_t low);
+  explicit UnguessableToken(const Token& token);
 
-  
-  
-  uint64_t high_ = 0;
-  uint64_t low_ = 0;
+  base::Token token_;
 };
 
 BASE_EXPORT std::ostream& operator<<(std::ostream& out,
@@ -94,7 +107,7 @@ BASE_EXPORT std::ostream& operator<<(std::ostream& out,
 struct UnguessableTokenHash {
   size_t operator()(const base::UnguessableToken& token) const {
     DCHECK(token);
-    return base::HashInts64(token.high_, token.low_);
+    return TokenHash()(token.token_);
   }
 };
 

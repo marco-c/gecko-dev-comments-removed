@@ -8,11 +8,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/memory/scoped_refptr.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/security_level.h"
 
 namespace sandbox {
+
+class AppContainerProfile;
 
 class TargetPolicy {
  public:
@@ -21,13 +24,13 @@ class TargetPolicy {
   
   
   enum SubSystem {
-    SUBSYS_FILES,             
-    SUBSYS_NAMED_PIPES,       
-    SUBSYS_PROCESS,           
-    SUBSYS_REGISTRY,          
-    SUBSYS_SYNC,              
-    SUBSYS_HANDLES,           
-    SUBSYS_WIN32K_LOCKDOWN    
+    SUBSYS_FILES,           
+    SUBSYS_NAMED_PIPES,     
+    SUBSYS_PROCESS,         
+    SUBSYS_REGISTRY,        
+    SUBSYS_SYNC,            
+    SUBSYS_HANDLES,         
+    SUBSYS_WIN32K_LOCKDOWN  
   };
 
   
@@ -182,9 +185,6 @@ class TargetPolicy {
   virtual ResultCode SetDelayedIntegrityLevel(IntegrityLevel level) = 0;
 
   
-  virtual ResultCode SetCapability(const wchar_t* sid) = 0;
-
-  
   
   virtual ResultCode SetLowBox(const wchar_t* sid) = 0;
 
@@ -234,7 +234,8 @@ class TargetPolicy {
   
   
   
-  virtual ResultCode AddRule(SubSystem subsystem, Semantics semantics,
+  virtual ResultCode AddRule(SubSystem subsystem,
+                             Semantics semantics,
                              const wchar_t* pattern) = 0;
 
   
@@ -261,9 +262,26 @@ class TargetPolicy {
   virtual void SetEnableOPMRedirection() = 0;
   
   virtual bool GetEnableOPMRedirection() = 0;
+
+  
+  
+  
+  
+  virtual ResultCode AddAppContainerProfile(const wchar_t* package_name,
+                                            bool create_profile) = 0;
+
+  
+  virtual scoped_refptr<AppContainerProfile> GetAppContainerProfile() = 0;
+
+  
+  
+  
+  virtual void SetEffectiveToken(HANDLE token) = 0;
+
+ protected:
+  ~TargetPolicy() {}
 };
 
 }  
-
 
 #endif  

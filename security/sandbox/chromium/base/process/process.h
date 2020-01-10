@@ -16,7 +16,7 @@
 #endif
 
 #if defined(OS_FUCHSIA)
-#include "base/fuchsia/scoped_mx_handle.h"
+#include <lib/zx/process.h>
 #endif
 
 #if defined(OS_MACOSX)
@@ -45,6 +45,8 @@ extern const Feature kMacAllowBackgroundingProcesses;
 
 class BASE_EXPORT Process {
  public:
+  
+  
   explicit Process(ProcessHandle handle = kNullProcessHandle);
 
   Process(Process&& other);
@@ -81,7 +83,7 @@ class BASE_EXPORT Process {
   static bool CanBackgroundProcesses();
 
   
-  static void TerminateCurrentProcessImmediately(int exit_code);
+  [[noreturn]] static void TerminateCurrentProcessImmediately(int exit_code);
 
   
   bool IsValid() const;
@@ -96,11 +98,31 @@ class BASE_EXPORT Process {
   
   ProcessId Pid() const;
 
+#if !defined(OS_ANDROID)
+  
+  
+  
+  
+  
+  
+  Time CreationTime() const;
+#endif  
+
   
   bool is_current() const;
 
   
   void Close();
+
+  
+  
+  
+  
+#if defined(OS_WIN)
+  bool IsRunning() const {
+    return !WaitForExitWithTimeout(base::TimeDelta(), nullptr);
+  }
+#endif
 
   
   
@@ -121,6 +143,13 @@ class BASE_EXPORT Process {
   
   
   bool WaitForExitWithTimeout(TimeDelta timeout, int* exit_code) const;
+
+  
+  
+  
+  
+  
+  void Exited(int exit_code) const;
 
 #if defined(OS_MACOSX)
   
@@ -143,9 +172,6 @@ class BASE_EXPORT Process {
   
   
   bool SetProcessBackgrounded(PortProvider* port_provider, bool value);
-
-  
-  static bool IsAppNapEnabled();
 #else
   
   
@@ -172,7 +198,7 @@ class BASE_EXPORT Process {
 #if defined(OS_WIN)
   win::ScopedHandle process_;
 #elif defined(OS_FUCHSIA)
-  ScopedMxHandle process_;
+  zx::process process_;
 #else
   ProcessHandle process_;
 #endif

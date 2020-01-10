@@ -11,17 +11,18 @@
 #include "build/build_config.h"
 
 #if defined(OS_WIN)
-#include <windows.h>
 #include "base/process/process_handle.h"
+#include "base/win/windows_types.h"
 #elif defined(OS_MACOSX) && !defined(OS_IOS)
 #include <mach/mach.h>
 #include "base/base_export.h"
-#include "base/file_descriptor_posix.h"
 #include "base/macros.h"
 #include "base/process/process_handle.h"
 #elif defined(OS_POSIX)
 #include <sys/types.h>
 #include "base/file_descriptor_posix.h"
+#elif defined(OS_FUCHSIA)
+#include <zircon/types.h>
 #endif
 
 namespace base {
@@ -74,14 +75,7 @@ class BASE_EXPORT SharedMemoryHandle {
   
   size_t GetSize() const;
 
-#if defined(OS_MACOSX) && !defined(OS_IOS)
-  enum Type {
-    
-    POSIX,
-    
-    MACH,
-  };
-
+#if defined(OS_WIN)
   
   
   
@@ -90,6 +84,9 @@ class BASE_EXPORT SharedMemoryHandle {
   
   
   
+  SharedMemoryHandle(HANDLE h, size_t size, const base::UnguessableToken& guid);
+  HANDLE GetHandle() const;
+#elif defined(OS_FUCHSIA)
   
   
   
@@ -98,10 +95,11 @@ class BASE_EXPORT SharedMemoryHandle {
   
   
   
-  SharedMemoryHandle(const base::FileDescriptor& file_descriptor,
+  SharedMemoryHandle(zx_handle_t h,
                      size_t size,
                      const base::UnguessableToken& guid);
-
+  zx_handle_t GetHandle() const;
+#elif defined(OS_MACOSX) && !defined(OS_IOS)
   
   
   
@@ -125,42 +123,7 @@ class BASE_EXPORT SharedMemoryHandle {
   
   
   bool MapAt(off_t offset, size_t bytes, void** memory, bool read_only);
-#elif defined(OS_FUCHSIA)
-  
-  
-  
-  
-  
-  
-  
-  
-  SharedMemoryHandle(mx_handle_t h,
-                     size_t size,
-                     const base::UnguessableToken& guid);
-  mx_handle_t GetHandle() const;
-#elif defined(OS_WIN)
-  
-  
-  
-  
-  
-  
-  
-  
-  SharedMemoryHandle(HANDLE h, size_t size, const base::UnguessableToken& guid);
-  HANDLE GetHandle() const;
-#else
-  
-  
-  
-  
-  
-  
-  
-  SharedMemoryHandle(const base::FileDescriptor& file_descriptor,
-                     size_t size,
-                     const base::UnguessableToken& guid);
-
+#elif defined(OS_POSIX)
   
   
   
@@ -175,31 +138,45 @@ class BASE_EXPORT SharedMemoryHandle {
   int Release();
 #endif
 
+#if defined(OS_ANDROID)
+  
+  
+  void SetReadOnly() { read_only_ = true; }
+
+  
+  
+  bool IsReadOnly() const { return read_only_; }
+
+  
+  bool IsRegionReadOnly() const;
+
+  
+  
+  bool SetRegionReadOnly() const;
+#endif
+
+#if defined(OS_POSIX) && !(defined(OS_MACOSX) && !defined(OS_IOS))
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SharedMemoryHandle(const base::FileDescriptor& file_descriptor,
+                     size_t size,
+                     const base::UnguessableToken& guid);
+#endif
+
  private:
-#if defined(OS_MACOSX) && !defined(OS_IOS)
-  friend class SharedMemory;
-
-  Type type_ = MACH;
-
-  
-  
-  union {
-    FileDescriptor file_descriptor_;
-
-    struct {
-      mach_port_t memory_object_ = MACH_PORT_NULL;
-
-      
-      
-      
-      
-      bool ownership_passes_to_ipc_ = false;
-    };
-  };
-#elif defined(OS_FUCHSIA)
-  mx_handle_t handle_ = MX_HANDLE_INVALID;
-  bool ownership_passes_to_ipc_ = false;
-#elif defined(OS_WIN)
+#if defined(OS_WIN)
   HANDLE handle_ = nullptr;
 
   
@@ -208,7 +185,27 @@ class BASE_EXPORT SharedMemoryHandle {
   
   
   bool ownership_passes_to_ipc_ = false;
-#else
+#elif defined(OS_FUCHSIA)
+  zx_handle_t handle_ = ZX_HANDLE_INVALID;
+  bool ownership_passes_to_ipc_ = false;
+#elif defined(OS_MACOSX) && !defined(OS_IOS)
+  friend class SharedMemory;
+  friend bool CheckReadOnlySharedMemoryHandleForTesting(
+      SharedMemoryHandle handle);
+
+  mach_port_t memory_object_ = MACH_PORT_NULL;
+
+  
+  
+  
+  
+  bool ownership_passes_to_ipc_ = false;
+#elif defined(OS_ANDROID)
+  friend class SharedMemory;
+
+  FileDescriptor file_descriptor_;
+  bool read_only_ = false;
+#elif defined(OS_POSIX)
   FileDescriptor file_descriptor_;
 #endif
 

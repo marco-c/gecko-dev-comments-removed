@@ -7,20 +7,113 @@
 
 #include <stddef.h>
 
+#include <functional>
+#include <memory>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
-#include "base/bind_helpers.h"
+#include "base/bind.h"
 #include "base/callback_internal.h"
+#include "base/compiler_specific.h"
 #include "base/memory/raw_scoped_refptr_mismatch_checker.h"
 #include "base/memory/weak_ptr.h"
 #include "base/template_util.h"
-#include "base/tuple.h"
 #include "build/build_config.h"
 
+#if defined(OS_MACOSX) && !HAS_FEATURE(objc_arc)
+#include "base/mac/scoped_block.h"
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(OS_WIN)
+namespace Microsoft {
+namespace WRL {
+template <typename>
+class ComPtr;
+}  
+}  
+#endif
+
 namespace base {
+
+template <typename T>
+struct IsWeakReceiver;
+
+template <typename>
+struct BindUnwrapTraits;
+
+template <typename Functor, typename BoundArgsTuple, typename SFINAE = void>
+struct CallbackCancellationTraits;
+
 namespace internal {
 
+template <typename Functor, typename SFINAE = void>
+struct FunctorTraits;
+
+template <typename T>
+class UnretainedWrapper {
+ public:
+  explicit UnretainedWrapper(T* o) : ptr_(o) {}
+  T* get() const { return ptr_; }
+
+ private:
+  T* ptr_;
+};
+
+template <typename T>
+class RetainedRefWrapper {
+ public:
+  explicit RetainedRefWrapper(T* o) : ptr_(o) {}
+  explicit RetainedRefWrapper(scoped_refptr<T> o) : ptr_(std::move(o)) {}
+  T* get() const { return ptr_.get(); }
+
+ private:
+  scoped_refptr<T> ptr_;
+};
+
+template <typename T>
+struct IgnoreResultHelper {
+  explicit IgnoreResultHelper(T functor) : functor_(std::move(functor)) {}
+  explicit operator bool() const { return !!functor_; }
+
+  T functor_;
+};
+
+template <typename T>
+class OwnedWrapper {
+ public:
+  explicit OwnedWrapper(T* o) : ptr_(o) {}
+  explicit OwnedWrapper(std::unique_ptr<T>&& ptr) : ptr_(std::move(ptr)) {}
+  T* get() const { return ptr_.get(); }
+
+ private:
+  std::unique_ptr<T> ptr_;
+};
 
 
 
@@ -45,13 +138,157 @@ namespace internal {
 
 
 
+template <typename T>
+class PassedWrapper {
+ public:
+  explicit PassedWrapper(T&& scoper)
+      : is_valid_(true), scoper_(std::move(scoper)) {}
+  PassedWrapper(PassedWrapper&& other)
+      : is_valid_(other.is_valid_), scoper_(std::move(other.scoper_)) {}
+  T Take() const {
+    CHECK(is_valid_);
+    is_valid_ = false;
+    return std::move(scoper_);
+  }
+
+ private:
+  mutable bool is_valid_;
+  mutable T scoper_;
+};
+
+template <typename T>
+using Unwrapper = BindUnwrapTraits<std::decay_t<T>>;
+
+template <typename T>
+decltype(auto) Unwrap(T&& o) {
+  return Unwrapper<T>::Unwrap(std::forward<T>(o));
+}
+
+
+
+
+
+
+
+
+template <bool is_method, typename... Args>
+struct IsWeakMethod : std::false_type {};
+
+template <typename T, typename... Args>
+struct IsWeakMethod<true, T, Args...> : IsWeakReceiver<T> {};
+
+
+template <typename... Types>
+struct TypeList {};
+
+
+template <size_t n, typename List>
+struct DropTypeListItemImpl;
+
+
+template <size_t n, typename T, typename... List>
+struct DropTypeListItemImpl<n, TypeList<T, List...>>
+    : DropTypeListItemImpl<n - 1, TypeList<List...>> {};
+
+template <typename T, typename... List>
+struct DropTypeListItemImpl<0, TypeList<T, List...>> {
+  using Type = TypeList<T, List...>;
+};
+
+template <>
+struct DropTypeListItemImpl<0, TypeList<>> {
+  using Type = TypeList<>;
+};
+
+
+template <size_t n, typename List>
+using DropTypeListItem = typename DropTypeListItemImpl<n, List>::Type;
+
+
+template <size_t n, typename List, typename... Accum>
+struct TakeTypeListItemImpl;
+
+
+template <size_t n, typename T, typename... List, typename... Accum>
+struct TakeTypeListItemImpl<n, TypeList<T, List...>, Accum...>
+    : TakeTypeListItemImpl<n - 1, TypeList<List...>, Accum..., T> {};
+
+template <typename T, typename... List, typename... Accum>
+struct TakeTypeListItemImpl<0, TypeList<T, List...>, Accum...> {
+  using Type = TypeList<Accum...>;
+};
+
+template <typename... Accum>
+struct TakeTypeListItemImpl<0, TypeList<>, Accum...> {
+  using Type = TypeList<Accum...>;
+};
+
+
+
+
+template <size_t n, typename List>
+using TakeTypeListItem = typename TakeTypeListItemImpl<n, List>::Type;
+
+
+template <typename List1, typename List2>
+struct ConcatTypeListsImpl;
+
+template <typename... Types1, typename... Types2>
+struct ConcatTypeListsImpl<TypeList<Types1...>, TypeList<Types2...>> {
+  using Type = TypeList<Types1..., Types2...>;
+};
+
+
+template <typename List1, typename List2>
+using ConcatTypeLists = typename ConcatTypeListsImpl<List1, List2>::Type;
+
+
+template <typename R, typename ArgList>
+struct MakeFunctionTypeImpl;
+
+template <typename R, typename... Args>
+struct MakeFunctionTypeImpl<R, TypeList<Args...>> {
+  
+  
+  typedef R Type(Args...);
+};
+
+
+
+template <typename R, typename ArgList>
+using MakeFunctionType = typename MakeFunctionTypeImpl<R, ArgList>::Type;
+
+
+template <typename Signature>
+struct ExtractArgsImpl;
+
+template <typename R, typename... Args>
+struct ExtractArgsImpl<R(Args...)> {
+  using ReturnType = R;
+  using ArgsList = TypeList<Args...>;
+};
+
+
+
+template <typename Signature>
+using ExtractArgs = typename ExtractArgsImpl<Signature>::ArgsList;
+
+
+
+template <typename Signature>
+using ExtractReturnType = typename ExtractArgsImpl<Signature>::ReturnType;
 
 template <typename Callable,
           typename Signature = decltype(&Callable::operator())>
 struct ExtractCallableRunTypeImpl;
 
 template <typename Callable, typename R, typename... Args>
-struct ExtractCallableRunTypeImpl<Callable, R(Callable::*)(Args...) const> {
+struct ExtractCallableRunTypeImpl<Callable, R (Callable::*)(Args...)> {
+  using Type = R(Args...);
+};
+
+template <typename Callable, typename R, typename... Args>
+struct ExtractCallableRunTypeImpl<Callable, R (Callable::*)(Args...) const> {
   using Type = R(Args...);
 };
 
@@ -76,16 +313,12 @@ using ExtractCallableRunType =
 
 
 
-
-
-
-
 template <typename Functor, typename SFINAE = void>
-struct IsConvertibleToRunType : std::false_type {};
+struct IsCallableObject : std::false_type {};
 
 template <typename Callable>
-struct IsConvertibleToRunType<Callable, void_t<decltype(&Callable::operator())>>
-    : std::is_convertible<Callable, ExtractCallableRunType<Callable>*> {};
+struct IsCallableObject<Callable, void_t<decltype(&Callable::operator())>>
+    : std::true_type {};
 
 
 
@@ -99,9 +332,9 @@ struct HasRefCountedTypeAsRawPtr : std::false_type {};
 
 template <typename T, typename... Args>
 struct HasRefCountedTypeAsRawPtr<T, Args...>
-    : std::conditional<NeedsScopedRefptrButGetsRawPtr<T>::value,
-                       std::true_type,
-                       HasRefCountedTypeAsRawPtr<Args...>>::type {};
+    : std::conditional_t<NeedsScopedRefptrButGetsRawPtr<T>::value,
+                         std::true_type,
+                         HasRefCountedTypeAsRawPtr<Args...>> {};
 
 
 
@@ -124,18 +357,33 @@ struct FunctorTraits;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename Functor>
-struct FunctorTraits<
-    Functor,
-    typename std::enable_if<IsConvertibleToRunType<Functor>::value>::type> {
+struct FunctorTraits<Functor,
+                     std::enable_if_t<IsCallableObject<Functor>::value &&
+                                      std::is_empty<Functor>::value>> {
   using RunType = ExtractCallableRunType<Functor>;
   static constexpr bool is_method = false;
   static constexpr bool is_nullable = false;
 
-  template <typename... RunArgs>
-  static ExtractReturnType<RunType>
-  Invoke(const Functor& functor, RunArgs&&... args) {
-    return functor(std::forward<RunArgs>(args)...);
+  template <typename RunFunctor, typename... RunArgs>
+  static ExtractReturnType<RunType> Invoke(RunFunctor&& functor,
+                                           RunArgs&&... args) {
+    return std::forward<RunFunctor>(functor)(std::forward<RunArgs>(args)...);
   }
 };
 
@@ -146,9 +394,9 @@ struct FunctorTraits<R (*)(Args...)> {
   static constexpr bool is_method = false;
   static constexpr bool is_nullable = true;
 
-  template <typename... RunArgs>
-  static R Invoke(R (*function)(Args...), RunArgs&&... args) {
-    return function(std::forward<RunArgs>(args)...);
+  template <typename Function, typename... RunArgs>
+  static R Invoke(Function&& function, RunArgs&&... args) {
+    return std::forward<Function>(function)(std::forward<RunArgs>(args)...);
   }
 };
 
@@ -182,6 +430,61 @@ struct FunctorTraits<R(__fastcall*)(Args...)> {
 
 #endif  
 
+#if defined(OS_MACOSX)
+
+
+
+
+
+
+
+
+
+
+
+
+#if HAS_FEATURE(objc_arc)
+
+template <typename R, typename... Args>
+struct FunctorTraits<R (^)(Args...)> {
+  using RunType = R(Args...);
+  static constexpr bool is_method = false;
+  static constexpr bool is_nullable = true;
+
+  template <typename BlockType, typename... RunArgs>
+  static R Invoke(BlockType&& block, RunArgs&&... args) {
+    
+    
+    
+    
+    
+    
+    __attribute__((objc_precise_lifetime)) R (^scoped_block)(Args...) = block;
+    return scoped_block(std::forward<RunArgs>(args)...);
+  }
+};
+
+#else  
+
+template <typename R, typename... Args>
+struct FunctorTraits<base::mac::ScopedBlock<R (^)(Args...)>> {
+  using RunType = R(Args...);
+  static constexpr bool is_method = false;
+  static constexpr bool is_nullable = true;
+
+  template <typename BlockType, typename... RunArgs>
+  static R Invoke(BlockType&& block, RunArgs&&... args) {
+    
+    
+    
+    base::mac::ScopedBlock<R (^)(Args...)> scoped_block(block);
+    return scoped_block.get()(std::forward<RunArgs>(args)...);
+  }
+};
+
+#endif  
+#endif  
+
 
 template <typename R, typename Receiver, typename... Args>
 struct FunctorTraits<R (Receiver::*)(Args...)> {
@@ -189,8 +492,8 @@ struct FunctorTraits<R (Receiver::*)(Args...)> {
   static constexpr bool is_method = true;
   static constexpr bool is_nullable = true;
 
-  template <typename ReceiverPtr, typename... RunArgs>
-  static R Invoke(R (Receiver::*method)(Args...),
+  template <typename Method, typename ReceiverPtr, typename... RunArgs>
+  static R Invoke(Method method,
                   ReceiverPtr&& receiver_ptr,
                   RunArgs&&... args) {
     return ((*receiver_ptr).*method)(std::forward<RunArgs>(args)...);
@@ -204,13 +507,30 @@ struct FunctorTraits<R (Receiver::*)(Args...) const> {
   static constexpr bool is_method = true;
   static constexpr bool is_nullable = true;
 
-  template <typename ReceiverPtr, typename... RunArgs>
-  static R Invoke(R (Receiver::*method)(Args...) const,
+  template <typename Method, typename ReceiverPtr, typename... RunArgs>
+  static R Invoke(Method method,
                   ReceiverPtr&& receiver_ptr,
                   RunArgs&&... args) {
     return ((*receiver_ptr).*method)(std::forward<RunArgs>(args)...);
   }
 };
+
+#ifdef __cpp_noexcept_function_type
+
+
+
+template <typename R, typename... Args>
+struct FunctorTraits<R (*)(Args...) noexcept> : FunctorTraits<R (*)(Args...)> {
+};
+
+template <typename R, typename Receiver, typename... Args>
+struct FunctorTraits<R (Receiver::*)(Args...) noexcept>
+    : FunctorTraits<R (Receiver::*)(Args...)> {};
+
+template <typename R, typename Receiver, typename... Args>
+struct FunctorTraits<R (Receiver::*)(Args...) const noexcept>
+    : FunctorTraits<R (Receiver::*)(Args...) const> {};
+#endif
 
 
 template <typename T>
@@ -258,7 +578,7 @@ struct FunctorTraits<RepeatingCallback<R(Args...)>> {
 };
 
 template <typename Functor>
-using MakeFunctorTraits = FunctorTraits<typename std::decay<Functor>::type>;
+using MakeFunctorTraits = FunctorTraits<std::decay_t<Functor>>;
 
 
 
@@ -310,7 +630,8 @@ struct Invoker;
 
 template <typename StorageType, typename R, typename... UnboundArgs>
 struct Invoker<StorageType, R(UnboundArgs...)> {
-  static R RunOnce(BindStateBase* base, UnboundArgs&&... unbound_args) {
+  static R RunOnce(BindStateBase* base,
+                   PassingType<UnboundArgs>... unbound_args) {
     
     
     
@@ -319,11 +640,11 @@ struct Invoker<StorageType, R(UnboundArgs...)> {
         std::tuple_size<decltype(storage->bound_args_)>::value;
     return RunImpl(std::move(storage->functor_),
                    std::move(storage->bound_args_),
-                   MakeIndexSequence<num_bound_args>(),
+                   std::make_index_sequence<num_bound_args>(),
                    std::forward<UnboundArgs>(unbound_args)...);
   }
 
-  static R Run(BindStateBase* base, UnboundArgs&&... unbound_args) {
+  static R Run(BindStateBase* base, PassingType<UnboundArgs>... unbound_args) {
     
     
     
@@ -331,7 +652,7 @@ struct Invoker<StorageType, R(UnboundArgs...)> {
     static constexpr size_t num_bound_args =
         std::tuple_size<decltype(storage->bound_args_)>::value;
     return RunImpl(storage->functor_, storage->bound_args_,
-                   MakeIndexSequence<num_bound_args>(),
+                   std::make_index_sequence<num_bound_args>(),
                    std::forward<UnboundArgs>(unbound_args)...);
   }
 
@@ -339,16 +660,14 @@ struct Invoker<StorageType, R(UnboundArgs...)> {
   template <typename Functor, typename BoundArgsTuple, size_t... indices>
   static inline R RunImpl(Functor&& functor,
                           BoundArgsTuple&& bound,
-                          IndexSequence<indices...>,
+                          std::index_sequence<indices...>,
                           UnboundArgs&&... unbound_args) {
     static constexpr bool is_method = MakeFunctorTraits<Functor>::is_method;
 
-    using DecayedArgsTuple = typename std::decay<BoundArgsTuple>::type;
+    using DecayedArgsTuple = std::decay_t<BoundArgsTuple>;
     static constexpr bool is_weak_call =
         IsWeakMethod<is_method,
-                     typename std::tuple_element<
-                         indices,
-                         DecayedArgsTuple>::type...>::value;
+                     std::tuple_element_t<indices, DecayedArgsTuple>...>();
 
     return InvokeHelper<is_weak_call, R>::MakeItSo(
         std::forward<Functor>(functor),
@@ -387,37 +706,96 @@ struct BindTypeHelper {
 };
 
 template <typename Functor>
-typename std::enable_if<FunctorTraits<Functor>::is_nullable, bool>::type
-IsNull(const Functor& functor) {
+std::enable_if_t<FunctorTraits<Functor>::is_nullable, bool> IsNull(
+    const Functor& functor) {
   return !functor;
 }
 
 template <typename Functor>
-typename std::enable_if<!FunctorTraits<Functor>::is_nullable, bool>::type
-IsNull(const Functor&) {
+std::enable_if_t<!FunctorTraits<Functor>::is_nullable, bool> IsNull(
+    const Functor&) {
   return false;
 }
 
 
 template <typename Functor, typename BoundArgsTuple, size_t... indices>
-bool ApplyCancellationTraitsImpl(const Functor& functor,
+bool QueryCancellationTraitsImpl(BindStateBase::CancellationQueryMode mode,
+                                 const Functor& functor,
                                  const BoundArgsTuple& bound_args,
-                                 IndexSequence<indices...>) {
-  return CallbackCancellationTraits<Functor, BoundArgsTuple>::IsCancelled(
-      functor, std::get<indices>(bound_args)...);
+                                 std::index_sequence<indices...>) {
+  switch (mode) {
+    case BindStateBase::IS_CANCELLED:
+      return CallbackCancellationTraits<Functor, BoundArgsTuple>::IsCancelled(
+          functor, std::get<indices>(bound_args)...);
+    case BindStateBase::MAYBE_VALID:
+      return CallbackCancellationTraits<Functor, BoundArgsTuple>::MaybeValid(
+          functor, std::get<indices>(bound_args)...);
+  }
+  NOTREACHED();
 }
 
 
 
 template <typename BindStateType>
-bool ApplyCancellationTraits(const BindStateBase* base) {
+bool QueryCancellationTraits(const BindStateBase* base,
+                             BindStateBase::CancellationQueryMode mode) {
   const BindStateType* storage = static_cast<const BindStateType*>(base);
   static constexpr size_t num_bound_args =
       std::tuple_size<decltype(storage->bound_args_)>::value;
-  return ApplyCancellationTraitsImpl(
-      storage->functor_, storage->bound_args_,
-      MakeIndexSequence<num_bound_args>());
-};
+  return QueryCancellationTraitsImpl(
+      mode, storage->functor_, storage->bound_args_,
+      std::make_index_sequence<num_bound_args>());
+}
+
+
+template <typename Functor, typename Receiver, typename... Unused>
+std::enable_if_t<
+    !(MakeFunctorTraits<Functor>::is_method &&
+      std::is_pointer<std::decay_t<Receiver>>::value &&
+      IsRefCountedType<std::remove_pointer_t<std::decay_t<Receiver>>>::value)>
+BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {}
+
+template <typename Functor>
+void BanUnconstructedRefCountedReceiver() {}
+
+
+template <typename Functor, typename Receiver, typename... Unused>
+std::enable_if_t<
+    MakeFunctorTraits<Functor>::is_method &&
+    std::is_pointer<std::decay_t<Receiver>>::value &&
+    IsRefCountedType<std::remove_pointer_t<std::decay_t<Receiver>>>::value>
+BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {
+  DCHECK(receiver);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  DCHECK(receiver->HasAtLeastOneRef())
+      << "base::Bind() refuses to create the first reference to ref-counted "
+         "objects. That is typically happens around PostTask() in their "
+         "constructor, and such objects can be destroyed before `new` returns "
+         "if the task resolves fast enough.";
+}
 
 
 
@@ -430,16 +808,19 @@ struct BindState final : BindStateBase {
                                  std::tuple<BoundArgs...>>::is_cancellable>;
 
   template <typename ForwardFunctor, typename... ForwardBoundArgs>
-  explicit BindState(BindStateBase::InvokeFuncStorage invoke_func,
-                     ForwardFunctor&& functor,
-                     ForwardBoundArgs&&... bound_args)
-      
-      
-      
-      : BindState(IsCancellable{},
-                  invoke_func,
-                  std::forward<ForwardFunctor>(functor),
-                  std::forward<ForwardBoundArgs>(bound_args)...) {
+  static BindState* Create(BindStateBase::InvokeFuncStorage invoke_func,
+                           ForwardFunctor&& functor,
+                           ForwardBoundArgs&&... bound_args) {
+    
+    
+    BanUnconstructedRefCountedReceiver<ForwardFunctor>(bound_args...);
+
+    
+    
+    
+    return new BindState(IsCancellable{}, invoke_func,
+                         std::forward<ForwardFunctor>(functor),
+                         std::forward<ForwardBoundArgs>(bound_args)...);
   }
 
   Functor functor_;
@@ -453,7 +834,7 @@ struct BindState final : BindStateBase {
                      ForwardBoundArgs&&... bound_args)
       : BindStateBase(invoke_func,
                       &Destroy,
-                      &ApplyCancellationTraits<BindState>),
+                      &QueryCancellationTraits<BindState>),
         functor_(std::forward<ForwardFunctor>(functor)),
         bound_args_(std::forward<ForwardBoundArgs>(bound_args)...) {
     DCHECK(!IsNull(functor_));
@@ -470,7 +851,7 @@ struct BindState final : BindStateBase {
     DCHECK(!IsNull(functor_));
   }
 
-  ~BindState() {}
+  ~BindState() = default;
 
   static void Destroy(const BindStateBase* self) {
     delete static_cast<const BindState*>(self);
@@ -483,38 +864,39 @@ struct MakeBindStateTypeImpl;
 
 template <typename Functor, typename... BoundArgs>
 struct MakeBindStateTypeImpl<false, Functor, BoundArgs...> {
-  static_assert(!HasRefCountedTypeAsRawPtr<
-                    typename std::decay<BoundArgs>::type...>::value,
+  static_assert(!HasRefCountedTypeAsRawPtr<std::decay_t<BoundArgs>...>::value,
                 "A parameter is a refcounted type and needs scoped_refptr.");
-  using Type = BindState<typename std::decay<Functor>::type,
-                         typename std::decay<BoundArgs>::type...>;
+  using Type = BindState<std::decay_t<Functor>, std::decay_t<BoundArgs>...>;
 };
 
 template <typename Functor>
 struct MakeBindStateTypeImpl<true, Functor> {
-  using Type = BindState<typename std::decay<Functor>::type>;
+  using Type = BindState<std::decay_t<Functor>>;
 };
 
 template <typename Functor, typename Receiver, typename... BoundArgs>
 struct MakeBindStateTypeImpl<true, Functor, Receiver, BoundArgs...> {
-  static_assert(
-      !std::is_array<typename std::remove_reference<Receiver>::type>::value,
-      "First bound argument to a method cannot be an array.");
-  static_assert(!HasRefCountedTypeAsRawPtr<
-                    typename std::decay<BoundArgs>::type...>::value,
-                "A parameter is a refcounted type and needs scoped_refptr.");
-
  private:
-  using DecayedReceiver = typename std::decay<Receiver>::type;
+  using DecayedReceiver = std::decay_t<Receiver>;
+
+  static_assert(!std::is_array<std::remove_reference_t<Receiver>>::value,
+                "First bound argument to a method cannot be an array.");
+  static_assert(
+      !std::is_pointer<DecayedReceiver>::value ||
+          IsRefCountedType<std::remove_pointer_t<DecayedReceiver>>::value,
+      "Receivers may not be raw pointers. If using a raw pointer here is safe"
+      " and has no lifetime concerns, use base::Unretained() and document why"
+      " it's safe.");
+  static_assert(!HasRefCountedTypeAsRawPtr<std::decay_t<BoundArgs>...>::value,
+                "A parameter is a refcounted type and needs scoped_refptr.");
 
  public:
   using Type = BindState<
-      typename std::decay<Functor>::type,
-      typename std::conditional<
-          std::is_pointer<DecayedReceiver>::value,
-          scoped_refptr<typename std::remove_pointer<DecayedReceiver>::type>,
-          DecayedReceiver>::type,
-      typename std::decay<BoundArgs>::type...>;
+      std::decay_t<Functor>,
+      std::conditional_t<std::is_pointer<DecayedReceiver>::value,
+                         scoped_refptr<std::remove_pointer_t<DecayedReceiver>>,
+                         DecayedReceiver>,
+      std::decay_t<BoundArgs>...>;
 };
 
 template <typename Functor, typename... BoundArgs>
@@ -524,6 +906,136 @@ using MakeBindStateType =
                                    BoundArgs...>::Type;
 
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct IsWeakReceiver : std::false_type {};
+
+template <typename T>
+struct IsWeakReceiver<std::reference_wrapper<T>> : IsWeakReceiver<T> {};
+
+template <typename T>
+struct IsWeakReceiver<WeakPtr<T>> : std::true_type {};
+
+
+
+
+template <typename>
+struct BindUnwrapTraits {
+  template <typename T>
+  static T&& Unwrap(T&& o) {
+    return std::forward<T>(o);
+  }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::UnretainedWrapper<T>> {
+  static T* Unwrap(const internal::UnretainedWrapper<T>& o) { return o.get(); }
+};
+
+template <typename T>
+struct BindUnwrapTraits<std::reference_wrapper<T>> {
+  static T& Unwrap(std::reference_wrapper<T> o) { return o.get(); }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::RetainedRefWrapper<T>> {
+  static T* Unwrap(const internal::RetainedRefWrapper<T>& o) { return o.get(); }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::OwnedWrapper<T>> {
+  static T* Unwrap(const internal::OwnedWrapper<T>& o) { return o.get(); }
+};
+
+template <typename T>
+struct BindUnwrapTraits<internal::PassedWrapper<T>> {
+  static T Unwrap(const internal::PassedWrapper<T>& o) { return o.Take(); }
+};
+
+#if defined(OS_WIN)
+template <typename T>
+struct BindUnwrapTraits<Microsoft::WRL::ComPtr<T>> {
+  static T* Unwrap(const Microsoft::WRL::ComPtr<T>& ptr) { return ptr.Get(); }
+};
+#endif
+
+
+
+
+
+template <typename Functor, typename BoundArgsTuple, typename SFINAE>
+struct CallbackCancellationTraits {
+  static constexpr bool is_cancellable = false;
+};
+
+
+template <typename Functor, typename... BoundArgs>
+struct CallbackCancellationTraits<
+    Functor,
+    std::tuple<BoundArgs...>,
+    std::enable_if_t<
+        internal::IsWeakMethod<internal::FunctorTraits<Functor>::is_method,
+                               BoundArgs...>::value>> {
+  static constexpr bool is_cancellable = true;
+
+  template <typename Receiver, typename... Args>
+  static bool IsCancelled(const Functor&,
+                          const Receiver& receiver,
+                          const Args&...) {
+    return !receiver;
+  }
+
+  template <typename Receiver, typename... Args>
+  static bool MaybeValid(const Functor&,
+                         const Receiver& receiver,
+                         const Args&...) {
+    return receiver.MaybeValid();
+  }
+};
+
+
+template <typename Signature, typename... BoundArgs>
+struct CallbackCancellationTraits<OnceCallback<Signature>,
+                                  std::tuple<BoundArgs...>> {
+  static constexpr bool is_cancellable = true;
+
+  template <typename Functor>
+  static bool IsCancelled(const Functor& functor, const BoundArgs&...) {
+    return functor.IsCancelled();
+  }
+
+  template <typename Functor>
+  static bool MaybeValid(const Functor& functor, const BoundArgs&...) {
+    return functor.MaybeValid();
+  }
+};
+
+template <typename Signature, typename... BoundArgs>
+struct CallbackCancellationTraits<RepeatingCallback<Signature>,
+                                  std::tuple<BoundArgs...>> {
+  static constexpr bool is_cancellable = true;
+
+  template <typename Functor>
+  static bool IsCancelled(const Functor& functor, const BoundArgs&...) {
+    return functor.IsCancelled();
+  }
+
+  template <typename Functor>
+  static bool MaybeValid(const Functor& functor, const BoundArgs&...) {
+    return functor.MaybeValid();
+  }
+};
 
 
 

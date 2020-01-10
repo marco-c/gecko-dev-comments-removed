@@ -24,6 +24,20 @@ namespace win {
 
 const DWORD kSandboxFatalMemoryExceeded = 7012;
 
+
+const DWORD kNormalTerminationExitCode = 0;
+const DWORD kDebuggerInactiveExitCode = 0xC0000354;
+const DWORD kKeyboardInterruptExitCode = 0xC000013A;
+const DWORD kDebuggerTerminatedExitCode = 0x40010004;
+
+
+
+
+
+
+
+const DWORD kProcessKilledExitCode = 1;
+
 }  
 
 #endif  
@@ -78,7 +92,7 @@ BASE_EXPORT bool KillProcessGroup(ProcessHandle process_group_id);
 BASE_EXPORT TerminationStatus GetTerminationStatus(ProcessHandle handle,
                                                    int* exit_code);
 
-#if defined(OS_POSIX) && !defined(OS_FUCHSIA)
+#if defined(OS_POSIX)
 
 
 
@@ -96,7 +110,21 @@ BASE_EXPORT TerminationStatus GetTerminationStatus(ProcessHandle handle,
 
 BASE_EXPORT TerminationStatus GetKnownDeadTerminationStatus(
     ProcessHandle handle, int* exit_code);
+
+#if defined(OS_LINUX)
+
+
+BASE_EXPORT void EnsureProcessGetsReaped(Process process);
 #endif  
+#endif  
+
+
+
+
+
+
+
+BASE_EXPORT void EnsureProcessTerminated(Process process);
 
 
 
@@ -121,28 +149,6 @@ BASE_EXPORT bool CleanupProcesses(const FilePath::StringType& executable_name,
                                   int exit_code,
                                   const ProcessFilter* filter);
 #endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BASE_EXPORT void EnsureProcessTerminated(Process process);
-
-#if defined(OS_POSIX) && !defined(OS_MACOSX) && !defined(OS_FUCHSIA)
-
-
-BASE_EXPORT void EnsureProcessGetsReaped(ProcessId pid);
-#endif
 
 }  
 

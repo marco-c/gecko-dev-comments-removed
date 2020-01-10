@@ -7,20 +7,63 @@
 
 #include <windows.h>
 
+#include "base/strings/string16.h"
+
 namespace sandbox {
+
+
+enum WellKnownCapabilities {
+  kInternetClient,
+  kInternetClientServer,
+  kPrivateNetworkClientServer,
+  kPicturesLibrary,
+  kVideosLibrary,
+  kMusicLibrary,
+  kDocumentsLibrary,
+  kEnterpriseAuthentication,
+  kSharedUserCertificates,
+  kRemovableStorage,
+  kAppointments,
+  kContacts,
+  kMaxWellKnownCapability
+};
 
 
 class Sid {
  public:
   
+  explicit Sid(PSID sid);
   
-  Sid(const SID *sid);
+  
+  Sid(const SID* sid);
   Sid(WELL_KNOWN_SID_TYPE type);
 
   
-  const SID *GetPSID() const;
+  
+  static Sid FromNamedCapability(const wchar_t* capability_name);
+  
+  
+  static Sid FromKnownCapability(WellKnownCapabilities capability);
+  
+  static Sid FromSddlString(const wchar_t* sddl_sid);
+  
+  static Sid FromSubAuthorities(PSID_IDENTIFIER_AUTHORITY identifier_authority,
+                                BYTE sub_authority_count,
+                                PDWORD sub_authorities);
+  
+  static Sid AllRestrictedApplicationPackages();
+
+  
+  PSID GetPSID() const;
+
+  
+  bool IsValid() const;
+
+  
+  bool ToSddlString(base::string16* sddl_string) const;
 
  private:
+  Sid();
   BYTE sid_[SECURITY_MAX_SID_SIZE];
 };
 

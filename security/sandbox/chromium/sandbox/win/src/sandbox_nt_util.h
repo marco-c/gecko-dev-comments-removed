@@ -8,28 +8,34 @@
 #include <intrin.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <memory>
 
 #include "base/macros.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/sandbox_nt_types.h"
 
 
-void* __cdecl operator new(size_t size, sandbox::AllocationType type,
-                           void* near_to = NULL);
-void* __cdecl operator new[](size_t size, sandbox::AllocationType type,
-			     void* near_to = NULL);
+void* __cdecl operator new(size_t size,
+                           sandbox::AllocationType type,
+                           void* near_to = nullptr);
+void* __cdecl operator new[](size_t size,
+                             sandbox::AllocationType type,
+                             void* near_to = nullptr);
 void __cdecl operator delete(void* memory, sandbox::AllocationType type);
 
 
 
 
-void __cdecl operator delete(void* memory, sandbox::AllocationType type,
+void __cdecl operator delete(void* memory,
+                             sandbox::AllocationType type,
                              void* near_to);
 
 
-void* __cdecl operator new(size_t size, void* buffer,
+void* __cdecl operator new(size_t size,
+                           void* buffer,
                            sandbox::AllocationType type);
-void __cdecl operator delete(void* memory, void* buffer,
+void __cdecl operator delete(void* memory,
+                             void* buffer,
                              sandbox::AllocationType type);
 
 
@@ -40,7 +46,8 @@ void __cdecl operator delete(void* memory, void* buffer,
 
 
 #ifndef NDEBUG
-#define DCHECK_NT(condition) { (condition) ? (void)0 : __debugbreak(); }
+#define DCHECK_NT(condition) \
+  { (condition) ? (void)0 : __debugbreak(); }
 #define VERIFY(action) DCHECK_NT(action)
 #define VERIFY_SUCCESS(action) DCHECK_NT(NT_SUCCESS(action))
 #else
@@ -49,7 +56,8 @@ void __cdecl operator delete(void* memory, void* buffer,
 #define VERIFY_SUCCESS(action) (action)
 #endif
 
-#define CHECK_NT(condition) { (condition) ? (void)0 : __debugbreak(); }
+#define CHECK_NT(condition) \
+  { (condition) ? (void)0 : __debugbreak(); }
 
 #define NOTREACHED_NT() DCHECK_NT(false)
 
@@ -61,15 +69,18 @@ namespace sandbox {
 
 #elif defined(_M_IX86)
 extern "C" long _InterlockedCompareExchange(long volatile* destination,
-                                            long exchange, long comperand);
+                                            long exchange,
+                                            long comperand);
 
 #pragma intrinsic(_InterlockedCompareExchange)
 
 
 
 __forceinline void* _InterlockedCompareExchangePointer(
-    void* volatile* destination, void* exchange, void* comperand) {
-  size_t ret = _InterlockedCompareExchange(
+    void* volatile* destination,
+    void* exchange,
+    void* comperand) {
+  long ret = _InterlockedCompareExchange(
       reinterpret_cast<long volatile*>(destination),
       static_cast<long>(reinterpret_cast<size_t>(exchange)),
       static_cast<long>(reinterpret_cast<size_t>(comperand)));
@@ -82,18 +93,19 @@ __forceinline void* _InterlockedCompareExchangePointer(
 
 #endif
 
+struct NtAllocDeleter {
+  inline void operator()(void* ptr) const {
+    operator delete(ptr, AllocationType::NT_ALLOC);
+  }
+};
+
 
 void* GetGlobalIPCMemory();
 
 
 void* GetGlobalPolicyMemory();
 
-enum RequiredAccess {
-  READ,
-  WRITE
-};
-
-
+enum RequiredAccess { READ, WRITE };
 
 
 
@@ -105,14 +117,15 @@ NTSTATUS CopyData(void* destination, const void* source, size_t bytes);
 
 
 NTSTATUS AllocAndCopyName(const OBJECT_ATTRIBUTES* in_object,
-                          wchar_t** out_name,
+                          std::unique_ptr<wchar_t, NtAllocDeleter>* out_name,
                           uint32_t* attributes,
                           HANDLE* root);
 
 
-NTSTATUS AllocAndGetFullPath(HANDLE root,
-                             wchar_t* path,
-                             wchar_t** full_path);
+NTSTATUS AllocAndGetFullPath(
+    HANDLE root,
+    const wchar_t* path,
+    std::unique_ptr<wchar_t, NtAllocDeleter>* full_path);
 
 
 bool InitHeap();
@@ -121,9 +134,9 @@ bool InitHeap();
 bool IsSameProcess(HANDLE process);
 
 enum MappedModuleFlags {
-  MODULE_IS_PE_IMAGE     = 1,   
-  MODULE_HAS_ENTRY_POINT = 2,   
-  MODULE_HAS_CODE =        4    
+  MODULE_IS_PE_IMAGE = 1,      
+  MODULE_HAS_ENTRY_POINT = 2,  
+  MODULE_HAS_CODE = 4          
 };
 
 
@@ -146,6 +159,12 @@ UNICODE_STRING* GetImageInfoFromModule(HMODULE module, uint32_t* flags);
 
 
 
+const char* GetAnsiImageInfoFromModule(HMODULE module);
+
+
+
+
+
 UNICODE_STRING* GetBackingFilePath(PVOID address);
 
 
@@ -155,7 +174,9 @@ UNICODE_STRING* GetBackingFilePath(PVOID address);
 UNICODE_STRING* ExtractModuleName(const UNICODE_STRING* module_path);
 
 
-bool IsValidImageSection(HANDLE section, PVOID *base, PLARGE_INTEGER offset,
+bool IsValidImageSection(HANDLE section,
+                         PVOID* base,
+                         PLARGE_INTEGER offset,
                          PSIZE_T view_size);
 
 
@@ -165,11 +186,9 @@ UNICODE_STRING* AnsiToUnicode(const char* string);
 class AutoProtectMemory {
  public:
   AutoProtectMemory()
-      : changed_(false), address_(NULL), bytes_(0), old_protect_(0) {}
+      : changed_(false), address_(nullptr), bytes_(0), old_protect_(0) {}
 
-  ~AutoProtectMemory() {
-    RevertProtection();
-  }
+  ~AutoProtectMemory() { RevertProtection(); }
 
   
   NTSTATUS ChangeProtection(void* address, size_t bytes, ULONG protect);
@@ -193,6 +212,5 @@ bool IsSupportedRenameCall(FILE_RENAME_INFORMATION* file_info,
                            uint32_t file_info_class);
 
 }  
-
 
 #endif  

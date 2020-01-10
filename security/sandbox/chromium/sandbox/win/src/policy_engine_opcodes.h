@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/logging.h"
 #include "base/macros.h"
 #include "base/numerics/safe_conversions.h"
 #include "sandbox/win/src/policy_engine_params.h"
@@ -59,29 +60,29 @@ enum EvalResult {
   EVAL_FALSE,  
   EVAL_ERROR,  
   
-  ASK_BROKER,  
-               
-  DENY_ACCESS,   
-  GIVE_READONLY,  
+  ASK_BROKER,   
+                
+  DENY_ACCESS,  
+  GIVE_READONLY,   
   GIVE_ALLACCESS,  
-  GIVE_CACHED,  
-  GIVE_FIRST,  
-  SIGNAL_ALARM,  
-  FAKE_SUCCESS,  
+  GIVE_CACHED,     
+  GIVE_FIRST,      
+  SIGNAL_ALARM,    
+  FAKE_SUCCESS,    
   FAKE_ACCESS_DENIED,  
                        
-  TERMINATE_PROCESS,  
+  TERMINATE_PROCESS,   
 };
 
 
 enum OpcodeID {
-  OP_ALWAYS_FALSE,  
-  OP_ALWAYS_TRUE,  
-  OP_NUMBER_MATCH,  
+  OP_ALWAYS_FALSE,        
+  OP_ALWAYS_TRUE,         
+  OP_NUMBER_MATCH,        
   OP_NUMBER_MATCH_RANGE,  
-  OP_NUMBER_AND_MATCH,  
-  OP_WSTRING_MATCH,  
-  OP_ACTION  
+  OP_NUMBER_AND_MATCH,    
+  OP_WSTRING_MATCH,       
+  OP_ACTION               
 };
 
 
@@ -113,9 +114,7 @@ struct MatchContext {
   size_t position;
   uint32_t options;
 
-  MatchContext() {
-    Clear();
-  }
+  MatchContext() { Clear(); }
 
   void Clear() {
     position = 0;
@@ -140,6 +139,7 @@ struct MatchContext {
 
 class PolicyOpcode {
   friend class OpcodeFactory;
+
  public:
   
   
@@ -150,7 +150,8 @@ class PolicyOpcode {
   
   
   
-  EvalResult Evaluate(const ParameterSet* parameters, size_t count,
+  EvalResult Evaluate(const ParameterSet* parameters,
+                      size_t count,
                       MatchContext* match);
 
   
@@ -183,14 +184,10 @@ class PolicyOpcode {
 
   
   
-  bool IsAction() const {
-    return (OP_ACTION == opcode_id_);
-  };
+  bool IsAction() const { return (OP_ACTION == opcode_id_); }
 
   
-  OpcodeID GetID() const {
-    return opcode_id_;
-  }
+  OpcodeID GetID() const { return opcode_id_; }
 
   
   uint32_t GetOptions() const { return options_; }
@@ -201,7 +198,6 @@ class PolicyOpcode {
   }
 
  private:
-
   static const size_t kArgumentCount = 4;  
 
   struct OpcodeArgument {
@@ -210,14 +206,12 @@ class PolicyOpcode {
 
   
   
-  void* operator new(size_t, void* location) {
-    return location;
-  }
+  void* operator new(size_t, void* location) { return location; }
 
   
   
   EvalResult EvaluateHelper(const ParameterSet* parameters,
-                           MatchContext* match);
+                            MatchContext* match);
   OpcodeID opcode_id_;
   int16_t parameter_;
   
@@ -228,9 +222,9 @@ class PolicyOpcode {
 };
 
 enum StringMatchOptions {
-  CASE_SENSITIVE = 0,      
-  CASE_INSENSITIVE = 1,    
-  EXACT_LENGHT = 2         
+  CASE_SENSITIVE = 0,    
+  CASE_INSENSITIVE = 1,  
+  EXACT_LENGTH = 2       
 };
 
 
@@ -239,10 +233,9 @@ enum StringMatchOptions {
 
 
 
-const int  kSeekForward = -1;
+const int kSeekForward = -1;
 
-const int  kSeekToEnd = 0xfffff;
-
+const int kSeekToEnd = 0xfffff;
 
 
 
@@ -280,8 +273,7 @@ class OpcodeFactory {
  public:
   
   
-  OpcodeFactory(char* memory, size_t memory_size)
-      : memory_top_(memory) {
+  OpcodeFactory(char* memory, size_t memory_size) : memory_top_(memory) {
     memory_bottom_ = &memory_top_[memory_size];
   }
 
@@ -294,6 +286,7 @@ class OpcodeFactory {
 
   
   size_t memory_size() const {
+    DCHECK_GE(memory_bottom_, memory_top_);
     return memory_bottom_ - memory_top_;
   }
 
@@ -369,7 +362,7 @@ class OpcodeFactory {
 
   
   
-  ptrdiff_t AllocRelative(void* start, const wchar_t* str, size_t lenght);
+  ptrdiff_t AllocRelative(void* start, const wchar_t* str, size_t length);
 
   
   

@@ -39,7 +39,7 @@
 #include "base/base_export.h"
 #include "build/build_config.h"
 
-#if defined(OS_WIN) && defined(ARCH_CPU_64_BITS)
+#if defined(OS_WIN) && (defined(ARCH_CPU_64_BITS) || defined(__MINGW32__))
 
 
 

@@ -18,15 +18,4 @@ extern "C" char* mkdtemp(char* path);
 
 extern "C" time_t timegm(struct tm* const t);
 
-
-#define F_LOCK LOCK_EX
-#define F_ULOCK LOCK_UN
-inline int lockf(int fd, int cmd, off_t ignored_len) {
-  return flock(fd, cmd);
-}
-
-
-
-#define pwrite(fd, buf, count, offset) pwrite64(fd, buf, count, offset)
-
 #endif  

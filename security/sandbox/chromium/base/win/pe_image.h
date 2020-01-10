@@ -11,6 +11,8 @@
 #ifndef BASE_WIN_PE_IMAGE_H_
 #define BASE_WIN_PE_IMAGE_H_
 
+#include <stdint.h>
+
 #include <windows.h>
 
 #if defined(_WIN32_WINNT_WIN8)
@@ -110,8 +112,10 @@ class PEImage {
   PIMAGE_SECTION_HEADER GetSectionHeader(UINT section) const;
 
   
+  
   DWORD GetImageDirectoryEntrySize(UINT directory) const;
 
+  
   
   PVOID GetImageDirectoryEntryAddr(UINT directory) const;
 
@@ -131,7 +135,22 @@ class PEImage {
   PIMAGE_EXPORT_DIRECTORY GetExportDirectory() const;
 
   
-  bool GetDebugId(LPGUID guid, LPDWORD age) const;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool GetDebugId(LPGUID guid,
+                  LPDWORD age,
+                  LPCSTR* pdb_filename,
+                  size_t* pdb_filename_length) const;
 
   
   
@@ -214,17 +233,21 @@ class PEImage {
   bool VerifyMagic() const;
 
   
-  virtual PVOID RVAToAddr(DWORD rva) const;
+  virtual PVOID RVAToAddr(uintptr_t rva) const;
 
   
   
-  bool ImageRVAToOnDiskOffset(DWORD rva, DWORD *on_disk_offset) const;
+  bool ImageRVAToOnDiskOffset(uintptr_t rva, DWORD* on_disk_offset) const;
 
   
   
   bool ImageAddrToOnDiskOffset(LPVOID address, DWORD *on_disk_offset) const;
 
  private:
+  
+  
+  const IMAGE_DATA_DIRECTORY* GetDataDirectory(UINT directory) const;
+
   HMODULE module_;
 };
 
@@ -234,7 +257,7 @@ class PEImageAsData : public PEImage {
  public:
   explicit PEImageAsData(HMODULE hModule) : PEImage(hModule) {}
 
-  PVOID RVAToAddr(DWORD rva) const override;
+  PVOID RVAToAddr(uintptr_t rva) const override;
 };
 
 inline bool PEImage::IsOrdinal(LPCSTR name) {

@@ -6,6 +6,7 @@
 #define SANDBOX_SRC_RESTRICTED_TOKEN_H_
 
 #include <windows.h>
+
 #include <vector>
 
 #include "base/macros.h"
@@ -86,7 +87,7 @@ class RestrictedToken {
   
   
   
-  DWORD AddAllSidsForDenyOnly(std::vector<Sid> *exceptions);
+  DWORD AddAllSidsForDenyOnly(std::vector<Sid>* exceptions);
 
   
   
@@ -94,7 +95,7 @@ class RestrictedToken {
   
   
   
-  DWORD AddSidForDenyOnly(const Sid &sid);
+  DWORD AddSidForDenyOnly(const Sid& sid);
 
   
   
@@ -115,7 +116,7 @@ class RestrictedToken {
   
   
   
-  DWORD DeleteAllPrivileges(const std::vector<base::string16> *exceptions);
+  DWORD DeleteAllPrivileges(const std::vector<base::string16>* exceptions);
 
   
   
@@ -127,7 +128,7 @@ class RestrictedToken {
   
   
   
-  DWORD DeletePrivilege(const wchar_t *privilege);
+  DWORD DeletePrivilege(const wchar_t* privilege);
 
   
   
@@ -139,7 +140,7 @@ class RestrictedToken {
   
   
   
-  DWORD AddRestrictingSid(const Sid &sid);
+  DWORD AddRestrictingSid(const Sid& sid);
 
   
   

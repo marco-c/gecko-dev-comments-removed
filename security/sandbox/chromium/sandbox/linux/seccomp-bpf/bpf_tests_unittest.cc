@@ -130,7 +130,7 @@ class BasicBPFTesterDelegate : public BPFTesterDelegate {
 
 
 
-BPF_TEST_D(BPFTest, BPFTestWithDelegateClass, BasicBPFTesterDelegate);
+BPF_TEST_D(BPFTest, BPFTestWithDelegateClass, BasicBPFTesterDelegate)
 
 
 BPF_TEST_C(BPFTest, BPFTestWithInlineTest, EnosysPtracePolicy) {

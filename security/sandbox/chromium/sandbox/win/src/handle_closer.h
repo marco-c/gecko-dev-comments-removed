@@ -21,19 +21,19 @@ namespace sandbox {
 
 
 
-typedef std::map<const base::string16, std::set<base::string16> > HandleMap;
+typedef std::map<const base::string16, std::set<base::string16>> HandleMap;
 
 
 struct HandleListEntry {
-  size_t record_bytes;       
-  size_t offset_to_names;    
+  size_t record_bytes;     
+  size_t offset_to_names;  
   size_t name_count;
   base::char16 handle_type[1];
 };
 
 
 struct HandleCloserInfo {
-  size_t record_bytes;       
+  size_t record_bytes;  
   size_t num_handle_types;
   struct HandleListEntry handle_entries[1];
 };

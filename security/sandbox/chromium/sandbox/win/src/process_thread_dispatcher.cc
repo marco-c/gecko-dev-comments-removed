@@ -31,7 +31,7 @@ namespace {
 
 
 
-base::string16 GetPathFromCmdLine(const base::string16 &cmd_line) {
+base::string16 GetPathFromCmdLine(const base::string16& cmd_line) {
   base::string16 exe_name;
   
   if (cmd_line[0] == L'\"') {
@@ -57,7 +57,7 @@ base::string16 GetPathFromCmdLine(const base::string16 &cmd_line) {
 
 
 
-bool IsPathRelative(const base::string16 &path) {
+bool IsPathRelative(const base::string16& path) {
   
   
   if (path.find(L"\\\\") == 0 || path.find(L":\\") == 1)
@@ -67,23 +67,24 @@ bool IsPathRelative(const base::string16 &path) {
 
 
 bool ConvertToAbsolutePath(const base::string16& child_current_directory,
-                           bool use_env_path, base::string16 *path) {
+                           bool use_env_path,
+                           base::string16* path) {
   wchar_t file_buffer[MAX_PATH];
-  wchar_t *file_part = NULL;
+  wchar_t* file_part = nullptr;
 
   
   
   DWORD result = 0;
   if (use_env_path) {
     
-    result = ::SearchPath(NULL, path->c_str(), NULL, MAX_PATH, file_buffer,
-                          &file_part);
+    result = ::SearchPath(nullptr, path->c_str(), nullptr, MAX_PATH,
+                          file_buffer, &file_part);
   }
 
   if (0 == result) {
     
-    result = ::SearchPath(child_current_directory.c_str(), path->c_str(), NULL,
-                          MAX_PATH, file_buffer, &file_part);
+    result = ::SearchPath(child_current_directory.c_str(), path->c_str(),
+                          nullptr, MAX_PATH, file_buffer, &file_part);
   }
 
   if (0 == result || result >= MAX_PATH)
@@ -169,9 +170,8 @@ bool ThreadProcessDispatcher::NtOpenThread(IPCInfo* ipc,
                                            uint32_t desired_access,
                                            uint32_t thread_id) {
   HANDLE handle;
-  NTSTATUS ret = ProcessPolicy::OpenThreadAction(*ipc->client_info,
-                                                 desired_access, thread_id,
-                                                 &handle);
+  NTSTATUS ret = ProcessPolicy::OpenThreadAction(
+      *ipc->client_info, desired_access, thread_id, &handle);
   ipc->return_info.nt_status = ret;
   ipc->return_info.handle = handle;
   return true;
@@ -181,9 +181,8 @@ bool ThreadProcessDispatcher::NtOpenProcess(IPCInfo* ipc,
                                             uint32_t desired_access,
                                             uint32_t process_id) {
   HANDLE handle;
-  NTSTATUS ret = ProcessPolicy::OpenProcessAction(*ipc->client_info,
-                                                  desired_access, process_id,
-                                                  &handle);
+  NTSTATUS ret = ProcessPolicy::OpenProcessAction(
+      *ipc->client_info, desired_access, process_id, &handle);
   ipc->return_info.nt_status = ret;
   ipc->return_info.handle = handle;
   return true;
@@ -193,9 +192,8 @@ bool ThreadProcessDispatcher::NtOpenProcessToken(IPCInfo* ipc,
                                                  HANDLE process,
                                                  uint32_t desired_access) {
   HANDLE handle;
-  NTSTATUS ret = ProcessPolicy::OpenProcessTokenAction(*ipc->client_info,
-                                                       process, desired_access,
-                                                       &handle);
+  NTSTATUS ret = ProcessPolicy::OpenProcessTokenAction(
+      *ipc->client_info, process, desired_access, &handle);
   ipc->return_info.nt_status = ret;
   ipc->return_info.handle = handle;
   return true;
@@ -206,16 +204,15 @@ bool ThreadProcessDispatcher::NtOpenProcessTokenEx(IPCInfo* ipc,
                                                    uint32_t desired_access,
                                                    uint32_t attributes) {
   HANDLE handle;
-  NTSTATUS ret = ProcessPolicy::OpenProcessTokenExAction(*ipc->client_info,
-                                                         process,
-                                                         desired_access,
-                                                         attributes, &handle);
+  NTSTATUS ret = ProcessPolicy::OpenProcessTokenExAction(
+      *ipc->client_info, process, desired_access, attributes, &handle);
   ipc->return_info.nt_status = ret;
   ipc->return_info.handle = handle;
   return true;
 }
 
-bool ThreadProcessDispatcher::CreateProcessW(IPCInfo* ipc, base::string16* name,
+bool ThreadProcessDispatcher::CreateProcessW(IPCInfo* ipc,
+                                             base::string16* name,
                                              base::string16* cmd_line,
                                              base::string16* cur_dir,
                                              base::string16* target_cur_dir,
@@ -242,16 +239,15 @@ bool ThreadProcessDispatcher::CreateProcessW(IPCInfo* ipc, base::string16* name,
   CountedParameterSet<NameBased> params;
   params[NameBased::NAME] = ParamPickerMake(const_exe_name);
 
-  EvalResult eval = policy_base_->EvalPolicy(IPC_CREATEPROCESSW_TAG,
-                                             params.GetBase());
+  EvalResult eval =
+      policy_base_->EvalPolicy(IPC_CREATEPROCESSW_TAG, params.GetBase());
 
   PROCESS_INFORMATION* proc_info =
       reinterpret_cast<PROCESS_INFORMATION*>(info->Buffer());
   
   
-  DWORD ret = ProcessPolicy::CreateProcessWAction(eval, *ipc->client_info,
-                                                  exe_name, *cmd_line,
-                                                  *target_cur_dir, proc_info);
+  DWORD ret = ProcessPolicy::CreateProcessWAction(
+      eval, *ipc->client_info, exe_name, *cmd_line, *target_cur_dir, proc_info);
 
   ipc->return_info.win32_result = ret;
   return true;
@@ -267,9 +263,9 @@ bool ThreadProcessDispatcher::CreateThread(IPCInfo* ipc,
   }
 
   HANDLE handle;
-  DWORD ret = ProcessPolicy::CreateThreadAction(*ipc->client_info, stack_size,
-                                                start_address, parameter,
-                                                creation_flags, NULL, &handle);
+  DWORD ret = ProcessPolicy::CreateThreadAction(
+      *ipc->client_info, stack_size, start_address, parameter, creation_flags,
+      nullptr, &handle);
 
   ipc->return_info.nt_status = ret;
   ipc->return_info.handle = handle;

@@ -44,8 +44,7 @@ namespace sandbox {
 
 
 const size_t kMaxServiceCount = 64;
-static_assert(IPC_LAST_TAG <= kMaxServiceCount,
-              "kMaxServiceCount is too low");
+static_assert(IPC_LAST_TAG <= kMaxServiceCount, "kMaxServiceCount is too low");
 
 
 
@@ -120,7 +119,7 @@ enum RuleType {
 enum RuleOp {
   EQUAL,
   AND,
-  RANGE   
+  RANGE  
 };
 
 
@@ -155,9 +154,7 @@ class PolicyRule {
                       RuleOp comparison_op);
 
   
-  size_t GetOpcodeCount() const {
-    return buffer_->opcode_count;
-  }
+  size_t GetOpcodeCount() const { return buffer_->opcode_count; }
 
   
   
@@ -180,8 +177,10 @@ class PolicyRule {
   
   
   
-  bool RebindCopy(PolicyOpcode* opcode_start, size_t opcode_size,
-                  char* data_start, size_t* data_size) const;
+  bool RebindCopy(PolicyOpcode* opcode_start,
+                  size_t opcode_size,
+                  char* data_start,
+                  size_t* data_size) const;
   PolicyBuffer* buffer_;
   OpcodeFactory* opcode_factory_;
   EvalResult action_;

@@ -43,11 +43,9 @@
 #include "base/logging.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
+#include "base/time/time_override.h"
 
-using base::ThreadTicks;
-using base::Time;
-using base::TimeDelta;
-using base::TimeTicks;
+namespace base {
 
 namespace {
 
@@ -76,14 +74,14 @@ int64_t CurrentWallclockMicroseconds() {
 }
 
 
-const int kMaxMillisecondsToAvoidDrift = 60 * Time::kMillisecondsPerSecond;
+constexpr TimeDelta kMaxTimeToAvoidDrift = TimeDelta::FromSeconds(60);
 
-int64_t initial_time = 0;
-TimeTicks initial_ticks;
+int64_t g_initial_time = 0;
+TimeTicks g_initial_ticks;
 
 void InitializeClock() {
-  initial_ticks = TimeTicks::Now();
-  initial_time = CurrentWallclockMicroseconds();
+  g_initial_ticks = subtle::TimeTicksNowIgnoringOverride();
+  g_initial_time = CurrentWallclockMicroseconds();
 }
 
 
@@ -105,8 +103,8 @@ TimeDelta g_high_res_timer_usage;
 
 TimeTicks g_high_res_timer_last_activation;
 
-base::Lock* GetHighResLock() {
-  static auto* lock = new base::Lock();
+Lock* GetHighResLock() {
+  static auto* lock = new Lock();
   return lock;
 }
 
@@ -121,7 +119,7 @@ uint64_t QPCNowRaw() {
 }
 
 bool SafeConvertToWord(int in, WORD* out) {
-  base::CheckedNumeric<WORD> result = in;
+  CheckedNumeric<WORD> result = in;
   *out = result.ValueOrDefault(std::numeric_limits<WORD>::max());
   return result.IsValid();
 }
@@ -130,9 +128,9 @@ bool SafeConvertToWord(int in, WORD* out) {
 
 
 
-
-Time Time::Now() {
-  if (initial_time == 0)
+namespace subtle {
+Time TimeNowIgnoringOverride() {
+  if (g_initial_time == 0)
     InitializeClock();
 
   
@@ -146,27 +144,27 @@ Time Time::Now() {
   
   
   while (true) {
-    TimeTicks ticks = TimeTicks::Now();
+    TimeTicks ticks = TimeTicksNowIgnoringOverride();
 
     
-    TimeDelta elapsed = ticks - initial_ticks;
+    TimeDelta elapsed = ticks - g_initial_ticks;
 
     
-    if (elapsed.InMilliseconds() > kMaxMillisecondsToAvoidDrift) {
+    if (elapsed > kMaxTimeToAvoidDrift) {
       InitializeClock();
       continue;
     }
 
-    return Time(elapsed + Time(initial_time));
+    return Time() + elapsed + TimeDelta::FromMicroseconds(g_initial_time);
   }
 }
 
-
-Time Time::NowFromSystemTime() {
+Time TimeNowFromSystemTimeIgnoringOverride() {
   
   InitializeClock();
-  return Time(initial_time);
+  return Time() + TimeDelta::FromMicroseconds(g_initial_time);
 }
+}  
 
 
 Time Time::FromFileTime(FILETIME ft) {
@@ -194,7 +192,7 @@ FILETIME Time::ToFileTime() const {
 
 
 void Time::EnableHighResolutionTimer(bool enable) {
-  base::AutoLock lock(*GetHighResLock());
+  AutoLock lock(*GetHighResLock());
   if (g_high_res_timer_enabled == enable)
     return;
   g_high_res_timer_enabled = enable;
@@ -221,22 +219,22 @@ bool Time::ActivateHighResolutionTimer(bool activating) {
   
   const uint32_t max = std::numeric_limits<uint32_t>::max();
 
-  base::AutoLock lock(*GetHighResLock());
+  AutoLock lock(*GetHighResLock());
   UINT period = g_high_res_timer_enabled ? kMinTimerIntervalHighResMs
                                          : kMinTimerIntervalLowResMs;
   if (activating) {
     DCHECK_NE(g_high_res_timer_count, max);
     ++g_high_res_timer_count;
     if (g_high_res_timer_count == 1) {
-      g_high_res_timer_last_activation = TimeTicks::Now();
+      g_high_res_timer_last_activation = subtle::TimeTicksNowIgnoringOverride();
       timeBeginPeriod(period);
     }
   } else {
     DCHECK_NE(g_high_res_timer_count, 0u);
     --g_high_res_timer_count;
     if (g_high_res_timer_count == 0) {
-      g_high_res_timer_usage +=
-          TimeTicks::Now() - g_high_res_timer_last_activation;
+      g_high_res_timer_usage += subtle::TimeTicksNowIgnoringOverride() -
+                                g_high_res_timer_last_activation;
       timeEndPeriod(period);
     }
   }
@@ -245,23 +243,23 @@ bool Time::ActivateHighResolutionTimer(bool activating) {
 
 
 bool Time::IsHighResolutionTimerInUse() {
-  base::AutoLock lock(*GetHighResLock());
+  AutoLock lock(*GetHighResLock());
   return g_high_res_timer_enabled && g_high_res_timer_count > 0;
 }
 
 
 void Time::ResetHighResolutionTimerUsage() {
-  base::AutoLock lock(*GetHighResLock());
+  AutoLock lock(*GetHighResLock());
   g_high_res_timer_usage = TimeDelta();
-  g_high_res_timer_usage_start = TimeTicks::Now();
+  g_high_res_timer_usage_start = subtle::TimeTicksNowIgnoringOverride();
   if (g_high_res_timer_count > 0)
     g_high_res_timer_last_activation = g_high_res_timer_usage_start;
 }
 
 
 double Time::GetHighResolutionTimerUsage() {
-  base::AutoLock lock(*GetHighResLock());
-  TimeTicks now = TimeTicks::Now();
+  AutoLock lock(*GetHighResLock());
+  TimeTicks now = subtle::TimeTicksNowIgnoringOverride();
   TimeDelta elapsed_time = now - g_high_res_timer_usage_start;
   if (elapsed_time.is_zero()) {
     
@@ -292,7 +290,7 @@ bool Time::FromExploded(bool is_local, const Exploded& exploded, Time* time) {
       !SafeConvertToWord(exploded.minute, &st.wMinute) ||
       !SafeConvertToWord(exploded.second, &st.wSecond) ||
       !SafeConvertToWord(exploded.millisecond, &st.wMilliseconds)) {
-    *time = base::Time(0);
+    *time = Time(0);
     return false;
   }
 
@@ -360,6 +358,7 @@ void Time::Explode(bool is_local, Exploded* exploded) const {
 }
 
 
+
 namespace {
 
 
@@ -375,7 +374,7 @@ DWORD (*g_tick_function)(void) = &timeGetTimeWrapper;
 
 union LastTimeAndRolloversState {
   
-  base::subtle::Atomic32 as_opaque_32;
+  subtle::Atomic32 as_opaque_32;
 
   
   struct {
@@ -391,7 +390,7 @@ union LastTimeAndRolloversState {
     uint16_t rollovers;
   } as_values;
 };
-base::subtle::Atomic32 g_last_time_and_rollovers = 0;
+subtle::Atomic32 g_last_time_and_rollovers = 0;
 static_assert(
     sizeof(LastTimeAndRolloversState) <= sizeof(g_last_time_and_rollovers),
     "LastTimeAndRolloversState does not fit in a single atomic word");
@@ -401,7 +400,7 @@ static_assert(
 
 
 
-TimeDelta RolloverProtectedNow() {
+TimeTicks RolloverProtectedNow() {
   LastTimeAndRolloversState state;
   DWORD now;  
 
@@ -410,7 +409,7 @@ TimeDelta RolloverProtectedNow() {
     
     
     
-    int32_t original = base::subtle::Acquire_Load(&g_last_time_and_rollovers);
+    int32_t original = subtle::Acquire_Load(&g_last_time_and_rollovers);
     state.as_opaque_32 = original;
     now = g_tick_function();
     uint8_t now_8 = static_cast<uint8_t>(now >> 24);
@@ -424,7 +423,7 @@ TimeDelta RolloverProtectedNow() {
 
     
     
-    int32_t check = base::subtle::Release_CompareAndSwap(
+    int32_t check = subtle::Release_CompareAndSwap(
         &g_last_time_and_rollovers, original, state.as_opaque_32);
     if (check == original)
       break;
@@ -432,8 +431,9 @@ TimeDelta RolloverProtectedNow() {
     
   }
 
-  return TimeDelta::FromMilliseconds(
-      now + (static_cast<uint64_t>(state.as_values.rollovers) << 32));
+  return TimeTicks() +
+         TimeDelta::FromMilliseconds(
+             now + (static_cast<uint64_t>(state.as_values.rollovers) << 32));
 }
 
 
@@ -471,13 +471,12 @@ TimeDelta RolloverProtectedNow() {
 
 
 
-using NowFunction = TimeDelta (*)(void);
-
-TimeDelta InitialNowFunction();
+TimeTicks InitialNowFunction();
 
 
 
-NowFunction g_now_function = &InitialNowFunction;
+TimeTicksNowFunction g_time_ticks_now_ignoring_override_function =
+    &InitialNowFunction;
 int64_t g_qpc_ticks_per_second = 0;
 
 
@@ -508,13 +507,8 @@ TimeDelta QPCValueToTimeDelta(LONGLONG qpc_value) {
        g_qpc_ticks_per_second));
 }
 
-TimeDelta QPCNow() {
-  return QPCValueToTimeDelta(QPCNowRaw());
-}
-
-bool IsBuggyAthlon(const base::CPU& cpu) {
-  
-  return cpu.vendor_name() == "AuthenticAMD" && cpu.family() == 15;
+TimeTicks QPCNow() {
+  return TimeTicks() + QPCValueToTimeDelta(QPCNowRaw());
 }
 
 void InitializeNowFunctionPointer() {
@@ -532,11 +526,9 @@ void InitializeNowFunctionPointer() {
   
   
   
-  
-  NowFunction now_function;
-  base::CPU cpu;
-  if (ticks_per_sec.QuadPart <= 0 ||
-      !cpu.has_non_stop_time_stamp_counter() || IsBuggyAthlon(cpu)) {
+  TimeTicksNowFunction now_function;
+  CPU cpu;
+  if (ticks_per_sec.QuadPart <= 0 || !cpu.has_non_stop_time_stamp_counter()) {
     now_function = &RolloverProtectedNow;
   } else {
     now_function = &QPCNow;
@@ -553,12 +545,19 @@ void InitializeNowFunctionPointer() {
   
   g_qpc_ticks_per_second = ticks_per_sec.QuadPart;
   ATOMIC_THREAD_FENCE(memory_order_release);
-  g_now_function = now_function;
+  
+  
+  
+  if (internal::g_time_ticks_now_function ==
+      &subtle::TimeTicksNowIgnoringOverride) {
+    internal::g_time_ticks_now_function = now_function;
+  }
+  g_time_ticks_now_ignoring_override_function = now_function;
 }
 
-TimeDelta InitialNowFunction() {
+TimeTicks InitialNowFunction() {
   InitializeNowFunctionPointer();
-  return g_now_function();
+  return g_time_ticks_now_ignoring_override_function();
 }
 
 }  
@@ -568,20 +567,21 @@ TimeTicks::TickFunctionType TimeTicks::SetMockTickFunction(
     TickFunctionType ticker) {
   TickFunctionType old = g_tick_function;
   g_tick_function = ticker;
-  base::subtle::NoBarrier_Store(&g_last_time_and_rollovers, 0);
+  subtle::NoBarrier_Store(&g_last_time_and_rollovers, 0);
   return old;
 }
 
-
-TimeTicks TimeTicks::Now() {
-  return TimeTicks() + g_now_function();
+namespace subtle {
+TimeTicks TimeTicksNowIgnoringOverride() {
+  return g_time_ticks_now_ignoring_override_function();
 }
+}  
 
 
 bool TimeTicks::IsHighResolution() {
-  if (g_now_function == &InitialNowFunction)
+  if (g_time_ticks_now_ignoring_override_function == &InitialNowFunction)
     InitializeNowFunctionPointer();
-  return g_now_function == &QPCNow;
+  return g_time_ticks_now_ignoring_override_function == &QPCNow;
 }
 
 
@@ -611,13 +611,16 @@ TimeTicks::Clock TimeTicks::GetClock() {
 }
 
 
-ThreadTicks ThreadTicks::Now() {
+
+namespace subtle {
+ThreadTicks ThreadTicksNowIgnoringOverride() {
   return ThreadTicks::GetForThread(PlatformThread::CurrentHandle());
 }
+}  
 
 
 ThreadTicks ThreadTicks::GetForThread(
-    const base::PlatformThreadHandle& thread_handle) {
+    const PlatformThreadHandle& thread_handle) {
   DCHECK(IsSupported());
 
   
@@ -637,8 +640,7 @@ ThreadTicks ThreadTicks::GetForThread(
 
 
 bool ThreadTicks::IsSupportedWin() {
-  static bool is_supported = base::CPU().has_non_stop_time_stamp_counter() &&
-                             !IsBuggyAthlon(base::CPU());
+  static bool is_supported = CPU().has_non_stop_time_stamp_counter();
   return is_supported;
 }
 
@@ -648,7 +650,7 @@ void ThreadTicks::WaitUntilInitializedWin() {
     ::Sleep(10);
 }
 
-#if defined(_M_ARM64)
+#if defined(_M_ARM64) && defined(__clang__)
 #define ReadCycleCounter() _ReadStatusReg(ARM64_PMCCNTR_EL0)
 #else
 #define ReadCycleCounter() __rdtsc()
@@ -674,6 +676,7 @@ double ThreadTicks::TSCTicksPerSecond() {
 
   
   
+
   static const uint64_t tsc_initial = ReadCycleCounter();
   static const uint64_t perf_counter_initial = QPCNowRaw();
 
@@ -701,7 +704,7 @@ double ThreadTicks::TSCTicksPerSecond() {
   double elapsed_time_seconds =
       perf_counter_ticks / static_cast<double>(perf_counter_frequency.QuadPart);
 
-  const double kMinimumEvaluationPeriodSeconds = 0.05;
+  static constexpr double kMinimumEvaluationPeriodSeconds = 0.05;
   if (elapsed_time_seconds < kMinimumEvaluationPeriodSeconds)
     return 0;
 
@@ -715,7 +718,6 @@ double ThreadTicks::TSCTicksPerSecond() {
 
 #undef ReadCycleCounter
 
-
 TimeTicks TimeTicks::FromQPCValue(LONGLONG qpc_value) {
   return TimeTicks() + QPCValueToTimeDelta(qpc_value);
 }
@@ -726,3 +728,10 @@ TimeTicks TimeTicks::FromQPCValue(LONGLONG qpc_value) {
 TimeDelta TimeDelta::FromQPCValue(LONGLONG qpc_value) {
   return QPCValueToTimeDelta(qpc_value);
 }
+
+
+TimeDelta TimeDelta::FromFileTime(FILETIME ft) {
+  return TimeDelta::FromMicroseconds(FileTimeToMicroseconds(ft));
+}
+
+}  

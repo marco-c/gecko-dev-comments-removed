@@ -21,6 +21,8 @@ namespace base {
 
 
 
+
+
 BASE_EXPORT std::string GenerateGUID();
 
 
@@ -28,12 +30,13 @@ BASE_EXPORT std::string GenerateGUID();
 
 
 
-BASE_EXPORT bool IsValidGUID(const base::StringPiece& guid);
+BASE_EXPORT bool IsValidGUID(base::StringPiece guid);
+BASE_EXPORT bool IsValidGUID(base::StringPiece16 guid);
 
 
 
 
-BASE_EXPORT bool IsValidGUIDOutputString(const base::StringPiece& guid);
+BASE_EXPORT bool IsValidGUIDOutputString(base::StringPiece guid);
 
 
 BASE_EXPORT std::string RandomDataToGUIDString(const uint64_t bytes[2]);

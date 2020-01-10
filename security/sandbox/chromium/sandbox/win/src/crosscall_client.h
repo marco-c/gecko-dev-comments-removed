@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/compiler_specific.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/sandbox.h"
 
@@ -52,15 +53,13 @@ const uint32_t kIPCChannelSize = 1024;
 
 
 
-template<typename T>
+template <typename T>
 class CopyHelper {
  public:
   CopyHelper(const T& t) : t_(t) {}
 
   
-  const void* GetStart() const {
-    return &t_;
-  }
+  const void* GetStart() const { return &t_; }
 
   
   
@@ -73,9 +72,7 @@ class CopyHelper {
   uint32_t GetSize() const { return sizeof(T); }
 
   
-  bool IsInOut() {
-    return false;
-  }
+  bool IsInOut() { return false; }
 
   
   ArgType GetType() {
@@ -89,15 +86,13 @@ class CopyHelper {
 
 
 
-template<>
+template <>
 class CopyHelper<void*> {
  public:
   CopyHelper(void* t) : t_(t) {}
 
   
-  const void* GetStart() const {
-    return &t_;
-  }
+  const void* GetStart() const { return &t_; }
 
   
   
@@ -110,14 +105,10 @@ class CopyHelper<void*> {
   uint32_t GetSize() const { return sizeof(t_); }
 
   
-  bool IsInOut() {
-    return false;
-  }
+  bool IsInOut() { return false; }
 
   
-  ArgType GetType() {
-    return VOIDPTR_TYPE;
-  }
+  ArgType GetType() { return VOIDPTR_TYPE; }
 
  private:
   const void* t_;
@@ -125,17 +116,13 @@ class CopyHelper<void*> {
 
 
 
-template<>
+template <>
 class CopyHelper<const wchar_t*> {
  public:
-  CopyHelper(const wchar_t* t)
-      : t_(t) {
-  }
+  CopyHelper(const wchar_t* t) : t_(t) {}
 
   
-  const void* GetStart() const {
-    return t_;
-  }
+  const void* GetStart() const { return t_; }
 
   
   
@@ -150,28 +137,24 @@ class CopyHelper<const wchar_t*> {
     __try {
       return (!t_) ? 0
                    : static_cast<uint32_t>(StringLength(t_) * sizeof(t_[0]));
-    }
-    __except(EXCEPTION_EXECUTE_HANDLER) {
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
       return UINT32_MAX;
     }
   }
 
   
-  bool IsInOut() {
-    return false;
-  }
+  bool IsInOut() { return false; }
 
-  ArgType GetType() {
-    return WCHAR_TYPE;
-  }
+  ArgType GetType() { return WCHAR_TYPE; }
 
  private:
   
   
   
-  static size_t __cdecl StringLength(const wchar_t* wcs) {
-    const wchar_t *eos = wcs;
-    while (*eos++);
+  static size_t CDECL StringLength(const wchar_t* wcs) {
+    const wchar_t* eos = wcs;
+    while (*eos++)
+      ;
     return static_cast<size_t>(eos - wcs - 1);
   }
 
@@ -180,57 +163,41 @@ class CopyHelper<const wchar_t*> {
 
 
 
-template<>
+template <>
 class CopyHelper<wchar_t*> : public CopyHelper<const wchar_t*> {
  public:
   typedef CopyHelper<const wchar_t*> Base;
   CopyHelper(wchar_t* t) : Base(t) {}
 
-  const void* GetStart() const {
-    return Base::GetStart();
-  }
+  const void* GetStart() const { return Base::GetStart(); }
 
-  bool Update(void* buffer) {
-    return Base::Update(buffer);
-  }
+  bool Update(void* buffer) { return Base::Update(buffer); }
 
   uint32_t GetSize() const { return Base::GetSize(); }
 
-  bool IsInOut() {
-    return Base::IsInOut();
-  }
+  bool IsInOut() { return Base::IsInOut(); }
 
-  ArgType GetType() {
-    return Base::GetType();
-  }
+  ArgType GetType() { return Base::GetType(); }
 };
 
 
 
-template<size_t n>
+template <size_t n>
 class CopyHelper<const wchar_t[n]> : public CopyHelper<const wchar_t*> {
  public:
   typedef const wchar_t array[n];
   typedef CopyHelper<const wchar_t*> Base;
   CopyHelper(array t) : Base(t) {}
 
-  const void* GetStart() const {
-    return Base::GetStart();
-  }
+  const void* GetStart() const { return Base::GetStart(); }
 
-  bool Update(void* buffer) {
-    return Base::Update(buffer);
-  }
+  bool Update(void* buffer) { return Base::Update(buffer); }
 
   uint32_t GetSize() const { return Base::GetSize(); }
 
-  bool IsInOut() {
-    return Base::IsInOut();
-  }
+  bool IsInOut() { return Base::IsInOut(); }
 
-  ArgType GetType() {
-    return Base::GetType();
-  }
+  ArgType GetType() { return Base::GetType(); }
 };
 
 
@@ -244,15 +211,13 @@ class InOutCountedBuffer : public CountedBuffer {
 
 
 
-template<>
+template <>
 class CopyHelper<InOutCountedBuffer> {
  public:
   CopyHelper(const InOutCountedBuffer t) : t_(t) {}
 
   
-  const void* GetStart() const {
-    return t_.Buffer();
-  }
+  const void* GetStart() const { return t_.Buffer(); }
 
   
   bool Update(void* buffer) {
@@ -260,8 +225,7 @@ class CopyHelper<InOutCountedBuffer> {
     
     __try {
       memcpy(t_.Buffer(), buffer, t_.Size());
-    }
-    __except(EXCEPTION_EXECUTE_HANDLER) {
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
       return false;
     }
     return true;
@@ -272,13 +236,9 @@ class CopyHelper<InOutCountedBuffer> {
   uint32_t GetSize() const { return t_.Size(); }
 
   
-  bool IsInOut() {
-    return true;
-  }
+  bool IsInOut() { return true; }
 
-  ArgType GetType() {
-    return INOUTPTR_TYPE;
-  }
+  ArgType GetType() { return INOUTPTR_TYPE; }
 
  private:
   const InOutCountedBuffer t_;
@@ -287,28 +247,27 @@ class CopyHelper<InOutCountedBuffer> {
 
 
 
-#define XCALL_GEN_PARAMS_OBJ(num, params) \
+#define XCALL_GEN_PARAMS_OBJ(num, params)                      \
   typedef ActualCallParams<num, kIPCChannelSize> ActualParams; \
-  void* raw_mem = ipc_provider.GetBuffer(); \
-  if (NULL == raw_mem) \
-    return SBOX_ERROR_NO_SPACE; \
-  ActualParams* params = new(raw_mem) ActualParams(tag);
+  void* raw_mem = ipc_provider.GetBuffer();                    \
+  if (!raw_mem)                                                \
+    return SBOX_ERROR_NO_SPACE;                                \
+  ActualParams* params = new (raw_mem) ActualParams(tag);
 
-#define XCALL_GEN_COPY_PARAM(num, params) \
-  static_assert(kMaxIpcParams >= num, "too many parameters"); \
-  CopyHelper<Par##num> ch##num(p##num); \
+#define XCALL_GEN_COPY_PARAM(num, params)                                  \
+  static_assert(kMaxIpcParams >= num, "too many parameters");              \
+  CopyHelper<Par##num> ch##num(p##num);                                    \
   if (!params->CopyParamIn(num - 1, ch##num.GetStart(), ch##num.GetSize(), \
-                           ch##num.IsInOut(), ch##num.GetType())) \
+                           ch##num.IsInOut(), ch##num.GetType()))          \
     return SBOX_ERROR_NO_SPACE;
 
-#define XCALL_GEN_UPDATE_PARAM(num, params) \
-  if (!ch##num.Update(params->GetParamPtr(num-1))) {\
-    ipc_provider.FreeBuffer(raw_mem); \
-    return SBOX_ERROR_BAD_PARAMS; \
+#define XCALL_GEN_UPDATE_PARAM(num, params)            \
+  if (!ch##num.Update(params->GetParamPtr(num - 1))) { \
+    ipc_provider.FreeBuffer(raw_mem);                  \
+    return SBOX_ERROR_BAD_PARAMS;                      \
   }
 
-#define XCALL_GEN_FREE_CHANNEL() \
-  ipc_provider.FreeBuffer(raw_mem);
+#define XCALL_GEN_FREE_CHANNEL() ipc_provider.FreeBuffer(raw_mem);
 
 
 template <typename IPCProvider, typename Par1>

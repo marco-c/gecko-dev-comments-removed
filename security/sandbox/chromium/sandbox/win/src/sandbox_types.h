@@ -114,6 +114,12 @@ enum ResultCode : int {
   
   SBOX_ERROR_CANNOT_FIND_BASE_ADDRESS = 43,
   
+  SBOX_ERROR_CREATE_APPCONTAINER_PROFILE = 44,
+  
+  SBOX_ERROR_CREATE_APPCONTAINER_PROFILE_ACCESS_CHECK = 45,
+  
+  SBOX_ERROR_CREATE_APPCONTAINER_PROFILE_CAPABILITY = 46,
+  
   SBOX_ERROR_LAST
 };
 
@@ -131,9 +137,11 @@ enum TerminationCodes {
   SBOX_FATAL_LAST
 };
 
+#if !defined(SANDBOX_FUZZ_TARGET)
 static_assert(SBOX_FATAL_MEMORY_EXCEEDED ==
                   base::win::kSandboxFatalMemoryExceeded,
               "Value for SBOX_FATAL_MEMORY_EXCEEDED must match base.");
+#endif  
 
 class BrokerServices;
 class TargetServices;
@@ -152,7 +160,7 @@ struct SandboxInterfaceInfo {
 
 enum InterceptionType {
   INTERCEPTION_INVALID = 0,
-  INTERCEPTION_SERVICE_CALL,    
+  INTERCEPTION_SERVICE_CALL,  
   INTERCEPTION_EAT,
   INTERCEPTION_SIDESTEP,        
   INTERCEPTION_SMART_SIDESTEP,  

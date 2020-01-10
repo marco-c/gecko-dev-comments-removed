@@ -7,10 +7,6 @@
 
 #include <stddef.h>
 
-#if !defined(__BIONIC_HAVE_UCONTEXT_T)
-#if !defined(__native_client_nonsfi__)
-#include <asm/sigcontext.h>
-#else
 
 
 struct sigcontext {
@@ -43,7 +39,6 @@ typedef struct sigaltstack {
   size_t ss_size;
 } stack_t;
 
-#endif
 
 
 typedef unsigned long greg_t;
@@ -61,9 +56,5 @@ typedef struct ucontext {
 
   unsigned long uc_regspace[128] __attribute__((__aligned__(8)));
 } ucontext_t;
-
-#else
-#include <sys/ucontext.h>
-#endif  
 
 #endif  

@@ -13,14 +13,34 @@
 #include "build/build_config.h"
 
 #if defined(OS_WIN)
-#include <windows.h>
-#elif defined(OS_POSIX)
+#include "base/win/windows_types.h"
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 #include <pthread.h>
 #endif
 
+namespace heap_profiling {
+class ScopedAllowAlloc;
+}  
+
+namespace ui {
+class TLSDestructionCheckerForX11;
+}
+
 namespace base {
 
+class SamplingHeapProfiler;
+
+namespace debug {
+class GlobalActivityTracker;
+}  
+
+namespace trace_event {
+class MallocDumpProvider;
+}  
+
 namespace internal {
+
+class ThreadLocalStorageTestInternal;
 
 
 
@@ -34,7 +54,7 @@ class BASE_EXPORT PlatformThreadLocalStorage {
 #if defined(OS_WIN)
   typedef unsigned long TLSKey;
   enum : unsigned { TLS_KEY_OUT_OF_INDEXES = TLS_OUT_OF_INDEXES };
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   typedef pthread_key_t TLSKey;
   
   
@@ -59,7 +79,7 @@ class BASE_EXPORT PlatformThreadLocalStorage {
   static void* GetTLSValue(TLSKey key) {
 #if defined(OS_WIN)
     return TlsGetValue(key);
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
     return pthread_getspecific(key);
 #endif
   }
@@ -76,7 +96,7 @@ class BASE_EXPORT PlatformThreadLocalStorage {
   
   
   static void OnThreadExit();
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   
   
   
@@ -90,7 +110,6 @@ class BASE_EXPORT PlatformThreadLocalStorage {
 
 class BASE_EXPORT ThreadLocalStorage {
  public:
-
   
   
   
@@ -100,48 +119,18 @@ class BASE_EXPORT ThreadLocalStorage {
   
   
   
-  #define TLS_INITIALIZER {0}
-
   
   
   
   
   
-  struct BASE_EXPORT StaticSlot {
-    
-    
-    
-    void Initialize(TLSDestructorFunc destructor);
-
-    
-    
-    
-    
-    void Free();
-
-    
-    
-    void* Get() const;
-
-    
-    
-    void Set(void* value);
-
-    bool initialized() const {
-      return base::subtle::Acquire_Load(&initialized_) != 0;
-    }
-
-    
-    base::subtle::Atomic32 initialized_;
-    int slot_;
-    uint32_t version_;
-  };
-
-  
-  
-  class BASE_EXPORT Slot {
+  class BASE_EXPORT Slot final {
    public:
-    explicit Slot(TLSDestructorFunc destructor = NULL);
+    
+    
+    explicit Slot(TLSDestructorFunc destructor = nullptr);
+    
+    
     ~Slot();
 
     
@@ -149,15 +138,37 @@ class BASE_EXPORT ThreadLocalStorage {
     void* Get() const;
 
     
+    
     void Set(void* value);
 
    private:
-    StaticSlot tls_slot_;
+    void Initialize(TLSDestructorFunc destructor);
+    void Free();
+
+    static constexpr int kInvalidSlotValue = -1;
+    int slot_ = kInvalidSlotValue;
+    uint32_t version_ = 0;
 
     DISALLOW_COPY_AND_ASSIGN(Slot);
   };
 
  private:
+  
+  
+  
+  
+  
+  
+  
+  
+  friend class base::SamplingHeapProfiler;
+  friend class base::internal::ThreadLocalStorageTestInternal;
+  friend class base::trace_event::MallocDumpProvider;
+  friend class debug::GlobalActivityTracker;
+  friend class heap_profiling::ScopedAllowAlloc;
+  friend class ui::TLSDestructionCheckerForX11;
+  static bool HasBeenDestroyed();
+
   DISALLOW_COPY_AND_ASSIGN(ThreadLocalStorage);
 };
 

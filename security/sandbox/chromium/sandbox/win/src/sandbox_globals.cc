@@ -10,7 +10,7 @@
 namespace sandbox {
 
 
-SANDBOX_INTERCEPT HANDLE g_shared_section = NULL;
+SANDBOX_INTERCEPT HANDLE g_shared_section = nullptr;
 
 
 SANDBOX_INTERCEPT NtExports g_nt = {};

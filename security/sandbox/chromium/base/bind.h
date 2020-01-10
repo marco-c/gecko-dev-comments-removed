@@ -5,7 +5,41 @@
 #ifndef BASE_BIND_H_
 #define BASE_BIND_H_
 
+#include <functional>
+#include <memory>
+#include <utility>
+
 #include "base/bind_internal.h"
+#include "base/compiler_specific.h"
+#include "build/build_config.h"
+
+#if defined(OS_MACOSX) && !HAS_FEATURE(objc_arc)
+#include "base/mac/scoped_block.h"
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -51,7 +85,7 @@ struct AssertConstructible {
   
   static_assert(
       param_is_forwardable ||
-          !std::is_constructible<Param, typename std::decay<Unwrapped>::type&&>::value,
+          !std::is_constructible<Param, std::decay_t<Unwrapped>&&>::value,
       "Bound argument |i| is move-only but will be forwarded by copy. "
       "Ensure |Arg| is bound using base::Passed(), not std::move().");
   static_assert(
@@ -62,7 +96,7 @@ struct AssertConstructible {
   static constexpr bool arg_is_storable =
       std::is_constructible<Storage, Arg>::value;
   static_assert(arg_is_storable ||
-                    !std::is_constructible<Storage, typename std::decay<Arg>::type&&>::value,
+                    !std::is_constructible<Storage, std::decay_t<Arg>&&>::value,
                 "Bound argument |i| is move-only but will be bound by copy. "
                 "Ensure |Arg| is mutable and bound using std::move().");
   static_assert(arg_is_storable,
@@ -82,11 +116,11 @@ template <size_t... Ns,
           typename... Args,
           typename... Unwrapped,
           typename... Params>
-struct AssertBindArgsValidity<IndexSequence<Ns...>,
+struct AssertBindArgsValidity<std::index_sequence<Ns...>,
                               TypeList<Args...>,
                               TypeList<Unwrapped...>,
                               TypeList<Params...>>
-    : AssertConstructible<Ns, Args, typename std::decay<Args>::type, Unwrapped, Params>... {
+    : AssertConstructible<Ns, Args, std::decay_t<Args>, Unwrapped, Params>... {
   static constexpr bool ok = true;
 };
 
@@ -96,14 +130,14 @@ struct TransformToUnwrappedTypeImpl;
 
 template <typename T>
 struct TransformToUnwrappedTypeImpl<true, T> {
-  using StoredType = typename std::decay<T>::type;
+  using StoredType = std::decay_t<T>;
   using ForwardType = StoredType&&;
   using Unwrapped = decltype(Unwrap(std::declval<ForwardType>()));
 };
 
 template <typename T>
 struct TransformToUnwrappedTypeImpl<false, T> {
-  using StoredType = typename std::decay<T>::type;
+  using StoredType = std::decay_t<T>;
   using ForwardType = const StoredType&;
   using Unwrapped = decltype(Unwrap(std::declval<ForwardType>()));
 };
@@ -151,12 +185,11 @@ using MakeUnwrappedTypeList =
 template <typename Functor, typename... Args>
 inline OnceCallback<MakeUnboundRunType<Functor, Args...>>
 BindOnce(Functor&& functor, Args&&... args) {
-  static_assert(
-      !internal::IsOnceCallback<typename std::decay<Functor>::type>() ||
-          (std::is_rvalue_reference<Functor&&>() &&
-           !std::is_const<typename std::remove_reference<Functor>::type>()),
-      "BindOnce requires non-const rvalue for OnceCallback binding."
-      " I.e.: base::BindOnce(std::move(callback)).");
+  static_assert(!internal::IsOnceCallback<std::decay_t<Functor>>() ||
+                    (std::is_rvalue_reference<Functor&&>() &&
+                     !std::is_const<std::remove_reference_t<Functor>>()),
+                "BindOnce requires non-const rvalue for OnceCallback binding."
+                " I.e.: base::BindOnce(std::move(callback)).");
 
   
   
@@ -169,7 +202,7 @@ BindOnce(Functor&& functor, Args&&... args) {
                                       Args&&...>;
   using BoundParamsList = typename Helper::BoundParamsList;
   static_assert(internal::AssertBindArgsValidity<
-                    MakeIndexSequence<Helper::num_bounds>, BoundArgsList,
+                    std::make_index_sequence<Helper::num_bounds>, BoundArgsList,
                     UnwrappedArgsList, BoundParamsList>::ok,
                 "The bound args need to be convertible to the target params.");
 
@@ -185,10 +218,9 @@ BindOnce(Functor&& functor, Args&&... args) {
   PolymorphicInvoke invoke_func = &Invoker::RunOnce;
 
   using InvokeFuncStorage = internal::BindStateBase::InvokeFuncStorage;
-  return CallbackType(new BindState(
+  return CallbackType(BindState::Create(
       reinterpret_cast<InvokeFuncStorage>(invoke_func),
-      std::forward<Functor>(functor),
-      std::forward<Args>(args)...));
+      std::forward<Functor>(functor), std::forward<Args>(args)...));
 }
 
 
@@ -196,7 +228,7 @@ template <typename Functor, typename... Args>
 inline RepeatingCallback<MakeUnboundRunType<Functor, Args...>>
 BindRepeating(Functor&& functor, Args&&... args) {
   static_assert(
-      !internal::IsOnceCallback<typename std::decay<Functor>::type>(),
+      !internal::IsOnceCallback<std::decay_t<Functor>>(),
       "BindRepeating cannot bind OnceCallback. Use BindOnce with std::move().");
 
   
@@ -210,7 +242,7 @@ BindRepeating(Functor&& functor, Args&&... args) {
                                       Args&&...>;
   using BoundParamsList = typename Helper::BoundParamsList;
   static_assert(internal::AssertBindArgsValidity<
-                    MakeIndexSequence<Helper::num_bounds>, BoundArgsList,
+                    std::make_index_sequence<Helper::num_bounds>, BoundArgsList,
                     UnwrappedArgsList, BoundParamsList>::ok,
                 "The bound args need to be convertible to the target params.");
 
@@ -226,10 +258,9 @@ BindRepeating(Functor&& functor, Args&&... args) {
   PolymorphicInvoke invoke_func = &Invoker::Run;
 
   using InvokeFuncStorage = internal::BindStateBase::InvokeFuncStorage;
-  return CallbackType(new BindState(
+  return CallbackType(BindState::Create(
       reinterpret_cast<InvokeFuncStorage>(invoke_func),
-      std::forward<Functor>(functor),
-      std::forward<Args>(args)...));
+      std::forward<Functor>(functor), std::forward<Args>(args)...));
 }
 
 
@@ -238,8 +269,8 @@ BindRepeating(Functor&& functor, Args&&... args) {
 template <typename Functor, typename... Args>
 inline Callback<MakeUnboundRunType<Functor, Args...>>
 Bind(Functor&& functor, Args&&... args) {
-  return BindRepeating(std::forward<Functor>(functor),
-                       std::forward<Args>(args)...);
+  return base::BindRepeating(std::forward<Functor>(functor),
+                             std::forward<Args>(args)...);
 }
 
 
@@ -258,6 +289,173 @@ template <typename Signature>
 Callback<Signature> Bind(Callback<Signature> closure) {
   return closure;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+static inline internal::UnretainedWrapper<T> Unretained(T* o) {
+  return internal::UnretainedWrapper<T>(o);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+static inline internal::RetainedRefWrapper<T> RetainedRef(T* o) {
+  return internal::RetainedRefWrapper<T>(o);
+}
+template <typename T>
+static inline internal::RetainedRefWrapper<T> RetainedRef(scoped_refptr<T> o) {
+  return internal::RetainedRefWrapper<T>(std::move(o));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+static inline internal::OwnedWrapper<T> Owned(T* o) {
+  return internal::OwnedWrapper<T>(o);
+}
+
+template <typename T>
+static inline internal::OwnedWrapper<T> Owned(std::unique_ptr<T>&& ptr) {
+  return internal::OwnedWrapper<T>(std::move(ptr));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T,
+          std::enable_if_t<!std::is_lvalue_reference<T>::value>* = nullptr>
+static inline internal::PassedWrapper<T> Passed(T&& scoper) {
+  return internal::PassedWrapper<T>(std::move(scoper));
+}
+template <typename T>
+static inline internal::PassedWrapper<T> Passed(T* scoper) {
+  return internal::PassedWrapper<T>(std::move(*scoper));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+static inline internal::IgnoreResultHelper<T> IgnoreResult(T data) {
+  return internal::IgnoreResultHelper<T>(std::move(data));
+}
+
+#if defined(OS_MACOSX) && !HAS_FEATURE(objc_arc)
+
+
+
+
+
+
+
+
+
+
+template <typename R, typename... Args>
+base::mac::ScopedBlock<R (^)(Args...)> RetainBlock(R (^block)(Args...)) {
+  return base::mac::ScopedBlock<R (^)(Args...)>(block,
+                                                base::scoped_policy::RETAIN);
+}
+
+#endif  
 
 }  
 

@@ -2,10 +2,10 @@
 
 
 
+#include "sandbox/win/src/policy_engine_processor.h"
+
 #include <stddef.h>
 #include <stdint.h>
-
-#include "sandbox/win/src/policy_engine_processor.h"
 
 namespace sandbox {
 
@@ -23,7 +23,8 @@ EvalResult PolicyProcessor::GetAction() const {
 
 
 
-bool SkipOpcode(const PolicyOpcode& opcode, MatchContext* context,
+bool SkipOpcode(const PolicyOpcode& opcode,
+                MatchContext* context,
                 bool* keep_skipping) {
   if (opcode.IsAction()) {
     uint32_t options = context->options;
@@ -38,15 +39,12 @@ bool SkipOpcode(const PolicyOpcode& opcode, MatchContext* context,
 PolicyResult PolicyProcessor::Evaluate(uint32_t options,
                                        ParameterSet* parameters,
                                        size_t param_count) {
-  if (NULL == policy_) {
+  if (!policy_)
     return NO_POLICY_MATCH;
-  }
-  if (0 == policy_->opcode_count) {
+  if (0 == policy_->opcode_count)
     return NO_POLICY_MATCH;
-  }
-  if (!(kShortEval & options)) {
+  if (!(kShortEval & options))
     return POLICY_ERROR;
-  }
 
   MatchContext context;
   bool evaluation = false;
@@ -67,29 +65,25 @@ PolicyResult PolicyProcessor::Evaluate(uint32_t options,
     PolicyOpcode& opcode = policy_->opcodes[ix];
     
     if (skip_group) {
-      if (SkipOpcode(opcode, &context, &skip_group)) {
+      if (SkipOpcode(opcode, &context, &skip_group))
         continue;
-      }
     }
     
     EvalResult result = opcode.Evaluate(parameters, param_count, &context);
     switch (result) {
       case EVAL_FALSE:
         evaluation = false;
-        if (kPolUseOREval != context.options) {
+        if (kPolUseOREval != context.options)
           skip_group = true;
-        }
         break;
       case EVAL_ERROR:
-        if (kStopOnErrors & options) {
+        if (kStopOnErrors & options)
           return POLICY_ERROR;
-        }
         break;
       case EVAL_TRUE:
         evaluation = true;
-        if (kPolUseOREval == context.options) {
+        if (kPolUseOREval == context.options)
           skip_group = true;
-        }
         break;
       default:
         
@@ -105,6 +99,5 @@ PolicyResult PolicyProcessor::Evaluate(uint32_t options,
   }
   return NO_POLICY_MATCH;
 }
-
 
 }  

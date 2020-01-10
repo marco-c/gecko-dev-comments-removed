@@ -12,13 +12,11 @@
 #include "base/files/scoped_file.h"
 #include "base/macros.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
+#include "sandbox/linux/bpf_dsl/policy.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
 struct arch_seccomp_data;
-namespace bpf_dsl {
-class Policy;
-}
 
 
 
@@ -33,7 +31,7 @@ class SANDBOX_EXPORT SandboxBPF {
 
   
   
-  explicit SandboxBPF(bpf_dsl::Policy* policy);
+  explicit SandboxBPF(std::unique_ptr<bpf_dsl::Policy> policy);
   
   
   

@@ -19,9 +19,24 @@
 #include "base/compiler_specific.h"
 #include "base/debug/debugger.h"
 #include "base/macros.h"
+#include "base/scoped_clear_last_error.h"
 #include "base/strings/string_piece_forward.h"
 #include "base/template_util.h"
 #include "build/build_config.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -147,8 +162,8 @@ namespace logging {
 
 
 #if defined(OS_WIN)
-typedef wchar_t PathChar;
-#else
+typedef base::char16 PathChar;
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 typedef char PathChar;
 #endif
 
@@ -166,7 +181,7 @@ enum LoggingDestination {
   
 #if defined(OS_WIN)
   LOG_DEFAULT = LOG_TO_FILE,
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG,
 #endif
 };
@@ -267,6 +282,12 @@ int GetVlogLevel(const char (&file)[N]) {
 
 BASE_EXPORT void SetLogItems(bool enable_process_id, bool enable_thread_id,
                              bool enable_timestamp, bool enable_tickcount);
+
+
+
+
+
+BASE_EXPORT void SetLogPrefix(const char* prefix);
 
 
 
@@ -436,7 +457,7 @@ const LogSeverity LOG_0 = LOG_ERROR;
 #define VPLOG_STREAM(verbose_level) \
   ::logging::Win32ErrorLogMessage(__FILE__, __LINE__, -verbose_level, \
     ::logging::GetLastSystemErrorCode()).stream()
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 #define VPLOG_STREAM(verbose_level) \
   ::logging::ErrnoLogMessage(__FILE__, __LINE__, -verbose_level, \
     ::logging::GetLastSystemErrorCode()).stream()
@@ -459,7 +480,7 @@ const LogSeverity LOG_0 = LOG_ERROR;
 #define PLOG_STREAM(severity) \
   COMPACT_GOOGLE_LOG_EX_ ## severity(Win32ErrorLogMessage, \
       ::logging::GetLastSystemErrorCode()).stream()
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 #define PLOG_STREAM(severity) \
   COMPACT_GOOGLE_LOG_EX_ ## severity(ErrnoLogMessage, \
       ::logging::GetLastSystemErrorCode()).stream()
@@ -552,12 +573,6 @@ class CheckOpResult {
 #define TRAP_SEQUENCE() __builtin_trap()
 #endif  
 
-#define IMMEDIATE_CRASH()    \
-  ({                         \
-    TRAP_SEQUENCE();         \
-    __builtin_unreachable(); \
-  })
-
 #elif defined(COMPILER_MSVC)
 
 
@@ -572,14 +587,46 @@ class CheckOpResult {
 
 
 
-#if defined(__clang__)
-#define IMMEDIATE_CRASH() ({__asm int 3 __asm ud2 __asm push __COUNTER__})
+#if !defined(__clang__)
+#define TRAP_SEQUENCE() __debugbreak()
+#elif defined(ARCH_CPU_ARM64)
+#define TRAP_SEQUENCE() \
+  __asm volatile("brk #0\n hlt %0\n" ::"i"(__COUNTER__ % 65536));
 #else
-#define IMMEDIATE_CRASH() __debugbreak()
+#define TRAP_SEQUENCE() ({ {__asm int 3 __asm ud2 __asm push __COUNTER__}; })
 #endif  
 
 #else
 #error Port
+#endif  
+
+
+
+
+
+
+
+
+
+#if !defined(COMPILER_GCC)
+#define WRAPPED_TRAP_SEQUENCE() TRAP_SEQUENCE()
+#else
+#define WRAPPED_TRAP_SEQUENCE() \
+  do {                          \
+    [] { TRAP_SEQUENCE(); }();  \
+  } while (false)
+#endif
+
+#if defined(__clang__) || defined(COMPILER_GCC)
+#define IMMEDIATE_CRASH()    \
+  ({                         \
+    WRAPPED_TRAP_SEQUENCE(); \
+    __builtin_unreachable(); \
+  })
+#else
+
+
+#define IMMEDIATE_CRASH() WRAPPED_TRAP_SEQUENCE()
 #endif
 
 
@@ -807,24 +854,25 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DPLOG(severity)                                         \
   LAZY_STREAM(PLOG_STREAM(severity), DLOG_IS_ON(severity))
 
-#define DVLOG(verboselevel) DVLOG_IF(verboselevel, VLOG_IS_ON(verboselevel))
+#define DVLOG(verboselevel) DVLOG_IF(verboselevel, true)
 
-#define DVPLOG(verboselevel) DVPLOG_IF(verboselevel, VLOG_IS_ON(verboselevel))
+#define DVPLOG(verboselevel) DVPLOG_IF(verboselevel, true)
 
 
 
 #if DCHECK_IS_ON()
 
-#if defined(SYZYASAN)
+#if defined(DCHECK_IS_CONFIGURABLE)
 BASE_EXPORT extern LogSeverity LOG_DCHECK;
 #else
 const LogSeverity LOG_DCHECK = LOG_FATAL;
-#endif
+#endif  
 
 #else  
 
 
-const LogSeverity LOG_DCHECK = LOG_INFO;
+
+const LogSeverity LOG_DCHECK = LOG_FATAL;
 
 #endif  
 
@@ -881,9 +929,8 @@ const LogSeverity LOG_DCHECK = LOG_INFO;
 #define DCHECK_OP(name, op, val1, val2)                                \
   switch (0) case 0: default:                                          \
   if (::logging::CheckOpResult true_if_passed =                        \
-      DCHECK_IS_ON() ?                                                 \
       ::logging::Check##name##Impl((val1), (val2),                     \
-                                   #val1 " " #op " " #val2) : nullptr) \
+                                   #val1 " " #op " " #val2))           \
    ;                                                                   \
   else                                                                 \
     ::logging::LogMessage(__FILE__, __LINE__, ::logging::LOG_DCHECK,   \
@@ -992,25 +1039,10 @@ class BASE_EXPORT LogMessage {
   const char* file_;
   const int line_;
 
-#if defined(OS_WIN)
   
   
   
-  
-  
-  class SaveLastError {
-   public:
-    SaveLastError();
-    ~SaveLastError();
-
-    unsigned long get_error() const { return last_error_; }
-
-   protected:
-    unsigned long last_error_;
-  };
-
-  SaveLastError last_error_;
-#endif
+  base::internal::ScopedClearLastError last_error_;
 
   DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
@@ -1020,7 +1052,7 @@ class BASE_EXPORT LogMessage {
 
 class LogMessageVoidify {
  public:
-  LogMessageVoidify() { }
+  LogMessageVoidify() = default;
   
   
   void operator&(std::ostream&) { }
@@ -1028,7 +1060,7 @@ class LogMessageVoidify {
 
 #if defined(OS_WIN)
 typedef unsigned long SystemErrorCode;
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 typedef int SystemErrorCode;
 #endif
 
@@ -1057,7 +1089,7 @@ class BASE_EXPORT Win32ErrorLogMessage {
 
   DISALLOW_COPY_AND_ASSIGN(Win32ErrorLogMessage);
 };
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 
 class BASE_EXPORT ErrnoLogMessage {
  public:
@@ -1103,7 +1135,7 @@ BASE_EXPORT void RawLog(int level, const char* message);
 BASE_EXPORT bool IsLoggingToFileEnabled();
 
 
-BASE_EXPORT std::wstring GetLogFileFullPath();
+BASE_EXPORT base::string16 GetLogFileFullPath();
 #endif
 
 }  
@@ -1133,22 +1165,6 @@ inline std::ostream& operator<<(std::ostream& out, const std::wstring& wstr) {
 
 
 
-
-
-
-
-
-
-
-#ifndef NOTIMPLEMENTED_POLICY
-#if defined(OS_ANDROID) && defined(OFFICIAL_BUILD)
-#define NOTIMPLEMENTED_POLICY 0
-#else
-
-#define NOTIMPLEMENTED_POLICY 4
-#endif
-#endif
-
 #if defined(COMPILER_GCC)
 
 
@@ -1157,24 +1173,18 @@ inline std::ostream& operator<<(std::ostream& out, const std::wstring& wstr) {
 #define NOTIMPLEMENTED_MSG "NOT IMPLEMENTED"
 #endif
 
-#if NOTIMPLEMENTED_POLICY == 0
+#if defined(OS_ANDROID) && defined(OFFICIAL_BUILD)
 #define NOTIMPLEMENTED() EAT_STREAM_PARAMETERS
-#elif NOTIMPLEMENTED_POLICY == 1
-
-#define NOTIMPLEMENTED() static_assert(false, "NOT_IMPLEMENTED")
-#elif NOTIMPLEMENTED_POLICY == 2
-#define NOTIMPLEMENTED() static_assert(false, "NOT_IMPLEMENTED")
-#elif NOTIMPLEMENTED_POLICY == 3
-#define NOTIMPLEMENTED() NOTREACHED()
-#elif NOTIMPLEMENTED_POLICY == 4
+#define NOTIMPLEMENTED_LOG_ONCE() EAT_STREAM_PARAMETERS
+#else
 #define NOTIMPLEMENTED() LOG(ERROR) << NOTIMPLEMENTED_MSG
-#elif NOTIMPLEMENTED_POLICY == 5
-#define NOTIMPLEMENTED() do {\
-  static bool logged_once = false;\
-  LOG_IF(ERROR, !logged_once) << NOTIMPLEMENTED_MSG;\
-  logged_once = true;\
-} while(0);\
-EAT_STREAM_PARAMETERS
+#define NOTIMPLEMENTED_LOG_ONCE()                      \
+  do {                                                 \
+    static bool logged_once = false;                   \
+    LOG_IF(ERROR, !logged_once) << NOTIMPLEMENTED_MSG; \
+    logged_once = true;                                \
+  } while (0);                                         \
+  EAT_STREAM_PARAMETERS
 #endif
 
 #endif  

@@ -14,6 +14,7 @@
 #include "base/base_export.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
+#include "build/build_config.h"
 
 
 
@@ -39,29 +40,44 @@ namespace base {
 
 
 
-BASE_EXPORT std::string IntToString(int value);
-BASE_EXPORT string16 IntToString16(int value);
 
-BASE_EXPORT std::string UintToString(unsigned value);
-BASE_EXPORT string16 UintToString16(unsigned value);
-
-BASE_EXPORT std::string Int64ToString(int64_t value);
-BASE_EXPORT string16 Int64ToString16(int64_t value);
-
-BASE_EXPORT std::string Uint64ToString(uint64_t value);
-BASE_EXPORT string16 Uint64ToString16(uint64_t value);
-
-BASE_EXPORT std::string SizeTToString(size_t value);
-BASE_EXPORT string16 SizeTToString16(size_t value);
-
-
-
-BASE_EXPORT std::string DoubleToString(double value);
+BASE_EXPORT std::string NumberToString(int value);
+BASE_EXPORT string16 NumberToString16(int value);
+BASE_EXPORT std::string NumberToString(unsigned int value);
+BASE_EXPORT string16 NumberToString16(unsigned int value);
+BASE_EXPORT std::string NumberToString(long value);
+BASE_EXPORT string16 NumberToString16(long value);
+BASE_EXPORT std::string NumberToString(unsigned long value);
+BASE_EXPORT string16 NumberToString16(unsigned long value);
+BASE_EXPORT std::string NumberToString(long long value);
+BASE_EXPORT string16 NumberToString16(long long value);
+BASE_EXPORT std::string NumberToString(unsigned long long value);
+BASE_EXPORT string16 NumberToString16(unsigned long long value);
+BASE_EXPORT std::string NumberToString(double value);
+BASE_EXPORT string16 NumberToString16(double value);
 
 
 
 
 
+inline std::string IntToString(int value) {
+  return NumberToString(value);
+}
+inline string16 IntToString16(int value) {
+  return NumberToString16(value);
+}
+inline std::string UintToString(unsigned value) {
+  return NumberToString(value);
+}
+inline string16 UintToString16(unsigned value) {
+  return NumberToString16(value);
+}
+inline std::string Int64ToString(int64_t value) {
+  return NumberToString(value);
+}
+inline string16 Int64ToString16(int64_t value) {
+  return NumberToString16(value);
+}
 
 
 
@@ -76,20 +92,25 @@ BASE_EXPORT std::string DoubleToString(double value);
 
 
 
-BASE_EXPORT bool StringToInt(const StringPiece& input, int* output);
-BASE_EXPORT bool StringToInt(const StringPiece16& input, int* output);
 
-BASE_EXPORT bool StringToUint(const StringPiece& input, unsigned* output);
-BASE_EXPORT bool StringToUint(const StringPiece16& input, unsigned* output);
 
-BASE_EXPORT bool StringToInt64(const StringPiece& input, int64_t* output);
-BASE_EXPORT bool StringToInt64(const StringPiece16& input, int64_t* output);
 
-BASE_EXPORT bool StringToUint64(const StringPiece& input, uint64_t* output);
-BASE_EXPORT bool StringToUint64(const StringPiece16& input, uint64_t* output);
 
-BASE_EXPORT bool StringToSizeT(const StringPiece& input, size_t* output);
-BASE_EXPORT bool StringToSizeT(const StringPiece16& input, size_t* output);
+
+BASE_EXPORT bool StringToInt(StringPiece input, int* output);
+BASE_EXPORT bool StringToInt(StringPiece16 input, int* output);
+
+BASE_EXPORT bool StringToUint(StringPiece input, unsigned* output);
+BASE_EXPORT bool StringToUint(StringPiece16 input, unsigned* output);
+
+BASE_EXPORT bool StringToInt64(StringPiece input, int64_t* output);
+BASE_EXPORT bool StringToInt64(StringPiece16 input, int64_t* output);
+
+BASE_EXPORT bool StringToUint64(StringPiece input, uint64_t* output);
+BASE_EXPORT bool StringToUint64(StringPiece16 input, uint64_t* output);
+
+BASE_EXPORT bool StringToSizeT(StringPiece input, size_t* output);
+BASE_EXPORT bool StringToSizeT(StringPiece16 input, size_t* output);
 
 
 
@@ -114,30 +135,30 @@ BASE_EXPORT std::string HexEncode(const void* bytes, size_t size);
 
 
 
-BASE_EXPORT bool HexStringToInt(const StringPiece& input, int* output);
+BASE_EXPORT bool HexStringToInt(StringPiece input, int* output);
 
 
 
 
 
-BASE_EXPORT bool HexStringToUInt(const StringPiece& input, uint32_t* output);
+BASE_EXPORT bool HexStringToUInt(StringPiece input, uint32_t* output);
 
 
 
 
-BASE_EXPORT bool HexStringToInt64(const StringPiece& input, int64_t* output);
-
-
-
-
-
-BASE_EXPORT bool HexStringToUInt64(const StringPiece& input, uint64_t* output);
+BASE_EXPORT bool HexStringToInt64(StringPiece input, int64_t* output);
 
 
 
 
 
-BASE_EXPORT bool HexStringToBytes(const std::string& input,
+BASE_EXPORT bool HexStringToUInt64(StringPiece input, uint64_t* output);
+
+
+
+
+
+BASE_EXPORT bool HexStringToBytes(StringPiece input,
                                   std::vector<uint8_t>* output);
 
 }  

@@ -16,7 +16,7 @@ namespace base {
 
 class AtomicSequenceNumber {
  public:
-  constexpr AtomicSequenceNumber() {}
+  constexpr AtomicSequenceNumber() = default;
 
   
   

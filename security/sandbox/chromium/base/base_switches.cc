@@ -8,7 +8,13 @@
 namespace switches {
 
 
+const char kDisableBestEffortTasks[] = "disable-best-effort-tasks";
+
+
 const char kDisableBreakpad[]               = "disable-breakpad";
+
+
+const char kDisableFeatures[] = "disable-features";
 
 
 
@@ -16,23 +22,7 @@ const char kDisableBreakpad[]               = "disable-breakpad";
 const char kEnableCrashReporter[]           = "enable-crash-reporter";
 
 
-
-
-const char kEnableHeapProfiling[]           = "enable-heap-profiling";
-
-
-
-const char kEnableHeapProfilingModePseudo[] = "";
-
-
-
-const char kEnableHeapProfilingModeNative[] = "native";
-
-
-
-
-
-const char kEnableHeapProfilingTaskProfiler[] = "task-profiler";
+const char kEnableFeatures[] = "enable-features";
 
 
 const char kFullMemoryCrashReport[]         = "full-memory-crash-report";
@@ -94,10 +84,7 @@ const char kTraceToFileName[]               = "trace-to-file-name";
 
 
 
-const char kProfilerTiming[]                = "profiler-timing";
-
-
-const char kProfilerTimingDisabledValue[]   = "0";
+const char kProfilingAtStart[] = "profiling-at-start";
 
 
 
@@ -109,9 +96,23 @@ const char kProfilerTimingDisabledValue[]   = "0";
 
 const char kProfilingFile[] = "profiling-file";
 
+
+
+
+
+const char kProfilingFlush[] = "profiling-flush";
+
 #if defined(OS_WIN)
 
 const char kDisableUsbKeyboardDetect[]      = "disable-usb-keyboard-detect";
+#endif
+
+#if defined(OS_LINUX) && !defined(OS_CHROMEOS)
+
+
+
+
+const char kDisableDevShmUsage[] = "disable-dev-shm-usage";
 #endif
 
 #if defined(OS_POSIX)
@@ -119,6 +120,23 @@ const char kDisableUsbKeyboardDetect[]      = "disable-usb-keyboard-detect";
 
 const char kEnableCrashReporterForTesting[] =
     "enable-crash-reporter-for-testing";
+#endif
+
+#if defined(OS_ANDROID)
+
+
+const char kEnableReachedCodeProfiler[] = "enable-reached-code-profiler";
+
+
+
+
+
+
+
+
+
+
+const char kOrderfileMemoryOptimization[] = "orderfile-memory-optimization";
 #endif
 
 }  

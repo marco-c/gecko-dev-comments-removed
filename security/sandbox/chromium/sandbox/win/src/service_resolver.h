@@ -19,7 +19,7 @@ class ServiceResolverThunk : public ResolverThunk {
  public:
   
   ServiceResolverThunk(HANDLE process, bool relaxed)
-      : ntdll_base_(NULL),
+      : ntdll_base_(nullptr),
         process_(process),
         relaxed_(relaxed),
         relative_jump_(0) {}
@@ -154,6 +154,5 @@ class Wow64W10ResolverThunk : public ServiceResolverThunk {
 };
 
 }  
-
 
 #endif  

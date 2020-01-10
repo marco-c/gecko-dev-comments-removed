@@ -5,6 +5,7 @@
 #include "base/strings/utf_string_conversion_utils.h"
 
 #include "base/third_party/icu/icu_utf.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -121,11 +122,11 @@ void PrepareForUTF8Output(const CHAR* src,
 }
 
 
-template void PrepareForUTF8Output(const wchar_t*, size_t, std::string*);
-#ifndef __MINGW32__
+#if !defined(OS_WIN)
 
-template void PrepareForUTF8Output(const char16*, size_t, std::string*);
+template void PrepareForUTF8Output(const wchar_t*, size_t, std::string*);
 #endif
+template void PrepareForUTF8Output(const char16*, size_t, std::string*);
 
 template<typename STRING>
 void PrepareForUTF16Or32Output(const char* src,
@@ -145,10 +146,10 @@ void PrepareForUTF16Or32Output(const char* src,
 }
 
 
-template void PrepareForUTF16Or32Output(const char*, size_t, std::wstring*);
-#ifndef __MINGW32__
+#if !defined(OS_WIN)
 
-template void PrepareForUTF16Or32Output(const char*, size_t, string16*);
+template void PrepareForUTF16Or32Output(const char*, size_t, std::wstring*);
 #endif
+template void PrepareForUTF16Or32Output(const char*, size_t, string16*);
 
 }  

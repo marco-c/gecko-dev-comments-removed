@@ -29,15 +29,16 @@ class NamedPipePolicy {
   
   static DWORD CreateNamedPipeAction(EvalResult eval_result,
                                      const ClientInfo& client_info,
-                                     const base::string16 &name,
-                                     DWORD open_mode, DWORD pipe_mode,
+                                     const base::string16& name,
+                                     DWORD open_mode,
+                                     DWORD pipe_mode,
                                      DWORD max_instances,
                                      DWORD out_buffer_size,
                                      DWORD in_buffer_size,
-                                     DWORD default_timeout, HANDLE* pipe);
+                                     DWORD default_timeout,
+                                     HANDLE* pipe);
 };
 
 }  
-
 
 #endif  

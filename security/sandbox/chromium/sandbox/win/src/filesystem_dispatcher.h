@@ -42,7 +42,7 @@ class FilesystemDispatcher : public Dispatcher {
                   uint32_t share_access,
                   uint32_t create_options);
 
-    
+  
   
   bool NtQueryAttributesFile(IPCInfo* ipc,
                              base::string16* name,

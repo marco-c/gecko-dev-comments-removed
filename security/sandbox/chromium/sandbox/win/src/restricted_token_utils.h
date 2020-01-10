@@ -18,10 +18,7 @@
 namespace sandbox {
 
 
-enum TokenType {
-  IMPERSONATION = 0,
-  PRIMARY
-};
+enum TokenType { IMPERSONATION = 0, PRIMARY };
 
 
 
@@ -36,7 +33,8 @@ enum TokenType {
 
 
 
-DWORD CreateRestrictedToken(TokenLevel security_level,
+DWORD CreateRestrictedToken(HANDLE effective_token,
+                            TokenLevel security_level,
                             IntegrityLevel integrity_level,
                             TokenType token_type,
                             bool lockdown_default_dacl,
@@ -44,7 +42,8 @@ DWORD CreateRestrictedToken(TokenLevel security_level,
                             base::win::ScopedHandle* token);
 
 
-DWORD SetObjectIntegrityLabel(HANDLE handle, SE_OBJECT_TYPE type,
+DWORD SetObjectIntegrityLabel(HANDLE handle,
+                              SE_OBJECT_TYPE type,
                               const wchar_t* ace_access,
                               const wchar_t* integrity_level_sid);
 
@@ -74,6 +73,31 @@ DWORD HardenTokenIntegrityLevelPolicy(HANDLE token);
 
 
 DWORD HardenProcessIntegrityLevelPolicy();
+
+
+
+
+
+
+
+
+
+
+DWORD CreateLowBoxToken(HANDLE base_token,
+                        TokenType token_type,
+                        PSECURITY_CAPABILITIES security_capabilities,
+                        PHANDLE saved_handles,
+                        DWORD saved_handles_count,
+                        base::win::ScopedHandle* token);
+
+
+
+
+
+
+DWORD CreateLowBoxObjectDirectory(PSID lowbox_sid,
+                                  bool open_directory,
+                                  base::win::ScopedHandle* directory);
 
 }  
 

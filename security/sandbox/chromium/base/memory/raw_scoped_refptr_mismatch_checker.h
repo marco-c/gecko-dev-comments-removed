@@ -5,10 +5,9 @@
 #ifndef BASE_MEMORY_RAW_SCOPED_REFPTR_MISMATCH_CHECKER_H_
 #define BASE_MEMORY_RAW_SCOPED_REFPTR_MISMATCH_CHECKER_H_
 
-#include <tuple>
 #include <type_traits>
 
-#include "base/memory/ref_counted.h"
+#include "base/template_util.h"
 
 
 
@@ -23,6 +22,15 @@ namespace base {
 
 namespace internal {
 
+template <typename T, typename = void>
+struct IsRefCountedType : std::false_type {};
+
+template <typename T>
+struct IsRefCountedType<T,
+                        void_t<decltype(std::declval<T*>()->AddRef()),
+                               decltype(std::declval<T*>()->Release())>>
+    : std::true_type {};
+
 template <typename T>
 struct NeedsScopedRefptrButGetsRawPtr {
   static_assert(!std::is_reference<T>::value,
@@ -32,28 +40,9 @@ struct NeedsScopedRefptrButGetsRawPtr {
     
     
     
-    value =
-        (std::is_pointer<T>::value &&
-         (std::is_convertible<T, const subtle::RefCountedBase*>::value ||
-          std::is_convertible<T,
-                              const subtle::RefCountedThreadSafeBase*>::value))
+    value = std::is_pointer<T>::value &&
+            IsRefCountedType<std::remove_pointer_t<T>>::value
   };
-};
-
-template <typename Params>
-struct ParamsUseScopedRefptrCorrectly {
-  enum { value = 0 };
-};
-
-template <>
-struct ParamsUseScopedRefptrCorrectly<std::tuple<>> {
-  enum { value = 1 };
-};
-
-template <typename Head, typename... Tail>
-struct ParamsUseScopedRefptrCorrectly<std::tuple<Head, Tail...>> {
-  enum { value = !NeedsScopedRefptrButGetsRawPtr<Head>::value &&
-                  ParamsUseScopedRefptrCorrectly<std::tuple<Tail...>>::value };
 };
 
 }  

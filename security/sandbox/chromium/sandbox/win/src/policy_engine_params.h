@@ -59,7 +59,7 @@ namespace sandbox {
 
 class ParameterSet {
  public:
-  ParameterSet() : real_type_(INVALID_TYPE), address_(NULL) {}
+  ParameterSet() : real_type_(INVALID_TYPE), address_(nullptr) {}
 
   
   bool Get(uint32_t* destination) const {
@@ -89,16 +89,13 @@ class ParameterSet {
   }
 
   
-  bool IsValid() const {
-    return real_type_ != INVALID_TYPE;
-  }
+  bool IsValid() const { return real_type_ != INVALID_TYPE; }
 
  protected:
   
   
   ParameterSet(ArgType real_type, const void* address)
-      : real_type_(real_type), address_(address) {
-  }
+      : real_type_(real_type), address_(address) {}
 
  private:
   
@@ -124,56 +121,49 @@ class ParameterSetEx : public ParameterSet {
   ParameterSetEx(const void* address);
 };
 
-template<>
+template <>
 class ParameterSetEx<void const*> : public ParameterSet {
  public:
-  ParameterSetEx(const void* address)
-      : ParameterSet(VOIDPTR_TYPE, address) {}
+  ParameterSetEx(const void* address) : ParameterSet(VOIDPTR_TYPE, address) {}
 };
 
-template<>
+template <>
 class ParameterSetEx<void*> : public ParameterSet {
  public:
-  ParameterSetEx(const void* address)
-      : ParameterSet(VOIDPTR_TYPE, address) {}
+  ParameterSetEx(const void* address) : ParameterSet(VOIDPTR_TYPE, address) {}
 };
 
-
-template<>
+template <>
 class ParameterSetEx<wchar_t*> : public ParameterSet {
  public:
-  ParameterSetEx(const void* address)
-      : ParameterSet(WCHAR_TYPE, address) {}
+  ParameterSetEx(const void* address) : ParameterSet(WCHAR_TYPE, address) {}
 };
 
-template<>
+template <>
 class ParameterSetEx<wchar_t const*> : public ParameterSet {
  public:
-  ParameterSetEx(const void* address)
-      : ParameterSet(WCHAR_TYPE, address) {}
+  ParameterSetEx(const void* address) : ParameterSet(WCHAR_TYPE, address) {}
 };
 
 template <>
 class ParameterSetEx<uint32_t> : public ParameterSet {
  public:
-  ParameterSetEx(const void* address)
-      : ParameterSet(UINT32_TYPE, address) {}
+  ParameterSetEx(const void* address) : ParameterSet(UINT32_TYPE, address) {}
 };
 
-template<>
+template <>
 class ParameterSetEx<UNICODE_STRING> : public ParameterSet {
  public:
-  ParameterSetEx(const void* address)
-      : ParameterSet(UNISTR_TYPE, address) {}
+  ParameterSetEx(const void* address) : ParameterSet(UNISTR_TYPE, address) {}
 };
 
 template <typename T>
 ParameterSet ParamPickerMake(T& parameter) {
   return ParameterSetEx<T>(&parameter);
-};
+}
 
 struct CountedParameterSetBase {
-  int count;
+  size_t count;
   ParameterSet parameters[1];
 };
 
@@ -185,15 +175,13 @@ template <typename T>
 struct CountedParameterSet {
   CountedParameterSet() : count(T::PolParamLast) {}
 
-  ParameterSet& operator[](typename T::Args n) {
-    return parameters[n];
-  }
+  ParameterSet& operator[](typename T::Args n) { return parameters[n]; }
 
   CountedParameterSetBase* GetBase() {
     return reinterpret_cast<CountedParameterSetBase*>(this);
   }
 
-  int count;
+  size_t count;
   ParameterSet parameters[T::PolParamLast];
 };
 

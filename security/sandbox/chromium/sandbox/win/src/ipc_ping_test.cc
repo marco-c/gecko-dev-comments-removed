@@ -2,22 +2,22 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/target_services.h"
 #include "sandbox/win/tests/common/controller.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 namespace sandbox {
 
 
 
-SBOX_TESTS_COMMAND int IPC_Ping(int argc, wchar_t **argv) {
+SBOX_TESTS_COMMAND int IPC_Ping(int argc, wchar_t** argv) {
   if (argc != 1)
     return SBOX_TEST_FAILED;
 
   TargetServices* ts = SandboxFactory::GetTargetServices();
-  if (NULL == ts)
+  if (!ts)
     return SBOX_TEST_FAILED;
 
   

@@ -5,11 +5,12 @@
 #ifndef SANDBOX_SRC_WIN_UTILS_H_
 #define SANDBOX_SRC_WIN_UTILS_H_
 
-#include <windows.h>
 #include <stddef.h>
+#include <windows.h>
 #include <string>
 
 #include "base/macros.h"
+#include "base/stl_util.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/nt_internals.h"
 
@@ -17,27 +18,25 @@ namespace sandbox {
 
 
 const wchar_t kNTPrefix[] = L"\\??\\";
-const size_t kNTPrefixLen = arraysize(kNTPrefix) - 1;
+const size_t kNTPrefixLen = base::size(kNTPrefix) - 1;
 
 const wchar_t kNTDevicePrefix[] = L"\\Device\\";
-const size_t kNTDevicePrefixLen = arraysize(kNTDevicePrefix) - 1;
+const size_t kNTDevicePrefixLen = base::size(kNTDevicePrefix) - 1;
 
 
 
 class AutoLock {
  public:
   
-  explicit AutoLock(CRITICAL_SECTION *lock) : lock_(lock) {
+  explicit AutoLock(CRITICAL_SECTION* lock) : lock_(lock) {
     ::EnterCriticalSection(lock);
-  };
+  }
 
   
-  ~AutoLock() {
-    ::LeaveCriticalSection(lock_);
-  };
+  ~AutoLock() { ::LeaveCriticalSection(lock_); }
 
  private:
-  CRITICAL_SECTION *lock_;
+  CRITICAL_SECTION* lock_;
   DISALLOW_IMPLICIT_CONSTRUCTORS(AutoLock);
 };
 
@@ -47,8 +46,8 @@ template <typename Derived>
 class SingletonBase {
  public:
   static Derived* GetInstance() {
-    static Derived* instance = NULL;
-    if (NULL == instance) {
+    static Derived* instance = nullptr;
+    if (!instance) {
       instance = new Derived();
       
       
@@ -64,6 +63,15 @@ class SingletonBase {
     delete GetInstance();
     return 0;
   }
+};
+
+
+
+
+
+
+struct LocalFreeDeleter {
+  inline void operator()(void* ptr) const { ::LocalFree(ptr); }
 };
 
 
@@ -106,9 +114,10 @@ bool ResolveRegistryName(base::string16 name, base::string16* resolved_name);
 
 
 
-bool WriteProtectedChildMemory(HANDLE child_process, void* address,
-                               const void* buffer, size_t length,
-                               DWORD writeProtection = PAGE_WRITECOPY);
+bool WriteProtectedChildMemory(HANDLE child_process,
+                               void* address,
+                               const void* buffer,
+                               size_t length);
 
 
 bool IsPipe(const base::string16& path);

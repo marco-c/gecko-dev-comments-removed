@@ -61,12 +61,12 @@ class BASE_EXPORT TaskRunner
   
   
   
-  bool PostTask(const tracked_objects::Location& from_here, OnceClosure task);
+  bool PostTask(const Location& from_here, OnceClosure task);
 
   
   
   
-  virtual bool PostDelayedTask(const tracked_objects::Location& from_here,
+  virtual bool PostDelayedTask(const Location& from_here,
                                OnceClosure task,
                                base::TimeDelta delay) = 0;
 
@@ -129,16 +129,12 @@ class BASE_EXPORT TaskRunner
   
   
   
-  bool PostTaskAndReply(const tracked_objects::Location& from_here,
+  bool PostTaskAndReply(const Location& from_here,
                         OnceClosure task,
                         OnceClosure reply);
 
  protected:
   friend struct TaskRunnerTraits;
-
-  
-  
-  friend class RefCountedThreadSafe<TaskRunner, TaskRunnerTraits>;
 
   TaskRunner();
   virtual ~TaskRunner();

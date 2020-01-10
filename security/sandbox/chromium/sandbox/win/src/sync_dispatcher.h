@@ -23,15 +23,15 @@ class SyncDispatcher : public Dispatcher {
   
   bool SetupService(InterceptionManager* manager, int service) override;
 
-private:
+ private:
   
- bool CreateEvent(IPCInfo* ipc,
-                  base::string16* name,
-                  uint32_t event_type,
-                  uint32_t initial_state);
+  bool CreateEvent(IPCInfo* ipc,
+                   base::string16* name,
+                   uint32_t event_type,
+                   uint32_t initial_state);
 
   
- bool OpenEvent(IPCInfo* ipc, base::string16* name, uint32_t desired_access);
+  bool OpenEvent(IPCInfo* ipc, base::string16* name, uint32_t desired_access);
 
   PolicyBase* policy_base_;
   DISALLOW_COPY_AND_ASSIGN(SyncDispatcher);

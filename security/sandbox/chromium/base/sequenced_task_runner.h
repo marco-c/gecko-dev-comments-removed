@@ -111,45 +111,52 @@ class BASE_EXPORT SequencedTaskRunner : public TaskRunner {
   
   
 
-  bool PostNonNestableTask(const tracked_objects::Location& from_here,
-                           OnceClosure task);
+  bool PostNonNestableTask(const Location& from_here, OnceClosure task);
 
-  virtual bool PostNonNestableDelayedTask(
-      const tracked_objects::Location& from_here,
-      OnceClosure task,
-      base::TimeDelta delay) = 0;
+  virtual bool PostNonNestableDelayedTask(const Location& from_here,
+                                          OnceClosure task,
+                                          base::TimeDelta delay) = 0;
 
   
   
   
   template <class T>
-  bool DeleteSoon(const tracked_objects::Location& from_here,
-                  const T* object) {
+  bool DeleteSoon(const Location& from_here, const T* object) {
     return DeleteOrReleaseSoonInternal(from_here, &DeleteHelper<T>::DoDelete,
                                        object);
   }
 
   template <class T>
-  bool DeleteSoon(const tracked_objects::Location& from_here,
-                  std::unique_ptr<T> object) {
+  bool DeleteSoon(const Location& from_here, std::unique_ptr<T> object) {
     return DeleteSoon(from_here, object.release());
   }
 
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   template <class T>
-  bool ReleaseSoon(const tracked_objects::Location& from_here,
-                   const T* object) {
-    return DeleteOrReleaseSoonInternal(from_here, &ReleaseHelper<T>::DoRelease,
-                                       object);
+  void ReleaseSoon(const Location& from_here, scoped_refptr<T>&& object) {
+    if (!object)
+      return;
+
+    DeleteOrReleaseSoonInternal(from_here, &ReleaseHelper<T>::DoRelease,
+                                object.release());
   }
 
  protected:
-  ~SequencedTaskRunner() override {}
+  ~SequencedTaskRunner() override = default;
 
  private:
-  bool DeleteOrReleaseSoonInternal(const tracked_objects::Location& from_here,
+  bool DeleteOrReleaseSoonInternal(const Location& from_here,
                                    void (*deleter)(const void*),
                                    const void* object);
 };

@@ -16,7 +16,7 @@ namespace sandbox {
 
 class EatResolverThunk : public ResolverThunk {
  public:
-  EatResolverThunk() : eat_entry_(NULL) {}
+  EatResolverThunk() : eat_entry_(nullptr) {}
   ~EatResolverThunk() override {}
 
   
@@ -45,6 +45,5 @@ class EatResolverThunk : public ResolverThunk {
 };
 
 }  
-
 
 #endif  

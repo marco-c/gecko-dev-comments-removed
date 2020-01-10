@@ -26,19 +26,33 @@
 
 #include "build/build_config.h"
 
-#if defined(OS_POSIX) && (defined(_INTTYPES_H) || defined(_INTTYPES_H_)) && \
-    !defined(PRId64)
+#if (defined(OS_POSIX) || defined(OS_FUCHSIA)) && \
+    (defined(_INTTYPES_H) || defined(_INTTYPES_H_)) && !defined(PRId64)
 #error "inttypes.h has already been included before this header file, but "
 #error "without __STDC_FORMAT_MACROS defined."
 #endif
 
-#if defined(OS_POSIX) && !defined(__STDC_FORMAT_MACROS)
+#if (defined(OS_POSIX) || defined(OS_FUCHSIA)) && !defined(__STDC_FORMAT_MACROS)
 #define __STDC_FORMAT_MACROS
 #endif
 
 #include <inttypes.h>
 
-#if defined(OS_POSIX)
+#if defined(OS_WIN)
+
+#if !defined(PRId64) || !defined(PRIu64) || !defined(PRIx64)
+#error "inttypes.h provided by win toolchain should define these."
+#endif
+
+#define WidePRId64 L"I64d"
+#define WidePRIu64 L"I64u"
+#define WidePRIx64 L"I64x"
+
+#if !defined(PRIuS)
+#define PRIuS "Iu"
+#endif
+
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 
 
 
@@ -49,6 +63,8 @@
 #if !defined(PRIuS)
 #define PRIuS "zu"
 #endif
+
+#endif  
 
 
 
@@ -77,21 +93,5 @@
 #endif
 #endif
 #endif  
-
-#else  
-
-#if !defined(PRId64) || !defined(PRIu64) || !defined(PRIx64)
-#error "inttypes.h provided by win toolchain should define these."
-#endif
-
-#define WidePRId64 L"I64d"
-#define WidePRIu64 L"I64u"
-#define WidePRIx64 L"I64x"
-
-#if !defined(PRIuS)
-#define PRIuS "Iu"
-#endif
-
-#endif
 
 #endif  

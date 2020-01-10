@@ -9,6 +9,7 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/synchronization/lock_impl.h"
+#include "base/thread_annotations.h"
 #include "base/threading/platform_thread.h"
 #include "build/build_config.h"
 
@@ -17,12 +18,16 @@ namespace base {
 
 
 
-class BASE_EXPORT Lock {
+class LOCKABLE BASE_EXPORT Lock {
  public:
 #if !DCHECK_IS_ON()
-   
+  
   Lock() : lock_() {}
   ~Lock() {}
+
+  
+  
+  
   void Acquire() { lock_.Lock(); }
   void Release() { lock_.Unlock(); }
 
@@ -64,26 +69,24 @@ class BASE_EXPORT Lock {
   
   
   static bool HandlesMultipleThreadPriorities() {
-#if defined(OS_POSIX)
-    
-    
-    return internal::LockImpl::PriorityInheritanceAvailable();
-#elif defined(OS_WIN)
+#if defined(OS_WIN)
     
     
     
     return true;
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+    
+    
+    return internal::LockImpl::PriorityInheritanceAvailable();
 #else
 #error Unsupported platform
 #endif
   }
 
-#if defined(OS_POSIX) || defined(OS_WIN)
   
   
   
   friend class ConditionVariable;
-#endif
 
  private:
 #if DCHECK_IS_ON()
@@ -107,46 +110,11 @@ class BASE_EXPORT Lock {
 };
 
 
-class AutoLock {
- public:
-  struct AlreadyAcquired {};
-
-  explicit AutoLock(Lock& lock) : lock_(lock) {
-    lock_.Acquire();
-  }
-
-  AutoLock(Lock& lock, const AlreadyAcquired&) : lock_(lock) {
-    lock_.AssertAcquired();
-  }
-
-  ~AutoLock() {
-    lock_.AssertAcquired();
-    lock_.Release();
-  }
-
- private:
-  Lock& lock_;
-  DISALLOW_COPY_AND_ASSIGN(AutoLock);
-};
+using AutoLock = internal::BasicAutoLock<Lock>;
 
 
 
-class AutoUnlock {
- public:
-  explicit AutoUnlock(Lock& lock) : lock_(lock) {
-    
-    lock_.AssertAcquired();
-    lock_.Release();
-  }
-
-  ~AutoUnlock() {
-    lock_.Acquire();
-  }
-
- private:
-  Lock& lock_;
-  DISALLOW_COPY_AND_ASSIGN(AutoUnlock);
-};
+using AutoUnlock = internal::BasicAutoUnlock<Lock>;
 
 }  
 

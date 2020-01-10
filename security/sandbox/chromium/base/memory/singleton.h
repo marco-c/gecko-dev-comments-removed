@@ -16,31 +16,26 @@
 
 
 
+
+
+
+
+
+
+
+
 #ifndef BASE_MEMORY_SINGLETON_H_
 #define BASE_MEMORY_SINGLETON_H_
 
 #include "base/at_exit.h"
 #include "base/atomicops.h"
 #include "base/base_export.h"
+#include "base/lazy_instance_helpers.h"
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/threading/thread_restrictions.h"
 
 namespace base {
-namespace internal {
-
-
-
-static const subtle::AtomicWord kBeingCreatedMarker = 1;
-
-
-
-BASE_EXPORT subtle::AtomicWord WaitForInstance(subtle::AtomicWord* instance);
-
-class DeleteTraceLogForTesting;
-
-}  
-
 
 
 
@@ -104,29 +99,29 @@ struct LeakySingletonTraits : public DefaultSingletonTraits<Type> {
 
 
 
-
 template <typename Type>
 struct StaticMemorySingletonTraits {
-  
   
   static Type* New() {
     
     if (subtle::NoBarrier_AtomicExchange(&dead_, 1))
-      return NULL;
+      return nullptr;
 
     return new (buffer_) Type();
   }
 
   static void Delete(Type* p) {
-    if (p != NULL)
+    if (p)
       p->Type::~Type();
   }
 
   static const bool kRegisterAtExit = true;
-  static const bool kAllowedToAccessOnNonjoinableThread = true;
 
-  
-  static void Resurrect() { subtle::NoBarrier_Store(&dead_, 0); }
+#if DCHECK_IS_ON()
+  static const bool kAllowedToAccessOnNonjoinableThread = true;
+#endif
+
+  static void ResurrectForTesting() { subtle::NoBarrier_Store(&dead_, 0); }
 
  private:
   alignas(Type) static char buffer_[sizeof(Type)];
@@ -226,10 +221,8 @@ class Singleton {
  private:
   
   
-  friend Type* Type::GetInstance();
-
   
-  friend class internal::DeleteTraceLogForTesting;
+  friend Type;
 
   
   
@@ -237,41 +230,34 @@ class Singleton {
   
   static Type* get() {
 #if DCHECK_IS_ON()
-    
     if (!Traits::kAllowedToAccessOnNonjoinableThread)
       ThreadRestrictions::AssertSingletonAllowed();
 #endif
 
-    
-    
-    subtle::AtomicWord value = subtle::Acquire_Load(&instance_);
-    if (value != 0 && value != internal::kBeingCreatedMarker) {
-      return reinterpret_cast<Type*>(value);
-    }
-
-    
-    if (subtle::Acquire_CompareAndSwap(&instance_, 0,
-                                       internal::kBeingCreatedMarker) == 0) {
-      
-      
-      
-      Type* newval = Traits::New();
-
-      
-      subtle::Release_Store(&instance_,
-                            reinterpret_cast<subtle::AtomicWord>(newval));
-
-      if (newval != NULL && Traits::kRegisterAtExit)
-        AtExitManager::RegisterCallback(OnExit, NULL);
-
-      return newval;
-    }
-
-    
-    value = internal::WaitForInstance(&instance_);
-
-    return reinterpret_cast<Type*>(value);
+    return subtle::GetOrCreateLazyPointer(
+        &instance_, &CreatorFunc, nullptr,
+        Traits::kRegisterAtExit ? OnExit : nullptr, nullptr);
   }
+
+  
+  
+  static Type* GetIfExists() {
+#if DCHECK_IS_ON()
+    if (!Traits::kAllowedToAccessOnNonjoinableThread)
+      ThreadRestrictions::AssertSingletonAllowed();
+#endif
+
+    if (!subtle::NoBarrier_Load(&instance_))
+      return nullptr;
+
+    
+    
+    return get();
+  }
+
+  
+  
+  static Type* CreatorFunc(void* ) { return Traits::New(); }
 
   
   

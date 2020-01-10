@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include <algorithm>
 #include <limits>
 
 #include "base/macros.h"
@@ -236,10 +237,9 @@ class Buffer {
     if (count_ > kSSizeMax - 1 - inc) {
       count_ = kSSizeMax - 1;
       return false;
-    } else {
-      count_ += inc;
-      return true;
     }
+    count_ += inc;
+    return true;
   }
 
   
@@ -318,7 +318,7 @@ bool Buffer::IToASCII(bool sign, bool upcase, int64_t i, int base,
   
   
   
-  const char* reverse_prefix = NULL;
+  const char* reverse_prefix = nullptr;
   if (prefix && *prefix) {
     if (pad == '0') {
       while (*prefix) {
@@ -327,13 +327,13 @@ bool Buffer::IToASCII(bool sign, bool upcase, int64_t i, int base,
         }
         Out(*prefix++);
       }
-      prefix = NULL;
+      prefix = nullptr;
     } else {
       for (reverse_prefix = prefix; *reverse_prefix; ++reverse_prefix) {
       }
     }
   } else
-    prefix = NULL;
+    prefix = nullptr;
   const size_t prefix_length = reverse_prefix - prefix;
 
   
@@ -433,11 +433,9 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt, const Arg* args,
   
   
   
-  if (static_cast<ssize_t>(sz) < 1) {
+  if (static_cast<ssize_t>(sz) < 1)
     return -1;
-  } else if (sz > kSSizeMax) {
-    sz = kSSizeMax;
-  }
+  sz = std::min(sz, kSSizeMax);
 
   
   
@@ -530,7 +528,7 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt, const Arg* args,
 
         const Arg& arg = args[cur_arg++];
         int64_t i;
-        const char* prefix = NULL;
+        const char* prefix = nullptr;
         if (ch != 'p') {
           
           if (arg.type != Arg::INT && arg.type != Arg::UINT) {
@@ -659,11 +657,9 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt) {
   
   
   
-  if (static_cast<ssize_t>(sz) < 1) {
+  if (static_cast<ssize_t>(sz) < 1)
     return -1;
-  } else if (sz > kSSizeMax) {
-    sz = kSSizeMax;
-  }
+  sz = std::min(sz, kSSizeMax);
 
   Buffer buffer(buf, sz);
 

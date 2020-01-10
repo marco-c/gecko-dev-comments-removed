@@ -59,11 +59,7 @@ namespace sandbox {
 
 
 
-enum PolicyResult {
-  NO_POLICY_MATCH,
-  POLICY_MATCH,
-  POLICY_ERROR
-};
+enum PolicyResult { NO_POLICY_MATCH, POLICY_MATCH, POLICY_ERROR };
 
 
 
@@ -114,8 +110,7 @@ class PolicyProcessor {
   
 
   
-  explicit PolicyProcessor(PolicyBuffer* policy)
-      : policy_(policy) {
+  explicit PolicyProcessor(PolicyBuffer* policy) : policy_(policy) {
     SetInternalState(0, EVAL_FALSE);
   }
 

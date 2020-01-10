@@ -35,7 +35,7 @@ void SandboxBPFTestRunner::Run() {
   if (sandbox::SandboxBPF::SupportsSeccompSandbox(
           SandboxBPF::SeccompLevel::SINGLE_THREADED)) {
     
-    sandbox::SandboxBPF sandbox(policy.release());
+    sandbox::SandboxBPF sandbox(std::move(policy));
     SANDBOX_ASSERT(sandbox.StartSandbox(
         sandbox::SandboxBPF::SeccompLevel::SINGLE_THREADED));
 
@@ -45,13 +45,13 @@ void SandboxBPFTestRunner::Run() {
     printf("This BPF test is not fully running in this configuration!\n");
     
     
-    if (!IsAndroid() && !IsRunningOnValgrind()) {
+    if (!IsAndroid()) {
       const bool seccomp_bpf_is_supported = false;
       SANDBOX_ASSERT(seccomp_bpf_is_supported);
     }
     
     
-    sandbox::SandboxBPF sandbox(policy.release());
+    sandbox::SandboxBPF sandbox(std::move(policy));
     sandbox.AssembleFilter();
     sandbox::UnitTests::IgnoreThisTest();
   }

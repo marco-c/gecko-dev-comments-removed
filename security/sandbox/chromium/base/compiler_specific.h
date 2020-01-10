@@ -10,7 +10,6 @@
 #if defined(COMPILER_MSVC)
 
 
-#include <sal.h>
 
 
 
@@ -20,12 +19,6 @@
 
 
 
-
-
-
-
-
-#define MSVC_SUPPRESS_WARNING(n) __pragma(warning(suppress:n))
 
 
 
@@ -33,25 +26,32 @@
                                      __pragma(warning(disable:n))
 
 
-
-
-#define MSVC_PUSH_WARNING_LEVEL(n) __pragma(warning(push, n))
-
-
 #define MSVC_POP_WARNING() __pragma(warning(pop))
-
-#define MSVC_DISABLE_OPTIMIZE() __pragma(optimize("", off))
-#define MSVC_ENABLE_OPTIMIZE() __pragma(optimize("", on))
 
 #else  
 
-#define _Printf_format_string_
-#define MSVC_SUPPRESS_WARNING(n)
 #define MSVC_PUSH_DISABLE_WARNING(n)
-#define MSVC_PUSH_WARNING_LEVEL(n)
 #define MSVC_POP_WARNING()
 #define MSVC_DISABLE_OPTIMIZE()
 #define MSVC_ENABLE_OPTIMIZE()
+
+#endif  
+
+
+
+
+
+
+#if !defined(OFFICIAL_BUILD)
+#if defined(__clang__)
+#define DISABLE_OPTIMIZE() __pragma(clang optimize off)
+#define ENABLE_OPTIMIZE() __pragma(clang optimize on)
+#elif defined(COMPILER_MSVC)
+#define DISABLE_OPTIMIZE() __pragma(optimize("", off))
+#define ENABLE_OPTIMIZE() __pragma(optimize("", on))
+#else
+
+#endif
 
 #endif  
 
@@ -83,9 +83,9 @@
 #define NOINLINE
 #endif
 
-#if COMPILER_GCC && defined(NDEBUG)
+#if defined(COMPILER_GCC) && defined(NDEBUG)
 #define ALWAYS_INLINE inline __attribute__((__always_inline__))
-#elif COMPILER_MSVC && defined(NDEBUG)
+#elif defined(COMPILER_MSVC) && defined(NDEBUG)
 #define ALWAYS_INLINE __forceinline
 #else
 #define ALWAYS_INLINE inline
@@ -128,6 +128,7 @@
 #else
 #define WARN_UNUSED_RESULT
 #endif
+
 
 
 
@@ -198,7 +199,7 @@
 
 
 #if !defined(UNLIKELY)
-#if defined(COMPILER_GCC)
+#if defined(COMPILER_GCC) || defined(__clang__)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
 #define UNLIKELY(x) (x)
@@ -206,7 +207,7 @@
 #endif  
 
 #if !defined(LIKELY)
-#if defined(COMPILER_GCC)
+#if defined(COMPILER_GCC) || defined(__clang__)
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #else
 #define LIKELY(x) (x)
@@ -219,6 +220,22 @@
 #define HAS_FEATURE(FEATURE) __has_feature(FEATURE)
 #else
 #define HAS_FEATURE(FEATURE) 0
+#endif
+
+
+#if defined(__clang__)
+#define FALLTHROUGH [[clang::fallthrough]]
+#else
+#define FALLTHROUGH
+#endif
+
+#if defined(COMPILER_GCC)
+#define PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(COMPILER_MSVC)
+#define PRETTY_FUNCTION __FUNCSIG__
+#else
+
+#define PRETTY_FUNCTION __func__
 #endif
 
 #endif  

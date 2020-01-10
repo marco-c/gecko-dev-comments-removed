@@ -3,290 +3,37 @@
 
 
 #include "base/win/scoped_handle.h"
-
-#include <stddef.h>
-
-#include <unordered_map>
-
-#include "base/debug/alias.h"
-#include "base/debug/stack_trace.h"
-#include "base/hash.h"
-#include "base/logging.h"
-#include "base/macros.h"
-#include "base/synchronization/lock_impl.h"
-#include "base/threading/thread_local.h"
-#include "base/win/base_features.h"
-#include "base/win/current_module.h"
-
-extern "C" {
-__declspec(dllexport) void* GetHandleVerifier();
-typedef void* (*GetHandleVerifierFn)();
-}
-
-namespace {
-
-struct HandleHash {
-  size_t operator()(const HANDLE& handle) const {
-    char buffer[sizeof(handle)];
-    memcpy(buffer, &handle, sizeof(handle));
-    return base::Hash(buffer, sizeof(buffer));
-  }
-};
-
-struct Info {
-  const void* owner;
-  const void* pc1;
-  const void* pc2;
-  base::debug::StackTrace stack;
-  DWORD thread_id;
-};
-typedef std::unordered_map<HANDLE, Info, HandleHash> HandleMap;
-
-
-
-typedef base::internal::LockImpl NativeLock;
-NativeLock* GetLock() {
-  static auto* native_lock = new NativeLock();
-  return native_lock;
-}
-
-
-
-class AutoNativeLock {
- public:
-  explicit AutoNativeLock(NativeLock& lock) : lock_(lock) {
-    lock_.Lock();
-  }
-
-  ~AutoNativeLock() {
-    lock_.Unlock();
-  }
-
- private:
-  NativeLock& lock_;
-  DISALLOW_COPY_AND_ASSIGN(AutoNativeLock);
-};
-
-
-
-
-class ActiveVerifier {
- public:
-  explicit ActiveVerifier(bool enabled) : enabled_(enabled), lock_(GetLock()) {}
-
-  
-  static ActiveVerifier* Get();
-
-  
-  
-  
-  virtual bool CloseHandle(HANDLE handle);
-  virtual void StartTracking(HANDLE handle, const void* owner,
-                             const void* pc1, const void* pc2);
-  virtual void StopTracking(HANDLE handle, const void* owner,
-                            const void* pc1, const void* pc2);
-  virtual void Disable();
-  virtual void OnHandleBeingClosed(HANDLE handle);
-  virtual HMODULE GetModule() const;
-
- private:
-  ~ActiveVerifier();  
-
-  static void InstallVerifier();
-
-  base::debug::StackTrace creation_stack_;
-  bool enabled_;
-  base::ThreadLocalBoolean closing_;
-  NativeLock* lock_;
-  HandleMap map_;
-  DISALLOW_COPY_AND_ASSIGN(ActiveVerifier);
-};
-ActiveVerifier* g_active_verifier = NULL;
-
-
-ActiveVerifier* ActiveVerifier::Get() {
-  if (!g_active_verifier)
-    ActiveVerifier::InstallVerifier();
-
-  return g_active_verifier;
-}
-
-bool CloseHandleWrapper(HANDLE handle) {
-  if (!::CloseHandle(handle))
-    
-    
-    DCHECK(false);  
-  return true;
-}
-
-
-
-void ThreadSafeAssignOrCreateActiveVerifier(ActiveVerifier* existing_verifier,
-                                            bool enabled) {
-  AutoNativeLock lock(*GetLock());
-  
-  
-  if (g_active_verifier)
-    return;
-  g_active_verifier =
-      existing_verifier ? existing_verifier : new ActiveVerifier(enabled);
-}
-
-
-void ActiveVerifier::InstallVerifier() {
-#if BUILDFLAG(SINGLE_MODULE_MODE_HANDLE_VERIFIER)
-  
-  ThreadSafeAssignOrCreateActiveVerifier(nullptr, true);
-#else
-  
-  
-  
-  
-  HMODULE main_module = ::GetModuleHandle(NULL);
-  GetHandleVerifierFn get_handle_verifier =
-      reinterpret_cast<GetHandleVerifierFn>(::GetProcAddress(
-          main_module, "GetHandleVerifier"));
-
-  
-  
-  
-  if (!get_handle_verifier) {
-    ThreadSafeAssignOrCreateActiveVerifier(nullptr, false);
-    return;
-  }
-
-  
-  if (get_handle_verifier == GetHandleVerifier) {
-    ThreadSafeAssignOrCreateActiveVerifier(nullptr, true);
-    return;
-  }
-
-  ActiveVerifier* main_module_verifier =
-      reinterpret_cast<ActiveVerifier*>(get_handle_verifier());
-
-  
-  DCHECK(main_module_verifier);
-
-  ThreadSafeAssignOrCreateActiveVerifier(main_module_verifier, false);
-#endif
-}
-
-bool ActiveVerifier::CloseHandle(HANDLE handle) {
-  if (!enabled_)
-    return CloseHandleWrapper(handle);
-
-  closing_.Set(true);
-  CloseHandleWrapper(handle);
-  closing_.Set(false);
-
-  return true;
-}
-
-void ActiveVerifier::StartTracking(HANDLE handle, const void* owner,
-                                   const void* pc1, const void* pc2) {
-  if (!enabled_)
-    return;
-
-  
-  DWORD thread_id = GetCurrentThreadId();
-
-  AutoNativeLock lock(*lock_);
-
-  Info handle_info = { owner, pc1, pc2, base::debug::StackTrace(), thread_id };
-  std::pair<HANDLE, Info> item(handle, handle_info);
-  std::pair<HandleMap::iterator, bool> result = map_.insert(item);
-  if (!result.second) {
-    Info other = result.first->second;
-    base::debug::Alias(&other);
-    base::debug::Alias(&creation_stack_);
-    CHECK(false);  
-  }
-}
-
-void ActiveVerifier::StopTracking(HANDLE handle, const void* owner,
-                                  const void* pc1, const void* pc2) {
-  if (!enabled_)
-    return;
-
-  AutoNativeLock lock(*lock_);
-  HandleMap::iterator i = map_.find(handle);
-  if (i == map_.end()) {
-    base::debug::Alias(&creation_stack_);
-    CHECK(false);  
-  }
-
-  Info other = i->second;
-  if (other.owner != owner) {
-    base::debug::Alias(&other);
-    base::debug::Alias(&creation_stack_);
-    CHECK(false);  
-  }
-
-  map_.erase(i);
-}
-
-void ActiveVerifier::Disable() {
-  enabled_ = false;
-}
-
-void ActiveVerifier::OnHandleBeingClosed(HANDLE handle) {
-  if (!enabled_)
-    return;
-
-  if (closing_.Get())
-    return;
-
-  AutoNativeLock lock(*lock_);
-  HandleMap::iterator i = map_.find(handle);
-  if (i == map_.end())
-    return;
-
-  Info other = i->second;
-  base::debug::Alias(&other);
-  base::debug::Alias(&creation_stack_);
-  CHECK(false);  
-}
-
-HMODULE ActiveVerifier::GetModule() const {
-  return CURRENT_MODULE();
-}
-
-}  
-
-void* GetHandleVerifier() {
-  return ActiveVerifier::Get();
-}
+#include "base/win/scoped_handle_verifier.h"
+#include "base/win/windows_types.h"
 
 namespace base {
 namespace win {
 
+using base::win::internal::ScopedHandleVerifier;
+
 
 bool HandleTraits::CloseHandle(HANDLE handle) {
-  return ActiveVerifier::Get()->CloseHandle(handle);
+  return ScopedHandleVerifier::Get()->CloseHandle(handle);
 }
 
 
 void VerifierTraits::StartTracking(HANDLE handle, const void* owner,
                                    const void* pc1, const void* pc2) {
-  return ActiveVerifier::Get()->StartTracking(handle, owner, pc1, pc2);
+  return ScopedHandleVerifier::Get()->StartTracking(handle, owner, pc1, pc2);
 }
 
 
 void VerifierTraits::StopTracking(HANDLE handle, const void* owner,
                                   const void* pc1, const void* pc2) {
-  return ActiveVerifier::Get()->StopTracking(handle, owner, pc1, pc2);
+  return ScopedHandleVerifier::Get()->StopTracking(handle, owner, pc1, pc2);
 }
 
 void DisableHandleVerifier() {
-  return ActiveVerifier::Get()->Disable();
+  return ScopedHandleVerifier::Get()->Disable();
 }
 
 void OnHandleBeingClosed(HANDLE handle) {
-  return ActiveVerifier::Get()->OnHandleBeingClosed(handle);
-}
-
-HMODULE GetHandleVerifierModuleForTesting() {
-  return g_active_verifier->GetModule();
+  return ScopedHandleVerifier::Get()->OnHandleBeingClosed(handle);
 }
 
 }  

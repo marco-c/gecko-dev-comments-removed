@@ -6,12 +6,11 @@
 #define BASE_DEBUG_ALIAS_H_
 
 #include "base/base_export.h"
+#include "base/stl_util.h"
+#include "base/strings/string_util.h"
 
 namespace base {
 namespace debug {
-
-
-
 
 
 
@@ -33,5 +32,13 @@ void BASE_EXPORT Alias(const void* var);
 
 }  
 }  
+
+
+
+
+#define DEBUG_ALIAS_FOR_CSTR(var_name, c_str, char_count)   \
+  char var_name[char_count];                                \
+  ::base::strlcpy(var_name, (c_str), base::size(var_name)); \
+  ::base::debug::Alias(var_name);
 
 #endif  

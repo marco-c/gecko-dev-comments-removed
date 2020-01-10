@@ -6,7 +6,9 @@
 #define BASE_THREADING_PLATFORM_THREAD_INTERNAL_POSIX_H_
 
 #include "base/base_export.h"
+#include "base/optional.h"
 #include "base/threading/platform_thread.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -32,14 +34,26 @@ BASE_EXPORT ThreadPriority NiceValueToThreadPriority(int nice_value);
 
 
 
+Optional<bool> CanIncreaseCurrentThreadPriorityForPlatform(
+    ThreadPriority priority);
+
+
+
 
 
 bool SetCurrentThreadPriorityForPlatform(ThreadPriority priority);
 
 
 
+Optional<ThreadPriority> GetCurrentThreadPriorityForPlatform();
 
-bool GetCurrentThreadPriorityForPlatform(ThreadPriority* priority);
+#if defined(OS_LINUX)
+
+
+
+
+BASE_EXPORT void ClearTidCache();
+#endif  
 
 }  
 

@@ -10,6 +10,8 @@
 
 namespace base {
 
+constexpr int kInvalidFd = -1;
+
 
 
 
@@ -26,7 +28,7 @@ namespace base {
 
 
 struct FileDescriptor {
-  FileDescriptor() : fd(-1), auto_close(false) {}
+  FileDescriptor() : fd(kInvalidFd), auto_close(false) {}
 
   FileDescriptor(int ifd, bool iauto_close) : fd(ifd), auto_close(iauto_close) {
   }

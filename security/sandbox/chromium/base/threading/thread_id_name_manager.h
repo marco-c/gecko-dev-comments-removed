@@ -9,6 +9,7 @@
 #include <string>
 
 #include "base/base_export.h"
+#include "base/callback.h"
 #include "base/macros.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
@@ -28,10 +29,19 @@ class BASE_EXPORT ThreadIdNameManager {
   void RegisterThread(PlatformThreadHandle::Handle handle, PlatformThreadId id);
 
   
-  void SetName(PlatformThreadId id, const std::string& name);
+  
+  
+  using SetNameCallback = base::RepeatingCallback<void(const char* name)>;
+  void InstallSetNameCallback(SetNameCallback callback);
+
+  
+  void SetName(const std::string& name);
 
   
   const char* GetName(PlatformThreadId id);
+
+  
+  const char* GetNameForCurrentThread();
 
   
   void RemoveName(PlatformThreadHandle::Handle handle, PlatformThreadId id);
@@ -59,6 +69,8 @@ class BASE_EXPORT ThreadIdNameManager {
   
   std::string* main_process_name_;
   PlatformThreadId main_process_id_;
+
+  SetNameCallback set_name_callback_;
 
   DISALLOW_COPY_AND_ASSIGN(ThreadIdNameManager);
 };

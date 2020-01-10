@@ -14,6 +14,7 @@
 
 #include "base/logging.h"
 #include "base/numerics/safe_math.h"
+#include "base/time/time_override.h"
 #include "build/build_config.h"
 
 
@@ -32,12 +33,11 @@ int64_t ConvertTimespecToMicros(const struct timespec& ts) {
     result *= base::Time::kMicrosecondsPerSecond;
     result += (ts.tv_nsec / base::Time::kNanosecondsPerMicrosecond);
     return result;
-  } else {
-    base::CheckedNumeric<int64_t> result(ts.tv_sec);
-    result *= base::Time::kMicrosecondsPerSecond;
-    result += (ts.tv_nsec / base::Time::kNanosecondsPerMicrosecond);
-    return result.ValueOrDie();
   }
+  base::CheckedNumeric<int64_t> result(ts.tv_sec);
+  result *= base::Time::kMicrosecondsPerSecond;
+  result += (ts.tv_nsec / base::Time::kNanosecondsPerMicrosecond);
+  return result.ValueOrDie();
 }
 
 
@@ -62,30 +62,32 @@ namespace base {
 
 
 
-
-Time Time::Now() {
+namespace subtle {
+Time TimeNowIgnoringOverride() {
   struct timeval tv;
   struct timezone tz = {0, 0};  
   CHECK(gettimeofday(&tv, &tz) == 0);
   
   
   
-  return Time((tv.tv_sec * kMicrosecondsPerSecond + tv.tv_usec) +
-              kTimeTToMicrosecondsOffset);
+  return Time() + TimeDelta::FromMicroseconds(
+                      (tv.tv_sec * Time::kMicrosecondsPerSecond + tv.tv_usec) +
+                      Time::kTimeTToMicrosecondsOffset);
 }
 
-
-Time Time::NowFromSystemTime() {
+Time TimeNowFromSystemTimeIgnoringOverride() {
   
-  return Now();
+  return TimeNowIgnoringOverride();
 }
+}  
 
 
 
-
-TimeTicks TimeTicks::Now() {
-  return TimeTicks(ClockNow(CLOCK_MONOTONIC));
+namespace subtle {
+TimeTicks TimeTicksNowIgnoringOverride() {
+  return TimeTicks() + TimeDelta::FromMicroseconds(ClockNow(CLOCK_MONOTONIC));
 }
+}  
 
 
 TimeTicks::Clock TimeTicks::GetClock() {
@@ -103,14 +105,18 @@ bool TimeTicks::IsConsistentAcrossProcesses() {
 }
 
 
-ThreadTicks ThreadTicks::Now() {
+
+namespace subtle {
+ThreadTicks ThreadTicksNowIgnoringOverride() {
 #if (defined(_POSIX_THREAD_CPUTIME) && (_POSIX_THREAD_CPUTIME >= 0)) || \
     defined(OS_ANDROID)
-  return ThreadTicks(ClockNow(CLOCK_THREAD_CPUTIME_ID));
+  return ThreadTicks() +
+         TimeDelta::FromMicroseconds(ClockNow(CLOCK_THREAD_CPUTIME_ID));
 #else
   NOTREACHED();
   return ThreadTicks();
 #endif
 }
+}  
 
 }  

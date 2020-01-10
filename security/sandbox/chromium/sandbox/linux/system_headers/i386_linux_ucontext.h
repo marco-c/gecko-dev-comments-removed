@@ -12,18 +12,11 @@
 
 
 
-
-#if !defined(__BIONIC_HAVE_UCONTEXT_T)
-#if !defined(__native_client_nonsfi__)
-#include <asm/sigcontext.h>
-#else
-
 typedef struct sigaltstack {
   void* ss_sp;
   int ss_flags;
   size_t ss_size;
 } stack_t;
-#endif
 
 
 struct _libc_fpreg {
@@ -88,9 +81,5 @@ typedef struct ucontext {
   };
   struct _libc_fpstate __fpregs_mem;
 } ucontext_t;
-
-#else
-#include <sys/ucontext.h>
-#endif  
 
 #endif  

@@ -17,7 +17,9 @@
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/bit_cast.h"
 #include "base/compiler_specific.h"
+#include "base/stl_util.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"  
 #include "build/build_config.h"
@@ -39,14 +41,9 @@ int vsnprintf(char* buffer, size_t size, const char* format, va_list arguments)
 
 
 
-inline int snprintf(char* buffer,
-                    size_t size,
-                    _Printf_format_string_ const char* format,
-                    ...) PRINTF_FORMAT(3, 4);
-inline int snprintf(char* buffer,
-                    size_t size,
-                    _Printf_format_string_ const char* format,
-                    ...) {
+inline int snprintf(char* buffer, size_t size, const char* format, ...)
+    PRINTF_FORMAT(3, 4);
+inline int snprintf(char* buffer, size_t size, const char* format, ...) {
   va_list arguments;
   va_start(arguments, format);
   int result = vsnprintf(buffer, size, format, arguments);
@@ -174,10 +171,10 @@ BASE_EXPORT extern const char kUtf8ByteOrderMark[];
 
 
 BASE_EXPORT bool RemoveChars(const string16& input,
-                             const StringPiece16& remove_chars,
+                             StringPiece16 remove_chars,
                              string16* output);
 BASE_EXPORT bool RemoveChars(const std::string& input,
-                             const StringPiece& remove_chars,
+                             StringPiece remove_chars,
                              std::string* output);
 
 
@@ -186,11 +183,11 @@ BASE_EXPORT bool RemoveChars(const std::string& input,
 
 
 BASE_EXPORT bool ReplaceChars(const string16& input,
-                              const StringPiece16& replace_chars,
+                              StringPiece16 replace_chars,
                               const string16& replace_with,
                               string16* output);
 BASE_EXPORT bool ReplaceChars(const std::string& input,
-                              const StringPiece& replace_chars,
+                              StringPiece replace_chars,
                               const std::string& replace_with,
                               std::string* output);
 
@@ -200,6 +197,7 @@ enum TrimPositions {
   TRIM_TRAILING = 1 << 1,
   TRIM_ALL      = TRIM_LEADING | TRIM_TRAILING,
 };
+
 
 
 
@@ -216,10 +214,10 @@ BASE_EXPORT bool TrimString(const std::string& input,
 
 
 BASE_EXPORT StringPiece16 TrimString(StringPiece16 input,
-                                     const StringPiece16& trim_chars,
+                                     StringPiece16 trim_chars,
                                      TrimPositions positions);
 BASE_EXPORT StringPiece TrimString(StringPiece input,
-                                   const StringPiece& trim_chars,
+                                   StringPiece trim_chars,
                                    TrimPositions positions);
 
 
@@ -227,6 +225,43 @@ BASE_EXPORT StringPiece TrimString(StringPiece input,
 BASE_EXPORT void TruncateUTF8ToByteSize(const std::string& input,
                                         const size_t byte_size,
                                         std::string* output);
+
+#if defined(WCHAR_T_IS_UTF16)
+
+
+inline wchar_t* as_writable_wcstr(char16* str) {
+  return bit_cast<wchar_t*>(str);
+}
+
+inline wchar_t* as_writable_wcstr(string16& str) {
+  return bit_cast<wchar_t*>(data(str));
+}
+
+inline const wchar_t* as_wcstr(const char16* str) {
+  return bit_cast<const wchar_t*>(str);
+}
+
+inline const wchar_t* as_wcstr(StringPiece16 str) {
+  return bit_cast<const wchar_t*>(str.data());
+}
+
+
+inline char16* as_writable_u16cstr(wchar_t* str) {
+  return bit_cast<char16*>(str);
+}
+
+inline char16* as_writable_u16cstr(std::wstring& str) {
+  return bit_cast<char16*>(data(str));
+}
+
+inline const char16* as_u16cstr(const wchar_t* str) {
+  return bit_cast<const char16*>(str);
+}
+
+inline const char16* as_u16cstr(WStringPiece str) {
+  return bit_cast<const char16*>(str.data());
+}
+#endif  
 
 
 
@@ -263,10 +298,9 @@ BASE_EXPORT std::string CollapseWhitespaceASCII(
 
 
 
-BASE_EXPORT bool ContainsOnlyChars(const StringPiece& input,
-                                   const StringPiece& characters);
-BASE_EXPORT bool ContainsOnlyChars(const StringPiece16& input,
-                                   const StringPiece16& characters);
+BASE_EXPORT bool ContainsOnlyChars(StringPiece input, StringPiece characters);
+BASE_EXPORT bool ContainsOnlyChars(StringPiece16 input,
+                                   StringPiece16 characters);
 
 
 
@@ -282,12 +316,11 @@ BASE_EXPORT bool ContainsOnlyChars(const StringPiece16& input,
 
 
 
-BASE_EXPORT bool IsStringUTF8(const StringPiece& str);
-BASE_EXPORT bool IsStringASCII(const StringPiece& str);
-BASE_EXPORT bool IsStringASCII(const StringPiece16& str);
-BASE_EXPORT bool IsStringASCII(const string16& str);
+BASE_EXPORT bool IsStringUTF8(StringPiece str);
+BASE_EXPORT bool IsStringASCII(StringPiece str);
+BASE_EXPORT bool IsStringASCII(StringPiece16 str);
 #if defined(WCHAR_T_IS_UTF32)
-BASE_EXPORT bool IsStringASCII(const std::wstring& str);
+BASE_EXPORT bool IsStringASCII(WStringPiece str);
 #endif
 
 
@@ -332,7 +365,7 @@ BASE_EXPORT bool EndsWith(StringPiece16 str,
 
 template <typename Char>
 inline bool IsAsciiWhitespace(Char c) {
-  return c == ' ' || c == '\r' || c == '\n' || c == '\t';
+  return c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\f';
 }
 template <typename Char>
 inline bool IsAsciiAlpha(Char c) {
@@ -426,9 +459,8 @@ BASE_EXPORT void ReplaceSubstringsAfterOffset(
 
 BASE_EXPORT char* WriteInto(std::string* str, size_t length_with_null);
 BASE_EXPORT char16* WriteInto(string16* str, size_t length_with_null);
-#ifndef OS_WIN
-BASE_EXPORT wchar_t* WriteInto(std::wstring* str, size_t length_with_null);
-#endif
+
+
 
 
 
@@ -465,7 +497,7 @@ BASE_EXPORT string16 ReplaceStringPlaceholders(
     std::vector<size_t>* offsets);
 
 BASE_EXPORT std::string ReplaceStringPlaceholders(
-    const StringPiece& format_string,
+    StringPiece format_string,
     const std::vector<std::string>& subst,
     std::vector<size_t>* offsets);
 
@@ -478,7 +510,7 @@ BASE_EXPORT string16 ReplaceStringPlaceholders(const string16& format_string,
 
 #if defined(OS_WIN)
 #include "base/strings/string_util_win.h"
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 #include "base/strings/string_util_posix.h"
 #else
 #error Define string operations appropriately for your platform

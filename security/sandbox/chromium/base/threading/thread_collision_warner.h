@@ -133,12 +133,12 @@ namespace base {
 
 
 struct BASE_EXPORT AsserterBase {
-  virtual ~AsserterBase() {}
+  virtual ~AsserterBase() = default;
   virtual void warn() = 0;
 };
 
 struct BASE_EXPORT DCheckAsserter : public AsserterBase {
-  ~DCheckAsserter() override {}
+  ~DCheckAsserter() override = default;
   void warn() override;
 };
 
@@ -166,7 +166,7 @@ class BASE_EXPORT ThreadCollisionWarner {
       warner_->EnterSelf();
     }
 
-    ~Check() {}
+    ~Check() = default;
 
    private:
     ThreadCollisionWarner* warner_;

@@ -5,25 +5,23 @@
 #include "base/unguessable_token.h"
 
 #include "base/format_macros.h"
+#include "base/no_destructor.h"
 #include "base/rand_util.h"
 #include "base/strings/stringprintf.h"
 
 namespace base {
 
-UnguessableToken::UnguessableToken(uint64_t high, uint64_t low)
-    : high_(high), low_(low) {}
-
-std::string UnguessableToken::ToString() const {
-  return base::StringPrintf("(%08" PRIX64 "%08" PRIX64 ")", high_, low_);
-}
+UnguessableToken::UnguessableToken(const base::Token& token) : token_(token) {}
 
 
 UnguessableToken UnguessableToken::Create() {
-  UnguessableToken token;
-  
-  
-  base::RandBytes(&token, sizeof(token));
-  return token;
+  return UnguessableToken(Token::CreateRandom());
+}
+
+
+const UnguessableToken& UnguessableToken::Null() {
+  static const NoDestructor<UnguessableToken> null_token;
+  return *null_token;
 }
 
 
@@ -31,11 +29,11 @@ UnguessableToken UnguessableToken::Deserialize(uint64_t high, uint64_t low) {
   
   
   DCHECK(!(high == 0 && low == 0));
-  return UnguessableToken(high, low);
+  return UnguessableToken(Token{high, low});
 }
 
 std::ostream& operator<<(std::ostream& out, const UnguessableToken& token) {
-  return out << token.ToString();
+  return out << "(" << token.ToString() << ")";
 }
 
 }  

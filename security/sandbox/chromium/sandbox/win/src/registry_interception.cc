@@ -14,27 +14,23 @@
 #include "sandbox/win/src/sandbox_nt_util.h"
 #include "sandbox/win/src/sharedmem_ipc_client.h"
 #include "sandbox/win/src/target_services.h"
-#include "mozilla/sandboxing/sandboxLogging.h"
 
 namespace sandbox {
 
 NTSTATUS WINAPI TargetNtCreateKey(NtCreateKeyFunction orig_CreateKey,
-                                  PHANDLE key, ACCESS_MASK desired_access,
+                                  PHANDLE key,
+                                  ACCESS_MASK desired_access,
                                   POBJECT_ATTRIBUTES object_attributes,
-                                  ULONG title_index, PUNICODE_STRING class_name,
-                                  ULONG create_options, PULONG disposition) {
+                                  ULONG title_index,
+                                  PUNICODE_STRING class_name,
+                                  ULONG create_options,
+                                  PULONG disposition) {
   
-  NTSTATUS status = orig_CreateKey(key, desired_access, object_attributes,
-                                   title_index, class_name, create_options,
-                                   disposition);
+  NTSTATUS status =
+      orig_CreateKey(key, desired_access, object_attributes, title_index,
+                     class_name, create_options, disposition);
   if (NT_SUCCESS(status))
     return status;
-
-  if (STATUS_OBJECT_NAME_NOT_FOUND != status) {
-    mozilla::sandboxing::LogBlocked("NtCreateKey",
-                                    object_attributes->ObjectName->Buffer,
-                                    object_attributes->ObjectName->Length);
-  }
 
   
   if (!SandboxFactory::GetTargetServices()->GetState()->InitCalled())
@@ -56,36 +52,40 @@ NTSTATUS WINAPI TargetNtCreateKey(NtCreateKeyFunction orig_CreateKey,
       break;
 
     void* memory = GetGlobalIPCMemory();
-    if (NULL == memory)
+    if (!memory)
       break;
 
-    wchar_t* name;
+    std::unique_ptr<wchar_t, NtAllocDeleter> name;
     uint32_t attributes = 0;
     HANDLE root_directory = 0;
     NTSTATUS ret = AllocAndCopyName(object_attributes, &name, &attributes,
                                     &root_directory);
-    if (!NT_SUCCESS(ret) || NULL == name)
+    if (!NT_SUCCESS(ret) || !name)
       break;
 
     uint32_t desired_access_uint32 = desired_access;
     CountedParameterSet<OpenKey> params;
     params[OpenKey::ACCESS] = ParamPickerMake(desired_access_uint32);
 
-    wchar_t* full_name = NULL;
+    bool query_broker = false;
+    {
+      std::unique_ptr<wchar_t, NtAllocDeleter> full_name;
+      const wchar_t* name_ptr = name.get();
+      const wchar_t* full_name_ptr = nullptr;
 
-    if (root_directory) {
-      ret = sandbox::AllocAndGetFullPath(root_directory, name, &full_name);
-      if (!NT_SUCCESS(ret) || NULL == full_name)
-        break;
-      params[OpenKey::NAME] = ParamPickerMake(full_name);
-    } else {
-      params[OpenKey::NAME] = ParamPickerMake(name);
+      if (root_directory) {
+        ret = sandbox::AllocAndGetFullPath(root_directory, name.get(),
+                                           &full_name);
+        if (!NT_SUCCESS(ret) || !full_name)
+          break;
+        full_name_ptr = full_name.get();
+        params[OpenKey::NAME] = ParamPickerMake(full_name_ptr);
+      } else {
+        params[OpenKey::NAME] = ParamPickerMake(name_ptr);
+      }
+
+      query_broker = QueryBroker(IPC_NTCREATEKEY_TAG, params.GetBase());
     }
-
-    bool query_broker = QueryBroker(IPC_NTCREATEKEY_TAG, params.GetBase());
-
-    if (full_name != NULL)
-      operator delete(full_name, NT_ALLOC);
 
     if (!query_broker)
       break;
@@ -93,43 +93,39 @@ NTSTATUS WINAPI TargetNtCreateKey(NtCreateKeyFunction orig_CreateKey,
     SharedMemIPCClient ipc(memory);
     CrossCallReturn answer = {0};
 
-    ResultCode code = CrossCall(ipc, IPC_NTCREATEKEY_TAG, name, attributes,
-                                root_directory, desired_access, title_index,
-                                create_options, &answer);
-
-    operator delete(name, NT_ALLOC);
+    ResultCode code = CrossCall(ipc, IPC_NTCREATEKEY_TAG, name.get(),
+                                attributes, root_directory, desired_access,
+                                title_index, create_options, &answer);
 
     if (SBOX_ALL_OK != code)
       break;
 
     if (!NT_SUCCESS(answer.nt_status))
-        
-        
-        
-        
-        
-        
-        break;
+      
+      
+      
+      
+      
+      
+      break;
 
     __try {
       *key = answer.handle;
 
       if (disposition)
-       *disposition = answer.extended[0].unsigned_int;
+        *disposition = answer.extended[0].unsigned_int;
 
       status = answer.nt_status;
-    } __except(EXCEPTION_EXECUTE_HANDLER) {
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
       break;
     }
-    mozilla::sandboxing::LogAllowed("NtCreateKey",
-                                    object_attributes->ObjectName->Buffer,
-                                    object_attributes->ObjectName->Length);
   } while (false);
 
   return status;
 }
 
-NTSTATUS WINAPI CommonNtOpenKey(NTSTATUS status, PHANDLE key,
+NTSTATUS WINAPI CommonNtOpenKey(NTSTATUS status,
+                                PHANDLE key,
                                 ACCESS_MASK desired_access,
                                 POBJECT_ATTRIBUTES object_attributes) {
   
@@ -141,74 +137,74 @@ NTSTATUS WINAPI CommonNtOpenKey(NTSTATUS status, PHANDLE key,
       break;
 
     void* memory = GetGlobalIPCMemory();
-    if (NULL == memory)
+    if (!memory)
       break;
 
-    wchar_t* name;
+    std::unique_ptr<wchar_t, NtAllocDeleter> name;
     uint32_t attributes;
     HANDLE root_directory;
     NTSTATUS ret = AllocAndCopyName(object_attributes, &name, &attributes,
                                     &root_directory);
-    if (!NT_SUCCESS(ret) || NULL == name)
+    if (!NT_SUCCESS(ret) || !name)
       break;
 
     uint32_t desired_access_uint32 = desired_access;
     CountedParameterSet<OpenKey> params;
     params[OpenKey::ACCESS] = ParamPickerMake(desired_access_uint32);
 
-    wchar_t* full_name = NULL;
+    bool query_broker = false;
+    {
+      std::unique_ptr<wchar_t, NtAllocDeleter> full_name;
+      const wchar_t* name_ptr = name.get();
+      const wchar_t* full_name_ptr = nullptr;
 
-    if (root_directory) {
-      ret = sandbox::AllocAndGetFullPath(root_directory, name, &full_name);
-      if (!NT_SUCCESS(ret) || NULL == full_name)
-        break;
-      params[OpenKey::NAME] = ParamPickerMake(full_name);
-    } else {
-      params[OpenKey::NAME] = ParamPickerMake(name);
+      if (root_directory) {
+        ret = sandbox::AllocAndGetFullPath(root_directory, name.get(),
+                                           &full_name);
+        if (!NT_SUCCESS(ret) || !full_name)
+          break;
+        full_name_ptr = full_name.get();
+        params[OpenKey::NAME] = ParamPickerMake(full_name_ptr);
+      } else {
+        params[OpenKey::NAME] = ParamPickerMake(name_ptr);
+      }
+
+      query_broker = QueryBroker(IPC_NTOPENKEY_TAG, params.GetBase());
     }
-
-    bool query_broker = QueryBroker(IPC_NTOPENKEY_TAG, params.GetBase());
-
-    if (full_name != NULL)
-      operator delete(full_name, NT_ALLOC);
 
     if (!query_broker)
       break;
 
     SharedMemIPCClient ipc(memory);
     CrossCallReturn answer = {0};
-    ResultCode code = CrossCall(ipc, IPC_NTOPENKEY_TAG, name, attributes,
+    ResultCode code = CrossCall(ipc, IPC_NTOPENKEY_TAG, name.get(), attributes,
                                 root_directory, desired_access, &answer);
-
-    operator delete(name, NT_ALLOC);
 
     if (SBOX_ALL_OK != code)
       break;
 
     if (!NT_SUCCESS(answer.nt_status))
-        
-        
-        
-        
-        
-        
-        break;
+      
+      
+      
+      
+      
+      
+      break;
 
     __try {
       *key = answer.handle;
       status = answer.nt_status;
-    } __except(EXCEPTION_EXECUTE_HANDLER) {
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
       break;
     }
-    mozilla::sandboxing::LogAllowed("NtOpenKey[Ex]",
-                                    object_attributes->ObjectName->Buffer,
-                                    object_attributes->ObjectName->Length);
   } while (false);
 
   return status;
 }
 
-NTSTATUS WINAPI TargetNtOpenKey(NtOpenKeyFunction orig_OpenKey, PHANDLE key,
+NTSTATUS WINAPI TargetNtOpenKey(NtOpenKeyFunction orig_OpenKey,
+                                PHANDLE key,
                                 ACCESS_MASK desired_access,
                                 POBJECT_ATTRIBUTES object_attributes) {
   
@@ -216,34 +212,23 @@ NTSTATUS WINAPI TargetNtOpenKey(NtOpenKeyFunction orig_OpenKey, PHANDLE key,
   if (NT_SUCCESS(status))
     return status;
 
-  if (STATUS_OBJECT_NAME_NOT_FOUND != status) {
-    mozilla::sandboxing::LogBlocked("NtOpenKey",
-                                    object_attributes->ObjectName->Buffer,
-                                    object_attributes->ObjectName->Length);
-  }
-
   return CommonNtOpenKey(status, key, desired_access, object_attributes);
 }
 
 NTSTATUS WINAPI TargetNtOpenKeyEx(NtOpenKeyExFunction orig_OpenKeyEx,
-                                  PHANDLE key, ACCESS_MASK desired_access,
+                                  PHANDLE key,
+                                  ACCESS_MASK desired_access,
                                   POBJECT_ATTRIBUTES object_attributes,
                                   ULONG open_options) {
   
-  NTSTATUS status = orig_OpenKeyEx(key, desired_access, object_attributes,
-                                   open_options);
+  NTSTATUS status =
+      orig_OpenKeyEx(key, desired_access, object_attributes, open_options);
 
   
   
   
   if (NT_SUCCESS(status) || open_options != 0)
     return status;
-
-  if (STATUS_OBJECT_NAME_NOT_FOUND != status) {
-    mozilla::sandboxing::LogBlocked("NtOpenKeyEx",
-                                    object_attributes->ObjectName->Buffer,
-                                    object_attributes->ObjectName->Length);
-  }
 
   return CommonNtOpenKey(status, key, desired_access, object_attributes);
 }

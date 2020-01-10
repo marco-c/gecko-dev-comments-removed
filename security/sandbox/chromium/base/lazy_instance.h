@@ -32,22 +32,30 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef BASE_LAZY_INSTANCE_H_
 #define BASE_LAZY_INSTANCE_H_
 
 #include <new>  
 
 #include "base/atomicops.h"
-#include "base/base_export.h"
 #include "base/debug/leak_annotations.h"
+#include "base/lazy_instance_helpers.h"
 #include "base/logging.h"
 #include "base/threading/thread_restrictions.h"
 
 
 
-
-
-#define LAZY_INSTANCE_INITIALIZER {0}
+#define LAZY_INSTANCE_INITIALIZER {}
 
 namespace base {
 
@@ -115,52 +123,6 @@ struct LeakyLazyInstanceTraits {
 template <typename Type>
 struct ErrorMustSelectLazyOrDestructorAtExitForLazyInstance {};
 
-
-
-constexpr subtle::AtomicWord kLazyInstanceStateCreating = 1;
-
-
-
-
-BASE_EXPORT bool NeedsLazyInstance(subtle::AtomicWord* state);
-
-
-
-BASE_EXPORT void CompleteLazyInstance(subtle::AtomicWord* state,
-                                      subtle::AtomicWord new_instance,
-                                      void (*destructor)(void*),
-                                      void* destructor_arg);
-
-
-
-
-
-
-template <typename CreatorFunc>
-void* GetOrCreateLazyPointer(subtle::AtomicWord* state,
-                             const CreatorFunc& creator_func,
-                             void (*destructor)(void*),
-                             void* destructor_arg) {
-  
-  
-  constexpr subtle::AtomicWord kLazyInstanceCreatedMask =
-      ~internal::kLazyInstanceStateCreating;
-
-  
-  
-  
-  
-  
-  
-  subtle::AtomicWord value = subtle::Acquire_Load(state);
-  if (!(value & kLazyInstanceCreatedMask) && NeedsLazyInstance(state)) {
-    
-    value = reinterpret_cast<subtle::AtomicWord>(creator_func());
-    CompleteLazyInstance(state, value, destructor, destructor_arg);
-  }
-  return reinterpret_cast<void*>(subtle::NoBarrier_Load(state));
-}
-
 }  
 
 template <
@@ -188,25 +150,23 @@ class LazyInstance {
 
   Type* Pointer() {
 #if DCHECK_IS_ON()
-    
     if (!Traits::kAllowedToAccessOnNonjoinableThread)
       ThreadRestrictions::AssertSingletonAllowed();
 #endif
-    return static_cast<Type*>(internal::GetOrCreateLazyPointer(
-        &private_instance_,
-        [this]() { return Traits::New(private_buf_); },
-        Traits::kRegisterOnExit ? OnExit : nullptr, this));
+
+    return subtle::GetOrCreateLazyPointer(
+        &private_instance_, &Traits::New, private_buf_,
+        Traits::kRegisterOnExit ? OnExit : nullptr, this);
   }
 
-  bool operator==(Type* p) {
-    switch (subtle::NoBarrier_Load(&private_instance_)) {
-      case 0:
-        return p == NULL;
-      case internal::kLazyInstanceStateCreating:
-        return static_cast<void*>(p) == private_buf_;
-      default:
-        return p == instance();
-    }
+  
+  
+  bool IsCreated() {
+    
+    
+    
+    
+    return 0 != subtle::NoBarrier_Load(&private_instance_);
   }
 
   

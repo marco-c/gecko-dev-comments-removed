@@ -2,25 +2,25 @@
 
 
 
-#include <stdio.h>
-#include <windows.h>
 #include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_factory.h"
+
+#include <windows.h>
+
 #include "sandbox/win/src/broker_services.h"
+#include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/target_services.h"
 
 namespace sandbox {
 
-SANDBOX_INTERCEPT HANDLE  g_shared_section;
-static bool               s_is_broker = false;
+SANDBOX_INTERCEPT HANDLE g_shared_section;
+static bool s_is_broker = false;
 
 
 
 BrokerServices* SandboxFactory::GetBrokerServices() {
   
-  if (NULL != g_shared_section) {
-    return NULL;
-  }
+  if (g_shared_section)
+    return nullptr;
   
   
   s_is_broker = true;
@@ -31,9 +31,8 @@ BrokerServices* SandboxFactory::GetBrokerServices() {
 
 TargetServices* SandboxFactory::GetTargetServices() {
   
-  if (NULL == g_shared_section) {
-    return NULL;
-  }
+  if (!g_shared_section)
+    return nullptr;
   
   s_is_broker = false;
   
@@ -44,5 +43,5 @@ TargetServices* SandboxFactory::GetTargetServices() {
 
 
 extern "C" bool __declspec(dllexport) IsSandboxedProcess() {
-  return sandbox::g_shared_section != NULL;
+  return !!sandbox::g_shared_section;
 }

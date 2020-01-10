@@ -18,7 +18,7 @@
 #include "base/base_paths_android.h"
 #endif
 
-#if defined(OS_POSIX)
+#if defined(OS_POSIX) || defined(OS_FUCHSIA)
 #include "base/base_paths_posix.h"
 #endif
 
@@ -30,6 +30,7 @@ enum BasePathKey {
   DIR_CURRENT,       
   DIR_EXE,           
   DIR_MODULE,        
+  DIR_ASSETS,        
   DIR_TEMP,          
   DIR_HOME,          
                      
@@ -44,7 +45,7 @@ enum BasePathKey {
                      
   DIR_USER_DESKTOP,  
 
-  DIR_TEST_DATA,     
+  DIR_TEST_DATA,  
 
   PATH_END
 };

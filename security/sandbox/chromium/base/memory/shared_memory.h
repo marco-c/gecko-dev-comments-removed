@@ -17,7 +17,7 @@
 #include "base/strings/string16.h"
 #include "build/build_config.h"
 
-#if defined(OS_POSIX)
+#if defined(OS_POSIX) || defined(OS_FUCHSIA)
 #include <stdio.h>
 #include <sys/types.h>
 #include <semaphore.h>
@@ -36,10 +36,7 @@ class FilePath;
 
 
 struct BASE_EXPORT SharedMemoryCreateOptions {
-#if defined(OS_MACOSX) && !defined(OS_IOS)
-  
-  SharedMemoryHandle::Type type = SharedMemoryHandle::MACH;
-#elif !defined(OS_FUCHSIA)
+#if !defined(OS_FUCHSIA)
   
   
   
@@ -51,7 +48,7 @@ struct BASE_EXPORT SharedMemoryCreateOptions {
   
   
   bool open_existing_deprecated = false;
-#endif  
+#endif
 
   
   
@@ -106,7 +103,7 @@ class BASE_EXPORT SharedMemory {
   
   static SharedMemoryHandle DuplicateHandle(const SharedMemoryHandle& handle);
 
-#if defined(OS_POSIX) && !defined(OS_FUCHSIA)
+#if defined(OS_POSIX) && !(defined(OS_MACOSX) && !defined(OS_IOS))
   
   static int GetFdFromSharedMemoryHandle(const SharedMemoryHandle& handle);
 #endif
@@ -193,7 +190,6 @@ class BASE_EXPORT SharedMemory {
   
   
   
-  
   SharedMemoryHandle TakeHandle();
 
   
@@ -208,7 +204,7 @@ class BASE_EXPORT SharedMemory {
   
   
   
-  SharedMemoryHandle GetReadOnlyHandle();
+  SharedMemoryHandle GetReadOnlyHandle() const;
 
   
   
@@ -217,7 +213,7 @@ class BASE_EXPORT SharedMemory {
 
  private:
 #if defined(OS_POSIX) && !defined(OS_NACL) && !defined(OS_ANDROID) && \
-    !defined(OS_FUCHSIA) && (!defined(OS_MACOSX) || defined(OS_IOS))
+    (!defined(OS_MACOSX) || defined(OS_IOS))
   bool FilePathForMemoryName(const std::string& mem_name, FilePath* path);
 #endif
 
@@ -226,16 +222,10 @@ class BASE_EXPORT SharedMemory {
   
   bool external_section_ = false;
   string16 name_;
-#else
+#elif !defined(OS_ANDROID) && !defined(OS_FUCHSIA)
   
   
   SharedMemoryHandle readonly_shm_;
-#endif
-
-#if defined(OS_MACOSX) && !defined(OS_IOS)
-  
-  
-  SharedMemoryHandle::Type mapped_memory_mechanism_ = SharedMemoryHandle::MACH;
 #endif
 
   

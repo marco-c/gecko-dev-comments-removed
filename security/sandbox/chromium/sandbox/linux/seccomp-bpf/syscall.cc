@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "base/logging.h"
+#include "build/build_config.h"
 #include "sandbox/linux/bpf_dsl/seccomp_macros.h"
 
 namespace sandbox {
@@ -188,7 +189,7 @@ asm(
     ".fnend\n"
 #endif
     "9:.size SyscallAsm, 9b-SyscallAsm\n"
-#elif defined(__mips__)
+#elif (defined(ARCH_CPU_MIPS_FAMILY) && defined(ARCH_CPU_32_BITS))
     ".text\n"
     ".option pic2\n"
     ".align 4\n"
@@ -237,6 +238,53 @@ asm(
     "2:lw     $ra, 36($sp)\n"
     "jr     $ra\n"
     " addiu  $sp, $sp, 40\n"
+    ".set    pop\n"
+    ".end    SyscallAsm\n"
+    ".size   SyscallAsm,.-SyscallAsm\n"
+#elif defined(ARCH_CPU_MIPS_FAMILY) && defined(ARCH_CPU_64_BITS)
+    ".text\n"
+    ".option pic2\n"
+    ".global SyscallAsm\n"
+    ".type SyscallAsm, @function\n"
+    "SyscallAsm:.ent SyscallAsm\n"
+    ".frame  $sp, 16, $ra\n"
+    ".set   push\n"
+    ".set   noreorder\n"
+    "daddiu  $sp, $sp, -16\n"
+    ".cpsetup $25, 0, SyscallAsm\n"
+    "sd     $ra, 8($sp)\n"
+    
+    
+    
+    
+    "bgez   $v0, 1f\n"
+    " nop\n"
+    
+    
+    
+    "ld     $v0, %got(2f)($gp)\n"
+    "daddiu  $v0, $v0, %lo(2f)\n"
+    "b      2f\n"
+    " nop\n"
+    
+    
+    
+    "1:ld     $a7, 56($a0)\n"
+    "ld     $a6, 48($a0)\n"
+    "ld     $a5, 40($a0)\n"
+    "ld     $a4, 32($a0)\n"
+    "ld     $a3, 24($a0)\n"
+    "ld     $a2, 16($a0)\n"
+    "ld     $a1, 8($a0)\n"
+    "ld     $a0, 0($a0)\n"
+    
+    "syscall\n"
+    
+    
+    "2:ld     $ra, 8($sp)\n"
+    ".cpreturn\n"
+    "jr     $ra\n"
+    "daddiu  $sp, $sp, 16\n"
     ".set    pop\n"
     ".end    SyscallAsm\n"
     ".size   SyscallAsm,.-SyscallAsm\n"
@@ -358,7 +406,7 @@ intptr_t Syscall::Call(int nr,
     ret = inout;
   }
 #elif defined(__mips__)
-  int err_status;
+  intptr_t err_status;
   intptr_t ret = Syscall::SandboxSyscallRaw(nr, args, &err_status);
 
   if (err_status) {

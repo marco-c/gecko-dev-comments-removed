@@ -38,6 +38,8 @@ ProcessId GetParentProcessId(ProcessHandle process) {
     } while (Process32Next(snapshot.Get(), &process_entry));
   }
 
+  
+  
   return 0u;
 }
 

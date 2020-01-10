@@ -2,7 +2,7 @@
 
 
 
-#include "base/threading/platform_thread.h"
+#include "base/threading/platform_thread_win.h"
 
 #include <stddef.h>
 
@@ -10,15 +10,23 @@
 #include "base/debug/alias.h"
 #include "base/debug/profiler.h"
 #include "base/logging.h"
+#include "base/metrics/histogram_macros.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/threading/scoped_blocking_call.h"
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_restrictions.h"
-#include "base/tracked_objects.h"
 #include "base/win/scoped_handle.h"
+#include "base/win/windows_version.h"
+
+#include <windows.h>
 
 namespace base {
 
 namespace {
+
+
+
+constexpr int kWin8AboveBackgroundThreadModePriority = -4;
 
 
 
@@ -117,13 +125,20 @@ bool CreateThreadInternal(size_t stack_size,
   params->joinable = out_thread_handle != nullptr;
   params->priority = priority;
 
-  
-  
-  
-  
-  
-  void* thread_handle =
-      ::CreateThread(nullptr, stack_size, ThreadFunc, params, flags, nullptr);
+  void* thread_handle;
+  {
+    SCOPED_UMA_HISTOGRAM_TIMER("Windows.CreateThreadTime");
+
+    
+    
+    
+    
+    
+    
+    thread_handle =
+        ::CreateThread(nullptr, stack_size, ThreadFunc, params, flags, nullptr);
+  }
+
   if (!thread_handle) {
     delete params;
     return false;
@@ -134,6 +149,36 @@ bool CreateThreadInternal(size_t stack_size,
   else
     CloseHandle(thread_handle);
   return true;
+}
+
+}  
+
+namespace features {
+const Feature kWindowsThreadModeBackground{"WindowsThreadModeBackground",
+                                           FEATURE_DISABLED_BY_DEFAULT};
+}  
+
+namespace internal {
+
+void AssertMemoryPriority(HANDLE thread, int memory_priority) {
+#if DCHECK_IS_ON()
+  static const auto get_thread_information_fn =
+      reinterpret_cast<decltype(&::GetThreadInformation)>(::GetProcAddress(
+          ::GetModuleHandle(L"Kernel32.dll"), "GetThreadInformation"));
+
+  if (!get_thread_information_fn) {
+    DCHECK_EQ(win::GetVersion(), win::VERSION_WIN7);
+    return;
+  }
+
+  MEMORY_PRIORITY_INFORMATION memory_priority_information = {};
+  DCHECK(get_thread_information_fn(thread, ::ThreadMemoryPriority,
+                                   &memory_priority_information,
+                                   sizeof(memory_priority_information)));
+
+  DCHECK_EQ(memory_priority,
+            static_cast<int>(memory_priority_information.MemoryPriority));
+#endif
 }
 
 }  
@@ -169,16 +214,7 @@ void PlatformThread::Sleep(TimeDelta duration) {
 
 
 void PlatformThread::SetName(const std::string& name) {
-  ThreadIdNameManager::GetInstance()->SetName(CurrentId(), name);
-
-  
-  
-  
-  
-  
-  
-  if (name != "BrokerEvent")
-    tracked_objects::ThreadData::InitializeThreadContext(name);
+  ThreadIdNameManager::GetInstance()->SetName(name);
 
   
   auto set_thread_description_func =
@@ -191,9 +227,7 @@ void PlatformThread::SetName(const std::string& name) {
 
   
   
-  
-  
-  if (!::IsDebuggerPresent() && !base::debug::IsBinaryInstrumented())
+  if (!::IsDebuggerPresent())
     return;
 
   SetNameInternal(CurrentId(), name.c_str());
@@ -229,14 +263,6 @@ bool PlatformThread::CreateNonJoinableWithPriority(size_t stack_size,
 
 void PlatformThread::Join(PlatformThreadHandle thread_handle) {
   DCHECK(thread_handle.platform_handle());
-  
-  
-  
-  
-  
-#if 0
-  base::ThreadRestrictions::AssertIOAllowed();
-#endif
 
   DWORD thread_id = 0;
   thread_id = ::GetThreadId(thread_handle.platform_handle());
@@ -251,6 +277,9 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
   
   base::debug::ScopedThreadJoinActivity thread_activity(&thread_handle);
 
+  base::internal::ScopedBlockingCallWithBaseSyncPrimitives scoped_blocking_call(
+      base::BlockingType::MAY_BLOCK);
+
   
   
   CHECK_EQ(WAIT_OBJECT_0,
@@ -264,16 +293,41 @@ void PlatformThread::Detach(PlatformThreadHandle thread_handle) {
 }
 
 
-bool PlatformThread::CanIncreaseCurrentThreadPriority() {
+bool PlatformThread::CanIncreaseThreadPriority(ThreadPriority priority) {
   return true;
 }
 
 
-void PlatformThread::SetCurrentThreadPriority(ThreadPriority priority) {
+void PlatformThread::SetCurrentThreadPriorityImpl(ThreadPriority priority) {
+  
+  
+  
+  
+  
+  
+  
+  const bool use_thread_mode_background =
+      (priority == ThreadPriority::BACKGROUND
+           ? FeatureList::IsEnabled(features::kWindowsThreadModeBackground)
+           : (FeatureList::GetInstance() &&
+              FeatureList::IsEnabled(features::kWindowsThreadModeBackground)));
+
+  PlatformThreadHandle::Handle thread_handle =
+      PlatformThread::CurrentHandle().platform_handle();
+
+  if (use_thread_mode_background && priority != ThreadPriority::BACKGROUND) {
+    
+    
+    ::SetThreadPriority(thread_handle, THREAD_MODE_BACKGROUND_END);
+    internal::AssertMemoryPriority(thread_handle, MEMORY_PRIORITY_NORMAL);
+  }
+
   int desired_priority = THREAD_PRIORITY_ERROR_RETURN;
   switch (priority) {
     case ThreadPriority::BACKGROUND:
-      desired_priority = THREAD_PRIORITY_LOWEST;
+      desired_priority = use_thread_mode_background
+                             ? THREAD_MODE_BACKGROUND_BEGIN
+                             : THREAD_PRIORITY_LOWEST;
       break;
     case ThreadPriority::NORMAL:
       desired_priority = THREAD_PRIORITY_NORMAL;
@@ -293,17 +347,38 @@ void PlatformThread::SetCurrentThreadPriority(ThreadPriority priority) {
 #if DCHECK_IS_ON()
   const BOOL success =
 #endif
-      ::SetThreadPriority(PlatformThread::CurrentHandle().platform_handle(),
-                          desired_priority);
+      ::SetThreadPriority(thread_handle, desired_priority);
   DPLOG_IF(ERROR, !success) << "Failed to set thread priority to "
                             << desired_priority;
+
+  if (use_thread_mode_background && priority == ThreadPriority::BACKGROUND) {
+    
+    
+    
+    
+    if (GetCurrentThreadPriority() != ThreadPriority::BACKGROUND) {
+      ::SetThreadPriority(thread_handle, THREAD_PRIORITY_LOWEST);
+      
+      
+      
+      internal::AssertMemoryPriority(thread_handle, MEMORY_PRIORITY_VERY_LOW);
+    }
+  }
+
+  DCHECK_EQ(GetCurrentThreadPriority(), priority);
 }
 
 
 ThreadPriority PlatformThread::GetCurrentThreadPriority() {
-  int priority =
+  const int priority =
       ::GetThreadPriority(PlatformThread::CurrentHandle().platform_handle());
+
   switch (priority) {
+    case THREAD_PRIORITY_IDLE:
+    case internal::kWin7BackgroundThreadModePriority:
+      DCHECK_EQ(win::GetVersion(), win::VERSION_WIN7);
+      FALLTHROUGH;
+    case kWin8AboveBackgroundThreadModePriority:
     case THREAD_PRIORITY_LOWEST:
       return ThreadPriority::BACKGROUND;
     case THREAD_PRIORITY_NORMAL:
@@ -313,11 +388,16 @@ ThreadPriority PlatformThread::GetCurrentThreadPriority() {
     case THREAD_PRIORITY_TIME_CRITICAL:
       return ThreadPriority::REALTIME_AUDIO;
     case THREAD_PRIORITY_ERROR_RETURN:
-      DPCHECK(false) << "GetThreadPriority error";  
-    default:
-      NOTREACHED() << "Unexpected priority: " << priority;
-      return ThreadPriority::NORMAL;
+      DPCHECK(false) << "GetThreadPriority error";
   }
+
+  NOTREACHED() << "GetCurrentThreadPriority returned " << priority << ".";
+  return ThreadPriority::NORMAL;
+}
+
+
+size_t PlatformThread::GetDefaultThreadStackSize() {
+  return 0;
 }
 
 }  

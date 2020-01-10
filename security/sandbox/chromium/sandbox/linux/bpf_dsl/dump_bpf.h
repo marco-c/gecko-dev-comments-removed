@@ -2,6 +2,9 @@
 
 
 
+#ifndef SANDBOX_LINUX_BPF_DSL_DUMP_BPF_H_
+#define SANDBOX_LINUX_BPF_DSL_DUMP_BPF_H_
+
 #include <string>
 
 #include "sandbox/linux/bpf_dsl/codegen.h"
@@ -22,3 +25,5 @@ class SANDBOX_EXPORT DumpBPF {
 
 }  
 }  
+
+#endif  

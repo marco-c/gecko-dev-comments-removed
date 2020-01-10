@@ -30,7 +30,8 @@ namespace {
 
 bool FlushRegKey(HKEY root) {
   HKEY key;
-  if (ERROR_SUCCESS == ::RegOpenKeyExW(root, NULL, 0, MAXIMUM_ALLOWED, &key)) {
+  if (ERROR_SUCCESS ==
+      ::RegOpenKeyExW(root, nullptr, 0, MAXIMUM_ALLOWED, &key)) {
     if (ERROR_SUCCESS != ::RegCloseKey(key))
       return false;
   }
@@ -43,8 +44,7 @@ bool FlushRegKey(HKEY root) {
 
 
 bool FlushCachedRegHandles() {
-  return (FlushRegKey(HKEY_LOCAL_MACHINE) &&
-          FlushRegKey(HKEY_CLASSES_ROOT) &&
+  return (FlushRegKey(HKEY_LOCAL_MACHINE) && FlushRegKey(HKEY_CLASSES_ROOT) &&
           FlushRegKey(HKEY_USERS));
 }
 
@@ -64,13 +64,25 @@ bool CsrssDisconnectCleanup() {
 }
 
 
+static BOOL CALLBACK EnumLocalesProcEx(LPWSTR lpLocaleString,
+                                       DWORD dwFlags,
+                                       LPARAM lParam) {
+  return TRUE;
+}
+
+
+bool CsrssDisconnectWarmup() {
+  return ::EnumSystemLocalesEx(EnumLocalesProcEx, LOCALE_WINDOWS, 0, 0);
+}
+
+
 
 bool CloseOpenHandles(bool* is_csrss_connected) {
   if (HandleCloserAgent::NeedsHandlesClosed()) {
     HandleCloserAgent handle_closer;
     handle_closer.InitializeHandlesToClose(is_csrss_connected);
     if (!*is_csrss_connected) {
-      if (!CsrssDisconnectCleanup()) {
+      if (!CsrssDisconnectWarmup() || !CsrssDisconnectCleanup()) {
         return false;
       }
     }
@@ -105,13 +117,11 @@ TargetServicesBase* g_target_services = nullptr;
 
 }  
 
-
 SANDBOX_INTERCEPT IntegrityLevel g_shared_delayed_integrity_level =
     INTEGRITY_LEVEL_LAST;
 SANDBOX_INTERCEPT MitigationFlags g_shared_delayed_mitigations = 0;
 
-TargetServicesBase::TargetServicesBase() {
-}
+TargetServicesBase::TargetServicesBase() {}
 
 ResultCode TargetServicesBase::Init() {
   process_state_.SetInitCalled();
@@ -158,9 +168,8 @@ TargetServicesBase* TargetServicesBase::GetInstance() {
 
 bool TargetServicesBase::TestIPCPing(int version) {
   void* memory = GetGlobalIPCMemory();
-  if (NULL == memory) {
+  if (!memory)
     return false;
-  }
   SharedMemIPCClient ipc(memory);
   CrossCallReturn answer = {0};
 
@@ -207,8 +216,7 @@ bool TargetServicesBase::TestIPCPing(int version) {
   return true;
 }
 
-ProcessState::ProcessState() : process_state_(0), csrss_connected_(true) {
-}
+ProcessState::ProcessState() : process_state_(0), csrss_connected_(true) {}
 
 bool ProcessState::IsKernel32Loaded() const {
   return process_state_ != 0;

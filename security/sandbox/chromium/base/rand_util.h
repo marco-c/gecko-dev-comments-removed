@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <string>
 
 #include "base/base_export.h"
@@ -20,10 +21,6 @@ BASE_EXPORT uint64_t RandUint64();
 
 
 BASE_EXPORT int RandInt(int min, int max);
-
-
-
-
 
 
 BASE_EXPORT uint64_t RandGenerator(uint64_t range);
@@ -53,7 +50,26 @@ BASE_EXPORT void RandBytes(void* output, size_t output_length);
 
 BASE_EXPORT std::string RandBytesAsString(size_t length);
 
-#if defined(OS_POSIX) && !defined(OS_FUCHSIA)
+
+
+class RandomBitGenerator {
+ public:
+  using result_type = uint64_t;
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return UINT64_MAX; }
+  result_type operator()() const { return RandUint64(); }
+
+  RandomBitGenerator() = default;
+  ~RandomBitGenerator() = default;
+};
+
+
+template <typename Itr>
+void RandomShuffle(Itr first, Itr last) {
+  std::shuffle(first, last, RandomBitGenerator());
+}
+
+#if defined(OS_POSIX)
 BASE_EXPORT int GetUrandomFD();
 #endif
 

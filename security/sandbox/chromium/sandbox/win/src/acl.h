@@ -23,8 +23,11 @@ bool GetDefaultDacl(
 
 
 
-bool AddSidToDacl(const Sid& sid, ACL* old_dacl, ACCESS_MODE access_mode,
-                  ACCESS_MASK access, ACL** new_dacl);
+bool AddSidToDacl(const Sid& sid,
+                  ACL* old_dacl,
+                  ACCESS_MODE access_mode,
+                  ACCESS_MASK access,
+                  ACL** new_dacl);
 
 
 
@@ -42,11 +45,12 @@ bool AddUserSidToDefaultDacl(HANDLE token, ACCESS_MASK access);
 
 
 
-bool AddKnownSidToObject(HANDLE object, SE_OBJECT_TYPE object_type,
-                         const Sid& sid, ACCESS_MODE access_mode,
+bool AddKnownSidToObject(HANDLE object,
+                         SE_OBJECT_TYPE object_type,
+                         const Sid& sid,
+                         ACCESS_MODE access_mode,
                          ACCESS_MASK access);
 
 }  
-
 
 #endif  

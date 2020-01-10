@@ -17,6 +17,8 @@
 
 namespace sandbox {
 
+enum IsBroker { BROKER_FALSE, BROKER_TRUE };
+
 
 class FileSystemPolicy {
  public:

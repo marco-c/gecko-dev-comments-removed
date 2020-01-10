@@ -23,7 +23,7 @@
 #include "base/mac/scoped_mach_port.h"
 #include "base/memory/ref_counted.h"
 #include "base/synchronization/lock.h"
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 #include <list>
 #include <utility>
 
@@ -64,7 +64,8 @@ class BASE_EXPORT WaitableEvent {
 
   
   
-  WaitableEvent(ResetPolicy reset_policy, InitialState initial_state);
+  WaitableEvent(ResetPolicy reset_policy = ResetPolicy::MANUAL,
+                InitialState initial_state = InitialState::NOT_SIGNALED);
 
 #if defined(OS_WIN)
   
@@ -118,6 +119,14 @@ class BASE_EXPORT WaitableEvent {
   
   
   
+  void declare_only_used_while_idle() { waiting_is_blocking_ = false; }
+
+  
+  
+  
+  
+  
+  
   
   
   
@@ -155,7 +164,7 @@ class BASE_EXPORT WaitableEvent {
     virtual bool Compare(void* tag) = 0;
 
    protected:
-    virtual ~Waiter() {}
+    virtual ~Waiter() = default;
   };
 
  private:
@@ -190,7 +199,7 @@ class BASE_EXPORT WaitableEvent {
    public:
     ReceiveRight(mach_port_t name, bool create_slow_watch_list);
 
-    mach_port_t Name() const { return right_.get(); };
+    mach_port_t Name() const { return right_.get(); }
 
     
     
@@ -229,7 +238,7 @@ class BASE_EXPORT WaitableEvent {
   
   
   mac::ScopedMachSendRight send_right_;
-#else
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   
   
   
@@ -274,6 +283,10 @@ class BASE_EXPORT WaitableEvent {
 
   scoped_refptr<WaitableEventKernel> kernel_;
 #endif
+
+  
+  
+  bool waiting_is_blocking_ = true;
 
   DISALLOW_COPY_AND_ASSIGN(WaitableEvent);
 };

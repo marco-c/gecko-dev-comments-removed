@@ -21,14 +21,19 @@
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
 
-#if defined(OS_POSIX)
-#include "base/posix/file_descriptor_shuffle.h"
-#elif defined(OS_WIN)
+#if defined(OS_WIN)
 #include <windows.h>
+#elif defined(OS_FUCHSIA)
+#include <lib/fdio/spawn.h>
+#include <zircon/types.h>
 #endif
 
-#if defined(OS_FUCHSIA)
-#include <magenta/types.h>
+#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#include "base/posix/file_descriptor_shuffle.h"
+#endif
+
+#if defined(OS_MACOSX) && !defined(OS_IOS)
+#include "base/mac/mach_port_rendezvous.h"
 #endif
 
 namespace base {
@@ -37,30 +42,31 @@ class CommandLine;
 
 #if defined(OS_WIN)
 typedef std::vector<HANDLE> HandlesToInheritVector;
-#endif
-
-#if defined(OS_FUCHSIA)
+#elif defined(OS_FUCHSIA)
+struct PathToTransfer {
+  base::FilePath path;
+  zx_handle_t handle;
+};
 struct HandleToTransfer {
   uint32_t id;
-  mx_handle_t handle;
+  zx_handle_t handle;
 };
 typedef std::vector<HandleToTransfer> HandlesToTransferVector;
-#endif
-
-#if defined(OS_POSIX)
 typedef std::vector<std::pair<int, int>> FileHandleMappingVector;
-#endif
+#elif defined(OS_POSIX)
+typedef std::vector<std::pair<int, int>> FileHandleMappingVector;
+#endif  
 
 
 
 struct BASE_EXPORT LaunchOptions {
-#if defined(OS_POSIX)
+#if (defined(OS_POSIX) || defined(OS_FUCHSIA)) && !defined(OS_MACOSX)
   
   
   class BASE_EXPORT PreExecDelegate {
    public:
-    PreExecDelegate() {}
-    virtual ~PreExecDelegate() {}
+    PreExecDelegate() = default;
+    virtual ~PreExecDelegate() = default;
 
     
     
@@ -84,6 +90,10 @@ struct BASE_EXPORT LaunchOptions {
 
 #if defined(OS_WIN)
   bool start_hidden = false;
+
+  
+  
+  bool feedback_cursor_off = false;
 
   
   
@@ -150,7 +160,11 @@ struct BASE_EXPORT LaunchOptions {
   
   
   bool force_breakaway_from_job_ = false;
-#else  
+
+  
+  
+  bool grant_foreground_privilege = false;
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   
   
   
@@ -163,16 +177,7 @@ struct BASE_EXPORT LaunchOptions {
   
   
   FileHandleMappingVector fds_to_remap;
-
-  
-  
-  
-  const std::vector<int>* maximize_rlimits = nullptr;
-
-  
-  
-  
-  bool new_process_group = false;
+#endif  
 
 #if defined(OS_LINUX)
   
@@ -189,15 +194,56 @@ struct BASE_EXPORT LaunchOptions {
   bool kill_on_parent_death = false;
 #endif  
 
+#if defined(OS_MACOSX) && !defined(OS_IOS)
+  
+  
+  
+  
+  
+  
+  
+  
+  MachPortsForRendezvous mach_ports_for_rendezvous;
+#endif
+
 #if defined(OS_FUCHSIA)
   
-  mx_handle_t job_handle = MX_HANDLE_INVALID;
+  zx_handle_t job_handle = ZX_HANDLE_INVALID;
 
   
   
   
   
+  
+  
+  
+  
   HandlesToTransferVector handles_to_transfer;
+
+  
+  
+  static uint32_t AddHandleToTransfer(
+      HandlesToTransferVector* handles_to_transfer,
+      zx_handle_t handle);
+
+  
+  
+  
+  
+  
+  uint32_t spawn_flags = FDIO_SPAWN_CLONE_NAMESPACE | FDIO_SPAWN_CLONE_STDIO |
+                         FDIO_SPAWN_CLONE_JOB;
+
+  
+  
+  
+  
+  std::vector<FilePath> paths_to_clone;
+
+  
+  
+  
+  std::vector<PathToTransfer> paths_to_transfer;
 #endif  
 
 #if defined(OS_POSIX)
@@ -206,6 +252,7 @@ struct BASE_EXPORT LaunchOptions {
   
   base::FilePath real_path;
 
+#if !defined(OS_MACOSX)
   
   
   
@@ -215,11 +262,21 @@ struct BASE_EXPORT LaunchOptions {
   PreExecDelegate* pre_exec_delegate = nullptr;
 #endif  
 
+  
+  
+  
+  const std::vector<int>* maximize_rlimits = nullptr;
+
+  
+  
+  
+  bool new_process_group = false;
+#endif  
+
 #if defined(OS_CHROMEOS)
   
   
   int ctrl_terminal_fd = -1;
-#endif  
 #endif  
 };
 
@@ -261,7 +318,7 @@ BASE_EXPORT Process LaunchProcess(const string16& cmdline,
 BASE_EXPORT Process LaunchElevatedProcess(const CommandLine& cmdline,
                                           const LaunchOptions& options);
 
-#elif defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 
 
 
@@ -269,10 +326,12 @@ BASE_EXPORT Process LaunchElevatedProcess(const CommandLine& cmdline,
 BASE_EXPORT Process LaunchProcess(const std::vector<std::string>& argv,
                                   const LaunchOptions& options);
 
+#if !defined(OS_MACOSX)
 
 
 
 BASE_EXPORT void CloseSuperfluousFds(const InjectiveMultimap& saved_map);
+#endif  
 #endif  
 
 #if defined(OS_WIN)
@@ -307,9 +366,7 @@ BASE_EXPORT bool GetAppOutputWithExitCode(const CommandLine& cl,
 
 
 BASE_EXPORT bool GetAppOutput(const StringPiece16& cl, std::string* output);
-#endif
-
-#if defined(OS_POSIX)
+#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 
 
 
@@ -326,30 +383,11 @@ BASE_EXPORT bool GetAppOutputAndError(const std::vector<std::string>& argv,
 
 BASE_EXPORT void RaiseProcessToHighPriority();
 
-#if defined(OS_MACOSX)
-
-
-
-Process LaunchProcessPosixSpawn(const std::vector<std::string>& argv,
-                                const LaunchOptions& options);
-
-
-
-
-
-
-
-
-void RestoreDefaultExceptionHandler();
-#endif  
-
 
 
 BASE_EXPORT LaunchOptions LaunchOptionsForTest();
 
 #if defined(OS_LINUX) || defined(OS_NACL_NONSFI)
-
-
 
 
 

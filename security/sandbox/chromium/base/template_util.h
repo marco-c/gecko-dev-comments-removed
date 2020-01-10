@@ -10,6 +10,7 @@
 #include <iterator>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "build/build_config.h"
 
@@ -126,6 +127,52 @@ struct is_trivially_copyable {
 template <class T>
 using is_trivially_copyable = std::is_trivially_copyable<T>;
 #endif
+
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ <= 7
+
+
+
+
+template <typename T>
+struct is_trivially_copy_constructible
+    : std::is_trivially_copy_constructible<T> {};
+
+template <typename... T>
+struct is_trivially_copy_constructible<std::vector<T...>> : std::false_type {};
+#else
+
+template <typename T>
+using is_trivially_copy_constructible = std::is_trivially_copy_constructible<T>;
+#endif
+
+
+
+
+
+
+
+struct in_place_t {};
+constexpr in_place_t in_place = {};
+
+
+
+
+
+
+
+
+template <typename T>
+struct in_place_type_t {};
+
+template <typename T>
+struct is_in_place_type_t {
+  static constexpr bool value = false;
+};
+
+template <typename... Ts>
+struct is_in_place_type_t<in_place_type_t<Ts...>> {
+  static constexpr bool value = true;
+};
 
 }  
 

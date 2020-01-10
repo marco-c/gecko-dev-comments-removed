@@ -9,7 +9,6 @@
 #include <sched.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -19,17 +18,24 @@
 #include "base/debug/activity_tracker.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
+#include "base/no_destructor.h"
 #include "base/threading/platform_thread_internal_posix.h"
+#include "base/threading/scoped_blocking_call.h"
 #include "base/threading/thread_id_name_manager.h"
-#include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
+
+#if !defined(OS_MACOSX) && !defined(OS_FUCHSIA) && !defined(OS_NACL)
+#include "base/posix/can_lower_nice_to.h"
+#endif
 
 #if defined(OS_LINUX)
 #include <sys/syscall.h>
 #endif
 
 #if defined(OS_FUCHSIA)
-#include <magenta/process.h>
+#include <zircon/process.h>
+#else
+#include <sys/resource.h>
 #endif
 
 namespace base {
@@ -42,7 +48,7 @@ namespace {
 
 struct ThreadParams {
   ThreadParams()
-      : delegate(NULL), joinable(false), priority(ThreadPriority::NORMAL) {}
+      : delegate(nullptr), joinable(false), priority(ThreadPriority::NORMAL) {}
 
   PlatformThread::Delegate* delegate;
   bool joinable;
@@ -79,7 +85,7 @@ void* ThreadFunc(void* params) {
       PlatformThread::CurrentId());
 
   base::TerminateOnThread();
-  return NULL;
+  return nullptr;
 }
 
 bool CreateThread(size_t stack_size,
@@ -129,7 +135,39 @@ bool CreateThread(size_t stack_size,
   return success;
 }
 
+#if defined(OS_LINUX)
+
+
+
+
+
+
+
+
+
+
+thread_local pid_t g_thread_id = -1;
+
+class InitAtFork {
+ public:
+  InitAtFork() { pthread_atfork(nullptr, nullptr, internal::ClearTidCache); }
+};
+
+#endif  
+
 }  
+
+#if defined(OS_LINUX)
+
+namespace internal {
+
+void ClearTidCache() {
+  g_thread_id = -1;
+}
+
+}  
+
+#endif  
 
 
 PlatformThreadId PlatformThread::CurrentId() {
@@ -138,11 +176,20 @@ PlatformThreadId PlatformThread::CurrentId() {
 #if defined(OS_MACOSX)
   return pthread_mach_thread_np(pthread_self());
 #elif defined(OS_LINUX)
-  return syscall(__NR_gettid);
+  static NoDestructor<InitAtFork> init_at_fork;
+  if (g_thread_id == -1) {
+    g_thread_id = syscall(__NR_gettid);
+  } else {
+    DCHECK_EQ(g_thread_id, syscall(__NR_gettid))
+        << "Thread id stored in TLS is different from thread id returned by "
+           "the system. It is likely that the process was forked without going "
+           "through fork().";
+  }
+  return g_thread_id;
 #elif defined(OS_ANDROID)
   return gettid();
 #elif defined(OS_FUCHSIA)
-  return mx_thread_self();
+  return zx_thread_self();
 #elif defined(OS_SOLARIS) || defined(OS_QNX)
   return pthread_self();
 #elif defined(OS_NACL) && defined(__GLIBC__)
@@ -225,8 +272,9 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
   
   
   
-  base::ThreadRestrictions::AssertIOAllowed();
-  CHECK_EQ(0, pthread_join(thread_handle.platform_handle(), NULL));
+  base::internal::ScopedBlockingCallWithBaseSyncPrimitives scoped_blocking_call(
+      base::BlockingType::MAY_BLOCK);
+  CHECK_EQ(0, pthread_join(thread_handle.platform_handle(), nullptr));
 }
 
 
@@ -235,22 +283,26 @@ void PlatformThread::Detach(PlatformThreadHandle thread_handle) {
 }
 
 
-#if !defined(OS_MACOSX)
+
+#if !defined(OS_MACOSX) && !defined(OS_FUCHSIA)
 
 
-bool PlatformThread::CanIncreaseCurrentThreadPriority() {
+bool PlatformThread::CanIncreaseThreadPriority(ThreadPriority priority) {
 #if defined(OS_NACL)
   return false;
 #else
-  
-  
-  
-  return geteuid() == 0;
+  auto platform_specific_ability =
+      internal::CanIncreaseCurrentThreadPriorityForPlatform(priority);
+  if (platform_specific_ability)
+    return platform_specific_ability.value();
+
+  return internal::CanLowerNiceTo(
+      internal::ThreadPriorityToNiceValue(priority));
 #endif  
 }
 
 
-void PlatformThread::SetCurrentThreadPriority(ThreadPriority priority) {
+void PlatformThread::SetCurrentThreadPriorityImpl(ThreadPriority priority) {
 #if defined(OS_NACL)
   NOTIMPLEMENTED();
 #else
@@ -278,11 +330,10 @@ ThreadPriority PlatformThread::GetCurrentThreadPriority() {
   return ThreadPriority::NORMAL;
 #else
   
-  ThreadPriority platform_specific_priority;
-  if (internal::GetCurrentThreadPriorityForPlatform(
-          &platform_specific_priority)) {
-    return platform_specific_priority;
-  }
+  auto platform_specific_priority =
+      internal::GetCurrentThreadPriorityForPlatform();
+  if (platform_specific_priority)
+    return platform_specific_priority.value();
 
   
   
@@ -299,5 +350,12 @@ ThreadPriority PlatformThread::GetCurrentThreadPriority() {
 }
 
 #endif  
+
+
+size_t PlatformThread::GetDefaultThreadStackSize() {
+  pthread_attr_t attributes;
+  pthread_attr_init(&attributes);
+  return base::GetDefaultThreadStackSize(attributes);
+}
 
 }  

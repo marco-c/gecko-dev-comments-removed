@@ -10,8 +10,6 @@
 #ifndef BASE_MACROS_H_
 #define BASE_MACROS_H_
 
-#include <stddef.h>  
-
 
 #define DISALLOW_COPY(TypeName) \
   TypeName(const TypeName&) = delete
@@ -39,44 +37,8 @@
 
 
 
-
-template <typename T, size_t N> char (&ArraySizeHelper(T (&array)[N]))[N];
-#define arraysize(array) (sizeof(ArraySizeHelper(array)))
-
-
-
-
-
-
-
-
-
 template<typename T>
 inline void ignore_result(const T&) {
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace base {
-enum LinkerInitialized { LINKER_INITIALIZED };
-
-
-
-
-#define CR_DEFINE_STATIC_LOCAL(type, name, arguments) \
-  static type& name = *new type arguments
-
-}  
 
 #endif  

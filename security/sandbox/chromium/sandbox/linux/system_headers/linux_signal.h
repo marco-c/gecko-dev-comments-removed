@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#include "build/build_config.h"
+
 
 
 
@@ -108,17 +110,19 @@ static_assert(LINUX_SIG_DFL == SIG_DFL, "LINUX_SIG_DFL == SIG_DFL");
 
 typedef siginfo_t LinuxSigInfo;
 
-#if defined(__ANDROID__)
-
-#include "sandbox/linux/system_headers/linux_ucontext.h"
-#endif  
-
 #endif  
 
 
-#if defined(__mips__)
+#if (defined(ARCH_CPU_MIPS_FAMILY) && defined(ARCH_CPU_32_BITS))
 #if !defined(_NSIG_WORDS)
 #define _NSIG_WORDS 4
+#endif
+struct LinuxSigSet {
+  unsigned long sig[_NSIG_WORDS];
+};
+#elif defined(ARCH_CPU_MIPS_FAMILY) && defined(ARCH_CPU_64_BITS)
+#if !defined(_NSIG_WORDS)
+#define _NSIG_WORDS 2
 #endif
 struct LinuxSigSet {
   unsigned long sig[_NSIG_WORDS];

@@ -42,6 +42,7 @@ class SandboxFactory {
   
   
   static TargetServices* GetTargetServices();
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SandboxFactory);
 };

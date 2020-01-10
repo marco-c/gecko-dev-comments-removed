@@ -6,18 +6,112 @@
 #define BASE_THREADING_THREAD_RESTRICTIONS_H_
 
 #include "base/base_export.h"
+#include "base/gtest_prod_util.h"
 #include "base/logging.h"
 #include "base/macros.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BrowserProcessImpl;
 class HistogramSynchronizer;
+class KeyStorageLinux;
 class NativeBackendKWallet;
+class NativeDesktopMediaList;
+class StartupTimeBomb;
 
 namespace android_webview {
 class AwFormDatabaseService;
 class CookieManager;
+class ScopedAllowInitGLBindings;
 }
-
+namespace audio {
+class OutputDevice;
+}
+namespace blink {
+class VideoFrameResourceProvider;
+}
 namespace cc {
 class CompletionEvent;
 class SingleThreadTaskGraphRunner;
@@ -31,22 +125,34 @@ class StatisticsProviderImpl;
 namespace chrome_browser_net {
 class Predictor;
 }
+namespace chrome_cleaner {
+class SystemReportComponent;
+}
 namespace content {
 class BrowserGpuChannelHostFactory;
-class BrowserGpuMemoryBufferManager;
 class BrowserMainLoop;
+class BrowserProcessSubThread;
 class BrowserShutdownProfileDumper;
-class BrowserSurfaceViewManager;
 class BrowserTestBase;
 class CategorizedWorkerPool;
+class DesktopCaptureDevice;
+class DWriteFontLookupTableBuilder;
+class GpuProcessTransportFactory;
 class NestedMessagePumpAndroid;
-class ScopedAllowWaitForAndroidLayoutTests;
+class SandboxHostLinux;
 class ScopedAllowWaitForDebugURL;
+class ServiceWorkerContextClient;
+class SessionStorageDatabase;
 class SoftwareOutputDeviceMus;
 class SynchronousCompositor;
-class SynchronousCompositorBrowserFilter;
 class SynchronousCompositorHost;
+class SynchronousCompositorSyncCallBridge;
 class TextInputClientMac;
+class WebContentsViewMac;
+}  
+namespace cronet {
+class CronetPrefsManager;
+class CronetURLRequestContext;
 }  
 namespace dbus {
 class Bus;
@@ -55,22 +161,48 @@ namespace disk_cache {
 class BackendImpl;
 class InFlightIO;
 }
+namespace functions {
+class ExecScriptScopedAllowBaseSyncPrimitives;
+}
 namespace gpu {
 class GpuChannelHost;
 }
+namespace leveldb {
+class LevelDBMojoProxy;
+}
+namespace media {
+class AudioInputDevice;
+class AudioOutputDevice;
+class BlockingUrlProtocol;
+}
+namespace midi {
+class TaskService;  
+}
 namespace mojo {
+class CoreLibraryInitializer;
 class SyncCallRestrictions;
-namespace edk {
+namespace core {
 class ScopedIPCSupport;
 }
+}
+namespace printing {
+class PrinterQuery;
+}
+namespace rlz_lib {
+class FinancialPing;
 }
 namespace ui {
 class CommandBufferClientImpl;
 class CommandBufferLocal;
 class GpuState;
+class MaterialDesignController;
 }
 namespace net {
+class MultiThreadedCertVerifierScopedAllowBaseSyncPrimitives;
+class MultiThreadedProxyResolverScopedAllowJoinOnIO;
 class NetworkChangeNotifierMac;
+class NetworkConfigWatcherMacThread;
+class ScopedAllowThreadJoinForProxyResolverV8Tracing;
 namespace internal {
 class AddressTrackerLinux;
 }
@@ -78,21 +210,51 @@ class AddressTrackerLinux;
 
 namespace remoting {
 class AutoThread;
+namespace protocol {
+class ScopedAllowThreadJoinForWebRtcTransport;
+}
+}
+
+namespace resource_coordinator {
+class TabManagerDelegate;
+}
+
+namespace service_manager {
+class ServiceProcessLauncher;
+}
+
+namespace shell_integration_linux {
+class LaunchXdgUtilityScopedAllowBaseSyncPrimitives;
 }
 
 namespace ui {
 class WindowResizeHelperMac;
 }
 
-namespace views {
-class ScreenMus;
+namespace viz {
+class HostGpuMemoryBufferManager;
 }
 
-namespace viz {
-class ServerGpuMemoryBufferManager;
+namespace vr {
+class VrShell;
+}
+
+namespace web {
+class WebMainLoop;
+class WebSubThread;
+}
+
+namespace webrtc {
+class DesktopConfigurationMonitor;
 }
 
 namespace base {
+
+namespace sequence_manager {
+namespace internal {
+class TaskQueueImpl;
+}
+}  
 
 namespace android {
 class JavaHandlerThread;
@@ -102,49 +264,272 @@ namespace internal {
 class TaskTracker;
 }
 
-class SequencedWorkerPool;
+class AdjustOOMScoreHelper;
+class FileDescriptorWatcher;
+class GetAppOutputScopedAllowBaseSyncPrimitives;
+class MessageLoopImpl;
+class ScopedAllowThreadRecallForStackSamplingProfiler;
 class SimpleThread;
 class StackSamplingProfiler;
 class Thread;
-class ThreadTestHelper;
+
+#if DCHECK_IS_ON()
+#define INLINE_IF_DCHECK_IS_OFF BASE_EXPORT
+#define EMPTY_BODY_IF_DCHECK_IS_OFF
+#else
+#define INLINE_IF_DCHECK_IS_OFF inline
+#define EMPTY_BODY_IF_DCHECK_IS_OFF \
+  {}
+#endif
+
+namespace internal {
 
 
 
 
+INLINE_IF_DCHECK_IS_OFF void AssertBlockingAllowed()
+    EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+}  
+
+
+INLINE_IF_DCHECK_IS_OFF void DisallowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+
+class BASE_EXPORT ScopedDisallowBlocking {
+ public:
+  ScopedDisallowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
+  ~ScopedDisallowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+ private:
+#if DCHECK_IS_ON()
+  const bool was_disallowed_;
+#endif
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedDisallowBlocking);
+};
+
+class BASE_EXPORT ScopedAllowBlocking {
+ private:
+  FRIEND_TEST_ALL_PREFIXES(ThreadRestrictionsTest, ScopedAllowBlocking);
+  friend class ScopedAllowBlockingForTesting;
+
+  
+  
+  friend class AdjustOOMScoreHelper;
+  friend class android_webview::ScopedAllowInitGLBindings;
+  friend class content::BrowserProcessSubThread;
+  friend class content::GpuProcessTransportFactory;
+  friend class content::WebContentsViewMac;
+  friend class cronet::CronetPrefsManager;
+  friend class cronet::CronetURLRequestContext;
+  friend class mojo::CoreLibraryInitializer;
+  friend class resource_coordinator::TabManagerDelegate;  
+  friend class ui::MaterialDesignController;
+  friend class web::WebSubThread;
+  friend class StackSamplingProfiler;
+
+  ScopedAllowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
+  ~ScopedAllowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+#if DCHECK_IS_ON()
+  const bool was_disallowed_;
+#endif
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedAllowBlocking);
+};
+
+class ScopedAllowBlockingForTesting {
+ public:
+  ScopedAllowBlockingForTesting() {}
+  ~ScopedAllowBlockingForTesting() {}
+
+ private:
+#if DCHECK_IS_ON()
+  ScopedAllowBlocking scoped_allow_blocking_;
+#endif
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedAllowBlockingForTesting);
+};
+
+INLINE_IF_DCHECK_IS_OFF void DisallowBaseSyncPrimitives()
+    EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+class BASE_EXPORT ScopedAllowBaseSyncPrimitives {
+ private:
+  
+  
+  
+  FRIEND_TEST_ALL_PREFIXES(ThreadRestrictionsTest,
+                           ScopedAllowBaseSyncPrimitives);
+  FRIEND_TEST_ALL_PREFIXES(ThreadRestrictionsTest,
+                           ScopedAllowBaseSyncPrimitivesResetsState);
+  FRIEND_TEST_ALL_PREFIXES(ThreadRestrictionsTest,
+                           ScopedAllowBaseSyncPrimitivesWithBlockingDisallowed);
+
+  
+  friend class SimpleThread;
+  friend class base::GetAppOutputScopedAllowBaseSyncPrimitives;
+  friend class chrome_cleaner::SystemReportComponent;
+  friend class content::BrowserMainLoop;
+  friend class content::BrowserProcessSubThread;
+  friend class content::DWriteFontLookupTableBuilder;
+  friend class content::ServiceWorkerContextClient;
+  friend class content::SessionStorageDatabase;
+  friend class functions::ExecScriptScopedAllowBaseSyncPrimitives;
+  friend class internal::TaskTracker;
+  friend class leveldb::LevelDBMojoProxy;
+  friend class media::BlockingUrlProtocol;
+  friend class mojo::core::ScopedIPCSupport;
+  friend class net::MultiThreadedCertVerifierScopedAllowBaseSyncPrimitives;
+  friend class remoting::AutoThread;
+  friend class rlz_lib::FinancialPing;
+  friend class shell_integration_linux::
+      LaunchXdgUtilityScopedAllowBaseSyncPrimitives;
+  friend class webrtc::DesktopConfigurationMonitor;
+
+  
+  friend class ::NativeBackendKWallet;            
+  friend class ::chromeos::system::
+      StatisticsProviderImpl;                      
+  friend class content::TextInputClientMac;        
+  friend class blink::VideoFrameResourceProvider;  
+
+  ScopedAllowBaseSyncPrimitives() EMPTY_BODY_IF_DCHECK_IS_OFF;
+  ~ScopedAllowBaseSyncPrimitives() EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+#if DCHECK_IS_ON()
+  const bool was_disallowed_;
+#endif
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedAllowBaseSyncPrimitives);
+};
+
+class BASE_EXPORT ScopedAllowBaseSyncPrimitivesOutsideBlockingScope {
+ private:
+  
+  
+  
+  FRIEND_TEST_ALL_PREFIXES(ThreadRestrictionsTest,
+                           ScopedAllowBaseSyncPrimitivesOutsideBlockingScope);
+  FRIEND_TEST_ALL_PREFIXES(
+      ThreadRestrictionsTest,
+      ScopedAllowBaseSyncPrimitivesOutsideBlockingScopeResetsState);
+
+  
+  friend class ::BrowserProcessImpl;  
+  friend class ::KeyStorageLinux;
+  friend class ::NativeDesktopMediaList;
+  friend class ::StartupTimeBomb;
+  friend class android::JavaHandlerThread;
+  friend class android_webview::
+      AwFormDatabaseService;  
+  friend class android_webview::CookieManager;
+  friend class audio::OutputDevice;
+  friend class base::sequence_manager::internal::TaskQueueImpl;
+  friend class base::FileDescriptorWatcher;
+  friend class base::MessageLoopImpl;
+  friend class base::ScopedAllowThreadRecallForStackSamplingProfiler;
+  friend class base::StackSamplingProfiler;
+  friend class content::DesktopCaptureDevice;
+  friend class content::SandboxHostLinux;
+  friend class content::ScopedAllowWaitForDebugURL;
+  friend class content::SynchronousCompositor;
+  friend class content::SynchronousCompositorHost;
+  friend class content::SynchronousCompositorSyncCallBridge;
+  friend class media::AudioInputDevice;
+  friend class media::AudioOutputDevice;
+  friend class mojo::SyncCallRestrictions;
+  friend class net::NetworkConfigWatcherMacThread;
+  friend class viz::HostGpuMemoryBufferManager;
+  friend class vr::VrShell;
+
+  
+  friend class ::chromeos::BlockingMethodCaller;  
+  friend class base::Thread;                      
+  friend class cc::CompletionEvent;               
+  friend class cc::SingleThreadTaskGraphRunner;   
+  friend class content::
+      BrowserGpuChannelHostFactory;                 
+  friend class content::CategorizedWorkerPool;      
+  friend class dbus::Bus;                           
+  friend class disk_cache::BackendImpl;             
+  friend class disk_cache::InFlightIO;              
+  friend class gpu::GpuChannelHost;                 
+  friend class remoting::protocol::
+      ScopedAllowThreadJoinForWebRtcTransport;      
+  friend class midi::TaskService;                   
+  friend class net::internal::AddressTrackerLinux;  
+  friend class net::
+      MultiThreadedProxyResolverScopedAllowJoinOnIO;  
+  friend class net::NetworkChangeNotifierMac;         
+  friend class net::
+      ScopedAllowThreadJoinForProxyResolverV8Tracing;  
+  friend class printing::PrinterQuery;                 
+  
+  friend class service_manager::ServiceProcessLauncher;
+  friend class ui::WindowResizeHelperMac;  
+
+  ScopedAllowBaseSyncPrimitivesOutsideBlockingScope()
+      EMPTY_BODY_IF_DCHECK_IS_OFF;
+  ~ScopedAllowBaseSyncPrimitivesOutsideBlockingScope()
+      EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+#if DCHECK_IS_ON()
+  const bool was_disallowed_;
+#endif
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedAllowBaseSyncPrimitivesOutsideBlockingScope);
+};
+
+class BASE_EXPORT ScopedAllowBaseSyncPrimitivesForTesting {
+ public:
+  ScopedAllowBaseSyncPrimitivesForTesting() EMPTY_BODY_IF_DCHECK_IS_OFF;
+  ~ScopedAllowBaseSyncPrimitivesForTesting() EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+ private:
+#if DCHECK_IS_ON()
+  const bool was_disallowed_;
+#endif
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedAllowBaseSyncPrimitivesForTesting);
+};
+
+namespace internal {
 
 
 
+INLINE_IF_DCHECK_IS_OFF void AssertBaseSyncPrimitivesAllowed()
+    EMPTY_BODY_IF_DCHECK_IS_OFF;
 
 
+INLINE_IF_DCHECK_IS_OFF void ResetThreadRestrictionsForTesting()
+    EMPTY_BODY_IF_DCHECK_IS_OFF;
+
+}  
 
 
+INLINE_IF_DCHECK_IS_OFF void AssertLongCPUWorkAllowed()
+    EMPTY_BODY_IF_DCHECK_IS_OFF;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+INLINE_IF_DCHECK_IS_OFF void DisallowUnresponsiveTasks()
+    EMPTY_BODY_IF_DCHECK_IS_OFF;
 
 class BASE_EXPORT ThreadRestrictions {
  public:
   
   
+  
+  
   class BASE_EXPORT ScopedAllowIO {
    public:
-    ScopedAllowIO() { previous_value_ = SetIOAllowed(true); }
-    ~ScopedAllowIO() { SetIOAllowed(previous_value_); }
+    ScopedAllowIO() EMPTY_BODY_IF_DCHECK_IS_OFF;
+    ~ScopedAllowIO() EMPTY_BODY_IF_DCHECK_IS_OFF;
+
    private:
-    
-    bool previous_value_;
+#if DCHECK_IS_ON()
+    const bool was_allowed_;
+#endif
 
     DISALLOW_COPY_AND_ASSIGN(ScopedAllowIO);
   };
@@ -153,12 +538,9 @@ class BASE_EXPORT ThreadRestrictions {
   
   
   
+  
+  
   static bool SetIOAllowed(bool allowed);
-
-  
-  
-  
-  static void AssertIOAllowed();
 
   
   
@@ -170,103 +552,48 @@ class BASE_EXPORT ThreadRestrictions {
 
   
   
-  static void DisallowWaiting();
-
   
-  static void AssertWaitAllowed();
+  
+  static void DisallowWaiting();
 #else
   
   
   static bool SetIOAllowed(bool allowed) { return true; }
-  static void AssertIOAllowed() {}
   static bool SetSingletonAllowed(bool allowed) { return true; }
   static void AssertSingletonAllowed() {}
   static void DisallowWaiting() {}
-  static void AssertWaitAllowed() {}
 #endif
 
  private:
   
   
-  friend class android_webview::AwFormDatabaseService;
-  friend class android_webview::CookieManager;
-  friend class base::StackSamplingProfiler;
   friend class content::BrowserMainLoop;
   friend class content::BrowserShutdownProfileDumper;
-  friend class content::BrowserSurfaceViewManager;
   friend class content::BrowserTestBase;
-  friend class content::NestedMessagePumpAndroid;
-  friend class content::ScopedAllowWaitForAndroidLayoutTests;
   friend class content::ScopedAllowWaitForDebugURL;
-  friend class content::SynchronousCompositor;
-  friend class content::SynchronousCompositorBrowserFilter;
-  friend class content::SynchronousCompositorHost;
   friend class ::HistogramSynchronizer;
   friend class internal::TaskTracker;
-  friend class cc::CompletionEvent;
-  friend class cc::SingleThreadTaskGraphRunner;
-  friend class content::CategorizedWorkerPool;
-  friend class remoting::AutoThread;
-  friend class ui::WindowResizeHelperMac;
+  friend class web::WebMainLoop;
   friend class MessagePumpDefault;
-  friend class SequencedWorkerPool;
-  friend class SimpleThread;
-  friend class Thread;
-  friend class ThreadTestHelper;
   friend class PlatformThread;
-  friend class android::JavaHandlerThread;
-  friend class mojo::SyncCallRestrictions;
-  friend class mojo::edk::ScopedIPCSupport;
   friend class ui::CommandBufferClientImpl;
   friend class ui::CommandBufferLocal;
   friend class ui::GpuState;
 
   
   
-  friend class ::chromeos::BlockingMethodCaller;  
-  friend class ::chromeos::system::StatisticsProviderImpl;  
   friend class chrome_browser_net::Predictor;     
-  friend class
-      content::BrowserGpuChannelHostFactory;      
-  friend class
-      content::BrowserGpuMemoryBufferManager;     
-  friend class content::TextInputClientMac;       
-  friend class dbus::Bus;                         
-  friend class disk_cache::BackendImpl;           
-  friend class disk_cache::InFlightIO;            
-  friend class gpu::GpuChannelHost;               
-  friend class net::internal::AddressTrackerLinux;  
-  friend class net::NetworkChangeNotifierMac;     
-  friend class ::BrowserProcessImpl;              
-  friend class ::NativeBackendKWallet;            
 #if !defined(OFFICIAL_BUILD)
   friend class content::SoftwareOutputDeviceMus;  
 #endif
-  friend class views::ScreenMus;
-  friend class viz::ServerGpuMemoryBufferManager;
 
 
 #if DCHECK_IS_ON()
+  
   static bool SetWaitAllowed(bool allowed);
 #else
   static bool SetWaitAllowed(bool allowed) { return true; }
 #endif
-
-  
-  
-  
-  
-  class BASE_EXPORT ScopedAllowWait {
-   public:
-    ScopedAllowWait() { previous_value_ = SetWaitAllowed(true); }
-    ~ScopedAllowWait() { SetWaitAllowed(previous_value_); }
-   private:
-    
-    
-    bool previous_value_;
-
-    DISALLOW_COPY_AND_ASSIGN(ScopedAllowWait);
-  };
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ThreadRestrictions);
 };

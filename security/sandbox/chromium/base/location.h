@@ -11,14 +11,23 @@
 #include <string>
 
 #include "base/base_export.h"
+#include "base/debug/debugging_buildflags.h"
 #include "base/hash.h"
 
-namespace tracked_objects {
+namespace base {
 
 
 
 class BASE_EXPORT Location {
  public:
+  Location();
+  Location(const Location& other);
+
+  
+  
+  
+  Location(const char* file_name, const void* program_counter);
+
   
   
   
@@ -28,82 +37,80 @@ class BASE_EXPORT Location {
            const void* program_counter);
 
   
-  Location();
-
-  
-  Location(const Location& other);
-
-  
-  
   
   bool operator==(const Location& other) const {
-    return line_number_ == other.line_number_ &&
-           file_name_ == other.file_name_;
+    return program_counter_ == other.program_counter_;
   }
 
-  const char* function_name()   const { return function_name_; }
-  const char* file_name()       const { return file_name_; }
-  int line_number()             const { return line_number_; }
+  
+  
+  
+  bool has_source_info() const { return function_name_ && file_name_; }
+
+  
+  
+  const char* function_name() const { return function_name_; }
+
+  
+  
+  const char* file_name() const { return file_name_; }
+
+  
+  
+  int line_number() const { return line_number_; }
+
+  
+  
+  
   const void* program_counter() const { return program_counter_; }
 
+  
+  
   std::string ToString() const;
 
-  
-  struct Hash {
-    size_t operator()(const Location& location) const {
-      
-      
-      
-
-      
-      
-      
-      
-      return base::HashInts(reinterpret_cast<uintptr_t>(location.file_name()),
-                            location.line_number());
-    }
-  };
-
-  
-  
-  
-  
-  void Write(bool display_filename, bool display_function_name,
-             std::string* output) const;
-
-  
-  void WriteFunctionName(std::string* output) const;
+  static Location CreateFromHere(const char* file_name);
+  static Location CreateFromHere(const char* function_name,
+                                 const char* file_name,
+                                 int line_number);
 
  private:
-  const char* function_name_;
-  const char* file_name_;
-  int line_number_;
-  const void* program_counter_;
-};
-
-
-
-struct BASE_EXPORT LocationSnapshot {
-  
-  LocationSnapshot();
-  explicit LocationSnapshot(const tracked_objects::Location& location);
-  ~LocationSnapshot();
-
-  std::string file_name;
-  std::string function_name;
-  int line_number;
+  const char* function_name_ = nullptr;
+  const char* file_name_ = nullptr;
+  int line_number_ = -1;
+  const void* program_counter_ = nullptr;
 };
 
 BASE_EXPORT const void* GetProgramCounter();
 
 
-#define FROM_HERE FROM_HERE_WITH_EXPLICIT_FUNCTION(__func__)
+#if BUILDFLAG(ENABLE_LOCATION_SOURCE)
 
-#define FROM_HERE_WITH_EXPLICIT_FUNCTION(function_name)                        \
-    ::tracked_objects::Location(function_name,                                 \
-                                __FILE__,                                      \
-                                __LINE__,                                      \
-                                ::tracked_objects::GetProgramCounter())
+
+#define FROM_HERE FROM_HERE_WITH_EXPLICIT_FUNCTION(__func__)
+#define FROM_HERE_WITH_EXPLICIT_FUNCTION(function_name) \
+  ::base::Location::CreateFromHere(function_name, __FILE__, __LINE__)
+
+#else
+
+
+#define FROM_HERE ::base::Location::CreateFromHere(__FILE__)
+#define FROM_HERE_WITH_EXPLICIT_FUNCTION(function_name) \
+  ::base::Location::CreateFromHere(function_name, __FILE__, -1)
+
+#endif
+
+}  
+
+namespace std {
+
+
+template <>
+struct hash<::base::Location> {
+  std::size_t operator()(const ::base::Location& loc) const {
+    const void* program_counter = loc.program_counter();
+    return base::Hash(&program_counter, sizeof(void*));
+  }
+};
 
 }  
 
