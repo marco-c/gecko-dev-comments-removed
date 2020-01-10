@@ -2400,11 +2400,6 @@ class nsLayoutUtils {
   
 
 
-  static bool AnimatedImageLayersEnabled();
-
-  
-
-
   static bool IsInterCharacterRubyEnabled();
 
   static bool InterruptibleReflowEnabled() {

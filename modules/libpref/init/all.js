@@ -4950,9 +4950,6 @@ pref("full-screen-api.warning.delay", 500);
 
 pref("pointer-lock-api.warning.timeout", 3000);
 
-
-pref("layout.animated-image-layers.enabled", false);
-
 pref("dom.vibrator.enabled", true);
 pref("dom.vibrator.max_vibrate_ms", 10000);
 pref("dom.vibrator.max_vibrate_list_len", 128);
