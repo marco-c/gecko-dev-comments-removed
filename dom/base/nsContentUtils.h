@@ -3079,6 +3079,12 @@ class nsContentUtils {
 
 
 
+  static uint64_t GenerateWindowId();
+
+  
+
+
+
   static bool GetUserIsInteracting();
 
   
