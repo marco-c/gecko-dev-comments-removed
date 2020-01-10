@@ -185,6 +185,20 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
+  evaluateJS(string, opts = {}) {
+    const options = {
+      text: string,
+      frameActor: opts.frameActor,
+      url: opts.url,
+      selectedNodeActor: opts.selectedNodeActor,
+      selectedObjectActor: opts.selectedObjectActor,
+    };
+    return super.evaluateJS(options);
+  }
+
+  
+
+
 
   async evaluateJSAsync(string, opts = {}) {
     const options = {
