@@ -55,6 +55,11 @@ add_task(async function testToggleSwitch() {
   is(buttonEvents.length, 1, "recorded telemetry for opening the popup");
 
   
+  await TestUtils.waitForCondition(() => {
+    return BrowserTestUtils.is_visible(
+      gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
+    );
+  });
   ok(
     BrowserTestUtils.is_visible(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
