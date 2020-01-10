@@ -48,9 +48,9 @@ try:
     from marionette_harness import Marionette
 except ImportError as e:  
     
-    def reraise(*args, **kwargs):
+    def reraise_(*args, **kwargs):
         raise(e)  
-    Marionette = reraise
+    Marionette = reraise_
 
 from output import OutputHandler, ReftestFormatter
 import reftestcommandline
