@@ -72,6 +72,12 @@
 #  define SHT_ARM_EXIDX (SHT_LOPROC + 1)
 #endif
 
+#if (defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_amd64_android)) && \
+    !defined(SHT_X86_64_UNWIND)
+
+#  define SHT_X86_64_UNWIND 0x70000001
+#endif
+
 
 #ifndef EM_AARCH64
 #  define EM_AARCH64 183
@@ -395,6 +401,15 @@ bool LoadSymbols(const string& obj_file, const bool big_endian,
   const Shdr* eh_frame_section =
       FindElfSectionByName<ElfClass>(".eh_frame", SHT_PROGBITS, sections, names,
                                      names_end, elf_header->e_shnum);
+#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_amd64_android)
+  if (!eh_frame_section) {
+    
+    
+    eh_frame_section =
+        FindElfSectionByName<ElfClass>(".eh_frame", SHT_X86_64_UNWIND, sections,
+                                       names, names_end, elf_header->e_shnum);
+  }
+#endif
   if (eh_frame_section) {
     
     
