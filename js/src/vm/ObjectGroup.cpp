@@ -94,14 +94,14 @@ static inline size_t AddendumAllocSize(ObjectGroup::AddendumKind kind,
 }
 
 void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
-                              bool writeBarrier ) {
+                              bool isSweeping ) {
   MOZ_ASSERT(!needsSweep());
   MOZ_ASSERT(kind <= (OBJECT_FLAG_ADDENDUM_MASK >> OBJECT_FLAG_ADDENDUM_SHIFT));
 
   RemoveCellMemory(this, AddendumAllocSize(addendumKind(), addendum_),
-                   MemoryUse::ObjectGroupAddendum);
+                   MemoryUse::ObjectGroupAddendum, isSweeping);
 
-  if (writeBarrier) {
+  if (!isSweeping) {
     
     
     AutoSweepObjectGroup sweep(this);

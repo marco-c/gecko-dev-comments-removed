@@ -20,6 +20,10 @@ struct JSRuntime;
 
 namespace js {
 
+namespace gc {
+class AutoSetThreadIsPerformingGC;
+} 
+
 
 
 
@@ -31,6 +35,9 @@ class FreeOp : public JSFreeOp {
   Vector<void*, 0, SystemAllocPolicy> freeLaterList;
   jit::JitPoisonRangeVector jitPoisonRanges;
   const bool isDefault;
+  bool isCollecting_;
+
+  friend class gc::AutoSetThreadIsPerformingGC;
 
  public:
   static FreeOp* get(JSFreeOp* fop) { return static_cast<FreeOp*>(fop); }
@@ -47,6 +54,7 @@ class FreeOp : public JSFreeOp {
   }
 
   bool isDefaultFreeOp() const { return isDefault; }
+  bool isCollecting() const { return isCollecting_; }
 
   
   
@@ -143,6 +151,10 @@ class FreeOp : public JSFreeOp {
   
   template <class T>
   void release(gc::Cell* cell, T* p, size_t nbytes, MemoryUse use);
+
+  
+  
+  void removeCellMemory(gc::Cell* cell, size_t nbytes, MemoryUse use);
 
  private:
   void queueForFreeLater(void* p);

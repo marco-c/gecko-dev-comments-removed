@@ -1172,7 +1172,8 @@ JS_PUBLIC_API void JS::RemoveAssociatedMemory(JSObject* obj, size_t nbytes,
     return;
   }
 
-  obj->zoneFromAnyThread()->removeCellMemory(obj, nbytes, js::MemoryUse(use));
+  JSRuntime* rt = obj->runtimeFromAnyThread();
+  rt->defaultFreeOp()->removeCellMemory(obj, nbytes, js::MemoryUse(use));
 }
 
 #undef JS_AddRoot
@@ -3581,8 +3582,11 @@ JS::CompileOptions::CompileOptions(JSContext* cx)
   fieldsEnabledOption = cx->realm()->creationOptions().getFieldsEnabled();
 
   
+  
+  
   forceFullParse_ = cx->realm()->behaviors().disableLazyParsing() ||
-                    coverage::IsLCovEnabled();
+                    coverage::IsLCovEnabled() ||
+                    mozilla::recordreplay::IsRecordingOrReplaying();
 
   
   

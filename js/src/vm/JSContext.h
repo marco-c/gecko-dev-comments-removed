@@ -540,11 +540,6 @@ struct JSContext : public JS::RootingContext,
   js::ContextData<bool> ionCompilingSafeForMinorGC;
 
   
-  
-  
-  js::ContextData<bool> performingGC;
-
-  
   js::ContextData<size_t> isTouchingGrayThings;
 
   js::ContextData<size_t> noNurseryAllocationCheck;
@@ -1309,28 +1304,25 @@ class MOZ_RAII AutoUnsafeCallWithABI {
 namespace gc {
 
 
-struct MOZ_RAII AutoSetThreadIsPerformingGC {
-#ifdef DEBUG
+class MOZ_RAII AutoSetThreadIsPerformingGC {
+  JSContext* cx;
+
+ public:
   AutoSetThreadIsPerformingGC() : cx(TlsContext.get()) {
-    MOZ_ASSERT(!cx->performingGC);
-    cx->performingGC = true;
+    FreeOp* fop = cx->defaultFreeOp();
+    MOZ_ASSERT(!fop->isCollecting());
+    fop->isCollecting_ = true;
   }
 
   ~AutoSetThreadIsPerformingGC() {
-    MOZ_ASSERT(cx->performingGC);
-    cx->performingGC = false;
+    FreeOp* fop = cx->defaultFreeOp();
+    MOZ_ASSERT(fop->isCollecting());
+    fop->isCollecting_ = false;
   }
-
- private:
-  JSContext* cx;
-#else
-  AutoSetThreadIsPerformingGC() {}
-#endif
 };
 
 
 struct MOZ_RAII AutoSetThreadIsSweeping {
-#ifdef DEBUG
   AutoSetThreadIsSweeping() : cx(TlsContext.get()), prevState(cx->gcSweeping) {
     cx->gcSweeping = true;
   }
@@ -1340,9 +1332,6 @@ struct MOZ_RAII AutoSetThreadIsSweeping {
  private:
   JSContext* cx;
   bool prevState;
-#else
-  AutoSetThreadIsSweeping() {}
-#endif
 };
 
 }  

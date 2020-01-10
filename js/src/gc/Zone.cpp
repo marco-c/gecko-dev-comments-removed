@@ -86,6 +86,14 @@ js::gc::TriggerKind js::ZoneAllocator::shouldTriggerGCForTooMuchMalloc() {
                   jitCodeCounter.shouldTriggerGC(gc.tunables));
 }
 
+void ZoneAllocPolicy::decMemory(size_t nbytes) {
+  
+  
+  
+  JSContext* cx = TlsContext.get();
+  zone_->decPolicyMemory(this, nbytes, cx->defaultFreeOp()->isCollecting());
+}
+
 JS::Zone::Zone(JSRuntime* rt)
     : ZoneAllocator(rt),
       
@@ -338,7 +346,7 @@ void Zone::discardJitCode(FreeOp* fop,
     
     
     if (discardJitScripts) {
-      script->maybeReleaseJitScript();
+      script->maybeReleaseJitScript(fop);
     }
 
     if (jit::JitScript* jitScript = script->jitScript()) {
