@@ -13,6 +13,8 @@ let {formAutofillStorage} = ChromeUtils.import("resource://formautofill/FormAuto
 
 const {ADDRESSES_COLLECTION_NAME, CREDITCARDS_COLLECTION_NAME} = FormAutofillUtils;
 
+let destroyed = false;
+
 var ParentUtils = {
   async _getRecords(collectionName) {
     return new Promise(resolve => {
@@ -34,12 +36,16 @@ var ParentUtils = {
         }
 
         
-        let allowedNames = [ADDRESSES_COLLECTION_NAME, CREDITCARDS_COLLECTION_NAME];
-        assert.ok(allowedNames.includes(subject.wrappedJSObject.collectionName),
-                  "should include the collection name");
         
-        if (data != "removeAll") {
-          assert.ok(subject.wrappedJSObject.guid, "should have a guid");
+        
+        if (!destroyed) {
+          let allowedNames = [ADDRESSES_COLLECTION_NAME, CREDITCARDS_COLLECTION_NAME];
+          assert.ok(allowedNames.includes(subject.wrappedJSObject.collectionName),
+                    "should include the collection name");
+          
+          if (data != "removeAll") {
+            assert.ok(subject.wrappedJSObject.guid, "should have a guid");
+          }
         }
         Services.obs.removeObserver(observer, obsTopic);
         resolve();
@@ -172,7 +178,9 @@ var ParentUtils = {
   },
 
   observe(subject, topic, data) {
-    assert.ok(topic === "formautofill-storage-changed");
+    if (!destroyed) {
+      assert.ok(topic === "formautofill-storage-changed");
+    }
     sendAsyncMessage("formautofill-storage-changed", {subject: null, topic, data});
   },
 };
@@ -232,5 +240,6 @@ addMessageListener("setup", async () => {
 });
 
 addMessageListener("cleanup", async () => {
+  destroyed = true;
   await ParentUtils.cleanup();
 });
