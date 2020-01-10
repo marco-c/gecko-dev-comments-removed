@@ -631,6 +631,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   uint32_t detachedTypedObjects = 0;
 
+  void finishRoots();
+
  private:
   
   

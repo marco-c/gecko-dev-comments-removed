@@ -8,6 +8,8 @@
 
 #include "builtin/FinalizationGroupObject.h"
 
+#include "mozilla/ScopeExit.h"
+
 #include "gc/Zone.h"
 #include "vm/GlobalObject.h"
 
@@ -175,7 +177,10 @@ const ClassSpec FinalizationGroupObject::classSpec_ = {
     methods_,
     properties_};
 
-const JSFunctionSpec FinalizationGroupObject::methods_[] = {JS_FS_END};
+const JSFunctionSpec FinalizationGroupObject::methods_[] = {
+    JS_FN(js_register_str, register_, 2, 0),
+    JS_FN(js_unregister_str, unregister, 1, 0),
+    JS_FN(js_cleanupSome_str, cleanupSome, 0, 0), JS_FS_END};
 
 const JSPropertySpec FinalizationGroupObject::properties_[] = {
     JS_STRING_SYM_PS(toStringTag, "FinalizationGroup", JSPROP_READONLY),
@@ -302,6 +307,301 @@ void FinalizationGroupObject::setCleanupJobActive(bool value) {
 
 
 
+bool FinalizationGroupObject::register_(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  
+  
+  if (!args.thisv().isObject() ||
+      !args.thisv().toObject().is<FinalizationGroupObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_A_FINALIZATION_GROUP,
+                              "Receiver of FinalizationGroup.register call");
+    return false;
+  }
+
+  RootedFinalizationGroupObject group(
+      cx, &args.thisv().toObject().as<FinalizationGroupObject>());
+
+  
+  if (!args.get(0).isObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_OBJECT_REQUIRED,
+                              "target argument to FinalizationGroup.register");
+    return false;
+  }
+
+  RootedObject target(cx, &args[0].toObject());
+
+  
+  if (args.get(1).isObject() && &args.get(1).toObject() == target) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_HOLDINGS);
+    return false;
+  }
+
+  RootedValue holdings(cx, args.get(1));
+
+  
+  
+  if (!args.get(2).isUndefined() && !args.get(2).isObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_UNREGISTER_TOKEN,
+                              "FinalizationGroup.register");
+    return false;
+  }
+
+  RootedObject unregisterToken(cx);
+  if (!args.get(2).isUndefined()) {
+    unregisterToken = &args[2].toObject();
+  }
+
+  
+  Rooted<FinalizationRecordObject*> record(
+      cx, FinalizationRecordObject::create(cx, group, holdings));
+  if (!record) {
+    return false;
+  }
+
+  if (unregisterToken && !addRegistration(cx, group, unregisterToken, record)) {
+    return false;
+  }
+
+  auto guard = mozilla::MakeScopeExit([&] {
+    if (unregisterToken) {
+      removeRegistrationOnError(group, unregisterToken, record);
+    }
+  });
+
+  
+  RootedObject unwrappedTarget(cx);
+  unwrappedTarget = CheckedUnwrapDynamic(target, cx);
+  if (!unwrappedTarget) {
+    ReportAccessDenied(cx);
+    return false;
+  }
+
+  
+  RootedObject wrappedRecord(cx, record);
+  AutoRealm ar(cx, unwrappedTarget);
+  if (!JS_WrapObject(cx, &wrappedRecord)) {
+    return false;
+  }
+
+  
+  gc::GCRuntime* gc = &cx->runtime()->gc;
+  if (!gc->registerWithFinalizationGroup(cx, unwrappedTarget, wrappedRecord)) {
+    return false;
+  }
+
+  guard.release();
+  args.rval().setUndefined();
+  return true;
+}
+
+
+bool FinalizationGroupObject::addRegistration(
+    JSContext* cx, HandleFinalizationGroupObject group,
+    HandleObject unregisterToken, HandleFinalizationRecordObject record) {
+  
+  
+
+  MOZ_ASSERT(unregisterToken);
+  MOZ_ASSERT(group->registrations());
+
+  auto& map = *group->registrations();
+  Rooted<FinalizationRecordVectorObject*> recordsObject(cx);
+  JSObject* obj = map.lookup(unregisterToken);
+  if (obj) {
+    recordsObject = &obj->as<FinalizationRecordVectorObject>();
+  } else {
+    recordsObject = FinalizationRecordVectorObject::create(cx);
+    if (!recordsObject || !map.add(cx, unregisterToken, recordsObject)) {
+      return false;
+    }
+  }
+
+  return recordsObject->append(record);
+}
+
+ void FinalizationGroupObject::removeRegistrationOnError(
+    HandleFinalizationGroupObject group, HandleObject unregisterToken,
+    HandleFinalizationRecordObject record) {
+  
+  
+  
+
+  MOZ_ASSERT(unregisterToken);
+  MOZ_ASSERT(group->registrations());
+  JS::AutoAssertNoGC nogc;
+
+  auto& map = *group->registrations();
+  JSObject* obj = map.lookup(unregisterToken);
+  MOZ_ASSERT(obj);
+  auto records = &obj->as<FinalizationRecordVectorObject>();
+  records->remove(record);
+
+  if (records->empty()) {
+    map.remove(unregisterToken);
+  }
+}
+
+
+
+
+bool FinalizationGroupObject::unregister(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  
+  
+  if (!args.thisv().isObject() ||
+      !args.thisv().toObject().is<FinalizationGroupObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_A_FINALIZATION_GROUP,
+                              "Receiver of FinalizationGroup.unregister call");
+    return false;
+  }
+
+  RootedFinalizationGroupObject group(
+      cx, &args.thisv().toObject().as<FinalizationGroupObject>());
+
+  
+  if (!args.get(0).isObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_UNREGISTER_TOKEN,
+                              "FinalizationGroup.unregister");
+    return false;
+  }
+
+  RootedObject unregisterToken(cx, &args[0].toObject());
+
+  RootedObject obj(cx, group->registrations()->lookup(unregisterToken));
+  if (obj) {
+    auto& records = obj->as<FinalizationRecordVectorObject>().records();
+    MOZ_ASSERT(!records.empty());
+    for (FinalizationRecordObject* record : records) {
+      
+      
+      record->clear();
+    }
+    group->registrations()->remove(unregisterToken);
+  }
+
+  args.rval().setBoolean(bool(obj));
+  return true;
+}
+
+
+
+bool FinalizationGroupObject::cleanupSome(JSContext* cx, unsigned argc,
+                                          Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  
+  
+  
+  if (!args.thisv().isObject() ||
+      !args.thisv().toObject().is<FinalizationGroupObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_A_FINALIZATION_GROUP,
+                              "Receiver of FinalizationGroup.cleanupSome call");
+    return false;
+  }
+
+  
+  
+  RootedFinalizationGroupObject group(
+      cx, &args.thisv().toObject().as<FinalizationGroupObject>());
+  if (group->isCleanupJobActive()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_CLEANUP_STATE);
+    return false;
+  }
+
+  
+  
+  RootedObject cleanupCallback(cx);
+  if (!args.get(0).isUndefined()) {
+    cleanupCallback = ValueToCallable(cx, args.get(0), -1, NO_CONSTRUCT);
+    if (!cleanupCallback) {
+      return false;
+    }
+  }
+
+  if (!cleanupQueuedHoldings(cx, group, cleanupCallback)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+bool FinalizationGroupObject::cleanupQueuedHoldings(
+    JSContext* cx, HandleFinalizationGroupObject group,
+    HandleObject callbackArg) {
+  MOZ_ASSERT(cx->realm() == group->realm());
+
+  
+  HoldingsVector* holdings = group->holdingsToBeCleanedUp();
+  size_t initialLength = holdings->length();
+  if (initialLength == 0) {
+    return true;
+  }
+
+  
+  
+  Rooted<FinalizationIteratorObject*> iterator(
+      cx, FinalizationIteratorObject::create(cx, group));
+  if (!iterator) {
+    return false;
+  }
+
+  
+  
+  RootedObject callback(cx, callbackArg);
+  if (!callbackArg) {
+    callback = group->cleanupCallback();
+  }
+
+  
+  group->setCleanupJobActive(true);
+
+  
+  RootedValue rval(cx);
+  JS::AutoValueArray<1> args(cx);
+  args[0].setObject(*iterator);
+  bool ok = JS::Call(cx, UndefinedHandleValue, callback, args, &rval);
+
+  
+  size_t index = iterator->index();
+  MOZ_ASSERT(index <= initialLength);
+  MOZ_ASSERT(initialLength <= holdings->length());
+  if (index > 0) {
+    holdings->erase(holdings->begin(), holdings->begin() + index);
+  }
+
+  
+  group->setCleanupJobActive(false);
+
+  
+  iterator->clearFinalizationGroup();
+
+  return ok;
+}
+
+
+
+
 const JSClass FinalizationIteratorObject::class_ = {
     "FinalizationGroupCleanupIterator", JSCLASS_HAS_RESERVED_SLOTS(SlotCount),
     JS_NULL_CLASS_OPS, JS_NULL_CLASS_SPEC};
@@ -315,14 +615,130 @@ const JSPropertySpec FinalizationIteratorObject::properties_[] = {
     JS_PS_END};
 
 
-bool FinalizationIteratorObject::next(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  args.rval().setUndefined();
+bool GlobalObject::initFinalizationIteratorProto(JSContext* cx,
+                                                 Handle<GlobalObject*> global) {
+  Rooted<JSObject*> base(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
+  if (!base) {
+    return false;
+  }
+  RootedPlainObject proto(cx, NewObjectWithGivenProto<PlainObject>(cx, base));
+  if (!proto) {
+    return false;
+  }
+  if (!JS_DefineFunctions(cx, proto, FinalizationIteratorObject::methods_) ||
+      !JS_DefineProperties(cx, proto,
+                           FinalizationIteratorObject::properties_)) {
+    return false;
+  }
+  global->setReservedSlot(FINALIZATION_ITERATOR_PROTO, ObjectValue(*proto));
   return true;
+}
+
+ FinalizationIteratorObject* FinalizationIteratorObject::create(
+    JSContext* cx, HandleFinalizationGroupObject group) {
+  MOZ_ASSERT(group);
+
+  RootedObject proto(cx, GlobalObject::getOrCreateFinalizationIteratorPrototype(
+                             cx, cx->global()));
+  if (!proto) {
+    return nullptr;
+  }
+
+  FinalizationIteratorObject* iterator =
+      NewObjectWithClassProto<FinalizationIteratorObject>(cx, proto);
+  if (!iterator) {
+    return nullptr;
+  }
+
+  iterator->initReservedSlot(FinalizationGroupSlot, ObjectValue(*group));
+  iterator->initReservedSlot(IndexSlot, Int32Value(0));
+
+  return iterator;
+}
+
+FinalizationGroupObject* FinalizationIteratorObject::finalizationGroup() const {
+  Value value = getReservedSlot(FinalizationGroupSlot);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+  return &value.toObject().as<FinalizationGroupObject>();
 }
 
 size_t FinalizationIteratorObject::index() const {
   int32_t i = getReservedSlot(IndexSlot).toInt32();
   MOZ_ASSERT(i >= 0);
   return size_t(i);
+}
+
+void FinalizationIteratorObject::incIndex() {
+  int32_t i = index();
+  MOZ_ASSERT(i < INT32_MAX);
+  setReservedSlot(IndexSlot, Int32Value(i + 1));
+}
+
+void FinalizationIteratorObject::clearFinalizationGroup() {
+  MOZ_ASSERT(finalizationGroup());
+  setReservedSlot(FinalizationGroupSlot, UndefinedValue());
+}
+
+
+
+
+bool FinalizationIteratorObject::next(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  
+  
+  if (!args.thisv().isObject() ||
+      !args.thisv().toObject().is<FinalizationIteratorObject>()) {
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_NOT_A_FINALIZATION_ITERATOR,
+        "Receiver of FinalizationGroupCleanupIterator.next call");
+    return false;
+  }
+
+  RootedFinalizationIteratorObject iterator(
+      cx, &args.thisv().toObject().as<FinalizationIteratorObject>());
+
+  
+  
+  RootedFinalizationGroupObject group(cx, iterator->finalizationGroup());
+  if (!group) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_STALE_FINALIZATION_GROUP_ITERATOR);
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  auto* holdings = group->holdingsToBeCleanedUp();
+  size_t index = iterator->index();
+  MOZ_ASSERT(index <= holdings->length());
+  if (index < holdings->length() && index < INT32_MAX) {
+    RootedValue value(cx, (*holdings)[index]);
+    JSObject* result = CreateIterResultObject(cx, value, false);
+    if (!result) {
+      return false;
+    }
+
+    iterator->incIndex();
+
+    args.rval().setObject(*result);
+    return true;
+  }
+
+  
+  JSObject* result = CreateIterResultObject(cx, UndefinedHandleValue, true);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
 }
