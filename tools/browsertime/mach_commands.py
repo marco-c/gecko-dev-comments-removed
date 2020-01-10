@@ -102,7 +102,7 @@ host_fetches = {
     'darwin': {
         'ffmpeg': {
             'type': 'static-url',
-            'url': 'https://ffmpeg.zeranoe.com/builds/macos64/static/ffmpeg-4.1.1-macos64-static.zip',  
+            'url': 'https://github.com/ncalexan/geckodriver/releases/download/v0.24.0-android/ffmpeg-4.1.1-macos64-static.zip',  
             
             'path': 'ffmpeg-4.1.1-macos64-static',
         },
@@ -119,9 +119,9 @@ host_fetches = {
     'linux64': {
         'ffmpeg': {
             'type': 'static-url',
-            'url': 'https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-4.0.3-64bit-static.tar.xz',  
+            'url': 'https://github.com/ncalexan/geckodriver/releases/download/v0.24.0-android/ffmpeg-4.1.4-i686-static.tar.xz',  
             
-            'path': 'ffmpeg-4.0.3-64bit-static',
+            'path': 'ffmpeg-4.1.4-i686-static',
         },
         
         
@@ -131,7 +131,7 @@ host_fetches = {
     'win64': {
         'ffmpeg': {
             'type': 'static-url',
-            'url': 'https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-4.1.1-win64-static.zip',  
+            'url': 'https://github.com/ncalexan/geckodriver/releases/download/v0.24.0-android/ffmpeg-4.1.1-win64-static.zip',  
             
             'path': 'ffmpeg-4.1.1-win64-static',
         },
