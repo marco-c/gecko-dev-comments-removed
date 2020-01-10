@@ -182,6 +182,8 @@ RootActor.prototype = {
     nativeLogpoints: true,
     
     hasThreadFront: true,
+    
+    watchpoints: true,
   },
 
   
