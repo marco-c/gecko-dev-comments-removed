@@ -999,6 +999,11 @@ void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
   }
 
   
+  if (!StaticPrefs::browser_cache_offline_storage_enable()) {
+    return;
+  }
+
+  
   
   if (mDocument->GetController().isSome()) {
     return;
