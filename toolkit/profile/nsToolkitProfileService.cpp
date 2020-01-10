@@ -382,7 +382,7 @@ nsToolkitProfileService::nsToolkitProfileService()
       mIsFirstRun(true),
       mUseDevEditionProfile(false),
 #ifdef MOZ_DEDICATED_PROFILES
-      mUseDedicatedProfile(!IsSnapEnvironment()),
+      mUseDedicatedProfile(!IsSnapEnvironment() && !UseLegacyProfiles()),
 #else
       mUseDedicatedProfile(false),
 #endif
@@ -1750,6 +1750,17 @@ nsToolkitProfileService::CreateProfile(nsIFile* aRootDir,
 
 bool nsToolkitProfileService::IsSnapEnvironment() {
   return !!PR_GetEnv("SNAP_NAME");
+}
+
+
+
+
+
+
+
+
+bool nsToolkitProfileService::UseLegacyProfiles() {
+  return !!PR_GetEnv("MOZ_LEGACY_PROFILES");
 }
 
 struct FindInstallsClosure {
