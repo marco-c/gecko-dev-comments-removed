@@ -51,6 +51,12 @@ SocketProcessChild* SocketProcessChild::GetSingleton() {
   return sSocketProcessChild;
 }
 
+#if defined(XP_MACOSX)
+extern "C" {
+void CGSShutdownServerConnections();
+};
+#endif
+
 bool SocketProcessChild::Init(base::ProcessId aParentPid,
                               const char* aParentBuildID, MessageLoop* aIOLoop,
                               IPC::Channel* aChannel) {
@@ -78,6 +84,12 @@ bool SocketProcessChild::Init(base::ProcessId aParentPid,
   }
 
   SetThisProcessName("Socket Process");
+#if defined(XP_MACOSX)
+  
+  
+  
+  CGSShutdownServerConnections();
+#endif  
   return true;
 }
 
