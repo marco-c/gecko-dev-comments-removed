@@ -7,6 +7,7 @@
 #ifndef gc_GCParallelTask_h
 #define gc_GCParallelTask_h
 
+#include "mozilla/LinkedList.h"
 #include "mozilla/Move.h"
 
 #include "js/TypeDecls.h"
@@ -23,7 +24,8 @@ struct HelperThread;
 
 
 
-class GCParallelTask : public RunnableTask {
+class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
+                       public RunnableTask {
  public:
   using TaskFunc = void (*)(GCParallelTask*);
 
@@ -96,14 +98,17 @@ class GCParallelTask : public RunnableTask {
   
   MOZ_MUST_USE bool startWithLockHeld(AutoLockHelperThreadState& locked);
   void joinWithLockHeld(AutoLockHelperThreadState& locked);
+  void joinRunningOrFinishedTask(AutoLockHelperThreadState& locked);
 
   
   void runFromMainThread();
-  void joinAndRunFromMainThread();
 
   
   
   void startOrRunIfIdle(AutoLockHelperThreadState& lock);
+
+  
+  void cancelDispatchedTask(AutoLockHelperThreadState& lock);
 
   
   void cancelAndWait() {
@@ -126,6 +131,10 @@ class GCParallelTask : public RunnableTask {
     return isDispatched(lock) || isRunning(lock);
   }
 
+  bool isDispatched(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Dispatched;
+  }
+
   ThreadType threadType() override {
     return ThreadType::THREAD_TYPE_GCPARALLEL;
   }
@@ -145,9 +154,6 @@ class GCParallelTask : public RunnableTask {
     
     
     MOZ_ASSERT(state_ == State::Idle);
-  }
-  bool isDispatched(const AutoLockHelperThreadState& lock) const {
-    return state_ == State::Dispatched;
   }
   bool isRunning(const AutoLockHelperThreadState& lock) const {
     return state_ == State::Running;
@@ -172,7 +178,7 @@ class GCParallelTask : public RunnableTask {
     state_ = State::Finished;
   }
   void setIdle(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(isFinished(lock));
+    MOZ_ASSERT(isDispatched(lock) || isFinished(lock));
     state_ = State::Idle;
   }
 
