@@ -277,7 +277,7 @@ void nsImageBoxFrame::UpdateImage() {
     mIntrinsicSize.SizeTo(0, 0);
   } else {
     
-    mImageRequest->StartDecoding(imgIContainer::FLAG_NONE);
+    mImageRequest->StartDecoding(imgIContainer::FLAG_ASYNC_NOTIFY);
     mImageRequest->LockImage();
   }
 

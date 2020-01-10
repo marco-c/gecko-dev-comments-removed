@@ -7379,7 +7379,8 @@ void nsContentUtils::TransferableToIPCTransferable(
       } else if (nsCOMPtr<imgIContainer> image = do_QueryInterface(data)) {
         
         RefPtr<mozilla::gfx::SourceSurface> surface = image->GetFrame(
-            imgIContainer::FRAME_CURRENT, imgIContainer::FLAG_SYNC_DECODE);
+            imgIContainer::FRAME_CURRENT,
+            imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY);
         if (!surface) {
           continue;
         }
