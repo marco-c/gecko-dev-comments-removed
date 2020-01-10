@@ -54,11 +54,12 @@ class RunInfo(object):
 
 def update_expected(test_paths, serve_root, log_file_names,
                     update_properties, rev_old=None, rev_new="HEAD",
-                    full_update=False, sync_root=None, disable_intermittent=None):
+                    full_update=False, sync_root=None, disable_intermittent=None,
+                    update_intermittent=False, remove_intermittent=False):
     """Update the metadata files for web-platform-tests based on
     the results obtained in a previous run or runs
 
-    If stability is not None, assume log_file_names refers to logs from repeated
+    If disable_intermittent is not None, assume log_file_names refers to logs from repeated
     test jobs, disable tests that don't behave as expected on all runs"""
     do_delayed_imports(serve_root)
 
@@ -67,6 +68,8 @@ def update_expected(test_paths, serve_root, log_file_names,
     for metadata_path, updated_ini in update_from_logs(id_test_map,
                                                        update_properties,
                                                        disable_intermittent,
+                                                       update_intermittent,
+                                                       remove_intermittent,
                                                        full_update,
                                                        *log_file_names):
 
@@ -217,8 +220,8 @@ def load_test_data(test_paths):
     return id_test_map
 
 
-def update_from_logs(id_test_map, update_properties, disable_intermittent, full_update,
-                     *log_filenames):
+def update_from_logs(id_test_map, update_properties, disable_intermittent, update_intermittent,
+                     remove_intermittent, full_update, *log_filenames):
 
     updater = ExpectedUpdater(id_test_map)
 
@@ -227,7 +230,8 @@ def update_from_logs(id_test_map, update_properties, disable_intermittent, full_
         with open(log_filename) as f:
             updater.update_from_log(f)
 
-    for item in update_results(id_test_map, update_properties, disable_intermittent, full_update):
+    for item in update_results(id_test_map, update_properties, full_update,
+                               disable_intermittent, update_intermittent, remove_intermittent):
         yield item
 
 
