@@ -77,6 +77,13 @@ class nsAtom {
 
   
   
+  
+  
+  
+  inline bool IsEmpty() const;
+
+  
+  
   inline MozExternalRefCountType AddRef();
   inline MozExternalRefCountType Release();
 
