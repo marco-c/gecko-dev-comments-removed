@@ -40,11 +40,54 @@
 
 namespace mozilla {
 
-
-
 ComputedStyle::ComputedStyle(PseudoStyleType aPseudoType,
                              ServoComputedDataForgotten aComputedValues)
     : mSource(aComputedValues), mPseudoType(aPseudoType) {}
+
+
+
+
+
+
+
+static bool ContainingBlockMayHaveChanged(const ComputedStyle& aOldStyle,
+                                          const ComputedStyle& aNewStyle) {
+  auto* oldDisp = aOldStyle.StyleDisplay();
+  auto* newDisp = aNewStyle.StyleDisplay();
+
+  if (oldDisp->IsAbsPosContainingBlockForNonSVGTextFrames() !=
+        newDisp->IsAbsPosContainingBlockForNonSVGTextFrames()) {
+    return true;
+  }
+
+  bool fixedCB =
+      oldDisp->IsFixedPosContainingBlockForNonSVGTextFrames(aOldStyle);
+  if (fixedCB != newDisp->IsFixedPosContainingBlockForNonSVGTextFrames(aNewStyle)) {
+    return true;
+  }
+  
+  
+  
+  if (fixedCB) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  if (oldDisp->IsFixedPosContainingBlockForTransformSupportingFrames() !=
+        newDisp->IsFixedPosContainingBlockForTransformSupportingFrames()) {
+    return true;
+  }
+  if (oldDisp->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() !=
+        newDisp
+        ->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames()) {
+    return true;
+  }
+  return false;
+}
 
 nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
                                                 uint32_t* aEqualStructs) const {
@@ -192,48 +235,7 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
   }
 
   if (hint & nsChangeHint_UpdateContainingBlock) {
-    
-    
-    
-    
-    
-
-    
-    
-
-    
-    
-    
-    
-    const nsStyleDisplay* oldDisp = StyleDisplay();
-    const nsStyleDisplay* newDisp = aNewStyle.StyleDisplay();
-    bool isFixedCB;
-    if (oldDisp->IsAbsPosContainingBlockForNonSVGTextFrames() ==
-            newDisp->IsAbsPosContainingBlockForNonSVGTextFrames() &&
-        (isFixedCB =
-             oldDisp->IsFixedPosContainingBlockForNonSVGTextFrames(*this)) ==
-            newDisp->IsFixedPosContainingBlockForNonSVGTextFrames(aNewStyle) &&
-        
-        
-        
-        (isFixedCB ||
-         oldDisp->IsFixedPosContainingBlockForTransformSupportingFrames() ==
-             newDisp
-                 ->IsFixedPosContainingBlockForTransformSupportingFrames()) &&
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        (isFixedCB ||
-         oldDisp->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ==
-             newDisp
-                 ->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames())) {
+    if (!ContainingBlockMayHaveChanged(*this, aNewStyle)) {
       
       
       
