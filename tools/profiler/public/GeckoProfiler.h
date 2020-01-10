@@ -775,7 +775,10 @@ void profiler_add_marker(const char* aMarkerName,
 
 void profiler_add_js_marker(const char* aMarkerName);
 void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info);
-void profiler_add_native_allocation_marker(int64_t aSize);
+
+
+
+bool profiler_add_native_allocation_marker(int64_t aSize);
 
 
 
