@@ -1597,9 +1597,6 @@ function flushRendering() {
     logger.error("Descendant frame generated a MozAfterPaint event, " +
         "but the root document doesn't have one!");
   }
-
-  logger.debug(`flushRendering ${windowUtils.isMozAfterPaintPending}`);
-  return windowUtils.isMozAfterPaintPending;
 }
 
 async function reftestWait(url, remote) {
@@ -1655,18 +1652,23 @@ async function reftestWait(url, remote) {
 
   await new Promise(resolve => {
     let maybeResolve = () => {
-      if (flushRendering()) {
+      flushRendering();
+      if (remote) {
+        
+        windowUtils.updateLayerTree();
+      }
+      if (windowUtils.isMozAfterPaintPending) {
+        logger.debug(`reftestWait: ${windowUtils.isMozAfterPaintPending}`);
         win.addEventListener("MozAfterPaint", maybeResolve, {once: true});
       } else {
-        win.setTimeout(resolve, 0);
+        
+        win.requestAnimationFrame(() => {
+          win.requestAnimationFrame(resolve);
+        });
       }
     };
     maybeResolve();
   });
-
-  if (remote) {
-    windowUtils.updateLayerTree();
-  }
 }
 
 function domAddEventListener(msg) {
