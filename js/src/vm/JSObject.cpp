@@ -1756,6 +1756,22 @@ void JSObject::fixDictionaryShapeAfterSwap() {
   }
 }
 
+bool js::ObjectMayBeSwapped(const JSObject* obj) {
+  const js::Class* clasp = obj->getClass();
+
+  
+  
+  
+  if (clasp->isGlobal()) {
+    return false;
+  }
+
+  
+  
+  
+  return clasp->isProxy() || clasp->isDOMClass();
+}
+
 static MOZ_MUST_USE bool CopyProxyValuesBeforeSwap(
     JSContext* cx, ProxyObject* proxy, MutableHandleValueVector values) {
   MOZ_ASSERT(values.empty());
@@ -1830,6 +1846,11 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
   if (!JSObject::getGroup(cx, b)) {
     oomUnsafe.crash("JSObject::swap");
   }
+
+  
+  
+  MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(a));
+  MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(b));
 
   
 

@@ -759,6 +759,14 @@ namespace js {
 
 
 
+
+
+extern bool ObjectMayBeSwapped(const JSObject* obj);
+
+
+
+
+
 enum DefineAsIntrinsic { NotIntrinsic, AsIntrinsic };
 
 extern bool DefineFunctions(JSContext* cx, HandleObject obj,
