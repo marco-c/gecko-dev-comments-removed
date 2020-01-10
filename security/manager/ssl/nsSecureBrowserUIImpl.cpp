@@ -197,6 +197,15 @@ void nsSecureBrowserUIImpl::CheckForContentBlockingEvents() {
   }
 
   
+  if (doc->GetHasSocialTrackingContentBlocked()) {
+    mEvent |= STATE_BLOCKED_SOCIALTRACKING_CONTENT;
+  }
+
+  if (doc->GetHasSocialTrackingContentLoaded()) {
+    mEvent |= STATE_LOADED_SOCIALTRACKING_CONTENT;
+  }
+
+  
   if (doc->GetHasCookiesBlockedByPermission()) {
     mEvent |= STATE_COOKIES_BLOCKED_BY_PERMISSION;
   }

@@ -131,6 +131,7 @@ class AntiTrackingCommon final {
     eTrackingAnnotations,
     eFingerprinting,
     eCryptomining,
+    eSocialTracking,
   };
 
   

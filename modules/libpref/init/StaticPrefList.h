@@ -6931,6 +6931,22 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  Live,
+  "privacy.trackingprotection.socialtracking.enabled",
+  privacy_trackingprotection_socialtracking_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "privacy.trackingprotection.socialtracking.annotate.enabled",
+  privacy_trackingprotection_socialtracking_annotate_enabled,
+  bool, false
+)
+
+
 
 
 VARCACHE_PREF(

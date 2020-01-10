@@ -1121,6 +1121,14 @@ class Document : public nsINode,
   
 
 
+  bool GetHasSocialTrackingContentBlocked() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_BLOCKED_SOCIALTRACKING_CONTENT);
+  }
+
+  
+
+
   bool GetHasAllCookiesBlocked() {
     return mContentBlockingLog.HasBlockedAnyOfType(
         nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL);
@@ -1180,6 +1188,17 @@ class Document : public nsINode,
         aOriginBlocked,
         nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT,
         aHasCryptominingContentBlocked);
+  }
+
+  
+
+
+  void SetHasSocialTrackingContentBlocked(bool aHasSocialTrackingContentBlocked,
+                                          const nsACString& aOriginBlocked) {
+    RecordContentBlockingLog(
+        aOriginBlocked,
+        nsIWebProgressListener::STATE_BLOCKED_SOCIALTRACKING_CONTENT,
+        aHasSocialTrackingContentBlocked);
   }
 
   
@@ -1297,6 +1316,25 @@ class Document : public nsINode,
         aOriginBlocked,
         nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT,
         aHasCryptominingContentLoaded);
+  }
+
+  
+
+
+  bool GetHasSocialTrackingContentLoaded() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_LOADED_SOCIALTRACKING_CONTENT);
+  }
+
+  
+
+
+  void SetHasSocialTrackingContentLoaded(bool aHasSocialTrackingContentLoaded,
+                                         const nsACString& aOriginBlocked) {
+    RecordContentBlockingLog(
+        aOriginBlocked,
+        nsIWebProgressListener::STATE_LOADED_SOCIALTRACKING_CONTENT,
+        aHasSocialTrackingContentLoaded);
   }
 
   
