@@ -6,7 +6,7 @@
 
 
 
-use neqo_common::{matches, qdebug, Decoder, Encoder};
+use neqo_common::{qdebug, Decoder, Encoder};
 
 use crate::stream_id::StreamIndex;
 use crate::{AppError, TransportError};
@@ -345,7 +345,10 @@ impl Frame {
     }
 
     pub fn ack_eliciting(&self) -> bool {
-        !matches!(self, Frame::Ack { .. } | Frame::Padding)
+        match self {
+            Frame::Ack { .. } | Frame::Padding => false,
+            _ => true,
+        }
     }
 
     
@@ -588,6 +591,7 @@ pub fn decode_frame(dec: &mut Decoder) -> Res<Frame> {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TxMode {
     Normal,
+    #[allow(dead_code)]
     Pto,
 }
 

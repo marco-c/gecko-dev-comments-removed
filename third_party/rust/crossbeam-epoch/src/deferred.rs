@@ -36,9 +36,6 @@ impl Deferred {
 
         unsafe {
             if size <= mem::size_of::<Data>() && align <= mem::align_of::<Data>() {
-                
-                
-                #[allow(deprecated)]
                 let mut data: Data = mem::uninitialized();
                 ptr::write(&mut data as *mut Data as *mut F, f);
 
@@ -54,9 +51,6 @@ impl Deferred {
                 }
             } else {
                 let b: Box<F> = Box::new(f);
-                
-                
-                #[allow(deprecated)]
                 let mut data: Data = mem::uninitialized();
                 ptr::write(&mut data as *mut Data as *mut Box<F>, b);
 

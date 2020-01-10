@@ -581,8 +581,7 @@ impl<T> Worker<T> {
                                 f.wrapping_add(1),
                                 Ordering::SeqCst,
                                 Ordering::Relaxed,
-                            )
-                            .is_err()
+                            ).is_err()
                         {
                             
                             mem::forget(task.take());
@@ -812,8 +811,7 @@ impl<T> Stealer<T> {
                         f.wrapping_add(batch_size),
                         Ordering::SeqCst,
                         Ordering::Relaxed,
-                    )
-                    .is_err()
+                    ).is_err()
                 {
                     return Steal::Retry;
                 }
@@ -893,7 +891,9 @@ impl<T> Stealer<T> {
         
         
         
-        dest.inner.back.store(dest_b, Ordering::Release);
+        dest.inner
+            .back
+            .store(dest_b, Ordering::Release);
 
         
         Steal::Success(())
@@ -992,8 +992,7 @@ impl<T> Stealer<T> {
                         f.wrapping_add(batch_size + 1),
                         Ordering::SeqCst,
                         Ordering::Relaxed,
-                    )
-                    .is_err()
+                    ).is_err()
                 {
                     
                     mem::forget(task);
@@ -1083,7 +1082,9 @@ impl<T> Stealer<T> {
         
         
         
-        dest.inner.back.store(dest_b, Ordering::Release);
+        dest.inner
+            .back
+            .store(dest_b, Ordering::Release);
 
         
         Steal::Success(task)
@@ -1295,12 +1296,14 @@ impl<T> Injector<T> {
             let new_tail = tail + (1 << SHIFT);
 
             
-            match self.tail.index.compare_exchange_weak(
-                tail,
-                new_tail,
-                Ordering::SeqCst,
-                Ordering::Acquire,
-            ) {
+            match self.tail.index
+                .compare_exchange_weak(
+                    tail,
+                    new_tail,
+                    Ordering::SeqCst,
+                    Ordering::Acquire,
+                )
+            {
                 Ok(_) => unsafe {
                     
                     if offset + 1 == BLOCK_CAP {
@@ -1318,7 +1321,7 @@ impl<T> Injector<T> {
                     slot.state.fetch_or(WRITE, Ordering::Release);
 
                     return;
-                },
+                }
                 Err(t) => {
                     tail = t;
                     block = self.tail.block.load(Ordering::Acquire);
@@ -1382,10 +1385,13 @@ impl<T> Injector<T> {
         }
 
         
-        if self
-            .head
-            .index
-            .compare_exchange_weak(head, new_head, Ordering::SeqCst, Ordering::Acquire)
+        if self.head.index
+            .compare_exchange_weak(
+                head,
+                new_head,
+                Ordering::SeqCst,
+                Ordering::Acquire,
+            )
             .is_err()
         {
             return Steal::Retry;
@@ -1496,10 +1502,13 @@ impl<T> Injector<T> {
         let new_offset = offset + advance;
 
         
-        if self
-            .head
-            .index
-            .compare_exchange_weak(head, new_head, Ordering::SeqCst, Ordering::Acquire)
+        if self.head.index
+            .compare_exchange_weak(
+                head,
+                new_head,
+                Ordering::SeqCst,
+                Ordering::Acquire,
+            )
             .is_err()
         {
             return Steal::Retry;
@@ -1656,10 +1665,13 @@ impl<T> Injector<T> {
         let new_offset = offset + advance;
 
         
-        if self
-            .head
-            .index
-            .compare_exchange_weak(head, new_head, Ordering::SeqCst, Ordering::Acquire)
+        if self.head.index
+            .compare_exchange_weak(
+                head,
+                new_head,
+                Ordering::SeqCst,
+                Ordering::Acquire,
+            )
             .is_err()
         {
             return Steal::Retry;

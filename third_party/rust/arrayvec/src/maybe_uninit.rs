@@ -1,28 +1,27 @@
 
 
-use crate::array::Array;
-use std::mem::MaybeUninit as StdMaybeUninit;
+use array::Array;
+use std::mem::ManuallyDrop;
 
-#[derive(Copy)]
-pub struct MaybeUninit<T> {
-    inner: StdMaybeUninit<T>,
+
+
+
+#[repr(C)] 
+pub union MaybeUninit<T> {
+    empty: (),
+    value: ManuallyDrop<T>,
 }
 
-impl<T> Clone for MaybeUninit<T>
-    where T: Copy
-{
-    fn clone(&self) -> Self { *self }
-}
 
 impl<T> MaybeUninit<T> {
     
     pub unsafe fn uninitialized() -> Self {
-        MaybeUninit { inner: StdMaybeUninit::uninit() }
+        MaybeUninit { empty: () }
     }
 
     
     pub fn from(v: T) -> Self {
-        MaybeUninit { inner: StdMaybeUninit::new(v) }
+        MaybeUninit { value: ManuallyDrop::new(v) }
     }
 
     
@@ -32,13 +31,16 @@ impl<T> MaybeUninit<T> {
     pub fn ptr(&self) -> *const T::Item
         where T: Array
     {
-        self.inner.as_ptr() as *const T::Item
+        
+        
+        
+        self as *const _ as *const T::Item
     }
 
     
     pub fn ptr_mut(&mut self) -> *mut T::Item
         where T: Array
     {
-        self.inner.as_mut_ptr() as *mut T::Item
+        self as *mut _ as *mut T::Item
     }
 }

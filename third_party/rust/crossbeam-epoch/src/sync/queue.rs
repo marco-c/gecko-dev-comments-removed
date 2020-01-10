@@ -46,9 +46,6 @@ impl<T> Queue<T> {
             head: CachePadded::new(Atomic::null()),
             tail: CachePadded::new(Atomic::null()),
         };
-        
-        
-        #[allow(deprecated)]
         let sentinel = Owned::new(Node {
             data: unsafe { mem::uninitialized() },
             next: Atomic::null(),

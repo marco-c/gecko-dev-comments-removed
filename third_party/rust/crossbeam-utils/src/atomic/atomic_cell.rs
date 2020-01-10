@@ -2,12 +2,10 @@ use core::cell::UnsafeCell;
 use core::fmt;
 use core::mem;
 use core::ptr;
-use core::sync::atomic::{self, AtomicBool, Ordering};
+use core::slice;
+use core::sync::atomic::{self, AtomicBool, AtomicUsize, Ordering};
 
-#[cfg(feature = "std")]
-use std::panic::{RefUnwindSafe, UnwindSafe};
-
-use super::seq_lock::SeqLock;
+use Backoff;
 
 
 
@@ -19,12 +17,7 @@ use super::seq_lock::SeqLock;
 
 
 
-
-
-
-
-#[repr(transparent)]
-pub struct AtomicCell<T: ?Sized> {
+pub struct AtomicCell<T> {
     
     
     
@@ -36,11 +29,6 @@ pub struct AtomicCell<T: ?Sized> {
 unsafe impl<T: Send> Send for AtomicCell<T> {}
 unsafe impl<T: Send> Sync for AtomicCell<T> {}
 
-#[cfg(feature = "std")]
-impl<T> UnwindSafe for AtomicCell<T> {}
-#[cfg(feature = "std")]
-impl<T> RefUnwindSafe for AtomicCell<T> {}
-
 impl<T> AtomicCell<T> {
     
     
@@ -51,7 +39,6 @@ impl<T> AtomicCell<T> {
     
     
     
-    #[cfg(not(has_min_const_fn))]
     pub fn new(val: T) -> AtomicCell<T> {
         AtomicCell {
             value: UnsafeCell::new(val),
@@ -67,11 +54,11 @@ impl<T> AtomicCell<T> {
     
     
     
-    #[cfg(has_min_const_fn)]
-    pub const fn new(val: T) -> AtomicCell<T> {
-        AtomicCell {
-            value: UnsafeCell::new(val),
-        }
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.value.get() }
     }
 
     
@@ -163,61 +150,6 @@ impl<T> AtomicCell<T> {
     }
 }
 
-impl<T: ?Sized> AtomicCell<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn as_ptr(&self) -> *mut T {
-        self.value.get()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc(hidden)]
-    #[deprecated(note = "this method is unsound and will be removed in the next release")]
-    pub fn get_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.value.get() }
-    }
-}
-
-impl<T: Default> AtomicCell<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn take(&self) -> T {
-        self.swap(Default::default())
-    }
-}
-
 impl<T: Copy> AtomicCell<T> {
     
     
@@ -279,8 +211,23 @@ impl<T: Copy + Eq> AtomicCell<T> {
     
     
     
-    pub fn compare_exchange(&self, current: T, new: T) -> Result<T, T> {
-        unsafe { atomic_compare_exchange_weak(self.value.get(), current, new) }
+    pub fn compare_exchange(&self, mut current: T, new: T) -> Result<T, T> {
+        loop {
+            match unsafe { atomic_compare_exchange_weak(self.value.get(), current, new) } {
+                Ok(_) => return Ok(current),
+                Err(previous) => {
+                    if previous != current {
+                        return Err(previous);
+                    }
+
+                    
+                    
+                    
+                    
+                    current = previous;
+                }
+            }
+        }
     }
 }
 
@@ -305,7 +252,7 @@ macro_rules! impl_arithmetic {
             pub fn fetch_add(&self, val: $t) -> $t {
                 if can_transmute::<$t, atomic::AtomicUsize>() {
                     let a = unsafe { &*(self.value.get() as *const atomic::AtomicUsize) };
-                    a.fetch_add(val as usize, Ordering::AcqRel) as $t
+                    a.fetch_add(val as usize, Ordering::SeqCst) as $t
                 } else {
                     let _guard = lock(self.value.get() as usize).write();
                     let value = unsafe { &mut *(self.value.get()) };
@@ -333,7 +280,7 @@ macro_rules! impl_arithmetic {
             pub fn fetch_sub(&self, val: $t) -> $t {
                 if can_transmute::<$t, atomic::AtomicUsize>() {
                     let a = unsafe { &*(self.value.get() as *const atomic::AtomicUsize) };
-                    a.fetch_sub(val as usize, Ordering::AcqRel) as $t
+                    a.fetch_sub(val as usize, Ordering::SeqCst) as $t
                 } else {
                     let _guard = lock(self.value.get() as usize).write();
                     let value = unsafe { &mut *(self.value.get()) };
@@ -359,7 +306,7 @@ macro_rules! impl_arithmetic {
             pub fn fetch_and(&self, val: $t) -> $t {
                 if can_transmute::<$t, atomic::AtomicUsize>() {
                     let a = unsafe { &*(self.value.get() as *const atomic::AtomicUsize) };
-                    a.fetch_and(val as usize, Ordering::AcqRel) as $t
+                    a.fetch_and(val as usize, Ordering::SeqCst) as $t
                 } else {
                     let _guard = lock(self.value.get() as usize).write();
                     let value = unsafe { &mut *(self.value.get()) };
@@ -385,7 +332,7 @@ macro_rules! impl_arithmetic {
             pub fn fetch_or(&self, val: $t) -> $t {
                 if can_transmute::<$t, atomic::AtomicUsize>() {
                     let a = unsafe { &*(self.value.get() as *const atomic::AtomicUsize) };
-                    a.fetch_or(val as usize, Ordering::AcqRel) as $t
+                    a.fetch_or(val as usize, Ordering::SeqCst) as $t
                 } else {
                     let _guard = lock(self.value.get() as usize).write();
                     let value = unsafe { &mut *(self.value.get()) };
@@ -411,7 +358,7 @@ macro_rules! impl_arithmetic {
             pub fn fetch_xor(&self, val: $t) -> $t {
                 if can_transmute::<$t, atomic::AtomicUsize>() {
                     let a = unsafe { &*(self.value.get() as *const atomic::AtomicUsize) };
-                    a.fetch_xor(val as usize, Ordering::AcqRel) as $t
+                    a.fetch_xor(val as usize, Ordering::SeqCst) as $t
                 } else {
                     let _guard = lock(self.value.get() as usize).write();
                     let value = unsafe { &mut *(self.value.get()) };
@@ -441,7 +388,7 @@ macro_rules! impl_arithmetic {
             #[inline]
             pub fn fetch_add(&self, val: $t) -> $t {
                 let a = unsafe { &*(self.value.get() as *const $atomic) };
-                a.fetch_add(val, Ordering::AcqRel)
+                a.fetch_add(val, Ordering::SeqCst)
             }
 
             /// Decrements the current value by `val` and returns the previous value.
@@ -461,7 +408,7 @@ macro_rules! impl_arithmetic {
             #[inline]
             pub fn fetch_sub(&self, val: $t) -> $t {
                 let a = unsafe { &*(self.value.get() as *const $atomic) };
-                a.fetch_sub(val, Ordering::AcqRel)
+                a.fetch_sub(val, Ordering::SeqCst)
             }
 
             /// Applies bitwise "and" to the current value and returns the previous value.
@@ -479,7 +426,7 @@ macro_rules! impl_arithmetic {
             #[inline]
             pub fn fetch_and(&self, val: $t) -> $t {
                 let a = unsafe { &*(self.value.get() as *const $atomic) };
-                a.fetch_and(val, Ordering::AcqRel)
+                a.fetch_and(val, Ordering::SeqCst)
             }
 
             /// Applies bitwise "or" to the current value and returns the previous value.
@@ -497,7 +444,7 @@ macro_rules! impl_arithmetic {
             #[inline]
             pub fn fetch_or(&self, val: $t) -> $t {
                 let a = unsafe { &*(self.value.get() as *const $atomic) };
-                a.fetch_or(val, Ordering::AcqRel)
+                a.fetch_or(val, Ordering::SeqCst)
             }
 
             /// Applies bitwise "xor" to the current value and returns the previous value.
@@ -515,7 +462,7 @@ macro_rules! impl_arithmetic {
             #[inline]
             pub fn fetch_xor(&self, val: $t) -> $t {
                 let a = unsafe { &*(self.value.get() as *const $atomic) };
-                a.fetch_xor(val, Ordering::AcqRel)
+                a.fetch_xor(val, Ordering::SeqCst)
             }
         }
     };
@@ -581,7 +528,7 @@ impl AtomicCell<bool> {
     #[inline]
     pub fn fetch_and(&self, val: bool) -> bool {
         let a = unsafe { &*(self.value.get() as *const AtomicBool) };
-        a.fetch_and(val, Ordering::AcqRel)
+        a.fetch_and(val, Ordering::SeqCst)
     }
 
     
@@ -602,7 +549,7 @@ impl AtomicCell<bool> {
     #[inline]
     pub fn fetch_or(&self, val: bool) -> bool {
         let a = unsafe { &*(self.value.get() as *const AtomicBool) };
-        a.fetch_or(val, Ordering::AcqRel)
+        a.fetch_or(val, Ordering::SeqCst)
     }
 
     
@@ -623,7 +570,7 @@ impl AtomicCell<bool> {
     #[inline]
     pub fn fetch_xor(&self, val: bool) -> bool {
         let a = unsafe { &*(self.value.get() as *const AtomicBool) };
-        a.fetch_xor(val, Ordering::AcqRel)
+        a.fetch_xor(val, Ordering::SeqCst)
     }
 }
 
@@ -642,9 +589,99 @@ impl<T: Copy + fmt::Debug> fmt::Debug for AtomicCell<T> {
 }
 
 
+fn byte_eq<T>(a: &T, b: &T) -> bool {
+    unsafe {
+        let a = slice::from_raw_parts(a as *const _ as *const u8, mem::size_of::<T>());
+        let b = slice::from_raw_parts(b as *const _ as *const u8, mem::size_of::<T>());
+        a == b
+    }
+}
+
+
 fn can_transmute<A, B>() -> bool {
     
     mem::size_of::<A>() == mem::size_of::<B>() && mem::align_of::<A>() >= mem::align_of::<B>()
+}
+
+
+struct Lock {
+    
+    
+    
+    
+    state: AtomicUsize,
+}
+
+impl Lock {
+    
+    
+    
+    #[inline]
+    fn optimistic_read(&self) -> Option<usize> {
+        let state = self.state.load(Ordering::Acquire);
+        if state == 1 {
+            None
+        } else {
+            Some(state)
+        }
+    }
+
+    
+    
+    
+    
+    #[inline]
+    fn validate_read(&self, stamp: usize) -> bool {
+        atomic::fence(Ordering::Acquire);
+        self.state.load(Ordering::Relaxed) == stamp
+    }
+
+    
+    #[inline]
+    fn write(&'static self) -> WriteGuard {
+        let backoff = Backoff::new();
+        loop {
+            let previous = self.state.swap(1, Ordering::Acquire);
+
+            if previous != 1 {
+                atomic::fence(Ordering::Release);
+
+                return WriteGuard {
+                    lock: self,
+                    state: previous,
+                };
+            }
+
+            backoff.snooze();
+        }
+    }
+}
+
+
+struct WriteGuard {
+    
+    lock: &'static Lock,
+
+    
+    state: usize,
+}
+
+impl WriteGuard {
+    
+    #[inline]
+    fn abort(self) {
+        self.lock.state.store(self.state, Ordering::Release);
+    }
+}
+
+impl Drop for WriteGuard {
+    #[inline]
+    fn drop(&mut self) {
+        
+        self.lock
+            .state
+            .store(self.state.wrapping_add(2), Ordering::Release);
+    }
 }
 
 
@@ -657,7 +694,7 @@ fn can_transmute<A, B>() -> bool {
 
 #[inline]
 #[must_use]
-fn lock(addr: usize) -> &'static SeqLock {
+fn lock(addr: usize) -> &'static Lock {
     
     
     
@@ -682,9 +719,10 @@ fn lock(addr: usize) -> &'static SeqLock {
     
     const LEN: usize = 97;
 
-    const L: SeqLock = SeqLock::INIT;
-
-    static LOCKS: [SeqLock; LEN] = [
+    const L: Lock = Lock {
+        state: AtomicUsize::new(0),
+    };
+    static LOCKS: [Lock; LEN] = [
         L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L,
         L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L,
         L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L,
@@ -775,7 +813,7 @@ where
         T, a,
         {
             a = &*(src as *const _ as *const _);
-            mem::transmute_copy(&a.load(Ordering::Acquire))
+            mem::transmute_copy(&a.load(Ordering::SeqCst))
         },
         {
             let lock = lock(src as usize);
@@ -813,12 +851,13 @@ unsafe fn atomic_store<T>(dst: *mut T, val: T) {
         T, a,
         {
             a = &*(dst as *const _ as *const _);
-            a.store(mem::transmute_copy(&val), Ordering::Release);
+            let res = a.store(mem::transmute_copy(&val), Ordering::SeqCst);
             mem::forget(val);
+            res
         },
         {
             let _guard = lock(dst as usize).write();
-            ptr::write(dst, val);
+            ptr::write(dst, val)
         }
     }
 }
@@ -832,7 +871,7 @@ unsafe fn atomic_swap<T>(dst: *mut T, val: T) -> T {
         T, a,
         {
             a = &*(dst as *const _ as *const _);
-            let res = mem::transmute_copy(&a.swap(mem::transmute_copy(&val), Ordering::AcqRel));
+            let res = mem::transmute_copy(&a.swap(mem::transmute_copy(&val), Ordering::SeqCst));
             mem::forget(val);
             res
         },
@@ -850,46 +889,29 @@ unsafe fn atomic_swap<T>(dst: *mut T, val: T) -> T {
 
 
 
-unsafe fn atomic_compare_exchange_weak<T>(dst: *mut T, mut current: T, new: T) -> Result<T, T>
+unsafe fn atomic_compare_exchange_weak<T>(dst: *mut T, current: T, new: T) -> Result<T, T>
 where
-    T: Copy + Eq,
+    T: Copy,
 {
     atomic! {
         T, a,
         {
             a = &*(dst as *const _ as *const _);
-            let mut current_raw = mem::transmute_copy(&current);
-            let new_raw = mem::transmute_copy(&new);
-
-            loop {
-                match a.compare_exchange_weak(
-                    current_raw,
-                    new_raw,
-                    Ordering::AcqRel,
-                    Ordering::Acquire,
-                ) {
-                    Ok(_) => break Ok(current),
-                    Err(previous_raw) => {
-                        let previous = mem::transmute_copy(&previous_raw);
-
-                        if !T::eq(&previous, &current) {
-                            break Err(previous);
-                        }
-
-                        // The compare-exchange operation has failed and didn't store `new`. The
-                        // failure is either spurious, or `previous` was semantically equal to
-                        // `current` but not byte-equal. Let's retry with `previous` as the new
-                        // `current`.
-                        current = previous;
-                        current_raw = previous_raw;
-                    }
-                }
+            let res = a.compare_exchange_weak(
+                mem::transmute_copy(&current),
+                mem::transmute_copy(&new),
+                Ordering::SeqCst,
+                Ordering::SeqCst,
+            );
+            match res {
+                Ok(v) => Ok(mem::transmute_copy(&v)),
+                Err(v) => Err(mem::transmute_copy(&v)),
             }
         },
         {
             let guard = lock(dst as usize).write();
 
-            if T::eq(&*dst, &current) {
+            if byte_eq(&*dst, &current) {
                 Ok(ptr::replace(dst, new))
             } else {
                 let val = ptr::read(dst);
