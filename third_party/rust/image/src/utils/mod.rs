@@ -1,7 +1,8 @@
 
 
+use byteorder::{NativeEndian, ByteOrder};
 use num_iter::range_step;
-use std::{mem, slice};
+use std::mem;
 use std::iter::repeat;
 
 #[inline(always)]
@@ -39,15 +40,7 @@ pub fn vec_u16_into_u8(vec: Vec<u16>) -> Vec<u8> {
 }
 
 pub fn vec_u16_copy_u8(vec: &Vec<u16>) -> Vec<u8> {
-    let original_slice = vec.as_slice();
-    let ptr = original_slice.as_ptr() as *const u8;
-    let len = original_slice.len() * mem::size_of::<u16>();
-
-    
-    
-    
-    
-    assert!(mem::align_of::<u8>() <= mem::align_of::<u16>());
-    let byte_slice = unsafe { slice::from_raw_parts(ptr, len) };
-    byte_slice.to_owned()
+    let mut new = vec![0; vec.len() * mem::size_of::<u16>()];
+    NativeEndian::write_u16_into(&vec[..], &mut new[..]);
+    new
 }

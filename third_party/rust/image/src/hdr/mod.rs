@@ -8,10 +8,8 @@
 
 
 
-extern crate scoped_threadpool;
+mod decoder;
+mod encoder;
 
-mod hdr_decoder;
-mod hdr_encoder;
-
-pub use self::hdr_decoder::*;
-pub use self::hdr_encoder::*;
+pub use self::decoder::*;
+pub use self::encoder::*;
