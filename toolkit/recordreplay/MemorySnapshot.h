@@ -126,9 +126,6 @@ void MemoryMove(void* aDst, const void* aSrc, size_t aSize);
 
 void MemoryZero(void* aDst, size_t aSize);
 
-
-size_t GetMemoryUsage(MemoryKind aKind);
-
 }  
 }  
 
