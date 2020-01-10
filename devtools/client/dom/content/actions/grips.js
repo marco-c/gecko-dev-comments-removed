@@ -38,13 +38,15 @@ function receiveProperties(grip, response, error) {
 
 
 function fetchProperties(grip) {
-  return dispatch => {
-    
-
-    
-    return DomProvider.getPrototypeAndProperties(grip).then(response => {
+  return async dispatch => {
+    try {
+      
+      const response = await DomProvider.getPrototypeAndProperties(grip);
       dispatch(receiveProperties(grip, response));
-    });
+    } catch (e) {
+      console.error("Error while fetching properties", e);
+    }
+    DomProvider.onPropertiesFetched();
   };
 }
 

@@ -40,8 +40,16 @@ DomPanel.prototype = {
 
 
 
-  open() {
+  async open() {
+    
+    const onGetProperties = new Promise(resolve => {
+      this._resolveOpen = resolve;
+    });
+
     this.initialize();
+    this.refresh();
+
+    await onGetProperties;
 
     this.isReady = true;
     this.emit("ready");
@@ -66,6 +74,13 @@ DomPanel.prototype = {
       getToolbox: this.getToolbox.bind(this),
       getPrototypeAndProperties: this.getPrototypeAndProperties.bind(this),
       openLink: this.openLink.bind(this),
+      
+      onPropertiesFetched: () => {
+        if (this._resolveOpen) {
+          this._resolveOpen();
+          this._resolveOpen = null;
+        }
+      },
     };
 
     exportIntoContentScope(this.panelWin, provider, "DomProvider");
