@@ -121,9 +121,6 @@ bool HTMLTableSectionElement::ParseAttribute(
     
 
 
-    if (aAttribute == nsGkAtoms::charoff) {
-      return aResult.ParseIntWithBounds(aValue, 0);
-    }
     if (aAttribute == nsGkAtoms::height) {
       
       

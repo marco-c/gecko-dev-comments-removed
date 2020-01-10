@@ -119,10 +119,6 @@ bool HTMLTableCellElement::ParseAttribute(int32_t aNamespaceID,
     
 
 
-    if (aAttribute == nsGkAtoms::charoff) {
-      
-      return aResult.ParseIntWithBounds(aValue, 0);
-    }
     if (aAttribute == nsGkAtoms::colspan) {
       aResult.ParseClampedNonNegativeInt(aValue, 1, 1, MAX_COLSPAN);
       return true;
