@@ -20,6 +20,7 @@
 #define wasm_process_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 
 namespace js {
 namespace wasm {
@@ -52,6 +53,12 @@ extern mozilla::Atomic<bool> CodeExists;
 bool RegisterCodeSegment(const CodeSegment* cs);
 
 void UnregisterCodeSegment(const CodeSegment* cs);
+
+
+
+bool IsHugeMemoryEnabled();
+
+MOZ_MUST_USE bool DisableHugeMemory();
 
 
 
