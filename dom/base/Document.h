@@ -1289,6 +1289,43 @@ class Document : public nsINode,
   
 
 
+  void SetHasTrackerCookiesLoaded(bool aHasTrackerCookiesLoaded,
+                                  const nsACString& aOriginLoaded) {
+    RecordContentBlockingLog(
+        aOriginLoaded, nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER,
+        aHasTrackerCookiesLoaded);
+  }
+
+  
+
+
+  bool GetHasTrackerCookiesLoaded() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER);
+  }
+
+  
+
+
+  void SetHasSocialTrackerCookiesLoaded(bool aHasSocialTrackerCookiesLoaded,
+                                        const nsACString& aOriginLoaded) {
+    RecordContentBlockingLog(
+        aOriginLoaded,
+        nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER,
+        aHasSocialTrackerCookiesLoaded);
+  }
+
+  
+
+
+  bool GetHasSocialTrackerCookiesLoaded() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER);
+  }
+
+  
+
+
   bool GetHasTrackingContentLoaded() {
     return mContentBlockingLog.HasBlockedAnyOfType(
         nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);

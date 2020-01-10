@@ -68,10 +68,18 @@ const LOG = {
   ],
   
   "https://8.example.com": [
-    [Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_BY_PERMISSION, true, 2],
+    [Ci.nsIWebProgressListener.STATE_COOKIES_LOADED_TRACKER, true, 1],
   ],
   
   "https://9.example.com": [
+    [Ci.nsIWebProgressListener.STATE_COOKIES_LOADED_SOCIALTRACKER, true, 1],
+  ],
+  
+  "https://10.example.com": [
+    [Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_BY_PERMISSION, true, 2],
+  ],
+  
+  "https://11.example.com": [
     [Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT, false, 1],
   ],
 };
