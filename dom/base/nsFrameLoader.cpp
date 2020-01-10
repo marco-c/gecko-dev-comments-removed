@@ -2133,8 +2133,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
 
   if (OwnerIsMozBrowserFrame()) {
     docShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
-  } else if (mBrowsingContext->GetParent()) {
-    docShell->SetIsFrame();
   }
 
   
