@@ -19,8 +19,6 @@ class RDDChild;
 
 
 class RDDProcessManager final : public RDDProcessHost::Listener {
-  friend class RDDChild;
-
  public:
   static void Initialize();
   static void Shutdown();
@@ -29,14 +27,16 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   ~RDDProcessManager();
 
   
-  bool LaunchRDDProcess(base::ProcessId aOtherProcess,
-                        mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
-                            aOutRemoteDecoderManager);
+  void LaunchRDDProcess();
 
   
   
   
   bool EnsureRDDReady();
+
+  bool CreateContentBridge(base::ProcessId aOtherProcess,
+                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
+                               aOutRemoteDecoderManager);
 
   void OnProcessLaunchComplete(RDDProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) override;
@@ -65,11 +65,6 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   RDDProcessHost* Process() { return mProcess; }
 
  private:
-  bool CreateContentBridge(base::ProcessId aOtherProcess,
-                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
-                               aOutRemoteDecoderManager);
-  bool CreateVideoBridge();
-
   
   void OnXPCOMShutdown();
   void OnPreferenceChange(const char16_t* aData);
