@@ -244,36 +244,16 @@ class PSMutex : private ::mozilla::detail::MutexImpl {
  public:
   PSMutex()
       : ::mozilla::detail::MutexImpl(
-            ::mozilla::recordreplay::Behavior::DontPreserve) {}
-
+            ::mozilla::recordreplay::Behavior::DontPreserve),
+        mIsLocked(false) {}
   void Lock() {
-    const int tid = baseprofiler::profiler_current_thread_id();
-    MOZ_ASSERT(tid != 0);
-
-    
-    
-    
-    
-    
-    MOZ_ASSERT(mOwningThreadId != tid);
-
     ::mozilla::detail::MutexImpl::lock();
-
     
-    MOZ_ASSERT(mOwningThreadId == 0);
-    
-    mOwningThreadId = tid;
+    mIsLocked = true;
   }
 
   void Unlock() {
-    
-    
-    AssertCurrentThreadOwns();
-
-    
-    
-    mOwningThreadId = 0;
-
+    mIsLocked = false;
     ::mozilla::detail::MutexImpl::unlock();
   }
 
@@ -286,26 +266,27 @@ class PSMutex : private ::mozilla::detail::MutexImpl {
   
   
   
-  bool IsLockedOnCurrentThread() const {
-    return mOwningThreadId == baseprofiler::profiler_current_thread_id();
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool CouldBeLockedOnCurrentThread() const { return mIsLocked; }
 
-  void AssertCurrentThreadOwns() const {
-    MOZ_ASSERT(IsLockedOnCurrentThread());
-  }
-
-  void AssertCurrentThreadDoesNotOwn() const {
-    MOZ_ASSERT(!IsLockedOnCurrentThread());
-  }
-
- private:
   
   
-  
-  
-  Atomic<int, MemoryOrdering::SequentiallyConsistent,
-         recordreplay::Behavior::DontPreserve>
-      mOwningThreadId{0};
+  Atomic<bool, MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve>
+      mIsLocked;
 };
 
 
@@ -958,8 +939,6 @@ class ActivePS {
       }
     }
   }
-
-  PS_GET(ProfilerIOInterposeObserver*, InterposeObserver)
 
   PS_GET_AND_SET(bool, IsPaused)
 
@@ -2310,7 +2289,7 @@ profiler_code_address_service_for_presymbolication() {
 static void locked_profiler_stream_json_for_this_process(
     PSLockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime,
     bool aIsShuttingDown, ProfilerCodeAddressService* aService) {
-  LOG_LOCKED(aLock, "locked_profiler_stream_json_for_this_process");
+  LOG("locked_profiler_stream_json_for_this_process");
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
@@ -2445,8 +2424,15 @@ bool profiler_stream_json_for_this_process(
     return false;
   }
 
+#if !defined(RELEASE_OR_BETA)
+  ActivePS::PauseIOInterposer(lock);
+#endif
+
   locked_profiler_stream_json_for_this_process(lock, aWriter, aSinceTime,
                                                aIsShuttingDown, aService);
+#if !defined(RELEASE_OR_BETA)
+  ActivePS::ResumeIOInterposer(lock);
+#endif
 
   return true;
 }
@@ -2836,9 +2822,7 @@ void SamplerThread::Run() {
             auto state = localBlocksRingBuffer.GetState();
             if (NS_WARN_IF(state.mClearedBlockCount !=
                            previousState.mClearedBlockCount)) {
-              LOG_LOCKED(
-                  lock,
-                  "Stack sample too big for local storage, needed %u bytes",
+              LOG("Stack sample too big for local storage, needed %u bytes",
                   unsigned(state.mRangeEnd.ConvertToU64() -
                            previousState.mRangeEnd.ConvertToU64()));
               
@@ -2849,9 +2833,7 @@ void SamplerThread::Run() {
             } else if (state.mRangeEnd.ConvertToU64() -
                            previousState.mRangeEnd.ConvertToU64() >=
                        CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
-              LOG_LOCKED(
-                  lock,
-                  "Stack sample too big for profiler storage, needed %u bytes",
+              LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(state.mRangeEnd.ConvertToU64() -
                            previousState.mRangeEnd.ConvertToU64()));
               
@@ -3210,7 +3192,7 @@ void profiler_init(void* aStackTop) {
       return;
     }
 
-    LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP is set");
+    LOG("- MOZ_PROFILER_STARTUP is set");
 
     
     capacity = PROFILER_DEFAULT_STARTUP_ENTRIES;
@@ -3226,12 +3208,10 @@ void profiler_init(void* aStackTop) {
           static_cast<uint64_t>(capacityLong) <=
               static_cast<uint64_t>(INT32_MAX)) {
         capacity = PowerOfTwo32(static_cast<uint32_t>(capacityLong));
-        LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP_ENTRIES = %u",
-                   unsigned(capacity.Value()));
+        LOG("- MOZ_PROFILER_STARTUP_ENTRIES = %u", unsigned(capacity.Value()));
       } else {
-        LOG_LOCKED(lock,
-                   "- MOZ_PROFILER_STARTUP_ENTRIES not a valid integer: %s",
-                   startupCapacity);
+        LOG("- MOZ_PROFILER_STARTUP_ENTRIES not a valid integer: %s",
+            startupCapacity);
         PrintUsageThenExit(1);
       }
     }
@@ -3244,11 +3224,10 @@ void profiler_init(void* aStackTop) {
         if (durationVal > 0.0) {
           duration = Some(durationVal);
         }
-        LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP_DURATION = %f", durationVal);
+        LOG("- MOZ_PROFILER_STARTUP_DURATION = %f", durationVal);
       } else {
-        LOG_LOCKED(lock,
-                   "- MOZ_PROFILER_STARTUP_DURATION not a valid float: %s",
-                   startupDuration);
+        LOG("- MOZ_PROFILER_STARTUP_DURATION not a valid float: %s",
+            startupDuration);
         PrintUsageThenExit(1);
       }
     }
@@ -3258,11 +3237,10 @@ void profiler_init(void* aStackTop) {
       errno = 0;
       interval = PR_strtod(startupInterval, nullptr);
       if (errno == 0 && interval > 0.0 && interval <= PROFILER_MAX_INTERVAL) {
-        LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP_INTERVAL = %f", interval);
+        LOG("- MOZ_PROFILER_STARTUP_INTERVAL = %f", interval);
       } else {
-        LOG_LOCKED(lock,
-                   "- MOZ_PROFILER_STARTUP_INTERVAL not a valid float: %s",
-                   startupInterval);
+        LOG("- MOZ_PROFILER_STARTUP_INTERVAL not a valid float: %s",
+            startupInterval);
         PrintUsageThenExit(1);
       }
     }
@@ -3275,12 +3253,9 @@ void profiler_init(void* aStackTop) {
       errno = 0;
       features = strtol(startupFeaturesBitfield, nullptr, 10);
       if (errno == 0 && features != 0) {
-        LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP_FEATURES_BITFIELD = %d",
-                   features);
+        LOG("- MOZ_PROFILER_STARTUP_FEATURES_BITFIELD = %d", features);
       } else {
-        LOG_LOCKED(
-            lock,
-            "- MOZ_PROFILER_STARTUP_FEATURES_BITFIELD not a valid integer: %s",
+        LOG("- MOZ_PROFILER_STARTUP_FEATURES_BITFIELD not a valid integer: %s",
             startupFeaturesBitfield);
         PrintUsageThenExit(1);
       }
@@ -3295,14 +3270,14 @@ void profiler_init(void* aStackTop) {
         features = ParseFeaturesFromStringArray(featureStringArray.begin(),
                                                 featureStringArray.length(),
                                                  true);
-        LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP_FEATURES = %d", features);
+        LOG("- MOZ_PROFILER_STARTUP_FEATURES = %d", features);
       }
     }
 
     const char* startupFilters = getenv("MOZ_PROFILER_STARTUP_FILTERS");
     if (startupFilters && startupFilters[0] != '\0') {
       filters = SplitAtCommas(startupFilters, filterStorage);
-      LOG_LOCKED(lock, "- MOZ_PROFILER_STARTUP_FILTERS = %s", startupFilters);
+      LOG("- MOZ_PROFILER_STARTUP_FILTERS = %s", startupFilters);
     }
 
     locked_profiler_start(lock, capacity, interval, features, filters.begin(),
@@ -3554,13 +3529,9 @@ Vector<nsCString> profiler_move_exit_profiles() {
 static void locked_profiler_save_profile_to_file(PSLockRef aLock,
                                                  const char* aFilename,
                                                  bool aIsShuttingDown = false) {
-  LOG_LOCKED(aLock, "locked_profiler_save_profile_to_file(%s)", aFilename);
+  LOG("locked_profiler_save_profile_to_file(%s)", aFilename);
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
-
-#if !defined(RELEASE_OR_BETA)
-  ActivePS::PauseIOInterposer(aLock);
-#endif
 
   std::ofstream stream;
   stream.open(aFilename);
@@ -3584,10 +3555,6 @@ static void locked_profiler_save_profile_to_file(PSLockRef aLock,
 
     stream.close();
   }
-
-#if !defined(RELEASE_OR_BETA)
-  ActivePS::ResumeIOInterposer(aLock);
-#endif
 }
 
 void profiler_save_profile_to_file(const char* aFilename) {
@@ -3662,14 +3629,14 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
                                   const char** aFilters, uint32_t aFilterCount,
                                   const Maybe<double>& aDuration) {
   if (LOG_TEST) {
-    LOG_LOCKED(aLock, "locked_profiler_start");
-    LOG_LOCKED(aLock, "- capacity  = %u", unsigned(aCapacity.Value()));
-    LOG_LOCKED(aLock, "- duration  = %.2f", aDuration ? *aDuration : -1);
-    LOG_LOCKED(aLock, "- interval = %.2f", aInterval);
+    LOG("locked_profiler_start");
+    LOG("- capacity  = %u", unsigned(aCapacity.Value()));
+    LOG("- duration  = %.2f", aDuration ? *aDuration : -1);
+    LOG("- interval = %.2f", aInterval);
 
 #define LOG_FEATURE(n_, str_, Name_, desc_)     \
   if (ProfilerFeature::Has##Name_(aFeatures)) { \
-    LOG_LOCKED(aLock, "- feature  = %s", str_); \
+    LOG("- feature  = %s", str_);               \
   }
 
     PROFILER_FOR_EACH_FEATURE(LOG_FEATURE)
@@ -3677,7 +3644,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 #undef LOG_FEATURE
 
     for (uint32_t i = 0; i < aFilterCount; i++) {
-      LOG_LOCKED(aLock, "- threads  = %s", aFilters[i]);
+      LOG("- threads  = %s", aFilters[i]);
     }
   }
 
@@ -3886,7 +3853,7 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
 }
 
 static MOZ_MUST_USE SamplerThread* locked_profiler_stop(PSLockRef aLock) {
-  LOG_LOCKED(aLock, "locked_profiler_stop");
+  LOG("locked_profiler_stop");
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
@@ -4108,7 +4075,7 @@ void profiler_unregister_thread() {
   if (registeredThread) {
     RefPtr<ThreadInfo> info = registeredThread->Info();
 
-    DEBUG_LOG_LOCKED(lock, "profiler_unregister_thread: %s", info->Name());
+    DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
 
     if (ActivePS::Exists(lock)) {
       ActivePS::UnregisterThread(lock, registeredThread);
@@ -4383,8 +4350,12 @@ void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info) {
                                 profiler_get_backtrace()));
 }
 
-bool profiler_is_locked_on_current_thread() {
-  return gPSMutex.IsLockedOnCurrentThread();
+
+
+
+
+bool profiler_could_be_locked_on_current_thread() {
+  return gPSMutex.CouldBeLockedOnCurrentThread();
 }
 
 void profiler_add_native_allocation_marker(const int64_t aSize) {
