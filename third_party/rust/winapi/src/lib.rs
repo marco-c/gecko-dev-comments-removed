@@ -23,6 +23,7 @@ pub extern crate core as _core;
 
 #[macro_use]
 mod macros;
+pub mod km;
 pub mod shared;
 pub mod um;
 pub mod vc;
