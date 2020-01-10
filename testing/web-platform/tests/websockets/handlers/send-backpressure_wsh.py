@@ -4,10 +4,15 @@ import time
 
 
 
-MESSAGE_SIZE = 8 * 1024 * 1024
+
+
+
+
+MESSAGE_SIZE = 16 * 1024 * 1024
 
 
 def web_socket_do_extra_handshake(request):
+    
     
     request.ws_extension_processors = []
 

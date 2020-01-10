@@ -4,6 +4,9 @@
 
 
 
+const JITTER_ALLOWANCE_MS = 200;
+
+
 
 
 
@@ -24,6 +27,6 @@ promise_test(async t => {
 
   
   
-  assert_greater_than_equal(Number(value), 2,
+  assert_greater_than_equal(Number(value), 2 - JITTER_ALLOWANCE_MS / 1000,
                             'data send should have taken at least 2 seconds');
 }, 'backpressure should be applied to received messages');
