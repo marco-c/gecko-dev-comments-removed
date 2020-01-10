@@ -83,7 +83,9 @@ WorkerDispatcher.prototype = {
           const [, resolve, reject] = items[i];
 
           if (resultData.error) {
-            reject(resultData.error);
+            const err = new Error(resultData.message);
+            (err: any).metadata = resultData.metadata;
+            reject(err);
           } else {
             resolve(resultData.response);
           }
@@ -112,21 +114,35 @@ function workerHandler(publicInterface: Object) {
           if (response instanceof Promise) {
             return response.then(
               val => ({ response: val }),
-              
-              
-              err => ({ error: err.toString() })
+              err => asErrorMessage(err)
             );
           }
           return { response };
         } catch (error) {
-          
-          
-          return { error: error.toString() };
+          return asErrorMessage(error);
         }
       })
     ).then(results => {
       self.postMessage({ id, results });
     });
+  };
+}
+
+function asErrorMessage(error) {
+  if (typeof error === "object" && error && "message" in error) {
+    
+    
+    return {
+      error: true,
+      message: error.message,
+      metadata: error.metadata,
+    };
+  }
+
+  return {
+    error: true,
+    message: error == null ? error : error.toString(),
+    metadata: undefined,
   };
 }
 
