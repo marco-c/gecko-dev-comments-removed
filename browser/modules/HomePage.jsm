@@ -11,6 +11,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
+  ExtensionPreferencesManager:
+    "resource://gre/modules/ExtensionPreferencesManager.jsm",
   IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -261,8 +264,37 @@ let HomePage = {
       if (
         this._ignoreList.some(code => homePages.includes(code.toLowerCase()))
       ) {
-        this.clear();
-        Services.prefs.clearUserPref(kExtensionControllerPref);
+        if (Services.prefs.getBoolPref(kExtensionControllerPref, false)) {
+          if (Services.appinfo.inSafeMode) {
+            
+            
+            return;
+          }
+          
+          const item = await ExtensionPreferencesManager.getSetting(
+            "homepage_override"
+          );
+          if (item && item.id) {
+            
+            
+            await ExtensionParent.apiManager.asyncLoadModule(
+              "chrome_settings_overrides"
+            );
+            ExtensionPreferencesManager.removeSetting(
+              item.id,
+              "homepage_override"
+            ).catch(Cu.reportError);
+          } else {
+            
+            
+            Services.prefs.clearUserPref(kExtensionControllerPref);
+            Services.prefs.clearUserPref(
+              "browser.startup.homepage_override.privateAllowed"
+            );
+          }
+        } else {
+          this.clear();
+        }
         Services.telemetry.recordEvent(
           "homepage",
           "preference",
