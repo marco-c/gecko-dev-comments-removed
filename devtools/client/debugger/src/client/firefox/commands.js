@@ -377,7 +377,23 @@ async function setEventListenerBreakpoints(ids: string[]) {
 async function getEventListenerBreakpointTypes(): Promise<
   EventListenerCategoryList
 > {
-  return threadClient.getAvailableEventBreakpoints();
+  let categories;
+  try {
+    categories = await threadClient.getAvailableEventBreakpoints();
+
+    if (!Array.isArray(categories)) {
+      
+      
+      
+      
+      
+      
+      categories = null;
+    }
+  } catch (err) {
+    
+  }
+  return categories || [];
 }
 
 function pauseGrip(thread: string, func: Function): ObjectClient {
