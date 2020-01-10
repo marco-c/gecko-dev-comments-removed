@@ -210,8 +210,6 @@
 
 .search-setting-button-compact {
   max-height: 32px;
-  
-  margin-inline-end: -2px !important;
   align-self: end;
 }
 
