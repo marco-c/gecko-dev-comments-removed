@@ -47,6 +47,10 @@ const XUL_EVENTS = CLICK_EVENTS | COMMAND_EVENT;
 
 
 
+
+
+
+
 function testActions(aArray) {
   gActionsQueue = new eventQueue();
 
@@ -180,6 +184,17 @@ function checkerOfActionInvoker(aType, aTarget, aActionObj) {
 
   if (aActionObj && "eventTarget" in aActionObj) {
     this.eventTarget = aActionObj.eventTarget;
+  }
+
+  if (aActionObj && aActionObj.allowBubbling) {
+    
+    
+    this.eventTarget = "element";
+    
+    
+    this.match = function(aEvent) {
+      return aEvent.currentTarget == aTarget;
+    };
   }
 
   this.phase = false;
