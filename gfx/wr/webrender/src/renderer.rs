@@ -1738,6 +1738,24 @@ pub struct RendererVAOs {
 }
 
 
+struct DebugOverlayState {
+    
+    is_enabled: bool,
+
+    
+    
+    current_size: Option<DeviceIntSize>,
+}
+
+impl DebugOverlayState {
+    fn new() -> Self {
+        DebugOverlayState {
+            is_enabled: false,
+            current_size: None,
+        }
+    }
+}
+
 
 
 
@@ -1863,6 +1881,9 @@ pub struct Renderer {
     
     
     force_redraw: bool,
+
+    
+    debug_overlay_state: DebugOverlayState,
 }
 
 #[derive(Debug)]
@@ -2371,6 +2392,7 @@ impl Renderer {
             force_redraw: true,
             compositor_config: options.compositor_config,
             allocated_native_surfaces: FastHashSet::default(),
+            debug_overlay_state: DebugOverlayState::new(),
         };
 
         
@@ -2879,6 +2901,101 @@ impl Renderer {
 
     
     
+    fn update_debug_overlay(&mut self, framebuffer_size: DeviceIntSize) {
+        
+        self.debug_overlay_state.is_enabled = self.debug_flags.intersects(
+            DebugFlags::PROFILER_DBG |
+            DebugFlags::RENDER_TARGET_DBG |
+            DebugFlags::TEXTURE_CACHE_DBG |
+            DebugFlags::EPOCHS |
+            DebugFlags::NEW_FRAME_INDICATOR |
+            DebugFlags::NEW_SCENE_INDICATOR |
+            DebugFlags::GPU_CACHE_DBG |
+            DebugFlags::SLOW_FRAME_INDICATOR |
+            DebugFlags::PICTURE_CACHING_DBG |
+            DebugFlags::PRIMITIVE_DBG |
+            DebugFlags::ZOOM_DBG
+        );
+
+        
+        if let CompositorConfig::Native { ref mut compositor, .. } = self.compositor_config {
+            
+            
+            if let Some(current_size) = self.debug_overlay_state.current_size {
+                if !self.debug_overlay_state.is_enabled || current_size != framebuffer_size {
+                    compositor.destroy_surface(NativeSurfaceId::DEBUG_OVERLAY);
+                    self.debug_overlay_state.current_size = None;
+                }
+            }
+
+            
+            if self.debug_overlay_state.is_enabled && self.debug_overlay_state.current_size.is_none() {
+                compositor.create_surface(
+                    NativeSurfaceId::DEBUG_OVERLAY,
+                    framebuffer_size,
+                    false,
+                );
+                self.debug_overlay_state.current_size = Some(framebuffer_size);
+            }
+        }
+    }
+
+    
+    fn bind_debug_overlay(&mut self) {
+        
+        if self.debug_overlay_state.is_enabled {
+            if let CompositorConfig::Native { ref mut compositor, .. } = self.compositor_config {
+                let surface_size = self.debug_overlay_state.current_size.unwrap();
+
+                
+                let surface_info = compositor.bind(
+                    NativeSurfaceId::DEBUG_OVERLAY,
+                    DeviceIntRect::new(
+                        DeviceIntPoint::zero(),
+                        surface_size,
+                    ),
+                );
+
+                
+                let draw_target = DrawTarget::NativeSurface {
+                    offset: surface_info.origin,
+                    external_fbo_id: surface_info.fbo_id,
+                    dimensions: surface_size,
+                };
+                self.device.bind_draw_target(draw_target);
+
+                
+                self.device.clear_target(
+                    Some([0.0, 0.0, 0.0, 0.0]),
+                    Some(1.0),
+                    None,
+                );
+            }
+        }
+    }
+
+    
+    fn unbind_debug_overlay(&mut self) {
+        
+        if self.debug_overlay_state.is_enabled {
+            if let CompositorConfig::Native { ref mut compositor, .. } = self.compositor_config {
+                
+                compositor.unbind();
+
+                compositor.add_surface(
+                    NativeSurfaceId::DEBUG_OVERLAY,
+                    DeviceIntPoint::zero(),
+                    DeviceIntRect::new(
+                        DeviceIntPoint::zero(),
+                        self.debug_overlay_state.current_size.unwrap(),
+                    ),
+                );
+            }
+        }
+    }
+
+    
+    
     
     
     fn render_impl(
@@ -2935,6 +3052,13 @@ impl Renderer {
 
             frame_id
         });
+
+        
+        
+        
+        if let CompositorConfig::Native { ref mut compositor, .. } = self.compositor_config {
+            compositor.begin_frame();
+        }
 
         profile_timers.cpu_time.profile(|| {
             
@@ -2993,6 +3117,13 @@ impl Renderer {
         });
 
         if let Some(device_size) = device_size {
+            
+            
+            self.update_debug_overlay(device_size);
+
+            
+            self.bind_debug_overlay();
+
             self.draw_render_target_debug(device_size);
             self.draw_texture_cache_debug(device_size);
             self.draw_gpu_cache_debug(device_size);
@@ -3099,7 +3230,18 @@ impl Renderer {
             if let Some(debug_renderer) = self.debug.try_get_mut() {
                 let small_screen = self.debug_flags.contains(DebugFlags::SMALL_SCREEN);
                 let scale = if small_screen { 1.6 } else { 1.0 };
-                debug_renderer.render(&mut self.device, device_size, scale);
+                
+                
+                let surface_origin_is_top_left = match self.compositor_config {
+                    CompositorConfig::Native { .. } => true,
+                    CompositorConfig::Draw { .. } => self.device.surface_origin_is_top_left(),
+                };
+                debug_renderer.render(
+                    &mut self.device,
+                    device_size,
+                    scale,
+                    surface_origin_is_top_left,
+                );
             }
             
             
@@ -3112,6 +3254,17 @@ impl Renderer {
 
         if device_size.is_some() {
             self.last_time = current_time;
+
+            
+            
+            self.unbind_debug_overlay();
+        }
+
+        
+        
+        
+        if let CompositorConfig::Native { ref mut compositor, .. } = self.compositor_config {
+            compositor.end_frame();
         }
 
         self.documents_seen.clear();
@@ -5675,6 +5828,10 @@ impl Renderer {
             for id in self.allocated_native_surfaces.drain() {
                 compositor.destroy_surface(id);
             }
+            // Destroy the debug overlay surface, if currently allocated.
+            if self.debug_overlay_state.current_size.is_some() {
+                compositor.destroy_surface(NativeSurfaceId::DEBUG_OVERLAY);
+            }
         }
         self.gpu_cache_texture.deinit(&mut self.device);
         if let Some(dither_matrix_texture) = self.dither_matrix_texture {
@@ -6592,9 +6749,6 @@ impl CompositeState {
         compositor: &mut dyn Compositor,
     ) {
         
-        compositor.begin_frame();
-
-        
         
         
         for tile in self.opaque_tiles.iter().chain(self.alpha_tiles.iter()) {
@@ -6611,8 +6765,5 @@ impl CompositeState {
                 tile.clip_rect.to_i32(),
             );
         }
-
-        
-        compositor.end_frame();
     }
 }

@@ -6,7 +6,7 @@ use api::ColorF;
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::picture::{ResolvedSurfaceTexture, SurfaceTextureDescriptor};
-use std::ops;
+use std::{ops, u64};
 
 
 
@@ -279,6 +279,11 @@ impl CompositeState {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct NativeSurfaceId(pub u64);
+
+impl NativeSurfaceId {
+    
+    pub const DEBUG_OVERLAY: NativeSurfaceId = NativeSurfaceId(u64::MAX);
+}
 
 
 
