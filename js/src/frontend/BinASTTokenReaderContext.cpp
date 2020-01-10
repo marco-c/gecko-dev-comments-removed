@@ -628,10 +628,30 @@ class HuffmanPreludeReader {
   
   struct MaybeSum : EntryBase {
     
+    
+    using SymbolType = BinASTKind;
+    
+    
+    using Table = HuffmanTableIndexedSymbolsSum;
+
+    
     const BinASTSum contents;
+
     MaybeSum(const NormalizedInterfaceAndField identity,
              const BinASTSum contents)
         : EntryBase(identity), contents(contents) {}
+
+    size_t maxNumberOfSymbols() const {
+      return SUM_LIMITS[static_cast<size_t>(contents)] + 1;
+    }
+
+    BinASTKind interfaceAt(size_t index) const {
+      MOZ_ASSERT(index < maxNumberOfSymbols());
+      if (index == 0) {
+        return BinASTKind::_Null;
+      }
+      return SUM_RESOLUTIONS[static_cast<size_t>(contents)][index - 1];
+    }
 
     
     
@@ -949,6 +969,38 @@ class HuffmanPreludeReader {
     return Ok();
   }
 
+  
+  
+  
+  
+
+  
+  template <>
+  MOZ_MUST_USE JS::Result<uint32_t> readNumberOfSymbols(const MaybeSum& sum) {
+    return sum.maxNumberOfSymbols();
+  }
+
+  
+  template <>
+  MOZ_MUST_USE JS::Result<BinASTKind> readSymbol(const MaybeSum& sum,
+                                                 size_t index) {
+    MOZ_ASSERT(index < sum.numberOfSymbols());
+    return sum.interfaceAt(index);
+  }
+
+  
+  template <>
+  BINJS_MOZ_TRY_DECL(index, reader.readVarU32());
+  MOZ_MUST_USE JS::Result<Ok> readSingleValueTable<MaybeSum>(
+      HuffmanTableIndexedSymbolsSum& table, const MaybeSum& sum) {
+    if (index >= sum.maxNumberOfSymbols()) {
+      return raiseInvalidTableData(sum.identity);
+    }
+
+    MOZ_TRY(table.impl.initWithSingleValue(cx_, sum.interfaceAt(index)));
+    return Ok();
+  }
+
  private:
   
   
@@ -1029,6 +1081,31 @@ class HuffmanPreludeReader {
       return Ok();
     }
 
+    
+    
+    
+    MOZ_MUST_USE JS::Result<Ok> operator()(const MaybeSum& entry) {
+      
+      MOZ_TRY((owner.readTable<MaybeSum>(entry)));
+
+      
+      
+      
+
+      const auto& table = owner.dictionary.tableForField(entry.identity);
+      if (table.is<HuffmanTableUnreachable>()) {
+        return Ok();
+      }
+      const auto& tableRef = table.as<HuffmanTableIndexedSymbolsSum>();
+
+      for (const auto& kind : tableRef.impl) {
+        MOZ_TRY(owner.pushValue(
+            entry.identity,
+            {mozilla::VariantType<Interface>(), entry.identity, kind.value}));
+      }
+      return Ok();
+    }
+
     MOZ_MUST_USE JS::Result<Ok> operator()(const String& entry) {
       
       
@@ -1058,14 +1135,6 @@ class HuffmanPreludeReader {
     }
 
     MOZ_MUST_USE JS::Result<Ok> operator()(const List& entry) {
-      
-      
-      
-      MOZ_CRASH("Unimplemented");
-      return Ok();
-    }
-
-    MOZ_MUST_USE JS::Result<Ok> operator()(const MaybeSum& entry) {
       
       
       
