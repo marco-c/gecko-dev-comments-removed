@@ -1970,26 +1970,6 @@ var BrowserTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-  contentPainted(browser) {
-    return ContentTask.spawn(browser, null, async function() {
-      return new Promise(resolve => {
-        addEventListener("MozAfterPaint", function onPaint() {
-          removeEventListener("MozAfterPaint", onPaint);
-          resolve();
-        });
-      });
-    });
-  },
-
   _knownAboutPages: new Set(),
   _loadedAboutContentScript: false,
   
