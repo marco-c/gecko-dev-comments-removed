@@ -19,9 +19,7 @@
 #include "mozilla/layers/PWebRenderBridgeParent.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/WebRenderCompositionRecorder.h"
-#include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
@@ -124,19 +122,20 @@ class WebRenderBridgeParent final
   mozilla::ipc::IPCResult RecvSetDisplayList(
       nsTArray<RenderRootDisplayListData>&& aDisplayLists,
       nsTArray<OpDestroy>&& aToDestroy, const uint64_t& aFwdTransactionId,
-      const TransactionId& aTransactionId, const bool& aContainsSVGGroup,
-      const VsyncId& aVsyncId, const TimeStamp& aVsyncStartTime,
-      const TimeStamp& aRefreshStartTime, const TimeStamp& aTxnStartTime,
-      const nsCString& aTxnURL, const TimeStamp& aFwdTime,
-      nsTArray<CompositionPayload>&& aPayloads) override;
-  mozilla::ipc::IPCResult RecvEmptyTransaction(
-      const FocusTarget& aFocusTarget,
-      nsTArray<RenderRootUpdates>&& aRenderRootUpdates,
-      nsTArray<OpDestroy>&& aToDestroy, const uint64_t& aFwdTransactionId,
-      const TransactionId& aTransactionId, const VsyncId& aVsyncId,
+      const TransactionId& aTransactionId, const wr::IdNamespace& aIdNamespace,
+      const bool& aContainsSVGGroup, const VsyncId& aVsyncId,
       const TimeStamp& aVsyncStartTime, const TimeStamp& aRefreshStartTime,
       const TimeStamp& aTxnStartTime, const nsCString& aTxnURL,
       const TimeStamp& aFwdTime,
+      nsTArray<CompositionPayload>&& aPayloads) override;
+  mozilla::ipc::IPCResult RecvEmptyTransaction(
+      const FocusTarget& aFocusTarget, const uint32_t& aPaintSequenceNumber,
+      nsTArray<RenderRootUpdates>&& aRenderRootUpdates,
+      nsTArray<OpDestroy>&& aToDestroy, const uint64_t& aFwdTransactionId,
+      const TransactionId& aTransactionId, const wr::IdNamespace& aIdNamespace,
+      const VsyncId& aVsyncId, const TimeStamp& aVsyncStartTime,
+      const TimeStamp& aRefreshStartTime, const TimeStamp& aTxnStartTime,
+      const nsCString& aTxnURL, const TimeStamp& aFwdTime,
       nsTArray<CompositionPayload>&& aPayloads) override;
   mozilla::ipc::IPCResult RecvSetFocusTarget(
       const FocusTarget& aFocusTarget) override;
@@ -270,29 +269,6 @@ class WebRenderBridgeParent final
 
   void ForceIsFirstPaint() { mIsFirstPaint = true; }
 
-  void PushDeferredPipelineData(RenderRootDeferredData&& aDeferredData);
-
-  
-
-
-
-
-  bool MaybeHandleDeferredPipelineData(
-      wr::RenderRoot aRenderRoot, const nsTArray<wr::PipelineId>& aPipelineIds,
-      const TimeStamp& aTxnStartTime);
-
-  
-
-
-
-  bool MaybeHandleDeferredPipelineDataForPipeline(
-      wr::RenderRoot aRenderRoot, wr::PipelineId aPipelineId,
-      const TimeStamp& aTxnStartTime);
-
-  bool HandleDeferredPipelineData(
-      nsTArray<RenderRootDeferredData>& aDeferredData,
-      const TimeStamp& aTxnStartTime);
-
   bool IsRootWebRenderBridgeParent() const;
   LayersId GetLayersId() const;
   WRRootId GetWRRootId() const;
@@ -304,14 +280,14 @@ class WebRenderBridgeParent final
   class ScheduleSharedSurfaceRelease;
 
   explicit WebRenderBridgeParent(const wr::PipelineId& aPipelineId);
-  virtual ~WebRenderBridgeParent();
+  virtual ~WebRenderBridgeParent() = default;
 
   wr::WebRenderAPI* Api(wr::RenderRoot aRenderRoot) {
     if (IsRootWebRenderBridgeParent()) {
       return mApis[aRenderRoot];
     } else {
       MOZ_ASSERT(aRenderRoot == wr::RenderRoot::Default);
-      return mApis[*mRenderRoot];
+      return mApis[mRenderRoot];
     }
   }
 
@@ -326,24 +302,9 @@ class WebRenderBridgeParent final
       return aRenderRoot;
     } else {
       MOZ_ASSERT(aRenderRoot == wr::RenderRoot::Default);
-      return *mRenderRoot;
+      return mRenderRoot;
     }
   }
-
-  
-  
-  bool RenderRootIsValid(wr::RenderRoot aRenderRoot);
-
-  void RemoveDeferredPipeline(wr::PipelineId aPipelineId);
-
-  bool ProcessEmptyTransactionUpdates(RenderRootUpdates& aUpdates,
-                                      bool* aScheduleComposite);
-
-  bool ProcessRenderRootDisplayListData(RenderRootDisplayListData& aDisplayList,
-                                        wr::Epoch aWrEpoch,
-                                        const TimeStamp& aTxnStartTime,
-                                        bool aValidTransaction,
-                                        bool aObserveLayersUpdate);
 
   bool SetDisplayList(wr::RenderRoot aRenderRoot, const LayoutDeviceRect& aRect,
                       const wr::LayoutSize& aContentSize, ipc::ByteBuf&& aDL,
@@ -496,24 +457,6 @@ class WebRenderBridgeParent final
   
   
   wr::RenderRootArray<RefPtr<wr::WebRenderAPI>> mApis;
-  
-  
-  
-  
-  
-  
-  HashMap<uint64_t, wr::RenderRoot> mPipelineRenderRoots;
-  
-  
-  
-  
-  HashSet<uint64_t> mChildPipelines;
-  
-  
-  
-  
-  
-  HashMap<uint64_t, nsTArray<RenderRootDeferredData>> mPipelineDeferredUpdates;
   RefPtr<AsyncImagePipelineManager> mAsyncImageManager;
   RefPtr<CompositorVsyncScheduler> mCompositorScheduler;
   RefPtr<CompositorAnimationStorage> mAnimStorage;
@@ -548,7 +491,7 @@ class WebRenderBridgeParent final
   Mutex mRenderRootRectMutex;
   wr::NonDefaultRenderRootArray<ScreenRect> mRenderRootRects;
 
-  Maybe<wr::RenderRoot> mRenderRoot;
+  wr::RenderRoot mRenderRoot;
   bool mPaused;
   bool mDestroyed;
   bool mReceivedDisplayList;
