@@ -111,9 +111,6 @@ ChromeUtils.defineModuleGetter(this, "FormLikeFactory",
 ChromeUtils.defineModuleGetter(this, "GeckoViewAutoFill",
                                "resource://gre/modules/GeckoViewAutoFill.jsm");
 
-ChromeUtils.defineModuleGetter(this, "ContentBlockingAllowList",
-                               "resource://gre/modules/ContentBlockingAllowList.jsm");
-
 var GlobalEventDispatcher = EventDispatcher.instance;
 var WindowEventDispatcher = EventDispatcher.for(window);
 
@@ -1884,14 +1881,29 @@ var BrowserApp = {
           }
 
           if (data.contentType === "tracking") {
+            
+            
+            
+            let normalizedUrl = Services.io.newURI("https://" + browser.currentURI.hostPort);
             if (data.allowContent) {
-              ContentBlockingAllowList.add(browser);
-              if (!PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+              
+              
+              
+              if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+                PrivateBrowsingUtils.addToTrackingAllowlist(normalizedUrl);
+              } else {
+                Services.perms.addFromPrincipal(browser.contentPrincipal, "trackingprotection", Services.perms.ALLOW_ACTION);
                 Telemetry.addData("TRACKING_PROTECTION_EVENTS", 1);
               }
             } else {
-              ContentBlockingAllowList.remove(browser);
-              if (!PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+              
+              
+              
+              
+              if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+                PrivateBrowsingUtils.removeFromTrackingAllowlist(normalizedUrl);
+              } else {
+                Services.perms.removeFromPrincipal(browser.contentPrincipal, "trackingprotection");
                 Telemetry.addData("TRACKING_PROTECTION_EVENTS", 2);
               }
             }
