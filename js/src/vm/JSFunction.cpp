@@ -1533,6 +1533,114 @@ bool JSFunction::finishBoundFunctionInit(JSContext* cx, HandleFunction bound,
   return true;
 }
 
+static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
+                                              HandleFunction fun) {
+  Rooted<LazyScript*> lazy(cx, fun->lazyScript());
+
+  MOZ_ASSERT(!lazy->maybeScript(), "Script is already compiled!");
+  MOZ_ASSERT(lazy->functionNonDelazifying() == fun);
+
+  bool isBinAST = lazy->scriptSource()->hasBinASTSource();
+  bool canRelazify = lazy->canRelazify();
+
+  size_t lazyLength = lazy->sourceEnd() - lazy->sourceStart();
+  if (isBinAST) {
+#if defined(JS_BUILD_BINAST)
+    if (!frontend::CompileLazyBinASTFunction(
+            cx, lazy,
+            lazy->scriptSource()->binASTSource() + lazy->sourceStart(),
+            lazyLength)) {
+      MOZ_ASSERT(fun->isInterpretedLazy());
+      MOZ_ASSERT(fun->lazyScript() == lazy);
+      MOZ_ASSERT(!lazy->hasScript());
+      return false;
+    }
+#else
+    MOZ_CRASH("Trying to delazify BinAST function in non-BinAST build");
+#endif 
+  } else {
+    MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
+
+    
+    UncompressedSourceCache::AutoHoldEntry holder;
+
+    if (lazy->scriptSource()->hasSourceType<Utf8Unit>()) {
+      
+      ScriptSource::PinnedUnits<Utf8Unit> units(
+          cx, lazy->scriptSource(), holder, lazy->sourceStart(), lazyLength);
+      if (!units.get()) {
+        return false;
+      }
+
+      if (!frontend::CompileLazyFunction(cx, lazy, units.get(), lazyLength)) {
+        
+        
+        MOZ_ASSERT(fun->isInterpretedLazy());
+        MOZ_ASSERT(fun->lazyScript() == lazy);
+        MOZ_ASSERT(!lazy->hasScript());
+        return false;
+      }
+    } else {
+      MOZ_ASSERT(lazy->scriptSource()->hasSourceType<char16_t>());
+
+      
+      ScriptSource::PinnedUnits<char16_t> units(
+          cx, lazy->scriptSource(), holder, lazy->sourceStart(), lazyLength);
+      if (!units.get()) {
+        return false;
+      }
+
+      if (!frontend::CompileLazyFunction(cx, lazy, units.get(), lazyLength)) {
+        
+        
+        MOZ_ASSERT(fun->isInterpretedLazy());
+        MOZ_ASSERT(fun->lazyScript() == lazy);
+        MOZ_ASSERT(!lazy->hasScript());
+        return false;
+      }
+    }
+  }
+
+  RootedScript script(cx, fun->nonLazyScript());
+
+  
+  
+  if (!lazy->maybeScript()) {
+    lazy->initScript(script);
+  }
+
+  
+  if (canRelazify) {
+    
+    
+    MOZ_ASSERT(lazy->column() == script->column());
+
+    
+    
+    
+    script->setLazyScript(lazy);
+  } else if (lazy->isWrappedByDebugger()) {
+    
+    
+    
+    
+    
+    
+    script->setLazyScript(lazy);
+    script->setDoNotRelazify(true);
+  }
+
+  
+  if (script->scriptSource()->hasEncoder()) {
+    RootedScriptSourceObject sourceObject(cx, lazy->sourceObject());
+    if (!script->scriptSource()->xdrEncodeFunction(cx, fun, sourceObject)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
                                                           HandleFunction fun) {
@@ -1547,7 +1655,6 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
     Rooted<LazyScript*> lazy(cx, fun->lazyScript());
     RootedScript script(cx, lazy->maybeScript());
 
-    bool isBinAST = lazy->scriptSource()->hasBinASTSource();
     bool canRelazify = lazy->canRelazify();
 
     if (script) {
@@ -1580,104 +1687,7 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
       return true;
     }
 
-    
-
-    size_t lazyLength = lazy->sourceEnd() - lazy->sourceStart();
-    if (isBinAST) {
-#if defined(JS_BUILD_BINAST)
-      if (!frontend::CompileLazyBinASTFunction(
-              cx, lazy,
-              lazy->scriptSource()->binASTSource() + lazy->sourceStart(),
-              lazyLength)) {
-        MOZ_ASSERT(fun->isInterpretedLazy());
-        MOZ_ASSERT(fun->lazyScript() == lazy);
-        MOZ_ASSERT(!lazy->hasScript());
-        return false;
-      }
-#else
-      MOZ_CRASH("Trying to delazify BinAST function in non-BinAST build");
-#endif 
-    } else {
-      MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
-
-      
-      UncompressedSourceCache::AutoHoldEntry holder;
-
-      if (lazy->scriptSource()->hasSourceType<Utf8Unit>()) {
-        
-        ScriptSource::PinnedUnits<Utf8Unit> units(
-            cx, lazy->scriptSource(), holder, lazy->sourceStart(), lazyLength);
-        if (!units.get()) {
-          return false;
-        }
-
-        if (!frontend::CompileLazyFunction(cx, lazy, units.get(), lazyLength)) {
-          
-          
-          MOZ_ASSERT(fun->isInterpretedLazy());
-          MOZ_ASSERT(fun->lazyScript() == lazy);
-          MOZ_ASSERT(!lazy->hasScript());
-          return false;
-        }
-      } else {
-        MOZ_ASSERT(lazy->scriptSource()->hasSourceType<char16_t>());
-
-        
-        ScriptSource::PinnedUnits<char16_t> units(
-            cx, lazy->scriptSource(), holder, lazy->sourceStart(), lazyLength);
-        if (!units.get()) {
-          return false;
-        }
-
-        if (!frontend::CompileLazyFunction(cx, lazy, units.get(), lazyLength)) {
-          
-          
-          MOZ_ASSERT(fun->isInterpretedLazy());
-          MOZ_ASSERT(fun->lazyScript() == lazy);
-          MOZ_ASSERT(!lazy->hasScript());
-          return false;
-        }
-      }
-    }
-
-    script = fun->nonLazyScript();
-
-    
-    
-    if (!lazy->maybeScript()) {
-      lazy->initScript(script);
-    }
-
-    
-    if (canRelazify) {
-      
-      
-      MOZ_ASSERT(lazy->column() == script->column());
-
-      
-      
-      
-      script->setLazyScript(lazy);
-    } else if (lazy->isWrappedByDebugger()) {
-      
-      
-      
-      
-      
-      
-      script->setLazyScript(lazy);
-      script->setDoNotRelazify(true);
-    }
-
-    
-    if (script->scriptSource()->hasEncoder()) {
-      RootedScriptSourceObject sourceObject(cx, lazy->sourceObject());
-      if (!script->scriptSource()->xdrEncodeFunction(cx, fun, sourceObject)) {
-        return false;
-      }
-    }
-
-    return true;
+    return DelazifyCanonicalScriptedFunction(cx, fun);
   }
 
   
