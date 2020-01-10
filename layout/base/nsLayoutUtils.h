@@ -2373,11 +2373,6 @@ class nsLayoutUtils {
   
 
 
-  static bool IsAnimationLoggingEnabled();
-
-  
-
-
   static bool AreRetainedDisplayListsEnabled();
 
   static bool DisplayRootHasRetainedDisplayListBuilder(nsIFrame* aFrame);

@@ -4785,12 +4785,6 @@ pref("layers.tiles.edge-padding", true);
 pref("layers.tiles.edge-padding", false);
 #endif
 
-
-pref("layers.offmainthreadcomposition.async-animations", true);
-
-
-pref("layers.offmainthreadcomposition.log-animations", false);
-
 pref("layers.draw-mask-debug", false);
 
 pref("gfx.content.always-paint", false);
