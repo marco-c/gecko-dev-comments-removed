@@ -18,6 +18,8 @@
 
 using namespace mozilla;
 
+RefPtr<SharedThreadPool> sFuzzThreadPool;
+
 class FuzzRunner {
  public:
   explicit FuzzRunner(Benchmark* aBenchmark) : mBenchmark(aBenchmark) {}
@@ -36,6 +38,8 @@ class FuzzRunner {
 
 static int FuzzingInitMedia(int* argc, char*** argv) {
   
+  
+  sFuzzThreadPool = GetMediaThreadPool(MediaThreadType::PLAYBACK);
   return 0;
 }
 
