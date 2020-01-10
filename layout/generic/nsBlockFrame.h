@@ -486,7 +486,11 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void AddFrames(nsFrameList& aFrameList, nsIFrame* aPrevSibling);
+
+
+
+  void AddFrames(nsFrameList& aFrameList, nsIFrame* aPrevSibling,
+                 const nsLineList::iterator* aPrevSiblingLine);
 
   
 
