@@ -1,9 +1,0 @@
-
-
-
-
-"use strict";
-
-
-
-sendAsyncMessage("debug:new-process");
