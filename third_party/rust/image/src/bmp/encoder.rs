@@ -3,10 +3,6 @@ use std::io::{self, Write};
 
 use color;
 
-const BITMAPFILEHEADER_SIZE: u32 = 14;
-const BITMAPINFOHEADER_SIZE: u32 = 40;
-const BITMAPV4HEADER_SIZE: u32 = 108;
-
 
 pub struct BMPEncoder<'a, W: 'a> {
     writer: &'a mut W,
@@ -28,9 +24,10 @@ impl<'a, W: Write + 'a> BMPEncoder<'a, W> {
         height: u32,
         c: color::ColorType,
     ) -> io::Result<()> {
-        let bmp_header_size = BITMAPFILEHEADER_SIZE;
+        let bmp_header_size = 14;
+        let dib_header_size = 40; 
 
-        let (dib_header_size, written_pixel_size, palette_color_count) = get_pixel_info(c)?;
+        let (raw_pixel_size, written_pixel_size, palette_color_count) = try!(get_pixel_info(c));
         let row_pad_size = (4 - (width * written_pixel_size) % 4) % 4; 
 
         let image_size = width * height * written_pixel_size + (height * row_pad_size);
@@ -38,62 +35,39 @@ impl<'a, W: Write + 'a> BMPEncoder<'a, W> {
         let file_size = bmp_header_size + dib_header_size + palette_size + image_size;
 
         
-        self.writer.write_u8(b'B')?;
-        self.writer.write_u8(b'M')?;
-        self.writer.write_u32::<LittleEndian>(file_size)?; 
-        self.writer.write_u16::<LittleEndian>(0)?; 
-        self.writer.write_u16::<LittleEndian>(0)?; 
+        try!(self.writer.write_u8(b'B'));
+        try!(self.writer.write_u8(b'M'));
+        try!(self.writer.write_u32::<LittleEndian>(file_size)); 
+        try!(self.writer.write_u16::<LittleEndian>(0)); 
+        try!(self.writer.write_u16::<LittleEndian>(0)); 
         try!(
             self.writer
                 .write_u32::<LittleEndian>(bmp_header_size + dib_header_size + palette_size)
         ); 
 
         
-        self.writer.write_u32::<LittleEndian>(dib_header_size)?;
-        self.writer.write_i32::<LittleEndian>(width as i32)?;
-        self.writer.write_i32::<LittleEndian>(height as i32)?;
-        self.writer.write_u16::<LittleEndian>(1)?; 
+        try!(self.writer.write_u32::<LittleEndian>(dib_header_size));
+        try!(self.writer.write_i32::<LittleEndian>(width as i32));
+        try!(self.writer.write_i32::<LittleEndian>(height as i32));
+        try!(self.writer.write_u16::<LittleEndian>(1)); 
         try!(
             self.writer
                 .write_u16::<LittleEndian>((written_pixel_size * 8) as u16)
         ); 
-        if dib_header_size >= BITMAPV4HEADER_SIZE {
-            
-            self.writer.write_u32::<LittleEndian>(3)?; 
-        } else {
-            self.writer.write_u32::<LittleEndian>(0)?; 
-        }
-        self.writer.write_u32::<LittleEndian>(image_size)?;
-        self.writer.write_i32::<LittleEndian>(0)?; 
-        self.writer.write_i32::<LittleEndian>(0)?; 
-        self.writer.write_u32::<LittleEndian>(palette_color_count)?;
-        self.writer.write_u32::<LittleEndian>(0)?; 
-        if dib_header_size >= BITMAPV4HEADER_SIZE {
-            
-            self.writer.write_u32::<LittleEndian>(0xff << 16)?; 
-            self.writer.write_u32::<LittleEndian>(0xff << 8)?; 
-            self.writer.write_u32::<LittleEndian>(0xff << 0)?; 
-            self.writer.write_u32::<LittleEndian>(0xff << 24)?; 
-            self.writer.write_u32::<LittleEndian>(0x73524742)?; 
-            
-            for _ in 0..12 {
-                self.writer.write_u32::<LittleEndian>(0)?;
-            }
-        }
+        try!(self.writer.write_u32::<LittleEndian>(0)); 
+        try!(self.writer.write_u32::<LittleEndian>(image_size));
+        try!(self.writer.write_i32::<LittleEndian>(0)); 
+        try!(self.writer.write_i32::<LittleEndian>(0)); 
+        try!(self.writer.write_u32::<LittleEndian>(palette_color_count));
+        try!(self.writer.write_u32::<LittleEndian>(0)); 
 
         
         match c {
-            color::ColorType::RGB(8) => {
-                self.encode_rgb(image, width, height, row_pad_size, 3)?
+            color::ColorType::RGB(8) | color::ColorType::RGBA(8) => {
+                try!(self.encode_rgb(image, width, height, row_pad_size, raw_pixel_size))
             }
-            color::ColorType::RGBA(8) => {
-                self.encode_rgba(image, width, height, row_pad_size, 4)?
-            }
-            color::ColorType::Gray(8) => {
-                self.encode_gray(image, width, height, row_pad_size, 1)?
-            }
-            color::ColorType::GrayA(8) => {
-                self.encode_gray(image, width, height, row_pad_size, 2)?
+            color::ColorType::Gray(8) | color::ColorType::GrayA(8) => {
+                try!(self.encode_gray(image, width, height, row_pad_size, raw_pixel_size))
             }
             _ => {
                 return Err(io::Error::new(
@@ -125,45 +99,13 @@ impl<'a, W: Write + 'a> BMPEncoder<'a, W> {
                 let g = image[pixel_start + 1];
                 let b = image[pixel_start + 2];
                 
-                self.writer.write_u8(b)?;
-                self.writer.write_u8(g)?;
-                self.writer.write_u8(r)?;
+                try!(self.writer.write_u8(b));
+                try!(self.writer.write_u8(g));
+                try!(self.writer.write_u8(r));
                 
             }
 
-            self.write_row_pad(row_pad_size)?;
-        }
-
-        Ok(())
-    }
-
-    fn encode_rgba(
-        &mut self,
-        image: &[u8],
-        width: u32,
-        height: u32,
-        row_pad_size: u32,
-        bytes_per_pixel: u32,
-    ) -> io::Result<()> {
-        let x_stride = bytes_per_pixel;
-        let y_stride = width * x_stride;
-        for row in 0..height {
-            
-            let row_start = (height - row - 1) * y_stride;
-            for col in 0..width {
-                let pixel_start = (row_start + (col * x_stride)) as usize;
-                let r = image[pixel_start];
-                let g = image[pixel_start + 1];
-                let b = image[pixel_start + 2];
-                let a = image[pixel_start + 3];
-                
-                self.writer.write_u8(b)?;
-                self.writer.write_u8(g)?;
-                self.writer.write_u8(r)?;
-                self.writer.write_u8(a)?;
-            }
-
-            self.write_row_pad(row_pad_size)?;
+            try!(self.write_row_pad(row_pad_size));
         }
 
         Ok(())
@@ -181,10 +123,10 @@ impl<'a, W: Write + 'a> BMPEncoder<'a, W> {
         for val in 0..256 {
             
             let val = val as u8;
-            self.writer.write_u8(val)?;
-            self.writer.write_u8(val)?;
-            self.writer.write_u8(val)?;
-            self.writer.write_u8(0)?;
+            try!(self.writer.write_u8(val));
+            try!(self.writer.write_u8(val));
+            try!(self.writer.write_u8(val));
+            try!(self.writer.write_u8(0));
         }
 
         
@@ -196,11 +138,11 @@ impl<'a, W: Write + 'a> BMPEncoder<'a, W> {
             for col in 0..width {
                 let pixel_start = (row_start + (col * x_stride)) as usize;
                 
-                self.writer.write_u8(image[pixel_start])?;
+                try!(self.writer.write_u8(image[pixel_start]));
                 
             }
 
-            self.write_row_pad(row_pad_size)?;
+            try!(self.write_row_pad(row_pad_size));
         }
 
         Ok(())
@@ -208,7 +150,7 @@ impl<'a, W: Write + 'a> BMPEncoder<'a, W> {
 
     fn write_row_pad(&mut self, row_pad_size: u32) -> io::Result<()> {
         for _ in 0..row_pad_size {
-            self.writer.write_u8(0)?;
+            try!(self.writer.write_u8(0));
         }
 
         Ok(())
@@ -225,10 +167,10 @@ fn get_unsupported_error_message(c: color::ColorType) -> String {
 
 fn get_pixel_info(c: color::ColorType) -> io::Result<(u32, u32, u32)> {
     let sizes = match c {
-        color::ColorType::RGB(8) => (BITMAPINFOHEADER_SIZE, 3, 0),
-        color::ColorType::RGBA(8) => (BITMAPV4HEADER_SIZE, 4, 0),
-        color::ColorType::Gray(8) => (BITMAPINFOHEADER_SIZE, 1, 256),
-        color::ColorType::GrayA(8) => (BITMAPINFOHEADER_SIZE, 1, 256),
+        color::ColorType::RGB(8) => (3, 3, 0),
+        color::ColorType::RGBA(8) => (4, 3, 0),
+        color::ColorType::Gray(8) => (1, 1, 256),
+        color::ColorType::GrayA(8) => (2, 1, 256),
         _ => {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -273,9 +215,12 @@ mod tests {
 
     #[test]
     fn round_trip_single_pixel_rgba() {
-        let image = [1, 2, 3, 4];
+        let image = [255u8, 0, 0, 0]; 
         let decoded = round_trip_image(&image, 1, 1, ColorType::RGBA(8));
-        assert_eq!(&decoded[..], &image[..]);
+        assert_eq!(3, decoded.len());
+        assert_eq!(255, decoded[0]);
+        assert_eq!(0, decoded[1]);
+        assert_eq!(0, decoded[2]);
     }
 
     #[test]

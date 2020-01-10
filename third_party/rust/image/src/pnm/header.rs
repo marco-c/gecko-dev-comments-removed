@@ -232,7 +232,7 @@ impl PNMHeader {
     }
 
     
-    pub fn write(&self, writer: &mut dyn io::Write) -> io::Result<()> {
+    pub fn write(&self, writer: &mut io::Write) -> io::Result<()> {
         writer.write_all(self.subtype().magic_constant())?;
         match *self {
             PNMHeader {

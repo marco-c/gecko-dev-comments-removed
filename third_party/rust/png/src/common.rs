@@ -1,8 +1,6 @@
 
-use crate::filter;
-
-use std::fmt;
-
+extern crate deflate;
+use filter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -95,73 +93,7 @@ impl Unit {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum DisposeOp {
-    
-    None       = 0,
-    
-    Background = 1,
-    
-    Previous   = 2,
-}
-
-impl DisposeOp {
-    
-    pub fn from_u8(n: u8) -> Option<DisposeOp> {
-        match n {
-            0 => Some(DisposeOp::None),
-            1 => Some(DisposeOp::Background),
-            2 => Some(DisposeOp::Previous),
-            _ => None
-        }
-    }
-}
-
-impl fmt::Display for DisposeOp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = match *self {
-            DisposeOp::None => "DISPOSE_OP_NONE",
-            DisposeOp::Background => "DISPOSE_OP_BACKGROUND",
-            DisposeOp::Previous => "DISPOSE_OP_PREVIOUS",
-        };
-        write!(f, "{}", name)
-    }
-}
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum BlendOp {
-    
-    Source = 0,
-    
-    Over   = 1,
-}
-
-impl BlendOp {
-    
-    pub fn from_u8(n: u8) -> Option<BlendOp> {
-        match n {
-            0 => Some(BlendOp::Source),
-            1 => Some(BlendOp::Over),
-            _ => None
-        }
-    }
-}
-
-impl fmt::Display for BlendOp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = match *self {
-            BlendOp::Source => "BLEND_OP_SOURCE",
-            BlendOp::Over => "BLEND_OP_OVER",
-        };
-        write!(f, "{}", name)
-    }
-}
-
-
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct FrameControl {
     
     pub sequence_number: u32,
@@ -178,36 +110,9 @@ pub struct FrameControl {
     
     pub delay_den: u16,
     
-    pub dispose_op: DisposeOp,
+    pub dispose_op: u8,
     
-    pub blend_op: BlendOp,
-}
-
-impl Default for FrameControl {
-    fn default() -> FrameControl {
-        FrameControl {
-            sequence_number: 0,
-            width: 0,
-            height: 0,
-            x_offset: 0,
-            y_offset: 0,
-            delay_num: 1,
-            delay_den: 30,
-            dispose_op: DisposeOp::None,
-            blend_op: BlendOp::Source,
-        }
-    }
-}
-
-impl FrameControl {
-    pub fn set_seq_num(&mut self, s: u32) {
-        self.sequence_number = s;
-    }
-
-    pub fn inc_seq_num(&mut self, i: u32) {
-        self.sequence_number += i;
-    }
-
+    pub blend_op: u8,
 }
 
 
@@ -218,7 +123,6 @@ pub struct AnimationControl {
     
     pub num_plays: u32,
 }
-
 
 #[derive(Debug, Clone)]
 pub enum Compression {
@@ -234,6 +138,28 @@ pub enum Compression {
     Best,
     Huffman,
     Rle,
+}
+
+impl From<deflate::Compression> for Compression {
+    fn from(c: deflate::Compression) -> Self {
+        match c {
+            deflate::Compression::Default => Compression::Default,
+            deflate::Compression::Fast => Compression::Fast,
+            deflate::Compression::Best => Compression::Best,
+        }
+    }
+}
+
+impl From<Compression> for deflate::CompressionOptions {
+    fn from(c: Compression) -> Self {
+        match c {
+            Compression::Default => deflate::CompressionOptions::default(),
+            Compression::Fast => deflate::CompressionOptions::fast(),
+            Compression::Best => deflate::CompressionOptions::high(),
+            Compression::Huffman => deflate::CompressionOptions::huffman_only(),
+            Compression::Rle => deflate::CompressionOptions::rle(),
+        }
+    }
 }
 
 
@@ -268,7 +194,7 @@ impl Default for Info {
             animation_control: None,
             
             
-            compression: Compression::Fast,
+            compression: deflate::Compression::Fast.into(),
             filter: filter::FilterType::Sub,
         }
     }
@@ -367,38 +293,6 @@ bitflags! {
         const GRAY_TO_RGB         = 0x2000; // read only */
         const EXPAND_16           = 0x4000; // read only */
         const SCALE_16            = 0x8000; // read only */
-    }
-}
-
-
-
-
-
-#[cfg(feature = "png-encoding")]
-mod deflate_convert {
-    extern crate deflate;
-    use super::Compression;
-
-    impl From<deflate::Compression> for Compression {
-        fn from(c: deflate::Compression) -> Self {
-            match c {
-                deflate::Compression::Default => Compression::Default,
-                deflate::Compression::Fast => Compression::Fast,
-                deflate::Compression::Best => Compression::Best,
-            }
-        }
-    }
-
-    impl From<Compression> for deflate::CompressionOptions {
-        fn from(c: Compression) -> Self {
-            match c {
-                Compression::Default => deflate::CompressionOptions::default(),
-                Compression::Fast => deflate::CompressionOptions::fast(),
-                Compression::Best => deflate::CompressionOptions::high(),
-                Compression::Huffman => deflate::CompressionOptions::huffman_only(),
-                Compression::Rle => deflate::CompressionOptions::rle(),
-            }
-        }
     }
 }
 

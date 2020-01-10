@@ -14,8 +14,6 @@ extern crate lzw;
 extern crate num_iter;
 extern crate num_rational;
 extern crate num_traits;
-#[cfg(feature = "hdr")]
-extern crate scoped_threadpool;
 #[cfg(all(test, feature = "benchmarks"))]
 extern crate test;
 
@@ -36,6 +34,7 @@ pub use image::{AnimationDecoder,
                 ImageDecoderExt,
                 ImageError,
                 ImageResult,
+                MutPixels,
                 
                 Pixels,
                 SubImage};
@@ -62,7 +61,7 @@ pub use traits::Primitive;
 
 
 pub use dynimage::{guess_format, load, load_from_memory, load_from_memory_with_format, open,
-                   save_buffer, save_buffer_with_format, image_dimensions};
+                   save_buffer};
 
 pub use dynimage::DynamicImage::{self, ImageLuma8, ImageLumaA8, ImageRgb8, ImageRgba8, ImageBgr8, ImageBgra8};
 
@@ -108,24 +107,6 @@ mod dynimage;
 mod image;
 mod traits;
 mod utils;
-
-
-
-
-
-
-
-
-
-
-macro_rules! insert_as_doc {
-    { $content:expr } => {
-        #[doc = $content] extern { }
-    }
-}
-
-
-insert_as_doc!(include_str!("../README.md"));
 
 
 
