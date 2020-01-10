@@ -71,7 +71,11 @@ var gTests = [
       let browser = gBrowser.selectedBrowser;
       Services.prefs.setIntPref(CAMERA_PREF, SitePermissions.BLOCK);
       
-      SitePermissions.set(browser.currentURI, "camera", SitePermissions.ALLOW);
+      PermissionTestUtils.add(
+        browser.currentURI,
+        "camera",
+        Services.perms.ALLOW_ACTION
+      );
 
       
       let indicator = promiseIndicatorWindow();
@@ -86,7 +90,7 @@ var gTests = [
       await checkSharingUI({ video: true });
       await closeStream();
 
-      SitePermissions.remove(browser.currentURI, "camera");
+      PermissionTestUtils.remove(browser.currentURI, "camera");
       Services.prefs.clearUserPref(CAMERA_PREF);
     },
   },
@@ -152,10 +156,10 @@ var gTests = [
       let browser = gBrowser.selectedBrowser;
       Services.prefs.setIntPref(MICROPHONE_PREF, SitePermissions.BLOCK);
       
-      SitePermissions.set(
+      PermissionTestUtils.add(
         browser.currentURI,
         "microphone",
-        SitePermissions.ALLOW
+        Services.perms.ALLOW_ACTION
       );
 
       
@@ -171,7 +175,7 @@ var gTests = [
       await checkSharingUI({ audio: true });
       await closeStream();
 
-      SitePermissions.remove(browser.currentURI, "microphone");
+      PermissionTestUtils.remove(browser.currentURI, "microphone");
       Services.prefs.clearUserPref(MICROPHONE_PREF);
     },
   },

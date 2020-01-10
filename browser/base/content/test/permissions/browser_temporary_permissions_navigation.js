@@ -5,23 +5,26 @@
 
 
 add_task(async function testTempPermissionOnReload() {
-  let uri = NetUtil.newURI("https://example.com");
+  let origin = "https://example.com/";
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    origin
+  );
   let id = "geo";
 
-  await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
+  await BrowserTestUtils.withNewTab(origin, async function(browser) {
     let reloadButton = document.getElementById("reload-button");
 
-    SitePermissions.set(
-      uri,
+    SitePermissions.setForPrincipal(
+      principal,
       id,
       SitePermissions.BLOCK,
       SitePermissions.SCOPE_TEMPORARY,
       browser
     );
 
-    let reloaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
+    let reloaded = BrowserTestUtils.browserLoaded(browser, false, origin);
 
-    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+    Assert.deepEqual(SitePermissions.getForPrincipal(principal, id, browser), {
       state: SitePermissions.BLOCK,
       scope: SitePermissions.SCOPE_TEMPORARY,
     });
@@ -36,26 +39,26 @@ add_task(async function testTempPermissionOnReload() {
       return !reloadButton.disabled;
     });
 
-    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+    Assert.deepEqual(SitePermissions.getForPrincipal(principal, id, browser), {
       state: SitePermissions.BLOCK,
       scope: SitePermissions.SCOPE_TEMPORARY,
     });
 
-    reloaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
+    reloaded = BrowserTestUtils.browserLoaded(browser, false, origin);
 
     
     EventUtils.synthesizeMouseAtCenter(reloadButton, {});
 
     await reloaded;
 
-    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+    Assert.deepEqual(SitePermissions.getForPrincipal(principal, id, browser), {
       state: SitePermissions.UNKNOWN,
       scope: SitePermissions.SCOPE_PERSISTENT,
     });
 
     
-    SitePermissions.set(
-      uri,
+    SitePermissions.setForPrincipal(
+      principal,
       id,
       SitePermissions.BLOCK,
       SitePermissions.SCOPE_TEMPORARY,
@@ -79,30 +82,33 @@ add_task(async function testTempPermissionOnReload() {
 
     let reloadMenuItem = document.getElementById("context_reloadTab");
 
-    reloaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
+    reloaded = BrowserTestUtils.browserLoaded(browser, false, origin);
 
     
     EventUtils.synthesizeMouseAtCenter(reloadMenuItem, {});
 
     await reloaded;
 
-    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+    Assert.deepEqual(SitePermissions.getForPrincipal(principal, id, browser), {
       state: SitePermissions.UNKNOWN,
       scope: SitePermissions.SCOPE_PERSISTENT,
     });
 
-    SitePermissions.remove(uri, id, browser);
+    SitePermissions.removeFromPrincipal(principal, id, browser);
   });
 });
 
 
 add_task(async function testTempPermissionOnReloadAllTabs() {
-  let uri = NetUtil.newURI("https://example.com");
+  let origin = "https://example.com/";
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    origin
+  );
   let id = "geo";
 
-  await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
-    SitePermissions.set(
-      uri,
+  await BrowserTestUtils.withNewTab(origin, async function(browser) {
+    SitePermissions.setForPrincipal(
+      principal,
       id,
       SitePermissions.BLOCK,
       SitePermissions.SCOPE_TEMPORARY,
@@ -137,30 +143,33 @@ add_task(async function testTempPermissionOnReloadAllTabs() {
     EventUtils.synthesizeMouseAtCenter(reloadMenuItem, {});
     await reloaded;
 
-    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+    Assert.deepEqual(SitePermissions.getForPrincipal(principal, id, browser), {
       state: SitePermissions.BLOCK,
       scope: SitePermissions.SCOPE_TEMPORARY,
     });
 
-    SitePermissions.remove(uri, id, browser);
+    SitePermissions.removeFromPrincipal(principal, id, browser);
   });
 });
 
 
 add_task(async function testTempPermissionOnNavigation() {
-  let uri = NetUtil.newURI("https://example.com/");
+  let origin = "https://example.com/";
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    origin
+  );
   let id = "geo";
 
-  await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
-    SitePermissions.set(
-      uri,
+  await BrowserTestUtils.withNewTab(origin, async function(browser) {
+    SitePermissions.setForPrincipal(
+      principal,
       id,
       SitePermissions.BLOCK,
       SitePermissions.SCOPE_TEMPORARY,
       browser
     );
 
-    Assert.deepEqual(SitePermissions.get(uri, id, browser), {
+    Assert.deepEqual(SitePermissions.getForPrincipal(principal, id, browser), {
       state: SitePermissions.BLOCK,
       scope: SitePermissions.SCOPE_TEMPORARY,
     });
@@ -181,12 +190,15 @@ add_task(async function testTempPermissionOnNavigation() {
     await loaded;
 
     
-    Assert.deepEqual(SitePermissions.get(browser.currentURI, id, browser), {
-      state: SitePermissions.UNKNOWN,
-      scope: SitePermissions.SCOPE_PERSISTENT,
-    });
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(browser.contentPrincipal, id, browser),
+      {
+        state: SitePermissions.UNKNOWN,
+        scope: SitePermissions.SCOPE_PERSISTENT,
+      }
+    );
 
-    loaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
+    loaded = BrowserTestUtils.browserLoaded(browser, false, origin);
 
     
     await ContentTask.spawn(
@@ -198,11 +210,14 @@ add_task(async function testTempPermissionOnNavigation() {
     await loaded;
 
     
-    Assert.deepEqual(SitePermissions.get(browser.currentURI, id, browser), {
-      state: SitePermissions.BLOCK,
-      scope: SitePermissions.SCOPE_TEMPORARY,
-    });
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(browser.contentPrincipal, id, browser),
+      {
+        state: SitePermissions.BLOCK,
+        scope: SitePermissions.SCOPE_TEMPORARY,
+      }
+    );
 
-    SitePermissions.remove(uri, id, browser);
+    SitePermissions.removeFromPrincipal(browser.contentPrincipal, id, browser);
   });
 });
