@@ -1,20 +1,24 @@
 
 
 
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
+  
 
 
 
-
-<head>
-  <meta charset="utf-8">
-  <title>Frame component test</title>
-  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
-  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css">
-</head>
-<body>
-<pre id="test">
+  <head>
+    <meta charset="utf-8" />
+    <title>Frame component test</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+  </head>
+  <body>
+    <pre id="test">
 <script src="head.js" type="application/javascript"></script>
 <script type="application/javascript">
 window.onload = async function () {
@@ -339,7 +343,6 @@ window.onload = async function () {
         options: { logPoint: true },
       }
     }, {
-      locationPrefix: "Logpoint @ ",
       file: "mahscripts.js",
       line: 55,
       column: 10,
@@ -364,5 +367,5 @@ window.onload = async function () {
 };
 </script>
 </pre>
-</body>
+  </body>
 </html>
