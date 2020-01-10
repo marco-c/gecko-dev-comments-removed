@@ -3307,6 +3307,12 @@ bool nsBlockFrame::IsEmpty() {
 
 bool nsBlockFrame::ShouldApplyBStartMargin(BlockReflowInput& aState,
                                            nsLineBox* aLine) {
+  if (aLine->mFirstChild->IsPageBreakFrame()) {
+    
+    
+    return false;
+  }
+
   if (aState.mFlags.mShouldApplyBStartMargin) {
     
     return true;
