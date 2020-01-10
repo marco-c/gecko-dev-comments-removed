@@ -547,8 +547,20 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
   
   
   NukeCrossCompartmentWrapper(cx, wobj);
+  js::RemapDeadWrapper(cx, wobj, newTarget);
+}
 
-  
+
+
+
+
+void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
+                          HandleObject newTarget) {
+  MOZ_ASSERT(IsDeadProxyObject(wobj));
+  MOZ_ASSERT(!newTarget->is<CrossCompartmentWrapperObject>());
+
+  AutoDisableProxyCheck adpc;
+
   
   Realm* wrealm = wobj->nonCCWRealm();
 
@@ -558,6 +570,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
   RootedObject tobj(cx, newTarget);
   AutoRealmUnchecked ar(cx, wrealm);
   AutoEnterOOMUnsafeRegion oomUnsafe;
+  JS::Compartment* wcompartment = wobj->compartment();
   if (!wcompartment->rewrap(cx, &tobj, wobj)) {
     oomUnsafe.crash("js::RemapWrapper");
   }
