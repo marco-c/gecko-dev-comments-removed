@@ -202,6 +202,9 @@ function OnRefTestLoad(win)
         doc.firstChild.remove();
       }
       doc.appendChild(g.browser);
+      
+      
+      ChromeUtils.unregisterWindowActor("LoadURIDelegate");
     } else {
       document.getElementById("reftest-window").appendChild(g.browser);
     }
