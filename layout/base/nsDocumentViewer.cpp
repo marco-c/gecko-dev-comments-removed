@@ -315,6 +315,21 @@ class nsDocumentViewer final : public nsIContentViewer,
   typedef void (*CallChildFunc)(nsDocumentViewer* aViewer, void* aClosure);
   void CallChildren(CallChildFunc aFunc, void* aClosure);
 
+  typedef void (*PresContextFunc)(nsPresContext*, void* aClosure);
+  
+
+
+
+
+
+
+
+
+
+
+  void PropagateToPresContextsHelper(CallChildFunc, PresContextFunc,
+                                     void* aClosure);
+
   
   NS_DECL_NSIDOCUMENTVIEWERPRINT
 
@@ -2668,6 +2683,35 @@ NS_IMETHODIMP nsDocumentViewer::SetCommandNode(nsINode* aNode) {
   return NS_OK;
 }
 
+void nsDocumentViewer::PropagateToPresContextsHelper(CallChildFunc aChildFunc,
+                                                     PresContextFunc aPcFunc,
+                                                     void* aClosure) {
+  CallChildren(aChildFunc, aClosure);
+
+  {
+    struct ResourceDocClosure {
+      PresContextFunc mFunc;
+      void* mParentClosure;
+    } resourceDocClosure{aPcFunc, aClosure};
+
+    if (mDocument) {
+      mDocument->EnumerateExternalResources(
+          [](Document* aDoc, void* aClosure) -> bool {
+            auto* closure = static_cast<ResourceDocClosure*>(aClosure);
+            if (nsPresContext* pc = aDoc->GetPresContext()) {
+              closure->mFunc(pc, closure->mParentClosure);
+            }
+            return true;
+          },
+          &resourceDocClosure);
+    }
+  }
+
+  if (mPresContext) {
+    aPcFunc(mPresContext, aClosure);
+  }
+}
+
 void nsDocumentViewer::CallChildren(CallChildFunc aFunc, void* aClosure) {
   nsCOMPtr<nsIDocShell> docShell(mContainer);
   if (docShell) {
@@ -2690,67 +2734,6 @@ void nsDocumentViewer::CallChildren(CallChildFunc aFunc, void* aClosure) {
   }
 }
 
-static void ChangeChildPaintingEnabled(nsDocumentViewer* aChild,
-                                       void* aClosure) {
-  bool* enablePainting = (bool*)aClosure;
-  if (*enablePainting) {
-    aChild->ResumePainting();
-  } else {
-    aChild->PausePainting();
-  }
-}
-
-struct ZoomInfo {
-  float mZoom;
-};
-
-static void SetChildTextZoom(nsDocumentViewer* aChild, void* aClosure) {
-  struct ZoomInfo* ZoomInfo = (struct ZoomInfo*)aClosure;
-  aChild->SetTextZoom(ZoomInfo->mZoom);
-}
-
-static void SetChildFullZoom(nsDocumentViewer* aChild, void* aClosure) {
-  struct ZoomInfo* ZoomInfo = (struct ZoomInfo*)aClosure;
-  aChild->SetFullZoom(ZoomInfo->mZoom);
-}
-
-static void SetChildOverrideDPPX(nsDocumentViewer* aChild, void* aClosure) {
-  struct ZoomInfo* ZoomInfo = (struct ZoomInfo*)aClosure;
-  aChild->SetOverrideDPPX(ZoomInfo->mZoom);
-}
-
-static bool SetExtResourceTextZoom(Document* aDocument, void* aClosure) {
-  
-  nsPresContext* ctxt = aDocument->GetPresContext();
-  if (ctxt) {
-    struct ZoomInfo* ZoomInfo = static_cast<struct ZoomInfo*>(aClosure);
-    ctxt->SetTextZoom(ZoomInfo->mZoom);
-  }
-
-  return true;
-}
-
-static bool SetExtResourceFullZoom(Document* aDocument, void* aClosure) {
-  
-  nsPresContext* ctxt = aDocument->GetPresContext();
-  if (ctxt) {
-    struct ZoomInfo* ZoomInfo = static_cast<struct ZoomInfo*>(aClosure);
-    ctxt->SetFullZoom(ZoomInfo->mZoom);
-  }
-
-  return true;
-}
-
-static bool SetExtResourceOverrideDPPX(Document* aDocument, void* aClosure) {
-  nsPresContext* ctxt = aDocument->GetPresContext();
-  if (ctxt) {
-    struct ZoomInfo* ZoomInfo = static_cast<struct ZoomInfo*>(aClosure);
-    ctxt->SetOverrideDPPX(ZoomInfo->mZoom);
-  }
-
-  return true;
-}
-
 NS_IMETHODIMP
 nsDocumentViewer::SetTextZoom(float aTextZoom) {
   
@@ -2765,21 +2748,14 @@ nsDocumentViewer::SetTextZoom(float aTextZoom) {
   bool textZoomChange = (mTextZoom != aTextZoom);
   mTextZoom = aTextZoom;
 
-  
-  
-  
-  
-  struct ZoomInfo ZoomInfo = {aTextZoom};
-  CallChildren(SetChildTextZoom, &ZoomInfo);
-
-  
-  nsPresContext* pc = GetPresContext();
-  if (pc && aTextZoom != mPresContext->TextZoom()) {
-    pc->SetTextZoom(aTextZoom);
-  }
-
-  
-  mDocument->EnumerateExternalResources(SetExtResourceTextZoom, &ZoomInfo);
+  PropagateToPresContextsHelper(
+      [](nsDocumentViewer* aChild, void* aClosure) {
+        aChild->SetTextZoom(*static_cast<float*>(aClosure));
+      },
+      [](nsPresContext* aPc, void* aClosure) {
+        aPc->SetTextZoom(*static_cast<float*>(aClosure));
+      },
+      &aTextZoom);
 
   
   if (textZoomChange) {
@@ -2845,18 +2821,15 @@ nsDocumentViewer::SetFullZoom(float aFullZoom) {
   bool fullZoomChange = (mPageZoom != aFullZoom);
   mPageZoom = aFullZoom;
 
-  struct ZoomInfo ZoomInfo = {aFullZoom};
-  CallChildren(SetChildFullZoom, &ZoomInfo);
+  PropagateToPresContextsHelper(
+      [](nsDocumentViewer* aChild, void* aClosure) {
+        aChild->SetFullZoom(*static_cast<float*>(aClosure));
+      },
+      [](nsPresContext* aPc, void* aClosure) {
+        aPc->SetFullZoom(*static_cast<float*>(aClosure));
+      },
+      &aFullZoom);
 
-  nsPresContext* pc = GetPresContext();
-  if (pc) {
-    pc->SetFullZoom(aFullZoom);
-  }
-
-  
-  mDocument->EnumerateExternalResources(SetExtResourceFullZoom, &ZoomInfo);
-
-  
   
   if (fullZoomChange) {
     nsContentUtils::DispatchChromeEvent(mDocument, ToSupports(mDocument),
@@ -2910,16 +2883,14 @@ nsDocumentViewer::SetOverrideDPPX(float aDPPX) {
 
   mOverrideDPPX = aDPPX;
 
-  struct ZoomInfo ZoomInfo = {aDPPX};
-  CallChildren(SetChildOverrideDPPX, &ZoomInfo);
-
-  nsPresContext* pc = GetPresContext();
-  if (pc) {
-    pc->SetOverrideDPPX(aDPPX);
-  }
-
-  
-  mDocument->EnumerateExternalResources(SetExtResourceOverrideDPPX, &ZoomInfo);
+  PropagateToPresContextsHelper(
+      [](nsDocumentViewer* aChild, void* aClosure) {
+        aChild->SetOverrideDPPX(*static_cast<float*>(aClosure));
+      },
+      [](nsPresContext* aPc, void* aClosure) {
+        aPc->SetOverrideDPPX(*static_cast<float*>(aClosure));
+      },
+      &aDPPX);
 
   return NS_OK;
 }
@@ -2933,18 +2904,17 @@ nsDocumentViewer::GetOverrideDPPX(float* aDPPX) {
   return NS_OK;
 }
 
-static void SetChildAuthorStyleDisabled(nsDocumentViewer* aChild,
-                                        void* aClosure) {
-  bool styleDisabled = *static_cast<bool*>(aClosure);
-  aChild->SetAuthorStyleDisabled(styleDisabled);
-}
-
 NS_IMETHODIMP
 nsDocumentViewer::SetAuthorStyleDisabled(bool aStyleDisabled) {
   if (mPresShell) {
     mPresShell->SetAuthorStyleDisabled(aStyleDisabled);
   }
-  CallChildren(SetChildAuthorStyleDisabled, &aStyleDisabled);
+
+  CallChildren(
+      [](nsDocumentViewer* aChild, void* aClosure) {
+        aChild->SetAuthorStyleDisabled(*static_cast<bool*>(aClosure));
+      },
+      &aStyleDisabled);
   return NS_OK;
 }
 
@@ -2958,28 +2928,15 @@ nsDocumentViewer::GetAuthorStyleDisabled(bool* aStyleDisabled) {
   return NS_OK;
 }
 
-static bool ExtResourceEmulateMedium(Document* aDocument, void* aClosure) {
-  if (nsPresContext* pc = aDocument->GetPresContext()) {
-    pc->EmulateMedium(static_cast<nsAtom*>(aClosure));
-  }
-
-  return true;
-}
-
-static void ChildEmulateMedium(nsDocumentViewer* aChild, void* aClosure) {
-  aChild->EmulateMediumInternal(static_cast<nsAtom*>(aClosure));
-}
-
 void nsDocumentViewer::EmulateMediumInternal(nsAtom* aMedia) {
-  if (mPresContext) {
-    mPresContext->EmulateMedium(aMedia);
-  }
-
-  CallChildren(ChildEmulateMedium, aMedia);
-
-  if (mDocument) {
-    mDocument->EnumerateExternalResources(ExtResourceEmulateMedium, aMedia);
-  }
+  PropagateToPresContextsHelper(
+      [](nsDocumentViewer* aChild, void* aClosure) {
+        aChild->EmulateMediumInternal(static_cast<nsAtom*>(aClosure));
+      },
+      [](nsPresContext* aPc, void* aClosure) {
+        aPc->EmulateMedium(static_cast<nsAtom*>(aClosure));
+      },
+      aMedia);
 }
 
 NS_IMETHODIMP
@@ -3128,8 +3085,8 @@ NS_IMETHODIMP nsDocumentViewer::AppendSubtree(
 
 NS_IMETHODIMP
 nsDocumentViewer::PausePainting() {
-  bool enablePaint = false;
-  CallChildren(ChangeChildPaintingEnabled, &enablePaint);
+  CallChildren([](nsDocumentViewer* aChild, void*) { aChild->PausePainting(); },
+               nullptr);
 
   if (PresShell* presShell = GetPresShell()) {
     presShell->PausePainting();
@@ -3140,8 +3097,9 @@ nsDocumentViewer::PausePainting() {
 
 NS_IMETHODIMP
 nsDocumentViewer::ResumePainting() {
-  bool enablePaint = true;
-  CallChildren(ChangeChildPaintingEnabled, &enablePaint);
+  CallChildren(
+      [](nsDocumentViewer* aChild, void*) { aChild->ResumePainting(); },
+      nullptr);
 
   if (PresShell* presShell = GetPresShell()) {
     presShell->ResumePainting();
