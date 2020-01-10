@@ -4439,7 +4439,7 @@ static nsresult pref_ReadDefaultPrefs(const RefPtr<nsZipArchive> jarReader,
 
 
 
-struct PreferencesInternalMethods {
+struct Internals {
   template <typename T>
   static nsresult GetPrefValue(const char* aPrefName, T&& aResult,
                                PrefValueKind aKind) {
@@ -4513,9 +4513,9 @@ Result<Ok, const char*> Preferences::InitInitialObjects(bool aIsStartup) {
     
     
 #  define PREF(name, cpp_type, value)
-#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)   \
-    MOZ_ASSERT(PreferencesInternalMethods::GetPref<StripAtomic<cpp_type>>( \
-                   name, value) == StaticPrefs::full_id(),                 \
+#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
+    MOZ_ASSERT(Internals::GetPref<StripAtomic<cpp_type>>(name, value) == \
+                   StaticPrefs::full_id(),                               \
                "Incorrect cached value for " name);
 #  include "mozilla/StaticPrefListAll.h"
 #  undef PREF
@@ -4716,28 +4716,28 @@ Result<Ok, const char*> Preferences::InitInitialObjects(bool aIsStartup) {
 nsresult Preferences::GetBool(const char* aPrefName, bool* aResult,
                               PrefValueKind aKind) {
   MOZ_ASSERT(aResult);
-  return PreferencesInternalMethods::GetPrefValue(aPrefName, aResult, aKind);
+  return Internals::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 
 nsresult Preferences::GetInt(const char* aPrefName, int32_t* aResult,
                              PrefValueKind aKind) {
   MOZ_ASSERT(aResult);
-  return PreferencesInternalMethods::GetPrefValue(aPrefName, aResult, aKind);
+  return Internals::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 
 nsresult Preferences::GetFloat(const char* aPrefName, float* aResult,
                                PrefValueKind aKind) {
   MOZ_ASSERT(aResult);
-  return PreferencesInternalMethods::GetPrefValue(aPrefName, aResult, aKind);
+  return Internals::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 
 nsresult Preferences::GetCString(const char* aPrefName, nsACString& aResult,
                                  PrefValueKind aKind) {
   aResult.SetIsVoid(true);
-  return PreferencesInternalMethods::GetPrefValue(aPrefName, aResult, aKind);
+  return Internals::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 
@@ -4789,25 +4789,25 @@ nsresult Preferences::GetComplex(const char* aPrefName, const nsIID& aType,
 
 bool Preferences::GetBool(const char* aPrefName, bool aFallback,
                           PrefValueKind aKind) {
-  return PreferencesInternalMethods::GetPref(aPrefName, aFallback, aKind);
+  return Internals::GetPref(aPrefName, aFallback, aKind);
 }
 
 
 int32_t Preferences::GetInt(const char* aPrefName, int32_t aFallback,
                             PrefValueKind aKind) {
-  return PreferencesInternalMethods::GetPref(aPrefName, aFallback, aKind);
+  return Internals::GetPref(aPrefName, aFallback, aKind);
 }
 
 
 uint32_t Preferences::GetUint(const char* aPrefName, uint32_t aFallback,
                               PrefValueKind aKind) {
-  return PreferencesInternalMethods::GetPref(aPrefName, aFallback, aKind);
+  return Internals::GetPref(aPrefName, aFallback, aKind);
 }
 
 
 float Preferences::GetFloat(const char* aPrefName, float aFallback,
                             PrefValueKind aKind) {
-  return PreferencesInternalMethods::GetPref(aPrefName, aFallback, aKind);
+  return Internals::GetPref(aPrefName, aFallback, aKind);
 }
 
 
@@ -5208,15 +5208,14 @@ static nsresult AddVarCacheNoAssignment(T* aCache, const nsACString& aPref,
 
   CacheData* data = new CacheData(aCache, aDefault);
   CacheDataAppendElement(data);
-  PreferencesInternalMethods::RegisterCallback<T>(data, aPref);
+  Internals::RegisterCallback<T>(data, aPref);
   return NS_OK;
 }
 
 template <typename T>
 static nsresult AddVarCache(T* aCache, const nsACString& aPref,
                             StripAtomic<T> aDefault) {
-  *aCache = PreferencesInternalMethods::GetPref(PromiseFlatCString(aPref).get(),
-                                                aDefault);
+  *aCache = Internals::GetPref(PromiseFlatCString(aPref).get(), aDefault);
   return AddVarCacheNoAssignment(aCache, aPref, aDefault);
 }
 
@@ -5504,14 +5503,13 @@ static void InitOncePrefs() {
 #  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)       \
     if (UpdatePolicy::policy == UpdatePolicy::Once) {                          \
       MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);                                 \
-      sVarCache_##full_id = PreferencesInternalMethods::GetPref(               \
-          name, StripAtomic<cpp_type>(value));                                 \
+      sVarCache_##full_id =                                                    \
+          Internals::GetPref(name, StripAtomic<cpp_type>(value));              \
       auto checkPref = [&]() {                                                 \
         MOZ_ASSERT(sOncePrefRead);                                             \
         StripAtomic<cpp_type> staticPrefValue = full_id();                     \
-        StripAtomic<cpp_type> preferenceValue =                                \
-            PreferencesInternalMethods::GetPref(GetPrefName_##base_id(),       \
-                                                StripAtomic<cpp_type>(value)); \
+        StripAtomic<cpp_type> preferenceValue = Internals::GetPref(            \
+            GetPrefName_##base_id(), StripAtomic<cpp_type>(value));            \
         MOZ_ASSERT(staticPrefValue == preferenceValue,                         \
                    "Preference '" name                                         \
                    "' got modified since StaticPrefs::" #full_id               \
@@ -5525,8 +5523,8 @@ static void InitOncePrefs() {
 #else
 #  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
     if (UpdatePolicy::policy == UpdatePolicy::Once) {                    \
-      sVarCache_##full_id = PreferencesInternalMethods::GetPref(         \
-          name, StripAtomic<cpp_type>(value));                           \
+      sVarCache_##full_id =                                              \
+          Internals::GetPref(name, StripAtomic<cpp_type>(value));        \
     }
 #endif
 
@@ -5654,10 +5652,9 @@ static void InitStaticPrefsFromShared() {
     StripAtomic<cpp_type> val;                                         \
     nsresult rv;                                                       \
     if (UpdatePolicy::policy == UpdatePolicy::Once) {                  \
-      rv = PreferencesInternalMethods::GetSharedPrefValue(             \
-          ONCE_PREF_NAME(name), &val);                                 \
+      rv = Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val);  \
     } else {                                                           \
-      rv = PreferencesInternalMethods::GetSharedPrefValue(name, &val); \
+      rv = Internals::GetSharedPrefValue(name, &val);                  \
     }                                                                  \
     MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));                      \
     StaticPrefs::sVarCache_##full_id = val;                            \
