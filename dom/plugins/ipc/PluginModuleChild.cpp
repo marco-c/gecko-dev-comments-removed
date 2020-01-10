@@ -14,6 +14,7 @@
 
 #ifdef MOZ_WIDGET_GTK
 #  include <gtk/gtk.h>
+#  include <gdk/gdkx.h>
 #endif
 
 #include "nsIFile.h"
@@ -1556,6 +1557,12 @@ NPError PluginModuleChild::DoNP_Initialize(const PluginSettings& aSettings) {
 #endif
 
 #ifdef MOZ_X11
+#  ifdef MOZ_WIDGET_GTK
+  if (!GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+    
+    return NPERR_GENERIC_ERROR;
+  }
+#  endif
   
   
   int xSocketFd = ConnectionNumber(DefaultXDisplay());
