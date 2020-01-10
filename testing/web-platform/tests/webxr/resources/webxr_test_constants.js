@@ -29,6 +29,14 @@ const VALID_PROJECTION_MATRIX =
     [1, 0, 0, 0, 0, 1, 0, 0, 3, 2, -1, -1, 0, 0, -0.2, 0];
 
 
+const VALID_FIELD_OF_VIEW = {
+    upDegrees: 71.565,
+    downDegrees: -45,
+    leftDegrees:-63.4349,
+    rightDegrees: 75.9637
+};
+
+
 const VALID_GRIP = [1, 0, 0, 0,
                     0, 1, 0, 0,
                     0, 0, 1, 0,
