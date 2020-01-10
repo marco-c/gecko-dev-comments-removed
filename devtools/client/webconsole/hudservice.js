@@ -35,7 +35,6 @@ const BC_WINDOW_FEATURES =
 
 function HUDService() {
   this.consoles = new Map();
-  this.lastFinishedRequest = { callback: null };
 }
 
 HUDService.prototype = {
@@ -57,17 +56,6 @@ HUDService.prototype = {
   getBrowserConsoleSessionState() {
     return this._browerConsoleSessionState;
   },
-
-  
-
-
-
-
-
-
-
-
-  lastFinishedRequest: null,
 
   
 

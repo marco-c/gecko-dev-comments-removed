@@ -90,17 +90,6 @@ class WebConsole {
 
 
 
-  get lastFinishedRequestCallback() {
-    return this.hudService.lastFinishedRequest.callback;
-  }
-
-  
-
-
-
-
-
-
 
   get chromeUtilsWindow() {
     if (this.browserWindow) {
