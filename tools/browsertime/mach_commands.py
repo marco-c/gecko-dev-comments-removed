@@ -273,12 +273,18 @@ class MachBrowsertime(MachCommandBase):
         node_dir = os.path.dirname(self.node_path)
         path = [node_dir] + path
 
-        
-        
-        path = [os.path.dirname(self.virtualenv_manager.python_path)] + path
-
         append_env = {
             'PATH': os.pathsep.join(path),
+
+            
+            
+            
+            
+            
+            
+            
+            
+            'PYTHON': self.virtualenv_manager.python_path,
         }
 
         if path_to_imagemagick:
