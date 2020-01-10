@@ -107,6 +107,13 @@ using namespace mozilla::dom;
 
 
 
+
+@property(strong) NSMutableDictionary<NSTouchBarItemIdentifier, NSButton*>* scrollViewButtons;
+
+
+
+
+
 - (instancetype)init;
 
 
@@ -144,6 +151,12 @@ using namespace mozilla::dom;
 
 
 
+- (bool)maybeUpdateScrollViewChild:(TouchBarInput*)aInput;
+
+
+
+
+
 - (void)replaceMappedLayoutItem:(TouchBarInput*)aItem;
 
 
@@ -152,6 +165,7 @@ using namespace mozilla::dom;
 - (void)updateButton:(NSButton*)aButton input:(TouchBarInput*)aInput;
 - (void)updateMainButton:(NSButton*)aMainButton input:(TouchBarInput*)aInput;
 - (void)updatePopover:(NSPopoverTouchBarItem*)aPopoverItem input:(TouchBarInput*)aInput;
+- (void)updateScrollView:(NSCustomTouchBarItem*)aScrollViewItem input:(TouchBarInput*)aInput;
 - (NSTouchBarItem*)makeShareScrubberForIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
 
 
