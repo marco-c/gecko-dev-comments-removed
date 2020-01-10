@@ -15,8 +15,6 @@ user_pref("layout.css.grid-template-subgrid-value.enabled", true);
 
 user_pref("layout.css.initial-letter.enabled", true);
 
-user_pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
-
 user_pref("media.mediasource.mp4.enabled", true);
 user_pref("media.mediasource.webm.enabled", true);
 user_pref("media.av1.enabled", true);
