@@ -13,7 +13,13 @@ var EXPORTED_SYMBOLS = ["NormandyTestUtils"];
 let _addonStudyFactoryId = 0;
 let _preferenceStudyFactoryId = 0;
 
+let testGlobals = {};
+
 const NormandyTestUtils = {
+  init({ add_task } = {}) {
+    testGlobals.add_task = add_task;
+  },
+
   factories: {
     addonStudyFactory(attrs) {
       for (const key of ["name", "description"]) {
@@ -88,5 +94,50 @@ const NormandyTestUtils = {
         }
       );
     },
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  decorate(...args) {
+    const funcs = Array.from(args);
+    let decorated = funcs.pop();
+    const origName = decorated.name;
+    funcs.reverse();
+    for (const func of funcs) {
+      decorated = func(decorated);
+    }
+    Object.defineProperty(decorated, "name", { value: origName });
+    return decorated;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  decorate_task(...args) {
+    return testGlobals.add_task(NormandyTestUtils.decorate(...args));
   },
 };

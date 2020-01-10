@@ -13,28 +13,47 @@ const { TelemetryEvents } = ChromeUtils.import(
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
+const { NormandyTestUtils } = ChromeUtils.import(
+  "resource://testing-common/NormandyTestUtils.jsm"
+);
+const { AddonStudies } = ChromeUtils.import(
+  "resource://normandy/lib/AddonStudies.jsm"
+);
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
+
+NormandyTestUtils.init({ add_task });
+const { decorate_task } = NormandyTestUtils;
 
 const global = this;
 
 load("utils.js"); 
 
-add_task(
-  withMockApiServer(async function test_addon_unenroll(...args) {
-    const apiServer = args[args.length - 1];
+add_task(async () => {
+  ExtensionTestUtils.init(global);
+  AddonTestUtils.init(global);
+  AddonTestUtils.createAppInfo(
+    "xpcshell@tests.mozilla.org",
+    "XPCShell",
+    "1",
+    "1.9.2"
+  );
+  AddonTestUtils.overrideCertDB();
+  await AddonTestUtils.promiseStartupManager();
 
-    ExtensionTestUtils.init(global);
-    AddonTestUtils.init(global);
-    AddonTestUtils.createAppInfo(
-      "xpcshell@tests.mozilla.org",
-      "XPCShell",
-      "1",
-      "1.9.2"
-    );
-    AddonTestUtils.overrideCertDB();
-    await AddonTestUtils.promiseStartupManager();
+  TelemetryEvents.init();
+});
 
-    TelemetryEvents.init();
-
+decorate_task(
+  withMockApiServer,
+  AddonStudies.withStudies([]),
+  async function test_addon_unenroll(
+    _serverUrl,
+    _preferences,
+    apiServer,
+    _studies
+  ) {
     const ID = "study@tests.mozilla.org";
 
     
@@ -72,12 +91,13 @@ add_task(
           },
         ]),
 
-        
-        
-        
-        
-        
         "api.js": () => {
+          
+          
+          
+          
+          
+          
           const { AddonStudies } = ChromeUtils.import(
             "resource://normandy/lib/AddonStudies.jsm"
           );
@@ -185,5 +205,95 @@ add_task(
       null,
       "After resolving studyEnded promise, extension is uninstalled"
     );
-  })
+  }
+);
+
+
+decorate_task(
+  withMockApiServer,
+  AddonStudies.withStudies([]),
+  async function test_addon_unenroll(
+    _serverUrl,
+    _preferences,
+    apiServer,
+    _studies
+  ) {
+    const ID = "study@tests.mozilla.org";
+
+    
+    
+    let xpi = AddonTestUtils.createTempWebExtensionFile({
+      manifest: {
+        version: "1.0",
+
+        applications: {
+          gecko: { id: ID },
+        },
+      },
+    });
+
+    const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
+    server.registerFile("/study.xpi", xpi);
+
+    const API_ID = 999;
+    apiServer.registerPathHandler(
+      `/api/v1/extension/${API_ID}/`,
+      (request, response) => {
+        response.setStatusLine(request.httpVersion, 200, "OK");
+        response.write(
+          JSON.stringify({
+            id: API_ID,
+            name: "Addon Fixture",
+            xpi: "http://example.com/study.xpi",
+            extension_id: ID,
+            version: "1.0",
+            hash: CryptoUtils.getFileHash(xpi, "sha256"),
+            hash_algorithm: "sha256",
+          })
+        );
+      }
+    );
+
+    
+    
+    
+    let extension = ExtensionTestUtils.expectExtension(ID);
+
+    const RECIPE_ID = 1;
+    const UNENROLL_REASON = "test-ending";
+    let action = new AddonStudyAction();
+    await action.runRecipe({
+      id: RECIPE_ID,
+      type: "addon-study",
+      arguments: {
+        name: "addon unenroll test",
+        description: "testing",
+        addonUrl: "http://example.com/study.xpi",
+        extensionApiId: API_ID,
+      },
+    });
+
+    await extension.startupPromise;
+
+    let addon = await AddonManager.getAddonByID(ID);
+    ok(addon, "Extension is installed");
+
+    let listenerDeferred = PromiseUtils.defer();
+
+    AddonStudies.addUnenrollListener(ID, () => {
+      listenerDeferred.resolve();
+      throw new Error("This listener is busted");
+    });
+
+    
+    await action.unenroll(RECIPE_ID, UNENROLL_REASON);
+    await listenerDeferred;
+
+    addon = await AddonManager.getAddonByID(ID);
+    equal(
+      addon,
+      null,
+      "Extension is uninstalled even though it threw an exception in the callback"
+    );
+  }
 );
