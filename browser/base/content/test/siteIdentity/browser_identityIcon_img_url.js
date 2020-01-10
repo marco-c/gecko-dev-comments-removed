@@ -55,9 +55,7 @@ const TEST_CASES = [
   {
     type: "certificateError",
     testURL: "https://self-signed.example.com",
-    
-    
-    img_url: `url("chrome://browser/skin/identity-icon.svg")`,
+    img_url: `url("chrome://browser/skin/connection-mixed-passive-loaded.svg")`,
   },
   {
     type: "localhost",
