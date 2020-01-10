@@ -7,6 +7,7 @@
 #include "nsNSSIOLayer.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "NSSCertDBTrustDomain.h"
 #include "NSSErrorsService.h"
@@ -2144,6 +2145,35 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   if (SECSuccess != SSL_OptionSet(fd, SSL_HANDSHAKE_AS_CLIENT, true)) {
     return NS_ERROR_FAILURE;
   }
+
+#ifdef __arm__
+  unsigned int enabledCiphers = 0;
+  std::vector<uint16_t> ciphers(SSL_GetNumImplementedCiphers());
+
+  
+  
+  
+  if (SSL_CipherSuiteOrderGet(fd, ciphers.data(), &enabledCiphers) !=
+      SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  if (enabledCiphers > 1) {
+    if (ciphers[0] != TLS_CHACHA20_POLY1305_SHA256 &&
+        ciphers[1] == TLS_CHACHA20_POLY1305_SHA256) {
+      std::swap(ciphers[0], ciphers[1]);
+
+      if (SSL_CipherSuiteOrderSet(fd, ciphers.data(), enabledCiphers) !=
+          SECSuccess) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+  }
+#endif
 
   
   
