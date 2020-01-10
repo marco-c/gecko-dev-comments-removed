@@ -28,11 +28,15 @@ class KeyValueStorage final {
   typedef MozPromise<int32_t, nsresult, true> GetPromise;
   RefPtr<GetPromise> Get(const nsACString& aName, const nsACString& aKey);
 
+  
+  RefPtr<GenericPromise> Clear(const nsACString& aName);
+
  private:
   
   RefPtr<GenericPromise> Init();
   RefPtr<GenericPromise> Put(const nsACString& aKey, int32_t aValue);
   RefPtr<GetPromise> Get(const nsACString& aKey);
+  RefPtr<GenericPromise> Clear();
   ~KeyValueStorage() = default;
 
   RefPtr<nsIKeyValueDatabase> mDatabase;
