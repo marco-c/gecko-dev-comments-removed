@@ -869,7 +869,7 @@ var gIdentityHandler = {
 
   handleIdentityButtonEvent(event) {
     
-    if (this._protectionsPanelEnabled && event.metaKey) {
+    if (this._protectionsPanelEnabled && event.altKey) {
       gProtectionsHandler.handleProtectionsButtonEvent(event);
       return;
     }
