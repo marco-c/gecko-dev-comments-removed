@@ -2823,15 +2823,6 @@ VARCACHE_PREF(
 
 
 
-VARCACHE_PREF(
-  Live,
-  "extensions.webextensions.remote",
-  extensions_webextensions_remote,
-  bool, false
-)
-
-
-
 
 
 
