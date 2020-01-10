@@ -30,6 +30,7 @@
 
 
 
+
 #define CHECK_WRITING_MODE(param)                                           \
   NS_ASSERTION(param.IgnoreSideways() == GetWritingMode().IgnoreSideways(), \
                "writing-mode mismatch")
@@ -251,18 +252,42 @@ class WritingMode {
 
 
 
+  bool IsVerticalSideways() const {
+    return !!(mWritingMode & StyleWritingMode_VERTICAL_SIDEWAYS);
+  }
+
+  
+
+
+  bool IsSidewaysRL() const { return IsVerticalRL() && IsVerticalSideways(); }
+
+  
+
+
+  bool IsSidewaysLR() const { return IsVerticalLR() && IsVerticalSideways(); }
+
+  
+
+
+
+
 
 
 
 
   bool IsSideways() const {
-    return !!(mWritingMode & StyleWritingMode_SIDEWAYS);
+    return !!(mWritingMode & (StyleWritingMode_VERTICAL_SIDEWAYS |
+                              StyleWritingMode_TEXT_SIDEWAYS));
   }
 
-#ifdef DEBUG  
-              
+#ifdef DEBUG
+  
+  
   WritingMode IgnoreSideways() const {
-    return WritingMode(mWritingMode.bits & ~StyleWritingMode_SIDEWAYS.bits);
+    return WritingMode(
+        mWritingMode.bits &
+        ~(StyleWritingMode_VERTICAL_SIDEWAYS | StyleWritingMode_TEXT_SIDEWAYS)
+             .bits);
   }
 #endif
 
