@@ -2229,6 +2229,16 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     GetRootFrame()->SetComputedStyleWithoutNotification(sc);
   }
 
+  ServoStyleSet* set = mPresShell->StyleSet();
+
+  
+  if (!aDocElement->HasServoData()) {
+    
+    
+    
+    set->StyleNewSubtree(aDocElement);
+  }
+
   
   
   
@@ -2248,16 +2258,6 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   
   if (!mTempFrameTreeState)
     state.mPresShell->CaptureHistoryState(getter_AddRefs(mTempFrameTreeState));
-
-  
-  ServoStyleSet* set = mPresShell->StyleSet();
-  
-  if (!aDocElement->HasServoData()) {
-    
-    
-    
-    set->StyleNewSubtree(aDocElement);
-  }
 
   RefPtr<ComputedStyle> computedStyle =
       ServoStyleSet::ResolveServoStyle(*aDocElement);
