@@ -546,7 +546,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       } else {
         this._applyNonPseudoCueStyles();
       }
-      this.applyStyles(this._getNodeDefaultStyles(cue));
+      this._applyDefaultStylesOnRootNode();
     }
 
     getCueBoxPositionAndSize() {
@@ -608,7 +608,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       
       
       this.applyStyles({
-        "color": "rgba(255, 255, 255, 1)",
         "white-space": "pre-line",
         "font": this.fontSize + " sans-serif",
         "background-color": "rgba(0, 0, 0, 0.8)",
@@ -617,42 +616,43 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     }
 
     
-    _getNodeDefaultStyles(cue) {
-      let styles = {
+    _applyDefaultStylesOnRootNode() {
+      
+      
+      
+      const writingMode = this._getCueWritingMode();
+
+      
+      const {width, height, left, top} = this._getCueSizeAndPosition();
+
+      this.applyStyles({
         "position": "absolute",
         
+        "writing-mode": writingMode,
+        "top": top,
+        "left": left,
+        "width": width,
+        "height": height,
         "overflow-wrap": "break-word",
         
-        "font": this.fontSize + " sans-serif",
         "white-space": "pre-line",
-        "text-align": cue.align,
-      }
-
-      this._processCueSetting(cue, styles);
-      return styles;
+        "font": this.fontSize + " sans-serif",
+        "color": "rgba(255, 255, 255, 1)",
+        "white-space": "pre-line",
+        "text-align": this.cue.align,
+      });
     }
 
-    
-    _processCueSetting(cue, styles) {
-      
-      styles["writing-mode"] = this._getCueWritingMode(cue);
-
-      
-      const {width, height, left, top} = this._getCueSizeAndPosition(cue);
-      styles["width"] = width;
-      styles["height"] = height;
-      styles["left"] = left;
-      styles["top"] = top;
-    }
-
-    _getCueWritingMode(cue) {
+    _getCueWritingMode() {
+      const cue = this.cue;
       if (cue.vertical == "") {
         return "horizontal-tb";
       }
       return cue.vertical == "lr" ? "vertical-lr" : "vertical-rl";
     }
 
-    _getCueSizeAndPosition(cue) {
+    _getCueSizeAndPosition() {
+      const cue = this.cue;
       
       
       let maximumSize;
