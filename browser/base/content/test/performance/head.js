@@ -717,11 +717,7 @@ async function withPerfObserver(testFn, exceptions = {}, win = window) {
 
 
 
-
-
-
 async function runUrlbarTest(
-  useAwesomebar,
   keyed,
   expectedReflowsFirstOpen,
   expectedReflowsSecondOpen = null
@@ -736,51 +732,23 @@ async function runUrlbarTest(
   URLBar.focus();
   URLBar.value = SEARCH_TERM;
   let testFn = async function() {
-    if (useAwesomebar) {
-      let popup = URLBar.popup;
-      let oldInvalidate = popup.invalidate.bind(popup);
-      let oldResultsAdded = popup.onResultsAdded.bind(popup);
-      let oldSetTimeout = win.setTimeout;
+    let popup = URLBar.view;
+    let oldOnQueryResults = popup.onQueryResults.bind(popup);
+    let oldOnQueryFinished = popup.onQueryFinished.bind(popup);
 
-      
-      
-      
-      
-      popup.invalidate = reason => {
-        dirtyFrame(win);
-        oldInvalidate(reason);
-      };
+    
+    
+    
+    
+    popup.onQueryResults = context => {
+      dirtyFrame(win);
+      oldOnQueryResults(context);
+    };
 
-      popup.onResultsAdded = () => {
-        dirtyFrame(win);
-        oldResultsAdded();
-      };
-
-      win.setTimeout = (fn, ms) => {
-        return oldSetTimeout(() => {
-          dirtyFrame(win);
-          fn();
-        }, ms);
-      };
-    } else {
-      let popup = URLBar.view;
-      let oldOnQueryResults = popup.onQueryResults.bind(popup);
-      let oldOnQueryFinished = popup.onQueryFinished.bind(popup);
-
-      
-      
-      
-      
-      popup.onQueryResults = context => {
-        dirtyFrame(win);
-        oldOnQueryResults(context);
-      };
-
-      popup.onQueryFinished = context => {
-        dirtyFrame(win);
-        oldOnQueryFinished(context);
-      };
-    }
+    popup.onQueryFinished = context => {
+      dirtyFrame(win);
+      oldOnQueryFinished(context);
+    };
 
     let waitExtra = async () => {
       
@@ -851,7 +819,7 @@ async function runUrlbarTest(
       ),
   };
 
-  info(`First opening, useAwesomebar=${useAwesomebar}`);
+  info("First opening");
   await withPerfObserver(
     testFn,
     { expectedReflows: expectedReflowsFirstOpen, frames: expectedRects },
@@ -859,7 +827,7 @@ async function runUrlbarTest(
   );
 
   if (expectedReflowsSecondOpen) {
-    info(`Second opening, useAwesomebar=${useAwesomebar}`);
+    info("Second opening");
     await withPerfObserver(
       testFn,
       { expectedReflows: expectedReflowsSecondOpen, frames: expectedRects },
