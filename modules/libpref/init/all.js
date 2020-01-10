@@ -2623,6 +2623,10 @@ pref("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", true);
 pref("dom.ipc.plugins.reportCrashURL", true);
 
 
+
+pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
+
+
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
 

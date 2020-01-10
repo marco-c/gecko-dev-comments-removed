@@ -15,6 +15,7 @@
 #include "prlink.h"
 #include "nsIPluginTag.h"
 #include "nsPluginsDir.h"
+#include "nsPluginDirServiceProvider.h"
 #include "nsWeakReference.h"
 #include "nsIPrompt.h"
 #include "MainThreadUtils.h"
@@ -58,7 +59,22 @@ struct _NPP;
 typedef _NPP* NPP;
 #endif
 
-class PluginFinder;
+class nsInvalidPluginTag : public nsISupports {
+  virtual ~nsInvalidPluginTag();
+
+ public:
+  explicit nsInvalidPluginTag(const char* aFullPath,
+                              int64_t aLastModifiedTime = 0);
+
+  NS_DECL_ISUPPORTS
+
+  nsCString mFullPath;
+  int64_t mLastModifiedTime;
+  bool mSeen;
+
+  RefPtr<nsInvalidPluginTag> mPrev;
+  RefPtr<nsInvalidPluginTag> mNext;
+};
 
 class nsPluginHost final : public nsIPluginHost,
                            public nsIObserver,
@@ -67,7 +83,6 @@ class nsPluginHost final : public nsIPluginHost,
                            public nsINamed {
   friend class nsPluginTag;
   friend class nsFakePluginTag;
-  friend class PluginFinder;
   virtual ~nsPluginHost();
 
  public:
@@ -80,6 +95,12 @@ class nsPluginHost final : public nsIPluginHost,
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
+
+  nsresult LoadPlugins();
+  nsresult UnloadPlugins();
+
+  nsresult SetUpPluginInstance(const nsACString& aMimeType, nsIURI* aURL,
+                               nsPluginInstanceOwner* aOwner);
 
   
   enum PluginFilter {
@@ -98,6 +119,11 @@ class nsPluginHost final : public nsIPluginHost,
 
   void GetPlugins(nsTArray<nsCOMPtr<nsIInternalPluginTag>>& aPluginArray,
                   bool aIncludeDisabled = false);
+
+  nsresult FindPluginsForContent(
+      uint32_t aPluginEpoch, nsTArray<mozilla::plugins::PluginTag>* aPlugins,
+      nsTArray<mozilla::plugins::FakePluginTag>* aFakePlugins,
+      uint32_t* aNewPluginEpoch);
 
   nsresult GetURL(nsISupports* pluginInst, const char* url, const char* target,
                   nsNPAPIPluginStreamListener* streamListener,
@@ -149,6 +175,11 @@ class nsPluginHost final : public nsIPluginHost,
   
   
   static bool IsTypeWhitelisted(const char* aType);
+
+  
+  
+  
+  static bool ShouldLoadTypeInParent(const nsACString& aMimeType);
 
   
 
@@ -211,16 +242,7 @@ class nsPluginHost final : public nsIPluginHost,
       uint32_t aPluginEpoch, nsTArray<mozilla::plugins::PluginTag>& aPlugins,
       nsTArray<mozilla::plugins::FakePluginTag>& aFakePlugins);
 
-  void UpdatePluginBlocklistState(nsPluginTag* aPluginTag,
-                                  bool aShouldSoftblock = false);
-
  private:
-  nsresult LoadPlugins();
-  nsresult UnloadPlugins();
-
-  nsresult SetUpPluginInstance(const nsACString& aMimeType, nsIURI* aURL,
-                               nsPluginInstanceOwner* aOwner);
-
   friend class nsPluginUnloadRunnable;
   friend class mozilla::plugins::BlocklistPromiseHandler;
 
@@ -270,6 +292,8 @@ class nsPluginHost final : public nsIPluginHost,
   nsresult FindStoppedPluginForURL(nsIURI* aURL,
                                    nsIPluginInstanceOwner* aOwner);
 
+  nsresult FindPlugins(bool aCreatePluginList, bool* aPluginsChanged);
+
   
   
   enum nsRegisterType {
@@ -283,15 +307,40 @@ class nsPluginHost final : public nsIPluginHost,
 
   void AddPluginTag(nsPluginTag* aPluginTag);
 
+  void UpdatePluginBlocklistState(nsPluginTag* aPluginTag,
+                                  bool aShouldSoftblock = false);
+
+  nsresult ScanPluginsDirectory(nsIFile* pluginsDir, bool aCreatePluginList,
+                                bool* aPluginsChanged);
+
+  nsresult ScanPluginsDirectoryList(nsISimpleEnumerator* dirEnum,
+                                    bool aCreatePluginList,
+                                    bool* aPluginsChanged);
+
   nsresult EnsurePluginLoaded(nsPluginTag* aPluginTag);
 
   bool IsRunningPlugin(nsPluginTag* aPluginTag);
+
+  
+  nsresult WritePluginInfo();
+
+  
+  nsresult ReadPluginInfo();
+
+  
+  
+  void RemoveCachedPluginsInfo(const char* filePath, nsPluginTag** result);
 
   
   bool IsLiveTag(nsIPluginTag* tag);
 
   
   nsPluginTag* HaveSamePlugin(const nsPluginTag* aPluginTag);
+
+  
+  nsPluginTag* FirstPluginWithPath(const nsCString& path);
+
+  nsresult EnsurePrivateDirServiceProvider();
 
   void OnPluginInstanceDestroyed(nsPluginTag* aPluginTag);
 
@@ -308,13 +357,11 @@ class nsPluginHost final : public nsIPluginHost,
 
   void UpdateInMemoryPluginInfo(nsPluginTag* aPluginTag);
 
-  void ClearNonRunningPlugins();
   nsresult ActuallyReloadPlugins();
 
-  
-  void FindingFinished();
-
   RefPtr<nsPluginTag> mPlugins;
+  RefPtr<nsPluginTag> mCachedPlugins;
+  RefPtr<nsInvalidPluginTag> mInvalidPlugins;
 
   nsTArray<RefPtr<nsFakePluginTag>> mFakePlugins;
 
@@ -327,20 +374,14 @@ class nsPluginHost final : public nsIPluginHost,
   bool mPluginsDisabled;
 
   
-  bool mFlashOnly;
-
-  
-  RefPtr<PluginFinder> mPendingFinder;
-  bool mDoReloadOnceFindingFinished;
-  bool mAddedFinderShutdownBlocker;
-
-  
   
   
   nsTArray<RefPtr<nsNPAPIPluginInstance>> mInstances;
 
-  
+  nsCOMPtr<nsIFile> mPluginRegFile;
 #ifdef XP_WIN
+  RefPtr<nsPluginDirServiceProvider> mPrivateDirServiceProvider;
+
   
   
   nsCOMPtr<nsIWindowsRegKey> mRegKeyHKLM;

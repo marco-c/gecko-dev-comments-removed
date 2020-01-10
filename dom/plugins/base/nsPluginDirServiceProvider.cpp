@@ -7,21 +7,59 @@
 
 #include "nsCRT.h"
 #include "nsIFile.h"
+#include "nsDependentString.h"
+#include "nsArrayEnumerator.h"
+#include "mozilla/Preferences.h"
 
 #include <windows.h>
 #include "nsIWindowsRegKey.h"
 
 using namespace mozilla;
 
- nsresult GetPLIDDirectories(nsTArray<nsCOMPtr<nsIFile>>& aDirs) {
-  GetPLIDDirectoriesWithRootKey(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER, aDirs);
-  GetPLIDDirectoriesWithRootKey(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
-                                aDirs);
-  return NS_OK;
+
+
+
+
+nsPluginDirServiceProvider::nsPluginDirServiceProvider() {}
+
+nsPluginDirServiceProvider::~nsPluginDirServiceProvider() {}
+
+
+
+
+
+NS_IMPL_ISUPPORTS(nsPluginDirServiceProvider, nsIDirectoryServiceProvider)
+
+
+
+
+
+NS_IMETHODIMP
+nsPluginDirServiceProvider::GetFile(const char* charProp, bool* persistant,
+                                    nsIFile** _retval) {
+  NS_ENSURE_ARG(charProp);
+
+  *_retval = nullptr;
+  *persistant = false;
+
+  return NS_ERROR_FAILURE;
 }
 
- nsresult GetPLIDDirectoriesWithRootKey(
-    uint32_t aKey, nsTArray<nsCOMPtr<nsIFile>>& aDirs) {
+nsresult nsPluginDirServiceProvider::GetPLIDDirectories(
+    nsISimpleEnumerator** aEnumerator) {
+  NS_ENSURE_ARG_POINTER(aEnumerator);
+  *aEnumerator = nullptr;
+
+  nsCOMArray<nsIFile> dirs;
+
+  GetPLIDDirectoriesWithRootKey(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER, dirs);
+  GetPLIDDirectoriesWithRootKey(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE, dirs);
+
+  return NS_NewArrayEnumerator(aEnumerator, dirs, NS_GET_IID(nsIFile));
+}
+
+nsresult nsPluginDirServiceProvider::GetPLIDDirectoriesWithRootKey(
+    uint32_t aKey, nsCOMArray<nsIFile>& aDirs) {
   nsCOMPtr<nsIWindowsRegKey> regKey =
       do_CreateInstance("@mozilla.org/windows-registry-key;1");
   NS_ENSURE_TRUE(regKey, NS_ERROR_FAILURE);
@@ -47,14 +85,37 @@ using namespace mozilla;
         nsAutoString path;
         rv = childKey->ReadStringValue(NS_LITERAL_STRING("Path"), path);
         if (NS_SUCCEEDED(rv)) {
-          
-          
-          
-          
           nsCOMPtr<nsIFile> localFile;
-          rv = NS_NewLocalFile(path, true, getter_AddRefs(localFile));
-          if (NS_SUCCEEDED(rv) && localFile) {
-            aDirs.AppendElement(localFile);
+          if (NS_SUCCEEDED(
+                  NS_NewLocalFile(path, true, getter_AddRefs(localFile))) &&
+              localFile) {
+            
+            
+            bool isDir = false;
+            if (NS_SUCCEEDED(localFile->IsDirectory(&isDir)) && !isDir) {
+              nsCOMPtr<nsIFile> temp;
+              localFile->GetParent(getter_AddRefs(temp));
+              if (temp) localFile = temp;
+            }
+
+            
+            
+            bool isFileThere = false;
+            bool isDupEntry = false;
+            if (NS_SUCCEEDED(localFile->Exists(&isFileThere)) && isFileThere) {
+              int32_t c = aDirs.Count();
+              for (int32_t i = 0; i < c; i++) {
+                nsIFile* dup = static_cast<nsIFile*>(aDirs[i]);
+                if (dup && NS_SUCCEEDED(dup->Equals(localFile, &isDupEntry)) &&
+                    isDupEntry) {
+                  break;
+                }
+              }
+
+              if (!isDupEntry) {
+                aDirs.AppendObject(localFile);
+              }
+            }
           }
         }
       }
