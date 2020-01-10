@@ -1034,25 +1034,12 @@ class nsDocShell final : public nsDocLoader,
   nsresult MaybeHandleLoadDelegate(nsDocShellLoadState* aLoadState,
                                    uint32_t aWindowType, bool* aDidHandleLoad);
 
-  struct SameDocumentNavigationState {
-    nsAutoCString mCurrentHash;
-    nsAutoCString mNewHash;
-    bool mCurrentURIHasRef = false;
-    bool mNewURIHasRef = false;
-    bool mSameExceptHashes = false;
-    bool mHistoryNavBetweenSameDoc = false;
-  };
-
   
-  
-  bool IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
-                                SameDocumentNavigationState& aState);
-
   
   
   MOZ_CAN_RUN_SCRIPT
-  nsresult HandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
-                                        SameDocumentNavigationState& aState);
+  nsresult MaybeHandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
+                                             bool* aWasSameDocument);
 
  private:  
   static nsIURIFixup* sURIFixup;
