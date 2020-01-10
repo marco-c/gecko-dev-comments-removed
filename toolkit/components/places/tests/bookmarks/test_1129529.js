@@ -3,7 +3,10 @@ var now = Date.now() * 1000;
 
 
 add_task(async function() {
-  let bookmarksFile = OS.Path.join(do_get_cwd().path, "bookmarks_long_tag.json");
+  let bookmarksFile = OS.Path.join(
+    do_get_cwd().path,
+    "bookmarks_long_tag.json"
+  );
   let bookmarksUrl = OS.Path.toFileURI(bookmarksFile);
 
   await BookmarkJSONUtils.importFromURL(bookmarksUrl);

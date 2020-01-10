@@ -7,18 +7,20 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = [
-  "LoginTestUtils",
-];
+const EXPORTED_SYMBOLS = ["LoginTestUtils"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const {Assert} = ChromeUtils.import("resource://testing-common/Assert.jsm");
-const {TestUtils} = ChromeUtils.import("resource://testing-common/TestUtils.jsm");
+const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
+const { TestUtils } = ChromeUtils.import(
+  "resource://testing-common/TestUtils.jsm"
+);
 
-const LoginInfo =
-      Components.Constructor("@mozilla.org/login-manager/loginInfo;1",
-                             "nsILoginInfo", "init");
+const LoginInfo = Components.Constructor(
+  "@mozilla.org/login-manager/loginInfo;1",
+  "nsILoginInfo",
+  "init"
+);
 
 this.LoginTestUtils = {
   
@@ -94,10 +96,15 @@ this.LoginTestUtils.testData = {
 
 
   formLogin(modifications) {
-    let loginInfo = new LoginInfo("http://www3.example.com",
-                                  "http://www.example.com", null,
-                                  "the username", "the password",
-                                  "form_field_username", "form_field_password");
+    let loginInfo = new LoginInfo(
+      "http://www3.example.com",
+      "http://www.example.com",
+      null,
+      "the username",
+      "the password",
+      "form_field_username",
+      "form_field_password"
+    );
     loginInfo.QueryInterface(Ci.nsILoginMetaInfo);
     if (modifications) {
       for (let [name, value] of Object.entries(modifications)) {
@@ -115,9 +122,13 @@ this.LoginTestUtils.testData = {
 
 
   authLogin(modifications) {
-    let loginInfo = new LoginInfo("http://www.example.org", null,
-                                  "The HTTP Realm", "the username",
-                                  "the password");
+    let loginInfo = new LoginInfo(
+      "http://www.example.org",
+      null,
+      "The HTTP Realm",
+      "the username",
+      "the password"
+    );
     loginInfo.QueryInterface(Ci.nsILoginMetaInfo);
     if (modifications) {
       for (let [name, value] of Object.entries(modifications)) {
@@ -136,104 +147,239 @@ this.LoginTestUtils.testData = {
       
 
       
-      new LoginInfo("http://www.example.com", "http://www.example.com", null,
-                    "the username", "the password for www.example.com",
-                    "form_field_username", "form_field_password"),
+      new LoginInfo(
+        "http://www.example.com",
+        "http://www.example.com",
+        null,
+        "the username",
+        "the password for www.example.com",
+        "form_field_username",
+        "form_field_password"
+      ),
 
       
-      new LoginInfo("https://www.example.com", "https://www.example.com", null,
-                    "the username", "the password for https",
-                    "form_field_username", "form_field_password"),
+      new LoginInfo(
+        "https://www.example.com",
+        "https://www.example.com",
+        null,
+        "the username",
+        "the password for https",
+        "form_field_username",
+        "form_field_password"
+      ),
 
       
-      new LoginInfo("https://example.com", "https://example.com", null,
-                    "the username", "the password for example.com",
-                    "form_field_username", "form_field_password"),
+      new LoginInfo(
+        "https://example.com",
+        "https://example.com",
+        null,
+        "the username",
+        "the password for example.com",
+        "form_field_username",
+        "form_field_password"
+      ),
 
       
       
-      new LoginInfo("http://www3.example.com", "http://www.example.com", null,
-                    "the username", "the password",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://www3.example.com", "https://www.example.com", null,
-                    "the username", "the password",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://www3.example.com", "http://example.com", null,
-                    "the username", "the password",
-                    "form_field_username", "form_field_password"),
+      new LoginInfo(
+        "http://www3.example.com",
+        "http://www.example.com",
+        null,
+        "the username",
+        "the password",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://www3.example.com",
+        "https://www.example.com",
+        null,
+        "the username",
+        "the password",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://www3.example.com",
+        "http://example.com",
+        null,
+        "the username",
+        "the password",
+        "form_field_username",
+        "form_field_password"
+      ),
 
       
       
       
-      new LoginInfo("http://www4.example.com", "http://www4.example.com", null,
-                    "username one", "password one",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://www4.example.com", "http://www4.example.com", null,
-                    "username two", "password two",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://www4.example.com", "http://www4.example.com", null,
-                    "", "password three",
-                    "form_field_username", "form_field_password"),
+      new LoginInfo(
+        "http://www4.example.com",
+        "http://www4.example.com",
+        null,
+        "username one",
+        "password one",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://www4.example.com",
+        "http://www4.example.com",
+        null,
+        "username two",
+        "password two",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://www4.example.com",
+        "http://www4.example.com",
+        null,
+        "",
+        "password three",
+        "form_field_username",
+        "form_field_password"
+      ),
 
       
-      new LoginInfo("http://www5.example.com", "http://www5.example.com", null,
-                    "multi username", "multi password", "", ""),
+      new LoginInfo(
+        "http://www5.example.com",
+        "http://www5.example.com",
+        null,
+        "multi username",
+        "multi password",
+        "",
+        ""
+      ),
 
       
-      new LoginInfo("http://www6.example.com", "http://www6.example.com", null,
-                    "", "12345", "", "form_field_password"),
-
-      
-
-      
-      new LoginInfo("http://www.example.org", null, "The HTTP Realm",
-                    "the username", "the password"),
-
-      
-      new LoginInfo("ftp://ftp.example.org", null, "ftp://ftp.example.org",
-                    "the username", "the password"),
-
-      
-      new LoginInfo("http://www2.example.org", null, "The HTTP Realm",
-                    "the username", "the password"),
-      new LoginInfo("http://www2.example.org", null, "The HTTP Realm Other",
-                    "the username other", "the password other"),
-
-      
-
-      new LoginInfo("http://example.net", "http://example.net", null,
-                    "the username", "the password",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://example.net", "http://www.example.net", null,
-                    "the username", "the password",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://example.net", "http://www.example.net", null,
-                    "username two", "the password",
-                    "form_field_username", "form_field_password"),
-      new LoginInfo("http://example.net", null, "The HTTP Realm",
-                    "the username", "the password"),
-      new LoginInfo("http://example.net", null, "The HTTP Realm Other",
-                    "username two", "the password"),
-      new LoginInfo("ftp://example.net", null, "ftp://example.net",
-                    "the username", "the password"),
+      new LoginInfo(
+        "http://www6.example.com",
+        "http://www6.example.com",
+        null,
+        "",
+        "12345",
+        "",
+        "form_field_password"
+      ),
 
       
 
-      new LoginInfo("chrome://example_extension", null, "Example Login One",
-                    "the username", "the password one", "", ""),
-      new LoginInfo("chrome://example_extension", null, "Example Login Two",
-                    "the username", "the password two"),
+      
+      new LoginInfo(
+        "http://www.example.org",
+        null,
+        "The HTTP Realm",
+        "the username",
+        "the password"
+      ),
+
+      
+      new LoginInfo(
+        "ftp://ftp.example.org",
+        null,
+        "ftp://ftp.example.org",
+        "the username",
+        "the password"
+      ),
+
+      
+      new LoginInfo(
+        "http://www2.example.org",
+        null,
+        "The HTTP Realm",
+        "the username",
+        "the password"
+      ),
+      new LoginInfo(
+        "http://www2.example.org",
+        null,
+        "The HTTP Realm Other",
+        "the username other",
+        "the password other"
+      ),
+
+      
+
+      new LoginInfo(
+        "http://example.net",
+        "http://example.net",
+        null,
+        "the username",
+        "the password",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://example.net",
+        "http://www.example.net",
+        null,
+        "the username",
+        "the password",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://example.net",
+        "http://www.example.net",
+        null,
+        "username two",
+        "the password",
+        "form_field_username",
+        "form_field_password"
+      ),
+      new LoginInfo(
+        "http://example.net",
+        null,
+        "The HTTP Realm",
+        "the username",
+        "the password"
+      ),
+      new LoginInfo(
+        "http://example.net",
+        null,
+        "The HTTP Realm Other",
+        "username two",
+        "the password"
+      ),
+      new LoginInfo(
+        "ftp://example.net",
+        null,
+        "ftp://example.net",
+        "the username",
+        "the password"
+      ),
+
+      
+
+      new LoginInfo(
+        "chrome://example_extension",
+        null,
+        "Example Login One",
+        "the username",
+        "the password one",
+        "",
+        ""
+      ),
+      new LoginInfo(
+        "chrome://example_extension",
+        null,
+        "Example Login Two",
+        "the username",
+        "the password two"
+      ),
     ];
   },
 };
 
 this.LoginTestUtils.recipes = {
   getRecipeParent() {
-    let { LoginManagerParent } = ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm");
+    let { LoginManagerParent } = ChromeUtils.import(
+      "resource://gre/modules/LoginManagerParent.jsm"
+    );
     if (!LoginManagerParent.recipeParentPromise) {
       return null;
     }
-    return LoginManagerParent.recipeParentPromise.then((recipeParent) => {
+    return LoginManagerParent.recipeParentPromise.then(recipeParent => {
       return recipeParent;
     });
   },
@@ -255,8 +401,9 @@ this.LoginTestUtils.masterPassword = {
     
     
     
-    let pk11db = Cc["@mozilla.org/security/pk11tokendb;1"]
-                   .getService(Ci.nsIPK11TokenDB);
+    let pk11db = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
+      Ci.nsIPK11TokenDB
+    );
     let token = pk11db.getInternalKeyToken();
     if (token.needsUserInit) {
       dump("MP initialized to " + newPW + "\n");

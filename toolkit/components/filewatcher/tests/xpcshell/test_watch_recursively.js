@@ -19,7 +19,10 @@ function run_test() {
 add_task(async function test_watch_recursively() {
   
   
-  let watchedDir = OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground");
+  let watchedDir = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "filewatcher_playground"
+  );
   await OS.File.makeDir(watchedDir);
 
   
@@ -47,7 +50,12 @@ add_task(async function test_watch_recursively() {
 
   
   
-  await promiseRemovePath(watcher, watchedDir, deferred.resolve, deferred.reject);
+  await promiseRemovePath(
+    watcher,
+    watchedDir,
+    deferred.resolve,
+    deferred.reject
+  );
 
   
   await OS.File.removeDir(watchedDir);

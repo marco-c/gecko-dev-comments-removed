@@ -31,11 +31,13 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "CrashMonitor" ];
+var EXPORTED_SYMBOLS = ["CrashMonitor"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 const NOTIFICATIONS = [
   "final-ui-startup",
@@ -49,7 +51,6 @@ const NOTIFICATIONS = [
 ];
 
 var CrashMonitorInternal = {
-
   
 
 
@@ -92,13 +93,17 @@ var CrashMonitorInternal = {
     this.previousCheckpoints = (async function() {
       let data;
       try {
-        data = await OS.File.read(CrashMonitorInternal.path, { encoding: "utf-8" });
+        data = await OS.File.read(CrashMonitorInternal.path, {
+          encoding: "utf-8",
+        });
       } catch (ex) {
         if (!(ex instanceof OS.File.Error)) {
           throw ex;
         }
         if (!ex.becauseNoSuchFile) {
-          Cu.reportError("Error while loading crash monitor data: " + ex.toString());
+          Cu.reportError(
+            "Error while loading crash monitor data: " + ex.toString()
+          );
         }
 
         return null;
@@ -114,7 +119,9 @@ var CrashMonitorInternal = {
 
       
       if (Object(notifications) !== notifications) {
-        Cu.reportError("Error while parsing crash monitor data: invalid monitor data");
+        Cu.reportError(
+          "Error while parsing crash monitor data: invalid monitor data"
+        );
         return null;
       }
 
@@ -126,7 +133,6 @@ var CrashMonitorInternal = {
 };
 
 var CrashMonitor = {
-
   
 
 
@@ -137,7 +143,9 @@ var CrashMonitor = {
 
   get previousCheckpoints() {
     if (!CrashMonitorInternal.initialized) {
-      throw new Error("CrashMonitor must be initialized before getting previous checkpoints");
+      throw new Error(
+        "CrashMonitor must be initialized before getting previous checkpoints"
+      );
     }
 
     return CrashMonitorInternal.previousCheckpoints;
@@ -195,9 +203,9 @@ var CrashMonitor = {
 
 
 
-          await OS.File.writeAtomic(
-            CrashMonitorInternal.path,
-            data, {tmpPath: CrashMonitorInternal.path + ".tmp"});
+          await OS.File.writeAtomic(CrashMonitorInternal.path, data, {
+            tmpPath: CrashMonitorInternal.path + ".tmp",
+          });
         } finally {
           
           if (aTopic == "profile-before-change") {

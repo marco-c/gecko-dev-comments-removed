@@ -14,17 +14,19 @@ const test = new SearchConfigTest({
       
     ],
   },
-  details: [{
-    included: [{}],
-    domain: "duckduckgo.com",
-    codes: {
-      "searchbar": "t=ffsb",
-      "keyword": "t=ffab",
-      "contextmenu": "t=ffcm",
-      "homepage": "t=ffhp",
-      "newtab": "t=ffnt",
+  details: [
+    {
+      included: [{}],
+      domain: "duckduckgo.com",
+      codes: {
+        searchbar: "t=ffsb",
+        keyword: "t=ffab",
+        contextmenu: "t=ffcm",
+        homepage: "t=ffhp",
+        newtab: "t=ffnt",
+      },
     },
-  }],
+  ],
 });
 
 add_task(async function setup() {

@@ -4,7 +4,7 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 {
@@ -37,10 +37,11 @@ function force_expiration_start() {
 
 
 
-
 function promiseForceExpirationStep(aLimit) {
   let promise = promiseTopicObserved(PlacesUtils.TOPIC_EXPIRATION_FINISHED);
-  let expire = Cc["@mozilla.org/places/expiration;1"].getService(Ci.nsIObserver);
+  let expire = Cc["@mozilla.org/places/expiration;1"].getService(
+    Ci.nsIObserver
+  );
   expire.observe(null, "places-debug-start-expiration", aLimit);
   return promise;
 }
@@ -49,12 +50,16 @@ function promiseForceExpirationStep(aLimit) {
 
 
 
-
 function setInterval(aNewInterval) {
-  Services.prefs.setIntPref("places.history.expiration.interval_seconds", aNewInterval);
+  Services.prefs.setIntPref(
+    "places.history.expiration.interval_seconds",
+    aNewInterval
+  );
 }
 function getInterval() {
-  return Services.prefs.getIntPref("places.history.expiration.interval_seconds");
+  return Services.prefs.getIntPref(
+    "places.history.expiration.interval_seconds"
+  );
 }
 function clearInterval() {
   try {
@@ -62,9 +67,11 @@ function clearInterval() {
   } catch (ex) {}
 }
 
-
 function setMaxPages(aNewMaxPages) {
-  Services.prefs.setIntPref("places.history.expiration.max_pages", aNewMaxPages);
+  Services.prefs.setIntPref(
+    "places.history.expiration.max_pages",
+    aNewMaxPages
+  );
 }
 function getMaxPages() {
   return Services.prefs.getIntPref("places.history.expiration.max_pages");
@@ -74,7 +81,6 @@ function clearMaxPages() {
     Services.prefs.clearUserPref("places.history.expiration.max_pages");
   } catch (ex) {}
 }
-
 
 function setHistoryEnabled(aHistoryEnabled) {
   Services.prefs.setBoolPref("places.history.enabled", aHistoryEnabled);

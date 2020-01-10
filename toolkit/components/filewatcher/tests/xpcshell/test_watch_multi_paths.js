@@ -45,48 +45,53 @@ add_task(async function test_watch_multi_paths() {
 
   
   let changeCallback = function(changed) {
-      info(changed + " has changed.");
+    info(changed + " has changed.");
 
-      detectedChanges += 1;
+    detectedChanges += 1;
 
-      
-      if (detectedChanges === resourcesToWatch) {
-        deferredChanges.resolve();
-      }
-    };
+    
+    if (detectedChanges === resourcesToWatch) {
+      deferredChanges.resolve();
+    }
+  };
 
   
   let watchSuccessCallback = function(resourcePath) {
-      info(resourcePath + " is being watched.");
+    info(resourcePath + " is being watched.");
 
-      watchedResources += 1;
+    watchedResources += 1;
 
-      
-      
-      if (watchedResources === resourcesToWatch) {
-        deferredSuccesses.resolve();
-      }
-    };
+    
+    
+    if (watchedResources === resourcesToWatch) {
+      deferredSuccesses.resolve();
+    }
+  };
 
   
   let unwatchSuccessCallback = function(resourcePath) {
-      info(resourcePath + " is being un-watched.");
+    info(resourcePath + " is being un-watched.");
 
-      unwatchedResources += 1;
+    unwatchedResources += 1;
 
-      
-      
-      if (unwatchedResources === resourcesToWatch) {
-        deferredShutdown.resolve();
-      }
-    };
+    
+    
+    if (unwatchedResources === resourcesToWatch) {
+      deferredShutdown.resolve();
+    }
+  };
 
   
   for (let i = 0; i < resourcesToWatch; i++) {
     let tmpSubDirPath = OS.Path.join(watchedDir, tempDirNameBase + i);
     info("Creating the " + tmpSubDirPath + " directory.");
     await OS.File.makeDir(tmpSubDirPath);
-    watcher.addPath(tmpSubDirPath, changeCallback, deferredChanges.reject, watchSuccessCallback);
+    watcher.addPath(
+      tmpSubDirPath,
+      changeCallback,
+      deferredChanges.reject,
+      watchSuccessCallback
+    );
   }
 
   
@@ -95,7 +100,11 @@ add_task(async function test_watch_multi_paths() {
 
   
   for (let i = 0; i < resourcesToWatch; i++) {
-    let tmpFilePath = OS.Path.join(watchedDir, tempDirNameBase + i, tempFileName);
+    let tmpFilePath = OS.Path.join(
+      watchedDir,
+      tempDirNameBase + i,
+      tempFileName
+    );
     await OS.File.writeAtomic(tmpFilePath, "test content");
   }
 
@@ -105,7 +114,12 @@ add_task(async function test_watch_multi_paths() {
   
   for (let i = 0; i < resourcesToWatch; i++) {
     let tmpSubDirPath = OS.Path.join(watchedDir, tempDirNameBase + i);
-    watcher.removePath(tmpSubDirPath, changeCallback, deferredChanges.reject, unwatchSuccessCallback);
+    watcher.removePath(
+      tmpSubDirPath,
+      changeCallback,
+      deferredChanges.reject,
+      unwatchSuccessCallback
+    );
   }
 
   

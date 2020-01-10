@@ -3,7 +3,8 @@
 
 
 
-const TEST_FAVICON_PAGE_URL = "http://en-US.www.mozilla.com/en-US/firefox/central/";
+const TEST_FAVICON_PAGE_URL =
+  "http://en-US.www.mozilla.com/en-US/firefox/central/";
 const TEST_FAVICON_DATA_SIZE = 580;
 
 add_task(async function test_corrupt_file() {
@@ -18,17 +19,24 @@ add_task(async function test_corrupt_file() {
 
 add_task(async function test_corrupt_database() {
   
-  let corruptBookmark = await PlacesUtils.bookmarks.insert({ parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-                                                             url: "http://test.mozilla.org",
-                                                             title: "We love belugas" });
+  let corruptBookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    url: "http://test.mozilla.org",
+    title: "We love belugas",
+  });
   await PlacesUtils.withConnectionWrapper("test", async function(db) {
-    await db.execute("UPDATE moz_bookmarks SET fk = NULL WHERE guid = :guid",
-                     { guid: corruptBookmark.guid });
+    await db.execute("UPDATE moz_bookmarks SET fk = NULL WHERE guid = :guid", {
+      guid: corruptBookmark.guid,
+    });
   });
 
-  let bookmarksFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.exported.html");
-  if ((await OS.File.exists(bookmarksFile)))
+  let bookmarksFile = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "bookmarks.exported.html"
+  );
+  if (await OS.File.exists(bookmarksFile)) {
     await OS.File.remove(bookmarksFile);
+  }
   await BookmarkHTMLUtils.exportToFile(bookmarksFile);
 
   
@@ -77,9 +85,14 @@ var database_check = async function() {
   Assert.equal(bookmarkNode.dateAdded, 1177375336000000);
   Assert.equal(bookmarkNode.lastModified, 1177375423000000);
 
-  let pageInfo = await PlacesUtils.history.fetch(bookmarkNode.uri, {includeAnnotations: true});
-  Assert.equal(pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO), "ISO-8859-1",
-    "Should have the correct charset");
+  let pageInfo = await PlacesUtils.history.fetch(bookmarkNode.uri, {
+    includeAnnotations: true,
+  });
+  Assert.equal(
+    pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO),
+    "ISO-8859-1",
+    "Should have the correct charset"
+  );
 
   
   folderNode.containerOpen = false;
@@ -99,7 +112,8 @@ var database_check = async function() {
 
   
   await new Promise(resolve => {
-    PlacesUtils.favicons.getFaviconDataForPage(uri(TEST_FAVICON_PAGE_URL),
+    PlacesUtils.favicons.getFaviconDataForPage(
+      uri(TEST_FAVICON_PAGE_URL),
       (aURI, aDataLen, aData, aMimeType) => {
         
         Assert.notEqual(aURI, null);
@@ -108,6 +122,7 @@ var database_check = async function() {
         
         Assert.equal(TEST_FAVICON_DATA_SIZE, aDataLen);
         resolve();
-      });
+      }
+    );
   });
 };

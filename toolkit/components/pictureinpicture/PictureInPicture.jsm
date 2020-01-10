@@ -6,7 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["PictureInPicture"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 const PLAYER_FEATURES = `chrome,titlebar=no,alwaysontop,lockaspectratio,resizable`;
@@ -90,7 +90,7 @@ var PictureInPicture = {
         continue;
       }
       let closedPromise = new Promise(resolve => {
-        win.addEventListener("unload", resolve, {once: true});
+        win.addEventListener("unload", resolve, { once: true });
       });
       gCloseReasons.set(win, reason);
       win.close();
@@ -141,10 +141,17 @@ var PictureInPicture = {
 
 
   unload(window) {
-    TelemetryStopwatch.finish("FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION", window);
+    TelemetryStopwatch.finish(
+      "FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION",
+      window
+    );
 
     let reason = gCloseReasons.get(window) || "other";
-    Services.telemetry.keyedScalarAdd("pictureinpicture.closed_method", reason, 1);
+    Services.telemetry.keyedScalarAdd(
+      "pictureinpicture.closed_method",
+      reason,
+      1
+    );
 
     this.clearPipTabIcon();
     delete this.weakPipControls;
@@ -176,16 +183,28 @@ var PictureInPicture = {
 
     
     
-    let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
-                          .getService(Ci.nsIScreenManager);
-    let screen = screenManager.screenForRect(parentWin.screenX,
-                                             parentWin.screenY, 1, 1);
+    let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
+      Ci.nsIScreenManager
+    );
+    let screen = screenManager.screenForRect(
+      parentWin.screenX,
+      parentWin.screenY,
+      1,
+      1
+    );
 
     
     
-    let screenLeft = {}, screenTop = {}, screenWidth = {}, screenHeight = {};
-    screen.GetAvailRectDisplayPix(screenLeft, screenTop, screenWidth,
-                                  screenHeight);
+    let screenLeft = {},
+      screenTop = {},
+      screenWidth = {},
+      screenHeight = {};
+    screen.GetAvailRectDisplayPix(
+      screenLeft,
+      screenTop,
+      screenWidth,
+      screenHeight
+    );
 
     
     
@@ -230,20 +249,34 @@ var PictureInPicture = {
     let isRTL = Services.locale.isAppLocaleRTL;
     let pipLeft = isRTL ? 0 : screenWidth.value - resultWidth;
     let pipTop = screenHeight.value - resultHeight;
-    let features = `${PLAYER_FEATURES},top=${pipTop},left=${pipLeft},` +
-                   `outerWidth=${resultWidth},outerHeight=${resultHeight}`;
+    let features =
+      `${PLAYER_FEATURES},top=${pipTop},left=${pipLeft},` +
+      `outerWidth=${resultWidth},outerHeight=${resultHeight}`;
 
-    let pipWindow =
-      Services.ww.openWindow(parentWin, PLAYER_URI, null, features, null);
+    let pipWindow = Services.ww.openWindow(
+      parentWin,
+      PLAYER_URI,
+      null,
+      features,
+      null
+    );
 
-    TelemetryStopwatch.start("FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION", pipWindow, {
-      inSeconds: true,
-    });
+    TelemetryStopwatch.start(
+      "FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION",
+      pipWindow,
+      {
+        inSeconds: true,
+      }
+    );
 
     return new Promise(resolve => {
-      pipWindow.addEventListener("load", () => {
-        resolve(pipWindow);
-      }, { once: true });
+      pipWindow.addEventListener(
+        "load",
+        () => {
+          resolve(pipWindow);
+        },
+        { once: true }
+      );
     });
   },
 };

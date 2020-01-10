@@ -9,17 +9,20 @@
 
 
 
-const bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-           getService(Ci.nsINavBookmarksService);
+const bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].getService(
+  Ci.nsINavBookmarksService
+);
 
 const TEST_URL = "http://www.mozilla.org";
 
 function run_test() {
   
-  var itemId = bs.insertBookmark(bs.toolbarFolder,
-                                 uri(TEST_URL),
-                                 bs.DEFAULT_INDEX,
-                                 "");
+  var itemId = bs.insertBookmark(
+    bs.toolbarFolder,
+    uri(TEST_URL),
+    bs.DEFAULT_INDEX,
+    ""
+  );
   
   Assert.equal(bs.getItemTitle(itemId), "");
   
@@ -30,10 +33,12 @@ function run_test() {
   bs.removeItem(itemId);
 
   
-  itemId = bs.insertBookmark(bs.toolbarFolder,
-                             uri(TEST_URL),
-                             bs.DEFAULT_INDEX,
-                             null);
+  itemId = bs.insertBookmark(
+    bs.toolbarFolder,
+    uri(TEST_URL),
+    bs.DEFAULT_INDEX,
+    null
+  );
   
   Assert.equal(bs.getItemTitle(itemId), "");
   

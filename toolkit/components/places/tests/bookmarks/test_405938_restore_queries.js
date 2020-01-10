@@ -61,25 +61,31 @@ var test = {
         title: `folder${i}`,
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
         dateAdded,
-        children: [{
-          dateAdded,
-          url: `http://${i}`,
-          title: `bookmark${i}`,
-        }],
+        children: [
+          {
+            dateAdded,
+            url: `http://${i}`,
+            title: `bookmark${i}`,
+          },
+        ],
       });
     }
 
     let bookmarksTree = {
       guid: PlacesUtils.bookmarks.toolbarGuid,
-      children: [{
-        dateAdded,
-        title: this._testRootTitle,
-        type: PlacesUtils.bookmarks.TYPE_FOLDER,
-        children: testFolderItems,
-      }],
+      children: [
+        {
+          dateAdded,
+          title: this._testRootTitle,
+          type: PlacesUtils.bookmarks.TYPE_FOLDER,
+          children: testFolderItems,
+        },
+      ],
     };
 
-    let insertedBookmarks = await PlacesUtils.bookmarks.insertTree(bookmarksTree);
+    let insertedBookmarks = await PlacesUtils.bookmarks.insertTree(
+      bookmarksTree
+    );
 
     
     this._queryURI1 = `place:parent=${this._folderGuids[0]}&queryType=1`;
@@ -92,7 +98,9 @@ var test = {
     });
 
     
-    this._queryURI2 = `place:parent=${this._folderGuids.join("&parent=")}&queryType=1`;
+    this._queryURI2 = `place:parent=${this._folderGuids.join(
+      "&parent="
+    )}&queryType=1`;
     this._queryTitle2 = "query2";
     await PlacesUtils.bookmarks.insert({
       parentGuid: insertedBookmarks[0].guid,
@@ -102,7 +110,8 @@ var test = {
     });
 
     
-    this._queryURI3 = "place:queryType=1&sort=12&maxResults=10&excludeQueries=1";
+    this._queryURI3 =
+      "place:queryType=1&sort=12&maxResults=10&excludeQueries=1";
     this._queryTitle3 = "query3";
     await PlacesUtils.bookmarks.insert({
       parentGuid: insertedBookmarks[0].guid,
@@ -118,19 +127,21 @@ var test = {
     if (addExtras) {
       
       
-      let date = new Date() - (this._extraBookmarksCount * 1000);
+      let date = new Date() - this._extraBookmarksCount * 1000;
       for (let i = 0; i < this._extraBookmarksCount; i++) {
         await PlacesUtils.bookmarks.insert({
           parentGuid: PlacesUtils.bookmarks.menuGuid,
           url: uri("http://aaaa" + i),
-          dateAdded: new Date(date + ((this._extraBookmarksCount - i) * 1000)),
+          dateAdded: new Date(date + (this._extraBookmarksCount - i) * 1000),
         });
       }
     }
 
-    var toolbar =
-      PlacesUtils.getFolderContents(PlacesUtils.bookmarks.toolbarGuid,
-                                    false, true).root;
+    var toolbar = PlacesUtils.getFolderContents(
+      PlacesUtils.bookmarks.toolbarGuid,
+      false,
+      true
+    ).root;
     Assert.equal(toolbar.childCount, 1);
 
     var folderNode = toolbar.getChild(0);

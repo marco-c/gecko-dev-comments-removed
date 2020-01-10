@@ -11,18 +11,21 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = [
-  "LoginImport",
-];
+const EXPORTED_SYMBOLS = ["LoginImport"];
 
 
 
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "Sqlite",
-                               "resource://gre/modules/Sqlite.jsm");
-ChromeUtils.defineModuleGetter(this, "NetUtil",
-                               "resource://gre/modules/NetUtil.jsm");
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Sqlite",
+  "resource://gre/modules/Sqlite.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "NetUtil",
+  "resource://gre/modules/NetUtil.jsm"
+);
 
 
 
@@ -61,8 +64,10 @@ this.LoginImport.prototype = {
     
     
     if (this.store.data.logins.length > 0) {
-      throw new Error("Unable to import saved passwords because some data " +
-                      "has already been imported or saved.");
+      throw new Error(
+        "Unable to import saved passwords because some data " +
+          "has already been imported or saved."
+      );
     }
 
     
@@ -77,8 +82,10 @@ this.LoginImport.prototype = {
       
       
       if (schemaVersion < 3) {
-        throw new Error("Unable to import saved passwords because " +
-                        "the existing profile is too old.");
+        throw new Error(
+          "Unable to import saved passwords because " +
+            "the existing profile is too old."
+        );
       }
 
       let rows = await connection.execute("SELECT * FROM moz_logins");
@@ -108,7 +115,7 @@ this.LoginImport.prototype = {
             timeLastUsed = row.getResultByName("timeLastUsed");
             timePasswordChanged = row.getResultByName("timePasswordChanged");
             timesUsed = row.getResultByName("timesUsed");
-          } catch (ex) { }
+          } catch (ex) {}
 
           
           

@@ -2,7 +2,7 @@
 
 info("starting tests");
 
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
@@ -23,8 +23,10 @@ function setup_mode(mode) {
 
 
 async function test_append(mode) {
-  let path = OS.Path.join(OS.Constants.Path.tmpDir,
-                          "test_osfile_async_append.tmp");
+  let path = OS.Path.join(
+    OS.Constants.Path.tmpDir,
+    "test_osfile_async_append.tmp"
+  );
 
   
   await removeTestFile(path);
@@ -56,8 +58,10 @@ async function test_append(mode) {
 
 
 async function test_no_append(mode) {
-  let path = OS.Path.join(OS.Constants.Path.tmpDir,
-                          "test_osfile_async_noappend.tmp");
+  let path = OS.Path.join(
+    OS.Constants.Path.tmpDir,
+    "test_osfile_async_noappend.tmp"
+  );
 
   
   await removeTestFile(path);
@@ -87,11 +91,7 @@ async function test_no_append(mode) {
   }
 }
 
-var test_flags = [
-  {},
-  {create: true},
-  {trunc: true},
-];
+var test_flags = [{}, { create: true }, { trunc: true }];
 function run_test() {
   do_test_pending();
 

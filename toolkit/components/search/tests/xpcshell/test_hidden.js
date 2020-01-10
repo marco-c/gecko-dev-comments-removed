@@ -7,18 +7,24 @@ add_task(async function setup() {
   configureToLoadJarEngines();
 
   
-  Services.prefs.setCharPref("browser.search.geoip.url",
-                             'data:application/json,{"country_code": "US"}');
+  Services.prefs.setCharPref(
+    "browser.search.geoip.url",
+    'data:application/json,{"country_code": "US"}'
+  );
 
   
-  let url = "data:application/json," + JSON.stringify({
-    "interval": 31536000,
-    "settings": {
-      "searchDefault": "hidden",
-      "visibleDefaultEngines": ["hidden"],
-    },
-  });
-  Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
+  let url =
+    "data:application/json," +
+    JSON.stringify({
+      interval: 31536000,
+      settings: {
+        searchDefault: "hidden",
+        visibleDefaultEngines: ["hidden"],
+      },
+    });
+  Services.prefs
+    .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
+    .setCharPref(kUrlPref, url);
 
   Assert.ok(!Services.search.isInitialized);
 
@@ -52,14 +58,18 @@ add_task(async function invalid_engine() {
   
   
   
-  let url = "data:application/json," + JSON.stringify({
-    "interval": 31536000,
-    "settings": {
-      "searchDefault": "hidden",
-      "visibleDefaultEngines": ["hidden", "bogus"],
-    },
-  });
-  Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
+  let url =
+    "data:application/json," +
+    JSON.stringify({
+      interval: 31536000,
+      settings: {
+        searchDefault: "hidden",
+        visibleDefaultEngines: ["hidden", "bogus"],
+      },
+    });
+  Services.prefs
+    .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
+    .setCharPref(kUrlPref, url);
 
   await asyncReInit({ waitForRegionFetch: true });
 

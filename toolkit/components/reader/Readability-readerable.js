@@ -37,7 +37,10 @@ var REGEXPS = {
 
 function isNodeVisible(node) {
   
-  return (!node.style || node.style.display != "none") && !node.hasAttribute("hidden");
+  return (
+    (!node.style || node.style.display != "none") &&
+    !node.hasAttribute("hidden")
+  );
 }
 
 
@@ -72,12 +75,15 @@ function isProbablyReaderable(doc, isVisible) {
   
   
   return [].some.call(nodes, function(node) {
-    if (!isVisible(node))
+    if (!isVisible(node)) {
       return false;
+    }
 
     var matchString = node.className + " " + node.id;
-    if (REGEXPS.unlikelyCandidates.test(matchString) &&
-        !REGEXPS.okMaybeItsACandidate.test(matchString)) {
+    if (
+      REGEXPS.unlikelyCandidates.test(matchString) &&
+      !REGEXPS.okMaybeItsACandidate.test(matchString)
+    ) {
       return false;
     }
 

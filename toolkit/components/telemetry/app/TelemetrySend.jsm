@@ -11,32 +11,42 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "TelemetrySend",
-];
+var EXPORTED_SYMBOLS = ["TelemetrySend"];
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm", this);
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
-const {ClientID} = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
+const { ClientID } = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm", this);
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 ChromeUtils.import("resource://gre/modules/ServiceRequest.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
 
-ChromeUtils.defineModuleGetter(this, "TelemetryStorage",
-                               "resource://gre/modules/TelemetryStorage.jsm");
-ChromeUtils.defineModuleGetter(this, "TelemetryReportingPolicy",
-                               "resource://gre/modules/TelemetryReportingPolicy.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "Telemetry",
-                                   "@mozilla.org/base/telemetry;1",
-                                   "nsITelemetry");
-ChromeUtils.defineModuleGetter(this, "TelemetryHealthPing",
-                               "resource://gre/modules/HealthPing.jsm");
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryStorage",
+  "resource://gre/modules/TelemetryStorage.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryReportingPolicy",
+  "resource://gre/modules/TelemetryReportingPolicy.jsm"
+);
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "Telemetry",
+  "@mozilla.org/base/telemetry;1",
+  "nsITelemetry"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryHealthPing",
+  "resource://gre/modules/HealthPing.jsm"
+);
 
 const Utils = TelemetryUtils;
 
@@ -53,7 +63,10 @@ const TOPIC_PROFILE_CHANGE_NET_TEARDOWN = "profile-change-net-teardown";
 
 
 
-const IS_UNIFIED_TELEMETRY = Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false);
+const IS_UNIFIED_TELEMETRY = Services.prefs.getBoolPref(
+  TelemetryUtils.Preferences.Unified,
+  false
+);
 
 const MS_IN_A_MINUTE = 60 * 1000;
 
@@ -103,16 +116,20 @@ var Policy = {
   midnightPingFuzzingDelay: () => MIDNIGHT_FUZZING_DELAY_MS,
   pingSubmissionTimeout: () => PING_SUBMIT_TIMEOUT_MS,
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
-  clearSchedulerTickTimeout: (id) => clearTimeout(id),
-  gzipCompressString: (data) => gzipCompressString(data),
+  clearSchedulerTickTimeout: id => clearTimeout(id),
+  gzipCompressString: data => gzipCompressString(data),
 };
 
 
 
 
 function isV4PingFormat(aPing) {
-  return ("id" in aPing) && ("application" in aPing) &&
-         ("version" in aPing) && (aPing.version >= 2);
+  return (
+    "id" in aPing &&
+    "application" in aPing &&
+    "version" in aPing &&
+    aPing.version >= 2
+  );
 }
 
 
@@ -121,7 +138,7 @@ function isV4PingFormat(aPing) {
 
 
 function isOptoutPing(aPing) {
-  return isV4PingFormat(aPing) && (aPing.type == PING_TYPE_OPTOUT);
+  return isV4PingFormat(aPing) && aPing.type == PING_TYPE_OPTOUT;
 }
 
 
@@ -144,20 +161,25 @@ function gzipCompressString(string) {
       
       const chunkSize = 500000;
       for (let offset = 0; offset < result.length; offset += chunkSize) {
-        this.buffer += String.fromCharCode.apply(String, result.slice(offset, offset + chunkSize));
+        this.buffer += String.fromCharCode.apply(
+          String,
+          result.slice(offset, offset + chunkSize)
+        );
       }
     },
   };
 
-  let scs = Cc["@mozilla.org/streamConverters;1"]
-            .getService(Ci.nsIStreamConverterService);
-  let listener = Cc["@mozilla.org/network/stream-loader;1"]
-                .createInstance(Ci.nsIStreamLoader);
+  let scs = Cc["@mozilla.org/streamConverters;1"].getService(
+    Ci.nsIStreamConverterService
+  );
+  let listener = Cc["@mozilla.org/network/stream-loader;1"].createInstance(
+    Ci.nsIStreamLoader
+  );
   listener.init(observer);
-  let converter = scs.asyncConvertData("uncompressed", "gzip",
-                                       listener, null);
-  let stringStream = Cc["@mozilla.org/io/string-input-stream;1"]
-                     .createInstance(Ci.nsIStringInputStream);
+  let converter = scs.asyncConvertData("uncompressed", "gzip", listener, null);
+  let stringStream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
+    Ci.nsIStringInputStream
+  );
   stringStream.data = string;
   converter.onStartRequest(null, null);
   converter.onDataAvailable(null, stringStream, 0, string.length);
@@ -166,7 +188,6 @@ function gzipCompressString(string) {
 }
 
 var TelemetrySend = {
-
   get pendingPingCount() {
     return TelemetrySendImpl.pendingPingCount;
   },
@@ -319,7 +340,10 @@ var CancellableTimeout = {
   promiseWaitOnTimeout(timeoutMs) {
     if (!this._deferred) {
       this._deferred = PromiseUtils.defer();
-      this._timer = Policy.setSchedulerTickTimeout(() => this._onTimeout(), timeoutMs);
+      this._timer = Policy.setSchedulerTickTimeout(
+        () => this._onTimeout(),
+        timeoutMs
+      );
     }
 
     return this._deferred.promise;
@@ -362,7 +386,10 @@ var SendScheduler = {
 
   get _log() {
     if (!this._logger) {
-      this._logger = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX + "Scheduler::");
+      this._logger = Log.repository.getLoggerWithMessagePrefix(
+        LOGGER_NAME,
+        LOGGER_PREFIX + "Scheduler::"
+      );
     }
 
     return this._logger;
@@ -410,7 +437,7 @@ var SendScheduler = {
   isThrottled() {
     const now = Policy.now();
     const nextPingSendTime = this._getNextPingSendTime(now);
-    return (nextPingSendTime > now.getTime());
+    return nextPingSendTime > now.getTime();
   },
 
   waitOnSendTask() {
@@ -418,11 +445,16 @@ var SendScheduler = {
   },
 
   triggerSendingPings(immediately) {
-    this._log.trace("triggerSendingPings - active send task: " + !!this._sendTask + ", immediately: " + immediately);
+    this._log.trace(
+      "triggerSendingPings - active send task: " +
+        !!this._sendTask +
+        ", immediately: " +
+        immediately
+    );
 
     if (!this._sendTask) {
       this._sendTask = this._doSendTask();
-      let clear = () => this._sendTask = null;
+      let clear = () => (this._sendTask = null);
       this._sendTask.then(clear, clear);
     } else if (immediately) {
       CancellableTimeout.cancelTimeout();
@@ -455,7 +487,12 @@ var SendScheduler = {
       
       let pending = TelemetryStorage.getPendingPingList();
       let current = TelemetrySendImpl.getUnpersistedPings();
-      this._log.trace("_doSendTask - pending: " + pending.length + ", current: " + current.length);
+      this._log.trace(
+        "_doSendTask - pending: " +
+          pending.length +
+          ", current: " +
+          current.length
+      );
       
       
       if (!TelemetrySendImpl.sendingEnabled()) {
@@ -463,10 +500,15 @@ var SendScheduler = {
         pending = [];
         current = current.filter(p => isOptoutPing(p));
       }
-      this._log.trace("_doSendTask - can send - pending: " + pending.length + ", current: " + current.length);
+      this._log.trace(
+        "_doSendTask - can send - pending: " +
+          pending.length +
+          ", current: " +
+          current.length
+      );
 
       
-      if ((pending.length == 0) && (current.length == 0)) {
+      if (pending.length == 0 && current.length == 0) {
         this._log.trace("_doSendTask - no pending pings, bailing out");
         this._sendTaskState = "bail out - no pings to send";
         return;
@@ -476,13 +518,18 @@ var SendScheduler = {
       const now = Policy.now();
       if (this.isThrottled()) {
         const nextPingSendTime = this._getNextPingSendTime(now);
-        this._log.trace("_doSendTask - throttled, delaying ping send to " + new Date(nextPingSendTime));
+        this._log.trace(
+          "_doSendTask - throttled, delaying ping send to " +
+            new Date(nextPingSendTime)
+        );
         this._sendTaskState = "wait for throttling to pass";
 
         const delay = nextPingSendTime - now.getTime();
         const cancelled = await CancellableTimeout.promiseWaitOnTimeout(delay);
         if (cancelled) {
-          this._log.trace("_doSendTask - throttling wait was cancelled, resetting backoff timer");
+          this._log.trace(
+            "_doSendTask - throttling wait was cancelled, resetting backoff timer"
+          );
           resetBackoffTimer();
         }
 
@@ -491,16 +538,26 @@ var SendScheduler = {
 
       let sending = pending.slice(0, MAX_PING_SENDS_PER_MINUTE);
       pending = pending.slice(MAX_PING_SENDS_PER_MINUTE);
-      this._log.trace("_doSendTask - triggering sending of " + sending.length + " pings now" +
-                      ", " + pending.length + " pings waiting");
+      this._log.trace(
+        "_doSendTask - triggering sending of " +
+          sending.length +
+          " pings now" +
+          ", " +
+          pending.length +
+          " pings waiting"
+      );
 
       this._sendsFailed = false;
       const sendStartTime = Policy.now();
       this._sendTaskState = "wait on ping sends";
       await TelemetrySendImpl.sendPings(current, sending.map(p => p.id));
-      if (this._shutdown || (TelemetrySend.pendingPingCount == 0)) {
-        this._log.trace("_doSendTask - bailing out after sending, shutdown: " + this._shutdown +
-                        ", pendingPingCount: " + TelemetrySend.pendingPingCount);
+      if (this._shutdown || TelemetrySend.pendingPingCount == 0) {
+        this._log.trace(
+          "_doSendTask - bailing out after sending, shutdown: " +
+            this._shutdown +
+            ", pendingPingCount: " +
+            TelemetrySend.pendingPingCount
+        );
         this._sendTaskState = "bail out - shutdown & pending check after send";
         return;
       }
@@ -513,23 +570,38 @@ var SendScheduler = {
       let nextSendDelay = Math.max(0, SEND_TICK_DELAY - timeSinceLastSend);
 
       if (!this._sendsFailed) {
-        this._log.trace("_doSendTask - had no send failures, resetting backoff timer");
+        this._log.trace(
+          "_doSendTask - had no send failures, resetting backoff timer"
+        );
         resetBackoffTimer();
       } else {
-        const newDelay = Math.min(SEND_MAXIMUM_BACKOFF_DELAY_MS,
-                                  this._backoffDelay * 2);
-        this._log.trace("_doSendTask - had send failures, backing off -" +
-                        " old timeout: " + this._backoffDelay +
-                        ", new timeout: " + newDelay);
+        const newDelay = Math.min(
+          SEND_MAXIMUM_BACKOFF_DELAY_MS,
+          this._backoffDelay * 2
+        );
+        this._log.trace(
+          "_doSendTask - had send failures, backing off -" +
+            " old timeout: " +
+            this._backoffDelay +
+            ", new timeout: " +
+            newDelay
+        );
         this._backoffDelay = newDelay;
         nextSendDelay = this._backoffDelay;
       }
 
-      this._log.trace("_doSendTask - waiting for next send opportunity, timeout is " + nextSendDelay);
+      this._log.trace(
+        "_doSendTask - waiting for next send opportunity, timeout is " +
+          nextSendDelay
+      );
       this._sendTaskState = "wait on next send opportunity";
-      const cancelled = await CancellableTimeout.promiseWaitOnTimeout(nextSendDelay);
+      const cancelled = await CancellableTimeout.promiseWaitOnTimeout(
+        nextSendDelay
+      );
       if (cancelled) {
-        this._log.trace("_doSendTask - batch send wait was cancelled, resetting backoff timer");
+        this._log.trace(
+          "_doSendTask - batch send wait was cancelled, resetting backoff timer"
+        );
         resetBackoffTimer();
       }
     }
@@ -551,14 +623,17 @@ var SendScheduler = {
     
     
 
-    let disableFuzzingDelay = Services.prefs.getBoolPref(TelemetryUtils.Preferences.DisableFuzzingDelay, false);
+    let disableFuzzingDelay = Services.prefs.getBoolPref(
+      TelemetryUtils.Preferences.DisableFuzzingDelay,
+      false
+    );
     if (disableFuzzingDelay) {
       return now.getTime();
     }
 
     const midnight = Utils.truncateToDays(now);
     
-    if ((now.getTime() - midnight.getTime()) > MIDNIGHT_FUZZING_INTERVAL_MS) {
+    if (now.getTime() - midnight.getTime() > MIDNIGHT_FUZZING_INTERVAL_MS) {
       return now.getTime();
     }
 
@@ -576,7 +651,7 @@ var SendScheduler = {
       backoffDelay: this._backoffDelay,
     };
   },
- };
+};
 
 var TelemetrySendImpl = {
   _sendingEnabled: false,
@@ -610,12 +685,18 @@ var TelemetrySendImpl = {
 
   
   get _overrideOfficialCheck() {
-    return Services.prefs.getBoolPref(TelemetryUtils.Preferences.OverrideOfficialCheck, false);
+    return Services.prefs.getBoolPref(
+      TelemetryUtils.Preferences.OverrideOfficialCheck,
+      false
+    );
   },
 
   get _log() {
     if (!this._logger) {
-      this._logger = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX);
+      this._logger = Log.repository.getLoggerWithMessagePrefix(
+        LOGGER_NAME,
+        LOGGER_PREFIX
+      );
     }
 
     return this._logger;
@@ -626,7 +707,9 @@ var TelemetrySendImpl = {
   },
 
   get pendingPingCount() {
-    return TelemetryStorage.getPendingPingList().length + this._currentPings.size;
+    return (
+      TelemetryStorage.getPendingPingList().length + this._currentPings.size
+    );
   },
 
   setTestModeEnabled(testing) {
@@ -652,7 +735,10 @@ var TelemetrySendImpl = {
     Services.obs.addObserver(this, TOPIC_IDLE_DAILY);
     Services.obs.addObserver(this, TOPIC_PROFILE_CHANGE_NET_TEARDOWN);
 
-    this._server = Services.prefs.getStringPref(TelemetryUtils.Preferences.Server, undefined);
+    this._server = Services.prefs.getStringPref(
+      TelemetryUtils.Preferences.Server,
+      undefined
+    );
     this._sendingEnabled = true;
 
     
@@ -690,7 +776,12 @@ var TelemetrySendImpl = {
         const crs = cr.getService(Ci.nsICrashReporter);
 
         let clientId = ClientID.getCachedClientID();
-        let server = this._server || Services.prefs.getStringPref(TelemetryUtils.Preferences.Server, undefined);
+        let server =
+          this._server ||
+          Services.prefs.getStringPref(
+            TelemetryUtils.Preferences.Server,
+            undefined
+          );
 
         if (!this.sendingEnabled() || !TelemetryReportingPolicy.canUpload()) {
           
@@ -723,11 +814,12 @@ var TelemetrySendImpl = {
 
     
     for (let pingInfo of infos) {
-      const ageInDays =
-        Utils.millisecondsToDays(Math.abs(now.getTime() - pingInfo.lastModificationDate));
+      const ageInDays = Utils.millisecondsToDays(
+        Math.abs(now.getTime() - pingInfo.lastModificationDate)
+      );
       Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_AGE").add(ageInDays);
     }
-   },
+  },
 
   async shutdown() {
     this._shutdown = true;
@@ -743,7 +835,10 @@ var TelemetrySendImpl = {
       try {
         Services.obs.removeObserver(this, topic);
       } catch (ex) {
-        this._log.error("shutdown - failed to remove observer for " + topic, ex);
+        this._log.error(
+          "shutdown - failed to remove observer for " + topic,
+          ex
+        );
       }
     }
 
@@ -781,9 +876,7 @@ var TelemetrySendImpl = {
 
     histograms.forEach(h => Telemetry.getHistogramById(h).clear());
 
-    const keyedHistograms = [
-      "TELEMETRY_SEND_FAILURE_TYPE_PER_PING",
-    ];
+    const keyedHistograms = ["TELEMETRY_SEND_FAILURE_TYPE_PER_PING"];
 
     keyedHistograms.forEach(h => Telemetry.getKeyedHistogramById(h).clear());
 
@@ -795,7 +888,9 @@ var TelemetrySendImpl = {
 
   notifyCanUpload() {
     if (!this._sendingEnabled) {
-      this._log.trace("notifyCanUpload - notifying before sending is enabled. Ignoring.");
+      this._log.trace(
+        "notifyCanUpload - notifying before sending is enabled. Ignoring."
+      );
       return Promise.resolve();
     }
     
@@ -813,25 +908,25 @@ var TelemetrySendImpl = {
     };
 
     switch (topic) {
-    case TOPIC_IDLE_DAILY:
-      SendScheduler.triggerSendingPings(true);
-      break;
-    case TOPIC_QUIT_APPLICATION_FORCED:
-      setOSShutdown();
-      break;
-    case TOPIC_QUIT_APPLICATION_GRANTED:
-      if (data == "syncShutdown") {
+      case TOPIC_IDLE_DAILY:
+        SendScheduler.triggerSendingPings(true);
+        break;
+      case TOPIC_QUIT_APPLICATION_FORCED:
         setOSShutdown();
-      }
-      break;
-    case PREF_CHANGED_TOPIC:
-      if (this.OBSERVED_PREFERENCES.includes(data)) {
-        this._annotateCrashReport();
-      }
-      break;
-    case TOPIC_PROFILE_CHANGE_NET_TEARDOWN:
-      this._tooLateToSend = true;
-      break;
+        break;
+      case TOPIC_QUIT_APPLICATION_GRANTED:
+        if (data == "syncShutdown") {
+          setOSShutdown();
+        }
+        break;
+      case PREF_CHANGED_TOPIC:
+        if (this.OBSERVED_PREFERENCES.includes(data)) {
+          this._annotateCrashReport();
+        }
+        break;
+      case TOPIC_PROFILE_CHANGE_NET_TEARDOWN:
+        this._tooLateToSend = true;
+        break;
     }
   },
 
@@ -848,7 +943,9 @@ var TelemetrySendImpl = {
 
 
   _sendWithPingSender(pingId, submissionURL) {
-    this._log.trace("_sendWithPingSender - sending " + pingId + " to " + submissionURL);
+    this._log.trace(
+      "_sendWithPingSender - sending " + pingId + " to " + submissionURL
+    );
     try {
       const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, pingId);
       this.runPingSender(submissionURL, pingPath);
@@ -858,7 +955,12 @@ var TelemetrySendImpl = {
   },
 
   submitPing(ping, options) {
-    this._log.trace("submitPing - ping id: " + ping.id + ", options: " + JSON.stringify(options));
+    this._log.trace(
+      "submitPing - ping id: " +
+        ping.id +
+        ", options: " +
+        JSON.stringify(options)
+    );
 
     if (!this.sendingEnabled(ping)) {
       this._log.trace("submitPing - Telemetry is not allowed to send pings.");
@@ -874,10 +976,12 @@ var TelemetrySendImpl = {
     
     
     
-    if (options.usePingSender &&
-        !this._isOSShutdown &&
-        TelemetryReportingPolicy.canUpload() &&
-        AppConstants.platform != "android") {
+    if (
+      options.usePingSender &&
+      !this._isOSShutdown &&
+      TelemetryReportingPolicy.canUpload() &&
+      AppConstants.platform != "android"
+    ) {
       const url = this._buildSubmissionURL(ping);
       
       return savePing(ping).then(() => this._sendWithPingSender(ping.id, url));
@@ -885,8 +989,11 @@ var TelemetrySendImpl = {
 
     if (!this.canSendNow) {
       
-      this._log.trace("submitPing - can't send ping now, persisting to disk - " +
-                      "canSendNow: " + this.canSendNow);
+      this._log.trace(
+        "submitPing - can't send ping now, persisting to disk - " +
+          "canSendNow: " +
+          this.canSendNow
+      );
       return savePing(ping);
     }
 
@@ -929,7 +1036,9 @@ var TelemetrySendImpl = {
     
     
     if (this._shutdown) {
-      this._log.trace("clearCurrentPings - in shutdown, not spinning SendScheduler up again");
+      this._log.trace(
+        "clearCurrentPings - in shutdown, not spinning SendScheduler up again"
+      );
       return;
     }
 
@@ -941,11 +1050,16 @@ var TelemetrySendImpl = {
   _cancelOutgoingRequests() {
     
     for (let [id, request] of this._pendingPingRequests) {
-      this._log.trace("_cancelOutgoingRequests - aborting ping request for id " + id);
+      this._log.trace(
+        "_cancelOutgoingRequests - aborting ping request for id " + id
+      );
       try {
         request.abort();
       } catch (e) {
-        this._log.error("_cancelOutgoingRequests - failed to abort request for id " + id, e);
+        this._log.error(
+          "_cancelOutgoingRequests - failed to abort request for id " + id,
+          e
+        );
       }
     }
     this._pendingPingRequests.clear();
@@ -968,9 +1082,15 @@ var TelemetrySendImpl = {
         } catch (ex) {
           if (isOptoutPing(ping)) {
             
-            this._log.info("sendPings - optout ping " + ping.id + " not sent, discarding", ex);
+            this._log.info(
+              "sendPings - optout ping " + ping.id + " not sent, discarding",
+              ex
+            );
           } else {
-            this._log.info("sendPings - ping " + ping.id + " not sent, saving to disk", ex);
+            this._log.info(
+              "sendPings - ping " + ping.id + " not sent, saving to disk",
+              ex
+            );
             await savePing(ping);
           }
         } finally {
@@ -983,9 +1103,11 @@ var TelemetrySendImpl = {
     }
 
     if (persistedPingIds.length > 0) {
-      pingSends.push(this._sendPersistedPings(persistedPingIds).catch((ex) => {
-        this._log.info("sendPings - persisted pings not sent", ex);
-      }));
+      pingSends.push(
+        this._sendPersistedPings(persistedPingIds).catch(ex => {
+          this._log.info("sendPings - persisted pings not sent", ex);
+        })
+      );
     }
 
     return Promise.all(pingSends);
@@ -1013,14 +1135,19 @@ var TelemetrySendImpl = {
 
     
     
-    this._log.trace("sendPersistedPings - sending " + pingIds.length + " pings");
+    this._log.trace(
+      "sendPersistedPings - sending " + pingIds.length + " pings"
+    );
     let pingSendPromises = [];
     for (let pingId of pingIds) {
       const id = pingId;
       pingSendPromises.push(
         TelemetryStorage.loadPendingPing(id)
-          .then((data) => this._doPing(data, id, true))
-          .catch(e => this._log.error("sendPersistedPings - failed to send ping " + id, e)));
+          .then(data => this._doPing(data, id, true))
+          .catch(e =>
+            this._log.error("sendPersistedPings - failed to send ping " + id, e)
+          )
+      );
     }
 
     let promise = Promise.all(pingSendPromises);
@@ -1029,7 +1156,12 @@ var TelemetrySendImpl = {
   },
 
   _onPingRequestFinished(success, startTime, id, isPersisted) {
-    this._log.trace("_onPingRequestFinished - success: " + success + ", persisted: " + isPersisted);
+    this._log.trace(
+      "_onPingRequestFinished - success: " +
+        success +
+        ", persisted: " +
+        isPersisted
+    );
 
     let sendId = success ? "TELEMETRY_SEND_SUCCESS" : "TELEMETRY_SEND_FAILURE";
     let hsend = Telemetry.getHistogramById(sendId);
@@ -1050,7 +1182,9 @@ var TelemetrySendImpl = {
   },
 
   _buildSubmissionURL(ping) {
-    const version = isV4PingFormat(ping) ? AppConstants.TELEMETRY_PING_FORMAT_VERSION : 1;
+    const version = isV4PingFormat(ping)
+      ? AppConstants.TELEMETRY_PING_FORMAT_VERSION
+      : 1;
     return this._server + this._getSubmissionPath(ping) + "?v=" + version;
   },
 
@@ -1062,7 +1196,12 @@ var TelemetrySendImpl = {
       
       let app = ping.application;
       pathComponents = [
-        ping.id, ping.type, app.name, app.version, app.channel, app.buildId,
+        ping.id,
+        ping.type,
+        app.name,
+        app.version,
+        app.channel,
+        app.buildId,
       ];
     } else {
       
@@ -1072,14 +1211,20 @@ var TelemetrySendImpl = {
       }
 
       
-      let payload = ("payload" in ping) ? ping.payload : null;
-      if (payload && ("info" in payload)) {
+      let payload = "payload" in ping ? ping.payload : null;
+      if (payload && "info" in payload) {
         let info = ping.payload.info;
-        pathComponents = [ ping.slug, info.reason, info.appName, info.appVersion,
-                           info.appUpdateChannel, info.appBuildID ];
+        pathComponents = [
+          ping.slug,
+          info.reason,
+          info.appName,
+          info.appVersion,
+          info.appUpdateChannel,
+          info.appBuildID,
+        ];
       } else {
         
-        pathComponents = [ ping.slug ];
+        pathComponents = [ping.slug];
       }
     }
 
@@ -1098,17 +1243,25 @@ var TelemetrySendImpl = {
       
       this._log.trace("_doPing - Too late to send ping " + ping.id);
       Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE_TYPE").add("eTooLate");
-      Telemetry.getKeyedHistogramById("TELEMETRY_SEND_FAILURE_TYPE_PER_PING").add(ping.type, "eTooLate");
+      Telemetry.getKeyedHistogramById(
+        "TELEMETRY_SEND_FAILURE_TYPE_PER_PING"
+      ).add(ping.type, "eTooLate");
       return Promise.reject();
     }
 
-    this._log.trace("_doPing - server: " + this._server + ", persisted: " + isPersisted +
-                    ", id: " + id);
+    this._log.trace(
+      "_doPing - server: " +
+        this._server +
+        ", persisted: " +
+        isPersisted +
+        ", id: " +
+        id
+    );
 
     const url = this._buildSubmissionURL(ping);
 
     
-    let request = new ServiceRequest({mozAnon: true});
+    let request = new ServiceRequest({ mozAnon: true });
     request.mozBackgroundRequest = true;
     request.timeout = Policy.pingSubmissionTimeout();
 
@@ -1132,15 +1285,23 @@ var TelemetrySendImpl = {
       };
 
       this._pendingPingRequests.delete(id);
-      this._onPingRequestFinished(success, monotonicStartTime, id, isPersisted)
-        .then(() => onCompletion(),
-              (error) => {
-                this._log.error("_doPing - request success: " + success + ", error: " + error);
-                onCompletion();
-              });
+      this._onPingRequestFinished(
+        success,
+        monotonicStartTime,
+        id,
+        isPersisted
+      ).then(
+        () => onCompletion(),
+        error => {
+          this._log.error(
+            "_doPing - request success: " + success + ", error: " + error
+          );
+          onCompletion();
+        }
+      );
     };
 
-    let errorhandler = (event) => {
+    let errorhandler = event => {
       let failure = event.type;
       if (failure === "error") {
         failure = XHR_ERROR_TYPE[request.errorCode];
@@ -1152,7 +1313,8 @@ var TelemetrySendImpl = {
         
         this.fallbackHttp = false;
 
-        request.channel.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo)
+        request.channel.securityInfo
+          .QueryInterface(Ci.nsITransportSecurityInfo)
           .QueryInterface(Ci.nsISerializable);
         if (request.channel.securityInfo.errorCodeString.startsWith("SEC_")) {
           
@@ -1165,16 +1327,20 @@ var TelemetrySendImpl = {
       }
 
       Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE_TYPE").add(failure);
-      Telemetry.getKeyedHistogramById("TELEMETRY_SEND_FAILURE_TYPE_PER_PING").add(ping.type, failure);
+      Telemetry.getKeyedHistogramById(
+        "TELEMETRY_SEND_FAILURE_TYPE_PER_PING"
+      ).add(ping.type, failure);
 
-      this._log.error("_doPing - error making request to " + url + ": " + failure);
+      this._log.error(
+        "_doPing - error making request to " + url + ": " + failure
+      );
       onRequestFinished(false, event);
     };
     request.onerror = errorhandler;
     request.ontimeout = errorhandler;
     request.onabort = errorhandler;
 
-    request.onload = (event) => {
+    request.onload = event => {
       let status = request.status;
       let statusClass = status - (status % 100);
       let success = false;
@@ -1185,20 +1351,38 @@ var TelemetrySendImpl = {
         success = true;
       } else if (statusClass === 400) {
         
-        this._log.error("_doPing - error submitting to " + url + ", status: " + status
-                        + " - ping request broken?");
-        Telemetry.getHistogramById("TELEMETRY_PING_EVICTED_FOR_SERVER_ERRORS").add();
+        this._log.error(
+          "_doPing - error submitting to " +
+            url +
+            ", status: " +
+            status +
+            " - ping request broken?"
+        );
+        Telemetry.getHistogramById(
+          "TELEMETRY_PING_EVICTED_FOR_SERVER_ERRORS"
+        ).add();
         
         
         success = true;
       } else if (statusClass === 500) {
         
-        this._log.error("_doPing - error submitting to " + url + ", status: " + status
-                        + " - server error, should retry later");
+        this._log.error(
+          "_doPing - error submitting to " +
+            url +
+            ", status: " +
+            status +
+            " - server error, should retry later"
+        );
       } else {
         
-        this._log.error("_doPing - error submitting to " + url + ", status: " + status
-                        + ", type: " + event.type);
+        this._log.error(
+          "_doPing - error submitting to " +
+            url +
+            ", status: " +
+            status +
+            ", type: " +
+            event.type
+        );
       }
 
       onRequestFinished(success, event);
@@ -1207,26 +1391,36 @@ var TelemetrySendImpl = {
     
     let networkPayload = isV4PingFormat(ping) ? ping : ping.payload;
     request.setRequestHeader("Content-Encoding", "gzip");
-    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                    .createInstance(Ci.nsIScriptableUnicodeConverter);
+    let converter = Cc[
+      "@mozilla.org/intl/scriptableunicodeconverter"
+    ].createInstance(Ci.nsIScriptableUnicodeConverter);
     converter.charset = "UTF-8";
     let startTime = Utils.monotonicNow();
-    let utf8Payload = converter.ConvertFromUnicode(JSON.stringify(networkPayload));
+    let utf8Payload = converter.ConvertFromUnicode(
+      JSON.stringify(networkPayload)
+    );
     utf8Payload += converter.Finish();
-    Telemetry.getHistogramById("TELEMETRY_STRINGIFY").add(Utils.monotonicNow() - startTime);
+    Telemetry.getHistogramById("TELEMETRY_STRINGIFY").add(
+      Utils.monotonicNow() - startTime
+    );
 
-    let payloadStream = Cc["@mozilla.org/io/string-input-stream;1"]
-                        .createInstance(Ci.nsIStringInputStream);
+    let payloadStream = Cc[
+      "@mozilla.org/io/string-input-stream;1"
+    ].createInstance(Ci.nsIStringInputStream);
     startTime = Utils.monotonicNow();
     payloadStream.data = Policy.gzipCompressString(utf8Payload);
 
     
     const compressedPingSizeBytes = payloadStream.data.length;
     if (compressedPingSizeBytes > TelemetryStorage.MAXIMUM_PING_SIZE) {
-      this._log.error("_doPing - submitted ping exceeds the size limit, size: " + compressedPingSizeBytes);
+      this._log.error(
+        "_doPing - submitted ping exceeds the size limit, size: " +
+          compressedPingSizeBytes
+      );
       Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_SEND").add();
-      Telemetry.getHistogramById("TELEMETRY_DISCARDED_SEND_PINGS_SIZE_MB")
-               .add(Math.floor(compressedPingSizeBytes / 1024 / 1024));
+      Telemetry.getHistogramById("TELEMETRY_DISCARDED_SEND_PINGS_SIZE_MB").add(
+        Math.floor(compressedPingSizeBytes / 1024 / 1024)
+      );
       
       this._pendingPingRequests.delete(id);
 
@@ -1234,7 +1428,9 @@ var TelemetrySendImpl = {
       return TelemetryStorage.removePendingPing(id);
     }
 
-    Telemetry.getHistogramById("TELEMETRY_COMPRESS").add(Utils.monotonicNow() - startTime);
+    Telemetry.getHistogramById("TELEMETRY_COMPRESS").add(
+      Utils.monotonicNow() - startTime
+    );
     request.sendInputStream(payloadStream);
 
     this.payloadStream = payloadStream;
@@ -1267,9 +1463,11 @@ var TelemetrySendImpl = {
 
   sendingEnabled(ping = null) {
     
-    if (!Telemetry.isOfficialTelemetry &&
-        !this._testMode &&
-        !this._overrideOfficialCheck) {
+    if (
+      !Telemetry.isOfficialTelemetry &&
+      !this._testMode &&
+      !this._overrideOfficialCheck
+    ) {
       return false;
     }
 
@@ -1280,7 +1478,10 @@ var TelemetrySendImpl = {
       if (ping && isOptoutPing(ping)) {
         return true;
       }
-      return Services.prefs.getBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+      return Services.prefs.getBoolPref(
+        TelemetryUtils.Preferences.FhrUploadEnabled,
+        false
+      );
     }
 
     
@@ -1304,9 +1505,14 @@ var TelemetrySendImpl = {
 
   promisePendingPingActivity() {
     this._log.trace("promisePendingPingActivity - Waiting for ping task");
-    let p = Array.from(this._pendingPingActivity, p => p.catch(ex => {
-      this._log.error("promisePendingPingActivity - ping activity had an error", ex);
-    }));
+    let p = Array.from(this._pendingPingActivity, p =>
+      p.catch(ex => {
+        this._log.error(
+          "promisePendingPingActivity - ping activity had an error",
+          ex
+        );
+      })
+    );
     p.push(SendScheduler.waitOnSendTask());
     return Promise.all(p);
   },
@@ -1352,14 +1558,15 @@ var TelemetrySendImpl = {
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
 
-    const exeName = AppConstants.platform === "win" ? "pingsender.exe"
-                                                    : "pingsender";
+    const exeName =
+      AppConstants.platform === "win" ? "pingsender.exe" : "pingsender";
 
     let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     exe.append(exeName);
 
-    let process = Cc["@mozilla.org/process/util;1"]
-                  .createInstance(Ci.nsIProcess);
+    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+      Ci.nsIProcess
+    );
     process.init(exe);
     process.startHidden = true;
     process.noShell = true;

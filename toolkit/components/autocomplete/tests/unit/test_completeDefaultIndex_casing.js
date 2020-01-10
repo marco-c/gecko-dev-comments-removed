@@ -20,7 +20,7 @@ add_test(function test_keyNavigation() {
     Assert.equal(aController.input.textValue, "MOZilla");
     
     
-    aController.handleKeyNavigation(0x27  );
+    aController.handleKeyNavigation(0x27 );
     Assert.equal(aController.input.textValue, "mozilla");
   });
 });
@@ -34,15 +34,18 @@ add_test(function test_handleEnter() {
 });
 
 function doSearch(aSearchString, aResultValue, aOnCompleteCallback) {
-  let search = new AutoCompleteSearchBase("search",
-                                          new AutoCompleteResult([ "mozilla", "toolkit" ], 0));
+  let search = new AutoCompleteSearchBase(
+    "search",
+    new AutoCompleteResult(["mozilla", "toolkit"], 0)
+  );
   registerAutoCompleteSearch(search);
 
-  let controller = Cc["@mozilla.org/autocomplete/controller;1"].
-                   getService(Ci.nsIAutoCompleteController);
+  let controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(
+    Ci.nsIAutoCompleteController
+  );
 
   
-  let input = new AutoCompleteInput([ search.name ]);
+  let input = new AutoCompleteInput([search.name]);
   input.textValue = aSearchString;
 
   

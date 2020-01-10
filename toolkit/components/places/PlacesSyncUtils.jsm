@@ -6,15 +6,19 @@
 
 var EXPORTED_SYMBOLS = ["PlacesSyncUtils"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL", "URLSearchParams"]);
 
-ChromeUtils.defineModuleGetter(this, "Log",
-                               "resource://gre/modules/Log.jsm");
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-                               "resource://gre/modules/PlacesUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "Log", "resource://gre/modules/Log.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
 
 
 
@@ -32,7 +36,7 @@ var PlacesSyncUtils = {
 
 
 
-  * chunkArray(array, chunkLength) {
+  *chunkArray(array, chunkLength) {
     if (!array.length || chunkLength <= 0) {
       return;
     }
@@ -75,7 +79,7 @@ XPCOMUtils.defineLazyGetter(this, "ROOTS", () =>
   Object.keys(ROOT_RECORD_ID_TO_GUID)
 );
 
-const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
+const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
   SYNC_ID_META_KEY: "sync/history/syncId",
   LAST_SYNC_META_KEY: "sync/history/lastSync",
 
@@ -83,8 +87,7 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
 
   getSyncId() {
-    return PlacesUtils.metadata.get(
-      HistorySyncUtils.SYNC_ID_META_KEY, "");
+    return PlacesUtils.metadata.get(HistorySyncUtils.SYNC_ID_META_KEY, "");
   },
 
   
@@ -123,16 +126,22 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
       "HistorySyncUtils: ensureCurrentSyncId",
       async function(db) {
         let existingSyncId = await PlacesUtils.metadata.getWithConnection(
-          db, HistorySyncUtils.SYNC_ID_META_KEY, "");
+          db,
+          HistorySyncUtils.SYNC_ID_META_KEY,
+          ""
+        );
 
         if (existingSyncId == newSyncId) {
-          HistorySyncLog.trace("History sync ID up-to-date",
-                               { existingSyncId });
+          HistorySyncLog.trace("History sync ID up-to-date", {
+            existingSyncId,
+          });
           return;
         }
 
-        HistorySyncLog.info("History sync ID changed; resetting metadata",
-                            { existingSyncId, newSyncId });
+        HistorySyncLog.info("History sync ID changed; resetting metadata", {
+          existingSyncId,
+          newSyncId,
+        });
         await db.executeTransaction(function() {
           return setHistorySyncId(db, newSyncId);
         });
@@ -146,7 +155,9 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
   async getLastSync() {
     let lastSync = await PlacesUtils.metadata.get(
-      HistorySyncUtils.LAST_SYNC_META_KEY, 0);
+      HistorySyncUtils.LAST_SYNC_META_KEY,
+      0
+    );
     return lastSync / 1000;
   },
 
@@ -161,8 +172,10 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
     if (!Number.isInteger(lastSync)) {
       throw new TypeError("Invalid history last sync timestamp");
     }
-    await PlacesUtils.metadata.set(HistorySyncUtils.LAST_SYNC_META_KEY,
-                                   lastSync);
+    await PlacesUtils.metadata.set(
+      HistorySyncUtils.LAST_SYNC_META_KEY,
+      lastSync
+    );
   },
 
   
@@ -184,8 +197,10 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
 
   reset() {
-    return PlacesUtils.metadata.delete(HistorySyncUtils.SYNC_ID_META_KEY,
-      HistorySyncUtils.LAST_SYNC_META_KEY);
+    return PlacesUtils.metadata.delete(
+      HistorySyncUtils.SYNC_ID_META_KEY,
+      HistorySyncUtils.LAST_SYNC_META_KEY
+    );
   },
 
   
@@ -217,7 +232,8 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
     let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(url);
 
     let db = await PlacesUtils.promiseDBConnection();
-    let rows = await db.executeCached(`
+    let rows = await db.executeCached(
+      `
       SELECT frecency
       FROM moz_places
       WHERE url_hash = hash(:url) AND url = :url
@@ -242,15 +258,23 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
     
     let db = await PlacesUtils.promiseDBConnection();
     let nonSyncableGuids = [];
-    for (let [, chunk] of PlacesSyncUtils.chunkArray(guids, SQLITE_MAX_VARIABLE_NUMBER)) {
-      let rows = await db.execute(`
+    for (let [, chunk] of PlacesSyncUtils.chunkArray(
+      guids,
+      SQLITE_MAX_VARIABLE_NUMBER
+    )) {
+      let rows = await db.execute(
+        `
         SELECT DISTINCT p.guid FROM moz_places p
         JOIN moz_historyvisits v ON p.id = v.place_id
         WHERE p.guid IN (${new Array(chunk.length).fill("?").join(",")}) AND
             (p.hidden = 1 OR v.visit_type IN (0,
               ${PlacesUtils.history.TRANSITION_FRAMED_LINK}))
-      `, chunk);
-      nonSyncableGuids = nonSyncableGuids.concat(rows.map(row => row.getResultByName("guid")));
+      `,
+        chunk
+      );
+      nonSyncableGuids = nonSyncableGuids.concat(
+        rows.map(row => row.getResultByName("guid"))
+      );
     }
     return nonSyncableGuids;
   },
@@ -262,16 +286,20 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
 
   changeGuid(uri, guid) {
-      let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(uri);
-      let validatedGuid = PlacesUtils.BOOKMARK_VALIDATORS.guid(guid);
-      return PlacesUtils.withConnectionWrapper("PlacesSyncUtils.history: changeGuid",
-        async function(db) {
-          await db.executeCached(`
+    let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(uri);
+    let validatedGuid = PlacesUtils.BOOKMARK_VALIDATORS.guid(guid);
+    return PlacesUtils.withConnectionWrapper(
+      "PlacesSyncUtils.history: changeGuid",
+      async function(db) {
+        await db.executeCached(
+          `
             UPDATE moz_places
             SET guid = :guid
             WHERE url_hash = hash(:page_url) AND url = :page_url`,
-            {guid: validatedGuid, page_url: canonicalURL.href});
-        });
+          { guid: validatedGuid, page_url: canonicalURL.href }
+        );
+      }
+    );
   },
 
   
@@ -283,12 +311,14 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
   async fetchVisitsForURL(url) {
     let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(url);
     let db = await PlacesUtils.promiseDBConnection();
-    let rows = await db.executeCached(`
+    let rows = await db.executeCached(
+      `
       SELECT visit_type type, visit_date date
       FROM moz_historyvisits
       JOIN moz_places h ON h.id = place_id
       WHERE url_hash = hash(:url) AND url = :url
-      ORDER BY date DESC LIMIT 20`, { url: canonicalURL.href }
+      ORDER BY date DESC LIMIT 20`,
+      { url: canonicalURL.href }
     );
     return rows.map(row => {
       let visitDate = row.getResultByName("date");
@@ -304,18 +334,19 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
 
   async fetchGuidForURL(url) {
-      let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(url);
-      let db = await PlacesUtils.promiseDBConnection();
-      let rows = await db.executeCached(`
+    let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(url);
+    let db = await PlacesUtils.promiseDBConnection();
+    let rows = await db.executeCached(
+      `
         SELECT guid
         FROM moz_places
         WHERE url_hash = hash(:page_url) AND url = :page_url`,
-        { page_url: canonicalURL.href }
-      );
-      if (rows.length == 0) {
-        return null;
-      }
-      return rows[0].getResultByName("guid");
+      { page_url: canonicalURL.href }
+    );
+    if (rows.length == 0) {
+      return null;
+    }
+    return rows[0].getResultByName("guid");
   },
 
   
@@ -326,7 +357,8 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
   async fetchURLInfoForGuid(guid) {
     let db = await PlacesUtils.promiseDBConnection();
-    let rows = await db.executeCached(`
+    let rows = await db.executeCached(
+      `
       SELECT url, IFNULL(title, "") AS title, frecency
       FROM moz_places
       WHERE guid = :guid`,
@@ -355,12 +387,18 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
       throw new Error("The number provided in options.limit is not finite.");
     }
     
-    if (!options.since || Object.prototype.toString.call(options.since) != "[object Date]") {
-      throw new Error("The property since of the options object must be of type Date.");
+    if (
+      !options.since ||
+      Object.prototype.toString.call(options.since) != "[object Date]"
+    ) {
+      throw new Error(
+        "The property since of the options object must be of type Date."
+      );
     }
     let db = await PlacesUtils.promiseDBConnection();
     let sinceInMicroseconds = PlacesUtils.toPRTime(options.since);
-    let rows = await db.executeCached(`
+    let rows = await db.executeCached(
+      `
       SELECT DISTINCT p.url
       FROM moz_places p
       JOIN moz_historyvisits v ON p.id = v.place_id
@@ -374,9 +412,9 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
     );
     return rows.map(row => row.getResultByName("url"));
   },
-});
+}));
 
-const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
+const BookmarkSyncUtils = (PlacesSyncUtils.bookmarks = Object.freeze({
   SYNC_PARENT_ANNO: "sync/parent",
 
   SYNC_ID_META_KEY: "sync/bookmarks/syncId",
@@ -404,8 +442,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
   getSyncId() {
-    return PlacesUtils.metadata.get(
-      BookmarkSyncUtils.SYNC_ID_META_KEY, "");
+    return PlacesUtils.metadata.get(BookmarkSyncUtils.SYNC_ID_META_KEY, "");
   },
 
   
@@ -415,7 +452,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   async shouldWipeRemote() {
     let shouldWipeRemote = await PlacesUtils.metadata.get(
-      BookmarkSyncUtils.WIPE_REMOTE_META_KEY, false);
+      BookmarkSyncUtils.WIPE_REMOTE_META_KEY,
+      false
+    );
     return !!shouldWipeRemote;
   },
 
@@ -435,8 +474,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
         let newSyncId = PlacesUtils.history.makeGuid();
         return db.executeTransaction(async function() {
           await setBookmarksSyncId(db, newSyncId);
-          await resetAllSyncStatuses(db,
-            PlacesUtils.bookmarks.SYNC_STATUS.NEW);
+          await resetAllSyncStatuses(db, PlacesUtils.bookmarks.SYNC_STATUS.NEW);
           return newSyncId;
         });
       }
@@ -465,7 +503,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       "BookmarkSyncUtils: ensureCurrentSyncId",
       async function(db) {
         let existingSyncId = await PlacesUtils.metadata.getWithConnection(
-          db, BookmarkSyncUtils.SYNC_ID_META_KEY, "");
+          db,
+          BookmarkSyncUtils.SYNC_ID_META_KEY,
+          ""
+        );
 
         
         
@@ -477,20 +518,25 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
         
         if (existingSyncId == newSyncId) {
-          BookmarkSyncLog.trace("Bookmarks sync ID up-to-date",
-                                { existingSyncId });
+          BookmarkSyncLog.trace("Bookmarks sync ID up-to-date", {
+            existingSyncId,
+          });
           return;
         }
 
         
         
         
-        BookmarkSyncLog.info("Bookmarks sync ID changed; resetting sync " +
-                             "statuses", { existingSyncId, newSyncId });
+        BookmarkSyncLog.info(
+          "Bookmarks sync ID changed; resetting sync " + "statuses",
+          { existingSyncId, newSyncId }
+        );
         await db.executeTransaction(async function() {
           await setBookmarksSyncId(db, newSyncId);
-          await resetAllSyncStatuses(db,
-            PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN);
+          await resetAllSyncStatuses(
+            db,
+            PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN
+          );
         });
       }
     );
@@ -502,7 +548,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   async getLastSync() {
     let lastSync = await PlacesUtils.metadata.get(
-      BookmarkSyncUtils.LAST_SYNC_META_KEY, 0);
+      BookmarkSyncUtils.LAST_SYNC_META_KEY,
+      0
+    );
     return lastSync / 1000;
   },
 
@@ -517,8 +565,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     if (!Number.isInteger(lastSync)) {
       throw new TypeError("Invalid bookmarks last sync timestamp");
     }
-    await PlacesUtils.metadata.set(BookmarkSyncUtils.LAST_SYNC_META_KEY,
-                                   lastSync);
+    await PlacesUtils.metadata.set(
+      BookmarkSyncUtils.LAST_SYNC_META_KEY,
+      lastSync
+    );
   },
 
   
@@ -550,31 +600,39 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
   async resetSyncMetadata(db, source) {
-    if (![ PlacesUtils.bookmarks.SOURCES.RESTORE,
-           PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
-           PlacesUtils.bookmarks.SOURCES.SYNC ].includes(source)) {
+    if (
+      ![
+        PlacesUtils.bookmarks.SOURCES.RESTORE,
+        PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+        PlacesUtils.bookmarks.SOURCES.SYNC,
+      ].includes(source)
+    ) {
       return;
     }
 
     
-    await PlacesUtils.metadata.deleteWithConnection(db,
+    await PlacesUtils.metadata.deleteWithConnection(
+      db,
       BookmarkSyncUtils.SYNC_ID_META_KEY,
-      BookmarkSyncUtils.LAST_SYNC_META_KEY);
+      BookmarkSyncUtils.LAST_SYNC_META_KEY
+    );
 
     
     
     
     
-    await PlacesUtils.metadata.setWithConnection(db,
+    await PlacesUtils.metadata.setWithConnection(
+      db,
       BookmarkSyncUtils.WIPE_REMOTE_META_KEY,
-      source == PlacesUtils.bookmarks.SOURCES.RESTORE);
+      source == PlacesUtils.bookmarks.SOURCES.RESTORE
+    );
 
     
     
     let syncStatus =
-      source == PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP ?
-      PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN :
-      PlacesUtils.bookmarks.SYNC_STATUS.NEW;
+      source == PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP
+        ? PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN
+        : PlacesUtils.bookmarks.SYNC_STATUS.NEW;
     await resetAllSyncStatuses(db, syncStatus);
   },
 
@@ -602,11 +660,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     let parentGuid = BookmarkSyncUtils.recordIdToGuid(parentRecordId);
 
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: fetchChildRecordIds", async function(db) {
+      "BookmarkSyncUtils: fetchChildRecordIds",
+      async function(db) {
         let childGuids = await fetchChildGuids(db, parentGuid);
-        return childGuids.map(guid =>
-          BookmarkSyncUtils.guidToRecordId(guid)
-        );
+        return childGuids.map(guid => BookmarkSyncUtils.guidToRecordId(guid));
       }
     );
   },
@@ -622,9 +679,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
   fetchRecordIdsForRepair(requestedRecordIds) {
-    let requestedGuids = requestedRecordIds.map(BookmarkSyncUtils.recordIdToGuid);
+    let requestedGuids = requestedRecordIds.map(
+      BookmarkSyncUtils.recordIdToGuid
+    );
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: fetchRecordIdsForRepair", async function(db) {
+      "BookmarkSyncUtils: fetchRecordIdsForRepair",
+      async function(db) {
         let rows = await db.executeCached(`
           WITH RECURSIVE
           syncedItems(id) AS (
@@ -637,7 +697,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           ),
           descendants(id) AS (
             SELECT b.id FROM moz_bookmarks b
-            WHERE b.guid IN (${requestedGuids.map(guid => JSON.stringify(guid)).join(",")})
+            WHERE b.guid IN (${requestedGuids
+              .map(guid => JSON.stringify(guid))
+              .join(",")})
             UNION ALL
             SELECT b.id FROM moz_bookmarks b
             JOIN descendants d ON d.id = b.parent
@@ -648,7 +710,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           LEFT JOIN syncedItems s ON s.id = d.id
           `);
         return rows.map(row => {
-          let recordId = BookmarkSyncUtils.guidToRecordId(row.getResultByName("guid"));
+          let recordId = BookmarkSyncUtils.guidToRecordId(
+            row.getResultByName("guid")
+          );
           let syncable = !!row.getResultByName("syncable");
           return { recordId, syncable };
         });
@@ -666,7 +730,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   migrateOldTrackerEntries(entries) {
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: migrateOldTrackerEntries", function(db) {
+      "BookmarkSyncUtils: migrateOldTrackerEntries",
+      function(db) {
         return db.executeTransaction(async function() {
           
           
@@ -678,7 +743,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           
           
           
-          await db.executeCached(`
+          await db.executeCached(
+            `
             WITH RECURSIVE
             syncedItems(id) AS (
               SELECT b.id FROM moz_bookmarks b
@@ -692,7 +758,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
               syncStatus = :syncStatus,
               syncChangeCounter = 0
             WHERE id IN syncedItems`,
-            { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
+            { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL }
+          );
 
           await db.executeCached(`DELETE FROM moz_bookmarks_deleted`);
 
@@ -705,16 +772,21 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
             for (let { recordId, modified } of entries) {
               let guid = BookmarkSyncUtils.recordIdToGuid(recordId);
               if (!PlacesUtils.isValidGuid(guid)) {
-                BookmarkSyncLog.warn(`migrateOldTrackerEntries: Ignoring ` +
-                                     `change for invalid item ${guid}`);
+                BookmarkSyncLog.warn(
+                  `migrateOldTrackerEntries: Ignoring ` +
+                    `change for invalid item ${guid}`
+                );
                 continue;
               }
-              let time = PlacesUtils.toPRTime(Number.isFinite(modified) ?
-                                              modified : Date.now());
-              await db.executeCached(`
+              let time = PlacesUtils.toPRTime(
+                Number.isFinite(modified) ? modified : Date.now()
+              );
+              await db.executeCached(
+                `
                 INSERT OR IGNORE INTO moz_bookmarks_tracked (guid, time)
                 VALUES (:guid, :time)`,
-                { guid, time });
+                { guid, time }
+              );
             }
 
             
@@ -770,9 +842,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       
       return undefined;
     }
-    let orderedChildrenGuids = childRecordIds.map(BookmarkSyncUtils.recordIdToGuid);
-    return PlacesUtils.bookmarks.reorder(parentGuid, orderedChildrenGuids,
-                                         { source: SOURCE_SYNC });
+    let orderedChildrenGuids = childRecordIds.map(
+      BookmarkSyncUtils.recordIdToGuid
+    );
+    return PlacesUtils.bookmarks.reorder(parentGuid, orderedChildrenGuids, {
+      source: SOURCE_SYNC,
+    });
   },
 
   
@@ -780,7 +855,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   havePendingChanges() {
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: havePendingChanges", async function(db) {
+      "BookmarkSyncUtils: havePendingChanges",
+      async function(db) {
         let rows = await db.executeCached(`
           WITH RECURSIVE
           syncedItems(id, guid, syncChangeCounter) AS (
@@ -816,7 +892,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   pullChanges() {
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: pullChanges", pullSyncChanges);
+      "BookmarkSyncUtils: pullChanges",
+      pullSyncChanges
+    );
   },
 
   
@@ -847,7 +925,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   pushChanges(changeRecords) {
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: pushChanges", async function(db) {
+      "BookmarkSyncUtils: pushChanges",
+      async function(db) {
         let skippedCount = 0;
         let weakCount = 0;
         let updateParams = [];
@@ -857,7 +936,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           
           let changeRecord = validateChangeRecord(
             "BookmarkSyncUtils: pushChanges",
-            changeRecords[recordId], {
+            changeRecords[recordId],
+            {
               tombstone: { required: true },
               counter: { required: true },
               synced: { required: true },
@@ -897,12 +977,14 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
         if (updateParams.length || tombstoneGuidsToRemove.length) {
           await db.executeTransaction(async function() {
             if (updateParams.length) {
-              await db.executeCached(`
+              await db.executeCached(
+                `
                 UPDATE moz_bookmarks
                 SET syncChangeCounter = MAX(syncChangeCounter - :syncChangeDelta, 0),
                     syncStatus = :syncStatus
                 WHERE guid = :guid`,
-                updateParams);
+                updateParams
+              );
               
               
               
@@ -913,10 +995,11 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           });
         }
 
-        BookmarkSyncLog.debug(`pushChanges: Processed change records`,
-                              { weak: weakCount,
-                                skipped: skippedCount,
-                                updated: updateParams.length });
+        BookmarkSyncLog.debug(`pushChanges: Processed change records`, {
+          weak: weakCount,
+          skipped: skippedCount,
+          updated: updateParams.length,
+        });
       }
     );
   },
@@ -945,7 +1028,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       return null;
     }
 
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: remove",
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: remove",
       async function(db) {
         let folderGuids = [];
         for (let recordId of recordIds) {
@@ -966,8 +1050,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           }
           let wasRemoved = await deleteSyncedAtom(bookmarkItem);
           if (wasRemoved) {
-             BookmarkSyncLog.trace(`remove: Removed item ${guid} with ` +
-                                   `kind ${kind}`);
+            BookmarkSyncLog.trace(
+              `remove: Removed item ${guid} with ` + `kind ${kind}`
+            );
           }
         }
 
@@ -979,7 +1064,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           }
           let wasRemoved = await deleteSyncedFolder(db, bookmarkItem);
           if (wasRemoved) {
-            BookmarkSyncLog.trace(`remove: Removed folder ${bookmarkItem.guid}`);
+            BookmarkSyncLog.trace(
+              `remove: Removed folder ${bookmarkItem.guid}`
+            );
           }
         }
 
@@ -1012,7 +1099,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     if (!bookmarkItem) {
       return null;
     }
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: touch",
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: touch",
       async function(db) {
         let kind = await getKindForItem(db, bookmarkItem);
         if (kind == BookmarkSyncUtils.KINDS.FOLDER) {
@@ -1059,7 +1147,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   reset() {
     return PlacesUtils.withConnectionWrapper(
-      "BookmarkSyncUtils: reset", function(db) {
+      "BookmarkSyncUtils: reset",
+      function(db) {
         return db.executeTransaction(async function() {
           await BookmarkSyncUtils.resetSyncMetadata(db, SOURCE_SYNC);
         });
@@ -1094,9 +1183,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.recordId(remoteParentRecordId);
 
     return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: dedupe", db =>
-      dedupeSyncBookmark(db, BookmarkSyncUtils.recordIdToGuid(localRecordId),
-                         BookmarkSyncUtils.recordIdToGuid(remoteRecordId),
-                         BookmarkSyncUtils.recordIdToGuid(remoteParentRecordId))
+      dedupeSyncBookmark(
+        db,
+        BookmarkSyncUtils.recordIdToGuid(localRecordId),
+        BookmarkSyncUtils.recordIdToGuid(remoteRecordId),
+        BookmarkSyncUtils.recordIdToGuid(remoteParentRecordId)
+      )
     );
   },
 
@@ -1123,11 +1215,15 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
   update(info) {
-    let updateInfo = validateSyncBookmarkObject("BookmarkSyncUtils: update",
-      info, { recordId: { required: true } });
+    let updateInfo = validateSyncBookmarkObject(
+      "BookmarkSyncUtils: update",
+      info,
+      { recordId: { required: true } }
+    );
 
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: update",
-      db => updateSyncBookmark(db, updateInfo));
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: update", db =>
+      updateSyncBookmark(db, updateInfo)
+    );
   },
 
   
@@ -1156,8 +1252,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   insert(info) {
     let insertInfo = validateNewBookmark("BookmarkSyncUtils: insert", info);
 
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: insert",
-      db => insertSyncBookmark(db, insertInfo));
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: insert", db =>
+      insertSyncBookmark(db, insertInfo)
+    );
   },
 
   
@@ -1187,7 +1284,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     if (!bookmarkItem) {
       return null;
     }
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: fetch",
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: fetch",
       async function(db) {
         
         
@@ -1219,7 +1317,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
         
         
         if (bookmarkItem.parentGuid) {
-          let parent = await PlacesUtils.bookmarks.fetch(bookmarkItem.parentGuid);
+          let parent = await PlacesUtils.bookmarks.fetch(
+            bookmarkItem.parentGuid
+          );
           item.parentTitle = parent.title || "";
         }
 
@@ -1274,24 +1374,34 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     if (!url || !syncChangeDelta) {
       return Promise.resolve();
     }
-    return db.executeCached(`
+    return db.executeCached(
+      `
       UPDATE moz_bookmarks
         SET syncChangeCounter = syncChangeCounter + :syncChangeDelta
       WHERE type = :type AND
             fk = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND
                   url = :url)`,
-      { syncChangeDelta, type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-        url: url.href });
+      {
+        syncChangeDelta,
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        url: url.href,
+      }
+    );
   },
 
   async removeLivemark(livemarkInfo) {
     let info = validateSyncBookmarkObject(
       "BookmarkSyncUtils: removeLivemark",
       livemarkInfo,
-      { kind: { required: true,
-                validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK },
+      {
+        kind: {
+          required: true,
+          validIf: b => b.kind == BookmarkSyncUtils.KINDS.LIVEMARK,
+        },
         recordId: { required: true },
-        parentRecordId: { required: true } });
+        parentRecordId: { required: true },
+      }
+    );
 
     let guid = BookmarkSyncUtils.recordIdToGuid(info.recordId);
     let parentGuid = BookmarkSyncUtils.recordIdToGuid(info.parentRecordId);
@@ -1304,16 +1414,20 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           
           
           await db.executeTransaction(async function() {
-            await db.executeCached(`
+            await db.executeCached(
+              `
               UPDATE moz_bookmarks SET
                 syncChangeCounter = syncChangeCounter + 1
               WHERE guid = :parentGuid`,
-              { parentGuid });
+              { parentGuid }
+            );
 
-            await db.executeCached(`
+            await db.executeCached(
+              `
               INSERT OR IGNORE INTO moz_bookmarks_deleted (guid, dateRemoved)
               VALUES (:guid, ${PlacesUtils.toPRTime(Date.now())})`,
-              { guid });
+              { guid }
+            );
           });
         } else {
           await PlacesUtils.bookmarks.remove({
@@ -1321,7 +1435,9 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
             
             
             
-            source: PlacesUtils.bookmarks.SOURCES.SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
+            source:
+              PlacesUtils.bookmarks.SOURCES
+                .SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
           });
         }
 
@@ -1335,8 +1451,14 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  ratchetTimestampBackwards(existingMillis, serverMillis, lowerBound = BookmarkSyncUtils.EARLIEST_BOOKMARK_TIMESTAMP) {
-    const possible = [+existingMillis, +serverMillis].filter(n => !isNaN(n) && n > lowerBound);
+  ratchetTimestampBackwards(
+    existingMillis,
+    serverMillis,
+    lowerBound = BookmarkSyncUtils.EARLIEST_BOOKMARK_TIMESTAMP
+  ) {
+    const possible = [+existingMillis, +serverMillis].filter(
+      n => !isNaN(n) && n > lowerBound
+    );
     if (!possible.length) {
       return 0;
     }
@@ -1357,7 +1479,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   async ensureMobileQuery() {
     let db = await PlacesUtils.promiseDBConnection();
 
-    let mobileChildGuids = await fetchChildGuids(db, PlacesUtils.bookmarks.mobileGuid);
+    let mobileChildGuids = await fetchChildGuids(
+      db,
+      PlacesUtils.bookmarks.mobileGuid
+    );
     let hasMobileBookmarks = mobileChildGuids.length > 0;
 
     Services.prefs.setBoolPref(MOBILE_BOOKMARKS_PREF, hasMobileBookmarks);
@@ -1371,7 +1496,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     let db = await PlacesUtils.promiseDBConnection();
     return fetchGuidsWithAnno(db, anno, val);
   },
-});
+}));
 
 XPCOMUtils.defineLazyGetter(this, "HistorySyncLog", () => {
   return Log.repository.getLogger("Sync.Engine.History.HistorySyncUtils");
@@ -1384,21 +1509,30 @@ XPCOMUtils.defineLazyGetter(this, "BookmarkSyncLog", () => {
 });
 
 function validateSyncBookmarkObject(name, input, behavior) {
-  return PlacesUtils.validateItemProperties(name,
-    PlacesUtils.SYNC_BOOKMARK_VALIDATORS, input, behavior);
+  return PlacesUtils.validateItemProperties(
+    name,
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS,
+    input,
+    behavior
+  );
 }
 
 
 
 function validateChangeRecord(name, changeRecord, behavior) {
-  return PlacesUtils.validateItemProperties(name,
-    PlacesUtils.SYNC_CHANGE_RECORD_VALIDATORS, changeRecord, behavior);
+  return PlacesUtils.validateItemProperties(
+    name,
+    PlacesUtils.SYNC_CHANGE_RECORD_VALIDATORS,
+    changeRecord,
+    behavior
+  );
 }
 
 
 
 var fetchChildGuids = async function(db, parentGuid) {
-  let rows = await db.executeCached(`
+  let rows = await db.executeCached(
+    `
     SELECT guid
     FROM moz_bookmarks
     WHERE parent = (
@@ -1428,8 +1562,12 @@ var GUIDMissing = async function(guid) {
 
 
 function updateTagQueryFolder(db, info) {
-  if (info.kind != BookmarkSyncUtils.KINDS.QUERY || !info.folder || !info.url ||
-      info.url.protocol != "place:") {
+  if (
+    info.kind != BookmarkSyncUtils.KINDS.QUERY ||
+    !info.folder ||
+    !info.url ||
+    info.url.protocol != "place:"
+  ) {
     return info;
   }
 
@@ -1439,7 +1577,9 @@ function updateTagQueryFolder(db, info) {
     return info;
   }
 
-  BookmarkSyncLog.debug(`updateTagQueryFolder: Tag query folder: ${info.folder}`);
+  BookmarkSyncLog.debug(
+    `updateTagQueryFolder: Tag query folder: ${info.folder}`
+  );
 
   
   params.delete("queryType");
@@ -1453,28 +1593,40 @@ function updateTagQueryFolder(db, info) {
 async function annotateOrphan(item, requestedParentRecordId) {
   let guid = BookmarkSyncUtils.recordIdToGuid(item.recordId);
   let itemId = await PlacesUtils.promiseItemId(guid);
-  PlacesUtils.annotations.setItemAnnotation(itemId,
-    BookmarkSyncUtils.SYNC_PARENT_ANNO, requestedParentRecordId, 0,
+  PlacesUtils.annotations.setItemAnnotation(
+    itemId,
+    BookmarkSyncUtils.SYNC_PARENT_ANNO,
+    requestedParentRecordId,
+    0,
     PlacesUtils.annotations.EXPIRE_NEVER,
-    SOURCE_SYNC);
+    SOURCE_SYNC
+  );
 }
 
 var reparentOrphans = async function(db, item) {
   if (!item.kind || item.kind != BookmarkSyncUtils.KINDS.FOLDER) {
     return;
   }
-  let orphanGuids = await fetchGuidsWithAnno(db,
-                                             BookmarkSyncUtils.SYNC_PARENT_ANNO,
-                                             item.recordId);
+  let orphanGuids = await fetchGuidsWithAnno(
+    db,
+    BookmarkSyncUtils.SYNC_PARENT_ANNO,
+    item.recordId
+  );
   let folderGuid = BookmarkSyncUtils.recordIdToGuid(item.recordId);
-  BookmarkSyncLog.debug(`reparentOrphans: Reparenting ${
-    JSON.stringify(orphanGuids)} to ${item.recordId}`);
+  BookmarkSyncLog.debug(
+    `reparentOrphans: Reparenting ${JSON.stringify(orphanGuids)} to ${
+      item.recordId
+    }`
+  );
   for (let i = 0; i < orphanGuids.length; ++i) {
     try {
       
       
-      BookmarkSyncLog.trace(`reparentOrphans: Attempting to move item ${
-        orphanGuids[i]} to new parent ${item.recordId}`);
+      BookmarkSyncLog.trace(
+        `reparentOrphans: Attempting to move item ${
+          orphanGuids[i]
+        } to new parent ${item.recordId}`
+      );
       await PlacesUtils.bookmarks.update({
         guid: orphanGuids[i],
         parentGuid: folderGuid,
@@ -1482,8 +1634,12 @@ var reparentOrphans = async function(db, item) {
         source: SOURCE_SYNC,
       });
     } catch (ex) {
-      BookmarkSyncLog.error(`reparentOrphans: Failed to reparent item ${
-        orphanGuids[i]} to ${item.recordId}`, ex);
+      BookmarkSyncLog.error(
+        `reparentOrphans: Failed to reparent item ${orphanGuids[i]} to ${
+          item.recordId
+        }`,
+        ex
+      );
     }
   }
 };
@@ -1491,18 +1647,22 @@ var reparentOrphans = async function(db, item) {
 
 async function insertSyncBookmark(db, insertInfo) {
   let requestedParentRecordId = insertInfo.parentRecordId;
-  let requestedParentGuid =
-    BookmarkSyncUtils.recordIdToGuid(insertInfo.parentRecordId);
+  let requestedParentGuid = BookmarkSyncUtils.recordIdToGuid(
+    insertInfo.parentRecordId
+  );
   let isOrphan = await GUIDMissing(requestedParentGuid);
 
   
   if (!isOrphan) {
-    BookmarkSyncLog.debug(`insertSyncBookmark: Item ${
-      insertInfo.recordId} is not an orphan`);
+    BookmarkSyncLog.debug(
+      `insertSyncBookmark: Item ${insertInfo.recordId} is not an orphan`
+    );
   } else {
-    BookmarkSyncLog.debug(`insertSyncBookmark: Item ${
-      insertInfo.recordId} is an orphan: parent ${
-      insertInfo.parentRecordId} doesn't exist; reparenting to unfiled`);
+    BookmarkSyncLog.debug(
+      `insertSyncBookmark: Item ${insertInfo.recordId} is an orphan: parent ${
+        insertInfo.parentRecordId
+      } doesn't exist; reparenting to unfiled`
+    );
     insertInfo.parentRecordId = "unfiled";
   }
 
@@ -1536,7 +1696,8 @@ async function insertSyncBookmark(db, insertInfo) {
 
 function removeConflictingKeywords(bookmarkURL, newKeyword) {
   return PlacesUtils.withConnectionWrapper(
-    "BookmarkSyncUtils: removeConflictingKeywords", async function(db) {
+    "BookmarkSyncUtils: removeConflictingKeywords",
+    async function(db) {
       let entryForURL = await PlacesUtils.keywords.fetch({
         url: bookmarkURL.href,
       });
@@ -1548,7 +1709,10 @@ function removeConflictingKeywords(bookmarkURL, newKeyword) {
         
         
         await BookmarkSyncUtils.addSyncChangesForBookmarksWithURL(
-          db, entryForURL.url, 1);
+          db,
+          entryForURL.url,
+          1
+        );
       }
       if (!newKeyword) {
         return;
@@ -1562,7 +1726,10 @@ function removeConflictingKeywords(bookmarkURL, newKeyword) {
           source: SOURCE_SYNC,
         });
         await BookmarkSyncUtils.addSyncChangesForBookmarksWithURL(
-          db, entryForNewKeyword.url, 1);
+          db,
+          entryForNewKeyword.url,
+          1
+        );
       }
     }
   );
@@ -1576,8 +1743,10 @@ async function insertBookmarkMetadata(db, bookmarkItem, insertInfo) {
   try {
     newItem.tags = tagItem(bookmarkItem, insertInfo.tags);
   } catch (ex) {
-    BookmarkSyncLog.warn(`insertBookmarkMetadata: Error tagging item ${
-      insertInfo.recordId}`, ex);
+    BookmarkSyncLog.warn(
+      `insertBookmarkMetadata: Error tagging item ${insertInfo.recordId}`,
+      ex
+    );
   }
 
   if (insertInfo.keyword) {
@@ -1600,9 +1769,9 @@ async function getKindForItem(db, item) {
       return BookmarkSyncUtils.KINDS.FOLDER;
     }
     case PlacesUtils.bookmarks.TYPE_BOOKMARK:
-      return item.url.protocol == "place:" ?
-             BookmarkSyncUtils.KINDS.QUERY :
-             BookmarkSyncUtils.KINDS.BOOKMARK;
+      return item.url.protocol == "place:"
+        ? BookmarkSyncUtils.KINDS.QUERY
+        : BookmarkSyncUtils.KINDS.BOOKMARK;
 
     case PlacesUtils.bookmarks.TYPE_SEPARATOR:
       return BookmarkSyncUtils.KINDS.SEPARATOR;
@@ -1631,13 +1800,16 @@ async function updateSyncBookmark(db, updateInfo) {
   let guid = BookmarkSyncUtils.recordIdToGuid(updateInfo.recordId);
   let oldBookmarkItem = await PlacesUtils.bookmarks.fetch(guid);
   if (!oldBookmarkItem) {
-    throw new Error(`Bookmark with record ID ${
-      updateInfo.recordId} does not exist`);
+    throw new Error(
+      `Bookmark with record ID ${updateInfo.recordId} does not exist`
+    );
   }
 
   if (updateInfo.hasOwnProperty("dateAdded")) {
     let newDateAdded = BookmarkSyncUtils.ratchetTimestampBackwards(
-      oldBookmarkItem.dateAdded, updateInfo.dateAdded);
+      oldBookmarkItem.dateAdded,
+      updateInfo.dateAdded
+    );
     if (!newDateAdded || newDateAdded === oldBookmarkItem.dateAdded) {
       delete updateInfo.dateAdded;
     } else {
@@ -1653,10 +1825,11 @@ async function updateSyncBookmark(db, updateInfo) {
     shouldReinsert = true;
     if (BookmarkSyncLog.level <= Log.Level.Warn) {
       let oldRecordId = BookmarkSyncUtils.guidToRecordId(oldBookmarkItem.guid);
-      BookmarkSyncLog.warn(`updateSyncBookmark: Local ${
-        oldRecordId} kind = ${oldKind}; remote ${
-        updateInfo.recordId} kind = ${
-        updateInfo.kind}. Deleting and recreating`);
+      BookmarkSyncLog.warn(
+        `updateSyncBookmark: Local ${oldRecordId} kind = ${oldKind}; remote ${
+          updateInfo.recordId
+        } kind = ${updateInfo.kind}. Deleting and recreating`
+      );
     }
   }
 
@@ -1664,8 +1837,10 @@ async function updateSyncBookmark(db, updateInfo) {
     if (!updateInfo.hasOwnProperty("dateAdded")) {
       updateInfo.dateAdded = oldBookmarkItem.dateAdded.getTime();
     }
-    let newInfo = validateNewBookmark("BookmarkSyncUtils: reinsert",
-                                      updateInfo);
+    let newInfo = validateNewBookmark(
+      "BookmarkSyncUtils: reinsert",
+      updateInfo
+    );
     await PlacesUtils.bookmarks.remove({
       guid,
       source: SOURCE_SYNC,
@@ -1679,28 +1854,34 @@ async function updateSyncBookmark(db, updateInfo) {
     return insertSyncBookmark(db, newInfo);
   }
 
-  let isOrphan = false, requestedParentRecordId;
+  let isOrphan = false,
+    requestedParentRecordId;
   if (updateInfo.hasOwnProperty("parentRecordId")) {
     requestedParentRecordId = updateInfo.parentRecordId;
-    let oldParentRecordId =
-      BookmarkSyncUtils.guidToRecordId(oldBookmarkItem.parentGuid);
+    let oldParentRecordId = BookmarkSyncUtils.guidToRecordId(
+      oldBookmarkItem.parentGuid
+    );
     if (requestedParentRecordId != oldParentRecordId) {
       if (PlacesUtils.isRootItem(oldBookmarkItem.guid)) {
         throw new Error(`Cannot move Places root ${oldBookmarkItem.guid}`);
       }
-      let requestedParentGuid =
-        BookmarkSyncUtils.recordIdToGuid(requestedParentRecordId);
+      let requestedParentGuid = BookmarkSyncUtils.recordIdToGuid(
+        requestedParentRecordId
+      );
       isOrphan = await GUIDMissing(requestedParentGuid);
       if (!isOrphan) {
-        BookmarkSyncLog.debug(`updateSyncBookmark: Item ${
-          updateInfo.recordId} is not an orphan`);
+        BookmarkSyncLog.debug(
+          `updateSyncBookmark: Item ${updateInfo.recordId} is not an orphan`
+        );
       } else {
         
         
         
-        BookmarkSyncLog.trace(`updateSyncBookmark: Item ${
-          updateInfo.recordId} is an orphan: could not find parent ${
-          requestedParentRecordId}`);
+        BookmarkSyncLog.trace(
+          `updateSyncBookmark: Item ${
+            updateInfo.recordId
+          } is an orphan: could not find parent ${requestedParentRecordId}`
+        );
         delete updateInfo.parentRecordId;
       }
     } else {
@@ -1713,11 +1894,15 @@ async function updateSyncBookmark(db, updateInfo) {
   updateInfo = await updateTagQueryFolder(db, updateInfo);
 
   let bookmarkInfo = syncBookmarkToPlacesBookmark(updateInfo);
-  let newBookmarkItem = shouldUpdateBookmark(bookmarkInfo) ?
-                        await PlacesUtils.bookmarks.update(bookmarkInfo) :
-                        oldBookmarkItem;
-  let newItem = await updateBookmarkMetadata(db, oldBookmarkItem,
-                                             newBookmarkItem, updateInfo);
+  let newBookmarkItem = shouldUpdateBookmark(bookmarkInfo)
+    ? await PlacesUtils.bookmarks.update(bookmarkInfo)
+    : oldBookmarkItem;
+  let newItem = await updateBookmarkMetadata(
+    db,
+    oldBookmarkItem,
+    newBookmarkItem,
+    updateInfo
+  );
 
   
   if (isOrphan) {
@@ -1732,16 +1917,21 @@ async function updateSyncBookmark(db, updateInfo) {
 
 
 
-async function updateBookmarkMetadata(db, oldBookmarkItem,
-                                      newBookmarkItem,
-                                      updateInfo) {
+async function updateBookmarkMetadata(
+  db,
+  oldBookmarkItem,
+  newBookmarkItem,
+  updateInfo
+) {
   let newItem = await placesBookmarkToSyncBookmark(db, newBookmarkItem);
 
   try {
     newItem.tags = tagItem(newBookmarkItem, updateInfo.tags);
   } catch (ex) {
-    BookmarkSyncLog.warn(`updateBookmarkMetadata: Error tagging item ${
-      updateInfo.recordId}`, ex);
+    BookmarkSyncLog.warn(
+      `updateBookmarkMetadata: Error tagging item ${updateInfo.recordId}`,
+      ex
+    );
   }
 
   if (updateInfo.hasOwnProperty("keyword")) {
@@ -1761,38 +1951,62 @@ async function updateBookmarkMetadata(db, oldBookmarkItem,
 }
 
 function validateNewBookmark(name, info) {
-  let insertInfo = validateSyncBookmarkObject(name, info,
-    { kind: { required: true },
-      recordId: { required: true },
-      url: { requiredIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                                BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind),
-            validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                            BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) },
-      parentRecordId: { required: true },
-      title: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                               BookmarkSyncUtils.KINDS.QUERY,
-                               BookmarkSyncUtils.KINDS.FOLDER ].includes(b.kind) ||
-                             b.title === "" },
-      query: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.QUERY },
-      folder: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.QUERY },
-      tags: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                              BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) },
-      keyword: { validIf: b => [ BookmarkSyncUtils.KINDS.BOOKMARK,
-                                 BookmarkSyncUtils.KINDS.QUERY ].includes(b.kind) },
-      dateAdded: { required: false },
-    });
+  let insertInfo = validateSyncBookmarkObject(name, info, {
+    kind: { required: true },
+    recordId: { required: true },
+    url: {
+      requiredIf: b =>
+        [
+          BookmarkSyncUtils.KINDS.BOOKMARK,
+          BookmarkSyncUtils.KINDS.QUERY,
+        ].includes(b.kind),
+      validIf: b =>
+        [
+          BookmarkSyncUtils.KINDS.BOOKMARK,
+          BookmarkSyncUtils.KINDS.QUERY,
+        ].includes(b.kind),
+    },
+    parentRecordId: { required: true },
+    title: {
+      validIf: b =>
+        [
+          BookmarkSyncUtils.KINDS.BOOKMARK,
+          BookmarkSyncUtils.KINDS.QUERY,
+          BookmarkSyncUtils.KINDS.FOLDER,
+        ].includes(b.kind) || b.title === "",
+    },
+    query: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.QUERY },
+    folder: { validIf: b => b.kind == BookmarkSyncUtils.KINDS.QUERY },
+    tags: {
+      validIf: b =>
+        [
+          BookmarkSyncUtils.KINDS.BOOKMARK,
+          BookmarkSyncUtils.KINDS.QUERY,
+        ].includes(b.kind),
+    },
+    keyword: {
+      validIf: b =>
+        [
+          BookmarkSyncUtils.KINDS.BOOKMARK,
+          BookmarkSyncUtils.KINDS.QUERY,
+        ].includes(b.kind),
+    },
+    dateAdded: { required: false },
+  });
 
   return insertInfo;
 }
 
 async function fetchGuidsWithAnno(db, anno, val) {
-  let rows = await db.executeCached(`
+  let rows = await db.executeCached(
+    `
     SELECT b.guid FROM moz_items_annos a
     JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
     JOIN moz_bookmarks b ON b.id = a.item_id
     WHERE n.name = :anno AND
           a.content = :val`,
-    { anno, val });
+    { anno, val }
+  );
   return rows.map(row => row.getResultByName("guid"));
 }
 
@@ -1808,11 +2022,13 @@ function tagItem(item, tags) {
   
   let dummyURI = PlacesUtils.toURI("about:weave#BStore_tagURI");
   let bookmarkURI = PlacesUtils.toURI(item.url.href);
-  if (newTags && newTags.length > 0)
+  if (newTags && newTags.length > 0) {
     PlacesUtils.tagging.tagURI(dummyURI, newTags, SOURCE_SYNC);
+  }
   PlacesUtils.tagging.untagURI(bookmarkURI, null, SOURCE_SYNC);
-  if (newTags && newTags.length > 0)
+  if (newTags && newTags.length > 0) {
     PlacesUtils.tagging.tagURI(bookmarkURI, newTags, SOURCE_SYNC);
+  }
   PlacesUtils.tagging.untagURI(dummyURI, null, SOURCE_SYNC);
 
   return newTags;
@@ -1822,9 +2038,11 @@ function tagItem(item, tags) {
 
 
 function shouldUpdateBookmark(bookmarkInfo) {
-  return bookmarkInfo.hasOwnProperty("parentGuid") ||
-         bookmarkInfo.hasOwnProperty("title") ||
-         bookmarkInfo.hasOwnProperty("url");
+  return (
+    bookmarkInfo.hasOwnProperty("parentGuid") ||
+    bookmarkInfo.hasOwnProperty("title") ||
+    bookmarkInfo.hasOwnProperty("url")
+  );
 }
 
 
@@ -1841,8 +2059,9 @@ async function placesBookmarkToSyncBookmark(db, bookmarkItem) {
         break;
 
       case "parentGuid":
-        item.parentRecordId =
-          BookmarkSyncUtils.guidToRecordId(bookmarkItem.parentGuid);
+        item.parentRecordId = BookmarkSyncUtils.guidToRecordId(
+          bookmarkItem.parentGuid
+        );
         break;
 
       
@@ -1890,8 +2109,9 @@ function syncBookmarkToPlacesBookmark(info) {
         break;
 
       case "parentRecordId":
-        bookmarkInfo.parentGuid =
-          BookmarkSyncUtils.recordIdToGuid(info.parentRecordId);
+        bookmarkInfo.parentGuid = BookmarkSyncUtils.recordIdToGuid(
+          info.parentRecordId
+        );
         
         
         
@@ -1919,7 +2139,8 @@ var fetchBookmarkItem = async function(db, bookmarkItem) {
   }
 
   item.tags = PlacesUtils.tagging.getTagsForURI(
-    PlacesUtils.toURI(bookmarkItem.url));
+    PlacesUtils.toURI(bookmarkItem.url)
+  );
 
   let keywordEntry = await PlacesUtils.keywords.fetch({
     url: bookmarkItem.url,
@@ -1977,19 +2198,25 @@ function addRowToChangeRecords(row, changeRecords) {
     }
     if (!existingRecord.tombstone && isTombstone) {
       
-      BookmarkSyncLog.warn("addRowToChangeRecords: Ignoring tombstone for " +
-                           "undeleted item", recordId);
+      BookmarkSyncLog.warn(
+        "addRowToChangeRecords: Ignoring tombstone for " + "undeleted item",
+        recordId
+      );
       return;
     }
     
-    BookmarkSyncLog.warn("addRowToChangeRecords: Replacing tombstone for " +
-                         "undeleted item", recordId);
+    BookmarkSyncLog.warn(
+      "addRowToChangeRecords: Replacing tombstone for " + "undeleted item",
+      recordId
+    );
   }
   let modifiedAsPRTime = row.getResultByName("modified");
   let modified = modifiedAsPRTime / MICROSECONDS_PER_SECOND;
   if (Number.isNaN(modified) || modified <= 0) {
-    BookmarkSyncLog.error("addRowToChangeRecords: Invalid modified date for " +
-                          recordId, modifiedAsPRTime);
+    BookmarkSyncLog.error(
+      "addRowToChangeRecords: Invalid modified date for " + recordId,
+      modifiedAsPRTime
+    );
     modified = 0;
   }
   changeRecords[recordId] = {
@@ -2019,13 +2246,15 @@ var pullSyncChanges = async function(db, forGuids = []) {
   let itemConditions = ["syncChangeCounter >= 1"];
   let tombstoneConditions = ["1 = 1"];
   if (forGuids.length) {
-    let restrictToGuids = `guid IN (${forGuids.map(guid =>
-      JSON.stringify(guid)).join(",")})`;
+    let restrictToGuids = `guid IN (${forGuids
+      .map(guid => JSON.stringify(guid))
+      .join(",")})`;
     itemConditions.push(restrictToGuids);
     tombstoneConditions.push(restrictToGuids);
   }
 
-  let rows = await db.executeCached(`
+  let rows = await db.executeCached(
+    `
     WITH RECURSIVE
     syncedItems(id, guid, modified, syncChangeCounter, syncStatus) AS (
       SELECT b.id, b.guid, b.lastModified, b.syncChangeCounter, b.syncStatus
@@ -2045,7 +2274,8 @@ var pullSyncChanges = async function(db, forGuids = []) {
            :deletedSyncStatus, 1 AS tombstone
     FROM moz_bookmarks_deleted
     WHERE ${tombstoneConditions.join(" AND ")}`,
-    { deletedSyncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
+    { deletedSyncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL }
+  );
   for (let row of rows) {
     addRowToChangeRecords(row, changeRecords);
   }
@@ -2057,16 +2287,20 @@ var touchSyncBookmark = async function(db, bookmarkItem) {
   if (BookmarkSyncLog.level <= Log.Level.Trace) {
     BookmarkSyncLog.trace(
       `touch: Reviving item "${bookmarkItem.guid}" and marking parent ` +
-      BookmarkSyncUtils.guidToRecordId(bookmarkItem.parentGuid) + ` as modified`);
+        BookmarkSyncUtils.guidToRecordId(bookmarkItem.parentGuid) +
+        ` as modified`
+    );
   }
 
   
   
-  await db.executeCached(`
+  await db.executeCached(
+    `
     UPDATE moz_bookmarks SET
       syncChangeCounter = syncChangeCounter + 1
     WHERE guid IN (:guid, :parentGuid)`,
-    { guid: bookmarkItem.guid, parentGuid: bookmarkItem.parentGuid });
+    { guid: bookmarkItem.guid, parentGuid: bookmarkItem.parentGuid }
+  );
 
   
   
@@ -2074,14 +2308,20 @@ var touchSyncBookmark = async function(db, bookmarkItem) {
   return pullSyncChanges(db);
 };
 
-var dedupeSyncBookmark = async function(db, localGuid, remoteGuid,
-                                               remoteParentGuid) {
-  let rows = await db.executeCached(`
+var dedupeSyncBookmark = async function(
+  db,
+  localGuid,
+  remoteGuid,
+  remoteParentGuid
+) {
+  let rows = await db.executeCached(
+    `
     SELECT b.id, b.type, p.id AS parentId, p.guid AS parentGuid, b.syncStatus
     FROM moz_bookmarks b
     JOIN moz_bookmarks p ON p.id = b.parent
     WHERE b.guid = :localGuid`,
-    { localGuid });
+    { localGuid }
+  );
   if (!rows.length) {
     throw new Error(`Local item ${localGuid} does not exist`);
   }
@@ -2100,12 +2340,18 @@ var dedupeSyncBookmark = async function(db, localGuid, remoteGuid,
   await db.executeTransaction(async function() {
     
     
-    BookmarkSyncLog.debug("dedupeSyncBookmark: Switching local GUID " +
-                          localGuid + " to incoming GUID " + remoteGuid);
-    await db.executeCached(`UPDATE moz_bookmarks
+    BookmarkSyncLog.debug(
+      "dedupeSyncBookmark: Switching local GUID " +
+        localGuid +
+        " to incoming GUID " +
+        remoteGuid
+    );
+    await db.executeCached(
+      `UPDATE moz_bookmarks
       SET guid = :remoteGuid
       WHERE id = :localId`,
-      { remoteGuid, localId });
+      { remoteGuid, localId }
+    );
     PlacesUtils.invalidateCachedGuidFor(localId);
 
     
@@ -2114,10 +2360,12 @@ var dedupeSyncBookmark = async function(db, localGuid, remoteGuid,
     
     
     
-    await db.executeCached(`UPDATE moz_bookmarks
+    await db.executeCached(
+      `UPDATE moz_bookmarks
       SET syncChangeCounter = syncChangeCounter + 1
       WHERE guid = :localParentGuid`,
-      { localParentGuid });
+      { localParentGuid }
+    );
 
     
     
@@ -2129,32 +2377,41 @@ var dedupeSyncBookmark = async function(db, localGuid, remoteGuid,
     
     
     if (!sameParent) {
-      await db.executeCached(`UPDATE moz_bookmarks
+      await db.executeCached(
+        `UPDATE moz_bookmarks
         SET syncChangeCounter = syncChangeCounter + 1
         WHERE guid = :remoteParentGuid`,
-        { remoteParentGuid });
+        { remoteParentGuid }
+      );
     }
 
     
     
     let localSyncStatus = rows[0].getResultByName("syncStatus");
     if (localSyncStatus == PlacesUtils.bookmarks.SYNC_STATUS.NORMAL) {
-      await db.executeCached(`
+      await db.executeCached(
+        `
         INSERT INTO moz_bookmarks_deleted (guid, dateRemoved)
         VALUES (:localGuid, :modified)`,
-        { localGuid, modified });
+        { localGuid, modified }
+      );
     }
   });
 
   let observers = PlacesUtils.bookmarks.getObservers();
-  notify(observers, "onItemChanged", [ localId, "guid", false,
-                                       remoteGuid,
-                                       modified,
-                                       bookmarkType,
-                                       localParentId,
-                                       remoteGuid, remoteParentGuid,
-                                       localGuid, SOURCE_SYNC,
-                                     ]);
+  notify(observers, "onItemChanged", [
+    localId,
+    "guid",
+    false,
+    remoteGuid,
+    modified,
+    bookmarkType,
+    localParentId,
+    remoteGuid,
+    remoteParentGuid,
+    localGuid,
+    SOURCE_SYNC,
+  ]);
 
   
   
@@ -2162,11 +2419,16 @@ var dedupeSyncBookmark = async function(db, localGuid, remoteGuid,
   let changeRecords = await pullSyncChanges(db);
 
   if (BookmarkSyncLog.level <= Log.Level.Debug && !sameParent) {
-    let remoteParentRecordId = BookmarkSyncUtils.guidToRecordId(remoteParentGuid);
+    let remoteParentRecordId = BookmarkSyncUtils.guidToRecordId(
+      remoteParentGuid
+    );
     if (!changeRecords.hasOwnProperty(remoteParentRecordId)) {
-      BookmarkSyncLog.debug("dedupeSyncBookmark: Incoming duplicate item " +
-                            remoteGuid + " specifies non-existing parent " +
-                            remoteParentGuid);
+      BookmarkSyncLog.debug(
+        "dedupeSyncBookmark: Incoming duplicate item " +
+          remoteGuid +
+          " specifies non-existing parent " +
+          remoteParentGuid
+      );
     }
   }
 
@@ -2189,9 +2451,10 @@ async function deleteSyncedFolder(db, bookmarkItem) {
   if (BookmarkSyncLog.level <= Log.Level.Trace) {
     BookmarkSyncLog.trace(
       `deleteSyncedFolder: Moving ${JSON.stringify(childGuids)} children of ` +
-      `"${bookmarkItem.guid}" to grandparent
+        `"${bookmarkItem.guid}" to grandparent
       "${BookmarkSyncUtils.guidToRecordId(bookmarkItem.parentGuid)}" before ` +
-      `deletion`);
+        `deletion`
+    );
   }
 
   
@@ -2208,7 +2471,8 @@ async function deleteSyncedFolder(db, bookmarkItem) {
       
       
       
-      source: PlacesUtils.bookmarks.SOURCES.SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
+      source:
+        PlacesUtils.bookmarks.SOURCES.SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
     });
   }
 
@@ -2229,8 +2493,11 @@ async function deleteSyncedFolder(db, bookmarkItem) {
     
     
     
-    BookmarkSyncLog.trace(`deleteSyncedFolder: Error removing parent ` +
-                          `${bookmarkItem.guid} after reparenting children`, e);
+    BookmarkSyncLog.trace(
+      `deleteSyncedFolder: Error removing parent ` +
+        `${bookmarkItem.guid} after reparenting children`,
+      e
+    );
     return false;
   }
 
@@ -2246,8 +2513,10 @@ var deleteSyncedAtom = async function(bookmarkItem) {
     });
   } catch (ex) {
     
-    BookmarkSyncLog.trace(`deleteSyncedAtom: Error removing ` +
-                          bookmarkItem.guid, ex);
+    BookmarkSyncLog.trace(
+      `deleteSyncedAtom: Error removing ` + bookmarkItem.guid,
+      ex
+    );
     return false;
   }
 
@@ -2268,8 +2537,9 @@ function markChangesAsSyncing(db, changeRecords) {
     if (changeRecords[recordId].tombstone) {
       continue;
     }
-    if (changeRecords[recordId].status ==
-        PlacesUtils.bookmarks.SYNC_STATUS.NORMAL) {
+    if (
+      changeRecords[recordId].status == PlacesUtils.bookmarks.SYNC_STATUS.NORMAL
+    ) {
       continue;
     }
     let guid = BookmarkSyncUtils.recordIdToGuid(recordId);
@@ -2278,11 +2548,13 @@ function markChangesAsSyncing(db, changeRecords) {
   if (!unsyncedGuids.length) {
     return Promise.resolve();
   }
-  return db.execute(`
+  return db.execute(
+    `
     UPDATE moz_bookmarks
     SET syncStatus = :syncStatus
     WHERE guid IN (${unsyncedGuids.join(",")})`,
-    { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL });
+    { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL }
+  );
 }
 
 
@@ -2335,39 +2607,53 @@ function notify(observers, notification, args = []) {
 
 
 async function setHistorySyncId(db, newSyncId) {
-  await PlacesUtils.metadata.setWithConnection(db,
-    HistorySyncUtils.SYNC_ID_META_KEY, newSyncId);
+  await PlacesUtils.metadata.setWithConnection(
+    db,
+    HistorySyncUtils.SYNC_ID_META_KEY,
+    newSyncId
+  );
 
-  await PlacesUtils.metadata.deleteWithConnection(db,
-    HistorySyncUtils.LAST_SYNC_META_KEY);
+  await PlacesUtils.metadata.deleteWithConnection(
+    db,
+    HistorySyncUtils.LAST_SYNC_META_KEY
+  );
 }
 
 
 async function setBookmarksSyncId(db, newSyncId) {
-  await PlacesUtils.metadata.setWithConnection(db,
-    BookmarkSyncUtils.SYNC_ID_META_KEY, newSyncId);
+  await PlacesUtils.metadata.setWithConnection(
+    db,
+    BookmarkSyncUtils.SYNC_ID_META_KEY,
+    newSyncId
+  );
 
-  await PlacesUtils.metadata.deleteWithConnection(db,
+  await PlacesUtils.metadata.deleteWithConnection(
+    db,
     BookmarkSyncUtils.LAST_SYNC_META_KEY,
-    BookmarkSyncUtils.WIPE_REMOTE_META_KEY);
+    BookmarkSyncUtils.WIPE_REMOTE_META_KEY
+  );
 }
 
 
 
 async function resetAllSyncStatuses(db, syncStatus) {
-  await db.execute(`
+  await db.execute(
+    `
     UPDATE moz_bookmarks
     SET syncChangeCounter = 1,
         syncStatus = :syncStatus`,
-    { syncStatus });
+    { syncStatus }
+  );
 
   
   
-  await db.execute(`
+  await db.execute(
+    `
     DELETE FROM moz_items_annos
     WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes
                                WHERE name = :orphanAnno)`,
-    { orphanAnno: BookmarkSyncUtils.SYNC_PARENT_ANNO });
+    { orphanAnno: BookmarkSyncUtils.SYNC_PARENT_ANNO }
+  );
 
   
   await db.execute("DELETE FROM moz_bookmarks_deleted");

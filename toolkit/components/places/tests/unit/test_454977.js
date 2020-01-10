@@ -11,28 +11,36 @@ var visit_count = 0;
 async function task_add_visit(aURI, aVisitType) {
   
   let visitId;
-  let visitsPromise = PlacesTestUtils.waitForNotification("page-visited", visits => {
-    visitId = visits[0].visitId;
-    let {url} = visits[0];
-    return url == aURI.spec;
-  }, "places");
+  let visitsPromise = PlacesTestUtils.waitForNotification(
+    "page-visited",
+    visits => {
+      visitId = visits[0].visitId;
+      let { url } = visits[0];
+      return url == aURI.spec;
+    },
+    "places"
+  );
 
   
-  await PlacesTestUtils.addVisits([{
-    uri: aURI,
-    transition: aVisitType,
-  }]);
+  await PlacesTestUtils.addVisits([
+    {
+      uri: aURI,
+      transition: aVisitType,
+    },
+  ]);
 
   if (aVisitType != TRANSITION_EMBED) {
     await visitsPromise;
   }
 
   
-  if (aVisitType != 0 &&
-      aVisitType != TRANSITION_EMBED &&
-      aVisitType != TRANSITION_FRAMED_LINK &&
-      aVisitType != TRANSITION_DOWNLOAD &&
-      aVisitType != TRANSITION_RELOAD) {
+  if (
+    aVisitType != 0 &&
+    aVisitType != TRANSITION_EMBED &&
+    aVisitType != TRANSITION_FRAMED_LINK &&
+    aVisitType != TRANSITION_DOWNLOAD &&
+    aVisitType != TRANSITION_RELOAD
+  ) {
     visit_count++;
   }
 
@@ -95,15 +103,15 @@ add_task(async function test_execute() {
   
   
   
-  Assert.equal((await task_add_visit(TEST_URI, TRANSITION_TYPED)), placeId);
+  Assert.equal(await task_add_visit(TEST_URI, TRANSITION_TYPED), placeId);
   check_results(1, 1);
 
   
-  Assert.equal((await task_add_visit(TEST_URI, TRANSITION_RELOAD)), placeId);
+  Assert.equal(await task_add_visit(TEST_URI, TRANSITION_RELOAD), placeId);
   check_results(1, 1);
 
   
-  Assert.equal((await task_add_visit(TEST_URI, TRANSITION_DOWNLOAD)), placeId);
+  Assert.equal(await task_add_visit(TEST_URI, TRANSITION_DOWNLOAD), placeId);
   check_results(1, 1);
 
   

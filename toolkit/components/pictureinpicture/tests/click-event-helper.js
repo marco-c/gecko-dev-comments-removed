@@ -8,13 +8,7 @@
 
 
 
-let eventTypes = [
-  "pointerdown",
-  "mousedown",
-  "pointerup",
-  "mouseup",
-  "click",
-];
+let eventTypes = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
 
 for (let event of eventTypes) {
   addEventListener(event, recordEvent, { capture: true });

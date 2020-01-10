@@ -42,19 +42,31 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionSettingsStore"];
 
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "AddonManager",
-                               "resource://gre/modules/AddonManager.jsm");
-ChromeUtils.defineModuleGetter(this, "JSONFile",
-                               "resource://gre/modules/JSONFile.jsm");
-ChromeUtils.defineModuleGetter(this, "ExtensionParent",
-                               "resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "AddonManager",
+  "resource://gre/modules/AddonManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "JSONFile",
+  "resource://gre/modules/JSONFile.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
 const JSON_FILE_NAME = "extension-settings.json";
 const JSON_FILE_VERSION = 2;
-const STORE_PATH = OS.Path.join(Services.dirsvc.get("ProfD", Ci.nsIFile).path, JSON_FILE_NAME);
+const STORE_PATH = OS.Path.join(
+  Services.dirsvc.get("ProfD", Ci.nsIFile).path,
+  JSON_FILE_NAME
+);
 
 let _initializePromise;
 let _store = {};
@@ -103,7 +115,8 @@ async function reloadFile(saveChanges) {
 function ensureType(type) {
   if (!_store.dataReady) {
     throw new Error(
-      "The ExtensionSettingsStore was accessed before the initialize promise resolved.");
+      "The ExtensionSettingsStore was accessed before the initialize promise resolved."
+    );
   }
 
   
@@ -142,18 +155,18 @@ function getItem(type, key, id) {
   if (id) {
     
     let item = keyInfo.precedenceList.find(item => item.id === id);
-    return item ? {key, value: item.value, id} : null;
+    return item ? { key, value: item.value, id } : null;
   }
 
   
   for (let item of keyInfo.precedenceList) {
     if (item.enabled) {
-      return {key, value: item.value, id: item.id};
+      return { key, value: item.value, id: item.id };
     }
   }
 
   
-  return {key, initialValue: keyInfo.initialValue};
+  return { key, initialValue: keyInfo.initialValue };
 }
 
 
@@ -196,7 +209,8 @@ function alterSetting(id, type, key, action) {
       return null;
     }
     throw new Error(
-      `Cannot alter the setting for ${type}:${key} as it does not exist.`);
+      `Cannot alter the setting for ${type}:${key} as it does not exist.`
+    );
   }
 
   let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
@@ -206,7 +220,8 @@ function alterSetting(id, type, key, action) {
       return null;
     }
     throw new Error(
-      `Cannot alter the setting for ${type}:${key} as it does not exist.`);
+      `Cannot alter the setting for ${type}:${key} as it does not exist.`
+    );
   }
 
   switch (action) {
@@ -238,7 +253,13 @@ function alterSetting(id, type, key, action) {
   }
 
   _store.saveSoon();
-  ExtensionParent.apiManager.emit("extension-setting-changed", {action, id, type, key, item: returnItem});
+  ExtensionParent.apiManager.emit("extension-setting-changed", {
+    action,
+    id,
+    type,
+    key,
+    item: returnItem,
+  });
   return returnItem;
 }
 
@@ -281,7 +302,14 @@ var ExtensionSettingsStore = {
 
 
 
-  async addSetting(id, type, key, value, initialValueCallback = () => undefined, callbackArgument = key) {
+  async addSetting(
+    id,
+    type,
+    key,
+    value,
+    initialValueCallback = () => undefined,
+    callbackArgument = key
+  ) {
     if (typeof initialValueCallback != "function") {
       throw new Error("initialValueCallback must be a function.");
     }
@@ -302,8 +330,12 @@ var ExtensionSettingsStore = {
     if (foundIndex === -1) {
       
       let addon = await AddonManager.getAddonByID(id);
-      keyInfo.precedenceList.push(
-        {id, installDate: addon.installDate.valueOf(), value, enabled: true});
+      keyInfo.precedenceList.push({
+        id,
+        installDate: addon.installDate.valueOf(),
+        value,
+        enabled: true,
+      });
     } else {
       
       let item = keyInfo.precedenceList[foundIndex];
@@ -319,7 +351,7 @@ var ExtensionSettingsStore = {
 
     
     if (keyInfo.precedenceList[0].id == id) {
-      return {id, key, value};
+      return { id, key, value };
     }
     return null;
   },
@@ -392,7 +424,8 @@ var ExtensionSettingsStore = {
 
 
   setByUser(type, key) {
-    let {precedenceList} = (_store.data[type] && _store.data[type][key]) || {};
+    let { precedenceList } =
+      (_store.data[type] && _store.data[type][key]) || {};
     if (!precedenceList) {
       
       return;
@@ -401,7 +434,11 @@ var ExtensionSettingsStore = {
     for (let item of precedenceList) {
       item.enabled = false;
     }
-    ExtensionParent.apiManager.emit("extension-setting-changed", {action: "disable", type, key});
+    ExtensionParent.apiManager.emit("extension-setting-changed", {
+      action: "disable",
+      type,
+      key,
+    });
 
     _store.saveSoon();
   },
@@ -502,9 +539,9 @@ var ExtensionSettingsStore = {
     }
 
     let addon = await AddonManager.getAddonByID(id);
-    return topItem.installDate > addon.installDate.valueOf() ?
-      "controlled_by_other_extensions" :
-      "controllable_by_this_extension";
+    return topItem.installDate > addon.installDate.valueOf()
+      ? "controlled_by_other_extensions"
+      : "controllable_by_this_extension";
   },
 
   

@@ -3,8 +3,10 @@
 
 
 
-const TEST_PATH = getRootDirectory(gTestPath)
-                    .replace("chrome://mochitests/content", "http://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 
 add_task(async function set_simplify_and_reader_pref() {
   
@@ -26,29 +28,40 @@ add_task(async function switch_print_preview_browsers() {
   }
 
   
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url, false, true);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    url,
+    false,
+    true
+  );
 
   
   tab.linkedBrowser.isArticle = true;
 
   
   let defaultPPBrowser = PrintPreviewListener.getPrintPreviewBrowser();
-  let defaultPPEntered = BrowserTestUtils
-                          .waitForMessage(defaultPPBrowser.messageManager,
-                                          "Printing:Preview:Entered");
+  let defaultPPEntered = BrowserTestUtils.waitForMessage(
+    defaultPPBrowser.messageManager,
+    "Printing:Preview:Entered"
+  );
   document.getElementById("cmd_printPreview").doCommand();
   await defaultPPEntered;
 
   
   await ContentTask.spawn(defaultPPBrowser, null, async function() {
-    is(content.document.title, "Non article title", "Should have initial content.");
+    is(
+      content.document.title,
+      "Non article title",
+      "Should have initial content."
+    );
   });
 
   
   let simplifiedPPBrowser = PrintPreviewListener.getSimplifiedPrintPreviewBrowser();
-  let simplifiedPPEntered = BrowserTestUtils
-                              .waitForMessage(simplifiedPPBrowser.messageManager,
-                                              "Printing:Preview:Entered");
+  let simplifiedPPEntered = BrowserTestUtils.waitForMessage(
+    simplifiedPPBrowser.messageManager,
+    "Printing:Preview:Entered"
+  );
   let printPreviewToolbar = document.getElementById("print-preview-toolbar");
 
   
@@ -60,20 +73,31 @@ add_task(async function switch_print_preview_browsers() {
   await simplifiedPPEntered;
 
   
-  is(printPreviewToolbar.mSimplifyPageCheckbox.checked, true,
-     "Should have simplify page option checked");
+  is(
+    printPreviewToolbar.mSimplifyPageCheckbox.checked,
+    true,
+    "Should have simplify page option checked"
+  );
 
   
   await ContentTask.spawn(simplifiedPPBrowser, null, async function() {
-    await ContentTaskUtils.waitForCondition(() => content.document.title === "Failed to load article from page",
-      "Simplified document title should be updated with recovery title.");
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.title === "Failed to load article from page",
+      "Simplified document title should be updated with recovery title."
+    );
   });
 
   
-  is(gBrowser.selectedTab.linkedBrowser, simplifiedPPBrowser,
-     "Should have simplified print preview browser selected");
-  isnot(gBrowser.selectedTab.linkedBrowser, defaultPPBrowser,
-        "Should not have default print preview browser selected");
+  is(
+    gBrowser.selectedTab.linkedBrowser,
+    simplifiedPPBrowser,
+    "Should have simplified print preview browser selected"
+  );
+  isnot(
+    gBrowser.selectedTab.linkedBrowser,
+    defaultPPBrowser,
+    "Should not have default print preview browser selected"
+  );
 
   PrintUtils.exitPrintPreview();
 

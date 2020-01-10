@@ -6,8 +6,34 @@ function dumpn(s) {
 const NS_APP_USER_PROFILE_50_DIR = "ProfD";
 const NS_APP_USER_PROFILE_LOCAL_50_DIR = "ProfLD";
 
-var {HTTP_400, HTTP_401, HTTP_402, HTTP_403, HTTP_404, HTTP_405, HTTP_406, HTTP_407, HTTP_408, HTTP_409, HTTP_410, HTTP_411, HTTP_412, HTTP_413, HTTP_414, HTTP_415, HTTP_417, HTTP_500, HTTP_501, HTTP_502, HTTP_503, HTTP_504, HTTP_505, HttpError, HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {
+  HTTP_400,
+  HTTP_401,
+  HTTP_402,
+  HTTP_403,
+  HTTP_404,
+  HTTP_405,
+  HTTP_406,
+  HTTP_407,
+  HTTP_408,
+  HTTP_409,
+  HTTP_410,
+  HTTP_411,
+  HTTP_412,
+  HTTP_413,
+  HTTP_414,
+  HTTP_415,
+  HTTP_417,
+  HTTP_500,
+  HTTP_501,
+  HTTP_502,
+  HTTP_503,
+  HTTP_504,
+  HTTP_505,
+  HttpError,
+  HttpServer,
+} = ChromeUtils.import("resource://testing-common/httpd.js");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 do_get_profile();
 
@@ -21,14 +47,23 @@ Services.prefs.setIntPref("urlclassifier.gethashnoise", 0);
 Services.prefs.setBoolPref("browser.safebrowsing.malware.enabled", true);
 Services.prefs.setBoolPref("browser.safebrowsing.blockedURIs.enabled", true);
 Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled", true);
-Services.prefs.setBoolPref("browser.safebrowsing.provider.test.disableBackoff", true);
+Services.prefs.setBoolPref(
+  "browser.safebrowsing.provider.test.disableBackoff",
+  true
+);
 
 
 Services.prefs.setCharPref("urlclassifier.phishTable", "test-phish-simple");
-Services.prefs.setCharPref("urlclassifier.malwareTable", "test-harmful-simple,test-malware-simple,test-unwanted-simple");
+Services.prefs.setCharPref(
+  "urlclassifier.malwareTable",
+  "test-harmful-simple,test-malware-simple,test-unwanted-simple"
+);
 Services.prefs.setCharPref("urlclassifier.blockedTable", "test-block-simple");
 Services.prefs.setCharPref("urlclassifier.trackingTable", "test-track-simple");
-Services.prefs.setCharPref("urlclassifier.trackingWhitelistTable", "test-trackwhite-simple");
+Services.prefs.setCharPref(
+  "urlclassifier.trackingWhitelistTable",
+  "test-trackwhite-simple"
+);
 
 
 Services.prefs.setCharPref("urlclassifier.disallow_completions", "");
@@ -41,10 +76,10 @@ function delFile(name) {
     
     var file = Services.dirsvc.get("ProfLD", Ci.nsIFile);
     file.append(name);
-    if (file.exists())
+    if (file.exists()) {
       file.remove(false);
-  } catch (e) {
-  }
+    }
+  } catch (e) {}
 }
 
 function cleanUp() {
@@ -71,13 +106,16 @@ function cleanUp() {
 }
 
 
-var allTables = "test-phish-simple,test-malware-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple";
+var allTables =
+  "test-phish-simple,test-malware-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple";
 var mozTables = "moz-phish-simple";
 
-var dbservice = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(Ci.nsIUrlClassifierDBService);
-var streamUpdater = Cc["@mozilla.org/url-classifier/streamupdater;1"]
-                    .getService(Ci.nsIUrlClassifierStreamUpdater);
-
+var dbservice = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
+  Ci.nsIUrlClassifierDBService
+);
+var streamUpdater = Cc[
+  "@mozilla.org/url-classifier/streamupdater;1"
+].getService(Ci.nsIUrlClassifierStreamUpdater);
 
 
 
@@ -96,8 +134,9 @@ function buildUpdate(update, hashSize) {
   var updateStr = "n:1000\n";
 
   for (var tableName in update) {
-    if (tableName != "")
+    if (tableName != "") {
       updateStr += "i:" + tableName + "\n";
+    }
     var chunks = update[tableName];
     for (var j = 0; j < chunks.length; j++) {
       var chunk = chunks[j];
@@ -118,27 +157,27 @@ function buildUpdate(update, hashSize) {
 }
 
 function buildPhishingUpdate(chunks, hashSize) {
-  return buildUpdate({"test-phish-simple": chunks}, hashSize);
+  return buildUpdate({ "test-phish-simple": chunks }, hashSize);
 }
 
 function buildMalwareUpdate(chunks, hashSize) {
-  return buildUpdate({"test-malware-simple": chunks}, hashSize);
+  return buildUpdate({ "test-malware-simple": chunks }, hashSize);
 }
 
 function buildUnwantedUpdate(chunks, hashSize) {
-  return buildUpdate({"test-unwanted-simple": chunks}, hashSize);
+  return buildUpdate({ "test-unwanted-simple": chunks }, hashSize);
 }
 
 function buildBlockedUpdate(chunks, hashSize) {
-  return buildUpdate({"test-block-simple": chunks}, hashSize);
+  return buildUpdate({ "test-block-simple": chunks }, hashSize);
 }
 
 function buildMozPhishingUpdate(chunks, hashSize) {
-  return buildUpdate({"moz-phish-simple": chunks}, hashSize);
+  return buildUpdate({ "moz-phish-simple": chunks }, hashSize);
 }
 
 function buildBareUpdate(chunks, hashSize) {
-  return buildUpdate({"": chunks}, hashSize);
+  return buildUpdate({ "": chunks }, hashSize);
 }
 
 
@@ -148,10 +187,14 @@ function doSimpleUpdate(updateText, success, failure) {
   var listener = {
     QueryInterface: ChromeUtils.generateQI(["nsIUrlClassifierUpdateObserver"]),
 
-    updateUrlRequested(url) { },
-    streamFinished(status) { },
-    updateError(errorCode) { failure(errorCode); },
-    updateSuccess(requestedTimeout) { success(requestedTimeout); },
+    updateUrlRequested(url) {},
+    streamFinished(status) {},
+    updateError(errorCode) {
+      failure(errorCode);
+    },
+    updateSuccess(requestedTimeout) {
+      success(requestedTimeout);
+    },
   };
 
   dbservice.beginUpdate(listener, allTables);
@@ -168,10 +211,14 @@ function doErrorUpdate(tables, success, failure) {
   var listener = {
     QueryInterface: ChromeUtils.generateQI(["nsIUrlClassifierUpdateObserver"]),
 
-    updateUrlRequested(url) { },
-    streamFinished(status) { },
-    updateError(errorCode) { success(errorCode); },
-    updateSuccess(requestedTimeout) { failure(requestedTimeout); },
+    updateUrlRequested(url) {},
+    streamFinished(status) {},
+    updateError(errorCode) {
+      success(errorCode);
+    },
+    updateSuccess(requestedTimeout) {
+      failure(requestedTimeout);
+    },
   };
 
   dbservice.beginUpdate(listener, tables, null);
@@ -190,14 +237,20 @@ function doStreamUpdate(updateText, success, failure, downloadFailure) {
     downloadFailure = failure;
   }
 
-  streamUpdater.downloadUpdates(allTables, "", true,
-                                dataUpdate, success, failure, downloadFailure);
+  streamUpdater.downloadUpdates(
+    allTables,
+    "",
+    true,
+    dataUpdate,
+    success,
+    failure,
+    downloadFailure
+  );
 }
 
 var gAssertions = {
-
-tableData(expectedTables, cb) {
-  dbservice.getTables(function(tables) {
+  tableData(expectedTables, cb) {
+    dbservice.getTables(function(tables) {
       
       var parts = tables.split("\n");
       while (parts[parts.length - 1] == "") {
@@ -209,81 +262,95 @@ tableData(expectedTables, cb) {
       Assert.equal(tables, expectedTables);
       cb();
     });
-},
+  },
 
-checkUrls(urls, expected, cb, useMoz = false) {
-  
-  urls = urls.slice(0);
-  var doLookup = function() {
-    if (urls.length > 0) {
-      var tables = useMoz ? mozTables : allTables;
-      var fragment = urls.shift();
-      var principal = Services.scriptSecurityManager.createCodebasePrincipal(Services.io.newURI("http://" + fragment), {});
-      dbservice.lookup(principal, tables,
-                                function(arg) {
-                                  Assert.equal(expected, arg);
-                                  doLookup();
-                                }, true);
-    } else {
-      cb();
-    }
-  };
-  doLookup();
-},
-
-checkTables(url, expected, cb) {
-  var principal = Services.scriptSecurityManager.createCodebasePrincipal(Services.io.newURI("http://" + url), {});
-  dbservice.lookup(principal, allTables, function(tables) {
+  checkUrls(urls, expected, cb, useMoz = false) {
     
-    var parts = tables.split(",");
-    while (parts[parts.length - 1] == "") {
-      parts.pop();
-    }
-    parts.sort();
-    tables = parts.join(",");
-    Assert.equal(tables, expected);
+    urls = urls.slice(0);
+    var doLookup = function() {
+      if (urls.length > 0) {
+        var tables = useMoz ? mozTables : allTables;
+        var fragment = urls.shift();
+        var principal = Services.scriptSecurityManager.createCodebasePrincipal(
+          Services.io.newURI("http://" + fragment),
+          {}
+        );
+        dbservice.lookup(
+          principal,
+          tables,
+          function(arg) {
+            Assert.equal(expected, arg);
+            doLookup();
+          },
+          true
+        );
+      } else {
+        cb();
+      }
+    };
+    doLookup();
+  },
+
+  checkTables(url, expected, cb) {
+    var principal = Services.scriptSecurityManager.createCodebasePrincipal(
+      Services.io.newURI("http://" + url),
+      {}
+    );
+    dbservice.lookup(
+      principal,
+      allTables,
+      function(tables) {
+        
+        var parts = tables.split(",");
+        while (parts[parts.length - 1] == "") {
+          parts.pop();
+        }
+        parts.sort();
+        tables = parts.join(",");
+        Assert.equal(tables, expected);
+        cb();
+      },
+      true
+    );
+  },
+
+  urlsDontExist(urls, cb) {
+    this.checkUrls(urls, "", cb);
+  },
+
+  urlsExist(urls, cb) {
+    this.checkUrls(urls, "test-phish-simple", cb);
+  },
+
+  malwareUrlsExist(urls, cb) {
+    this.checkUrls(urls, "test-malware-simple", cb);
+  },
+
+  unwantedUrlsExist(urls, cb) {
+    this.checkUrls(urls, "test-unwanted-simple", cb);
+  },
+
+  blockedUrlsExist(urls, cb) {
+    this.checkUrls(urls, "test-block-simple", cb);
+  },
+
+  mozPhishingUrlsExist(urls, cb) {
+    this.checkUrls(urls, "moz-phish-simple", cb, true);
+  },
+
+  subsDontExist(urls, cb) {
+    
     cb();
-  }, true);
-},
+  },
 
-urlsDontExist(urls, cb) {
-  this.checkUrls(urls, "", cb);
-},
+  subsExist(urls, cb) {
+    
+    cb();
+  },
 
-urlsExist(urls, cb) {
-  this.checkUrls(urls, "test-phish-simple", cb);
-},
-
-malwareUrlsExist(urls, cb) {
-  this.checkUrls(urls, "test-malware-simple", cb);
-},
-
-unwantedUrlsExist(urls, cb) {
-  this.checkUrls(urls, "test-unwanted-simple", cb);
-},
-
-blockedUrlsExist(urls, cb) {
-  this.checkUrls(urls, "test-block-simple", cb);
-},
-
-mozPhishingUrlsExist(urls, cb) {
-  this.checkUrls(urls, "moz-phish-simple", cb, true);
-},
-
-subsDontExist(urls, cb) {
-  
-  cb();
-},
-
-subsExist(urls, cb) {
-  
-  cb();
-},
-
-urlExistInMultipleTables(data, cb) {
-  this.checkTables(data.url, data.tables, cb);
-},
-
+  urlExistInMultipleTables(data, cb) {
+    this.checkTables(data.url, data.tables, cb);
+  },
 };
 
 
@@ -358,8 +425,8 @@ function Timer(delay, cb) {
 }
 
 Timer.prototype = {
-QueryInterface: ChromeUtils.generateQI(["nsITimerCallback"]),
-notify(timer) {
+  QueryInterface: ChromeUtils.generateQI(["nsITimerCallback"]),
+  notify(timer) {
     this.cb();
   },
 };
@@ -372,16 +439,18 @@ function LFSRgenerator(seed) {
   
   seed = +seed;
   
-  if (seed == 0)
+  if (seed == 0) {
     seed = 1;
+  }
 
   this._value = seed;
 }
 LFSRgenerator.prototype = {
   
   nextNum(bits) {
-    if (!bits)
+    if (!bits) {
       bits = 32;
+    }
 
     let val = this._value;
     
@@ -389,13 +458,14 @@ LFSRgenerator.prototype = {
     val = (val >>> 1) | (bit << 31);
     this._value = val;
 
-    return (val >>> (32 - bits));
+    return val >>> (32 - bits);
   },
 };
 
 function waitUntilMetaDataSaved(expectedState, expectedChecksum, callback) {
-  let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
-                     .getService(Ci.nsIUrlClassifierDBService);
+  let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
+    Ci.nsIUrlClassifierDBService
+  );
 
   dbService.getTables(metaData => {
     info("metadata: " + metaData);
@@ -415,8 +485,10 @@ function waitUntilMetaDataSaved(expectedState, expectedChecksum, callback) {
         return false; 
       }
 
-      if (stateBase64 === btoa(expectedState) &&
-          checksumBase64 === btoa(expectedChecksum)) {
+      if (
+        stateBase64 === btoa(expectedState) &&
+        checksumBase64 === btoa(expectedChecksum)
+      ) {
         info("State has been saved to disk!");
 
         
@@ -436,9 +508,15 @@ function waitUntilMetaDataSaved(expectedState, expectedChecksum, callback) {
     });
 
     if (!didCallback) {
-      do_timeout(1000, waitUntilMetaDataSaved.bind(null, expectedState,
-                                                         expectedChecksum,
-                                                         callback));
+      do_timeout(
+        1000,
+        waitUntilMetaDataSaved.bind(
+          null,
+          expectedState,
+          expectedChecksum,
+          callback
+        )
+      );
     }
   });
 }
@@ -452,13 +530,19 @@ var gUpdateFinishedObserver = function(aSubject, aTopic, aData) {
 };
 
 function throwOnUpdateErrors() {
-  Services.obs.addObserver(gUpdateFinishedObserver, "safebrowsing-update-finished");
+  Services.obs.addObserver(
+    gUpdateFinishedObserver,
+    "safebrowsing-update-finished"
+  );
   gUpdateFinishedObserverEnabled = true;
 }
 
 function stopThrowingOnUpdateErrors() {
   if (gUpdateFinishedObserverEnabled) {
-    Services.obs.removeObserver(gUpdateFinishedObserver, "safebrowsing-update-finished");
+    Services.obs.removeObserver(
+      gUpdateFinishedObserver,
+      "safebrowsing-update-finished"
+    );
     gUpdateFinishedObserverEnabled = false;
   }
 }

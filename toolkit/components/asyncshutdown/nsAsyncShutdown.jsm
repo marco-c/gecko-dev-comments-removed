@@ -8,9 +8,11 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "AsyncShutdown",
-  "resource://gre/modules/AsyncShutdown.jsm");
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "AsyncShutdown",
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
 
 
 
@@ -22,7 +24,7 @@ var PropertyBagConverter = {
       throw new TypeError("Not a property bag");
     }
     let result = {};
-    for (let {name, value: property} of bag.enumerator) {
+    for (let { name, value: property } of bag.enumerator) {
       let value = this.toValue(property);
       result[name] = value;
     }
@@ -46,8 +48,9 @@ var PropertyBagConverter = {
     if (obj == null || typeof obj != "object") {
       throw new TypeError("Invalid object: " + obj);
     }
-    let bag = Cc["@mozilla.org/hash-property-bag;1"].
-      createInstance(Ci.nsIWritablePropertyBag);
+    let bag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+      Ci.nsIWritablePropertyBag
+    );
     for (let k of Object.keys(obj)) {
       let value = this.fromValue(obj[k]);
       bag.setProperty(k, value);
@@ -68,8 +71,6 @@ var PropertyBagConverter = {
     return this.fromObject(value);
   },
 };
-
-
 
 
 
@@ -101,14 +102,19 @@ nsAsyncShutdownClient.prototype = {
   _setPromisified(xpcomBlocker, moduleBlocker) {
     let candidate = this._byName.get(xpcomBlocker.name);
     if (!candidate) {
-      this._byName.set(xpcomBlocker.name, {xpcom: xpcomBlocker,
-                                           jsm: moduleBlocker});
+      this._byName.set(xpcomBlocker.name, {
+        xpcom: xpcomBlocker,
+        jsm: moduleBlocker,
+      });
       return;
     }
     if (candidate.xpcom === xpcomBlocker) {
       return;
     }
-    throw new Error("We have already registered a distinct blocker with the same name: " + xpcomBlocker.name);
+    throw new Error(
+      "We have already registered a distinct blocker with the same name: " +
+        xpcomBlocker.name
+    );
   },
   _deletePromisified(xpcomBlocker) {
     let candidate = this._byName.get(xpcomBlocker.name);
@@ -124,8 +130,12 @@ nsAsyncShutdownClient.prototype = {
   get name() {
     return this._moduleClient.name;
   },
-  addBlocker( xpcomBlocker,
-      fileName, lineNumber, stack) {
+  addBlocker(
+     xpcomBlocker,
+    fileName,
+    lineNumber,
+    stack
+  ) {
     
     
     
@@ -138,30 +148,29 @@ nsAsyncShutdownClient.prototype = {
     
     let moduleBlocker = this._getPromisified(xpcomBlocker);
     if (!moduleBlocker) {
-      moduleBlocker = () => new Promise(
-        
-        
-        
-        () => xpcomBlocker.blockShutdown(this)
-      );
+      moduleBlocker = () =>
+        new Promise(
+          
+          
+          
+          () => xpcomBlocker.blockShutdown(this)
+        );
 
       this._setPromisified(xpcomBlocker, moduleBlocker);
     }
 
-    this._moduleClient.addBlocker(xpcomBlocker.name,
-      moduleBlocker,
-      {
-        fetchState: () => {
-          let state = xpcomBlocker.state;
-          if (state) {
-            return PropertyBagConverter.toValue(state);
-          }
-          return null;
-        },
-        filename: fileName,
-        lineNumber,
-        stack,
-      });
+    this._moduleClient.addBlocker(xpcomBlocker.name, moduleBlocker, {
+      fetchState: () => {
+        let state = xpcomBlocker.state;
+        if (state) {
+          return PropertyBagConverter.toValue(state);
+        }
+        return null;
+      },
+      filename: fileName,
+      lineNumber,
+      stack,
+    });
   },
 
   removeBlocker(xpcomBlocker) {
@@ -209,8 +218,8 @@ nsAsyncShutdownBarrier.prototype = {
 function nsAsyncShutdownService() {
   
 
-  for (let _k of
-   [
+  for (let _k of [
+    
     "profileBeforeChange",
     "profileChangeTeardown",
     "quitApplicationGranted",
@@ -222,7 +231,7 @@ function nsAsyncShutdownService() {
     
     "webWorkersShutdown",
     "xpcomWillShutdown",
-    ]) {
+  ]) {
     let k = _k;
     Object.defineProperty(this, k, {
       configurable: true,

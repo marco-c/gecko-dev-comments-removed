@@ -14,8 +14,11 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "Downloads",
-                               "resource://gre/modules/Downloads.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Downloads",
+  "resource://gre/modules/Downloads.jsm"
+);
 
 
 
@@ -46,34 +49,42 @@ ChromeUtils.defineModuleGetter(this, "Downloads",
 
 
 function DownloadLegacyTransfer() {
-  this._promiseDownload = new Promise(r => this._resolveDownload = r);
+  this._promiseDownload = new Promise(r => (this._resolveDownload = r));
 }
 
 DownloadLegacyTransfer.prototype = {
   classID: Components.ID("{1b4c85df-cbdd-4bb6-b04e-613caece083c}"),
 
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,
-                                          Ci.nsIWebProgressListener2,
-                                          Ci.nsITransfer]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIWebProgressListener,
+    Ci.nsIWebProgressListener2,
+    Ci.nsITransfer,
+  ]),
 
   
-  onStateChange: function DLT_onStateChange(aWebProgress, aRequest, aStateFlags,
-                                            aStatus) {
+  onStateChange: function DLT_onStateChange(
+    aWebProgress,
+    aRequest,
+    aStateFlags,
+    aStatus
+  ) {
     if (!Components.isSuccessCode(aStatus)) {
       this._componentFailed = true;
     }
 
-    if ((aStateFlags & Ci.nsIWebProgressListener.STATE_START) &&
-        (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
+    if (
+      aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
+      aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK
+    ) {
       let blockedByParentalControls = false;
       
       
       try {
         
         
-        blockedByParentalControls = aRequest instanceof Ci.nsIHttpChannel &&
-                                      aRequest.responseStatus == 450;
+        blockedByParentalControls =
+          aRequest instanceof Ci.nsIHttpChannel &&
+          aRequest.responseStatus == 450;
       } catch (e) {
         if (e.result == Cr.NS_ERROR_NOT_AVAILABLE) {
           aRequest.cancel(Cr.NS_BINDING_ABORTED);
@@ -86,47 +97,53 @@ DownloadLegacyTransfer.prototype = {
 
       
       
-      this._promiseDownload.then(download => {
-        
-        
-        
-        if (blockedByParentalControls) {
-          download._blockedByParentalControls = true;
-        }
-
-        download.saver.onTransferStarted(aRequest);
-
-        
-        
-        
-        
-        
-        return download.saver.deferCanceled.promise.then(() => {
+      this._promiseDownload
+        .then(download => {
           
-          if (this._cancelable && !this._componentFailed) {
-            this._cancelable.cancel(Cr.NS_ERROR_ABORT);
-            if (this._cancelable instanceof Ci.nsIWebBrowserPersist) {
-              
-              download.saver.onTransferFinished(Cr.NS_ERROR_ABORT);
-              this._cancelable = null;
-            }
+          
+          
+          if (blockedByParentalControls) {
+            download._blockedByParentalControls = true;
           }
-        });
-      }).catch(Cu.reportError);
-    } else if ((aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) &&
-        (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
+
+          download.saver.onTransferStarted(aRequest);
+
+          
+          
+          
+          
+          
+          return download.saver.deferCanceled.promise.then(() => {
+            
+            if (this._cancelable && !this._componentFailed) {
+              this._cancelable.cancel(Cr.NS_ERROR_ABORT);
+              if (this._cancelable instanceof Ci.nsIWebBrowserPersist) {
+                
+                download.saver.onTransferFinished(Cr.NS_ERROR_ABORT);
+                this._cancelable = null;
+              }
+            }
+          });
+        })
+        .catch(Cu.reportError);
+    } else if (
+      aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+      aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK
+    ) {
       
       
-      this._promiseDownload.then(download => {
-        
-        
-        if (Components.isSuccessCode(aStatus)) {
-          download.saver.setSha256Hash(this._sha256Hash);
-          download.saver.setSignatureInfo(this._signatureInfo);
-          download.saver.setRedirects(this._redirects);
-        }
-        download.saver.onTransferFinished(aStatus);
-      }).catch(Cu.reportError);
+      this._promiseDownload
+        .then(download => {
+          
+          
+          if (Components.isSuccessCode(aStatus)) {
+            download.saver.setSha256Hash(this._sha256Hash);
+            download.saver.setSignatureInfo(this._signatureInfo);
+            download.saver.setRedirects(this._redirects);
+          }
+          download.saver.onTransferFinished(aStatus);
+        })
+        .catch(Cu.reportError);
 
       
       this._cancelable = null;
@@ -134,21 +151,33 @@ DownloadLegacyTransfer.prototype = {
   },
 
   
-  onProgressChange: function DLT_onProgressChange(aWebProgress, aRequest,
-                                                  aCurSelfProgress,
-                                                  aMaxSelfProgress,
-                                                  aCurTotalProgress,
-                                                  aMaxTotalProgress) {
-    this.onProgressChange64(aWebProgress, aRequest, aCurSelfProgress,
-                            aMaxSelfProgress, aCurTotalProgress,
-                            aMaxTotalProgress);
+  onProgressChange: function DLT_onProgressChange(
+    aWebProgress,
+    aRequest,
+    aCurSelfProgress,
+    aMaxSelfProgress,
+    aCurTotalProgress,
+    aMaxTotalProgress
+  ) {
+    this.onProgressChange64(
+      aWebProgress,
+      aRequest,
+      aCurSelfProgress,
+      aMaxSelfProgress,
+      aCurTotalProgress,
+      aMaxTotalProgress
+    );
   },
 
-  onLocationChange() { },
+  onLocationChange() {},
 
   
-  onStatusChange: function DLT_onStatusChange(aWebProgress, aRequest, aStatus,
-                                              aMessage) {
+  onStatusChange: function DLT_onStatusChange(
+    aWebProgress,
+    aRequest,
+    aStatus,
+    aMessage
+  ) {
     
     
     
@@ -156,29 +185,36 @@ DownloadLegacyTransfer.prototype = {
       this._componentFailed = true;
 
       
-      this._promiseDownload.then(download => {
-        download.saver.onTransferFinished(aStatus);
-      }).catch(Cu.reportError);
+      this._promiseDownload
+        .then(download => {
+          download.saver.onTransferFinished(aStatus);
+        })
+        .catch(Cu.reportError);
     }
   },
 
-  onSecurityChange() { },
+  onSecurityChange() {},
 
-  onContentBlockingEvent() { },
+  onContentBlockingEvent() {},
 
   
-  onProgressChange64: function DLT_onProgressChange64(aWebProgress, aRequest,
-                                                      aCurSelfProgress,
-                                                      aMaxSelfProgress,
-                                                      aCurTotalProgress,
-                                                      aMaxTotalProgress) {
+  onProgressChange64: function DLT_onProgressChange64(
+    aWebProgress,
+    aRequest,
+    aCurSelfProgress,
+    aMaxSelfProgress,
+    aCurTotalProgress,
+    aMaxTotalProgress
+  ) {
     
     
     
     if (this._download) {
       this._hasDelayedProgress = false;
-      this._download.saver.onProgressBytes(aCurTotalProgress,
-                                           aMaxTotalProgress);
+      this._download.saver.onProgressBytes(
+        aCurTotalProgress,
+        aMaxTotalProgress
+      );
       return;
     }
 
@@ -194,43 +230,63 @@ DownloadLegacyTransfer.prototype = {
     }
     this._hasDelayedProgress = true;
 
-    this._promiseDownload.then(download => {
-      
-      
-      if (!this._hasDelayedProgress) {
-        return;
-      }
-      download.saver.onProgressBytes(this._delayedCurTotalProgress,
-                                     this._delayedMaxTotalProgress);
-    }).catch(Cu.reportError);
+    this._promiseDownload
+      .then(download => {
+        
+        
+        if (!this._hasDelayedProgress) {
+          return;
+        }
+        download.saver.onProgressBytes(
+          this._delayedCurTotalProgress,
+          this._delayedMaxTotalProgress
+        );
+      })
+      .catch(Cu.reportError);
   },
   _hasDelayedProgress: false,
   _delayedCurTotalProgress: 0,
   _delayedMaxTotalProgress: 0,
 
   
-  onRefreshAttempted: function DLT_onRefreshAttempted(aWebProgress, aRefreshURI,
-                                                      aMillis, aSameURI) {
+  onRefreshAttempted: function DLT_onRefreshAttempted(
+    aWebProgress,
+    aRefreshURI,
+    aMillis,
+    aSameURI
+  ) {
     
     
     return true;
   },
 
   
-  init: function DLT_init(aSource, aTarget, aDisplayName, aMIMEInfo, aStartTime,
-                          aTempFile, aCancelable, aIsPrivate) {
+  init: function DLT_init(
+    aSource,
+    aTarget,
+    aDisplayName,
+    aMIMEInfo,
+    aStartTime,
+    aTempFile,
+    aCancelable,
+    aIsPrivate
+  ) {
     this._cancelable = aCancelable;
 
-    let launchWhenSucceeded = false, contentType = null, launcherPath = null;
+    let launchWhenSucceeded = false,
+      contentType = null,
+      launcherPath = null;
 
     if (aMIMEInfo instanceof Ci.nsIMIMEInfo) {
       launchWhenSucceeded =
-                aMIMEInfo.preferredAction != Ci.nsIMIMEInfo.saveToDisk;
+        aMIMEInfo.preferredAction != Ci.nsIMIMEInfo.saveToDisk;
       contentType = aMIMEInfo.type;
 
       let appHandler = aMIMEInfo.preferredApplicationHandler;
-      if (aMIMEInfo.preferredAction == Ci.nsIMIMEInfo.useHelperApp &&
-          appHandler instanceof Ci.nsILocalHandlerApp) {
+      if (
+        aMIMEInfo.preferredAction == Ci.nsIMIMEInfo.useHelperApp &&
+        appHandler instanceof Ci.nsILocalHandlerApp
+      ) {
         launcherPath = appHandler.executable.path;
       }
     }
@@ -240,28 +296,34 @@ DownloadLegacyTransfer.prototype = {
     
     Downloads.createDownload({
       source: { url: aSource.spec, isPrivate: aIsPrivate },
-      target: { path: aTarget.QueryInterface(Ci.nsIFileURL).file.path,
-                partFilePath: aTempFile && aTempFile.path },
+      target: {
+        path: aTarget.QueryInterface(Ci.nsIFileURL).file.path,
+        partFilePath: aTempFile && aTempFile.path,
+      },
       saver: "legacy",
       launchWhenSucceeded,
       contentType,
       launcherPath,
-    }).then(aDownload => {
-      
-      if (aTempFile) {
-        aDownload.tryToKeepPartialData = true;
-      }
+    })
+      .then(aDownload => {
+        
+        if (aTempFile) {
+          aDownload.tryToKeepPartialData = true;
+        }
 
-      
-      aDownload.start().catch(() => {});
+        
+        aDownload.start().catch(() => {});
 
-      
-      this._download = aDownload;
-      this._resolveDownload(aDownload);
+        
+        this._download = aDownload;
+        this._resolveDownload(aDownload);
 
-      
-      return Downloads.getList(Downloads.ALL).then(list => list.add(aDownload));
-    }).catch(Cu.reportError);
+        
+        return Downloads.getList(Downloads.ALL).then(list =>
+          list.add(aDownload)
+        );
+      })
+      .catch(Cu.reportError);
   },
 
   setSha256Hash(hash) {

@@ -16,8 +16,10 @@ function run_test() {
 
 
 add_task(async function test_remove_not_watched() {
-  let nonExistingDir =
-    OS.Path.join(OS.Constants.Path.profileDir, "absolutelyNotExisting");
+  let nonExistingDir = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "absolutelyNotExisting"
+  );
 
   
   let watcher = makeWatcher();
@@ -31,9 +33,13 @@ add_task(async function test_remove_not_watched() {
     function(xpcomError, osError) {
       
       
-      do_throw("Unexpected exception: "
-               + xpcomError + " (XPCOM) "
-               + osError + " (OS Error)");
+      do_throw(
+        "Unexpected exception: " +
+          xpcomError +
+          " (XPCOM) " +
+          osError +
+          " (OS Error)"
+      );
     }
   );
 });

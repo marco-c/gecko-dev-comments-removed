@@ -72,11 +72,13 @@ add_task(async function test_expire_orphans_optionalarg() {
 
 add_task(async function test_expire_limited() {
   await PlacesTestUtils.addVisits([
-    { 
+    {
+      
       uri: "http://old.mozilla.org/",
       visitDate: gNow++,
     },
-    { 
+    {
+      
       uri: "http://new.mozilla.org/",
       visitDate: gNow++,
     },
@@ -97,15 +99,18 @@ add_task(async function test_expire_limited() {
 add_task(async function test_expire_limited_longurl() {
   let longurl = "http://long.mozilla.org/" + "a".repeat(232);
   await PlacesTestUtils.addVisits([
-    { 
+    {
+      
       uri: "http://old.mozilla.org/",
       visitDate: gNow++,
     },
-    { 
+    {
+      
       uri: longurl,
       visitDate: gNow++,
     },
-    { 
+    {
+      
       uri: longurl,
       visitDate: getExpirablePRTime(58),
     },
@@ -124,16 +129,19 @@ add_task(async function test_expire_limited_longurl() {
 
 add_task(async function test_expire_limited_exoticurl() {
   await PlacesTestUtils.addVisits([
-    { 
+    {
+      
       uri: "http://old.mozilla.org/",
       visitDate: gNow++,
     },
-    { 
+    {
+      
       uri: "http://download.mozilla.org",
       visitDate: gNow++,
       transition: 7,
     },
-    { 
+    {
+      
       uri: "http://nonexpirable-download.mozilla.org",
       visitDate: getExpirablePRTime(58),
       transition: 7,
@@ -143,7 +151,10 @@ add_task(async function test_expire_limited_exoticurl() {
   await promiseForceExpirationStep(1);
 
   
-  Assert.equal(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
+  Assert.equal(
+    visits_in_database("http://nonexpirable-download.mozilla.org/"),
+    1
+  );
   
   
   
@@ -197,7 +208,10 @@ add_task(async function test_expire_unlimited() {
 
   
   Assert.equal(visits_in_database("http://nonexpirable.mozilla.org/"), 1);
-  Assert.equal(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
+  Assert.equal(
+    visits_in_database("http://nonexpirable-download.mozilla.org/"),
+    1
+  );
   Assert.equal(visits_in_database(longurl), 1);
   
   Assert.ok(!page_in_database("http://old.mozilla.org/"));

@@ -1,6 +1,7 @@
 
 
-AntiTracking.runTest("Storage Access is removed when topframe navigates",
+AntiTracking.runTest(
+  "Storage Access is removed when topframe navigates",
   
   async _ => {
     
@@ -24,7 +25,9 @@ AntiTracking.runTest("Storage Access is removed when topframe navigates",
   
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   null, 

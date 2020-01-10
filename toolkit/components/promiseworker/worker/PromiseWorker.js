@@ -23,7 +23,9 @@ if (typeof Components != "undefined") {
   throw new Error("This module is meant to be used from the worker thread");
 }
 if (typeof require == "undefined" || typeof module == "undefined") {
-  throw new Error("this module is meant to be imported using the implementation of require() at resource://gre/modules/workers/require.js");
+  throw new Error(
+    "this module is meant to be imported using the implementation of require() at resource://gre/modules/workers/require.js"
+  );
 }
 
 importScripts("resource://gre/modules/workers/require.js");
@@ -93,8 +95,7 @@ function AbstractWorker(agent) {
 }
 AbstractWorker.prototype = {
   
-  log() {
-  },
+  log() {},
 
   
 
@@ -111,8 +112,12 @@ AbstractWorker.prototype = {
     }
     
     
-    if (options && typeof options === "object" && "outExecutionDuration" in options) {
-       start = Date.now();
+    if (
+      options &&
+      typeof options === "object" &&
+      "outExecutionDuration" in options
+    ) {
+      start = Date.now();
     }
 
     let result;
@@ -125,7 +130,12 @@ AbstractWorker.prototype = {
       this.log("Method", method, "succeeded");
     } catch (ex) {
       exn = ex;
-      this.log("Error while calling agent method", method, exn, exn.moduleStack || exn.stack || "");
+      this.log(
+        "Error while calling agent method",
+        method,
+        exn,
+        exn.moduleStack || exn.stack || ""
+      );
     }
 
     if (start) {
@@ -143,17 +153,19 @@ AbstractWorker.prototype = {
       if (result instanceof Meta) {
         if ("transfers" in result.meta) {
           
-          this.postMessage({ok: result.data, id, durationMs},
-            result.meta.transfers);
+          this.postMessage(
+            { ok: result.data, id, durationMs },
+            result.meta.transfers
+          );
         } else {
-          this.postMessage({ok: result.data, id, durationMs});
+          this.postMessage({ ok: result.data, id, durationMs });
         }
         if (result.meta.shutdown || false) {
           
           this.close();
         }
       } else {
-        this.postMessage({ok: result, id, durationMs});
+        this.postMessage({ ok: result, id, durationMs });
       }
     } else if (exn.constructor.name in EXCEPTION_NAMES) {
       
@@ -168,23 +180,34 @@ AbstractWorker.prototype = {
         lineNumber: exn.lineNumber,
         stack: exn.moduleStack,
       };
-      this.postMessage({fail: error, id, durationMs});
+      this.postMessage({ fail: error, id, durationMs });
     } else if ("toMsg" in exn) {
       
       
       
       
       
-      this.log("Sending back an error that knows how to serialize itself", exn, "id is", id);
+      this.log(
+        "Sending back an error that knows how to serialize itself",
+        exn,
+        "id is",
+        id
+      );
       let msg = exn.toMsg();
-      this.postMessage({fail: msg, id, durationMs});
+      this.postMessage({ fail: msg, id, durationMs });
     } else {
       
       
       
       
       
-      this.log("Sending back regular error", exn, exn.moduleStack || exn.stack, "id is", id);
+      this.log(
+        "Sending back regular error",
+        exn,
+        exn.moduleStack || exn.stack,
+        "id is",
+        id
+      );
 
       try {
         

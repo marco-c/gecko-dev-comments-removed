@@ -53,9 +53,11 @@ if (typeof Mozilla == "undefined") {
     var setupPromise = new Promise(function(resolveInit, rejectInit) {
       
       function policyChangeHandler(updatedPref) {
-        if (!("detail" in updatedPref) ||
-            !("canUpload" in updatedPref.detail) ||
-            typeof updatedPref.detail.canUpload != "boolean") {
+        if (
+          !("detail" in updatedPref) ||
+          !("canUpload" in updatedPref.detail) ||
+          typeof updatedPref.detail.canUpload != "boolean"
+        ) {
           return;
         }
         _canUpload = updatedPref.detail.canUpload;
@@ -63,10 +65,15 @@ if (typeof Mozilla == "undefined") {
         
         resolveInit();
       }
-      document.addEventListener("mozTelemetryPolicyChange", policyChangeHandler);
-      document.addEventListener("mozTelemetryUntrustedOrigin",
-                                () => rejectInit(new Error("Origin not trusted or HCT disabled.")),
-                                {once: true});
+      document.addEventListener(
+        "mozTelemetryPolicyChange",
+        policyChangeHandler
+      );
+      document.addEventListener(
+        "mozTelemetryUntrustedOrigin",
+        () => rejectInit(new Error("Origin not trusted or HCT disabled.")),
+        { once: true }
+      );
     });
 
     
@@ -101,7 +108,13 @@ if (typeof Mozilla == "undefined") {
     });
   };
 
-  Mozilla.ContentTelemetry.recordEvent = function(category, method, object, value, extra) {
+  Mozilla.ContentTelemetry.recordEvent = function(
+    category,
+    method,
+    object,
+    value,
+    extra
+  ) {
     _sendMessageToChrome("recordEvent", {
       category: category,
       method: method,

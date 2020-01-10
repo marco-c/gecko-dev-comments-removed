@@ -2,16 +2,19 @@
 
 
 
-var {AppConstants} = SpecialPowers.Cu.import("resource://gre/modules/AppConstants.jsm", {});
+var { AppConstants } = SpecialPowers.Cu.import(
+  "resource://gre/modules/AppConstants.jsm",
+  {}
+);
 
 
 
 
 
 let remote = location.pathname.includes("test-oop-extensions");
-SpecialPowers.pushPrefEnv({set: [
-  ["extensions.webextensions.remote", remote],
-]});
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.webextensions.remote", remote]],
+});
 if (remote) {
   
   
@@ -20,7 +23,8 @@ if (remote) {
 
 {
   let chromeScript = SpecialPowers.loadChromeScript(
-    SimpleTest.getTestFileURL("chrome_cleanup_script.js"));
+    SimpleTest.getTestFileURL("chrome_cleanup_script.js")
+  );
 
   SimpleTest.registerCleanupFunction(async () => {
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -31,7 +35,10 @@ if (remote) {
     chromeScript.destroy();
 
     if (results.extraWindows.length || results.extraTabs.length) {
-      ok(false, `Test left extra windows or tabs: ${JSON.stringify(results)}\n`);
+      ok(
+        false,
+        `Test left extra windows or tabs: ${JSON.stringify(results)}\n`
+      );
     }
   });
 }
@@ -40,24 +47,27 @@ let Assert = {
   
   
   rejects(promise, expected, msg) {
-    return promise.then(() => {
-      ok(false, msg);
-    }, actual => {
-      let matched = false;
-      if (Object.prototype.toString.call(expected) == "[object RegExp]") {
-        if (expected.test(actual)) {
+    return promise.then(
+      () => {
+        ok(false, msg);
+      },
+      actual => {
+        let matched = false;
+        if (Object.prototype.toString.call(expected) == "[object RegExp]") {
+          if (expected.test(actual)) {
+            matched = true;
+          }
+        } else if (actual instanceof expected) {
           matched = true;
         }
-      } else if (actual instanceof expected) {
-        matched = true;
-      }
 
-      if (matched) {
-        ok(true, msg);
-      } else {
-        ok(false, `Unexpected exception for "${msg}": ${actual}`);
+        if (matched) {
+          ok(true, msg);
+        } else {
+          ok(false, `Unexpected exception for "${msg}": ${actual}`);
+        }
       }
-    });
+    );
   },
 };
 
@@ -65,9 +75,13 @@ let Assert = {
 
 function waitForLoad(win) {
   return new Promise(resolve => {
-    win.addEventListener("load", function() {
-      resolve();
-    }, {capture: true, once: true});
+    win.addEventListener(
+      "load",
+      function() {
+        resolve();
+      },
+      { capture: true, once: true }
+    );
   });
 }
 
@@ -84,7 +98,8 @@ const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 let consoleMonitor = {
   start(messages) {
     this.chromeScript = SpecialPowers.loadChromeScript(
-      SimpleTest.getTestFileURL("mochitest_console.js"));
+      SimpleTest.getTestFileURL("mochitest_console.js")
+    );
     this.chromeScript.sendAsyncMessage("consoleStart", messages);
   },
 

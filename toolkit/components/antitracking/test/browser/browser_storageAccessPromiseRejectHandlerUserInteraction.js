@@ -1,12 +1,15 @@
 
 
-AntiTracking.runTest("Storage Access API returns promises that maintain user activation for calling its reject handler",
+AntiTracking.runTest(
+  "Storage Access API returns promises that maintain user activation for calling its reject handler",
   
   async _ => {
     
     let [threw, rejected] = await callRequestStorageAccess(dwu => {
-      ok(dwu.isHandlingUserInput,
-         "Promise reject handler must run as if we're handling user input");
+      ok(
+        dwu.isHandlingUserInput,
+        "Promise reject handler must run as if we're handling user input"
+      );
     }, true);
     ok(!threw, "requestStorageAccess should not throw");
     ok(rejected, "requestStorageAccess should not be available");
@@ -16,7 +19,9 @@ AntiTracking.runTest("Storage Access API returns promises that maintain user act
   
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   null, 

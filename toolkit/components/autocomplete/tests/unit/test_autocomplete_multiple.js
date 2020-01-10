@@ -54,8 +54,6 @@ AutoCompleteInput.prototype = {
 
 
 
-
-
 function AutoCompleteResult(aValues, aComments, aStyles) {
   this._values = aValues;
   this._comments = aComments;
@@ -112,8 +110,6 @@ AutoCompleteResult.prototype = {
 
 
 
-
-
 function AutoCompleteSearch(aName, aResult) {
   this.name = aName;
   this._result = aResult;
@@ -127,14 +123,10 @@ AutoCompleteSearch.prototype = {
   
   _result: null,
 
-
   
 
 
-  startSearch(aSearchString,
-                        aSearchParam,
-                        aPreviousResult,
-                        aListener) {
+  startSearch(aSearchString, aSearchParam, aPreviousResult, aListener) {
     var result = this._result;
     if (result._values.length > 0) {
       result.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS_ONGOING;
@@ -154,7 +146,10 @@ AutoCompleteSearch.prototype = {
   stopSearch() {},
 
   
-  QueryInterface: ChromeUtils.generateQI(["nsIFactory", "nsIAutoCompleteSearch"]),
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIFactory",
+    "nsIAutoCompleteSearch",
+  ]),
 
   
   createInstance(outer, iid) {
@@ -166,19 +161,19 @@ AutoCompleteSearch.prototype = {
 
 
 
-
-
 function registerAutoCompleteSearch(aSearch) {
   var name = "@mozilla.org/autocomplete/search;1?name=" + aSearch.name;
 
-  var uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].
-                      getService(Ci.nsIUUIDGenerator);
+  var uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(
+    Ci.nsIUUIDGenerator
+  );
   var cid = uuidGenerator.generateUUID();
 
   var desc = "Test AutoCompleteSearch";
 
-  var componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);
+  var componentManager = Components.manager.QueryInterface(
+    Ci.nsIComponentRegistrar
+  );
   componentManager.registerFactory(cid, desc, name, aSearch);
 
   
@@ -188,15 +183,12 @@ function registerAutoCompleteSearch(aSearch) {
 
 
 
-
-
 function unregisterAutoCompleteSearch(aSearch) {
-  var componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);
+  var componentManager = Components.manager.QueryInterface(
+    Ci.nsIComponentRegistrar
+  );
   componentManager.unregisterFactory(aSearch.cid, aSearch);
 }
-
-
 
 
 
@@ -204,17 +196,22 @@ function unregisterAutoCompleteSearch(aSearch) {
 function run_test() {
   var expected1 = ["1", "2", "3"];
   var expected2 = ["a", "b", "c"];
-  var search1 = new AutoCompleteSearch("search1",
-                             new AutoCompleteResult(expected1, [], []));
-  var search2 = new AutoCompleteSearch("search2",
-                             new AutoCompleteResult(expected2, [], []));
+  var search1 = new AutoCompleteSearch(
+    "search1",
+    new AutoCompleteResult(expected1, [], [])
+  );
+  var search2 = new AutoCompleteSearch(
+    "search2",
+    new AutoCompleteResult(expected2, [], [])
+  );
 
   
   registerAutoCompleteSearch(search1);
   registerAutoCompleteSearch(search2);
 
-  var controller = Cc["@mozilla.org/autocomplete/controller;1"].
-                   getService(Ci.nsIAutoCompleteController);
+  var controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(
+    Ci.nsIAutoCompleteController
+  );
 
   
   
@@ -229,8 +226,10 @@ function run_test() {
   input.onSearchComplete = function() {
     Assert.equal(numSearchesStarted, 1);
 
-    Assert.equal(controller.searchStatus,
-                 Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
+    Assert.equal(
+      controller.searchStatus,
+      Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH
+    );
     Assert.equal(controller.matchCount, expected1.length + expected2.length);
 
     

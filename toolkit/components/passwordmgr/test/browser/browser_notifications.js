@@ -3,77 +3,103 @@
 
 
 add_task(async function test_save_change() {
-  let testCases = [{
-    username: "username",
-    password: "password",
-  }, {
-    username: "",
-    password: "password",
-  }, {
-    username: "username",
-    oldPassword: "password",
-    password: "newPassword",
-  }, {
-    username: "",
-    oldPassword: "password",
-    password: "newPassword",
-  }];
+  let testCases = [
+    {
+      username: "username",
+      password: "password",
+    },
+    {
+      username: "",
+      password: "password",
+    },
+    {
+      username: "username",
+      oldPassword: "password",
+      password: "newPassword",
+    },
+    {
+      username: "",
+      oldPassword: "password",
+      password: "newPassword",
+    },
+  ];
 
   for (let { username, oldPassword, password } of testCases) {
     
     if (oldPassword) {
-      Services.logins.addLogin(LoginTestUtils.testData.formLogin({
-        origin: "https://example.com",
-        formActionOrigin: "https://example.com",
-        username,
-        password: oldPassword,
-      }));
+      Services.logins.addLogin(
+        LoginTestUtils.testData.formLogin({
+          origin: "https://example.com",
+          formActionOrigin: "https://example.com",
+          username,
+          password: oldPassword,
+        })
+      );
     }
 
-    await BrowserTestUtils.withNewTab({
-      gBrowser,
-      url: "https://example.com/browser/toolkit/components/" +
-           "passwordmgr/test/browser/form_basic.html",
-    }, async function(browser) {
-      
-      
-      let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "popupshown",
-                                                       (event) => event.target == PopupNotifications.panel);
-      await ContentTask.spawn(browser, [username, password],
-                              async function([contentUsername, contentPassword]) {
-                                let doc = content.document;
-                                doc.getElementById("form-basic-username").value = contentUsername;
-                                doc.getElementById("form-basic-password").value = contentPassword;
-                                doc.getElementById("form-basic").submit();
-                              });
-      await promiseShown;
-      let notificationElement = PopupNotifications.panel.childNodes[0];
-      
-      notificationElement.querySelector("#password-notification-password").clientTop;
+    await BrowserTestUtils.withNewTab(
+      {
+        gBrowser,
+        url:
+          "https://example.com/browser/toolkit/components/" +
+          "passwordmgr/test/browser/form_basic.html",
+      },
+      async function(browser) {
+        
+        
+        let promiseShown = BrowserTestUtils.waitForEvent(
+          PopupNotifications.panel,
+          "popupshown",
+          event => event.target == PopupNotifications.panel
+        );
+        await ContentTask.spawn(browser, [username, password], async function([
+          contentUsername,
+          contentPassword,
+        ]) {
+          let doc = content.document;
+          doc.getElementById("form-basic-username").value = contentUsername;
+          doc.getElementById("form-basic-password").value = contentPassword;
+          doc.getElementById("form-basic").submit();
+        });
+        await promiseShown;
+        let notificationElement = PopupNotifications.panel.childNodes[0];
+        
+        notificationElement.querySelector("#password-notification-password")
+          .clientTop;
 
-      
-      Assert.equal(notificationElement.querySelector("#password-notification-username")
-                           .value, username);
-      Assert.equal(notificationElement.querySelector("#password-notification-password")
-                           .value, password);
+        
+        Assert.equal(
+          notificationElement.querySelector("#password-notification-username")
+            .value,
+          username
+        );
+        Assert.equal(
+          notificationElement.querySelector("#password-notification-password")
+            .value,
+          password
+        );
 
-      
-      
-      
-      let expectedNotification = oldPassword ? "modifyLogin" : "addLogin";
-      let promiseLogin = TestUtils.topicObserved("passwordmgr-storage-changed",
-                                                 (_, data) => data == expectedNotification);
-      notificationElement.button.doCommand();
-      let [result] = await promiseLogin;
+        
+        
+        
+        let expectedNotification = oldPassword ? "modifyLogin" : "addLogin";
+        let promiseLogin = TestUtils.topicObserved(
+          "passwordmgr-storage-changed",
+          (_, data) => data == expectedNotification
+        );
+        notificationElement.button.doCommand();
+        let [result] = await promiseLogin;
 
-      
-      let login = oldPassword ? result.QueryInterface(Ci.nsIArray)
-                                      .queryElementAt(1, Ci.nsILoginInfo)
-                              : result.QueryInterface(Ci.nsILoginInfo);
-      Assert.equal(login.username, username);
-      Assert.equal(login.password, password);
-    });
+        
+        let login = oldPassword
+          ? result
+              .QueryInterface(Ci.nsIArray)
+              .queryElementAt(1, Ci.nsILoginInfo)
+          : result.QueryInterface(Ci.nsILoginInfo);
+        Assert.equal(login.username, username);
+        Assert.equal(login.password, password);
+      }
+    );
 
     
     Services.logins.removeAllLogins();

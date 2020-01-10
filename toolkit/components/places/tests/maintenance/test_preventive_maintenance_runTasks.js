@@ -2,12 +2,14 @@
 
 
 
- 
+
 
 
 
 add_task(async function() {
-  let tasksStatusMap = await PlacesDBUtils.runTasks([PlacesDBUtils.invalidateCaches]);
+  let tasksStatusMap = await PlacesDBUtils.runTasks([
+    PlacesDBUtils.invalidateCaches,
+  ]);
   let numberOfTasksRun = tasksStatusMap.size;
   let successfulTasks = [];
   let failedTasks = [];
@@ -20,6 +22,10 @@ add_task(async function() {
   });
 
   Assert.equal(numberOfTasksRun, 1, "Check that we have run all tasks.");
-  Assert.equal(successfulTasks.length, 1, "Check that we have run all tasks successfully");
+  Assert.equal(
+    successfulTasks.length,
+    1,
+    "Check that we have run all tasks successfully"
+  );
   Assert.equal(failedTasks.length, 0, "Check that no task is failing");
 });

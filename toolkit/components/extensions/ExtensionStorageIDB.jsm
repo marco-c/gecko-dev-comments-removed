@@ -6,8 +6,12 @@
 
 this.EXPORTED_SYMBOLS = ["ExtensionStorageIDB"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {IndexedDB} = ChromeUtils.import("resource://gre/modules/IndexedDB.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { IndexedDB } = ChromeUtils.import(
+  "resource://gre/modules/IndexedDB.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
@@ -16,9 +20,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
-                                   "@mozilla.org/dom/quota-manager-service;1",
-                                   "nsIQuotaManagerService");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "quotaManagerService",
+  "@mozilla.org/dom/quota-manager-service;1",
+  "nsIQuotaManagerService"
+);
 
 
 
@@ -28,11 +35,14 @@ const WEBEXT_STORAGE_USER_CONTEXT_ID = -1 >>> 0;
 const IDB_NAME = "webExtensions-storage-local";
 const IDB_DATA_STORENAME = "storage-local-data";
 const IDB_VERSION = 1;
-const IDB_MIGRATE_RESULT_HISTOGRAM = "WEBEXT_STORAGE_LOCAL_IDB_MIGRATE_RESULT_COUNT";
+const IDB_MIGRATE_RESULT_HISTOGRAM =
+  "WEBEXT_STORAGE_LOCAL_IDB_MIGRATE_RESULT_COUNT";
 
 
-const BACKEND_ENABLED_PREF = "extensions.webextensions.ExtensionStorageIDB.enabled";
-const IDB_MIGRATED_PREF_BRANCH = "extensions.webextensions.ExtensionStorageIDB.migrated";
+const BACKEND_ENABLED_PREF =
+  "extensions.webextensions.ExtensionStorageIDB.enabled";
+const IDB_MIGRATED_PREF_BRANCH =
+  "extensions.webextensions.ExtensionStorageIDB.migrated";
 
 var DataMigrationTelemetry = {
   initialized: false,
@@ -46,7 +56,9 @@ var DataMigrationTelemetry = {
     
     Services.telemetry.setEventRecordingEnabled("extensions.data", true);
 
-    this.resultHistogram = Services.telemetry.getHistogramById(IDB_MIGRATE_RESULT_HISTOGRAM);
+    this.resultHistogram = Services.telemetry.getHistogramById(
+      IDB_MIGRATE_RESULT_HISTOGRAM
+    );
   },
 
   
@@ -110,7 +122,7 @@ var DataMigrationTelemetry = {
       this.lazyInit();
       this.resultHistogram.add(histogramCategory);
 
-      const extra = {backend};
+      const extra = { backend };
 
       if (dataMigrated != null) {
         extra.data_migrated = dataMigrated ? "y" : "n";
@@ -128,8 +140,13 @@ var DataMigrationTelemetry = {
         extra.error_name = this.getErrorName(error);
       }
 
-      Services.telemetry.recordEvent("extensions.data", "migrateResult", "storageLocal",
-                                     getTrimmedString(extensionId), extra);
+      Services.telemetry.recordEvent(
+        "extensions.data",
+        "migrateResult",
+        "storageLocal",
+        getTrimmedString(extensionId),
+        extra
+      );
     } catch (err) {
       
       
@@ -152,7 +169,10 @@ class ExtensionStorageLocalIDB extends IndexedDB {
   }
 
   async isEmpty() {
-    const cursor = await this.objectStore(IDB_DATA_STORENAME, "readonly").openKeyCursor();
+    const cursor = await this.objectStore(
+      IDB_DATA_STORENAME,
+      "readonly"
+    ).openKeyCursor();
     return cursor.done;
   }
 
@@ -175,14 +195,17 @@ class ExtensionStorageLocalIDB extends IndexedDB {
 
 
 
-  async set(items, {serialize} = {}) {
+  async set(items, { serialize } = {}) {
     const changes = {};
     let changed = false;
 
     
     
     const transaction = this.transaction(IDB_DATA_STORENAME, "readwrite");
-    const objectStore = transaction.objectStore(IDB_DATA_STORENAME, "readwrite");
+    const objectStore = transaction.objectStore(
+      IDB_DATA_STORENAME,
+      "readwrite"
+    );
     const transactionCompleted = transaction.promiseComplete();
 
     for (let key of Object.keys(items)) {
@@ -234,7 +257,7 @@ class ExtensionStorageLocalIDB extends IndexedDB {
       keys = [keysOrItems];
     } else if (Array.isArray(keysOrItems)) {
       keys = keysOrItems;
-    } else if (keysOrItems && typeof(keysOrItems) === "object") {
+    } else if (keysOrItems && typeof keysOrItems === "object") {
       keys = Object.keys(keysOrItems);
       defaultValues = keysOrItems;
     }
@@ -244,7 +267,10 @@ class ExtensionStorageLocalIDB extends IndexedDB {
     
     
     if (keys == null) {
-      const cursor = await this.objectStore(IDB_DATA_STORENAME, "readonly").openCursor();
+      const cursor = await this.objectStore(
+        IDB_DATA_STORENAME,
+        "readonly"
+      ).openCursor();
       while (!cursor.done) {
         result[cursor.key] = cursor.value;
         await cursor.continue();
@@ -291,13 +317,15 @@ class ExtensionStorageLocalIDB extends IndexedDB {
     let promises = [];
 
     for (let key of keys) {
-      promises.push(objectStore.getKey(key).then(async foundKey => {
-        if (foundKey === key) {
-          changed = true;
-          changes[key] = {oldValue: await objectStore.get(key)};
-          return objectStore.delete(key);
-        }
-      }));
+      promises.push(
+        objectStore.getKey(key).then(async foundKey => {
+          if (foundKey === key) {
+            changed = true;
+            changes[key] = { oldValue: await objectStore.get(key) };
+            return objectStore.delete(key);
+          }
+        })
+      );
     }
 
     await Promise.all(promises);
@@ -319,7 +347,7 @@ class ExtensionStorageLocalIDB extends IndexedDB {
 
     const cursor = await objectStore.openCursor();
     while (!cursor.done) {
-      changes[cursor.key] = {oldValue: cursor.value};
+      changes[cursor.key] = { oldValue: cursor.value };
       changed = true;
       await cursor.continue();
     }
@@ -362,7 +390,10 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   }
 
   try {
-    idbConn = await ExtensionStorageIDB.open(storagePrincipal, extension.hasPermission("unlimitedStorage"));
+    idbConn = await ExtensionStorageIDB.open(
+      storagePrincipal,
+      extension.hasPermission("unlimitedStorage")
+    );
     hasEmptyIDB = await idbConn.isEmpty();
 
     if (!hasEmptyIDB) {
@@ -375,7 +406,10 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     }
   } catch (err) {
     extension.logWarning(
-      `storage.local data migration cancelled, unable to open IDB connection: ${err.message}::${err.stack}`);
+      `storage.local data migration cancelled, unable to open IDB connection: ${
+        err.message
+      }::${err.stack}`
+    );
 
     DataMigrationTelemetry.recordResult({
       backend: "JSONFile",
@@ -394,7 +428,10 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       
       
       extension.logWarning(
-        `Unable to access extension storage.local data file: ${fileErr.message}::${fileErr.stack}`);
+        `Unable to access extension storage.local data file: ${
+          fileErr.message
+        }::${fileErr.stack}`
+      );
       return false;
     });
 
@@ -402,7 +439,8 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     
     if (oldStorageExists) {
       Services.console.logStringMessage(
-        `Migrating storage.local data for ${extension.policy.debugName}...`);
+        `Migrating storage.local data for ${extension.policy.debugName}...`
+      );
 
       jsonFile = await ExtensionStorage.getFile(extension.id);
       const data = {};
@@ -413,12 +451,17 @@ async function migrateJSONFileData(extension, storagePrincipal) {
 
       await idbConn.set(data);
       Services.console.logStringMessage(
-        `storage.local data successfully migrated to IDB Backend for ${extension.policy.debugName}.`);
+        `storage.local data successfully migrated to IDB Backend for ${
+          extension.policy.debugName
+        }.`
+      );
     }
 
     dataMigrateCompleted = true;
   } catch (err) {
-    extension.logWarning(`Error on migrating storage.local data file: ${err.message}::${err.stack}`);
+    extension.logWarning(
+      `Error on migrating storage.local data file: ${err.message}::${err.stack}`
+    );
 
     if (oldStorageExists && !dataMigrateCompleted) {
       
@@ -458,7 +501,9 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       
       
       if (await OS.File.exists(oldStoragePath)) {
-        let openInfo = await OS.File.openUnique(`${oldStoragePath}.migrated`, {humanReadable: true});
+        let openInfo = await OS.File.openUnique(`${oldStoragePath}.migrated`, {
+          humanReadable: true,
+        });
         await openInfo.file.close();
         await OS.File.move(oldStoragePath, openInfo.path);
       }
@@ -501,15 +546,26 @@ this.ExtensionStorageIDB = {
   selectedBackendPromises: new WeakMap(),
 
   init() {
-    XPCOMUtils.defineLazyPreferenceGetter(this, "isBackendEnabled", BACKEND_ENABLED_PREF, false);
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "isBackendEnabled",
+      BACKEND_ENABLED_PREF,
+      false
+    );
   },
 
   isMigratedExtension(extension) {
-    return Services.prefs.getBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, false);
+    return Services.prefs.getBoolPref(
+      `${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`,
+      false
+    );
   },
 
   setMigratedExtensionPref(extension, val) {
-    Services.prefs.setBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, !!val);
+    Services.prefs.setBoolPref(
+      `${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`,
+      !!val
+    );
   },
 
   clearMigratedExtensionPref(extensionId) {
@@ -552,42 +608,48 @@ this.ExtensionStorageIDB = {
 
 
   selectBackend(context) {
-    const {extension} = context;
+    const { extension } = context;
 
     if (!this.selectedBackendPromises.has(extension)) {
       let promise;
 
       if (context.childManager) {
-        return context.childManager.callParentAsyncFunction(
-          "storage.local.IDBBackend.selectBackend", []
-        ).then(parentResult => {
-          let result;
+        return context.childManager
+          .callParentAsyncFunction("storage.local.IDBBackend.selectBackend", [])
+          .then(parentResult => {
+            let result;
 
-          if (!parentResult.backendEnabled) {
-            result = {backendEnabled: false};
-          } else {
-            result = {
-              ...parentResult,
-              
-              
-              storagePrincipal: parentResult.storagePrincipal.deserialize(this, true),
-            };
-          }
+            if (!parentResult.backendEnabled) {
+              result = { backendEnabled: false };
+            } else {
+              result = {
+                ...parentResult,
+                
+                
+                storagePrincipal: parentResult.storagePrincipal.deserialize(
+                  this,
+                  true
+                ),
+              };
+            }
 
-          
-          
-          
-          
-          this.selectedBackendPromises.set(extension, Promise.resolve(result));
+            
+            
+            
+            
+            this.selectedBackendPromises.set(
+              extension,
+              Promise.resolve(result)
+            );
 
-          return result;
-        });
+            return result;
+          });
       }
 
       
       
       if (!this.isBackendEnabled) {
-        promise = Promise.resolve({backendEnabled: false});
+        promise = Promise.resolve({ backendEnabled: false });
       } else {
         
         
@@ -596,24 +658,34 @@ this.ExtensionStorageIDB = {
 
         
         
-        const serializedPrincipal = new StructuredCloneHolder(storagePrincipal, this);
+        const serializedPrincipal = new StructuredCloneHolder(
+          storagePrincipal,
+          this
+        );
 
-        promise = migrateJSONFileData(extension, storagePrincipal).then(() => {
-          return {backendEnabled: true, storagePrincipal: serializedPrincipal};
-        }).catch(err => {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          extension.logWarning("JSONFile backend is being kept enabled by an unexpected " +
-                               `IDBBackend failure: ${err.message}::${err.stack}`);
-          return {backendEnabled: false};
-        });
+        promise = migrateJSONFileData(extension, storagePrincipal)
+          .then(() => {
+            return {
+              backendEnabled: true,
+              storagePrincipal: serializedPrincipal,
+            };
+          })
+          .catch(err => {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            extension.logWarning(
+              "JSONFile backend is being kept enabled by an unexpected " +
+                `IDBBackend failure: ${err.message}::${err.stack}`
+            );
+            return { backendEnabled: false };
+          });
       }
 
       this.selectedBackendPromises.set(extension, promise);
@@ -629,7 +701,13 @@ this.ExtensionStorageIDB = {
         if (request.resultCode === Cr.NS_OK) {
           resolve();
         } else {
-          reject(new Error(`Failed to persist storage for principal: ${storagePrincipal.originNoSuffix}`));
+          reject(
+            new Error(
+              `Failed to persist storage for principal: ${
+                storagePrincipal.originNoSuffix
+              }`
+            )
+          );
         }
       };
     });
@@ -652,8 +730,12 @@ this.ExtensionStorageIDB = {
     if (!storagePrincipal) {
       return Promise.reject(new Error("Unexpected empty principal"));
     }
-    let setPersistentMode = persisted ? this.persist(storagePrincipal) : Promise.resolve();
-    return setPersistentMode.then(() => ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal));
+    let setPersistentMode = persisted
+      ? this.persist(storagePrincipal)
+      : Promise.resolve();
+    return setPersistentMode.then(() =>
+      ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal)
+    );
   },
 
   addOnChangedListener(extensionId, listener) {

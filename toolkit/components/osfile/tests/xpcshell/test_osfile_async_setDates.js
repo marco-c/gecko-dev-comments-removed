@@ -2,7 +2,7 @@
 
 
 
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
@@ -13,8 +13,10 @@ const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 add_task(async function test_nonproto() {
   
-  let path = OS.Path.join(OS.Constants.Path.tmpDir,
-                              "test_osfile_async_setDates_nonproto.tmp");
+  let path = OS.Path.join(
+    OS.Constants.Path.tmpDir,
+    "test_osfile_async_setDates_nonproto.tmp"
+  );
   await OS.File.writeAtomic(path, new Uint8Array(1));
 
   try {
@@ -100,12 +102,14 @@ add_task(async function test_proto() {
   }
 
   
-  let path = OS.Path.join(OS.Constants.Path.tmpDir,
-                              "test_osfile_async_setDates_proto.tmp");
+  let path = OS.Path.join(
+    OS.Constants.Path.tmpDir,
+    "test_osfile_async_setDates_proto.tmp"
+  );
   await OS.File.writeAtomic(path, new Uint8Array(1));
 
   try {
-    let fd = await OS.File.open(path, {write: true});
+    let fd = await OS.File.open(path, { write: true });
 
     try {
       
@@ -186,8 +190,10 @@ add_task(async function test_proto() {
 
 
 add_task(async function test_dirs() {
-  let path = OS.Path.join(OS.Constants.Path.tmpDir,
-                              "test_osfile_async_setDates_dir");
+  let path = OS.Path.join(
+    OS.Constants.Path.tmpDir,
+    "test_osfile_async_setDates_dir"
+  );
   await OS.File.makeDir(path);
 
   try {

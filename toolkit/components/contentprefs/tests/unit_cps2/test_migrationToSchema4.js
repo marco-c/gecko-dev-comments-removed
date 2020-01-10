@@ -59,10 +59,14 @@ add_task(async function testMigration() {
   await dbOK(dbExpectedState);
 
   
-  await new Promise(resolve => cps.removeAllDomainsSince(1000, null, makeCallback(resolve)));
+  await new Promise(resolve =>
+    cps.removeAllDomainsSince(1000, null, makeCallback(resolve))
+  );
   await dbOK(dbExpectedState);
 
-  await new Promise(resolve => cps.removeAllDomainsSince(0, null, makeCallback(resolve)));
+  await new Promise(resolve =>
+    cps.removeAllDomainsSince(0, null, makeCallback(resolve))
+  );
   await dbOK([[null, "zoom-setting", 0.1]]);
 
   

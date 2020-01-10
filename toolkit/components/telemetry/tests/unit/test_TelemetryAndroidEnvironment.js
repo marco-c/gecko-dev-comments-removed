@@ -13,7 +13,7 @@ ChromeUtils.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
 
 
 function checkString(aValue) {
-  return (typeof aValue == "string") && (aValue != "");
+  return typeof aValue == "string" && aValue != "";
 }
 
 
@@ -41,12 +41,12 @@ function checkNullOrString(aValue) {
 
 
 function checkNullOrBool(aValue) {
-  return aValue === null || (typeof aValue == "boolean");
+  return aValue === null || typeof aValue == "boolean";
 }
 
 function checkSystemSection(data) {
-Assert.ok("system" in data, "There must be a system section in Environment.");
-
+  Assert.ok("system" in data, "There must be a system section in Environment.");
+  
   if (gIsAndroid) {
     let deviceData = data.system.device;
     Assert.ok(checkNullOrString(deviceData.model));

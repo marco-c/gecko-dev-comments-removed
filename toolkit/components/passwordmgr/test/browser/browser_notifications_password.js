@@ -12,132 +12,165 @@
 
 
 add_task(async function test_edit_password() {
-  let testCases = [{
-    usernameInPage: "username",
-    passwordInPage: "password",
-    passwordChangedTo: "newPassword",
-    timesUsed: 1,
-  }, {
-    usernameInPage: "username",
-    usernameInPageExists: true,
-    passwordInPage: "password",
-    passwordInStorage: "oldPassword",
-    passwordChangedTo: "newPassword",
-    timesUsed: 2,
-  }, {
-    usernameInPage: "username",
-    usernameChangedTo: "newUsername",
-    usernameChangedToExists: true,
-    passwordInPage: "password",
-    passwordChangedTo: "newPassword",
-    timesUsed: 2,
-  }, {
-    usernameInPage: "username",
-    usernameChangedTo: "newUsername",
-    usernameChangedToExists: true,
-    passwordInPage: "password",
-    passwordChangedTo: "password",
-    timesUsed: 2,
-    checkPasswordNotUpdated: true,
-  }, {
-    usernameInPage: "newUsername",
-    usernameChangedTo: "",
-    usernameChangedToExists: true,
-    passwordInPage: "password",
-    passwordChangedTo: "newPassword",
-    timesUsed: 2,
-  }];
+  let testCases = [
+    {
+      usernameInPage: "username",
+      passwordInPage: "password",
+      passwordChangedTo: "newPassword",
+      timesUsed: 1,
+    },
+    {
+      usernameInPage: "username",
+      usernameInPageExists: true,
+      passwordInPage: "password",
+      passwordInStorage: "oldPassword",
+      passwordChangedTo: "newPassword",
+      timesUsed: 2,
+    },
+    {
+      usernameInPage: "username",
+      usernameChangedTo: "newUsername",
+      usernameChangedToExists: true,
+      passwordInPage: "password",
+      passwordChangedTo: "newPassword",
+      timesUsed: 2,
+    },
+    {
+      usernameInPage: "username",
+      usernameChangedTo: "newUsername",
+      usernameChangedToExists: true,
+      passwordInPage: "password",
+      passwordChangedTo: "password",
+      timesUsed: 2,
+      checkPasswordNotUpdated: true,
+    },
+    {
+      usernameInPage: "newUsername",
+      usernameChangedTo: "",
+      usernameChangedToExists: true,
+      passwordInPage: "password",
+      passwordChangedTo: "newPassword",
+      timesUsed: 2,
+    },
+  ];
 
   for (let testCase of testCases) {
     info("Test case: " + JSON.stringify(testCase));
 
     
     if (testCase.usernameInPageExists) {
-      Services.logins.addLogin(LoginTestUtils.testData.formLogin({
-        origin: "https://example.com",
-        formActionOrigin: "https://example.com",
-        username: testCase.usernameInPage,
-        password: testCase.passwordInStorage,
-      }));
+      Services.logins.addLogin(
+        LoginTestUtils.testData.formLogin({
+          origin: "https://example.com",
+          formActionOrigin: "https://example.com",
+          username: testCase.usernameInPage,
+          password: testCase.passwordInStorage,
+        })
+      );
     }
 
     if (testCase.usernameChangedToExists) {
-      Services.logins.addLogin(LoginTestUtils.testData.formLogin({
-        origin: "https://example.com",
-        formActionOrigin: "https://example.com",
-        username: testCase.usernameChangedTo,
-        password: testCase.passwordChangedTo,
-      }));
+      Services.logins.addLogin(
+        LoginTestUtils.testData.formLogin({
+          origin: "https://example.com",
+          formActionOrigin: "https://example.com",
+          username: testCase.usernameChangedTo,
+          password: testCase.passwordChangedTo,
+        })
+      );
     }
 
-    await BrowserTestUtils.withNewTab({
-      gBrowser,
-      url: "https://example.com/browser/toolkit/components/" +
-           "passwordmgr/test/browser/form_basic.html",
-    }, async function(browser) {
-      
-      
-      let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "popupshown",
-                                                       (event) => event.target == PopupNotifications.panel);
-      await ContentTask.spawn(browser, testCase,
-                              async function(contentTestCase) {
-                                let doc = content.document;
-                                doc.getElementById("form-basic-username").value = contentTestCase.usernameInPage;
-                                doc.getElementById("form-basic-password").value = contentTestCase.passwordInPage;
-                                doc.getElementById("form-basic").submit();
-                              });
-      await promiseShown;
-      let notificationElement = PopupNotifications.panel.childNodes[0];
-      
-      notificationElement.querySelector("#password-notification-password").clientTop;
-
-      
-      if (testCase.usernameChangedTo) {
-        notificationElement.querySelector("#password-notification-username")
-                .value = testCase.usernameChangedTo;
-      }
-
-      
-      if (testCase.passwordChangedTo) {
+    await BrowserTestUtils.withNewTab(
+      {
+        gBrowser,
+        url:
+          "https://example.com/browser/toolkit/components/" +
+          "passwordmgr/test/browser/form_basic.html",
+      },
+      async function(browser) {
+        
+        
+        let promiseShown = BrowserTestUtils.waitForEvent(
+          PopupNotifications.panel,
+          "popupshown",
+          event => event.target == PopupNotifications.panel
+        );
+        await ContentTask.spawn(browser, testCase, async function(
+          contentTestCase
+        ) {
+          let doc = content.document;
+          doc.getElementById("form-basic-username").value =
+            contentTestCase.usernameInPage;
+          doc.getElementById("form-basic-password").value =
+            contentTestCase.passwordInPage;
+          doc.getElementById("form-basic").submit();
+        });
+        await promiseShown;
+        let notificationElement = PopupNotifications.panel.childNodes[0];
+        
         notificationElement.querySelector("#password-notification-password")
-                .value = testCase.passwordChangedTo;
+          .clientTop;
+
+        
+        if (testCase.usernameChangedTo) {
+          notificationElement.querySelector(
+            "#password-notification-username"
+          ).value = testCase.usernameChangedTo;
+        }
+
+        
+        if (testCase.passwordChangedTo) {
+          notificationElement.querySelector(
+            "#password-notification-password"
+          ).value = testCase.passwordChangedTo;
+        }
+
+        
+        
+        let expectModifyLogin =
+          typeof testCase.usernameChangedTo !== "undefined"
+            ? testCase.usernameChangedToExists
+            : testCase.usernameInPageExists;
+
+        
+        
+        
+        let expectedNotification = expectModifyLogin
+          ? "modifyLogin"
+          : "addLogin";
+        let promiseLogin = TestUtils.topicObserved(
+          "passwordmgr-storage-changed",
+          (_, data) => data == expectedNotification
+        );
+        notificationElement.button.doCommand();
+        let [result] = await promiseLogin;
+
+        
+        let login = expectModifyLogin
+          ? result
+              .QueryInterface(Ci.nsIArray)
+              .queryElementAt(1, Ci.nsILoginInfo)
+          : result.QueryInterface(Ci.nsILoginInfo);
+
+        Assert.equal(
+          login.username,
+          testCase.usernameChangedTo || testCase.usernameInPage
+        );
+        Assert.equal(
+          login.password,
+          testCase.passwordChangedTo || testCase.passwordInPage
+        );
+
+        let meta = login.QueryInterface(Ci.nsILoginMetaInfo);
+        Assert.equal(meta.timesUsed, testCase.timesUsed);
+
+        
+        if (testCase.checkPasswordNotUpdated) {
+          Assert.ok(meta.timeLastUsed > meta.timeCreated);
+          Assert.ok(meta.timeCreated == meta.timePasswordChanged);
+        }
       }
-
-      
-      
-      let expectModifyLogin = typeof testCase.usernameChangedTo !== "undefined"
-                              ? testCase.usernameChangedToExists
-                              : testCase.usernameInPageExists;
-
-      
-      
-      
-      let expectedNotification = expectModifyLogin ? "modifyLogin" : "addLogin";
-      let promiseLogin = TestUtils.topicObserved("passwordmgr-storage-changed",
-                                                 (_, data) => data == expectedNotification);
-      notificationElement.button.doCommand();
-      let [result] = await promiseLogin;
-
-      
-      let login = expectModifyLogin ? result.QueryInterface(Ci.nsIArray)
-                                            .queryElementAt(1, Ci.nsILoginInfo)
-                                    : result.QueryInterface(Ci.nsILoginInfo);
-
-      Assert.equal(login.username, testCase.usernameChangedTo ||
-                                   testCase.usernameInPage);
-      Assert.equal(login.password, testCase.passwordChangedTo ||
-                                   testCase.passwordInPage);
-
-      let meta = login.QueryInterface(Ci.nsILoginMetaInfo);
-      Assert.equal(meta.timesUsed, testCase.timesUsed);
-
-      
-      if (testCase.checkPasswordNotUpdated) {
-        Assert.ok(meta.timeLastUsed > meta.timeCreated);
-        Assert.ok(meta.timeCreated == meta.timePasswordChanged);
-      }
-    });
+    );
 
     
     Services.logins.removeAllLogins();

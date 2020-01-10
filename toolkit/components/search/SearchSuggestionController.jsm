@@ -6,29 +6,42 @@
 
 var EXPORTED_SYMBOLS = ["SearchSuggestionController"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 const SEARCH_RESPONSE_SUGGESTION_JSON = "application/x-suggestions+json";
-const DEFAULT_FORM_HISTORY_PARAM      = "searchbar-history";
-const HTTP_OK            = 200;
+const DEFAULT_FORM_HISTORY_PARAM = "searchbar-history";
+const HTTP_OK = 200;
 const BROWSER_SUGGEST_PREF = "browser.search.suggest.enabled";
 const REMOTE_TIMEOUT_PREF = "browser.search.suggest.timeout";
 const REMOTE_TIMEOUT_DEFAULT = 500; 
 
-XPCOMUtils.defineLazyServiceGetter(this, "UUIDGenerator",
-                                   "@mozilla.org/uuid-generator;1",
-                                   "nsIUUIDGenerator");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UUIDGenerator",
+  "@mozilla.org/uuid-generator;1",
+  "nsIUUIDGenerator"
+);
 
 
 
 
 
-var gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(BROWSER_SUGGEST_PREF);
-Services.prefs.addObserver(BROWSER_SUGGEST_PREF, function(aSubject, aTopic, aData) {
+var gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(
+  BROWSER_SUGGEST_PREF
+);
+Services.prefs.addObserver(BROWSER_SUGGEST_PREF, function(
+  aSubject,
+  aTopic,
+  aData
+) {
   gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(BROWSER_SUGGEST_PREF);
 });
 
@@ -142,7 +155,9 @@ this.SearchSuggestionController.prototype = {
       throw new Error("Search not initialized yet (how did you get here?)");
     }
     if (typeof privateMode === "undefined") {
-      throw new Error("The privateMode argument is required to avoid unintentional privacy leaks");
+      throw new Error(
+        "The privateMode argument is required to avoid unintentional privacy leaks"
+      );
     }
     if (!engine.getSubmission) {
       throw new Error("Invalid search engine");
@@ -159,9 +174,18 @@ this.SearchSuggestionController.prototype = {
     this._searchString = searchTerm;
 
     
-    if (searchTerm && gRemoteSuggestionsEnabled && this.maxRemoteResults &&
-        engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON)) {
-      this._deferredRemoteResult = this._fetchRemote(searchTerm, engine, privateMode, userContextId);
+    if (
+      searchTerm &&
+      gRemoteSuggestionsEnabled &&
+      this.maxRemoteResults &&
+      engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON)
+    ) {
+      this._deferredRemoteResult = this._fetchRemote(
+        searchTerm,
+        engine,
+        privateMode,
+        userContextId
+      );
       promises.push(this._deferredRemoteResult.promise);
     }
 
@@ -178,7 +202,10 @@ this.SearchSuggestionController.prototype = {
       Cu.reportError("SearchSuggestionController rejection: " + reason);
       return null;
     }
-    return Promise.all(promises).then(this._dedupeAndReturnResults.bind(this), handleRejection);
+    return Promise.all(promises).then(
+      this._dedupeAndReturnResults.bind(this),
+      handleRejection
+    );
   },
 
   
@@ -192,8 +219,10 @@ this.SearchSuggestionController.prototype = {
     if (this._request) {
       this._request.abort();
     } else if (!this.maxRemoteResults) {
-      Cu.reportError("SearchSuggestionController: Cannot stop fetching if remote results were not " +
-                     "requested");
+      Cu.reportError(
+        "SearchSuggestionController: Cannot stop fetching if remote results were not " +
+          "requested"
+      );
     }
     this._reset();
   },
@@ -208,17 +237,23 @@ this.SearchSuggestionController.prototype = {
           this._formHistoryResult = result;
 
           if (this._request) {
-            this._remoteResultTimer = Cc["@mozilla.org/timer;1"].
-                                      createInstance(Ci.nsITimer);
-            this._remoteResultTimer.initWithCallback(this._onRemoteTimeout.bind(this),
-                                                     this.remoteTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
+            this._remoteResultTimer = Cc["@mozilla.org/timer;1"].createInstance(
+              Ci.nsITimer
+            );
+            this._remoteResultTimer.initWithCallback(
+              this._onRemoteTimeout.bind(this),
+              this.remoteTimeout,
+              Ci.nsITimer.TYPE_ONE_SHOT
+            );
           }
 
           switch (result.searchResult) {
             case Ci.nsIAutoCompleteResult.RESULT_SUCCESS:
             case Ci.nsIAutoCompleteResult.RESULT_NOMATCH:
               if (result.searchString !== this._searchString) {
-                resolve("Unexpected response, this._searchString does not match form history response");
+                resolve(
+                  "Unexpected response, this._searchString does not match form history response"
+                );
                 return;
               }
               let fhEntries = [];
@@ -238,11 +273,15 @@ this.SearchSuggestionController.prototype = {
         },
       };
 
-      let formHistory = Cc["@mozilla.org/autocomplete/search;1?name=form-history"].
-                        createInstance(Ci.nsIAutoCompleteSearch);
-      formHistory.startSearch(searchTerm, this.formHistoryParam || DEFAULT_FORM_HISTORY_PARAM,
-                              this._formHistoryResult,
-                              acSearchObserver);
+      let formHistory = Cc[
+        "@mozilla.org/autocomplete/search;1?name=form-history"
+      ].createInstance(Ci.nsIAutoCompleteSearch);
+      formHistory.startSearch(
+        searchTerm,
+        this.formHistoryParam || DEFAULT_FORM_HISTORY_PARAM,
+        this._formHistoryResult,
+        acSearchObserver
+      );
     });
   },
 
@@ -252,13 +291,15 @@ this.SearchSuggestionController.prototype = {
   _fetchRemote(searchTerm, engine, privateMode, userContextId) {
     let deferredResponse = PromiseUtils.defer();
     this._request = new XMLHttpRequest();
-    let submission = engine.getSubmission(searchTerm,
-                                          SEARCH_RESPONSE_SUGGESTION_JSON);
-    let method = (submission.postData ? "POST" : "GET");
+    let submission = engine.getSubmission(
+      searchTerm,
+      SEARCH_RESPONSE_SUGGESTION_JSON
+    );
+    let method = submission.postData ? "POST" : "GET";
     this._request.open(method, submission.uri.spec, true);
     
-    this._request.channel.loadFlags = Ci.nsIChannel.LOAD_ANONYMOUS |
-                                      Ci.nsIChannel.INHIBIT_PERSISTENT_CACHING;
+    this._request.channel.loadFlags =
+      Ci.nsIChannel.LOAD_ANONYMOUS | Ci.nsIChannel.INHIBIT_PERSISTENT_CACHING;
     
     
     if (!gFirstPartyDomains.has(engine.name)) {
@@ -267,8 +308,10 @@ this.SearchSuggestionController.prototype = {
       
       
       
-      gFirstPartyDomains.set(engine.name,
-        `${engine.identifier || uuid()}.search.suggestions.mozilla`);
+      gFirstPartyDomains.set(
+        engine.name,
+        `${engine.identifier || uuid()}.search.suggestions.mozilla`
+      );
     }
     let firstPartyDomain = gFirstPartyDomains.get(engine.name);
 
@@ -280,11 +323,18 @@ this.SearchSuggestionController.prototype = {
 
     this._request.mozBackgroundRequest = true; 
 
-    this._request.addEventListener("load", this._onRemoteLoaded.bind(this, deferredResponse));
-    this._request.addEventListener("error", (evt) => deferredResponse.resolve("HTTP error"));
+    this._request.addEventListener(
+      "load",
+      this._onRemoteLoaded.bind(this, deferredResponse)
+    );
+    this._request.addEventListener("error", evt =>
+      deferredResponse.resolve("HTTP error")
+    );
     
     
-    this._request.addEventListener("abort", (evt) => deferredResponse.reject("HTTP request aborted"));
+    this._request.addEventListener("abort", evt =>
+      deferredResponse.reject("HTTP request aborted")
+    );
 
     if (submission.postData) {
       this._request.sendInputStream(submission.postData);
@@ -302,7 +352,9 @@ this.SearchSuggestionController.prototype = {
 
   _onRemoteLoaded(deferredResponse) {
     if (!this._request) {
-      deferredResponse.resolve("Got HTTP response after the request was cancelled");
+      deferredResponse.resolve(
+        "Got HTTP response after the request was cancelled"
+      );
       return;
     }
 
@@ -316,7 +368,9 @@ this.SearchSuggestionController.prototype = {
     }
 
     if (status != HTTP_OK || this._request.responseText == "") {
-      deferredResponse.resolve("Non-200 status or empty HTTP response: " + status);
+      deferredResponse.resolve(
+        "Non-200 status or empty HTTP response: " + status
+      );
       return;
     }
 
@@ -327,11 +381,16 @@ this.SearchSuggestionController.prototype = {
       return;
     }
 
-    if (!serverResults[0] ||
-        this._searchString.localeCompare(serverResults[0], undefined,
-                                         { sensitivity: "base" })) {
+    if (
+      !serverResults[0] ||
+      this._searchString.localeCompare(serverResults[0], undefined, {
+        sensitivity: "base",
+      })
+    ) {
       
-      deferredResponse.resolve("Unexpected response, this._searchString does not match remote response");
+      deferredResponse.resolve(
+        "Unexpected response, this._searchString does not match remote response"
+      );
       return;
     }
     let results = serverResults[1] || [];
@@ -376,12 +435,15 @@ this.SearchSuggestionController.prototype = {
     };
 
     for (let result of suggestResults) {
-      if (typeof result === "string") { 
+      if (typeof result === "string") {
+        
         Cu.reportError("SearchSuggestionController: " + result);
-      } else if (result.formHistoryResult) { 
+      } else if (result.formHistoryResult) {
+        
         results.formHistoryResult = result.formHistoryResult;
         results.local = result.result || [];
-      } else { 
+      } else {
+        
         results.remote = result.result || [];
       }
     }
@@ -404,8 +466,10 @@ this.SearchSuggestionController.prototype = {
     }
 
     
-    results.remote =
-      results.remote.slice(0, this.maxRemoteResults - results.local.length);
+    results.remote = results.remote.slice(
+      0,
+      this.maxRemoteResults - results.local.length
+    );
 
     if (this._callback) {
       this._callback(results);
@@ -433,11 +497,15 @@ this.SearchSuggestionController.prototype = {
 
 
 this.SearchSuggestionController.engineOffersSuggestions = function(engine) {
- return engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON);
+  return engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON);
 };
 
 
 
 
-XPCOMUtils.defineLazyPreferenceGetter(this.SearchSuggestionController.prototype, "remoteTimeout",
-                                      REMOTE_TIMEOUT_PREF, REMOTE_TIMEOUT_DEFAULT);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this.SearchSuggestionController.prototype,
+  "remoteTimeout",
+  REMOTE_TIMEOUT_PREF,
+  REMOTE_TIMEOUT_DEFAULT
+);

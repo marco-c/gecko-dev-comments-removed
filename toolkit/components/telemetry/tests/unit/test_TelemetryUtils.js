@@ -14,12 +14,21 @@ add_task(async function testUpdateChannelOverride() {
   }
 
   
-  Assert.equal(TelemetryUtils.getUpdateChannel(), UpdateUtils.getUpdateChannel(false),
-               "The telemetry reported channel must match the one from UpdateChannel, by default.");
+  Assert.equal(
+    TelemetryUtils.getUpdateChannel(),
+    UpdateUtils.getUpdateChannel(false),
+    "The telemetry reported channel must match the one from UpdateChannel, by default."
+  );
 
   
   const OVERRIDE_TEST_CHANNEL = "nightly-test";
-  Preferences.set(TelemetryUtils.Preferences.OverrideUpdateChannel, OVERRIDE_TEST_CHANNEL);
-  Assert.equal(TelemetryUtils.getUpdateChannel(), OVERRIDE_TEST_CHANNEL,
-               "The telemetry reported channel must match the override pref when pref is set.");
+  Preferences.set(
+    TelemetryUtils.Preferences.OverrideUpdateChannel,
+    OVERRIDE_TEST_CHANNEL
+  );
+  Assert.equal(
+    TelemetryUtils.getUpdateChannel(),
+    OVERRIDE_TEST_CHANNEL,
+    "The telemetry reported channel must match the override pref when pref is set."
+  );
 });

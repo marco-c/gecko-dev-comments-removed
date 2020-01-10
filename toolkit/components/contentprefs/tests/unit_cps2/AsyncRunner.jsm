@@ -2,11 +2,9 @@
 
 
 
-var EXPORTED_SYMBOLS = [
-  "AsyncRunner",
-];
+var EXPORTED_SYMBOLS = ["AsyncRunner"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function AsyncRunner(callbacks) {
   this._callbacks = callbacks;
@@ -17,7 +15,6 @@ function AsyncRunner(callbacks) {
 }
 
 AsyncRunner.prototype = {
-
   appendIterator: function AR_appendIterator(iter) {
     this._iteratorQueue.push(iter);
   },
@@ -43,8 +40,9 @@ AsyncRunner.prototype = {
     
     
     if (value) {
-      if (typeof(value) != "boolean")
+      if (typeof value != "boolean") {
         this._iteratorQueue.unshift(value);
+      }
       this.next();
     }
   },
@@ -55,8 +53,10 @@ AsyncRunner.prototype = {
   },
 
   observe: function AR_consoleServiceListener(msg) {
-    if (msg instanceof Ci.nsIScriptError &&
-        !(msg.flags & Ci.nsIScriptError.warningFlag)) {
+    if (
+      msg instanceof Ci.nsIScriptError &&
+      !(msg.flags & Ci.nsIScriptError.warningFlag)
+    ) {
       this._callbacks.consoleError(msg);
     }
   },

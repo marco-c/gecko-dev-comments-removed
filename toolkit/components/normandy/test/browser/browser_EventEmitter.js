@@ -25,75 +25,85 @@ function listenerC(x) {
   evidence.log += "c";
 }
 
-decorate_task(
-  async function() {
-    const eventEmitter = new EventEmitter();
+decorate_task(async function() {
+  const eventEmitter = new EventEmitter();
 
-    
-    eventEmitter.on("nothing");
+  
+  eventEmitter.on("nothing");
 
-    
-    eventEmitter.on("event", listenerA);
-    eventEmitter.on("event", listenerB);
-    eventEmitter.once("event", listenerC);
+  
+  eventEmitter.on("event", listenerA);
+  eventEmitter.on("event", listenerB);
+  eventEmitter.once("event", listenerC);
 
-    
-    eventEmitter.emit("event", 1);
-    
-    eventEmitter.emit("event", 10);
+  
+  eventEmitter.emit("event", 1);
+  
+  eventEmitter.emit("event", 10);
 
-    
-    Assert.deepEqual(evidence, {
+  
+  Assert.deepEqual(
+    evidence,
+    {
       a: 0,
       b: 0,
       c: 0,
       log: "",
-    }, "events are fired async");
+    },
+    "events are fired async"
+  );
 
-    
-    await Promise.resolve();
+  
+  await Promise.resolve();
 
-    
-    Assert.deepEqual(evidence, {
+  
+  Assert.deepEqual(
+    evidence,
+    {
       a: 11,
       b: 11,
       c: 1,
       log: "abcab",
-    }, "intermediate events are fired");
+    },
+    "intermediate events are fired"
+  );
 
-    
-    eventEmitter.off("event", listenerB);
-    eventEmitter.emit("event", 100);
+  
+  eventEmitter.off("event", listenerB);
+  eventEmitter.emit("event", 100);
 
-    
-    eventEmitter.on("nothing");
+  
+  eventEmitter.on("nothing");
 
-    
-    await Promise.resolve();
+  
+  await Promise.resolve();
 
-    Assert.deepEqual(evidence, {
+  Assert.deepEqual(
+    evidence,
+    {
       a: 111,
       b: 11,
       c: 1,
-      log: "abcaba",  
-    }, "events fired as expected");
+      log: "abcaba", 
+    },
+    "events fired as expected"
+  );
 
-    
-    
-    let handlerRunCount = 0;
-    const mutationHandler = data => {
-      handlerRunCount++;
-      data.count++;
-      is(data.count, 1, "Event data is not mutated between handlers.");
-    };
-    eventEmitter.on("mutationTest", mutationHandler);
-    eventEmitter.on("mutationTest", mutationHandler);
+  
+  
+  let handlerRunCount = 0;
+  const mutationHandler = data => {
+    handlerRunCount++;
+    data.count++;
+    is(data.count, 1, "Event data is not mutated between handlers.");
+  };
+  eventEmitter.on("mutationTest", mutationHandler);
+  eventEmitter.on("mutationTest", mutationHandler);
 
-    const data = {count: 0};
-    eventEmitter.emit("mutationTest", data);
-    await Promise.resolve();
+  const data = { count: 0 };
+  eventEmitter.emit("mutationTest", data);
+  await Promise.resolve();
 
-    is(handlerRunCount, 2, "Mutation handler was executed twice.");
-    is(data.count, 0, "Event data cannot be mutated by handlers.");
-  }
-);
+  is(handlerRunCount, 2, "Mutation handler was executed twice.");
+  is(data.count, 0, "Event data cannot be mutated by handlers.");
+});

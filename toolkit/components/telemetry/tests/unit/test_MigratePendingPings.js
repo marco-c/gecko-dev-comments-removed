@@ -21,9 +21,15 @@ async function createFakeAppDir() {
   let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
 
   
-  const pendingPingsPath = OS.Path.join(profileDir.path, "UAppData", PENDING_PING_DIR_NAME);
-  await OS.File.makeDir(pendingPingsPath, { ignoreExisting: true,
-                                            from: OS.Constants.Path.profileDir });
+  const pendingPingsPath = OS.Path.join(
+    profileDir.path,
+    "UAppData",
+    PENDING_PING_DIR_NAME
+  );
+  await OS.File.makeDir(pendingPingsPath, {
+    ignoreExisting: true,
+    from: OS.Constants.Path.profileDir,
+  });
 
   await makeFakeAppDir();
 }
@@ -41,13 +47,13 @@ add_task(async function test_migrateUnsentPings() {
     {
       type: "crash",
       id: TelemetryUtils.generateUUID(),
-      payload: { foo: "bar"},
+      payload: { foo: "bar" },
       dateCreated: new Date(2010, 1, 1, 10, 0, 0),
     },
     {
       type: "other",
       id: TelemetryUtils.generateUUID(),
-      payload: { moo: "meh"},
+      payload: { moo: "meh" },
       dateCreated: new Date(2010, 2, 1, 10, 2, 0),
     },
   ];
@@ -65,32 +71,51 @@ add_task(async function test_migrateUnsentPings() {
 
   
   let pendingPings = await TelemetryStorage.loadPendingPingList();
-  Assert.equal(pendingPings.length, 2,
-               "TelemetryStorage must have migrated 2 pings.");
+  Assert.equal(
+    pendingPings.length,
+    2,
+    "TelemetryStorage must have migrated 2 pings."
+  );
 
   for (let ping of PINGS) {
     
-    Assert.ok(pendingPings.find(p => p.id == ping.id),
-              "The ping must have been migrated.");
+    Assert.ok(
+      pendingPings.find(p => p.id == ping.id),
+      "The ping must have been migrated."
+    );
 
     
     let migratedPing = await TelemetryStorage.loadPendingPing(ping.id);
-    Assert.equal(ping.id, migratedPing.id, "Should have loaded the correct ping id.");
-    Assert.equal(ping.type, migratedPing.type,
-                 "Should have loaded the correct ping type.");
-    Assert.deepEqual(ping.payload, migratedPing.payload,
-                     "Should have loaded the correct payload.");
+    Assert.equal(
+      ping.id,
+      migratedPing.id,
+      "Should have loaded the correct ping id."
+    );
+    Assert.equal(
+      ping.type,
+      migratedPing.type,
+      "Should have loaded the correct ping type."
+    );
+    Assert.deepEqual(
+      ping.payload,
+      migratedPing.payload,
+      "Should have loaded the correct payload."
+    );
 
     
     const pingPath = OS.Path.join(APPDATA_PINGS_DIR, ping.id + ".json");
-    Assert.ok(!(await OS.File.exists(pingPath)),
-              "The ping should not be in the Pending Pings directory anymore.");
+    Assert.ok(
+      !(await OS.File.exists(pingPath)),
+      "The ping should not be in the Pending Pings directory anymore."
+    );
   }
 
   
-  await OS.File.removeDir(APP_DATA_DIR, {ignorePermissions: true});
-  Assert.ok(!(await OS.File.exists(APP_DATA_DIR)),
-            "The UAppData directory must not exist anymore.");
+  await OS.File.removeDir(APP_DATA_DIR, { ignorePermissions: true });
+  Assert.ok(
+    !(await OS.File.exists(APP_DATA_DIR)),
+    "The UAppData directory must not exist anymore."
+  );
   TelemetryStorage.reset();
   await TelemetryStorage.loadPendingPingList();
 });

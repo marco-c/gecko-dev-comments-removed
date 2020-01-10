@@ -18,15 +18,15 @@ var endTime = endTimeDate.getTime();
 
 
 var jan7_800 = (beginTime + DAY_MSEC) * 1000;
-var jan6_815 = (beginTime + (MIN_MSEC * 15)) * 1000;
-var jan11_800 = (beginTime + (DAY_MSEC * 5)) * 1000;
+var jan6_815 = (beginTime + MIN_MSEC * 15) * 1000;
+var jan11_800 = (beginTime + DAY_MSEC * 5) * 1000;
 var jan14_2130 = (endTime - DAY_MSEC) * 1000;
-var jan15_2045 = (endTime - (MIN_MSEC * 45)) * 1000;
-var jan12_1730 = (endTime - (DAY_MSEC * 3) - (HOUR_MSEC * 4)) * 1000;
+var jan15_2045 = (endTime - MIN_MSEC * 45) * 1000;
+var jan12_1730 = (endTime - DAY_MSEC * 3 - HOUR_MSEC * 4) * 1000;
 
 
 var jan6_700 = (beginTime - HOUR_MSEC) * 1000;
-var dec27_800 = (beginTime - (DAY_MSEC * 10)) * 1000;
+var dec27_800 = (beginTime - DAY_MSEC * 10) * 1000;
 
 
 beginTime *= 1000;
@@ -44,70 +44,169 @@ var badAnnoName = "text/foo";
 
 var testData = [
   
-  {isInQuery: true, isVisit: true, isDetails: true,
-   uri: "ftp://foo.com/ftp", lastVisit: jan12_1730,
-   title: "hugelongconfmozlagurationofwordswithasearchtermsinit whoo-hoo"},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    uri: "ftp://foo.com/ftp",
+    lastVisit: jan12_1730,
+    title: "hugelongconfmozlagurationofwordswithasearchtermsinit whoo-hoo",
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, isPageAnnotation: true,
-   uri: "http://foo.com/", annoName: goodAnnoName, annoVal: val,
-   lastVisit: jan14_2130, title: "moz"},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    isPageAnnotation: true,
+    uri: "http://foo.com/",
+    annoName: goodAnnoName,
+    annoVal: val,
+    lastVisit: jan14_2130,
+    title: "moz",
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz",
-   isRedirect: true, uri: "http://mail.foo.com/redirect", lastVisit: jan11_800,
-   transType: PlacesUtils.history.TRANSITION_LINK},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    isRedirect: true,
+    uri: "http://mail.foo.com/redirect",
+    lastVisit: jan11_800,
+    transType: PlacesUtils.history.TRANSITION_LINK,
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true,
-   uri: "http://mail.foo.com/yiihah", title: "moz", lastVisit: jan6_815},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    uri: "http://mail.foo.com/yiihah",
+    title: "moz",
+    lastVisit: jan6_815,
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, isPageAnnotation: true,
-   uri: "http://www.foo.com/yiihah", annoName: goodAnnoName, annoVal: val,
-   lastVisit: jan7_800, title: "moz"},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    isPageAnnotation: true,
+    uri: "http://www.foo.com/yiihah",
+    annoName: goodAnnoName,
+    annoVal: val,
+    lastVisit: jan7_800,
+    title: "moz",
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz",
-   uri: "https://foo.com/", lastVisit: jan15_2045},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    uri: "https://foo.com/",
+    lastVisit: jan15_2045,
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz mozilla",
-   uri: "https://foo.com/begin.html", lastVisit: beginTime},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    title: "moz mozilla",
+    uri: "https://foo.com/begin.html",
+    lastVisit: beginTime,
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz mozilla",
-   uri: "https://foo.com/end.html", lastVisit: endTime},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    title: "moz mozilla",
+    uri: "https://foo.com/end.html",
+    lastVisit: endTime,
+  },
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, isPageAnnotation: true,
-   title: "mozzie the dino", uri: "https://foo.com/mozzie.png",
-   annoName: goodAnnoName, annoVal: val, lastVisit: jan14_2130},
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    isPageAnnotation: true,
+    title: "mozzie the dino",
+    uri: "https://foo.com/mozzie.png",
+    annoName: goodAnnoName,
+    annoVal: val,
+    lastVisit: jan14_2130,
+  },
 
   
-  {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
-   uri: "http://foo.com/tooearly.php", lastVisit: jan6_700},
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    uri: "http://foo.com/tooearly.php",
+    lastVisit: jan6_700,
+  },
 
   
-  {isInQuery: false, isVisit: true, isDetails: true, isPageAnnotation: true,
-   title: "moz", uri: "http://foo.com/badanno.htm", lastVisit: jan12_1730,
-   annoName: badAnnoName, annoVal: val},
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    isPageAnnotation: true,
+    title: "moz",
+    uri: "http://foo.com/badanno.htm",
+    lastVisit: jan12_1730,
+    annoName: badAnnoName,
+    annoVal: val,
+  },
 
   
-  {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
-   uri: "http://somefoo.com/justwrong.htm", lastVisit: jan11_800},
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    uri: "http://somefoo.com/justwrong.htm",
+    lastVisit: jan11_800,
+  },
 
   
-  {isInQuery: false, isVisit: true, isDetails: true, title: "changeme",
-   uri: "http://foo.com/changeme1.htm", lastVisit: jan12_1730},
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "changeme",
+    uri: "http://foo.com/changeme1.htm",
+    lastVisit: jan12_1730,
+  },
 
   
-  {isInQuery: false, isVisit: true, isDetails: true, title: "changeme2",
-   uri: "http://foo.com/changeme2.htm", lastVisit: jan7_800},
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "changeme2",
+    uri: "http://foo.com/changeme2.htm",
+    lastVisit: jan7_800,
+  },
 
   
-  {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
-   uri: "http://foo.com/changeme3.htm", lastVisit: dec27_800}];
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    uri: "http://foo.com/changeme3.htm",
+    lastVisit: dec27_800,
+  },
+];
 
 
 
@@ -150,15 +249,29 @@ add_task(async function test_abstime_annotation_domain() {
 
   
   
-  var addItem = [{isInQuery: true, isVisit: true, isDetails: true, title: "moz",
-                 uri: "http://www.foo.com/i-am-added.html", lastVisit: jan11_800}];
+  var addItem = [
+    {
+      isInQuery: true,
+      isVisit: true,
+      isDetails: true,
+      title: "moz",
+      uri: "http://www.foo.com/i-am-added.html",
+      lastVisit: jan11_800,
+    },
+  ];
   await task_populateDB(addItem);
   info("Adding item foo.com/i-am-added.html");
   Assert.equal(isInResult(addItem, root), true);
 
   
-  var change1 = [{isDetails: true, uri: "http://foo.com/changeme1",
-                  lastVisit: jan12_1730, title: "moz moz mozzie"}];
+  var change1 = [
+    {
+      isDetails: true,
+      uri: "http://foo.com/changeme1",
+      lastVisit: jan12_1730,
+      title: "moz moz mozzie",
+    },
+  ];
   await task_populateDB(change1);
   info("LiveUpdate by changing title");
   Assert.equal(isInResult(change1, root), true);
@@ -176,8 +289,14 @@ add_task(async function test_abstime_annotation_domain() {
 
 
   
-  var change3 = [{isDetails: true, uri: "http://foo.com/changeme3.htm",
-                  title: "moz", lastVisit: jan15_2045}];
+  var change3 = [
+    {
+      isDetails: true,
+      uri: "http://foo.com/changeme3.htm",
+      title: "moz",
+      lastVisit: jan15_2045,
+    },
+  ];
   await task_populateDB(change3);
   info("LiveUpdate by adding visit within timerange");
   Assert.equal(isInResult(change3, root), true);
@@ -191,7 +310,9 @@ add_task(async function test_abstime_annotation_domain() {
 
 
   
-  var change5 = [{isDetails: true, uri: "http://foo.com/end.html", title: "deleted"}];
+  var change5 = [
+    { isDetails: true, uri: "http://foo.com/end.html", title: "deleted" },
+  ];
   await task_populateDB(change5);
   info("LiveUpdate by deleting item by changing title");
   Assert.equal(isInResult(change5, root), false);

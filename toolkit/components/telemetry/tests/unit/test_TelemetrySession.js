@@ -8,9 +8,11 @@
 
 
 
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
-const {ClientID} = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
+const { ClientID } = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);
@@ -19,7 +21,9 @@ ChromeUtils.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySend.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryReportingPolicy.jsm", this);
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
 
 const PING_FORMAT_VERSION = 4;
 const PING_TYPE_MAIN = "main";
@@ -52,8 +56,8 @@ const RW_OWNER = parseInt("0600", 8);
 const NUMBER_OF_THREADS_TO_LAUNCH = 30;
 var gNumberOfThreadsLaunched = 0;
 
-const MS_IN_ONE_HOUR  = 60 * 60 * 1000;
-const MS_IN_ONE_DAY   = 24 * MS_IN_ONE_HOUR;
+const MS_IN_ONE_HOUR = 60 * 60 * 1000;
+const MS_IN_ONE_DAY = 24 * MS_IN_ONE_HOUR;
 
 const DATAREPORTING_DIR = "datareporting";
 const ABORTED_PING_FILE_NAME = "aborted-session-ping";
@@ -77,13 +81,19 @@ function sendPing() {
 }
 
 function fakeGenerateUUID(sessionFunc, subsessionFunc) {
-  let session = ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", null);
+  let session = ChromeUtils.import(
+    "resource://gre/modules/TelemetrySession.jsm",
+    null
+  );
   session.Policy.generateSessionUUID = sessionFunc;
   session.Policy.generateSubsessionUUID = subsessionFunc;
 }
 
 function fakeIdleNotification(topic) {
-  let scheduler = ChromeUtils.import("resource://gre/modules/TelemetryScheduler.jsm", null);
+  let scheduler = ChromeUtils.import(
+    "resource://gre/modules/TelemetryScheduler.jsm",
+    null
+  );
   return scheduler.TelemetryScheduler.observe(null, topic, null);
 }
 
@@ -108,15 +118,19 @@ function getSavedPingFile(basename) {
   registerCleanupFunction(function() {
     try {
       pingFile.remove(true);
-    } catch (e) {
-    }
+    } catch (e) {}
   });
   return pingFile;
 }
 
 function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
   const MANDATORY_PING_FIELDS = [
-    "type", "id", "creationDate", "version", "application", "payload",
+    "type",
+    "id",
+    "creationDate",
+    "version",
+    "application",
+    "payload",
   ];
 
   const APPLICATION_TEST_DATA = {
@@ -134,20 +148,31 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
   }
 
   Assert.equal(aPing.type, aType, "The ping must have the correct type.");
-  Assert.equal(aPing.version, PING_FORMAT_VERSION, "The ping must have the correct version.");
+  Assert.equal(
+    aPing.version,
+    PING_FORMAT_VERSION,
+    "The ping must have the correct version."
+  );
 
   
   for (let f in APPLICATION_TEST_DATA) {
-    Assert.equal(aPing.application[f], APPLICATION_TEST_DATA[f],
-                 f + " must have the correct value.");
+    Assert.equal(
+      aPing.application[f],
+      APPLICATION_TEST_DATA[f],
+      f + " must have the correct value."
+    );
   }
 
   
   
-  Assert.ok("architecture" in aPing.application,
-            "The application section must have an architecture field.");
-  Assert.ok("channel" in aPing.application,
-            "The application section must have a channel field.");
+  Assert.ok(
+    "architecture" in aPing.application,
+    "The application section must have an architecture field."
+  );
+  Assert.ok(
+    "channel" in aPing.application,
+    "The application section must have a channel field."
+  );
 
   
   Assert.equal("clientId" in aPing, aHasClientId);
@@ -156,13 +181,25 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
 
 function checkPayloadInfo(data, reason) {
   const ALLOWED_REASONS = [
-    "environment-change", "shutdown", "daily", "saved-session", "test-ping",
+    "environment-change",
+    "shutdown",
+    "daily",
+    "saved-session",
+    "test-ping",
   ];
-  let numberCheck = arg => { return (typeof arg == "number"); };
-  let positiveNumberCheck = arg => { return numberCheck(arg) && (arg >= 0); };
-  let stringCheck = arg => { return (typeof arg == "string") && (arg != ""); };
+  let numberCheck = arg => {
+    return typeof arg == "number";
+  };
+  let positiveNumberCheck = arg => {
+    return numberCheck(arg) && arg >= 0;
+  };
+  let stringCheck = arg => {
+    return typeof arg == "string" && arg != "";
+  };
   let revisionCheck = arg => {
-    return (AppConstants.MOZILLA_OFFICIAL) ? stringCheck(arg) : (typeof arg == "string");
+    return AppConstants.MOZILLA_OFFICIAL
+      ? stringCheck(arg)
+      : typeof arg == "string";
   };
   let uuidCheck = arg => {
     return UUID_REGEX.test(arg);
@@ -171,8 +208,11 @@ function checkPayloadInfo(data, reason) {
     
     
     const isoDateRegEx = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$/;
-    return stringCheck(arg) && !Number.isNaN(Date.parse(arg)) &&
-           isoDateRegEx.test(arg);
+    return (
+      stringCheck(arg) &&
+      !Number.isNaN(Date.parse(arg)) &&
+      isoDateRegEx.test(arg)
+    );
   };
 
   const EXPECTED_INFO_FIELDS_TYPES = {
@@ -182,8 +222,12 @@ function checkPayloadInfo(data, reason) {
     sessionId: uuidCheck,
     subsessionId: uuidCheck,
     
-    previousSessionId: (arg) => { return (arg) ? uuidCheck(arg) : true; },
-    previousSubsessionId: (arg) => { return (arg) ? uuidCheck(arg) : true; },
+    previousSessionId: arg => {
+      return arg ? uuidCheck(arg) : true;
+    },
+    previousSubsessionId: arg => {
+      return arg ? uuidCheck(arg) : true;
+    },
     subsessionCounter: positiveNumberCheck,
     profileSubsessionCounter: positiveNumberCheck,
     sessionStartDate: isoDateCheck,
@@ -195,8 +239,10 @@ function checkPayloadInfo(data, reason) {
     Assert.ok(f in data, f + " must be available.");
 
     let checkFunc = EXPECTED_INFO_FIELDS_TYPES[f];
-    Assert.ok(checkFunc(data[f]),
-              f + " must have the correct type and valid data " + data[f]);
+    Assert.ok(
+      checkFunc(data[f]),
+      f + " must have the correct type and valid data " + data[f]
+    );
   }
 
   
@@ -210,43 +256,72 @@ function checkPayloadInfo(data, reason) {
     Assert.ok(stringCheck(data.previousBuildId));
   }
 
-  Assert.ok(ALLOWED_REASONS.find(r => r == data.reason),
-            "Payload must contain an allowed reason.");
+  Assert.ok(
+    ALLOWED_REASONS.find(r => r == data.reason),
+    "Payload must contain an allowed reason."
+  );
   Assert.equal(data.reason, reason, "Payload reason must match expected.");
 
-  Assert.ok(Date.parse(data.subsessionStartDate) >= Date.parse(data.sessionStartDate));
+  Assert.ok(
+    Date.parse(data.subsessionStartDate) >= Date.parse(data.sessionStartDate)
+  );
   Assert.ok(data.profileSubsessionCounter >= data.subsessionCounter);
-  Assert.ok(data.timezoneOffset >= -12 * 60, "The timezone must be in a valid range.");
-  Assert.ok(data.timezoneOffset <= 12 * 60, "The timezone must be in a valid range.");
+  Assert.ok(
+    data.timezoneOffset >= -12 * 60,
+    "The timezone must be in a valid range."
+  );
+  Assert.ok(
+    data.timezoneOffset <= 12 * 60,
+    "The timezone must be in a valid range."
+  );
 }
 
 function checkScalars(processes) {
   
   const parentProcess = processes.parent;
-  Assert.ok("scalars" in parentProcess, "The scalars section must be available in the parent process.");
-  Assert.ok("keyedScalars" in parentProcess, "The keyedScalars section must be available in the parent process.");
-  Assert.equal(typeof parentProcess.scalars, "object", "The scalars entry must be an object.");
-  Assert.equal(typeof parentProcess.keyedScalars, "object", "The keyedScalars entry must be an object.");
+  Assert.ok(
+    "scalars" in parentProcess,
+    "The scalars section must be available in the parent process."
+  );
+  Assert.ok(
+    "keyedScalars" in parentProcess,
+    "The keyedScalars section must be available in the parent process."
+  );
+  Assert.equal(
+    typeof parentProcess.scalars,
+    "object",
+    "The scalars entry must be an object."
+  );
+  Assert.equal(
+    typeof parentProcess.keyedScalars,
+    "object",
+    "The keyedScalars entry must be an object."
+  );
 
   let checkScalar = function(scalar) {
     
-    const valueType = typeof(scalar);
+    const valueType = typeof scalar;
     switch (valueType) {
       case "string":
-        Assert.ok(scalar.length <= 50,
-                  "String values can't have more than 50 characters");
-      break;
+        Assert.ok(
+          scalar.length <= 50,
+          "String values can't have more than 50 characters"
+        );
+        break;
       case "number":
-        Assert.ok(scalar >= 0,
-                  "We only support unsigned integer values in scalars.");
-      break;
+        Assert.ok(
+          scalar >= 0,
+          "We only support unsigned integer values in scalars."
+        );
+        break;
       case "boolean":
-        Assert.ok(true,
-                  "Boolean scalar found.");
-      break;
+        Assert.ok(true, "Boolean scalar found.");
+        break;
       default:
-        Assert.ok(false,
-                  name + " contains an unsupported value type (" + valueType + ")");
+        Assert.ok(
+          false,
+          name + " contains an unsupported value type (" + valueType + ")"
+        );
     }
   };
 
@@ -261,11 +336,16 @@ function checkScalars(processes) {
   const keyedScalars = parentProcess.keyedScalars;
   for (let name in keyedScalars) {
     Assert.equal(typeof name, "string", "Scalar names must be strings.");
-    Assert.ok(Object.keys(keyedScalars[name]).length,
-              "The reported keyed scalars must contain at least 1 key.");
+    Assert.ok(
+      Object.keys(keyedScalars[name]).length,
+      "The reported keyed scalars must contain at least 1 key."
+    );
     for (let key in keyedScalars[name]) {
       Assert.equal(typeof key, "string", "Keyed scalar keys must be strings.");
-      Assert.ok(key.length <= 70, "Keyed scalar keys can't have more than 70 characters.");
+      Assert.ok(
+        key.length <= 70,
+        "Keyed scalar keys can't have more than 70 characters."
+      );
       checkScalar(scalars[name][key]);
     }
   }
@@ -279,24 +359,31 @@ function checkPayload(payload, reason, successfulPings) {
   Assert.equal(payload.simpleMeasurements.startupInterrupted, 1);
   Assert.equal(payload.simpleMeasurements.shutdownDuration, SHUTDOWN_TIME);
   Assert.ok("maximalNumberOfConcurrentThreads" in payload.simpleMeasurements);
-  Assert.ok(payload.simpleMeasurements.maximalNumberOfConcurrentThreads >= gNumberOfThreadsLaunched);
+  Assert.ok(
+    payload.simpleMeasurements.maximalNumberOfConcurrentThreads >=
+      gNumberOfThreadsLaunched
+  );
 
   let activeTicks = payload.simpleMeasurements.activeTicks;
   Assert.ok(activeTicks >= 0);
 
   if ("browser.timings.last_shutdown" in payload.processes.parent.scalars) {
-    Assert.equal(payload.processes.parent.scalars["browser.timings.last_shutdown"], SHUTDOWN_TIME);
+    Assert.equal(
+      payload.processes.parent.scalars["browser.timings.last_shutdown"],
+      SHUTDOWN_TIME
+    );
   }
 
-  Assert.equal(payload.simpleMeasurements.failedProfileLockCount,
-              FAILED_PROFILE_LOCK_ATTEMPTS);
+  Assert.equal(
+    payload.simpleMeasurements.failedProfileLockCount,
+    FAILED_PROFILE_LOCK_ATTEMPTS
+  );
   let profileDirectory = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let failedProfileLocksFile = profileDirectory.clone();
   failedProfileLocksFile.append("Telemetry.FailedProfileLocks.txt");
   Assert.ok(!failedProfileLocksFile.exists());
 
-
-  let isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
+  let isWindows = "@mozilla.org/windows-registry-key;1" in Cc;
   if (isWindows) {
     Assert.ok(payload.simpleMeasurements.startupSessionRestoreReadBytes > 0);
     Assert.ok(payload.simpleMeasurements.startupSessionRestoreWriteBytes > 0);
@@ -322,7 +409,7 @@ function checkPayload(payload, reason, successfulPings) {
     range: [1, 2],
     bucket_count: 3,
     histogram_type: 3,
-    values: {0: 1, 1: 0},
+    values: { 0: 1, 1: 0 },
     sum: 0,
   };
   let flag = payload.histograms[TELEMETRY_TEST_FLAG];
@@ -333,7 +420,7 @@ function checkPayload(payload, reason, successfulPings) {
     range: [1, 2],
     bucket_count: 3,
     histogram_type: 4,
-    values: {0: 1, 1: 0},
+    values: { 0: 1, 1: 0 },
     sum: 1,
   };
   let count = payload.histograms[TELEMETRY_TEST_COUNT];
@@ -345,7 +432,7 @@ function checkPayload(payload, reason, successfulPings) {
       range: [1, 2],
       bucket_count: 3,
       histogram_type: 2,
-      values: {0: 2, 1: successfulPings, 2: 0},
+      values: { 0: 2, 1: successfulPings, 2: 0 },
       sum: successfulPings,
     };
     let tc = payload.histograms[TELEMETRY_SUCCESS];
@@ -366,11 +453,14 @@ function checkPayload(payload, reason, successfulPings) {
   Assert.ok("MEMORY_JS_GC_HEAP" in payload.histograms); 
   Assert.ok("MEMORY_JS_COMPARTMENTS_SYSTEM" in payload.histograms); 
 
-  Assert.ok(("mainThread" in payload.slowSQL) &&
-                ("otherThreads" in payload.slowSQL));
+  Assert.ok(
+    "mainThread" in payload.slowSQL && "otherThreads" in payload.slowSQL
+  );
 
-  Assert.ok(("IceCandidatesStats" in payload.webrtc) &&
-                ("webrtc" in payload.webrtc.IceCandidatesStats));
+  Assert.ok(
+    "IceCandidatesStats" in payload.webrtc &&
+      "webrtc" in payload.webrtc.IceCandidatesStats
+  );
 
   
 
@@ -380,34 +470,48 @@ function checkPayload(payload, reason, successfulPings) {
   Assert.ok(TELEMETRY_TEST_KEYED_COUNT in keyedHistograms);
 
   const expected_keyed_count = {
-    "a": {
+    a: {
       range: [1, 2],
       bucket_count: 3,
       histogram_type: 4,
-      values: {0: 2, 1: 0},
+      values: { 0: 2, 1: 0 },
       sum: 2,
     },
-    "b": {
+    b: {
       range: [1, 2],
       bucket_count: 3,
       histogram_type: 4,
-      values: {0: 1, 1: 0},
+      values: { 0: 1, 1: 0 },
       sum: 1,
     },
   };
-  Assert.deepEqual(expected_keyed_count, keyedHistograms[TELEMETRY_TEST_KEYED_COUNT]);
+  Assert.deepEqual(
+    expected_keyed_count,
+    keyedHistograms[TELEMETRY_TEST_KEYED_COUNT]
+  );
 
-  Assert.ok("processes" in payload, "The payload must have a processes section.");
-  Assert.ok("parent" in payload.processes, "There must be at least a parent process.");
+  Assert.ok(
+    "processes" in payload,
+    "The payload must have a processes section."
+  );
+  Assert.ok(
+    "parent" in payload.processes,
+    "There must be at least a parent process."
+  );
 
   checkScalars(payload.processes);
 }
 
 function writeStringToFile(file, contents) {
-  let ostream = Cc["@mozilla.org/network/safe-file-output-stream;1"]
-                .createInstance(Ci.nsIFileOutputStream);
-  ostream.init(file, PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
-               RW_OWNER, ostream.DEFER_OPEN);
+  let ostream = Cc[
+    "@mozilla.org/network/safe-file-output-stream;1"
+  ].createInstance(Ci.nsIFileOutputStream);
+  ostream.init(
+    file,
+    PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
+    RW_OWNER,
+    ostream.DEFER_OPEN
+  );
   ostream.write(contents, contents.length);
   ostream.QueryInterface(Ci.nsISafeOutputStream).finish();
   ostream.close();
@@ -460,7 +564,9 @@ add_task(async function test_setup() {
   }
   gNumberOfThreadsLaunched = threads.length;
 
-  Assert.ok(Telemetry.maximalNumberOfConcurrentThreads >= gNumberOfThreadsLaunched);
+  Assert.ok(
+    Telemetry.maximalNumberOfConcurrentThreads >= gNumberOfThreadsLaunched
+  );
 
   registerCleanupFunction(function() {
     threads.forEach(function(thread) {
@@ -469,7 +575,8 @@ add_task(async function test_setup() {
   });
 
   await new Promise(resolve =>
-    Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve)));
+    Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve))
+  );
 });
 
 add_task(async function asyncSetup() {
@@ -484,7 +591,10 @@ add_task(async function test_expiredHistogram() {
 
   dummy.add(1);
 
-  Assert.equal(TelemetrySession.getPayload().histograms.TELEMETRY_TEST_EXPIRED, undefined);
+  Assert.equal(
+    TelemetrySession.getPayload().histograms.TELEMETRY_TEST_EXPIRED,
+    undefined
+  );
 });
 
 
@@ -503,7 +613,10 @@ add_task(async function test_noServerPing() {
 add_task(async function test_simplePing() {
   await TelemetryStorage.testClearPendingPings();
   PingServer.start();
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(
+    TelemetryUtils.Preferences.Server,
+    "http://localhost:" + PingServer.port
+  );
 
   let now = new Date(2020, 1, 1, 12, 5, 6);
   let expectedDate = new Date(2020, 1, 1, 12, 0, 0);
@@ -519,7 +632,9 @@ add_task(async function test_simplePing() {
   
   const SESSION_DURATION_IN_MINUTES = 15;
   fakeNow(new Date(2020, 1, 1, 12, SESSION_DURATION_IN_MINUTES, 0));
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + SESSION_DURATION_IN_MINUTES * 60 * 1000);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + SESSION_DURATION_IN_MINUTES * 60 * 1000
+  );
 
   await sendPing();
   let ping = await PingServer.promiseNextPing();
@@ -560,8 +675,11 @@ add_task(async function test_saveLoadPing() {
   const requests = await PingServer.promiseNextRequests(2);
 
   for (let req of requests) {
-    Assert.equal(req.getHeader("content-type"), "application/json; charset=UTF-8",
-                 "The request must have the correct content-type.");
+    Assert.equal(
+      req.getHeader("content-type"),
+      "application/json; charset=UTF-8",
+      "The request must have the correct content-type."
+    );
   }
 
   
@@ -604,29 +722,41 @@ add_task(async function test_checkSubsessionScalars() {
   let classic = TelemetrySession.getPayload();
   let subsession = TelemetrySession.getPayload("environment-change", true);
 
-  const TEST_SCALARS = [ UINT_SCALAR, STRING_SCALAR ];
+  const TEST_SCALARS = [UINT_SCALAR, STRING_SCALAR];
   for (let name of TEST_SCALARS) {
     
-    Assert.ok(name in subsession.processes.parent.scalars,
-              name + " must be reported in a subsession ping.");
+    Assert.ok(
+      name in subsession.processes.parent.scalars,
+      name + " must be reported in a subsession ping."
+    );
   }
   
-  Assert.ok(Object.keys(classic.processes.parent.scalars).length == 0,
-            "Scalars must not be reported in a classic ping.");
+  Assert.ok(
+    Object.keys(classic.processes.parent.scalars).length == 0,
+    "Scalars must not be reported in a classic ping."
+  );
 
   
   
-  Assert.equal(subsession.processes.parent.scalars[UINT_SCALAR], expectedUint,
-               UINT_SCALAR + " must contain the expected value.");
-  Assert.equal(subsession.processes.parent.scalars[STRING_SCALAR], expectedString,
-               STRING_SCALAR + " must contain the expected value.");
+  Assert.equal(
+    subsession.processes.parent.scalars[UINT_SCALAR],
+    expectedUint,
+    UINT_SCALAR + " must contain the expected value."
+  );
+  Assert.equal(
+    subsession.processes.parent.scalars[STRING_SCALAR],
+    expectedString,
+    STRING_SCALAR + " must contain the expected value."
+  );
 
   
   
   subsession = TelemetrySession.getPayload("environment-change");
   for (let name of TEST_SCALARS) {
-    Assert.ok(!(name in subsession.processes.parent.scalars),
-              name + " must be cleared with the new subsession.");
+    Assert.ok(
+      !(name in subsession.processes.parent.scalars),
+      name + " must be cleared with the new subsession."
+    );
   }
 
   
@@ -635,10 +765,16 @@ add_task(async function test_checkSubsessionScalars() {
   Telemetry.scalarSet(UINT_SCALAR, expectedUint);
   Telemetry.scalarSet(STRING_SCALAR, expectedString);
   subsession = TelemetrySession.getPayload("environment-change");
-  Assert.equal(subsession.processes.parent.scalars[UINT_SCALAR], expectedUint,
-               UINT_SCALAR + " must contain the expected value.");
-  Assert.equal(subsession.processes.parent.scalars[STRING_SCALAR], expectedString,
-               STRING_SCALAR + " must contain the expected value.");
+  Assert.equal(
+    subsession.processes.parent.scalars[UINT_SCALAR],
+    expectedUint,
+    UINT_SCALAR + " must contain the expected value."
+  );
+  Assert.equal(
+    subsession.processes.parent.scalars[STRING_SCALAR],
+    expectedString,
+    STRING_SCALAR + " must contain the expected value."
+  );
 
   await TelemetryController.testShutdown();
 });
@@ -658,7 +794,7 @@ add_task(async function test_dailyCollection() {
   fakeNow(now);
 
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
 
   
   await TelemetryStorage.testClearPendingPings();
@@ -760,7 +896,7 @@ add_task(async function test_dailyDuplication() {
   let now = new Date(2030, 1, 1, 0, 0, 0);
   fakeNow(now);
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
 
   
@@ -782,7 +918,10 @@ add_task(async function test_dailyDuplication() {
 
   
   PingServer.registerPingHandler((req, res) => {
-    Assert.ok(false, "No more daily pings should be sent/received in this test.");
+    Assert.ok(
+      false,
+      "No more daily pings should be sent/received in this test."
+    );
   });
 
   
@@ -810,7 +949,7 @@ add_task(async function test_dailyOverdue() {
   let now = new Date(2030, 1, 1, 11, 0, 0);
   fakeNow(now);
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryStorage.testClearPendingPings();
   await TelemetryController.testReset();
 
@@ -861,13 +1000,15 @@ add_task(async function test_environmentChange() {
   PingServer.clearRequests();
 
   let now = fakeNow(2040, 1, 1, 12, 0, 0);
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
 
   const PREF_TEST = "toolkit.telemetry.test.pref1";
   Preferences.reset(PREF_TEST);
 
   const PREFS_TO_WATCH = new Map([
-    [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_VALUE}],
+    [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_VALUE }],
   ]);
 
   
@@ -888,7 +1029,9 @@ add_task(async function test_environmentChange() {
   keyed.add("b", 1);
 
   
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   let startHour = TelemetryUtils.truncateToHours(now);
   now = fakeNow(futureDate(now, 10 * MILLISECONDS_PER_MINUTE));
 
@@ -907,7 +1050,9 @@ add_task(async function test_environmentChange() {
 
   
   startHour = TelemetryUtils.truncateToHours(now);
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   now = fakeNow(futureDate(now, 10 * MILLISECONDS_PER_MINUTE));
 
   Preferences.set(PREF_TEST, 2);
@@ -925,7 +1070,9 @@ add_task(async function test_environmentChange() {
 
   
   startHour = TelemetryUtils.truncateToHours(now);
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   now = fakeNow(futureDate(now, 10 * MILLISECONDS_PER_MINUTE));
 
   await TelemetryController.testShutdown();
@@ -946,7 +1093,9 @@ add_task(async function test_experimentAnnotations_subsession() {
   PingServer.clearRequests();
 
   let now = fakeNow(2040, 1, 1, 12, 0, 0);
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
 
   
   await TelemetryController.testReset();
@@ -954,7 +1103,9 @@ add_task(async function test_experimentAnnotations_subsession() {
   Assert.equal(TelemetrySession.getPayload().info.subsessionCounter, 1);
 
   
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   let futureTestDate = futureDate(now, 10 * MILLISECONDS_PER_MINUTE);
   now = fakeNow(futureTestDate);
   TelemetryEnvironment.setExperimentActive(EXPERIMENT1, EXPERIMENT1_BRANCH);
@@ -962,41 +1113,71 @@ add_task(async function test_experimentAnnotations_subsession() {
   let ping = await PingServer.promiseNextPing();
   Assert.ok(!!ping, "A ping must be received.");
 
-  Assert.equal(ping.type, PING_TYPE_MAIN, "The received ping must be a 'main' ping.");
-  Assert.equal(ping.payload.info.reason, REASON_ENVIRONMENT_CHANGE,
-               "The 'main' ping must be triggered by a change in the environment.");
+  Assert.equal(
+    ping.type,
+    PING_TYPE_MAIN,
+    "The received ping must be a 'main' ping."
+  );
+  Assert.equal(
+    ping.payload.info.reason,
+    REASON_ENVIRONMENT_CHANGE,
+    "The 'main' ping must be triggered by a change in the environment."
+  );
   
   
-  Assert.ok(!("experiments" in ping.environment),
-            "The old environment must contain no active experiments.");
+  Assert.ok(
+    !("experiments" in ping.environment),
+    "The old environment must contain no active experiments."
+  );
   
-  Assert.equal(TelemetrySession.getPayload().info.subsessionCounter, 2,
-               "The experiment annotation must trigger a new subsession.");
+  Assert.equal(
+    TelemetrySession.getPayload().info.subsessionCounter,
+    2,
+    "The experiment annotation must trigger a new subsession."
+  );
 
   
   
   TelemetryEnvironment.setExperimentActive(EXPERIMENT2, EXPERIMENT2_BRANCH);
-  Assert.equal(TelemetrySession.getPayload().info.subsessionCounter, 2,
-               "The experiment annotation must not trigger a new subsession " +
-               "if throttling happens.");
+  Assert.equal(
+    TelemetrySession.getPayload().info.subsessionCounter,
+    2,
+    "The experiment annotation must not trigger a new subsession " +
+      "if throttling happens."
+  );
   let oldExperiments = TelemetryEnvironment.getActiveExperiments();
 
   
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   now = fakeNow(futureDate(now, 10 * MILLISECONDS_PER_MINUTE));
   TelemetryEnvironment.setExperimentInactive(EXPERIMENT1, EXPERIMENT1_BRANCH);
 
   ping = await PingServer.promiseNextPing();
   Assert.ok(!!ping, "A ping must be received.");
 
-  Assert.equal(ping.type, PING_TYPE_MAIN, "The received ping must be a 'main' ping.");
-  Assert.equal(ping.payload.info.reason, REASON_ENVIRONMENT_CHANGE,
-               "The 'main' ping must be triggered by a change in the environment.");
+  Assert.equal(
+    ping.type,
+    PING_TYPE_MAIN,
+    "The received ping must be a 'main' ping."
+  );
+  Assert.equal(
+    ping.payload.info.reason,
+    REASON_ENVIRONMENT_CHANGE,
+    "The 'main' ping must be triggered by a change in the environment."
+  );
   
-  Assert.deepEqual(ping.environment.experiments, oldExperiments,
-                   "The environment must contain both the experiments.");
-  Assert.equal(TelemetrySession.getPayload().info.subsessionCounter, 3,
-               "The removing an experiment annotation must trigger a new subsession.");
+  Assert.deepEqual(
+    ping.environment.experiments,
+    oldExperiments,
+    "The environment must contain both the experiments."
+  );
+  Assert.equal(
+    TelemetrySession.getPayload().info.subsessionCounter,
+    3,
+    "The removing an experiment annotation must trigger a new subsession."
+  );
 
   await TelemetryController.testShutdown();
 });
@@ -1007,7 +1188,7 @@ add_task(async function test_savedPingsOnShutdown() {
   
   
   const dir = TelemetryStorage.pingDirectoryPath;
-  await OS.File.removeDir(dir, {ignoreAbsent: true});
+  await OS.File.removeDir(dir, { ignoreAbsent: true });
   await OS.File.makeDir(dir);
   await TelemetryController.testShutdown();
 
@@ -1016,7 +1197,7 @@ add_task(async function test_savedPingsOnShutdown() {
 
   const ping = await PingServer.promiseNextPing();
 
-  let expectedType   = gIsAndroid ? PING_TYPE_SAVED_SESSION : PING_TYPE_MAIN;
+  let expectedType = gIsAndroid ? PING_TYPE_SAVED_SESSION : PING_TYPE_MAIN;
   let expectedReason = gIsAndroid ? REASON_SAVED_SESSION : REASON_SHUTDOWN;
 
   checkPingFormat(ping, expectedType, true, true);
@@ -1025,8 +1206,10 @@ add_task(async function test_savedPingsOnShutdown() {
 });
 
 add_task(async function test_sendShutdownPing() {
-  if (gIsAndroid ||
-      (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)) {
+  if (
+    gIsAndroid ||
+    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
+  ) {
     
     
     
@@ -1036,13 +1219,17 @@ add_task(async function test_sendShutdownPing() {
 
   let checkPendingShutdownPing = async function() {
     let pendingPings = await TelemetryStorage.loadPendingPingList();
-    Assert.equal(pendingPings.length, 1,
-                 "We expect 1 pending ping: shutdown.");
+    Assert.equal(pendingPings.length, 1, "We expect 1 pending ping: shutdown.");
     
-    const shutdownPing = await TelemetryStorage.loadPendingPing(pendingPings[0].id);
+    const shutdownPing = await TelemetryStorage.loadPendingPing(
+      pendingPings[0].id
+    );
     Assert.ok(shutdownPing, "The 'shutdown' ping must be saved to disk.");
-    Assert.equal("shutdown", shutdownPing.payload.info.reason,
-                 "The 'shutdown' ping must be saved to disk.");
+    Assert.equal(
+      "shutdown",
+      shutdownPing.payload.info.reason,
+      "The 'shutdown' ping must be saved to disk."
+    );
   };
 
   Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, true);
@@ -1063,7 +1250,9 @@ add_task(async function test_sendShutdownPing() {
   Assert.equal(ping.clientId, gClientID);
   
   
-  PingServer.registerPingHandler(() => Assert.ok(false, "Telemetry must not send pings if not allowed to."));
+  PingServer.registerPingHandler(() =>
+    Assert.ok(false, "Telemetry must not send pings if not allowed to.")
+  );
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
   await TelemetryController.testReset();
   await TelemetryController.testShutdown();
@@ -1088,7 +1277,11 @@ add_task(async function test_sendShutdownPing() {
   Telemetry.clearScalars();
 
   await TelemetryController.testReset();
-  Services.obs.notifyObservers(null, "quit-application-granted", "syncShutdown");
+  Services.obs.notifyObservers(
+    null,
+    "quit-application-granted",
+    "syncShutdown"
+  );
   await TelemetryController.testShutdown();
   await checkPendingShutdownPing();
 
@@ -1124,7 +1317,10 @@ add_task(async function test_sendShutdownPing() {
 
   
   
-  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, true);
+  Preferences.set(
+    TelemetryUtils.Preferences.ShutdownPingSenderFirstSession,
+    true
+  );
   Preferences.set(TelemetryUtils.Preferences.FirstRun, true);
   TelemetryReportingPolicy.testUpdateFirstRun();
 
@@ -1140,14 +1336,19 @@ add_task(async function test_sendShutdownPing() {
 
   
   Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, false);
-  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false);
+  Preferences.set(
+    TelemetryUtils.Preferences.ShutdownPingSenderFirstSession,
+    false
+  );
   Preferences.reset(TelemetryUtils.Preferences.FirstRun);
   PingServer.resetPingHandler();
 });
 
 add_task(async function test_sendFirstShutdownPing() {
-  if (gIsAndroid ||
-      (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)) {
+  if (
+    gIsAndroid ||
+    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
+  ) {
     
     
     
@@ -1158,7 +1359,7 @@ add_task(async function test_sendFirstShutdownPing() {
   let storageContainsFirstShutdown = async function() {
     let pendingPings = await TelemetryStorage.loadPendingPingList();
     let pings = await Promise.all(
-      pendingPings.map(async (p) => {
+      pendingPings.map(async p => {
         return TelemetryStorage.loadPendingPing(p.id);
       })
     );
@@ -1173,7 +1374,10 @@ add_task(async function test_sendFirstShutdownPing() {
     
     PingServer.registerPingHandler((req, res) => {
       const receivedPing = decodeRequestPayload(req);
-      Assert.ok(false, `No ping should be received in this test (got ${receivedPing.id}).`);
+      Assert.ok(
+        false,
+        `No ping should be received in this test (got ${receivedPing.id}).`
+      );
     });
 
     
@@ -1184,8 +1388,10 @@ add_task(async function test_sendFirstShutdownPing() {
     await TelemetryController.testReset();
     Services.obs.notifyObservers(null, "quit-application-forced");
     await TelemetryController.testShutdown();
-    Assert.ok(await storageContainsFirstShutdown(),
-              "The 'first-shutdown' ping must be saved to disk.");
+    Assert.ok(
+      await storageContainsFirstShutdown(),
+      "The 'first-shutdown' ping must be saved to disk."
+    );
 
     await TelemetryStorage.testClearPendingPings();
 
@@ -1196,8 +1402,10 @@ add_task(async function test_sendFirstShutdownPing() {
     await TelemetryController.testReset();
     Services.obs.notifyObservers(null, "quit-application-forced");
     await TelemetryController.testShutdown();
-    Assert.ok(!(await storageContainsFirstShutdown()),
-              "The 'first-shutdown' ping should only be written during first run.");
+    Assert.ok(
+      !(await storageContainsFirstShutdown()),
+      "The 'first-shutdown' ping should only be written during first run."
+    );
 
     await TelemetryStorage.testClearPendingPings();
 
@@ -1208,8 +1416,10 @@ add_task(async function test_sendFirstShutdownPing() {
 
     await TelemetryController.testReset();
     await TelemetryController.testShutdown();
-    Assert.ok(!(await storageContainsFirstShutdown()),
-              "The 'first-shutdown' ping should only be written if enabled");
+    Assert.ok(
+      !(await storageContainsFirstShutdown()),
+      "The 'first-shutdown' ping should only be written if enabled"
+    );
 
     await TelemetryStorage.testClearPendingPings();
 
@@ -1221,8 +1431,10 @@ add_task(async function test_sendFirstShutdownPing() {
 
     await TelemetryController.testReset();
     await TelemetryController.testShutdown();
-    Assert.ok(!(await storageContainsFirstShutdown()),
-              "The 'first-shutdown' ping should only be written if ping-sender is enabled");
+    Assert.ok(
+      !(await storageContainsFirstShutdown()),
+      "The 'first-shutdown' ping should only be written if ping-sender is enabled"
+    );
 
     
     await TelemetryStorage.testClearPendingPings();
@@ -1237,7 +1449,10 @@ add_task(async function test_sendFirstShutdownPing() {
 
   
   Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, true);
-  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false);
+  Preferences.set(
+    TelemetryUtils.Preferences.ShutdownPingSenderFirstSession,
+    false
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.FirstShutdownPingEnabled, true);
@@ -1259,7 +1474,10 @@ add_task(async function test_sendFirstShutdownPing() {
 
   
   Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, false);
-  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false);
+  Preferences.set(
+    TelemetryUtils.Preferences.ShutdownPingSenderFirstSession,
+    false
+  );
   Preferences.set(TelemetryUtils.Preferences.FirstShutdownPingEnabled, false);
   Preferences.reset(TelemetryUtils.Preferences.FirstRun);
   PingServer.resetPingHandler();
@@ -1285,7 +1503,7 @@ add_task(async function test_savedSessionData() {
   const PREF_TEST = "toolkit.telemetry.test.pref1";
   Preferences.reset(PREF_TEST);
   const PREFS_TO_WATCH = new Map([
-    [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_VALUE}],
+    [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_VALUE }],
   ]);
 
   
@@ -1308,11 +1526,14 @@ add_task(async function test_savedSessionData() {
 
   
   
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   fakeNow(new Date(2050, 1, 1, 12, 0, 0));
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let changePromise = new Promise(resolve =>
-    TelemetryEnvironment.registerChangeListener("test_fake_change", resolve));
+    TelemetryEnvironment.registerChangeListener("test_fake_change", resolve)
+  );
   Preferences.set(PREF_TEST, 1);
   await changePromise;
   TelemetryEnvironment.unregisterChangeListener("test_fake_change");
@@ -1337,7 +1558,10 @@ add_task(async function test_sessionData_ShortSession() {
     return;
   }
 
-  const SESSION_STATE_PATH = OS.Path.join(DATAREPORTING_PATH, "session-state.json");
+  const SESSION_STATE_PATH = OS.Path.join(
+    DATAREPORTING_PATH,
+    "session-state.json"
+  );
 
   
   await OS.File.remove(SESSION_STATE_PATH, { ignoreAbsent: true });
@@ -1388,8 +1612,10 @@ add_task(async function test_invalidSessionData() {
   
   const dataFilePath = OS.Path.join(DATAREPORTING_PATH, "session-state.json");
   const unparseableData = "{asdf:@äü";
-  OS.File.writeAtomic(dataFilePath, unparseableData,
-                      {encoding: "utf-8", tmpPath: dataFilePath + ".tmp"});
+  OS.File.writeAtomic(dataFilePath, unparseableData, {
+    encoding: "utf-8",
+    tmpPath: dataFilePath + ".tmp",
+  });
 
   
   await TelemetryController.testReset();
@@ -1449,11 +1675,13 @@ add_task(async function test_abortedSession() {
   let now = new Date(2040, 1, 1, 0, 0, 0);
   fakeNow(now);
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
 
-  Assert.ok((await OS.File.exists(DATAREPORTING_PATH)),
-            "Telemetry must create the aborted session directory when starting.");
+  Assert.ok(
+    await OS.File.exists(DATAREPORTING_PATH),
+    "Telemetry must create the aborted session directory when starting."
+  );
 
   
   now = futureDate(now, ABORTED_SESSION_UPDATE_INTERVAL_MS);
@@ -1463,8 +1691,10 @@ add_task(async function test_abortedSession() {
   
   await schedulerTickCallback();
   
-  Assert.ok((await OS.File.exists(ABORTED_FILE)),
-            "There must be an aborted session ping.");
+  Assert.ok(
+    await OS.File.exists(ABORTED_FILE),
+    "There must be an aborted session ping."
+  );
 
   
   
@@ -1483,13 +1713,21 @@ add_task(async function test_abortedSession() {
   pingContent = await OS.File.read(ABORTED_FILE, { encoding: "utf-8" });
   let updatedAbortedSessionPing = JSON.parse(pingContent);
   checkPingFormat(updatedAbortedSessionPing, PING_TYPE_MAIN, true, true);
-  Assert.equal(updatedAbortedSessionPing.payload.info.reason, REASON_ABORTED_SESSION);
+  Assert.equal(
+    updatedAbortedSessionPing.payload.info.reason,
+    REASON_ABORTED_SESSION
+  );
   Assert.notEqual(abortedSessionPing.id, updatedAbortedSessionPing.id);
-  Assert.notEqual(abortedSessionPing.creationDate, updatedAbortedSessionPing.creationDate);
+  Assert.notEqual(
+    abortedSessionPing.creationDate,
+    updatedAbortedSessionPing.creationDate
+  );
 
   await TelemetryController.testShutdown();
-  Assert.ok(!(await OS.File.exists(ABORTED_FILE)),
-            "No aborted session ping must be available after a shutdown.");
+  Assert.ok(
+    !(await OS.File.exists(ABORTED_FILE)),
+    "No aborted session ping must be available after a shutdown."
+  );
 });
 
 add_task(async function test_abortedSession_Shutdown() {
@@ -1503,11 +1741,13 @@ add_task(async function test_abortedSession_Shutdown() {
   let schedulerTickCallback = null;
   let now = fakeNow(2040, 1, 1, 0, 0, 0);
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
 
-  Assert.ok((await OS.File.exists(DATAREPORTING_PATH)),
-            "Telemetry must create the aborted session directory when starting.");
+  Assert.ok(
+    await OS.File.exists(DATAREPORTING_PATH),
+    "Telemetry must create the aborted session directory when starting."
+  );
 
   
   fakeNow(futureDate(now, ABORTED_SESSION_UPDATE_INTERVAL_MS));
@@ -1516,7 +1756,10 @@ add_task(async function test_abortedSession_Shutdown() {
   
   await schedulerTickCallback();
   
-  Assert.ok((await OS.File.exists(ABORTED_FILE)), "There must be an aborted session ping.");
+  Assert.ok(
+    await OS.File.exists(ABORTED_FILE),
+    "There must be an aborted session ping."
+  );
 
   
   
@@ -1543,13 +1786,15 @@ add_task(async function test_abortedDailyCoalescing() {
   fakeNow(nowDate);
 
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
   await TelemetryController.testReset();
 
-  Assert.ok((await OS.File.exists(DATAREPORTING_PATH)),
-            "Telemetry must create the aborted session directory when starting.");
+  Assert.ok(
+    await OS.File.exists(DATAREPORTING_PATH),
+    "Telemetry must create the aborted session directory when starting."
+  );
 
   
   
@@ -1565,15 +1810,23 @@ add_task(async function test_abortedDailyCoalescing() {
   Assert.equal(dailyPing.payload.info.reason, REASON_DAILY);
 
   
-  Assert.ok((await OS.File.exists(ABORTED_FILE)),
-            "There must be an aborted session ping.");
+  Assert.ok(
+    await OS.File.exists(ABORTED_FILE),
+    "There must be an aborted session ping."
+  );
 
   
   
   let pingContent = await OS.File.read(ABORTED_FILE, { encoding: "utf-8" });
   let abortedSessionPing = JSON.parse(pingContent);
-  Assert.equal(abortedSessionPing.payload.info.sessionId, dailyPing.payload.info.sessionId);
-  Assert.equal(abortedSessionPing.payload.info.subsessionId, dailyPing.payload.info.subsessionId);
+  Assert.equal(
+    abortedSessionPing.payload.info.sessionId,
+    dailyPing.payload.info.sessionId
+  );
+  Assert.equal(
+    abortedSessionPing.payload.info.subsessionId,
+    dailyPing.payload.info.subsessionId
+  );
 
   await TelemetryController.testShutdown();
 });
@@ -1597,7 +1850,7 @@ add_task(async function test_schedulerComputerSleep() {
   
   let nowDate = fakeNow(2009, 10, 18, 0, 0, 0);
   let schedulerTickCallback = null;
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
 
   
@@ -1607,13 +1860,21 @@ add_task(async function test_schedulerComputerSleep() {
   await schedulerTickCallback();
 
   let dailyPing = await PingServer.promiseNextPing();
-  Assert.equal(dailyPing.payload.info.reason, REASON_DAILY,
-               "The wake notification should have triggered a daily ping.");
-  Assert.equal(dailyPing.creationDate, nowDate.toISOString(),
-               "The daily ping date should be correct.");
+  Assert.equal(
+    dailyPing.payload.info.reason,
+    REASON_DAILY,
+    "The wake notification should have triggered a daily ping."
+  );
+  Assert.equal(
+    dailyPing.creationDate,
+    nowDate.toISOString(),
+    "The daily ping date should be correct."
+  );
 
-  Assert.ok((await OS.File.exists(ABORTED_FILE)),
-            "There must be an aborted session ping.");
+  Assert.ok(
+    await OS.File.exists(ABORTED_FILE),
+    "There must be an aborted session ping."
+  );
 
   
   
@@ -1628,10 +1889,16 @@ add_task(async function test_schedulerComputerSleep() {
   Services.obs.notifyObservers(null, "wake_notification");
 
   dailyPing = await PingServer.promiseNextPing();
-  Assert.equal(dailyPing.payload.info.reason, REASON_DAILY,
-               "The wake notification should have triggered a daily ping.");
-  Assert.equal(dailyPing.creationDate, nowDate.toISOString(),
-               "The daily ping date should be correct.");
+  Assert.equal(
+    dailyPing.payload.info.reason,
+    REASON_DAILY,
+    "The wake notification should have triggered a daily ping."
+  );
+  Assert.equal(
+    dailyPing.creationDate,
+    nowDate.toISOString(),
+    "The daily ping date should be correct."
+  );
 
   await TelemetryController.testShutdown();
 });
@@ -1646,7 +1913,7 @@ add_task(async function test_schedulerEnvironmentReschedules() {
   const PREF_TEST = "toolkit.telemetry.test.pref1";
   Preferences.reset(PREF_TEST);
   const PREFS_TO_WATCH = new Map([
-    [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_VALUE}],
+    [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_VALUE }],
   ]);
 
   await TelemetryController.testReset();
@@ -1656,15 +1923,19 @@ add_task(async function test_schedulerEnvironmentReschedules() {
 
   
   let nowDate = fakeNow(2060, 10, 18, 0, 0, 0);
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   let schedulerTickCallback = null;
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
 
   
   fakeNow(futureDate(nowDate, MS_IN_ONE_DAY));
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
 
   
   Preferences.set(PREF_TEST, 1);
@@ -1675,7 +1946,10 @@ add_task(async function test_schedulerEnvironmentReschedules() {
   
   PingServer.registerPingHandler((req, res) => {
     const receivedPing = decodeRequestPayload(req);
-    Assert.ok(false, `No ping should be received in this test (got ${receivedPing.id}).`);
+    Assert.ok(
+      false,
+      `No ping should be received in this test (got ${receivedPing.id}).`
+    );
   });
 
   
@@ -1700,7 +1974,10 @@ add_task(async function test_schedulerNothingDue() {
   
   PingServer.registerPingHandler((req, res) => {
     const receivedPing = decodeRequestPayload(req);
-    Assert.ok(false, `No ping should be received in this test (got ${receivedPing.id}).`);
+    Assert.ok(
+      false,
+      `No ping should be received in this test (got ${receivedPing.id}).`
+    );
   });
 
   
@@ -1708,11 +1985,14 @@ add_task(async function test_schedulerNothingDue() {
   let nowDate = new Date(2009, 10, 18, 11, 0, 0);
   fakeNow(nowDate);
   let schedulerTickCallback = null;
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
 
   
-  let nothingDueDate = futureDate(nowDate, ABORTED_SESSION_UPDATE_INTERVAL_MS / 2);
+  let nothingDueDate = futureDate(
+    nowDate,
+    ABORTED_SESSION_UPDATE_INTERVAL_MS / 2
+  );
   fakeNow(nothingDueDate);
   Assert.ok(!!schedulerTickCallback);
   
@@ -1727,8 +2007,12 @@ add_task(async function test_schedulerNothingDue() {
 
 add_task(async function test_pingExtendedStats() {
   const EXTENDED_PAYLOAD_FIELDS = [
-    "log", "slowSQL", "fileIOReports", "lateWrites",
-    "addonDetails", "webrtc",
+    "log",
+    "slowSQL",
+    "fileIOReports",
+    "lateWrites",
+    "addonDetails",
+    "webrtc",
   ];
 
   if (AppConstants.platform == "android") {
@@ -1748,19 +2032,28 @@ add_task(async function test_pingExtendedStats() {
 
   
   for (let f in EXTENDED_PAYLOAD_FIELDS) {
-    Assert.ok(!(EXTENDED_PAYLOAD_FIELDS[f] in ping.payload),
-              EXTENDED_PAYLOAD_FIELDS[f] + " must not be in the payload if the extended set is off.");
+    Assert.ok(
+      !(EXTENDED_PAYLOAD_FIELDS[f] in ping.payload),
+      EXTENDED_PAYLOAD_FIELDS[f] +
+        " must not be in the payload if the extended set is off."
+    );
   }
 
   
   
-  Assert.ok(!("slowSQLStartup" in ping.payload),
-            "slowSQLStartup must not be sent if the extended set is off");
+  Assert.ok(
+    !("slowSQLStartup" in ping.payload),
+    "slowSQLStartup must not be sent if the extended set is off"
+  );
 
-  Assert.ok(!("addonManager" in ping.payload.simpleMeasurements),
-            "addonManager must not be sent if the extended set is off.");
-  Assert.ok(!("UITelemetry" in ping.payload.simpleMeasurements),
-            "UITelemetry must not be sent.");
+  Assert.ok(
+    !("addonManager" in ping.payload.simpleMeasurements),
+    "addonManager must not be sent if the extended set is off."
+  );
+  Assert.ok(
+    !("UITelemetry" in ping.payload.simpleMeasurements),
+    "UITelemetry must not be sent."
+  );
 
   
   Telemetry.canRecordExtended = true;
@@ -1772,14 +2065,21 @@ add_task(async function test_pingExtendedStats() {
 
   
   for (let f in EXTENDED_PAYLOAD_FIELDS) {
-    Assert.ok(EXTENDED_PAYLOAD_FIELDS[f] in ping.payload,
-              EXTENDED_PAYLOAD_FIELDS[f] + " must be in the payload if the extended set is on.");
+    Assert.ok(
+      EXTENDED_PAYLOAD_FIELDS[f] in ping.payload,
+      EXTENDED_PAYLOAD_FIELDS[f] +
+        " must be in the payload if the extended set is on."
+    );
   }
 
-  Assert.ok("addonManager" in ping.payload.simpleMeasurements,
-            "addonManager must be sent if the extended set is on.");
-  Assert.ok(!("UITelemetry" in ping.payload.simpleMeasurements),
-            "UITelemetry must not be sent.");
+  Assert.ok(
+    "addonManager" in ping.payload.simpleMeasurements,
+    "addonManager must be sent if the extended set is on."
+  );
+  Assert.ok(
+    !("UITelemetry" in ping.payload.simpleMeasurements),
+    "UITelemetry must not be sent."
+  );
 
   await TelemetryController.testShutdown();
 });
@@ -1797,9 +2097,12 @@ add_task(async function test_schedulerUserIdle() {
   fakeNow(now);
 
   let schedulerTimeout = 0;
-  fakeSchedulerTimer((callback, timeout) => {
-    schedulerTimeout = timeout;
-  }, () => {});
+  fakeSchedulerTimer(
+    (callback, timeout) => {
+      schedulerTimeout = timeout;
+    },
+    () => {}
+  );
   await TelemetryController.testReset();
   await TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
@@ -1851,7 +2154,7 @@ add_task(async function test_DailyDueAndIdle() {
   let now = new Date(2030, 1, 1, 0, 0, 0);
   fakeNow(now);
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryController.testReset();
 
   
@@ -1897,7 +2200,7 @@ add_task(async function test_userIdleAndSchedlerTick() {
   let now = new Date(2030, 1, 1, 0, 0, 0);
   fakeNow(now);
   
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
   await TelemetryStorage.testClearPendingPings();
   await TelemetryController.testReset();
   PingServer.clearRequests();
@@ -1941,12 +2244,14 @@ add_task(async function test_changeThrottling() {
 
   const PREF_TEST = "toolkit.telemetry.test.pref1";
   const PREFS_TO_WATCH = new Map([
-    [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_STATE}],
+    [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_STATE }],
   ]);
   Preferences.reset(PREF_TEST);
 
   let now = fakeNow(2050, 1, 2, 0, 0, 0);
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
+  );
   await TelemetryController.testReset();
   Assert.equal(getSubsessionCount(), 1);
 
@@ -1959,7 +2264,9 @@ add_task(async function test_changeThrottling() {
 
   
   fakeNow(futureDate(now, 5 * MILLISECONDS_PER_MINUTE + 1));
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 5 * MILLISECONDS_PER_MINUTE + 1);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 5 * MILLISECONDS_PER_MINUTE + 1
+  );
   Preferences.set(PREF_TEST, 2);
   Assert.equal(getSubsessionCount(), 2);
 
@@ -1971,7 +2278,9 @@ add_task(async function test_changeThrottling() {
 
   
   now = fakeNow(futureDate(now, 4 * MILLISECONDS_PER_MINUTE + 1));
-  gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 4 * MILLISECONDS_PER_MINUTE + 1);
+  gMonotonicNow = fakeMonotonicNow(
+    gMonotonicNow + 4 * MILLISECONDS_PER_MINUTE + 1
+  );
   Preferences.set(PREF_TEST, 4);
   Assert.equal(getSubsessionCount(), 3);
 

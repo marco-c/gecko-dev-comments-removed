@@ -5,16 +5,17 @@
 var USERSCRIPT_PREFNAME = "extensions.webextensions.userScripts.enabled";
 var USERSCRIPT_DISABLED_ERRORMSG = `userScripts APIs are currently experimental and must be enabled with the ${USERSCRIPT_PREFNAME} preference.`;
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "userScriptsEnabled", USERSCRIPT_PREFNAME, false);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "userScriptsEnabled",
+  USERSCRIPT_PREFNAME,
+  false
+);
 
 
 Cu.importGlobalProperties(["crypto", "TextEncoder"]);
 
-var {
-  DefaultMap,
-  ExtensionError,
-  getUniqueId,
-} = ExtensionUtils;
+var { DefaultMap, ExtensionError, getUniqueId } = ExtensionUtils;
 
 
 
@@ -26,7 +27,7 @@ var {
 
 
 class UserScriptChild {
-  constructor({context, scriptId, onScriptUnregister}) {
+  constructor({ context, scriptId, onScriptUnregister }) {
     this.context = context;
     this.scriptId = scriptId;
     this.onScriptUnregister = onScriptUnregister;
@@ -41,7 +42,9 @@ class UserScriptChild {
     this.unregistered = true;
 
     await this.context.childManager.callParentAsyncFunction(
-      "userScripts.unregister", [this.scriptId]);
+      "userScripts.unregister",
+      [this.scriptId]
+    );
 
     this.context = null;
 
@@ -49,7 +52,7 @@ class UserScriptChild {
   }
 
   api() {
-    const {context} = this;
+    const { context } = this;
 
     
     return {
@@ -101,7 +104,10 @@ this.userScripts = class extends ExtensionAPI {
     const getBlobURL = async (text, scriptId) => {
       
       
-      const buffer = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(text));
+      const buffer = await crypto.subtle.digest(
+        "SHA-1",
+        new TextEncoder().encode(text)
+      );
       const hash = String.fromCharCode(...new Uint16Array(buffer));
 
       let blobURL = blobURLsByHash.get(hash);
@@ -111,7 +117,9 @@ this.userScripts = class extends ExtensionAPI {
         return blobURL;
       }
 
-      const blob = new context.cloneScope.Blob([text], {type: "text/javascript"});
+      const blob = new context.cloneScope.Blob([text], {
+        type: "text/javascript",
+      });
       blobURL = context.cloneScope.URL.createObjectURL(blob);
 
       
@@ -124,12 +132,16 @@ this.userScripts = class extends ExtensionAPI {
 
     function convertToAPIObject(scriptId, options) {
       const registeredScript = new UserScriptChild({
-        context, scriptId,
+        context,
+        scriptId,
         onScriptUnregister: () => revokeBlobURLs(scriptId, options),
       });
 
-      const scriptAPI = Cu.cloneInto(registeredScript.api(), context.cloneScope,
-                                     {cloneFunctions: true});
+      const scriptAPI = Cu.cloneInto(
+        registeredScript.api(),
+        context.cloneScope,
+        { cloneFunctions: true }
+      );
       return scriptAPI;
     }
 
@@ -156,11 +168,16 @@ this.userScripts = class extends ExtensionAPI {
           let scriptId = getUniqueId();
           return context.cloneScope.Promise.resolve().then(async () => {
             options.scriptId = scriptId;
-            options.js = await Promise.all(options.js.map(js => {
-              return js.file || getBlobURL(js.code, scriptId);
-            }));
+            options.js = await Promise.all(
+              options.js.map(js => {
+                return js.file || getBlobURL(js.code, scriptId);
+              })
+            );
 
-            await context.childManager.callParentAsyncFunction("userScripts.register", [options]);
+            await context.childManager.callParentAsyncFunction(
+              "userScripts.register",
+              [options]
+            );
 
             return convertToAPIObject(scriptId, options);
           });

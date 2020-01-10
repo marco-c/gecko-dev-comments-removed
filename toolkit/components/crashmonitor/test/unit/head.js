@@ -3,9 +3,10 @@
 
 
 
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 var sessionCheckpointsPath;
 var CrashMonitor;
@@ -15,8 +16,12 @@ var CrashMonitor;
 
 function run_test() {
   do_get_profile();
-  sessionCheckpointsPath = OS.Path.join(OS.Constants.Path.profileDir,
-                                        "sessionCheckpoints.json");
-  ({CrashMonitor} = ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm"));
+  sessionCheckpointsPath = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "sessionCheckpoints.json"
+  );
+  ({ CrashMonitor } = ChromeUtils.import(
+    "resource://gre/modules/CrashMonitor.jsm"
+  ));
   run_next_test();
 }

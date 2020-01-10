@@ -4,7 +4,7 @@
 
 
 
- 
+
 
 
 
@@ -12,26 +12,31 @@
 var PU = PlacesUtils;
 var hs = PU.history;
 
-
 add_task(async function test_getURLsForContainerNode_folder() {
   info("*** TEST: folder");
   let bookmarks = await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.toolbarGuid,
-    children: [{
-      
-      title: "folder",
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      
-      
-      children: [{
-        title: "inside folder",
+    children: [
+      {
+        
+        title: "folder",
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
-        children: [{
-          url: "place:sort=1",
-          title: "inside query",
-        }],
-      }],
-    }],
+        
+        
+        children: [
+          {
+            title: "inside folder",
+            type: PlacesUtils.bookmarks.TYPE_FOLDER,
+            children: [
+              {
+                url: "place:sort=1",
+                title: "inside query",
+              },
+            ],
+          },
+        ],
+      },
+    ],
   });
 
   var query = hs.getNewQuery();
@@ -57,21 +62,27 @@ add_task(async function test_getURLsForContainerNode_folder_excludeItems() {
   info("*** TEST: folder in an excludeItems root");
   let bookmarks = await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.toolbarGuid,
-    children: [{
-      
-      title: "folder",
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      
-      
-      children: [{
-        title: "inside folder",
+    children: [
+      {
+        
+        title: "folder",
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
-        children: [{
-          url: "place:sort=1",
-          title: "inside query",
-        }],
-      }],
-    }],
+        
+        
+        children: [
+          {
+            title: "inside folder",
+            type: PlacesUtils.bookmarks.TYPE_FOLDER,
+            children: [
+              {
+                url: "place:sort=1",
+                title: "inside query",
+              },
+            ],
+          },
+        ],
+      },
+    ],
   });
 
   var query = hs.getNewQuery();
@@ -107,14 +118,18 @@ add_task(async function test_getURLsForContainerNode_query() {
   
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.menuGuid,
-    children: [{
-      title: "inside folder",
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      children: [{
-        url: "place:sort=1",
-        title: "inside query",
-      }],
-    }],
+    children: [
+      {
+        title: "inside folder",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        children: [
+          {
+            url: "place:sort=1",
+            title: "inside query",
+          },
+        ],
+      },
+    ],
   });
 
   var query = hs.getNewQuery();
@@ -149,14 +164,18 @@ add_task(async function test_getURLsForContainerNode_query_excludeItems() {
   
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.menuGuid,
-    children: [{
-      title: "inside folder",
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      children: [{
-        url: "place:sort=1",
-        title: "inside query",
-      }],
-    }],
+    children: [
+      {
+        title: "inside folder",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        children: [
+          {
+            url: "place:sort=1",
+            title: "inside query",
+          },
+        ],
+      },
+    ],
   });
 
   var query = hs.getNewQuery();
@@ -192,14 +211,18 @@ add_task(async function test_getURLsForContainerNode_query_excludeQueries() {
   
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.menuGuid,
-    children: [{
-      title: "inside folder",
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      children: [{
-        url: "place:sort=1",
-        title: "inside query",
-      }],
-    }],
+    children: [
+      {
+        title: "inside folder",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        children: [
+          {
+            url: "place:sort=1",
+            title: "inside query",
+          },
+        ],
+      },
+    ],
   });
 
   var query = hs.getNewQuery();

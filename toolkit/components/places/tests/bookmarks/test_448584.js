@@ -78,7 +78,9 @@ add_task(async function() {
   
   try {
     await BookmarkJSONUtils.importFromFile(jsonFile, { replace: true });
-  } catch (ex) { do_throw("couldn't import the exported file: " + ex); }
+  } catch (ex) {
+    do_throw("couldn't import the exported file: " + ex);
+  }
 
   
   validateResults(1);

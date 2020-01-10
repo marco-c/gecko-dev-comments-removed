@@ -18,28 +18,33 @@
 
 var testData = [
   
-  { isBookmark: true,
+  {
+    isBookmark: true,
     uri: "http://bookmarked.com/",
     title: "",
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: PlacesUtils.bookmarks.DEFAULT_INDEX,
-    isInQuery: true },
+    isInQuery: true,
+  },
 
   
-  { isBookmark: true,
+  {
+    isBookmark: true,
     uri: "http://bookmarked-elsewhere.com/",
     title: "",
     parentGuid: PlacesUtils.bookmarks.menuGuid,
     index: PlacesUtils.bookmarks.DEFAULT_INDEX,
-    isInQuery: false },
+    isInQuery: false,
+  },
 
   
-  { isVisit: true,
+  {
+    isVisit: true,
     uri: "http://notbookmarked.com/",
     title: "",
-    isInQuery: false },
+    isInQuery: false,
+  },
 ];
-
 
 add_task(async function test_onlyBookmarked() {
   
@@ -69,20 +74,24 @@ add_task(async function test_onlyBookmarked() {
   
   var liveUpdateTestData = [
     
-    { isBookmark: true,
+    {
+      isBookmark: true,
       uri: "http://bookmarked2.com/",
       title: "",
       parentGuid: PlacesUtils.bookmarks.toolbarGuid,
       index: PlacesUtils.bookmarks.DEFAULT_INDEX,
-      isInQuery: true },
+      isInQuery: true,
+    },
 
     
-    { isBookmark: true,
+    {
+      isBookmark: true,
       uri: "http://bookmarked-elsewhere2.com/",
       title: "",
       parentGuid: PlacesUtils.bookmarks.menuGuid,
       index: PlacesUtils.bookmarks.DEFAULT_INDEX,
-      isInQuery: false },
+      isInQuery: false,
+    },
   ];
 
   await task_populateDB(liveUpdateTestData); 

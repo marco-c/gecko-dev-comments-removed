@@ -1,16 +1,22 @@
 
 
 
-AntiTracking.runTest("localStorage and Storage Access API",
+AntiTracking.runTest(
+  "localStorage and Storage Access API",
   async _ => {
     
     await noStorageAccessInitially();
 
-    let shouldThrow = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
+    let shouldThrow =
+      SpecialPowers.Services.prefs.getIntPref(
+        "network.cookie.cookieBehavior"
+      ) == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
 
-    is(window.localStorage == null, shouldThrow,
-       shouldThrow ? "LocalStorage is null"
-                   : "LocalStorage is not null");
+    is(
+      window.localStorage == null,
+      shouldThrow,
+      shouldThrow ? "LocalStorage is null" : "LocalStorage is not null"
+    );
     let hasThrown;
     try {
       localStorage.foo = 42;
@@ -72,18 +78,27 @@ AntiTracking.runTest("localStorage and Storage Access API",
   },
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
-  [["privacy.restrict3rdpartystorage.partitionedHosts", "tracking.example.org,tracking.example.com"]],
-  false, false);
+  [
+    [
+      "privacy.restrict3rdpartystorage.partitionedHosts",
+      "tracking.example.org,tracking.example.com",
+    ],
+  ],
+  false,
+  false
+);
 
 PartitionedStorageHelper.runPartitioningTest(
   "Partitioned tabs - localStorage",
 
   
   async win => {
-    return ("foo" in win.localStorage) ? win.localStorage.foo : "";
+    return "foo" in win.localStorage ? win.localStorage.foo : "";
   },
 
   
@@ -95,7 +110,9 @@ PartitionedStorageHelper.runPartitioningTest(
   
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   }
 );

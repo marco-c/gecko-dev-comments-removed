@@ -1,49 +1,62 @@
 try {
   
   
-  var {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
-} catch (e) {
-}
+  var { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+} catch (e) {}
 
 var acquire, dispose, null_dispose, compare, dispose_64;
 
 function run_test() {
   let library = open_ctypes_test_lib();
 
-  let start = library.declare("test_finalizer_start", ctypes.default_abi,
-                          ctypes.void_t,
-                          ctypes.size_t);
-  let stop = library.declare("test_finalizer_stop", ctypes.default_abi,
-                             ctypes.void_t);
+  let start = library.declare(
+    "test_finalizer_start",
+    ctypes.default_abi,
+    ctypes.void_t,
+    ctypes.size_t
+  );
+  let stop = library.declare(
+    "test_finalizer_stop",
+    ctypes.default_abi,
+    ctypes.void_t
+  );
   let tester = new ResourceTester(start, stop);
-  acquire = library.declare("test_finalizer_acq_size_t",
-                            ctypes.default_abi,
-                            ctypes.size_t,
-                            ctypes.size_t);
-  dispose = library.declare("test_finalizer_rel_size_t",
-                            ctypes.default_abi,
-                            ctypes.void_t,
-                            ctypes.size_t);
-  compare = library.declare("test_finalizer_cmp_size_t",
-                            ctypes.default_abi,
-                            ctypes.bool,
-                            ctypes.size_t,
-                            ctypes.size_t);
+  acquire = library.declare(
+    "test_finalizer_acq_size_t",
+    ctypes.default_abi,
+    ctypes.size_t,
+    ctypes.size_t
+  );
+  dispose = library.declare(
+    "test_finalizer_rel_size_t",
+    ctypes.default_abi,
+    ctypes.void_t,
+    ctypes.size_t
+  );
+  compare = library.declare(
+    "test_finalizer_cmp_size_t",
+    ctypes.default_abi,
+    ctypes.bool,
+    ctypes.size_t,
+    ctypes.size_t
+  );
 
-  dispose_64 = library.declare("test_finalizer_rel_int64_t",
-                               ctypes.default_abi,
-                               ctypes.void_t,
-                               ctypes.int64_t);
+  dispose_64 = library.declare(
+    "test_finalizer_rel_int64_t",
+    ctypes.default_abi,
+    ctypes.void_t,
+    ctypes.int64_t
+  );
 
-  let type_afun = ctypes.FunctionType(ctypes.default_abi,
-                                      ctypes.void_t,
-                                      [ctypes.size_t]).ptr;
+  let type_afun = ctypes.FunctionType(ctypes.default_abi, ctypes.void_t, [
+    ctypes.size_t,
+  ]).ptr;
 
-  let null_dispose_maker =
-    library.declare("test_finalizer_rel_null_function",
-                    ctypes.default_abi,
-                    type_afun
-                   );
+  let null_dispose_maker = library.declare(
+    "test_finalizer_rel_null_function",
+    ctypes.default_abi,
+    type_afun
+  );
   null_dispose = null_dispose_maker();
 
   tester.launch(10, test_double_dispose);
@@ -56,30 +69,35 @@ function run_test() {
 
 
 
-
 function test_finalize_bad_construction() {
   
-  must_throw(function() { ctypes.CDataFinalizer({}, dispose); });
-  must_throw(function() { ctypes.CDataFinalizer(dispose, dispose); });
+  must_throw(function() {
+    ctypes.CDataFinalizer({}, dispose);
+  });
+  must_throw(function() {
+    ctypes.CDataFinalizer(dispose, dispose);
+  });
 
   
-  must_throw(function() { ctypes.CDataFinalizer(dispose); },
-             "TypeError: CDataFinalizer constructor takes two arguments");
+  must_throw(function() {
+    ctypes.CDataFinalizer(dispose);
+  }, "TypeError: CDataFinalizer constructor takes two arguments");
 
   
-  must_throw(function() { ctypes.CDataFinalizer(dispose, dispose, dispose); },
-             "TypeError: CDataFinalizer constructor takes two arguments");
+  must_throw(function() {
+    ctypes.CDataFinalizer(dispose, dispose, dispose);
+  }, "TypeError: CDataFinalizer constructor takes two arguments");
 
   
-  must_throw(function() { ctypes.CDataFinalizer(dispose, null); },
-             "TypeError: expected _a CData object_ of a function pointer type, got null");
+  must_throw(function() {
+    ctypes.CDataFinalizer(dispose, null);
+  }, "TypeError: expected _a CData object_ of a function pointer type, got null");
 
   
   must_throw(function() {
     let a;
     ctypes.CDataFinalizer(dispose, a);
-  },
-  "TypeError: expected _a CData object_ of a function pointer type, got undefined");
+  }, "TypeError: expected _a CData object_ of a function pointer type, got undefined");
 }
 
 
@@ -89,7 +107,9 @@ function test_double_dispose() {
   function test_one_combination(i, a, b) {
     let v = ctypes.CDataFinalizer(acquire(i), dispose);
     a(v);
-    must_throw(function() { b(v); } );
+    must_throw(function() {
+      b(v);
+    });
   }
 
   let call_dispose = function(v) {
@@ -104,7 +124,6 @@ function test_double_dispose() {
   test_one_combination(2, call_forget, call_dispose);
   test_one_combination(3, call_forget, call_forget);
 }
-
 
 
 

@@ -1,12 +1,18 @@
 "use strict";
 
-let {ExtensionTestCommon} = ChromeUtils.import("resource://testing-common/ExtensionTestCommon.jsm");
+let { ExtensionTestCommon } = ChromeUtils.import(
+  "resource://testing-common/ExtensionTestCommon.jsm"
+);
 
 let bundle;
 if (AppConstants.MOZ_APP_NAME == "thunderbird") {
-  bundle = Services.strings.createBundle("chrome://messenger/locale/addons.properties");
+  bundle = Services.strings.createBundle(
+    "chrome://messenger/locale/addons.properties"
+  );
 } else {
-  bundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
+  bundle = Services.strings.createBundle(
+    "chrome://browser/locale/browser.properties"
+  );
 }
 const DUMMY_APP_NAME = "Dummy brandName";
 
@@ -21,11 +27,14 @@ function getPermissionWarnings(manifestPermissions) {
     permissions: manifestPermissions,
     appName: DUMMY_APP_NAME,
   };
-  let {msgs} = ExtensionData.formatPermissionStrings(info, bundle);
+  let { msgs } = ExtensionData.formatPermissionStrings(info, bundle);
   return msgs;
 }
 
-async function getPermissionWarningsForUpdate(oldExtensionData, newExtensionData) {
+async function getPermissionWarningsForUpdate(
+  oldExtensionData,
+  newExtensionData
+) {
   let oldPerms = await getManifestPermissions(oldExtensionData);
   let newPerms = await getManifestPermissions(newExtensionData);
   let difference = Extension.comparePermissions(oldPerms, newPerms);
@@ -35,134 +44,204 @@ async function getPermissionWarningsForUpdate(oldExtensionData, newExtensionData
 
 
 add_task(async function host_permissions() {
-  let {PluralForm} = ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
+  let { PluralForm } = ChromeUtils.import(
+    "resource://gre/modules/PluralForm.jsm"
+  );
 
-  let permissionTestCases = [{
-    description: "Empty manifest without permissions",
-    manifest: {},
-    expectedOrigins: [],
-    expectedWarnings: [],
-  }, {
-    description: "Invalid match patterns",
-    manifest: {
-      permissions: [
-        "https:///",
-        "https://",
-        "https://*",
-        "about:ugh",
-        "about:*",
-        "about://*/",
-        "resource://*/",
+  let permissionTestCases = [
+    {
+      description: "Empty manifest without permissions",
+      manifest: {},
+      expectedOrigins: [],
+      expectedWarnings: [],
+    },
+    {
+      description: "Invalid match patterns",
+      manifest: {
+        permissions: [
+          "https:///",
+          "https://",
+          "https://*",
+          "about:ugh",
+          "about:*",
+          "about://*/",
+          "resource://*/",
+        ],
+      },
+      expectedOrigins: [],
+      expectedWarnings: [],
+    },
+    {
+      description: "moz-extension: permissions",
+      manifest: {
+        permissions: ["moz-extension://*/*", "moz-extension://uuid/"],
+      },
+      
+      
+      expectedOrigins: [],
+      expectedWarnings: [],
+    },
+    {
+      description: "*. host permission",
+      manifest: {
+        
+        permissions: ["http://*./"],
+      },
+      expectedOrigins: [],
+      expectedWarnings: [],
+    },
+    {
+      description: "<all_urls> permission",
+      manifest: {
+        permissions: ["<all_urls>"],
+      },
+      expectedOrigins: ["<all_urls>"],
+      expectedWarnings: [
+        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
       ],
     },
-    expectedOrigins: [],
-    expectedWarnings: [],
-  }, {
-    description: "moz-extension: permissions",
-    manifest: {
-      permissions: ["moz-extension://*/*", "moz-extension://uuid/"],
+    {
+      description: "file: permissions",
+      manifest: {
+        permissions: ["file://*/"],
+      },
+      expectedOrigins: ["file://*/"],
+      expectedWarnings: [
+        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+      ],
     },
-    
-    
-    expectedOrigins: [],
-    expectedWarnings: [],
-  }, {
-    description: "*. host permission",
-    manifest: {
-      
-      permissions: ["http://*./"],
+    {
+      description: "http: permission",
+      manifest: {
+        permissions: ["http://*/"],
+      },
+      expectedOrigins: ["http://*/"],
+      expectedWarnings: [
+        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+      ],
     },
-    expectedOrigins: [],
-    expectedWarnings: [],
-  }, {
-    description: "<all_urls> permission",
-    manifest: {
-      permissions: ["<all_urls>"],
+    {
+      description: "*://*/ permission",
+      manifest: {
+        permissions: ["*://*/"],
+      },
+      expectedOrigins: ["*://*/"],
+      expectedWarnings: [
+        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+      ],
     },
-    expectedOrigins: ["<all_urls>"],
-    expectedWarnings: [
-      bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
-    ],
-  }, {
-    description: "file: permissions",
-    manifest: {
-      permissions: ["file://*/"],
+    {
+      description: "content_script[*].matches",
+      manifest: {
+        content_scripts: [
+          {
+            
+            
+            js: ["dummy.js"],
+            matches: ["https://*/"],
+          },
+        ],
+      },
+      expectedOrigins: ["https://*/"],
+      expectedWarnings: [
+        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+      ],
     },
-    expectedOrigins: ["file://*/"],
-    expectedWarnings: [
-      bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
-    ],
-  }, {
-    description: "http: permission",
-    manifest: {
-      permissions: ["http://*/"],
-    },
-    expectedOrigins: ["http://*/"],
-    expectedWarnings: [
-      bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
-    ],
-  }, {
-    description: "*://*/ permission",
-    manifest: {
-      permissions: ["*://*/"],
-    },
-    expectedOrigins: ["*://*/"],
-    expectedWarnings: [
-      bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
-    ],
-  }, {
-    description: "content_script[*].matches",
-    manifest: {
-      content_scripts: [{
+    {
+      description: "A few host permissions",
+      manifest: {
+        permissions: ["http://a/", "http://*.b/", "http://c/*"],
+      },
+      expectedOrigins: ["http://a/", "http://*.b/", "http://c/*"],
+      expectedWarnings: [
         
+        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+          "b",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
+          "a",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
+          "c",
+        ]),
+      ],
+    },
+    {
+      description: "many host permission",
+      manifest: {
+        permissions: [
+          "http://a/",
+          "http://b/",
+          "http://c/",
+          "http://d/",
+          "http://e/*",
+          "http://*.1/",
+          "http://*.2/",
+          "http://*.3/",
+          "http://*.4/",
+        ],
+      },
+      expectedOrigins: [
+        "http://a/",
+        "http://b/",
+        "http://c/",
+        "http://d/",
+        "http://e/*",
+        "http://*.1/",
+        "http://*.2/",
+        "http://*.3/",
+        "http://*.4/",
+      ],
+      expectedWarnings: [
         
-        js: ["dummy.js"],
-        matches: ["https://*/"],
-      }],
+        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+          "1",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+          "2",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+          "3",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+          "4",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
+          "a",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
+          "b",
+        ]),
+        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
+          "c",
+        ]),
+        PluralForm.get(
+          2,
+          bundle.GetStringFromName("webextPerms.hostDescription.tooManySites")
+        ).replace("#1", "2"),
+      ],
     },
-    expectedOrigins: ["https://*/"],
-    expectedWarnings: [
-      bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
-    ],
-  }, {
-    description: "A few host permissions",
-    manifest: {
-      permissions: ["http://a/", "http://*.b/", "http://c/*"],
-    },
-    expectedOrigins: ["http://a/", "http://*.b/", "http://c/*"],
-    expectedWarnings: [
-      
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["b"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["a"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["c"]),
-    ],
-  }, {
-    description: "many host permission",
-    manifest: {
-      permissions: ["http://a/", "http://b/", "http://c/", "http://d/", "http://e/*",
-                    "http://*.1/", "http://*.2/", "http://*.3/", "http://*.4/"],
-    },
-    expectedOrigins: ["http://a/", "http://b/", "http://c/", "http://d/", "http://e/*",
-                      "http://*.1/", "http://*.2/", "http://*.3/", "http://*.4/"],
-    expectedWarnings: [
-      
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["1"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["2"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["3"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["4"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["a"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["b"]),
-      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["c"]),
-      PluralForm.get(2, bundle.GetStringFromName("webextPerms.hostDescription.tooManySites")).replace("#1", "2"),
-    ],
-  }];
-  for (let {description, manifest, expectedOrigins, expectedWarnings} of permissionTestCases) {
+  ];
+  for (let {
+    description,
+    manifest,
+    expectedOrigins,
+    expectedWarnings,
+  } of permissionTestCases) {
     let manifestPermissions = await getManifestPermissions({
       manifest,
     });
 
-    deepEqual(manifestPermissions.origins, expectedOrigins, `Expected origins (${description})`);
-    deepEqual(manifestPermissions.permissions, [], `Expected no non-host permissions (${description})`);
+    deepEqual(
+      manifestPermissions.origins,
+      expectedOrigins,
+      `Expected origins (${description})`
+    );
+    deepEqual(
+      manifestPermissions.permissions,
+      [],
+      `Expected no non-host permissions (${description})`
+    );
 
     let warnings = getPermissionWarnings(manifestPermissions);
     deepEqual(warnings, expectedWarnings, `Expected warnings (${description})`);
@@ -175,28 +254,47 @@ add_task(async function api_permissions() {
   let manifestPermissions = await getManifestPermissions({
     manifest: {
       permissions: [
-        "activeTab", "webNavigation", "tabs", "nativeMessaging",
-        "http://x/", "http://*.x/", "http://*.tld/",
+        "activeTab",
+        "webNavigation",
+        "tabs",
+        "nativeMessaging",
+        "http://x/",
+        "http://*.x/",
+        "http://*.tld/",
       ],
     },
   });
-  deepEqual(manifestPermissions, {
-    origins: ["http://x/", "http://*.x/", "http://*.tld/"],
-    permissions: ["activeTab", "webNavigation", "tabs", "nativeMessaging"],
-  }, "Expected origins and permissions");
+  deepEqual(
+    manifestPermissions,
+    {
+      origins: ["http://x/", "http://*.x/", "http://*.tld/"],
+      permissions: ["activeTab", "webNavigation", "tabs", "nativeMessaging"],
+    },
+    "Expected origins and permissions"
+  );
 
-  deepEqual(getPermissionWarnings(manifestPermissions), [
-    
-    bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["x"]),
-    bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["tld"]),
-    bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["x"]),
-    
-    bundle.formatStringFromName("webextPerms.description.nativeMessaging", [DUMMY_APP_NAME]),
-    
-    
-    bundle.GetStringFromName("webextPerms.description.tabs"),
-    bundle.GetStringFromName("webextPerms.description.webNavigation"),
-  ], "Expected warnings");
+  deepEqual(
+    getPermissionWarnings(manifestPermissions),
+    [
+      
+      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+        "x",
+      ]),
+      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+        "tld",
+      ]),
+      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["x"]),
+      
+      bundle.formatStringFromName("webextPerms.description.nativeMessaging", [
+        DUMMY_APP_NAME,
+      ]),
+      
+      
+      bundle.GetStringFromName("webextPerms.description.tabs"),
+      bundle.GetStringFromName("webextPerms.description.webNavigation"),
+    ],
+    "Expected warnings"
+  );
 });
 
 
@@ -206,17 +304,30 @@ add_task(async function privileged_with_mozillaAddons() {
   let manifestPermissions = await getManifestPermissions({
     isPrivileged: true,
     manifest: {
-      permissions: ["mozillaAddons", "mozillaAddons", "mozillaAddons", "resource://x/*", "http://a/", "about:reader*"],
+      permissions: [
+        "mozillaAddons",
+        "mozillaAddons",
+        "mozillaAddons",
+        "resource://x/*",
+        "http://a/",
+        "about:reader*",
+      ],
     },
   });
-  deepEqual(manifestPermissions, {
-    origins: ["resource://x/*", "http://a/", "about:reader*"],
-    permissions: ["mozillaAddons"],
-  }, "Expected origins and permissions for privileged add-on with mozillaAddons");
+  deepEqual(
+    manifestPermissions,
+    {
+      origins: ["resource://x/*", "http://a/", "about:reader*"],
+      permissions: ["mozillaAddons"],
+    },
+    "Expected origins and permissions for privileged add-on with mozillaAddons"
+  );
 
-  deepEqual(getPermissionWarnings(manifestPermissions), [
-    bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
-  ], "Expected warnings for privileged add-on with mozillaAddons permission.");
+  deepEqual(
+    getPermissionWarnings(manifestPermissions),
+    [bundle.GetStringFromName("webextPerms.hostDescription.allUrls")],
+    "Expected warnings for privileged add-on with mozillaAddons permission."
+  );
 });
 
 
@@ -224,110 +335,169 @@ add_task(async function privileged_with_mozillaAddons() {
 add_task(async function unprivileged_with_mozillaAddons() {
   let manifestPermissions = await getManifestPermissions({
     manifest: {
-      permissions: ["mozillaAddons", "mozillaAddons", "mozillaAddons", "resource://x/*", "http://a/", "about:reader*"],
+      permissions: [
+        "mozillaAddons",
+        "mozillaAddons",
+        "mozillaAddons",
+        "resource://x/*",
+        "http://a/",
+        "about:reader*",
+      ],
     },
   });
-  deepEqual(manifestPermissions, {
-    origins: ["http://a/"],
-    permissions: [],
-  }, "Expected origins and permissions for unprivileged add-on with mozillaAddons");
+  deepEqual(
+    manifestPermissions,
+    {
+      origins: ["http://a/"],
+      permissions: [],
+    },
+    "Expected origins and permissions for unprivileged add-on with mozillaAddons"
+  );
 
-  deepEqual(getPermissionWarnings(manifestPermissions), [
-    bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["a"]),
-  ], "Expected warnings for unprivileged add-on with mozillaAddons permission.");
+  deepEqual(
+    getPermissionWarnings(manifestPermissions),
+    [bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["a"])],
+    "Expected warnings for unprivileged add-on with mozillaAddons permission."
+  );
 });
 
 
 add_task(async function update_drop_permission() {
-  let warnings = await getPermissionWarningsForUpdate({
-    manifest: {
-      permissions: ["<all_urls>", "https://a/", "http://b/"],
+  let warnings = await getPermissionWarningsForUpdate(
+    {
+      manifest: {
+        permissions: ["<all_urls>", "https://a/", "http://b/"],
+      },
     },
-  }, {
-    manifest: {
-      permissions: ["https://a/", "http://b/", "ftp://host_matching_all_urls/"],
-    },
-  });
-  deepEqual(warnings, [], "An update with fewer permissions should not have any warnings");
+    {
+      manifest: {
+        permissions: [
+          "https://a/",
+          "http://b/",
+          "ftp://host_matching_all_urls/",
+        ],
+      },
+    }
+  );
+  deepEqual(
+    warnings,
+    [],
+    "An update with fewer permissions should not have any warnings"
+  );
 });
 
 
 
 add_task(async function update_all_urls_permission() {
-  let warnings = await getPermissionWarningsForUpdate({
-    manifest: {
-      permissions: ["*://*/*"],
+  let warnings = await getPermissionWarningsForUpdate(
+    {
+      manifest: {
+        permissions: ["*://*/*"],
+      },
     },
-  }, {
-    manifest: {
-      permissions: ["<all_urls>"],
-    },
-  });
-  deepEqual(warnings, [], "An update from a wildcard host to <all_urls> should not have any warnings");
+    {
+      manifest: {
+        permissions: ["<all_urls>"],
+      },
+    }
+  );
+  deepEqual(
+    warnings,
+    [],
+    "An update from a wildcard host to <all_urls> should not have any warnings"
+  );
 });
 
 
 
 add_task(async function update_change_permissions() {
-  let warnings = await getPermissionWarningsForUpdate({
-    manifest: {
-      permissions: ["https://a/", "http://*.b/", "http://c/", "http://f/"],
+  let warnings = await getPermissionWarningsForUpdate(
+    {
+      manifest: {
+        permissions: ["https://a/", "http://*.b/", "http://c/", "http://f/"],
+      },
     },
-  }, {
-    manifest: {
-      permissions: [
-        
-        "https://a/",
-        
-        "ftp://ftp.b/", "ws://ws.b/", "wss://wss.b",
-        "https://https.b/", "http://http.b/", "*://*.b/", "http://b/",
+    {
+      manifest: {
+        permissions: [
+          
+          "https://a/",
+          
+          "ftp://ftp.b/",
+          "ws://ws.b/",
+          "wss://wss.b",
+          "https://https.b/",
+          "http://http.b/",
+          "*://*.b/",
+          "http://b/",
 
-        
-        "http://*.c/",
-        
-        "file://f/",
-        
-        "proxy",
-      ],
-    },
-  });
-  deepEqual(warnings, [
-    bundle.formatStringFromName("webextPerms.hostDescription.wildcard", ["c"]),
-    bundle.formatStringFromName("webextPerms.description.proxy", [DUMMY_APP_NAME]),
-  ], "Expected permission warnings for new permissions only");
+          
+          "http://*.c/",
+          
+          "file://f/",
+          
+          "proxy",
+        ],
+      },
+    }
+  );
+  deepEqual(
+    warnings,
+    [
+      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
+        "c",
+      ]),
+      bundle.formatStringFromName("webextPerms.description.proxy", [
+        DUMMY_APP_NAME,
+      ]),
+    ],
+    "Expected permission warnings for new permissions only"
+  );
 });
 
 
 
 add_task(async function update_privileged_with_mozillaAddons() {
-  let warnings = await getPermissionWarningsForUpdate({
-    isPrivileged: true,
-    manifest: {
-      permissions: ["mozillaAddons", "resource://a/"],
+  let warnings = await getPermissionWarningsForUpdate(
+    {
+      isPrivileged: true,
+      manifest: {
+        permissions: ["mozillaAddons", "resource://a/"],
+      },
     },
-  }, {
-    isPrivileged: true,
-    manifest: {
-      permissions: ["mozillaAddons", "resource://a/", "resource://b/"],
-    },
-  });
-  deepEqual(warnings, [
-    bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["b"]),
-  ], "Expected permission warnings for new host only");
+    {
+      isPrivileged: true,
+      manifest: {
+        permissions: ["mozillaAddons", "resource://a/", "resource://b/"],
+      },
+    }
+  );
+  deepEqual(
+    warnings,
+    [bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["b"])],
+    "Expected permission warnings for new host only"
+  );
 });
 
 
 
 add_task(async function update_unprivileged_with_mozillaAddons() {
   
-  let warnings = await getPermissionWarningsForUpdate({
-    manifest: {
-      permissions: ["mozillaAddons", "resource://a/"],
+  let warnings = await getPermissionWarningsForUpdate(
+    {
+      manifest: {
+        permissions: ["mozillaAddons", "resource://a/"],
+      },
     },
-  }, {
-    manifest: {
-      permissions: ["mozillaAddons", "resource://a/", "resource://b/"],
-    },
-  });
-  deepEqual(warnings, [], "resource:-scheme is unsupported for unprivileged extensions");
+    {
+      manifest: {
+        permissions: ["mozillaAddons", "resource://a/", "resource://b/"],
+      },
+    }
+  );
+  deepEqual(
+    warnings,
+    [],
+    "resource:-scheme is unsupported for unprivileged extensions"
+  );
 });

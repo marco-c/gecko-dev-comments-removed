@@ -27,15 +27,18 @@ var TelemetryTimestamps = {
 
   add: function TT_add(name, value) {
     
-    if (value == null)
+    if (value == null) {
       value = Date.now();
+    }
 
-    if (isNaN(value))
+    if (isNaN(value)) {
       throw new Error("Value must be a timestamp");
+    }
 
     
-    if (timeStamps.hasOwnProperty(name))
+    if (timeStamps.hasOwnProperty(name)) {
       return;
+    }
 
     timeStamps[name] = value;
   },

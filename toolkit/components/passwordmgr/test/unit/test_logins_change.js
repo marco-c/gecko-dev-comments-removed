@@ -31,17 +31,26 @@ function checkLoginInvalid(aLoginInfo, aExpectedError) {
   Services.logins.addLogin(testLogin);
 
   
-  Assert.throws(() => Services.logins.modifyLogin(testLogin, aLoginInfo),
-                aExpectedError);
-  Assert.throws(() => Services.logins.modifyLogin(testLogin, newPropertyBag({
-    origin: aLoginInfo.origin,
-    formActionOrigin: aLoginInfo.formActionOrigin,
-    httpRealm: aLoginInfo.httpRealm,
-    username: aLoginInfo.username,
-    password: aLoginInfo.password,
-    usernameField: aLoginInfo.usernameField,
-    passwordField: aLoginInfo.passwordField,
-  })), aExpectedError);
+  Assert.throws(
+    () => Services.logins.modifyLogin(testLogin, aLoginInfo),
+    aExpectedError
+  );
+  Assert.throws(
+    () =>
+      Services.logins.modifyLogin(
+        testLogin,
+        newPropertyBag({
+          origin: aLoginInfo.origin,
+          formActionOrigin: aLoginInfo.formActionOrigin,
+          httpRealm: aLoginInfo.httpRealm,
+          username: aLoginInfo.username,
+          password: aLoginInfo.password,
+          usernameField: aLoginInfo.usernameField,
+          passwordField: aLoginInfo.passwordField,
+        })
+      ),
+    aExpectedError
+  );
 
   
   LoginTestUtils.checkLogins([testLogin]);
@@ -107,12 +116,16 @@ add_task(function test_addLogin_removeLogin() {
 
 add_task(function test_invalid_httpRealm_formActionOrigin() {
   
-  checkLoginInvalid(TestData.formLogin({ formActionOrigin: null }),
-                    /without a httpRealm or formActionOrigin/);
+  checkLoginInvalid(
+    TestData.formLogin({ formActionOrigin: null }),
+    /without a httpRealm or formActionOrigin/
+  );
 
   
-  checkLoginInvalid(TestData.authLogin({ httpRealm: "" }),
-                    /without a httpRealm or formActionOrigin/);
+  checkLoginInvalid(
+    TestData.authLogin({ httpRealm: "" }),
+    /without a httpRealm or formActionOrigin/
+  );
 
   
   
@@ -120,40 +133,52 @@ add_task(function test_invalid_httpRealm_formActionOrigin() {
   
 
   
-  checkLoginInvalid(TestData.formLogin({ formActionOrigin: "", httpRealm: "" }),
-                    /both a httpRealm and formActionOrigin/);
+  checkLoginInvalid(
+    TestData.formLogin({ formActionOrigin: "", httpRealm: "" }),
+    /both a httpRealm and formActionOrigin/
+  );
 
   
-  checkLoginInvalid(TestData.formLogin({ httpRealm: "The HTTP Realm" }),
-                    /both a httpRealm and formActionOrigin/);
+  checkLoginInvalid(
+    TestData.formLogin({ httpRealm: "The HTTP Realm" }),
+    /both a httpRealm and formActionOrigin/
+  );
 
   
-  checkLoginInvalid(TestData.formLogin({ httpRealm: "" }),
-                    /both a httpRealm and formActionOrigin/);
+  checkLoginInvalid(
+    TestData.formLogin({ httpRealm: "" }),
+    /both a httpRealm and formActionOrigin/
+  );
 
   
-  checkLoginInvalid(TestData.authLogin({ formActionOrigin: "" }),
-                    /both a httpRealm and formActionOrigin/);
+  checkLoginInvalid(
+    TestData.authLogin({ formActionOrigin: "" }),
+    /both a httpRealm and formActionOrigin/
+  );
 });
 
 
 
 
 add_task(function test_missing_properties() {
-  checkLoginInvalid(TestData.formLogin({ origin: null }),
-                    /null or empty origin/);
+  checkLoginInvalid(
+    TestData.formLogin({ origin: null }),
+    /null or empty origin/
+  );
 
-  checkLoginInvalid(TestData.formLogin({ origin: "" }),
-                    /null or empty origin/);
+  checkLoginInvalid(TestData.formLogin({ origin: "" }), /null or empty origin/);
 
-  checkLoginInvalid(TestData.formLogin({ username: null }),
-                    /null username/);
+  checkLoginInvalid(TestData.formLogin({ username: null }), /null username/);
 
-  checkLoginInvalid(TestData.formLogin({ password: null }),
-                    /null or empty password/);
+  checkLoginInvalid(
+    TestData.formLogin({ password: null }),
+    /null or empty password/
+  );
 
-  checkLoginInvalid(TestData.formLogin({ password: "" }),
-                    /null or empty password/);
+  checkLoginInvalid(
+    TestData.formLogin({ password: "" }),
+    /null or empty password/
+  );
 });
 
 
@@ -179,8 +204,10 @@ add_task(function test_invalid_characters() {
 
 
 add_task(function test_removeLogin_nonexisting() {
-  Assert.throws(() => Services.logins.removeLogin(TestData.formLogin()),
-                /No matching logins/);
+  Assert.throws(
+    () => Services.logins.removeLogin(TestData.formLogin()),
+    /No matching logins/
+  );
 });
 
 
@@ -211,8 +238,10 @@ add_task(function test_modifyLogin_nsILoginInfo() {
   let differentLoginInfo = TestData.authLogin();
 
   
-  Assert.throws(() => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
-                /No matching logins/);
+  Assert.throws(
+    () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
+    /No matching logins/
+  );
 
   
   Services.logins.addLogin(loginInfo);
@@ -220,8 +249,10 @@ add_task(function test_modifyLogin_nsILoginInfo() {
 
   
   LoginTestUtils.checkLogins([updatedLoginInfo]);
-  Assert.throws(() => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
-                /No matching logins/);
+  Assert.throws(
+    () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
+    /No matching logins/
+  );
 
   
   Services.logins.modifyLogin(updatedLoginInfo, differentLoginInfo);
@@ -234,7 +265,8 @@ add_task(function test_modifyLogin_nsILoginInfo() {
   
   Assert.throws(
     () => Services.logins.modifyLogin(loginInfo, differentLoginInfo),
-    /already exists/);
+    /already exists/
+  );
   LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   LoginTestUtils.clearData();
@@ -263,31 +295,45 @@ add_task(function test_modifyLogin_nsIProperyBag() {
   });
 
   
-  Assert.throws(() => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
-                /No matching logins/);
+  Assert.throws(
+    () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
+    /No matching logins/
+  );
 
   
   
   Services.logins.addLogin(loginInfo);
-  Services.logins.modifyLogin(loginInfo, newPropertyBag({
-    username: "new username",
-    password: "new password",
-    usernameField: "",
-    passwordField: "new_form_field_password",
-  }));
+  Services.logins.modifyLogin(
+    loginInfo,
+    newPropertyBag({
+      username: "new username",
+      password: "new password",
+      usernameField: "",
+      passwordField: "new_form_field_password",
+    })
+  );
 
   
   LoginTestUtils.checkLogins([updatedLoginInfo]);
-  Assert.throws(() => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
-                /No matching logins/);
+  Assert.throws(
+    () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
+    /No matching logins/
+  );
 
   
   Services.logins.modifyLogin(updatedLoginInfo, newPropertyBag());
 
   
-  Assert.throws(() => Services.logins.modifyLogin(loginInfo, newPropertyBag({
-    usernameField: null,
-  })), /No matching logins/);
+  Assert.throws(
+    () =>
+      Services.logins.modifyLogin(
+        loginInfo,
+        newPropertyBag({
+          usernameField: null,
+        })
+      ),
+    /No matching logins/
+  );
 
   
   Services.logins.modifyLogin(updatedLoginInfo, differentLoginProperties);
@@ -300,7 +346,8 @@ add_task(function test_modifyLogin_nsIProperyBag() {
   
   Assert.throws(
     () => Services.logins.modifyLogin(loginInfo, differentLoginProperties),
-    /already exists/);
+    /already exists/
+  );
   LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   LoginTestUtils.clearData();
@@ -336,12 +383,21 @@ add_task(function test_deduplicate_logins() {
   for (let testCase of keyCombinations) {
     
     let deduped = LoginHelper.dedupeLogins(logins, testCase.keyset);
-    Assert.equal(deduped.length, testCase.results, "Correct amount of results.");
+    Assert.equal(
+      deduped.length,
+      testCase.results,
+      "Correct amount of results."
+    );
 
     
-    Assert.ok(deduped.every(loginA =>
-      deduped.every(loginB => !compareAttributes(loginA, loginB, testCase.keyset))
-    ), "Every login is unique.");
+    Assert.ok(
+      deduped.every(loginA =>
+        deduped.every(
+          loginB => !compareAttributes(loginA, loginB, testCase.keyset)
+        )
+      ),
+      "Every login is unique."
+    );
   }
 });
 
@@ -351,8 +407,11 @@ add_task(function test_deduplicate_logins() {
 add_task(function test_deduplicate_keeps_most_recent() {
   
   let logins = [
-    TestData.formLogin({timeLastUsed: Date.UTC(2004, 11, 4, 0, 0, 0)}),
-    TestData.formLogin({formActionOrigin: "http://example.com", timeLastUsed: Date.UTC(2015, 11, 4, 0, 0, 0)}),
+    TestData.formLogin({ timeLastUsed: Date.UTC(2004, 11, 4, 0, 0, 0) }),
+    TestData.formLogin({
+      formActionOrigin: "http://example.com",
+      timeLastUsed: Date.UTC(2015, 11, 4, 0, 0, 0),
+    }),
   ];
 
   
@@ -360,14 +419,24 @@ add_task(function test_deduplicate_keeps_most_recent() {
   Assert.equal(deduped.length, 1, "Deduplicated the logins array.");
 
   
-  let loginTimeLastUsed = deduped[0].QueryInterface(Ci.nsILoginMetaInfo).timeLastUsed;
-  Assert.equal(loginTimeLastUsed, Date.UTC(2015, 11, 4, 0, 0, 0), "Most recent login was kept.");
+  let loginTimeLastUsed = deduped[0].QueryInterface(Ci.nsILoginMetaInfo)
+    .timeLastUsed;
+  Assert.equal(
+    loginTimeLastUsed,
+    Date.UTC(2015, 11, 4, 0, 0, 0),
+    "Most recent login was kept."
+  );
 
   
   deduped = LoginHelper.dedupeLogins(logins.reverse());
   Assert.equal(deduped.length, 1, "Deduplicated the reversed logins array.");
 
   
-  loginTimeLastUsed = deduped[0].QueryInterface(Ci.nsILoginMetaInfo).timeLastUsed;
-  Assert.equal(loginTimeLastUsed, Date.UTC(2015, 11, 4, 0, 0, 0), "Most recent login was kept.");
+  loginTimeLastUsed = deduped[0].QueryInterface(Ci.nsILoginMetaInfo)
+    .timeLastUsed;
+  Assert.equal(
+    loginTimeLastUsed,
+    Date.UTC(2015, 11, 4, 0, 0, 0),
+    "Most recent login was kept."
+  );
 });

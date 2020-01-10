@@ -13,28 +13,34 @@ add_task(async () => {
   for (let videoID of ["with-controls", "no-controls"]) {
     info(`Testing ${videoID} case.`);
 
-    await BrowserTestUtils.withNewTab({
-      url: TEST_PAGE,
-      gBrowser,
-    }, async browser => {
-      let pipWin = await triggerPictureInPicture(browser, videoID);
-      ok(pipWin, "Got Picture-in-Picture window.");
+    await BrowserTestUtils.withNewTab(
+      {
+        url: TEST_PAGE,
+        gBrowser,
+      },
+      async browser => {
+        let pipWin = await triggerPictureInPicture(browser, videoID);
+        ok(pipWin, "Got Picture-in-Picture window.");
 
-      try {
-        await assertShowingMessage(browser, videoID, true);
-      } finally {
-        let uaWidgetUpdate = BrowserTestUtils.waitForContentEvent(browser, "UAWidgetSetupOrChange",
-                                                                  true );
-        await BrowserTestUtils.closeWindow(pipWin);
-        await uaWidgetUpdate;
-      }
+        try {
+          await assertShowingMessage(browser, videoID, true);
+        } finally {
+          let uaWidgetUpdate = BrowserTestUtils.waitForContentEvent(
+            browser,
+            "UAWidgetSetupOrChange",
+            true 
+          );
+          await BrowserTestUtils.closeWindow(pipWin);
+          await uaWidgetUpdate;
+        }
 
-      
-      
-      
-      if (videoID !== "no-controls") {
-        await assertShowingMessage(browser, videoID, false);
+        
+        
+        
+        if (videoID !== "no-controls") {
+          await assertShowingMessage(browser, videoID, false);
+        }
       }
-    });
+    );
   }
 });

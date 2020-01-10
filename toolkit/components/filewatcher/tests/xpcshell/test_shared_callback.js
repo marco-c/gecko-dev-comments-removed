@@ -19,11 +19,10 @@ function run_test() {
 add_task(async function test_watch_with_shared_callback() {
   
   
-  let watchedDirs =
-    [
-      OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground"),
-      OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground2"),
-    ];
+  let watchedDirs = [
+    OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground"),
+    OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground2"),
+  ];
 
   await OS.File.makeDir(watchedDirs[0]);
   await OS.File.makeDir(watchedDirs[1]);
@@ -35,8 +34,18 @@ add_task(async function test_watch_with_shared_callback() {
   let deferred = Promise.defer();
 
   
-  await promiseAddPath(watcher, watchedDirs[0], deferred.resolve, deferred.reject);
-  await promiseAddPath(watcher, watchedDirs[1], deferred.resolve, deferred.reject);
+  await promiseAddPath(
+    watcher,
+    watchedDirs[0],
+    deferred.resolve,
+    deferred.reject
+  );
+  await promiseAddPath(
+    watcher,
+    watchedDirs[1],
+    deferred.resolve,
+    deferred.reject
+  );
 
   
   

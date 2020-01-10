@@ -64,6 +64,6 @@ add_task(async function test_historyClear() {
 
   for (let guid of items) {
     
-    Assert.ok((await PlacesUtils.bookmarks.fetch({guid})), "item exists");
+    Assert.ok(await PlacesUtils.bookmarks.fetch({ guid }), "item exists");
   }
 });

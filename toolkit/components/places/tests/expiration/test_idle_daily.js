@@ -9,10 +9,13 @@ add_task(async function test_expiration_on_idle_daily() {
   
   setInterval(3600); 
 
-  let expirationPromise = TestUtils.topicObserved(PlacesUtils.TOPIC_EXPIRATION_FINISHED);
+  let expirationPromise = TestUtils.topicObserved(
+    PlacesUtils.TOPIC_EXPIRATION_FINISHED
+  );
 
-  let expire = Cc["@mozilla.org/places/expiration;1"].
-               getService(Ci.nsIObserver);
+  let expire = Cc["@mozilla.org/places/expiration;1"].getService(
+    Ci.nsIObserver
+  );
   expire.observe(null, "idle-daily", null);
 
   await expirationPromise;

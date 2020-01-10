@@ -4,27 +4,33 @@
 
 
 
- 
+
 
 
 
 add_task(async function() {
   
-  Assert.equal(PlacesUtils.history.databaseStatus,
-               PlacesUtils.history.DATABASE_STATUS_CREATE);
+  Assert.equal(
+    PlacesUtils.history.databaseStatus,
+    PlacesUtils.history.DATABASE_STATUS_CREATE
+  );
 
   let tasksStatusMap = await PlacesDBUtils.checkAndFixDatabase();
   let numberOfTasksRun = tasksStatusMap.size;
-    let successfulTasks = [];
-    let failedTasks = [];
-    tasksStatusMap.forEach(val => {
-      if (val.succeeded && val.logs) {
-        successfulTasks.push(val);
-      } else {
-        failedTasks.push(val);
-      }
-    });
-    Assert.equal(numberOfTasksRun, 8, "Check that we have run all tasks.");
-    Assert.equal(successfulTasks.length, 8, "Check that we have run all tasks successfully");
-    Assert.equal(failedTasks.length, 0, "Check that no task is failing");
+  let successfulTasks = [];
+  let failedTasks = [];
+  tasksStatusMap.forEach(val => {
+    if (val.succeeded && val.logs) {
+      successfulTasks.push(val);
+    } else {
+      failedTasks.push(val);
+    }
+  });
+  Assert.equal(numberOfTasksRun, 8, "Check that we have run all tasks.");
+  Assert.equal(
+    successfulTasks.length,
+    8,
+    "Check that we have run all tasks successfully"
+  );
+  Assert.equal(failedTasks.length, 0, "Check that no task is failing");
 });

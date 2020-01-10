@@ -20,8 +20,9 @@
 
 
 function notifyPromptObservers(aIsPrivate, aExpectedCount, aExpectedPBCount) {
-  let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].
-                   createInstance(Ci.nsISupportsPRBool);
+  let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+    Ci.nsISupportsPRBool
+  );
 
   
   DownloadIntegration._testPromptDownloads = -1;
@@ -58,8 +59,9 @@ function allowDirectoriesInTest() {
 }
 
 XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
-  return Services.strings.
-    createBundle("chrome://mozapps/locale/downloads/downloads.properties");
+  return Services.strings.createBundle(
+    "chrome://mozapps/locale/downloads/downloads.properties"
+  );
 });
 
 
@@ -73,10 +75,12 @@ add_task(async function test_getSystemDownloadsDirectory_exists_or_creates() {
   let downloadDir;
 
   
-  if (Services.appinfo.OS == "Darwin" ||
-      Services.appinfo.OS == "Linux" ||
-      (Services.appinfo.OS == "WINNT" &&
-       parseFloat(Services.sysinfo.getProperty("version")) >= 6)) {
+  if (
+    Services.appinfo.OS == "Darwin" ||
+    Services.appinfo.OS == "Linux" ||
+    (Services.appinfo.OS == "WINNT" &&
+      parseFloat(Services.sysinfo.getProperty("version")) >= 6)
+  ) {
     downloadDir = await DownloadIntegration.getSystemDownloadsDirectory();
     Assert.equal(downloadDir, tempDir.path);
     Assert.ok(await OS.File.exists(downloadDir));
@@ -84,8 +88,10 @@ add_task(async function test_getSystemDownloadsDirectory_exists_or_creates() {
     let info = await OS.File.stat(downloadDir);
     Assert.ok(info.isDir);
   } else {
-    let targetPath = OS.Path.join(tempDir.path,
-                       gStringBundle.GetStringFromName("downloadsFolder"));
+    let targetPath = OS.Path.join(
+      tempDir.path,
+      gStringBundle.GetStringFromName("downloadsFolder")
+    );
     try {
       await OS.File.removeEmptyDir(targetPath);
     } catch (e) {}
@@ -150,7 +156,7 @@ add_task(async function test_getPreferredDownloadsDirectory() {
   Assert.equal(downloadDir, systemDir);
 
   
-  let time = (new Date()).getTime();
+  let time = new Date().getTime();
   let tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
   tempDir.append(time);
   Services.prefs.setComplexValue("browser.download.dir", Ci.nsIFile, tempDir);
@@ -377,7 +383,11 @@ add_task(async function test_suspend_resume() {
   Assert.ok(download4.canceled);
 
   
-  Services.obs.notifyObservers(null, "network:offline-status-changed", "online");
+  Services.obs.notifyObservers(
+    null,
+    "network:offline-status-changed",
+    "online"
+  );
   await download1.whenSucceeded();
   await download2.whenSucceeded();
   await download3.whenSucceeded();

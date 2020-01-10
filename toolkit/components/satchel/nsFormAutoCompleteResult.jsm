@@ -4,14 +4,16 @@
 
 var EXPORTED_SYMBOLS = ["FormAutoCompleteResult"];
 
-function FormAutoCompleteResult(searchString,
-                                searchResult,
-                                defaultIndex,
-                                errorDescription,
-                                values,
-                                labels,
-                                comments,
-                                prevResult) {
+function FormAutoCompleteResult(
+  searchString,
+  searchResult,
+  defaultIndex,
+  errorDescription,
+  values,
+  labels,
+  comments,
+  prevResult
+) {
   this.searchString = searchString;
   this._searchResult = searchResult;
   this._defaultIndex = defaultIndex;
@@ -24,7 +26,6 @@ function FormAutoCompleteResult(searchString,
 }
 
 FormAutoCompleteResult.prototype = {
-
   
   searchString: "",
 
@@ -83,7 +84,10 @@ FormAutoCompleteResult.prototype = {
 
   _checkIndexBounds(index) {
     if (index < 0 || index >= this._values.length) {
-      throw Components.Exception("Index out of range.", Cr.NS_ERROR_ILLEGAL_VALUE);
+      throw Components.Exception(
+        "Index out of range.",
+        Cr.NS_ERROR_ILLEGAL_VALUE
+      );
     }
   },
 
@@ -124,9 +128,11 @@ FormAutoCompleteResult.prototype = {
       return "fromhistory";
     }
 
-    if (this._formHistResult &&
-        this._formHistResult.matchCount > 0 &&
-        index == this._formHistResult.matchCount) {
+    if (
+      this._formHistResult &&
+      this._formHistResult.matchCount > 0 &&
+      index == this._formHistResult.matchCount
+    ) {
       return "datalist-first";
     }
 
@@ -162,8 +168,11 @@ FormAutoCompleteResult.prototype = {
     
     
     
-    if (removeFromDatabase && this._formHistResult &&
-        index < this._formHistResult.matchCount) {
+    if (
+      removeFromDatabase &&
+      this._formHistResult &&
+      index < this._formHistResult.matchCount
+    ) {
       
       this._formHistResult.removeValueAt(index, true);
     }

@@ -10,14 +10,22 @@ add_task(async function test_same_date_same_hash() {
   
   let backupFolder = await PlacesBackups.getBackupFolder();
   
-  let tempPath = OS.Path.join(OS.Constants.Path.profileDir,
-                              "bug10169583_bookmarks.json");
-  let {count, hash} = await BookmarkJSONUtils.exportToFile(tempPath);
+  let tempPath = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "bug10169583_bookmarks.json"
+  );
+  let { count, hash } = await BookmarkJSONUtils.exportToFile(tempPath);
 
   
   let dateObj = new Date();
-  let filename = "bookmarks-" + PlacesBackups.toISODateString(dateObj) + "_" +
-                  count + "_" + hash + ".json";
+  let filename =
+    "bookmarks-" +
+    PlacesBackups.toISODateString(dateObj) +
+    "_" +
+    count +
+    "_" +
+    hash +
+    ".json";
   let backupFile = OS.Path.join(backupFolder, filename);
   await OS.File.move(tempPath, backupFile);
 
@@ -43,12 +51,18 @@ add_task(async function test_same_date_diff_hash() {
   
   
   let backupFolder = await PlacesBackups.getBackupFolder();
-  let tempPath = OS.Path.join(OS.Constants.Path.profileDir,
-                              "bug10169583_bookmarks.json");
-  let {count} = await BookmarkJSONUtils.exportToFile(tempPath);
+  let tempPath = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "bug10169583_bookmarks.json"
+  );
+  let { count } = await BookmarkJSONUtils.exportToFile(tempPath);
   let dateObj = new Date();
-  let filename = "bookmarks-" + PlacesBackups.toISODateString(dateObj) + "_" +
-                  count + "_differentHash==.json";
+  let filename =
+    "bookmarks-" +
+    PlacesBackups.toISODateString(dateObj) +
+    "_" +
+    count +
+    "_differentHash==.json";
   let backupFile = OS.Path.join(backupFolder, filename);
   await OS.File.move(tempPath, backupFile);
   await PlacesBackups.create(); 
@@ -71,15 +85,29 @@ add_task(async function test_diff_date_same_hash() {
   
   
   let backupFolder = await PlacesBackups.getBackupFolder();
-  let tempPath = OS.Path.join(OS.Constants.Path.profileDir,
-                              "bug10169583_bookmarks.json");
-  let {count, hash} = await BookmarkJSONUtils.exportToFile(tempPath);
+  let tempPath = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "bug10169583_bookmarks.json"
+  );
+  let { count, hash } = await BookmarkJSONUtils.exportToFile(tempPath);
   let oldDate = new Date(2014, 1, 1);
   let curDate = new Date();
-  let oldFilename = "bookmarks-" + PlacesBackups.toISODateString(oldDate) + "_" +
-                  count + "_" + hash + ".json";
-  let newFilename = "bookmarks-" + PlacesBackups.toISODateString(curDate) + "_" +
-                  count + "_" + hash + ".json";
+  let oldFilename =
+    "bookmarks-" +
+    PlacesBackups.toISODateString(oldDate) +
+    "_" +
+    count +
+    "_" +
+    hash +
+    ".json";
+  let newFilename =
+    "bookmarks-" +
+    PlacesBackups.toISODateString(curDate) +
+    "_" +
+    count +
+    "_" +
+    hash +
+    ".json";
   let backupFile = OS.Path.join(backupFolder, oldFilename);
   let newBackupFile = OS.Path.join(backupFolder, newFilename);
   await OS.File.move(tempPath, backupFile);

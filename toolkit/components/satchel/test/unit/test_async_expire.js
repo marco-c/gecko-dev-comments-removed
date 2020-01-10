@@ -2,13 +2,19 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "TestUtils",
-                               "resource://testing-common/TestUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "TestUtils",
+  "resource://testing-common/TestUtils.jsm"
+);
 
 function promiseExpiration() {
-  let promise = TestUtils.topicObserved("satchel-storage-changed", (subject, data) => {
-    return data == "formhistory-expireoldentries";
-  });
+  let promise = TestUtils.topicObserved(
+    "satchel-storage-changed",
+    (subject, data) => {
+      return data == "formhistory-expireoldentries";
+    }
+  );
 
   
   
@@ -38,8 +44,8 @@ add_task(async function() {
 
   
   Assert.equal(508, await promiseCountEntries(null, null));
-  Assert.ok(await promiseCountEntries("name-A", "value-A") > 0); 
-  Assert.ok(await promiseCountEntries("name-B", "value-B") > 0); 
+  Assert.ok((await promiseCountEntries("name-A", "value-A")) > 0); 
+  Assert.ok((await promiseCountEntries("name-B", "value-B")) > 0); 
 
   Assert.equal(CURRENT_SCHEMA, getDBVersion(dbFile));
 
@@ -79,9 +85,9 @@ add_task(async function() {
   results = await FormHistory.search(["guid"], { lastUsed: 9 });
   await promiseUpdate(updateLastUsed(results, 9));
 
-  Assert.ok(await promiseCountEntries("name-A", "value-A") > 0);
-  Assert.ok(await promiseCountEntries("181DaysOld", "foo") > 0);
-  Assert.ok(await promiseCountEntries("179DaysOld", "foo") > 0);
+  Assert.ok((await promiseCountEntries("name-A", "value-A")) > 0);
+  Assert.ok((await promiseCountEntries("181DaysOld", "foo")) > 0);
+  Assert.ok((await promiseCountEntries("179DaysOld", "foo")) > 0);
   Assert.equal(509, await promiseCountEntries(null, null));
 
   
@@ -89,7 +95,7 @@ add_task(async function() {
 
   Assert.equal(0, await promiseCountEntries("name-A", "value-A"));
   Assert.equal(0, await promiseCountEntries("181DaysOld", "foo"));
-  Assert.ok(await promiseCountEntries("179DaysOld", "foo") > 0);
+  Assert.ok((await promiseCountEntries("179DaysOld", "foo")) > 0);
   Assert.equal(507, await promiseCountEntries(null, null));
 
   
@@ -100,31 +106,31 @@ add_task(async function() {
   
   Services.prefs.setIntPref("browser.formfill.expire_days", 30);
 
-  Assert.ok(await promiseCountEntries("179DaysOld", "foo") > 0);
-  Assert.ok(await promiseCountEntries("bar", "31days") > 0);
-  Assert.ok(await promiseCountEntries("bar", "29days") > 0);
+  Assert.ok((await promiseCountEntries("179DaysOld", "foo")) > 0);
+  Assert.ok((await promiseCountEntries("bar", "31days")) > 0);
+  Assert.ok((await promiseCountEntries("bar", "29days")) > 0);
   Assert.equal(507, await promiseCountEntries(null, null));
 
   await promiseExpiration();
 
   Assert.equal(0, await promiseCountEntries("179DaysOld", "foo"));
   Assert.equal(0, await promiseCountEntries("bar", "31days"));
-  Assert.ok(await promiseCountEntries("bar", "29days") > 0);
+  Assert.ok((await promiseCountEntries("bar", "29days")) > 0);
   Assert.equal(505, await promiseCountEntries(null, null));
 
   
   
   Services.prefs.setIntPref("browser.formfill.expire_days", 10);
 
-  Assert.ok(await promiseCountEntries("bar", "29days") > 0);
-  Assert.ok(await promiseCountEntries("9DaysOld", "foo") > 0);
+  Assert.ok((await promiseCountEntries("bar", "29days")) > 0);
+  Assert.ok((await promiseCountEntries("9DaysOld", "foo")) > 0);
   Assert.equal(505, await promiseCountEntries(null, null));
 
   await promiseExpiration();
 
   Assert.equal(0, await promiseCountEntries("bar", "29days"));
-  Assert.ok(await promiseCountEntries("9DaysOld", "foo") > 0);
-  Assert.ok(await promiseCountEntries("name-B", "value-B") > 0);
-  Assert.ok(await promiseCountEntries("name-C", "value-C") > 0);
+  Assert.ok((await promiseCountEntries("9DaysOld", "foo")) > 0);
+  Assert.ok((await promiseCountEntries("name-B", "value-B")) > 0);
+  Assert.ok((await promiseCountEntries("name-C", "value-C")) > 0);
   Assert.equal(3, await promiseCountEntries(null, null));
 });

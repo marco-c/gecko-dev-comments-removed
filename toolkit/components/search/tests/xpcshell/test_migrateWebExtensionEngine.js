@@ -9,7 +9,8 @@ const kExtensionID = "test@example.com";
 const kSearchEngineDetails = {
   template: "http://example.com/?search={searchTerms}",
   description: "Test Description",
-  iconURL: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+  iconURL:
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
   suggestURL: "http://example.com/?suggest={searchTerms}",
   alias: "alias_foo",
   extensionID: kExtensionID,
@@ -22,7 +23,10 @@ add_task(async function setup() {
 add_task(async function test_migrateLegacyEngine() {
   Assert.ok(!Services.search.isInitialized);
 
-  await Services.search.addEngineWithDetails(kSearchEngineID, kSearchEngineDetails);
+  await Services.search.addEngineWithDetails(
+    kSearchEngineID,
+    kSearchEngineDetails
+  );
 
   
   let engine = Services.search.getEngineByName(kSearchEngineID);
@@ -30,9 +34,15 @@ add_task(async function test_migrateLegacyEngine() {
   engine.wrappedJSObject._extensionID = null;
 
   
-  await Services.search.addEngineWithDetails(kSearchEngineID, kSearchEngineDetails);
+  await Services.search.addEngineWithDetails(
+    kSearchEngineID,
+    kSearchEngineDetails
+  );
 
   engine = Services.search.getEngineByName(kSearchEngineID);
-  Assert.equal(engine.wrappedJSObject._loadPath, "[other]addEngineWithDetails:" + kExtensionID);
+  Assert.equal(
+    engine.wrappedJSObject._loadPath,
+    "[other]addEngineWithDetails:" + kExtensionID
+  );
   Assert.equal(engine.wrappedJSObject._extensionID, kExtensionID);
 });

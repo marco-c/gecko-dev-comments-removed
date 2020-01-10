@@ -1,37 +1,47 @@
 
 
 
-
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
 });
 
 add_task(async function test_location() {
-  Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code": "AU"}');
+  Services.prefs.setCharPref(
+    "browser.search.geoip.url",
+    'data:application/json,{"country_code": "AU"}'
+  );
   await Services.search.init();
-  equal(Services.prefs.getCharPref("browser.search.region"), "AU", "got the correct region.");
+  equal(
+    Services.prefs.getCharPref("browser.search.region"),
+    "AU",
+    "got the correct region."
+  );
   
   checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
   
-  let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
+  let histogram = Services.telemetry.getHistogramById(
+    "SEARCH_SERVICE_COUNTRY_TIMEOUT"
+  );
   let snapshot = histogram.snapshot();
-  deepEqual(snapshot.values, {0: 1, 1: 0}); 
+  deepEqual(snapshot.values, { 0: 1, 1: 0 }); 
 
   
   
   
   let probeUSMismatched, probeNonUSMismatched;
   switch (Services.appinfo.OS) {
-  case "Darwin":
-    probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX";
-    probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
-    break;
-  case "WINNT":
-    probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
-    probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
-    break;
-  default:
-    break;
+    case "Darwin":
+      probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX";
+      probeNonUSMismatched =
+        "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
+      break;
+    case "WINNT":
+      probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
+      probeNonUSMismatched =
+        "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
+      break;
+    default:
+      break;
   }
 
   if (probeUSMismatched && probeNonUSMismatched) {
@@ -43,12 +53,13 @@ add_task(async function test_location() {
     
     if (countryCode == "US") {
       hid = probeUSMismatched;
-      expectedResult = {0: 0, 1: 1, 2: 0}; 
+      expectedResult = { 0: 0, 1: 1, 2: 0 }; 
     } else {
       
       
       hid = probeNonUSMismatched;
-      expectedResult = countryCode == "AU" ? {0: 1, 1: 0} : {0: 0, 1: 1, 2: 0};
+      expectedResult =
+        countryCode == "AU" ? { 0: 1, 1: 0 } : { 0: 0, 1: 1, 2: 0 };
     }
 
     histogram = Services.telemetry.getHistogramById(hid);

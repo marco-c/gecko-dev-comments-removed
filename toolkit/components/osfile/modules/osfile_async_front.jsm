@@ -22,9 +22,11 @@
 var EXPORTED_SYMBOLS = ["OS"];
 
 var SharedAll = {};
-ChromeUtils.import("resource://gre/modules/osfile/osfile_shared_allthreads.jsm", SharedAll);
+ChromeUtils.import(
+  "resource://gre/modules/osfile/osfile_shared_allthreads.jsm",
+  SharedAll
+);
 ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
-
 
 
 var LOG = SharedAll.LOG.bind(SharedAll, "Controller");
@@ -33,9 +35,15 @@ var isTypedArray = SharedAll.isTypedArray;
 
 var SysAll = {};
 if (SharedAll.Constants.Win) {
-  ChromeUtils.import("resource://gre/modules/osfile/osfile_win_allthreads.jsm", SysAll);
+  ChromeUtils.import(
+    "resource://gre/modules/osfile/osfile_win_allthreads.jsm",
+    SysAll
+  );
 } else if (SharedAll.Constants.libc) {
-  ChromeUtils.import("resource://gre/modules/osfile/osfile_unix_allthreads.jsm", SysAll);
+  ChromeUtils.import(
+    "resource://gre/modules/osfile/osfile_unix_allthreads.jsm",
+    SysAll
+  );
 } else {
   throw new Error("I am neither under Windows nor under a Posix system");
 }
@@ -46,15 +54,20 @@ var Path = {};
 ChromeUtils.import("resource://gre/modules/osfile/ospath.jsm", Path);
 
 
-ChromeUtils.defineModuleGetter(this, "PromiseUtils",
-                               "resource://gre/modules/PromiseUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 
 ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm", this);
-var Native = ChromeUtils.import("resource://gre/modules/osfile/osfile_native.jsm", null);
-
+var Native = ChromeUtils.import(
+  "resource://gre/modules/osfile/osfile_native.jsm",
+  null
+);
 
 
 
@@ -86,13 +99,16 @@ for (let [constProp, dirKey] of [
   ["tmpDir", "TmpD"],
   ["homeDir", "Home"],
   ["macUserLibDir", "ULibDir"],
-  ]) {
+]) {
   if (constProp in SharedAll.Constants.Path) {
     continue;
   }
 
-  LOG("Installing lazy getter for OS.Constants.Path." + constProp +
-      " because it isn't defined and profile may not be loaded.");
+  LOG(
+    "Installing lazy getter for OS.Constants.Path." +
+      constProp +
+      " because it isn't defined and profile may not be loaded."
+  );
   Object.defineProperty(SharedAll.Constants.Path, constProp, {
     get: lazyPathGetter(constProp, dirKey),
   });
@@ -120,20 +136,20 @@ function summarizeObject(obj) {
   }
   if (typeof obj == "string") {
     if (obj.length > 1024) {
-      return {"Long string": obj.length};
+      return { "Long string": obj.length };
     }
     return obj;
   }
   if (typeof obj == "object") {
     if (Array.isArray(obj)) {
       if (obj.length > 32) {
-        return {"Long array": obj.length};
+        return { "Long array": obj.length };
       }
       return obj.map(summarizeObject);
     }
     if ("byteLength" in obj) {
       
-      return {"Binary Data": obj.byteLength};
+      return { "Binary Data": obj.byteLength };
     }
     let result = {};
     for (let k of Object.keys(obj)) {
@@ -147,8 +163,7 @@ function summarizeObject(obj) {
 
 
 
-var Scheduler = this.Scheduler = {
-
+var Scheduler = (this.Scheduler = {
   
 
 
@@ -231,22 +246,22 @@ var Scheduler = this.Scheduler = {
     if (!this._worker) {
       
       
-      this._worker = new BasePromiseWorker("resource://gre/modules/osfile/osfile_async_worker.js");
+      this._worker = new BasePromiseWorker(
+        "resource://gre/modules/osfile/osfile_async_worker.js"
+      );
       this._worker.log = LOG;
       this._worker.ExceptionHandlers["OS.File.Error"] = OSError.fromMsg;
 
       let delay = Services.prefs.getIntPref("osfile.reset_worker_delay", 0);
       if (delay) {
-        this.resetTimer = setInterval(
-          () => {
-            if (this.hasRecentActivity) {
-              this.hasRecentActivity = false;
-              return;
-            }
-            clearInterval(this.resetTimer);
-            Scheduler.kill({reset: true, shutdown: false});
-          },
-          delay);
+        this.resetTimer = setInterval(() => {
+          if (this.hasRecentActivity) {
+            this.hasRecentActivity = false;
+            return;
+          }
+          clearInterval(this.resetTimer);
+          Scheduler.kill({ reset: true, shutdown: false });
+        }, delay);
       }
     }
     return this._worker;
@@ -271,7 +286,7 @@ var Scheduler = this.Scheduler = {
 
 
 
-  kill({shutdown, reset}) {
+  kill({ shutdown, reset }) {
     
     
     let killQueue = this._killQueue;
@@ -284,7 +299,7 @@ var Scheduler = this.Scheduler = {
     let savedQueue = this.queue;
     this.queue = deferred.promise;
 
-    return this._killQueue = (async () => {
+    return (this._killQueue = (async () => {
       await killQueue;
       
       
@@ -322,24 +337,31 @@ var Scheduler = this.Scheduler = {
           
           
           
-          resources = {openedFiles: [], openedDirectoryIterators: [], killed: true};
+          resources = {
+            openedFiles: [],
+            openedDirectoryIterators: [],
+            killed: true,
+          };
 
           Scheduler.latestReceived = [Date.now(), message, ex];
         }
 
-        let {openedFiles, openedDirectoryIterators, killed} = resources;
-        if (!reset
-          && (openedFiles && openedFiles.length
-            || ( openedDirectoryIterators && openedDirectoryIterators.length))) {
+        let { openedFiles, openedDirectoryIterators, killed } = resources;
+        if (
+          !reset &&
+          ((openedFiles && openedFiles.length) ||
+            (openedDirectoryIterators && openedDirectoryIterators.length))
+        ) {
           
 
           let msg = "";
           if (openedFiles.length > 0) {
-            msg += "The following files are still open:\n" +
-              openedFiles.join("\n");
+            msg +=
+              "The following files are still open:\n" + openedFiles.join("\n");
           }
           if (openedDirectoryIterators.length > 0) {
-            msg += "The following directory iterators are still open:\n" +
+            msg +=
+              "The following directory iterators are still open:\n" +
               openedDirectoryIterators.join("\n");
           }
 
@@ -360,7 +382,7 @@ var Scheduler = this.Scheduler = {
         
         deferred.resolve();
       }
-    })();
+    })());
   },
 
   
@@ -395,9 +417,14 @@ var Scheduler = this.Scheduler = {
 
   post: function post(method, args = undefined, closure = undefined) {
     if (this.shutdown) {
-      LOG("OS.File is not available anymore. The following request has been rejected.",
-        method, args);
-      return Promise.reject(new Error("OS.File has been shut down. Rejecting post to " + method));
+      LOG(
+        "OS.File is not available anymore. The following request has been rejected.",
+        method,
+        args
+      );
+      return Promise.reject(
+        new Error("OS.File has been shut down. Rejecting post to " + method)
+      );
     }
     let firstLaunch = !this.launched;
     this.launched = true;
@@ -411,22 +438,35 @@ var Scheduler = this.Scheduler = {
     Scheduler.Debugging.messagesQueued++;
     return this.push(async () => {
       if (this.shutdown) {
-        LOG("OS.File is not available anymore. The following request has been rejected.",
-          method, args);
-        throw new Error("OS.File has been shut down. Rejecting request to " + method);
+        LOG(
+          "OS.File is not available anymore. The following request has been rejected.",
+          method,
+          args
+        );
+        throw new Error(
+          "OS.File has been shut down. Rejecting request to " + method
+        );
       }
 
       
       
       Scheduler.Debugging.latestReceived = null;
-      Scheduler.Debugging.latestSent = [Date.now(), method, summarizeObject(args)];
+      Scheduler.Debugging.latestSent = [
+        Date.now(),
+        method,
+        summarizeObject(args),
+      ];
 
       
       Scheduler.restartTimer();
 
       
       let options = null;
-      if (args && args.length >= 1 && typeof args[args.length - 1] === "object") {
+      if (
+        args &&
+        args.length >= 1 &&
+        typeof args[args.length - 1] === "object"
+      ) {
         options = args[args.length - 1];
       }
 
@@ -434,16 +474,25 @@ var Scheduler = this.Scheduler = {
       try {
         try {
           Scheduler.Debugging.messagesSent++;
-          Scheduler.Debugging.latestSent = Scheduler.Debugging.latestSent.slice(0, 2);
+          Scheduler.Debugging.latestSent = Scheduler.Debugging.latestSent.slice(
+            0,
+            2
+          );
           let serializationStartTimeMs = Date.now();
           reply = await this.worker.post(method, args, closure);
           let serializationEndTimeMs = Date.now();
-          Scheduler.Debugging.latestReceived = [Date.now(), summarizeObject(reply)];
+          Scheduler.Debugging.latestReceived = [
+            Date.now(),
+            summarizeObject(reply),
+          ];
 
           
           if (options && "outSerializationDuration" in options) {
             
-            let serializationDurationMs = Math.max(0, serializationEndTimeMs - serializationStartTimeMs);
+            let serializationDurationMs = Math.max(
+              0,
+              serializationEndTimeMs - serializationStartTimeMs
+            );
 
             if (typeof options.outSerializationDuration === "number") {
               options.outSerializationDuration += serializationDurationMs;
@@ -456,7 +505,12 @@ var Scheduler = this.Scheduler = {
           Scheduler.Debugging.messagesReceived++;
         }
       } catch (error) {
-        Scheduler.Debugging.latestReceived = [Date.now(), error.message, error.fileName, error.lineNumber];
+        Scheduler.Debugging.latestReceived = [
+          Date.now(),
+          error.message,
+          error.fileName,
+          error.lineNumber,
+        ];
         throw error;
       } finally {
         if (firstLaunch) {
@@ -481,13 +535,21 @@ var Scheduler = this.Scheduler = {
       
       return;
     }
-    let HISTOGRAM_LAUNCH = Services.telemetry.getHistogramById("OSFILE_WORKER_LAUNCH_MS");
-    HISTOGRAM_LAUNCH.add(worker.workerTimeStamps.entered - worker.launchTimeStamp);
+    let HISTOGRAM_LAUNCH = Services.telemetry.getHistogramById(
+      "OSFILE_WORKER_LAUNCH_MS"
+    );
+    HISTOGRAM_LAUNCH.add(
+      worker.workerTimeStamps.entered - worker.launchTimeStamp
+    );
 
-    let HISTOGRAM_READY = Services.telemetry.getHistogramById("OSFILE_WORKER_READY_MS");
-    HISTOGRAM_READY.add(worker.workerTimeStamps.loaded - worker.launchTimeStamp);
+    let HISTOGRAM_READY = Services.telemetry.getHistogramById(
+      "OSFILE_WORKER_READY_MS"
+    );
+    HISTOGRAM_READY.add(
+      worker.workerTimeStamps.loaded - worker.launchTimeStamp
+    );
   },
-};
+});
 
 const PREF_OSFILE_LOG = "toolkit.osfile.log";
 const PREF_OSFILE_LOG_REDIRECT = "toolkit.osfile.log.redirect";
@@ -508,22 +570,33 @@ function readDebugPref(prefName, oldPref = false) {
 
 
 
-Services.prefs.addObserver(PREF_OSFILE_LOG,
-  function prefObserver(aSubject, aTopic, aData) {
-    SharedAll.Config.DEBUG = readDebugPref(PREF_OSFILE_LOG, SharedAll.Config.DEBUG);
-    if (Scheduler.launched) {
-      
-      Scheduler.post("SET_DEBUG", [SharedAll.Config.DEBUG]);
-    }
-  });
+Services.prefs.addObserver(PREF_OSFILE_LOG, function prefObserver(
+  aSubject,
+  aTopic,
+  aData
+) {
+  SharedAll.Config.DEBUG = readDebugPref(
+    PREF_OSFILE_LOG,
+    SharedAll.Config.DEBUG
+  );
+  if (Scheduler.launched) {
+    
+    Scheduler.post("SET_DEBUG", [SharedAll.Config.DEBUG]);
+  }
+});
 SharedAll.Config.DEBUG = readDebugPref(PREF_OSFILE_LOG, false);
 
-Services.prefs.addObserver(PREF_OSFILE_LOG_REDIRECT,
-  function prefObserver(aSubject, aTopic, aData) {
-    SharedAll.Config.TEST = readDebugPref(PREF_OSFILE_LOG_REDIRECT, OS.Shared.TEST);
-  });
+Services.prefs.addObserver(PREF_OSFILE_LOG_REDIRECT, function prefObserver(
+  aSubject,
+  aTopic,
+  aData
+) {
+  SharedAll.Config.TEST = readDebugPref(
+    PREF_OSFILE_LOG_REDIRECT,
+    OS.Shared.TEST
+  );
+});
 SharedAll.Config.TEST = readDebugPref(PREF_OSFILE_LOG_REDIRECT, false);
-
 
 
 
@@ -531,11 +604,16 @@ SharedAll.Config.TEST = readDebugPref(PREF_OSFILE_LOG_REDIRECT, false);
 
 var nativeWheneverAvailable = true;
 const PREF_OSFILE_NATIVE = "toolkit.osfile.native";
-Services.prefs.addObserver(PREF_OSFILE_NATIVE,
-  function prefObserver(aSubject, aTopic, aData) {
-    nativeWheneverAvailable = readDebugPref(PREF_OSFILE_NATIVE, nativeWheneverAvailable);
-  });
-
+Services.prefs.addObserver(PREF_OSFILE_NATIVE, function prefObserver(
+  aSubject,
+  aTopic,
+  aData
+) {
+  nativeWheneverAvailable = readDebugPref(
+    PREF_OSFILE_NATIVE,
+    nativeWheneverAvailable
+  );
+});
 
 
 
@@ -551,10 +629,10 @@ AsyncShutdown.webWorkersShutdown.addBlocker(
   "OS.File: flush pending requests, warn about unclosed files, shut down service.",
   async function() {
     
-    await Barriers.shutdown.wait({crashAfterMS: null});
+    await Barriers.shutdown.wait({ crashAfterMS: null });
 
     
-    await Scheduler.kill({reset: false, shutdown: true});
+    await Scheduler.kill({ reset: false, shutdown: true });
   },
   () => {
     let details = Barriers.getDetails();
@@ -567,13 +645,15 @@ AsyncShutdown.webWorkersShutdown.addBlocker(
 
 
 
-
-Services.prefs.addObserver(PREF_OSFILE_TEST_SHUTDOWN_OBSERVER,
+Services.prefs.addObserver(
+  PREF_OSFILE_TEST_SHUTDOWN_OBSERVER,
   function prefObserver() {
     
     
-    let TOPIC = Services.prefs.getCharPref(PREF_OSFILE_TEST_SHUTDOWN_OBSERVER,
-                                           "");
+    let TOPIC = Services.prefs.getCharPref(
+      PREF_OSFILE_TEST_SHUTDOWN_OBSERVER,
+      ""
+    );
     if (TOPIC) {
       
       
@@ -581,10 +661,11 @@ Services.prefs.addObserver(PREF_OSFILE_TEST_SHUTDOWN_OBSERVER,
       let phase = AsyncShutdown._getPhase(TOPIC);
       phase.addBlocker(
         "(for testing purposes) OS.File: warn about unclosed files",
-        () => Scheduler.kill({shutdown: false, reset: false})
+        () => Scheduler.kill({ shutdown: false, reset: false })
       );
     }
-  });
+  }
+);
 
 
 
@@ -602,7 +683,6 @@ var File = function File(fdmsg) {
   this._closed = null;
 };
 
-
 File.prototype = {
   
 
@@ -617,8 +697,11 @@ File.prototype = {
     if (this._fdmsg != null) {
       let msg = this._fdmsg;
       this._fdmsg = null;
-      return this._closeResult =
-        Scheduler.post("File_prototype_close", [msg], this);
+      return (this._closeResult = Scheduler.post(
+        "File_prototype_close",
+        [msg],
+        this
+      ));
     }
     return this._closeResult;
   },
@@ -662,14 +745,17 @@ File.prototype = {
     
     if (isTypedArray(buffer) && !(options && "bytes" in options)) {
       
-      options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
+      options = clone(options, [
+        "outExecutionDuration",
+        "outSerializationDuration",
+      ]);
       options.bytes = buffer.byteLength;
     }
-    return Scheduler.post("File_prototype_write",
-      [this._fdmsg,
-       Type.void_t.in_ptr.toMsg(buffer),
-       options],
-       buffer);
+    return Scheduler.post(
+      "File_prototype_write",
+      [this._fdmsg, Type.void_t.in_ptr.toMsg(buffer), options],
+      buffer 
+    );
   },
 
   
@@ -683,13 +769,14 @@ File.prototype = {
 
 
   read: function read(nbytes, options = {}) {
-    let promise = Scheduler.post("File_prototype_read",
-      [this._fdmsg,
-       nbytes, options]);
-    return promise.then(
-      function onSuccess(data) {
-        return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-      });
+    let promise = Scheduler.post("File_prototype_read", [
+      this._fdmsg,
+      nbytes,
+      options,
+    ]);
+    return promise.then(function onSuccess(data) {
+      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    });
   },
 
   
@@ -700,8 +787,7 @@ File.prototype = {
 
 
   getPosition: function getPosition() {
-    return Scheduler.post("File_prototype_getPosition",
-      [this._fdmsg]);
+    return Scheduler.post("File_prototype_getPosition", [this._fdmsg]);
   },
 
   
@@ -716,8 +802,11 @@ File.prototype = {
 
 
   setPosition: function setPosition(pos, whence) {
-    return Scheduler.post("File_prototype_setPosition",
-      [this._fdmsg, pos, whence]);
+    return Scheduler.post("File_prototype_setPosition", [
+      this._fdmsg,
+      pos,
+      whence,
+    ]);
   },
 
   
@@ -732,8 +821,7 @@ File.prototype = {
 
 
   flush: function flush() {
-    return Scheduler.post("File_prototype_flush",
-      [this._fdmsg]);
+    return Scheduler.post("File_prototype_flush", [this._fdmsg]);
   },
 
   
@@ -757,14 +845,15 @@ File.prototype = {
 
 
   setPermissions: function setPermissions(options = {}) {
-    return Scheduler.post("File_prototype_setPermissions",
-                          [this._fdmsg, options]);
+    return Scheduler.post("File_prototype_setPermissions", [
+      this._fdmsg,
+      options,
+    ]);
   },
 };
 
-
 if (SharedAll.Constants.Sys.Name != "Android") {
-   
+  
 
 
 
@@ -777,8 +866,11 @@ if (SharedAll.Constants.Sys.Name != "Android") {
 
 
   File.prototype.setDates = function(accessDate, modificationDate) {
-    return Scheduler.post("File_prototype_setDates",
-      [this._fdmsg, accessDate, modificationDate], this);
+    return Scheduler.post(
+      "File_prototype_setDates",
+      [this._fdmsg, accessDate, modificationDate],
+      this
+    );
   };
 }
 
@@ -789,16 +881,14 @@ if (SharedAll.Constants.Sys.Name != "Android") {
 
 
 
-
 File.open = function open(path, mode, options) {
   return Scheduler.post(
-    "open", [Type.path.toMsg(path), mode, options],
+    "open",
+    [Type.path.toMsg(path), mode, options],
     path
-  ).then(
-    function onSuccess(msg) {
-      return new File(msg);
-    }
-  );
+  ).then(function onSuccess(msg) {
+    return new File(msg);
+  });
 };
 
 
@@ -818,16 +908,15 @@ File.open = function open(path, mode, options) {
 
 File.openUnique = function openUnique(path, options) {
   return Scheduler.post(
-      "openUnique", [Type.path.toMsg(path), options],
-      path
-    ).then(
-    function onSuccess(msg) {
-      return {
-        path: msg.path,
-        file: new File(msg.file),
-      };
-    }
-  );
+    "openUnique",
+    [Type.path.toMsg(path), options],
+    path
+  ).then(function onSuccess(msg) {
+    return {
+      path: msg.path,
+      file: new File(msg.file),
+    };
+  });
 };
 
 
@@ -838,11 +927,10 @@ File.openUnique = function openUnique(path, options) {
 
 
 File.stat = function stat(path, options) {
-  return Scheduler.post(
-    "stat", [Type.path.toMsg(path), options],
-    path).then(File.Info.fromMsg);
+  return Scheduler.post("stat", [Type.path.toMsg(path), options], path).then(
+    File.Info.fromMsg
+  );
 };
-
 
 
 
@@ -854,9 +942,11 @@ File.stat = function stat(path, options) {
 
 
 File.setDates = function setDates(path, accessDate, modificationDate) {
-  return Scheduler.post("setDates",
-                        [Type.path.toMsg(path), accessDate, modificationDate],
-                        this);
+  return Scheduler.post(
+    "setDates",
+    [Type.path.toMsg(path), accessDate, modificationDate],
+    this
+  );
 };
 
 
@@ -881,8 +971,7 @@ File.setDates = function setDates(path, accessDate, modificationDate) {
 
 
 File.setPermissions = function setPermissions(path, options = {}) {
-  return Scheduler.post("setPermissions",
-                        [Type.path.toMsg(path), options]);
+  return Scheduler.post("setPermissions", [Type.path.toMsg(path), options]);
 };
 
 
@@ -893,9 +982,7 @@ File.setPermissions = function setPermissions(path, options = {}) {
 
 
 File.getCurrentDirectory = function getCurrentDirectory() {
-  return Scheduler.post(
-    "getCurrentDirectory"
-  ).then(Type.path.fromMsg);
+  return Scheduler.post("getCurrentDirectory").then(Type.path.fromMsg);
 };
 
 
@@ -910,9 +997,7 @@ File.getCurrentDirectory = function getCurrentDirectory() {
 
 
 File.setCurrentDirectory = function setCurrentDirectory(path) {
-  return Scheduler.post(
-    "setCurrentDirectory", [Type.path.toMsg(path)], path
-  );
+  return Scheduler.post("setCurrentDirectory", [Type.path.toMsg(path)], path);
 };
 
 
@@ -939,8 +1024,11 @@ File.setCurrentDirectory = function setCurrentDirectory(path) {
 
 
 File.copy = function copy(sourcePath, destPath, options) {
-  return Scheduler.post("copy", [Type.path.toMsg(sourcePath),
-    Type.path.toMsg(destPath), options], [sourcePath, destPath]);
+  return Scheduler.post(
+    "copy",
+    [Type.path.toMsg(sourcePath), Type.path.toMsg(destPath), options],
+    [sourcePath, destPath]
+  );
 };
 
 
@@ -968,8 +1056,11 @@ File.copy = function copy(sourcePath, destPath, options) {
 
 
 File.move = function move(sourcePath, destPath, options) {
-  return Scheduler.post("move", [Type.path.toMsg(sourcePath),
-    Type.path.toMsg(destPath), options], [sourcePath, destPath]);
+  return Scheduler.post(
+    "move",
+    [Type.path.toMsg(sourcePath), Type.path.toMsg(destPath), options],
+    [sourcePath, destPath]
+  );
 };
 
 
@@ -985,8 +1076,11 @@ File.move = function move(sourcePath, destPath, options) {
 
 if (!SharedAll.Constants.Win) {
   File.unixSymLink = function unixSymLink(sourcePath, destPath) {
-    return Scheduler.post("unixSymLink", [Type.path.toMsg(sourcePath),
-      Type.path.toMsg(destPath)], [sourcePath, destPath]);
+    return Scheduler.post(
+      "unixSymLink",
+      [Type.path.toMsg(sourcePath), Type.path.toMsg(destPath)],
+      [sourcePath, destPath]
+    );
   };
 }
 
@@ -999,8 +1093,11 @@ if (!SharedAll.Constants.Win) {
 
 
 File.removeEmptyDir = function removeEmptyDir(path, options) {
-  return Scheduler.post("removeEmptyDir",
-    [Type.path.toMsg(path), options], path);
+  return Scheduler.post(
+    "removeEmptyDir",
+    [Type.path.toMsg(path), options],
+    path
+  );
 };
 
 
@@ -1014,11 +1111,8 @@ File.removeEmptyDir = function removeEmptyDir(path, options) {
 
 
 File.remove = function remove(path, options) {
-  return Scheduler.post("remove",
-    [Type.path.toMsg(path), options], path);
+  return Scheduler.post("remove", [Type.path.toMsg(path), options], path);
 };
-
-
 
 
 
@@ -1047,8 +1141,7 @@ File.remove = function remove(path, options) {
 
 
 File.makeDir = function makeDir(path, options) {
-  return Scheduler.post("makeDir",
-    [Type.path.toMsg(path), options], path);
+  return Scheduler.post("makeDir", [Type.path.toMsg(path), options], path);
 };
 
 
@@ -1076,7 +1169,10 @@ File.read = function read(path, bytes, options = {}) {
     
     options = bytes || {};
   } else {
-    options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
+    options = clone(options, [
+      "outExecutionDuration",
+      "outSerializationDuration",
+    ]);
     if (typeof bytes != "undefined") {
       options.bytes = bytes;
     }
@@ -1084,15 +1180,17 @@ File.read = function read(path, bytes, options = {}) {
 
   if (options.compression || !nativeWheneverAvailable) {
     
-    let promise = Scheduler.post("read",
-      [Type.path.toMsg(path), bytes, options], path);
-    return promise.then(
-      function onSuccess(data) {
-        if (typeof data == "string") {
-          return data;
-        }
-        return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-      });
+    let promise = Scheduler.post(
+      "read",
+      [Type.path.toMsg(path), bytes, options],
+      path
+    );
+    return promise.then(function onSuccess(data) {
+      if (typeof data == "string") {
+        return data;
+      }
+      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    });
   }
 
   
@@ -1107,8 +1205,7 @@ File.read = function read(path, bytes, options = {}) {
 
 
 File.exists = function exists(path) {
-  return Scheduler.post("exists",
-    [Type.path.toMsg(path)], path);
+  return Scheduler.post("exists", [Type.path.toMsg(path)], path);
 };
 
 
@@ -1156,18 +1253,22 @@ File.exists = function exists(path) {
 
 
 File.writeAtomic = function writeAtomic(path, buffer, options = {}) {
-  const useNativeImplementation = nativeWheneverAvailable &&
-                                  !options.compression &&
-                                  !(isTypedArray(buffer) && "byteOffset" in buffer && buffer.byteOffset > 0);
+  const useNativeImplementation =
+    nativeWheneverAvailable &&
+    !options.compression &&
+    !(isTypedArray(buffer) && "byteOffset" in buffer && buffer.byteOffset > 0);
   
   
-  options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
+  options = clone(options, [
+    "outExecutionDuration",
+    "outSerializationDuration",
+  ]);
   
   
   if ("tmpPath" in options && !useNativeImplementation) {
     options.tmpPath = Type.path.toMsg(options.tmpPath);
   }
-  if (isTypedArray(buffer) && (!("bytes" in options))) {
+  if (isTypedArray(buffer) && !("bytes" in options)) {
     options.bytes = buffer.byteLength;
   }
   let refObj = {};
@@ -1176,18 +1277,18 @@ File.writeAtomic = function writeAtomic(path, buffer, options = {}) {
   if (useNativeImplementation) {
     promise = Scheduler.push(() => Native.writeAtomic(path, buffer, options));
   } else {
-  promise = Scheduler.post("writeAtomic",
-    [Type.path.toMsg(path),
-     Type.void_t.in_ptr.toMsg(buffer),
-     options], [options, buffer, path]);
+    promise = Scheduler.post(
+      "writeAtomic",
+      [Type.path.toMsg(path), Type.void_t.in_ptr.toMsg(buffer), options],
+      [options, buffer, path]
+    );
   }
   TelemetryStopwatch.finish("OSFILE_WRITEATOMIC_JANK_MS", refObj);
   return promise;
 };
 
 File.removeDir = function(path, options = {}) {
-  return Scheduler.post("removeDir",
-    [Type.path.toMsg(path), options], path);
+  return Scheduler.post("removeDir", [Type.path.toMsg(path), options], path);
 };
 
 
@@ -1201,18 +1302,25 @@ File.Info = function Info(value) {
   
   for (let k in value) {
     if (k != "creationDate") {
-      Object.defineProperty(this, k, {value: value[k]});
+      Object.defineProperty(this, k, { value: value[k] });
     }
   }
-  Object.defineProperty(this, "_deprecatedCreationDate", {value: value.creationDate});
+  Object.defineProperty(this, "_deprecatedCreationDate", {
+    value: value.creationDate,
+  });
 };
 File.Info.prototype = SysAll.AbstractInfo.prototype;
 
 
 Object.defineProperty(File.Info.prototype, "creationDate", {
   get: function creationDate() {
-    let {Deprecated} = ChromeUtils.import("resource://gre/modules/Deprecated.jsm");
-    Deprecated.warning("Field 'creationDate' is deprecated.", "https://developer.mozilla.org/en-US/docs/JavaScript_OS.File/OS.File.Info#Cross-platform_Attributes");
+    let { Deprecated } = ChromeUtils.import(
+      "resource://gre/modules/Deprecated.jsm"
+    );
+    Deprecated.warning(
+      "Field 'creationDate' is deprecated.",
+      "https://developer.mozilla.org/en-US/docs/JavaScript_OS.File/OS.File.Info#Cross-platform_Attributes"
+    );
     return this._deprecatedCreationDate;
   },
 });
@@ -1243,7 +1351,8 @@ var DirectoryIterator = function DirectoryIterator(path, options) {
 
 
   this._itmsg = Scheduler.post(
-    "new_DirectoryIterator", [Type.path.toMsg(path), options],
+    "new_DirectoryIterator",
+    [Type.path.toMsg(path), options],
     path
   );
   this._isClosed = false;
@@ -1277,7 +1386,7 @@ DirectoryIterator.prototype = {
 
   async next() {
     if (this._isClosed) {
-      return {value: undefined, done: true};
+      return { value: undefined, done: true };
     }
     return this._next(await this._itmsg);
   },
@@ -1294,7 +1403,10 @@ DirectoryIterator.prototype = {
       return [];
     }
     let iterator = await this._itmsg;
-    let array = await Scheduler.post("DirectoryIterator_prototype_nextBatch", [iterator, size]);
+    let array = await Scheduler.post("DirectoryIterator_prototype_nextBatch", [
+      iterator,
+      size,
+    ]);
     return array.map(DirectoryIterator.Entry.fromMsg);
   },
   
@@ -1322,7 +1434,7 @@ DirectoryIterator.prototype = {
       if (this._isClosed) {
         return undefined;
       }
-      let {value, done} = await this._next(iterator);
+      let { value, done } = await this._next(iterator);
       if (done) {
         return undefined;
       }
@@ -1337,14 +1449,17 @@ DirectoryIterator.prototype = {
 
   async _next(iterator) {
     if (this._isClosed) {
-      return {value: undefined, done: true};
+      return { value: undefined, done: true };
     }
-    let {value, done} = await Scheduler.post("DirectoryIterator_prototype_next", [iterator]);
+    let { value, done } = await Scheduler.post(
+      "DirectoryIterator_prototype_next",
+      [iterator]
+    );
     if (done) {
       this.close();
-      return {value: undefined, done: true};
+      return { value: undefined, done: true };
     }
-    return {value: DirectoryIterator.Entry.fromMsg(value), done: false};
+    return { value: DirectoryIterator.Entry.fromMsg(value), done: false };
   },
   
 
@@ -1363,7 +1478,9 @@ DirectoryIterator.prototype = {
 DirectoryIterator.Entry = function Entry(value) {
   return value;
 };
-DirectoryIterator.Entry.prototype = Object.create(SysAll.AbstractEntry.prototype);
+DirectoryIterator.Entry.prototype = Object.create(
+  SysAll.AbstractEntry.prototype
+);
 
 DirectoryIterator.Entry.fromMsg = function fromMsg(value) {
   return new DirectoryIterator.Entry(value);
@@ -1371,9 +1488,12 @@ DirectoryIterator.Entry.fromMsg = function fromMsg(value) {
 
 File.resetWorker = function() {
   return (async function() {
-    let resources = await Scheduler.kill({shutdown: false, reset: true});
+    let resources = await Scheduler.kill({ shutdown: false, reset: true });
     if (resources && !resources.killed) {
-        throw new Error("Could not reset worker, this would leak file descriptors: " + JSON.stringify(resources));
+      throw new Error(
+        "Could not reset worker, this would leak file descriptors: " +
+          JSON.stringify(resources)
+      );
     }
   })();
 };
@@ -1397,7 +1517,7 @@ this.OS.Shared = {
     return SharedAll.Config.DEBUG;
   },
   set DEBUG(x) {
-    return SharedAll.Config.DEBUG = x;
+    return (SharedAll.Config.DEBUG = x);
   },
 };
 Object.freeze(this.OS.Shared);
@@ -1415,13 +1535,17 @@ Object.defineProperty(OS.File, "queue", {
 
 
 
-const isContent = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+const isContent =
+  Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType ==
+  Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 
 
 
 
 var Barriers = {
-  shutdown: new AsyncShutdown.Barrier("OS.File: Waiting for clients before full shutdown"),
+  shutdown: new AsyncShutdown.Barrier(
+    "OS.File: Waiting for clients before full shutdown"
+  ),
   
 
 
@@ -1449,7 +1573,9 @@ var Barriers = {
 };
 
 function setupShutdown(phaseName) {
-  Barriers[phaseName] = new AsyncShutdown.Barrier(`OS.File: Waiting for clients before ${phaseName}`);
+  Barriers[phaseName] = new AsyncShutdown.Barrier(
+    `OS.File: Waiting for clients before ${phaseName}`
+  );
   File[phaseName] = Barriers[phaseName].client;
 
   
@@ -1460,7 +1586,7 @@ function setupShutdown(phaseName) {
     `OS.File: flush I/O queued before ${phaseName}`,
     async function() {
       
-      await Barriers[phaseName].wait({crashAfterMS: null});
+      await Barriers[phaseName].wait({ crashAfterMS: null });
 
       
       await Scheduler.queue;

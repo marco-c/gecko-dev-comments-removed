@@ -4,7 +4,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 var dialog;
@@ -16,7 +16,7 @@ var printProgress = null;
 var targetFile;
 
 var docTitle = "";
-var docURL   = "";
+var docURL = "";
 var progressParams = null;
 var switchUI = true;
 
@@ -25,7 +25,10 @@ function ellipseString(aStr, doFront) {
     return "";
   }
 
-  if (aStr.length > 3 && (aStr.substr(0, 3) == "..." || aStr.substr(aStr.length - 4, 3) == "...")) {
+  if (
+    aStr.length > 3 &&
+    (aStr.substr(0, 3) == "..." || aStr.substr(aStr.length - 4, 3) == "...")
+  ) {
     return aStr;
   }
 
@@ -43,167 +46,183 @@ function ellipseString(aStr, doFront) {
 
 
 var progressListener = {
-    onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
-      if (aStateFlags & Ci.nsIWebProgressListener.STATE_START) {
+  onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
+    if (aStateFlags & Ci.nsIWebProgressListener.STATE_START) {
+      
+      dialog.progress.removeAttribute("value");
+    }
+
+    if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+      
+      
+      document.l10n.setAttributes(dialog.title, "print-complete");
+
+      
+      dialog.progress.setAttribute("value", 100);
+      document.l10n.setAttributes(dialog.progressText, "print-percent", {
+        percent: 100,
+      });
+
+      if (Services.focus.activeWindow == window) {
         
-        dialog.progress.removeAttribute("value");
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        opener.focus();
       }
 
-      if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-        
-        
-        document.l10n.setAttributes(dialog.title, "print-complete");
+      window.close();
+    }
+  },
 
-        
-        dialog.progress.setAttribute( "value", 100 );
-        document.l10n.setAttributes(dialog.progressText, "print-percent", {"percent": 100});
+  onProgressChange(
+    aWebProgress,
+    aRequest,
+    aCurSelfProgress,
+    aMaxSelfProgress,
+    aCurTotalProgress,
+    aMaxTotalProgress
+  ) {
+    if (switchUI) {
+      dialog.tempLabel.setAttribute("hidden", "true");
+      dialog.progressBox.removeAttribute("hidden");
 
-        if (Services.focus.activeWindow == window) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          opener.focus();
+      switchUI = false;
+    }
+
+    if (progressParams) {
+      var docTitleStr = ellipseString(progressParams.docTitle, false);
+      if (docTitleStr != docTitle) {
+        docTitle = docTitleStr;
+        dialog.title.value = docTitle;
+      }
+      var docURLStr = progressParams.docURL;
+      if (docURLStr != docURL && dialog.title != null) {
+        docURL = docURLStr;
+        if (docTitle == "") {
+          dialog.title.value = ellipseString(docURLStr, true);
         }
-
-        window.close();
       }
-    },
+    }
 
-    onProgressChange(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
-      if (switchUI) {
-        dialog.tempLabel.setAttribute("hidden", "true");
-        dialog.progressBox.removeAttribute("hidden");
-
-        switchUI = false;
-      }
-
-      if (progressParams) {
-        var docTitleStr = ellipseString(progressParams.docTitle, false);
-        if (docTitleStr != docTitle) {
-          docTitle = docTitleStr;
-          dialog.title.value = docTitle;
-        }
-        var docURLStr = progressParams.docURL;
-        if (docURLStr != docURL && dialog.title != null) {
-          docURL = docURLStr;
-          if (docTitle == "") {
-            dialog.title.value = ellipseString(docURLStr, true);
-          }
-        }
+    
+    var percent;
+    if (aMaxTotalProgress > 0) {
+      percent = Math.round((aCurTotalProgress * 100) / aMaxTotalProgress);
+      if (percent > 100) {
+        percent = 100;
       }
 
       
-      var percent;
-      if ( aMaxTotalProgress > 0 ) {
-        percent = Math.round( (aCurTotalProgress * 100) / aMaxTotalProgress );
-        if ( percent > 100 )
-          percent = 100;
+      dialog.progress.setAttribute("value", percent);
 
-        
-        dialog.progress.setAttribute( "value", percent );
-
-        
-        document.l10n.setAttributes(dialog.progressText, "print-percent", {"percent": percent});
-      } else {
-        
-        dialog.progress.removeAttribute("value");
-        
-        dialog.progressText.setAttribute("value", "");
-      }
-    },
-
-    onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
       
-    },
-
-    onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
-      if (aMessage != "")
-        dialog.title.setAttribute("value", aMessage);
-    },
-
-    onSecurityChange(aWebProgress, aRequest, state) {
+      document.l10n.setAttributes(dialog.progressText, "print-percent", {
+        percent,
+      });
+    } else {
       
-    },
-
-    onContentBlockingEvent(aWebProgress, aRequest, event) {
+      dialog.progress.removeAttribute("value");
       
-    },
+      dialog.progressText.setAttribute("value", "");
+    }
+  },
 
-    QueryInterface: ChromeUtils.generateQI(["nsIWebProgressListener",
-                                            "nsISupportsWeakReference"]),
+  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
+    
+  },
+
+  onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
+    if (aMessage != "") {
+      dialog.title.setAttribute("value", aMessage);
+    }
+  },
+
+  onSecurityChange(aWebProgress, aRequest, state) {
+    
+  },
+
+  onContentBlockingEvent(aWebProgress, aRequest, event) {
+    
+  },
+
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIWebProgressListener",
+    "nsISupportsWeakReference",
+  ]),
 };
 
-function loadDialog() {
-}
+function loadDialog() {}
 
 function onLoad() {
-    
-    printProgress = window.arguments[0];
-    if (window.arguments[1]) {
-      progressParams = window.arguments[1].QueryInterface(Ci.nsIPrintProgressParams);
-      if (progressParams) {
-        docTitle = ellipseString(progressParams.docTitle, false);
-        docURL   = ellipseString(progressParams.docURL, true);
-      }
+  
+  printProgress = window.arguments[0];
+  if (window.arguments[1]) {
+    progressParams = window.arguments[1].QueryInterface(
+      Ci.nsIPrintProgressParams
+    );
+    if (progressParams) {
+      docTitle = ellipseString(progressParams.docTitle, false);
+      docURL = ellipseString(progressParams.docURL, true);
     }
+  }
 
-    if ( !printProgress ) {
-        dump( "Invalid argument to printProgress.xul\n" );
-        window.close();
-        return;
-    }
+  if (!printProgress) {
+    dump("Invalid argument to printProgress.xul\n");
+    window.close();
+    return;
+  }
 
-    dialog = {};
-    dialog.strings = [];
-    dialog.title        = document.getElementById("dialog.title");
-    dialog.titleLabel   = document.getElementById("dialog.titleLabel");
-    dialog.progress     = document.getElementById("dialog.progress");
-    dialog.progressBox     = document.getElementById("dialog.progressBox");
-    dialog.progressText = document.getElementById("dialog.progressText");
-    dialog.progressLabel = document.getElementById("dialog.progressLabel");
-    dialog.tempLabel    = document.getElementById("dialog.tempLabel");
+  dialog = {};
+  dialog.strings = [];
+  dialog.title = document.getElementById("dialog.title");
+  dialog.titleLabel = document.getElementById("dialog.titleLabel");
+  dialog.progress = document.getElementById("dialog.progress");
+  dialog.progressBox = document.getElementById("dialog.progressBox");
+  dialog.progressText = document.getElementById("dialog.progressText");
+  dialog.progressLabel = document.getElementById("dialog.progressLabel");
+  dialog.tempLabel = document.getElementById("dialog.tempLabel");
 
-    dialog.progressBox.setAttribute("hidden", "true");
+  dialog.progressBox.setAttribute("hidden", "true");
 
-    document.l10n.setAttributes(dialog.tempLabel, "print-preparing");
+  document.l10n.setAttributes(dialog.tempLabel, "print-preparing");
 
-    dialog.title.value = docTitle;
+  dialog.title.value = docTitle;
 
-    
-    loadDialog();
+  
+  loadDialog();
 
-    document.addEventListener("dialogcancel", onCancel);
-    
-    printProgress.registerListener(progressListener);
-    
-    window.setTimeout(doneIniting, 500);
+  document.addEventListener("dialogcancel", onCancel);
+  
+  printProgress.registerListener(progressListener);
+  
+  window.setTimeout(doneIniting, 500);
 }
 
 function onUnload() {
   if (printProgress) {
-   try {
-     printProgress.unregisterListener(progressListener);
-     printProgress = null;
-   } catch ( exception ) {}
+    try {
+      printProgress.unregisterListener(progressListener);
+      printProgress = null;
+    } catch (exception) {}
   }
 }
 
 
 function onCancel() {
   
-   try {
-     printProgress.processCanceledByUser = true;
-   } catch ( exception ) {}
+  try {
+    printProgress.processCanceledByUser = true;
+  } catch (exception) {}
 }
 
 function doneIniting() {

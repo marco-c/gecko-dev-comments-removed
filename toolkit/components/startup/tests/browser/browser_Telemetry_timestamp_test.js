@@ -8,13 +8,24 @@ add_task(async function test() {
   let payload = TelemetrySession.getPayload("main");
 
   
-  ok("scalars" in payload.processes.parent, "Scalars are present in the payload.");
-  ok("timestamps.first_paint" in payload.processes.parent.scalars,
-     "The first_paint timestamp is present in the payload.");
-  Assert.greater(payload.processes.parent.scalars["timestamps.first_paint"], 0,
-    "first_paint scalar is greater than 0.");
+  ok(
+    "scalars" in payload.processes.parent,
+    "Scalars are present in the payload."
+  );
+  ok(
+    "timestamps.first_paint" in payload.processes.parent.scalars,
+    "The first_paint timestamp is present in the payload."
+  );
+  Assert.greater(
+    payload.processes.parent.scalars["timestamps.first_paint"],
+    0,
+    "first_paint scalar is greater than 0."
+  );
   Assert.greater(now, 0, "Browser test runtime is greater than zero.");
   
-  Assert.greater(now, payload.processes.parent.scalars["timestamps.first_paint"],
-    "first_paint is less than total browser test runtime.");
+  Assert.greater(
+    now,
+    payload.processes.parent.scalars["timestamps.first_paint"],
+    "first_paint is less than total browser test runtime."
+  );
 });

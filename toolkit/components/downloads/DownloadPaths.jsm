@@ -8,14 +8,17 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "DownloadPaths",
-];
+var EXPORTED_SYMBOLS = ["DownloadPaths"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "AppConstants",
-                               "resource://gre/modules/AppConstants.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 
 
@@ -67,14 +70,16 @@ var DownloadPaths = {
 
   sanitize(leafName) {
     if (AppConstants.platform == "win") {
-      leafName = leafName.replace(/</g, "(")
-                         .replace(/>/g, ")")
-                         .replace(/"/g, "'");
+      leafName = leafName
+        .replace(/</g, "(")
+        .replace(/>/g, ")")
+        .replace(/"/g, "'");
     }
-    return leafName.replace(/[\\/]+/g, "_")
-                   .replace(/[\u200e\u200f\u202a-\u202e]/g, "")
-                   .replace(gConvertToSpaceRegExp, " ")
-                   .replace(/^[\s\u180e.]+|[\s\u180e.]+$/g, "");
+    return leafName
+      .replace(/[\\/]+/g, "_")
+      .replace(/[\u200e\u200f\u202a-\u202e]/g, "")
+      .replace(gConvertToSpaceRegExp, " ")
+      .replace(/^[\s\u180e.]+|[\s\u180e.]+$/g, "");
   },
 
   
@@ -133,8 +138,9 @@ var DownloadPaths = {
     
     
     
-    let [, base, ext] = /(.*?)(\.[A-Z0-9]{1,3}\.(?:gz|bz2|Z)|\.[^.]*)?$/i
-                        .exec(leafName);
+    let [, base, ext] = /(.*?)(\.[A-Z0-9]{1,3}\.(?:gz|bz2|Z)|\.[^.]*)?$/i.exec(
+      leafName
+    );
     
     return [base, ext || ""];
   },

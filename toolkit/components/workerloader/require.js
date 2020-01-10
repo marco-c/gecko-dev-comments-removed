@@ -38,8 +38,6 @@
 
 
 
-
-
 (function(exports) {
   "use strict";
 
@@ -63,8 +61,7 @@
 
 
 
-    Object.defineProperty(Error.prototype, "moduleStack",
-    {
+    Object.defineProperty(Error.prototype, "moduleStack", {
       get() {
         return this.stack;
       },
@@ -74,8 +71,7 @@
 
 
 
-    Object.defineProperty(Error.prototype, "moduleName",
-    {
+    Object.defineProperty(Error.prototype, "moduleName", {
       get() {
         let match = this.stack.match(/\@(.*):.*:/);
         if (match) {
@@ -93,7 +89,9 @@
 
     return function require(path) {
       if (typeof path != "string" || !path.includes("://")) {
-        throw new TypeError("The argument to require() must be a string uri, got " + path);
+        throw new TypeError(
+          "The argument to require() must be a string uri, got " + path
+        );
       }
       
       let uri;
@@ -127,7 +125,6 @@
         xhr.responseType = "text";
         xhr.send();
 
-
         let source = xhr.responseText;
         if (source == "") {
           
@@ -137,8 +134,12 @@
         
         
         
-        let code = new Function("exports", "require", "module",
-          `eval(arguments[3] + "\\n//# sourceURL=" + arguments[4] + "\\n")`);
+        let code = new Function(
+          "exports",
+          "require",
+          "module",
+          `eval(arguments[3] + "\\n//# sourceURL=" + arguments[4] + "\\n")`
+        );
         code(exports, require, module, source, uri);
       } catch (ex) {
         

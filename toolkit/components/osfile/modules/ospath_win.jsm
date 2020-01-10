@@ -62,8 +62,9 @@ var basename = function(path) {
     }
     return ""; 
   }
-  return path.slice(Math.max(path.lastIndexOf("\\"),
-                             path.lastIndexOf(":")) + 1);
+  return path.slice(
+    Math.max(path.lastIndexOf("\\"), path.lastIndexOf(":")) + 1
+  );
 };
 exports.basename = basename;
 
@@ -84,7 +85,7 @@ exports.basename = basename;
 
 
 var dirname = function(path, options) {
-  let noDrive = (options && options.winNoDrive);
+  let noDrive = options && options.winNoDrive;
 
   
   let index = path.lastIndexOf("\\");
@@ -202,7 +203,9 @@ var winGetDrive = function(path) {
   }
   
   let index = path.indexOf(":");
-  if (index <= 0) return null;
+  if (index <= 0) {
+    return null;
+  }
   return path.slice(0, index + 1);
 };
 exports.winGetDrive = winGetDrive;
@@ -244,23 +247,24 @@ var normalize = function(path) {
   
   path.split("\\").forEach(function loop(v) {
     switch (v) {
-    case "": case ".": 
-      break;
-    case "..":
-      if (stack.length == 0) {
-        if (absolute) {
-          throw new Error("Path is ill-formed: attempting to go past root");
-        } else {
-         stack.push("..");
-        }
-      } else if (stack[stack.length - 1] == "..") {
+      case "":
+      case ".": 
+        break;
+      case "..":
+        if (stack.length == 0) {
+          if (absolute) {
+            throw new Error("Path is ill-formed: attempting to go past root");
+          } else {
+            stack.push("..");
+          }
+        } else if (stack[stack.length - 1] == "..") {
           stack.push("..");
         } else {
           stack.pop();
         }
-      break;
-    default:
-      stack.push(v);
+        break;
+      default:
+        stack.push(v);
     }
   });
 
@@ -301,14 +305,18 @@ exports.split = split;
 
 
 
-var toFileURIExtraEncodings = {";": "%3b", "?": "%3F", "#": "%23"};
+var toFileURIExtraEncodings = { ";": "%3b", "?": "%3F", "#": "%23" };
 var toFileURI = function toFileURI(path) {
   
-  path = this.normalize(path).replace(/[\\\/]/g, m => (m == "\\") ? "/" : "%2F");
+  path = this.normalize(path).replace(/[\\\/]/g, m =>
+    m == "\\" ? "/" : "%2F"
+  );
   
-  let dontNeedEscaping = {"%5B": "[", "%5D": "]"};
-  let uri = encodeURI(path).replace(/%(5B|5D)/gi,
-    match => dontNeedEscaping[match]);
+  let dontNeedEscaping = { "%5B": "[", "%5D": "]" };
+  let uri = encodeURI(path).replace(
+    /%(5B|5D)/gi,
+    match => dontNeedEscaping[match]
+  );
 
   
   
@@ -338,8 +346,7 @@ var fromFileURI = function fromFileURI(uri) {
 
   let path = decodeURI(uri);
   
-  path = path.replace(/%(3b|3f|23)/gi,
-        match => decodeURIComponent(match));
+  path = path.replace(/%(3b|3f|23)/gi, match => decodeURIComponent(match));
   path = this.normalize(path);
 
   

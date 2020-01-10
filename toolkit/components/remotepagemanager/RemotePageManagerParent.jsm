@@ -19,10 +19,15 @@ var EXPORTED_SYMBOLS = ["RemotePages", "RemotePageManager"];
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {MessageListener, MessagePort} = ChromeUtils.import("resource://gre/modules/remotepagemanager/MessagePort.jsm");
-ChromeUtils.defineModuleGetter(this, "FxAccounts",
-  "resource://gre/modules/FxAccounts.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { MessageListener, MessagePort } = ChromeUtils.import(
+  "resource://gre/modules/remotepagemanager/MessagePort.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "FxAccounts",
+  "resource://gre/modules/FxAccounts.jsm"
+);
 
 
 
@@ -112,8 +117,9 @@ class RemotePages {
       } catch (e) {
         
         
-        if (e.result !== Cr.NS_ERROR_NOT_INITIALIZED)
+        if (e.result !== Cr.NS_ERROR_NOT_INITIALIZED) {
           Cu.reportError(e);
+        }
       }
     }
   }
@@ -146,10 +152,13 @@ class RemotePages {
 }
 
 
-
 function publicMessagePort(port) {
-  let properties = ["addMessageListener", "removeMessageListener",
-                    "sendAsyncMessage", "destroy"];
+  let properties = [
+    "addMessageListener",
+    "removeMessageListener",
+    "sendAsyncMessage",
+    "destroy",
+  ];
 
   let clean = {};
   for (let property of properties) {
@@ -211,8 +220,9 @@ class ChromeMessagePort extends MessagePort {
   swapBrowsers({ detail: newBrowser }) {
     
     
-    if (this._browser.permanentKey != this._permanentKey)
+    if (this._browser.permanentKey != this._permanentKey) {
       return;
+    }
 
     this._browser.removeEventListener("SwapDocShells", this.swapBrowsers);
 
@@ -225,8 +235,9 @@ class ChromeMessagePort extends MessagePort {
   
   
   observe(messageManager) {
-    if (messageManager != this.messageManager)
+    if (messageManager != this.messageManager) {
       return;
+    }
 
     this.listener.callListeners({
       target: this.publicPort,
@@ -254,14 +265,14 @@ class ChromeMessagePort extends MessagePort {
     };
     this.listener.callListeners(message);
 
-    if (messagedata.name == "RemotePage:Unload")
+    if (messagedata.name == "RemotePage:Unload") {
       this.destroy();
+    }
   }
 
   destroy() {
     try {
-      this._browser.removeEventListener(
-          "SwapDocShells", this.swapBrowsers);
+      this._browser.removeEventListener("SwapDocShells", this.swapBrowsers);
     } catch (e) {
       
       
@@ -281,12 +292,18 @@ var RemotePageManagerInternal = {
 
   
   init() {
-    Services.mm.addMessageListener("RemotePage:InitPort", this.initPort.bind(this));
+    Services.mm.addMessageListener(
+      "RemotePage:InitPort",
+      this.initPort.bind(this)
+    );
     this.updateProcessUrls();
   },
 
   updateProcessUrls() {
-    Services.ppmm.sharedData.set("RemotePageManager:urls", new Set(this.pages.keys()));
+    Services.ppmm.sharedData.set(
+      "RemotePageManager:urls",
+      new Set(this.pages.keys())
+    );
     Services.ppmm.sharedData.flush();
   },
 
@@ -333,7 +350,10 @@ RemotePageManagerInternal.init();
 
 
 var RemotePageManager = {
-  addRemotePageListener: RemotePageManagerInternal.addRemotePageListener.bind(RemotePageManagerInternal),
-  removeRemotePageListener: RemotePageManagerInternal.removeRemotePageListener.bind(RemotePageManagerInternal),
+  addRemotePageListener: RemotePageManagerInternal.addRemotePageListener.bind(
+    RemotePageManagerInternal
+  ),
+  removeRemotePageListener: RemotePageManagerInternal.removeRemotePageListener.bind(
+    RemotePageManagerInternal
+  ),
 };
-

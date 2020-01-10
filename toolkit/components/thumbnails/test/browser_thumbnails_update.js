@@ -16,8 +16,9 @@ function* runTests() {
   ];
   for (let test of tests) {
     info("Running subtest " + test.name);
-    for (let iterator of test())
+    for (let iterator of test()) {
       yield iterator;
+    }
   }
 }
 
@@ -43,7 +44,8 @@ function getThumbnailModifiedTime(url) {
 
 function* simpleCaptureTest() {
   let numNotifications = 0;
-  const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?simple";
+  const URL =
+    "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?simple";
 
   function observe(subject, topic, data) {
     is(topic, "page-thumbnail:create", "got expected topic");
@@ -68,7 +70,11 @@ function* simpleCaptureTest() {
     
     
     PageThumbs.captureAndStoreIfStale(browser, function() {
-      is(numNotifications, 1, "still only 1 notification of item being created.");
+      is(
+        numNotifications,
+        1,
+        "still only 1 notification of item being created."
+      );
 
       ensureThumbnailStale(URL);
       
@@ -84,7 +90,8 @@ function* simpleCaptureTest() {
 
 
 function* capIfStaleErrorResponseUpdateTest() {
-  const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
+  const URL =
+    "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
   yield addTab(URL);
 
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
@@ -97,7 +104,7 @@ function* capIfStaleErrorResponseUpdateTest() {
   
   
   
-  let now = Date.now() - 1000 ;
+  let now = Date.now() - 1000;
   PageThumbs.captureAndStoreIfStale(gBrowser.selectedBrowser, () => {
     ok(getThumbnailModifiedTime(URL) < now, "modified time should be < now");
     retrieveImageDataForURL(URL, function([r, g, b]) {
@@ -114,7 +121,8 @@ function* capIfStaleErrorResponseUpdateTest() {
 
 
 function* capIfStaleGoodResponseUpdateTest() {
-  const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
+  const URL =
+    "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
   yield addTab(URL);
   let browser = gBrowser.selectedBrowser;
 
@@ -127,7 +135,7 @@ function* capIfStaleGoodResponseUpdateTest() {
   
   
   
-  let now = Date.now() - 1000 ;
+  let now = Date.now() - 1000;
   PageThumbs.captureAndStoreIfStale(browser, () => {
     ok(getThumbnailModifiedTime(URL) >= now, "modified time should be >= now");
     
@@ -144,7 +152,8 @@ function* capIfStaleGoodResponseUpdateTest() {
 
 
 function* regularCapErrorResponseUpdateTest() {
-  const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
+  const URL =
+    "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
   yield addTab(URL);
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
   gBrowser.removeTab(gBrowser.selectedTab);
@@ -158,7 +167,8 @@ function* regularCapErrorResponseUpdateTest() {
 
 
 function* regularCapGoodResponseUpdateTest() {
-  const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
+  const URL =
+    "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
   yield addTab(URL);
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
   gBrowser.removeTab(gBrowser.selectedTab);

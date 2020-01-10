@@ -1,46 +1,58 @@
 "use strict";
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-add_task({
-  skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
-}, async function test_get_values() {
-  
-  
-  
-  const {XULStore} = ChromeUtils.import("resource://gre/modules/XULStore.jsm");
+add_task(
+  {
+    skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
+  },
+  async function test_get_values() {
+    
+    
+    
+    const { XULStore } = ChromeUtils.import(
+      "resource://gre/modules/XULStore.jsm"
+    );
 
-  
-  
-  Assert.equal(XULStore.getValue("doc1", "id1", "attr1"), "");
+    
+    
+    Assert.equal(XULStore.getValue("doc1", "id1", "attr1"), "");
 
-  
-  
-  
-  
-  Services.obs.addObserver({
-    observe() {
-      const file = FileUtils.getFile("ProfD", ["xulstore.json"]);
-      const xulstoreJSON = JSON.stringify({
-        doc1: {
-          id1: {
-            attr1: "value1",
-          },
+    
+    
+    
+    
+    Services.obs.addObserver(
+      {
+        observe() {
+          const file = FileUtils.getFile("ProfD", ["xulstore.json"]);
+          const xulstoreJSON = JSON.stringify({
+            doc1: {
+              id1: {
+                attr1: "value1",
+              },
+            },
+          });
+          let stream = FileUtils.openAtomicFileOutputStream(file);
+          stream.write(xulstoreJSON, xulstoreJSON.length);
+          FileUtils.closeAtomicFileOutputStream(stream);
         },
-      });
-      let stream = FileUtils.openAtomicFileOutputStream(file);
-      stream.write(xulstoreJSON, xulstoreJSON.length);
-      FileUtils.closeAtomicFileOutputStream(stream);
-    },
-  }, "profile-after-change");
+      },
+      "profile-after-change"
+    );
 
-  
-  
-  do_get_profile(true);
+    
+    
+    do_get_profile(true);
 
-  
-  Assert.equal(XULStore.getValue("doc1", "id1", "attr1"), "value1");
-});
+    
+    Assert.equal(XULStore.getValue("doc1", "id1", "attr1"), "value1");
+  }
+);

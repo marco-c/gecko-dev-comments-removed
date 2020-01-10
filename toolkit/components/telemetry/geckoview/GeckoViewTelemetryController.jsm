@@ -4,8 +4,12 @@
 
 "use strict";
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {GeckoViewUtils} = ChromeUtils.import("resource://gre/modules/GeckoViewUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { GeckoViewUtils } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
@@ -13,7 +17,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.jsm",
 });
 
-const {debug, warn} = GeckoViewUtils.initLogging("GeckoView.TelemetryController"); 
+const { debug, warn } = GeckoViewUtils.initLogging(
+  "GeckoView.TelemetryController"
+); 
 
 var EXPORTED_SYMBOLS = ["GeckoViewTelemetryController"];
 
@@ -30,8 +36,10 @@ const GeckoViewTelemetryController = {
   setup() {
     TelemetryUtils.setTelemetryRecordingFlags();
 
-    debug `setup -
-           canRecordPrereleaseData ${Services.telemetry.canRecordPrereleaseData},
+    debug`setup -
+           canRecordPrereleaseData ${
+             Services.telemetry.canRecordPrereleaseData
+           },
            canRecordReleaseData ${Services.telemetry.canRecordReleaseData}`;
 
     if (GeckoViewUtils.IS_PARENT_PROCESS) {
@@ -39,10 +47,10 @@ const GeckoViewTelemetryController = {
       this._loadComplete = new Promise(resolve => {
         Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
           if (aTopic !== LOAD_COMPLETE_TOPIC) {
-            warn `Received unexpected topic ${aTopic}`;
+            warn`Received unexpected topic ${aTopic}`;
             return;
           }
-          debug `observed ${aTopic} - ready to handle telemetry requests`;
+          debug`observed ${aTopic} - ready to handle telemetry requests`;
           
           Services.obs.removeObserver(observer, LOAD_COMPLETE_TOPIC);
           resolve();
@@ -54,7 +62,7 @@ const GeckoViewTelemetryController = {
           "GeckoView:TelemetrySnapshots",
         ]);
       } catch (e) {
-        warn `Failed registering GeckoView:TelemetrySnapshots listener: ${e}`;
+        warn`Failed registering GeckoView:TelemetrySnapshots listener: ${e}`;
       }
     }
   },
@@ -68,15 +76,17 @@ const GeckoViewTelemetryController = {
 
 
   onEvent(aEvent, aData, aCallback) {
-    debug `onEvent: aEvent=${aEvent}, aData=${aData}`;
+    debug`onEvent: aEvent=${aEvent}, aData=${aData}`;
 
     if (aEvent !== "GeckoView:TelemetrySnapshots") {
-      warn `Received unexpected event ${aEvent}`;
+      warn`Received unexpected event ${aEvent}`;
       return;
     }
 
     
-    this._loadComplete.then(() => this.retrieveSnapshots(aData.clear, aCallback));
+    this._loadComplete.then(() =>
+      this.retrieveSnapshots(aData.clear, aCallback)
+    );
   },
 
   
@@ -86,12 +96,24 @@ const GeckoViewTelemetryController = {
 
 
   retrieveSnapshots(aClear, aCallback) {
-    debug `retrieveSnapshots`;
+    debug`retrieveSnapshots`;
 
-    const histograms = Services.telemetry.getSnapshotForHistograms("main",  false);
-    const keyedHistograms = Services.telemetry.getSnapshotForKeyedHistograms("main",  false);
-    const scalars = Services.telemetry.getSnapshotForScalars("main",  false);
-    const keyedScalars = Services.telemetry.getSnapshotForKeyedScalars("main",  false);
+    const histograms = Services.telemetry.getSnapshotForHistograms(
+      "main",
+       false
+    );
+    const keyedHistograms = Services.telemetry.getSnapshotForKeyedHistograms(
+      "main",
+       false
+    );
+    const scalars = Services.telemetry.getSnapshotForScalars(
+      "main",
+       false
+    );
+    const keyedScalars = Services.telemetry.getSnapshotForKeyedScalars(
+      "main",
+       false
+    );
 
     const snapshots = {
       histograms,
@@ -100,8 +122,12 @@ const GeckoViewTelemetryController = {
       keyedScalars,
     };
 
-    if (!snapshots.histograms || !snapshots.keyedHistograms ||
-        !snapshots.scalars || !snapshots.keyedScalars) {
+    if (
+      !snapshots.histograms ||
+      !snapshots.keyedHistograms ||
+      !snapshots.scalars ||
+      !snapshots.keyedScalars
+    ) {
       aCallback.onError(`Failed retrieving snapshots!`);
       return;
     }

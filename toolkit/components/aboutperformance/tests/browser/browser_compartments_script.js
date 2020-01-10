@@ -1,5 +1,4 @@
 
-
 var interval = window.setInterval(() => {
   
   

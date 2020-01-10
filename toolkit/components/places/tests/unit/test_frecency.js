@@ -65,8 +65,9 @@ async function ensure_results(uris, searchTerm) {
 }
 
 async function ensure_results_internal(uris, searchTerm) {
-  var controller = Cc["@mozilla.org/autocomplete/controller;1"].
-                   getService(Ci.nsIAutoCompleteController);
+  var controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(
+    Ci.nsIAutoCompleteController
+  );
 
   
   
@@ -83,8 +84,10 @@ async function ensure_results_internal(uris, searchTerm) {
   let promise = new Promise(resolve => {
     input.onSearchComplete = function() {
       Assert.equal(numSearchesStarted, 1);
-      Assert.equal(controller.searchStatus,
-                   Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
+      Assert.equal(
+        controller.searchStatus,
+        Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH
+      );
       Assert.equal(controller.matchCount, uris.length);
       for (var i = 0; i < controller.matchCount; i++) {
         Assert.equal(controller.getValueAt(i), uris[i].spec);
@@ -100,8 +103,9 @@ async function ensure_results_internal(uris, searchTerm) {
 
 
 try {
-  var tagssvc = Cc["@mozilla.org/browser/tagging-service;1"].
-                getService(Ci.nsITaggingService);
+  var tagssvc = Cc["@mozilla.org/browser/tagging-service;1"].getService(
+    Ci.nsITaggingService
+  );
 } catch (ex) {
   do_throw("Could not get history service\n");
 }
@@ -146,115 +150,117 @@ var c1 = 10;
 var c2 = 1;
 
 var tests = [
+  
+  async function() {
+    print("TEST-INFO | Test 0: same count, different date");
+    await task_setCountDate(uri1, c1, d1);
+    await task_setCountDate(uri2, c1, d2);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri1, uri2], "");
+  },
+  async function() {
+    print("TEST-INFO | Test 1: same count, different date");
+    await task_setCountDate(uri1, c1, d2);
+    await task_setCountDate(uri2, c1, d1);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri2, uri1], "");
+  },
+  async function() {
+    print("TEST-INFO | Test 2: different count, same date");
+    await task_setCountDate(uri1, c1, d1);
+    await task_setCountDate(uri2, c2, d1);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri1, uri2], "");
+  },
+  async function() {
+    print("TEST-INFO | Test 3: different count, same date");
+    await task_setCountDate(uri1, c2, d1);
+    await task_setCountDate(uri2, c1, d1);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri2, uri1], "");
+  },
 
-async function() {
-  print("TEST-INFO | Test 0: same count, different date");
-  await task_setCountDate(uri1, c1, d1);
-  await task_setCountDate(uri2, c1, d2);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri1, uri2], "");
-},
-async function() {
-  print("TEST-INFO | Test 1: same count, different date");
-  await task_setCountDate(uri1, c1, d2);
-  await task_setCountDate(uri2, c1, d1);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri2, uri1], "");
-},
-async function() {
-  print("TEST-INFO | Test 2: different count, same date");
-  await task_setCountDate(uri1, c1, d1);
-  await task_setCountDate(uri2, c2, d1);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri1, uri2], "");
-},
-async function() {
-  print("TEST-INFO | Test 3: different count, same date");
-  await task_setCountDate(uri1, c2, d1);
-  await task_setCountDate(uri2, c1, d1);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri2, uri1], "");
-},
-
-
-async function() {
-  print("TEST-INFO | Test 4: same count, different date");
-  await task_setCountDate(uri1, c1, d1);
-  await task_setCountDate(uri2, c1, d2);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri1, uri2], "site");
-},
-async function() {
-  print("TEST-INFO | Test 5: same count, different date");
-  await task_setCountDate(uri1, c1, d2);
-  await task_setCountDate(uri2, c1, d1);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri2, uri1], "site");
-},
-async function() {
-  print("TEST-INFO | Test 6: different count, same date");
-  await task_setCountDate(uri1, c1, d1);
-  await task_setCountDate(uri2, c2, d1);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri1, uri2], "site");
-},
-async function() {
-  print("TEST-INFO | Test 7: different count, same date");
-  await task_setCountDate(uri1, c2, d1);
-  await task_setCountDate(uri2, c1, d1);
-  await tagURI(uri1, ["site"]);
-  await ensure_results([uri2, uri1], "site");
-},
-
-
-async function() {
-  print("TEST-INFO | Test 8.1a: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "a");
-},
-async function() {
-  print("TEST-INFO | Test 8.1b: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "aa");
-},
-async function() {
-  print("TEST-INFO | Test 8.2: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "aaa");
-},
-async function() {
-  print("TEST-INFO | Test 8.3: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "aaaa");
-},
-async function() {
-  print("TEST-INFO | Test 8.4: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "aaa");
-},
-async function() {
-  print("TEST-INFO | Test 8.5: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "aa");
-},
-async function() {
-  print("TEST-INFO | Test 8.6: same count, same date");
-  await setBookmark(uri3);
-  await setBookmark(uri4);
-  await ensure_results([uri4, uri3], "a");
-},
+  
+  async function() {
+    print("TEST-INFO | Test 4: same count, different date");
+    await task_setCountDate(uri1, c1, d1);
+    await task_setCountDate(uri2, c1, d2);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri1, uri2], "site");
+  },
+  async function() {
+    print("TEST-INFO | Test 5: same count, different date");
+    await task_setCountDate(uri1, c1, d2);
+    await task_setCountDate(uri2, c1, d1);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri2, uri1], "site");
+  },
+  async function() {
+    print("TEST-INFO | Test 6: different count, same date");
+    await task_setCountDate(uri1, c1, d1);
+    await task_setCountDate(uri2, c2, d1);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri1, uri2], "site");
+  },
+  async function() {
+    print("TEST-INFO | Test 7: different count, same date");
+    await task_setCountDate(uri1, c2, d1);
+    await task_setCountDate(uri2, c1, d1);
+    await tagURI(uri1, ["site"]);
+    await ensure_results([uri2, uri1], "site");
+  },
+  
+  
+  async function() {
+    print("TEST-INFO | Test 8.1a: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "a");
+  },
+  async function() {
+    print("TEST-INFO | Test 8.1b: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "aa");
+  },
+  async function() {
+    print("TEST-INFO | Test 8.2: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "aaa");
+  },
+  async function() {
+    print("TEST-INFO | Test 8.3: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "aaaa");
+  },
+  async function() {
+    print("TEST-INFO | Test 8.4: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "aaa");
+  },
+  async function() {
+    print("TEST-INFO | Test 8.5: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "aa");
+  },
+  async function() {
+    print("TEST-INFO | Test 8.6: same count, same date");
+    await setBookmark(uri3);
+    await setBookmark(uri4);
+    await ensure_results([uri4, uri3], "a");
+  },
 ];
 
 add_task(async function test_frecency() {
   
   Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
-  registerCleanupFunction(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("browser.urlbar.autoFill")
+  );
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.history", true);
   Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", true);

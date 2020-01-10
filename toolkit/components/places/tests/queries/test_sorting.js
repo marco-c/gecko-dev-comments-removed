@@ -13,26 +13,32 @@ tests.push({
     info("Sorting test 1: SORT BY NONE");
 
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "y",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/a",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "z",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "x",
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = this._unsortedData;
@@ -71,34 +77,42 @@ tests.push({
     info("Sorting test 2: SORT BY TITLE");
 
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b1",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "y",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/a",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "z",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "x",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b2",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "y",
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -145,7 +159,8 @@ tests.push({
 
     var timeInMicroseconds = Date.now() * 1000;
     this._unsortedData = [
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         isBookmark: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -153,9 +168,11 @@ tests.push({
         uri: "http://example.com/c1",
         lastVisit: timeInMicroseconds - 2000,
         title: "x1",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         isBookmark: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -163,9 +180,11 @@ tests.push({
         uri: "http://example.com/a",
         lastVisit: timeInMicroseconds - 1000,
         title: "z",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         isBookmark: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -173,10 +192,12 @@ tests.push({
         uri: "http://example.com/b",
         lastVisit: timeInMicroseconds - 3000,
         title: "y",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         isBookmark: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -184,10 +205,12 @@ tests.push({
         uri: "http://example.com/c2",
         lastVisit: timeInMicroseconds - 2000,
         title: "x2",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         isBookmark: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -195,7 +218,8 @@ tests.push({
         uri: "http://example.com/c2",
         lastVisit: timeInMicroseconds - 2000,
         title: "x2",
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -243,62 +267,76 @@ tests.push({
 
     var timeInMicroseconds = Date.now() * 1000;
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         isDetails: true,
         lastVisit: timeInMicroseconds,
         uri: "http://example.com/b",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 0,
         title: "y",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 1,
         title: "x",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/a",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 2,
         title: "z",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         isDetails: true,
         lastVisit: timeInMicroseconds + 1000,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 3,
         title: "x",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isFolder: true,
+      {
+        isFolder: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 4,
         title: "a",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         isDetails: true,
         lastVisit: timeInMicroseconds + 1000,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 5,
         title: "x",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isFolder: true,
+      {
+        isFolder: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 6,
         title: "a",
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -347,47 +385,57 @@ tests.push({
 
     var timeInMicroseconds = Date.now() * 1000;
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/a",
         lastVisit: timeInMicroseconds,
         title: "z",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 0,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/c",
         lastVisit: timeInMicroseconds,
         title: "x",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 1,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b1",
         lastVisit: timeInMicroseconds,
         title: "y1",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 2,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b2",
         lastVisit: timeInMicroseconds + 1000,
         title: "y2a",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 3,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b2",
         lastVisit: timeInMicroseconds + 1000,
         title: "y2b",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 4,
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -402,14 +450,46 @@ tests.push({
     await task_populateDB(this._unsortedData);
     
     await PlacesTestUtils.addVisits([
-      { uri: uri("http://example.com/a"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
-      { uri: uri("http://example.com/b1"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
-      { uri: uri("http://example.com/b1"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
-      { uri: uri("http://example.com/b2"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds + 1000 },
-      { uri: uri("http://example.com/b2"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds + 1000 },
-      { uri: uri("http://example.com/c"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
-      { uri: uri("http://example.com/c"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
-      { uri: uri("http://example.com/c"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
+      {
+        uri: uri("http://example.com/a"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds,
+      },
+      {
+        uri: uri("http://example.com/b1"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds,
+      },
+      {
+        uri: uri("http://example.com/b1"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds,
+      },
+      {
+        uri: uri("http://example.com/b2"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds + 1000,
+      },
+      {
+        uri: uri("http://example.com/b2"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds + 1000,
+      },
+      {
+        uri: uri("http://example.com/c"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds,
+      },
+      {
+        uri: uri("http://example.com/c"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds,
+      },
+      {
+        uri: uri("http://example.com/c"),
+        transition: TRANSITION_TYPED,
+        visitDate: timeInMicroseconds,
+      },
     ]);
   },
 
@@ -432,7 +512,8 @@ tests.push({
   },
 
   check_reverse() {
-    this._sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_VISITCOUNT_DESCENDING;
+    this._sortingMode =
+      Ci.nsINavHistoryQueryOptions.SORT_BY_VISITCOUNT_DESCENDING;
     this._sortedData.reverse();
     this.check();
   },
@@ -446,47 +527,57 @@ tests.push({
 
     var timeInMicroseconds = Date.now() * 1000;
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b1",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 0,
         title: "y1",
         dateAdded: timeInMicroseconds - 1000,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/a",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 1,
         title: "z",
         dateAdded: timeInMicroseconds - 2000,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 2,
         title: "x",
         dateAdded: timeInMicroseconds,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b2",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 3,
         title: "y2",
         dateAdded: timeInMicroseconds - 1000,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b3",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 4,
         title: "y3",
         dateAdded: timeInMicroseconds - 1000,
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -520,7 +611,8 @@ tests.push({
   },
 
   check_reverse() {
-    this._sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_DATEADDED_DESCENDING;
+    this._sortingMode =
+      Ci.nsINavHistoryQueryOptions.SORT_BY_DATEADDED_DESCENDING;
     this._sortedData.reverse();
     this.check();
   },
@@ -536,53 +628,63 @@ tests.push({
     var timeAddedInMicroseconds = timeInMicroseconds - 10000;
 
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b1",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 0,
         title: "y1",
         dateAdded: timeAddedInMicroseconds,
         lastModified: timeInMicroseconds - 1000,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/a",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 1,
         title: "z",
         dateAdded: timeAddedInMicroseconds,
         lastModified: timeInMicroseconds - 2000,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/c",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 2,
         title: "x",
         dateAdded: timeAddedInMicroseconds,
         lastModified: timeInMicroseconds,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b2",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 3,
         title: "y2",
         dateAdded: timeAddedInMicroseconds,
         lastModified: timeInMicroseconds - 1000,
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://example.com/b3",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 4,
         title: "y3",
         dateAdded: timeAddedInMicroseconds,
         lastModified: timeInMicroseconds - 1000,
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -616,7 +718,8 @@ tests.push({
   },
 
   check_reverse() {
-    this._sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_LASTMODIFIED_DESCENDING;
+    this._sortingMode =
+      Ci.nsINavHistoryQueryOptions.SORT_BY_LASTMODIFIED_DESCENDING;
     this._sortedData.reverse();
     this.check();
   },
@@ -629,57 +732,69 @@ tests.push({
     info("Sorting test 9: SORT BY TAGS");
 
     this._unsortedData = [
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://url2.com/",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "title x",
         isTag: true,
         tagArray: ["x", "y", "z"],
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://url1a.com/",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "title y1",
         isTag: true,
         tagArray: ["a", "b"],
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://url3a.com/",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "title w1",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://url0.com/",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "title z",
         isTag: true,
         tagArray: ["a", "y", "z"],
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://url1b.com/",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "title y2",
         isTag: true,
         tagArray: ["b", "a"],
-        isInQuery: true },
+        isInQuery: true,
+      },
 
       
-      { isBookmark: true,
+      {
+        isBookmark: true,
         uri: "http://url3b.com/",
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: PlacesUtils.bookmarks.DEFAULT_INDEX,
         title: "title w2",
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -736,47 +851,59 @@ tests.push({
     }
 
     this._unsortedData = [
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         uri: "http://moz.com/",
         lastVisit: newTimeInMicroseconds(),
         title: "I",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         uri: "http://moz.com/",
         lastVisit: newTimeInMicroseconds(),
         title: "I",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         uri: "http://moz.com/",
         lastVisit: newTimeInMicroseconds(),
         title: "I",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         uri: "http://is.com/",
         lastVisit: newTimeInMicroseconds(),
         title: "love",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         uri: "http://best.com/",
         lastVisit: newTimeInMicroseconds(),
         title: "moz",
-        isInQuery: true },
+        isInQuery: true,
+      },
 
-      { isVisit: true,
+      {
+        isVisit: true,
         isDetails: true,
         uri: "http://best.com/",
         lastVisit: newTimeInMicroseconds(),
         title: "moz",
-        isInQuery: true },
+        isInQuery: true,
+      },
     ];
 
     this._sortedData = [
@@ -801,7 +928,8 @@ tests.push({
   },
 
   check_reverse() {
-    this._sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_FRECENCY_DESCENDING;
+    this._sortingMode =
+      Ci.nsINavHistoryQueryOptions.SORT_BY_FRECENCY_DESCENDING;
     this._sortedData.reverse();
     this.check();
   },

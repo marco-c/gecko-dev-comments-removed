@@ -1,13 +1,19 @@
 function insertTree(tree) {
-  return PlacesUtils.bookmarks.insertTree(tree, { fixupOrSkipInvalidEntries: true });
+  return PlacesUtils.bookmarks.insertTree(tree, {
+    fixupOrSkipInvalidEntries: true,
+  });
 }
 
 add_task(async function() {
   let guid = PlacesUtils.bookmarks.unfiledGuid;
-  await Assert.throws(() => insertTree({guid, children: []}),
-                      /Should have a non-zero number of children to insert./);
-  await Assert.throws(() => insertTree({guid: "invalid", children: [{}]}),
-                      /The parent guid is not valid/);
+  await Assert.throws(
+    () => insertTree({ guid, children: [] }),
+    /Should have a non-zero number of children to insert./
+  );
+  await Assert.throws(
+    () => insertTree({ guid: "invalid", children: [{}] }),
+    /The parent guid is not valid/
+  );
 
   let now = new Date();
   let url = "http://mozilla.com/";
@@ -22,7 +28,10 @@ add_task(async function() {
         if (event.itemType == PlacesUtils.bookmarks.TYPE_BOOKMARK) {
           Assert.equal(event.url, url, "Found the expected url");
         }
-        Assert.ok(event.index == 0 || event.index == lastIndex + 1, "Consecutive indices");
+        Assert.ok(
+          event.index == 0 || event.index == lastIndex + 1,
+          "Consecutive indices"
+        );
         Assert.ok(event.dateAdded >= now, "Found a valid dateAdded");
         Assert.ok(PlacesUtils.isValidGuid(event.guid), "guid is valid");
       }
@@ -33,18 +42,22 @@ add_task(async function() {
   let tree = {
     guid,
     children: [
-      { 
+      {
+        
         guid: "test",
         url,
       },
-      { 
+      {
+        
         url: "fake_url",
       },
-      { 
+      {
+        
         url,
         type: 999,
       },
-      { 
+      {
+        
         type: 999,
         children: [
           {
@@ -56,23 +69,28 @@ add_task(async function() {
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
         title: "test",
         children: [
-          { 
+          {
+            
             url,
             lastModified: null,
           },
-          { 
+          {
+            
             url: "fake_url",
             dateAdded: null,
           },
-          { 
+          {
+            
             url,
             dateAdded: undefined,
           },
-          { 
+          {
+            
             url,
             type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
           },
-          { 
+          {
+            
             url,
             dateAdded: new Date(now - 86400000),
             lastModified: new Date(now - 172800000), 
@@ -89,6 +107,8 @@ add_task(async function() {
   Assert.equal(bms.length, 5);
   Assert.equal(obs.count, bms.length);
 
-  PlacesUtils.observers.removeListener(["bookmark-added"], obs.handlePlacesEvent);
+  PlacesUtils.observers.removeListener(
+    ["bookmark-added"],
+    obs.handlePlacesEvent
+  );
 });
-

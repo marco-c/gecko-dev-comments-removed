@@ -5,10 +5,12 @@
 
 
 
-var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].
-              getService(Ci.nsINavHistoryService);
-var tagssvc = Cc["@mozilla.org/browser/tagging-service;1"].
-              getService(Ci.nsITaggingService);
+var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
+  Ci.nsINavHistoryService
+);
+var tagssvc = Cc["@mozilla.org/browser/tagging-service;1"].getService(
+  Ci.nsITaggingService
+);
 
 add_task(async function test_query_node_tags_property() {
   

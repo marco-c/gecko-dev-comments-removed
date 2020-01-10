@@ -10,8 +10,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 function run_test() {
   
-  Services.telemetry.getHistogramById("TELEMETRY_TEST_MULTIPRODUCT")
-                    .add(73);
-  Services.telemetry.getKeyedHistogramById("TELEMETRY_TEST_KEYED_COUNT")
-                    .add("content-test-key", 37);
+  Services.telemetry.getHistogramById("TELEMETRY_TEST_MULTIPRODUCT").add(73);
+  Services.telemetry
+    .getKeyedHistogramById("TELEMETRY_TEST_KEYED_COUNT")
+    .add("content-test-key", 37);
 }

@@ -5,7 +5,10 @@
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
-ChromeUtils.import("resource://testing-common/TelemetryArchiveTesting.jsm", this);
+ChromeUtils.import(
+  "resource://testing-common/TelemetryArchiveTesting.jsm",
+  this
+);
 
 add_task(async function test_updatePing() {
   const TEST_VERSION = "37.85";
@@ -13,13 +16,15 @@ add_task(async function test_updatePing() {
 
   
   
-  await SpecialPowers.pushPrefEnv({"set": [
-    [TelemetryUtils.Preferences.UpdatePing, true],
-    ["app.update.postupdate", true],
-    ["browser.startup.homepage_override.mstone", TEST_VERSION],
-    ["browser.startup.homepage_override.buildID", TEST_BUILDID],
-    ["toolkit.telemetry.log.level", "Trace"],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [TelemetryUtils.Preferences.UpdatePing, true],
+      ["app.update.postupdate", true],
+      ["browser.startup.homepage_override.mstone", TEST_VERSION],
+      ["browser.startup.homepage_override.buildID", TEST_BUILDID],
+      ["toolkit.telemetry.log.level", "Trace"],
+    ],
+  });
 
   
   let archiveChecker = new TelemetryArchiveTesting.Checker();
@@ -33,31 +38,44 @@ add_task(async function test_updatePing() {
   
   
   let updatePing;
-  await BrowserTestUtils.waitForCondition(async function() {
-    
-    
-    updatePing = await archiveChecker.promiseFindPing("update", [
+  await BrowserTestUtils.waitForCondition(
+    async function() {
+      
+      
+      updatePing = await archiveChecker.promiseFindPing("update", [
         [["payload", "reason"], "success"],
         [["payload", "previousBuildId"], TEST_BUILDID],
         [["payload", "previousVersion"], TEST_VERSION],
       ]);
-    return !!updatePing;
-  }, "Make sure the ping is generated before trying to validate it.", 500, 100);
+      return !!updatePing;
+    },
+    "Make sure the ping is generated before trying to validate it.",
+    500,
+    100
+  );
 
   ok(updatePing, "The 'update' ping must be correctly sent.");
 
   
   
   
-  ok("previousChannel" in updatePing.payload,
-     "The payload must contain the 'previousChannel' field");
+  ok(
+    "previousChannel" in updatePing.payload,
+    "The payload must contain the 'previousChannel' field"
+  );
   const channelField = updatePing.payload.previousChannel;
   if (channelField != null) {
-    ok(typeof(channelField) == "string", "'previousChannel' must be a string, if available.");
+    ok(
+      typeof channelField == "string",
+      "'previousChannel' must be a string, if available."
+    );
   }
 
   
   
   ok("clientId" in updatePing, "The update ping must report a client id.");
-  ok("environment" in updatePing, "The update ping must report the environment.");
+  ok(
+    "environment" in updatePing,
+    "The update ping must report the environment."
+  );
 });

@@ -22,24 +22,32 @@ add_task(function test_setLoginSavingEnabled_getAllDisabledHosts() {
   Services.logins.setLoginSavingEnabled(origin2, false);
   Services.logins.setLoginSavingEnabled(origin3, false);
 
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          [origin1, origin2, origin3]);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    [origin1, origin2, origin3]
+  );
 
   
   Services.logins.setLoginSavingEnabled(origin2, false);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          [origin1, origin2, origin3]);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    [origin1, origin2, origin3]
+  );
 
   
   Services.logins.setLoginSavingEnabled(origin2, true);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          [origin1, origin3]);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    [origin1, origin3]
+  );
 
   
   Services.logins.setLoginSavingEnabled(origin1, true);
   Services.logins.setLoginSavingEnabled(origin3, true);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          []);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    []
+  );
 });
 
 
@@ -74,12 +82,16 @@ add_task(function test_setLoginSavingEnabled_getLoginSavingEnabled() {
 
 add_task(function test_setLoginSavingEnabled_invalid_characters() {
   let origin = "http://null\0X.example.com";
-  Assert.throws(() => Services.logins.setLoginSavingEnabled(origin, false),
-                /Invalid origin/);
+  Assert.throws(
+    () => Services.logins.setLoginSavingEnabled(origin, false),
+    /Invalid origin/
+  );
 
   
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          []);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    []
+  );
 });
 
 
@@ -99,16 +111,19 @@ add_task(function test_rememberSignons() {
 
   
   Services.prefs.setBoolPref("signon.rememberSignons", false);
-  registerCleanupFunction(
-    () => Services.prefs.clearUserPref("signon.rememberSignons"));
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("signon.rememberSignons")
+  );
 
   
   Assert.ok(!Services.logins.getLoginSavingEnabled(origin1));
   Assert.ok(!Services.logins.getLoginSavingEnabled(origin2));
 
   
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          [origin1]);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    [origin1]
+  );
 
   
   Services.logins.setLoginSavingEnabled(origin1, true);
@@ -119,8 +134,10 @@ add_task(function test_rememberSignons() {
   Assert.ok(!Services.logins.getLoginSavingEnabled(origin2));
 
   
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          [origin2]);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    [origin2]
+  );
 
   
   Services.prefs.setBoolPref("signon.rememberSignons", true);
@@ -131,58 +148,76 @@ add_task(function test_rememberSignons() {
 
   
   Services.logins.setLoginSavingEnabled(origin2, true);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                          []);
+  LoginTestUtils.assertDisabledHostsEqual(
+    Services.logins.getAllDisabledHosts(),
+    []
+  );
 });
 
 
 
 
-add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_is_supported() {
-  let origin = "http://大.net";
-  let encoding = "http://xn--pss.net";
+add_task(
+  async function test_storage_setLoginSavingEnabled_nonascii_IDN_is_supported() {
+    let origin = "http://大.net";
+    let encoding = "http://xn--pss.net";
 
-  
-  Services.logins.setLoginSavingEnabled(origin, false);
-  await LoginTestUtils.reloadData();
-  Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
-  Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(), [origin]);
+    
+    Services.logins.setLoginSavingEnabled(origin, false);
+    await LoginTestUtils.reloadData();
+    Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
+    Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
+    LoginTestUtils.assertDisabledHostsEqual(
+      Services.logins.getAllDisabledHosts(),
+      [origin]
+    );
 
-  LoginTestUtils.clearData();
+    LoginTestUtils.clearData();
 
-  
-  Services.logins.setLoginSavingEnabled(encoding, false);
-  await LoginTestUtils.reloadData();
-  Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
-  Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(), [origin]);
+    
+    Services.logins.setLoginSavingEnabled(encoding, false);
+    await LoginTestUtils.reloadData();
+    Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
+    Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
+    LoginTestUtils.assertDisabledHostsEqual(
+      Services.logins.getAllDisabledHosts(),
+      [origin]
+    );
 
-  LoginTestUtils.clearData();
-});
+    LoginTestUtils.clearData();
+  }
+);
 
 
 
 
-add_task(async function test_storage_setLoginSavingEnabled_nonascii_IDN_not_supported() {
-  let origin = "http://√.com";
-  let encoding = "http://xn--19g.com";
+add_task(
+  async function test_storage_setLoginSavingEnabled_nonascii_IDN_not_supported() {
+    let origin = "http://√.com";
+    let encoding = "http://xn--19g.com";
 
-  
-  Services.logins.setLoginSavingEnabled(origin, false);
-  await LoginTestUtils.reloadData();
-  Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
-  Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(), [encoding]);
+    
+    Services.logins.setLoginSavingEnabled(origin, false);
+    await LoginTestUtils.reloadData();
+    Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
+    Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
+    LoginTestUtils.assertDisabledHostsEqual(
+      Services.logins.getAllDisabledHosts(),
+      [encoding]
+    );
 
-  LoginTestUtils.clearData();
+    LoginTestUtils.clearData();
 
-  
-  Services.logins.setLoginSavingEnabled(encoding, false);
-  await LoginTestUtils.reloadData();
-  Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
-  Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
-  LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(), [encoding]);
+    
+    Services.logins.setLoginSavingEnabled(encoding, false);
+    await LoginTestUtils.reloadData();
+    Assert.equal(Services.logins.getLoginSavingEnabled(origin), false);
+    Assert.equal(Services.logins.getLoginSavingEnabled(encoding), false);
+    LoginTestUtils.assertDisabledHostsEqual(
+      Services.logins.getAllDisabledHosts(),
+      [encoding]
+    );
 
-  LoginTestUtils.clearData();
-});
+    LoginTestUtils.clearData();
+  }
+);

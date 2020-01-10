@@ -63,8 +63,9 @@ AutoCompleteInput.prototype = {
 add_task(async function test_autocomplete_non_english() {
   await PlacesTestUtils.addVisits(url);
 
-  var controller = Cc["@mozilla.org/autocomplete/controller;1"].
-                   getService(Ci.nsIAutoCompleteController);
+  var controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(
+    Ci.nsIAutoCompleteController
+  );
 
   
   
@@ -81,8 +82,10 @@ add_task(async function test_autocomplete_non_english() {
 
     input.onSearchComplete = function() {
       Assert.equal(numSearchesStarted, 1);
-      Assert.equal(controller.searchStatus,
-                   Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
+      Assert.equal(
+        controller.searchStatus,
+        Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH
+      );
 
       
       Assert.equal(controller.matchCount, 1);

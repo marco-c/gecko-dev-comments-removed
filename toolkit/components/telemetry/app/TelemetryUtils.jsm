@@ -4,15 +4,19 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "TelemetryUtils",
-];
+var EXPORTED_SYMBOLS = ["TelemetryUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.defineModuleGetter(this, "AppConstants",
-                               "resource://gre/modules/AppConstants.jsm");
-ChromeUtils.defineModuleGetter(this, "UpdateUtils",
-                               "resource://gre/modules/UpdateUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "UpdateUtils",
+  "resource://gre/modules/UpdateUtils.jsm"
+);
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -42,10 +46,12 @@ var TelemetryUtils = {
     OverrideUpdateChannel: "toolkit.telemetry.overrideUpdateChannel",
     Server: "toolkit.telemetry.server",
     ShutdownPingSender: "toolkit.telemetry.shutdownPingSender.enabled",
-    ShutdownPingSenderFirstSession: "toolkit.telemetry.shutdownPingSender.enabledFirstSession",
+    ShutdownPingSenderFirstSession:
+      "toolkit.telemetry.shutdownPingSender.enabledFirstSession",
     TelemetryEnabled: "toolkit.telemetry.enabled",
     Unified: "toolkit.telemetry.unified",
-    UntrustedModulesPingFrequency: "toolkit.telemetry.untrustedModulesPing.frequency",
+    UntrustedModulesPingFrequency:
+      "toolkit.telemetry.untrustedModulesPing.frequency",
     UpdatePing: "toolkit.telemetry.updatePing.enabled",
     NewProfilePingEnabled: "toolkit.telemetry.newProfilePing.enabled",
     NewProfilePingDelay: "toolkit.telemetry.newProfilePing.delay",
@@ -70,8 +76,10 @@ var TelemetryUtils = {
 
     
     AcceptedPolicyDate: "datareporting.policy.dataSubmissionPolicyNotifiedTime",
-    AcceptedPolicyVersion: "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
-    BypassNotification: "datareporting.policy.dataSubmissionPolicyBypassNotification",
+    AcceptedPolicyVersion:
+      "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
+    BypassNotification:
+      "datareporting.policy.dataSubmissionPolicyBypassNotification",
     CurrentPolicyVersion: "datareporting.policy.currentPolicyVersion",
     DataSubmissionEnabled: "datareporting.policy.dataSubmissionEnabled",
     FhrUploadEnabled: "datareporting.healthreport.uploadEnabled",
@@ -115,21 +123,30 @@ var TelemetryUtils = {
 
 
   truncateToDays(date) {
-    return new Date(date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    0, 0, 0, 0);
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      0,
+      0,
+      0,
+      0
+    );
   },
 
   
 
 
   truncateToHours(date) {
-    return new Date(date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    date.getHours(),
-                    0, 0, 0);
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      date.getHours(),
+      0,
+      0,
+      0
+    );
   },
 
   
@@ -169,14 +186,19 @@ var TelemetryUtils = {
     }
 
     const nextMidnightDate = this.getNextMidnight(date);
-    if (this.areTimesClose(date.getTime(), nextMidnightDate.getTime(), tolerance)) {
+    if (
+      this.areTimesClose(date.getTime(), nextMidnightDate.getTime(), tolerance)
+    ) {
       return nextMidnightDate;
     }
     return null;
   },
 
   generateUUID() {
-    let str = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator).generateUUID().toString();
+    let str = Cc["@mozilla.org/uuid-generator;1"]
+      .getService(Ci.nsIUUIDGenerator)
+      .generateUUID()
+      .toString();
     
     return str.substring(1, str.length - 1);
   },
@@ -188,8 +210,11 @@ var TelemetryUtils = {
 
 
   getElapsedTimeInMonths(aStartDate, aEndDate) {
-    return (aEndDate.getMonth() - aStartDate.getMonth())
-           + 12 * (aEndDate.getFullYear() - aStartDate.getFullYear());
+    return (
+      aEndDate.getMonth() -
+      aStartDate.getMonth() +
+      12 * (aEndDate.getFullYear() - aStartDate.getFullYear())
+    );
   },
 
   
@@ -203,20 +228,30 @@ var TelemetryUtils = {
       return number.toString().padStart(length, "0");
     }
 
-    let sign = (n) => n >= 0 ? "+" : "-";
+    let sign = n => (n >= 0 ? "+" : "-");
     
     let tzOffset = -date.getTimezoneOffset();
 
     
-    return padNumber(date.getFullYear(), 4)
-      + "-" + padNumber(date.getMonth() + 1, 2)
-      + "-" + padNumber(date.getDate(), 2)
-      + "T" + padNumber(date.getHours(), 2)
-      + ":" + padNumber(date.getMinutes(), 2)
-      + ":" + padNumber(date.getSeconds(), 2)
-      + "." + date.getMilliseconds()
-      + sign(tzOffset) + padNumber(Math.floor(Math.abs(tzOffset / 60)), 2)
-      + ":" + padNumber(Math.abs(tzOffset % 60), 2);
+    return (
+      padNumber(date.getFullYear(), 4) +
+      "-" +
+      padNumber(date.getMonth() + 1, 2) +
+      "-" +
+      padNumber(date.getDate(), 2) +
+      "T" +
+      padNumber(date.getHours(), 2) +
+      ":" +
+      padNumber(date.getMinutes(), 2) +
+      ":" +
+      padNumber(date.getSeconds(), 2) +
+      "." +
+      date.getMilliseconds() +
+      sign(tzOffset) +
+      padNumber(Math.floor(Math.abs(tzOffset / 60)), 2) +
+      ":" +
+      padNumber(Math.abs(tzOffset % 60), 2)
+    );
   },
 
   
@@ -238,13 +273,15 @@ var TelemetryUtils = {
       
       prereleaseChannels.push("default");
     }
-    const isPrereleaseChannel =
-      prereleaseChannels.includes(AppConstants.MOZ_UPDATE_CHANNEL);
+    const isPrereleaseChannel = prereleaseChannels.includes(
+      AppConstants.MOZ_UPDATE_CHANNEL
+    );
     const isReleaseCandidateOnBeta =
       AppConstants.MOZ_UPDATE_CHANNEL === "release" &&
       Services.prefs.getCharPref("app.update.channel", null) === "beta";
     Services.telemetry.canRecordBase = true;
-    Services.telemetry.canRecordExtended = isPrereleaseChannel ||
+    Services.telemetry.canRecordExtended =
+      isPrereleaseChannel ||
       isReleaseCandidateOnBeta ||
       Services.prefs.getBoolPref(this.Preferences.OverridePreRelease, false);
   },
@@ -258,7 +295,10 @@ var TelemetryUtils = {
 
 
   getUpdateChannel() {
-    let overrideChannel = Services.prefs.getCharPref(this.Preferences.OverrideUpdateChannel, undefined);
+    let overrideChannel = Services.prefs.getCharPref(
+      this.Preferences.OverrideUpdateChannel,
+      undefined
+    );
     if (overrideChannel) {
       return overrideChannel;
     }

@@ -2,10 +2,16 @@
 
 
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetters(this, {
   gCertDB: ["@mozilla.org/security/x509certdb;1", "nsIX509CertDB"],
@@ -18,7 +24,9 @@ var EXPORTED_SYMBOLS = ["Corroborate"];
 
 this.Corroborate = {
   async init() {
-    const appOmniJar = FileUtils.getFile("XCurProcD", [AppConstants.OMNIJAR_NAME]);
+    const appOmniJar = FileUtils.getFile("XCurProcD", [
+      AppConstants.OMNIJAR_NAME,
+    ]);
     const greOmniJar = FileUtils.getFile("GreD", [AppConstants.OMNIJAR_NAME]);
     const systemAddons = FileUtils.getFile("XCurProcD", ["features"]);
 
@@ -27,7 +35,9 @@ this.Corroborate = {
     
     
     if (appOmniJar.exists() && greOmniJar.exists()) {
-      corruptOmnijar = !(await this.verifyJar(appOmniJar) && await this.verifyJar(greOmniJar));
+      corruptOmnijar = !(
+        (await this.verifyJar(appOmniJar)) && (await this.verifyJar(greOmniJar))
+      );
     }
 
     
@@ -35,7 +45,7 @@ this.Corroborate = {
     
     let corruptSystemAddons = false;
     for (let file of systemAddons.directoryEntries) {
-      if (!await this.verifyJar(file)) {
+      if (!(await this.verifyJar(file))) {
         corruptSystemAddons = true;
         break;
       }
@@ -59,13 +69,22 @@ this.Corroborate = {
 
     return new Promise(resolve => {
       gCertDB.openSignedAppFileAsync(root, file, (rv, _zipReader, cert) => {
-        resolve(Components.isSuccessCode(rv) && cert.organizationalUnit === expectedOrganizationalUnit);
+        resolve(
+          Components.isSuccessCode(rv) &&
+            cert.organizationalUnit === expectedOrganizationalUnit
+        );
       });
     });
   },
 
   reportTelemetry(corruptOmnijar, corruptSystemAddons) {
-    Services.telemetry.scalarSet("corroborate.omnijar_corrupted", corruptOmnijar);
-    Services.telemetry.scalarSet("corroborate.system_addons_corrupted", corruptSystemAddons);
+    Services.telemetry.scalarSet(
+      "corroborate.omnijar_corrupted",
+      corruptOmnijar
+    );
+    Services.telemetry.scalarSet(
+      "corroborate.system_addons_corrupted",
+      corruptSystemAddons
+    );
   },
 };

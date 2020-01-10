@@ -7,8 +7,10 @@
 add_task(async function() {
   
   
-  await test_database_replacement("../migration/favicons_v41.sqlite",
-                                  "favicons.sqlite",
-                                  true,
-                                  PlacesUtils.history.DATABASE_STATUS_CREATE);
+  await test_database_replacement(
+    "../migration/favicons_v41.sqlite",
+    "favicons.sqlite",
+    true,
+    PlacesUtils.history.DATABASE_STATUS_CREATE
+  );
 });

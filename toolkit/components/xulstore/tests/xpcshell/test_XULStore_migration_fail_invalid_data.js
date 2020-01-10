@@ -1,48 +1,58 @@
 "use strict";
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 function run_test() {
   do_get_profile();
   run_next_test();
 }
 
-add_task({
-  skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
-}, async function test_create_old_datastore() {
-  const path = OS.Path.join(OS.Constants.Path.profileDir, "xulstore.json");
+add_task(
+  {
+    skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
+  },
+  async function test_create_old_datastore() {
+    const path = OS.Path.join(OS.Constants.Path.profileDir, "xulstore.json");
 
-  
-  const xulstoreJSON = {
-    doc1: {
-      id1: {
-        attr1: 1,
+    
+    const xulstoreJSON = {
+      doc1: {
+        id1: {
+          attr1: 1,
+        },
       },
-    },
-    doc2: {
-      id2: {
-        attr2: "value2",
+      doc2: {
+        id2: {
+          attr2: "value2",
+        },
       },
-    },
-  };
+    };
 
-  await OS.File.writeAtomic(path, JSON.stringify(xulstoreJSON));
-});
+    await OS.File.writeAtomic(path, JSON.stringify(xulstoreJSON));
+  }
+);
 
-add_task({
-  skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
-}, async function test_get_values() {
-  
-  
-  
-  const {XULStore} = ChromeUtils.import("resource://gre/modules/XULStore.jsm");
+add_task(
+  {
+    skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
+  },
+  async function test_get_values() {
+    
+    
+    
+    const { XULStore } = ChromeUtils.import(
+      "resource://gre/modules/XULStore.jsm"
+    );
 
-  
-  
-  
-  
-  
-  Assert.equal(await XULStore.getValue("doc1", "id1", "attr1"), "");
-  Assert.equal(await XULStore.getValue("doc2", "id2", "attr2"), "");
-});
+    
+    
+    
+    
+    
+    Assert.equal(await XULStore.getValue("doc1", "id1", "attr1"), "");
+    Assert.equal(await XULStore.getValue("doc2", "id2", "attr2"), "");
+  }
+);

@@ -12,14 +12,20 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ONLOGIN_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.js",
   ONLOGOUT_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.js",
 });
-ChromeUtils.defineModuleGetter(this, "EcosystemTelemetry",
-                               "resource://gre/modules/EcosystemTelemetry.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "EcosystemTelemetry",
+  "resource://gre/modules/EcosystemTelemetry.jsm"
+);
 
 const WEAVE_EVENT = "weave:service:login:change";
 const TEST_PING_TYPE = "test-ping-type";
 
 function fakeIdleNotification(topic) {
-  let scheduler = ChromeUtils.import("resource://gre/modules/TelemetryScheduler.jsm", null);
+  let scheduler = ChromeUtils.import(
+    "resource://gre/modules/TelemetryScheduler.jsm",
+    null
+  );
   return scheduler.TelemetryScheduler.observe(null, topic, null);
 }
 
@@ -32,28 +38,57 @@ function checkPingStructure(ping, type, reason) {
 
   
   const ALLOWED_ENVIRONMENT_KEYS = ["settings", "system", "profile"];
-  Assert.deepEqual(ALLOWED_ENVIRONMENT_KEYS, Object.keys(environment), "Environment should only contain a limited set of keys.");
+  Assert.deepEqual(
+    ALLOWED_ENVIRONMENT_KEYS,
+    Object.keys(environment),
+    "Environment should only contain a limited set of keys."
+  );
 
   
-  Assert.deepEqual(["locale"], Object.keys(environment.settings), "Settings environment should only contain locale");
-  Assert.deepEqual(["cpu", "memoryMB", "os"], Object.keys(environment.system).sort(),
-    "System environment should contain a limited set of keys");
-  Assert.deepEqual(["locale", "name", "version"], Object.keys(environment.system.os).sort(),
-    "system.environment.os should contain a limited set of keys");
+  Assert.deepEqual(
+    ["locale"],
+    Object.keys(environment.settings),
+    "Settings environment should only contain locale"
+  );
+  Assert.deepEqual(
+    ["cpu", "memoryMB", "os"],
+    Object.keys(environment.system).sort(),
+    "System environment should contain a limited set of keys"
+  );
+  Assert.deepEqual(
+    ["locale", "name", "version"],
+    Object.keys(environment.system.os).sort(),
+    "system.environment.os should contain a limited set of keys"
+  );
 
   
   let payload = ping.payload;
   Assert.equal(payload.reason, reason, "Ping reason must match.");
-  Assert.ok(payload.duration >= 0, "Payload must have a duration greater or equal to 0");
-  Assert.ok("ecosystemClientId" in payload, "Payload must contain the ecosystem client ID");
+  Assert.ok(
+    payload.duration >= 0,
+    "Payload must have a duration greater or equal to 0"
+  );
+  Assert.ok(
+    "ecosystemClientId" in payload,
+    "Payload must contain the ecosystem client ID"
+  );
 
   Assert.ok("scalars" in payload, "Payload must contain scalars");
   Assert.ok("keyedScalars" in payload, "Payload must contain keyed scalars");
   Assert.ok("histograms" in payload, "Payload must contain histograms");
-  Assert.ok("keyedHistograms" in payload, "Payload must contain keyed histograms");
+  Assert.ok(
+    "keyedHistograms" in payload,
+    "Payload must contain keyed histograms"
+  );
 
-  Assert.ok("telemetry.ecosystem_old_send_time" in payload.scalars.parent, "Old send time should be set");
-  Assert.ok("telemetry.ecosystem_new_send_time" in payload.scalars.parent, "New send time should be set");
+  Assert.ok(
+    "telemetry.ecosystem_old_send_time" in payload.scalars.parent,
+    "Old send time should be set"
+  );
+  Assert.ok(
+    "telemetry.ecosystem_new_send_time" in payload.scalars.parent,
+    "New send time should be set"
+  );
 }
 
 function sendPing() {
@@ -61,7 +96,10 @@ function sendPing() {
 }
 
 function fakeFxaUid(fn) {
-  const m = ChromeUtils.import("resource://gre/modules/EcosystemTelemetry.jsm", null);
+  const m = ChromeUtils.import(
+    "resource://gre/modules/EcosystemTelemetry.jsm",
+    null
+  );
   let oldFn = m.Policy.fxaUid;
   m.Policy.fxaUid = fn;
   return oldFn;
@@ -79,171 +117,198 @@ add_task(async function setup() {
 
   
   PingServer.start();
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(
+    TelemetryUtils.Preferences.Server,
+    "http://localhost:" + PingServer.port
+  );
   TelemetrySend.setServer("http://localhost:" + PingServer.port);
 
   await TelemetryController.testSetup();
 });
 
 
-add_task({
-  skip_if: () => !gIsAndroid,
-}, async function test_no_ecosystem_ping_on_fennec() {
-  
-  Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
-  EcosystemTelemetry.testReset();
+add_task(
+  {
+    skip_if: () => !gIsAndroid,
+  },
+  async function test_no_ecosystem_ping_on_fennec() {
+    
+    Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
+    EcosystemTelemetry.testReset();
 
-  
-  
-  EcosystemTelemetry.periodicPing();
-  
-  sendPing();
+    
+    
+    EcosystemTelemetry.periodicPing();
+    
+    sendPing();
 
-  let ping = await PingServer.promiseNextPing();
-  Assert.equal(ping.type, TEST_PING_TYPE, "Should be a test ping.");
-});
+    let ping = await PingServer.promiseNextPing();
+    Assert.equal(ping.type, TEST_PING_TYPE, "Should be a test ping.");
+  }
+);
 
-add_task({
-  skip_if: () => gIsAndroid,
-}, async function test_nosending_if_disabled() {
-  Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, false);
-  EcosystemTelemetry.testReset();
+add_task(
+  {
+    skip_if: () => gIsAndroid,
+  },
+  async function test_nosending_if_disabled() {
+    Preferences.set(
+      TelemetryUtils.Preferences.EcosystemTelemetryEnabled,
+      false
+    );
+    EcosystemTelemetry.testReset();
 
-  
-  
-  EcosystemTelemetry.periodicPing();
-  
-  sendPing();
+    
+    
+    EcosystemTelemetry.periodicPing();
+    
+    sendPing();
 
-  let ping = await PingServer.promiseNextPing();
-  Assert.equal(ping.type, TEST_PING_TYPE, "Should be a test ping.");
-});
+    let ping = await PingServer.promiseNextPing();
+    Assert.equal(ping.type, TEST_PING_TYPE, "Should be a test ping.");
+  }
+);
 
-add_task({
-  skip_if: () => gIsAndroid,
-}, async function test_simple_send() {
-  Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
-  EcosystemTelemetry.testReset();
+add_task(
+  {
+    skip_if: () => gIsAndroid,
+  },
+  async function test_simple_send() {
+    Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
+    EcosystemTelemetry.testReset();
 
-  
-  EcosystemTelemetry.periodicPing();
+    
+    EcosystemTelemetry.periodicPing();
 
-  let ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "periodic");
-});
+    let ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "periodic");
+  }
+);
 
-add_task({
-  skip_if: () => gIsAndroid,
-}, async function test_login_workflow() {
-  
+add_task(
+  {
+    skip_if: () => gIsAndroid,
+  },
+  async function test_login_workflow() {
+    
 
-  Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
-  EcosystemTelemetry.testReset();
+    Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
+    EcosystemTelemetry.testReset();
 
-  let originalFxaUid = fakeFxaUid(() => null);
-  let ping;
+    let originalFxaUid = fakeFxaUid(() => null);
+    let ping;
 
-  
-  EcosystemTelemetry.periodicPing();
-  ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "periodic");
-  Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
+    
+    EcosystemTelemetry.periodicPing();
+    ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "periodic");
+    Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
 
-  
-  
-  EcosystemTelemetry.observe(null, ONLOGIN_NOTIFICATION, null);
-  sendPing();
-  ping = await PingServer.promiseNextPing();
-  Assert.equal(ping.type, TEST_PING_TYPE, "Should be a test ping.");
+    
+    
+    EcosystemTelemetry.observe(null, ONLOGIN_NOTIFICATION, null);
+    sendPing();
+    ping = await PingServer.promiseNextPing();
+    Assert.equal(ping.type, TEST_PING_TYPE, "Should be a test ping.");
 
-  
-  fakeFxaUid(() => "hashed-id");
-  EcosystemTelemetry.observe(null, WEAVE_EVENT, null);
-  ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "login");
-  Assert.ok("uid" in ping.payload, "Ping should contain hashed ID");
+    
+    fakeFxaUid(() => "hashed-id");
+    EcosystemTelemetry.observe(null, WEAVE_EVENT, null);
+    ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "login");
+    Assert.ok("uid" in ping.payload, "Ping should contain hashed ID");
 
-  
-  EcosystemTelemetry.periodicPing();
-  ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "periodic");
-  Assert.ok("uid" in ping.payload, "Ping should contain hashed ID");
+    
+    EcosystemTelemetry.periodicPing();
+    ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "periodic");
+    Assert.ok("uid" in ping.payload, "Ping should contain hashed ID");
 
-  
-  fakeFxaUid(() => null);
-  EcosystemTelemetry.observe(null, ONLOGOUT_NOTIFICATION, null);
-  ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "logout");
-  Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
+    
+    fakeFxaUid(() => null);
+    EcosystemTelemetry.observe(null, ONLOGOUT_NOTIFICATION, null);
+    ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "logout");
+    Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
 
-  
-  EcosystemTelemetry.periodicPing();
-  ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "periodic");
-  Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
+    
+    EcosystemTelemetry.periodicPing();
+    ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "periodic");
+    Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
 
-  
-  EcosystemTelemetry.shutdown();
-  ping = await PingServer.promiseNextPing();
-  checkPingStructure(ping, "pre-account", "shutdown");
-  Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
+    
+    EcosystemTelemetry.shutdown();
+    ping = await PingServer.promiseNextPing();
+    checkPingStructure(ping, "pre-account", "shutdown");
+    Assert.ok(!("uid" in ping.payload), "Ping should not contain a UID");
 
-  
-  fakeFxaUid(originalFxaUid);
-});
+    
+    fakeFxaUid(originalFxaUid);
+  }
+);
 
 
 
 
-add_task({
-  skip_if: () => gIsAndroid,
-}, async function test_periodic_ping() {
-  await TelemetryStorage.testClearPendingPings();
-  PingServer.clearRequests();
+add_task(
+  {
+    skip_if: () => gIsAndroid,
+  },
+  async function test_periodic_ping() {
+    await TelemetryStorage.testClearPendingPings();
+    PingServer.clearRequests();
 
-  const pingType = "pre-account";
+    const pingType = "pre-account";
 
-  let receivedPing = null;
-  
-  
-  PingServer.registerPingHandler(req => {
-    const ping = decodeRequestPayload(req);
-    if (ping.type == pingType) {
-      Assert.ok(!receivedPing, "Telemetry must only send one periodic ecosystem ping.");
-      receivedPing = ping;
-    }
-  });
+    let receivedPing = null;
+    
+    
+    PingServer.registerPingHandler(req => {
+      const ping = decodeRequestPayload(req);
+      if (ping.type == pingType) {
+        Assert.ok(
+          !receivedPing,
+          "Telemetry must only send one periodic ecosystem ping."
+        );
+        receivedPing = ping;
+      }
+    });
 
-  
-  
-  let schedulerTickCallback = null;
-  let now = new Date(2040, 1, 1, 0, 0, 0);
-  fakeNow(now);
-  
-  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  await TelemetryController.testReset();
+    
+    
+    let schedulerTickCallback = null;
+    let now = new Date(2040, 1, 1, 0, 0, 0);
+    fakeNow(now);
+    
+    fakeSchedulerTimer(
+      callback => (schedulerTickCallback = callback),
+      () => {}
+    );
+    await TelemetryController.testReset();
 
-  Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
-  EcosystemTelemetry.testReset();
+    Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
+    EcosystemTelemetry.testReset();
 
-  
-  let firstPeriodicDue = new Date(2040, 1, 2, 0, 0, 0);
-  fakeNow(firstPeriodicDue);
+    
+    let firstPeriodicDue = new Date(2040, 1, 2, 0, 0, 0);
+    fakeNow(firstPeriodicDue);
 
-  
-  Assert.ok(!!schedulerTickCallback);
-  let tickPromise = schedulerTickCallback();
+    
+    Assert.ok(!!schedulerTickCallback);
+    let tickPromise = schedulerTickCallback();
 
-  
-  fakeIdleNotification("idle");
-  fakeIdleNotification("active");
+    
+    fakeIdleNotification("idle");
+    fakeIdleNotification("active");
 
-  
-  await tickPromise;
+    
+    await tickPromise;
 
-  await TelemetrySend.testWaitOnOutgoingPings();
+    await TelemetrySend.testWaitOnOutgoingPings();
 
-  
-  Assert.ok(receivedPing, "Telemetry must send one ecosystem periodic ping.");
-  checkPingStructure(receivedPing, pingType, "periodic");
-});
+    
+    Assert.ok(receivedPing, "Telemetry must send one ecosystem periodic ping.");
+    checkPingStructure(receivedPing, pingType, "periodic");
+  }
+);

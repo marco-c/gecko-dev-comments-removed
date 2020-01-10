@@ -3,85 +3,93 @@
 
 
 function run_test() {
-  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
+  );
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const { FileUtils } = ChromeUtils.import(
+    "resource://gre/modules/FileUtils.jsm"
+  );
 
-  let isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
-
-  
-  let paths = isWindows ? [
-    "C:\\",
-    "C:\\test",
-    "C:\\test\\",
-    "C:\\test%2f",
-    "C:\\test\\test\\test",
-    "C:\\test;+%",
-    "C:\\test?action=index\\",
-    "C:\\test\ test",
-    "\\\\C:\\a\\b\\c",
-    "\\\\Server\\a\\b\\c",
-
-    
-    
-    "C:\\char^",
-    "C:\\char&",
-    "C:\\char'",
-    "C:\\char@",
-    "C:\\char{",
-    "C:\\char}",
-    "C:\\char[",
-    "C:\\char]",
-    "C:\\char,",
-    "C:\\char$",
-    "C:\\char=",
-    "C:\\char!",
-    "C:\\char-",
-    "C:\\char#",
-    "C:\\char(",
-    "C:\\char)",
-    "C:\\char%",
-    "C:\\char.",
-    "C:\\char+",
-    "C:\\char~",
-    "C:\\char_",
-  ] : [
-    "/",
-    "/test",
-    "/test/",
-    "/test%2f",
-    "/test/test/test",
-    "/test;+%",
-    "/test?action=index/",
-    "/test\ test",
-    '/punctuation/;,/?:@&=+$-_.!~*\'()[]"#',
-    "/CasePreserving",
-  ];
+  let isWindows = "@mozilla.org/windows-registry-key;1" in Cc;
 
   
-  let uris = isWindows ? [
-    "file:///C:/test/",
-    "file://localhost/C:/test",
-    "file:///c:/test/test.txt",
-    
-    "file:///C:/%3f%3F",
-    "file:///C:/%3b%3B",
-    "file:///C:/%3c%3C", 
-    "file:///C:/%78", 
-    "file:///C:/test#frag", 
-    "file:///C:/test?action=index", 
-  ] : [
-    "file:///test/",
-    "file://localhost/test",
-    "file:///test/test.txt",
-    "file:///foo%2f", 
-    "file:///%3f%3F",
-    "file:///%3b%3B",
-    "file:///%3c%3C", 
-    "file:///%78", 
-    "file:///test#frag", 
-    "file:///test?action=index", 
-  ];
+  let paths = isWindows
+    ? [
+        "C:\\",
+        "C:\\test",
+        "C:\\test\\",
+        "C:\\test%2f",
+        "C:\\test\\test\\test",
+        "C:\\test;+%",
+        "C:\\test?action=index\\",
+        "C:\\test test",
+        "\\\\C:\\a\\b\\c",
+        "\\\\Server\\a\\b\\c",
+
+        
+        
+        "C:\\char^",
+        "C:\\char&",
+        "C:\\char'",
+        "C:\\char@",
+        "C:\\char{",
+        "C:\\char}",
+        "C:\\char[",
+        "C:\\char]",
+        "C:\\char,",
+        "C:\\char$",
+        "C:\\char=",
+        "C:\\char!",
+        "C:\\char-",
+        "C:\\char#",
+        "C:\\char(",
+        "C:\\char)",
+        "C:\\char%",
+        "C:\\char.",
+        "C:\\char+",
+        "C:\\char~",
+        "C:\\char_",
+      ]
+    : [
+        "/",
+        "/test",
+        "/test/",
+        "/test%2f",
+        "/test/test/test",
+        "/test;+%",
+        "/test?action=index/",
+        "/test test",
+        "/punctuation/;,/?:@&=+$-_.!~*'()[]\"#",
+        "/CasePreserving",
+      ];
+
+  
+  let uris = isWindows
+    ? [
+        "file:///C:/test/",
+        "file://localhost/C:/test",
+        "file:///c:/test/test.txt",
+        
+        "file:///C:/%3f%3F",
+        "file:///C:/%3b%3B",
+        "file:///C:/%3c%3C", 
+        "file:///C:/%78", 
+        "file:///C:/test#frag", 
+        "file:///C:/test?action=index", 
+      ]
+    : [
+        "file:///test/",
+        "file://localhost/test",
+        "file:///test/test.txt",
+        "file:///foo%2f", 
+        "file:///%3f%3F",
+        "file:///%3b%3B",
+        "file:///%3c%3C", 
+        "file:///%78", 
+        "file:///test#frag", 
+        "file:///test?action=index", 
+      ];
 
   for (let path of paths) {
     

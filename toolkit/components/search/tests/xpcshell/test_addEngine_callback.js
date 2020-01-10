@@ -5,9 +5,11 @@
 
 
 
-const {MockRegistrar} = ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
+const { MockRegistrar } = ChromeUtils.import(
+  "resource://testing-common/MockRegistrar.jsm"
+);
 
-"use strict";
+("use strict");
 
 
 var promptService = {
@@ -21,7 +23,10 @@ var prompt = {
 
 
 
-MockRegistrar.register("@mozilla.org/embedcomp/prompt-service;1", promptService);
+MockRegistrar.register(
+  "@mozilla.org/embedcomp/prompt-service;1",
+  promptService
+);
 MockRegistrar.register("@mozilla.org/prompter;1", prompt);
 
 
@@ -32,11 +37,17 @@ add_task(async function init_search_service() {
 
 
 add_task(async function simple_callback_test() {
-  let engine = await Services.search.addEngine(gDataUrl + "engine.xml", null, false);
+  let engine = await Services.search.addEngine(
+    gDataUrl + "engine.xml",
+    null,
+    false
+  );
   Assert.ok(!!engine);
   Assert.notEqual(engine.name, (await Services.search.getDefault()).name);
-  Assert.equal(engine.wrappedJSObject._loadPath,
-               "[http]localhost/test-search-engine.xml");
+  Assert.equal(
+    engine.wrappedJSObject._loadPath,
+    "[http]localhost/test-search-engine.xml"
+  );
 });
 
 
@@ -44,7 +55,11 @@ add_task(async function duplicate_failure_test() {
   
   let engine;
   try {
-    engine = await Services.search.addEngine(gDataUrl + "engine.xml", null, false);
+    engine = await Services.search.addEngine(
+      gDataUrl + "engine.xml",
+      null,
+      false
+    );
   } catch (ex) {
     let errorCode = ex.result;
     Assert.ok(!!errorCode);
@@ -59,7 +74,11 @@ add_task(async function load_failure_test() {
   
   let engine;
   try {
-    engine = await Services.search.addEngine("http://invalid/data/engine.xml", null, false);
+    engine = await Services.search.addEngine(
+      "http://invalid/data/engine.xml",
+      null,
+      false
+    );
   } catch (ex) {
     let errorCode = ex.result;
     Assert.ok(!!errorCode);

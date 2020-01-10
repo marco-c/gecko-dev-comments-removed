@@ -5,8 +5,8 @@
 
 const EXPORTED_SYMBOLS = ["TelemetryTestUtils"];
 
-const {Assert} = ChromeUtils.import("resource://testing-common/Assert.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var TelemetryTestUtils = {
   
@@ -39,12 +39,16 @@ var TelemetryTestUtils = {
 
 
   assertKeyedScalar(scalars, scalarName, key, expectedValue) {
-    Assert.ok(scalarName in scalars,
-              scalarName + " must be recorded.");
-    Assert.ok(key in scalars[scalarName],
-              scalarName + " must contain the '" + key + "' key.");
-    Assert.equal(scalars[scalarName][key], expectedValue,
-              scalarName + "['" + key + "'] must contain the expected value");
+    Assert.ok(scalarName in scalars, scalarName + " must be recorded.");
+    Assert.ok(
+      key in scalars[scalarName],
+      scalarName + " must contain the '" + key + "' key."
+    );
+    Assert.equal(
+      scalars[scalarName][key],
+      expectedValue,
+      scalarName + "['" + key + "'] must contain the expected value"
+    );
   },
 
   
@@ -59,14 +63,20 @@ var TelemetryTestUtils = {
 
 
 
-  getProcessScalars(aProcessName, aKeyed = false, aClear = false,
-      aChannel = Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS) {
+  getProcessScalars(
+    aProcessName,
+    aKeyed = false,
+    aClear = false,
+    aChannel = Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS
+  ) {
     const extended = aChannel == Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS;
     const currentExtended = Services.telemetry.canRecordExtended;
     Services.telemetry.canRecordExtended = extended;
-    const scalars = aKeyed ?
-      Services.telemetry.getSnapshotForKeyedScalars("main", aClear)[aProcessName] :
-      Services.telemetry.getSnapshotForScalars("main", aClear)[aProcessName];
+    const scalars = aKeyed
+      ? Services.telemetry.getSnapshotForKeyedScalars("main", aClear)[
+          aProcessName
+        ]
+      : Services.telemetry.getSnapshotForScalars("main", aClear)[aProcessName];
     Services.telemetry.canRecordExtended = currentExtended;
     return scalars || {};
   },
@@ -83,7 +93,10 @@ var TelemetryTestUtils = {
   assertNumberOfEvents(numEvents, filter, options) {
     
     TelemetryTestUtils.assertEvents(
-      Array.from({length: numEvents}, () => ({})), filter, options);
+      Array.from({ length: numEvents }, () => ({})),
+      filter,
+      options
+    );
   },
 
   
@@ -108,43 +121,64 @@ var TelemetryTestUtils = {
 
 
 
-  assertEvents(expectedEvents, filter = {}, {clear = true, process = "parent"} = {}) {
+  assertEvents(
+    expectedEvents,
+    filter = {},
+    { clear = true, process = "parent" } = {}
+  ) {
     
-    let snapshots = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS, clear);
+    let snapshots = Services.telemetry.snapshotEvents(
+      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
+      clear
+    );
     if (expectedEvents.length === 0 && !(process in snapshots)) {
       
       return;
     }
-    Assert.ok(process in snapshots, `${process} must be in snapshot. Has [${Object.keys(snapshots)}].`);
+    Assert.ok(
+      process in snapshots,
+      `${process} must be in snapshot. Has [${Object.keys(snapshots)}].`
+    );
     let snapshot = snapshots[process];
 
     
-    let {category: filterCategory, method: filterMethod, object: filterObject} = filter;
+    let {
+      category: filterCategory,
+      method: filterMethod,
+      object: filterObject,
+    } = filter;
     let matches = (expected, actual) => {
       if (expected === undefined) {
         return true;
-      } else if (expected && expected.test) { 
+      } else if (expected && expected.test) {
+        
         return expected.test(actual);
-      } else if ((typeof expected) === "function") {
+      } else if (typeof expected === "function") {
         return expected(actual);
       }
       return expected === actual;
     };
 
     let filtered = snapshot
-      .map(([, category, method, object, value, extra]) => {
+      .map(([,  category, method, object, value, extra]) => {
         
         
         return [category, method, object, value, extra];
-      }).filter(([category, method, object]) => {
-        return matches(filterCategory, category)
-          && matches(filterMethod, method)
-          && matches(filterObject, object);
+      })
+      .filter(([category, method, object]) => {
+        return (
+          matches(filterCategory, category) &&
+          matches(filterMethod, method) &&
+          matches(filterObject, object)
+        );
       });
 
     
-    Assert.equal(expectedEvents.length, filtered.length,
-      "After filtering we must have the expected number of events.");
+    Assert.equal(
+      expectedEvents.length,
+      filtered.length,
+      "After filtering we must have the expected number of events."
+    );
     if (expectedEvents.length === 0) {
       
       return;
@@ -153,8 +187,14 @@ var TelemetryTestUtils = {
     
     if (!Array.isArray(expectedEvents[0])) {
       expectedEvents = expectedEvents.map(
-        ({category, method, object, value, extra}) =>
-          [category, method, object, value, extra]);
+        ({ category, method, object, value, extra }) => [
+          category,
+          method,
+          object,
+          value,
+          extra,
+        ]
+      );
     }
 
     const FIELD_NAMES = ["category", "method", "object", "value", "extra"];
@@ -169,23 +209,46 @@ var TelemetryTestUtils = {
           
           continue;
         }
-        Assert.report(!matches(expected[j], actual[j]), actual[j], expected[j],
-            `${FIELD_NAMES[j]} in event ${actual[0]}#${actual[1]}#${actual[2]} must match.`,
-            "matches");
+        Assert.report(
+          !matches(expected[j], actual[j]),
+          actual[j],
+          expected[j],
+          `${FIELD_NAMES[j]} in event ${actual[0]}#${actual[1]}#${
+            actual[2]
+          } must match.`,
+          "matches"
+        );
       }
 
       
-      if (expected.length > EXTRA_INDEX && expected[EXTRA_INDEX] !== undefined) {
-        Assert.ok(actual.length > EXTRA_INDEX,
-            `Actual event ${actual[0]}#${actual[1]}#${actual[2]} expected to have extra.`);
+      if (
+        expected.length > EXTRA_INDEX &&
+        expected[EXTRA_INDEX] !== undefined
+      ) {
+        Assert.ok(
+          actual.length > EXTRA_INDEX,
+          `Actual event ${actual[0]}#${actual[1]}#${
+            actual[2]
+          } expected to have extra.`
+        );
         let expectedExtra = expected[EXTRA_INDEX];
         let actualExtra = actual[EXTRA_INDEX];
         for (let [key, value] of Object.entries(expectedExtra)) {
-          Assert.ok(key in actualExtra,
-              `Expected key ${key} must be in actual extra. Actual keys: [${Object.keys(actualExtra)}].`);
-          Assert.report(!matches(value, actualExtra[key]), actualExtra[key], value,
-              `extra[${key}] must match in event ${actual[0]}#${actual[1]}#${actual[2]}.`,
-              "matches");
+          Assert.ok(
+            key in actualExtra,
+            `Expected key ${key} must be in actual extra. Actual keys: [${Object.keys(
+              actualExtra
+            )}].`
+          );
+          Assert.report(
+            !matches(value, actualExtra[key]),
+            actualExtra[key],
+            value,
+            `extra[${key}] must match in event ${actual[0]}#${actual[1]}#${
+              actual[2]
+            }.`,
+            "matches"
+          );
         }
       }
     }
@@ -204,7 +267,6 @@ var TelemetryTestUtils = {
     histogram.clear();
     return histogram;
   },
-
 
   
 
@@ -232,14 +294,23 @@ var TelemetryTestUtils = {
     for (let [i, val] of Object.entries(snapshot.values)) {
       if (i == index) {
         found = true;
-        Assert.equal(val, expected,
-          `expected counts should match for ${histogram.name()} at index ${i}`);
+        Assert.equal(
+          val,
+          expected,
+          `expected counts should match for ${histogram.name()} at index ${i}`
+        );
       } else {
-        Assert.equal(val, 0,
-          `unexpected counts should be zero for ${histogram.name()} at index ${i}`);
+        Assert.equal(
+          val,
+          0,
+          `unexpected counts should be zero for ${histogram.name()} at index ${i}`
+        );
       }
     }
-    Assert.ok(found, `Should have found an entry for ${histogram.name()} at index ${index}`);
+    Assert.ok(
+      found,
+      `Should have found an entry for ${histogram.name()} at index ${index}`
+    );
   },
 
   
@@ -252,12 +323,21 @@ var TelemetryTestUtils = {
   assertKeyedHistogramSum(histogram, key, expected) {
     const snapshot = histogram.snapshot();
     if (expected === undefined) {
-      Assert.ok(!(key in snapshot), `The histogram ${histogram.name()} must not contain ${key}.`);
+      Assert.ok(
+        !(key in snapshot),
+        `The histogram ${histogram.name()} must not contain ${key}.`
+      );
       return;
     }
-    Assert.ok(key in snapshot, `The histogram ${histogram.name()} must contain ${key}.`);
-    Assert.equal(snapshot[key].sum, expected,
-      `The key ${key} must contain the expected sum in ${histogram.name()}.`);
+    Assert.ok(
+      key in snapshot,
+      `The histogram ${histogram.name()} must contain ${key}.`
+    );
+    Assert.equal(
+      snapshot[key].sum,
+      expected,
+      `The key ${key} must contain the expected sum in ${histogram.name()}.`
+    );
   },
 
   
@@ -277,11 +357,17 @@ var TelemetryTestUtils = {
     }
     for (let [i, val] of Object.entries(snapshot[key].values)) {
       if (i == index) {
-        Assert.equal(val, expected,
-          `expected counts should match for ${histogram.name()} at index ${i}`);
+        Assert.equal(
+          val,
+          expected,
+          `expected counts should match for ${histogram.name()} at index ${i}`
+        );
       } else {
-        Assert.equal(val, 0,
-          `unexpected counts should be zero for ${histogram.name() } at index ${i}`);
+        Assert.equal(
+          val,
+          0,
+          `unexpected counts should be zero for ${histogram.name()} at index ${i}`
+        );
       }
     }
   },

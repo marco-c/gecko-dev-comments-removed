@@ -1,19 +1,20 @@
 "use strict";
 
-const HOSTS = new Set([
-  "example.com",
-]);
+const HOSTS = new Set(["example.com"]);
 
-const server = createHttpServer({hosts: HOSTS});
+const server = createHttpServer({ hosts: HOSTS });
 
 server.registerDirectory("/data/", do_get_file("data"));
 
-server.registerPathHandler("/file_webrequestblocking_set_cookie.html", (request, response) => {
-  response.setStatusLine(request.httpVersion, 200, "OK");
-  response.setHeader("Content-Type", "text/html", false);
-  response.setHeader("Set-Cookie", "reqcookie=reqvalue", false);
-  response.write("<!DOCTYPE html><html></html>");
-});
+server.registerPathHandler(
+  "/file_webrequestblocking_set_cookie.html",
+  (request, response) => {
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    response.setHeader("Content-Type", "text/html", false);
+    response.setHeader("Set-Cookie", "reqcookie=reqvalue", false);
+    response.write("<!DOCTYPE html><html></html>");
+  }
+);
 
 add_task(async function test_modifying_cookies_from_onHeadersReceived() {
   async function background() {
@@ -30,14 +31,26 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
     async function checkCookies(prefixes) {
       const numPrefixes = prefixes.length;
       const currentCookies = await browser.cookies.getAll({});
-      browser.test.assertEq(numPrefixes, currentCookies.length, `${numPrefixes} cookies were set`);
+      browser.test.assertEq(
+        numPrefixes,
+        currentCookies.length,
+        `${numPrefixes} cookies were set`
+      );
 
       for (let cookiePrefix of prefixes) {
         let cookieName = `${cookiePrefix}cookie`;
         let expectedCookieValue = `${cookiePrefix}value`;
-        let fetchedCookie = await browser.cookies.getAll({name: cookieName});
-        browser.test.assertEq(1, fetchedCookie.length, `Found 1 cookie with name "${cookieName}"`);
-        browser.test.assertEq(expectedCookieValue, fetchedCookie[0] && fetchedCookie[0].value, `Cookie "${cookieName}" has expected value of "${expectedCookieValue}"`);
+        let fetchedCookie = await browser.cookies.getAll({ name: cookieName });
+        browser.test.assertEq(
+          1,
+          fetchedCookie.length,
+          `Found 1 cookie with name "${cookieName}"`
+        );
+        browser.test.assertEq(
+          expectedCookieValue,
+          fetchedCookie[0] && fetchedCookie[0].value,
+          `Cookie "${cookieName}" has expected value of "${expectedCookieValue}"`
+        );
       }
     }
 
@@ -62,7 +75,10 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
 
     function openContentPage(filename) {
       let promise = awaitMessage("url-loaded");
-      browser.test.sendMessage("load-url", `http://example.com/${filename}?nocache=${Math.random()}`);
+      browser.test.sendMessage(
+        "load-url",
+        `http://example.com/${filename}?nocache=${Math.random()}`
+      );
       return promise;
     }
 
@@ -119,7 +135,11 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
         responseHeaders: details.responseHeaders,
       };
     };
-    browser.webRequest.onHeadersReceived.addListener(onHeadersReceived, filter, headersReceivedInfoSpec);
+    browser.webRequest.onHeadersReceived.addListener(
+      onHeadersReceived,
+      filter,
+      headersReceivedInfoSpec
+    );
 
     
     
@@ -129,7 +149,10 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
     
     
     
-    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", ["ext", "req"]);
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", [
+      "ext",
+      "req",
+    ]);
 
     
     
@@ -146,10 +169,20 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
         responseHeaders: details.responseHeaders,
       };
     };
-    browser.webRequest.onHeadersReceived.addListener(thirdOnHeadersRecievedListener, filter, headersReceivedInfoSpec);
-    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", ["ext", "req", "third"]);
+    browser.webRequest.onHeadersReceived.addListener(
+      thirdOnHeadersRecievedListener,
+      filter,
+      headersReceivedInfoSpec
+    );
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", [
+      "ext",
+      "req",
+      "third",
+    ]);
     browser.webRequest.onHeadersReceived.removeListener(onHeadersReceived);
-    browser.webRequest.onHeadersReceived.removeListener(thirdOnHeadersRecievedListener);
+    browser.webRequest.onHeadersReceived.removeListener(
+      thirdOnHeadersRecievedListener
+    );
 
     
     
@@ -158,7 +191,9 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
     
     const fourthOnHeadersRecievedListener = details => {
       
-      const newHeaders = details.responseHeaders.filter(cookie => cookie.name !== "set-cookie");
+      const newHeaders = details.responseHeaders.filter(
+        cookie => cookie.name !== "set-cookie"
+      );
 
       
       newHeaders.push({
@@ -170,9 +205,17 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
         responseHeaders: newHeaders,
       };
     };
-    browser.webRequest.onHeadersReceived.addListener(fourthOnHeadersRecievedListener, filter, headersReceivedInfoSpec);
-    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", ["ext"]);
-    browser.webRequest.onHeadersReceived.removeListener(fourthOnHeadersRecievedListener);
+    browser.webRequest.onHeadersReceived.addListener(
+      fourthOnHeadersRecievedListener,
+      filter,
+      headersReceivedInfoSpec
+    );
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", [
+      "ext",
+    ]);
+    browser.webRequest.onHeadersReceived.removeListener(
+      fourthOnHeadersRecievedListener
+    );
 
     
     
@@ -181,7 +224,9 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
     
     const fifthOnHeadersRecievedListener = details => {
       
-      const newHeaders = details.responseHeaders.filter(cookie => cookie.name !== "set-cookie");
+      const newHeaders = details.responseHeaders.filter(
+        cookie => cookie.name !== "set-cookie"
+      );
 
       
       newHeaders.push({
@@ -193,20 +238,40 @@ add_task(async function test_modifying_cookies_from_onHeadersReceived() {
         responseHeaders: newHeaders,
       };
     };
-    browser.webRequest.onHeadersReceived.addListener(fifthOnHeadersRecievedListener, filter, headersReceivedInfoSpec);
+    browser.webRequest.onHeadersReceived.addListener(
+      fifthOnHeadersRecievedListener,
+      filter,
+      headersReceivedInfoSpec
+    );
 
-    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", undefined, async () => {
-      const currentCookies = await browser.cookies.getAll({});
-      browser.test.assertEq(1, currentCookies.length, `1 cookie was set`);
+    await testCookiesWithFile(
+      "file_webrequestblocking_set_cookie.html",
+      undefined,
+      async () => {
+        const currentCookies = await browser.cookies.getAll({});
+        browser.test.assertEq(1, currentCookies.length, `1 cookie was set`);
 
-      const cookieName = "reqcookie";
-      const expectedCookieValue = "changedvalue";
-      const fetchedCookie = await browser.cookies.getAll({name: cookieName});
+        const cookieName = "reqcookie";
+        const expectedCookieValue = "changedvalue";
+        const fetchedCookie = await browser.cookies.getAll({
+          name: cookieName,
+        });
 
-      browser.test.assertEq(1, fetchedCookie.length, `Found 1 cookie with name "${cookieName}"`);
-      browser.test.assertEq(expectedCookieValue, fetchedCookie[0] && fetchedCookie[0].value, `Cookie "${cookieName}" has expected value of "${expectedCookieValue}"`);
-    });
-    browser.webRequest.onHeadersReceived.removeListener(fifthOnHeadersRecievedListener);
+        browser.test.assertEq(
+          1,
+          fetchedCookie.length,
+          `Found 1 cookie with name "${cookieName}"`
+        );
+        browser.test.assertEq(
+          expectedCookieValue,
+          fetchedCookie[0] && fetchedCookie[0].value,
+          `Cookie "${cookieName}" has expected value of "${expectedCookieValue}"`
+        );
+      }
+    );
+    browser.webRequest.onHeadersReceived.removeListener(
+      fifthOnHeadersRecievedListener
+    );
 
     browser.test.notifyPass("cookie modifying extension");
   }

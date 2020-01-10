@@ -1,7 +1,6 @@
 
 
 
-
 add_task(async function() {
   
   
@@ -15,33 +14,41 @@ add_task(async function() {
   await check_autocomplete({
     search: "mozilla",
     searchParam: "enable-actions",
-    matches: [ makeSearchMatch("mozilla", { heuristic: true }) ],
+    matches: [makeSearchMatch("mozilla", { heuristic: true })],
   });
 
   info("search engine, uri-like input");
   await check_autocomplete({
     search: "http:///",
     searchParam: "enable-actions",
-    matches: [ makeSearchMatch("http:///", { heuristic: true }) ],
+    matches: [makeSearchMatch("http:///", { heuristic: true })],
   });
 
   info("search engine, multiple words");
   await check_autocomplete({
     search: "mozzarella cheese",
     searchParam: "enable-actions",
-    matches: [ makeSearchMatch("mozzarella cheese", { heuristic: true }) ],
+    matches: [makeSearchMatch("mozzarella cheese", { heuristic: true })],
   });
 
   info("search engine, after current engine has changed");
-  await Services.search.addEngineWithDetails("MozSearch2",
-    {method: "GET", template: "http://s.example.com/search2"});
+  await Services.search.addEngineWithDetails("MozSearch2", {
+    method: "GET",
+    template: "http://s.example.com/search2",
+  });
   let engine = Services.search.getEngineByName("MozSearch2");
-  notEqual(Services.search.defaultEngine, engine, "New engine shouldn't be the current engine yet");
+  notEqual(
+    Services.search.defaultEngine,
+    engine,
+    "New engine shouldn't be the current engine yet"
+  );
   await Services.search.setDefault(engine);
   await check_autocomplete({
     search: "mozilla",
     searchParam: "enable-actions",
-    matches: [ makeSearchMatch("mozilla", { engineName: "MozSearch2", heuristic: true }) ],
+    matches: [
+      makeSearchMatch("mozilla", { engineName: "MozSearch2", heuristic: true }),
+    ],
   });
 
   await cleanup();

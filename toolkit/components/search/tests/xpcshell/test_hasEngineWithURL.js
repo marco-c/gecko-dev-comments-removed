@@ -12,15 +12,22 @@ function getEngineClone(engine) {
 
 
 function checkEngineState(exists, engine) {
-  Assert.equal(exists, Services.search.hasEngineWithURL(engine.method,
-                                                        engine.formURL,
-                                                        engine.queryParams));
+  Assert.equal(
+    exists,
+    Services.search.hasEngineWithURL(
+      engine.method,
+      engine.formURL,
+      engine.queryParams
+    )
+  );
 }
 
 
 async function addEngineWithParams(engine) {
-  await Services.search.addEngineWithDetails(engine.name,
-    {method: engine.method, template: engine.formURL});
+  await Services.search.addEngineWithDetails(engine.name, {
+    method: engine.method,
+    template: engine.formURL,
+  });
 
   let addedEngine = Services.search.getEngineByName(engine.name);
   for (let param of engine.queryParams) {
@@ -87,7 +94,6 @@ add_task(async function test_hasEngineWithURL() {
   let SORTED_ENGINE_NAME_CHANGE = getEngineClone(SORTED_ENGINE);
   SORTED_ENGINE_NAME_CHANGE.name += " 2";
 
-
   
   
   checkEngineState(false, UNSORTED_ENGINE);
@@ -105,11 +111,9 @@ add_task(async function test_hasEngineWithURL() {
   checkEngineState(false, SORTED_ENGINE_NAME_CHANGE);
   info("There is no NAME modified version of the sorted test engine.");
 
-
   
   await addEngineWithParams(UNSORTED_ENGINE);
   info("The unsorted engine has been added.");
-
 
   
   

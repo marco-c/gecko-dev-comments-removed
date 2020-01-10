@@ -41,19 +41,27 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
-ChromeUtils.defineModuleGetter(this, "PromiseUtils",
-  "resource://gre/modules/PromiseUtils.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "gDebug",
-  "@mozilla.org/xpcom/debug;1", "nsIDebug2");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm"
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gDebug",
+  "@mozilla.org/xpcom/debug;1",
+  "nsIDebug2"
+);
 Object.defineProperty(this, "gCrashReporter", {
   get() {
     delete this.gCrashReporter;
     try {
-      let reporter = Cc["@mozilla.org/xre/app-info;1"].
-            getService(Ci.nsICrashReporter);
-      return this.gCrashReporter = reporter;
+      let reporter = Cc["@mozilla.org/xre/app-info;1"].getService(
+        Ci.nsICrashReporter
+      );
+      return (this.gCrashReporter = reporter);
     } catch (ex) {
-      return this.gCrashReporter = null;
+      return (this.gCrashReporter = null);
     }
   },
   configurable: true,
@@ -64,17 +72,17 @@ Object.defineProperty(this, "gCrashReporter", {
 
 
 
-const isContent = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+const isContent =
+  Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType ==
+  Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 
 
 const DELAY_WARNING_MS = 10 * 1000;
 
 
 
-
 const PREF_DELAY_CRASH_MS = "toolkit.asyncshutdown.crash_timeout";
-var DELAY_CRASH_MS = Services.prefs.getIntPref(PREF_DELAY_CRASH_MS,
-                                               60 * 1000); 
+var DELAY_CRASH_MS = Services.prefs.getIntPref(PREF_DELAY_CRASH_MS, 60 * 1000); 
 Services.prefs.addObserver(PREF_DELAY_CRASH_MS, function() {
   DELAY_CRASH_MS = Services.prefs.getIntPref(PREF_DELAY_CRASH_MS);
 });
@@ -143,7 +151,8 @@ PromiseSet.prototype = {
       err => {
         this._indirections.delete(key);
         indirection.reject(err);
-      });
+      }
+    );
     this._indirections.set(key, indirection);
   },
 
@@ -168,13 +177,11 @@ PromiseSet.prototype = {
     if (!key || typeof key != "object") {
       throw new Error("Expected an object");
     }
-    if ((!("then" in key)) || typeof key.then != "function") {
+    if (!("then" in key) || typeof key.then != "function") {
       throw new Error("Expected a Promise");
     }
   },
-
 };
-
 
 
 
@@ -269,12 +276,16 @@ function looseTimer(delay) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   let beats = Math.ceil(delay / DELAY_BEAT);
   let deferred = PromiseUtils.defer();
-  timer.initWithCallback(function() {
-    if (beats <= 0) {
-      deferred.resolve();
-    }
-    --beats;
-  }, DELAY_BEAT, Ci.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP);
+  timer.initWithCallback(
+    function() {
+      if (beats <= 0) {
+        deferred.resolve();
+      }
+      --beats;
+    },
+    DELAY_BEAT,
+    Ci.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP
+  );
   
   
   deferred.promise.then(() => timer.cancel(), () => timer.cancel());
@@ -343,7 +354,10 @@ var AsyncShutdown = {
 
 
   get _getPhase() {
-    let accepted = Services.prefs.getBoolPref("toolkit.asyncshutdown.testing", false);
+    let accepted = Services.prefs.getBoolPref(
+      "toolkit.asyncshutdown.testing",
+      false
+    );
     if (accepted) {
       return getPhase;
     }
@@ -451,7 +465,10 @@ function getPhase(topic) {
 
 
     get _trigger() {
-      let accepted = Services.prefs.getBoolPref("toolkit.asyncshutdown.testing", false);
+      let accepted = Services.prefs.getBoolPref(
+        "toolkit.asyncshutdown.testing",
+        false
+      );
       if (accepted) {
         return () => spinner.observe();
       }
@@ -506,18 +523,20 @@ Spinner.prototype = {
   
   observe() {
     let topic = this._topic;
-    debug(`Starting phase ${ topic }`);
+    debug(`Starting phase ${topic}`);
     Services.obs.removeObserver(this, topic);
 
     let satisfied = false; 
     let promise;
     try {
-      promise = this._barrier.wait({
-        warnAfterMS: DELAY_WARNING_MS,
-        crashAfterMS: DELAY_CRASH_MS,
-      }).catch(
+      promise = this._barrier
+        .wait({
+          warnAfterMS: DELAY_WARNING_MS,
+          crashAfterMS: DELAY_CRASH_MS,
+        })
+        .catch
         
-      );
+        ();
     } catch (ex) {
       debug("Error waiting for notification");
       throw ex;
@@ -525,7 +544,7 @@ Spinner.prototype = {
 
     
     debug("Spinning the event loop");
-    promise.then(() => satisfied = true); 
+    promise.then(() => (satisfied = true)); 
     let thread = Services.tm.mainThread;
     while (!satisfied) {
       try {
@@ -536,7 +555,7 @@ Spinner.prototype = {
         Promise.reject(ex);
       }
     }
-    debug(`Finished phase ${ topic }`);
+    debug(`Finished phase ${topic}`);
   },
 };
 
@@ -557,7 +576,6 @@ function Barrier(name) {
   if (!name) {
     throw new TypeError("Instances of Barrier need a (non-empty) name");
   }
-
 
   
 
@@ -668,12 +686,18 @@ function Barrier(name) {
         details = {};
       }
       if (typeof details != "object") {
-        throw new TypeError("Expected an object as third argument to `addBlocker`, got " + details);
+        throw new TypeError(
+          "Expected an object as third argument to `addBlocker`, got " + details
+        );
       }
       if (!this._waitForMe) {
-        throw new Error(`Phase "${ this._name }" is finished, it is too late to register completion condition "${ name }"`);
+        throw new Error(
+          `Phase "${
+            this._name
+          }" is finished, it is too late to register completion condition "${name}"`
+        );
       }
-      debug(`Adding blocker ${ name } for phase ${ this._name }`);
+      debug(`Adding blocker ${name} for phase ${this._name}`);
 
       
 
@@ -712,20 +736,22 @@ function Barrier(name) {
       }
 
       
-      promise = promise.catch(error => {
-        let msg = `A blocker encountered an error while we were waiting.
-          Blocker:  ${ name }
-          Phase: ${ this._name }
-          State: ${ safeGetState(fetchState) }`;
-        warn(msg, error);
+      promise = promise
+        .catch(error => {
+          let msg = `A blocker encountered an error while we were waiting.
+          Blocker:  ${name}
+          Phase: ${this._name}
+          State: ${safeGetState(fetchState)}`;
+          warn(msg, error);
 
+          
+          
+          Promise.reject(error);
+        })
+        .catch
         
         
-        Promise.reject(error);
-      }).catch(
-        
-        
-      );
+        ();
 
       let topFrame = null;
       if (filename == null || lineNumber == null || stack == null) {
@@ -748,7 +774,7 @@ function Barrier(name) {
       
       
       promise = promise.then(() => {
-        debug(`Completed blocker ${ name } for phase ${ this._name }`);
+        debug(`Completed blocker ${name} for phase ${this._name}`);
         this._removeBlocker(condition);
       });
 
@@ -770,7 +796,7 @@ function Barrier(name) {
 
 
 
-    removeBlocker: (condition) => {
+    removeBlocker: condition => {
       return this._removeBlocker(condition);
     },
   };
@@ -789,8 +815,8 @@ Barrier.prototype = Object.freeze({
     }
     let frozen = [];
     for (let blocker of this._promiseToBlocker.values()) {
-      let {name, fetchState} = blocker;
-      let {stack, filename, lineNumber} = blocker.getOrigin();
+      let { name, fetchState } = blocker;
+      let { stack, filename, lineNumber } = blocker.getOrigin();
       frozen.push({
         name,
         state: safeGetState(fetchState),
@@ -829,14 +855,18 @@ Barrier.prototype = Object.freeze({
     if (this._promise) {
       return this._promise;
     }
-    return this._promise = this._wait(options);
+    return (this._promise = this._wait(options));
   },
   _wait(options) {
     
     if (this._isStarted) {
       throw new TypeError("Internal error: already started " + this._name);
     }
-    if (!this._waitForMe || !this._conditionToPromise || !this._promiseToBlocker) {
+    if (
+      !this._waitForMe ||
+      !this._conditionToPromise ||
+      !this._promiseToBlocker
+    ) {
       throw new TypeError("Internal error: already finished " + this._name);
     }
 
@@ -855,8 +885,10 @@ Barrier.prototype = Object.freeze({
     promise = promise.catch(function onError(error) {
       
       
-      let msg = "An uncaught error appeared while completing the phase." +
-        " Phase: " + topic;
+      let msg =
+        "An uncaught error appeared while completing the phase." +
+        " Phase: " +
+        topic;
       warn(msg, error);
     });
 
@@ -870,8 +902,10 @@ Barrier.prototype = Object.freeze({
     
     let warnAfterMS = DELAY_WARNING_MS;
     if (options && "warnAfterMS" in options) {
-      if (typeof options.warnAfterMS == "number"
-         || options.warnAfterMS == null) {
+      if (
+        typeof options.warnAfterMS == "number" ||
+        options.warnAfterMS == null
+      ) {
         
         warnAfterMS = options.warnAfterMS;
       } else {
@@ -883,12 +917,19 @@ Barrier.prototype = Object.freeze({
       
       
       let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      timer.initWithCallback(() => {
-        let msg = "At least one completion condition is taking too long to complete." +
-        " Conditions: " + JSON.stringify(this.state) +
-        " Barrier: " + topic;
-        warn(msg);
-      }, warnAfterMS, Ci.nsITimer.TYPE_ONE_SHOT);
+      timer.initWithCallback(
+        () => {
+          let msg =
+            "At least one completion condition is taking too long to complete." +
+            " Conditions: " +
+            JSON.stringify(this.state) +
+            " Barrier: " +
+            topic;
+          warn(msg);
+        },
+        warnAfterMS,
+        Ci.nsITimer.TYPE_ONE_SHOT
+      );
 
       promise = promise.then(function onSuccess() {
         timer.cancel();
@@ -899,8 +940,10 @@ Barrier.prototype = Object.freeze({
 
     let crashAfterMS = DELAY_CRASH_MS;
     if (options && "crashAfterMS" in options) {
-      if (typeof options.crashAfterMS == "number"
-         || options.crashAfterMS == null) {
+      if (
+        typeof options.crashAfterMS == "number" ||
+        options.crashAfterMS == null
+      ) {
         
         crashAfterMS = options.crashAfterMS;
       } else {
@@ -927,8 +970,11 @@ Barrier.prototype = Object.freeze({
           
           
           
-          let msg = "AsyncShutdown timeout in " + topic +
-            " Conditions: " + JSON.stringify(state) +
+          let msg =
+            "AsyncShutdown timeout in " +
+            topic +
+            " Conditions: " +
+            JSON.stringify(state) +
             " At least one completion condition failed to complete" +
             " within a reasonable amount of time. Causing a crash to" +
             " ensure that we do not leave the user with an unresponsive" +
@@ -939,8 +985,10 @@ Barrier.prototype = Object.freeze({
               phase: topic,
               conditions: state,
             };
-            gCrashReporter.annotateCrashReport("AsyncShutdownTimeout",
-              JSON.stringify(data));
+            gCrashReporter.annotateCrashReport(
+              "AsyncShutdownTimeout",
+              JSON.stringify(data)
+            );
           } else {
             warn("No crash reporter available");
           }
@@ -953,7 +1001,7 @@ Barrier.prototype = Object.freeze({
           let filename = "?";
           let lineNumber = -1;
           for (let blocker of this._promiseToBlocker.values()) {
-            ({filename, lineNumber} = blocker.getOrigin());
+            ({ filename, lineNumber } = blocker.getOrigin());
             break;
           }
           gDebug.abort(filename, lineNumber);
@@ -961,18 +1009,25 @@ Barrier.prototype = Object.freeze({
         function onSatisfied() {
           
           
-        });
+        }
+      );
 
-      promise = promise.then(function() {
-        timeToCrash.reject();
-      });
+      promise = promise.then(
+        function() {
+          timeToCrash.reject();
+        } 
+      );
     }
 
     return promise;
   },
 
   _removeBlocker(condition) {
-    if (!this._waitForMe || !this._promiseToBlocker || !this._conditionToPromise) {
+    if (
+      !this._waitForMe ||
+      !this._promiseToBlocker ||
+      !this._conditionToPromise
+    ) {
       
       return false;
     }
@@ -986,7 +1041,6 @@ Barrier.prototype = Object.freeze({
     this._promiseToBlocker.delete(promise);
     return this._waitForMe.delete(promise);
   },
-
 });
 
 
@@ -995,18 +1049,22 @@ Barrier.prototype = Object.freeze({
 
 
 
-
-
 if (!isContent) {
-  this.AsyncShutdown.profileChangeTeardown = getPhase("profile-change-teardown");
+  this.AsyncShutdown.profileChangeTeardown = getPhase(
+    "profile-change-teardown"
+  );
   this.AsyncShutdown.profileBeforeChange = getPhase("profile-before-change");
-  this.AsyncShutdown.sendTelemetry = getPhase("profile-before-change-telemetry");
+  this.AsyncShutdown.sendTelemetry = getPhase(
+    "profile-before-change-telemetry"
+  );
 }
 
 
 
 if (!isContent) {
-  this.AsyncShutdown.quitApplicationGranted = getPhase("quit-application-granted");
+  this.AsyncShutdown.quitApplicationGranted = getPhase(
+    "quit-application-granted"
+  );
 }
 
 

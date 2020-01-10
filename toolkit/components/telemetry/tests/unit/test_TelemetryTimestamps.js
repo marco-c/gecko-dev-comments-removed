@@ -1,14 +1,16 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);
 
 
 
 
-const {updateAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
+const { updateAppInfo } = ChromeUtils.import(
+  "resource://testing-common/AppInfo.jsm"
+);
 updateAppInfo();
 
 var gGlobalScope = this;
@@ -29,7 +31,8 @@ add_task(async function test_setup() {
   await setEmptyPrefWatchlist();
 
   await new Promise(resolve =>
-    Services.telemetry.asyncFetchTelemetryData(resolve));
+    Services.telemetry.asyncFetchTelemetryData(resolve)
+  );
 });
 
 add_task(async function actualTest() {

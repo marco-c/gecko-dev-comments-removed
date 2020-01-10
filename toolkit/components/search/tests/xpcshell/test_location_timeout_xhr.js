@@ -40,20 +40,28 @@ add_task(async function test_location_timeout_xhr() {
   });
 
   let server = startServer(continuePromise);
-  let url = "http://localhost:" + server.identity.primaryPort + "/lookup_country";
+  let url =
+    "http://localhost:" + server.identity.primaryPort + "/lookup_country";
   Services.prefs.setCharPref("browser.search.geoip.url", url);
   
   Services.prefs.setIntPref("browser.search.geoip.timeout", 10);
-  let promiseXHRStarted = SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-starting");
+  let promiseXHRStarted = SearchTestUtils.promiseSearchNotification(
+    "geoip-lookup-xhr-starting"
+  );
   await Services.search.init();
-  ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
+  ok(
+    !Services.prefs.prefHasUserValue("browser.search.region"),
+    "should be no region pref"
+  );
   
   checkCountryResultTelemetry(null);
 
   
-  let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
+  let histogram = Services.telemetry.getHistogramById(
+    "SEARCH_SERVICE_COUNTRY_TIMEOUT"
+  );
   let snapshot = histogram.snapshot();
-  deepEqual(snapshot.values, {0: 0, 1: 1, 2: 0});
+  deepEqual(snapshot.values, { 0: 0, 1: 1, 2: 0 });
 
   
   
@@ -64,21 +72,26 @@ add_task(async function test_location_timeout_xhr() {
     
     xhr.timeout = 10;
     
-    SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(() => {
-      
-      checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
-      
-      
-      verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
-      
-      ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
+    SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(
+      () => {
+        
+        checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
+        
+        
+        verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
+        
+        ok(
+          !Services.prefs.prefHasUserValue("browser.search.region"),
+          "should be no region pref"
+        );
 
-      
-      resolveContinuePromise();
+        
+        resolveContinuePromise();
 
-      return new Promise(resolve => {
-        server.stop(resolve);
-      });
-    });
+        return new Promise(resolve => {
+          server.stop(resolve);
+        });
+      }
+    );
   });
 });

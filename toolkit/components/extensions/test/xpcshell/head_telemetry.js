@@ -4,8 +4,11 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "ContentTaskUtils",
-                               "resource://testing-common/ContentTaskUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "ContentTaskUtils",
+  "resource://testing-common/ContentTaskUtils.jsm"
+);
 
 const IS_OOP = Services.prefs.getBoolPref("extensions.webextensions.remote");
 
@@ -19,11 +22,16 @@ function clearHistograms() {
 }
 
 function getSnapshots(process) {
-  return Services.telemetry.getSnapshotForHistograms("main", false )[process];
+  return Services.telemetry.getSnapshotForHistograms("main", false )[
+    process
+  ];
 }
 
 function getKeyedSnapshots(process) {
-  return Services.telemetry.getSnapshotForKeyedHistograms("main", false )[process];
+  return Services.telemetry.getSnapshotForKeyedHistograms(
+    "main",
+    false 
+  )[process];
 }
 
 
@@ -31,23 +39,40 @@ function getKeyedSnapshots(process) {
 
 function promiseTelemetryRecorded(id, process, expectedCount) {
   let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForHistograms("main",
-                                                               false )[process][id];
+    let snapshot = Services.telemetry.getSnapshotForHistograms(
+      "main",
+      false 
+    )[process][id];
     return snapshot && valueSum(snapshot.values) >= expectedCount;
   };
   return ContentTaskUtils.waitForCondition(condition);
 }
 
-function promiseKeyedTelemetryRecorded(id, process, expectedKey, expectedCount) {
+function promiseKeyedTelemetryRecorded(
+  id,
+  process,
+  expectedKey,
+  expectedCount
+) {
   let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForKeyedHistograms("main",
-                                                                    false )[process][id];
-    return snapshot && snapshot[expectedKey] && valueSum(snapshot[expectedKey].values) >= expectedCount;
+    let snapshot = Services.telemetry.getSnapshotForKeyedHistograms(
+      "main",
+      false 
+    )[process][id];
+    return (
+      snapshot &&
+      snapshot[expectedKey] &&
+      valueSum(snapshot[expectedKey].values) >= expectedCount
+    );
   };
   return ContentTaskUtils.waitForCondition(condition);
 }
 
-function assertHistogramSnapshot(histogramId, {keyed, processSnapshot, expectedValue}, msg) {
+function assertHistogramSnapshot(
+  histogramId,
+  { keyed, processSnapshot, expectedValue },
+  msg
+) {
   let histogram;
 
   if (keyed) {
@@ -62,16 +87,24 @@ function assertHistogramSnapshot(histogramId, {keyed, processSnapshot, expectedV
 }
 
 function assertHistogramEmpty(histogramId) {
-  assertHistogramSnapshot(histogramId, {
-    processSnapshot: (snapshot) => snapshot.sum,
-    expectedValue: 0,
-  }, `No data recorded for histogram: ${histogramId}.`);
+  assertHistogramSnapshot(
+    histogramId,
+    {
+      processSnapshot: snapshot => snapshot.sum,
+      expectedValue: 0,
+    },
+    `No data recorded for histogram: ${histogramId}.`
+  );
 }
 
 function assertKeyedHistogramEmpty(histogramId) {
-  assertHistogramSnapshot(histogramId, {
-    keyed: true,
-    processSnapshot: (snapshot) => Object.keys(snapshot).length,
-    expectedValue: 0,
-  }, `No data recorded for histogram: ${histogramId}.`);
+  assertHistogramSnapshot(
+    histogramId,
+    {
+      keyed: true,
+      processSnapshot: snapshot => Object.keys(snapshot).length,
+      expectedValue: 0,
+    },
+    `No data recorded for histogram: ${histogramId}.`
+  );
 }

@@ -2,7 +2,7 @@
 
 
 
- 
+
 
 "use strict";
 
@@ -11,23 +11,28 @@ var Primitives = {};
 var SharedAll;
 if (typeof Components != "undefined") {
   SharedAll = {};
-  ChromeUtils.import("resource://gre/modules/osfile/osfile_shared_allthreads.jsm", SharedAll);
+  ChromeUtils.import(
+    "resource://gre/modules/osfile/osfile_shared_allthreads.jsm",
+    SharedAll
+  );
 
-  this.EXPORTED_SYMBOLS = [
-    "Primitives",
-  ];
+  this.EXPORTED_SYMBOLS = ["Primitives"];
   this.Primitives = Primitives;
   this.exports = {};
 } else if (typeof module != "undefined" && typeof require != "undefined") {
   SharedAll = require("resource://gre/modules/osfile/osfile_shared_allthreads.jsm");
 } else {
-  throw new Error("Please load this module with Component.utils.import or with require()");
+  throw new Error(
+    "Please load this module with Component.utils.import or with require()"
+  );
 }
 
 var libxul = new SharedAll.Library("libxul", SharedAll.Constants.Path.libxul);
 var Type = SharedAll.Type;
 
-libxul.declareLazyFFI(Primitives, "compress",
+libxul.declareLazyFFI(
+  Primitives,
+  "compress",
   "workerlz4_compress",
   null,
    Type.size_t,
@@ -36,7 +41,9 @@ libxul.declareLazyFFI(Primitives, "compress",
    Type.void_t.out_ptr
 );
 
-libxul.declareLazyFFI(Primitives, "decompress",
+libxul.declareLazyFFI(
+  Primitives,
+  "decompress",
   "workerlz4_decompress",
   null,
    Type.int,
@@ -47,7 +54,9 @@ libxul.declareLazyFFI(Primitives, "decompress",
    Type.size_t.out_ptr
 );
 
-libxul.declareLazyFFI(Primitives, "maxCompressedSize",
+libxul.declareLazyFFI(
+  Primitives,
+  "maxCompressedSize",
   "workerlz4_maxCompressedSize",
   null,
    Type.size_t,

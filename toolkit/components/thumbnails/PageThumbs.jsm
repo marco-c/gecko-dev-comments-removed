@@ -40,11 +40,19 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "gUpdateTimerManager",
-  "@mozilla.org/updates/timer-manager;1", "nsIUpdateTimerManager");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gUpdateTimerManager",
+  "@mozilla.org/updates/timer-manager;1",
+  "nsIUpdateTimerManager"
+);
 
-XPCOMUtils.defineLazyServiceGetter(this, "PageThumbsStorageService",
-  "@mozilla.org/thumbnails/pagethumbs-service;1", "nsIPageThumbsStorageService");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "PageThumbsStorageService",
+  "@mozilla.org/thumbnails/pagethumbs-service;1",
+  "nsIPageThumbsStorageService"
+);
 
 
 
@@ -71,9 +79,6 @@ const TaskUtils = {
     });
   },
 };
-
-
-
 
 
 
@@ -132,12 +137,18 @@ var PageThumbs = {
 
 
   getThumbnailURL: function PageThumbs_getThumbnailURL(aUrl) {
-    return this.scheme + "://" + this.staticHost +
-           "/?url=" + encodeURIComponent(aUrl) +
-           "&revision=" + PageThumbsStorage.getRevision(aUrl);
+    return (
+      this.scheme +
+      "://" +
+      this.staticHost +
+      "/?url=" +
+      encodeURIComponent(aUrl) +
+      "&revision=" +
+      PageThumbsStorage.getRevision(aUrl)
+    );
   },
 
-   
+  
 
 
 
@@ -145,9 +156,9 @@ var PageThumbs = {
 
 
 
-   getThumbnailPath: function PageThumbs_getThumbnailPath(aUrl) {
-     return PageThumbsStorageService.getFilePathForURL(aUrl);
-   },
+  getThumbnailPath: function PageThumbs_getThumbnailPath(aUrl) {
+    return PageThumbsStorageService.getFilePathForURL(aUrl);
+  },
 
   
 
@@ -191,10 +202,10 @@ var PageThumbs = {
     let args = {
       fullScale: aArgs ? aArgs.fullScale : false,
     };
-    this._captureToCanvas(aBrowser, aCanvas, args, (aCanvas) => {
+    this._captureToCanvas(aBrowser, aCanvas, args, aCanvas => {
       Services.telemetry
-              .getHistogramById("FX_THUMBNAILS_CAPTURE_TIME_MS")
-              .add(new Date() - telemetryCaptureTime);
+        .getHistogramById("FX_THUMBNAILS_CAPTURE_TIME_MS")
+        .add(new Date() - telemetryCaptureTime);
       if (aCallback) {
         aCallback(aCanvas);
       }
@@ -222,10 +233,16 @@ var PageThumbs = {
     if (aBrowser.isRemoteBrowser) {
       let mm = aBrowser.messageManager;
       let resultFunc = function(aMsg) {
-        mm.removeMessageListener("Browser:Thumbnail:CheckState:Response", resultFunc);
+        mm.removeMessageListener(
+          "Browser:Thumbnail:CheckState:Response",
+          resultFunc
+        );
         aCallback(aMsg.data.result);
       };
-      mm.addMessageListener("Browser:Thumbnail:CheckState:Response", resultFunc);
+      mm.addMessageListener(
+        "Browser:Thumbnail:CheckState:Response",
+        resultFunc
+      );
       try {
         mm.sendAsyncMessage("Browser:Thumbnail:CheckState");
       } catch (ex) {
@@ -235,8 +252,12 @@ var PageThumbs = {
         resultFunc({ data: { result: false } });
       }
     } else {
-      aCallback(PageThumbUtils.shouldStoreContentThumbnail(aBrowser.contentDocument,
-                                                           aBrowser.docShell));
+      aCallback(
+        PageThumbUtils.shouldStoreContentThumbnail(
+          aBrowser.contentDocument,
+          aBrowser.docShell
+        )
+      );
     }
   },
 
@@ -245,9 +266,12 @@ var PageThumbs = {
   _captureToCanvas(aBrowser, aCanvas, aArgs, aCallback) {
     if (aBrowser.isRemoteBrowser) {
       (async () => {
-        let data =
-          await this._captureRemoteThumbnail(aBrowser, aCanvas.width,
-                                             aCanvas.height, aArgs);
+        let data = await this._captureRemoteThumbnail(
+          aBrowser,
+          aCanvas.width,
+          aCanvas.height,
+          aArgs
+        );
         let canvas = data.thumbnail;
         let ctx = canvas.getContext("2d");
         let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -261,9 +285,11 @@ var PageThumbs = {
       return;
     }
     
-    PageThumbUtils.createSnapshotThumbnail(aBrowser.contentWindow,
-                                           aCanvas,
-                                           aArgs);
+    PageThumbUtils.createSnapshotThumbnail(
+      aBrowser.contentWindow,
+      aCanvas,
+      aArgs
+    );
 
     if (aCallback) {
       aCallback(aCanvas);
@@ -303,7 +329,10 @@ var PageThumbs = {
         reader.addEventListener("loadend", function() {
           let image = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "img");
           image.onload = function() {
-            let thumbnail = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "canvas");
+            let thumbnail = doc.createElementNS(
+              PageThumbUtils.HTML_NAMESPACE,
+              "canvas"
+            );
             thumbnail.width = image.naturalWidth;
             thumbnail.height = image.naturalHeight;
             let ctx = thumbnail.getContext("2d");
@@ -370,7 +399,9 @@ var PageThumbs = {
         let buffer = await TaskUtils.readBlob(blob);
         await this._store(originalURL, url, buffer, channelError);
       } catch (ex) {
-        Cu.reportError("Exception thrown during thumbnail capture: '" + ex + "'");
+        Cu.reportError(
+          "Exception thrown during thumbnail capture: '" + ex + "'"
+        );
         isSuccess = false;
       }
       if (aCallback) {
@@ -388,22 +419,31 @@ var PageThumbs = {
 
 
 
-  captureAndStoreIfStale: function PageThumbs_captureAndStoreIfStale(aBrowser, aCallback) {
+  captureAndStoreIfStale: function PageThumbs_captureAndStoreIfStale(
+    aBrowser,
+    aCallback
+  ) {
     let url = aBrowser.currentURI.spec;
-    PageThumbsStorage.isFileRecentForURL(url).then(recent => {
-      if (!recent &&
+    PageThumbsStorage.isFileRecentForURL(url).then(
+      recent => {
+        if (
+          !recent &&
           
           
           aBrowser.currentURI &&
-          aBrowser.currentURI.spec == url) {
-        this.captureAndStore(aBrowser, aCallback);
-      } else if (aCallback) {
-        aCallback(true);
+          aBrowser.currentURI.spec == url
+        ) {
+          this.captureAndStore(aBrowser, aCallback);
+        } else if (aCallback) {
+          aCallback(true);
+        }
+      },
+      err => {
+        if (aCallback) {
+          aCallback(false);
+        }
       }
-    }, err => {
-      if (aCallback)
-        aCallback(false);
-    });
+    );
   },
 
   
@@ -418,11 +458,17 @@ var PageThumbs = {
 
 
 
-  _store: function PageThumbs__store(aOriginalURL, aFinalURL, aData, aNoOverwrite) {
+  _store: function PageThumbs__store(
+    aOriginalURL,
+    aFinalURL,
+    aData,
+    aNoOverwrite
+  ) {
     return (async function() {
       let telemetryStoreTime = new Date();
       await PageThumbsStorage.writeData(aFinalURL, aData, aNoOverwrite);
-      Services.telemetry.getHistogramById("FX_THUMBNAILS_STORE_TIME_MS")
+      Services.telemetry
+        .getHistogramById("FX_THUMBNAILS_STORE_TIME_MS")
         .add(new Date() - telemetryStoreTime);
 
       Services.obs.notifyObservers(null, "page-thumbnail:create", aFinalURL);
@@ -439,7 +485,11 @@ var PageThumbs = {
       
       if (aFinalURL != aOriginalURL) {
         await PageThumbsStorage.copy(aFinalURL, aOriginalURL, aNoOverwrite);
-        Services.obs.notifyObservers(null, "page-thumbnail:create", aOriginalURL);
+        Services.obs.notifyObservers(
+          null,
+          "page-thumbnail:create",
+          aOriginalURL
+        );
       }
     })();
   },
@@ -482,7 +532,9 @@ var PageThumbs = {
 
   _prefEnabled: function PageThumbs_prefEnabled() {
     try {
-      return !Services.prefs.getBoolPref("browser.pagethumbnails.capturing_disabled");
+      return !Services.prefs.getBoolPref(
+        "browser.pagethumbnails.capturing_disabled"
+      );
     } catch (e) {
       return true;
     }
@@ -490,17 +542,18 @@ var PageThumbs = {
 };
 
 var PageThumbsStorage = {
-
   ensurePath: function Storage_ensurePath() {
     
     
     
     
     
-    return PageThumbsWorker.post("makeDir",
-      [PageThumbsStorageService.path, {ignoreExisting: true}]).catch(function onError(aReason) {
-          Cu.reportError("Could not create thumbnails directory" + aReason);
-        });
+    return PageThumbsWorker.post("makeDir", [
+      PageThumbsStorageService.path,
+      { ignoreExisting: true },
+    ]).catch(function onError(aReason) {
+      Cu.reportError("Could not create thumbnails directory" + aReason);
+    });
   },
 
   _revisionTable: {},
@@ -511,8 +564,9 @@ var PageThumbsStorage = {
     
     
     let rev = this._revisionTable[aURL];
-    if (rev == null)
+    if (rev == null) {
       rev = Math.floor(Math.random() * this._revisionRange);
+    }
     this._revisionTable[aURL] = (rev + 1) % this._revisionRange;
   },
 
@@ -564,13 +618,19 @@ var PageThumbsStorage = {
         tmpPath: path + ".tmp",
         bytes: aData.byteLength,
         noOverwrite: aNoOverwrite,
-        flush: false, 
-      }];
-    return PageThumbsWorker.post("writeAtomic", msg,
+        flush: false ,
+      },
+    ];
+    return PageThumbsWorker.post(
+      "writeAtomic",
+      msg,
       msg 
 
-).
-      then(() => this._updateRevision(aURL), this._eatNoOverwriteError(aNoOverwrite));
+
+    ).then(
+      () => this._updateRevision(aURL),
+      this._eatNoOverwriteError(aNoOverwrite)
+    );
   },
 
   
@@ -588,8 +648,14 @@ var PageThumbsStorage = {
     let sourceFile = PageThumbsStorageService.getFilePathForURL(aSourceURL);
     let targetFile = PageThumbsStorageService.getFilePathForURL(aTargetURL);
     let options = { noOverwrite: aNoOverwrite };
-    return PageThumbsWorker.post("copy", [sourceFile, targetFile, options]).
-      then(() => this._updateRevision(aTargetURL), this._eatNoOverwriteError(aNoOverwrite));
+    return PageThumbsWorker.post("copy", [
+      sourceFile,
+      targetFile,
+      options,
+    ]).then(
+      () => this._updateRevision(aTargetURL),
+      this._eatNoOverwriteError(aNoOverwrite)
+    );
   },
 
   
@@ -598,7 +664,9 @@ var PageThumbsStorage = {
 
 
   remove: function Storage_remove(aURL) {
-    return PageThumbsWorker.post("remove", [PageThumbsStorageService.getFilePathForURL(aURL)]);
+    return PageThumbsWorker.post("remove", [
+      PageThumbsStorageService.getFilePathForURL(aURL),
+    ]);
   },
 
   
@@ -625,34 +693,40 @@ var PageThumbsStorage = {
     
     AsyncShutdown.profileBeforeChange.addBlocker(
       "PageThumbs: removing all thumbnails",
-      blocker);
+      blocker
+    );
 
     
     
 
-    let promise = PageThumbsWorker.post("wipe", [PageThumbsStorageService.path]);
+    let promise = PageThumbsWorker.post("wipe", [
+      PageThumbsStorageService.path,
+    ]);
     try {
       await promise;
     } finally {
-       
-       
-       if ("removeBlocker" in AsyncShutdown.profileBeforeChange) {
-         
-         
-         
-         AsyncShutdown.profileBeforeChange.removeBlocker(blocker);
-       }
+      
+      
+      if ("removeBlocker" in AsyncShutdown.profileBeforeChange) {
+        
+        
+        
+        AsyncShutdown.profileBeforeChange.removeBlocker(blocker);
+      }
     }
   },
 
   fileExistsForURL: function Storage_fileExistsForURL(aURL) {
-    return PageThumbsWorker.post("exists", [PageThumbsStorageService.getFilePathForURL(aURL)]);
+    return PageThumbsWorker.post("exists", [
+      PageThumbsStorageService.getFilePathForURL(aURL),
+    ]);
   },
 
   isFileRecentForURL: function Storage_isFileRecentForURL(aURL) {
-    return PageThumbsWorker.post("isFileRecent",
-                                 [PageThumbsStorageService.getFilePathForURL(aURL),
-                                  MAX_THUMBNAIL_AGE_SECS]);
+    return PageThumbsWorker.post("isFileRecent", [
+      PageThumbsStorageService.getFilePathForURL(aURL),
+      MAX_THUMBNAIL_AGE_SECS,
+    ]);
   },
 
   
@@ -667,9 +741,11 @@ var PageThumbsStorage = {
 
   _eatNoOverwriteError: function Storage__eatNoOverwriteError(aNoOverwrite) {
     return function onError(err) {
-      if (!aNoOverwrite ||
-          !(err instanceof OS.File.Error) ||
-          !err.becauseExists) {
+      if (
+        !aNoOverwrite ||
+        !(err instanceof OS.File.Error) ||
+        !err.becauseExists
+      ) {
         throw err;
       }
     };
@@ -677,8 +753,10 @@ var PageThumbsStorage = {
 
   
   getFileForURL: function Storage_getFileForURL_DEPRECATED(aURL) {
-    Deprecated.warning("PageThumbs.getFileForURL is deprecated. Please use PageThumbs.getFilePathForURL and OS.File",
-                       "https://developer.mozilla.org/docs/JavaScript_OS.File");
+    Deprecated.warning(
+      "PageThumbs.getFileForURL is deprecated. Please use PageThumbs.getFilePathForURL and OS.File",
+      "https://developer.mozilla.org/docs/JavaScript_OS.File"
+    );
     
     return new FileUtils.File(PageThumbsStorageService.getFilePathForURL(aURL));
   },
@@ -733,12 +811,12 @@ var PageThumbsStorageMigrator = {
 
   migrateToVersion3: function Migrator_migrateToVersion3(
     local = OS.Constants.Path.localProfileDir,
-    roaming = OS.Constants.Path.profileDir) {
-    PageThumbsWorker.post(
-      "moveOrDeleteAllThumbnails",
-      [OS.Path.join(roaming, THUMBNAIL_DIRECTORY),
-       OS.Path.join(local, THUMBNAIL_DIRECTORY)]
-    );
+    roaming = OS.Constants.Path.profileDir
+  ) {
+    PageThumbsWorker.post("moveOrDeleteAllThumbnails", [
+      OS.Path.join(roaming, THUMBNAIL_DIRECTORY),
+      OS.Path.join(local, THUMBNAIL_DIRECTORY),
+    ]);
   },
 };
 
@@ -746,8 +824,11 @@ var PageThumbsExpiration = {
   _filters: [],
 
   init: function Expiration_init() {
-    gUpdateTimerManager.registerTimer("browser-cleanup-thumbnails", this,
-                                      EXPIRATION_INTERVAL_SECS);
+    gUpdateTimerManager.registerTimer(
+      "browser-cleanup-thumbnails",
+      this,
+      EXPIRATION_INTERVAL_SECS
+    );
   },
 
   addFilter: function Expiration_addFilter(aFilter) {
@@ -756,8 +837,9 @@ var PageThumbsExpiration = {
 
   removeFilter: function Expiration_removeFilter(aFilter) {
     let index = this._filters.indexOf(aFilter);
-    if (index > -1)
+    if (index > -1) {
       this._filters.splice(index, 1);
+    }
   },
 
   notify: function Expiration_notify(aTimer) {
@@ -776,37 +858,36 @@ var PageThumbsExpiration = {
 
     function filterCallback(aURLs) {
       urls = urls.concat(aURLs);
-      if (--filtersToWaitFor == 0)
+      if (--filtersToWaitFor == 0) {
         expire();
+      }
     }
 
     for (let filter of this._filters) {
-      if (typeof filter == "function")
+      if (typeof filter == "function") {
         filter(filterCallback);
-      else
+      } else {
         filter.filterForThumbnailExpiration(filterCallback);
+      }
     }
   },
 
   expireThumbnails: function Expiration_expireThumbnails(aURLsToKeep) {
-    let keep = aURLsToKeep.map(url => PageThumbsStorageService.getLeafNameForURL(url));
-    let msg = [
-      PageThumbsStorageService.path,
-      keep,
-      EXPIRATION_MIN_CHUNK_SIZE,
-    ];
-
-    return PageThumbsWorker.post(
-      "expireFilesInDirectory",
-      msg
+    let keep = aURLsToKeep.map(url =>
+      PageThumbsStorageService.getLeafNameForURL(url)
     );
+    let msg = [PageThumbsStorageService.path, keep, EXPIRATION_MIN_CHUNK_SIZE];
+
+    return PageThumbsWorker.post("expireFilesInDirectory", msg);
   },
 };
 
 
 
 
-var PageThumbsWorker = new BasePromiseWorker("resource://gre/modules/PageThumbsWorker.js");
+var PageThumbsWorker = new BasePromiseWorker(
+  "resource://gre/modules/PageThumbsWorker.js"
+);
 
 
 PageThumbsWorker.ExceptionHandlers["OS.File.Error"] = OS.File.Error.fromMsg;
@@ -826,6 +907,8 @@ var PageThumbsHistoryObserver = {
   onPageChanged() {},
   onDeleteVisits() {},
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsINavHistoryObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsINavHistoryObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 };

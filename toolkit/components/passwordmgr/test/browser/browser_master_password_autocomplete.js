@@ -1,6 +1,7 @@
 
 const HOST = "https://example.com";
-const URL = HOST + "/browser/toolkit/components/passwordmgr/test/browser/form_basic.html";
+const URL =
+  HOST + "/browser/toolkit/components/passwordmgr/test/browser/form_basic.html";
 const TIMEOUT_PREF = "signon.masterPasswordReprompt.timeout_ms";
 
 
@@ -33,7 +34,7 @@ add_task(async function test_mpAutocompleteTimeout() {
 
   
   
-  await SpecialPowers.pushPrefEnv({set: [[TIMEOUT_PREF, 3000]]});
+  await SpecialPowers.pushPrefEnv({ set: [[TIMEOUT_PREF, 3000]] });
 
   
   let dialogShown = waitForDialog();
@@ -48,7 +49,7 @@ add_task(async function test_mpAutocompleteTimeout() {
 
     
     
-    await new Promise((c) => setTimeout(c, 4000));
+    await new Promise(c => setTimeout(c, 4000));
 
     dialogShown = waitForDialog();
     await ContentTask.spawn(browser, null, async function() {

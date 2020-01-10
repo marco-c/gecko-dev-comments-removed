@@ -16,8 +16,10 @@ add_task(async function test_query_result_favicon_changed_on_child() {
 
   
   let query = PlacesUtils.history.getNewQuery();
-  query.setParents([PlacesUtils.bookmarks.menuGuid,
-                    PlacesUtils.bookmarks.toolbarGuid]);
+  query.setParents([
+    PlacesUtils.bookmarks.menuGuid,
+    PlacesUtils.bookmarks.toolbarGuid,
+  ]);
 
   let options = PlacesUtils.history.getNewQueryOptions();
   options.queryType = Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS;
@@ -34,17 +36,21 @@ add_task(async function test_query_result_favicon_changed_on_child() {
         
         
         
-        PlacesUtils.favicons.setAndFetchFaviconForPage(PAGE_URI,
-                                                       SMALLPNG_DATA_URI,
-                                                       false,
-                                                       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
-                                                       null,
-                                                       Services.scriptSecurityManager.getSystemPrincipal());
+        PlacesUtils.favicons.setAndFetchFaviconForPage(
+          PAGE_URI,
+          SMALLPNG_DATA_URI,
+          false,
+          PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
+          null,
+          Services.scriptSecurityManager.getSystemPrincipal()
+        );
       }
     },
     nodeIconChanged(aNode) {
-      do_throw("The icon should be set only for the page," +
-               " not for the containing query.");
+      do_throw(
+        "The icon should be set only for the page," +
+          " not for the containing query."
+      );
     },
   };
   result.addObserver(resultObserver);
@@ -71,51 +77,75 @@ add_task(async function test_query_result_favicon_changed_on_child() {
   await PlacesUtils.history.clear();
 });
 
-add_task(async function test_query_result_favicon_changed_not_affect_lastmodified() {
-  
-  const PAGE_URI2 = Services.io.newURI("http://example.com/test_query_result");
-  let bm = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.menuGuid,
-    title: "test_bookmark",
-    url: PAGE_URI2,
-  });
+add_task(
+  async function test_query_result_favicon_changed_not_affect_lastmodified() {
+    
+    const PAGE_URI2 = Services.io.newURI(
+      "http://example.com/test_query_result"
+    );
+    let bm = await PlacesUtils.bookmarks.insert({
+      parentGuid: PlacesUtils.bookmarks.menuGuid,
+      title: "test_bookmark",
+      url: PAGE_URI2,
+    });
 
-  let result = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.menuGuid);
+    let result = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.menuGuid);
 
-  Assert.equal(result.root.childCount, 1,
-    "Should have only one item in the query");
-  Assert.equal(result.root.getChild(0).uri, PAGE_URI2.spec,
-    "Should have the correct child");
-  Assert.equal(result.root.getChild(0).lastModified, PlacesUtils.toPRTime(bm.lastModified),
-    "Should have the expected last modified date.");
+    Assert.equal(
+      result.root.childCount,
+      1,
+      "Should have only one item in the query"
+    );
+    Assert.equal(
+      result.root.getChild(0).uri,
+      PAGE_URI2.spec,
+      "Should have the correct child"
+    );
+    Assert.equal(
+      result.root.getChild(0).lastModified,
+      PlacesUtils.toPRTime(bm.lastModified),
+      "Should have the expected last modified date."
+    );
 
-  let promise = promiseFaviconChanged(PAGE_URI2, SMALLPNG_DATA_URI);
-  PlacesUtils.favicons.setAndFetchFaviconForPage(PAGE_URI2,
-                                                 SMALLPNG_DATA_URI,
-                                                 false,
-                                                 PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
-                                                 null,
-                                                 Services.scriptSecurityManager.getSystemPrincipal());
-  await promise;
+    let promise = promiseFaviconChanged(PAGE_URI2, SMALLPNG_DATA_URI);
+    PlacesUtils.favicons.setAndFetchFaviconForPage(
+      PAGE_URI2,
+      SMALLPNG_DATA_URI,
+      false,
+      PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
+      null,
+      Services.scriptSecurityManager.getSystemPrincipal()
+    );
+    await promise;
 
-  
-  
-  
-  
+    
+    
+    
+    
 
-  
-  
-  
-  
-  await PlacesTestUtils.promiseAsyncUpdates();
+    
+    
+    
+    
+    await PlacesTestUtils.promiseAsyncUpdates();
 
-  Assert.equal(result.root.childCount, 1,
-    "Should have only one item in the query");
-  Assert.equal(result.root.getChild(0).uri, PAGE_URI2.spec,
-    "Should have the correct child");
-  Assert.equal(result.root.getChild(0).lastModified, PlacesUtils.toPRTime(bm.lastModified),
-    "Should not have changed the last modified date.");
+    Assert.equal(
+      result.root.childCount,
+      1,
+      "Should have only one item in the query"
+    );
+    Assert.equal(
+      result.root.getChild(0).uri,
+      PAGE_URI2.spec,
+      "Should have the correct child"
+    );
+    Assert.equal(
+      result.root.getChild(0).lastModified,
+      PlacesUtils.toPRTime(bm.lastModified),
+      "Should not have changed the last modified date."
+    );
 
-  
-  result.root.containerOpen = false;
-});
+    
+    result.root.containerOpen = false;
+  }
+);

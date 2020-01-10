@@ -4,9 +4,12 @@
 
 
 
-
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
@@ -29,8 +32,12 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   gEnvironment: ["@mozilla.org/process/environment;1", "nsIEnvironment"],
 });
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "gGeoSpecificDefaultsEnabled",
-  SearchUtils.BROWSER_SEARCH_PREF + "geoSpecificDefaults", false);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gGeoSpecificDefaultsEnabled",
+  SearchUtils.BROWSER_SEARCH_PREF + "geoSpecificDefaults",
+  false
+);
 
 
 
@@ -39,11 +46,9 @@ XPCOMUtils.defineLazyGetter(this, "distroID", () => {
 });
 
 
-XPCOMUtils.defineLazyGetter(this, "gEncoder",
-                            function() {
-                              return new TextEncoder();
-                            });
-
+XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
+  return new TextEncoder();
+});
 
 
 const NS_APP_DISTRIBUTION_SEARCH_DIR_LIST = "SrchPluginsDistDL";
@@ -56,8 +61,8 @@ const APP_SEARCH_PREFIX = "resource://search-plugins/";
 
 const EXT_SIGNING_ADDRESS = "search.mozilla.org";
 
-const TOPIC_LOCALES_CHANGE       = "intl:app-locales-changed";
-const QUIT_APPLICATION_TOPIC     = "quit-application";
+const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
+const QUIT_APPLICATION_TOPIC = "quit-application";
 
 
 
@@ -84,8 +89,18 @@ const SEARCH_GEO_DEFAULT_UPDATE_INTERVAL = 2592000;
 
 
 const MULTI_LOCALE_ENGINES = [
-  "amazon", "amazondotcom", "bolcom", "ebay", "google", "marktplaats",
-  "mercadolibre", "twitter", "wikipedia", "wiktionary", "yandex", "multilocale",
+  "amazon",
+  "amazondotcom",
+  "bolcom",
+  "ebay",
+  "google",
+  "marktplaats",
+  "mercadolibre",
+  "twitter",
+  "wikipedia",
+  "wiktionary",
+  "yandex",
+  "multilocale",
 ];
 
 
@@ -110,7 +125,7 @@ function isUSTimezone() {
   
   
 
-  let UTCOffset = (new Date()).getTimezoneOffset();
+  let UTCOffset = new Date().getTimezoneOffset();
   return UTCOffset >= 150 && UTCOffset <= 600;
 }
 
@@ -131,12 +146,17 @@ var ensureKnownRegion = async function(ss) {
       
       
       let defaultEngine = ss.getVerifiedGlobalAttr("searchDefault");
-      let visibleDefaultEngines = ss.getVerifiedGlobalAttr("visibleDefaultEngines");
-      let hasValidHashes = (defaultEngine || defaultEngine === undefined) &&
-                           (visibleDefaultEngines || visibleDefaultEngines === undefined);
+      let visibleDefaultEngines = ss.getVerifiedGlobalAttr(
+        "visibleDefaultEngines"
+      );
+      let hasValidHashes =
+        (defaultEngine || defaultEngine === undefined) &&
+        (visibleDefaultEngines || visibleDefaultEngines === undefined);
       if (expired || !hasValidHashes) {
         await new Promise(resolve => {
-          let timeoutMS = Services.prefs.getIntPref("browser.search.geoip.timeout");
+          let timeoutMS = Services.prefs.getIntPref(
+            "browser.search.geoip.timeout"
+          );
           let timerId = setTimeout(() => {
             timerId = null;
             resolve();
@@ -146,10 +166,12 @@ var ensureKnownRegion = async function(ss) {
             clearTimeout(timerId);
             resolve();
           };
-          fetchRegionDefault(ss).then(callback).catch(err => {
-            Cu.reportError(err);
-            callback();
-          });
+          fetchRegionDefault(ss)
+            .then(callback)
+            .catch(err => {
+              Cu.reportError(err);
+              callback();
+            });
         });
       }
     }
@@ -159,7 +181,11 @@ var ensureKnownRegion = async function(ss) {
     
     
     
-    Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "ensure-known-region-done");
+    Services.obs.notifyObservers(
+      null,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "ensure-known-region-done"
+    );
   }
 };
 
@@ -176,11 +202,15 @@ function storeRegion(region) {
   
   if (region == "US" && !isTimezoneUS) {
     SearchUtils.log("storeRegion mismatch - US Region, non-US timezone");
-    Services.telemetry.getHistogramById("SEARCH_SERVICE_US_COUNTRY_MISMATCHED_TIMEZONE").add(1);
+    Services.telemetry
+      .getHistogramById("SEARCH_SERVICE_US_COUNTRY_MISMATCHED_TIMEZONE")
+      .add(1);
   }
   if (region != "US" && isTimezoneUS) {
     SearchUtils.log("storeRegion mismatch - non-US Region, US timezone");
-    Services.telemetry.getHistogramById("SEARCH_SERVICE_US_TIMEZONE_MISMATCHED_COUNTRY").add(1);
+    Services.telemetry
+      .getHistogramById("SEARCH_SERVICE_US_TIMEZONE_MISMATCHED_COUNTRY")
+      .add(1);
   }
   
   
@@ -190,24 +220,33 @@ function storeRegion(region) {
     switch (Services.appinfo.OS) {
       case "Darwin":
         probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX";
-        probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
+        probeNonUSMismatched =
+          "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
         break;
       case "WINNT":
         probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
-        probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
+        probeNonUSMismatched =
+          "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
         break;
       default:
-        Cu.reportError("Platform " + Services.appinfo.OS +
-          " has system country code but no search service telemetry probes");
+        Cu.reportError(
+          "Platform " +
+            Services.appinfo.OS +
+            " has system country code but no search service telemetry probes"
+        );
         break;
     }
     if (probeUSMismatched && probeNonUSMismatched) {
       if (region == "US" || platformCC == "US") {
         
-        Services.telemetry.getHistogramById(probeUSMismatched).add(region != platformCC);
+        Services.telemetry
+          .getHistogramById(probeUSMismatched)
+          .add(region != platformCC);
       } else {
         
-        Services.telemetry.getHistogramById(probeNonUSMismatched).add(region != platformCC);
+        Services.telemetry
+          .getHistogramById(probeNonUSMismatched)
+          .add(region != platformCC);
       }
     }
   }
@@ -225,7 +264,9 @@ function fetchRegion(ss) {
     
     
   };
-  let endpoint = Services.urlFormatter.formatURLPref("browser.search.geoip.url");
+  let endpoint = Services.urlFormatter.formatURLPref(
+    "browser.search.geoip.url"
+  );
   SearchUtils.log("_fetchRegion starting with endpoint " + endpoint);
   
   if (!endpoint) {
@@ -246,8 +287,11 @@ function fetchRegion(ss) {
     let geoipTimeoutPossible = true;
     let timerId = setTimeout(() => {
       SearchUtils.log("_fetchRegion: timeout fetching region information");
-      if (geoipTimeoutPossible)
-        Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT").add(1);
+      if (geoipTimeoutPossible) {
+        Services.telemetry
+          .getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT")
+          .add(1);
+      }
       timerId = null;
       resolve();
     }, timeoutMS);
@@ -258,13 +302,21 @@ function fetchRegion(ss) {
       if (result) {
         storeRegion(result);
       }
-      Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT").add(reason);
+      Services.telemetry
+        .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT")
+        .add(reason);
 
       
-      Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "geoip-lookup-xhr-complete");
+      Services.obs.notifyObservers(
+        null,
+        SearchUtils.TOPIC_SEARCH_SERVICE,
+        "geoip-lookup-xhr-complete"
+      );
 
       if (timerId) {
-        Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT").add(0);
+        Services.telemetry
+          .getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT")
+          .add(0);
         geoipTimeoutPossible = false;
       }
 
@@ -279,10 +331,12 @@ function fetchRegion(ss) {
       };
 
       if (result && gGeoSpecificDefaultsEnabled) {
-        fetchRegionDefault(ss).then(callback).catch(err => {
-          Cu.reportError(err);
-          callback();
-        });
+        fetchRegionDefault(ss)
+          .then(callback)
+          .catch(err => {
+            Cu.reportError(err);
+            callback();
+          });
       } else {
         callback();
       }
@@ -290,18 +344,30 @@ function fetchRegion(ss) {
 
     let request = new XMLHttpRequest();
     
-    Services.obs.notifyObservers(request, SearchUtils.TOPIC_SEARCH_SERVICE, "geoip-lookup-xhr-starting");
+    Services.obs.notifyObservers(
+      request,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "geoip-lookup-xhr-starting"
+    );
     request.timeout = 100000; 
     request.onload = function(event) {
       let took = Date.now() - startTime;
       let region = event.target.response && event.target.response.country_code;
-      SearchUtils.log("_fetchRegion got success response in " + took + "ms: " + region);
-      Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS").add(took);
-      let reason = region ? TELEMETRY_RESULT_ENUM.SUCCESS : TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA;
+      SearchUtils.log(
+        "_fetchRegion got success response in " + took + "ms: " + region
+      );
+      Services.telemetry
+        .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS")
+        .add(took);
+      let reason = region
+        ? TELEMETRY_RESULT_ENUM.SUCCESS
+        : TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA;
       resolveAndReportSuccess(region, reason);
     };
     request.ontimeout = function(event) {
-      SearchUtils.log("_fetchRegion: XHR finally timed-out fetching region information");
+      SearchUtils.log(
+        "_fetchRegion: XHR finally timed-out fetching region information"
+      );
       resolveAndReportSuccess(null, TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
     };
     request.onerror = function(event) {
@@ -320,12 +386,12 @@ function fetchRegion(ss) {
 
 function convertGoogleEngines(engineNames) {
   let overrides = {
-    "google": "google-b-d",
+    google: "google-b-d",
     "google-2018": "google-b-1-d",
   };
 
   let mobileOverrides = {
-    "google": "google-b-m",
+    google: "google-b-m",
     "google-2018": "google-b-1-m",
   };
 
@@ -352,86 +418,100 @@ function convertGoogleEngines(engineNames) {
 
 
 
-var fetchRegionDefault = (ss) => new Promise(resolve => {
-  let urlTemplate = Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
-                            .getCharPref("geoSpecificDefaults.url");
-  let endpoint = Services.urlFormatter.formatURL(urlTemplate);
+var fetchRegionDefault = ss =>
+  new Promise(resolve => {
+    let urlTemplate = Services.prefs
+      .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
+      .getCharPref("geoSpecificDefaults.url");
+    let endpoint = Services.urlFormatter.formatURL(urlTemplate);
 
-  
-  if (!endpoint) {
-    resolve();
-    return;
-  }
-
-  
-  const cohortPref = "browser.search.cohort";
-  let cohort = Services.prefs.getCharPref(cohortPref, "");
-  if (cohort)
-    endpoint += "/" + cohort;
-
-  SearchUtils.log("fetchRegionDefault starting with endpoint " + endpoint);
-
-  let startTime = Date.now();
-  let request = new XMLHttpRequest();
-  request.timeout = 100000; 
-  request.onload = function(event) {
-    let took = Date.now() - startTime;
-
-    let status = event.target.status;
-    if (status != 200) {
-      SearchUtils.log("fetchRegionDefault failed with HTTP code " + status);
-      let retryAfter = request.getResponseHeader("retry-after");
-      if (retryAfter) {
-        ss.setGlobalAttr("searchDefaultExpir", Date.now() + retryAfter * 1000);
-      }
+    
+    if (!endpoint) {
       resolve();
       return;
     }
 
-    let response = event.target.response || {};
-    SearchUtils.log("received " + response.toSource());
-
-    if (response.cohort) {
-      Services.prefs.setCharPref(cohortPref, response.cohort);
-    } else {
-      Services.prefs.clearUserPref(cohortPref);
-    }
-
-    if (response.settings && response.settings.searchDefault) {
-      let defaultEngine = response.settings.searchDefault;
-      ss.setVerifiedGlobalAttr("searchDefault", defaultEngine);
-      SearchUtils.log("fetchRegionDefault saved searchDefault: " + defaultEngine);
-    }
-
-    if (response.settings && response.settings.visibleDefaultEngines) {
-      let visibleDefaultEngines = response.settings.visibleDefaultEngines;
-      let string = visibleDefaultEngines.join(",");
-      ss.setVerifiedGlobalAttr("visibleDefaultEngines", string);
-      SearchUtils.log("fetchRegionDefault saved visibleDefaultEngines: " + string);
-    }
-
-    let interval = response.interval || SEARCH_GEO_DEFAULT_UPDATE_INTERVAL;
-    let milliseconds = interval * 1000; 
-    ss.setGlobalAttr("searchDefaultExpir", Date.now() + milliseconds);
-
-    SearchUtils.log("fetchRegionDefault got success response in " + took + "ms");
     
-    
-    ss._maybeReloadEngines().finally(resolve);
-  };
-  request.ontimeout = function(event) {
-    SearchUtils.log("fetchRegionDefault: XHR finally timed-out");
-    resolve();
-  };
-  request.onerror = function(event) {
-    SearchUtils.log("fetchRegionDefault: failed to retrieve territory default information");
-    resolve();
-  };
-  request.open("GET", endpoint, true);
-  request.setRequestHeader("Content-Type", "application/json");
-  request.responseType = "json";
-  request.send();
-});
+    const cohortPref = "browser.search.cohort";
+    let cohort = Services.prefs.getCharPref(cohortPref, "");
+    if (cohort) {
+      endpoint += "/" + cohort;
+    }
+
+    SearchUtils.log("fetchRegionDefault starting with endpoint " + endpoint);
+
+    let startTime = Date.now();
+    let request = new XMLHttpRequest();
+    request.timeout = 100000; 
+    request.onload = function(event) {
+      let took = Date.now() - startTime;
+
+      let status = event.target.status;
+      if (status != 200) {
+        SearchUtils.log("fetchRegionDefault failed with HTTP code " + status);
+        let retryAfter = request.getResponseHeader("retry-after");
+        if (retryAfter) {
+          ss.setGlobalAttr(
+            "searchDefaultExpir",
+            Date.now() + retryAfter * 1000
+          );
+        }
+        resolve();
+        return;
+      }
+
+      let response = event.target.response || {};
+      SearchUtils.log("received " + response.toSource());
+
+      if (response.cohort) {
+        Services.prefs.setCharPref(cohortPref, response.cohort);
+      } else {
+        Services.prefs.clearUserPref(cohortPref);
+      }
+
+      if (response.settings && response.settings.searchDefault) {
+        let defaultEngine = response.settings.searchDefault;
+        ss.setVerifiedGlobalAttr("searchDefault", defaultEngine);
+        SearchUtils.log(
+          "fetchRegionDefault saved searchDefault: " + defaultEngine
+        );
+      }
+
+      if (response.settings && response.settings.visibleDefaultEngines) {
+        let visibleDefaultEngines = response.settings.visibleDefaultEngines;
+        let string = visibleDefaultEngines.join(",");
+        ss.setVerifiedGlobalAttr("visibleDefaultEngines", string);
+        SearchUtils.log(
+          "fetchRegionDefault saved visibleDefaultEngines: " + string
+        );
+      }
+
+      let interval = response.interval || SEARCH_GEO_DEFAULT_UPDATE_INTERVAL;
+      let milliseconds = interval * 1000; 
+      ss.setGlobalAttr("searchDefaultExpir", Date.now() + milliseconds);
+
+      SearchUtils.log(
+        "fetchRegionDefault got success response in " + took + "ms"
+      );
+      
+      
+      ss._maybeReloadEngines().finally(resolve);
+    };
+    request.ontimeout = function(event) {
+      SearchUtils.log("fetchRegionDefault: XHR finally timed-out");
+      resolve();
+    };
+    request.onerror = function(event) {
+      SearchUtils.log(
+        "fetchRegionDefault: failed to retrieve territory default information"
+      );
+      resolve();
+    };
+    request.open("GET", endpoint, true);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.responseType = "json";
+    request.send();
+  });
 
 
 
@@ -442,7 +522,7 @@ var fetchRegionDefault = (ss) => new Promise(resolve => {
 function makeURI(urlSpec) {
   try {
     return Services.io.newURI(urlSpec);
-  } catch (ex) { }
+  } catch (ex) {}
 
   return null;
 }
@@ -456,13 +536,15 @@ function makeURI(urlSpec) {
 function makeChannel(url) {
   try {
     let uri = typeof url == "string" ? Services.io.newURI(url) : url;
-    return Services.io.newChannelFromURI(uri,
-                                         null, 
-                                         Services.scriptSecurityManager.getSystemPrincipal(),
-                                         null, 
-                                         Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                                         Ci.nsIContentPolicy.TYPE_OTHER);
-  } catch (ex) { }
+    return Services.io.newChannelFromURI(
+      uri,
+      null ,
+      Services.scriptSecurityManager.getSystemPrincipal(),
+      null ,
+      Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+      Ci.nsIContentPolicy.TYPE_OTHER
+    );
+  } catch (ex) {}
 
   return null;
 }
@@ -478,8 +560,8 @@ function makeChannel(url) {
 
 function getLocalizedPref(prefName, defaultValue) {
   try {
-    return Services.prefs.getComplexValue(prefName,
-      Ci.nsIPrefLocalizedString).data;
+    return Services.prefs.getComplexValue(prefName, Ci.nsIPrefLocalizedString)
+      .data;
   } catch (ex) {}
 
   return defaultValue;
@@ -511,8 +593,9 @@ ParseSubmissionResult.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsISearchParseSubmissionResult]),
 };
 
-const gEmptyParseSubmissionResult =
-      Object.freeze(new ParseSubmissionResult(null, "", -1, 0));
+const gEmptyParseSubmissionResult = Object.freeze(
+  new ParseSubmissionResult(null, "", -1, 0)
+);
 
 
 
@@ -562,14 +645,19 @@ SearchService.prototype = {
     if (gInitialized) {
       if (!Components.isSuccessCode(this._initRV)) {
         SearchUtils.log("_ensureInitialized: failure");
-        throw Components.Exception("SearchService previously failed to initialize", this._initRV);
+        throw Components.Exception(
+          "SearchService previously failed to initialize",
+          this._initRV
+        );
       }
       return;
     }
 
-    let err = new Error("Something tried to use the search service before it's been " +
-      "properly intialized. Please examine the stack trace to figure out what and " +
-      "where to fix it:\n");
+    let err = new Error(
+      "Something tried to use the search service before it's been " +
+        "properly intialized. Please examine the stack trace to figure out what and " +
+        "where to fix it:\n"
+    );
     err.message += err.stack;
     throw err;
   },
@@ -596,8 +684,10 @@ SearchService.prototype = {
       
       
       this._ensureKnownRegionPromise = ensureKnownRegion(this)
-        .catch(ex => SearchUtils.log("_init: failure determining region: " + ex))
-        .finally(() => this._ensureKnownRegionPromise = null);
+        .catch(ex =>
+          SearchUtils.log("_init: failure determining region: " + ex)
+        )
+        .finally(() => (this._ensureKnownRegionPromise = null));
       if (!skipRegionCheck) {
         await this._ensureKnownRegionPromise;
       }
@@ -611,8 +701,10 @@ SearchService.prototype = {
       this._buildCache();
       this._addObservers();
     } catch (ex) {
-      this._initRV = (ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE);
-      SearchUtils.log("_init: failure initializng search: " + ex + "\n" + ex.stack);
+      this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
+      SearchUtils.log(
+        "_init: failure initializng search: " + ex + "\n" + ex.stack
+      );
     }
     gInitialized = true;
     if (Components.isSuccessCode(this._initRV)) {
@@ -620,12 +712,15 @@ SearchService.prototype = {
     } else {
       this._initObservers.reject(this._initRV);
     }
-    Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "init-complete");
+    Services.obs.notifyObservers(
+      null,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "init-complete"
+    );
 
     SearchUtils.log("_init: Completed _init");
     return this._initRV;
   },
-
 
   
 
@@ -644,9 +739,12 @@ SearchService.prototype = {
 
   async _getRemoteSettings(ignoreListSettings, firstTime = true) {
     try {
-      return ignoreListSettings.get({verifySignature: true});
+      return ignoreListSettings.get({ verifySignature: true });
     } catch (ex) {
-      if (ex instanceof RemoteSettingsClient.InvalidSignatureError && firstTime) {
+      if (
+        ex instanceof RemoteSettingsClient.InvalidSignatureError &&
+        firstTime
+      ) {
         
         const collection = await ignoreListSettings.openCollection();
         await collection.clear();
@@ -671,7 +769,9 @@ SearchService.prototype = {
 
 
   async _setupRemoteSettings() {
-    const ignoreListSettings = RemoteSettings(SearchUtils.SETTINGS_IGNORELIST_KEY);
+    const ignoreListSettings = RemoteSettings(
+      SearchUtils.SETTINGS_IGNORELIST_KEY
+    );
     
     const current = await this._getRemoteSettings(ignoreListSettings);
 
@@ -679,8 +779,12 @@ SearchService.prototype = {
     this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
     ignoreListSettings.on("sync", this._ignoreListListener);
 
-    await this._handleIgnoreListUpdated({data: {current}});
-    Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "settings-update-complete");
+    await this._handleIgnoreListUpdated({ data: { current } });
+    Services.obs.notifyObservers(
+      null,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "settings-update-complete"
+    );
   },
 
   
@@ -692,7 +796,9 @@ SearchService.prototype = {
 
   async _handleIgnoreListUpdated(eventData) {
     SearchUtils.log("_handleIgnoreListUpdated");
-    const {data: {current}} = eventData;
+    const {
+      data: { current },
+    } = eventData;
 
     for (const entry of current) {
       if (entry.id == "load-paths") {
@@ -737,15 +843,21 @@ SearchService.prototype = {
     if (this._loadPathIgnoreList.includes(engine._loadPath)) {
       return true;
     }
-    let url = engine._getURLOfType("text/html")
-                    .getSubmission("dummy", engine).uri.spec.toLowerCase();
-    if (this._submissionURLIgnoreList.some(code => url.includes(code.toLowerCase()))) {
+    let url = engine
+      ._getURLOfType("text/html")
+      .getSubmission("dummy", engine)
+      .uri.spec.toLowerCase();
+    if (
+      this._submissionURLIgnoreList.some(code =>
+        url.includes(code.toLowerCase())
+      )
+    ) {
       return true;
     }
     return false;
   },
 
-  _metaData: { },
+  _metaData: {},
   setGlobalAttr(name, val) {
     this._metaData[name] = val;
     this.batchTask.disarm();
@@ -768,9 +880,12 @@ SearchService.prototype = {
     return val;
   },
 
-  _listJSONURL: ((AppConstants.platform == "android") ? APP_SEARCH_PREFIX : EXT_SEARCH_PREFIX) + "list.json",
+  _listJSONURL:
+    (AppConstants.platform == "android"
+      ? APP_SEARCH_PREFIX
+      : EXT_SEARCH_PREFIX) + "list.json",
 
-  _engines: { },
+  _engines: {},
   __sortedEngines: null,
   _visibleDefaultEngines: [],
   _searchDefault: null,
@@ -781,8 +896,9 @@ SearchService.prototype = {
   _startupExtensions: new Set(),
 
   get _sortedEngines() {
-    if (!this.__sortedEngines)
+    if (!this.__sortedEngines) {
       return this._buildSortedEngineList();
+    }
     return this.__sortedEngines;
   },
 
@@ -795,11 +911,16 @@ SearchService.prototype = {
       
       
       if (distroID) {
-        let defaultPrefB = Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF);
+        let defaultPrefB = Services.prefs.getDefaultBranch(
+          SearchUtils.BROWSER_SEARCH_PREF
+        );
         let nsIPLS = Ci.nsIPrefLocalizedString;
 
         try {
-          defaultEngineName = defaultPrefB.getComplexValue("defaultenginename", nsIPLS).data;
+          defaultEngineName = defaultPrefB.getComplexValue(
+            "defaultenginename",
+            nsIPLS
+          ).data;
         } catch (ex) {
           
           
@@ -830,8 +951,9 @@ SearchService.prototype = {
   },
 
   async _buildCache() {
-    if (this._batchTask)
+    if (this._batchTask) {
       this._batchTask.disarm();
+    }
 
     let cache = {};
     let locale = Services.locale.requestedLocale;
@@ -859,17 +981,23 @@ SearchService.prototype = {
     }
 
     try {
-      if (!cache.engines.length)
+      if (!cache.engines.length) {
         throw new Error("cannot write without any engine.");
+      }
 
       SearchUtils.log("_buildCache: Writing to cache file.");
       let path = OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME);
       let data = gEncoder.encode(JSON.stringify(cache));
-      await OS.File.writeAtomic(path, data, {compression: "lz4",
-                                             tmpPath: path + ".tmp"});
+      await OS.File.writeAtomic(path, data, {
+        compression: "lz4",
+        tmpPath: path + ".tmp",
+      });
       SearchUtils.log("_buildCache: cache file written to disk.");
-      Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE,
-        "write-cache-to-disk-complete");
+      Services.obs.notifyObservers(
+        null,
+        SearchUtils.TOPIC_SEARCH_SERVICE,
+        "write-cache-to-disk-complete"
+      );
     } catch (ex) {
       SearchUtils.log("_buildCache: Could not write to cache file: " + ex);
     }
@@ -883,7 +1011,11 @@ SearchService.prototype = {
 
   async _loadEngines(cache, isReload) {
     SearchUtils.log("_loadEngines: start");
-    Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "find-jar-engines");
+    Services.obs.notifyObservers(
+      null,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "find-jar-engines"
+    );
     let engines = await this._findEngines();
     SearchUtils.log("_loadEngines: loading - " + engines.join(","));
 
@@ -891,19 +1023,22 @@ SearchService.prototype = {
     let distDirs = [];
     let locations;
     try {
-      locations = Services.dirsvc.get(NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
-                                      Ci.nsISimpleEnumerator);
+      locations = Services.dirsvc.get(
+        NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
+        Ci.nsISimpleEnumerator
+      );
     } catch (e) {
       
       
       locations = [];
     }
     for (let dir of locations) {
-      let iterator = new OS.File.DirectoryIterator(dir.path,
-                                                   { winPattern: "*.xml" });
+      let iterator = new OS.File.DirectoryIterator(dir.path, {
+        winPattern: "*.xml",
+      });
       try {
         
-        let {done} = await iterator.next();
+        let { done } = await iterator.next();
         if (!done) {
           distDirs.push(dir);
         }
@@ -917,13 +1052,15 @@ SearchService.prototype = {
     }
 
     let buildID = Services.appinfo.platformBuildID;
-    let rebuildCache = gEnvironment.get("RELOAD_ENGINES") ||
-                       !cache.engines ||
-                       cache.version != CACHE_VERSION ||
-                       cache.locale != Services.locale.requestedLocale ||
-                       cache.buildID != buildID ||
-                       cache.visibleDefaultEngines.length != this._visibleDefaultEngines.length ||
-                       this._visibleDefaultEngines.some(notInCacheVisibleEngines);
+    let rebuildCache =
+      gEnvironment.get("RELOAD_ENGINES") ||
+      !cache.engines ||
+      cache.version != CACHE_VERSION ||
+      cache.locale != Services.locale.requestedLocale ||
+      cache.buildID != buildID ||
+      cache.visibleDefaultEngines.length !=
+        this._visibleDefaultEngines.length ||
+      this._visibleDefaultEngines.some(notInCacheVisibleEngines);
 
     if (!rebuildCache) {
       SearchUtils.log("_loadEngines: loading from cache directories");
@@ -932,10 +1069,14 @@ SearchService.prototype = {
         SearchUtils.log("_loadEngines: done using existing cache");
         return;
       }
-      SearchUtils.log("_loadEngines: No valid engines found in cache. Loading engines from disk.");
+      SearchUtils.log(
+        "_loadEngines: No valid engines found in cache. Loading engines from disk."
+      );
     }
 
-    SearchUtils.log("_loadEngines: Absent or outdated cache. Loading engines from disk.");
+    SearchUtils.log(
+      "_loadEngines: Absent or outdated cache. Loading engines from disk."
+    );
     for (let loadDir of distDirs) {
       let enginesFromDir = await this._loadEnginesFromDir(loadDir);
       enginesFromDir.forEach(this._addEngineToStore, this);
@@ -949,14 +1090,19 @@ SearchService.prototype = {
         await this.ensureBuiltinExtension(id, locales);
       }
 
-      SearchUtils.log("_loadEngines: loading " +
-        this._startupExtensions.size + " engines reported by AddonManager startup");
+      SearchUtils.log(
+        "_loadEngines: loading " +
+          this._startupExtensions.size +
+          " engines reported by AddonManager startup"
+      );
       for (let extension of this._startupExtensions) {
         await this._installExtensionEngine(extension, [DEFAULT_TAG], true);
       }
     }
 
-    SearchUtils.log("_loadEngines: loading user-installed engines from the obsolete cache");
+    SearchUtils.log(
+      "_loadEngines: loading user-installed engines from the obsolete cache"
+    );
     this._loadEnginesFromCache(cache, true);
 
     this._loadEnginesMetadataFromCache(cache);
@@ -987,7 +1133,9 @@ SearchService.prototype = {
       await this._installExtensionEngine(policy.extension, locales);
       SearchUtils.log("ensureBuiltinExtension: " + id + " installed.");
     } catch (err) {
-      Cu.reportError("Failed to install engine: " + err.message + "\n" + err.stack);
+      Cu.reportError(
+        "Failed to install engine: " + err.message + "\n" + err.stack
+      );
     }
   },
 
@@ -1060,10 +1208,16 @@ SearchService.prototype = {
     
     
     if (prevCurrentEngine && this.defaultEngine !== prevCurrentEngine) {
-      SearchUtils.notifyAction(this._currentEngine, SearchUtils.MODIFIED_TYPE.DEFAULT);
+      SearchUtils.notifyAction(
+        this._currentEngine,
+        SearchUtils.MODIFIED_TYPE.DEFAULT
+      );
     }
-    Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE,
-      "engines-reloaded");
+    Services.obs.notifyObservers(
+      null,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "engines-reloaded"
+    );
   },
 
   _reInit(origin, skipRegionCheck = true) {
@@ -1105,16 +1259,21 @@ SearchService.prototype = {
 
         
         
-        Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE,
-                                     "uninit-complete");
+        Services.obs.notifyObservers(
+          null,
+          SearchUtils.TOPIC_SEARCH_SERVICE,
+          "uninit-complete"
+        );
 
         let cache = await this._readCacheFile();
         
         
         
         this._ensureKnownRegionPromise = ensureKnownRegion(this)
-          .catch(ex => SearchUtils.log("_reInit: failure determining region: " + ex))
-          .finally(() => this._ensureKnownRegionPromise = null);
+          .catch(ex =>
+            SearchUtils.log("_reInit: failure determining region: " + ex)
+          )
+          .finally(() => (this._ensureKnownRegionPromise = null));
 
         if (!skipRegionCheck) {
           await this._ensureKnownRegionPromise;
@@ -1128,14 +1287,26 @@ SearchService.prototype = {
         
         gInitialized = true;
         this._initObservers.resolve();
-        Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "init-complete");
+        Services.obs.notifyObservers(
+          null,
+          SearchUtils.TOPIC_SEARCH_SERVICE,
+          "init-complete"
+        );
       } catch (err) {
         SearchUtils.log("Reinit failed: " + err);
         SearchUtils.log(err.stack);
-        Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "reinit-failed");
+        Services.obs.notifyObservers(
+          null,
+          SearchUtils.TOPIC_SEARCH_SERVICE,
+          "reinit-failed"
+        );
       } finally {
         gReinitializing = false;
-        Services.obs.notifyObservers(null, SearchUtils.TOPIC_SEARCH_SERVICE, "reinit-complete");
+        Services.obs.notifyObservers(
+          null,
+          SearchUtils.TOPIC_SEARCH_SERVICE,
+          "reinit-complete"
+        );
       }
     })();
   },
@@ -1146,8 +1317,7 @@ SearchService.prototype = {
   reset() {
     gInitialized = false;
     this._initObservers = PromiseUtils.defer();
-    this._initStarted = this.__sortedEngines =
-      this._currentEngine = this._searchDefault = null;
+    this._initStarted = this.__sortedEngines = this._currentEngine = this._searchDefault = null;
     this._startupExtensions = new Set();
     this._engines = {};
     this._visibleDefaultEngines = [];
@@ -1164,23 +1334,30 @@ SearchService.prototype = {
   async _readCacheFile() {
     let json;
     try {
-      let cacheFilePath = OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME);
-      let bytes = await OS.File.read(cacheFilePath, {compression: "lz4"});
+      let cacheFilePath = OS.Path.join(
+        OS.Constants.Path.profileDir,
+        CACHE_FILENAME
+      );
+      let bytes = await OS.File.read(cacheFilePath, { compression: "lz4" });
       json = JSON.parse(new TextDecoder().decode(bytes));
-      if (!json.engines || !json.engines.length)
+      if (!json.engines || !json.engines.length) {
         throw new Error("no engine in the file");
+      }
       
-      if (json.appVersion != Services.appinfo.version &&
-          gGeoSpecificDefaultsEnabled &&
-          json.metaData) {
+      if (
+        json.appVersion != Services.appinfo.version &&
+        gGeoSpecificDefaultsEnabled &&
+        json.metaData
+      ) {
         json.metaData.searchDefaultExpir = 0;
       }
     } catch (ex) {
       SearchUtils.log("_readCacheFile: Error reading cache file: " + ex);
       json = {};
     }
-    if (!gInitialized && json.metaData)
+    if (!gInitialized && json.metaData) {
       this._metaData = json.metaData;
+    }
 
     return json;
   },
@@ -1203,12 +1380,12 @@ SearchService.prototype = {
       return;
     }
 
-    SearchUtils.log("_addEngineToStore: Adding engine: \"" + engine.name + "\"");
+    SearchUtils.log('_addEngineToStore: Adding engine: "' + engine.name + '"');
 
     
     
-    var hasSameNameAsUpdate = (engine._engineToUpdate &&
-                               engine.name == engine._engineToUpdate.name);
+    var hasSameNameAsUpdate =
+      engine._engineToUpdate && engine.name == engine._engineToUpdate.name;
     if (engine.name in this._engines && !hasSameNameAsUpdate) {
       SearchUtils.log("_addEngineToStore: Duplicate engine found, aborting!");
       return;
@@ -1227,8 +1404,9 @@ SearchService.prototype = {
       
       
       for (var p in engine) {
-        if (!(engine.__lookupGetter__(p) || engine.__lookupSetter__(p)))
+        if (!(engine.__lookupGetter__(p) || engine.__lookupSetter__(p))) {
           oldEngine[p] = engine[p];
+        }
       }
       engine = oldEngine;
       engine._engineToUpdate = null;
@@ -1252,30 +1430,38 @@ SearchService.prototype = {
 
     if (engine._hasUpdates) {
       
-      if (!engine.getAttr("updateexpir"))
+      if (!engine.getAttr("updateexpir")) {
         engineUpdateService.scheduleNextUpdate(engine);
+      }
     }
   },
 
   _loadEnginesMetadataFromCache(cache) {
-    if (!cache.engines)
+    if (!cache.engines) {
       return;
+    }
 
     for (let engine of cache.engines) {
       let name = engine._name;
       if (name in this._engines) {
-        SearchUtils.log("_loadEnginesMetadataFromCache, transfering metadata for " + name);
+        SearchUtils.log(
+          "_loadEnginesMetadataFromCache, transfering metadata for " + name
+        );
         this._engines[name]._metaData = engine._metaData || {};
       }
     }
   },
 
   _loadEnginesFromCache(cache, skipReadOnly) {
-    if (!cache.engines)
+    if (!cache.engines) {
       return;
+    }
 
-    SearchUtils.log("_loadEnginesFromCache: Loading " +
-        cache.engines.length + " engines from cache");
+    SearchUtils.log(
+      "_loadEnginesFromCache: Loading " +
+        cache.engines.length +
+        " engines from cache"
+    );
 
     let skippedEngines = 0;
     for (let engine of cache.engines) {
@@ -1288,7 +1474,11 @@ SearchService.prototype = {
     }
 
     if (skippedEngines) {
-      SearchUtils.log("_loadEnginesFromCache: skipped " + skippedEngines + " read-only engines.");
+      SearchUtils.log(
+        "_loadEnginesFromCache: skipped " +
+          skippedEngines +
+          " read-only engines."
+      );
     }
   },
 
@@ -1315,7 +1505,9 @@ SearchService.prototype = {
 
 
   async _loadEnginesFromDir(dir) {
-    SearchUtils.log("_loadEnginesFromDir: Searching in " + dir.path + " for search engines.");
+    SearchUtils.log(
+      "_loadEnginesFromDir: Searching in " + dir.path + " for search engines."
+    );
 
     let iterator = new OS.File.DirectoryIterator(dir.path);
 
@@ -1324,15 +1516,17 @@ SearchService.prototype = {
 
     let engines = [];
     for (let osfile of osfiles) {
-      if (osfile.isDir || osfile.isSymLink)
+      if (osfile.isDir || osfile.isSymLink) {
         continue;
+      }
 
       let fileInfo = await OS.File.stat(osfile.path);
-      if (fileInfo.size == 0)
+      if (fileInfo.size == 0) {
         continue;
+      }
 
       let parts = osfile.path.split(".");
-      if (parts.length <= 1 || (parts.pop()).toLowerCase() != "xml") {
+      if (parts.length <= 1 || parts.pop().toLowerCase() != "xml") {
         
         continue;
       }
@@ -1348,7 +1542,9 @@ SearchService.prototype = {
         await addedEngine._initFromFile(file);
         engines.push(addedEngine);
       } catch (ex) {
-        SearchUtils.log("_loadEnginesFromDir: Failed to load " + osfile.path + "!\n" + ex);
+        SearchUtils.log(
+          "_loadEnginesFromDir: Failed to load " + osfile.path + "!\n" + ex
+        );
       }
     }
     return engines;
@@ -1368,7 +1564,9 @@ SearchService.prototype = {
     let engines = [];
     for (let url of urls) {
       try {
-        SearchUtils.log("_loadFromChromeURLs: loading engine from chrome url: " + url);
+        SearchUtils.log(
+          "_loadFromChromeURLs: loading engine from chrome url: " + url
+        );
         let uri = Services.io.newURI(APP_SEARCH_PREFIX + url + ".xml");
         let engine = new SearchEngine({
           uri,
@@ -1400,7 +1598,9 @@ SearchService.prototype = {
 
     let chan = makeChannel(this._listJSONURL);
     if (!chan) {
-      SearchUtils.log("_findEngines: " + this._listJSONURL + " isn't registered");
+      SearchUtils.log(
+        "_findEngines: " + this._listJSONURL + " isn't registered"
+      );
       return [];
     }
 
@@ -1435,12 +1635,14 @@ SearchService.prototype = {
       return;
     }
 
-    let searchRegion = Services.prefs.getCharPref("browser.search.region", null);
+    let searchRegion = Services.prefs.getCharPref(
+      "browser.search.region",
+      null
+    );
 
     let searchSettings;
     let locale = Services.locale.appLocaleAsBCP47;
-    if ("locales" in json &&
-        locale in json.locales) {
+    if ("locales" in json && locale in json.locales) {
       searchSettings = json.locales[locale];
     } else {
       
@@ -1457,7 +1659,9 @@ SearchService.prototype = {
     
     
     let engineNames;
-    let visibleDefaultEngines = this.getVerifiedGlobalAttr("visibleDefaultEngines");
+    let visibleDefaultEngines = this.getVerifiedGlobalAttr(
+      "visibleDefaultEngines"
+    );
     if (visibleDefaultEngines) {
       let jarNames = new Set();
       for (let region in searchSettings) {
@@ -1469,8 +1673,7 @@ SearchService.prototype = {
         for (let engine of searchSettings[region].visibleDefaultEngines) {
           jarNames.add(engine);
         }
-        if ("regionOverrides" in json &&
-            searchRegion in json.regionOverrides) {
+        if ("regionOverrides" in json && searchRegion in json.regionOverrides) {
           for (let engine in json.regionOverrides[searchRegion]) {
             jarNames.add(json.regionOverrides[searchRegion][engine]);
           }
@@ -1490,8 +1693,11 @@ SearchService.prototype = {
         
         
         if (!jarNames.has(engineName)) {
-          SearchUtils.log("_parseListJSON: ignoring visibleDefaultEngines value because " +
-              engineName + " is not in the jar engines we have found");
+          SearchUtils.log(
+            "_parseListJSON: ignoring visibleDefaultEngines value because " +
+              engineName +
+              " is not in the jar engines we have found"
+          );
           engineNames = null;
           break;
         }
@@ -1500,8 +1706,11 @@ SearchService.prototype = {
 
     
     if (!engineNames || !engineNames.length) {
-      if (searchRegion && searchRegion in searchSettings &&
-          "visibleDefaultEngines" in searchSettings[searchRegion]) {
+      if (
+        searchRegion &&
+        searchRegion in searchSettings &&
+        "visibleDefaultEngines" in searchSettings[searchRegion]
+      ) {
         engineNames = searchSettings[searchRegion].visibleDefaultEngines;
       } else {
         engineNames = searchSettings.default.visibleDefaultEngines;
@@ -1510,20 +1719,26 @@ SearchService.prototype = {
 
     
     
-    let branch = Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF);
-    if (isPartnerBuild() &&
-        branch.getPrefType("ignoredJAREngines") == branch.PREF_STRING) {
-      let ignoredJAREngines = branch.getCharPref("ignoredJAREngines")
-                                    .split(",");
-      let filteredEngineNames = engineNames.filter(e => !ignoredJAREngines.includes(e));
+    let branch = Services.prefs.getDefaultBranch(
+      SearchUtils.BROWSER_SEARCH_PREF
+    );
+    if (
+      isPartnerBuild() &&
+      branch.getPrefType("ignoredJAREngines") == branch.PREF_STRING
+    ) {
+      let ignoredJAREngines = branch
+        .getCharPref("ignoredJAREngines")
+        .split(",");
+      let filteredEngineNames = engineNames.filter(
+        e => !ignoredJAREngines.includes(e)
+      );
       
       if (filteredEngineNames.length > 0) {
         engineNames = filteredEngineNames;
       }
     }
 
-    if ("regionOverrides" in json &&
-        searchRegion in json.regionOverrides) {
+    if ("regionOverrides" in json && searchRegion in json.regionOverrides) {
       for (let engine in json.regionOverrides[searchRegion]) {
         let index = engineNames.indexOf(engine);
         if (index > -1) {
@@ -1554,8 +1769,11 @@ SearchService.prototype = {
     
     this._visibleDefaultEngines = engineNames;
 
-    if (searchRegion && searchRegion in searchSettings &&
-        "searchDefault" in searchSettings[searchRegion]) {
+    if (
+      searchRegion &&
+      searchRegion in searchSettings &&
+      "searchDefault" in searchSettings[searchRegion]
+    ) {
       this._searchDefault = searchSettings[searchRegion].searchDefault;
     } else if ("searchDefault" in searchSettings.default) {
       this._searchDefault = searchSettings.default.searchDefault;
@@ -1567,8 +1785,11 @@ SearchService.prototype = {
       Cu.reportError("parseListJSON: No searchDefault");
     }
 
-    if (searchRegion && searchRegion in searchSettings &&
-        "searchOrder" in searchSettings[searchRegion]) {
+    if (
+      searchRegion &&
+      searchRegion in searchSettings &&
+      "searchOrder" in searchSettings[searchRegion]
+    ) {
       this._searchOrder = searchSettings[searchRegion].searchOrder;
     } else if ("searchOrder" in searchSettings.default) {
       this._searchOrder = searchSettings.default.searchOrder;
@@ -1582,7 +1803,10 @@ SearchService.prototype = {
 
     
     
-    Services.prefs.setBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder", true);
+    Services.prefs.setBoolPref(
+      SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
+      true
+    );
 
     var engines = this._getSortedEngines(true);
 
@@ -1595,12 +1819,17 @@ SearchService.prototype = {
 
   _buildSortedEngineList() {
     SearchUtils.log("_buildSortedEngineList: building list");
-    var addedEngines = { };
+    var addedEngines = {};
     this.__sortedEngines = [];
 
     
     
-    if (Services.prefs.getBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder", false)) {
+    if (
+      Services.prefs.getBoolPref(
+        SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
+        false
+      )
+    ) {
       SearchUtils.log("_buildSortedEngineList: using db for order");
 
       
@@ -1624,13 +1853,17 @@ SearchService.prototype = {
       }
 
       
-      var filteredEngines = this.__sortedEngines.filter(function(a) { return !!a; });
-      if (this.__sortedEngines.length != filteredEngines.length)
+      var filteredEngines = this.__sortedEngines.filter(function(a) {
+        return !!a;
+      });
+      if (this.__sortedEngines.length != filteredEngines.length) {
         needToSaveEngineList = true;
+      }
       this.__sortedEngines = filteredEngines;
 
-      if (needToSaveEngineList)
+      if (needToSaveEngineList) {
         this._saveSortedEngineList();
+      }
     } else {
       
       var i = 0;
@@ -1639,35 +1872,41 @@ SearchService.prototype = {
       
       if (this.originalDefaultEngine) {
         this.__sortedEngines.push(this.originalDefaultEngine);
-        addedEngines[this.originalDefaultEngine.name] = this.originalDefaultEngine;
+        addedEngines[
+          this.originalDefaultEngine.name
+        ] = this.originalDefaultEngine;
       }
 
       if (distroID) {
         try {
-          var extras =
-            Services.prefs.getChildList(SearchUtils.BROWSER_SEARCH_PREF + "order.extra.");
+          var extras = Services.prefs.getChildList(
+            SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
+          );
 
           for (prefName of extras) {
             let engineName = Services.prefs.getCharPref(prefName);
 
             let engine = this._engines[engineName];
-            if (!engine || engine.name in addedEngines)
+            if (!engine || engine.name in addedEngines) {
               continue;
+            }
 
             this.__sortedEngines.push(engine);
             addedEngines[engine.name] = engine;
           }
-        } catch (e) { }
+        } catch (e) {}
 
         while (true) {
           prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${++i}`;
           let engineName = getLocalizedPref(prefName);
-          if (!engineName)
+          if (!engineName) {
             break;
+          }
 
           let engine = this._engines[engineName];
-          if (!engine || engine.name in addedEngines)
+          if (!engine || engine.name in addedEngines) {
             continue;
+          }
 
           this.__sortedEngines.push(engine);
           addedEngines[engine.name] = engine;
@@ -1676,8 +1915,9 @@ SearchService.prototype = {
 
       for (let engineName of this._searchOrder) {
         let engine = this._engines[engineName];
-        if (!engine || engine.name in addedEngines)
+        if (!engine || engine.name in addedEngines) {
           continue;
+        }
 
         this.__sortedEngines.push(engine);
         addedEngines[engine.name] = engine;
@@ -1689,17 +1929,19 @@ SearchService.prototype = {
 
     for (let name in this._engines) {
       let engine = this._engines[name];
-      if (!(engine.name in addedEngines))
+      if (!(engine.name in addedEngines)) {
         alphaEngines.push(this._engines[engine.name]);
+      }
     }
 
     let collation = Cc["@mozilla.org/intl/collation-factory;1"]
-                      .createInstance(Ci.nsICollationFactory)
-                      .CreateCollation();
+      .createInstance(Ci.nsICollationFactory)
+      .CreateCollation();
     const strength = Ci.nsICollation.kCollationCaseInsensitiveAscii;
-    let comparator = (a, b) => collation.compareString(strength, a.name, b.name);
+    let comparator = (a, b) =>
+      collation.compareString(strength, a.name, b.name);
     alphaEngines.sort(comparator);
-    return this.__sortedEngines = this.__sortedEngines.concat(alphaEngines);
+    return (this.__sortedEngines = this.__sortedEngines.concat(alphaEngines));
   },
 
   
@@ -1708,12 +1950,13 @@ SearchService.prototype = {
 
 
   _getSortedEngines(withHidden) {
-    if (withHidden)
+    if (withHidden) {
       return this._sortedEngines;
+    }
 
     return this._sortedEngines.filter(function(engine) {
-                                        return !engine.hidden;
-                                      });
+      return !engine.hidden;
+    });
   },
 
   
@@ -1744,7 +1987,10 @@ SearchService.prototype = {
       }
     }
     if (!Components.isSuccessCode(this._initRV)) {
-      throw Components.Exception("SearchService initialization failed", this._initRV);
+      throw Components.Exception(
+        "SearchService initialization failed",
+        this._initRV
+      );
     }
     return this._initRV;
   },
@@ -1788,13 +2034,16 @@ SearchService.prototype = {
     if (distroID) {
       
       try {
-        var extras = Services.prefs.getChildList(SearchUtils.BROWSER_SEARCH_PREF + "order.extra.");
+        var extras = Services.prefs.getChildList(
+          SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
+        );
 
         for (let prefName of extras) {
           let engineName = Services.prefs.getCharPref(prefName);
 
-          if (!(engineName in engineOrder))
+          if (!(engineName in engineOrder)) {
             engineOrder[engineName] = i++;
+          }
         }
       } catch (e) {
         SearchUtils.log("Getting extra order prefs failed: " + e);
@@ -1804,11 +2053,13 @@ SearchService.prototype = {
       for (var j = 1; ; j++) {
         let prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${j}`;
         let engineName = getLocalizedPref(prefName);
-        if (!engineName)
+        if (!engineName) {
           break;
+        }
 
-        if (!(engineName in engineOrder))
+        if (!(engineName in engineOrder)) {
           engineOrder[engineName] = i++;
+        }
       }
     }
 
@@ -1817,18 +2068,23 @@ SearchService.prototype = {
       engineOrder[engineName] = i++;
     }
 
-    SearchUtils.log("getDefaultEngines: engineOrder: " + engineOrder.toSource());
+    SearchUtils.log(
+      "getDefaultEngines: engineOrder: " + engineOrder.toSource()
+    );
 
     function compareEngines(a, b) {
       var aIdx = engineOrder[a.name];
       var bIdx = engineOrder[b.name];
 
-      if (aIdx && bIdx)
+      if (aIdx && bIdx) {
         return aIdx - bIdx;
-      if (aIdx)
+      }
+      if (aIdx) {
         return -1;
-      if (bIdx)
+      }
+      if (bIdx) {
         return 1;
+      }
 
       return a.name.localeCompare(b.name);
     }
@@ -1854,7 +2110,10 @@ SearchService.prototype = {
     this._ensureInitialized();
     for (var engineName in this._engines) {
       var engine = this._engines[engineName];
-      if (engine && (engine.alias == alias || engine._internalAliases.includes(alias))) {
+      if (
+        engine &&
+        (engine.alias == alias || engine._internalAliases.includes(alias))
+      ) {
         return engine;
       }
     }
@@ -1862,7 +2121,7 @@ SearchService.prototype = {
   },
 
   async addEngineWithDetails(name, details) {
-    SearchUtils.log("addEngineWithDetails: Adding \"" + name + "\".");
+    SearchUtils.log('addEngineWithDetails: Adding "' + name + '".');
     let isCurrent = false;
     var params = details;
 
@@ -1873,19 +2132,28 @@ SearchService.prototype = {
     if (!gInitialized && !isBuiltin && !params.initEngine) {
       await this.init(true);
     }
-    if (!name)
+    if (!name) {
       SearchUtils.fail("Invalid name passed to addEngineWithDetails!");
-    if (!params.template)
+    }
+    if (!params.template) {
       SearchUtils.fail("Invalid template passed to addEngineWithDetails!");
+    }
     let existingEngine = this._engines[name];
     if (existingEngine) {
-      if (params.extensionID &&
-          existingEngine._loadPath.startsWith(`jar:[profile]/extensions/${params.extensionID}`)) {
+      if (
+        params.extensionID &&
+        existingEngine._loadPath.startsWith(
+          `jar:[profile]/extensions/${params.extensionID}`
+        )
+      ) {
         
         isCurrent = this.defaultEngine == existingEngine;
         await this.removeEngine(existingEngine);
       } else {
-        SearchUtils.fail("An engine with that name already exists!", Cr.NS_ERROR_FILE_ALREADY_EXISTS);
+        SearchUtils.fail(
+          "An engine with that name already exists!",
+          Cr.NS_ERROR_FILE_ALREADY_EXISTS
+        );
       }
     }
 
@@ -1925,36 +2193,55 @@ SearchService.prototype = {
   async _installExtensionEngine(extension, locales, initEngine) {
     SearchUtils.log("installExtensionEngine: " + extension.id);
 
-    let installLocale = async (locale) => {
-      let manifest = (locale === DEFAULT_TAG) ? extension.manifest :
-        (await extension.getLocalizedManifest(locale));
-      return this._addEngineForManifest(extension, manifest, locale, initEngine);
+    let installLocale = async locale => {
+      let manifest =
+        locale === DEFAULT_TAG
+          ? extension.manifest
+          : await extension.getLocalizedManifest(locale);
+      return this._addEngineForManifest(
+        extension,
+        manifest,
+        locale,
+        initEngine
+      );
     };
 
     let engines = [];
     for (let locale of locales) {
-      SearchUtils.log("addEnginesFromExtension: installing locale: " +
-        extension.id + ":" + locale);
+      SearchUtils.log(
+        "addEnginesFromExtension: installing locale: " +
+          extension.id +
+          ":" +
+          locale
+      );
       engines.push(await installLocale(locale));
     }
     return engines;
   },
 
-  async _addEngineForManifest(extension, manifest,
-                              locale = DEFAULT_TAG,
-                              initEngine = false) {
-    let {IconDetails} = ExtensionParent;
+  async _addEngineForManifest(
+    extension,
+    manifest,
+    locale = DEFAULT_TAG,
+    initEngine = false
+  ) {
+    let { IconDetails } = ExtensionParent;
 
     
     let icons = extension.manifest.icons;
     let iconList = [];
     if (icons) {
       iconList = Object.entries(icons).map(icon => {
-        return {width: icon[0], height: icon[0],
-                url: extension.baseURI.resolve(icon[1])};
+        return {
+          width: icon[0],
+          height: icon[0],
+          url: extension.baseURI.resolve(icon[1]),
+        };
       });
     }
-    let preferredIconUrl = icons && extension.baseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
+    let preferredIconUrl =
+      icons &&
+      extension.baseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
     let searchProvider = manifest.chrome_settings_overrides.search_provider;
 
     
@@ -1999,7 +2286,7 @@ SearchService.prototype = {
   },
 
   async addEngine(engineURL, iconURL, confirm, extensionID) {
-    SearchUtils.log("addEngine: Adding \"" + engineURL + "\".");
+    SearchUtils.log('addEngine: Adding "' + engineURL + '".');
     await this.init(true);
     let errCode;
     try {
@@ -2025,9 +2312,13 @@ SearchService.prototype = {
       }
     } catch (ex) {
       
-      if (engine)
+      if (engine) {
         engine._installCallback = null;
-      SearchUtils.fail("addEngine: Error adding engine:\n" + ex, errCode || Cr.NS_ERROR_FAILURE);
+      }
+      SearchUtils.fail(
+        "addEngine: Error adding engine:\n" + ex,
+        errCode || Cr.NS_ERROR_FAILURE
+      );
     }
     return engine;
   },
@@ -2041,17 +2332,23 @@ SearchService.prototype = {
 
   async removeEngine(engine) {
     await this.init(true);
-    if (!engine)
+    if (!engine) {
       SearchUtils.fail("no engine passed to removeEngine!");
+    }
 
     var engineToRemove = null;
     for (var e in this._engines) {
-      if (engine.wrappedJSObject == this._engines[e])
+      if (engine.wrappedJSObject == this._engines[e]) {
         engineToRemove = this._engines[e];
+      }
     }
 
-    if (!engineToRemove)
-      SearchUtils.fail("removeEngine: Can't find engine to remove!", Cr.NS_ERROR_FILE_NOT_FOUND);
+    if (!engineToRemove) {
+      SearchUtils.fail(
+        "removeEngine: Can't find engine to remove!",
+        Cr.NS_ERROR_FILE_NOT_FOUND
+      );
+    }
 
     if (engineToRemove == this.defaultEngine) {
       this._currentEngine = null;
@@ -2075,8 +2372,12 @@ SearchService.prototype = {
 
       
       var index = this._sortedEngines.indexOf(engineToRemove);
-      if (index == -1)
-        SearchUtils.fail("Can't find engine to remove in _sortedEngines!", Cr.NS_ERROR_FAILURE);
+      if (index == -1) {
+        SearchUtils.fail(
+          "Can't find engine to remove in _sortedEngines!",
+          Cr.NS_ERROR_FAILURE
+        );
+      }
       this.__sortedEngines.splice(index, 1);
 
       
@@ -2090,18 +2391,31 @@ SearchService.prototype = {
 
   async moveEngine(engine, newIndex) {
     await this.init(true);
-    if ((newIndex > this._sortedEngines.length) || (newIndex < 0))
+    if (newIndex > this._sortedEngines.length || newIndex < 0) {
       SearchUtils.fail("moveEngine: Index out of bounds!");
-    if (!(engine instanceof Ci.nsISearchEngine) && !(engine instanceof SearchEngine))
+    }
+    if (
+      !(engine instanceof Ci.nsISearchEngine) &&
+      !(engine instanceof SearchEngine)
+    ) {
       SearchUtils.fail("moveEngine: Invalid engine passed to moveEngine!");
-    if (engine.hidden)
-      SearchUtils.fail("moveEngine: Can't move a hidden engine!", Cr.NS_ERROR_FAILURE);
+    }
+    if (engine.hidden) {
+      SearchUtils.fail(
+        "moveEngine: Can't move a hidden engine!",
+        Cr.NS_ERROR_FAILURE
+      );
+    }
 
     engine = engine.wrappedJSObject;
 
     var currentIndex = this._sortedEngines.indexOf(engine);
-    if (currentIndex == -1)
-      SearchUtils.fail("moveEngine: Can't find engine to move!", Cr.NS_ERROR_UNEXPECTED);
+    if (currentIndex == -1) {
+      SearchUtils.fail(
+        "moveEngine: Can't find engine to move!",
+        Cr.NS_ERROR_UNEXPECTED
+      );
+    }
 
     
     
@@ -2115,18 +2429,25 @@ SearchService.prototype = {
     
     
     var newIndexEngine = this._getSortedEngines(false)[newIndex];
-    if (!newIndexEngine)
-      SearchUtils.fail("moveEngine: Can't find engine to replace!", Cr.NS_ERROR_UNEXPECTED);
-
-    for (var i = 0; i < this._sortedEngines.length; ++i) {
-      if (newIndexEngine == this._sortedEngines[i])
-        break;
-      if (this._sortedEngines[i].hidden)
-        newIndex++;
+    if (!newIndexEngine) {
+      SearchUtils.fail(
+        "moveEngine: Can't find engine to replace!",
+        Cr.NS_ERROR_UNEXPECTED
+      );
     }
 
-    if (currentIndex == newIndex)
-      return; 
+    for (var i = 0; i < this._sortedEngines.length; ++i) {
+      if (newIndexEngine == this._sortedEngines[i]) {
+        break;
+      }
+      if (this._sortedEngines[i].hidden) {
+        newIndex++;
+      }
+    }
+
+    if (currentIndex == newIndex) {
+      return;
+    } 
 
     
     var movedEngine = this.__sortedEngines.splice(currentIndex, 1)[0];
@@ -2143,8 +2464,9 @@ SearchService.prototype = {
     for (let name in this._engines) {
       let e = this._engines[name];
       
-      if (e.hidden && e._isDefault)
+      if (e.hidden && e._isDefault) {
         e.hidden = false;
+      }
     }
   },
 
@@ -2153,15 +2475,19 @@ SearchService.prototype = {
     if (!this._currentEngine) {
       let name = this.getGlobalAttr("current");
       let engine = this.getEngineByName(name);
-      if (engine && (this.getGlobalAttr("hash") == getVerificationHash(name) ||
-                     engine._isDefault)) {
+      if (
+        engine &&
+        (this.getGlobalAttr("hash") == getVerificationHash(name) ||
+          engine._isDefault)
+      ) {
         
         
         
         this._currentEngine = engine;
       }
-      if (!name)
+      if (!name) {
         this._currentEngine = this.originalDefaultEngine;
+      }
     }
 
     
@@ -2176,11 +2502,13 @@ SearchService.prototype = {
           return firstVisible;
         }
         
-        if (originalDefault)
+        if (originalDefault) {
           originalDefault.hidden = false;
+        }
       }
-      if (!originalDefault)
+      if (!originalDefault) {
         return null;
+      }
 
       
       
@@ -2197,28 +2525,38 @@ SearchService.prototype = {
     
     
     
-    if (!(val instanceof Ci.nsISearchEngine) && !(val instanceof SearchEngine))
+    if (
+      !(val instanceof Ci.nsISearchEngine) &&
+      !(val instanceof SearchEngine)
+    ) {
       SearchUtils.fail("Invalid argument passed to defaultEngine setter");
+    }
 
     var newCurrentEngine = this.getEngineByName(val.name);
-    if (!newCurrentEngine)
+    if (!newCurrentEngine) {
       SearchUtils.fail("Can't find engine in store!", Cr.NS_ERROR_UNEXPECTED);
+    }
 
     if (!newCurrentEngine._isDefault) {
       
       
-      if (!newCurrentEngine._loadPath)
+      if (!newCurrentEngine._loadPath) {
         newCurrentEngine._loadPath = "[other]unknown";
+      }
       let loadPathHash = getVerificationHash(newCurrentEngine._loadPath);
       let currentHash = newCurrentEngine.getAttr("loadPathHash");
       if (!currentHash || currentHash != loadPathHash) {
         newCurrentEngine.setAttr("loadPathHash", loadPathHash);
-        SearchUtils.notifyAction(newCurrentEngine, SearchUtils.MODIFIED_TYPE.CHANGED);
+        SearchUtils.notifyAction(
+          newCurrentEngine,
+          SearchUtils.MODIFIED_TYPE.CHANGED
+        );
       }
     }
 
-    if (newCurrentEngine == this._currentEngine)
+    if (newCurrentEngine == this._currentEngine) {
       return;
+    }
 
     this._currentEngine = newCurrentEngine;
 
@@ -2235,7 +2573,10 @@ SearchService.prototype = {
     this.setGlobalAttr("current", newName);
     this.setGlobalAttr("hash", getVerificationHash(newName));
 
-    SearchUtils.notifyAction(this._currentEngine, SearchUtils.MODIFIED_TYPE.DEFAULT);
+    SearchUtils.notifyAction(
+      this._currentEngine,
+      SearchUtils.MODIFIED_TYPE.DEFAULT
+    );
   },
 
   async getDefault() {
@@ -2245,7 +2586,7 @@ SearchService.prototype = {
 
   async setDefault(engine) {
     await this.init(true);
-    return this.defaultEngine = engine;
+    return (this.defaultEngine = engine);
   },
 
   get defaultPrivateEngine() {
@@ -2253,7 +2594,7 @@ SearchService.prototype = {
   },
 
   set defaultPrivateEngine(engine) {
-    return this.defaultEngine = engine;
+    return (this.defaultEngine = engine);
   },
 
   async getDefaultPrivate() {
@@ -2263,7 +2604,7 @@ SearchService.prototype = {
 
   async setDefaultPrivate(engine) {
     await this.init(true);
-    return this.defaultEngine = engine;
+    return (this.defaultEngine = engine);
   },
 
   async getDefaultEngineInfo() {
@@ -2282,8 +2623,9 @@ SearchService.prototype = {
     if (!engine) {
       result.name = "NONE";
     } else {
-      if (engine.name)
+      if (engine.name) {
         result.name = engine.name;
+      }
 
       result.loadPath = engine._loadPath;
 
@@ -2306,8 +2648,9 @@ SearchService.prototype = {
 
       
       if (!sendSubmissionURL) {
-        let extras =
-          Services.prefs.getChildList(SearchUtils.BROWSER_SEARCH_PREF + "order.extra.");
+        let extras = Services.prefs.getChildList(
+          SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
+        );
 
         for (let prefName of extras) {
           try {
@@ -2322,8 +2665,9 @@ SearchService.prototype = {
         while (!sendSubmissionURL) {
           let prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${++i}`;
           let engineName = getLocalizedPref(prefName);
-          if (!engineName)
+          if (!engineName) {
             break;
+          }
           if (result.name == engineName) {
             sendSubmissionURL = true;
             break;
@@ -2340,14 +2684,17 @@ SearchService.prototype = {
 
       if (!sendSubmissionURL) {
         
-        let engineHost = engine._getURLOfType(SearchUtils.URL_TYPE.SEARCH).templateHost;
+        let engineHost = engine._getURLOfType(SearchUtils.URL_TYPE.SEARCH)
+          .templateHost;
         for (let name in this._engines) {
           let innerEngine = this._engines[name];
           if (!innerEngine._isDefault) {
             continue;
           }
 
-          let innerEngineURL = innerEngine._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
+          let innerEngineURL = innerEngine._getURLOfType(
+            SearchUtils.URL_TYPE.SEARCH
+          );
           if (innerEngineURL.templateHost == engineHost) {
             sendSubmissionURL = true;
             break;
@@ -2360,18 +2707,19 @@ SearchService.prototype = {
           
           
           
-          const urlTest =
-            /^(?:www\.google\.|search\.aol\.|yandex\.)|(?:search\.yahoo|\.ask|\.bing|\.startpage|\.baidu|duckduckgo)\.com$/;
+          const urlTest = /^(?:www\.google\.|search\.aol\.|yandex\.)|(?:search\.yahoo|\.ask|\.bing|\.startpage|\.baidu|duckduckgo)\.com$/;
           sendSubmissionURL = urlTest.test(engineHost);
         }
       }
 
       if (sendSubmissionURL) {
-        let uri = engine._getURLOfType("text/html")
-                        .getSubmission("", engine, "searchbar").uri;
-        uri = uri.mutate()
-                 .setUserPass("") 
-                 .finalize();
+        let uri = engine
+          ._getURLOfType("text/html")
+          .getSubmission("", engine, "searchbar").uri;
+        uri = uri
+          .mutate()
+          .setUserPass("") 
+          .finalize();
         result.submissionURL = uri.spec;
       }
     }
@@ -2440,8 +2788,9 @@ SearchService.prototype = {
       };
 
       processDomain(urlParsingInfo.mainDomain, false);
-      SearchStaticData.getAlternateDomains(urlParsingInfo.mainDomain)
-                      .forEach(d => processDomain(d, true));
+      SearchStaticData.getAlternateDomains(urlParsingInfo.mainDomain).forEach(
+        d => processDomain(d, true)
+      );
     }
   },
 
@@ -2454,16 +2803,18 @@ SearchService.prototype = {
 
     
     let getSortedFormData = data => {
-      return data.filter(a => a.name && a.value).sort((a, b) => {
-        if (a.name > b.name) {
-          return 1;
-        } else if (b.name > a.name) {
-          return -1;
-        } else if (a.value > b.value) {
-          return 1;
-        }
-        return (b.value > a.value) ? -1 : 0;
-      });
+      return data
+        .filter(a => a.name && a.value)
+        .sort((a, b) => {
+          if (a.name > b.name) {
+            return 1;
+          } else if (b.name > a.name) {
+            return -1;
+          } else if (a.value > b.value) {
+            return 1;
+          }
+          return b.value > a.value ? -1 : 0;
+        });
     };
 
     
@@ -2474,10 +2825,12 @@ SearchService.prototype = {
     return this._getSortedEngines(false).some(engine => {
       return engine._urls.some(url => {
         
-        if (url.type != SearchUtils.URL_TYPE.SEARCH ||
-            url.method != methodUpper ||
-            url.template != template ||
-            url.params.length != sortedFormLength) {
+        if (
+          url.type != SearchUtils.URL_TYPE.SEARCH ||
+          url.method != methodUpper ||
+          url.template != template ||
+          url.params.length != sortedFormLength
+        ) {
           return false;
         }
 
@@ -2487,9 +2840,11 @@ SearchService.prototype = {
         for (let i = 0; i < sortedFormLength; i++) {
           let data = sortedFormData[i];
           let param = sortedParams[i];
-          if (param.name != data.name ||
-              param.value != data.value ||
-              param.purpose != data.purpose) {
+          if (
+            param.name != data.name ||
+            param.value != data.value ||
+            param.purpose != data.purpose
+          ) {
             return false;
           }
         }
@@ -2540,8 +2895,10 @@ SearchService.prototype = {
     let encodedTerms = null;
     for (let param of soughtQuery.split("&")) {
       let equalPos = param.indexOf("=");
-      if (equalPos != -1 &&
-          param.substr(0, equalPos) == mapEntry.termsParameterName) {
+      if (
+        equalPos != -1 &&
+        param.substr(0, equalPos) == mapEntry.termsParameterName
+      ) {
         
         encodedTerms = param.substr(equalPos + 1);
         break;
@@ -2558,8 +2915,10 @@ SearchService.prototype = {
     
     for (let param of query.split("&")) {
       let equalPos = param.indexOf("=");
-      if (equalPos != -1 &&
-          param.substr(0, equalPos) == mapEntry.termsParameterName) {
+      if (
+        equalPos != -1 &&
+        param.substr(0, equalPos) == mapEntry.termsParameterName
+      ) {
         
         offset += equalPos + 1;
         length = param.length - equalPos - 1;
@@ -2573,7 +2932,8 @@ SearchService.prototype = {
     try {
       terms = Services.textToSubURI.UnEscapeAndConvert(
         mapEntry.engine.queryCharset,
-        encodedTerms.replace(/\+/g, " "));
+        encodedTerms.replace(/\+/g, " ")
+      );
     } catch (ex) {
       
       return gEmptyParseSubmissionResult;
@@ -2589,8 +2949,11 @@ SearchService.prototype = {
         switch (verb) {
           case SearchUtils.MODIFIED_TYPE.LOADED:
             engine = engine.QueryInterface(Ci.nsISearchEngine);
-            SearchUtils.log("nsSearchService::observe: Done installation of " + engine.name
-                + ".");
+            SearchUtils.log(
+              "nsSearchService::observe: Done installation of " +
+                engine.name +
+                "."
+            );
             this._addEngineToStore(engine.wrappedJSObject);
             if (engine.wrappedJSObject._useNow) {
               SearchUtils.log("nsSearchService::observe: setting current");
@@ -2630,8 +2993,14 @@ SearchService.prototype = {
   notify(timer) {
     SearchUtils.log("_notify: checking for updates");
 
-    if (!Services.prefs.getBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "update", true))
+    if (
+      !Services.prefs.getBoolPref(
+        SearchUtils.BROWSER_SEARCH_PREF + "update",
+        true
+      )
+    ) {
       return;
+    }
 
     
     
@@ -2639,14 +3008,21 @@ SearchService.prototype = {
     SearchUtils.log("currentTime: " + currentTime);
     for (let name in this._engines) {
       let engine = this._engines[name].wrappedJSObject;
-      if (!engine._hasUpdates)
+      if (!engine._hasUpdates) {
         continue;
+      }
 
       SearchUtils.log("checking " + engine.name);
 
       var expirTime = engine.getAttr("updateexpir");
-      SearchUtils.log("expirTime: " + expirTime + "\nupdateURL: " + engine._updateURL +
-          "\niconUpdateURL: " + engine._iconUpdateURL);
+      SearchUtils.log(
+        "expirTime: " +
+          expirTime +
+          "\nupdateURL: " +
+          engine._updateURL +
+          "\niconUpdateURL: " +
+          engine._iconUpdateURL
+      );
 
       var engineExpired = expirTime <= currentTime;
 
@@ -2687,26 +3063,27 @@ SearchService.prototype = {
     };
     OS.File.profileBeforeChange.addBlocker(
       "Search service: shutting down",
-      () => (async () => {
-        if (this._batchTask) {
-          shutdownState.step = "Finalizing batched task";
-          try {
-            await this._batchTask.finalize();
-            shutdownState.step = "Batched task finalized";
-          } catch (ex) {
-            shutdownState.step = "Batched task failed to finalize";
+      () =>
+        (async () => {
+          if (this._batchTask) {
+            shutdownState.step = "Finalizing batched task";
+            try {
+              await this._batchTask.finalize();
+              shutdownState.step = "Batched task finalized";
+            } catch (ex) {
+              shutdownState.step = "Batched task failed to finalize";
 
-            shutdownState.latestError.message = "" + ex;
-            if (ex && typeof ex == "object") {
-              shutdownState.latestError.stack = ex.stack || undefined;
+              shutdownState.latestError.message = "" + ex;
+              if (ex && typeof ex == "object") {
+                shutdownState.latestError.stack = ex.stack || undefined;
+              }
+
+              
+              
+              Promise.reject(ex);
             }
-
-            
-            
-            Promise.reject(ex);
           }
-        }
-      })(),
+        })(),
 
       () => shutdownState
     );
@@ -2715,7 +3092,10 @@ SearchService.prototype = {
 
   _removeObservers() {
     if (this._ignoreListListener) {
-      RemoteSettings(SearchUtils.SETTINGS_IGNORELIST_KEY).off("sync", this._ignoreListListener);
+      RemoteSettings(SearchUtils.SETTINGS_IGNORELIST_KEY).off(
+        "sync",
+        this._ignoreListListener
+      );
       delete this._ignoreListListener;
     }
 
@@ -2741,15 +3121,22 @@ var engineUpdateService = {
   update(engine) {
     engine = engine.wrappedJSObject;
     this._log("update called for " + engine._name);
-    if (!Services.prefs.getBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "update", true) ||
-        !engine._hasUpdates)
+    if (
+      !Services.prefs.getBoolPref(
+        SearchUtils.BROWSER_SEARCH_PREF + "update",
+        true
+      ) ||
+      !engine._hasUpdates
+    ) {
       return;
+    }
 
     let testEngine = null;
     let updateURL = engine._getURLOfType(SearchUtils.URL_TYPE.OPENSEARCH);
-    let updateURI = (updateURL && updateURL._hasRelation("self")) ?
-                     updateURL.getSubmission("", engine).uri :
-                     makeURI(engine._updateURL);
+    let updateURI =
+      updateURL && updateURL._hasRelation("self")
+        ? updateURL.getSubmission("", engine).uri
+        : makeURI(engine._updateURL);
     if (updateURI) {
       if (engine._isDefault && !updateURI.schemeIs("https")) {
         this._log("Invalid scheme for default engine update");
@@ -2782,7 +3169,12 @@ var engineUpdateService = {
 
 
   _log(text) {
-    if (Services.prefs.getBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "update.log", false)) {
+    if (
+      Services.prefs.getBoolPref(
+        SearchUtils.BROWSER_SEARCH_PREF + "update.log",
+        false
+      )
+    ) {
       dump("*** Search update: " + text + "\n");
       Services.console.logStringMessage(text);
     }

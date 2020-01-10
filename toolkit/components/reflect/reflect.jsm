@@ -3,8 +3,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "Reflect" ];
-
+var EXPORTED_SYMBOLS = ["Reflect"];
 
 
 

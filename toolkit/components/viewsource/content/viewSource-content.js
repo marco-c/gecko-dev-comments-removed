@@ -4,11 +4,16 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "DeferredTask",
-  "resource://gre/modules/DeferredTask.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "DeferredTask",
+  "resource://gre/modules/DeferredTask.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["NodeFilter"]);
 
@@ -62,7 +67,7 @@ var ViewSourceContent = {
 
 
   init() {
-    this.messages.forEach((msgName) => {
+    this.messages.forEach(msgName => {
       addMessageListener(msgName, this);
     });
 
@@ -78,7 +83,7 @@ var ViewSourceContent = {
 
 
   uninit() {
-    this.messages.forEach((msgName) => {
+    this.messages.forEach(msgName => {
       removeMessageListener(msgName, this);
     });
 
@@ -101,11 +106,19 @@ var ViewSourceContent = {
     let data = msg.data;
     switch (msg.name) {
       case "ViewSource:LoadSource":
-        this.viewSource(data.URL, data.outerWindowID, data.lineNumber,
-                        data.shouldWrap);
+        this.viewSource(
+          data.URL,
+          data.outerWindowID,
+          data.lineNumber,
+          data.shouldWrap
+        );
         break;
       case "ViewSource:LoadSourceWithSelection":
-        this.viewSourceWithSelection(data.URL, data.drawSelection, data.baseURI);
+        this.viewSourceWithSelection(
+          data.URL,
+          data.drawSelection,
+          data.baseURI
+        );
         break;
       case "ViewSource:GoToLine":
         this.goToLine(data.lineNumber);
@@ -153,17 +166,19 @@ var ViewSourceContent = {
 
 
   get selectionController() {
-    return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsISelectionDisplay)
-                   .QueryInterface(Ci.nsISelectionController);
+    return docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsISelectionDisplay)
+      .QueryInterface(Ci.nsISelectionController);
   },
 
   
 
 
   get webBrowserFind() {
-    return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIWebBrowserFind);
+    return docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebBrowserFind);
   },
 
   
@@ -188,7 +203,7 @@ var ViewSourceContent = {
 
       try {
         pageDescriptor = otherDocShell.QueryInterface(Ci.nsIWebPageDescriptor)
-                                      .currentDescriptor;
+          .currentDescriptor;
       } catch (e) {
         
         
@@ -196,8 +211,7 @@ var ViewSourceContent = {
 
       let utils = contentWindow.windowUtils;
       let doc = contentWindow.document;
-      forcedCharSet = utils.docCharsetIsForced ? doc.characterSet
-                                               : null;
+      forcedCharSet = utils.docCharsetIsForced ? doc.characterSet : null;
     }
 
     this.loadSource(URL, pageDescriptor, lineNumber, forcedCharSet);
@@ -225,14 +239,15 @@ var ViewSourceContent = {
     if (forcedCharSet) {
       try {
         docShell.charset = forcedCharSet;
-      } catch (e) {  }
+      } catch (e) {
+        
+      }
     }
 
     if (lineNumber && lineNumber > 0) {
-      let doneLoading = (event) => {
+      let doneLoading = event => {
         
-        if (this.isAboutBlank ||
-            !content.document.body) {
+        if (this.isAboutBlank || !content.document.body) {
           return;
         }
         this.goToLine(lineNumber);
@@ -249,8 +264,10 @@ var ViewSourceContent = {
 
     try {
       let pageLoader = docShell.QueryInterface(Ci.nsIWebPageDescriptor);
-      pageLoader.loadPage(pageDescriptor,
-                          Ci.nsIWebPageDescriptor.DISPLAY_AS_SOURCE);
+      pageLoader.loadPage(
+        pageDescriptor,
+        Ci.nsIWebPageDescriptor.DISPLAY_AS_SOURCE
+      );
     } catch (e) {
       
       this.loadSourceFromURL(viewSrcURL);
@@ -258,18 +275,18 @@ var ViewSourceContent = {
     }
 
     let shEntrySource = pageDescriptor.QueryInterface(Ci.nsISHEntry);
-    let shEntry = Cc["@mozilla.org/browser/session-history-entry;1"]
-                    .createInstance(Ci.nsISHEntry);
+    let shEntry = Cc[
+      "@mozilla.org/browser/session-history-entry;1"
+    ].createInstance(Ci.nsISHEntry);
     shEntry.URI = Services.io.newURI(viewSrcURL);
     shEntry.title = viewSrcURL;
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     shEntry.triggeringPrincipal = systemPrincipal;
     shEntry.setLoadTypeAsHistory();
     shEntry.cacheKey = shEntrySource.cacheKey;
-    docShell.QueryInterface(Ci.nsIWebNavigation)
-            .sessionHistory
-            .legacySHistory
-            .addEntry(shEntry, true);
+    docShell
+      .QueryInterface(Ci.nsIWebNavigation)
+      .sessionHistory.legacySHistory.addEntry(shEntry, true);
   },
 
   
@@ -308,8 +325,9 @@ var ViewSourceContent = {
     }
 
     
-    if (!event.isTrusted || event.target.localName != "button")
+    if (!event.isTrusted || event.target.localName != "button") {
       return;
+    }
 
     let errorDoc = target.ownerDocument;
 
@@ -334,8 +352,10 @@ var ViewSourceContent = {
 
     
     
-    if (this.needsDrawSelection &&
-        content.document.documentURI.startsWith("view-source:")) {
+    if (
+      this.needsDrawSelection &&
+      content.document.documentURI.startsWith("view-source:")
+    ) {
       this.needsDrawSelection = false;
       this.drawSelection();
     }
@@ -448,7 +468,9 @@ var ViewSourceContent = {
         
         
         
-        node = node.nextSibling ? node.nextSibling : node.parentNode.nextSibling;
+        node = node.nextSibling
+          ? node.nextSibling
+          : node.parentNode.nextSibling;
         selection.extend(node, 0);
       }
     }
@@ -461,11 +483,11 @@ var ViewSourceContent = {
     selCon.scrollSelectionIntoView(
       Ci.nsISelectionController.SELECTION_NORMAL,
       Ci.nsISelectionController.SELECTION_FOCUS_REGION,
-      true);
+      true
+    );
 
     sendAsyncMessage("ViewSource:GoToLine:Success", { lineNumber });
   },
-
 
   
 
@@ -482,9 +504,7 @@ var ViewSourceContent = {
   findLocation(pre, lineNumber, node, offset, interlinePosition, result) {
     if (node && !pre) {
       
-      for (pre = node;
-           pre.nodeName != "PRE";
-           pre = pre.parentNode);
+      for (pre = node; pre.nodeName != "PRE"; pre = pre.parentNode) {}
     }
 
     
@@ -495,22 +515,27 @@ var ViewSourceContent = {
     let curLine = pre.id ? parseInt(pre.id.substring(4)) : 1;
 
     
-    let treewalker = content.document
-        .createTreeWalker(pre, NodeFilter.SHOW_TEXT, null);
+    let treewalker = content.document.createTreeWalker(
+      pre,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
 
     
     let firstCol = 1;
 
     let found = false;
-    for (let textNode = treewalker.firstChild();
-         textNode && !found;
-         textNode = treewalker.nextNode()) {
+    for (
+      let textNode = treewalker.firstChild();
+      textNode && !found;
+      textNode = treewalker.nextNode()
+    ) {
       
       let lineArray = textNode.data.split(/\n/);
       let lastLineInNode = curLine + lineArray.length - 1;
 
       
-      if (node ? (textNode != node) : (lastLineInNode < lineNumber)) {
+      if (node ? textNode != node : lastLineInNode < lineNumber) {
         if (lineArray.length > 1) {
           firstCol = 1;
         }
@@ -521,9 +546,11 @@ var ViewSourceContent = {
 
       
       
-      for (var i = 0, curPos = 0;
-           i < lineArray.length;
-           curPos += lineArray[i++].length + 1) {
+      for (
+        var i = 0, curPos = 0;
+        i < lineArray.length;
+        curPos += lineArray[i++].length + 1
+      ) {
         if (i > 0) {
           curLine++;
         }
@@ -562,7 +589,7 @@ var ViewSourceContent = {
       }
     }
 
-    return found || ("range" in result);
+    return found || "range" in result;
   },
 
   
@@ -614,26 +641,29 @@ var ViewSourceContent = {
 
 
   drawSelection() {
-    content.document.title =
-      this.bundle.GetStringFromName("viewSelectionSourceTitle");
+    content.document.title = this.bundle.GetStringFromName(
+      "viewSelectionSourceTitle"
+    );
 
     
     
     var findService = null;
     try {
       
-      findService = Cc["@mozilla.org/find/find_service;1"]
-                    .getService(Ci.nsIFindService);
-    } catch (e) { }
-    if (!findService)
+      findService = Cc["@mozilla.org/find/find_service;1"].getService(
+        Ci.nsIFindService
+      );
+    } catch (e) {}
+    if (!findService) {
       return;
+    }
 
     
-    var matchCase     = findService.matchCase;
-    var entireWord    = findService.entireWord;
-    var wrapFind      = findService.wrapFind;
+    var matchCase = findService.matchCase;
+    var entireWord = findService.entireWord;
+    var wrapFind = findService.wrapFind;
     var findBackwards = findService.findBackwards;
-    var searchString  = findService.searchString;
+    var searchString = findService.searchString;
     var replaceString = findService.replaceString;
 
     
@@ -649,8 +679,9 @@ var ViewSourceContent = {
     findInst.findNext();
 
     var selection = content.getSelection();
-    if (!selection.rangeCount)
+    if (!selection.rangeCount) {
       return;
+    }
 
     var range = selection.getRangeAt(0);
 
@@ -671,8 +702,9 @@ var ViewSourceContent = {
     
     endContainer.deleteData(endOffset, endLength);
     startContainer.deleteData(startOffset, startLength);
-    if (startContainer == endContainer)
-      endOffset -= startLength; 
+    if (startContainer == endContainer) {
+      endOffset -= startLength;
+    } 
     range.setEnd(endContainer, endOffset);
 
     
@@ -682,24 +714,25 @@ var ViewSourceContent = {
     
     try {
       this.selectionController.scrollSelectionIntoView(
-                                 Ci.nsISelectionController.SELECTION_NORMAL,
-                                 Ci.nsISelectionController.SELECTION_ANCHOR_REGION,
-                                 true);
-    } catch (e) { }
+        Ci.nsISelectionController.SELECTION_NORMAL,
+        Ci.nsISelectionController.SELECTION_ANCHOR_REGION,
+        true
+      );
+    } catch (e) {}
 
     
-    findService.matchCase     = matchCase;
-    findService.entireWord    = entireWord;
-    findService.wrapFind      = wrapFind;
+    findService.matchCase = matchCase;
+    findService.entireWord = entireWord;
+    findService.wrapFind = wrapFind;
     findService.findBackwards = findBackwards;
-    findService.searchString  = searchString;
+    findService.searchString = searchString;
     findService.replaceString = replaceString;
 
-    findInst.matchCase     = matchCase;
-    findInst.entireWord    = entireWord;
-    findInst.wrapFind      = wrapFind;
+    findInst.matchCase = matchCase;
+    findInst.entireWord = entireWord;
+    findInst.wrapFind = wrapFind;
     findInst.findBackwards = findBackwards;
-    findInst.searchString  = searchString;
+    findInst.searchString = searchString;
   },
 
   
@@ -756,8 +789,10 @@ var ViewSourceContent = {
       }
       if (itemSpec.accesskey) {
         let accesskeyName = `context_${itemSpec.id}_accesskey`;
-        item.setAttribute("accesskey",
-                          this.bundle.GetStringFromName(accesskeyName));
+        item.setAttribute(
+          "accesskey",
+          this.bundle.GetStringFromName(accesskeyName)
+        );
       }
       menu.appendChild(item);
     });

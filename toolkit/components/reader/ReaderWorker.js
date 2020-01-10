@@ -10,9 +10,11 @@
 
 
 
-importScripts("resource://gre/modules/workers/require.js",
-              "resource://gre/modules/reader/JSDOMParser.js",
-              "resource://gre/modules/reader/Readability.js");
+importScripts(
+  "resource://gre/modules/workers/require.js",
+  "resource://gre/modules/reader/JSDOMParser.js",
+  "resource://gre/modules/reader/Readability.js"
+);
 
 var PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
 

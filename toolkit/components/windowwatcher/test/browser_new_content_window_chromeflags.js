@@ -12,23 +12,23 @@
 
 
 const ALLOWED = {
-  "toolbar": {
+  toolbar: {
     flag: Ci.nsIWebBrowserChrome.CHROME_TOOLBAR,
     defaults_to: true,
   },
-  "personalbar": {
+  personalbar: {
     flag: Ci.nsIWebBrowserChrome.CHROME_PERSONAL_TOOLBAR,
     defaults_to: true,
   },
-  "menubar": {
+  menubar: {
     flag: Ci.nsIWebBrowserChrome.CHROME_MENUBAR,
     defaults_to: true,
   },
-  "scrollbars": {
+  scrollbars: {
     flag: Ci.nsIWebBrowserChrome.CHROME_SCROLLBARS,
     defaults_to: false,
   },
-  "minimizable": {
+  minimizable: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_MIN,
     defaults_to: true,
   },
@@ -36,28 +36,30 @@ const ALLOWED = {
 
 
 
-const ALLOWED_STRING = Object.keys(ALLOWED).map(feature => {
-  let toValue = ALLOWED[feature].defaults_to ? "no" : "yes";
-  return `${feature}=${toValue}`;
-}).join(",");
+const ALLOWED_STRING = Object.keys(ALLOWED)
+  .map(feature => {
+    let toValue = ALLOWED[feature].defaults_to ? "no" : "yes";
+    return `${feature}=${toValue}`;
+  })
+  .join(",");
 
 
 
 
 const DISALLOWED = {
-  "location": {
+  location: {
     flag: Ci.nsIWebBrowserChrome.CHROME_LOCATIONBAR,
     defaults_to: true,
   },
-  "chrome": {
+  chrome: {
     flag: Ci.nsIWebBrowserChrome.CHROME_OPENAS_CHROME,
     defaults_to: false,
   },
-  "dialog": {
+  dialog: {
     flag: Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG,
     defaults_to: false,
   },
-  "private": {
+  private: {
     flag: Ci.nsIWebBrowserChrome.CHROME_PRIVATE_WINDOW,
     defaults_to: false,
   },
@@ -72,11 +74,11 @@ const DISALLOWED = {
   
   
   
-  "popup": {
+  popup: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_POPUP,
     defaults_to: false,
   },
-  "alwaysLowered": {
+  alwaysLowered: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_LOWERED,
     defaults_to: false,
   },
@@ -84,47 +86,47 @@ const DISALLOWED = {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_LOWERED, 
     defaults_to: false,
   },
-  "alwaysRaised": {
+  alwaysRaised: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_RAISED,
     defaults_to: false,
   },
-  "alwaysOnTop": {
+  alwaysOnTop: {
     flag: Ci.nsIWebBrowserChrome.CHROME_ALWAYS_ON_TOP,
     defaults_to: false,
   },
-  "suppressanimation": {
+  suppressanimation: {
     flag: Ci.nsIWebBrowserChrome.CHROME_SUPPRESS_ANIMATION,
     defaults_to: false,
   },
-  "extrachrome": {
+  extrachrome: {
     flag: Ci.nsIWebBrowserChrome.CHROME_EXTRA,
     defaults_to: false,
   },
-  "centerscreen": {
+  centerscreen: {
     flag: Ci.nsIWebBrowserChrome.CHROME_CENTER_SCREEN,
     defaults_to: false,
   },
-  "dependent": {
+  dependent: {
     flag: Ci.nsIWebBrowserChrome.CHROME_DEPENDENT,
     defaults_to: false,
   },
-  "modal": {
+  modal: {
     flag: Ci.nsIWebBrowserChrome.CHROME_MODAL,
     defaults_to: false,
   },
-  "titlebar": {
+  titlebar: {
     flag: Ci.nsIWebBrowserChrome.CHROME_TITLEBAR,
     defaults_to: true,
   },
-  "close": {
+  close: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_CLOSE,
     defaults_to: true,
   },
-  "resizable": {
+  resizable: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE,
     defaults_to: true,
   },
-  "status": {
+  status: {
     flag: Ci.nsIWebBrowserChrome.CHROME_STATUSBAR,
     defaults_to: true,
   },
@@ -148,11 +150,9 @@ registerCleanupFunction(() => {
 
 
 function getParentChromeFlags(win) {
-  return win.docShell
-            .treeOwner
-            .QueryInterface(Ci.nsIInterfaceRequestor)
-            .getInterface(Ci.nsIXULWindow)
-            .chromeFlags;
+  return win.docShell.treeOwner
+    .QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIXULWindow).chromeFlags;
 }
 
 
@@ -171,14 +171,14 @@ function getContentChromeFlags(win) {
     docShell.QueryInterface(Ci.nsIInterfaceRequestor);
     try {
       
-      return docShell.getInterface(Ci.nsIBrowserChild)
-                      .QueryInterface(Ci.nsIWebBrowserChrome)
-                      .chromeFlags;
+      return docShell
+        .getInterface(Ci.nsIBrowserChild)
+        .QueryInterface(Ci.nsIWebBrowserChrome).chromeFlags;
     } catch (e) {
       
-      return docShell.treeOwner
-                      .QueryInterface(Ci.nsIWebBrowserChrome)
-                      .chromeFlags;
+      return docShell.treeOwner.QueryInterface(
+        Ci.nsIWebBrowserChrome
+      ).chromeFlags;
     }
   });
 }
@@ -198,13 +198,17 @@ function assertContentFlags(chromeFlags) {
     if (ALLOWED[feature].defaults_to) {
       
       
-      Assert.ok(!(chromeFlags & flag),
-                `Expected feature ${feature} to be disabled`);
+      Assert.ok(
+        !(chromeFlags & flag),
+        `Expected feature ${feature} to be disabled`
+      );
     } else {
       
       
-      Assert.ok((chromeFlags & flag),
-                `Expected feature ${feature} to be enabled`);
+      Assert.ok(
+        chromeFlags & flag,
+        `Expected feature ${feature} to be enabled`
+      );
     }
   }
 
@@ -214,13 +218,17 @@ function assertContentFlags(chromeFlags) {
     if (DISALLOWED[feature].defaults_to) {
       
       
-      Assert.ok((chromeFlags & flag),
-                `Expected feature ${feature} to be unchanged`);
+      Assert.ok(
+        chromeFlags & flag,
+        `Expected feature ${feature} to be unchanged`
+      );
     } else {
       
       
-      Assert.ok(!(chromeFlags & flag),
-                `Expected feature ${feature} to be unchanged`);
+      Assert.ok(
+        !(chromeFlags & flag),
+        `Expected feature ${feature} to be unchanged`
+      );
     }
   }
 }
@@ -234,10 +242,12 @@ function assertContentFlags(chromeFlags) {
 add_task(async function test_new_remote_window_flags() {
   
   
-  const DISALLOWED_STRING = Object.keys(DISALLOWED).map(feature => {
-    let toValue = DISALLOWED[feature].defaults_to ? "no" : "yes";
-    return `${feature}=${toValue}`;
-  }).join(",");
+  const DISALLOWED_STRING = Object.keys(DISALLOWED)
+    .map(feature => {
+      let toValue = DISALLOWED[feature].defaults_to ? "no" : "yes";
+      return `${feature}=${toValue}`;
+    })
+    .join(",");
 
   const FEATURES = [ALLOWED_STRING, DISALLOWED_STRING].join(",");
 
@@ -246,50 +256,61 @@ add_task(async function test_new_remote_window_flags() {
 
   let newWinPromise = BrowserTestUtils.waitForNewWindow();
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: SCRIPT_PAGE,
-  }, async function(browser) {
-    let win = await newWinPromise;
-    let parentChromeFlags = getParentChromeFlags(win);
-    assertContentFlags(parentChromeFlags);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: SCRIPT_PAGE,
+    },
+    async function(browser) {
+      let win = await newWinPromise;
+      let parentChromeFlags = getParentChromeFlags(win);
+      assertContentFlags(parentChromeFlags);
 
-    if (win.gMultiProcessBrowser) {
-      Assert.ok(parentChromeFlags &
-                Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW,
-                "Should be remote by default");
-    } else {
-      Assert.ok(!(parentChromeFlags &
-                  Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW),
-                "Should not be remote by default");
+      if (win.gMultiProcessBrowser) {
+        Assert.ok(
+          parentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW,
+          "Should be remote by default"
+        );
+      } else {
+        Assert.ok(
+          !(parentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW),
+          "Should not be remote by default"
+        );
+      }
+
+      
+      
+      let contentChromeFlags = await getContentChromeFlags(win);
+      assertContentFlags(contentChromeFlags);
+      Assert.ok(
+        !(contentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW),
+        "Should not be remote in the content process."
+      );
+
+      await BrowserTestUtils.closeWindow(win);
     }
-
-    
-    
-    let contentChromeFlags = await getContentChromeFlags(win);
-    assertContentFlags(contentChromeFlags);
-    Assert.ok(!(contentChromeFlags &
-                Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW),
-              "Should not be remote in the content process.");
-
-    await BrowserTestUtils.closeWindow(win);
-  });
+  );
 
   
   
   newWinPromise = BrowserTestUtils.waitForNewWindow();
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: SCRIPT_PAGE_FOR_CHROME_ALL,
-  }, async function(browser) {
-    let win = await newWinPromise;
-    let parentChromeFlags = getParentChromeFlags(win);
-    Assert.notEqual((parentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_ALL),
-                    Ci.nsIWebBrowserChrome.CHROME_ALL,
-                    "Should not have been able to set CHROME_ALL");
-    await BrowserTestUtils.closeWindow(win);
-  });
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: SCRIPT_PAGE_FOR_CHROME_ALL,
+    },
+    async function(browser) {
+      let win = await newWinPromise;
+      let parentChromeFlags = getParentChromeFlags(win);
+      Assert.notEqual(
+        parentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_ALL,
+        Ci.nsIWebBrowserChrome.CHROME_ALL,
+        "Should not have been able to set CHROME_ALL"
+      );
+      await BrowserTestUtils.closeWindow(win);
+    }
+  );
 });
 
 
@@ -301,20 +322,27 @@ add_task(async function test_scrollbars_flag() {
   const SCRIPT_PAGE = `data:text/html,<script>${SCRIPT}</script>`;
 
   let newWinPromise = BrowserTestUtils.waitForNewWindow();
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: SCRIPT_PAGE,
-  }, async function(browser) {
-    let win = await newWinPromise;
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: SCRIPT_PAGE,
+    },
+    async function(browser) {
+      let win = await newWinPromise;
 
-    let parentChromeFlags = getParentChromeFlags(win);
-    Assert.ok(parentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_SCROLLBARS,
-              "Should have scrollbars when not disabled explicitly");
+      let parentChromeFlags = getParentChromeFlags(win);
+      Assert.ok(
+        parentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_SCROLLBARS,
+        "Should have scrollbars when not disabled explicitly"
+      );
 
-    let contentChromeFlags = await getContentChromeFlags(win);
-    Assert.ok(contentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_SCROLLBARS,
-              "Should have scrollbars when not disabled explicitly");
+      let contentChromeFlags = await getContentChromeFlags(win);
+      Assert.ok(
+        contentChromeFlags & Ci.nsIWebBrowserChrome.CHROME_SCROLLBARS,
+        "Should have scrollbars when not disabled explicitly"
+      );
 
-    await BrowserTestUtils.closeWindow(win);
-  });
+      await BrowserTestUtils.closeWindow(win);
+    }
+  );
 });

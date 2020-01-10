@@ -15,8 +15,9 @@
 
 
 
-var as = Cc["@mozilla.org/browser/annotation-service;1"].
-         getService(Ci.nsIAnnotationService);
+var as = Cc["@mozilla.org/browser/annotation-service;1"].getService(
+  Ci.nsIAnnotationService
+);
 
 add_task(async function test_annos_expire_never() {
   
@@ -32,7 +33,10 @@ add_task(async function test_annos_expire_never() {
     await PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
     await PlacesUtils.history.update({
       url: pageURI,
-      annotations: new Map([["page_expire1", "test"], ["page_expire2", "test"]]),
+      annotations: new Map([
+        ["page_expire1", "test"],
+        ["page_expire2", "test"],
+      ]),
     });
   }
 
@@ -68,7 +72,10 @@ add_task(async function test_annos_expire_never() {
     await PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
     await PlacesUtils.history.update({
       url: pageURI,
-      annotations: new Map([["page_persist1", "test"], ["page_persist2", "test"]]),
+      annotations: new Map([
+        ["page_persist1", "test"],
+        ["page_persist2", "test"],
+      ]),
     });
   }
 

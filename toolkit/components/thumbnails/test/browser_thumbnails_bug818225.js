@@ -1,8 +1,10 @@
 
 
 
-const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/" +
-            "test/background_red.html?" + Date.now();
+const URL =
+  "http://mochi.test:8888/browser/toolkit/components/thumbnails/" +
+  "test/background_red.html?" +
+  Date.now();
 
 
 function* runTests() {

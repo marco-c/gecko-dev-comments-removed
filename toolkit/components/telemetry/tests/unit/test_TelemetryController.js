@@ -8,16 +8,20 @@
 
 
 
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
-const {ClientID} = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
+const { ClientID } = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryStorage.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySend.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryArchive.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
 ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
 
 const PING_FORMAT_VERSION = 4;
@@ -50,7 +54,12 @@ function sendPing(aSendClientId, aSendEnvironment) {
 
 function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
   const MANDATORY_PING_FIELDS = [
-    "type", "id", "creationDate", "version", "application", "payload",
+    "type",
+    "id",
+    "creationDate",
+    "version",
+    "application",
+    "payload",
   ];
 
   const APPLICATION_TEST_DATA = {
@@ -69,20 +78,31 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
   }
 
   Assert.equal(aPing.type, aType, "The ping must have the correct type.");
-  Assert.equal(aPing.version, PING_FORMAT_VERSION, "The ping must have the correct version.");
+  Assert.equal(
+    aPing.version,
+    PING_FORMAT_VERSION,
+    "The ping must have the correct version."
+  );
 
   
   for (let f in APPLICATION_TEST_DATA) {
-    Assert.equal(aPing.application[f], APPLICATION_TEST_DATA[f],
-                 f + " must have the correct value.");
+    Assert.equal(
+      aPing.application[f],
+      APPLICATION_TEST_DATA[f],
+      f + " must have the correct value."
+    );
   }
 
   
   
-  Assert.ok("architecture" in aPing.application,
-            "The application section must have an architecture field.");
-  Assert.ok("channel" in aPing.application,
-            "The application section must have a channel field.");
+  Assert.ok(
+    "architecture" in aPing.application,
+    "The application section must have an architecture field."
+  );
+  Assert.ok(
+    "channel" in aPing.application,
+    "The application section must have a channel field."
+  );
 
   
   Assert.equal("clientId" in aPing, aHasClientId);
@@ -101,7 +121,8 @@ add_task(async function test_setup() {
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   await new Promise(resolve =>
-    Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve)));
+    Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve))
+  );
 });
 
 add_task(async function asyncSetup() {
@@ -110,7 +131,7 @@ add_task(async function asyncSetup() {
 
 
 add_task(async function test_overwritePing() {
-  let ping = {id: "foo"};
+  let ping = { id: "foo" };
   await TelemetryStorage.savePing(ping, true);
   await TelemetryStorage.savePing(ping, false);
   await TelemetryStorage.cleanupPingFile(ping);
@@ -122,7 +143,10 @@ add_task(async function test_simplePing() {
   
   
   
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(
+    TelemetryUtils.Preferences.Server,
+    "http://localhost:" + PingServer.port
+  );
 
   await sendPing(false, false);
   let request = await PingServer.promiseNextRequest();
@@ -142,7 +166,10 @@ add_task(async function test_disableDataUpload() {
 
   
   let snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
-  Assert.ok(!(OPTIN_PROBE in snapshot), "Data optin scalar should not be set at start");
+  Assert.ok(
+    !(OPTIN_PROBE in snapshot),
+    "Data optin scalar should not be set at start"
+  );
 
   
   await sendPing(true, false);
@@ -150,7 +177,11 @@ add_task(async function test_disableDataUpload() {
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   let firstClientId = ping.clientId;
   Assert.ok(firstClientId, "Test ping needs a client ID");
-  Assert.notEqual(TelemetryUtils.knownClientID, firstClientId, "Client ID should be valid and random");
+  Assert.notEqual(
+    TelemetryUtils.knownClientID,
+    firstClientId,
+    "Client ID should be valid and random"
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
@@ -161,7 +192,10 @@ add_task(async function test_disableDataUpload() {
   await TelemetrySend.testWaitOnOutgoingPings();
 
   snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
-  Assert.ok(!(OPTIN_PROBE in snapshot), "Data optin scalar should not be set after optout");
+  Assert.ok(
+    !(OPTIN_PROBE in snapshot),
+    "Data optin scalar should not be set after optout"
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
@@ -169,12 +203,17 @@ add_task(async function test_disableDataUpload() {
   
   await ContentTaskUtils.waitForCondition(() => {
     const scalarSnapshot = Telemetry.getSnapshotForScalars("main", false);
-    return Object.keys(scalarSnapshot).includes("parent") &&
-           OPTIN_PROBE in scalarSnapshot.parent;
+    return (
+      Object.keys(scalarSnapshot).includes("parent") &&
+      OPTIN_PROBE in scalarSnapshot.parent
+    );
   });
 
   snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
-  Assert.ok(snapshot[OPTIN_PROBE], "Enabling data upload should set optin probe");
+  Assert.ok(
+    snapshot[OPTIN_PROBE],
+    "Enabling data upload should set optin probe"
+  );
 
   
   await PingServer.stop();
@@ -195,14 +234,20 @@ add_task(async function test_disableDataUpload() {
 
   
   let pendingPings = await TelemetryStorage.loadPendingPingList();
-  Assert.equal(pendingPings.length, 0,
-               "All the pending pings should have been deleted, including the optout ping");
+  Assert.equal(
+    pendingPings.length,
+    0,
+    "All the pending pings should have been deleted, including the optout ping"
+  );
 
   
   PingServer.start();
   
   
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(
+    TelemetryUtils.Preferences.Server,
+    "http://localhost:" + PingServer.port
+  );
 
   
   await TelemetrySend.shutdown();
@@ -220,8 +265,16 @@ add_task(async function test_disableDataUpload() {
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
 
   
-  Assert.notEqual(TelemetryUtils.knownClientID, ping.clientId, "Client ID should be reset to a random value");
-  Assert.notEqual(firstClientId, ping.clientId, "Client ID should be different from the previous value");
+  Assert.notEqual(
+    TelemetryUtils.knownClientID,
+    ping.clientId,
+    "Client ID should be reset to a random value"
+  );
+  Assert.notEqual(
+    firstClientId,
+    ping.clientId,
+    "Client ID should be different from the previous value"
+  );
 
   
   
@@ -239,14 +292,19 @@ add_task(async function test_pingHasClientId() {
   await ClientID._reset();
   await TelemetryStorage.testClearPendingPings();
   
-  let h = Telemetry.getHistogramById("TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID");
+  let h = Telemetry.getHistogramById(
+    "TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID"
+  );
   h.clear();
 
   
   let promisePingSetup = TelemetryController.testReset();
   await sendPing(true, false);
-  Assert.equal(h.snapshot().sum, 1,
-               "We must have a ping waiting for the clientId early during startup.");
+  Assert.equal(
+    h.snapshot().sum,
+    1,
+    "We must have a ping waiting for the clientId early during startup."
+  );
   
   
   await promisePingSetup;
@@ -258,7 +316,11 @@ add_task(async function test_pingHasClientId() {
   gClientID = await ClientID.getClientID();
 
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
-  Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
+  Assert.equal(
+    ping.clientId,
+    gClientID,
+    "The correct clientId must be reported."
+  );
 
   
   await TelemetryController.testShutdown();
@@ -275,8 +337,11 @@ add_task(async function test_pingHasClientId() {
   Assert.equal(h.snapshot().sum, 0, "We must have used the cached clientId.");
   ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
-  Assert.equal(ping.clientId, gClientID,
-               "Telemetry should report the correct cached clientId.");
+  Assert.equal(
+    ping.clientId,
+    gClientID,
+    "Telemetry should report the correct cached clientId."
+  );
 
   
   
@@ -287,8 +352,16 @@ add_task(async function test_pingHasClientId() {
   await sendPing(true, false);
   ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
-  Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
-  Assert.equal(h.snapshot().sum, 0, "No ping should have been waiting for a clientId.");
+  Assert.equal(
+    ping.clientId,
+    gClientID,
+    "The correct clientId must be reported."
+  );
+  Assert.equal(
+    h.snapshot().sum,
+    0,
+    "No ping should have been waiting for a clientId."
+  );
 });
 
 add_task(async function test_pingHasEnvironment() {
@@ -310,7 +383,11 @@ add_task(async function test_pingHasEnvironmentAndClientId() {
   
   Assert.equal(ping.application.buildId, ping.environment.build.buildId);
   
-  Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
+  Assert.equal(
+    ping.clientId,
+    gClientID,
+    "The correct clientId must be reported."
+  );
 });
 
 add_task(async function test_archivePings() {
@@ -321,7 +398,9 @@ add_task(async function test_archivePings() {
   
   
   const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
-  const uploadPref = isUnified ? TelemetryUtils.Preferences.FhrUploadEnabled : TelemetryUtils.Preferences.TelemetryEnabled;
+  const uploadPref = isUnified
+    ? TelemetryUtils.Preferences.FhrUploadEnabled
+    : TelemetryUtils.Preferences.TelemetryEnabled;
   Preferences.set(uploadPref, false);
 
   
@@ -332,12 +411,18 @@ add_task(async function test_archivePings() {
   }
 
   
-  PingServer.registerPingHandler(() => Assert.ok(false, "Telemetry must not send pings if not allowed to."));
+  PingServer.registerPingHandler(() =>
+    Assert.ok(false, "Telemetry must not send pings if not allowed to.")
+  );
   let pingId = await sendPing(true, true);
 
   
   let ping = await TelemetryArchive.promiseArchivedPingById(pingId);
-  Assert.equal(ping.id, pingId, "TelemetryController should still archive pings.");
+  Assert.equal(
+    ping.id,
+    pingId,
+    "TelemetryController should still archive pings."
+  );
 
   
   now = new Date(2010, 10, 18, 12, 0, 0);
@@ -345,8 +430,10 @@ add_task(async function test_archivePings() {
   Preferences.set(TelemetryUtils.Preferences.ArchiveEnabled, false);
   pingId = await sendPing(true, true);
   let promise = TelemetryArchive.promiseArchivedPingById(pingId);
-  Assert.ok((await promiseRejects(promise)),
-    "TelemetryController should not archive pings if the archive pref is disabled.");
+  Assert.ok(
+    await promiseRejects(promise),
+    "TelemetryController should not archive pings if the archive pref is disabled."
+  );
 
   
   Preferences.set(uploadPref, true);
@@ -361,8 +448,11 @@ add_task(async function test_archivePings() {
   
   await PingServer.promiseNextPing();
   ping = await TelemetryArchive.promiseArchivedPingById(pingId);
-  Assert.equal(ping.id, pingId,
-    "TelemetryController should still archive pings if ping upload is enabled.");
+  Assert.equal(
+    ping.id,
+    pingId,
+    "TelemetryController should still archive pings if ping upload is enabled."
+  );
 });
 
 
@@ -373,11 +463,15 @@ add_task(async function test_midnightPingSendFuzzing() {
   let now = new Date(2030, 5, 1, 11, 0, 0);
   fakeNow(now);
 
-  let waitForTimer = () => new Promise(resolve => {
-    fakePingSendTimer((callback, timeout) => {
-      resolve([callback, timeout]);
-    }, () => {});
-  });
+  let waitForTimer = () =>
+    new Promise(resolve => {
+      fakePingSendTimer(
+        (callback, timeout) => {
+          resolve([callback, timeout]);
+        },
+        () => {}
+      );
+    });
 
   PingServer.clearRequests();
   await TelemetryController.testReset();
@@ -392,7 +486,10 @@ add_task(async function test_midnightPingSendFuzzing() {
   await sendPing(true, true);
   let [timerCallback, timerTimeout] = await timerPromise;
   Assert.ok(!!timerCallback);
-  Assert.deepEqual(futureDate(now, timerTimeout), new Date(2030, 5, 2, 1, 0, 0));
+  Assert.deepEqual(
+    futureDate(now, timerTimeout),
+    new Date(2030, 5, 2, 1, 0, 0)
+  );
 
   
   now = new Date(2030, 5, 2, 0, 59, 59);
@@ -438,7 +535,10 @@ add_task(async function test_midnightPingSendFuzzing() {
 add_task(async function test_changePingAfterSubmission() {
   
   let payload = { canary: "test" };
-  let pingPromise = TelemetryController.submitExternalPing(TEST_PING_TYPE, payload);
+  let pingPromise = TelemetryController.submitExternalPing(
+    TEST_PING_TYPE,
+    payload
+  );
 
   
   payload.canary = "changed";
@@ -448,42 +548,59 @@ add_task(async function test_changePingAfterSubmission() {
 
   
   let archivedCopy = await TelemetryArchive.promiseArchivedPingById(pingId);
-  Assert.equal(archivedCopy.payload.canary, "test",
-               "The payload must not be changed after being submitted.");
+  Assert.equal(
+    archivedCopy.payload.canary,
+    "test",
+    "The payload must not be changed after being submitted."
+  );
 });
 
-add_task({ skip_if: () => Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false)},
-         async function test_telemetryEnabledUnexpectedValue() {
-  
-  
-  let defaultPrefBranch = Services.prefs.getDefaultBranch(null);
-  defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
+add_task(
+  {
+    skip_if: () =>
+      Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false),
+  },
+  async function test_telemetryEnabledUnexpectedValue() {
+    
+    
+    let defaultPrefBranch = Services.prefs.getDefaultBranch(null);
+    defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
 
-  
-  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, "false");
-  
-  await TelemetryController.testReset();
-  Assert.equal(Telemetry.canRecordExtended, false,
-               "Invalid values must not enable Telemetry recording.");
+    
+    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, "false");
+    
+    await TelemetryController.testReset();
+    Assert.equal(
+      Telemetry.canRecordExtended,
+      false,
+      "Invalid values must not enable Telemetry recording."
+    );
 
-  
-  defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
+    
+    defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
 
-  
-  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
-  await TelemetryController.testReset();
-  Assert.equal(Telemetry.canRecordExtended, true,
-               "True must enable Telemetry recording.");
+    
+    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
+    await TelemetryController.testReset();
+    Assert.equal(
+      Telemetry.canRecordExtended,
+      true,
+      "True must enable Telemetry recording."
+    );
 
-  
-  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, false);
-  await TelemetryController.testReset();
-  Assert.equal(Telemetry.canRecordExtended, false,
-               "False must disable Telemetry recording.");
+    
+    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, false);
+    await TelemetryController.testReset();
+    Assert.equal(
+      Telemetry.canRecordExtended,
+      false,
+      "False must disable Telemetry recording."
+    );
 
-  
-  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
-});
+    
+    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
+  }
+);
 
 add_task(async function test_telemetryCleanFHRDatabase() {
   const FHR_DBNAME_PREF = "datareporting.healthreport.dbName";
@@ -506,7 +623,10 @@ add_task(async function test_telemetryCleanFHRDatabase() {
   
   await TelemetryStorage.removeFHRDatabase();
   for (let dbFilePath of CUSTOM_DB_PATHS) {
-    Assert.ok(!(await OS.File.exists(dbFilePath)), "The DB must not be on the disk anymore: " + dbFilePath);
+    Assert.ok(
+      !(await OS.File.exists(dbFilePath)),
+      "The DB must not be on the disk anymore: " + dbFilePath
+    );
   }
 
   
@@ -529,13 +649,18 @@ add_task(async function test_telemetryCleanFHRDatabase() {
   
   await TelemetryStorage.removeFHRDatabase();
   for (let dbFilePath of DEFAULT_DB_PATHS) {
-    Assert.ok(!(await OS.File.exists(dbFilePath)), "The DB must not be on the disk anymore: " + dbFilePath);
+    Assert.ok(
+      !(await OS.File.exists(dbFilePath)),
+      "The DB must not be on the disk anymore: " + dbFilePath
+    );
   }
 });
 
 add_task(async function test_sendNewProfile() {
-  if (gIsAndroid ||
-      (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)) {
+  if (
+    gIsAndroid ||
+    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
+  ) {
     
     
     
@@ -568,13 +693,18 @@ add_task(async function test_sendNewProfile() {
   let req = await nextReq;
   let ping = decodeRequestPayload(req);
   checkPingFormat(ping, NEWPROFILE_PING_TYPE, true, true);
-  Assert.equal(ping.payload.reason, "startup",
-               "The new-profile ping generated after startup must have the correct reason");
+  Assert.equal(
+    ping.payload.reason,
+    "startup",
+    "The new-profile ping generated after startup must have the correct reason"
+  );
 
   
-  Assert.throws(() => req.getHeader("X-PingSender-Version"),
-                /NS_ERROR_NOT_AVAILABLE/,
-                "Should not have used the pingsender.");
+  Assert.throws(
+    () => req.getHeader("X-PingSender-Version"),
+    /NS_ERROR_NOT_AVAILABLE/,
+    "Should not have used the pingsender."
+  );
 
   
   await resetTest();
@@ -587,20 +717,30 @@ add_task(async function test_sendNewProfile() {
   req = await nextReq;
   ping = decodeRequestPayload(req);
   checkPingFormat(ping, NEWPROFILE_PING_TYPE, true, true);
-  Assert.equal(ping.payload.reason, "shutdown",
-               "The new-profile ping generated at shutdown must have the correct reason");
+  Assert.equal(
+    ping.payload.reason,
+    "shutdown",
+    "The new-profile ping generated at shutdown must have the correct reason"
+  );
 
   
-  Assert.equal(req.getHeader("User-Agent"), "pingsender/1.0",
-               "Should have received the correct user agent string.");
-  Assert.equal(req.getHeader("X-PingSender-Version"), "1.0",
-               "Should have received the correct PingSender version string.");
+  Assert.equal(
+    req.getHeader("User-Agent"),
+    "pingsender/1.0",
+    "Should have received the correct user agent string."
+  );
+  Assert.equal(
+    req.getHeader("X-PingSender-Version"),
+    "1.0",
+    "Should have received the correct PingSender version string."
+  );
 
   
   
   await resetTest();
-  PingServer.registerPingHandler(
-    () => Assert.ok(false, "The new-profile ping must be sent only on new profiles."));
+  PingServer.registerPingHandler(() =>
+    Assert.ok(false, "The new-profile ping must be sent only on new profiles.")
+  );
   await TelemetryController.testReset();
   await TelemetryController.testShutdown();
 
@@ -626,16 +766,23 @@ add_task(async function test_sendNewProfile() {
 add_task(async function test_pingRejection() {
   await TelemetryController.testReset();
   await TelemetryController.testShutdown();
-  await sendPing(false, false)
-    .then(() => Assert.ok(false, "Pings submitted after shutdown must be rejected."),
-          () => Assert.ok(true, "Ping submitted after shutdown correctly rejected."));
+  await sendPing(false, false).then(
+    () => Assert.ok(false, "Pings submitted after shutdown must be rejected."),
+    () => Assert.ok(true, "Ping submitted after shutdown correctly rejected.")
+  );
 });
 
 add_task(async function test_newCanRecordsMatchTheOld() {
-  Assert.equal(Telemetry.canRecordBase, Telemetry.canRecordReleaseData,
-               "Release Data is the new way to say Base Collection");
-  Assert.equal(Telemetry.canRecordExtended, Telemetry.canRecordPrereleaseData,
-               "Prerelease Data is the new way to say Extended Collection");
+  Assert.equal(
+    Telemetry.canRecordBase,
+    Telemetry.canRecordReleaseData,
+    "Release Data is the new way to say Base Collection"
+  );
+  Assert.equal(
+    Telemetry.canRecordExtended,
+    Telemetry.canRecordPrereleaseData,
+    "Prerelease Data is the new way to say Extended Collection"
+  );
 });
 
 add_task(function test_histogram_filtering() {
@@ -647,15 +794,40 @@ add_task(function test_histogram_filtering() {
   count.add(1);
   keyed.add("a", 1);
 
-  let snapshot = Telemetry.getSnapshotForHistograms("main", false,  false).parent;
-  let keyedSnapshot = Telemetry.getSnapshotForKeyedHistograms("main", false,  false).parent;
+  let snapshot = Telemetry.getSnapshotForHistograms(
+    "main",
+    false,
+     false
+  ).parent;
+  let keyedSnapshot = Telemetry.getSnapshotForKeyedHistograms(
+    "main",
+    false,
+     false
+  ).parent;
   Assert.ok(COUNT_ID in snapshot, "test histogram should be snapshotted");
-  Assert.ok(KEYED_ID in keyedSnapshot, "test keyed histogram should be snapshotted");
+  Assert.ok(
+    KEYED_ID in keyedSnapshot,
+    "test keyed histogram should be snapshotted"
+  );
 
-  snapshot = Telemetry.getSnapshotForHistograms("main", false,  true).parent;
-  keyedSnapshot = Telemetry.getSnapshotForKeyedHistograms("main", false,  true).parent;
-  Assert.ok(!(COUNT_ID in snapshot), "test histogram should not be snapshotted");
-  Assert.ok(!(KEYED_ID in keyedSnapshot), "test keyed histogram should not be snapshotted");
+  snapshot = Telemetry.getSnapshotForHistograms(
+    "main",
+    false,
+     true
+  ).parent;
+  keyedSnapshot = Telemetry.getSnapshotForKeyedHistograms(
+    "main",
+    false,
+     true
+  ).parent;
+  Assert.ok(
+    !(COUNT_ID in snapshot),
+    "test histogram should not be snapshotted"
+  );
+  Assert.ok(
+    !(KEYED_ID in keyedSnapshot),
+    "test keyed histogram should not be snapshotted"
+  );
 });
 
 add_task(function test_scalar_filtering() {
@@ -665,15 +837,34 @@ add_task(function test_scalar_filtering() {
   Telemetry.scalarSet(COUNT_ID, 2);
   Telemetry.keyedScalarSet(KEYED_ID, "a", 2);
 
-  let snapshot = Telemetry.getSnapshotForScalars("main", false,  false).parent;
-  let keyedSnapshot = Telemetry.getSnapshotForKeyedScalars("main", false,  false).parent;
+  let snapshot = Telemetry.getSnapshotForScalars(
+    "main",
+    false,
+     false
+  ).parent;
+  let keyedSnapshot = Telemetry.getSnapshotForKeyedScalars(
+    "main",
+    false,
+     false
+  ).parent;
   Assert.ok(COUNT_ID in snapshot, "test scalars should be snapshotted");
-  Assert.ok(KEYED_ID in keyedSnapshot, "test keyed scalars should be snapshotted");
+  Assert.ok(
+    KEYED_ID in keyedSnapshot,
+    "test keyed scalars should be snapshotted"
+  );
 
-  snapshot = Telemetry.getSnapshotForScalars("main", false,  true).parent;
-  keyedSnapshot = Telemetry.getSnapshotForKeyedScalars("main", false,  true).parent;
+  snapshot = Telemetry.getSnapshotForScalars("main", false,  true)
+    .parent;
+  keyedSnapshot = Telemetry.getSnapshotForKeyedScalars(
+    "main",
+    false,
+     true
+  ).parent;
   Assert.ok(!(COUNT_ID in snapshot), "test scalars should not be snapshotted");
-  Assert.ok(!(KEYED_ID in keyedSnapshot), "test keyed scalars should not be snapshotted");
+  Assert.ok(
+    !(KEYED_ID in keyedSnapshot),
+    "test keyed scalars should not be snapshotted"
+  );
 });
 
 add_task(async function stopServer() {

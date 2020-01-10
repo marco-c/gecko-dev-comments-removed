@@ -1,35 +1,76 @@
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/components-utils/Sampling.jsm", this);
-
+ChromeUtils.import(
+  "resource://gre/modules/components-utils/Sampling.jsm",
+  this
+);
 
 add_task(async function testStableSample() {
   
-  equal(await Sampling.stableSample("test", 1), true, "stableSample returns true for 100% sample");
-  equal(await Sampling.stableSample("test", 0), false, "stableSample returns false for 0% sample");
+  equal(
+    await Sampling.stableSample("test", 1),
+    true,
+    "stableSample returns true for 100% sample"
+  );
+  equal(
+    await Sampling.stableSample("test", 0),
+    false,
+    "stableSample returns false for 0% sample"
+  );
 
   
-  equal(await Sampling.stableSample("test-0", 0.5), true, "stableSample returns true for known matching sample");
-  equal(await Sampling.stableSample("test-1", 0.5), false, "stableSample returns false for known non-matching sample");
+  equal(
+    await Sampling.stableSample("test-0", 0.5),
+    true,
+    "stableSample returns true for known matching sample"
+  );
+  equal(
+    await Sampling.stableSample("test-1", 0.5),
+    false,
+    "stableSample returns false for known non-matching sample"
+  );
 });
 
 add_task(async function testBucketSample() {
   
-  equal(await Sampling.bucketSample("test", 0, 10, 10), true, "bucketSample returns true for 100% sample");
-  equal(await Sampling.bucketSample("test", 0, 0, 10), false, "bucketSample returns false for 0% sample");
+  equal(
+    await Sampling.bucketSample("test", 0, 10, 10),
+    true,
+    "bucketSample returns true for 100% sample"
+  );
+  equal(
+    await Sampling.bucketSample("test", 0, 0, 10),
+    false,
+    "bucketSample returns false for 0% sample"
+  );
 
   
-  equal(await Sampling.bucketSample("test-0", 0, 5, 10), true, "bucketSample returns true for known matching sample");
-  equal(await Sampling.bucketSample("test-1", 0, 5, 10), false, "bucketSample returns false for known non-matching sample");
+  equal(
+    await Sampling.bucketSample("test-0", 0, 5, 10),
+    true,
+    "bucketSample returns true for known matching sample"
+  );
+  equal(
+    await Sampling.bucketSample("test-1", 0, 5, 10),
+    false,
+    "bucketSample returns false for known non-matching sample"
+  );
 });
 
 add_task(async function testRatioSample() {
   
-  await Assert.rejects(Sampling.ratioSample("test", []), /ratios must be at least 1 element long/,
-                       "ratioSample rejects for a list with no ratios");
+  await Assert.rejects(
+    Sampling.ratioSample("test", []),
+    /ratios must be at least 1 element long/,
+    "ratioSample rejects for a list with no ratios"
+  );
 
   
-  equal(await Sampling.ratioSample("test", [1]), 0, "ratioSample returns 0 for a list with only 1 ratio");
+  equal(
+    await Sampling.ratioSample("test", [1]),
+    0,
+    "ratioSample returns 0 for a list with only 1 ratio"
+  );
   equal(
     await Sampling.ratioSample("test", [0, 0, 1, 0]),
     2,
@@ -37,8 +78,16 @@ add_task(async function testRatioSample() {
   );
 
   
-  equal(await Sampling.ratioSample("test-0", [1, 1]), 0, "ratioSample returns the correct index for known matching sample");
-  equal(await Sampling.ratioSample("test-1", [1, 1]), 1, "ratioSample returns the correct index for known non-matching sample");
+  equal(
+    await Sampling.ratioSample("test-0", [1, 1]),
+    0,
+    "ratioSample returns the correct index for known matching sample"
+  );
+  equal(
+    await Sampling.ratioSample("test-1", [1, 1]),
+    1,
+    "ratioSample returns the correct index for known non-matching sample"
+  );
 });
 
 add_task(async function testFractionToKey() {

@@ -5,7 +5,6 @@
 
 
 
-
 const kUniqueURI = Services.io.newURI("http://mochi.test:8888/#bug_680727");
 var proxyPrefValue;
 var ourTab;
@@ -26,8 +25,10 @@ function test() {
 
   BrowserTestUtils.openNewForegroundTab(gBrowser).then(tab => {
     ourTab = tab;
-    BrowserTestUtils.waitForContentEvent(ourTab.linkedBrowser, "DOMContentLoaded")
-                    .then(errorListener);
+    BrowserTestUtils.waitForContentEvent(
+      ourTab.linkedBrowser,
+      "DOMContentLoaded"
+    ).then(errorListener);
     BrowserTestUtils.loadURI(ourTab.linkedBrowser, kUniqueURI.spec);
   });
 }
@@ -39,11 +40,18 @@ function errorListener() {
 
   
   ContentTask.spawn(ourTab.linkedBrowser, kUniqueURI.spec, function(uri) {
-    Assert.equal(content.document.documentURI.substring(0, 27),
-      "about:neterror?e=netOffline", "Document URI is the error page.");
+    Assert.equal(
+      content.document.documentURI.substring(0, 27),
+      "about:neterror?e=netOffline",
+      "Document URI is the error page."
+    );
 
     
-    Assert.equal(content.location.href, uri, "Docshell URI is the original URI.");
+    Assert.equal(
+      content.location.href,
+      uri,
+      "Docshell URI is the original URI."
+    );
   }).then(() => {
     
     PlacesTestUtils.promiseAsyncUpdates().then(() => {
@@ -55,21 +63,29 @@ function errorListener() {
 }
 
 function errorAsyncListener(aURI, aIsVisited) {
-  ok(kUniqueURI.equals(aURI) && !aIsVisited,
-     "The neterror page is not listed in global history.");
+  ok(
+    kUniqueURI.equals(aURI) && !aIsVisited,
+    "The neterror page is not listed in global history."
+  );
 
   Services.prefs.setIntPref("network.proxy.type", proxyPrefValue);
 
   
   Services.io.offline = false;
 
-  BrowserTestUtils.waitForContentEvent(ourTab.linkedBrowser, "DOMContentLoaded")
-                  .then(reloadListener);
+  BrowserTestUtils.waitForContentEvent(
+    ourTab.linkedBrowser,
+    "DOMContentLoaded"
+  ).then(reloadListener);
 
   ContentTask.spawn(ourTab.linkedBrowser, null, function() {
-    Assert.ok(content.document.querySelector("#netErrorButtonContainer > .try-again"),
-      "The error page has got a .try-again element");
-    content.document.querySelector("#netErrorButtonContainer > .try-again").click();
+    Assert.ok(
+      content.document.querySelector("#netErrorButtonContainer > .try-again"),
+      "The error page has got a .try-again element"
+    );
+    content.document
+      .querySelector("#netErrorButtonContainer > .try-again")
+      .click();
   });
 }
 
@@ -83,13 +99,16 @@ function reloadListener() {
 
   ContentTask.spawn(ourTab.linkedBrowser, kUniqueURI.spec, function(uri) {
     
-    Assert.equal(content.document.documentURI, uri,
-      "Document URI is not the offline-error page, but the original URI.");
+    Assert.equal(
+      content.document.documentURI,
+      uri,
+      "Document URI is not the offline-error page, but the original URI."
+    );
   }).then(() => {
     
     PlacesTestUtils.promiseAsyncUpdates().then(() => {
       PlacesUtils.history.hasVisits(kUniqueURI).then(isVisited => {
-          reloadAsyncListener(kUniqueURI, isVisited);
+        reloadAsyncListener(kUniqueURI, isVisited);
       });
     });
   });

@@ -8,55 +8,86 @@ ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
 
 Cu.importGlobalProperties(["fetch"]);
 
-load("utils.js"); 
+load(
+  "utils.js"
+); 
 
-add_task(withMockApiServer(async function test_get(serverUrl) {
-  
-  const response = await NormandyApi.get(`${serverUrl}/api/v1/`);
-  const data = await response.json();
-  equal(data["recipe-signed"], "/api/v1/recipe/signed/", "Expected data in response");
-}));
+add_task(
+  withMockApiServer(async function test_get(serverUrl) {
+    
+    const response = await NormandyApi.get(`${serverUrl}/api/v1/`);
+    const data = await response.json();
+    equal(
+      data["recipe-signed"],
+      "/api/v1/recipe/signed/",
+      "Expected data in response"
+    );
+  })
+);
 
-add_task(withMockApiServer(async function test_getApiUrl(serverUrl) {
-  const apiBase = `${serverUrl}/api/v1`;
-  
-  const recipeListUrl = await NormandyApi.getApiUrl("extension-list");
-  equal(recipeListUrl, `${apiBase}/extension/`, "Can retrieve extension-list URL from API");
-}));
+add_task(
+  withMockApiServer(async function test_getApiUrl(serverUrl) {
+    const apiBase = `${serverUrl}/api/v1`;
+    
+    const recipeListUrl = await NormandyApi.getApiUrl("extension-list");
+    equal(
+      recipeListUrl,
+      `${apiBase}/extension/`,
+      "Can retrieve extension-list URL from API"
+    );
+  })
+);
 
-add_task(withMockApiServer(async function test_getApiUrlSlashes(serverUrl, preferences) {
-  const fakeResponse = new MockResponse(JSON.stringify({"test-endpoint": `${serverUrl}/test/`}));
-  const mockGet = sinon.stub(NormandyApi, "get").callsFake(async () => fakeResponse);
+add_task(
+  withMockApiServer(async function test_getApiUrlSlashes(
+    serverUrl,
+    preferences
+  ) {
+    const fakeResponse = new MockResponse(
+      JSON.stringify({ "test-endpoint": `${serverUrl}/test/` })
+    );
+    const mockGet = sinon
+      .stub(NormandyApi, "get")
+      .callsFake(async () => fakeResponse);
 
-  
-  {
+    
+    {
+      NormandyApi.clearIndexCache();
+      preferences.set("app.normandy.api_url", `${serverUrl}/api/v1`);
+      const endpoint = await NormandyApi.getApiUrl("test-endpoint");
+      equal(endpoint, `${serverUrl}/test/`);
+      ok(
+        mockGet.calledWithExactly(`${serverUrl}/api/v1/`),
+        "trailing slash was added"
+      );
+      mockGet.resetHistory();
+    }
+
+    
+    {
+      NormandyApi.clearIndexCache();
+      preferences.set("app.normandy.api_url", `${serverUrl}/api/v1/`);
+      const endpoint = await NormandyApi.getApiUrl("test-endpoint");
+      equal(endpoint, `${serverUrl}/test/`);
+      ok(
+        mockGet.calledWithExactly(`${serverUrl}/api/v1/`),
+        "existing trailing slash was preserved"
+      );
+      mockGet.resetHistory();
+    }
+
     NormandyApi.clearIndexCache();
-    preferences.set("app.normandy.api_url", `${serverUrl}/api/v1`);
-    const endpoint = await NormandyApi.getApiUrl("test-endpoint");
-    equal(endpoint, `${serverUrl}/test/`);
-    ok(mockGet.calledWithExactly(`${serverUrl}/api/v1/`), "trailing slash was added");
-    mockGet.resetHistory();
-  }
+    mockGet.restore();
+  })
+);
 
-  
-  {
-    NormandyApi.clearIndexCache();
-    preferences.set("app.normandy.api_url", `${serverUrl}/api/v1/`);
-    const endpoint = await NormandyApi.getApiUrl("test-endpoint");
-    equal(endpoint, `${serverUrl}/test/`);
-    ok(mockGet.calledWithExactly(`${serverUrl}/api/v1/`), "existing trailing slash was preserved");
-    mockGet.resetHistory();
-  }
-
-  NormandyApi.clearIndexCache();
-  mockGet.restore();
-}));
-
-add_task(withMockApiServer(async function test_fetchRecipes() {
-  const recipes = await NormandyApi.fetchRecipes();
-  equal(recipes.length, 1);
-  equal(recipes[0].name, "system-addon-test");
-}));
+add_task(
+  withMockApiServer(async function test_fetchRecipes() {
+    const recipes = await NormandyApi.fetchRecipes();
+    equal(recipes.length, 1);
+    equal(recipes[0].name, "system-addon-test");
+  })
+);
 
 add_task(async function test_fetchSignedObjects_canonical_mismatch() {
   const getApiUrl = sinon.stub(NormandyApi, "getApiUrl");
@@ -74,7 +105,10 @@ add_task(async function test_fetchSignedObjects_canonical_mismatch() {
     await NormandyApi.fetchSignedObjects("object");
     ok(false, "fetchSignedObjects did not throw for canonical JSON mismatch");
   } catch (err) {
-    ok(err instanceof NormandyApi.InvalidSignatureError, "Error is an InvalidSignatureError");
+    ok(
+      err instanceof NormandyApi.InvalidSignatureError,
+      "Error is an InvalidSignatureError"
+    );
     ok(/Canonical/.test(err), "Error is due to canonical JSON mismatch");
   }
 
@@ -84,134 +118,208 @@ add_task(async function test_fetchSignedObjects_canonical_mismatch() {
 
 
 
-add_task(withMockApiServer(async function test_fetchSignedObjects_validation_error() {
-  const getApiUrl = sinon.stub(NormandyApi, "getApiUrl").resolves("http://localhost/object/");
+add_task(
+  withMockApiServer(async function test_fetchSignedObjects_validation_error() {
+    const getApiUrl = sinon
+      .stub(NormandyApi, "getApiUrl")
+      .resolves("http://localhost/object/");
 
-  
-  const get = sinon.stub(NormandyApi, "get").callsFake(async url => {
-    if (url.endsWith("object/")) {
-      return new MockResponse(CanonicalJSON.stringify([
-        {
-          object: {a: 1, b: 2},
-          signature: {signature: "invalidsignature", x5u: "http://localhost/x5u/"},
-        },
-      ]));
-    } else if (url.endsWith("x5u/")) {
-      return new MockResponse("certchain");
+    
+    const get = sinon.stub(NormandyApi, "get").callsFake(async url => {
+      if (url.endsWith("object/")) {
+        return new MockResponse(
+          CanonicalJSON.stringify([
+            {
+              object: { a: 1, b: 2 },
+              signature: {
+                signature: "invalidsignature",
+                x5u: "http://localhost/x5u/",
+              },
+            },
+          ])
+        );
+      } else if (url.endsWith("x5u/")) {
+        return new MockResponse("certchain");
+      }
+
+      return null;
+    });
+
+    
+    try {
+      await NormandyApi.fetchSignedObjects("object");
+      ok(false, "fetchSignedObjects did not throw for a validation error");
+    } catch (err) {
+      ok(
+        err instanceof NormandyApi.InvalidSignatureError,
+        "Error is an InvalidSignatureError"
+      );
+      ok(/signature/.test(err), "Error is due to a validation error");
     }
 
-    return null;
-  });
-
-  
-  try {
-    await NormandyApi.fetchSignedObjects("object");
-    ok(false, "fetchSignedObjects did not throw for a validation error");
-  } catch (err) {
-    ok(err instanceof NormandyApi.InvalidSignatureError, "Error is an InvalidSignatureError");
-    ok(/signature/.test(err), "Error is due to a validation error");
-  }
-
-  getApiUrl.restore();
-  get.restore();
-}));
+    getApiUrl.restore();
+    get.restore();
+  })
+);
 
 
 
-const invalidSignatureServer = makeMockApiServer(do_get_file("invalid_recipe_signature_api"));
-add_task(withServer(invalidSignatureServer, async function test_fetchSignedObjects_invalid_signature() {
-  try {
-    await NormandyApi.fetchSignedObjects("recipe");
-    ok(false, "fetchSignedObjects did not throw for an invalid signature");
-  } catch (err) {
-    ok(err instanceof NormandyApi.InvalidSignatureError, "Error is an InvalidSignatureError");
-    ok(/signature/.test(err), "Error is due to an invalid signature");
-  }
-}));
+const invalidSignatureServer = makeMockApiServer(
+  do_get_file("invalid_recipe_signature_api")
+);
+add_task(
+  withServer(
+    invalidSignatureServer,
+    async function test_fetchSignedObjects_invalid_signature() {
+      try {
+        await NormandyApi.fetchSignedObjects("recipe");
+        ok(false, "fetchSignedObjects did not throw for an invalid signature");
+      } catch (err) {
+        ok(
+          err instanceof NormandyApi.InvalidSignatureError,
+          "Error is an InvalidSignatureError"
+        );
+        ok(/signature/.test(err), "Error is due to an invalid signature");
+      }
+    }
+  )
+);
 
-add_task(withMockApiServer(async function test_classifyClient() {
-  const classification = await NormandyApi.classifyClient();
-  Assert.deepEqual(classification, {
-    country: "US",
-    request_time: new Date("2017-02-22T17:43:24.657841Z"),
-  });
-}));
+add_task(
+  withMockApiServer(async function test_classifyClient() {
+    const classification = await NormandyApi.classifyClient();
+    Assert.deepEqual(classification, {
+      country: "US",
+      request_time: new Date("2017-02-22T17:43:24.657841Z"),
+    });
+  })
+);
 
-add_task(withMockApiServer(async function test_fetchExtensionDetails() {
-  const extensionDetails = await NormandyApi.fetchExtensionDetails(1);
-  deepEqual(extensionDetails, {
-    "id": 1,
-    "name": "Normandy Fixture",
-    "xpi": "http://example.com/browser/toolkit/components/normandy/test/browser/fixtures/normandy.xpi",
-    "extension_id": "normandydriver@example.com",
-    "version": "1.0",
-    "hash": "ade1c14196ec4fe0aa0a6ba40ac433d7c8d1ec985581a8a94d43dc58991b5171",
-    "hash_algorithm": "sha256",
-  });
-}));
+add_task(
+  withMockApiServer(async function test_fetchExtensionDetails() {
+    const extensionDetails = await NormandyApi.fetchExtensionDetails(1);
+    deepEqual(extensionDetails, {
+      id: 1,
+      name: "Normandy Fixture",
+      xpi:
+        "http://example.com/browser/toolkit/components/normandy/test/browser/fixtures/normandy.xpi",
+      extension_id: "normandydriver@example.com",
+      version: "1.0",
+      hash: "ade1c14196ec4fe0aa0a6ba40ac433d7c8d1ec985581a8a94d43dc58991b5171",
+      hash_algorithm: "sha256",
+    });
+  })
+);
 
-add_task(withScriptServer("query_server.sjs", async function test_getTestServer(serverUrl) {
-  
-  const response = await NormandyApi.get(serverUrl);
-  const data = await response.json();
-  Assert.deepEqual(data, {queryString: {}, body: {}}, "NormandyApi returned incorrect server data.");
-}));
-
-add_task(withScriptServer("query_server.sjs", async function test_getQueryString(serverUrl) {
-  
-  const response = await NormandyApi.get(serverUrl, {foo: "bar", baz: "biff"});
-  const data = await response.json();
-  Assert.deepEqual(
-    data, {queryString: {foo: "bar", baz: "biff"}, body: {}},
-    "NormandyApi sent an incorrect query string."
-  );
-}));
-
-add_task(withScriptServer("query_server.sjs", async function test_postData(serverUrl) {
-  
-  const response = await NormandyApi.post(serverUrl, {foo: "bar", baz: "biff"});
-  const data = await response.json();
-  Assert.deepEqual(
-    data, {queryString: {}, body: {foo: "bar", baz: "biff"}},
-    "NormandyApi sent an incorrect query string."
-  );
-}));
-
-
-add_task(withScriptServer("cookie_server.sjs", async function test_sendsNoCredentials(serverUrl) {
-  
-  
-
-  
-  await fetch(serverUrl);
-
-  
-  const cookieExpectedDeferred = PromiseUtils.defer();
-  function cookieExpectedObserver(aSubject, aTopic, aData) {
-    equal(aTopic, "http-on-modify-request", "Only the expected topic should be observed");
-    let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
-    equal(httpChannel.getRequestHeader("Cookie"), "type=chocolate-chip", "The header should be sent");
-    Services.obs.removeObserver(cookieExpectedObserver, "http-on-modify-request");
-    cookieExpectedDeferred.resolve();
-  }
-  Services.obs.addObserver(cookieExpectedObserver, "http-on-modify-request");
-  await fetch(serverUrl);
-  await cookieExpectedDeferred.promise;
-
-  
-  const cookieNotExpectedDeferred = PromiseUtils.defer();
-  function cookieNotExpectedObserver(aSubject, aTopic, aData) {
-    equal(aTopic, "http-on-modify-request", "Only the expected topic should be observed");
-    let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
-    Assert.throws(
-      () => httpChannel.getRequestHeader("Cookie"),
-      /NS_ERROR_NOT_AVAILABLE/,
-      "The cookie header should not be sent"
+add_task(
+  withScriptServer("query_server.sjs", async function test_getTestServer(
+    serverUrl
+  ) {
+    
+    const response = await NormandyApi.get(serverUrl);
+    const data = await response.json();
+    Assert.deepEqual(
+      data,
+      { queryString: {}, body: {} },
+      "NormandyApi returned incorrect server data."
     );
-    Services.obs.removeObserver(cookieNotExpectedObserver, "http-on-modify-request");
-    cookieNotExpectedDeferred.resolve();
-  }
-  Services.obs.addObserver(cookieNotExpectedObserver, "http-on-modify-request");
-  await NormandyApi.get(serverUrl);
-  await cookieNotExpectedDeferred.promise;
-}));
+  })
+);
+
+add_task(
+  withScriptServer("query_server.sjs", async function test_getQueryString(
+    serverUrl
+  ) {
+    
+    const response = await NormandyApi.get(serverUrl, {
+      foo: "bar",
+      baz: "biff",
+    });
+    const data = await response.json();
+    Assert.deepEqual(
+      data,
+      { queryString: { foo: "bar", baz: "biff" }, body: {} },
+      "NormandyApi sent an incorrect query string."
+    );
+  })
+);
+
+add_task(
+  withScriptServer("query_server.sjs", async function test_postData(serverUrl) {
+    
+    const response = await NormandyApi.post(serverUrl, {
+      foo: "bar",
+      baz: "biff",
+    });
+    const data = await response.json();
+    Assert.deepEqual(
+      data,
+      { queryString: {}, body: { foo: "bar", baz: "biff" } },
+      "NormandyApi sent an incorrect query string."
+    );
+  })
+);
+
+
+add_task(
+  withScriptServer("cookie_server.sjs", async function test_sendsNoCredentials(
+    serverUrl
+  ) {
+    
+    
+
+    
+    await fetch(serverUrl);
+
+    
+    const cookieExpectedDeferred = PromiseUtils.defer();
+    function cookieExpectedObserver(aSubject, aTopic, aData) {
+      equal(
+        aTopic,
+        "http-on-modify-request",
+        "Only the expected topic should be observed"
+      );
+      let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
+      equal(
+        httpChannel.getRequestHeader("Cookie"),
+        "type=chocolate-chip",
+        "The header should be sent"
+      );
+      Services.obs.removeObserver(
+        cookieExpectedObserver,
+        "http-on-modify-request"
+      );
+      cookieExpectedDeferred.resolve();
+    }
+    Services.obs.addObserver(cookieExpectedObserver, "http-on-modify-request");
+    await fetch(serverUrl);
+    await cookieExpectedDeferred.promise;
+
+    
+    const cookieNotExpectedDeferred = PromiseUtils.defer();
+    function cookieNotExpectedObserver(aSubject, aTopic, aData) {
+      equal(
+        aTopic,
+        "http-on-modify-request",
+        "Only the expected topic should be observed"
+      );
+      let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
+      Assert.throws(
+        () => httpChannel.getRequestHeader("Cookie"),
+        /NS_ERROR_NOT_AVAILABLE/,
+        "The cookie header should not be sent"
+      );
+      Services.obs.removeObserver(
+        cookieNotExpectedObserver,
+        "http-on-modify-request"
+      );
+      cookieNotExpectedDeferred.resolve();
+    }
+    Services.obs.addObserver(
+      cookieNotExpectedObserver,
+      "http-on-modify-request"
+    );
+    await NormandyApi.get(serverUrl);
+    await cookieNotExpectedDeferred.promise;
+  })
+);

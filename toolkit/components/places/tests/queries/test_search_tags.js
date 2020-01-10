@@ -20,7 +20,15 @@ add_task(async function test_search_for_tagged_bookmarks() {
   });
 
   
-  PlacesUtils.tagging.tagURI(uri(testURI), ["elephant", "walrus", "giraffe", "turkey", "hiPPo", "BABOON", "alf"]);
+  PlacesUtils.tagging.tagURI(uri(testURI), [
+    "elephant",
+    "walrus",
+    "giraffe",
+    "turkey",
+    "hiPPo",
+    "BABOON",
+    "alf",
+  ]);
 
   
   var query = PlacesUtils.history.getNewQuery();

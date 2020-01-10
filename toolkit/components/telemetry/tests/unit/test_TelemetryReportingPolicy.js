@@ -22,7 +22,10 @@ const PREF_MINIMUM_CHANNEL_POLICY_VERSION =
   TelemetryUtils.Preferences.MinimumPolicyVersion + ".channel-" + TEST_CHANNEL;
 
 function fakeShowPolicyTimeout(set, clear) {
-  let reportingPolicy = ChromeUtils.import("resource://gre/modules/TelemetryReportingPolicy.jsm", null);
+  let reportingPolicy = ChromeUtils.import(
+    "resource://gre/modules/TelemetryReportingPolicy.jsm",
+    null
+  );
   reportingPolicy.Policy.setShowInfobarTimeout = set;
   reportingPolicy.Policy.clearShowInfobarTimeout = clear;
 }
@@ -36,7 +39,9 @@ function setMinimumPolicyVersion(aNewPolicyVersion) {
   const CHANNEL_NAME = UpdateUtils.getUpdateChannel(false);
   
   const CHANNEL_DEPENDENT_PREF =
-    TelemetryUtils.Preferences.MinimumPolicyVersion + ".channel-" + CHANNEL_NAME;
+    TelemetryUtils.Preferences.MinimumPolicyVersion +
+    ".channel-" +
+    CHANNEL_NAME;
 
   
   if (Preferences.get(CHANNEL_DEPENDENT_PREF, undefined)) {
@@ -45,7 +50,10 @@ function setMinimumPolicyVersion(aNewPolicyVersion) {
   }
 
   
-  Preferences.set(TelemetryUtils.Preferences.MinimumPolicyVersion, aNewPolicyVersion);
+  Preferences.set(
+    TelemetryUtils.Preferences.MinimumPolicyVersion,
+    aNewPolicyVersion
+  );
 }
 
 add_task(async function test_setup() {
@@ -62,7 +70,10 @@ add_task(async function test_setup() {
   await setEmptyPrefWatchlist();
 
   
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.BypassNotification, false);
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.BypassNotification,
+    false
+  );
 
   TelemetryReportingPolicy.setup();
 });
@@ -74,18 +85,27 @@ add_task(async function test_firstRun() {
   Preferences.reset(TelemetryUtils.Preferences.FirstRun);
 
   let startupTimeout = 0;
-  fakeShowPolicyTimeout((callback, timeout) => startupTimeout = timeout, () => {});
+  fakeShowPolicyTimeout(
+    (callback, timeout) => (startupTimeout = timeout),
+    () => {}
+  );
   TelemetryReportingPolicy.reset();
 
   Services.obs.notifyObservers(null, "sessionstore-windows-restored");
-  Assert.equal(startupTimeout, FIRST_RUN_TIMEOUT_MSEC,
-               "The infobar display timeout should be 60s on the first run.");
+  Assert.equal(
+    startupTimeout,
+    FIRST_RUN_TIMEOUT_MSEC,
+    "The infobar display timeout should be 60s on the first run."
+  );
 
   
   TelemetryReportingPolicy.reset();
   Services.obs.notifyObservers(null, "sessionstore-windows-restored");
-  Assert.equal(startupTimeout, OTHER_RUNS_TIMEOUT_MSEC,
-               "The infobar display timeout should be 10s on other runs.");
+  Assert.equal(
+    startupTimeout,
+    OTHER_RUNS_TIMEOUT_MSEC,
+    "The infobar display timeout should be 10s on other runs."
+  );
 });
 
 add_task(async function test_prefs() {
@@ -96,42 +116,61 @@ add_task(async function test_prefs() {
   
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(!TelemetryReportingPolicy.testIsUserNotified());
-  Assert.equal(Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, null), 0,
-                "Invalid dates should not make the policy accepted.");
+  Assert.equal(
+    Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, null),
+    0,
+    "Invalid dates should not make the policy accepted."
+  );
 
   
   now = fakeNow(2012, 11, 18);
   TelemetryReportingPolicy.testInfobarShown();
-  Assert.equal(Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, null), now.getTime(),
-                "A valid date must correctly be saved.");
+  Assert.equal(
+    Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, null),
+    now.getTime(),
+    "A valid date must correctly be saved."
+  );
 
   
-  Assert.ok(TelemetryReportingPolicy.canUpload(),
-            "We must be able to upload after the policy is accepted.");
+  Assert.ok(
+    TelemetryReportingPolicy.canUpload(),
+    "We must be able to upload after the policy is accepted."
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.DataSubmissionEnabled, false);
-  Assert.ok(!TelemetryReportingPolicy.canUpload(),
-            "We must not be able to upload if data submission is disabled.");
+  Assert.ok(
+    !TelemetryReportingPolicy.canUpload(),
+    "We must not be able to upload if data submission is disabled."
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.DataSubmissionEnabled, true);
-  Assert.ok(TelemetryReportingPolicy.canUpload(),
-            "We must be able to upload if data submission is enabled and the policy was accepted.");
+  Assert.ok(
+    TelemetryReportingPolicy.canUpload(),
+    "We must be able to upload if data submission is enabled and the policy was accepted."
+  );
 
   
-  let newMinimum = Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) + 1;
+  let newMinimum =
+    Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) + 1;
   setMinimumPolicyVersion(newMinimum);
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified(),
-            "A greater minimum policy version must invalidate the policy and disable upload.");
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotified(),
+    "A greater minimum policy version must invalidate the policy and disable upload."
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.CurrentPolicyVersion, newMinimum);
   TelemetryReportingPolicy.testInfobarShown();
-  Assert.ok(TelemetryReportingPolicy.testIsUserNotified(),
-            "Accepting the policy again should show the user as notified.");
-  Assert.ok(TelemetryReportingPolicy.canUpload(),
-            "Accepting the policy again should let us upload data.");
+  Assert.ok(
+    TelemetryReportingPolicy.testIsUserNotified(),
+    "Accepting the policy again should show the user as notified."
+  );
+  Assert.ok(
+    TelemetryReportingPolicy.canUpload(),
+    "Accepting the policy again should let us upload data."
+  );
 
   
   let defaultPrefs = new Preferences({ defaultBranch: true });
@@ -140,16 +179,22 @@ add_task(async function test_prefs() {
   
   newMinimum++;
   Preferences.set(PREF_MINIMUM_CHANNEL_POLICY_VERSION, newMinimum);
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified(),
-            "Increasing the minimum policy version should invalidate the policy.");
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotified(),
+    "Increasing the minimum policy version should invalidate the policy."
+  );
 
   
   Preferences.set(TelemetryUtils.Preferences.CurrentPolicyVersion, newMinimum);
   TelemetryReportingPolicy.testInfobarShown();
-  Assert.ok(TelemetryReportingPolicy.testIsUserNotified(),
-            "Accepting the policy again should show the user as notified.");
-  Assert.ok(TelemetryReportingPolicy.canUpload(),
-            "Accepting the policy again should let us upload data.");
+  Assert.ok(
+    TelemetryReportingPolicy.testIsUserNotified(),
+    "Accepting the policy again should show the user as notified."
+  );
+  Assert.ok(
+    TelemetryReportingPolicy.canUpload(),
+    "Accepting the policy again should let us upload data."
+  );
 });
 
 add_task(async function test_migratePrefs() {
@@ -177,51 +222,70 @@ add_task(async function test_userNotifiedOfCurrentPolicy() {
   TelemetryReportingPolicy.reset();
 
   
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified(),
-            "The initial state should be unnotified.");
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotified(),
+    "The initial state should be unnotified."
+  );
 
   
-  Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyVersion,
-                  TelemetryReportingPolicy.DEFAULT_DATAREPORTING_POLICY_VERSION);
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified(),
-                 "The default state of the date should have a time of 0 and it should therefore fail");
+  Preferences.set(
+    TelemetryUtils.Preferences.AcceptedPolicyVersion,
+    TelemetryReportingPolicy.DEFAULT_DATAREPORTING_POLICY_VERSION
+  );
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotified(),
+    "The default state of the date should have a time of 0 and it should therefore fail"
+  );
 
   
   fakeNow(2012, 11, 11);
   TelemetryReportingPolicy.testInfobarShown();
-  Assert.ok(TelemetryReportingPolicy.testIsUserNotified(),
-            "Using the proper API causes user notification to report as true.");
+  Assert.ok(
+    TelemetryReportingPolicy.testIsUserNotified(),
+    "Using the proper API causes user notification to report as true."
+  );
 
   
   
   let newVersion =
     Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) + 1;
   Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyVersion, newVersion);
-  Assert.ok(TelemetryReportingPolicy.testIsUserNotified(),
-            "A future version of the policy should pass.");
+  Assert.ok(
+    TelemetryReportingPolicy.testIsUserNotified(),
+    "A future version of the policy should pass."
+  );
 
   newVersion =
     Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) - 1;
   Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyVersion, newVersion);
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified(),
-            "A previous version of the policy should fail.");
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotified(),
+    "A previous version of the policy should fail."
+  );
 });
 
 add_task(async function test_canSend() {
   const TEST_PING_TYPE = "test-ping";
 
   PingServer.start();
-  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
+  Preferences.set(
+    TelemetryUtils.Preferences.Server,
+    "http://localhost:" + PingServer.port
+  );
 
   await TelemetryController.testReset();
   TelemetryReportingPolicy.reset();
 
   
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified(),
-            "The initial state should be unnotified.");
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotified(),
+    "The initial state should be unnotified."
+  );
 
   
-  PingServer.registerPingHandler(() => Assert.ok(false, "Should not have received any pings now"));
+  PingServer.registerPingHandler(() =>
+    Assert.ok(false, "Should not have received any pings now")
+  );
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
 
   
@@ -231,8 +295,11 @@ add_task(async function test_canSend() {
   TelemetryReportingPolicy.testInfobarShown();
   let ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
-  Assert.equal(ping[0].type, TEST_PING_TYPE,
-               "We should have received the previous ping.");
+  Assert.equal(
+    ping[0].type,
+    TEST_PING_TYPE,
+    "We should have received the previous ping."
+  );
 
   
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
@@ -240,7 +307,11 @@ add_task(async function test_canSend() {
   
   ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
-  Assert.equal(ping[0].type, TEST_PING_TYPE, "We should have received the new ping.");
+  Assert.equal(
+    ping[0].type,
+    TEST_PING_TYPE,
+    "We should have received the new ping."
+  );
 
   
   await TelemetryController.addPendingPing(TEST_PING_TYPE, {});
@@ -249,7 +320,11 @@ add_task(async function test_canSend() {
   
   ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
-  Assert.equal(ping[0].type, TEST_PING_TYPE, "We should have received the pending ping.");
+  Assert.equal(
+    ping[0].type,
+    TEST_PING_TYPE,
+    "We should have received the pending ping."
+  );
 
   
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
@@ -257,7 +332,11 @@ add_task(async function test_canSend() {
   
   ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
-  Assert.equal(ping[0].type, TEST_PING_TYPE, "We should have received the new ping.");
+  Assert.equal(
+    ping[0].type,
+    TEST_PING_TYPE,
+    "We should have received the new ping."
+  );
 
   await PingServer.stop();
 });

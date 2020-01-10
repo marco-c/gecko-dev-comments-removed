@@ -19,7 +19,10 @@ function run_test() {
 add_task(async function test_fill_notification_buffer() {
   
   
-  let watchedDir = OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground");
+  let watchedDir = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "filewatcher_playground"
+  );
   await OS.File.makeDir(watchedDir);
 
   
@@ -41,15 +44,15 @@ add_task(async function test_fill_notification_buffer() {
 
   
   let changeCallback = function(changed) {
-      info(changed + " has changed.");
+    info(changed + " has changed.");
 
-      detectedChanges += 1;
+    detectedChanges += 1;
 
-      
-      if (detectedChanges >= expectedChanges) {
-        deferred.resolve();
-      }
-    };
+    
+    if (detectedChanges >= expectedChanges) {
+      deferred.resolve();
+    }
+  };
 
   
   

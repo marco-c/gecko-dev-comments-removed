@@ -72,7 +72,6 @@ add_task(async function search_bookmark_in_folder() {
   });
   Assert.equal(b5.index, 0);
 
-
   
   let hs = PlacesUtils.history;
   let options = hs.getNewQueryOptions();

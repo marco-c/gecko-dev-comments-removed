@@ -9,8 +9,9 @@
 
 add_task(async function test_listJSONlocale() {
   let url = "resource://test/data/";
-  let resProt = Services.io.getProtocolHandler("resource")
-                        .QueryInterface(Ci.nsIResProtocolHandler);
+  let resProt = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
   resProt.setSubstitution("search-extensions", Services.io.newURI(url));
 
   Services.locale.availableLocales = ["de"];
@@ -26,11 +27,12 @@ add_task(async function test_listJSONlocale() {
 });
 
 
-
 add_task(async function test_listJSONlocaleSwitch() {
   let promise = SearchTestUtils.promiseSearchNotification("reinit-complete");
 
-  let defaultBranch = Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF);
+  let defaultBranch = Services.prefs.getDefaultBranch(
+    SearchUtils.BROWSER_SEARCH_PREF
+  );
   defaultBranch.setCharPref("param.code", "good&id=unique");
 
   Services.locale.availableLocales = ["fr"];
@@ -49,11 +51,15 @@ add_task(async function test_listJSONlocaleSwitch() {
 add_task(async function test_listJSONRegionOverride() {
   Services.prefs.setCharPref("browser.search.region", "RU");
 
-  await asyncReInit({skipReset: true});
+  await asyncReInit({ skipReset: true });
 
   Assert.ok(Services.search.isInitialized, "search initialized");
 
   let sortedEngines = await Services.search.getEngines();
   Assert.equal(sortedEngines.length, 2, "Should have two engines");
-  Assert.equal(sortedEngines[0].identifier, "engine-chromeicon", "Engine should have been overridden by engine-chromeicon");
+  Assert.equal(
+    sortedEngines[0].identifier,
+    "engine-chromeicon",
+    "Engine should have been overridden by engine-chromeicon"
+  );
 });

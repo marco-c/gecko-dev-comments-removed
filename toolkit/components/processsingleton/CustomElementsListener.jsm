@@ -3,25 +3,31 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
 
 
-Services.obs.addObserver({
-  observe(doc) {
-    if (doc.nodePrincipal.isSystemPrincipal && (
-      doc.contentType == "application/vnd.mozilla.xul+xml" ||
-      doc.contentType == "application/xhtml+xml" ||
-      doc.contentType == "text/html"
-    ) &&
+Services.obs.addObserver(
+  {
+    observe(doc) {
+      if (
+        doc.nodePrincipal.isSystemPrincipal &&
+        (doc.contentType == "application/vnd.mozilla.xul+xml" ||
+          doc.contentType == "application/xhtml+xml" ||
+          doc.contentType == "text/html") &&
         
         
         
-        doc.URL != "about:blank") {
-      Services.scriptloader.loadSubScript(
-        "chrome://global/content/customElements.js", doc.ownerGlobal);
-    }
+        doc.URL != "about:blank"
+      ) {
+        Services.scriptloader.loadSubScript(
+          "chrome://global/content/customElements.js",
+          doc.ownerGlobal
+        );
+      }
+    },
   },
-}, "document-element-inserted");
+  "document-element-inserted"
+);

@@ -2,7 +2,9 @@
 
 "use strict";
 
-const {PlacesTestUtils} = ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
+const { PlacesTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PlacesTestUtils.jsm"
+);
 
 add_task(async function test_global_history() {
   let extension = ExtensionTestUtils.loadExtension({

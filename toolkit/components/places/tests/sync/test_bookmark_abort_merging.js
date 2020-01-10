@@ -1,7 +1,9 @@
 
 
 
-var {AsyncShutdown} = ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+var { AsyncShutdown } = ChromeUtils.import(
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
 
 add_task(async function test_abort_merging() {
   let buf = await openMirror("abort_merging");
@@ -38,27 +40,34 @@ add_task(async function test_blocker_state() {
     recordStepTelemetry(...args) {},
     recordValidationTelemetry(...args) {},
   });
-  await storeRecords(buf, [{
-    id: "menu",
-    parentid: "places",
-    type: "folder",
-    children: ["bookmarkAAAA"],
-  }, {
-    id: "bookmarkAAAA",
-    parentid: "menu",
-    type: "bookmark",
-    title: "A",
-    bmkUri: "http://example.com/a",
-  }]);
+  await storeRecords(buf, [
+    {
+      id: "menu",
+      parentid: "places",
+      type: "folder",
+      children: ["bookmarkAAAA"],
+    },
+    {
+      id: "bookmarkAAAA",
+      parentid: "menu",
+      type: "bookmark",
+      title: "A",
+      bmkUri: "http://example.com/a",
+    },
+  ]);
 
   await buf.tryApply(0, 0, { notifyAll() {} }, []);
   
   
   let waitPromise = barrier.wait();
-  let blocker = barrier.state.find(b =>
-    b.name == "SyncedBookmarksMirror: finalize");
-  deepEqual(blocker.state.steps, buf.progress.steps,
-    "Should report merge progress in shutdown blocker state");
+  let blocker = barrier.state.find(
+    b => b.name == "SyncedBookmarksMirror: finalize"
+  );
+  deepEqual(
+    blocker.state.steps,
+    buf.progress.steps,
+    "Should report merge progress in shutdown blocker state"
+  );
   await waitPromise;
 
   await buf.finalize();

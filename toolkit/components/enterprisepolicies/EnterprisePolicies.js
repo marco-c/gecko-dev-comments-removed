@@ -2,15 +2,21 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.jsm",
-  macOSPoliciesParser: "resource://gre/modules/policies/macOSPoliciesParser.jsm",
+  macOSPoliciesParser:
+    "resource://gre/modules/policies/macOSPoliciesParser.jsm",
   Policies: "resource:///modules/policies/Policies.jsm",
-  JsonSchemaValidator: "resource://gre/modules/components-utils/JsonSchemaValidator.jsm",
+  JsonSchemaValidator:
+    "resource://gre/modules/components-utils/JsonSchemaValidator.jsm",
 });
 
 
@@ -20,15 +26,15 @@ const POLICIES_FILENAME = "policies.json";
 
 
 
-const PREF_ALTERNATE_PATH     = "browser.policies.alternatePath";
+const PREF_ALTERNATE_PATH = "browser.policies.alternatePath";
 
 
 
 
-const MAGIC_TEST_ROOT_PREFIX  = "<test-root>";
-const PREF_TEST_ROOT          = "mochitest.testRoot";
+const MAGIC_TEST_ROOT_PREFIX = "<test-root>";
+const PREF_TEST_ROOT = "mochitest.testRoot";
 
-const PREF_LOGLEVEL           = "browser.policies.loglevel";
+const PREF_LOGLEVEL = "browser.policies.loglevel";
 
 
 const PREF_DISALLOW_ENTERPRISE = "browser.policies.testing.disallowEnterprise";
@@ -44,7 +50,9 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   });
 });
 
-let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+let env = Cc["@mozilla.org/process/environment;1"].getService(
+  Ci.nsIEnvironment
+);
 const isXpcshell = env.exists("XPCSHELL_TEST_PROFILE_DIR");
 
 function EnterprisePoliciesManager() {
@@ -55,11 +63,15 @@ function EnterprisePoliciesManager() {
 }
 
 EnterprisePoliciesManager.prototype = {
-  classID:        Components.ID("{ea4e1414-779b-458b-9d1f-d18e8efbc145}"),
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference,
-                                          Ci.nsIEnterprisePolicies]),
-  _xpcom_factory: XPCOMUtils.generateSingletonFactory(EnterprisePoliciesManager),
+  classID: Components.ID("{ea4e1414-779b-458b-9d1f-d18e8efbc145}"),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+    Ci.nsIEnterprisePolicies,
+  ]),
+  _xpcom_factory: XPCOMUtils.generateSingletonFactory(
+    EnterprisePoliciesManager
+  ),
 
   _initialize() {
     let provider = this._chooseProvider();
@@ -99,7 +111,9 @@ EnterprisePoliciesManager.prototype = {
   },
 
   _activatePolicies(unparsedPolicies) {
-    let { schema } = ChromeUtils.import("resource:///modules/policies/schema.jsm");
+    let { schema } = ChromeUtils.import(
+      "resource:///modules/policies/schema.jsm"
+    );
 
     for (let policyName of Object.keys(unparsedPolicies)) {
       let policySchema = schema.properties[policyName];
@@ -115,8 +129,13 @@ EnterprisePoliciesManager.prototype = {
         continue;
       }
 
-      let [parametersAreValid, parsedParameters] =
-        JsonSchemaValidator.validateAndParseParameters(policyParameters, policySchema);
+      let [
+        parametersAreValid,
+        parsedParameters,
+      ] = JsonSchemaValidator.validateAndParseParameters(
+        policyParameters,
+        policySchema
+      );
 
       if (!parametersAreValid) {
         log.error(`Invalid parameters specified for ${policyName}.`);
@@ -131,9 +150,12 @@ EnterprisePoliciesManager.prototype = {
         if (policyCallback) {
           this._schedulePolicyCallback(
             timing,
-            policyCallback.bind(policyImpl,
-                                this, 
-                                parsedParameters));
+            policyCallback.bind(
+              policyImpl,
+              this ,
+              parsedParameters
+            )
+          );
         }
       }
     }
@@ -187,7 +209,9 @@ EnterprisePoliciesManager.prototype = {
       this._callbacks[timing] = [];
     }
 
-    let { PromiseUtils } = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+    let { PromiseUtils } = ChromeUtils.import(
+      "resource://gre/modules/PromiseUtils.jsm"
+    );
     
     
 
@@ -231,8 +255,10 @@ EnterprisePoliciesManager.prototype = {
         this._runPoliciesCallbacks("onAllWindowsRestored");
 
         
-        Services.obs.notifyObservers(null,
-                                     "EnterprisePolicies:AllPoliciesApplied");
+        Services.obs.notifyObservers(
+          null,
+          "EnterprisePolicies:AllPoliciesApplied"
+        );
         break;
 
       case "EnterprisePolicies:Restart":
@@ -247,8 +273,12 @@ EnterprisePoliciesManager.prototype = {
     
     
     if (neededOnContentProcess) {
-      Services.ppmm.sharedData.set("EnterprisePolicies:DisallowedFeatures",
-        new Set(Object.keys(DisallowedFeatures).filter(key => DisallowedFeatures[key])));
+      Services.ppmm.sharedData.set(
+        "EnterprisePolicies:DisallowedFeatures",
+        new Set(
+          Object.keys(DisallowedFeatures).filter(key => DisallowedFeatures[key])
+        )
+      );
     }
   },
 
@@ -291,8 +321,7 @@ EnterprisePoliciesManager.prototype = {
   },
 
   getExtensionPolicy(extensionID) {
-    if (ExtensionPolicies &&
-        extensionID in ExtensionPolicies) {
+    if (ExtensionPolicies && extensionID in ExtensionPolicies) {
       return ExtensionPolicies[extensionID];
     }
     return null;
@@ -300,9 +329,13 @@ EnterprisePoliciesManager.prototype = {
 
   setExtensionSettings(extensionSettings) {
     ExtensionSettings = extensionSettings;
-    if ("*" in extensionSettings &&
-        "install_sources" in extensionSettings["*"]) {
-      InstallSources = new MatchPatternSet(extensionSettings["*"].install_sources);
+    if (
+      "*" in extensionSettings &&
+      "install_sources" in extensionSettings["*"]
+    ) {
+      InstallSources = new MatchPatternSet(
+        extensionSettings["*"].install_sources
+      );
     }
   },
 
@@ -334,8 +367,10 @@ EnterprisePoliciesManager.prototype = {
       }
     }
     if ("*" in ExtensionSettings) {
-      if (ExtensionSettings["*"].installation_mode &&
-          ExtensionSettings["*"].installation_mode == "blocked") {
+      if (
+        ExtensionSettings["*"].installation_mode &&
+        ExtensionSettings["*"].installation_mode == "blocked"
+      ) {
         return false;
       }
       if ("allowed_types" in ExtensionSettings["*"]) {
@@ -376,8 +411,11 @@ function areEnterpriseOnlyPoliciesAllowed() {
     return false;
   }
 
-  if (AppConstants.MOZ_UPDATE_CHANNEL != "release" ||
-      Cu.isInAutomation || isXpcshell) {
+  if (
+    AppConstants.MOZ_UPDATE_CHANNEL != "release" ||
+    Cu.isInAutomation ||
+    isXpcshell
+  ) {
     return true;
   }
 
@@ -429,22 +467,26 @@ class JSONPoliciesProvider {
     
     
     
-    if (alternatePath && (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD || isXpcshell) &&
-        (!configFile || !configFile.exists())) {
+    if (
+      alternatePath &&
+      (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD || isXpcshell) &&
+      (!configFile || !configFile.exists())
+    ) {
       if (alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
         
         
         
         let testRoot = Services.prefs.getStringPref(PREF_TEST_ROOT);
-        let relativePath = alternatePath.substring(MAGIC_TEST_ROOT_PREFIX.length);
+        let relativePath = alternatePath.substring(
+          MAGIC_TEST_ROOT_PREFIX.length
+        );
         if (AppConstants.platform == "win") {
           relativePath = relativePath.replace(/\//g, "\\");
         }
         alternatePath = testRoot + relativePath;
       }
 
-      configFile = Cc["@mozilla.org/file/local;1"]
-                     .createInstance(Ci.nsIFile);
+      configFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
       configFile.initWithPath(alternatePath);
     }
 
@@ -468,8 +510,10 @@ class JSONPoliciesProvider {
         }
       }
     } catch (ex) {
-      if (ex instanceof Components.Exception &&
-          ex.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
+      if (
+        ex instanceof Components.Exception &&
+        ex.result == Cr.NS_ERROR_FILE_NOT_FOUND
+      ) {
         
       } else if (ex instanceof SyntaxError) {
         log.error("Error parsing JSON file");
@@ -486,7 +530,9 @@ class WindowsGPOPoliciesProvider {
   constructor() {
     this._policies = null;
 
-    let wrk = Cc["@mozilla.org/windows-registry-key;1"].createInstance(Ci.nsIWindowsRegKey);
+    let wrk = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
+      Ci.nsIWindowsRegKey
+    );
 
     
     
@@ -520,8 +566,9 @@ class WindowsGPOPoliciesProvider {
 class macOSPoliciesProvider {
   constructor() {
     this._policies = null;
-    let prefReader = Cc["@mozilla.org/mac-preferences-reader;1"]
-                       .createInstance(Ci.nsIMacPreferencesReader);
+    let prefReader = Cc["@mozilla.org/mac-preferences-reader;1"].createInstance(
+      Ci.nsIMacPreferencesReader
+    );
     if (!prefReader.policiesEnabled()) {
       return;
     }

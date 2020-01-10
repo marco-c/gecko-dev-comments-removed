@@ -5,19 +5,26 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "TelemetryController",
-                               "resource://gre/modules/TelemetryController.jsm");
-ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment",
-                               "resource://gre/modules/TelemetryEnvironment.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryController",
+  "resource://gre/modules/TelemetryController.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryEnvironment",
+  "resource://gre/modules/TelemetryEnvironment.jsm"
+);
 
 
 
 
 
-function TelemetryStartup() {
-}
+function TelemetryStartup() {}
 
-TelemetryStartup.prototype.QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
+TelemetryStartup.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIObserver,
+]);
 TelemetryStartup.prototype.observe = function(aSubject, aTopic, aData) {
   if (aTopic == "profile-after-change") {
     
@@ -25,7 +32,10 @@ TelemetryStartup.prototype.observe = function(aSubject, aTopic, aData) {
   }
   if (aTopic == "profile-after-change") {
     annotateEnvironment();
-    TelemetryEnvironment.registerChangeListener("CrashAnnotator", annotateEnvironment);
+    TelemetryEnvironment.registerChangeListener(
+      "CrashAnnotator",
+      annotateEnvironment
+    );
     TelemetryEnvironment.onInitialized().then(() => annotateEnvironment());
   }
 };
@@ -35,7 +45,10 @@ function annotateEnvironment() {
     let cr = Cc["@mozilla.org/toolkit/crash-reporter;1"];
     if (cr) {
       let env = JSON.stringify(TelemetryEnvironment.currentEnvironment);
-      cr.getService(Ci.nsICrashReporter).annotateCrashReport("TelemetryEnvironment", env);
+      cr.getService(Ci.nsICrashReporter).annotateCrashReport(
+        "TelemetryEnvironment",
+        env
+      );
     }
   } catch (e) {
     

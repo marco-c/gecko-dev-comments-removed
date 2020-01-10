@@ -13,12 +13,14 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "DownloadHistory",
-];
+var EXPORTED_SYMBOLS = ["DownloadHistory"];
 
-const {DownloadList} = ChromeUtils.import("resource://gre/modules/DownloadList.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { DownloadList } = ChromeUtils.import(
+  "resource://gre/modules/DownloadList.jsm"
+);
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Downloads: "resource://gre/modules/Downloads.jsm",
@@ -30,8 +32,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 const HISTORY_PLACES_QUERY =
-      "place:transition=" + Ci.nsINavHistoryService.TRANSITION_DOWNLOAD +
-      "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
+  "place:transition=" +
+  Ci.nsINavHistoryService.TRANSITION_DOWNLOAD +
+  "&sort=" +
+  Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
 
 const DESTINATIONFILEURI_ANNO = "downloads/destinationFileURI";
 const METADATA_ANNO = "downloads/metaData";
@@ -64,7 +68,7 @@ var DownloadHistory = {
 
 
 
-  async getList({type = Downloads.PUBLIC, maxHistoryResults} = {}) {
+  async getList({ type = Downloads.PUBLIC, maxHistoryResults } = {}) {
     await DownloadCache.ensureInitialized();
 
     let key = `${type}|${maxHistoryResults ? maxHistoryResults : -1}`;
@@ -72,7 +76,8 @@ var DownloadHistory = {
       this._listPromises[key] = Downloads.getList(type).then(list => {
         
         
-        let query = HISTORY_PLACES_QUERY +
+        let query =
+          HISTORY_PLACES_QUERY +
           (maxHistoryResults ? "&maxResults=" + maxHistoryResults : "");
         return new DownloadHistoryList(list, query);
       });
@@ -89,8 +94,10 @@ var DownloadHistory = {
   _listPromises: {},
 
   async addDownloadToHistory(download) {
-    if (download.source.isPrivate ||
-        !PlacesUtils.history.canAddURI(PlacesUtils.toURI(download.source.url))) {
+    if (
+      download.source.isPrivate ||
+      !PlacesUtils.history.canAddURI(PlacesUtils.toURI(download.source.url))
+    ) {
       return;
     }
 
@@ -135,8 +142,7 @@ var DownloadHistory = {
 
     
     if (download.error && download.error.reputationCheckVerdict) {
-      metaData.reputationCheckVerdict =
-        download.error.reputationCheckVerdict;
+      metaData.reputationCheckVerdict = download.error.reputationCheckVerdict;
     }
 
     
@@ -149,8 +155,10 @@ var DownloadHistory = {
   async _updateHistoryListData(sourceUrl) {
     for (let key of Object.getOwnPropertyNames(this._listPromises)) {
       let downloadHistoryList = await this._listPromises[key];
-      downloadHistoryList.updateForMetaDataChange(sourceUrl,
-        DownloadCache.get(sourceUrl));
+      downloadHistoryList.updateForMetaDataChange(
+        sourceUrl,
+        DownloadCache.get(sourceUrl)
+      );
     }
   },
 };
@@ -192,7 +200,7 @@ var DownloadCache = {
 
       let metaDataPages = pageAnnos.get(METADATA_ANNO);
       if (metaDataPages) {
-        for (let {uri, content} of metaDataPages) {
+        for (let { uri, content } of metaDataPages) {
           try {
             this._data.set(uri.href, JSON.parse(content));
           } catch (ex) {
@@ -203,7 +211,7 @@ var DownloadCache = {
 
       let destinationFilePages = pageAnnos.get(DESTINATIONFILEURI_ANNO);
       if (destinationFilePages) {
-        for (let {uri, content} of destinationFilePages) {
+        for (let { uri, content } of destinationFilePages) {
           let newData = this.get(uri.href);
           newData.targetFileSpec = content;
           this._data.set(uri.href, newData);
@@ -257,13 +265,16 @@ var DownloadCache = {
       
       
       
-      title: (originalPageInfo && originalPageInfo.title) || targetFile.leafName,
-      visits: [{
-        
-        date: download.startTime,
-        transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
-        referrer: download.source.referrer,
-      }],
+      title:
+        (originalPageInfo && originalPageInfo.title) || targetFile.leafName,
+      visits: [
+        {
+          
+          date: download.startTime,
+          transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+          referrer: download.source.referrer,
+        },
+      ],
     });
 
     await PlacesUtils.history.update({
@@ -368,16 +379,17 @@ HistoryDownload.prototype = {
   updateFromMetaData(metaData) {
     try {
       this.target.path = Cc["@mozilla.org/network/protocol;1?name=file"]
-                           .getService(Ci.nsIFileProtocolHandler)
-                           .getFileFromURLSpec(metaData.targetFileSpec).path;
+        .getService(Ci.nsIFileProtocolHandler)
+        .getFileFromURLSpec(metaData.targetFileSpec).path;
     } catch (ex) {
       this.target.path = undefined;
     }
 
     if ("state" in metaData) {
       this.succeeded = metaData.state == METADATA_STATE_FINISHED;
-      this.canceled = metaData.state == METADATA_STATE_CANCELED ||
-                      metaData.state == METADATA_STATE_PAUSED;
+      this.canceled =
+        metaData.state == METADATA_STATE_CANCELED ||
+        metaData.state == METADATA_STATE_PAUSED;
       this.endTime = metaData.endTime;
 
       
@@ -532,7 +544,8 @@ var DownloadHistoryList = function(publicList, place) {
 
   
   publicList.addView(this).catch(Cu.reportError);
-  let query = {}, options = {};
+  let query = {},
+    options = {};
   PlacesUtils.history.queryStringToQuery(place, query, options);
 
   
@@ -784,12 +797,14 @@ this.DownloadHistoryList.prototype = {
       
       
       
-      slot.historyDownload.updateFromMetaData(
-        DownloadCache.get(url));
+      slot.historyDownload.updateFromMetaData(DownloadCache.get(url));
       slot.sessionDownload = null;
       
-      this._insertSlot({ slot, slotsForUrl,
-                         index: this._firstSessionSlotIndex });
+      this._insertSlot({
+        slot,
+        slotsForUrl,
+        index: this._firstSessionSlotIndex,
+      });
     }
   },
 

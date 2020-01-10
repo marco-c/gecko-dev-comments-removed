@@ -41,7 +41,10 @@ add_task(async function test_engineUpdate() {
 
     
     
-    engine.wrappedJSObject.setAttr("updateexpir", Date.now() - (ONE_DAY_IN_MS * 8));
+    engine.wrappedJSObject.setAttr(
+      "updateexpir",
+      Date.now() - ONE_DAY_IN_MS * 8
+    );
     Services.search.QueryInterface(Ci.nsITimerCallback).notify(null);
   });
 });

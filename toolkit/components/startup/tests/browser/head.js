@@ -10,20 +10,34 @@ function whenBrowserLoaded(browser, callback) {
 }
 
 function waitForOnBeforeUnloadDialog(browser, callback) {
-  browser.addEventListener("DOMWillOpenModalDialog", function onModalDialog(event) {
-    if (Cu.isCrossProcessWrapper(event.target)) {
-      
-      
-      return;
-    }
+  browser.addEventListener(
+    "DOMWillOpenModalDialog",
+    function onModalDialog(event) {
+      if (Cu.isCrossProcessWrapper(event.target)) {
+        
+        
+        return;
+      }
 
-    browser.removeEventListener("DOMWillOpenModalDialog", onModalDialog, true);
+      browser.removeEventListener(
+        "DOMWillOpenModalDialog",
+        onModalDialog,
+        true
+      );
 
-    SimpleTest.waitForCondition(() => Services.focus.activeWindow == browser.ownerGlobal, function() {
-      let stack = browser.parentNode;
-      let dialogs = stack.getElementsByTagNameNS(XUL_NS, "tabmodalprompt");
-      let {button0, button1} = browser.tabModalPromptBox.prompts.get(dialogs[0]).ui;
-      callback(button0, button1);
-    }, "Waited too long for window with dialog to focus");
-  }, true);
+      SimpleTest.waitForCondition(
+        () => Services.focus.activeWindow == browser.ownerGlobal,
+        function() {
+          let stack = browser.parentNode;
+          let dialogs = stack.getElementsByTagNameNS(XUL_NS, "tabmodalprompt");
+          let { button0, button1 } = browser.tabModalPromptBox.prompts.get(
+            dialogs[0]
+          ).ui;
+          callback(button0, button1);
+        },
+        "Waited too long for window with dialog to focus"
+      );
+    },
+    true
+  );
 }

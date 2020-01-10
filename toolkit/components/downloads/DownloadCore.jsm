@@ -20,8 +20,12 @@ var EXPORTED_SYMBOLS = [
   "DownloadPDFSaver",
 ];
 
-const {Integration} = ChromeUtils.import("resource://gre/modules/Integration.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Integration } = ChromeUtils.import(
+  "resource://gre/modules/Integration.jsm"
+);
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
@@ -34,31 +38,46 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "gExternalAppLauncher",
-           "@mozilla.org/uriloader/external-helper-app-service;1",
-           Ci.nsPIExternalAppLauncher);
-XPCOMUtils.defineLazyServiceGetter(this, "gExternalHelperAppService",
-           "@mozilla.org/uriloader/external-helper-app-service;1",
-           Ci.nsIExternalHelperAppService);
-XPCOMUtils.defineLazyServiceGetter(this, "gPrintSettingsService",
-           "@mozilla.org/gfx/printsettings-service;1",
-           Ci.nsIPrintSettingsService);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gExternalAppLauncher",
+  "@mozilla.org/uriloader/external-helper-app-service;1",
+  Ci.nsPIExternalAppLauncher
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gExternalHelperAppService",
+  "@mozilla.org/uriloader/external-helper-app-service;1",
+  Ci.nsIExternalHelperAppService
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gPrintSettingsService",
+  "@mozilla.org/gfx/printsettings-service;1",
+  Ci.nsIPrintSettingsService
+);
 
 
-Integration.downloads.defineModuleGetter(this, "DownloadIntegration",
-            "resource://gre/modules/DownloadIntegration.jsm");
+Integration.downloads.defineModuleGetter(
+  this,
+  "DownloadIntegration",
+  "resource://gre/modules/DownloadIntegration.jsm"
+);
 
 const BackgroundFileSaverStreamListener = Components.Constructor(
-      "@mozilla.org/network/background-file-saver;1?mode=streamlistener",
-      "nsIBackgroundFileSaver");
+  "@mozilla.org/network/background-file-saver;1?mode=streamlistener",
+  "nsIBackgroundFileSaver"
+);
 
 
 
 
 function isString(aValue) {
   
-  return (typeof aValue == "string") ||
-         (typeof aValue == "object" && "charAt" in aValue);
+  return (
+    typeof aValue == "string" ||
+    (typeof aValue == "object" && "charAt" in aValue)
+  );
 }
 
 
@@ -81,7 +100,7 @@ function deserializeUnknownProperties(aObject, aSerializable, aFilterFn) {
   for (let property in aSerializable) {
     if (aFilterFn(property)) {
       if (!aObject._unknownProperties) {
-        aObject._unknownProperties = { };
+        aObject._unknownProperties = {};
       }
 
       aObject._unknownProperties[property] = aSerializable[property];
@@ -336,14 +355,20 @@ this.Download.prototype = {
     
     
     if (this._finalized) {
-      return Promise.reject(new DownloadError({
-                                message: "Cannot start after finalization."}));
+      return Promise.reject(
+        new DownloadError({
+          message: "Cannot start after finalization.",
+        })
+      );
     }
 
     if (this.error && this.error.becauseBlockedByReputationCheck) {
-      return Promise.reject(new DownloadError({
-                                message: "Cannot start after being blocked " +
-                                         "by a reputation check."}));
+      return Promise.reject(
+        new DownloadError({
+          message:
+            "Cannot start after being blocked " + "by a reputation check.",
+        })
+      );
     }
 
     
@@ -387,8 +412,12 @@ this.Download.prototype = {
 
       let changeMade = false;
 
-      for (let property of ["contentType", "progress", "hasPartialData",
-                            "hasBlockedData"]) {
+      for (let property of [
+        "contentType",
+        "progress",
+        "hasPartialData",
+        "hasBlockedData",
+      ]) {
         if (property in aOptions && this[property] != aOptions[property]) {
           this[property] = aOptions[property];
           changeMade = true;
@@ -402,145 +431,153 @@ this.Download.prototype = {
 
     
     
-    deferAttempt.resolve((async () => {
-      
-      if (this._promiseCanceled) {
-        await this._promiseCanceled;
-      }
-      if (this._promiseRemovePartialData) {
-        try {
-          await this._promiseRemovePartialData;
-        } catch (ex) {
-          
-          
-        }
-      }
-
-      
-      
-      
-      if (this.succeeded) {
-        return;
-      }
-
-      try {
-        if (this.downloadingToSameFile()) {
-          throw new DownloadError({ message: "Can't overwrite the source file.",
-                                    becauseTargetFailed: true });
-        }
-
-        
-        if (await DownloadIntegration.shouldBlockForParentalControls(this)) {
-          throw new DownloadError({ becauseBlockedByParentalControls: true });
-        }
-
-        
-        
-        if (await DownloadIntegration.shouldBlockForRuntimePermissions()) {
-          throw new DownloadError({ becauseBlockedByRuntimePermissions: true });
-        }
-
-        
-        
+    deferAttempt.resolve(
+      (async () => {
         
         if (this._promiseCanceled) {
-          
-          throw new Error(undefined);
+          await this._promiseCanceled;
         }
-
-        
-        this._saverExecuting = true;
-        try {
-          await this.saver.execute(DS_setProgressBytes.bind(this),
-                                   DS_setProperties.bind(this));
-        } catch (ex) {
-          
-          
-          
-          if (!this.hasPartialData && !this.hasBlockedData) {
-            await this.saver.removeData(true);
+        if (this._promiseRemovePartialData) {
+          try {
+            await this._promiseRemovePartialData;
+          } catch (ex) {
+            
+            
           }
-          throw ex;
-        }
-
-        
-        
-        await this.target.refresh();
-
-        
-        
-        
-        
-        if (this._promiseCanceled) {
-          
-          
-          
-          
-          await this.saver.removeData(true);
-
-          
-          throw new DownloadError();
-        }
-
-        
-        this.progress = 100;
-        this.succeeded = true;
-        this.hasPartialData = false;
-      } catch (originalEx) {
-        
-        
-        
-        let ex = originalEx;
-
-        
-        
-        
-        if (this._promiseCanceled) {
-          throw new DownloadError({ message: "Download canceled." });
         }
 
         
         
         
-        
-        
-        if (this._blockedByParentalControls) {
-          ex = new DownloadError({ becauseBlockedByParentalControls: true });
+        if (this.succeeded) {
+          return;
         }
 
-        
-        
-        if (this._currentAttempt == currentAttempt || !this._currentAttempt) {
-          if (!(ex instanceof DownloadError)) {
-            let properties = {innerException: ex};
+        try {
+          if (this.downloadingToSameFile()) {
+            throw new DownloadError({
+              message: "Can't overwrite the source file.",
+              becauseTargetFailed: true,
+            });
+          }
 
-            if (ex.message) {
-              properties.message = ex.message;
+          
+          if (await DownloadIntegration.shouldBlockForParentalControls(this)) {
+            throw new DownloadError({ becauseBlockedByParentalControls: true });
+          }
+
+          
+          
+          if (await DownloadIntegration.shouldBlockForRuntimePermissions()) {
+            throw new DownloadError({
+              becauseBlockedByRuntimePermissions: true,
+            });
+          }
+
+          
+          
+          
+          if (this._promiseCanceled) {
+            
+            throw new Error(undefined);
+          }
+
+          
+          this._saverExecuting = true;
+          try {
+            await this.saver.execute(
+              DS_setProgressBytes.bind(this),
+              DS_setProperties.bind(this)
+            );
+          } catch (ex) {
+            
+            
+            
+            if (!this.hasPartialData && !this.hasBlockedData) {
+              await this.saver.removeData(true);
+            }
+            throw ex;
+          }
+
+          
+          
+          await this.target.refresh();
+
+          
+          
+          
+          
+          if (this._promiseCanceled) {
+            
+            
+            
+            
+            await this.saver.removeData(true);
+
+            
+            throw new DownloadError();
+          }
+
+          
+          this.progress = 100;
+          this.succeeded = true;
+          this.hasPartialData = false;
+        } catch (originalEx) {
+          
+          
+          
+          let ex = originalEx;
+
+          
+          
+          
+          if (this._promiseCanceled) {
+            throw new DownloadError({ message: "Download canceled." });
+          }
+
+          
+          
+          
+          
+          
+          if (this._blockedByParentalControls) {
+            ex = new DownloadError({ becauseBlockedByParentalControls: true });
+          }
+
+          
+          
+          if (this._currentAttempt == currentAttempt || !this._currentAttempt) {
+            if (!(ex instanceof DownloadError)) {
+              let properties = { innerException: ex };
+
+              if (ex.message) {
+                properties.message = ex.message;
+              }
+
+              ex = new DownloadError(properties);
             }
 
-            ex = new DownloadError(properties);
+            this.error = ex;
           }
+          throw ex;
+        } finally {
+          
+          this._saverExecuting = false;
+          this._promiseCanceled = null;
 
-          this.error = ex;
-        }
-        throw ex;
-      } finally {
-        
-        this._saverExecuting = false;
-        this._promiseCanceled = null;
-
-        
-        if (this._currentAttempt == currentAttempt || !this._currentAttempt) {
-          this._currentAttempt = null;
-          this.stopped = true;
-          this.speed = 0;
-          this._notifyChange();
-          if (this.succeeded) {
-            await this._succeed();
+          
+          if (this._currentAttempt == currentAttempt || !this._currentAttempt) {
+            this._currentAttempt = null;
+            this.stopped = true;
+            this.speed = 0;
+            this._notifyChange();
+            if (this.succeeded) {
+              await this._succeed();
+            }
           }
         }
-      }
-    })());
+      })()
+    );
 
     
     this._notifyChange();
@@ -566,11 +603,14 @@ this.Download.prototype = {
       
       if (this.source.isPrivate) {
         gExternalAppLauncher.deleteTemporaryPrivateFileWhenPossible(
-                             new FileUtils.File(this.target.path));
-      } else if (Services.prefs.getBoolPref(
-                  "browser.helperApps.deleteTempFileOnExit")) {
+          new FileUtils.File(this.target.path)
+        );
+      } else if (
+        Services.prefs.getBoolPref("browser.helperApps.deleteTempFileOnExit")
+      ) {
         gExternalAppLauncher.deleteTemporaryFileOnExit(
-                             new FileUtils.File(this.target.path));
+          new FileUtils.File(this.target.path)
+        );
       }
     }
   },
@@ -606,13 +646,15 @@ this.Download.prototype = {
     }
 
     if (this._promiseConfirmBlock) {
-      return Promise.reject(new Error(
-        "Download block has been confirmed, cannot unblock."));
+      return Promise.reject(
+        new Error("Download block has been confirmed, cannot unblock.")
+      );
     }
 
     if (!this.hasBlockedData) {
-      return Promise.reject(new Error(
-        "unblock may only be called on Downloads with blocked data."));
+      return Promise.reject(
+        new Error("unblock may only be called on Downloads with blocked data.")
+      );
     }
 
     this._promiseUnblock = (async () => {
@@ -650,13 +692,17 @@ this.Download.prototype = {
     }
 
     if (this._promiseUnblock) {
-      return Promise.reject(new Error(
-        "Download is being unblocked, cannot confirmBlock."));
+      return Promise.reject(
+        new Error("Download is being unblocked, cannot confirmBlock.")
+      );
     }
 
     if (!this.hasBlockedData) {
-      return Promise.reject(new Error(
-        "confirmBlock may only be called on Downloads with blocked data."));
+      return Promise.reject(
+        new Error(
+          "confirmBlock may only be called on Downloads with blocked data."
+        )
+      );
     }
 
     this._promiseConfirmBlock = (async () => {
@@ -917,8 +963,10 @@ this.Download.prototype = {
       }
 
       
-      if ((this.hasPartialData || this.hasBlockedData) &&
-          this.target.partFilePath) {
+      if (
+        (this.hasPartialData || this.hasBlockedData) &&
+        this.target.partFilePath
+      ) {
         try {
           let stat = await OS.File.stat(this.target.partFilePath);
 
@@ -931,8 +979,9 @@ this.Download.prototype = {
           this.currentBytes = stat.size;
           if (this.totalBytes > 0) {
             this.hasProgress = true;
-            this.progress = Math.floor(this.currentBytes /
-                                           this.totalBytes * 100);
+            this.progress = Math.floor(
+              (this.currentBytes / this.totalBytes) * 100
+            );
           }
         } catch (ex) {
           if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
@@ -1015,13 +1064,15 @@ this.Download.prototype = {
 
 
   _setBytes: function D_setBytes(aCurrentBytes, aTotalBytes, aHasPartialData) {
-    let changeMade = (this.hasPartialData != aHasPartialData);
+    let changeMade = this.hasPartialData != aHasPartialData;
     this.hasPartialData = aHasPartialData;
 
     
     
-    if (aTotalBytes != -1 && (!this.hasProgress ||
-                              this.totalBytes != aTotalBytes)) {
+    if (
+      aTotalBytes != -1 &&
+      (!this.hasProgress || this.totalBytes != aTotalBytes)
+    ) {
       this.hasProgress = true;
       this.totalBytes = aTotalBytes;
       changeMade = true;
@@ -1035,7 +1086,8 @@ this.Download.prototype = {
       
       if (this._lastProgressTimeMs != 0) {
         
-        let rawSpeed = (aCurrentBytes - this.currentBytes) / intervalMs * 1000;
+        let rawSpeed =
+          ((aCurrentBytes - this.currentBytes) / intervalMs) * 1000;
         if (this.speed == 0) {
           
           
@@ -1057,7 +1109,9 @@ this.Download.prototype = {
         
         this.currentBytes = aCurrentBytes;
         if (this.totalBytes > 0) {
-          this.progress = Math.floor(this.currentBytes / this.totalBytes * 100);
+          this.progress = Math.floor(
+            (this.currentBytes / this.totalBytes) * 100
+          );
         }
         changeMade = true;
       }
@@ -1128,8 +1182,15 @@ this.Download.prototype = {
     
     
     
-    return this.stopped + "," + this.totalBytes + "," + this.hasPartialData +
-           "," + this.contentType;
+    return (
+      this.stopped +
+      "," +
+      this.totalBytes +
+      "," +
+      this.hasPartialData +
+      "," +
+      this.contentType
+    );
   },
 };
 
@@ -1189,8 +1250,8 @@ Download.fromSerializable = function(aSerializable) {
 
   if ("startTime" in aSerializable) {
     let time = aSerializable.startTime.getTime
-             ? aSerializable.startTime.getTime()
-             : aSerializable.startTime;
+      ? aSerializable.startTime.getTime()
+      : aSerializable.startTime;
     download.startTime = new Date(time);
   }
 
@@ -1212,13 +1273,17 @@ Download.fromSerializable = function(aSerializable) {
     }
   }
 
-  deserializeUnknownProperties(download, aSerializable, property =>
-    !kPlainSerializableDownloadProperties.includes(property) &&
-    property != "startTime" &&
-    property != "source" &&
-    property != "target" &&
-    property != "error" &&
-    property != "saver");
+  deserializeUnknownProperties(
+    download,
+    aSerializable,
+    property =>
+      !kPlainSerializableDownloadProperties.includes(property) &&
+      property != "startTime" &&
+      property != "source" &&
+      property != "target" &&
+      property != "error" &&
+      property != "saver"
+  );
 
   return download;
 };
@@ -1262,7 +1327,7 @@ this.DownloadSource.prototype = {
 
 
 
-   adjustChannel: null,
+  adjustChannel: null,
 
   
 
@@ -1326,7 +1391,9 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
     source.url = aSerializable.spec;
   } else if (aSerializable instanceof Ci.nsIDOMWindow) {
     source.url = aSerializable.location.href;
-    source.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(aSerializable);
+    source.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
+      aSerializable
+    );
     source.windowRef = Cu.getWeakReference(aSerializable);
   } else {
     
@@ -1341,8 +1408,12 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
       source.adjustChannel = aSerializable.adjustChannel;
     }
 
-    deserializeUnknownProperties(source, aSerializable, property =>
-      property != "url" && property != "isPrivate" && property != "referrer");
+    deserializeUnknownProperties(
+      source,
+      aSerializable,
+      property =>
+        property != "url" && property != "isPrivate" && property != "referrer"
+    );
   }
 
   return source;
@@ -1430,8 +1501,7 @@ this.DownloadTarget.prototype = {
       return this.path;
     }
 
-    let serializable = { path: this.path,
-                         partFilePath: this.partFilePath };
+    let serializable = { path: this.path, partFilePath: this.partFilePath };
     serializeUnknownProperties(this, serializable);
     return serializable;
   },
@@ -1467,8 +1537,11 @@ this.DownloadTarget.fromSerializable = function(aSerializable) {
       target.partFilePath = aSerializable.partFilePath;
     }
 
-    deserializeUnknownProperties(target, aSerializable, property =>
-      property != "path" && property != "partFilePath");
+    deserializeUnknownProperties(
+      target,
+      aSerializable,
+      property => property != "path" && property != "partFilePath"
+    );
   }
   return target;
 };
@@ -1501,20 +1574,22 @@ var DownloadError = function(aProperties) {
   this.result = aProperties.result || Cr.NS_ERROR_FAILURE;
   if (aProperties.message) {
     this.message = aProperties.message;
-  } else if (aProperties.becauseBlocked ||
-             aProperties.becauseBlockedByParentalControls ||
-             aProperties.becauseBlockedByReputationCheck ||
-             aProperties.becauseBlockedByRuntimePermissions) {
+  } else if (
+    aProperties.becauseBlocked ||
+    aProperties.becauseBlockedByParentalControls ||
+    aProperties.becauseBlockedByReputationCheck ||
+    aProperties.becauseBlockedByRuntimePermissions
+  ) {
     this.message = "Download blocked.";
   } else {
     let exception = new Components.Exception("", this.result);
     this.message = exception.toString();
   }
   if (aProperties.inferCause) {
-    let module = ((this.result & 0x7FFF0000) >> 16) -
-                 NS_ERROR_MODULE_BASE_OFFSET;
-    this.becauseSourceFailed = (module == NS_ERROR_MODULE_NETWORK);
-    this.becauseTargetFailed = (module == NS_ERROR_MODULE_FILES);
+    let module =
+      ((this.result & 0x7fff0000) >> 16) - NS_ERROR_MODULE_BASE_OFFSET;
+    this.becauseSourceFailed = module == NS_ERROR_MODULE_NETWORK;
+    this.becauseTargetFailed = module == NS_ERROR_MODULE_FILES;
   } else {
     if (aProperties.becauseSourceFailed) {
       this.becauseSourceFailed = true;
@@ -1630,7 +1705,8 @@ this.DownloadError.prototype = {
       becauseBlocked: this.becauseBlocked,
       becauseBlockedByParentalControls: this.becauseBlockedByParentalControls,
       becauseBlockedByReputationCheck: this.becauseBlockedByReputationCheck,
-      becauseBlockedByRuntimePermissions: this.becauseBlockedByRuntimePermissions,
+      becauseBlockedByRuntimePermissions: this
+        .becauseBlockedByRuntimePermissions,
       reputationCheckVerdict: this.reputationCheckVerdict,
     };
 
@@ -1649,16 +1725,20 @@ this.DownloadError.prototype = {
 
 this.DownloadError.fromSerializable = function(aSerializable) {
   let e = new DownloadError(aSerializable);
-  deserializeUnknownProperties(e, aSerializable, property =>
-    property != "result" &&
-    property != "message" &&
-    property != "becauseSourceFailed" &&
-    property != "becauseTargetFailed" &&
-    property != "becauseBlocked" &&
-    property != "becauseBlockedByParentalControls" &&
-    property != "becauseBlockedByReputationCheck" &&
-    property != "becauseBlockedByRuntimePermissions" &&
-    property != "reputationCheckVerdict");
+  deserializeUnknownProperties(
+    e,
+    aSerializable,
+    property =>
+      property != "result" &&
+      property != "message" &&
+      property != "becauseSourceFailed" &&
+      property != "becauseTargetFailed" &&
+      property != "becauseBlocked" &&
+      property != "becauseBlockedByParentalControls" &&
+      property != "becauseBlockedByReputationCheck" &&
+      property != "becauseBlockedByRuntimePermissions" &&
+      property != "reputationCheckVerdict"
+  );
 
   return e;
 };
@@ -1769,8 +1849,9 @@ this.DownloadSaver.prototype = {
 
 
 this.DownloadSaver.fromSerializable = function(aSerializable) {
-  let serializable = isString(aSerializable) ? { type: aSerializable }
-                                             : aSerializable;
+  let serializable = isString(aSerializable)
+    ? { type: aSerializable }
+    : aSerializable;
   let saver;
   switch (serializable.type) {
     case "copy":
@@ -1896,7 +1977,7 @@ this.DownloadCopySaver.prototype = {
       
       
       backgroundFileSaver.observer = {
-        onTargetChange() { },
+        onTargetChange() {},
         onSaveComplete: (aSaver, aStatus) => {
           
           if (Components.isSuccessCode(aStatus)) {
@@ -1926,8 +2007,7 @@ this.DownloadCopySaver.prototype = {
       if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
         channel.setPrivate(download.source.isPrivate);
       }
-      if (channel instanceof Ci.nsIHttpChannel &&
-          download.source.referrer) {
+      if (channel instanceof Ci.nsIHttpChannel && download.source.referrer) {
         
         
         
@@ -1935,11 +2015,13 @@ this.DownloadCopySaver.prototype = {
         let ReferrerInfo = Components.Constructor(
           "@mozilla.org/referrer-info;1",
           "nsIReferrerInfo",
-          "init");
+          "init"
+        );
         channel.referrerInfo = new ReferrerInfo(
           Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL,
           true,
-          NetUtil.newURI(download.source.referrer));
+          NetUtil.newURI(download.source.referrer)
+        );
       }
 
       
@@ -1952,8 +2034,12 @@ this.DownloadCopySaver.prototype = {
       
       let resumeAttempted = false;
       let resumeFromBytes = 0;
-      if (channel instanceof Ci.nsIResumableChannel && this.entityID &&
-          partFilePath && keepPartialData) {
+      if (
+        channel instanceof Ci.nsIResumableChannel &&
+        this.entityID &&
+        partFilePath &&
+        keepPartialData
+      ) {
         try {
           let stat = await OS.File.stat(partFilePath);
           channel.resumeAt(stat.size, this.entityID);
@@ -1969,15 +2055,22 @@ this.DownloadCopySaver.prototype = {
       channel.notificationCallbacks = {
         QueryInterface: ChromeUtils.generateQI([Ci.nsIInterfaceRequestor]),
         getInterface: ChromeUtils.generateQI([Ci.nsIProgressEventSink]),
-        onProgress: function DCSE_onProgress(aRequest, aContext, aProgress,
-                                             aProgressMax) {
+        onProgress: function DCSE_onProgress(
+          aRequest,
+          aContext,
+          aProgress,
+          aProgressMax
+        ) {
           let currentBytes = resumeFromBytes + aProgress;
-          let totalBytes = aProgressMax == -1 ? -1 : (resumeFromBytes +
-                                                      aProgressMax);
-          aSetProgressBytesFn(currentBytes, totalBytes, aProgress > 0 &&
-                              partFilePath && keepPartialData);
+          let totalBytes =
+            aProgressMax == -1 ? -1 : resumeFromBytes + aProgressMax;
+          aSetProgressBytesFn(
+            currentBytes,
+            totalBytes,
+            aProgress > 0 && partFilePath && keepPartialData
+          );
         },
-        onStatus() { },
+        onStatus() {},
       };
 
       
@@ -1993,8 +2086,10 @@ this.DownloadCopySaver.prototype = {
 
           
           
-          if (aRequest instanceof Ci.nsIHttpChannel &&
-              aRequest.responseStatus == 450) {
+          if (
+            aRequest instanceof Ci.nsIHttpChannel &&
+            aRequest.responseStatus == 450
+          ) {
             
             
             this.download._blockedByParentalControls = true;
@@ -2015,16 +2110,19 @@ this.DownloadCopySaver.prototype = {
           
           
           
-          if (channel instanceof Ci.nsIEncodedChannel &&
-              channel.contentEncodings) {
+          if (
+            channel instanceof Ci.nsIEncodedChannel &&
+            channel.contentEncodings
+          ) {
             let uri = channel.URI;
             if (uri instanceof Ci.nsIURL && uri.fileExtension) {
               
               let encoding = channel.contentEncodings.getNext();
               if (encoding) {
-                channel.applyConversion =
-                  gExternalHelperAppService.applyDecodingForExtension(
-                                            uri.fileExtension, encoding);
+                channel.applyConversion = gExternalHelperAppService.applyDecodingForExtension(
+                  uri.fileExtension,
+                  encoding
+                );
               }
             }
           }
@@ -2037,8 +2135,10 @@ this.DownloadCopySaver.prototype = {
                 
                 this.entityID = aRequest.entityID;
               } catch (ex) {
-                if (!(ex instanceof Components.Exception) ||
-                    ex.result != Cr.NS_ERROR_NOT_RESUMABLE) {
+                if (
+                  !(ex instanceof Components.Exception) ||
+                  ex.result != Cr.NS_ERROR_NOT_RESUMABLE
+                ) {
                   throw ex;
                 }
                 keepPartialData = false;
@@ -2060,19 +2160,22 @@ this.DownloadCopySaver.prototype = {
             }
 
             
-            backgroundFileSaver.setTarget(new FileUtils.File(partFilePath),
-                                          keepPartialData);
+            backgroundFileSaver.setTarget(
+              new FileUtils.File(partFilePath),
+              keepPartialData
+            );
           } else {
             
-            backgroundFileSaver.setTarget(new FileUtils.File(targetPath),
-                                          false);
+            backgroundFileSaver.setTarget(
+              new FileUtils.File(targetPath),
+              false
+            );
           }
         }.bind(copySaver),
 
         onStopRequest(aRequest, aStatusCode) {
           try {
-            backgroundFileSaver.onStopRequest(aRequest,
-                                              aStatusCode);
+            backgroundFileSaver.onStopRequest(aRequest, aStatusCode);
           } finally {
             
             
@@ -2083,11 +2186,13 @@ this.DownloadCopySaver.prototype = {
           }
         },
 
-        onDataAvailable(aRequest, aInputStream,
-                                  aOffset, aCount) {
-          backgroundFileSaver.onDataAvailable(aRequest,
-                                              aInputStream, aOffset,
-                                              aCount);
+        onDataAvailable(aRequest, aInputStream, aOffset, aCount) {
+          backgroundFileSaver.onDataAvailable(
+            aRequest,
+            aInputStream,
+            aOffset,
+            aCount
+          );
         },
       });
 
@@ -2135,8 +2240,10 @@ this.DownloadCopySaver.prototype = {
     let targetPath = this.download.target.path;
     let partFilePath = this.download.target.partFilePath;
 
-    let { shouldBlock, verdict } =
-        await DownloadIntegration.shouldBlockForReputationCheck(download);
+    let {
+      shouldBlock,
+      verdict,
+    } = await DownloadIntegration.shouldBlockForReputationCheck(download);
     if (shouldBlock) {
       let newProperties = { progress: 100, hasPartialData: false };
 
@@ -2187,8 +2294,12 @@ this.DownloadCopySaver.prototype = {
         
         
         
-        if (!(ex instanceof OS.File.Error &&
-              (ex.becauseNoSuchFile || ex.becauseAccessDenied))) {
+        if (
+          !(
+            ex instanceof OS.File.Error &&
+            (ex.becauseNoSuchFile || ex.becauseAccessDenied)
+          )
+        ) {
           Cu.reportError(ex);
         }
       }
@@ -2199,7 +2310,10 @@ this.DownloadCopySaver.prototype = {
     }
 
     if (this.download.target.path) {
-      if (canRemoveFinalTarget || await isPlaceholder(this.download.target.path)) {
+      if (
+        canRemoveFinalTarget ||
+        (await isPlaceholder(this.download.target.path))
+      ) {
         await _tryToRemoveFile(this.download.target.path);
       }
       this.download.target.exists = false;
@@ -2216,8 +2330,7 @@ this.DownloadCopySaver.prototype = {
       return "copy";
     }
 
-    let serializable = { type: "copy",
-                         entityID: this.entityID };
+    let serializable = { type: "copy", entityID: this.entityID };
     serializeUnknownProperties(this, serializable);
     return serializable;
   },
@@ -2259,8 +2372,11 @@ this.DownloadCopySaver.fromSerializable = function(aSerializable) {
     saver.entityID = aSerializable.entityID;
   }
 
-  deserializeUnknownProperties(saver, aSerializable, property =>
-    property != "entityID" && property != "type");
+  deserializeUnknownProperties(
+    saver,
+    aSerializable,
+    property => property != "entityID" && property != "type"
+  );
 
   return saver;
 };
@@ -2346,8 +2462,11 @@ this.DownloadLegacySaver.prototype = {
 
     let hasPartFile = !!this.download.target.partFilePath;
 
-    this.setProgressBytesFn(aCurrentBytes, aTotalBytes,
-                            aCurrentBytes > 0 && hasPartFile);
+    this.setProgressBytesFn(
+      aCurrentBytes,
+      aTotalBytes,
+      aCurrentBytes > 0 && hasPartFile
+    );
   },
 
   
@@ -2367,14 +2486,18 @@ this.DownloadLegacySaver.prototype = {
     this.request = aRequest;
 
     
-    if (this.download.tryToKeepPartialData &&
-        aRequest instanceof Ci.nsIResumableChannel) {
+    if (
+      this.download.tryToKeepPartialData &&
+      aRequest instanceof Ci.nsIResumableChannel
+    ) {
       try {
         
         this.entityID = aRequest.entityID;
       } catch (ex) {
-        if (!(ex instanceof Components.Exception) ||
-            ex.result != Cr.NS_ERROR_NOT_RESUMABLE) {
+        if (
+          !(ex instanceof Components.Exception) ||
+          ex.result != Cr.NS_ERROR_NOT_RESUMABLE
+        ) {
           throw ex;
         }
       }
@@ -2458,9 +2581,11 @@ this.DownloadLegacySaver.prototype = {
       
       
       
-      if (!this.progressWasNotified &&
-          this.request instanceof Ci.nsIChannel &&
-          this.request.contentLength >= 0) {
+      if (
+        !this.progressWasNotified &&
+        this.request instanceof Ci.nsIChannel &&
+        this.request.contentLength >= 0
+      ) {
         aSetProgressBytesFn(0, this.request.contentLength);
       }
 
@@ -2477,8 +2602,9 @@ this.DownloadLegacySaver.prototype = {
       if (!this.download.target.partFilePath) {
         try {
           
-          let file = await OS.File.open(this.download.target.path,
-                                        { create: true });
+          let file = await OS.File.open(this.download.target.path, {
+            create: true,
+          });
           await file.close();
         } catch (ex) {
           if (!(ex instanceof OS.File.Error) || !ex.becauseExists) {
@@ -2505,8 +2631,10 @@ this.DownloadLegacySaver.prototype = {
   },
 
   _checkReputationAndMove() {
-    return DownloadCopySaver.prototype._checkReputationAndMove
-                                      .apply(this, arguments);
+    return DownloadCopySaver.prototype._checkReputationAndMove.apply(
+      this,
+      arguments
+    );
   },
 
   
@@ -2533,7 +2661,10 @@ this.DownloadLegacySaver.prototype = {
     
     
     
-    return DownloadCopySaver.prototype.removeData.call(this, canRemoveFinalTarget);
+    return DownloadCopySaver.prototype.removeData.call(
+      this,
+      canRemoveFinalTarget
+    );
   },
 
   
@@ -2620,8 +2751,7 @@ this.DownloadLegacySaver.fromSerializable = function() {
 
 
 
-var DownloadPDFSaver = function() {
-};
+var DownloadPDFSaver = function() {};
 
 this.DownloadPDFSaver.prototype = {
   __proto__: DownloadSaver.prototype,
@@ -2639,7 +2769,8 @@ this.DownloadPDFSaver.prototype = {
   async execute(aSetProgressBytesFn, aSetPropertiesFn) {
     if (!this.download.source.windowRef) {
       throw new DownloadError({
-        message: "PDF saver must be passed an open window, and cannot be restarted.",
+        message:
+          "PDF saver must be passed an open window, and cannot be restarted.",
         becauseSourceFailed: true,
       });
     }
@@ -2690,16 +2821,20 @@ this.DownloadPDFSaver.prototype = {
           onStateChange(webProgress, request, stateFlags, status) {
             if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
               if (!Components.isSuccessCode(status)) {
-                reject(new DownloadError({ result: status,
-                                           inferCause: true }));
+                reject(new DownloadError({ result: status, inferCause: true }));
               } else {
                 resolve();
               }
             }
           },
-          onProgressChange(webProgress, request, curSelfProgress,
-                                     maxSelfProgress, curTotalProgress,
-                                     maxTotalProgress) {
+          onProgressChange(
+            webProgress,
+            request,
+            curSelfProgress,
+            maxSelfProgress,
+            curTotalProgress,
+            maxTotalProgress
+          ) {
             aSetProgressBytesFn(curTotalProgress, maxTotalProgress, false);
           },
           onLocationChange() {},

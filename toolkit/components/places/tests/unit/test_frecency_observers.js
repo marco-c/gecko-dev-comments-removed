@@ -5,20 +5,24 @@
 
 
 
-add_task(async function test_InsertVisitedURIs_UpdateFrecency_and_History_InsertPlace() {
-  
-  
-  
-  let url = Services.io.newURI("http://example.com/a");
-  let promises = [onFrecencyChanged(url), onFrecencyChanged(url)];
-  await PlacesUtils.history.insert({
-    url,
-    visits: [{
-      transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
-    }],
-  });
-  await Promise.all(promises);
-});
+add_task(
+  async function test_InsertVisitedURIs_UpdateFrecency_and_History_InsertPlace() {
+    
+    
+    
+    let url = Services.io.newURI("http://example.com/a");
+    let promises = [onFrecencyChanged(url), onFrecencyChanged(url)];
+    await PlacesUtils.history.insert({
+      url,
+      visits: [
+        {
+          transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+        },
+      ],
+    });
+    await Promise.all(promises);
+  }
+);
 
 
 add_task(async function test_nsNavHistory_UpdateFrecency() {
@@ -57,21 +61,21 @@ add_task(async function test_clear() {
 add_task(async function test_nsNavHistory_FixAndDecayFrecency() {
   
   
-  PlacesUtils.history.QueryInterface(Ci.nsIObserver).
-    observe(null, "idle-daily", "");
+  PlacesUtils.history
+    .QueryInterface(Ci.nsIObserver)
+    .observe(null, "idle-daily", "");
   await Promise.all([onManyFrecenciesChanged()]);
 });
 
 function onFrecencyChanged(expectedURI) {
   return new Promise(resolve => {
     let obs = new NavHistoryObserver();
-    obs.onFrecencyChanged =
-      (uri, newFrecency, guid, hidden, visitDate) => {
-        PlacesUtils.history.removeObserver(obs);
-        Assert.ok(!!uri);
-        Assert.ok(uri.equals(expectedURI));
-        resolve();
-      };
+    obs.onFrecencyChanged = (uri, newFrecency, guid, hidden, visitDate) => {
+      PlacesUtils.history.removeObserver(obs);
+      Assert.ok(!!uri);
+      Assert.ok(uri.equals(expectedURI));
+      resolve();
+    };
     PlacesUtils.history.addObserver(obs);
   });
 }

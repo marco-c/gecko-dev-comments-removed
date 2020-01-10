@@ -1,8 +1,12 @@
 
 
-AntiTracking.runTest("localStorage with a tracker that is whitelisted via a pref",
+AntiTracking.runTest(
+  "localStorage with a tracker that is whitelisted via a pref",
   async _ => {
-    let shouldThrow = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
+    let shouldThrow =
+      SpecialPowers.Services.prefs.getIntPref(
+        "network.cookie.cookieBehavior"
+      ) == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
 
     let hasThrown;
     try {
@@ -20,18 +24,25 @@ AntiTracking.runTest("localStorage with a tracker that is whitelisted via a pref
   },
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   [["urlclassifier.trackingAnnotationSkipURLs", "TRACKING.EXAMPLE.ORG"]],
   false, 
   false, 
   0, 
-  false); 
+  false
+); 
 
-AntiTracking.runTest("localStorage with a tracker that is whitelisted via a fancy pref",
+AntiTracking.runTest(
+  "localStorage with a tracker that is whitelisted via a fancy pref",
   async _ => {
-    let shouldThrow = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
+    let shouldThrow =
+      SpecialPowers.Services.prefs.getIntPref(
+        "network.cookie.cookieBehavior"
+      ) == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
 
     let hasThrown;
     try {
@@ -49,16 +60,25 @@ AntiTracking.runTest("localStorage with a tracker that is whitelisted via a fanc
   },
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
-  [["urlclassifier.trackingAnnotationSkipURLs", "foobar.example,*.example.org,baz.example"]],
+  [
+    [
+      "urlclassifier.trackingAnnotationSkipURLs",
+      "foobar.example,*.example.org,baz.example",
+    ],
+  ],
   false, 
   false, 
   0, 
-  false); 
+  false
+); 
 
-AntiTracking.runTest("localStorage with a tracker that is whitelisted via a misconfigured pref",
+AntiTracking.runTest(
+  "localStorage with a tracker that is whitelisted via a misconfigured pref",
   async _ => {
     is(window.localStorage, null, "LocalStorage is null");
     try {
@@ -75,12 +95,14 @@ AntiTracking.runTest("localStorage with a tracker that is whitelisted via a misc
   },
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   [["urlclassifier.trackingAnnotationSkipURLs", "*.tracking.example.org"]],
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
-  false); 
-
+  false
+); 

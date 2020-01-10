@@ -9,10 +9,13 @@
 
 var EXPORTED_SYMBOLS = ["PageThumbUtils"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserUtils",
+  "resource://gre/modules/BrowserUtils.jsm"
+);
 
 var PageThumbUtils = {
   
@@ -50,10 +53,19 @@ var PageThumbUtils = {
 
   getThumbnailSize(aWindow = null) {
     if (!this._thumbnailWidth || !this._thumbnailHeight) {
-      let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
-                            .getService(Ci.nsIScreenManager);
-      let left = {}, top = {}, screenWidth = {}, screenHeight = {};
-      screenManager.primaryScreen.GetRectDisplayPix(left, top, screenWidth, screenHeight);
+      let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
+        Ci.nsIScreenManager
+      );
+      let left = {},
+        top = {},
+        screenWidth = {},
+        screenHeight = {};
+      screenManager.primaryScreen.GetRectDisplayPix(
+        left,
+        top,
+        screenWidth,
+        screenHeight
+      );
 
       
 
@@ -70,14 +82,24 @@ var PageThumbUtils = {
 
 
       let prefWidth = Services.prefs.getIntPref("toolkit.pageThumbs.minWidth");
-      let prefHeight = Services.prefs.getIntPref("toolkit.pageThumbs.minHeight");
-      let divisor = Services.prefs.getIntPref("toolkit.pageThumbs.screenSizeDivisor");
+      let prefHeight = Services.prefs.getIntPref(
+        "toolkit.pageThumbs.minHeight"
+      );
+      let divisor = Services.prefs.getIntPref(
+        "toolkit.pageThumbs.screenSizeDivisor"
+      );
 
       prefWidth *= scale;
       prefHeight *= scale;
 
-      this._thumbnailWidth = Math.max(Math.round(screenWidth.value / divisor), prefWidth);
-      this._thumbnailHeight = Math.max(Math.round(screenHeight.value / divisor), prefHeight);
+      this._thumbnailWidth = Math.max(
+        Math.round(screenWidth.value / divisor),
+        prefWidth
+      );
+      this._thumbnailHeight = Math.max(
+        Math.round(screenHeight.value / divisor),
+        prefHeight
+      );
     }
 
     return [this._thumbnailWidth, this._thumbnailHeight];
@@ -90,7 +112,8 @@ var PageThumbUtils = {
   getContentSize(aWindow) {
     let utils = aWindow.windowUtils;
     
-    let sbWidth = {}, sbHeight = {};
+    let sbWidth = {},
+      sbHeight = {};
 
     try {
       utils.getScrollbarSize(false, sbWidth, sbHeight);
@@ -113,7 +136,12 @@ var PageThumbUtils = {
 
 
 
-  async createImageThumbnailCanvas(window, url, targetWidth = 448, backgroundColor = this.THUMBNAIL_BG_COLOR) {
+  async createImageThumbnailCanvas(
+    window,
+    url,
+    targetWidth = 448,
+    backgroundColor = this.THUMBNAIL_BG_COLOR
+  ) {
     
     const doc = (window || Services.appShell.hiddenDOMWindow).document;
 
@@ -134,7 +162,7 @@ var PageThumbUtils = {
       throw new Error("IMAGE_ZERO_DIMENSION");
     }
     const width = Math.min(targetWidth, imageWidth);
-    const height = imageHeight * width / imageWidth;
+    const height = (imageHeight * width) / imageWidth;
 
     
     
@@ -178,9 +206,9 @@ var PageThumbUtils = {
     }
     let fullScale = aArgs ? aArgs.fullScale : false;
     let [contentWidth, contentHeight] = this.getContentSize(aWindow);
-    let [thumbnailWidth, thumbnailHeight] = aDestCanvas ?
-                                            [aDestCanvas.width, aDestCanvas.height] :
-                                            this.getThumbnailSize(aWindow);
+    let [thumbnailWidth, thumbnailHeight] = aDestCanvas
+      ? [aDestCanvas.width, aDestCanvas.height]
+      : this.getThumbnailSize(aWindow);
 
     
     
@@ -201,37 +229,55 @@ var PageThumbUtils = {
     
     
     
-    if ((intermediateWidth >= contentWidth ||
-         intermediateHeight >= contentHeight) || fullScale) {
+    if (
+      intermediateWidth >= contentWidth ||
+      intermediateHeight >= contentHeight ||
+      fullScale
+    ) {
       intermediateWidth = thumbnailWidth;
       intermediateHeight = thumbnailHeight;
       skipDownscale = true;
     }
 
     
-    let snapshotCanvas = this.createCanvas(aWindow, intermediateWidth,
-                                           intermediateHeight);
+    let snapshotCanvas = this.createCanvas(
+      aWindow,
+      intermediateWidth,
+      intermediateHeight
+    );
 
     
     
     
     
     
-    let scale = Math.min(Math.max(intermediateWidth / contentWidth,
-                                  intermediateHeight / contentHeight), 1);
+    let scale = Math.min(
+      Math.max(
+        intermediateWidth / contentWidth,
+        intermediateHeight / contentHeight
+      ),
+      1
+    );
 
     let snapshotCtx = snapshotCanvas.getContext("2d");
     snapshotCtx.save();
     snapshotCtx.scale(scale, scale);
-    snapshotCtx.drawWindow(aWindow, 0, 0, contentWidth, contentHeight,
-                           PageThumbUtils.THUMBNAIL_BG_COLOR,
-                           snapshotCtx.DRAWWINDOW_DO_NOT_FLUSH);
+    snapshotCtx.drawWindow(
+      aWindow,
+      0,
+      0,
+      contentWidth,
+      contentHeight,
+      PageThumbUtils.THUMBNAIL_BG_COLOR,
+      snapshotCtx.DRAWWINDOW_DO_NOT_FLUSH
+    );
     snapshotCtx.restore();
 
     
     
     
-    let finalCanvas = aDestCanvas ||
+    let finalCanvas =
+      aDestCanvas ||
       this.createCanvas(aWindow, thumbnailWidth, thumbnailHeight);
 
     let finalCtx = finalCanvas.getContext("2d");
@@ -259,7 +305,8 @@ var PageThumbUtils = {
     }
     let utils = aWindow.windowUtils;
     
-    let sbWidth = {}, sbHeight = {};
+    let sbWidth = {},
+      sbHeight = {};
 
     try {
       utils.getScrollbarSize(false, sbWidth, sbHeight);
@@ -274,16 +321,21 @@ var PageThumbUtils = {
     let width = aWindow.innerWidth - sbWidth.value;
     let height = aWindow.innerHeight - sbHeight.value;
 
-    let {width: thumbnailWidth, height: thumbnailHeight} = aCanvas;
-    let scale = Math.min(Math.max(thumbnailWidth / width, thumbnailHeight / height), 1);
+    let { width: thumbnailWidth, height: thumbnailHeight } = aCanvas;
+    let scale = Math.min(
+      Math.max(thumbnailWidth / width, thumbnailHeight / height),
+      1
+    );
     let scaledWidth = width * scale;
     let scaledHeight = height * scale;
 
-    if (scaledHeight > thumbnailHeight)
+    if (scaledHeight > thumbnailHeight) {
       height -= Math.floor(Math.abs(scaledHeight - thumbnailHeight) * scale);
+    }
 
-    if (scaledWidth > thumbnailWidth)
+    if (scaledWidth > thumbnailWidth) {
       width -= Math.floor(Math.abs(scaledWidth - thumbnailWidth) * scale);
+    }
 
     return [width, height, scale];
   },
@@ -328,13 +380,15 @@ var PageThumbUtils = {
     let httpChannel;
     try {
       httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
-    } catch (e) {  }
+    } catch (e) {
+      
+    }
 
     if (httpChannel) {
       
       try {
         if (Math.floor(httpChannel.responseStatus / 100) != 2) {
-        return false;
+          return false;
         }
       } catch (e) {
         
@@ -348,8 +402,10 @@ var PageThumbUtils = {
       }
 
       
-      if (uri.schemeIs("https") &&
-          !Services.prefs.getBoolPref("browser.cache.disk_cache_ssl")) {
+      if (
+        uri.schemeIs("https") &&
+        !Services.prefs.getBoolPref("browser.cache.disk_cache_ssl")
+      ) {
         return false;
       }
     } 
@@ -362,11 +418,13 @@ var PageThumbUtils = {
 
   isChannelErrorResponse(channel) {
     
-    if (!channel)
+    if (!channel) {
       return true;
-    if (!(channel instanceof Ci.nsIHttpChannel))
+    }
+    if (!(channel instanceof Ci.nsIHttpChannel)) {
       
       return false;
+    }
     try {
       return !channel.requestSucceeded;
     } catch (_) {

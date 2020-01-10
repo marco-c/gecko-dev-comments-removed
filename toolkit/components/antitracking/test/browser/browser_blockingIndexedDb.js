@@ -1,6 +1,7 @@
 
 
-AntiTracking.runTest("IndexedDB",
+AntiTracking.runTest(
+  "IndexedDB",
   
   async _ => {
     try {
@@ -19,11 +20,15 @@ AntiTracking.runTest("IndexedDB",
   
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
-  });
+  }
+);
 
-AntiTracking.runTest("IndexedDB and Storage Access API",
+AntiTracking.runTest(
+  "IndexedDB and Storage Access API",
   
   async _ => {
     
@@ -40,7 +45,10 @@ AntiTracking.runTest("IndexedDB and Storage Access API",
     
     await callRequestStorageAccess();
 
-    let shouldThrow = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
+    let shouldThrow =
+      SpecialPowers.Services.prefs.getIntPref(
+        "network.cookie.cookieBehavior"
+      ) == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
 
     let hasThrown;
     try {
@@ -51,7 +59,11 @@ AntiTracking.runTest("IndexedDB and Storage Access API",
       is(e.name, "SecurityError", "We want a security error message.");
     }
 
-    is(hasThrown, shouldThrow, "IDB should be allowed if not in BEHAVIOR_REJECT");
+    is(
+      hasThrown,
+      shouldThrow,
+      "IDB should be allowed if not in BEHAVIOR_REJECT"
+    );
   },
   
   async _ => {
@@ -74,7 +86,12 @@ AntiTracking.runTest("IndexedDB and Storage Access API",
   
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
-  null, false, false);
+  null,
+  false,
+  false
+);

@@ -11,7 +11,9 @@
 
 
 
-const {AboutPages} = ChromeUtils.import("resource://normandy-content/AboutPages.jsm");
+const { AboutPages } = ChromeUtils.import(
+  "resource://normandy-content/AboutPages.jsm"
+);
 
 function AboutStudies() {
   return AboutPages.aboutStudies;

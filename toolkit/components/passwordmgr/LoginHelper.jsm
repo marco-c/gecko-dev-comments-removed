@@ -12,14 +12,14 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = [
-  "LoginHelper",
-];
+const EXPORTED_SYMBOLS = ["LoginHelper"];
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 
@@ -45,19 +45,37 @@ this.LoginHelper = {
 
   updateSignonPrefs() {
     this.autofillForms = Services.prefs.getBoolPref("signon.autofillForms");
-    this.autofillAutocompleteOff = Services.prefs.getBoolPref("signon.autofillForms.autocompleteOff");
+    this.autofillAutocompleteOff = Services.prefs.getBoolPref(
+      "signon.autofillForms.autocompleteOff"
+    );
     this.debug = Services.prefs.getBoolPref("signon.debug");
     this.enabled = Services.prefs.getBoolPref("signon.rememberSignons");
-    this.formlessCaptureEnabled = Services.prefs.getBoolPref("signon.formlessCapture.enabled");
-    this.generationAvailable = Services.prefs.getBoolPref("signon.generation.available");
-    this.generationEnabled = Services.prefs.getBoolPref("signon.generation.enabled");
-    this.insecureAutofill = Services.prefs.getBoolPref("signon.autofillForms.http");
-    this.managementURI = Services.prefs.getStringPref("signon.management.overrideURI", null);
-    this.privateBrowsingCaptureEnabled =
-      Services.prefs.getBoolPref("signon.privateBrowsingCapture.enabled");
+    this.formlessCaptureEnabled = Services.prefs.getBoolPref(
+      "signon.formlessCapture.enabled"
+    );
+    this.generationAvailable = Services.prefs.getBoolPref(
+      "signon.generation.available"
+    );
+    this.generationEnabled = Services.prefs.getBoolPref(
+      "signon.generation.enabled"
+    );
+    this.insecureAutofill = Services.prefs.getBoolPref(
+      "signon.autofillForms.http"
+    );
+    this.managementURI = Services.prefs.getStringPref(
+      "signon.management.overrideURI",
+      null
+    );
+    this.privateBrowsingCaptureEnabled = Services.prefs.getBoolPref(
+      "signon.privateBrowsingCapture.enabled"
+    );
     this.schemeUpgrades = Services.prefs.getBoolPref("signon.schemeUpgrades");
-    this.showAutoCompleteFooter = Services.prefs.getBoolPref("signon.showAutoCompleteFooter");
-    this.storeWhenAutocompleteOff = Services.prefs.getBoolPref("signon.storeWhenAutocompleteOff");
+    this.showAutoCompleteFooter = Services.prefs.getBoolPref(
+      "signon.showAutoCompleteFooter"
+    );
+    this.storeWhenAutocompleteOff = Services.prefs.getBoolPref(
+      "signon.storeWhenAutocompleteOff"
+    );
   },
 
   createLogger(aLogPrefix) {
@@ -94,10 +112,12 @@ this.LoginHelper = {
     
     
     
-    if (aOrigin == "." ||
-        aOrigin.includes("\r") ||
-        aOrigin.includes("\n") ||
-        aOrigin.includes("\0")) {
+    if (
+      aOrigin == "." ||
+      aOrigin.includes("\r") ||
+      aOrigin.includes("\n") ||
+      aOrigin.includes("\0")
+    ) {
       throw new Error("Invalid origin");
     }
   },
@@ -111,11 +131,13 @@ this.LoginHelper = {
 
   checkLoginValues(aLogin) {
     function badCharacterPresent(l, c) {
-      return ((l.formActionOrigin && l.formActionOrigin.includes(c)) ||
-              (l.httpRealm && l.httpRealm.includes(c)) ||
-                                  l.origin.includes(c) ||
-                                  l.usernameField.includes(c) ||
-                                  l.passwordField.includes(c));
+      return (
+        (l.formActionOrigin && l.formActionOrigin.includes(c)) ||
+        (l.httpRealm && l.httpRealm.includes(c)) ||
+        l.origin.includes(c) ||
+        l.usernameField.includes(c) ||
+        l.passwordField.includes(c)
+      );
     }
 
     
@@ -128,20 +150,20 @@ this.LoginHelper = {
     
     
     
-    if (aLogin.username.includes("\0") ||
-        aLogin.password.includes("\0")) {
+    if (aLogin.username.includes("\0") || aLogin.password.includes("\0")) {
       throw new Error("login values can't contain nulls");
     }
 
     
-    if (badCharacterPresent(aLogin, "\r") ||
-        badCharacterPresent(aLogin, "\n")) {
+    if (
+      badCharacterPresent(aLogin, "\r") ||
+      badCharacterPresent(aLogin, "\n")
+    ) {
       throw new Error("login values can't contain newlines");
     }
 
     
-    if (aLogin.usernameField == "." ||
-        aLogin.formActionOrigin == ".") {
+    if (aLogin.usernameField == "." || aLogin.formActionOrigin == ".") {
       throw new Error("login values can't be periods");
     }
 
@@ -164,16 +186,18 @@ this.LoginHelper = {
 
 
   newPropertyBag(aProperties) {
-    let propertyBag = Cc["@mozilla.org/hash-property-bag;1"]
-                      .createInstance(Ci.nsIWritablePropertyBag);
+    let propertyBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+      Ci.nsIWritablePropertyBag
+    );
     if (aProperties) {
       for (let [name, value] of Object.entries(aProperties)) {
         propertyBag.setProperty(name, value);
       }
     }
-    return propertyBag.QueryInterface(Ci.nsIPropertyBag)
-                      .QueryInterface(Ci.nsIPropertyBag2)
-                      .QueryInterface(Ci.nsIWritablePropertyBag2);
+    return propertyBag
+      .QueryInterface(Ci.nsIPropertyBag)
+      .QueryInterface(Ci.nsIPropertyBag2)
+      .QueryInterface(Ci.nsIWritablePropertyBag2);
   },
 
   
@@ -251,11 +275,15 @@ this.LoginHelper = {
 
 
 
-  isOriginMatching(aLoginOrigin, aSearchOrigin, aOptions = {
-    schemeUpgrades: false,
-    acceptWildcardMatch: false,
-    acceptDifferentSubdomains: false,
-  }) {
+  isOriginMatching(
+    aLoginOrigin,
+    aSearchOrigin,
+    aOptions = {
+      schemeUpgrades: false,
+      acceptWildcardMatch: false,
+      acceptDifferentSubdomains: false,
+    }
+  ) {
     if (aLoginOrigin == aSearchOrigin) {
       return true;
     }
@@ -271,21 +299,27 @@ this.LoginHelper = {
     try {
       let loginURI = Services.io.newURI(aLoginOrigin);
       let searchURI = Services.io.newURI(aSearchOrigin);
-      let schemeMatches = loginURI.scheme == "http" && searchURI.scheme == "https";
+      let schemeMatches =
+        loginURI.scheme == "http" && searchURI.scheme == "https";
 
       if (aOptions.acceptDifferentSubdomains) {
         let loginBaseDomain = Services.eTLD.getBaseDomain(loginURI);
         let searchBaseDomain = Services.eTLD.getBaseDomain(searchURI);
-        if (loginBaseDomain == searchBaseDomain &&
-            (loginURI.scheme == searchURI.scheme ||
-             (aOptions.schemeUpgrades && schemeMatches))) {
+        if (
+          loginBaseDomain == searchBaseDomain &&
+          (loginURI.scheme == searchURI.scheme ||
+            (aOptions.schemeUpgrades && schemeMatches))
+        ) {
           return true;
         }
       }
 
-      if (aOptions.schemeUpgrades &&
-          loginURI.host == searchURI.host &&
-          schemeMatches && loginURI.port == searchURI.port) {
+      if (
+        aOptions.schemeUpgrades &&
+        loginURI.host == searchURI.host &&
+        schemeMatches &&
+        loginURI.port == searchURI.port
+      ) {
         return true;
       }
     } catch (ex) {
@@ -297,12 +331,15 @@ this.LoginHelper = {
     return false;
   },
 
-  doLoginsMatch(aLogin1, aLogin2, {
-    ignorePassword = false,
-    ignoreSchemes = false,
-  }) {
-    if (aLogin1.httpRealm != aLogin2.httpRealm ||
-        aLogin1.username != aLogin2.username) {
+  doLoginsMatch(
+    aLogin1,
+    aLogin2,
+    { ignorePassword = false, ignoreSchemes = false }
+  ) {
+    if (
+      aLogin1.httpRealm != aLogin2.httpRealm ||
+      aLogin1.username != aLogin2.username
+    ) {
       return false;
     }
 
@@ -317,9 +354,12 @@ this.LoginHelper = {
         return false;
       }
 
-      if (aLogin1.formActionOrigin != "" && aLogin2.formActionOrigin != "" &&
-          this.maybeGetHostPortForURL(aLogin1.formActionOrigin) !=
-          this.maybeGetHostPortForURL(aLogin2.formActionOrigin)) {
+      if (
+        aLogin1.formActionOrigin != "" &&
+        aLogin2.formActionOrigin != "" &&
+        this.maybeGetHostPortForURL(aLogin1.formActionOrigin) !=
+          this.maybeGetHostPortForURL(aLogin2.formActionOrigin)
+      ) {
         return false;
       }
     } else {
@@ -328,8 +368,11 @@ this.LoginHelper = {
       }
 
       
-      if (aLogin1.formActionOrigin != "" && aLogin2.formActionOrigin != "" &&
-          aLogin1.formActionOrigin != aLogin2.formActionOrigin) {
+      if (
+        aLogin1.formActionOrigin != "" &&
+        aLogin2.formActionOrigin != "" &&
+        aLogin1.formActionOrigin != aLogin2.formActionOrigin
+      ) {
         return false;
       }
     }
@@ -357,7 +400,7 @@ this.LoginHelper = {
       try {
         aNewLoginData.getProperty(aPropName);
         return true;
-      } catch (ex) { }
+      } catch (ex) {}
       return false;
     }
 
@@ -368,10 +411,15 @@ this.LoginHelper = {
       
       
       newLogin = aOldStoredLogin.clone();
-      newLogin.init(aNewLoginData.origin,
-                    aNewLoginData.formActionOrigin, aNewLoginData.httpRealm,
-                    aNewLoginData.username, aNewLoginData.password,
-                    aNewLoginData.usernameField, aNewLoginData.passwordField);
+      newLogin.init(
+        aNewLoginData.origin,
+        aNewLoginData.formActionOrigin,
+        aNewLoginData.httpRealm,
+        aNewLoginData.username,
+        aNewLoginData.password,
+        aNewLoginData.usernameField,
+        aNewLoginData.passwordField
+      );
       newLogin.QueryInterface(Ci.nsILoginMetaInfo);
 
       
@@ -443,16 +491,22 @@ this.LoginHelper = {
     if (newLogin.formActionOrigin || newLogin.formActionOrigin == "") {
       
       if (newLogin.httpRealm != null) {
-        throw new Error("Can't add a login with both a httpRealm and formActionOrigin.");
+        throw new Error(
+          "Can't add a login with both a httpRealm and formActionOrigin."
+        );
       }
     } else if (newLogin.httpRealm) {
       
       if (newLogin.formActionOrigin != null) {
-        throw new Error("Can't add a login with both a httpRealm and formActionOrigin.");
+        throw new Error(
+          "Can't add a login with both a httpRealm and formActionOrigin."
+        );
       }
     } else {
       
-      throw new Error("Can't add a login without a httpRealm or formActionOrigin.");
+      throw new Error(
+        "Can't add a login without a httpRealm or formActionOrigin."
+      );
     }
 
     
@@ -479,10 +533,13 @@ this.LoginHelper = {
       let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
       let hasHTTPSlogin = hasHTTPSByHostPortUsername.get(key) || false;
       let loginURI = Services.io.newURI(login.origin);
-      hasHTTPSByHostPortUsername.set(key, loginURI.scheme == "https" || hasHTTPSlogin);
+      hasHTTPSByHostPortUsername.set(
+        key,
+        loginURI.scheme == "https" || hasHTTPSlogin
+      );
     }
 
-    return logins.filter((login) => {
+    return logins.filter(login => {
       let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
       let loginURI = Services.io.newURI(login.origin);
       if (loginURI.scheme == "http" && hasHTTPSByHostPortUsername.get(key)) {
@@ -539,18 +596,25 @@ this.LoginHelper = {
 
 
 
-  dedupeLogins(logins, uniqueKeys = ["username", "password"],
-               resolveBy = ["timeLastUsed"],
-               preferredOrigin = undefined,
-               preferredFormActionOrigin = undefined) {
+  dedupeLogins(
+    logins,
+    uniqueKeys = ["username", "password"],
+    resolveBy = ["timeLastUsed"],
+    preferredOrigin = undefined,
+    preferredFormActionOrigin = undefined
+  ) {
     if (!preferredOrigin) {
       if (resolveBy.includes("scheme")) {
-        throw new Error("dedupeLogins: `preferredOrigin` is required in order to " +
-                        "prefer schemes which match it.");
+        throw new Error(
+          "dedupeLogins: `preferredOrigin` is required in order to " +
+            "prefer schemes which match it."
+        );
       }
       if (resolveBy.includes("subdomain")) {
-        throw new Error("dedupeLogins: `preferredOrigin` is required in order to " +
-                        "prefer subdomains which match it.");
+        throw new Error(
+          "dedupeLogins: `preferredOrigin` is required in order to " +
+            "prefer subdomains which match it."
+        );
       }
     }
 
@@ -564,8 +628,10 @@ this.LoginHelper = {
     }
 
     if (!preferredOriginScheme && resolveBy.includes("scheme")) {
-      log.warn("dedupeLogins: Deduping with a scheme preference but couldn't " +
-               "get the preferred origin scheme.");
+      log.warn(
+        "dedupeLogins: Deduping with a scheme preference but couldn't " +
+          "get the preferred origin scheme."
+      );
     }
 
     
@@ -590,8 +656,18 @@ this.LoginHelper = {
             if (!preferredFormActionOrigin) {
               break;
             }
-            if (LoginHelper.isOriginMatching(existingLogin.formActionOrigin, preferredFormActionOrigin, {schemeUpgrades: LoginHelper.schemeUpgrades}) &&
-                !LoginHelper.isOriginMatching(login.formActionOrigin, preferredFormActionOrigin, {schemeUpgrades: LoginHelper.schemeUpgrades})) {
+            if (
+              LoginHelper.isOriginMatching(
+                existingLogin.formActionOrigin,
+                preferredFormActionOrigin,
+                { schemeUpgrades: LoginHelper.schemeUpgrades }
+              ) &&
+              !LoginHelper.isOriginMatching(
+                login.formActionOrigin,
+                preferredFormActionOrigin,
+                { schemeUpgrades: LoginHelper.schemeUpgrades }
+              )
+            ) {
               return false;
             }
             break;
@@ -607,18 +683,25 @@ this.LoginHelper = {
               let loginURI = Services.io.newURI(login.origin);
               
               
-              if (loginURI.scheme == existingLoginURI.scheme ||
-                  (loginURI.scheme != preferredOriginScheme &&
-                   existingLoginURI.scheme != preferredOriginScheme)) {
+              if (
+                loginURI.scheme == existingLoginURI.scheme ||
+                (loginURI.scheme != preferredOriginScheme &&
+                  existingLoginURI.scheme != preferredOriginScheme)
+              ) {
                 break;
               }
 
               return loginURI.scheme == preferredOriginScheme;
             } catch (ex) {
               
-              log.debug("dedupeLogins/shouldReplaceExisting: Error comparing schemes:",
-                        existingLogin.origin, login.origin,
-                        "preferredOrigin:", preferredOrigin, ex);
+              log.debug(
+                "dedupeLogins/shouldReplaceExisting: Error comparing schemes:",
+                existingLogin.origin,
+                login.origin,
+                "preferredOrigin:",
+                preferredOrigin,
+                ex
+              );
             }
             break;
           }
@@ -627,12 +710,16 @@ this.LoginHelper = {
             let existingLoginURI = Services.io.newURI(existingLogin.origin);
             let newLoginURI = Services.io.newURI(login.origin);
             let preferredOriginURI = Services.io.newURI(preferredOrigin);
-            if (existingLoginURI.hostPort != preferredOriginURI.hostPort &&
-                newLoginURI.hostPort == preferredOriginURI.hostPort) {
+            if (
+              existingLoginURI.hostPort != preferredOriginURI.hostPort &&
+              newLoginURI.hostPort == preferredOriginURI.hostPort
+            ) {
               return true;
             }
-            if (existingLoginURI.host != preferredOriginURI.host &&
-                newLoginURI.host == preferredOriginURI.host) {
+            if (
+              existingLoginURI.host != preferredOriginURI.host &&
+              newLoginURI.host == preferredOriginURI.host
+            ) {
               return true;
             }
             break;
@@ -640,8 +727,12 @@ this.LoginHelper = {
           case "timeLastUsed":
           case "timePasswordChanged": {
             
-            let loginDate = login.QueryInterface(Ci.nsILoginMetaInfo)[preference];
-            let storedLoginDate = existingLogin.QueryInterface(Ci.nsILoginMetaInfo)[preference];
+            let loginDate = login.QueryInterface(Ci.nsILoginMetaInfo)[
+              preference
+            ];
+            let storedLoginDate = existingLogin.QueryInterface(
+              Ci.nsILoginMetaInfo
+            )[preference];
             if (loginDate == storedLoginDate) {
               break;
             }
@@ -649,7 +740,9 @@ this.LoginHelper = {
             return loginDate > storedLoginDate;
           }
           default: {
-            throw new Error("dedupeLogins: Invalid resolveBy preference: " + preference);
+            throw new Error(
+              "dedupeLogins: Invalid resolveBy preference: " + preference
+            );
           }
         }
       }
@@ -690,7 +783,10 @@ this.LoginHelper = {
   openPasswordManager(window, { filterString = "", entryPoint = "" } = {}) {
     Services.telemetry.recordEvent("pwmgr", "open_management", entryPoint);
     if (this.managementURI && window.openTrustedLinkIn) {
-      let managementURL = this.managementURI.replace("%DOMAIN%", window.encodeURIComponent(filterString));
+      let managementURL = this.managementURI.replace(
+        "%DOMAIN%",
+        window.encodeURIComponent(filterString)
+      );
       window.openTrustedLinkIn(managementURL, "tab");
       return;
     }
@@ -699,9 +795,12 @@ this.LoginHelper = {
       win.setFilter(filterString);
       win.focus();
     } else {
-      window.openDialog("chrome://passwordmgr/content/passwordManager.xul",
-                        "Toolkit:PasswordManager", "",
-                        {filterString});
+      window.openDialog(
+        "chrome://passwordmgr/content/passwordManager.xul",
+        "Toolkit:PasswordManager",
+        "",
+        { filterString }
+      );
     }
   },
 
@@ -725,26 +824,34 @@ this.LoginHelper = {
       return false;
     }
 
-    let fieldType = (element.hasAttribute("type") ?
-                     element.getAttribute("type").toLowerCase() :
-                     element.type);
-    if (!(fieldType == "text" ||
-          fieldType == "email" ||
-          fieldType == "url" ||
-          fieldType == "tel" ||
-          fieldType == "number")) {
+    let fieldType = element.hasAttribute("type")
+      ? element.getAttribute("type").toLowerCase()
+      : element.type;
+    if (
+      !(
+        fieldType == "text" ||
+        fieldType == "email" ||
+        fieldType == "url" ||
+        fieldType == "tel" ||
+        fieldType == "number"
+      )
+    ) {
       return false;
     }
 
     let acFieldName = element.getAutocompleteInfo().fieldName;
-    if (!(acFieldName == "username" ||
-          
-          acFieldName == "email" ||
-          acFieldName == "tel" ||
-          acFieldName == "tel-national" ||
-          acFieldName == "off" ||
-          acFieldName == "on" ||
-          acFieldName == "")) {
+    if (
+      !(
+        acFieldName == "username" ||
+        
+        acFieldName == "email" ||
+        acFieldName == "tel" ||
+        acFieldName == "tel-national" ||
+        acFieldName == "off" ||
+        acFieldName == "on" ||
+        acFieldName == ""
+      )
+    ) {
       return false;
     }
     return true;
@@ -762,19 +869,25 @@ this.LoginHelper = {
     let loginMap = new Map();
     for (let loginData of loginDatas) {
       
-      let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
-      login.init(loginData.origin,
-                 loginData.formActionOrigin || (typeof(loginData.httpRealm) == "string" ? null : ""),
-                 typeof(loginData.httpRealm) == "string" ? loginData.httpRealm : null,
-                 loginData.username,
-                 loginData.password,
-                 loginData.usernameElement || "",
-                 loginData.passwordElement || "");
+      let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
+        Ci.nsILoginInfo
+      );
+      login.init(
+        loginData.origin,
+        loginData.formActionOrigin ||
+          (typeof loginData.httpRealm == "string" ? null : ""),
+        typeof loginData.httpRealm == "string" ? loginData.httpRealm : null,
+        loginData.username,
+        loginData.password,
+        loginData.usernameElement || "",
+        loginData.passwordElement || ""
+      );
 
       login.QueryInterface(Ci.nsILoginMetaInfo);
       login.timeCreated = loginData.timeCreated;
       login.timeLastUsed = loginData.timeLastUsed || loginData.timeCreated;
-      login.timePasswordChanged = loginData.timePasswordChanged || loginData.timeCreated;
+      login.timePasswordChanged =
+        loginData.timePasswordChanged || loginData.timeCreated;
       login.timesUsed = loginData.timesUsed || 1;
 
       try {
@@ -801,8 +914,10 @@ this.LoginHelper = {
           if (login.username == newLogin.username) {
             foundMatchingNewLogin = true;
             newLogin.QueryInterface(Ci.nsILoginMetaInfo);
-            if (login.password != newLogin.password &
-                login.timePasswordChanged > newLogin.timePasswordChanged) {
+            if (
+              (login.password != newLogin.password) &
+              (login.timePasswordChanged > newLogin.timePasswordChanged)
+            ) {
               
               
               newLogin.password = login.password;
@@ -818,12 +933,16 @@ this.LoginHelper = {
 
       
       
-      let existingLogins = Services.logins.findLogins(login.origin,
-                                                      login.formActionOrigin,
-                                                      login.httpRealm);
+      let existingLogins = Services.logins.findLogins(
+        login.origin,
+        login.formActionOrigin,
+        login.httpRealm
+      );
       
       
-      if (existingLogins.some(l => login.matches(l, false ))) {
+      if (
+        existingLogins.some(l => login.matches(l, false ))
+      ) {
         continue;
       }
       
@@ -833,14 +952,20 @@ this.LoginHelper = {
         if (login.username == existingLogin.username) {
           foundMatchingLogin = true;
           existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
-          if (login.password != existingLogin.password &
-             login.timePasswordChanged > existingLogin.timePasswordChanged) {
+          if (
+            (login.password != existingLogin.password) &
+            (login.timePasswordChanged > existingLogin.timePasswordChanged)
+          ) {
             
             
-            let propBag = Cc["@mozilla.org/hash-property-bag;1"].
-                          createInstance(Ci.nsIWritablePropertyBag);
+            let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+              Ci.nsIWritablePropertyBag
+            );
             propBag.setProperty("password", login.password);
-            propBag.setProperty("timePasswordChanged", login.timePasswordChanged);
+            propBag.setProperty(
+              "timePasswordChanged",
+              login.timePasswordChanged
+            );
             Services.logins.modifyLogin(existingLogin, propBag);
           }
         }
@@ -887,16 +1012,28 @@ this.LoginHelper = {
 
 
   vanillaObjectToLogin(login) {
-    let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
+    let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
+      Ci.nsILoginInfo
+    );
     
-    formLogin.init(login.origin || login.hostname,
-                   "formSubmitURL" in login ? login.formSubmitURL : login.formActionOrigin,
-                   login.httpRealm, login.username,
-                   login.password, login.usernameField,
-                   login.passwordField);
+    formLogin.init(
+      login.origin || login.hostname,
+      "formSubmitURL" in login ? login.formSubmitURL : login.formActionOrigin,
+      login.httpRealm,
+      login.username,
+      login.password,
+      login.usernameField,
+      login.passwordField
+    );
 
     formLogin.QueryInterface(Ci.nsILoginMetaInfo);
-    for (let prop of ["guid", "timeCreated", "timeLastUsed", "timePasswordChanged", "timesUsed"]) {
+    for (let prop of [
+      "guid",
+      "timeCreated",
+      "timeLastUsed",
+      "timePasswordChanged",
+      "timesUsed",
+    ]) {
       formLogin[prop] = login[prop];
     }
     return formLogin;
@@ -913,8 +1050,9 @@ this.LoginHelper = {
 
 
   isMasterPasswordSet() {
-    let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                    .getService(Ci.nsIPK11TokenDB);
+    let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
+      Ci.nsIPK11TokenDB
+    );
     let token = tokenDB.getInternalKeyToken();
     return token.hasPassword;
   },
@@ -926,24 +1064,33 @@ this.LoginHelper = {
     let dataObject = data;
     
     if (Array.isArray(data)) {
-      dataObject = Cc["@mozilla.org/array;1"].
-                   createInstance(Ci.nsIMutableArray);
+      dataObject = Cc["@mozilla.org/array;1"].createInstance(
+        Ci.nsIMutableArray
+      );
       for (let i = 0; i < data.length; i++) {
         dataObject.appendElement(data[i]);
       }
-    } else if (typeof(data) == "string") {
-      dataObject = Cc["@mozilla.org/supports-string;1"].
-                   createInstance(Ci.nsISupportsString);
+    } else if (typeof data == "string") {
+      dataObject = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
       dataObject.data = data;
     }
-    Services.obs.notifyObservers(dataObject, "passwordmgr-storage-changed", changeType);
+    Services.obs.notifyObservers(
+      dataObject,
+      "passwordmgr-storage-changed",
+      changeType
+    );
   },
 };
 
 LoginHelper.init();
 
-XPCOMUtils.defineLazyPreferenceGetter(LoginHelper, "showInsecureFieldWarning",
-                                      "security.insecure_field_warning.contextual.enabled");
+XPCOMUtils.defineLazyPreferenceGetter(
+  LoginHelper,
+  "showInsecureFieldWarning",
+  "security.insecure_field_warning.contextual.enabled"
+);
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let logger = LoginHelper.createLogger("LoginHelper");

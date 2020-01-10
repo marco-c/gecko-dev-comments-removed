@@ -4,42 +4,55 @@
 
 "use strict";
 
-const TEST_URL = "http://example.com/browser/toolkit/components/startup/tests/browser/beforeunload.html";
+const TEST_URL =
+  "http://example.com/browser/toolkit/components/startup/tests/browser/beforeunload.html";
 
-SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunload", false]]});
+SpecialPowers.pushPrefEnv({
+  set: [["dom.require_user_interaction_for_beforeunload", false]],
+});
 
 function test() {
   waitForExplicitFinish();
   ignoreAllUncaughtExceptions();
 
   
-  let win2 = window.openDialog(location, "", "chrome,all,dialog=no", "about:blank");
-  win2.addEventListener("load", function() {
-    
-    let browser = BrowserTestUtils.addTab(gBrowser, TEST_URL).linkedBrowser;
-
-    whenBrowserLoaded(browser, function() {
-      let seenDialog = false;
-
+  let win2 = window.openDialog(
+    location,
+    "",
+    "chrome,all,dialog=no",
+    "about:blank"
+  );
+  win2.addEventListener(
+    "load",
+    function() {
       
-      waitForOnBeforeUnloadDialog(browser, (btnLeave, btnStay) => {
-        seenDialog = Services.focus.activeWindow == window &&
-                     gBrowser.selectedBrowser == browser;
-        btnStay.click();
+      let browser = BrowserTestUtils.addTab(gBrowser, TEST_URL).linkedBrowser;
+
+      whenBrowserLoaded(browser, function() {
+        let seenDialog = false;
+
+        
+        waitForOnBeforeUnloadDialog(browser, (btnLeave, btnStay) => {
+          seenDialog =
+            Services.focus.activeWindow == window &&
+            gBrowser.selectedBrowser == browser;
+          btnStay.click();
+        });
+
+        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
+        ok(seenDialog, "Should have seen a prompt dialog");
+        ok(!win2.closed, "Shouldn't have closed the additional window");
+        win2.close();
+
+        
+        waitForOnBeforeUnloadDialog(browser, (btnLeave, btnStay) => {
+          btnLeave.click();
+        });
+
+        gBrowser.removeTab(gBrowser.selectedTab);
+        executeSoon(finish);
       });
-
-      Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
-      ok(seenDialog, "Should have seen a prompt dialog");
-      ok(!win2.closed, "Shouldn't have closed the additional window");
-      win2.close();
-
-      
-      waitForOnBeforeUnloadDialog(browser, (btnLeave, btnStay) => {
-        btnLeave.click();
-      });
-
-      gBrowser.removeTab(gBrowser.selectedTab);
-      executeSoon(finish);
-    });
-  }, {once: true});
+    },
+    { once: true }
+  );
 }

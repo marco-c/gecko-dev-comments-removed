@@ -127,7 +127,7 @@ function buildCompletionRequest(aCompletionSet) {
     prefixSet.add(prefix);
     prefixes.push(prefix);
   });
-  return 4 + ":" + (4 * prefixes.length) + "\n" + prefixes.join("");
+  return 4 + ":" + 4 * prefixes.length + "\n" + prefixes.join("");
 }
 
 function parseCompletionRequest(aRequest) {
@@ -141,10 +141,11 @@ function parseCompletionRequest(aRequest) {
 
   let partialLength = parseInt(tokens[1]);
 
-  let payloadStart = tokens[1].length + 
-                     1 + 
-                     tokens[2].length + 
-                     1; 
+  let payloadStart =
+    tokens[1].length + 
+    1 + 
+    tokens[2].length + 
+    1; 
 
   let prefixSet = [];
   for (let i = payloadStart; i < aRequest.length; i += partialLength) {
@@ -182,7 +183,11 @@ function getRandomCompletionSet(forceServerError) {
   let rand = new LFSRgenerator(seed);
 
   for (let i = 0; i < SIZE_OF_RANDOM_SET; i++) {
-    let completion = { expectCompletion: false, forceServerError: false, _finished: false };
+    let completion = {
+      expectCompletion: false,
+      forceServerError: false,
+      _finished: false,
+    };
 
     
     
@@ -191,8 +196,9 @@ function getRandomCompletionSet(forceServerError) {
     do {
       hash = "";
       let length = 1 + rand.nextNum(5);
-      for (let j = 0; j < length; j++)
+      for (let j = 0; j < length; j++) {
         hash += String.fromCharCode(rand.nextNum(8));
+      }
       prefix = hash.substring(0, 4);
     } while (hashPrefixes.includes(prefix));
 
@@ -207,7 +213,7 @@ function getRandomCompletionSet(forceServerError) {
     if (completion.expectCompletion) {
       
       
-      completion.table = "test" + (rand.nextNum(31)).toString(36);
+      completion.table = "test" + rand.nextNum(31).toString(36);
 
       completion.chunkId = rand.nextNum(16);
     }
@@ -217,8 +223,12 @@ function getRandomCompletionSet(forceServerError) {
   return completionSet;
 }
 
-var completionSets = [basicCompletionSet, falseCompletionSet,
-                      dupedCompletionSet, multipleResponsesCompletionSet];
+var completionSets = [
+  basicCompletionSet,
+  falseCompletionSet,
+  dupedCompletionSet,
+  multipleResponsesCompletionSet,
+];
 var currentCompletionSet = -1;
 var finishedCompletions = 0;
 
@@ -230,8 +240,9 @@ var server;
 
 const COMPLETE_LENGTH = 32;
 
-var completer = Cc["@mozilla.org/url-classifier/hashcompleter;1"].
-                  getService(Ci.nsIUrlClassifierHashCompleter);
+var completer = Cc["@mozilla.org/url-classifier/hashcompleter;1"].getService(
+  Ci.nsIUrlClassifierHashCompleter
+);
 
 var gethashUrl;
 
@@ -241,7 +252,10 @@ var maxServerCompletionSet = 0;
 
 function run_test() {
   
-  Services.prefs.setBoolPref("browser.safebrowsing.provider.test.disableBackoff", false);
+  Services.prefs.setBoolPref(
+    "browser.safebrowsing.provider.test.disableBackoff",
+    false
+  );
   
   completionSets.push(getRandomCompletionSet(false));
   
@@ -259,11 +273,11 @@ function run_test() {
       if (completion.multipleCompletions) {
         for (let responseCompletion of completion.completions) {
           let numChars = COMPLETE_LENGTH - responseCompletion.hash.length;
-          responseCompletion.hash += (new Array(numChars + 1)).join("\u0000");
+          responseCompletion.hash += new Array(numChars + 1).join("\u0000");
         }
       } else {
         let numChars = COMPLETE_LENGTH - completion.hash.length;
-        completion.hash += (new Array(numChars + 1)).join("\u0000");
+        completion.hash += new Array(numChars + 1).join("\u0000");
       }
     }
   }
@@ -289,28 +303,39 @@ function runNextCompletion() {
     return;
   }
 
-  dump("Now on completion set index " + currentCompletionSet + ", length " +
-       completionSets[currentCompletionSet].length + "\n");
+  dump(
+    "Now on completion set index " +
+      currentCompletionSet +
+      ", length " +
+      completionSets[currentCompletionSet].length +
+      "\n"
+  );
   
   finishedCompletions = 0;
   for (let completion of completionSets[currentCompletionSet]) {
-    completer.complete(completion.hash.substring(0, 4), gethashUrl,
-                       "test-phish-shavar", 
-                       (new callback(completion)));
+    completer.complete(
+      completion.hash.substring(0, 4),
+      gethashUrl,
+      "test-phish-shavar", 
+      new callback(completion)
+    );
   }
 }
 
 function hashCompleterServer(aRequest, aResponse) {
   let stream = aRequest.bodyInputStream;
-  let wrapperStream = Cc["@mozilla.org/binaryinputstream;1"].
-                        createInstance(Ci.nsIBinaryInputStream);
+  let wrapperStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+    Ci.nsIBinaryInputStream
+  );
   wrapperStream.setInputStream(stream);
 
   let len = stream.available();
   let data = wrapperStream.readBytes(len);
 
   
-  let expectedRequest = buildCompletionRequest(completionSets[currentCompletionSet]);
+  let expectedRequest = buildCompletionRequest(
+    completionSets[currentCompletionSet]
+  );
   compareCompletionRequest(data, expectedRequest);
 
   
@@ -325,14 +350,19 @@ function hashCompleterServer(aRequest, aResponse) {
   
   let httpStatus = 204;
   for (let completion of completionSets[currentCompletionSet]) {
-    if (completion.expectCompletion &&
-        (!completedHashes.includes(completion.hash))) {
+    if (
+      completion.expectCompletion &&
+      !completedHashes.includes(completion.hash)
+    ) {
       completedHashes.push(completion.hash);
 
-      if (completion.multipleCompletions)
-        responseText += completion.completions.map(responseForCompletion).join("");
-      else
+      if (completion.multipleCompletions) {
+        responseText += completion.completions
+          .map(responseForCompletion)
+          .join("");
+      } else {
         responseText += responseForCompletion(completion);
+      }
     }
     if (completion.forceServerError) {
       httpStatus = 503;
@@ -347,7 +377,6 @@ function hashCompleterServer(aRequest, aResponse) {
     aResponse.setStatusLine(null, httpStatus, null);
   }
 }
-
 
 function callback(completion) {
   this._completion = completion;
@@ -365,8 +394,9 @@ callback.prototype = {
 
           completion._completed = true;
 
-          if (this._completion.completions.every(x => x._completed))
+          if (this._completion.completions.every(x => x._completed)) {
             this._completed = true;
+          }
 
           break;
         }
@@ -387,15 +417,19 @@ callback.prototype = {
     this._completion._finished = true;
 
     
-    if (currentCompletionSet < completionSets.length &&
-        finishedCompletions == completionSets[currentCompletionSet].length) {
+    if (
+      currentCompletionSet < completionSets.length &&
+      finishedCompletions == completionSets[currentCompletionSet].length
+    ) {
       runNextCompletion();
     }
   },
 };
 
 function finish() {
-  Services.prefs.clearUserPref("browser.safebrowsing.provider.test.disableBackoff");
+  Services.prefs.clearUserPref(
+    "browser.safebrowsing.provider.test.disableBackoff"
+  );
 
   Assert.equal(expectedMaxServerCompletionSet, maxServerCompletionSet);
   server.stop(function() {

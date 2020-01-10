@@ -10,30 +10,43 @@ var storage = searchParams.get("storage") || "";
 var cacheContext = searchParams.get("context");
 
 
-if (cacheContext)
-  var [context, isAnon, isInBrowser, isPrivate] = cacheContext.match(/(a,)?(b,)?(p,)?/);
+if (cacheContext) {
+  var [context, isAnon, isInBrowser, isPrivate] = cacheContext.match(
+    /(a,)?(b,)?(p,)?/
+  );
+}
 
-function $(id) { return document.getElementById(id) || {}; }
+function $(id) {
+  return document.getElementById(id) || {};
+}
 
 
-addEventListener("DOMContentLoaded", function() {
-  $("anon").checked = !!isAnon;
-  $("inbrowser").checked = !!isInBrowser;
-  $("priv").checked = !!isPrivate;
-}, false);
+addEventListener(
+  "DOMContentLoaded",
+  function() {
+    $("anon").checked = !!isAnon;
+    $("inbrowser").checked = !!isInBrowser;
+    $("priv").checked = !!isPrivate;
+  },
+  false
+);
 
 
 
 function navigate() {
   context = "";
-  if ($("anon").checked)
+  if ($("anon").checked) {
     context += "a,";
-  if ($("inbrowser").checked)
+  }
+  if ($("inbrowser").checked) {
     context += "b,";
-  if ($("priv").checked)
+  }
+  if ($("priv").checked) {
     context += "p,";
+  }
 
-  window.location.href = "about:cache?storage=" + storage + "&context=" + context;
+  window.location.href =
+    "about:cache?storage=" + storage + "&context=" + context;
 }
 
 let submitButton = document.getElementById("submit");

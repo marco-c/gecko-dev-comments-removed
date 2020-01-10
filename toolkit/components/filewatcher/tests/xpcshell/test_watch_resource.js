@@ -16,8 +16,10 @@ function run_test() {
 
 
 add_task(async function test_watching_non_existing() {
-  let notExistingDir =
-    OS.Path.join(OS.Constants.Path.profileDir, "absolutelyNotExisting");
+  let notExistingDir = OS.Path.join(
+    OS.Constants.Path.profileDir,
+    "absolutelyNotExisting"
+  );
 
   
   let watcher = makeWatcher();

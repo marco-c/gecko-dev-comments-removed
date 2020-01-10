@@ -213,8 +213,11 @@ this.DownloadList.prototype = {
         
         
         
-        if (download.stopped && (!download.hasPartialData || download.error) &&
-            (!aFilterFn || aFilterFn(download))) {
+        if (
+          download.stopped &&
+          (!download.hasPartialData || download.error) &&
+          (!aFilterFn || aFilterFn(download))
+        ) {
           
           
           await this.remove(download);
@@ -467,16 +470,19 @@ this.DownloadSummary.prototype = {
     for (let download of this._downloads) {
       if (!download.stopped) {
         allHaveStopped = false;
-        progressTotalBytes += download.hasProgress ? download.totalBytes
-                                                   : download.currentBytes;
+        progressTotalBytes += download.hasProgress
+          ? download.totalBytes
+          : download.currentBytes;
         progressCurrentBytes += download.currentBytes;
       }
     }
 
     
-    if (this.allHaveStopped == allHaveStopped &&
-        this.progressTotalBytes == progressTotalBytes &&
-        this.progressCurrentBytes == progressCurrentBytes) {
+    if (
+      this.allHaveStopped == allHaveStopped &&
+      this.progressTotalBytes == progressTotalBytes &&
+      this.progressCurrentBytes == progressCurrentBytes
+    ) {
       return;
     }
 

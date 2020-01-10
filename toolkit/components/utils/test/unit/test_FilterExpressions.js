@@ -1,9 +1,12 @@
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "FilterExpressions",
-                               "resource://gre/modules/components-utils/FilterExpressions.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "FilterExpressions",
+  "resource://gre/modules/components-utils/FilterExpressions.jsm"
+);
 
 
 add_task(async function() {
@@ -21,7 +24,10 @@ add_task(async function() {
   equal(val, 4, "multiline expression works");
 
   
-  val = await FilterExpressions.eval("first + second + 3", {first: 1, second: 2});
+  val = await FilterExpressions.eval("first + second + 3", {
+    first: 1,
+    second: 2,
+  });
   equal(val, 6, "context is available to filter expressions");
 });
 
@@ -34,7 +40,7 @@ add_task(async function() {
   equal(val.toString(), d.toString(), "Date transform works");
 
   
-  const context = {someTime: Date.UTC(2016, 0, 1)};
+  const context = { someTime: Date.UTC(2016, 0, 1) };
   val = await FilterExpressions.eval('"2015-01-01"|date < someTime', context);
   ok(val, "dates are comparable with less-than");
   val = await FilterExpressions.eval('"2017-01-01"|date > someTime', context);
@@ -70,30 +76,63 @@ add_task(async function() {
   let val;
   
   Services.prefs.setIntPref("normandy.test.value", 3);
-  registerCleanupFunction(() => Services.prefs.clearUserPref("normandy.test.value"));
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("normandy.test.value")
+  );
 
-  val = await FilterExpressions.eval('"normandy.test.value"|preferenceValue == 3');
+  val = await FilterExpressions.eval(
+    '"normandy.test.value"|preferenceValue == 3'
+  );
   ok(val, "preferenceValue expression compares against preference values");
-  val = await FilterExpressions.eval('"normandy.test.value"|preferenceValue == "test"');
+  val = await FilterExpressions.eval(
+    '"normandy.test.value"|preferenceValue == "test"'
+  );
   ok(!val, "preferenceValue expression fails value checks appropriately");
 
   
   
-  val = await FilterExpressions.eval('"normandy.test.default"|preferenceValue(false) == false');
-  ok(val, "preferenceValue takes optional 'default value' param for prefs without set values");
-  val = await FilterExpressions.eval('"normandy.test.value"|preferenceValue(5) == 5');
-  ok(!val, "preferenceValue default param is not returned for prefs with set values");
+  val = await FilterExpressions.eval(
+    '"normandy.test.default"|preferenceValue(false) == false'
+  );
+  ok(
+    val,
+    "preferenceValue takes optional 'default value' param for prefs without set values"
+  );
+  val = await FilterExpressions.eval(
+    '"normandy.test.value"|preferenceValue(5) == 5'
+  );
+  ok(
+    !val,
+    "preferenceValue default param is not returned for prefs with set values"
+  );
 
   
-  val = await FilterExpressions.eval('"normandy.test.isSet"|preferenceIsUserSet == true');
-  ok(!val, "preferenceIsUserSet expression determines if preference is set at all");
-  val = await FilterExpressions.eval('"normandy.test.value"|preferenceIsUserSet == true');
-  ok(val, "preferenceIsUserSet expression determines if user's preference has been set");
+  val = await FilterExpressions.eval(
+    '"normandy.test.isSet"|preferenceIsUserSet == true'
+  );
+  ok(
+    !val,
+    "preferenceIsUserSet expression determines if preference is set at all"
+  );
+  val = await FilterExpressions.eval(
+    '"normandy.test.value"|preferenceIsUserSet == true'
+  );
+  ok(
+    val,
+    "preferenceIsUserSet expression determines if user's preference has been set"
+  );
 
   
-  val = await FilterExpressions.eval('"normandy.test.nonexistant"|preferenceExists == true');
-  ok(!val, "preferenceExists expression determines if preference exists at all");
-  val = await FilterExpressions.eval('"normandy.test.value"|preferenceExists == true');
+  val = await FilterExpressions.eval(
+    '"normandy.test.nonexistant"|preferenceExists == true'
+  );
+  ok(
+    !val,
+    "preferenceExists expression determines if preference exists at all"
+  );
+  val = await FilterExpressions.eval(
+    '"normandy.test.value"|preferenceExists == true'
+  );
   ok(val, "preferenceExists expression fails existence check appropriately");
 });
 
@@ -106,55 +145,60 @@ add_task(async function testKeys() {
   Assert.deepEqual(
     new Set(val),
     new Set(["foo", "bar"]),
-    "keys returns the keys from an object in JEXL",
+    "keys returns the keys from an object in JEXL"
   );
 
   
-  let context = {ctxObject: {baz: "string", biff: NaN}};
+  let context = { ctxObject: { baz: "string", biff: NaN } };
   val = await FilterExpressions.eval("ctxObject|keys", context);
 
   Assert.deepEqual(
     new Set(val),
     new Set(["baz", "biff"]),
-    "keys returns the keys from an object in the context",
+    "keys returns the keys from an object in the context"
   );
 
   
-  context = {ctxObject: Object.create({fooProto: 7})};
+  context = { ctxObject: Object.create({ fooProto: 7 }) };
   context.ctxObject.baz = 8;
   context.ctxObject.biff = 5;
   equal(
     await FilterExpressions.eval("ctxObject.fooProto", context),
     7,
-    "Prototype properties are accessible via property access",
+    "Prototype properties are accessible via property access"
   );
   val = await FilterExpressions.eval("ctxObject|keys", context);
   Assert.deepEqual(
     new Set(val),
     new Set(["baz", "biff"]),
-    "keys does not return properties from the object's prototype chain",
+    "keys does not return properties from the object's prototype chain"
   );
 
   
   equal(
-    await FilterExpressions.eval("ctxObject|keys", {ctxObject: 45}),
+    await FilterExpressions.eval("ctxObject|keys", { ctxObject: 45 }),
     undefined,
-    "keys returns undefined for numbers",
+    "keys returns undefined for numbers"
   );
   equal(
-    await FilterExpressions.eval("ctxObject|keys", {ctxObject: null}),
+    await FilterExpressions.eval("ctxObject|keys", { ctxObject: null }),
     undefined,
-    "keys returns undefined for null",
+    "keys returns undefined for null"
   );
 
   
   let pong = 0;
-  context = {ctxObject: {
-    get ping() {
-      return ++pong;
+  context = {
+    ctxObject: {
+      get ping() {
+        return ++pong;
+      },
     },
-  }};
-  await FilterExpressions.eval("ctxObject.ping == 0 || ctxObject.ping == 1", context);
+  };
+  await FilterExpressions.eval(
+    "ctxObject.ping == 0 || ctxObject.ping == 1",
+    context
+  );
   equal(pong, 2, "Properties are not reifed");
 });
 
@@ -196,8 +240,10 @@ add_task(async function testLength() {
 
 add_task(async function testMapToProperty() {
   Assert.deepEqual(
-    await FilterExpressions.eval('[{a: 1}, {a: {b: 10}}, {a: [5,6,7,8]}]|mapToProperty("a")'),
-    [1, {b: 10}, [5, 6, 7, 8]],
+    await FilterExpressions.eval(
+      '[{a: 1}, {a: {b: 10}}, {a: [5,6,7,8]}]|mapToProperty("a")'
+    ),
+    [1, { b: 10 }, [5, 6, 7, 8]],
     "mapToProperty returns an array of values when applied to an array of objects all with the property defined"
   );
 
@@ -237,7 +283,6 @@ add_task(async function testMapToProperty() {
 });
 
 
-
 add_task(async function testIntersect() {
   let val;
 
@@ -245,39 +290,44 @@ add_task(async function testIntersect() {
   Assert.deepEqual(
     new Set(val),
     new Set([2, 3]),
-    "intersect finds the common elements between two lists in JEXL",
+    "intersect finds the common elements between two lists in JEXL"
   );
 
-  const context = {left: [5, 7], right: [4, 5, 3]};
+  const context = { left: [5, 7], right: [4, 5, 3] };
   val = await FilterExpressions.eval("left intersect right", context);
   Assert.deepEqual(
     new Set(val),
     new Set([5]),
-    "intersect finds the common elements between two lists in the context",
+    "intersect finds the common elements between two lists in the context"
   );
 
-  val = await FilterExpressions.eval("['string', 2] intersect [4, 'string', 'other', 3]");
+  val = await FilterExpressions.eval(
+    "['string', 2] intersect [4, 'string', 'other', 3]"
+  );
   Assert.deepEqual(
     new Set(val),
     new Set(["string"]),
-    "intersect can compare strings",
+    "intersect can compare strings"
   );
 
   
   equal(
     await FilterExpressions.eval("5 intersect 7"),
     undefined,
-    "intersect returns undefined for numbers",
+    "intersect returns undefined for numbers"
   );
   equal(
-    await FilterExpressions.eval("val intersect other", {val: null, other: null}),
+    await FilterExpressions.eval("val intersect other", {
+      val: null,
+      other: null,
+    }),
     undefined,
-    "intersect returns undefined for null",
+    "intersect returns undefined for null"
   );
   equal(
     await FilterExpressions.eval("5 intersect [1, 2, 5]"),
     undefined,
-    "intersect returns undefined if only one operand is a list",
+    "intersect returns undefined if only one operand is a list"
   );
 });
 
@@ -288,22 +338,18 @@ add_task(async function test_regExpMatch() {
   Assert.deepEqual(
     new Set(val),
     new Set(["foobar", "bar"]),
-    "regExpMatch returns the matches in an array",
+    "regExpMatch returns the matches in an array"
   );
 
   val = await FilterExpressions.eval('"FOObar"|regExpMatch("^foo(.+?)$", "i")');
   Assert.deepEqual(
     new Set(val),
     new Set(["FOObar", "bar"]),
-    "regExpMatch accepts flags for matching",
+    "regExpMatch accepts flags for matching"
   );
 
   val = await FilterExpressions.eval('"F00bar"|regExpMatch("^foo(.+?)$", "i")');
-  Assert.equal(
-    val,
-    null,
-    "regExpMatch returns null if there are no matches",
-  );
+  Assert.equal(val, null, "regExpMatch returns null if there are no matches");
 });
 
 add_task(async function test_versionCompare() {

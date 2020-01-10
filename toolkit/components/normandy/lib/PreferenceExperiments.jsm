@@ -66,13 +66,37 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "CleanupManager", "resource://normandy/lib/CleanupManager.jsm");
-ChromeUtils.defineModuleGetter(this, "JSONFile", "resource://gre/modules/JSONFile.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Services",
+  "resource://gre/modules/Services.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "CleanupManager",
+  "resource://normandy/lib/CleanupManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "JSONFile",
+  "resource://gre/modules/JSONFile.jsm"
+);
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "LogManager", "resource://normandy/lib/LogManager.jsm");
-ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
-ChromeUtils.defineModuleGetter(this, "TelemetryEvents", "resource://normandy/lib/TelemetryEvents.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "LogManager",
+  "resource://normandy/lib/LogManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryEnvironment",
+  "resource://gre/modules/TelemetryEnvironment.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryEvents",
+  "resource://normandy/lib/TelemetryEvents.jsm"
+);
 
 var EXPORTED_SYMBOLS = ["PreferenceExperiments", "migrateStorage"];
 
@@ -81,7 +105,8 @@ const STARTUP_EXPERIMENT_PREFS_BRANCH = "app.normandy.startupExperimentPrefs.";
 
 const MAX_EXPERIMENT_TYPE_LENGTH = 20; 
 const EXPERIMENT_TYPE_PREFIX = "normandy-";
-const MAX_EXPERIMENT_SUBTYPE_LENGTH = MAX_EXPERIMENT_TYPE_LENGTH - EXPERIMENT_TYPE_PREFIX.length;
+const MAX_EXPERIMENT_SUBTYPE_LENGTH =
+  MAX_EXPERIMENT_TYPE_LENGTH - EXPERIMENT_TYPE_PREFIX.length;
 
 const PREFERENCE_TYPE_MAP = {
   boolean: Services.prefs.PREF_BOOL,
@@ -108,7 +133,7 @@ let gStorePromise;
 function ensureStorage() {
   if (gStorePromise === undefined) {
     const path = OS.Path.join(OS.Constants.Path.profileDir, EXPERIMENT_FILE);
-    const storage = new JSONFile({path});
+    const storage = new JSONFile({ path });
     gStorePromise = storage.load().then(() => {
       migrateStorage(storage);
       return storage;
@@ -198,7 +223,9 @@ const log = LogManager.getLogger("preference-experiments");
 
 
 let experimentObservers = new Map();
-CleanupManager.addCleanupHandler(() => PreferenceExperiments.stopAllObservers());
+CleanupManager.addCleanupHandler(() =>
+  PreferenceExperiments.stopAllObservers()
+);
 
 function getPref(prefBranch, prefName, prefType) {
   if (prefBranch.getPrefType(prefName) === 0) {
@@ -218,7 +245,9 @@ function getPref(prefBranch, prefName, prefType) {
       return prefBranch.getIntPref(prefName);
 
     default:
-      throw new TypeError(`Unexpected preference type (${prefType}) for ${prefName}.`);
+      throw new TypeError(
+        `Unexpected preference type (${prefType}) for ${prefName}.`
+      );
   }
 }
 
@@ -237,7 +266,9 @@ function setPref(prefBranch, prefName, prefType, prefValue) {
       break;
 
     default:
-      throw new TypeError(`Unexpected preference type (${prefType}) for ${prefName}.`);
+      throw new TypeError(
+        `Unexpected preference type (${prefType}) for ${prefName}.`
+      );
   }
 }
 
@@ -250,13 +281,19 @@ var PreferenceExperiments = {
     const store = await ensureStorage();
 
     for (const experiment of Object.values(store.data.experiments)) {
-      for (const [prefName, prefInfo] of Object.entries(experiment.preferences)) {
+      for (const [prefName, prefInfo] of Object.entries(
+        experiment.preferences
+      )) {
         if (studyPrefsChanged.hasOwnProperty(prefName)) {
           if (experiment.expired) {
-            log.warn("Expired preference experiment changed value during startup");
+            log.warn(
+              "Expired preference experiment changed value during startup"
+            );
           }
           if (prefInfo.preferenceBranch !== "default") {
-            log.warn("Non-default branch preference experiment changed value during startup");
+            log.warn(
+              "Non-default branch preference experiment changed value during startup"
+            );
           }
           prefInfo.previousPreferenceValue = studyPrefsChanged[prefName];
         }
@@ -278,10 +315,17 @@ var PreferenceExperiments = {
     for (const experiment of await this.getAllActive()) {
       
       let stopped = false;
-      for (const [prefName, prefInfo] of Object.entries(experiment.preferences)) {
-        if (getPref(UserPreferences, prefName, prefInfo.preferenceType) !== prefInfo.preferenceValue) {
+      for (const [prefName, prefInfo] of Object.entries(
+        experiment.preferences
+      )) {
+        if (
+          getPref(UserPreferences, prefName, prefInfo.preferenceType) !==
+          prefInfo.preferenceValue
+        ) {
           
-          log.info(`Stopping experiment "${experiment.name}" because its value changed`);
+          log.info(
+            `Stopping experiment "${experiment.name}" because its value changed`
+          );
           await this.stop(experiment.name, {
             resetValue: false,
             reason: "user-preference-changed-sideload",
@@ -298,7 +342,7 @@ var PreferenceExperiments = {
       TelemetryEnvironment.setExperimentActive(
         experiment.name,
         experiment.branch,
-        {type: EXPERIMENT_TYPE_PREFIX + experiment.experimentType}
+        { type: EXPERIMENT_TYPE_PREFIX + experiment.experimentType }
       );
 
       
@@ -318,7 +362,9 @@ var PreferenceExperiments = {
 
 
   async saveStartupPrefs() {
-    const prefBranch = Services.prefs.getBranch(STARTUP_EXPERIMENT_PREFS_BRANCH);
+    const prefBranch = Services.prefs.getBranch(
+      STARTUP_EXPERIMENT_PREFS_BRANCH
+    );
     for (const pref of prefBranch.getChildList("")) {
       prefBranch.clearUserPref(pref);
     }
@@ -328,10 +374,13 @@ var PreferenceExperiments = {
     
     
     const allExperiments = await this.getAllActive();
-    const defaultBranchPrefs =
-          allExperiments.flatMap(exp => Object.entries(exp.preferences))
-          .filter(([preferenceName, preferenceInfo]) => preferenceInfo.preferenceBranchType === "default");
-    for (const [preferenceName, {preferenceValue}] of defaultBranchPrefs) {
+    const defaultBranchPrefs = allExperiments
+      .flatMap(exp => Object.entries(exp.preferences))
+      .filter(
+        ([preferenceName, preferenceInfo]) =>
+          preferenceInfo.preferenceBranchType === "default"
+      );
+    for (const [preferenceName, { preferenceValue }] of defaultBranchPrefs) {
       switch (typeof preferenceValue) {
         case "string":
           prefBranch.setCharPref(preferenceName, preferenceValue);
@@ -371,7 +420,7 @@ var PreferenceExperiments = {
         const oldPromise = gStorePromise;
         gStorePromise = Promise.resolve({
           data,
-          saveSoon() { },
+          saveSoon() {},
         });
         const oldObservers = experimentObservers;
         experimentObservers = new Map();
@@ -427,64 +476,108 @@ var PreferenceExperiments = {
 
     const store = await ensureStorage();
     if (name in store.data.experiments) {
-      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {reason: "name-conflict"});
-      throw new Error(`A preference experiment named "${name}" already exists.`);
+      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+        reason: "name-conflict",
+      });
+      throw new Error(
+        `A preference experiment named "${name}" already exists.`
+      );
     }
 
-    const activeExperiments = Object.values(store.data.experiments).filter(e => !e.expired);
-    const preferencesWithConflicts = Object.keys(preferences).filter(preferenceName => {
-      return activeExperiments.some(
-        e => e.preferences.hasOwnProperty(preferenceName)
-      );
-    });
+    const activeExperiments = Object.values(store.data.experiments).filter(
+      e => !e.expired
+    );
+    const preferencesWithConflicts = Object.keys(preferences).filter(
+      preferenceName => {
+        return activeExperiments.some(e =>
+          e.preferences.hasOwnProperty(preferenceName)
+        );
+      }
+    );
 
     if (preferencesWithConflicts.length > 0) {
-      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {reason: "pref-conflict"});
+      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+        reason: "pref-conflict",
+      });
       throw new Error(
-        `Another preference experiment for the pref "${preferencesWithConflicts[0]}" is currently active.`
+        `Another preference experiment for the pref "${
+          preferencesWithConflicts[0]
+        }" is currently active.`
       );
     }
 
     if (experimentType.length > MAX_EXPERIMENT_SUBTYPE_LENGTH) {
-      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {reason: "experiment-type-too-long"});
+      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+        reason: "experiment-type-too-long",
+      });
       throw new Error(
         `experimentType must be less than ${MAX_EXPERIMENT_SUBTYPE_LENGTH} characters. ` +
-        `"${experimentType}" is ${experimentType.length} long.`
+          `"${experimentType}" is ${experimentType.length} long.`
       );
     }
 
     
-    for (const [preferenceName, preferenceInfo] of Object.entries(preferences)) {
+    for (const [preferenceName, preferenceInfo] of Object.entries(
+      preferences
+    )) {
       const { preferenceBranchType, preferenceType } = preferenceInfo;
       const preferenceBranch = PreferenceBranchType[preferenceBranchType];
       if (!preferenceBranch) {
-        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {reason: "invalid-branch"});
-        throw new Error(`Invalid value for preferenceBranchType: ${preferenceBranchType}`);
+        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+          reason: "invalid-branch",
+        });
+        throw new Error(
+          `Invalid value for preferenceBranchType: ${preferenceBranchType}`
+        );
       }
 
       const prevPrefType = Services.prefs.getPrefType(preferenceName);
       const givenPrefType = PREFERENCE_TYPE_MAP[preferenceType];
 
       if (!preferenceType || !givenPrefType) {
-        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {reason: "invalid-type"});
-        throw new Error(`Invalid preferenceType provided (given "${preferenceType}")`);
+        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+          reason: "invalid-type",
+        });
+        throw new Error(
+          `Invalid preferenceType provided (given "${preferenceType}")`
+        );
       }
 
-      if (prevPrefType !== Services.prefs.PREF_INVALID && prevPrefType !== givenPrefType) {
-        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {reason: "invalid-type"});
+      if (
+        prevPrefType !== Services.prefs.PREF_INVALID &&
+        prevPrefType !== givenPrefType
+      ) {
+        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+          reason: "invalid-type",
+        });
         throw new Error(
           `Previous preference value is of type "${prevPrefType}", but was given ` +
             `"${givenPrefType}" (${preferenceType})`
         );
       }
 
-      preferenceInfo.previousPreferenceValue = getPref(preferenceBranch, preferenceName, preferenceType);
+      preferenceInfo.previousPreferenceValue = getPref(
+        preferenceBranch,
+        preferenceName,
+        preferenceType
+      );
     }
 
-    for (const [preferenceName, preferenceInfo] of Object.entries(preferences)) {
-      const { preferenceType, preferenceValue, preferenceBranchType } = preferenceInfo;
+    for (const [preferenceName, preferenceInfo] of Object.entries(
+      preferences
+    )) {
+      const {
+        preferenceType,
+        preferenceValue,
+        preferenceBranchType,
+      } = preferenceInfo;
       const preferenceBranch = PreferenceBranchType[preferenceBranchType];
-      setPref(preferenceBranch, preferenceName, preferenceType, preferenceValue);
+      setPref(
+        preferenceBranch,
+        preferenceName,
+        preferenceType,
+        preferenceValue
+      );
     }
     PreferenceExperiments.startObserver(name, preferences);
 
@@ -504,8 +597,13 @@ var PreferenceExperiments = {
     store.data.experiments[name] = experiment;
     store.saveSoon();
 
-    TelemetryEnvironment.setExperimentActive(name, branch, {type: EXPERIMENT_TYPE_PREFIX + experimentType});
-    TelemetryEvents.sendEvent("enroll", "preference_study", name, {experimentType, branch});
+    TelemetryEnvironment.setExperimentActive(name, branch, {
+      type: EXPERIMENT_TYPE_PREFIX + experimentType,
+    });
+    TelemetryEvents.sendEvent("enroll", "preference_study", name, {
+      experimentType,
+      branch,
+    });
     await this.saveStartupPrefs();
   },
 
@@ -530,8 +628,12 @@ var PreferenceExperiments = {
     const observerInfo = {
       preferences,
       observe(aSubject, aTopic, preferenceName) {
-        const {preferenceValue, preferenceType} = preferences[preferenceName];
-        const newValue = getPref(UserPreferences, preferenceName, preferenceType);
+        const { preferenceValue, preferenceType } = preferences[preferenceName];
+        const newValue = getPref(
+          UserPreferences,
+          preferenceName,
+          preferenceType
+        );
         if (newValue !== preferenceValue) {
           PreferenceExperiments.stop(experimentName, {
             resetValue: false,
@@ -566,7 +668,9 @@ var PreferenceExperiments = {
     log.debug(`PreferenceExperiments.stopObserver(${experimentName})`);
 
     if (!experimentObservers.has(experimentName)) {
-      throw new Error(`No observer for the preference experiment ${experimentName} found.`);
+      throw new Error(
+        `No observer for the preference experiment ${experimentName} found.`
+      );
     }
 
     const observer = experimentObservers.get(experimentName);
@@ -601,7 +705,9 @@ var PreferenceExperiments = {
 
     const store = await ensureStorage();
     if (!(experimentName in store.data.experiments)) {
-      throw new Error(`Could not find a preference experiment named "${experimentName}"`);
+      throw new Error(
+        `Could not find a preference experiment named "${experimentName}"`
+      );
     }
 
     store.data.experiments[experimentName].lastSeen = new Date().toJSON();
@@ -623,21 +729,35 @@ var PreferenceExperiments = {
 
 
 
-  async stop(experimentName, {resetValue = true, reason = "unknown"} = {}) {
-    log.debug(`PreferenceExperiments.stop(${experimentName}, {resetValue: ${resetValue}, reason: ${reason}})`);
+  async stop(experimentName, { resetValue = true, reason = "unknown" } = {}) {
+    log.debug(
+      `PreferenceExperiments.stop(${experimentName}, {resetValue: ${resetValue}, reason: ${reason}})`
+    );
     if (reason === "unknown") {
       log.warn(`experiment ${experimentName} ending for unknown reason`);
     }
 
     const store = await ensureStorage();
     if (!(experimentName in store.data.experiments)) {
-      TelemetryEvents.sendEvent("unenrollFailed", "preference_study", experimentName, {reason: "does-not-exist"});
-      throw new Error(`Could not find a preference experiment named "${experimentName}"`);
+      TelemetryEvents.sendEvent(
+        "unenrollFailed",
+        "preference_study",
+        experimentName,
+        { reason: "does-not-exist" }
+      );
+      throw new Error(
+        `Could not find a preference experiment named "${experimentName}"`
+      );
     }
 
     const experiment = store.data.experiments[experimentName];
     if (experiment.expired) {
-      TelemetryEvents.sendEvent("unenrollFailed", "preference_study", experimentName, {reason: "already-unenrolled"});
+      TelemetryEvents.sendEvent(
+        "unenrollFailed",
+        "preference_study",
+        experimentName,
+        { reason: "already-unenrolled" }
+      );
       throw new Error(
         `Cannot stop preference experiment "${experimentName}" because it is already expired`
       );
@@ -648,20 +768,31 @@ var PreferenceExperiments = {
     }
 
     if (resetValue) {
-      for (const [preferenceName, prefInfo] of Object.entries(experiment.preferences)) {
-        const {preferenceType, previousPreferenceValue, preferenceBranchType} = prefInfo;
+      for (const [preferenceName, prefInfo] of Object.entries(
+        experiment.preferences
+      )) {
+        const {
+          preferenceType,
+          previousPreferenceValue,
+          preferenceBranchType,
+        } = prefInfo;
         const preferences = PreferenceBranchType[preferenceBranchType];
 
         if (previousPreferenceValue !== null) {
-          setPref(preferences, preferenceName, preferenceType, previousPreferenceValue);
+          setPref(
+            preferences,
+            preferenceName,
+            preferenceType,
+            previousPreferenceValue
+          );
         } else if (preferenceBranchType === "user") {
           
           preferences.clearUserPref(preferenceName);
         } else {
           log.warn(
-            `Can't revert pref ${preferenceName} for experiment ${experimentName} `
-              + `because it had no default value. `
-              + `Preference will be reset at the next restart.`
+            `Can't revert pref ${preferenceName} for experiment ${experimentName} ` +
+              `because it had no default value. ` +
+              `Preference will be reset at the next restart.`
           );
           
           
@@ -708,7 +839,9 @@ var PreferenceExperiments = {
     log.debug(`PreferenceExperiments.get(${experimentName})`);
     const store = await ensureStorage();
     if (!(experimentName in store.data.experiments)) {
-      throw new Error(`Could not find a preference experiment named "${experimentName}"`);
+      throw new Error(
+        `Could not find a preference experiment named "${experimentName}"`
+      );
     }
 
     return this._cloneExperiment(store.data.experiments[experimentName]);
@@ -721,7 +854,9 @@ var PreferenceExperiments = {
   async getAll() {
     const store = await ensureStorage();
 
-    return Object.values(store.data.experiments).map(experiment => this._cloneExperiment(experiment));
+    return Object.values(store.data.experiments).map(experiment =>
+      this._cloneExperiment(experiment)
+    );
   },
 
   
@@ -730,7 +865,9 @@ var PreferenceExperiments = {
 
   async getAllActive() {
     const store = await ensureStorage();
-    return Object.values(store.data.experiments).filter(e => !e.expired).map(e => this._cloneExperiment(e));
+    return Object.values(store.data.experiments)
+      .filter(e => !e.expired)
+      .map(e => this._cloneExperiment(e));
   },
 
   

@@ -1,7 +1,7 @@
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {addMessageListener, sendAsyncMessage} = this;
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { addMessageListener, sendAsyncMessage } = this;
 
 
 
@@ -11,7 +11,7 @@ function monitorConsole(msgs) {
       if (!(k in msg)) {
         return false;
       }
-      if (pat[k] instanceof RegExp && typeof(msg[k]) === "string") {
+      if (pat[k] instanceof RegExp && typeof msg[k] === "string") {
         if (!pat[k].test(msg[k])) {
           return false;
         }
@@ -31,7 +31,9 @@ function monitorConsole(msgs) {
   addMessageListener("waitForConsole", () => {
     sendAsyncMessage("consoleDone", {
       ok: counter >= msgs.length,
-      message: `monitorConsole | messages left expected at least ${msgs.length} got ${counter}`,
+      message: `monitorConsole | messages left expected at least ${
+        msgs.length
+      } got ${counter}`,
     });
     Services.console.unregisterListener(listener);
   });
@@ -45,7 +47,7 @@ addMessageListener("consoleStart", messages => {
     
     
     let message = msg.message;
-    if (typeof(message) == "object" && !(message instanceof RegExp)) {
+    if (typeof message == "object" && !(message instanceof RegExp)) {
       msg.message = new RegExp(message);
     }
   }

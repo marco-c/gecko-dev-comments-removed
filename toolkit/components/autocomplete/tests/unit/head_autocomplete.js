@@ -1,7 +1,9 @@
 
 
 
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 
@@ -13,7 +15,6 @@ function AutoCompleteInputBase(aSearches) {
   this.searches = aSearches;
 }
 AutoCompleteInputBase.prototype = {
-
   
   searches: null,
 
@@ -69,7 +70,6 @@ function AutoCompleteResultBase(aValues) {
   this._values = aValues;
 }
 AutoCompleteResultBase.prototype = {
-
   
   _values: null,
   _comments: [],
@@ -124,17 +124,13 @@ function AutoCompleteSearchBase(aName, aResult) {
   this._result = aResult;
 }
 AutoCompleteSearchBase.prototype = {
-
   
   name: null,
 
   
   _result: null,
 
-  startSearch(aSearchString,
-                        aSearchParam,
-                        aPreviousResult,
-                        aListener) {
+  startSearch(aSearchString, aSearchParam, aPreviousResult, aListener) {
     var result = this._result;
 
     result.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
@@ -144,8 +140,10 @@ AutoCompleteSearchBase.prototype = {
   stopSearch() {},
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIFactory,
-                                          Ci.nsIAutoCompleteSearch]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIFactory,
+    Ci.nsIAutoCompleteSearch,
+  ]),
 
   
   createInstance(outer, iid) {
@@ -178,13 +176,14 @@ AutocompletePopupBase.prototype = {
 
 function registerAutoCompleteSearch(aSearch) {
   var name = "@mozilla.org/autocomplete/search;1?name=" + aSearch.name;
-  var cid = Cc["@mozilla.org/uuid-generator;1"].
-            getService(Ci.nsIUUIDGenerator).
-            generateUUID();
+  var cid = Cc["@mozilla.org/uuid-generator;1"]
+    .getService(Ci.nsIUUIDGenerator)
+    .generateUUID();
 
   var desc = "Test AutoCompleteSearch";
-  var componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);
+  var componentManager = Components.manager.QueryInterface(
+    Ci.nsIComponentRegistrar
+  );
   componentManager.registerFactory(cid, desc, name, aSearch);
 
   
@@ -195,8 +194,8 @@ function registerAutoCompleteSearch(aSearch) {
 
 
 function unregisterAutoCompleteSearch(aSearch) {
-  var componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);
+  var componentManager = Components.manager.QueryInterface(
+    Ci.nsIComponentRegistrar
+  );
   componentManager.unregisterFactory(aSearch.cid, aSearch);
 }
-

@@ -73,7 +73,9 @@ var PrintUtils = {
 
   get _bundle() {
     delete this._bundle;
-    return this._bundle = Services.strings.createBundle("chrome://global/locale/printing.properties");
+    return (this._bundle = Services.strings.createBundle(
+      "chrome://global/locale/printing.properties"
+    ));
   },
 
   
@@ -85,14 +87,20 @@ var PrintUtils = {
   showPageSetup() {
     try {
       var printSettings = this.getPrintSettings();
-      var PRINTPROMPTSVC = Cc["@mozilla.org/embedcomp/printingprompt-service;1"]
-                             .getService(Ci.nsIPrintingPromptService);
+      var PRINTPROMPTSVC = Cc[
+        "@mozilla.org/embedcomp/printingprompt-service;1"
+      ].getService(Ci.nsIPrintingPromptService);
       PRINTPROMPTSVC.showPageSetupDialog(window, printSettings, null);
       if (gSavePrintSettings) {
         
-        var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
-                      .getService(Ci.nsIPrintSettingsService);
-        PSSVC.savePrintSettingsToPrefs(printSettings, true, printSettings.kInitSaveNativeData);
+        var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+          Ci.nsIPrintSettingsService
+        );
+        PSSVC.savePrintSettingsToPrefs(
+          printSettings,
+          true,
+          printSettings.kInitSaveNativeData
+        );
       }
     } catch (e) {
       dump("showPageSetup " + e + "\n");
@@ -103,8 +111,9 @@ var PrintUtils = {
 
   _getDefaultPrinterName() {
     try {
-      let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
-                    .getService(Ci.nsIPrintSettingsService);
+      let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+        Ci.nsIPrintSettingsService
+      );
 
       return PSSVC.defaultPrinterName;
     } catch (e) {
@@ -191,9 +200,9 @@ var PrintUtils = {
       
       
       
-      this._sourceBrowser = this._shouldSimplify ?
-        this._listener.getSimplifiedPrintPreviewBrowser() :
-        this._listener.getPrintPreviewBrowser();
+      this._sourceBrowser = this._shouldSimplify
+        ? this._listener.getSimplifiedPrintPreviewBrowser()
+        : this._listener.getPrintPreviewBrowser();
       this._sourceBrowser.collapsed = true;
 
       
@@ -202,24 +211,33 @@ var PrintUtils = {
     }
 
     this._webProgressPP = {};
-    let ppParams        = {};
-    let notifyOnOpen    = {};
-    let printSettings   = this.getPrintSettings();
+    let ppParams = {};
+    let notifyOnOpen = {};
+    let printSettings = this.getPrintSettings();
     
     
     
     
     
-    let PPROMPTSVC = Cc["@mozilla.org/embedcomp/printingprompt-service;1"]
-                       .getService(Ci.nsIPrintingPromptService);
+    let PPROMPTSVC = Cc[
+      "@mozilla.org/embedcomp/printingprompt-service;1"
+    ].getService(Ci.nsIPrintingPromptService);
     
     
     try {
-      PPROMPTSVC.showPrintProgressDialog(window, null, printSettings, this._obsPP, false,
-                                         this._webProgressPP, ppParams, notifyOnOpen);
+      PPROMPTSVC.showPrintProgressDialog(
+        window,
+        null,
+        printSettings,
+        this._obsPP,
+        false,
+        this._webProgressPP,
+        ppParams,
+        notifyOnOpen
+      );
       if (ppParams.value) {
         ppParams.value.docTitle = this._originalTitle;
-        ppParams.value.docURL   = this._originalURL;
+        ppParams.value.docURL = this._originalURL;
       }
 
       
@@ -296,16 +314,21 @@ var PrintUtils = {
       msg = this._bundle.GetStringFromName(msgName);
     }
 
-    title = this._bundle.GetStringFromName(isPrinting ? "print_error_dialog_title"
-                                                      : "printpreview_error_dialog_title");
+    title = this._bundle.GetStringFromName(
+      isPrinting
+        ? "print_error_dialog_title"
+        : "printpreview_error_dialog_title"
+    );
 
     Services.prompt.alert(window, title, msg);
   },
 
   receiveMessage(aMessage) {
     if (aMessage.name == "Printing:Error") {
-      this._displayPrintingError(aMessage.data.nsresult,
-                                 aMessage.data.isPrinting);
+      this._displayPrintingError(
+        aMessage.data.nsresult,
+        aMessage.data.isPrinting
+      );
       return undefined;
     }
 
@@ -323,11 +346,14 @@ var PrintUtils = {
 
     switch (aMessage.name) {
       case "Printing:Preview:ProgressChange": {
-        return listener.onProgressChange(null, null,
-                                         data.curSelfProgress,
-                                         data.maxSelfProgress,
-                                         data.curTotalProgress,
-                                         data.maxTotalProgress);
+        return listener.onProgressChange(
+          null,
+          null,
+          data.curSelfProgress,
+          data.maxSelfProgress,
+          data.curTotalProgress,
+          data.maxTotalProgress
+        );
       }
 
       case "Printing:Preview:StateChange": {
@@ -346,32 +372,43 @@ var PrintUtils = {
           printPreviewTB.disableUpdateTriggers(false);
         }
 
-        return listener.onStateChange(null, null,
-                                      data.stateFlags,
-                                      data.status);
+        return listener.onStateChange(null, null, data.stateFlags, data.status);
       }
     }
     return undefined;
   },
 
   _setPrinterDefaultsForSelectedPrinter(aPSSVC, aPrintSettings) {
-    if (!aPrintSettings.printerName)
+    if (!aPrintSettings.printerName) {
       aPrintSettings.printerName = aPSSVC.defaultPrinterName;
+    }
 
     
-    aPSSVC.initPrintSettingsFromPrinter(aPrintSettings.printerName, aPrintSettings);
+    aPSSVC.initPrintSettingsFromPrinter(
+      aPrintSettings.printerName,
+      aPrintSettings
+    );
     
-    aPSSVC.initPrintSettingsFromPrefs(aPrintSettings, true, aPrintSettings.kInitSaveAll);
+    aPSSVC.initPrintSettingsFromPrefs(
+      aPrintSettings,
+      true,
+      aPrintSettings.kInitSaveAll
+    );
   },
 
   getPrintSettings() {
-    gPrintSettingsAreGlobal = Services.prefs.getBoolPref("print.use_global_printsettings");
-    gSavePrintSettings = Services.prefs.getBoolPref("print.save_print_settings");
+    gPrintSettingsAreGlobal = Services.prefs.getBoolPref(
+      "print.use_global_printsettings"
+    );
+    gSavePrintSettings = Services.prefs.getBoolPref(
+      "print.save_print_settings"
+    );
 
     var printSettings;
     try {
-      var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
-                    .getService(Ci.nsIPrintSettingsService);
+      var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+        Ci.nsIPrintSettingsService
+      );
       if (gPrintSettingsAreGlobal) {
         printSettings = PSSVC.globalPrintSettings;
         this._setPrinterDefaultsForSelectedPrinter(PSSVC, printSettings);
@@ -385,8 +422,7 @@ var PrintUtils = {
   },
 
   
-  _obsPP:
-  {
+  _obsPP: {
     observe(aSubject, aTopic, aData) {
       
       if (aTopic) {
@@ -394,11 +430,15 @@ var PrintUtils = {
       }
 
       
-      setTimeout(function() { PrintUtils._enterPrintPreview(); }, 0);
+      setTimeout(function() {
+        PrintUtils._enterPrintPreview();
+      }, 0);
     },
 
-    QueryInterface: ChromeUtils.generateQI(["nsIObserver",
-                                            "nsISupportsWeakReference"]),
+    QueryInterface: ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]),
   },
 
   get shouldSimplify() {
@@ -429,9 +469,9 @@ var PrintUtils = {
     
     
     
-    let ppBrowser = this._shouldSimplify ?
-      this._listener.getSimplifiedPrintPreviewBrowser() :
-      this._listener.getPrintPreviewBrowser();
+    let ppBrowser = this._shouldSimplify
+      ? this._listener.getSimplifiedPrintPreviewBrowser()
+      : this._listener.getPrintPreviewBrowser();
     this._ppBrowsers.add(ppBrowser);
 
     
@@ -472,10 +512,16 @@ var PrintUtils = {
         
         
         let spMM = simplifiedBrowser.messageManager;
-        spMM.addMessageListener("Printing:Preview:ReaderModeReady", function onReaderReady() {
-          spMM.removeMessageListener("Printing:Preview:ReaderModeReady", onReaderReady);
-          sendEnterPreviewMessage(simplifiedBrowser, true);
-        });
+        spMM.addMessageListener(
+          "Printing:Preview:ReaderModeReady",
+          function onReaderReady() {
+            spMM.removeMessageListener(
+              "Printing:Preview:ReaderModeReady",
+              onReaderReady
+            );
+            sendEnterPreviewMessage(simplifiedBrowser, true);
+          }
+        );
 
         
         
@@ -499,7 +545,7 @@ var PrintUtils = {
       waitForPrintProgressToEnableToolbar = true;
     }
 
-    let onEntered = (message) => {
+    let onEntered = message => {
       mm.removeMessageListener("Printing:Preview:Entered", onEntered);
 
       if (message.data.failed) {
@@ -545,8 +591,9 @@ var PrintUtils = {
 
       
       
-      printPreviewTB = document.createXULElement("toolbar",
-        { is: "printpreview-toolbar" });
+      printPreviewTB = document.createXULElement("toolbar", {
+        is: "printpreview-toolbar",
+      });
       printPreviewTB.setAttribute("fullscreentoolbar", true);
       printPreviewTB.id = "print-preview-toolbar";
 
@@ -575,7 +622,10 @@ var PrintUtils = {
       } else {
         this._closeHandlerPP = null;
       }
-      document.documentElement.setAttribute("onclose", "PrintUtils.exitPrintPreview(); return false;");
+      document.documentElement.setAttribute(
+        "onclose",
+        "PrintUtils.exitPrintPreview(); return false;"
+      );
 
       
       window.addEventListener("keydown", this.onKeyDownPP, true);
@@ -613,10 +663,11 @@ var PrintUtils = {
     printPreviewTB.destroy();
     printPreviewTB.remove();
 
-    if (gFocusedElement)
+    if (gFocusedElement) {
       Services.focus.setFocus(gFocusedElement, Services.focus.FLAG_NOSCROLL);
-    else
+    } else {
       this._sourceBrowser.focus();
+    }
     gFocusedElement = null;
 
     this.setSimplifiedMode(false);
@@ -641,18 +692,22 @@ var PrintUtils = {
   onKeyPressPP(aEvent) {
     var closeKey;
     try {
-      closeKey = document.getElementById("key_close")
-                         .getAttribute("key");
+      closeKey = document.getElementById("key_close").getAttribute("key");
       closeKey = aEvent["DOM_VK_" + closeKey];
     } catch (e) {}
     var isModif = aEvent.ctrlKey || aEvent.metaKey;
     
-    if (isModif &&
-        (aEvent.charCode == closeKey || aEvent.charCode == closeKey + 32)) {
+    if (
+      isModif &&
+      (aEvent.charCode == closeKey || aEvent.charCode == closeKey + 32)
+    ) {
       PrintUtils.exitPrintPreview();
     } else if (isModif) {
       var printPreviewTB = document.getElementById("print-preview-toolbar");
-      var printKey = document.getElementById("printKb").getAttribute("key").toUpperCase();
+      var printKey = document
+        .getElementById("printKb")
+        .getAttribute("key")
+        .toUpperCase();
       var pressedKey = String.fromCharCode(aEvent.charCode).toUpperCase();
       if (printKey == pressedKey) {
         printPreviewTB.print();
@@ -671,8 +726,12 @@ var PrintUtils = {
 
   ensureProgressDialogClosed() {
     if (this._webProgressPP && this._webProgressPP.value) {
-      this._webProgressPP.value.onStateChange(null, null,
-        Ci.nsIWebProgressListener.STATE_STOP, 0);
+      this._webProgressPP.value.onStateChange(
+        null,
+        null,
+        Ci.nsIWebProgressListener.STATE_STOP,
+        0
+      );
     }
   },
 };

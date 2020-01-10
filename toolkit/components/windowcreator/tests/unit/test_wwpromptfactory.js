@@ -2,8 +2,7 @@ function run_test() {
   
   
   
-  var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-             .getService();
+  var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].getService();
 
   var prompt;
 
@@ -12,13 +11,10 @@ function run_test() {
   prompt = ww.nsIWindowWatcher.getNewAuthPrompter(null);
   Assert.notEqual(prompt, null);
 
-  prompt = ww.nsIPromptFactory.getPrompt(null,
-                                         Ci.nsIPrompt);
+  prompt = ww.nsIPromptFactory.getPrompt(null, Ci.nsIPrompt);
   Assert.notEqual(prompt, null);
-  prompt = ww.nsIPromptFactory.getPrompt(null,
-                                         Ci.nsIAuthPrompt);
+  prompt = ww.nsIPromptFactory.getPrompt(null, Ci.nsIAuthPrompt);
   Assert.notEqual(prompt, null);
-  prompt = ww.nsIPromptFactory.getPrompt(null,
-                                         Ci.nsIAuthPrompt2);
+  prompt = ww.nsIPromptFactory.getPrompt(null, Ci.nsIAuthPrompt2);
   Assert.notEqual(prompt, null);
 }

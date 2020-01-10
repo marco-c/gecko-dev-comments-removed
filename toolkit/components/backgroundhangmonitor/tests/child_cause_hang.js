@@ -1,7 +1,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function ensureProfilerInitialized() {
   
@@ -23,7 +23,7 @@ add_task(async function childCauseHang() {
 
   executeSoon(() => {
     let startTime = Date.now();
-    while ((Date.now() - startTime) < 2000);
+    while (Date.now() - startTime < 2000) {}
   });
 
   await do_await_remote_message("bhr_hangs_detected");

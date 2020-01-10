@@ -4,53 +4,118 @@
 
 
 
- 
- 
- 
- var testData = [
-   
-   {isInQuery: true, isVisit: true, isDetails: true,
-    uri: "ftp://foo.com/ftp", lastVisit: lastweek,
-    title: "hugelongconfmozlagurationofwordswithasearchtermsinit whoo-hoo"},
 
-   
-   {isInQuery: true, isVisit: true, isDetails: true, isPageAnnotation: true,
-    uri: "http://foo.com/", annoName: "moz/test", annoVal: "val",
-    lastVisit: lastweek, title: "you know, moz is cool"},
 
-   
-   {isInQuery: true, isVisit: true, isDetails: true, title: "amozzie",
-    isRedirect: true, uri: "http://mail.foo.com/redirect", lastVisit: old,
-    referrer: "http://myreferrer.com", transType: PlacesUtils.history.TRANSITION_LINK},
 
-   
-   {isInQuery: true, isVisit: true, isDetails: true,
-    uri: "http://mail.foo.com/yiihah", title: "blahmoz", lastVisit: daybefore},
+var testData = [
+  
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    uri: "ftp://foo.com/ftp",
+    lastVisit: lastweek,
+    title: "hugelongconfmozlagurationofwordswithasearchtermsinit whoo-hoo",
+  },
 
-   
-   {isInQuery: true, isVisit: true, isDetails: true, isTag: true,
-    uri: "http://www.foo.com/yiihah", tagArray: ["moz"],
-    lastVisit: yesterday, title: "foo"},
+  
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    isPageAnnotation: true,
+    uri: "http://foo.com/",
+    annoName: "moz/test",
+    annoVal: "val",
+    lastVisit: lastweek,
+    title: "you know, moz is cool",
+  },
 
-   
-   {isInQuery: true, isVisit: true, isDetails: true, title: "moz",
-    uri: "https://foo.com/", lastVisit: today},
+  
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    title: "amozzie",
+    isRedirect: true,
+    uri: "http://mail.foo.com/redirect",
+    lastVisit: old,
+    referrer: "http://myreferrer.com",
+    transType: PlacesUtils.history.TRANSITION_LINK,
+  },
 
-   
-   {isInQuery: false, isVisit: true, isDetails: true, title: "m o z",
-    uri: "http://foo.com/tooearly.php", lastVisit: today},
+  
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    uri: "http://mail.foo.com/yiihah",
+    title: "blahmoz",
+    lastVisit: daybefore,
+  },
 
-   
-   {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
-    uri: "http://sffoo.com/justwrong.htm", lastVisit: yesterday},
+  
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    isTag: true,
+    uri: "http://www.foo.com/yiihah",
+    tagArray: ["moz"],
+    lastVisit: yesterday,
+    title: "foo",
+  },
 
-   
-   {isInQuery: false, isVisit: true, isDetails: true, title: "m%0o%0z",
-    uri: "http://foo.com/changeme1.htm", lastVisit: yesterday},
+  
+  {
+    isInQuery: true,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    uri: "https://foo.com/",
+    lastVisit: today,
+  },
 
-   
-   {isInQuery: false, isVisit: true, isDetails: true, title: "m,oz",
-    uri: "http://foo.com/changeme2.htm", lastVisit: yesterday}];
+  
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "m o z",
+    uri: "http://foo.com/tooearly.php",
+    lastVisit: today,
+  },
+
+  
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "moz",
+    uri: "http://sffoo.com/justwrong.htm",
+    lastVisit: yesterday,
+  },
+
+  
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "m%0o%0z",
+    uri: "http://foo.com/changeme1.htm",
+    lastVisit: yesterday,
+  },
+
+  
+  {
+    isInQuery: false,
+    isVisit: true,
+    isDetails: true,
+    title: "m,oz",
+    uri: "http://foo.com/changeme2.htm",
+    lastVisit: yesterday,
+  },
+];
 
 
 
@@ -74,7 +139,9 @@ add_task(async function test_searchterms_domain() {
 
   info("Number of items in result set: " + root.childCount);
   for (var i = 0; i < root.childCount; ++i) {
-    info("result: " + root.getChild(i).uri + " Title: " + root.getChild(i).title);
+    info(
+      "result: " + root.getChild(i).uri + " Title: " + root.getChild(i).title
+    );
   }
 
   
@@ -83,35 +150,46 @@ add_task(async function test_searchterms_domain() {
   
   
   info("Adding item to query");
-  var change1 = [{isVisit: true, isDetails: true, uri: "http://foo.com/added.htm",
-                  title: "moz", transType: PlacesUtils.history.TRANSITION_LINK}];
+  var change1 = [
+    {
+      isVisit: true,
+      isDetails: true,
+      uri: "http://foo.com/added.htm",
+      title: "moz",
+      transType: PlacesUtils.history.TRANSITION_LINK,
+    },
+  ];
   await task_populateDB(change1);
   Assert.ok(isInResult(change1, root));
 
   
   info("Updating Item");
-  var change2 = [{isDetails: true, uri: "http://foo.com/changeme1.htm",
-                  title: "moz" }];
+  var change2 = [
+    { isDetails: true, uri: "http://foo.com/changeme1.htm", title: "moz" },
+  ];
   await task_populateDB(change2);
   Assert.ok(isInResult(change2, root));
 
   
   
   info("Updating More Items");
-  var change3 = [{isDetails: true, uri: "http://foo.com/changeme2.htm",
-                  title: "moz"},
-                 {isDetails: true, uri: "http://mail.foo.com/yiihah",
-                  title: "moz now updated"},
-                 {isDetails: true, uri: "ftp://foo.com/ftp", title: "gone"}];
+  var change3 = [
+    { isDetails: true, uri: "http://foo.com/changeme2.htm", title: "moz" },
+    {
+      isDetails: true,
+      uri: "http://mail.foo.com/yiihah",
+      title: "moz now updated",
+    },
+    { isDetails: true, uri: "ftp://foo.com/ftp", title: "gone" },
+  ];
   await task_populateDB(change3);
-  Assert.ok(isInResult({uri: "http://foo.com/changeme2.htm"}, root));
-  Assert.ok(isInResult({uri: "http://mail.foo.com/yiihah"}, root));
-  Assert.ok(!isInResult({uri: "ftp://foo.com/ftp"}, root));
+  Assert.ok(isInResult({ uri: "http://foo.com/changeme2.htm" }, root));
+  Assert.ok(isInResult({ uri: "http://mail.foo.com/yiihah" }, root));
+  Assert.ok(!isInResult({ uri: "ftp://foo.com/ftp" }, root));
 
   
   info("Deleting items");
-  var change4 = [{isDetails: true, uri: "https://foo.com/",
-                  title: "mo,z"}];
+  var change4 = [{ isDetails: true, uri: "https://foo.com/", title: "mo,z" }];
   await task_populateDB(change4);
   Assert.ok(!isInResult(change4, root));
 

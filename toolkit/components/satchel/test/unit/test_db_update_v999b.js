@@ -50,7 +50,7 @@ add_task(async function() {
     
     testnum++;
     
-    Assert.ok(!await promiseCountEntries(null, null));
+    Assert.ok(!(await promiseCountEntries(null, null)));
     Assert.equal(0, await promiseCountEntries("name-A", "value-A"));
     
     Assert.equal(CURRENT_SCHEMA, getDBVersion(destFile));

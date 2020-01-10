@@ -3,7 +3,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "ctypes" ];
+var EXPORTED_SYMBOLS = ["ctypes"];
 
 
 
@@ -20,4 +20,3 @@ var EXPORTED_SYMBOLS = [ "ctypes" ];
 
 const init = Cc["@mozilla.org/jsctypes;1"].createInstance();
 init();
-

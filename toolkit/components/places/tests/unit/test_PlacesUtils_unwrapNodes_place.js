@@ -8,18 +8,27 @@ add_task(function() {
     
     ["place:type=0&sort=1:", PlacesUtils.TYPE_X_MOZ_URL],
     
-    ["place:type=0&sort=1:\nfirst\nplace:type=0&sort=1\nsecond", PlacesUtils.TYPE_X_MOZ_URL],
+    [
+      "place:type=0&sort=1:\nfirst\nplace:type=0&sort=1\nsecond",
+      PlacesUtils.TYPE_X_MOZ_URL,
+    ],
     
     ["place:type=0&sort=1:\nplace:type=0&sort=1", PlacesUtils.TYPE_X_MOZ_URL],
     
-    ["place:type=0&sort=1:\nplace:type=0&sort=1\nmalformed", PlacesUtils.TYPE_X_MOZ_URL],
+    [
+      "place:type=0&sort=1:\nplace:type=0&sort=1\nmalformed",
+      PlacesUtils.TYPE_X_MOZ_URL,
+    ],
     
     ["place:type=0&sort=1:", PlacesUtils.TYPE_UNICODE],
     
     ["place:type=0&sort=1:\nplace:type=0&sort=1", PlacesUtils.TYPE_UNICODE],
   ];
   for (let [blob, type] of tests) {
-    Assert.deepEqual(PlacesUtils.unwrapNodes(blob, type), [],
-                     "No valid entries should be found");
+    Assert.deepEqual(
+      PlacesUtils.unwrapNodes(blob, type),
+      [],
+      "No valid entries should be found"
+    );
   }
 });

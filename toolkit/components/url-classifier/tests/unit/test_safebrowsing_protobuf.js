@@ -1,22 +1,28 @@
 function run_test() {
-  let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
-                   .getService(Ci.nsIUrlClassifierUtils);
+  let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"].getService(
+    Ci.nsIUrlClassifierUtils
+  );
 
   
   let requestNoList = urlUtils.makeUpdateRequestV4([], []);
 
   
-  let requestOneValid =
-    urlUtils.makeUpdateRequestV4(["goog-phish-proto"], ["AAAAAA"]);
+  let requestOneValid = urlUtils.makeUpdateRequestV4(
+    ["goog-phish-proto"],
+    ["AAAAAA"]
+  );
 
   
-  let requestOneInvalid =
-    urlUtils.makeUpdateRequestV4(["bad-list-name"], ["AAAAAA"]);
+  let requestOneInvalid = urlUtils.makeUpdateRequestV4(
+    ["bad-list-name"],
+    ["AAAAAA"]
+  );
 
   
-  let requestOneInvalidOneValid =
-    urlUtils.makeUpdateRequestV4(["goog-phish-proto", "bad-list-name"],
-                                 ["AAAAAA", "AAAAAA"]);
+  let requestOneInvalidOneValid = urlUtils.makeUpdateRequestV4(
+    ["goog-phish-proto", "bad-list-name"],
+    ["AAAAAA", "AAAAAA"]
+  );
 
   equal(requestNoList, requestOneInvalid);
   equal(requestOneValid, requestOneInvalidOneValid);

@@ -2,12 +2,15 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "FormHistory",
-                               "resource://gre/modules/FormHistory.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "FormHistory",
+  "resource://gre/modules/FormHistory.jsm"
+);
 
-function FormHistoryStartup() { }
+function FormHistoryStartup() {}
 
 FormHistoryStartup.prototype = {
   classID: Components.ID("{3A0012EB-007F-4BB8-AA81-A07385F77A25}"),
@@ -106,14 +109,20 @@ FormHistoryStartup.prototype = {
             if (query === this.pendingQuery) {
               this.pendingQuery = null;
               if (!aReason) {
-                mm.sendAsyncMessage("FormHistory:AutoCompleteSearchResults",
-                                    { id, results });
+                mm.sendAsyncMessage("FormHistory:AutoCompleteSearchResults", {
+                  id,
+                  results,
+                });
               }
             }
           },
         };
 
-        query = FormHistory.getAutoCompleteResults(searchString, params, processResults);
+        query = FormHistory.getAutoCompleteResults(
+          searchString,
+          params,
+          processResults
+        );
         this.pendingQuery = query;
         break;
       }

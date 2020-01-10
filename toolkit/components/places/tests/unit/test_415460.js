@@ -4,8 +4,9 @@
 
 
 
-var hs = Cc["@mozilla.org/browser/nav-history-service;1"].
-         getService(Ci.nsINavHistoryService);
+var hs = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
+  Ci.nsINavHistoryService
+);
 
 
 
@@ -25,7 +26,7 @@ function search_has_result(aTerms) {
   root.containerOpen = true;
   var cc = root.childCount;
   root.containerOpen = false;
-  return (cc == 1);
+  return cc == 1;
 }
 
 add_task(async function test_execute() {

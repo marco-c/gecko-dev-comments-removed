@@ -6,8 +6,11 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
-ChromeUtils.defineModuleGetter(this, "TelemetryController",
-                               "resource://gre/modules/TelemetryController.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryController",
+  "resource://gre/modules/TelemetryController.jsm"
+);
 
 function BHRTelemetryService() {
   
@@ -34,8 +37,16 @@ BHRTelemetryService.prototype = Object.freeze({
     };
   },
 
-  recordHang({duration, thread, runnableName, process, stack,
-              remoteType, modules, annotations}) {
+  recordHang({
+    duration,
+    thread,
+    runnableName,
+    process,
+    stack,
+    remoteType,
+    modules,
+    annotations,
+  }) {
     if (!Services.telemetry.canRecordExtended) {
       return;
     }
@@ -88,7 +99,9 @@ BHRTelemetryService.prototype = Object.freeze({
     
     
     
-    if (Services.prefs.getBoolPref("toolkit.telemetry.bhrPing.enabled", false)) {
+    if (
+      Services.prefs.getBoolPref("toolkit.telemetry.bhrPing.enabled", false)
+    ) {
       this.payload.timeSinceLastPing = new Date() - this.startTime;
       TelemetryController.submitExternalPing("bhr", this.payload, {
         addEnvironment: true,
@@ -106,18 +119,18 @@ BHRTelemetryService.prototype = Object.freeze({
 
   observe(aSubject, aTopic, aData) {
     switch (aTopic) {
-    case "profile-after-change":
-      this.resetPayload();
-      break;
-    case "bhr-thread-hang":
-      this.recordHang(aSubject.QueryInterface(Ci.nsIHangDetails));
-      break;
-    case "profile-before-change":
-      this.shutdown();
-      break;
-    case "idle-daily":
-      this.submit();
-      break;
+      case "profile-after-change":
+        this.resetPayload();
+        break;
+      case "bhr-thread-hang":
+        this.recordHang(aSubject.QueryInterface(Ci.nsIHangDetails));
+        break;
+      case "profile-before-change":
+        this.shutdown();
+        break;
+      case "idle-daily":
+        this.submit();
+        break;
     }
   },
 });

@@ -1,6 +1,7 @@
 function run_test() {
-  let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
-                   .getService(Ci.nsIUrlClassifierUtils);
+  let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"].getService(
+    Ci.nsIUrlClassifierUtils
+  );
 
   
   

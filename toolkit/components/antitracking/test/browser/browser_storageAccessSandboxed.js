@@ -2,7 +2,8 @@
 
 let counter = 0;
 
-AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
+AntiTracking.runTest(
+  "Storage Access API called in a sandboxed iframe",
   
   async _ => {
     
@@ -17,10 +18,12 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
     
     
     await new Promise(resolve => {
-      Services.clearData.deleteDataFromHost(Services.io.newURI(TEST_3RD_PARTY_DOMAIN).host,
-                                            true,
-                                            Ci.nsIClearDataService.CLEAR_PERMISSIONS,
-                                            value => resolve());
+      Services.clearData.deleteDataFromHost(
+        Services.io.newURI(TEST_3RD_PARTY_DOMAIN).host,
+        true,
+        Ci.nsIClearDataService.CLEAR_PERMISSIONS,
+        value => resolve()
+      );
     });
   },
   [["dom.storage_access.enabled", true]], 
@@ -31,8 +34,9 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
   "allow-scripts allow-same-origin allow-popups"
 );
 
-AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
-                     " allow-storage-access-by-user-activation",
+AntiTracking.runTest(
+  "Storage Access API called in a sandboxed iframe with" +
+    " allow-storage-access-by-user-activation",
   
   async _ => {
     
@@ -54,7 +58,9 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
       return;
     }
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   [["dom.storage_access.enabled", true]], 
@@ -65,7 +71,8 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
   "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
 
-AntiTracking.runTest("Verify that sandboxed contexts don't get the saved permission",
+AntiTracking.runTest(
+  "Verify that sandboxed contexts don't get the saved permission",
   
   async _ => {
     
@@ -91,9 +98,10 @@ AntiTracking.runTest("Verify that sandboxed contexts don't get the saved permiss
   "allow-scripts allow-same-origin allow-popups"
 );
 
-AntiTracking.runTest("Verify that sandboxed contexts with" +
-                     " allow-storage-access-by-user-activation get the" +
-                     " saved permission",
+AntiTracking.runTest(
+  "Verify that sandboxed contexts with" +
+    " allow-storage-access-by-user-activation get the" +
+    " saved permission",
   
   async _ => {
     
@@ -113,7 +121,8 @@ AntiTracking.runTest("Verify that sandboxed contexts with" +
   "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
 
-AntiTracking.runTest("Verify that private browsing contexts don't get the saved permission",
+AntiTracking.runTest(
+  "Verify that private browsing contexts don't get the saved permission",
   
   async _ => {
     
@@ -139,8 +148,8 @@ AntiTracking.runTest("Verify that private browsing contexts don't get the saved 
   null 
 );
 
-AntiTracking.runTest("Verify that non-sandboxed contexts get the" +
-                     " saved permission",
+AntiTracking.runTest(
+  "Verify that non-sandboxed contexts get the" + " saved permission",
   
   async _ => {
     
@@ -157,7 +166,9 @@ AntiTracking.runTest("Verify that non-sandboxed contexts get the" +
       return;
     }
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   [["dom.storage_access.enabled", true]], 

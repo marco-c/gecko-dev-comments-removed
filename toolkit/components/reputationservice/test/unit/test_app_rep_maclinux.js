@@ -5,11 +5,15 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "NetUtil",
-                               "resource://gre/modules/NetUtil.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "NetUtil",
+  "resource://gre/modules/NetUtil.jsm"
+);
 
-const gAppRep = Cc["@mozilla.org/reputationservice/application-reputation-service;1"].
-                  getService(Ci.nsIApplicationReputationService);
+const gAppRep = Cc[
+  "@mozilla.org/reputationservice/application-reputation-service;1"
+].getService(Ci.nsIApplicationReputationService);
 var gStillRunning = true;
 var gTables = {};
 var gHttpServer = null;
@@ -19,8 +23,9 @@ const remoteEnabledPref = "browser.safebrowsing.downloads.remote.enabled";
 
 function readFileToString(aFilename) {
   let f = do_get_file(aFilename);
-  let stream = Cc["@mozilla.org/network/file-input-stream;1"]
-                 .createInstance(Ci.nsIFileInputStream);
+  let stream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
   stream.init(f, -1, 0, 0);
   let buf = NetUtil.readInputStreamToString(stream, stream.available());
   return buf;
@@ -45,8 +50,11 @@ function registerTableUpdate(aTable, aFilename) {
     info("Mock safebrowsing server handling request for " + redirectPath);
     let contents = readFileToString(aFilename);
     info("Length of " + aFilename + ": " + contents.length);
-    response.setHeader("Content-Type",
-                       "application/vnd.google.safebrowsing-update", false);
+    response.setHeader(
+      "Content-Type",
+      "application/vnd.google.safebrowsing-update",
+      false
+    );
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.bodyOutputStream.write(contents, contents.length);
   });
@@ -62,15 +70,16 @@ add_task(function test_setup() {
     }
   });
   
-  Services.prefs.setCharPref(appRepURLPref,
-                             "http://localhost:4444/download");
+  Services.prefs.setCharPref(appRepURLPref, "http://localhost:4444/download");
   
   
   Services.prefs.setBoolPref("browser.safebrowsing.malware.enabled", true);
   Services.prefs.setBoolPref("browser.safebrowsing.downloads.enabled", true);
   
-  Services.prefs.setCharPref("urlclassifier.downloadBlockTable",
-                             "goog-badbinurl-shavar");
+  Services.prefs.setCharPref(
+    "urlclassifier.downloadBlockTable",
+    "goog-badbinurl-shavar"
+  );
   
   let originalReqLocales = Services.locale.requestedLocales;
   Services.locale.requestedLocales = ["en-US"];
@@ -108,11 +117,13 @@ add_task(function test_setup() {
     response.setHeader("Content-Type", "application/octet-stream", false);
     let buf = NetUtil.readInputStreamToString(
       request.bodyInputStream,
-      request.bodyInputStream.available());
+      request.bodyInputStream.available()
+    );
     info("Request length: " + buf.length);
     
     
-    let blob = "this is not a serialized protocol buffer (the length doesn't match our hard-coded values)";
+    let blob =
+      "this is not a serialized protocol buffer (the length doesn't match our hard-coded values)";
     
     
     if (buf.length == 67) {
@@ -154,14 +165,18 @@ function waitForUpdates() {
   return new Promise((resolve, reject) => {
     gHttpServer.registerPathHandler("/downloads", function(request, response) {
       let blob = processUpdateRequest();
-      response.setHeader("Content-Type",
-                         "application/vnd.google.safebrowsing-update", false);
+      response.setHeader(
+        "Content-Type",
+        "application/vnd.google.safebrowsing-update",
+        false
+      );
       response.setStatusLine(request.httpVersion, 200, "OK");
       response.bodyOutputStream.write(blob, blob.length);
     });
 
-    let streamUpdater = Cc["@mozilla.org/url-classifier/streamupdater;1"]
-      .getService(Ci.nsIUrlClassifierStreamUpdater);
+    let streamUpdater = Cc[
+      "@mozilla.org/url-classifier/streamupdater;1"
+    ].getService(Ci.nsIUrlClassifierStreamUpdater);
 
     
     
@@ -186,7 +201,10 @@ function waitForUpdates() {
       "goog-downloadwhite-digest256;\n",
       true,
       "http://localhost:4444/downloads",
-      updateSuccess, handleError, handleError);
+      updateSuccess,
+      handleError,
+      handleError
+    );
   });
 }
 
@@ -208,105 +226,110 @@ add_task(async function() {
 
 add_task(async function test_blocked_binary() {
   
-  Services.prefs.setBoolPref(remoteEnabledPref,
-                             true);
-  Services.prefs.setCharPref(appRepURLPref,
-                             "http://localhost:4444/download");
+  Services.prefs.setBoolPref(remoteEnabledPref, true);
+  Services.prefs.setCharPref(appRepURLPref, "http://localhost:4444/download");
   let expected = get_telemetry_snapshot();
   expected.shouldBlock++;
   add_telemetry_count(expected.local, NO_LIST, 1);
   add_telemetry_count(expected.reason, VerdictDangerous, 1);
 
   
-  await promiseQueryReputation({sourceURI: createURI("http://evil.com"),
-                                suggestedFileName: "noop.bat",
-                                fileSize: 12}, expected);
+  await promiseQueryReputation(
+    {
+      sourceURI: createURI("http://evil.com"),
+      suggestedFileName: "noop.bat",
+      fileSize: 12,
+    },
+    expected
+  );
 });
 
 add_task(async function test_non_binary() {
   
-  Services.prefs.setBoolPref(remoteEnabledPref,
-                             true);
-  Services.prefs.setCharPref(appRepURLPref,
-                             "http://localhost:4444/throw");
+  Services.prefs.setBoolPref(remoteEnabledPref, true);
+  Services.prefs.setCharPref(appRepURLPref, "http://localhost:4444/throw");
 
   let expected = get_telemetry_snapshot();
   add_telemetry_count(expected.local, NO_LIST, 1);
   add_telemetry_count(expected.reason, NonBinaryFile, 1);
 
-  await promiseQueryReputation({sourceURI: createURI("http://evil.com"),
-                                suggestedFileName: "noop.txt",
-                                fileSize: 12}, expected);
+  await promiseQueryReputation(
+    {
+      sourceURI: createURI("http://evil.com"),
+      suggestedFileName: "noop.txt",
+      fileSize: 12,
+    },
+    expected
+  );
 });
 
 add_task(async function test_good_binary() {
   
-  Services.prefs.setBoolPref(remoteEnabledPref,
-                             true);
-  Services.prefs.setCharPref(appRepURLPref,
-                             "http://localhost:4444/download");
+  Services.prefs.setBoolPref(remoteEnabledPref, true);
+  Services.prefs.setCharPref(appRepURLPref, "http://localhost:4444/download");
 
   let expected = get_telemetry_snapshot();
   add_telemetry_count(expected.local, NO_LIST, 1);
   add_telemetry_count(expected.reason, VerdictSafe, 1);
 
   
-  await promiseQueryReputation({sourceURI: createURI("http://mozilla.com"),
-                                suggestedFileName: "noop.bat",
-                                fileSize: 12}, expected);
+  await promiseQueryReputation(
+    {
+      sourceURI: createURI("http://mozilla.com"),
+      suggestedFileName: "noop.bat",
+      fileSize: 12,
+    },
+    expected
+  );
 });
 
 add_task(async function test_disabled() {
   
-  Services.prefs.setBoolPref(remoteEnabledPref,
-                             false);
-  Services.prefs.setCharPref(appRepURLPref,
-                             "http://localhost:4444/throw");
+  Services.prefs.setBoolPref(remoteEnabledPref, false);
+  Services.prefs.setCharPref(appRepURLPref, "http://localhost:4444/throw");
 
   let expected = get_telemetry_snapshot();
   add_telemetry_count(expected.local, NO_LIST, 1);
   add_telemetry_count(expected.reason, RemoteLookupDisabled, 1);
 
-  let query = {sourceURI: createURI("http://example.com"),
-               suggestedFileName: "noop.bat",
-               fileSize: 12};
+  let query = {
+    sourceURI: createURI("http://example.com"),
+    suggestedFileName: "noop.bat",
+    fileSize: 12,
+  };
   await new Promise(resolve => {
-    gAppRep.queryReputation(query,
-      function onComplete(aShouldBlock, aStatus) {
-        
-        Assert.equal(Cr.NS_ERROR_NOT_AVAILABLE, aStatus);
-        Assert.ok(!aShouldBlock);
-        check_telemetry(expected);
-        resolve(true);
-      }
-    );
+    gAppRep.queryReputation(query, function onComplete(aShouldBlock, aStatus) {
+      
+      Assert.equal(Cr.NS_ERROR_NOT_AVAILABLE, aStatus);
+      Assert.ok(!aShouldBlock);
+      check_telemetry(expected);
+      resolve(true);
+    });
   });
 });
 
 add_task(async function test_disabled_through_lists() {
-  Services.prefs.setBoolPref(remoteEnabledPref,
-                             false);
-  Services.prefs.setCharPref(appRepURLPref,
-                             "http://localhost:4444/download");
+  Services.prefs.setBoolPref(remoteEnabledPref, false);
+  Services.prefs.setCharPref(appRepURLPref, "http://localhost:4444/download");
   Services.prefs.setCharPref("urlclassifier.downloadBlockTable", "");
 
   let expected = get_telemetry_snapshot();
   add_telemetry_count(expected.local, NO_LIST, 1);
   add_telemetry_count(expected.reason, RemoteLookupDisabled, 1);
 
-  let query = {sourceURI: createURI("http://example.com"),
-               suggestedFileName: "noop.bat",
-               fileSize: 12};
+  let query = {
+    sourceURI: createURI("http://example.com"),
+    suggestedFileName: "noop.bat",
+    fileSize: 12,
+  };
   await new Promise(resolve => {
-    gAppRep.queryReputation(query,
-      function onComplete(aShouldBlock, aStatus) {
-        
-        Assert.equal(Cr.NS_ERROR_NOT_AVAILABLE, aStatus);
-        Assert.ok(!aShouldBlock);
-        check_telemetry(expected);
-        resolve(true);
-      }
-    );
+    gAppRep.queryReputation(query, function onComplete(aShouldBlock, aStatus) {
+      
+      Assert.equal(Cr.NS_ERROR_NOT_AVAILABLE, aStatus);
+      Assert.ok(!aShouldBlock);
+      check_telemetry(expected);
+      resolve(true);
+    });
   });
 });
 add_task(async function test_teardown() {

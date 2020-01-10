@@ -2,7 +2,9 @@
 
 
 
-const {PictureInPicture} = ChromeUtils.import("resource://gre/modules/PictureInPicture.jsm");
+const { PictureInPicture } = ChromeUtils.import(
+  "resource://gre/modules/PictureInPicture.jsm"
+);
 
 
 const CONTROLS_FADE_TIMEOUT = 3000;

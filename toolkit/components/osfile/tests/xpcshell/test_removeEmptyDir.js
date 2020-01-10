@@ -4,8 +4,8 @@
 
 "use strict";
 
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 registerCleanupFunction(function() {
   Services.prefs.setBoolPref("toolkit.osfile.log", false);
@@ -28,18 +28,18 @@ add_task(async function() {
   let dir = OS.Path.join(OS.Constants.Path.profileDir, "directory");
 
   
-  Assert.equal(false, (await OS.File.exists(dir)));
+  Assert.equal(false, await OS.File.exists(dir));
 
   
   await OS.File.removeEmptyDir(dir);
 
   
-  await OS.File.removeEmptyDir(dir, {ignoreAbsent: true});
+  await OS.File.removeEmptyDir(dir, { ignoreAbsent: true });
 
   
   let exception = null;
   try {
-    await OS.File.removeEmptyDir(dir, {ignoreAbsent: false});
+    await OS.File.removeEmptyDir(dir, { ignoreAbsent: false });
   } catch (ex) {
     exception = ex;
   }
@@ -51,5 +51,5 @@ add_task(async function() {
   
   await OS.File.makeDir(dir);
   await OS.File.removeEmptyDir(dir);
-  Assert.equal(false, (await OS.File.exists(dir)));
+  Assert.equal(false, await OS.File.exists(dir));
 });

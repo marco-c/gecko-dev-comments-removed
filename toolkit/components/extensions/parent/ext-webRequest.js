@@ -4,14 +4,24 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "WebRequest",
-                               "resource://gre/modules/WebRequest.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "WebRequest",
+  "resource://gre/modules/WebRequest.jsm"
+);
 
 
 
-function registerEvent(extension, eventName, fire, filter, info, remoteTab = null) {
+function registerEvent(
+  extension,
+  eventName,
+  fire,
+  filter,
+  info,
+  remoteTab = null
+) {
   let listener = async data => {
-    let browserData = {tabId: -1, windowId: -1};
+    let browserData = { tabId: -1, windowId: -1 };
     if (data.browser) {
       browserData = tabTracker.getBrowserData(data.browser);
     }
@@ -27,7 +37,9 @@ function registerEvent(extension, eventName, fire, filter, info, remoteTab = nul
     if (data.originAttributes) {
       event.incognito = data.originAttributes.privateBrowsingId > 0;
       if (extension.hasPermission("cookies")) {
-        event.cookieStoreId = getCookieStoreIdForOriginAttributes(data.originAttributes);
+        event.cookieStoreId = getCookieStoreIdForOriginAttributes(
+          data.originAttributes
+        );
       }
     }
     if (data.registerTraceableChannel) {
@@ -46,13 +58,17 @@ function registerEvent(extension, eventName, fire, filter, info, remoteTab = nul
 
   let filter2 = {};
   if (filter.urls) {
-    let perms = new MatchPatternSet([...extension.whiteListedHosts.patterns,
-                                     ...extension.optionalOrigins.patterns]);
+    let perms = new MatchPatternSet([
+      ...extension.whiteListedHosts.patterns,
+      ...extension.optionalOrigins.patterns,
+    ]);
 
     filter2.urls = new MatchPatternSet(filter.urls);
 
     if (!perms.overlapsAll(filter2.urls)) {
-      Cu.reportError("The webRequest.addListener filter doesn't overlap with host permissions.");
+      Cu.reportError(
+        "The webRequest.addListener filter doesn't overlap with host permissions."
+      );
     }
   }
   if (filter.types) {
@@ -78,8 +94,10 @@ function registerEvent(extension, eventName, fire, filter, info, remoteTab = nul
         
         
         
-        Cu.reportError("Using webRequest.addListener with the blocking option " +
-                       "requires the 'webRequestBlocking' permission.");
+        Cu.reportError(
+          "Using webRequest.addListener with the blocking option " +
+            "requires the 'webRequestBlocking' permission."
+        );
       } else {
         info2.push(desc);
       }
@@ -91,12 +109,12 @@ function registerEvent(extension, eventName, fire, filter, info, remoteTab = nul
     extension: extension.policy,
     blockingAllowed,
   };
-  WebRequest[eventName].addListener(
-    listener, filter2, info2,
-    listenerDetails);
+  WebRequest[eventName].addListener(listener, filter2, info2, listenerDetails);
 
   return {
-    unregister: () => { WebRequest[eventName].removeListener(listener); },
+    unregister: () => {
+      WebRequest[eventName].removeListener(listener);
+    },
     convert(_fire, context) {
       fire = _fire;
       remoteTab = context.xulBrowser.frameLoader.remoteTab;
@@ -113,8 +131,14 @@ function makeWebRequestEvent(context, name) {
       event: name,
     },
     register: (fire, filter, info) => {
-      return registerEvent(context.extension, name, fire, filter, info,
-                           context.xulBrowser.frameLoader.remoteTab).unregister;
+      return registerEvent(
+        context.extension,
+        name,
+        fire,
+        filter,
+        info,
+        context.xulBrowser.frameLoader.remoteTab
+      ).unregister;
     },
   }).api();
 }
@@ -128,7 +152,10 @@ this.webRequest = class extends ExtensionAPI {
     return {
       webRequest: {
         onBeforeRequest: makeWebRequestEvent(context, "onBeforeRequest"),
-        onBeforeSendHeaders: makeWebRequestEvent(context, "onBeforeSendHeaders"),
+        onBeforeSendHeaders: makeWebRequestEvent(
+          context,
+          "onBeforeSendHeaders"
+        ),
         onSendHeaders: makeWebRequestEvent(context, "onSendHeaders"),
         onHeadersReceived: makeWebRequestEvent(context, "onHeadersReceived"),
         onAuthRequired: makeWebRequestEvent(context, "onAuthRequired"),

@@ -4,11 +4,14 @@
 "use strict";
 
 add_task(async function test_json_with_mistyped_policies() {
-    
-    await setupPolicyEngineWithJson({
-        "polcies": {},
-    });
+  
+  await setupPolicyEngineWithJson({
+    polcies: {},
+  });
 
-    is(Services.policies.status, Ci.nsIEnterprisePolicies.FAILED, "Engine was correctly set to the error state");
+  is(
+    Services.policies.status,
+    Ci.nsIEnterprisePolicies.FAILED,
+    "Engine was correctly set to the error state"
+  );
 });
-

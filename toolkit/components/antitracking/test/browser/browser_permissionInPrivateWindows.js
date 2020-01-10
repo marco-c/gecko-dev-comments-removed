@@ -1,6 +1,7 @@
 
 
-AntiTracking.runTest("Test whether we receive any persistent permissions in private windows",
+AntiTracking.runTest(
+  "Test whether we receive any persistent permissions in private windows",
   
   async _ => {
     
@@ -8,33 +9,39 @@ AntiTracking.runTest("Test whether we receive any persistent permissions in priv
 
   
   async _ => {
-  try {
-    let Services = SpecialPowers.Services;
-    
-    
-    let uri = Services.io.newURI("https://tracking.example.org/");
-    for (let perm of Services.perms.getAllForURI(uri)) {
+    try {
+      let Services = SpecialPowers.Services;
       
-      if (!perm.type.startsWith("3rdPartyStorage^")) {
-        continue;
+      
+      let uri = Services.io.newURI("https://tracking.example.org/");
+      for (let perm of Services.perms.getAllForURI(uri)) {
+        
+        if (!perm.type.startsWith("3rdPartyStorage^")) {
+          continue;
+        }
+        is(
+          perm.expireType,
+          Services.perms.EXPIRE_SESSION,
+          "Permission must expire at the end of session"
+        );
+        is(perm.expireTime, 0, "Permission must have no expiry time");
       }
-      is(perm.expireType, Services.perms.EXPIRE_SESSION,
-         "Permission must expire at the end of session");
-      is(perm.expireTime, 0,
-         "Permission must have no expiry time");
+    } catch (e) {
+      alert(e);
     }
-  } catch (e) { alert(e); }
   },
 
   
   async _ => {
     await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
     });
   },
   null, 
   true, 
   true, 
   0, 
-  true); 
-
+  true
+); 

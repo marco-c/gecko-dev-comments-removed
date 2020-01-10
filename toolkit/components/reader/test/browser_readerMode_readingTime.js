@@ -4,25 +4,40 @@
 
 "use strict";
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 
 
 
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticle.html", async function(browser) {
-    let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
-    let readerButton = document.getElementById("reader-mode-button");
-    readerButton.click();
-    await pageShownPromise;
-    await ContentTask.spawn(browser, null, async function() {
-      
-      let readingTimeElement = content.document.querySelector(".reader-estimated-time");
-      ok(readingTimeElement, "Reading time element should be in document");
-      is(readingTimeElement.textContent, "9-12 minutes", "Reading time should be '9-12 minutes'");
-    });
-  });
+  await BrowserTestUtils.withNewTab(
+    TEST_PATH + "readerModeArticle.html",
+    async function(browser) {
+      let pageShownPromise = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "AboutReaderContentReady"
+      );
+      let readerButton = document.getElementById("reader-mode-button");
+      readerButton.click();
+      await pageShownPromise;
+      await ContentTask.spawn(browser, null, async function() {
+        
+        let readingTimeElement = content.document.querySelector(
+          ".reader-estimated-time"
+        );
+        ok(readingTimeElement, "Reading time element should be in document");
+        is(
+          readingTimeElement.textContent,
+          "9-12 minutes",
+          "Reading time should be '9-12 minutes'"
+        );
+      });
+    }
+  );
 });
 
 
@@ -30,18 +45,30 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleShort.html", async function(browser) {
-    let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
-    let readerButton = document.getElementById("reader-mode-button");
-    readerButton.click();
-    await pageShownPromise;
-    await ContentTask.spawn(browser, null, async function() {
-      
-      let readingTimeElement = content.document.querySelector(".reader-estimated-time");
-      ok(readingTimeElement, "Reading time element should be in document");
-      is(readingTimeElement.textContent, "1 minute", "Reading time should be '1 minute'");
-    });
-  });
+  await BrowserTestUtils.withNewTab(
+    TEST_PATH + "readerModeArticleShort.html",
+    async function(browser) {
+      let pageShownPromise = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "AboutReaderContentReady"
+      );
+      let readerButton = document.getElementById("reader-mode-button");
+      readerButton.click();
+      await pageShownPromise;
+      await ContentTask.spawn(browser, null, async function() {
+        
+        let readingTimeElement = content.document.querySelector(
+          ".reader-estimated-time"
+        );
+        ok(readingTimeElement, "Reading time element should be in document");
+        is(
+          readingTimeElement.textContent,
+          "1 minute",
+          "Reading time should be '1 minute'"
+        );
+      });
+    }
+  );
 });
 
 
@@ -50,16 +77,28 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleMedium.html", async function(browser) {
-    let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
-    let readerButton = document.getElementById("reader-mode-button");
-    readerButton.click();
-    await pageShownPromise;
-    await ContentTask.spawn(browser, null, async function() {
-      
-      let readingTimeElement = content.document.querySelector(".reader-estimated-time");
-      ok(readingTimeElement, "Reading time element should be in document");
-      is(readingTimeElement.textContent, "3 minutes", "Reading time should be '3 minutes'");
-    });
-  });
+  await BrowserTestUtils.withNewTab(
+    TEST_PATH + "readerModeArticleMedium.html",
+    async function(browser) {
+      let pageShownPromise = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "AboutReaderContentReady"
+      );
+      let readerButton = document.getElementById("reader-mode-button");
+      readerButton.click();
+      await pageShownPromise;
+      await ContentTask.spawn(browser, null, async function() {
+        
+        let readingTimeElement = content.document.querySelector(
+          ".reader-estimated-time"
+        );
+        ok(readingTimeElement, "Reading time element should be in document");
+        is(
+          readingTimeElement.textContent,
+          "3 minutes",
+          "Reading time should be '3 minutes'"
+        );
+      });
+    }
+  );
 });
