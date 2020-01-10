@@ -563,7 +563,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             return;
         }
 
-        SendUpdateCanvasForEvent(event, contentRootElement);
+        SendUpdateCanvasForEvent(forURL, event, contentRootElement);
         
         
         
@@ -1359,8 +1359,15 @@ function elementDescription(element)
         '>';
 }
 
-function SendUpdateCanvasForEvent(event, contentRootElement)
+function SendUpdateCanvasForEvent(forURL, event, contentRootElement)
 {
+    if (forURL != gCurrentURL) {
+        LogInfo("SendUpdateCanvasForEvent called for previous document");
+        
+        
+        return;
+    }
+
     var win = content;
     var scale = markupDocumentViewer().fullZoom;
 
