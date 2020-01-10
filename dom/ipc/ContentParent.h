@@ -723,7 +723,7 @@ class ContentParent final : public PContentParent,
       mozilla::Variant<bool*, RefPtr<LaunchPromise>*>&& aRetval);
 
   
-  void InitInternal(ProcessPriority aPriority);
+  bool InitInternal(ProcessPriority aPriority);
 
   
   void GeneratePairedMinidump(const char* aReason);
