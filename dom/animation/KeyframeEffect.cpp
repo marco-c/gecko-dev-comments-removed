@@ -938,6 +938,9 @@ already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
   
   effect->mKeyframes = aSource.mKeyframes;
   effect->mProperties = aSource.mProperties;
+  for (auto iter = aSource.mBaseValues.ConstIter(); !iter.Done(); iter.Next()) {
+    effect->mBaseValues.Put(iter.Key(), iter.Data());
+  }
   return effect.forget();
 }
 
