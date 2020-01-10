@@ -138,7 +138,7 @@ static int copy_subcoefs(coef *coeff,
 
 
 
-    const int16_t *const scan = dav1d_scans[tx][dav1d_tx_type_class[txtp]];
+    const uint16_t *const scan = dav1d_scans[tx][dav1d_tx_type_class[txtp]];
     const int sub_high = subsh > 0 ? subsh * 8 - 1 : 0;
     const int sub_low  = subsh > 1 ? sub_high - 8 : 0;
     int n, eob;

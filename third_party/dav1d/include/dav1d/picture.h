@@ -77,9 +77,16 @@ typedef struct Dav1dPicture {
 
 
     Dav1dMasteringDisplay *mastering_display;
+    
+
+
+    Dav1dITUTT35 *itut_t35;
+
+    uintptr_t reserved[4]; 
 
     struct Dav1dRef *frame_hdr_ref, *seq_hdr_ref; 
-    struct Dav1dRef *content_light_ref, *mastering_display_ref; 
+    struct Dav1dRef *content_light_ref, *mastering_display_ref, *itut_t35_ref; 
+    uintptr_t reserved_ref[4]; 
     struct Dav1dRef *ref; 
 
     void *allocator_data; 

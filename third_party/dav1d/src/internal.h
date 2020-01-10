@@ -42,6 +42,7 @@ typedef struct Dav1dTileContext Dav1dTileContext;
 #include "src/cdf.h"
 #include "src/data.h"
 #include "src/env.h"
+#include "src/film_grain.h"
 #include "src/intra_edge.h"
 #include "src/ipred.h"
 #include "src/itx.h"
@@ -57,6 +58,7 @@ typedef struct Dav1dTileContext Dav1dTileContext;
 #include "src/thread.h"
 
 typedef struct Dav1dDSPContext {
+    Dav1dFilmGrainDSPContext fg;
     Dav1dIntraPredDSPContext ipred;
     Dav1dMCDSPContext mc;
     Dav1dInvTxfmDSPContext itx;
@@ -89,6 +91,8 @@ struct Dav1dContext {
     Dav1dContentLightLevel *content_light;
     Dav1dRef *mastering_display_ref;
     Dav1dMasteringDisplay *mastering_display;
+    Dav1dRef *itut_t35_ref;
+    Dav1dITUTT35 *itut_t35;
 
     
     Dav1dData in;
@@ -213,7 +217,7 @@ struct Dav1dFrameContext {
         Av1Restoration *lr_mask;
         int top_pre_cdef_toggle;
         int mask_sz , lr_mask_sz, line_sz , lr_line_sz, re_sz ;
-        Av1FilterLUT lim_lut;
+        ALIGN(Av1FilterLUT lim_lut, 16);
         int last_sharpness;
         uint8_t lvl[8 ][4 ][8 ][2 ];
         uint8_t *tx_lpf_right_edge[2];
@@ -233,19 +237,20 @@ struct Dav1dFrameContext {
         pthread_cond_t cond, icond;
         int tasks_left, num_tasks;
         int (*task_idx_to_sby_and_tile_idx)[2];
-        int titsati_sz, titsati_init[3];
+        int titsati_sz, titsati_init[2];
+        uint16_t titsati_index_rows[1 + DAV1D_MAX_TILE_ROWS];
         int inited;
     } tile_thread;
 };
 
 struct Dav1dTileState {
+    CdfContext cdf;
+    MsacContext msac;
+
     struct {
         int col_start, col_end, row_start, row_end; 
         int col, row; 
     } tiling;
-
-    CdfContext cdf;
-    MsacContext msac;
 
     atomic_int progress; 
     struct {
@@ -299,25 +304,27 @@ struct Dav1dTileContext {
             };
         };
         struct {
-            uint8_t interintra_8bpc[64 * 64];
-            uint8_t edge_8bpc[257];
-        };
-        struct {
-            uint16_t interintra_16bpc[64 * 64];
-            uint16_t edge_16bpc[257];
-        };
-        struct {
-            uint8_t pal_idx[2 * 64 * 64];
             union {
+                uint8_t levels[32 * 34];
                 struct {
                     uint8_t pal_order[64][8];
                     uint8_t pal_ctx[64];
                 };
-                uint8_t levels[36 * 36];
             };
+            int16_t ac[32 * 32];
+            uint8_t pal_idx[2 * 64 * 64];
             uint16_t pal[3 ][8 ];
+            ALIGN(union, 32) {
+                struct {
+                    uint8_t interintra_8bpc[64 * 64];
+                    uint8_t edge_8bpc[257];
+                };
+                struct {
+                    uint16_t interintra_16bpc[64 * 64];
+                    uint16_t edge_16bpc[257];
+                };
+            };
         };
-        int16_t ac[32 * 32];
     } scratch;
 
     Dav1dWarpedMotionParams warpmv;

@@ -28,9 +28,10 @@
 #ifndef DAV1D_SRC_MSAC_H
 #define DAV1D_SRC_MSAC_H
 
-#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#include "common/attributes.h"
 
 typedef size_t ec_win;
 
@@ -58,6 +59,7 @@ unsigned dav1d_msac_decode_symbol_adapt_c(MsacContext *s, uint16_t *cdf,
 unsigned dav1d_msac_decode_bool_adapt_c(MsacContext *s, uint16_t *cdf);
 unsigned dav1d_msac_decode_bool_equi_c(MsacContext *s);
 unsigned dav1d_msac_decode_bool_c(MsacContext *s, unsigned f);
+unsigned dav1d_msac_decode_hi_tok_c(MsacContext *s, uint16_t *cdf);
 int dav1d_msac_decode_subexp(MsacContext *s, int ref, int n, unsigned k);
 
 
@@ -78,6 +80,9 @@ int dav1d_msac_decode_subexp(MsacContext *s, int ref, int n, unsigned k);
 #endif
 #ifndef dav1d_msac_decode_bool
 #define dav1d_msac_decode_bool           dav1d_msac_decode_bool_c
+#endif
+#ifndef dav1d_msac_decode_hi_tok
+#define dav1d_msac_decode_hi_tok         dav1d_msac_decode_hi_tok_c
 #endif
 
 static inline unsigned dav1d_msac_decode_bools(MsacContext *const s, unsigned n) {
