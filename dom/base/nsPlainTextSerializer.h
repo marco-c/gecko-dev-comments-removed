@@ -126,7 +126,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   void PushBool(nsTArray<bool>& aStack, bool aValue);
   bool PopBool(nsTArray<bool>& aStack);
 
-  bool ShouldReplaceContainerWithPlaceholder(nsAtom* aTag);
   bool IsIgnorableRubyAnnotation(nsAtom* aTag);
 
   bool IsElementPreformatted(mozilla::dom::Element* aElement);
@@ -234,8 +233,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   const nsString kSpace;
 
-  
-  
   
   
   

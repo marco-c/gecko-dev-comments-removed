@@ -242,21 +242,6 @@ bool nsPlainTextSerializer::PopBool(nsTArray<bool>& aStack) {
   return returnValue;
 }
 
-bool nsPlainTextSerializer::ShouldReplaceContainerWithPlaceholder(
-    nsAtom* aTag) {
-  
-  
-  
-  if (!(mFlags & nsIDocumentEncoder::OutputNonTextContentAsPlaceholder)) {
-    return false;
-  }
-
-  return (aTag == nsGkAtoms::audio) || (aTag == nsGkAtoms::canvas) ||
-         (aTag == nsGkAtoms::iframe) || (aTag == nsGkAtoms::meter) ||
-         (aTag == nsGkAtoms::progress) || (aTag == nsGkAtoms::object) ||
-         (aTag == nsGkAtoms::svg) || (aTag == nsGkAtoms::video);
-}
-
 bool nsPlainTextSerializer::IsIgnorableRubyAnnotation(nsAtom* aTag) {
   if (mWithRubyAnnotation) {
     return false;
@@ -453,17 +438,6 @@ nsPlainTextSerializer::AppendDocumentStart(Document* aDocument,
 }
 
 nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
-  
-  
-  if (ShouldReplaceContainerWithPlaceholder(mElement->NodeInfo()->NameAtom())) {
-    if (mIgnoredChildNodeLevel == 0) {
-      
-      Write(NS_LITERAL_STRING(u"\xFFFC"));
-    }
-    
-    mIgnoredChildNodeLevel++;
-    return NS_OK;
-  }
   if (IsIgnorableRubyAnnotation(aTag)) {
     
     
@@ -774,10 +748,6 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
 }
 
 nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
-  if (ShouldReplaceContainerWithPlaceholder(mElement->NodeInfo()->NameAtom())) {
-    mIgnoredChildNodeLevel--;
-    return NS_OK;
-  }
   if (IsIgnorableRubyAnnotation(aTag)) {
     mIgnoredChildNodeLevel--;
     return NS_OK;
@@ -1062,8 +1032,6 @@ nsresult nsPlainTextSerializer::DoAddLeaf(nsAtom* aTag) {
     Write(line);
 
     EnsureVerticalSpace(0);
-  } else if (mFlags & nsIDocumentEncoder::OutputNonTextContentAsPlaceholder) {
-    Write(NS_LITERAL_STRING(u"\xFFFC"));
   } else if (aTag == nsGkAtoms::img) {
     
 
