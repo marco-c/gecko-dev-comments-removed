@@ -3370,7 +3370,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       nsIContent* currentContent = frame->GetContent();
       nsIContent* oldTopLevelScopeOwner = currentTopLevelScopeOwner;
-      if (oldTopLevelScopeOwner != currentContent) {
+      if (!aForward || oldTopLevelScopeOwner != currentContent) {
         currentTopLevelScopeOwner = GetTopLevelScopeOwner(currentContent);
       } else {
         currentTopLevelScopeOwner = currentContent;
