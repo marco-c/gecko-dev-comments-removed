@@ -56,4 +56,13 @@ if (topLevelDocument) {
   
   
   RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=nested-cross-origin-frame&allowed=false&rootdocument=false");
+
+  
+  promise_test(() => {
+    let createdDocument = document.implementation.createDocument("", null);
+
+    return createdDocument.hasStorageAccess().then(hasAccess => {
+      assert_false(hasAccess, "Access should be denied to a generated document not part of the DOM.");
+    });
+  }, "[" + testPrefix + "] document.hasStorageAccess() should work on a document object.");
 }
