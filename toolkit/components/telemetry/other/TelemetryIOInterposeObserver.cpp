@@ -75,7 +75,7 @@ void TelemetryIOInterposeObserver::Observe(Observation& aOb) {
   
   FileIOEntryType* entry = mFileStats.PutEntry(processedName);
   if (entry) {
-    FileStats& stats = entry->GetModifiableData()->mStats[mCurStage];
+    FileStats& stats = entry->mData.mStats[mCurStage];
     
     stats.totalTime += (double)aOb.Duration().ToMilliseconds();
     switch (aOb.ObservedOperation()) {
@@ -105,7 +105,7 @@ bool TelemetryIOInterposeObserver::ReflectFileStats(FileIOEntryType* entry,
                                                     JS::Handle<JSObject*> obj) {
   JS::AutoValueArray<NUM_STAGES> stages(cx);
 
-  FileStatsByStage& statsByStage = *entry->GetModifiableData();
+  FileStatsByStage& statsByStage = entry->mData;
   for (int s = STAGE_STARTUP; s < NUM_STAGES; ++s) {
     FileStats& fileStats = statsByStage.mStats[s];
 
