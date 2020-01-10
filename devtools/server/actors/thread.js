@@ -441,6 +441,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this.pauseOverlay
     ) {
       const reason = this._priorPause.why.type;
+
+      
+      if (this.dbg.replaying) {
+        return;
+      }
+
       this.pauseOverlay.show(null, { reason });
     }
   },
