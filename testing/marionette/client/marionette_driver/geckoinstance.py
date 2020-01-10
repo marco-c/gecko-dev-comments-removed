@@ -595,10 +595,6 @@ class DesktopInstance(GeckoInstance):
         "browser.urlbar.suggest.searches": False,
 
         
-        
-        "browser.urlbar.userMadeSearchSuggestionsChoice": True,
-
-        
         "browser.warnOnQuit": False,
 
         

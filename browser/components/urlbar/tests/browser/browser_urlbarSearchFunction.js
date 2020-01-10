@@ -9,25 +9,14 @@ add_task(async function init() {
   
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  let which = gURLBar._whichSearchSuggestionsNotification || undefined;
   registerCleanupFunction(async function() {
     BrowserTestUtils.removeTab(tab);
-    
-    if (which === undefined) {
-      delete gURLBar._whichSearchSuggestionsNotification;
-    } else {
-      gURLBar._whichSearchSuggestionsNotification = which;
-    }
-    Services.prefs.clearUserPref("timesBeforeHidingSuggestionsHint");
-
     gURLBar.handleRevert();
   });
 });
 
 
 add_task(async function basic() {
-  let resetNotification = enableSearchSuggestionsNotification();
-
   gURLBar.blur();
   gURLBar.search("basic");
   ok(gURLBar.hasAttribute("focused"), "url bar is focused");
@@ -38,15 +27,11 @@ add_task(async function basic() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
-
-  resetNotification();
 });
 
 
 
 add_task(async function searchEngineAlias() {
-  let resetNotification = enableSearchSuggestionsNotification();
-
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () =>
     gURLBar.search("@example")
@@ -62,7 +47,6 @@ add_task(async function searchEngineAlias() {
 
   
   
-  
   await UrlbarTestUtils.promisePopupOpen(window, () =>
     gURLBar.search("not an engine alias")
   );
@@ -72,14 +56,10 @@ add_task(async function searchEngineAlias() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
-
-  resetNotification();
 });
 
 
 add_task(async function searchRestriction() {
-  let resetNotification = enableSearchSuggestionsNotification();
-
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () =>
     gURLBar.search(UrlbarTokenizer.RESTRICT.SEARCH)
@@ -91,14 +71,10 @@ add_task(async function searchRestriction() {
   assertOneOffButtonsVisible(false);
 
   await UrlbarTestUtils.promisePopupClose(window);
-
-  resetNotification();
 });
 
 
 add_task(async function searchTwice() {
-  let resetNotification = enableSearchSuggestionsNotification();
-
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () => gURLBar.search("test"));
   ok(gURLBar.hasAttribute("focused"), "url bar is focused");
@@ -111,14 +87,10 @@ add_task(async function searchTwice() {
   await assertUrlbarValue("test");
   assertOneOffButtonsVisible(true);
   await UrlbarTestUtils.promisePopupClose(window);
-
-  resetNotification();
 });
 
 
 add_task(async function searchIME() {
-  let resetNotification = enableSearchSuggestionsNotification();
-
   
   gURLBar.blur();
   await UrlbarTestUtils.promisePopupOpen(window, () => gURLBar.search("test"));
@@ -143,30 +115,7 @@ add_task(async function searchIME() {
   assertOneOffButtonsVisible(true);
 
   await UrlbarTestUtils.promisePopupClose(window);
-
-  resetNotification();
 });
-
-
-
-
-
-
-
-
-function enableSearchSuggestionsNotification() {
-  let which = gURLBar._whichSearchSuggestionsNotification || undefined;
-  gURLBar._whichSearchSuggestionsNotification = "opt-out";
-  Services.prefs.setIntPref("timesBeforeHidingSuggestionsHint", 10);
-  return function reset() {
-    if (which === undefined) {
-      delete gURLBar._whichSearchSuggestionsNotification;
-    } else {
-      gURLBar._whichSearchSuggestionsNotification = which;
-    }
-    Services.prefs.clearUserPref("timesBeforeHidingSuggestionsHint");
-  };
-}
 
 
 

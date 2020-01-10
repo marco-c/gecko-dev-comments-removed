@@ -300,11 +300,6 @@ pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.searches",             true);
 
 
-pref("browser.urlbar.userMadeSearchSuggestionsChoice", false);
-
-pref("browser.urlbar.timesBeforeHidingSuggestionsHint", 4);
-
-
 
 pref("browser.urlbar.maxCharsForSearchSuggestions", 20);
 
