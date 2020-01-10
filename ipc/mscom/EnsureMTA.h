@@ -10,8 +10,11 @@
 #include "MainThreadUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Unused.h"
+#include "mozilla/mscom/AgileReference.h"
 #include "mozilla/mscom/Utils.h"
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
@@ -107,7 +110,69 @@ class MOZ_STACK_CLASS EnsureMTA final {
     MOZ_ASSERT(waitResult == WAIT_OBJECT_0);
   }
 
+  using CreateInstanceAgileRefPromise =
+      MozPromise<AgileReference, HRESULT, false>;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static RefPtr<CreateInstanceAgileRefPromise> CreateInstance(REFCLSID aClsid,
+                                                              REFIID aIid);
+
  private:
+  static RefPtr<CreateInstanceAgileRefPromise> CreateInstanceInternal(
+      REFCLSID aClsid, REFIID aIid);
+
   static nsCOMPtr<nsIThread> GetMTAThread();
 
   
