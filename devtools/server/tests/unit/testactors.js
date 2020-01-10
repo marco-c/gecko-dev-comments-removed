@@ -102,7 +102,7 @@ function TestTargetActor(connection, global) {
   this._attached = false;
   this._extraActors = {};
   
-  this._extraActors.contextActor = this.threadActor;
+  this._extraActors.threadActor = this.threadActor;
   this.makeDebugger = makeDebugger.bind(null, {
     findDebuggees: () => [this._global],
     shouldAddNewGlobalAsDebuggee: g => {

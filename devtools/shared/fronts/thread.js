@@ -47,7 +47,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     this.before("resumed", this._beforeResumed);
     this.before("detached", this._beforeDetached);
     
-    this.formAttributeName = "contextActor";
+    this.formAttributeName = "threadActor";
   }
 
   get state() {
