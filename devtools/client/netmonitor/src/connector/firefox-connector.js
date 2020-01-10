@@ -96,6 +96,11 @@ class FirefoxConnector {
       this.emulationFront = null;
     }
 
+    if (this.webSocketFront) {
+      this.webSocketFront.destroy();
+      this.webSocketFront = null;
+    }
+
     if (this.tabTarget) {
       this.tabTarget.off("will-navigate", this.willNavigate);
       this.tabTarget.off("navigate", this.navigate);
@@ -123,6 +128,27 @@ class FirefoxConnector {
     this.webConsoleClient.on("documentEvent", this.onDocEvent);
 
     
+    if (Services.prefs.getBoolPref(
+      "devtools.netmonitor.features.webSockets")) {
+      try {
+        
+        this.webSocketFront = await this.tabTarget.getFront("webSocket");
+        this.webSocketFront.startListening();
+
+        this.webSocketFront.on("webSocketOpened",
+          this.dataProvider.onWebSocketOpened);
+        this.webSocketFront.on("webSocketClosed",
+          this.dataProvider.onWebSocketClosed);
+        this.webSocketFront.on("frameReceived",
+          this.dataProvider.onFrameReceived);
+        this.webSocketFront.on("frameSent",
+          this.dataProvider.onFrameSent);
+      } catch (e) {
+        
+      }
+    }
+
+    
     
     await this.webConsoleClient.startListeners(["DocumentEvents"]);
   }
@@ -130,6 +156,17 @@ class FirefoxConnector {
   async removeListeners() {
     if (this.tabTarget) {
       this.tabTarget.off("close", this.disconnect);
+      if (this.webSocketFront) {
+        this.webSocketFront.off("webSocketOpened",
+          this.dataProvider.onWebSocketOpened);
+        this.webSocketFront.off("webSocketClosed",
+          this.dataProvider.onWebSocketClosed);
+        this.webSocketFront.off("frameReceived",
+          this.dataProvider.onFrameReceived);
+        this.webSocketFront.off("frameSent",
+          this.dataProvider.onFrameSent);
+        this.webSocketFront.stopListening();
+      }
     }
     if (this.webConsoleClient) {
       this.webConsoleClient.off("networkEvent", this.dataProvider.onNetworkEvent);
