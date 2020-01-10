@@ -644,7 +644,8 @@ class gfxUserFontEntry : public gfxFontEntry {
  protected:
   const uint8_t* SanitizeOpenTypeData(const uint8_t* aData, uint32_t aLength,
                                       uint32_t& aSaneLength,
-                                      gfxUserFontType& aFontType);
+                                      gfxUserFontType& aFontType,
+                                      nsTArray<nsCString>& aMessages);
 
   
   void LoadNextSrc();
@@ -680,7 +681,7 @@ class gfxUserFontEntry : public gfxFontEntry {
   void ContinuePlatformFontLoadOnMainThread(
       const uint8_t* aOriginalFontData, uint32_t aOriginalLength,
       gfxUserFontType aFontType, const uint8_t* aSanitizedFontData,
-      uint32_t aSanitizedLength,
+      uint32_t aSanitizedLength, nsTArray<nsCString>&& aMessages,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
   
@@ -688,7 +689,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   bool LoadPlatformFont(const uint8_t* aOriginalFontData,
                         uint32_t aOriginalLength, gfxUserFontType aFontType,
                         const uint8_t* aSanitizedFontData,
-                        uint32_t aSanitizedLength);
+                        uint32_t aSanitizedLength,
+                        nsTArray<nsCString>&& aMessages);
 
   
   
