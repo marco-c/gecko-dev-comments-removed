@@ -74,7 +74,7 @@ struct AnimationProperty {
 
   Maybe<AnimationPerformanceWarning> mPerformanceWarning;
 
-  InfallibleTArray<AnimationPropertySegment> mSegments;
+  nsTArray<AnimationPropertySegment> mSegments;
 
   
   
@@ -240,9 +240,7 @@ class KeyframeEffect : public AnimationEffect {
   nsCSSPropertyIDSet GetPropertiesForCompositor(EffectSet& aEffects,
                                                 const nsIFrame* aFrame) const;
 
-  const InfallibleTArray<AnimationProperty>& Properties() const {
-    return mProperties;
-  }
+  const nsTArray<AnimationProperty>& Properties() const { return mProperties; }
 
   
   
