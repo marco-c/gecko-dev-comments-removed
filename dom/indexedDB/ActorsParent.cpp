@@ -25734,9 +25734,17 @@ bool Cursor::CursorOpBase::SendFailureResult(nsresult aResultCode) {
     
     
     
-    if (Transaction()->IsInvalidated() && !mFiles.IsEmpty()) {
-      mFiles.Clear();
-    }
+    
+    
+    
+    NS_WARNING_ASSERTION(
+        !mFiles.IsEmpty() && !Transaction()->IsInvalidated(),
+        "Expected empty mFiles when transaction has not been invalidated");
+
+    
+    
+    
+    mFiles.Clear();
 
     mCursor->SendResponseInternal(mResponse, mFiles);
   }
