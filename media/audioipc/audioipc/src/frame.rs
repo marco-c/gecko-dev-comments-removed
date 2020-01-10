@@ -96,6 +96,9 @@ where
             assert!(!self.eof);
 
             
+            self.read_buf.reserve(INITIAL_CAPACITY);
+
+            
             
             
             if try_ready!(self.io.read_buf(&mut self.read_buf)) == 0 {
