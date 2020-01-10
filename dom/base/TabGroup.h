@@ -101,6 +101,7 @@ class TabGroup final : public SchedulerGroup,
   
   uint32_t Count(bool aActiveOnly = false) const;
 
+  nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows() const;
   const nsTArray<nsPIDOMWindowOuter*>& GetWindows() { return mWindows; }
 
   

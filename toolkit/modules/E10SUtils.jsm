@@ -659,14 +659,11 @@ var E10SUtils = {
     
     
     
-    let isOnlyToplevelBrowsingContext =
-        !aDocShell.browsingContext.parent &&
-        (aDocShell.browsingContext.group.getToplevels().length == 1);
     if (
       !aHasPostData &&
       Services.appinfo.remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
       !aDocShell.awaitingLargeAlloc &&
-      isOnlyToplevelBrowsingContext
+      aDocShell.isOnlyToplevelInTabGroup
     ) {
       return false;
     }
