@@ -23,19 +23,10 @@ class WebConsoleConnectionProxy {
 
 
 
-  constructor(webConsoleUI, target, isBrowserConsole, fissionSupport) {
+  constructor(webConsoleUI, target) {
     this.webConsoleUI = webConsoleUI;
     this.target = target;
-    this.isBrowserConsole = isBrowserConsole;
-    this.fissionSupport = fissionSupport;
-
-    
-
-
-
-
-
-    this.client = target.client;
+    this.fissionSupport = this.webConsoleUI.fissionSupport;
 
     this._connecter = null;
 
@@ -68,6 +59,7 @@ class WebConsoleConnectionProxy {
     this.target.on("navigate", this._onTabNavigated);
 
     const connection = (async () => {
+      this.client = this.target.client;
       this.webConsoleClient = await this.target.getFront("console");
       this._addWebConsoleClientEventListeners();
       await this._attachConsole();
@@ -384,7 +376,6 @@ class WebConsoleConnectionProxy {
 
     this.client = null;
     this.webConsoleClient = null;
-    this.target = null;
     this.webConsoleUI = null;
   }
 }

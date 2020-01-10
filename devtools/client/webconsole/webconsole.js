@@ -60,16 +60,16 @@ class WebConsole {
 
 
   constructor(
-    target,
+    toolbox,
     iframeWindow,
     chromeWindow,
     isBrowserConsole = false,
     fissionSupport = false
   ) {
+    this.toolbox = toolbox;
     this.iframeWindow = iframeWindow;
     this.chromeWindow = chromeWindow;
     this.hudId = "hud_" + ++gHudId;
-    this.target = target;
     this.browserWindow = this.chromeWindow.top;
     this.isBrowserConsole = isBrowserConsole;
     this.fissionSupport = fissionSupport;
@@ -84,6 +84,10 @@ class WebConsole {
     this._destroyer = null;
 
     EventEmitter.decorate(this);
+  }
+
+  get target() {
+    return this.toolbox.target;
   }
 
   
