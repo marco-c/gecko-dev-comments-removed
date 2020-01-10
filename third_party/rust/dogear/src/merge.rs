@@ -1857,6 +1857,20 @@ pub struct CompletionOps<'t> {
     pub upload: Vec<Upload<'t>>,
 }
 
+impl<'t> CompletionOps<'t> {
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.change_guids.is_empty()
+            && self.apply_remote_items.is_empty()
+            && self.apply_new_local_structure.is_empty()
+            && self.flag_for_upload.is_empty()
+            && self.skip_upload.is_empty()
+            && self.flag_as_merged.is_empty()
+            && self.upload.is_empty()
+    }
+}
+
 
 
 

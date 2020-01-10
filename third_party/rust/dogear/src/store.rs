@@ -24,23 +24,29 @@ use crate::tree::Tree;
 
 
 
-pub trait Store<E: From<Error>> {
+pub trait Store {
     
+    type Ok;
+
     
-    fn fetch_local_tree(&self) -> Result<Tree, E>;
+    type Error: From<Error>;
 
     
     
-    fn fetch_remote_tree(&self) -> Result<Tree, E>;
+    fn fetch_local_tree(&self) -> Result<Tree, Self::Error>;
+
+    
+    
+    fn fetch_remote_tree(&self) -> Result<Tree, Self::Error>;
 
     
     
     
     
-    fn apply<'t>(&mut self, root: MergedRoot<'t>) -> Result<(), E>;
+    fn apply<'t>(&mut self, root: MergedRoot<'t>) -> Result<Self::Ok, Self::Error>;
 
     
-    fn merge(&mut self) -> Result<(), E> {
+    fn merge(&mut self) -> Result<Self::Ok, Self::Error> {
         self.merge_with_driver(&DefaultDriver, &DefaultAbortSignal)
     }
 
@@ -51,7 +57,7 @@ pub trait Store<E: From<Error>> {
         &mut self,
         driver: &impl Driver,
         signal: &impl AbortSignal,
-    ) -> Result<(), E> {
+    ) -> Result<Self::Ok, Self::Error> {
         signal.err_if_aborted()?;
         debug!(driver, "Building local tree");
         let (local_tree, time) = with_timing(|| self.fetch_local_tree())?;
@@ -95,10 +101,10 @@ pub trait Store<E: From<Error>> {
 
         signal.err_if_aborted()?;
         debug!(driver, "Applying merged tree");
-        let ((), time) = with_timing(|| self.apply(merged_root))?;
+        let (result, time) = with_timing(|| self.apply(merged_root))?;
         driver.record_telemetry_event(TelemetryEvent::Apply(time));
 
-        Ok(())
+        Ok(result)
     }
 }
 

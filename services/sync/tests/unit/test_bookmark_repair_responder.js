@@ -346,9 +346,6 @@ add_task(async function test_folder_descendants() {
   );
 
   _("Insert missing bookmarks locally to request later");
-  
-  
-  
   let childBmk = await PlacesSyncUtils.bookmarks.insert({
     kind: "bookmark",
     recordId: Utils.makeGUID(),
@@ -371,15 +368,22 @@ add_task(async function test_folder_descendants() {
     url: "https://mozilla.org",
   });
 
-  _("Sync again; server contents shouldn't change");
+  _("Sync again");
   await Service.sync();
-  deepEqual(
-    getServerBookmarks(server)
-      .keys()
-      .sort(),
-    initialRecordIds,
-    "Second sync should not upload missing bookmarks"
-  );
+  {
+    
+    
+    
+    let collection = getServerBookmarks(server);
+    collection.remove(childBmk.recordId);
+    collection.remove(grandChildBmk.recordId);
+    collection.remove(grandChildSiblingBmk.recordId);
+    deepEqual(
+      collection.keys().sort(),
+      initialRecordIds,
+      "Second sync should not upload missing bookmarks"
+    );
+  }
 
   
   
