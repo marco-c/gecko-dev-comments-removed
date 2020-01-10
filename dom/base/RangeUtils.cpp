@@ -37,13 +37,15 @@ nsINode* RangeUtils::ComputeRootNode(nsINode* aNode) {
     nsIContent* content = aNode->AsContent();
 
     
+    
+    
+    
     if (ShadowRoot* containingShadow = content->GetContainingShadow()) {
       return containingShadow;
     }
 
     
-    
-    if (nsINode* root = content->GetBindingParent()) {
+    if (nsINode* root = content->GetClosestNativeAnonymousSubtreeRootParent()) {
       return root;
     }
   }
