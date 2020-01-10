@@ -9738,7 +9738,7 @@ ComputedStyle* nsFrame::DoGetParentComputedStyle(
           pseudo == PseudoStyleType::tableWrapper) {
         if (Servo_Element_IsDisplayContents(parentElement)) {
           RefPtr<ComputedStyle> style =
-              ServoStyleSet::ResolveServoStyle(*parentElement);
+              PresShell()->StyleSet()->ResolveServoStyle(*parentElement);
           
           
           

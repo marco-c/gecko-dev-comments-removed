@@ -40,61 +40,6 @@
 
 
 
-scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
-  
-
-
-
-  all: initial;
-  visibility: inherit;
-
-  
-  -moz-list-reversed: initial;
-  -moz-font-smoothing-background-color: initial;
-
-  
-
-
-
-
-
-  direction: ltr;
-
-  
-
-
-
-  font: 16px sans-serif;
-
-  
-
-
-
-
-
-  -moz-user-focus: ignore;
-  -moz-user-select: none;
-  display: -moz-box;
-  box-sizing: border-box;
-}
-
-thumb {
-  
-
-  -moz-user-modify: initial;
-}
-
-
-
-
-
-scrollbarbutton, slider, thumb {
-  direction: inherit;
-  cursor: inherit;
-}
-
-
-
 resizer {
   position: relative;
   z-index: 2147483647;
@@ -152,6 +97,11 @@ resizer[dir="topright"] {
 
 
 
+
+scrollbar[orient="horizontal"] {
+  direction: ltr;
+}
+
 thumb {
   display: -moz-box !important;
 }
@@ -202,7 +152,7 @@ scrollbar[value="hidden"] {
 }
 
 @media (-moz-scrollbar-thumb-proportional) {
-  thumb {
+  thumb[sbattr="scrollbar-thumb"] {
     -moz-box-flex: 1;
   }
 }

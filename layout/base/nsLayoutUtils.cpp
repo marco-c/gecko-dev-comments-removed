@@ -10044,12 +10044,12 @@ ComputedStyle* nsLayoutUtils::StyleForScrollbar(nsIFrame* aScrollbarPart) {
   
   
   
-  MOZ_ASSERT(
-      content == aScrollbarPart->PresContext()->Document()->GetRootElement(),
-      "Root element is the only case for this fallback "
-      "path to be triggered");
+  nsPresContext* pc = aScrollbarPart->PresContext();
+  MOZ_ASSERT(content == pc->Document()->GetRootElement(),
+             "Root element is the only case for this fallback "
+             "path to be triggered");
   RefPtr<ComputedStyle> style =
-      ServoStyleSet::ResolveServoStyle(*content->AsElement());
+      pc->StyleSet()->ResolveServoStyle(*content->AsElement());
   
   
   return style.get();
