@@ -86,7 +86,11 @@ window.Application = {
 
   async updateWorkers() {
     const { service } = await this.client.mainRoot.listAllWorkers();
-    this.actions.updateWorkers(service);
+    
+    
+    const workers = service.filter(x => x.url && x.scope);
+
+    this.actions.updateWorkers(workers);
   },
 
   updateDomain() {
