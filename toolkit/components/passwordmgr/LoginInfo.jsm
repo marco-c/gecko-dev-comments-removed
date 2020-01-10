@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -33,24 +32,6 @@ nsLoginInfo.prototype = {
   password: null,
   usernameField: null,
   passwordField: null,
-
-  get displayOrigin() {
-    let displayOrigin = this.origin;
-    try {
-      let uri = Services.io.newURI(this.origin);
-      
-      displayOrigin = uri.displayHostPort || this.origin;
-    } catch (ex) {
-      
-      
-    }
-
-    if (this.httpRealm === null) {
-      return displayOrigin;
-    }
-
-    return `${displayOrigin} (${this.httpRealm})`;
-  },
 
   
 

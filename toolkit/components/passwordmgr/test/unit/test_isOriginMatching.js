@@ -11,17 +11,6 @@ add_task(function test_isOriginMatching() {
     [true, "http://example.com:8080", "http://example.com:8080"],
     [true, "https://example.com", "https://example.com"],
     [true, "https://example.com:8443", "https://example.com:8443"],
-
-    
-    [true, "javascript:", "javascript:"],
-    [false, "javascript:", "http://example.com"],
-    [false, "http://example.com", "javascript:"],
-
-    
-    [true, null, null],
-    [false, null, "http://example.com"],
-    [false, "http://example.com", null],
-
     [false, "http://example.com", "http://mozilla.org"],
     [false, "http://example.com", "http://example.com:8080"],
     [false, "https://example.com", "http://example.com"],
@@ -152,18 +141,6 @@ add_task(function test_isOriginMatching() {
       "http://sub.example.com",
       "http://sub.example.mozilla.com",
       { acceptDifferentSubdomains: false },
-    ],
-
-    
-    [
-      false,
-      null,
-      "http://example.com",
-      {
-        acceptDifferentSubdomains: false,
-        acceptWildcardMatch: true,
-        schemeUpgrades: true,
-      },
     ],
   ];
   for (let tc of testcases) {
