@@ -166,7 +166,12 @@ class FramePayload extends Component {
       },
     ];
     if (!isTruncated && this.state.isFormattedData) {
-      items.push({
+      
+
+
+
+
+      items.unshift({
         className: "formattedData",
         component: JSONPreview({
           object: this.state.formattedData,
