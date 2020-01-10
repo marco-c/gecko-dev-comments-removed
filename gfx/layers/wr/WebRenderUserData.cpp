@@ -263,7 +263,7 @@ void WebRenderImageData::CreateAsyncImageWebRenderCommands(
   
   
   
-  wr::LayoutRect r = wr::ToLayoutRect(aBounds);
+  wr::LayoutRect r = wr::ToRoundedLayoutRect(aBounds);
   aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref(),
                        false);
 
