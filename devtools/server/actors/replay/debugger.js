@@ -477,9 +477,6 @@ ReplayDebugger.prototype = {
       this._direction = Direction.NONE;
 
       
-      this._control.repaint();
-
-      
       
       this._cancelPerformPause = true;
     }
@@ -538,12 +535,13 @@ ReplayDebugger.prototype = {
 
   
   
+  
   _capturePauseData() {
     if (this._pool.frames.length) {
       return;
     }
 
-    const pauseData = this._control.getPauseData();
+    const pauseData = this._control.getPauseDataAndRepaint();
     if (!pauseData.frames) {
       return;
     }

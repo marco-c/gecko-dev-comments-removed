@@ -366,8 +366,6 @@ Services.obs.addObserver(
         contents.arguments.forEach(v =>
           contents.argumentsData.addValue(v, PropertyLevels.FULL)
         );
-
-        ClearPausedState();
       }
 
       newConsoleMessage(contents);
@@ -912,12 +910,6 @@ function getDebuggeeValue(value) {
 }
 
 
-function ClearPausedState() {
-  gPausedObjects = new IdMap();
-  gDereferencedObjects = new Map();
-}
-
-
 
 
 
@@ -1015,7 +1007,6 @@ const gManifestStartHandlers = {
   getPauseData() {
     divergeFromRecording();
     const data = getPauseData();
-    data.paintData = RecordReplayControl.repaint();
     RecordReplayControl.manifestFinished(data);
   },
 
@@ -1034,12 +1025,7 @@ const gManifestStartHandlers = {
     const displayName = formatDisplayName(frame);
     const rv = frame.evalWithBindings(`[${text}]`, { displayName });
 
-    let pauseData;
-    if (!skipPauseData) {
-      pauseData = getPauseData();
-      pauseData.paintData = RecordReplayControl.repaint();
-      ClearPausedState();
-    }
+    const pauseData = skipPauseData ? undefined : getPauseData();
 
     let result;
     if (rv.return) {
@@ -1188,6 +1174,12 @@ function processManifestAfterCheckpoint(point, restoredSnapshot) {
 function HitCheckpoint(id) {
   gLastCheckpoint = id;
   const point = currentExecutionPoint();
+
+  
+  
+  
+  gPausedObjects = new IdMap();
+  gDereferencedObjects = new Map();
 
   try {
     processManifestAfterCheckpoint(point);
@@ -1778,13 +1770,16 @@ PreviewedObjects.prototype = {
 
 
 function getPauseData() {
+  const paintData = RecordReplayControl.repaint();
+
   const numFrames = countScriptFrames();
   if (!numFrames) {
-    return {};
+    return { paintData };
   }
 
   const rv = new PreviewedObjects();
 
+  rv.paintData = paintData;
   rv.frames = [];
   rv.scripts = {};
   rv.offsetMetadata = [];
