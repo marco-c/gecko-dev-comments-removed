@@ -719,6 +719,10 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     
     if (why == AbnormalShutdown) {
       frameLoader->MaybeNotifyCrashed(mBrowsingContext, GetIPCChannel());
+
+      if (!mBrowsingContext->IsTopContent()) {
+        OnSubFrameCrashed();
+      }
     }
   }
 
@@ -3870,6 +3874,61 @@ FakeChannel::OnAuthCancelled(nsISupports* aContext, bool userCancel) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
+}
+
+void BrowserParent::OnSubFrameCrashed() {
+  if (mBrowsingContext->IsDiscarded()) {
+    return;
+  }
+
+  auto processId = Manager()->ChildID();
+  BrowsingContext* parent = mBrowsingContext->GetParent();
+  ContentParent* embedderProcess = parent->Canonical()->GetContentParent();
+  if (!embedderProcess) {
+    return;
+  }
+
+  ContentParent* manager = Manager();
+  
+  
+  
+  mBrowsingContext->SetOwnerProcessId(embedderProcess->ChildID());
+
+  
+  
+  mBrowsingContext->PostOrderWalk([&](auto* aContext) {
+    
+    
+    
+
+    aContext->Group()->EachOtherParent(manager, [&](auto* aParent) {
+      Unused << aParent->SendCacheBrowsingContextChildren(aContext);
+    });
+    aContext->CacheChildren( true);
+
+    
+    
+    
+    if (aContext->Canonical()->IsOwnedByProcess(processId)) {
+      
+      
+      
+      RefPtr<BrowsingContext> context = aContext;
+      auto resolve = [context](bool) {};
+      auto reject = [context](ResponseRejectReason) {};
+      aContext->Group()->EachOtherParent(manager, [&](auto* aParent) {
+        aParent->SendDetachBrowsingContext(aContext->Id(), resolve, reject);
+      });
+
+      aContext->Detach( true);
+    }
+  });
+
+  MOZ_DIAGNOSTIC_ASSERT(!mBrowsingContext->GetChildren().Length());
+  
+  if (GetBrowserBridgeParent()) {
+    Unused << GetBrowserBridgeParent()->SendSubFrameCrashed(mBrowsingContext);
+  }
 }
 
 }  
