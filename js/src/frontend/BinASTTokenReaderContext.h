@@ -411,12 +411,12 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     
     
     template <Compression Compression>
-    HuffmanLookup getHuffmanLookup();
+    MOZ_MUST_USE JS::Result<HuffmanLookup> getHuffmanLookup(
+        BinASTTokenReaderContext& owner);
 
     
     template <Compression Compression>
-    MOZ_MUST_USE JS::Result<Ok> advanceBitBuffer(
-        BinASTTokenReaderContext& owner, const uint8_t bitLength);
+    void advanceBitBuffer(const uint8_t bitLength);
 
    private:
     
@@ -679,8 +679,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     friend BinASTTokenReaderContext;
     void init();
 
-    
-    
     bool initialized_;
     BinASTTokenReaderContext& reader_;
   };
