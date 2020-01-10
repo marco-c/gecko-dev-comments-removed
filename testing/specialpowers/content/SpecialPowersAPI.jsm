@@ -1438,6 +1438,67 @@ class SpecialPowersAPI extends JSWindowActorChild {
     return obj;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  spawn(frame, args, task) {
+    let {caller} = Components.stack;
+    return this.sendQuery("Spawn", {
+      browsingContext: frame.browsingContext,
+      args,
+      task: String(task),
+      caller: {
+        filename: caller.filename,
+        lineNumber: caller.lineNumber,
+      },
+    });
+  }
+
+  _spawnTask(task, args, caller) {
+    let sb = Cu.Sandbox(Cu.getGlobalForObject({}),
+                        {wantGlobalProperties: ["ChromeUtils"]});
+
+    sb.SpecialPowers = this;
+    Object.defineProperty(sb, "content", {
+      get: () => { return this.contentWindow; },
+      enumerable: true,
+    });
+
+    let func = Cu.evalInSandbox(`(${task})`, sb, undefined,
+                                caller.filename, caller.lineNumber);
+
+    return func(...args);
+  }
+
   getFocusedElementForWindow(targetWindow, aDeep) {
     var outParam = {};
     Services.focus.getFocusedElementForWindow(targetWindow, aDeep, outParam);
