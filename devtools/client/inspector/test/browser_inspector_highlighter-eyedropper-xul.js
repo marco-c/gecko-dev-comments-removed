@@ -6,7 +6,7 @@
 
 
 
-const TEST_URL = URL_ROOT + "doc_inspector_highlighter_xbl.xul";
+const TEST_URL = URL_ROOT + "doc_inspector_eyedropper_disabled.xhtml";
 const TEST_URL_2 =
   "data:text/html;charset=utf-8,<h1 style='color:red'>HTML test page</h1>";
 
@@ -18,7 +18,7 @@ add_task(async function() {
   ok(isDisabled(button), "The button is hidden in the toolbar");
 
   info("Check the color picker");
-  await selectNode("#xbl-host", inspector);
+  await selectNode("#box", inspector);
 
   
   let ruleView = inspector.getPanel("ruleview").view;
