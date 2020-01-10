@@ -66,9 +66,7 @@ class Migrator(object):
 
         
         
-        files = (
-            path for path in ctx.localization_resources.keys()
-            if not path.endswith('.ftl'))
+        files = ctx.localization_resources.keys()
         blame = Blame(self.client).attribution(files)
         changesets = convert_blame_to_changesets(blame)
         known_legacy_translations = set()
@@ -133,6 +131,8 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
 
     for migration in migrations:
         migrator.run(migration)
+
+    migrator.close()
 
 
 def cli():
