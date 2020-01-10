@@ -208,9 +208,6 @@ class RenderThread final {
   void NotifyNotUsed(uint64_t aExternalImageId);
 
   
-  void NofityForUse(uint64_t aExternalImageId);
-
-  
   void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
 
   
@@ -278,6 +275,7 @@ class RenderThread final {
  private:
   explicit RenderThread(base::Thread* aThread);
 
+  void HandlePrepareForUse();
   void DeferredRenderTextureHostDestroy();
   void ShutDownTask(layers::SynchronousTask* aTask);
   void InitDeviceTask();
@@ -324,6 +322,10 @@ class RenderThread final {
 
   Mutex mRenderTextureMapLock;
   std::unordered_map<uint64_t, RefPtr<RenderTextureHost>> mRenderTextures;
+  
+  
+  
+  std::list<RefPtr<RenderTextureHost>> mRenderTexturesPrepareForUse;
   
   
   

@@ -66,13 +66,12 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
     return InvalidToWrExternalImage();
   }
 
+  MOZ_ASSERT(mAttachedToGLContext);
   if (!mAttachedToGLContext) {
-    
-    mCachedRendering = aRendering;
-    if (!EnsureAttachedToGLContext()) {
-      return InvalidToWrExternalImage();
-    }
-  } else if (IsFilterUpdateNecessary(aRendering)) {
+    return InvalidToWrExternalImage();
+  }
+
+  if (IsFilterUpdateNecessary(aRendering)) {
     
     mCachedRendering = aRendering;
     ActivateBindAndTexParameteri(mGL, LOCAL_GL_TEXTURE0,
@@ -83,7 +82,7 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
   if (mContinuousUpdate) {
     MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
     mSurfTex->UpdateTexImage();
-  } else if (mPrepareStatus == STATUS_PREPARE_NEEDED) {
+  } else if (mPrepareStatus == STATUS_UPDATE_TEX_IMAGE_NEEDED) {
     MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
     
     
@@ -139,27 +138,6 @@ bool RenderAndroidSurfaceTextureHostOGL::EnsureAttachedToGLContext() {
   return true;
 }
 
-bool RenderAndroidSurfaceTextureHostOGL::CheckIfAttachedToGLContext() {
-  if (mAttachedToGLContext) {
-    return true;
-  }
-
-  if (!mGL) {
-    mGL = RenderThread::Get()->SharedGL();
-  }
-
-  if (!mSurfTex || !mGL || !mGL->MakeCurrent()) {
-    return false;
-  }
-
-  if (!mSurfTex->IsAttachedToGLContext((int64_t)mGL.get())) {
-    return false;
-  }
-
-  mAttachedToGLContext = true;
-  return true;
-}
-
 void RenderAndroidSurfaceTextureHostOGL::PrepareForUse() {
   
   
@@ -169,65 +147,43 @@ void RenderAndroidSurfaceTextureHostOGL::PrepareForUse() {
   MOZ_ASSERT(RenderThread::IsInRenderThread());
   MOZ_ASSERT(mPrepareStatus == STATUS_NONE);
 
+  if (!EnsureAttachedToGLContext()) {
+    return;
+  }
+
   if (mContinuousUpdate) {
     return;
   }
 
-  mPrepareStatus = STATUS_MIGHT_BE_USED;
+  MOZ_ASSERT(mSurfTex);
+  mPrepareStatus = STATUS_UPDATE_TEX_IMAGE_NEEDED;
 
-  if (mSurfTex && mSurfTex->IsSingleBuffer()) {
+  if (mSurfTex->IsSingleBuffer()) {
     
     
-    EnsureAttachedToGLContext();
     mSurfTex->UpdateTexImage();
     mPrepareStatus = STATUS_PREPARED;
-  } else {
-    
-    
-    
-    
-    
-    if (CheckIfAttachedToGLContext()) {
-      mPrepareStatus = STATUS_PREPARE_NEEDED;
-    }
-  }
-}
-
-void RenderAndroidSurfaceTextureHostOGL::NofityForUse() {
-  MOZ_ASSERT(RenderThread::IsInRenderThread());
-
-  if (mPrepareStatus == STATUS_MIGHT_BE_USED) {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!mSurfTex || !mSurfTex->IsSingleBuffer());
-    if (!EnsureAttachedToGLContext()) {
-      return;
-    }
-    mPrepareStatus = STATUS_PREPARE_NEEDED;
   }
 }
 
 void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
   MOZ_ASSERT(RenderThread::IsInRenderThread());
 
-  if (mSurfTex && mSurfTex->IsSingleBuffer() &&
-      mPrepareStatus == STATUS_PREPARED) {
-    if (!EnsureAttachedToGLContext()) {
-      return;
-    }
+  if (!mSurfTex) {
+    MOZ_ASSERT(mPrepareStatus == STATUS_NONE);
+    return;
+  }
+
+  if (mSurfTex->IsSingleBuffer()) {
+    MOZ_ASSERT(mPrepareStatus == STATUS_PREPARED);
+    MOZ_ASSERT(mAttachedToGLContext);
     
     mGL->MakeCurrent();
     mSurfTex->ReleaseTexImage();
-  } else if (mSurfTex && mPrepareStatus == STATUS_PREPARE_NEEDED) {
+  } else if (mPrepareStatus == STATUS_UPDATE_TEX_IMAGE_NEEDED) {
+    MOZ_ASSERT(mAttachedToGLContext);
     
     
-    MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
-    if (!EnsureAttachedToGLContext()) {
-      return;
-    }
     mSurfTex->UpdateTexImage();
   }
 

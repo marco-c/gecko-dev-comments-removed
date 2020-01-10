@@ -41,8 +41,13 @@ class RenderTextureHost {
   virtual void Unlock() = 0;
   virtual void ClearCachedResources() {}
 
+  
+  
+  
   virtual void PrepareForUse() {}
-  virtual void NofityForUse() {}
+  
+  
+  
   virtual void NotifyNotUsed() {}
 
   virtual RenderDXGITextureHostOGL* AsRenderDXGITextureHostOGL() {
