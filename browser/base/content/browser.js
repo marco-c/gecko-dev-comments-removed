@@ -2906,6 +2906,9 @@ function focusAndSelectUrlBar() {
   }
 
   gURLBar.select();
+  
+  
+  gURLBar.startLayoutExtend();
 }
 
 function openLocation(event) {

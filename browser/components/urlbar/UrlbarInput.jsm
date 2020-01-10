@@ -1008,12 +1008,25 @@ class UrlbarInput {
   }
 
   startLayoutExtend() {
+    
+    
     if (
       !this.hasAttribute("breakout") ||
-      this.hasAttribute("breakout-extend") ||
-      
-      
-      (this.selectionStart != this.selectionEnd && !this.view.isOpen) ||
+      this.hasAttribute("breakout-extend")
+    ) {
+      return;
+    }
+    
+    
+    if (
+      this.selectionStart != this.selectionEnd &&
+      !(this.selectionStart == 0 && this.selectionEnd == this.value.length) &&
+      !this.view.isOpen
+    ) {
+      return;
+    }
+    
+    if (
       !(
         (this.getAttribute("focused") == "true" &&
           !this.textbox.classList.contains("hidden-focus")) ||
@@ -1869,6 +1882,14 @@ class UrlbarInput {
         
         if (!UrlbarPrefs.get("ui.popup.disable_autohide")) {
           this.view.close();
+        }
+
+        if (
+          event.target.id == "tabs-newtab-button" ||
+          event.target.id == "new-tab-button" ||
+          event.target.classList.contains("tab-close-button")
+        ) {
+          break;
         }
 
         
