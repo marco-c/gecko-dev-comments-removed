@@ -53,8 +53,7 @@ WindowGlobalParent::WindowGlobalParent(const WindowGlobalInit& aInit,
       mOuterWindowId(aInit.outerWindowId()),
       mInProcess(aInProcess),
       mIPCClosed(true),  
-      mIsInitialDocument(false),
-      mHasBeforeUnload(false) {
+      mIsInitialDocument(false) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(), "Parent process only");
   MOZ_RELEASE_ASSERT(mDocumentPrincipal, "Must have a valid principal");
 
@@ -182,11 +181,6 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentURI(nsIURI* aURI) {
   
   
   mDocumentURI = aURI;
-  return IPC_OK();
-}
-
-IPCResult WindowGlobalParent::RecvSetHasBeforeUnload(bool aHasBeforeUnload) {
-  mHasBeforeUnload = aHasBeforeUnload;
   return IPC_OK();
 }
 
