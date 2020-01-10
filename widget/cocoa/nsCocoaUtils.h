@@ -392,6 +392,18 @@ class nsCocoaUtils {
 
 
 
+  static bool ShouldZoomOnTitlebarDoubleClick();
+
+  
+
+
+
+  static bool ShouldMinimizeOnTitlebarDoubleClick();
+
+  
+
+
+
   static nsresult GetVideoCapturePermissionState(uint16_t& aPermissionState);
 
   
