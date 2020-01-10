@@ -5518,14 +5518,16 @@ void EventStateManager::RemoveNodeFromChainIfNeeded(EventStates aState,
   
   
   
+  
   NS_ASSERTION(nsContentUtils::ContentIsFlattenedTreeDescendantOf(
                    leaf, aContentRemoved) ||
-                   leaf->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT),
+               leaf->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT),
                "Flat tree and active / hover chain got out of sync");
 
   nsIContent* newLeaf = aContentRemoved->GetFlattenedTreeParent();
-  MOZ_ASSERT_IF(newLeaf, newLeaf->IsElement() &&
-                             newLeaf->AsElement()->State().HasState(aState));
+  MOZ_ASSERT(!newLeaf || newLeaf->IsElement());
+  NS_ASSERTION(!newLeaf || newLeaf->AsElement()->State().HasState(aState),
+               "State got out of sync because of shadow DOM");
   if (aNotify) {
     SetContentState(newLeaf, aState);
   } else {
