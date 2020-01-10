@@ -461,6 +461,8 @@ function BuildConditionSandbox(aURL) {
     sandbox.retainedDisplayList =
       prefs.getBoolPref("layout.display-list.retain");
 
+    sandbox.usesOverlayScrollbars = g.windowUtils.usesOverlayScrollbars;
+
     
     sandbox.Android = xr.OS == "Android";
     sandbox.cocoaWidget = xr.widgetToolkit == "cocoa";

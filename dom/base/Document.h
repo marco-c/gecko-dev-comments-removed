@@ -4123,6 +4123,10 @@ class Document : public nsINode,
   bool InRDMPane() const { return mInRDMPane; }
   void SetInRDMPane(bool aInRDMPane) { mInRDMPane = aInRDMPane; }
 
+  
+  
+  static bool UseOverlayScrollbars(const Document* aDocument);
+
   static bool HasRecentlyStartedForegroundLoads();
 
  protected:
