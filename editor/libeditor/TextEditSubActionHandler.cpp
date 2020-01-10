@@ -939,8 +939,7 @@ EditActionResult TextEditor::TruncateInsertionStringForMaxLength(
   char16_t maybeLowSurrogate =
       aInsertionString.CharAt(newInsertionStringLength);
   
-  if (NS_IS_HIGH_SURROGATE(maybeHighSurrogate) &&
-      NS_IS_LOW_SURROGATE(maybeLowSurrogate)) {
+  if (NS_IS_SURROGATE_PAIR(maybeHighSurrogate, maybeLowSurrogate)) {
     newInsertionStringLength--;
   }
   
