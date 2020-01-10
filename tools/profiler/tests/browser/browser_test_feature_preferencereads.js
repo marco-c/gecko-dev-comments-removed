@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(10);
+
 function countDpiPrefReadsInThread(thread) {
   let count = 0;
   for (let payload of getPayloadsOfType(thread, "PreferenceRead")) {
@@ -10,6 +12,23 @@ function countDpiPrefReadsInThread(thread) {
     }
   }
   return count;
+}
+
+async function waitForPaintAfterLoad() {
+  return ContentTask.spawn(gBrowser.selectedBrowser, null, () => {
+    return new Promise(function(resolve) {
+      function listener() {
+        if (content.document.readyState == "complete") {
+          content.requestAnimationFrame(() => setTimeout(resolve, 0));
+        }
+      }
+      if (content.document.readyState != "complete") {
+        content.document.addEventListener("readystatechange", listener);
+      } else {
+        listener();
+      }
+    });
+  });
 }
 
 
@@ -34,8 +53,7 @@ add_task(async function test_profile_feature_preferencereads() {
       () => Services.appinfo.processID
     );
 
-    
-    await wait(100);
+    await waitForPaintAfterLoad();
 
     
     
@@ -54,8 +72,17 @@ add_task(async function test_profile_feature_preferencereads() {
 
     startProfiler({ features: ["threads"] });
     
-    gBrowser.reload();
-    await wait(100);
+    await ContentTask.spawn(contentBrowser, null, () => {
+      return new Promise(resolve => {
+        addEventListener("pageshow", () => resolve(), {
+          capturing: true,
+          once: true,
+        });
+        content.location.reload();
+      });
+    });
+
+    await waitForPaintAfterLoad();
 
     
     
