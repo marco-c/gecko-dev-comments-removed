@@ -172,8 +172,7 @@ class RemoteObjectProxy : public RemoteObjectProxyBase {
 
 
 
-inline bool IsRemoteObjectProxy(JSObject* aObj,
-                                prototypes::ID aProtoID) {
+inline bool IsRemoteObjectProxy(JSObject* aObj, prototypes::ID aProtoID) {
   if (!js::IsProxy(aObj)) {
     return false;
   }

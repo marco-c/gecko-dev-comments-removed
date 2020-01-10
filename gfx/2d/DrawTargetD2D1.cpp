@@ -2172,7 +2172,8 @@ already_AddRefed<ID2D1Image> DrawTargetD2D1::GetImageForSurface(
     case SurfaceType::DUAL_DT: {
       
       
-      SourceSurfaceDual* dualSurface = static_cast<SourceSurfaceDual*>(surface.get());
+      SourceSurfaceDual* dualSurface =
+          static_cast<SourceSurfaceDual*>(surface.get());
       SourceSurface* first = dualSurface->GetFirstSurface();
       if (first->GetType() == SurfaceType::D2D1_1_IMAGE) {
         MOZ_ASSERT(dualSurface->SameSurfaceTypes());

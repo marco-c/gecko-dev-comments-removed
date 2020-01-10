@@ -273,6 +273,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  
   void TriggerParentCheckDocShellIsEmpty() {
     RefPtr<nsDocShell> parent = GetParentDocshell();
     if (parent) {

@@ -105,9 +105,8 @@ class DocGroup final {
   
   bool IsActive() const;
 
-  nsresult QueueIframePostMessages(
-      already_AddRefed<nsIRunnable>&& aRunnable,
-      uint64_t aWindowId);
+  nsresult QueueIframePostMessages(already_AddRefed<nsIRunnable>&& aRunnable,
+                                   uint64_t aWindowId);
 
   void TryFlushIframePostMessages(uint64_t aWindowId);
 

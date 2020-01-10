@@ -260,13 +260,9 @@ nsDocLoader::Stop(void) {
   return rv;
 }
 
-bool nsDocLoader::TreatAsBackgroundLoad() {
-   return mTreatAsBackgroundLoad;
-}
+bool nsDocLoader::TreatAsBackgroundLoad() { return mTreatAsBackgroundLoad; }
 
-void nsDocLoader::SetBackgroundLoadIframe() {
-   mTreatAsBackgroundLoad = true;
-}
+void nsDocLoader::SetBackgroundLoadIframe() { mTreatAsBackgroundLoad = true; }
 
 bool nsDocLoader::IsBusy() {
   nsresult rv;
@@ -306,7 +302,7 @@ bool nsDocLoader::IsBusy() {
 
     
     
-    if (loader && static_cast<nsDocLoader *>(loader)->TreatAsBackgroundLoad()) {
+    if (loader && static_cast<nsDocLoader*>(loader)->TreatAsBackgroundLoad()) {
       continue;
     }
     
@@ -761,8 +757,8 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
                   (mozilla::dom::DocGroup::TryToLoadIframesInBackground() &&
                    !HasFakeOnLoadDispatched())) {
                 MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
-                    ("DocLoader:%p: Firing load event for document.open\n",
-                     this));
+                        ("DocLoader:%p: Firing load event for document.open\n",
+                         this));
 
                 
                 
@@ -777,7 +773,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
                 nsEventStatus unused = nsEventStatus_eIgnore;
                 doc->SetLoadEventFiring(true);
                 EventDispatcher::Dispatch(window, nullptr, &event, nullptr,
-                    &unused);
+                                          &unused);
                 doc->SetLoadEventFiring(false);
 
                 

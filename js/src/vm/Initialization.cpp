@@ -68,9 +68,9 @@ static void CheckCanonicalNaN() {
   
   
   
-#if !defined(JS_CODEGEN_NONE)
-#error "No JIT support for non-canonical hardware NaN"
-#endif
+#  if !defined(JS_CODEGEN_NONE)
+#    error "No JIT support for non-canonical hardware NaN"
+#  endif
 
 #else
   

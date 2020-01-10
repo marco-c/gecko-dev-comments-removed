@@ -283,7 +283,7 @@ static inline double CanonicalizeNaN(double d) {
 
 
 
-#define JS_NONCANONICAL_HARDWARE_NAN
+#  define JS_NONCANONICAL_HARDWARE_NAN
 #endif
 
 

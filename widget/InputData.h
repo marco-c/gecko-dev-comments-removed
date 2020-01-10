@@ -381,36 +381,43 @@ class PanGestureInput : public InputData {
 
   PanDeltaType mDeltaType = PANDELTA_PIXEL;
 
-  bool mHandledByAPZ: 1;
+  bool mHandledByAPZ : 1;
 
   
   
-  bool mFollowedByMomentum: 1;
-
-  
-  
-  
-  
-  
-  
-  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection: 1;
+  bool mFollowedByMomentum : 1;
 
   
   
   
   
-  bool mOverscrollBehaviorAllowsSwipe: 1;
+  
+  
+  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection : 1;
 
   
   
-  bool mSimulateMomentum: 1;
+  
+  
+  bool mOverscrollBehaviorAllowsSwipe : 1;
+
+  
+  
+  
+  bool mSimulateMomentum : 1;
 
   void SetHandledByAPZ(bool aHandled) { mHandledByAPZ = aHandled; }
-  void SetFollowedByMomentum(bool aFollowed) { mFollowedByMomentum = aFollowed; }
-  void SetRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(bool aRequires) {
-    mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection = aRequires;
+  void SetFollowedByMomentum(bool aFollowed) {
+    mFollowedByMomentum = aFollowed;
   }
-  void SetOverscrollBehaviorAllowsSwipe(bool aAllows) { mOverscrollBehaviorAllowsSwipe = aAllows; }
+  void SetRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(
+      bool aRequires) {
+    mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
+        aRequires;
+  }
+  void SetOverscrollBehaviorAllowsSwipe(bool aAllows) {
+    mOverscrollBehaviorAllowsSwipe = aAllows;
+  }
   void SetSimulateMomentum(bool aSimulate) { mSimulateMomentum = aSimulate; }
 };
 

@@ -196,8 +196,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void UpdateHitTestingTree(Layer* aRoot,
-                            bool aIsFirstPaint, LayersId aOriginatingLayersId,
+
+  void UpdateHitTestingTree(Layer* aRoot, bool aIsFirstPaint,
+                            LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
 
   

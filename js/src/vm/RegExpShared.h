@@ -48,10 +48,9 @@ enum RegExpRunStatus {
 
 
 
-struct RegExpByteCodeHeader
-{
-  uint32_t length;          
-  uint32_t numRegisters;    
+struct RegExpByteCodeHeader {
+  uint32_t length;        
+  uint32_t numRegisters;  
 };
 
 

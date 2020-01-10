@@ -1678,7 +1678,6 @@ class ICCall_Fallback : public ICMonitoredFallbackStub {
 };
 
 
-
 class ICGetIterator_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
