@@ -212,9 +212,12 @@ BrowserCLH.prototype = {
     }
 
     function shouldIgnoreLoginManagerEvent(event) {
+      let nodePrincipal = event.target.nodePrincipal;
       
       
-      return event.target.nodePrincipal.isNullPrincipal;
+      return (
+        nodePrincipal.isNullPrincipal || nodePrincipal.URI.schemeIs("about")
+      );
     }
 
     let options = {
