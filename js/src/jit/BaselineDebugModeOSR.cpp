@@ -321,7 +321,11 @@ static void PatchBaselineFramesForDebugMode(
             
             
             
-            frame.baselineFrame()->switchFromJitToInterpreter(cx, pc);
+            if (kind == RetAddrEntry::Kind::DebugPrologue) {
+              frame.baselineFrame()->switchFromJitToInterpreterAtPrologue(cx);
+            } else {
+              frame.baselineFrame()->switchFromJitToInterpreter(cx, pc);
+            }
             switch (kind) {
               case RetAddrEntry::Kind::DebugTrap:
                 
