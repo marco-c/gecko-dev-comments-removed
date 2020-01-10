@@ -395,22 +395,12 @@ bool BackgroundChildImpl::DeallocPFileCreatorChild(PFileCreatorChild* aActor) {
   return true;
 }
 
-dom::PIPCBlobInputStreamChild*
+already_AddRefed<dom::PIPCBlobInputStreamChild>
 BackgroundChildImpl::AllocPIPCBlobInputStreamChild(const nsID& aID,
                                                    const uint64_t& aSize) {
-  
-  
-
   RefPtr<dom::IPCBlobInputStreamChild> actor =
       new dom::IPCBlobInputStreamChild(aID, aSize);
-  return actor.forget().take();
-}
-
-bool BackgroundChildImpl::DeallocPIPCBlobInputStreamChild(
-    dom::PIPCBlobInputStreamChild* aActor) {
-  RefPtr<dom::IPCBlobInputStreamChild> actor =
-      dont_AddRef(static_cast<dom::IPCBlobInputStreamChild*>(aActor));
-  return true;
+  return actor.forget();
 }
 
 PFileDescriptorSetChild* BackgroundChildImpl::AllocPFileDescriptorSetChild(

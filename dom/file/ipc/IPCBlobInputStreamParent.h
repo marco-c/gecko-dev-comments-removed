@@ -26,7 +26,7 @@ class NS_NO_VTABLE IPCBlobInputStreamParentCallback {
 
 class IPCBlobInputStreamParent final : public PIPCBlobInputStreamParent {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCBlobInputStreamParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCBlobInputStreamParent, final)
 
   
   

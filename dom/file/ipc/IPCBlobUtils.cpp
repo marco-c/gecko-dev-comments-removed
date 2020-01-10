@@ -106,11 +106,6 @@ nsresult SerializeInputStreamParent(nsIInputStream* aInputStream,
     return rv;
   }
 
-  
-  
-  
-  parentActor.get()->AddRef();
-
   if (!aManager->SendPIPCBlobInputStreamConstructor(
           parentActor, parentActor->ID(), parentActor->Size())) {
     return NS_ERROR_FAILURE;

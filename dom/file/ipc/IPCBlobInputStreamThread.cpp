@@ -57,10 +57,6 @@ class MigrateActorRunnable final : public Runnable {
 
     if (actorChild->SendPIPCBlobInputStreamConstructor(mActor, mActor->ID(),
                                                        mActor->Size())) {
-      
-      
-      
-      mActor.get()->AddRef();
       mActor->Migrated();
     }
 
