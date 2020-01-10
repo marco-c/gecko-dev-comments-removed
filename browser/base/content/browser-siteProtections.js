@@ -22,6 +22,11 @@ var gProtectionsHandler = {
     return this._protectionsPopupMainViewHeaderLabel =
       document.getElementById("protections-popup-mainView-panel-header-span");
   },
+  get _protectionsPopupTPSwitchBreakageLink() {
+    delete this._protectionsPopupTPSwitchBreakageLink;
+    return this._protectionsPopupTPSwitchBreakageLink =
+      document.getElementById("protections-popup-tp-switch-breakage-link");
+  },
   get _protectionsPopupTPSwitch() {
     delete this._protectionsPopupTPSwitch;
     return this._protectionsPopupTPSwitch =
@@ -108,6 +113,11 @@ var gProtectionsHandler = {
       !this._protectionsPopup.hasAttribute("hasException");
 
     this._protectionsPopupTPSwitch.toggleAttribute("enabled", currentlyEnabled);
+
+    
+    
+    
+    this._protectionsPopupTPSwitchBreakageLink.hidden = !currentlyEnabled;
 
     
     
