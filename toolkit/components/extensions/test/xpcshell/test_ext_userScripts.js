@@ -33,12 +33,6 @@ add_task(async function setup_test_environment() {
   registerCleanupFunction(() => {
     Services.obs.removeObserver(permissionObserver, "webextension-optional-permission-prompt");
   });
-
-  
-  Services.prefs.setBoolPref("extensions.webextensions.userScripts.enabled", true);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("extensions.webextensions.userScripts.enabled");
-  });
 });
 
 
