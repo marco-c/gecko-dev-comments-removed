@@ -303,21 +303,18 @@ class nsPresContext : public nsISupports,
   
 
 
-  nsAtom* Medium() {
-    if (!mIsEmulatingMedia) return mMedium;
-    return mMediaEmulated;
+  const nsAtom* Medium() {
+    MOZ_ASSERT(mMedium);
+    return mMediaEmulated ? mMediaEmulated.get() : mMedium;
   }
 
   
 
 
 
-  void EmulateMedium(const nsAString& aMediaType);
-
-  
 
 
-  void StopEmulatingMedium();
+  void EmulateMedium(nsAtom* aMediaType);
 
   
   
@@ -1119,8 +1116,7 @@ class nsPresContext : public nsISupports,
   mozilla::UniquePtr<nsAnimationManager> mAnimationManager;
   mozilla::UniquePtr<mozilla::RestyleManager> mRestyleManager;
   RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
-  nsAtom* MOZ_UNSAFE_REF(
-      "always a static atom") mMedium;  
+  const nsStaticAtom* mMedium;
   RefPtr<nsAtom> mMediaEmulated;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 
@@ -1221,7 +1217,6 @@ class nsPresContext : public nsISupports,
   unsigned mPendingUIResolutionChanged : 1;
   unsigned mPrefChangePendingNeedsReflow : 1;
   unsigned mPostedPrefChangedRunnable : 1;
-  unsigned mIsEmulatingMedia : 1;
 
   
   unsigned mIsGlyph : 1;

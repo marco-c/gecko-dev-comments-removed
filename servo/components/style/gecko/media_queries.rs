@@ -214,11 +214,10 @@ impl Device {
         };
 
         
-        
-        let medium_to_use = if pc.mIsEmulatingMedia() != 0 {
+        let medium_to_use = if !pc.mMediaEmulated.mRawPtr.is_null() {
             pc.mMediaEmulated.mRawPtr
         } else {
-            pc.mMedium
+            pc.mMedium as *const bindings::nsAtom as *mut _
         };
 
         MediaType(CustomIdent(unsafe { Atom::from_raw(medium_to_use) }))
