@@ -9605,6 +9605,18 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
           }
         }
       }
+#ifdef MOZ_LAYOUT_DEBUGGER
+      
+      nsCOMPtr<nsIDocShellTreeItem> rootItem;
+      GetRootTreeItem(getter_AddRefs(rootItem));
+      nsCOMPtr<nsIWebNavigation> root = do_QueryInterface(rootItem);
+      nsCOMPtr<nsIURI> rootURL;
+      root->GetCurrentURI(getter_AddRefs(rootURL));
+      if (rootURL && rootURL->GetSpecOrDefault().EqualsLiteral(
+                         "chrome://layoutdebug/content/layoutdebug.xul")) {
+        break;
+      }
+#endif
       
       if (xpc::IsInAutomation() &&
           Preferences::GetBool("security.allow_unsafe_parent_loads", false)) {
