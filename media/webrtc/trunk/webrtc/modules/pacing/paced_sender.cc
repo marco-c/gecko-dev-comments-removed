@@ -268,7 +268,11 @@ void PacedSender::Process() {
     pacing_info = prober_->CurrentCluster();
     recommended_probe_size = prober_->RecommendedMinProbeSize();
   }
-  while (!packets_->Empty()) {
+  
+  
+  
+  
+  while (!paused_ && !packets_->Empty()) {
     
     
     
