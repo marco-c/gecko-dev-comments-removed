@@ -13,10 +13,6 @@
 #include "mozilla/gfx/Triangle.h"
 #include "mozilla/gfx/Polygon.h"
 
-#ifdef XP_MACOSX
-class MacIOSurface;
-#endif
-
 namespace mozilla {
 namespace layers {
 
@@ -201,12 +197,6 @@ class BasicCompositor : public Compositor {
   
   
   RefPtr<NativeLayer> mCurrentNativeLayer;
-
-#ifdef XP_MACOSX
-  
-  
-  RefPtr<MacIOSurface> mCurrentIOSurface;
-#endif
 
   gfx::IntRegion mInvalidRegion;
 
