@@ -1069,10 +1069,18 @@ void nsPlainTextSerializer::DoAddText(bool aIsLineBreak,
   Write(aText);
 }
 
+void CreateLineOfDashes(nsAString& aResult, const uint32_t aWrapColumn) {
+  MOZ_ASSERT(aResult.IsEmpty());
+
+  const uint32_t width = (aWrapColumn > 0 ? aWrapColumn : 25);
+  while (aResult.Length() < width) {
+    aResult.Append(char16_t('-'));
+  }
+}
+
 nsresult nsPlainTextSerializer::DoAddLeaf(nsAtom* aTag) {
   mPreformattedBlockBoundary = false;
 
-  
   if (!DoOutput()) {
     return NS_OK;
   }
@@ -1101,10 +1109,7 @@ nsresult nsPlainTextSerializer::DoAddLeaf(nsAtom* aTag) {
     
     
     nsAutoString line;
-    uint32_t width = (mWrapColumn > 0 ? mWrapColumn : 25);
-    while (line.Length() < width) {
-      line.Append(char16_t('-'));
-    }
+    CreateLineOfDashes(line, mWrapColumn);
     Write(line);
 
     EnsureVerticalSpace(0);
