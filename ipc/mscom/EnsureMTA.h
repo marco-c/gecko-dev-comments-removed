@@ -44,7 +44,6 @@ class MOZ_STACK_CLASS EnsureMTA final {
 
 
   EnsureMTA() {
-    MOZ_ASSERT(NS_IsMainThread());
     nsCOMPtr<nsIThread> thread = GetMTAThread();
     MOZ_ASSERT(thread);
     Unused << thread;
@@ -64,8 +63,6 @@ class MOZ_STACK_CLASS EnsureMTA final {
       aClosure();
       return;
     }
-
-    MOZ_ASSERT(NS_IsMainThread());
 
     
     nsCOMPtr<nsIThread> thread = GetMTAThread();
