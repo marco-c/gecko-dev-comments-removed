@@ -123,9 +123,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.29.0"
-#define SQLITE_VERSION_NUMBER 3029000
-#define SQLITE_SOURCE_ID      "2019-07-10 17:32:03 fc82b73eaac8b36950e527f12c4b5dc1e147e6f4ad2217ae43ad82882a88bfa6"
+#define SQLITE_VERSION        "3.30.1"
+#define SQLITE_VERSION_NUMBER 3030001
+#define SQLITE_SOURCE_ID      "2019-10-10 20:19:45 18db032d058f1436ce3dea84081f4ee5a0f2259ad97301d43c426bc7f3df1b0b"
 
 
 
@@ -2250,6 +2250,17 @@ struct sqlite3_mem_methods {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
@@ -2265,7 +2276,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    1012 /* int int* */
 #define SQLITE_DBCONFIG_DQS_DML               1013 /* int int* */
 #define SQLITE_DBCONFIG_DQS_DDL               1014 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1014 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1015 /* Largest DBCONFIG */
 
 
 
@@ -4901,6 +4913,12 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 
 
 
+
+
+
+
+
+
 SQLITE_API int sqlite3_create_function(
   sqlite3 *db,
   const char *zFunctionName,
@@ -4966,7 +4984,29 @@ SQLITE_API int sqlite3_create_window_function(
 
 
 
-#define SQLITE_DETERMINISTIC    0x800
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SQLITE_DETERMINISTIC    0x000000800
+#define SQLITE_DIRECTONLY       0x000080000
+#define SQLITE_SUBTYPE          0x000100000
 
 
 
@@ -6613,6 +6653,12 @@ struct sqlite3_index_info {
 
 
 
+
+
+
+
+
+
 SQLITE_API int sqlite3_create_module(
   sqlite3 *db,               
   const char *zName,         
@@ -6625,6 +6671,23 @@ SQLITE_API int sqlite3_create_module_v2(
   const sqlite3_module *p,   
   void *pClientData,         
   void(*xDestroy)(void*)     
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API int sqlite3_drop_modules(
+  sqlite3 *db,                
+  const char **azKeep         
 );
 
 
@@ -7335,7 +7398,7 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_FIRST                    5
 #define SQLITE_TESTCTRL_PRNG_SAVE                5
 #define SQLITE_TESTCTRL_PRNG_RESTORE             6
-#define SQLITE_TESTCTRL_PRNG_RESET               7
+#define SQLITE_TESTCTRL_PRNG_RESET               7  /* NOT USED */
 #define SQLITE_TESTCTRL_BITVEC_TEST              8
 #define SQLITE_TESTCTRL_FAULT_INSTALL            9
 #define SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS     10
@@ -7358,7 +7421,9 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_IMPOSTER                25
 #define SQLITE_TESTCTRL_PARSER_COVERAGE         26
 #define SQLITE_TESTCTRL_RESULT_INTREAL          27
-#define SQLITE_TESTCTRL_LAST                    27  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_PRNG_SEED               28
+#define SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS     29
+#define SQLITE_TESTCTRL_LAST                    29  /* Largest TESTCTRL */
 
 
 
