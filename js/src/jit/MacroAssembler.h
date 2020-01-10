@@ -473,7 +473,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  CodeOffset nopPatchableToCall(const wasm::CallSiteDesc& desc) PER_SHARED_ARCH;
+  CodeOffset nopPatchableToCall() PER_SHARED_ARCH;
+  void nopPatchableToCall(const wasm::CallSiteDesc& desc);
   static void patchNopToCall(uint8_t* callsite,
                              uint8_t* target) PER_SHARED_ARCH;
   static void patchCallToNop(uint8_t* callsite) PER_SHARED_ARCH;
