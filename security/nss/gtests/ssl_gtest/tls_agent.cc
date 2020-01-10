@@ -842,6 +842,13 @@ void TlsAgent::ResetPreliminaryInfo() {
   expected_cipher_suite_ = 0;
 }
 
+void TlsAgent::UpdatePreliminaryChannelInfo() {
+  SECStatus rv = SSL_GetPreliminaryChannelInfo(ssl_fd_.get(), &pre_info_,
+                                               sizeof(pre_info_));
+  EXPECT_EQ(SECSuccess, rv);
+  EXPECT_EQ(sizeof(pre_info_), pre_info_.length);
+}
+
 void TlsAgent::ValidateCipherSpecs() {
   PRInt32 cipherSpecs = SSLInt_CountCipherSpecs(ssl_fd());
   
@@ -904,6 +911,7 @@ void TlsAgent::Connected() {
   
   
   
+  UpdatePreliminaryChannelInfo();
   EXPECT_EQ(expected_version_, info_.protocolVersion);
   EXPECT_EQ(expected_cipher_suite_, info_.cipherSuite);
 

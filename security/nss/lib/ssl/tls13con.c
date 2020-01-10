@@ -4185,7 +4185,9 @@ tls13_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
         
 
 
-        if (sigScheme != dc->expectedCertVerifyAlg) {
+
+
+        if (sigScheme != dc->expectedCertVerifyAlg || sigScheme != ss->sec.signatureScheme) {
             FATAL_ERROR(ss, SSL_ERROR_DC_CERT_VERIFY_ALG_MISMATCH, illegal_parameter);
             return SECFailure;
         }
@@ -4248,9 +4250,16 @@ tls13_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
     
     if (!ss->sec.isServer) {
         ss->sec.authType = ssl_SignatureSchemeToAuthType(sigScheme);
+
+        uint32_t prelimAuthKeyBits = ss->sec.authKeyBits;
         rv = ssl_SetAuthKeyBits(ss, pubKey);
         if (rv != SECSuccess) {
             goto loser; 
+        }
+
+        if (prelimAuthKeyBits != ss->sec.authKeyBits) {
+            FATAL_ERROR(ss, SSL_ERROR_DC_CERT_VERIFY_ALG_MISMATCH, illegal_parameter);
+            goto loser;
         }
     }
 

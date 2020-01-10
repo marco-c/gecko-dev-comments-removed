@@ -368,6 +368,9 @@ typedef struct SSLChannelInfoStr {
 #define ssl_preinfo_0rtt_cipher_suite (1U << 2)
 
 
+#define ssl_preinfo_peer_auth (1U << 3)
+
+
 #define ssl_preinfo_all (ssl_preinfo_version | ssl_preinfo_cipher_suite)
 
 typedef struct SSLPreliminaryChannelInfoStr {
@@ -405,6 +408,16 @@ typedef struct SSLPreliminaryChannelInfoStr {
 
 
     PRUint16 zeroRttCipherSuite;
+
+    
+    
+
+
+
+
+    PRBool peerDelegCred;
+    PRUint32 authKeyBits;
+    SSLSignatureScheme signatureScheme;
 
     
 
