@@ -17,10 +17,10 @@ struct PCRelativeLoadTest {
   
   uint32_t mMatchBits;
   
-  LoadInfo (*mDecodeFn)(const uintptr_t aPC, const uint32_t aInst);
+  LoadOrBranch (*mDecodeFn)(const uintptr_t aPC, const uint32_t aInst);
 };
 
-static LoadInfo ADRPDecode(const uintptr_t aPC, const uint32_t aInst) {
+static LoadOrBranch ADRPDecode(const uintptr_t aPC, const uint32_t aInst) {
   
   const uint32_t kMaskDataProcImmPcRelativeImmLo = 0x60000000;
   const uint32_t kMaskDataProcImmPcRelativeImmHi = 0x00FFFFE0;
@@ -30,12 +30,19 @@ static LoadInfo ADRPDecode(const uintptr_t aPC, const uint32_t aInst) {
       ((aInst & kMaskDataProcImmPcRelativeImmHi) >> 3) |
           ((aInst & kMaskDataProcImmPcRelativeImmLo) >> 29),
       21);
+
   base &= ~0xFFFULL;
   offset <<= 12;
 
   uint8_t reg = aInst & 0x1F;
 
-  return LoadInfo(base + offset, reg);
+  return LoadOrBranch(base + offset, reg);
+}
+
+MFBT_API LoadOrBranch BUncondImmDecode(const uintptr_t aPC,
+                                       const uint32_t aInst) {
+  int32_t offset = SignExtend<int32_t>(aInst & 0x03FFFFFFU, 26);
+  return LoadOrBranch(aPC + offset);
 }
 
 
@@ -60,8 +67,8 @@ static const PCRelativeLoadTest gPCRelTests[] = {
 
 
 
-MFBT_API Result<LoadInfo, PCRelCheckError> CheckForPCRel(const uintptr_t aPC,
-                                                         const uint32_t aInst) {
+MFBT_API Result<LoadOrBranch, PCRelCheckError> CheckForPCRel(
+    const uintptr_t aPC, const uint32_t aInst) {
   for (auto&& test : gPCRelTests) {
     if ((aInst & test.mTestMask) == test.mMatchBits) {
       if (!test.mDecodeFn) {

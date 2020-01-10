@@ -8,7 +8,11 @@
 #define mozilla_interceptor_Arm64_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
+#include "mozilla/Saturate.h"
 #include "mozilla/Types.h"
 #include "mozilla/TypeTraits.h"
 
@@ -17,16 +21,64 @@ namespace interceptor {
 namespace arm64 {
 
 
-struct LoadInfo {
-  LoadInfo(const uintptr_t aAbsAddress, const uint8_t aDestReg)
-      : mAbsAddress(aAbsAddress), mDestReg(aDestReg) {
+enum class IntegerConditionCode : uint8_t {
+  
+  
+  EQ = 0b0000,  
+  NE = 0b0001,  
+  CS = 0b0010,  
+  HS = 0b0010,  
+  CC = 0b0011,  
+  LO = 0b0011,  
+  MI = 0b0100,  
+  PL = 0b0101,  
+  VS = 0b0110,  
+  VC = 0b0111,  
+  HI = 0b1000,  
+  LS = 0b1001,  
+  GE = 0b1010,  
+  LT = 0b1011,  
+  GT = 0b1100,  
+  LE = 0b1101,  
+  AL = 0b1110,  
+  NV = 0b1111   
+};
+
+
+struct LoadOrBranch {
+  enum class Type {
+    Load,
+    Branch,
+  };
+
+  
+  LoadOrBranch(const uintptr_t aAbsAddress, const uint8_t aDestReg)
+      : mType(Type::Load), mAbsAddress(aAbsAddress), mDestReg(aDestReg) {
     MOZ_ASSERT(aDestReg < 32);
   }
 
   
-  uintptr_t mAbsAddress;
+  explicit LoadOrBranch(const uintptr_t aAbsAddress)
+      : mType(Type::Branch),
+        mAbsAddress(aAbsAddress),
+        mCond(IntegerConditionCode::AL) {}
+
   
-  uint8_t mDestReg;
+  LoadOrBranch(const uintptr_t aAbsAddress, const IntegerConditionCode aCond)
+      : mType(Type::Branch), mAbsAddress(aAbsAddress), mCond(aCond) {}
+
+  Type mType;
+
+  
+  uintptr_t mAbsAddress;
+
+  union {
+    
+    uint8_t mDestReg;
+
+    
+    IntegerConditionCode mCond;
+  };
 };
 
 enum class PCRelCheckError {
@@ -34,8 +86,8 @@ enum class PCRelCheckError {
   NoDecoderAvailable,
 };
 
-MFBT_API Result<LoadInfo, PCRelCheckError> CheckForPCRel(const uintptr_t aPC,
-                                                         const uint32_t aInst);
+MFBT_API Result<LoadOrBranch, PCRelCheckError> CheckForPCRel(
+    const uintptr_t aPC, const uint32_t aInst);
 
 
 
@@ -76,6 +128,90 @@ inline static uint32_t BuildUnconditionalBranchToRegister(const uint32_t aReg) {
   MOZ_ASSERT(aReg < 32);
   
   return 0xD61F0000 | (aReg << 5);
+}
+
+MFBT_API LoadOrBranch BUncondImmDecode(const uintptr_t aPC,
+                                       const uint32_t aInst);
+
+
+
+
+inline static bool IsVeneerRequired(const uintptr_t aPC,
+                                    const uintptr_t aTarget) {
+  detail::Saturate<intptr_t> saturated(aTarget);
+  saturated -= aPC;
+
+  uintptr_t absDiff = Abs(saturated.value());
+
+  return absDiff >= 0x08000000U;
+}
+
+inline static bool IsUnconditionalBranchImm(const uint32_t aInst) {
+  return (aInst & 0xFC000000U) == 0x14000000U;
+}
+
+inline static Maybe<uint32_t> BuildUnconditionalBranchImm(
+    const uintptr_t aPC, const uintptr_t aTarget) {
+  detail::Saturate<intptr_t> saturated(aTarget);
+  saturated -= aPC;
+
+  CheckedInt<int32_t> offset(saturated.value());
+  if (!offset.isValid()) {
+    return Nothing();
+  }
+
+  
+  MOZ_ASSERT(offset.value() % 4 == 0);
+  if (offset.value() % 4) {
+    return Nothing();
+  }
+
+  offset /= 4;
+  if (!offset.isValid()) {
+    return Nothing();
+  }
+
+  int32_t signbits = offset.value() & 0xFE000000;
+  
+  
+  MOZ_ASSERT(signbits == 0xFE000000 || !signbits);
+  if (signbits && signbits != 0xFE000000) {
+    return Nothing();
+  }
+
+  int32_t masked = offset.value() & 0x03FFFFFF;
+
+  
+  return Some(0x14000000U | masked);
+}
+
+
+
+
+
+template <typename TrampPoolT>
+inline static uintptr_t MakeVeneer(TrampPoolT& aTrampPool, void* aPrimaryTramp,
+                                   const uintptr_t aDestAddress) {
+  auto maybeVeneer = aTrampPool.GetNextTrampoline();
+  if (!maybeVeneer) {
+    return 0;
+  }
+
+  Trampoline<typename TrampPoolT::MMPolicyT> veneer(
+      std::move(maybeVeneer.ref()));
+
+  
+  veneer.WriteEncodedPointer(nullptr);
+  veneer.WriteEncodedPointer(aPrimaryTramp);
+
+  veneer.StartExecutableCode();
+
+  
+  
+  veneer.WriteLoadLiteral(aDestAddress, 16);
+  veneer.WriteInstruction(BuildUnconditionalBranchToRegister(16));
+
+  return reinterpret_cast<uintptr_t>(veneer.EndExecutableCode());
 }
 
 }  
