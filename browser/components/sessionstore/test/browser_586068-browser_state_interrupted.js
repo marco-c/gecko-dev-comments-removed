@@ -190,7 +190,7 @@ add_task(async function test() {
   
   Services.ww.registerNotification(function observer(aSubject, aTopic, aData) {
     if (aTopic == "domwindowopened") {
-      let win = aSubject.QueryInterface(Ci.nsIDOMWindow);
+      let win = aSubject;
       win.addEventListener(
         "load",
         function() {

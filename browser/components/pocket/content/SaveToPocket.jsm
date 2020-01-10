@@ -255,7 +255,6 @@ var SaveToPocket = {
 
   observe(subject, topic, data) {
     if (topic == "browser-delayed-startup-finished") {
-      subject.QueryInterface(Ci.nsIDOMWindow);
       
       
       this.updateElementsInWindow(subject, false);

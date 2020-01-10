@@ -251,7 +251,7 @@ var ProcessHangMonitor = {
       case "domwindowopened": {
         
         
-        let win = subject.QueryInterface(Ci.nsIDOMWindow);
+        let win = subject;
         let listener = ev => {
           win.removeEventListener("load", listener, true);
           this.updateWindows();
@@ -261,7 +261,7 @@ var ProcessHangMonitor = {
       }
 
       case "domwindowclosed": {
-        let win = subject.QueryInterface(Ci.nsIDOMWindow);
+        let win = subject;
         this.onWindowClosed(win);
         break;
       }

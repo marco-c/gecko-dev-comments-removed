@@ -150,7 +150,7 @@ function waitForBrowserState(aState, aSetStateCallback) {
   
   function windowObserver(aSubject, aTopic, aData) {
     if (aTopic == "domwindowopened") {
-      let newWindow = aSubject.QueryInterface(Ci.nsIDOMWindow);
+      let newWindow = aSubject;
       newWindow.addEventListener(
         "load",
         function() {

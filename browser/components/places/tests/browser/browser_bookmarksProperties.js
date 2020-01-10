@@ -497,12 +497,11 @@ function open_properties_dialog(test) {
     );
 
     
-    function windowObserver(aSubject, aTopic, aData) {
+    function windowObserver(observerWindow, aTopic, aData) {
       if (aTopic != "domwindowopened") {
         return;
       }
       Services.ww.unregisterNotification(windowObserver);
-      let observerWindow = aSubject.QueryInterface(Ci.nsIDOMWindow);
       waitForFocus(async () => {
         
         await BrowserTestUtils.waitForCondition(
