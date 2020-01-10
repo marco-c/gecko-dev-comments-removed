@@ -9,6 +9,7 @@
 #include "Layers.h"
 #include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/layers/TextureClient.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "pratom.h"
@@ -149,6 +150,18 @@ PersistentBufferProviderShared::PersistentBufferProviderShared(
   if (mTextures.append(aTexture)) {
     mBack = Some<uint32_t>(0);
   }
+
+  
+  
+  
+  
+  if (!aTexture->HasIntermediateBuffer() && gfxVars::UseWebRender()) {
+    ++mMaxAllowedTextures;
+    if (gfxVars::UseWebRenderTripleBufferingWin()) {
+      ++mMaxAllowedTextures;
+    }
+  }
+
   MOZ_COUNT_CTOR(PersistentBufferProviderShared);
 }
 
@@ -306,7 +319,7 @@ PersistentBufferProviderShared::BorrowDrawTarget(
 
   if (!tex) {
     
-    if (mTextures.length() >= 4) {
+    if (mTextures.length() >= mMaxAllowedTextures) {
       
       
       
