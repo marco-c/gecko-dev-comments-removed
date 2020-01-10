@@ -259,6 +259,20 @@ class BlocksRingBuffer {
   }
 
   
+  
+  
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    if (!mMaybeUnderlyingBuffer) {
+      return 0;
+    }
+    return mMaybeUnderlyingBuffer->mBuffer.SizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  
   struct State {
     
     BlockIndex mRangeStart;
