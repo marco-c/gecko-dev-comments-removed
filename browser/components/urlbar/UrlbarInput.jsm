@@ -1317,7 +1317,11 @@ class UrlbarInput {
     let isMouseEvent = event instanceof MouseEvent;
     let reuseEmpty = !isMouseEvent;
     let where = undefined;
-    if (!isMouseEvent && event && event.altKey) {
+    if (
+      !isMouseEvent &&
+      event &&
+      (event.altKey || event.getModifierState("AltGraph"))
+    ) {
       
       
       where = event.shiftKey ? "tabshifted" : "tab";

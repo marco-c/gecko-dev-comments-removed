@@ -124,6 +124,11 @@ add_task(async function load_in_current_tab_test() {
       type: "keypress",
       details: { altKey: true },
     },
+    {
+      desc: "AltGr+Return keypress in a blank tab",
+      type: "keypress",
+      details: { altGraphKey: true },
+    },
   ];
 
   for (let { desc, type, details } of tests) {
@@ -164,6 +169,12 @@ add_task(async function load_in_new_tab_test() {
       desc: "Alt+Return keypress in a dirty tab",
       type: "keypress",
       details: { altKey: true },
+      url: START_VALUE,
+    },
+    {
+      desc: "AltGr+Return keypress in a dirty tab",
+      type: "keypress",
+      details: { altGraphKey: true },
       url: START_VALUE,
     },
   ];
