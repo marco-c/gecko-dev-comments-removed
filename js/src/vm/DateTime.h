@@ -248,6 +248,28 @@ class DateTimeInfo {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   int32_t utcToLocalStandardOffsetSeconds_;
 
   RangeCache dstRange_;  
