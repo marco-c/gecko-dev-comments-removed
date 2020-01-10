@@ -1496,95 +1496,138 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
-  RefPtr<TextEditRules> rules(mRules);
-
   CommitComposition();
+
+  if (IsReadonly() || IsDisabled()) {
+    return NS_OK;
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
+  }
+
+  UndefineCaretBidiLevel();
+
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertElement, nsIEditor::eNext);
 
+  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EnsureNoPaddingBRElementForEmptyEditor() failed, but ignored");
+
+  if (NS_SUCCEEDED(rv) && SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = EnsureCaretNotAfterPaddingBRElement();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EnsureCaretNotAfterPaddingBRElement() failed, but ignored");
+    if (NS_SUCCEEDED(rv)) {
+      nsresult rv = PrepareInlineStylesForCaret();
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "PrepareInlineStylesForCaret() failed, but ignored");
+    }
+  }
+
+  if (aDeleteSelection) {
+    if (!IsBlockNode(aElement)) {
+      
+      
+      
+      
+      nsresult rv = DeleteSelectionAsSubAction(eNone, eNoStrip);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditorBase::ToGenericNSResult(rv);
+      }
+    }
+
+    nsresult rv = DeleteSelectionAndPrepareToCreateNode();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
   
-  bool cancel, handled;
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (cancel || NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!handled) {
-    if (aDeleteSelection) {
-      if (!IsBlockNode(aElement)) {
-        
-        
-        
-        
-        rv = DeleteSelectionAsSubAction(eNone, eNoStrip);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return EditorBase::ToGenericNSResult(rv);
-        }
-      }
-
-      nsresult rv = DeleteSelectionAndPrepareToCreateNode();
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
+  
+  else {
     
     
-    if (!aDeleteSelection) {
-      
-      
-      
-      if (HTMLEditUtils::IsNamedAnchor(aElement)) {
-        SelectionRefPtr()->CollapseToStart(IgnoreErrors());
-      } else {
-        SelectionRefPtr()->CollapseToEnd(IgnoreErrors());
+    
+    if (HTMLEditUtils::IsNamedAnchor(aElement)) {
+      SelectionRefPtr()->CollapseToStart(IgnoreErrors());
+      if (NS_WARN_IF(Destroyed())) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
       }
-    }
-
-    if (SelectionRefPtr()->GetAnchorNode()) {
-      EditorRawDOMPoint atAnchor(SelectionRefPtr()->AnchorRef());
-      
-      EditorDOMPoint pointToInsert =
-          GetBetterInsertionPointFor(*aElement, atAnchor);
-      if (NS_WARN_IF(!pointToInsert.IsSet())) {
-        return NS_ERROR_FAILURE;
-      }
-
-      EditorDOMPoint insertedPoint =
-          InsertNodeIntoProperAncestorWithTransaction(
-              *aElement, pointToInsert,
-              SplitAtEdges::eAllowToCreateEmptyContainer);
-      if (NS_WARN_IF(!insertedPoint.IsSet())) {
-        return NS_ERROR_FAILURE;
-      }
-      
-      
-      if (!SetCaretInTableCell(aElement)) {
-        rv = CollapseSelectionAfter(*aElement);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      }
-      
-      
-      if (HTMLEditUtils::IsTable(aElement) && IsLastEditableChild(aElement)) {
-        DebugOnly<bool> advanced = insertedPoint.AdvanceOffset();
-        NS_WARNING_ASSERTION(advanced,
-                             "Failed to advance offset from inserted point");
-        
-        RefPtr<Element> newBrElement =
-            InsertBRElementWithTransaction(insertedPoint, ePrevious);
-        if (NS_WARN_IF(!newBrElement)) {
-          return NS_ERROR_FAILURE;
-        }
+    } else {
+      SelectionRefPtr()->CollapseToEnd(IgnoreErrors());
+      if (NS_WARN_IF(Destroyed())) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
       }
     }
   }
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+
+  if (!SelectionRefPtr()->GetAnchorNode()) {
+    return NS_OK;
   }
+
+  EditorRawDOMPoint atAnchor(SelectionRefPtr()->AnchorRef());
+  
+  EditorDOMPoint pointToInsert =
+      GetBetterInsertionPointFor(*aElement, atAnchor);
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  EditorDOMPoint insertedPoint = InsertNodeIntoProperAncestorWithTransaction(
+      *aElement, pointToInsert, SplitAtEdges::eAllowToCreateEmptyContainer);
+  if (NS_WARN_IF(!insertedPoint.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  if (!SetCaretInTableCell(aElement)) {
+    if (NS_WARN_IF(Destroyed())) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    rv = CollapseSelectionAfter(*aElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  if (NS_WARN_IF(Destroyed())) {
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+  }
+
+  
+  
+  if (HTMLEditUtils::IsTable(aElement) && IsLastEditableChild(aElement)) {
+    DebugOnly<bool> advanced = insertedPoint.AdvanceOffset();
+    NS_WARNING_ASSERTION(advanced,
+                         "Failed to advance offset from inserted point");
+    
+    RefPtr<Element> newBRElement =
+        InsertBRElementWithTransaction(insertedPoint, ePrevious);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(!newBRElement)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   return NS_OK;
 }
 

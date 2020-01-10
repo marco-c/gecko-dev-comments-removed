@@ -3209,11 +3209,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
-                                          const nsAString& aCitation,
-                                          bool aInsertHTML,
-                                          nsINode** aNodeInserted);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertAsCitedQuotationInternal(
+      const nsAString& aQuotedText, const nsAString& aCitation,
+      bool aInsertHTML, nsINode** aNodeInserted);
 
   
 
@@ -3766,9 +3764,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult InsertAsPlaintextQuotation(const nsAString& aQuotedText,
-                                      bool aAddCites, nsINode** aNodeInserted);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertAsPlaintextQuotation(
+      const nsAString& aQuotedText, bool aAddCites, nsINode** aNodeInserted);
 
   
 
@@ -3922,8 +3919,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult DoInsertHTMLWithContext(
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DoInsertHTMLWithContext(
       const nsAString& aInputString, const nsAString& aContextStr,
       const nsAString& aInfoStr, const nsAString& aFlavor, Document* aSourceDoc,
       const EditorDOMPoint& aPointToInsert, bool aDeleteSelection,

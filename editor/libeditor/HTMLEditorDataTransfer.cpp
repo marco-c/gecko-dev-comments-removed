@@ -179,10 +179,8 @@ nsresult HTMLEditor::InsertHTMLAsAction(const nsAString& aInString,
   nsresult rv = DoInsertHTMLWithContext(aInString, EmptyString(), EmptyString(),
                                         EmptyString(), nullptr,
                                         EditorDOMPoint(), true, true, false);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "DoInsertHTMLWithContext() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::DoInsertHTMLWithContext(
@@ -195,9 +193,6 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   if (NS_WARN_IF(!mRules)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
-
-  
-  RefPtr<TextEditRules> rules(mRules);
 
   
   CommitComposition();
@@ -234,7 +229,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   
 
   
-  nsTArray<OwningNonNull<nsINode>> nodeList;
+  AutoTArray<OwningNonNull<nsINode>, 64> nodeList;
   CreateListOfNodesToPaste(*fragmentAsNode->AsDocumentFragment(), nodeList,
                            streamStartParent, streamStartOffset,
                            streamEndParent, streamEndOffset);
@@ -310,67 +305,85 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   }
 
   
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
-  bool cancel, handled;
-  rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (cancel) {
-    return NS_OK;  
+  if (IsReadonly() || IsDisabled()) {
+    return NS_OK;
   }
 
-  if (!handled) {
-    
-    
-    EditorDOMPoint pointToInsert = GetBetterInsertionPointFor(
-        nodeList[0], EditorBase::GetStartPoint(*SelectionRefPtr()));
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
+  }
+
+  UndefineCaretBidiLevel();
+
+  rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EnsureNoPaddingBRElementForEmptyEditor() failed, but ignored");
+
+  if (NS_SUCCEEDED(rv) && SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = EnsureCaretNotAfterPaddingBRElement();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EnsureCaretNotAfterPaddingBRElement() failed, but ignored");
+    if (NS_SUCCEEDED(rv)) {
+      nsresult rv = PrepareInlineStylesForCaret();
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "PrepareInlineStylesForCaret() failed, but ignored");
+    }
+  }
+
+  
+  EditorDOMPoint pointToInsert = GetBetterInsertionPointFor(
+      nodeList[0], EditorBase::GetStartPoint(*SelectionRefPtr()));
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  WSRunObject wsObj(this, pointToInsert);
+  if (wsObj.mEndReasonNode && TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
+      !IsVisibleBRElement(wsObj.mEndReasonNode)) {
+    AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
+    rv = DeleteNodeWithTransaction(MOZ_KnownLive(*wsObj.mEndReasonNode));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  bool insertionPointWasInLink = !!GetLinkElement(pointToInsert.GetContainer());
+
+  if (pointToInsert.IsInTextNode()) {
+    SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
+        MOZ_KnownLive(*pointToInsert.GetContainerAsContent()), pointToInsert,
+        SplitAtEdges::eAllowToCreateEmptyContainer);
+    if (NS_WARN_IF(splitNodeResult.Failed())) {
+      return splitNodeResult.Rv();
+    }
+    pointToInsert = splitNodeResult.SplitPoint();
     if (NS_WARN_IF(!pointToInsert.IsSet())) {
       return NS_ERROR_FAILURE;
     }
+  }
 
-    
-    
-    
-    WSRunObject wsObj(this, pointToInsert);
-    if (wsObj.mEndReasonNode && TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
-        !IsVisibleBRElement(wsObj.mEndReasonNode)) {
-      AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-      rv = DeleteNodeWithTransaction(MOZ_KnownLive(*wsObj.mEndReasonNode));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
-    
-    bool bStartedInLink = !!GetLinkElement(pointToInsert.GetContainer());
-
-    
-    if (pointToInsert.IsInTextNode()) {
-      SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
-          MOZ_KnownLive(*pointToInsert.GetContainerAsContent()), pointToInsert,
-          SplitAtEdges::eAllowToCreateEmptyContainer);
-      if (NS_WARN_IF(splitNodeResult.Failed())) {
-        return splitNodeResult.Rv();
-      }
-      pointToInsert = splitNodeResult.SplitPoint();
-      if (NS_WARN_IF(!pointToInsert.IsSet())) {
-        return NS_ERROR_FAILURE;
-      }
-    }
-
-    
-    
-    nsTArray<OwningNonNull<Element>> startListAndTableArray;
-    GetListAndTableParents(StartOrEnd::start, nodeList, startListAndTableArray);
-
-    
-    int32_t highWaterMark = -1;
-    if (!startListAndTableArray.IsEmpty()) {
-      highWaterMark =
-          DiscoverPartialListsAndTables(nodeList, startListAndTableArray);
-    }
-
+  
+  
+  AutoTArray<OwningNonNull<Element>, 4> startListAndTableArray;
+  GetListAndTableParents(StartOrEnd::start, nodeList, startListAndTableArray);
+  if (!startListAndTableArray.IsEmpty()) {
+    int32_t highWaterMark =
+        DiscoverPartialListsAndTables(nodeList, startListAndTableArray);
     
     
     
@@ -378,179 +391,150 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
       ReplaceOrphanedStructure(StartOrEnd::start, nodeList,
                                startListAndTableArray, highWaterMark);
     }
+  }
 
-    
-    nsTArray<OwningNonNull<Element>> endListAndTableArray;
-    GetListAndTableParents(StartOrEnd::end, nodeList, endListAndTableArray);
-    highWaterMark = -1;
-
-    
-    if (!endListAndTableArray.IsEmpty()) {
-      highWaterMark =
-          DiscoverPartialListsAndTables(nodeList, endListAndTableArray);
-    }
-
+  
+  AutoTArray<OwningNonNull<Element>, 4> endListAndTableArray;
+  GetListAndTableParents(StartOrEnd::end, nodeList, endListAndTableArray);
+  if (!endListAndTableArray.IsEmpty()) {
+    int32_t highWaterMark =
+        DiscoverPartialListsAndTables(nodeList, endListAndTableArray);
     
     if (highWaterMark >= 0) {
       ReplaceOrphanedStructure(StartOrEnd::end, nodeList, endListAndTableArray,
                                highWaterMark);
     }
+  }
 
-    MOZ_ASSERT(pointToInsert.GetContainer()->GetChildAt_Deprecated(
-                   pointToInsert.Offset()) == pointToInsert.GetChild());
+  MOZ_ASSERT(pointToInsert.GetContainer()->GetChildAt_Deprecated(
+                 pointToInsert.Offset()) == pointToInsert.GetChild());
+
+  
+  nsCOMPtr<nsINode> parentBlock =
+      IsBlockNode(pointToInsert.GetContainer())
+          ? pointToInsert.GetContainer()
+          : GetBlockNodeParent(pointToInsert.GetContainer());
+  nsCOMPtr<nsIContent> lastInsertedContent;
+  nsCOMPtr<nsINode> insertedContextParent;
+  for (OwningNonNull<nsINode>& curNode : nodeList) {
+    if (NS_WARN_IF(curNode == fragmentAsNode) ||
+        NS_WARN_IF(TextEditUtils::IsBody(curNode))) {
+      return NS_ERROR_FAILURE;
+    }
+
+    if (insertedContextParent) {
+      
+      
+      
+      
+      
+      
+      
+      if (EditorUtils::IsDescendantOf(*curNode, *insertedContextParent)) {
+        continue;
+      }
+    }
 
     
-    nsCOMPtr<nsINode> parentBlock =
-        IsBlockNode(pointToInsert.GetContainer())
-            ? pointToInsert.GetContainer()
-            : GetBlockNodeParent(pointToInsert.GetContainer());
-    nsCOMPtr<nsIContent> lastInsertNode;
-    nsCOMPtr<nsINode> insertedContextParent;
-    for (OwningNonNull<nsINode>& curNode : nodeList) {
-      if (NS_WARN_IF(curNode == fragmentAsNode) ||
-          NS_WARN_IF(TextEditUtils::IsBody(curNode))) {
-        return NS_ERROR_FAILURE;
-      }
-
-      if (insertedContextParent) {
-        
-        
-        
-        if (EditorUtils::IsDescendantOf(*curNode, *insertedContextParent)) {
-          continue;
-        }
-      }
-
+    
+    
+    bool inserted = false;
+    if (HTMLEditUtils::IsTableRow(curNode) &&
+        HTMLEditUtils::IsTableRow(pointToInsert.GetContainer()) &&
+        (HTMLEditUtils::IsTable(curNode) ||
+         HTMLEditUtils::IsTable(pointToInsert.GetContainer()))) {
       
-      
-      
-      bool bDidInsert = false;
-      if (HTMLEditUtils::IsTableRow(curNode) &&
-          HTMLEditUtils::IsTableRow(pointToInsert.GetContainer()) &&
-          (HTMLEditUtils::IsTable(curNode) ||
-           HTMLEditUtils::IsTable(pointToInsert.GetContainer()))) {
-        for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
-             firstChild; firstChild = curNode->GetFirstChild()) {
-          EditorDOMPoint insertedPoint =
-              InsertNodeIntoProperAncestorWithTransaction(
-                  *firstChild, pointToInsert,
-                  SplitAtEdges::eDoNotCreateEmptyContainer);
-          if (NS_WARN_IF(!insertedPoint.IsSet())) {
-            break;
-          }
-          bDidInsert = true;
-          lastInsertNode = firstChild;
-          pointToInsert = insertedPoint;
-          DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
-          NS_WARNING_ASSERTION(advanced,
-                               "Failed to advance offset from inserted point");
-        }
-      }
-      
-      
-      
-      
-      else if (HTMLEditUtils::IsList(curNode) &&
-               (HTMLEditUtils::IsList(pointToInsert.GetContainer()) ||
-                HTMLEditUtils::IsListItem(pointToInsert.GetContainer()))) {
-        for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
-             firstChild; firstChild = curNode->GetFirstChild()) {
-          if (HTMLEditUtils::IsListItem(firstChild) ||
-              HTMLEditUtils::IsList(firstChild)) {
-            
-            
-            if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer())) {
-              bool isEmpty;
-              rv = IsEmptyNode(pointToInsert.GetContainer(), &isEmpty, true);
-              if (NS_SUCCEEDED(rv) && isEmpty) {
-                if (NS_WARN_IF(
-                        !pointToInsert.GetContainer()->GetParentNode())) {
-                  
-                } else {
-                  DeleteNodeWithTransaction(
-                      MOZ_KnownLive(*pointToInsert.GetContainer()));
-                  pointToInsert.Set(pointToInsert.GetContainer());
-                }
-              }
-            }
-            EditorDOMPoint insertedPoint =
-                InsertNodeIntoProperAncestorWithTransaction(
-                    *firstChild, pointToInsert,
-                    SplitAtEdges::eDoNotCreateEmptyContainer);
-            if (NS_WARN_IF(!insertedPoint.IsSet())) {
-              break;
-            }
-
-            bDidInsert = true;
-            lastInsertNode = firstChild;
-            pointToInsert = insertedPoint;
-            DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
-            NS_WARNING_ASSERTION(
-                advanced, "Failed to advance offset from inserted point");
-          } else {
-            AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-            ErrorResult error;
-            curNode->RemoveChild(*firstChild, error);
-            if (NS_WARN_IF(error.Failed())) {
-              error.SuppressException();
-            }
-          }
-        }
-      } else if (parentBlock && HTMLEditUtils::IsPre(parentBlock) &&
-                 HTMLEditUtils::IsPre(curNode)) {
-        
-        for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
-             firstChild; firstChild = curNode->GetFirstChild()) {
-          EditorDOMPoint insertedPoint =
-              InsertNodeIntoProperAncestorWithTransaction(
-                  *firstChild, pointToInsert,
-                  SplitAtEdges::eDoNotCreateEmptyContainer);
-          if (NS_WARN_IF(!insertedPoint.IsSet())) {
-            break;
-          }
-
-          bDidInsert = true;
-          lastInsertNode = firstChild;
-          pointToInsert = insertedPoint;
-          DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
-          NS_WARNING_ASSERTION(advanced,
-                               "Failed to advance offset from inserted point");
-        }
-      }
-
-      if (!bDidInsert || NS_FAILED(rv)) {
-        
+      for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
+           firstChild; firstChild = curNode->GetFirstChild()) {
         EditorDOMPoint insertedPoint =
             InsertNodeIntoProperAncestorWithTransaction(
-                MOZ_KnownLive(*curNode->AsContent()), pointToInsert,
+                *firstChild, pointToInsert,
                 SplitAtEdges::eDoNotCreateEmptyContainer);
-        if (insertedPoint.IsSet()) {
-          lastInsertNode = curNode->AsContent();
-          pointToInsert = insertedPoint;
+        if (NS_WARN_IF(!insertedPoint.IsSet())) {
+          break;
         }
-
-        
-        
-        for (nsCOMPtr<nsIContent> content =
-                 curNode->IsContent() ? curNode->AsContent() : nullptr;
-             content && !insertedPoint.IsSet();
-             content = content->GetParent()) {
-          if (NS_WARN_IF(!content->GetParent()) ||
-              NS_WARN_IF(TextEditUtils::IsBody(content->GetParent()))) {
-            continue;
+        inserted = true;
+        lastInsertedContent = firstChild;
+        pointToInsert = insertedPoint;
+        DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
+        NS_WARNING_ASSERTION(advanced,
+                             "Failed to advance offset from inserted point");
+      }
+    }
+    
+    
+    
+    else if (HTMLEditUtils::IsList(curNode) &&
+             (HTMLEditUtils::IsList(pointToInsert.GetContainer()) ||
+              HTMLEditUtils::IsListItem(pointToInsert.GetContainer()))) {
+      for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
+           firstChild; firstChild = curNode->GetFirstChild()) {
+        if (HTMLEditUtils::IsListItem(firstChild) ||
+            HTMLEditUtils::IsList(firstChild)) {
+          
+          
+          
+          
+          
+          if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer())) {
+            bool isEmpty;
+            rv = IsEmptyNode(pointToInsert.GetContainer(), &isEmpty, true);
+            if (NS_SUCCEEDED(rv) && isEmpty) {
+              NS_WARNING_ASSERTION(
+                  pointToInsert.GetContainer()->GetParentNode(),
+                  "Insertion point is out of the DOM tree");
+              if (pointToInsert.GetContainer()->GetParentNode()) {
+                DeleteNodeWithTransaction(
+                    MOZ_KnownLive(*pointToInsert.GetContainer()));
+                pointToInsert.Set(pointToInsert.GetContainer());
+              }
+            }
           }
-          nsCOMPtr<nsINode> oldParent = content->GetParentNode();
-          insertedPoint = InsertNodeIntoProperAncestorWithTransaction(
-              MOZ_KnownLive(*content->GetParent()), pointToInsert,
-              SplitAtEdges::eDoNotCreateEmptyContainer);
-          if (insertedPoint.IsSet()) {
-            insertedContextParent = oldParent;
-            pointToInsert = insertedPoint;
+          EditorDOMPoint insertedPoint =
+              InsertNodeIntoProperAncestorWithTransaction(
+                  *firstChild, pointToInsert,
+                  SplitAtEdges::eDoNotCreateEmptyContainer);
+          if (NS_WARN_IF(!insertedPoint.IsSet())) {
+            break;
+          }
+
+          inserted = true;
+          lastInsertedContent = firstChild;
+          pointToInsert = insertedPoint;
+          DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
+          NS_WARNING_ASSERTION(advanced,
+                               "Failed to advance offset from inserted point");
+        }
+        
+        
+        else {
+          AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
+          ErrorResult error;
+          curNode->RemoveChild(*firstChild, error);
+          if (NS_WARN_IF(error.Failed())) {
+            error.SuppressException();
           }
         }
       }
-      if (lastInsertNode) {
-        pointToInsert.Set(lastInsertNode);
+    }
+    
+    
+    else if (parentBlock && HTMLEditUtils::IsPre(parentBlock) &&
+             HTMLEditUtils::IsPre(curNode)) {
+      
+      for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
+           firstChild; firstChild = curNode->GetFirstChild()) {
+        EditorDOMPoint insertedPoint =
+            InsertNodeIntoProperAncestorWithTransaction(
+                *firstChild, pointToInsert,
+                SplitAtEdges::eDoNotCreateEmptyContainer);
+        if (NS_WARN_IF(!insertedPoint.IsSet())) {
+          break;
+        }
+
+        inserted = true;
+        lastInsertedContent = firstChild;
+        pointToInsert = insertedPoint;
         DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
         NS_WARNING_ASSERTION(advanced,
                              "Failed to advance offset from inserted point");
@@ -558,112 +542,143 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     }
 
     
-    if (lastInsertNode) {
-      
-      nsCOMPtr<nsINode> selNode;
-      int32_t selOffset;
-
-      
-      if (!HTMLEditUtils::IsTable(lastInsertNode)) {
-        selNode = GetLastEditableLeaf(*lastInsertNode);
-        nsINode* highTable = nullptr;
-        for (nsINode* parent = selNode; parent && parent != lastInsertNode;
-             parent = parent->GetParentNode()) {
-          if (HTMLEditUtils::IsTable(parent)) {
-            highTable = parent;
-          }
-        }
-        if (highTable) {
-          selNode = highTable;
-        }
-      }
-      if (!selNode) {
-        selNode = lastInsertNode;
-      }
-      if (EditorBase::IsTextNode(selNode) ||
-          (IsContainer(selNode) && !HTMLEditUtils::IsTable(selNode))) {
-        selOffset = selNode->Length();
-      } else {
-        
-        EditorRawDOMPoint pointAtContainer(selNode);
-        if (NS_WARN_IF(!pointAtContainer.IsSet())) {
-          return NS_ERROR_FAILURE;
-        }
-        
-        
-        selNode = pointAtContainer.GetContainer();
-        
-        selOffset = pointAtContainer.Offset() + 1;
+    
+    
+    
+    
+    if (!inserted || NS_FAILED(rv)) {
+      EditorDOMPoint insertedPoint =
+          InsertNodeIntoProperAncestorWithTransaction(
+              MOZ_KnownLive(*curNode->AsContent()), pointToInsert,
+              SplitAtEdges::eDoNotCreateEmptyContainer);
+      if (insertedPoint.IsSet()) {
+        lastInsertedContent = curNode->AsContent();
+        pointToInsert = insertedPoint;
       }
 
       
       
-      WSRunObject wsRunObj(this, selNode, selOffset);
-      WSType visType;
-      wsRunObj.PriorVisibleNode(EditorRawDOMPoint(selNode, selOffset),
-                                &visType);
-      if (visType == WSType::br) {
-        
-        
-        
-        
-        if (!IsVisibleBRElement(wsRunObj.mStartReasonNode)) {
-          
-          
-          EditorRawDOMPoint atStartReasonNode(wsRunObj.mStartReasonNode);
-          selNode = atStartReasonNode.GetContainer();
-          selOffset = atStartReasonNode.Offset();
-          
-          WSRunObject wsRunObj(this, selNode, selOffset);
-          nsCOMPtr<nsINode> visNode;
-          int32_t outVisOffset;
-          wsRunObj.PriorVisibleNode(EditorRawDOMPoint(selNode, selOffset),
-                                    address_of(visNode), &outVisOffset,
-                                    &visType);
-          if (visType == WSType::text || visType == WSType::normalWS) {
-            selNode = visNode;
-            selOffset = outVisOffset;  
-                                       
-          } else if (visType == WSType::special) {
-            
-            
-            atStartReasonNode.Set(wsRunObj.mStartReasonNode);
-            selNode = atStartReasonNode.GetContainer();
-            selOffset = atStartReasonNode.Offset() + 1;
-          }
+      for (nsCOMPtr<nsIContent> content =
+               curNode->IsContent() ? curNode->AsContent() : nullptr;
+           content && !insertedPoint.IsSet(); content = content->GetParent()) {
+        if (NS_WARN_IF(!content->GetParent()) ||
+            NS_WARN_IF(TextEditUtils::IsBody(content->GetParent()))) {
+          continue;
         }
-      }
-      DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(selNode, selOffset);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to collapse Selection");
-
-      
-      nsCOMPtr<nsIContent> linkContent;
-      if (!bStartedInLink && (linkContent = GetLinkElement(selNode))) {
-        
-        
-        
-        
-        SplitNodeResult splitLinkResult = SplitNodeDeepWithTransaction(
-            *linkContent, EditorDOMPoint(selNode, selOffset),
+        nsCOMPtr<nsINode> oldParent = content->GetParentNode();
+        insertedPoint = InsertNodeIntoProperAncestorWithTransaction(
+            MOZ_KnownLive(*content->GetParent()), pointToInsert,
             SplitAtEdges::eDoNotCreateEmptyContainer);
-        NS_WARNING_ASSERTION(splitLinkResult.Succeeded(),
-                             "Failed to split the link");
-        if (splitLinkResult.GetPreviousNode()) {
-          EditorRawDOMPoint afterLeftLink(splitLinkResult.GetPreviousNode());
-          if (afterLeftLink.AdvanceOffset()) {
-            DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(afterLeftLink);
-            NS_WARNING_ASSERTION(
-                NS_SUCCEEDED(rv),
-                "Failed to collapse Selection after the left link");
-          }
+        if (insertedPoint.IsSet()) {
+          insertedContextParent = oldParent;
+          pointToInsert = insertedPoint;
         }
       }
     }
+    if (lastInsertedContent) {
+      pointToInsert.Set(lastInsertedContent);
+      DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+                           "Failed to advance offset from inserted point");
+    }
   }
 
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!lastInsertedContent) {
+    return NS_OK;
+  }
+
+  
+  EditorDOMPoint pointToPutCaret;
+
+  
+  nsINode* containerNode = nullptr;
+  if (!HTMLEditUtils::IsTable(lastInsertedContent)) {
+    containerNode = GetLastEditableLeaf(*lastInsertedContent);
+    Element* mostAncestorTableElement = nullptr;
+    for (nsINode* parentNode = containerNode;
+         parentNode && parentNode != lastInsertedContent;
+         parentNode = parentNode->GetParentNode()) {
+      if (HTMLEditUtils::IsTable(parentNode)) {
+        mostAncestorTableElement = parentNode->AsElement();
+      }
+    }
+    
+    
+    if (mostAncestorTableElement) {
+      containerNode = mostAncestorTableElement;
+    }
+  }
+  
+  
+  if (!containerNode) {
+    containerNode = lastInsertedContent;
+  }
+
+  
+  
+  if (EditorBase::IsTextNode(containerNode) ||
+      (IsContainer(containerNode) && !HTMLEditUtils::IsTable(containerNode))) {
+    pointToPutCaret.SetToEndOf(containerNode);
+  }
+  
+  
+  else {
+    pointToPutCaret.Set(containerNode);
+    DebugOnly<bool> advanced = pointToPutCaret.AdvanceOffset();
+    NS_WARNING_ASSERTION(advanced, "Failed to advance offset from found node");
+  }
+
+  
+  
+  WSRunObject wsRunObj(this, pointToPutCaret);
+  WSType visType;
+  wsRunObj.PriorVisibleNode(pointToPutCaret, &visType);
+  if (visType == WSType::br && !IsVisibleBRElement(wsRunObj.mStartReasonNode)) {
+    WSRunObject wsRunObj2(this, EditorDOMPoint(wsRunObj.mStartReasonNode));
+    nsCOMPtr<nsINode> visibleNode;
+    int32_t visibleNodeOffset;
+    wsRunObj2.PriorVisibleNode(pointToPutCaret, address_of(visibleNode),
+                               &visibleNodeOffset, &visType);
+    if (visType == WSType::text || visType == WSType::normalWS) {
+      pointToPutCaret.Set(visibleNode, visibleNodeOffset);
+    } else if (visType == WSType::special) {
+      pointToPutCaret.Set(wsRunObj2.mStartReasonNode);
+      DebugOnly<bool> advanced = pointToPutCaret.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+                           "Failed to advance offset from found object");
+    }
+  }
+  DebugOnly<nsresult> rvIgnored =
+      SelectionRefPtr()->Collapse(pointToPutCaret.ToRawRangeBoundary());
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "Selection::Collapse() failed, but ignored");
+
+  
+  
+  if (insertionPointWasInLink) {
+    return NS_OK;
+  }
+  RefPtr<Element> linkElement = GetLinkElement(pointToPutCaret.GetContainer());
+  if (!linkElement) {
+    return NS_OK;
+  }
+  
+  
+  
+  
+  
+  SplitNodeResult splitLinkResult = SplitNodeDeepWithTransaction(
+      *linkElement, pointToPutCaret, SplitAtEdges::eDoNotCreateEmptyContainer);
+  NS_WARNING_ASSERTION(splitLinkResult.Succeeded(),
+                       "SplitNodeDeepWithTransaction() failed, but ignored");
+  if (splitLinkResult.GetPreviousNode()) {
+    EditorRawDOMPoint afterLeftLink(splitLinkResult.GetPreviousNode());
+    if (afterLeftLink.AdvanceOffset()) {
+      DebugOnly<nsresult> rvIgnored =
+          SelectionRefPtr()->Collapse(afterLeftLink);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "Selection::Collapse() failed, but ignored");
+    }
   }
   return NS_OK;
 }
@@ -988,10 +1003,8 @@ nsresult HTMLEditor::BlobReader::OnResult(const nsACString& aResult) {
                                      NS_LITERAL_STRING(kFileMime),
                                      sourceDocument, pointToInsert,
                                      mDoDeleteSelection, mIsSafe, false);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "DoInsertHTMLWithContext() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::BlobReader::OnError(const nsAString& aError) {
@@ -1177,7 +1190,8 @@ nsresult HTMLEditor::InsertObject(const nsACString& aType, nsISupports* aObject,
                                  NS_LITERAL_STRING(kFileMime), aSourceDoc,
                                  aPointToInsert, aDoDeleteSelection, aIsSafe,
                                  false);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the image");
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "DoInsertHTMLWithContext() failed, but ignored");
   }
 
   return NS_OK;
@@ -1380,21 +1394,19 @@ nsresult HTMLEditor::InsertFromDataTransfer(DataTransfer* aDataTransfer,
             GetStringFromDataTransfer(aDataTransfer,
                                       NS_LITERAL_STRING(kHTMLInfo), aIndex,
                                       infoString);
-            rv = DoInsertHTMLWithContext(cffragment, contextString, infoString,
-                                         type, aSourceDoc, aDroppedAt,
-                                         aDoDeleteSelection, isSafe);
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-              return rv;
-            }
-            return NS_OK;
-          }
-          rv = DoInsertHTMLWithContext(cffragment, cfcontext, cfselection, type,
-                                       aSourceDoc, aDroppedAt,
-                                       aDoDeleteSelection, isSafe);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
+            nsresult rv = DoInsertHTMLWithContext(
+                cffragment, contextString, infoString, type, aSourceDoc,
+                aDroppedAt, aDoDeleteSelection, isSafe);
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                                 "DoInsertHTMLWithContext() failed");
             return rv;
           }
-          return NS_OK;
+          nsresult rv = DoInsertHTMLWithContext(
+              cffragment, cfcontext, cfselection, type, aSourceDoc, aDroppedAt,
+              aDoDeleteSelection, isSafe);
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                               "DoInsertHTMLWithContext() failed");
+          return rv;
         }
       } else if (type.EqualsLiteral(kHTMLMime)) {
         nsAutoString text, contextString, infoString;
@@ -1408,10 +1420,9 @@ nsresult HTMLEditor::InsertFromDataTransfer(DataTransfer* aDataTransfer,
           nsresult rv = DoInsertHTMLWithContext(text, contextString, infoString,
                                                 type, aSourceDoc, aDroppedAt,
                                                 aDoDeleteSelection, isSafe);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-          return NS_OK;
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                               "DoInsertHTMLWithContext() failed");
+          return rv;
         }
       }
     }
@@ -1729,44 +1740,75 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
   if (IsPlaintextEditor()) {
     
     nsresult rv = PasteAsPlaintextQuotation(aClipboardType);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "PasteAsPlaintextQuotation() failed");
+    return EditorBase::ToGenericNSResult(rv);
   }
 
   
   
+
+  
+  if (IsReadonly() || IsDisabled()) {
+    return NS_OK;
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return EditorBase::ToGenericNSResult(result.Rv());
+  }
+
+  UndefineCaretBidiLevel();
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertQuotation, nsIEditor::eNext);
 
-  
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
-  bool cancel, handled;
-  RefPtr<TextEditRules> rules(mRules);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
+  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
   }
-  if (cancel || handled) {
-    return NS_OK;
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EnsureNoPaddingBRElementForEmptyEditor() failed, but ignored");
+
+  if (NS_SUCCEEDED(rv) && SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = EnsureCaretNotAfterPaddingBRElement();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EnsureCaretNotAfterPaddingBRElement() failed, but ignored");
+    if (NS_SUCCEEDED(rv)) {
+      nsresult rv = PrepareInlineStylesForCaret();
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "PrepareInlineStylesForCaret() failed, but ignored");
+    }
   }
 
   
   
   
-  nsCOMPtr<Element> newNode =
+  RefPtr<Element> newBlockquoteElement =
       DeleteSelectionAndCreateElement(*nsGkAtoms::blockquote);
-  if (NS_WARN_IF(!newNode)) {
+  if (NS_WARN_IF(!newBlockquoteElement)) {
     return NS_ERROR_FAILURE;
   }
-  newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                   NS_LITERAL_STRING("cite"), true);
+  newBlockquoteElement->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
+                                NS_LITERAL_STRING("cite"), true);
+  if (NS_WARN_IF(Destroyed())) {
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+  }
 
   
-  rv = SelectionRefPtr()->Collapse(newNode, 0);
+  rv = SelectionRefPtr()->Collapse(newBlockquoteElement, 0);
+  if (NS_WARN_IF(Destroyed())) {
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1777,10 +1819,8 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
   
   
   rv = PasteInternal(aClipboardType, aDispatchPasteEvent);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "PasteInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 
@@ -1817,14 +1857,18 @@ nsresult HTMLEditor::PasteAsPlaintextQuotation(int32_t aSelectionType) {
   rv = trans->GetAnyTransferData(flav, getter_AddRefs(genericDataObj));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (flav.EqualsLiteral(kUnicodeMime)) {
-    nsAutoString stuffToPaste;
-    if (GetString(genericDataObj, stuffToPaste)) {
-      AutoPlaceholderBatch treatAsOneTransaction(*this);
-      rv = InsertAsPlaintextQuotation(stuffToPaste, true, 0);
-    }
+  if (!flav.EqualsLiteral(kUnicodeMime)) {
+    return rv;
   }
 
+  nsAutoString stuffToPaste;
+  if (!GetString(genericDataObj, stuffToPaste)) {
+    return rv;
+  }
+
+  AutoPlaceholderBatch treatAsOneTransaction(*this);
+  rv = InsertAsPlaintextQuotation(stuffToPaste, true, 0);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "InsertAsPlaintextQuotation() failed");
   return rv;
 }
 
@@ -1924,6 +1968,12 @@ nsresult HTMLEditor::InsertTextWithQuotationsInternal(
     if (curHunkIsQuoted) {
       rv =
           InsertAsPlaintextQuotation(curHunk, false, getter_AddRefs(dummyNode));
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "InsertAsPlaintextQuotation() failed, might be ignored");
     } else {
       rv = InsertTextAsSubAction(curHunk);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -1936,6 +1986,8 @@ nsresult HTMLEditor::InsertTextWithQuotationsInternal(
     hunkStart = lineStart;
   }
 
+  
+  
   return rv;
 }
 
@@ -1950,10 +2002,9 @@ nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
     editActionData.SetData(aQuotedText);
     AutoPlaceholderBatch treatAsOneTransaction(*this);
     nsresult rv = InsertAsPlaintextQuotation(aQuotedText, true, aNodeInserted);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "InsertAsPlaintextQuotation() failed");
+    return EditorBase::ToGenericNSResult(rv);
   }
 
   AutoEditActionDataSetter editActionData(*this,
@@ -1966,10 +2017,9 @@ nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
   nsAutoString citation;
   nsresult rv = InsertAsCitedQuotationInternal(aQuotedText, citation, false,
                                                aNodeInserted);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "InsertAsCitedQuotationInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 
@@ -1985,20 +2035,44 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     *aNodeInserted = nullptr;
   }
 
+  if (IsReadonly() || IsDisabled()) {
+    return NS_OK;
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
+  }
+
+  UndefineCaretBidiLevel();
+
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertQuotation, nsIEditor::eNext);
 
-  
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
-  bool cancel, handled;
-  
-  RefPtr<TextEditRules> rules(mRules);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (cancel || handled) {
-    return NS_OK;  
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EnsureNoPaddingBRElementForEmptyEditor() failed, but ignored");
+
+  if (NS_SUCCEEDED(rv) && SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = EnsureCaretNotAfterPaddingBRElement();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EnsureCaretNotAfterPaddingBRElement() failed, but ignored");
+    if (NS_SUCCEEDED(rv)) {
+      nsresult rv = PrepareInlineStylesForCaret();
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "PrepareInlineStylesForCaret() failed, but ignored");
+    }
   }
 
   
@@ -2007,31 +2081,33 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   
   
   
-  RefPtr<Element> newNode = DeleteSelectionAndCreateElement(*nsGkAtoms::span);
+  RefPtr<Element> newSpanElement =
+      DeleteSelectionAndCreateElement(*nsGkAtoms::span);
 
   
   
   
   
-  if (newNode) {
+  if (newSpanElement) {
     
-    newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::mozquote,
-                     NS_LITERAL_STRING("true"), true);
+    newSpanElement->SetAttr(kNameSpaceID_None, nsGkAtoms::mozquote,
+                            NS_LITERAL_STRING("true"), true);
     
-    nsCOMPtr<nsINode> parent = newNode->GetParentNode();
-    if (parent && parent->IsHTMLElement(nsGkAtoms::body)) {
-      newNode->SetAttr(
+    nsCOMPtr<nsINode> parentNode = newSpanElement->GetParentNode();
+    if (parentNode && parentNode->IsHTMLElement(nsGkAtoms::body)) {
+      newSpanElement->SetAttr(
           kNameSpaceID_None, nsGkAtoms::style,
           NS_LITERAL_STRING(
               "white-space: pre-wrap; display: block; width: 98vw;"),
           true);
     } else {
-      newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                       NS_LITERAL_STRING("white-space: pre-wrap;"), true);
+      newSpanElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
+                              NS_LITERAL_STRING("white-space: pre-wrap;"),
+                              true);
     }
 
     
-    DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(newNode, 0);
+    DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(newSpanElement, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Failed to collapse selection into the new node");
   }
@@ -2048,29 +2124,30 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     }
   }
 
-  if (!newNode) {
+  
+  if (!newSpanElement) {
     return NS_OK;
   }
 
   
-  EditorRawDOMPoint afterNewNode(newNode);
-  bool advanced = afterNewNode.AdvanceOffset();
+  EditorRawDOMPoint afterNewSpanElement(newSpanElement);
+  bool advanced = afterNewSpanElement.AdvanceOffset();
   NS_WARNING_ASSERTION(
       advanced, "Failed to advance offset to after the new <span> element");
   if (advanced) {
-    DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(afterNewNode);
+    DebugOnly<nsresult> rvIgnored =
+        SelectionRefPtr()->Collapse(afterNewSpanElement);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "Failed to collapse after the new node");
+                         "Selection::Collapse() failed, but ignored");
   }
 
   
   
   
   if (aNodeInserted) {
-    newNode.forget(aNodeInserted);
+    newSpanElement.forget(aNodeInserted);
   }
 
-  
   return NS_OK;
 }
 
@@ -2141,10 +2218,9 @@ HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
 
     AutoPlaceholderBatch treatAsOneTransaction(*this);
     nsresult rv = InsertAsPlaintextQuotation(aQuotedText, true, aNodeInserted);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "InsertAsPlaintextQuotation() failed");
+    return EditorBase::ToGenericNSResult(rv);
   }
 
   AutoEditActionDataSetter editActionData(*this,
@@ -2156,10 +2232,9 @@ HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   nsresult rv = InsertAsCitedQuotationInternal(aQuotedText, aCitation,
                                                aInsertHTML, aNodeInserted);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "InsertAsCitedQuotationInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::InsertAsCitedQuotationInternal(
@@ -2168,71 +2243,120 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsPlaintextEditor());
 
+  if (IsReadonly() || IsDisabled()) {
+    return NS_OK;
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
+  }
+
+  UndefineCaretBidiLevel();
+
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertQuotation, nsIEditor::eNext);
 
-  
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
-  bool cancel, handled;
-  
-  RefPtr<TextEditRules> rules(mRules);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (cancel || handled) {
-    return NS_OK;  
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EnsureNoPaddingBRElementForEmptyEditor() failed, but ignored");
+
+  if (NS_SUCCEEDED(rv) && SelectionRefPtr()->IsCollapsed()) {
+    nsresult rv = EnsureCaretNotAfterPaddingBRElement();
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EnsureCaretNotAfterPaddingBRElement() failed, but ignored");
+    if (NS_SUCCEEDED(rv)) {
+      nsresult rv = PrepareInlineStylesForCaret();
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "PrepareInlineStylesForCaret() failed, but ignored");
+    }
   }
 
-  RefPtr<Element> newNode =
+  RefPtr<Element> newBlockquoteElement =
       DeleteSelectionAndCreateElement(*nsGkAtoms::blockquote);
-  if (NS_WARN_IF(!newNode)) {
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  if (NS_WARN_IF(!newBlockquoteElement)) {
     return NS_ERROR_FAILURE;
   }
 
   
-  newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                   NS_LITERAL_STRING("cite"), true);
+  newBlockquoteElement->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
+                                NS_LITERAL_STRING("cite"), true);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
 
   if (!aCitation.IsEmpty()) {
-    newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::cite, aCitation, true);
+    newBlockquoteElement->SetAttr(kNameSpaceID_None, nsGkAtoms::cite, aCitation,
+                                  true);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
   }
 
   
-  DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(newNode, 0);
+  DebugOnly<nsresult> rvIgnored =
+      SelectionRefPtr()->Collapse(newBlockquoteElement, 0);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "Failed to collapse Selection in the new <blockquote> element");
 
   if (aInsertHTML) {
     rv = LoadHTML(aQuotedText);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
     rv = InsertTextAsSubAction(aQuotedText);  
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
 
-  if (!newNode) {
+  
+  if (!newBlockquoteElement) {
     return NS_OK;
   }
 
   
-  EditorRawDOMPoint afterNewNode(newNode);
-  bool advanced = afterNewNode.AdvanceOffset();
+  EditorRawDOMPoint afterNewBlockquoteElement(newBlockquoteElement);
+  bool advanced = afterNewBlockquoteElement.AdvanceOffset();
   NS_WARNING_ASSERTION(
       advanced, "Failed advance offset to after the new <blockquote> element");
   if (advanced) {
-    DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(afterNewNode);
+    DebugOnly<nsresult> rvIgnored =
+        SelectionRefPtr()->Collapse(afterNewBlockquoteElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "Failed to collapse after the new node");
+                         "Selection::Collapse() failed, but ignored");
   }
 
   if (aNodeInserted) {
-    newNode.forget(aNodeInserted);
+    newBlockquoteElement.forget(aNodeInserted);
   }
 
   return NS_OK;
