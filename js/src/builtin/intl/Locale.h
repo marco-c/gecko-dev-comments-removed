@@ -33,6 +33,31 @@ extern JSObject* CreateLocalePrototype(JSContext* cx,
                                        JS::Handle<JSObject*> Intl,
                                        JS::Handle<GlobalObject*> global);
 
+
+
+
+extern MOZ_MUST_USE bool intl_CreateUninitializedLocale(JSContext* cx,
+                                                        unsigned argc,
+                                                        Value* vp);
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_AddLikelySubtags(JSContext* cx, unsigned argc,
+                                               Value* vp);
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_RemoveLikelySubtags(JSContext* cx, unsigned argc,
+                                                  Value* vp);
+
 }  
 
 #endif 
