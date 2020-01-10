@@ -1157,9 +1157,10 @@ var AddonTestUtils = {
       let stream = ArrayBufferInputStream(data, 0, data.byteLength);
 
       
+      
       zipW.addEntryStream(
         path,
-        0,
+        Math.pow(2, 49),
         Ci.nsIZipWriter.COMPRESSION_NONE,
         stream,
         false
