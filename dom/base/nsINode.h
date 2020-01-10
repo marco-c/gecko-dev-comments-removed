@@ -1057,6 +1057,48 @@ class nsINode : public mozilla::dom::EventTarget {
     }
   }
 
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<nsINode> CloneAndAdopt(
+      nsINode* aNode, bool aClone, bool aDeep,
+      nsNodeInfoManager* aNewNodeInfoManager,
+      JS::Handle<JSObject*> aReparentScope,
+      nsCOMArray<nsINode>* aNodesWithProperties, nsINode* aParent,
+      mozilla::ErrorResult& aError);
+
+ public:
   
 
 

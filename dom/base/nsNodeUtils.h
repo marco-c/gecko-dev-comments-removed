@@ -11,16 +11,12 @@
 #include "nsIMutationObserver.h"  
 #include "mozilla/dom/Document.h"
 #include "js/TypeDecls.h"
-#include "nsCOMArray.h"
 #include "nsContentUtils.h"
 
 struct CharacterDataChangeInfo;
-template <class E>
-class nsCOMArray;
 class nsCycleCollectionTraversalCallback;
 namespace mozilla {
 struct NonOwningAnimationTarget;
-class ErrorResult;
 namespace dom {
 class Animation;
 }  
@@ -140,46 +136,6 @@ class nsNodeUtils {
   static void AnimationAdded(mozilla::dom::Animation* aAnimation);
   static void AnimationChanged(mozilla::dom::Animation* aAnimation);
   static void AnimationRemoved(mozilla::dom::Animation* aAnimation);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<nsINode> CloneAndAdopt(
-      nsINode* aNode, bool aClone, bool aDeep,
-      nsNodeInfoManager* aNewNodeInfoManager,
-      JS::Handle<JSObject*> aReparentScope,
-      nsCOMArray<nsINode>* aNodesWithProperties, nsINode* aParent,
-      mozilla::ErrorResult& aError);
 
  private:
   enum class AnimationMutationType { Added, Changed, Removed };
