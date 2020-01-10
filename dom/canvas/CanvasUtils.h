@@ -176,7 +176,8 @@ void DashArrayToJSVal(nsTArray<T>& dashes, JSContext* cx,
 
 
 
-bool CheckWriteOnlySecurity(bool aCORSUsed, nsIPrincipal* aPrincipal);
+bool CheckWriteOnlySecurity(bool aCORSUsed, nsIPrincipal* aPrincipal,
+                            bool aHadCrossOriginRedirects);
 
 }  
 }  
