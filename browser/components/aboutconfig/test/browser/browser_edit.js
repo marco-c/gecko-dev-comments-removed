@@ -122,10 +122,10 @@ add_task(async function test_click_type_label_multiple_forms() {
 
       
       
-      await BrowserTestUtils.synthesizeMouseAtCenter(
+      EventUtils.synthesizeMouseAtCenter(
         radioLabels[radioIndex],
         {},
-        this.browser
+        this.browser.contentWindow
       );
 
       

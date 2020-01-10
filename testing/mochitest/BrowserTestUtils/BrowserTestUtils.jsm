@@ -79,11 +79,6 @@ registrar.registerFactory(OUR_PROCESSSELECTOR_CID, "", null, selectorFactory);
 
 Cu.permitCPOWsInScope(this);
 
-var gSendCharCount = 0;
-var gSynthesizeKeyCount = 0;
-var gSynthesizeCompositionCount = 0;
-var gSynthesizeCompositionChangeCount = 0;
-
 const kAboutPageRegistrationContentScript =
   "chrome://mochikit/content/tests/BrowserTestUtils/content-about-page-utils.js";
 
@@ -321,6 +316,18 @@ var BrowserTestUtils = {
     }
 
     return true;
+  },
+
+  
+
+
+
+  getBrowsingContextFrom(browser) {
+    if (Element.isInstance(browser)) {
+      return browser.browsingContext;
+    }
+
+    return browser;
   },
 
   
@@ -1457,39 +1464,22 @@ var BrowserTestUtils = {
 
 
 
+  synthesizeMouse(target, offsetX, offsetY, event, browsingContext) {
+    let targetFn = null;
+    if (typeof target == "function") {
+      targetFn = target.toString();
+      target = null;
+    } else if (typeof target != "string" && !Array.isArray(target)) {
+      target = null;
+    }
 
-
-
-
-  synthesizeMouse(target, offsetX, offsetY, event, browser) {
-    return new Promise((resolve, reject) => {
-      let mm = browser.messageManager;
-      mm.addMessageListener("Test:SynthesizeMouseDone", function mouseMsg(
-        message
-      ) {
-        mm.removeMessageListener("Test:SynthesizeMouseDone", mouseMsg);
-        if (message.data.hasOwnProperty("defaultPrevented")) {
-          resolve(message.data.defaultPrevented);
-        } else {
-          reject(new Error(message.data.error));
-        }
-      });
-
-      let cpowObject = null;
-      let targetFn = null;
-      if (typeof target == "function") {
-        targetFn = target.toString();
-        target = null;
-      } else if (typeof target != "string" && !Array.isArray(target)) {
-        cpowObject = target;
-        target = null;
-      }
-
-      mm.sendAsyncMessage(
-        "Test:SynthesizeMouse",
-        { target, targetFn, x: offsetX, y: offsetY, event },
-        { object: cpowObject }
-      );
+    browsingContext = this.getBrowsingContextFrom(browsingContext);
+    return this.sendQuery(browsingContext, "Test:SynthesizeMouse", {
+      target,
+      targetFn,
+      x: offsetX,
+      y: offsetY,
+      event,
     });
   },
 
@@ -1518,39 +1508,22 @@ var BrowserTestUtils = {
 
 
 
+  synthesizeTouch(target, offsetX, offsetY, event, browsingContext) {
+    let targetFn = null;
+    if (typeof target == "function") {
+      targetFn = target.toString();
+      target = null;
+    } else if (typeof target != "string" && !Array.isArray(target)) {
+      target = null;
+    }
 
-
-
-
-  synthesizeTouch(target, offsetX, offsetY, event, browser) {
-    return new Promise((resolve, reject) => {
-      let mm = browser.messageManager;
-      mm.addMessageListener("Test:SynthesizeTouchDone", function touchMsg(
-        message
-      ) {
-        mm.removeMessageListener("Test:SynthesizeTouchDone", touchMsg);
-        if (message.data.hasOwnProperty("defaultPrevented")) {
-          resolve(message.data.defaultPrevented);
-        } else {
-          reject(new Error(message.data.error));
-        }
-      });
-
-      let cpowObject = null;
-      let targetFn = null;
-      if (typeof target == "function") {
-        targetFn = target.toString();
-        target = null;
-      } else if (typeof target != "string" && !Array.isArray(target)) {
-        cpowObject = target;
-        target = null;
-      }
-
-      mm.sendAsyncMessage(
-        "Test:SynthesizeTouch",
-        { target, targetFn, x: offsetX, y: offsetY, event },
-        { object: cpowObject }
-      );
+    browsingContext = this.getBrowsingContextFrom(browsingContext);
+    return this.sendQuery(browsingContext, "Test:SynthesizeTouch", {
+      target,
+      targetFn,
+      x: offsetX,
+      y: offsetY,
+      event,
     });
   },
 
@@ -1579,10 +1552,16 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeMouseAtCenter(target, event, browser) {
+  synthesizeMouseAtCenter(target, event, browsingContext) {
     
     event.centered = true;
-    return BrowserTestUtils.synthesizeMouse(target, 0, 0, event, browser);
+    return BrowserTestUtils.synthesizeMouse(
+      target,
+      0,
+      0,
+      event,
+      browsingContext
+    );
   },
 
   
@@ -1590,13 +1569,13 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeMouseAtPoint(offsetX, offsetY, event, browser) {
+  synthesizeMouseAtPoint(offsetX, offsetY, event, browsingContext) {
     return BrowserTestUtils.synthesizeMouse(
       null,
       offsetX,
       offsetY,
       event,
-      browser
+      browsingContext
     );
   },
 
@@ -1846,25 +1825,9 @@ var BrowserTestUtils = {
 
 
 
-  sendChar(char, browser) {
-    return new Promise(resolve => {
-      let seq = ++gSendCharCount;
-      let mm = browser.messageManager;
-
-      mm.addMessageListener("Test:SendCharDone", function charMsg(message) {
-        if (message.data.seq != seq) {
-          return;
-        }
-
-        mm.removeMessageListener("Test:SendCharDone", charMsg);
-        resolve(message.data.result);
-      });
-
-      mm.sendAsyncMessage("Test:SendChar", {
-        char,
-        seq,
-      });
-    });
+  sendChar(char, browsingContext) {
+    browsingContext = this.getBrowsingContextFrom(browsingContext);
+    return this.sendQuery(browsingContext, "Test:SendChar", { char });
   },
 
   
@@ -1882,21 +1845,11 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeKey(key, event, browser) {
-    return new Promise(resolve => {
-      let seq = ++gSynthesizeKeyCount;
-      let mm = browser.messageManager;
-
-      mm.addMessageListener("Test:SynthesizeKeyDone", function keyMsg(message) {
-        if (message.data.seq != seq) {
-          return;
-        }
-
-        mm.removeMessageListener("Test:SynthesizeKeyDone", keyMsg);
-        resolve();
-      });
-
-      mm.sendAsyncMessage("Test:SynthesizeKey", { key, event, seq });
+  synthesizeKey(key, event, browsingContext) {
+    browsingContext = this.getBrowsingContextFrom(browsingContext);
+    return this.sendQuery(browsingContext, "Test:SynthesizeKey", {
+      key,
+      event,
     });
   },
 
@@ -1914,23 +1867,10 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeComposition(event, browser) {
-    return new Promise(resolve => {
-      let seq = ++gSynthesizeCompositionCount;
-      let mm = browser.messageManager;
-
-      mm.addMessageListener("Test:SynthesizeCompositionDone", function compMsg(
-        message
-      ) {
-        if (message.data.seq != seq) {
-          return;
-        }
-
-        mm.removeMessageListener("Test:SynthesizeCompositionDone", compMsg);
-        resolve(message.data.result);
-      });
-
-      mm.sendAsyncMessage("Test:SynthesizeComposition", { event, seq });
+  synthesizeComposition(event, browsingContext) {
+    browsingContext = this.getBrowsingContextFrom(browsingContext);
+    return this.sendQuery(browsingContext, "Test:SynthesizeComposition", {
+      event,
     });
   },
 
@@ -1947,27 +1887,10 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeCompositionChange(event, browser) {
-    return new Promise(resolve => {
-      let seq = ++gSynthesizeCompositionChangeCount;
-      let mm = browser.messageManager;
-
-      mm.addMessageListener(
-        "Test:SynthesizeCompositionChangeDone",
-        function compMsg(message) {
-          if (message.data.seq != seq) {
-            return;
-          }
-
-          mm.removeMessageListener(
-            "Test:SynthesizeCompositionChangeDone",
-            compMsg
-          );
-          resolve();
-        }
-      );
-
-      mm.sendAsyncMessage("Test:SynthesizeCompositionChange", { event, seq });
+  synthesizeCompositionChange(event, browsingContext) {
+    browsingContext = this.getBrowsingContextFrom(browsingContext);
+    return this.sendQuery(browsingContext, "Test:SynthesizeCompositionChange", {
+      event,
     });
   },
 
@@ -2240,5 +2163,25 @@ var BrowserTestUtils = {
       "BrowserTestUtils"
     );
     actor.sendAsyncMessage(aMessageName, aMessageData);
+  },
+
+  
+
+
+
+
+
+
+
+
+  async sendQuery(aBrowsingContext, aMessageName, aMessageData) {
+    if (!aBrowsingContext.currentWindowGlobal) {
+      await this.waitForCondition(() => aBrowsingContext.currentWindowGlobal);
+    }
+
+    let actor = aBrowsingContext.currentWindowGlobal.getActor(
+      "BrowserTestUtils"
+    );
+    return actor.sendQuery(aMessageName, aMessageData);
   },
 };
