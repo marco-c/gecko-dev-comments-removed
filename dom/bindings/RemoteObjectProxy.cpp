@@ -63,37 +63,6 @@ bool RemoteObjectProxyBase::delete_(JSContext* aCx,
   return ReportCrossOriginDenial(aCx, aId, NS_LITERAL_CSTRING("delete"));
 }
 
-bool RemoteObjectProxyBase::getPrototype(
-    JSContext* aCx, JS::Handle<JSObject*> aProxy,
-    JS::MutableHandle<JSObject*> aProtop) const {
-  
-  
-  
-  
-  aProtop.set(nullptr);
-  return true;
-}
-
-bool RemoteObjectProxyBase::setPrototype(JSContext* aCx,
-                                         JS::Handle<JSObject*> aProxy,
-                                         JS::Handle<JSObject*> aProto,
-                                         JS::ObjectOpResult& aResult) const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!aProto) {
-    return aResult.succeed();
-  }
-  return aResult.failCantSetProto();
-}
-
 bool RemoteObjectProxyBase::getPrototypeIfOrdinary(
     JSContext* aCx, JS::Handle<JSObject*> aProxy, bool* aIsOrdinary,
     JS::MutableHandle<JSObject*> aProtop) const {
@@ -186,6 +155,12 @@ void RemoteObjectProxyBase::GetOrCreateProxyObject(
   if (!obj) {
     return;
   }
+
+  bool success;
+  if (!JS_SetImmutablePrototype(aCx, obj, &success)) {
+    return;
+  }
+  MOZ_ASSERT(success);
 
   aNewObjectCreated = true;
 
