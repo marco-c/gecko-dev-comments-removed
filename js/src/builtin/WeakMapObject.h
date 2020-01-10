@@ -17,12 +17,12 @@ class GlobalObject;
 
 class WeakCollectionObject : public NativeObject {
  public:
-  ObjectValueMap* getMap() {
-    return static_cast<ObjectValueMap*>(getPrivate());
+  ObjectValueWeakMap* getMap() {
+    return static_cast<ObjectValueWeakMap*>(getPrivate());
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
-    ObjectValueMap* map = getMap();
+    ObjectValueWeakMap* map = getMap();
     return map ? map->sizeOfIncludingThis(aMallocSizeOf) : 0;
   }
 
