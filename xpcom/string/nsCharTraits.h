@@ -51,9 +51,6 @@
 
 #define IS_SURROGATE(u) ((uint32_t(u) & 0xFFFFF800) == 0xD800)
 
-#define IS_SURROGATE_PAIR(h, l) \
-  (NS_IS_HIGH_SURROGATE(h) && NS_IS_LOW_SURROGATE(l))
-
 
 
 
