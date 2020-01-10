@@ -1138,15 +1138,6 @@ nsresult ContentChild::ProvideWindowCommon(
       newChild->RecvLoadURL(urlToLoad, showInfo);
     }
 
-    if (xpc::IsInAutomation()) {
-      if (nsCOMPtr<nsPIDOMWindowOuter> outer =
-              do_GetInterface(newChild->WebNavigation())) {
-        nsCOMPtr<nsIObserverService> obs(services::GetObserverService());
-        obs->NotifyObservers(
-            outer, "dangerous:test-only:new-browser-child-ready", nullptr);
-      }
-    }
-
     browsingContext.forget(aReturn);
   };
 
@@ -1244,14 +1235,6 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   
-
-  
-  
-  
-  if (*aReturn && (*aReturn)->IsDiscarded()) {
-    NS_RELEASE(*aReturn);
-    return NS_ERROR_ABORT;
-  }
 
   
   MOZ_ASSERT_IF(NS_SUCCEEDED(rv), *aReturn);
