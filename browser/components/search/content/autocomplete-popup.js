@@ -17,18 +17,6 @@
       this.addEventListener("popupshowing", event => {
         
         
-        let DOMUtils = window.windowUtils;
-        let textboxRect = DOMUtils.getBoundsWithoutFlushing(this.mInput);
-
-        
-        let minWidth = Math.max(
-          textboxRect.width,
-          this.oneOffButtons.buttonWidth * 3
-        );
-        this.style.minWidth = Math.round(minWidth) + "px";
-
-        
-        
         
         let searchbar = document.getElementById("searchbar");
         if (searchbar.hasAttribute("showonlysettings")) {
