@@ -4995,18 +4995,18 @@ bool nsContentUtils::IsInSameAnonymousTree(const nsINode* aNode,
   MOZ_ASSERT(aNode, "Must have a node to work with");
   MOZ_ASSERT(aContent, "Must have a content to work with");
 
-  if (!aNode->IsContent()) {
-    
-
-
-
-
-
-
-    return aContent->GetBindingParent() == nullptr;
+  if (aNode->IsInNativeAnonymousSubtree() != aContent->IsInNativeAnonymousSubtree()) {
+    return false;
   }
 
-  return aNode->AsContent()->GetBindingParent() == aContent->GetBindingParent();
+  if (aNode->IsInNativeAnonymousSubtree()) {
+    return aContent->GetClosestNativeAnonymousSubtreeRoot() ==
+           aNode->GetClosestNativeAnonymousSubtreeRoot();
+  }
+
+  
+  
+  return aNode->GetContainingShadow() == aContent->GetContainingShadow();
 }
 
 
