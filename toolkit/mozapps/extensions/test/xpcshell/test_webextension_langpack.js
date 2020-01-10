@@ -120,15 +120,20 @@ add_task(async function() {
 
   {
     
-    let bundles = L10nRegistry.generateBundles(["und"], ["toolkit_test.ftl"]);
-    let bundle0 = (await bundles.next()).value;
+    let bundles = L10nRegistry.generateBundlesSync(
+      ["und"],
+      ["toolkit_test.ftl"]
+    );
+    let bundle0 = bundles.next().value;
+    ok(bundle0);
     equal(bundle0.hasMessage("message-id1"), true);
   }
 
   {
     
-    let bundles = L10nRegistry.generateBundles(["und"], ["browser.ftl"]);
-    let bundle0 = (await bundles.next()).value;
+    let bundles = L10nRegistry.generateBundlesSync(["und"], ["browser.ftl"]);
+    let bundle0 = bundles.next().value;
+    ok(bundle0);
     equal(bundle0.hasMessage("message-browser"), true);
   }
 
@@ -144,6 +149,33 @@ add_task(async function() {
     equal(entry, "Value from .properties");
 
     Services.locale.requestedLocales = reqLocs;
+  }
+
+  await addon.uninstall();
+});
+
+
+
+
+
+add_task(async function() {
+  let [, { addon }] = await Promise.all([
+    promiseLangpackStartup(),
+    AddonTestUtils.promiseInstallXPI(ADDONS.langpack_1),
+  ]);
+
+  {
+    
+    let bundles = L10nRegistry.generateBundles(["und"], ["toolkit_test.ftl"]);
+    let bundle0 = (await bundles.next()).value;
+    equal(bundle0.hasMessage("message-id1"), true);
+  }
+
+  {
+    
+    let bundles = L10nRegistry.generateBundles(["und"], ["browser.ftl"]);
+    let bundle0 = (await bundles.next()).value;
+    equal(bundle0.hasMessage("message-browser"), true);
   }
 
   await addon.uninstall();
