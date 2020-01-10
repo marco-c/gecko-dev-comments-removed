@@ -1095,10 +1095,6 @@ int nr_socket_local_create(void* obj, nr_transport_addr* addr,
   if (r) {
     ABORT(r);
   }
-  
-  
-  
-  addr->is_proxied = sock->IsProxied();
 
   r = nr_socket_create_int(static_cast<void*>(sock), sock->vtbl(), sockp);
   if (r) ABORT(r);
