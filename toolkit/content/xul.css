@@ -573,7 +573,6 @@ stringbundleset {
 
 dialog,
 dialog:root  {
-  -moz-binding: url("chrome://global/content/bindings/dialog.xml#dialog");
   -moz-box-orient: vertical;
 }
 
