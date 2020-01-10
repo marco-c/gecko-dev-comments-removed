@@ -132,6 +132,7 @@ WINDOWS_WORKER_TYPES = {
 
 MACOSX_WORKER_TYPES = {
     'macosx1014-64': 'releng-hardware/gecko-t-osx-1014',
+    'macosx1014-64-power': 'releng-hardware/gecko-t-osx-1014-power'
 }
 
 
@@ -1385,7 +1386,10 @@ def set_worker_type(config, tests):
             
             pass
         elif test_platform.startswith('macosx1014-64'):
-            test['worker-type'] = MACOSX_WORKER_TYPES['macosx1014-64']
+            if '--power-test' in test['mozharness']['extra-options']:
+                test['worker-type'] = MACOSX_WORKER_TYPES['macosx1014-64-power']
+            else:
+                test['worker-type'] = MACOSX_WORKER_TYPES['macosx1014-64']
         elif test_platform.startswith('win'):
             
             if test['virtualization'] == 'hardware':
