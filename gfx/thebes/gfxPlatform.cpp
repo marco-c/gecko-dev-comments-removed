@@ -3115,6 +3115,22 @@ void gfxPlatform::InitWebRenderConfig() {
       gfxVars::SetUseWebRenderTripleBufferingWin(true);
     }
   }
+
+  
+  
+  
+  
+  
+  if (IsWin10May2019UpdateOrLater() && UseWebRender() &&
+      gfxVars::UseWebRenderDCompWin()) {
+    nsAutoString adapterVendorID;
+    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+    gfxInfo->GetAdapterVendorID(adapterVendorID);
+    if (adapterVendorID == u"0x8086") {  
+      gfxVars::SetWorkaroundWebRenderIntelBug1556634(true);
+      gfxCriticalNote << "Use Premul SwapChain for Intel GPU";
+    }
+  }
 #endif
 
   
