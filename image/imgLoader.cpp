@@ -1664,7 +1664,7 @@ bool imgLoader::ValidateRequestWithNewChannel(
     imgRequest* request, nsIURI* aURI, nsIURI* aInitialDocumentURI,
     nsIReferrerInfo* aReferrerInfo, nsILoadGroup* aLoadGroup,
     imgINotificationObserver* aObserver, nsISupports* aCX,
-    Document* aLoadingDocument, nsLoadFlags aLoadFlags,
+    Document* aLoadingDocument, uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
     nsContentPolicyType aLoadPolicyType, imgRequestProxy** aProxyRequest,
     nsIPrincipal* aTriggeringPrincipal, int32_t aCORSMode,
     bool* aNewChannelCreated) {
@@ -1730,7 +1730,7 @@ bool imgLoader::ValidateRequestWithNewChannel(
   }
 
   RefPtr<imgCacheValidator> hvc = new imgCacheValidator(
-      progressproxy, this, request, aCX, forcePrincipalCheck);
+      progressproxy, this, request, aCX, aInnerWindowId, forcePrincipalCheck);
 
   
   nsCOMPtr<nsIStreamListener> listener =
@@ -1890,8 +1890,9 @@ bool imgLoader::ValidateEntry(
 
     return ValidateRequestWithNewChannel(
         request, aURI, aInitialDocumentURI, aReferrerInfo, aLoadGroup,
-        aObserver, aCX, aLoadingDocument, aLoadFlags, aLoadPolicyType,
-        aProxyRequest, aTriggeringPrincipal, aCORSMode, aNewChannelCreated);
+        aObserver, aCX, aLoadingDocument, innerWindowID, aLoadFlags,
+        aLoadPolicyType, aProxyRequest, aTriggeringPrincipal, aCORSMode,
+        aNewChannelCreated);
   }
 
   return !validateRequest;
@@ -2759,10 +2760,12 @@ NS_IMPL_ISUPPORTS(imgCacheValidator, nsIStreamListener, nsIRequestObserver,
 imgCacheValidator::imgCacheValidator(nsProgressNotificationProxy* progress,
                                      imgLoader* loader, imgRequest* request,
                                      nsISupports* aContext,
+                                     uint64_t aInnerWindowId,
                                      bool forcePrincipalCheckForCacheEntry)
     : mProgressProxy(progress),
       mRequest(request),
       mContext(aContext),
+      mInnerWindowId(aInnerWindowId),
       mImgLoader(loader),
       mHadInsecureRedirect(false) {
   NewRequestAndEntry(forcePrincipalCheckForCacheEntry, loader,
@@ -2888,6 +2891,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
       
       
       mRequest->SetLoadId(context);
+      mRequest->SetInnerWindowID(mInnerWindowId);
       UpdateProxies( false,  true);
       return NS_OK;
     }

@@ -91,6 +91,9 @@ class imgRequest final : public nsIStreamListener,
   void StartDecoding();
 
   inline uint64_t InnerWindowID() const { return mInnerWindowId; }
+  void SetInnerWindowID(uint64_t aInnerWindowId) {
+    mInnerWindowId = aInnerWindowId;
+  }
 
   
   
