@@ -134,6 +134,16 @@ const nodeSpec = generateActorSpec({
       request: {},
       response: RetVal("windowDimensions"),
     },
+    connectToRemoteFrame: {
+      request: {},
+      
+      
+      
+      
+      
+      
+      response: RetVal("json"),
+    },
   },
 });
 

@@ -452,6 +452,25 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       nextSibling: nextSibling,
     };
   }
+
+  async children(node, options) {
+    if (!node.remoteFrame) {
+      return super.children(node, options);
+    }
+    
+    const target = await node.connectToRemoteFrame();
+    
+    const walker = (await target.getFront("inspector")).walker;
+    
+    const documentNode = await walker.getRootNode();
+
+    
+    return {
+      nodes: [documentNode],
+      hasFirst: true,
+      hasLast: true,
+    };
+  }
 }
 
 exports.WalkerFront = WalkerFront;

@@ -2191,13 +2191,18 @@ MarkupView.prototype = {
   
 
 
-  _getVisibleChildren: function(container, centered) {
+  _getVisibleChildren: async function(container, centered) {
     let maxChildren = container.maxChildren || this.maxChildren;
     if (maxChildren == -1) {
       maxChildren = undefined;
     }
 
-    return this.walker.children(container.node, {
+    
+    
+    const inspectorFront = await container.node.targetFront.getFront(
+      "inspector"
+    );
+    return inspectorFront.walker.children(container.node, {
       maxNodes: maxChildren,
       center: centered,
     });
