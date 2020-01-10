@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops;
 use std::rc::Rc;
-use std::slice;
 
 use crate::cdsl::camel_case;
 use crate::cdsl::formats::{
@@ -15,7 +14,7 @@ use crate::cdsl::type_inference::Constraint;
 use crate::cdsl::types::{LaneType, ReferenceType, ValueType, VectorType};
 use crate::cdsl::typevar::TypeVar;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct OpcodeNumber(u32);
 entity_impl!(OpcodeNumber);
 
@@ -72,10 +71,6 @@ pub struct InstructionGroup {
 }
 
 impl InstructionGroup {
-    pub fn iter(&self) -> slice::Iter<Instruction> {
-        self.instructions.iter()
-    }
-
     pub fn by_name(&self, name: &'static str) -> &Instruction {
         self.instructions
             .iter()
@@ -84,12 +79,14 @@ impl InstructionGroup {
     }
 }
 
+#[derive(Debug)]
 pub struct PolymorphicInfo {
     pub use_typevar_operand: bool,
     pub ctrl_typevar: TypeVar,
     pub other_typevars: Vec<TypeVar>,
 }
 
+#[derive(Debug)]
 pub struct InstructionContent {
     
     pub name: String,
@@ -113,9 +110,12 @@ pub struct InstructionContent {
     
     pub polymorphic_info: Option<PolymorphicInfo>,
 
+    
     pub value_opnums: Vec<usize>,
-    pub value_results: Vec<usize>,
+    
     pub imm_opnums: Vec<usize>,
+    
+    pub value_results: Vec<usize>,
 
     
     pub is_terminator: bool,
@@ -141,7 +141,7 @@ pub struct InstructionContent {
     pub writes_cpu_flags: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Instruction {
     content: Rc<InstructionContent>,
 }
@@ -332,8 +332,6 @@ impl InstructionBuilder {
         let operands_in = self.operands_in.unwrap_or_else(Vec::new);
         let operands_out = self.operands_out.unwrap_or_else(Vec::new);
 
-        let format_index = format_registry.lookup(&operands_in);
-
         let mut value_opnums = Vec::new();
         let mut imm_opnums = Vec::new();
         for (i, op) in operands_in.iter().enumerate() {
@@ -346,13 +344,13 @@ impl InstructionBuilder {
             }
         }
 
-        let mut value_results = Vec::new();
-        for (i, op) in operands_out.iter().enumerate() {
-            if op.is_value() {
-                value_results.push(i);
-            }
-        }
+        let value_results = operands_out
+            .iter()
+            .enumerate()
+            .filter_map(|(i, op)| if op.is_value() { Some(i) } else { None })
+            .collect();
 
+        let format_index = format_registry.lookup(&operands_in);
         let format = format_registry.get(format_index);
         let polymorphic_info =
             verify_polymorphic(&operands_in, &operands_out, &format, &value_opnums);
@@ -461,12 +459,8 @@ fn verify_polymorphic(
     }
 
     
-    let mut use_typevar_operand = false;
-    let mut ctrl_typevar = None;
-    let mut other_typevars = None;
-    let mut maybe_error_message = None;
-
     let tv_op = format.typevar_operand;
+    let mut maybe_error_message = None;
     if let Some(tv_op) = tv_op {
         if tv_op < value_opnums.len() {
             let op_num = value_opnums[tv_op];
@@ -475,11 +469,13 @@ fn verify_polymorphic(
             if (free_typevar.is_some() && tv == &free_typevar.unwrap())
                 || tv.singleton_type().is_some()
             {
-                match verify_ctrl_typevar(tv, &value_opnums, &operands_in, &operands_out) {
-                    Ok(typevars) => {
-                        other_typevars = Some(typevars);
-                        ctrl_typevar = Some(tv.clone());
-                        use_typevar_operand = true;
+                match is_ctrl_typevar_candidate(tv, &operands_in, &operands_out) {
+                    Ok(other_typevars) => {
+                        return Some(PolymorphicInfo {
+                            use_typevar_operand: true,
+                            ctrl_typevar: tv.clone(),
+                            other_typevars,
+                        });
                     }
                     Err(error_message) => {
                         maybe_error_message = Some(error_message);
@@ -489,33 +485,32 @@ fn verify_polymorphic(
         }
     };
 
-    if !use_typevar_operand {
-        if operands_out.len() == 0 {
-            match maybe_error_message {
-                Some(msg) => panic!(msg),
-                None => panic!("typevar_operand must be a free type variable"),
-            }
+    
+    
+    
+    if operands_out.len() == 0 {
+        
+        match maybe_error_message {
+            Some(msg) => panic!(msg),
+            None => panic!("typevar_operand must be a free type variable"),
         }
-
-        let tv = operands_out[0].type_var().unwrap();
-        let free_typevar = tv.free_typevar();
-        if free_typevar.is_some() && tv != &free_typevar.unwrap() {
-            panic!("first result must be a free type variable");
-        }
-
-        other_typevars =
-            Some(verify_ctrl_typevar(tv, &value_opnums, &operands_in, &operands_out).unwrap());
-        ctrl_typevar = Some(tv.clone());
     }
 
     
-    assert!(ctrl_typevar.is_some());
-    assert!(other_typevars.is_some());
+    let tv = operands_out[0].type_var().unwrap();
+    let free_typevar = tv.free_typevar();
+    if free_typevar.is_some() && tv != &free_typevar.unwrap() {
+        panic!("first result must be a free type variable");
+    }
+
+    
+    
+    let other_typevars = is_ctrl_typevar_candidate(tv, &operands_in, &operands_out).unwrap();
 
     Some(PolymorphicInfo {
-        use_typevar_operand,
-        ctrl_typevar: ctrl_typevar.unwrap(),
-        other_typevars: other_typevars.unwrap(),
+        use_typevar_operand: false,
+        ctrl_typevar: tv.clone(),
+        other_typevars,
     })
 }
 
@@ -528,56 +523,50 @@ fn verify_polymorphic(
 
 
 
-fn verify_ctrl_typevar(
+fn is_ctrl_typevar_candidate(
     ctrl_typevar: &TypeVar,
-    value_opnums: &Vec<usize>,
     operands_in: &Vec<Operand>,
     operands_out: &Vec<Operand>,
 ) -> Result<Vec<TypeVar>, String> {
     let mut other_typevars = Vec::new();
 
     
-    for &op_num in value_opnums {
-        let typ = operands_in[op_num].type_var();
+    for input in operands_in {
+        if !input.is_value() {
+            continue;
+        }
 
-        let tv = if let Some(typ) = typ {
-            typ.free_typevar()
-        } else {
-            None
-        };
-
-        
-        let tv = match tv {
-            Some(tv) => {
-                if &tv == ctrl_typevar {
-                    continue;
-                }
-                tv
-            }
-            None => continue,
-        };
+        let typ = input.type_var().unwrap();
+        let free_typevar = typ.free_typevar();
 
         
-        if typ.is_some() && typ.unwrap() != &tv {
+        if free_typevar.is_none() {
+            continue;
+        }
+        let free_typevar = free_typevar.unwrap();
+        if &free_typevar == ctrl_typevar {
+            continue;
+        }
+
+        
+        if typ != &free_typevar {
             return Err(format!(
-                "{:?}: type variable {} must be derived from {:?}",
-                operands_in[op_num],
-                typ.unwrap().name,
-                ctrl_typevar
+                "{:?}: type variable {} must be derived from {:?} while it is derived from {:?}",
+                input, typ.name, ctrl_typevar, free_typevar
             ));
         }
 
         
         for other_tv in &other_typevars {
-            if &tv == other_tv {
+            if &free_typevar == other_tv {
                 return Err(format!(
-                    "type variable {} can't be used more than once",
-                    tv.name
+                    "non-controlling type variable {} can't be used more than once",
+                    free_typevar.name
                 ));
             }
         }
 
-        other_typevars.push(tv);
+        other_typevars.push(free_typevar);
     }
 
     
@@ -587,10 +576,10 @@ fn verify_ctrl_typevar(
         }
 
         let typ = result.type_var().unwrap();
-        let tv = typ.free_typevar();
+        let free_typevar = typ.free_typevar();
 
         
-        if tv.is_none() || &tv.unwrap() == ctrl_typevar {
+        if free_typevar.is_none() || &free_typevar.unwrap() == ctrl_typevar {
             continue;
         }
 
@@ -1138,6 +1127,11 @@ fn bind_vector(
     mut value_types: Vec<ValueTypeOrAny>,
 ) -> BoundInstruction {
     let num_lanes = vector_size_in_bits / lane_type.lane_bits();
+    assert!(
+        num_lanes >= 2,
+        "Minimum lane number for bind_vector is 2, found {}.",
+        num_lanes,
+    );
     let vector_type = ValueType::Vector(VectorType::new(lane_type, num_lanes));
     value_types.push(ValueTypeOrAny::ValueType(vector_type));
     verify_polymorphic_binding(&inst, &value_types);

@@ -16,6 +16,7 @@ use cranelift_codegen::ir::types::{F32, F64};
 use cranelift_codegen::ir::{Ebb, Function, Inst, InstBuilder, InstructionData, Type, Value};
 use cranelift_codegen::packed_option::PackedOption;
 use cranelift_codegen::packed_option::ReservedValue;
+use smallvec::SmallVec;
 use std::vec::Vec;
 
 
@@ -123,9 +124,11 @@ impl PredBlock {
     }
 }
 
+type PredBlockSmallVec = SmallVec<[PredBlock; 4]>;
+
 struct EbbHeaderBlockData {
     
-    predecessors: Vec<PredBlock>,
+    predecessors: PredBlockSmallVec,
     
     sealed: bool,
     
@@ -173,9 +176,7 @@ impl SSABuilder {
         self.variables.clear();
         self.blocks.clear();
         self.ebb_headers.clear();
-        debug_assert!(self.calls.is_empty());
-        debug_assert!(self.results.is_empty());
-        debug_assert!(self.side_effects.is_empty());
+        debug_assert!(self.is_empty());
     }
 
     
@@ -368,7 +369,7 @@ impl SSABuilder {
     
     pub fn declare_ebb_header_block(&mut self, ebb: Ebb) -> Block {
         let block = self.blocks.push(BlockData::EbbHeader(EbbHeaderBlockData {
-            predecessors: Vec::new(),
+            predecessors: PredBlockSmallVec::new(),
             sealed: false,
             ebb,
             undef_variables: Vec::new(),
@@ -589,7 +590,8 @@ impl SSABuilder {
                 
                 
                 
-                let mut preds = mem::replace(self.predecessors_mut(dest_ebb), Vec::new());
+                let mut preds =
+                    mem::replace(self.predecessors_mut(dest_ebb), PredBlockSmallVec::new());
                 for &mut PredBlock {
                     block: ref mut pred_block,
                     branch: ref mut last_inst,
@@ -701,7 +703,7 @@ impl SSABuilder {
     }
 
     
-    fn predecessors_mut(&mut self, ebb: Ebb) -> &mut Vec<PredBlock> {
+    fn predecessors_mut(&mut self, ebb: Ebb) -> &mut PredBlockSmallVec {
         let block = self.header_block(ebb);
         match self.blocks[block] {
             BlockData::EbbBody { .. } => panic!("should not happen"),

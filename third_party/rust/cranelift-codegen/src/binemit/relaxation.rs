@@ -74,7 +74,7 @@ pub fn relax_branches(
     {
         let mut cur = FuncCursor::new(func);
         while let Some(ebb) = cur.next_ebb() {
-            divert.clear();
+            divert.at_ebb(&cur.func.entry_diversions, ebb);
             cur.func.offsets[ebb] = offset;
             while let Some(inst) = cur.next_inst() {
                 divert.apply(&cur.func.dfg[inst]);
@@ -93,7 +93,8 @@ pub fn relax_branches(
         
         let mut cur = FuncCursor::new(func);
         while let Some(ebb) = cur.next_ebb() {
-            divert.clear();
+            divert.at_ebb(&cur.func.entry_diversions, ebb);
+
             
             if cur.func.offsets[ebb] != offset {
                 cur.func.offsets[ebb] = offset;
@@ -128,7 +129,6 @@ pub fn relax_branches(
 
     for (jt, jt_data) in func.jump_tables.iter() {
         func.jt_offsets[jt] = offset;
-        
         
         offset += jt_data.len() as u32 * 4;
     }
@@ -167,6 +167,14 @@ fn try_fold_redundant_jump(
             return false; 
         }
     };
+
+    
+    
+    
+    
+    if func.dfg.num_ebb_params(first_dest) != 0 {
+        return false;
+    }
 
     
     

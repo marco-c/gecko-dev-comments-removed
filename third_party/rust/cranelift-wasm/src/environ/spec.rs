@@ -467,4 +467,18 @@ pub trait ModuleEnvironment<'data> {
         offset: usize,
         data: &'data [u8],
     ) -> WasmResult<()>;
+
+    
+    
+    
+    
+    fn declare_func_name(&mut self, _func_index: FuncIndex, _name: &'data str) -> WasmResult<()> {
+        Ok(())
+    }
+
+    
+    fn custom_section(&mut self, name: &'data str, data: &'data [u8]) -> WasmResult<()> {
+        drop((name, data));
+        Ok(())
+    }
 }

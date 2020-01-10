@@ -2,11 +2,12 @@
 
 use crate::parse_error::ParseError;
 use crate::targets::{
-    default_binary_format, Architecture, BinaryFormat, Environment, OperatingSystem, Vendor,
+    default_binary_format, Architecture, ArmArchitecture, BinaryFormat, Environment,
+    OperatingSystem, Vendor,
 };
+use alloc::borrow::ToOwned;
 use core::fmt;
 use core::str::FromStr;
-use std::borrow::ToOwned;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -53,6 +54,8 @@ impl PointerWidth {
 #[allow(missing_docs)]
 pub enum CallingConvention {
     SystemV,
+    
+    WasmBasicCAbi,
     WindowsFastcall,
 }
 
@@ -66,6 +69,7 @@ pub struct Triple {
     pub vendor: Vendor,
     
     pub operating_system: OperatingSystem,
+    
     
     pub environment: Environment,
     
@@ -96,12 +100,19 @@ impl Triple {
             | OperatingSystem::Ios
             | OperatingSystem::L4re
             | OperatingSystem::Linux
-            | OperatingSystem::Nebulet
+            | OperatingSystem::MacOSX { .. }
             | OperatingSystem::Netbsd
             | OperatingSystem::Openbsd
             | OperatingSystem::Redox
             | OperatingSystem::Solaris => CallingConvention::SystemV,
             OperatingSystem::Windows => CallingConvention::WindowsFastcall,
+            OperatingSystem::Nebulet
+            | OperatingSystem::Emscripten
+            | OperatingSystem::Wasi
+            | OperatingSystem::Unknown => match self.architecture {
+                Architecture::Wasm32 => CallingConvention::WasmBasicCAbi,
+                _ => return Err(()),
+            },
             _ => return Err(()),
         })
     }
@@ -159,14 +170,15 @@ impl fmt::Display for Triple {
                 && (self.environment == Environment::Android
                     || self.environment == Environment::Androideabi))
                 || self.operating_system == OperatingSystem::Fuchsia
+                || self.operating_system == OperatingSystem::Wasi
                 || (self.operating_system == OperatingSystem::None_
-                    && (self.architecture == Architecture::Armebv7r
-                        || self.architecture == Architecture::Armv7r
-                        || self.architecture == Architecture::Thumbv6m
-                        || self.architecture == Architecture::Thumbv7em
-                        || self.architecture == Architecture::Thumbv7m
-                        || self.architecture == Architecture::Thumbv8mBase
-                        || self.architecture == Architecture::Thumbv8mMain
+                    && (self.architecture == Architecture::Arm(ArmArchitecture::Armebv7r)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Armv7r)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv6m)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv7em)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv7m)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv8mBase)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv8mMain)
                         || self.architecture == Architecture::Msp430)))
         {
             

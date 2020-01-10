@@ -1239,7 +1239,6 @@ mod tests {
 
     #[test]
     fn aliases() {
-        use crate::ir::condcodes::IntCC;
         use crate::ir::InstBuilder;
 
         let mut func = Function::new();
@@ -1266,7 +1265,7 @@ mod tests {
 
         
         pos.func.dfg.replace(iadd).iadd(v1, arg0);
-        let c2 = pos.ins().icmp(IntCC::UnsignedLessThan, s, v1);
+        let c2 = pos.ins().ifcmp(s, v1);
         pos.func.dfg.change_to_alias(c, c2);
 
         assert_eq!(pos.func.dfg.resolve_aliases(c2), c2);

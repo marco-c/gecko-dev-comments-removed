@@ -325,14 +325,14 @@ fn valid_scale(format: &InstructionFormat) -> InstructionPredicate {
         })
 }
 
-pub fn define<'shared>(
+pub(crate) fn define<'shared>(
     shared_defs: &'shared SharedDefinitions,
     settings: &'shared SettingGroup,
     regs: &'shared IsaRegs,
 ) -> RecipeGroup<'shared> {
     
     
-    let floatcc = shared_defs.operand_kinds.by_name("floatcc");
+    let floatcc = &shared_defs.imm.floatcc;
     let supported_floatccs: Vec<Literal> = ["ord", "uno", "one", "ueq", "gt", "ge", "ult", "ule"]
         .iter()
         .map(|name| Literal::enumerator_for(floatcc, name))
@@ -351,6 +351,7 @@ pub fn define<'shared>(
     let reg_rax = Register::new(gpr, regs.regunit_by_name(gpr, "rax"));
     let reg_rcx = Register::new(gpr, regs.regunit_by_name(gpr, "rcx"));
     let reg_rdx = Register::new(gpr, regs.regunit_by_name(gpr, "rdx"));
+    let reg_r15 = Register::new(gpr, regs.regunit_by_name(gpr, "r15"));
 
     
     let stack_gpr32 = Stack::new(gpr);
@@ -426,6 +427,25 @@ pub fn define<'shared>(
             .operands_in(vec![stack_gpr32])
             .operands_out(vec![stack_gpr32])
             .emit(""),
+    );
+
+    recipes.add_recipe(
+        EncodingRecipeBuilder::new("get_pinned_reg", f_nullary, 0)
+            .operands_out(vec![reg_r15])
+            .emit(""),
+    );
+    
+    recipes.add_template_recipe(
+        EncodingRecipeBuilder::new("set_pinned_reg", f_unary, 1)
+            .operands_in(vec![gpr])
+            .clobbers_flags(false)
+            .emit(
+                r#"
+                    let r15 = RU::r15.into();
+                    {{PUT_OP}}(bits, rex2(r15, in_reg0), sink);
+                    modrm_rr(r15, in_reg0, sink);
+                "#,
+            ),
     );
 
     
@@ -545,6 +565,27 @@ pub fn define<'shared>(
                 "#,
             ),
     );
+
+    
+    {
+        let format = formats.get(f_insert_lane);
+        recipes.add_template_recipe(
+            EncodingRecipeBuilder::new("fa_ib", f_insert_lane, 2)
+                .operands_in(vec![fpr, fpr])
+                .operands_out(vec![0])
+                .inst_predicate(InstructionPredicate::new_is_unsigned_int(
+                    format, "lane", 8, 0,
+                ))
+                .emit(
+                    r#"
+                    {{PUT_OP}}(bits, rex2(in_reg1, in_reg0), sink);
+                    modrm_rr(in_reg1, in_reg0, sink);
+                    let imm:i64 = lane.into();
+                    sink.put1(imm as u8);
+                "#,
+                ),
+        );
+    }
 
     
     recipes.add_template_recipe(
@@ -2524,6 +2565,64 @@ pub fn define<'shared>(
                 r#"
                     {{PUT_OP}}(bits, rex2(in_reg0, out_reg0), sink);
                     modrm_rr(in_reg0, out_reg0, sink);
+                "#,
+            ),
+    );
+
+    
+
+    
+    recipes.add_template_recipe(
+        EncodingRecipeBuilder::new("rout", f_binary, 1)
+            .operands_in(vec![gpr, gpr])
+            .operands_out(vec![
+                OperandConstraint::TiedInput(0),
+                OperandConstraint::FixedReg(reg_rflags),
+            ])
+            .clobbers_flags(true)
+            .emit(
+                r#"
+                    {{PUT_OP}}(bits, rex2(in_reg0, in_reg1), sink);
+                    modrm_rr(in_reg0, in_reg1, sink);
+                "#,
+            ),
+    );
+
+    
+    recipes.add_template_recipe(
+        EncodingRecipeBuilder::new("rin", f_ternary, 1)
+            .operands_in(vec![
+                OperandConstraint::RegClass(gpr),
+                OperandConstraint::RegClass(gpr),
+                OperandConstraint::FixedReg(reg_rflags),
+            ])
+            .operands_out(vec![0])
+            .clobbers_flags(true)
+            .emit(
+                r#"
+                    {{PUT_OP}}(bits, rex2(in_reg0, in_reg1), sink);
+                    modrm_rr(in_reg0, in_reg1, sink);
+                "#,
+            ),
+    );
+
+    
+    recipes.add_template_recipe(
+        EncodingRecipeBuilder::new("rio", f_ternary, 1)
+            .operands_in(vec![
+                OperandConstraint::RegClass(gpr),
+                OperandConstraint::RegClass(gpr),
+                OperandConstraint::FixedReg(reg_rflags),
+            ])
+            .operands_out(vec![
+                OperandConstraint::TiedInput(0),
+                OperandConstraint::FixedReg(reg_rflags),
+            ])
+            .clobbers_flags(true)
+            .emit(
+                r#"
+                    {{PUT_OP}}(bits, rex2(in_reg0, in_reg1), sink);
+                    modrm_rr(in_reg0, in_reg1, sink);
                 "#,
             ),
     );

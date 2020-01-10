@@ -8,6 +8,8 @@ use crate::dominator_tree::DominatorTree;
 use crate::flowgraph::ControlFlowGraph;
 use crate::ir::Function;
 use crate::isa::TargetIsa;
+#[cfg(feature = "basic-blocks")]
+use crate::regalloc::branch_splitting;
 use crate::regalloc::coalescing::Coalescing;
 use crate::regalloc::coloring::Coloring;
 use crate::regalloc::live_value_tracker::LiveValueTracker;
@@ -78,7 +80,7 @@ impl Context {
         &mut self,
         isa: &dyn TargetIsa,
         func: &mut Function,
-        cfg: &ControlFlowGraph,
+        cfg: &mut ControlFlowGraph,
         domtree: &mut DominatorTree,
     ) -> CodegenResult<()> {
         let _tt = timing::regalloc();
@@ -92,6 +94,12 @@ impl Context {
         
         
         self.tracker.clear();
+
+        
+        #[cfg(feature = "basic-blocks")]
+        {
+            branch_splitting::run(isa, func, cfg, domtree, &mut self.topo);
+        }
 
         
         self.liveness.compute(isa, func, cfg);
@@ -190,8 +198,14 @@ impl Context {
         }
 
         
-        self.coloring
-            .run(isa, func, domtree, &mut self.liveness, &mut self.tracker);
+        self.coloring.run(
+            isa,
+            func,
+            cfg,
+            domtree,
+            &mut self.liveness,
+            &mut self.tracker,
+        );
 
         
         
@@ -210,7 +224,7 @@ impl Context {
         if isa.flags().enable_verifier() {
             let ok = verify_context(func, cfg, domtree, isa, &mut errors).is_ok()
                 && verify_liveness(isa, func, cfg, &self.liveness, &mut errors).is_ok()
-                && verify_locations(isa, func, Some(&self.liveness), &mut errors).is_ok()
+                && verify_locations(isa, func, cfg, Some(&self.liveness), &mut errors).is_ok()
                 && verify_cssa(
                     func,
                     cfg,

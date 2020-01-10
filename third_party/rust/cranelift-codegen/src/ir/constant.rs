@@ -5,6 +5,9 @@
 
 
 
+
+
+
 use crate::ir::Constant;
 use cranelift_entity::EntityRef;
 use std::collections::{BTreeMap, HashMap};
@@ -30,7 +33,7 @@ pub struct ConstantPoolEntry {
 
 impl ConstantPoolEntry {
     fn new(data: ConstantData) -> Self {
-        ConstantPoolEntry { data, offset: None }
+        Self { data, offset: None }
     }
 
     
@@ -46,11 +49,13 @@ impl ConstantPoolEntry {
 
 
 
-
 #[derive(Clone)]
 pub struct ConstantPool {
     
+    
     handles_to_values: BTreeMap<Constant, ConstantPoolEntry>,
+
+    
     
     values_to_handles: HashMap<ConstantData, Constant>,
 }
@@ -58,7 +63,7 @@ pub struct ConstantPool {
 impl ConstantPool {
     
     pub fn new() -> Self {
-        ConstantPool {
+        Self {
             handles_to_values: BTreeMap::new(),
             values_to_handles: HashMap::new(),
         }
@@ -75,10 +80,7 @@ impl ConstantPool {
     
     pub fn insert(&mut self, constant_value: ConstantData) -> Constant {
         if self.values_to_handles.contains_key(&constant_value) {
-            self.values_to_handles
-                .get(&constant_value)
-                .expect("A constant handle must have a corresponding constant value; this is an implementation error in ConstantPool")
-                .clone()
+            self.values_to_handles.get(&constant_value).unwrap().clone()
         } else {
             let constant_handle = Constant::new(self.len());
             self.values_to_handles
@@ -94,16 +96,17 @@ impl ConstantPool {
     
     pub fn get(&self, constant_handle: Constant) -> &ConstantData {
         assert!(self.handles_to_values.contains_key(&constant_handle));
-        &self.handles_to_values
-            .get(&constant_handle)
-            .expect("A constant handle must have a corresponding constant value; was a constant handle created outside of the pool?")
-            .data
+        &self.handles_to_values.get(&constant_handle).unwrap().data
     }
 
     
     
     pub fn set_offset(&mut self, constant_handle: Constant, constant_offset: ConstantOffset) {
-        assert!(self.handles_to_values.contains_key(&constant_handle), "A constant handle must have already been inserted into the pool; perhaps a constant pool was created outside of the pool?");
+        assert!(
+            self.handles_to_values.contains_key(&constant_handle),
+            "A constant handle must have already been inserted into the pool; perhaps a \
+             constant pool was created outside of the pool?"
+        );
         self.handles_to_values
             .entry(constant_handle)
             .and_modify(|e| e.offset = Some(constant_offset));
@@ -112,10 +115,17 @@ impl ConstantPool {
     
     
     pub fn get_offset(&self, constant_handle: Constant) -> ConstantOffset {
-        self.handles_to_values.get(&constant_handle)
-            .expect("A constant handle must have a corresponding constant value; was a constant handle created outside of the pool?")
+        self.handles_to_values
+            .get(&constant_handle)
+            .expect(
+                "A constant handle must have a corresponding constant value; was a constant \
+                 handle created outside of the pool?",
+            )
             .offset
-            .expect("A constant offset has not yet been set; verify that `set_offset` has been called before this point")
+            .expect(
+                "A constant offset has not yet been set; verify that `set_offset` has been \
+                 called before this point",
+            )
     }
 
     

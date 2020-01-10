@@ -55,12 +55,31 @@ where
     
     
     
+    pub fn with_capacity(capacity: usize) -> Self
+    where
+        V: Default,
+    {
+        Self {
+            elems: Vec::with_capacity(capacity),
+            default: Default::default(),
+            unused: PhantomData,
+        }
+    }
+
+    
+    
+    
     pub fn with_default(default: V) -> Self {
         Self {
             elems: Vec::new(),
             default,
             unused: PhantomData,
         }
+    }
+
+    
+    pub fn capacity(&self) -> usize {
+        self.elems.capacity()
     }
 
     

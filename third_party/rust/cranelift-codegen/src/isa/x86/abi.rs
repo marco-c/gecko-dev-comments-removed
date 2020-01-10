@@ -89,9 +89,8 @@ impl ArgAssigner for Args {
                 let reg = FPR.unit(self.fpr_used);
                 self.fpr_used += 1;
                 return ArgumentLoc::Reg(reg).into();
-            } else {
-                return ValueConversion::VectorSplit.into();
             }
+            return ValueConversion::VectorSplit.into();
         }
 
         
@@ -229,7 +228,7 @@ pub fn regclass_for_abi_type(ty: ir::Type) -> RegClass {
 }
 
 
-pub fn allocatable_registers(_func: &ir::Function, triple: &Triple) -> RegisterSet {
+pub fn allocatable_registers(triple: &Triple, flags: &shared_settings::Flags) -> RegisterSet {
     let mut regs = RegisterSet::new();
     regs.take(GPR, RU::rsp as RegUnit);
     regs.take(GPR, RU::rbp as RegUnit);
@@ -239,6 +238,15 @@ pub fn allocatable_registers(_func: &ir::Function, triple: &Triple) -> RegisterS
         for i in 8..16 {
             regs.take(GPR, GPR.unit(i));
             regs.take(FPR, FPR.unit(i));
+        }
+        if flags.enable_pinned_reg() {
+            unimplemented!("Pinned register not implemented on x86-32.");
+        }
+    } else {
+        
+        
+        if flags.enable_pinned_reg() {
+            regs.take(GPR, RU::r15 as RegUnit);
         }
     }
 

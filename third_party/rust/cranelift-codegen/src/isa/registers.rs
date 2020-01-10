@@ -154,6 +154,12 @@ pub struct RegClassData {
 
     
     pub info: &'static RegInfo,
+
+    
+    
+    
+    
+    pub pinned_reg: Option<RegUnit>,
 }
 
 impl RegClassData {
@@ -200,6 +206,15 @@ impl RegClassData {
     
     pub fn contains(&self, regunit: RegUnit) -> bool {
         self.mask[(regunit / 32) as usize] & (1u32 << (regunit % 32)) != 0
+    }
+
+    
+    #[inline]
+    pub fn is_pinned_reg(&self, enabled: bool, regunit: RegUnit) -> bool {
+        enabled
+            && self
+                .pinned_reg
+                .map_or(false, |pinned_reg| pinned_reg == regunit)
     }
 }
 

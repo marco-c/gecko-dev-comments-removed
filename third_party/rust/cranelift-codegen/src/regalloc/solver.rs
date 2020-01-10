@@ -877,6 +877,7 @@ impl Solver {
             let d = v.iter(&self.regs_in, &self.regs_out, global_regs).len();
             v.domain = cmp::min(d, u16::MAX as usize) as u16;
         }
+
         
         
         
@@ -949,9 +950,8 @@ impl Solver {
                     
                     if v.is_global && gregs.iter(rc).next().is_none() {
                         return Err(SolverError::Global(v.value));
-                    } else {
-                        return Err(SolverError::Divert(rc));
                     }
+                    return Err(SolverError::Divert(rc));
                 }
             };
 
@@ -976,7 +976,7 @@ impl Solver {
     }
 
     
-    pub fn can_add_var(&mut self, _value: Value, constraint: RegClass, from: RegUnit) -> bool {
+    pub fn can_add_var(&mut self, constraint: RegClass, from: RegUnit) -> bool {
         !self.regs_in.is_avail(constraint, from)
     }
 }

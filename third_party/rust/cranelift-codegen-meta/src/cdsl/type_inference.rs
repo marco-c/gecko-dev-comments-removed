@@ -4,7 +4,7 @@ use crate::cdsl::typevar::{DerivedFunc, TypeSet, TypeVar};
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
-#[derive(Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq)]
 pub enum Constraint {
     
     

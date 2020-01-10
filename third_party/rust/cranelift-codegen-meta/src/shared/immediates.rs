@@ -2,154 +2,174 @@ use crate::cdsl::operands::{OperandKind, OperandKindBuilder as Builder};
 
 use std::collections::HashMap;
 
-pub fn define() -> Vec<OperandKind> {
-    let mut kinds = Vec::new();
+pub(crate) struct Immediates {
+    
+    
+    
+    pub imm64: OperandKind,
 
     
     
     
     
-    let imm64 = Builder::new_imm("imm64")
-        .doc("A 64-bit immediate integer.")
-        .build();
-    kinds.push(imm64);
+    pub uimm8: OperandKind,
+
+    
+    pub uimm32: OperandKind,
 
     
     
     
     
-    let uimm8 = Builder::new_imm("uimm8")
-        .doc("An 8-bit immediate unsigned integer.")
-        .build();
-    kinds.push(uimm8);
-
-    
-    let uimm32 = Builder::new_imm("uimm32")
-        .doc("A 32-bit immediate unsigned integer.")
-        .build();
-    kinds.push(uimm32);
+    pub uimm128: OperandKind,
 
     
     
     
-    
-    let uimm128 = Builder::new_imm("uimm128")
-        .doc("A 128-bit immediate unsigned integer.")
-        .rust_type("ir::Constant")
-        .build();
-    kinds.push(uimm128);
+    pub offset32: OperandKind,
 
     
     
     
-    
-    let offset32 = Builder::new_imm("offset32")
-        .doc("A 32-bit immediate signed offset.")
-        .default_member("offset")
-        .build();
-    kinds.push(offset32);
+    pub ieee32: OperandKind,
 
     
     
     
-    let ieee32 = Builder::new_imm("ieee32")
-        .doc("A 32-bit immediate floating point number.")
-        .build();
-    kinds.push(ieee32);
+    pub ieee64: OperandKind,
 
     
     
     
-    let ieee64 = Builder::new_imm("ieee64")
-        .doc("A 64-bit immediate floating point number.")
-        .build();
-    kinds.push(ieee64);
+    pub boolean: OperandKind,
 
     
     
     
     
-    let boolean = Builder::new_imm("boolean")
-        .doc("An immediate boolean.")
-        .rust_type("bool")
-        .build();
-    kinds.push(boolean);
-
-    
-    
-    
-    let mut intcc_values = HashMap::new();
-    intcc_values.insert("eq", "Equal");
-    intcc_values.insert("ne", "NotEqual");
-    intcc_values.insert("sge", "SignedGreaterThanOrEqual");
-    intcc_values.insert("sgt", "SignedGreaterThan");
-    intcc_values.insert("sle", "SignedLessThanOrEqual");
-    intcc_values.insert("slt", "SignedLessThan");
-    intcc_values.insert("uge", "UnsignedGreaterThanOrEqual");
-    intcc_values.insert("ugt", "UnsignedGreaterThan");
-    intcc_values.insert("ule", "UnsignedLessThanOrEqual");
-    intcc_values.insert("ult", "UnsignedLessThan");
-    let intcc = Builder::new_enum("intcc", intcc_values)
-        .doc("An integer comparison condition code.")
-        .default_member("cond")
-        .rust_type("ir::condcodes::IntCC")
-        .build();
-    kinds.push(intcc);
-
-    
-    
-    let mut floatcc_values = HashMap::new();
-    floatcc_values.insert("ord", "Ordered");
-    floatcc_values.insert("uno", "Unordered");
-    floatcc_values.insert("eq", "Equal");
-    floatcc_values.insert("ne", "NotEqual");
-    floatcc_values.insert("one", "OrderedNotEqual");
-    floatcc_values.insert("ueq", "UnorderedOrEqual");
-    floatcc_values.insert("lt", "LessThan");
-    floatcc_values.insert("le", "LessThanOrEqual");
-    floatcc_values.insert("gt", "GreaterThan");
-    floatcc_values.insert("ge", "GreaterThanOrEqual");
-    floatcc_values.insert("ult", "UnorderedOrLessThan");
-    floatcc_values.insert("ule", "UnorderedOrLessThanOrEqual");
-    floatcc_values.insert("ugt", "UnorderedOrGreaterThan");
-    floatcc_values.insert("uge", "UnorderedOrGreaterThanOrEqual");
-    let floatcc = Builder::new_enum("floatcc", floatcc_values)
-        .doc("A floating point comparison condition code")
-        .default_member("cond")
-        .rust_type("ir::condcodes::FloatCC")
-        .build();
-    kinds.push(floatcc);
-
-    
-    let memflags = Builder::new_imm("memflags")
-        .doc("Memory operation flags")
-        .default_member("flags")
-        .rust_type("ir::MemFlags")
-        .build();
-    kinds.push(memflags);
-
-    
-    let regunit = Builder::new_imm("regunit")
-        .doc("A register unit in the target ISA")
-        .rust_type("isa::RegUnit")
-        .build();
-    kinds.push(regunit);
+    pub intcc: OperandKind,
 
     
     
     
     
-    let mut trapcode_values = HashMap::new();
-    trapcode_values.insert("stk_ovf", "StackOverflow");
-    trapcode_values.insert("heap_oob", "HeapOutOfBounds");
-    trapcode_values.insert("int_ovf", "IntegerOverflow");
-    trapcode_values.insert("int_divz", "IntegerDivisionByZero");
-    let trapcode = Builder::new_enum("trapcode", trapcode_values)
-        .doc("A trap reason code.")
-        .default_member("code")
-        .rust_type("ir::TrapCode")
-        .build();
-    kinds.push(trapcode);
+    pub floatcc: OperandKind,
 
-    return kinds;
+    
+    pub memflags: OperandKind,
+
+    
+    pub regunit: OperandKind,
+
+    
+    
+    
+    pub trapcode: OperandKind,
+}
+
+impl Immediates {
+    pub fn new() -> Self {
+        Self {
+            imm64: Builder::new_imm("imm64")
+                .doc("A 64-bit immediate integer.")
+                .build(),
+
+            uimm8: Builder::new_imm("uimm8")
+                .doc("An 8-bit immediate unsigned integer.")
+                .build(),
+
+            uimm32: Builder::new_imm("uimm32")
+                .doc("A 32-bit immediate unsigned integer.")
+                .build(),
+
+            uimm128: Builder::new_imm("uimm128")
+                .doc("A 128-bit immediate unsigned integer.")
+                .rust_type("ir::Constant")
+                .build(),
+
+            offset32: Builder::new_imm("offset32")
+                .doc("A 32-bit immediate signed offset.")
+                .default_member("offset")
+                .build(),
+
+            ieee32: Builder::new_imm("ieee32")
+                .doc("A 32-bit immediate floating point number.")
+                .build(),
+
+            ieee64: Builder::new_imm("ieee64")
+                .doc("A 64-bit immediate floating point number.")
+                .build(),
+
+            boolean: Builder::new_imm("boolean")
+                .doc("An immediate boolean.")
+                .rust_type("bool")
+                .build(),
+
+            intcc: {
+                let mut intcc_values = HashMap::new();
+                intcc_values.insert("eq", "Equal");
+                intcc_values.insert("ne", "NotEqual");
+                intcc_values.insert("sge", "SignedGreaterThanOrEqual");
+                intcc_values.insert("sgt", "SignedGreaterThan");
+                intcc_values.insert("sle", "SignedLessThanOrEqual");
+                intcc_values.insert("slt", "SignedLessThan");
+                intcc_values.insert("uge", "UnsignedGreaterThanOrEqual");
+                intcc_values.insert("ugt", "UnsignedGreaterThan");
+                intcc_values.insert("ule", "UnsignedLessThanOrEqual");
+                intcc_values.insert("ult", "UnsignedLessThan");
+                Builder::new_enum("intcc", intcc_values)
+                    .doc("An integer comparison condition code.")
+                    .default_member("cond")
+                    .rust_type("ir::condcodes::IntCC")
+                    .build()
+            },
+
+            floatcc: {
+                let mut floatcc_values = HashMap::new();
+                floatcc_values.insert("ord", "Ordered");
+                floatcc_values.insert("uno", "Unordered");
+                floatcc_values.insert("eq", "Equal");
+                floatcc_values.insert("ne", "NotEqual");
+                floatcc_values.insert("one", "OrderedNotEqual");
+                floatcc_values.insert("ueq", "UnorderedOrEqual");
+                floatcc_values.insert("lt", "LessThan");
+                floatcc_values.insert("le", "LessThanOrEqual");
+                floatcc_values.insert("gt", "GreaterThan");
+                floatcc_values.insert("ge", "GreaterThanOrEqual");
+                floatcc_values.insert("ult", "UnorderedOrLessThan");
+                floatcc_values.insert("ule", "UnorderedOrLessThanOrEqual");
+                floatcc_values.insert("ugt", "UnorderedOrGreaterThan");
+                floatcc_values.insert("uge", "UnorderedOrGreaterThanOrEqual");
+                Builder::new_enum("floatcc", floatcc_values)
+                    .doc("A floating point comparison condition code")
+                    .default_member("cond")
+                    .rust_type("ir::condcodes::FloatCC")
+                    .build()
+            },
+
+            memflags: Builder::new_imm("memflags")
+                .doc("Memory operation flags")
+                .default_member("flags")
+                .rust_type("ir::MemFlags")
+                .build(),
+
+            regunit: Builder::new_imm("regunit")
+                .doc("A register unit in the target ISA")
+                .rust_type("isa::RegUnit")
+                .build(),
+
+            trapcode: {
+                let mut trapcode_values = HashMap::new();
+                trapcode_values.insert("stk_ovf", "StackOverflow");
+                trapcode_values.insert("heap_oob", "HeapOutOfBounds");
+                trapcode_values.insert("int_ovf", "IntegerOverflow");
+                trapcode_values.insert("int_divz", "IntegerDivisionByZero");
+                Builder::new_enum("trapcode", trapcode_values)
+                    .doc("A trap reason code.")
+                    .default_member("code")
+                    .rust_type("ir::TrapCode")
+                    .build()
+            },
+        }
+    }
 }

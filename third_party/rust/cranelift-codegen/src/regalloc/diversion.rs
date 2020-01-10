@@ -9,10 +9,11 @@
 
 use crate::fx::FxHashMap;
 use crate::hash_map::{Entry, Iter};
+use crate::ir::{Ebb, StackSlot, Value, ValueLoc, ValueLocations};
 use crate::ir::{InstructionData, Opcode};
-use crate::ir::{StackSlot, Value, ValueLoc, ValueLocations};
 use crate::isa::{RegInfo, RegUnit};
 use core::fmt;
+use cranelift_entity::{SparseMap, SparseMapValue};
 
 
 
@@ -38,8 +39,21 @@ impl Diversion {
 }
 
 
+#[derive(Clone)]
 pub struct RegDiversions {
     current: FxHashMap<Value, Diversion>,
+}
+
+
+#[derive(Clone)]
+struct EntryRegDiversionsValue {
+    key: Ebb,
+    divert: RegDiversions,
+}
+
+
+pub struct EntryRegDiversions {
+    map: SparseMap<Ebb, EntryRegDiversionsValue>,
 }
 
 impl RegDiversions {
@@ -92,7 +106,7 @@ impl RegDiversions {
     
     
     
-    pub fn divert(&mut self, value: Value, from: ValueLoc, to: ValueLoc) {
+    fn divert(&mut self, value: Value, from: ValueLoc, to: ValueLoc) {
         debug_assert!(from.is_assigned() && to.is_assigned());
         match self.current.entry(value) {
             Entry::Occupied(mut e) => {
@@ -164,8 +178,91 @@ impl RegDiversions {
     }
 
     
+    
+    
+    pub fn at_ebb(&mut self, entry_diversions: &EntryRegDiversions, ebb: Ebb) {
+        self.clear();
+        if let Some(entry_divert) = entry_diversions.map.get(ebb) {
+            let iter = entry_divert.divert.current.iter();
+            self.current.extend(iter);
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn save_for_ebb(&mut self, entry_diversions: &mut EntryRegDiversions, target: Ebb) {
+        
+        if self.is_empty() {
+            return;
+        }
+        debug_assert!(!entry_diversions.map.contains_key(target));
+        let iter = self.current.iter();
+        let mut entry_divert = RegDiversions::new();
+        entry_divert.current.extend(iter);
+        entry_diversions.map.insert(EntryRegDiversionsValue {
+            key: target,
+            divert: entry_divert,
+        });
+    }
+
+    
+    
+    pub fn check_ebb_entry(&self, entry_diversions: &EntryRegDiversions, target: Ebb) -> bool {
+        let entry_divert = match entry_diversions.map.get(target) {
+            Some(entry_divert) => entry_divert,
+            None => return self.is_empty(),
+        };
+
+        if entry_divert.divert.current.len() != self.current.len() {
+            return false;
+        }
+
+        for (val, _) in entry_divert.divert.current.iter() {
+            if !self.current.contains_key(val) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    
     pub fn display<'a, R: Into<Option<&'a RegInfo>>>(&'a self, regs: R) -> DisplayDiversions<'a> {
-        DisplayDiversions(self, regs.into())
+        DisplayDiversions(&self, regs.into())
+    }
+}
+
+impl EntryRegDiversions {
+    
+    pub fn new() -> Self {
+        EntryRegDiversions {
+            map: SparseMap::new(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.map.clear();
+    }
+}
+
+impl Clone for EntryRegDiversions {
+    
+    fn clone(&self) -> Self {
+        let mut tmp = Self::new();
+        for v in self.map.values() {
+            tmp.map.insert(v.clone());
+        }
+        tmp
+    }
+}
+
+
+
+impl SparseMapValue<Ebb> for EntryRegDiversionsValue {
+    fn key(&self) -> Ebb {
+        self.key
     }
 }
 
@@ -175,7 +272,7 @@ pub struct DisplayDiversions<'a>(&'a RegDiversions, Option<&'a RegInfo>);
 impl<'a> fmt::Display for DisplayDiversions<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{{")?;
-        for (value, div) in self.0.iter() {
+        for (value, div) in self.0.current.iter() {
             write!(
                 f,
                 " {}: {} -> {}",

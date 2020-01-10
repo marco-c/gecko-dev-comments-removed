@@ -44,18 +44,19 @@
 
 use crate::cursor::{Cursor, EncCursor};
 use crate::dominator_tree::DominatorTree;
-use crate::ir::{AbiParam, ArgumentLoc, InstBuilder, ValueDef};
+use crate::flowgraph::ControlFlowGraph;
+use crate::ir::{ArgumentLoc, InstBuilder, ValueDef};
 use crate::ir::{Ebb, Function, Inst, InstructionData, Layout, Opcode, SigRef, Value, ValueLoc};
 use crate::isa::{regs_overlap, RegClass, RegInfo, RegUnit};
 use crate::isa::{ConstraintKind, EncInfo, OperandConstraint, RecipeConstraints, TargetIsa};
 use crate::packed_option::PackedOption;
 use crate::regalloc::affinity::Affinity;
+use crate::regalloc::diversion::RegDiversions;
 use crate::regalloc::live_value_tracker::{LiveValue, LiveValueTracker};
 use crate::regalloc::liveness::Liveness;
 use crate::regalloc::liverange::{LiveRange, LiveRangeContext};
 use crate::regalloc::register_set::RegisterSet;
 use crate::regalloc::solver::{Solver, SolverError};
-use crate::regalloc::RegDiversions;
 use crate::timing;
 use core::mem;
 use log::debug;
@@ -66,6 +67,12 @@ use log::debug;
 pub struct Coloring {
     divert: RegDiversions,
     solver: Solver,
+}
+
+
+enum AbiParams {
+    Parameters(SigRef),
+    Returns,
 }
 
 
@@ -86,6 +93,7 @@ struct Context<'a> {
     encinfo: EncInfo,
 
     
+    cfg: &'a ControlFlowGraph,
     domtree: &'a DominatorTree,
     liveness: &'a mut Liveness,
 
@@ -98,6 +106,8 @@ struct Context<'a> {
     
     
     usable_regs: RegisterSet,
+
+    uses_pinned_reg: bool,
 }
 
 impl Coloring {
@@ -120,6 +130,7 @@ impl Coloring {
         &mut self,
         isa: &dyn TargetIsa,
         func: &mut Function,
+        cfg: &ControlFlowGraph,
         domtree: &DominatorTree,
         liveness: &mut Liveness,
         tracker: &mut LiveValueTracker,
@@ -128,9 +139,11 @@ impl Coloring {
         debug!("Coloring for:\n{}", func.display(isa));
         let mut ctx = Context {
             usable_regs: isa.allocatable_registers(func),
+            uses_pinned_reg: isa.flags().enable_pinned_reg(),
             cur: EncCursor::new(func, isa),
             reginfo: isa.register_info(),
             encinfo: isa.encoding_info(),
+            cfg,
             domtree,
             liveness,
             divert: &mut self.divert,
@@ -141,6 +154,12 @@ impl Coloring {
 }
 
 impl<'a> Context<'a> {
+    
+    #[inline]
+    fn is_pinned_reg(&self, rc: RegClass, reg: RegUnit) -> bool {
+        rc.is_pinned_reg(self.uses_pinned_reg, reg)
+    }
+
     
     fn run(&mut self, tracker: &mut LiveValueTracker) {
         self.cur
@@ -160,13 +179,13 @@ impl<'a> Context<'a> {
         debug!("Coloring {}:", ebb);
         let mut regs = self.visit_ebb_header(ebb, tracker);
         tracker.drop_dead_params();
-        self.divert.clear();
 
         
         self.cur.goto_top(ebb);
         while let Some(inst) = self.cur.next_inst() {
             self.cur.use_srcloc(inst);
-            if !self.cur.func.dfg[inst].opcode().is_ghost() {
+            let opcode = self.cur.func.dfg[inst].opcode();
+            if !opcode.is_ghost() {
                 
                 
                 let enc = self.cur.func.encodings[inst];
@@ -183,6 +202,54 @@ impl<'a> Context<'a> {
                 self.process_ghost_kills(kills, &mut regs);
             }
             tracker.drop_dead(inst);
+
+            
+            
+            
+            if opcode.is_branch() && cfg!(feature = "basic-blocks") {
+                
+                if let Some(branch) = self.cur.next_inst() {
+                    debug!(
+                        "Skip coloring {}\n    from {}\n    with diversions {}",
+                        self.cur.display_inst(branch),
+                        regs.input.display(&self.reginfo),
+                        self.divert.display(&self.reginfo)
+                    );
+                    use crate::ir::instructions::BranchInfo::*;
+                    let target = match self.cur.func.dfg.analyze_branch(branch) {
+                        NotABranch | Table(_, _) => panic!(
+                            "unexpected instruction {} after a conditional branch",
+                            self.cur.display_inst(branch)
+                        ),
+                        SingleDest(ebb, _) => ebb,
+                    };
+
+                    
+                    
+                    if self.cfg.pred_iter(target).count() == 1 {
+                        
+                        self.divert
+                            .save_for_ebb(&mut self.cur.func.entry_diversions, target);
+                        debug!(
+                            "Set entry-diversion for {} to\n      {}",
+                            target,
+                            self.divert.display(&self.reginfo)
+                        );
+                    } else {
+                        debug_assert!(
+                            self.divert.is_empty(),
+                            "Divert set is non-empty after the terminator."
+                        );
+                    }
+                    assert_eq!(
+                        self.cur.next_inst(),
+                        None,
+                        "Unexpected instruction after a branch group."
+                    );
+                } else {
+                    assert!(opcode.is_terminator());
+                }
+            }
         }
     }
 
@@ -197,6 +264,15 @@ impl<'a> Context<'a> {
             self.liveness,
             &self.cur.func.layout,
             self.domtree,
+        );
+
+        
+        
+        self.divert.at_ebb(&self.cur.func.entry_diversions, ebb);
+        debug!(
+            "Start {} with entry-diversion set to\n      {}",
+            ebb,
+            self.divert.display(&self.reginfo)
         );
 
         if self.cur.func.layout.entry_block() == Some(ebb) {
@@ -224,17 +300,35 @@ impl<'a> Context<'a> {
                 "Live-in: {}:{} in {}",
                 lv.value,
                 lv.affinity.display(&self.reginfo),
-                self.cur.func.locations[lv.value].display(&self.reginfo)
+                self.divert
+                    .get(lv.value, &self.cur.func.locations)
+                    .display(&self.reginfo)
             );
             if let Affinity::Reg(rci) = lv.affinity {
                 let rc = self.reginfo.rc(rci);
                 let loc = self.cur.func.locations[lv.value];
-                match loc {
-                    ValueLoc::Reg(reg) => regs.take(rc, reg, lv.is_local),
+                let reg = match loc {
+                    ValueLoc::Reg(reg) => reg,
                     ValueLoc::Unassigned => panic!("Live-in {} wasn't assigned", lv.value),
                     ValueLoc::Stack(ss) => {
                         panic!("Live-in {} is in {}, should be register", lv.value, ss)
                     }
+                };
+                if lv.is_local {
+                    regs.take(rc, reg, lv.is_local);
+                } else {
+                    let loc = self.divert.get(lv.value, &self.cur.func.locations);
+                    let reg_divert = match loc {
+                        ValueLoc::Reg(reg) => reg,
+                        ValueLoc::Unassigned => {
+                            panic!("Diversion: Live-in {} wasn't assigned", lv.value)
+                        }
+                        ValueLoc::Stack(ss) => panic!(
+                            "Diversion: Live-in {} is in {}, should be register",
+                            lv.value, ss
+                        ),
+                    };
+                    regs.take_divert(rc, reg, reg_divert);
                 }
             }
         }
@@ -287,6 +381,36 @@ impl<'a> Context<'a> {
     
     
     
+    fn program_input_abi(&mut self, inst: Inst, abi_params: AbiParams) {
+        let abi_types = match abi_params {
+            AbiParams::Parameters(sig) => &self.cur.func.dfg.signatures[sig].params,
+            AbiParams::Returns => &self.cur.func.signature.returns,
+        };
+
+        for (abi, &value) in abi_types
+            .iter()
+            .zip(self.cur.func.dfg.inst_variable_args(inst))
+        {
+            if let ArgumentLoc::Reg(reg) = abi.location {
+                if let Affinity::Reg(rci) = self
+                    .liveness
+                    .get(value)
+                    .expect("ABI register must have live range")
+                    .affinity
+                {
+                    let rc = self.reginfo.rc(rci);
+                    let cur_reg = self.divert.reg(value, &self.cur.func.locations);
+                    self.solver.reassign_in(value, rc, cur_reg, reg);
+                } else {
+                    panic!("ABI argument {} should be in a register", value);
+                }
+            }
+        }
+    }
+
+    
+    
+    
     
     
     
@@ -310,30 +434,16 @@ impl<'a> Context<'a> {
 
         
         self.solver.reset(&regs.input);
+
         if let Some(constraints) = constraints {
             self.program_input_constraints(inst, constraints.ins);
         }
+
         let call_sig = self.cur.func.dfg.call_signature(inst);
         if let Some(sig) = call_sig {
-            program_input_abi(
-                &mut self.solver,
-                inst,
-                &self.cur.func.dfg.signatures[sig].params,
-                &self.cur.func,
-                &self.liveness,
-                &self.reginfo,
-                &self.divert,
-            );
+            self.program_input_abi(inst, AbiParams::Parameters(sig));
         } else if self.cur.func.dfg[inst].opcode().is_return() {
-            program_input_abi(
-                &mut self.solver,
-                inst,
-                &self.cur.func.signature.returns,
-                &self.cur.func,
-                &self.liveness,
-                &self.reginfo,
-                &self.divert,
-            );
+            self.program_input_abi(inst, AbiParams::Returns);
         } else if self.cur.func.dfg[inst].opcode().is_branch() {
             
             
@@ -358,6 +468,7 @@ impl<'a> Context<'a> {
         if self.solver.has_fixed_input_conflicts() {
             self.divert_fixed_input_conflicts(tracker.live());
         }
+
         self.solver.inputs_done();
 
         
@@ -368,6 +479,13 @@ impl<'a> Context<'a> {
             if let Affinity::Reg(rci) = lv.affinity {
                 let rc = self.reginfo.rc(rci);
                 let reg = self.divert.reg(lv.value, &self.cur.func.locations);
+
+                if self.is_pinned_reg(rc, reg) {
+                    
+                    debug_assert!(lv.is_local, "pinned register SSA value can't be global");
+                    continue;
+                }
+
                 debug!(
                     "    kill {} in {} ({} {})",
                     lv.value,
@@ -407,6 +525,7 @@ impl<'a> Context<'a> {
                 );
             }
         }
+
         if let Some(sig) = call_sig {
             self.program_output_abi(
                 sig,
@@ -416,6 +535,7 @@ impl<'a> Context<'a> {
                 &regs.global,
             );
         }
+
         if let Some(constraints) = constraints {
             self.program_output_constraints(
                 inst,
@@ -497,16 +617,28 @@ impl<'a> Context<'a> {
 
             if let Affinity::Reg(rci) = lv.affinity {
                 let rc = self.reginfo.rc(rci);
+                let reg = loc.unwrap_reg();
+
+                debug_assert!(
+                    !self.is_pinned_reg(rc, reg)
+                        || self.cur.func.dfg[inst].opcode() == Opcode::GetPinnedReg,
+                    "pinned register may not be part of outputs for '{}'.",
+                    self.cur.func.dfg[inst].opcode()
+                );
+
+                if self.is_pinned_reg(rc, reg) {
+                    continue;
+                }
 
                 
                 if lv.endpoint == inst {
-                    regs.input.free(rc, loc.unwrap_reg());
+                    regs.input.free(rc, reg);
                     debug_assert!(lv.is_local);
                 }
 
                 
                 if !lv.is_local && !replace_global_defines {
-                    regs.global.take(rc, loc.unwrap_reg());
+                    regs.global.take(rc, reg);
                 }
             }
         }
@@ -527,14 +659,35 @@ impl<'a> Context<'a> {
             
             let cur_reg = self.divert.reg(value, &self.cur.func.locations);
             match op.kind {
-                ConstraintKind::FixedReg(regunit) | ConstraintKind::FixedTied(regunit) => {
+                ConstraintKind::FixedReg(regunit) => {
                     
                     
                     
                     self.solver
                         .reassign_in(value, op.regclass, cur_reg, regunit);
                 }
-                ConstraintKind::Reg | ConstraintKind::Tied(_) => {
+                ConstraintKind::FixedTied(regunit) => {
+                    
+                    
+                    debug_assert!(
+                        !self.is_pinned_reg(op.regclass, regunit),
+                        "see comment above"
+                    );
+                    
+                    self.solver
+                        .reassign_in(value, op.regclass, cur_reg, regunit);
+                }
+                ConstraintKind::Tied(_) => {
+                    if self.is_pinned_reg(op.regclass, cur_reg) {
+                        
+                        if self.solver.can_add_var(op.regclass, cur_reg) {
+                            self.solver.add_var(value, op.regclass, cur_reg);
+                        }
+                    } else if !op.regclass.contains(cur_reg) {
+                        self.solver.add_var(value, op.regclass, cur_reg);
+                    }
+                }
+                ConstraintKind::Reg => {
                     if !op.regclass.contains(cur_reg) {
                         self.solver.add_var(value, op.regclass, cur_reg);
                     }
@@ -565,8 +718,11 @@ impl<'a> Context<'a> {
             match op.kind {
                 ConstraintKind::Reg | ConstraintKind::Tied(_) => {
                     let cur_reg = self.divert.reg(value, &self.cur.func.locations);
+
                     
-                    if op.regclass.contains(cur_reg) {
+                    
+                    if op.regclass.contains(cur_reg) && !self.is_pinned_reg(op.regclass, cur_reg) {
+                        
                         
                         
                         let ctx = self.liveness.context(&self.cur.func.layout);
@@ -787,7 +943,9 @@ impl<'a> Context<'a> {
         reg: RegUnit,
         throughs: &[LiveValue],
     ) {
-        if !self.solver.add_fixed_output(rc, reg) {
+        
+        
+        if !self.is_pinned_reg(rc, reg) && !self.solver.add_fixed_output(rc, reg) {
             
             for lv in throughs {
                 if let Affinity::Reg(rci) = lv.affinity {
@@ -830,12 +988,12 @@ impl<'a> Context<'a> {
                     
                     
                     let arg = self.cur.func.dfg.inst_args(inst)[num as usize];
-                    if let Some(reg) = self.solver.add_tied_input(
-                        arg,
-                        op.regclass,
-                        self.divert.reg(arg, &self.cur.func.locations),
-                        !lv.is_local,
-                    ) {
+                    let reg = self.divert.reg(arg, &self.cur.func.locations);
+
+                    if let Some(reg) =
+                        self.solver
+                            .add_tied_input(arg, op.regclass, reg, !lv.is_local)
+                    {
                         
                         
                         
@@ -901,7 +1059,7 @@ impl<'a> Context<'a> {
                 let toprc2 = self.reginfo.toprc(rci);
                 let reg2 = self.divert.reg(lv.value, &self.cur.func.locations);
                 if rc.contains(reg2)
-                    && self.solver.can_add_var(lv.value, toprc2, reg2)
+                    && self.solver.can_add_var(toprc2, reg2)
                     && !self.is_live_on_outgoing_edge(lv.value)
                 {
                     self.solver.add_through_var(lv.value, toprc2, reg2);
@@ -962,8 +1120,15 @@ impl<'a> Context<'a> {
         for m in self.solver.moves() {
             match *m {
                 Reg {
-                    value, from, to, ..
+                    value,
+                    from,
+                    to,
+                    rc,
                 } => {
+                    debug_assert!(
+                        !self.is_pinned_reg(rc, to),
+                        "pinned register used in a regmove"
+                    );
                     self.divert.regmove(value, from, to);
                     self.cur.ins().regmove(value, from, to);
                 }
@@ -987,8 +1152,12 @@ impl<'a> Context<'a> {
                     value,
                     from_slot,
                     to,
-                    ..
+                    rc,
                 } => {
+                    debug_assert!(
+                        !self.is_pinned_reg(rc, to),
+                        "pinned register used in a regfill"
+                    );
                     
                     let ss = slot[from_slot].take().expect("Using unallocated slot");
                     self.divert.regfill(value, ss, to);
@@ -1105,35 +1274,6 @@ impl<'a> Context<'a> {
 
 
 
-
-fn program_input_abi(
-    solver: &mut Solver,
-    inst: Inst,
-    abi_types: &[AbiParam],
-    func: &Function,
-    liveness: &Liveness,
-    reginfo: &RegInfo,
-    divert: &RegDiversions,
-) {
-    for (abi, &value) in abi_types.iter().zip(func.dfg.inst_variable_args(inst)) {
-        if let ArgumentLoc::Reg(reg) = abi.location {
-            if let Affinity::Reg(rci) = liveness
-                .get(value)
-                .expect("ABI register must have live range")
-                .affinity
-            {
-                let rc = reginfo.rc(rci);
-                let cur_reg = divert.reg(value, &func.locations);
-                solver.reassign_in(value, rc, cur_reg, reg);
-            } else {
-                panic!("ABI argument {} should be in a register", value);
-            }
-        }
-    }
-}
-
-
-
 struct AvailableRegs {
     
     
@@ -1162,5 +1302,11 @@ impl AvailableRegs {
         if !is_local {
             self.global.take(rc, reg);
         }
+    }
+
+    
+    pub fn take_divert(&mut self, rc: RegClass, reg: RegUnit, reg_divert: RegUnit) {
+        self.input.take(rc, reg_divert);
+        self.global.take(rc, reg);
     }
 }

@@ -66,7 +66,7 @@ use crate::timing;
 use core::fmt;
 use failure_derive::Fail;
 use std::boxed::Box;
-use target_lexicon::{Architecture, PointerWidth, Triple};
+use target_lexicon::{triple, Architecture, PointerWidth, Triple};
 
 #[cfg(feature = "riscv")]
 mod riscv;
@@ -90,16 +90,15 @@ mod stack;
 
 
 macro_rules! isa_builder {
-    ($name:ident, $feature:tt) => {{
+    ($name: ident, $feature: tt, $triple: ident) => {{
         #[cfg(feature = $feature)]
-        fn $name(triple: Triple) -> Result<Builder, LookupError> {
-            Ok($name::isa_builder(triple))
-        };
-        #[cfg(not(feature = $feature))]
-        fn $name(_triple: Triple) -> Result<Builder, LookupError> {
-            Err(LookupError::Unsupported)
+        {
+            Ok($name::isa_builder($triple))
         }
-        $name
+        #[cfg(not(feature = $feature))]
+        {
+            Err(LookupError::SupportDisabled)
+        }
     }};
 }
 
@@ -107,21 +106,21 @@ macro_rules! isa_builder {
 
 pub fn lookup(triple: Triple) -> Result<Builder, LookupError> {
     match triple.architecture {
-        Architecture::Riscv32 | Architecture::Riscv64 => isa_builder!(riscv, "riscv")(triple),
+        Architecture::Riscv32 | Architecture::Riscv64 => isa_builder!(riscv, "riscv", triple),
         Architecture::I386 | Architecture::I586 | Architecture::I686 | Architecture::X86_64 => {
-            isa_builder!(x86, "x86")(triple)
+            isa_builder!(x86, "x86", triple)
         }
-        Architecture::Thumbv6m
-        | Architecture::Thumbv7em
-        | Architecture::Thumbv7m
-        | Architecture::Arm
-        | Architecture::Armv4t
-        | Architecture::Armv5te
-        | Architecture::Armv7
-        | Architecture::Armv7s => isa_builder!(arm32, "arm32")(triple),
-        Architecture::Aarch64 => isa_builder!(arm64, "arm64")(triple),
+        Architecture::Arm { .. } => isa_builder!(arm32, "arm32", triple),
+        Architecture::Aarch64 { .. } => isa_builder!(arm64, "arm64", triple),
         _ => Err(LookupError::Unsupported),
     }
+}
+
+
+
+pub fn lookup_by_name(name: &str) -> Result<Builder, LookupError> {
+    use std::str::FromStr;
+    lookup(triple!(name))
 }
 
 

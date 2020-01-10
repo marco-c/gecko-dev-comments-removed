@@ -1,4 +1,4 @@
-use std::string::String;
+use alloc::string::String;
 
 
 #[derive(Fail, Clone, Debug, PartialEq, Eq)]

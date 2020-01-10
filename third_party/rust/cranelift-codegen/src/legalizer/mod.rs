@@ -16,11 +16,13 @@
 use crate::bitset::BitSet;
 use crate::cursor::{Cursor, FuncCursor};
 use crate::flowgraph::ControlFlowGraph;
-use crate::ir::types::I32;
+use crate::ir::types::{I32, I64};
 use crate::ir::{self, InstBuilder, MemFlags};
 use crate::isa::TargetIsa;
 use crate::predicates;
 use crate::timing;
+use std::collections::BTreeSet;
+use std::vec::Vec;
 
 mod boundary;
 mod call;
@@ -36,6 +38,11 @@ use self::heap::expand_heap_addr;
 use self::libcall::expand_as_libcall;
 use self::table::expand_table_addr;
 
+enum LegalizeInstResult {
+    Done,
+    Legalized,
+    SplitLegalizePending,
+}
 
 
 fn legalize_inst(
@@ -43,24 +50,66 @@ fn legalize_inst(
     pos: &mut FuncCursor,
     cfg: &mut ControlFlowGraph,
     isa: &dyn TargetIsa,
-) -> bool {
+) -> LegalizeInstResult {
     let opcode = pos.func.dfg[inst].opcode();
 
     
     if opcode.is_call() {
         if boundary::handle_call_abi(inst, pos.func, cfg) {
-            return true;
+            return LegalizeInstResult::Legalized;
         }
     } else if opcode.is_return() {
         if boundary::handle_return_abi(inst, pos.func, cfg) {
-            return true;
+            return LegalizeInstResult::Legalized;
         }
     } else if opcode.is_branch() {
         split::simplify_branch_arguments(&mut pos.func.dfg, inst);
+    } else if opcode == ir::Opcode::Isplit {
+        pos.use_srcloc(inst);
+
+        let arg = match pos.func.dfg[inst] {
+            ir::InstructionData::Unary { arg, .. } => pos.func.dfg.resolve_aliases(arg),
+            _ => panic!("Expected isplit: {}", pos.func.dfg.display_inst(inst, None)),
+        };
+
+        match pos.func.dfg.value_def(arg) {
+            ir::ValueDef::Result(inst, _num) => {
+                if let ir::InstructionData::Binary {
+                    opcode: ir::Opcode::Iconcat,
+                    ..
+                } = pos.func.dfg[inst]
+                {
+                    
+                } else {
+                    
+                    
+                    
+                    return LegalizeInstResult::SplitLegalizePending;
+                }
+            }
+            ir::ValueDef::Param(_ebb, _num) => {}
+        }
+
+        let res = pos.func.dfg.inst_results(inst).to_vec();
+        assert_eq!(res.len(), 2);
+        let (resl, resh) = (res[0], res[1]); 
+
+        
+        pos.func.dfg.clear_results(inst);
+        pos.remove_inst();
+
+        let curpos = pos.position();
+        let srcloc = pos.srcloc();
+        let (xl, xh) = split::isplit(pos.func, cfg, curpos, srcloc, arg);
+
+        pos.func.dfg.change_to_alias(resl, xl);
+        pos.func.dfg.change_to_alias(resh, xh);
+
+        return LegalizeInstResult::Legalized;
     }
 
     match pos.func.update_encoding(inst, isa) {
-        Ok(()) => false,
+        Ok(()) => LegalizeInstResult::Done,
         Err(action) => {
             
             
@@ -69,12 +118,16 @@ fn legalize_inst(
             
             
             if action(inst, pos.func, cfg, isa) {
-                return true;
+                return LegalizeInstResult::Legalized;
             }
 
             
             
-            expand_as_libcall(inst, pos.func, isa)
+            if expand_as_libcall(inst, pos.func, isa) {
+                LegalizeInstResult::Legalized
+            } else {
+                LegalizeInstResult::Done
+            }
         }
     }
 }
@@ -95,21 +148,39 @@ pub fn legalize_function(func: &mut ir::Function, cfg: &mut ControlFlowGraph, is
     let mut pos = FuncCursor::new(func);
 
     
+    let mut pending_splits = BTreeSet::new();
+
     
-    while let Some(_ebb) = pos.next_ebb() {
+    
+    while let Some(ebb) = pos.next_ebb() {
+        split::split_ebb_params(pos.func, cfg, ebb);
+
         
         
         let mut prev_pos = pos.position();
 
         while let Some(inst) = pos.next_inst() {
-            if legalize_inst(inst, &mut pos, cfg, isa) {
+            match legalize_inst(inst, &mut pos, cfg, isa) {
                 
-                pos.set_position(prev_pos);
-            } else {
+                LegalizeInstResult::Done => prev_pos = pos.position(),
+
                 
-                prev_pos = pos.position();
+                LegalizeInstResult::Legalized => pos.set_position(prev_pos),
+
+                
+                
+                
+                LegalizeInstResult::SplitLegalizePending => {
+                    pending_splits.insert(inst);
+                }
             }
         }
+    }
+
+    
+    for inst in pending_splits {
+        pos.goto_inst(inst);
+        legalize_inst(inst, &mut pos, cfg, isa);
     }
 
     
@@ -497,4 +568,100 @@ fn expand_stack_store(
     mflags.set_notrap();
     mflags.set_aligned();
     pos.func.dfg.replace(inst).store(mflags, val, addr, 0);
+}
+
+
+fn narrow_load(
+    inst: ir::Inst,
+    func: &mut ir::Function,
+    _cfg: &mut ControlFlowGraph,
+    _isa: &dyn TargetIsa,
+) {
+    let mut pos = FuncCursor::new(func).at_inst(inst);
+    pos.use_srcloc(inst);
+
+    let (ptr, offset, flags) = match pos.func.dfg[inst] {
+        ir::InstructionData::Load {
+            opcode: ir::Opcode::Load,
+            arg,
+            offset,
+            flags,
+        } => (arg, offset, flags),
+        _ => panic!("Expected load: {}", pos.func.dfg.display_inst(inst, None)),
+    };
+
+    let res_ty = pos.func.dfg.ctrl_typevar(inst);
+    let small_ty = res_ty.half_width().expect("Can't narrow load");
+
+    let al = pos.ins().load(small_ty, flags, ptr, offset);
+    let ah = pos.ins().load(
+        small_ty,
+        flags,
+        ptr,
+        offset.try_add_i64(8).expect("load offset overflow"),
+    );
+    pos.func.dfg.replace(inst).iconcat(al, ah);
+}
+
+
+fn narrow_store(
+    inst: ir::Inst,
+    func: &mut ir::Function,
+    _cfg: &mut ControlFlowGraph,
+    _isa: &dyn TargetIsa,
+) {
+    let mut pos = FuncCursor::new(func).at_inst(inst);
+    pos.use_srcloc(inst);
+
+    let (val, ptr, offset, flags) = match pos.func.dfg[inst] {
+        ir::InstructionData::Store {
+            opcode: ir::Opcode::Store,
+            args,
+            offset,
+            flags,
+        } => (args[0], args[1], offset, flags),
+        _ => panic!("Expected store: {}", pos.func.dfg.display_inst(inst, None)),
+    };
+
+    let (al, ah) = pos.ins().isplit(val);
+    pos.ins().store(flags, al, ptr, offset);
+    pos.ins().store(
+        flags,
+        ah,
+        ptr,
+        offset.try_add_i64(8).expect("store offset overflow"),
+    );
+    pos.remove_inst();
+}
+
+
+fn narrow_iconst(
+    inst: ir::Inst,
+    func: &mut ir::Function,
+    _cfg: &mut ControlFlowGraph,
+    isa: &dyn TargetIsa,
+) {
+    let imm: i64 = if let ir::InstructionData::UnaryImm {
+        opcode: ir::Opcode::Iconst,
+        imm,
+    } = &func.dfg[inst]
+    {
+        (*imm).into()
+    } else {
+        panic!("unexpected instruction in narrow_iconst");
+    };
+
+    let mut pos = FuncCursor::new(func).at_inst(inst);
+    pos.use_srcloc(inst);
+
+    let ty = pos.func.dfg.ctrl_typevar(inst);
+    if isa.pointer_bits() == 32 && ty == I64 {
+        let low = pos.ins().iconst(I32, imm & 0xffffffff);
+        let high = pos.ins().iconst(I32, imm >> 32);
+        
+        pos.func.dfg.replace(inst).iconcat(low, high);
+        return;
+    }
+
+    unimplemented!("missing encoding or legalization for iconst.{:?}", ty);
 }

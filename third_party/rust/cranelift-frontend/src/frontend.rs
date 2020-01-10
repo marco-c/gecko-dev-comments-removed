@@ -20,22 +20,22 @@ use std::vec::Vec;
 
 
 
-pub struct FunctionBuilderContext {
+struct FunctionBuilderContext {
     ssa: SSABuilder,
     ebbs: SecondaryMap<Ebb, EbbData>,
     types: SecondaryMap<Variable, Type>,
 }
 
 
-pub struct FunctionBuilder<'a> {
+pub struct FunctionBuilder {
     
     
-    pub func: &'a mut Function,
+    pub func: Function,
 
     
     srcloc: ir::SourceLoc,
 
-    func_ctx: &'a mut FunctionBuilderContext,
+    func_ctx: FunctionBuilderContext,
     position: Position,
 }
 
@@ -77,6 +77,7 @@ impl Position {
 impl FunctionBuilderContext {
     
     
+    
     pub fn new() -> Self {
         Self {
             ssa: SSABuilder::new(),
@@ -90,26 +91,22 @@ impl FunctionBuilderContext {
         self.ebbs.clear();
         self.types.clear();
     }
-
-    fn is_empty(&self) -> bool {
-        self.ssa.is_empty() && self.ebbs.is_empty() && self.types.is_empty()
-    }
 }
 
 
 
-pub struct FuncInstBuilder<'short, 'long: 'short> {
-    builder: &'short mut FunctionBuilder<'long>,
+pub struct FuncInstBuilder<'short> {
+    builder: &'short mut FunctionBuilder,
     ebb: Ebb,
 }
 
-impl<'short, 'long> FuncInstBuilder<'short, 'long> {
-    fn new(builder: &'short mut FunctionBuilder<'long>, ebb: Ebb) -> Self {
+impl<'short> FuncInstBuilder<'short> {
+    fn new(builder: &'short mut FunctionBuilder, ebb: Ebb) -> Self {
         Self { builder, ebb }
     }
 }
 
-impl<'short, 'long> InstBuilderBase<'short> for FuncInstBuilder<'short, 'long> {
+impl<'short> InstBuilderBase<'short> for FuncInstBuilder<'short> {
     fn data_flow_graph(&self) -> &DataFlowGraph {
         &self.builder.func.dfg
     }
@@ -213,18 +210,13 @@ impl<'short, 'long> InstBuilderBase<'short> for FuncInstBuilder<'short, 'long> {
 
 
 
-
-
-
-impl<'a> FunctionBuilder<'a> {
+impl FunctionBuilder {
     
-    
-    pub fn new(func: &'a mut Function, func_ctx: &'a mut FunctionBuilderContext) -> Self {
-        debug_assert!(func_ctx.is_empty());
+    pub fn new(func: Function) -> Self {
         Self {
             func,
             srcloc: Default::default(),
-            func_ctx,
+            func_ctx: FunctionBuilderContext::new(),
             position: Position::default(),
         }
     }
@@ -279,7 +271,7 @@ impl<'a> FunctionBuilder<'a> {
     
     
     pub fn seal_block(&mut self, ebb: Ebb) {
-        let side_effects = self.func_ctx.ssa.seal_ebb_header_block(ebb, self.func);
+        let side_effects = self.func_ctx.ssa.seal_ebb_header_block(ebb, &mut self.func);
         self.handle_ssa_side_effects(side_effects);
     }
 
@@ -290,7 +282,7 @@ impl<'a> FunctionBuilder<'a> {
     
     
     pub fn seal_all_blocks(&mut self) {
-        let side_effects = self.func_ctx.ssa.seal_all_ebb_header_blocks(self.func);
+        let side_effects = self.func_ctx.ssa.seal_all_ebb_header_blocks(&mut self.func);
         self.handle_ssa_side_effects(side_effects);
     }
 
@@ -311,7 +303,7 @@ impl<'a> FunctionBuilder<'a> {
             });
             self.func_ctx
                 .ssa
-                .use_var(self.func, var, ty, self.position.basic_block.unwrap())
+                .use_var(&mut self.func, var, ty, self.position.basic_block.unwrap())
         };
         self.handle_ssa_side_effects(side_effects);
         val
@@ -393,7 +385,7 @@ impl<'a> FunctionBuilder<'a> {
 
     
     
-    pub fn ins<'short>(&'short mut self) -> FuncInstBuilder<'short, 'a> {
+    pub fn ins<'short>(&'short mut self) -> FuncInstBuilder<'short> {
         let ebb = self
             .position
             .ebb
@@ -423,7 +415,7 @@ impl<'a> FunctionBuilder<'a> {
     
     pub fn cursor(&mut self) -> FuncCursor {
         self.ensure_inserted_ebb();
-        FuncCursor::new(self.func)
+        FuncCursor::new(&mut self.func)
             .with_srcloc(self.srcloc)
             .at_bottom(self.position.ebb.unwrap())
     }
@@ -461,8 +453,19 @@ impl<'a> FunctionBuilder<'a> {
 
     
     
+    pub fn clear(&mut self) {
+        
+        
+        self.func_ctx.clear();
+        
+        self.srcloc = Default::default();
+        self.position = Position::default();
+    }
+
     
-    pub fn finalize(&mut self) {
+    
+    
+    pub fn finalize(&mut self) -> ir::Function {
         
         debug_assert!(
             self.func_ctx
@@ -492,13 +495,8 @@ impl<'a> FunctionBuilder<'a> {
             }
         }
 
-        
-        
-        self.func_ctx.clear();
-
-        
-        self.srcloc = Default::default();
-        self.position = Position::default();
+        self.clear();
+        std::mem::replace(&mut self.func, Function::new())
     }
 }
 
@@ -507,7 +505,7 @@ impl<'a> FunctionBuilder<'a> {
 
 
 
-impl<'a> FunctionBuilder<'a> {
+impl FunctionBuilder {
     
     
     pub fn ebb_params(&self, ebb: Ebb) -> &[Value] {
@@ -593,7 +591,7 @@ impl<'a> FunctionBuilder<'a> {
 }
 
 
-impl<'a> FunctionBuilder<'a> {
+impl FunctionBuilder {
     
     
     
@@ -853,7 +851,7 @@ fn greatest_divisible_power_of_two(size: u64) -> u64 {
 }
 
 
-impl<'a> FunctionBuilder<'a> {
+impl FunctionBuilder {
     fn move_to_next_basic_block(&mut self) {
         self.position.basic_block = PackedOption::from(
             self.func_ctx
@@ -888,7 +886,7 @@ impl<'a> FunctionBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::greatest_divisible_power_of_two;
-    use crate::frontend::{FunctionBuilder, FunctionBuilderContext};
+    use crate::frontend::FunctionBuilder;
     use crate::Variable;
     use cranelift_codegen::entity::EntityRef;
     use cranelift_codegen::ir::types::*;
@@ -903,14 +901,14 @@ mod tests {
         sig.returns.push(AbiParam::new(I32));
         sig.params.push(AbiParam::new(I32));
 
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
+        let func = {
+            let func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
+            let mut builder = FunctionBuilder::new(func);
 
             let block0 = builder.create_ebb();
             let block1 = builder.create_ebb();
             let block2 = builder.create_ebb();
+            let block3 = builder.create_ebb();
             let x = Variable::new(0);
             let y = Variable::new(1);
             let z = Variable::new(2);
@@ -948,7 +946,13 @@ mod tests {
             }
             {
                 let arg = builder.use_var(y);
-                builder.ins().brnz(arg, block2, &[]);
+                builder.ins().brnz(arg, block3, &[]);
+            }
+            builder.ins().jump(block2, &[]);
+
+            builder.switch_to_block(block2);
+            if !lazy_seal {
+                builder.seal_block(block2);
             }
             {
                 let arg1 = builder.use_var(z);
@@ -961,9 +965,9 @@ mod tests {
                 builder.ins().return_(&[arg]);
             }
 
-            builder.switch_to_block(block2);
+            builder.switch_to_block(block3);
             if !lazy_seal {
-                builder.seal_block(block2);
+                builder.seal_block(block3);
             }
 
             {
@@ -981,8 +985,8 @@ mod tests {
                 builder.seal_all_blocks();
             }
 
-            builder.finalize();
-        }
+            builder.finalize()
+        };
 
         let flags = settings::Flags::new(settings::builder());
         
@@ -1019,10 +1023,9 @@ mod tests {
         let mut sig = Signature::new(target.default_call_conv());
         sig.returns.push(AbiParam::new(I32));
 
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
+        let func = {
+            let func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
+            let mut builder = FunctionBuilder::new(func);
 
             let block0 = builder.create_ebb();
             let x = Variable::new(0);
@@ -1041,8 +1044,8 @@ mod tests {
             builder.ins().return_(&[size]);
 
             builder.seal_all_blocks();
-            builder.finalize();
-        }
+            builder.finalize()
+        };
 
         assert_eq!(
             func.display(None).to_string(),
@@ -1080,10 +1083,9 @@ ebb0:
         let mut sig = Signature::new(target.default_call_conv());
         sig.returns.push(AbiParam::new(I32));
 
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
+        let func = {
+            let func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
+            let mut builder = FunctionBuilder::new(func);
 
             let block0 = builder.create_ebb();
             let x = Variable::new(0);
@@ -1100,8 +1102,8 @@ ebb0:
             builder.ins().return_(&[dest]);
 
             builder.seal_all_blocks();
-            builder.finalize();
-        }
+            builder.finalize()
+        };
 
         assert_eq!(
             func.display(None).to_string(),
@@ -1137,10 +1139,9 @@ ebb0:
         let mut sig = Signature::new(target.default_call_conv());
         sig.returns.push(AbiParam::new(I32));
 
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
+        let func = {
+            let func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
+            let mut builder = FunctionBuilder::new(func);
 
             let block0 = builder.create_ebb();
             let x = Variable::new(0);
@@ -1157,8 +1158,8 @@ ebb0:
             builder.ins().return_(&[dest]);
 
             builder.seal_all_blocks();
-            builder.finalize();
-        }
+            builder.finalize()
+        };
 
         assert_eq!(
             func.display(None).to_string(),
@@ -1197,10 +1198,9 @@ ebb0:
         let mut sig = Signature::new(target.default_call_conv());
         sig.returns.push(AbiParam::new(I32));
 
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
+        let func = {
+            let func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
+            let mut builder = FunctionBuilder::new(func);
 
             let block0 = builder.create_ebb();
             let y = Variable::new(16);
@@ -1214,8 +1214,8 @@ ebb0:
             builder.ins().return_(&[dest]);
 
             builder.seal_all_blocks();
-            builder.finalize();
-        }
+            builder.finalize()
+        };
 
         assert_eq!(
             func.display(None).to_string(),
@@ -1249,10 +1249,9 @@ ebb0:
         let mut sig = Signature::new(target.default_call_conv());
         sig.returns.push(AbiParam::new(I32));
 
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
+        let func = {
+            let func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
+            let mut builder = FunctionBuilder::new(func);
 
             let block0 = builder.create_ebb();
             let y = Variable::new(16);
@@ -1266,8 +1265,8 @@ ebb0:
             builder.ins().return_(&[dest]);
 
             builder.seal_all_blocks();
-            builder.finalize();
-        }
+            builder.finalize()
+        };
 
         assert_eq!(
             func.display(None).to_string(),

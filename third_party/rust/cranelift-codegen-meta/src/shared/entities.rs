@@ -1,65 +1,76 @@
 use crate::cdsl::operands::{OperandKind, OperandKindBuilder as Builder, OperandKindFields};
 
+pub struct EntityRefs {
+    
+    
+    pub ebb: OperandKind,
+
+    
+    pub stack_slot: OperandKind,
+
+    
+    pub global_value: OperandKind,
+
+    
+    
+    pub sig_ref: OperandKind,
+
+    
+    
+    pub func_ref: OperandKind,
+
+    
+    pub jump_table: OperandKind,
+
+    
+    pub heap: OperandKind,
+
+    
+    pub table: OperandKind,
+
+    
+    pub varargs: OperandKind,
+}
+
+impl EntityRefs {
+    pub fn new() -> Self {
+        Self {
+            ebb: create("ebb", "An extended basic block in the same function.")
+                .default_member("destination")
+                .build(),
+
+            stack_slot: create("stack_slot", "A stack slot").build(),
+
+            global_value: create("global_value", "A global value.").build(),
+
+            sig_ref: create("sig_ref", "A function signature.").build(),
+
+            func_ref: create("func_ref", "An external function.").build(),
+
+            jump_table: create("jump_table", "A jump table.")
+                .default_member("table")
+                .build(),
+
+            heap: create("heap", "A heap.").build(),
+
+            table: create("table", "A table.").build(),
+
+            varargs: Builder::new("variable_args", OperandKindFields::VariableArgs)
+                .doc(
+                    r#"
+                        A variable size list of `value` operands.
+
+                        Use this to represent arguments passed to a function call, arguments
+                        passed to an extended basic block, or a variable number of results
+                        returned from an instruction.
+                    "#,
+                )
+                .build(),
+        }
+    }
+}
+
 
 fn create(name: &'static str, doc: &'static str) -> Builder {
     Builder::new(name, OperandKindFields::EntityRef).doc(doc)
-}
-
-pub fn define() -> Vec<OperandKind> {
-    let mut kinds = Vec::new();
-
-    
-    
-    let ebb = create("ebb", "An extended basic block in the same function.")
-        .default_member("destination")
-        .build();
-    kinds.push(ebb);
-
-    
-    let stack_slot = create("stack_slot", "A stack slot").build();
-    kinds.push(stack_slot);
-
-    
-    let global_value = create("global_value", "A global value.").build();
-    kinds.push(global_value);
-
-    
-    
-    let sig_ref = create("sig_ref", "A function signature.").build();
-    kinds.push(sig_ref);
-
-    
-    
-    let func_ref = create("func_ref", "An external function.").build();
-    kinds.push(func_ref);
-
-    
-    let jump_table = create("jump_table", "A jump table.")
-        .default_member("table")
-        .build();
-    kinds.push(jump_table);
-
-    
-    let heap = create("heap", "A heap.").build();
-    kinds.push(heap);
-
-    
-    let table = create("table", "A table.").build();
-    kinds.push(table);
-
-    
-    let varargs = Builder::new("variable_args", OperandKindFields::VariableArgs)
-        .doc(
-            r#"
-            A variable size list of `value` operands.
-
-            Use this to represent arguments passed to a function call, arguments
-            passed to an extended basic block, or a variable number of results
-            returned from an instruction.
-        "#,
-        )
-        .build();
-    kinds.push(varargs);
-
-    return kinds;
 }
