@@ -27,22 +27,14 @@ async function attachTargets(type, targetLists, args) {
       if (targets[threadActorID]) {
         newTargets[threadActorID] = targets[threadActorID];
       } else {
+        const [, threadFront] = await targetFront.attachThread(args.options);
         
         
-        
-        let threadFront = targetFront.threadFront;
-
-        
-        
-        if (!threadFront) {
-          [, threadFront] = await targetFront.attachThread(args.options);
-          
-          
-          threadFront.resume();
-        }
+        threadFront.resume();
 
         addThreadEventListeners(threadFront);
 
+        await targetFront.attachConsole();
         newTargets[threadFront.actor] = targetFront;
       }
     } catch (e) {

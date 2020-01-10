@@ -55,6 +55,12 @@ export async function onConnect(connection: any, actions: Object) {
   
   actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
 
+  
+  
+  
+  
+  
+  
   const traits = tabTarget.traits;
   await actions.connect(
     tabTarget.url,
@@ -63,18 +69,18 @@ export async function onConnect(connection: any, actions: Object) {
     tabTarget.isWebExtension
   );
 
-  
-  
-  
-  
-  
-  
-  
-  
-  const sources = await clientCommands.fetchSources();
-  await actions.newGeneratedSources(sources);
+  const fetched = clientCommands
+    .fetchSources()
+    .then(sources => actions.newGeneratedSources(sources));
 
-  await clientCommands.checkIfAlreadyPaused();
+  
+  
+  const pausedPacket = threadFront.getLastPausePacket();
+  if (pausedPacket) {
+    clientEvents.paused(threadFront, pausedPacket);
+  }
+
+  return fetched;
 }
 
 export { createObjectClient, clientCommands, clientEvents };
