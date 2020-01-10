@@ -8,12 +8,6 @@ const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const {Bookmark, BookmarkFolder, BookmarksEngine, BufferedBookmarksEngine, Livemark} = ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
 const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
-
-Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
-});
-
 var recordedEvents = [];
 
 function checkRecordedEvents(object, expected, message) {

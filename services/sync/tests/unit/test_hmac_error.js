@@ -4,12 +4,6 @@
 const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 
-Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
-});
-
-
 var hmacErrorCount = 0;
 (function() {
   let hHE = Service.handleHMACEvent;

@@ -7,12 +7,6 @@ const {SyncScheduler} = ChromeUtils.import("resource://services-sync/policies.js
 const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 const {Status} = ChromeUtils.import("resource://services-sync/status.js");
 
-
-Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
-});
-
 function CatapultEngine() {
   SyncEngine.call(this, "Catapult", Service);
 }
