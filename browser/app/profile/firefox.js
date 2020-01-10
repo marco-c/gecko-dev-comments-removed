@@ -1359,13 +1359,9 @@ pref("security.insecure_password.ui.enabled", true);
 pref("security.insecure_field_warning.contextual.enabled", true);
 
 
-pref("security.insecure_connection_icon.enabled", false);
+pref("security.insecure_connection_icon.enabled", true);
 
-#if defined(NIGHTLY_BUILD)
 pref("security.insecure_connection_icon.pbmode.enabled", true);
-#else
-pref("security.insecure_connection_icon.pbmode.enabled", false);
-#endif
 
 
 pref("security.insecure_connection_text.enabled", false);
