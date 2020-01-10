@@ -663,7 +663,7 @@ PluginModuleChromeParent::~PluginModuleChromeParent() {
   mozilla::BackgroundHangMonitor::UnregisterAnnotator(*this);
 }
 
-void PluginModuleChromeParent::WriteExtraDataForMinidump() {
+void PluginModuleChromeParent::AddCrashAnnotations() {
   
   mCrashReporterMutex.AssertCurrentThreadOwns();
 
@@ -1278,9 +1278,13 @@ static void RemoveMinidump(nsIFile* minidump) {
 void PluginModuleChromeParent::ProcessFirstMinidump() {
   mozilla::MutexAutoLock lock(mCrashReporterMutex);
 
-  if (!mCrashReporter) return;
+  if (!mCrashReporter) {
+    CrashReporter::FinalizeOrphanedMinidump(OtherPid(),
+                                            GeckoProcessType_Plugin);
+    return;
+  }
 
-  WriteExtraDataForMinidump();
+  AddCrashAnnotations();
 
   if (mCrashReporter->HasMinidump()) {
     

@@ -153,7 +153,7 @@ class GMPParent final : public PGMPParent {
       const nsAString& aJSON);  
   RefPtr<GenericPromise> ReadChromiumManifestFile(
       nsIFile* aFile);  
-  void WriteExtraDataForMinidump();
+  void AddCrashAnnotations();
   bool GetCrashID(nsString& aResult);
   void ActorDestroy(ActorDestroyReason aWhy) override;
 

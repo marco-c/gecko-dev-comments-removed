@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include "nsError.h"
 #include "nsString.h"
+#include "nsXULAppAPI.h"
 #include "prio.h"
 
 #if defined(XP_WIN)
@@ -171,6 +172,18 @@ bool TakeMinidump(nsIFile** aResult, bool aMoveToPending = false);
 bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
                           AnnotationTable& aAnnotations,
                           uint32_t* aSequence = nullptr);
+
+
+
+
+
+
+
+
+
+
+
+bool FinalizeOrphanedMinidump(uint32_t aChildPid, GeckoProcessType aType);
 
 #if defined(XP_WIN)
 typedef HANDLE ProcessHandle;

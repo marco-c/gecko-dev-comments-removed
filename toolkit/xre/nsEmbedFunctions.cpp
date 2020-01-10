@@ -230,6 +230,21 @@ const char* XRE_ChildProcessTypeToString(GeckoProcessType aProcessType) {
              : "invalid";
 }
 
+const char* XRE_ChildProcessTypeToAnnotation(GeckoProcessType aProcessType) {
+  switch (aProcessType) {
+    case GeckoProcessType_GMPlugin:
+      
+      
+      return "plugin";
+    case GeckoProcessType_Default:
+      return "";
+    case GeckoProcessType_Content:
+      return "content";
+    default:
+      return XRE_ChildProcessTypeToString(aProcessType);
+  }
+}
+
 namespace mozilla {
 namespace startup {
 GeckoProcessType sChildProcessType = GeckoProcessType_Default;
