@@ -160,8 +160,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, const ListContext&,
-                                        AutoList& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, const ListContext&);
 
   
 
@@ -179,33 +178,27 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag);
 
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const FieldOrRootContext&,
-                                               AutoTaggedTuple& guard) {
-    return enterTaggedTuple(tag, guard);
+                                               const FieldOrRootContext&) {
+    return enterTaggedTuple(tag);
   }
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const FieldOrListContext&,
-                                               AutoTaggedTuple& guard) {
-    return enterTaggedTuple(tag, guard);
+                                               const FieldOrListContext&) {
+    return enterTaggedTuple(tag);
   }
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const RootContext&,
-                                               AutoTaggedTuple& guard) {
-    return enterTaggedTuple(tag, guard);
+                                               const RootContext&) {
+    return enterTaggedTuple(tag);
   }
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const ListContext&,
-                                               AutoTaggedTuple& guard) {
-    return enterTaggedTuple(tag, guard);
+                                               const ListContext&) {
+    return enterTaggedTuple(tag);
   }
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const FieldContext&,
-                                               AutoTaggedTuple& guard) {
-    return enterTaggedTuple(tag, guard);
+                                               const FieldContext&) {
+    return enterTaggedTuple(tag);
   }
 
   
@@ -263,12 +256,12 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
     explicit AutoBase(BinASTTokenReaderMultipart& reader);
     ~AutoBase();
 
-    
-    MOZ_MUST_USE JS::Result<Ok> checkPosition(const uint8_t* expectedPosition);
-
     friend BinASTTokenReaderMultipart;
+
+   public:
     void init();
 
+   protected:
     
     
     bool initialized_;
@@ -285,7 +278,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
    protected:
     friend BinASTTokenReaderMultipart;
-    void init();
   };
 
   
