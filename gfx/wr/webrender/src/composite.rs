@@ -150,6 +150,7 @@ impl CompositeState {
 }
 
 
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
