@@ -522,8 +522,6 @@ uint32_t decoder_decode_to_utf16_without_replacement(
 
 
 
-
-
 size_t decoder_latin1_byte_compatible_up_to(ENCODING_RS_DECODER const* decoder,
                                             uint8_t const* buffer,
                                             size_t buffer_len);

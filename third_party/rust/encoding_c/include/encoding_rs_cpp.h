@@ -298,8 +298,6 @@ class Decoder final {
 
 
 
-
-
   inline std::optional<size_t> latin1_byte_compatible_up_to(
       gsl::span<const uint8_t> buffer) const {
     size_t val = decoder_latin1_byte_compatible_up_to(

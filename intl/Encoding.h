@@ -1042,7 +1042,6 @@ class Decoder final {
 
 
 
-
   inline mozilla::Maybe<size_t> Latin1ByteCompatibleUpTo(
       Span<const uint8_t> aBuffer) const {
     size_t upTo = decoder_latin1_byte_compatible_up_to(

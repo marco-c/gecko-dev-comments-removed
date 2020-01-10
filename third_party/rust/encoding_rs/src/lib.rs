@@ -11,7 +11,7 @@
     feature = "cargo-clippy",
     allow(doc_markdown, inline_always, new_ret_no_self)
 )]
-#![doc(html_root_url = "https://docs.rs/encoding_rs/0.8.19")]
+#![doc(html_root_url = "https://docs.rs/encoding_rs/0.8.20")]
 
 
 
@@ -4226,11 +4226,11 @@ impl Decoder {
     
     
     
-    
-    
     pub fn latin1_byte_compatible_up_to(&self, bytes: &[u8]) -> Option<usize> {
         match self.life_cycle {
-            DecoderLifeCycle::Converting => Some(self.variant.latin1_byte_compatible_up_to(bytes)),
+            DecoderLifeCycle::Converting => {
+                return self.variant.latin1_byte_compatible_up_to(bytes);
+            }
             DecoderLifeCycle::Finished => panic!("Must not use a decoder that has finished."),
             _ => None,
         }
@@ -5760,13 +5760,10 @@ mod tests {
                 .unwrap(),
             1
         );
-        assert_eq!(
-            REPLACEMENT
-                .new_decoder_without_bom_handling()
-                .latin1_byte_compatible_up_to(buffer)
-                .unwrap(),
-            0
-        );
+        assert!(REPLACEMENT
+            .new_decoder_without_bom_handling()
+            .latin1_byte_compatible_up_to(buffer)
+            .is_none());
         assert_eq!(
             SHIFT_JIS
                 .new_decoder_without_bom_handling()
@@ -5781,20 +5778,14 @@ mod tests {
                 .unwrap(),
             1
         );
-        assert_eq!(
-            UTF_16BE
-                .new_decoder_without_bom_handling()
-                .latin1_byte_compatible_up_to(buffer)
-                .unwrap(),
-            0
-        );
-        assert_eq!(
-            UTF_16LE
-                .new_decoder_without_bom_handling()
-                .latin1_byte_compatible_up_to(buffer)
-                .unwrap(),
-            0
-        );
+        assert!(UTF_16BE
+            .new_decoder_without_bom_handling()
+            .latin1_byte_compatible_up_to(buffer)
+            .is_none());
+        assert!(UTF_16LE
+            .new_decoder_without_bom_handling()
+            .latin1_byte_compatible_up_to(buffer)
+            .is_none());
         assert_eq!(
             ISO_2022_JP
                 .new_decoder_without_bom_handling()
@@ -6019,6 +6010,6 @@ mod tests {
         let _ = decoder.decode_to_utf16(b"\xBB\xBF", &mut output, false);
         assert_eq!(decoder.latin1_byte_compatible_up_to(buffer), Some(1));
         let _ = decoder.decode_to_utf16(b"\xEF", &mut output, false);
-        assert_eq!(decoder.latin1_byte_compatible_up_to(buffer), Some(0));
+        assert_eq!(decoder.latin1_byte_compatible_up_to(buffer), None);
     }
 }

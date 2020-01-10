@@ -928,8 +928,6 @@ pub unsafe extern "C" fn decoder_decode_to_utf16_without_replacement(
 
 
 
-
-
 #[no_mangle]
 pub unsafe extern "C" fn decoder_latin1_byte_compatible_up_to(
     decoder: *const Decoder,
