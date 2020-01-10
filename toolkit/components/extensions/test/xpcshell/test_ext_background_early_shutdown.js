@@ -2,6 +2,10 @@
 
 "use strict";
 
+const { BrowserTestUtils } = ChromeUtils.import(
+  "resource://testing-common/BrowserTestUtils.jsm"
+);
+
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 AddonTestUtils.createAppInfo(
@@ -29,21 +33,18 @@ let { Management } = ChromeUtils.import(
 
 
 
-function crashBrowser(browser) {
+function crashFrame(browser) {
   if (!browser.isRemoteBrowser) {
     
     throw new Error("<browser> must be remote");
   }
 
-  let frameScript = () => {
-    const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
-    privateNoteIntentionalCrash(); 
-    let zero = new ctypes.intptr_t(8);
-    let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
-    dump("Intentionally crashing extension process...\n");
-    badptr.contents; 
-  };
-  browser.messageManager.loadFrameScript(`data:,(${frameScript})();`, false);
+  
+  BrowserTestUtils.sendAsyncMessage(
+    browser.browsingContext,
+    "BrowserTestUtils:CrashFrame",
+    {}
+  );
 }
 
 
@@ -163,7 +164,7 @@ add_task(async function test_unload_extension_during_background_page_startup() {
 
         
         if (browser.isRemote) {
-          crashBrowser(browser);
+          crashFrame(browser);
         } else {
           
           
