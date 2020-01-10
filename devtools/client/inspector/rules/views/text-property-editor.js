@@ -111,6 +111,7 @@ function TextPropertyEditor(ruleEditor, property) {
   this.getGridlineNames = this.getGridlineNames.bind(this);
   this.update = this.update.bind(this);
   this.updatePropertyState = this.updatePropertyState.bind(this);
+  this._onEnableChanged = this._onEnableChanged.bind(this);
   this._onEnableClicked = this._onEnableClicked.bind(this);
   this._onExpandClicked = this._onExpandClicked.bind(this);
   this._onNameDone = this._onNameDone.bind(this);
@@ -159,8 +160,10 @@ TextPropertyEditor.prototype = {
     });
 
     
-    this.enable = createChild(this.container, "div", {
-      class: "ruleview-enableproperty theme-checkbox",
+    this.enable = createChild(this.container, "input", {
+      type: "checkbox",
+      class: "ruleview-enableproperty",
+      "aria-labelledby": this.prop.id,
       tabindex: "-1",
     });
 
@@ -173,6 +176,7 @@ TextPropertyEditor.prototype = {
     this.nameSpan = createChild(this.nameContainer, "span", {
       class: "ruleview-propertyname theme-fg-color3",
       tabindex: this.ruleEditor.isEditable ? "0" : "-1",
+      id: this.prop.id,
     });
 
     appendText(this.nameContainer, ": ");
@@ -244,6 +248,7 @@ TextPropertyEditor.prototype = {
     
     if (this.ruleEditor.isEditable) {
       this.enable.addEventListener("click", this._onEnableClicked, true);
+      this.enable.addEventListener("change", this._onEnableChanged, true);
 
       this.nameContainer.addEventListener("click", event => {
         
@@ -914,6 +919,13 @@ TextPropertyEditor.prototype = {
 
 
   _onEnableClicked: function(event) {
+    event.stopPropagation();
+  },
+
+  
+
+
+  _onEnableChanged: function(event) {
     const checked = this.enable.hasAttribute("checked");
     if (checked) {
       this.enable.removeAttribute("checked");
