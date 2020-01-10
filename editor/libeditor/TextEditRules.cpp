@@ -318,10 +318,6 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return WillSetText(aCancel, aHandled, aInfo.inString, aInfo.maxLength);
     case EditSubAction::eDeleteSelectedContent:
       return WillDeleteSelection(aInfo.collapsedAction, aCancel, aHandled);
-    case EditSubAction::eUndo:
-      return WillUndo(aCancel, aHandled);
-    case EditSubAction::eRedo:
-      return WillRedo(aCancel, aHandled);
     case EditSubAction::eSetTextProperty:
       return WillSetTextProperty(aCancel, aHandled);
     case EditSubAction::eRemoveTextProperty:
@@ -343,6 +339,8 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return rv;
     }
     case EditSubAction::eInsertElement:
+    case EditSubAction::eUndo:
+    case EditSubAction::eRedo:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
       return NS_ERROR_UNEXPECTED;
     default:
@@ -365,10 +363,11 @@ nsresult TextEditRules::DidDoAction(EditSubActionInfo& aInfo,
   switch (aInfo.mEditSubAction) {
     case EditSubAction::eDeleteSelectedContent:
       return DidDeleteSelection();
+    case EditSubAction::eInsertElement:
     case EditSubAction::eUndo:
-      return DidUndo(aResult);
     case EditSubAction::eRedo:
-      return DidRedo(aResult);
+      MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
+      return NS_ERROR_UNEXPECTED;
     default:
       
       return NS_OK;
@@ -1122,89 +1121,6 @@ nsresult TextEditRules::DidDeleteSelection() {
   SelectionRefPtr()->SetInterlinePosition(true, err);
   NS_WARNING_ASSERTION(!err.Failed(), "Failed to set interline position");
   return err.StealNSResult();
-}
-
-nsresult TextEditRules::WillUndo(bool* aCancel, bool* aHandled) {
-  if (NS_WARN_IF(!aCancel) || NS_WARN_IF(!aHandled)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  CANCEL_OPERATION_IF_READONLY_OR_DISABLED
-  
-  *aCancel = false;
-  *aHandled = false;
-  return NS_OK;
-}
-
-nsresult TextEditRules::DidUndo(nsresult aResult) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  if (NS_WARN_IF(NS_FAILED(aResult))) {
-    return aResult;
-  }
-
-  Element* rootElement = TextEditorRef().GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  
-  nsIContent* node = TextEditorRef().GetLeftmostChild(rootElement);
-  if (node && EditorBase::IsPaddingBRElementForEmptyEditor(*node)) {
-    TextEditorRef().mPaddingBRElementForEmptyEditor =
-        static_cast<HTMLBRElement*>(node);
-  } else {
-    TextEditorRef().mPaddingBRElementForEmptyEditor = nullptr;
-  }
-  return aResult;
-}
-
-nsresult TextEditRules::WillRedo(bool* aCancel, bool* aHandled) {
-  if (NS_WARN_IF(!aCancel) || NS_WARN_IF(!aHandled)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  CANCEL_OPERATION_IF_READONLY_OR_DISABLED
-  
-  *aCancel = false;
-  *aHandled = false;
-  return NS_OK;
-}
-
-nsresult TextEditRules::DidRedo(nsresult aResult) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  if (NS_FAILED(aResult)) {
-    return aResult;  
-  }
-
-  Element* rootElement = TextEditorRef().GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIHTMLCollection> nodeList =
-      rootElement->GetElementsByTagName(NS_LITERAL_STRING("br"));
-  MOZ_ASSERT(nodeList);
-  uint32_t len = nodeList->Length();
-
-  if (len != 1) {
-    
-    TextEditorRef().mPaddingBRElementForEmptyEditor = nullptr;
-    return NS_OK;
-  }
-
-  Element* brElement = nodeList->Item(0);
-  if (EditorBase::IsPaddingBRElementForEmptyEditor(*brElement)) {
-    TextEditorRef().mPaddingBRElementForEmptyEditor =
-        static_cast<HTMLBRElement*>(brElement);
-  } else {
-    TextEditorRef().mPaddingBRElementForEmptyEditor = nullptr;
-  }
-  return NS_OK;
 }
 
 nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
