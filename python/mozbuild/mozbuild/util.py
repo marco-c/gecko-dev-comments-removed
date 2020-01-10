@@ -1315,7 +1315,12 @@ def patch_main():
     See also: http://bugs.python.org/issue19946
     And: https://bugzilla.mozilla.org/show_bug.cgi?id=914563
     '''
-    if sys.platform == 'win32':
+    
+    
+    
+    
+    
+    if sys.platform == 'win32' and sys.version_info < (3, 4):
         import inspect
         import os
         from multiprocessing import forking
