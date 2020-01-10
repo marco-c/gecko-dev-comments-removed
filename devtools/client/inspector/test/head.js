@@ -188,24 +188,6 @@ function clearCurrentNodeSelection(inspector) {
 
 
 
-
-var openInspectorForURL = async function(url, hostType) {
-  const tab = await addTab(url);
-  const { inspector, toolbox, testActor } = await openInspector(hostType);
-  return { tab, inspector, toolbox, testActor };
-};
-
-async function getActiveInspector() {
-  const target = await TargetFactory.forTab(gBrowser.selectedTab);
-  return gDevTools.getToolbox(target).getPanel("inspector");
-}
-
-
-
-
-
-
-
 var clickOnInspectMenuItem = async function(testActor, selector) {
   info("Showing the contextual menu on node " + selector);
   const contentAreaContextMenu = document.querySelector(
