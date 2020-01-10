@@ -1613,14 +1613,16 @@ void MediaRecorder::Pause(ErrorResult& aResult) {
   
   
   mState = RecordingState::Paused;
-  MOZ_ASSERT(!mSessions.IsEmpty());
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "MediaRecorder::Pause", [session = mSessions.LastElement(),
-                               recorder = RefPtr<MediaRecorder>(this)] {
-        
-        
-        session->Pause();
 
+  
+  
+  
+  
+  MOZ_ASSERT(!mSessions.IsEmpty());
+  mSessions.LastElement()->Pause();
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "MediaRecorder::Pause", [recorder = RefPtr<MediaRecorder>(this)] {
         
         
         recorder->DispatchSimpleEvent(NS_LITERAL_STRING("pause"));
@@ -1652,13 +1654,15 @@ void MediaRecorder::Resume(ErrorResult& aResult) {
   
   
   mState = RecordingState::Recording;
-  MOZ_ASSERT(!mSessions.IsEmpty());
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "MediaRecorder::Resume", [session = mSessions.LastElement(),
-                                recorder = RefPtr<MediaRecorder>(this)] {
-        
-        session->Resume();
 
+  
+  
+  
+  MOZ_ASSERT(!mSessions.IsEmpty());
+  mSessions.LastElement()->Resume();
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "MediaRecorder::Resume", [recorder = RefPtr<MediaRecorder>(this)] {
         
         
         recorder->DispatchSimpleEvent(NS_LITERAL_STRING("resume"));
