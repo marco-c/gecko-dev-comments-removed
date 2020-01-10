@@ -363,7 +363,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAllowAuth(mItemType == typeContent),
       mAllowKeywordFixup(false),
       mIsOffScreenBrowser(false),
-      mIsActive(true),
       mDisableMetaRefreshWhenInactive(false),
       mIsAppTab(false),
       mUseGlobalHistory(false),
@@ -1047,8 +1046,9 @@ bool nsDocShell::MaybeInitTiming() {
   }
 
   mTiming->NotifyNavigationStart(
-      mIsActive ? nsDOMNavigationTiming::DocShellState::eActive
-                : nsDOMNavigationTiming::DocShellState::eInactive);
+      mBrowsingContext->GetIsActive()
+          ? nsDOMNavigationTiming::DocShellState::eActive
+          : nsDOMNavigationTiming::DocShellState::eInactive);
 
   return canBeReset;
 }
@@ -5020,7 +5020,7 @@ nsDocShell::GetIsOffScreenBrowser(bool* aIsOffScreen) {
 NS_IMETHODIMP
 nsDocShell::SetIsActive(bool aIsActive) {
   
-  mIsActive = aIsActive;
+  mBrowsingContext->SetIsActive(aIsActive);
 
   
   if (RefPtr<PresShell> presShell = GetPresShell()) {
@@ -5076,7 +5076,7 @@ nsDocShell::SetIsActive(bool aIsActive) {
 
   
   if (mDisableMetaRefreshWhenInactive) {
-    if (mIsActive) {
+    if (mBrowsingContext->GetIsActive()) {
       ResumeRefreshURIs();
     } else {
       SuspendRefreshURIs();
@@ -5088,7 +5088,7 @@ nsDocShell::SetIsActive(bool aIsActive) {
 
 NS_IMETHODIMP
 nsDocShell::GetIsActive(bool* aIsActive) {
-  *aIsActive = mIsActive;
+  *aIsActive = mBrowsingContext->GetIsActive();
   return NS_OK;
 }
 
@@ -5442,7 +5442,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDelay,
   }
 
   if (busyFlags & BUSY_FLAGS_BUSY ||
-      (!mIsActive && mDisableMetaRefreshWhenInactive)) {
+      (!mBrowsingContext->GetIsActive() && mDisableMetaRefreshWhenInactive)) {
     
     
     
@@ -6335,7 +6335,8 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   }
   
   
-  if (mIsActive || !mDisableMetaRefreshWhenInactive) RefreshURIFromQueue();
+  if (mBrowsingContext->GetIsActive() || !mDisableMetaRefreshWhenInactive)
+    RefreshURIFromQueue();
 
   
   bool isTopFrame = true;
@@ -8440,7 +8441,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
   MOZ_ASSERT(!aLoadState->Target().IsEmpty(), "should have a target here!");
 
   nsresult rv = NS_OK;
-  nsCOMPtr<nsIDocShell> targetDocShell;
+  RefPtr<BrowsingContext> targetContext;
 
   
   
@@ -8452,13 +8453,11 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
       aLoadState->Target().LowerCaseEqualsLiteral("_self") ||
       aLoadState->Target().LowerCaseEqualsLiteral("_parent") ||
       aLoadState->Target().LowerCaseEqualsLiteral("_top")) {
-    if (BrowsingContext* context = mBrowsingContext->FindWithName(
-            aLoadState->Target(),  false)) {
-      targetDocShell = context->GetDocShell();
-    }
+    targetContext = mBrowsingContext->FindWithName(
+        aLoadState->Target(),  false);
   }
 
-  if (!targetDocShell) {
+  if (!targetContext) {
     
     
     
@@ -8509,10 +8508,10 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
     }
   }
 
-  if ((!targetDocShell || targetDocShell == static_cast<nsIDocShell*>(this))) {
+  if (!targetContext || (targetContext == mBrowsingContext)) {
     bool handled;
     rv = MaybeHandleLoadDelegate(aLoadState,
-                                 targetDocShell
+                                 targetContext
                                      ? nsIBrowserDOMWindow::OPEN_CURRENTWINDOW
                                      : nsIBrowserDOMWindow::OPEN_NEWWINDOW,
                                  &handled);
@@ -8535,7 +8534,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
   
   aLoadState->UnsetLoadFlag(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL);
 
-  if (!targetDocShell) {
+  if (!targetContext) {
     
     
     
@@ -8635,39 +8634,22 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
     }
 
     if (newBC) {
-      targetDocShell = newBC->GetDocShell();
+      targetContext = newBC;
     }
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(targetDocShell, rv);
+  NS_ENSURE_TRUE(targetContext, rv);
   
   
   
   
-  nsDocShell* docShell = nsDocShell::Cast(targetDocShell);
   
   aLoadState->SetTarget(EmptyString());
   
   aLoadState->SetFileName(VoidString());
-  rv = docShell->InternalLoad(aLoadState, aDocShell, aRequest);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  bool isTargetActive = false;
-  targetDocShell->GetIsActive(&isTargetActive);
-  nsCOMPtr<nsPIDOMWindowOuter> domWin = targetDocShell->GetWindow();
-  if (mIsActive && !isTargetActive && domWin &&
-      !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false)) {
-    nsFocusManager::FocusWindow(domWin);
-  }
-
-  
-  
-
-  return rv;
+  return targetContext->InternalLoad(mBrowsingContext, aLoadState, aDocShell,
+                                     aRequest);
 }
 
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
@@ -9293,7 +9275,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     MOZ_ASSERT(!parent);
 #endif
     SetOrientationLock(hal::eScreenOrientation_None);
-    if (mIsActive) {
+    if (mBrowsingContext->GetIsActive()) {
       ScreenOrientation::UpdateActiveOrientationLock(
           hal::eScreenOrientation_None);
     }
@@ -9950,7 +9932,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
               mScriptGlobal->GetFrameElementInternal();
           popupBlocked = !PopupBlocker::TryUsePopupOpeningToken(
               loadingNode ? loadingNode->NodePrincipal() : nullptr);
-        } else if (mIsActive &&
+        } else if (mBrowsingContext->GetIsActive() &&
                    PopupBlocker::ConsumeTimerTokenForExternalProtocolIframe()) {
           popupBlocked = false;
         } else {
@@ -10204,8 +10186,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     }
   }
 
-  bool isActive =
-      mIsActive || (mLoadType & (LOAD_CMD_NORMAL | LOAD_CMD_HISTORY));
+  bool isActive = mBrowsingContext->GetIsActive() ||
+                  (mLoadType & (LOAD_CMD_NORMAL | LOAD_CMD_HISTORY));
   if (!CreateChannelForLoadState(
           aLoadState, loadInfo, this, this, initiatorType, loadFlags, mLoadType,
           cacheKey, isActive, isTopLevelDoc,
