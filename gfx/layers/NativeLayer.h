@@ -84,6 +84,19 @@ class NativeLayer {
   
   
   
+  
+  
+  
+  virtual RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
+      gfx::BackendType aBackendType) = 0;
+
+  
+  
+  
+  
+  
+  
+  
   virtual gfx::IntRegion CurrentSurfaceInvalidRegion() = 0;
 
   

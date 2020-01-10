@@ -98,6 +98,8 @@ class NativeLayerCA : public NativeLayer {
   gfx::IntRect GetRect() override;
   void InvalidateRegionThroughoutSwapchain(
       const gfx::IntRegion& aRegion) override;
+  RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
+      gfx::BackendType aBackendType) override;
   gfx::IntRegion CurrentSurfaceInvalidRegion() override;
   void NotifySurfaceReady() override;
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
@@ -112,6 +114,7 @@ class NativeLayerCA : public NativeLayer {
   
   
   CFTypeRefPtr<IOSurfaceRef> NextSurface();
+  CFTypeRefPtr<IOSurfaceRef> NextSurfaceLocked(const MutexAutoLock&);
 
   
   
@@ -228,6 +231,9 @@ class NativeLayerCA : public NativeLayer {
   
   
   std::deque<SurfaceWithInvalidRegion> mSurfaces;
+
+  
+  RefPtr<MacIOSurface> mInProgressLockedIOSurface;
 
   gfx::IntPoint mPosition;
   gfx::IntSize mSize;
