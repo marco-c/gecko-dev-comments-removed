@@ -118,12 +118,16 @@ static void TraceOneDataRelocation(JSTracer* trc, Instruction* inst) {
 
   
   
+  
+  
   uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
   if (word >> JSVAL_TAG_SHIFT) {
+    
     Value v = Value::fromRawBits(word);
     TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
     ptr = (void*)v.bitsAsPunboxPointer();
   } else {
+    
     
     TraceManuallyBarrieredGenericPointerEdge(
         trc, reinterpret_cast<gc::Cell**>(&ptr), "ion-masm-ptr");

@@ -796,6 +796,8 @@ class AssemblerMIPSShared : public AssemblerShared {
   
   
   void writeDataRelocation(ImmGCPtr ptr) {
+    
+    
     if (ptr.value) {
       if (gc::IsInsideNursery(ptr.value)) {
         embedsNurseryPointers_ = true;
