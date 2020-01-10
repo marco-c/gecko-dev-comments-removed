@@ -3018,13 +3018,15 @@ var updateFrecency = async function(db, urls, collapseNotifications = false) {
       ", url, guid, hidden, last_visit_date)";
   }
   
-  await db.execute(
-    `UPDATE moz_places
-     SET hidden = (url_hash BETWEEN hash("place", "prefix_lo") AND hash("place", "prefix_hi")),
-         frecency = ${frecencyClause}
-     WHERE url_hash IN (${sqlBindPlaceholders(hrefs, "hash(", ")")})`,
-    hrefs
-  );
+  for (let chunk of PlacesUtils.chunkArray(hrefs, db.variableLimit)) {
+    await db.execute(
+      `UPDATE moz_places
+       SET hidden = (url_hash BETWEEN hash("place", "prefix_lo") AND hash("place", "prefix_hi")),
+           frecency = ${frecencyClause}
+       WHERE url_hash IN (${sqlBindPlaceholders(chunk, "hash(", ")")})`,
+      chunk
+    );
+  }
 
   
   await db.executeCached(`DELETE FROM moz_updateoriginsupdate_temp`);
