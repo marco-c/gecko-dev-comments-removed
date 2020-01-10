@@ -3275,9 +3275,9 @@ void nsStyleContent::TriggerImageLoads(Document& aDocument,
 
 nsStyleContent::nsStyleContent(const nsStyleContent& aSource)
     : mContents(aSource.mContents),
-      mIncrements(aSource.mIncrements),
-      mResets(aSource.mResets),
-      mSets(aSource.mSets) {
+      mCounterIncrement(aSource.mCounterIncrement),
+      mCounterReset(aSource.mCounterReset),
+      mCounterSet(aSource.mCounterSet) {
   MOZ_COUNT_CTOR(nsStyleContent);
 }
 
@@ -3286,8 +3286,10 @@ nsChangeHint nsStyleContent::CalcDifference(
   
   
   
-  if (mContents != aNewData.mContents || mIncrements != aNewData.mIncrements ||
-      mResets != aNewData.mResets || mSets != aNewData.mSets) {
+  if (mContents != aNewData.mContents ||
+      mCounterIncrement != aNewData.mCounterIncrement ||
+      mCounterReset != aNewData.mCounterReset ||
+      mCounterSet != aNewData.mCounterSet) {
     return nsChangeHint_ReconstructFrame;
   }
 

@@ -25,12 +25,14 @@ use std::ops::Deref;
     ToResolvedValue,
     ToShmem,
 )]
-pub struct CounterPair<Integer> {
+#[repr(C)]
+pub struct GenericCounterPair<Integer> {
     
     pub name: CustomIdent,
     
     pub value: Integer,
 }
+pub use self::GenericCounterPair as CounterPair;
 
 
 #[derive(
@@ -45,13 +47,15 @@ pub struct CounterPair<Integer> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct CounterIncrement<I>(pub Counters<I>);
+#[repr(transparent)]
+pub struct GenericCounterIncrement<I>(pub GenericCounters<I>);
+pub use self::GenericCounterIncrement as CounterIncrement;
 
 impl<I> CounterIncrement<I> {
     
     #[inline]
     pub fn new(counters: Vec<CounterPair<I>>) -> Self {
-        CounterIncrement(Counters(counters.into_boxed_slice()))
+        CounterIncrement(Counters(counters.into()))
     }
 }
 
@@ -77,13 +81,15 @@ impl<I> Deref for CounterIncrement<I> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct CounterSetOrReset<I>(pub Counters<I>);
+#[repr(transparent)]
+pub struct GenericCounterSetOrReset<I>(pub GenericCounters<I>);
+pub use self::GenericCounterSetOrReset as CounterSetOrReset;
 
 impl<I> CounterSetOrReset<I> {
     
     #[inline]
     pub fn new(counters: Vec<CounterPair<I>>) -> Self {
-        CounterSetOrReset(Counters(counters.into_boxed_slice()))
+        CounterSetOrReset(Counters(counters.into()))
     }
 }
 
@@ -111,17 +117,9 @@ impl<I> Deref for CounterSetOrReset<I> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct Counters<I>(#[css(iterable, if_empty = "none")] Box<[CounterPair<I>]>);
-
-impl<I> Counters<I> {
-    
-    
-    
-    #[inline]
-    pub fn into_vec(self) -> Vec<CounterPair<I>> {
-        self.0.into_vec()
-    }
-}
+#[repr(transparent)]
+pub struct GenericCounters<I>(#[css(iterable, if_empty = "none")] crate::OwnedSlice<GenericCounterPair<I>>);
+pub use self::GenericCounters as Counters;
 
 #[cfg(feature = "servo")]
 type CounterStyleType = ListStyleType;

@@ -263,11 +263,6 @@ class nsCounterManager {
   }
 
  private:
-  
-  bool AddCounterChangeNode(nsIFrame* aFrame, int32_t aIndex,
-                            const nsStyleCounterData& aCounterData,
-                            nsCounterNode::Type aType);
-
   nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsCounterList> mNames;
 };
 
