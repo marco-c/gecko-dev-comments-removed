@@ -40,7 +40,7 @@ void HTMLMetaElement::SetMetaReferrer(Document* aDocument) {
   GetContent(content);
 
   Element* headElt = aDocument->GetHeadElement();
-  if (headElt && nsContentUtils::ContentIsDescendantOf(this, headElt)) {
+  if (headElt && IsInclusiveDescendantOf(headElt)) {
     content = nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
         content);
     aDocument->UpdateReferrerInfoFromMeta(content, false);
@@ -91,7 +91,7 @@ nsresult HTMLMetaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     Element* headElt = doc.GetHeadElement();
-    if (headElt && nsContentUtils::ContentIsDescendantOf(this, headElt)) {
+    if (headElt && IsInclusiveDescendantOf(headElt)) {
       nsAutoString content;
       GetContent(content);
       content =

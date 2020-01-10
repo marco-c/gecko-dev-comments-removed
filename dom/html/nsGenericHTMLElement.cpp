@@ -510,7 +510,7 @@ HTMLFormElement* nsGenericHTMLElement::FindAncestorForm(
       
       
       
-      if (nsContentUtils::ContentIsDescendantOf(aCurrentForm, prevContent)) {
+      if (aCurrentForm->IsInclusiveDescendantOf(prevContent)) {
         return aCurrentForm;
       }
     }

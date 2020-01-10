@@ -821,7 +821,7 @@ bool nsCaret::IsMenuPopupHidingCaret() {
     nsMenuPopupFrame* popupFrame = static_cast<nsMenuPopupFrame*>(popups[i]);
     nsIContent* popupContent = popupFrame->GetContent();
 
-    if (nsContentUtils::ContentIsDescendantOf(caretContent, popupContent)) {
+    if (caretContent->IsInclusiveDescendantOf(popupContent)) {
       
       
       return false;

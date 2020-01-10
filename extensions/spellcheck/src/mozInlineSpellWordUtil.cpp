@@ -757,7 +757,7 @@ void mozInlineSpellWordUtil::BuildSoftText() {
       break;
     }
     
-    if (!nsContentUtils::ContentIsDescendantOf(node, mRootNode)) {
+    if (!node->IsInclusiveDescendantOf(mRootNode)) {
       break;
     }
     node = node->GetPreviousContent(mRootNode);

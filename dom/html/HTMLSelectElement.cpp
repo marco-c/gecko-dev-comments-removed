@@ -533,7 +533,7 @@ void HTMLSelectElement::Add(nsGenericHTMLElement& aElement,
   
   
   nsCOMPtr<nsINode> parent = aBefore->Element::GetParentNode();
-  if (!parent || !nsContentUtils::ContentIsDescendantOf(parent, this)) {
+  if (!parent || !parent->IsInclusiveDescendantOf(this)) {
     
     
     aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);

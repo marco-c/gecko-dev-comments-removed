@@ -7131,7 +7131,7 @@ void HTMLEditRules::PromoteRange(nsRange& aRange,
         return;
       }
       
-      if (!nsContentUtils::ContentIsDescendantOf(host, block)) {
+      if (!host->IsInclusiveDescendantOf(block)) {
         HTMLEditorRef().IsEmptyNode(block, &bIsEmptyNode, true, false);
       }
       if (bIsEmptyNode) {

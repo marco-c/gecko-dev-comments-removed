@@ -4190,8 +4190,7 @@ nsresult nsFrame::GetDataForTableSelection(
 
   
   
-  if (limiter && nsContentUtils::ContentIsDescendantOf(limiter, GetContent()))
-    return NS_OK;
+  if (limiter && limiter->IsInclusiveDescendantOf(GetContent())) return NS_OK;
 
   
   

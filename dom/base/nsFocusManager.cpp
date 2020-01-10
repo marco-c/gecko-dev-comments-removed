@@ -2714,10 +2714,10 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       
       
       
-      if (retargetElement && (retargetElement == startContent ||
-                              (!retargetElement->Contains(startContent) &&
-                               nsContentUtils::ContentIsDescendantOf(
-                                   startContent, retargetElement)))) {
+      if (retargetElement &&
+          (retargetElement == startContent ||
+           (!retargetElement->Contains(startContent) &&
+            startContent->IsInclusiveDescendantOf(retargetElement)))) {
         startContent = rootContent;
       }
     }

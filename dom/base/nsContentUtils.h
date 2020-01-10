@@ -341,22 +341,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-
-
-  static bool ContentIsDescendantOf(const nsINode* aPossibleDescendant,
-                                    const nsINode* aPossibleAncestor);
-
-  
-
-
-
-
-
   static bool ContentIsHostIncludingDescendantOf(
       const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor);
 

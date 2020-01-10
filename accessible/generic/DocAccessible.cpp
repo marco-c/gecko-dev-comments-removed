@@ -1938,7 +1938,7 @@ void DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner) {
     
     if (!child) {
       
-      if (nsContentUtils::ContentIsDescendantOf(aOwner->Elm(), childEl)) {
+      if (aOwner->Elm()->IsInclusiveDescendantOf(childEl)) {
         continue;
       }
 

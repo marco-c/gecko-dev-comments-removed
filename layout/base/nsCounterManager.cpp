@@ -157,8 +157,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
           nodeContent == startContent) &&
         
         
-        (!startContent ||
-         nsContentUtils::ContentIsDescendantOf(nodeContent, startContent))) {
+        (!startContent || nodeContent->IsInclusiveDescendantOf(startContent))) {
       aNode->mScopeStart = start;
       aNode->mScopePrev = prev;
       return;

@@ -2182,20 +2182,6 @@ nsINode* nsContentUtils::GetCrossDocParentNode(nsINode* aChild) {
   return parentDoc ? parentDoc->FindContentForSubDocument(doc) : nullptr;
 }
 
-
-bool nsContentUtils::ContentIsDescendantOf(const nsINode* aPossibleDescendant,
-                                           const nsINode* aPossibleAncestor) {
-  MOZ_ASSERT(aPossibleDescendant, "The possible descendant is null!");
-  MOZ_ASSERT(aPossibleAncestor, "The possible ancestor is null!");
-
-  do {
-    if (aPossibleDescendant == aPossibleAncestor) return true;
-    aPossibleDescendant = aPossibleDescendant->GetParentNode();
-  } while (aPossibleDescendant);
-
-  return false;
-}
-
 bool nsContentUtils::ContentIsHostIncludingDescendantOf(
     const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor) {
   MOZ_ASSERT(aPossibleDescendant, "The possible descendant is null!");
@@ -2945,9 +2931,9 @@ nsresult nsContentUtils::NewURIWithDocumentCharset(nsIURI** aResult,
                                                    nsIURI* aBaseURI) {
   if (aDocument) {
     return NS_NewURI(aResult, aSpec, aDocument->GetDocumentCharacterSet(),
-                     aBaseURI);
+                     aBaseURI, sIOService);
   }
-  return NS_NewURI(aResult, aSpec, nullptr, aBaseURI);
+  return NS_NewURI(aResult, aSpec, nullptr, aBaseURI, sIOService);
 }
 
 

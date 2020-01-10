@@ -4894,8 +4894,8 @@ nsIContent* HTMLEditor::GetFocusedContent() {
   }
 
   if (inDesignMode) {
-    return OurWindowHasFocus() && nsContentUtils::ContentIsDescendantOf(
-                                      focusedContent, document)
+    return OurWindowHasFocus() &&
+                   focusedContent->IsInclusiveDescendantOf(document)
                ? focusedContent.get()
                : nullptr;
   }
@@ -5019,7 +5019,7 @@ void HTMLEditor::NotifyEditingHostMaybeChanged() {
 
   
   
-  if (nsContentUtils::ContentIsDescendantOf(ancestorLimiter, editingHost)) {
+  if (ancestorLimiter->IsInclusiveDescendantOf(editingHost)) {
     
     
     EditorBase::InitializeSelectionAncestorLimit(*editingHost);
@@ -5187,7 +5187,7 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) {
     }
     
     
-    if (!nsContentUtils::ContentIsDescendantOf(targetContent, editingHost)) {
+    if (!targetContent->IsInclusiveDescendantOf(editingHost)) {
       return false;
     }
     
