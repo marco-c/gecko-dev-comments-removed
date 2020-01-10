@@ -207,15 +207,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
     run = job['run']
     test = taskdesc['run']['test']
     mozharness = test['mozharness']
-
-    is_aarch64_laptop = taskdesc['worker-type'] == 't-win64-aarch64-laptop'
-
-    
-    
-    if is_aarch64_laptop:
-        worker = taskdesc['worker']
-    else:
-        worker = taskdesc['worker'] = job['worker']
+    worker = taskdesc['worker'] = job['worker']
 
     bitbar_script = 'test-linux.sh'
 
@@ -404,10 +396,6 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
                 'url': a_url,
             },
         }]
-
-    if is_aarch64_laptop:
-        worker['command'] = [' '.join(mh_command)]
-        return
 
     job['run'] = {
         'workdir': run['workdir'],
