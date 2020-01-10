@@ -9,7 +9,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Tuple.h"
 
@@ -40,10 +39,7 @@ class ThreadTrampoline;
 
 class Thread {
  public:
-  struct Hasher;
-
   class Id {
-    friend struct Hasher;
     class PlatformData;
     void* platformData_[2];
 
@@ -74,17 +70,6 @@ class Thread {
       return *this;
     }
     size_t stackSize() const { return stackSize_; }
-  };
-
-  
-  struct Hasher {
-    typedef Id Lookup;
-
-    static HashNumber hash(const Lookup& l);
-
-    static bool match(const Id& key, const Lookup& lookup) {
-      return key == lookup;
-    }
   };
 
   
