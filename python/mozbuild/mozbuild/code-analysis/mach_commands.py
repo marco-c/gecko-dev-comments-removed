@@ -349,7 +349,10 @@ class StaticAnalysis(MachCommandBase):
         
         cmd = [self.cov_run_desktop, '--setup']
         if self.run_cov_command(cmd, self.cov_path):
-            return 1
+            
+            
+            if not full_build:
+                return 1
 
         
         langs = ["clang", "javascript", "python"]
