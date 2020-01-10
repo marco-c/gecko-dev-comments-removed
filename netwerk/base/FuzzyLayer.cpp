@@ -5,6 +5,8 @@
 
 
 #include "FuzzyLayer.h"
+#include "nsDataHashtable.h"
+#include "nsDeque.h"
 #include "nsIRunnable.h"
 #include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
@@ -12,6 +14,7 @@
 #include "prmem.h"
 #include "prio.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla {
 namespace net {
@@ -22,15 +25,35 @@ LazyLogModule gFuzzingLog("nsFuzzingNecko");
   MOZ_LOG(mozilla::net::gFuzzingLog, mozilla::LogLevel::Verbose, args)
 
 
-static Atomic<const uint8_t*> gFuzzingBuf(NULL);
-static Atomic<size_t> gFuzzingSize(0);
+Mutex gConnRecvMutex("ConnectRecvMutex");
 
 
 
 
 
+typedef struct {
+  const uint8_t* buf;
+  size_t size;
+  bool allowRead;
+  bool allowUnused;
+} NetworkFuzzingBuffer;
 
 
+static nsDataHashtable<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
+    gConnectedNetworkFuzzingBuffers;
+
+
+static nsDeque gNetworkFuzzingBuffers;
+
+
+
+
+
+static Atomic<bool> fuzzingNoWaitRequired(false);
+
+
+
+static Atomic<bool> fuzzingMainSignaledDone(false);
 
 
 
@@ -40,17 +63,50 @@ static Atomic<size_t> gFuzzingSize(0);
 
 
 Atomic<bool> gFuzzingConnClosed(true);
-Atomic<bool> gFuzzingAllowNewConn(false);
-Atomic<bool> gFuzzingAllowRead(false);
 
-void setNetworkFuzzingBuffer(const uint8_t* data, size_t size) {
+void addNetworkFuzzingBuffer(const uint8_t* data, size_t size, bool readFirst,
+                             bool useIsOptional) {
   if (size > INT32_MAX) {
     MOZ_CRASH("Unsupported buffer size");
   }
-  gFuzzingBuf = data;
-  gFuzzingSize = size;
-  gFuzzingAllowNewConn = true;
-  gFuzzingAllowRead = false;
+
+  NetworkFuzzingBuffer* buf = new NetworkFuzzingBuffer();
+  buf->buf = data;
+  buf->size = size;
+  buf->allowRead = readFirst;
+  buf->allowUnused = useIsOptional;
+
+  gNetworkFuzzingBuffers.Push(buf);
+
+  fuzzingMainSignaledDone = false;
+  fuzzingNoWaitRequired = false;
+}
+
+
+
+
+
+
+
+
+bool signalNetworkFuzzingDone() {
+  FUZZING_LOG(("[signalNetworkFuzzingDone] Called."));
+  MutexAutoLock lock(gConnRecvMutex);
+  bool rv = false;
+
+  if (fuzzingNoWaitRequired) {
+    FUZZING_LOG(("[signalNetworkFuzzingDone] Purging remaining buffers."));
+    
+    gNetworkFuzzingBuffers.Erase();
+    gFuzzingConnClosed = true;
+    rv = true;
+  } else {
+    
+    
+    fuzzingMainSignaledDone = true;
+  }
+
+  return rv;
 }
 
 static PRDescIdentity sFuzzyLayerIdentity;
@@ -61,7 +117,11 @@ static PRInt16 PR_CALLBACK FuzzyPoll(PRFileDesc* fd, PRInt16 in_flags,
                                      PRInt16* out_flags) {
   *out_flags = 0;
 
-  if (in_flags & PR_POLL_READ && gFuzzingAllowRead) {
+  FUZZING_LOG(("[FuzzyPoll] Called with in_flags=%X.", in_flags));
+
+  NetworkFuzzingBuffer* fuzzBuf = gConnectedNetworkFuzzingBuffers.Get(fd);
+
+  if (in_flags & PR_POLL_READ && fuzzBuf && fuzzBuf->allowRead) {
     *out_flags = PR_POLL_READ;
     return PR_POLL_READ;
   }
@@ -79,14 +139,20 @@ static PRStatus FuzzyConnect(PRFileDesc* fd, const PRNetAddr* addr,
   MOZ_RELEASE_ASSERT(fd->identity == sFuzzyLayerIdentity);
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  if (!gFuzzingAllowNewConn) {
+  MutexAutoLock lock(gConnRecvMutex);
+
+  NetworkFuzzingBuffer* buf =
+      (NetworkFuzzingBuffer*)gNetworkFuzzingBuffers.PopFront();
+  if (!buf) {
     FUZZING_LOG(("[FuzzyConnect] Denying additional connection."));
     return PR_FAILURE;
   }
 
-  FUZZING_LOG(("[FuzzyConnect] Successfully opened connection."));
+  gConnectedNetworkFuzzingBuffers.Put(fd, buf);
+  fuzzingNoWaitRequired = false;
 
-  gFuzzingAllowNewConn = false;
+  FUZZING_LOG(("[FuzzyConnect] Successfully opened connection: %p", fd));
+
   gFuzzingConnClosed = false;
 
   return PR_SUCCESS;
@@ -97,11 +163,21 @@ static PRInt32 FuzzySend(PRFileDesc* fd, const void* buf, PRInt32 amount,
   MOZ_RELEASE_ASSERT(fd->identity == sFuzzyLayerIdentity);
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  
-  if (!gFuzzingAllowRead) {
-    FUZZING_LOG(("[FuzzySend] Write received, allowing further reads."));
-    gFuzzingAllowRead = true;
+  MutexAutoLock lock(gConnRecvMutex);
+
+  NetworkFuzzingBuffer* fuzzBuf = gConnectedNetworkFuzzingBuffers.Get(fd);
+  if (!fuzzBuf) {
+    FUZZING_LOG(("[FuzzySend] Write on socket that is not connected."));
+    amount = 0;
   }
+
+  
+  if (fuzzBuf && !fuzzBuf->allowRead) {
+    FUZZING_LOG(("[FuzzySend] Write received, allowing further reads."));
+    fuzzBuf->allowRead = true;
+  }
+
+  FUZZING_LOG(("[FuzzySend] Sent %" PRIx32 " bytes of data.", amount));
 
   return amount;
 }
@@ -114,8 +190,16 @@ static PRInt32 FuzzyRecv(PRFileDesc* fd, void* buf, PRInt32 amount,
                          PRIntn flags, PRIntervalTime timeout) {
   MOZ_RELEASE_ASSERT(fd->identity == sFuzzyLayerIdentity);
 
+  MutexAutoLock lock(gConnRecvMutex);
+
+  NetworkFuzzingBuffer* fuzzBuf = gConnectedNetworkFuzzingBuffers.Get(fd);
+  if (!fuzzBuf) {
+    FUZZING_LOG(("[FuzzyRecv] Denying read, connection is closed."));
+    return 0;
+  }
+
   
-  if (!gFuzzingAllowRead) {
+  if (!fuzzBuf->allowRead) {
     FUZZING_LOG(("[FuzzyRecv] Denying read, nothing written before."));
     PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
     return -1;
@@ -127,18 +211,23 @@ static PRInt32 FuzzyRecv(PRFileDesc* fd, void* buf, PRInt32 amount,
   }
 
   
-  if (!gFuzzingSize) return 0;
+  if (!fuzzBuf->size) {
+    FUZZING_LOG(("[FuzzyRecv] Read failed, no data left."));
+    return 0;
+  }
 
   
-  if (gFuzzingSize < (PRUint32)amount) amount = gFuzzingSize;
+  if (fuzzBuf->size < (PRUint32)amount) amount = fuzzBuf->size;
 
   
-  memcpy(buf, gFuzzingBuf, amount);
+  memcpy(buf, fuzzBuf->buf, amount);
 
   if (!(flags & PR_MSG_PEEK)) {
-    gFuzzingBuf += amount;
-    gFuzzingSize -= amount;
+    fuzzBuf->buf += amount;
+    fuzzBuf->size -= amount;
   }
+
+  FUZZING_LOG(("[FuzzyRecv] Read %" PRIx32 " bytes of data.", amount));
 
   return amount;
 }
@@ -157,16 +246,59 @@ static PRStatus FuzzyClose(PRFileDesc* fd) {
 
   layer->dtor(layer);
 
+  MutexAutoLock lock(gConnRecvMutex);
+
+  NetworkFuzzingBuffer* fuzzBuf = nullptr;
+  if (gConnectedNetworkFuzzingBuffers.Remove(fd, &fuzzBuf)) {
+    FUZZING_LOG(("[FuzzyClose] Received close on socket %p", fd));
+    delete fuzzBuf;
+  } else {
+    
+    FUZZING_LOG(("[FuzzyClose] Received close on unknown socket %p.", fd));
+  }
+
   PRStatus ret = fd->methods->close(fd);
 
-  
-  gFuzzingConnClosed = true;
+  if (!gConnectedNetworkFuzzingBuffers.Count()) {
+    
+    
+    bool haveRemainingUnusedBuffers = false;
+    for (size_t i = 0; i < gNetworkFuzzingBuffers.GetSize(); ++i) {
+      NetworkFuzzingBuffer* buf = static_cast<NetworkFuzzingBuffer*>(
+          gNetworkFuzzingBuffers.ObjectAt(i));
 
-  FUZZING_LOG(("[FuzzyClose] Connection closed."));
+      if (!buf->allowUnused) {
+        haveRemainingUnusedBuffers = true;
+        break;
+      }
+    }
 
-  
-  nsCOMPtr<nsIRunnable> r(new mozilla::Runnable("Dummy"));
-  NS_DispatchToMainThread(r.forget());
+    if (haveRemainingUnusedBuffers) {
+      FUZZING_LOG(
+          ("[FuzzyClose] All connections closed, waiting for remaining "
+           "connections."));
+    } else if (!fuzzingMainSignaledDone) {
+      
+      
+      
+      FUZZING_LOG(
+          ("[FuzzyClose] All connections closed, waiting for main thread."));
+      fuzzingNoWaitRequired = true;
+    } else {
+      
+      
+      FUZZING_LOG(("[FuzzyClose] All connections closed, cleaning up."));
+
+      gNetworkFuzzingBuffers.Erase();
+      gFuzzingConnClosed = true;
+
+      
+      nsCOMPtr<nsIRunnable> r(new mozilla::Runnable("Dummy"));
+      NS_DispatchToMainThread(r.forget());
+    }
+  } else {
+    FUZZING_LOG(("[FuzzyClose] Connection closed."));
+  }
 
   return ret;
 }

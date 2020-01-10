@@ -1,6 +1,7 @@
 #include "mozilla/Preferences.h"
 
 #include "FuzzingInterface.h"
+#include "FuzzyLayer.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -93,11 +94,6 @@ FuzzingWebSocketListener::OnBinaryMessageAvailable(nsISupports* aContext,
   return NS_OK;
 }
 
-
-
-void setNetworkFuzzingBuffer(const uint8_t* data, size_t size);
-extern Atomic<bool> gFuzzingConnClosed;
-
 static int FuzzingInitNetworkWebsocket(int* argc, char*** argv) {
   Preferences::SetBool("network.dns.native-is-localhost", true);
   Preferences::SetBool("fuzzing.necko.enabled", true);
@@ -113,7 +109,7 @@ static int FuzzingInitNetworkWebsocketPlain(int* argc, char*** argv) {
 
 static int FuzzingRunNetworkWebsocket(const uint8_t* data, size_t size) {
   
-  setNetworkFuzzingBuffer(data, size);
+  addNetworkFuzzingBuffer(data, size);
 
   nsWeakPtr channelRef;
 
@@ -202,8 +198,10 @@ static int FuzzingRunNetworkWebsocket(const uint8_t* data, size_t size) {
     return channel == nullptr;
   });
 
-  
-  SpinEventLoopUntil([&]() -> bool { return gFuzzingConnClosed; });
+  if (!signalNetworkFuzzingDone()) {
+    
+    SpinEventLoopUntil([&]() -> bool { return gFuzzingConnClosed; });
+  }
 
   return 0;
 }
