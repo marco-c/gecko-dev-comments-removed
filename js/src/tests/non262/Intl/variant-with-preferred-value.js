@@ -25,7 +25,8 @@ const languageTags = {
     "ja-Latn-hepburn-heploc-alalc97": "ja-Latn-alalc97",
 
     
-    "ja-Latn-heploc-hepburn": "ja-Latn-heploc-hepburn",
+    
+    "ja-Latn-heploc-hepburn": "ja-Latn-alalc97",
 };
 
 for (let [tag, canonical] of Object.entries(languageTags)) {

@@ -594,9 +594,6 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
     if (hasOwn("grandfathered", localeObj))
         return localeObj.locale;
 
-    
-    updateLangTagMappings(localeObj);
-
     var {
         language,
         script,
@@ -645,6 +642,61 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
     assert(!privateuse || IsLowerCase(privateuse),
            "If present, privateuse subtag is in lower case");
 
+
+    
+
+    
+    if (variants.length > 0) {
+        callFunction(ArraySort, variants);
+    }
+
+    
+    if (extensions.length > 0) {
+        
+        
+        callFunction(ArraySort, extensions);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        for (var i = 0; i < extensions.length; i++) {
+            var ext = extensions[i];
+            assert(IsLowerCase(ext),
+                   "extension subtags must be in lower-case");
+            assert(ext[1] === "-",
+                   "extension subtags start with a singleton");
+
+            
+            if (ext[0] === "u") {
+                var {attributes, keywords} = UnicodeExtensionComponents(ext);
+                extensions[i] = CanonicalizeUnicodeExtension(attributes, keywords);
+                break;
+            }
+
+            
+        }
+    }
+
+    
+    updateLangTagMappings(localeObj);
+
+    
+    ({
+        language,
+        script,
+        region,
+        variants,
+        extensions,
+        privateuse,
+    } = localeObj);
+
     
     
     if (hasOwn(language, languageMappings))
@@ -674,28 +726,8 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
     if (variants.length > 0)
         canonical += "-" + callFunction(std_Array_join, variants, "-");
 
-    if (extensions.length > 0) {
-        
-        
-        callFunction(ArraySort, extensions);
-
-        
-        for (var i = 0; i < extensions.length; i++) {
-            var ext = extensions[i];
-            assert(IsLowerCase(ext),
-                   "extension subtags must be in lower-case");
-            assert(ext[1] === "-",
-                   "extension subtags start with a singleton");
-
-            if (ext[0] === "u") {
-                var {attributes, keywords} = UnicodeExtensionComponents(ext);
-                extensions[i] = CanonicalizeUnicodeExtension(attributes, keywords);
-                break;
-            }
-        }
-
+    if (extensions.length > 0)
         canonical += "-" + callFunction(std_Array_join, extensions, "-");
-    }
 
     
     if (privateuse)
