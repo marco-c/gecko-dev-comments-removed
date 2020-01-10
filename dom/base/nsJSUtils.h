@@ -25,6 +25,7 @@
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
 #include "nsString.h"
+#include "xpcpublic.h"
 
 class nsIScriptContext;
 class nsIScriptElement;
@@ -258,11 +259,42 @@ class nsJSUtils {
   static bool DumpEnabled();
 };
 
+inline void AssignFromStringBuffer(nsStringBuffer* buffer, size_t len,
+                                   nsAString& dest) {
+  buffer->ToString(len, dest);
+}
+
+inline void AssignFromLiteralChars(const char16_t* chars, size_t len,
+                                   nsAString& dest) {
+  dest.AssignLiteral(chars, len);
+}
+
 template <typename T>
 inline bool AssignJSString(JSContext* cx, T& dest, JSString* s) {
   size_t len = JS::GetStringLength(s);
   static_assert(js::MaxStringLength < (1 << 30),
                 "Shouldn't overflow here or in SetCapacity");
+
+  const char16_t* chars;
+  if (XPCStringConvert::MaybeGetDOMStringChars(s, &chars)) {
+    
+    
+    
+    if (chars[len] == '\0') {
+      AssignFromStringBuffer(
+          nsStringBuffer::FromData(const_cast<char16_t*>(chars)), len, dest);
+      return true;
+    }
+  } else if (XPCStringConvert::MaybeGetLiteralStringChars(s, &chars)) {
+    
+    
+    AssignFromLiteralChars(chars, len, dest);
+    return true;
+  }
+
+  
+  
+
   if (MOZ_UNLIKELY(!dest.SetLength(len, mozilla::fallible))) {
     JS_ReportOutOfMemory(cx);
     return false;

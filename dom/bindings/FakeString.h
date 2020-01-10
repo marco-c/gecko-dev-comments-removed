@@ -43,8 +43,7 @@ struct FakeString {
     if (!sharedBuffer) {
       Rebind(aString.Data(), aString.Length());
     } else {
-      AssignFromStringBuffer(sharedBuffer.forget());
-      mLength = aString.Length();
+      AssignFromStringBuffer(sharedBuffer.forget(), aString.Length());
     }
   }
 
@@ -126,6 +125,12 @@ struct FakeString {
     return true;
   }
 
+  void AssignFromStringBuffer(already_AddRefed<nsStringBuffer>&& aBuffer,
+                              size_t aLength) {
+    AssignFromStringBuffer(std::move(aBuffer));
+    mLength = aLength;
+  }
+
   
   
   const nsAString* ToAStringPtr() const {
@@ -198,5 +203,17 @@ struct FakeString {
 }  
 }  
 }  
+
+inline void AssignFromStringBuffer(
+    nsStringBuffer* aBuffer, size_t aLength,
+    mozilla::dom::binding_detail::FakeString& aDest) {
+  aDest.AssignFromStringBuffer(do_AddRef(aBuffer), aLength);
+}
+
+inline void AssignFromLiteralChars(
+    const char16_t* aChars, size_t aLength,
+    mozilla::dom::binding_detail::FakeString& aDest) {
+  aDest.Rebind(aChars, aLength);
+}
 
 #endif 

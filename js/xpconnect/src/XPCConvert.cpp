@@ -559,30 +559,7 @@ bool XPCConvert::JSData2Native(JSContext* cx, void* d, HandleValue s,
         return true;
       }
 
-      if (XPCStringConvert::IsDOMString(str)) {
-        
-        
-        const char16_t* chars = JS_GetTwoByteExternalStringChars(str);
-        if (chars[length] == '\0') {
-          
-          nsStringBuffer::FromData((void*)chars)->ToString(length, *ws);
-        } else {
-          
-          ws->Assign(chars, length);
-        }
-      } else if (XPCStringConvert::IsLiteral(str)) {
-        
-        
-        const char16_t* chars = JS_GetTwoByteExternalStringChars(str);
-        ws->AssignLiteral(chars, length);
-      } else {
-        
-        
-        if (!AssignJSString(cx, *ws, str)) {
-          return false;
-        }
-      }
-      return true;
+      return AssignJSString(cx, *ws, str);
     }
 
     case nsXPTType::T_CHAR_STR:
