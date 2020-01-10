@@ -108,20 +108,14 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
     uint32_t origCh = ch;
     ch = ToLowerCase(ch);
 
-    if (ch != origCh) {
-      if (firstLetter) {
-        
-        
-        if (!mHyphenateCapitalized) {
-          return;
-        }
-      } else {
-        
-        
+    
+    
+    if (firstLetter) {
+      if (!mHyphenateCapitalized && ch != origCh) {
         return;
       }
+      firstLetter = false;
     }
-    firstLetter = false;
 
     if (ch < 0x80) {  
       utf8.Append(ch);
