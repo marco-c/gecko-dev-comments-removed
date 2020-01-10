@@ -157,10 +157,14 @@ var AboutProtectionsHandler = {
 
   async getLoginData() {
     let syncedDevices = [];
-    const hasFxa = await fxAccounts.accountStatus();
+    let hasFxa = false;
 
-    if (hasFxa) {
-      syncedDevices = await fxAccounts.getDeviceList();
+    try {
+      if ((hasFxa = await fxAccounts.accountStatus())) {
+        syncedDevices = await fxAccounts.getDeviceList();
+      }
+    } catch (e) {
+      Cu.reportError("There was an error fetching login data: ", e.message);
     }
 
     return {
@@ -185,57 +189,51 @@ var AboutProtectionsHandler = {
     let monitorData = {};
     let potentiallyBreachedLogins = null;
     let userEmail = null;
-    const hasFxa = await fxAccounts.accountStatus();
+    let token = await this.getMonitorScopedOAuthToken();
 
-    if (hasFxa) {
-      let token = await this.getMonitorScopedOAuthToken();
-
-      if (!token) {
-        return { error: true };
-      }
-
-      try {
+    try {
+      if ((await fxAccounts.accountStatus()) && token) {
         monitorData = await this.fetchUserBreachStats(token);
-      } catch (e) {
-        Cu.reportError(e.message);
-        
-        
-        
-        if (e.message === INVALID_OAUTH_TOKEN) {
-          await fxAccounts.removeCachedOAuthToken({ token });
-          token = await await this.getMonitorScopedOAuthToken();
 
-          try {
-            monitorData = await this.fetchUserBreachStats(token);
-          } catch (_) {
-            Cu.reportError(e.message);
-            monitorData.errorMessage = INVALID_OAUTH_TOKEN;
+        
+        
+        if (!LoginHelper.isMasterPasswordSet()) {
+          const logins = await LoginHelper.getAllUserFacingLogins();
+          potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
+            logins
+          );
+
+          
+          
+          if (monitorData.errorMessage) {
+            const { email } = await fxAccounts.getSignedInUser();
+            userEmail = email;
           }
-        } else {
-          monitorData.errorMessage = e.message;
         }
+      } else {
+        
+        monitorData = {
+          errorMessage: "No account",
+        };
       }
-
+    } catch (e) {
+      Cu.reportError(e.message);
       
       
-      if (!LoginHelper.isMasterPasswordSet()) {
-        const logins = await LoginHelper.getAllUserFacingLogins();
-        potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
-          logins
-        );
+      
+      if (e.message === INVALID_OAUTH_TOKEN) {
+        await fxAccounts.removeCachedOAuthToken({ token });
+        token = await this.getMonitorScopedOAuthToken();
 
-        
-        
-        if (monitorData.errorMessage) {
-          const { email } = await fxAccounts.getSignedInUser();
-          userEmail = email;
+        try {
+          monitorData = await this.fetchUserBreachStats(token);
+        } catch (_) {
+          Cu.reportError(e.message);
+          monitorData.errorMessage = INVALID_OAUTH_TOKEN;
         }
+      } else {
+        monitorData.errorMessage = e.message || "An error ocurred.";
       }
-    } else {
-      
-      monitorData = {
-        errorMessage: "No account",
-      };
     }
 
     return {
