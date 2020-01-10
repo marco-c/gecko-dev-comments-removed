@@ -29,13 +29,9 @@
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
 #  include "unicode/basictz.h"
 #  include "unicode/locid.h"
-#endif 
-
-#if ENABLE_INTL_API && (!MOZ_SYSTEM_ICU || defined(ICU_TZ_HAS_RECREATE_DEFAULT))
 #  include "unicode/timezone.h"
 #  include "unicode/unistr.h"
 #endif 
-
 
 #include "util/Text.h"
 #include "vm/MutexIDs.h"
@@ -587,7 +583,7 @@ static bool IsOlsonCompatibleWindowsTimeZoneId(const char* tz) {
   }
   return false;
 }
-#elif ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
+#elif ENABLE_INTL_API && !MOZ_SYSTEM_ICU
 static inline const char* TZContainsAbsolutePath(const char* tzVar) {
   
   
@@ -731,9 +727,7 @@ void js::ResyncICUDefaultTimeZone() {
 }
 
 void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
-#if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-  bool recreate = true;
-
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
   if (const char* tz = std::getenv("TZ")) {
     icu::UnicodeString tzid;
 
@@ -765,13 +759,13 @@ void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
       if (*newTimeZone != icu::TimeZone::getUnknown()) {
         
         icu::TimeZone::adoptDefault(newTimeZone.release());
-        recreate = false;
+        return;
       }
     }
   }
 
-  if (recreate) {
-    icu::TimeZone::recreateDefault();
+  if (icu::TimeZone* defaultZone = icu::TimeZone::detectHostTimeZone()) {
+    icu::TimeZone::adoptDefault(defaultZone);
   }
 #endif
 }
