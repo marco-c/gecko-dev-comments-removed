@@ -1,5 +1,5 @@
 use super::arch::*;
-use super::data::{SigAction, Stat, StatVfs, TimeSpec};
+use super::data::{Map, SigAction, Stat, StatVfs, TimeSpec};
 use super::error::Result;
 use super::number::*;
 
@@ -43,6 +43,10 @@ pub fn chdir<T: AsRef<[u8]>>(path: T) -> Result<usize> {
     unsafe { syscall2(SYS_CHDIR, path.as_ref().as_ptr() as usize, path.as_ref().len()) }
 }
 
+#[deprecated(
+    since = "0.1.55",
+    note = "use fchmod instead"
+)]
 pub fn chmod<T: AsRef<[u8]>>(path: T, mode: usize) -> Result<usize> {
     unsafe { syscall3(SYS_CHMOD, path.as_ref().as_ptr() as usize, path.as_ref().len(), mode) }
 }
@@ -73,12 +77,6 @@ pub fn dup2(fd: usize, newfd: usize, buf: &[u8]) -> Result<usize> {
 }
 
 
-pub fn execve<T: AsRef<[u8]>>(path: T, args: &[[usize; 2]]) -> Result<usize> {
-    unsafe { syscall4(SYS_EXECVE, path.as_ref().as_ptr() as usize,
-                      path.as_ref().len(), args.as_ptr() as usize, args.len()) }
-}
-
-
 pub fn exit(status: usize) -> Result<usize> {
     unsafe { syscall1(SYS_EXIT, status) }
 }
@@ -101,13 +99,13 @@ pub fn fcntl(fd: usize, cmd: usize, arg: usize) -> Result<usize> {
 }
 
 
-pub fn fevent(fd: usize, flags: usize) -> Result<usize> {
-    unsafe { syscall2(SYS_FEVENT, fd, flags) }
+pub fn fexec(fd: usize, args: &[[usize; 2]], vars: &[[usize; 2]]) -> Result<usize> {
+    unsafe { syscall5(SYS_FEXEC, fd, args.as_ptr() as usize, args.len(), vars.as_ptr() as usize, vars.len()) }
 }
 
 
-pub unsafe fn fmap(fd: usize, offset: usize, size: usize) -> Result<usize> {
-    syscall3(SYS_FMAP, fd, offset, size)
+pub unsafe fn fmap(fd: usize, map: &Map) -> Result<usize> {
+    syscall3(SYS_FMAP, fd, map as *const Map as usize, mem::size_of::<Map>())
 }
 
 
@@ -118,6 +116,11 @@ pub unsafe fn funmap(addr: usize) -> Result<usize> {
 
 pub fn fpath(fd: usize, buf: &mut [u8]) -> Result<usize> {
     unsafe { syscall3(SYS_FPATH, fd, buf.as_mut_ptr() as usize, buf.len()) }
+}
+
+
+pub fn frename<T: AsRef<[u8]>>(fd: usize, path: T) -> Result<usize> {
+    unsafe { syscall3(SYS_FRENAME, fd, path.as_ref().as_ptr() as usize, path.as_ref().len()) }
 }
 
 
@@ -202,6 +205,11 @@ pub fn getuid() -> Result<usize> {
 }
 
 
+
+
+
+
+
 pub unsafe fn iopl(level: usize) -> Result<usize> {
     syscall1(SYS_IOPL, level)
 }
@@ -227,6 +235,11 @@ pub fn mkns(schemes: &[[usize; 2]]) -> Result<usize> {
 }
 
 
+pub unsafe fn mprotect(addr: usize, size: usize, flags: usize) -> Result<usize> {
+    syscall3(SYS_MPROTECT, addr, size, flags)
+}
+
+
 pub fn nanosleep(req: &TimeSpec, rem: &mut TimeSpec) -> Result<usize> {
     unsafe { syscall2(SYS_NANOSLEEP, req as *const TimeSpec as usize,
                                      rem as *mut TimeSpec as usize) }
@@ -238,9 +251,18 @@ pub fn open<T: AsRef<[u8]>>(path: T, flags: usize) -> Result<usize> {
 }
 
 
+
+
+
+
+
 pub unsafe fn physalloc(size: usize) -> Result<usize> {
     syscall1(SYS_PHYSALLOC, size)
 }
+
+
+
+
 
 
 pub unsafe fn physfree(physical_address: usize, size: usize) -> Result<usize> {
@@ -248,9 +270,18 @@ pub unsafe fn physfree(physical_address: usize, size: usize) -> Result<usize> {
 }
 
 
+
+
+
+
 pub unsafe fn physmap(physical_address: usize, size: usize, flags: usize) -> Result<usize> {
     syscall3(SYS_PHYSMAP, physical_address, size, flags)
 }
+
+
+
+
+
 
 
 pub unsafe fn physunmap(virtual_address: usize) -> Result<usize> {
@@ -301,14 +332,30 @@ pub fn sigaction(sig: usize, act: Option<&SigAction>, oldact: Option<&mut SigAct
 }
 
 
+pub fn sigprocmask(how: usize, set: Option<&[u64; 2]>, oldset: Option<&mut [u64; 2]>) -> Result<usize> {
+    unsafe { syscall3(SYS_SIGPROCMASK, how,
+                      set.map(|x| x as *const _).unwrap_or_else(ptr::null) as usize,
+                      oldset.map(|x| x as *mut _).unwrap_or_else(ptr::null_mut) as usize) }
+}
+
+
 pub fn sigreturn() -> Result<usize> {
     unsafe { syscall0(SYS_SIGRETURN) }
+}
+
+
+pub fn umask(mask: usize) -> Result<usize> {
+    unsafe { syscall1(SYS_UMASK, mask) }
 }
 
 
 pub fn unlink<T: AsRef<[u8]>>(path: T) -> Result<usize> {
     unsafe { syscall2(SYS_UNLINK, path.as_ref().as_ptr() as usize, path.as_ref().len()) }
 }
+
+
+
+
 
 
 pub unsafe fn virttophys(virtual_address: usize) -> Result<usize> {
