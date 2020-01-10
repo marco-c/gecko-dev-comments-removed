@@ -702,8 +702,8 @@ nsresult nsContentSink::ProcessStyleLinkFromHeader(
 
   
   
-  net::ReferrerPolicy policy =
-      net::AttributeReferrerPolicyFromString(aReferrerPolicy);
+  ReferrerPolicy policy =
+      ReferrerInfo::ReferrerPolicyAttributeFromString(aReferrerPolicy);
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       ReferrerInfo::CreateFromDocumentAndPolicyOverride(mDocument, policy);
 

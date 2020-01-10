@@ -814,7 +814,7 @@ class Document : public nsINode,
   void UpdateReferrerInfoFromMeta(const nsAString& aMetaReferrer,
                                   bool aPreload) {
     ReferrerPolicyEnum policy =
-        mozilla::net::ReferrerPolicyFromString(aMetaReferrer);
+        ReferrerInfo::ReferrerPolicyFromMetaString(aMetaReferrer);
     
     
     if (policy == ReferrerPolicy::_empty) {

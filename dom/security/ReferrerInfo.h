@@ -204,7 +204,47 @@ class ReferrerInfo : public nsIReferrerInfo {
       nsIHttpChannel* aChannel = nullptr, nsIURI* aURI = nullptr,
       bool privateBrowsing = false);
 
-   
+  
+
+
+
+
+
+
+  static ReferrerPolicyEnum ReferrerPolicyFromMetaString(
+      const nsAString& aContent);
+
+  
+
+
+
+
+
+
+
+  static ReferrerPolicyEnum ReferrerPolicyAttributeFromString(
+      const nsAString& aContent);
+
+  
+
+
+
+
+
+
+
+
+  static ReferrerPolicyEnum ReferrerPolicyFromHeaderString(
+      const nsAString& aContent);
+
+  
+
+
+
+
+  static const char* ReferrerPolicyToString(ReferrerPolicyEnum aPolicy);
+
+  
 
 
   HashNumber Hash() const;
@@ -266,7 +306,8 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  void GetReferrerPolicyFromAtribute(nsINode* aNode, ReferrerPolicyEnum& aPolicy) const;
+  void GetReferrerPolicyFromAtribute(nsINode* aNode,
+                                     ReferrerPolicyEnum& aPolicy) const;
 
   
 
