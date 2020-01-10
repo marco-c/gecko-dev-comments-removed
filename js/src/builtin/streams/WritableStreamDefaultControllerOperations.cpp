@@ -21,7 +21,7 @@
 #include "builtin/streams/WritableStreamOperations.h"  
 #include "js/CallArgs.h"    
 #include "js/RootingAPI.h"  
-#include "js/Value.h"       
+#include "js/Value.h"  
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"   
 #include "vm/JSObject.h"    
@@ -38,6 +38,8 @@
 using JS::CallArgs;
 using JS::CallArgsFromVp;
 using JS::Handle;
+using JS::Int32Value;
+using JS::MagicValue;
 using JS::ObjectValue;
 using JS::Rooted;
 using JS::UndefinedHandleValue;
@@ -416,15 +418,22 @@ void js::WritableStreamDefaultControllerClearAlgorithms(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamDefaultControllerClose(
+bool js::WritableStreamDefaultControllerClose(
     JSContext* cx,
     Handle<WritableStreamDefaultController*> unwrappedController) {
   
+  {
+    Rooted<Value> v(cx, MagicValue(JS_WRITABLESTREAM_CLOSE_RECORD));
+    Rooted<Value> size(cx, Int32Value(0));
+    if (!EnqueueValueWithSize(cx, unwrappedController, v, size)) {
+      return false;
+    }
+  }
+
   
   
-  
-  JS_ReportErrorASCII(cx, "nope");
-  return false;
+  return WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+      cx, unwrappedController);
 }
 
 
