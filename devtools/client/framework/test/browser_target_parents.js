@@ -42,15 +42,41 @@ add_task(async function() {
 
   const { processes } = await mainRoot.listProcesses();
 
+  
+  
+  
+  
   await Promise.all(
     processes.map(async processDescriptor => {
-      const process = await processDescriptor.getTarget();
-
-      is(
-        process.descriptorFront,
-        processDescriptor,
-        "Got the correct descriptorFront from the process target."
-      );
+      const promises = [];
+      const concurrentCalls = 10;
+      for (let i = 0; i < concurrentCalls; i++) {
+        const targetPromise = processDescriptor.getTarget();
+        
+        if (i % 2 == 0) {
+          await wait(0);
+        }
+        promises.push(
+          targetPromise.then(target => {
+            is(
+              target.descriptorFront,
+              processDescriptor,
+              "Got the correct descriptorFront from the process target."
+            );
+            
+            ok(target.activeConsole, "The target is attached");
+            return target;
+          })
+        );
+      }
+      const targets = await Promise.all(promises);
+      for (let i = 1; i < concurrentCalls; i++) {
+        is(
+          targets[0],
+          targets[i],
+          "All the targets returned by concurrent calls to getTarget are the same"
+        );
+      }
     })
   );
 
@@ -73,15 +99,39 @@ add_task(async function() {
 
   const mainProcess = await mainRoot.getMainProcess();
   const { frames } = await mainProcess.listRemoteFrames();
-  await Promise.all(
-    frames.map(async frameDescriptorFront => {
-      const frameTargetFront = await frameDescriptorFront.getTarget();
 
-      is(
-        frameTargetFront.descriptorFront,
-        frameDescriptorFront,
-        "Got the correct descriptorFront from the frame target."
-      );
+  
+  await Promise.all(
+    frames.map(async frameDescriptor => {
+      const promises = [];
+      const concurrentCalls = 10;
+      for (let i = 0; i < concurrentCalls; i++) {
+        const targetPromise = frameDescriptor.getTarget();
+        
+        if (i % 2 == 0) {
+          await wait(0);
+        }
+        promises.push(
+          targetPromise.then(target => {
+            is(
+              target.descriptorFront,
+              frameDescriptor,
+              "Got the correct descriptorFront from the frame target."
+            );
+            
+            ok(target.traits, "The target is attached");
+            return target;
+          })
+        );
+      }
+      const targets = await Promise.all(promises);
+      for (let i = 1; i < concurrentCalls; i++) {
+        is(
+          targets[0],
+          targets[i],
+          "All the targets returned by concurrent calls to getTarget are the same"
+        );
+      }
     })
   );
 

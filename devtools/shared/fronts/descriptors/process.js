@@ -55,31 +55,35 @@ class ProcessDescriptorFront extends FrontClassWithSpec(processDescriptorSpec) {
   }
 
   async getTarget() {
+    
     if (this._processTargetFront && this._processTargetFront.actorID) {
       return this._processTargetFront;
     }
+    
+    
     if (this._targetFrontPromise) {
       return this._targetFrontPromise;
     }
     this._targetFrontPromise = (async () => {
+      let targetFront = null;
       try {
         const targetForm = await super.getTarget();
-        this._processTargetFront = await this._createProcessTargetFront(
-          targetForm
-        );
-        await this._processTargetFront.attach();
-        
-        
-        this._targetFrontPromise = null;
-        return this._processTargetFront;
+        targetFront = await this._createProcessTargetFront(targetForm);
+        await targetFront.attach();
       } catch (e) {
         
         
         console.log(
           `Request to connect to ProcessDescriptor "${this.id}" failed: ${e}`
         );
-        return null;
       }
+      
+      
+      this._processTargetFront = targetFront;
+      
+      
+      this._targetFrontPromise = null;
+      return targetFront;
     })();
     return this._targetFrontPromise;
   }

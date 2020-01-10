@@ -43,33 +43,42 @@ class FrameDescriptorFront extends FrontClassWithSpec(frameDescriptorSpec) {
   }
 
   async getTarget() {
+    
+    
+    
     if (this._frameTargetFront && this._frameTargetFront.actorID) {
       return this._frameTargetFront;
     }
+    
+    
     if (this._targetFrontPromise) {
       return this._targetFrontPromise;
     }
     this._targetFrontPromise = (async () => {
+      let target = null;
       try {
         const targetForm = await super.getTarget();
+        
+        
         if (targetForm.error) {
-          this._targetFrontPromise = null;
-          return null;
+          throw new Error(targetForm.error);
         }
-        this._frameTargetFront = await this._createFrameTarget(targetForm);
-        await this._frameTargetFront.attach();
-        
-        
-        this._targetFrontPromise = null;
-        return this._frameTargetFront;
+        target = await this._createFrameTarget(targetForm);
+        await target.attach();
       } catch (e) {
         
         
         console.log(
           `Request to connect to frameDescriptor "${this.id}" failed: ${e}`
         );
-        return null;
       }
+      
+      
+      this._frameTargetFront = target;
+      
+      
+      this._targetFrontPromise = null;
+      return target;
     })();
     return this._targetFrontPromise;
   }
