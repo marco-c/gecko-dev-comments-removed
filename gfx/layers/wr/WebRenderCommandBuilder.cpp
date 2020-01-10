@@ -859,8 +859,8 @@ struct DIGroup {
             }
 
             paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
-            TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
-                                 aResources);
+            TakeExternalSurfaces(aRecorder, data->mExternalSurfaces,
+                                 aRootManager, aResources);
 
             if (currentClip.HasClip()) {
               aContext->Restore();
@@ -1470,6 +1470,12 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
 
   auto p = group.mGroupBounds;
   auto q = groupBounds;
+  
+  
+  
+  
+  
+  
   GP("Bounds: %d %d %d %d vs %d %d %d %d\n", p.x, p.y, p.width, p.height, q.x,
      q.y, q.width, q.height);
   if (!group.mGroupBounds.IsEqualEdges(groupBounds) ||
