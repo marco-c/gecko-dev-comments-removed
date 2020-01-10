@@ -33,8 +33,7 @@
 }
 
 
-[collapsed="true"],
-[moz-collapsed="true"] {
+[collapsed="true"] {
   visibility: collapse;
 }
 
