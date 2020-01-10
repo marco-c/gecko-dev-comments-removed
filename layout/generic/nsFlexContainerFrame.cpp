@@ -2104,7 +2104,7 @@ void FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
   
   mNeedsMinSizeAutoResolution =
       IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
-      disp->mOverflowX == StyleOverflow::Visible;
+      disp->IsScrollableOverflow();
 }
 
 nscoord FlexItem::GetBaselineOffsetFromOuterCrossEdge(
