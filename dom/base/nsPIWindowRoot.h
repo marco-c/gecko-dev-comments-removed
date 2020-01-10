@@ -14,12 +14,7 @@ class nsPIDOMWindowOuter;
 class nsIControllers;
 class nsIController;
 class nsINode;
-
-namespace mozilla {
-namespace dom {
-class BrowserParent;
-}  
-}  
+class nsIRemoteTab;
 
 #define NS_IWINDOWROOT_IID                           \
   {                                                  \

@@ -8,9 +8,8 @@
 
 #include "mozilla/dom/BrowserBridgeChild.h"  
 #include "mozilla/dom/EventTarget.h"         
-#include "mozilla/dom/BrowserParent.h"       
+#include "mozilla/dom/RemoteBrowser.h"       
 #include "mozilla/EventDispatcher.h"         
-#include "mozilla/layout/RenderFrame.h"      
 #include "mozilla/PresShell.h"               
 #include "nsIContentInlines.h"               
 #include "nsLayoutUtils.h"                   
@@ -157,17 +156,16 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
   }
 
   
-  if (BrowserParent* browserParent = BrowserParent::GetFrom(keyEventTarget)) {
-    RenderFrame* rf = browserParent->GetRenderFrame();
+  if (RemoteBrowser* remoteBrowser = RemoteBrowser::GetFrom(keyEventTarget)) {
+    LayersId layersId = remoteBrowser->GetLayersId();
 
     
-    if (rf) {
+    if (layersId.IsValid()) {
       FT_LOG("Creating reflayer target with seq=%" PRIu64 ", kl=%d, lt=%" PRIu64
              "\n",
-             aFocusSequenceNumber, mFocusHasKeyEventListeners,
-             rf->GetLayersId());
+             aFocusSequenceNumber, mFocusHasKeyEventListeners, layersId);
 
-      mData = AsVariant<LayersId>(rf->GetLayersId());
+      mData = AsVariant<LayersId>(std::move(layersId));
       return;
     }
 
@@ -175,17 +173,6 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
            ", kl=%d (remote browser missing layers id)\n",
            aFocusSequenceNumber, mFocusHasKeyEventListeners);
 
-    return;
-  }
-
-  
-  if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(keyEventTarget)) {
-    FT_LOG("Creating oopif reflayer target with seq=%" PRIu64
-           ", kl=%d, lt=%" PRIu64 "\n",
-           aFocusSequenceNumber, mFocusHasKeyEventListeners,
-           bbc->GetLayersId());
-
-    mData = AsVariant<LayersId>(bbc->GetLayersId());
     return;
   }
 

@@ -39,6 +39,9 @@ class RemoteBrowser : public nsISupports {
  public:
   typedef mozilla::layers::LayersId LayersId;
 
+  static RemoteBrowser* GetFrom(nsFrameLoader* aFrameLoader);
+  static RemoteBrowser* GetFrom(nsIContent* aContent);
+
   
   virtual BrowserHost* AsBrowserHost() = 0;
   
