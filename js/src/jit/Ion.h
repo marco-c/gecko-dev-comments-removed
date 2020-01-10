@@ -54,10 +54,16 @@ static_assert(sizeof(AbortReasonOr<bool>) <= sizeof(uintptr_t),
 
 class JitContext {
  public:
+  
   JitContext(JSContext* cx, TempAllocator* temp);
+
+  
   JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator* temp);
+
+  
   explicit JitContext(TempAllocator* temp);
   JitContext();
+
   ~JitContext();
 
   
