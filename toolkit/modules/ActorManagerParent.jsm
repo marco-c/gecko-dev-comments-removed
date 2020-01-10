@@ -163,6 +163,21 @@ let ACTORS = {
     allFrames: true,
   },
 
+  FindBar: {
+    parent: {
+      moduleURI: "resource://gre/actors/FindBarParent.jsm",
+      messages: ["Findbar:Keypress", "Findbar:Mouseup"],
+    },
+    child: {
+      moduleURI: "resource://gre/actors/FindBarChild.jsm",
+      events: {
+        keypress: { mozSystemGroup: true },
+      },
+    },
+
+    allFrames: true,
+  },
+
   
   
   Finder: {
@@ -267,15 +282,6 @@ let LEGACY_ACTORS = {
         "ext-Finder:HighlightResults",
         "ext-Finder:clearHighlighting",
       ],
-    },
-  },
-
-  FindBar: {
-    child: {
-      module: "resource://gre/actors/FindBarChild.jsm",
-      events: {
-        keypress: { mozSystemGroup: true },
-      },
     },
   },
 

@@ -68,9 +68,6 @@
       }
       messageManager.addMessageListener("RefreshBlocker:Blocked", this);
 
-      
-      
-      messageManager.addMessageListener("Findbar:Keypress", this);
       this._setFindbarData();
 
       XPCOMUtils.defineLazyModuleGetters(this, {
@@ -4937,16 +4934,6 @@
             { isAppTab: tab.pinned },
             "BrowserTab"
           );
-          break;
-        }
-        case "Findbar:Keypress": {
-          let tab = this.getTabForBrowser(browser);
-          if (!this.isFindBarInitialized(tab)) {
-            let fakeEvent = data;
-            this.getFindBar(tab).then(findbar => {
-              findbar._onBrowserKeypress(fakeEvent);
-            });
-          }
           break;
         }
         case "RefreshBlocker:Blocked": {
