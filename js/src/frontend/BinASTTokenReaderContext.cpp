@@ -1160,11 +1160,6 @@ JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
   
   
 
-  
-  
-  
-  StringBuffer buf(cx_);
-
   RootedAtom atom(cx_);
 
   for (uint32_t stringIndex = 0; stringIndex < stringsNumberOfEntries;
@@ -1197,7 +1192,6 @@ JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
   
 
   MOZ_ASSERT(!metadata_);
-  MOZ_ASSERT(buf.empty());
   se.release();
   metadata_ = metadata;
   metadataOwned_ = MetadataOwnership::Owned;
