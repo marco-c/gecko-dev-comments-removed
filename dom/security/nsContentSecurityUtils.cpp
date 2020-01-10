@@ -433,6 +433,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
   bool foundDefaultSrc = false;
   bool foundObjectSrc = false;
+  bool foundUnsafeEval = false;
+  bool foundUnsafeInline = false;
   if (csp) {
     uint32_t policyCount = 0;
     csp->GetPolicyCount(&policyCount);
@@ -444,6 +446,12 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       }
       if (parsedPolicyStr.Find("object-src 'none'") >= 0) {
         foundObjectSrc = true;
+      }
+      if (parsedPolicyStr.Find("'unsafe-eval'") >= 0) {
+        foundUnsafeEval = true;
+      }
+      if (parsedPolicyStr.Find("'unsafe-inline'") >= 0) {
+        foundUnsafeInline = true;
       }
     }
   }
@@ -488,5 +496,42 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must contain a CSP including default-src");
   MOZ_ASSERT(foundObjectSrc,
              "about: page must contain a CSP denying object-src");
+
+  if (aDocument->IsExtensionPage()) {
+    
+    
+    
+    
+    return;
+  }
+
+  MOZ_ASSERT(!foundUnsafeEval,
+             "about: page must not contain a CSP including 'unsafe-eval'");
+
+  static nsLiteralCString sLegacyUnsafeInlineAllowList[] = {
+    
+    NS_LITERAL_CSTRING("about:preferences"),
+    
+    NS_LITERAL_CSTRING("about:addons"),
+    
+    
+    
+    
+    NS_LITERAL_CSTRING("about:newtab"),
+    NS_LITERAL_CSTRING("about:welcome"),
+    NS_LITERAL_CSTRING("about:home"),
+  };
+
+  for (const nsLiteralCString& aUnsafeInlineEntry : sLegacyUnsafeInlineAllowList) {
+    
+    
+    
+    if (StringBeginsWith(aboutSpec, aUnsafeInlineEntry)) {
+      return;
+    }
+  }
+
+  MOZ_ASSERT(!foundUnsafeInline,
+             "about: page must not contain a CSP including 'unsafe-inline'");
 }
 #endif
