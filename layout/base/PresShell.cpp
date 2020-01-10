@@ -1827,7 +1827,7 @@ nsresult PresShell::Initialize() {
   
   
   if (!mPaintingSuppressed) {
-    ScheduleBeforeFirstPaint();
+    mShouldUnsuppressPainting = true;
   }
 
   return NS_OK;  
