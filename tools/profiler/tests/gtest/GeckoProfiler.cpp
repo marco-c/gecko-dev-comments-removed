@@ -94,9 +94,9 @@ TEST(GeckoProfiler, FeaturesAndParams)
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::Privacy));
 
-    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-                      features, filters, MOZ_ARRAY_LENGTH(filters),
-                      Some(PROFILER_DEFAULT_DURATION));
+    ActiveParamsCheck(
+        PROFILER_DEFAULT_ENTRIES.Value(), PROFILER_DEFAULT_INTERVAL, features,
+        filters, MOZ_ARRAY_LENGTH(filters), Some(PROFILER_DEFAULT_DURATION));
 
     profiler_stop();
 
@@ -109,15 +109,18 @@ TEST(GeckoProfiler, FeaturesAndParams)
         ProfilerFeature::MainThreadIO | ProfilerFeature::Privacy;
     const char* filters[] = {"GeckoMain", "Foo", "Bar"};
 
-    profiler_start(999999, 3, features, filters, MOZ_ARRAY_LENGTH(filters),
-                   Some(25.0));
+    
+    
+    profiler_start(PowerOfTwo32(999999), 3, features, filters,
+                   MOZ_ARRAY_LENGTH(filters), Some(25.0));
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::Privacy));
 
     
-    ActiveParamsCheck(999999, 3, features | ProfilerFeature::Threads, filters,
+    ActiveParamsCheck(PowerOfTwo32(999999).Value(), 3,
+                      features | ProfilerFeature::Threads, filters,
                       MOZ_ARRAY_LENGTH(filters), Some(25.0));
 
     profiler_stop();
@@ -131,15 +134,16 @@ TEST(GeckoProfiler, FeaturesAndParams)
         ProfilerFeature::MainThreadIO | ProfilerFeature::Privacy;
     const char* filters[] = {"GeckoMain", "Foo", "Bar"};
 
-    profiler_start(999999, 3, features, filters, MOZ_ARRAY_LENGTH(filters),
-                   Nothing());
+    profiler_start(PowerOfTwo32(999999), 3, features, filters,
+                   MOZ_ARRAY_LENGTH(filters), Nothing());
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::Privacy));
 
     
-    ActiveParamsCheck(999999, 3, features | ProfilerFeature::Threads, filters,
+    ActiveParamsCheck(PowerOfTwo32(999999).Value(), 3,
+                      features | ProfilerFeature::Threads, filters,
                       MOZ_ARRAY_LENGTH(filters), Nothing());
 
     profiler_stop();
@@ -152,15 +156,15 @@ TEST(GeckoProfiler, FeaturesAndParams)
     uint32_t availableFeatures = profiler_get_available_features();
     const char* filters[] = {""};
 
-    profiler_start(88888, 10, availableFeatures, filters,
+    profiler_start(PowerOfTwo32(88888), 10, availableFeatures, filters,
                    MOZ_ARRAY_LENGTH(filters), Some(15.0));
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::Privacy));
 
-    ActiveParamsCheck(88888, 10, availableFeatures, filters,
-                      MOZ_ARRAY_LENGTH(filters), Some(15.0));
+    ActiveParamsCheck(PowerOfTwo32(88888).Value(), 10, availableFeatures,
+                      filters, MOZ_ARRAY_LENGTH(filters), Some(15.0));
 
     
   }
@@ -172,15 +176,16 @@ TEST(GeckoProfiler, FeaturesAndParams)
 
     
     
-    profiler_start(0, 0, features, filters, MOZ_ARRAY_LENGTH(filters),
-                   Some(0.0));
+    profiler_start(PowerOfTwo32(0), 0, features, filters,
+                   MOZ_ARRAY_LENGTH(filters), Some(0.0));
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::Privacy));
 
     
-    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
+    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES.Value(),
+                      PROFILER_DEFAULT_INTERVAL,
                       features | ProfilerFeature::Threads, filters,
                       MOZ_ARRAY_LENGTH(filters), Nothing());
 
@@ -208,9 +213,9 @@ TEST(GeckoProfiler, EnsureStarted)
                             features, filters, MOZ_ARRAY_LENGTH(filters),
                             Some(PROFILER_DEFAULT_DURATION));
 
-    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-                      features, filters, MOZ_ARRAY_LENGTH(filters),
-                      Some(PROFILER_DEFAULT_DURATION));
+    ActiveParamsCheck(
+        PROFILER_DEFAULT_ENTRIES.Value(), PROFILER_DEFAULT_INTERVAL, features,
+        filters, MOZ_ARRAY_LENGTH(filters), Some(PROFILER_DEFAULT_DURATION));
   }
 
   {
@@ -228,9 +233,9 @@ TEST(GeckoProfiler, EnsureStarted)
                             features, filters, MOZ_ARRAY_LENGTH(filters),
                             Some(PROFILER_DEFAULT_DURATION));
 
-    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-                      features, filters, MOZ_ARRAY_LENGTH(filters),
-                      Some(PROFILER_DEFAULT_DURATION));
+    ActiveParamsCheck(
+        PROFILER_DEFAULT_ENTRIES.Value(), PROFILER_DEFAULT_INTERVAL, features,
+        filters, MOZ_ARRAY_LENGTH(filters), Some(PROFILER_DEFAULT_DURATION));
 
     
     
@@ -251,8 +256,9 @@ TEST(GeckoProfiler, EnsureStarted)
                             differentFeatures, filters,
                             MOZ_ARRAY_LENGTH(filters));
 
-    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-                      differentFeatures, filters, MOZ_ARRAY_LENGTH(filters));
+    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES.Value(),
+                      PROFILER_DEFAULT_INTERVAL, differentFeatures, filters,
+                      MOZ_ARRAY_LENGTH(filters));
 
     Maybe<ProfilerBufferInfo> info2 = profiler_get_buffer_info();
     ASSERT_TRUE(info2->mRangeEnd < info1->mRangeEnd);
@@ -294,8 +300,9 @@ TEST(GeckoProfiler, DifferentThreads)
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::Privacy));
 
-    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-                      features, filters, MOZ_ARRAY_LENGTH(filters));
+    ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES.Value(),
+                      PROFILER_DEFAULT_INTERVAL, features, filters,
+                      MOZ_ARRAY_LENGTH(filters));
 
     thread->Dispatch(
         NS_NewRunnableFunction("GeckoProfiler_DifferentThreads_Test::TestBody",
@@ -323,7 +330,7 @@ TEST(GeckoProfiler, DifferentThreads)
                   !profiler_feature_active(ProfilerFeature::MainThreadIO));
               ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::Privacy));
 
-              ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES,
+              ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES.Value(),
                                 PROFILER_DEFAULT_INTERVAL, features, filters,
                                 MOZ_ARRAY_LENGTH(filters));
             }),
