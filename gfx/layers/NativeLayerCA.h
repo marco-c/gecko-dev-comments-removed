@@ -63,7 +63,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
   void SetBackingScale(float aBackingScale);
 
   
-  already_AddRefed<NativeLayer> CreateLayer() override;
+  already_AddRefed<NativeLayer> CreateLayer(const gfx::IntSize& aSize,
+                                            bool aIsOpaque) override;
   void AppendLayer(NativeLayer* aLayer) override;
   void RemoveLayer(NativeLayer* aLayer) override;
   void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) override;
@@ -102,7 +103,9 @@ class NativeLayerCA : public NativeLayer {
   virtual NativeLayerCA* AsNativeLayerCA() override { return this; }
 
   
-  void SetRect(const gfx::IntRect& aRect) override;
+  gfx::IntSize GetSize() override;
+  void SetPosition(const gfx::IntPoint& aPosition) override;
+  gfx::IntPoint GetPosition() override;
   gfx::IntRect GetRect() override;
   void InvalidateRegionThroughoutSwapchain(
       const gfx::IntRegion& aRegion) override;
@@ -113,7 +116,6 @@ class NativeLayerCA : public NativeLayer {
   Maybe<GLuint> NextSurfaceAsFramebuffer(bool aNeedsDepth) override;
   gfx::IntRegion CurrentSurfaceInvalidRegion() override;
   void NotifySurfaceReady() override;
-  void SetIsOpaque(bool aIsOpaque) override;
   bool IsOpaque() override;
   void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) override;
   Maybe<gfx::IntRect> ClipRect() override;
@@ -141,7 +143,7 @@ class NativeLayerCA : public NativeLayer {
  protected:
   friend class NativeLayerRootCA;
 
-  NativeLayerCA();
+  NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque);
   ~NativeLayerCA() override;
 
   
@@ -166,7 +168,6 @@ class NativeLayerCA : public NativeLayer {
   struct SurfaceWithInvalidRegion {
     CFTypeRefPtr<IOSurfaceRef> mSurface;
     gfx::IntRegion mInvalidRegion;
-    gfx::IntSize mSize;
   };
 
   std::vector<SurfaceWithInvalidRegion> RemoveExcessUnusedSurfaces(
@@ -177,8 +178,6 @@ class NativeLayerCA : public NativeLayer {
 
   RefPtr<IOSurfaceRegistry> mSurfaceRegistry;  
 
-  
-  
   
   
   
@@ -251,7 +250,7 @@ class NativeLayerCA : public NativeLayer {
       mFramebuffers;
 
   gfx::IntPoint mPosition;
-  gfx::IntSize mSize;
+  const gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
 
   
@@ -263,10 +262,10 @@ class NativeLayerCA : public NativeLayer {
 
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
-  bool mIsOpaque = false;
+  const bool mIsOpaque = false;
+  bool mMutatedBackingScale = false;
+  bool mMutatedSurfaceIsFlipped = false;
   bool mMutatedPosition = false;
-  bool mMutatedSize = false;
-  bool mMutatedIsOpaque = false;
   bool mMutatedClipRect = false;
 };
 
