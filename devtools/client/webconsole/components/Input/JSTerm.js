@@ -1730,12 +1730,6 @@ class JSTerm extends Component {
   }
 
   destroy() {
-    if (this.webConsoleUI.outputNode) {
-      
-      
-      this.webConsoleUI.outputNode.innerHTML = "";
-    }
-
     if (this.autocompletePopup) {
       this.autocompletePopup.destroy();
       this.autocompletePopup = null;

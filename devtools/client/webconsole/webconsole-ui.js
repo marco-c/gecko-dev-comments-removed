@@ -89,6 +89,13 @@ class WebConsoleUI {
     }
 
     this.React = this.ReactDOM = this.FrameView = null;
+
+    if (this.outputNode) {
+      
+      
+      this.outputNode.innerHTML = "";
+    }
+
     if (this.jsterm) {
       this.jsterm.destroy();
       this.jsterm = null;
