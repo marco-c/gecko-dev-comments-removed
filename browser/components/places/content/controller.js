@@ -1182,10 +1182,19 @@ PlacesController.prototype = {
     
     
     let parentNode = node.parent;
-    return parentNode != null &&
-           PlacesUtils.nodeIsFolder(parentNode) &&
-           !PlacesUIUtils.isFolderReadOnly(parentNode) &&
-           !PlacesUtils.nodeIsTagQuery(parentNode);
+    if (!parentNode) {
+      return false;
+    }
+
+    
+    
+    if (PlacesUtils.nodeIsTagQuery(parentNode)) {
+      return false;
+    }
+
+    return (PlacesUtils.nodeIsFolder(parentNode) &&
+          !PlacesUIUtils.isFolderReadOnly(parentNode)) ||
+          PlacesUtils.nodeIsQuery(parentNode);
   },
 };
 

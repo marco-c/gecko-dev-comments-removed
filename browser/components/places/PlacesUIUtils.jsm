@@ -1066,10 +1066,7 @@ function canMoveUnwrappedNode(unwrappedNode) {
   }
 
   let parentGuid = unwrappedNode.parentGuid;
-  
-  
-  if (!parentGuid ||
-      parentGuid == PlacesUtils.bookmarks.rootGuid) {
+  if (parentGuid == PlacesUtils.bookmarks.rootGuid) {
     return false;
   }
 
