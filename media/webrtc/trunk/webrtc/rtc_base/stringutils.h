@@ -311,6 +311,9 @@ bool ends_with(const char *s1, const char *s2);
 
 std::string string_trim(const std::string& s);
 
+
+std::string ToHex(const int i);
+
 }  
 
 #endif 
