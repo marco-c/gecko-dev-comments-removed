@@ -434,10 +434,30 @@ class SingleLookupHuffmanTable {
   using InternalIndex = uint8_t;
 
   
+  
+  enum Use {
+    
+    LeafOfMultiLookupHuffmanTable,
+    
+    ToplevelTable,
+    
+    ShortKeys,
+  };
+
+  
   static const uint8_t MAX_BIT_LENGTH = sizeof(InternalIndex) * 8;
 
-  explicit SingleLookupHuffmanTable(JSContext* cx)
-      : values_(cx), saturated_(cx), largestBitLength_(-1) {}
+  explicit SingleLookupHuffmanTable(
+      JSContext* cx, Use use = Use::LeafOfMultiLookupHuffmanTable)
+      : values_(cx),
+        saturated_(cx),
+        largestBitLength_(-1)
+#ifdef DEBUG
+        ,
+        use_(use)
+#endif  
+  {
+  }
   SingleLookupHuffmanTable(SingleLookupHuffmanTable&& other) = default;
 
   
@@ -508,8 +528,28 @@ class SingleLookupHuffmanTable {
   
   uint8_t largestBitLength_;
 
+#ifdef DEBUG
+  Use use_;
+#endif  
+
   friend class HuffmanPreludeReader;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -637,7 +677,11 @@ class MultiLookupHuffmanTable {
       PrefixBitLength + Subtable::MAX_BIT_LENGTH;
 
   explicit MultiLookupHuffmanTable(JSContext* cx)
-      : cx_(cx), values_(cx), subTables_(cx), largestBitLength_(-1) {}
+      : cx_(cx),
+        shortKeys_(cx, SingleLookupHuffmanTable::Use::ShortKeys),
+        values_(cx),
+        suffixTables_(cx),
+        largestBitLength_(-1) {}
   MultiLookupHuffmanTable(MultiLookupHuffmanTable&& other) = default;
 
   
@@ -698,6 +742,10 @@ class MultiLookupHuffmanTable {
 
   
   
+  SingleLookupHuffmanTable shortKeys_;
+
+  
+  
   
   
   
@@ -713,7 +761,7 @@ class MultiLookupHuffmanTable {
   
   
   
-  Vector<Subtable> subTables_;
+  Vector<Subtable> suffixTables_;
 
   
   
