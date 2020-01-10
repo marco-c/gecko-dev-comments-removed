@@ -74,4 +74,7 @@ config = {
     },
     'src_mozconfig': 'mobile/android/config/mozconfigs/android/nightly',
     
+    
+    'disable_package_metrics': True,
+    
 }
