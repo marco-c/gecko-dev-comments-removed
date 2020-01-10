@@ -199,17 +199,6 @@ static const Scale ScalePointer = TimesFour;
 namespace js {
 namespace jit {
 
-static inline void PatchJump(CodeLocationJump jump, CodeLocationLabel label) {
-#ifdef DEBUG
-  
-  
-  
-  unsigned char* x = (unsigned char*)jump.raw() - 5;
-  MOZ_ASSERT(((*x >= 0x80 && *x <= 0x8F) && *(x - 1) == 0x0F) || (*x == 0xE9));
-#endif
-  X86Encoding::SetRel32(jump.raw(), label.raw());
-}
-
 static inline Operand LowWord(const Operand& op) {
   switch (op.kind()) {
     case Operand::MEM_REG_DISP:
