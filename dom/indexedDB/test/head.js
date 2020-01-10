@@ -79,40 +79,29 @@ function dismissNotification(popup) {
 }
 
 function waitForMessage(aMessage, browser) {
-  return new Promise((resolve, reject) => {
-    
-    
-    
-    
-    function contentScript() {
-      addEventListener(
-        "message",
-        function(event) {
-          sendAsyncMessage("testLocal:message", { message: event.data });
-        },
-        { once: true, capture: true },
-        true
-      );
-    }
-    
-
-    let script = "data:,(" + contentScript.toString() + ")();";
-
-    let mm = browser.selectedBrowser.messageManager;
-
-    mm.addMessageListener("testLocal:message", function listener(msg) {
-      mm.removeMessageListener("testLocal:message", listener);
-      mm.removeDelayedFrameScript(script);
-      is(msg.data.message, aMessage, "received " + aMessage);
-      if (msg.data.message == aMessage) {
-        resolve();
-      } else {
-        reject();
+  
+  
+  let checkFn = function() {};
+  checkFn.toSource = function() {
+    return `function checkFn(event) {
+      let message = ${aMessage.toSource()};
+      is(event.data, message, "Received: " + message);
+      if (event.data == message) {
+        return true;
       }
-    });
+      throw new Error(
+       \`Unexpected result: \$\{event.data\}, expected \$\{message\}\`
+      );
+    }`;
+  };
 
-    mm.loadFrameScript(script, true);
-  });
+  return BrowserTestUtils.waitForContentEvent(
+    browser.selectedBrowser,
+    "message",
+     true,
+    checkFn,
+     true
+  );
 }
 
 function dispatchEvent(eventName) {
