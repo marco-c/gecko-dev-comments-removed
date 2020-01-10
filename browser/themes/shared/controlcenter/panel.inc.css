@@ -622,13 +622,6 @@ description#identity-popup-content-verifier,
 
 
 
-
-#protections-popup:not([blocking]):not([hasException]) #protections-popup-tp-switch-breakage-link {
-  display: none;
-}
-
-
-
 #identity-popup-permissions-content {
   background-image: url(chrome://browser/skin/controlcenter/permissions.svg);
   padding-bottom: 1.5em;

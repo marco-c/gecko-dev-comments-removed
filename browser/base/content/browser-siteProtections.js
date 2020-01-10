@@ -975,12 +975,6 @@ var gProtectionsHandler = {
       "protections-popup-tp-switch"
     ));
   },
-  get _breakageLink() {
-    delete this._breakageLink;
-    return (this._breakageLink = document.getElementById(
-      "protections-popup-tp-switch-breakage-link"
-    ));
-  },
   get _protectionPopupSettingsButton() {
     delete this._protectionPopupSettingsButton;
     return (this._protectionPopupSettingsButton = document.getElementById(
@@ -1454,9 +1448,7 @@ var gProtectionsHandler = {
     }
 
     
-    
-    
-    this._protectionsPopupTPSwitchBreakageLink.hidden = !currentlyEnabled;
+    this.toggleBreakageLink();
 
     
     
@@ -1499,6 +1491,9 @@ var gProtectionsHandler = {
     ]) {
       tpSwitch.toggleAttribute("enabled", !newExceptionState);
     }
+
+    
+    this.toggleBreakageLink();
 
     
     
@@ -1571,10 +1566,6 @@ var gProtectionsHandler = {
     }
 
     
-    
-    gProtectionsHandler.toggleBreakageLink();
-
-    
     if (gIdentityHandler._identityPopup.state != "closed") {
       PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
     }
@@ -1613,16 +1604,16 @@ var gProtectionsHandler = {
   toggleBreakageLink() {
     
     
-    if (
-      this.reportBreakageEnabled ||
-      (ThirdPartyCookies.reportBreakageEnabled &&
-        ThirdPartyCookies.activated &&
-        !TrackingProtection.activated)
-    ) {
-      this._breakageLink.removeAttribute("hidden");
-    } else {
-      this._breakageLink.setAttribute("hidden", "true");
-    }
+    
+    
+    
+    
+    
+    
+    
+    this._protectionsPopupTPSwitchBreakageLink.hidden =
+      ContentBlockingAllowList.includes(gBrowser.selectedBrowser) ||
+      !this._protectionsPopupTPSwitch.hasAttribute("enabled");
   },
 
   submitBreakageReport(uri) {
