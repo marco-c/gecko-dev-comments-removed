@@ -841,34 +841,6 @@ struct SharedDummyStream {
 
 
 
-enum class BlockingMode {
-  
-
-
-
-  CREATION,
-  
-
-
-
-  END_EXISTING,
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -887,13 +859,10 @@ class MediaInputPort final {
  private:
   
   
-  MediaInputPort(MediaStream* aSource, TrackID& aSourceTrack,
-                 ProcessedMediaStream* aDest, TrackID& aDestTrack,
+  MediaInputPort(MediaStream* aSource, ProcessedMediaStream* aDest,
                  uint16_t aInputNumber, uint16_t aOutputNumber)
       : mSource(aSource),
-        mSourceTrack(aSourceTrack),
         mDest(aDest),
-        mDestTrack(aDestTrack),
         mInputNumber(aInputNumber),
         mOutputNumber(aOutputNumber),
         mGraph(nullptr) {
@@ -921,50 +890,7 @@ class MediaInputPort final {
 
   
   MediaStream* GetSource() const { return mSource; }
-  TrackID GetSourceTrackId() const { return mSourceTrack; }
   ProcessedMediaStream* GetDestination() const { return mDest; }
-  TrackID GetDestinationTrackId() const { return mDestTrack; }
-
-  
-
-
-
-
-
-  RefPtr<GenericPromise> BlockSourceTrackId(TrackID aTrackId,
-                                            BlockingMode aBlockingMode);
-
- private:
-  void BlockSourceTrackIdImpl(TrackID aTrackId, BlockingMode aBlockingMode);
-
- public:
-  
-  
-  bool PassTrackThrough(TrackID aTrackId) const {
-    bool blocked = false;
-    for (auto pair : mBlockedTracks) {
-      if (pair.first() == aTrackId &&
-          (pair.second() == BlockingMode::CREATION ||
-           pair.second() == BlockingMode::END_EXISTING)) {
-        blocked = true;
-        break;
-      }
-    }
-    return !blocked && (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
-  }
-
-  
-  
-  bool AllowCreationOf(TrackID aTrackId) const {
-    bool blocked = false;
-    for (auto pair : mBlockedTracks) {
-      if (pair.first() == aTrackId && pair.second() == BlockingMode::CREATION) {
-        blocked = true;
-        break;
-      }
-    }
-    return !blocked && (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
-  }
 
   uint16_t InputNumber() const { return mInputNumber; }
   uint16_t OutputNumber() const { return mOutputNumber; }
@@ -1020,16 +946,11 @@ class MediaInputPort final {
   friend class ProcessedMediaStream;
   
   MediaStream* mSource;
-  TrackID mSourceTrack;
   ProcessedMediaStream* mDest;
-  TrackID mDestTrack;
   
   
   const uint16_t mInputNumber;
   const uint16_t mOutputNumber;
-
-  typedef Pair<TrackID, BlockingMode> BlockedTrack;
-  nsTArray<BlockedTrack> mBlockedTracks;
 
   
   MediaStreamGraphImpl* mGraph;
@@ -1050,27 +971,9 @@ class ProcessedMediaStream : public MediaStream {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   already_AddRefed<MediaInputPort> AllocateInputPort(
-      MediaStream* aStream, TrackID aTrackID = TRACK_ANY,
-      TrackID aDestTrackID = TRACK_ANY, uint16_t aInputNumber = 0,
-      uint16_t aOutputNumber = 0, nsTArray<TrackID>* aBlockedTracks = nullptr);
+      MediaStream* aStream, uint16_t aInputNumber = 0,
+      uint16_t aOutputNumber = 0);
   
 
 
