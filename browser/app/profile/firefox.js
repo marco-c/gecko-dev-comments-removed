@@ -2098,7 +2098,7 @@ pref("devtools.serviceWorkers.testing.enabled", false);
 pref("devtools.netmonitor.enabled", true);
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
   pref("devtools.netmonitor.features.search", true);
 #else
   pref("devtools.netmonitor.features.search", false);
