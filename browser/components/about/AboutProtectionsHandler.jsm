@@ -202,13 +202,6 @@ var AboutProtectionsHandler = {
           potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
             logins
           );
-
-          
-          
-          if (monitorData.errorMessage) {
-            const { email } = await fxAccounts.getSignedInUser();
-            userEmail = email;
-          }
         }
       } else {
         
@@ -218,6 +211,8 @@ var AboutProtectionsHandler = {
       }
     } catch (e) {
       Cu.reportError(e.message);
+      monitorData.errorMessage = e.message;
+
       
       
       
@@ -229,8 +224,12 @@ var AboutProtectionsHandler = {
           monitorData = await this.fetchUserBreachStats(token);
         } catch (_) {
           Cu.reportError(e.message);
-          monitorData.errorMessage = INVALID_OAUTH_TOKEN;
         }
+      } else if (e.message === USER_UNSUBSCRIBED_TO_MONITOR) {
+        
+        
+        const { email } = await fxAccounts.getSignedInUser();
+        userEmail = email;
       } else {
         monitorData.errorMessage = e.message || "An error ocurred.";
       }
