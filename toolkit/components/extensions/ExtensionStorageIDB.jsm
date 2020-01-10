@@ -44,6 +44,12 @@ const BACKEND_ENABLED_PREF =
 const IDB_MIGRATED_PREF_BRANCH =
   "extensions.webextensions.ExtensionStorageIDB.migrated";
 
+class DataMigrationAbortedError extends Error {
+  get name() {
+    return "DataMigrationAbortedError";
+  }
+}
+
 var DataMigrationTelemetry = {
   initialized: false,
 
@@ -77,7 +83,10 @@ var DataMigrationTelemetry = {
       return undefined;
     }
 
-    if (error instanceof DOMException) {
+    if (
+      error instanceof DOMException ||
+      error instanceof DataMigrationAbortedError
+    ) {
       if (error.name.length > 80) {
         return getTrimmedString(error.name);
       }
@@ -385,15 +394,24 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   let dataMigrateCompleted = false;
   let hasOldData = false;
 
+  function abortIfShuttingDown() {
+    if (extension.hasShutdown || Services.startup.shuttingDown) {
+      throw new DataMigrationAbortedError("extension or app is shutting down");
+    }
+  }
+
   if (ExtensionStorageIDB.isMigratedExtension(extension)) {
     return;
   }
 
   try {
+    abortIfShuttingDown();
     idbConn = await ExtensionStorageIDB.open(
       storagePrincipal,
       extension.hasPermission("unlimitedStorage")
     );
+    abortIfShuttingDown();
+
     hasEmptyIDB = await idbConn.isEmpty();
 
     if (!hasEmptyIDB) {
@@ -422,6 +440,8 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   }
 
   try {
+    abortIfShuttingDown();
+
     oldStoragePath = ExtensionStorage.getStorageFile(extension.id);
     oldStorageExists = await OS.File.exists(oldStoragePath).catch(fileErr => {
       
@@ -438,11 +458,17 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     
     
     if (oldStorageExists) {
+      
+      abortIfShuttingDown();
+
       Services.console.logStringMessage(
         `Migrating storage.local data for ${extension.policy.debugName}...`
       );
 
       jsonFile = await ExtensionStorage.getFile(extension.id);
+
+      abortIfShuttingDown();
+
       const data = {};
       for (let [key, value] of jsonFile.data.entries()) {
         data[key] = value;
@@ -464,12 +490,6 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     );
 
     if (oldStorageExists && !dataMigrateCompleted) {
-      
-      
-      
-      
-      Services.qms.clearStoragesForPrincipal(storagePrincipal);
-
       DataMigrationTelemetry.recordResult({
         backend: "JSONFile",
         dataMigrated: dataMigrateCompleted,
@@ -478,6 +498,15 @@ async function migrateJSONFileData(extension, storagePrincipal) {
         hasJSONFile: oldStorageExists,
         hasOldData,
         histogramCategory: "failure",
+      });
+
+      
+      
+      
+      
+      await new Promise(resolve => {
+        let req = Services.qms.clearStoragesForPrincipal(storagePrincipal);
+        req.callback = resolve;
       });
 
       throw err;
