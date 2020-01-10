@@ -163,15 +163,19 @@ class Selection final : public nsSupportsWeakReference,
                           int32_t aFlags = 0);
   nsresult SubtractRange(RangeData* aRange, nsRange* aSubtract,
                          nsTArray<RangeData>* aOutput);
+
+ private:
   
 
 
 
 
 
-  nsresult AddItem(nsRange* aRange, int32_t* aOutIndex,
-                   bool aNoStartSelect = false);
+  nsresult AddRangesForSelectableNodes(nsRange* aRange, int32_t* aOutIndex,
+                                       bool aNoStartSelect = false);
   nsresult RemoveItem(nsRange* aRange);
+
+ public:
   nsresult RemoveCollapsedRanges();
   nsresult Clear(nsPresContext* aPresContext);
   nsresult Collapse(nsINode* aContainer, int32_t aOffset) {
@@ -737,8 +741,8 @@ class Selection final : public nsSupportsWeakReference,
                                  int32_t* aEndIndex);
   RangeData* FindRangeData(nsRange* aRange);
 
-  void UserSelectRangesToAdd(nsRange* aItem,
-                             nsTArray<RefPtr<nsRange>>& rangesToAdd);
+  static void UserSelectRangesToAdd(nsRange* aItem,
+                                    nsTArray<RefPtr<nsRange>>& rangesToAdd);
 
   
 
