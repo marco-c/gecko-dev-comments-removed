@@ -2,14 +2,8 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
-  shortURL: "resource://activity-stream/lib/ShortURL.jsm",
-  getSearchProvider: "resource://activity-stream/lib/SearchShortcuts.jsm",
-});
-
-const SHORTCUTS_PREF =
-  "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts";
+ChromeUtils.defineModuleGetter(this, "NewTabUtils",
+                               "resource://gre/modules/NewTabUtils.jsm");
 
 this.topSites = class extends ExtensionAPI {
   getAPI(context) {
@@ -22,52 +16,13 @@ this.topSites = class extends ExtensionAPI {
             numItems: options.limit,
             includeFavicon: options.includeFavicon,
           });
-
-          if (options.includePinned) {
-            let pinnedLinks = NewTabUtils.pinnedLinks.links;
-            if (options.includeFavicon) {
-              pinnedLinks = NewTabUtils.activityStreamProvider._faviconBytesToDataURI(
-                await NewTabUtils.activityStreamProvider._addFavicons(pinnedLinks));
-            }
-            pinnedLinks.forEach((pinnedLink, index) => {
-              if (pinnedLink &&
-                  (!pinnedLink.searchTopSite || options.includeSearchShortcuts)) {
-                
-                links = links.filter(link => link.url != pinnedLink.url &&
-                  (!options.onePerDomain ||
-                   NewTabUtils.extractSite(link.url) != pinnedLink.baseDomain));
-                links.splice(index, 0, pinnedLink);
-              }
-            });
-            
-            if (options.limit) {
-              links = links.slice(0, options.limit);
-            }
-          }
-
-          
-          if (options.includeSearchShortcuts &&
-            Services.prefs.getBoolPref(SHORTCUTS_PREF, false)) {
-            
-            
-            
-            links = links.map(link => {
-              let searchProvider = getSearchProvider(shortURL(link));
-              if (searchProvider) {
-                link.searchTopSite = true;
-                link.label = searchProvider.keyword;
-                link.url = searchProvider.url;
-              }
-              return link;
-            });
-          }
-
-          return links.map(link => ({
-            url: link.url,
-            title: link.searchTopSite ? link.label : link.title,
-            favicon: link.favicon,
-            type: link.searchTopSite ? "search" : "url",
-          }));
+          return links.map(link => {
+            return {
+              url: link.url,
+              title: link.title,
+              favicon: link.favicon,
+            };
+          });
         },
       },
     };
