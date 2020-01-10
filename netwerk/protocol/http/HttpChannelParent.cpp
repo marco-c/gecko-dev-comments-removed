@@ -753,8 +753,14 @@ bool HttpChannelParent::ConnectChannel(const uint32_t& registrarId,
   nsCOMPtr<nsINetworkInterceptController> controller;
   NS_QueryNotificationCallbacks(channel, controller);
   RefPtr<ParentChannelListener> parentListener = do_QueryObject(controller);
-  MOZ_ASSERT(parentListener);
-  parentListener->SetupInterceptionAfterRedirect(shouldIntercept);
+  if (parentListener) {
+    
+    
+    
+    
+    
+    parentListener->SetupInterceptionAfterRedirect(shouldIntercept);
+  }
 
   if (mPBOverride != kPBOverride_Unset) {
     
