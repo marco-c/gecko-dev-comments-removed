@@ -228,6 +228,22 @@ return credFetch(origin + "/cookies/resources/dropSecure.py")
 
 
 
+function resetSameSiteNoneCookies(origin, value) {
+  return credFetch(origin + "/cookies/resources/dropSameSiteNone.py")
+    .then(_ => {
+      if (origin == self.origin) {
+        assert_dom_cookie("samesite_none_insecure", value, false);
+        assert_dom_cookie("samesite_none_secure", value, false);
+      }
+    })
+    .then(_ => {
+      return credFetch(origin + "/cookies/resources/setSameSiteNone.py?" + value);
+    })
+}
+
+
+
+
 
 
 function erase_cookie_from_js(name, params) {
