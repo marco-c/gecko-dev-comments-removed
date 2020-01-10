@@ -111,13 +111,9 @@ static void CompressSourceSync(JS::Handle<JSFunction*> fun, JSContext* cx) {
   MOZ_RELEASE_ASSERT(script);
   MOZ_RELEASE_ASSERT(script->scriptSource()->hasSourceText());
 
-  js::RunPendingSourceCompressions(cx->runtime());
+  js::RunPendingSourceCompressions(cx);
 
-  
-  
-  
-  
-  
+  MOZ_RELEASE_ASSERT(script->scriptSource()->hasCompressedSource());
 }
 
 static constexpr char FunctionStart[] = "function @() {";

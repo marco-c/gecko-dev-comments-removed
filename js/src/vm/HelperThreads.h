@@ -676,7 +676,7 @@ void AttachFinishedCompressions(JSRuntime* runtime,
                                 AutoLockHelperThreadState& lock);
 
 
-void RunPendingSourceCompressions(JSRuntime* runtime);
+void RunPendingSourceCompressions(JSContext* cx);
 
 class MOZ_RAII AutoLockHelperThreadState : public LockGuard<Mutex> {
   using Base = LockGuard<Mutex>;
@@ -752,7 +752,6 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   }
 
   void runTask() override;
-  ThreadType threadType() override { return ThreadType::THREAD_TYPE_PARSE; }
 };
 
 struct ScriptDecodeTask : public ParseTask {
@@ -843,8 +842,6 @@ class SourceCompressionTask : public RunnableTask {
   void runTask() override;
   void complete();
 
-  ThreadType threadType() override { return ThreadType::THREAD_TYPE_COMPRESS; }
-
  private:
   struct PerformTaskWork;
   friend struct PerformTaskWork;
@@ -878,7 +875,6 @@ struct PromiseHelperTask : OffThreadPromiseTask, public RunnableTask {
   
   void executeAndResolveAndDestroy(JSContext* cx);
   void runTask() override;
-  ThreadType threadType() override { return THREAD_TYPE_PROMISE_TASK; }
 };
 
 } 
