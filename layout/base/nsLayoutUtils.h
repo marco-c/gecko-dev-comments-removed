@@ -119,8 +119,6 @@ struct DisplayPortMarginsPropertyData {
 struct MotionPathData {
   gfx::Point mTranslate;
   float mRotate;
-  
-  gfx::Point mShift;
 };
 
 }  

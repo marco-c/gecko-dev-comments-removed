@@ -13,7 +13,6 @@ use crate::str::HTML_SPACE_CHARACTERS;
 use crate::values::computed::LengthPercentage as ComputedLengthPercentage;
 use crate::values::computed::{Context, Percentage, ToComputedValue};
 use crate::values::generics::position::Position as GenericPosition;
-use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
 use crate::values::generics::position::ZIndex as GenericZIndex;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage};
 use crate::Atom;
@@ -26,9 +25,6 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
 pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;
-
-
-pub type PositionOrAuto = GenericPositionOrAuto<Position>;
 
 
 pub type HorizontalPosition = PositionComponent<HorizontalPositionKeyword>;

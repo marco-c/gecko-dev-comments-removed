@@ -10156,27 +10156,10 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
   
   
   
-  
-  
   TransformReferenceBox refBox(aFrame);
-  const auto& transformOrigin = display->mTransformOrigin;
-  const CSSPoint origin = nsStyleTransformMatrix::Convert2DPosition(
+  auto& transformOrigin = display->mTransformOrigin;
+  CSSPoint anchorPoint = nsStyleTransformMatrix::Convert2DPosition(
       transformOrigin.horizontal, transformOrigin.vertical, refBox);
-
-  
-  
-  CSSPoint anchorPoint(origin);
-  Point shift;
-  if (!display->mOffsetAnchor.IsAuto()) {
-    const auto& pos = display->mOffsetAnchor.AsPosition();
-    anchorPoint = nsStyleTransformMatrix::Convert2DPosition(
-        pos.horizontal, pos.vertical, refBox);
-    
-    
-    
-    shift = (anchorPoint - origin).ToUnknownPoint();
-  }
-
   
   
   
@@ -10189,6 +10172,7 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
     anchorPoint.y += CSSPixel::FromAppUnits(aFrame->GetPosition().y);
   }
 
-  return Some(
-      MotionPathData{point - anchorPoint.ToUnknownPoint(), angle, shift});
+  
+  
+  return Some(MotionPathData{point - anchorPoint.ToUnknownPoint(), angle});
 }
