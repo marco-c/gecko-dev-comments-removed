@@ -3142,6 +3142,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   }
 
   
+  
+  void truncateNoWrapValueToInt32(ValueOperand value, MDefinition* input,
+                                  FloatRegister temp, Register output,
+                                  Label* truncateDoubleSlow, Label* fail) {
+    convertValueToInt(value, input, nullptr, nullptr, truncateDoubleSlow,
+                      InvalidReg, temp, output, fail,
+                      IntConversionBehavior::TruncateNoWrap);
+  }
+
+  
   void clampValueToUint8(ValueOperand value, MDefinition* input,
                          Label* handleStringEntry, Label* handleStringRejoin,
                          Register stringReg, FloatRegister temp,

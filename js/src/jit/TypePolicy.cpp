@@ -787,7 +787,8 @@ bool ToDoublePolicy::staticAdjustInputs(TempAllocator& alloc,
 
 bool ToInt32Policy::staticAdjustInputs(TempAllocator& alloc,
                                        MInstruction* ins) {
-  MOZ_ASSERT(ins->isToNumberInt32() || ins->isTruncateToInt32());
+  MOZ_ASSERT(ins->isToNumberInt32() || ins->isTruncateToInt32() ||
+             ins->isToIntegerInt32());
 
   IntConversionInputKind conversion = IntConversionInputKind::Any;
   if (ins->isToNumberInt32()) {
@@ -804,7 +805,9 @@ bool ToInt32Policy::staticAdjustInputs(TempAllocator& alloc,
       return true;
     case MIRType::Undefined:
       
-      if (ins->isTruncateToInt32()) {
+      
+      
+      if (ins->isTruncateToInt32() || ins->isToIntegerInt32()) {
         return true;
       }
       break;
