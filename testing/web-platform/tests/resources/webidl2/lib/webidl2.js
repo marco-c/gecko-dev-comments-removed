@@ -103,10 +103,10 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_webidl2_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  __webpack_require__.d(__webpack_exports__, "parse", function() { return _lib_webidl2_js__WEBPACK_IMPORTED_MODULE_0__["parse"]; });
 
- var _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(14);
+ var _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(29);
  __webpack_require__.d(__webpack_exports__, "write", function() { return _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__["write"]; });
 
- var _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
+ var _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
  __webpack_require__.d(__webpack_exports__, "validate", function() { return _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__["validate"]; });
 
 
@@ -121,14 +121,20 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "parse", function() { return parse; });
- var _productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _tokeniser_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var _productions_base_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
- var _productions_default_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
- var _productions_enum_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(12);
- var _productions_includes_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(13);
- var _productions_type_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(3);
- var _productions_extended_attributes_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9);
+ var _tokeniser_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var _productions_enum_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
+ var _productions_includes_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(16);
+ var _productions_extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(11);
+ var _productions_typedef_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(17);
+ var _productions_callback_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(18);
+ var _productions_interface_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(19);
+ var _productions_mixin_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(24);
+ var _productions_dictionary_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(25);
+ var _productions_namespace_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(27);
+ var _productions_callback_interface_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(28);
+
+
+
 
 
 
@@ -148,469 +154,57 @@ __webpack_require__.r(__webpack_exports__);
 function parseByTokens(tokeniser, options) {
   const source = tokeniser.source;
 
-  const ID = "identifier";
-
   function error(str) {
     tokeniser.error(str);
-  }
-
-  function probe(type) {
-    return tokeniser.probe(type);
   }
 
   function consume(...candidates) {
     return tokeniser.consume(...candidates);
   }
 
-  function unconsume(position) {
-    return tokeniser.unconsume(position);
-  }
-
-  class Constant extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse() {
-      const tokens = {};
-      tokens.base = consume("const");
-      if (!tokens.base) {
-        return;
-      }
-      let idlType = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["primitive_type"])(tokeniser);
-      if (!idlType) {
-        const base = consume(ID) || error("No type for const");
-        idlType = new _productions_type_js__WEBPACK_IMPORTED_MODULE_6__["Type"]({ source, tokens: { base } });
-      }
-      if (probe("?")) {
-        error("Unexpected nullable constant type");
-      }
-      idlType.type = "const-type";
-      tokens.name = consume(ID) || error("No name for const");
-      tokens.assign = consume("=") || error("No value assignment for const");
-      tokens.value = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["const_value"])(tokeniser) || error("No value for const");
-      tokens.termination = consume(";") || error("Unterminated const");
-      const ret = new Constant({ source, tokens });
-      ret.idlType = idlType;
-      return ret;
-    }
-
-    get type() {
-      return "const";
-    }
-    get name() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.name.value);
-    }
-    get value() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["const_data"])(this.tokens.value);
-    }
-  }
-
-  class CallbackFunction extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse(base) {
-      const tokens = { base };
-      const ret = new CallbackFunction({ source, tokens });
-      tokens.name = consume(ID) || error("No name for callback");
-      tokeniser.current = ret;
-      tokens.assign = consume("=") || error("No assignment in callback");
-      ret.idlType = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["return_type"])(tokeniser) || error("Missing return type");
-      tokens.open = consume("(") || error("No arguments in callback");
-      ret.arguments = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["argument_list"])(tokeniser);
-      tokens.close = consume(")") || error("Unterminated callback");
-      tokens.termination = consume(";") || error("Unterminated callback");
-      return ret;
-    }
-
-    get type() {
-      return "callback";
-    }
-    get name() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.name.value);
-    }
-  }
-
   function callback() {
     const callback = consume("callback");
     if (!callback) return;
-    const tok = consume("interface");
-    if (tok) {
-      return Interface.parse(tok, { callback });
+    if (tokeniser.probe("interface")) {
+      return _productions_callback_interface_js__WEBPACK_IMPORTED_MODULE_10__["CallbackInterface"].parse(tokeniser, callback);
     }
-    return CallbackFunction.parse(callback);
-  }
-
-  class Attribute extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse({ special, noInherit = false, readonly = false } = {}) {
-      const start_position = tokeniser.position;
-      const tokens = { special };
-      const ret = new Attribute({ source, tokens });
-      if (!special && !noInherit) {
-        tokens.special = consume("inherit");
-      }
-      if (ret.special === "inherit" && probe("readonly")) {
-        error("Inherited attributes cannot be read-only");
-      }
-      tokens.readonly = consume("readonly");
-      if (readonly && !tokens.readonly && probe("attribute")) {
-        error("Attributes must be readonly in this context");
-      }
-      tokens.base = consume("attribute");
-      if (!tokens.base) {
-        unconsume(start_position);
-        return;
-      }
-      ret.idlType = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["type_with_extended_attributes"])(tokeniser, "attribute-type") || error("No type in attribute");
-      switch (ret.idlType.generic) {
-        case "sequence":
-        case "record": error(`Attributes cannot accept ${ret.idlType.generic} types`);
-      }
-      tokens.name = consume(ID, "required") || error("No name in attribute");
-      tokens.termination = consume(";") || error("Unterminated attribute");
-      return ret;
-    }
-
-    get type() {
-      return "attribute";
-    }
-    get special() {
-      if (!this.tokens.special) {
-        return "";
-      }
-      return this.tokens.special.value;
-    }
-    get readonly() {
-      return !!this.tokens.readonly;
-    }
-    get name() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.name.value);
-    }
-  }
-
-  class Operation extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse({ special, regular } = {}) {
-      const tokens = { special };
-      const ret = new Operation({ source, tokens });
-      if (special && special.value === "stringifier") {
-        tokens.termination = consume(";");
-        if (tokens.termination) {
-          ret.arguments = [];
-          return ret;
-        }
-      }
-      if (!special && !regular) {
-        tokens.special = consume("getter", "setter", "deleter");
-      }
-      ret.idlType = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["return_type"])(tokeniser) || error("Missing return type");
-      tokens.name = consume(ID);
-      tokens.open = consume("(") || error("Invalid operation");
-      ret.arguments = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["argument_list"])(tokeniser);
-      tokens.close = consume(")") || error("Unterminated operation");
-      tokens.termination = consume(";") || error("Unterminated attribute");
-      return ret;
-    }
-
-    get type() {
-      return "operation";
-    }
-    get name() {
-      const { name } = this.tokens;
-      if (!name) {
-        return "";
-      }
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(name.value);
-    }
-    get special() {
-      if (!this.tokens.special) {
-        return "";
-      }
-      return this.tokens.special.value;
-    }
-  }
-
-  function static_member() {
-    const special = consume("static");
-    if (!special) return;
-    const member = Attribute.parse({ special }) ||
-      Operation.parse({ special }) ||
-      error("No body in static member");
-    return member;
-  }
-
-  function stringifier() {
-    const special = consume("stringifier");
-    if (!special) return;
-    const member = Attribute.parse({ special }) ||
-      Operation.parse({ special }) ||
-      error("Unterminated stringifier");
-    return member;
-  }
-
-  class IterableLike extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse() {
-      const start_position = tokeniser.position;
-      const tokens = {};
-      const ret = new IterableLike({ source, tokens });
-      tokens.readonly = consume("readonly");
-      tokens.base = tokens.readonly ?
-        consume("maplike", "setlike") :
-        consume("iterable", "maplike", "setlike");
-      if (!tokens.base) {
-        unconsume(start_position);
-        return;
-      }
-
-      const { type } = ret;
-      const secondTypeRequired = type === "maplike";
-      const secondTypeAllowed = secondTypeRequired || type === "iterable";
-
-      tokens.open = consume("<") || error(`Error parsing ${type} declaration`);
-      const first = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["type_with_extended_attributes"])(tokeniser) || error(`Error parsing ${type} declaration`);
-      ret.idlType = [first];
-      if (secondTypeAllowed) {
-        first.tokens.separator = consume(",");
-        if (first.tokens.separator) {
-          ret.idlType.push(Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["type_with_extended_attributes"])(tokeniser));
-        }
-        else if (secondTypeRequired)
-          error(`Missing second type argument in ${type} declaration`);
-      }
-      tokens.close = consume(">") || error(`Unterminated ${type} declaration`);
-      tokens.termination = consume(";") || error(`Missing semicolon after ${type} declaration`);
-
-      return ret;
-    }
-
-    get type() {
-      return this.tokens.base.value;
-    }
-    get readonly() {
-      return !!this.tokens.readonly;
-    }
-  }
-
-  function inheritance() {
-    const colon = consume(":");
-    if (!colon) {
-      return {};
-    }
-    const inheritance = consume(ID) || error("No type in inheritance");
-    return { colon, inheritance };
-  }
-
-  class Container extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse(instance, { type, inheritable, allowedMembers }) {
-      const { tokens } = instance;
-      tokens.name = consume(ID) || error("No name for interface");
-      tokeniser.current = instance;
-      if (inheritable) {
-        Object.assign(tokens, inheritance());
-      }
-      tokens.open = consume("{") || error(`Bodyless ${type}`);
-      instance.members = [];
-      while (true) {
-        tokens.close = consume("}");
-        if (tokens.close) {
-          tokens.termination = consume(";") || error(`Missing semicolon after ${type}`);
-          return instance;
-        }
-        const ea = _productions_extended_attributes_js__WEBPACK_IMPORTED_MODULE_7__["ExtendedAttributes"].parse(tokeniser);
-        let mem;
-        for (const [parser, ...args] of allowedMembers) {
-          mem = parser(...args);
-          if (mem) {
-            break;
-          }
-        }
-        if (!mem) {
-          error("Unknown member");
-        }
-        mem.extAttrs = ea;
-        instance.members.push(mem);
-      }
-    }
-
-    get partial() {
-      return !!this.tokens.partial;
-    }
-    get name() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.name.value);
-    }
-    get inheritance() {
-      if (!this.tokens.inheritance) {
-        return null;
-      }
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.inheritance.value);
-    }
-  }
-
-  class Interface extends Container {
-    static parse(base, { callback = null, partial = null } = {}) {
-      const tokens = { callback, partial, base };
-      return Container.parse(new Interface({ source, tokens }), {
-        type: "interface",
-        inheritable: !partial,
-        allowedMembers: [
-          [Constant.parse],
-          [static_member],
-          [stringifier],
-          [IterableLike.parse],
-          [Attribute.parse],
-          [Operation.parse]
-        ]
-      });
-    }
-
-    get type() {
-      if (this.tokens.callback) {
-        return "callback interface";
-      }
-      return "interface";
-    }
-  }
-
-  class Mixin extends Container {
-    static parse(base, { partial } = {}) {
-      const tokens = { partial, base };
-      tokens.mixin = consume("mixin");
-      if (!tokens.mixin) {
-        return;
-      }
-      return Container.parse(new Mixin({ source, tokens }), {
-        type: "interface mixin",
-        allowedMembers: [
-          [Constant.parse],
-          [stringifier],
-          [Attribute.parse, { noInherit: true }],
-          [Operation.parse, { regular: true }]
-        ]
-      });
-    }
-
-    get type() {
-      return "interface mixin";
-    }
+    return _productions_callback_js__WEBPACK_IMPORTED_MODULE_5__["CallbackFunction"].parse(tokeniser, callback);
   }
 
   function interface_(opts) {
     const base = consume("interface");
     if (!base) return;
-    const ret = Mixin.parse(base, opts) ||
-      Interface.parse(base, opts) ||
+    const ret = _productions_mixin_js__WEBPACK_IMPORTED_MODULE_7__["Mixin"].parse(tokeniser, base, opts) ||
+      _productions_interface_js__WEBPACK_IMPORTED_MODULE_6__["Interface"].parse(tokeniser, base, opts) ||
       error("Interface has no proper body");
     return ret;
-  }
-
-  class Namespace extends Container {
-    static parse({ partial } = {}) {
-      const tokens = { partial };
-      tokens.base = consume("namespace");
-      if (!tokens.base) {
-        return;
-      }
-      return Container.parse(new Namespace({ source, tokens }), {
-        type: "namespace",
-        allowedMembers: [
-          [Attribute.parse, { noInherit: true, readonly: true }],
-          [Operation.parse, { regular: true }]
-        ]
-      });
-    }
-
-    get type() {
-      return "namespace";
-    }
   }
 
   function partial() {
     const partial = consume("partial");
     if (!partial) return;
-    return Dictionary.parse({ partial }) ||
+    return _productions_dictionary_js__WEBPACK_IMPORTED_MODULE_8__["Dictionary"].parse(tokeniser, { partial }) ||
       interface_({ partial }) ||
-      Namespace.parse({ partial }) ||
+      _productions_namespace_js__WEBPACK_IMPORTED_MODULE_9__["Namespace"].parse(tokeniser, { partial }) ||
       error("Partial doesn't apply to anything");
-  }
-
-  class Dictionary extends Container {
-    static parse({ partial } = {}) {
-      const tokens = { partial };
-      tokens.base = consume("dictionary");
-      if (!tokens.base) {
-        return;
-      }
-      return Container.parse(new Dictionary({ source, tokens }), {
-        type: "dictionary",
-        inheritable: !partial,
-        allowedMembers: [
-          [Field.parse],
-        ]
-      });
-    }
-
-    get type() {
-      return "dictionary";
-    }
-  }
-
-  class Field extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse() {
-      const tokens = {};
-      const ret = new Field({ source, tokens });
-      ret.extAttrs = _productions_extended_attributes_js__WEBPACK_IMPORTED_MODULE_7__["ExtendedAttributes"].parse(tokeniser);
-      tokens.required = consume("required");
-      ret.idlType = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["type_with_extended_attributes"])(tokeniser, "dictionary-type") || error("No type for dictionary member");
-      tokens.name = consume(ID) || error("No name for dictionary member");
-      ret.default = _productions_default_js__WEBPACK_IMPORTED_MODULE_3__["Default"].parse(tokeniser);
-      if (tokens.required && ret.default) error("Required member must not have a default");
-      tokens.termination = consume(";") || error("Unterminated dictionary member");
-      return ret;
-    }
-
-    get type() {
-      return "field";
-    }
-    get name() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.name.value);
-    }
-    get required() {
-      return !!this.tokens.required;
-    }
-  }
-
-  class Typedef extends _productions_base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
-    static parse() {
-      const tokens = {};
-      const ret = new Typedef({ source, tokens });
-      tokens.base = consume("typedef");
-      if (!tokens.base) {
-        return;
-      }
-      ret.idlType = Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["type_with_extended_attributes"])(tokeniser, "typedef-type") || error("No type in typedef");
-      tokens.name = consume(ID) || error("No name in typedef");
-      tokeniser.current = ret;
-      tokens.termination = consume(";") || error("Unterminated typedef");
-      return ret;
-    }
-
-    get type() {
-      return "typedef";
-    }
-    get name() {
-      return Object(_productions_helpers_js__WEBPACK_IMPORTED_MODULE_0__["unescape"])(this.tokens.name.value);
-    }
   }
 
   function definition() {
     return callback() ||
       interface_() ||
       partial() ||
-      Dictionary.parse() ||
-      _productions_enum_js__WEBPACK_IMPORTED_MODULE_4__["Enum"].parse(tokeniser) ||
-      Typedef.parse() ||
-      _productions_includes_js__WEBPACK_IMPORTED_MODULE_5__["Includes"].parse(tokeniser) ||
-      Namespace.parse();
+      _productions_dictionary_js__WEBPACK_IMPORTED_MODULE_8__["Dictionary"].parse(tokeniser) ||
+      _productions_enum_js__WEBPACK_IMPORTED_MODULE_1__["Enum"].parse(tokeniser) ||
+      _productions_typedef_js__WEBPACK_IMPORTED_MODULE_4__["Typedef"].parse(tokeniser) ||
+      _productions_includes_js__WEBPACK_IMPORTED_MODULE_2__["Includes"].parse(tokeniser) ||
+      _productions_namespace_js__WEBPACK_IMPORTED_MODULE_9__["Namespace"].parse(tokeniser);
   }
 
   function definitions() {
     if (!source.length) return [];
     const defs = [];
     while (true) {
-      const ea = _productions_extended_attributes_js__WEBPACK_IMPORTED_MODULE_7__["ExtendedAttributes"].parse(tokeniser);
+      const ea = _productions_extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__["ExtendedAttributes"].parse(tokeniser);
       const def = definition();
       if (!def) {
         if (ea.length) error("Stray extended attributes");
@@ -631,372 +225,11 @@ function parseByTokens(tokeniser, options) {
 }
 
 function parse(str, options = {}) {
-  const tokeniser = new _tokeniser_js__WEBPACK_IMPORTED_MODULE_1__["Tokeniser"](str);
+  const tokeniser = new _tokeniser_js__WEBPACK_IMPORTED_MODULE_0__["Tokeniser"](str);
+  if (typeof options.sourceName !== "undefined") {
+    tokeniser.source.name = options.sourceName;
+  }
   return parseByTokens(tokeniser, options);
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "unescape", function() { return unescape; });
- __webpack_require__.d(__webpack_exports__, "list", function() { return list; });
- __webpack_require__.d(__webpack_exports__, "const_value", function() { return const_value; });
- __webpack_require__.d(__webpack_exports__, "const_data", function() { return const_data; });
- __webpack_require__.d(__webpack_exports__, "primitive_type", function() { return primitive_type; });
- __webpack_require__.d(__webpack_exports__, "identifiers", function() { return identifiers; });
- __webpack_require__.d(__webpack_exports__, "argument_list", function() { return argument_list; });
- __webpack_require__.d(__webpack_exports__, "type_with_extended_attributes", function() { return type_with_extended_attributes; });
- __webpack_require__.d(__webpack_exports__, "return_type", function() { return return_type; });
- var _type_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
- var _argument_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7);
- var _token_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(11);
- var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
-
-
-
-
-
-
-
-
-function unescape(identifier) {
-  return identifier.startsWith('_') ? identifier.slice(1) : identifier;
-}
-
-
-
-
-
-
-
-
-
-function list(tokeniser, { parser, allowDangler, listName = "list" }) {
-  const first = parser(tokeniser);
-  if (!first) {
-    return [];
-  }
-  first.tokens.separator = tokeniser.consume(",");
-  const items = [first];
-  while (first.tokens.separator) {
-    const item = parser(tokeniser);
-    if (!item) {
-      if (!allowDangler) {
-        tokeniser.error(`Trailing comma in ${listName}`);
-      }
-      break;
-    }
-    item.tokens.separator = tokeniser.consume(",");
-    items.push(item);
-    if (!item.tokens.separator) break;
-  }
-  return items;
-}
-
-
-
-
-function const_value(tokeniser) {
-  return tokeniser.consume("true", "false", "Infinity", "-Infinity", "NaN", "decimal", "integer");
-}
-
-
-
-
-
-
-function const_data({ type, value }) {
-  switch (type) {
-    case "true":
-    case "false":
-      return { type: "boolean", value: type === "true" };
-    case "Infinity":
-    case "-Infinity":
-      return { type: "Infinity", negative: type.startsWith("-") };
-    case "[":
-      return { type: "sequence", value: [] };
-    case "{":
-      return { type: "dictionary" };
-    case "decimal":
-    case "integer":
-      return { type: "number", value };
-    case "string":
-      return { type: "string", value: value.slice(1, -1) };
-    default:
-      return { type };
-  }
-}
-
-
-
-
-function primitive_type(tokeniser) {
-  function integer_type() {
-    const prefix = tokeniser.consume("unsigned");
-    const base = tokeniser.consume("short", "long");
-    if (base) {
-      const postfix = tokeniser.consume("long");
-      return new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source, tokens: { prefix, base, postfix } });
-    }
-    if (prefix) tokeniser.error("Failed to parse integer type");
-  }
-
-  function decimal_type() {
-    const prefix = tokeniser.consume("unrestricted");
-    const base = tokeniser.consume("float", "double");
-    if (base) {
-      return new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source, tokens: { prefix, base } });
-    }
-    if (prefix) tokeniser.error("Failed to parse float type");
-  }
-
-  const { source } = tokeniser;
-  const num_type = integer_type(tokeniser) || decimal_type(tokeniser);
-  if (num_type) return num_type;
-  const base = tokeniser.consume("boolean", "byte", "octet");
-  if (base) {
-    return new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source, tokens: { base } });
-  }
-}
-
-
-
-
-function identifiers(tokeniser) {
-  const ids = list(tokeniser, { parser: _token_js__WEBPACK_IMPORTED_MODULE_2__["Token"].parser(tokeniser, "identifier"), listName: "identifier list" });
-  if (!ids.length) {
-    tokeniser.error("Expected identifiers but none found");
-  }
-  return ids;
-}
-
-
-
-
-function argument_list(tokeniser) {
-  return list(tokeniser, { parser: _argument_js__WEBPACK_IMPORTED_MODULE_1__["Argument"].parse, listName: "arguments list" });
-}
-
-
-
-
-
-function type_with_extended_attributes(tokeniser, typeName) {
-  const extAttrs = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__["ExtendedAttributes"].parse(tokeniser);
-  const ret = _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"].parse(tokeniser, typeName);
-  if (ret) ret.extAttrs = extAttrs;
-  return ret;
-}
-
-
-
-
-
-function return_type(tokeniser, typeName) {
-  const typ = _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"].parse(tokeniser, typeName || "return-type");
-  if (typ) {
-    return typ;
-  }
-  const voidToken = tokeniser.consume("void");
-  if (voidToken) {
-    const ret = new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source: tokeniser.source, tokens: { base: voidToken } });
-    ret.type = "return-type";
-    return ret;
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Type", function() { return Type; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var _tokeniser_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
-
-
-
-
-
-
-
-
-function generic_type(tokeniser, typeName) {
-  const base = tokeniser.consume("FrozenArray", "Promise", "sequence", "record");
-  if (!base) {
-    return;
-  }
-  const ret = new Type({ source: tokeniser.source, tokens: { base } });
-  ret.tokens.open = tokeniser.consume("<") || tokeniser.error(`No opening bracket after ${base.type}`);
-  switch (base.type) {
-    case "Promise": {
-      if (tokeniser.probe("[")) tokeniser.error("Promise type cannot have extended attribute");
-      const subtype = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["return_type"])(tokeniser, typeName) || tokeniser.error("Missing Promise subtype");
-      ret.subtype.push(subtype);
-      break;
-    }
-    case "sequence":
-    case "FrozenArray": {
-      const subtype = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, typeName) || tokeniser.error(`Missing ${base.type} subtype`);
-      ret.subtype.push(subtype);
-      break;
-    }
-    case "record": {
-      if (tokeniser.probe("[")) tokeniser.error("Record key cannot have extended attribute");
-      const keyType = tokeniser.consume(..._tokeniser_js__WEBPACK_IMPORTED_MODULE_2__["stringTypes"]) || tokeniser.error(`Record key must be one of: ${_tokeniser_js__WEBPACK_IMPORTED_MODULE_2__["stringTypes"].join(", ")}`);
-      const keyIdlType = new Type({ source: tokeniser.source, tokens: { base: keyType }});
-      keyIdlType.tokens.separator = tokeniser.consume(",") || tokeniser.error("Missing comma after record key type");
-      keyIdlType.type = typeName;
-      const valueType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, typeName) || tokeniser.error("Error parsing generic type record");
-      ret.subtype.push(keyIdlType, valueType);
-      break;
-    }
-  }
-  if (!ret.idlType) tokeniser.error(`Error parsing generic type ${base.type}`);
-  ret.tokens.close = tokeniser.consume(">") || tokeniser.error(`Missing closing bracket after ${base.type}`);
-  return ret;
-}
-
-
-
-
-function type_suffix(tokeniser, obj) {
-  const nullable = tokeniser.consume("?");
-  if (nullable) {
-    obj.tokens.nullable = nullable;
-  }
-  if (tokeniser.probe("?")) tokeniser.error("Can't nullable more than once");
-}
-
-
-
-
-
-function single_type(tokeniser, typeName) {
-  let ret = generic_type(tokeniser, typeName) || Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["primitive_type"])(tokeniser);
-  if (!ret) {
-    const base = tokeniser.consume("identifier", ..._tokeniser_js__WEBPACK_IMPORTED_MODULE_2__["stringTypes"]);
-    if (!base) {
-      return;
-    }
-    ret = new Type({ source: tokeniser.source, tokens: { base } });
-    if (tokeniser.probe("<")) tokeniser.error(`Unsupported generic type ${base.value}`);
-  }
-  if (ret.generic === "Promise" && tokeniser.probe("?")) {
-    tokeniser.error("Promise type cannot be nullable");
-  }
-  ret.type = typeName || null;
-  type_suffix(tokeniser, ret);
-  if (ret.nullable && ret.idlType === "any") tokeniser.error("Type `any` cannot be made nullable");
-  return ret;
-}
-
-
-
-
-
-function union_type(tokeniser, type) {
-  const tokens = {};
-  tokens.open = tokeniser.consume("(");
-  if (!tokens.open) return;
-  const ret = new Type({ source: tokeniser.source, tokens });
-  ret.type = type || null;
-  while (true) {
-    const typ = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser) || tokeniser.error("No type after open parenthesis or 'or' in union type");
-    if (typ.idlType === "any") tokeniser.error("Type `any` cannot be included in a union type");
-    ret.subtype.push(typ);
-    const or = tokeniser.consume("or");
-    if (or) {
-      typ.tokens.separator = or;
-    }
-    else break;
-  }
-  if (ret.idlType.length < 2) {
-    tokeniser.error("At least two types are expected in a union type but found less");
-  }
-  tokens.close = tokeniser.consume(")") || tokeniser.error("Unterminated union type");
-  type_suffix(tokeniser, ret);
-  return ret;
-}
-
-class Type extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-
-  static parse(tokeniser, typeName) {
-    return single_type(tokeniser, typeName) || union_type(tokeniser, typeName);
-  }
-
-  constructor({ source, tokens }) {
-    super({ source, tokens });
-    Object.defineProperty(this, "subtype", { value: [] });
-    this.extAttrs = [];
-  }
-
-  get generic() {
-    if (this.subtype.length && this.tokens.base) {
-      return this.tokens.base.value;
-    }
-    return "";
-  }
-  get nullable() {
-    return Boolean(this.tokens.nullable);
-  }
-  get union() {
-    return Boolean(this.subtype.length) && !this.tokens.base;
-  }
-  get idlType() {
-    if (this.subtype.length) {
-      return this.subtype;
-    }
-    
-    const name = [
-      this.tokens.prefix,
-      this.tokens.base,
-      this.tokens.postfix
-    ].filter(t => t).map(t => t.value).join(" ");
-    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(name);
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Base", function() { return Base; });
-class Base {
-  constructor({ source, tokens }) {
-    Object.defineProperties(this, {
-      source: { value: source },
-      tokens: { value: tokens }
-    });
-  }
-
-  toJSON() {
-    const json = { type: undefined, name: undefined, inheritance: undefined };
-    let proto = this;
-    while (proto !== Object.prototype) {
-      const descMap = Object.getOwnPropertyDescriptors(proto);
-      for (const [key, value] of Object.entries(descMap)) {
-        if (value.enumerable || value.get) {
-          json[key] = this[key];
-        }
-      }
-      proto = Object.getPrototypeOf(proto);
-    }
-    return json;
-  }
 }
 
 
@@ -1009,7 +242,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "stringTypes", function() { return stringTypes; });
  __webpack_require__.d(__webpack_exports__, "argumentNameKeywords", function() { return argumentNameKeywords; });
  __webpack_require__.d(__webpack_exports__, "Tokeniser", function() { return Tokeniser; });
- var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
+ var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
 
 
 
@@ -1033,6 +266,7 @@ const stringTypes = [
 ];
 
 const argumentNameKeywords = [
+  "async",
   "attribute",
   "callback",
   "const",
@@ -1062,13 +296,12 @@ const nonRegexTerminals = [
   "Infinity",
   "NaN",
   "Promise",
+  "async",
   "boolean",
   "byte",
   "double",
   "false",
   "float",
-  "implements",
-  "legacyiterable",
   "long",
   "mixin",
   "null",
@@ -1235,10 +468,14 @@ class Tokeniser {
 }
 
 class WebIDLParseError extends Error {
-  constructor({ message, line, input, tokens }) {
+  constructor({ message, bareMessage, context, line, sourceName, input, tokens }) {
     super(message);
+
     this.name = "WebIDLParseError"; 
+    this.bareMessage = bareMessage;
+    this.context = context;
     this.line = line;
+    this.sourceName = sourceName;
     this.input = input;
     this.tokens = tokens;
   }
@@ -1265,7 +502,11 @@ function lastLine(text) {
 
 
 
-function error(source, position, current, message, type) {
+
+
+
+
+function error(source, position, current, message, kind, { level = "error" } = {}) {
   
 
 
@@ -1293,22 +534,28 @@ function error(source, position, current, message, type) {
     source.length > 1 ? source[position - 1].line :
     1;
 
-  const precedingLine = lastLine(
+  const precedingLastLine = lastLine(
     tokensToText(sliceTokens(-maxTokens), { precedes: true })
   );
 
   const subsequentTokens = sliceTokens(maxTokens);
   const subsequentText = tokensToText(subsequentTokens);
-  const sobsequentLine = subsequentText.split("\n")[0];
+  const subsequentFirstLine = subsequentText.split("\n")[0];
 
-  const spaced = " ".repeat(precedingLine.length) + "^ " + message;
-  const contextualMessage = precedingLine + sobsequentLine + "\n" + spaced;
+  const spaced = " ".repeat(precedingLastLine.length) + "^";
+  const sourceContext = precedingLastLine + subsequentFirstLine + "\n" + spaced;
 
-  const contextType = type === "Syntax" ? "since" : "inside";
-  const grammaticalContext = current ? `, ${contextType} \`${current.partial ? "partial " : ""}${current.type} ${current.name}\`` : "";
+  const contextType = kind === "Syntax" ? "since" : "inside";
+  const inSourceName = source.name ? ` in ${source.name}` : "";
+  const grammaticalContext = (current && current.name) ? `, ${contextType} \`${current.partial ? "partial " : ""}${current.type} ${current.name}\`` : "";
+  const context = `${kind} error at line ${line}${inSourceName}${grammaticalContext}:\n${sourceContext}`;
   return {
-    message: `${type} error at line ${line}${grammaticalContext}:\n${contextualMessage}`,
+    message: `${context} ${message}`,
+    bareMessage: message,
+    context,
     line,
+    sourceName: source.name,
+    level,
     input: subsequentText,
     tokens: subsequentTokens
   };
@@ -1324,275 +571,9 @@ function syntaxError(source, position, current, message) {
 
 
 
-function validationError(source, token, current, message) {
-  return error(source, token.index, current, message, "Validation").message;
-}
 
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Argument", function() { return Argument; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
- var _default_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
- var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2);
- var _tokeniser_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(5);
-
-
-
-
-
-
-class Argument extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-  static parse(tokeniser) {
-    const start_position = tokeniser.position;
-    const tokens = {};
-    const ret = new Argument({ source: tokeniser.source, tokens });
-    ret.extAttrs = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_2__["ExtendedAttributes"].parse(tokeniser);
-    tokens.optional = tokeniser.consume("optional");
-    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_3__["type_with_extended_attributes"])(tokeniser, "argument-type");
-    if (!ret.idlType) {
-      return tokeniser.unconsume(start_position);
-    }
-    if (!tokens.optional) {
-      tokens.variadic = tokeniser.consume("...");
-    }
-    tokens.name = tokeniser.consume("identifier", ..._tokeniser_js__WEBPACK_IMPORTED_MODULE_4__["argumentNameKeywords"]);
-    if (!tokens.name) {
-      return tokeniser.unconsume(start_position);
-    }
-    ret.default = tokens.optional ? _default_js__WEBPACK_IMPORTED_MODULE_1__["Default"].parse(tokeniser) : null;
-    return ret;
-  }
-
-  get optional() {
-    return !!this.tokens.optional;
-  }
-  get variadic() {
-    return !!this.tokens.variadic;
-  }
-  get name() {
-    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_3__["unescape"])(this.tokens.name.value);
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Default", function() { return Default; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
-
-
-
-class Default extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-  static parse(tokeniser) {
-    const assign = tokeniser.consume("=");
-    if (!assign) {
-      return null;
-    }
-    const def = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_value"])(tokeniser) || tokeniser.consume("string", "null", "[", "{") || tokeniser.error("No value for default");
-    const expression = [def];
-    if (def.type === "[") {
-      const close = tokeniser.consume("]") || tokeniser.error("Default sequence value must be empty");
-      expression.push(close);
-    } else if (def.type === "{") {
-      const close = tokeniser.consume("}") || tokeniser.error("Default dictionary value must be empty");
-      expression.push(close);
-    }
-    return new Default({ source: tokeniser.source, tokens: { assign }, expression });
-  }
-
-  constructor({ source, tokens, expression }) {
-    super({ source, tokens });
-    Object.defineProperty(this, "expression", { value: expression });
-  }
-
-  get type() {
-    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_data"])(this.expression[0]).type;
-  }
-  get value() {
-    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_data"])(this.expression[0]).value;
-  }
-  get negative() {
-    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_data"])(this.expression[0]).negative;
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "ExtendedAttributes", function() { return ExtendedAttributes; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
- var _array_base_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2);
-
-
-
-
-class ExtendedAttributeParameters extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-  static parse(tokeniser) {
-    const tokens = { assign: tokeniser.consume("=") };
-    const ret = new ExtendedAttributeParameters({ source: tokeniser.source, tokens });
-    if (tokens.assign) {
-      tokens.secondaryName = tokeniser.consume("identifier", "decimal", "integer", "string");
-    }
-    tokens.open = tokeniser.consume("(");
-    if (tokens.open) {
-      ret.list = ret.rhsType === "identifier-list" ?
-        
-        Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["identifiers"])(tokeniser) :
-        
-        Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["argument_list"])(tokeniser);
-      tokens.close = tokeniser.consume(")") || tokeniser.error("Unexpected token in extended attribute argument list");
-    } else if (ret.hasRhs && !tokens.secondaryName) {
-      tokeniser.error("No right hand side to extended attribute assignment");
-    }
-    return ret;
-  }
-
-  get rhsType() {
-    return !this.tokens.assign ? null :
-      !this.tokens.secondaryName ? "identifier-list" :
-        this.tokens.secondaryName.type;
-  }
-}
-
-class SimpleExtendedAttribute extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-  static parse(tokeniser) {
-    const name = tokeniser.consume("identifier");
-    if (name) {
-      return new SimpleExtendedAttribute({
-        tokens: { name },
-        params: ExtendedAttributeParameters.parse(tokeniser)
-      });
-    }
-  }
-
-  constructor({ source, tokens, params }) {
-    super({ source, tokens });
-    Object.defineProperty(this, "params", { value: params });
-  }
-
-  get type() {
-    return "extended-attribute";
-  }
-  get name() {
-    return this.tokens.name.value;
-  }
-  get rhs() {
-    const { rhsType: type, tokens, list } = this.params;
-    if (!type) {
-      return null;
-    }
-    const value = type === "identifier-list" ? list : tokens.secondaryName.value;
-    return { type, value };
-  }
-  get arguments() {
-    const { rhsType, list } = this.params;
-    if (!list || rhsType === "identifier-list") {
-      return [];
-    }
-    return list;
-  }
-}
-
-
-
-class ExtendedAttributes extends _array_base_js__WEBPACK_IMPORTED_MODULE_1__["ArrayBase"] {
-  
-
-
-  static parse(tokeniser) {
-    const tokens = {};
-    tokens.open = tokeniser.consume("[");
-    if (!tokens.open) return [];
-    const ret = new ExtendedAttributes({ source: tokeniser.source, tokens });
-    ret.push(...Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["list"])(tokeniser, {
-      parser: SimpleExtendedAttribute.parse,
-      listName: "extended attribute"
-    }));
-    tokens.close = tokeniser.consume("]") || tokeniser.error("Unexpected closing token of extended attribute");
-    if (!ret.length) {
-      tokeniser.error("Found an empty extended attribute");
-    }
-    if (tokeniser.probe("[")) {
-      tokeniser.error("Illegal double extended attribute lists, consider merging them");
-    }
-    return ret;
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "ArrayBase", function() { return ArrayBase; });
-class ArrayBase extends Array {
-  constructor({ source, tokens }) {
-    super();
-    Object.defineProperties(this, {
-      source: { value: source },
-      tokens: { value: tokens }
-    });
-  }
-}
-
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Token", function() { return Token; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
-
-
-class Token extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
-  
-
-
-
-  static parser(tokeniser, type) {
-    return () => {
-      const value = tokeniser.consume(type);
-      if (value) {
-        return new Token({ source: tokeniser.source, tokens: { value } });
-      }
-    };
-  }
-
-  get value() {
-    return this.tokens.value.value;
-  }
+function validationError(source, token, current, message, options) {
+  return error(source, token.index, current, message, "Validation", options);
 }
 
 
@@ -1603,9 +584,9 @@ class Token extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Enum", function() { return Enum; });
- var _helpers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _token_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(11);
- var _base_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var _token_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(13);
+ var _base_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
 
 
 
@@ -1673,9 +654,931 @@ class Enum extends _base_js__WEBPACK_IMPORTED_MODULE_2__["Base"] {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "unescape", function() { return unescape; });
+ __webpack_require__.d(__webpack_exports__, "list", function() { return list; });
+ __webpack_require__.d(__webpack_exports__, "const_value", function() { return const_value; });
+ __webpack_require__.d(__webpack_exports__, "const_data", function() { return const_data; });
+ __webpack_require__.d(__webpack_exports__, "primitive_type", function() { return primitive_type; });
+ __webpack_require__.d(__webpack_exports__, "identifiers", function() { return identifiers; });
+ __webpack_require__.d(__webpack_exports__, "argument_list", function() { return argument_list; });
+ __webpack_require__.d(__webpack_exports__, "type_with_extended_attributes", function() { return type_with_extended_attributes; });
+ __webpack_require__.d(__webpack_exports__, "return_type", function() { return return_type; });
+ __webpack_require__.d(__webpack_exports__, "stringifier", function() { return stringifier; });
+ var _type_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
+ var _argument_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
+ var _token_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(13);
+ var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(11);
+ var _operation_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(14);
+ var _attribute_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
+
+
+
+
+
+
+
+
+
+
+function unescape(identifier) {
+  return identifier.startsWith('_') ? identifier.slice(1) : identifier;
+}
+
+
+
+
+
+
+
+
+
+function list(tokeniser, { parser, allowDangler, listName = "list" }) {
+  const first = parser(tokeniser);
+  if (!first) {
+    return [];
+  }
+  first.tokens.separator = tokeniser.consume(",");
+  const items = [first];
+  while (first.tokens.separator) {
+    const item = parser(tokeniser);
+    if (!item) {
+      if (!allowDangler) {
+        tokeniser.error(`Trailing comma in ${listName}`);
+      }
+      break;
+    }
+    item.tokens.separator = tokeniser.consume(",");
+    items.push(item);
+    if (!item.tokens.separator) break;
+  }
+  return items;
+}
+
+
+
+
+function const_value(tokeniser) {
+  return tokeniser.consume("true", "false", "Infinity", "-Infinity", "NaN", "decimal", "integer");
+}
+
+
+
+
+
+
+function const_data({ type, value }) {
+  switch (type) {
+    case "true":
+    case "false":
+      return { type: "boolean", value: type === "true" };
+    case "Infinity":
+    case "-Infinity":
+      return { type: "Infinity", negative: type.startsWith("-") };
+    case "[":
+      return { type: "sequence", value: [] };
+    case "{":
+      return { type: "dictionary" };
+    case "decimal":
+    case "integer":
+      return { type: "number", value };
+    case "string":
+      return { type: "string", value: value.slice(1, -1) };
+    default:
+      return { type };
+  }
+}
+
+
+
+
+function primitive_type(tokeniser) {
+  function integer_type() {
+    const prefix = tokeniser.consume("unsigned");
+    const base = tokeniser.consume("short", "long");
+    if (base) {
+      const postfix = tokeniser.consume("long");
+      return new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source, tokens: { prefix, base, postfix } });
+    }
+    if (prefix) tokeniser.error("Failed to parse integer type");
+  }
+
+  function decimal_type() {
+    const prefix = tokeniser.consume("unrestricted");
+    const base = tokeniser.consume("float", "double");
+    if (base) {
+      return new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source, tokens: { prefix, base } });
+    }
+    if (prefix) tokeniser.error("Failed to parse float type");
+  }
+
+  const { source } = tokeniser;
+  const num_type = integer_type(tokeniser) || decimal_type(tokeniser);
+  if (num_type) return num_type;
+  const base = tokeniser.consume("boolean", "byte", "octet");
+  if (base) {
+    return new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source, tokens: { base } });
+  }
+}
+
+
+
+
+function identifiers(tokeniser) {
+  const ids = list(tokeniser, { parser: _token_js__WEBPACK_IMPORTED_MODULE_2__["Token"].parser(tokeniser, "identifier"), listName: "identifier list" });
+  if (!ids.length) {
+    tokeniser.error("Expected identifiers but none found");
+  }
+  return ids;
+}
+
+
+
+
+function argument_list(tokeniser) {
+  return list(tokeniser, { parser: _argument_js__WEBPACK_IMPORTED_MODULE_1__["Argument"].parse, listName: "arguments list" });
+}
+
+
+
+
+
+function type_with_extended_attributes(tokeniser, typeName) {
+  const extAttrs = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_3__["ExtendedAttributes"].parse(tokeniser);
+  const ret = _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"].parse(tokeniser, typeName);
+  if (ret) ret.extAttrs = extAttrs;
+  return ret;
+}
+
+
+
+
+
+function return_type(tokeniser, typeName) {
+  const typ = _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"].parse(tokeniser, typeName || "return-type");
+  if (typ) {
+    return typ;
+  }
+  const voidToken = tokeniser.consume("void");
+  if (voidToken) {
+    const ret = new _type_js__WEBPACK_IMPORTED_MODULE_0__["Type"]({ source: tokeniser.source, tokens: { base: voidToken } });
+    ret.type = "return-type";
+    return ret;
+  }
+}
+
+
+
+
+function stringifier(tokeniser) {
+  const special = tokeniser.consume("stringifier");
+  if (!special) return;
+  const member = _attribute_js__WEBPACK_IMPORTED_MODULE_5__["Attribute"].parse(tokeniser, { special }) ||
+    _operation_js__WEBPACK_IMPORTED_MODULE_4__["Operation"].parse(tokeniser, { special }) ||
+    tokeniser.error("Unterminated stringifier");
+  return member;
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Type", function() { return Type; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _tokeniser_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2);
+ var _error_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3);
+ var _validators_helpers_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
+
+
+
+
+
+
+
+
+
+
+function generic_type(tokeniser, typeName) {
+  const base = tokeniser.consume("FrozenArray", "Promise", "sequence", "record");
+  if (!base) {
+    return;
+  }
+  const ret = new Type({ source: tokeniser.source, tokens: { base } });
+  ret.tokens.open = tokeniser.consume("<") || tokeniser.error(`No opening bracket after ${base.type}`);
+  switch (base.type) {
+    case "Promise": {
+      if (tokeniser.probe("[")) tokeniser.error("Promise type cannot have extended attribute");
+      const subtype = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["return_type"])(tokeniser, typeName) || tokeniser.error("Missing Promise subtype");
+      ret.subtype.push(subtype);
+      break;
+    }
+    case "sequence":
+    case "FrozenArray": {
+      const subtype = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, typeName) || tokeniser.error(`Missing ${base.type} subtype`);
+      ret.subtype.push(subtype);
+      break;
+    }
+    case "record": {
+      if (tokeniser.probe("[")) tokeniser.error("Record key cannot have extended attribute");
+      const keyType = tokeniser.consume(..._tokeniser_js__WEBPACK_IMPORTED_MODULE_2__["stringTypes"]) || tokeniser.error(`Record key must be one of: ${_tokeniser_js__WEBPACK_IMPORTED_MODULE_2__["stringTypes"].join(", ")}`);
+      const keyIdlType = new Type({ source: tokeniser.source, tokens: { base: keyType }});
+      keyIdlType.tokens.separator = tokeniser.consume(",") || tokeniser.error("Missing comma after record key type");
+      keyIdlType.type = typeName;
+      const valueType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, typeName) || tokeniser.error("Error parsing generic type record");
+      ret.subtype.push(keyIdlType, valueType);
+      break;
+    }
+  }
+  if (!ret.idlType) tokeniser.error(`Error parsing generic type ${base.type}`);
+  ret.tokens.close = tokeniser.consume(">") || tokeniser.error(`Missing closing bracket after ${base.type}`);
+  return ret;
+}
+
+
+
+
+function type_suffix(tokeniser, obj) {
+  const nullable = tokeniser.consume("?");
+  if (nullable) {
+    obj.tokens.nullable = nullable;
+  }
+  if (tokeniser.probe("?")) tokeniser.error("Can't nullable more than once");
+}
+
+
+
+
+
+function single_type(tokeniser, typeName) {
+  let ret = generic_type(tokeniser, typeName) || Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["primitive_type"])(tokeniser);
+  if (!ret) {
+    const base = tokeniser.consume("identifier", ..._tokeniser_js__WEBPACK_IMPORTED_MODULE_2__["stringTypes"]);
+    if (!base) {
+      return;
+    }
+    ret = new Type({ source: tokeniser.source, tokens: { base } });
+    if (tokeniser.probe("<")) tokeniser.error(`Unsupported generic type ${base.value}`);
+  }
+  if (ret.generic === "Promise" && tokeniser.probe("?")) {
+    tokeniser.error("Promise type cannot be nullable");
+  }
+  ret.type = typeName || null;
+  type_suffix(tokeniser, ret);
+  if (ret.nullable && ret.idlType === "any") tokeniser.error("Type `any` cannot be made nullable");
+  return ret;
+}
+
+
+
+
+
+function union_type(tokeniser, type) {
+  const tokens = {};
+  tokens.open = tokeniser.consume("(");
+  if (!tokens.open) return;
+  const ret = new Type({ source: tokeniser.source, tokens });
+  ret.type = type || null;
+  while (true) {
+    const typ = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser) || tokeniser.error("No type after open parenthesis or 'or' in union type");
+    if (typ.idlType === "any") tokeniser.error("Type `any` cannot be included in a union type");
+    ret.subtype.push(typ);
+    const or = tokeniser.consume("or");
+    if (or) {
+      typ.tokens.separator = or;
+    }
+    else break;
+  }
+  if (ret.idlType.length < 2) {
+    tokeniser.error("At least two types are expected in a union type but found less");
+  }
+  tokens.close = tokeniser.consume(")") || tokeniser.error("Unterminated union type");
+  type_suffix(tokeniser, ret);
+  return ret;
+}
+
+class Type extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+
+  static parse(tokeniser, typeName) {
+    return single_type(tokeniser, typeName) || union_type(tokeniser, typeName);
+  }
+
+  constructor({ source, tokens }) {
+    super({ source, tokens });
+    Object.defineProperty(this, "subtype", { value: [] });
+    this.extAttrs = [];
+  }
+
+  get generic() {
+    if (this.subtype.length && this.tokens.base) {
+      return this.tokens.base.value;
+    }
+    return "";
+  }
+  get nullable() {
+    return Boolean(this.tokens.nullable);
+  }
+  get union() {
+    return Boolean(this.subtype.length) && !this.tokens.base;
+  }
+  get idlType() {
+    if (this.subtype.length) {
+      return this.subtype;
+    }
+    
+    const name = [
+      this.tokens.prefix,
+      this.tokens.base,
+      this.tokens.postfix
+    ].filter(t => t).map(t => t.value).join(" ");
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(name);
+  }
+
+  *validate(defs) {
+    
+
+
+
+    const typedef = !this.union && defs.unique.get(this.idlType);
+    const target =
+      this.union ? this :
+      (typedef && typedef.type === "typedef") ? typedef.idlType :
+      undefined;
+    if (target && this.nullable) {
+      
+      const reference = Object(_validators_helpers_js__WEBPACK_IMPORTED_MODULE_4__["idlTypeIncludesDictionary"])(target, defs);
+      if (reference) {
+        const targetToken = (this.union ? reference : this).tokens.base;
+        const message = `Nullable union cannot include a dictionary type`;
+        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_3__["validationError"])(this.source, targetToken, this, message);
+      }
+    } else {
+      
+      for (const subtype of this.subtype) {
+        yield* subtype.validate(defs);
+      }
+    }
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Base", function() { return Base; });
+class Base {
+  constructor({ source, tokens }) {
+    Object.defineProperties(this, {
+      source: { value: source },
+      tokens: { value: tokens }
+    });
+  }
+
+  toJSON() {
+    const json = { type: undefined, name: undefined, inheritance: undefined };
+    let proto = this;
+    while (proto !== Object.prototype) {
+      const descMap = Object.getOwnPropertyDescriptors(proto);
+      for (const [key, value] of Object.entries(descMap)) {
+        if (value.enumerable || value.get) {
+          json[key] = this[key];
+        }
+      }
+      proto = Object.getPrototypeOf(proto);
+    }
+    return json;
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "dictionaryWithinUnion", function() { return dictionaryWithinUnion; });
+ __webpack_require__.d(__webpack_exports__, "idlTypeIncludesDictionary", function() { return idlTypeIncludesDictionary; });
+ __webpack_require__.d(__webpack_exports__, "referencesTypedef", function() { return referencesTypedef; });
+
+
+
+function* dictionaryWithinUnion(subtypes, defs) {
+  for (const subtype of subtypes) {
+    const def = defs.unique.get(subtype.idlType);
+    if (def && def.type === "dictionary") {
+      yield subtype;
+    }
+  }
+}
+
+
+
+
+function idlTypeIncludesDictionary(idlType, defs) {
+  if (!idlType.union) {
+    const def = defs.unique.get(idlType.idlType);
+    if (!def) {
+      return;
+    }
+    if (def.type === "typedef") {
+      const { typedefIncludesDictionary} = defs.cache;
+      if (typedefIncludesDictionary.has(def)) {
+        
+        
+        return typedefIncludesDictionary.get(def);
+      }
+      defs.cache.typedefIncludesDictionary.set(def, undefined); 
+      const result = idlTypeIncludesDictionary(def.idlType, defs);
+      defs.cache.typedefIncludesDictionary.set(def, result);
+      if (result) {
+        return idlType;
+      }
+    }
+    if (def.type === "dictionary") {
+      return idlType;
+    }
+  }
+  for (const subtype of idlType.subtype) {
+    const result = idlTypeIncludesDictionary(subtype, defs);
+    if (result) {
+      if (subtype.union) {
+        return result;
+      }
+      return subtype;
+    }
+  }
+}
+
+
+
+
+function referencesTypedef(idlType, defs) {
+  const result = defs.unique.get(idlType.idlType);
+  return result && result.type === "typedef";
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Argument", function() { return Argument; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _default_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
+ var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(11);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var _tokeniser_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(2);
+ var _error_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(3);
+ var _validators_helpers_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8);
+
+
+
+
+
+
+
+
+class Argument extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const start_position = tokeniser.position;
+    const tokens = {};
+    const ret = new Argument({ source: tokeniser.source, tokens });
+    ret.extAttrs = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_2__["ExtendedAttributes"].parse(tokeniser);
+    tokens.optional = tokeniser.consume("optional");
+    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_3__["type_with_extended_attributes"])(tokeniser, "argument-type");
+    if (!ret.idlType) {
+      return tokeniser.unconsume(start_position);
+    }
+    if (!tokens.optional) {
+      tokens.variadic = tokeniser.consume("...");
+    }
+    tokens.name = tokeniser.consume("identifier", ..._tokeniser_js__WEBPACK_IMPORTED_MODULE_4__["argumentNameKeywords"]);
+    if (!tokens.name) {
+      return tokeniser.unconsume(start_position);
+    }
+    ret.default = tokens.optional ? _default_js__WEBPACK_IMPORTED_MODULE_1__["Default"].parse(tokeniser) : null;
+    return ret;
+  }
+
+  get type() {
+    return "argument";
+  }
+  get optional() {
+    return !!this.tokens.optional;
+  }
+  get variadic() {
+    return !!this.tokens.variadic;
+  }
+  get name() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_3__["unescape"])(this.tokens.name.value);
+  }
+
+  *validate(defs) {
+    yield* this.idlType.validate(defs);
+    if (Object(_validators_helpers_js__WEBPACK_IMPORTED_MODULE_6__["idlTypeIncludesDictionary"])(this.idlType, defs)) {
+      if (this.optional && !this.default) {
+        const message = `Optional dictionary arguments must have a default value of \`{}\`.`;
+        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_5__["validationError"])(this.source, this.tokens.name, this, message);
+      }
+      if (this.idlType.nullable) {
+        const message = `Dictionary arguments cannot be nullable.`;
+        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_5__["validationError"])(this.source, this.tokens.name, this, message);
+      }
+    }
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Default", function() { return Default; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+class Default extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const assign = tokeniser.consume("=");
+    if (!assign) {
+      return null;
+    }
+    const def = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_value"])(tokeniser) || tokeniser.consume("string", "null", "[", "{") || tokeniser.error("No value for default");
+    const expression = [def];
+    if (def.type === "[") {
+      const close = tokeniser.consume("]") || tokeniser.error("Default sequence value must be empty");
+      expression.push(close);
+    } else if (def.type === "{") {
+      const close = tokeniser.consume("}") || tokeniser.error("Default dictionary value must be empty");
+      expression.push(close);
+    }
+    return new Default({ source: tokeniser.source, tokens: { assign }, expression });
+  }
+
+  constructor({ source, tokens, expression }) {
+    super({ source, tokens });
+    Object.defineProperty(this, "expression", { value: expression });
+  }
+
+  get type() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_data"])(this.expression[0]).type;
+  }
+  get value() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_data"])(this.expression[0]).value;
+  }
+  get negative() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["const_data"])(this.expression[0]).negative;
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "ExtendedAttributes", function() { return ExtendedAttributes; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _array_base_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(12);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var _error_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3);
+
+
+
+
+
+class ExtendedAttributeParameters extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const tokens = { assign: tokeniser.consume("=") };
+    const ret = new ExtendedAttributeParameters({ source: tokeniser.source, tokens });
+    if (tokens.assign) {
+      tokens.secondaryName = tokeniser.consume("identifier", "decimal", "integer", "string");
+    }
+    tokens.open = tokeniser.consume("(");
+    if (tokens.open) {
+      ret.list = ret.rhsType === "identifier-list" ?
+        
+        Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["identifiers"])(tokeniser) :
+        
+        Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["argument_list"])(tokeniser);
+      tokens.close = tokeniser.consume(")") || tokeniser.error("Unexpected token in extended attribute argument list");
+    } else if (ret.hasRhs && !tokens.secondaryName) {
+      tokeniser.error("No right hand side to extended attribute assignment");
+    }
+    return ret;
+  }
+
+  get rhsType() {
+    return !this.tokens.assign ? null :
+      !this.tokens.secondaryName ? "identifier-list" :
+        this.tokens.secondaryName.type;
+  }
+}
+
+class SimpleExtendedAttribute extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const name = tokeniser.consume("identifier");
+    if (name) {
+      return new SimpleExtendedAttribute({
+        source: tokeniser.source,
+        tokens: { name },
+        params: ExtendedAttributeParameters.parse(tokeniser)
+      });
+    }
+  }
+
+  constructor({ source, tokens, params }) {
+    super({ source, tokens });
+    Object.defineProperty(this, "params", { value: params });
+  }
+
+  get type() {
+    return "extended-attribute";
+  }
+  get name() {
+    return this.tokens.name.value;
+  }
+  get rhs() {
+    const { rhsType: type, tokens, list } = this.params;
+    if (!type) {
+      return null;
+    }
+    const value = type === "identifier-list" ? list : tokens.secondaryName.value;
+    return { type, value };
+  }
+  get arguments() {
+    const { rhsType, list } = this.params;
+    if (!list || rhsType === "identifier-list") {
+      return [];
+    }
+    return list;
+  }
+
+  *validate(defs) {
+    if (this.name === "NoInterfaceObject") {
+      const message = `\`[NoInterfaceObject]\` extended attribute is an \
+undesirable feature that may be removed from Web IDL in the future. Refer to the \
+[relevant upstream PR](https://github.com/heycam/webidl/pull/609) for more \
+information.`;
+      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_3__["validationError"])(this.source, this.tokens.name, this, message, { level: "warning" });
+    }
+    for (const arg of this.arguments) {
+      yield* arg.validate(defs);
+    }
+  }
+}
+
+
+
+class ExtendedAttributes extends _array_base_js__WEBPACK_IMPORTED_MODULE_1__["ArrayBase"] {
+  
+
+
+  static parse(tokeniser) {
+    const tokens = {};
+    tokens.open = tokeniser.consume("[");
+    if (!tokens.open) return new ExtendedAttributes({});
+    const ret = new ExtendedAttributes({ source: tokeniser.source, tokens });
+    ret.push(...Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["list"])(tokeniser, {
+      parser: SimpleExtendedAttribute.parse,
+      listName: "extended attribute"
+    }));
+    tokens.close = tokeniser.consume("]") || tokeniser.error("Unexpected closing token of extended attribute");
+    if (!ret.length) {
+      tokeniser.error("Found an empty extended attribute");
+    }
+    if (tokeniser.probe("[")) {
+      tokeniser.error("Illegal double extended attribute lists, consider merging them");
+    }
+    return ret;
+  }
+
+  *validate(defs) {
+    for (const extAttr of this) {
+      yield* extAttr.validate(defs);
+    }
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "ArrayBase", function() { return ArrayBase; });
+class ArrayBase extends Array {
+  constructor({ source, tokens }) {
+    super();
+    Object.defineProperties(this, {
+      source: { value: source },
+      tokens: { value: tokens }
+    });
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Token", function() { return Token; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+
+
+class Token extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+
+  static parser(tokeniser, type) {
+    return () => {
+      const value = tokeniser.consume(type);
+      if (value) {
+        return new Token({ source: tokeniser.source, tokens: { value } });
+      }
+    };
+  }
+
+  get value() {
+    return this.tokens.value.value;
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Operation", function() { return Operation; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+class Operation extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser, { special, regular } = {}) {
+    const tokens = { special };
+    const ret = new Operation({ source: tokeniser.source, tokens });
+    if (special && special.value === "stringifier") {
+      tokens.termination = tokeniser.consume(";");
+      if (tokens.termination) {
+        ret.arguments = [];
+        return ret;
+      }
+    }
+    if (!special && !regular) {
+      tokens.special = tokeniser.consume("getter", "setter", "deleter");
+    }
+    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["return_type"])(tokeniser) || tokeniser.error("Missing return type");
+    tokens.name = tokeniser.consume("identifier", "includes");
+    tokens.open = tokeniser.consume("(") || tokeniser.error("Invalid operation");
+    ret.arguments = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["argument_list"])(tokeniser);
+    tokens.close = tokeniser.consume(")") || tokeniser.error("Unterminated operation");
+    tokens.termination = tokeniser.consume(";") || tokeniser.error("Unterminated operation, expected `;`");
+    return ret;
+  }
+
+  get type() {
+    return "operation";
+  }
+  get name() {
+    const { name } = this.tokens;
+    if (!name) {
+      return "";
+    }
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(name.value);
+  }
+  get special() {
+    if (!this.tokens.special) {
+      return "";
+    }
+    return this.tokens.special.value;
+  }
+
+  *validate(defs) {
+    if (this.idlType) {
+      yield* this.idlType.validate(defs);
+    }
+    for (const argument of this.arguments) {
+      yield* argument.validate(defs);
+    }
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Attribute", function() { return Attribute; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+class Attribute extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser, { special, noInherit = false, readonly = false } = {}) {
+    const start_position = tokeniser.position;
+    const tokens = { special };
+    const ret = new Attribute({ source: tokeniser.source, tokens });
+    if (!special && !noInherit) {
+      tokens.special = tokeniser.consume("inherit");
+    }
+    if (ret.special === "inherit" && tokeniser.probe("readonly")) {
+      tokeniser.error("Inherited attributes cannot be read-only");
+    }
+    tokens.readonly = tokeniser.consume("readonly");
+    if (readonly && !tokens.readonly && tokeniser.probe("attribute")) {
+      tokeniser.error("Attributes must be readonly in this context");
+    }
+    tokens.base = tokeniser.consume("attribute");
+    if (!tokens.base) {
+      tokeniser.unconsume(start_position);
+      return;
+    }
+    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, "attribute-type") || tokeniser.error("Attribute lacks a type");
+    switch (ret.idlType.generic) {
+      case "sequence":
+      case "record": tokeniser.error(`Attributes cannot accept ${ret.idlType.generic} types`);
+    }
+    tokens.name = tokeniser.consume("identifier", "async", "required") || tokeniser.error("Attribute lacks a name");
+    tokens.termination = tokeniser.consume(";") || tokeniser.error("Unterminated attribute, expected `;`");
+    return ret;
+  }
+
+  get type() {
+    return "attribute";
+  }
+  get special() {
+    if (!this.tokens.special) {
+      return "";
+    }
+    return this.tokens.special.value;
+  }
+  get readonly() {
+    return !!this.tokens.readonly;
+  }
+  get name() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(this.tokens.name.value);
+  }
+
+  *validate(defs) {
+    yield* this.idlType.validate(defs);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Includes", function() { return Includes; });
- var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
- var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
 
 
 
@@ -1707,6 +1610,646 @@ class Includes extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
   }
   get includes() {
     return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(this.tokens.mixin.value);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Typedef", function() { return Typedef; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+class Typedef extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const tokens = {};
+    const ret = new Typedef({ source: tokeniser.source, tokens });
+    tokens.base = tokeniser.consume("typedef");
+    if (!tokens.base) {
+      return;
+    }
+    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, "typedef-type") || tokeniser.error("Typedef lacks a type");
+    tokens.name = tokeniser.consume("identifier") || tokeniser.error("Typedef lacks a name");
+    tokeniser.current = ret;
+    tokens.termination = tokeniser.consume(";") || tokeniser.error("Unterminated typedef, expected `;`");
+    return ret;
+  }
+
+  get type() {
+    return "typedef";
+  }
+  get name() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(this.tokens.name.value);
+  }
+
+  *validate(defs) {
+    yield* this.idlType.validate(defs);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "CallbackFunction", function() { return CallbackFunction; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+class CallbackFunction extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser, base) {
+    const tokens = { base };
+    const ret = new CallbackFunction({ source: tokeniser.source, tokens });
+    tokens.name = tokeniser.consume("identifier") || tokeniser.error("Callback lacks a name");
+    tokeniser.current = ret;
+    tokens.assign = tokeniser.consume("=") || tokeniser.error("Callback lacks an assignment");
+    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["return_type"])(tokeniser) || tokeniser.error("Callback lacks a return type");
+    tokens.open = tokeniser.consume("(") || tokeniser.error("Callback lacks parentheses for arguments");
+    ret.arguments = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["argument_list"])(tokeniser);
+    tokens.close = tokeniser.consume(")") || tokeniser.error("Unterminated callback");
+    tokens.termination = tokeniser.consume(";") || tokeniser.error("Unterminated callback, expected `;`");
+    return ret;
+  }
+
+  get type() {
+    return "callback";
+  }
+  get name() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(this.tokens.name.value);
+  }
+
+  *validate(defs) {
+    yield* this.idlType.validate(defs);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Interface", function() { return Interface; });
+ var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
+ var _attribute_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var _operation_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(14);
+ var _constant_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(21);
+ var _iterable_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(22);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
+ var _error_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(3);
+ var _validators_interface_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(23);
+
+
+
+
+
+
+
+
+
+
+
+
+function static_member(tokeniser) {
+  const special = tokeniser.consume("static");
+  if (!special) return;
+  const member = _attribute_js__WEBPACK_IMPORTED_MODULE_1__["Attribute"].parse(tokeniser, { special }) ||
+    _operation_js__WEBPACK_IMPORTED_MODULE_2__["Operation"].parse(tokeniser, { special }) ||
+    tokeniser.error("No body in static member");
+  return member;
+}
+
+class Interface extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  
+
+
+  static parse(tokeniser, base, { partial = null } = {}) {
+    const tokens = { partial, base };
+    return _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"].parse(tokeniser, new Interface({ source: tokeniser.source, tokens }), {
+      type: "interface",
+      inheritable: !partial,
+      allowedMembers: [
+        [_constant_js__WEBPACK_IMPORTED_MODULE_3__["Constant"].parse],
+        [static_member],
+        [_helpers_js__WEBPACK_IMPORTED_MODULE_5__["stringifier"]],
+        [_iterable_js__WEBPACK_IMPORTED_MODULE_4__["IterableLike"].parse],
+        [_attribute_js__WEBPACK_IMPORTED_MODULE_1__["Attribute"].parse],
+        [_operation_js__WEBPACK_IMPORTED_MODULE_2__["Operation"].parse]
+      ]
+    });
+  }
+
+  get type() {
+    return "interface";
+  }
+
+  *validate(defs) {
+    yield* this.extAttrs.validate(defs);
+    if (
+      !this.partial &&
+      this.extAttrs.every(extAttr => extAttr.name !== "Exposed") &&
+      this.extAttrs.every(extAttr => extAttr.name !== "NoInterfaceObject")
+    ) {
+      const message = `Interfaces must have \`[Exposed]\` extended attribute. \
+To fix, add, for example, \`[Exposed=Window]\`. Please also consider carefully \
+if your interface should also be exposed in a Worker scope. Refer to the \
+[WebIDL spec section on Exposed](https://heycam.github.io/webidl/#Exposed) \
+for more information.`;
+      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_6__["validationError"])(this.source, this.tokens.name, this, message);
+    }
+
+    yield* super.validate(defs);
+    if (!this.partial) {
+      yield* Object(_validators_interface_js__WEBPACK_IMPORTED_MODULE_7__["checkInterfaceMemberDuplication"])(defs, this);
+    }
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Container", function() { return Container; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(11);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+
+
+
+
+
+
+
+function inheritance(tokeniser) {
+  const colon = tokeniser.consume(":");
+  if (!colon) {
+    return {};
+  }
+  const inheritance = tokeniser.consume("identifier") || tokeniser.error("Inheritance lacks a type");
+  return { colon, inheritance };
+}
+
+class Container extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+    
+
+
+
+
+    static parse(tokeniser, instance, { type, inheritable, allowedMembers }) {
+      const { tokens } = instance;
+      tokens.name = tokeniser.consume("identifier") || tokeniser.error(`Missing name in ${instance.type}`);
+      tokeniser.current = instance;
+      if (inheritable) {
+        Object.assign(tokens, inheritance(tokeniser));
+      }
+      tokens.open = tokeniser.consume("{") || tokeniser.error(`Bodyless ${type}`);
+      instance.members = [];
+      while (true) {
+        tokens.close = tokeniser.consume("}");
+        if (tokens.close) {
+          tokens.termination = tokeniser.consume(";") || tokeniser.error(`Missing semicolon after ${type}`);
+          return instance;
+        }
+        const ea = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_1__["ExtendedAttributes"].parse(tokeniser);
+        let mem;
+        for (const [parser, ...args] of allowedMembers) {
+          mem = parser(tokeniser, ...args);
+          if (mem) {
+            break;
+          }
+        }
+        if (!mem) {
+          tokeniser.error("Unknown member");
+        }
+        mem.extAttrs = ea;
+        instance.members.push(mem);
+      }
+    }
+
+    get partial() {
+      return !!this.tokens.partial;
+    }
+    get name() {
+      return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["unescape"])(this.tokens.name.value);
+    }
+    get inheritance() {
+      if (!this.tokens.inheritance) {
+        return null;
+      }
+      return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["unescape"])(this.tokens.inheritance.value);
+    }
+
+    *validate(defs) {
+      for (const member of this.members) {
+        if (member.validate) {
+          yield* member.validate(defs);
+        }
+      }
+    }
+  }
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Constant", function() { return Constant; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _type_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+
+
+
+
+class Constant extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const tokens = {};
+    tokens.base = tokeniser.consume("const");
+    if (!tokens.base) {
+      return;
+    }
+    let idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["primitive_type"])(tokeniser);
+    if (!idlType) {
+      const base = tokeniser.consume("identifier") || tokeniser.error("Const lacks a type");
+      idlType = new _type_js__WEBPACK_IMPORTED_MODULE_1__["Type"]({ source: tokeniser.source, tokens: { base } });
+    }
+    if (tokeniser.probe("?")) {
+      tokeniser.error("Unexpected nullable constant type");
+    }
+    idlType.type = "const-type";
+    tokens.name = tokeniser.consume("identifier") || tokeniser.error("Const lacks a name");
+    tokens.assign = tokeniser.consume("=") || tokeniser.error("Const lacks value assignment");
+    tokens.value = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["const_value"])(tokeniser) || tokeniser.error("Const lacks a value");
+    tokens.termination = tokeniser.consume(";") || tokeniser.error("Unterminated const, expected `;`");
+    const ret = new Constant({ source: tokeniser.source, tokens });
+    ret.idlType = idlType;
+    return ret;
+  }
+
+  get type() {
+    return "const";
+  }
+  get name() {
+    return unescape(this.tokens.name.value);
+  }
+  get value() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_2__["const_data"])(this.tokens.value);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "IterableLike", function() { return IterableLike; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+class IterableLike extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const start_position = tokeniser.position;
+    const tokens = {};
+    const ret = new IterableLike({ source: tokeniser.source, tokens });
+    tokens.readonly = tokeniser.consume("readonly");
+    if (!tokens.readonly) {
+      tokens.async = tokeniser.consume("async");
+    }
+    tokens.base =
+      tokens.readonly ? tokeniser.consume("maplike", "setlike") :
+      tokens.async ? tokeniser.consume("iterable") :
+      tokeniser.consume("iterable", "maplike", "setlike");
+    if (!tokens.base) {
+      tokeniser.unconsume(start_position);
+      return;
+    }
+
+    const { type } = ret;
+    const secondTypeRequired = type === "maplike" || ret.async;
+    const secondTypeAllowed = secondTypeRequired || type === "iterable";
+
+    tokens.open = tokeniser.consume("<") || tokeniser.error(`Missing less-than sign \`<\` in ${type} declaration`);
+    const first = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser) || tokeniser.error(`Missing a type argument in ${type} declaration`);
+    ret.idlType = [first];
+    if (secondTypeAllowed) {
+      first.tokens.separator = tokeniser.consume(",");
+      if (first.tokens.separator) {
+        ret.idlType.push(Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser));
+      }
+      else if (secondTypeRequired) {
+        tokeniser.error(`Missing second type argument in ${type} declaration`);
+      }
+    }
+    tokens.close = tokeniser.consume(">") || tokeniser.error(`Missing greater-than sign \`>\` in ${type} declaration`);
+    tokens.termination = tokeniser.consume(";") || tokeniser.error(`Missing semicolon after ${type} declaration`);
+
+    return ret;
+  }
+
+  get type() {
+    return this.tokens.base.value;
+  }
+  get readonly() {
+    return !!this.tokens.readonly;
+  }
+  get async() {
+    return !!this.tokens.async;
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "checkInterfaceMemberDuplication", function() { return checkInterfaceMemberDuplication; });
+ var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
+
+
+function* checkInterfaceMemberDuplication(defs, i) {
+  const opNames = new Set(getOperations(i).map(op => op.name));
+  const partials = defs.partials.get(i.name) || [];
+  const mixins = defs.mixinMap.get(i.name) || [];
+  for (const ext of [...partials, ...mixins]) {
+    const additions = getOperations(ext);
+    yield* forEachExtension(additions, opNames, ext, i);
+    for (const addition of additions) {
+      opNames.add(addition.name);
+    }
+  }
+
+  function* forEachExtension(additions, existings, ext, base) {
+    for (const addition of additions) {
+      const { name } = addition;
+      if (name && existings.has(name)) {
+        const message = `The operation "${name}" has already been defined for the base interface "${base.name}" either in itself or in a mixin`;
+        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_0__["validationError"])(ext.source, addition.tokens.name, ext, message);
+      }
+    }
+  }
+
+  function getOperations(i) {
+    return i.members
+      .filter(({type}) => type === "operation");
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Mixin", function() { return Mixin; });
+ var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
+ var _constant_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(21);
+ var _attribute_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
+ var _operation_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(14);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(5);
+
+
+
+
+
+
+class Mixin extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  
+
+
+  static parse(tokeniser, base, { partial } = {}) {
+    const tokens = { partial, base };
+    tokens.mixin = tokeniser.consume("mixin");
+    if (!tokens.mixin) {
+      return;
+    }
+    return _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"].parse(tokeniser, new Mixin({ source: tokeniser.source, tokens }), {
+      type: "interface mixin",
+      allowedMembers: [
+        [_constant_js__WEBPACK_IMPORTED_MODULE_1__["Constant"].parse],
+        [_helpers_js__WEBPACK_IMPORTED_MODULE_4__["stringifier"]],
+        [_attribute_js__WEBPACK_IMPORTED_MODULE_2__["Attribute"].parse, { noInherit: true }],
+        [_operation_js__WEBPACK_IMPORTED_MODULE_3__["Operation"].parse, { regular: true }]
+      ]
+    });
+  }
+
+  get type() {
+    return "interface mixin";
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Dictionary", function() { return Dictionary; });
+ var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
+ var _field_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
+
+
+
+class Dictionary extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  
+
+
+  static parse(tokeniser, { partial } = {}) {
+    const tokens = { partial };
+    tokens.base = tokeniser.consume("dictionary");
+    if (!tokens.base) {
+      return;
+    }
+    return _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"].parse(tokeniser, new Dictionary({ source: tokeniser.source, tokens }), {
+      type: "dictionary",
+      inheritable: !partial,
+      allowedMembers: [
+        [_field_js__WEBPACK_IMPORTED_MODULE_1__["Field"].parse],
+      ]
+    });
+  }
+
+  get type() {
+    return "dictionary";
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Field", function() { return Field; });
+ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+ var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _extended_attributes_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(11);
+ var _default_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
+
+
+
+
+
+class Field extends _base_js__WEBPACK_IMPORTED_MODULE_0__["Base"] {
+  
+
+
+  static parse(tokeniser) {
+    const tokens = {};
+    const ret = new Field({ source: tokeniser.source, tokens });
+    ret.extAttrs = _extended_attributes_js__WEBPACK_IMPORTED_MODULE_2__["ExtendedAttributes"].parse(tokeniser);
+    tokens.required = tokeniser.consume("required");
+    ret.idlType = Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["type_with_extended_attributes"])(tokeniser, "dictionary-type") || tokeniser.error("Dictionary member lacks a type");
+    tokens.name = tokeniser.consume("identifier") || tokeniser.error("Dictionary member lacks a name");
+    ret.default = _default_js__WEBPACK_IMPORTED_MODULE_3__["Default"].parse(tokeniser);
+    if (tokens.required && ret.default) tokeniser.error("Required member must not have a default");
+    tokens.termination = tokeniser.consume(";") || tokeniser.error("Unterminated dictionary member, expected `;`");
+    return ret;
+  }
+
+  get type() {
+    return "field";
+  }
+  get name() {
+    return Object(_helpers_js__WEBPACK_IMPORTED_MODULE_1__["unescape"])(this.tokens.name.value);
+  }
+  get required() {
+    return !!this.tokens.required;
+  }
+
+  *validate(defs) {
+    yield* this.idlType.validate(defs);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Namespace", function() { return Namespace; });
+ var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
+ var _attribute_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var _operation_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(14);
+ var _error_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3);
+
+
+
+
+
+class Namespace extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  
+
+
+  static parse(tokeniser, { partial } = {}) {
+    const tokens = { partial };
+    tokens.base = tokeniser.consume("namespace");
+    if (!tokens.base) {
+      return;
+    }
+    return _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"].parse(tokeniser, new Namespace({ source: tokeniser.source, tokens }), {
+      type: "namespace",
+      allowedMembers: [
+        [_attribute_js__WEBPACK_IMPORTED_MODULE_1__["Attribute"].parse, { noInherit: true, readonly: true }],
+        [_operation_js__WEBPACK_IMPORTED_MODULE_2__["Operation"].parse, { regular: true }]
+      ]
+    });
+  }
+
+  get type() {
+    return "namespace";
+  }
+
+  *validate(defs) {
+    if (!this.partial && this.extAttrs.every(extAttr => extAttr.name !== "Exposed")) {
+      const message = `Namespaces must have [Exposed] extended attribute. \
+To fix, add, for example, [Exposed=Window]. Please also consider carefully \
+if your namespace should also be exposed in a Worker scope. Refer to the \
+[WebIDL spec section on Exposed](https://heycam.github.io/webidl/#Exposed) \
+for more information.`;
+      yield Object(_error_js__WEBPACK_IMPORTED_MODULE_3__["validationError"])(this.source, this.tokens.name, this, message);
+    }
+    yield* super.validate(defs);
+  }
+}
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "CallbackInterface", function() { return CallbackInterface; });
+ var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
+ var _operation_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(14);
+ var _constant_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(21);
+
+
+
+
+
+class CallbackInterface extends _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  
+
+
+  static parse(tokeniser, callback, { partial = null } = {}) {
+    const tokens = { callback };
+    tokens.base = tokeniser.consume("interface");
+    if (!tokens.base) {
+      return;
+    }
+    return _container_js__WEBPACK_IMPORTED_MODULE_0__["Container"].parse(tokeniser, new CallbackInterface({ source: tokeniser.source, tokens }), {
+      type: "callback interface",
+      inheritable: !partial,
+      allowedMembers: [
+        [_constant_js__WEBPACK_IMPORTED_MODULE_2__["Constant"].parse],
+        [_operation_js__WEBPACK_IMPORTED_MODULE_1__["Operation"].parse, { regular: true }]
+      ]
+    });
+  }
+
+  get type() {
+    return "callback interface";
   }
 }
 
@@ -1977,6 +2520,7 @@ function write(ast, { templates: ts = templates } = {}) {
     return ts.definition(ts.wrap([
       extended_attributes(it.extAttrs),
       token(it.tokens.readonly),
+      token(it.tokens.async),
       token(it.tokens.base, ts.generic),
       token(it.tokens.open),
       ts.wrap(it.idlType.map(type)),
@@ -2032,10 +2576,28 @@ function write(ast, { templates: ts = templates } = {}) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "validate", function() { return validate; });
- var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
+ var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
 
 
 
+
+function getMixinMap(all, unique) {
+  const map = new Map();
+  const includes = all.filter(def => def.type === "includes");
+  for (const include of includes) {
+    const mixin = unique.get(include.includes);
+    if (!mixin) {
+      continue;
+    }
+    const array = map.get(include.target);
+    if (array) {
+      array.push(mixin);
+    } else {
+      map.set(include.target, [mixin]);
+    }
+  }
+  return map;
+}
 
 function groupDefinitions(all) {
   const unique = new Map();
@@ -2060,7 +2622,16 @@ function groupDefinitions(all) {
       duplicates.add(def);
     }
   }
-  return { all, unique, partials, duplicates };
+  return {
+    all,
+    unique,
+    partials,
+    duplicates,
+    mixinMap: getMixinMap(all, unique),
+    cache: {
+      typedefIncludesDictionary: new WeakMap()
+    },
+  };
 }
 
 function* checkDuplicatedNames({ unique, duplicates }) {
@@ -2071,67 +2642,29 @@ function* checkDuplicatedNames({ unique, duplicates }) {
   }
 }
 
-function* checkInterfaceMemberDuplication(defs) {
-  const interfaces = [...defs.unique.values()].filter(def => def.type === "interface");
-  const includesMap = getIncludesMap();
-
-  for (const i of interfaces) {
-    yield* forEachInterface(i);
-  }
-
-  function* forEachInterface(i) {
-    const opNames = new Set(getOperations(i).map(op => op.name));
-    const partials = defs.partials.get(i.name) || [];
-    const mixins = includesMap.get(i.name) || [];
-    for (const ext of [...partials, ...mixins]) {
-      const additions = getOperations(ext);
-      yield* forEachExtension(additions, opNames, ext, i);
-      for (const addition of additions) {
-        opNames.add(addition.name);
-      }
+function* validateIterable(ast) {
+  const defs = groupDefinitions(ast);
+  for (const def of defs.all) {
+    if (def.validate) {
+      yield* def.validate(defs);
     }
   }
-
-  function* forEachExtension(additions, existings, ext, base) {
-    for (const addition of additions) {
-      const { name } = addition;
-      if (name && existings.has(name)) {
-        const message = `The operation "${name}" has already been defined for the base interface "${base.name}" either in itself or in a mixin`;
-        yield Object(_error_js__WEBPACK_IMPORTED_MODULE_0__["validationError"])(ext.source, addition.tokens.name, ext, message);
-      }
-    }
-  }
-
-  function getOperations(i) {
-    return i.members
-      .filter(({type}) => type === "operation");
-  }
-
-  function getIncludesMap() {
-    const map = new Map();
-    const includes = defs.all.filter(def => def.type === "includes");
-    for (const include of includes) {
-      const array = map.get(include.target);
-      const mixin = defs.unique.get(include.includes);
-      if (!mixin) {
-        continue;
-      }
-      if (array) {
-        array.push(mixin);
-      } else {
-        map.set(include.target, [mixin]);
-      }
-    }
-    return map;
-  }
+  yield* checkDuplicatedNames(defs);
 }
 
+
+function flatten(array) {
+  if (array.flat) {
+    return array.flat();
+  }
+  return [].concat(...array);
+}
+
+
+
+
 function validate(ast) {
-  const defs = groupDefinitions(ast);
-  return [
-    ...checkDuplicatedNames(defs),
-    ...checkInterfaceMemberDuplication(defs)
-  ];
+  return [...validateIterable(flatten(ast))];
 }
 
 
