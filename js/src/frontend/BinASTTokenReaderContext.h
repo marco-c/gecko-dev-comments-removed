@@ -636,8 +636,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
  protected:
   friend class HuffmanPreludeReader;
 
-  JSContext* cx_;
-
  public:
   
   
