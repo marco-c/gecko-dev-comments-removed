@@ -1285,6 +1285,11 @@ nsView* nsSubDocumentFrame::EnsureInnerView() {
   return mInnerView;
 }
 
+nsPoint nsSubDocumentFrame::GetExtraOffset() const {
+  MOZ_ASSERT(mInnerView);
+  return mInnerView->GetPosition();
+}
+
 nsIFrame* nsSubDocumentFrame::ObtainIntrinsicSizeFrame() {
   if (StyleDisplay()->IsContainSize()) {
     
