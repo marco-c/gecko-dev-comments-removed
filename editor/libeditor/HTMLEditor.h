@@ -2440,6 +2440,19 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult AlignBlockContentsWithDivElement(
       dom::Element& aBlockElement, const nsAString& aAlignType);
 
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  AlignContentsInAllTableCellsAndListItems(dom::Element& aElement,
+                                           const nsAString& aAlignType);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
