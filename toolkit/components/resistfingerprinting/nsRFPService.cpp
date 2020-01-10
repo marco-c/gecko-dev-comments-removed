@@ -345,7 +345,7 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
     
     if (aSecretSeed != nullptr) {
       StaticMutexAutoLock lock(sLock);
-      if (sSecretMidpointSeed) {
+      if (sSecretMidpointSeed != nullptr) {
         delete[] sSecretMidpointSeed;
       }
       sSecretMidpointSeed = new uint8_t[kSeedSize];
@@ -731,7 +731,7 @@ nsresult nsRFPService::Init() {
 
   
   const char* tzValue = PR_GetEnv("TZ");
-  if (tzValue) {
+  if (tzValue != nullptr) {
     mInitialTZValue = nsCString(tzValue);
   }
 
@@ -740,7 +740,7 @@ nsresult nsRFPService::Init() {
 
   
   
-  if (!sCache) {
+  if (sCache == nullptr) {
     sCache = new LRUCache();
   }
 
@@ -788,13 +788,13 @@ void nsRFPService::UpdateRFPPref() {
 
       
       
-      if (tz) {
+      if (tz != nullptr) {
         free(tz);
       }
       
       
       tz = ToNewCString(tzValue);
-      if (tz) {
+      if (tz != nullptr) {
         PR_SetEnv(tz);
       }
     } else {
@@ -843,7 +843,7 @@ void nsRFPService::StartShutdown() {
 
 void nsRFPService::MaybeCreateSpoofingKeyCodes(const KeyboardLangs aLang,
                                                const KeyboardRegions aRegion) {
-  if (!sSpoofingKeyboardCodes) {
+  if (sSpoofingKeyboardCodes == nullptr) {
     sSpoofingKeyboardCodes =
         new nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>();
   }
@@ -941,7 +941,7 @@ bool nsRFPService::GetSpoofedKeyCodeInfo(
   KeyboardRegions keyboardRegion = RFP_DEFAULT_SPOOFING_KEYBOARD_REGION;
   
   
-  if (aDoc) {
+  if (aDoc != nullptr) {
     nsAutoString language;
     aDoc->GetContentLanguage(language);
 
@@ -950,7 +950,7 @@ bool nsRFPService::GetSpoofedKeyCodeInfo(
     if (language.IsEmpty()) {
       dom::Element* elm = aDoc->GetHtmlElement();
 
-      if (elm) {
+      if (elm != nullptr) {
         elm->GetLang(language);
       }
     }
@@ -975,7 +975,7 @@ bool nsRFPService::GetSpoofedKeyCodeInfo(
   KeyboardHashKey key(keyboardLang, keyboardRegion, keyIdx, keyName);
   const SpoofingKeyboardCode* keyboardCode = sSpoofingKeyboardCodes->Get(key);
 
-  if (keyboardCode) {
+  if (keyboardCode != nullptr) {
     aOut = *keyboardCode;
     return true;
   }
@@ -997,11 +997,11 @@ bool nsRFPService::GetSpoofedModifierStates(
   
   
   
-  if (aModifier & (MODIFIER_ALT | MODIFIER_SHIFT | MODIFIER_ALTGRAPH)) {
+  if ((aModifier & (MODIFIER_ALT | MODIFIER_SHIFT | MODIFIER_ALTGRAPH)) != 0) {
     SpoofingKeyboardCode keyCodeInfo;
 
     if (GetSpoofedKeyCodeInfo(aDoc, aKeyboardEvent, keyCodeInfo)) {
-      aOut = keyCodeInfo.mModifierStates & aModifier;
+      aOut = ((keyCodeInfo.mModifierStates & aModifier) != 0);
       return true;
     }
   }
@@ -1075,7 +1075,7 @@ void nsRFPService::PrefChanged(const char* aPref) {
 NS_IMETHODIMP
 nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
                       const char16_t* aMessage) {
-  if (!strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic)) {
+  if (strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic) == 0) {
     StartShutdown();
   }
 #if defined(XP_WIN)
