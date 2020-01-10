@@ -511,7 +511,9 @@ impl<'a> SceneBuilder<'a> {
         
         for cluster in main_prim_list.clusters.drain(..) {
             
-            create_slice |= cluster.flags.contains(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+            create_slice |= cluster.flags.intersects(
+                ClusterFlags::CREATE_PICTURE_CACHE_PRE | ClusterFlags::IS_CLEAR_PRIMITIVE
+            );
 
             if create_slice {
                 
@@ -608,7 +610,9 @@ impl<'a> SceneBuilder<'a> {
             }
 
             
-            create_slice |= cluster.flags.contains(ClusterFlags::CREATE_PICTURE_CACHE_POST);
+            create_slice |= cluster.flags.intersects(
+                ClusterFlags::CREATE_PICTURE_CACHE_POST | ClusterFlags::IS_CLEAR_PRIMITIVE
+            );
 
             
             slices.last_mut().unwrap().prim_list.add_cluster(cluster);

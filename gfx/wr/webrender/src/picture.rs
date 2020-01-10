@@ -379,6 +379,7 @@ pub enum TileSurface {
     Color {
         color: ColorF,
     },
+    Clear,
 }
 
 impl TileSurface {
@@ -386,6 +387,7 @@ impl TileSurface {
         match *self {
             TileSurface::Color { .. } => "Color",
             TileSurface::Texture { .. } => "Texture",
+            TileSurface::Clear => "Clear",
         }
     }
 }
@@ -655,15 +657,22 @@ impl Tile {
 
         
         
-        let is_solid_color = self.current_descriptor.prims.len() == 1 && self.is_opaque;
+        let is_simple_prim = self.current_descriptor.prims.len() == 1 && self.is_opaque;
 
         
-        let mut surface = if is_solid_color {
+        let mut surface = if is_simple_prim {
             
             
             
-            TileSurface::Color {
-                color: ctx.backdrop.color,
+            match ctx.backdrop.kind {
+                BackdropKind::Color { color } => {
+                    TileSurface::Color {
+                        color,
+                    }
+                }
+                BackdropKind::Clear => {
+                    TileSurface::Clear
+                }
             }
         } else {
             
@@ -674,7 +683,7 @@ impl Tile {
                 Some(old_surface @ TileSurface::Texture { .. }) => {
                     old_surface
                 }
-                Some(TileSurface::Color { .. }) | None => {
+                Some(TileSurface::Color { .. }) | Some(TileSurface::Clear) | None => {
                     TileSurface::Texture {
                         handle: TextureCacheHandle::invalid(),
                         visibility_mask: PrimitiveVisibilityMask::empty(),
@@ -1067,6 +1076,14 @@ impl ::std::fmt::Debug for RecordedDirtyRegion {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+enum BackdropKind {
+    Color {
+        color: ColorF,
+    },
+    Clear,
+}
+
 
 #[derive(Debug, Copy, Clone)]
 struct BackdropInfo {
@@ -1075,14 +1092,16 @@ struct BackdropInfo {
     
     rect: PictureRect,
     
-    color: ColorF,
+    kind: BackdropKind,
 }
 
 impl BackdropInfo {
     fn empty() -> Self {
         BackdropInfo {
             rect: PictureRect::zero(),
-            color: ColorF::BLACK,
+            kind: BackdropKind::Color {
+                color: ColorF::BLACK,
+            },
         }
     }
 }
@@ -1619,7 +1638,9 @@ impl TileCacheInstance {
                             if clip_chain.pic_clip_rect.contains_rect(&self.backdrop.rect) {
                                 self.backdrop = BackdropInfo {
                                     rect: clip_chain.pic_clip_rect,
-                                    color,
+                                    kind: BackdropKind::Color {
+                                        color,
+                                    },
                                 };
                             }
                         }
@@ -1685,8 +1706,15 @@ impl TileCacheInstance {
                     }
                 }
             }
+            PrimitiveInstanceKind::Clear { .. } => {
+                if let Some(ref clip_chain) = prim_clip_chain {
+                    self.backdrop = BackdropInfo {
+                        rect: clip_chain.pic_clip_rect,
+                        kind: BackdropKind::Clear,
+                    };
+                }
+            }
             PrimitiveInstanceKind::LineDecoration { .. } |
-            PrimitiveInstanceKind::Clear { .. } |
             PrimitiveInstanceKind::NormalBorder { .. } |
             PrimitiveInstanceKind::LinearGradient { .. } |
             PrimitiveInstanceKind::RadialGradient { .. } |
@@ -2287,6 +2315,8 @@ bitflags! {
         const CREATE_PICTURE_CACHE_POST = 32;
         /// If set, this cluster represents a scroll bar container.
         const SCROLLBAR_CONTAINER = 64;
+        /// If set, this cluster contains clear rectangle primitives.
+        const IS_CLEAR_PRIMITIVE = 128;
     }
 }
 
@@ -2399,6 +2429,9 @@ impl PrimitiveList {
             }
             PrimitiveInstanceKind::Backdrop { .. } => {
                 flags.insert(ClusterFlags::IS_BACKDROP_FILTER);
+            }
+            PrimitiveInstanceKind::Clear { .. } => {
+                flags.insert(ClusterFlags::IS_CLEAR_PRIMITIVE);
             }
             _ => {}
         }
