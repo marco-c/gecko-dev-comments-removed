@@ -91,13 +91,16 @@ class Kinto extends _KintoBase.default {
     };
   }
 
+  get ApiClass() {
+    return KintoHttpClient;
+  }
+
   constructor(options = {}) {
     const events = {};
     EventEmitter.decorate(events);
     const defaults = {
       adapter: _IDB.default,
-      events,
-      ApiClass: KintoHttpClient
+      events
     };
     super({ ...defaults,
       ...options
@@ -212,34 +215,41 @@ class KintoBase {
       throw new Error("No adapter provided");
     }
 
-    const {
-      ApiClass,
-      events,
-      headers,
-      remote,
-      requestMode,
-      retry,
-      timeout
-    } = this._options; 
-
-    
-
-
-
-
-    this.api = new ApiClass(remote, {
-      events,
-      headers,
-      requestMode,
-      retry,
-      timeout
-    });
+    this._api = null;
     
 
 
 
 
     this.events = this._options.events;
+  }
+  
+
+
+
+
+
+  get api() {
+    const {
+      events,
+      headers,
+      remote,
+      requestMode,
+      retry,
+      timeout
+    } = this._options;
+
+    if (!this._api) {
+      this._api = new this.ApiClass(remote, {
+        events,
+        headers,
+        requestMode,
+        retry,
+        timeout
+      });
+    }
+
+    return this._api;
   }
   
 
@@ -274,7 +284,7 @@ class KintoBase {
       hooks,
       localFields
     } = options;
-    return new _collection.default(bucket, collName, this.api, {
+    return new _collection.default(bucket, collName, this, {
       events,
       adapter,
       adapterOptions,
@@ -326,7 +336,16 @@ async function open(dbname, {
     request.onupgradeneeded = event => {
       const db = event.target.result;
 
-      db.onerror = event => reject(event.target.error);
+      db.onerror = event => reject(event.target.error); 
+
+
+      const transaction = event.target.transaction;
+
+      transaction.onabort = event => {
+        const error = event.target.error || transaction.error || new DOMException("The operation has been aborted", "AbortError");
+        reject(error);
+      }; 
+
 
       return onupgradeneeded(event);
     };
@@ -382,6 +401,11 @@ async function execute(db, name, callback, options = {}) {
     transaction.onerror = event => reject(event.target.error);
 
     transaction.oncomplete = event => resolve(result);
+
+    transaction.onabort = event => {
+      const error = event.target.error || transaction.error || new DOMException("The operation has been aborted", "AbortError");
+      reject(error);
+    };
   });
 }
 
@@ -1598,7 +1622,7 @@ class Collection {
 
 
 
-  constructor(bucket, name, api, options = {}) {
+  constructor(bucket, name, kinto, options = {}) {
     this._bucket = bucket;
     this._name = name;
     this._lastModified = null;
@@ -1626,7 +1650,7 @@ class Collection {
 
 
 
-    this.api = api;
+    this.kinto = kinto;
     
 
 
@@ -1657,6 +1681,15 @@ class Collection {
 
 
     this.localFields = options.localFields || [];
+  }
+  
+
+
+
+
+
+  get api() {
+    return this.kinto.api;
   }
   
 
