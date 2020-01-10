@@ -569,6 +569,7 @@ const gEmptyParseSubmissionResult = Object.freeze(
 
 function SearchService() {
   this._initObservers = PromiseUtils.defer();
+  this._engines = new Map();
 }
 
 SearchService.prototype = {
@@ -601,6 +602,11 @@ SearchService.prototype = {
 
 
   _loadPathIgnoreList: [],
+
+  
+
+
+  _engines: null,
 
   
   
@@ -783,8 +789,7 @@ SearchService.prototype = {
     
     
     let engineRemoved = false;
-    for (let name in this._engines) {
-      let engine = this._engines[name];
+    for (let engine of this._engines.values()) {
       if (this._engineMatchesIgnoreLists(engine)) {
         await this.removeEngine(engine);
         engineRemoved = true;
@@ -793,7 +798,7 @@ SearchService.prototype = {
     
     
     
-    if (engineRemoved && !Object.keys(this._engines).length) {
+    if (engineRemoved && !this._engines.size) {
       this._reInit();
     }
   },
@@ -852,7 +857,6 @@ SearchService.prototype = {
       ? APP_SEARCH_PREFIX
       : EXT_SEARCH_PREFIX) + "list.json",
 
-  _engines: {},
   __sortedEngines: null,
   _visibleDefaultEngines: [],
   _searchDefault: null,
@@ -941,11 +945,7 @@ SearchService.prototype = {
 
     cache.visibleDefaultEngines = this._visibleDefaultEngines;
     cache.metaData = this._metaData;
-    cache.engines = [];
-
-    for (let name in this._engines) {
-      cache.engines.push(this._engines[name]);
-    }
+    cache.engines = [...this._engines.values()];
 
     try {
       if (!cache.engines.length) {
@@ -1029,7 +1029,7 @@ SearchService.prototype = {
     if (!rebuildCache) {
       SearchUtils.log("_loadEngines: loading from cache directories");
       this._loadEnginesFromCache(cache);
-      if (Object.keys(this._engines).length) {
+      if (this._engines.size) {
         SearchUtils.log("_loadEngines: done using existing cache");
         return;
       }
@@ -1219,7 +1219,7 @@ SearchService.prototype = {
         }
 
         
-        this._engines = {};
+        this._engines.clear();
         this.__sortedEngines = null;
         this._currentEngine = null;
         this._visibleDefaultEngines = [];
@@ -1289,7 +1289,7 @@ SearchService.prototype = {
     this._initObservers = PromiseUtils.defer();
     this._initStarted = this.__sortedEngines = this._currentEngine = this._searchDefault = null;
     this._startupExtensions = new Set();
-    this._engines = {};
+    this._engines.clear();
     this._visibleDefaultEngines = [];
     this._searchOrder = [];
     this._metaData = {};
@@ -1353,7 +1353,7 @@ SearchService.prototype = {
     
     var hasSameNameAsUpdate =
       engine._engineToUpdate && engine.name == engine._engineToUpdate.name;
-    if (engine.name in this._engines && !hasSameNameAsUpdate) {
+    if (this._engines.has(engine.name) && !hasSameNameAsUpdate) {
       SearchUtils.log("_addEngineToStore: Duplicate engine found, aborting!");
       return;
     }
@@ -1364,7 +1364,7 @@ SearchService.prototype = {
 
       
       
-      delete this._engines[oldEngine.name];
+      this._engines.delete(oldEngine.name);
 
       
       
@@ -1379,11 +1379,11 @@ SearchService.prototype = {
       engine._engineToUpdate = null;
 
       
-      this._engines[engine.name] = engine;
+      this._engines.set(engine.name, engine);
       SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
     } else {
       
-      this._engines[engine.name] = engine;
+      this._engines.set(engine.name, engine);
       
       
       
@@ -1410,11 +1410,11 @@ SearchService.prototype = {
 
     for (let engine of cache.engines) {
       let name = engine._name;
-      if (name in this._engines) {
+      if (this._engines.has(name)) {
         SearchUtils.log(
           "_loadEnginesMetadataFromCache, transfering metadata for " + name
         );
-        this._engines[name]._metaData = engine._metaData || {};
+        this._engines.get(name)._metaData = engine._metaData || {};
       }
     }
   },
@@ -1543,8 +1543,8 @@ SearchService.prototype = {
         
         
         
-        if (isReload && engine.name in this._engines) {
-          engine._engineToUpdate = this._engines[engine.name];
+        if (isReload && this._engines.has(engine.name)) {
+          engine._engineToUpdate = this._engines.get(engine.name);
         }
         engines.push(engine);
       } catch (ex) {
@@ -1796,8 +1796,7 @@ SearchService.prototype = {
       
       let needToSaveEngineList = false;
 
-      for (let name in this._engines) {
-        let engine = this._engines[name];
+      for (let engine of this._engines.values()) {
         var orderNumber = engine.getAttr("order");
 
         
@@ -1847,7 +1846,7 @@ SearchService.prototype = {
           for (prefName of extras) {
             let engineName = Services.prefs.getCharPref(prefName);
 
-            let engine = this._engines[engineName];
+            let engine = this._engines.get(engineName);
             if (!engine || engine.name in addedEngines) {
               continue;
             }
@@ -1864,7 +1863,7 @@ SearchService.prototype = {
             break;
           }
 
-          let engine = this._engines[engineName];
+          let engine = this._engines.get(engineName);
           if (!engine || engine.name in addedEngines) {
             continue;
           }
@@ -1875,7 +1874,7 @@ SearchService.prototype = {
       }
 
       for (let engineName of this._searchOrder) {
-        let engine = this._engines[engineName];
+        let engine = this._engines.get(engineName);
         if (!engine || engine.name in addedEngines) {
           continue;
         }
@@ -1888,10 +1887,9 @@ SearchService.prototype = {
     
     let alphaEngines = [];
 
-    for (let name in this._engines) {
-      let engine = this._engines[name];
+    for (let engine of this._engines.values()) {
       if (!(engine.name in addedEngines)) {
-        alphaEngines.push(this._engines[engine.name]);
+        alphaEngines.push(engine);
       }
     }
 
@@ -2065,13 +2063,12 @@ SearchService.prototype = {
 
   getEngineByName(engineName) {
     this._ensureInitialized();
-    return this._engines[engineName] || null;
+    return this._engines.get(engineName) || null;
   },
 
   getEngineByAlias(alias) {
     this._ensureInitialized();
-    for (var engineName in this._engines) {
-      var engine = this._engines[engineName];
+    for (var engine of this._engines.values()) {
       if (
         engine &&
         (engine.alias == alias || engine._internalAliases.includes(alias))
@@ -2100,7 +2097,7 @@ SearchService.prototype = {
     if (!params.template) {
       SearchUtils.fail("Invalid template passed to addEngineWithDetails!");
     }
-    let existingEngine = this._engines[name];
+    let existingEngine = this._engines.get(name);
     if (existingEngine) {
       if (
         params.extensionID &&
@@ -2299,9 +2296,9 @@ SearchService.prototype = {
     }
 
     var engineToRemove = null;
-    for (var e in this._engines) {
-      if (engine.wrappedJSObject == this._engines[e]) {
-        engineToRemove = this._engines[e];
+    for (var e of this._engines.values()) {
+      if (engine.wrappedJSObject == e) {
+        engineToRemove = e;
       }
     }
 
@@ -2343,7 +2340,7 @@ SearchService.prototype = {
       this.__sortedEngines.splice(index, 1);
 
       
-      delete this._engines[engineToRemove.name];
+      this._engines.delete(engineToRemove.name);
 
       
       this._saveSortedEngineList();
@@ -2423,8 +2420,7 @@ SearchService.prototype = {
 
   restoreDefaultEngines() {
     this._ensureInitialized();
-    for (let name in this._engines) {
-      let e = this._engines[name];
+    for (let e of this._engines.values()) {
       
       if (e.hidden && e._isDefault) {
         e.hidden = false;
@@ -2648,8 +2644,7 @@ SearchService.prototype = {
         
         let engineHost = engine._getURLOfType(SearchUtils.URL_TYPE.SEARCH)
           .templateHost;
-        for (let name in this._engines) {
-          let innerEngine = this._engines[name];
+        for (let innerEngine of this._engines.values()) {
           if (!innerEngine._isDefault) {
             continue;
           }
@@ -2977,8 +2972,8 @@ SearchService.prototype = {
     
     var currentTime = Date.now();
     SearchUtils.log("currentTime: " + currentTime);
-    for (let name in this._engines) {
-      let engine = this._engines[name].wrappedJSObject;
+    for (let e of this._engines.values()) {
+      let engine = e.wrappedJSObject;
       if (!engine._hasUpdates) {
         continue;
       }
