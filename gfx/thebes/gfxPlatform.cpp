@@ -2617,27 +2617,9 @@ static FeatureState& WebRenderHardwareQualificationStatus(
             FeatureStatus::BlockedDeviceUnknown, "Bad device id",
             NS_LITERAL_CSTRING("FEATURE_FAILURE_BAD_DEVICE_ID"));
       } else {
-#ifdef NIGHTLY_BUILD
-        
-        
-        
-        
-        const int32_t kMaxPixelsBattery = 1920 * 1200;  
         const int32_t screenPixels = aScreenSize.width * aScreenSize.height;
-        bool disableForBattery = aHasBattery;
-        if ((adapterVendorID == u"0x8086" || adapterVendorID == u"0x1002") &&
-            screenPixels > 0 && screenPixels <= kMaxPixelsBattery) {
-          disableForBattery = false;
-        }
-#else
-        bool disableForBattery = aHasBattery;
-#endif
 
-        if (disableForBattery) {
-          featureWebRenderQualified.Disable(
-              FeatureStatus::BlockedHasBattery, "Has battery",
-              NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
-        } else if (adapterVendorID == u"0x10de") {
+        if (adapterVendorID == u"0x10de") {
           if (deviceID < 0x6c0) {
             
             
@@ -2646,7 +2628,6 @@ static FeatureState& WebRenderHardwareQualificationStatus(
                 FeatureStatus::BlockedDeviceTooOld, "Device too old",
                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
           }
-#ifdef EARLY_BETA_OR_EARLIER
         } else if (adapterVendorID == u"0x1002") {  
           
           
@@ -2659,13 +2640,17 @@ static FeatureState& WebRenderHardwareQualificationStatus(
               (deviceID >= 0x9830 && deviceID < 0x9870) ||
               (deviceID >= 0x9900 && deviceID < 0x9a00)) {
             
+#ifndef EARLY_BETA_OR_EARLIER
+            featureWebRenderQualified.Disable(
+                FeatureStatus::BlockedReleaseChannelAMD,
+                "Release channel and AMD",
+                NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_AMD"));
+#endif  
           } else {
             featureWebRenderQualified.Disable(
                 FeatureStatus::BlockedDeviceTooOld, "Device too old",
                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
           }
-#endif
-#ifdef NIGHTLY_BUILD
         } else if (adapterVendorID == u"0x8086") {  
           const uint16_t supportedDevices[] = {
               
@@ -2757,13 +2742,8 @@ static FeatureState& WebRenderHardwareQualificationStatus(
               break;
             }
           }
-          if (!supported) {
-            featureWebRenderQualified.Disable(
-                FeatureStatus::BlockedDeviceTooOld, "Device too old",
-                NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
-          }
-#  ifdef MOZ_WIDGET_GTK
-          else {
+          if (supported) {
+#ifdef MOZ_WIDGET_GTK
             
             
             const int32_t kMaxPixelsLinux = 3440 * 1440;  
@@ -2775,14 +2755,49 @@ static FeatureState& WebRenderHardwareQualificationStatus(
               featureWebRenderQualified.Disable(
                   FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
                   NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
-            }
-          }
-#  endif
+            } else {
 #endif
+#ifndef NIGHTLY_BUILD
+              featureWebRenderQualified.Disable(
+                  FeatureStatus::BlockedReleaseChannelIntel,
+                  "Release channel and Intel",
+                  NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_INTEL"));
+#endif  
+#ifdef MOZ_WIDGET_GTK
+            }
+#endif  
+          } else {
+            featureWebRenderQualified.Disable(
+                FeatureStatus::BlockedDeviceTooOld, "Device too old",
+                NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
+          }
         } else {
           featureWebRenderQualified.Disable(
               FeatureStatus::BlockedVendorUnsupported, "Unsupported vendor",
               NS_LITERAL_CSTRING("FEATURE_FAILURE_UNSUPPORTED_VENDOR"));
+        }
+
+        
+        
+        if (featureWebRenderQualified.IsEnabled() && aHasBattery) {
+          
+          
+          
+          
+          const int32_t kMaxPixelsBattery = 1920 * 1200;  
+          if ((adapterVendorID == u"0x8086" || adapterVendorID == u"0x1002") &&
+              screenPixels > 0 && screenPixels <= kMaxPixelsBattery) {
+#ifndef NIGHTLY_BUILD
+            featureWebRenderQualified.Disable(
+                FeatureStatus::BlockedReleaseChannelBattery,
+                "Release channel and battery",
+                NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_BATTERY"));
+#endif  
+          } else {
+            featureWebRenderQualified.Disable(
+                FeatureStatus::BlockedHasBattery, "Has battery",
+                NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
+          }
         }
       }
     }

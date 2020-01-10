@@ -40,6 +40,9 @@ enum class FeatureStatus {
   BlockedScreenUnknown,
   BlockedNoGfxInfo,
   BlockedOverride,
+  BlockedReleaseChannelIntel,
+  BlockedReleaseChannelAMD,
+  BlockedReleaseChannelBattery,
 
   
   Blacklisted,
