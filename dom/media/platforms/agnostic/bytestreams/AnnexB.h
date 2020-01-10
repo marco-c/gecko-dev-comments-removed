@@ -18,6 +18,16 @@ class MediaByteBuffer;
 
 class AnnexB {
  public:
+  struct NALEntry {
+    NALEntry(int64_t aOffset, int64_t aSize) : mOffset(aOffset), mSize(aSize) {
+      MOZ_ASSERT(mOffset >= 0);
+      MOZ_ASSERT(mSize >= 0);
+    }
+    
+    
+    int64_t mOffset;
+    int64_t mSize;
+  };
   
   
   static mozilla::Result<mozilla::Ok, nsresult> ConvertSampleToAnnexB(
@@ -35,6 +45,11 @@ class AnnexB {
   static bool IsAVCC(const mozilla::MediaRawData* aSample);
   
   static bool IsAnnexB(const mozilla::MediaRawData* aSample);
+
+  
+  
+  static void ParseNALEntries(const Span<const uint8_t>& aSpan,
+                              nsTArray<AnnexB::NALEntry>& aEntries);
 
  private:
   
