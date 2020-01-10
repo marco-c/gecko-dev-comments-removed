@@ -10,15 +10,11 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsIPropertyBag2.h"
 #include "ProcessPriorityManager.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIXULRuntime.h"
-
-
-
-
-#define DEFAULT_ALLOCATE_DELAY 1000
 
 using namespace mozilla::hal;
 using namespace mozilla::dom;
@@ -43,7 +39,6 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
 
  private:
   static mozilla::StaticRefPtr<PreallocatedProcessManagerImpl> sSingleton;
-  static uint32_t sPrelaunchDelayMS;
 
   PreallocatedProcessManagerImpl();
   ~PreallocatedProcessManagerImpl();
@@ -76,8 +71,6 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
 StaticRefPtr<PreallocatedProcessManagerImpl>
     PreallocatedProcessManagerImpl::sSingleton;
 
-uint32_t PreallocatedProcessManagerImpl::sPrelaunchDelayMS = 0;
-
 
 PreallocatedProcessManagerImpl* PreallocatedProcessManagerImpl::Singleton() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -102,9 +95,6 @@ PreallocatedProcessManagerImpl::~PreallocatedProcessManagerImpl() {
 }
 
 void PreallocatedProcessManagerImpl::Init() {
-  Preferences::AddUintVarCache(&sPrelaunchDelayMS,
-                               "dom.ipc.processPrelaunch.delayMs",
-                               DEFAULT_ALLOCATE_DELAY);
   Preferences::AddStrongObserver(this, "dom.ipc.processPrelaunch.enabled");
   
   
@@ -239,7 +229,7 @@ void PreallocatedProcessManagerImpl::AllocateAfterDelay() {
   NS_DelayedDispatchToCurrentThread(
       NewRunnableMethod("PreallocatedProcessManagerImpl::AllocateOnIdle", this,
                         &PreallocatedProcessManagerImpl::AllocateOnIdle),
-      sPrelaunchDelayMS);
+      StaticPrefs::dom_ipc_processPrelaunch_delayMs());
 }
 
 void PreallocatedProcessManagerImpl::AllocateOnIdle() {
