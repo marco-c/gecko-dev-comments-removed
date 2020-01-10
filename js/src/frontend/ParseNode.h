@@ -586,7 +586,10 @@ enum class FunctionSyntaxKind {
   Statement,
 
   Arrow,
+
+  
   Method,
+
   ClassConstructor,
   DerivedClassConstructor,
   Getter,

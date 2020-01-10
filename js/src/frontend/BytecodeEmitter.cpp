@@ -8093,6 +8093,13 @@ bool BytecodeEmitter::emitCreateFieldInitializers(ClassEmitter& ce,
           
           return false;
         }
+        if (initializer->funbox()->needsHomeObject()) {
+          MOZ_ASSERT(initializer->funbox()->function()->allowSuperProperty());
+          if (!ce.emitFieldInitializerHomeObject()) {
+            
+            return false;
+          }
+        }
         if (!ce.emitStoreFieldInitializer()) {
           
           return false;

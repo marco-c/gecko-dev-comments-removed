@@ -563,6 +563,18 @@ class MOZ_RAII AutoSaveLocalStrictMode {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   enum class Kind {
@@ -673,6 +685,18 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   enum class ClassState {
     
     Start,
@@ -689,6 +713,9 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
     
     
     FieldInitializers,
+
+    
+    FieldInitializerWithHomeObject,
 
     
     FieldInitializersEnd,
@@ -742,6 +769,7 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
       const mozilla::Maybe<uint32_t>& classEnd);
 
   MOZ_MUST_USE bool prepareForFieldInitializers(size_t numFields);
+  MOZ_MUST_USE bool emitFieldInitializerHomeObject();
   MOZ_MUST_USE bool emitStoreFieldInitializer();
   MOZ_MUST_USE bool emitFieldInitializersEnd();
 
