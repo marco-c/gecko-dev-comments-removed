@@ -1921,14 +1921,45 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  async blockRequest(filter) {
-    if (this.netmonitors) {
-      for (const { messageManager } of this.netmonitors) {
-        messageManager.sendAsyncMessage("debug:block-request", {
-          filter,
-        });
-      }
+
+
+  async _sendMessageToNetmonitors(messageName, responseName, args) {
+    if (!this.netmonitors) {
+      return;
     }
+    await Promise.all(
+      this.netmonitors.map(({ messageManager }) => {
+        const onResponseReceived = new Promise(resolve => {
+          messageManager.addMessageListener(
+            responseName,
+            function onResponse() {
+              messageManager.removeMessageListener(responseName, onResponse);
+              resolve();
+            }
+          );
+        });
+        messageManager.sendAsyncMessage(messageName, args);
+        return onResponseReceived;
+      })
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async blockRequest(filter) {
+    await this._sendMessageToNetmonitors(
+      "debug:block-request",
+      "debug:block-request:response",
+      { filter }
+    );
 
     return {};
   },
@@ -1944,13 +1975,11 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   async unblockRequest(filter) {
-    if (this.netmonitors) {
-      for (const { messageManager } of this.netmonitors) {
-        messageManager.sendAsyncMessage("debug:unblock-request", {
-          filter,
-        });
-      }
-    }
+    await this._sendMessageToNetmonitors(
+      "debug:unblock-request",
+      "debug:unblock-request:response",
+      { filter }
+    );
 
     return {};
   },
