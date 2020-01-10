@@ -97,7 +97,7 @@ class SearchPanel extends Component {
       ...props,
       title:
         member.level == 1
-          ? this.provider.getValue(member.object)
+          ? this.getTooltip(member.object)
           : this.provider.getResourceTooltipLabel(member.object),
       renderSuffix,
     });
@@ -159,7 +159,7 @@ class SearchPanel extends Component {
           return highlightedMatch;
         });
 
-        return span({ title: object.value }, allMatches);
+        return span({ title: this.getTooltip(object) }, allMatches);
       }
 
       const indexStart = caseSensitive
@@ -170,7 +170,7 @@ class SearchPanel extends Component {
       
       if (indexStart >= 0) {
         return span(
-          { title: object.value },
+          { title: this.getTooltip(object) },
           span({}, object.value.substring(0, indexStart)),
           span(
             { className: "query-match" },
@@ -182,10 +182,21 @@ class SearchPanel extends Component {
 
       
       
-      return span({ title: object.value }, span({}, object.value));
+      return span({ title: this.getTooltip(object) }, span({}, object.value));
     }
 
     return this.provider.getValue(member.object);
+  }
+
+  
+
+
+
+
+  getTooltip(object) {
+    return object.value.length > 1024
+      ? object.value.substring(0, 1024) + "…"
+      : object.value;
   }
 
   render() {
