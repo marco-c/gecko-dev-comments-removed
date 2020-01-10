@@ -3823,7 +3823,7 @@ class Document : public nsINode,
 
   void ReportUseCounters();
 
-  void SetDocumentUseCounter(UseCounter aUseCounter) {
+  void SetUseCounter(UseCounter aUseCounter) {
     mUseCounters[aUseCounter] = true;
   }
 
@@ -3831,13 +3831,7 @@ class Document : public nsINode,
     return mStyleUseCounters.get();
   }
 
-  void SetPageUseCounter(UseCounter aUseCounter);
-
-  void SetDocumentAndPageUseCounter(UseCounter aUseCounter) {
-    SetDocumentUseCounter(aUseCounter);
-    SetPageUseCounter(aUseCounter);
-  }
-
+  void PropagateUseCountersToPage();
   void PropagateUseCounters(Document* aParentDocument);
 
   void AddToVisibleContentHeuristic(uint32_t aNumber) {
@@ -5075,9 +5069,6 @@ class Document : public nsINode,
   std::bitset<eUseCounter_Count> mUseCounters;
   
   std::bitset<eUseCounter_Count> mChildDocumentUseCounters;
-  
-  
-  std::bitset<eUseCounter_Count> mNotifiedPageForUseCounter;
 
   
   UniquePtr<StyleUseCounters> mStyleUseCounters;

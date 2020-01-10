@@ -1338,7 +1338,6 @@ Document::Document(const char* aContentType)
       mBlockDOMContentLoaded(0),
       mUseCounters(0),
       mChildDocumentUseCounters(0),
-      mNotifiedPageForUseCounter(0),
       mUserHasInteracted(false),
       mHasUserInteractionTimerScheduled(false),
       mStackRefCnt(0),
@@ -6179,8 +6178,7 @@ nsresult Document::SetSubDocumentFor(Element* aElement, Document* aSubDoc) {
     
 
     if (mSubDocuments) {
-      Document* subDoc = GetSubDocumentFor(aElement);
-      if (subDoc) {
+      if (Document* subDoc = GetSubDocumentFor(aElement)) {
         subDoc->SetAllowPaymentRequest(false);
       }
       mSubDocuments->Remove(aElement);
@@ -8771,7 +8769,7 @@ Document* Document::Open(const Optional<nsAString>& ,
 
   
   
-  SetDocumentAndPageUseCounter(eUseCounter_custom_DocumentOpen);
+  SetUseCounter(eUseCounter_custom_DocumentOpen);
 
   
   
@@ -10515,6 +10513,7 @@ void Document::Destroy() {
     MOZ_ASSERT(child->GetParentNode() == this);
   }
   MOZ_ASSERT(oldChildCount == GetChildCount());
+  MOZ_ASSERT(!mSubDocuments || mSubDocuments->EntryCount() == 0);
 
   mInUnlinkOrDeletion = oldVal;
 
@@ -12170,7 +12169,7 @@ void Document::WarnOnceAbout(DeprecatedOperations aOperation,
   
   
   if (!IsAboutPage()) {
-    const_cast<Document*>(this)->SetDocumentAndPageUseCounter(
+    const_cast<Document*>(this)->SetUseCounter(
         OperationToUseCounter(aOperation));
   }
   uint32_t flags =
@@ -14366,54 +14365,12 @@ void Document::PropagateUseCounters(Document* aParentDocument) {
   
   
   Document* contentParent = aParentDocument->GetTopLevelContentDocument();
-
   if (!contentParent) {
     return;
   }
 
   contentParent->mChildDocumentUseCounters |= mUseCounters;
   contentParent->mChildDocumentUseCounters |= mChildDocumentUseCounters;
-}
-
-void Document::SetPageUseCounter(UseCounter aUseCounter) {
-  
-  
-  
-  
-  if (mNotifiedPageForUseCounter[aUseCounter]) {
-    return;
-  }
-  mNotifiedPageForUseCounter[aUseCounter] = true;
-
-  if (mDisplayDocument) {
-    
-    
-    
-    MOZ_ASSERT(!mDocumentContainer);
-    mDisplayDocument->SetChildDocumentUseCounter(aUseCounter);
-    return;
-  }
-
-  if (IsBeingUsedAsImage()) {
-    
-    MOZ_ASSERT(!mDocumentContainer);
-    return;
-  }
-
-  
-  
-  
-  Document* contentParent = GetTopLevelContentDocument();
-  if (!contentParent) {
-    return;
-  }
-
-  if (this == contentParent) {
-    MOZ_ASSERT(GetUseCounter(aUseCounter));
-    return;
-  }
-
-  contentParent->SetChildDocumentUseCounter(aUseCounter);
 }
 
 bool Document::HasScriptsBlockedBySandbox() {
@@ -14440,6 +14397,35 @@ bool Document::InlineScriptAllowedByCSP() {
   return allowsInlineScript;
 }
 
+void Document::PropagateUseCountersToPage() {
+  if (mDisplayDocument) {
+    
+    
+    
+    MOZ_ASSERT(!mDocumentContainer);
+    return PropagateUseCounters(mDisplayDocument);
+  }
+
+  if (IsBeingUsedAsImage()) {
+    
+    
+    
+    
+    MOZ_ASSERT(!mDocumentContainer);
+    return;
+  }
+
+  
+  
+  
+  Document* contentParent = GetTopLevelContentDocument();
+  if (!contentParent || this == contentParent) {
+    return;
+  }
+
+  PropagateUseCounters(contentParent);
+}
+
 void Document::ReportUseCounters() {
   static const bool kDebugUseCounters = false;
 
@@ -14448,6 +14434,43 @@ void Document::ReportUseCounters() {
   }
 
   mReportedUseCounters = true;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    if (mSubDocuments) {
+      for (auto iter = mSubDocuments->ConstIter(); !iter.Done(); iter.Next()) {
+        auto* entry = static_cast<SubDocMapEntry*>(iter.Get());
+        entry->mSubDocument->ReportUseCounters();
+      }
+    }
+    if (Document* doc = GetLatestStaticClone()) {
+      doc->ReportUseCounters();
+    }
+    EnumerateExternalResources(
+        [](Document* aDoc, void*) -> bool {
+          aDoc->ReportUseCounters();
+          return true;
+        },
+        nullptr);
+  }
+
+  PropagateUseCountersToPage();
 
   if (Telemetry::HistogramUseCounterCount > 0 &&
       (IsContentDocument() || IsResourceDoc())) {
