@@ -132,14 +132,6 @@ class CompositorWidget {
 
 
 
-  virtual void DrawWindowOverlay(WidgetRenderingContext* aContext,
-                                 LayoutDeviceIntRect aRect) {}
-
-  
-
-
-
-
 
 
 

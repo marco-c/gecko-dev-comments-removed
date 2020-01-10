@@ -292,8 +292,6 @@ class ShadowLayerForwarder final : public LayersIPCActor,
   
   void SynchronouslyShutdown();
 
-  virtual void WindowOverlayChanged() { mWindowOverlayChanged = true; }
-
   
 
 
@@ -424,7 +422,6 @@ class ShadowLayerForwarder final : public LayersIPCActor,
   DiagnosticTypes mDiagnosticTypes;
   bool mIsFirstPaint;
   FocusTarget mFocusTarget;
-  bool mWindowOverlayChanged;
   nsTArray<PluginWindowData> mPluginWindowData;
   UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
   uint64_t mNextLayerHandle;

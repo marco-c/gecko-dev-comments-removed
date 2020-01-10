@@ -160,11 +160,6 @@ class HostLayerManager : public LayerManager {
     }
   }
 
-  
-  
-  
-  void SetWindowOverlayChanged() { mWindowOverlayChanged = true; }
-
   void SetPaintTime(const TimeDuration& aPaintTime) {
     mLastPaintTime = aPaintTime;
   }
@@ -223,7 +218,6 @@ class HostLayerManager : public LayerManager {
   UniquePtr<Diagnostics> mDiagnostics;
   uint64_t mCompositorBridgeID;
 
-  bool mWindowOverlayChanged;
   TimeDuration mLastPaintTime;
   TimeStamp mRenderStartTime;
   UniquePtr<CompositionRecorder> mCompositionRecorder = nullptr;

@@ -36,7 +36,6 @@ namespace layers {
 WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
     : mWidget(aWidget),
       mLatestTransactionId{0},
-      mWindowOverlayChanged(false),
       mNeedsComposite(false),
       mIsFirstPaint(false),
       mTarget(nullptr),
@@ -191,16 +190,6 @@ bool WebRenderLayerManager::BeginTransaction(const nsCString& aURL) {
 }
 
 bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
-  if (mWindowOverlayChanged) {
-    
-    
-    
-    
-    
-    
-    return false;
-  }
-
   
   mAnimationReadyTime = TimeStamp::Now();
 
@@ -362,7 +351,6 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
 
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder,
                                              resourceUpdates);
-  mWindowOverlayChanged = false;
   if (dumpEnabled) {
     printf_stderr("(window overlay)\n");
     Unused << builder.Dump( 1, Some(builderDumpIndex), Nothing());

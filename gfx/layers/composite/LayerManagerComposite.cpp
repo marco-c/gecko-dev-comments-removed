@@ -116,7 +116,6 @@ HostLayerManager::HostLayerManager()
     : mDebugOverlayWantsNextFrame(false),
       mWarningLevel(0.0f),
       mCompositorBridgeID(0),
-      mWindowOverlayChanged(false),
       mLastPaintTime(TimeDuration::Forever()),
       mRenderStartTime(TimeStamp::Now()) {}
 
@@ -618,7 +617,7 @@ void LayerManagerComposite::UpdateAndRender() {
     invalid = mInvalidRegion;
   }
 
-  if (invalid.IsEmpty() && !mWindowOverlayChanged) {
+  if (invalid.IsEmpty()) {
     
     mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
     mProfilerScreenshotGrabber.NotifyEmptyFrame();
@@ -646,7 +645,6 @@ void LayerManagerComposite::UpdateAndRender() {
 
   if (!mTarget && rendered) {
     mInvalidRegion.SetEmpty();
-    mWindowOverlayChanged = false;
   }
 
   
@@ -1274,10 +1272,6 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
   if (usingNativeLayers) {
     UpdateDebugOverlayNativeLayers();
   } else {
-    
-    mCompositor->GetWidget()->DrawWindowOverlay(
-        &widgetContext, LayoutDeviceIntRect::FromUnknownRect(bounds));
-
 #if defined(MOZ_WIDGET_ANDROID)
     if (AndroidDynamicToolbarAnimator::IsEnabled()) {
       
