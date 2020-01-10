@@ -440,15 +440,17 @@ void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCount,
 
   MOZ_ASSERT_IF(!is<ArrayObject>(), newCount >= SLOT_CAPACITY_MIN);
 
+  
+  
+  RemoveCellMemory(this, oldCount * sizeof(HeapSlot), MemoryUse::ObjectSlots);
+  AddCellMemory(this, newCount * sizeof(HeapSlot), MemoryUse::ObjectSlots);
+
   HeapSlot* newslots =
       ReallocateObjectBuffer<HeapSlot>(cx, this, slots_, oldCount, newCount);
   if (!newslots) {
     cx->recoverFromOutOfMemory();
     return; 
   }
-
-  RemoveCellMemory(this, oldCount * sizeof(HeapSlot), MemoryUse::ObjectSlots);
-  AddCellMemory(this, newCount * sizeof(HeapSlot), MemoryUse::ObjectSlots);
 
   slots_ = newslots;
 }
