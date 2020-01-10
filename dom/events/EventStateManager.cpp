@@ -5479,9 +5479,14 @@ void EventStateManager::RemoveNodeFromChainIfNeeded(EventStates aState,
   MOZ_ASSERT(leaf);
   
   
-  MOZ_ASSERT(nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-                 leaf, aContentRemoved) ||
-             leaf->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT));
+  
+  
+  
+  
+  NS_ASSERTION(nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+                   leaf, aContentRemoved) ||
+                   leaf->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT),
+               "Flat tree and active / hover chain got out of sync");
 
   nsIContent* newLeaf = aContentRemoved->GetFlattenedTreeParent();
   MOZ_ASSERT_IF(newLeaf, newLeaf->IsElement() &&
