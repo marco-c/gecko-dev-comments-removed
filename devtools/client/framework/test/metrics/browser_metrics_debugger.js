@@ -20,7 +20,7 @@ add_task(async function() {
 
   
   const debuggerLoader = panel.panelWin.getBrowserLoaderForWindow();
-  const loaders = [loader.provider.loader, debuggerLoader.loader];
+  const loaders = [loader.loader, debuggerLoader.loader];
 
   runMetricsTest({
     filterString: "devtools/client/debugger",

@@ -20,7 +20,7 @@ add_task(async function() {
 
   
   const webconsoleLoader = panel._frameWindow.getBrowserLoaderForWindow();
-  const loaders = [loader.provider.loader, webconsoleLoader.loader];
+  const loaders = [loader.loader, webconsoleLoader.loader];
 
   runMetricsTest({
     filterString: "devtools/client/webconsole",

@@ -32,8 +32,9 @@ function setupServer(mm) {
   
   
   
-  gLoader = new DevToolsLoader();
-  gLoader.invisibleToDebugger = true;
+  gLoader = new DevToolsLoader({
+    invisibleToDebugger: true,
+  });
   const { DebuggerServer } = gLoader.require("devtools/server/main");
 
   DebuggerServer.init();

@@ -24,64 +24,6 @@ this.EXPORTED_SYMBOLS = [
   "StructuredCloneHolder",
 ];
 
-
-
-
-
-
-
-
-
-function BuiltinProvider() {}
-BuiltinProvider.prototype = {
-  load: function() {
-    const paths = {
-      
-      devtools: "resource://devtools",
-      
-      acorn: "resource://devtools/shared/acorn",
-      
-      "acorn/util/walk": "resource://devtools/shared/acorn/walk.js",
-      
-      
-      "xpcshell-test": "resource://test",
-
-      
-      
-      
-      "devtools/client/locales": "chrome://devtools/locale",
-      "devtools/shared/locales": "chrome://devtools-shared/locale",
-      "devtools/startup/locales": "chrome://devtools-startup/locale",
-      "toolkit/locales": "chrome://global/locale",
-    };
-    
-    
-    
-    
-    
-    if (this.invisibleToDebugger) {
-      paths.promise = "resource://gre/modules/Promise-backend.js";
-    }
-    this.loader = new Loader({
-      paths,
-      invisibleToDebugger: this.invisibleToDebugger,
-      freshCompartment: this.freshCompartment,
-      sandboxName: "DevTools (Module loader)",
-      requireHook: (id, require) => {
-        if (id.startsWith("raw!") || id.startsWith("theme-loader!")) {
-          return requireRawId(id, require);
-        }
-        return require(id);
-      },
-    });
-  },
-
-  unload: function(reason) {
-    unload(this.loader, reason);
-    delete this.loader;
-  },
-};
-
 var gNextLoaderID = 0;
 
 
@@ -89,58 +31,128 @@ var gNextLoaderID = 0;
 
 
 
-this.DevToolsLoader = function DevToolsLoader() {
-  this.require = this.require.bind(this);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.DevToolsLoader = function DevToolsLoader({
+  invisibleToDebugger = false,
+  freshCompartment = false,
+} = {}) {
+  const paths = {
+    
+    devtools: "resource://devtools",
+    
+    acorn: "resource://devtools/shared/acorn",
+    
+    "acorn/util/walk": "resource://devtools/shared/acorn/walk.js",
+    
+    
+    "xpcshell-test": "resource://test",
+
+    
+    
+    
+    "devtools/client/locales": "chrome://devtools/locale",
+    "devtools/shared/locales": "chrome://devtools-shared/locale",
+    "devtools/startup/locales": "chrome://devtools-startup/locale",
+    "toolkit/locales": "chrome://global/locale",
+  };
+
+  
+  
+  
+  
+  
+  if (invisibleToDebugger) {
+    paths.promise = "resource://gre/modules/Promise-backend.js";
+  }
+
+  this.loader = new Loader({
+    paths,
+    invisibleToDebugger,
+    freshCompartment,
+    sandboxName: "DevTools (Module loader)",
+    requireHook: (id, require) => {
+      if (id.startsWith("raw!") || id.startsWith("theme-loader!")) {
+        return requireRawId(id, require);
+      }
+      return require(id);
+    },
+  });
+
+  this.require = Require(this.loader, { id: "devtools" });
+
+  
+  const { modules, globals } = this.require("devtools/shared/builtin-modules");
+
+  
+  
+  
+  if (invisibleToDebugger) {
+    delete modules.promise;
+  }
+
+  
+  for (const id in modules) {
+    const uri = resolveURI(id, this.loader.mapping);
+    this.loader.modules[uri] = {
+      get exports() {
+        return modules[id];
+      },
+    };
+  }
+
+  
+  Object.defineProperties(
+    this.loader.globals,
+    Object.getOwnPropertyDescriptors(globals)
+  );
+
+  
+  
+  
+  
+  this.id = gNextLoaderID++;
+  
+  
+  globals.loader.id = this.id;
+
+  
+  
+  
+  
+  this.lazyGetter = globals.loader.lazyGetter;
+  this.lazyImporter = globals.loader.lazyImporter;
+  this.lazyServiceGetter = globals.loader.lazyServiceGetter;
+  this.lazyRequireGetter = globals.loader.lazyRequireGetter;
+
+  
+  
+  
+  if (globals.isReplaying) {
+    const oldHook = this.loader.requireHook;
+    const ReplayInspector = this.require(
+      "devtools/server/actors/replay/inspector"
+    );
+    this.loader.requireHook = ReplayInspector.wrapRequireHook(oldHook);
+  }
 };
 
 DevToolsLoader.prototype = {
   destroy: function(reason = "shutdown") {
-
-    if (this._provider) {
-      this._provider.unload(reason);
-      delete this._provider;
-    }
-  },
-
-  get provider() {
-    if (!this._provider) {
-      this._loadProvider();
-    }
-    return this._provider;
-  },
-
-  _provider: null,
-
-  get id() {
-    if (this._id) {
-      return this._id;
-    }
-    this._id = ++gNextLoaderID;
-    return this._id;
-  },
-
-  
-
-
-
-
-  require: function() {
-    if (!this._provider) {
-      this._loadProvider();
-    }
-    return this.require.apply(this, arguments);
-  },
-
-  
-
-
-
-
-  lazyRequireGetter: function() {
-    if (!this._provider) {
-      this._loadProvider();
-    }
-    return this.lazyRequireGetter.apply(this, arguments);
+    unload(this.loader, reason);
+    delete this.loader;
   },
 
   
@@ -150,85 +162,10 @@ DevToolsLoader.prototype = {
   isLoaderPluginId: function(id) {
     return id.startsWith("raw!");
   },
-
-  
-
-
-  setProvider: function(provider) {
-    if (provider === this._provider) {
-      return;
-    }
-
-    if (this._provider) {
-      delete this.require;
-      this._provider.unload("newprovider");
-    }
-    this._provider = provider;
-
-    
-    this._provider.invisibleToDebugger = this.invisibleToDebugger;
-    this._provider.freshCompartment = this.freshCompartment;
-
-    this._provider.load();
-    this.require = Require(this._provider.loader, { id: "devtools" });
-
-    
-    const { modules, globals } = this.require(
-      "devtools/shared/builtin-modules"
-    );
-
-    
-    
-    
-    if (this.invisibleToDebugger) {
-      delete modules.promise;
-    }
-
-    
-    const loader = this._provider.loader;
-    for (const id in modules) {
-      const uri = resolveURI(id, loader.mapping);
-      loader.modules[uri] = {
-        get exports() {
-          return modules[id];
-        },
-      };
-    }
-
-    
-    globals.loader.id = this.id;
-    Object.defineProperties(
-      loader.globals,
-      Object.getOwnPropertyDescriptors(globals)
-    );
-
-    
-    this.lazyGetter = globals.loader.lazyGetter;
-    this.lazyImporter = globals.loader.lazyImporter;
-    this.lazyServiceGetter = globals.loader.lazyServiceGetter;
-    this.lazyRequireGetter = globals.loader.lazyRequireGetter;
-
-    
-    
-    
-    if (globals.isReplaying) {
-      const oldHook = this._provider.loader.requireHook;
-      const ReplayInspector = this.require(
-        "devtools/server/actors/replay/inspector"
-      );
-      this._provider.loader.requireHook = ReplayInspector.wrapRequireHook(
-        oldHook
-      );
-    }
-  },
-
-  
+};
 
 
-  _loadProvider: function() {
-    this.setProvider(new BuiltinProvider());
-  },
-
+this.loader = new DevToolsLoader({
   
 
 
@@ -239,9 +176,6 @@ DevToolsLoader.prototype = {
 
 
   invisibleToDebugger: Services.appinfo.name !== "Firefox",
-};
-
-
-this.loader = new DevToolsLoader();
+});
 
 this.require = this.loader.require;

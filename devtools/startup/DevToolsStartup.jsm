@@ -1010,8 +1010,9 @@ DevToolsStartup.prototype = {
       
       
       
-      const serverLoader = new DevToolsLoader();
-      serverLoader.invisibleToDebugger = true;
+      const serverLoader = new DevToolsLoader({
+        invisibleToDebugger: true,
+      });
       const { DebuggerServer: debuggerServer } = serverLoader.require(
         "devtools/server/main"
       );

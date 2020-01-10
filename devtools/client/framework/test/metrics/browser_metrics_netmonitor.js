@@ -20,7 +20,7 @@ add_task(async function() {
 
   
   const netmonitorLoader = panel.panelWin.getBrowserLoaderForWindow();
-  const loaders = [loader.provider.loader, netmonitorLoader.loader];
+  const loaders = [loader.loader, netmonitorLoader.loader];
 
   runMetricsTest({
     filterString: "devtools/client/netmonitor",

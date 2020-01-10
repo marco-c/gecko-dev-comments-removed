@@ -18,7 +18,7 @@ add_task(async function() {
   await openNewTabAndToolbox(TEST_URL, "inspector");
 
   
-  const loaders = [loader.provider.loader];
+  const loaders = [loader.loader];
 
   runMetricsTest({
     filterString: "devtools/client/inspector",
