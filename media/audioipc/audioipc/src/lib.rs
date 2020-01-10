@@ -168,10 +168,19 @@ unsafe fn close_platformhandle(handle: PlatformHandleType) {
     winapi::um::handleapi::CloseHandle(handle);
 }
 
-pub fn get_shm_path(dir: &str) -> PathBuf {
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static SHM_ID: AtomicUsize = AtomicUsize::new(0);
+
+
+
+
+
+pub fn get_shm_path() -> PathBuf {
     let pid = std::process::id();
+    let shm_id = SHM_ID.fetch_add(1, Ordering::SeqCst);
     let mut temp = temp_dir();
-    temp.push(&format!("cubeb-shm-{}-{}", pid, dir));
+    temp.push(&format!("cubeb-shm-{}-{}", pid, shm_id));
     temp
 }
 
@@ -187,17 +196,15 @@ pub use messagestream_win::*;
 
 #[cfg(windows)]
 pub fn server_platform_init() {
+    use winapi::shared::winerror;
     use winapi::um::combaseapi;
     use winapi::um::objbase;
-    use winapi::shared::winerror;
 
     unsafe {
-        let r = combaseapi::CoInitializeEx(std::ptr::null_mut(),
-                                           objbase::COINIT_MULTITHREADED);
+        let r = combaseapi::CoInitializeEx(std::ptr::null_mut(), objbase::COINIT_MULTITHREADED);
         assert!(winerror::SUCCEEDED(r));
     }
 }
 
 #[cfg(unix)]
-pub fn server_platform_init() {
-}
+pub fn server_platform_init() {}
