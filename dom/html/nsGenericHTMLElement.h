@@ -918,7 +918,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 
   
   virtual mozilla::dom::HTMLFieldSetElement* GetFieldSet() override;
-  virtual mozilla::dom::Element* GetFormElement() override;
+  virtual mozilla::dom::HTMLFormElement* GetFormElement() override;
   mozilla::dom::HTMLFormElement* GetForm() const { return mForm; }
   virtual void SetForm(mozilla::dom::HTMLFormElement* aForm) override;
   virtual void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) override;
@@ -1071,7 +1071,8 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
  public:
   nsGenericHTMLFormElementWithState(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, uint8_t aType);
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      mozilla::dom::FromParser aFromParser, uint8_t aType);
 
   
 
@@ -1092,6 +1093,16 @@ class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
 
 
 
+  virtual void NodeInfoChanged(Document* aOldDoc) override;
+
+ protected:
+  
+
+
+
+
+
+
 
 
 
@@ -1099,18 +1110,20 @@ class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
 
   
 
-
-
-  virtual void NodeInfoChanged(Document* aOldDoc) override;
-
- protected:
-  
-
   void GenerateStateKey();
+
+  int32_t GetParserInsertedControlNumberForStateKey() const override {
+    return mControlNumber;
+  }
 
   
 
   nsCString mStateKey;
+
+  
+  
+  
+  int32_t mControlNumber;
 };
 
 #define NS_INTERFACE_MAP_ENTRY_IF_TAG(_interface, _tag) \
