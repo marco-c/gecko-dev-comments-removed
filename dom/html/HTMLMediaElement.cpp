@@ -9,7 +9,6 @@
 #endif
 
 #include "mozilla/dom/HTMLMediaElement.h"
-#include "AudioChannelService.h"
 #include "AudioDeviceInfo.h"
 #include "AudioStreamTrack.h"
 #include "AutoplayPolicy.h"
@@ -147,6 +146,8 @@ namespace dom {
 extern void NotifyMediaStarted(uint64_t aWindowID);
 extern void NotifyMediaStopped(uint64_t aWindowID);
 extern void NotifyMediaAudibleChanged(uint64_t aWindowID, bool aAudible);
+
+using AudibleState = AudioChannelService::AudibleState;
 
 
 static const uint32_t PROGRESS_MS = 350;
@@ -1324,24 +1325,10 @@ class HTMLMediaElement::AudioChannelAgentCallback final
 
   AudibleState IsOwnerAudible() const {
     
-    if (!mOwner->HasAudio()) {
-      return AudioChannelService::AudibleState::eNotAudible;
-    }
-
-    
-    if (mOwner->mMuted || (std::fabs(mOwner->Volume()) <= 1e-7)) {
-      return AudioChannelService::AudibleState::eMaybeAudible;
-    }
-
-    
     if (mSuspended != nsISuspendedTypes::NONE_SUSPENDED || mOwner->mPaused) {
-      return AudioChannelService::AudibleState::eNotAudible;
+      return AudibleState::eNotAudible;
     }
-
-    
-    return mOwner->mIsAudioTrackAudible
-               ? AudioChannelService::AudibleState::eAudible
-               : AudioChannelService::AudibleState::eMaybeAudible;
+    return mOwner->GetAudibleState();
   }
 
   bool IsPlayingThroughTheAudioChannel() const {
@@ -7231,6 +7218,21 @@ void HTMLMediaElement::NotifyDecoderActivityChanges() const {
 }
 
 Document* HTMLMediaElement::GetDocument() const { return OwnerDoc(); }
+
+AudibleState HTMLMediaElement::GetAudibleState() const {
+  
+  if (!HasAudio()) {
+    return AudibleState::eNotAudible;
+  }
+
+  
+  if (mMuted || (std::fabs(Volume()) <= 1e-7)) {
+    return AudibleState::eMaybeAudible;
+  }
+
+  return mIsAudioTrackAudible ? AudibleState::eAudible
+                              : AudibleState::eMaybeAudible;
+}
 
 void HTMLMediaElement::ConstructMediaTracks(const MediaInfo* aInfo) {
   if (mMediaTracksConstructed || !aInfo) {

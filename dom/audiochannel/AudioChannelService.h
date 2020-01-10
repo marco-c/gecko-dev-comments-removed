@@ -55,6 +55,41 @@ class AudioChannelService final : public nsIObserver {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   enum AudibleState : uint8_t {
     eNotAudible = 0,
     eMaybeAudible = 1,
