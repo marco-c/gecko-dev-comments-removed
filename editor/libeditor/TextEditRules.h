@@ -288,38 +288,9 @@ class TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreateBR(const EditorDOMPoint& aPointToInsert) {
-    CreateElementResult ret = CreateBRInternal(aPointToInsert, false);
-#ifdef DEBUG
-    
-    if (!CanHandleEditAction()) {
-      MOZ_ASSERT(ret.Rv() == NS_ERROR_EDITOR_DESTROYED);
-    }
-#endif  
-    return ret;
-  }
-
-  
-
-
-
-
-
-
-
 
   MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreatePaddingBRElementForEmptyLastLine(const EditorDOMPoint& aPointToInsert) {
-    CreateElementResult ret = CreateBRInternal(aPointToInsert, true);
-#ifdef DEBUG
-    
-    if (!CanHandleEditAction()) {
-      MOZ_ASSERT(ret.Rv() == NS_ERROR_EDITOR_DESTROYED);
-    }
-#endif  
-    return ret;
-  }
+  CreatePaddingBRElementForEmptyLastLine(const EditorDOMPoint& aPointToInsert);
 
   void UndefineCaretBidiLevel();
 
@@ -347,21 +318,6 @@ class TextEditRules {
 
  private:
   TextEditor* MOZ_NON_OWNING_REF mTextEditor;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreateBRInternal(const EditorDOMPoint& aPointToInsert, bool aForPadding);
 
  protected:
   
