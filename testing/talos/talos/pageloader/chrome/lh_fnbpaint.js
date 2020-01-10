@@ -36,6 +36,7 @@ function _contentFNBPaintHandler() {
 
 addEventListener(
   "load",
+  
   contentLoadHandlerCallback(_contentFNBPaintHandler),
   true
-); 
+);

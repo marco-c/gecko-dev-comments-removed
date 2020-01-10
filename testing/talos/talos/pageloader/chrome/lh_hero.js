@@ -41,6 +41,7 @@ function _contentHeroLoadHandler() {
 
 addEventListener(
   "load",
+  
   contentLoadHandlerCallback(_contentHeroLoadHandler),
   true
-); 
+);

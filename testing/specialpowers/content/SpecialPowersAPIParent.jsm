@@ -452,8 +452,8 @@ class SpecialPowersAPIParent extends JSWindowActorParent {
 
 
 
+  
   receiveMessage(aMessage) {
-    
     
     
     

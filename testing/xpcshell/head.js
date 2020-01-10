@@ -101,8 +101,8 @@ var runningInParent = true;
 try {
   
   
-  
   runningInParent =
+    
     Cc["@mozilla.org/xre/runtime;1"].getService(Ci.nsIXULRuntime).processType ==
     Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
 } catch (e) {}

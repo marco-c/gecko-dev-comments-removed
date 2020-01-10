@@ -19,6 +19,7 @@ function _contentPaintHandler() {
 
 addEventListener(
   "load",
+  
   contentLoadHandlerCallback(_contentPaintHandler),
   true
-); 
+);

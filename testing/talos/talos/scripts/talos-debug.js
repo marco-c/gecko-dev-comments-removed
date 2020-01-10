@@ -35,8 +35,8 @@ window.talosDebug = {
 
   median(values) {
     var clone = values.slice(0);
-    
     var sorted = clone.sort(function(a, b) {
+      
       return a > b ? 1 : a < b ? -1 : 0;
     });
     var len = values.length;

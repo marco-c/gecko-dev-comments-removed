@@ -130,8 +130,9 @@ addEventListener(
     let uniqueMessageId =
       "TalosPowers:ParentExec:" +
       content.document.documentURI +
+      
       Date.now() +
-      Math.random(); 
+      Math.random();
 
     
     addMessageListener("TalosPowers:ParentExec:ReplyMsg", function done(reply) {
