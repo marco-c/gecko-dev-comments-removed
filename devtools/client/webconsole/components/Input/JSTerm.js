@@ -133,6 +133,8 @@ class JSTerm extends Component {
       autoSelect: true,
     };
 
+    const isMacOS = Services.appinfo.OS === "Darwin";
+
     const doc = this.webConsoleUI.document;
     const toolbox = this.webConsoleUI.wrapper.toolbox;
     const tooltipDoc = toolbox ? toolbox.doc : doc;
@@ -287,6 +289,8 @@ class JSTerm extends Component {
             "Ctrl-Left": onArrowLeft,
             "Cmd-Left": onArrowLeft,
             "Alt-Left": onArrowLeft,
+            
+            "Ctrl-A": isMacOS ? onArrowLeft : undefined,
 
             "Right": onArrowRight,
             "Ctrl-Right": onArrowRight,
@@ -859,30 +863,23 @@ class JSTerm extends Component {
 
 
   _keyPress(event) {
-    const inputNode = this.inputNode;
     const inputValue = this._getValue();
     let inputUpdated = false;
 
     if (event.ctrlKey) {
       switch (event.charCode) {
+        case 97:
+          
+          if (!Services.appinfo.OS == "Darwin") {
+            break;
+          }
+          this.clearCompletion();
+          break;
         case 101:
           
           if (Services.appinfo.OS == "WINNT") {
             break;
           }
-          let lineEndPos = inputValue.length;
-          if (this.hasMultilineInput()) {
-            
-            for (let i = inputNode.selectionEnd; i < lineEndPos; i++) {
-              if (inputValue.charAt(i) == "\r" ||
-                  inputValue.charAt(i) == "\n") {
-                lineEndPos = i;
-                break;
-              }
-            }
-          }
-          inputNode.setSelectionRange(lineEndPos, lineEndPos);
-          event.preventDefault();
           this.clearCompletion();
           break;
 
