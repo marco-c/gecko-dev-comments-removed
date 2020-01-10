@@ -200,7 +200,7 @@ already_AddRefed<Promise> Client::Navigate(const nsAString& aURL,
       [self, outerPromise](nsresult aResult) {
         
         
-        outerPromise->MaybeReject(NS_ERROR_TYPE_ERR);
+        outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
       });
 
   return outerPromise.forget();

@@ -240,7 +240,7 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
       [outerPromise](nsresult aResult) {
         
         
-        outerPromise->MaybeReject(NS_ERROR_TYPE_ERR);
+        outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
       });
 
   return outerPromise.forget();
