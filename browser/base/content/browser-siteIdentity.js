@@ -1303,6 +1303,9 @@ var gIdentityHandler = {
     dt.setData("text/plain", value);
     dt.setData("text/html", htmlString);
     dt.setDragImage(canvas, 16, 16);
+
+    
+    gURLBar.endLayoutExtend(true);
   },
 
   onLocationChange() {
