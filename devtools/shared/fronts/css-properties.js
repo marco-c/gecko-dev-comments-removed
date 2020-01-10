@@ -55,6 +55,17 @@ function isCssVariable(input) {
   return !!input.match(IS_VARIABLE_TOKEN);
 }
 
+
+
+
+
+
+
+
+function isIdentifier(input) {
+  return input === CSS.escape(input);
+}
+
 var cachedCssProperties = new WeakMap();
 
 
@@ -143,6 +154,11 @@ CssProperties.prototype = {
 
 
   isValidOnClient(name, value, doc) {
+    
+    if (!isIdentifier(name)) {
+      return false;
+    }
+
     let dummyElement = this._dummyElements.get(doc);
     if (!dummyElement) {
       dummyElement = doc.createElementNS("http://www.w3.org/1999/xhtml", "div");
