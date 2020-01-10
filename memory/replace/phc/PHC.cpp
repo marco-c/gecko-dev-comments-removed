@@ -344,10 +344,10 @@ Atomic<Delay, ReleaseAcquire, Behavior::DontPreserve> GAtomic::sAllocDelay;
 class GConst {
  private:
   
-  const uintptr_t mPagesStart;
-  const uintptr_t mPagesLimit;
+  uint8_t* const mPagesStart;
+  uint8_t* const mPagesLimit;
 
-  uintptr_t AllocPages() {
+  uint8_t* AllocPages() {
     
     
     
@@ -362,33 +362,32 @@ class GConst {
       MOZ_CRASH();
     }
 
-    return reinterpret_cast<uintptr_t>(pages);
+    return static_cast<uint8_t*>(pages);
   }
 
  public:
   GConst()
       : mPagesStart(AllocPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
-    LOG("AllocPages at %p..%p\n", (void*)mPagesStart, (void*)mPagesLimit);
+    LOG("AllocPages at %p..%p\n", mPagesStart, mPagesLimit);
   }
 
   
   
   
   Maybe<uintptr_t> PageIndex(const void* aPtr) {
-    auto ptr = reinterpret_cast<uintptr_t>(aPtr);
-    if (!(mPagesStart <= ptr && ptr < mPagesLimit)) {
+    if (!(mPagesStart <= aPtr && aPtr < mPagesLimit)) {
       return Nothing();
     }
 
-    size_t i = (ptr - mPagesStart) / kPageSize;
+    size_t i = (static_cast<const uint8_t*>(aPtr) - mPagesStart) / kPageSize;
     MOZ_ASSERT(i < kMaxPageAllocs);
     return Some(i);
   }
 
   
-  void* PagePtr(size_t aIndex) {
+  uint8_t* PagePtr(size_t aIndex) {
     MOZ_ASSERT(aIndex < kMaxPageAllocs);
-    return reinterpret_cast<void*>(mPagesStart + kPageSize * aIndex);
+    return mPagesStart + kPageSize * aIndex;
   }
 };
 
@@ -664,7 +663,7 @@ class GMut {
       
       
       sMutex.Unlock();
-      *static_cast<char*>(aPtr) = 0;
+      *static_cast<uint8_t*>(aPtr) = 0;
       MOZ_CRASH("unreachable");
     }
   }
@@ -688,7 +687,7 @@ class GMut {
       default:
         MOZ_CRASH();
     }
-    aOut.mBaseAddr = const_cast<const void*>(gConst->PagePtr(aIndex));
+    aOut.mBaseAddr = gConst->PagePtr(aIndex);
     aOut.mUsableSize = page.mUsableSize;
     aOut.mAllocStack = page.mAllocStack;
     aOut.mFreeStack = page.mFreeStack;
@@ -704,7 +703,7 @@ class GMut {
       case PageState::InUse: {
         
         
-        char* pagePtr = static_cast<char*>(gConst->PagePtr(aIndex));
+        uint8_t* pagePtr = gConst->PagePtr(aIndex);
         if (aPtr < pagePtr + page.mUsableSize) {
           *aInfo = {TagLiveAlloc, pagePtr, page.mUsableSize,
                     page.mArenaId.valueOr(0)};
@@ -716,7 +715,7 @@ class GMut {
       case PageState::Freed: {
         
         
-        char* pagePtr = static_cast<char*>(gConst->PagePtr(aIndex));
+        uint8_t* pagePtr = gConst->PagePtr(aIndex);
         if (aPtr < pagePtr + page.mUsableSize) {
           *aInfo = {TagFreedAlloc, gConst->PagePtr(aIndex), page.mUsableSize,
                     page.mArenaId.valueOr(0)};
@@ -863,14 +862,14 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 
   
   
-  void* ptr = nullptr;
+  uint8_t* ptr = nullptr;
   for (uintptr_t n = 0, i = size_t(gMut->Random64(lock)) % kMaxPageAllocs;
        n < kMaxPageAllocs; n++, i = (i + 1) % kMaxPageAllocs) {
     if (!gMut->IsPageAllocatable(lock, i, now)) {
       continue;
     }
 
-    void* pagePtr = gConst->PagePtr(i);
+    uint8_t* pagePtr = gConst->PagePtr(i);
     bool ok =
 #ifdef XP_WIN
         !!VirtualAlloc(pagePtr, kPageSize, MEM_COMMIT, PAGE_READWRITE);

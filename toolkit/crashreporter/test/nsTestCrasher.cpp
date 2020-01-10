@@ -125,10 +125,10 @@ void MOZ_NEVER_INLINE ReserveStack() {
 #endif  
 
 #ifdef MOZ_PHC
-char* GetPHCAllocation(size_t aSize) {
+uint8_t* GetPHCAllocation(size_t aSize) {
   
   for (int i = 0; i < 2000000; i++) {
-    char* p = (char*)malloc(aSize);
+    uint8_t* p = (uint8_t*)malloc(aSize);
     if (ReplaceMalloc::IsPHCAllocation(p, nullptr)) {
       return p;
     }
@@ -194,14 +194,14 @@ extern "C" NS_EXPORT void Crash(int16_t how) {
 #ifdef MOZ_PHC
     case CRASH_PHC_USE_AFTER_FREE: {
       
-      char* p = GetPHCAllocation(32);
+      uint8_t* p = GetPHCAllocation(32);
       free(p);
       *p = 0;
       
     }
     case CRASH_PHC_DOUBLE_FREE: {
       
-      char* p = GetPHCAllocation(64);
+      uint8_t* p = GetPHCAllocation(64);
       free(p);
       free(p);
       
