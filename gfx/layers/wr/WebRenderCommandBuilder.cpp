@@ -266,16 +266,10 @@ static bool IsContainerLayerItem(nsDisplayItem* aItem) {
 static bool DetectContainerLayerPropertiesBoundsChange(
     nsDisplayItem* aItem, BlobItemData* aData,
     nsDisplayItemGeometry& aGeometry) {
-  switch (aItem->GetType()) {
-    case DisplayItemType::TYPE_MASK:
-    case DisplayItemType::TYPE_FILTER: {
-      
-      
-      aGeometry.mBounds = aGeometry.mBounds.Intersect(aItem->GetBuildingRect());
-      break;
-    }
-    default:
-      break;
+  if (aItem->GetType() == DisplayItemType::TYPE_FILTER) {
+    
+    
+    aGeometry.mBounds = aGeometry.mBounds.Intersect(aItem->GetBuildingRect());
   }
 
   return !aGeometry.mBounds.IsEqualEdges(aData->mGeometry->mBounds);
