@@ -124,7 +124,11 @@ add_task(async function() {
       observeFrameUpdate
     );
     
-    todo_is(frameCount, 0, "No frameUpdate should happen");
+    if (frameCount == 0) {
+      is(frameCount, 0, "no frameupdates");
+    } else {
+      todo_is(frameCount, 0, "no frameupdates");
+    }
 
     
     await SpecialPowers.spawn(browser, [], async () => {
