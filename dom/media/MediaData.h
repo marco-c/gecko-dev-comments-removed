@@ -451,6 +451,12 @@ class VideoData : public MediaData {
     ColorRange mColorRange = ColorRange::LIMITED;
   };
 
+  class Listener {
+   public:
+    virtual void OnSentToCompositor() = 0;
+    virtual ~Listener() {}
+  };
+
   
   
   
@@ -505,7 +511,8 @@ class VideoData : public MediaData {
             const media::TimeUnit& aTimecode, IntSize aDisplay,
             uint32_t aFrameID);
 
-  void MarkSentToCompositor() { mSentToCompositor = true; }
+  void SetListener(UniquePtr<Listener> aListener);
+  void MarkSentToCompositor();
   bool IsSentToCompositor() { return mSentToCompositor; }
 
   void UpdateDuration(const media::TimeUnit& aDuration);
@@ -521,6 +528,7 @@ class VideoData : public MediaData {
   ~VideoData();
 
   bool mSentToCompositor;
+  UniquePtr<Listener> mListener;
   media::TimeUnit mNextKeyFrameTime;
 };
 
