@@ -48,6 +48,11 @@ ChromeUtils.defineModuleGetter(
   "clearInterval",
   "resource://gre/modules/Timer.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "requestIdleCallback",
+  "resource://gre/modules/Timer.jsm"
+);
 
 
 const SYSTEM_TICK_INTERVAL = 5 * 60 * 1000;
@@ -257,16 +262,16 @@ class _ToolbarBadgeHub {
   }
 
   registerBadgeToAllWindows(message) {
-    
-    this._addImpression(message);
-    
-    this.sendUserEventTelemetry("IMPRESSION", message);
-
     if (message.template === "update_action") {
       this.executeAction({ ...message.content.action, message_id: message.id });
       
       return;
     }
+
+    
+    this._addImpression(message);
+    
+    this.sendUserEventTelemetry("IMPRESSION", message);
 
     EveryWindow.registerCallback(
       this.id,
@@ -297,7 +302,7 @@ class _ToolbarBadgeHub {
 
     if (message.content.delay) {
       this.state.showBadgeTimeoutId = setTimeout(() => {
-        this.registerBadgeToAllWindows(message);
+        requestIdleCallback(() => this.registerBadgeToAllWindows(message));
       }, message.content.delay);
     } else {
       this.registerBadgeToAllWindows(message);
