@@ -925,6 +925,11 @@ impl Tile {
         }
 
         
+        self.dirty_rect = self.dirty_rect
+            .intersection(&self.rect)
+            .unwrap_or(PictureRect::zero());
+
+        
         
         
         
