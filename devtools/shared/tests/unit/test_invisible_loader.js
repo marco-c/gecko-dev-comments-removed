@@ -34,7 +34,7 @@ function visible_loader() {
 
   
   
-  const promise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {})
+  const promise = ChromeUtils.import("resource://gre/modules/Promise.jsm")
     .Promise;
   Assert.equal(loader.require("promise"), promise);
 }

@@ -3,11 +3,10 @@
 
 
 
-var tempScope = {};
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm", tempScope);
-ChromeUtils.import("resource://gre/modules/FileUtils.jsm", tempScope);
-var NetUtil = tempScope.NetUtil;
-var FileUtils = tempScope.FileUtils;
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
 
 
 const expected = 9;

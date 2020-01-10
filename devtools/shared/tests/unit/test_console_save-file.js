@@ -6,8 +6,7 @@
 
 
 const { FileUtils } = ChromeUtils.import(
-  "resource://gre/modules/FileUtils.jsm",
-  {}
+  "resource://gre/modules/FileUtils.jsm"
 );
 
 

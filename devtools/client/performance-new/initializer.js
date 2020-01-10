@@ -5,12 +5,10 @@
 
 
 
-const BrowserLoaderModule = {};
-ChromeUtils.import(
-  "resource://devtools/client/shared/browser-loader.js",
-  BrowserLoaderModule
+const { BrowserLoader } = ChromeUtils.import(
+  "resource://devtools/client/shared/browser-loader.js"
 );
-const { require } = BrowserLoaderModule.BrowserLoader({
+const { require } = BrowserLoader({
   baseURI: "resource://devtools/client/performance-new/",
   window,
 });

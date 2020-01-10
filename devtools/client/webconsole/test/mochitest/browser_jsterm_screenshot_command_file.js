@@ -9,8 +9,9 @@ const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/mochitest/test_jsterm_screenshot_command.html";
 
-const FileUtils = ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {})
-  .FileUtils;
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
 
 
 const dpr = "--dpr 1";

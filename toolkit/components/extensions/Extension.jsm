@@ -5,7 +5,13 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Dictionary", "Extension", "ExtensionData", "Langpack"];
+var EXPORTED_SYMBOLS = [
+  "Dictionary",
+  "Extension",
+  "ExtensionData",
+  "Langpack",
+  "Management",
+];
 
 
 

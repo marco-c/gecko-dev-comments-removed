@@ -3,10 +3,7 @@
 
 "use strict";
 
-const loaders = ChromeUtils.import(
-  "resource://devtools/shared/base-loader.js",
-  null
-);
+const loaders = ChromeUtils.import("resource://devtools/shared/base-loader.js");
 const { devtools, loader } = ChromeUtils.import(
   "resource://devtools/shared/Loader.jsm"
 );
