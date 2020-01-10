@@ -276,7 +276,15 @@ void js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc,
     traceRuntimeAtoms(trc, session.checkAtomsAccess());
   }
   traceKeptAtoms(trc);
-  Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(trc);
+
+  {
+    
+    
+    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_CCWS);
+    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
+        trc, Compartment::NonGrayEdges);
+  }
+
   traceRuntimeCommon(trc, MarkRuntime);
 }
 
@@ -524,9 +532,9 @@ void js::gc::GCRuntime::bufferGrayRoots() {
   }
 
   BufferGrayRootsTracer grayBufferer(rt);
-  if (JSTraceDataOp op = grayRootTracer.op) {
-    (*op)(&grayBufferer, grayRootTracer.data);
-  }
+  traceEmbeddingGrayRoots(&grayBufferer);
+  Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
+      &grayBufferer, Compartment::GrayEdges);
 
   
   if (grayBufferer.failed()) {

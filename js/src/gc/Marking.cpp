@@ -3636,11 +3636,11 @@ bool UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing) {
   
   
   Zone* zone = tenured.zone();
-  if (zone->isGCMarkingBlackAndGray()) {
+  if (zone->isGCMarking()) {
     if (!cell->isMarkedBlack()) {
       Cell* tmp = cell;
-      TraceManuallyBarrieredGenericPointerEdge(zone->barrierTracer(), &tmp,
-                                               "read barrier");
+      JSTracer* trc = &runtime()->gc.marker;
+      TraceManuallyBarrieredGenericPointerEdge(trc, &tmp, "read barrier");
       MOZ_ASSERT(tmp == cell);
       unmarkedAny = true;
     }

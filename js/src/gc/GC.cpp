@@ -2474,19 +2474,19 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
   rt->geckoProfiler().fixupStringsMapAfterMovingGC();
 
+  
+
   traceRuntimeForMajorGC(&trc, session);
 
-  
   {
     gcstats::AutoPhase ap2(stats(), gcstats::PhaseKind::MARK_ROOTS);
     DebugAPI::traceAllForMovingGC(&trc);
     DebugAPI::traceCrossCompartmentEdges(&trc);
 
     
-    
-    if (JSTraceDataOp op = grayRootTracer.op) {
-      (*op)(&trc, grayRootTracer.data);
-    }
+    traceEmbeddingGrayRoots(&trc);
+    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
+        &trc, Compartment::GrayEdges);
   }
 
   
@@ -4172,9 +4172,9 @@ void GCRuntime::markGrayRoots(gcstats::PhaseKind phase) {
     }
   } else {
     MOZ_ASSERT(!isIncremental);
-    if (JSTraceDataOp op = grayRootTracer.op) {
-      (*op)(&marker, grayRootTracer.data);
-    }
+    traceEmbeddingGrayRoots(&marker);
+    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
+        &marker, Compartment::GrayEdges);
   }
 }
 
