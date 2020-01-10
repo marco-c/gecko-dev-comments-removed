@@ -50,13 +50,6 @@ var gSync = {
     ));
   },
 
-  get brandStrings() {
-    delete this.brandStrings;
-    return (this.brandStrings = Services.strings.createBundle(
-      "chrome://branding/locale/brand.properties"
-    ));
-  },
-
   
   
   get sendTabConfiguredAndLoading() {
@@ -152,6 +145,8 @@ var gSync = {
       this.onFxaDisabled();
       return;
     }
+
+    MozXULElement.insertFTLIfNeeded("browser/sync.ftl");
 
     this._generateNodeGetters();
 
@@ -999,9 +994,7 @@ var gSync = {
   },
 
   _appendSendTabUnconfigured(fragment, createDeviceNodeFn) {
-    const brandProductName = this.brandStrings.GetStringFromName(
-      "brandProductName"
-    );
+    const brandProductName = gBrandBundle.GetStringFromName("brandProductName");
     const notConnected = this.fxaStrings.GetStringFromName(
       "sendTabToDevice.unconfigured.label2"
     );
@@ -1227,17 +1220,8 @@ var gSync = {
   
   
   async disconnect({ confirm = true, disconnectAccount = true } = {}) {
-    if (confirm) {
-      let args = { disconnectAccount, confirmed: false };
-      window.openDialog(
-        "chrome://browser/content/fxaDisconnect.xul",
-        "_blank",
-        "chrome,modal,centerscreen,resizable=no",
-        args
-      );
-      if (!args.confirmed) {
-        return false;
-      }
+    if (confirm && !(await this._confirmDisconnect(disconnectAccount))) {
+      return false;
     }
     await Weave.Service.promiseInitialized;
     await Weave.Service.startOver();
@@ -1245,6 +1229,39 @@ var gSync = {
       await fxAccounts.signOut();
     }
     return true;
+  },
+
+  
+
+
+
+
+
+  async _confirmDisconnect(disconnectAccount) {
+    const l10nPrefix = `${
+      disconnectAccount ? "fxa" : "sync"
+    }-disconnect-dialog`;
+    const [title, body, button] = await document.l10n.formatValues([
+      { id: `${l10nPrefix}-title` },
+      { id: `${l10nPrefix}-body` },
+      { id: "sync-disconnect-dialog-button" },
+    ]);
+    
+    const flags =
+      Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
+      Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1;
+    const buttonPressed = Services.prompt.confirmEx(
+      window,
+      title,
+      body,
+      flags,
+      button,
+      null,
+      null,
+      null,
+      {}
+    );
+    return buttonPressed == 0;
   },
 
   
