@@ -5,6 +5,14 @@
 
 
 
+
+
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.keepProcessesAlive.webIsolated.perOrigin", 1]],
+  });
+});
+
 add_task(async function test() {
   const testPageURL =
     "https://example.com/browser/" +
