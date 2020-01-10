@@ -52,8 +52,18 @@ class nsFind : public nsIFind {
 
   
   
+  char32_t DecodeChar(const char16_t* t2b, int32_t* index) const;
+
   
-  char16_t PeekNextChar(State&) const;
+  
+  
+  
+  bool BreakInBetween(char32_t x, char32_t y) const;
+
+  
+  
+  
+  char32_t PeekNextChar(State&) const;
 };
 
 #endif  

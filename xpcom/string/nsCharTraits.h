@@ -49,6 +49,9 @@
 
 #define NS_IS_LOW_SURROGATE(u) ((uint32_t(u) & 0xFFFFFC00) == 0xDC00)
 
+#define NS_IS_SURROGATE_PAIR(h, l) \
+  (NS_IS_HIGH_SURROGATE(h) && NS_IS_LOW_SURROGATE(l))
+
 #define IS_SURROGATE(u) ((uint32_t(u) & 0xFFFFF800) == 0xD800)
 
 

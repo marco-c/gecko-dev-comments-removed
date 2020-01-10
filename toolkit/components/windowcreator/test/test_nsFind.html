@@ -3,6 +3,7 @@
 
 
 
+
 <head>
   <meta charset="UTF-8">
   <title>Test for nsFind::Find()</title>
@@ -47,6 +48,10 @@ async function runTests() {
   rf.caseSensitive = false;
 
   searchValue = "TexT";
+  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
+  ok(retRange, "\"" + searchValue + "\" not found (not caseSensitive)");
+
+  searchValue = "𐐸𐐯𐑊𐐬";
   retRange = rf.Find(searchValue, searchRange, startPt, endPt);
   ok(retRange, "\"" + searchValue + "\" not found (not caseSensitive)");
 
@@ -252,6 +257,7 @@ async function runTests() {
 <p id="quotes">"straight" and &ldquo;curly&rdquo; and &lsquo;didn't&rsquo; and 'doesn&rsquo;t'</p>
 <p id="nullcharsnative">native null&#0;</p>
 <p id="nullcharsinjected"></p>
+<p id="deseret">𐐐𐐯𐑊𐐬 𐐶𐐯𐑉𐑊𐐼!</p>
 <div id="content" style="display: none">
 
 </div>
