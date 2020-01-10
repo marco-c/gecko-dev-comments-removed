@@ -150,16 +150,15 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSFontFaceRule,
   tmp->mDecl.TraceWrapper(aCallbacks, aClosure);
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSFontFaceRule)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CSSFontFaceRule,
+                                                mozilla::css::Rule)
   
 
   
   
   
-  
-  
   tmp->mDecl.ReleaseWrapper(static_cast<nsISupports*>(p));
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(mozilla::css::Rule)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSFontFaceRule,
                                                   mozilla::css::Rule)

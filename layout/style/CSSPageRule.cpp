@@ -103,17 +103,15 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSPageRule, css::Rule)
   tmp->mDecls.TraceWrapper(aCallbacks, aClosure);
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSPageRule)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CSSPageRule, css::Rule)
   
 
   
   
   
-  
-  
   tmp->mDecls.ReleaseWrapper(static_cast<nsISupports*>(p));
   tmp->mDecls.mDecls->SetOwningRule(nullptr);
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(css::Rule)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSPageRule, css::Rule)
   
