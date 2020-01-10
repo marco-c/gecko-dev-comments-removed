@@ -851,6 +851,7 @@ class MochitestDesktop(object):
 
     
     TEST_PATH = "tests"
+    NESTED_OOP_TEST_PATH = "nested_oop"
     CHROME_PATH = "redirect.html"
 
     certdbNew = False
@@ -1101,6 +1102,8 @@ class MochitestDesktop(object):
             testURL = "/".join([testHost, self.CHROME_PATH])
         elif options.flavor == 'browser':
             testURL = "about:blank"
+        if options.nested_oop:
+            testURL = "/".join([testHost, self.NESTED_OOP_TEST_PATH])
         return testURL
 
     def getTestsByScheme(self, options, testsToFilter=None, disabled=True):
@@ -1920,6 +1923,7 @@ toolbar#nav-bar {
         
         prefs = {
             "browser.tabs.remote.autostart": options.e10s,
+            "dom.ipc.tabs.nested.enabled": options.nested_oop,
             
             
             "marionette.log.level": "Trace",

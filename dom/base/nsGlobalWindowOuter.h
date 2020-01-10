@@ -74,6 +74,7 @@ class nsIWebBrowserChrome;
 class mozIDOMWindowProxy;
 
 class nsDocShellLoadState;
+class nsDOMWindowList;
 class nsScreen;
 class nsHistory;
 class nsGlobalWindowObserver;
@@ -353,8 +354,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   NS_DECL_NSIOBSERVER
 
-  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> IndexedGetterOuter(
-      uint32_t aIndex);
+  already_AddRefed<nsPIDOMWindowOuter> IndexedGetterOuter(uint32_t aIndex);
 
   already_AddRefed<nsPIDOMWindowOuter> GetTop() override;
   
@@ -535,6 +535,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   nsresult Focus() override;
   void BlurOuter();
   mozilla::dom::BrowsingContext* GetFramesOuter();
+  nsDOMWindowList* GetFrames() final;
   uint32_t Length();
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> GetTopOuter();
 
@@ -917,8 +918,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   virtual bool ShouldShowFocusRing() override;
 
-  virtual void SetKeyboardIndicators(
-      UIStateChangeType aShowFocusRings) override;
+  virtual void SetKeyboardIndicators(UIStateChangeType aShowFocusRings)
+      override;
 
  public:
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() override;
@@ -1098,6 +1099,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   nsCOMPtr<nsIArray> mArguments;
 
+  RefPtr<nsDOMWindowList> mFrames;
   RefPtr<nsDOMWindowUtils> mWindowUtils;
   nsString mStatus;
 

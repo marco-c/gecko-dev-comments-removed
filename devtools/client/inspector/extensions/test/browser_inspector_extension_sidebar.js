@@ -273,7 +273,7 @@ add_task(async function testActiveTabOnNonExistingSidebar() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["devtools.inspector.activeSidebar", "unexisting-sidebar-id"]],
+    set: [["devtools.inspector.activeSidebar"], "unexisting-sidebar-id"],
   });
 
   const res = await openInspectorForURL("about:blank");
