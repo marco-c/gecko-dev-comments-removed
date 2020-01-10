@@ -26,18 +26,83 @@ class CertificateSection extends HTMLElement {
     title.textContent = "Certificate";
     this.infoGroupContainer = this.shadowRoot.querySelector(".info-groups");
     for (let i = 0; i < certArray.length; i++) {
-      let tab = certificateTabs.appendChild(new CertificateTab(i));
+      let tab = document.createElement("button");
+      tab.textContent = "tab" + i;
+      tab.setAttribute("id", "tab" + i);
+      tab.setAttribute("aria-controls", "panel" + i);
+      tab.setAttribute("idnumber", i);
+      tab.setAttribute("role", "tab");
+      tab.classList.add("certificate-tab");
+      tab.classList.add("tab");
+      certificateTabs.appendChild(tab);
+
+      
+      
+      
       if (i === 0) {
         tab.classList.add("selected");
+        tab.setAttribute("tabindex", 0);
+      } else {
+        tab.setAttribute("tabindex", -1);
       }
     }
-
+    this.setAccessibilityEventListeners();
     this.infoGroupsContainers[0].classList.add("selected");
+  }
+
+  
+
+  setAccessibilityEventListeners() {
+    const tabs = this.shadowRoot.querySelectorAll('[role="tab"]');
+    const tabList = this.shadowRoot.querySelector('[role="tablist"]');
+
+    
+    tabs.forEach(tab => {
+      tab.addEventListener("click", e =>
+        updateSelectedItem(e.target.getAttribute("idnumber"))
+      );
+    });
+
+    
+    let tabFocus = 0;
+
+    tabList.addEventListener("keydown", e => {
+      
+      if (e.keyCode === 39 || e.keyCode === 37) {
+        
+        
+        
+        tabs[tabFocus].setAttribute("tabindex", -1);
+        if (e.keyCode === 39) {
+          tabFocus++;
+          
+          if (tabFocus > tabs.length - 1) {
+            tabFocus = 0;
+          }
+          
+        } else if (e.keyCode === 37) {
+          tabFocus--;
+          
+          if (tabFocus < 0) {
+            tabFocus = tabs.length;
+          }
+        }
+        tabs[tabFocus].setAttribute("tabindex", 0);
+        tabs[tabFocus].focus();
+      }
+    });
   }
 
   createInfoGroupsContainers() {
     for (let i = 0; i < certArray.length; i++) {
       this.infoGroupsContainers[i] = document.createElement("div");
+      this.infoGroupsContainers[i].setAttribute("id", "panel" + i);
+      this.infoGroupsContainers[i].setAttribute("role", "tabpanel");
+      this.infoGroupsContainers[i].setAttribute("tabindex", 0);
+      this.infoGroupsContainers[i].setAttribute("aria-labelledby", "tab" + i);
+      if (i !== 0) {
+        this.infoGroupsContainers[i].setAttribute("hidden", true);
+      }
       this.infoGroupsContainers[i].classList.add("info-groups");
       this.shadowRoot.appendChild(this.infoGroupsContainers[i]);
       let arrayItem = certArray[i];
@@ -48,7 +113,7 @@ class CertificateSection extends HTMLElement {
   }
 
   updateSelectedTab(index) {
-    let tabs = this.shadowRoot.querySelectorAll("certificate-tab");
+    let tabs = this.shadowRoot.querySelectorAll(".certificate-tab");
 
     for (let i = 0; i < tabs.length; i++) {
       tabs[i].classList.remove("selected");
