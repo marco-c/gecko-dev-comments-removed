@@ -103,6 +103,10 @@ add_task(async function setup() {
       
       return;
     }
+    if (msg.errorMessage.includes("Can't find profile directory.")) {
+      
+      return;
+    }
     if (msg.errorMessage.includes(EXPECTED_ERROR_MESSAGE)) {
       return;
     }
