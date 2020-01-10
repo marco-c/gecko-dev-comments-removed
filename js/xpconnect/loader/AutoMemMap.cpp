@@ -39,8 +39,7 @@ Result<Ok, nsresult> AutoMemMap::init(nsIFile* file, int flags, int mode,
 }
 
 Result<Ok, nsresult> AutoMemMap::init(const FileDescriptor& file,
-                                      PRFileMapProtect prot,
-                                      size_t expectedSize) {
+                                      PRFileMapProtect prot, size_t maybeSize) {
   MOZ_ASSERT(!fd);
   if (!file.IsValid()) {
     return Err(NS_ERROR_INVALID_ARG);
@@ -54,32 +53,35 @@ Result<Ok, nsresult> AutoMemMap::init(const FileDescriptor& file,
   }
   Unused << handle.release();
 
-  return initInternal(prot, expectedSize);
+  return initInternal(prot, maybeSize);
 }
 
 Result<Ok, nsresult> AutoMemMap::initInternal(PRFileMapProtect prot,
-                                              size_t expectedSize) {
+                                              size_t maybeSize) {
   MOZ_ASSERT(!fileMap);
   MOZ_ASSERT(!addr);
 
-  PRFileInfo64 fileInfo;
-  MOZ_TRY(PR_GetOpenFileInfo64(fd.get(), &fileInfo));
+  if (maybeSize > 0) {
+    
+    
+    
+    size_ = maybeSize;
+  } else {
+    
+    
+    PRFileInfo64 fileInfo;
+    MOZ_TRY(PR_GetOpenFileInfo64(fd.get(), &fileInfo));
 
-  if (fileInfo.size > UINT32_MAX) {
-    return Err(NS_ERROR_INVALID_ARG);
+    if (fileInfo.size > UINT32_MAX) {
+      return Err(NS_ERROR_INVALID_ARG);
+    }
+    size_ = fileInfo.size;
   }
 
   fileMap = PR_CreateFileMap(fd, 0, prot);
   if (!fileMap) {
     return Err(NS_ERROR_FAILURE);
   }
-
-  size_ = fileInfo.size;
-  
-  
-  
-  
-  MOZ_ASSERT_IF(expectedSize > 0, size_ == expectedSize);
 
   addr = PR_MemMap(fileMap, 0, size_);
   if (!addr) {
@@ -122,7 +124,8 @@ FileDescriptor AutoMemMap::cloneHandle() const {
 Result<Ok, nsresult> AutoMemMap::initWithHandle(const FileDescriptor& file,
                                                 size_t size,
                                                 PRFileMapProtect prot) {
-  return init(file, prot);
+  MOZ_DIAGNOSTIC_ASSERT(size > 0);
+  return init(file, prot, size);
 }
 
 FileDescriptor AutoMemMap::cloneHandle() const { return cloneFileDescriptor(); }
