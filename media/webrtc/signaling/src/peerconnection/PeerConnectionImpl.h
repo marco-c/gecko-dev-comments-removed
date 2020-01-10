@@ -5,7 +5,6 @@
 #ifndef _PEER_CONNECTION_IMPL_H_
 #define _PEER_CONNECTION_IMPL_H_
 
-#include <deque>
 #include <string>
 #include <vector>
 #include <map>
@@ -138,6 +137,20 @@ class RTCStatsQuery {
   std::string transportId;
   bool grabAllLevels;
   DOMHighResTimeStamp now;
+};
+
+
+
+
+struct PeerConnectionAutoTimer {
+  PeerConnectionAutoTimer() : mRefCnt(1), mStart(TimeStamp::Now()){};
+  void AddRef();
+  void Release();
+  bool IsStopped();
+
+ private:
+  int64_t mRefCnt;
+  TimeStamp mStart;
 };
 
 typedef MozPromise<UniquePtr<RTCStatsQuery>, nsresult, true>
@@ -623,12 +636,12 @@ class PeerConnectionImpl final
   unsigned long mIceRollbackCount;
 
   
+  
   mozilla::TimeStamp mIceStartTime;
   
-  mozilla::TimeStamp mStartTime;
-  
-  
   bool mIceFinished = false;
+  
+  static std::map<std::string, PeerConnectionAutoTimer> mAutoTimers;
 
   bool mHaveConfiguredCodecs;
 
