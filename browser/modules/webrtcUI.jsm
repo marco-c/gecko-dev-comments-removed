@@ -639,6 +639,10 @@ function prompt(aBrowser, aRequest) {
         if (videoDevices.length && sharingScreen) {
           camAllowed = false;
         }
+        if (aRequest.isThirdPartyOrigin) {
+          camAllowed = false;
+          micAllowed = false;
+        }
 
         let activeCamera;
         let activeMic;
@@ -1083,7 +1087,10 @@ function prompt(aBrowser, aRequest) {
   };
 
   
-  if (!PrivateBrowsingUtils.isBrowserPrivate(aBrowser)) {
+  if (
+    !PrivateBrowsingUtils.isBrowserPrivate(aBrowser) &&
+    !aRequest.isThirdPartyOrigin
+  ) {
     
     
     
