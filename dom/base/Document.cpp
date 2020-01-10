@@ -11104,7 +11104,7 @@ nsresult Document::CloneDocHelper(Document* clone) const {
   
   clone->mCharacterSet = mCharacterSet;
   clone->mCharacterSetSource = mCharacterSetSource;
-  clone->mCompatMode = mCompatMode;
+  clone->SetCompatibilityMode(mCompatMode);
   clone->mBidiOptions = mBidiOptions;
   clone->mContentLanguage = mContentLanguage;
   clone->SetContentTypeInternal(GetContentTypeInternal());
