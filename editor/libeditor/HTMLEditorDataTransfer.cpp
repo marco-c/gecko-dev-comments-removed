@@ -1643,8 +1643,10 @@ static const char* textHtmlEditorFlavors[] = {kUnicodeMime,   kHTMLMime,
 
 bool HTMLEditor::CanPaste(int32_t aClipboardType) const {
   
+  
   Document* document = GetDocument();
-  if (document && document->IsHTMLOrXHTML()) {
+  if (document && document->IsHTMLOrXHTML() &&
+      !nsContentUtils::IsChromeDoc(document)) {
     return true;
   }
 

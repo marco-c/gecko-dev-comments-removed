@@ -1795,8 +1795,10 @@ bool TextEditor::CanCut() const {
   }
 
   
+  
   Document* document = GetDocument();
-  if (document && document->IsHTMLOrXHTML()) {
+  if (document && document->IsHTMLOrXHTML() &&
+      !nsContentUtils::IsChromeDoc(document)) {
     return true;
   }
 
@@ -1824,8 +1826,10 @@ bool TextEditor::CanCopy() const {
   }
 
   
+  
   Document* document = GetDocument();
-  if (document && document->IsHTMLOrXHTML()) {
+  if (document && document->IsHTMLOrXHTML() &&
+      !nsContentUtils::IsChromeDoc(document)) {
     return true;
   }
 

@@ -488,7 +488,7 @@ nsresult nsClipboardCommand::IsCommandEnabled(const char* aCommandName,
   RefPtr<dom::Document> doc = window->GetExtantDoc();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
-  if (doc->IsHTMLOrXHTML()) {
+  if (doc->IsHTMLOrXHTML() && !nsContentUtils::IsChromeDoc(doc)) {
     
     
     *outCmdEnabled = true;
