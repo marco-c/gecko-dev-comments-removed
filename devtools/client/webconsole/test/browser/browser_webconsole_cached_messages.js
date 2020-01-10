@@ -3,13 +3,14 @@
 
 
 
-
 "use strict";
+
+
+requestLongerTimeout(2);
 
 const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
-  "test/browser/" +
-  "test-webconsole-error-observer.html";
+  "test/browser/test-webconsole-error-observer.html";
 
 add_task(async function() {
   
@@ -25,31 +26,36 @@ add_task(async function() {
   info("Open the console");
   let hud = await openConsole();
 
-  await testMessagesVisibility(hud, true);
+  await testMessagesVisibility(hud);
 
   info("Close the toolbox");
   await closeToolbox();
 
   info("Open the console again");
   hud = await openConsole();
-  await testMessagesVisibility(hud, false);
+  await testMessagesVisibility(hud);
 });
 
-async function testMessagesVisibility(hud, waitForCSSMessage) {
-  let message = findMessage(hud, "log Bazzle", ".message.log");
+async function testMessagesVisibility(hud) {
+  let message = await waitFor(() =>
+    findMessage(hud, "log Bazzle", ".message.log")
+  );
   ok(message, "console.log message is visible");
 
-  message = findMessage(hud, "error Bazzle", ".message.error");
+  message = await waitFor(() =>
+    findMessage(hud, "error Bazzle", ".message.error")
+  );
   ok(message, "console.error message is visible");
 
-  message = findMessage(hud, "bazBug611032", ".message.error");
+  message = await waitFor(() =>
+    findMessage(hud, "bazBug611032", ".message.error")
+  );
   ok(message, "exception message is visible");
 
   
   
-  if (waitForCSSMessage) {
-    await waitForMessage(hud, "cssColorBug611032");
-  }
-  message = findMessage(hud, "cssColorBug611032", ".message.warn.css");
+  message = await waitFor(() =>
+    findMessage(hud, "cssColorBug611032", ".message.warn.css")
+  );
   ok(message, "css warning message is visible");
 }
