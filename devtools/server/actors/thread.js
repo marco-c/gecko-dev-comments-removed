@@ -553,7 +553,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       const pkt = onPacket(packet);
 
       this._priorPause = pkt;
-      this.conn.send(pkt);
+      this.conn.sendActorEvent(this.actorID, "paused", pkt);
     } catch (error) {
       reportError(error);
       this.conn.send({
@@ -1151,31 +1151,30 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onInterrupt: function(request) {
+  onInterrupt: function({when}) {
     if (this.state == "exited") {
       return { type: "exited" };
     } else if (this.state == "paused") {
       
-      return { type: "paused", why: { type: "alreadyPaused" } };
+      this.conn.sendActorEvent(this.actorID, "paused", { why: { type: "alreadyPaused" }});
+      return {};
     } else if (this.state != "running") {
       return { error: "wrongState",
                message: "Received interrupt request in " + this.state +
                         " state." };
     }
-
     try {
       
       
-      if (request.when == "onNext" && !this.dbg.replaying) {
+      if (when == "onNext" && !this.dbg.replaying) {
         const onEnterFrame = (frame) => {
-          return this._pauseAndRespond(frame, { type: "interrupted", onNext: true });
+          this._pauseAndRespond(frame, { type: "interrupted", onNext: true });
         };
         this.dbg.onEnterFrame = onEnterFrame;
 
         this.conn.sendActorEvent(this.actorID, "willInterrupt");
         return {};
       }
-
       if (this.dbg.replaying) {
         this.dbg.replayPause();
       }
@@ -1194,7 +1193,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
-      this.conn.send(packet);
+      this.conn.send({from: this.actorID, type: "interrupt"});
+      this.conn.sendActorEvent(this.actorID, "paused", packet);
 
       
       this._pushThreadPause();
