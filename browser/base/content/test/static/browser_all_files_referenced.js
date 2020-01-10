@@ -243,9 +243,6 @@ const ignorableWhitelist = new Set([
 
   
   "resource://gre/res/test.properties",
-
-  
-  "resource://app/localization/en-US/browser/aboutConfig.ftl",
 ]);
 for (let entry of ignorableWhitelist) {
   whitelist.add(entry);
@@ -267,11 +264,6 @@ if (!isDevtools) {
   ]) {
     whitelist.add("resource://services-sync/engines/" + module);
   }
-}
-
-if (!AppConstants.NIGHTLY_BUILD && !isDevtools) {
-  
-  whitelist.add("chrome://browser/skin/toggle.svg");
 }
 
 if (AppConstants.MOZ_CODE_COVERAGE) {
