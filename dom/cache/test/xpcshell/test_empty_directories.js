@@ -67,17 +67,7 @@ async function run_test() {
   ok(!!response, "Upgrade from 25 to 26 do succeed");
   ok(verifyResult(), "InitOrigin should clean all empty directories");
 
-  info("Test 1 - DeleteBodyFiles shouldn't leave an empty directoy");
-
-  await cache.put(url, response.clone());
-  await cache.delete(url);
-
-  
-  await cache.match(url);
-
-  ok(verifyResult(), "Empty directory should be removed");
-
-  info("Test 2 - DeleteOrphanedBodyFiles shouldn't leave an empty directoy");
+  info("Test 1 - DeleteOrphanedBodyFiles shouldn't leave an empty directoy");
 
   await cache.put(url, response.clone());
   
