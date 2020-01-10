@@ -112,7 +112,7 @@ host_fetches = {
             
             
             
-            'url': 'https://imagemagick.org/download/binaries/ImageMagick-x86_64-apple-darwin18.7.0.tar.gz',  
+            'url': 'https://ftp.icm.edu.pl/packages/ImageMagick/binaries/ImageMagick-x86_64-apple-darwin18.7.0.tar.gz',  
             
             'path': 'ImageMagick-7.0.8',
         },
