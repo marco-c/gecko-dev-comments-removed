@@ -2637,7 +2637,6 @@ HttpChannelParent::OnRedirectResult(bool succeeded) {
 }
 
 nsresult HttpChannelParent::TriggerCrossProcessRedirect(nsIChannel* aChannel,
-                                                        nsILoadInfo* aLoadInfo,
                                                         uint64_t aIdentifier) {
   CancelChildCrossProcessRedirect();
 
@@ -2645,7 +2644,21 @@ nsresult HttpChannelParent::TriggerCrossProcessRedirect(nsIChannel* aChannel,
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(channel);
   RefPtr<nsHttpChannel::ContentProcessIdPromise> p =
       httpChannel->TakeRedirectContentProcessIdPromise();
-  nsCOMPtr<nsILoadInfo> loadInfo = aLoadInfo;
+
+  nsCOMPtr<nsIURI> uri;
+  aChannel->GetURI(getter_AddRefs(uri));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->CloneLoadInfoForRedirect(
+      uri, nsIChannelEventSink::REDIRECT_INTERNAL);
+  loadInfo->SetResultPrincipalURI(uri);
 
   RefPtr<HttpChannelParent> self = this;
   p->Then(
