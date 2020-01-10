@@ -18,6 +18,11 @@ namespace mozilla {
 
 using RayFunction = StyleRayFunction<StyleAngle>;
 
+namespace layers {
+class PathCommand;
+class TransformData;
+}  
+
 struct MotionPathData {
   gfx::Point mTranslate;
   float mRotate;
@@ -31,7 +36,13 @@ struct RayReferenceData {
   
   CSSRect mContainingBlockRect;
 
+  RayReferenceData() = default;
   explicit RayReferenceData(const nsIFrame* aFrame);
+
+  bool operator==(const RayReferenceData& aOther) const {
+    return mInitialPosition == aOther.mInitialPosition &&
+           mContainingBlockRect == aOther.mContainingBlockRect;
+  }
 };
 
 
@@ -153,7 +164,29 @@ class MotionPathUtils final {
   
 
 
+
   static Maybe<MotionPathData> ResolveMotionPath(const nsIFrame* aFrame);
+
+  
+
+
+
+  static Maybe<MotionPathData> ResolveMotionPath(
+      const StyleOffsetPath* aPath, const StyleLengthPercentage* aDistance,
+      const StyleOffsetRotate* aRotate, const StylePositionOrAuto* aAnchor,
+      const layers::TransformData& aTransformData);
+
+  
+
+
+
+
+
+
+
+
+  static nsTArray<layers::PathCommand> NormalizeAndConvertToPathCommands(
+      const StyleSVGPathData& aPath);
 };
 
 }  

@@ -86,6 +86,12 @@ struct AnimationValue {
   const mozilla::StyleRotate& GetRotateProperty() const;
 
   
+  const mozilla::StyleOffsetPath& GetOffsetPathProperty() const;
+  const mozilla::LengthPercentage& GetOffsetDistanceProperty() const;
+  const mozilla::StyleOffsetRotate& GetOffsetRotateProperty() const;
+  const mozilla::StylePositionOrAuto& GetOffsetAnchorProperty() const;
+
+  
   mozilla::gfx::Size GetScaleValue(const nsIFrame* aFrame) const;
 
   

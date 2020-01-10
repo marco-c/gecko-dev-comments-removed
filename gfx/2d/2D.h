@@ -1659,6 +1659,12 @@ class GFX2D_API Factory {
 
 
 
+  static already_AddRefed<PathBuilder> CreateSimplePathBuilder();
+
+  
+
+
+
 
 
 

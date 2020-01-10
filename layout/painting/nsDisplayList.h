@@ -7129,19 +7129,18 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
   struct MOZ_STACK_CLASS FrameTransformProperties {
     FrameTransformProperties(const nsIFrame* aFrame, float aAppUnitsPerPixel,
                              const nsRect* aBoundsOverride);
-    
-    
-    
     FrameTransformProperties(const mozilla::StyleTranslate& aTranslate,
                              const mozilla::StyleRotate& aRotate,
                              const mozilla::StyleScale& aScale,
                              const mozilla::StyleTransform& aTransform,
+                             const Maybe<mozilla::MotionPathData>& aMotion,
                              const Point3D& aToTransformOrigin)
         : mFrame(nullptr),
           mTranslate(aTranslate),
           mRotate(aRotate),
           mScale(aScale),
           mTransform(aTransform),
+          mMotion(aMotion),
           mToTransformOrigin(aToTransformOrigin) {}
 
     bool HasTransform() const {
