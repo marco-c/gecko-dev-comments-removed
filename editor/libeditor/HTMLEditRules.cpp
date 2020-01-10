@@ -3134,6 +3134,32 @@ EditActionResult HTMLEditRules::HandleDeleteNonCollapsedSelection(
     }
   }
 
+  
+  
+  if (firstRangeStart.GetContainer() == firstRangeEnd.GetContainer()) {
+    {
+      AutoTrackDOMPoint startTracker(HTMLEditorRef().RangeUpdaterRef(),
+                                     &firstRangeStart);
+      AutoTrackDOMPoint endTracker(HTMLEditorRef().RangeUpdaterRef(),
+                                   &firstRangeEnd);
+
+      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                        .DeleteSelectionWithTransaction(aDirectionAndAmount,
+                                                        aStripWrappers);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionHandled(rv);
+      }
+    }
+    nsresult rv = DeleteUnnecessaryNodesAndCollapseSelection(
+        aDirectionAndAmount, firstRangeStart, firstRangeEnd);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "DeleteUnnecessaryNodesAndCollapseSelection() failed");
+    return EditActionHandled(rv);
+  }
+
   EditActionResult result(NS_OK);
   result.MarkAsHandled();
   {
@@ -3145,201 +3171,185 @@ EditActionResult HTMLEditRules::HandleDeleteNonCollapsedSelection(
                                    &firstRangeStart);
     AutoTrackDOMPoint endTracker(HTMLEditorRef().RangeUpdaterRef(),
                                  &firstRangeEnd);
-    
 
-    if (firstRangeStart.GetContainer() == firstRangeEnd.GetContainer()) {
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .DeleteSelectionWithTransaction(aDirectionAndAmount,
-                                                        aStripWrappers);
+    
+    RefPtr<Element> startCiteNode =
+        HTMLEditorRef().GetMostAncestorMailCiteElement(
+            *firstRangeStart.GetContainer());
+    RefPtr<Element> endCiteNode =
+        HTMLEditorRef().GetMostAncestorMailCiteElement(
+            *firstRangeEnd.GetContainer());
+
+    
+    
+    
+    if (startCiteNode && !endCiteNode) {
+      aDirectionAndAmount = nsIEditor::eNext;
+    } else if (!startCiteNode && endCiteNode) {
+      aDirectionAndAmount = nsIEditor::ePrevious;
+    }
+
+    
+    RefPtr<Element> leftBlock =
+        HTMLEditor::GetBlock(*firstRangeStart.GetContainer());
+    RefPtr<Element> rightBlock =
+        HTMLEditor::GetBlock(*firstRangeEnd.GetContainer());
+
+    
+    if (leftBlock && leftBlock == rightBlock) {
+      MOZ_KnownLive(HTMLEditorRef())
+          .DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
       if (NS_WARN_IF(!CanHandleEditAction())) {
         return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
       }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return result.SetResult(rv);
-      }
     } else {
       
-      RefPtr<Element> startCiteNode =
-          HTMLEditorRef().GetMostAncestorMailCiteElement(
-              *firstRangeStart.GetContainer());
-      RefPtr<Element> endCiteNode =
-          HTMLEditorRef().GetMostAncestorMailCiteElement(
-              *firstRangeEnd.GetContainer());
-
-      
-      
-      
-      if (startCiteNode && !endCiteNode) {
-        aDirectionAndAmount = nsIEditor::eNext;
-      } else if (!startCiteNode && endCiteNode) {
-        aDirectionAndAmount = nsIEditor::ePrevious;
+      if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
+        return result.SetResult(NS_ERROR_FAILURE);
       }
 
       
-      RefPtr<Element> leftBlock =
-          HTMLEditor::GetBlock(*firstRangeStart.GetContainer());
-      RefPtr<Element> rightBlock =
-          HTMLEditor::GetBlock(*firstRangeEnd.GetContainer());
+      nsCOMPtr<nsINode> leftBlockParent = leftBlock->GetParentNode();
+      nsCOMPtr<nsINode> rightBlockParent = rightBlock->GetParentNode();
 
       
-      if (leftBlock && leftBlock == rightBlock) {
-        MOZ_KnownLive(HTMLEditorRef())
-            .DeleteSelectionWithTransaction(aDirectionAndAmount,
-                                            aStripWrappers);
+      if (leftBlockParent == rightBlockParent &&
+          HTMLEditorRef().AreNodesSameType(*leftBlock, *rightBlock) &&
+          
+          (leftBlock->IsHTMLElement(nsGkAtoms::p) ||
+           HTMLEditUtils::IsListItem(leftBlock) ||
+           HTMLEditUtils::IsHeader(*leftBlock))) {
+        
+        nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                          .DeleteSelectionWithTransaction(aDirectionAndAmount,
+                                                          aStripWrappers);
         if (NS_WARN_IF(!CanHandleEditAction())) {
           return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
         }
-      } else {
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return result.SetResult(rv);
+        }
         
-        if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
+        EditorDOMPoint atFirstChildOfTheLastRightNode =
+            MOZ_KnownLive(HTMLEditorRef())
+                .JoinNodesDeepWithTransaction(*leftBlock, *rightBlock);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (NS_WARN_IF(!atFirstChildOfTheLastRightNode.IsSet())) {
           return result.SetResult(NS_ERROR_FAILURE);
         }
-
         
-        nsCOMPtr<nsINode> leftBlockParent = leftBlock->GetParentNode();
-        nsCOMPtr<nsINode> rightBlockParent = rightBlock->GetParentNode();
-
-        
-        if (leftBlockParent == rightBlockParent &&
-            HTMLEditorRef().AreNodesSameType(*leftBlock, *rightBlock) &&
-            
-            (leftBlock->IsHTMLElement(nsGkAtoms::p) ||
-             HTMLEditUtils::IsListItem(leftBlock) ||
-             HTMLEditUtils::IsHeader(*leftBlock))) {
-          
-          nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                            .DeleteSelectionWithTransaction(aDirectionAndAmount,
-                                                            aStripWrappers);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return result.SetResult(rv);
-          }
-          
-          EditorDOMPoint atFirstChildOfTheLastRightNode =
-              MOZ_KnownLive(HTMLEditorRef())
-                  .JoinNodesDeepWithTransaction(*leftBlock, *rightBlock);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (NS_WARN_IF(!atFirstChildOfTheLastRightNode.IsSet())) {
-            return result.SetResult(NS_ERROR_FAILURE);
-          }
-          
-          ErrorResult error;
-          SelectionRefPtr()->Collapse(atFirstChildOfTheLastRightNode, error);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            error.SuppressException();
-            return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
-          return result.SetResult(error.StealNSResult());
+        ErrorResult error;
+        SelectionRefPtr()->Collapse(atFirstChildOfTheLastRightNode, error);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          error.SuppressException();
+          return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
         }
+        NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+        return result.SetResult(error.StealNSResult());
+      }
+
+      
+      
+      bool join = true;
+
+      AutoRangeArray arrayOfRanges(SelectionRefPtr());
+      for (auto& range : arrayOfRanges.mRanges) {
+        
+        nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
+        TrivialFunctor functor;
+        DOMSubtreeIterator iter;
+        nsresult rv = iter.Init(*range);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return result.SetResult(rv);
+        }
+        iter.AppendList(functor, arrayOfNodes);
 
         
-        
-        bool join = true;
-
-        AutoRangeArray arrayOfRanges(SelectionRefPtr());
-        for (auto& range : arrayOfRanges.mRanges) {
-          
-          nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-          TrivialFunctor functor;
-          DOMSubtreeIterator iter;
-          nsresult rv = iter.Init(*range);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return result.SetResult(rv);
+        int32_t listCount = arrayOfNodes.Length();
+        for (int32_t j = 0; j < listCount; j++) {
+          OwningNonNull<nsINode> node = arrayOfNodes[0];
+          nsresult rv = DeleteElementsExceptTableRelatedElements(node);
+          if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+            return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
           }
-          iter.AppendList(functor, arrayOfNodes);
-
+          NS_WARNING_ASSERTION(
+              NS_SUCCEEDED(rv),
+              "Failed to elements except table related elements");
+          arrayOfNodes.RemoveElementAt(0);
           
-          int32_t listCount = arrayOfNodes.Length();
-          for (int32_t j = 0; j < listCount; j++) {
-            OwningNonNull<nsINode> node = arrayOfNodes[0];
-            nsresult rv = DeleteElementsExceptTableRelatedElements(node);
-            if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-              return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
+          
+          if (join && aSelectionWasCollapsed == SelectionWasCollapsed::Yes) {
+            if (!node->IsContent()) {
+              join = false;
+              continue;
             }
-            NS_WARNING_ASSERTION(
-                NS_SUCCEEDED(rv),
-                "Failed to elements except table related elements");
-            arrayOfNodes.RemoveElementAt(0);
-            
-            
-            if (join && aSelectionWasCollapsed == SelectionWasCollapsed::Yes) {
-              if (!node->IsContent()) {
-                join = false;
-                continue;
-              }
-              nsIContent* content = node->AsContent();
-              if (Text* text = content->GetAsText()) {
-                join = !HTMLEditorRef().IsInVisibleTextFrames(*text);
-              } else {
-                join = content->IsHTMLElement(nsGkAtoms::br) &&
-                       !HTMLEditorRef().IsVisibleBRElement(node);
-              }
+            nsIContent* content = node->AsContent();
+            if (Text* text = content->GetAsText()) {
+              join = !HTMLEditorRef().IsInVisibleTextFrames(*text);
+            } else {
+              join = content->IsHTMLElement(nsGkAtoms::br) &&
+                     !HTMLEditorRef().IsVisibleBRElement(node);
             }
           }
         }
+      }
 
+      
+      
+      
+      
+      if (firstRangeStart.IsInTextNode() &&
+          !firstRangeStart.IsEndOfContainer()) {
         
-        
-        
-        
-        if (firstRangeStart.IsInTextNode() &&
-            !firstRangeStart.IsEndOfContainer()) {
-          
-          OwningNonNull<Text> textNode = *firstRangeStart.GetContainerAsText();
-          nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                            .DeleteTextWithTransaction(
-                                textNode, firstRangeStart.Offset(),
-                                firstRangeStart.GetContainer()->Length() -
-                                    firstRangeStart.Offset());
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return result.SetResult(rv);
-          }
+        OwningNonNull<Text> textNode = *firstRangeStart.GetContainerAsText();
+        nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                          .DeleteTextWithTransaction(
+                              textNode, firstRangeStart.Offset(),
+                              firstRangeStart.GetContainer()->Length() -
+                                  firstRangeStart.Offset());
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
         }
-        if (firstRangeEnd.IsInTextNode() &&
-            !firstRangeEnd.IsStartOfContainer()) {
-          
-          OwningNonNull<Text> textNode = *firstRangeEnd.GetContainerAsText();
-          nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                            .DeleteTextWithTransaction(textNode, 0,
-                                                       firstRangeEnd.Offset());
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return result.SetResult(rv);
-          }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return result.SetResult(rv);
+        }
+      }
+      if (firstRangeEnd.IsInTextNode() && !firstRangeEnd.IsStartOfContainer()) {
+        
+        OwningNonNull<Text> textNode = *firstRangeEnd.GetContainerAsText();
+        nsresult rv =
+            MOZ_KnownLive(HTMLEditorRef())
+                .DeleteTextWithTransaction(textNode, 0, firstRangeEnd.Offset());
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return result.SetResult(rv);
+        }
+      }
+
+      if (join) {
+        result |= MOZ_KnownLive(HTMLEditorRef())
+                      .TryToJoinBlocksWithTransaction(*leftBlock, *rightBlock);
+        if (NS_WARN_IF(result.Failed())) {
+          return result;
         }
 
-        if (join) {
-          result |=
-              MOZ_KnownLive(HTMLEditorRef())
-                  .TryToJoinBlocksWithTransaction(*leftBlock, *rightBlock);
-          if (NS_WARN_IF(result.Failed())) {
-            return result;
-          }
-
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (aDirectionAndAmount == nsIEditor::eNext) {
-            aDirectionAndAmount = nsIEditor::ePrevious;
-          } else {
-            aDirectionAndAmount = nsIEditor::eNext;
-          }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (aDirectionAndAmount == nsIEditor::eNext) {
+          aDirectionAndAmount = nsIEditor::ePrevious;
+        } else {
+          aDirectionAndAmount = nsIEditor::eNext;
         }
       }
     }
