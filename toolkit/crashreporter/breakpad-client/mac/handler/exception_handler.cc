@@ -41,6 +41,10 @@
 #include "common/mac/scoped_task_suspend-inl.h"
 #include "google_breakpad/common/minidump_exception_mac.h"
 
+#ifdef MOZ_PHC
+#include "replace_malloc_bridge.h"
+#endif
+
 #include "mozilla/RecordReplay.h"
 
 #ifndef __EXCEPTIONS
@@ -348,6 +352,19 @@ bool ExceptionHandler::WriteMinidumpForChild(mach_port_t child,
   return result;
 }
 
+#ifdef MOZ_PHC
+static void GetPHCAddrInfo(int64_t exception_subcode,
+                           mozilla::phc::AddrInfo* addr_info) {
+  
+  if (exception_subcode) {
+    
+    
+    char* addr = reinterpret_cast<char*>(exception_subcode);
+    ReplaceMalloc::IsPHCAllocation(addr, addr_info);
+  }
+}
+#endif
+
 bool ExceptionHandler::WriteMinidumpWithException(
     int exception_type,
     int exception_code,
@@ -361,6 +378,11 @@ bool ExceptionHandler::WriteMinidumpWithException(
 #if TARGET_OS_IPHONE
   
   exit_after_write = false;
+#endif
+
+    mozilla::phc::AddrInfo addr_info;
+#ifdef MOZ_PHC
+    GetPHCAddrInfo(exception_subcode, &addr_info);
 #endif
 
   if (directCallback_) {
@@ -377,7 +399,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
     if (exception_type && exception_code) {
       
       
-      if (filter_ && !filter_(callback_context_, nullptr))
+      if (filter_ && !filter_(callback_context_, &addr_info))
         return false;
       result = crash_generation_client_->RequestDumpForException(
           exception_type,
@@ -418,7 +440,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
       
       
       if (callback_(dump_path_c_, next_minidump_id_c_, callback_context_,
-                    nullptr, result)) {
+                    &addr_info, result)) {
         if (exit_after_write)
           _exit(exception_type);
       }

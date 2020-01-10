@@ -7,8 +7,9 @@ function check(extra, size) {
   Assert.equal(extra.PHCUsableSize, size);
 
   
-  Assert.ok(/^(\d+,)+\d+$/.test(extra.PHCAllocStack));
-  Assert.ok(/^(\d+,)+\d+$/.test(extra.PHCFreeStack));
+  
+  Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCAllocStack));
+  Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCFreeStack));
 }
 
 function run_test() {

@@ -23,8 +23,9 @@ function run_test() {
       Assert.equal(extra.PHCUsableSize, 32);
 
       
-      Assert.ok(/^(\d+,)+\d+$/.test(extra.PHCAllocStack));
-      Assert.ok(/^(\d+,)+\d+$/.test(extra.PHCFreeStack));
+      
+      Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCAllocStack));
+      Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCFreeStack));
     }
   );
 }
