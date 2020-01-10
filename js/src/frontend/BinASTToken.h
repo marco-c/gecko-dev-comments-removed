@@ -3355,6 +3355,30 @@ const size_t BINAST_INTERFACE_AND_FIELD_LIMIT = 275;
 
 
 
+#define BINAST_PARAM_NUMBER_OF_INTERFACE_AND_FIELD(X)                        \
+  (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X),  \
+      (X), (X), (X), (X), (X), (X), (X), (X)
+
+
+
 
 
 
@@ -3698,6 +3722,12 @@ enum class BinASTList : uint16_t {
 
 
 const size_t BINAST_NUMBER_OF_LIST_TYPES = 22;
+
+
+
+#define BINAST_PARAM_NUMBER_OF_LIST_TYPES(X)                                 \
+  (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), (X), \
+      (X), (X), (X), (X), (X), (X), (X)
 
 #define FOR_EACH_BIN_SUM(F)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
   F(ArrowExpression, "ArrowExpression", ARROW_EXPRESSION,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
