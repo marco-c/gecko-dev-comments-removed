@@ -340,9 +340,6 @@ class nsContentSink : public nsICSSLoaderObserver,
       mProcessLinkHeaderEvent;
 
   
-  static int32_t sInteractiveParseTime;
-  static int32_t sPerfParseTime;
-  
   static int32_t sInteractiveTime;
   
   static int32_t sInitialPerfTime;
