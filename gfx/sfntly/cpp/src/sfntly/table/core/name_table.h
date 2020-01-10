@@ -446,12 +446,12 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
   class NameEntry : public RefCounted<NameEntry> {
    public:
     NameEntry();
-    NameEntry(const NameEntryId& name_entry_id, const ByteVector& name_bytes);
+    NameEntry(const NameEntryId& name_entry_id, const std::vector<uint8_t>& name_bytes);
     NameEntry(int32_t platform_id,
               int32_t encoding_id,
               int32_t language_id,
               int32_t name_id,
-              const ByteVector& name_bytes);
+              const std::vector<uint8_t>& name_bytes);
     virtual ~NameEntry();
 
     NameEntryId& name_entry_id() { return name_entry_id_; }
@@ -462,7 +462,7 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
 
     
     
-    ByteVector* NameAsBytes();
+    std::vector<uint8_t>* NameAsBytes();
 
     
     int32_t NameBytesLength();
@@ -477,10 +477,10 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
 
    private:
     void Init(int32_t platform_id, int32_t encoding_id, int32_t language_id,
-              int32_t name_id, const ByteVector* name_bytes);
+              int32_t name_id, const std::vector<uint8_t>* name_bytes);
 
     NameEntryId name_entry_id_;
-    ByteVector name_bytes_;
+    std::vector<uint8_t> name_bytes_;
 
     friend class NameEntryBuilder;
   };
@@ -492,14 +492,14 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
    public:
     NameEntryBuilder();
     NameEntryBuilder(const NameEntryId& name_entry_id,
-                     const ByteVector& name_bytes);
+                     const std::vector<uint8_t>& name_bytes);
     explicit NameEntryBuilder(const NameEntryId& name_entry_id);
     explicit NameEntryBuilder(NameEntry* entry);
     virtual ~NameEntryBuilder();
 
     virtual void SetName(const UChar* name);
-    virtual void SetName(const ByteVector& name_bytes);
-    virtual void SetName(const ByteVector& name_bytes,
+    virtual void SetName(const std::vector<uint8_t>& name_bytes);
+    virtual void SetName(const std::vector<uint8_t>& name_bytes,
                          int32_t offset,
                          int32_t length);
 
@@ -510,7 +510,7 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
 
    private:
     void Init(int32_t platform_id, int32_t encoding_id, int32_t language_id,
-              int32_t name_id, const ByteVector* name_bytes);
+              int32_t name_id, const std::vector<uint8_t>* name_bytes);
 
     Ptr<NameEntry> name_entry_;
   };
@@ -647,10 +647,10 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
 
   
   
-  virtual void NameAsBytes(int32_t index, ByteVector* b);
+  virtual void NameAsBytes(int32_t index, std::vector<uint8_t>* b);
   virtual void NameAsBytes(int32_t platform_id, int32_t encoding_id,
                            int32_t language_id, int32_t name_id,
-                           ByteVector* b);
+                           std::vector<uint8_t>* b);
 
   
   
@@ -727,10 +727,10 @@ class NameTable : public SubTableContainerTable, public RefCounted<NameTable> {
   
   
   static void ConvertToNameBytes(const UChar* name, int32_t platform_id,
-                                 int32_t encoding_id, ByteVector* b);
+                                 int32_t encoding_id, std::vector<uint8_t>* b);
 
   
-  static UChar* ConvertFromNameBytes(ByteVector* name_bytes,
+  static UChar* ConvertFromNameBytes(std::vector<uint8_t>* name_bytes,
                                      int32_t platform_id, int32_t encoding_id);
 };  
 typedef Ptr<NameTable> NameTablePtr;

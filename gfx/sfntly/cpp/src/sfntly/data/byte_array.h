@@ -32,15 +32,15 @@ class ByteArray : virtual public RefCount {
   virtual ~ByteArray();
 
   
-  int32_t Length();
+  int32_t Length() const { return filled_length_; }
 
   
   
   
-  int32_t Size();
+  int32_t Size() const { return storage_length_; }
 
   
-  bool growable() { return growable_; }
+  bool growable() const { return growable_; }
 
   int32_t SetFilledLength(int32_t filled_length);
 
@@ -55,7 +55,7 @@ class ByteArray : virtual public RefCount {
   
   
   
-  virtual int32_t Get(int32_t index, ByteVector* b);
+  virtual int32_t Get(int32_t index, std::vector<uint8_t>* b);
 
   
   
@@ -66,18 +66,18 @@ class ByteArray : virtual public RefCount {
   
   
   virtual int32_t Get(int32_t index,
-                      byte_t* b,
+                      uint8_t* b,
                       int32_t offset,
                       int32_t length);
 
   
   
-  virtual void Put(int32_t index, byte_t b);
+  virtual void Put(int32_t index, uint8_t b);
 
   
   
   
-  virtual int32_t Put(int32_t index, ByteVector* b);
+  virtual int32_t Put(int32_t index, std::vector<uint8_t>* b);
 
   
   
@@ -89,7 +89,7 @@ class ByteArray : virtual public RefCount {
   
   
   virtual int32_t Put(int32_t index,
-                      byte_t* b,
+                      uint8_t* b,
                       int32_t offset,
                       int32_t length);
 
@@ -149,7 +149,7 @@ class ByteArray : virtual public RefCount {
   
   
   
-  virtual void InternalPut(int32_t index, byte_t b) = 0;
+  virtual void InternalPut(int32_t index, uint8_t b) = 0;
 
   
   
@@ -158,14 +158,14 @@ class ByteArray : virtual public RefCount {
   
   
   virtual int32_t InternalPut(int32_t index,
-                              byte_t* b,
+                              uint8_t* b,
                               int32_t offset,
                               int32_t length) = 0;
 
   
   
   
-  virtual byte_t InternalGet(int32_t index) = 0;
+  virtual uint8_t InternalGet(int32_t index) = 0;
 
   
   
@@ -174,7 +174,7 @@ class ByteArray : virtual public RefCount {
   
   
   virtual int32_t InternalGet(int32_t index,
-                              byte_t* b,
+                              uint8_t* b,
                               int32_t offset,
                               int32_t length) = 0;
 
@@ -182,7 +182,7 @@ class ByteArray : virtual public RefCount {
   virtual void Close() = 0;
 
   
-  virtual byte_t* Begin() = 0;
+  virtual uint8_t* Begin() = 0;
 
   
 

@@ -149,7 +149,7 @@ class Font : public RefCounted<Font> {
     CALLER_ATTACH Font* Build();
 
     
-    void SetDigest(ByteVector* digest);
+    void SetDigest(std::vector<uint8_t>* digest);
 
     
     void ClearTableBuilders();
@@ -226,7 +226,7 @@ class Font : public RefCounted<Font> {
     int32_t entry_selector_;
     int32_t range_shift_;
     DataBlockMap data_blocks_;
-    ByteVector digest_;
+    std::vector<uint8_t> digest_;
   };
 
   virtual ~Font();
@@ -236,7 +236,7 @@ class Font : public RefCounted<Font> {
 
   
   
-  ByteVector* digest() { return &digest_; }
+  std::vector<uint8_t>* digest() { return &digest_; }
 
   
   int64_t checksum() { return checksum_; }
@@ -265,7 +265,7 @@ class Font : public RefCounted<Font> {
   
   
   
-  void Serialize(OutputStream* os, IntegerList* table_ordering);
+  void Serialize(OutputStream* os, std::vector<int32_t>* table_ordering);
 
  private:
   
@@ -300,7 +300,7 @@ class Font : public RefCounted<Font> {
   
   
   
-  Font(int32_t sfnt_version, ByteVector* digest);
+  Font(int32_t sfnt_version, std::vector<uint8_t>* digest);
 
   
   
@@ -309,7 +309,7 @@ class Font : public RefCounted<Font> {
   
   
   
-  void BuildTableHeadersForSerialization(IntegerList* table_ordering,
+  void BuildTableHeadersForSerialization(std::vector<int32_t>* table_ordering,
                                          TableHeaderList* table_headers);
 
   
@@ -330,15 +330,15 @@ class Font : public RefCounted<Font> {
   
   
   
-  void GenerateTableOrdering(IntegerList* default_table_ordering,
-                             IntegerList* table_ordering);
+  void GenerateTableOrdering(std::vector<int32_t>* default_table_ordering,
+                             std::vector<int32_t>* table_ordering);
 
   
   
-  void DefaultTableOrdering(IntegerList* default_table_ordering);
+  void DefaultTableOrdering(std::vector<int32_t>* default_table_ordering);
 
   int32_t sfnt_version_;
-  ByteVector digest_;
+  std::vector<uint8_t> digest_;
   int64_t checksum_;
   TableMap tables_;
 };

@@ -36,7 +36,7 @@ class ByteArrayTableBuilder : public TableBasedTableBuilder {
   
   
   
-  virtual void SetByteValue(int32_t index, byte_t b);
+  virtual void SetByteValue(int32_t index, uint8_t b);
 
   
   

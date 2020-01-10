@@ -29,16 +29,16 @@ class OutputStream {
 
   virtual void Close() = 0;
   virtual void Flush() = 0;
-  virtual void Write(ByteVector* buffer) = 0;
-  virtual void Write(byte_t b) = 0;
+  virtual void Write(std::vector<uint8_t>* buffer) = 0;
+  virtual void Write(uint8_t b) = 0;
 
   
   
   
-  virtual void Write(ByteVector* buffer, int32_t offset, int32_t length) = 0;
+  virtual void Write(std::vector<uint8_t>* buffer, int32_t offset, int32_t length) = 0;
 
   
-  virtual void Write(byte_t* buffer, int32_t offset, int32_t length) = 0;
+  virtual void Write(uint8_t* buffer, int32_t offset, int32_t length) = 0;
 };
 
 }  

@@ -56,7 +56,7 @@ class FontFactory : public RefCounted<FontFactory> {
   
   
   
-  void LoadFonts(ByteVector* b, FontArray* output);
+  void LoadFonts(std::vector<uint8_t>* b, FontArray* output);
 
   
   
@@ -72,7 +72,7 @@ class FontFactory : public RefCounted<FontFactory> {
   
   
   
-  void LoadFontsForBuilding(ByteVector* b, FontBuilderArray* output);
+  void LoadFontsForBuilding(std::vector<uint8_t>* b, FontBuilderArray* output);
 
   
   
@@ -80,12 +80,6 @@ class FontFactory : public RefCounted<FontFactory> {
   
   
   void SerializeFont(Font* font, OutputStream* os);
-
-  
-  
-  
-  
-  void SetSerializationTableOrdering(const IntegerList& table_ordering);
 
   
   CALLER_ATTACH Font::Builder* NewFontBuilder();
@@ -131,7 +125,6 @@ class FontFactory : public RefCounted<FontFactory> {
   static bool IsCollection(ReadableFontData* wfd);
 
   bool fingerprint_;
-  IntegerList table_ordering_;
 };
 typedef Ptr<FontFactory> FontFactoryPtr;
 

@@ -57,7 +57,7 @@ class ReadableFontData : public FontData,
   static const int32_t kInvalidUnsigned = -1;
   static const int64_t kInvalidLongDateTime = -1;
 
-  static CALLER_ATTACH ReadableFontData* CreateReadableFontData(ByteVector* b);
+  static CALLER_ATTACH ReadableFontData* CreateReadableFontData(std::vector<uint8_t>* b);
 
   
   
@@ -72,7 +72,7 @@ class ReadableFontData : public FontData,
   
   
   
-  void SetCheckSumRanges(const IntegerList& ranges);
+  void SetCheckSumRanges(const std::vector<int32_t>& ranges);
 
   
   
@@ -94,7 +94,7 @@ class ReadableFontData : public FontData,
   
   
   virtual int32_t ReadBytes(int32_t index,
-                            byte_t* b,
+                            uint8_t* b,
                             int32_t offset,
                             int32_t length);
 
@@ -306,7 +306,7 @@ class ReadableFontData : public FontData,
   Lock checksum_lock_;
   bool checksum_set_;
   int64_t checksum_;
-  IntegerList checksum_range_;
+  std::vector<int32_t> checksum_range_;
 };
 typedef Ptr<ReadableFontData> ReadableFontDataPtr;
 

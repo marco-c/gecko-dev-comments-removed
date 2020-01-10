@@ -99,14 +99,14 @@ class FontData : virtual public RefCount {
   
   
   
-  int32_t BoundOffset(int32_t offset);
+  int32_t BoundOffset(int32_t offset) const;
 
   
   
   
   
   
-  int32_t BoundLength(int32_t offset, int32_t length);
+  int32_t BoundLength(int32_t offset, int32_t length) const;
 
   static const int32_t GROWABLE_SIZE = INT_MAX;
 

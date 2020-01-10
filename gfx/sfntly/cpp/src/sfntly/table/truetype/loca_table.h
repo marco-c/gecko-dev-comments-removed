@@ -60,12 +60,12 @@ class LocaTable : public Table, public RefCounted<LocaTable> {
     
     
     
-    IntegerList* LocaList();
+    std::vector<int32_t>* LocaList();
 
     
     
     
-    void SetLocaList(IntegerList* list);
+    void SetLocaList(std::vector<int32_t>* list);
 
     
     
@@ -129,13 +129,13 @@ class LocaTable : public Table, public RefCounted<LocaTable> {
     
     
     
-    IntegerList* GetLocaList();
+    std::vector<int32_t>* GetLocaList();
 
     void ClearLoca(bool nullify);
 
     int32_t format_version_;  
     int32_t num_glyphs_;
-    IntegerList loca_;
+    std::vector<int32_t> loca_;
   };
 
   virtual ~LocaTable();

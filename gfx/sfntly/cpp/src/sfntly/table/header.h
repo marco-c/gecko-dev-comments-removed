@@ -34,51 +34,51 @@ class Header : public RefCounted<Header> {
   virtual ~Header();
 
   
-  int32_t tag() { return tag_; }
+  int32_t tag() const { return tag_; }
 
   
   
   
   
-  int32_t offset() { return offset_; }
+  int32_t offset() const { return offset_; }
 
   
   
   
-  bool offset_valid() { return offset_valid_; }
-
-  
-  
-  
-  
-  int32_t length() { return length_; }
-
-  
-  
-  
-  bool length_valid() { return length_valid_; }
-
-  
-  int64_t checksum() { return checksum_; }
+  bool offset_valid() const { return offset_valid_; }
 
   
   
   
   
-  bool checksum_valid() { return checksum_valid_; }
+  int32_t length() const { return length_; }
+
+  
+  
+  
+  bool length_valid() const { return length_valid_; }
+
+  
+  int64_t checksum() const { return checksum_; }
+
+  
+  
+  
+  
+  bool checksum_valid() const { return checksum_valid_; }
 
   
   
   
 
  private:
-  int32_t tag_;
-  int32_t offset_;
-  bool offset_valid_;
-  int32_t length_;
-  bool length_valid_;
-  int64_t checksum_;
-  bool checksum_valid_;
+  const int32_t tag_;
+  const int32_t offset_;
+  const bool offset_valid_;
+  const int32_t length_;
+  const bool length_valid_;
+  const int64_t checksum_;
+  const bool checksum_valid_;
 
   friend class HeaderComparatorByOffset;
   friend class HeaderComparatorByTag;
@@ -89,21 +89,21 @@ class HeaderComparator {
  public:
   virtual ~HeaderComparator() {}
   virtual bool operator()(const HeaderPtr h1,
-                          const HeaderPtr h2) = 0;
+                          const HeaderPtr h2) const = 0;
 };
 
 class HeaderComparatorByOffset : public HeaderComparator {
  public:
   virtual ~HeaderComparatorByOffset() {}
   virtual bool operator()(const HeaderPtr h1,
-                          const HeaderPtr h2);
+                          const HeaderPtr h2) const;
 };
 
 class HeaderComparatorByTag : public HeaderComparator {
  public:
   virtual ~HeaderComparatorByTag() {}
   virtual bool operator()(const HeaderPtr h1,
-                          const HeaderPtr h2);
+                          const HeaderPtr h2) const;
 };
 
 typedef std::set<HeaderPtr, HeaderComparatorByOffset> HeaderOffsetSortedSet;

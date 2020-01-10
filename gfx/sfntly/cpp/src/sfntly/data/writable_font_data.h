@@ -42,13 +42,13 @@ class WritableFontData : public ReadableFontData {
   
   
   
-  static CALLER_ATTACH WritableFontData* CreateWritableFontData(ByteVector* b);
+  static CALLER_ATTACH WritableFontData* CreateWritableFontData(std::vector<uint8_t>* b);
 
   
   
   
   
-  virtual int32_t WriteByte(int32_t index, byte_t b);
+  virtual int32_t WriteByte(int32_t index, uint8_t b);
 
   
   
@@ -58,7 +58,7 @@ class WritableFontData : public ReadableFontData {
   
   
   virtual int32_t WriteBytes(int32_t index,
-                             byte_t* b,
+                             uint8_t* b,
                              int32_t offset,
                              int32_t length);
 
@@ -67,7 +67,7 @@ class WritableFontData : public ReadableFontData {
   
   
   
-  virtual int32_t WriteBytes(int32_t index, ByteVector* b);
+  virtual int32_t WriteBytes(int32_t index, std::vector<uint8_t>* b);
 
   
   
@@ -80,10 +80,10 @@ class WritableFontData : public ReadableFontData {
   
   
   virtual int32_t WriteBytesPad(int32_t index,
-                                ByteVector* b,
+                                std::vector<uint8_t>* b,
                                 int32_t offset,
                                 int32_t length,
-                                byte_t pad);
+                                uint8_t pad);
 
   
   
@@ -96,14 +96,14 @@ class WritableFontData : public ReadableFontData {
   
   
   
-  virtual int32_t WritePadding(int32_t index, int32_t count, byte_t pad);
+  virtual int32_t WritePadding(int32_t index, int32_t count, uint8_t pad);
 
   
   
   
   
   
-  virtual int32_t WriteChar(int32_t index, byte_t c);
+  virtual int32_t WriteChar(int32_t index, uint8_t c);
 
   
   

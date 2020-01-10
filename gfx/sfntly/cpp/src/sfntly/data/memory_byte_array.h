@@ -37,7 +37,7 @@ class MemoryByteArray : public ByteArray, public RefCounted<MemoryByteArray> {
   
   
   
-  MemoryByteArray(byte_t* b, int32_t filled_length);
+  MemoryByteArray(uint8_t* b, int32_t filled_length);
 
   virtual ~MemoryByteArray();
   virtual int32_t CopyTo(OutputStream* os, int32_t offset, int32_t length);
@@ -56,23 +56,23 @@ class MemoryByteArray : public ByteArray, public RefCounted<MemoryByteArray> {
   virtual int32_t CopyTo(OutputStream* os) { return ByteArray::CopyTo(os); }
 
  protected:
-  virtual void InternalPut(int32_t index, byte_t b);
+  virtual void InternalPut(int32_t index, uint8_t b);
   virtual int32_t InternalPut(int32_t index,
-                              byte_t* b,
+                              uint8_t* b,
                               int32_t offset,
                               int32_t length);
-  virtual byte_t InternalGet(int32_t index);
+  virtual uint8_t InternalGet(int32_t index);
   virtual int32_t InternalGet(int32_t index,
-                              byte_t* b,
+                              uint8_t* b,
                               int32_t offset,
                               int32_t length);
   virtual void Close();
-  virtual byte_t* Begin();
+  virtual uint8_t* Begin();
 
  private:
   void Init();  
 
-  byte_t* b_;
+  uint8_t* b_;
   bool allocated_;
 };
 
