@@ -2799,6 +2799,12 @@ mozilla::ipc::IPCResult ContentParent::RecvGetClipboard(
       do_CreateInstance("@mozilla.org/widget/transferable;1", &rv);
   NS_ENSURE_SUCCESS(rv, IPC_OK());
   trans->Init(nullptr);
+  
+  
+  
+  
+  
+  trans->SetIsPrivateData(true);
 
   for (uint32_t t = 0; t < aTypes.Length(); t++) {
     trans->AddDataFlavor(aTypes[t].get());
