@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 
 ALL_HARNESSES = [
     'common',  
+    'condprof',
     'mochitest',
     'reftest',
     'xpcshell',
@@ -25,6 +26,7 @@ ALL_HARNESSES = [
 ]
 
 PACKAGE_SPECIFIED_HARNESSES = [
+    'condprof',
     'cppunittest',
     'mochitest',
     'reftest',

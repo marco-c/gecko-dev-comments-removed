@@ -1,0 +1,7 @@
+import asyncio
+
+
+async def cold(session, options):
+    
+    await asyncio.sleep(options.get("sleep", 30))
+    return {}
