@@ -7,10 +7,6 @@
 
 
 {
-  const { AppConstants } = ChromeUtils.import(
-    "resource://gre/modules/AppConstants.jsm"
-  );
-
   class MozMenuPopup extends MozElements.MozElementMixin(XULPopupElement) {
     constructor() {
       super();
@@ -26,9 +22,6 @@
         if (event.target != this) {
           return;
         }
-
-        
-        this.shadowRoot;
 
         let array = [];
         let width = 0;
@@ -52,110 +45,50 @@
         }
         array.forEach(accel => (accel.width = width));
       });
-
-      this.attachShadow({ mode: "open" });
     }
 
     connectedCallback() {
       if (this.delayConnectedCallback() || this.hasConnected) {
         return;
       }
-
       this.hasConnected = true;
+      this.appendChild(
+        MozXULElement.parseXULToFragment(`
+        <arrowscrollbox class="popup-internal-box"
+                        flex="1"
+                        orient="vertical"
+                        smoothscroll="false"/>
+      `)
+      );
+      this.scrollBox = this.querySelector(".popup-internal-box");
+
       if (this.parentNode && this.parentNode.localName == "menulist") {
         this._setUpMenulistPopup();
       }
     }
 
-    get shadowRoot() {
-      
-      
-      if (!super.shadowRoot.firstElementChild) {
-        super.shadowRoot.appendChild(this.fragment);
+    
 
-        
-        this.scrollBox.addEventListener("scroll", ev =>
-          this.dispatchEvent(new Event("scroll"))
-        );
-        this.scrollBox.addEventListener("overflow", ev =>
-          this.dispatchEvent(new Event("overflow"))
-        );
-        this.scrollBox.addEventListener("underflow", ev =>
-          this.dispatchEvent(new Event("underflow"))
-        );
+
+
+
+
+
+
+
+
+
+
+    _setUpChildElements() {
+      while (this.childElementCount > 1) {
+        this.scrollBox.appendChild(this.firstElementChild);
       }
-      return super.shadowRoot;
-    }
-
-    get fragment() {
-      if (!this.constructor.hasOwnProperty("_fragment")) {
-        this.constructor._fragment = MozXULElement.parseXULToFragment(
-          this.markup
-        );
-      }
-      return document.importNode(this.constructor._fragment, true);
-    }
-
-    get markup() {
-      return `
-        <html:link rel="stylesheet" href="chrome://global/skin/global.css"/>
-        <html:style>${this.styles}</html:style>
-        <arrowscrollbox class="popup-internal-box"
-                        flex="1"
-                        orient="vertical"
-                        smoothscroll="false">
-          <html:slot></html:slot>
-        </arrowscrollbox>
-      `;
-    }
-
-    get styles() {
-      let s = `
-        :host(.in-menulist) .popup-internal-box > .scrollbutton-up,
-        :host(.in-menulist) .popup-internal-box > .arrowscrollbox-overflow-start-indicator,
-        :host(.in-menulist) .popup-internal-box > .arrowscrollbox-overflow-end-indicator,
-        :host(.in-menulist) .popup-internal-box > .scrollbutton-down {
-          display: none;
-        }
-        :host(.in-menulist) .popup-internal-box > .arrowscrollbox-scrollbox {
-          overflow: auto;
-        }
-      `;
-
-      switch (AppConstants.platform) {
-        case "macosx":
-          s += `
-            :host(.in-menulist) .popup-internal-box {
-              padding: 0;
-            }
-          `;
-          break;
-
-        default:
-          break;
-      }
-
-      return s;
-    }
-
-    get scrollBox() {
-      if (!this._scrollBox) {
-        this._scrollBox = this.shadowRoot.querySelector(".popup-internal-box");
-      }
-      return this._scrollBox;
     }
 
     
 
 
     _setUpMenulistPopup() {
-      
-      
-      
-      
-      this.shadowRoot;
-      this.classList.add("in-menulist");
-
       this.addEventListener("popupshown", () => {
         
         
@@ -264,7 +197,7 @@
     }
   }
 
-  customElements.define("menupopup", MozMenuPopup);
-
+  
+  
   MozElements.MozMenuPopup = MozMenuPopup;
 }
