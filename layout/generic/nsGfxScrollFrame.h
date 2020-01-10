@@ -753,10 +753,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   static uint32_t sHorzExpandScrollPort;
   static uint32_t sVertExpandScrollPort;
-  
-  
-  static int32_t sHorzScrollFraction;
-  static int32_t sVertScrollFraction;
 };
 
 }  
