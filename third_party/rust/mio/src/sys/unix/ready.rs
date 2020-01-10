@@ -92,46 +92,30 @@ use std::fmt;
 #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct UnixReady(Ready);
 
-const ERROR: usize = 0b00_0100;
-const HUP: usize   = 0b00_1000;
+const ERROR: usize = 0b000100;
+const HUP: usize   = 0b001000;
 
 #[cfg(any(target_os = "dragonfly",
     target_os = "freebsd", target_os = "ios", target_os = "macos"))]
-const AIO: usize   = 0b01_0000;
+const AIO: usize   = 0b010000;
 
 #[cfg(not(any(target_os = "dragonfly",
     target_os = "freebsd", target_os = "ios", target_os = "macos")))]
-const AIO: usize   = 0b00_0000;
+const AIO: usize   = 0b000000;
 
 #[cfg(any(target_os = "freebsd"))]
-const LIO: usize   = 0b10_0000;
+const LIO: usize   = 0b100000;
 
 #[cfg(not(any(target_os = "freebsd")))]
-const LIO: usize   = 0b00_0000;
+const LIO: usize   = 0b000000;
+
 
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "solaris"))]
-const PRI: usize = 0b100_0000;
-
-#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "solaris")))]
-const PRI: usize = 0;
+const PRI: usize = ::libc::EPOLLPRI as usize;
 
 
-pub const READY_ALL: usize = ERROR | HUP | AIO | LIO | PRI;
 
-#[test]
-fn test_ready_all() {
-    let readable = Ready::readable().as_usize();
-    let writable = Ready::writable().as_usize();
-
-    assert_eq!(
-        READY_ALL | readable | writable,
-        ERROR + HUP + AIO + LIO + PRI + readable + writable
-    );
-
-    
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "solaris"))]
-    assert!(!Ready::from(UnixReady::priority()).is_writable());
-}
+pub const READY_ALL: usize = ERROR | HUP | AIO | LIO;
 
 impl UnixReady {
     
@@ -190,8 +174,6 @@ impl UnixReady {
         UnixReady(ready_from_usize(ERROR))
     }
 
-    
-    
     
     
     

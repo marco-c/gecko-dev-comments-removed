@@ -1,6 +1,6 @@
 
 
-#![doc(html_root_url = "https://docs.rs/memmap/0.7.0")]
+#![doc(html_root_url = "https://docs.rs/memmap/0.6.2")]
 
 #[cfg(windows)]
 extern crate winapi;
@@ -17,9 +17,9 @@ use unix::MmapInner;
 use std::fmt;
 use std::fs::File;
 use std::io::{Error, ErrorKind, Result};
-use std::ops::{Deref, DerefMut};
 use std::slice;
 use std::usize;
+use std::ops::{Deref, DerefMut};
 
 
 
@@ -28,12 +28,13 @@ use std::usize;
 
 #[derive(Clone, Debug, Default)]
 pub struct MmapOptions {
-    offset: u64,
+    offset: usize,
     len: Option<usize>,
     stack: bool,
 }
 
 impl MmapOptions {
+    
     
     
     
@@ -84,11 +85,13 @@ impl MmapOptions {
     
     
     
-    pub fn offset(&mut self, offset: u64) -> &mut Self {
+    
+    pub fn offset(&mut self, offset: usize) -> &mut Self {
         self.offset = offset;
         self
     }
 
+    
     
     
     
@@ -119,17 +122,18 @@ impl MmapOptions {
     
     fn get_len(&self, file: &File) -> Result<usize> {
         self.len.map(Ok).unwrap_or_else(|| {
-            let len = file.metadata()?.len() - self.offset;
+            let len = file.metadata()?.len();
             if len > (usize::MAX as u64) {
                 return Err(Error::new(
                     ErrorKind::InvalidData,
-                    "memory map length overflows usize",
+                    "file length overflows usize",
                 ));
             }
-            Ok(len as usize)
+            Ok(len as usize - self.offset)
         })
     }
 
+    
     
     
     
@@ -151,6 +155,7 @@ impl MmapOptions {
         self
     }
 
+    
     
     
     
@@ -227,11 +232,13 @@ impl MmapOptions {
     
     
     
+    
     pub unsafe fn map_mut(&self, file: &File) -> Result<MmapMut> {
         MmapInner::map_mut(self.get_len(file)?, file, self.offset)
             .map(|inner| MmapMut { inner: inner })
     }
 
+    
     
     
     
@@ -298,6 +305,7 @@ impl MmapOptions {
 
 
 
+
 pub struct Mmap {
     inner: MmapInner,
 }
@@ -332,10 +340,12 @@ impl Mmap {
     
     
     
+    
     pub unsafe fn map(file: &File) -> Result<Mmap> {
         MmapOptions::new().map(file)
     }
 
+    
     
     
     
@@ -453,6 +463,7 @@ impl MmapMut {
     
     
     
+    
     pub unsafe fn map_mut(file: &File) -> Result<MmapMut> {
         MmapOptions::new().map_mut(file)
     }
@@ -468,6 +479,7 @@ impl MmapMut {
         MmapOptions::new().len(length).map_anon()
     }
 
+    
     
     
     
@@ -569,6 +581,7 @@ impl MmapMut {
     
     
     
+    
     pub fn make_read_only(mut self) -> Result<Mmap> {
         self.inner.make_read_only()?;
         Ok(Mmap { inner: self.inner })
@@ -635,9 +648,9 @@ mod test {
     extern crate winapi;
 
     use std::fs::OpenOptions;
-    use std::io::{Read, Write};
     #[cfg(windows)]
     use std::os::windows::fs::OpenOptionsExt;
+    use std::io::{Read, Write};
     use std::sync::Arc;
     use std::thread;
 
@@ -816,15 +829,11 @@ mod test {
             .open(&path)
             .unwrap();
 
-        let offset = u32::max_value() as u64 + 2;
-        let len = 5432;
-        file.set_len(offset + len as u64).unwrap();
+        file.set_len(500000 as u64).unwrap();
 
-        
-        let mmap = unsafe { MmapOptions::new().offset(offset).map_mut(&file).unwrap() };
-        assert_eq!(len, mmap.len());
+        let offset = 5099;
+        let len = 50050;
 
-        
         let mut mmap = unsafe {
             MmapOptions::new()
                 .offset(offset)

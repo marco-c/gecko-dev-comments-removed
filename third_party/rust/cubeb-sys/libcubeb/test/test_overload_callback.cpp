@@ -15,8 +15,6 @@
 #include <memory>
 #include <atomic>
 #include "cubeb/cubeb.h"
-
-
 #include "common.h"
 
 #define SAMPLE_FREQUENCY 48000

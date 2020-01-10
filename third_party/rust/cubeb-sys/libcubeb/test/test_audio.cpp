@@ -17,11 +17,8 @@
 #include <memory>
 #include <string.h>
 #include "cubeb/cubeb.h"
-#include <string>
-
-
-
 #include "common.h"
+#include <string>
 
 using namespace std;
 

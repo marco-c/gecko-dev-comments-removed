@@ -13,9 +13,6 @@ use poll::SelectorId;
 use std::fmt;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-use iovec::IoVec;
-
 
 
 
@@ -544,48 +541,6 @@ impl UdpSocket {
     
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.sys.take_error()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(all(unix, not(target_os = "fuchsia")))]
-    pub fn recv_bufs(&self, bufs: &mut [&mut IoVec]) -> io::Result<usize> {
-        self.sys.readv(bufs)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(all(unix, not(target_os = "fuchsia")))]
-    pub fn send_bufs(&self, bufs: &[&IoVec]) -> io::Result<usize> {
-        self.sys.writev(bufs)
     }
 }
 

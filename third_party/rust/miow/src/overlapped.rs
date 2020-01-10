@@ -1,24 +1,11 @@
-use std::fmt;
-use std::io;
 use std::mem;
-use std::ptr;
 
-use winapi::shared::ntdef::{
-    HANDLE,
-    NULL,
-};
-use winapi::um::minwinbase::*;
-use winapi::um::synchapi::*;
+use winapi::*;
 
 
 
+#[derive(Debug)]
 pub struct Overlapped(OVERLAPPED);
-
-impl fmt::Debug for Overlapped {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "OVERLAPPED")
-    }
-}
 
 unsafe impl Send for Overlapped {}
 unsafe impl Sync for Overlapped {}
@@ -30,20 +17,6 @@ impl Overlapped {
     
     pub fn zero() -> Overlapped {
         Overlapped(unsafe { mem::zeroed() })
-    }
-
-    
-    
-    
-    
-    pub fn initialize_with_autoreset_event() -> io::Result<Overlapped> {
-        let event = unsafe {CreateEventW(ptr::null_mut(), 0i32, 0i32, ptr::null())};
-        if event == NULL {
-            return Err(io::Error::last_os_error());
-        }
-        let mut overlapped = Self::zero();
-        overlapped.set_event(event);
-        Ok(overlapped)
     }
 
     
@@ -70,15 +43,13 @@ impl Overlapped {
     
     
     pub fn set_offset(&mut self, offset: u64) {
-        let s = unsafe { self.0.u.s_mut() };
-        s.Offset = offset as u32;
-        s.OffsetHigh = (offset >> 32) as u32;
+        self.0.Offset = offset as u32;
+        self.0.OffsetHigh = (offset >> 32) as u32;
     }
 
     
     pub fn offset(&self) -> u64 {
-        let s = unsafe { self.0.u.s() };
-        (s.Offset as u64) | ((s.OffsetHigh as u64) << 32)
+        (self.0.Offset as u64) | ((self.0.OffsetHigh as u64) << 32)
     }
 
     

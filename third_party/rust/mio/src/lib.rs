@@ -1,13 +1,9 @@
-#![doc(html_root_url = "https://docs.rs/mio/0.6.19")]
-
-
-#![allow(deprecated)]
+#![doc(html_root_url = "https://docs.rs/mio/0.6.16")]
 #![deny(missing_docs, missing_debug_implementations)]
 #![cfg_attr(test, deny(warnings))]
 
 
 
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::trivially_copy_pass_by_ref))]
 
 
 
@@ -98,16 +94,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
+extern crate lazycell;
 extern crate net2;
 extern crate iovec;
 extern crate slab;
@@ -137,7 +124,6 @@ mod io;
 mod poll;
 mod sys;
 mod token;
-mod lazycell;
 
 pub mod net;
 
@@ -306,6 +292,6 @@ mod convert {
     pub fn millis(duration: Duration) -> u64 {
         
         let millis = (duration.subsec_nanos() + NANOS_PER_MILLI - 1) / NANOS_PER_MILLI;
-        duration.as_secs().saturating_mul(MILLIS_PER_SEC).saturating_add(u64::from(millis))
+        duration.as_secs().saturating_mul(MILLIS_PER_SEC).saturating_add(millis as u64)
     }
 }

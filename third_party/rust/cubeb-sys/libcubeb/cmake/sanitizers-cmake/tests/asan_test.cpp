@@ -29,8 +29,7 @@ int
 main(int argc, char **argv)
 {
 	
-	int *array = new int[argc + 1];
-	array[argc] = 0;
+	int *array = new int[argc];
 	delete[] array;
 
 	

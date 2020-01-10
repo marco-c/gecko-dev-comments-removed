@@ -127,11 +127,11 @@ impl<H: Handler> EventLoop<H> {
 
         Ok(EventLoop {
             run: true,
-            poll,
-            timer,
+            poll: poll,
+            timer: timer,
             notify_tx: tx,
             notify_rx: rx,
-            config,
+            config: config,
             events: Events::with_capacity(1024),
         })
     }
@@ -156,10 +156,61 @@ impl<H: Handler> EventLoop<H> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn channel(&self) -> Sender<H::Message> {
         Sender::new(self.notify_tx.clone())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -336,7 +387,7 @@ impl<M> Clone for Sender <M> {
 
 impl<M> Sender<M> {
     fn new(tx: channel::SyncSender<M>) -> Sender<M> {
-        Sender { tx }
+        Sender { tx: tx }
     }
 
     pub fn send(&self, msg: M) -> Result<(), NotifyError<M>> {

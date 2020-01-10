@@ -1,18 +1,14 @@
 
 
 use std::cmp;
-use std::fmt;
 use std::io;
 use std::mem;
 use std::os::windows::io::*;
 use std::time::Duration;
 
 use handle::Handle;
-use winapi::shared::basetsd::*;
-use winapi::shared::ntdef::*;
-use winapi::um::minwinbase::*;
-use winapi::um::handleapi::*;
-use winapi::um::ioapiset::*;
+use winapi::*;
+use kernel32::*;
 use Overlapped;
 
 
@@ -26,14 +22,8 @@ pub struct CompletionPort {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct CompletionStatus(OVERLAPPED_ENTRY);
-
-impl fmt::Debug for CompletionStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CompletionStatus(OVERLAPPED_ENTRY)")
-    }
-}
 
 unsafe impl Send for CompletionStatus {}
 unsafe impl Sync for CompletionStatus {}
@@ -158,7 +148,7 @@ impl CompletionPort {
                                         len,
                                         &mut removed,
                                         timeout,
-                                        FALSE as i32)
+                                        FALSE)
         };
         match ::cvt(ret) {
             Ok(_) => Ok(&mut list[..removed as usize]),
@@ -266,8 +256,7 @@ mod tests {
     use std::mem;
     use std::time::Duration;
 
-    use winapi::shared::basetsd::*;
-    use winapi::shared::winerror::*;
+    use winapi::*;
 
     use iocp::{CompletionPort, CompletionStatus};
 

@@ -43,8 +43,6 @@
 
 
 #include "gtest/gtest.h"
-
-
 #include "common.h"       
 #include "cubeb/cubeb.h"  
 #include "cubeb_utils.h"  

@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <memory>
 #include "cubeb/cubeb.h"
-
-
 #include "common.h"
 
 TEST(cubeb, latency)
