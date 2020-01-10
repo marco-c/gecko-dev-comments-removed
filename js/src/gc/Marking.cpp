@@ -1506,6 +1506,16 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
   
   
   
+  
+  
+  
+  if (queueMarkColor == mozilla::Some(MarkColor::Gray) && hasBlackEntries()) {
+    return QueueSuspended;
+  }
+
+  
+  
+  
   AutoSetMarkColor autoRevertColor(*this, queueMarkColor.valueOr(markColor()));
 
   
