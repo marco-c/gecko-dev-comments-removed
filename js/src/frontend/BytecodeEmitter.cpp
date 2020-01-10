@@ -2219,18 +2219,14 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitSwitch(SwitchStatement* switchStmt) {
 }
 
 bool BytecodeEmitter::isRunOnceLambda() {
-  
-  
-  
-
-  if (!(parent && parent->emittingRunOnceLambda) &&
-      (emitterMode != LazyFunction || !lazyScript->treatAsRunOnce())) {
-    return false;
+  if (lazyScript) {
+    MOZ_ASSERT_IF(sc->asFunctionBox()->shouldSuppressRunOnce(),
+                  !lazyScript->treatAsRunOnce());
+    return lazyScript->treatAsRunOnce();
   }
 
-  FunctionBox* funbox = sc->asFunctionBox();
-  return !funbox->argumentsHasLocalBinding() && !funbox->isGenerator() &&
-         !funbox->isAsync() && !funbox->explicitName();
+  return parent && parent->emittingRunOnceLambda &&
+         !sc->asFunctionBox()->shouldSuppressRunOnce();
 }
 
 bool BytecodeEmitter::allocateResumeIndex(BytecodeOffset offset,

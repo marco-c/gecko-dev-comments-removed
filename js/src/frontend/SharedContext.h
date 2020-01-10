@@ -553,6 +553,15 @@ class FunctionBox : public ObjectBox, public SharedContext {
     return !strict() && hasSimpleParameterList();
   }
 
+  bool shouldSuppressRunOnce() const {
+    
+    
+    
+    
+    return explicitName() || argumentsHasLocalBinding() || isGenerator() ||
+           isAsync();
+  }
+
   
   
   
