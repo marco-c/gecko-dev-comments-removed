@@ -490,7 +490,7 @@ bool WebGLContext::CreateAndInitGL(
     auto powerPref = mOptions.powerPreference;
 
     
-    if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
+    if (!gfxConfig::IsEnabled(gfx::Feature::HW_COMPOSITING)) {
       powerPref = dom::WebGLPowerPreference::Low_power;
     }
 

@@ -120,6 +120,22 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   void GetAllowlistForFeature(const nsAString& aFeatureName,
                               nsTArray<nsString>& aList) const;
 
+  void GetInheritedDeniedFeatureNames(
+      nsTArray<nsString>& aInheritedDeniedFeatureNames) {
+    aInheritedDeniedFeatureNames = mInheritedDeniedFeatureNames;
+  }
+
+  void SetInheritedDeniedFeatureNames(
+      const nsTArray<nsString>& aInheritedDeniedFeatureNames) {
+    mInheritedDeniedFeatureNames = aInheritedDeniedFeatureNames;
+  }
+
+  void GetDeclaredString(nsAString& aDeclaredString) {
+    aDeclaredString = mDeclaredString;
+  }
+  nsIPrincipal* GetSelfOrigin() const { return mSelfOrigin; }
+  nsIPrincipal* GetSrcOrigin() const { return mSrcOrigin; }
+
  private:
   ~FeaturePolicy() = default;
 
@@ -137,7 +153,7 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   
   bool HasDeclaredFeature(const nsAString& aFeatureName) const;
 
-  nsCOMPtr<nsINode> mParentNode;
+  nsINode* mParentNode;
 
   
   
@@ -146,7 +162,12 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   
   nsTArray<Feature> mFeatures;
 
+  
+  nsString mDeclaredString;
+
   nsCOMPtr<nsIPrincipal> mDefaultOrigin;
+  nsCOMPtr<nsIPrincipal> mSelfOrigin;
+  nsCOMPtr<nsIPrincipal> mSrcOrigin;
 };
 
 }  

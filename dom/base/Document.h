@@ -52,7 +52,6 @@
 #include "ReferrerInfo.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
@@ -90,6 +89,7 @@ class imgIRequest;
 class nsBindingManager;
 #endif
 class nsCachableElementsByNameNodeList;
+class nsCommandManager;
 class nsContentList;
 class nsIDocShell;
 class nsDocShell;
@@ -221,6 +221,8 @@ class XPathEvaluator;
 class XPathExpression;
 class XPathNSResolver;
 class XPathResult;
+class BrowsingContext;
+
 template <typename>
 class Sequence;
 
@@ -4048,6 +4050,10 @@ class Document : public nsINode,
   
   
   bool ParseScalesInViewportMetaData(const ViewportMetaData& aViewportMetaData);
+
+  
+  
+  already_AddRefed<mozilla::dom::FeaturePolicy> GetParentFeaturePolicy();
 
   
   ViewportMetaData GetViewportMetaData() const;
