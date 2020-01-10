@@ -14,6 +14,7 @@
 #include "prlink.h"
 
 #include "ctypes/typedefs.h"
+#include "gc/ZoneAllocator.h"
 #include "js/AllocPolicy.h"
 #include "js/GCHashTable.h"
 #include "js/UniquePtr.h"
@@ -357,11 +358,13 @@ struct FieldHashPolicy : DefaultHasher<JSFlatString*> {
 };
 
 using FieldInfoHash = GCHashMap<js::HeapPtr<JSFlatString*>, FieldInfo,
-                                FieldHashPolicy, SystemAllocPolicy>;
+                                FieldHashPolicy, ZoneAllocPolicy>;
 
 
 
 struct FunctionInfo {
+  explicit FunctionInfo(JS::Zone* zone) : mArgTypes(zone), mFFITypes(zone) {}
+
   
   
   
@@ -376,12 +379,12 @@ struct FunctionInfo {
 
   
   
-  GCVector<HeapPtr<JSObject*>, 0, SystemAllocPolicy> mArgTypes;
+  GCVector<HeapPtr<JSObject*>, 0, ZoneAllocPolicy> mArgTypes;
 
   
   
   
-  Vector<ffi_type*, 0, SystemAllocPolicy> mFFITypes;
+  Vector<ffi_type*, 0, ZoneAllocPolicy> mFFITypes;
 
   
   
