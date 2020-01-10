@@ -57,11 +57,9 @@ bool nsCookiePermission::Init() {
   
   
   
-  nsresult rv;
-  mPermMgr = do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) return false;
 
-  return true;
+  mPermMgr = nsPermissionManager::GetInstance();
+  return mPermMgr != nullptr;
 }
 
 NS_IMETHODIMP
@@ -89,8 +87,10 @@ nsCookiePermission::CanSetCookie(nsIURI* aURI, nsIChannel* aChannel,
   
   if (!EnsureInitialized()) return NS_ERROR_UNEXPECTED;
 
+  nsCookie* cookie = static_cast<nsCookie*>(aCookie);
   uint32_t perm;
-  mPermMgr->TestPermission(aURI, kPermissionType, &perm);
+  mPermMgr->LegacyTestPermissionFromURI(aURI, &cookie->OriginAttributesRef(),
+                                        kPermissionType, &perm);
   switch (perm) {
     case nsICookiePermission::ACCESS_SESSION:
       *aIsSession = true;

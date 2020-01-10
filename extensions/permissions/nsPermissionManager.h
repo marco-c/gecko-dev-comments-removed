@@ -77,6 +77,9 @@ class nsPermissionManager final : public nsIPermissionManager,
     static PermissionKey* CreateFromPrincipal(nsIPrincipal* aPrincipal,
                                               nsresult& aResult);
     static PermissionKey* CreateFromURI(nsIURI* aURI, nsresult& aResult);
+    static PermissionKey* CreateFromURIAndOriginAttributes(
+        nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
+        nsresult& aResult);
 
     explicit PermissionKey(const nsACString& aOrigin)
         : mOrigin(aOrigin), mHashCode(mozilla::HashString(aOrigin)) {}
@@ -189,6 +192,10 @@ class nsPermissionManager final : public nsIPermissionManager,
                                 nsIPermissionManager::UNKNOWN_ACTION, true,
                                 false, true);
   }
+
+  nsresult LegacyTestPermissionFromURI(
+      nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
+      const nsACString& aType, uint32_t* aPermission);
 
   
 
@@ -327,6 +334,9 @@ class nsPermissionManager final : public nsIPermissionManager,
                                           uint32_t aType, bool aExactHostMatch);
   PermissionHashKey* GetPermissionHashKey(nsIURI* aURI, uint32_t aType,
                                           bool aExactHostMatch);
+  PermissionHashKey* GetPermissionHashKey(
+      nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
+      uint32_t aType, bool aExactHostMatch);
 
   
   
@@ -433,7 +443,7 @@ class nsPermissionManager final : public nsIPermissionManager,
     }
 
     return CommonTestPermissionInternal(
-        aPrincipal, nullptr, preparationResult.as<int32_t>(), aType,
+        aPrincipal, nullptr, nullptr, preparationResult.as<int32_t>(), aType,
         aPermission, aExactHostMatch, aIncludingSession);
   }
   
@@ -450,16 +460,31 @@ class nsPermissionManager final : public nsIPermissionManager,
     }
 
     return CommonTestPermissionInternal(
-        nullptr, aURI, preparationResult.as<int32_t>(), aType, aPermission,
-        aExactHostMatch, aIncludingSession);
+        nullptr, aURI, nullptr, preparationResult.as<int32_t>(), aType,
+        aPermission, aExactHostMatch, aIncludingSession);
+  }
+  nsresult CommonTestPermission(
+      nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
+      int32_t aTypeIndex, const nsACString& aType, uint32_t* aPermission,
+      uint32_t aDefaultPermission, bool aDefaultPermissionIsValid,
+      bool aExactHostMatch, bool aIncludingSession) {
+    auto preparationResult = CommonPrepareToTestPermission(
+        nullptr, aTypeIndex, aType, aPermission, aDefaultPermission,
+        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
+    if (preparationResult.is<nsresult>()) {
+      return preparationResult.as<nsresult>();
+    }
+
+    return CommonTestPermissionInternal(
+        nullptr, aURI, aOriginAttributes, preparationResult.as<int32_t>(),
+        aType, aPermission, aExactHostMatch, aIncludingSession);
   }
   
-  nsresult CommonTestPermissionInternal(nsIPrincipal* aPrincipal, nsIURI* aURI,
-                                        int32_t aTypeIndex,
-                                        const nsACString& aType,
-                                        uint32_t* aPermission,
-                                        bool aExactHostMatch,
-                                        bool aIncludingSession);
+  nsresult CommonTestPermissionInternal(
+      nsIPrincipal* aPrincipal, nsIURI* aURI,
+      const mozilla::OriginAttributes* aOriginAttributes, int32_t aTypeIndex,
+      const nsACString& aType, uint32_t* aPermission, bool aExactHostMatch,
+      bool aIncludingSession);
 
   nsresult OpenDatabase(nsIFile* permissionsFile);
   nsresult InitDB(bool aRemoveFile);
