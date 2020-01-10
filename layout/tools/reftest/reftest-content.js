@@ -509,145 +509,51 @@ const STATE_WAITING_TO_FINISH = 4;
 const STATE_COMPLETED = 5;
 
 function FlushRendering(aFlushMode) {
-    let browsingContext = content.docShell.browsingContext;
-    let ignoreThrottledAnimations = (aFlushMode === FlushMode.IGNORE_THROTTLED_ANIMATIONS);
-    let promise = content.getWindowGlobalChild().getActor("ReftestFission").sendQuery("FlushRendering", {browsingContext, ignoreThrottledAnimations});
-    return promise.then(function(result) {
-        for (let errorString of result.errorStrings) {
-            LogError(errorString);
+    var anyPendingPaintsGeneratedInDescendants = false;
+
+    function flushWindow(win) {
+        var utils = win.windowUtils;
+        var afterPaintWasPending = utils.isMozAfterPaintPending;
+
+        var root = win.document.documentElement;
+        if (root && !root.classList.contains("reftest-no-flush")) {
+            try {
+                if (aFlushMode === FlushMode.IGNORE_THROTTLED_ANIMATIONS) {
+                    utils.flushLayoutWithoutThrottledAnimations();
+                } else {
+                    root.getBoundingClientRect();
+                }
+            } catch (e) {
+                LogWarning("flushWindow failed: " + e + "\n");
+            }
         }
-        for (let warningString of result.warningStrings) {
-            LogWarning(warningString);
+
+        if (!afterPaintWasPending && utils.isMozAfterPaintPending) {
+            LogInfo("FlushRendering generated paint for window " + win.location.href);
+            anyPendingPaintsGeneratedInDescendants = true;
         }
-        for (let infoString of result.infoStrings) {
-            LogInfo(infoString);
+
+        for (var i = 0; i < win.frames.length; ++i) {
+            try {
+                flushWindow(win.frames[i]);
+            } catch (e) {
+                Cu.reportError(e);
+            }
         }
-    }, function(reason) {
-        
-        
-        LogInfo("FlushRendering sendQuery to parent rejected: " + reason);
-    });
+    }
+
+    flushWindow(content);
+
+    if (anyPendingPaintsGeneratedInDescendants &&
+        !windowUtils().isMozAfterPaintPending) {
+        LogWarning("Internal error: descendant frame generated a MozAfterPaint event, but the root document doesn't have one!");
+    }
 }
 
 function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, forURL) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    function CheckForLivenessOfContentRootElement() {
-        if (contentRootElement && Cu.isDeadWrapper(contentRootElement)) {
-            contentRootElement = null;
-        }
-    }
-
-    var setTimeoutCallMakeProgressWhenComplete = false;
-
-    var operationInProgress = false;
-    function OperationInProgress() {
-        if (operationInProgress != false) {
-            LogWarning("Nesting atomic operations?");
-        }
-        operationInProgress = true;
-    }
-    function OperationCompleted() {
-        if (operationInProgress != true) {
-            LogWarning("Mismatched OperationInProgress/OperationCompleted calls?");
-        }
-        operationInProgress = false;
-        if (setTimeoutCallMakeProgressWhenComplete) {
-            setTimeoutCallMakeProgressWhenComplete = false;
-            setTimeout(CallMakeProgress, 0);
-        }
-    }
-    function AssertNoOperationInProgress() {
-        if (operationInProgress) {
-            LogWarning("AssertNoOperationInProgress but operationInProgress");
-        }
-    }
-
-    var updateCanvasPending = false;
-    var updateCanvasRects = []
-
     var stopAfterPaintReceived = false;
     var currentDoc = content.document;
     var state = STATE_WAITING_TO_FIRE_INVALIDATE_EVENT;
-
-    var setTimeoutMakeProgressPending = false;
-
-    function CallSetTimeoutMakeProgress() {
-        if (setTimeoutMakeProgressPending) {
-            return;
-        }
-        setTimeoutMakeProgressPending = true;
-        setTimeout(CallMakeProgress, 0);
-    }
-
-    
-    function CallMakeProgress() {
-        if (operationInProgress) {
-            setTimeoutCallMakeProgressWhenComplete = true;
-            return;
-        }
-        setTimeoutMakeProgressPending = false;
-        MakeProgress();
-    }
-
-    var waitingForAnAfterPaint = false;
-
-    
-    
-    function HandlePendingTasksAfterMakeProgress() {
-        AssertNoOperationInProgress();
-
-        if ((state == STATE_WAITING_TO_FIRE_INVALIDATE_EVENT || state == STATE_WAITING_TO_FINISH) &&
-            shouldWaitForPendingPaints()) {
-            LogInfo("HandlePendingTasksAfterMakeProgress waiting for a MozAfterPaint");
-            
-            
-            
-            waitingForAnAfterPaint = true;
-            OperationInProgress();
-            return;
-        }
-
-        if (updateCanvasPending) {
-            LogInfo("HandlePendingTasksAfterMakeProgress updating canvas");
-            updateCanvasPending = false;
-            let rects = updateCanvasRects;
-            updateCanvasRects = [];
-            OperationInProgress();
-            CheckForLivenessOfContentRootElement
-            let promise = SendUpdateCanvasForEvent(rects, contentRootElement);
-            promise.then(function () {
-                OperationCompleted();
-                
-                
-                
-                CallSetTimeoutMakeProgress();
-            });
-        }
-    }
 
     function AfterPaintListener(event) {
         LogInfo("AfterPaintListener in " + event.target.document.location.href);
@@ -657,44 +563,11 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             return;
         }
 
-        
-        function Contains(rectA, rectB) {
-            return (rectA.left <= rectB.left && rectB.right <= rectA.right && rectA.top <= rectB.top && rectB.bottom <= rectA.bottom);
-        }
-        
-        function ContainedIn(rectList, rect) {
-            for (let i = 0; i < rectList.length; ++i) {
-                if (Contains(rectList[i], rect)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        updateCanvasPending = true;
-        for (let i = 0; i < event.clientRects.length; ++i) {
-            let r = event.clientRects[i];
-            if (ContainedIn(updateCanvasRects, r)) {
-                continue;
-            }
-
-            
-            
-            
-            updateCanvasRects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
-        }
-
-        if (waitingForAnAfterPaint) {
-            waitingForAnAfterPaint = false;
-            OperationCompleted();
-        }
-
-        if (!operationInProgress) {
-            HandlePendingTasksAfterMakeProgress();
-        }
+        SendUpdateCanvasForEvent(forURL, event, contentRootElement);
         
         
         
+        setTimeout(MakeProgress, 0);
     }
 
     function AttrModifiedListener() {
@@ -703,20 +576,19 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         
         
         
-        CallSetTimeoutMakeProgress();
+        setTimeout(MakeProgress, 0);
     }
 
     function ExplicitPaintsCompleteListener() {
         LogInfo("ExplicitPaintsCompleteListener fired");
         
         
-        CallSetTimeoutMakeProgress();
+        setTimeout(MakeProgress, 0);
     }
 
     function RemoveListeners() {
         
         removeEventListener("MozAfterPaint", AfterPaintListener, false);
-        CheckForLivenessOfContentRootElement();
         if (contentRootElement) {
             contentRootElement.removeEventListener("DOMAttrModified", AttrModifiedListener);
         }
@@ -736,12 +608,8 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             return;
         }
 
-        LogInfo("MakeProgress");
-
         
         
-        OperationInProgress();
-        let promise = Promise.resolve(undefined);
         if (state != STATE_WAITING_TO_FINISH) {
           
           
@@ -753,25 +621,13 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
           flushMode = (state === STATE_WAITING_TO_FIRE_INVALIDATE_EVENT)
                     ? FlushMode.IGNORE_THROTTLED_ANIMATIONS
                     : FlushMode.ALL;
-          promise = FlushRendering(flushMode);
+          FlushRendering(flushMode);
         }
-        promise.then(function () {
-            OperationCompleted();
-            MakeProgress2();
-            
-            
-            if (!operationInProgress) {
-                HandlePendingTasksAfterMakeProgress();
-            }
-        });
-    }
 
-    function MakeProgress2() {
         switch (state) {
         case STATE_WAITING_TO_FIRE_INVALIDATE_EVENT: {
             LogInfo("MakeProgress: STATE_WAITING_TO_FIRE_INVALIDATE_EVENT");
-            if (shouldWaitForExplicitPaintWaiters() || shouldWaitForPendingPaints() ||
-                updateCanvasPending) {
+            if (shouldWaitForExplicitPaintWaiters() || shouldWaitForPendingPaints()) {
                 gFailureReason = "timed out waiting for pending paint count to reach zero";
                 if (shouldWaitForExplicitPaintWaiters()) {
                     gFailureReason += " (waiting for MozPaintWaitFinished)";
@@ -781,15 +637,10 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
                     gFailureReason += " (waiting for MozAfterPaint)";
                     LogInfo("MakeProgress: waiting for MozAfterPaint");
                 }
-                if (updateCanvasPending) {
-                    gFailureReason += " (waiting for updateCanvasPending)";
-                    LogInfo("MakeProgress: waiting for updateCanvasPending");
-                }
                 return;
             }
 
             state = STATE_WAITING_FOR_REFTEST_WAIT_REMOVAL;
-            CheckForLivenessOfContentRootElement();
             var hasReftestWait = shouldWaitForReftestWaitRemoval(contentRootElement);
             
             LogInfo("MakeProgress: dispatching MozReftestInvalidate");
@@ -819,17 +670,10 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             if (hasReftestWait && !shouldWaitForReftestWaitRemoval(contentRootElement)) {
                 
                 
-                OperationInProgress();
-                let promise = FlushRendering(FlushMode.ALL);
-                promise.then(function () {
-                    OperationCompleted();
-                    if (!updateCanvasPending && !shouldWaitForPendingPaints() &&
-                        !shouldWaitForExplicitPaintWaiters()) {
-                        LogWarning("MozInvalidateEvent didn't invalidate");
-                    }
-                    MakeProgress();
-                });
-                return;
+                FlushRendering(FlushMode.ALL);
+                if (!shouldWaitForPendingPaints() && !shouldWaitForExplicitPaintWaiters()) {
+                    LogWarning("MozInvalidateEvent didn't invalidate");
+                }
             }
             
             MakeProgress();
@@ -838,7 +682,6 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
 
         case STATE_WAITING_FOR_REFTEST_WAIT_REMOVAL:
             LogInfo("MakeProgress: STATE_WAITING_FOR_REFTEST_WAIT_REMOVAL");
-            CheckForLivenessOfContentRootElement();
             if (shouldWaitForReftestWaitRemoval(contentRootElement)) {
                 gFailureReason = "timed out waiting for reftest-wait to be removed";
                 LogInfo("MakeProgress: waiting for reftest-wait to be removed");
@@ -867,16 +710,11 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
                 if (aTopic) LogInfo("MakeProgress: apz-repaints-flushed fired");
                 os.removeObserver(flushWaiter, "apz-repaints-flushed");
                 state = STATE_WAITING_TO_FINISH;
-                if (operationInProgress) {
-                    CallSetTimeoutMakeProgress();
-                } else {
-                    MakeProgress();
-                }
+                MakeProgress();
             };
             os.addObserver(flushWaiter, "apz-repaints-flushed");
 
             var willSnapshot = IsSnapshottableTestType();
-            CheckForLivenessOfContentRootElement();
             var noFlush =
                 !(contentRootElement &&
                   contentRootElement.classList.contains("reftest-no-flush"));
@@ -896,8 +734,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
 
         case STATE_WAITING_TO_FINISH:
             LogInfo("MakeProgress: STATE_WAITING_TO_FINISH");
-            if (shouldWaitForExplicitPaintWaiters() || shouldWaitForPendingPaints() ||
-                updateCanvasPending) {
+            if (shouldWaitForExplicitPaintWaiters() || shouldWaitForPendingPaints()) {
                 gFailureReason = "timed out waiting for pending paint count to " +
                     "reach zero (after reftest-wait removed and switch to print mode)";
                 if (shouldWaitForExplicitPaintWaiters()) {
@@ -908,13 +745,8 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
                     gFailureReason += " (waiting for MozAfterPaint)";
                     LogInfo("MakeProgress: waiting for MozAfterPaint");
                 }
-                if (updateCanvasPending) {
-                    gFailureReason += " (waiting for updateCanvasPending)";
-                    LogInfo("MakeProgress: waiting for updateCanvasPending");
-                }
                 return;
             }
-            CheckForLivenessOfContentRootElement();
             if (contentRootElement) {
               var elements = getNoPaintElements(contentRootElement);
               for (var i = 0; i < elements.length; ++i) {
@@ -956,7 +788,6 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             state = STATE_COMPLETED;
             gFailureReason = "timed out while taking snapshot (bug in harness?)";
             RemoveListeners();
-            CheckForLivenessOfContentRootElement();
             CheckForProcessCrashExpectation(contentRootElement);
             setTimeout(RecordResult, 0, forURL);
             return;
@@ -967,7 +798,6 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
     addEventListener("MozAfterPaint", AfterPaintListener, false);
     
     
-    CheckForLivenessOfContentRootElement();
     if (contentRootElement) {
       contentRootElement.addEventListener("DOMAttrModified", AttrModifiedListener);
     }
@@ -978,11 +808,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
     var numPendingSpellChecks = spellCheckedElements.length;
     function decNumPendingSpellChecks() {
         --numPendingSpellChecks;
-        if (operationInProgress) {
-            CallSetTimeoutMakeProgress();
-        } else {
-            MakeProgress();
-        }
+        MakeProgress();
     }
     for (let editable of spellCheckedElements) {
         try {
@@ -996,12 +822,8 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
     
     
     
-    OperationInProgress();
-    let promise = SendInitCanvasWithSnapshot(forURL);
-    promise.then(function () {
-        OperationCompleted();
-        MakeProgress();
-    });
+    SendInitCanvasWithSnapshot(forURL);
+    MakeProgress();
 }
 
 function OnDocumentLoad(event)
@@ -1054,45 +876,21 @@ function OnDocumentLoad(event)
     setupDisplayport(contentRootElement);
     var inPrintMode = false;
 
-    async function AfterOnLoadScripts() {
+    function AfterOnLoadScripts() {
         
         var contentRootElement =
           content.document ? content.document.documentElement : null;
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        var paintWaiterFinished = false;
-
-        gExplicitPendingPaintsCompleteHook = function () {
-            LogInfo("PaintWaiters finished while we were sending initial snapshop in AfterOnLoadScripts");
-            paintWaiterFinished = true;
-        }
-
-        
-        await FlushRendering(FlushMode.ALL);
+        FlushRendering(FlushMode.ALL);
 
         
         
         
         
-        let painted = await SendInitCanvasWithSnapshot(ourURL);
+        var painted = SendInitCanvasWithSnapshot(ourURL);
 
-        gExplicitPendingPaintsCompleteHook = null;
-
-        if (contentRootElement && Cu.isDeadWrapper(contentRootElement)) {
-            contentRootElement = null;
-        }
-
-        if (paintWaiterFinished || shouldWaitForExplicitPaintWaiters() ||
+        if (shouldWaitForExplicitPaintWaiters() ||
             (!inPrintMode && doPrintMode(contentRootElement)) ||
             
             
@@ -1324,15 +1122,6 @@ function LoadURI(uri)
     webNavigation().loadURI(uri, loadURIOptions);
 }
 
-function LogError(str)
-{
-    if (gVerbose) {
-        sendSyncMessage("reftest:Log", { type: "error", msg: str });
-    } else {
-        sendAsyncMessage("reftest:Log", { type: "error", msg: str });
-    }
-}
-
 function LogWarning(str)
 {
     if (gVerbose) {
@@ -1361,11 +1150,10 @@ function IsSnapshottableTestType()
 
 const SYNC_DEFAULT = 0x0;
 const SYNC_ALLOW_DISABLE = 0x1;
-
 function SynchronizeForSnapshot(flags)
 {
     if (!IsSnapshottableTestType()) {
-        return Promise.resolve(undefined);
+        return;
     }
 
     if (flags & SYNC_ALLOW_DISABLE) {
@@ -1374,31 +1162,16 @@ function SynchronizeForSnapshot(flags)
             (docElt.hasAttribute("reftest-no-sync-layers") ||
              docElt.classList.contains("reftest-no-flush"))) {
             LogInfo("Test file chose to skip SynchronizeForSnapshot");
-            return Promise.resolve(undefined);
+            return;
         }
     }
 
-    let browsingContext = content.docShell.browsingContext;
-    let promise = content.getWindowGlobalChild().getActor("ReftestFission").sendQuery("UpdateLayerTree", {browsingContext});
-    return promise.then(function (result) {
-        for (let errorString of result) {
-            LogError(errorString);
-        }
+    windowUtils().updateLayerTree();
 
-        
-        
-        setupAsyncScrollOffsets({allowFailure:false});
-        setupAsyncZoom({allowFailure:false});
-    }, function(reason) {
-        
-        
-        LogInfo("UpdateLayerTree sendQuery to parent rejected: " + reason);
-
-        
-        
-        setupAsyncScrollOffsets({allowFailure:false});
-        setupAsyncZoom({allowFailure:false});
-    });
+    
+    
+    setupAsyncScrollOffsets({allowFailure:false});
+    setupAsyncZoom({allowFailure:false});
 }
 
 function RegisterMessageListeners()
@@ -1526,7 +1299,7 @@ function SendInitCanvasWithSnapshot(forURL)
         
         
         
-        return Promise.resolve(true);
+        return true;
     }
 
     
@@ -1536,13 +1309,7 @@ function SendInitCanvasWithSnapshot(forURL)
     
     
     if (gBrowserIsRemote) {
-        let promise = SynchronizeForSnapshot(SYNC_DEFAULT);
-        return promise.then(function () {
-            let ret = sendSyncMessage("reftest:InitCanvasWithSnapshot")[0];
-
-            gHaveCanvasSnapshot = ret.painted;
-            return ret.painted;
-        });
+        SynchronizeForSnapshot(SYNC_DEFAULT);
     }
 
     
@@ -1551,10 +1318,10 @@ function SendInitCanvasWithSnapshot(forURL)
     
     
     
-    let ret = sendSyncMessage("reftest:InitCanvasWithSnapshot")[0];
+    var ret = sendSyncMessage("reftest:InitCanvasWithSnapshot")[0];
 
     gHaveCanvasSnapshot = ret.painted;
-    return Promise.resolve(ret.painted);
+    return ret.painted;
 }
 
 function SendScriptResults(runtimeMs, error, results)
@@ -1592,13 +1359,13 @@ function elementDescription(element)
         '>';
 }
 
-function SendUpdateCanvasForEvent(forURL, rectList, contentRootElement)
+function SendUpdateCanvasForEvent(forURL, event, contentRootElement)
 {
     if (forURL != gCurrentURL) {
         LogInfo("SendUpdateCanvasForEvent called for previous document");
         
         
-        return Promise.resolve(undefined);
+        return;
     }
 
     var win = content;
@@ -1611,12 +1378,10 @@ function SendUpdateCanvasForEvent(forURL, rectList, contentRootElement)
       if (!gBrowserIsRemote) {
           sendSyncMessage("reftest:UpdateWholeCanvasForInvalidation");
       } else {
-          let promise = SynchronizeForSnapshot(SYNC_ALLOW_DISABLE);
-          return promise.then(function () {
-            sendAsyncMessage("reftest:UpdateWholeCanvasForInvalidation");
-          });
+          SynchronizeForSnapshot(SYNC_ALLOW_DISABLE);
+          sendAsyncMessage("reftest:UpdateWholeCanvasForInvalidation");
       }
-      return Promise.resolve(undefined);
+      return;
     }
 
     var message;
@@ -1628,6 +1393,7 @@ function SendUpdateCanvasForEvent(forURL, rectList, contentRootElement)
         LogInfo("Webrender enabled, sending update whole canvas for invalidation");
         message = "reftest:UpdateWholeCanvasForInvalidation";
     } else {
+        var rectList = event.clientRects;
         LogInfo("SendUpdateCanvasForEvent with " + rectList.length + " rects");
         for (var i = 0; i < rectList.length; ++i) {
             var r = rectList[i];
@@ -1649,15 +1415,10 @@ function SendUpdateCanvasForEvent(forURL, rectList, contentRootElement)
     if (!gBrowserIsRemote) {
         sendSyncMessage(message, { rects: rects });
     } else {
-        let promise = SynchronizeForSnapshot(SYNC_ALLOW_DISABLE);
-        return promise.then(function () {
-            sendAsyncMessage(message, { rects: rects });
-        });
+        SynchronizeForSnapshot(SYNC_ALLOW_DISABLE);
+        sendAsyncMessage(message, { rects: rects });
     }
-
-    return Promise.resolve(undefined);
 }
-
 if (content.document.readyState == "complete") {
   
   OnInitialLoad();
