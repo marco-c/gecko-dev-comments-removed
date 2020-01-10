@@ -53,7 +53,27 @@ static_assert(sizeof(AbortReasonOr<bool>) <= sizeof(uintptr_t),
 
 
 class JitContext {
+  JitContext* prev_ = nullptr;
+  CompileRealm* realm_ = nullptr;
+  int assemblerCount_ = 0;
+
+#ifdef DEBUG
+  bool isCompilingWasm_ = false;
+  bool oom_ = false;
+#endif
+
  public:
+  
+  
+  JSContext* cx = nullptr;
+
+  
+  TempAllocator* temp = nullptr;
+
+  
+  
+  CompileRuntime* runtime = nullptr;
+
   
   JitContext(JSContext* cx, TempAllocator* temp);
 
@@ -65,17 +85,6 @@ class JitContext {
   JitContext();
 
   ~JitContext();
-
-  
-  
-  JSContext* cx;
-
-  
-  TempAllocator* temp;
-
-  
-  
-  CompileRuntime* runtime;
 
   int getNextAssemblerId() { return assemblerCount_++; }
 
@@ -90,15 +99,6 @@ class JitContext {
   bool hasOOM() { return oom_; }
   void setOOM() { oom_ = true; }
 #endif
-
- private:
-  JitContext* prev_;
-  CompileRealm* realm_;
-#ifdef DEBUG
-  bool isCompilingWasm_;
-  bool oom_;
-#endif
-  int assemblerCount_;
 };
 
 
