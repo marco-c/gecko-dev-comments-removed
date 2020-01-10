@@ -340,7 +340,7 @@ var gEditItemOverlay = {
           )
         );
       } else if (focusedElement === "first") {
-        elt = document.querySelector("textbox:not([collapsed=true])");
+        elt = document.querySelector("vbox:not([collapsed=true]) > input");
       }
       if (elt) {
         elt.focus();

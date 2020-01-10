@@ -243,12 +243,14 @@ var withBookmarksDialog = async function(
 
   
   let doc = dialogWin.document;
-  let elt = doc.querySelector("textbox:not([collapsed=true])");
+  let elt = doc.querySelector("vbox:not([collapsed=true]) > input");
+  ok(elt, "There should be an input to focus.");
+
   if (elt) {
     info("waiting for focus on the first textfield");
     await waitForCondition(
-      () => doc.activeElement == elt.inputField,
-      "The first non collapsed textbox should have been focused"
+      () => doc.activeElement == elt,
+      "The first non collapsed input should have been focused"
     );
   }
 
