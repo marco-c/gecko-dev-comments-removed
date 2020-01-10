@@ -1283,7 +1283,6 @@ JS_PUBLIC_API void AddPersistentRoot(JSRuntime* rt, RootKind kind,
 
 
 
-
 template <typename T>
 class PersistentRooted
     : public js::RootedBase<T, PersistentRooted<T>>,
@@ -1355,8 +1354,14 @@ class PersistentRooted
 
   bool initialized() { return ListBase::isInList(); }
 
-  void init(JSContext* cx) { init(cx, SafelyInitialized<T>()); }
+  void init(RootingContext* cx) { init(cx, SafelyInitialized<T>()); }
+  void init(JSContext* cx) { init(RootingContext::get(cx)); }
 
+  template <typename U>
+  void init(RootingContext* cx, U&& initial) {
+    ptr = std::forward<U>(initial);
+    registerWithRootLists(cx);
+  }
   template <typename U>
   void init(JSContext* cx, U&& initial) {
     ptr = std::forward<U>(initial);
