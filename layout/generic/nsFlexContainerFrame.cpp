@@ -1865,6 +1865,8 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
 
   if (aForceBResizeForMeasuringReflow) {
     childRIForMeasuringBSize.SetBResize(true);
+    
+    childRIForMeasuringBSize.mFlags.mIsBResizeForPercentages = true;
   }
 
   const CachedMeasuringReflowResult& reflowResult =
@@ -4232,6 +4234,8 @@ void nsFlexContainerFrame::SizeItemInCrossAxis(
     
     
     aChildReflowInput.SetBResize(true);
+    
+    aChildReflowInput.mFlags.mIsBResizeForPercentages = true;
   }
 
   
@@ -5248,6 +5252,7 @@ void nsFlexContainerFrame::ReflowFlexItem(
     }
     if (didOverrideComputedBSize) {
       childReflowInput.SetBResize(true);
+      childReflowInput.mFlags.mIsBResizeForPercentages = true;
     }
   }
   

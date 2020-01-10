@@ -4634,6 +4634,8 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   
   
   childRI.SetBResize(true);
+  
+  childRI.mFlags.mIsBResizeForPercentages = true;
 
   ReflowOutput childSize(childRI);
   nsReflowStatus childStatus;
@@ -6379,6 +6381,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
   
   
   childRI.SetBResize(true);
+  childRI.mFlags.mIsBResizeForPercentages = true;
 
   
   
