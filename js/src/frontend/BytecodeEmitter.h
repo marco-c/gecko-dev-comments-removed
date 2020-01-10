@@ -102,7 +102,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   mozilla::Maybe<EitherParser> ep_ = {};
   BCEParserHandle* parser = nullptr;
 
-  unsigned firstLine = 0; 
+  
+  unsigned firstLine = 0;
+  unsigned firstColumn = 0;
 
   uint32_t maxFixedSlots = 0; 
 
@@ -175,7 +177,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   BytecodeEmitter(
       BytecodeEmitter* parent, SharedContext* sc, JS::Handle<JSScript*> script,
-      JS::Handle<LazyScript*> lazyScript, uint32_t lineNum,
+      JS::Handle<LazyScript*> lazyScript, uint32_t line, uint32_t column,
       EmitterMode emitterMode,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
@@ -194,60 +196,27 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   BytecodeEmitter(
       BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
       JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
-      uint32_t lineNum, EmitterMode emitterMode = Normal,
+      uint32_t line, uint32_t column, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
   BytecodeEmitter(
       BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
       JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
-      uint32_t lineNum, EmitterMode emitterMode = Normal,
+      uint32_t line, uint32_t column, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
   template <typename Unit>
   BytecodeEmitter(
       BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
       SharedContext* sc, JS::Handle<JSScript*> script,
-      JS::Handle<LazyScript*> lazyScript, uint32_t lineNum,
+      JS::Handle<LazyScript*> lazyScript, uint32_t line, uint32_t column,
       EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid())
       : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
-                        lineNum, emitterMode, fieldInitializers) {}
-
-  
-  
-  BytecodeEmitter(
-      BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
-      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
-      TokenPos bodyPosition, EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
-      : BytecodeEmitter(parent, parser, sc, script, lazyScript,
-                        parser->errorReporter().lineAt(bodyPosition.begin),
-                        emitterMode, fieldInitializers) {
-    initFromBodyPosition(bodyPosition);
-  }
-
-  BytecodeEmitter(
-      BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
-      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
-      TokenPos bodyPosition, EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
-      : BytecodeEmitter(parent, parser, sc, script, lazyScript,
-                        parser.errorReporter().lineAt(bodyPosition.begin),
-                        emitterMode, fieldInitializers) {
-    initFromBodyPosition(bodyPosition);
-  }
-
-  template <typename Unit>
-  BytecodeEmitter(
-      BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
-      SharedContext* sc, JS::Handle<JSScript*> script,
-      JS::Handle<LazyScript*> lazyScript, TokenPos bodyPosition,
-      EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
-      : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
-                        bodyPosition, emitterMode, fieldInitializers) {}
+                        line, column, emitterMode, fieldInitializers) {}
 
   MOZ_MUST_USE bool init();
+  MOZ_MUST_USE bool init(TokenPos bodyPosition);
 
   template <typename T>
   T* findInnermostNestableControl() const;

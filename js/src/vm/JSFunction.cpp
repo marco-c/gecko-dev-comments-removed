@@ -1664,8 +1664,7 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
     if (canRelazify) {
       
       
-      
-      script->setColumn(lazy->column());
+      MOZ_ASSERT(lazy->column() == script->column());
 
       
       

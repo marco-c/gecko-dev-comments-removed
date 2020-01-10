@@ -4101,6 +4101,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
 
   
   script->lineno_ = bce->firstLine;
+  script->column_ = bce->firstColumn;
 
   
   script->setFlag(ImmutableFlags::Strict, bce->sc->strict());

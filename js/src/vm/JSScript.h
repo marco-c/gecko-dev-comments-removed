@@ -2343,8 +2343,6 @@ class JSScript : public js::BaseScript {
 
   size_t mainOffset() const { return immutableScriptData()->mainOffset; }
 
-  void setColumn(size_t column) { column_ = column; }
-
   
   
   size_t nfixed() const { return immutableScriptData()->nfixed; }
