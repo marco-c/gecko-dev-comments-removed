@@ -50,6 +50,14 @@ public class WebExtension {
 
      final @NonNull Map<String, MessageDelegate> messageDelegates;
 
+    @Override
+    public String toString() {
+        return "WebExtension {" +
+                "location=" + location + ", " +
+                "id=" + id + ", " +
+                "flags=" + flags + "}";
+    }
+
     private final static String LOGTAG = "WebExtension";
 
     public static class Flags {

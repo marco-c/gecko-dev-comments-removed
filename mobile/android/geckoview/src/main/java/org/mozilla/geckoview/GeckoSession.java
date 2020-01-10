@@ -317,8 +317,37 @@ public class GeckoSession implements Parcelable {
             }
         };
 
+    private static class WebExtensionSender {
+        public String webExtensionId;
+        public String nativeApp;
+
+        public WebExtensionSender(final String webExtensionId, final String nativeApp) {
+            this.webExtensionId = webExtensionId;
+            this.nativeApp = nativeApp;
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            if (!(other instanceof WebExtensionSender)) {
+                return false;
+            }
+
+            WebExtensionSender o = (WebExtensionSender) other;
+            return webExtensionId.equals(o.webExtensionId) &&
+                    nativeApp.equals(o.nativeApp);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = 17;
+            result = 31 * result + (webExtensionId != null ? webExtensionId.hashCode() : 0);
+            result = 31 * result + (nativeApp != null ? nativeApp.hashCode() : 0);
+            return result;
+        }
+    }
+
     private final class WebExtensionListener implements BundleEventListener {
-        final private HashMap<String, WebExtension.MessageDelegate> mMessageDelegates;
+        final private HashMap<WebExtensionSender, WebExtension.MessageDelegate> mMessageDelegates;
 
         public WebExtensionListener() {
             mMessageDelegates = new HashMap<>();
@@ -332,13 +361,15 @@ public class GeckoSession implements Parcelable {
                     null);
         }
 
-        public void setDelegate(final WebExtension.MessageDelegate delegate,
+        public void setDelegate(final WebExtension webExtension,
+                                final WebExtension.MessageDelegate delegate,
                                 final String nativeApp) {
-            mMessageDelegates.put(nativeApp, delegate);
+            mMessageDelegates.put(new WebExtensionSender(webExtension.id, nativeApp), delegate);
         }
 
-        public WebExtension.MessageDelegate getDelegate(final String nativeApp) {
-            return mMessageDelegates.get(nativeApp);
+        public WebExtension.MessageDelegate getDelegate(final WebExtension webExtension,
+                                                        final String nativeApp) {
+            return mMessageDelegates.get(new WebExtensionSender(webExtension.id, nativeApp));
         }
 
         @Override
@@ -367,10 +398,12 @@ public class GeckoSession implements Parcelable {
 
 
 
+
     @AnyThread
     public @Nullable WebExtension.MessageDelegate getMessageDelegate(
+            final @NonNull WebExtension webExtension,
             final @NonNull String nativeApp) {
-        return mWebExtensionListener.getDelegate(nativeApp);
+        return mWebExtensionListener.getDelegate(webExtension, nativeApp);
     }
 
     
@@ -392,10 +425,14 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
+
     @AnyThread
-    public void setMessageDelegate(final @Nullable WebExtension.MessageDelegate delegate,
+    public void setMessageDelegate(final @NonNull WebExtension webExtension,
+                                   final @Nullable WebExtension.MessageDelegate delegate,
                                    final @NonNull String nativeApp) {
-        mWebExtensionListener.setDelegate(delegate, nativeApp);
+        mWebExtensionListener.setDelegate(webExtension, delegate, nativeApp);
     }
 
     private final GeckoSessionHandler<ContentDelegate> mContentHandler =
