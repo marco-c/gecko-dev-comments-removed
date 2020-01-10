@@ -145,12 +145,6 @@ class nsNodeUtils {
 
 
 
-  static void LastRelease(nsINode* aNode);
-
-  
-
-
-
 
 
 

@@ -663,6 +663,11 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+  void LastRelease();
+
+  
+
+
 
   uint16_t NodeType() const { return mNodeInfo->NodeType(); }
   const nsString& NodeName() const { return mNodeInfo->NodeName(); }
