@@ -1,0 +1,2 @@
+
+window.MAGIC = 42;

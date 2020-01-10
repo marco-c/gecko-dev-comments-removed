@@ -155,9 +155,11 @@ module.exports.addTests = ({testRunner, product, puppeteerPath}) => {
 
   
   require('./ignorehttpserrors.spec.js').addTests(testOptions);
+  require('./defaultbrowsercontext.spec.js').addTests(testOptions);
   require('./launcher.spec.js').addTests(testOptions);
   require('./fixtures.spec.js').addTests(testOptions);
   if (CHROME) {
+    require('./oopif.spec.js').addTests(testOptions);
     require('./headful.spec.js').addTests(testOptions);
     require('./tracing.spec.js').addTests(testOptions);
     

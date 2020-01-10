@@ -50,12 +50,30 @@ class JSHandle {
 
 
 
+
+  async evaluate(pageFunction, ...args) {
+    return await this.executionContext().evaluate(pageFunction, this, ...args);
+  }
+
+  
+
+
+
+
+  async evaluateHandle(pageFunction, ...args) {
+    return await this.executionContext().evaluateHandle(pageFunction, this, ...args);
+  }
+
+  
+
+
+
   async getProperty(propertyName) {
-    const objectHandle = await this._context.evaluateHandle((object, propertyName) => {
+    const objectHandle = await this.evaluateHandle((object, propertyName) => {
       const result = {__proto__: null};
       result[propertyName] = object[propertyName];
       return result;
-    }, this, propertyName);
+    }, propertyName);
     const properties = await objectHandle.getProperties();
     const result = properties.get(propertyName) || null;
     await objectHandle.dispose();
@@ -160,7 +178,7 @@ class ElementHandle extends JSHandle {
   }
 
   async _scrollIntoViewIfNeeded() {
-    const error = await this.executionContext().evaluate(async(element, pageJavascriptEnabled) => {
+    const error = await this.evaluate(async(element, pageJavascriptEnabled) => {
       if (!element.isConnected)
         return 'Node is detached from document';
       if (element.nodeType !== Node.ELEMENT_NODE)
@@ -180,7 +198,7 @@ class ElementHandle extends JSHandle {
       if (visibleRatio !== 1.0)
         element.scrollIntoView({block: 'center', inline: 'center', behavior: 'instant'});
       return false;
-    }, this, this._page._javascriptEnabled);
+    }, this._page._javascriptEnabled);
     if (error)
       throw new Error(error);
   }
@@ -269,6 +287,30 @@ class ElementHandle extends JSHandle {
   
 
 
+
+  async select(...values) {
+    for (const value of values)
+      assert(helper.isString(value), 'Values must be strings. Found value "' + value + '" of type "' + (typeof value) + '"');
+    return this.evaluate((element, values) => {
+      if (element.nodeName.toLowerCase() !== 'select')
+        throw new Error('Element is not a <select> element.');
+
+      const options = Array.from(element.options);
+      element.value = undefined;
+      for (const option of options) {
+        option.selected = values.includes(option.value);
+        if (option.selected && !element.multiple)
+          break;
+      }
+      element.dispatchEvent(new Event('input', { 'bubbles': true }));
+      element.dispatchEvent(new Event('change', { 'bubbles': true }));
+      return options.filter(option => option.selected).map(option => option.value);
+    }, values);
+  }
+
+  
+
+
   async uploadFile(...filePaths) {
     const files = filePaths.map(filePath => path.resolve(filePath));
     const objectId = this._remoteObject.objectId;
@@ -282,7 +324,7 @@ class ElementHandle extends JSHandle {
   }
 
   async focus() {
-    await this.executionContext().evaluate(element => element.focus(), this);
+    await this.evaluate(element => element.focus());
   }
 
   
@@ -392,9 +434,9 @@ class ElementHandle extends JSHandle {
 
 
   async $(selector) {
-    const handle = await this.executionContext().evaluateHandle(
+    const handle = await this.evaluateHandle(
         (element, selector) => element.querySelector(selector),
-        this, selector
+        selector
     );
     const element = handle.asElement();
     if (element)
@@ -408,9 +450,9 @@ class ElementHandle extends JSHandle {
 
 
   async $$(selector) {
-    const arrayHandle = await this.executionContext().evaluateHandle(
+    const arrayHandle = await this.evaluateHandle(
         (element, selector) => element.querySelectorAll(selector),
-        this, selector
+        selector
     );
     const properties = await arrayHandle.getProperties();
     await arrayHandle.dispose();
@@ -433,7 +475,7 @@ class ElementHandle extends JSHandle {
     const elementHandle = await this.$(selector);
     if (!elementHandle)
       throw new Error(`Error: failed to find element matching selector "${selector}"`);
-    const result = await this.executionContext().evaluate(pageFunction, elementHandle, ...args);
+    const result = await elementHandle.evaluate(pageFunction, ...args);
     await elementHandle.dispose();
     return result;
   }
@@ -445,12 +487,12 @@ class ElementHandle extends JSHandle {
 
 
   async $$eval(selector, pageFunction, ...args) {
-    const arrayHandle = await this.executionContext().evaluateHandle(
+    const arrayHandle = await this.evaluateHandle(
         (element, selector) => Array.from(element.querySelectorAll(selector)),
-        this, selector
+        selector
     );
 
-    const result = await this.executionContext().evaluate(pageFunction, arrayHandle, ...args);
+    const result = await arrayHandle.evaluate(pageFunction, ...args);
     await arrayHandle.dispose();
     return result;
   }
@@ -460,7 +502,7 @@ class ElementHandle extends JSHandle {
 
 
   async $x(expression) {
-    const arrayHandle = await this.executionContext().evaluateHandle(
+    const arrayHandle = await this.evaluateHandle(
         (element, expression) => {
           const document = element.ownerDocument || element;
           const iterator = document.evaluate(expression, element, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
@@ -470,7 +512,7 @@ class ElementHandle extends JSHandle {
             array.push(item);
           return array;
         },
-        this, expression
+        expression
     );
     const properties = await arrayHandle.getProperties();
     await arrayHandle.dispose();
@@ -487,7 +529,7 @@ class ElementHandle extends JSHandle {
 
 
   isIntersectingViewport() {
-    return this.executionContext().evaluate(async element => {
+    return this.evaluate(async element => {
       const visibleRatio = await new Promise(resolve => {
         const observer = new IntersectionObserver(entries => {
           resolve(entries[0].intersectionRatio);
@@ -496,7 +538,7 @@ class ElementHandle extends JSHandle {
         observer.observe(element);
       });
       return visibleRatio > 0;
-    }, this);
+    });
   }
 }
 

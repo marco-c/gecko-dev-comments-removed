@@ -17,7 +17,6 @@
 const {Events} = require('./Events');
 const {Page} = require('./Page');
 const {Worker} = require('./Worker');
-const {Connection} = require('./Connection');
 
 class Target {
   
@@ -84,16 +83,9 @@ class Target {
     if (this._targetInfo.type !== 'service_worker' && this._targetInfo.type !== 'shared_worker')
       return null;
     if (!this._workerPromise) {
-      this._workerPromise = this._sessionFactory().then(async client => {
-        
-        const [targetAttached] = await Promise.all([
-          new Promise(x => client.once('Target.attachedToTarget', x)),
-          client.send('Target.setAutoAttach', {autoAttach: true, waitForDebuggerOnStart: false, flatten: true}),
-        ]);
-        const session = Connection.fromSession(client).session(targetAttached.sessionId);
-        
-        return new Worker(session, this._targetInfo.url, () => {} , () => {} );
-      });
+      
+      this._workerPromise = this._sessionFactory()
+          .then(client => new Worker(client, this._targetInfo.url, () => {} , () => {} ));
     }
     return this._workerPromise;
   }

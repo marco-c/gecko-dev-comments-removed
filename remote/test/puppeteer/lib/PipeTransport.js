@@ -13,7 +13,7 @@
 
 
 
-const {helper} = require('./helper');
+const {helper, debugError} = require('./helper');
 
 
 
@@ -31,7 +31,9 @@ class PipeTransport {
       helper.addEventListener(pipeRead, 'close', () => {
         if (this.onclose)
           this.onclose.call(null);
-      })
+      }),
+      helper.addEventListener(pipeRead, 'error', debugError),
+      helper.addEventListener(pipeWrite, 'error', debugError),
     ];
     this.onmessage = null;
     this.onclose = null;

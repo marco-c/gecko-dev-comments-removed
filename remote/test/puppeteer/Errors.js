@@ -14,15 +14,4 @@
 
 
 
-let asyncawait = true;
-try {
-  new Function('async function test(){await 1}');
-} catch (error) {
-  asyncawait = false;
-}
-
-
-if (asyncawait)
-  module.exports = require('./lib/Errors');
-else
-  module.exports = require('./node6/lib/Errors');
+module.exports = require('./lib/Errors');

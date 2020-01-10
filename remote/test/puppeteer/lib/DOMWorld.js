@@ -393,24 +393,12 @@ class DOMWorld {
 
 
 
-  select(selector, ...values){
-    for (const value of values)
-      assert(helper.isString(value), 'Values must be strings. Found value "' + value + '" of type "' + (typeof value) + '"');
-    return this.$eval(selector, (element, values) => {
-      if (element.nodeName.toLowerCase() !== 'select')
-        throw new Error('Element is not a <select> element.');
-
-      const options = Array.from(element.options);
-      element.value = undefined;
-      for (const option of options) {
-        option.selected = values.includes(option.value);
-        if (option.selected && !element.multiple)
-          break;
-      }
-      element.dispatchEvent(new Event('input', { 'bubbles': true }));
-      element.dispatchEvent(new Event('change', { 'bubbles': true }));
-      return options.filter(option => option.selected).map(option => option.value);
-    }, values);
+  async select(selector, ...values) {
+    const handle = await this.$(selector);
+    assert(handle, 'No node found for selector: ' + selector);
+    const result = await handle.select(...values);
+    await handle.dispose();
+    return result;
   }
 
   
