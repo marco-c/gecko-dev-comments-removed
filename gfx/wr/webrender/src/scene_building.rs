@@ -358,6 +358,9 @@ pub struct SceneBuilder<'a> {
     
     
     iframe_depth: usize,
+
+    
+    content_slice_count: usize,
 }
 
 impl<'a> SceneBuilder<'a> {
@@ -397,6 +400,7 @@ impl<'a> SceneBuilder<'a> {
             external_scroll_mapper: ScrollOffsetMapper::new(),
             found_explicit_tile_cache: false,
             iframe_depth: 0,
+            content_slice_count: 0,
         };
 
         let device_pixel_scale = view.accumulated_scale_factor_for_snapping();
@@ -452,6 +456,7 @@ impl<'a> SceneBuilder<'a> {
             clip_store: builder.clip_store,
             root_pic_index: builder.root_pic_index,
             config: builder.config,
+            content_slice_count: builder.content_slice_count,
         }
     }
 
@@ -578,12 +583,14 @@ impl<'a> SceneBuilder<'a> {
                             clip_instance.clip_chain_id,
                             &mut prim_clips,
                             &self.clip_store,
+                            &self.interners,
                         );
                     }
                     add_clips(
                         instance.clip_chain_id,
                         &mut prim_clips,
                         &self.clip_store,
+                        &self.interners,
                     );
                 }
 
@@ -1859,7 +1866,7 @@ impl<'a> SceneBuilder<'a> {
                         
                         
                         if parent_sc.pipeline_id != stacking_context.pipeline_id && self.iframe_depth == 1 {
-                            stacking_context.init_picture_caching(&self.clip_scroll_tree);
+                            self.content_slice_count = stacking_context.init_picture_caching(&self.clip_scroll_tree);
 
                             
                             self.found_explicit_tile_cache = true;
@@ -3521,12 +3528,13 @@ impl FlattenedStackingContext {
     fn init_picture_caching(
         &mut self,
         clip_scroll_tree: &ClipScrollTree,
-    ) {
+    ) -> usize {
         struct SliceInfo {
             cluster_index: usize,
-            scroll_roots: Vec<SpatialNodeIndex>,
+            scroll_root: SpatialNodeIndex,
         }
 
+        let mut content_slice_count = 0;
         let mut slices: Vec<SliceInfo> = Vec::new();
 
         
@@ -3542,46 +3550,42 @@ impl FlattenedStackingContext {
             let create_new_slice =
                 cluster.flags.contains(ClusterFlags::SCROLLBAR_CONTAINER) ||
                 slices.last().map(|slice| {
-                    scroll_root != ROOT_SPATIAL_NODE_INDEX &&
-                    slice.scroll_roots.is_empty()
+                    scroll_root != slice.scroll_root
                 }).unwrap_or(true);
 
             
             if create_new_slice {
                 slices.push(SliceInfo {
                     cluster_index,
-                    scroll_roots: Vec::new(),
+                    scroll_root
                 });
-            }
-
-            
-            
-            if scroll_root != ROOT_SPATIAL_NODE_INDEX {
-                let slice = slices.last_mut().unwrap();
-                if !slice.scroll_roots.contains(&scroll_root) {
-                    slice.scroll_roots.push(scroll_root);
-                }
             }
         }
 
         
         
-        for slice in slices.drain(..) {
-            let cluster = &mut self.prim_list.clusters[slice.cluster_index];
+        
+        
+        
+        
+        
+        const MAX_CONTENT_SLICES: usize = 8;
+
+        if slices.len() > MAX_CONTENT_SLICES {
+            if let Some(cluster) = self.prim_list.clusters.first_mut() {
+                content_slice_count = 1;
+                cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+                cluster.cache_scroll_root = None;
+            }
+        } else {
             
-            cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
-            assert!(!slice.scroll_roots.contains(&ROOT_SPATIAL_NODE_INDEX));
             
-            
-            
-            
-            
-            
-            
-            
-            
-            if slice.scroll_roots.len() == 1 {
-                cluster.cache_scroll_root = Some(slice.scroll_roots.first().cloned().unwrap());
+            for slice in slices.drain(..) {
+                content_slice_count += 1;
+                let cluster = &mut self.prim_list.clusters[slice.cluster_index];
+                
+                cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+                cluster.cache_scroll_root = Some(slice.scroll_root);
             }
         }
 
@@ -3590,6 +3594,8 @@ impl FlattenedStackingContext {
         if let Some(cluster) = self.prim_list.clusters.last_mut() {
             cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_POST);
         }
+
+        content_slice_count
     }
 
     
@@ -3933,6 +3939,7 @@ fn add_clips(
     clip_chain_id: ClipChainId,
     prim_clips: &mut Vec<ClipDataHandle>,
     clip_store: &ClipStore,
+    interners: &Interners,
 ) {
     let mut current_clip_chain_id = clip_chain_id;
 
@@ -3940,7 +3947,10 @@ fn add_clips(
         let clip_chain_node = &clip_store
             .clip_chain_nodes[current_clip_chain_id.0 as usize];
 
-        prim_clips.push(clip_chain_node.handle);
+        let clip_kind = interners.clip[clip_chain_node.handle];
+        if let ClipNodeKind::Rectangle = clip_kind {
+            prim_clips.push(clip_chain_node.handle);
+        }
 
         current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
     }
