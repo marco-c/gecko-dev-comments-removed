@@ -17,6 +17,8 @@
 namespace mozilla {
 namespace widget {
 
+class WindowSurfaceWayland;
+
 
 class WaylandShmPool {
  public:
@@ -69,20 +71,22 @@ class WindowBackBuffer {
 
   static gfx::SurfaceFormat GetSurfaceFormat() { return mFormat; }
 
-  nsWaylandDisplay* GetWaylandDisplay() { return mWaylandDisplay; };
+  nsWaylandDisplay* GetWaylandDisplay();
 
-  WindowBackBuffer(nsWaylandDisplay* aWaylandDisplay)
-      : mWaylandDisplay(aWaylandDisplay){};
+  WindowBackBuffer(WindowSurfaceWayland* aWindowSurfaceWayland)
+      : mWindowSurfaceWayland(aWindowSurfaceWayland){};
   virtual ~WindowBackBuffer(){};
+
+ protected:
+  WindowSurfaceWayland* mWindowSurfaceWayland;
 
  private:
   static gfx::SurfaceFormat mFormat;
-  nsWaylandDisplay* mWaylandDisplay;
 };
 
 class WindowBackBufferShm : public WindowBackBuffer {
  public:
-  WindowBackBufferShm(nsWaylandDisplay* aWaylandDisplay, int aWidth,
+  WindowBackBufferShm(WindowSurfaceWayland* aWindowSurfaceWayland, int aWidth,
                       int aHeight);
   ~WindowBackBufferShm();
 
@@ -121,8 +125,8 @@ class WindowBackBufferShm : public WindowBackBuffer {
 
 class WindowBackBufferDMABuf : public WindowBackBuffer {
  public:
-  WindowBackBufferDMABuf(nsWaylandDisplay* aWaylandDisplay, int aWidth,
-                         int aHeight);
+  WindowBackBufferDMABuf(WindowSurfaceWayland* aWindowSurfaceWayland,
+                         int aWidth, int aHeight);
   ~WindowBackBufferDMABuf();
 
   bool IsAttached();
@@ -170,11 +174,38 @@ class WindowSurfaceWayland : public WindowSurface {
   explicit WindowSurfaceWayland(nsWindow* aWindow);
   ~WindowSurfaceWayland();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   already_AddRefed<gfx::DrawTarget> Lock(
       const LayoutDeviceIntRegion& aRegion) override;
   void Commit(const LayoutDeviceIntRegion& aInvalidRegion) final;
+
+  
+  
+  
   void FrameCallbackHandler();
+
+  
+  
+  
+  
   void DelayedCommitHandler();
+
+  
+  
+  
+  
+  void CommitWaylandBuffer();
+
+  nsWaylandDisplay* GetWaylandDisplay() { return mWaylandDisplay; };
 
   
   typedef enum {
@@ -207,7 +238,6 @@ class WindowSurfaceWayland : public WindowSurface {
 
   void CacheImageSurface(const LayoutDeviceIntRegion& aRegion);
   bool CommitImageCacheToWaylandBuffer();
-  void CommitWaylandBuffer();
 
   void DrawDelayedImageCommits(gfx::DrawTarget* aDrawTarget,
                                LayoutDeviceIntRegion& aWaylandBufferDamage);
@@ -219,21 +249,69 @@ class WindowSurfaceWayland : public WindowSurface {
   
   LayoutDeviceIntRect mBufferScreenRect;
   nsWaylandDisplay* mWaylandDisplay;
+
+  
+  
+  
+  
   WindowBackBuffer* mWaylandBuffer;
-  LayoutDeviceIntRegion mWaylandBufferDamage;
   WindowBackBuffer* mBackupBuffer[BACK_BUFFER_NUM];
+  LayoutDeviceIntRegion mWaylandBufferDamage;
+
+  
+  
+  
   wl_callback* mFrameCallback;
   wl_surface* mLastCommittedSurface;
-  MessageLoop* mDisplayThreadMessageLoop;
+
+  
   WindowSurfaceWayland** mDelayedCommitHandle;
+
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<gfxImageSurface> mImageSurface;
   AutoTArray<WindowImageSurface, 30> mDelayedImageCommits;
+
+  int64_t mLastCommitTime;
+
+  
+  
+  
   bool mDrawToWaylandBufferDirectly;
-  bool mPendingCommit;
+
+  
+  
+  bool mBufferPendingCommit;
+
+  
+  
+  
+  
+  
+  bool mBufferCommitAllowed;
+
+  
+  
+  
   bool mWholeWindowBufferDamage;
+
+  
+  
   bool mBufferNeedsClear;
+
   bool mIsMainThread;
+
+  
+  
   bool mNeedScaleFactorUpdate;
+
+  
   RenderingCacheMode mRenderingCacheMode;
 
   static bool UseDMABufBackend();

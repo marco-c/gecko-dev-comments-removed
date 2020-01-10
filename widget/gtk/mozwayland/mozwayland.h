@@ -27,6 +27,9 @@ MOZ_EXPORT struct wl_proxy* wl_proxy_marshal_constructor(
     struct wl_proxy* proxy, uint32_t opcode,
     const struct wl_interface* interface, ...);
 
+MOZ_EXPORT void* wl_proxy_create_wrapper(void* proxy);
+MOZ_EXPORT void wl_proxy_wrapper_destroy(void* proxy_wrapper);
+
 
 
 #ifndef WL_DATA_DEVICE_MANAGER_DND_ACTION_ENUM
