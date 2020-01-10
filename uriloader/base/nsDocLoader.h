@@ -31,12 +31,6 @@
 
 #include "mozilla/LinkedList.h"
 
-namespace mozilla {
-namespace dom {
-class BrowserBridgeChild;
-}  
-}  
-
 
 
 
@@ -57,8 +51,6 @@ class nsDocLoader : public nsIDocumentLoader,
                     public nsIChannelEventSink,
                     public nsISupportsPriority {
  public:
-  typedef mozilla::dom::BrowserBridgeChild BrowserBridgeChild;
-
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_THIS_DOCLOADER_IMPL_CID)
 
   nsDocLoader();
@@ -142,27 +134,6 @@ class nsDocLoader : public nsIDocumentLoader,
     mIsReadyToHandlePostMessage = false;
     mTreatAsBackgroundLoad = false;
   };
-
-  
-  
-  
-  void OOPChildLoadStarted(BrowserBridgeChild* aChild) {
-    MOZ_ASSERT(!mOOPChildrenLoading.Contains(aChild));
-    mOOPChildrenLoading.AppendElement(aChild);
-  }
-
-  
-  
-  
-  void OOPChildLoadDone(BrowserBridgeChild* aChild) {
-    
-    
-    
-    
-    if (mOOPChildrenLoading.RemoveElement(aChild)) {
-      DocLoaderIsEmpty(true);
-    }
-  }
 
  protected:
   virtual ~nsDocLoader();
@@ -369,10 +340,6 @@ class nsDocLoader : public nsIDocumentLoader,
   
   
   nsCOMArray<nsIDocumentLoader> mChildrenInOnload;
-
-  
-  
-  nsTArray<const BrowserBridgeChild*> mOOPChildrenLoading;
 
   int64_t GetMaxTotalProgress();
 

@@ -159,8 +159,6 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvFireFrameLoadEvent(
   event.mFlags.mCancelable = false;
   EventDispatcher::Dispatch(owner, nullptr, &event, nullptr, &status);
 
-  UnblockOwnerDocsLoadEvent(owner->OwnerDoc());
-
   return IPC_OK();
 }
 
@@ -216,20 +214,6 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvSubFrameCrashed(
 
 void BrowserBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
   mIPCOpen = false;
-
-  
-  
-  if (RefPtr<Element> owner = mFrameLoader->GetOwnerContent()) {
-    UnblockOwnerDocsLoadEvent(owner->OwnerDoc());
-  }
-}
-
-void BrowserBridgeChild::UnblockOwnerDocsLoadEvent(Document* aOwnerDoc) {
-  
-  if (!mHadInitialLoad && aOwnerDoc->GetDocShell()) {
-    mHadInitialLoad = true;
-    nsDocShell::Cast(aOwnerDoc->GetDocShell())->OOPChildLoadDone(this);
-  }
 }
 
 }  

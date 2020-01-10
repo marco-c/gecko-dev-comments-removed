@@ -2094,10 +2094,6 @@ already_AddRefed<RemoteBrowser> ContentChild::CreateBrowser(
   TabId tabId(nsContentUtils::GenerateTabId());
   RefPtr<BrowserBridgeChild> browserBridge =
       new BrowserBridgeChild(aFrameLoader, aBrowsingContext, tabId);
-  
-  if (auto docShell = owner->OwnerDoc()->GetDocShell()) {
-    nsDocShell::Cast(docShell)->OOPChildLoadStarted(browserBridge);
-  }
   browserChild->SendPBrowserBridgeConstructor(
       browserBridge, PromiseFlatString(aContext.PresentationURL()), aRemoteType,
       aBrowsingContext, chromeFlags, tabId);

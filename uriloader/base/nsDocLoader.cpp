@@ -243,7 +243,6 @@ nsDocLoader::Stop(void) {
   
   
   mChildrenInOnload.Clear();
-  mOOPChildrenLoading.Clear();
 
   
   
@@ -278,8 +277,7 @@ bool nsDocLoader::IsBusy() {
   
   
 
-  if (!mChildrenInOnload.IsEmpty() || !mOOPChildrenLoading.IsEmpty() ||
-      mIsFlushingLayout) {
+  if (mChildrenInOnload.Count() || mIsFlushingLayout) {
     return true;
   }
 
@@ -288,7 +286,6 @@ bool nsDocLoader::IsBusy() {
     return false;
   }
 
-  
   bool busy;
   rv = mLoadGroup->IsPending(&busy);
   if (NS_FAILED(rv)) {
