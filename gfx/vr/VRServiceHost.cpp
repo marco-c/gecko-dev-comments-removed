@@ -181,8 +181,8 @@ void VRServiceHost::ShutdownVRProcess() {
 #endif  
 
 void VRServiceHost::PuppetSubmit(const nsTArray<uint64_t>& aBuffer) {
+  mPuppetActive = true;
   if (mVRProcessEnabled) {
-    mPuppetActive = true;
     
     MOZ_ASSERT(false);  
   } else {
@@ -199,8 +199,9 @@ void VRServiceHost::PuppetReset() {
     }
     
     MOZ_ASSERT(false);  
-  } else {
+  } else if (mPuppetActive) {
     VRPuppetCommandBuffer::Get().Reset();
+    mPuppetActive = false;
   }
 }
 
@@ -218,7 +219,12 @@ bool VRServiceHost::PuppetHasEnded() {
     MOZ_ASSERT(false);  
     return false;
   }
-  return VRPuppetCommandBuffer::Get().HasEnded();
+
+  if (mPuppetActive) {
+    return VRPuppetCommandBuffer::Get().HasEnded();
+  }
+
+  return true;
 }
 
 }  
