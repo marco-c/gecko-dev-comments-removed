@@ -262,9 +262,6 @@ class MediaEngineSource : public MediaEngineSourceInterface {
   
   nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) override;
 
-  
-  void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
-
  protected:
   virtual ~MediaEngineSource();
 };
