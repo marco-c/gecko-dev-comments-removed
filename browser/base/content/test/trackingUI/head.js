@@ -2,12 +2,6 @@ var { UrlClassifierTestUtils } = ChromeUtils.import(
   "resource://testing-common/UrlClassifierTestUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ContentBlockingAllowList",
-  "resource://gre/modules/ContentBlockingAllowList.jsm"
-);
-
 
 
 
@@ -46,14 +40,6 @@ function openIdentityPopup() {
   let mainView = document.getElementById("identity-popup-mainView");
   let viewShown = BrowserTestUtils.waitForEvent(mainView, "ViewShown");
   gIdentityHandler._identityBox.click();
-  return viewShown;
-}
-
-function openProtectionsPopup() {
-  let mainView = document.getElementById("protections-popup-mainView");
-  let viewShown = BrowserTestUtils.waitForEvent(mainView, "ViewShown");
-  
-  gProtectionsHandler.showProtectionsPopup();
   return viewShown;
 }
 

@@ -20,7 +20,7 @@ add_task(async function() {
   await BrowserTestUtils.browserLoaded(browser);
 
   info("Disabling content blocking for this page");
-  gProtectionsHandler.disableForCurrentPage();
+  ContentBlocking.disableForCurrentPage();
 
   
   await BrowserTestUtils.browserLoaded(browser);
@@ -57,7 +57,7 @@ add_task(async function() {
   });
 
   info("Enabling content blocking for this page");
-  gProtectionsHandler.enableForCurrentPage();
+  ContentBlocking.enableForCurrentPage();
 
   
   await BrowserTestUtils.browserLoaded(browser);
