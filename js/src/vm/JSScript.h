@@ -1477,15 +1477,6 @@ XDRResult XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
 
 
 
-
-
-
-
-
-
-
-
-
 class alignas(uintptr_t) PrivateScriptData final {
   struct PackedOffsets {
     static constexpr size_t SCALE = sizeof(uint32_t);
@@ -1493,11 +1484,6 @@ class alignas(uintptr_t) PrivateScriptData final {
 
     
     uint32_t gcthingsOffset : 8;
-
-    
-    uint32_t tryNotesSpanOffset : 4;
-    uint32_t scopeNotesSpanOffset : 4;
-    uint32_t resumeOffsetsSpanOffset : 4;
   };
 
   
@@ -1548,12 +1534,10 @@ class alignas(uintptr_t) PrivateScriptData final {
   void initElements(size_t offset, size_t length);
 
   
-  static size_t AllocationSize(uint32_t ngcthings, uint32_t ntrynotes,
-                               uint32_t nscopenotes, uint32_t nresumeoffsets);
+  static size_t AllocationSize(uint32_t ngcthings);
 
   
-  PrivateScriptData(uint32_t ngcthings, uint32_t ntrynotes,
-                    uint32_t nscopenotes, uint32_t nresumeoffsets);
+  explicit PrivateScriptData(uint32_t ngcthings);
 
  public:
   
@@ -1562,22 +1546,7 @@ class alignas(uintptr_t) PrivateScriptData final {
         packedOffsetToPointer<JS::GCCellPtr>(packedOffsets.gcthingsOffset);
     return mozilla::MakeSpan(base, ngcthings);
   }
-  mozilla::Span<JSTryNote> tryNotes() {
-    return packedOffsetToSpan<JSTryNote>(packedOffsets.tryNotesSpanOffset);
-  }
-  mozilla::Span<ScopeNote> scopeNotes() {
-    return packedOffsetToSpan<ScopeNote>(packedOffsets.scopeNotesSpanOffset);
-  }
-  mozilla::Span<uint32_t> resumeOffsets() {
-    return packedOffsetToSpan<uint32_t>(packedOffsets.resumeOffsetsSpanOffset);
-  }
 
-  
-  bool hasTryNotes() const { return packedOffsets.tryNotesSpanOffset != 0; }
-  bool hasScopeNotes() const { return packedOffsets.scopeNotesSpanOffset != 0; }
-  bool hasResumeOffsets() const {
-    return packedOffsets.resumeOffsetsSpanOffset != 0;
-  }
   void setFieldInitializers(FieldInitializers fieldInitializers) {
     fieldInitializers_ = fieldInitializers;
   }
@@ -1586,8 +1555,7 @@ class alignas(uintptr_t) PrivateScriptData final {
   
   
   static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings,
-                                 uint32_t ntrynotes, uint32_t nscopenotes,
-                                 uint32_t nresumeoffsets, uint32_t* dataSize);
+                                 uint32_t* dataSize);
 
   template <XDRMode mode>
   static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
@@ -1623,6 +1591,10 @@ class alignas(uintptr_t) SharedScriptData final {
 
   uint32_t codeOffset_ = 0;  
   uint32_t codeLength_ = 0;
+  uint32_t resumeOffsetsOffset_ = 0;
+  uint32_t scopeNotesOffset_ = 0;
+  uint32_t tryNotesOffset_ = 0;
+  uint32_t padding_ = 0;
   uint32_t tailOffset_ = 0;
 
   
@@ -1653,13 +1625,20 @@ class alignas(uintptr_t) SharedScriptData final {
 
  private:
   
+  
+  
   size_t atomOffset() const { return offsetOfAtoms(); }
   size_t codeOffset() const { return codeOffset_; }
   size_t noteOffset() const { return codeOffset_ + codeLength_; }
+  size_t resumeOffsetsOffset() const { return resumeOffsetsOffset_; }
+  size_t scopeNotesOffset() const { return scopeNotesOffset_; }
+  size_t tryNotesOffset() const { return tryNotesOffset_; }
+  size_t endOffset() const { return tailOffset_; }
 
   
   static size_t AllocationSize(uint32_t codeLength, uint32_t noteLength,
-                               uint32_t natoms);
+                               uint32_t natoms, uint32_t numResumeOffsets,
+                               uint32_t numScopeNotes, uint32_t numTryNotes);
 
   
   template <typename T>
@@ -1672,11 +1651,15 @@ class alignas(uintptr_t) SharedScriptData final {
   void initElements(size_t offset, size_t length);
 
   
-  SharedScriptData(uint32_t codeLength, uint32_t noteLength, uint32_t natoms);
+  SharedScriptData(uint32_t codeLength, uint32_t noteLength, uint32_t natoms,
+                   uint32_t numResumeOffsets, uint32_t numScopeNotes,
+                   uint32_t numTryNotes);
 
  public:
   static SharedScriptData* new_(JSContext* cx, uint32_t codeLength,
-                                uint32_t noteLength, uint32_t natoms);
+                                uint32_t noteLength, uint32_t natoms,
+                                uint32_t numResumeOffsets,
+                                uint32_t numScopeNotes, uint32_t numTryNotes);
 
   
   
@@ -1735,8 +1718,21 @@ class alignas(uintptr_t) SharedScriptData final {
   uint32_t codeLength() const { return codeLength_; }
   jsbytecode* code() { return offsetToPointer<jsbytecode>(codeOffset_); }
 
-  uint32_t noteLength() const { return tailOffset_ - noteOffset(); }
+  uint32_t noteLength() const { return resumeOffsetsOffset() - noteOffset(); }
   jssrcnote* notes() { return offsetToPointer<jssrcnote>(noteOffset()); }
+
+  mozilla::Span<uint32_t> resumeOffsets() {
+    return mozilla::MakeSpan(offsetToPointer<uint32_t>(resumeOffsetsOffset()),
+                             offsetToPointer<uint32_t>(scopeNotesOffset()));
+  }
+  mozilla::Span<ScopeNote> scopeNotes() {
+    return mozilla::MakeSpan(offsetToPointer<ScopeNote>(scopeNotesOffset()),
+                             offsetToPointer<ScopeNote>(tryNotesOffset()));
+  }
+  mozilla::Span<JSTryNote> tryNotes() {
+    return mozilla::MakeSpan(offsetToPointer<JSTryNote>(tryNotesOffset()),
+                             offsetToPointer<JSTryNote>(endOffset()));
+  }
 
   static constexpr size_t offsetOfCodeOffset() {
     return offsetof(SharedScriptData, codeOffset_);
@@ -2114,9 +2110,7 @@ class JSScript : public js::gc::TenuredCell {
   
   static bool createPrivateScriptData(JSContext* cx,
                                       JS::Handle<JSScript*> script,
-                                      uint32_t ngcthings, uint32_t ntrynotes,
-                                      uint32_t nscopenotes,
-                                      uint32_t nresumeoffsets);
+                                      uint32_t ngcthings);
 
  private:
   void initFromFunctionBox(js::frontend::FunctionBox* funbox);
@@ -2749,7 +2743,9 @@ class JSScript : public js::gc::TenuredCell {
   bool createJitScript(JSContext* cx);
 
   bool createSharedScriptData(JSContext* cx, uint32_t codeLength,
-                              uint32_t noteLength, uint32_t natoms);
+                              uint32_t noteLength, uint32_t natoms,
+                              uint32_t numResumeOffsets, uint32_t numScopeNotes,
+                              uint32_t numTryNotes);
   bool shareScriptData(JSContext* cx);
   void freeScriptData();
 
@@ -2830,27 +2826,26 @@ class JSScript : public js::gc::TenuredCell {
 
   size_t dataSize() const { return dataSize_; }
 
-  bool hasTrynotes() const { return data_->hasTryNotes(); }
-  bool hasScopeNotes() const { return data_->hasScopeNotes(); }
-  bool hasResumeOffsets() const { return data_->hasResumeOffsets(); }
+  bool hasTrynotes() const { return !scriptData_->tryNotes().empty(); }
+  bool hasScopeNotes() const { return !scriptData_->scopeNotes().empty(); }
+  bool hasResumeOffsets() const {
+    return !scriptData_->resumeOffsets().empty();
+  }
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
     return data_->gcthings();
   }
 
   mozilla::Span<const JSTryNote> trynotes() const {
-    MOZ_ASSERT(hasTrynotes());
-    return data_->tryNotes();
+    return scriptData_->tryNotes();
   }
 
   mozilla::Span<const js::ScopeNote> scopeNotes() const {
-    MOZ_ASSERT(hasScopeNotes());
-    return data_->scopeNotes();
+    return scriptData_->scopeNotes();
   }
 
   mozilla::Span<const uint32_t> resumeOffsets() const {
-    MOZ_ASSERT(hasResumeOffsets());
-    return data_->resumeOffsets();
+    return scriptData_->resumeOffsets();
   }
 
   uint32_t tableSwitchCaseOffset(jsbytecode* pc, uint32_t caseIndex) const {
