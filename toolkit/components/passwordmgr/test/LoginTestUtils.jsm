@@ -45,6 +45,25 @@ this.LoginTestUtils = {
   
 
 
+  async addLogin({ username, password, origin = "https://example.com" }) {
+    const login = LoginTestUtils.testData.formLogin({
+      origin,
+      formActionOrigin: origin,
+      username,
+      password,
+    });
+    let storageChangedPromised = TestUtils.topicObserved(
+      "passwordmgr-storage-changed",
+      (_, data) => data == "addLogin"
+    );
+    Services.logins.addLogin(login);
+    await storageChangedPromised;
+    return login;
+  },
+
+  
+
+
 
 
   checkLogins(expectedLogins) {
