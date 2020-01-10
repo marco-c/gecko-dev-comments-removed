@@ -268,14 +268,6 @@ class FxAccountsKeys {
 
 
 
-  invalidateCertificate() {
-    return this._fxia.invalidateCertificate();
-  }
-
-  
-
-
-
 
   _deriveWebExtSyncStoreKey(kBbytes) {
     return CryptoUtils.hkdfLegacy(
