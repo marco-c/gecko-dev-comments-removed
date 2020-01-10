@@ -121,6 +121,7 @@ void exitJsDirectory() {
 
 #endif  
 
+
 void readFull(const char* path, js::Vector<uint8_t>& buf) {
   enterJsDirectory();
   buf.shrinkTo(0);
@@ -150,7 +151,9 @@ void readFull(const char* path, js::Vector<uint8_t>& buf) {
   exitJsDirectory();
 }
 
-void readFull(JSContext* cx, const char* path, js::Vector<char16_t>& buf) {
+
+void readFull(JSContext* cx, const char* path,
+              js::Vector<mozilla::Utf8Unit>& buf) {
   buf.shrinkTo(0);
 
   js::Vector<uint8_t> intermediate(cx);
@@ -271,7 +274,7 @@ void runTestFromPath(JSContext* cx, const char* path) {
     fprintf(stderr, "Testing %s\n", txtPath.begin());
 
     
-    js::Vector<char16_t> txtSource(cx);
+    js::Vector<mozilla::Utf8Unit> txtSource(cx);
     readFull(cx, txtPath.begin(), txtSource);
 
     
@@ -287,11 +290,11 @@ void runTestFromPath(JSContext* cx, const char* path) {
       MOZ_CRASH("Couldn't initialize ScriptSourceObject");
     }
 
-    js::frontend::Parser<js::frontend::FullParseHandler, char16_t> txtParser(
-        cx, allocScope.alloc(), txtOptions, txtSource.begin(),
-        txtSource.length(),
-         false, txtUsedNames, nullptr, nullptr,
-        sourceObject, frontend::ParseGoal::Script);
+    js::frontend::Parser<js::frontend::FullParseHandler, mozilla::Utf8Unit>
+        txtParser(cx, allocScope.alloc(), txtOptions, txtSource.begin(),
+                  txtSource.length(),
+                   false, txtUsedNames, nullptr, nullptr,
+                  sourceObject, frontend::ParseGoal::Script);
     if (!txtParser.checkOptions()) {
       MOZ_CRASH("Bad options");
     }
