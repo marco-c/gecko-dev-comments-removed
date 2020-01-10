@@ -1633,14 +1633,6 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   if (HasFlag(NODE_IS_ANONYMOUS_ROOT)) {
     aParent.SetMayHaveAnonymousChildren();
   }
-  if (aParent.IsInShadowTree()) {
-    ClearSubtreeRootPointer();
-    SetFlags(NODE_IS_IN_SHADOW_TREE);
-    MOZ_ASSERT(aParent.IsContent() &&
-               aParent.AsContent()->GetContainingShadow());
-    ExtendedDOMSlots()->mContainingShadow =
-        aParent.AsContent()->GetContainingShadow();
-  }
 
   
   mParent = &aParent;
@@ -1650,40 +1642,24 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
   MOZ_ASSERT(!!GetParent() == aParent.IsContent());
 
-  
-
   MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
 
   
-  if (aParent.IsInUncomposedDoc()) {
-    
-    
-    
-    
-    
-    
-    
-    
-
+  if (aParent.IsInUncomposedDoc() || aParent.IsInShadowTree()) {
     
     
     ClearSubtreeRootPointer();
-
-    
-    SetIsInDocument();
-    SetIsConnected(true);
-
-    
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
-  } else if (IsInShadowTree()) {
     SetIsConnected(aParent.IsInComposedDoc());
-    
-    
-    
-    
-    
-    
-    
+
+    if (aParent.IsInUncomposedDoc()) {
+      SetIsInDocument();
+    } else {
+      SetFlags(NODE_IS_IN_SHADOW_TREE);
+      MOZ_ASSERT(aParent.IsContent() &&
+                 aParent.AsContent()->GetContainingShadow());
+      ExtendedDOMSlots()->mContainingShadow =
+          aParent.AsContent()->GetContainingShadow();
+    }
     
     UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else {
