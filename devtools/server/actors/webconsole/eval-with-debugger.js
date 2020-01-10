@@ -170,6 +170,12 @@ function getEvalResult(string, evalOptions, bindings, frame, dbgWindow) {
 }
 
 function parseErrorOutput(dbgWindow, string) {
+  
+  
+  if (isWorker) {
+    return;
+  }
+
   let ast;
   
   
