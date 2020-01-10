@@ -705,6 +705,8 @@ nsresult FetchDriver::HttpFetch(
     }
   }
 
+  NotifyNetworkMonitorAlternateStack(chan, std::move(mOriginStack));
+
   
   
   
