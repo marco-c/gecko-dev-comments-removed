@@ -99,35 +99,65 @@ document.addEventListener("DOMContentLoaded", e => {
       cryptominer: 0,
     };
 
+    
+    
+    
+    
+    
+    
+    let maxColumnCount = 0;
     let date = new Date();
+    
     let graph = document.getElementById("graph");
     for (let i = 0; i <= 6; i++) {
       let dateString = date.toISOString().split("T")[0];
+      let ariaOwnsString = ""; 
+      let currentColumnCount = 0;
 
       let bar = document.createElement("div");
       bar.className = "graph-bar";
+      bar.setAttribute("role", "row");
       let innerBar = document.createElement("div");
       innerBar.className = "graph-wrapper-bar";
       if (data[dateString]) {
         let content = data[dateString];
         let count = document.createElement("div");
         count.className = "bar-count";
+        count.id = "count" + i;
+        count.setAttribute("role", "cell");
         count.textContent = content.total;
         bar.appendChild(count);
+        ariaOwnsString = count.id;
+        currentColumnCount += 1;
         let barHeight = (content.total / largest) * 100;
         weekCount += content.total;
         bar.style.height = `${barHeight}%`;
         for (let type of dataTypes) {
           if (content[type]) {
             let dataHeight = (content[type] / content.total) * 100;
+            
+            let cellSpan = document.createElement("span");
+            cellSpan.id = type + i;
+            cellSpan.setAttribute("role", "cell");
             let div = document.createElement("div");
             div.className = `${type}-bar inner-bar`;
             div.setAttribute("data-type", type);
             div.style.height = `${dataHeight}%`;
+            div.setAttribute(
+              "data-l10n-args",
+              JSON.stringify({ count: content[type], percentage: dataHeight })
+            );
             div.setAttribute("data-l10n-id", `bar-tooltip-${type}`);
             weekTypeCounts[type] += content[type];
-            innerBar.appendChild(div);
+            cellSpan.appendChild(div);
+            innerBar.appendChild(cellSpan);
+            ariaOwnsString = ariaOwnsString + " " + cellSpan.id;
+            currentColumnCount += 1;
           }
+        }
+        if (currentColumnCount > maxColumnCount) {
+          
+          maxColumnCount = currentColumnCount;
         }
       } else {
         
@@ -144,14 +174,21 @@ document.addEventListener("DOMContentLoaded", e => {
 
       let label = document.createElement("span");
       label.className = "column-label";
+      
+      label.id = "day" + (6 - i);
+      label.setAttribute("role", "rowheader");
       if (i == 6) {
         label.setAttribute("data-l10n-id", "graph-today");
       } else {
         label.textContent = data.weekdays[(i + 1 + new Date().getDay()) % 7];
       }
       graph.append(label);
+      
+      bar.setAttribute("aria-owns", "day" + i + " " + ariaOwnsString);
       date.setDate(date.getDate() - 1);
     }
+    maxColumnCount += 1; 
+    graph.setAttribute("aria-colCount", maxColumnCount);
     
     
     for (let type of dataTypes) {
