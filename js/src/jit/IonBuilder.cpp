@@ -8681,6 +8681,11 @@ bool IonBuilder::checkTypedObjectIndexInBounds(
   return indexAsByteOffset->add(index, AssertedCast<int32_t>(elemSize));
 }
 
+static bool CheckTypedObjectSupportedType(Scalar::Type type) {
+  
+  return !Scalar::isBigIntType(type);
+}
+
 AbortReasonOr<Ok> IonBuilder::getElemTryScalarElemOfTypedObject(
     bool* emitted, MDefinition* obj, MDefinition* index,
     TypedObjectPrediction objPrediction, TypedObjectPrediction elemPrediction,
@@ -8690,6 +8695,10 @@ AbortReasonOr<Ok> IonBuilder::getElemTryScalarElemOfTypedObject(
   
   ScalarTypeDescr::Type elemType = elemPrediction.scalarType();
   MOZ_ASSERT(elemSize == ScalarTypeDescr::alignment(elemType));
+
+  if (!CheckTypedObjectSupportedType(elemType)) {
+    return Ok();
+  }
 
   LinearSum indexAsByteOffset(alloc());
   if (!checkTypedObjectIndexInBounds(elemSize, index, objPrediction,
@@ -9774,6 +9783,10 @@ AbortReasonOr<Ok> IonBuilder::setElemTryScalarElemOfTypedObject(
   
   ScalarTypeDescr::Type elemType = elemPrediction.scalarType();
   MOZ_ASSERT(elemSize == ScalarTypeDescr::alignment(elemType));
+
+  if (!CheckTypedObjectSupportedType(elemType)) {
+    return Ok();
+  }
 
   LinearSum indexAsByteOffset(alloc());
   if (!checkTypedObjectIndexInBounds(elemSize, index, objPrediction,
@@ -11348,6 +11361,10 @@ AbortReasonOr<Ok> IonBuilder::getPropTryScalarPropOfTypedObject(
   
   Scalar::Type fieldType = fieldPrediction.scalarType();
 
+  if (!CheckTypedObjectSupportedType(fieldType)) {
+    return Ok();
+  }
+
   
   TypeSet::ObjectKey* globalKey = TypeSet::ObjectKey::get(&script()->global());
   if (globalKey->hasFlags(constraints(),
@@ -12371,6 +12388,10 @@ AbortReasonOr<Ok> IonBuilder::setPropTryScalarPropOfTypedObject(
     TypedObjectPrediction fieldPrediction) {
   
   Scalar::Type fieldType = fieldPrediction.scalarType();
+
+  if (!CheckTypedObjectSupportedType(fieldType)) {
+    return Ok();
+  }
 
   
   TypeSet::ObjectKey* globalKey = TypeSet::ObjectKey::get(&script()->global());
