@@ -2,8 +2,6 @@
 
 
 add_task(async function setup() {
-  Services.prefs.setCharPref("browser.search.region", "US");
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
   configureToLoadJarEngines();
   await AddonTestUtils.promiseStartupManager();
 });
@@ -11,7 +9,7 @@ add_task(async function setup() {
 add_task(async function ignore_cache_files_without_engines() {
   let commitPromise = promiseAfterCache();
   let engineCount = (await Services.search.getEngines()).length;
-  Assert.equal(engineCount, 1, "one engine installed on search init");
+  Assert.equal(engineCount, 1);
 
   
   await commitPromise;
@@ -24,11 +22,7 @@ add_task(async function ignore_cache_files_without_engines() {
   
   commitPromise = promiseAfterCache();
   await asyncReInit();
-  Assert.equal(
-    engineCount,
-    (await Services.search.getEngines()).length,
-    "Search got correct number of engines"
-  );
+  Assert.equal(engineCount, (await Services.search.getEngines()).length);
   await commitPromise;
 
   
@@ -38,13 +32,41 @@ add_task(async function ignore_cache_files_without_engines() {
   );
   let reInitPromise = asyncReInit();
   await unInitPromise;
-  Assert.ok(!Services.search.isInitialized, "Search is not initialized");
+  Assert.ok(!Services.search.isInitialized);
   
-  Assert.equal(
-    engineCount,
-    (await Services.search.getEngines()).length,
-    "Search got correct number of engines"
+  Assert.equal(engineCount, (await Services.search.getEngines()).length);
+  Assert.ok(Services.search.isInitialized);
+  await reInitPromise;
+});
+
+add_task(async function skip_writing_cache_without_engines() {
+  let unInitPromise = SearchTestUtils.promiseSearchNotification(
+    "uninit-complete"
   );
-  Assert.ok(Services.search.isInitialized, "Search is initialized");
+  let reInitPromise = asyncReInit();
+  await unInitPromise;
+
+  
+  Assert.ok(removeCacheFile());
+  let resProt = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
+  resProt.setSubstitution(
+    "search-extensions",
+    Services.io.newURI("about:blank")
+  );
+
+  
+  await reInitPromise;
+  Assert.strictEqual(0, (await Services.search.getEngines()).length);
+
+  
+  unInitPromise = SearchTestUtils.promiseSearchNotification("uninit-complete");
+  reInitPromise = asyncReInit();
+  await unInitPromise;
+
+  
+  Assert.ok(!removeCacheFile());
+
   await reInitPromise;
 });
