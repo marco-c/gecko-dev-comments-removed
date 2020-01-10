@@ -253,11 +253,9 @@ function onFinish(event) {
     return;
   }
 
-  
-  
-  if (window.opener) {
+  if (window.arguments && window.arguments[1]) {
     
-    window.opener.CreateProfile(profile);
+    window.arguments[1].CreateProfile(profile);
   } else {
     
     var profileLock = profile.lock(null);
