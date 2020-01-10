@@ -15,6 +15,9 @@ use std::ops::DerefMut;
 
 
 
+
+
+
 pub struct ScopedTLS<'scope, T: Send> {
     pool: &'scope rayon::ThreadPool,
     slots: Box<[RefCell<Option<T>>]>,
