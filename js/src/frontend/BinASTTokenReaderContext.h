@@ -355,6 +355,80 @@ class SingleEntryHuffmanTable {
 };
 
 
+class TwoEntriesHuffmanTable {
+ public:
+  TwoEntriesHuffmanTable() : length_(0) {}
+  TwoEntriesHuffmanTable(TwoEntriesHuffmanTable&& other) noexcept = default;
+
+  
+  
+  
+  
+  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
+                           uint8_t maxBitLength);
+
+  JS::Result<Ok> initComplete();
+
+  
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength,
+                           const BinASTSymbol& value);
+
+  TwoEntriesHuffmanTable(TwoEntriesHuffmanTable&) = delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  HuffmanLookupResult lookup(HuffmanLookup key) const;
+
+  struct Iterator {
+    explicit Iterator(const BinASTSymbol* position);
+    void operator++();
+    const BinASTSymbol* operator*() const;
+    const BinASTSymbol* operator->() const;
+    bool operator==(const Iterator& other) const;
+    bool operator!=(const Iterator& other) const;
+
+   private:
+    const BinASTSymbol* position_;
+  };
+  Iterator begin() const { return Iterator(std::begin(values_)); }
+  Iterator end() const {
+    MOZ_ASSERT(length_ == 2);
+    return Iterator(std::end(values_));
+  }
+
+  
+  size_t length() const {
+    MOZ_ASSERT(length_ == 2);
+    return 2;
+  }
+
+ private:
+  
+  
+  
+  
+  BinASTSymbol values_[2] = {BinASTSymbol::fromBool(false),
+                             BinASTSymbol::fromBool(false)};
+
+  
+  
+  
+  
+  uint8_t length_;
+
+  friend class HuffmanPreludeReader;
+};
+
+
 
 
 
@@ -816,6 +890,7 @@ struct GenericHuffmanTable {
 
   struct Iterator {
     explicit Iterator(typename SingleEntryHuffmanTable::Iterator&&);
+    explicit Iterator(typename TwoEntriesHuffmanTable::Iterator&&);
     explicit Iterator(typename SingleLookupHuffmanTable::Iterator&&);
     explicit Iterator(typename TwoLookupsHuffmanTable::Iterator&&);
     explicit Iterator(typename ThreeLookupsHuffmanTable::Iterator&&);
@@ -829,6 +904,7 @@ struct GenericHuffmanTable {
 
    private:
     mozilla::Variant<typename SingleEntryHuffmanTable::Iterator,
+                     typename TwoEntriesHuffmanTable::Iterator,
                      typename SingleLookupHuffmanTable::Iterator,
                      typename TwoLookupsHuffmanTable::Iterator,
                      typename ThreeLookupsHuffmanTable::Iterator>
@@ -853,9 +929,9 @@ struct GenericHuffmanTable {
   HuffmanLookupResult lookup(HuffmanLookup key) const;
 
  private:
-  mozilla::Variant<SingleEntryHuffmanTable, SingleLookupHuffmanTable,
-                   TwoLookupsHuffmanTable, ThreeLookupsHuffmanTable,
-                   HuffmanTableUnreachable>
+  mozilla::Variant<SingleEntryHuffmanTable, TwoEntriesHuffmanTable,
+                   SingleLookupHuffmanTable, TwoLookupsHuffmanTable,
+                   ThreeLookupsHuffmanTable, HuffmanTableUnreachable>
       implementation_;
 };
 
