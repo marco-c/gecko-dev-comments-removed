@@ -93,8 +93,10 @@ class TestMemoryUsage(AwsyTestCase):
         tp6_pageset_manifest = os.path.join(AWSY_PATH, 'tp6-pageset.manifest')
         config = {
             'playback_tool': 'mitmproxy',
-            'playback_binary_manifest': 'mitmproxy-rel-bin-{platform}.manifest',
+            'playback_version': '4.0.4',
+            'playback_binary_manifest': 'mitmproxy-rel-bin-4.0.4-{platform}.manifest',
             'playback_pageset_manifest': tp6_pageset_manifest,
+            'playback_upstream_cert': False,
             'platform': mozinfo.os,
             'obj_path': self._webroot_dir,
             'binary': self._binary,
@@ -106,23 +108,11 @@ class TestMemoryUsage(AwsyTestCase):
 
         self._playback = get_playback(config)
 
-        script = os.path.join(AWSY_PATH, "awsy", "alternate-server-replay.py")
         recording_arg = []
         for recording in recordings:
             recording_arg.append(os.path.join(self._playback.mozproxy_dir, recording))
 
-        script = '""%s %s""' % (script, " ".join(recording_arg))
-
-        if mozinfo.os == "win":
-            script = script.replace("\\", "\\\\\\")
-
-        
-        
-        self._playback.config['playback_tool_args'] = [
-                "--no-upstream-cert",
-                "-s", script]
-
-        self.logger.info("Using script %s" % script)
+        self._playback.config['playback_files'] = recording_arg
 
         self._playback.start()
 
@@ -132,7 +122,7 @@ class TestMemoryUsage(AwsyTestCase):
         
         self.marionette.delete_session()
         caps = {
-                "unhandledPromptBehavior": "dismiss",  
+            "unhandledPromptBehavior": "dismiss",  
         }
         self.marionette.start_session(caps)
         self.marionette.set_context('chrome')
