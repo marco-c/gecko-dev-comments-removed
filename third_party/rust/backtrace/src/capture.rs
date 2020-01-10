@@ -1,9 +1,20 @@
+use crate::PrintFmt;
+use crate::{resolve, resolve_frame, trace, BacktraceFmt, Symbol, SymbolName};
+use std::ffi::c_void;
 use std::fmt;
-use std::mem;
-use std::os::raw::c_void;
 use std::path::{Path, PathBuf};
+use std::prelude::v1::*;
 
-use {trace, resolve, SymbolName};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+
+
+
+
+
+
+
 
 
 
@@ -11,31 +22,73 @@ use {trace, resolve, SymbolName};
 
 #[derive(Clone)]
 #[cfg_attr(feature = "serialize-rustc", derive(RustcDecodable, RustcEncodable))]
-#[cfg_attr(feature = "serialize-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Backtrace {
+    
     frames: Vec<BacktraceFrame>,
+    
+    
+    actual_start_index: usize,
+}
+
+fn _assert_send_sync() {
+    fn _assert<T: Send + Sync>() {}
+    _assert::<Backtrace>();
 }
 
 
 
 
 
+
+
+
+
+
 #[derive(Clone)]
-#[cfg_attr(feature = "serialize-rustc", derive(RustcDecodable, RustcEncodable))]
-#[cfg_attr(feature = "serialize-serde", derive(Deserialize, Serialize))]
 pub struct BacktraceFrame {
-    ip: usize,
-    symbol_address: usize,
+    frame: Frame,
     symbols: Option<Vec<BacktraceSymbol>>,
 }
 
+#[derive(Clone)]
+enum Frame {
+    Raw(crate::Frame),
+    #[allow(dead_code)]
+    Deserialized {
+        ip: usize,
+        symbol_address: usize,
+    },
+}
+
+impl Frame {
+    fn ip(&self) -> *mut c_void {
+        match *self {
+            Frame::Raw(ref f) => f.ip(),
+            Frame::Deserialized { ip, .. } => ip as *mut c_void,
+        }
+    }
+
+    fn symbol_address(&self) -> *mut c_void {
+        match *self {
+            Frame::Raw(ref f) => f.symbol_address(),
+            Frame::Deserialized { symbol_address, .. } => symbol_address as *mut c_void,
+        }
+    }
+}
+
+
+
+
+
+
 
 
 
 
 #[derive(Clone)]
 #[cfg_attr(feature = "serialize-rustc", derive(RustcDecodable, RustcEncodable))]
-#[cfg_attr(feature = "serialize-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct BacktraceSymbol {
     name: Option<Vec<u8>>,
     addr: Option<usize>,
@@ -59,10 +112,22 @@ impl Backtrace {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(never)] 
     pub fn new() -> Backtrace {
-        let mut bt = Backtrace::new_unresolved();
+        let mut bt = Self::create(Self::new as usize);
         bt.resolve();
-        return bt
+        bt
     }
 
     
@@ -83,29 +148,56 @@ impl Backtrace {
     
     
     
+    
+    
+    
+    
+    
+    #[inline(never)] 
     pub fn new_unresolved() -> Backtrace {
+        Self::create(Self::new_unresolved as usize)
+    }
+
+    fn create(ip: usize) -> Backtrace {
         let mut frames = Vec::new();
+        let mut actual_start_index = None;
         trace(|frame| {
             frames.push(BacktraceFrame {
-                ip: frame.ip() as usize,
-                symbol_address: frame.symbol_address() as usize,
+                frame: Frame::Raw(frame.clone()),
                 symbols: None,
             });
+
+            if frame.symbol_address() as usize == ip && actual_start_index.is_none() {
+                actual_start_index = Some(frames.len());
+            }
             true
         });
 
-        Backtrace { frames: frames }
+        Backtrace {
+            frames,
+            actual_start_index: actual_start_index.unwrap_or(0),
+        }
     }
 
+    
+    
+    
+    
+    
     
     
     
     
     
     pub fn frames(&self) -> &[BacktraceFrame] {
-        &self.frames
+        &self.frames[self.actual_start_index..]
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -114,14 +206,22 @@ impl Backtrace {
     pub fn resolve(&mut self) {
         for frame in self.frames.iter_mut().filter(|f| f.symbols.is_none()) {
             let mut symbols = Vec::new();
-            resolve(frame.ip as *mut _, |symbol| {
-                symbols.push(BacktraceSymbol {
-                    name: symbol.name().map(|m| m.as_bytes().to_vec()),
-                    addr: symbol.addr().map(|a| a as usize),
-                    filename: symbol.filename().map(|m| m.to_path_buf()),
-                    lineno: symbol.lineno(),
-                });
-            });
+            {
+                let sym = |symbol: &Symbol| {
+                    symbols.push(BacktraceSymbol {
+                        name: symbol.name().map(|m| m.as_bytes().to_vec()),
+                        addr: symbol.addr().map(|a| a as usize),
+                        filename: symbol.filename().map(|m| m.to_owned()),
+                        lineno: symbol.lineno(),
+                    });
+                };
+                match frame.frame {
+                    Frame::Raw(ref f) => resolve_frame(f, sym),
+                    Frame::Deserialized { ip, .. } => {
+                        resolve(ip as *mut c_void, sym);
+                    }
+                }
+            }
             frame.symbols = Some(symbols);
         }
     }
@@ -130,7 +230,8 @@ impl Backtrace {
 impl From<Vec<BacktraceFrame>> for Backtrace {
     fn from(frames: Vec<BacktraceFrame>) -> Self {
         Backtrace {
-            frames: frames
+            frames,
+            actual_start_index: 0,
         }
     }
 }
@@ -143,15 +244,30 @@ impl Into<Vec<BacktraceFrame>> for Backtrace {
 
 impl BacktraceFrame {
     
+    
+    
+    
+    
+    
     pub fn ip(&self) -> *mut c_void {
-        self.ip as *mut c_void
+        self.frame.ip() as *mut c_void
     }
 
     
+    
+    
+    
+    
+    
     pub fn symbol_address(&self) -> *mut c_void {
-        self.symbol_address as *mut c_void
+        self.frame.symbol_address() as *mut c_void
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -168,20 +284,40 @@ impl BacktraceFrame {
 
 impl BacktraceSymbol {
     
+    
+    
+    
+    
+    
     pub fn name(&self) -> Option<SymbolName> {
         self.name.as_ref().map(|s| SymbolName::new(s))
     }
 
+    
+    
+    
+    
+    
     
     pub fn addr(&self) -> Option<*mut c_void> {
         self.addr.map(|s| s as *mut c_void)
     }
 
     
+    
+    
+    
+    
+    
     pub fn filename(&self) -> Option<&Path> {
         self.filename.as_ref().map(|p| &**p)
     }
 
+    
+    
+    
+    
+    
     
     pub fn lineno(&self) -> Option<u32> {
         self.lineno
@@ -190,42 +326,36 @@ impl BacktraceSymbol {
 
 impl fmt::Debug for Backtrace {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let hex_width = mem::size_of::<usize>() * 2 + 2;
+        let full = fmt.alternate();
+        let (frames, style) = if full {
+            (&self.frames[..], PrintFmt::Full)
+        } else {
+            (&self.frames[self.actual_start_index..], PrintFmt::Short)
+        };
 
-        try!(write!(fmt, "stack backtrace:"));
-
-        for (idx, frame) in self.frames().iter().enumerate() {
-            let ip = frame.ip();
-            try!(write!(fmt, "\n{:4}: {:2$?}", idx, ip, hex_width));
-
-            let symbols = match frame.symbols {
-                Some(ref s) => s,
-                None => {
-                    try!(write!(fmt, " - <unresolved>"));
-                    continue
-                }
-            };
-            if symbols.len() == 0 {
-                try!(write!(fmt, " - <no info>"));
-            }
-
-            for (idx, symbol) in symbols.iter().enumerate() {
-                if idx != 0 {
-                    try!(write!(fmt, "\n      {:1$}", "", hex_width));
-                }
-
-                if let Some(name) = symbol.name() {
-                    try!(write!(fmt, " - {}", name));
-                } else {
-                    try!(write!(fmt, " - <unknown>"));
-                }
-
-                if let (Some(file), Some(line)) = (symbol.filename(), symbol.lineno()) {
-                    try!(write!(fmt, "\n      {:3$}at {}:{}", "", file.display(), line, hex_width));
+        
+        
+        
+        
+        let cwd = std::env::current_dir();
+        let mut print_path = move |fmt: &mut fmt::Formatter, path: crate::BytesOrWideString| {
+            let path = path.into_path_buf();
+            if !full {
+                if let Ok(cwd) = &cwd {
+                    if let Ok(suffix) = path.strip_prefix(cwd) {
+                        return fmt::Display::fmt(&suffix.display(), fmt);
+                    }
                 }
             }
+            fmt::Display::fmt(&path.display(), fmt)
+        };
+
+        let mut f = BacktraceFmt::new(fmt, style, &mut print_path);
+        f.add_context()?;
+        for frame in frames {
+            f.frame().backtrace_frame(frame)?;
         }
-
+        f.finish()?;
         Ok(())
     }
 }
@@ -233,5 +363,117 @@ impl fmt::Debug for Backtrace {
 impl Default for Backtrace {
     fn default() -> Backtrace {
         Backtrace::new()
+    }
+}
+
+impl fmt::Debug for BacktraceFrame {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("BacktraceFrame")
+            .field("ip", &self.ip())
+            .field("symbol_address", &self.symbol_address())
+            .finish()
+    }
+}
+
+impl fmt::Debug for BacktraceSymbol {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("BacktraceSymbol")
+            .field("name", &self.name())
+            .field("addr", &self.addr())
+            .field("filename", &self.filename())
+            .field("lineno", &self.lineno())
+            .finish()
+    }
+}
+
+#[cfg(feature = "serialize-rustc")]
+mod rustc_serialize_impls {
+    use super::*;
+    use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+
+    #[derive(RustcEncodable, RustcDecodable)]
+    struct SerializedFrame {
+        ip: usize,
+        symbol_address: usize,
+        symbols: Option<Vec<BacktraceSymbol>>,
+    }
+
+    impl Decodable for BacktraceFrame {
+        fn decode<D>(d: &mut D) -> Result<Self, D::Error>
+        where
+            D: Decoder,
+        {
+            let frame: SerializedFrame = SerializedFrame::decode(d)?;
+            Ok(BacktraceFrame {
+                frame: Frame::Deserialized {
+                    ip: frame.ip,
+                    symbol_address: frame.symbol_address,
+                },
+                symbols: frame.symbols,
+            })
+        }
+    }
+
+    impl Encodable for BacktraceFrame {
+        fn encode<E>(&self, e: &mut E) -> Result<(), E::Error>
+        where
+            E: Encoder,
+        {
+            let BacktraceFrame { frame, symbols } = self;
+            SerializedFrame {
+                ip: frame.ip() as usize,
+                symbol_address: frame.symbol_address() as usize,
+                symbols: symbols.clone(),
+            }
+            .encode(e)
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impls {
+    extern crate serde;
+
+    use self::serde::de::Deserializer;
+    use self::serde::ser::Serializer;
+    use self::serde::{Deserialize, Serialize};
+    use super::*;
+
+    #[derive(Serialize, Deserialize)]
+    struct SerializedFrame {
+        ip: usize,
+        symbol_address: usize,
+        symbols: Option<Vec<BacktraceSymbol>>,
+    }
+
+    impl Serialize for BacktraceFrame {
+        fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let BacktraceFrame { frame, symbols } = self;
+            SerializedFrame {
+                ip: frame.ip() as usize,
+                symbol_address: frame.symbol_address() as usize,
+                symbols: symbols.clone(),
+            }
+            .serialize(s)
+        }
+    }
+
+    impl<'a> Deserialize<'a> for BacktraceFrame {
+        fn deserialize<D>(d: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'a>,
+        {
+            let frame: SerializedFrame = SerializedFrame::deserialize(d)?;
+            Ok(BacktraceFrame {
+                frame: Frame::Deserialized {
+                    ip: frame.ip,
+                    symbol_address: frame.symbol_address,
+                },
+                symbols: frame.symbols,
+            })
+        }
     }
 }

@@ -38,11 +38,10 @@
 use core::cell::{Cell, UnsafeCell};
 use core::mem::{self, ManuallyDrop};
 use core::num::Wrapping;
-use core::ptr;
+use core::{ptr, fmt};
 use core::sync::atomic;
 use core::sync::atomic::Ordering;
 
-use arrayvec::ArrayVec;
 use crossbeam_utils::CachePadded;
 
 use atomic::{Shared, Owned};
@@ -60,10 +59,10 @@ const MAX_OBJECTS: usize = 64;
 const MAX_OBJECTS: usize = 4;
 
 
-#[derive(Default, Debug)]
 pub struct Bag {
     
-    deferreds: ArrayVec<[Deferred; MAX_OBJECTS]>,
+    deferreds: [Deferred; MAX_OBJECTS],
+    len: usize
 }
 
 
@@ -77,7 +76,7 @@ impl Bag {
 
     
     pub fn is_empty(&self) -> bool {
-        self.deferreds.is_empty()
+        self.len == 0
     }
 
     
@@ -89,7 +88,13 @@ impl Bag {
     
     
     pub unsafe fn try_push(&mut self, deferred: Deferred) -> Result<(), Deferred> {
-        self.deferreds.try_push(deferred).map_err(|e| e.element())
+        if self.len < MAX_OBJECTS {
+            self.deferreds[self.len] = deferred;
+            self.len += 1;
+            Ok(())
+        } else {
+            Err(deferred)
+        }
     }
 
     
@@ -98,14 +103,52 @@ impl Bag {
     }
 }
 
+impl Default for Bag {
+    fn default() -> Self {
+        
+        #[cfg(not(feature = "sanitize"))]
+        return Bag { len: 0, deferreds:
+            [Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func),
+             Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func)]
+        };
+        #[cfg(feature = "sanitize")]
+        return Bag { len: 0, deferreds: [Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func), Deferred::new(no_op_func)] };
+    }
+}
+
 impl Drop for Bag {
     fn drop(&mut self) {
         
-        for deferred in self.deferreds.drain(..) {
-            deferred.call();
+        for deferred in &mut self.deferreds[..self.len] {
+            let no_op = Deferred::new(no_op_func);
+            let owned_deferred = mem::replace(deferred, no_op);
+            owned_deferred.call();
         }
     }
 }
+
+
+impl fmt::Debug for Bag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Bag").field("deferreds", &&self.deferreds[..self.len]).finish()
+    }
+}
+
+fn no_op_func() {}
 
 
 #[derive(Default, Debug)]

@@ -423,8 +423,8 @@ impl<'scope, 'env> ScopedThreadBuilder<'scope, 'env> {
                 let closure = move || closure.take().unwrap()();
 
                 
-                let closure: Box<FnMut() + Send + 'env> = Box::new(closure);
-                let closure: Box<FnMut() + Send + 'static> = unsafe { mem::transmute(closure) };
+                let closure: Box<dyn FnMut() + Send + 'env> = Box::new(closure);
+                let closure: Box<dyn FnMut() + Send + 'static> = unsafe { mem::transmute(closure) };
 
                 
                 let mut closure = closure;

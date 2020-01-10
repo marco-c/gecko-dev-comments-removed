@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+pub enum MTLDrawable {}
+
+foreign_obj_type! {
+    type CType = MTLDrawable;
+    pub struct Drawable;
+    pub struct DrawableRef;
+}
+
+impl DrawableRef {
+    pub fn present(&self) {
+        unsafe { msg_send![self, present] }
+    }
+}

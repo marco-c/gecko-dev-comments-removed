@@ -8,29 +8,56 @@
 
 
 
-use std::os::raw::c_void;
 
-pub struct Frame {
-    ctx: *mut uw::_Unwind_Context,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use core::ffi::c_void;
+
+pub enum Frame {
+    Raw(*mut uw::_Unwind_Context),
+    Cloned {
+        ip: *mut c_void,
+        symbol_address: *mut c_void,
+    },
 }
+
+
+
+
+
+unsafe impl Send for Frame {}
+unsafe impl Sync for Frame {}
 
 impl Frame {
     pub fn ip(&self) -> *mut c_void {
-        let mut ip_before_insn = 0;
-        let mut ip = unsafe {
-            uw::_Unwind_GetIPInfo(self.ctx, &mut ip_before_insn) as *mut c_void
+        let ctx = match *self {
+            Frame::Raw(ctx) => ctx,
+            Frame::Cloned { ip, .. } => return ip,
         };
-        if !ip.is_null() && ip_before_insn == 0 {
-            
-            
-            ip = (ip as usize - 1) as *mut _;
+        unsafe {
+            uw::_Unwind_GetIP(ctx) as *mut c_void
         }
-        return ip
     }
 
     pub fn symbol_address(&self) -> *mut c_void {
-        
-        
+        if let Frame::Cloned { symbol_address, .. } = *self {
+            return symbol_address;
+        }
+
         
         
         
@@ -47,20 +74,27 @@ impl Frame {
     }
 }
 
-#[inline(always)]
-pub fn trace(mut cb: &mut FnMut(&super::Frame) -> bool) {
-    unsafe {
-        uw::_Unwind_Backtrace(trace_fn, &mut cb as *mut _ as *mut _);
+impl Clone for Frame {
+    fn clone(&self) -> Frame {
+        Frame::Cloned {
+            ip: self.ip(),
+            symbol_address: self.symbol_address(),
+        }
     }
+}
+
+#[inline(always)]
+pub unsafe fn trace(mut cb: &mut FnMut(&super::Frame) -> bool) {
+    uw::_Unwind_Backtrace(trace_fn, &mut cb as *mut _ as *mut _);
 
     extern fn trace_fn(ctx: *mut uw::_Unwind_Context,
                        arg: *mut c_void) -> uw::_Unwind_Reason_Code {
         let cb = unsafe { &mut *(arg as *mut &mut FnMut(&super::Frame) -> bool) };
         let cx = super::Frame {
-            inner: Frame { ctx: ctx },
+            inner: Frame::Raw(ctx),
         };
 
-        let mut bomb = ::Bomb { enabled: true };
+        let mut bomb = crate::Bomb { enabled: true };
         let keep_going = cb(&cx);
         bomb.enabled = false;
 
@@ -83,8 +117,7 @@ pub fn trace(mut cb: &mut FnMut(&super::Frame) -> bool) {
 mod uw {
     pub use self::_Unwind_Reason_Code::*;
 
-    use libc;
-    use std::os::raw::{c_int, c_void};
+    use core::ffi::c_void;
 
     #[repr(C)]
     pub enum _Unwind_Reason_Code {
@@ -115,12 +148,13 @@ mod uw {
 
         
         #[cfg(all(not(all(target_os = "android", target_arch = "arm")),
+                  not(all(target_os = "freebsd", target_arch = "arm")),
                   not(all(target_os = "linux", target_arch = "arm"))))]
-        pub fn _Unwind_GetIPInfo(ctx: *mut _Unwind_Context,
-                                 ip_before_insn: *mut c_int)
+        pub fn _Unwind_GetIP(ctx: *mut _Unwind_Context)
                     -> libc::uintptr_t;
 
         #[cfg(all(not(target_os = "android"),
+                  not(all(target_os = "freebsd", target_arch = "arm")),
                   not(all(target_os = "linux", target_arch = "arm"))))]
         pub fn _Unwind_FindEnclosingFunction(pc: *mut c_void)
             -> *mut c_void;
@@ -130,6 +164,7 @@ mod uw {
     
     
     #[cfg(any(all(target_os = "android", target_arch = "arm"),
+              all(target_os = "freebsd", target_arch = "arm"),
               all(target_os = "linux", target_arch = "arm")))]
     pub unsafe fn _Unwind_GetIP(ctx: *mut _Unwind_Context) -> libc::uintptr_t {
         #[repr(C)]
@@ -176,19 +211,8 @@ mod uw {
 
     
     
-    #[cfg(any(all(target_os = "android", target_arch = "arm"),
-              all(target_os = "linux", target_arch = "arm")))]
-    pub unsafe fn _Unwind_GetIPInfo(ctx: *mut _Unwind_Context,
-                                    ip_before_insn: *mut c_int)
-        -> libc::uintptr_t
-    {
-        *ip_before_insn = 0;
-        _Unwind_GetIP(ctx)
-    }
-
-    
-    
     #[cfg(any(target_os = "android",
+              all(target_os = "freebsd", target_arch = "arm"),
               all(target_os = "linux", target_arch = "arm")))]
     pub unsafe fn _Unwind_FindEnclosingFunction(pc: *mut c_void)
         -> *mut c_void

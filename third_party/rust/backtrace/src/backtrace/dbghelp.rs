@@ -8,96 +8,198 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #![allow(bad_style)]
 
-use std::mem;
-use winapi::ctypes::*;
-use winapi::shared::minwindef::*;
-use winapi::um::processthreadsapi;
-use winapi::um::winnt::{self, CONTEXT};
-use winapi::um::dbghelp;
-use winapi::um::dbghelp::*;
+use core::ffi::c_void;
+use core::mem;
+use crate::dbghelp;
+use crate::windows::*;
 
-pub struct Frame {
-    inner: STACKFRAME64,
+#[derive(Clone, Copy)]
+pub enum Frame {
+    New(STACKFRAME_EX),
+    Old(STACKFRAME64),
 }
+
+
+
+unsafe impl Send for Frame {}
+unsafe impl Sync for Frame {}
 
 impl Frame {
     pub fn ip(&self) -> *mut c_void {
-        self.inner.AddrPC.Offset as *mut _
+        self.addr_pc().Offset as *mut _
     }
 
     pub fn symbol_address(&self) -> *mut c_void {
         self.ip()
     }
+
+    fn addr_pc(&self) -> &ADDRESS64 {
+        match self {
+            Frame::New(new) => &new.AddrPC,
+            Frame::Old(old) => &old.AddrPC,
+        }
+    }
+
+    fn addr_pc_mut(&mut self) -> &mut ADDRESS64 {
+        match self {
+            Frame::New(new) => &mut new.AddrPC,
+            Frame::Old(old) => &mut old.AddrPC,
+        }
+    }
+
+    fn addr_frame_mut(&mut self) -> &mut ADDRESS64 {
+        match self {
+            Frame::New(new) => &mut new.AddrFrame,
+            Frame::Old(old) => &mut old.AddrFrame,
+        }
+    }
+
+    fn addr_stack_mut(&mut self) -> &mut ADDRESS64 {
+        match self {
+            Frame::New(new) => &mut new.AddrStack,
+            Frame::Old(old) => &mut old.AddrStack,
+        }
+    }
 }
 
+#[repr(C, align(16))] 
+struct MyContext(CONTEXT);
+
 #[inline(always)]
-pub fn trace(cb: &mut FnMut(&super::Frame) -> bool) {
+pub unsafe fn trace(cb: &mut FnMut(&super::Frame) -> bool) {
+    
+    let process = GetCurrentProcess();
+    let thread = GetCurrentThread();
+
+    let mut context = mem::zeroed::<MyContext>();
+    RtlCaptureContext(&mut context.0);
+
+    
+    let dbghelp = match dbghelp::init() {
+        Ok(dbghelp) => dbghelp,
+        Err(()) => return, 
+    };
+
     
     
-    let _g = ::lock::lock();
+    match (*dbghelp.dbghelp()).StackWalkEx() {
+        Some(StackWalkEx) => {
+            let mut frame = super::Frame {
+                inner: Frame::New(mem::zeroed()),
+            };
+            let image = init_frame(&mut frame.inner, &context.0);
+            let frame_ptr = match &mut frame.inner {
+                Frame::New(ptr) => ptr as *mut STACKFRAME_EX,
+                _ => unreachable!(),
+            };
 
-    unsafe {
-        
-        let process = processthreadsapi::GetCurrentProcess();
-        let thread = processthreadsapi::GetCurrentThread();
-
-        
-        
-        
-        
-        let mut context = Box::new(mem::zeroed::<CONTEXT>());
-        winnt::RtlCaptureContext(&mut *context);
-        let mut frame = super::Frame {
-            inner: Frame { inner: mem::zeroed() },
-        };
-        let image = init_frame(&mut frame.inner.inner, &context);
-
-        
-        let _c = ::dbghelp_init();
-
-        
-        while dbghelp::StackWalk64(image as DWORD,
-                                   process,
-                                   thread,
-                                   &mut frame.inner.inner,
-                                   &mut *context as *mut _ as *mut _,
-                                   None,
-                                   Some(dbghelp::SymFunctionTableAccess64),
-                                   Some(dbghelp::SymGetModuleBase64),
-                                   None) == TRUE {
-            if frame.inner.inner.AddrPC.Offset == frame.inner.inner.AddrReturn.Offset ||
-               frame.inner.inner.AddrPC.Offset == 0 ||
-               frame.inner.inner.AddrReturn.Offset == 0 {
-                break
+            while StackWalkEx(
+                image as DWORD,
+                process,
+                thread,
+                frame_ptr,
+                &mut context.0 as *mut CONTEXT as *mut _,
+                None,
+                Some(dbghelp.SymFunctionTableAccess64()),
+                Some(dbghelp.SymGetModuleBase64()),
+                None,
+                0,
+            ) == TRUE
+            {
+                if !cb(&frame) {
+                    break;
+                }
             }
+        }
+        None => {
+            let mut frame = super::Frame {
+                inner: Frame::Old(mem::zeroed()),
+            };
+            let image = init_frame(&mut frame.inner, &context.0);
+            let frame_ptr = match &mut frame.inner {
+                Frame::Old(ptr) => ptr as *mut STACKFRAME64,
+                _ => unreachable!(),
+            };
 
-            if !cb(&frame) {
-                break
+            while dbghelp.StackWalk64()(
+                image as DWORD,
+                process,
+                thread,
+                frame_ptr,
+                &mut context.0 as *mut CONTEXT as *mut _,
+                None,
+                Some(dbghelp.SymFunctionTableAccess64()),
+                Some(dbghelp.SymGetModuleBase64()),
+                None,
+            ) == TRUE
+            {
+                if !cb(&frame) {
+                    break;
+                }
             }
         }
     }
 }
 
 #[cfg(target_arch = "x86_64")]
-fn init_frame(frame: &mut STACKFRAME64, ctx: &CONTEXT) -> WORD {
-    frame.AddrPC.Offset = ctx.Rip as u64;
-    frame.AddrPC.Mode = AddrModeFlat;
-    frame.AddrStack.Offset = ctx.Rsp as u64;
-    frame.AddrStack.Mode = AddrModeFlat;
-    frame.AddrFrame.Offset = ctx.Rbp as u64;
-    frame.AddrFrame.Mode = AddrModeFlat;
-    winnt::IMAGE_FILE_MACHINE_AMD64
+fn init_frame(frame: &mut Frame, ctx: &CONTEXT) -> WORD {
+    frame.addr_pc_mut().Offset = ctx.Rip as u64;
+    frame.addr_pc_mut().Mode = AddrModeFlat;
+    frame.addr_stack_mut().Offset = ctx.Rsp as u64;
+    frame.addr_stack_mut().Mode = AddrModeFlat;
+    frame.addr_frame_mut().Offset = ctx.Rbp as u64;
+    frame.addr_frame_mut().Mode = AddrModeFlat;
+
+    IMAGE_FILE_MACHINE_AMD64
 }
 
 #[cfg(target_arch = "x86")]
-fn init_frame(frame: &mut STACKFRAME64, ctx: &CONTEXT) -> WORD {
-    frame.AddrPC.Offset = ctx.Eip as u64;
-    frame.AddrPC.Mode = AddrModeFlat;
-    frame.AddrStack.Offset = ctx.Esp as u64;
-    frame.AddrStack.Mode = AddrModeFlat;
-    frame.AddrFrame.Offset = ctx.Ebp as u64;
-    frame.AddrFrame.Mode = AddrModeFlat;
-    winnt::IMAGE_FILE_MACHINE_I386
+fn init_frame(frame: &mut Frame, ctx: &CONTEXT) -> WORD {
+    frame.addr_pc_mut().Offset = ctx.Eip as u64;
+    frame.addr_pc_mut().Mode = AddrModeFlat;
+    frame.addr_stack_mut().Offset = ctx.Esp as u64;
+    frame.addr_stack_mut().Mode = AddrModeFlat;
+    frame.addr_frame_mut().Offset = ctx.Ebp as u64;
+    frame.addr_frame_mut().Mode = AddrModeFlat;
+
+    IMAGE_FILE_MACHINE_I386
+}
+
+#[cfg(target_arch = "aarch64")]
+fn init_frame(frame: &mut Frame, ctx: &CONTEXT) -> WORD {
+    frame.addr_pc_mut().Offset = ctx.Pc as u64;
+    frame.addr_pc_mut().Mode = AddrModeFlat;
+    frame.addr_stack_mut().Offset = ctx.Sp as u64;
+    frame.addr_stack_mut().Mode = AddrModeFlat;
+    unsafe {
+        frame.addr_frame_mut().Offset = ctx.u.s().Fp as u64;
+    }
+    frame.addr_frame_mut().Mode = AddrModeFlat;
+    IMAGE_FILE_MACHINE_ARM64
+}
+
+#[cfg(target_arch = "arm")]
+fn init_frame(frame: &mut Frame, ctx: &CONTEXT) -> WORD {
+    frame.addr_pc_mut().Offset = ctx.Pc as u64;
+    frame.addr_pc_mut().Mode = AddrModeFlat;
+    frame.addr_stack_mut().Offset = ctx.Sp as u64;
+    frame.addr_stack_mut().Mode = AddrModeFlat;
+    unsafe {
+        frame.addr_frame_mut().Offset = ctx.R11 as u64;
+    }
+    frame.addr_frame_mut().Mode = AddrModeFlat;
+    IMAGE_FILE_MACHINE_ARMNT
 }
