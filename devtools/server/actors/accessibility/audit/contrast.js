@@ -37,14 +37,20 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "DevToolsWorker",
-  "devtools/shared/worker/worker",
+  "getContrastRatioScore",
+  "devtools/shared/accessibility",
   true
 );
 loader.lazyRequireGetter(
   this,
-  "accessibility",
-  "devtools/shared/constants",
+  "getTextProperties",
+  "devtools/shared/accessibility",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "DevToolsWorker",
+  "devtools/shared/worker/worker",
   true
 );
 loader.lazyRequireGetter(
@@ -55,66 +61,11 @@ loader.lazyRequireGetter(
 
 const WORKER_URL = "resource://devtools/server/actors/accessibility/worker.js";
 const HIGHLIGHTED_PSEUDO_CLASS = ":-moz-devtools-highlighted";
-
-
-const BOLD_LARGE_TEXT_MIN_PIXELS = 18.66;
-
-
-const LARGE_TEXT_MIN_PIXELS = 24;
+const {
+  LARGE_TEXT: { BOLD_LARGE_TEXT_MIN_PIXELS, LARGE_TEXT_MIN_PIXELS },
+} = require("devtools/shared/accessibility");
 
 loader.lazyGetter(this, "worker", () => new DevToolsWorker(WORKER_URL));
-
-
-
-
-
-
-
-
-function getTextProperties(node) {
-  const computedStyles = CssLogic.getComputedStyle(node);
-  if (!computedStyles) {
-    return null;
-  }
-
-  const {
-    color,
-    "font-size": fontSize,
-    "font-weight": fontWeight,
-  } = computedStyles;
-  const opacity = parseFloat(computedStyles.opacity);
-
-  let { r, g, b, a } = colorUtils.colorToRGBA(color, true);
-  
-  
-  
-  a = opacity * a;
-  const textRgbaColor = new colorUtils.CssColor(
-    `rgba(${r}, ${g}, ${b}, ${a})`,
-    true
-  );
-  
-  
-  
-  
-  
-  if (textRgbaColor.isTransparent()) {
-    return null;
-  }
-
-  const isBoldText = parseInt(fontWeight, 10) >= 600;
-  const size = parseFloat(fontSize);
-  const isLargeText =
-    size >= (isBoldText ? BOLD_LARGE_TEXT_MIN_PIXELS : LARGE_TEXT_MIN_PIXELS);
-
-  return {
-    color: [r, g, b, a],
-    isLargeText,
-    isBoldText,
-    size,
-    opacity,
-  };
-}
 
 
 
@@ -176,31 +127,6 @@ function getImageCtx(win, bounds, zoom, scale, node) {
 
 
 
-function getContrastRatioScore(ratio, isLargeText) {
-  const {
-    SCORES: { FAIL, AA, AAA },
-  } = accessibility;
-  const levels = isLargeText ? { AA: 3, AAA: 4.5 } : { AA: 4.5, AAA: 7 };
-
-  let score = FAIL;
-  if (ratio >= levels.AAA) {
-    score = AAA;
-  } else if (ratio >= levels.AA) {
-    score = AA;
-  }
-
-  return score;
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -208,7 +134,9 @@ function getContrastRatioScore(ratio, isLargeText) {
 
 
 async function getContrastRatioFor(node, options = {}) {
-  const props = getTextProperties(node);
+  const computedStyle = CssLogic.getComputedStyle(node);
+  const props = computedStyle ? getTextProperties(computedStyle) : null;
+
   if (!props) {
     return {
       error: true,
