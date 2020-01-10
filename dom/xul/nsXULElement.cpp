@@ -314,6 +314,10 @@ nsresult nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
 
   uint32_t count = mAttrs.AttrCount();
   rv = NS_OK;
+  
+  
+  
+  
   for (uint32_t i = 0; i < count; ++i) {
     const nsAttrName* originalName = mAttrs.AttrNameAt(i);
     const nsAttrValue* originalValue = mAttrs.AttrAt(i);
@@ -351,6 +355,9 @@ nsresult nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
     }
     if (originalName->Equals(nsGkAtoms::style)) {
       element->SetMayHaveStyle();
+    }
+    if (originalName->Equals(nsGkAtoms::part)) {
+      element->SetHasPartAttribute(true);
     }
   }
 
