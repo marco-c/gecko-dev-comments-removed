@@ -1,0 +1,8 @@
+
+
+
+
+
+module.exports = {
+  "dwarf_to_json.wasm": require.resolve("./wasm/dwarf_to_json.wasm"),
+};

@@ -1,0 +1,24 @@
+
+
+
+
+
+const { SourceMapConsumer } = require("source-map");
+const {
+  setAssetRootURL: wasmDwarfSetAssetRootURL,
+} = require("devtools-wasm-dwarf");
+
+function setAssetRootURL(assetRoot: string): void {
+  
+  const root = assetRoot.replace(/\/$/, "");
+
+  wasmDwarfSetAssetRootURL(root);
+
+  SourceMapConsumer.initialize({
+    "lib/mappings.wasm": `${root}/source-map-mappings.wasm`,
+  });
+}
+
+module.exports = {
+  setAssetRootURL,
+};

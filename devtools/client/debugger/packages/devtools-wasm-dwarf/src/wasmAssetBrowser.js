@@ -3,16 +3,9 @@
 
 
 
-const { SourceMapConsumer } = require("source-map");
-
 let root;
 function setAssetRootURL(assetRoot: string): void {
-  
-  root = assetRoot.replace(/\/$/, "");
-
-  SourceMapConsumer.initialize({
-    "lib/mappings.wasm": `${root}/source-map-mappings.wasm`,
-  });
+  root = assetRoot;
 }
 
 async function getDwarfToWasmData(name: string): Promise<ArrayBuffer> {

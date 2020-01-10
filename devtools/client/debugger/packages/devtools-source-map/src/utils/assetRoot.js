@@ -1,0 +1,12 @@
+
+
+
+
+
+function setAssetRootURL(assetRoot: string): void {
+  
+}
+
+module.exports = {
+  setAssetRootURL,
+};
