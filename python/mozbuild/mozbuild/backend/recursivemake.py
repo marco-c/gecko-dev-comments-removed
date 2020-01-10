@@ -845,6 +845,25 @@ class RecursiveMakeBackend(CommonBackend):
                 non_default_graphs[target_name][root] = self._compile_graph[root]
                 del self._compile_graph[root]
 
+        targets_per_directory = defaultdict(list)
+        for target in self._compile_graph.iterkeys():
+            targets_per_directory[mozpath.dirname(target)].append(
+                mozpath.basename(target))
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for directory, targets in targets_per_directory.iteritems():
+            if 'target-shared' in targets and 'target' in targets:
+                self._compile_graph[mozpath.join(directory, 'target-shared')].add(
+                    mozpath.join(directory, 'target'))
+
         for root in chain(*non_default_roots.values()):
             compile_roots.remove(root)
             dirname = mozpath.dirname(root)
