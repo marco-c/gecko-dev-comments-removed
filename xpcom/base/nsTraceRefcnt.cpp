@@ -762,6 +762,13 @@ void nsTraceRefcnt::WalkTheStack(FILE* aStream) {
   MozStackWalk(PrintStackFrame,  2,  0, aStream);
 }
 
+#ifdef ANDROID
+void nsTraceRefcnt::WalkTheStack(void (*aWriter)(uint32_t, void*, void*,
+                                                 void*)) {
+  MozStackWalk(aWriter,  2,  0, nullptr);
+}
+#endif
+
 
 
 
