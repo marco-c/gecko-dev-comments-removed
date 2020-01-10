@@ -44,15 +44,22 @@
   (v) = ((v) << (q)) | (((v) >> (32 - q)) & ((1 << (q)) - 1));
 
 
-#define H_OPT (1 << 0)
-#define H_OPT_ALIASM (1 << 1)
-#define H_OPT_PHON (1 << 2)
+#define H_OPT (1 << 0)          // is there optional morphological data?
+#define H_OPT_ALIASM (1 << 1)   // using alias compression?
+#define H_OPT_PHON (1 << 2)     // is there ph: field in the morphological data?
+#define H_OPT_INITCAP (1 << 3)  // is dictionary word capitalized?
 
 
 #define HENTRY_WORD(h) &(h->word[0])
 
 
 #define USERWORD 1000
+
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+#  define HUNSPELL_THREAD_LOCAL thread_local
+#else
+#  define HUNSPELL_THREAD_LOCAL static
+#endif
 
 struct hentry {
   unsigned char blen;    
