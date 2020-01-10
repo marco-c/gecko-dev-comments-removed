@@ -1739,6 +1739,8 @@ static AbortReason IonCompile(JSContext* cx, JSScript* script,
   AutoTraceLog logScript(logger, event);
   AutoTraceLog logCompile(logger, TraceLogger_IonCompilation);
 
+  cx->check(script);
+
   
   
   script->ensureNonLazyCanonicalFunction();

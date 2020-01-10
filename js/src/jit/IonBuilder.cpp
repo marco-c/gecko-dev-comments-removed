@@ -1143,15 +1143,12 @@ AbortReasonOr<Ok> IonBuilder::buildInline(IonBuilder* callerBuilder,
 
 void IonBuilder::runTask() {
   
-  JSRuntime* rt = script()->runtimeFromAnyThread();
-
   TraceLoggerThread* logger = TraceLoggerForCurrentThread();
   TraceLoggerEvent event(TraceLogger_AnnotateScripts, script());
   AutoTraceLog logScript(logger, event);
   AutoTraceLog logCompile(logger, TraceLogger_IonCompilation);
 
-  jit::JitContext jctx(jit::CompileRuntime::get(rt),
-                       jit::CompileRealm::get(script()->realm()), &alloc());
+  jit::JitContext jctx(realm->runtime(), realm, &alloc());
   setBackgroundCodegen(jit::CompileBackEnd(this));
 }
 
