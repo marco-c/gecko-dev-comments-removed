@@ -167,7 +167,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (!this._dbg) {
       this._dbg = this._parent.dbg;
       
-      this._dbg.enabled = this._state != "detached";
+      if (this._state === "detached") {
+        this._dbg.disable();
+      } else {
+        this._dbg.enable();
+      }
     }
     return this._dbg;
   },
@@ -1724,7 +1728,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (isTopLevel && this.state != "detached") {
       this.sources.reset();
       this.clearDebuggees();
-      this.dbg.enabled = true;
+      this.dbg.enable();
       this.maybePauseOnExceptions();
       
       
@@ -1752,14 +1756,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     if (this.state == "paused") {
       this.unsafeSynchronize(Promise.resolve(this.doResume()));
-      this.dbg.enabled = false;
+      this.dbg.disable();
     }
     this.disableAllBreakpoints();
   },
 
   _onNavigate: function() {
     if (this.state == "running") {
-      this.dbg.enabled = true;
+      this.dbg.enable();
     }
   },
 
