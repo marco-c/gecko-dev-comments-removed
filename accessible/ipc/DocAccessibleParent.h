@@ -36,6 +36,7 @@ class DocAccessibleParent : public ProxyAccessible,
         mEmulatedWindowHandle(nullptr),
 #endif  
         mTopLevel(false),
+        mTopLevelInContentProcess(false),
         mShutdown(false) {
     sMaxDocID++;
     mActorID = sMaxDocID;
@@ -43,8 +44,26 @@ class DocAccessibleParent : public ProxyAccessible,
     LiveDocs().Put(mActorID, this);
   }
 
-  void SetTopLevel() { mTopLevel = true; }
+  
+
+
+
+
+
+  void SetTopLevel() {
+    mTopLevel = true;
+    mTopLevelInContentProcess = true;
+  }
   bool IsTopLevel() const { return mTopLevel; }
+
+  
+
+
+
+
+
+  void SetTopLevelInContentProcess() { mTopLevelInContentProcess = true; }
+  bool IsTopLevelInContentProcess() const { return mTopLevelInContentProcess; }
 
   bool IsShutdown() const { return mShutdown; }
 
@@ -279,6 +298,7 @@ class DocAccessibleParent : public ProxyAccessible,
   nsTHashtable<ProxyEntry> mAccessibles;
   uint64_t mActorID;
   bool mTopLevel;
+  bool mTopLevelInContentProcess;
   bool mShutdown;
 
   static uint64_t sMaxDocID;
