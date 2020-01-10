@@ -13,21 +13,25 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["InspectorUtils"]);
 
-function ValueExtractor(errors, aBundle) {
-  this.errors = errors;
-  this.domBundle = aBundle;
-}
+class ValueExtractor {
+  constructor(errors, aBundle) {
+    this.errors = errors;
+    this.domBundle = aBundle;
+  }
 
-ValueExtractor.prototype = {
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   extractValue(options) {
     const {
       expectedType,
@@ -39,6 +43,7 @@ ValueExtractor.prototype = {
     } = options;
     const value = object[property];
     const isArray = Array.isArray(value);
+
     
     const type = isArray ? "array" : typeof value;
     if (type !== expectedType) {
@@ -54,13 +59,15 @@ ValueExtractor.prototype = {
       }
       return undefined;
     }
+
     
     const shouldTrim = expectedType === "string" && value && trim;
     if (shouldTrim) {
       return value.trim() || undefined;
     }
     return value;
-  },
+  }
+
   extractColorValue(spec) {
     const value = this.extractValue(spec);
     let color;
@@ -75,7 +82,8 @@ ValueExtractor.prototype = {
       this.errors.push({ warn });
     }
     return color;
-  },
+  }
+
   extractLanguageValue(spec) {
     let langTag;
     const value = this.extractValue(spec);
@@ -91,6 +99,7 @@ ValueExtractor.prototype = {
       }
     }
     return langTag;
-  },
-};
-var EXPORTED_SYMBOLS = ["ValueExtractor"]; 
+  }
+}
+
+const EXPORTED_SYMBOLS = ["ValueExtractor"];
