@@ -2,7 +2,10 @@
 
 
 
-import { recordTelemetryEvent } from "./aboutLoginsUtils.js";
+import {
+  recordTelemetryEvent,
+  setKeyboardAccessForNonDialogElements,
+} from "./aboutLoginsUtils.js";
 
 
 
@@ -41,6 +44,10 @@ function handleSyncState(syncState) {
 window.addEventListener("AboutLoginsChromeToContent", event => {
   switch (event.detail.messageType) {
     case "AllLogins": {
+      document.documentElement.classList.remove(
+        "master-password-auth-required"
+      );
+      setKeyboardAccessForNonDialogElements(true);
       handleAllLogins(event.detail.value);
       break;
     }
@@ -66,6 +73,10 @@ window.addEventListener("AboutLoginsChromeToContent", event => {
       updateNoLogins();
       break;
     }
+    case "MasterPasswordAuthRequired":
+      document.documentElement.classList.add("master-password-auth-required");
+      setKeyboardAccessForNonDialogElements(false);
+      break;
     case "SendFavicons": {
       gElements.loginList.addFavicons(event.detail.value);
       break;
