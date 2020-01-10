@@ -66,6 +66,8 @@ class nsJSContext : public nsIScriptContext {
   
   static void EnsureStatics();
 
+  static void SetLowMemoryState(bool aState);
+
   static void GarbageCollectNow(JS::GCReason reason,
                                 IsIncremental aIncremental = NonIncrementalGC,
                                 IsShrinking aShrinking = NonShrinkingGC,
