@@ -261,7 +261,9 @@ class RequestListHeader extends Component {
 
     
     
-    const newWidth = Math.max(x - headerRefRect.left, minWidth);
+    let newWidth =
+      document.dir == "ltr" ? x - headerRefRect.left : headerRefRect.right - x;
+    newWidth = Math.max(newWidth, minWidth);
     headerRef.style.width = `${this.px2percent(newWidth, parentWidth)}%`;
     const adjustment = oldWidth - newWidth;
 
@@ -333,7 +335,10 @@ class RequestListHeader extends Component {
     
     const waterfallRefRect = waterfallRef.getBoundingClientRect();
     const oldWidth = waterfallRefRect.width;
-    const adjustment = waterfallRefRect.left - x;
+    const adjustment =
+      document.dir == "ltr"
+        ? waterfallRefRect.left - x
+        : x - waterfallRefRect.right;
     if (this.allColumnsAtMinWidth() && adjustment > 0) {
       
       
