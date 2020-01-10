@@ -655,6 +655,14 @@ class WebConsoleWrapper {
   
 
 
+
+  dispatchEvaluateExpression(expression) {
+    store.dispatch(actions.evaluateExpression(expression));
+  }
+
+  
+
+
   waitAsyncDispatches() {
     if (!this.throttledDispatchPromise) {
       return Promise.resolve();

@@ -15,7 +15,6 @@ add_task(async function() {
 
 async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
-  const jsterm = hud.jsterm;
 
   
   ok(
@@ -26,7 +25,7 @@ async function performTests() {
   
   
   const onMessage = waitForMessage(hud, `var a = 'str';`);
-  jsterm.execute("var a = 'str';");
+  execute(hud, "var a = 'str';");
   const message = await onMessage;
   const highlighted = message.node.querySelectorAll("syntax-highlighted");
   let expectedMarkup;
