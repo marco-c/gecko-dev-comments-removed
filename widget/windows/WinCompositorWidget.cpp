@@ -340,31 +340,10 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
 
 
 
-
 void WinCompositorWidget::RequestFxrOutput() {
-  mozilla::gfx::VRShMem shmem(nullptr, true );
-  if (shmem.JoinShMem()) {
-    mozilla::gfx::VRWindowState windowState = {0};
-    shmem.PullWindowState(windowState);
+  MOZ_ASSERT(mFxrHandler == nullptr);
 
-    
-    MOZ_ASSERT(windowState.hwndFx != 0);
-    MOZ_ASSERT(windowState.textureFx == nullptr);
-
-    windowState.textureFx = (HANDLE)0xFFFFFFFF;
-
-    shmem.PushWindowState(windowState);
-    shmem.LeaveShMem();
-
-    
-    HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
-                                  FALSE,                  
-                                  windowState.signalName  
-    );
-
-    ::SetEvent(hSignal);
-    ::CloseHandle(hSignal);
-  }
+  mFxrHandler.reset(new FxROutputHandler());
 }
 
 }  

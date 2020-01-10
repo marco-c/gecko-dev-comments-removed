@@ -395,7 +395,13 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
       mPendingLayersObserverEpoch{0},
       mPendingDocShellBlockers(0),
       mCancelContentJSEpoch(0),
-      mWidgetNativeData(0) {
+      mWidgetNativeData(0)
+#ifdef XP_WIN
+      ,
+      mWindowSupportsProtectedMedia(true),
+      mWindowSupportsProtectedMediaChecked(false)
+#endif
+{
   mozilla::HoldJSObjects(this);
 
   nsWeakPtr weakPtrThis(do_GetWeakReference(
@@ -600,7 +606,8 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
     mPuppetWidget->CreateCompositor();
   }
 
-#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_THUNDERBIRD) && !defined(MOZ_SUITE)
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_THUNDERBIRD) && \
+    !defined(MOZ_SUITE)
   mSessionStoreListener = new TabListener(docShell, nullptr);
   rv = mSessionStoreListener->Init();
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3893,6 +3900,27 @@ bool BrowserChild::UpdateSessionStore(uint32_t aFlushId, bool aIsFinal) {
       aIsFinal, mSessionStoreListener->GetEpoch());
   return true;
 }
+
+#ifdef XP_WIN
+
+
+void BrowserChild::UpdateIsWindowSupportingProtectedMedia(bool aIsSupported) {
+  mWindowSupportsProtectedMediaChecked = true;
+  mWindowSupportsProtectedMedia = aIsSupported;
+}
+
+
+
+bool BrowserChild::RequiresIsWindowSupportingProtectedMediaCheck(
+    bool& aIsSupported) {
+  if (mWindowSupportsProtectedMediaChecked) {
+    aIsSupported = mWindowSupportsProtectedMedia;
+    return false;
+  } else {
+    return true;
+  }
+}
+#endif
 
 BrowserChildMessageManager::BrowserChildMessageManager(
     BrowserChild* aBrowserChild)
