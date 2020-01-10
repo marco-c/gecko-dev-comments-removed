@@ -697,7 +697,12 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   if (disp->IsContainLayout() && disp->IsContainSize() &&
       
-      IsFrameOfType(eSupportsContainLayoutAndPaint)) {
+      IsFrameOfType(eSupportsContainLayoutAndPaint) && !IsTableWrapperFrame()) {
+    
+    
+    
+    
+    
     
     
     
