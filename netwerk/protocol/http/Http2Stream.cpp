@@ -1592,6 +1592,17 @@ nsresult Http2Stream::OnWriteSegment(char* buf, uint32_t count,
 
 
 
+nsCString& Http2Stream::RegistrationKey() {
+  if (mRegistrationKey.IsEmpty()) {
+    MOZ_ASSERT(Transaction());
+    MOZ_ASSERT(Transaction()->ConnectionInfo());
+
+    mRegistrationKey = Transaction()->ConnectionInfo()->HashKey();
+  }
+
+  return mRegistrationKey;
+}
+
 void Http2Stream::ClearTransactionsBlockedOnTunnel() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 

@@ -365,6 +365,11 @@ class Http2Stream : public nsAHttpSegmentReader,
   
  public:
   bool IsTunnel() { return mIsTunnel; }
+  
+  
+  
+  
+  nsCString& RegistrationKey();
 
  private:
   void ClearTransactionsBlockedOnTunnel();
@@ -373,6 +378,7 @@ class Http2Stream : public nsAHttpSegmentReader,
 
   bool mIsTunnel;
   bool mPlainTextTunnel;
+  nsCString mRegistrationKey;
 
   
  public:
