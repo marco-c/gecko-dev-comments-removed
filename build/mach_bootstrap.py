@@ -215,6 +215,28 @@ def bootstrap(topsrcdir, mozilla_dir=None):
                 mozversioncontrol.MissingVCSTool):
             return None
 
+    def pre_dispatch_handler(context, handler, args):
+        
+        
+        
+        
+        if handler.category == 'testing':
+            from mozbuild.base import BuildEnvironmentNotFoundException
+            try:
+                from mozbuild.base import MozbuildObject
+                
+                build = MozbuildObject.from_environment()
+                if build is not None and hasattr(build, 'mozconfig'):
+                    ac_options = build.mozconfig['configure_args']
+                    if ac_options and '--disable-tests' in ac_options:
+                        print('Tests have been disabled by mozconfig with the flag ' +
+                              '"ac_add_options --disable-tests".\n' +
+                              'Remove the flag, and re-compile to enable tests.')
+                        sys.exit(1)
+            except BuildEnvironmentNotFoundException:
+                
+                pass
+
     def should_skip_telemetry_submission(handler):
         
         if handler.name in ('bootstrap', 'doctor', 'mach-commands', 'vcs-setup',
@@ -338,6 +360,9 @@ def bootstrap(topsrcdir, mozilla_dir=None):
 
         if key == 'topdir':
             return topsrcdir
+
+        if key == 'pre_dispatch_handler':
+            return pre_dispatch_handler
 
         if key == 'post_dispatch_handler':
             return post_dispatch_handler
