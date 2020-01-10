@@ -3,6 +3,9 @@
 
 "use strict";
 
+const Services = require("Services");
+const { L10nRegistry } = require("resource://gre/modules/L10nRegistry.jsm");
+
 const EventEmitter = require("devtools/shared/event-emitter");
 
 const Telemetry = require("devtools/client/shared/telemetry");
@@ -81,6 +84,8 @@ AccessibilityPanel.prototype = {
       this.picker = new Picker(this);
     }
 
+    this.fluentBundles = await this.createFluentBundles();
+
     this.updateA11YServiceDurationTimer();
     this.front.on("init", this.updateA11YServiceDurationTimer);
     this.front.on("shutdown", this.updateA11YServiceDurationTimer);
@@ -92,6 +97,25 @@ AccessibilityPanel.prototype = {
     this.emit("ready");
     resolver(this);
     return this._opening;
+  },
+
+  
+
+
+
+  async createFluentBundles() {
+    const locales = Services.locale.appLocalesAsBCP47;
+    const generator =
+      L10nRegistry.generateBundles(locales, ["devtools/accessibility.ftl"]);
+
+    
+    
+    const contexts = [];
+    for await (const message of generator) {
+      contexts.push(message);
+    }
+
+    return contexts;
   },
 
   onNewAccessibleFrontSelected(selected) {
@@ -133,7 +157,8 @@ AccessibilityPanel.prototype = {
     }
     
     this.shouldRefresh = false;
-    this.postContentMessage("initialize", this.front, this.walker, this.supports);
+    this.postContentMessage("initialize", this.front, this.walker, this.supports,
+                            this.fluentBundles);
   },
 
   updateA11YServiceDurationTimer() {

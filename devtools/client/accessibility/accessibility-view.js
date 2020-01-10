@@ -53,7 +53,8 @@ AccessibilityView.prototype = {
 
 
 
-  async initialize(accessibility, walker, supports) {
+
+  async initialize(accessibility, walker, supports, fluentBundles) {
     
     await this.store.dispatch(reset(accessibility, supports));
     const container = document.getElementById("content");
@@ -63,7 +64,7 @@ AccessibilityView.prototype = {
       return;
     }
 
-    const mainFrame = MainFrame({ accessibility, walker });
+    const mainFrame = MainFrame({ accessibility, walker, fluentBundles });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
     this.mainFrame = ReactDOM.render(provider, container);
