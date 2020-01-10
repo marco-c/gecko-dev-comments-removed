@@ -460,13 +460,11 @@ class UrlbarInput {
       }
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
         if (result.payload.isKeywordOffer) {
-          if (result.autofill) {
-            
-            
-            
-            let value = result.autofill.value;
-            this.selectionStart = this.selectionEnd = value.length;
-          }
+          
+          
+          
+          this.selectionStart = this.selectionEnd = this.value.length;
+
           
           
           
