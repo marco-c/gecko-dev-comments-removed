@@ -2882,11 +2882,19 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
       rootLayer->SetScrollMetadata(nsTArray<ScrollMetadata>());
     }
 
-    float rootLayerResolution = StaticPrefs::LayoutUseContainersForRootFrames()
-                                    ? presShell->GetResolution()
-                                    : 1.0f;
-    ContainerLayerParameters containerParameters(rootLayerResolution,
-                                                 rootLayerResolution);
+    float resolutionUniform = StaticPrefs::LayoutUseContainersForRootFrames()
+                                  ? presShell->GetResolution()
+                                  : 1.0f;
+    float resolutionX = resolutionUniform;
+    float resolutionY = resolutionUniform;
+
+    
+    if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
+      resolutionX *= browserChild->GetEffectsInfo().mScaleX;
+      resolutionY *= browserChild->GetEffectsInfo().mScaleY;
+    }
+
+    ContainerLayerParameters containerParameters(resolutionX, resolutionY);
 
     {
       PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
@@ -2906,11 +2914,10 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
     if (!root) {
       return nullptr;
     }
+    
+    root->SetPostScale(1.0f / resolutionX, 1.0f / resolutionY);
     if (StaticPrefs::LayoutUseContainersForRootFrames()) {
-      
-      root->SetPostScale(1.0f / containerParameters.mXScale,
-                         1.0f / containerParameters.mYScale);
-      root->SetScaleToResolution(containerParameters.mXScale);
+      root->SetScaleToResolution(resolutionUniform);
     }
 
     auto callback = [root](ScrollableLayerGuid::ViewID aScrollId) -> bool {
