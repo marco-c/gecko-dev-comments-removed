@@ -297,6 +297,23 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   
   
   
+  virtual bool CanDecodeBatch() { return false; }
+  virtual RefPtr<DecodePromise> DecodeBatch(
+      nsTArray<RefPtr<MediaRawData>>&& aSamples) {
+    MOZ_CRASH("DecodeBatch not implemented yet");
+    return MediaDataDecoder::DecodePromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   virtual RefPtr<DecodePromise> Drain() = 0;
 
