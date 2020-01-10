@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import codecs
 import inspect
 import logging
 import os
@@ -35,6 +36,7 @@ from mozbuild.util import (
     memoized_property,
     ReadOnlyDict,
     ReadOnlyNamespace,
+    system_encoding,
 )
 
 import mozpack.path as mozpath
@@ -900,8 +902,20 @@ class ConfigureSandbox(dict):
         
         
         
+        
         if what == '__builtin__.open':
-            return lambda *args, **kwargs: open(*args, **kwargs)
+            def wrapped_open(name, mode=None, buffering=None):
+                args = (name,)
+                kwargs = {}
+                if buffering is not None:
+                    kwargs['buffering'] = buffering
+                if mode is not None:
+                    args += (mode,)
+                    if 'b' in mode:
+                        return open(*args, **kwargs)
+                kwargs['encoding'] = system_encoding
+                return codecs.open(*args, **kwargs)
+            return wrapped_open
         
         
         if what == 'os.environ':
