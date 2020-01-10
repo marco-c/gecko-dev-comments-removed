@@ -9,6 +9,7 @@
 #include "mozilla/dom/HTMLMetaElement.h"
 #include "mozilla/dom/HTMLMetaElementBinding.h"
 #include "mozilla/dom/nsCSPService.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/ViewportMetaData.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -91,8 +92,7 @@ nsresult HTMLMetaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     ProcessViewportContent(&doc);
   }
 
-  if (StaticPrefs::security_csp_enable() && !doc.IsLoadedAsData() &&
-      AttrValueIs(kNameSpaceID_None, nsGkAtoms::httpEquiv, nsGkAtoms::headerCSP,
+  if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::httpEquiv, nsGkAtoms::headerCSP,
                   eIgnoreCase)) {
     
     
@@ -100,37 +100,20 @@ nsresult HTMLMetaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     if (headElt && IsInclusiveDescendantOf(headElt)) {
       nsAutoString content;
       GetContent(content);
-      content =
-          nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
-              content);
 
-      if (nsCOMPtr<nsIContentSecurityPolicy> csp = doc.GetCsp()) {
-        if (LOG_ENABLED()) {
-          nsAutoCString documentURIspec;
-          if (nsIURI* documentURI = doc.GetDocumentURI()) {
-            documentURI->GetAsciiSpec(documentURIspec);
-          }
-
-          LOG(
-              ("HTMLMetaElement %p sets CSP '%s' on document=%p, "
-               "document-uri=%s",
-               this, NS_ConvertUTF16toUTF8(content).get(), &doc,
-               documentURIspec.get()));
+      if (LOG_ENABLED()) {
+        nsAutoCString documentURIspec;
+        if (nsIURI* documentURI = doc.GetDocumentURI()) {
+          documentURI->GetAsciiSpec(documentURIspec);
         }
 
-        
-        
-        
-        rv =
-            csp->AppendPolicy(content,
-                              false,  
-                              true);  
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (nsPIDOMWindowInner* inner = doc.GetInnerWindow()) {
-          inner->SetCsp(csp);
-        }
-        doc.ApplySettingsFromCSP(false);
+        LOG(
+            ("HTMLMetaElement %p sets CSP '%s' on document=%p, "
+             "document-uri=%s",
+             this, NS_ConvertUTF16toUTF8(content).get(), &doc,
+             documentURIspec.get()));
       }
+      CSP_ApplyMetaCSPToDoc(doc, content);
     }
   }
 

@@ -37,6 +37,15 @@ function isPanelReady(toolbox, toolId) {
 
 
 add_task(async function automaticallyBindTexbox() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["security.csp.enable", false],
+      ["csp.skip_about_page_has_csp_assert", true],
+    ],
+  });
+
   info(
     "Registering a tool with an input field and making sure the context menu works"
   );
