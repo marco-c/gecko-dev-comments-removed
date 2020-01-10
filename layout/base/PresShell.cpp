@@ -2848,7 +2848,8 @@ void PresShell::SlotAssignmentWillChange(Element& aElement,
 
   
   
-  if (aOldSlot && aOldSlot->AssignedNodes().Length() == 1) {
+  if (aOldSlot && aOldSlot->AssignedNodes().Length() == 1 &&
+      aOldSlot->HasChildren()) {
     DestroyFramesForAndRestyle(aOldSlot);
   }
 
