@@ -97,12 +97,22 @@ class MockVRService {
       
       for (let i = 0; i < results.length; i++) {
         if (results[i].session) {
-          return results[i];
+          return {
+            result: {
+              session : results[i].session,
+              $tag :  0
+            }
+          };
         }
       }
 
       
-      return {session: null};
+      return {
+        result: {
+          failureReason : device.mojom.RequestSessionResult.NO_RUNTIME_FOUND,
+          $tag :  1
+        }
+      };
     });
   }
 
