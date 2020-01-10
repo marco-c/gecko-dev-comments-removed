@@ -2235,7 +2235,7 @@ pref("devtools.webconsole.timestampMessages", false);
 #endif
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
   pref("devtools.webconsole.features.editor", true);
 #else
   pref("devtools.webconsole.features.editor", false);
