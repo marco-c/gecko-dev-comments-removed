@@ -454,13 +454,9 @@ static void MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
 
 
 
-
-
-
-
-static void BuildDocTree(BrowsingContext* aBrowsingContext,
-                         const UniquePtr<nsPrintObject>& aPO,
-                         nsTArray<nsPrintObject*>* aDocList) {
+static void BuildNestedPrintObjects(BrowsingContext* aBrowsingContext,
+                                    const UniquePtr<nsPrintObject>& aPO,
+                                    nsTArray<nsPrintObject*>* aDocList) {
   MOZ_ASSERT(aBrowsingContext, "Pointer is null!");
   MOZ_ASSERT(aDocList, "Pointer is null!");
   MOZ_ASSERT(aPO, "Pointer is null!");
@@ -480,7 +476,7 @@ static void BuildDocTree(BrowsingContext* aBrowsingContext,
     }
     aPO->mKids.AppendElement(std::move(childPO));
     aDocList->AppendElement(aPO->mKids.LastElement().get());
-    BuildDocTree(childBC, aPO->mKids.LastElement(), aDocList);
+    BuildNestedPrintObjects(childBC, aPO->mKids.LastElement(), aDocList);
   }
 }
 
@@ -852,10 +848,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     printData->mPrintObject->mFrameType =
         printData->mIsParentAFrameSet ? eFrameSet : eDoc;
 
-    
-    BuildDocTree(nsDocShell::Cast(printData->mPrintObject->mDocShell)
-                     ->GetBrowsingContext(),
-                 printData->mPrintObject, &printData->mPrintDocList);
+    BuildNestedPrintObjects(nsDocShell::Cast(printData->mPrintObject->mDocShell)
+                                ->GetBrowsingContext(),
+                            printData->mPrintObject, &printData->mPrintDocList);
   }
 
   
