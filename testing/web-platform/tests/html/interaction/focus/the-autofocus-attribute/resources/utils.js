@@ -38,5 +38,4 @@ async function waitUntilStableAutofocusState(w) {
   let targetWindow = w || window;
   
   await waitForAnimationFrame(targetWindow);
-  await waitForAnimationFrame(targetWindow);
 }
