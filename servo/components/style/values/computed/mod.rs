@@ -684,10 +684,10 @@ impl From<CSSInteger> for PositiveInteger {
 pub type PositiveIntegerOrNone = Either<PositiveInteger, None_>;
 
 
-pub type ClipRect = generics::ClipRect<LengthOrAuto>;
+pub type ClipRect = generics::GenericClipRect<LengthOrAuto>;
 
 
-pub type ClipRectOrAuto = Either<ClipRect, Auto>;
+pub type ClipRectOrAuto = generics::GenericClipRectOrAuto<ClipRect>;
 
 
 pub type TrackBreadth = GenericTrackBreadth<LengthPercentage>;
@@ -707,18 +707,3 @@ pub type GridLine = GenericGridLine<Integer>;
 
 
 pub type GridTemplateComponent = GenericGridTemplateComponent<LengthPercentage, Integer>;
-
-impl ClipRectOrAuto {
-    
-    pub fn auto() -> Self {
-        Either::Second(Auto)
-    }
-
-    
-    pub fn is_auto(&self) -> bool {
-        match *self {
-            Either::Second(_) => true,
-            _ => false,
-        }
-    }
-}

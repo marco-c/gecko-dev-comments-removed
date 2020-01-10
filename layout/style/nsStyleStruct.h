@@ -934,6 +934,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
     return mListStyleImage ? mListStyleImage->get() : nullptr;
   }
 
+  nsRect GetImageRegion() const {
+    if (!mImageRegion.IsRect()) {
+      return nsRect();
+    }
+    return mImageRegion.AsRect().ToLayoutRect(0);
+  }
+
   already_AddRefed<nsIURI> GetListStyleImageURI() const;
 
   uint8_t mListStylePosition;
@@ -946,7 +953,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
 
  public:
   mozilla::StyleQuotes mQuotes;
-  nsRect mImageRegion;  
+  mozilla::StyleClipRectOrAuto mImageRegion;  
   mozilla::StyleMozListReversed
       mMozListReversed;  
 };
@@ -2396,9 +2403,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects {
   mozilla::StyleOwnedSlice<mozilla::StyleFilter> mFilters;
   mozilla::StyleOwnedSlice<mozilla::StyleBoxShadow> mBoxShadow;
   mozilla::StyleOwnedSlice<mozilla::StyleFilter> mBackdropFilters;
-  nsRect mClip;  
+  mozilla::StyleClipRectOrAuto mClip;  
   float mOpacity;
-  uint8_t mClipFlags;     
   uint8_t mMixBlendMode;  
 };
 

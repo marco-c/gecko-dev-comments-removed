@@ -617,7 +617,7 @@ void nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   
   const nsStyleList* myList = StyleList();
-  mSubRect = myList->mImageRegion;  
+  mSubRect = myList->GetImageRegion();  
 
   if (mUseSrcAttr || mSuppressStyleCheck)
     return;  
