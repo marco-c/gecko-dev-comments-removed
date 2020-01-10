@@ -1347,7 +1347,6 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
 
 
   if (!(mFlags & nsIDocumentEncoder::OutputPreformatted) &&
-      !(mFlags & nsIDocumentEncoder::OutputDontRemoveLineEndingSpaces) &&
       (aSoftlinebreak || !(mCurrentLine.EqualsLiteral("-- ") ||
                            mCurrentLine.EqualsLiteral("- -- ")))) {
     
