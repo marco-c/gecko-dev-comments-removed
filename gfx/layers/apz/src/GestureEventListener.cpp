@@ -154,17 +154,21 @@ void GestureEventListener::SetLongTapEnabled(bool aLongTapEnabled) {
   sLongTapEnabled = aLongTapEnabled;
 }
 
+void GestureEventListener::EnterFirstSingleTouchDown() {
+  SetState(GESTURE_FIRST_SINGLE_TOUCH_DOWN);
+  mTouchStartPosition = mLastTouchInput.mTouches[0].mScreenPoint;
+  mTouchStartOffset = mLastTouchInput.mScreenOffset;
+
+  if (sLongTapEnabled) {
+    CreateLongTapTimeoutTask();
+  }
+  CreateMaxTapTimeoutTask();
+}
+
 nsEventStatus GestureEventListener::HandleInputTouchSingleStart() {
   switch (mState) {
     case GESTURE_NONE:
-      SetState(GESTURE_FIRST_SINGLE_TOUCH_DOWN);
-      mTouchStartPosition = mLastTouchInput.mTouches[0].mScreenPoint;
-      mTouchStartOffset = mLastTouchInput.mScreenOffset;
-
-      if (sLongTapEnabled) {
-        CreateLongTapTimeoutTask();
-      }
-      CreateMaxTapTimeoutTask();
+      EnterFirstSingleTouchDown();
       break;
     case GESTURE_FIRST_SINGLE_TOUCH_UP:
       if (SecondTapIsFar()) {
@@ -173,7 +177,11 @@ nsEventStatus GestureEventListener::HandleInputTouchSingleStart() {
         CancelLongTapTimeoutTask();
         CancelMaxTapTimeoutTask();
         mSingleTapSent = Nothing();
-        SetState(GESTURE_NONE);
+
+        
+        
+        
+        EnterFirstSingleTouchDown();
       } else {
         
         
