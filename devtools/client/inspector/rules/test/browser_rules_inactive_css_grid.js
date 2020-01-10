@@ -172,7 +172,7 @@ add_task(async function() {
   await runInactiveCSSTests(view, inspector, BEFORE);
 
   
-  await toggleDeclaration(inspector, view, 0, {
+  await toggleDeclaration(view, 0, {
     display: "grid",
   });
   await view.once("ruleview-refreshed");
