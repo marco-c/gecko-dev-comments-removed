@@ -17,6 +17,7 @@
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
+#include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "js/CallArgs.h"  
 #include "js/Class.h"  
 #include "js/RealmOptions.h"      
@@ -28,9 +29,12 @@
 #include "vm/ObjectOperations.h"  
 #include "vm/Realm.h"             
 
+#include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 
+using js::CreateWritableStreamDefaultWriter;
+using js::UnwrapAndTypeCheckThis;
 using js::WritableStream;
 
 using JS::CallArgs;
@@ -144,7 +148,30 @@ bool WritableStream::constructor(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static const JSFunctionSpec WritableStream_methods[] = {JS_FS_END};
+
+
+
+static bool WritableStream_getWriter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Rooted<WritableStream*> unwrappedStream(
+      cx, UnwrapAndTypeCheckThis<WritableStream>(cx, args, "getWriter"));
+  if (!unwrappedStream) {
+    return false;
+  }
+
+  auto* writer = CreateWritableStreamDefaultWriter(cx, unwrappedStream);
+  if (!writer) {
+    return false;
+  }
+
+  args.rval().setObject(*writer);
+  return true;
+}
+
+static const JSFunctionSpec WritableStream_methods[] = {
+    JS_FN("getWriter", WritableStream_getWriter, 0, 0), JS_FS_END};
 
 static const JSPropertySpec WritableStream_properties[] = {JS_PS_END};
 
