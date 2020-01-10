@@ -327,32 +327,6 @@ class RemoteSettingsClient extends EventEmitter {
 
       
       
-      if (expectedTimestamp <= collectionLastModified) {
-        console.debug(`${this.identifier} local data is up-to-date`);
-        
-        
-        if (this.verifySignature && ObjectUtils.isEmpty(await kintoCollection.metadata())) {
-          console.debug(`${this.identifier} verify signature of local data`);
-          let allData = importedFromDump;
-          if (importedFromDump.length == 0) {
-            
-            ({ data: allData } = await kintoCollection.list({ order: "" }));
-          }
-          const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
-          const metadata = await kintoCollection.pullMetadata(this.httpClient());
-          if (this.verifySignature) {
-            await this._validateCollectionSignature([],
-                                                    collectionLastModified,
-                                                    metadata,
-                                                    { localRecords });
-          }
-        }
-        reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
-        return;
-      }
-
-      
-      
       if (this.verifySignature) {
         kintoCollection.hooks["incoming-changes"] = [async (payload, collection) => {
           const { changes: remoteRecords, lastModified: timestamp } = payload;
@@ -374,12 +348,43 @@ class RemoteSettingsClient extends EventEmitter {
       let syncResult;
       try {
         
-        const strategy = Kinto.syncStrategy.PULL_ONLY;
-        syncResult = await kintoCollection.sync({ remote: gServerURL, strategy, expectedTimestamp });
-        if (!syncResult.ok) {
+        if (expectedTimestamp <= collectionLastModified) {
+          console.debug(`${this.identifier} local data is up-to-date`);
+          reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
+
           
-          throw new Error("Sync failed");
-        }
+          
+          if (this.verifySignature && ObjectUtils.isEmpty(await kintoCollection.metadata())) {
+            console.debug(`${this.identifier} pull collection metadata`);
+            const metadata = await kintoCollection.pullMetadata(this.httpClient());
+            
+            
+            if (this.verifySignature && importedFromDump.length == 0) {
+              console.debug(`${this.identifier} verify signature of local data`);
+              const { data: allData } = await kintoCollection.list({ order: "" });
+              const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
+              await this._validateCollectionSignature([],
+                                                      collectionLastModified,
+                                                      metadata,
+                                                      { localRecords });
+            }
+          }
+
+          
+          if (importedFromDump.length == 0) {
+            return;
+          }
+          
+          syncResult = { current: importedFromDump, created: importedFromDump, updated: [], deleted: [] };
+        } else {
+          
+          
+          const strategy = Kinto.syncStrategy.PULL_ONLY;
+          syncResult = await kintoCollection.sync({ remote: gServerURL, strategy, expectedTimestamp });
+          if (!syncResult.ok) {
+            
+            throw new Error("Sync failed");
+          }
         
         
         const importedById = importedFromDump.reduce((acc, r) => {
@@ -395,6 +400,7 @@ class RemoteSettingsClient extends EventEmitter {
           }
         });
         syncResult.add("created", Array.from(importedById.values()));
+        }
       } catch (e) {
         if (e instanceof RemoteSettingsClient.InvalidSignatureError) {
           
