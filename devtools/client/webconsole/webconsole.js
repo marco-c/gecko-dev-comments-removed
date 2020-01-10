@@ -98,14 +98,6 @@ class WebConsole {
     return this.chromeWindow.top;
   }
 
-  
-
-
-
-  get outputNode() {
-    return this.ui ? this.ui.outputNode : null;
-  }
-
   get gViewSourceUtils() {
     return this.chromeUtilsWindow.gViewSourceUtils;
   }

@@ -40,7 +40,7 @@ add_task(async function() {
 
   
   
-  text = hud.outputNode.textContent;
+  text = hud.ui.outputNode.textContent;
   ok(
     !text.includes("cachedBrowserConsoleMessage"),
     "cached nsIConsoleMessages are not displayed"
