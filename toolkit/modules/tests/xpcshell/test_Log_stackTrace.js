@@ -25,9 +25,9 @@ function run_test() {
   print(`Got trace: ${trace}`);
   Assert.notEqual(trace, "");
 
-  let bazPos = trace.indexOf("baz@test_Log_stackTrace.js:4");
-  let barPos = trace.indexOf("bar@test_Log_stackTrace.js:3");
-  let fooPos = trace.indexOf("foo@test_Log_stackTrace.js:2");
+  let bazPos = trace.indexOf("baz@test_Log_stackTrace.js:9");
+  let barPos = trace.indexOf("bar@test_Log_stackTrace.js:6");
+  let fooPos = trace.indexOf("foo@test_Log_stackTrace.js:3");
   print(`String positions: ${bazPos} ${barPos} ${fooPos}`);
 
   print("Make sure the desired messages show up");
