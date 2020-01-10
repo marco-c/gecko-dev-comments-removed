@@ -33,11 +33,7 @@ class JitCode;
 }  
 
 #ifdef DEBUG
-
-
-bool IsBufferGrayRootsTracer(JSTracer* trc);
-
-bool IsUnmarkGrayTracer(JSTracer* trc);
+bool IsTracerKind(JSTracer* trc, JS::CallbackTracer::TracerKind kind);
 #endif
 
 namespace gc {
