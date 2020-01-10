@@ -453,9 +453,6 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
                                          BrowsingContext& aRequestingContext);
 
-  
-  void Unregister();
-
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;
   

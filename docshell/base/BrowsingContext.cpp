@@ -61,16 +61,6 @@ static void Register(BrowsingContext* aBrowsingContext) {
   aBrowsingContext->Group()->Register(aBrowsingContext);
 }
 
-void BrowsingContext::Unregister() {
-  MOZ_DIAGNOSTIC_ASSERT(mGroup);
-  mGroup->Unregister(this);
-  mIsDiscarded = true;
-
-  
-  
-  mClosed = true;
-}
-
 BrowsingContext* BrowsingContext::Top() {
   BrowsingContext* bc = this;
   while (bc->mParent) {
@@ -361,7 +351,17 @@ void BrowsingContext::Detach(bool aFromIPC) {
     children->RemoveElement(this);
   }
 
-  Unregister();
+  if (!mChildren.IsEmpty()) {
+    mGroup->CacheContexts(mChildren);
+    mChildren.Clear();
+  }
+
+  mGroup->Unregister(this);
+  mIsDiscarded = true;
+
+  
+  
+  mClosed = true;
 
   if (!aFromIPC && XRE_IsContentProcess()) {
     auto cc = ContentChild::GetSingleton();
