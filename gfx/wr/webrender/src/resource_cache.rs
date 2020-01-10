@@ -437,8 +437,6 @@ pub struct BlobImageRasterizerEpoch(usize);
 
 
 
-
-
 #[derive(Clone, Copy, Debug)]
 pub struct BlobImageClearParams {
     pub key: BlobImageKey,
@@ -729,35 +727,6 @@ impl ResourceCache {
         if self.blob_image_rasterizer_consumed_epoch.0 < supp.epoch.0 {
             self.blob_image_rasterizer = Some(rasterizer);
             self.blob_image_rasterizer_consumed_epoch = supp.epoch;
-        }
-
-        
-        
-        for req in supp.clear_requests {
-            let tiles = match self.rasterized_blob_images.get_mut(&req.key) {
-                Some(RasterizedBlob::Tiled(tiles)) => tiles,
-                _ => { continue; }
-            };
-
-            tiles.retain(|tile, _| {
-                !req.original_tile_range.contains(*tile) ||
-                req.actual_tile_range.contains(*tile)
-            });
-
-            let texture_cache = &mut self.texture_cache;
-            match self.cached_images.try_get_mut(&req.key.as_image()) {
-                Some(&mut ImageResult::Multi(ref mut entries)) => {
-                    entries.retain(|key, entry| {
-                        if !req.original_tile_range.contains(key.tile.unwrap()) ||
-                           req.actual_tile_range.contains(key.tile.unwrap()) {
-                            return true;
-                        }
-                        entry.mark_unused(texture_cache);
-                        return false;
-                    });
-                }
-                _ => {}
-            }
         }
     }
 
@@ -1266,7 +1235,6 @@ impl ResourceCache {
             return (None, Vec::new());
         }
 
-        let mut blob_tiles_clear_requests = Vec::new();
         let mut blob_request_params = Vec::new();
         for key in keys {
             let template = self.blob_image_templates.get_mut(key).unwrap();
@@ -1274,7 +1242,7 @@ impl ResourceCache {
             if let Some(tile_size) = template.tiling {
                 
                 
-                let mut tiles = compute_tile_range(
+                let tiles = compute_tile_range(
                     &template.visible_rect,
                     tile_size,
                 );
@@ -1301,46 +1269,6 @@ impl ResourceCache {
                     }
                     DirtyRect::All => tiles,
                 };
-
-                let original_tile_range = tiles;
-
-                
-                
-                
-                const MAX_TILES_PER_REQUEST: i32 = 512;
-                
-                
-                
-                while !tiles.size.is_empty_or_negative()
-                    && (tiles.size.width > MAX_TILES_PER_REQUEST
-                        || tiles.size.height > MAX_TILES_PER_REQUEST
-                        || tiles.size.width * tiles.size.height > MAX_TILES_PER_REQUEST) {
-                    let limit = 46340; 
-                    let w = tiles.size.width.min(limit);
-                    let h = tiles.size.height.min(limit);
-                    let diff = w * h - MAX_TILES_PER_REQUEST;
-                    
-                    if tiles.size.width > tiles.size.height {
-                        tiles.size.width -= diff / h + 1;
-                        tiles.origin.x += diff / (2 * h);
-                    } else {
-                        tiles.size.height -= diff / w + 1;
-                        tiles.origin.y += diff / (2 * w);
-                    }
-                }
-
-                
-                
-                
-                if original_tile_range != tiles {
-                    let clear_params = BlobImageClearParams {
-                        key: *key,
-                        original_tile_range,
-                        actual_tile_range: tiles,
-                    };
-                    blob_tiles_clear_requests.push(clear_params);
-                }
-
 
                 for_each_tile_in_range(&tiles, |tile| {
                     let still_valid = template.valid_tiles_after_bounds_change
@@ -1431,7 +1359,7 @@ impl ResourceCache {
         self.blob_image_rasterizer_produced_epoch.0 += 1;
         let info = AsyncBlobImageInfo {
             epoch: self.blob_image_rasterizer_produced_epoch,
-            clear_requests: blob_tiles_clear_requests,
+            clear_requests: Vec::new(),
         };
         let handler = self.blob_image_handler.as_mut().unwrap();
         handler.prepare_resources(&self.resources, &blob_request_params);
