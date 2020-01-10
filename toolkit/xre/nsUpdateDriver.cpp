@@ -31,6 +31,7 @@
 #include "mozilla/Services.h"
 
 #ifdef XP_MACOSX
+#  include <sys/xattr.h>
 #  include "nsILocalFileMac.h"
 #  include "nsCommandLineServiceMac.h"
 #  include "MacLaunchHelper.h"
@@ -57,6 +58,7 @@ using namespace mozilla;
 
 static LazyLogModule sUpdateLog("updatedriver");
 #define LOG(args) MOZ_LOG(sUpdateLog, mozilla::LogLevel::Debug, args)
+#define LOG_ENABLED() MOZ_LOG_TEST(sUpdateLog, mozilla::LogLevel::Debug)
 
 #ifdef XP_WIN
 #  define UPDATER_BIN "updater.exe"
@@ -297,12 +299,37 @@ static bool CopyFileIntoUpdateDir(nsIFile* parentDir, const nsACString& leaf,
   file->Remove(true);
 
   
+  nsCString targetFilePath;
+  rv = file->GetNativePath(targetFilePath);
+  if (NS_FAILED(rv)) return false;
+
+  
   rv = parentDir->Clone(getter_AddRefs(file));
   if (NS_FAILED(rv)) return false;
   rv = file->AppendNative(leaf);
   if (NS_FAILED(rv)) return false;
   rv = file->CopyToNative(updateDir, EmptyCString());
   if (NS_FAILED(rv)) return false;
+
+  
+  
+  
+  
+  int remove_rv = removexattr(targetFilePath.get(), "com.apple.quarantine", 0);
+  LOG(("Removing quarantine from %s: rv = %d", targetFilePath.get(),
+       remove_rv));
+
+  
+  if (LOG_ENABLED()) {
+    bool isQuarantined;
+    
+    
+    
+    isQuarantined = (getxattr(targetFilePath.get(), "com.apple.quarantine",
+                              nullptr, 0, 0, 0) >= 0);
+    LOG(("Destination file %s is%s quarantined", targetFilePath.get(),
+         isQuarantined ? "" : " not"));
+  }
 
   return true;
 }
