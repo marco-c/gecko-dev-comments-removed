@@ -2914,16 +2914,10 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   
   
   
-  if (printRangeType == nsIPrintSettings::kRangeSelection) {
-    printHowEnable = nsIPrintSettings::kFrameEnableNone;
-  }
-
   
   
-  
-  
-  
-  if (printHowEnable == nsIPrintSettings::kFrameEnableNone) {
+  if (!printData->mIsParentAFrameSet ||
+      printRangeType == nsIPrintSettings::kRangeSelection) {
     
     if (printRangeType == nsIPrintSettings::kRangeAllPages ||
         printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange) {
