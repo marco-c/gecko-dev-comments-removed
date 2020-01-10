@@ -3242,6 +3242,8 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
   
   
   
+  
+  
   if (!mIsShown) {
     aEvent->changed_mask = static_cast<GdkWindowState>(
         aEvent->changed_mask & ~GDK_WINDOW_STATE_MAXIMIZED);
