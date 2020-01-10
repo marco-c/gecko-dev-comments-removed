@@ -207,35 +207,6 @@ class nsTStringRepr {
   bool NS_FASTCALL Equals(const char_type* aData,
                           const comparator_type& aComp) const;
 
-  
-
-
-
-
-
-
-
-  template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
-  int32_t Compare(const char_type* aString, bool aIgnoreCase = false,
-                  int32_t aCount = -1) const;
-
-  
-
-
-
-
-
-
-
-  template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
-  bool EqualsIgnoreCase(const char_type* aString, int32_t aCount = -1) const {
-    return Compare(aString, true, aCount) == 0;
-  }
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  bool EqualsIgnoreCase(const incompatible_char_type* aString,
-                        int32_t aCount = -1) const;
-
 #if defined(MOZ_USE_CHAR16_WRAPPER)
   template <typename Q = T, typename EnableIfChar16 = Char16OnlyT<Q>>
   bool NS_FASTCALL Equals(char16ptr_t aData) const {
