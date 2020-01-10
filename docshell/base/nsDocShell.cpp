@@ -2888,65 +2888,6 @@ static bool ItemIsActive(nsIDocShellTreeItem* aItem) {
   return false;
 }
 
-NS_IMETHODIMP
-nsDocShell::FindItemWithName(const nsAString& aName,
-                             nsIDocShellTreeItem* aRequestor,
-                             nsIDocShellTreeItem* aOriginalRequestor,
-                             bool aSkipTabGroup,
-                             nsIDocShellTreeItem** aResult) {
-  NS_ENSURE_ARG_POINTER(aResult);
-
-  
-  *aResult = nullptr;
-
-  if (aName.IsEmpty()) {
-    return NS_OK;
-  }
-
-  if (aRequestor) {
-    
-    
-    return DoFindItemWithName(aName, aRequestor, aOriginalRequestor,
-                              aSkipTabGroup, aResult);
-  } else {
-    
-    
-    
-
-    nsCOMPtr<nsIDocShellTreeItem> foundItem;
-    if (aName.LowerCaseEqualsLiteral("_self")) {
-      foundItem = this;
-    } else if (aName.LowerCaseEqualsLiteral("_blank")) {
-      
-      
-      return NS_OK;
-    } else if (aName.LowerCaseEqualsLiteral("_parent")) {
-      GetInProcessSameTypeParent(getter_AddRefs(foundItem));
-      if (!foundItem) {
-        foundItem = this;
-      }
-    } else if (aName.LowerCaseEqualsLiteral("_top")) {
-      GetInProcessSameTypeRootTreeItem(getter_AddRefs(foundItem));
-      NS_ASSERTION(foundItem, "Must have this; worst case it's us!");
-    } else {
-      
-      DoFindItemWithName(aName, aRequestor, aOriginalRequestor, aSkipTabGroup,
-                         getter_AddRefs(foundItem));
-    }
-
-    if (foundItem && !CanAccessItem(foundItem, aOriginalRequestor)) {
-      foundItem = nullptr;
-    }
-
-    
-    
-    if (foundItem) {
-      foundItem.swap(*aResult);
-    }
-    return NS_OK;
-  }
-}
-
 void nsDocShell::AssertOriginAttributesMatchPrivateBrowsing() {
   
   
@@ -2957,64 +2898,6 @@ void nsDocShell::AssertOriginAttributesMatchPrivateBrowsing() {
     MOZ_DIAGNOSTIC_ASSERT(mOriginAttributes.mPrivateBrowsingId ==
                           mPrivateBrowsingId);
   }
-}
-
-nsresult nsDocShell::DoFindItemWithName(const nsAString& aName,
-                                        nsIDocShellTreeItem* aRequestor,
-                                        nsIDocShellTreeItem* aOriginalRequestor,
-                                        bool aSkipTabGroup,
-                                        nsIDocShellTreeItem** aResult) {
-  
-  if (mBrowsingContext->NameEquals(aName) && ItemIsActive(this) &&
-      CanAccessItem(this, aOriginalRequestor)) {
-    NS_ADDREF(*aResult = this);
-    return NS_OK;
-  }
-
-  
-  
-#ifdef DEBUG
-  nsresult rv =
-#endif
-      FindChildWithName(aName, true, true, aRequestor, aOriginalRequestor,
-                        aResult);
-  NS_ASSERTION(NS_SUCCEEDED(rv),
-               "FindChildWithName should not be failing here.");
-  if (*aResult) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIDocShellTreeItem> parentAsTreeItem =
-      do_QueryInterface(GetAsSupports(mParent));
-  if (parentAsTreeItem) {
-    if (parentAsTreeItem == aRequestor) {
-      return NS_OK;
-    }
-
-    
-    
-    
-    if (!GetIsMozBrowser() && parentAsTreeItem->ItemType() == mItemType) {
-      return parentAsTreeItem->FindItemWithName(aName, this, aOriginalRequestor,
-                                                 false,
-                                                aResult);
-    }
-  }
-
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
-  if (window && !aSkipTabGroup) {
-    RefPtr<mozilla::dom::TabGroup> tabGroup = window->TabGroup();
-    tabGroup->FindItemWithName(aName, this, aOriginalRequestor, aResult);
-  }
-
-  return NS_OK;
 }
 
 bool nsDocShell::IsSandboxedFrom(BrowsingContext* aTargetBC) {
@@ -8704,11 +8587,9 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
   MOZ_ASSERT(aLoadState, "need a load state!");
   MOZ_ASSERT(!aLoadState->Target().IsEmpty(), "should have a target here!");
 
-  nsresult rv;
+  nsresult rv = NS_OK;
   nsCOMPtr<nsIDocShell> targetDocShell;
 
-  
-  nsCOMPtr<nsIDocShellTreeItem> targetItem;
   
   
   
@@ -8719,12 +8600,12 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
       aLoadState->Target().LowerCaseEqualsLiteral("_self") ||
       aLoadState->Target().LowerCaseEqualsLiteral("_parent") ||
       aLoadState->Target().LowerCaseEqualsLiteral("_top")) {
-    rv = FindItemWithName(aLoadState->Target(), nullptr, this, false,
-                          getter_AddRefs(targetItem));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (BrowsingContext* context =
+            mBrowsingContext->FindWithName(aLoadState->Target())) {
+      targetDocShell = context->GetDocShell();
+    }
   }
 
-  targetDocShell = do_QueryInterface(targetItem);
   if (!targetDocShell) {
     
     

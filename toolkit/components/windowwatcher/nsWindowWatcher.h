@@ -68,14 +68,6 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   
   
-  already_AddRefed<nsIDocShellTreeItem> GetCallerTreeItem(
-      nsIDocShellTreeItem* aParentItem);
-
-  mozilla::dom::BrowsingContext* GetCallerBrowsingContext(
-      mozilla::dom::BrowsingContext* aParent);
-
-  
-  
   
   already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContextByName(
       const nsAString& aName, bool aForceNoOpener,
