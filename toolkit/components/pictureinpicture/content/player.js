@@ -14,88 +14,221 @@ const { DeferredTask } = ChromeUtils.import(
 const CONTROLS_FADE_TIMEOUT_MS = 3000;
 const RESIZE_DEBOUNCE_RATE_MS = 500;
 
-async function setupPlayer(id, originatingBrowser, videoData) {
-  let holder = document.querySelector(".player-holder");
-  let browser = document.getElementById("browser");
-  browser.remove();
 
-  browser.setAttribute("nodefaultsrc", "true");
-  browser.sameProcessAsFrameLoader = originatingBrowser.frameLoader;
-  holder.appendChild(browser);
 
-  browser.loadURI("about:blank", {
-    triggeringPrincipal: originatingBrowser.contentPrincipal,
-  });
 
-  let mm = browser.frameLoader.messageManager;
-  mm.sendAsyncMessage("PictureInPicture:SetupPlayer");
 
-  document.getElementById("play").addEventListener("click", () => {
-    mm.sendAsyncMessage("PictureInPicture:Play");
-  });
 
-  document.getElementById("pause").addEventListener("click", () => {
-    mm.sendAsyncMessage("PictureInPicture:Pause");
-  });
 
-  document.getElementById("unpip").addEventListener("click", () => {
-    PictureInPicture.focusTabAndClosePip();
-  });
+
+
+
+function setupPlayer(id, originatingBrowser) {
+  Player.init(id, originatingBrowser);
+}
+
+
+
+
+
+
+
+
+function setIsPlayingState(isPlaying) {
+  Player.isPlaying = isPlaying;
+}
+
+
+
+
+
+let Player = {
+  WINDOW_EVENTS: ["click", "mouseout", "resize", "unload"],
+  mm: null,
+  
+
+
+
+
+  resizeDebouncer: null,
+  
+
+
+
+  lastScreenX: -1,
+  lastScreenY: -1,
+  id: -1,
 
   
-  
-  browser.addEventListener("oop-browser-crashed", () => {
-    PictureInPicture.closePipWindow({ reason: "browser-crash" });
-  });
 
-  let close = document.getElementById("close");
-  close.addEventListener("click", () => {
-    PictureInPicture.closePipWindow({ reason: "close-button" });
-  });
 
-  document.getElementById("controls").setAttribute("showing", true);
-  setTimeout(() => {
-    document.getElementById("controls").removeAttribute("showing");
-  }, CONTROLS_FADE_TIMEOUT_MS);
 
-  Services.telemetry.setEventRecordingEnabled("pictureinpicture", true);
 
-  let resizeDebouncer = new DeferredTask(() => {
-    Services.telemetry.recordEvent("pictureinpicture", "resize", "player", id, {
+
+
+
+  init(id, originatingBrowser) {
+    this.id = id;
+
+    let holder = document.querySelector(".player-holder");
+    let browser = document.getElementById("browser");
+    browser.remove();
+
+    browser.setAttribute("nodefaultsrc", "true");
+    browser.sameProcessAsFrameLoader = originatingBrowser.frameLoader;
+    holder.appendChild(browser);
+
+    browser.loadURI("about:blank", {
+      triggeringPrincipal: originatingBrowser.contentPrincipal,
+    });
+
+    this.mm = browser.frameLoader.messageManager;
+    this.mm.sendAsyncMessage("PictureInPicture:SetupPlayer");
+
+    for (let eventType of this.WINDOW_EVENTS) {
+      addEventListener(eventType, this);
+    }
+
+    
+    
+    browser.addEventListener("oop-browser-crashed", this);
+
+    
+    
+    this.controls.setAttribute("showing", true);
+    setTimeout(() => {
+      this.controls.removeAttribute("showing");
+    }, CONTROLS_FADE_TIMEOUT_MS);
+
+    Services.telemetry.setEventRecordingEnabled("pictureinpicture", true);
+
+    this.resizeDebouncer = new DeferredTask(() => {
+      this.recordEvent("resize", {
+        width: window.outerWidth.toString(),
+        height: window.outerHeight.toString(),
+      });
+    }, RESIZE_DEBOUNCE_RATE_MS);
+
+    this.lastScreenX = window.screenX;
+    this.lastScreenY = window.screenY;
+
+    this.recordEvent("create", {
       width: window.outerWidth.toString(),
       height: window.outerHeight.toString(),
+      screenX: window.screenX.toString(),
+      screenY: window.screenY.toString(),
     });
-  }, RESIZE_DEBOUNCE_RATE_MS);
+  },
 
-  addEventListener("resize", e => {
-    resizeDebouncer.disarm();
-    resizeDebouncer.arm();
-  });
+  uninit() {
+    this.resizeDebouncer.disarm();
+    PictureInPicture.unload(window);
+  },
 
-  let lastScreenX = window.screenX;
-  let lastScreenY = window.screenY;
+  handleEvent(event) {
+    switch (event.type) {
+      case "click": {
+        this.onClick(event);
+        break;
+      }
 
-  addEventListener("mouseout", e => {
-    if (window.screenX != lastScreenX || window.screenY != lastScreenY) {
-      Services.telemetry.recordEvent("pictureinpicture", "move", "player", id, {
+      case "mouseout": {
+        this.onMouseOut(event);
+        break;
+      }
+
+      case "oop-browser-crashed": {
+        PictureInPicture.closePipWindow({ reason: "browser-crash" });
+        break;
+      }
+
+      case "resize": {
+        this.onResize(event);
+        break;
+      }
+
+      case "unload": {
+        this.uninit();
+        break;
+      }
+    }
+  },
+
+  onClick(event) {
+    switch (event.target.id) {
+      case "close": {
+        PictureInPicture.closePipWindow({ reason: "close-button" });
+        break;
+      }
+
+      case "play": {
+        this.mm.sendAsyncMessage("PictureInPicture:Play");
+        break;
+      }
+
+      case "pause": {
+        this.mm.sendAsyncMessage("PictureInPicture:Pause");
+        break;
+      }
+
+      case "unpip": {
+        PictureInPicture.focusTabAndClosePip();
+        break;
+      }
+    }
+  },
+
+  onMouseOut(event) {
+    if (
+      window.screenX != this.lastScreenX ||
+      window.screenY != this.lastScreenY
+    ) {
+      this.recordEvent("move", {
         screenX: window.screenX.toString(),
         screenY: window.screenY.toString(),
       });
     }
 
-    lastScreenX = window.screenX;
-    lastScreenY = window.screenY;
-  });
+    this.lastScreenX = window.screenX;
+    this.lastScreenY = window.screenY;
+  },
 
-  Services.telemetry.recordEvent("pictureinpicture", "create", "player", id, {
-    width: window.outerWidth.toString(),
-    height: window.outerHeight.toString(),
-    screenX: window.screenX.toString(),
-    screenY: window.screenY.toString(),
-  });
+  onResize(event) {
+    this.resizeDebouncer.disarm();
+    this.resizeDebouncer.arm();
+  },
 
-  window.addEventListener("unload", () => {
-    resizeDebouncer.disarm();
-    PictureInPicture.unload(window);
-  });
-}
+  get controls() {
+    delete this.controls;
+    return (this.controls = document.getElementById("controls"));
+  },
+
+  _isPlaying: false,
+  
+
+
+
+
+  get isPlaying() {
+    return this._isPlaying;
+  },
+
+  
+
+
+
+  set isPlaying(isPlaying) {
+    this._isPlaying = isPlaying;
+    this.controls.classList.toggle("playing", isPlaying);
+  },
+
+  recordEvent(type, args) {
+    Services.telemetry.recordEvent(
+      "pictureinpicture",
+      type,
+      "player",
+      this.id,
+      args
+    );
+  },
+};
