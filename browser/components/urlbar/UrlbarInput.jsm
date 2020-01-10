@@ -1005,7 +1005,8 @@ class UrlbarInput {
   endLayoutExtend(force) {
     if (
       !this.hasAttribute("breakout-extend") ||
-      (!force && (this.view.isOpen || this.getAttribute("focused") == "true"))
+      this.view.isOpen ||
+      (!force && this.getAttribute("focused") == "true")
     ) {
       return;
     }
@@ -2076,7 +2077,7 @@ class UrlbarInput {
     }
 
     
-    this.endLayoutExtend(true);
+    this.view.close();
 
     
     

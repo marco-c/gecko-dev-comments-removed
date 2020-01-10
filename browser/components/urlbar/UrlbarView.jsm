@@ -1380,7 +1380,9 @@ class UrlbarView {
     
     
     
-    this.clear();
+    if (!UrlbarPrefs.get("ui.popup.disable_autohide")) {
+      this.clear();
+    }
   }
 
   _on_TabSelect() {

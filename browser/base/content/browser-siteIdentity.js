@@ -1304,7 +1304,7 @@ var gIdentityHandler = {
     dt.setDragImage(canvas, 16, 16);
 
     
-    gURLBar.endLayoutExtend(true);
+    gURLBar.view.close();
   },
 
   onLocationChange() {
