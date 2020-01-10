@@ -240,7 +240,25 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
   mInner->Update(
       [outer, self](const ServiceWorkerRegistrationDescriptor& aDesc) {
         nsIGlobalObject* global = self->GetParentObject();
-        MOZ_DIAGNOSTIC_ASSERT(global);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!global) {
+          outer->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+          return;
+        }
         RefPtr<ServiceWorkerRegistration> ref =
             global->GetOrCreateServiceWorkerRegistration(aDesc);
         if (!ref) {
