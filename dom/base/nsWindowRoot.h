@@ -75,13 +75,7 @@ class nsWindowRoot final : public nsPIWindowRoot {
   virtual void EnumerateBrowsers(BrowserEnumerator aEnumFunc,
                                  void* aArg) override;
 
-  virtual bool ShowAccelerators() override { return mShowAccelerators; }
-
   virtual bool ShowFocusRings() override { return mShowFocusRings; }
-
-  virtual void SetShowAccelerators(bool aEnable) override {
-    mShowAccelerators = aEnable;
-  }
 
   virtual void SetShowFocusRings(bool aEnable) override {
     mShowFocusRings = aEnable;
@@ -103,8 +97,6 @@ class nsWindowRoot final : public nsPIWindowRoot {
   nsWeakPtr mPopupNode;
 
   
-  
-  bool mShowAccelerators;
   bool mShowFocusRings;
 
   nsCOMPtr<mozilla::dom::EventTarget> mParent;

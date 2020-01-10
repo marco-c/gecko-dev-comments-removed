@@ -39,10 +39,8 @@ nsWindowRoot::nsWindowRoot(nsPIDOMWindowOuter* aWindow) {
 
   
 #if defined(XP_MACOSX)
-  mShowAccelerators = false;
   mShowFocusRings = false;
 #else
-  mShowAccelerators = true;
   mShowFocusRings = true;
 #endif
 }

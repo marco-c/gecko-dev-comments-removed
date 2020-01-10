@@ -346,8 +346,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   
   void NotifySysColorChanged();
   void NotifyThemeChanged();
-  void NotifyUIStateChanged(UIStateChangeType aShowAccelerators,
-                            UIStateChangeType aShowFocusRings);
+  void NotifyUIStateChanged(UIStateChangeType aShowFocusRings);
 
 #ifdef ACCESSIBILITY
   

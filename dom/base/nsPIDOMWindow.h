@@ -717,8 +717,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
 
 
-  void SetInitialKeyboardIndicators(UIStateChangeType aShowAccelerators,
-                                    UIStateChangeType aShowFocusRings);
+  void SetInitialKeyboardIndicators(UIStateChangeType aShowFocusRings);
 
   
   
@@ -959,8 +958,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
 
 
-  virtual void SetKeyboardIndicators(UIStateChangeType aShowAccelerators,
-                                     UIStateChangeType aShowFocusRings) = 0;
+  virtual void SetKeyboardIndicators(UIStateChangeType aShowFocusRings) = 0;
 
   
 
