@@ -509,7 +509,9 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   destroy() {
     
     
-    this.selection.destroy();
+    if (this.selection) {
+      this.selection.destroy();
+    }
     
     
     
