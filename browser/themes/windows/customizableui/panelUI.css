@@ -15,7 +15,7 @@
   padding-inline-start: 3px;
 }
 
-#BMB_bookmarksPopup menupopup[placespopup=true] > hbox {
+#BMB_bookmarksPopup menupopup[placespopup=true]::part(innerbox) {
   
   box-shadow: 0 0 4px rgba(0,0,0,0.2);
   background: var(--arrowpanel-background);
@@ -26,14 +26,9 @@
 
 
 @media (-moz-os-version: windows-win7) {
-  #BMB_bookmarksPopup menupopup[placespopup=true] > hbox {
+  #BMB_bookmarksPopup menupopup[placespopup=true]::part(innerbox) {
     border-radius: 3.5px;
   }
-}
-
-
-#BMB_bookmarksPopup menupopup[placespopup=true] > hbox > .popup-internal-box > .arrowscrollbox-scrollbox  {
-  padding-top: 4px;
 }
 
 
