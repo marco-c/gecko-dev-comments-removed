@@ -64,7 +64,8 @@ class FontInspector {
     
     this.node = null;
     this.nodeComputedStyle = {};
-    this.pageStyle = this.inspector.pageStyle;
+    
+    this.pageStyle = null;
     this.ruleViewTool = this.inspector.getPanel("ruleview");
     this.ruleView = this.ruleViewTool.view;
     this.selectedRule = null;
@@ -743,18 +744,21 @@ class FontInspector {
 
   onNewNode() {
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
+
     
     this.node = null;
+    this.pageStyle = null;
+
     
     const selection = this.inspector && this.inspector.selection;
     if (selection && selection.isConnected()) {
       if (selection.isElementNode()) {
         this.node = selection.nodeFront;
-      }
-
-      if (selection.isTextNode()) {
+      } else if (selection.isTextNode()) {
         this.node = selection.nodeFront.parentNode();
       }
+
+      this.pageStyle = this.node.inspectorFront.pageStyle;
     }
 
     if (this.isPanelVisible()) {
