@@ -479,11 +479,10 @@
       }
 
       
-      let anonid = event.originalTarget.getAttribute("anonid");
       let scrollDir = 0;
-      if (anonid == "scrollbutton-up") {
+      if (event.originalTarget == this.scrollBox._scrollButtonUp) {
         scrollDir = -1;
-      } else if (anonid == "scrollbutton-down") {
+      } else if (event.originalTarget == this.scrollBox._scrollButtonDown) {
         scrollDir = 1;
       }
       if (scrollDir != 0) {
