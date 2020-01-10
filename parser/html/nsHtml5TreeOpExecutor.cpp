@@ -168,21 +168,22 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
   
   DidBuildModelImpl(aTerminated || NS_FAILED(IsBroken()));
 
-  if (!mLayoutStarted) {
-    
-    
+  bool destroying = true;
+  if (mDocShell) {
+    mDocShell->IsBeingDestroyed(&destroying);
+  }
 
-    
-    
-    
-    
-    bool destroying = true;
-    if (mDocShell) {
-      mDocShell->IsBeingDestroyed(&destroying);
-    }
+  if (!destroying) {
+    mDocument->TriggerInitialDocumentTranslation();
 
-    if (!destroying) {
-      mDocument->TriggerInitialDocumentTranslation();
+    if (!mLayoutStarted) {
+      
+      
+
+      
+      
+      
+      
       nsContentSink::StartLayout(false);
     }
   }
