@@ -99,6 +99,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["maxRichResults", 10],
 
   
+  ["megabar", false],
+
+  
   ["oneOffSearches", false],
 
   
