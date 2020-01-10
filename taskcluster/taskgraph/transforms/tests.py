@@ -136,16 +136,11 @@ WINDOWS_WORKER_TYPES = {
       'virtual-with-gpu': 't-win10-64-gpu',
       'hardware': 't-win10-64-hw',
     },
-    'windows10-64-ux': {
+    'windows10-64-ref-hw-2017': {
       'virtual': 't-win10-64',
       'virtual-with-gpu': 't-win10-64-gpu',
-      'hardware': 't-win10-64-ux',
+      'hardware': 't-win10-64-ref-hw',
     },
-    
-    
-    
-    
-    
 }
 
 
@@ -1212,10 +1207,8 @@ def set_worker_type(config, tests):
             
             if test['virtualization'] == 'hardware':
                 
-                if test_platform.startswith('windows10-64-ux'):
-                    win_worker_type_platform = WINDOWS_WORKER_TYPES['windows10-64-ux']
-                
-                
+                if test_platform.startswith('windows10-64-ref-hw-2017'):
+                    win_worker_type_platform = WINDOWS_WORKER_TYPES['windows10-64-ref-hw-2017']
                 elif test_platform.startswith('windows10-aarch64'):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES['windows10-aarch64']
                 else:
