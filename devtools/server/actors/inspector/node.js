@@ -140,6 +140,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       isShadowHost: isShadowHost(this.rawNode),
       isDirectShadowHostChild: isDirectShadowHostChild(this.rawNode),
       pseudoClassLocks: this.writePseudoClassLocks(),
+      mutationBreakpoints: this.walker.getMutationBreakpoints(this),
 
       isDisplayed: this.isDisplayed,
       isInHTMLDocument: this.rawNode.ownerDocument &&
@@ -532,6 +533,16 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       innerWidth: win.innerWidth,
       innerHeight: win.innerHeight,
     };
+  },
+
+  
+
+
+
+
+
+  setMutationBreakpoints(bps) {
+    this.walker.setMutationBreakpoints(this, bps);
   },
 });
 
