@@ -138,12 +138,6 @@ jclass GetClassRef(JNIEnv* aEnv, const char* aClassName);
 
 void DispatchToGeckoPriorityQueue(already_AddRefed<nsIRunnable> aCall);
 
-
-
-
-
-bool IsFennec();
-
 int GetAPIVersion();
 
 pid_t GetUIThreadId();
