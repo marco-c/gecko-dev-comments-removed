@@ -1,0 +1,187 @@
+
+
+
+
+
+
+#ifndef mozilla_GlobalKeyListener_h_
+#define mozilla_GlobalKeyListener_h_
+
+#include "mozilla/EventForwards.h"
+#include "mozilla/layers/KeyboardMap.h"
+#include "nsIDOMEventListener.h"
+#include "nsIWeakReferenceUtils.h"
+
+class nsAtom;
+
+namespace mozilla {
+class EventListenerManager;
+class WidgetKeyboardEvent;
+struct IgnoreModifierState;
+
+namespace layers {
+class KeyboardMap;
+}
+
+namespace dom {
+class Element;
+class EventTarget;
+class KeyboardEvent;
+}  
+
+using namespace dom;
+
+class KeyEventHandler;
+
+
+
+
+
+
+
+
+class GlobalKeyListener : public nsIDOMEventListener {
+ public:
+  explicit GlobalKeyListener(EventTarget* aTarget);
+
+  void InstallKeyboardEventListenersTo(
+      EventListenerManager* aEventListenerManager);
+  void RemoveKeyboardEventListenersFrom(
+      EventListenerManager* aEventListenerManager);
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIDOMEVENTLISTENER
+
+ protected:
+  virtual ~GlobalKeyListener() = default;
+
+  MOZ_CAN_RUN_SCRIPT
+  void WalkHandlers(KeyboardEvent* aKeyEvent);
+
+  
+  MOZ_CAN_RUN_SCRIPT
+  bool WalkHandlersInternal(KeyboardEvent* aKeyEvent, bool aExecute,
+                            bool* aOutReservedForChrome = nullptr);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT
+  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, uint32_t aCharCode,
+                              const IgnoreModifierState& aIgnoreModifierState,
+                              bool aExecute,
+                              bool* aOutReservedForChrome = nullptr);
+
+  
+  MOZ_CAN_RUN_SCRIPT
+  void HandleEventOnCaptureInDefaultEventGroup(KeyboardEvent* aEvent);
+  
+  MOZ_CAN_RUN_SCRIPT
+  void HandleEventOnCaptureInSystemEventGroup(KeyboardEvent* aEvent);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT
+  bool HasHandlerForEvent(KeyboardEvent* aEvent,
+                          bool* aOutReservedForChrome = nullptr);
+
+  
+  
+  bool IsReservedKey(WidgetKeyboardEvent* aKeyEvent, KeyEventHandler* aHandler);
+
+  
+  
+  virtual void EnsureHandlers() = 0;
+
+  virtual bool CanHandle(KeyEventHandler* aHandler, bool aWillExecute) const {
+    return true;
+  }
+
+  virtual bool IsDisabled() const { return false; }
+
+  virtual already_AddRefed<EventTarget> GetHandlerTarget(
+      KeyEventHandler* aHandler) {
+    return do_AddRef(mTarget);
+  }
+
+  EventTarget* mTarget;  
+
+  KeyEventHandler* mHandler;  
+};
+
+
+
+
+
+
+
+class XULKeySetGlobalKeyListener final : public GlobalKeyListener {
+ public:
+  explicit XULKeySetGlobalKeyListener(Element* aElement, EventTarget* aTarget);
+
+  static void AttachKeyHandler(Element* aElementTarget);
+  static void DetachKeyHandler(Element* aElementTarget);
+
+ protected:
+  virtual ~XULKeySetGlobalKeyListener();
+
+  
+  
+  
+  
+  Element* GetElement(bool* aIsDisabled = nullptr) const;
+
+  virtual void EnsureHandlers() override;
+
+  virtual bool CanHandle(KeyEventHandler* aHandler,
+                         bool aWillExecute) const override;
+  virtual bool IsDisabled() const override;
+  virtual already_AddRefed<EventTarget> GetHandlerTarget(
+      KeyEventHandler* aHandler) override;
+
+  
+
+
+
+
+
+
+
+
+  bool GetElementForHandler(KeyEventHandler* aHandler,
+                            Element** aElementForHandler) const;
+
+  
+
+
+
+  bool IsExecutableElement(Element* aElement) const;
+
+  
+  nsWeakPtr mWeakPtrForElement;
+};
+
+
+
+
+
+
+
+class RootWindowGlobalKeyListener final : public GlobalKeyListener {
+ public:
+  explicit RootWindowGlobalKeyListener(EventTarget* aTarget);
+
+  static void AttachKeyHandler(EventTarget* aTarget);
+
+  static layers::KeyboardMap CollectKeyboardShortcuts();
+
+ protected:
+  
+  static bool IsHTMLEditorFocused();
+
+  virtual void EnsureHandlers() override;
+};
+
+}  
+
+#endif

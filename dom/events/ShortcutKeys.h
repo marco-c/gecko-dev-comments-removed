@@ -2,16 +2,15 @@
 
 
 
-#ifndef mozilla_dom_ShortcutKeys_h
-#define mozilla_dom_ShortcutKeys_h
+#ifndef mozilla_ShortcutKeys_h
+#define mozilla_ShortcutKeys_h
 
 #include "nsIObserver.h"
 
-class nsXBLPrototypeHandler;
 class nsAtom;
 
 namespace mozilla {
-
+class KeyEventHandler;
 class WidgetKeyboardEvent;
 
 typedef struct {
@@ -35,7 +34,7 @@ class ShortcutKeys : public nsIObserver {
   NS_DECL_NSIOBSERVER
 
   
-  static nsXBLPrototypeHandler* GetHandlers(HandlerType aType);
+  static KeyEventHandler* GetHandlers(HandlerType aType);
 
   
   static nsAtom* ConvertEventToDOMEventType(
@@ -46,7 +45,7 @@ class ShortcutKeys : public nsIObserver {
   virtual ~ShortcutKeys();
 
   
-  nsXBLPrototypeHandler* EnsureHandlers(HandlerType aType);
+  KeyEventHandler* EnsureHandlers(HandlerType aType);
 
   
   static StaticRefPtr<ShortcutKeys> sInstance;
@@ -58,10 +57,10 @@ class ShortcutKeys : public nsIObserver {
   static ShortcutKeyData sTextAreaHandlers[];
 
   
-  nsXBLPrototypeHandler* mBrowserHandlers;
-  nsXBLPrototypeHandler* mEditorHandlers;
-  nsXBLPrototypeHandler* mInputHandlers;
-  nsXBLPrototypeHandler* mTextAreaHandlers;
+  KeyEventHandler* mBrowserHandlers;
+  KeyEventHandler* mEditorHandlers;
+  KeyEventHandler* mInputHandlers;
+  KeyEventHandler* mTextAreaHandlers;
 };
 
 }  
