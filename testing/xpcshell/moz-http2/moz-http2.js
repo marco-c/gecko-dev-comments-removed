@@ -11,10 +11,18 @@ if (process.env.NODE_HTTP2_ROOT) {
 }
 var http2 = require(node_http2_root);
 var fs = require('fs');
+var net = require('net');
 var url = require('url');
 var crypto = require('crypto');
 const dnsPacket = require(`${node_http2_root}/../dns-packet`);
 const ip = require(`${node_http2_root}/../node-ip`);
+
+let http2_internal = null;
+try {
+  http2_internal = require('http2');
+} catch (_) {
+  
+}
 
 
 var compression_module = node_http2_root + "/lib/protocol/compressor";
@@ -76,6 +84,7 @@ function getHttpContent(path) {
   var content = '<!doctype html>' +
                 '<html>' +
                 '<head><title>HOORAY!</title></head>' +
+                
                 '<body>You Win! (by requesting' + path + ')</body>' +
                 '</html>';
   return content;
@@ -1111,6 +1120,12 @@ function handleRequest(req, res) {
     return;
   }
 
+  else if (u.pathname === "/proxy-session-counter") {
+    
+    res.end(proxy_session_count.toString());
+    return;
+  }
+
   res.setHeader('Content-Type', 'text/html');
   if (req.httpVersionMajor != 2) {
     res.setHeader('Connection', 'close');
@@ -1141,18 +1156,91 @@ server.on('connection', function(socket) {
   });
 });
 
+
+var proxy = http2_internal ? http2_internal.createSecureServer(options) : null;
+var proxy_session_count = 0;
+
+if (http2_internal) {
+  proxy.on('session', () => {
+    
+    ++proxy_session_count;
+  });
+
+  proxy.on('stream', (stream, headers) => {
+    if (headers[':method'] !== 'CONNECT') {
+      
+      stream.close(http2.constants.NGHTTP2_REFUSED_STREAM);
+      return;
+    }
+
+    const target = headers[':authority'];
+
+    const authorization_token = headers['proxy-authorization'];
+    if ('authorization-token' != authorization_token || target == '407.example.com:443') {
+      stream.respond({ ':status': 407 });
+      
+      stream.end();
+      return;
+    }
+    if (target == '404.example.com:443') {
+      
+      stream.respond({ ':status': 404 });
+      stream.end();
+      return;
+    }
+    if (target == '502.example.com:443') {
+      
+      stream.respond({ ':status': 502 });
+      stream.end();
+      return;
+    }
+    if (target == '504.example.com:443') {
+      
+      stream.respond({ ':status': 504 });
+      stream.end();
+      return;
+    }
+
+    const socket = net.connect(serverPort, '127.0.0.1', () => {
+      try {
+        stream.respond({ ':status': 200 });
+        socket.pipe(stream);
+        stream.pipe(socket);
+      } catch (exception) {
+        stream.close(http2.constants.NGHTTP2_STREAM_CLOSED);
+      }
+    });
+    socket.on('error', (error) => {
+      throw `Unxpected error when conneting the HTTP/2 server from the HTTP/2 proxy during CONNECT handling: '${error}'`;
+    });
+  });
+}
+
 var serverPort;
-function listenok() {
-  serverPort = server._server.address().port;
-  console.log('HTTP2 server listening on port ' + serverPort);
-}
-var portSelection = 0;
-var envport = process.env.MOZHTTP2_PORT;
-if (envport !== undefined) {
-  try {
-    portSelection = parseInt(envport, 10);
-  } catch (e) {
-    portSelection = -1;
+
+const listen = (server, envport) => {
+  if (!server) {
+    return Promise.resolve(0);
   }
+
+  let portSelection = 0;
+  if (envport !== undefined) {
+    try {
+      portSelection = parseInt(envport, 10);
+    } catch (e) {
+      portSelection = -1;
+    }
+  }
+  return new Promise(resolve => {
+    server.listen(portSelection, "0.0.0.0", 200, () => {
+      resolve(server.address().port);
+    });
+  });
 }
-server.listen(portSelection, "0.0.0.0", 200, listenok);
+
+Promise.all([
+  listen(server, process.env.MOZHTTP2_PORT).then(port => serverPort = port),
+  listen(proxy, process.env.MOZHTTP2_PROXY_PORT)
+]).then(([serverPort, proxyPort]) => {
+  console.log(`HTTP2 server listening on ports ${serverPort},${proxyPort}`);
+});

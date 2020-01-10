@@ -1954,16 +1954,18 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
       rv = NS_ERROR_CONNECTION_REFUSED;
       break;
     case 403:  
-    case 407:  
     case 501:  
       
       rv = NS_ERROR_PROXY_CONNECTION_REFUSED;
       break;
-    
+    case 407:  
+      rv = NS_ERROR_PROXY_AUTHENTICATION_FAILED;
+      break;
+      
     case 404:  
-    
-    
-    
+               
+               
+               
     case 400:  
     case 500:  
       
@@ -1972,8 +1974,10 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
       rv = NS_ERROR_UNKNOWN_HOST;
       break;
     case 502:  
-    
+      rv = NS_ERROR_PROXY_BAD_GATEWAY;
+      break;
     case 503:  
+      
       
 
 
@@ -1986,7 +1990,7 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
     case 504:  
       
       
-      rv = NS_ERROR_NET_TIMEOUT;
+      rv = NS_ERROR_PROXY_GATEWAY_TIMEOUT;
       break;
     
     default:

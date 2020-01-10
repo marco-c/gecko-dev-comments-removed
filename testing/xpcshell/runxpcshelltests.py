@@ -1131,9 +1131,11 @@ class XPCShellTests(object):
                 
                 msg = process.stdout.readline()
                 if 'server listening' in msg:
-                    searchObj = re.search(r'HTTP2 server listening on port (.*)', msg, 0)
+                    searchObj = re.search(r'HTTP2 server listening on ports ([0-9]+),([0-9]+)',
+                                          msg, 0)
                     if searchObj:
                         self.env["MOZHTTP2_PORT"] = searchObj.group(1)
+                        self.env["MOZHTTP2_PROXY_PORT"] = searchObj.group(2)
             except OSError as e:
                 
                 self.log.error('Could not run %s server: %s' % (name, str(e)))
