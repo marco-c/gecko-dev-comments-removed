@@ -255,7 +255,7 @@ pub enum KeywordSize {
     XXLarge,
     
     
-    #[css(skip)]
+    #[css(keyword = "xxx-large")]
     XXXLarge,
 }
 
