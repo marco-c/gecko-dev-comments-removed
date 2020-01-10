@@ -861,8 +861,31 @@ class Dumper_Mac(Dumper):
         
         
         
+        
+        
+        
         if 'warning: no debug symbols in' in dsymerr:
             print(dsymerr, file=sys.stderr)
+            return False
+
+        contents_dir = os.path.join(dsymbundle, 'Contents', 'Resources', 'DWARF')
+        if not os.path.exists(contents_dir):
+            print("No DWARF information in .dSYM bundle %s" % (dsymbundle,),
+                  file=sys.stderr)
+            return False
+
+        files = os.listdir(contents_dir)
+        if len(files) != 1:
+            print("Unexpected files in .dSYM bundle %s" % (files,),
+                  file=sys.stderr)
+            return False
+
+        otool_out = subprocess.check_output([buildconfig.substs['OTOOL'],
+                                             '-l',
+                                             os.path.join(contents_dir, files[0])])
+        if 'sectname __debug_info' not in otool_out:
+            print("No symbols in .dSYM bundle %s" % (dsymbundle,),
+                  file=sys.stderr)
             return False
 
         elapsed = time.time() - t_start
