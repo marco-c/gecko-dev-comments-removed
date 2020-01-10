@@ -269,8 +269,14 @@ StyleSheetEditor.prototype = {
     }).then((source) => {
       const ruleCount = this.styleSheet.ruleCount;
       if (!this.styleSheet.isOriginalSource) {
-        source = prettifyCSS(source, ruleCount);
+        const { result, mappings } = prettifyCSS(source, ruleCount);
+        source = result;
+        
+        
+        
+        this._mappings = mappings;
       }
+
       this._state.text = source;
       return source;
     });
@@ -300,6 +306,42 @@ StyleSheetEditor.prototype = {
         throw e;
       }
     });
+  },
+
+  
+
+
+
+
+
+  setCursor(line, column) {
+    const position = this.translateCursorPosition(line, column);
+    this.sourceEditor.setCursor({ line: position.line, ch: position.column });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  translateCursorPosition(line, column) {
+    if (Array.isArray(this._mappings)) {
+      for (const mapping of this._mappings) {
+        if (mapping.original.line === line && mapping.original.column === column) {
+          line = mapping.generated.line;
+          column = mapping.generated.column;
+          continue;
+        }
+      }
+    }
+
+    return { line, column };
   },
 
   
@@ -526,6 +568,11 @@ StyleSheetEditor.prototype = {
 
     this._isUpdating = true;
     this.styleSheet.update(this._state.text, this.transitionsEnabled)
+      .then(() => {
+        
+        
+        this._mappings = null;
+      })
       .catch(console.error);
   },
 

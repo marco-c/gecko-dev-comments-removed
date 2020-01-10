@@ -181,6 +181,26 @@ function getLineCountInComments(text) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function prettifyCSS(text, ruleCount) {
   if (prettifyCSS.LINE_SEPARATOR == null) {
     const os = Services.appinfo.OS;
@@ -200,7 +220,7 @@ function prettifyCSS(text, ruleCount) {
   
   const lineCount = text.split("\n").length - 1 - getLineCountInComments(text);
   if (ruleCount !== null && lineCount >= ruleCount) {
-    return originalText;
+    return { result: originalText, mappings: [] };
   }
 
   
@@ -219,6 +239,12 @@ function prettifyCSS(text, ruleCount) {
   let indent = "";
   let indentLevel = 0;
   const tokens = getCSSLexer(text);
+  
+  const mappings = [];
+  
+  let lineOffset = 0;
+  let columnOffset = 0;
+  let indentOffset = 0;
   let result = "";
   let pushbackToken = undefined;
 
@@ -284,6 +310,21 @@ function prettifyCSS(text, ruleCount) {
         break;
       }
 
+      const line = tokens.lineNumber;
+      const column = tokens.columnNumber;
+      mappings.push({
+        original: {
+          line,
+          column,
+        },
+        generated: {
+          line: lineOffset + line,
+          column: columnOffset,
+        },
+      });
+      
+      columnOffset += token.endOffset - token.startOffset;
+
       if (token.tokenType === "at") {
         isInAtRuleDefinition = true;
       }
@@ -346,6 +387,7 @@ function prettifyCSS(text, ruleCount) {
         result = result + indent + text.substring(startIndex, endIndex);
         if (isCloseBrace) {
           result += prettifyCSS.LINE_SEPARATOR;
+          lineOffset = lineOffset + 1;
         }
       }
     }
@@ -361,8 +403,10 @@ function prettifyCSS(text, ruleCount) {
 
       if (tabPrefs.indentWithTabs) {
         indent = TAB_CHARS.repeat(indentLevel);
+        indentOffset = 4 * indentLevel;
       } else {
         indent = SPACE_CHARS.repeat(indentLevel);
+        indentOffset = 1 * indentLevel;
       }
       result = result + indent + "}";
     }
@@ -374,12 +418,15 @@ function prettifyCSS(text, ruleCount) {
     if (token.tokenType === "symbol" && token.text === "{") {
       if (!lastWasWS) {
         result += " ";
+        columnOffset++;
       }
       result += "{";
       if (tabPrefs.indentWithTabs) {
         indent = TAB_CHARS.repeat(++indentLevel);
+        indentOffset = 4 * indentLevel;
       } else {
         indent = SPACE_CHARS.repeat(++indentLevel);
+        indentOffset = 1 * indentLevel;
       }
     }
 
@@ -392,11 +439,15 @@ function prettifyCSS(text, ruleCount) {
     
     if (pushbackToken && token && token.tokenType === "whitespace" &&
         /\n/g.test(text.substring(token.startOffset, token.endOffset))) {
-      return originalText;
+      return { result: originalText, mappings: [] };
     }
 
     
     result = result + prettifyCSS.LINE_SEPARATOR;
+
+    
+    lineOffset = lineOffset + 1;
+    columnOffset = 0 + indentOffset;
 
     
     if (!pushbackToken) {
@@ -404,7 +455,7 @@ function prettifyCSS(text, ruleCount) {
     }
   }
 
-  return result;
+  return { result, mappings };
 }
 
 
