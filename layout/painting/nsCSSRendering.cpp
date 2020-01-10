@@ -3766,7 +3766,9 @@ static void GetPositioning(
   }
 
   
-  Float linePadding = 0.75f;
+  
+  Float linePadding =
+      aParams.lineSize.height > 1 ? 0.25f * aParams.lineSize.height : 0;
   aBounds[0] = upperLine - linePadding;
   aBounds[1] = lowerLine + linePadding;
 }
