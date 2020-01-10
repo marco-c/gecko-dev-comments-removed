@@ -355,29 +355,59 @@ nsresult TLSFilterTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
   return NS_SUCCEEDED(rv) ? mReadSegmentReturnValue : rv;
 }
 
-nsresult TLSFilterTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
-                                             uint32_t aCount,
-                                             uint32_t* outCountWritten) {
+nsresult TLSFilterTransaction::WriteSegmentsAgain(nsAHttpSegmentWriter* aWriter,
+                                                  uint32_t aCount,
+                                                  uint32_t* outCountWritten,
+                                                  bool* again) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("TLSFilterTransaction::WriteSegments %p max=%d\n", this, aCount));
+  LOG(("TLSFilterTransaction::WriteSegmentsAgain %p max=%d\n", this, aCount));
 
   if (!mTransaction) {
     return mCloseReason;
   }
 
+  bool againBeforeWriteSegmentsCall = *again;
+
   mSegmentWriter = aWriter;
-  nsresult rv = mTransaction->WriteSegments(this, aCount, outCountWritten);
-  if (NS_SUCCEEDED(rv) && NS_FAILED(mFilterReadCode) && !(*outCountWritten)) {
-    
-    rv = mFilterReadCode;
-    if (Connection() && (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK)) {
-      Unused << Connection()->ResumeRecv();
+  nsresult rv =
+      mTransaction->WriteSegmentsAgain(this, aCount, outCountWritten, again);
+  if (NS_SUCCEEDED(rv) && !(*outCountWritten)) {
+    if (NS_FAILED(mFilterReadCode)) {
+      
+      rv = mFilterReadCode;
+      if (Connection() && (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK)) {
+        Unused << Connection()->ResumeRecv();
+      }
+    }
+    if (againBeforeWriteSegmentsCall && !*again) {
+      LOG(
+          ("TLSFilterTransaction %p called trans->WriteSegments which dropped "
+           "the 'again' flag",
+           this));
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Connection()) {
+        Unused << Connection()->ForceRecv();
+      }
     }
   }
   LOG(("TLSFilterTransaction %p called trans->WriteSegments rv=%" PRIx32
        " %d\n",
        this, static_cast<uint32_t>(rv), *outCountWritten));
   return rv;
+}
+
+nsresult TLSFilterTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
+                                             uint32_t aCount,
+                                             uint32_t* outCountWritten) {
+  bool again = false;
+  return WriteSegmentsAgain(aWriter, aCount, outCountWritten, &again);
 }
 
 nsresult TLSFilterTransaction::GetTransactionSecurityInfo(
