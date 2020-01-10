@@ -7780,6 +7780,91 @@ bool BytecodeEmitter::emitConditionalExpression(
   return true;
 }
 
+
+
+
+
+
+
+void BytecodeEmitter::isPropertyListObjLiteralCompatible(ListNode* obj,
+                                                         PropListType type,
+                                                         bool* withValues,
+                                                         bool* withoutValues) {
+  if (type == ClassBody) {
+    *withValues = false;
+    *withoutValues = false;
+    return;
+  }
+
+  bool keysOK = true;
+  bool valuesOK = true;
+  int propCount = 0;
+
+  for (ParseNode* propdef : obj->contents()) {
+    if (!propdef->is<BinaryNode>()) {
+      keysOK = false;
+      break;
+    }
+    propCount++;
+
+    BinaryNode* prop = &propdef->as<BinaryNode>();
+    ParseNode* key = prop->left();
+    ParseNode* value = prop->right();
+
+    
+    if (key->isKind(ParseNodeKind::ComputedName)) {
+      keysOK = false;
+      break;
+    }
+    
+    if (key->isKind(ParseNodeKind::NumberExpr)) {
+      double numValue = key->as<NumericLiteral>().value();
+      int32_t i = 0;
+      if (!NumberIsInt32(numValue, &i)) {
+        keysOK = false;
+        break;
+      }
+      if (!ObjLiteralWriter::arrayIndexInRange(i)) {
+        keysOK = false;
+        break;
+      }
+    }
+
+    AccessorType accessorType =
+        prop->is<PropertyDefinition>()
+            ? prop->as<PropertyDefinition>().accessorType()
+            : AccessorType::None;
+    if (accessorType != AccessorType::None) {
+      keysOK = false;
+      break;
+    }
+
+    if (!isRHSObjLiteralCompatible(value)) {
+      valuesOK = false;
+    }
+  }
+
+  if (propCount >= PropertyTree::MAX_HEIGHT) {
+    
+    keysOK = false;
+  }
+
+  *withValues = keysOK && valuesOK;
+  *withoutValues = keysOK;
+}
+
+bool BytecodeEmitter::isArrayObjLiteralCompatible(ParseNode* arrayHead) {
+  for (ParseNode* elem = arrayHead; elem; elem = elem->pn_next) {
+    if (elem->isKind(ParseNodeKind::Spread)) {
+      return false;
+    }
+    if (!isRHSObjLiteralCompatible(elem)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
                                        PropListType type) {
   
@@ -8088,6 +8173,159 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
   return true;
 }
 
+bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
+                                                 PropListType type,
+                                                 bool isSingletonContext,
+                                                 bool noValuesMode) {
+#ifdef DEBUG
+  bool withValues = false, withoutValues = false;
+  isPropertyListObjLiteralCompatible(obj, type, &withValues, &withoutValues);
+  MOZ_ASSERT_IF(noValuesMode, withoutValues);
+  MOZ_ASSERT_IF(!noValuesMode, withValues);
+#endif
+
+  int32_t stackDepth = bytecodeSection().stackDepth();
+
+  ObjLiteralCreationData data(cx);
+  ObjLiteralFlags flags = (isSingletonContext ? OBJ_LITERAL_SINGLETON : 0) |
+                          (noValuesMode ? OBJ_LITERAL_TEMPLATE : 0);
+  data.writer().beginObject(flags);
+
+  for (ParseNode* propdef : obj->contents()) {
+    MOZ_ASSERT(propdef->is<BinaryNode>());
+    BinaryNode* prop = &propdef->as<BinaryNode>();
+    ParseNode* key = prop->left();
+    MOZ_ASSERT(key->is<NameNode>() || key->is<NumericLiteral>());
+    ParseNode* value = noValuesMode ? nullptr : prop->right();
+
+    if (key->is<NameNode>()) {
+      uint32_t propNameIndex = 0;
+      if (!data.addAtom(key->as<NameNode>().atom(), &propNameIndex)) {
+        return false;
+      }
+      data.writer().setPropName(propNameIndex);
+    } else {
+      MOZ_ASSERT(key->is<NumericLiteral>());
+      double numValue = key->as<NumericLiteral>().value();
+      int32_t i = 0;
+      DebugOnly<bool> numIsInt =
+          NumberIsInt32(numValue, &i);  
+      MOZ_ASSERT(numIsInt);
+      MOZ_ASSERT(
+          ObjLiteralWriter::arrayIndexInRange(i));  
+      data.writer().setPropIndex(i);
+    }
+
+    if (!emitObjLiteralValue(&data, value)) {
+      return false;
+    }
+  }
+
+  uint32_t gcThingIndex = 0;
+  if (!perScriptData().gcThingList().append(std::move(data), &gcThingIndex)) {
+    return false;
+  }
+
+  bool success = noValuesMode ? emitIndex32(JSOP_NEWOBJECT, gcThingIndex)
+                              : emitIndex32(JSOP_OBJECT, gcThingIndex);
+  if (!success) {
+    return false;
+  }
+
+  bytecodeSection().setStackDepth(stackDepth + 1);
+  return true;
+}
+
+bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead,
+                                          bool isSingleton) {
+  int32_t stackDepth = bytecodeSection().stackDepth();
+
+  ObjLiteralCreationData data(cx);
+  data.writer().beginObject(OBJ_LITERAL_ARRAY |
+                            (isSingleton ? OBJ_LITERAL_SINGLETON : 0));
+
+  uint32_t index = 0;
+  for (ParseNode* elem = arrayHead; elem; elem = elem->pn_next, index++) {
+    data.writer().setPropIndex(index);
+    if (!emitObjLiteralValue(&data, elem)) {
+      return false;
+    }
+  }
+
+  uint32_t gcThingIndex = 0;
+  if (!perScriptData().gcThingList().append(std::move(data), &gcThingIndex)) {
+    return false;
+  }
+
+  JSOp op = isSingleton ? JSOP_OBJECT : JSOP_NEWARRAY_COPYONWRITE;
+  if (!emitIndex32(op, gcThingIndex)) {
+    return false;
+  }
+
+  bytecodeSection().setStackDepth(stackDepth + 1);
+  return true;
+}
+
+bool BytecodeEmitter::isRHSObjLiteralCompatible(ParseNode* value) {
+  return value->isKind(ParseNodeKind::NumberExpr) ||
+         value->isKind(ParseNodeKind::TrueExpr) ||
+         value->isKind(ParseNodeKind::FalseExpr) ||
+         value->isKind(ParseNodeKind::NullExpr) ||
+         value->isKind(ParseNodeKind::RawUndefinedExpr) ||
+         value->isKind(ParseNodeKind::StringExpr) ||
+         value->isKind(ParseNodeKind::TemplateStringExpr);
+}
+
+bool BytecodeEmitter::emitObjLiteralValue(ObjLiteralCreationData* data,
+                                          ParseNode* value) {
+  if (!value) {
+    
+    if (!data->writer().propWithUndefinedValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::NumberExpr)) {
+    double numValue = value->as<NumericLiteral>().value();
+    int32_t i = 0;
+    js::Value v;
+    if (NumberIsInt32(numValue, &i)) {
+      v.setInt32(i);
+    } else {
+      v.setDouble(numValue);
+    }
+    if (!data->writer().propWithConstNumericValue(v)) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::TrueExpr)) {
+    if (!data->writer().propWithTrueValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::FalseExpr)) {
+    if (!data->writer().propWithFalseValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::NullExpr)) {
+    if (!data->writer().propWithNullValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::RawUndefinedExpr)) {
+    if (!data->writer().propWithUndefinedValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::StringExpr) ||
+             value->isKind(ParseNodeKind::TemplateStringExpr)) {
+    uint32_t valueAtomIndex = 0;
+    if (!data->addAtom(value->as<NameNode>().atom(), &valueAtomIndex)) {
+      return false;
+    }
+    if (!data->writer().propWithAtomValue(valueAtomIndex)) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
 FieldInitializers BytecodeEmitter::setupFieldInitializers(
     ListNode* classMembers) {
   size_t numFields = 0;
@@ -8102,6 +8340,7 @@ FieldInitializers BytecodeEmitter::setupFieldInitializers(
   }
   return FieldInitializers(numFields);
 }
+
 
 
 
@@ -8301,22 +8540,89 @@ bool BytecodeEmitter::emitInitializeInstanceFields() {
 
 
 MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode) {
-  if (!objNode->hasNonConstInitializer() && objNode->head() &&
-      checkSingletonContext()) {
-    return emitSingletonInitialiser(objNode);
-  }
+  bool isSingletonContext = !objNode->hasNonConstInitializer() &&
+                            objNode->head() && checkSingletonContext();
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
+  bool okWithValues = false, okWithoutValues = false;
+  isPropertyListObjLiteralCompatible(objNode, ObjectLiteral, &okWithValues,
+                                     &okWithoutValues);
+  bool isObjLiteralWithValues = okWithValues && isSingletonContext;
+  bool isObjLiteralTemplate = !isObjLiteralWithValues && okWithoutValues;
+
+  
+  
   ObjectEmitter oe(this);
-  if (!oe.emitObject(objNode->count())) {
+  if (isObjLiteralWithValues || isObjLiteralTemplate) {
     
-    return false;
-  }
-  if (!emitPropertyList(objNode, oe, ObjectLiteral)) {
     
-    return false;
+    
+    
+    
+    if (!emitPropertyListObjLiteral(
+            objNode, ObjectLiteral,
+             isObjLiteralWithValues,
+             !isObjLiteralWithValues)) {
+      
+      return false;
+    }
+    
+    
+    
+    if (!oe.emitObjectWithTemplateOnStack()) {
+      
+      return false;
+    }
+    if (isObjLiteralTemplate) {
+      
+      
+      if (!emitPropertyList(objNode, oe, ObjectLiteral)) {
+        
+        return false;
+      }
+    }
+  } else {
+    
+    if (!oe.emitObject(objNode->count())) {
+      
+      return false;
+    }
+    if (!emitPropertyList(objNode, oe, ObjectLiteral)) {
+      
+      return false;
+    }
   }
+
   if (!oe.emitEnd()) {
     
     return false;
@@ -8352,42 +8658,16 @@ bool BytecodeEmitter::replaceNewInitWithNewObject(JSObject* obj,
 
 bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
   if (!array->hasNonConstInitializer() && array->head()) {
-    if (checkSingletonContext()) {
-      
-      return emitSingletonInitialiser(array);
-    }
-
     
     
     
     
     static const size_t MinElementsForCopyOnWrite = 5;
     if (emitterMode != BytecodeEmitter::SelfHosting &&
-        array->count() >= MinElementsForCopyOnWrite) {
-      RootedValue value(cx);
-      if (!array->getConstantValue(cx, ParseNode::ForCopyOnWriteArray,
-                                   &value)) {
-        return false;
-      }
-      if (!value.isMagic(JS_GENERIC_MAGIC)) {
-        
-        
-        
-        
-        
-        
-        
-        JSObject* obj = &value.toObject();
-        MOZ_ASSERT(obj->is<ArrayObject>() &&
-                   obj->as<ArrayObject>().denseElementsAreCopyOnWrite());
-
-        ObjectBox* objbox = parser->newObjectBox(obj);
-        if (!objbox) {
-          return false;
-        }
-
-        return emitObjectOp(objbox, JSOP_NEWARRAY_COPYONWRITE);
-      }
+        array->count() >= MinElementsForCopyOnWrite &&
+        isArrayObjLiteralCompatible(array->head())) {
+      bool isSingleton = checkSingletonContext();
+      return emitObjLiteralArray(array->head(), isSingleton);
     }
   }
 

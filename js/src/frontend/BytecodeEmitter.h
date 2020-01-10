@@ -11,8 +11,9 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"  
-#include "mozilla/Span.h"   
+#include "mozilla/Maybe.h"   
+#include "mozilla/Span.h"    
+#include "mozilla/Vector.h"  
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -482,8 +483,28 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   MOZ_MUST_USE bool emitHoistedFunctionsInList(ListNode* stmtList);
 
+  
+  
+  
+  void isPropertyListObjLiteralCompatible(ListNode* obj, PropListType type,
+                                          bool* withValues,
+                                          bool* withoutValues);
+  bool isArrayObjLiteralCompatible(ParseNode* arrayHead);
+
   MOZ_MUST_USE bool emitPropertyList(ListNode* obj, PropertyEmitter& pe,
                                      PropListType type);
+
+  MOZ_MUST_USE bool emitPropertyListObjLiteral(ListNode* obj, PropListType type,
+                                               bool isSingletonContext,
+                                               bool noValuesMode);
+
+  MOZ_MUST_USE bool emitObjLiteralArray(ParseNode* arrayHead, bool isSingleton);
+
+  
+  MOZ_MUST_USE bool isRHSObjLiteralCompatible(ParseNode* value);
+
+  MOZ_MUST_USE bool emitObjLiteralValue(ObjLiteralCreationData* data,
+                                        ParseNode* value);
 
   FieldInitializers setupFieldInitializers(ListNode* classMembers);
   MOZ_MUST_USE bool emitCreateFieldKeys(ListNode* obj);
