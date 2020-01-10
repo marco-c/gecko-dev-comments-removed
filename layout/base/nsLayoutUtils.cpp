@@ -9676,18 +9676,50 @@ CSSPoint nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame) {
     return delta;
   }
   nsIFrame* frame = aFrame;
-  nsCOMPtr<nsIContent> content = frame->GetContent();
   nsCOMPtr<nsIContent> lastContent;
+  bool seenRcdRsf = false;
+
+  
+  auto applyCallbackTransformForFrame = [&](nsIFrame* frame) {
+    if (frame) {
+      nsCOMPtr<nsIContent> content = frame->GetContent();
+      if (content && (content != lastContent)) {
+        void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
+        if (property) {
+          delta += *static_cast<CSSPoint*>(property);
+        }
+      }
+      lastContent = content;
+    }
+  };
+
   while (frame) {
-    if (content && (content != lastContent)) {
-      void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
-      if (property) {
-        delta += *static_cast<CSSPoint*>(property);
+    
+    applyCallbackTransformForFrame(frame);
+
+    
+    nsPresContext* pc = frame->PresContext();
+    if (nsIScrollableFrame* scrollFrame = do_QueryFrame(frame)) {
+      if (scrollFrame->IsRootScrollFrameOfDocument() &&
+          pc->IsRootContentDocument()) {
+        seenRcdRsf = true;
       }
     }
+
+    
+    
+    
+    
+    
+    ViewportFrame* viewportFrame = do_QueryFrame(frame);
+    if (viewportFrame) {
+      if (pc->IsRootContentDocument() && !seenRcdRsf) {
+        applyCallbackTransformForFrame(pc->PresShell()->GetRootScrollFrame());
+      }
+    }
+
+    
     frame = GetCrossDocParentFrame(frame);
-    lastContent = content;
-    content = frame ? frame->GetContent() : nullptr;
   }
   return delta;
 }
