@@ -18,19 +18,19 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "ContentProcessConnector",
+  "connectToContentProcess",
   "devtools/server/connectors/content-process-connector",
   true
 );
 loader.lazyRequireGetter(
   this,
-  "FrameConnector",
+  "connectToFrame",
   "devtools/server/connectors/frame-connector",
   true
 );
 loader.lazyRequireGetter(
   this,
-  "WorkerConnector",
+  "connectToWorker",
   "devtools/server/connectors/worker-connector",
   true
 );
@@ -353,21 +353,21 @@ var DebuggerServer = {
 
 
   connectToContentProcess(connection, mm, onDestroy) {
-    return ContentProcessConnector.startServer(connection, mm, onDestroy);
+    return connectToContentProcess(connection, mm, onDestroy);
   },
 
   
 
 
   connectToWorker(connection, dbg, id, options) {
-    return WorkerConnector.startServer(connection, dbg, id, options);
+    return connectToWorker(connection, dbg, id, options);
   },
 
   
 
 
   connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
-    return FrameConnector.startServer(connection, frame, onDestroy, {
+    return connectToFrame(connection, frame, onDestroy, {
       addonId,
     });
   },

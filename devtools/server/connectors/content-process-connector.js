@@ -20,95 +20,93 @@ const CONTENT_PROCESS_SERVER_STARTUP_SCRIPT =
 
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
-const ContentProcessConnector = {
-  
 
 
 
-  startServer(connection, mm, onDestroy) {
-    return new Promise(resolve => {
-      const prefix = connection.allocID("content-process");
-      let actor, childTransport;
 
-      mm.addMessageListener("debug:content-process-actor", function listener(
-        msg
-      ) {
-        mm.removeMessageListener("debug:content-process-actor", listener);
+function connectToContentProcess(connection, mm, onDestroy) {
+  return new Promise(resolve => {
+    const prefix = connection.allocID("content-process");
+    let actor, childTransport;
 
-        
-        childTransport = new ChildDebuggerTransport(mm, prefix);
-        childTransport.hooks = {
-          onPacket: connection.send.bind(connection),
-          onClosed() {},
-        };
-        childTransport.ready();
-
-        connection.setForwarding(prefix, childTransport);
-
-        dumpn(`Start forwarding for process with prefix ${prefix}`);
-
-        actor = msg.json.actor;
-
-        resolve(actor);
-      });
+    mm.addMessageListener("debug:content-process-actor", function listener(
+      msg
+    ) {
+      mm.removeMessageListener("debug:content-process-actor", listener);
 
       
-      const isContentProcessServerStartupScripLoaded = Services.ppmm
-        .getDelayedProcessScripts()
-        .some(([uri]) => uri === CONTENT_PROCESS_SERVER_STARTUP_SCRIPT);
-      if (!isContentProcessServerStartupScripLoaded) {
-        
-        Services.ppmm.loadProcessScript(
-          CONTENT_PROCESS_SERVER_STARTUP_SCRIPT,
-          true
-        );
-      }
+      childTransport = new ChildDebuggerTransport(mm, prefix);
+      childTransport.hooks = {
+        onPacket: connection.send.bind(connection),
+        onClosed() {},
+      };
+      childTransport.ready();
 
-      
-      
-      mm.sendAsyncMessage("debug:init-content-server", {
-        prefix: prefix,
-      });
+      connection.setForwarding(prefix, childTransport);
 
-      function onClose() {
-        Services.obs.removeObserver(
-          onMessageManagerClose,
-          "message-manager-close"
-        );
-        EventEmitter.off(connection, "closed", onClose);
-        if (childTransport) {
-          
-          
-          childTransport.close();
-          childTransport = null;
-          connection.cancelForwarding(prefix);
+      dumpn(`Start forwarding for process with prefix ${prefix}`);
 
-          
-          try {
-            mm.sendAsyncMessage("debug:content-process-destroy");
-          } catch (e) {
-            
-          }
-        }
+      actor = msg.json.actor;
 
-        if (onDestroy) {
-          onDestroy(mm);
-        }
-      }
-
-      const onMessageManagerClose = DevToolsUtils.makeInfallible(
-        (subject, topic, data) => {
-          if (subject == mm) {
-            onClose();
-            connection.send({ from: actor.actor, type: "tabDetached" });
-          }
-        }
-      );
-      Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
-
-      EventEmitter.on(connection, "closed", onClose);
+      resolve(actor);
     });
-  },
-};
 
-exports.ContentProcessConnector = ContentProcessConnector;
+    
+    const isContentProcessServerStartupScripLoaded = Services.ppmm
+      .getDelayedProcessScripts()
+      .some(([uri]) => uri === CONTENT_PROCESS_SERVER_STARTUP_SCRIPT);
+    if (!isContentProcessServerStartupScripLoaded) {
+      
+      Services.ppmm.loadProcessScript(
+        CONTENT_PROCESS_SERVER_STARTUP_SCRIPT,
+        true
+      );
+    }
+
+    
+    
+    mm.sendAsyncMessage("debug:init-content-server", {
+      prefix: prefix,
+    });
+
+    function onClose() {
+      Services.obs.removeObserver(
+        onMessageManagerClose,
+        "message-manager-close"
+      );
+      EventEmitter.off(connection, "closed", onClose);
+      if (childTransport) {
+        
+        
+        childTransport.close();
+        childTransport = null;
+        connection.cancelForwarding(prefix);
+
+        
+        try {
+          mm.sendAsyncMessage("debug:content-process-destroy");
+        } catch (e) {
+          
+        }
+      }
+
+      if (onDestroy) {
+        onDestroy(mm);
+      }
+    }
+
+    const onMessageManagerClose = DevToolsUtils.makeInfallible(
+      (subject, topic, data) => {
+        if (subject == mm) {
+          onClose();
+          connection.send({ from: actor.actor, type: "tabDetached" });
+        }
+      }
+    );
+    Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
+
+    EventEmitter.on(connection, "closed", onClose);
+  });
+}
+
+exports.connectToContentProcess = connectToContentProcess;
