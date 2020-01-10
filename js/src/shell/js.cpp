@@ -204,13 +204,6 @@ static const double MAX_TIMEOUT_SECONDS = 1800.0;
 #define SHARED_MEMORY_DEFAULT 1
 
 
-#ifdef FUZZING_INTERFACES
-#  include "shell/jsrtfuzzing/jsrtfuzzing.h"
-static bool fuzzDoDebug = !!getenv("MOZ_FUZZ_DEBUG");
-static bool fuzzHaveModule = !!getenv("FUZZER");
-#endif  
-
-
 #ifdef MOZ_CODE_COVERAGE
 #  if defined(__GNUC__) && !defined(__clang__)
 extern "C" void __gcov_dump();
@@ -2701,15 +2694,6 @@ static bool PrintInternal(JSContext* cx, const CallArgs& args, RCFile* file) {
 
 static bool Print(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-#ifdef FUZZING_INTERFACES
-  if (fuzzHaveModule && !fuzzDoDebug) {
-    
-    
-    
-    args.rval().setUndefined();
-    return true;
-  }
-#endif  
   return PrintInternal(cx, args, gOutFile);
 }
 
@@ -10747,12 +10731,6 @@ static int Shell(JSContext* cx, OptionParser* op, char** envp) {
   }
 
   JSAutoRealm ar(cx, glob);
-
-#ifdef FUZZING_INTERFACES
-  if (fuzzHaveModule) {
-    return FuzzJSRuntimeStart(cx, &sArgc, &sArgv);
-  }
-#endif
 
   ShellContext* sc = GetShellContext(cx);
   int result = EXIT_SUCCESS;
