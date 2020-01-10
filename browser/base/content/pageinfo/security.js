@@ -262,7 +262,7 @@ async function securityOnLoad(uri, windowInfo) {
       
       document.l10n.setAttributes(
         document.getElementById("security-identity-owner-value"),
-        "security-no-owner"
+        "page-info-security-no-owner"
       );
       setText(
         "security-identity-verifier-value",
@@ -273,11 +273,11 @@ async function securityOnLoad(uri, windowInfo) {
     
     document.l10n.setAttributes(
       document.getElementById("security-identity-owner-value"),
-      "security-no-owner"
+      "page-info-security-no-owner"
     );
     document.l10n.setAttributes(
       document.getElementById("security-identity-verifier-value"),
-      "not-set-verified-by"
+      "page-info-not-specified"
     );
   }
 
@@ -381,7 +381,7 @@ function setText(id, value) {
   if (!element) {
     return;
   }
-  if (element.localName == "textbox" || element.localName == "label") {
+  if (element.localName == "input" || element.localName == "label") {
     element.value = value;
   } else {
     element.textContent = value;
