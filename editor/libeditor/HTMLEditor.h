@@ -1640,6 +1640,28 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE SplitRangeOffFromNodeResult
+  SplitRangeOffFromBlockAndRemoveMiddleContainer(Element& aBlockElement,
+                                                 nsIContent& aStartOfRange,
+                                                 nsIContent& aEndOfRange);
+
+  
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MoveNodesIntoNewBlockquoteElement(
       nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
