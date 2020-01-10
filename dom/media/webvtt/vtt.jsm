@@ -574,6 +574,16 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       return this.div.firstLineBoxBSize;
     }
 
+    setBidiRule() {
+      
+      
+      
+      
+      
+      
+      this.applyStyles({ "unicode-bidi": "plaintext" });
+    }
+
     
 
 
@@ -610,7 +620,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     _getNodeDefaultStyles(cue) {
       let styles = {
         "position": "absolute",
-        "unicode-bidi": "plaintext",
+        
         "overflow-wrap": "break-word",
         
         "font": this.fontSize + " sans-serif",
@@ -1246,6 +1256,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
           
           let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
           if (cueBox) {
+            styleBox.setBidiRule();
             
             
             cue.displayState = styleBox.div;
