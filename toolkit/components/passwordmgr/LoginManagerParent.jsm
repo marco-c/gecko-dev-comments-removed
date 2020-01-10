@@ -734,7 +734,8 @@ this.LoginManagerParent = {
       password
     );
 
-    let shouldSaveLogin = true;
+    let autoSaveLogin = true;
+    let loginToChange = null;
 
     
     if (!generatedPW.filled) {
@@ -753,7 +754,7 @@ this.LoginManagerParent = {
         "_onGeneratedPasswordFilledOrEdited: saving is disabled for:",
         formOrigin
       );
-      shouldSaveLogin = false;
+      autoSaveLogin = false;
     }
 
     
@@ -765,46 +766,50 @@ this.LoginManagerParent = {
       ignoreActionAndRealm: false,
     });
 
-    if (logins.length > 0) {
-      log(
-        "_onGeneratedPasswordFilledOrEdited: Login already saved for this site"
-      );
-      shouldSaveLogin = false;
-      for (let login of logins) {
-        if (formLoginWithoutUsername.matches(login, false)) {
-          
-          log(
-            "_onGeneratedPasswordFilledOrEdited: Matching login already saved"
-          );
-          return;
-        }
+    let matchedLogin = logins.find(login =>
+      formLoginWithoutUsername.matches(login, true)
+    );
+    if (matchedLogin) {
+      autoSaveLogin = false;
+      if (matchedLogin.password == formLoginWithoutUsername.password) {
+        
+        log("_onGeneratedPasswordFilledOrEdited: Matching login already saved");
+        return;
       }
+      
+      loginToChange = matchedLogin;
+      log(
+        "_onGeneratedPasswordFilledOrEdited: Login with empty username already saved for this site"
+      );
     }
 
-    if (shouldSaveLogin) {
-      Services.logins.addLogin(formLoginWithoutUsername);
+    if (autoSaveLogin) {
+      log(
+        "_onGeneratedPasswordFilledOrEdited: auto-saving new login with empty username"
+      );
+      loginToChange = Services.logins.addLogin(formLoginWithoutUsername);
+    } else {
+      log("_onGeneratedPasswordFilledOrEdited: not auto-saving this login");
     }
-    log(
-      "_onGeneratedPasswordFilledOrEdited: show dismissed save-password notification"
-    );
     let browser = browsingContext.top.embedderElement;
     let prompter = this._getPrompter(browser, openerTopWindowID);
 
-    if (shouldSaveLogin) {
+    if (loginToChange) {
       
       
       prompter.promptToChangePassword(
-        formLoginWithoutUsername,
+        loginToChange,
         formLogin,
         true, 
-        shouldSaveLogin 
+        autoSaveLogin 
       );
       return;
     }
+    log("_onGeneratedPasswordFilledOrEdited: no matching login to save/update");
     prompter.promptToSavePassword(
       formLogin,
       true, 
-      shouldSaveLogin 
+      autoSaveLogin 
     );
   },
 

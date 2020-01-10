@@ -14,8 +14,20 @@ const passwordInputSelector = "#form-basic-password";
 const usernameInputSelector = "#form-basic-username";
 
 let login1;
-function addOneLogin() {
-  login1 = LoginTestUtils.addLogin({ username: "username", password: "pass1" });
+async function setup_withOneLogin(username = "username", password = "pass1") {
+  
+  Services.logins.removeAllLogins();
+  login1 = await LoginTestUtils.addLogin({ username, password });
+}
+
+async function setup_withNoLogins() {
+  
+  Services.logins.removeAllLogins();
+  is(
+    Services.logins.getAllLogins().length,
+    0,
+    "0 logins at the start of the test"
+  );
 }
 
 async function fillGeneratedPasswordFromACPopup(
@@ -51,14 +63,26 @@ async function fillGeneratedPasswordFromACPopup(
   await inputEventPromise;
 }
 
-async function checkPromptContents(anchorElement, browser) {
+async function checkPromptContents(
+  anchorElement,
+  browser,
+  expectedPasswordLength = 0
+) {
   let { panel } = PopupNotifications;
-  let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
-  await SimpleTest.promiseFocus(browser);
-  info("Clicking on anchor to show popup.");
-  anchorElement.click();
-  await promiseShown;
+  ok(PopupNotifications.isPanelOpen, "Confirm popup is open");
   let notificationElement = panel.childNodes[0];
+  if (expectedPasswordLength) {
+    info(
+      `Waiting for password value to be ${expectedPasswordLength} chars long`
+    );
+    await BrowserTestUtils.waitForCondition(() => {
+      return (
+        notificationElement.querySelector("#password-notification-password")
+          .value.length == expectedPasswordLength
+      );
+    }, "Wait for nsLoginManagerPrompter writeDataToUI()");
+  }
+
   return {
     passwordValue: notificationElement.querySelector(
       "#password-notification-password"
@@ -67,6 +91,210 @@ async function checkPromptContents(anchorElement, browser) {
       "#password-notification-username"
     ).value,
   };
+}
+
+async function verifyGeneratedPasswordWasFilled(
+  browser,
+  passwordInputSelector
+) {
+  await ContentTask.spawn(
+    browser,
+    [passwordInputSelector],
+    function checkFinalFieldValue(inputSelector) {
+      let passwordInput = content.document.querySelector(inputSelector);
+      is(
+        passwordInput.value.length,
+        15,
+        "Password field was filled with generated password"
+      );
+    }
+  );
+}
+
+async function verifyConfirmationHint(hintElem) {
+  info("verifyConfirmationHint");
+  info("verifyConfirmationHint, hintPromiseShown resolved");
+  is(
+    hintElem.anchorNode.id,
+    "password-notification-icon",
+    "Hint should be anchored on the password notification icon"
+  );
+  info("verifyConfirmationHint, assertion ok, wait for poopuphidden");
+  await BrowserTestUtils.waitForEvent(hintElem, "popuphidden");
+  info("verifyConfirmationHint, /popuphidden");
+}
+
+async function openFormInNewTab(url, formValues, taskFn) {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url,
+    },
+    async function(browser) {
+      await SimpleTest.promiseFocus(browser.ownerGlobal);
+      await ContentTask.spawn(
+        browser,
+        formValues,
+        async function prepareAndCheckForm({
+          password: passwordProps,
+          username: usernameProps,
+        }) {
+          let doc = content.document;
+          
+          doc.querySelector("form").action = "/";
+
+          let props = passwordProps;
+          if (props) {
+            
+            let field = doc.querySelector(props.selector);
+            field.setAttribute("autocomplete", "new-password");
+            if (props.hasOwnProperty("expectedValue")) {
+              is(
+                field.value,
+                props.expectedValue,
+                "Check autofilled password value"
+              );
+            }
+            if (props.hasOwnProperty("setValue")) {
+              let gotInput = ContentTaskUtils.waitForEvent(
+                field,
+                "input",
+                "field value changed"
+              );
+              field.setUserInput(props.setValue);
+              await gotInput;
+            }
+          }
+          props = usernameProps;
+          if (props) {
+            let field = doc.querySelector(props.selector);
+            if (props.hasOwnProperty("expectedValue")) {
+              is(
+                field.value,
+                props.expectedValue,
+                "Check autofilled username value"
+              );
+            }
+            if (props.hasOwnProperty("setValue")) {
+              let gotInput = ContentTaskUtils.waitForEvent(
+                field,
+                "input",
+                "field value changed"
+              );
+              field.setUserInput(props.setValue);
+              await gotInput;
+            }
+          }
+        }
+      );
+      await taskFn(browser);
+    }
+  );
+}
+
+async function waitForDoorhanger(browser, type) {
+  await TestUtils.waitForCondition(() => {
+    let notif = PopupNotifications.getNotification("password", browser);
+    return notif && notif.options.passwordNotificationType == type;
+  }, `Waiting for a ${type} notification`);
+}
+
+async function openAndVerifyDoorhanger(browser, type, expected) {
+  
+  let notif = getCaptureDoorhanger(type);
+  ok(notif, `${type} doorhanger was created`);
+  is(
+    notif.dismissed,
+    expected.dismissed,
+    "Check notification dismissed property"
+  );
+  is(
+    notif.anchorElement.getAttribute("extraAttr"),
+    expected.anchorExtraAttr,
+    "Check icon extraAttr attribute"
+  );
+  if (!PopupNotifications.isPanelOpen) {
+    let promiseShown = BrowserTestUtils.waitForEvent(
+      PopupNotifications.panel,
+      "popupshown"
+    );
+    await SimpleTest.promiseFocus(browser);
+    info("Clicking on anchor to show popup.");
+    notif.anchorElement.click();
+    await promiseShown;
+  }
+  
+  let { passwordValue, usernameValue } = await checkPromptContents(
+    notif.anchorElement,
+    browser,
+    expected.passwordLength
+  );
+  is(
+    passwordValue.length,
+    15,
+    "Doorhanger password field has generated 15-char value"
+  );
+  is(
+    usernameValue,
+    expected.usernameValue,
+    "Doorhanger username field was popuplated"
+  );
+  return notif;
+}
+
+async function hideDoorhangerPopup(browser) {
+  info("hideDoorhangerPopup");
+  if (!PopupNotifications.isPanelOpen) {
+    return;
+  }
+  let { panel } = PopupNotifications;
+  let promiseHidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+  panel.hidePopup();
+  await promiseHidden;
+  info("got popuphidden from notification panel");
+}
+
+async function submitForm(browser) {
+  
+  info("Now submit the form with the generated password");
+
+  await ContentTask.spawn(browser, null, async function() {
+    content.document.querySelector("form").submit();
+
+    await ContentTaskUtils.waitForCondition(() => {
+      return (
+        content.location.pathname == "/" &&
+        content.document.readyState == "complete"
+      );
+    }, "Wait for form submission load");
+  });
+}
+
+function verifyLogins(expectedValues) {
+  let allLogins = Services.logins.getAllLogins();
+  is(allLogins.length, expectedValues.count, "Check saved logins count");
+  for (let i = 0; i < expectedValues.loginProperties.length; i++) {
+    let expected = expectedValues[i];
+    if (expected) {
+      let login = allLogins[i];
+      if (expected.hasOwnProperty("timesUsed")) {
+        is(login.timesUsed, expected.timesUsed, "Check timesUsed");
+      }
+      if (expected.hasOwnProperty("passwordLength")) {
+        is(
+          login.password.length,
+          expected.passwordLength,
+          "Check passwordLength"
+        );
+      }
+      if (expected.hasOwnProperty("username")) {
+        is(login.username, expected.username, "Check username");
+      }
+      if (expected.hasOwnProperty("usedSince")) {
+        ok(login.timeLastUsed > expected.usedSince, "Check timeLastUsed");
+      }
+    }
+  }
 }
 
 add_task(async function setup() {
@@ -82,345 +310,402 @@ add_task(async function setup() {
 });
 
 add_task(async function autocomplete_generated_password_auto_saved() {
-  await BrowserTestUtils.withNewTab(
+  
+  
+  await setup_withNoLogins();
+  await openFormInNewTab(
+    TEST_ORIGIN + FORM_PAGE_PATH,
     {
-      gBrowser,
-      url: TEST_ORIGIN + FORM_PAGE_PATH,
+      password: { selector: passwordInputSelector, expectedValue: "" },
+      username: { selector: usernameInputSelector, expectedValue: "" },
     },
-    async function(browser) {
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector, usernameInputSelector],
-        function prepareAndCheckForm([passwordSelector, usernameSelector]) {
-          let passwordInput = content.document.querySelector(passwordSelector);
-          
-          passwordInput.setAttribute("autocomplete", "new-password");
-          passwordInput.value = "";
-          let usernameInput = content.document.querySelector(usernameSelector);
-          usernameInput.setUserInput("user1");
-        }
-      );
-
+    async function taskFn(browser) {
       let storageChangedPromise = TestUtils.topicObserved(
         "passwordmgr-storage-changed",
         (_, data) => data == "addLogin"
       );
-
       let confirmationHint = document.getElementById("confirmation-hint");
       let hintPromiseShown = BrowserTestUtils.waitForEvent(
         confirmationHint,
         "popupshown"
       );
       await fillGeneratedPasswordFromACPopup(browser, passwordInputSelector);
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector],
-        function checkFinalFieldValue(inputSelector) {
-          let passwordInput = content.document.querySelector(inputSelector);
-          is(
-            passwordInput.value.length,
-            15,
-            "Password field was filled with generated password"
-          );
-        }
-      );
-
       let [{ username, password }] = await storageChangedPromise;
+      await verifyGeneratedPasswordWasFilled(browser, passwordInputSelector);
       
       await hintPromiseShown;
-
-      Assert.equal(
-        confirmationHint.anchorNode.id,
-        "password-notification-icon",
-        "Hint should be anchored on the password notification icon"
-      );
-
-      let hintPromiseHidden = BrowserTestUtils.waitForEvent(
-        confirmationHint,
-        "popuphidden"
-      );
-      await hintPromiseHidden;
+      await verifyConfirmationHint(confirmationHint);
 
       
       is(username, "", "Saved login should have no username");
       is(password.length, 15, "Saved login should have generated password");
 
-      
-      let notif = getCaptureDoorhanger("password-change");
-      ok(notif && notif.dismissed, "Dismissed notification was created");
-      is(
-        notif.anchorElement.getAttribute("extraAttr"),
-        "attention",
-        "Check if icon has the extraAttr attribute"
-      );
-
-      let { passwordValue, usernameValue } = await checkPromptContents(
-        notif.anchorElement,
-        browser
-      );
-      is(
-        passwordValue.length,
-        15,
-        "Doorhanger password field has generated 15-char value"
-      );
-      is(usernameValue, "user1", "Doorhanger username field was popuplated");
-
-      info("Hiding popup.");
-      let { panel } = PopupNotifications;
-      let promiseHidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
-      panel.hidePopup();
-      await promiseHidden;
-
+      let notif = await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: true,
+        anchorExtraAttr: "attention",
+        usernameValue: "",
+        passwordLength: 15,
+      });
+      await clickDoorhangerButton(notif, DONT_CHANGE_BUTTON);
       
       ok(
         !notif.anchorElement.hasAttribute("extraAttr"),
         "Check if the extraAttr attribute was removed"
       );
       notif.remove();
+
+      storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "modifyLogin"
+      );
+      let [autoSavedLogin] = Services.logins.getAllLogins();
+      info("waiting for submitForm");
+      await submitForm(browser);
+      await storageChangedPromise;
+      verifyLogins({
+        count: 1,
+        loginProperties: [
+          {
+            timesUsed: autoSavedLogin.timesUsed + 1,
+            username: "",
+          },
+        ],
+      });
+      await hideDoorhangerPopup(browser); 
     }
   );
 });
 
-add_task(async function setup_logins() {
+add_task(async function autocomplete_generated_password_saved_empty_username() {
   
-  Services.logins.removeAllLogins();
   
-  await addOneLogin();
-});
-
-add_task(async function contextfill_generated_password_with_matching_logins() {
-  
-  await BrowserTestUtils.withNewTab(
+  await setup_withOneLogin("", "xyzpassword");
+  await openFormInNewTab(
+    TEST_ORIGIN + FORM_PAGE_PATH,
     {
-      gBrowser,
-      url: TEST_ORIGIN + FORM_PAGE_PATH,
+      password: {
+        selector: passwordInputSelector,
+        expectedValue: "xyzpassword",
+        setValue: "",
+      },
+      username: { selector: usernameInputSelector, expectedValue: "" },
     },
-    async function(browser) {
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector],
-        async function waitForFilledFieldValue(inputSelector) {
-          let passwordInput = content.document.querySelector(inputSelector);
-          await ContentTaskUtils.waitForCondition(
-            () => passwordInput.value == "pass1",
-            "Password field got autofilled value"
-          );
-        }
-      );
-      await doFillGeneratedPasswordContextMenuItem(
-        browser,
-        passwordInputSelector
-      );
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector],
-        function checkFinalFieldValue(inputSelector) {
-          is(
-            content.document.querySelector(inputSelector).value.length,
-            15,
-            "Password field was filled with generated password"
-          );
-        }
-      );
-      
-      let notif = getCaptureDoorhanger("password-save");
-      ok(notif && notif.dismissed, "Dismissed notification was created");
-
-      let { passwordValue } = await checkPromptContents(
-        notif.anchorElement,
-        browser
-      );
-      is(
-        passwordValue.length,
-        15,
-        "Doorhanger password field has generated 15-char value"
-      );
-      ok(
-        !notif.anchorElement.hasAttribute("extraAttr"),
-        "Check if icon has the extraAttr attribute"
-      );
-      notif.remove();
-    }
-  );
-});
-
-add_task(async function contextfill_generated_password_with_username() {
-  
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: TEST_ORIGIN + FORM_PAGE_PATH,
-    },
-    async function(browser) {
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector, usernameInputSelector],
-        function checkAndSetFieldValue([passwordSelector, usernameSelector]) {
-          is(
-            content.document.querySelector(passwordSelector).value,
-            "pass1",
-            "Password field has initial autofilled value"
-          );
-          content.document
-            .querySelector(usernameSelector)
-            .setUserInput("user1");
-        }
-      );
-
-      await doFillGeneratedPasswordContextMenuItem(
-        browser,
-        passwordInputSelector
-      );
-
-      
-      let notif = getCaptureDoorhanger("password-save");
-      ok(notif && notif.dismissed, "Dismissed notification was created");
-
-      let { passwordValue, usernameValue } = await checkPromptContents(
-        notif.anchorElement
-      );
-      is(
-        passwordValue.length,
-        15,
-        "Doorhanger password field has generated 15-char value"
-      );
-      is(
-        usernameValue,
-        "user1",
-        "Doorhanger username field has the username field value"
-      );
-      ok(
-        !notif.anchorElement.hasAttribute("extraAttr"),
-        "Check if icon has the extraAttr attribute"
-      );
-      notif.remove();
-    }
-  );
-});
-
-add_task(async function autocomplete_generated_password() {
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: TEST_ORIGIN + FORM_PAGE_PATH,
-    },
-    async function(browser) {
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector, usernameInputSelector],
-        function prepareAndCheckForm([passwordSelector, usernameSelector]) {
-          let passwordInput = content.document.querySelector(passwordSelector);
-          
-          passwordInput.setAttribute("autocomplete", "new-password");
-          passwordInput.value = "";
-          let usernameInput = content.document.querySelector(usernameSelector);
-          usernameInput.setUserInput("user1");
-        }
+    async function taskFn(browser) {
+      let [savedLogin] = Services.logins.getAllLogins();
+      let storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "modifyLogin"
       );
       await fillGeneratedPasswordFromACPopup(browser, passwordInputSelector);
-      await ContentTask.spawn(
-        browser,
-        [passwordInputSelector],
-        function checkFinalFieldValue(inputSelector) {
-          let passwordInput = content.document.querySelector(inputSelector);
-          is(
-            passwordInput.value.length,
-            15,
-            "Password field was filled with generated password"
-          );
-        }
-      );
+      await waitForDoorhanger(browser, "password-change");
+      info("Waiting to openAndVerifyDoorhanger");
+      await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: true,
+        anchorExtraAttr: "",
+        usernameValue: "",
+        passwordLength: 15,
+      });
+      await hideDoorhangerPopup(browser);
+      info("Waiting to verifyGeneratedPasswordWasFilled");
+      await verifyGeneratedPasswordWasFilled(browser, passwordInputSelector);
 
-      
-      let notif = getCaptureDoorhanger("password-save");
-      ok(notif && notif.dismissed, "Dismissed notification was created");
-      ok(
-        !notif.anchorElement.hasAttribute("extraAttr"),
-        "Check if icon has the extraAttr attribute"
-      );
+      info("waiting for submitForm");
+      await submitForm(browser);
+      let notif = await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: false,
+        anchorExtraAttr: "",
+        usernameValue: "",
+        passwordLength: 15,
+      });
 
-      let { passwordValue, usernameValue } = await checkPromptContents(
-        notif.anchorElement,
-        browser
-      );
-      is(
-        passwordValue.length,
-        15,
-        "Doorhanger password field has generated 15-char value"
-      );
-      is(usernameValue, "user1", "Doorhanger username field was popuplated");
-      notif.remove();
+      await clickDoorhangerButton(notif, CHANGE_BUTTON);
+      info("Waiting for modifyLogin");
+      await storageChangedPromise;
+      verifyLogins({
+        count: 1,
+        loginProperties: [
+          {
+            timesUsed: savedLogin.timesUsed + 1,
+            username: "",
+          },
+        ],
+      });
+      await hideDoorhangerPopup(browser); 
+      notif && notif.remove();
     }
   );
 });
 
-add_task(async function password_change_without_username() {
+add_task(async function contextfill_generated_password_saved_empty_username() {
+  
+  
+  await setup_withOneLogin("", "xyzpassword");
+  await openFormInNewTab(
+    TEST_ORIGIN + FORM_PAGE_PATH,
+    {
+      password: {
+        selector: passwordInputSelector,
+        expectedValue: "xyzpassword",
+        setValue: "",
+      },
+      username: { selector: usernameInputSelector, expectedValue: "" },
+    },
+    async function taskFn(browser) {
+      let [savedLogin] = Services.logins.getAllLogins();
+      let storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "modifyLogin"
+      );
+      await doFillGeneratedPasswordContextMenuItem(
+        browser,
+        passwordInputSelector
+      );
+      await waitForDoorhanger(browser, "password-change");
+      info("Waiting to openAndVerifyDoorhanger");
+      await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: true,
+        anchorExtraAttr: "",
+        usernameValue: "",
+        passwordLength: 15,
+      });
+      await hideDoorhangerPopup(browser);
+      info("Waiting to verifyGeneratedPasswordWasFilled");
+      await verifyGeneratedPasswordWasFilled(browser, passwordInputSelector);
+
+      info("waiting for submitForm");
+      await submitForm(browser);
+      let notif = await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: false,
+        anchorExtraAttr: "",
+        usernameValue: "",
+        passwordLength: 15,
+      });
+
+      await clickDoorhangerButton(notif, CHANGE_BUTTON);
+      info("Waiting for modifyLogin");
+      await storageChangedPromise;
+      verifyLogins({
+        count: 1,
+        loginProperties: [
+          {
+            timesUsed: savedLogin.timesUsed + 1,
+            username: "",
+          },
+        ],
+      });
+      await hideDoorhangerPopup(browser); 
+      notif && notif.remove();
+    }
+  );
+});
+
+add_task(async function contextmenu_fill_generated_password_and_set_username() {
+  
+  
+  
+  
+  await setup_withOneLogin("olduser", "xyzpassword");
+  await openFormInNewTab(
+    TEST_ORIGIN + FORM_PAGE_PATH,
+    {
+      password: {
+        selector: passwordInputSelector,
+        expectedValue: "xyzpassword",
+        setValue: "",
+      },
+      username: {
+        selector: usernameInputSelector,
+        expectedValue: "olduser",
+        setValue: "differentuser",
+      },
+    },
+    async function taskFn(browser) {
+      let storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "addLogin"
+      );
+      let confirmationHint = document.getElementById("confirmation-hint");
+      let hintPromiseShown = BrowserTestUtils.waitForEvent(
+        confirmationHint,
+        "popupshown"
+      );
+      await ContentTask.spawn(
+        browser,
+        [passwordInputSelector, usernameInputSelector],
+        function checkEmptyPasswordField([passwordSelector, usernameSelector]) {
+          is(
+            content.document.querySelector(passwordSelector).value,
+            "",
+            "Password field is empty"
+          );
+        }
+      );
+      info("waiting to fill generated password using context menu");
+      await doFillGeneratedPasswordContextMenuItem(
+        browser,
+        passwordInputSelector
+      );
+      info("waiting for password-change doorhanger");
+      await waitForDoorhanger(browser, "password-change");
+      
+      await hintPromiseShown;
+      await verifyConfirmationHint(confirmationHint);
+
+      info("waiting for addLogin");
+      await storageChangedPromise;
+      
+      verifyLogins({
+        count: 2,
+        loginProperties: [
+          null, 
+          {
+            timesUsed: 1,
+            username: "",
+            passwordLength: 15,
+          },
+        ],
+      });
+
+      info("Waiting to openAndVerifyDoorhanger");
+      await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: true,
+        anchorExtraAttr: "attention",
+        usernameValue: "differentuser",
+        passwordLength: 15,
+      });
+      await hideDoorhangerPopup(browser);
+      info("Waiting to verifyGeneratedPasswordWasFilled");
+      await verifyGeneratedPasswordWasFilled(browser, passwordInputSelector);
+
+      info("waiting for submitForm");
+      await submitForm(browser);
+      let notif = await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: false,
+        anchorExtraAttr: "",
+        usernameValue: "differentuser",
+        passwordLength: 15,
+      });
+
+      storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "modifyLogin"
+      );
+      await clickDoorhangerButton(notif, CHANGE_BUTTON);
+      info("Waiting for modifyLogin");
+      await storageChangedPromise;
+      verifyLogins({
+        count: 2,
+        loginProperties: [
+          null,
+          {
+            username: "differentuser",
+            passwordLength: 15,
+            timesUsed: 1,
+          },
+        ],
+      });
+      await hideDoorhangerPopup(browser); 
+      notif && notif.remove();
+    }
+  );
+});
+
+add_task(async function contextmenu_password_change_form_without_username() {
+  
+  
+  await setup_withOneLogin("user1", "xyzpassword");
+  await LoginTestUtils.addLogin({ username: "username2", password: "pass2" });
+  const passwordInputSelector = "#newpass";
+
   const CHANGE_FORM_PATH =
     "/browser/toolkit/components/passwordmgr/test/browser/form_password_change.html";
-  await BrowserTestUtils.withNewTab(
+  await openFormInNewTab(
+    TEST_ORIGIN + CHANGE_FORM_PATH,
     {
-      gBrowser,
-      url: TEST_ORIGIN + CHANGE_FORM_PATH,
+      password: {
+        selector: passwordInputSelector,
+        expectedValue: "",
+      },
     },
-    async function(browser) {
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
+    async function taskFn(browser) {
+      let storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "addLogin"
+      );
+      let confirmationHint = document.getElementById("confirmation-hint");
+      let hintPromiseShown = BrowserTestUtils.waitForEvent(
+        confirmationHint,
+        "popupshown"
+      );
+
       
-      LoginTestUtils.addLogin({
-        username: "username2",
-        password: "pass2",
+      info("Using contextmenu to fill with a generated password");
+      await doFillGeneratedPasswordContextMenuItem(
+        browser,
+        passwordInputSelector
+      );
+
+      info("waiting for password-change doorhanger");
+      await waitForDoorhanger(browser, "password-change");
+      
+      await hintPromiseShown;
+      await verifyConfirmationHint(confirmationHint);
+
+      info("waiting for addLogin");
+      await storageChangedPromise;
+      
+      verifyLogins({
+        count: 3,
+        loginProperties: [
+          null, 
+          null, 
+          {
+            timesUsed: 1,
+            username: "",
+            passwordLength: 15,
+          },
+        ],
       });
 
-      
-      await doFillGeneratedPasswordContextMenuItem(browser, "#newpass");
-
-      
-      let notif = getCaptureDoorhanger("password-save");
-      ok(notif && notif.dismissed, "Dismissed notification was created");
-
-      let { passwordValue, usernameValue } = await checkPromptContents(
-        notif.anchorElement
-      );
-      is(
-        passwordValue.length,
-        15,
-        "Doorhanger password field has generated 15-char value"
-      );
-      is(
-        usernameValue,
-        "",
-        "Doorhanger username field has the username field value"
-      );
-      ok(
-        !notif.anchorElement.hasAttribute("extraAttr"),
-        "Check if icon has the extraAttr attribute"
-      );
-      notif.remove();
-
-      
-      await ContentTask.spawn(browser, null, function() {
-        content.document.querySelector("#form").submit();
+      info("Waiting to openAndVerifyDoorhanger");
+      let notif = await openAndVerifyDoorhanger(browser, "password-change", {
+        dismissed: true,
+        anchorExtraAttr: "attention",
+        usernameValue: "",
+        passwordLength: 15,
       });
-
+      await hideDoorhangerPopup(browser);
       
-      notif = getCaptureDoorhanger("password-save");
-      ok(notif && !notif.dismissed, "Non-dismissed notification was created");
+      notif && notif.remove();
 
-      ok(!EventUtils.isHidden(notif.anchorElement), "Anchor should be shown");
-      let {
-        passwordValue: passwordValue2,
-        usernameValue: usernameValue2,
-      } = await checkPromptContents(notif.anchorElement);
-      is(
-        passwordValue2.length,
-        15,
-        "Doorhanger password field has generated 15-char value"
+      info("Waiting to verifyGeneratedPasswordWasFilled");
+      await verifyGeneratedPasswordWasFilled(browser, passwordInputSelector);
+
+      storageChangedPromise = TestUtils.topicObserved(
+        "passwordmgr-storage-changed",
+        (_, data) => data == "modifyLogin"
       );
-      is(usernameValue2, "", "Doorhanger username field has no value");
-      notif.remove();
+      let { timeLastUsed } = Services.logins.getAllLogins()[2];
+
+      info("waiting for submitForm");
+      await submitForm(browser);
+
+      info("Waiting for modifyLogin");
+      await storageChangedPromise;
+      verifyLogins({
+        count: 3,
+        loginProperties: [
+          null, 
+          null, 
+          {
+            timesUsed: 2,
+            usedSince: timeLastUsed,
+          },
+        ],
+      });
+      
+      notif = getCaptureDoorhanger("password-change");
+      ok(!notif, "No new doorhanger should be shown");
     }
   );
 });
