@@ -1,7 +1,7 @@
 "use strict";
 
 const ROOT = getRootDirectory(gTestPath);
-const URI = ROOT + "browser_tab_dragdrop2_frame1.xul";
+const URI = ROOT + "browser_tab_dragdrop2_frame1.xhtml";
 
 
 
