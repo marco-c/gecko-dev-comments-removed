@@ -8618,12 +8618,10 @@ bool BaseCompiler::emitIf() {
 
   BranchState b(&controlItem().otherLabel, InvertBranch(true));
   if (!deadCode_) {
+    needResultRegisters(params);
     emitBranchSetup(&b);
+    freeResultRegisters(params);
     sync();
-    
-    
-    
-    topBlockResults(params);
   } else {
     resetLatentOp();
   }
@@ -8631,6 +8629,10 @@ bool BaseCompiler::emitIf() {
   initControl(controlItem(), params);
 
   if (!deadCode_) {
+    
+    
+    
+    topBlockResults(params);
     emitBranchPerform(&b);
   }
 
@@ -8726,6 +8728,7 @@ bool BaseCompiler::emitElse() {
   fr.resetStackHeight(ifThenElse.stackHeight, params);
 
   if (!deadCode_) {
+    captureResultRegisters(params);
     pushBlockResults(params);
   }
 
