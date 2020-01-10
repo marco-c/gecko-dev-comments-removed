@@ -16,6 +16,7 @@
 namespace js {
 
 class AsyncFunctionGeneratorObject;
+class GlobalObject;
 
 
 
@@ -54,6 +55,9 @@ class AsyncFunctionGeneratorObject : public AbstractGeneratorObject {
     return &getFixedSlot(PROMISE_SLOT).toObject().as<PromiseObject>();
   }
 };
+
+extern JSObject* InitAsyncFunction(JSContext* cx,
+                                   js::Handle<GlobalObject*> global);
 
 }  
 
