@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, print_function
 
+import os
 import sys
 
 from mozbuild.backend.test_manifest import TestManifestBackend
@@ -22,6 +23,10 @@ def gen_test_backend():
         
         
         
+
+        if not os.path.isdir(build_obj.topobjdir):
+            os.makedirs(build_obj.topobjdir)
+
         config_status = mozpath.join(build_obj.topobjdir, 'config.status')
         open(config_status, 'w').close()
 
