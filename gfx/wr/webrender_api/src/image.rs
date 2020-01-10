@@ -5,6 +5,7 @@
 #![deny(missing_docs)]
 
 use euclid::{size2, TypedRect, num::Zero};
+use peek_poke::{PeekPoke};
 use std::ops::{Add, Sub};
 use std::sync::Arc;
 
@@ -16,8 +17,14 @@ use crate::units::*;
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub struct ImageKey(pub IdNamespace, pub u32);
+
+impl Default for ImageKey {
+    fn default() -> Self {
+        ImageKey::DUMMY
+    }
+}
 
 impl ImageKey {
     
@@ -142,7 +149,7 @@ impl ImageFormat {
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub enum ColorDepth {
     
     Color8,
@@ -152,6 +159,12 @@ pub enum ColorDepth {
     Color12,
     
     Color16,
+}
+
+impl Default for ColorDepth {
+    fn default() -> Self {
+        ColorDepth::Color8
+    }
 }
 
 impl ColorDepth {
