@@ -5,6 +5,8 @@
 
 
 
+{
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 
 
@@ -862,8 +864,9 @@ MozElements.MozRichlistitem = class MozRichlistitem extends MozElements.BaseText
       var control = this.control;
       if (!control || control.disabled)
         return;
-      if ((!event.ctrlKey || (/Mac/.test(navigator.platform) && event.button == 2)) &&
-        !event.shiftKey && !event.metaKey) {
+      if ((!event.ctrlKey || (AppConstants.platform == "macosx" && event.button == 2)) &&
+          !event.shiftKey &&
+          !event.metaKey) {
         if (!this.selected) {
           control.selectItem(this);
         }
@@ -990,4 +993,5 @@ MozXULElement.implementCustomInterface(
 
 if (document.documentURI != "about:addons") {
   customElements.define("richlistitem", MozElements.MozRichlistitem);
+}
 }

@@ -9,6 +9,8 @@
 
 
 {
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+
   class MozTreeChildren extends MozElements.BaseControl {
     constructor() {
       super();
@@ -294,7 +296,7 @@
 
         
         
-        if (/Win/.test(navigator.platform) && event.detail % 2 == 0)
+        if (AppConstants.platform == "win" && event.detail % 2 == 0)
           return;
 
         var tree = this.parentNode.parentNode;
@@ -556,7 +558,7 @@
 
       this.initializeAttributeInheritance();
 
-      this.pageUpOrDownMovesSelection = !/Mac/.test(navigator.platform);
+      this.pageUpOrDownMovesSelection = AppConstants.platform == "macosx";
 
       this._inputField = null;
 
