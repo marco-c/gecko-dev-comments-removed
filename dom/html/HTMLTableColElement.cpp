@@ -44,7 +44,10 @@ bool HTMLTableColElement::ParseAttribute(int32_t aNamespaceID,
       return true;
     }
     if (aAttribute == nsGkAtoms::width) {
-      return aResult.ParseSpecialIntValue(aValue);
+      
+      
+      
+      return aResult.ParseHTMLDimension(aValue);
     }
     if (aAttribute == nsGkAtoms::align) {
       return ParseTableCellHAlignValue(aValue, aResult);

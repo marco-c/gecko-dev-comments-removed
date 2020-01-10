@@ -816,18 +816,13 @@ bool HTMLTableElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       return aResult.ParseNonNegativeIntValue(aValue);
     }
     if (aAttribute == nsGkAtoms::height) {
-      return aResult.ParseSpecialIntValue(aValue);
+      
+      
+      
+      return aResult.ParseHTMLDimension(aValue);
     }
     if (aAttribute == nsGkAtoms::width) {
-      if (aResult.ParseSpecialIntValue(aValue)) {
-        
-        nsAttrValue::ValueType type = aResult.Type();
-        return !(
-            (type == nsAttrValue::eInteger && aResult.GetIntegerValue() == 0) ||
-            (type == nsAttrValue::ePercent &&
-             aResult.GetPercentValue() == 0.0f));
-      }
-      return false;
+      return aResult.ParseNonzeroHTMLDimension(aValue);
     }
 
     if (aAttribute == nsGkAtoms::align) {

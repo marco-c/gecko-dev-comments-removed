@@ -206,7 +206,9 @@ bool HTMLTableRowElement::ParseAttribute(int32_t aNamespaceID,
       return aResult.ParseIntWithBounds(aValue, 0);
     }
     if (aAttribute == nsGkAtoms::height) {
-      return aResult.ParseSpecialIntValue(aValue);
+      
+      
+      return aResult.ParseHTMLDimension(aValue);
     }
     if (aAttribute == nsGkAtoms::width) {
       return aResult.ParseSpecialIntValue(aValue);
