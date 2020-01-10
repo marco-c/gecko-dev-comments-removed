@@ -340,11 +340,14 @@ class MockRuntime {
     this.environmentProviderBinding_.close();
   }
 
+  closeDataProvider() {
+    this.dataProviderBinding_.close();
+  }
+
   updateSessionGeometry(frame_size, display_rotation) {
     
     
   }
-
 
   
   requestRuntimeSession(sessionOptions) {
@@ -366,7 +369,7 @@ class MockRuntime {
 
         let dataProviderPtr = new device.mojom.XRFrameDataProviderPtr();
         let dataProviderRequest = mojo.makeRequest(dataProviderPtr);
-        let dataProviderBinding = new mojo.Binding(
+        this.dataProviderBinding_ = new mojo.Binding(
             device.mojom.XRFrameDataProvider, this, dataProviderRequest);
 
         let clientRequest = mojo.makeRequest(this.sessionClient_);
