@@ -433,13 +433,6 @@ const proto = {
     
     
     
-    if (isReplaying) {
-      return safeGetterValues;
-    }
-
-    
-    
-    
     
     if (isArray(this.obj) || ["Object", "String"].includes(this.obj.class)) {
       obj = obj.proto;
