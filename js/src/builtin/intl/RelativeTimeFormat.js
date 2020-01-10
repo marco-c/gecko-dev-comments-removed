@@ -202,35 +202,41 @@ function Intl_RelativeTimeFormat_format(value, unit) {
     let u = ToString(unit);
 
     
-    if (!Number_isFinite(t)) {
-        ThrowRangeError(JSMSG_DATE_NOT_FINITE, "RelativeTimeFormat");
+    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.numeric,
+                                   false);
+}
+
+
+
+
+
+
+
+
+function Intl_RelativeTimeFormat_formatToParts(value, unit) {
+    
+    let relativeTimeFormat = this;
+
+    
+    if (!IsObject(relativeTimeFormat) ||
+        (relativeTimeFormat = GuardToRelativeTimeFormat(relativeTimeFormat)) === null)
+    {
+        return callFunction(CallRelativeTimeFormatMethodIfWrapped, this, value, unit,
+                            "Intl_RelativeTimeFormat_formatToParts");
     }
 
     
-    switch (u) {
-      case "second":
-      case "seconds":
-      case "minute":
-      case "minutes":
-      case "hour":
-      case "hours":
-      case "day":
-      case "days":
-      case "week":
-      case "weeks":
-      case "month":
-      case "months":
-      case "quarter":
-      case "quarters":
-      case "year":
-      case "years":
-        break;
-      default:
-        ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, "unit", u);
-    }
+    var internals = getRelativeTimeFormatInternals(relativeTimeFormat);
 
     
-    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.numeric);
+    let t = ToNumber(value);
+
+    
+    let u = ToString(unit);
+
+    
+    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.numeric,
+                                   true);
 }
 
 
