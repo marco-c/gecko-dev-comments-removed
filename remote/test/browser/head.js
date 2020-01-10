@@ -3,11 +3,11 @@
 
 "use strict";
 
-const { RemoteAgent } = ChromeUtils.import(
-  "chrome://remote/content/RemoteAgent.jsm"
-);
 const { RemoteAgentError } = ChromeUtils.import(
   "chrome://remote/content/Error.jsm"
+);
+const { RemoteAgent } = ChromeUtils.import(
+  "chrome://remote/content/RemoteAgent.jsm"
 );
 
 
@@ -77,23 +77,21 @@ this.add_task = function(taskFn, opts = {}) {
   });
 };
 
-const CRI_URI =
-  "http://example.com/browser/remote/test/browser/chrome-remote-interface.js";
-
 
 
 
 
 function createTestDocument() {
   const browser = Services.appShell.createWindowlessBrowser(true);
+  registerCleanupFunction(() => browser.close());
+
+  
+  
+  
   const webNavigation = browser.docShell.QueryInterface(Ci.nsIWebNavigation);
-  
-  
-  
   const system = Services.scriptSecurityManager.getSystemPrincipal();
   webNavigation.createAboutBlankContentViewer(system, system);
 
-  registerCleanupFunction(() => browser.close());
   return webNavigation.document;
 }
 
@@ -105,15 +103,11 @@ async function getCDP() {
   
   const document = createTestDocument();
 
-  
-  const script = document.createElement("script");
-  script.setAttribute("src", CRI_URI);
-  document.documentElement.appendChild(script);
-  await new Promise(resolve => {
-    script.addEventListener("load", resolve, { once: true });
-  });
-
   const window = document.defaultView.wrappedJSObject;
+  Services.scriptloader.loadSubScript(
+    "chrome://mochitests/content/browser/remote/test/browser/chrome-remote-interface.js",
+    window
+  );
 
   
   
