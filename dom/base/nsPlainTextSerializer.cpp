@@ -782,12 +782,6 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
         mCurrentLine.mIndentation.mWidth += kIndentIncrementHeaders;
       }
     }
-  } else if (aTag == nsGkAtoms::a && !currentNodeIsConverted) {
-    nsAutoString url;
-    if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::href, url)) &&
-        !url.IsEmpty()) {
-      mURL = url;
-    }
   } else if (aTag == nsGkAtoms::sup && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
     Write(NS_LITERAL_STRING("^"));
@@ -980,14 +974,16 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
       }
     }
     EnsureVerticalSpace(1);
-  } else if (aTag == nsGkAtoms::a && !currentNodeIsConverted &&
-             !mURL.IsEmpty()) {
-    nsAutoString temp;
-    temp.AssignLiteral(" <");
-    temp += mURL;
-    temp.Append(char16_t('>'));
-    Write(temp);
-    mURL.Truncate();
+  } else if (aTag == nsGkAtoms::a && !currentNodeIsConverted) {
+    nsAutoString url;
+    if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::href, url)) &&
+        !url.IsEmpty()) {
+      nsAutoString temp;
+      temp.AssignLiteral(" <");
+      temp += url;
+      temp.Append(char16_t('>'));
+      Write(temp);
+    }
   } else if ((aTag == nsGkAtoms::sup || aTag == nsGkAtoms::sub) &&
              mSettings.GetStructs() && !currentNodeIsConverted) {
     Write(kSpace);
@@ -1063,12 +1059,6 @@ void nsPlainTextSerializer::DoAddText(bool aIsLineBreak,
     return;
   }
 
-  
-
-
-  if (!mURL.IsEmpty() && mURL.Equals(aText)) {
-    mURL.Truncate();
-  }
   Write(aText);
 }
 

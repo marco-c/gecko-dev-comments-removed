@@ -314,7 +314,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   bool mPreformattedBlockBoundary;
 
-  nsString mURL;
   int32_t mHeaderCounter[7]; 
 
 
