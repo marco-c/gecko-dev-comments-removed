@@ -1,4 +1,8 @@
 
+
+
+
+
 '''
 This script downloads and repacks official rust language builds
 with the necessary tool and target support for the Firefox
