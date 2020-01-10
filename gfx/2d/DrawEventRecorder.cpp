@@ -92,8 +92,8 @@ DrawEventRecorderMemory::DrawEventRecorderMemory() {
 }
 
 DrawEventRecorderMemory::DrawEventRecorderMemory(
-    const SerializeResourcesFn& aFn, IntPoint aOrigin)
-    : mSerializeCallback(aFn), mOrigin(aOrigin) {
+    const SerializeResourcesFn& aFn)
+    : mSerializeCallback(aFn) {
   mExternalFonts = !!mSerializeCallback;
   WriteHeader(mOutputStream);
 }
@@ -134,7 +134,6 @@ bool DrawEventRecorderMemory::Finish() {
   mIndex = MemStream();
   
   WriteElement(mOutputStream, indexOffset);
-  WriteElement(mOutputStream, mOrigin);
   ClearResources();
   return hasItems;
 }
