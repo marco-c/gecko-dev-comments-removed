@@ -347,7 +347,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     this._nestedEventLoops = new EventLoopStack({
-      connection: this.conn,
       thread: this,
     });
 
@@ -1208,14 +1207,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     if (
       this._nestedEventLoops.size &&
-      this._nestedEventLoops.lastPausedUrl &&
-      (this._nestedEventLoops.lastPausedUrl !== this._parent.url ||
-        this._nestedEventLoops.lastConnection !== this.conn)
+      this._nestedEventLoops.lastPausedThreadActor &&
+      this._nestedEventLoops.lastPausedThreadActor !== this
     ) {
       return {
         error: "wrongOrder",
         message: "trying to resume in the wrong order.",
-        lastPausedUrl: this._nestedEventLoops.lastPausedUrl,
       };
     }
 

@@ -15,11 +15,8 @@ const xpcInspector = require("xpcInspector");
 
 
 
-
-
-function EventLoopStack({ thread, connection }) {
+function EventLoopStack({ thread }) {
   this._thread = thread;
-  this._connection = connection;
 }
 
 EventLoopStack.prototype = {
@@ -33,26 +30,11 @@ EventLoopStack.prototype = {
   
 
 
-  get lastPausedUrl() {
-    let url = null;
+  get lastPausedThreadActor() {
     if (this.size > 0) {
-      try {
-        url = xpcInspector.lastNestRequestor.url;
-      } catch (e) {
-        
-        
-        dumpn(e);
-      }
+      return xpcInspector.lastNestRequestor.thread;
     }
-    return url;
-  },
-
-  
-
-
-
-  get lastConnection() {
-    return xpcInspector.lastNestRequestor._connection;
+    return null;
   },
 
   
@@ -63,7 +45,6 @@ EventLoopStack.prototype = {
   push: function() {
     return new EventLoop({
       thread: this._thread,
-      connection: this._connection,
     });
   },
 };
@@ -75,11 +56,8 @@ EventLoopStack.prototype = {
 
 
 
-
-
-function EventLoop({ thread, connection }) {
+function EventLoop({ thread }) {
   this._thread = thread;
-  this._connection = connection;
 
   this.enter = this.enter.bind(this);
   this.resolve = this.resolve.bind(this);
@@ -88,8 +66,8 @@ function EventLoop({ thread, connection }) {
 EventLoop.prototype = {
   entered: false,
   resolved: false,
-  get url() {
-    return this._thread._parent.url;
+  get thread() {
+    return this._thread;
   },
 
   
