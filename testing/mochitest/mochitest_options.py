@@ -421,6 +421,11 @@ class MochitestArguments(ArgumentContainer):
           "default": None,
           "suppress": True,
           }],
+        [["--nested_oop"],
+         {"action": "store_true",
+          "default": False,
+          "help": "Run tests with nested_oop preferences and test filtering enabled.",
+          }],
         [["--dmd"],
          {"action": "store_true",
           "default": False,
@@ -623,6 +628,9 @@ class MochitestArguments(ArgumentContainer):
         """Validate generic options."""
 
         
+        mozinfo.update({"nested_oop": options.nested_oop})
+
+        
         if parser.app != 'android':
             if options.app is None:
                 if build_obj:
@@ -818,6 +826,9 @@ class MochitestArguments(ArgumentContainer):
                 parser.error(
                     'Missing binary pactl required for '
                     '--use-test-media-devices')
+
+        if options.nested_oop:
+            options.e10s = True
 
         
         if options.flavor in ('a11y', 'chrome') and options.e10s:
