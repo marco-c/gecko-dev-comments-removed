@@ -258,6 +258,9 @@
 }
 
 #tracking-protection-icon-box:not([hasException])[active] #tracking-protection-icon-animatable-image {
+  
+
+  display: block;
   background-image: url(chrome://browser/skin/tracking-protection-animation.svg);
   transform: translateX(-256px);
   width: 272px;
