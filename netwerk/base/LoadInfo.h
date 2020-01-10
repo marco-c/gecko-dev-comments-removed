@@ -97,15 +97,24 @@ class LoadInfo final : public nsILoadInfo {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void SetCSPToInherit(nsIContentSecurityPolicy* aCspToInherit) {
     mCspToInherit = aCspToInherit;
   }
-  
-  
-  
-  
-  
-  nsIContentSecurityPolicy* GetCSPToInherit() { return mCspToInherit; }
 
  private:
   

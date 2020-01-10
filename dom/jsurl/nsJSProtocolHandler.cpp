@@ -161,8 +161,7 @@ nsresult nsJSThunk::EvaluateScript(
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp =
-      static_cast<mozilla::net::LoadInfo*>(loadInfo.get())->GetCSPToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
   if (csp) {
     bool allowsInlineScript = true;
     rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,

@@ -6937,7 +6937,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 
           LoadURIOptions loadURIOptions;
           loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
-          loadURIOptions.mCsp = loadInfo->GetCsp();
+          loadURIOptions.mCsp = loadInfo->GetCspToInherit();
           loadURIOptions.mPostData = newPostData;
           return LoadURI(newSpecW, loadURIOptions);
         }
@@ -10061,16 +10061,16 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       }
     }
 
-    if (CSP_ShouldResponseInheritCSP(channel)) {
-      
-      
-      
-      
-      
-      RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
-      cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
-      loadInfo->SetCSPToInherit(cspToInherit);
-    }
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
+    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
+    loadInfo->SetCSPToInherit(cspToInherit);
   }
 
   nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
@@ -11471,7 +11471,7 @@ nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
       triggeringPrincipal = loadInfo->TriggeringPrincipal();
     }
     if (!csp) {
-      csp = static_cast<net::LoadInfo*>(loadInfo.get())->GetCSPToInherit();
+      csp = loadInfo->GetCspToInherit();
     }
 
     loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
