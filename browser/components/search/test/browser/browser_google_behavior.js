@@ -7,11 +7,6 @@
 
 
 
-
-
-
-
-
 "use strict";
 
 let searchEngineDetails = [
