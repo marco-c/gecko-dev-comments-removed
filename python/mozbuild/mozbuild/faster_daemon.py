@@ -74,7 +74,6 @@ class Daemon(object):
         
         defines.update({
             'AB_CD': 'en-US',
-            'BUILD_FASTER': '1',
         })
         return defines
 

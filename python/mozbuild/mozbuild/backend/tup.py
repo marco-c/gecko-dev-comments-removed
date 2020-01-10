@@ -694,10 +694,6 @@ class TupBackend(CommonBackend):
             
             acdefines_flags += ' -DAB_CD=en-US'
 
-            
-            
-            acdefines_flags += ' -DBUILD_FASTER=1'
-
             fh.write('MOZ_OBJ_ROOT = $(TUP_CWD)\n')
             fh.write('DIST = $(MOZ_OBJ_ROOT)/dist\n')
             fh.write('ACDEFINES = %s\n' % acdefines_flags)
