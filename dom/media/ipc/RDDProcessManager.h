@@ -27,7 +27,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   ~RDDProcessManager();
 
   
-  void LaunchRDDProcess();
+  bool LaunchRDDProcess();
 
   
   
