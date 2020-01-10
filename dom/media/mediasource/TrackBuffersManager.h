@@ -194,6 +194,9 @@ class TrackBuffersManager final
   RefPtr<RangeRemovalPromise> CodedFrameRemovalWithPromise(
       media::TimeInterval aInterval);
   bool CodedFrameRemoval(media::TimeInterval aInterval);
+  
+  
+  void RemoveAllCodedFrames();
   void SetAppendState(SourceBufferAttributes::AppendState aAppendState);
 
   bool HasVideo() const { return mVideoTracks.mNumTracks > 0; }

@@ -493,6 +493,20 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
   
   auto& track = HasVideo() ? mVideoTracks : mAudioTracks;
   const auto& buffer = track.GetTrackBuffer();
+  if (buffer.IsEmpty()) {
+    
+    return;
+  }
+  if (track.mBufferedRanges.Length() == 0) {
+    MSE_DEBUG(
+        "DoEvictData running with no buffered ranges. 0 duration data likely "
+        "present in our buffer(s). Evicting all data!");
+    
+    
+    
+    RemoveAllCodedFrames();
+    return;
+  }
   
   
   TimeUnit lowerLimit = std::min(track.mNextSampleTime, aPlaybackTime);
@@ -660,6 +674,80 @@ bool TrackBuffersManager::CodedFrameRemoval(TimeInterval aInterval) {
   }
 
   return dataRemoved;
+}
+
+void TrackBuffersManager::RemoveAllCodedFrames() {
+  
+  
+  
+  MSE_DEBUG("RemoveAllCodedFrames called.");
+  MOZ_ASSERT(OnTaskQueue());
+
+  
+  TimeUnit start{};
+  
+  TimeUnit end = TimeUnit::FromMicroseconds(1);
+  
+  
+  
+  for (TrackData* track : GetTracksList()) {
+    for (auto& frame : track->GetTrackBuffer()) {
+      MOZ_ASSERT(frame->mTime >= start,
+                 "Shouldn't have frame at negative time!");
+      TimeUnit frameEnd = frame->mTime + frame->mDuration;
+      if (frameEnd > end) {
+        end = frameEnd + TimeUnit::FromMicroseconds(1);
+      }
+    }
+  }
+
+  
+  TimeIntervals removedInterval{TimeInterval(start, end)};
+  for (TrackData* track : GetTracksList()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    RemoveFrames(removedInterval, *track, 0, RemovalMode::kRemoveFrame);
+
+    
+    
+    
+    
+    
+    
+  }
+
+  UpdateBufferedRanges();
+  MOZ_ASSERT(mAudioBufferedRanges.Length() == 0,
+             "Should have no buffered video ranges after evicting everything.");
+  MOZ_ASSERT(mVideoBufferedRanges.Length() == 0,
+             "Should have no buffered video ranges after evicting everything.");
+  mSizeSourceBuffer = mVideoTracks.mSizeBuffer + mAudioTracks.mSizeBuffer;
+  MOZ_ASSERT(mSizeSourceBuffer == 0,
+             "Buffer should be empty after evicting everything!");
+  if (mBufferFull && mSizeSourceBuffer < EvictionThreshold()) {
+    mBufferFull = false;
+  }
 }
 
 void TrackBuffersManager::UpdateBufferedRanges() {
