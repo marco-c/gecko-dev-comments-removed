@@ -5007,8 +5007,6 @@ pref("network.trr.bootstrapAddress", "");
 
 pref("network.trr.blacklist-duration", 60);
 
-pref("network.trr.request-timeout", 1500);
-
 pref("network.trr.early-AAAA", false);
 
 pref("network.trr.skip-AAAA-when-not-supported", true);
