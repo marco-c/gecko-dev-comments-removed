@@ -101,11 +101,11 @@ add_task(function test_initialize() {
 
 add_task(function test_search_all_basic() {
   
-  checkAllSearches({}, 23);
+  checkAllSearches({}, 27);
 
   
-  checkAllSearches({ httpRealm: null }, 14);
-  checkAllSearches({ formActionOrigin: null }, 9);
+  checkAllSearches({ httpRealm: null }, 17);
+  checkAllSearches({ formActionOrigin: null }, 10);
 
   
   checkAllSearches({ origin: "http://www4.example.com", httpRealm: null }, 3);
@@ -176,10 +176,10 @@ add_task(function test_searchLogins() {
   checkSearchLogins({ passwordField: "form_field_password" }, 13);
 
   
-  checkSearchLogins({ usernameField: "" }, 11);
+  checkSearchLogins({ usernameField: "" }, 15);
 
   
-  checkSearchLogins({ httpRealm: null, usernameField: "" }, 2);
+  checkSearchLogins({ httpRealm: null, usernameField: "" }, 5);
 
   
   checkSearchLogins(
