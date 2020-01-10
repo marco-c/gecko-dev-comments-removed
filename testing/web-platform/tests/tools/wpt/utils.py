@@ -6,7 +6,7 @@ import zipfile
 from io import BytesIO
 
 try:
-    from typing import Any
+    from typing import Any, Callable
 except ImportError:
     pass
 
@@ -21,6 +21,7 @@ class Kwargs(dict):
                     desc=None,       
                     extra_cond=None  
                     ):
+        
         if desc is None:
             desc = name
 
