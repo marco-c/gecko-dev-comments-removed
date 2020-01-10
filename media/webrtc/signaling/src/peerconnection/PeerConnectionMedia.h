@@ -117,7 +117,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   bool AnyCodecHasPluginID(uint64_t aPluginID);
 
   const nsCOMPtr<nsIThread>& GetMainThread() const { return mMainThread; }
-  const nsCOMPtr<nsIEventTarget>& GetSTSThread() const { return mSTSThread; }
+  const nsCOMPtr<nsISerialEventTarget>& GetSTSThread() const {
+    return mSTSThread;
+  }
 
   
   
@@ -203,7 +205,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsCOMPtr<nsIThread> mMainThread;
 
   
-  nsCOMPtr<nsIEventTarget> mSTSThread;
+  nsCOMPtr<nsISerialEventTarget> mSTSThread;
 
   
   
