@@ -113,7 +113,6 @@
 #  include "mozilla/WinHeaderOnlyUtils.h"
 #  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/widget/AudioSession.h"
-#  include "WinTokenUtils.h"
 
 #  if defined(MOZ_LAUNCHER_PROCESS)
 #    include "mozilla/LauncherRegistryInfo.h"
@@ -4562,15 +4561,6 @@ nsresult XREMain::XRE_mainRun() {
 
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ContentSandboxCapabilities, flagsString);
-#endif 
-
-#if defined(XP_WIN)
-  LauncherResult<bool> isAdminWithoutUac = IsAdminWithoutUac();
-  if (isAdminWithoutUac.isOk()) {
-    Telemetry::ScalarSet(
-        Telemetry::ScalarID::OS_ENVIRONMENT_IS_ADMIN_WITHOUT_UAC,
-        isAdminWithoutUac.unwrap());
-  }
 #endif 
 
 #if defined(MOZ_SANDBOX)
