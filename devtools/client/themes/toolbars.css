@@ -10,11 +10,8 @@
   border-width: 0;
   border-bottom-width: 1px;
   border-style: solid;
-  
-  height: calc(var(--theme-toolbar-height) + 1px);
-  
-
-  line-height: var(--theme-toolbar-height);
+  height: 24px;
+  line-height: 24px;
   box-sizing: border-box;
 }
 

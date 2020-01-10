@@ -17,9 +17,6 @@
   --theme-code-font-size: 11px;
 
   
-  --theme-toolbar-height: 24px;
-
-  
 
   --theme-focus-outline: 1px dotted var(--theme-focus-outline-color);
   --theme-focus-box-shadow-textbox: 0 0 0 1px var(--theme-textbox-box-shadow);
