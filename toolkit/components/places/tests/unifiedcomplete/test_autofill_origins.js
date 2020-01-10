@@ -369,7 +369,7 @@ add_task(async function groupByHostNonDefaultStddevMultiplier() {
 
 
 
-add_task(async function bookmarkedMultiple() {
+add_task(async function suggestHistoryFalse_bookmark_multiple() {
   
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
@@ -441,7 +441,8 @@ add_task(async function bookmarkedMultiple() {
 
 
 
-add_task(async function bookmarkedPrefixMultiple() {
+
+add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
   
   
   Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
