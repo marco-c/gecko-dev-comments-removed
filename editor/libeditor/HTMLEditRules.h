@@ -245,16 +245,6 @@ class HTMLEditRules : public TextEditRules {
   
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillMakeList(const nsAString* aListType,
-                                     bool aEntireList,
-                                     const nsAString* aBulletType,
-                                     bool* aCancel, bool* aHandled,
-                                     const nsAString* aItemType = nullptr);
-
-  
-
-
 
 
 
@@ -342,21 +332,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillRelativeChangeZIndex(int32_t aChange, bool* aCancel,
                                                  bool* aHandled);
-
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillMakeDefListItem(const nsAString* aBlockType,
-                                            bool aEntireList, bool* aCancel,
-                                            bool* aHandled);
 
   
 

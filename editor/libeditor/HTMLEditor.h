@@ -262,8 +262,23 @@ class HTMLEditor final : public TextEditor,
   nsresult RemoveListAsAction(const nsAString& aListType,
                               nsIPrincipal* aPrincipal = nullptr);
 
-  MOZ_CAN_RUN_SCRIPT nsresult MakeOrChangeListAsAction(
-      const nsAString& aListType, bool entireList, const nsAString& aBulletType,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  enum class SelectAllOfCurrentList { Yes, No };
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MakeOrChangeListAsAction(
+      nsAtom& aListElementTagName, const nsAString& aBulletType,
+      SelectAllOfCurrentList aSelectAllOfCurrentList,
       nsIPrincipal* aPrincipal = nullptr);
 
   
@@ -1904,13 +1919,34 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  ChangeSelectedHardLinesToList(nsAtom& aListElementTagName,
+                                nsAtom& aListItemElementTagName,
+                                const nsAString& aBulletType,
+                                SelectAllOfCurrentList aSelectAllOfCurrentList);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
-  ChangeSelectedHardLinesToList(nsAtom& aListElementTagName,
-                                bool aSelectAllOfCurrentList,
-                                const nsAString* aBulletType,
-                                nsAtom& aListItemElementTagName);
+  MakeOrChangeListAndListItemAsSubAction(
+      nsAtom& aListElementOrListItemElementTagName,
+      const nsAString& aBulletType,
+      SelectAllOfCurrentList aSelectAllOfCurrentList);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
@@ -3022,7 +3058,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult MakeDefinitionListItemWithTransaction(nsAtom& aTagName);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  MakeDefinitionListItemWithTransaction(nsAtom& aTagName);
 
   
 

@@ -446,7 +446,8 @@ enum class EditSubAction : int32_t {
 
   
   
-  eCreateOrChangeDefinitionList,
+  
+  eCreateOrChangeDefinitionListItem,
 
   
   eInsertElement,
