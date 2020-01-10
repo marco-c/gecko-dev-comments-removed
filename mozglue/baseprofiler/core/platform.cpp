@@ -173,7 +173,6 @@ static uint32_t AvailableFeatures() {
   
   ProfilerFeature::ClearJava(features);
   ProfilerFeature::ClearJS(features);
-  ProfilerFeature::ClearMemory(features);
   ProfilerFeature::ClearResponsiveness(features);
   ProfilerFeature::ClearScreenshots(features);
 #  if !defined(HAVE_NATIVE_UNWIND)
@@ -198,7 +197,7 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::MainThreadIO | ProfilerFeature::Memory;
+  return ProfilerFeature::MainThreadIO;
 }
 
 
@@ -1632,7 +1631,6 @@ static void locked_profiler_stream_json_for_this_process(
                                         aSinceTime);
     buffer.StreamCountersToJSON(aWriter, CorePS::ProcessStartTime(),
                                 aSinceTime);
-    buffer.StreamMemoryToJSON(aWriter, CorePS::ProcessStartTime(), aSinceTime);
 
     
     aWriter.StartArrayProperty("threads");

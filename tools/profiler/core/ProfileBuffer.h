@@ -80,9 +80,6 @@ class ProfileBuffer final {
   void StreamCountersToJSON(SpliceableJSONWriter& aWriter,
                             const mozilla::TimeStamp& aProcessStartTime,
                             double aSinceTime) const;
-  void StreamMemoryToJSON(SpliceableJSONWriter& aWriter,
-                          const mozilla::TimeStamp& aProcessStartTime,
-                          double aSinceTime) const;
 
   
   

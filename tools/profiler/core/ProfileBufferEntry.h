@@ -42,8 +42,6 @@ class ProfilerMarker;
   MACRO(Resume, double)                                             \
   MACRO(ThreadId, int)                                              \
   MACRO(Time, double)                                               \
-  MACRO(ResidentMemory, uint64_t)                                   \
-  MACRO(UnsharedMemory, uint64_t)                                   \
   MACRO(CounterId, void*)                                           \
   MACRO(CounterKey, uint64_t)                                       \
   MACRO(Number, uint64_t)                                           \
@@ -401,24 +399,6 @@ class UniqueStacks {
 
   mozilla::Vector<JITFrameInfoForBufferRange> mJITInfoRanges;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
