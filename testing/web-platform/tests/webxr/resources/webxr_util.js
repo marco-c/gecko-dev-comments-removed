@@ -71,9 +71,7 @@ function xr_session_promise_test(
                             .then((session) => {
                               testSession = session;
                               session.mode = sessionMode;
-                              let glLayer = new XRWebGLLayer(session, gl, {
-                                compositionDisabled: session.mode == 'inline'
-                              });
+                              let glLayer = new XRWebGLLayer(session, gl);
                               glLayer.context = gl;
                               
                               
