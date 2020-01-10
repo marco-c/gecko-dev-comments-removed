@@ -989,24 +989,20 @@ nsresult PresentationControllingInfo::ContinueReconnect() {
 
 NS_IMETHODIMP
 PresentationControllingInfo::OnListedNetworkAddresses(
-    const char** aAddressArray, uint32_t aAddressArraySize) {
-  if (!aAddressArraySize) {
+    const nsTArray<nsCString>& aAddressArray) {
+  if (aAddressArray.IsEmpty()) {
     return OnListNetworkAddressesFailed();
   }
 
   
   
-  
-
-  nsAutoCString ip;
-  ip.Assign(aAddressArray[0]);
 
   
   
   
   NS_DispatchToMainThread(NewRunnableMethod<nsCString>(
       "dom::PresentationControllingInfo::OnGetAddress", this,
-      &PresentationControllingInfo::OnGetAddress, ip));
+      &PresentationControllingInfo::OnGetAddress, aAddressArray[0]));
 
   return NS_OK;
 }
