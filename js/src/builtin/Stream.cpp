@@ -680,6 +680,11 @@ static MOZ_MUST_USE bool ReadableStream_cancel(JSContext* cx, unsigned argc,
   return true;
 }
 
+
+
+
+
+
 static MOZ_MUST_USE ReadableStreamDefaultReader*
 CreateReadableStreamDefaultReader(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream,
@@ -733,6 +738,7 @@ static bool ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
     if (equal) {
+      
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr,
           JSMSG_READABLESTREAM_BYTES_TYPE_NOT_IMPLEMENTED);
@@ -752,6 +758,7 @@ static bool ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setObject(*reader);
   return true;
 }
+
 
 
 
@@ -801,6 +808,11 @@ static bool ReadableStream_tee(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static const JSFunctionSpec ReadableStream_methods[] = {
     JS_FN("cancel", ReadableStream_cancel, 1, 0),
     JS_FN("getReader", ReadableStream_getReader, 0, 0),
@@ -812,6 +824,10 @@ static const JSPropertySpec ReadableStream_properties[] = {
 CLASS_SPEC(ReadableStream, 0, SlotCount, 0,
            JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE,
            JS_NULL_CLASS_OPS);
+
+
+
+
 
 
 
@@ -947,6 +963,10 @@ bool ReadableStream::locked() const {
   return hasReader();
 }
 
+
+
+
+
 static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
     JSContext* cx,
     Handle<ReadableStreamDefaultController*> unwrappedController);
@@ -958,11 +978,18 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
 
 
 
+
+
 static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<TeeState*> unwrappedTeeState(cx,
                                       UnwrapCalleeSlot<TeeState>(cx, args, 0));
   HandleValue resultVal = args.get(0);
+
+  
+  
+  
+  
 
   
   RootedObject result(cx, &resultVal.toObject());
@@ -1333,6 +1360,12 @@ static MOZ_MUST_USE bool ReadableStreamTee(
   
   return true;
 }
+
+
+
+
+
+
 
 
 
@@ -1747,6 +1780,10 @@ static uint32_t ReadableStreamGetNumReadRequests(ReadableStream* stream) {
 
 
 
+
+
+
+
 static MOZ_MUST_USE bool ReadableStreamHasDefaultReader(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream, bool* result) {
   
@@ -2002,6 +2039,10 @@ const Class ReadableStreamReader::class_ = {"ReadableStreamReader"};
 
 CLASS_SPEC(ReadableStreamDefaultReader, 1, SlotCount,
            ClassSpec::DontDefineConstructor, 0, JS_NULL_CLASS_OPS);
+
+
+
+
 
 
 
