@@ -1414,12 +1414,10 @@ class UrlbarInput {
 
 
 
-
-
-  _maybeSelectAll(ignoreClickSelectsAllPref = false) {
+  _maybeSelectAll() {
     if (
       !this._preventClickSelectsAll &&
-      (ignoreClickSelectsAllPref || UrlbarPrefs.get("clickSelectsAll")) &&
+      UrlbarPrefs.get("clickSelectsAll") &&
       this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING &&
       this.document.activeElement == this.inputField &&
       this.inputField.selectionStart == this.inputField.selectionEnd
@@ -1480,13 +1478,18 @@ class UrlbarInput {
 
   _on_contextmenu(event) {
     
-    if (!event.button) {
+    
+    
+    if (AppConstants.platform == "win") {
       return;
     }
 
     
-    
-    this._maybeSelectAll( event.button == 2);
+    if (!event.button) {
+      return;
+    }
+
+    this._maybeSelectAll();
   }
 
   _on_focus(event) {
