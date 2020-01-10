@@ -7,6 +7,7 @@
 #include "gfxFT2Utils.h"
 #include "harfbuzz/hb.h"
 #include "mozilla/Likely.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "gfxFontConstants.h"
 #include "gfxFontUtils.h"
 #include <algorithm>
@@ -24,6 +25,7 @@
 #  define FT_FACE_FLAG_COLOR (1L << 14)
 #endif
 
+using namespace mozilla;
 using namespace mozilla::gfx;
 
 gfxFT2FontBase::gfxFT2FontBase(
@@ -479,10 +481,18 @@ bool gfxFT2FontBase::ShouldRoundXOffset(cairo_t* aCairo) const {
   
   
   
-  return aCairo != nullptr || !mFTFace || !FT_IS_SCALABLE(mFTFace->GetFace()) ||
+  
+  
+  return MOZ_UNLIKELY(
+             StaticPrefs::
+                 gfx_text_subpixel_position_force_disabled_AtStartup()) ||
+         aCairo != nullptr || !mFTFace || !FT_IS_SCALABLE(mFTFace->GetFace()) ||
          (mFTLoadFlags & FT_LOAD_MONOCHROME) ||
          !((mFTLoadFlags & FT_LOAD_NO_HINTING) ||
-           FT_LOAD_TARGET_MODE(mFTLoadFlags) == FT_RENDER_MODE_LIGHT);
+           FT_LOAD_TARGET_MODE(mFTLoadFlags) == FT_RENDER_MODE_LIGHT ||
+           MOZ_UNLIKELY(
+               StaticPrefs::
+                   gfx_text_subpixel_position_force_enabled_AtStartup()));
 }
 
 FT_Vector gfxFT2FontBase::GetEmboldenStrength(FT_Face aFace) {
