@@ -58,6 +58,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FileSource: "resource://gre/modules/L10nRegistry.jsm",
   L10nRegistry: "resource://gre/modules/L10nRegistry.jsm",
   LightweightThemeManager: "resource://gre/modules/LightweightThemeManager.jsm",
+  Localization: "resource://gre/modules/Localization.jsm",
   Log: "resource://gre/modules/Log.jsm",
   MessageChannel: "resource://gre/modules/MessageChannel.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
@@ -382,6 +383,7 @@ class ExtensionData {
     this.id = null;
     this.uuid = null;
     this.localeData = null;
+    this.fluentL10n = null;
     this._promiseLocales = null;
 
     this.apiNames = new Set();
@@ -696,7 +698,7 @@ class ExtensionData {
       preprocessors: {},
     };
 
-    if (this.localeData) {
+    if (this.fluentL10n || this.localeData) {
       context.preprocessors.localize = (value, context) =>
         this.localize(value, locale);
     }
@@ -726,6 +728,19 @@ class ExtensionData {
 
     if (manifest && manifest.default_locale) {
       await this.initLocale();
+    }
+
+    
+    
+    
+    
+    if (manifest && manifest.l10n_resources && "isPrivileged" in this) {
+      if (this.isPrivileged) {
+        this.fluentL10n = new Localization(manifest.l10n_resources, true);
+      } else {
+        
+        Cu.reportError("Ignoring l10n_resources in unprivileged extension");
+      }
     }
 
     if (this.manifest.theme) {
@@ -1110,8 +1125,23 @@ class ExtensionData {
     return this.localeData.localizeMessage(...args);
   }
 
-  localize(...args) {
-    return this.localeData.localize(...args);
+  localize(str, locale) {
+    
+    
+    
+    
+    
+    
+    if (this.fluentL10n) {
+      str = str.replace(/__MSG_([-A-Za-z0-9@_]+?)__/g, (matched, message) => {
+        let translation = this.fluentL10n.formatValueSync(message);
+        return translation !== undefined ? translation : matched;
+      });
+    }
+    if (this.localeData) {
+      str = this.localeData.localize(str, locale);
+    }
+    return str;
   }
 
   
