@@ -259,7 +259,10 @@ inline void nsIContent::HandleShadowDOMRelatedRemovalSteps(bool aNullParent) {
   using mozilla::dom::ShadowRoot;
 
   if (aNullParent) {
-    if (Element* parentElement = Element::FromNode(mParent)) {
+    
+    
+    
+    if (Element* parentElement = Element::FromNodeOrNull(mParent)) {
       if (ShadowRoot* shadow = parentElement->GetShadowRoot()) {
         shadow->MaybeUnslotHostChild(*this);
       }
