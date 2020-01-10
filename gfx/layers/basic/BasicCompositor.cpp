@@ -922,6 +922,8 @@ void BasicCompositor::BeginFrame(
 
   BufferMode bufferMode = BufferMode::BUFFERED;
   if (mTarget) {
+    MOZ_RELEASE_ASSERT(!mInvalidRect.IsEmpty());
+
     
     
     
@@ -954,10 +956,6 @@ void BasicCompositor::BeginFrame(
     } else {
       mDrawTargetBounds = IntRect(IntPoint(0, 0), dtSize);
     }
-  }
-
-  if (!mDrawTarget || mInvalidRect.IsEmpty()) {
-    return;
   }
 
   LayoutDeviceIntRegion clearRegion = mInvalidRegion;
