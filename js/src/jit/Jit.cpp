@@ -140,7 +140,7 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
   do {
     
     
-    if (JitOptions.baselineInterpreter) {
+    if (IsBaselineInterpreterEnabled()) {
       if (script->jitScript()) {
         break;
       }
@@ -178,7 +178,7 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
     }
 
     
-    if (JitOptions.baselineInterpreter) {
+    if (IsBaselineInterpreterEnabled()) {
       jit::MethodStatus status =
           jit::CanEnterBaselineMethod<BaselineTier::Interpreter>(cx, state);
       if (status == jit::Method_Error) {
