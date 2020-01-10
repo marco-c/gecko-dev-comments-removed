@@ -9,15 +9,4 @@ module.exports = {
     "files": ["*.js"],
     "processor": "spidermonkey-js/processor",
   }],
-
-  "rules": {
-    
-    "no-self-compare": "off",
-    "no-lonely-if": "off",
-    
-    "no-undef": "off",
-    
-    
-    "no-redeclare": "off",
-  }
 };
