@@ -27,26 +27,6 @@ function startProfiler(callersSettings) {
 
 
 
-async function doAtLeastOnePeriodicSample() {
-  async function getProfileSampleCount() {
-    const profile = await Services.profiler.getProfileDataAsync();
-    return profile.threads[0].samples.data.length;
-  }
-
-  const sampleCount = await getProfileSampleCount();
-  
-  while (true) {
-    if (sampleCount < (await getProfileSampleCount())) {
-      return;
-    }
-  }
-}
-
-
-
-
-
-
 
 
 
@@ -86,7 +66,7 @@ async function stopProfilerNowAndGetThreads(contentPid) {
 
 
 async function stopProfilerAndGetThreads(contentPid) {
-  await doAtLeastOnePeriodicSample();
+  await Services.profiler.waitOnePeriodicSampling();
 
   return stopProfilerNowAndGetThreads(contentPid);
 }
