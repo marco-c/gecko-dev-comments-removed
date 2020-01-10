@@ -136,7 +136,7 @@ class nsFrame : public nsBox {
 
  private:
   
-  void* operator new(size_t sz) CPP_THROW_NEW;
+  void* operator new(size_t sz) noexcept(true);
 
  protected:
   

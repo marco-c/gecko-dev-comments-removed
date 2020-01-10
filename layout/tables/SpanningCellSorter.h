@@ -84,7 +84,7 @@ class MOZ_STACK_CLASS SpanningCellSorter {
 
 
 
-  void* operator new(size_t sz) CPP_THROW_NEW { return nullptr; }
+  void* operator new(size_t sz) noexcept(true) { return nullptr; }
 };
 
 #endif
