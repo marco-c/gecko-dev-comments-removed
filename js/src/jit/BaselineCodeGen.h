@@ -634,6 +634,12 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
   
   ResumeOffsetEntryVector resumeOffsetEntries_;
 
+  
+  
+  using DebugTrapEntryVector =
+      Vector<BaselineScript::DebugTrapEntry, 0, SystemAllocPolicy>;
+  DebugTrapEntryVector debugTrapEntries_;
+
   CodeOffset profilerPushToggleOffset_;
 
   CodeOffset traceLoggerScriptTextIdOffset_;
