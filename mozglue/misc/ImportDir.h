@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/LauncherResult.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 

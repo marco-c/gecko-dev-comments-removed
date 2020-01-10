@@ -490,7 +490,7 @@ static NTSTATUS NTAPI patched_LdrLoadDll(PWCHAR filePath, PULONG flags,
             load_ok = true;
           }
         } else {
-          WindowsErrorResult<ModuleVersion> version =
+          LauncherResult<ModuleVersion> version =
               GetModuleVersion(full_fname.get());
           
           if (version.isOk()) {
