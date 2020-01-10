@@ -98,16 +98,16 @@ class DebugAPI {
   static void traceAllForMovingGC(JSTracer* trc);
 
   
-  static void sweepAll(FreeOp* fop);
+  static void sweepAll(JSFreeOp* fop);
 
   
   static MOZ_MUST_USE bool findSweepGroupEdges(JSRuntime* rt);
 
   
-  static inline void sweepBreakpoints(FreeOp* fop, JSScript* script);
+  static inline void sweepBreakpoints(JSFreeOp* fop, JSScript* script);
 
   
-  static void destroyDebugScript(FreeOp* fop, JSScript* script);
+  static void destroyDebugScript(JSFreeOp* fop, JSScript* script);
 
   
 #ifdef JSGC_HASH_TABLE_CHECKS
@@ -348,7 +348,7 @@ class DebugAPI {
  private:
   static bool stepModeEnabledSlow(JSScript* script);
   static bool hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc);
-  static void sweepBreakpointsSlow(FreeOp* fop, JSScript* script);
+  static void sweepBreakpointsSlow(JSFreeOp* fop, JSScript* script);
   static void slowPathOnNewScript(JSContext* cx, HandleScript script);
   static void slowPathOnNewGlobalObject(JSContext* cx,
                                         Handle<GlobalObject*> global);

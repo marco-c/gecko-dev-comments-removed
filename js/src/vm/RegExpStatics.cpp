@@ -20,7 +20,7 @@ using namespace js;
 
 
 
-static void resc_finalize(FreeOp* fop, JSObject* obj) {
+static void resc_finalize(JSFreeOp* fop, JSObject* obj) {
   MOZ_ASSERT(fop->onMainThread());
   RegExpStatics* res =
       static_cast<RegExpStatics*>(obj->as<RegExpStaticsObject>().getPrivate());

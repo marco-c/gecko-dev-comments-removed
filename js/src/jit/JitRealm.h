@@ -684,8 +684,8 @@ class JitRealm {
 };
 
 
-void InvalidateAll(FreeOp* fop, JS::Zone* zone);
-void FinishInvalidation(FreeOp* fop, JSScript* script);
+void InvalidateAll(JSFreeOp* fop, JS::Zone* zone);
+void FinishInvalidation(JSFreeOp* fop, JSScript* script);
 
 
 
