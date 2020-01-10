@@ -1216,19 +1216,22 @@ const JSClass* const js::FunctionClassPtr = &JSFunction::class_;
 
 bool JSFunction::isDerivedClassConstructor() {
   bool derived;
-  if (hasSelfHostedLazyScript()) {
+  if (isInterpretedLazy()) {
     
     
-    JSAtom* name = GetClonedSelfHostedFunctionName(this);
+    if (isSelfHostedBuiltin()) {
+      JSAtom* name = GetClonedSelfHostedFunctionName(this);
 
-    
-    
-    derived = name == compartment()
-                          ->runtimeFromAnyThread()
-                          ->commonNames->DefaultDerivedClassConstructor;
-  }
-  if (hasBaseScript()) {
-    derived = baseScript()->isDerivedClassConstructor();
+      
+      
+      derived = name == compartment()
+                            ->runtimeFromAnyThread()
+                            ->commonNames->DefaultDerivedClassConstructor;
+    } else {
+      derived = lazyScript()->isDerivedClassConstructor();
+    }
+  } else {
+    derived = nonLazyScript()->isDerivedClassConstructor();
   }
   MOZ_ASSERT_IF(derived, isClassConstructor());
   return derived;
@@ -2161,7 +2164,8 @@ bool js::CanReuseScriptForClone(JS::Realm* realm, HandleFunction fun,
 
   
   
-  return fun->baseScript()->hasNonSyntacticScope();
+  return fun->hasScript() ? fun->nonLazyScript()->hasNonSyntacticScope()
+                          : fun->lazyScript()->hasNonSyntacticScope();
 }
 
 static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
