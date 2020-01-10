@@ -553,9 +553,9 @@ function promiseAddonsByIDs(aIDs) {
 
 
 
-function install_addon(path, cb, pathPrefix = TESTROOT) {
-  let p = new Promise(async (resolve, reject) => {
-    let install = await AddonManager.getInstallForURL(pathPrefix + path);
+async function install_addon(path, cb, pathPrefix = TESTROOT) {
+  let install = await AddonManager.getInstallForURL(pathPrefix + path);
+  let p = new Promise((resolve, reject) => {
     install.addListener({
       onInstallEnded: () => resolve(install.addon),
     });

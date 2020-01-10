@@ -3,6 +3,7 @@
 
 
 function waitForConsole(task, message) {
+  
   return new Promise(async resolve => {
     SimpleTest.monitorConsole(resolve, [
       {

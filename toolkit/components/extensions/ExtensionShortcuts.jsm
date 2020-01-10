@@ -168,7 +168,7 @@ class ExtensionShortcuts {
     
     this.manifestCommands = this.loadCommandsFromManifest(extension.manifest);
 
-    this.commands = new Promise(async resolve => {
+    this.commands = (async () => {
       
       
       let commands = new Map();
@@ -187,8 +187,8 @@ class ExtensionShortcuts {
         }
       });
 
-      resolve(commands);
-    });
+      return commands;
+    })();
   }
 
   registerKeys(commands) {

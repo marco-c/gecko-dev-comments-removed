@@ -238,7 +238,7 @@ add_task(async function test_blocklisted_plugin_disabled() {
   });
 
   
-  await new Promise(async resolve => {
+  await new Promise(resolve => {
     
     
     registerCleanupFunction(ensurePluginEnabled);

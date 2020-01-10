@@ -41,6 +41,7 @@ add_task(async function test_get_current() {
 
       function ensureWindowFocused(winId) {
         browser.test.log("Waiting for focused window to be " + winId);
+        
         return new Promise(async resolve => {
           let listener = windowId => {
             if (windowId === winId) {
