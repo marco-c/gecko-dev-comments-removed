@@ -93,6 +93,7 @@
 #include "nsBindingManager.h"
 #include "nsXBLBinding.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIBoxObject.h"
 #include "mozilla/dom/DOMRect.h"
 #include "nsSVGUtils.h"
 #include "nsLayoutUtils.h"
@@ -1963,6 +1964,8 @@ void Element::UnbindFromTree(bool aNullParent) {
                                               false);
       }
     }
+
+    document->ClearBoxObjectFor(this);
 
     
     

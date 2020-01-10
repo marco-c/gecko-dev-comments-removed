@@ -159,6 +159,7 @@ namespace dom {
 class Animation;
 class AnonymousContent;
 class Attr;
+class BoxObject;
 class XULBroadcastManager;
 class XULPersist;
 class ClientInfo;
@@ -1560,6 +1561,8 @@ class Document : public nsINode,
 
   void DoUnblockOnload();
 
+  void ClearAllBoxObjects();
+
   void MaybeEndOutermostXBLUpdate();
 
   void RetrieveRelevantHeaders(nsIChannel* aChannel);
@@ -2440,6 +2443,20 @@ class Document : public nsINode,
 
   
   void RefreshLinkHrefs();
+
+  
+
+
+
+
+  void ClearBoxObjectFor(nsIContent* aContent);
+
+  
+
+
+
+  already_AddRefed<BoxObject> GetBoxObjectFor(Element* aElement,
+                                              ErrorResult& aRv);
 
   
 
@@ -4356,6 +4373,8 @@ class Document : public nsINode,
   bool mScrolledToRefAlready : 1;
   bool mChangeScrollPosWhenScrollingToRef : 1;
 
+  bool mHasWarnedAboutBoxObjects : 1;
+
   bool mDelayFrameLoaderInitialization : 1;
 
   bool mSynchronousDOMContentLoaded : 1;
@@ -4734,6 +4753,8 @@ class Document : public nsINode,
   LinkedList<DocumentTimeline> mTimelines;
 
   RefPtr<dom::ScriptLoader> mScriptLoader;
+
+  nsRefPtrHashtable<nsPtrHashKey<nsIContent>, BoxObject>* mBoxObjectTable;
 
   
   
