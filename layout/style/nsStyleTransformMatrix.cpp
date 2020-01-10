@@ -551,10 +551,17 @@ Matrix4x4 ReadTransforms(const StyleTranslate& aTranslate,
     
     
     
-    result.PreTranslate(aMotion->mTranslate.x, aMotion->mTranslate.y, 0.0);
+    
+    
+    
+    
+    result.PreTranslate(aMotion->mTranslate.x + aMotion->mShift.x,
+                        aMotion->mTranslate.y + aMotion->mShift.y, 0.0);
     if (aMotion->mRotate != 0.0) {
       result.RotateZ(aMotion->mRotate);
     }
+    
+    result.PreTranslate(-aMotion->mShift.x, -aMotion->mShift.y, 0.0);
   }
 
   for (const StyleTransformOperation& op : aTransform.Operations()) {

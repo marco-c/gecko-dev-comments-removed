@@ -42,6 +42,40 @@ impl<H, V> Position<H, V> {
 }
 
 
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericPositionOrAuto<Pos> {
+    
+    Position(Pos),
+    
+    Auto,
+}
+
+pub use self::GenericPositionOrAuto as PositionOrAuto;
+
+impl<Pos> PositionOrAuto<Pos> {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        PositionOrAuto::Auto
+    }
+}
+
+
 #[derive(
     Animate,
     Clone,
