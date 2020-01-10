@@ -521,12 +521,22 @@ pub trait TElement:
     fn has_attr(&self, namespace: &Namespace, attr: &LocalName) -> bool;
 
     
+    fn has_part_attr(&self) -> bool;
+
+    
     fn id(&self) -> Option<&WeakAtom>;
 
     
     fn each_class<F>(&self, callback: F)
     where
         F: FnMut(&Atom);
+
+    
+    fn each_part<F>(&self, _callback: F)
+    where
+        F: FnMut(&Atom)
+    {
+    }
 
     
     
