@@ -222,9 +222,20 @@ const backgroundPageThumbsContent = {
       });
     };
     let win = docShell.domWindow;
-    win.requestIdleCallback(() =>
-      doCapture().catch(ex => this._failCurrentCapture(ex.message))
-    );
+
+    let runCapture = () => {
+      doCapture().catch(ex => this._failCurrentCapture(ex.message));
+    };
+
+    
+    
+    
+    
+    if (Cu.isInAutomation) {
+      Services.tm.dispatchToMainThread(runCapture);
+    } else {
+      win.requestIdleCallback(runCapture);
+    }
   },
 
   _finishCurrentCapture() {
