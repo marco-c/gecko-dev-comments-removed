@@ -14,9 +14,11 @@
 
 
 use std::boxed::Box;
-use std::error::Error;
 use std::fmt;
 use std::result;
+
+#[cfg(feature = "std")]
+use std::error::Error;
 
 #[derive(Debug, Copy, Clone)]
 pub struct BinaryReaderError {
@@ -26,6 +28,7 @@ pub struct BinaryReaderError {
 
 pub type Result<T> = result::Result<T, BinaryReaderError>;
 
+#[cfg(feature = "std")]
 impl Error for BinaryReaderError {}
 
 impl fmt::Display for BinaryReaderError {
@@ -81,6 +84,19 @@ pub enum Type {
     AnyRef,
     Func,
     EmptyBlockType,
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum TypeOrFuncType {
+    
+    
+    
+    
+    Type(Type),
+
+    
+    FuncType(u32),
 }
 
 
@@ -220,9 +236,9 @@ pub type SIMDLineIndex = u8;
 pub enum Operator<'a> {
     Unreachable,
     Nop,
-    Block { ty: Type },
-    Loop { ty: Type },
-    If { ty: Type },
+    Block { ty: TypeOrFuncType },
+    Loop { ty: TypeOrFuncType },
+    If { ty: TypeOrFuncType },
     Else,
     End,
     Br { relative_depth: u32 },

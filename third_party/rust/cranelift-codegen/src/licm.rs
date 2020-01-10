@@ -17,7 +17,7 @@ use std::vec::Vec;
 
 
 pub fn do_licm(
-    isa: &TargetIsa,
+    isa: &dyn TargetIsa,
     func: &mut Function,
     cfg: &mut ControlFlowGraph,
     domtree: &mut DominatorTree,
@@ -64,7 +64,7 @@ pub fn do_licm(
 
 
 fn create_pre_header(
-    isa: &TargetIsa,
+    isa: &dyn TargetIsa,
     header: Ebb,
     func: &mut Function,
     cfg: &mut ControlFlowGraph,

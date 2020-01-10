@@ -199,7 +199,7 @@ pub fn allocatable_registers(_func: &ir::Function, triple: &Triple) -> RegisterS
 }
 
 
-fn callee_saved_gprs(isa: &TargetIsa, call_conv: CallConv) -> &'static [RU] {
+fn callee_saved_gprs(isa: &dyn TargetIsa, call_conv: CallConv) -> &'static [RU] {
     match isa.triple().pointer_width().unwrap() {
         PointerWidth::U16 => panic!(),
         PointerWidth::U32 => &[RU::rbx, RU::rsi, RU::rdi],
@@ -227,7 +227,7 @@ fn callee_saved_gprs(isa: &TargetIsa, call_conv: CallConv) -> &'static [RU] {
 }
 
 
-fn callee_saved_gprs_used(isa: &TargetIsa, func: &ir::Function) -> RegisterSet {
+fn callee_saved_gprs_used(isa: &dyn TargetIsa, func: &ir::Function) -> RegisterSet {
     let mut all_callee_saved = RegisterSet::empty();
     for reg in callee_saved_gprs(isa, func.signature.call_conv) {
         all_callee_saved.free(GPR, *reg as RegUnit);
@@ -269,7 +269,7 @@ fn callee_saved_gprs_used(isa: &TargetIsa, func: &ir::Function) -> RegisterSet {
     used
 }
 
-pub fn prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+pub fn prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> CodegenResult<()> {
     match func.signature.call_conv {
         
         CallConv::Fast | CallConv::Cold | CallConv::SystemV => {
@@ -281,7 +281,7 @@ pub fn prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenRes
     }
 }
 
-fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> CodegenResult<()> {
     debug_assert!(
         !isa.flags().probestack_enabled(),
         "baldrdash does not expect cranelift to emit stack probes"
@@ -302,7 +302,7 @@ fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> Code
 
 
 
-fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> CodegenResult<()> {
     if isa.triple().pointer_width().unwrap() != PointerWidth::U64 {
         panic!("TODO: windows-fastcall: x86-32 not implemented yet");
     }
@@ -374,7 +374,7 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> Codeg
 }
 
 
-fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> CodegenResult<()> {
     
     
     let stack_align = 16;
@@ -435,7 +435,7 @@ fn insert_common_prologue(
     stack_size: i64,
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
-    isa: &TargetIsa,
+    isa: &dyn TargetIsa,
 ) {
     if stack_size > 0 {
         

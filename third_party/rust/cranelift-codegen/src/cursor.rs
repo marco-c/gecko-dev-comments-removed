@@ -657,12 +657,12 @@ pub struct EncCursor<'f> {
     pub func: &'f mut ir::Function,
 
     
-    pub isa: &'f TargetIsa,
+    pub isa: &'f dyn TargetIsa,
 }
 
 impl<'f> EncCursor<'f> {
     
-    pub fn new(func: &'f mut ir::Function, isa: &'f TargetIsa) -> Self {
+    pub fn new(func: &'f mut ir::Function, isa: &'f dyn TargetIsa) -> Self {
         Self {
             pos: CursorPosition::Nowhere,
             srcloc: Default::default(),

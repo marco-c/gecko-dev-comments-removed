@@ -223,3 +223,8 @@ GPfi = EncRecipe(
         'GPfi', Unary, base_size=4,
         ins=Stack(GPR), outs=GPR,
         emit='unimplemented!();')
+
+
+
+stacknull = EncRecipe('stacknull', Unary, base_size=0,
+                      ins=Stack(GPR), outs=Stack(GPR), emit='')

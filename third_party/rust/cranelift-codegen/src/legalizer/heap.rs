@@ -14,7 +14,7 @@ pub fn expand_heap_addr(
     inst: ir::Inst,
     func: &mut ir::Function,
     cfg: &mut ControlFlowGraph,
-    _isa: &TargetIsa,
+    _isa: &dyn TargetIsa,
 ) {
     
     let (heap, offset, access_size) = match func.dfg[inst] {

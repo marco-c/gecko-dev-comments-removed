@@ -343,10 +343,22 @@ X86_32.enc(base.copy_special, *r.copysp(0x89))
 
 
 
-X86_64.enc(base.copy_nop.i64, r.stacknull, 0)
-X86_64.enc(base.copy_nop.i32, r.stacknull, 0)
-X86_64.enc(base.copy_nop.f64, r.stacknull, 0)
-X86_64.enc(base.copy_nop.f32, r.stacknull, 0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+for ty in [types.i64, types.i32, types.i16, types.i8, types.f64, types.f32]:
+    X86_64.enc(base.copy_nop.bind(ty), r.stacknull, 0)
+    X86_32.enc(base.copy_nop.bind(ty), r.stacknull, 0)
 
 
 X86_32.enc(base.adjust_sp_down.i32, *r.adjustsp(0x29))

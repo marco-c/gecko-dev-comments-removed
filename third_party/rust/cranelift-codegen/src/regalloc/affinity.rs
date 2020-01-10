@@ -48,7 +48,7 @@ impl Affinity {
     }
 
     
-    pub fn abi(arg: &AbiParam, isa: &TargetIsa) -> Self {
+    pub fn abi(arg: &AbiParam, isa: &dyn TargetIsa) -> Self {
         match arg.location {
             ArgumentLoc::Unassigned => Affinity::Unassigned,
             ArgumentLoc::Reg(_) => Affinity::Reg(isa.regclass_for_abi_type(arg.value_type).into()),

@@ -141,13 +141,13 @@ pub enum LookupError {
 pub struct Builder {
     triple: Triple,
     setup: settings::Builder,
-    constructor: fn(Triple, settings::Flags, settings::Builder) -> Box<TargetIsa>,
+    constructor: fn(Triple, settings::Flags, settings::Builder) -> Box<dyn TargetIsa>,
 }
 
 impl Builder {
     
     
-    pub fn finish(self, shared_flags: settings::Flags) -> Box<TargetIsa> {
+    pub fn finish(self, shared_flags: settings::Flags) -> Box<dyn TargetIsa> {
         (self.constructor)(self.triple, shared_flags, self.setup)
     }
 }
@@ -167,7 +167,7 @@ impl settings::Configurable for Builder {
 
 
 pub type Legalize =
-    fn(ir::Inst, &mut ir::Function, &mut flowgraph::ControlFlowGraph, &TargetIsa) -> bool;
+    fn(ir::Inst, &mut ir::Function, &mut flowgraph::ControlFlowGraph, &dyn TargetIsa) -> bool;
 
 
 
@@ -367,7 +367,7 @@ pub trait TargetIsa: fmt::Display + Sync {
         func: &ir::Function,
         inst: ir::Inst,
         divert: &mut regalloc::RegDiversions,
-        sink: &mut binemit::CodeSink,
+        sink: &mut dyn binemit::CodeSink,
     );
 
     

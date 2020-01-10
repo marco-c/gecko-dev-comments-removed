@@ -76,7 +76,7 @@ impl GlobalValueData {
     }
 
     
-    pub fn global_type(&self, isa: &TargetIsa) -> Type {
+    pub fn global_type(&self, isa: &dyn TargetIsa) -> Type {
         match *self {
             GlobalValueData::VMContext { .. } | GlobalValueData::Symbol { .. } => {
                 isa.pointer_type()

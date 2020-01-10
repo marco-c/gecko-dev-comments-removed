@@ -571,7 +571,7 @@ impl<'a> FunctionBuilder<'a> {
     
     
     #[cfg_attr(feature = "cargo-clippy", allow(clippy::needless_lifetimes))]
-    pub fn display<'b, I: Into<Option<&'b TargetIsa>>>(&'b self, isa: I) -> DisplayFunction {
+    pub fn display<'b, I: Into<Option<&'b dyn TargetIsa>>>(&'b self, isa: I) -> DisplayFunction {
         self.func.display(isa)
     }
 }

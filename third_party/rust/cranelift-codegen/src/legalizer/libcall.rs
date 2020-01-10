@@ -7,7 +7,7 @@ use crate::legalizer::boundary::legalize_libcall_signature;
 use std::vec::Vec;
 
 
-pub fn expand_as_libcall(inst: ir::Inst, func: &mut ir::Function, isa: &TargetIsa) -> bool {
+pub fn expand_as_libcall(inst: ir::Inst, func: &mut ir::Function, isa: &dyn TargetIsa) -> bool {
     
     let libcall = match ir::LibCall::for_inst(func.dfg[inst].opcode(), func.dfg.ctrl_typevar(inst))
     {

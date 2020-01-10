@@ -13,7 +13,7 @@ pub fn expand_global_value(
     inst: ir::Inst,
     func: &mut ir::Function,
     _cfg: &mut ControlFlowGraph,
-    isa: &TargetIsa,
+    isa: &dyn TargetIsa,
 ) {
     
     let gv = match func.dfg[inst] {
@@ -90,7 +90,7 @@ fn load_addr(
     offset: ir::immediates::Offset32,
     global_type: ir::Type,
     readonly: bool,
-    isa: &TargetIsa,
+    isa: &dyn TargetIsa,
 ) {
     
     
@@ -123,7 +123,7 @@ fn load_addr(
 }
 
 
-fn symbol(inst: ir::Inst, func: &mut ir::Function, gv: ir::GlobalValue, isa: &TargetIsa) {
+fn symbol(inst: ir::Inst, func: &mut ir::Function, gv: ir::GlobalValue, isa: &dyn TargetIsa) {
     let ptr_ty = isa.pointer_type();
     func.dfg.replace(inst).symbol_value(ptr_ty, gv);
 }

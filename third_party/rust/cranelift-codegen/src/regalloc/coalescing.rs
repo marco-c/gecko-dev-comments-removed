@@ -66,7 +66,7 @@ pub struct Coalescing {
 
 
 struct Context<'a> {
-    isa: &'a TargetIsa,
+    isa: &'a dyn TargetIsa,
     encinfo: EncInfo,
 
     func: &'a mut Function,
@@ -108,7 +108,7 @@ impl Coalescing {
     
     pub fn conventional_ssa(
         &mut self,
-        isa: &TargetIsa,
+        isa: &dyn TargetIsa,
         func: &mut Function,
         cfg: &ControlFlowGraph,
         domtree: &DominatorTree,

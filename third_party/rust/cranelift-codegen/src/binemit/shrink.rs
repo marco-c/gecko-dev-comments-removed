@@ -13,7 +13,7 @@ use crate::timing;
 use log::debug;
 
 
-pub fn shrink_instructions(func: &mut Function, isa: &TargetIsa) {
+pub fn shrink_instructions(func: &mut Function, isa: &dyn TargetIsa) {
     let _tt = timing::shrink_instructions();
 
     let encinfo = isa.encoding_info();

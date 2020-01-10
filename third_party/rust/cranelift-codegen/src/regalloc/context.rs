@@ -75,7 +75,7 @@ impl Context {
     
     pub fn run(
         &mut self,
-        isa: &TargetIsa,
+        isa: &dyn TargetIsa,
         func: &mut Function,
         cfg: &ControlFlowGraph,
         domtree: &mut DominatorTree,

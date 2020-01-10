@@ -35,7 +35,7 @@ use std::vec::Vec;
 
 
 
-pub fn legalize_signatures(func: &mut Function, isa: &TargetIsa) {
+pub fn legalize_signatures(func: &mut Function, isa: &dyn TargetIsa) {
     legalize_signature(&mut func.signature, true, isa);
     for sig_data in func.dfg.signatures.values_mut() {
         legalize_signature(sig_data, false, isa);
@@ -49,14 +49,14 @@ pub fn legalize_signatures(func: &mut Function, isa: &TargetIsa) {
 
 
 
-pub fn legalize_libcall_signature(signature: &mut Signature, isa: &TargetIsa) {
+pub fn legalize_libcall_signature(signature: &mut Signature, isa: &dyn TargetIsa) {
     legalize_signature(signature, false, isa);
 }
 
 
 
 
-fn legalize_signature(signature: &mut Signature, current: bool, isa: &TargetIsa) {
+fn legalize_signature(signature: &mut Signature, current: bool, isa: &dyn TargetIsa) {
     isa.legalize_signature(signature, current);
 }
 

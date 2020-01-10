@@ -34,8 +34,8 @@ pub struct MemoryCodeSink<'a> {
     data: *mut u8,
     
     offset: isize,
-    relocs: &'a mut RelocSink,
-    traps: &'a mut TrapSink,
+    relocs: &'a mut dyn RelocSink,
+    traps: &'a mut dyn TrapSink,
     
     pub info: CodeInfo,
 }
@@ -45,7 +45,11 @@ impl<'a> MemoryCodeSink<'a> {
     
     
     
-    pub unsafe fn new(data: *mut u8, relocs: &'a mut RelocSink, traps: &'a mut TrapSink) -> Self {
+    pub unsafe fn new(
+        data: *mut u8,
+        relocs: &'a mut dyn RelocSink,
+        traps: &'a mut dyn TrapSink,
+    ) -> Self {
         Self {
             data,
             offset: 0,
@@ -142,7 +146,7 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
     }
 
     fn end_codegen(&mut self) {
-        self.info.rodata_size = self.offset() - self.info.jumptables_size;
+        self.info.rodata_size = self.offset() - (self.info.jumptables_size + self.info.code_size);
         self.info.total_size = self.offset();
     }
 }

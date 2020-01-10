@@ -19,7 +19,7 @@ use crate::verifier::{VerifierErrors, VerifierStepResult};
 
 
 pub fn verify_locations(
-    isa: &isa::TargetIsa,
+    isa: &dyn isa::TargetIsa,
     func: &ir::Function,
     liveness: Option<&Liveness>,
     errors: &mut VerifierErrors,
@@ -37,7 +37,7 @@ pub fn verify_locations(
 }
 
 struct LocationVerifier<'a> {
-    isa: &'a isa::TargetIsa,
+    isa: &'a dyn isa::TargetIsa,
     func: &'a ir::Function,
     reginfo: isa::RegInfo,
     encinfo: isa::EncInfo,
