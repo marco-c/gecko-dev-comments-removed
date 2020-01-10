@@ -4,22 +4,22 @@
 
 
 
-#include "dbg/Frame-inl.h"
+#include "debugger/Frame-inl.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ScopeExit.h"
 
-#include "dbg/Environment.h"
-#include "dbg/NoExecute.h"
-#include "dbg/Object.h"
-#include "dbg/Script.h"
+#include "debugger/Environment.h"
+#include "debugger/NoExecute.h"
+#include "debugger/Object.h"
+#include "debugger/Script.h"
 #include "frontend/BytecodeCompilation.h"
 #include "jit/JitFrames.h"
 #include "jit/RematerializedFrame.h"
 #include "vm/Interpreter.h"
 #include "wasm/WasmInstance.h"
 
-#include "dbg/Debugger-inl.h"
+#include "debugger/Debugger-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
 

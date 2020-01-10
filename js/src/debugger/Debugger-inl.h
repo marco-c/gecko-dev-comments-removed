@@ -4,10 +4,10 @@
 
 
 
-#ifndef dbg_Debugger_inl_h
-#define dbg_Debugger_inl_h
+#ifndef debugger_Debugger_inl_h
+#define debugger_Debugger_inl_h
 
-#include "dbg/Debugger.h"
+#include "debugger/Debugger.h"
 
 #include "builtin/Promise.h"
 

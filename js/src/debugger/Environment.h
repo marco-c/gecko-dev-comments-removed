@@ -4,10 +4,10 @@
 
 
 
-#ifndef dbg_Environment_h
-#define dbg_Environment_h
+#ifndef debugger_Environment_h
+#define debugger_Environment_h
 
-#include "dbg/Debugger.h"
+#include "debugger/Debugger.h"
 #include "gc/Rooting.h"
 #include "js/Class.h"
 #include "js/PropertySpec.h"

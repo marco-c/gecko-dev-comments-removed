@@ -4,8 +4,8 @@
 
 
 
-#ifndef dbg_Frame_h
-#define dbg_Frame_h
+#ifndef debugger_Frame_h
+#define debugger_Frame_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
@@ -13,7 +13,7 @@
 
 #include "jsapi.h"
 
-#include "dbg/Debugger.h"
+#include "debugger/Debugger.h"
 #include "gc/Rooting.h"
 #include "js/Class.h"
 #include "js/PropertySpec.h"

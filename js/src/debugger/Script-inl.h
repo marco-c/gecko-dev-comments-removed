@@ -4,10 +4,10 @@
 
 
 
-#ifndef dbg_Script_inl_h
-#define dbg_Script_inl_h
+#ifndef debugger_Script_inl_h
+#define debugger_Script_inl_h
 
-#include "dbg/Script.h"
+#include "debugger/Script.h"
 
 js::gc::Cell* js::DebuggerScript::getReferentCell() const {
   return static_cast<gc::Cell*>(getPrivate());

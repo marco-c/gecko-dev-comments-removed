@@ -25,7 +25,7 @@
 #include "jstypes.h"  
 #include "jsutil.h"   
 
-#include "dbg/Debugger.h"                        
+#include "debugger/Debugger.h"                   
 #include "ds/Nestable.h"                         
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/CallOrNewEmitter.h"           

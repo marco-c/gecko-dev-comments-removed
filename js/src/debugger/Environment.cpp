@@ -4,12 +4,12 @@
 
 
 
-#include "dbg/Environment-inl.h"
+#include "debugger/Environment-inl.h"
 
 #include "mozilla/Assertions.h"
 
-#include "dbg/Debugger.h"
-#include "dbg/Object.h"
+#include "debugger/Debugger.h"
+#include "debugger/Object.h"
 #include "frontend/BytecodeCompiler.h"
 #include "vm/Realm.h"
 

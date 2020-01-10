@@ -4,8 +4,8 @@
 
 
 
-#ifndef dbg_Object_h
-#define dbg_Object_h
+#ifndef debugger_Object_h
+#define debugger_Object_h
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -15,7 +15,7 @@
 #include "jsapi.h"
 
 #include "builtin/Promise.h"
-#include "dbg/Debugger.h"
+#include "debugger/Debugger.h"
 #include "gc/Rooting.h"
 #include "js/Class.h"
 #include "js/Promise.h"

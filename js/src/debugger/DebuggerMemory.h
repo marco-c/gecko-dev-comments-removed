@@ -4,8 +4,8 @@
 
 
 
-#ifndef dbg_DebuggerMemory_h
-#define dbg_DebuggerMemory_h
+#ifndef debugger_DebuggerMemory_h
+#define debugger_DebuggerMemory_h
 
 #include "jsapi.h"
 

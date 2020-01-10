@@ -4,14 +4,14 @@
 
 
 
-#ifndef dbg_Script_h
-#define dbg_Script_h
+#ifndef debugger_Script_h
+#define debugger_Script_h
 
 #include "mozilla/Variant.h"
 
 #include "jsapi.h"
 
-#include "dbg/Debugger.h"
+#include "debugger/Debugger.h"
 #include "gc/Cell.h"
 #include "gc/Rooting.h"
 #include "js/CallArgs.h"

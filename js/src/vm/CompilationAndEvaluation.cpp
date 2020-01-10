@@ -17,7 +17,7 @@
 #include "jsfriendapi.h"  
 #include "jstypes.h"      
 
-#include "dbg/Debugger.h"                  
+#include "debugger/Debugger.h"             
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/FullParseHandler.h"     
 #include "frontend/ParseContext.h"         

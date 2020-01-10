@@ -4,10 +4,10 @@
 
 
 
-#ifndef dbg_Frame_inl_h
-#define dbg_Frame_inl_h
+#ifndef debugger_Frame_inl_h
+#define debugger_Frame_inl_h
 
-#include "dbg/Frame.h"
+#include "debugger/Frame.h"
 
 #include "vm/GeneratorObject.h"
 

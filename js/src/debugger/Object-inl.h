@@ -4,10 +4,10 @@
 
 
 
-#ifndef dbg_Object_inl_h
-#define dbg_Object_inl_h
+#ifndef debugger_Object_inl_h
+#define debugger_Object_inl_h
 
-#include "dbg/Object.h"
+#include "debugger/Object.h"
 
 inline js::Debugger* js::DebuggerObject::owner() const {
   JSObject* dbgobj = &getReservedSlot(OWNER_SLOT).toObject();

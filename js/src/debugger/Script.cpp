@@ -4,9 +4,9 @@
 
 
 
-#include "dbg/Script-inl.h"
+#include "debugger/Script-inl.h"
 
-#include "dbg/Debugger.h"
+#include "debugger/Debugger.h"
 #include "wasm/WasmInstance.h"
 
 #include "vm/BytecodeUtil-inl.h"
