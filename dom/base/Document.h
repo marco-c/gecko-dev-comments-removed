@@ -3704,7 +3704,6 @@ class Document : public nsINode,
   bool IsScrollingElement(Element* aElement);
 
   
-  nsINodeList* GetAnonymousNodes(Element& aElement);
 
   XPathExpression* CreateExpression(const nsAString& aExpression,
                                     XPathNSResolver* aResolver,
