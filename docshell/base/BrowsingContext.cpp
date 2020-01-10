@@ -16,6 +16,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/LocationBinding.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/UserActivationIPCUtils.h"
 #include "mozilla/dom/WindowBinding.h"
@@ -461,8 +462,14 @@ void BrowsingContext::GetChildren(Children& aChildren) {
 
 
 
-BrowsingContext* BrowsingContext::FindWithName(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
+  RefPtr<BrowsingContext> requestingContext = this;
+  if (nsCOMPtr<nsIDocShell> caller = do_GetInterface(GetEntryGlobal())) {
+    if (caller->GetBrowsingContext()) {
+      requestingContext = caller->GetBrowsingContext();
+    }
+  }
+
   BrowsingContext* found = nullptr;
   if (aName.IsEmpty()) {
     
@@ -472,9 +479,9 @@ BrowsingContext* BrowsingContext::FindWithName(
     
     found = nullptr;
   } else if (IsSpecialName(aName)) {
-    found = FindWithSpecialName(aName, aRequestingContext);
+    found = FindWithSpecialName(aName, *requestingContext);
   } else if (BrowsingContext* child =
-                 FindWithNameInSubtree(aName, aRequestingContext)) {
+                 FindWithNameInSubtree(aName, *requestingContext)) {
     found = child;
   } else {
     BrowsingContext* current = this;
@@ -488,7 +495,7 @@ BrowsingContext* BrowsingContext::FindWithName(
         
         siblings = &mGroup->Toplevels();
       } else if (parent->NameEquals(aName) &&
-                 aRequestingContext.CanAccess(parent) &&
+                 requestingContext->CanAccess(parent) &&
                  parent->IsTargetable()) {
         found = parent;
         break;
@@ -502,7 +509,7 @@ BrowsingContext* BrowsingContext::FindWithName(
         }
 
         if (BrowsingContext* relative =
-                sibling->FindWithNameInSubtree(aName, aRequestingContext)) {
+                sibling->FindWithNameInSubtree(aName, *requestingContext)) {
           found = relative;
           
           parent = nullptr;
@@ -516,7 +523,7 @@ BrowsingContext* BrowsingContext::FindWithName(
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!found || aRequestingContext.CanAccess(found));
+  MOZ_DIAGNOSTIC_ASSERT(!found || requestingContext->CanAccess(found));
 
   return found;
 }
