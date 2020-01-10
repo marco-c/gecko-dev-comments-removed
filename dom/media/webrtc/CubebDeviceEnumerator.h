@@ -8,17 +8,18 @@
 #include "AudioDeviceInfo.h"
 #include "CubebUtils.h"
 #include "cubeb/cubeb.h"
+#include "mozilla/media/DeviceChangeCallback.h"
 #include "mozilla/Mutex.h"
 #include "nsTArray.h"
 
 namespace mozilla {
 
 
-class CubebDeviceEnumerator final {
+class CubebDeviceEnumerator final : public DeviceChangeNotifier {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CubebDeviceEnumerator)
 
-  static already_AddRefed<CubebDeviceEnumerator> GetInstance();
+  static CubebDeviceEnumerator* GetInstance();
   static void Shutdown();
   
   

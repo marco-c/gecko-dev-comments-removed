@@ -77,7 +77,6 @@ class MediaEngineWebRTC : public MediaEngine {
 
   
   Mutex mMutex;
-  RefPtr<mozilla::CubebDeviceEnumerator> mEnumerator;
   const bool mDelayAgnostic;
   const bool mExtendedFilter;
   
