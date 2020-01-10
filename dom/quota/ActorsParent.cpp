@@ -1914,6 +1914,9 @@ StaticRefPtr<QuotaManager> gInstance;
 bool gCreateFailed = false;
 mozilla::Atomic<bool> gShutdown(false);
 
+
+static const uint32_t kDefaultChunkSizeKB = 10 * 1024;
+
 class StorageOperationBase {
  protected:
   struct OriginProps;
@@ -2642,31 +2645,32 @@ nsresult GetBinaryInputStream(nsIFile* aDirectory, const nsAString& aFilename,
 
 
 
-
-nsresult GetTemporaryStorageLimit(nsIFile* aDirectory, uint64_t aCurrentUsage,
-                                  uint64_t* aLimit) {
-  
-  int64_t bytesAvailable;
-  nsresult rv = aDirectory->GetDiskSpaceAvailable(&bytesAvailable);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  NS_ASSERTION(bytesAvailable >= 0, "Negative bytes available?!");
-
-  uint64_t availableKB =
-      static_cast<uint64_t>((bytesAvailable + aCurrentUsage) / 1024);
-  uint32_t chunkSizeKB =
-      StaticPrefs::dom_quotaManager_temporaryStorage_chunkSize();
-
+uint64_t GetTemporaryStorageLimit(uint64_t aAvailableSpaceBytes) {
   
   
-  
-  availableKB = (availableKB / chunkSizeKB) * chunkSizeKB;
+  if (StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit() >= 0) {
+    return static_cast<uint64_t>(
+               StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit()) *
+           1024;
+  }
+
+  uint64_t availableSpaceKB = aAvailableSpaceBytes / 1024;
 
   
-  uint64_t resultKB = availableKB * .50;
+  uint32_t chunkSizeKB;
+  if (StaticPrefs::dom_quotaManager_temporaryStorage_chunkSize()) {
+    chunkSizeKB = StaticPrefs::dom_quotaManager_temporaryStorage_chunkSize();
+  } else {
+    chunkSizeKB = kDefaultChunkSizeKB;
+  }
 
-  *aLimit = resultKB * 1024;
-  return NS_OK;
+  
+  
+  
+  availableSpaceKB = (availableSpaceKB / chunkSizeKB) * chunkSizeKB;
+
+  
+  return availableSpaceKB * .50 * 1024;
 }
 
 }  
@@ -6859,29 +6863,33 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitialized() {
 
   nsresult rv;
 
-  if (StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit() >= 0) {
-    mTemporaryStorageLimit =
-        static_cast<uint64_t>(
-            StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit()) *
-        1024;
-  } else {
-    nsCOMPtr<nsIFile> storageDir =
-        do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    rv = storageDir->InitWithPath(GetStoragePath());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    rv = GetTemporaryStorageLimit(storageDir, mTemporaryStorageUsage,
-                                  &mTemporaryStorageLimit);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  nsCOMPtr<nsIFile> storageDir =
+      do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
+
+  rv = storageDir->InitWithPath(GetStoragePath());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  bool dummy;
+  rv = EnsureDirectory(storageDir, &dummy);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  
+  int64_t diskSpaceAvailable;
+  rv = storageDir->GetDiskSpaceAvailable(&diskSpaceAvailable);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  MOZ_ASSERT(diskSpaceAvailable >= 0);
 
   rv = LoadQuota();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -6889,6 +6897,14 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitialized() {
   }
 
   mTemporaryStorageInitialized = true;
+
+  
+  
+  
+  
+  
+  mTemporaryStorageLimit = GetTemporaryStorageLimit(
+       diskSpaceAvailable + mTemporaryStorageUsage);
 
   CheckTemporaryStorageLimits();
 
