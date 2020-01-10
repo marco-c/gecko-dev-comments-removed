@@ -15,7 +15,6 @@
 
 
 
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "baseName");
 assert.sameValue(propdesc.set, undefined);
 assert.sameValue(typeof propdesc.get, "function");

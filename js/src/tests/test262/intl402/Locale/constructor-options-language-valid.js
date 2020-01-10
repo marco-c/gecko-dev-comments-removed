@@ -30,7 +30,6 @@
 
 
 
-
 const validLanguageOptions = [
   [{ toString() { return 'de' } }, 'de'],
 ];

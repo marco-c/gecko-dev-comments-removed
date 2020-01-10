@@ -17,7 +17,6 @@
 
 
 
-
 verifyProperty(Intl.Locale.prototype, 'constructor', {
   value: Intl.Locale,
   writable: true,

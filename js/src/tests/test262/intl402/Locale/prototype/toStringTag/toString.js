@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(Object.prototype.toString.call(Intl.Locale.prototype), "[object Intl.Locale]");
 assert.sameValue(Object.prototype.toString.call(new Intl.Locale("en")), "[object Intl.Locale]");
 

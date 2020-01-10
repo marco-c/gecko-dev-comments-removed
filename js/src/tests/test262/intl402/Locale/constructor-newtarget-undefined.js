@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.Locale, "function");
 
 assert.throws(TypeError, function() {

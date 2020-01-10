@@ -14,7 +14,6 @@
 
 
 
-
 const value = new Intl.Locale('en');
 assert.sameValue(
     Object.getPrototypeOf(value),

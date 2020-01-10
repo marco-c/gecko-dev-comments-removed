@@ -24,7 +24,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.Locale, "function");
 
 

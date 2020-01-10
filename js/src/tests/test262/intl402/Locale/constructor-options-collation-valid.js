@@ -36,7 +36,6 @@
 
 
 
-
 const validCollationOptions = [
   ["abc", "en-u-co-abc"],
   ["abcd", "en-u-co-abcd"],

@@ -30,7 +30,6 @@
 
 
 
-
 const validScriptOptions = [
   [null, 'Null'],
   ['bali', 'Bali'],

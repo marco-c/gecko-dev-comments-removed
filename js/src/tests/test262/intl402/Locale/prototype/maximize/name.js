@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.Locale.prototype.maximize, 'name', {
   value: 'maximize',
   writable: false,

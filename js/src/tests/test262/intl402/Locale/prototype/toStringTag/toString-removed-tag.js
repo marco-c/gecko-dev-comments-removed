@@ -12,7 +12,6 @@
 
 
 
-
 delete Intl.Locale.prototype[Symbol.toStringTag];
 
 assert.sameValue(Object.prototype.toString.call(Intl.Locale.prototype), "[object Object]");

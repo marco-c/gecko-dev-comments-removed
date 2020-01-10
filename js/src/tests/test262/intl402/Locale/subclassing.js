@@ -12,7 +12,6 @@
 
 
 
-
 class CustomLocale extends Intl.Locale {
   constructor(locales, options) {
     super(locales, options);

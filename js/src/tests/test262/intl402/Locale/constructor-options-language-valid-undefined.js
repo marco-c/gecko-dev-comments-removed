@@ -28,7 +28,6 @@
 
 
 
-
 assert.sameValue(
   new Intl.Locale('en', {language: undefined}).toString(),
   'en',

@@ -28,7 +28,6 @@
 
 
 
-
 const validRegionOptions = [
   [undefined, undefined],
   ['FR', 'en-FR'],

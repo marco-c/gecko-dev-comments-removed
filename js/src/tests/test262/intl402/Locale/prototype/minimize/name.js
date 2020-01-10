@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.Locale.prototype.minimize, 'name', {
   value: 'minimize',
   writable: false,

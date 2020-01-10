@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   Object.getPrototypeOf(Intl.Locale),
   Function.prototype,

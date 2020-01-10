@@ -13,7 +13,6 @@
 
 
 
-
 const minimize = Intl.Locale.prototype.minimize;
 
 assert.sameValue(typeof minimize, "function");

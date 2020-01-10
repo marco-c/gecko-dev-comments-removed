@@ -16,7 +16,6 @@
 
 
 
-
 assert.throws(RangeError, () => new Intl.Locale("x-default", {
   language: "fr",
   script: "Cyrl",

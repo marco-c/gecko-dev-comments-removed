@@ -25,7 +25,6 @@
 
 
 
-
 const invalidScriptOptions = [
   "",
   "a",

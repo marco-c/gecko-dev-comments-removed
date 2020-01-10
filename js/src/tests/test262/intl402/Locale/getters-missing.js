@@ -25,7 +25,6 @@
 
 
 
-
 var loc = new Intl.Locale("sv");
 assert.sameValue(loc.baseName, "sv");
 assert.sameValue(loc.language, "sv");

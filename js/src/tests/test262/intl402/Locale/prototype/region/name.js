@@ -13,7 +13,6 @@
 
 
 
-
 const getter = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "region").get;
 verifyProperty(getter, "name", {
   value: "get region",

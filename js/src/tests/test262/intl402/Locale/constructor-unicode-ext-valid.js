@@ -11,7 +11,6 @@
 
 
 
-
 const validLanguageTags = {
     
     "da-u-ca-gregory-ca-buddhist": "da-u-ca-gregory",

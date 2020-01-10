@@ -26,7 +26,6 @@
 
 
 
-
 assert.throws(RangeError, () => new Intl.Locale("zh-min"));
 
 assert.throws(RangeError, () => new Intl.Locale("i-default"));

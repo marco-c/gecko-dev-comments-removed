@@ -25,7 +25,6 @@
 
 
 
-
 verifyProperty(Intl, "Locale", {
   value: Intl.Locale,
   writable: true,

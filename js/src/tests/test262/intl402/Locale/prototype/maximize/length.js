@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Intl.Locale.prototype.maximize, 'length', {
   value: 0,
   writable: false,

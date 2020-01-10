@@ -13,7 +13,6 @@
 
 
 
-
 const maximize = Intl.Locale.prototype.maximize;
 
 assert.sameValue(typeof maximize, "function");

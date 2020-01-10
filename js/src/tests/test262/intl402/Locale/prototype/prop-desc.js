@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(Intl.Locale, 'prototype', {
   writable: false,
   enumerable: false,

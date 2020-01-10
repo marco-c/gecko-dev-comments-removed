@@ -35,7 +35,6 @@
 
 
 
-
 const validHourCycleOptions = [
   'h11',
   'h12',

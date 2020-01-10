@@ -13,7 +13,6 @@
 
 
 
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "language");
 const invalidValues = [
   undefined,

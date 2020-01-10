@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Intl.Locale.prototype.minimize, 'length', {
   value: 0,
   writable: false,

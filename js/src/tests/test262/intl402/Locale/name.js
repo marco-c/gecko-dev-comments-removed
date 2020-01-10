@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.Locale, "name", {
   value: "Locale",
   writable: false,

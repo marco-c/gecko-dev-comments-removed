@@ -47,7 +47,6 @@
 
 
 
-
 var langtag = "de-latn-de-u-ca-gregory-co-phonebk-hc-h23-kf-true-kn-false-nu-latn";
 var loc = new Intl.Locale(langtag);
 

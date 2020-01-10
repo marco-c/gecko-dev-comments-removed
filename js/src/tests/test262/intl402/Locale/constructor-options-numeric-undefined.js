@@ -34,7 +34,6 @@
 
 
 
-
 const options = { numeric: undefined };
 assert.sameValue(
   new Intl.Locale('en', options).toString(),

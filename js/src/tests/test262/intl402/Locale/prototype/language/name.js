@@ -13,7 +13,6 @@
 
 
 
-
 const getter = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "language").get;
 verifyProperty(getter, "name", {
   value: "get language",

@@ -13,7 +13,6 @@
 
 
 
-
 const getter = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "collation").get;
 verifyProperty(getter, "name", {
   value: "get collation",

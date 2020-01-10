@@ -18,7 +18,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   new Intl.Locale("nb", {
     language: "no-bok",

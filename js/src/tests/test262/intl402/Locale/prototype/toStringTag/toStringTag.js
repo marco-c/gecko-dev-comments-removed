@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(Intl.Locale.prototype, Symbol.toStringTag, {
   value: 'Intl.Locale',
   writable: false,

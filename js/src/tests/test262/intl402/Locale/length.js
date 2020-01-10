@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Intl.Locale, "length", {
   value: 1,
   writable: false,

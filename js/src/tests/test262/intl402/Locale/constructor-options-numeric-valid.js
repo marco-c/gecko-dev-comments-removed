@@ -35,7 +35,6 @@
 
 
 
-
 const validNumericOptions = [
   [false, false],
   [true, true],

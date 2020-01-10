@@ -12,7 +12,6 @@
 
 
 
-
 assert.compareArray(Intl.getCanonicalLocales([
   "fr-CA",
   new Intl.Locale("en-gb-oxendict"),

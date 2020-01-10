@@ -21,7 +21,6 @@
 
 
 
-
 const invalidCaseFirstOptions = [
   "",
   "u",

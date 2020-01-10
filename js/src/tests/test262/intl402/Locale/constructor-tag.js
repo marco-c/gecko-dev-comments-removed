@@ -13,7 +13,6 @@
 
 
 
-
 const validLanguageTags = {
   "eN": "en",
   "en-gb": "en-GB",

@@ -13,7 +13,6 @@
 
 
 
-
 const toString = Intl.Locale.prototype.toString;
 
 assert.sameValue(typeof toString, "function");

@@ -1286,3 +1286,19 @@ function isCanonicalizedStructurallyValidTimeZoneName(timeZone) {
   }
   return zoneNamePattern.test(timeZone);
 }
+
+
+
+
+
+
+
+if (typeof addIntlExtras === "function") {
+    let intlExtras = {};
+    addIntlExtras(intlExtras);
+
+    Object.defineProperty(Intl, "Locale", {
+        value: intlExtras.Locale,
+        writable: true, enumerable: false, configurable: true
+    });
+}
