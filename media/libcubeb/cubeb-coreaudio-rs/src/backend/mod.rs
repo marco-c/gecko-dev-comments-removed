@@ -413,140 +413,151 @@ extern "C" fn audiounit_input_callback(
         return NO_ERR;
     }
 
-    let handler =
-        |stm: &mut AudioUnitStream,
-         flags: *mut AudioUnitRenderActionFlags,
-         tstamp: *const AudioTimeStamp,
-         bus: u32,
-         input_frames: u32|
-         -> (ErrorHandle, Option<State>) {
-            let mut core_stream_data = stm.core_stream_data.lock().unwrap();
-            assert_eq!(core_stream_data.stm_ptr, user_ptr as *const AudioUnitStream);
+    let handler = |stm: &mut AudioUnitStream,
+                   flags: *mut AudioUnitRenderActionFlags,
+                   tstamp: *const AudioTimeStamp,
+                   bus: u32,
+                   input_frames: u32|
+     -> (ErrorHandle, Option<State>) {
+        assert_eq!(
+            stm.core_stream_data.stm_ptr,
+            user_ptr as *const AudioUnitStream
+        );
 
+        
+        let mut input_buffer_list = AudioBufferList::default();
+        input_buffer_list.mBuffers[0].mDataByteSize =
+            stm.core_stream_data.input_desc.mBytesPerFrame * input_frames;
+        input_buffer_list.mBuffers[0].mData = ptr::null_mut();
+        input_buffer_list.mBuffers[0].mNumberChannels =
+            stm.core_stream_data.input_desc.mChannelsPerFrame;
+        input_buffer_list.mNumberBuffers = 1;
+
+        assert!(!stm.core_stream_data.input_unit.is_null());
+        let status = audio_unit_render(
+            stm.core_stream_data.input_unit,
+            flags,
+            tstamp,
+            bus,
+            input_frames,
+            &mut input_buffer_list,
+        );
+        if (status != NO_ERR)
+            && (status != kAudioUnitErr_CannotDoInCurrentContext
+                || stm.core_stream_data.output_unit.is_null())
+        {
+            return (ErrorHandle::Return(status), None);
+        }
+        let handle = if status == kAudioUnitErr_CannotDoInCurrentContext {
+            assert!(!stm.core_stream_data.output_unit.is_null());
             
-            let mut input_buffer_list = AudioBufferList::default();
-            input_buffer_list.mBuffers[0].mDataByteSize =
-                core_stream_data.input_desc.mBytesPerFrame * input_frames;
-            input_buffer_list.mBuffers[0].mData = ptr::null_mut();
-            input_buffer_list.mBuffers[0].mNumberChannels =
-                core_stream_data.input_desc.mChannelsPerFrame;
-            input_buffer_list.mNumberBuffers = 1;
-
-            assert!(!core_stream_data.input_unit.is_null());
-            let status = audio_unit_render(
-                core_stream_data.input_unit,
-                flags,
-                tstamp,
-                bus,
-                input_frames,
-                &mut input_buffer_list,
-            );
-            if (status != NO_ERR)
-                && (status != kAudioUnitErr_CannotDoInCurrentContext
-                    || core_stream_data.output_unit.is_null())
-            {
-                return (ErrorHandle::Return(status), None);
-            }
-            let handle = if status == kAudioUnitErr_CannotDoInCurrentContext {
-                assert!(!core_stream_data.output_unit.is_null());
-                
-                
-                
-                
-                
-                cubeb_logv!(
-                    "({:p}) input: reinit pending feeding silence instead",
-                    core_stream_data.stm_ptr
-                );
-                let elements =
-                    (input_frames * core_stream_data.input_desc.mChannelsPerFrame) as usize;
-                core_stream_data
-                    .input_linear_buffer
-                    .as_mut()
-                    .unwrap()
-                    .push_zeros(elements);
-                ErrorHandle::Reinit
-            } else {
-                assert_eq!(status, NO_ERR);
-                
-                let elements =
-                    (input_frames * core_stream_data.input_desc.mChannelsPerFrame) as usize;
-                core_stream_data
-                    .input_linear_buffer
-                    .as_mut()
-                    .unwrap()
-                    .push(input_buffer_list.mBuffers[0].mData, elements);
-                ErrorHandle::Return(status)
-            };
-
             
-            stm.frames_read
-                .fetch_add(i64::from(input_frames), atomic::Ordering::SeqCst);
-
+            
+            
+            
             cubeb_logv!(
+                "({:p}) input: reinit pending feeding silence instead",
+                stm.core_stream_data.stm_ptr
+            );
+            let elements =
+                (input_frames * stm.core_stream_data.input_desc.mChannelsPerFrame) as usize;
+            stm.core_stream_data
+                .input_linear_buffer
+                .as_mut()
+                .unwrap()
+                .push_zeros(elements);
+            ErrorHandle::Reinit
+        } else {
+            assert_eq!(status, NO_ERR);
+            
+            let elements =
+                (input_frames * stm.core_stream_data.input_desc.mChannelsPerFrame) as usize;
+            stm.core_stream_data
+                .input_linear_buffer
+                .as_mut()
+                .unwrap()
+                .push(input_buffer_list.mBuffers[0].mData, elements);
+            ErrorHandle::Return(status)
+        };
+
+        
+        stm.frames_read
+            .fetch_add(i64::from(input_frames), atomic::Ordering::SeqCst);
+
+        cubeb_logv!(
             "({:p}) input: buffers {}, size {}, channels {}, rendered frames {}, total frames {}.",
-            core_stream_data.stm_ptr,
+            stm.core_stream_data.stm_ptr,
             input_buffer_list.mNumberBuffers,
             input_buffer_list.mBuffers[0].mDataByteSize,
             input_buffer_list.mBuffers[0].mNumberChannels,
             input_frames,
-            core_stream_data.input_linear_buffer.as_ref().unwrap().elements()
-                / core_stream_data.input_desc.mChannelsPerFrame as usize
-        );
-
-            
-            if !core_stream_data.output_unit.is_null() {
-                return (handle, None);
-            }
-
-            
-            
-            assert!(
-                input_frames as usize
-                    <= core_stream_data
-                        .input_linear_buffer
-                        .as_ref()
-                        .unwrap()
-                        .elements()
-                        / core_stream_data.input_desc.mChannelsPerFrame as usize
-            );
-            let mut total_input_frames = (core_stream_data
+            stm.core_stream_data
                 .input_linear_buffer
                 .as_ref()
                 .unwrap()
                 .elements()
-                / core_stream_data.input_desc.mChannelsPerFrame as usize)
-                as i64;
-            assert!(!core_stream_data
+                / stm.core_stream_data.input_desc.mChannelsPerFrame as usize
+        );
+
+        
+        if !stm.core_stream_data.output_unit.is_null() {
+            return (handle, None);
+        }
+
+        
+        
+        assert!(
+            input_frames as usize
+                <= stm
+                    .core_stream_data
+                    .input_linear_buffer
+                    .as_ref()
+                    .unwrap()
+                    .elements()
+                    / stm.core_stream_data.input_desc.mChannelsPerFrame as usize
+        );
+        let mut total_input_frames =
+            (stm.core_stream_data
                 .input_linear_buffer
                 .as_ref()
                 .unwrap()
-                .as_ptr()
-                .is_null());
-            let input_buffer = core_stream_data
-                .input_linear_buffer
-                .as_mut()
-                .unwrap()
-                .as_mut_ptr();
-            let outframes = core_stream_data.resampler.fill(
-                input_buffer,
-                &mut total_input_frames,
-                ptr::null_mut(),
-                0,
+                .elements()
+                / stm.core_stream_data.input_desc.mChannelsPerFrame as usize) as i64;
+        assert!(!stm
+            .core_stream_data
+            .input_linear_buffer
+            .as_ref()
+            .unwrap()
+            .as_ptr()
+            .is_null());
+        let input_buffer = stm
+            .core_stream_data
+            .input_linear_buffer
+            .as_mut()
+            .unwrap()
+            .as_mut_ptr();
+        let outframes = stm.core_stream_data.resampler.fill(
+            input_buffer,
+            &mut total_input_frames,
+            ptr::null_mut(),
+            0,
+        );
+        if outframes < total_input_frames {
+            assert_eq!(
+                audio_output_unit_stop(stm.core_stream_data.input_unit),
+                NO_ERR
             );
-            if outframes < total_input_frames {
-                assert_eq!(audio_output_unit_stop(core_stream_data.input_unit), NO_ERR);
-                return (handle, Some(State::Drained));
-            }
-            
-            core_stream_data
-                .input_linear_buffer
-                .as_mut()
-                .unwrap()
-                .clear();
+            return (handle, Some(State::Drained));
+        }
+        
+        stm.core_stream_data
+            .input_linear_buffer
+            .as_mut()
+            .unwrap()
+            .clear();
 
-            (handle, None)
-        };
+        (handle, None)
+    };
 
     let (handle, notification) = handler(stm, flags, tstamp, bus, input_frames);
     if let Some(state) = notification {
@@ -600,10 +611,7 @@ extern "C" fn audiounit_output_callback(
     }
 
     if stm.draining.load(Ordering::SeqCst) {
-        {
-            let core_stream_data = stm.core_stream_data.lock().unwrap();
-            core_stream_data.stop_audiounits();
-        }
+        stm.core_stream_data.stop_audiounits();
         stm.notify_state_changed(State::Drained);
         audiounit_make_silent(&mut buffers[0]);
         return NO_ERR;
@@ -613,10 +621,8 @@ extern "C" fn audiounit_output_callback(
                    output_frames: u32,
                    buffers: &mut [AudioBuffer]|
      -> (OSStatus, Option<State>) {
-        let mut core_stream_data = stm.core_stream_data.lock().unwrap();
-
         
-        let output_buffer = match core_stream_data.mixer.as_mut() {
+        let output_buffer = match stm.core_stream_data.mixer.as_mut() {
             None => buffers[0].mData,
             Some(mixer) => {
                 
@@ -630,17 +636,18 @@ extern "C" fn audiounit_output_callback(
             .fetch_add(i64::from(output_frames), Ordering::SeqCst);
 
         
-        let (input_buffer, mut input_frames) = if !core_stream_data.input_unit.is_null() {
-            assert!(core_stream_data.input_linear_buffer.is_some());
-            let input_frames = core_stream_data
+        let (input_buffer, mut input_frames) = if !stm.core_stream_data.input_unit.is_null() {
+            assert!(stm.core_stream_data.input_linear_buffer.is_some());
+            let input_frames = stm
+                .core_stream_data
                 .input_linear_buffer
                 .as_ref()
                 .unwrap()
                 .elements()
-                / core_stream_data.input_desc.mChannelsPerFrame as usize;
+                / stm.core_stream_data.input_desc.mChannelsPerFrame as usize;
             cubeb_logv!("Total input frames: {}", input_frames);
 
-            assert_ne!(core_stream_data.input_desc.mChannelsPerFrame, 0);
+            assert_ne!(stm.core_stream_data.input_desc.mChannelsPerFrame, 0);
             
             
             
@@ -648,16 +655,16 @@ extern "C" fn audiounit_output_callback(
             
             let frames_written = stm.frames_written.load(Ordering::SeqCst);
             let input_frames_needed = minimum_resampling_input_frames(
-                core_stream_data.input_hw_rate,
-                f64::from(core_stream_data.output_stream_params.rate()),
+                stm.core_stream_data.input_hw_rate,
+                f64::from(stm.core_stream_data.output_stream_params.rate()),
                 frames_written,
             );
             let missing_frames = input_frames_needed - stm.frames_read.load(Ordering::SeqCst);
             let elements = (missing_frames
-                * i64::from(core_stream_data.input_desc.mChannelsPerFrame))
+                * i64::from(stm.core_stream_data.input_desc.mChannelsPerFrame))
                 as usize;
             if missing_frames > 0 {
-                core_stream_data
+                stm.core_stream_data
                     .input_linear_buffer
                     .as_mut()
                     .unwrap()
@@ -665,7 +672,7 @@ extern "C" fn audiounit_output_callback(
                 stm.frames_read.store(input_frames_needed, Ordering::SeqCst);
                 cubeb_log!(
                     "({:p}) {} pushed {} frames of input silence.",
-                    core_stream_data.stm_ptr,
+                    stm.core_stream_data.stm_ptr,
                     if stm.frames_read.load(Ordering::SeqCst) == 0 {
                         "Input hasn't started,"
                     } else if stm.switching_device.load(Ordering::SeqCst) {
@@ -677,7 +684,7 @@ extern "C" fn audiounit_output_callback(
                 );
             }
             (
-                core_stream_data
+                stm.core_stream_data
                     .input_linear_buffer
                     .as_mut()
                     .unwrap()
@@ -690,7 +697,7 @@ extern "C" fn audiounit_output_callback(
 
         
         assert!(!output_buffer.is_null());
-        let outframes = core_stream_data.resampler.fill(
+        let outframes = stm.core_stream_data.resampler.fill(
             input_buffer,
             if input_buffer.is_null() {
                 ptr::null_mut()
@@ -703,8 +710,8 @@ extern "C" fn audiounit_output_callback(
         if !input_buffer.is_null() {
             
             let elements =
-                input_frames as usize * core_stream_data.input_desc.mChannelsPerFrame as usize;
-            core_stream_data
+                input_frames as usize * stm.core_stream_data.input_desc.mChannelsPerFrame as usize;
+            stm.core_stream_data
                 .input_linear_buffer
                 .as_mut()
                 .unwrap()
@@ -713,7 +720,7 @@ extern "C" fn audiounit_output_callback(
 
         if outframes < 0 || outframes > i64::from(output_frames) {
             *stm.shutdown.get_mut() = true;
-            core_stream_data.stop_audiounits();
+            stm.core_stream_data.stop_audiounits();
             audiounit_make_silent(&mut buffers[0]);
             return (NO_ERR, Some(State::Error));
         }
@@ -723,8 +730,8 @@ extern "C" fn audiounit_output_callback(
             .store(stm.frames_queued, atomic::Ordering::SeqCst);
         stm.frames_queued += outframes as u64;
 
-        let outaff = core_stream_data.output_desc.mFormatFlags;
-        let panning = if core_stream_data.output_desc.mChannelsPerFrame == 2 {
+        let outaff = stm.core_stream_data.output_desc.mFormatFlags;
+        let panning = if stm.core_stream_data.output_desc.mChannelsPerFrame == 2 {
             stm.panning.load(Ordering::Relaxed)
         } else {
             0.0
@@ -734,7 +741,8 @@ extern "C" fn audiounit_output_callback(
         if stm.draining.load(Ordering::SeqCst) {
             
             let count_bytes = |frames: usize| -> usize {
-                let sample_size = cubeb_sample_size(core_stream_data.output_stream_params.format());
+                let sample_size =
+                    cubeb_sample_size(stm.core_stream_data.output_stream_params.format());
                 frames * sample_size / mem::size_of::<u8>()
             };
             let out_bytes = unsafe {
@@ -750,7 +758,7 @@ extern "C" fn audiounit_output_callback(
         }
 
         
-        if core_stream_data.mixer.is_none() {
+        if stm.core_stream_data.mixer.is_none() {
             
             if panning != 0.0 {
                 unsafe {
@@ -772,9 +780,9 @@ extern "C" fn audiounit_output_callback(
         } else {
             assert!(
                 buffers[0].mDataByteSize
-                    >= core_stream_data.output_desc.mBytesPerFrame * output_frames
+                    >= stm.core_stream_data.output_desc.mBytesPerFrame * output_frames
             );
-            core_stream_data.mixer.as_mut().unwrap().mix(
+            stm.core_stream_data.mixer.as_mut().unwrap().mix(
                 output_frames as usize,
                 buffers[0].mData,
                 buffers[0].mDataByteSize as usize,
@@ -841,8 +849,8 @@ extern "C" fn audiounit_property_listener_callback(
                 );
                 
                 
-                let core_stream_data = stm.core_stream_data.lock().unwrap();
-                if core_stream_data
+                if stm
+                    .core_stream_data
                     .input_device
                     .flags
                     .contains(device_flags::DEV_SYSTEM_DEFAULT)
@@ -2464,16 +2472,10 @@ impl ContextOps for AudioUnitContext {
             global_latency_frames,
         ));
 
-        boxed_stream.core_stream_data = Mutex::new(CoreStreamData::new(
-            boxed_stream.as_ref(),
-            in_stm_settings,
-            out_stm_settings,
-        ));
+        boxed_stream.core_stream_data =
+            CoreStreamData::new(boxed_stream.as_ref(), in_stm_settings, out_stm_settings);
 
-        if let Err(r) = {
-            let mut core_stream_data = boxed_stream.core_stream_data.lock().unwrap();
-            core_stream_data.setup()
-        } {
+        if let Err(r) = boxed_stream.core_stream_data.setup() {
             cubeb_log!(
                 "({:p}) Could not setup the audiounit stream.",
                 boxed_stream.as_ref()
@@ -2530,12 +2532,6 @@ impl Drop for AudioUnitContext {
 
 unsafe impl Send for AudioUnitContext {}
 unsafe impl Sync for AudioUnitContext {}
-
-
-
-
-
-
 
 #[derive(Debug)]
 struct CoreStreamData<'ctx> {
@@ -3348,7 +3344,7 @@ struct AudioUnitStream<'ctx> {
     panning: atomic::Atomic<f32>,
     
     switching_device: AtomicBool,
-    core_stream_data: Mutex<CoreStreamData<'ctx>>,
+    core_stream_data: CoreStreamData<'ctx>,
 }
 
 impl<'ctx> AudioUnitStream<'ctx> {
@@ -3377,7 +3373,7 @@ impl<'ctx> AudioUnitStream<'ctx> {
             current_latency_frames: AtomicU32::new(0),
             panning: atomic::Atomic::new(0.0_f32),
             switching_device: AtomicBool::new(false),
-            core_stream_data: Mutex::new(CoreStreamData::default()),
+            core_stream_data: CoreStreamData::default(),
         }
     }
 
@@ -3414,97 +3410,103 @@ impl<'ctx> AudioUnitStream<'ctx> {
     }
 
     fn reinit(&mut self) -> Result<()> {
+        
+        
+        
+        
         if !self.shutdown.load(Ordering::SeqCst) {
-            let core_stream_data = self.core_stream_data.lock().unwrap();
-            core_stream_data.stop_audiounits();
+            self.core_stream_data.stop_audiounits();
         }
 
-        {
-            let mut core_stream_data = self.core_stream_data.lock().unwrap();
+        assert!(
+            !self.core_stream_data.input_unit.is_null()
+                || !self.core_stream_data.output_unit.is_null()
+        );
+        let vol_rv = if self.core_stream_data.output_unit.is_null() {
+            Err(Error::error())
+        } else {
+            get_volume(self.core_stream_data.output_unit)
+        };
 
-            assert!(
-                !core_stream_data.input_unit.is_null() || !core_stream_data.output_unit.is_null()
-            );
-            let vol_rv = if core_stream_data.output_unit.is_null() {
-                Err(Error::error())
-            } else {
-                get_volume(core_stream_data.output_unit)
-            };
+        self.core_stream_data.close();
 
-            core_stream_data.close();
+        
+        
+        
+        
+        
+        
+        let has_input = !self.core_stream_data.input_unit.is_null();
+        let input_device = if has_input {
+            self.core_stream_data.input_device.id
+        } else {
+            kAudioObjectUnknown
+        };
 
-            
-            
-            
-            
-            
-            
-            let has_input = !core_stream_data.input_unit.is_null();
-            let input_device = if has_input {
-                core_stream_data.input_device.id
-            } else {
-                kAudioObjectUnknown
-            };
-
-            if has_input {
-                core_stream_data.input_device = create_device_info(input_device, DeviceType::INPUT).map_err(|e| {
-                    cubeb_log!(
-                        "({:p}) Create input device info failed. This can happen when last media device is unplugged",
-                        core_stream_data.stm_ptr
-                    );
-                    core_stream_data.close();
-                    e
-                })?;
-            }
-
-            
-            
-            
-            core_stream_data.output_device = create_device_info(kAudioObjectUnknown, DeviceType::OUTPUT).map_err(|e| {
+        if has_input {
+            self.core_stream_data.input_device = create_device_info(input_device, DeviceType::INPUT).map_err(|e| {
                 cubeb_log!(
-                    "({:p}) Create output device info failed. This can happen when last media device is unplugged",
-                    core_stream_data.stm_ptr
+                    "({:p}) Create input device info failed. This can happen when last media device is unplugged",
+                    self.core_stream_data.stm_ptr
                 );
-                core_stream_data.close();
+                self.core_stream_data.close();
                 e
             })?;
+        }
 
-            if core_stream_data.setup().is_err() {
-                cubeb_log!("({:p}) Stream reinit failed.", core_stream_data.stm_ptr);
-                if has_input && input_device != kAudioObjectUnknown {
-                    
-                    
-                    core_stream_data.input_device = create_device_info(kAudioObjectUnknown, DeviceType::INPUT).map_err(|e| {
-                        cubeb_log!(
-                            "({:p}) Create input device info failed. This can happen when last media device is unplugged",
-                            core_stream_data.stm_ptr
-                        );
-                        core_stream_data.close();
-                        e
-                    })?;
-                    core_stream_data.setup().map_err(|e| {
-                        cubeb_log!(
-                            "({:p}) Second stream reinit failed.",
-                            core_stream_data.stm_ptr
-                        );
-                        core_stream_data.close();
-                        e
-                    })?;
-                }
-            }
+        
+        
+        
+        self.core_stream_data.output_device = create_device_info(kAudioObjectUnknown, DeviceType::OUTPUT).map_err(|e| {
+            cubeb_log!(
+                "({:p}) Create output device info failed. This can happen when last media device is unplugged",
+                self.core_stream_data.stm_ptr
+            );
+            self.core_stream_data.close();
+            e
+        })?;
 
-            if vol_rv.is_ok() {
-                set_volume(core_stream_data.output_unit, vol_rv.unwrap());
-            }
-
-            
-            if !self.shutdown.load(Ordering::SeqCst) {
-                core_stream_data.start_audiounits().map_err(|e| {
-                    cubeb_log!("({:p}) Start audiounit failed.", core_stream_data.stm_ptr);
-                    core_stream_data.close();
+        if self.core_stream_data.setup().is_err() {
+            cubeb_log!(
+                "({:p}) Stream reinit failed.",
+                self.core_stream_data.stm_ptr
+            );
+            if has_input && input_device != kAudioObjectUnknown {
+                
+                
+                self.core_stream_data.input_device = create_device_info(kAudioObjectUnknown, DeviceType::INPUT).map_err(|e| {
+                    cubeb_log!(
+                        "({:p}) Create input device info failed. This can happen when last media device is unplugged",
+                        self.core_stream_data.stm_ptr
+                    );
+                    self.core_stream_data.close();
+                    e
+                })?;
+                self.core_stream_data.setup().map_err(|e| {
+                    cubeb_log!(
+                        "({:p}) Second stream reinit failed.",
+                        self.core_stream_data.stm_ptr
+                    );
+                    self.core_stream_data.close();
                     e
                 })?;
             }
+        }
+
+        if vol_rv.is_ok() {
+            set_volume(self.core_stream_data.output_unit, vol_rv.unwrap());
+        }
+
+        
+        if !self.shutdown.load(Ordering::SeqCst) {
+            self.core_stream_data.start_audiounits().map_err(|e| {
+                cubeb_log!(
+                    "({:p}) Start audiounit failed.",
+                    self.core_stream_data.stm_ptr
+                );
+                self.core_stream_data.close();
+                e
+            })?;
         }
 
         Ok(())
@@ -3549,18 +3551,18 @@ impl<'ctx> AudioUnitStream<'ctx> {
     }
 
     fn destroy_internal(&mut self) {
-        let mut core_stream_data = self.core_stream_data.lock().unwrap();
-        core_stream_data.close();
+        self.core_stream_data.close();
         assert!(self.context.active_streams() >= 1);
         self.context.update_latency_by_removing_stream();
     }
 
     fn destroy(&mut self) {
+        
+        
+        
+        
         if !self.shutdown.load(Ordering::SeqCst) {
-            {
-                let core_stream_data = self.core_stream_data.lock().unwrap();
-                core_stream_data.stop_audiounits();
-            }
+            self.core_stream_data.stop_audiounits();
             *self.shutdown.get_mut() = true;
         }
 
@@ -3593,24 +3595,7 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
         *self.shutdown.get_mut() = false;
         *self.draining.get_mut() = false;
 
-        
-        
-        
-        
-        
-        
-        let (input_unit, output_unit) = {
-            let core_stream_data = self.core_stream_data.lock().unwrap();
-            (core_stream_data.input_unit, core_stream_data.output_unit)
-        };
-
-        if !input_unit.is_null() {
-            start_audiounit(input_unit)?;
-        }
-
-        if !output_unit.is_null() {
-            start_audiounit(output_unit)?;
-        }
+        self.core_stream_data.start_audiounits()?;
 
         self.notify_state_changed(State::Started);
 
@@ -3623,24 +3608,7 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
     fn stop(&mut self) -> Result<()> {
         *self.shutdown.get_mut() = true;
 
-        
-        
-        
-        
-        
-        
-        let (input_unit, output_unit) = {
-            let core_stream_data = self.core_stream_data.lock().unwrap();
-            (core_stream_data.input_unit, core_stream_data.output_unit)
-        };
-
-        if !input_unit.is_null() {
-            stop_audiounit(input_unit)?;
-        }
-
-        if !output_unit.is_null() {
-            stop_audiounit(output_unit)?;
-        }
+        self.core_stream_data.stop_audiounits();
 
         self.notify_state_changed(State::Stopped);
 
@@ -3672,18 +3640,11 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
         Ok(self.current_latency_frames.load(Ordering::SeqCst))
     }
     fn set_volume(&mut self, volume: f32) -> Result<()> {
-        let output_unit = {
-            let core_stream_data = self.core_stream_data.lock().unwrap();
-            core_stream_data.output_unit
-        };
-        set_volume(output_unit, volume)
+        set_volume(self.core_stream_data.output_unit, volume)
     }
     fn set_panning(&mut self, panning: f32) -> Result<()> {
-        {
-            let core_stream_data = self.core_stream_data.lock().unwrap();
-            if core_stream_data.output_desc.mChannelsPerFrame > 2 {
-                return Err(Error::invalid_format());
-            }
+        if self.core_stream_data.output_desc.mChannelsPerFrame > 2 {
+            return Err(Error::invalid_format());
         }
         self.panning.store(panning, Ordering::Relaxed);
         Ok(())
