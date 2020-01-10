@@ -257,7 +257,7 @@ class nsContentSink : public nsICSSLoaderObserver,
       return 1000;
     }
 
-    return sNotificationInterval;
+    return mozilla::StaticPrefs::content_notify_interval();
   }
 
   virtual nsresult FlushTags() = 0;
@@ -337,8 +337,6 @@ class nsContentSink : public nsICSSLoaderObserver,
   nsRevocableEventPtr<nsRunnableMethod<nsContentSink, void, false> >
       mProcessLinkHeaderEvent;
 
-  
-  static int32_t sNotificationInterval;
   
   static int32_t sInteractiveDeflectCount;
   static int32_t sPerfDeflectCount;
