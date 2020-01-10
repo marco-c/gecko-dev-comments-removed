@@ -198,6 +198,10 @@ const SearchExtensionLoader = {
   _promises: new Map(),
   
   _strict: false,
+  
+  
+  
+  _chaosMode: false,
 
   
 
@@ -281,6 +285,15 @@ const SearchExtensionLoader = {
       SearchUtils.log(
         `SearchExtensionLoader.installAddons: installing ${id} at ${path}`
       );
+      if (this._chaosMode) {
+        
+        
+        let policy = WebExtensionPolicy.getByID(id);
+        if (policy) {
+          Services.search.addEnginesFromExtension(policy.extension);
+          continue;
+        }
+      }
       
       AddonManager.installBuiltinAddon(path).catch(error => {
         
