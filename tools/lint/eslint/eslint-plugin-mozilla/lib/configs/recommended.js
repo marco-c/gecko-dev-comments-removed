@@ -176,8 +176,17 @@ module.exports = {
     "no-extra-bind": "error",
 
     
-    
-    "no-fallthrough": "off",
+    "no-fallthrough": [
+      "error",
+      {
+        
+        
+        
+        
+        commentPattern:
+          "[Ff][Aa][Ll][Ll][Ss]?[\\s-]?([Tt][Hh][Rr][Oo][Uu][Gg][Hh]|[Tt][Hh][Rr][Uu])",
+      },
+    ],
 
     
     "no-global-assign": "error",
