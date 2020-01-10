@@ -3,7 +3,9 @@
 function registerPassthroughAnimator() {
   return runInAnimationWorklet(`
     registerAnimator('passthrough', class {
-      animate(currentTime, effect) { effect.localTime = currentTime; }
+      animate(currentTime, effect) {
+        effect.localTime = currentTime;
+      }
     });
   `);
 }
@@ -16,19 +18,6 @@ function registerConstantLocalTimeAnimator(localTime) {
   `);
 }
 
-
-
-
-function registerPassthroughExceptNaNAnimator() {
-  return runInAnimationWorklet(`
-    registerAnimator('passthrough_except_nan', class {
-      animate(currentTime, effect) {
-        if (Number.isNaN(currentTime)) return;
-        effect.localTime = currentTime;
-      }
-    });
-  `);
-}
 
 function runInAnimationWorklet(code) {
   return CSS.animationWorklet.addModule(
