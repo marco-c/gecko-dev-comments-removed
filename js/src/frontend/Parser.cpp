@@ -9629,7 +9629,37 @@ RegExpLiteral* Parser<FullParseHandler, Unit>::newRegExp() {
 
   
   const auto& chars = tokenStream.getCharBuffer();
+  mozilla::Range<const char16_t> range(chars.begin(), chars.length());
   RegExpFlags flags = anyChars.currentToken().regExpFlags();
+
+  if (this->getTreeHolder().isDeferred()) {
+    {
+      LifoAllocScope allocScope(&cx_->tempLifoAlloc());
+      
+      
+      if (!irregexp::ParsePatternSyntax(anyChars, allocScope.alloc(), range,
+                                        flags.unicode())) {
+        return nullptr;
+      }
+    }
+
+    
+    
+    
+    
+    RegExpCreationData data;
+    if (!data.init(cx_, range, flags)) {
+      return nullptr;
+    }
+
+    RegExpLiteral* node = handler_.newRegExp(pos());
+    if (!node) {
+      return nullptr;
+    }
+
+    node->init(std::move(data));
+    return node;
+  }
 
   Rooted<RegExpObject*> reobj(cx_);
   reobj = RegExpObject::create(cx_, chars.begin(), chars.length(), flags,

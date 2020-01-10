@@ -14,6 +14,7 @@
 #include "frontend/SharedContext.h"  
 #include "vm/BytecodeUtil.h"         
 #include "vm/JSContext.h"            
+#include "vm/RegExpObject.h"         
 
 using namespace js;
 using namespace js::frontend;
@@ -70,6 +71,15 @@ bool GCThingList::finish(JSContext* cx, mozilla::Span<JS::GCCellPtr> array) {
         return false;
       }
       array[i] = JS::GCCellPtr(obj);
+      return true;
+    }
+
+    bool operator()(RegExpCreationData& data) {
+      RegExpObject* regexp = data.createRegExp(cx);
+      if (!regexp) {
+        return false;
+      }
+      array[i] = JS::GCCellPtr(regexp);
       return true;
     }
   };
