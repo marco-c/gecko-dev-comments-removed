@@ -322,28 +322,81 @@ nsresult nsTextControlFrame::EnsureEditorInitialized() {
   return NS_OK;
 }
 
-static already_AddRefed<Element> CreateEmptyDiv(
-    const nsTextControlFrame& aOwnerFrame) {
-  Document* doc = aOwnerFrame.PresContext()->Document();
+already_AddRefed<Element> nsTextControlFrame::CreateEmptyAnonymousDiv(
+    AnonymousDivType aAnonymousDivType) const {
+  Document* doc = PresContext()->Document();
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
       nsGkAtoms::div, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
 
-  RefPtr<Element> element = NS_NewHTMLDivElement(nodeInfo.forget());
-  return element.forget();
+  RefPtr<Element> divElement = NS_NewHTMLDivElement(nodeInfo.forget());
+  switch (aAnonymousDivType) {
+    case AnonymousDivType::Root: {
+      divElement->SetIsNativeAnonymousRoot();
+
+      
+      divElement->SetFlags(NODE_IS_EDITABLE);
+
+      
+      
+      
+      
+      nsAutoString classValue;
+      classValue.AppendLiteral("anonymous-div");
+
+      if (!IsSingleLineTextControl()) {
+        
+        
+        
+        
+        const nsStyleDisplay* disp = StyleDisplay();
+        if (disp->mOverflowX != StyleOverflow::Visible &&
+            disp->mOverflowX != StyleOverflow::MozHiddenUnscrollable) {
+          classValue.AppendLiteral(" inherit-overflow");
+        }
+      }
+      nsresult rv = divElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
+                                        classValue, false);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
+      break;
+    }
+    case AnonymousDivType::Placeholder:
+      
+      divElement->SetPseudoElementType(PseudoStyleType::placeholder);
+      break;
+    case AnonymousDivType::Preview:
+      divElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
+                          NS_LITERAL_STRING("preview-div"), false);
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown anonymous div creation request");
+      break;
+  }
+  return divElement.forget();
 }
 
-static already_AddRefed<Element> CreateEmptyDivWithTextNode(
-    const nsTextControlFrame& aOwnerFrame) {
-  RefPtr<Element> element = CreateEmptyDiv(aOwnerFrame);
+already_AddRefed<Element>
+nsTextControlFrame::CreateEmptyAnonymousDivWithTextNode(
+    AnonymousDivType aAnonymousDivType) const {
+  RefPtr<Element> divElement = CreateEmptyAnonymousDiv(aAnonymousDivType);
 
   
   RefPtr<nsTextNode> textNode =
-      new nsTextNode(element->OwnerDoc()->NodeInfoManager());
-  textNode->MarkAsMaybeModifiedFrequently();
-
-  element->AppendChildTo(textNode, false);
-
-  return element.forget();
+      new nsTextNode(divElement->OwnerDoc()->NodeInfoManager());
+  
+  
+  
+  if (aAnonymousDivType != AnonymousDivType::Placeholder) {
+    textNode->MarkAsMaybeModifiedFrequently();
+    
+    
+    if (IsPasswordTextControl()) {
+      textNode->MarkAsMaybeMasked();
+    }
+  }
+  divElement->AppendChildTo(textNode, false);
+  return divElement.forget();
 }
 
 nsresult nsTextControlFrame::CreateAnonymousContent(
@@ -423,36 +476,12 @@ void nsTextControlFrame::InitializeEagerlyIfNeeded() {
 nsresult nsTextControlFrame::CreateRootNode() {
   MOZ_ASSERT(!mRootNode);
 
-  mRootNode = CreateEmptyDiv(*this);
-  mRootNode->SetIsNativeAnonymousRoot();
-
+  mRootNode = CreateEmptyAnonymousDiv(AnonymousDivType::Root);
+  if (NS_WARN_IF(!mRootNode)) {
+    return NS_ERROR_FAILURE;
+  }
   mMutationObserver = new nsAnonDivObserver(*this);
   mRootNode->AddMutationObserver(mMutationObserver);
-
-  
-  mRootNode->SetFlags(NODE_IS_EDITABLE);
-
-  
-  
-  
-  nsAutoString classValue;
-  classValue.AppendLiteral("anonymous-div");
-
-  if (!IsSingleLineTextControl()) {
-    
-    
-    
-    
-    const nsStyleDisplay* disp = StyleDisplay();
-    if (disp->mOverflowX != StyleOverflow::Visible &&
-        disp->mOverflowX != StyleOverflow::MozHiddenUnscrollable) {
-      classValue.AppendLiteral(" inherit-overflow");
-    }
-  }
-  nsresult rv = mRootNode->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                                   classValue, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   return NS_OK;
 }
 
@@ -473,9 +502,8 @@ void nsTextControlFrame::CreatePlaceholderIfNeeded() {
     return;
   }
 
-  mPlaceholderDiv = CreateEmptyDivWithTextNode(*this);
-  
-  mPlaceholderDiv->SetPseudoElementType(PseudoStyleType::placeholder);
+  mPlaceholderDiv =
+      CreateEmptyAnonymousDivWithTextNode(AnonymousDivType::Placeholder);
   mPlaceholderDiv->GetFirstChild()->AsText()->SetText(placeholderTxt, false);
 }
 
@@ -485,9 +513,7 @@ void nsTextControlFrame::CreatePreviewIfNeeded() {
     return;
   }
 
-  mPreviewDiv = CreateEmptyDivWithTextNode(*this);
-  mPreviewDiv->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                       NS_LITERAL_STRING("preview-div"), false);
+  mPreviewDiv = CreateEmptyAnonymousDivWithTextNode(AnonymousDivType::Preview);
 }
 
 void nsTextControlFrame::AppendAnonymousContentTo(
@@ -1188,6 +1214,9 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
     RefPtr<nsTextNode> textNode =
         new nsTextNode(mContent->NodeInfo()->NodeInfoManager());
     textNode->MarkAsMaybeModifiedFrequently();
+    if (IsPasswordTextControl()) {
+      textNode->MarkAsMaybeMasked();
+    }
 
     mRootNode->AppendChildTo(textNode, aNotify);
     textContent = textNode;

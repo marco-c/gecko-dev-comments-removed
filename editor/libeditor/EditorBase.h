@@ -1247,8 +1247,8 @@ class EditorBase : public nsIEditor,
   
 
 
-  static already_AddRefed<nsTextNode> CreateTextNode(Document& aDocument,
-                                                     const nsAString& aData);
+
+  already_AddRefed<nsTextNode> CreateTextNode(const nsAString& aData);
 
   
 

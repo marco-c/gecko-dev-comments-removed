@@ -2634,8 +2634,10 @@ nsresult EditorBase::InsertTextWithTransaction(
     CheckedInt<int32_t> newOffset;
     if (!pointToInsert.IsInTextNode()) {
       
-      RefPtr<nsTextNode> newNode =
-          EditorBase::CreateTextNode(aDocument, EmptyString());
+      RefPtr<nsTextNode> newNode = CreateTextNode(EmptyString());
+      if (NS_WARN_IF(!newNode)) {
+        return NS_ERROR_FAILURE;
+      }
       
       nsresult rv = InsertNodeWithTransaction(*newNode, pointToInsert);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2675,8 +2677,10 @@ nsresult EditorBase::InsertTextWithTransaction(
 
   
   
-  RefPtr<nsTextNode> newNode =
-      EditorBase::CreateTextNode(aDocument, aStringToInsert);
+  RefPtr<nsTextNode> newNode = CreateTextNode(aStringToInsert);
+  if (NS_WARN_IF(!newNode)) {
+    return NS_ERROR_FAILURE;
+  }
   
   nsresult rv = InsertNodeWithTransaction(*newNode, pointToInsert);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4355,11 +4359,19 @@ already_AddRefed<Element> EditorBase::CreateHTMLContent(const nsAtom* aTag) {
                          kNameSpaceID_XHTML);
 }
 
-
 already_AddRefed<nsTextNode> EditorBase::CreateTextNode(
-    Document& aDocument, const nsAString& aData) {
-  RefPtr<nsTextNode> text = aDocument.CreateEmptyTextNode();
+    const nsAString& aData) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  Document* document = GetDocument();
+  if (NS_WARN_IF(!document)) {
+    return nullptr;
+  }
+  RefPtr<nsTextNode> text = document->CreateEmptyTextNode();
   text->MarkAsMaybeModifiedFrequently();
+  if (IsPasswordEditor()) {
+    text->MarkAsMaybeMasked();
+  }
   
   text->SetText(aData, false);
   return text.forget();

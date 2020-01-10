@@ -62,10 +62,14 @@ enum {
   
   
   NS_MAYBE_MODIFIED_FREQUENTLY = CHARACTER_DATA_FLAG_BIT(6),
+
+  
+  
+  NS_MAYBE_MASKED = CHARACTER_DATA_FLAG_BIT(7),
 };
 
 
-ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET + 7);
+ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET + 8);
 
 #undef CHARACTER_DATA_FLAG_BIT
 
@@ -87,6 +91,7 @@ class CharacterData : public nsIContent {
   void MarkAsMaybeModifiedFrequently() {
     SetFlags(NS_MAYBE_MODIFIED_FREQUENTLY);
   }
+  void MarkAsMaybeMasked() { SetFlags(NS_MAYBE_MASKED); }
 
   NS_IMPL_FROMNODE_HELPER(CharacterData, IsCharacterData())
 
