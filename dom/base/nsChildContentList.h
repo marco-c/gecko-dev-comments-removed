@@ -7,6 +7,7 @@
 #ifndef nsChildContentList_h__
 #define nsChildContentList_h__
 
+#include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
 #include "nsINodeList.h"   
 #include "js/TypeDecls.h"  
@@ -35,19 +36,16 @@ class nsAttrChildContentList : public nsINodeList {
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsIContent* Item(uint32_t aIndex) override;
   uint32_t Length() override;
+  nsINode* GetParentObject() final { return mNode; }
 
-  virtual void DropReference() { mNode = nullptr; }
-
-  virtual nsINode* GetParentObject() override { return mNode; }
+  virtual void InvalidateCacheIfAvailable() {}
 
  protected:
   virtual ~nsAttrChildContentList() {}
 
  private:
   
-  
-  
-  nsINode* MOZ_NON_OWNING_REF mNode;
+  RefPtr<nsINode> mNode;
 };
 
 class nsParentNodeChildContentList final : public nsAttrChildContentList {
@@ -62,10 +60,7 @@ class nsParentNodeChildContentList final : public nsAttrChildContentList {
   virtual nsIContent* Item(uint32_t aIndex) override;
   uint32_t Length() override;
 
-  void DropReference() override {
-    InvalidateCache();
-    nsAttrChildContentList::DropReference();
-  }
+  void InvalidateCacheIfAvailable() final { InvalidateCache(); }
 
   void InvalidateCache() {
     mIsCacheValid = false;
