@@ -100,24 +100,16 @@ class nsNodeInfoManager final {
 
   nsBindingManager* GetBindingManager() const { return mBindingManager; }
 
-  enum Tri { eTriUnset = 0, eTriFalse, eTriTrue };
-
   
 
 
-  bool SVGEnabled() {
-    return mSVGEnabled == eTriTrue
-               ? true
-               : mSVGEnabled == eTriFalse ? false : InternalSVGEnabled();
-  }
+  bool SVGEnabled() { return mSVGEnabled.valueOr(InternalSVGEnabled()); }
 
   
 
 
   bool MathMLEnabled() {
-    return mMathMLEnabled == eTriTrue
-               ? true
-               : mMathMLEnabled == eTriFalse ? false : InternalMathMLEnabled();
+    return mMathMLEnabled.valueOr(InternalMathMLEnabled());
   }
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
@@ -171,8 +163,8 @@ class nsNodeInfoManager final {
       mDocumentNodeInfo;  
   RefPtr<nsBindingManager> mBindingManager;
   NodeInfoCache mRecentlyUsedNodeInfos;
-  Tri mSVGEnabled;
-  Tri mMathMLEnabled;
+  mozilla::Maybe<bool> mSVGEnabled;     
+  mozilla::Maybe<bool> mMathMLEnabled;  
 };
 
 #endif 
