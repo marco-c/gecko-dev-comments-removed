@@ -17,6 +17,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "ds/FixedLengthVector.h"  
 #include "frontend/BinASTRuntimeSupport.h"  
 #include "frontend/BinASTToken.h"
 #include "frontend/BinASTTokenReaderBase.h"  
@@ -300,7 +301,7 @@ class SingleEntryHuffmanTable {
 
 class TwoEntriesHuffmanTable {
  public:
-  TwoEntriesHuffmanTable() : length_(0) {}
+  TwoEntriesHuffmanTable() {}
   TwoEntriesHuffmanTable(TwoEntriesHuffmanTable&& other) noexcept = default;
 
   
@@ -310,10 +311,11 @@ class TwoEntriesHuffmanTable {
   JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
                            uint8_t maxBitLength);
 
-  JS::Result<Ok> initComplete();
+  JS::Result<Ok> initComplete(JSContext* cx);
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength,
+  
+  JS::Result<Ok> addSymbol(size_t index, uint32_t bits, uint8_t bitLength,
                            const BinASTSymbol& value);
 
   TwoEntriesHuffmanTable(TwoEntriesHuffmanTable&) = delete;
@@ -343,30 +345,15 @@ class TwoEntriesHuffmanTable {
     const BinASTSymbol* position_;
   };
   Iterator begin() const { return Iterator(std::begin(values_)); }
-  Iterator end() const {
-    MOZ_ASSERT(length_ == 2);
-    return Iterator(std::end(values_));
-  }
+  Iterator end() const { return Iterator(std::end(values_)); }
 
   
-  size_t length() const {
-    MOZ_ASSERT(length_ == 2);
-    return 2;
-  }
+  size_t length() const { return 2; }
 
  private:
   
-  
-  
-  
   BinASTSymbol values_[2] = {BinASTSymbol::fromBool(false),
                              BinASTSymbol::fromBool(false)};
-
-  
-  
-  
-  
-  uint8_t length_;
 
   friend class HuffmanPreludeReader;
 };
@@ -466,9 +453,7 @@ class SingleLookupHuffmanTable {
 
   explicit SingleLookupHuffmanTable(
       JSContext* cx, Use use = Use::LeafOfMultiLookupHuffmanTable)
-      : values_(cx),
-        saturated_(cx),
-        largestBitLength_(-1)
+      : largestBitLength_(-1)
 #ifdef DEBUG
         ,
         use_(use)
@@ -484,10 +469,11 @@ class SingleLookupHuffmanTable {
   JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
                            uint8_t maxBitLength);
 
-  JS::Result<Ok> initComplete();
+  JS::Result<Ok> initComplete(JSContext* cx);
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength,
+  
+  JS::Result<Ok> addSymbol(size_t index, uint32_t bits, uint8_t bitLength,
                            const BinASTSymbol& value);
 
   SingleLookupHuffmanTable() = delete;
@@ -530,14 +516,14 @@ class SingleLookupHuffmanTable {
   
   
   
-  Vector<HuffmanEntry> values_;
+  FixedLengthVector<HuffmanEntry> values_;
 
   
   
   
   
   
-  Vector<InternalIndex> saturated_;
+  FixedLengthVector<InternalIndex> saturated_;
 
   
   
@@ -696,8 +682,6 @@ class MultiLookupHuffmanTable {
   explicit MultiLookupHuffmanTable(JSContext* cx)
       : cx_(cx),
         shortKeys_(cx, SingleLookupHuffmanTable::Use::ShortKeys),
-        values_(cx),
-        suffixTables_(cx),
         largestBitLength_(-1) {}
   MultiLookupHuffmanTable(MultiLookupHuffmanTable&& other) = default;
 
@@ -708,10 +692,11 @@ class MultiLookupHuffmanTable {
   JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
                            uint8_t largestBitLength);
 
-  JS::Result<Ok> initComplete();
+  JS::Result<Ok> initComplete(JSContext* cx);
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength,
+  
+  JS::Result<Ok> addSymbol(size_t index, uint32_t bits, uint8_t bitLength,
                            const BinASTSymbol& value);
 
   MultiLookupHuffmanTable() = delete;
@@ -769,7 +754,7 @@ class MultiLookupHuffmanTable {
   
   
   
-  Vector<HuffmanEntry> values_;
+  FixedLengthVector<HuffmanEntry> values_;
 
   
   
@@ -778,7 +763,7 @@ class MultiLookupHuffmanTable {
   
   
   
-  Vector<Subtable> suffixTables_;
+  FixedLengthVector<Subtable> suffixTables_;
 
   
   
@@ -823,10 +808,11 @@ struct GenericHuffmanTable {
                            uint8_t maxBitLength);
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength,
+  
+  JS::Result<Ok> addSymbol(size_t index, uint32_t bits, uint8_t bitLength,
                            const BinASTSymbol& value);
 
-  JS::Result<Ok> initComplete();
+  JS::Result<Ok> initComplete(JSContext* cx);
 
   
   size_t length() const;
