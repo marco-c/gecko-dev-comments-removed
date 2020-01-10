@@ -2007,6 +2007,10 @@ pref("devtools.layout.boxmodel.opened", true);
 
 pref("devtools.layout.flexbox.opened", true);
 
+pref("devtools.layout.flex-container.opened", true);
+
+pref("devtools.layout.flex-item.opened", true);
+
 pref("devtools.layout.grid.opened", true);
 
 

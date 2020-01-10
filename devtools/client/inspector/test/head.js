@@ -750,6 +750,35 @@ var waitForTab = async function() {
 
 
 
+
+
+
+
+
+
+async function waitFor(
+  condition,
+  message = "waitFor",
+  interval = 10,
+  maxTries = 500
+) {
+  await BrowserTestUtils.waitForCondition(
+    condition,
+    message,
+    interval,
+    maxTries
+  );
+  return condition();
+}
+
+
+
+
+
+
+
+
+
 function synthesizeKeys(input, win) {
   for (const key of input.split("")) {
     EventUtils.synthesizeKey(key, {}, win);

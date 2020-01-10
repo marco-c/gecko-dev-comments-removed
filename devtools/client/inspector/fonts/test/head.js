@@ -251,17 +251,3 @@ function getPropertyValue(viewDoc, name) {
 function isRemote(fontEl) {
   return fontEl.querySelector(".font-origin").classList.contains("remote");
 }
-
-
-
-
-
-
-
-
-
-
-async function waitFor(condition) {
-  await BrowserTestUtils.waitForCondition(condition, "waitFor", 10, 500);
-  return condition();
-}
