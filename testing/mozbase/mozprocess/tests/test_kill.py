@@ -7,7 +7,6 @@ import time
 import unittest
 import proctest
 import signal
-import sys
 
 import mozunit
 
@@ -51,17 +50,9 @@ class ProcTestKill(proctest.ProcTest):
         """Process is started, we use a deep process tree, we let it spawn
            for a bit, we kill it"""
 
-        myenv = None
-        
-        
-        
-        if sys.platform == 'darwin' and sys.version_info[0] > 2:
-            myenv = os.environ.copy()
-            myenv['PYTHONPATH'] = ':'.join(sys.path)
-
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_deep.ini"],
-                                          cwd=here, env=myenv)
+                                          cwd=here)
         p.run()
         
         time.sleep(3)
@@ -84,17 +75,9 @@ class ProcTestKill(proctest.ProcTest):
         """Process is started, we use a broad process tree, we let it spawn
            for a bit, we kill it"""
 
-        myenv = None
-        
-        
-        
-        if sys.platform == 'darwin' and sys.version_info[0] > 2:
-            myenv = os.environ.copy()
-            myenv['PYTHONPATH'] = ':'.join(sys.path)
-
         p = processhandler.ProcessHandler([self.python, self.proclaunch,
                                            "process_normal_broad.ini"],
-                                          cwd=here, env=myenv)
+                                          cwd=here)
         p.run()
         
         time.sleep(3)
