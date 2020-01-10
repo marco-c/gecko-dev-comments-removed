@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+function openNetworkPanel(messageId) {
+  return ({ hud }) => {
+    hud.openNetworkPanel(messageId);
+  };
+}
+
+function resendNetworkRequest(messageId) {
+  return ({ hud }) => {
+    hud.resendNetworkRequest(messageId);
+  };
+}
+
+module.exports = {
+  openNetworkPanel,
+  resendNetworkRequest,
+};

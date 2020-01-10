@@ -11,6 +11,7 @@ const { MESSAGE_SOURCE } = require("devtools/client/webconsole/constants");
 
 const clipboardHelper = require("devtools/shared/platform/clipboard");
 const { l10n } = require("devtools/client/webconsole/utils/messages");
+const actions = require("devtools/client/webconsole/actions/index");
 
 loader.lazyRequireGetter(this, "saveAs", "devtools/shared/DevToolsUtils", true);
 loader.lazyRequireGetter(
@@ -38,39 +39,45 @@ loader.lazyRequireGetter(
 
 
 
+function createContextMenu(event, message, webConsoleWrapper) {
+  const { target } = event;
+  const { parentNode, toolbox, hud } = webConsoleWrapper;
+  const store = webConsoleWrapper.getStore();
+  const { dispatch } = store;
 
+  const messageEl = target.closest(".message");
+  const clipboardText = getElementText(messageEl);
 
+  const linkEl = target.closest("a[href]");
+  const url = linkEl && linkEl.href;
 
+  const messageVariable = target.closest(".objectBox");
+  
+  const variableText =
+    messageVariable &&
+    !messageEl.classList.contains("startGroup") &&
+    !messageEl.classList.contains("startGroupCollapsed")
+      ? messageVariable.textContent
+      : null;
 
+  
+  const actorEl =
+    target.closest("[data-link-actor-id]") ||
+    target.querySelector("[data-link-actor-id]");
+  const actor = actorEl ? actorEl.dataset.linkActorId : null;
 
+  const rootObjectInspector = target.closest(".object-inspector");
+  const rootActor = rootObjectInspector
+    ? rootObjectInspector.querySelector("[data-link-actor-id]")
+    : null;
+  const rootActorId = rootActor ? rootActor.dataset.linkActorId : null;
 
-
-
-
-function createContextMenu(
-  webConsoleUI,
-  parentNode,
-  {
-    actor,
-    clipboardText,
-    variableText,
-    message,
-    serviceContainer,
-    openSidebar,
-    rootActorId,
-    executionPoint,
-    toolbox,
-    url,
-  }
-) {
   const win = parentNode.ownerDocument.defaultView;
   const selection = win.getSelection();
 
-  const { source, request } = message || {};
+  const { source, request, executionPoint, messageId } = message || {};
 
-  const menu = new Menu({
-    id: "webconsole-menu",
-  });
+  const menu = new Menu({ id: "webconsole-menu" });
 
   
   menu.append(
@@ -89,20 +96,20 @@ function createContextMenu(
   );
 
   
-  if (serviceContainer.openNetworkPanel && request) {
+  if (toolbox && request) {
     menu.append(
       new MenuItem({
         id: "console-menu-open-in-network-panel",
         label: l10n.getStr("webconsole.menu.openInNetworkPanel.label"),
         accesskey: l10n.getStr("webconsole.menu.openInNetworkPanel.accesskey"),
         visible: source === MESSAGE_SOURCE.NETWORK,
-        click: () => serviceContainer.openNetworkPanel(message.messageId),
+        click: () => dispatch(actions.openNetworkPanel(message.messageId)),
       })
     );
   }
 
   
-  if (serviceContainer.resendNetworkRequest && request) {
+  if (toolbox && request) {
     menu.append(
       new MenuItem({
         id: "console-menu-resend-network-request",
@@ -111,7 +118,7 @@ function createContextMenu(
           "webconsole.menu.resendNetworkRequest.accesskey"
         ),
         visible: source === MESSAGE_SOURCE.NETWORK,
-        click: () => serviceContainer.resendNetworkRequest(message.messageId),
+        click: () => dispatch(actions.resendNetworkRequest(messageId)),
       })
     );
   }
@@ -139,23 +146,7 @@ function createContextMenu(
       label: l10n.getStr("webconsole.menu.storeAsGlobalVar.label"),
       accesskey: l10n.getStr("webconsole.menu.storeAsGlobalVar.accesskey"),
       disabled: !actor,
-      click: () => {
-        const evalString = `{ let i = 0;
-        while (this.hasOwnProperty("temp" + i) && i < 1000) {
-          i++;
-        }
-        this["temp" + i] = _self;
-        "temp" + i;
-      }`;
-        const options = {
-          selectedObjectActor: actor,
-        };
-
-        webConsoleUI.evaluateJSAsync(evalString, options).then(res => {
-          webConsoleUI.jsterm.focus();
-          webConsoleUI.hud.setInputValue(res.result);
-        });
-      },
+      click: () => dispatch(actions.storeAsGlobal(actor)),
     })
   );
 
@@ -187,21 +178,7 @@ function createContextMenu(
       accesskey: l10n.getStr("webconsole.menu.copyObject.accesskey"),
       
       disabled: !actor && !variableText,
-      click: () => {
-        if (actor) {
-          
-          
-          webConsoleUI
-            .evaluateJSAsync("copy(_self)", {
-              selectedObjectActor: actor,
-            })
-            .then(res => {
-              clipboardHelper.copyString(res.helperResult.value);
-            });
-        } else {
-          clipboardHelper.copyString(variableText);
-        }
-      },
+      click: () => dispatch(actions.copyMessageObject(actor, variableText)),
     })
   );
 
@@ -266,14 +243,15 @@ function createContextMenu(
   );
 
   
-  if (openSidebar) {
+  const shouldOpenSidebar = store.getState().prefs.sidebarToggle;
+  if (shouldOpenSidebar) {
     menu.append(
       new MenuItem({
         id: "console-menu-open-sidebar",
         label: l10n.getStr("webconsole.menu.openInSidebar.label"),
         accesskey: l10n.getStr("webconsole.menu.openInSidebar.accesskey"),
         disabled: !rootActorId,
-        click: () => openSidebar(message.messageId),
+        click: () => dispatch(actions.openSidebar(messageId, rootActorId)),
       })
     );
   }
@@ -285,10 +263,7 @@ function createContextMenu(
         id: "console-menu-time-warp",
         label: l10n.getStr("webconsole.menu.timeWarp.label"),
         disabled: false,
-        click: () => {
-          const threadFront = toolbox.threadFront;
-          threadFront.timeWarp(executionPoint);
-        },
+        click: () => dispatch(actions.jumpToExecutionPoint(executionPoint)),
       })
     );
   }
@@ -303,6 +278,11 @@ function createContextMenu(
       })
     );
   }
+
+  
+  const { screenX, screenY } = event;
+  menu.once("open", () => webConsoleWrapper.emit("menu-open"));
+  menu.popup(screenX, screenY, hud.chromeWindow.document);
 
   return menu;
 }

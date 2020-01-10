@@ -37,9 +37,9 @@ loader.lazyRequireGetter(
 const HELP_URL = "https://developer.mozilla.org/docs/Tools/Web_Console/Helpers";
 
 function evaluateExpression(expression) {
-  return async ({ dispatch, services }) => {
+  return async ({ dispatch, webConsoleUI, hud }) => {
     if (!expression) {
-      expression = services.getInputSelection() || services.getInputValue();
+      expression = hud.getInputSelection() || hud.getInputValue();
     }
     if (!expression) {
       return null;
@@ -63,7 +63,7 @@ function evaluateExpression(expression) {
 
     let mappedExpressionRes;
     try {
-      mappedExpressionRes = await services.getMappedExpression(expression);
+      mappedExpressionRes = await hud.getMappedExpression(expression);
     } catch (e) {
       console.warn("Error when calling getMappedExpression", e);
     }
@@ -72,7 +72,7 @@ function evaluateExpression(expression) {
       ? mappedExpressionRes.expression
       : expression;
 
-    const { frameActor, client } = services.getFrameActor();
+    const { frameActor, client } = webConsoleUI.getFrameActor();
 
     
     
@@ -81,15 +81,12 @@ function evaluateExpression(expression) {
     const response = await client
       .evaluateJSAsync(expression, {
         frameActor,
-        selectedNodeActor: services.getSelectedNodeActor(),
+        selectedNodeActor: webConsoleUI.getSelectedNodeActor(),
         mapped: mappedExpressionRes ? mappedExpressionRes.mapped : null,
       })
       .then(onSettled, onSettled);
 
-    return onExpressionEvaluated(response, {
-      dispatch,
-      services,
-    });
+    return dispatch(onExpressionEvaluated(response));
   };
 }
 
@@ -100,81 +97,105 @@ function evaluateExpression(expression) {
 
 
 
-async function onExpressionEvaluated(response, { dispatch, services } = {}) {
-  if (response.error) {
-    console.error(`Evaluation error`, response.error, ": ", response.message);
-    return;
-  }
+function onExpressionEvaluated(response) {
+  return async ({ dispatch, webConsoleUI }) => {
+    if (response.error) {
+      console.error(`Evaluation error`, response.error, ": ", response.message);
+      return;
+    }
 
-  
-  
-  if (response.topLevelAwaitRejected === true) {
-    return;
-  }
+    
+    
+    if (response.topLevelAwaitRejected === true) {
+      return;
+    }
 
-  if (!response.helperResult) {
-    dispatch(messagesActions.messagesAdd([response]));
-    return;
-  }
+    if (!response.helperResult) {
+      dispatch(messagesActions.messagesAdd([response]));
+      return;
+    }
 
-  await handleHelperResult(response, { dispatch, services });
+    await dispatch(handleHelperResult(response));
+  };
 }
 
-async function handleHelperResult(response, { dispatch, services }) {
-  const result = response.result;
-  const helperResult = response.helperResult;
-  const helperHasRawOutput = !!(helperResult || {}).rawOutput;
+function handleHelperResult(response) {
+  return async ({ dispatch, hud, webConsoleUI }) => {
+    const result = response.result;
+    const helperResult = response.helperResult;
+    const helperHasRawOutput = !!(helperResult || {}).rawOutput;
 
-  if (helperResult && helperResult.type) {
-    switch (helperResult.type) {
-      case "clearOutput":
-        dispatch(messagesActions.messagesClear());
-        break;
-      case "clearHistory":
-        dispatch(historyActions.clearHistory());
-        break;
-      case "inspectObject":
-        services.inspectObjectActor(helperResult.object);
-        break;
-      case "help":
-        services.openLink(HELP_URL);
-        break;
-      case "copyValueToClipboard":
-        clipboardHelper.copyString(helperResult.value);
-        break;
-      case "screenshotOutput":
-        const { args, value } = helperResult;
-        const screenshotMessages = await saveScreenshot(
-          services.getPanelWindow(),
-          args,
-          value
-        );
-        dispatch(
-          messagesActions.messagesAdd(
-            screenshotMessages.map(message => ({
-              message,
-              type: "logMessage",
-            }))
-          )
-        );
-        
-        return;
+    if (helperResult && helperResult.type) {
+      switch (helperResult.type) {
+        case "clearOutput":
+          dispatch(messagesActions.messagesClear());
+          break;
+        case "clearHistory":
+          dispatch(historyActions.clearHistory());
+          break;
+        case "inspectObject": {
+          const objectActor = helperResult.object;
+          if (hud.toolbox) {
+            hud.toolbox.inspectObjectActor(objectActor);
+          } else {
+            webConsoleUI.inspectObjectActor(objectActor);
+          }
+          break;
+        }
+        case "help":
+          hud.openLink(HELP_URL);
+          break;
+        case "copyValueToClipboard":
+          clipboardHelper.copyString(helperResult.value);
+          break;
+        case "screenshotOutput":
+          const { args, value } = helperResult;
+          const screenshotMessages = await saveScreenshot(
+            webConsoleUI.getPanelWindow(),
+            args,
+            value
+          );
+          dispatch(
+            messagesActions.messagesAdd(
+              screenshotMessages.map(message => ({
+                message,
+                type: "logMessage",
+              }))
+            )
+          );
+          
+          return;
+      }
     }
-  }
 
-  const hasErrorMessage =
-    response.exceptionMessage ||
-    (helperResult && helperResult.type === "error");
+    const hasErrorMessage =
+      response.exceptionMessage ||
+      (helperResult && helperResult.type === "error");
 
-  
-  const hasUndefinedResult =
-    result && typeof result == "object" && result.type == "undefined";
+    
+    const hasUndefinedResult =
+      result && typeof result == "object" && result.type == "undefined";
 
-  if (hasErrorMessage || helperHasRawOutput || !hasUndefinedResult) {
-    dispatch(messagesActions.messagesAdd([response]));
-  }
+    if (hasErrorMessage || helperHasRawOutput || !hasUndefinedResult) {
+      dispatch(messagesActions.messagesAdd([response]));
+    }
+  };
+}
+
+function focusInput() {
+  return ({ hud }) => {
+    return hud.focusInput();
+  };
+}
+
+function setInputValue(value) {
+  return ({ hud }) => {
+    return hud.setInputValue(value);
+  };
 }
 
 module.exports = {
   evaluateExpression,
+  focusInput,
+  setInputValue,
 };
