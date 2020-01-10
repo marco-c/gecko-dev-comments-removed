@@ -174,6 +174,29 @@ SkTypeface* ScaledFontMac::CreateSkTypeface() {
     return typeface;
   }
 }
+
+void ScaledFontMac::SetupSkFontDrawOptions(SkFont& aFont) {
+  aFont.setSubpixel(true);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFont.getEdging() == SkFont::Edging::kAntiAlias && !mUseFontSmoothing) {
+    aFont.setHinting(kNo_SkFontHinting);
+  }
+}
 #endif
 
 
