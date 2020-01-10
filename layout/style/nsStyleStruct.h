@@ -1744,7 +1744,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     return (mContain & mozilla::StyleContain_SIZE) &&
            !IsInternalRubyDisplayType() &&
-           (mozilla::StyleDisplay::Table != mDisplay) && !IsInnerTableStyle();
+           DisplayInside() != mozilla::StyleDisplayInside::Table &&
+           !IsInnerTableStyle();
   }
 
   
