@@ -252,9 +252,6 @@ public class GeckoAppShell {
     @WrapForJNI
      static native void reportJavaCrash(Throwable exc, String stackTrace);
 
-    @WrapForJNI(dispatchTo = "gecko")
-    public static native void notifyUriVisited(String uri);
-
     private static Rect sScreenSizeOverride;
 
     @WrapForJNI(stubName = "NotifyObservers", dispatchTo = "gecko")

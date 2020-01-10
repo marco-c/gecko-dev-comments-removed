@@ -9,6 +9,7 @@
 #include "nsIPrefBranch.h"
 #include "nsString.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "nsNetUtil.h"
 
 #include "mock_Link.h"
@@ -119,7 +120,7 @@ void test_wait_checkpoint() {
 
 namespace test_unvisited_does_not_notify {
 nsCOMPtr<nsIURI> testURI;
-RefPtr<Link> testLink;
+RefPtr<mock_Link> testLink;
 }  
 void test_unvisited_does_not_notify_part1() {
   using namespace test_unvisited_does_not_notify;
@@ -167,15 +168,13 @@ void test_unvisited_does_not_notify_part2() {
 
   
   
-  nsCOMPtr<IHistory> history = do_get_IHistory();
-  history->UnregisterVisitedCallback(testURI, testLink);
+  
+  testLink->AwaitNewNotification(expect_visit);
+  addURI(testURI);
 
   
   testURI = nullptr;
   testLink = nullptr;
-
-  
-  run_next_test();
 }
 
 void test_same_uri_notifies_both() {
@@ -206,8 +205,6 @@ void test_unregistered_visited_does_not_notify() {
 
   nsCOMPtr<nsIURI> testURI = new_test_uri();
   RefPtr<Link> link = new mock_Link(expect_no_visit);
-
-  
   nsCOMPtr<IHistory> history(do_get_IHistory());
   nsresult rv = history->RegisterVisitedCallback(testURI, link);
   do_check_success(rv);
@@ -230,13 +227,20 @@ void test_unregistered_visited_does_not_notify() {
 void test_new_visit_notifies_waiting_Link() {
   
   
-  RefPtr<Link> link = new mock_Link(expect_visit);
+  
+  
+  
+  RefPtr<mock_Link> link = new mock_Link(expect_no_visit);
 
   
   nsCOMPtr<nsIURI> testURI = new_test_uri();
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsresult rv = history->RegisterVisitedCallback(testURI, link);
   do_check_success(rv);
+
+  SpinEventLoopUntil([&]() { return link->GotNotified(); });
+
+  link->AwaitNewNotification(expect_visit);
 
   
   addURI(testURI);
@@ -504,7 +508,7 @@ void test_new_visit_adds_place_guid() {
   PlaceRecord place;
   do_get_place(visitedURI, place);
   do_check_eq(place.visitCount, 1);
-  do_check_eq(place.guid.Length(), 12);
+  do_check_eq(place.guid.Length(), 12u);
 
   run_next_test();
 }

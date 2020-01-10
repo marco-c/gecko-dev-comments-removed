@@ -16,7 +16,7 @@ class BaseHistory : public IHistory {
  public:
   nsresult RegisterVisitedCallback(nsIURI*, dom::Link*) final;
   void UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
-  void NotifyVisited(nsIURI* aURI) final;
+  void NotifyVisited(nsIURI*, VisitedStatus) final;
 
  protected:
   static constexpr const size_t kTrackedUrisInitialSize = 64;
@@ -34,7 +34,7 @@ class BaseHistory : public IHistory {
   using ObserverArray = nsTObserverArray<dom::Link*>;
   struct ObservingLinks {
     ObserverArray mLinks;
-    bool mKnownVisited = false;
+    VisitedStatus mStatus = VisitedStatus::Unknown;
 
     size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
       return mLinks.ShallowSizeOfExcludingThis(aMallocSizeOf);
@@ -46,19 +46,15 @@ class BaseHistory : public IHistory {
 
 
 
-  void NotifyVisitedForDocument(nsIURI*, dom::Document*);
+  void NotifyVisitedForDocument(nsIURI*, dom::Document*, VisitedStatus);
 
   
 
 
 
-  void DispatchNotifyVisited(nsIURI*, dom::Document*);
+  void DispatchNotifyVisited(nsIURI*, dom::Document*, VisitedStatus);
 
  protected:
-  
-  
-  
-  
   
   
   nsDataHashtable<nsURIHashKey, ObservingLinks> mTrackedURIs;

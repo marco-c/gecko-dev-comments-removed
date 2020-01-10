@@ -45,7 +45,7 @@ class Link : public nsISupports {
 
   explicit Link();
 
-  virtual void SetLinkState(nsLinkState aState);
+  virtual void VisitedQueryFinished(bool aVisited);
 
   
 
