@@ -108,7 +108,9 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   nsresult DoOpenContainer(nsAtom* aTag);
   nsresult DoCloseContainer(nsAtom* aTag);
   nsresult DoAddLeaf(nsAtom* aTag);
-  void DoAddText(bool aIsWhitespace, const nsAString& aText);
+
+  
+  void DoAddText(bool aIsLineBreak, const nsAString& aText);
 
   
   inline bool MayWrap() {
