@@ -16,6 +16,7 @@ from taskgraph.transforms.job import job_description_schema
 from taskgraph.util.attributes import keymatch
 from taskgraph.util.schema import (
     resolve_keyed_by,
+    optionally_keyed_by,
 )
 from taskgraph.util.treeherder import join_symbol, split_symbol
 
@@ -45,17 +46,21 @@ source_test_description_schema = Schema({
 
     
     
-    Required('worker-type'): Any(
-        job_description_schema['worker-type'],
-        {'by-platform': {basestring: job_description_schema['worker-type']}},
-    ),
-    Required('worker'): Any(
-        job_description_schema['worker'],
-        {'by-platform': {basestring: job_description_schema['worker']}},
-    ),
+    Required('worker-type'): optionally_keyed_by(
+        'platform', job_description_schema['worker-type']),
+
+    Required('worker'): optionally_keyed_by(
+        'platform', job_description_schema['worker']),
+
     Optional('python-version'): [int],
     
     Optional('require-decision-task-id'): bool,
+
+    
+    Optional('fetches'): {
+        basestring: optionally_keyed_by(
+            'platform', job_description_schema['fetches'][basestring]),
+    },
 })
 
 transforms = TransformSequence()
@@ -175,6 +180,7 @@ def handle_platform(config, jobs):
     try-related attributes.
     """
     fields = [
+        'fetches.toolchain',
         'worker-type',
         'worker',
     ]
