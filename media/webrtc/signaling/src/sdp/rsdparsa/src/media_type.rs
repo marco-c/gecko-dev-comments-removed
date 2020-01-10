@@ -371,7 +371,7 @@ pub fn parse_media(value: &str) -> Result<SdpType, SdpParserInternalError> {
                     8  |  
                     9  |  
                     13 |  
-                    96 ... 127 => (),  
+                    96 ..= 127 => (),  
                     _ => return Err(SdpParserInternalError::Generic(
                           "format number in media line is out of range".to_string()))
                 };
