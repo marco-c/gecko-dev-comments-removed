@@ -144,8 +144,15 @@ NS_IMETHODIMP
 nsParentalControlsService::GetBlockFileDownloadsEnabled(bool* aResult) {
   *aResult = false;
 
-  if (!mEnabled || !mPC) {
+  if (!mEnabled) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  
+  if (!mPC) {
+    return NS_OK;
   }
 
   RefPtr<IWPCWebSettings> wpcws;
@@ -162,8 +169,14 @@ NS_IMETHODIMP
 nsParentalControlsService::GetLoggingEnabled(bool* aResult) {
   *aResult = false;
 
-  if (!mEnabled || !mPC) {
+  if (!mEnabled) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  if (!mPC) {
+    return NS_OK;
   }
 
   
@@ -217,8 +230,13 @@ nsParentalControlsService::RequestURIOverride(
     nsIURI* aTarget, nsIInterfaceRequestor* aWindowContext, bool* _retval) {
   *_retval = false;
 
-  if (!mEnabled || !mPC) {
+  if (!mEnabled) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  if (!mPC) {
+    return NS_OK;
   }
 
   NS_ENSURE_ARG_POINTER(aTarget);
@@ -250,8 +268,13 @@ nsParentalControlsService::RequestURIOverrides(
     nsIArray* aTargets, nsIInterfaceRequestor* aWindowContext, bool* _retval) {
   *_retval = false;
 
-  if (!mEnabled || !mPC) {
+  if (!mEnabled) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  if (!mPC) {
+    return NS_OK;
   }
 
   NS_ENSURE_ARG_POINTER(aTargets);
