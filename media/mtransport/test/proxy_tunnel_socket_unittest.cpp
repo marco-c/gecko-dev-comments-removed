@@ -110,7 +110,7 @@ TEST_F(NrTcpSocketTest, TestConnected) {
   
   ASSERT_TRUE(!mConnected);
 
-  mSProxy->OnConnected();
+  mSProxy->OnConnected(NS_LITERAL_CSTRING("http"));
 
   ASSERT_TRUE(mConnected);
 }
