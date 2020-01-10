@@ -35,6 +35,10 @@ use num_traits::NumCast;
 
 
 
+
+
+
+
 #[repr(C)]
 #[derive(EuclidMatrix)]
 pub struct TypedTransform2D<T, Src, Dst> {
@@ -50,6 +54,10 @@ pub type Transform2D<T> = TypedTransform2D<T, UnknownUnit, UnknownUnit>;
 
 impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
     
+    
+    
+    
+    
     pub fn row_major(m11: T, m12: T, m21: T, m22: T, m31: T, m32: T) -> Self {
         TypedTransform2D {
             m11, m12,
@@ -59,6 +67,10 @@ impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
         }
     }
 
+    
+    
+    
+    
     
     pub fn column_major(m11: T, m21: T, m31: T, m12: T, m22: T, m32: T) -> Self {
         TypedTransform2D {
@@ -71,6 +83,10 @@ impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
 
     
     
+    
+    
+    
+    
     pub fn to_row_major_array(&self) -> [T; 6] {
         [
             self.m11, self.m12,
@@ -80,6 +96,10 @@ impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
     }
 
     
+    
+    
+    
+    
     pub fn to_column_major_array(&self) -> [T; 6] {
         [
             self.m11, self.m21, self.m31,
@@ -87,6 +107,10 @@ impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
         ]
     }
 
+    
+    
+    
+    
     
     
     
@@ -100,6 +124,10 @@ impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
     }
 
     
+    
+    
+    
+    
     pub fn from_row_major_array(array: [T; 6]) -> Self {
         Self::row_major(
             array[0], array[1],
@@ -108,6 +136,10 @@ impl<T: Copy, Src, Dst> TypedTransform2D<T, Src, Dst> {
         )
     }
 
+    
+    
+    
+    
     
     pub fn from_row_arrays(array: [[T; 2]; 3]) -> Self {
         Self::row_major(
@@ -194,6 +226,8 @@ where T: Copy + Clone +
 
     
     
+    
+    
     #[cfg_attr(feature = "unstable", must_use)]
     pub fn post_mul<NewDst>(&self, mat: &TypedTransform2D<T, Dst, NewDst>) -> TypedTransform2D<T, Src, NewDst> {
         TypedTransform2D::row_major(
@@ -206,6 +240,8 @@ where T: Copy + Clone +
         )
     }
 
+    
+    
     
     
     #[cfg_attr(feature = "unstable", must_use)]
@@ -286,6 +322,8 @@ where T: Copy + Clone +
     }
 
     
+    
+    
     #[inline]
     #[cfg_attr(feature = "unstable", must_use)]
     pub fn transform_point(&self, point: &TypedPoint2D<T, Src>) -> TypedPoint2D<T, Dst> {
@@ -293,6 +331,8 @@ where T: Copy + Clone +
                           point.x * self.m12 + point.y * self.m22 + self.m32)
     }
 
+    
+    
     
     #[inline]
     #[cfg_attr(feature = "unstable", must_use)]
