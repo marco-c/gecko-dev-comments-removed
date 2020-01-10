@@ -42,12 +42,6 @@ pub mod attributes {
         }
     }
 
-    pub fn non_exhaustive() -> TokenStream {
-        quote! {
-            #[non_exhaustive]
-        }
-    }
-
     pub fn doc(comment: String) -> TokenStream {
         
         
