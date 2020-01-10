@@ -643,11 +643,7 @@ bool SelectAllCommand::IsCommandEnabled(Command aCommand,
   }
 
   
-  bool isEmpty = false;
-  if (NS_WARN_IF(NS_FAILED(aTextEditor->IsEmpty(&isEmpty)))) {
-    return false;
-  }
-  return !isEmpty;
+  return !aTextEditor->IsEmpty();
 }
 
 nsresult SelectAllCommand::DoCommand(Command aCommand, TextEditor& aTextEditor,

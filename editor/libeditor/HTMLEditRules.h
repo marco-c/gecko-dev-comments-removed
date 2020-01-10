@@ -60,7 +60,6 @@ class HTMLEditRules : public TextEditRules {
   virtual nsresult DetachEditor() override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult BeforeEdit() override;
   MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit() override;
-  virtual bool DocumentIsEmpty() const override;
 
   
 

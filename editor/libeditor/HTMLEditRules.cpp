@@ -742,12 +742,6 @@ EditActionResult HTMLEditor::CanHandleHTMLEditSubAction() const {
   return EditActionIgnored();
 }
 
-bool HTMLEditRules::DocumentIsEmpty() const {
-  
-  
-  return HTMLEditorRef().HasPaddingBRElementForEmptyEditor();
-}
-
 nsresult HTMLEditRules::GetListState(bool* aMixed, bool* aOL, bool* aUL,
                                      bool* aDL) {
   NS_ENSURE_TRUE(aMixed && aOL && aUL && aDL, NS_ERROR_NULL_POINTER);
@@ -2283,7 +2277,7 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
 
   
   
-  if (HasPaddingBRElementForEmptyEditor()) {
+  if (mPaddingBRElementForEmptyEditor) {
     return EditActionCanceled();
   }
 

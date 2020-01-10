@@ -171,14 +171,7 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult IsEmpty(bool* aIsEmpty) const;
-  bool IsEmpty() const {
-    bool isEmpty = false;
-    nsresult rv = IsEmpty(&isEmpty);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "Checking whether the editor is empty failed");
-    return NS_SUCCEEDED(rv) && isEmpty;
-  }
+  virtual bool IsEmpty() const;
 
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult HandleKeyPressEvent(

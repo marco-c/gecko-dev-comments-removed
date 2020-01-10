@@ -138,6 +138,14 @@ class HTMLEditor final : public TextEditor,
   NS_IMETHOD BeginningOfDocument() override;
   NS_IMETHOD SetFlags(uint32_t aFlags) override;
 
+  
+
+
+
+
+
+  virtual bool IsEmpty() const override;
+
   virtual bool CanPaste(int32_t aClipboardType) const override;
   using EditorBase::CanPaste;
 

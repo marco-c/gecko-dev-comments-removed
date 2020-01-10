@@ -79,13 +79,6 @@ class TextEditRules {
   virtual nsresult BeforeEdit();
   MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit();
 
-  
-
-
-
-
-  virtual bool DocumentIsEmpty() const;
-
  protected:
   virtual ~TextEditRules() = default;
 
