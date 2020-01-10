@@ -23,7 +23,13 @@ var systemAppOrigin = (function() {
 })();
 
 var threshold = Services.prefs.getIntPref("ui.dragThresholdX", 25);
-var delay = Services.prefs.getIntPref("ui.click_hold_context_menus.delay", 500);
+var isClickHoldEnabled = Services.prefs.getBoolPref(
+  "ui.click_hold_context_menus"
+);
+var clickHoldDelay = Services.prefs.getIntPref(
+  "ui.click_hold_context_menus.delay",
+  500
+);
 
 const kStateHover = 0x00000004; 
 
@@ -185,7 +191,12 @@ TouchSimulator.prototype = {
       case "mousedown":
         this.target = evt.target;
 
-        this.contextMenuTimeout = this.sendContextMenu(evt);
+        
+        
+        
+        if (isClickHoldEnabled && !evt.originalTarget.closest("scrollbar")) {
+          this.contextMenuTimeout = this.sendContextMenu(evt);
+        }
 
         this.cancelClick = false;
         this.startX = evt.pageX;
@@ -307,7 +318,7 @@ TouchSimulator.prototype = {
     const timeout = content.setTimeout(() => {
       target.dispatchEvent(evt);
       this.cancelClick = true;
-    }, delay);
+    }, clickHoldDelay);
 
     return timeout;
   },
