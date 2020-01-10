@@ -630,15 +630,17 @@ ElementEditor.prototype = {
     
     
     
-    const attributes = this.node.attributes.filter(existingAttribute => {
-      return existingAttribute.name !== attribute.name;
-    });
+    const attributes = this.node.attributes.filter(
+      existingAttribute => existingAttribute.name !== attribute.name
+    );
+
     attributes.push(attribute);
     const parsedLinksData = parseAttribute(
       this.node.namespaceURI,
       this.node.tagName,
       attributes,
-      attribute.name
+      attribute.name,
+      attribute.value
     );
 
     
