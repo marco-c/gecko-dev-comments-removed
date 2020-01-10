@@ -33,12 +33,13 @@
 #include "nsRange.h"
 #include "nsTextFragment.h"
 #include "mozilla/BinarySearch.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/EventStates.h"
-#include "mozilla/dom/Selection.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TextEditor.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/Selection.h"
 #include "gfxSkipChars.h"
 #include <algorithm>
 
@@ -255,11 +256,8 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
   
   Accessible* descendant = nullptr;
   if (findNode) {
-    nsCOMPtr<nsIContent> findContent(do_QueryInterface(findNode));
-    if (findContent && findContent->IsHTMLElement(nsGkAtoms::br) &&
-        findContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                              nsGkAtoms::mozeditorbogusnode,
-                                              nsGkAtoms::_true, eIgnoreCase)) {
+    dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(findNode);
+    if (brElement && brElement->IsPaddingForEmptyEditor()) {
       
       
       return 0;

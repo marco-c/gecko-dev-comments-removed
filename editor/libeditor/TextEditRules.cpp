@@ -16,6 +16,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/NodeFilterBinding.h"
 #include "mozilla/dom/NodeIterator.h"
 #include "mozilla/dom/Selection.h"
@@ -62,7 +63,7 @@ using namespace dom;
 NS_IMPL_CYCLE_COLLECTION_CLASS(TextEditRules)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(TextEditRules)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mBogusNode)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPaddingBRElementForEmptyEditor)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCachedSelectionNode)
   if (HTMLEditRules* htmlEditRules = tmp->AsHTMLEditRules()) {
     HTMLEditRules* tmp = htmlEditRules;
@@ -74,7 +75,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(TextEditRules)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(TextEditRules)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBogusNode)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPaddingBRElementForEmptyEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedSelectionNode)
   if (HTMLEditRules* htmlEditRules = tmp->AsHTMLEditRules()) {
     HTMLEditRules* tmp = htmlEditRules;
@@ -103,7 +104,7 @@ TextEditRules::TextEditRules()
 
 void TextEditRules::InitFields() {
   mTextEditor = nullptr;
-  mBogusNode = nullptr;
+  mPaddingBRElementForEmptyEditor = nullptr;
   mCachedSelectionNode = nullptr;
   mCachedSelectionOffset = 0;
   mActionNesting = 0;
@@ -139,7 +140,7 @@ nsresult TextEditRules::Init(TextEditor* aTextEditor) {
 
   
   
-  nsresult rv = CreateBogusNodeIfNeeded();
+  nsresult rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -243,7 +244,7 @@ nsresult TextEditRules::AfterEdit(EditSubAction aEditSubAction,
     }
 
     
-    rv = CreateBogusNodeIfNeeded();
+    rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -349,7 +350,7 @@ nsresult TextEditRules::DidDoAction(EditSubActionInfo& aInfo,
   }
 }
 
-bool TextEditRules::DocumentIsEmpty() {
+bool TextEditRules::DocumentIsEmpty() const {
   bool retVal = false;
   if (!mTextEditor || NS_FAILED(mTextEditor->IsEmpty(&retVal))) {
     retVal = true;
@@ -378,19 +379,22 @@ nsresult TextEditRules::WillInsert(bool* aCancel) {
   }
 
   
-  if (!mBogusNode) {
+  if (!mPaddingBRElementForEmptyEditor) {
     return NS_OK;
   }
 
   
   
-  nsCOMPtr<nsIContent> bogusNode(std::move(mBogusNode));
-  DebugOnly<nsresult> rv =
-      MOZ_KnownLive(TextEditorRef()).DeleteNodeWithTransaction(*bogusNode);
+  
+  RefPtr<HTMLBRElement> paddingBRElement(
+      std::move(mPaddingBRElementForEmptyEditor));
+  DebugOnly<nsresult> rv = MOZ_KnownLive(TextEditorRef())
+                               .DeleteNodeWithTransaction(*paddingBRElement);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove the bogus node");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "Failed to remove the padding <br> element");
   return NS_OK;
 }
 
@@ -1012,7 +1016,8 @@ nsresult TextEditRules::WillDeleteSelection(
   *aHandled = false;
 
   
-  if (mBogusNode) {
+  
+  if (mPaddingBRElementForEmptyEditor) {
     *aCancel = true;
     return NS_OK;
   }
@@ -1151,10 +1156,10 @@ nsresult TextEditRules::DidUndo(nsresult aResult) {
   
   
   nsIContent* node = TextEditorRef().GetLeftmostChild(rootElement);
-  if (node && TextEditorRef().IsMozEditorBogusNode(node)) {
-    mBogusNode = node;
+  if (node && EditorBase::IsPaddingBRElementForEmptyEditor(*node)) {
+    mPaddingBRElementForEmptyEditor = static_cast<HTMLBRElement*>(node);
   } else {
-    mBogusNode = nullptr;
+    mPaddingBRElementForEmptyEditor = nullptr;
   }
   return aResult;
 }
@@ -1189,15 +1194,15 @@ nsresult TextEditRules::DidRedo(nsresult aResult) {
 
   if (len != 1) {
     
-    mBogusNode = nullptr;
+    mPaddingBRElementForEmptyEditor = nullptr;
     return NS_OK;
   }
 
   Element* brElement = nodeList->Item(0);
-  if (TextEditorRef().IsMozEditorBogusNode(brElement)) {
-    mBogusNode = brElement;
+  if (EditorBase::IsPaddingBRElementForEmptyEditor(*brElement)) {
+    mPaddingBRElementForEmptyEditor = static_cast<HTMLBRElement*>(brElement);
   } else {
-    mBogusNode = nullptr;
+    mPaddingBRElementForEmptyEditor = nullptr;
   }
   return NS_OK;
 }
@@ -1222,7 +1227,8 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
   }
 
   
-  if (mBogusNode) {
+  
+  if (mPaddingBRElementForEmptyEditor) {
     aOutString->Truncate();
     *aHandled = true;
     return NS_OK;
@@ -1303,7 +1309,7 @@ nsresult TextEditRules::RemoveRedundantTrailingBR() {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
-  if (mBogusNode) {
+  if (mPaddingBRElementForEmptyEditor) {
     return NS_OK;
   }
 
@@ -1317,35 +1323,27 @@ nsresult TextEditRules::RemoveRedundantTrailingBR() {
     return NS_ERROR_NULL_POINTER;
   }
 
-  uint32_t childCount = rootElement->GetChildCount();
-  if (childCount > 1) {
+  if (rootElement->GetChildCount() > 1) {
     
     return NS_OK;
   }
 
-  RefPtr<nsIContent> child = rootElement->GetFirstChild();
-  if (!child || !child->IsElement()) {
-    return NS_OK;
-  }
-
-  RefPtr<Element> childElement = child->AsElement();
-  if (!TextEditUtils::IsMozBR(childElement)) {
+  RefPtr<HTMLBRElement> brElement =
+      HTMLBRElement::FromNodeOrNull(rootElement->GetFirstChild());
+  if (!brElement || !TextEditUtils::IsMozBR(brElement)) {
     return NS_OK;
   }
 
   
   
-  childElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::type, true);
+  brElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::type, true);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
-  
-  mBogusNode = childElement;
+  mPaddingBRElementForEmptyEditor = std::move(brElement);
+  mPaddingBRElementForEmptyEditor->SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
 
-  
-  childElement->SetAttr(kNameSpaceID_None, kMOZEditorBogusNodeAttrAtom,
-                        kMOZEditorBogusNodeValue, false);
   return NS_OK;
 }
 
@@ -1362,13 +1360,15 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIContent> lastChild = rootElement->GetLastChild();
   
-  if (NS_WARN_IF(!lastChild)) {
+  
+  if (NS_WARN_IF(!rootElement->GetLastChild())) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!lastChild->IsHTMLElement(nsGkAtoms::br)) {
+  RefPtr<HTMLBRElement> brElement =
+      HTMLBRElement::FromNode(rootElement->GetLastChild());
+  if (!brElement) {
     AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
     EditorDOMPoint endOfRoot;
     endOfRoot.SetToEndOf(rootElement);
@@ -1381,32 +1381,33 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
 
   
   
-  if (!TextEditorRef().IsMozEditorBogusNode(lastChild)) {
+  
+  if (!brElement->IsPaddingForEmptyEditor()) {
     return NS_OK;
   }
 
   
-  lastChild->AsElement()->UnsetAttr(kNameSpaceID_None,
-                                    kMOZEditorBogusNodeAttrAtom, false);
-  lastChild->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                                  NS_LITERAL_STRING("_moz"), true);
+  brElement->UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
+  brElement->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
+                     NS_LITERAL_STRING("_moz"), true);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   return NS_OK;
 }
 
-nsresult TextEditRules::CreateBogusNodeIfNeeded() {
+nsresult TextEditRules::CreatePaddingBRElementForEmptyEditorIfNeeded() {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  if (mBogusNode) {
+  if (mPaddingBRElementForEmptyEditor) {
     
     return NS_OK;
   }
 
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-      TextEditorRef(), EditSubAction::eCreateBogusNode, nsIEditor::eNone);
+      TextEditorRef(), EditSubAction::eCreatePaddingBRElementForEmptyEditor,
+      nsIEditor::eNone);
 
   RefPtr<Element> rootElement = TextEditorRef().GetRoot();
   if (!rootElement) {
@@ -1421,13 +1422,14 @@ nsresult TextEditRules::CreateBogusNodeIfNeeded() {
   bool isRootEditable = TextEditorRef().IsEditable(rootElement);
   for (nsIContent* rootChild = rootElement->GetFirstChild(); rootChild;
        rootChild = rootChild->GetNextSibling()) {
-    if (TextEditorRef().IsMozEditorBogusNode(rootChild) || !isRootEditable ||
-        TextEditorRef().IsEditable(rootChild) ||
+    if (EditorBase::IsPaddingBRElementForEmptyEditor(*rootChild) ||
+        !isRootEditable || TextEditorRef().IsEditable(rootChild) ||
         TextEditorRef().IsBlockNode(rootChild)) {
       return NS_OK;
     }
   }
 
+  
   
   if (!TextEditorRef().IsModifiableNode(*rootElement)) {
     return NS_OK;
@@ -1443,15 +1445,11 @@ nsresult TextEditRules::CreateBogusNodeIfNeeded() {
     return NS_ERROR_FAILURE;
   }
 
-  
-  mBogusNode = newBrElement;
+  mPaddingBRElementForEmptyEditor =
+      static_cast<HTMLBRElement*>(newBrElement.get());
 
   
-  newBrElement->SetAttr(kNameSpaceID_None, kMOZEditorBogusNodeAttrAtom,
-                        kMOZEditorBogusNodeValue, false);
-  if (NS_WARN_IF(mBogusNode != newBrElement)) {
-    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-  }
+  newBrElement->SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
 
   
   nsresult rv = MOZ_KnownLive(TextEditorRef())

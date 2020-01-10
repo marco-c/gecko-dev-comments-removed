@@ -26,6 +26,7 @@ class EditSubActionInfo;
 class HTMLEditor;
 class HTMLEditRules;
 namespace dom {
+class HTMLBRElement;
 class Selection;
 }  
 
@@ -100,7 +101,7 @@ class TextEditRules {
 
 
 
-  virtual bool DocumentIsEmpty();
+  virtual bool DocumentIsEmpty() const;
 
   bool DontEchoPassword() const;
 
@@ -130,7 +131,9 @@ class TextEditRules {
 
   void HandleNewLines(nsString& aString);
 
-  bool HasBogusNode() { return !!mBogusNode; }
+  bool HasPaddingBRElementForEmptyEditor() const {
+    return !!mPaddingBRElementForEmptyEditor;
+  }
 
  protected:
   void InitFields();
@@ -265,7 +268,9 @@ class TextEditRules {
   
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CreateBogusNodeIfNeeded();
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  CreatePaddingBRElementForEmptyEditorIfNeeded();
 
   
 
@@ -437,7 +442,8 @@ class TextEditRules {
   inline already_AddRefed<nsINode> GetTextNodeAroundSelectionStartContainer();
 
   
-  nsCOMPtr<nsIContent> mBogusNode;
+  
+  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
   
   nsCOMPtr<nsINode> mCachedSelectionNode;
   

@@ -350,7 +350,8 @@ enum class EditAction {
 
   
   
-  eCreateBogusNode,
+  
+  eCreatePaddingBRElementForEmptyEditor,
 };
 
 
@@ -470,7 +471,8 @@ enum class EditSubAction : int32_t {
   eIncreaseZIndex,
 
   
-  eCreateBogusNode,
+  
+  eCreatePaddingBRElementForEmptyEditor,
 };
 
 inline EditorInputType ToInputType(EditAction aEditAction) {

@@ -18,6 +18,7 @@
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/WeakPtr.h"             
 #include "mozilla/dom/DataTransfer.h"    
+#include "mozilla/dom/HTMLBRElement.h"   
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"  
@@ -100,9 +101,6 @@ class EventTarget;
 namespace widget {
 struct IMEState;
 }  
-
-#define kMOZEditorBogusNodeAttrAtom nsGkAtoms::mozeditorbogusnode
-#define kMOZEditorBogusNodeValue NS_LITERAL_STRING("TRUE")
 
 
 
@@ -707,7 +705,7 @@ class EditorBase : public nsIEditor,
         case EditSubAction::eUndo:
         case EditSubAction::eRedo:
         case EditSubAction::eComputeTextToOutput:
-        case EditSubAction::eCreateBogusNode:
+        case EditSubAction::eCreatePaddingBRElementForEmptyEditor:
         case EditSubAction::eNone:
           MOZ_ASSERT(aDirection == eNone);
           mDirectionOfTopLevelEditSubAction = eNone;
@@ -1619,8 +1617,8 @@ class EditorBase : public nsIEditor,
       return false;
     }
 
-    if (!aNode->IsContent() || IsMozEditorBogusNode(aNode) ||
-        !IsModifiableNode(*aNode)) {
+    if (!aNode->IsContent() || !IsModifiableNode(*aNode) ||
+        EditorBase::IsPaddingBRElementForEmptyEditor(*aNode)) {
       return false;
     }
 
@@ -1643,21 +1641,20 @@ class EditorBase : public nsIEditor,
 
 
   bool IsElementOrText(const nsINode& aNode) const {
-    if (!aNode.IsContent() || IsMozEditorBogusNode(&aNode)) {
-      return false;
+    if (aNode.IsText()) {
+      return true;
     }
-    return aNode.NodeType() == nsINode::ELEMENT_NODE ||
-           aNode.NodeType() == nsINode::TEXT_NODE;
+    return aNode.IsElement() &&
+           !EditorBase::IsPaddingBRElementForEmptyEditor(aNode);
   }
 
   
 
 
-  bool IsMozEditorBogusNode(const nsINode* aNode) const {
-    return aNode && aNode->IsElement() &&
-           aNode->AsElement()->AttrValueIs(
-               kNameSpaceID_None, kMOZEditorBogusNodeAttrAtom,
-               kMOZEditorBogusNodeValue, eCaseMatters);
+
+  static bool IsPaddingBRElementForEmptyEditor(const nsINode& aNode) {
+    const dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(&aNode);
+    return brElement && brElement->IsPaddingForEmptyEditor();
   }
 
   

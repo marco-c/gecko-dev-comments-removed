@@ -10,6 +10,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
+#include "mozilla/EditorUtils.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/mozInlineSpellChecker.h"
@@ -3403,7 +3404,7 @@ nsresult HTMLEditor::DeleteNodeWithTransaction(nsINode& aNode) {
   
   
   if (NS_WARN_IF(!IsModifiableNode(*aNode.AsContent()) &&
-                 !IsMozEditorBogusNode(aNode.AsContent()))) {
+                 !EditorBase::IsPaddingBRElementForEmptyEditor(aNode))) {
     return NS_ERROR_FAILURE;
   }
   nsresult rv = EditorBase::DeleteNodeWithTransaction(aNode);
@@ -3616,7 +3617,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
   }
   
   else if (!GetTopLevelEditSubAction() && container->IsEditable()) {
-    if (IsMozEditorBogusNode(aChild)) {
+    if (EditorBase::IsPaddingBRElementForEmptyEditor(*aChild)) {
       
       return;
     }
@@ -3662,7 +3663,7 @@ void HTMLEditor::ContentRemoved(nsIContent* aChild,
     
   } else if (!GetTopLevelEditSubAction() &&
              aChild->GetParentNode()->IsEditable()) {
-    if (aChild && IsMozEditorBogusNode(aChild)) {
+    if (aChild && EditorBase::IsPaddingBRElementForEmptyEditor(*aChild)) {
       
       return;
     }
@@ -5252,7 +5253,8 @@ void HTMLEditor::OnModifyDocument() {
     return;
   }
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::eCreateBogusNode);
+  AutoEditActionDataSetter editActionData(
+      *this, EditAction::eCreatePaddingBRElementForEmptyEditor);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return;
   }

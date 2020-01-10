@@ -20,17 +20,18 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Move.h"
+#include "mozilla/mozalloc.h"
+#include "mozilla/OwningNonNull.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/RangeBinding.h"
-#include "mozilla/OwningNonNull.h"
-#include "mozilla/mozalloc.h"
 #include "nsAString.h"
 #include "nsAlgorithm.h"
 #include "nsCRT.h"
@@ -68,9 +69,6 @@ class nsISupports;
 namespace mozilla {
 
 using namespace dom;
-
-
-
 
 enum { kLonely = 0, kPrevSib = 1, kNextSib = 2, kBothSibs = 3 };
 
@@ -455,7 +453,7 @@ nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
   }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to normalize Selection");
   if (aEditSubAction == EditSubAction::eReplaceHeadWithHTMLSource ||
-      aEditSubAction == EditSubAction::eCreateBogusNode) {
+      aEditSubAction == EditSubAction::eCreatePaddingBRElementForEmptyEditor) {
     return NS_OK;
   }
 
@@ -631,7 +629,10 @@ nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
   }
 
   
-  rv = CreateBogusNodeIfNeeded();
+  
+  
+  
+  rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -804,7 +805,9 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
   }
 }
 
-bool HTMLEditRules::DocumentIsEmpty() { return !!mBogusNode; }
+bool HTMLEditRules::DocumentIsEmpty() const {
+  return !!mPaddingBRElementForEmptyEditor;
+}
 
 nsresult HTMLEditRules::GetListState(bool* aMixed, bool* aOL, bool* aUL,
                                      bool* aDL) {
@@ -1643,17 +1646,19 @@ nsresult HTMLEditRules::WillLoadHTML() {
 
   
   
-
-  if (mBogusNode) {
+  if (mPaddingBRElementForEmptyEditor) {
     
     
-    nsCOMPtr<nsINode> bogusNode(std::move(mBogusNode));
-    DebugOnly<nsresult> rv =
-        MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*bogusNode);
+    
+    RefPtr<HTMLBRElement> paddingBRElement(
+        std::move(mPaddingBRElementForEmptyEditor));
+    DebugOnly<nsresult> rv = MOZ_KnownLive(HTMLEditorRef())
+                                 .DeleteNodeWithTransaction(*paddingBRElement);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove the bogus node");
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "Failed to remove the padding <br> element");
   }
 
   return NS_OK;
@@ -2284,7 +2289,8 @@ nsresult HTMLEditRules::WillDeleteSelection(
   mDidDeleteSelection = true;
 
   
-  if (mBogusNode) {
+  
+  if (mPaddingBRElementForEmptyEditor) {
     *aCancel = true;
     return NS_OK;
   }
@@ -11097,20 +11103,23 @@ void HTMLEditRules::OnModifyDocument() {
 
   
   
-  if (mBogusNode) {
+  if (mPaddingBRElementForEmptyEditor) {
     
     
-    nsCOMPtr<nsIContent> bogusNode(std::move(mBogusNode));
-    DebugOnly<nsresult> rv =
-        MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*bogusNode);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove the bogus node");
+    
+    RefPtr<HTMLBRElement> paddingBRElement(
+        std::move(mPaddingBRElementForEmptyEditor));
+    DebugOnly<nsresult> rv = MOZ_KnownLive(HTMLEditorRef())
+                                 .DeleteNodeWithTransaction(*paddingBRElement);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "Failed to remove the padding <br> element");
   }
 
   
-  DebugOnly<nsresult> rv = CreateBogusNodeIfNeeded();
+  DebugOnly<nsresult> rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
   NS_WARNING_ASSERTION(
       rv.value != NS_ERROR_EDITOR_DESTROYED,
-      "The editor has been destroyed during creating a bogus node");
+      "The editor has been destroyed during creating a padding <br> element");
 }
 
 }  

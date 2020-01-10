@@ -7,6 +7,7 @@
 
 
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/HTMLBRElement.h"
 #include "gfxContext.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
@@ -247,9 +248,8 @@ nsIFrame::FrameSearchResult BRFrame::PeekOffsetWord(
 
 #ifdef ACCESSIBILITY
 a11y::AccType BRFrame::AccessibleType() {
-  nsIContent* parent = mContent->GetParent();
-  if (parent && parent->IsRootOfNativeAnonymousSubtree() &&
-      parent->GetChildCount() == 1) {
+  dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(mContent);
+  if (brElement->IsPaddingForEmptyEditor()) {
     
     
     return a11y::eNoType;

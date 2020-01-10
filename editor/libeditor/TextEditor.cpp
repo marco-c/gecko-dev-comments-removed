@@ -1441,10 +1441,11 @@ nsresult TextEditor::IsEmpty(bool* aIsEmpty) const {
 
   *aIsEmpty = true;
 
-  if (mRules->HasBogusNode()) {
+  if (mRules->HasPaddingBRElementForEmptyEditor()) {
     return NS_OK;
   }
 
+  
   
   
   Element* rootElement = GetRoot();
@@ -1481,6 +1482,7 @@ TextEditor::GetTextLength(int32_t* aCount) {
   
   *aCount = 0;
 
+  
   
   bool isEmpty = false;
   nsresult rv = IsEmpty(&isEmpty);

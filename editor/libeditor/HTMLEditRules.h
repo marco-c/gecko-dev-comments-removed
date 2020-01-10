@@ -94,7 +94,7 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult DidDoAction(EditSubActionInfo& aInfo,
                                nsresult aResult) override;
-  virtual bool DocumentIsEmpty() override;
+  virtual bool DocumentIsEmpty() const override;
 
   
 
