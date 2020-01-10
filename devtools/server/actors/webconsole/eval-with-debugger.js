@@ -7,10 +7,11 @@
 
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+
 loader.lazyRequireGetter(
   this,
-  "Parser",
-  "resource://devtools/shared/Parser.jsm",
+  "Reflect",
+  "resource://gre/modules/reflect.jsm",
   true
 );
 loader.lazyRequireGetter(
@@ -169,7 +170,7 @@ function parseErrorOutput(dbgWindow, string) {
   
   
   try {
-    ast = Parser.reflectionAPI.parse(string);
+    ast = Reflect.parse(string);
   } catch (ex) {
     return;
   }
