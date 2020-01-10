@@ -17,7 +17,10 @@ ProcessMessageManager::ProcessMessageManager(
     ParentProcessMessageManager* aParentManager, MessageManagerFlags aFlags)
     : MessageSender(aCallback, aParentManager,
                     aFlags | MessageManagerFlags::MM_CHROME |
-                        MessageManagerFlags::MM_PROCESSMANAGER) {
+                        MessageManagerFlags::MM_PROCESSMANAGER),
+      mPid(-1),
+      
+      mInProcess(!!aCallback) {
   MOZ_ASSERT(!(aFlags & ~(MessageManagerFlags::MM_GLOBAL |
                           MessageManagerFlags::MM_OWNSCALLBACK)));
 

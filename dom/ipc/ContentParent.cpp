@@ -1514,6 +1514,7 @@ void ContentParent::ShutDownMessageManager() {
       mMessageManager, nullptr, CHILD_PROCESS_SHUTDOWN_MESSAGE, false, nullptr,
       nullptr, nullptr, nullptr, IgnoreErrors());
 
+  mMessageManager->SetOsPid(-1);
   mMessageManager->Disconnect();
   mMessageManager = nullptr;
 }
@@ -2556,6 +2557,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   
   mMessageManager->InitWithCallback(this);
+  mMessageManager->SetOsPid(Pid());
 
   
   
