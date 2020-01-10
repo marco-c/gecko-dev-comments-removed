@@ -12,6 +12,21 @@
 
 using namespace mozilla;
 
+mozilla::AsyncLogger gAudioCallbackTraceLogger("AudioCallbackTracing");
+static Atomic<bool> gTracingStarted(false);
+
+void StartAudioCallbackTracing() {
+#ifdef TRACING
+  if (gTracingStarted) {
+    return;
+  }
+  
+  gAudioCallbackTraceLogger.Start();
+  gAudioCallbackTraceLogger.Log("[");
+  gTracingStarted = true;
+#endif
+}
+
 uint64_t AutoTracer::NowInUs() {
   static TimeStamp base = TimeStamp::Now();
   return (TimeStamp::Now() - base).ToMicroseconds();
