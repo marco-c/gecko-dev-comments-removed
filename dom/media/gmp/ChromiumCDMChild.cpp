@@ -500,55 +500,15 @@ mozilla::ipc::IPCResult ChromiumCDMChild::RecvRemoveSession(
   return IPC_OK();
 }
 
-
-
-static cdm::HdcpVersion ToCDMHdcpVersion(const nsCString& aMinHdcpVersion) {
-  
-  if (aMinHdcpVersion.IsEmpty()) {
-    return cdm::HdcpVersion::kHdcpVersionNone;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-1.0")) {
-    return cdm::HdcpVersion::kHdcpVersion1_0;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-1.1")) {
-    return cdm::HdcpVersion::kHdcpVersion1_1;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-1.2")) {
-    return cdm::HdcpVersion::kHdcpVersion1_2;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-1.3")) {
-    return cdm::HdcpVersion::kHdcpVersion1_3;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-1.4")) {
-    return cdm::HdcpVersion::kHdcpVersion1_4;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-2.0")) {
-    return cdm::HdcpVersion::kHdcpVersion2_0;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-2.1")) {
-    return cdm::HdcpVersion::kHdcpVersion2_1;
-  }
-  if (aMinHdcpVersion.EqualsIgnoreCase("hdcp-2.2")) {
-    return cdm::HdcpVersion::kHdcpVersion2_2;
-  }
-
-  
-  return cdm::HdcpVersion::kHdcpVersionNone;
-}
-
 mozilla::ipc::IPCResult ChromiumCDMChild::RecvGetStatusForPolicy(
-    const uint32_t& aPromiseId, const nsCString& aMinHdcpVersion) {
+    const uint32_t& aPromiseId, const cdm::HdcpVersion& aMinHdcpVersion) {
   MOZ_ASSERT(IsOnMessageLoopThread());
   GMP_LOG("ChromiumCDMChild::RecvGetStatusForPolicy(pid=%" PRIu32
-          ", MinHdcpVersion=%s)",
-          aPromiseId, aMinHdcpVersion.get());
+          ", MinHdcpVersion=%" PRIu32 ")",
+          aPromiseId, static_cast<uint32_t>(aMinHdcpVersion));
   if (mCDM) {
     cdm::Policy policy;
-    
-    
-    
-    
-    policy.min_hdcp_version = ToCDMHdcpVersion(aMinHdcpVersion);
+    policy.min_hdcp_version = aMinHdcpVersion;
     mCDM->GetStatusForPolicy(aPromiseId, policy);
   }
   return IPC_OK();
