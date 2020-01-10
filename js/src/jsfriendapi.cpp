@@ -121,8 +121,8 @@ JS_FRIEND_API JSObject* JS_NewObjectWithUniqueType(JSContext* cx,
 
 
 
-  RootedObject obj(cx, NewObjectWithGivenProto(cx, Valueify(clasp), nullptr,
-                                               SingletonObject));
+  RootedObject obj(
+      cx, NewObjectWithGivenProto(cx, clasp, nullptr, SingletonObject));
   if (!obj) {
     return nullptr;
   }

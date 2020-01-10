@@ -946,14 +946,6 @@ struct JSClass {
 
 namespace js {
 
-static MOZ_ALWAYS_INLINE const JSClass* Jsvalify(const Class* c) {
-  return (const JSClass*)c;
-}
-
-static MOZ_ALWAYS_INLINE const Class* Valueify(const JSClass* c) {
-  return (const Class*)c;
-}
-
 
 
 
@@ -989,9 +981,5 @@ JS_FRIEND_API bool HasObjectMovedOp(JSObject* obj);
 #endif
 
 } 
-
-
-using js::Jsvalify;
-using js::Valueify;
 
 #endif 
