@@ -2,10 +2,14 @@
 
 
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils", "resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 function nsWebHandlerApp() {}
 
@@ -13,7 +17,10 @@ nsWebHandlerApp.prototype = {
   classDescription: "A web handler for protocols and content",
   classID: Components.ID("8b1ae382-51a9-4972-b930-56977a57919d"),
   contractID: "@mozilla.org/uriloader/web-handler-app;1",
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIWebHandlerApp, Ci.nsIHandlerApp]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIWebHandlerApp,
+    Ci.nsIHandlerApp,
+  ]),
 
   _name: null,
   _detailedDescription: null,
@@ -42,10 +49,12 @@ nsWebHandlerApp.prototype = {
       throw Cr.NS_ERROR_NULL_POINTER;
     }
 
-    if (aHandlerApp instanceof Ci.nsIWebHandlerApp &&
-        aHandlerApp.uriTemplate &&
-        this.uriTemplate &&
-        aHandlerApp.uriTemplate == this.uriTemplate) {
+    if (
+      aHandlerApp instanceof Ci.nsIWebHandlerApp &&
+      aHandlerApp.uriTemplate &&
+      this.uriTemplate &&
+      aHandlerApp.uriTemplate == this.uriTemplate
+    ) {
       return true;
     }
     return false;
@@ -70,10 +79,14 @@ nsWebHandlerApp.prototype = {
     
     if (aWindowContext) {
       try {
-        let remoteWindow = aWindowContext.getInterface(Ci.nsIRemoteWindowContext);
+        let remoteWindow = aWindowContext.getInterface(
+          Ci.nsIRemoteWindowContext
+        );
         if (remoteWindow.usePrivateBrowsing && !privateAllowed) {
-          throw Components.Exception("Extension not allowed in private windows.",
-                                     Cr.NS_ERROR_FILE_NOT_FOUND);
+          throw Components.Exception(
+            "Extension not allowed in private windows.",
+            Cr.NS_ERROR_FILE_NOT_FOUND
+          );
         }
         
         
@@ -88,12 +101,14 @@ nsWebHandlerApp.prototype = {
       }
 
       try {
-        let isPrivate = aWindowContext.getInterface(Ci.nsIDocShell)
-                                      .QueryInterface(Ci.nsILoadContext)
-                                      .usePrivateBrowsing;
+        let isPrivate = aWindowContext
+          .getInterface(Ci.nsIDocShell)
+          .QueryInterface(Ci.nsILoadContext).usePrivateBrowsing;
         if (isPrivate && !privateAllowed) {
-          throw Components.Exception("Extension not allowed in private windows.",
-                                      Cr.NS_ERROR_FILE_NOT_FOUND);
+          throw Components.Exception(
+            "Extension not allowed in private windows.",
+            Cr.NS_ERROR_FILE_NOT_FOUND
+          );
         }
       } catch (e) {
         if (e.result != Cr.NS_NOINTERFACE) {
@@ -109,25 +124,31 @@ nsWebHandlerApp.prototype = {
       channel.loadFlags = Ci.nsIChannel.LOAD_DOCUMENT_URI;
 
       
-      var uriLoader = Cc["@mozilla.org/uriloader;1"].getService(Ci.nsIURILoader);
+      var uriLoader = Cc["@mozilla.org/uriloader;1"].getService(
+        Ci.nsIURILoader
+      );
 
       
       
       
       
       
-      uriLoader.openURI(channel, Ci.nsIURILoader.IS_CONTENT_PREFERRED,
-                        aWindowContext);
+      uriLoader.openURI(
+        channel,
+        Ci.nsIURILoader.IS_CONTENT_PREFERRED,
+        aWindowContext
+      );
       return;
     }
 
     let win = Services.wm.getMostRecentWindow("navigator:browser");
 
     
-    if (!privateAllowed &&
-        PrivateBrowsingUtils.isContentWindowPrivate(win)) {
-      throw Components.Exception("Extension not allowed in private windows.",
-                                 Cr.NS_ERROR_FILE_NOT_FOUND);
+    if (!privateAllowed && PrivateBrowsingUtils.isContentWindowPrivate(win)) {
+      throw Components.Exception(
+        "Extension not allowed in private windows.",
+        Cr.NS_ERROR_FILE_NOT_FOUND
+      );
     }
 
     
@@ -147,11 +168,13 @@ nsWebHandlerApp.prototype = {
     
 
     
-    win.browserDOMWindow.openURI(uriToSend,
-                                 null, 
-                                 Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW,
-                                 Ci.nsIBrowserDOMWindow.OPEN_NEW,
-                                 Services.scriptSecurityManager.getSystemPrincipal());
+    win.browserDOMWindow.openURI(
+      uriToSend,
+      null, 
+      Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW,
+      Ci.nsIBrowserDOMWindow.OPEN_NEW,
+      Services.scriptSecurityManager.getSystemPrincipal()
+    );
   },
 
   

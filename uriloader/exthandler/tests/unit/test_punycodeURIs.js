@@ -20,8 +20,13 @@ function checkFile() {
 
   if (!tempFile.exists()) {
     if (gCheckExistsAttempts >= kMaxCheckExistAttempts) {
-      do_throw("Expected File " + tempFile.path + " does not exist after " +
-                 kMaxCheckExistAttempts + " seconds");
+      do_throw(
+        "Expected File " +
+          tempFile.path +
+          " does not exist after " +
+          kMaxCheckExistAttempts +
+          " seconds"
+      );
     } else {
       ++gCheckExistsAttempts;
       
@@ -31,12 +36,12 @@ function checkFile() {
   }
 
   
-  var fstream =
-    Cc["@mozilla.org/network/file-input-stream;1"]
-      .createInstance(Ci.nsIFileInputStream);
-  var sstream =
-    Cc["@mozilla.org/scriptableinputstream;1"]
-      .createInstance(Ci.nsIScriptableInputStream);
+  var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
+  var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
+    Ci.nsIScriptableInputStream
+  );
   fstream.init(tempFile, -1, 0, 0);
   sstream.init(fstream);
 
@@ -55,8 +60,9 @@ function checkFile() {
   
   
   
-  if (data.substring(0, 7) != "-psn_0_")
+  if (data.substring(0, 7) != "-psn_0_") {
     Assert.equal(data, kExpectedURI);
+  }
 
   do_test_finished();
 }
@@ -71,9 +77,9 @@ function run_test() {
   var ioService = Services.io;
 
   
-  var localHandler =
-    Cc["@mozilla.org/uriloader/local-handler-app;1"]
-      .createInstance(Ci.nsILocalHandlerApp);
+  var localHandler = Cc[
+    "@mozilla.org/uriloader/local-handler-app;1"
+  ].createInstance(Ci.nsILocalHandlerApp);
   localHandler.name = "Test Local Handler App";
 
   
@@ -84,17 +90,18 @@ function run_test() {
   if (!exe.exists()) {
     
     exe.leafName = "WriteArgument.exe";
-    if (!exe.exists())
+    if (!exe.exists()) {
       do_throw("Could not locate the WriteArgument tests executable\n");
+    }
   }
 
   var outFile = tempDir.clone();
   outFile.append(kOutputFile);
 
   
-  var envSvc =
-    Cc["@mozilla.org/process/environment;1"]
-      .getService(Ci.nsIEnvironment);
+  var envSvc = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
 
   
   

@@ -8,12 +8,17 @@ add_task(async function() {
   let doc = dlg.document;
 
   
-  ok(!doc.getElementById("rememberChoice").checked,
-     "Remember choice checkbox should be not checked.");
+  ok(
+    !doc.getElementById("rememberChoice").checked,
+    "Remember choice checkbox should be not checked."
+  );
   doc.getElementById("rememberChoice").checked = true;
 
   
-  ok(!gHandlerSvc.exists(launcher.MIMEInfo), "Should not be in nsIHandlerService.");
+  ok(
+    !gHandlerSvc.exists(launcher.MIMEInfo),
+    "Should not be in nsIHandlerService."
+  );
 
   
   let dialogClosedPromise = BrowserTestUtils.windowClosed(dlg);
@@ -32,15 +37,23 @@ add_task(async function() {
   for (let handlerInfo of gHandlerSvc.enumerate()) {
     if (handlerInfo.type == launcher.MIMEInfo.type) {
       
-      ok(!handlerInfo.alwaysAskBeforeHandling,
-         "Should turn off the always ask.");
+      ok(
+        !handlerInfo.alwaysAskBeforeHandling,
+        "Should turn off the always ask."
+      );
       
-      ok(handlerInfo.preferredApplicationHandler.equals(
-         launcher.MIMEInfo.preferredApplicationHandler),
-         "Should be equal to the mockedHandlerApp.");
+      ok(
+        handlerInfo.preferredApplicationHandler.equals(
+          launcher.MIMEInfo.preferredApplicationHandler
+        ),
+        "Should be equal to the mockedHandlerApp."
+      );
       
-      is(handlerInfo.preferredAction, launcher.MIMEInfo.preferredAction,
-         "Should be equal to Ci.nsIHandlerInfo.useHelperApp.");
+      is(
+        handlerInfo.preferredAction,
+        launcher.MIMEInfo.preferredAction,
+        "Should be equal to Ci.nsIHandlerInfo.useHelperApp."
+      );
       break;
     }
   }

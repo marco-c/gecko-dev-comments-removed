@@ -11,16 +11,15 @@
 function run_test() {
   
 
-  const mimeService = Cc["@mozilla.org/mime;1"].
-                      getService(Ci.nsIMIMEService);
+  const mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 
   const categoryManager = Services.catMan;
 
   
 
-  const kTestExtension          = "testextension";
+  const kTestExtension = "testextension";
   const kTestExtensionMixedCase = "testExtensIon";
-  const kTestMimeType           = "application/x-testextension";
+  const kTestMimeType = "application/x-testextension";
 
   
   
@@ -30,8 +29,10 @@ function run_test() {
     
     do_throw("nsIMIMEService.getTypeFromExtension succeeded unexpectedly");
   } catch (e) {
-    if (!(e instanceof Ci.nsIException) ||
-        e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+    if (
+      !(e instanceof Ci.nsIException) ||
+      e.result != Cr.NS_ERROR_NOT_AVAILABLE
+    ) {
       throw e;
     }
     
@@ -39,8 +40,13 @@ function run_test() {
   }
 
   
-  categoryManager.addCategoryEntry("ext-to-type-mapping", kTestExtension,
-                                   kTestMimeType, false, true);
+  categoryManager.addCategoryEntry(
+    "ext-to-type-mapping",
+    kTestExtension,
+    kTestMimeType,
+    false,
+    true
+  );
 
   
   var type = mimeService.getTypeFromExtension(kTestExtension);
@@ -51,5 +57,9 @@ function run_test() {
   Assert.equal(type, kTestMimeType);
 
   
-  categoryManager.deleteCategoryEntry("ext-to-type-mapping", kTestExtension, false);
+  categoryManager.deleteCategoryEntry(
+    "ext-to-type-mapping",
+    kTestExtension,
+    false
+  );
 }
