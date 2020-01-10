@@ -2,7 +2,7 @@
 
 
 
-const BASE_PARAMS = {
+export const BASE_PARAMS = {
   utm_source: "activity-stream",
   utm_campaign: "firstrun",
   utm_medium: "referral",

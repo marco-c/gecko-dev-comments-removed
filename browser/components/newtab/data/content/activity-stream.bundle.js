@@ -93,7 +93,7 @@
 __webpack_require__.r(__webpack_exports__);
 (function(global) { var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
- var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(51);
+ var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(54);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
@@ -101,7 +101,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
  var react_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(12);
  var react_dom__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_6__);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(56);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(59);
 
 
 
@@ -194,7 +194,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 const actionTypes = {};
 
-for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM_POCKET", "AS_ROUTER_INITIALIZED", "AS_ROUTER_PREF_CHANGED", "AS_ROUTER_TARGETING_UPDATE", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISCOVERY_STREAM_CONFIG_CHANGE", "DISCOVERY_STREAM_CONFIG_SETUP", "DISCOVERY_STREAM_CONFIG_SET_VALUE", "DISCOVERY_STREAM_FEEDS_UPDATE", "DISCOVERY_STREAM_FEED_UPDATE", "DISCOVERY_STREAM_IMPRESSION_STATS", "DISCOVERY_STREAM_LAYOUT_RESET", "DISCOVERY_STREAM_LAYOUT_UPDATE", "DISCOVERY_STREAM_LINK_BLOCKED", "DISCOVERY_STREAM_LOADED_CONTENT", "DISCOVERY_STREAM_RETRY_FEED", "DISCOVERY_STREAM_SPOCS_CAPS", "DISCOVERY_STREAM_SPOCS_ENDPOINT", "DISCOVERY_STREAM_SPOCS_FILL", "DISCOVERY_STREAM_SPOCS_UPDATE", "DISCOVERY_STREAM_SPOC_BLOCKED", "DISCOVERY_STREAM_SPOC_IMPRESSION", "DOWNLOAD_CHANGED", "FAKE_FOCUS_SEARCH", "FILL_SEARCH_TERM", "HANDOFF_SEARCH_TO_AWESOMEBAR", "HIDE_SEARCH", "INIT", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "POCKET_CTA", "POCKET_LINK_DELETED_OR_ARCHIVED", "POCKET_LOGGED_IN", "POCKET_WAITING_FOR_SPOC", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SHOW_SEARCH", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_PREVIEW_MODE", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_OPEN_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "TRAILHEAD_ENROLL_EVENT", "UNINIT", "UPDATE_PINNED_SEARCH_SHORTCUTS", "UPDATE_SEARCH_SHORTCUTS", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
+for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM_POCKET", "AS_ROUTER_INITIALIZED", "AS_ROUTER_PREF_CHANGED", "AS_ROUTER_TARGETING_UPDATE", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "CLEAR_PREF", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISCOVERY_STREAM_CONFIG_CHANGE", "DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS", "DISCOVERY_STREAM_CONFIG_SETUP", "DISCOVERY_STREAM_CONFIG_SET_VALUE", "DISCOVERY_STREAM_FEEDS_UPDATE", "DISCOVERY_STREAM_FEED_UPDATE", "DISCOVERY_STREAM_IMPRESSION_STATS", "DISCOVERY_STREAM_LAYOUT_RESET", "DISCOVERY_STREAM_LAYOUT_UPDATE", "DISCOVERY_STREAM_LINK_BLOCKED", "DISCOVERY_STREAM_LOADED_CONTENT", "DISCOVERY_STREAM_RETRY_FEED", "DISCOVERY_STREAM_SPOCS_CAPS", "DISCOVERY_STREAM_SPOCS_ENDPOINT", "DISCOVERY_STREAM_SPOCS_FILL", "DISCOVERY_STREAM_SPOCS_UPDATE", "DISCOVERY_STREAM_SPOC_BLOCKED", "DISCOVERY_STREAM_SPOC_IMPRESSION", "DOWNLOAD_CHANGED", "FAKE_FOCUS_SEARCH", "FILL_SEARCH_TERM", "HANDOFF_SEARCH_TO_AWESOMEBAR", "HIDE_SEARCH", "INIT", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "POCKET_CTA", "POCKET_LINK_DELETED_OR_ARCHIVED", "POCKET_LOGGED_IN", "POCKET_WAITING_FOR_SPOC", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SHOW_SEARCH", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_PREVIEW_MODE", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_OPEN_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "TRAILHEAD_ENROLL_EVENT", "UNINIT", "UPDATE_PINNED_SEARCH_SHORTCUTS", "UPDATE_SEARCH_SHORTCUTS", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
   actionTypes[type] = type;
 } 
 
@@ -202,7 +202,7 @@ for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM
 
 const ASRouterActions = {};
 
-for (const type of ["INSTALL_ADDON_FROM_URL", "OPEN_APPLICATIONS_MENU", "OPEN_PRIVATE_BROWSER_WINDOW", "OPEN_URL", "OPEN_ABOUT_PAGE", "OPEN_PREFERENCES_PAGE", "SHOW_FIREFOX_ACCOUNTS", "PIN_CURRENT_TAB"]) {
+for (const type of ["INSTALL_ADDON_FROM_URL", "OPEN_APPLICATIONS_MENU", "OPEN_PRIVATE_BROWSER_WINDOW", "OPEN_URL", "OPEN_ABOUT_PAGE", "OPEN_PREFERENCES_PAGE", "SHOW_FIREFOX_ACCOUNTS", "PIN_CURRENT_TAB", "ENABLE_FIREFOX_MONITOR"]) {
   ASRouterActions[type] = type;
 } 
 
@@ -565,12 +565,12 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_ConfirmDialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(29);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(52);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(34);
+ var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(55);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(36);
  var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(50);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(39);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(53);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(41);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -752,6 +752,7 @@ const Base = Object(react_redux__WEBPACK_IMPORTED_MODULE_4__["connect"])(state =
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "ToggleStoryButton", function() { return ToggleStoryButton; });
+ __webpack_require__.d(__webpack_exports__, "TogglePrefCheckbox", function() { return TogglePrefCheckbox; });
  __webpack_require__.d(__webpack_exports__, "DiscoveryStreamAdmin", function() { return DiscoveryStreamAdmin; });
  __webpack_require__.d(__webpack_exports__, "ASRouterAdminInner", function() { return ASRouterAdminInner; });
  __webpack_require__.d(__webpack_exports__, "CollapseToggle", function() { return CollapseToggle; });
@@ -803,6 +804,7 @@ function relativeTime(timestamp) {
 
 const LAYOUT_VARIANTS = {
   basic: "Basic default layout (on by default in nightly)",
+  staging_spocs: "A layout with all spocs shown",
   "dev-test-all": "A little bit of everything. Good layout for testing all components",
   "dev-test-feeds": "Stress testing for slow feeds"
 };
@@ -823,10 +825,31 @@ class ToggleStoryButton extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pur
   }
 
 }
+class TogglePrefCheckbox extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onChange = this.onChange.bind(this);
+  }
+
+  onChange(event) {
+    this.props.onChange(this.props.pref, event.target.checked);
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
+      type: "checkbox",
+      checked: this.props.checked,
+      onChange: this.onChange
+    }), " ", this.props.pref, " ");
+  }
+
+}
 class DiscoveryStreamAdmin extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
   constructor(props) {
     super(props);
-    this.onEnableToggle = this.onEnableToggle.bind(this);
+    this.restorePrefDefaults = this.restorePrefDefaults.bind(this);
+    this.setConfigValue = this.setConfigValue.bind(this);
+    this.expireCache = this.expireCache.bind(this);
     this.changeEndpointVariant = this.changeEndpointVariant.bind(this);
     this.onStoryToggle = this.onStoryToggle.bind(this);
     this.state = {
@@ -844,8 +867,20 @@ class DiscoveryStreamAdmin extends react__WEBPACK_IMPORTED_MODULE_4___default.a.
     }));
   }
 
-  onEnableToggle(event) {
-    this.setConfigValue("enabled", event.target.checked);
+  restorePrefDefaults(event) {
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS
+    }));
+  }
+
+  expireCache() {
+    const {
+      config
+    } = this.props.state;
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_CONFIG_CHANGE,
+      data: config
+    }));
   }
 
   changeEndpointVariant(event) {
@@ -950,19 +985,26 @@ class DiscoveryStreamAdmin extends react__WEBPACK_IMPORTED_MODULE_4___default.a.
   }
 
   render() {
+    const prefToggles = "enabled hardcoded_layout show_spocs personalized collapsible".split(" ");
     const {
       config,
       lastUpdated,
       layout
     } = this.props.state;
-    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "dsEnabled"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
-      type: "checkbox",
-      checked: config.enabled,
-      onChange: this.onEnableToggle
-    }), " ", "enabled", " "), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h3", null, "Endpoint variant"), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, "You can also change this manually by changing this pref:", " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("code", null, "browser.newtabpage.activity-stream.discoverystream.config")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", {
-      style: config.enabled ? null : {
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
+      className: "button",
+      onClick: this.restorePrefDefaults
+    }, "Restore Pref Defaults"), " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
+      className: "button",
+      onClick: this.expireCache
+    }, "Expire Cache"), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("tbody", null, prefToggles.map(pref => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(Row, {
+      key: pref
+    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(TogglePrefCheckbox, {
+      checked: config[pref],
+      pref: pref,
+      onChange: this.setConfigValue
+    })))))), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h3", null, "Endpoint variant"), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, "You can also change this manually by changing this pref:", " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("code", null, "browser.newtabpage.activity-stream.discoverystream.config")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", {
+      style: config.enabled && !config.hardcoded_layout ? null : {
         opacity: 0.5
       }
     }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("tbody", null, Object.keys(LAYOUT_VARIANTS).map(id => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(Row, {
@@ -1719,16 +1761,16 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ASRouterUISurface", function() { return ASRouterUISurface; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(55);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(58);
  var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
- var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(53);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(56);
  var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(11);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
  var react_dom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(12);
  var react_dom__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_7__);
- var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(54);
- var _templates_FirstRun_FirstRun__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(58);
+ var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(57);
+ var _templates_FirstRun_FirstRun__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(60);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -1862,6 +1904,8 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
     this.sendClick = this.sendClick.bind(this);
     this.sendImpression = this.sendImpression.bind(this);
     this.sendUserActionTelemetry = this.sendUserActionTelemetry.bind(this);
+    this.onUserAction = this.onUserAction.bind(this);
+    this.fetchFlowParams = this.fetchFlowParams.bind(this);
     this.state = {
       message: {}
     };
@@ -1870,6 +1914,64 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
       this.headerPortal = props.document.getElementById("header-asrouter-container");
       this.footerPortal = props.document.getElementById("footer-asrouter-container");
     }
+  }
+
+  async fetchFlowParams(params = {}) {
+    let result = {};
+    const {
+      fxaEndpoint,
+      dispatch
+    } = this.props;
+
+    if (!fxaEndpoint) {
+      const err = "Tried to fetch flow params before fxaEndpoint pref was ready";
+      console.error(err); 
+    }
+
+    try {
+      const urlObj = new URL(fxaEndpoint);
+      urlObj.pathname = "metrics-flow";
+      Object.keys(params).forEach(key => {
+        urlObj.searchParams.append(key, params[key]);
+      });
+      const response = await fetch(urlObj.toString(), {
+        credentials: "omit"
+      });
+
+      if (response.status === 200) {
+        const {
+          deviceId,
+          flowId,
+          flowBeginTime
+        } = await response.json();
+        result = {
+          deviceId,
+          flowId,
+          flowBeginTime
+        };
+      } else {
+        console.error("Non-200 response", response); 
+
+        dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+          type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
+          data: {
+            event: "FXA_METRICS_FETCH_ERROR",
+            value: response.status
+          }
+        }));
+      }
+    } catch (error) {
+      console.error(error); 
+
+      dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
+        data: {
+          event: "FXA_METRICS_ERROR"
+        }
+      }));
+    }
+
+    return result;
   }
 
   sendUserActionTelemetry(extraProps = {}) {
@@ -2022,6 +2124,39 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
     ASRouterUtils.removeListener(this.onMessageFromParent);
   }
 
+  async getMonitorUrl({
+    url,
+    flowRequestParams = {}
+  }) {
+    const flowValues = await this.fetchFlowParams(flowRequestParams); 
+
+    const urlObj = new URL(url);
+    ["deviceId", "flowId", "flowBeginTime"].forEach(key => {
+      if (key in flowValues) {
+        urlObj.searchParams.append(key, flowValues[key]);
+      }
+    });
+    return urlObj.toString();
+  }
+
+  async onUserAction(action) {
+    switch (action.type) {
+      
+      case common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["ASRouterActions"].ENABLE_FIREFOX_MONITOR:
+        const url = await this.getMonitorUrl(action.data.args);
+        ASRouterUtils.executeAction({
+          type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["ASRouterActions"].OPEN_URL,
+          data: {
+            args: url
+          }
+        });
+        break;
+
+      default:
+        ASRouterUtils.executeAction(action);
+    }
+  }
+
   renderSnippets() {
     const {
       message
@@ -2048,7 +2183,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
       UISurface: "NEWTAB_FOOTER_BAR",
       onBlock: this.onBlockById(this.state.message.id),
       onDismiss: this.onDismissById(this.state.message.id),
-      onAction: ASRouterUtils.executeAction,
+      onAction: this.onUserAction,
       sendClick: this.sendClick,
       sendUserActionTelemetry: this.sendUserActionTelemetry
     }))));
@@ -2087,7 +2222,8 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
         dispatch: this.props.dispatch,
         onBlock: this.onBlockById(this.state.message.id),
         onDismiss: this.onDismissById(this.state.message.id),
-        fxaEndpoint: this.props.fxaEndpoint
+        fxaEndpoint: this.props.fxaEndpoint,
+        fetchFlowParams: this.fetchFlowParams
       }));
     }
 
@@ -2441,10 +2577,10 @@ module.exports = {"title":"EOYSnippet","description":"Fundraising Snippet","vers
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
  __webpack_require__.d(__webpack_exports__, "RichText", function() { return RichText; });
- var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(53);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(56);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(55);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(58);
  var _template_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(15);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
@@ -2540,7 +2676,7 @@ function safeURI(url) {
 
  (function(module) {
 
-module.exports = {"title":"SimpleSnippet","description":"A simple template with an icon, text, and optional button.","version":"1.1.1","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"icon_dark_theme":{"type":"string","description":"Snippet icon, dark theme variant. 64x64px. SVG or PNG preferred."},"icon_alt_text":{"type":"string","description":"Alt text describing icon for screen readers","default":""},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_alt_text":{"type":"string","description":"Alt text describing title icon for screen readers","default":""},"button_action":{"type":"string","description":"The type of action the button should trigger."},"button_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, button_label links to this"}]},"button_action_args":{"type":"string","description":"Additional parameters for button action, example which specific menu the button should open"},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button.","default":"Remove this"},"tall":{"type":"boolean","description":"To be used by fundraising only, increases height to roughly 120px. Defaults to false."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}},"section_title_icon":{"type":"string","description":"Section title icon. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_icon_dark_theme":{"type":"string","description":"Section title icon, dark theme variant. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_text":{"type":"string","description":"Section title text. section_title_icon must also be specified to display."},"section_title_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, section_title_text links to this"}]}},"additionalProperties":false,"required":["text"],"dependencies":{"button_action":["button_label"],"button_url":["button_label"],"button_color":["button_label"],"button_background_color":["button_label"],"section_title_url":["section_title_text"]}};
+module.exports = {"title":"SimpleSnippet","description":"A simple template with an icon, text, and optional button.","version":"1.1.1","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"icon_dark_theme":{"type":"string","description":"Snippet icon, dark theme variant. 64x64px. SVG or PNG preferred."},"icon_alt_text":{"type":"string","description":"Alt text describing icon for screen readers","default":""},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_alt_text":{"type":"string","description":"Alt text describing title icon for screen readers","default":""},"button_action":{"type":"string","description":"The type of action the button should trigger."},"button_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, button_label links to this"}]},"button_action_args":{"description":"Additional parameters for button action, example which specific menu the button should open"},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button.","default":"Remove this"},"tall":{"type":"boolean","description":"To be used by fundraising only, increases height to roughly 120px. Defaults to false."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}},"section_title_icon":{"type":"string","description":"Section title icon. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_icon_dark_theme":{"type":"string","description":"Section title icon, dark theme variant. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_text":{"type":"string","description":"Section title text. section_title_icon must also be specified to display."},"section_title_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, section_title_text links to this"}]}},"additionalProperties":false,"required":["text"],"dependencies":{"button_action":["button_label"],"button_url":["button_label"],"button_color":["button_label"],"button_background_color":["button_label"],"section_title_url":["section_title_text"]}};
 
  }),
 
@@ -2935,6 +3071,7 @@ class ModalOverlay extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "BASE_PARAMS", function() { return BASE_PARAMS; });
  __webpack_require__.d(__webpack_exports__, "addUtmParams", function() { return addUtmParams; });
 
 
@@ -4120,14 +4257,57 @@ ImpressionStats.defaultProps = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "cardContextTypes", function() { return cardContextTypes; });
+
+
+
+const cardContextTypes = {
+  history: {
+    fluentID: "newtab-label-visited",
+    icon: "history-item"
+  },
+  removedBookmark: {
+    fluentID: "newtab-label-removed-bookmark",
+    icon: "bookmark-removed"
+  },
+  bookmark: {
+    fluentID: "newtab-label-bookmarked",
+    icon: "bookmark-added"
+  },
+  trending: {
+    fluentID: "newtab-label-recommended",
+    icon: "trending"
+  },
+  pocket: {
+    fluentID: "newtab-label-saved",
+    icon: "pocket"
+  },
+  download: {
+    fluentID: "newtab-label-download",
+    icon: "download"
+  }
+};
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = ReactTransitionGroup;
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(34);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(36);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(36);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(38);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(39);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(40);
  var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(31);
 
 
@@ -4411,7 +4591,7 @@ CollapsibleSection.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
  __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
- var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(35);
+ var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(37);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
@@ -4578,7 +4758,7 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
 
 
 
@@ -4813,18 +4993,18 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
  __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(57);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(41);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(36);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(35);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(44);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
  var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(27);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(43);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(44);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(46);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(47);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(45);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(46);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(48);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(49);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -5179,6 +5359,351 @@ const Sections = Object(react_redux__WEBPACK_IMPORTED_MODULE_5__["connect"])(sta
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_Card", function() { return _Card; });
+ __webpack_require__.d(__webpack_exports__, "Card", function() { return Card; });
+ __webpack_require__.d(__webpack_exports__, "PlaceholderCard", function() { return PlaceholderCard; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var _types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(31);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(61);
+ var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(43);
+
+
+
+
+
+
+
+
+
+ 
+
+const gImageLoading = new Map();
+
+
+
+
+
+
+
+
+
+
+class _Card extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeCard: null,
+      imageLoaded: false,
+      cardImage: null
+    };
+    this.onMenuButtonUpdate = this.onMenuButtonUpdate.bind(this);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+  
+
+
+
+
+  async maybeLoadImage() {
+    
+    const {
+      cardImage
+    } = this.state;
+
+    if (!cardImage) {
+      return;
+    }
+
+    const imageUrl = cardImage.url;
+
+    if (!this.state.imageLoaded) {
+      
+      if (!gImageLoading.has(imageUrl)) {
+        const loaderPromise = new Promise((resolve, reject) => {
+          const loader = new Image();
+          loader.addEventListener("load", resolve);
+          loader.addEventListener("error", reject);
+          loader.src = imageUrl;
+        }); 
+
+        gImageLoading.set(imageUrl, loaderPromise);
+        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl)).catch();
+      } 
+
+
+      await gImageLoading.get(imageUrl); 
+
+      if (content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__["ScreenshotUtils"].isRemoteImageLocal(this.state.cardImage, this.props.link.image) && !this.state.imageLoaded) {
+        this.setState({
+          imageLoaded: true
+        });
+      }
+    }
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static getNextStateFromProps(nextProps, prevState) {
+    const {
+      image
+    } = nextProps.link;
+    const imageInState = content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__["ScreenshotUtils"].isRemoteImageLocal(prevState.cardImage, image);
+    let nextState = null; 
+
+    if (!imageInState && nextProps.link) {
+      nextState = {
+        imageLoaded: false
+      };
+    }
+
+    if (imageInState) {
+      return nextState;
+    } 
+
+
+    content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__["ScreenshotUtils"].maybeRevokeBlobObjectURL(prevState.cardImage);
+    nextState = nextState || {};
+    nextState.cardImage = content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__["ScreenshotUtils"].createLocalImageObject(image);
+    return nextState;
+  }
+
+  onMenuButtonUpdate(isOpen) {
+    if (isOpen) {
+      this.setState({
+        activeCard: this.props.index
+      });
+    } else {
+      this.setState({
+        activeCard: null
+      });
+    }
+  }
+  
+
+
+
+
+  _getTelemetryInfo() {
+    
+    if (this.props.link.type !== "history") {
+      return {
+        value: {
+          card_type: this.props.link.type
+        }
+      };
+    }
+
+    return null;
+  }
+
+  onLinkClick(event) {
+    event.preventDefault();
+
+    if (this.props.link.type === "download") {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SHOW_DOWNLOAD_FILE,
+        data: this.props.link
+      }));
+    } else {
+      const {
+        altKey,
+        button,
+        ctrlKey,
+        metaKey,
+        shiftKey
+      } = event;
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_LINK,
+        data: Object.assign(this.props.link, {
+          event: {
+            altKey,
+            button,
+            ctrlKey,
+            metaKey,
+            shiftKey
+          }
+        })
+      }));
+    }
+
+    if (this.props.isWebExtension) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].WebExtEvent(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].WEBEXT_CLICK, {
+        source: this.props.eventSource,
+        url: this.props.link.url,
+        action_position: this.props.index
+      }));
+    } else {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(Object.assign({
+        event: "CLICK",
+        source: this.props.eventSource,
+        action_position: this.props.index
+      }, this._getTelemetryInfo())));
+
+      if (this.props.shouldSendImpressionStats) {
+        this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+          source: this.props.eventSource,
+          click: 0,
+          tiles: [{
+            id: this.props.link.guid,
+            pos: this.props.index
+          }]
+        }));
+      }
+    }
+  }
+
+  componentDidMount() {
+    this.maybeLoadImage();
+  }
+
+  componentDidUpdate() {
+    this.maybeLoadImage();
+  } 
+  
+  
+
+
+  componentWillMount() {
+    const nextState = _Card.getNextStateFromProps(this.props, this.state);
+
+    if (nextState) {
+      this.setState(nextState);
+    }
+  } 
+  
+  
+
+
+  componentWillReceiveProps(nextProps) {
+    const nextState = _Card.getNextStateFromProps(nextProps, this.state);
+
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
+
+  componentWillUnmount() {
+    content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__["ScreenshotUtils"].maybeRevokeBlobObjectURL(this.state.cardImage);
+  }
+
+  render() {
+    const {
+      index,
+      className,
+      link,
+      dispatch,
+      contextMenuOptions,
+      eventSource,
+      shouldSendImpressionStats
+    } = this.props;
+    const {
+      props
+    } = this;
+    const title = link.title || link.hostname;
+    const isContextMenuOpen = this.state.activeCard === index; 
+
+    const {
+      icon,
+      fluentID
+    } = _types__WEBPACK_IMPORTED_MODULE_1__["cardContextTypes"][link.type === "now" ? "trending" : link.type] || {};
+    const hasImage = this.state.cardImage || link.hasImage;
+    const imageStyle = {
+      backgroundImage: this.state.cardImage ? `url(${this.state.cardImage.url})` : "none"
+    };
+    const outerClassName = ["card-outer", className, isContextMenuOpen && "active", props.placeholder && "placeholder"].filter(v => v).join(" ");
+    return react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("li", {
+      className: outerClassName
+    }, react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("a", {
+      href: link.type === "pocket" ? link.open_url : link.url,
+      onClick: !props.placeholder ? this.onLinkClick : undefined
+    }, react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card"
+    }, react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-preview-image-outer"
+    }, hasImage && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: `card-preview-image${this.state.imageLoaded ? " loaded" : ""}`,
+      style: imageStyle
+    })), react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-details"
+    }, link.type === "download" && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-host-name alternate",
+      "data-l10n-id": "newtab-menu-show-file"
+    }), link.hostname && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-host-name"
+    }, link.hostname.slice(0, 100), link.type === "download" && `  \u2014 ${link.description}`), react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: ["card-text", icon ? "" : "no-context", link.description ? "" : "no-description", link.hostname ? "" : "no-host-name"].join(" ")
+    }, react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("h4", {
+      className: "card-title",
+      dir: "auto"
+    }, link.title), react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("p", {
+      className: "card-description",
+      dir: "auto"
+    }, link.description)), react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-context"
+    }, icon && !link.context && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("span", {
+      "aria-haspopup": "true",
+      className: `card-context-icon icon icon-${icon}`
+    }), link.icon && link.context && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("span", {
+      "aria-haspopup": "true",
+      className: "card-context-icon icon",
+      style: {
+        backgroundImage: `url('${link.icon}')`
+      }
+    }), fluentID && !link.context && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-context-label",
+      "data-l10n-id": fluentID
+    }), link.context && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement("div", {
+      className: "card-context-label"
+    }, link.context))))), !props.placeholder && react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_3__["ContextMenuButton"], {
+      tooltip: "newtab-menu-content-tooltip",
+      tooltipArgs: {
+        title
+      },
+      onUpdate: this.onMenuButtonUpdate
+    }, react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_4__["LinkMenu"], {
+      dispatch: dispatch,
+      index: index,
+      source: eventSource,
+      options: link.contextMenuOptions || contextMenuOptions,
+      site: link,
+      siteInfo: this._getTelemetryInfo(),
+      shouldSendImpressionStats: shouldSendImpressionStats
+    })));
+  }
+
+}
+_Card.defaultProps = {
+  link: {}
+};
+const Card = Object(react_redux__WEBPACK_IMPORTED_MODULE_2__["connect"])(state => ({
+  platform: state.Prefs.values.platform
+}))(_Card);
+const PlaceholderCard = props => react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(Card, {
+  placeholder: true,
+  className: props.className
+});
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "ScreenshotUtils", function() { return ScreenshotUtils; });
 
 
@@ -5250,7 +5775,7 @@ const ScreenshotUtils = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -5683,18 +6208,18 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(41);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(50);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(35);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(44);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(48);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(56);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(59);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(49);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(51);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(59);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(62);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(52);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -5934,7 +6459,7 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(47);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(50);
 
 
 
@@ -6125,12 +6650,12 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TopSitePlaceholder", function() { return TopSitePlaceholder; });
  __webpack_require__.d(__webpack_exports__, "TopSiteList", function() { return TopSiteList; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(60);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(50);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(61);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(40);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(56);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(43);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(59);
  var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(31);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
@@ -6953,7 +7478,7 @@ const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])()(_Se
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
 
 
 
@@ -7168,7 +7693,7 @@ DSImage_DSImage.defaultProps = {
 
 };
 
-var LinkMenu = __webpack_require__(60);
+var LinkMenu = __webpack_require__(61);
 
 
 var ContextMenuButton = __webpack_require__(31);
@@ -7332,6 +7857,63 @@ class SafeAnchor_SafeAnchor extends external_React_default.a.PureComponent {
 
 }
 
+var types = __webpack_require__(33);
+
+
+var external_ReactTransitionGroup_ = __webpack_require__(34);
+
+
+
+
+
+
+
+ 
+
+const ANIMATION_DURATION = 3000;
+
+const StatusMessage = ({
+  icon,
+  fluentID
+}) => external_React_default.a.createElement("div", {
+  className: "status-message"
+}, external_React_default.a.createElement("span", {
+  "aria-haspopup": "true",
+  className: `story-badge-icon icon icon-${icon}`
+}), external_React_default.a.createElement("div", {
+  className: "story-context-label",
+  "data-l10n-id": fluentID
+}));
+
+class DSContextFooter_DSContextFooter extends external_React_default.a.PureComponent {
+  render() {
+    const {
+      context,
+      context_type
+    } = this.props;
+    const {
+      icon,
+      fluentID
+    } = types["cardContextTypes"][context_type] || {};
+    return external_React_default.a.createElement("div", {
+      className: "story-footer"
+    }, context && external_React_default.a.createElement("p", {
+      className: "story-sponsored-label"
+    }, context), external_React_default.a.createElement(external_ReactTransitionGroup_["TransitionGroup"], {
+      component: null
+    }, !context && context_type && external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
+      key: fluentID,
+      timeout: ANIMATION_DURATION,
+      classNames: "story-animate"
+    }, external_React_default.a.createElement(StatusMessage, {
+      icon: icon,
+      fluentID: fluentID
+    }))));
+  }
+
+}
+
+
 
 
 
@@ -7392,9 +7974,10 @@ class DSCard_DSCard extends external_React_default.a.PureComponent {
       className: "title clamp"
     }, this.props.title), this.props.excerpt && external_React_default.a.createElement("p", {
       className: "excerpt clamp"
-    }, this.props.excerpt)), this.props.context && external_React_default.a.createElement("p", {
-      className: "context"
-    }, this.props.context)), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+    }, this.props.excerpt)), external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
+      context_type: this.props.context_type,
+      context: this.props.context
+    })), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
       campaignId: this.props.campaignId,
       rows: [{
         id: this.props.id,
@@ -7549,6 +8132,7 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
         dispatch: this.props.dispatch,
         source: rec.domain,
         pocket_id: rec.pocket_id,
+        context_type: rec.context_type,
         bookmarkGuid: rec.bookmarkGuid
       }));
     }
@@ -7595,7 +8179,7 @@ CardGrid_CardGrid.defaultProps = {
 
 };
 
-var CollapsibleSection = __webpack_require__(33);
+var CollapsibleSection = __webpack_require__(35);
 
 
 var external_ReactRedux_ = __webpack_require__(27);
@@ -7968,7 +8552,7 @@ Hero_Hero.defaultProps = {
 
 };
 
-var Sections = __webpack_require__(39);
+var Sections = __webpack_require__(41);
 
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -8279,7 +8863,7 @@ const selectLayoutRender = (state, prefs, rickRollCache) => {
   };
 };
 
-var TopSites = __webpack_require__(46);
+var TopSites = __webpack_require__(49);
 
 
 
@@ -10461,7 +11045,7 @@ class SimpleBelowSearchSnippet_SimpleBelowSearchSnippet extends external_React_d
     }, title) : null;
   }
 
-  onButtonClick() {
+  async onButtonClick() {
     if (this.props.provider !== "preview") {
       this.props.sendUserActionTelemetry({
         event: "CLICK_BUTTON",
@@ -10474,7 +11058,7 @@ class SimpleBelowSearchSnippet_SimpleBelowSearchSnippet extends external_React_d
     } = this.props.content; 
 
     const type = this.props.content.button_action || button_url && "OPEN_URL";
-    this.props.onAction({
+    await this.props.onAction({
       type,
       data: {
         args: this.props.content.button_action_args || button_url
@@ -12758,7 +13342,8 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         if (item.url === action.data.url) {
           return Object.assign({}, item, {
             open_url: action.data.open_url,
-            pocket_id: action.data.pocket_id
+            pocket_id: action.data.pocket_id,
+            context_type: "pocket"
           });
         }
 
@@ -12782,7 +13367,8 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
           return Object.assign({}, item, {
             bookmarkGuid,
             bookmarkTitle,
-            bookmarkDateCreated: dateAdded
+            bookmarkDateCreated: dateAdded,
+            context_type: "bookmark"
           });
         }
 
@@ -12798,6 +13384,11 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
           delete newSite.bookmarkGuid;
           delete newSite.bookmarkTitle;
           delete newSite.bookmarkDateCreated;
+
+          if (!newSite.context_type || newSite.context_type === "bookmark") {
+            newSite.context_type = "removedBookmark";
+          }
+
           return newSite;
         }
 
@@ -12855,389 +13446,6 @@ var reducers = {
 __webpack_require__.r(__webpack_exports__);
 
 
-var Actions = __webpack_require__(2);
-
-
-
-
-
-const cardContextTypes = {
-  history: {
-    fluentID: "newtab-label-visited",
-    icon: "history-item"
-  },
-  bookmark: {
-    fluentID: "newtab-label-bookmarked",
-    icon: "bookmark-added"
-  },
-  trending: {
-    fluentID: "newtab-label-recommended",
-    icon: "trending"
-  },
-  pocket: {
-    fluentID: "newtab-label-saved",
-    icon: "pocket"
-  },
-  download: {
-    fluentID: "newtab-label-download",
-    icon: "download"
-  }
-};
-
-var external_ReactRedux_ = __webpack_require__(27);
-
-
-var ContextMenuButton = __webpack_require__(31);
-
-
-var LinkMenu = __webpack_require__(60);
-
-
-var external_React_ = __webpack_require__(9);
-var external_React_default = __webpack_require__.n(external_React_);
-
-
-var screenshot_utils = __webpack_require__(40);
-
-
- __webpack_require__.d(__webpack_exports__, "_Card", function() { return Card_Card; });
- __webpack_require__.d(__webpack_exports__, "Card", function() { return Card; });
- __webpack_require__.d(__webpack_exports__, "PlaceholderCard", function() { return PlaceholderCard; });
-
-
-
-
-
-
-
-
-
- 
-
-const gImageLoading = new Map();
-
-
-
-
-
-
-
-
-
-
-class Card_Card extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      activeCard: null,
-      imageLoaded: false,
-      cardImage: null
-    };
-    this.onMenuButtonUpdate = this.onMenuButtonUpdate.bind(this);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-  
-
-
-
-
-  async maybeLoadImage() {
-    
-    const {
-      cardImage
-    } = this.state;
-
-    if (!cardImage) {
-      return;
-    }
-
-    const imageUrl = cardImage.url;
-
-    if (!this.state.imageLoaded) {
-      
-      if (!gImageLoading.has(imageUrl)) {
-        const loaderPromise = new Promise((resolve, reject) => {
-          const loader = new Image();
-          loader.addEventListener("load", resolve);
-          loader.addEventListener("error", reject);
-          loader.src = imageUrl;
-        }); 
-
-        gImageLoading.set(imageUrl, loaderPromise);
-        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl)).catch();
-      } 
-
-
-      await gImageLoading.get(imageUrl); 
-
-      if (screenshot_utils["ScreenshotUtils"].isRemoteImageLocal(this.state.cardImage, this.props.link.image) && !this.state.imageLoaded) {
-        this.setState({
-          imageLoaded: true
-        });
-      }
-    }
-  }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static getNextStateFromProps(nextProps, prevState) {
-    const {
-      image
-    } = nextProps.link;
-    const imageInState = screenshot_utils["ScreenshotUtils"].isRemoteImageLocal(prevState.cardImage, image);
-    let nextState = null; 
-
-    if (!imageInState && nextProps.link) {
-      nextState = {
-        imageLoaded: false
-      };
-    }
-
-    if (imageInState) {
-      return nextState;
-    } 
-
-
-    screenshot_utils["ScreenshotUtils"].maybeRevokeBlobObjectURL(prevState.cardImage);
-    nextState = nextState || {};
-    nextState.cardImage = screenshot_utils["ScreenshotUtils"].createLocalImageObject(image);
-    return nextState;
-  }
-
-  onMenuButtonUpdate(isOpen) {
-    if (isOpen) {
-      this.setState({
-        activeCard: this.props.index
-      });
-    } else {
-      this.setState({
-        activeCard: null
-      });
-    }
-  }
-  
-
-
-
-
-  _getTelemetryInfo() {
-    
-    if (this.props.link.type !== "history") {
-      return {
-        value: {
-          card_type: this.props.link.type
-        }
-      };
-    }
-
-    return null;
-  }
-
-  onLinkClick(event) {
-    event.preventDefault();
-
-    if (this.props.link.type === "download") {
-      this.props.dispatch(Actions["actionCreators"].OnlyToMain({
-        type: Actions["actionTypes"].SHOW_DOWNLOAD_FILE,
-        data: this.props.link
-      }));
-    } else {
-      const {
-        altKey,
-        button,
-        ctrlKey,
-        metaKey,
-        shiftKey
-      } = event;
-      this.props.dispatch(Actions["actionCreators"].OnlyToMain({
-        type: Actions["actionTypes"].OPEN_LINK,
-        data: Object.assign(this.props.link, {
-          event: {
-            altKey,
-            button,
-            ctrlKey,
-            metaKey,
-            shiftKey
-          }
-        })
-      }));
-    }
-
-    if (this.props.isWebExtension) {
-      this.props.dispatch(Actions["actionCreators"].WebExtEvent(Actions["actionTypes"].WEBEXT_CLICK, {
-        source: this.props.eventSource,
-        url: this.props.link.url,
-        action_position: this.props.index
-      }));
-    } else {
-      this.props.dispatch(Actions["actionCreators"].UserEvent(Object.assign({
-        event: "CLICK",
-        source: this.props.eventSource,
-        action_position: this.props.index
-      }, this._getTelemetryInfo())));
-
-      if (this.props.shouldSendImpressionStats) {
-        this.props.dispatch(Actions["actionCreators"].ImpressionStats({
-          source: this.props.eventSource,
-          click: 0,
-          tiles: [{
-            id: this.props.link.guid,
-            pos: this.props.index
-          }]
-        }));
-      }
-    }
-  }
-
-  componentDidMount() {
-    this.maybeLoadImage();
-  }
-
-  componentDidUpdate() {
-    this.maybeLoadImage();
-  } 
-  
-  
-
-
-  componentWillMount() {
-    const nextState = Card_Card.getNextStateFromProps(this.props, this.state);
-
-    if (nextState) {
-      this.setState(nextState);
-    }
-  } 
-  
-  
-
-
-  componentWillReceiveProps(nextProps) {
-    const nextState = Card_Card.getNextStateFromProps(nextProps, this.state);
-
-    if (nextState) {
-      this.setState(nextState);
-    }
-  }
-
-  componentWillUnmount() {
-    screenshot_utils["ScreenshotUtils"].maybeRevokeBlobObjectURL(this.state.cardImage);
-  }
-
-  render() {
-    const {
-      index,
-      className,
-      link,
-      dispatch,
-      contextMenuOptions,
-      eventSource,
-      shouldSendImpressionStats
-    } = this.props;
-    const {
-      props
-    } = this;
-    const title = link.title || link.hostname;
-    const isContextMenuOpen = this.state.activeCard === index; 
-
-    const {
-      icon,
-      fluentID
-    } = cardContextTypes[link.type === "now" ? "trending" : link.type] || {};
-    const hasImage = this.state.cardImage || link.hasImage;
-    const imageStyle = {
-      backgroundImage: this.state.cardImage ? `url(${this.state.cardImage.url})` : "none"
-    };
-    const outerClassName = ["card-outer", className, isContextMenuOpen && "active", props.placeholder && "placeholder"].filter(v => v).join(" ");
-    return external_React_default.a.createElement("li", {
-      className: outerClassName
-    }, external_React_default.a.createElement("a", {
-      href: link.type === "pocket" ? link.open_url : link.url,
-      onClick: !props.placeholder ? this.onLinkClick : undefined
-    }, external_React_default.a.createElement("div", {
-      className: "card"
-    }, external_React_default.a.createElement("div", {
-      className: "card-preview-image-outer"
-    }, hasImage && external_React_default.a.createElement("div", {
-      className: `card-preview-image${this.state.imageLoaded ? " loaded" : ""}`,
-      style: imageStyle
-    })), external_React_default.a.createElement("div", {
-      className: "card-details"
-    }, link.type === "download" && external_React_default.a.createElement("div", {
-      className: "card-host-name alternate",
-      "data-l10n-id": "newtab-menu-show-file"
-    }), link.hostname && external_React_default.a.createElement("div", {
-      className: "card-host-name"
-    }, link.hostname.slice(0, 100), link.type === "download" && `  \u2014 ${link.description}`), external_React_default.a.createElement("div", {
-      className: ["card-text", icon ? "" : "no-context", link.description ? "" : "no-description", link.hostname ? "" : "no-host-name"].join(" ")
-    }, external_React_default.a.createElement("h4", {
-      className: "card-title",
-      dir: "auto"
-    }, link.title), external_React_default.a.createElement("p", {
-      className: "card-description",
-      dir: "auto"
-    }, link.description)), external_React_default.a.createElement("div", {
-      className: "card-context"
-    }, icon && !link.context && external_React_default.a.createElement("span", {
-      "aria-haspopup": "true",
-      className: `card-context-icon icon icon-${icon}`
-    }), link.icon && link.context && external_React_default.a.createElement("span", {
-      "aria-haspopup": "true",
-      className: "card-context-icon icon",
-      style: {
-        backgroundImage: `url('${link.icon}')`
-      }
-    }), fluentID && !link.context && external_React_default.a.createElement("div", {
-      className: "card-context-label",
-      "data-l10n-id": fluentID
-    }), link.context && external_React_default.a.createElement("div", {
-      className: "card-context-label"
-    }, link.context))))), !props.placeholder && external_React_default.a.createElement(ContextMenuButton["ContextMenuButton"], {
-      tooltip: "newtab-menu-content-tooltip",
-      tooltipArgs: {
-        title
-      },
-      onUpdate: this.onMenuButtonUpdate
-    }, external_React_default.a.createElement(LinkMenu["LinkMenu"], {
-      dispatch: dispatch,
-      index: index,
-      source: eventSource,
-      options: link.contextMenuOptions || contextMenuOptions,
-      site: link,
-      siteInfo: this._getTelemetryInfo(),
-      shouldSendImpressionStats: shouldSendImpressionStats
-    })));
-  }
-
-}
-Card_Card.defaultProps = {
-  link: {}
-};
-const Card = Object(external_ReactRedux_["connect"])(state => ({
-  platform: state.Prefs.values.platform
-}))(Card_Card);
-const PlaceholderCard = props => external_React_default.a.createElement(Card, {
-  placeholder: true,
-  className: props.className
-});
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-
-
 var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
@@ -13251,10 +13459,10 @@ var ReturnToAMO = __webpack_require__(23);
 var StartupOverlay = __webpack_require__(24);
 
 
-var src = __webpack_require__(53);
+var src = __webpack_require__(56);
 
 
-var rich_text_strings = __webpack_require__(55);
+var rich_text_strings = __webpack_require__(58);
 
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -13325,16 +13533,12 @@ class Interrupt_Interrupt extends external_React_default.a.PureComponent {
 var Triplets = __webpack_require__(25);
 
 
-var Actions = __webpack_require__(2);
-
-
 var addUtmParams = __webpack_require__(22);
 
 
  __webpack_require__.d(__webpack_exports__, "FLUENT_FILES", function() { return FLUENT_FILES; });
  __webpack_require__.d(__webpack_exports__, "helpers", function() { return helpers; });
  __webpack_require__.d(__webpack_exports__, "FirstRun", function() { return FirstRun_FirstRun; });
-
 
 
 
@@ -13363,49 +13567,6 @@ const helpers = {
       link.href = file;
       link.rel = "localization";
     });
-  },
-
-  async fetchFlowParams({
-    fxaEndpoint,
-    UTMTerm,
-    dispatch,
-    setFlowParams
-  }) {
-    try {
-      const url = new URL(`${fxaEndpoint}/metrics-flow?entrypoint=activity-stream-firstrun&form_type=email`);
-      Object(addUtmParams["addUtmParams"])(url, UTMTerm);
-      const response = await fetch(url, {
-        credentials: "omit"
-      });
-
-      if (response.status === 200) {
-        const {
-          deviceId,
-          flowId,
-          flowBeginTime
-        } = await response.json();
-        setFlowParams({
-          deviceId,
-          flowId,
-          flowBeginTime
-        });
-      } else {
-        dispatch(Actions["actionCreators"].OnlyToMain({
-          type: Actions["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
-          data: {
-            event: "FXA_METRICS_FETCH_ERROR",
-            value: response.status
-          }
-        }));
-      }
-    } catch (error) {
-      dispatch(Actions["actionCreators"].OnlyToMain({
-        type: Actions["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
-        data: {
-          event: "FXA_METRICS_ERROR"
-        }
-      }));
-    }
   }
 
 };
@@ -13459,10 +13620,10 @@ class FirstRun_FirstRun extends external_React_default.a.PureComponent {
     return null;
   }
 
-  fetchFlowParams() {
+  async fetchFlowParams() {
     const {
       fxaEndpoint,
-      dispatch
+      fetchFlowParams
     } = this.props;
     const {
       UTMTerm
@@ -13470,13 +13631,13 @@ class FirstRun_FirstRun extends external_React_default.a.PureComponent {
 
     if (fxaEndpoint && UTMTerm && !this.didLoadFlowParams) {
       this.didLoadFlowParams = true;
-      helpers.fetchFlowParams({
-        fxaEndpoint,
-        UTMTerm,
-        dispatch,
-        setFlowParams: flowParams => this.setState({
-          flowParams
-        })
+      const flowParams = await fetchFlowParams({ ...addUtmParams["BASE_PARAMS"],
+        entrypoint: "activity-stream-firstrun",
+        form_type: "email",
+        utm_term: UTMTerm
+      });
+      this.setState({
+        flowParams
       });
     }
   }
@@ -13561,435 +13722,6 @@ class FirstRun_FirstRun extends external_React_default.a.PureComponent {
   }
 
 }
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-
-
-var Actions = __webpack_require__(2);
-
-
-var A11yLinkButton = __webpack_require__(35);
-
-
-var external_React_ = __webpack_require__(9);
-var external_React_default = __webpack_require__.n(external_React_);
-
-
-var TopSitesConstants = __webpack_require__(47);
-
-
-
-
-
-
-class TopSiteFormInput_TopSiteFormInput extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      validationError: this.props.validationError
-    };
-    this.onChange = this.onChange.bind(this);
-    this.onMount = this.onMount.bind(this);
-    this.onClearIconPress = this.onClearIconPress.bind(this);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.shouldFocus && !this.props.shouldFocus) {
-      this.input.focus();
-    }
-
-    if (nextProps.validationError && !this.props.validationError) {
-      this.setState({
-        validationError: true
-      });
-    } 
-
-
-    if (this.state.validationError && !nextProps.value) {
-      this.setState({
-        validationError: false
-      });
-    }
-  }
-
-  onClearIconPress(event) {
-    
-    
-    
-    if (event.key === "Enter") {
-      this.props.onClear();
-    }
-  }
-
-  onChange(ev) {
-    if (this.state.validationError) {
-      this.setState({
-        validationError: false
-      });
-    }
-
-    this.props.onChange(ev);
-  }
-
-  onMount(input) {
-    this.input = input;
-  }
-
-  renderLoadingOrCloseButton() {
-    const showClearButton = this.props.value && this.props.onClear;
-
-    if (this.props.loading) {
-      return external_React_default.a.createElement("div", {
-        className: "loading-container"
-      }, external_React_default.a.createElement("div", {
-        className: "loading-animation"
-      }));
-    } else if (showClearButton) {
-      return external_React_default.a.createElement("button", {
-        type: "button",
-        className: "icon icon-clear-input icon-button-style",
-        onClick: this.props.onClear,
-        onKeyPress: this.onClearIconPress
-      });
-    }
-
-    return null;
-  }
-
-  render() {
-    const {
-      typeUrl
-    } = this.props;
-    const {
-      validationError
-    } = this.state;
-    return external_React_default.a.createElement("label", null, external_React_default.a.createElement("span", {
-      "data-l10n-id": this.props.titleId
-    }), external_React_default.a.createElement("div", {
-      className: `field ${typeUrl ? "url" : ""}${validationError ? " invalid" : ""}`
-    }, external_React_default.a.createElement("input", {
-      type: "text",
-      value: this.props.value,
-      ref: this.onMount,
-      onChange: this.onChange,
-      "data-l10n-id": this.props.placeholderId 
-      
-      ,
-      autoFocus: this.props.shouldFocus,
-      disabled: this.props.loading
-    }), this.renderLoadingOrCloseButton(), validationError && external_React_default.a.createElement("aside", {
-      className: "error-tooltip",
-      "data-l10n-id": this.props.errorMessageId
-    })));
-  }
-
-}
-TopSiteFormInput_TopSiteFormInput.defaultProps = {
-  showClearButton: false,
-  value: "",
-  validationError: false
-};
-
-var TopSite = __webpack_require__(49);
-
-
- __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });
-
-
-
-
-
-
-
-
-
-class TopSiteForm_TopSiteForm extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    const {
-      site
-    } = props;
-    this.state = {
-      label: site ? site.label || site.hostname : "",
-      url: site ? site.url : "",
-      validationError: false,
-      customScreenshotUrl: site ? site.customScreenshotURL : "",
-      showCustomScreenshotForm: site ? site.customScreenshotURL : false
-    };
-    this.onClearScreenshotInput = this.onClearScreenshotInput.bind(this);
-    this.onLabelChange = this.onLabelChange.bind(this);
-    this.onUrlChange = this.onUrlChange.bind(this);
-    this.onCancelButtonClick = this.onCancelButtonClick.bind(this);
-    this.onClearUrlClick = this.onClearUrlClick.bind(this);
-    this.onDoneButtonClick = this.onDoneButtonClick.bind(this);
-    this.onCustomScreenshotUrlChange = this.onCustomScreenshotUrlChange.bind(this);
-    this.onPreviewButtonClick = this.onPreviewButtonClick.bind(this);
-    this.onEnableScreenshotUrlForm = this.onEnableScreenshotUrlForm.bind(this);
-    this.validateUrl = this.validateUrl.bind(this);
-  }
-
-  onLabelChange(event) {
-    this.setState({
-      label: event.target.value
-    });
-  }
-
-  onUrlChange(event) {
-    this.setState({
-      url: event.target.value,
-      validationError: false
-    });
-  }
-
-  onClearUrlClick() {
-    this.setState({
-      url: "",
-      validationError: false
-    });
-  }
-
-  onEnableScreenshotUrlForm() {
-    this.setState({
-      showCustomScreenshotForm: true
-    });
-  }
-
-  _updateCustomScreenshotInput(customScreenshotUrl) {
-    this.setState({
-      customScreenshotUrl,
-      validationError: false
-    });
-    this.props.dispatch({
-      type: Actions["actionTypes"].PREVIEW_REQUEST_CANCEL
-    });
-  }
-
-  onCustomScreenshotUrlChange(event) {
-    this._updateCustomScreenshotInput(event.target.value);
-  }
-
-  onClearScreenshotInput() {
-    this._updateCustomScreenshotInput("");
-  }
-
-  onCancelButtonClick(ev) {
-    ev.preventDefault();
-    this.props.onClose();
-  }
-
-  onDoneButtonClick(ev) {
-    ev.preventDefault();
-
-    if (this.validateForm()) {
-      const site = {
-        url: this.cleanUrl(this.state.url)
-      };
-      const {
-        index
-      } = this.props;
-
-      if (this.state.label !== "") {
-        site.label = this.state.label;
-      }
-
-      if (this.state.customScreenshotUrl) {
-        site.customScreenshotURL = this.cleanUrl(this.state.customScreenshotUrl);
-      } else if (this.props.site && this.props.site.customScreenshotURL) {
-        
-        site.customScreenshotURL = null;
-      }
-
-      this.props.dispatch(Actions["actionCreators"].AlsoToMain({
-        type: Actions["actionTypes"].TOP_SITES_PIN,
-        data: {
-          site,
-          index
-        }
-      }));
-      this.props.dispatch(Actions["actionCreators"].UserEvent({
-        source: TopSitesConstants["TOP_SITES_SOURCE"],
-        event: "TOP_SITES_EDIT",
-        action_position: index
-      }));
-      this.props.onClose();
-    }
-  }
-
-  onPreviewButtonClick(event) {
-    event.preventDefault();
-
-    if (this.validateForm()) {
-      this.props.dispatch(Actions["actionCreators"].AlsoToMain({
-        type: Actions["actionTypes"].PREVIEW_REQUEST,
-        data: {
-          url: this.cleanUrl(this.state.customScreenshotUrl)
-        }
-      }));
-      this.props.dispatch(Actions["actionCreators"].UserEvent({
-        source: TopSitesConstants["TOP_SITES_SOURCE"],
-        event: "PREVIEW_REQUEST"
-      }));
-    }
-  }
-
-  cleanUrl(url) {
-    
-    if (!url.startsWith("http:") && !url.startsWith("https:")) {
-      return `http://${url}`;
-    }
-
-    return url;
-  }
-
-  _tryParseUrl(url) {
-    try {
-      return new URL(url);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  validateUrl(url) {
-    const validProtocols = ["http:", "https:"];
-
-    const urlObj = this._tryParseUrl(url) || this._tryParseUrl(this.cleanUrl(url));
-
-    return urlObj && validProtocols.includes(urlObj.protocol);
-  }
-
-  validateCustomScreenshotUrl() {
-    const {
-      customScreenshotUrl
-    } = this.state;
-    return !customScreenshotUrl || this.validateUrl(customScreenshotUrl);
-  }
-
-  validateForm() {
-    const validate = this.validateUrl(this.state.url) && this.validateCustomScreenshotUrl();
-
-    if (!validate) {
-      this.setState({
-        validationError: true
-      });
-    }
-
-    return validate;
-  }
-
-  _renderCustomScreenshotInput() {
-    const {
-      customScreenshotUrl
-    } = this.state;
-    const requestFailed = this.props.previewResponse === "";
-    const validationError = this.state.validationError && !this.validateCustomScreenshotUrl() || requestFailed; 
-
-    const shouldFocus = validationError && this.validateUrl(this.state.url) || !customScreenshotUrl;
-    const isLoading = this.props.previewResponse === null && customScreenshotUrl && this.props.previewUrl === this.cleanUrl(customScreenshotUrl);
-
-    if (!this.state.showCustomScreenshotForm) {
-      return external_React_default.a.createElement(A11yLinkButton["A11yLinkButton"], {
-        onClick: this.onEnableScreenshotUrlForm,
-        className: "enable-custom-image-input",
-        "data-l10n-id": "newtab-topsites-use-image-link"
-      });
-    }
-
-    return external_React_default.a.createElement("div", {
-      className: "custom-image-input-container"
-    }, external_React_default.a.createElement(TopSiteFormInput_TopSiteFormInput, {
-      errorMessageId: requestFailed ? "newtab-topsites-image-validation" : "newtab-topsites-url-validation",
-      loading: isLoading,
-      onChange: this.onCustomScreenshotUrlChange,
-      onClear: this.onClearScreenshotInput,
-      shouldFocus: shouldFocus,
-      typeUrl: true,
-      value: customScreenshotUrl,
-      validationError: validationError,
-      titleId: "newtab-topsites-image-url-label",
-      placeholderId: "newtab-topsites-url-input"
-    }));
-  }
-
-  render() {
-    const {
-      customScreenshotUrl
-    } = this.state;
-    const requestFailed = this.props.previewResponse === ""; 
-
-    const showAsAdd = !this.props.site;
-    const previous = this.props.site && this.props.site.customScreenshotURL || "";
-    const changed = customScreenshotUrl && this.cleanUrl(customScreenshotUrl) !== previous; 
-    
-
-    const previewMode = changed && !this.props.previewResponse;
-    const previewLink = Object.assign({}, this.props.site);
-
-    if (this.props.previewResponse) {
-      previewLink.screenshot = this.props.previewResponse;
-      previewLink.customScreenshotURL = this.props.previewUrl;
-    } 
-
-
-    const onSubmit = previewMode ? this.onPreviewButtonClick : this.onDoneButtonClick;
-    return external_React_default.a.createElement("form", {
-      className: "topsite-form",
-      onSubmit: onSubmit
-    }, external_React_default.a.createElement("div", {
-      className: "form-input-container"
-    }, external_React_default.a.createElement("h3", {
-      className: "section-title grey-title",
-      "data-l10n-id": showAsAdd ? "newtab-topsites-add-topsites-header" : "newtab-topsites-edit-topsites-header"
-    }), external_React_default.a.createElement("div", {
-      className: "fields-and-preview"
-    }, external_React_default.a.createElement("div", {
-      className: "form-wrapper"
-    }, external_React_default.a.createElement(TopSiteFormInput_TopSiteFormInput, {
-      onChange: this.onLabelChange,
-      value: this.state.label,
-      titleId: "newtab-topsites-title-label",
-      placeholderId: "newtab-topsites-title-input"
-    }), external_React_default.a.createElement(TopSiteFormInput_TopSiteFormInput, {
-      onChange: this.onUrlChange,
-      shouldFocus: this.state.validationError && !this.validateUrl(this.state.url),
-      value: this.state.url,
-      onClear: this.onClearUrlClick,
-      validationError: this.state.validationError && !this.validateUrl(this.state.url),
-      titleId: "newtab-topsites-url-label",
-      typeUrl: true,
-      placeholderId: "newtab-topsites-url-input",
-      errorMessageId: "newtab-topsites-url-validation"
-    }), this._renderCustomScreenshotInput()), external_React_default.a.createElement(TopSite["TopSiteLink"], {
-      link: previewLink,
-      defaultStyle: requestFailed,
-      title: this.state.label
-    }))), external_React_default.a.createElement("section", {
-      className: "actions"
-    }, external_React_default.a.createElement("button", {
-      className: "cancel",
-      type: "button",
-      onClick: this.onCancelButtonClick,
-      "data-l10n-id": "newtab-topsites-cancel-button"
-    }), previewMode ? external_React_default.a.createElement("button", {
-      className: "done preview",
-      type: "submit",
-      "data-l10n-id": "newtab-topsites-preview-button"
-    }) : external_React_default.a.createElement("button", {
-      className: "done",
-      type: "submit",
-      "data-l10n-id": showAsAdd ? "newtab-topsites-add-button" : "newtab-topsites-save-button"
-    })));
-  }
-
-}
-TopSiteForm_TopSiteForm.defaultProps = {
-  site: null,
-  index: -1
-};
 
  }),
 
@@ -14371,6 +14103,435 @@ const getState = state => ({
 });
 
 const LinkMenu = Object(external_ReactRedux_["connect"])(getState)(LinkMenu_LinkMenu);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+
+
+var Actions = __webpack_require__(2);
+
+
+var A11yLinkButton = __webpack_require__(37);
+
+
+var external_React_ = __webpack_require__(9);
+var external_React_default = __webpack_require__.n(external_React_);
+
+
+var TopSitesConstants = __webpack_require__(50);
+
+
+
+
+
+
+class TopSiteFormInput_TopSiteFormInput extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      validationError: this.props.validationError
+    };
+    this.onChange = this.onChange.bind(this);
+    this.onMount = this.onMount.bind(this);
+    this.onClearIconPress = this.onClearIconPress.bind(this);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.shouldFocus && !this.props.shouldFocus) {
+      this.input.focus();
+    }
+
+    if (nextProps.validationError && !this.props.validationError) {
+      this.setState({
+        validationError: true
+      });
+    } 
+
+
+    if (this.state.validationError && !nextProps.value) {
+      this.setState({
+        validationError: false
+      });
+    }
+  }
+
+  onClearIconPress(event) {
+    
+    
+    
+    if (event.key === "Enter") {
+      this.props.onClear();
+    }
+  }
+
+  onChange(ev) {
+    if (this.state.validationError) {
+      this.setState({
+        validationError: false
+      });
+    }
+
+    this.props.onChange(ev);
+  }
+
+  onMount(input) {
+    this.input = input;
+  }
+
+  renderLoadingOrCloseButton() {
+    const showClearButton = this.props.value && this.props.onClear;
+
+    if (this.props.loading) {
+      return external_React_default.a.createElement("div", {
+        className: "loading-container"
+      }, external_React_default.a.createElement("div", {
+        className: "loading-animation"
+      }));
+    } else if (showClearButton) {
+      return external_React_default.a.createElement("button", {
+        type: "button",
+        className: "icon icon-clear-input icon-button-style",
+        onClick: this.props.onClear,
+        onKeyPress: this.onClearIconPress
+      });
+    }
+
+    return null;
+  }
+
+  render() {
+    const {
+      typeUrl
+    } = this.props;
+    const {
+      validationError
+    } = this.state;
+    return external_React_default.a.createElement("label", null, external_React_default.a.createElement("span", {
+      "data-l10n-id": this.props.titleId
+    }), external_React_default.a.createElement("div", {
+      className: `field ${typeUrl ? "url" : ""}${validationError ? " invalid" : ""}`
+    }, external_React_default.a.createElement("input", {
+      type: "text",
+      value: this.props.value,
+      ref: this.onMount,
+      onChange: this.onChange,
+      "data-l10n-id": this.props.placeholderId 
+      
+      ,
+      autoFocus: this.props.shouldFocus,
+      disabled: this.props.loading
+    }), this.renderLoadingOrCloseButton(), validationError && external_React_default.a.createElement("aside", {
+      className: "error-tooltip",
+      "data-l10n-id": this.props.errorMessageId
+    })));
+  }
+
+}
+TopSiteFormInput_TopSiteFormInput.defaultProps = {
+  showClearButton: false,
+  value: "",
+  validationError: false
+};
+
+var TopSite = __webpack_require__(52);
+
+
+ __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });
+
+
+
+
+
+
+
+
+
+class TopSiteForm_TopSiteForm extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    const {
+      site
+    } = props;
+    this.state = {
+      label: site ? site.label || site.hostname : "",
+      url: site ? site.url : "",
+      validationError: false,
+      customScreenshotUrl: site ? site.customScreenshotURL : "",
+      showCustomScreenshotForm: site ? site.customScreenshotURL : false
+    };
+    this.onClearScreenshotInput = this.onClearScreenshotInput.bind(this);
+    this.onLabelChange = this.onLabelChange.bind(this);
+    this.onUrlChange = this.onUrlChange.bind(this);
+    this.onCancelButtonClick = this.onCancelButtonClick.bind(this);
+    this.onClearUrlClick = this.onClearUrlClick.bind(this);
+    this.onDoneButtonClick = this.onDoneButtonClick.bind(this);
+    this.onCustomScreenshotUrlChange = this.onCustomScreenshotUrlChange.bind(this);
+    this.onPreviewButtonClick = this.onPreviewButtonClick.bind(this);
+    this.onEnableScreenshotUrlForm = this.onEnableScreenshotUrlForm.bind(this);
+    this.validateUrl = this.validateUrl.bind(this);
+  }
+
+  onLabelChange(event) {
+    this.setState({
+      label: event.target.value
+    });
+  }
+
+  onUrlChange(event) {
+    this.setState({
+      url: event.target.value,
+      validationError: false
+    });
+  }
+
+  onClearUrlClick() {
+    this.setState({
+      url: "",
+      validationError: false
+    });
+  }
+
+  onEnableScreenshotUrlForm() {
+    this.setState({
+      showCustomScreenshotForm: true
+    });
+  }
+
+  _updateCustomScreenshotInput(customScreenshotUrl) {
+    this.setState({
+      customScreenshotUrl,
+      validationError: false
+    });
+    this.props.dispatch({
+      type: Actions["actionTypes"].PREVIEW_REQUEST_CANCEL
+    });
+  }
+
+  onCustomScreenshotUrlChange(event) {
+    this._updateCustomScreenshotInput(event.target.value);
+  }
+
+  onClearScreenshotInput() {
+    this._updateCustomScreenshotInput("");
+  }
+
+  onCancelButtonClick(ev) {
+    ev.preventDefault();
+    this.props.onClose();
+  }
+
+  onDoneButtonClick(ev) {
+    ev.preventDefault();
+
+    if (this.validateForm()) {
+      const site = {
+        url: this.cleanUrl(this.state.url)
+      };
+      const {
+        index
+      } = this.props;
+
+      if (this.state.label !== "") {
+        site.label = this.state.label;
+      }
+
+      if (this.state.customScreenshotUrl) {
+        site.customScreenshotURL = this.cleanUrl(this.state.customScreenshotUrl);
+      } else if (this.props.site && this.props.site.customScreenshotURL) {
+        
+        site.customScreenshotURL = null;
+      }
+
+      this.props.dispatch(Actions["actionCreators"].AlsoToMain({
+        type: Actions["actionTypes"].TOP_SITES_PIN,
+        data: {
+          site,
+          index
+        }
+      }));
+      this.props.dispatch(Actions["actionCreators"].UserEvent({
+        source: TopSitesConstants["TOP_SITES_SOURCE"],
+        event: "TOP_SITES_EDIT",
+        action_position: index
+      }));
+      this.props.onClose();
+    }
+  }
+
+  onPreviewButtonClick(event) {
+    event.preventDefault();
+
+    if (this.validateForm()) {
+      this.props.dispatch(Actions["actionCreators"].AlsoToMain({
+        type: Actions["actionTypes"].PREVIEW_REQUEST,
+        data: {
+          url: this.cleanUrl(this.state.customScreenshotUrl)
+        }
+      }));
+      this.props.dispatch(Actions["actionCreators"].UserEvent({
+        source: TopSitesConstants["TOP_SITES_SOURCE"],
+        event: "PREVIEW_REQUEST"
+      }));
+    }
+  }
+
+  cleanUrl(url) {
+    
+    if (!url.startsWith("http:") && !url.startsWith("https:")) {
+      return `http://${url}`;
+    }
+
+    return url;
+  }
+
+  _tryParseUrl(url) {
+    try {
+      return new URL(url);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  validateUrl(url) {
+    const validProtocols = ["http:", "https:"];
+
+    const urlObj = this._tryParseUrl(url) || this._tryParseUrl(this.cleanUrl(url));
+
+    return urlObj && validProtocols.includes(urlObj.protocol);
+  }
+
+  validateCustomScreenshotUrl() {
+    const {
+      customScreenshotUrl
+    } = this.state;
+    return !customScreenshotUrl || this.validateUrl(customScreenshotUrl);
+  }
+
+  validateForm() {
+    const validate = this.validateUrl(this.state.url) && this.validateCustomScreenshotUrl();
+
+    if (!validate) {
+      this.setState({
+        validationError: true
+      });
+    }
+
+    return validate;
+  }
+
+  _renderCustomScreenshotInput() {
+    const {
+      customScreenshotUrl
+    } = this.state;
+    const requestFailed = this.props.previewResponse === "";
+    const validationError = this.state.validationError && !this.validateCustomScreenshotUrl() || requestFailed; 
+
+    const shouldFocus = validationError && this.validateUrl(this.state.url) || !customScreenshotUrl;
+    const isLoading = this.props.previewResponse === null && customScreenshotUrl && this.props.previewUrl === this.cleanUrl(customScreenshotUrl);
+
+    if (!this.state.showCustomScreenshotForm) {
+      return external_React_default.a.createElement(A11yLinkButton["A11yLinkButton"], {
+        onClick: this.onEnableScreenshotUrlForm,
+        className: "enable-custom-image-input",
+        "data-l10n-id": "newtab-topsites-use-image-link"
+      });
+    }
+
+    return external_React_default.a.createElement("div", {
+      className: "custom-image-input-container"
+    }, external_React_default.a.createElement(TopSiteFormInput_TopSiteFormInput, {
+      errorMessageId: requestFailed ? "newtab-topsites-image-validation" : "newtab-topsites-url-validation",
+      loading: isLoading,
+      onChange: this.onCustomScreenshotUrlChange,
+      onClear: this.onClearScreenshotInput,
+      shouldFocus: shouldFocus,
+      typeUrl: true,
+      value: customScreenshotUrl,
+      validationError: validationError,
+      titleId: "newtab-topsites-image-url-label",
+      placeholderId: "newtab-topsites-url-input"
+    }));
+  }
+
+  render() {
+    const {
+      customScreenshotUrl
+    } = this.state;
+    const requestFailed = this.props.previewResponse === ""; 
+
+    const showAsAdd = !this.props.site;
+    const previous = this.props.site && this.props.site.customScreenshotURL || "";
+    const changed = customScreenshotUrl && this.cleanUrl(customScreenshotUrl) !== previous; 
+    
+
+    const previewMode = changed && !this.props.previewResponse;
+    const previewLink = Object.assign({}, this.props.site);
+
+    if (this.props.previewResponse) {
+      previewLink.screenshot = this.props.previewResponse;
+      previewLink.customScreenshotURL = this.props.previewUrl;
+    } 
+
+
+    const onSubmit = previewMode ? this.onPreviewButtonClick : this.onDoneButtonClick;
+    return external_React_default.a.createElement("form", {
+      className: "topsite-form",
+      onSubmit: onSubmit
+    }, external_React_default.a.createElement("div", {
+      className: "form-input-container"
+    }, external_React_default.a.createElement("h3", {
+      className: "section-title grey-title",
+      "data-l10n-id": showAsAdd ? "newtab-topsites-add-topsites-header" : "newtab-topsites-edit-topsites-header"
+    }), external_React_default.a.createElement("div", {
+      className: "fields-and-preview"
+    }, external_React_default.a.createElement("div", {
+      className: "form-wrapper"
+    }, external_React_default.a.createElement(TopSiteFormInput_TopSiteFormInput, {
+      onChange: this.onLabelChange,
+      value: this.state.label,
+      titleId: "newtab-topsites-title-label",
+      placeholderId: "newtab-topsites-title-input"
+    }), external_React_default.a.createElement(TopSiteFormInput_TopSiteFormInput, {
+      onChange: this.onUrlChange,
+      shouldFocus: this.state.validationError && !this.validateUrl(this.state.url),
+      value: this.state.url,
+      onClear: this.onClearUrlClick,
+      validationError: this.state.validationError && !this.validateUrl(this.state.url),
+      titleId: "newtab-topsites-url-label",
+      typeUrl: true,
+      placeholderId: "newtab-topsites-url-input",
+      errorMessageId: "newtab-topsites-url-validation"
+    }), this._renderCustomScreenshotInput()), external_React_default.a.createElement(TopSite["TopSiteLink"], {
+      link: previewLink,
+      defaultStyle: requestFailed,
+      title: this.state.label
+    }))), external_React_default.a.createElement("section", {
+      className: "actions"
+    }, external_React_default.a.createElement("button", {
+      className: "cancel",
+      type: "button",
+      onClick: this.onCancelButtonClick,
+      "data-l10n-id": "newtab-topsites-cancel-button"
+    }), previewMode ? external_React_default.a.createElement("button", {
+      className: "done preview",
+      type: "submit",
+      "data-l10n-id": "newtab-topsites-preview-button"
+    }) : external_React_default.a.createElement("button", {
+      className: "done",
+      type: "submit",
+      "data-l10n-id": showAsAdd ? "newtab-topsites-add-button" : "newtab-topsites-save-button"
+    })));
+  }
+
+}
+TopSiteForm_TopSiteForm.defaultProps = {
+  site: null,
+  index: -1
+};
 
  })
  ]);

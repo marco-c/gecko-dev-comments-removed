@@ -10,11 +10,6 @@ ChromeUtils.defineModuleGetter(
   "AppConstants",
   "resource://gre/modules/AppConstants.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "UpdateUtils",
-  "resource://gre/modules/UpdateUtils.jsm"
-);
 
 
 
@@ -104,9 +99,6 @@ const DEFAULT_SITES = new Map([
 ]);
 const GEO_PREF = "browser.search.region";
 const SPOCS_GEOS = ["US"];
-const IS_NIGHTLY_OR_UNBRANDED_BUILD = ["nightly", "default"].includes(
-  UpdateUtils.getUpdateChannel(true)
-);
 
 
 function showSpocs({ geo }) {
@@ -446,18 +438,15 @@ const PREFS_CONFIG = new Map([
       title: "Configuration for the new pocket new tab",
       getValue: ({ geo, locale }) => {
         
-        const locales = {
-          US: ["en-CA", "en-GB", "en-US", "en-ZA"],
-          CA: ["en-CA", "en-GB", "en-US", "en-ZA"],
-        }[geo];
+        
+        const dsEnablementMatrix = {
+          US: ["en-CA", "en-GB", "en-US"],
+          CA: ["en-CA", "en-GB", "en-US"],
+        };
 
         
-        
         const isEnabled =
-          (geo === `US` && locale === `en-US`) ||
-          (IS_NIGHTLY_OR_UNBRANDED_BUILD &&
-            locales &&
-            locales.includes(locale));
+          !!dsEnablementMatrix[geo] && dsEnablementMatrix[geo].includes(locale);
 
         return JSON.stringify({
           api_key_pref: "extensions.pocket.oAuthConsumerKey",
