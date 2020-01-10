@@ -197,6 +197,11 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
+  static uint32_t GetUserTrimmingPolicy();
+
+  
+
+
 
 
 

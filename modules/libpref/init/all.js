@@ -1345,8 +1345,6 @@ pref("network.http.referer.defaultPolicy.pbmode", 2);
 
 pref("network.http.referer.defaultPolicy.trackers.pbmode", 2);
 
-pref("network.http.referer.trimmingPolicy", 0);
-
 pref("network.http.referer.XOriginTrimmingPolicy", 0);
 
 
