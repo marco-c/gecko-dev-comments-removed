@@ -254,9 +254,11 @@ class MediaEncoder {
   void SetError();
 
   
-  nsresult WriteEncodedDataToMuxer(TrackEncoder* aTrackEncoder);
-  
   nsresult CopyMetadataToMuxer(TrackEncoder* aTrackEncoder);
+  
+  nsresult EncodeData();
+  
+  nsresult WriteEncodedDataToMuxer();
 
   const RefPtr<TaskQueue> mEncoderThread;
   const RefPtr<DriftCompensator> mDriftCompensator;
@@ -284,6 +286,12 @@ class MediaEncoder {
   
   
   RefPtr<dom::VideoStreamTrack> mVideoTrack;
+
+  
+  nsTArray<RefPtr<EncodedFrame>> mEncodedAudioFrames;
+  
+  nsTArray<RefPtr<EncodedFrame>> mEncodedVideoFrames;
+
   TimeStamp mStartTime;
   nsString mMIMEType;
   bool mInitialized;
