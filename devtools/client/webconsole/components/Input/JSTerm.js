@@ -577,14 +577,6 @@ class JSTerm extends Component {
     return this.webConsoleUI.outputNode;
   }
 
-  
-
-
-
-  get webConsoleClient() {
-    return this.webConsoleUI.webConsoleClient;
-  }
-
   focus() {
     if (this.editor) {
       this.editor.focus();
