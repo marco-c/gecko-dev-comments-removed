@@ -20,6 +20,10 @@ namespace a11y {
 
 class xpcAccessibleGeneric;
 
+#if !defined(XP_WIN)
+class DocAccessiblePlatformExtParent;
+#endif
+
 
 
 
@@ -241,6 +245,14 @@ class DocAccessibleParent : public ProxyAccessible,
 #if !defined(XP_WIN)
   virtual mozilla::ipc::IPCResult RecvBatch(
       const uint64_t& aBatchType, nsTArray<BatchData>&& aData) override;
+
+  virtual bool DeallocPDocAccessiblePlatformExtParent(
+      PDocAccessiblePlatformExtParent* aActor) override;
+
+  virtual PDocAccessiblePlatformExtParent*
+  AllocPDocAccessiblePlatformExtParent() override;
+
+  DocAccessiblePlatformExtParent* GetPlatformExtension();
 #endif
 
   
