@@ -621,6 +621,28 @@ class ADBDevice(ADBCommand):
 
         
         
+        
+        start_time = time.time()
+
+        
+        
+        
+        self.version = 0
+        while self.version < 1 and (time.time() - start_time) <= float(timeout):
+            try:
+                version = self.get_prop("ro.build.version.sdk",
+                                        timeout=timeout)
+                self.version = int(version)
+            except ValueError:
+                self._logger.info("unexpected ro.build.version.sdk: '%s'" % version)
+                time.sleep(2)
+        if self.version < 1:
+            
+            
+            raise ADBTimeoutError("ADBDevice: unable to determine ro.build.version.sdk.")
+
+        
+        
 
         uid = 'uid=0'
         
@@ -664,7 +686,6 @@ class ADBDevice(ADBCommand):
         
         
         
-        start_time = time.time()
         boot_completed = False
         while not boot_completed and (time.time() - start_time) <= float(timeout):
             try:
@@ -721,20 +742,6 @@ class ADBDevice(ADBCommand):
 
         self._selinux = None
         self.enforcing = 'Permissive'
-
-        self.version = 0
-        while self.version < 1 and (time.time() - start_time) <= float(timeout):
-            try:
-                version = self.get_prop("ro.build.version.sdk",
-                                        timeout=timeout)
-                self.version = int(version)
-            except ValueError:
-                self._logger.info("unexpected ro.build.version.sdk: '%s'" % version)
-                time.sleep(2)
-        if self.version < 1:
-            
-            
-            raise ADBTimeoutError("ADBDevice: unable to determine ro.build.version.sdk.")
 
         
         if self.version >= version_codes.N:
@@ -939,7 +946,7 @@ class ADBDevice(ADBCommand):
     @staticmethod
     def _get_exitcode(file_obj):
         """Get the exitcode from the last line of the file_obj for shell
-        commands.
+        commands executed on Android prior to Android 7.
         """
         re_returncode = re.compile(r'adb_returncode=([0-9]+)')
         file_obj.seek(0, os.SEEK_END)
@@ -1404,7 +1411,16 @@ class ADBDevice(ADBCommand):
             envstr = '&& '.join(['export %s=%s' %
                                  (x[0], x[1]) for x in env.items()])
             cmd = envstr + "&& " + cmd
-        cmd += "; echo adb_returncode=$?"
+        
+        
+        
+        
+        
+        
+        
+        
+        if not hasattr(self, 'version') or self.version < version_codes.N:
+            cmd += "; echo adb_returncode=$?"
 
         args = [self._adb_path]
         if self._adb_host:
@@ -1443,7 +1459,10 @@ class ADBDevice(ADBCommand):
             adb_process.timedout = True
             adb_process.exitcode = adb_process.proc.poll()
         elif exitcode == 0:
-            adb_process.exitcode = self._get_exitcode(adb_process.stdout_file)
+            if hasattr(self, 'version') and self.version >= version_codes.N:
+                adb_process.exitcode = 0
+            else:
+                adb_process.exitcode = self._get_exitcode(adb_process.stdout_file)
         else:
             adb_process.exitcode = exitcode
 
