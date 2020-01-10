@@ -9,21 +9,22 @@
 
 
 async function testSteps() {
-  const obsoleteOriginPaths = [
-    "storage/default/chrome+++content+browser.xul/",
-    "storage/default/moz-safe-about+++home/",
+  const obsoleteOriginPaths =
+    [
+      "storage/default/chrome+++content+browser.xul/",
+      "storage/default/moz-safe-about+++home/",
+      
+      "storage/default/https+++example.com/asmjs/",
+      "storage/default/about+home+1",
+      "storage/default/about+home+1+q",
+      
+      "storage/default/about+reader+url=https%3A%2F%2Fexample.com",
+    ] +
     
     
-    
-    
-    
-    
-    "storage/default/https+++example.com/asmjs/",
-    "storage/default/about+home+1",
-    "storage/default/about+home+1+q",
-    
-    "storage/default/about+reader+url=https%3A%2F%2Fexample.com",
-  ];
+    isValidMozURL("https://smaug----.github.io")
+      ? ["storage/default/https+++smaug----.github.io/"]
+      : [];
   const obsoleteFilePath =
     "storage/default/https+++example.com/idb/UUID123.tmp";
   const invalidOriginPath = "storage/default/invalid+++example.com/";
