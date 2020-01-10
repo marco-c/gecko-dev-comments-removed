@@ -22,13 +22,5 @@ g.dbg.allowUnobservedAsmJS = false;
 assertAsmTypeFail(asmFunStr);
 
 
-g.dbg.enabled = false;
-assertEq(asmLink(asmCompile(asmFunStr))(), undefined);
-
-
-g.dbg.enabled = true;
-assertAsmTypeFail(asmFunStr);
-
-
 g.dbg.removeDebuggee(this);
 assertEq(asmLink(asmCompile(asmFunStr))(), undefined);
