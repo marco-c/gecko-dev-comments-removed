@@ -3777,12 +3777,12 @@ ProfilingStack* profiler_register_thread(const char* aName,
 }
 
 void profiler_unregister_thread() {
+  PSAutoLock lock(gPSMutex);
+
   if (!CorePS::Exists()) {
     
     return;
   }
-
-  PSAutoLock lock(gPSMutex);
 
   
   
@@ -3847,12 +3847,12 @@ void profiler_register_page(const nsID& aDocShellId, uint32_t aHistoryId,
 }
 
 void profiler_unregister_pages(const nsID& aRegisteredDocShellId) {
+  PSAutoLock lock(gPSMutex);
+
   if (!CorePS::Exists()) {
     
     return;
   }
-
-  PSAutoLock lock(gPSMutex);
 
   
   
@@ -3866,13 +3866,15 @@ void profiler_unregister_pages(const nsID& aRegisteredDocShellId) {
 }
 
 void profiler_clear_all_pages() {
-  if (!CorePS::Exists()) {
-    
-    return;
-  }
-
   {
     PSAutoLock lock(gPSMutex);
+
+    if (!CorePS::Exists()) {
+      
+      
+      return;
+    }
+
     CorePS::ClearRegisteredPages(lock);
     if (ActivePS::Exists(lock)) {
       ActivePS::ClearUnregisteredPages(lock);
