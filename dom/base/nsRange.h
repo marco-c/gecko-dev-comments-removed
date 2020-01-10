@@ -190,43 +190,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
   }
 
   
-
-
-
-  static nsINode* GetContainerAndOffsetAfter(nsINode* aNode,
-                                             uint32_t* aOffset) {
-    MOZ_ASSERT(aNode);
-    MOZ_ASSERT(aOffset);
-    *aOffset = 0;
-    nsINode* parentNode = aNode->GetParentNode();
-    if (!parentNode) {
-      return nullptr;
-    }
-    int32_t indexInParent = parentNode->ComputeIndexOf(aNode);
-    if (NS_WARN_IF(indexInParent < 0)) {
-      return nullptr;
-    }
-    *aOffset = static_cast<uint32_t>(indexInParent) + 1;
-    return parentNode;
-  }
-  static nsINode* GetContainerAndOffsetBefore(nsINode* aNode,
-                                              uint32_t* aOffset) {
-    MOZ_ASSERT(aNode);
-    MOZ_ASSERT(aOffset);
-    *aOffset = 0;
-    nsINode* parentNode = aNode->GetParentNode();
-    if (!parentNode) {
-      return nullptr;
-    }
-    int32_t indexInParent = parentNode->ComputeIndexOf(aNode);
-    if (NS_WARN_IF(indexInParent < 0)) {
-      return nullptr;
-    }
-    *aOffset = static_cast<uint32_t>(indexInParent);
-    return parentNode;
-  }
-
-  
   
   
   nsresult GetUsedFontFaces(
@@ -348,32 +311,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  static nsINode* ComputeRootNode(nsINode* aNode);
-
-  
-
-
-
-  static bool IsValidPoints(nsINode* aStartContainer, uint32_t aStartOffset,
-                            nsINode* aEndContainer, uint32_t aEndOffset);
-
-  
-
-
-
-
-
-
-  static nsresult CompareNodeToRange(nsINode* aNode, nsRange* aRange,
-                                     bool* outNodeBefore, bool* outNodeAfter);
-
-  
-
-
-
-
-
-
 
   static bool IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
                              uint32_t aEndOffset);
@@ -411,18 +348,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
  protected:
   void RegisterCommonAncestor(nsINode* aNode);
   void UnregisterCommonAncestor(nsINode* aNode, bool aIsUnlinking);
-  nsINode* IsValidBoundary(nsINode* aNode) const {
-    return ComputeRootNode(aNode);
-  }
-
-  
-
-
-
-
-
-  static bool IsValidOffset(uint32_t aOffset) { return aOffset <= INT32_MAX; }
-  static bool IsValidOffset(nsINode* aNode, uint32_t aOffset);
 
   
   

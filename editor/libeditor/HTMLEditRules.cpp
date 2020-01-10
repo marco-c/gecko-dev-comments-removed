@@ -21,6 +21,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Move.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/RangeUtils.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -6733,7 +6734,7 @@ nsresult HTMLEditRules::ExpandSelectionForDeletion() {
 
     
     if (brBlock) {
-      nsRange::CompareNodeToRange(brBlock, range, &nodeBefore, &nodeAfter);
+      RangeUtils::CompareNodeToRange(brBlock, range, &nodeBefore, &nodeAfter);
     }
 
     
@@ -9295,7 +9296,8 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
   }
 
   bool nodeBefore, nodeAfter;
-  rv = nsRange::CompareNodeToRange(mNewBlock, range, &nodeBefore, &nodeAfter);
+  rv =
+      RangeUtils::CompareNodeToRange(mNewBlock, range, &nodeBefore, &nodeAfter);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
