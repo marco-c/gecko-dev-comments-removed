@@ -11,6 +11,10 @@ const TEST_URI =
   "test/browser/test-eval-in-stackframe.html";
 
 add_task(async function() {
+  
+  
+  await pushPref("devtools.debugger.features.inline-preview", false);
+
   const hud = await openNewTabAndConsole(TEST_URI);
 
   info("Switch to the debugger");
