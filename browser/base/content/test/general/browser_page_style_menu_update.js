@@ -14,9 +14,8 @@ add_task(async function() {
     false
   );
   let browser = tab.linkedBrowser;
-
   await BrowserTestUtils.loadURI(browser, PAGE);
-  await promiseStylesheetsUpdated(browser);
+  await promiseStylesheetsLoaded(tab, 17);
 
   let menupopup = document.getElementById("pageStyleMenu").menupopup;
   gPageStyleMenu.fillPopup(menupopup);
@@ -33,10 +32,6 @@ add_task(async function() {
   
   let target = menupopup.querySelector("menuitem[label='1']");
   target.click();
-
-  
-  
-  await promiseStylesheetsUpdated(browser);
 
   gPageStyleMenu.fillPopup(menupopup);
   

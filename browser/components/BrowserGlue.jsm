@@ -104,6 +104,23 @@ let ACTORS = {
     allFrames: true,
   },
 
+  PageStyle: {
+    parent: {
+      moduleURI: "resource:///actors/PageStyleParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/PageStyleChild.jsm",
+      events: {
+        pageshow: {},
+      },
+    },
+
+    
+    
+    matches: ["*://*/*"],
+    allFrames: true,
+  },
+
   Plugin: {
     parent: {
       moduleURI: "resource:///actors/PluginParent.jsm",
@@ -310,20 +327,6 @@ let LEGACY_ACTORS = {
         MozApplicationManifest: {},
       },
       messages: ["OfflineApps:StartFetching"],
-    },
-  },
-
-  PageStyle: {
-    child: {
-      module: "resource:///actors/PageStyleChild.jsm",
-      group: "browsers",
-      events: {
-        pageshow: {},
-      },
-      messages: ["PageStyle:Switch", "PageStyle:Disable"],
-      
-      
-      matches: ["*://*/*"],
     },
   },
 
