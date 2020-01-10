@@ -19,6 +19,27 @@ types.addDictType("available-breakpoint-event", {
   id: "string",
   name: "string",
 });
+types.addDictType("paused-reason", {
+  type: "string",
+
+  
+  message: "nullable:string",
+
+  
+  frameFinished: "nullable:json",
+
+  
+  exception: "nullable:json",
+
+  
+  onNext: "nullable:boolean",
+
+  
+  breakpoint: "nullable:json",
+
+  
+  mutationType: "nullable:string",
+});
 
 const threadSpec = generateActorSpec({
   typeName: "thread",
@@ -27,7 +48,7 @@ const threadSpec = generateActorSpec({
     paused: {
       actor: Option(0, "nullable:string"),
       frame: Option(0, "nullable:json"),
-      why: Option(0, "nullable:json"),
+      why: Option(0, "paused-reason"),
       poppedFrames: Option(0, "nullable:json"),
       error: Option(0, "nullable:json"),
       recordingEndpoint: Option(0, "nullable:json"),
