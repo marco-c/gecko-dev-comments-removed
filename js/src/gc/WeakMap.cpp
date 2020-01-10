@@ -71,9 +71,9 @@ bool WeakMapBase::markZoneIteratively(JS::Zone* zone, GCMarker* marker) {
   return markedAny;
 }
 
-bool WeakMapBase::findSweepGroupEdges(JS::Zone* zone) {
+bool WeakMapBase::findSweepGroupEdgesForZone(JS::Zone* zone) {
   for (WeakMapBase* m : zone->gcWeakMapList()) {
-    if (!m->findZoneEdges()) {
+    if (!m->findSweepGroupEdges()) {
       return false;
     }
   }
@@ -133,7 +133,7 @@ size_t ObjectValueMap::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
   return mallocSizeOf(this) + shallowSizeOfExcludingThis(mallocSizeOf);
 }
 
-bool ObjectValueMap::findZoneEdges() {
+bool ObjectValueMap::findSweepGroupEdges() {
   
 
 
