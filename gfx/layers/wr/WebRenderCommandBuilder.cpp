@@ -836,36 +836,38 @@ struct DIGroup {
                                      aResources);
       } else {
         nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
-        if (dirty && paintedItem &&
+        if (paintedItem &&
             
             
             item->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
-          
-          
-          
-          
-          DisplayItemClip currentClip = paintedItem->GetClip();
+          if (dirty) {
+            
+            
+            
+            
+            DisplayItemClip currentClip = paintedItem->GetClip();
 
-          if (currentClip.HasClip()) {
-            aContext->Save();
-            currentClip.ApplyTo(aContext, aGrouper->mAppUnitsPerDevPixel);
-          }
-          aContext->NewPath();
-          GP("painting %s %p-%d\n", paintedItem->Name(), paintedItem->Frame(),
-             paintedItem->GetPerFrameKey());
-          if (aGrouper->mDisplayListBuilder->IsPaintingToWindow()) {
-            paintedItem->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
-          }
+            if (currentClip.HasClip()) {
+              aContext->Save();
+              currentClip.ApplyTo(aContext, aGrouper->mAppUnitsPerDevPixel);
+            }
+            aContext->NewPath();
+            GP("painting %s %p-%d\n", paintedItem->Name(), paintedItem->Frame(),
+               paintedItem->GetPerFrameKey());
+            if (aGrouper->mDisplayListBuilder->IsPaintingToWindow()) {
+              paintedItem->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
+            }
 
-          paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
-          TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
-                               aResources);
+            paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
+            TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
+                                 aResources);
 
-          if (currentClip.HasClip()) {
-            aContext->Restore();
+            if (currentClip.HasClip()) {
+              aContext->Restore();
+            }
           }
+          aContext->GetDrawTarget()->FlushItem(bounds);
         }
-        aContext->GetDrawTarget()->FlushItem(bounds);
       }
     }
   }
