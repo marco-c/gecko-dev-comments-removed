@@ -998,6 +998,12 @@ struct JSContext : public JS::RootingContext,
   js::StructuredSpewer& spewer() { return structuredSpewer_.ref(); }
 #endif
 
+  
+  
+  
+  
+  js::ContextData<js::Debugger*> insideDebuggerEvaluationWithOnNativeCallHook;
+
 }; 
 
 inline JS::Result<> JSContext::boolToResult(bool ok) {
@@ -1241,6 +1247,20 @@ class MOZ_RAII AutoKeepAtoms {
  public:
   explicit inline AutoKeepAtoms(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
   inline ~AutoKeepAtoms();
+};
+
+class MOZ_RAII AutoNoteDebuggerEvaluationWithOnNativeCallHook {
+  JSContext* cx;
+  Debugger* oldValue;
+ public:
+  AutoNoteDebuggerEvaluationWithOnNativeCallHook(JSContext* cx, Debugger* dbg)
+      : cx(cx), oldValue(cx->insideDebuggerEvaluationWithOnNativeCallHook) {
+    cx->insideDebuggerEvaluationWithOnNativeCallHook = dbg;
+  }
+
+  ~AutoNoteDebuggerEvaluationWithOnNativeCallHook() {
+    cx->insideDebuggerEvaluationWithOnNativeCallHook = oldValue;
+  }
 };
 
 enum UnsafeABIStrictness {
