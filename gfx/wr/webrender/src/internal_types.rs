@@ -176,6 +176,15 @@ impl Default for Swizzle {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+pub struct SwizzleSettings {
+    
+    pub bgra8_sampling_swizzle: Swizzle,
+}
+
+
 
 
 
@@ -307,6 +316,7 @@ pub struct TextureCacheUpdate {
     pub stride: Option<i32>,
     pub offset: i32,
     pub layer_index: i32,
+    pub format_override: Option<ImageFormat>,
     pub source: TextureUpdateSource,
 }
 
@@ -364,10 +374,11 @@ impl TextureUpdateList {
         self.push_update(TextureCacheUpdate {
             id,
             rect,
-            source: TextureUpdateSource::DebugClear,
             stride: None,
             offset: 0,
             layer_index: layer_index as i32,
+            format_override: None,
+            source: TextureUpdateSource::DebugClear,
         });
     }
 

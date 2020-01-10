@@ -12,7 +12,7 @@ use crate::freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle
 use crate::gpu_cache::{GpuCache, GpuCacheHandle};
 use crate::gpu_types::{ImageSource, UvRectKind};
 use crate::internal_types::{
-    CacheTextureId, FastHashMap, LayerIndex, Swizzle,
+    CacheTextureId, FastHashMap, LayerIndex, Swizzle, SwizzleSettings,
     TextureUpdateList, TextureUpdateSource, TextureSource,
     TextureCacheAllocInfo, TextureCacheUpdate,
 };
@@ -173,6 +173,14 @@ impl CacheEntry {
             eviction_notice.notify();
         }
     }
+
+    fn alternative_input_format(&self) -> ImageFormat {
+        match self.input_format {
+            ImageFormat::RGBA8 => ImageFormat::BGRA8,
+            ImageFormat::BGRA8 => ImageFormat::RGBA8,
+            other => other,
+        }
+    }
 }
 
 
@@ -299,31 +307,23 @@ impl SharedTextures {
     
     fn select(
         &mut self, external_format: ImageFormat, filter: TextureFilter
-    ) -> (&mut TextureArray, Swizzle) {
+    ) -> &mut TextureArray {
         match external_format {
             ImageFormat::R8 => {
                 assert_eq!(filter, TextureFilter::Linear);
-                (&mut self.array_alpha8_linear, Swizzle::default())
+                &mut self.array_alpha8_linear
             }
             ImageFormat::R16 => {
                 assert_eq!(filter, TextureFilter::Linear);
-                (&mut self.array_alpha16_linear, Swizzle::default())
+                &mut self.array_alpha16_linear
             }
             ImageFormat::RGBA8 |
             ImageFormat::BGRA8 => {
-                let array = match filter {
+                match filter {
                     TextureFilter::Linear => &mut self.array_color8_linear,
                     TextureFilter::Nearest => &mut self.array_color8_nearest,
                     _ => panic!("Unexpexcted filter {:?}", filter),
-                };
-                let swizzle = if array.formats.external == external_format {
-                    Swizzle::default()
-                } else {
-                    
-                    
-                    Swizzle::Bgra
-                };
-                (array, swizzle)
+                }
             }
             _ => panic!("Unexpected format {:?}", external_format),
         }
@@ -518,7 +518,7 @@ pub struct TextureCache {
     max_texture_layers: usize,
 
     
-    bgra_swizzle: Swizzle,
+    swizzle: Option<SwizzleSettings>,
 
     
     debug_flags: DebugFlags,
@@ -564,7 +564,7 @@ impl TextureCache {
         picture_tile_sizes: &[DeviceIntSize],
         initial_size: DeviceIntSize,
         color_formats: TextureFormatPair<ImageFormat>,
-        bgra_swizzle: Swizzle,
+        swizzle: Option<SwizzleSettings>,
     ) -> Self {
         if cfg!(target_os = "macos") {
             
@@ -622,7 +622,9 @@ impl TextureCache {
         
         
         
-        assert!(color_formats.internal != ImageFormat::BGRA8 || bgra_swizzle == Swizzle::default());
+        assert!(color_formats.internal != ImageFormat::BGRA8 ||
+            swizzle.map_or(true, |s| s.bgra8_sampling_swizzle == Swizzle::default())
+        );
 
         TextureCache {
             shared_textures: SharedTextures::new(color_formats),
@@ -631,7 +633,7 @@ impl TextureCache {
             entries: FreeList::new(),
             max_texture_size,
             max_texture_layers,
-            bgra_swizzle,
+            swizzle,
             debug_flags: DebugFlags::empty(),
             next_id: CacheTextureId(next_texture_id),
             pending_updates,
@@ -657,7 +659,7 @@ impl TextureCache {
             &[],
             DeviceIntSize::zero(),
             TextureFormatPair::from(image_format),
-            Swizzle::default(),
+            None,
         );
         let mut now = FrameStamp::first(DocumentId::new(IdNamespace(1), 1));
         now.advance();
@@ -887,8 +889,8 @@ impl TextureCache {
     }
 
     #[cfg(feature = "replay")]
-    pub fn bgra_swizzle(&self) -> Swizzle {
-        self.bgra_swizzle
+    pub fn swizzle_settings(&self) -> Option<SwizzleSettings> {
+        self.swizzle
     }
 
     pub fn pending_updates(&mut self) -> TextureUpdateList {
@@ -919,7 +921,8 @@ impl TextureCache {
         
         let realloc = match self.entries.get_opt(handle) {
             Some(entry) => {
-                entry.size != descriptor.size || entry.input_format != descriptor.format
+                entry.size != descriptor.size || (entry.input_format != descriptor.format &&
+                    entry.alternative_input_format() != descriptor.format)
             }
             None => {
                 
@@ -957,6 +960,10 @@ impl TextureCache {
         
         
         if let Some(data) = data {
+            
+            
+            
+            let use_upload_format = !self.swizzle.is_some();
             let (layer_index, origin) = entry.details.describe();
             let op = TextureCacheUpdate::new_update(
                 data,
@@ -965,6 +972,7 @@ impl TextureCache {
                 entry.size,
                 entry.texture_id,
                 layer_index as i32,
+                use_upload_format,
                 &dirty_rect,
             );
             self.pending_updates.push_update(op);
@@ -1130,7 +1138,7 @@ impl TextureCache {
             }
             EntryDetails::Cache { origin, layer_index } => {
                 
-                let (texture_array, _swizzle) = self.shared_textures.select(entry.input_format, entry.filter);
+                let texture_array = self.shared_textures.select(entry.input_format, entry.filter);
                 let unit = texture_array.units
                     .iter_mut()
                     .find(|unit| unit.texture_id == entry.texture_id)
@@ -1159,7 +1167,7 @@ impl TextureCache {
         &mut self,
         params: &CacheAllocParams,
     ) -> bool {
-        let (texture_array, _swizzle) = self.shared_textures.select(
+        let texture_array = self.shared_textures.select(
             params.descriptor.format,
             params.filter,
         );
@@ -1175,10 +1183,18 @@ impl TextureCache {
         params: &CacheAllocParams,
     ) -> CacheEntry {
         
-        let (texture_array, swizzle) = self.shared_textures.select(
+        let texture_array = self.shared_textures.select(
             params.descriptor.format,
             params.filter,
         );
+        let swizzle = if texture_array.formats.external == params.descriptor.format {
+            Swizzle::default()
+        } else {
+            match self.swizzle {
+                Some(_) => Swizzle::Bgra,
+                None => Swizzle::default(),
+            }
+        };
 
         let max_texture_layers = self.max_texture_layers;
         let slab_size = SlabSize::new(params.descriptor.size);
@@ -1277,16 +1293,16 @@ impl TextureCache {
 
         
         let swizzle = if params.descriptor.format == ImageFormat::BGRA8 {
-            self.bgra_swizzle
+            self.swizzle.map(|s| s.bgra8_sampling_swizzle)
         } else {
-            Swizzle::default()
+            None
         };
 
         CacheEntry::new_standalone(
             texture_id,
             self.now,
             params,
-            swizzle,
+            swizzle.unwrap_or_default(),
         )
     }
 
@@ -1823,6 +1839,7 @@ impl TextureCacheUpdate {
         size: DeviceIntSize,
         texture_id: CacheTextureId,
         layer_index: i32,
+        use_upload_format: bool,
         dirty_rect: &ImageDirtyRect,
     ) -> TextureCacheUpdate {
         let source = match data {
@@ -1847,8 +1864,13 @@ impl TextureCacheUpdate {
                 TextureUpdateSource::Bytes { data: bytes }
             }
         };
+        let format_override = if use_upload_format {
+            Some(descriptor.format)
+        } else {
+            None
+        };
 
-        let update_op = match *dirty_rect {
+        match *dirty_rect {
             DirtyRect::Partial(dirty) => {
                 
                 let stride = descriptor.compute_stride();
@@ -1866,6 +1888,7 @@ impl TextureCacheUpdate {
                     source,
                     stride: Some(stride),
                     offset,
+                    format_override,
                     layer_index,
                 }
             }
@@ -1876,12 +1899,11 @@ impl TextureCacheUpdate {
                     source,
                     stride: descriptor.stride,
                     offset: descriptor.offset,
+                    format_override,
                     layer_index,
                 }
             }
-        };
-
-        update_op
+        }
     }
 }
 
