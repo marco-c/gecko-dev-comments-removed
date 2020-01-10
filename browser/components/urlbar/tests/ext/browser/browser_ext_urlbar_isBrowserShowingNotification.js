@@ -15,6 +15,25 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 add_task(async function noNotifications() {
+  
+
+  
+  
+  EventUtils.synthesizeKey("KEY_Escape");
+
+  
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  
+  window.gBrowser.getNotificationBox().removeAllNotifications(true);
+
+  
+  if (AppMenuNotifications.activeNotification) {
+    AppMenuNotifications.dismissNotification(
+      AppMenuNotifications.activeNotification.id
+    );
+  }
+
   await checkExtension(false);
 });
 
@@ -27,6 +46,7 @@ add_task(async function urlbarView() {
   });
   await checkExtension(true);
   await UrlbarTestUtils.promisePopupClose(window);
+  await checkExtension(false);
 });
 
 
@@ -41,6 +61,8 @@ add_task(async function trackingProtection() {
 
     EventUtils.synthesizeKey("KEY_Escape");
     await BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+
+    await checkExtension(false);
   });
 });
 
@@ -56,6 +78,8 @@ add_task(async function siteIdentity() {
 
     EventUtils.synthesizeKey("KEY_Escape");
     await BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+
+    await checkExtension(false);
   });
 });
 
@@ -72,10 +96,9 @@ add_task(async function notificationBox() {
     null,
     null
   );
-
   await checkExtension(true);
-
   box.removeNotification(note, true);
+  await checkExtension(false);
 });
 
 
@@ -90,6 +113,8 @@ add_task(async function pageActionPanel() {
 
     EventUtils.synthesizeKey("KEY_Escape");
     await BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+
+    await checkExtension(false);
   });
 });
 
@@ -110,6 +135,8 @@ add_task(async function toolbarButtonPanel() {
   await TestUtils.waitForCondition(() => {
     return !document.getElementById("customizationui-widget-panel");
   });
+
+  await checkExtension(false);
 });
 
 
@@ -125,6 +152,13 @@ add_task(async function appMenuNotification() {
 
   AppMenuNotifications.dismissNotification("update-manual");
   await BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+
+  await checkExtension(false);
+
+  
+  
+  
+  AppMenuNotifications.removeNotification("update-manual");
 });
 
 async function checkExtension(expectedShowing) {

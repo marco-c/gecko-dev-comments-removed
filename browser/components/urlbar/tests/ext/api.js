@@ -21,8 +21,16 @@ this.experiments_urlbar = class extends ExtensionAPI {
             
             if (
               window.gURLBar.view.isOpen ||
-              AppMenuNotifications.activeNotification ||
               window.gBrowser.getNotificationBox().currentNotification
+            ) {
+              return true;
+            }
+
+            
+            if (
+              AppMenuNotifications.activeNotification &&
+              !AppMenuNotifications.activeNotification.dismissed &&
+              !AppMenuNotifications.activeNotification.options.badgeOnly
             ) {
               return true;
             }
