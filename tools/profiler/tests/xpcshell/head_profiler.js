@@ -48,6 +48,14 @@ function wait(time) {
   });
 }
 
+
+
+
+
+
+
+
+
 function getInflatedStackLocations(thread, sample) {
   let stackTable = thread.stackTable;
   let frameTable = thread.frameTable;
@@ -70,4 +78,86 @@ function getInflatedStackLocations(thread, sample) {
 
   
   return locations.reverse();
+}
+
+
+
+
+
+
+
+
+async function doAtLeastOnePeriodicSample() {
+  async function getProfileSampleCount() {
+    const profile = await Services.profiler.getProfileDataAsync();
+    return profile.threads[0].samples.data.length;
+  }
+
+  const sampleCount = await getProfileSampleCount();
+  
+  while (true) {
+    if (sampleCount < (await getProfileSampleCount())) {
+      return sampleCount;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function expectStackToContain(
+  actualStackFrames,
+  expectedStackFrames,
+  message = "The actual stack and expected stack do not match."
+) {
+  
+  
+  console.log("Actual stack: ", actualStackFrames);
+  console.log(
+    "Expected to contain: ",
+    expectedStackFrames.map(s => s.toString())
+  );
+
+  let actualIndex = 0;
+
+  
+  for (
+    let expectedIndex = 0;
+    expectedIndex < expectedStackFrames.length;
+    expectedIndex++
+  ) {
+    const expectedStackFrame = expectedStackFrames[expectedIndex];
+
+    while (true) {
+      
+      if (actualIndex >= actualStackFrames.length) {
+        info(`Could not find a match for: "${expectedStackFrame.toString()}"`);
+        Assert.ok(false, message);
+      }
+
+      const actualStackFrame = actualStackFrames[actualIndex];
+      actualIndex++;
+
+      const itMatches =
+        typeof expectedStackFrame === "string"
+          ? expectedStackFrame === actualStackFrame
+          : actualStackFrame.match(expectedStackFrame);
+
+      if (itMatches) {
+        
+        break;
+      }
+      
+    }
+  }
+
+  Assert.ok(true, message);
 }
