@@ -52,6 +52,11 @@ let gFilterString = null;
 
 
 
+let gFilterPattern = null;
+
+
+
+
 let gFilterShowAll = false;
 
 class PrefRow {
@@ -121,6 +126,7 @@ class PrefRow {
 
   get matchesFilter() {
     return gFilterShowAll ||
+           (gFilterPattern && gFilterPattern.test(this.name)) ||
            (gFilterString && this.name.toLowerCase().includes(gFilterString));
   }
 
@@ -452,7 +458,13 @@ function filterPrefs(options = {}) {
   gFilterString = searchName.toLowerCase();
   gFilterShowAll = !!options.showAll;
 
-  let showResults = gFilterString || gFilterShowAll;
+  gFilterPattern = null;
+  if (gFilterString.includes("*")) {
+    gFilterPattern = new RegExp(gFilterString.replace(/\*+/g, ".*"), "i");
+    gFilterString = "";
+  }
+
+  let showResults = gFilterString || gFilterPattern || gFilterShowAll;
   document.getElementById("show-all").classList.toggle("hidden", showResults);
 
   let prefArray = [];
