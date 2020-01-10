@@ -1450,6 +1450,25 @@ void nsPlainTextSerializer::OutputQuotesAndIndent(
   }
 }
 
+static bool IsLineFeedCarriageReturnBlankOrTab(char16_t c) {
+  return ('\n' == c || '\r' == c || ' ' == c || '\t' == c);
+}
+
+static void ReplaceVisiblyTrailingNbsps(nsAString& aString) {
+  const int32_t totLen = aString.Length();
+  for (int32_t i = totLen - 1; i >= 0; i--) {
+    char16_t c = aString[i];
+    if (IsLineFeedCarriageReturnBlankOrTab(c)) {
+      continue;
+    }
+    if (kNBSP == c) {
+      aString.Replace(i, 1, ' ');
+    } else {
+      break;
+    }
+  }
+}
+
 
 
 
@@ -1476,14 +1495,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
   
   
   if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-    for (int32_t i = totLen - 1; i >= 0; i--) {
-      char16_t c = str[i];
-      if ('\n' == c || '\r' == c || ' ' == c || '\t' == c) continue;
-      if (kNBSP == c)
-        str.Replace(i, 1, ' ');
-      else
-        break;
-    }
+    ReplaceVisiblyTrailingNbsps(str);
   }
 
   
@@ -1536,8 +1548,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
         stringpart.Assign(Substring(str, bol, totLen - bol));
         if (!stringpart.IsEmpty()) {
           char16_t lastchar = stringpart[stringpart.Length() - 1];
-          if ((lastchar == '\t') || (lastchar == ' ') || (lastchar == '\r') ||
-              (lastchar == '\n')) {
+          if (IsLineFeedCarriageReturnBlankOrTab(lastchar)) {
             mInWhitespace = true;
           } else {
             mInWhitespace = false;
