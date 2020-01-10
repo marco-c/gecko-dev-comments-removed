@@ -17,7 +17,7 @@ import pprint
 import sys
 from datetime import datetime
 
-from six import string_types
+from six import string_types, PY3
 from voluptuous import (
     Any,
     Optional,
@@ -96,7 +96,11 @@ def get_client_id(state_dir):
     import uuid
     
     client_id = str(uuid.uuid4())
-    with open(path, 'wb') as f:
+    if PY3:
+        file_mode = 'w'
+    else:
+        file_mode = 'wb'
+    with open(path, file_mode) as f:
         json.dump({'client_id': client_id}, f)
     return client_id
 
