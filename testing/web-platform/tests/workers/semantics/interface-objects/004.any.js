@@ -1,0 +1,46 @@
+
+
+var unexpected = [
+  
+  "DedicatedWorkerGlobalScope",
+  "AbstractView",
+  "AbstractWorker",
+  "Location",
+  "Navigator",
+  "DOMImplementation",
+  "Audio",
+  "HTMLCanvasElement",
+  "Path",
+  "TextMetrics",
+  "CanvasProxy",
+  "CanvasRenderingContext2D",
+  "DrawingStyle",
+  "PopStateEvent",
+  "HashChangeEvent",
+  "PageTransitionEvent",
+  
+  "ReadableStreamDefaultReader",
+  "ReadableStreamBYOBReader",
+  "ReadableStreamDefaultController",
+  "ReadableByteStreamController",
+  "WritableStreamDefaultWriter",
+  "WritableStreamDefaultController",
+  
+  "IDBEnvironment",
+  
+  "Database",
+  
+  "UIEvent",
+  "FocusEvent",
+  "MouseEvent",
+  "WheelEvent",
+  "InputEvent",
+  "KeyboardEvent",
+  "CompositionEvent",
+];
+
+for (var i = 0; i < unexpected.length; ++i) {
+  test(function() {
+    assert_false(unexpected[i] in self);
+  }, "The " + unexpected[i] + " interface object should not be exposed");
+}

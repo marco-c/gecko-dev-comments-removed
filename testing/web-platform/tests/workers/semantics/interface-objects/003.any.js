@@ -1,0 +1,83 @@
+
+
+var expected = [
+  
+  "ApplicationCache",
+  "WorkerGlobalScope",
+  "SharedWorkerGlobalScope",
+  "Worker",
+  "SharedWorker",
+  "MessagePort",
+  "MessageEvent",
+  "WorkerNavigator",
+  "MessageChannel",
+  "WorkerLocation",
+  "ImageData",
+  "ImageBitmap",
+  "CanvasGradient",
+  "CanvasPattern",
+  "CanvasPath",
+  "Path2D",
+  "PromiseRejectionEvent",
+  "EventSource",
+  "WebSocket",
+  "CloseEvent",
+  "BroadcastChannel",
+  
+  "ArrayBuffer",
+  "Int8Array",
+  "Uint8Array",
+  "Uint8ClampedArray",
+  "Int16Array",
+  "Uint16Array",
+  "Int32Array",
+  "Uint32Array",
+  "Float32Array",
+  "Float64Array",
+  "DataView",
+  
+  "XMLHttpRequestEventTarget",
+  "XMLHttpRequestUpload",
+  "XMLHttpRequest",
+  "ProgressEvent",
+  "FormData",
+  
+  "URL",
+  "URLSearchParams",
+  
+  "File",
+  "Blob",
+  "FileList",
+  "FileReader",
+  "FileReaderSync",
+  
+  "EventTarget",
+  "ErrorEvent",
+  "Event",
+  "CustomEvent",
+  
+  "DOMException",
+  
+  "ReadableStream",
+  "WritableStream",
+  "ByteLengthQueuingStrategy",
+  "CountQueuingStrategy",
+  
+  "IDBRequest",
+  "IDBOpenDBRequest",
+  "IDBVersionChangeEvent",
+  "IDBFactory",
+  "IDBDatabase",
+  "IDBObjectStore",
+  "IDBIndex",
+  "IDBKeyRange",
+  "IDBCursor",
+  "IDBCursorWithValue",
+  "IDBTransaction",
+];
+
+for (var i = 0; i < unexpected.length; ++i) {
+  test(function() {
+    assert_true(unexpected[i] in self);
+  }, "The " + unexpected[i] + " interface object should not be exposed");
+}
