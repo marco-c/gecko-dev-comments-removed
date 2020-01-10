@@ -1321,6 +1321,9 @@ pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", fal
 pref("trailhead.firstrun.branches", "join-privacy");
 
 
+pref("browser.messaging-system.whatsNewPanel.enabled", false);
+
+
 pref("full-screen-api.enabled", true);
 
 
