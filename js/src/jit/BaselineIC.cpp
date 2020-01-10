@@ -870,10 +870,6 @@ bool FallbackICCodeCompiler::emit_WarmUpCounter() {
   
   {
     
-    masm.subFromStackPtr(Imm32(sizeof(void*)));
-    masm.push(masm.getStackPointer());
-
-    
     masm.push(ICStubReg);
     masm.push(R0.scratchReg());
     pushStubPayload(masm, R0.scratchReg());
@@ -884,19 +880,15 @@ bool FallbackICCodeCompiler::emit_WarmUpCounter() {
       return false;
     }
 
-    
-    masm.pop(R0.scratchReg());
-
     leaveStubFrame(masm);
 
     
-    masm.branchPtr(Assembler::Equal, R0.scratchReg(), ImmPtr(nullptr),
-                   &noCompiledCode);
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, &noCompiledCode);
   }
 
   
   AllocatableGeneralRegisterSet regs(availableGeneralRegs(0));
-  Register osrDataReg = R0.scratchReg();
+  Register osrDataReg = ReturnReg;
   regs.take(osrDataReg);
   regs.takeUnchecked(OsrFrameReg);
 
