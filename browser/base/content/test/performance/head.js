@@ -256,35 +256,9 @@ async function ensureNoPreloadedBrowser(win = window) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-function forceImmediateToolbarOverflowHandling(win) {
-  let overflowableToolbar = win.document.getElementById("nav-bar").overflowable;
-  if (
-    overflowableToolbar._lazyResizeHandler &&
-    overflowableToolbar._lazyResizeHandler.isArmed
-  ) {
-    overflowableToolbar._lazyResizeHandler.disarm();
-    
-    
-    let dwu = win.windowUtils;
-    dwu.ensureDirtyRootFrame();
-    overflowableToolbar._checkOverflow();
-  }
-}
-
 async function prepareSettledWindow() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
-
   await ensureNoPreloadedBrowser(win);
-  forceImmediateToolbarOverflowHandling(win);
   return win;
 }
 
