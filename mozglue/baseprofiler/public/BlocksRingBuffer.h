@@ -469,13 +469,34 @@ class BlocksRingBuffer {
   
   class EntryWriter : public BufferWriter {
    public:
+    
 #ifdef DEBUG
+    EntryWriter(EntryWriter&& aOther)
+        : BufferWriter(std::move(aOther)),
+          mRing(aOther.mRing),
+          mEntryBytes(aOther.mEntryBytes),
+          mEntryStart(aOther.mEntryStart) {
+      
+      mRing.mMutex.AssertCurrentThreadOwns();
+      
+      
+      aOther += aOther.RemainingBytes();
+    }
+
     ~EntryWriter() {
+      
+      
       MOZ_ASSERT(RemainingBytes() == 0);
       
-      mRing->mMutex.AssertCurrentThreadOwns();
+      mRing.mMutex.AssertCurrentThreadOwns();
     }
+#else   
+    EntryWriter(EntryWriter&& aOther) = default;
 #endif  
+    
+    EntryWriter(const EntryWriter& aOther) = delete;
+    EntryWriter& operator=(const EntryWriter& aOther) = delete;
+    EntryWriter& operator=(EntryWriter&& aOther) = delete;
 
     
     
@@ -507,10 +528,10 @@ class BlocksRingBuffer {
     }
 
     
-    BlockIndex BufferRangeStart() const { return mRing->mFirstReadIndex; }
+    BlockIndex BufferRangeStart() const { return mRing.mFirstReadIndex; }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing->mNextWriteIndex; }
+    BlockIndex BufferRangeEnd() const { return mRing.mNextWriteIndex; }
 
     
     
@@ -519,8 +540,8 @@ class BlocksRingBuffer {
       MOZ_RELEASE_ASSERT(aBlockIndex < BufferRangeEnd());
       if (aBlockIndex >= BufferRangeStart()) {
         
-        mRing->AssertBlockIndexIsValid(aBlockIndex);
-        return Some(EntryReader(*mRing, aBlockIndex));
+        mRing.AssertBlockIndexIsValid(aBlockIndex);
+        return Some(EntryReader(mRing, aBlockIndex));
       }
       
       return Nothing();
@@ -540,7 +561,7 @@ class BlocksRingBuffer {
     EntryWriter(BlocksRingBuffer& aRing, BlockIndex aBlockIndex,
                 Length aEntryBytes)
         : BufferWriter(aRing.mBuffer.WriterAt(Index(aBlockIndex))),
-          mRing(WrapNotNull(&aRing)),
+          mRing(aRing),
           mEntryBytes(aEntryBytes),
           mEntryStart([&]() {
             
@@ -549,15 +570,14 @@ class BlocksRingBuffer {
             return CurrentIndex();
           }()) {
       
-      mRing->mMutex.AssertCurrentThreadOwns();
+      mRing.mMutex.AssertCurrentThreadOwns();
     }
 
     
     
-    
-    NotNull<BlocksRingBuffer*> mRing;
-    Length mEntryBytes;
-    Index mEntryStart;
+    BlocksRingBuffer& mRing;
+    const Length mEntryBytes;
+    const Index mEntryStart;
   };
 
   
