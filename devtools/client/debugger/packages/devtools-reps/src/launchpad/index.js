@@ -34,7 +34,15 @@ function onConnect(connection) {
       return connection.tabConnection.tabTarget.activeConsole.longString(grip);
     },
     releaseActor: function(actor) {
-      return connection.tabConnection.debuggerClient.release(actor);
+      const debuggerClient = connection.tabConnection.debuggerClient;
+      const objFront = debuggerClient.getFrontByID(actor);
+
+      if (objFront) {
+        return objFront.release();
+      }
+
+      
+      return debuggerClient.release(actor).catch(() => {});
     },
   };
 
