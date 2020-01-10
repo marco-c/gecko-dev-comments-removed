@@ -42,7 +42,13 @@ enum class SectionId {
   GcFeatureOptIn = 42  
 };
 
+
+
+static const uint8_t SLEB128SignMask = 0xc0;
+static const uint8_t SLEB128SignBit = 0x40;
+
 enum class TypeCode {
+
   I32 = 0x7f,  
   I64 = 0x7e,  
   F32 = 0x7d,  
