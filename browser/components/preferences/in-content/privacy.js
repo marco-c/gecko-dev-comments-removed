@@ -1152,17 +1152,24 @@ var gPrivacyPane = {
   
 
 
+
+
   reloadAllOtherTabs() {
-    let activeWindow = window.BrowserWindowTracker.getTopWindow();
-    let selectedPrefTab = activeWindow.gBrowser.selectedTab;
-    for (let win of window.BrowserWindowTracker.orderedWindows) {
-      let tabbrowser = win.gBrowser;
-      let tabsToReload = [...tabbrowser.tabs];
-      if (win == activeWindow ) {
-        tabsToReload = tabsToReload.filter(tab => tab !== selectedPrefTab);
+    let ourTab = BrowserWindowTracker.getTopWindow().gBrowser.selectedTab;
+    BrowserWindowTracker.orderedWindows.forEach(win => {
+      let otherGBrowser = win.gBrowser;
+      for (let tab of otherGBrowser.tabs) {
+        if (tab == ourTab) {
+          
+          continue;
+        }
+
+        if (tab.pinned || !otherGBrowser.discardBrowser(tab)) {
+          otherGBrowser.reloadTab(tab);
+        }
       }
-      tabbrowser.reloadTabs(tabsToReload);
-    }
+    });
+
     for (let notification of document.querySelectorAll(".reload-tabs")) {
       notification.hidden = true;
     }
