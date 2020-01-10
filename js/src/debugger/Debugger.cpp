@@ -4551,7 +4551,6 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
   
   
   
-  
 
   AutoRealm ar(cx, global);
   Zone* zone = global->zone();
@@ -4576,21 +4575,6 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
   auto debuggeesGuard = MakeScopeExit([&] { debuggees.remove(global); });
 
   bool addingZoneRelation = !debuggeeZones.has(zone);
-
-  
-  auto* zoneDebuggers = zone->getOrCreateDebuggers(cx);
-  if (!zoneDebuggers) {
-    return false;
-  }
-  if (addingZoneRelation && !zoneDebuggers->append(this)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-  auto zoneDebuggersGuard = MakeScopeExit([&] {
-    if (addingZoneRelation) {
-      zoneDebuggers->popBack();
-    }
-  });
 
   
   if (addingZoneRelation && !debuggeeZones.put(zone)) {
@@ -4627,7 +4611,6 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
 
   globalDebuggersGuard.release();
   debuggeesGuard.release();
-  zoneDebuggersGuard.release();
   debuggeeZonesGuard.release();
   allocationsTrackingGuard.release();
   debugModeGuard.release();
@@ -4721,7 +4704,6 @@ void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
   }
 
   auto* globalDebuggersVector = global->getDebuggers();
-  auto* zoneDebuggersVector = global->zone()->getDebuggers();
 
   
   
@@ -4742,10 +4724,6 @@ void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
   }
 
   recomputeDebuggeeZoneSet();
-
-  if (!debuggeeZones.has(global->zone())) {
-    zoneDebuggersVector->erase(findDebuggerInVector(this, zoneDebuggersVector));
-  }
 
   
   Breakpoint* nextbp;
