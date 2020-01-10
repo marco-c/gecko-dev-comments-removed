@@ -216,6 +216,8 @@ class nsFtpState final : public nsBaseContentStream,
   bool mRetryPass;          
   bool mStorReplyReceived;  
                             
+  bool mRlist1xxReceived;   
+                            
   nsresult mInternalError;  
   bool mReconnectAndLoginAgain;
   bool mCacheConnection;
