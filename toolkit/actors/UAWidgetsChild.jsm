@@ -14,6 +14,20 @@ class UAWidgetsChild extends JSWindowActorChild {
 
     this.widgets = new WeakMap();
     this.prefsCache = new Map();
+    this.observedPrefs = [];
+
+    
+    
+    
+    this.observerFunction = (subject, topic, data) => {
+      this.observe(subject, topic, data);
+    };
+  }
+
+  willDestroy() {
+    for (let pref in this.observedPrefs) {
+      Services.prefs.removeObserver(pref, this.observerFunction);
+    }
   }
 
   handleEvent(aEvent) {
@@ -28,11 +42,13 @@ class UAWidgetsChild extends JSWindowActorChild {
   }
 
   setupOrNotifyWidget(aElement) {
-    let widget = this.widgets.get(aElement);
-    if (!widget) {
+    if (!this.widgets.has(aElement)) {
       this.setupWidget(aElement);
       return;
     }
+
+    let { widget } = this.widgets.get(aElement);
+
     if (typeof widget.onchange == "function") {
       try {
         widget.onchange();
@@ -45,6 +61,12 @@ class UAWidgetsChild extends JSWindowActorChild {
   setupWidget(aElement) {
     let uri;
     let widgetName;
+    
+    
+    
+    
+    
+    
     let prefKeys = [];
     switch (aElement.localName) {
       case "video":
@@ -104,7 +126,7 @@ class UAWidgetsChild extends JSWindowActorChild {
     if (!isSystemPrincipal) {
       widget = widget.wrappedJSObject;
     }
-    this.widgets.set(aElement, widget);
+    this.widgets.set(aElement, { widget, widgetName });
     try {
       widget.onsetup();
     } catch (ex) {
@@ -113,10 +135,10 @@ class UAWidgetsChild extends JSWindowActorChild {
   }
 
   teardownWidget(aElement) {
-    let widget = this.widgets.get(aElement);
-    if (!widget) {
+    if (!this.widgets.has(aElement)) {
       return;
     }
+    let { widget } = this.widgets.get(aElement);
     if (typeof widget.destructor == "function") {
       try {
         widget.destructor();
@@ -135,23 +157,63 @@ class UAWidgetsChild extends JSWindowActorChild {
 
     result = {};
     for (let key of aPrefKeys) {
-      switch (Services.prefs.getPrefType(key)) {
-        case Ci.nsIPrefBranch.PREF_BOOL: {
-          result[key] = Services.prefs.getBoolPref(key);
-          break;
-        }
-        case Ci.nsIPrefBranch.PREF_INT: {
-          result[key] = Services.prefs.getIntPref(key);
-          break;
-        }
-        case Ci.nsIPrefBranch.PREF_STRING: {
-          result[key] = Services.prefs.getStringPref(key);
-          break;
-        }
-      }
+      result[key] = this.getPref(key);
+      this.observePref(key);
     }
 
     this.prefsCache.set(aWidgetName, result);
     return result;
+  }
+
+  observePref(prefKey) {
+    Services.prefs.addObserver(prefKey, this.observerFunction);
+    this.observedPrefs.push(prefKey);
+  }
+
+  getPref(prefKey) {
+    switch (Services.prefs.getPrefType(prefKey)) {
+      case Ci.nsIPrefBranch.PREF_BOOL: {
+        return Services.prefs.getBoolPref(prefKey);
+      }
+      case Ci.nsIPrefBranch.PREF_INT: {
+        return Services.prefs.getIntPref(prefKey);
+      }
+      case Ci.nsIPrefBranch.PREF_STRING: {
+        return Services.prefs.getStringPref(prefKey);
+      }
+    }
+
+    return undefined;
+  }
+
+  observe(subject, topic, data) {
+    if (topic == "nsPref:changed") {
+      for (let [widgetName, prefCache] of this.prefsCache) {
+        if (prefCache.hasOwnProperty(data)) {
+          let newValue = this.getPref(data);
+          prefCache[data] = newValue;
+
+          this.notifyWidgetsOnPrefChange(widgetName, data, newValue);
+        }
+      }
+    }
+  }
+
+  notifyWidgetsOnPrefChange(nameOfWidgetToNotify, prefKey, newValue) {
+    let elements = ChromeUtils.nondeterministicGetWeakMapKeys(this.widgets);
+    for (let element of elements) {
+      if (!Cu.isDeadWrapper(element) && element.isConnected) {
+        let { widgetName, widget } = this.widgets.get(element);
+        if (widgetName == nameOfWidgetToNotify) {
+          if (typeof widget.onPrefChange == "function") {
+            try {
+              widget.onPrefChange(prefKey, newValue);
+            } catch (ex) {
+              Cu.reportError(ex);
+            }
+          }
+        }
+      }
+    }
   }
 }
