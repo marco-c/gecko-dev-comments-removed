@@ -12,14 +12,6 @@ const WIDTH = 375;
 const HEIGHT = 450;
 const ZOOM_LEVELS = [0.3, 0.5, 0.9, 1, 1.5, 2, 2.4];
 
-function promiseContentReflow(ui) {
-  return ContentTask.spawn(ui.getViewportBrowser(), {}, async function() {
-    return new Promise(resolve => {
-      content.window.requestAnimationFrame(resolve);
-    });
-  });
-}
-
 add_task(async function() {
   const tab = await addTab(TEST_URL);
   const browser = tab.linkedBrowser;
@@ -30,17 +22,7 @@ add_task(async function() {
   info("Ensure outer size values are unchanged at different zoom levels.");
   for (let i = 0; i < ZOOM_LEVELS.length; i++) {
     info(`Setting zoom level to ${ZOOM_LEVELS[i]}`);
-    ZoomManager.setZoomForBrowser(browser, ZOOM_LEVELS[i]);
-
-    
-    
-    
-    
-    
-    
-    
-    await promiseContentReflow(ui);
-    await promiseContentReflow(ui);
+    await promiseRDMZoom(ui, browser, ZOOM_LEVELS[i]);
 
     await checkWindowOuterSize(ui, ZOOM_LEVELS[i]);
     await checkWindowScreenSize(ui, ZOOM_LEVELS[i]);
