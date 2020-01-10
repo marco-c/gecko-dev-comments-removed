@@ -17,7 +17,13 @@ class AdbRuntime {
     const packageName = this._packageName();
     const query = `dumpsys package ${packageName} | grep versionName`;
     const versionNameString = await shell(this._adbDevice.id, query);
-    const matches = versionNameString.match(/versionName=([\d.]+)/);
+
+    
+    
+    
+    
+    
+    const matches = versionNameString.match(/versionName=(.*)\n/);
     if (matches && matches[1]) {
       this._versionName = matches[1];
     }
