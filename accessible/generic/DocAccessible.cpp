@@ -1294,6 +1294,36 @@ void DocAccessible::ContentInserted(nsIContent* aStartChildNode,
 
 bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
   bool insert = false;
+
+  
+  
+  nsIContent* shadowHost =
+      aRoot->GetShadowRoot() ? aRoot : aRoot->GetContainingShadowHost();
+  if (shadowHost) {
+    dom::ExplicitChildIterator iter(shadowHost);
+
+    
+    
+    while (nsIContent* childNode = iter.GetNextChild()) {
+      if (!childNode->GetPrimaryFrame() &&
+          !nsCoreUtils::IsDisplayContents(childNode)) {
+        ContentRemoved(childNode);
+      }
+    }
+
+    
+    
+    if (aRoot->IsHTMLElement(nsGkAtoms::slot)) {
+      for (nsIContent* childNode = aRoot->GetFirstChild(); childNode;
+           childNode = childNode->GetNextSibling()) {
+        if (!childNode->GetPrimaryFrame() &&
+            !nsCoreUtils::IsDisplayContents(childNode)) {
+          ContentRemoved(childNode);
+        }
+      }
+    }
+  }
+
   
   
   Accessible* acc = GetAccessible(aRoot);
@@ -1334,6 +1364,11 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
       ContentRemoved(aRoot);
       return true;
     }
+
+    
+    
+    
+    insert = true;
   } else {
     
     
@@ -1762,6 +1797,7 @@ class InsertIterator final {
   TreeWalker mWalker;
 
   const nsTArray<nsCOMPtr<nsIContent> >* mNodes;
+  nsTHashtable<nsPtrHashKey<const nsIContent>> mProcessedNodes;
   uint32_t mNodesIdx;
 };
 
@@ -1787,7 +1823,15 @@ bool InsertIterator::Next() {
     
     nsIContent* prevNode = mNodes->SafeElementAt(mNodesIdx - 1);
     nsIContent* node = mNodes->ElementAt(mNodesIdx++);
-    Accessible* container = Document()->AccessibleOrTrueContainer(node, true);
+    
+    
+    
+    if (!mProcessedNodes.EnsureInserted(node)) {
+      continue;
+    }
+
+    Accessible* container =
+        Document()->AccessibleOrTrueContainer(node->GetParentNode(), true);
     if (container != Context()) {
       continue;
     }
@@ -1856,20 +1900,17 @@ void DocAccessible::ProcessContentInserted(
   do {
     Accessible* parent = iter.Child()->Parent();
     if (parent) {
-      if (parent != aContainer) {
+      Accessible* previousSibling = iter.ChildBefore();
+      if (parent != aContainer ||
+          iter.Child()->PrevSibling() != previousSibling) {
 #ifdef A11Y_LOG
-        logging::TreeInfo("stealing accessible", 0, "old parent", parent,
+        logging::TreeInfo("relocating accessible", 0, "old parent", parent,
                           "new parent", aContainer, "child", iter.Child(),
                           nullptr);
 #endif
-        MOZ_ASSERT_UNREACHABLE("stealing accessible");
-        continue;
+        MoveChild(iter.Child(), aContainer,
+                  previousSibling ? previousSibling->IndexInParent() + 1 : 0);
       }
-
-#ifdef A11Y_LOG
-      logging::TreeInfo("binding to same parent", logging::eVerbose, "parent",
-                        aContainer, "child", iter.Child(), nullptr);
-#endif
       continue;
     }
 
