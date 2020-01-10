@@ -172,7 +172,7 @@ if not on_rtd:
 
 
 
-
+html_show_copyright = False
 
 
 

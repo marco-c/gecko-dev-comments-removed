@@ -151,3 +151,5 @@ htmlhelp_basename = 'Pastedoc'
 
 
 
+
+html_show_copyright = False
