@@ -172,7 +172,13 @@ class BlocksRingBuffer {
 
   
   
-  ~BlocksRingBuffer() { DestroyAllEntries(); }
+  ~BlocksRingBuffer() {
+#ifdef DEBUG
+    
+    baseprofiler::detail::BPAutoLock lock(mMutex);
+#endif  
+    DestroyAllEntries();
+  }
 
   
   PowerOfTwo<Length> BufferLength() const { return mBuffer.BufferLength(); }
@@ -190,11 +196,15 @@ class BlocksRingBuffer {
   
   class EntryReader : public BufferReader {
    public:
+#ifdef DEBUG
     ~EntryReader() {
       
       MOZ_ASSERT(CurrentIndex() >= mEntryStart);
       MOZ_ASSERT(CurrentIndex() <= mEntryStart + mEntryBytes);
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
     }
+#endif  
 
     
     
@@ -262,7 +272,10 @@ class BlocksRingBuffer {
         : BufferReader(aRing.mBuffer.ReaderAt(Index(aBlockIndex))),
           mRing(WrapNotNull(&aRing)),
           mEntryBytes(BufferReader::ReadULEB128<Length>()),
-          mEntryStart(CurrentIndex()) {}
+          mEntryStart(CurrentIndex()) {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
 
     
     
@@ -278,6 +291,13 @@ class BlocksRingBuffer {
   
   class BlockIterator {
    public:
+#ifdef DEBUG
+    ~BlockIterator() {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
+#endif  
+
     
     bool operator==(const BlockIterator aRhs) const {
       MOZ_ASSERT(mRing == aRhs.mRing);
@@ -327,7 +347,10 @@ class BlocksRingBuffer {
     friend class Reader;
 
     BlockIterator(const BlocksRingBuffer& aRing, BlockIndex aBlockIndex)
-        : mRing(WrapNotNull(&aRing)), mBlockIndex(aBlockIndex) {}
+        : mRing(WrapNotNull(&aRing)), mBlockIndex(aBlockIndex) {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
 
     
     
@@ -340,6 +363,13 @@ class BlocksRingBuffer {
   
   class Reader {
    public:
+#ifdef DEBUG
+    ~Reader() {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
+#endif  
+
     
     BlockIndex BufferRangeStart() const { return mRing->mFirstReadIndex; }
 
@@ -369,7 +399,10 @@ class BlocksRingBuffer {
     friend class BlocksRingBuffer;
 
     explicit Reader(const BlocksRingBuffer& aRing)
-        : mRing(WrapNotNull(&aRing)) {}
+        : mRing(WrapNotNull(&aRing)) {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
 
     
     
@@ -419,6 +452,14 @@ class BlocksRingBuffer {
   
   class EntryWriter : public BufferWriter {
    public:
+#ifdef DEBUG
+    ~EntryWriter() {
+      MOZ_ASSERT(RemainingBytes() == 0);
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
+#endif  
+
     
     
     
@@ -489,9 +530,10 @@ class BlocksRingBuffer {
             BufferWriter::WriteULEB128(aEntryBytes);
             
             return CurrentIndex();
-          }()) {}
-
-    ~EntryWriter() { MOZ_ASSERT(RemainingBytes() == 0); }
+          }()) {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
 
     
     
@@ -505,6 +547,13 @@ class BlocksRingBuffer {
   
   class EntryReserver {
    public:
+#ifdef DEBUG
+    ~EntryReserver() {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
+#endif  
+
     
     
     
@@ -583,7 +632,10 @@ class BlocksRingBuffer {
     friend class BlocksRingBuffer;
 
     explicit EntryReserver(BlocksRingBuffer& aRing)
-        : mRing(WrapNotNull(&aRing)) {}
+        : mRing(WrapNotNull(&aRing)) {
+      
+      mRing->mMutex.AssertCurrentThreadOwns();
+    }
 
     
     
@@ -703,6 +755,7 @@ class BlocksRingBuffer {
   
   
   void AssertBlockIndexIsValid(BlockIndex aBlockIndex) const {
+    mMutex.AssertCurrentThreadOwns();
 #ifdef DEBUG
     MOZ_ASSERT(aBlockIndex >= mFirstReadIndex);
     MOZ_ASSERT(aBlockIndex < mNextWriteIndex);
@@ -735,6 +788,7 @@ class BlocksRingBuffer {
 
   
   EntryReader ReaderInBlockAt(BlockIndex aBlockIndex) const {
+    mMutex.AssertCurrentThreadOwns();
     MOZ_ASSERT(aBlockIndex >= mFirstReadIndex);
     MOZ_ASSERT(aBlockIndex < mNextWriteIndex);
     return EntryReader(*this, aBlockIndex);
@@ -744,6 +798,7 @@ class BlocksRingBuffer {
   
   
   void DestroyAllEntries() {
+    mMutex.AssertCurrentThreadOwns();
     if (mEntryDestructor) {
       
       Reader(*this).ForEach(
@@ -755,6 +810,7 @@ class BlocksRingBuffer {
   
   
   void ClearAllEntries() {
+    mMutex.AssertCurrentThreadOwns();
     DestroyAllEntries();
     
     
