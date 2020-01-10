@@ -13,6 +13,7 @@
 
 
 
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["BrowserTestUtils"];
@@ -745,6 +746,25 @@ var BrowserTestUtils = {
     ) {
       await this.waitForEvent(browser, "XULFrameLoaderCreated");
     }
+  },
+
+  
+
+
+
+
+
+  async maybeCreatePreloadedBrowser(gBrowser) {
+    let win = gBrowser.ownerGlobal;
+    win.NewTabPagePreloading.maybeCreatePreloadedBrowser(win);
+
+    
+    
+    await ContentTask.spawn(gBrowser.preloadedBrowser, null, async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document && content.document.readyState == "complete";
+      });
+    });
   },
 
   

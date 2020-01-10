@@ -244,7 +244,7 @@ add_task(async function test_preload_crash() {
   NewTabPagePreloading.removePreloadedBrowser(window);
 
   
-  NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
+  await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
 
   await BrowserTestUtils.crashBrowser(gBrowser.preloadedBrowser, false);
 

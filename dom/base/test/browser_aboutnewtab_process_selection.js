@@ -15,18 +15,6 @@ add_task(async function() {
   });
 });
 
-
-async function ensurePreloaded(gBrowser) {
-  NewTabPagePreloading.maybeCreatePreloadedBrowser(gBrowser.ownerGlobal);
-  
-  
-  await ContentTask.spawn(gBrowser.preloadedBrowser, null, async () => {
-    await ContentTaskUtils.waitForCondition(() => {
-      return content.document && content.document.readyState == "complete";
-    });
-  });
-}
-
 add_task(async function() {
   
   if (!gMultiProcessBrowser) {
@@ -36,7 +24,7 @@ add_task(async function() {
   ppmm.releaseCachedProcesses();
 
   
-  await ensurePreloaded(gBrowser);
+  await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
 
   
   const { childCount: originalChildCount } = ppmm;
@@ -44,7 +32,7 @@ add_task(async function() {
   
   BrowserOpenTab();
   let tab1 = gBrowser.selectedTab;
-  await ensurePreloaded(gBrowser);
+  await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
 
   
   is(
@@ -56,7 +44,7 @@ add_task(async function() {
   
   BrowserOpenTab();
   let tab2 = gBrowser.selectedTab;
-  await ensurePreloaded(gBrowser);
+  await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
 
   
   is(
@@ -102,7 +90,7 @@ add_task(async function() {
 
 add_task(async function preloaded_state_attribute() {
   
-  await ensurePreloaded(gBrowser);
+  await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
   let preloadedTabState = gBrowser.preloadedBrowser.getAttribute(
     "preloadedState"
   );
@@ -113,7 +101,7 @@ add_task(async function preloaded_state_attribute() {
   );
 
   BrowserOpenTab();
-  await ensurePreloaded(gBrowser);
+  await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
 
   
   let consumedTabState = gBrowser.selectedBrowser.getAttribute(
