@@ -625,7 +625,7 @@ var PermissionPromptPrototype = {
       options.hideClose = true;
     }
 
-    options.eventCallback = (topic, nextRemovalReason) => {
+    options.eventCallback = (topic, nextRemovalReason, isCancel) => {
       
       
       
@@ -652,6 +652,9 @@ var PermissionPromptPrototype = {
             this._buttonAction,
             nextRemovalReason
           );
+        }
+        if (isCancel) {
+          this.cancel();
         }
         this.onAfterShow();
       }

@@ -356,10 +356,14 @@ PopupNotifications.prototype = {
 
 
 
+
   getNotification: function PopupNotifications_getNotification(id, browser) {
     let notifications = this._getNotificationsForBrowser(
       browser || this.tabbrowser.selectedBrowser
     );
+    if (Array.isArray(id)) {
+      return notifications.filter(x => id.includes(x.id));
+    }
     return notifications.find(x => x.id == id) || null;
   },
 
@@ -733,14 +737,17 @@ PopupNotifications.prototype = {
 
 
 
-  remove: function PopupNotifications_remove(notification) {
+
+
+
+  remove: function PopupNotifications_remove(notification, isCancel = false) {
     let notificationArray = Array.isArray(notification)
       ? notification
       : [notification];
     let activeBrowser;
 
     notificationArray.forEach(n => {
-      this._remove(n);
+      this._remove(n, isCancel);
       if (!activeBrowser && this._isActiveBrowser(n.browser)) {
         activeBrowser = n.browser;
       }
@@ -796,7 +803,10 @@ PopupNotifications.prototype = {
       : [];
   },
 
-  _remove: function PopupNotifications_removeHelper(notification) {
+  _remove: function PopupNotifications_removeHelper(
+    notification,
+    isCancel = false
+  ) {
     
     
     let notifications = this._getNotificationsForBrowser(notification.browser);
@@ -818,7 +828,8 @@ PopupNotifications.prototype = {
     this._fireCallback(
       notification,
       NOTIFICATION_EVENT_REMOVED,
-      this.nextRemovalReason
+      this.nextRemovalReason,
+      isCancel
     );
   },
 
