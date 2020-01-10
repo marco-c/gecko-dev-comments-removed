@@ -202,18 +202,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   class CurrentLineContent {
    public:
     
-    explicit CurrentLineContent(int32_t aFlags);
-
-    void MaybeReplaceNbsps();
+    void MaybeReplaceNbsps(int32_t aFlags);
 
     nsString mValue;
 
     
     uint32_t mWidth = 0;
-
-   private:
-    
-    int32_t mFlags;
   };
 
   CurrentLineContent mCurrentLineContent;
