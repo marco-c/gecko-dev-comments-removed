@@ -3567,8 +3567,12 @@ class HTMLEditor final : public TextEditor,
 
   bool SetCaretInTableCell(dom::Element* aElement);
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult TabInTable(bool inIsShift, bool* outHandled);
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleTabKeyPressInTable(WidgetKeyboardEvent* aKeyboardEvent);
 
   
 

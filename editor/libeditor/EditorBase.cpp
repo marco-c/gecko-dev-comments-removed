@@ -939,7 +939,11 @@ void EditorBase::EndPlaceholderTransaction() {
 
     
     
-    ScrollSelectionIntoView(false);
+    
+    
+    DebugOnly<nsresult> rvIgnored = ScrollSelectionFocusIntoView();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "ScrollSelectionFocusIntoView() failed, but Ignored");
 
     
     SelectionRefPtr()->SetCanCacheFrameOffset(false);
@@ -2617,20 +2621,20 @@ void EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
   }
 }
 
-nsresult EditorBase::ScrollSelectionIntoView(bool aScrollToAnchor) {
+nsresult EditorBase::ScrollSelectionFocusIntoView() {
   nsISelectionController* selectionController = GetSelectionController();
   if (!selectionController) {
     return NS_OK;
   }
 
-  int16_t region = nsISelectionController::SELECTION_FOCUS_REGION;
-  if (aScrollToAnchor) {
-    region = nsISelectionController::SELECTION_ANCHOR_REGION;
-  }
-  selectionController->ScrollSelectionIntoView(
-      nsISelectionController::SELECTION_NORMAL, region,
+  DebugOnly<nsresult> rvIgnored = selectionController->ScrollSelectionIntoView(
+      nsISelectionController::SELECTION_NORMAL,
+      nsISelectionController::SELECTION_FOCUS_REGION,
       nsISelectionController::SCROLL_OVERFLOW_HIDDEN);
-  return NS_OK;
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "nsISelectionController::ScrollSelectionIntoView() failed, but ignored");
+  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
 EditorRawDOMPoint EditorBase::FindBetterInsertionPoint(

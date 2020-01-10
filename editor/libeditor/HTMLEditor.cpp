@@ -668,9 +668,14 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
         return TextEditor::HandleKeyPressEvent(aKeyboardEvent);
       }
 
+      
+      
       if (IsTabbable()) {
-        return NS_OK;  
+        return NS_OK;
       }
+
+      
+      
 
       if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
           aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {
@@ -691,33 +696,42 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
         break;
       }
 
-      bool handled = false;
-      nsresult rv = NS_OK;
+      
       if (HTMLEditUtils::IsTableElement(blockParent)) {
-        rv = TabInTable(aKeyboardEvent->IsShift(), &handled);
-        
-        if (Destroyed()) {
+        EditActionResult result = HandleTabKeyPressInTable(aKeyboardEvent);
+        if (NS_WARN_IF(result.Failed())) {
+          return EditorBase::ToGenericNSResult(result.Rv());
+        }
+        if (!result.Handled()) {
           return NS_OK;
         }
-        if (handled) {
-          ScrollSelectionIntoView(false);
+        nsresult rv = ScrollSelectionFocusIntoView();
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "ScrollSelectionFocusIntoView() failed");
+        return EditorBase::ToGenericNSResult(rv);
+      }
+
+      
+      if (HTMLEditUtils::IsListItem(blockParent)) {
+        nsresult rv =
+            !aKeyboardEvent->IsShift() ? IndentAsAction() : OutdentAsAction();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return EditorBase::ToGenericNSResult(rv);
         }
-      } else if (HTMLEditUtils::IsListItem(blockParent)) {
-        rv = !aKeyboardEvent->IsShift() ? IndentAsAction() : OutdentAsAction();
-        handled = true;
-      }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      if (handled) {
-        aKeyboardEvent->PreventDefault();  
+        aKeyboardEvent->PreventDefault();
         return NS_OK;
       }
+
+      
+      
       if (aKeyboardEvent->IsShift()) {
-        return NS_OK;  
+        return NS_OK;
       }
       aKeyboardEvent->PreventDefault();
-      return OnInputText(NS_LITERAL_STRING("\t"));
+      nsresult rv = OnInputText(NS_LITERAL_STRING("\t"));
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "OnInputText() with tab character failed");
+      return EditorBase::ToGenericNSResult(rv);
     }
     case NS_VK_RETURN:
       if (!aKeyboardEvent->IsInputtingLineBreak()) {
@@ -1000,27 +1014,27 @@ nsresult HTMLEditor::InsertParagraphSeparatorAsAction(
   return EditorBase::ToGenericNSResult(result.Rv());
 }
 
-nsresult HTMLEditor::TabInTable(bool inIsShift, bool* outHandled) {
-  NS_ENSURE_TRUE(outHandled, NS_ERROR_NULL_POINTER);
-  *outHandled = false;
+EditActionResult HTMLEditor::HandleTabKeyPressInTable(
+    WidgetKeyboardEvent* aKeyboardEvent) {
+  MOZ_ASSERT(aKeyboardEvent);
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
+  AutoEditActionDataSetter dummyEditActionData(*this, EditAction::eNotEditing);
+  if (NS_WARN_IF(!dummyEditActionData.CanHandle())) {
     
-    return NS_OK;
+    return EditActionIgnored();
   }
 
   
   Element* cellElement = GetElementOrParentByTagNameAtSelection(*nsGkAtoms::td);
   if (NS_WARN_IF(!cellElement)) {
     
-    return NS_OK;
+    return EditActionIgnored();
   }
 
   
   RefPtr<Element> table = GetEnclosingTable(cellElement);
   if (NS_WARN_IF(!table)) {
-    return NS_OK;
+    return EditActionIgnored();
   }
 
   
@@ -1028,70 +1042,74 @@ nsresult HTMLEditor::TabInTable(bool inIsShift, bool* outHandled) {
   PostContentIterator postOrderIter;
   nsresult rv = postOrderIter.Init(table);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+    return EditActionResult(rv);
   }
   
   rv = postOrderIter.PositionAt(cellElement);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+    return EditActionResult(rv);
   }
 
-  nsCOMPtr<nsINode> node;
   do {
-    if (inIsShift) {
+    if (aKeyboardEvent->IsShift()) {
       postOrderIter.Prev();
     } else {
       postOrderIter.Next();
     }
 
-    node = postOrderIter.GetCurrentNode();
-
+    nsCOMPtr<nsINode> node = postOrderIter.GetCurrentNode();
     if (node && HTMLEditUtils::IsTableCell(node) &&
         GetEnclosingTable(node) == table) {
+      aKeyboardEvent->PreventDefault();
       CollapseSelectionToDeepestNonTableFirstChild(node);
-      *outHandled = true;
-      return NS_OK;
+      return EditActionHandled(
+          NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK);
     }
   } while (!postOrderIter.IsDone());
 
-  if (!(*outHandled) && !inIsShift) {
-    
-    
-    
-    
-    AutoEditActionDataSetter editActionData(*this,
-                                            EditAction::eInsertTableRowElement);
-    if (NS_WARN_IF(!editActionData.CanHandle())) {
-      return NS_ERROR_FAILURE;
-    }
-    rv = InsertTableRowsWithTransaction(1, InsertPosition::eAfterSelectedCell);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    *outHandled = true;
-    
-    
-    RefPtr<Element> tblElement, cell;
-    int32_t row;
-    rv = GetCellContext(getter_AddRefs(tblElement), getter_AddRefs(cell),
-                        nullptr, nullptr, &row, nullptr);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    if (NS_WARN_IF(!tblElement)) {
-      return NS_ERROR_FAILURE;
-    }
-    
-    cell = GetTableCellElementAt(*tblElement, row, 0);
-    
-    
-    
-    if (cell) {
-      SelectionRefPtr()->Collapse(cell, 0);
-    }
+  if (aKeyboardEvent->IsShift()) {
+    return EditActionIgnored();
   }
 
-  return NS_OK;
+  
+  
+  
+  
+  AutoEditActionDataSetter editActionData(*this,
+                                          EditAction::eInsertTableRowElement);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+  rv = InsertTableRowsWithTransaction(1, InsertPosition::eAfterSelectedCell);
+  if (NS_WARN_IF(Destroyed())) {
+    return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return EditActionHandled(rv);
+  }
+  aKeyboardEvent->PreventDefault();
+  
+  
+  RefPtr<Element> tblElement, cell;
+  int32_t row;
+  rv = GetCellContext(getter_AddRefs(tblElement), getter_AddRefs(cell), nullptr,
+                      nullptr, &row, nullptr);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return EditActionHandled(rv);
+  }
+  if (NS_WARN_IF(!tblElement)) {
+    return EditActionHandled(NS_ERROR_FAILURE);
+  }
+  
+  cell = GetTableCellElementAt(*tblElement, row, 0);
+  
+  
+  
+  if (cell) {
+    SelectionRefPtr()->Collapse(cell, 0);
+  }
+  return EditActionHandled(NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED
+                                                   : NS_OK);
 }
 
 nsresult HTMLEditor::InsertBrElementAtSelectionWithTransaction() {

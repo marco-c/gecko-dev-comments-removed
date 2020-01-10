@@ -2248,9 +2248,7 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-  nsresult ScrollSelectionIntoView(bool aScrollToAnchor);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult ScrollSelectionFocusIntoView();
 
   
 

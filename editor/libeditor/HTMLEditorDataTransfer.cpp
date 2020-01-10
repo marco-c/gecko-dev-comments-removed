@@ -1321,7 +1321,9 @@ nsresult HTMLEditor::InsertFromTransferable(nsITransferable* transferable,
   }
 
   
-  ScrollSelectionIntoView(false);
+  DebugOnly<nsresult> rvIgnored = ScrollSelectionFocusIntoView();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "ScrollSelectionFocusIntoView() failed, but ignored");
   return NS_OK;
 }
 
