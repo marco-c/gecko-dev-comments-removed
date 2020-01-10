@@ -277,7 +277,7 @@ tab_test("elem.drop 0", "",
 
 tab_test("elem.drop 3", "",
          WebAssembly.CompileError,
-         /active elem segment requires a table section/,
+         /active elem segment requires a table/,
          false, true, true);
 
 

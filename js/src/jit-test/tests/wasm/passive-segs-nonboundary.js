@@ -311,7 +311,7 @@ function checkPassiveElemSegment(mangle, err) {
            body: (function () {
                let body = [];
                body.push(1);           
-               body.push(1);           
+               body.push(0x1 | 0x4);   
                body.push(AnyFuncCode + (mangle == "type" ? 1 : 0)); 
                body.push(1);           
                body.push(RefFuncCode + (mangle == "ref.func" ? 1 : 0)); 
@@ -334,7 +334,7 @@ function checkPassiveElemSegment(mangle, err) {
 }
 
 checkPassiveElemSegment("");
-checkPassiveElemSegment("type", /passive segments can only contain function references/);
+checkPassiveElemSegment("type", /segments with element expressions can only contain function references/);
 checkPassiveElemSegment("ref.func", /failed to read initializer operation/);
 checkPassiveElemSegment("end", /failed to read end of initializer expression/);
 
