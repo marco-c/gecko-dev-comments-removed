@@ -23,13 +23,14 @@ async function run_test() {
   checkFilesAfterUpdateFailure(getApplyDirFile);
   await waitForUpdateXMLFiles();
   if (gIsServiceTest) {
-    checkUpdateManager(
-      STATE_NONE,
-      false,
-      STATE_FAILED,
-      SERVICE_INVALID_APPLYTO_DIR_ERROR,
-      1
-    );
+    
+    
+    
+    
+    
+    
+    
+    checkUpdateManager(STATE_NONE, false, STATE_PENDING_SVC, 0, 1);
   } else {
     checkUpdateManager(
       STATE_NONE,
