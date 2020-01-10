@@ -212,8 +212,20 @@ def run(paths, linters, formats, outgoing, workdir, edit,
 
         out = formatter(result)
         if out:
-            output_file = open(path, 'w') if path else sys.stdout
-            print(out, file=output_file)
+            fh = open(path, 'w') if path else sys.stdout
+
+            if not path and fh.encoding == 'ascii':
+                
+                
+                
+                
+                
+                
+                out += '\n'
+                fh.buffer.write(out.encode('utf-8', errors='replace'))
+                fh.buffer.flush()
+            else:
+                print(out, file=fh)
 
     return result.returncode
 
