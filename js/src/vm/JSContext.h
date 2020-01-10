@@ -183,7 +183,9 @@ struct JSContext : public JS::RootingContext,
 
   
   
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire> freeUnusedMemory;
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      freeUnusedMemory;
 
  public:
   
