@@ -53,6 +53,14 @@ let RPMAccessManager = {
       getAppBuildID: ["yes"],
       recordTelemetryEvent: ["yes"],
     },
+    "about:neterror": {
+      getFormatURLPref: ["app.support.baseURL"],
+      getBoolPref: [
+        "security.ssl.errorReporting.enabled",
+        "security.ssl.errorReporting.automatic",
+        "security.certerror.hideAddException",
+      ],
+    },
     "about:privatebrowsing": {
       
       getFormatURLPref: ["app.support.baseURL"],
@@ -99,6 +107,9 @@ let RPMAccessManager = {
     let uri = aPrincipal.URI.asciiSpec;
     if (uri.startsWith("about:certerror")) {
       uri = "about:certerror";
+    }
+    if (uri.startsWith("about:neterror")) {
+      uri = "about:neterror";
     }
 
     
