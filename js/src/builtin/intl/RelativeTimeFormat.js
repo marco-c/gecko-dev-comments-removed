@@ -60,8 +60,7 @@ function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
 
 
 
-
-function getRelativeTimeFormatInternals(obj, methodName) {
+function getRelativeTimeFormatInternals(obj) {
     assert(IsObject(obj), "getRelativeTimeFormatInternals called with non-object");
     assert(GuardToRelativeTimeFormat(obj) !== null, "getRelativeTimeFormatInternals called with non-RelativeTimeFormat");
 
@@ -245,7 +244,7 @@ function Intl_RelativeTimeFormat_resolvedOptions() {
                             "Intl_RelativeTimeFormat_resolvedOptions");
     }
 
-    var internals = getRelativeTimeFormatInternals(relativeTimeFormat, "resolvedOptions");
+    var internals = getRelativeTimeFormatInternals(relativeTimeFormat);
 
     
     var result = {
