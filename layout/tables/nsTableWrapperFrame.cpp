@@ -173,6 +173,7 @@ void nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   if (mCaptionFrames.IsEmpty()) {
     BuildDisplayListForInnerTable(aBuilder, aLists);
+    DisplayOutline(aBuilder, aLists);
     return;
   }
 
@@ -193,6 +194,8 @@ void nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   set.PositionedDescendants()->SortByContentOrder(GetContent());
   set.Outlines()->SortByContentOrder(GetContent());
   set.MoveTo(aLists);
+
+  DisplayOutline(aBuilder, aLists);
 }
 
 void nsTableWrapperFrame::BuildDisplayListForInnerTable(

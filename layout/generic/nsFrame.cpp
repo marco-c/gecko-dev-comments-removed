@@ -2410,6 +2410,11 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  
+  if (IsTableFrame()) {
+    return;
+  }
+
   if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT) &&
       GetScrollableOverflowRect().IsEmpty()) {
     
