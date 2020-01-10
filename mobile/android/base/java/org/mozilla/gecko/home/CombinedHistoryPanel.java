@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.annotation.UiThread;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -111,6 +112,15 @@ public class CombinedHistoryPanel extends HomeFragment implements RemoteClientsD
     @Override
     public void onCreate(Bundle savedInstance) {
         super.onCreate(savedInstance);
+
+        
+        
+        
+        
+        final FragmentActivity parent = getActivity();
+        if (parent != null && parent.isFinishing()) {
+            return;
+        }
 
         int cachedRecentTabsCount = 0;
         if (mPanelStateChangeListener != null ) {
