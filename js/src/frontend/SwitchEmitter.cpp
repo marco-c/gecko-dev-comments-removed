@@ -15,7 +15,6 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/SharedContext.h"    
-#include "frontend/SourceNotes.h"      
 #include "js/TypeDecls.h"              
 #include "util/BitArray.h"
 #include "vm/BytecodeUtil.h"  
@@ -178,11 +177,6 @@ bool SwitchEmitter::emitTable(const TableGenerator& tableGen) {
   
   controlInfo_.emplace(bce_, StatementKind::Switch);
   top_ = bce_->bytecodeSection().offset();
-
-  
-  if (!bce_->newSrcNote2(SRC_TABLESWITCH, 0, &tableSwitchNoteIndex_)) {
-    return false;
-  }
 
   if (!caseOffsets_.resize(tableGen.tableLength())) {
     ReportOutOfMemory(bce_->cx);
@@ -375,13 +369,6 @@ bool SwitchEmitter::emitEnd() {
   }
 
   if (kind_ == Kind::Table) {
-    
-    if (!bce_->setSrcNoteOffset(
-            tableSwitchNoteIndex_, SrcNote::TableSwitch::EndOffset,
-            bce_->bytecodeSection().lastNonJumpTargetOffset() - top_)) {
-      return false;
-    }
-
     
     pc += 2 * JUMP_OFFSET_LEN;
 
