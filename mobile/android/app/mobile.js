@@ -344,6 +344,13 @@ pref("devtools.remote.usb.enabled", false);
 pref("devtools.remote.wifi.enabled", false);
 
 
+
+
+
+
+pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\",\"java\"]");
+
+
 pref("view_source.wrap_long_lines", true);
 
 

@@ -853,6 +853,33 @@ pref("devtools.recordreplay.loggingFull", false);
 pref("devtools.recordreplay.fastLogpoints", false);
 
 
+
+
+
+pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com");
+
+
+
+pref("devtools.performance.recording.entries", 10000000);
+
+pref("devtools.performance.recording.interval", 1000);
+
+
+
+pref("devtools.performance.recording.duration", 0);
+
+
+
+
+pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\"]");
+
+pref("devtools.performance.recording.threads", "[\"GeckoMain\",\"Compositor\",\"Renderer\"]");
+
+
+
+pref("devtools.performance.recording.objdirs", "[]");
+
+
 pref("view_source.syntax_highlight", true);
 pref("view_source.wrap_long_lines", false);
 pref("view_source.editor.path", "");
