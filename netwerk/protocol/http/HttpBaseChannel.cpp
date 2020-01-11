@@ -3569,7 +3569,12 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
     rv = httpInternal->SetTlsFlags(mTlsFlags);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-    RefPtr<nsHttpChannel> realChannel;
+    
+    
+    
+    
+    
+    RefPtr<HttpBaseChannel> realChannel;
     CallQueryInterface(newChannel, realChannel.StartAssignment());
     if (realChannel) {
       realChannel->SetContentBlockingAllowListPrincipal(
