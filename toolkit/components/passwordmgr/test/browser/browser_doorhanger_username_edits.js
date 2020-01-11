@@ -94,8 +94,10 @@ add_task(async function test_edit_username() {
           testCase.usernameInPage,
           async function(usernameInPage) {
             let doc = content.document;
-            doc.getElementById("form-basic-username").value = usernameInPage;
-            doc.getElementById("form-basic-password").value = "password";
+            doc
+              .getElementById("form-basic-username")
+              .setUserInput(usernameInPage);
+            doc.getElementById("form-basic-password").setUserInput("password");
             doc.getElementById("form-basic").submit();
           }
         );
@@ -107,9 +109,9 @@ add_task(async function test_edit_username() {
 
         
         if (testCase.usernameChangedTo) {
-          notificationElement.querySelector(
-            "#password-notification-username"
-          ).value = testCase.usernameChangedTo;
+          await updateDoorhangerInputValues({
+            username: testCase.usernameChangedTo,
+          });
         }
 
         
@@ -128,8 +130,13 @@ add_task(async function test_edit_username() {
           "passwordmgr-storage-changed",
           (_, data) => data == expectedNotification
         );
+        let promiseHidden = BrowserTestUtils.waitForEvent(
+          PopupNotifications.panel,
+          "popuphidden"
+        );
         notificationElement.button.doCommand();
         let [result] = await promiseLogin;
+        await promiseHidden;
 
         
         let login = expectModifyLogin
