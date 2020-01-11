@@ -94,15 +94,13 @@ inline void JSObject::finalize(JSFreeOp* fop) {
                  js::MemoryUse::ObjectElements);
     }
   }
-
-  nobj->sweepDictionaryListPointer();
 }
 
 MOZ_ALWAYS_INLINE void js::NativeObject::sweepDictionaryListPointer() {
   
   
   
-  
+  MOZ_ASSERT(inDictionaryMode());
   if (shape()->dictNext == DictionaryShapeLink(this)) {
     shape()->dictNext.setNone();
   }
