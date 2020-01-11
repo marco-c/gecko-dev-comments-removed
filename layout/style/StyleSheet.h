@@ -396,6 +396,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   bool IsReadOnly() const;
 
+  
+  void RemoveFromParent();
+
  private:
   
   

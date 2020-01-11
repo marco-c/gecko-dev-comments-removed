@@ -664,6 +664,36 @@ uint64_t StyleSheet::FindOwningWindowInnerID() const {
   return windowID;
 }
 
+void StyleSheet::RemoveFromParent() {
+  if (!mParent) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  bool found = false;
+  for (auto* child = mParent->GetFirstChild(); child; child = child->mNext) {
+    if (child == this) {
+      
+      found = true;
+      mParent->Inner().mFirstChild = mNext;
+      break;
+    }
+    if (child->mNext == this) {
+      found = true;
+      child->mNext = mNext;
+      break;
+    }
+  }
+  MOZ_DIAGNOSTIC_ASSERT(found, "Should find the rule in the child list.");
+  mParent = nullptr;
+  ClearAssociatedDocumentOrShadowRoot();
+  mNext = nullptr;
+}
+
 void StyleSheet::UnparentChildren() {
   
   
