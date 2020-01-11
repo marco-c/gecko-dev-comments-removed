@@ -644,10 +644,15 @@ class gfxUserFontEntry : public gfxFontEntry {
   static void Shutdown() { sFontLoadingThread = nullptr; }
 
  protected:
+  struct OTSMessage {
+    nsCString mMessage;
+    int mLevel;  
+  };
+
   const uint8_t* SanitizeOpenTypeData(const uint8_t* aData, uint32_t aLength,
                                       uint32_t& aSaneLength,
                                       gfxUserFontType& aFontType,
-                                      nsTArray<nsCString>& aMessages);
+                                      nsTArray<OTSMessage>& aMessages);
 
   
   void LoadNextSrc();
@@ -683,7 +688,7 @@ class gfxUserFontEntry : public gfxFontEntry {
   void ContinuePlatformFontLoadOnMainThread(
       const uint8_t* aOriginalFontData, uint32_t aOriginalLength,
       gfxUserFontType aFontType, const uint8_t* aSanitizedFontData,
-      uint32_t aSanitizedLength, nsTArray<nsCString>&& aMessages,
+      uint32_t aSanitizedLength, nsTArray<OTSMessage>&& aMessages,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
   
@@ -692,7 +697,7 @@ class gfxUserFontEntry : public gfxFontEntry {
                         uint32_t aOriginalLength, gfxUserFontType aFontType,
                         const uint8_t* aSanitizedFontData,
                         uint32_t aSanitizedLength,
-                        nsTArray<nsCString>&& aMessages);
+                        nsTArray<OTSMessage>&& aMessages);
 
   
   
