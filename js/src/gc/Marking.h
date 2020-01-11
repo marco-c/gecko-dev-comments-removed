@@ -38,13 +38,8 @@ bool IsTracerKind(JSTracer* trc, JS::CallbackTracer::TracerKind kind);
 
 namespace gc {
 
-class Arena;
 struct Cell;
 class TenuredCell;
-
-
-
-void PushArena(GCMarker* gcmarker, Arena* arena);
 
 
 

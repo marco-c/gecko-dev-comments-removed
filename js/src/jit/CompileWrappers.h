@@ -49,10 +49,6 @@ class CompileRuntime {
   const void* addressOfInterruptBits();
   const void* addressOfZone();
 
-#ifdef DEBUG
-  bool isInsideNursery(gc::Cell* cell);
-#endif
-
   
   const DOMCallbacks* DOMcallbacks();
 

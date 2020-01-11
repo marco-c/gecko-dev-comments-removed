@@ -197,9 +197,6 @@ struct MOZ_RAII AutoDisableCompactingGC {
   JSContext* cx;
 };
 
-
-bool UninlinedIsInsideNursery(const gc::Cell* cell);
-
 } 
 
 #endif 
