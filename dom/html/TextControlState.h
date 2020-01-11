@@ -8,22 +8,20 @@
 #define mozilla_TextControlState_h
 
 #include "mozilla/Assertions.h"
-#include "nsString.h"
-#include "nsITextControlElement.h"
-#include "nsITextControlFrame.h"
-#include "nsCycleCollectionParticipant.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Nullable.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsITextControlFrame.h"
 
 class nsTextControlFrame;
 class nsISelectionController;
 class nsFrameSelection;
-class nsITextControlElement;
 class nsFrame;
 
 namespace mozilla {
@@ -141,7 +139,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(TextControlState)
 
-  static TextControlState* Construct(nsITextControlElement* aOwningElement);
+  static TextControlState* Construct(TextControlElement* aOwningElement);
 
   static void Shutdown();
 
@@ -383,7 +381,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   }
 
  private:
-  explicit TextControlState(nsITextControlElement* aOwningElement);
+  explicit TextControlState(TextControlElement* aOwningElement);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY ~TextControlState();
 
   
@@ -444,7 +442,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   
   
   
-  nsITextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
+  TextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
   RefPtr<TextInputSelectionController> mSelCon;
   RefPtr<RestoreSelectionState> mRestoringSelection;
   RefPtr<TextEditor> mTextEditor;

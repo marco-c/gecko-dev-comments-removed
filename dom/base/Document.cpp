@@ -39,6 +39,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StorageAccess.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/URLDecorationStripper.h"
 #include "mozilla/URLExtraData.h"
@@ -283,7 +284,6 @@
 #include "nsDOMCaretPosition.h"
 #include "nsViewportInfo.h"
 #include "mozilla/StaticPtr.h"
-#include "nsITextControlElement.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsISecurityConsoleMessage.h"
 #include "nsCharSeparatedTokenizer.h"
@@ -306,6 +306,7 @@
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
+#include "mozilla/dom/ChromeObserver.h"
 #ifdef MOZ_XUL
 #  include "mozilla/dom/XULBroadcastManager.h"
 #  include "mozilla/dom/XULPersist.h"
@@ -5008,14 +5009,12 @@ nsresult Document::TurnEditingOff() {
 
   
   
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm) {
-    Element* element = fm->GetFocusedElement();
-    nsCOMPtr<nsITextControlElement> txtCtrl = do_QueryInterface(element);
-    if (txtCtrl) {
-      RefPtr<TextEditor> textEditor = txtCtrl->GetTextEditor();
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    if (RefPtr<TextControlElement> textControlElement =
+            TextControlElement::FromNodeOrNull(fm->GetFocusedElement())) {
+      RefPtr<TextEditor> textEditor = textControlElement->GetTextEditor();
       if (textEditor) {
-        textEditor->ReinitializeSelection(*element);
+        textEditor->ReinitializeSelection(*textControlElement);
       }
     }
   }
@@ -11004,10 +11003,15 @@ void Document::SetReadyStateInternal(ReadyState aReadyState,
   }
   
 
-  if (READYSTATE_INTERACTIVE == aReadyState) {
-    if (!mXULPersist && nsContentUtils::IsSystemPrincipal(NodePrincipal())) {
+  if (READYSTATE_INTERACTIVE == aReadyState &&
+      nsContentUtils::IsSystemPrincipal(NodePrincipal())) {
+    if (!mXULPersist) {
       mXULPersist = new XULPersist(this);
       mXULPersist->Init();
+    }
+    if (!mChromeObserver) {
+      mChromeObserver = new ChromeObserver(this);
+      mChromeObserver->Init();
     }
   }
 
