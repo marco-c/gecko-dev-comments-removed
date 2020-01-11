@@ -4402,6 +4402,13 @@ class BaseCompiler final : public BaseCompilerInterface {
   }
 
   void assertStackInvariants() const {
+    if (deadCode_) {
+      
+      
+      
+      
+      return;
+    }
     size_t size = 0;
     for (const Stk& v : stk_) {
       switch (v.kind()) {
@@ -4425,13 +4432,7 @@ class BaseCompiler final : public BaseCompilerInterface {
           break;
       }
     }
-    if (deadCode_) {
-      
-      
-      MOZ_ASSERT(size <= fr.dynamicHeight());
-    } else {
-      MOZ_ASSERT(size == fr.dynamicHeight());
-    }
+    MOZ_ASSERT(size == fr.dynamicHeight());
   }
 
 #endif
