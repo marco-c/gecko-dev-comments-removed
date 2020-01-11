@@ -107,15 +107,6 @@ host_fetches = {
             
             'path': 'ffmpeg-4.1.1-macos64-static',
         },
-        'ImageMagick': {
-            'type': 'static-url',
-            
-            
-            
-            'url': 'https://ftp.icm.edu.pl/packages/ImageMagick/binaries/ImageMagick-x86_64-apple-darwin17.7.0.tar.gz',  
-            
-            'path': 'ImageMagick-7.0.8',
-        },
     },
     'linux64': {
         'ffmpeg': {
@@ -318,6 +309,20 @@ class MachBrowsertime(MachCommandBase):
         
         if 'win64' in host_platform() and path_to_imagemagick:
             path.insert(0, path_to_imagemagick)
+
+        
+        
+        
+        
+        
+        
+        
+        if host_platform() == "darwin":
+            for p in os.environ["PATH"].split(os.pathsep):
+                p = p.strip()
+                if not p or p in path:
+                    continue
+                path.append(p)
 
         append_env = {
             'PATH': os.pathsep.join(path),
