@@ -155,6 +155,8 @@ bool IsPreloadPermission(const nsACString& aType) {
 
 
 
+
+
 static constexpr std::array<nsLiteralCString, 1> kStripOAPermissions = {
     {NS_LITERAL_CSTRING("cookie")}};
 
