@@ -39,6 +39,7 @@
 #include "nsIScreenManager.h"
 #include "nsIServiceManager.h"
 #include "nsStyleConsts.h"
+#include "nsStyleStructInlines.h"
 #include "nsTransitionManager.h"
 #include "nsDisplayList.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
@@ -283,7 +284,8 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
 
     
     
-    mMouseTransparent = GetStateBits() & NS_FRAME_MOUSE_THROUGH_ALWAYS;
+    mMouseTransparent = StyleUI()->GetEffectivePointerEvents(this) ==
+                        NS_STYLE_POINTER_EVENTS_NONE;
     widgetData.mMouseTransparent = mMouseTransparent;
   }
 
