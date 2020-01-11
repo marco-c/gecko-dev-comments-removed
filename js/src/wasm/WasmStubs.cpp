@@ -522,6 +522,7 @@ STATIC_ASSERT_ANYREF_IS_JSOBJECT;
 
 
 
+
 static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register tls,
                                  Register src, const Address& dst,
                                  Register scratch) {
@@ -550,6 +551,7 @@ static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register tls,
 
   masm.bind(&done);
 }
+
 
 
 static void UnboxAnyrefIntoValueReg(MacroAssembler& masm, Register tls,
@@ -586,6 +588,7 @@ static void UnboxAnyrefIntoValueReg(MacroAssembler& masm, Register tls,
 
   masm.bind(&done);
 }
+
 
 
 static void BoxValueIntoAnyref(MacroAssembler& masm, ValueOperand src,
@@ -1224,6 +1227,11 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   
   
+  
+  
+
+  
+  
   *callOffset = masm.buildFakeExitFrame(scratch);
   masm.loadJSContext(scratch);
 
@@ -1255,6 +1263,9 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
           break;
         case MIRType::Double:
           GenPrintF64(DebugChannel::Function, masm, iter->fpu());
+          break;
+        case MIRType::RefOrNull:
+          GenPrintPtr(DebugChannel::Function, masm, iter->gpr());
           break;
         default:
           MOZ_CRASH("ion to wasm fast path can only handle i32/f32/f64");
@@ -1310,13 +1321,21 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
             masm.storeFloat32(fpscratch, dst);
             break;
           }
-          case MIRType::Int32:
+          case MIRType::Int32: {
             masm.loadPtr(src, scratch);
             GenPrintIsize(DebugChannel::Function, masm, scratch);
             masm.storePtr(scratch, dst);
             break;
-          default:
+          }
+          case MIRType::RefOrNull: {
+            masm.loadPtr(src, scratch);
+            GenPrintPtr(DebugChannel::Function, masm, scratch);
+            masm.storePtr(scratch, dst);
+            break;
+          }
+          default: {
             MOZ_CRASH("unexpected MIR type for a stack slot in wasm fast call");
+          }
         }
         break;
       }
@@ -1372,9 +1391,14 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
         masm.canonicalizeDouble(ReturnDoubleReg);
         GenPrintF64(DebugChannel::Function, masm, ReturnDoubleReg);
         break;
+      case wasm::ValType::AnyRef:
+        
+        
+        UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg, JSReturnOperand,
+                                WasmJitEntryReturnScratch);
+        break;
       case wasm::ValType::Ref:
       case wasm::ValType::FuncRef:
-      case wasm::ValType::AnyRef:
       case wasm::ValType::I64:
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
       case wasm::ValType::NullRef:

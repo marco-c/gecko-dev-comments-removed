@@ -587,6 +587,8 @@ static inline const char* ToCString(ExprType type) {
 
 
 
+
+
 class AnyRef {
   JSObject* value_;
 
@@ -639,6 +641,14 @@ typedef MutableHandle<AnyRef> MutableHandleAnyRef;
 
 
 bool BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef result);
+
+
+
+
+
+
+
+JSObject* BoxBoxableValue(JSContext* cx, HandleValue val);
 
 
 
@@ -995,7 +1005,17 @@ class FuncType {
   
   
   bool temporarilyUnsupportedReftypeForInlineEntry() const {
-    return hasReferenceArg() || hasReferenceReturn();
+    for (ValType arg : args()) {
+      if (arg.isReference() && arg.code() != ValType::AnyRef) {
+        return true;
+      }
+    }
+    for (ValType result : results()) {
+      if (result.isReference() && result.code() != ValType::AnyRef) {
+        return true;
+      }
+    }
+    return false;
   }
   
   bool temporarilyUnsupportedReftypeForExit() const {
