@@ -18,12 +18,12 @@ var handler = {
   ownKeys: function(t) {
     _handler = this;
     _target = t;
-    return Object.getOwnPropertyNames(t);
+    return Object.keys(t);
   }
 };
 var p = new Proxy(target, handler);
 
-var keys = Object.getOwnPropertyNames(p);
+var keys = Object.keys(p);
 
 assert.sameValue(keys[0], "foo");
 assert.sameValue(keys[1], "bar");

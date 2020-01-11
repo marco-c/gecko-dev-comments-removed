@@ -16,14 +16,9 @@
 
 
 
-
-
-
-
-
 var fg = new FinalizationGroup(function() {});
 
 var target = {};
-assert.sameValue(fg.register(target, target), undefined);
+assert.throws(TypeError, () => fg.register(target, target));
 
 reportCompare(0, 0);

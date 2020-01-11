@@ -16,6 +16,7 @@
 
 
 
+
 class M1 extends WeakMap {
   constructor() {}
 }

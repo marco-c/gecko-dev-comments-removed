@@ -17,4 +17,5 @@ let indices = match.indices;
 
 assert.sameValue(Object.getPrototypeOf(indices), Array.prototype);
 assert(Array.isArray(indices));
+
 reportCompare(0, 0);
