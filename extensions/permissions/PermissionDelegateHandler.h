@@ -115,6 +115,29 @@ class PermissionDelegateHandler final : nsISupports {
 
   void DropDocumentReference() { mDocument = nullptr; }
 
+  
+
+
+
+  static const PermissionDelegateInfo* GetPermissionDelegateInfo(
+      const nsAString& aPermissionName);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult GetDelegatePrincipal(const nsACString& aType,
+                                       nsIContentPermissionRequest* aRequest,
+                                       nsIPrincipal** aResult);
+
  private:
   virtual ~PermissionDelegateHandler() = default;
 
@@ -122,8 +145,10 @@ class PermissionDelegateHandler final : nsISupports {
 
 
 
-  const PermissionDelegateInfo* GetPermissionDelegateInfo(
-      const nsAString& aPermissionName) const;
+
+
+
+  bool HasFeaturePolicyAllowed(const PermissionDelegateInfo* info) const;
 
   
   mozilla::dom::Document* mDocument;

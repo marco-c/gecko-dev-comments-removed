@@ -207,10 +207,6 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
 
   
   
-  bool FeaturePolicyBlocked() const;
-
-  
-  
   
   
   
