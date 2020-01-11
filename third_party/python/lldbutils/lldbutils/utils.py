@@ -1,3 +1,7 @@
+
+
+
+
 def format_char(c):
     if c == 0:
         return "\\0"
@@ -30,6 +34,7 @@ def format_char(c):
 
 
 
+
 def format_string(lldb_value, length=100):
     ptr = lldb_value.GetValueAsUnsigned(0)
     char_type = lldb_value.GetType().GetPointeeType()
@@ -59,11 +64,13 @@ def format_string(lldb_value, length=100):
 
 
 
+
 def dereference(lldb_value):
     if lldb_value.TypeIsPointerType():
         return lldb_value.Dereference()
     name = lldb_value.GetType().GetUnqualifiedType().GetName()
-    if name.startswith("nsCOMPtr<") or name.startswith("RefPtr<") or name.startswith("nsAutoPtr<") or name.startswith("already_AddRefed<"):
+    if name.startswith("nsCOMPtr<") or name.startswith("RefPtr<") or \
+       name.startswith("nsAutoPtr<") or name.startswith("already_AddRefed<"):
         return lldb_value.GetChildMemberWithName("mRawPtr")
     if name.startswith("mozilla::RefPtr<"):
         return lldb_value.GetChildMemberWithName("ptr")
