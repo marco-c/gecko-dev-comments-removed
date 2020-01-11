@@ -475,7 +475,7 @@ public class GeckoSession implements Parcelable {
                     }
 
                     try {
-                        delegate.onWebAppManifest(GeckoSession.this, manifest.toJSONObject());
+                        delegate.onWebAppManifest(GeckoSession.this, fixupWebAppManifest(manifest.toJSONObject()));
                     } catch (JSONException e) {
                         Log.e(LOGTAG, "Failed to convert web app manifest to JSON", e);
                     }
@@ -3158,6 +3158,9 @@ public class GeckoSession implements Parcelable {
         default void onFirstContentfulPaint(@NonNull GeckoSession session) {}
 
         
+
+
+
 
 
 
@@ -6031,5 +6034,31 @@ public class GeckoSession implements Parcelable {
     @UiThread
     public @NonNull Autofill.Session getAutofillSession() {
         return getAutofillSupport().getAutofillSession();
+    }
+
+    private static String rgbaToArgb(final String color) {
+        
+        if (color.length() != 9 || !color.startsWith("#")) {
+            throw new IllegalArgumentException("Invalid color format");
+        }
+
+        return "#" + color.substring(7) + color.substring(1, 7);
+    }
+
+    private static void fixupManifestColor(final JSONObject manifest, final String name) throws JSONException {
+        manifest.put(name, rgbaToArgb(manifest.getString(name)));
+    }
+
+    private static JSONObject fixupWebAppManifest(final JSONObject manifest) {
+        
+        
+        try {
+            fixupManifestColor(manifest, "theme_color");
+            fixupManifestColor(manifest, "background_color");
+        } catch (JSONException e) {
+            Log.w(LOGTAG, "Failed to fixup web app manifest", e);
+        }
+
+        return manifest;
     }
 }
