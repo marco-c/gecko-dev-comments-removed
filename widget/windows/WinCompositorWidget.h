@@ -34,14 +34,6 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
   virtual void ClearTransparentWindow() = 0;
 
   
-  
-  virtual HDC GetTransparentDC() const = 0;
-  virtual void SetParentWnd(const HWND aParentWnd) {}
-  virtual void UpdateCompositorWnd(const HWND aCompositorWnd,
-                                   const HWND aParentWnd) {}
-  virtual void SetRootLayerTreeID(const layers::LayersId& aRootLayerTreeId) {}
-
-  
 
   PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() override {
     return this;
@@ -54,8 +46,7 @@ class WinCompositorWidgetInitData;
 
 
 
-class WinCompositorWidget : public CompositorWidget,
-                            public PlatformCompositorWidgetDelegate {
+class WinCompositorWidget : public CompositorWidget {
  public:
   WinCompositorWidget(const WinCompositorWidgetInitData& aInitData,
                       const layers::CompositorOptions& aOptions);
@@ -65,12 +56,6 @@ class WinCompositorWidget : public CompositorWidget,
 
   uintptr_t GetWidgetKey() override;
   WinCompositorWidget* AsWindows() override { return this; }
-  CompositorWidgetDelegate* AsDelegate() override { return this; }
-
-  virtual bool RedrawTransparentWindow() = 0;
-
-  
-  virtual RefPtr<gfxASurface> EnsureTransparentSurface() = 0;
 
   HWND GetHwnd() const {
     return mCompositorWnds.mCompositorWnd ? mCompositorWnds.mCompositorWnd
@@ -83,13 +68,15 @@ class WinCompositorWidget : public CompositorWidget,
   void DestroyCompositorWindow();
   void UpdateCompositorWndSizeIfNecessary();
 
-  virtual mozilla::Mutex& GetTransparentSurfaceLock() = 0;
-
   void RequestFxrOutput();
   bool HasFxrOutputHandler() const { return mFxrHandler != nullptr; }
   FxROutputHandler* GetFxrOutputHandler() const { return mFxrHandler.get(); }
 
   virtual bool HasGlass() const = 0;
+
+  virtual void UpdateCompositorWnd(const HWND aCompositorWnd,
+                                   const HWND aParentWnd) = 0;
+  virtual void SetRootLayerTreeID(const layers::LayersId& aRootLayerTreeId) = 0;
 
  protected:
   bool mSetParentCompleted;

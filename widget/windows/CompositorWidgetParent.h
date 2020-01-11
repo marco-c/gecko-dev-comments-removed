@@ -33,25 +33,6 @@ class CompositorWidgetParent final : public PCompositorWidgetParent,
   bool InitCompositor(layers::Compositor* aCompositor) override;
   bool IsHidden() const override;
 
-  
-
-  void EnterPresentLock() override;
-  void LeavePresentLock() override;
-  void OnDestroyWindow() override;
-  void UpdateTransparency(nsTransparencyMode aMode) override;
-  void ClearTransparentWindow() override;
-
-  bool RedrawTransparentWindow() override;
-
-  
-  RefPtr<gfxASurface> EnsureTransparentSurface() override;
-
-  HDC GetTransparentDC() const override { return mMemoryDC; }
-
-  mozilla::Mutex& GetTransparentSurfaceLock() override {
-    return mTransparentSurfaceLock;
-  }
-
   bool HasGlass() const override;
 
   mozilla::ipc::IPCResult RecvEnterPresentLock() override;
@@ -71,6 +52,11 @@ class CompositorWidgetParent final : public PCompositorWidgetParent,
   void SetRootLayerTreeID(const layers::LayersId& aRootLayerTreeId) override;
 
  private:
+  bool RedrawTransparentWindow();
+
+  
+  RefPtr<gfxASurface> EnsureTransparentSurface();
+
   HDC GetWindowSurface();
   void FreeWindowSurface(HDC dc);
 

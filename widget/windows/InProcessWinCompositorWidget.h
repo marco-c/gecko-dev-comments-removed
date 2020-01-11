@@ -17,7 +17,9 @@ namespace widget {
 
 
 
-class InProcessWinCompositorWidget final : public WinCompositorWidget {
+class InProcessWinCompositorWidget final
+    : public WinCompositorWidget,
+      public PlatformCompositorWidgetDelegate {
  public:
   InProcessWinCompositorWidget(const WinCompositorWidgetInitData& aInitData,
                                const layers::CompositorOptions& aOptions,
@@ -34,6 +36,7 @@ class InProcessWinCompositorWidget final : public WinCompositorWidget {
       bool* aOutIsCleared) override;
   already_AddRefed<gfx::SourceSurface> EndBackBufferDrawing() override;
   bool InitCompositor(layers::Compositor* aCompositor) override;
+  CompositorWidgetDelegate* AsDelegate() override { return this; }
   bool IsHidden() const override;
 
   
@@ -44,14 +47,14 @@ class InProcessWinCompositorWidget final : public WinCompositorWidget {
   void UpdateTransparency(nsTransparencyMode aMode) override;
   void ClearTransparentWindow() override;
 
-  bool RedrawTransparentWindow() override;
+  bool RedrawTransparentWindow();
 
   
-  RefPtr<gfxASurface> EnsureTransparentSurface() override;
+  RefPtr<gfxASurface> EnsureTransparentSurface();
 
-  HDC GetTransparentDC() const override { return mMemoryDC; }
+  HDC GetTransparentDC() const { return mMemoryDC; }
 
-  mozilla::Mutex& GetTransparentSurfaceLock() override {
+  mozilla::Mutex& GetTransparentSurfaceLock() {
     return mTransparentSurfaceLock;
   }
 
@@ -59,6 +62,10 @@ class InProcessWinCompositorWidget final : public WinCompositorWidget {
 
   void ObserveVsync(VsyncObserver* aObserver) override;
   nsIWidget* RealWidget() override;
+
+  void UpdateCompositorWnd(const HWND aCompositorWnd,
+                           const HWND aParentWnd) override {}
+  void SetRootLayerTreeID(const layers::LayersId& aRootLayerTreeId) override {}
 
  private:
   HDC GetWindowSurface();

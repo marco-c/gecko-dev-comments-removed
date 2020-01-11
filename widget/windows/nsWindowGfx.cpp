@@ -46,7 +46,7 @@ using mozilla::plugins::PluginInstanceParent;
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "ClientLayerManager.h"
-#include "WinCompositorWidget.h"
+#include "InProcessWinCompositorWidget.h"
 
 #include "nsUXThemeData.h"
 #include "nsUXThemeConstants.h"
@@ -227,7 +227,9 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   mLastPaintBounds = mBounds;
 
 #ifdef MOZ_XUL
-  if (!aDC && (eTransparencyTransparent == mTransparencyMode)) {
+  if (!aDC &&
+      (GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC) &&
+      (eTransparencyTransparent == mTransparencyMode)) {
     
     
     
@@ -240,7 +242,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
     
     
-    aDC = mCompositorWidgetDelegate->GetTransparentDC();
+    aDC = mBasicLayersSurface->GetTransparentDC();
   }
 #endif
 
