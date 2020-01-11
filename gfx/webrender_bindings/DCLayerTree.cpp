@@ -24,10 +24,6 @@ namespace mozilla {
 namespace wr {
 
 
-
-#if !defined(__MINGW32__)
-
-
 UniquePtr<DCLayerTree> DCLayerTree::Create(gl::GLContext* aGL,
                                            EGLConfig aEGLConfig,
                                            ID3D11Device* aDevice, HWND aHwnd) {
@@ -489,6 +485,5 @@ void DCLayer::EndDraw() {
   DestroyEGLSurface();
 }
 
-#endif
 }  
 }  

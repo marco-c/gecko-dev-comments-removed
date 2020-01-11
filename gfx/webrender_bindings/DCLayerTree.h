@@ -32,10 +32,6 @@ class GLContext;
 
 namespace wr {
 
-
-
-#if !defined(__MINGW32__)
-
 class DCLayer;
 
 
@@ -155,31 +151,6 @@ class DCLayer {
 
   RefPtr<IDCompositionVisual2> mVisual;
 };
-
-#else
-class DCLayerTree {
- public:
-  static UniquePtr<DCLayerTree> Create(gl::GLContext* aGL, EGLConfig aEGLConfig,
-                                       ID3D11Device* aDevice, HWND aHwnd) {
-    return nullptr;
-  }
-  void SetDefaultSwapChain(IDXGISwapChain1* aSwapChain) {}
-  void MaybeUpdateDebug() {}
-  void WaitForCommitCompletion() {}
-
-  
-  void CompositorBeginFrame() {}
-  void CompositorEndFrame() {}
-  void Bind(wr::NativeSurfaceId aId, wr::DeviceIntPoint* aOffset,
-            uint32_t* aFboId, wr::DeviceIntRect aDirtyRect) {}
-  void Unbind() {}
-  void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aSize,
-                     bool aIsOpaque) {}
-  void DestroySurface(NativeSurfaceId aId) {}
-  void AddSurface(wr::NativeSurfaceId aId, wr::DeviceIntPoint aPosition,
-                  wr::DeviceIntRect aClipRect) {}
-};
-#endif
 
 }  
 }  
