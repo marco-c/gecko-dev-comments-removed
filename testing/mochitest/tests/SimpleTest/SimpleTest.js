@@ -957,6 +957,16 @@ SimpleTest.waitForFocus = function (callback, targetWindow, expectBlankPage) {
 
 
 
+
+
+
+
+
+
+
+
+
+
 SimpleTest.waitForClipboard = function(aExpectedStringOrValidatorFn, aSetupFn,
                                        aSuccessFn, aFailureFn, aFlavor, aTimeout, aExpectFailure) {
     let promise = SimpleTest.promiseClipboardChange(aExpectedStringOrValidatorFn, aSetupFn,
@@ -987,9 +997,23 @@ SimpleTest.promiseClipboardChange = async function(aExpectedStringOrValidatorFn,
         };
     } else {
         
-        inputValidatorFn = typeof(aExpectedStringOrValidatorFn) == "string"
-            ? function(aData) { return aData == aExpectedStringOrValidatorFn; }
-            : aExpectedStringOrValidatorFn;
+        if (typeof(aExpectedStringOrValidatorFn) == "string") {
+          if (aExpectedStringOrValidatorFn.includes("\r")) {
+            throw new Error("Use function instead of string to compare raw line breakers in clipboard");
+          }
+          if (requestedFlavor === "text/html" && navigator.platform.includes("Win")) {
+            inputValidatorFn = function(aData) {
+              return aData.replace(/\r\n?/g, "\n") ===
+                         `<html><body>\n<!--StartFragment-->${aExpectedStringOrValidatorFn}<!--EndFragment-->\n</body>\n</html>`;
+            };
+          } else {
+            inputValidatorFn = function(aData) {
+              return aData.replace(/\r\n?/g, "\n") === aExpectedStringOrValidatorFn;
+            };
+          }
+        } else {
+          inputValidatorFn = aExpectedStringOrValidatorFn;
+        }
     }
 
     let maxPolls = aTimeout ? aTimeout / 100 : 50;

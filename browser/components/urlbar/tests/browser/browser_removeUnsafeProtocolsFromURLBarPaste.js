@@ -57,9 +57,17 @@ if (supportsReturnWithoutNewline) {
 
 async function paste(input) {
   try {
-    await SimpleTest.promiseClipboardChange(input, () => {
-      clipboardHelper.copyString(input);
-    });
+    await SimpleTest.promiseClipboardChange(
+      aData => {
+        
+        
+        
+        return aData === input;
+      },
+      () => {
+        clipboardHelper.copyString(input);
+      }
+    );
   } catch (ex) {
     Assert.ok(false, "Failed to copy string '" + input + "' to clipboard");
   }
