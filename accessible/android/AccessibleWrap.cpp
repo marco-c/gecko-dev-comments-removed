@@ -13,6 +13,7 @@
 #include "DocAccessibleWrap.h"
 #include "IDSet.h"
 #include "SessionAccessibility.h"
+#include "TextLeafAccessible.h"
 #include "TraversalRule.h"
 #include "Pivot.h"
 #include "nsAccessibilityService.h"
@@ -266,6 +267,8 @@ void AccessibleWrap::GetTextContents(nsAString& aText) {
   
   if (IsHyperText()) {
     AsHyperText()->TextSubstring(0, -1, aText);
+  } else if (IsTextLeaf()) {
+    aText = AsTextLeaf()->Text();
   }
 }
 
@@ -348,6 +351,28 @@ void AccessibleWrap::NavigateText(int32_t aGranularity, int32_t aStartOffset,
   }
 
   if (newAnchor && (start != aStartOffset || end != aEndOffset)) {
+    if (IsTextLeaf() && newAnchor == Parent()) {
+      
+      
+      
+      
+      
+      
+      int32_t thisChild = IndexInParent();
+      HyperTextAccessible* newHyper = newAnchor->AsHyperText();
+      MOZ_ASSERT(newHyper);
+      int32_t startChild = newHyper->GetChildIndexAtOffset(start);
+      
+      
+      int32_t endChild = newHyper->GetChildIndexAtOffset(end - 1);
+      if (startChild == thisChild && endChild == thisChild) {
+        
+        newAnchor = this;
+        int32_t thisOffset = newHyper->GetChildOffset(thisChild);
+        start -= thisOffset;
+        end -= thisOffset;
+      }
+    }
     RefPtr<AccEvent> event = new AccVCChangeEvent(
         newAnchor->Document(), this, aStartOffset, aEndOffset, newAnchor, start,
         end, nsIAccessiblePivot::REASON_NONE, pivotGranularity, eFromUserInput);
