@@ -5,6 +5,7 @@
 
 
 #include "gtest/gtest.h"
+#include "nsIObserverService.h"
 #include "mozilla/StaticPtr.h"
 #include "GMPTestMonitor.h"
 #include "GMPVideoDecoderProxy.h"

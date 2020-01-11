@@ -40,7 +40,9 @@
 #include "WebGLStrongTypes.h"
 
 
+#include "nsIDOMEventListener.h"
 #include "nsICanvasRenderingContextInternal.h"
+#include "nsIObserver.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "nsWrapperCache.h"
 #include "nsLayoutUtils.h"

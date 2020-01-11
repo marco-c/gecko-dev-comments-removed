@@ -5,9 +5,11 @@
 
 
 #include "nsDOMOfflineResourceList.h"
+#include "nsIScriptSecurityManager.h"
 #include "nsError.h"
 #include "mozilla/Components.h"
 #include "mozilla/dom/DOMStringList.h"
+#include "nsIPrefetchService.h"
 #include "nsMemory.h"
 #include "nsNetUtil.h"
 #include "nsNetCID.h"
@@ -767,7 +769,8 @@ nsDOMOfflineResourceList::GetDocumentAppCache() {
   return nullptr;
 }
 
-void nsDOMOfflineResourceList::UpdateCompleted(nsIOfflineCacheUpdate* aUpdate) {
+void nsDOMOfflineResourceList::UpdateCompleted(
+    nsIOfflineCacheUpdate* aUpdate) {
   if (aUpdate != mCacheUpdate) {
     
     return;

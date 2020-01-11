@@ -5,6 +5,7 @@
 
 
 #include "PresentationSessionRequest.h"
+#include "nsIPresentationControlChannel.h"
 #include "nsIPresentationDevice.h"
 
 namespace mozilla {

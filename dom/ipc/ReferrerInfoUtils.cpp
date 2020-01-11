@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ReferrerInfoUtils.h"
+#include "nsISerializable.h"
 #include "nsSerializationHelper.h"
 
 namespace IPC {

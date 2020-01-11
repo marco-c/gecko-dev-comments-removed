@@ -36,6 +36,7 @@
 #include "nsCSSPseudoElements.h"    
 #include "nsDOMMutationObserver.h"  
 #include "nsIFrame.h"
+#include "nsIScriptError.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
 

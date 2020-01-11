@@ -30,8 +30,10 @@
 #include "nsIProgressEventSink.h"
 #include "nsIRadioGroupContainer.h"
 #include "nsIScriptObjectPrincipal.h"
-#include "nsIScriptGlobalObject.h"   
-#include "nsIURI.h"                  
+#include "nsIScriptGlobalObject.h"  
+#include "nsIServiceManager.h"
+#include "nsIURI.h"  
+#include "nsIUUIDGenerator.h"
 #include "nsIWebProgressListener.h"  
 #include "nsIWeakReferenceUtils.h"   
 #include "nsPIDOMWindow.h"           
@@ -86,6 +88,7 @@ class imgIRequest;
 class nsCachableElementsByNameNodeList;
 class nsCommandManager;
 class nsContentList;
+class nsIDocShell;
 class nsDocShell;
 class nsDOMNavigationTiming;
 class nsFrameLoader;

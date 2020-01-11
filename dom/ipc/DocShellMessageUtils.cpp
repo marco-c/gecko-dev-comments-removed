@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/DocShellMessageUtils.h"
+#include "nsISerializable.h"
 #include "nsSerializationHelper.h"
 
 namespace mozilla {

@@ -4,7 +4,6 @@
 
 
 
-#include "nsIURL.h"
 #include "StorageUtils.h"
 
 #include "mozilla/OriginAttributes.h"

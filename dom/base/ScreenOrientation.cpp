@@ -5,6 +5,7 @@
 
 
 #include "ScreenOrientation.h"
+#include "nsIDeviceSensors.h"
 #include "nsIDocShell.h"
 #include "mozilla/dom/Document.h"
 #include "nsGlobalWindow.h"
