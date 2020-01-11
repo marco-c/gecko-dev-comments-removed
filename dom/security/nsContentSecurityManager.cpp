@@ -989,7 +989,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
 
     
     
-    rv = loadingPrincipal->CheckMayLoad(uri, false, false);
+    rv = loadingPrincipal->CheckMayLoad(uri, false);
     if (NS_FAILED(rv)) {
       AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
     }

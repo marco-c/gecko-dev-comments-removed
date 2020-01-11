@@ -1137,7 +1137,7 @@ class ContextMenuChild extends JSWindowActorChild {
           try {
             if (elem.download) {
               
-              context.principal.checkMayLoad(context.linkURI, false, true);
+              context.principal.checkMayLoad(context.linkURI, true);
               context.linkDownload = elem.download;
             }
           } catch (ex) {}
