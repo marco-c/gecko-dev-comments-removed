@@ -1,5 +1,7 @@
 
 
+
+
 setDiscardSource(true);
 eval("var f = function() { return 0; };");
 assertEq(f.toSource(), "(function() {\n    [native code]\n})");

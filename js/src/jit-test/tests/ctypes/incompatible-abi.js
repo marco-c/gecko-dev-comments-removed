@@ -1,3 +1,5 @@
+
+
 load(libdir + 'asserts.js');
 
 function test() {
