@@ -1941,12 +1941,12 @@ bool gfxFont::DrawMissingGlyph(const TextRunDrawParams& aRunParams,
     if (textDrawer) {
       
       wr::FontInstanceFlags flags = textDrawer->GetWRGlyphFlags();
-      if (flags & wr::FontInstanceFlags_TRANSPOSE) {
+      if (flags & wr::FontInstanceFlags::TRANSPOSE) {
         std::swap(mat._11, mat._12);
         std::swap(mat._21, mat._22);
       }
-      mat.PostScale(flags & wr::FontInstanceFlags_FLIP_X ? -1.0f : 1.0f,
-                    flags & wr::FontInstanceFlags_FLIP_Y ? -1.0f : 1.0f);
+      mat.PostScale(flags & wr::FontInstanceFlags::FLIP_X ? -1.0f : 1.0f,
+                    flags & wr::FontInstanceFlags::FLIP_Y ? -1.0f : 1.0f);
       matPtr = &mat;
     }
 
@@ -2114,11 +2114,11 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
       
       
       textDrawer->SetWRGlyphFlags(
-          textDrawer->GetWRGlyphFlags() | wr::FontInstanceFlags_TRANSPOSE |
+          textDrawer->GetWRGlyphFlags() | wr::FontInstanceFlags::TRANSPOSE |
           (aOrientation ==
                    gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT
-               ? wr::FontInstanceFlags_FLIP_Y
-               : wr::FontInstanceFlags_FLIP_X));
+               ? wr::FontInstanceFlags::FLIP_Y
+               : wr::FontInstanceFlags::FLIP_X));
       
       
       static const gfx::Matrix kSidewaysLeft = {0, -1, 1, 0, 0, 0};

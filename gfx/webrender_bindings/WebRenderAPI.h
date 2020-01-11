@@ -357,7 +357,7 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
             wr::TransformStyle::Flat,
             wr::WrReferenceFrameKind::Transform,
             nullptr,
-             wr::PrimitiveFlags_IS_BACKFACE_VISIBLE,
+             wr::PrimitiveFlags::IS_BACKFACE_VISIBLE,
              false,
             wr::MixBlendMode::Normal,
              false} {}
