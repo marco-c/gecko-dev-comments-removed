@@ -169,18 +169,10 @@ def generate_selection(spec_json, config, selection, spec,
     top_source_context = selection['source_context_list'].pop(0)
     assert (top_source_context.source_context_type == 'top')
 
-    test_parameters = dump_test_parameters(selection)
     
     indent = "\n" + " " * 8
-    test_parameters = test_parameters.replace("\n", indent)
-
-    selection['test_js'] = '''
-      %s(
-        %s,
-        document.querySelector("meta[name=assert]").content,
-        new SanityChecker()
-      ).start();
-      ''' % (config.test_case_name, test_parameters)
+    selection['scenario'] = dump_test_parameters(selection).replace(
+        "\n", indent)
 
     selection['spec_name'] = spec['name']
     selection[
