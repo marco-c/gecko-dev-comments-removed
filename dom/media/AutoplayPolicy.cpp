@@ -160,8 +160,7 @@ static bool IsAudioContextAllowedToPlay(const AudioContext& aContext) {
 }
 
 static bool IsEnableBlockingWebAudioByUserGesturePolicy() {
-  return DefaultAutoplayBehaviour() != nsIAutoplay::ALLOWED &&
-         Preferences::GetBool("media.autoplay.block-webaudio", false) &&
+  return Preferences::GetBool("media.autoplay.block-webaudio", false) &&
          StaticPrefs::media_autoplay_enabled_user_gestures_needed();
 }
 
@@ -233,7 +232,13 @@ bool AutoplayPolicy::IsAllowedToPlay(const AudioContext& aContext) {
 
 
 
+
+
   if (aContext.IsOffline()) {
+    return true;
+  }
+
+  if (!IsEnableBlockingWebAudioByUserGesturePolicy()) {
     return true;
   }
 
@@ -258,9 +263,6 @@ bool AutoplayPolicy::IsAllowedToPlay(const AudioContext& aContext) {
     return true;
   }
 
-  if (!IsEnableBlockingWebAudioByUserGesturePolicy()) {
-    return true;
-  }
   return IsWindowAllowedToPlay(window);
 }
 
