@@ -53,6 +53,13 @@ Services.prefs
   .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
   .setCharPref("geoSpecificDefaults.url", "");
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gModernConfig",
+  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
+  false
+);
+
 AddonTestUtils.init(this, false);
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
@@ -315,15 +322,21 @@ function readJSONFile(aFile) {
 
 
 
-function isSubObjectOf(expectedObj, actualObj) {
+
+
+
+function isSubObjectOf(expectedObj, actualObj, skipProp) {
   for (let prop in expectedObj) {
+    if (skipProp && skipProp(prop, expectedObj[prop])) {
+      continue;
+    }
     if (expectedObj[prop] instanceof Object) {
       Assert.equal(
         actualObj[prop].length,
         expectedObj[prop].length,
         `Should have the correct length for property ${prop}`
       );
-      isSubObjectOf(expectedObj[prop], actualObj[prop]);
+      isSubObjectOf(expectedObj[prop], actualObj[prop], skipProp);
     } else {
       Assert.equal(
         actualObj[prop],

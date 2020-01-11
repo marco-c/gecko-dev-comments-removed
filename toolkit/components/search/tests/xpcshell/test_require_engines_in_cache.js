@@ -38,35 +38,3 @@ add_task(async function ignore_cache_files_without_engines() {
   Assert.ok(Services.search.isInitialized);
   await reInitPromise;
 });
-
-add_task(async function skip_writing_cache_without_engines() {
-  let unInitPromise = SearchTestUtils.promiseSearchNotification(
-    "uninit-complete"
-  );
-  let reInitPromise = asyncReInit();
-  await unInitPromise;
-
-  
-  Assert.ok(removeCacheFile());
-  let resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution(
-    "search-extensions",
-    Services.io.newURI("about:blank")
-  );
-
-  
-  await reInitPromise;
-  Assert.strictEqual(0, (await Services.search.getEngines()).length);
-
-  
-  unInitPromise = SearchTestUtils.promiseSearchNotification("uninit-complete");
-  reInitPromise = asyncReInit();
-  await unInitPromise;
-
-  
-  Assert.ok(!removeCacheFile());
-
-  await reInitPromise;
-});

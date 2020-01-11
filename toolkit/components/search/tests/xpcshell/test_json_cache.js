@@ -39,8 +39,13 @@ add_task(async function setup() {
   let engineTemplateFile = do_get_file("data/engine.xml");
   engineTemplateFile.copyTo(engineFile.parent, "test-search-engine.xml");
 
-  
-  cacheTemplate.visibleDefaultEngines = getDefaultEngineList(false);
+  if (gModernConfig) {
+    cacheTemplate.version = 2;
+    delete cacheTemplate.visibleDefaultEngines;
+  } else {
+    
+    cacheTemplate.visibleDefaultEngines = getDefaultEngineList(false);
+  }
 
   
   
@@ -119,7 +124,14 @@ add_task(async function test_cache_write() {
 
   let cacheData = await promiseCacheData();
   info("Check search.json.mozlz4");
-  isSubObjectOf(cacheTemplate, cacheData);
+  isSubObjectOf(cacheTemplate, cacheData, (prop, value) => {
+    
+    
+    if (prop != "_iconURL" && prop != "{}") {
+      return false;
+    }
+    return value.startsWith("moz-extension://");
+  });
 });
 
 var EXPECTED_ENGINE = {
