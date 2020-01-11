@@ -384,6 +384,13 @@ this.LoginManagerStorage_json.prototype = {
     return result;
   },
 
+  async searchLoginsAsync(matchData) {
+    this.log("searchLoginsAsync:", matchData);
+    let result = this.searchLogins(LoginHelper.newPropertyBag(matchData));
+    
+    return Promise.resolve(result);
+  },
+
   
 
 

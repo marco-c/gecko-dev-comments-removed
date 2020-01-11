@@ -455,10 +455,12 @@ LoginManager.prototype = {
     return this._storage.findLogins(origin, formActionOrigin, httpRealm);
   },
 
+  async searchLoginsAsync(matchData) {
+    log.debug("searchLoginsAsync:", matchData);
+    return this._storage.searchLoginsAsync(matchData);
+  },
+
   
-
-
-
 
 
   searchLogins(matchData) {

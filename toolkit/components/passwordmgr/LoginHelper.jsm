@@ -213,6 +213,7 @@ this.LoginHelper = {
 
 
 
+
   searchLoginsWithObject(aSearchOptions) {
     return Services.logins.searchLogins(this.newPropertyBag(aSearchOptions));
   },
