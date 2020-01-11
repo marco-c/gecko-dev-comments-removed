@@ -3332,6 +3332,20 @@ void gfxPlatform::InitWebRenderConfig() {
   }
 
   
+  
+  if (StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup() > 0) {
+    
+    if (UseWebRender() && !gfxVars::UseWebRenderCompositor()) {
+      FeatureState& featurePartial =
+          gfxConfig::GetFeature(Feature::WEBRENDER_PARTIAL);
+      featurePartial.EnableByDefault();
+      
+      
+      featurePartial.UserEnable("Enabled");
+    }
+  }
+
+  
   gfxVars::SetUseGLSwizzle(
       IsFeatureSupported(nsIGfxInfo::FEATURE_GL_SWIZZLE, true));
 
