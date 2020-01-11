@@ -13,8 +13,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.util.SimpleArrayMap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 
 
@@ -507,6 +510,104 @@ public class GeckoResult<T> {
         final GeckoResult<T> result = new GeckoResult<>(handler);
         result.completeFrom(this);
         return result;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @SuppressWarnings("varargs")
+    @SafeVarargs
+    @NonNull
+    public static <V> GeckoResult<List<V>> allOf(final @NonNull GeckoResult<V> ... pending) {
+        return allOf(Arrays.asList(pending));
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @NonNull
+    public static <V> GeckoResult<List<V>> allOf(
+            final @Nullable List<GeckoResult<V>> pending) {
+        if (pending == null) {
+            return GeckoResult.fromValue(null);
+        }
+
+        return new AllOfResult<>(pending);
+    }
+
+    private static class AllOfResult<V> extends GeckoResult<List<V>> {
+        private boolean mFailed = false;
+        private int mResultCount = 0;
+        private final List<V> mAccumulator;
+        private final List<GeckoResult<V>> mPending;
+
+        public AllOfResult(final @NonNull List<GeckoResult<V>> pending) {
+            
+            mAccumulator = new ArrayList<>(Collections.nCopies(pending.size(), null));
+            mPending = pending;
+
+            
+            if (pending.size() == 0) {
+                complete(mAccumulator);
+                return;
+            }
+
+            
+            final ListIterator<GeckoResult<V>> it = pending.listIterator();
+            while (it.hasNext()) {
+                final int index = it.nextIndex();
+                it.next().accept(
+                    value -> onResult(value, index),
+                        this::onError);
+            }
+        }
+
+        private void onResult(final V value, final int index) {
+            if (mFailed) {
+                
+                return;
+            }
+
+            mResultCount++;
+            mAccumulator.set(index, value);
+
+            if (mResultCount == mPending.size()) {
+                complete(mAccumulator);
+            }
+        }
+
+        private void onError(final Throwable error) {
+            mFailed = true;
+            completeExceptionally(error);
+        }
     }
 
     private void dispatchLocked() {
