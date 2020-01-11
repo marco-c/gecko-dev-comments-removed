@@ -224,6 +224,33 @@
 
 
 
+
+
+        set_permission: function(name, state, one_realm) {
+            let permission_params = {
+              descriptor: {
+                name: name
+              },
+              state: state,
+              oneRealm: one_realm,
+            };
+            return window.test_driver_internal.set_permission(permission_params);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
         add_virtual_authenticator: function(config) {
             return window.test_driver_internal.add_virtual_authenticator(config);
         },
@@ -424,6 +451,23 @@
 
 
         generate_test_report: function(message) {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        set_permission: function(permission_params) {
             return Promise.reject(new Error("unimplemented"));
         },
 
