@@ -7726,7 +7726,6 @@ bool BytecodeEmitter::emitConditionalExpression(
 
 
 
-
 void BytecodeEmitter::isPropertyListObjLiteralCompatible(ListNode* obj,
                                                          PropListType type,
                                                          bool* withValues,
@@ -7807,8 +7806,7 @@ bool BytecodeEmitter::isArrayObjLiteralCompatible(ParseNode* arrayHead) {
 }
 
 bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
-                                       PropListType type,
-                                       bool isInnerSingleton) {
+                                       PropListType type, bool isInner) {
   
 
   size_t curFieldKeyIndex = 0;
@@ -7827,7 +7825,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
 
         if (!emitTree(nameExpr, ValueUsage::WantValue, EMIT_LINENOTE,
-                       isInnerSingleton)) {
+                       isInner)) {
           
           return false;
         }
@@ -8475,7 +8473,7 @@ bool BytecodeEmitter::emitInitializeInstanceFields() {
 
 
 MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
-                                                  bool isInnerSingleton) {
+                                                  bool isInner) {
   bool isSingletonContext = !objNode->hasNonConstInitializer() &&
                             objNode->head() && checkSingletonContext();
 
@@ -8514,7 +8512,13 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
   bool useObjLiteralValues = false;
   isPropertyListObjLiteralCompatible(objNode, ObjectLiteral,
                                      &useObjLiteralValues, &useObjLiteral);
-  if (!isSingletonContext) {
+
+  
+  
+  
+  
+  
+  if (!isSingletonContext || isInner) {
     useObjLiteralValues = false;
   }
 
@@ -8534,7 +8538,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
       
       
       flags += ObjLiteralFlag::SpecificGroup;
-      if (!isInnerSingleton) {
+      if (!isInner) {
         flags += ObjLiteralFlag::Singleton;
       }
     }
@@ -8613,8 +8617,8 @@ bool BytecodeEmitter::replaceNewInitWithNewObject(JSObject* obj,
 }
 
 bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
+  bool isSingleton = checkSingletonContext();
   if (!array->hasNonConstInitializer() && array->head()) {
-    bool isSingleton = checkSingletonContext();
     
     
     
@@ -8628,10 +8632,12 @@ bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
     }
   }
 
-  return emitArray(array->head(), array->count());
+  return emitArray(array->head(), array->count(),
+                    isSingleton);
 }
 
-bool BytecodeEmitter::emitArray(ParseNode* arrayHead, uint32_t count) {
+bool BytecodeEmitter::emitArray(ParseNode* arrayHead, uint32_t count,
+                                bool isInner ) {
   
 
 
@@ -8700,7 +8706,7 @@ bool BytecodeEmitter::emitArray(ParseNode* arrayHead, uint32_t count) {
       } else {
         expr = elem;
       }
-      if (!emitTree(expr)) {
+      if (!emitTree(expr, ValueUsage::WantValue, EMIT_LINENOTE, isInner)) {
         
         return false;
       }
@@ -9346,7 +9352,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationForOpcodeSlow(
 bool BytecodeEmitter::emitTree(
     ParseNode* pn, ValueUsage valueUsage ,
     EmitLineNumberNote emitLineNote ,
-    bool isInnerSingleton ) {
+    bool isInner ) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -9767,7 +9773,7 @@ bool BytecodeEmitter::emitTree(
       break;
 
     case ParseNodeKind::ObjectExpr:
-      if (!emitObject(&pn->as<ListNode>(), isInnerSingleton)) {
+      if (!emitObject(&pn->as<ListNode>(), isInner)) {
         return false;
       }
       break;
