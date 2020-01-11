@@ -32,9 +32,13 @@ const DEFAULT_PORT = 9222;
 const LOOPBACKS = ["localhost", "127.0.0.1", "[::1]"];
 
 class RemoteAgentClass {
-  async init() {
+  get listening() {
+    return !!this.server && !this.server.isStopped();
+  }
+
+  async listen(address) {
     if (!Preferences.get(ENABLED, false)) {
-      throw new Error("Remote agent is disabled by its preference");
+      throw new Error("Remote agent is disabled by preference");
     }
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
       throw new Error(
@@ -42,37 +46,6 @@ class RemoteAgentClass {
       );
     }
 
-    if (this.server) {
-      return;
-    }
-
-    this.server = new HttpServer();
-    this.targets = new Targets();
-
-    
-    this.server.registerPrefixHandler("/json/", new JSONHandler(this));
-
-    
-    
-    
-    this.targets.on("target-created", (eventName, target) => {
-      if (!target.path) {
-        throw new Error(`Target is missing 'path' attribute: ${target}`);
-      }
-      this.server.registerPathHandler(target.path, target);
-    });
-    this.targets.on("target-destroyed", (eventName, target) => {
-      
-      
-      delete this.server._handler._overridePaths[target.path];
-    });
-  }
-
-  get listening() {
-    return !!this.server && !this.server._socketClosed;
-  }
-
-  async listen(address) {
     if (!(address instanceof Ci.nsIURI)) {
       throw new TypeError(`Expected nsIURI: ${address}`);
     }
@@ -91,13 +64,25 @@ class RemoteAgentClass {
       return;
     }
 
-    await this.init();
+    this.server = new HttpServer();
+    this.server.registerPrefixHandler("/json/", new JSONHandler(this));
 
-    
-    
-    await this.targets.watchForTargets();
+    this.targets = new Targets();
+    this.targets.on("target-created", (eventName, target) => {
+      if (!target.path) {
+        throw new Error(`Target is missing 'path' attribute: ${target}`);
+      }
+      this.server.registerPathHandler(target.path, target);
+    });
+    this.targets.on("target-destroyed", (eventName, target) => {
+      
+      
+      delete this.server._handler._overridePaths[target.path];
+    });
 
     try {
+      await this.targets.watchForTargets();
+
       
       
       const mainTarget = this.targets.getMainProcessTarget();
