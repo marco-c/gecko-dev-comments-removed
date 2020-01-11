@@ -2351,6 +2351,12 @@ var gBrowserInit = {
       NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
     });
 
+    if (AppConstants.NIGHTLY_BUILD) {
+      scheduleIdleTask(() => {
+        FissionTestingUI.init();
+      });
+    }
+
     
     
     
@@ -9358,3 +9364,22 @@ var ConfirmationHint = {
     ));
   },
 };
+
+if (AppConstants.NIGHTLY_BUILD) {
+  var FissionTestingUI = {
+    init() {
+      let autostart = Services.prefs.getBoolPref("fission.autostart");
+      if (!autostart) {
+        return;
+      }
+
+      let newFissionWindow = document.getElementById("Tools:FissionWindow");
+      let newNonFissionWindow = document.getElementById(
+        "Tools:NonFissionWindow"
+      );
+
+      newFissionWindow.hidden = gFissionBrowser;
+      newNonFissionWindow.hidden = !gFissionBrowser;
+    },
+  };
+}
