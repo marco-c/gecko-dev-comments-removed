@@ -9,14 +9,36 @@
 
 #include "nsIDOMStorageManager.h"
 #include "nsClassHashtable.h"
+#include "nsHashKeys.h"
 #include "nsRefPtrHashtable.h"
 #include "StorageObserver.h"
 
 namespace mozilla {
 namespace dom {
 
+class ContentParent;
+class KeyValuePair;
 class SessionStorageCache;
 class SessionStorageObserver;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class SessionStorageManager final : public nsIDOMSessionStorageManager,
                                     public StorageObserverSink {
@@ -32,6 +54,16 @@ class SessionStorageManager final : public nsIDOMSessionStorageManager,
   RefPtr<BrowsingContext> GetBrowsingContext() const {
     return mBrowsingContext;
   }
+
+  void SendSessionStorageDataToParentProcess();
+  void SendSessionStorageDataToContentProcess(ContentParent* aActor,
+                                              nsIPrincipal* aPrincipal);
+
+  void LoadSessionStorageData(ContentParent* aSource,
+                              const nsACString& aOriginAttrs,
+                              const nsACString& aOriginKey,
+                              const nsTArray<KeyValuePair>& aDefaultData,
+                              const nsTArray<KeyValuePair>& aSessionData);
 
  private:
   ~SessionStorageManager();
@@ -61,8 +93,22 @@ class SessionStorageManager final : public nsIDOMSessionStorageManager,
                                         SessionStorageCache* aCloneFrom,
                                         RefPtr<SessionStorageCache>* aRetVal);
 
-  typedef nsRefPtrHashtable<nsCStringHashKey, SessionStorageCache>
-      OriginKeyHashTable;
+  struct OriginRecord {
+    RefPtr<SessionStorageCache> mCache;
+    nsTHashtable<nsUint64HashKey> mKnownTo;
+  };
+
+  OriginRecord* GetOriginRecord(const nsACString& aOriginAttrs,
+                                const nsACString& aOriginKey,
+                                bool aMakeIfNeeded,
+                                SessionStorageCache* aCloneFrom);
+
+  template <typename Actor>
+  void SendSessionStorageCache(Actor* aActor, const nsACString& aOriginAttrs,
+                               const nsACString& aOriginKey,
+                               SessionStorageCache* aCache);
+
+  using OriginKeyHashTable = nsClassHashtable<nsCStringHashKey, OriginRecord>;
   nsClassHashtable<nsCStringHashKey, OriginKeyHashTable> mOATable;
 
   RefPtr<SessionStorageObserver> mObserver;
