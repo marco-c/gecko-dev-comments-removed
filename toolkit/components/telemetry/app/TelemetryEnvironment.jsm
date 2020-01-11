@@ -182,10 +182,19 @@ var TelemetryEnvironment = {
   },
 
   
-  RECORD_PREF_STATE: 1, 
-  RECORD_PREF_VALUE: 2, 
-  RECORD_DEFAULTPREF_VALUE: 3, 
-  RECORD_DEFAULTPREF_STATE: 4, 
+  
+  RECORD_PREF_STATE: 1,
+
+  
+  RECORD_PREF_VALUE: 2,
+
+  
+  
+  RECORD_DEFAULTPREF_VALUE: 3,
+
+  
+  
+  RECORD_DEFAULTPREF_STATE: 4,
 
   
   async testWatchPreferences(prefMap) {
