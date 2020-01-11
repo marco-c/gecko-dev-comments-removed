@@ -3190,10 +3190,10 @@ class JSScript : public js::BaseScript {
   
   
 
-  js::Scope* lookupScope(jsbytecode* pc);
+  js::Scope* lookupScope(jsbytecode* pc) const;
 
-  js::Scope* innermostScope(jsbytecode* pc);
-  js::Scope* innermostScope() { return innermostScope(main()); }
+  js::Scope* innermostScope(jsbytecode* pc) const;
+  js::Scope* innermostScope() const { return innermostScope(main()); }
 
   
 
