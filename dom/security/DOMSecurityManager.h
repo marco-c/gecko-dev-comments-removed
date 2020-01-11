@@ -10,6 +10,8 @@
 #include "nsIObserver.h"
 #include "nsIContentSecurityPolicy.h"
 
+class nsIChannel;
+
 class DOMSecurityManager final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
@@ -28,8 +30,8 @@ class DOMSecurityManager final : public nsIObserver {
       nsIChannel* aChannel, nsIContentSecurityPolicy** aOutCSP);
 
   
-  nsresult EnforeXFrameOptionsCheck(nsIChannel* aChannel,
-                                    nsIContentSecurityPolicy* aCsp);
+  void EnforceXFrameOptionsCheck(nsIChannel* aChannel,
+                                 nsIContentSecurityPolicy* aCsp);
 
   static void Shutdown();
 };

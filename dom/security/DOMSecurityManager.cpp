@@ -104,12 +104,8 @@ DOMSecurityManager::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     
-    rv = EnforeXFrameOptionsCheck(channel, csp);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+    EnforceXFrameOptionsCheck(channel, csp);
   }
-
   return NS_OK;
 }
 
@@ -205,13 +201,11 @@ nsresult DOMSecurityManager::ParseCSPAndEnforceFrameAncestorCheck(
   return NS_OK;
 }
 
-nsresult DOMSecurityManager::EnforeXFrameOptionsCheck(
+void DOMSecurityManager::EnforceXFrameOptionsCheck(
     nsIChannel* aChannel, nsIContentSecurityPolicy* aCsp) {
   MOZ_ASSERT(aChannel);
-
   if (!FramingChecker::CheckFrameOptions(aChannel, aCsp)) {
     
     aChannel->Cancel(NS_ERROR_XFO_VIOLATION);
   }
-  return NS_OK;
 }
