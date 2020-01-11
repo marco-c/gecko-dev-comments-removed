@@ -8,6 +8,7 @@
 #define mozilla_ipc_backgroundchildimpl_h__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsRefPtrHashtable.h"
 #include "nsAutoPtr.h"
@@ -28,7 +29,8 @@ namespace ipc {
 
 
 
-class BackgroundChildImpl : public PBackgroundChild {
+class BackgroundChildImpl : public PBackgroundChild,
+                            public ChildToParentStreamActorManager {
  public:
   class ThreadLocal;
 
@@ -38,6 +40,11 @@ class BackgroundChildImpl : public PBackgroundChild {
   
   
   static ThreadLocal* GetThreadLocalForCurrentThread();
+
+  PChildToParentStreamChild* SendPChildToParentStreamConstructor(
+      PChildToParentStreamChild* aActor) override;
+  PFileDescriptorSetChild* SendPFileDescriptorSetConstructor(
+      const FileDescriptor& aFD) override;
 
  protected:
   BackgroundChildImpl();

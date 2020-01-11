@@ -18,6 +18,11 @@ class ContentChild;
 class ContentParent;
 }  
 
+namespace net {
+class SocketProcessParent;
+class SocketProcessChild;
+}  
+
 namespace ipc {
 
 class PBackgroundChild;
@@ -154,12 +159,21 @@ class AutoIPCStream {
   bool Serialize(nsIInputStream* aStream, PBackgroundChild* aManager);
 
   
+  
+  
+  bool Serialize(nsIInputStream* aStream, net::SocketProcessChild* aManager);
+
+  
   MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
                               dom::ContentParent* aManager);
 
   
   MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
                               PBackgroundParent* aManager);
+
+  
+  MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
+                              net::SocketProcessParent* aManager);
 
   
   

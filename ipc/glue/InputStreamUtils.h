@@ -16,6 +16,28 @@ namespace mozilla {
 namespace ipc {
 
 class FileDescriptor;
+class PFileDescriptorSetChild;
+class PFileDescriptorSetParent;
+class PChildToParentStreamChild;
+class PParentToChildStreamParent;
+
+
+
+class ParentToChildStreamActorManager {
+ public:
+  virtual PParentToChildStreamParent* SendPParentToChildStreamConstructor(
+      PParentToChildStreamParent* aActor) = 0;
+  virtual PFileDescriptorSetParent* SendPFileDescriptorSetConstructor(
+      const FileDescriptor& aFD) = 0;
+};
+
+class ChildToParentStreamActorManager {
+ public:
+  virtual PChildToParentStreamChild* SendPChildToParentStreamConstructor(
+      PChildToParentStreamChild* aActor) = 0;
+  virtual PFileDescriptorSetChild* SendPFileDescriptorSetConstructor(
+      const FileDescriptor& aFD) = 0;
+};
 
 
 class InputStreamHelper {
@@ -34,50 +56,24 @@ class InputStreamHelper {
                                    nsTArray<FileDescriptor>& aFileDescriptors,
                                    bool aDelayedStart, uint32_t aMaxSize,
                                    uint32_t* aSizeUsed,
-                                   mozilla::dom::ContentChild* aManager);
+                                   ParentToChildStreamActorManager* aManager);
 
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
                                    nsTArray<FileDescriptor>& aFileDescriptors,
                                    bool aDelayedStart, uint32_t aMaxSize,
                                    uint32_t* aSizeUsed,
-                                   PBackgroundChild* aManager);
-
-  static void SerializeInputStream(nsIInputStream* aInputStream,
-                                   InputStreamParams& aParams,
-                                   nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart, uint32_t aMaxSize,
-                                   uint32_t* aSizeUsed,
-                                   mozilla::dom::ContentParent* aManager);
-
-  static void SerializeInputStream(nsIInputStream* aInputStream,
-                                   InputStreamParams& aParams,
-                                   nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart, uint32_t aMaxSize,
-                                   uint32_t* aSizeUsed,
-                                   PBackgroundParent* aManager);
+                                   ChildToParentStreamActorManager* aManager);
 
   
   
-  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
-                                         InputStreamParams& aParams,
-                                         bool aDelayedStart,
-                                         mozilla::dom::ContentChild* aManager);
+  static void SerializeInputStreamAsPipe(
+      nsIInputStream* aInputStream, InputStreamParams& aParams,
+      bool aDelayedStart, ParentToChildStreamActorManager* aManager);
 
-  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
-                                         InputStreamParams& aParams,
-                                         bool aDelayedStart,
-                                         PBackgroundChild* aManager);
-
-  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
-                                         InputStreamParams& aParams,
-                                         bool aDelayedStart,
-                                         mozilla::dom::ContentParent* aManager);
-
-  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
-                                         InputStreamParams& aParams,
-                                         bool aDelayedStart,
-                                         PBackgroundParent* aManager);
+  static void SerializeInputStreamAsPipe(
+      nsIInputStream* aInputStream, InputStreamParams& aParams,
+      bool aDelayedStart, ChildToParentStreamActorManager* aManager);
 
   
   

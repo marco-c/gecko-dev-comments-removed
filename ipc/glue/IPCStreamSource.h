@@ -14,19 +14,14 @@ class nsIAsyncInputStream;
 
 namespace mozilla {
 
-namespace dom {
-class ContentChild;
-class ContentParent;
-}  
-
 namespace wr {
 struct ByteBuffer;
 }  
 
 namespace ipc {
 
-class PBackgroundChild;
-class PBackgroundParent;
+class ParentToChildStreamActorManager;
+class ChildToParentStreamActorManager;
 class PChildToParentStreamChild;
 class PParentToChildStreamParent;
 
@@ -59,27 +54,15 @@ class IPCStreamSource {
  public:
   
   
-  
-  static PChildToParentStreamChild* Create(nsIAsyncInputStream* aInputStream,
-                                           dom::ContentChild* aManager);
+  static PChildToParentStreamChild* Create(
+      nsIAsyncInputStream* aInputStream,
+      ChildToParentStreamActorManager* aManager);
 
   
   
-  
-  static PChildToParentStreamChild* Create(nsIAsyncInputStream* aInputStream,
-                                           PBackgroundChild* aManager);
-
-  
-  
-  
-  static PParentToChildStreamParent* Create(nsIAsyncInputStream* aInputStream,
-                                            dom::ContentParent* aManager);
-
-  
-  
-  
-  static PParentToChildStreamParent* Create(nsIAsyncInputStream* aInputStream,
-                                            PBackgroundParent* aManager);
+  static PParentToChildStreamParent* Create(
+      nsIAsyncInputStream* aInputStream,
+      ParentToChildStreamActorManager* aManager);
 
   static IPCStreamSource* Cast(PChildToParentStreamChild* aActor);
 
