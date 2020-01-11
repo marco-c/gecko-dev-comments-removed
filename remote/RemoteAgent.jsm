@@ -90,6 +90,7 @@ class RemoteAgentClass {
       this.server._start(port, host);
       dump(`DevTools listening on ${mainTarget.wsDebuggerURL}\n`);
     } catch (e) {
+      await this.close();
       throw new Error(`Unable to start remote agent: ${e.message}`, e);
     }
 
@@ -97,20 +98,27 @@ class RemoteAgentClass {
   }
 
   async close() {
-    if (this.listening) {
+    try {
+      
       try {
-        
-        
-        this.targets.destructor();
-
-        await this.server.stop();
-
         Preferences.reset(Object.keys(RecommendedPreferences));
-      } catch (e) {
-        throw new Error(`Unable to stop agent: ${e.message}`, e);
+      } catch (e) {}
+
+      
+      
+      if (this.targets) {
+        this.targets.destructor();
       }
 
-      log.info("Stopped listening");
+      if (this.listening) {
+        await this.server.stop();
+      }
+    } catch (e) {
+      
+      log.error("unable to stop listener", e);
+    } finally {
+      this.server = null;
+      this.targets = null;
     }
   }
 
