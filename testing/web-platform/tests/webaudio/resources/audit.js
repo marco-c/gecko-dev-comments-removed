@@ -51,12 +51,6 @@ window.Audit = (function() {
     }, message);
   }
 
-  function _logException(message, exception) {
-    test(function() {
-      throw exception;
-    }, message);
-  }
-
   function _throwException(message) {
     throw new Error(message);
   }
@@ -1187,28 +1181,15 @@ window.Audit = (function() {
     
     run() {
       this._state = TaskState.STARTED;
-
       
       _logPassed(
           '> [' + this._label + '] ' +
           (this._description ? this._description : ''));
 
-      
-      
-      
-      
-      let testName = `Executing "${this.label}"`;
-      try {
+      return new Promise(resolve => {
+        this._resolve = resolve;
         this._taskFunction(this, this.should.bind(this));
-        _logPassed(testName);
-      } catch (e) {
-        _logException(testName, e);
-        if (this.state != TaskState.FINISHED) {
-          
-          
-          this.done();
-        }
-      }
+      });
     }
 
     
@@ -1238,7 +1219,7 @@ window.Audit = (function() {
         _logFailed(message);
       }
 
-      this._taskRunner._runNextTask();
+      this._resolve();
     }
 
     
@@ -1271,18 +1252,9 @@ window.Audit = (function() {
     constructor() {
       this._tasks = {};
       this._taskSequence = [];
-      this._currentTaskIndex = -1;
 
       
       setup(new Function(), {explicit_done: true});
-    }
-
-    _runNextTask() {
-      if (this._currentTaskIndex < this._taskSequence.length) {
-        this._tasks[this._taskSequence[this._currentTaskIndex++]].run();
-      } else {
-        this._finish();
-      }
     }
 
     _finish() {
@@ -1302,9 +1274,7 @@ window.Audit = (function() {
             prefix + this._taskSequence.length + ' tasks ran successfully.');
       }
 
-      
-      
-      _testharnessDone();
+      return Promise.resolve();
     }
 
     
@@ -1347,9 +1317,19 @@ window.Audit = (function() {
         return;
       }
 
+      for (let taskIndex in this._taskSequence) {
+        let task = this._tasks[this._taskSequence[taskIndex]];
+        
+        
+        promise_test(() => task.run(), `Executing "${task.label}"`);
+      }
+
       
-      this._currentTaskIndex = 0;
-      this._runNextTask();
+      promise_test(() => this._finish(), "Audit report");
+
+      
+      
+      _testharnessDone();
     }
   }
 
