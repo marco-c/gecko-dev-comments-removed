@@ -15,6 +15,7 @@
 #include "nsThreadUtils.h"
 #include "nsThreadPool.h"
 #include "nsCOMPtr.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/SHA1.h"
@@ -70,6 +71,9 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
 
   
   bool mShutdown;
+
+  
+  mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> mFoundVPN;
 
   
   
