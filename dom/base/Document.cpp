@@ -15420,29 +15420,12 @@ already_AddRefed<Promise> Document::RequestStorageAccess(ErrorResult& aRv) {
                 
                 [p] {
                   Telemetry::AccumulateCategorical(
-                      Telemetry::LABELS_STORAGE_ACCESS_API_UI::AllowOnAnySite);
-                  p->Resolve(AntiTrackingCommon::eAllowOnAnySite, __func__);
-                },
-                
-                [p] {
-                  Telemetry::AccumulateCategorical(
                       Telemetry::LABELS_STORAGE_ACCESS_API_UI::Deny);
                   p->Reject(false, __func__);
                 });
 
         typedef ContentPermissionRequestBase::PromptResult PromptResult;
         PromptResult pr = sapr->CheckPromptPrefs();
-        bool onAnySite = false;
-        if (pr == PromptResult::Pending) {
-          
-          if (Preferences::GetBool("dom.storage_access.prompt.testing",
-                                   false) &&
-              Preferences::GetBool(
-                  "dom.storage_access.prompt.testing.allowonanysite", false)) {
-            pr = PromptResult::Granted;
-            onAnySite = true;
-          }
-        }
 
         if (pr == PromptResult::Pending) {
           
@@ -15452,7 +15435,7 @@ already_AddRefed<Promise> Document::RequestStorageAccess(ErrorResult& aRv) {
 
         self->AutomaticStorageAccessCanBeGranted()->Then(
             GetCurrentThreadSerialEventTarget(), __func__,
-            [p, pr, sapr, inner, onAnySite](
+            [p, pr, sapr, inner](
                 const AutomaticStorageAccessGrantPromise::ResolveOrRejectValue&
                     aValue) -> void {
               
@@ -15479,9 +15462,7 @@ already_AddRefed<Promise> Document::RequestStorageAccess(ErrorResult& aRv) {
                 if (pr2 == PromptResult::Granted) {
                   AntiTrackingCommon::StorageAccessPromptChoices choice =
                       AntiTrackingCommon::eAllow;
-                  if (onAnySite) {
-                    choice = AntiTrackingCommon::eAllowOnAnySite;
-                  } else if (autoGrant) {
+                  if (autoGrant) {
                     choice = AntiTrackingCommon::eAllowAutoGrant;
                   }
                   if (!autoGrant) {

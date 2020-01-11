@@ -76,7 +76,7 @@ class AntiTrackingCommon final {
     eOpenerAfterUserInteraction,
     eOpener
   };
-  enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant, eAllowOnAnySite };
+  enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant };
 
   
   
