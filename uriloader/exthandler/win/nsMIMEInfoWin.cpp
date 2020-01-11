@@ -55,7 +55,9 @@ static nsresult ShellExecuteWithIFile(const nsCOMPtr<nsIFile>& aExecutable,
   }
 
   _bstr_t execPathBStr(execPath.get());
-  _variant_t verb(L"open");
+  
+  
+  _variant_t verbDefault(DISP_E_PARAMNOTFOUND, VT_ERROR);
   _variant_t workingDir;
   _variant_t showCmd(SW_SHOWNORMAL);
 
@@ -63,7 +65,7 @@ static nsresult ShellExecuteWithIFile(const nsCOMPtr<nsIFile>& aExecutable,
   
   
   mozilla::LauncherVoidResult shellExecuteOk = mozilla::ShellExecuteByExplorer(
-      execPathBStr, aArgs, verb, workingDir, showCmd);
+      execPathBStr, aArgs, verbDefault, workingDir, showCmd);
   if (shellExecuteOk.isErr()) {
     return NS_ERROR_FILE_EXECUTION_FAILED;
   }

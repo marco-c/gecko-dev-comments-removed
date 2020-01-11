@@ -3021,7 +3021,9 @@ nsLocalFile::Launch() {
   _bstr_t execPath(mResolvedPath.get());
 
   _variant_t args;
-  _variant_t verb(L"open");
+  
+  
+  _variant_t verbDefault(DISP_E_PARAMNOTFOUND, VT_ERROR);
   _variant_t workingDir;
   _variant_t showCmd(SW_SHOWNORMAL);
 
@@ -3040,7 +3042,7 @@ nsLocalFile::Launch() {
   
   
   mozilla::LauncherVoidResult shellExecuteOk = mozilla::ShellExecuteByExplorer(
-      execPath, args, verb, workingDir, showCmd);
+      execPath, args, verbDefault, workingDir, showCmd);
   if (shellExecuteOk.isErr()) {
     return NS_ERROR_FILE_EXECUTION_FAILED;
   }
