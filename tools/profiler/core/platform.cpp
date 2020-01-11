@@ -215,18 +215,6 @@ static uint32_t AvailableFeatures() {
 #if !defined(MOZ_TASK_TRACER)
   ProfilerFeature::ClearTaskTracer(features);
 #endif
-#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  if (getenv("XPCOM_MEM_BLOAT_LOG")) {
-    
-    
-    
-    
-    ProfilerFeature::ClearNativeAllocations(features);
-  }
-#else
-  
-  ProfilerFeature::ClearNativeAllocations(features);
-#endif
   if (!JS::TraceLoggerSupported()) {
     ProfilerFeature::ClearJSTracer(features);
   }

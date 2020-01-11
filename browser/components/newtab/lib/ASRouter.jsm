@@ -62,7 +62,6 @@ const TRAILHEAD_CONFIG = {
   INTERRUPTS_EXPERIMENT_PREF: "trailhead.firstrun.interruptsExperiment",
   TRIPLETS_ENROLLED_PREF: "trailhead.firstrun.tripletsEnrolled",
   DEFAULT_TRIPLET: "supercharge",
-  DYNAMIC_TRIPLET_BUNDLE_LENGTH: 3,
   BRANCHES: {
     interrupts: [
       ["modal_control"],
@@ -1215,7 +1214,7 @@ class _ASRouter {
     };
   }
 
-  _findAllMessages(candidateMessages, trigger, ordered = false) {
+  _findAllMessages(candidateMessages, trigger) {
     const messages = candidateMessages.filter(m =>
       this.isBelowFrequencyCaps(m)
     );
@@ -1226,7 +1225,6 @@ class _ASRouter {
       trigger,
       context,
       onError: this._handleTargetingError,
-      ordered,
     });
   }
 
@@ -1349,29 +1347,32 @@ class _ASRouter {
         }
       }
     } else {
-      
-      const allMessages = await this._findAllMessages(
-        bundledMessagesOfSameTemplate,
-        trigger,
-        true
-      );
-
-      if (allMessages && allMessages.length) {
+      while (bundledMessagesOfSameTemplate.length) {
         
-        
-        result = result.concat(
-          allMessages.slice(0, bundleLength).map(message => ({
-            content: message.content,
-            id: message.id,
-            order: message.order || 0,
-            
-            
-            blockOnClick:
-              this.state.trailheadTriplet.startsWith("dynamic") &&
-              allMessages.length >
-                TRAILHEAD_CONFIG.DYNAMIC_TRIPLET_BUNDLE_LENGTH,
-          }))
+        const message = await this._findMessage(
+          bundledMessagesOfSameTemplate,
+          trigger,
+          true
         );
+        if (!message) {
+           
+          break;
+        }
+        
+        
+        result.push({
+          content: message.content,
+          id: message.id,
+          order: message.order || 0,
+        });
+        bundledMessagesOfSameTemplate.splice(
+          bundledMessagesOfSameTemplate.findIndex(msg => msg.id === message.id),
+          1
+        );
+        
+        if (result.length === bundleLength) {
+          break;
+        }
       }
     }
 
