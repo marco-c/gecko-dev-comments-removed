@@ -126,6 +126,13 @@ class SearchConfigTest {
       Services.search.isInitialized,
       "Should have correctly initialized the search service"
     );
+
+    registerCleanupFunction(() => {
+      this.assertOk(
+        !TEST_DEBUG,
+        "Should not have test debug turned on in production"
+      );
+    });
   }
 
   
@@ -157,11 +164,6 @@ class SearchConfigTest {
         }
       }
     }
-
-    this.assertOk(
-      !TEST_DEBUG,
-      "Should not have test debug turned on in production"
-    );
   }
 
   async _getEngines(useEngineSelector, region, locale) {
@@ -169,7 +171,7 @@ class SearchConfigTest {
       let engines = [];
       let configs = await engineSelector.fetchEngineConfiguration(
         locale,
-        region,
+        region || "default",
         AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")
           ? "esr"
           : AppConstants.MOZ_UPDATE_CHANNEL
@@ -192,7 +194,14 @@ class SearchConfigTest {
 
 
   async _reinit(region, locale) {
-    Services.prefs.setStringPref("browser.search.region", region.toUpperCase());
+    if (region) {
+      Services.prefs.setStringPref(
+        "browser.search.region",
+        region.toUpperCase()
+      );
+    } else {
+      Services.prefs.clearUserPref("browser.search.region");
+    }
     const reinitCompletePromise = SearchTestUtils.promiseSearchNotification(
       "reinit-complete"
     );
@@ -211,12 +220,19 @@ class SearchConfigTest {
 
 
   get _regions() {
+    
+    
+    
+    
     if (TEST_DEBUG) {
-      return new Set(["by", "cn", "kz", "us", "ru", "tr"]);
+      return new Set(["by", "cn", "kz", "us", "ru", "tr", null]);
     }
     const chunk =
       Services.prefs.getIntPref("browser.search.config.test.section", -1) - 1;
-    const regions = Services.intl.getAvailableLocaleDisplayNames("region");
+    const regions = [
+      ...Services.intl.getAvailableLocaleDisplayNames("region"),
+      null,
+    ];
     const chunkSize = Math.ceil(regions.length / 4);
     const startPoint = chunk * chunkSize;
     return regions.slice(startPoint, startPoint + chunkSize);
