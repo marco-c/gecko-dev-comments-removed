@@ -452,7 +452,7 @@ void IMEHandler::OnDestroyWindow(nsWindow* aWindow) {
   if (!sIsInTSFMode) {
     
     
-    SetInputScopeForIMM32(aWindow, EmptyString(), EmptyString());
+    SetInputScopeForIMM32(aWindow, EmptyString(), EmptyString(), false);
   }
 #endif  
   AssociateIMEContext(aWindow, true);
@@ -513,7 +513,8 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
   } else {
     
     SetInputScopeForIMM32(aWindow, aInputContext.mHTMLInputType,
-                          aInputContext.mHTMLInputInputmode);
+                          aInputContext.mHTMLInputInputmode,
+                          aInputContext.mInPrivateBrowsing);
   }
 #endif  
 
@@ -635,11 +636,16 @@ void IMEHandler::OnKeyboardLayoutChanged() {
 
 void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
                                        const nsAString& aHTMLInputType,
-                                       const nsAString& aHTMLInputInputmode) {
+                                       const nsAString& aHTMLInputInputmode,
+                                       bool aInPrivateBrowsing) {
   if (sIsInTSFMode || !sSetInputScopes || aWindow->Destroyed()) {
     return;
   }
   AutoTArray<InputScope, 3> scopes;
+
+  if (aInPrivateBrowsing) {
+    scopes.AppendElement(IS_PRIVATE);
+  }
 
   
   if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
