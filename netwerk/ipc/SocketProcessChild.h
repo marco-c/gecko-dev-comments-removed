@@ -69,6 +69,7 @@ class SocketProcessChild final
       PChildToParentStreamChild* aActor) override;
   PFileDescriptorSetChild* SendPFileDescriptorSetConstructor(
       const FileDescriptor& aFD) override;
+  already_AddRefed<PHttpConnectionMgrChild> AllocPHttpConnectionMgrChild();
 
  private:
   
