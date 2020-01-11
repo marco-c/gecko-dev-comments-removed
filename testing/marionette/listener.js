@@ -1653,7 +1653,7 @@ function switchToFrame(msg) {
 
 
 function getScreenshotRect({ el, full = true, scroll = true } = {}) {
-  let win = curContainer.frame;
+  let win = el ? curContainer.frame : content;
 
   let rect;
 
