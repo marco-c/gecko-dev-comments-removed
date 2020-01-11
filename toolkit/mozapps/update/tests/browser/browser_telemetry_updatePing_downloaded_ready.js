@@ -16,6 +16,9 @@ ChromeUtils.import(
 
 
 
+
+
+
 add_task(async function telemetry_updatePing_ready() {
   let archiveChecker = new TelemetryArchiveTesting.Checker();
   await archiveChecker.promiseInit();
