@@ -95,7 +95,7 @@
   padding: 4px;
 }
 
-#PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"] {
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"]:not([collapsed="true"]) {
   
   display: block;
 }
