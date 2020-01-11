@@ -298,7 +298,13 @@ inline const Stmt *MaybeSkipOneTrivial(const Stmt *s) {
       return ewc->getSubExpr();
     }
     if (auto *mte = dyn_cast<MaterializeTemporaryExpr>(s)) {
+      
+      
+#if CLANG_VERSION_FULL >= 1000
+      return mte->getSubExpr();
+#else
       return mte->GetTemporaryExpr();
+#endif
     }
     if (auto *bte = dyn_cast<CXXBindTemporaryExpr>(s)) {
       return bte->getSubExpr();
