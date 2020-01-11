@@ -34,17 +34,6 @@ var TalosContentProfiler;
   
   var interval, entries, threadsArray, profileDir;
 
-  try {
-    
-    
-    
-    
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  } catch (e) {}
-
-  
-  Cu.import("resource://gre/modules/Services.jsm");
-
   
 
 
@@ -289,14 +278,6 @@ var TalosContentProfiler;
       }
 
       return Promise.resolve();
-    },
-
-    
-
-
-
-    contentMarker(marker) {
-      Services.profiler.AddMarker(marker);
     },
   };
 

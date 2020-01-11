@@ -6,11 +6,15 @@
 
 
 
-addEventListener("TalosContentProfilerCommand", e => {
-  let name = e.detail.name;
-  let data = e.detail.data;
-  sendAsyncMessage("TalosContentProfiler:Command", { name, data });
-});
+addEventListener(
+  "TalosContentProfilerCommand",
+  e => {
+    let name = e.detail.name;
+    let data = e.detail.data;
+    sendAsyncMessage("TalosContentProfiler:Command", { name, data });
+  },
+  { wantUntrusted: true } 
+);
 
 addMessageListener("TalosContentProfiler:Response", msg => {
   let name = msg.data.name;
@@ -31,12 +35,16 @@ addMessageListener("TalosContentProfiler:Response", msg => {
   );
 });
 
-addEventListener("TalosPowersContentForceCCAndGC", e => {
-  Cu.forceGC();
-  Cu.forceCC();
-  Cu.forceShrinkingGC();
-  sendSyncMessage("TalosPowersContent:ForceCCAndGC");
-});
+addEventListener(
+  "TalosPowersContentForceCCAndGC",
+  e => {
+    Cu.forceGC();
+    Cu.forceCC();
+    Cu.forceShrinkingGC();
+    sendSyncMessage("TalosPowersContent:ForceCCAndGC");
+  },
+  { wantUntrusted: true } 
+);
 
 addEventListener(
   "TalosPowersContentFocus",
@@ -61,33 +69,39 @@ addEventListener(
       new content.CustomEvent("TalosPowersContentFocused", contentEvent)
     );
   },
-  true,
-  true
+  { capture: true, wantUntrusted: true } 
 );
 
-addEventListener("TalosPowersContentGetStartupInfo", e => {
-  sendAsyncMessage("TalosPowersContent:GetStartupInfo");
-  addMessageListener(
-    "TalosPowersContent:GetStartupInfo:Result",
-    function onResult(msg) {
-      removeMessageListener(
-        "TalosPowersContent:GetStartupInfo:Result",
-        onResult
-      );
-      let event = Cu.cloneInto(
-        {
-          bubbles: true,
-          detail: msg.data,
-        },
-        content
-      );
+addEventListener(
+  "TalosPowersContentGetStartupInfo",
+  e => {
+    sendAsyncMessage("TalosPowersContent:GetStartupInfo");
+    addMessageListener(
+      "TalosPowersContent:GetStartupInfo:Result",
+      function onResult(msg) {
+        removeMessageListener(
+          "TalosPowersContent:GetStartupInfo:Result",
+          onResult
+        );
+        let event = Cu.cloneInto(
+          {
+            bubbles: true,
+            detail: msg.data,
+          },
+          content
+        );
 
-      content.dispatchEvent(
-        new content.CustomEvent("TalosPowersContentGetStartupInfoResult", event)
-      );
-    }
-  );
-});
+        content.dispatchEvent(
+          new content.CustomEvent(
+            "TalosPowersContentGetStartupInfoResult",
+            event
+          )
+        );
+      }
+    );
+  },
+  { wantUntrusted: true } 
+);
 
 addEventListener(
   "TalosPowersContentDumpConsole",
@@ -112,18 +126,22 @@ addEventListener(
 
 
 
-addEventListener("TalosPowersGoQuitApplication", e => {
-  
-  
-  
-  
-  let priority = docShell
-    .QueryInterface(Ci.nsIDocumentLoader)
-    .loadGroup.QueryInterface(Ci.nsISupportsPriority).priority;
-  if (priority != Ci.nsISupportsPriority.PRIORITY_LOWEST) {
-    sendAsyncMessage("Talos:ForceQuit", e.detail);
-  }
-});
+addEventListener(
+  "TalosPowersGoQuitApplication",
+  e => {
+    
+    
+    
+    
+    let priority = docShell
+      .QueryInterface(Ci.nsIDocumentLoader)
+      .loadGroup.QueryInterface(Ci.nsISupportsPriority).priority;
+    if (priority != Ci.nsISupportsPriority.PRIORITY_LOWEST) {
+      sendAsyncMessage("Talos:ForceQuit", e.detail);
+    }
+  },
+  { wantUntrusted: true } 
+);
 
 
 
@@ -179,6 +197,5 @@ addEventListener(
       id: uniqueMessageId,
     });
   },
-  false,
-  true
-); 
+  { wantUntrusted: true } 
+);
