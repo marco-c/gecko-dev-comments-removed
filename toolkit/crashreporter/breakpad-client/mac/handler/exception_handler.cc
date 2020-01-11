@@ -815,6 +815,7 @@ bool ExceptionHandler::Setup(bool install_handler) {
   
   if (result == KERN_SUCCESS && !mozilla::recordreplay::IsReplaying()) {
     
+    mozilla::recordreplay::AutoPassThroughThreadEvents pt;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
