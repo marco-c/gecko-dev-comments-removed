@@ -284,14 +284,40 @@ function prompt(
   
   
   
+  
+  
+  
+  
+  const shouldDelegatePermission =
+    Services.prefs.getBoolPref("permissions.delegation.enabled", false) &&
+    Services.prefs.getBoolPref("dom.security.featurePolicy.enabled", false);
+
+  const origin = shouldDelegatePermission
+    ? aContentWindow.top.document.nodePrincipal.origin
+    : aContentWindow.document.nodePrincipal.origin;
+
+  let secondOrigin = undefined;
+  if (shouldDelegatePermission) {
+    const permDelegateHandler = aContentWindow.document.permDelegateHandler.QueryInterface(
+      Ci.nsIPermissionDelegateHandler
+    );
+    if (permDelegateHandler.maybeUnsafePermissionDelegate(requestTypes)) {
+      
+      
+      secondOrigin = aContentWindow.document.nodePrincipal.origin;
+    }
+  }
+
   let request = {
     callID: aCallID,
     windowID: aWindowID,
-    origin: aContentWindow.document.nodePrincipal.origin,
+    origin,
+    secondOrigin,
     documentURI: aContentWindow.document.documentURI,
     secure: aSecure,
     isHandlingUserInput: aIsHandlingUserInput,
     isThirdPartyOrigin,
+    shouldDelegatePermission,
     requestTypes,
     sharingScreen,
     sharingAudio,

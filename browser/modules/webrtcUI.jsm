@@ -529,7 +529,7 @@ function checkRequestAllowed(aRequest, aPrincipal, aBrowser) {
   if (videoDevices.length && sharingScreen) {
     camAllowed = false;
   }
-  if (aRequest.isThirdPartyOrigin) {
+  if (aRequest.isThirdPartyOrigin && !aRequest.shouldDelegatePermission) {
     camAllowed = false;
     micAllowed = false;
   }
@@ -643,7 +643,10 @@ function prompt(aBrowser, aRequest) {
     
     
     if (isPopup) {
-      if (!checkRequestAllowed(aRequest, principal, aBrowser)) {
+      if (
+        aRequest.secondOrigin ||
+        !checkRequestAllowed(aRequest, principal, aBrowser)
+      ) {
         denyRequest(aBrowser, aRequest);
       }
       return;
@@ -680,20 +683,39 @@ function prompt(aBrowser, aRequest) {
   
   
   let joinedRequestTypes = requestTypes.join("And");
-  let stringId = [
-    
-    "getUserMedia.shareCamera2.message",
-    "getUserMedia.shareMicrophone2.message",
-    "getUserMedia.shareScreen3.message",
-    "getUserMedia.shareAudioCapture2.message",
-    
-    "getUserMedia.shareCameraAndMicrophone2.message",
-    "getUserMedia.shareCameraAndAudioCapture2.message",
-    "getUserMedia.shareScreenAndMicrophone3.message",
-    "getUserMedia.shareScreenAndAudioCapture3.message",
-  ].find(id => id.includes(joinedRequestTypes));
+  let requestMessages;
+  if (aRequest.secondOrigin) {
+    requestMessages = [
+      
+      "getUserMedia.shareCameraUnsafeDelegation.message",
+      "getUserMedia.shareMicrophoneUnsafeDelegation.message",
+      "getUserMedia.shareScreenUnsafeDelegation.message",
+      "getUserMedia.shareAudioCaptureUnsafeDelegation.message",
+      
+      "getUserMedia.shareCameraAndMicrophoneUnsafeDelegation.message",
+      "getUserMedia.shareCameraAndAudioCaptureUnsafeDelegation.message",
+      "getUserMedia.shareScreenAndMicrophoneUnsafeDelegation.message",
+      "getUserMedia.shareScreenAndAudioCaptureUnsafeDelegation.message",
+    ];
+  } else {
+    requestMessages = [
+      
+      "getUserMedia.shareCamera2.message",
+      "getUserMedia.shareMicrophone2.message",
+      "getUserMedia.shareScreen3.message",
+      "getUserMedia.shareAudioCapture2.message",
+      
+      "getUserMedia.shareCameraAndMicrophone2.message",
+      "getUserMedia.shareCameraAndAudioCapture2.me ssage",
+      "getUserMedia.shareScreenAndMicrophone3.message",
+      "getUserMedia.shareScreenAndAudioCapture3.message",
+    ];
+  }
 
-  let message = stringBundle.getFormattedString(stringId, ["<>"], 1);
+  let stringId = requestMessages.find(id => id.includes(joinedRequestTypes));
+  let message = aRequest.secondOrigin
+    ? stringBundle.getFormattedString(stringId, ["<>", "{}"])
+    : stringBundle.getFormattedString(stringId, ["<>"]);
 
   let notification; 
   let mainAction = {
@@ -787,7 +809,12 @@ function prompt(aBrowser, aRequest) {
       
       
       
-      if (checkRequestAllowed(aRequest, principal, aBrowser)) {
+      
+      
+      if (
+        !aRequest.secondOrigin &&
+        checkRequestAllowed(aRequest, principal, aBrowser)
+      ) {
         this.remove();
         return true;
       }
@@ -1181,11 +1208,28 @@ function prompt(aBrowser, aRequest) {
     },
   };
 
-  
-  if (
-    !PrivateBrowsingUtils.isBrowserPrivate(aBrowser) &&
-    !aRequest.isThirdPartyOrigin
-  ) {
+  function shouldShowAlwaysRemember() {
+    
+    if (PrivateBrowsingUtils.isBrowserPrivate(aBrowser)) {
+      return false;
+    }
+
+    
+    
+    if (aRequest.isThirdPartyOrigin && !aRequest.shouldDelegatePermission) {
+      return false;
+    }
+
+    
+    
+    if (aRequest.shouldDelegatePermission && aRequest.secondOrigin) {
+      return false;
+    }
+
+    return true;
+  }
+
+  if (shouldShowAlwaysRemember()) {
     
     
     
@@ -1233,6 +1277,10 @@ function prompt(aBrowser, aRequest) {
     iconClass = "camera";
   }
   options.popupIconClass = iconClass + "-icon";
+
+  if (aRequest.secondOrigin) {
+    options.secondName = getHostOrExtensionName(null, aRequest.secondOrigin);
+  }
 
   notification = chromeDoc.defaultView.PopupNotifications.show(
     aBrowser,
