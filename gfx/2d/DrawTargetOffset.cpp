@@ -79,8 +79,7 @@ void DrawTargetOffset::DrawFilter(FilterNode* aNode, const Rect& aSourceRect,
     
     
     
-    auto destRect = Rect(mOrigin.x, mOrigin.y, mDrawTarget->GetSize().width,
-                         mDrawTarget->GetSize().height);
+    auto destRect = Rect(mDrawTarget->GetRect() + mOrigin);
     Rect userSpaceBounds = clone.TransformBounds(destRect);
     userSpaceSource = userSpaceSource.Intersect(userSpaceBounds);
   }
