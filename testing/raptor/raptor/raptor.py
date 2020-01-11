@@ -144,6 +144,7 @@ either Raptor or browsertime."""
         
         self.no_condprof = ((self.config['platform'] == 'win'
                              and self.config['processor'] == 'aarch64') or
+                            self.config['binary'] == 'org.mozilla.fennec_aurora' or
                             self.config['no_conditioned_profile'])
 
         
