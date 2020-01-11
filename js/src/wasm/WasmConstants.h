@@ -578,11 +578,9 @@ static const unsigned MaxElemSegments = 10000000;
 static const unsigned MaxTableLength = 10000000;
 static const unsigned MaxLocals = 50000;
 static const unsigned MaxParams = 1000;
-#ifdef ENABLE_WASM_MULTI_VALUE
+
+
 static const unsigned MaxResults = 1000;
-#else
-static const unsigned MaxResults = 1;
-#endif
 static const unsigned MaxStructFields = 1000;
 static const unsigned MaxMemoryMaximumPages = 65536;
 static const unsigned MaxStringBytes = 100000;
