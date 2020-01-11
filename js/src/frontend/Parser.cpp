@@ -9690,22 +9690,18 @@ BigIntLiteral* Parser<FullParseHandler, Unit>::newBigInt() {
   const auto& chars = tokenStream.getCharBuffer();
 
   if (this->parseInfo_.isDeferred()) {
-    BigIntCreationData data;
-    if (!data.init(this->cx_, chars)) {
+    BigIntIndex index(this->parseInfo_.bigIntData.length());
+    if (!this->parseInfo_.bigIntData.emplaceBack()) {
+      return null();
+    }
+
+    if (!this->parseInfo_.bigIntData[index].init(this->cx_, chars)) {
       return null();
     }
 
     
     
-    BigIntLiteral* lit = handler_.newBigInt(pos());
-    if (!lit) {
-      return null();
-    }
-    
-    
-    
-    lit->init(std::move(data));
-    return lit;
+    return handler_.newBigInt(index, this->parseInfo_, pos());
   }
 
   mozilla::Range<const char16_t> source(chars.begin(), chars.length());

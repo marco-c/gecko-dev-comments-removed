@@ -42,6 +42,7 @@ struct MOZ_RAII ParseInfo {
   
   
   Vector<RegExpCreationData> regExpData;
+  Vector<BigIntCreationData> bigIntData;
 
   ParseInfo(JSContext* cx, LifoAllocScope& alloc)
       : usedNames(cx),
@@ -50,7 +51,8 @@ struct MOZ_RAII ParseInfo {
         mode(cx->realm()->behaviors().deferredParserAlloc()
                  ? ParseInfo::Mode::Deferred
                  : ParseInfo::Mode::Eager),
-        regExpData(cx) {}
+        regExpData(cx),
+        bigIntData(cx) {}
 
   
   

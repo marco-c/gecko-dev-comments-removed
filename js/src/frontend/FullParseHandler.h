@@ -166,8 +166,9 @@ class FullParseHandler {
 
   
   
-  BigIntLiteralType newBigInt(const TokenPos& pos) {
-    return new_<BigIntLiteral>(pos);
+  BigIntLiteralType newBigInt(BigIntIndex index, ParseInfo& parseInfo,
+                              const TokenPos& pos) {
+    return new_<BigIntLiteral>(index, parseInfo, pos);
   }
 
   BooleanLiteralType newBooleanLiteral(bool cond, const TokenPos& pos) {
