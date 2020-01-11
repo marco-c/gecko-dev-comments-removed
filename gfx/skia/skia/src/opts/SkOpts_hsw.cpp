@@ -5,8 +5,6 @@
 
 
 
-
-
 #if defined(__AVX2__)
 
 #include <immintrin.h>
