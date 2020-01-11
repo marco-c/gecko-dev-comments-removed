@@ -5,7 +5,7 @@
 use api::ColorF;
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
-use crate::picture::{ResolvedSurfaceTexture};
+use crate::picture::{ResolvedSurfaceTexture, TileId};
 use std::{ops, u64};
 
 
@@ -58,6 +58,7 @@ pub struct CompositeTile {
     pub clip_rect: DeviceRect,
     pub dirty_rect: DeviceRect,
     pub z_id: ZBufferId,
+    pub tile_id: TileId,
 }
 
 
@@ -130,6 +131,30 @@ struct Occluder {
 }
 
 
+#[derive(PartialEq)]
+pub struct CompositeTileDescriptor {
+    pub rect: DeviceRect,
+    pub clip_rect: DeviceRect,
+    pub tile_id: TileId,
+}
+
+
+
+#[derive(PartialEq)]
+pub struct CompositeDescriptor {
+    tiles: Vec<CompositeTileDescriptor>,
+}
+
+impl CompositeDescriptor {
+    
+    pub fn empty() -> Self {
+        CompositeDescriptor {
+            tiles: Vec::new(),
+        }
+    }
+}
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositeState {
@@ -192,6 +217,29 @@ impl CompositeState {
             picture_caching_is_enabled,
             global_device_pixel_scale,
             occluders: Vec::new(),
+        }
+    }
+
+    
+    
+    pub fn create_descriptor(&self) -> CompositeDescriptor {
+        let mut tiles = Vec::new();
+
+        let native_iter = self.native_tiles.iter();
+        let opaque_iter = self.opaque_tiles.iter();
+        let clear_iter = self.clear_tiles.iter();
+        let alpha_iter = self.alpha_tiles.iter();
+
+        for tile in native_iter.chain(opaque_iter).chain(clear_iter).chain(alpha_iter) {
+            tiles.push(CompositeTileDescriptor {
+                rect: tile.rect,
+                clip_rect: tile.clip_rect,
+                tile_id: tile.tile_id,
+            });
+        }
+
+        CompositeDescriptor {
+            tiles,
         }
     }
 

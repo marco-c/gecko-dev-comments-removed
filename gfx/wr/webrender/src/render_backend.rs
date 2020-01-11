@@ -21,7 +21,7 @@ use api::CaptureBits;
 #[cfg(feature = "replay")]
 use api::CapturedDocument;
 use crate::clip_scroll_tree::SpatialNodeIndex;
-use crate::composite::CompositorKind;
+use crate::composite::{CompositorKind, CompositeDescriptor};
 #[cfg(feature = "debugger")]
 use crate::debug_server;
 use crate::frame_builder::{FrameBuilder, FrameBuilderConfig};
@@ -382,6 +382,9 @@ struct Document {
 
     #[cfg(feature = "replay")]
     loaded_scene: Scene,
+
+    
+    prev_composite_descriptor: CompositeDescriptor,
 }
 
 impl Document {
@@ -418,6 +421,7 @@ impl Document {
             render_task_counters: RenderTaskGraphCounters::new(),
             #[cfg(feature = "replay")]
             loaded_scene: Scene::new(),
+            prev_composite_descriptor: CompositeDescriptor::empty(),
         }
     }
 
@@ -1541,10 +1545,20 @@ impl RenderBackend {
             };
 
             
+            let composite_descriptor = rendered_document
+                .frame
+                .composite_state
+                .create_descriptor();
+
             
-            if pending_update.is_nop() && rendered_document.frame.is_nop() {
+            
+            
+            if pending_update.is_nop() &&
+               rendered_document.frame.is_nop() &&
+               composite_descriptor == doc.prev_composite_descriptor {
                 doc.rendered_frame_is_valid = true;
             }
+            doc.prev_composite_descriptor = composite_descriptor;
 
             let msg = ResultMsg::PublishPipelineInfo(doc.updated_pipeline_info());
             self.result_tx.send(msg).unwrap();
@@ -1839,6 +1853,7 @@ impl RenderBackend {
                 scratch: PrimitiveScratchBuffer::new(),
                 render_task_counters: RenderTaskGraphCounters::new(),
                 loaded_scene: scene.clone(),
+                prev_composite_descriptor: CompositeDescriptor::empty(),
             };
 
             let frame_name = format!("frame-{}-{}", id.namespace_id.0, id.id);
