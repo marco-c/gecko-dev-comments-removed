@@ -96,7 +96,7 @@ class RemoteAgentClass {
     }
   }
 
-  async close() {
+  close() {
     try {
       
       try {
@@ -110,7 +110,7 @@ class RemoteAgentClass {
       }
 
       if (this.listening) {
-        await this.server.stop();
+        return this.server.stop();
       }
     } catch (e) {
       
@@ -119,6 +119,8 @@ class RemoteAgentClass {
       this.server = null;
       this.targets = null;
     }
+
+    return Promise.resolve();
   }
 
   get scheme() {
