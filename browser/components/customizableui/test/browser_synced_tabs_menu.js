@@ -322,6 +322,9 @@ add_task(async function() {
   let tabList = document.getElementById("PanelUI-remotetabs-tabslist");
   let node = tabList.firstElementChild;
   
+  is(node.nodeName, "vbox");
+  let currentClient = node;
+  node = node.firstElementChild;
   is(node.getAttribute("itemtype"), "client", "node is a client entry");
   is(node.textContent, "My Desktop", "correct client");
   
@@ -338,26 +341,40 @@ add_task(async function() {
   node = node.nextElementSibling;
   is(node.getAttribute("itemtype"), "tab", "node is a tab");
   is(node.getAttribute("label"), "http://example.com/1");
+  node = node.nextElementSibling;
+  is(node, null, "no more siblings");
 
   
-  node = node.nextElementSibling;
+  node = currentClient.nextElementSibling;
   is(node.nodeName, "menuseparator");
 
   
   node = node.nextElementSibling;
+  is(node.nodeName, "vbox");
+  currentClient = node;
+
+  
+  node = node.firstElementChild;
   is(node.getAttribute("itemtype"), "client", "node is a client entry");
   is(node.textContent, "My Other Desktop", "correct client");
   
   node = node.nextElementSibling;
   is(node.getAttribute("itemtype"), "tab", "node is a tab");
   is(node.getAttribute("label"), "http://example.com/6");
+  node = node.nextElementSibling;
+  is(node, null, "no more siblings");
 
   
-  node = node.nextElementSibling;
+  node = currentClient.nextElementSibling;
   is(node.nodeName, "menuseparator");
 
   
   node = node.nextElementSibling;
+  is(node.nodeName, "vbox");
+  currentClient = node;
+
+  
+  node = node.firstElementChild;
   is(node.getAttribute("itemtype"), "client", "node is a client entry");
   is(node.textContent, "My Phone", "correct client");
   
@@ -366,7 +383,23 @@ add_task(async function() {
   is(node.getAttribute("itemtype"), "", "node is neither a tab nor a client");
 
   node = node.nextElementSibling;
-  is(node, null, "no more entries");
+  is(node, null, "no more siblings");
+  is(currentClient.nextElementSibling, null, "no more clients");
+
+  
+  
+  let clientContainers = [
+    ...tabList.querySelectorAll("[aria-labelledby]").values(),
+  ];
+  let labelIds = clientContainers.map(container =>
+    container.getAttribute("aria-labelledby")
+  );
+  let labels = labelIds.map(id => document.getElementById(id).textContent);
+  Assert.deepEqual(labels.sort(), [
+    "My Desktop",
+    "My Other Desktop",
+    "My Phone",
+  ]);
 
   let didSync = false;
   let oldDoSync = gSync.doSync;
@@ -432,7 +465,7 @@ add_task(async function() {
 
   function checkTabsPage(tabsShownCount, showMoreLabel) {
     let tabList = document.getElementById("PanelUI-remotetabs-tabslist");
-    let node = tabList.firstElementChild;
+    let node = tabList.firstElementChild.firstElementChild;
     is(node.getAttribute("itemtype"), "client", "node is a client entry");
     is(node.textContent, "My Desktop", "correct client");
     for (let i = 0; i < tabsShownCount; i++) {
@@ -467,7 +500,7 @@ add_task(async function() {
 
   async function checkCanOpenURL() {
     let tabList = document.getElementById("PanelUI-remotetabs-tabslist");
-    let node = tabList.firstElementChild.nextElementSibling;
+    let node = tabList.firstElementChild.firstElementChild.nextElementSibling;
     let promiseTabOpened = BrowserTestUtils.waitForLocationChange(
       gBrowser,
       SAMPLE_TAB_URL
