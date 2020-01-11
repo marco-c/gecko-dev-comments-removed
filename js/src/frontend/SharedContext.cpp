@@ -301,21 +301,23 @@ void FunctionBox::initWithEnclosingScope(JSFunction* fun) {
 
 void FunctionBox::setEnclosingScopeForInnerLazyFunction(
     const AbstractScope& enclosingScope) {
-  MOZ_ASSERT(isLazyFunctionWithoutEnclosingScope());
-
   
   
   
   
+  MOZ_ASSERT(!enclosingScope_);
   enclosingScope_ = enclosingScope;
 }
 
 void FunctionBox::finish() {
-  if (!isLazyFunctionWithoutEnclosingScope()) {
-    return;
+  if (isInterpretedLazy()) {
+    
+    
+    function()->setEnclosingScope(enclosingScope_.maybeScope());
+  } else {
+    
+    MOZ_ASSERT(!enclosingScope_);
   }
-  MOZ_ASSERT(enclosingScope_);
-  function()->setEnclosingScope(enclosingScope_.maybeScope());
 }
 
 ModuleSharedContext::ModuleSharedContext(JSContext* cx, ModuleObject* module,
