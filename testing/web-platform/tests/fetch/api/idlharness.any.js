@@ -2,6 +2,7 @@
 
 
 
+
 idl_test(
   ['fetch'],
   ['referrer-policy', 'html', 'dom'],
