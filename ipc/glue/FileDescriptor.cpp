@@ -129,8 +129,17 @@ FileDescriptor::UniquePlatformHandle FileDescriptor::Clone(
 void IPDLParamTraits<FileDescriptor>::Write(IPC::Message* aMsg,
                                             IProtocol* aActor,
                                             const FileDescriptor& aParam) {
+#ifdef XP_WIN
   FileDescriptor::PickleType pfd =
       aParam.ShareTo(FileDescriptor::IPDLPrivate(), aActor->OtherPid());
+#else
+  
+  
+  
+  
+  FileDescriptor::PickleType pfd =
+      aParam.ShareTo(FileDescriptor::IPDLPrivate(), 0);
+#endif
   WriteIPDLParam(aMsg, aActor, pfd);
 }
 
