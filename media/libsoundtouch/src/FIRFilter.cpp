@@ -38,7 +38,6 @@
 
 
 
-
 #include <memory.h>
 #include <assert.h>
 #include <math.h>
@@ -68,6 +67,7 @@ FIRFilter::~FIRFilter()
 {
     delete[] filterCoeffs;
 }
+
 
 
 uint FIRFilter::evaluateFilterStereo(SAMPLETYPE *dest, const SAMPLETYPE *src, uint numSamples) const
@@ -125,8 +125,6 @@ uint FIRFilter::evaluateFilterStereo(SAMPLETYPE *dest, const SAMPLETYPE *src, ui
     }
     return numSamples - length;
 }
-
-
 
 
 
@@ -258,7 +256,6 @@ uint FIRFilter::getLength() const
 
 
 
-
 uint FIRFilter::evaluate(SAMPLETYPE *dest, const SAMPLETYPE *src, uint numSamples, uint numChannels) 
 {
     assert(length > 0);
@@ -282,7 +279,6 @@ uint FIRFilter::evaluate(SAMPLETYPE *dest, const SAMPLETYPE *src, uint numSample
         return evaluateFilterMulti(dest, src, numSamples, numChannels);
     }
 }
-
 
 
 

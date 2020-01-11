@@ -34,10 +34,6 @@
 
 
 
-
-
-
-
 #ifndef _InterpolateShannon_H_
 #define _InterpolateShannon_H_
 
@@ -61,7 +57,7 @@ protected:
                         const SAMPLETYPE *src, 
                         int &srcSamples);
 
-    float fract;
+    double fract;
 
 public:
     InterpolateShannon();

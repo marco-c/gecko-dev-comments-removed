@@ -35,13 +35,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef RateTransposer_H
 #define RateTransposer_H
 
@@ -81,14 +74,14 @@ protected:
     static ALGORITHM algorithm;
 
 public:
-    float rate;
+    double rate;
     int numChannels;
 
     TransposerBase();
     virtual ~TransposerBase();
 
     virtual int transpose(FIFOSampleBuffer &dest, FIFOSampleBuffer &src);
-    virtual void setRate(float newRate);
+    virtual void setRate(double newRate);
     virtual void setChannels(int channels);
 
     
@@ -133,19 +126,7 @@ public:
     virtual ~RateTransposer();
 
     
-    
-
-
-    
-    
-    
-
-
-    
     FIFOSamplePipe *getOutput() { return &outputBuffer; };
-
-    
-
 
     
     AAFilter *getAAFilter();
@@ -158,7 +139,7 @@ public:
 
     
     
-    virtual void setRate(float newRate);
+    virtual void setRate(double newRate);
 
     
     void setChannels(int channels);
@@ -172,6 +153,9 @@ public:
 
     
     int isEmpty() const;
+
+    
+    int getLatency() const;
 };
 
 }

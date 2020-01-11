@@ -32,13 +32,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "cpu_detect.h"
 #include "STTypes.h"
 
@@ -72,7 +65,6 @@ void disableExtensions(uint dwDisableMask)
 {
     _dwDisabledISA = dwDisableMask;
 }
-
 
 
 

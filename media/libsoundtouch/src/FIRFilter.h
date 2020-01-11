@@ -32,13 +32,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef FIRFilter_H
 #define FIRFilter_H
 

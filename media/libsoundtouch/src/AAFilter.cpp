@@ -33,13 +33,6 @@
 
 
 
-
-
-
-
-
-
-
 #include <memory.h>
 #include <assert.h>
 #include <math.h>
@@ -81,7 +74,6 @@ using namespace soundtouch;
 
 
 
-
 AAFilter::AAFilter(uint len)
 {
     pFIR = FIRFilter::newInstance();
@@ -90,12 +82,10 @@ AAFilter::AAFilter(uint len)
 }
 
 
-
 AAFilter::~AAFilter()
 {
     delete pFIR;
 }
-
 
 
 
@@ -109,13 +99,11 @@ void AAFilter::setCutoffFreq(double newCutoffFreq)
 
 
 
-
 void AAFilter::setLength(uint newLength)
 {
     length = newLength;
     calculateCoeffs();
 }
-
 
 
 
@@ -177,12 +165,10 @@ void AAFilter::calculateCoeffs()
     for (i = 0; i < length; i ++) 
     {
         temp = work[i] * scaleCoeff;
-
         
         temp += (temp >= 0) ? 0.5 : -0.5;
         
         assert(temp >= -32768 && temp <= 32767);
-
         coeffs[i] = (SAMPLETYPE)temp;
     }
 

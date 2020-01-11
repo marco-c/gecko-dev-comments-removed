@@ -41,13 +41,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "STTypes.h"
 
 #ifdef SOUNDTOUCH_ALLOW_MMX
@@ -68,7 +61,7 @@ using namespace soundtouch;
 
 
 
-double TDStretchMMX::calcCrossCorr(const short *pV1, const short *pV2, double &dnorm) const
+double TDStretchMMX::calcCrossCorr(const short *pV1, const short *pV2, double &dnorm)
 {
     const __m64 *pVec1, *pVec2;
     __m64 shifter;
@@ -79,7 +72,7 @@ double TDStretchMMX::calcCrossCorr(const short *pV1, const short *pV2, double &d
     pVec1 = (__m64*)pV1;
     pVec2 = (__m64*)pV2;
 
-    shifter = _m_from_int(overlapDividerBits);
+    shifter = _m_from_int(overlapDividerBitsNorm);
     normaccu = accu = _mm_setzero_si64();
 
     
@@ -123,6 +116,16 @@ double TDStretchMMX::calcCrossCorr(const short *pV1, const short *pV2, double &d
     
     _m_empty();
 
+    if (norm > (long)maxnorm)
+    {
+        
+        #pragma omp critical
+        if (norm > (long)maxnorm)
+        {
+            maxnorm = norm;
+        }
+    }
+
     
     
     dnorm = (double)norm;
@@ -134,7 +137,7 @@ double TDStretchMMX::calcCrossCorr(const short *pV1, const short *pV2, double &d
 
 
 
-double TDStretchMMX::calcCrossCorrAccumulate(const short *pV1, const short *pV2, double &dnorm) const
+double TDStretchMMX::calcCrossCorrAccumulate(const short *pV1, const short *pV2, double &dnorm)
 {
     const __m64 *pVec1, *pVec2;
     __m64 shifter;
@@ -146,13 +149,13 @@ double TDStretchMMX::calcCrossCorrAccumulate(const short *pV1, const short *pV2,
     lnorm = 0;
     for (i = 1; i <= channels; i ++)
     {
-        lnorm -= (pV1[-i] * pV1[-i]) >> overlapDividerBits;
+        lnorm -= (pV1[-i] * pV1[-i]) >> overlapDividerBitsNorm;
     }
 
     pVec1 = (__m64*)pV1;
     pVec2 = (__m64*)pV2;
 
-    shifter = _m_from_int(overlapDividerBits);
+    shifter = _m_from_int(overlapDividerBitsNorm);
     accu = _mm_setzero_si64();
 
     
@@ -191,9 +194,14 @@ double TDStretchMMX::calcCrossCorrAccumulate(const short *pV1, const short *pV2,
     pV1 = (short *)pVec1;
     for (int j = 1; j <= channels; j ++)
     {
-        lnorm += (pV1[-j] * pV1[-j]) >> overlapDividerBits;
+        lnorm += (pV1[-j] * pV1[-j]) >> overlapDividerBitsNorm;
     }
     dnorm += (double)lnorm;
+
+    if (lnorm > (long)maxnorm)
+    {
+        maxnorm = lnorm;
+    }
 
     
     
@@ -207,7 +215,6 @@ void TDStretchMMX::clearCrossCorrState()
     _m_empty();
     
 }
-
 
 
 
@@ -233,7 +240,7 @@ void TDStretchMMX::overlapStereo(short *output, const short *input) const
 
     
     
-    shifter = _m_from_int(overlapDividerBits + 1);
+    shifter = _m_from_int(overlapDividerBitsPure + 1);
 
     for (i = 0; i < overlapLength / 4; i ++)
     {
@@ -326,7 +333,6 @@ void FIRFilterMMX::setCoefficients(const short *coeffs, uint newLength, uint uRe
 
 
 
-
 uint FIRFilterMMX::evaluateFilterStereo(short *dest, const short *src, uint numSamples) const
 {
     
@@ -381,5 +387,10 @@ uint FIRFilterMMX::evaluateFilterStereo(short *dest, const short *src, uint numS
 
     return (numSamples & 0xfffffffe) - length;
 }
+
+#else
+
+
+bool _dontcomplain_mmx_empty;
 
 #endif  

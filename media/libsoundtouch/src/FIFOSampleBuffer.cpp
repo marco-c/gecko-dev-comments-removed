@@ -36,13 +36,6 @@
 
 
 
-
-
-
-
-
-
-
 #include <stdlib.h>
 #include <memory.h>
 #include <string.h>
@@ -80,7 +73,8 @@ void FIFOSampleBuffer::setChannels(int numChannels)
 {
     uint usedBytes;
 
-    assert(numChannels > 0);
+    if (!verifyNumberOfChannels(numChannels)) return;
+
     usedBytes = channels * samplesInBuffer;
     channels = (uint)numChannels;
     samplesInBuffer = usedBytes / channels;
@@ -271,4 +265,3 @@ uint FIFOSampleBuffer::adjustAmountOfSamples(uint numSamples)
     }
     return samplesInBuffer;
 }
-

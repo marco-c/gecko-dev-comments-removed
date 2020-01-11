@@ -62,13 +62,6 @@
 
 
 
-
-
-
-
-
-
-
 #include <assert.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -110,10 +103,12 @@ SoundTouch::SoundTouch()
 
     calcEffectiveRateAndTempo();
 
+    samplesExpectedOut = 0;
+    samplesOutput = 0;
+
     channels = 0;
     bSrateSet = false;
 }
-
 
 
 SoundTouch::~SoundTouch()
@@ -121,7 +116,6 @@ SoundTouch::~SoundTouch()
     delete pRateTransposer;
     delete pTDStretch;
 }
-
 
 
 
@@ -143,10 +137,7 @@ uint SoundTouch::getVersionId()
 
 void SoundTouch::setChannels(uint numChannels)
 {
-    
-
-
-
+    if (!verifyNumberOfChannels(numChannels)) return;
 
     channels = numChannels;
     pRateTransposer->setChannels((int)numChannels);
@@ -156,8 +147,7 @@ void SoundTouch::setChannels(uint numChannels)
 
 
 
-
-void SoundTouch::setRate(float newRate)
+void SoundTouch::setRate(double newRate)
 {
     virtualRate = newRate;
     calcEffectiveRateAndTempo();
@@ -166,18 +156,16 @@ void SoundTouch::setRate(float newRate)
 
 
 
-
-void SoundTouch::setRateChange(float newRate)
+void SoundTouch::setRateChange(double newRate)
 {
-    virtualRate = 1.0f + 0.01f * newRate;
+    virtualRate = 1.0 + 0.01 * newRate;
     calcEffectiveRateAndTempo();
 }
 
 
 
 
-
-void SoundTouch::setTempo(float newTempo)
+void SoundTouch::setTempo(double newTempo)
 {
     virtualTempo = newTempo;
     calcEffectiveRateAndTempo();
@@ -186,18 +174,16 @@ void SoundTouch::setTempo(float newTempo)
 
 
 
-
-void SoundTouch::setTempoChange(float newTempo)
+void SoundTouch::setTempoChange(double newTempo)
 {
-    virtualTempo = 1.0f + 0.01f * newTempo;
+    virtualTempo = 1.0 + 0.01 * newTempo;
     calcEffectiveRateAndTempo();
 }
 
 
 
 
-
-void SoundTouch::setPitch(float newPitch)
+void SoundTouch::setPitch(double newPitch)
 {
     virtualPitch = newPitch;
     calcEffectiveRateAndTempo();
@@ -206,27 +192,24 @@ void SoundTouch::setPitch(float newPitch)
 
 
 
-
-void SoundTouch::setPitchOctaves(float newPitch)
+void SoundTouch::setPitchOctaves(double newPitch)
 {
-    virtualPitch = (float)exp(0.69314718056f * newPitch);
+    virtualPitch = exp(0.69314718056 * newPitch);
     calcEffectiveRateAndTempo();
 }
 
 
 
 
-
 void SoundTouch::setPitchSemiTones(int newPitch)
 {
-    setPitchOctaves((float)newPitch / 12.0f);
+    setPitchOctaves((double)newPitch / 12.0);
 }
 
 
-
-void SoundTouch::setPitchSemiTones(float newPitch)
+void SoundTouch::setPitchSemiTones(double newPitch)
 {
-    setPitchOctaves(newPitch / 12.0f);
+    setPitchOctaves(newPitch / 12.0);
 }
 
 
@@ -234,8 +217,8 @@ void SoundTouch::setPitchSemiTones(float newPitch)
 
 void SoundTouch::calcEffectiveRateAndTempo()
 {
-    float oldTempo = tempo;
-    float oldRate = rate;
+    double oldTempo = tempo;
+    double oldRate = rate;
 
     tempo = virtualTempo / virtualPitch;
     rate = virtualPitch * virtualRate;
@@ -283,9 +266,9 @@ void SoundTouch::calcEffectiveRateAndTempo()
 
 void SoundTouch::setSampleRate(uint srate)
 {
-    bSrateSet = true;
     
     pTDStretch->setParameters((int)srate);
+    bSrateSet = true;
 }
 
 
@@ -304,21 +287,10 @@ void SoundTouch::putSamples(const SAMPLETYPE *samples, uint nSamples)
 
     
     
-
-
-
-
-
-
-
-
-
-
-
-
+    samplesExpectedOut += (double)nSamples / ((double)rate * (double)tempo);
 
 #ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
-    else if (rate <= 1.0f) 
+    if (rate <= 1.0f) 
     {
         
         assert(output == pTDStretch);
@@ -346,42 +318,28 @@ void SoundTouch::putSamples(const SAMPLETYPE *samples, uint nSamples)
 void SoundTouch::flush()
 {
     int i;
-    int nUnprocessed;
-    int nOut;
-    SAMPLETYPE *buff = new SAMPLETYPE[64 * channels];
-    
-    
-    
-    nUnprocessed = numUnprocessedSamples();
-    nUnprocessed = (int)((double)nUnprocessed / (tempo * rate) + 0.5);
+    int numStillExpected;
+    SAMPLETYPE *buff = new SAMPLETYPE[128 * channels];
 
-    nOut = numSamples();        
-    nOut += nUnprocessed;       
     
-    memset(buff, 0, 64 * channels * sizeof(SAMPLETYPE));
+    numStillExpected = (int)((long)(samplesExpectedOut + 0.5) - samplesOutput);
+    if (numStillExpected < 0) numStillExpected = 0;
+
+    memset(buff, 0, 128 * channels * sizeof(SAMPLETYPE));
     
     
     
     
-    for (i = 0; i < 128; i ++) 
+    for (i = 0; (numStillExpected > (int)numSamples()) && (i < 200); i ++)
     {
-        putSamples(buff, 64);
-        if ((int)numSamples() >= nOut) 
-        {
-            
-            
-            
-            adjustAmountOfSamples(nOut);
-
-            
-            break;  
-        }
+        putSamples(buff, 128);
     }
+
+    adjustAmountOfSamples(numStillExpected);
 
     delete[] buff;
 
     
-    pRateTransposer->clear();
     pTDStretch->clearInput();
     
     
@@ -452,7 +410,7 @@ int SoundTouch::getSetting(int settingId) const
             return pRateTransposer->getAAFilter()->getLength();
 
         case SETTING_USE_QUICKSEEK :
-            return (uint)   pTDStretch->isQuickSeekEnabled();
+            return (uint)pTDStretch->isQuickSeekEnabled();
 
         case SETTING_SEQUENCE_MS:
             pTDStretch->getParameters(NULL, &temp, NULL, NULL);
@@ -466,13 +424,53 @@ int SoundTouch::getSetting(int settingId) const
             pTDStretch->getParameters(NULL, NULL, NULL, &temp);
             return temp;
 
-		case SETTING_NOMINAL_INPUT_SEQUENCE :
-			return pTDStretch->getInputSampleReq();
+        case SETTING_NOMINAL_INPUT_SEQUENCE :
+        {
+            int size = pTDStretch->getInputSampleReq();
 
-		case SETTING_NOMINAL_OUTPUT_SEQUENCE :
-			return pTDStretch->getOutputBatchSize();
+#ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
+            if (rate <= 1.0)
+            {
+                
+                return (int)(size * rate + 0.5);
+            }
+#endif
+            return size;
+        }
 
-		default :
+        case SETTING_NOMINAL_OUTPUT_SEQUENCE :
+        {
+            int size = pTDStretch->getOutputBatchSize();
+
+            if (rate > 1.0)
+            {
+                
+                return (int)(size / rate + 0.5);
+            }
+            return size;
+        }
+
+        case SETTING_INITIAL_LATENCY:
+        {
+            double latency = pTDStretch->getLatency();
+            int latency_tr = pRateTransposer->getLatency();
+
+#ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
+            if (rate <= 1.0)
+            {
+                
+                latency = (latency + latency_tr) * rate;
+            }
+            else
+#endif
+            {
+                latency += (double)latency_tr / rate;
+            }
+
+            return (int)(latency + 0.5);
+        }
+
+        default :
             return 0;
     }
 }
@@ -482,10 +480,11 @@ int SoundTouch::getSetting(int settingId) const
 
 void SoundTouch::clear()
 {
+    samplesExpectedOut = 0;
+    samplesOutput = 0;
     pRateTransposer->clear();
     pTDStretch->clear();
 }
-
 
 
 
@@ -501,4 +500,39 @@ uint SoundTouch::numUnprocessedSamples() const
         }
     }
     return 0;
+}
+
+
+
+
+
+
+
+uint SoundTouch::receiveSamples(SAMPLETYPE *output, uint maxSamples)
+{
+    uint ret = FIFOProcessor::receiveSamples(output, maxSamples);
+    samplesOutput += (long)ret;
+    return ret;
+}
+
+
+
+
+
+
+
+uint SoundTouch::receiveSamples(uint maxSamples)
+{
+    uint ret = FIFOProcessor::receiveSamples(maxSamples);
+    samplesOutput += (long)ret;
+    return ret;
+}
+
+
+
+
+
+double SoundTouch::getInputOutputSampleRatio()
+{
+    return 1.0 / (tempo * rate);
 }

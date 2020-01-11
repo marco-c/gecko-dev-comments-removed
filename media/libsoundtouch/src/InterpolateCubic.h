@@ -29,10 +29,6 @@
 
 
 
-
-
-
-
 #ifndef _InterpolateCubic_H_
 #define _InterpolateCubic_H_
 
@@ -56,7 +52,7 @@ protected:
                         const SAMPLETYPE *src, 
                         int &srcSamples);
 
-    float fract;
+    double fract;
 
 public:
     InterpolateCubic();

@@ -29,10 +29,6 @@
 
 
 
-
-
-
-
 #include <stddef.h>
 #include <math.h>
 #include "InterpolateCubic.h"

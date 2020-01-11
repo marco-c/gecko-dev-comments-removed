@@ -34,10 +34,6 @@
 
 
 
-
-
-
-
 #include <math.h>
 #include "InterpolateShannon.h"
 #include "STTypes.h"

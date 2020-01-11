@@ -44,13 +44,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "cpu_detect.h"
 #include "STTypes.h"
 
@@ -71,7 +64,7 @@ using namespace soundtouch;
 #include <math.h>
 
 
-double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &anorm) const
+double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &anorm)
 {
     int i;
     const float *pVec1;
@@ -183,7 +176,7 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &a
 
 
 
-double TDStretchSSE::calcCrossCorrAccumulate(const float *pV1, const float *pV2, double &norm) const
+double TDStretchSSE::calcCrossCorrAccumulate(const float *pV1, const float *pV2, double &norm)
 {
     
     

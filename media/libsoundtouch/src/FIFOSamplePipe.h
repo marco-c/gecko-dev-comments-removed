@@ -38,13 +38,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef FIFOSamplePipe_H
 #define FIFOSamplePipe_H
 
@@ -58,6 +51,18 @@ namespace soundtouch
 
 class FIFOSamplePipe
 {
+protected:
+
+    bool verifyNumberOfChannels(int nChannels) const
+    {
+        if ((nChannels > 0) && (nChannels <= SOUNDTOUCH_MAX_CHANNELS))
+        {
+            return true;
+        }
+        ST_THROW_RT_ERROR("Error: Illegal number of channels");
+        return false;
+    }
+
 public:
     
     virtual ~FIFOSamplePipe() {}
@@ -130,7 +135,6 @@ public:
 
 
 
-
 class FIFOProcessor :public FIFOSamplePipe
 {
 protected:
@@ -145,14 +149,12 @@ protected:
         output = pOutput;
     }
 
-
     
     
     FIFOProcessor()
     {
         output = NULL;
     }
-
 
     
     FIFOProcessor(FIFOSamplePipe *pOutput   
@@ -161,12 +163,10 @@ protected:
         output = pOutput;
     }
 
-
     
     virtual ~FIFOProcessor()
     {
     }
-
 
     
     
@@ -194,7 +194,6 @@ public:
         return output->receiveSamples(outBuffer, maxSamples);
     }
 
-
     
     
     
@@ -206,13 +205,11 @@ public:
         return output->receiveSamples(maxSamples);
     }
 
-
     
     virtual uint numSamples() const
     {
         return output->numSamples();
     }
-
 
     
     virtual int isEmpty() const
@@ -226,7 +223,6 @@ public:
     {
         return output->adjustAmountOfSamples(numSamples);
     }
-
 };
 
 }

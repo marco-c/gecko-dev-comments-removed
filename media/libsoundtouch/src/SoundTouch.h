@@ -62,13 +62,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SoundTouch_H
 #define SoundTouch_H
 
@@ -79,10 +72,10 @@ namespace soundtouch
 {
 
 
-#define SOUNDTOUCH_VERSION          "1.9.0"
+#define SOUNDTOUCH_VERSION          "2.1.3"
 
 
-#define SOUNDTOUCH_VERSION_ID       (10900)
+#define SOUNDTOUCH_VERSION_ID       (20103)
 
 
 
@@ -126,7 +119,20 @@ namespace soundtouch
 
 
 
-#define SETTING_NOMINAL_INPUT_SEQUENCE		6
+
+
+#define SETTING_NOMINAL_INPUT_SEQUENCE      6
+
+
+
+
+
+
+
+
+
+
+#define SETTING_NOMINAL_OUTPUT_SEQUENCE     7
 
 
 
@@ -139,7 +145,25 @@ namespace soundtouch
 
 
 
-#define SETTING_NOMINAL_OUTPUT_SEQUENCE		7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SETTING_INITIAL_LATENCY             8
+
 
 class SOUNDTOUCH_API SoundTouch : public FIFOProcessor
 {
@@ -151,16 +175,23 @@ private:
     class TDStretch *pTDStretch;
 
     
-    float virtualRate;
+    double virtualRate;
 
     
-    float virtualTempo;
+    double virtualTempo;
 
     
-    float virtualPitch;
+    double virtualPitch;
 
     
     bool  bSrateSet;
+
+    
+    
+    double samplesExpectedOut;
+
+    
+    long   samplesOutput;
 
     
     
@@ -171,10 +202,10 @@ protected :
     uint  channels;
 
     
-    float rate;
+    double rate;
 
     
-    float tempo;
+    double tempo;
 
 public:
     SoundTouch();
@@ -188,38 +219,56 @@ public:
 
     
     
-    void setRate(float newRate);
+    void setRate(double newRate);
 
     
     
-    void setTempo(float newTempo);
+    void setTempo(double newTempo);
 
     
     
-    void setRateChange(float newRate);
+    void setRateChange(double newRate);
 
     
     
-    void setTempoChange(float newTempo);
+    void setTempoChange(double newTempo);
 
     
     
-    void setPitch(float newPitch);
+    void setPitch(double newPitch);
 
     
     
-    void setPitchOctaves(float newPitch);
+    void setPitchOctaves(double newPitch);
 
     
     
     void setPitchSemiTones(int newPitch);
-    void setPitchSemiTones(float newPitch);
+    void setPitchSemiTones(double newPitch);
 
     
     void setChannels(uint numChannels);
 
     
     void setSampleRate(uint srate);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    double getInputOutputSampleRatio();
 
     
     
@@ -239,6 +288,23 @@ public:
                                                     
                                                     
             );
+
+    
+    
+    
+    
+    
+    virtual uint receiveSamples(SAMPLETYPE *output, 
+        uint maxSamples                 
+        );
+
+    
+    
+    
+    
+    
+    virtual uint receiveSamples(uint maxSamples   
+        );
 
     
     
@@ -262,6 +328,11 @@ public:
     
     virtual uint numUnprocessedSamples() const;
 
+    
+    uint numChannels() const
+    {
+        return channels;
+    }
 
     
     

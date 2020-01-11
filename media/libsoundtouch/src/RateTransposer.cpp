@@ -31,13 +31,6 @@
 
 
 
-
-
-
-
-
-
-
 #include <memory.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -57,13 +50,18 @@ TransposerBase::ALGORITHM TransposerBase::algorithm = TransposerBase::CUBIC;
 
 RateTransposer::RateTransposer() : FIFOProcessor(&outputBuffer)
 {
-    bUseAAFilter = true;
+    bUseAAFilter = 
+#ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
+        true;
+#else
+        
+        false;
+#endif
 
     
     pAAFilter = new AAFilter(64);
     pTransposer = TransposerBase::newInstance();
 }
-
 
 
 RateTransposer::~RateTransposer()
@@ -74,10 +72,12 @@ RateTransposer::~RateTransposer()
 
 
 
-
 void RateTransposer::enableAAFilter(bool newMode)
 {
+#ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
+    
     bUseAAFilter = newMode;
+#endif
 }
 
 
@@ -96,21 +96,20 @@ AAFilter *RateTransposer::getAAFilter()
 
 
 
-
-void RateTransposer::setRate(float newRate)
+void RateTransposer::setRate(double newRate)
 {
     double fCutoff;
 
     pTransposer->setRate(newRate);
 
     
-    if (newRate > 1.0f) 
+    if (newRate > 1.0) 
     {
-        fCutoff = 0.5f / newRate;
+        fCutoff = 0.5 / newRate;
     } 
     else 
     {
-        fCutoff = 0.5f * newRate;
+        fCutoff = 0.5 * newRate;
     }
     pAAFilter->setCutoffFreq(fCutoff);
 }
@@ -177,11 +176,10 @@ void RateTransposer::processSamples(const SAMPLETYPE *src, uint nSamples)
 
 void RateTransposer::setChannels(int nChannels)
 {
-    assert(nChannels > 0);
+    if (!verifyNumberOfChannels(nChannels) ||
+        (pTransposer->numChannels == nChannels)) return;
 
-    if (pTransposer->numChannels == nChannels) return;
     pTransposer->setChannels(nChannels);
-
     inputBuffer.setChannels(nChannels);
     midBuffer.setChannels(nChannels);
     outputBuffer.setChannels(nChannels);
@@ -209,6 +207,13 @@ int RateTransposer::isEmpty() const
 
 
 
+int RateTransposer::getLatency() const
+{
+    return (bUseAAFilter) ? pAAFilter->getLength() : 0;
+}
+
+
+
 
 
 
@@ -225,7 +230,7 @@ void TransposerBase::setAlgorithm(TransposerBase::ALGORITHM a)
 int TransposerBase::transpose(FIFOSampleBuffer &dest, FIFOSampleBuffer &src)
 {
     int numSrcSamples = src.numSamples();
-    int sizeDemand = (int)((float)numSrcSamples / rate) + 8;
+    int sizeDemand = (int)((double)numSrcSamples / rate) + 8;
     int numOutput;
     SAMPLETYPE *psrc = src.ptrBegin();
     SAMPLETYPE *pdest = dest.ptrEnd(sizeDemand);
@@ -270,7 +275,7 @@ void TransposerBase::setChannels(int channels)
 }
 
 
-void TransposerBase::setRate(float newRate)
+void TransposerBase::setRate(double newRate)
 {
     rate = newRate;
 }

@@ -29,13 +29,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef STTypes_H
 #define STTypes_H
 
@@ -68,6 +61,9 @@ typedef unsigned long   ulong;
 
 namespace soundtouch
 {
+    
+    #define SOUNDTOUCH_MAX_CHANNELS     16
+
     
     
     
@@ -149,7 +145,9 @@ namespace soundtouch
 
         #ifdef SOUNDTOUCH_ALLOW_X86_OPTIMIZATIONS
             
-            #define SOUNDTOUCH_ALLOW_MMX   1
+            #if (!_M_X64)
+                #define SOUNDTOUCH_ALLOW_MMX   1
+            #endif
         #endif
 
     #else

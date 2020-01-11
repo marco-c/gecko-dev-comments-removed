@@ -29,10 +29,6 @@
 
 
 
-
-
-
-
 #ifndef _InterpolateLinear_H_
 #define _InterpolateLinear_H_
 
@@ -63,7 +59,7 @@ public:
 
     
     
-    virtual void setRate(float newRate);
+    virtual void setRate(double newRate);
 };
 
 
@@ -71,7 +67,7 @@ public:
 class InterpolateLinearFloat : public TransposerBase
 {
 protected:
-    float fract;
+    double fract;
 
     virtual void resetRegisters();
 
