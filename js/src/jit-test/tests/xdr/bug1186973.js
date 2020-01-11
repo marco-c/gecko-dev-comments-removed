@@ -1,4 +1,6 @@
 
+
+
 load(libdir + 'bytecode-cache.js');
 
 var test = (function () {
