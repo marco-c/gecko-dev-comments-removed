@@ -5144,12 +5144,9 @@ nsDocShell::SetTitle(const nsAString& aTitle) {
   mTitle = aTitle;
   mTitleValidForCurrentURI = true;
 
-  nsCOMPtr<nsIDocShellTreeItem> parent;
-  GetInProcessSameTypeParent(getter_AddRefs(parent));
-
   
   
-  if (!parent) {
+  if (!mBrowsingContext->GetParent()) {
     nsCOMPtr<nsIBaseWindow> treeOwnerAsWin(do_QueryInterface(mTreeOwner));
     if (treeOwnerAsWin) {
       treeOwnerAsWin->SetTitle(aTitle);
