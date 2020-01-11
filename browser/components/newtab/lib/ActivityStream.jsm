@@ -468,22 +468,10 @@ const PREFS_CONFIG = new Map([
     {
       title: "Configuration for the new pocket new tab",
       getValue: ({ geo, locale }) => {
-        
-        
-        const dsEnablementMatrix = {
-          US: ["en-CA", "en-GB", "en-US"],
-          CA: ["en-CA", "en-GB", "en-US"],
-          DE: ["de", "de-DE", "de-AT", "de-CH"],
-        };
-
-        
-        const isEnabled =
-          !!dsEnablementMatrix[geo] && dsEnablementMatrix[geo].includes(locale);
-
         return JSON.stringify({
           api_key_pref: "extensions.pocket.oAuthConsumerKey",
           collapsible: true,
-          enabled: isEnabled,
+          enabled: true,
           show_spocs: showSpocs({ geo }),
           hardcoded_layout: true,
           personalized: true,
