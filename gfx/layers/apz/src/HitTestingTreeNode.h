@@ -126,9 +126,11 @@ class HitTestingTreeNode {
   
 
   void SetFixedPosData(ScrollableLayerGuid::ViewID aFixedPosTarget,
-                       SideBits aFixedPosSides);
+                       SideBits aFixedPosSides,
+                       const Maybe<uint64_t>& aFixedPositionAnimationId);
   ScrollableLayerGuid::ViewID GetFixedPosTarget() const;
   SideBits GetFixedPosSides() const;
+  Maybe<uint64_t> GetFixedPositionAnimationId() const;
 
   
 
@@ -183,6 +185,10 @@ class HitTestingTreeNode {
 
   
   ScrollbarData mScrollbarData;
+
+  
+  
+  Maybe<uint64_t> mFixedPositionAnimationId;
 
   ScrollableLayerGuid::ViewID mFixedPosTarget;
   SideBits mFixedPosSides;

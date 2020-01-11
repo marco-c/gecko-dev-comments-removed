@@ -400,6 +400,14 @@ class MOZ_STACK_CLASS LayerMetricsWrapper final {
     return Nothing();
   }
 
+  Maybe<uint64_t> GetFixedPositionAnimationId() const {
+    MOZ_ASSERT(IsValid());
+    
+    
+    
+    return Nothing();
+  }
+
   ScrollableLayerGuid::ViewID GetFixedPositionScrollContainerId() const {
     MOZ_ASSERT(IsValid());
 
