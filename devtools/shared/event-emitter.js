@@ -29,6 +29,8 @@ class EventEmitter {
 
 
 
+
+
   static on(target, type, listener) {
     if (typeof listener !== "function" && !isEventHandler(listener)) {
       throw new Error(BAD_LISTENER);
@@ -45,6 +47,8 @@ class EventEmitter {
     } else {
       events.set(type, new Set([listener]));
     }
+
+    return () => EventEmitter.off(target, type, listener);
   }
 
   
@@ -253,7 +257,7 @@ class EventEmitter {
   }
 
   on(...args) {
-    EventEmitter.on(this, ...args);
+    return EventEmitter.on(this, ...args);
   }
 
   off(...args) {
