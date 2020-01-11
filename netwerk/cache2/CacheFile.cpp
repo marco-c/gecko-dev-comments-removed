@@ -2300,7 +2300,11 @@ void CacheFile::NotifyListenersAboutOutputRemoval() {
     RefPtr<CacheFileChunk> chunk;
     mChunks.Get(idx, getter_AddRefs(chunk));
     if (chunk) {
-      MOZ_ASSERT(!chunk->IsReady());
+      
+      
+      
+      
+      
       continue;
     }
 
