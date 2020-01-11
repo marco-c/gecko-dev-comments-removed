@@ -127,11 +127,10 @@ unsigned StorageAccessPermissionRequest::CalculateSimulatedDelay() {
   }
 
   
-  
   std::srand(static_cast<unsigned>(PR_Now()));
 
-  const unsigned kMin = 5000;
-  const unsigned kMax = 6000;
+  const unsigned kMin = 0;
+  const unsigned kMax = 3000;
   const unsigned random = std::abs(std::rand());
 
   return kMin + random % (kMax - kMin);
