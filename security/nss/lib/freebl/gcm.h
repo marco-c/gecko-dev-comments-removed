@@ -45,7 +45,7 @@
 
 
 
-#if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 5)) && \
+#if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 8)) && \
     defined(IS_LITTLE_ENDIAN)
 #define USE_PPC_CRYPTO
 #endif
