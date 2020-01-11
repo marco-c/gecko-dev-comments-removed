@@ -519,7 +519,7 @@ class FunctionBox : public ObjectBox, public SharedContext {
     
 
     MOZ_ASSERT(enclosingScope_);
-    return enclosingScope_.maybeScope();
+    return enclosingScope_.scope();
   }
 
   bool needsCallObjectRegardlessOfBindings() const {

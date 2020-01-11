@@ -22,7 +22,6 @@
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
 #include "frontend/ObjLiteral.h"       
-#include "frontend/ParseInfo.h"        
 #include "frontend/ParseNode.h"        
 #include "frontend/SourceNotes.h"      
 #include "frontend/Stencil.h"          
@@ -48,8 +47,10 @@ class BigIntLiteral;
 class ObjectBox;
 
 struct MOZ_STACK_CLASS GCThingList {
-  using ListType = mozilla::Variant<JS::GCCellPtr, BigIntIndex,
-                                    ObjLiteralCreationData, RegExpIndex>;
+  using ListType =
+      mozilla::Variant<JS::GCCellPtr, BigIntIndex, ObjLiteralCreationData,
+                       RegExpIndex, ScopeIndex>;
+  ParseInfo& parseInfo;
   JS::RootedVector<ListType> vector;
 
   
@@ -58,8 +59,19 @@ struct MOZ_STACK_CLASS GCThingList {
   
   mozilla::Maybe<uint32_t> firstScopeIndex;
 
-  explicit GCThingList(JSContext* cx) : vector(cx) {}
+  explicit GCThingList(JSContext* cx, ParseInfo& parseInfo)
+      : parseInfo(parseInfo), vector(cx) {}
 
+  MOZ_MUST_USE bool append(ScopeIndex scope, uint32_t* index) {
+    *index = vector.length();
+    if (!vector.append(mozilla::AsVariant(scope))) {
+      return false;
+    }
+    if (!firstScopeIndex) {
+      firstScopeIndex.emplace(*index);
+    }
+    return true;
+  }
   MOZ_MUST_USE bool append(Scope* scope, uint32_t* index) {
     *index = vector.length();
     if (!vector.append(mozilla::AsVariant(JS::GCCellPtr(scope)))) {
@@ -98,7 +110,10 @@ struct MOZ_STACK_CLASS GCThingList {
 
   AbstractScope getScope(size_t index) const {
     auto& elem = vector[index].get();
-    return AbstractScope(&elem.as<JS::GCCellPtr>().as<Scope>());
+    if (elem.is<JS::GCCellPtr>()) {
+      return AbstractScope(&elem.as<JS::GCCellPtr>().as<Scope>());
+    }
+    return AbstractScope(parseInfo, elem.as<ScopeIndex>());
   }
 
   AbstractScope firstScope() const {
@@ -373,7 +388,7 @@ class BytecodeSection {
 
 class PerScriptData {
  public:
-  explicit PerScriptData(JSContext* cx);
+  explicit PerScriptData(JSContext* cx, frontend::ParseInfo& parseInfo);
 
   MOZ_MUST_USE bool init(JSContext* cx);
 

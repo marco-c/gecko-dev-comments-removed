@@ -319,7 +319,7 @@ void FunctionBox::finish() {
   if (isInterpretedLazy()) {
     
     
-    function()->setEnclosingScope(enclosingScope_.maybeScope());
+    function()->setEnclosingScope(enclosingScope_.getExistingScope());
   } else {
     
     MOZ_ASSERT(!enclosingScope_);

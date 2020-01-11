@@ -22,8 +22,6 @@
 namespace js {
 namespace frontend {
 
-class ParserBase;
-
 
 
 
@@ -44,6 +42,17 @@ struct MOZ_RAII ParseInfo {
   Vector<RegExpCreationData> regExpData;
   Vector<BigIntCreationData> bigIntData;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::RootedVector<ScopeCreationData> scopeCreationData;
+
   ParseInfo(JSContext* cx, LifoAllocScope& alloc)
       : usedNames(cx),
         allocScope(alloc),
@@ -52,7 +61,8 @@ struct MOZ_RAII ParseInfo {
                  ? ParseInfo::Mode::Deferred
                  : ParseInfo::Mode::Eager),
         regExpData(cx),
-        bigIntData(cx) {}
+        bigIntData(cx),
+        scopeCreationData(cx) {}
 
   
   
