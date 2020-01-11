@@ -128,6 +128,7 @@ async function test_cookie_settings({
   await SpecialPowers.spawn(
     tab.linkedBrowser,
     [{ cookiesEnabled, cookieSettingsLocked }],
+    
     async function({ cookiesEnabled, cookieSettingsLocked }) {
       let deleteOnCloseCheckbox = content.document.getElementById(
         "deleteOnClose"
