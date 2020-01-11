@@ -42,11 +42,15 @@ class ChangesView {
     this.window = window;
 
     this.onAddChange = this.onAddChange.bind(this);
-    this.onClearChanges = this.onClearChanges.bind(this);
-    this.onChangesFront = this.onChangesFront.bind(this);
+    this.onChangesFrontAvailable = this.onChangesFrontAvailable.bind(this);
+    this.onChangesFrontDestroyed = this.onChangesFrontDestroyed.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
     this.onCopyAllChanges = this.copyAllChanges.bind(this);
     this.onCopyRule = this.copyRule.bind(this);
+    this.onClearChanges = this.onClearChanges.bind(this);
+    this.onTargetAvailable = this.onTargetAvailable.bind(this);
+    this.onTargetDestroyed = this.onTargetDestroyed.bind(this);
+
     this.destroy = this.destroy.bind(this);
 
     this.init();
@@ -68,10 +72,6 @@ class ChangesView {
     });
 
     
-    
-    this._getChangesFront();
-
-    
     this.provider = createElement(
       Provider,
       {
@@ -82,23 +82,14 @@ class ChangesView {
       changesApp
     );
 
-    this.inspector.currentTarget.on("will-navigate", this.onClearChanges);
+    this.inspector.toolbox.targetList.watchTargets(
+      [this.inspector.toolbox.targetList.TYPES.FRAME],
+      this.onTargetAvailable,
+      this.onTargetDestroyed
+    );
   }
 
-  _getChangesFront() {
-    if (this.changesFrontPromise) {
-      return this.changesFrontPromise;
-    }
-    this.changesFrontPromise = (async () => {
-      const target = this.inspector.currentTarget;
-      const front = await target.getFront("changes");
-      this.onChangesFront(front);
-      return front;
-    })();
-    return this.changesFrontPromise;
-  }
-
-  async onChangesFront(changesFront) {
+  async onChangesFrontAvailable(changesFront) {
     changesFront.on("add-change", this.onAddChange);
     changesFront.on("clear-changes", this.onClearChanges);
     try {
@@ -113,6 +104,35 @@ class ChangesView {
       
       
       
+    }
+  }
+
+  async onChangesFrontDestroyed(changesFront) {
+    changesFront.off("add-change", this.onAddChange);
+    changesFront.off("clear-changes", this.onClearChanges);
+  }
+
+  async onTargetAvailable(type, targetFront, isTopLevel) {
+    targetFront.watchFronts(
+      "changes",
+      this.onChangesFrontAvailable,
+      this.onChangesFrontDestroyed
+    );
+
+    if (isTopLevel) {
+      targetFront.on("will-navigate", this.onClearChanges);
+    }
+  }
+
+  async onTargetDestroyed(type, targetFront, isTopLevel) {
+    targetFront.unwatchFronts(
+      "changes",
+      this.onChangesFrontAvailable,
+      this.onChangesFrontDestroyed
+    );
+
+    if (isTopLevel) {
+      targetFront.off("will-navigate", this.onClearChanges);
     }
   }
 
