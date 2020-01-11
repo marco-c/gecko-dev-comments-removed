@@ -154,10 +154,13 @@ inline void FinalizationRecordVectorObject::remove(
 
 
 
+
+
+
 const JSClass FinalizationGroupObject::class_ = {
     "FinalizationGroup",
     JSCLASS_HAS_CACHED_PROTO(JSProto_FinalizationGroup) |
-        JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_BACKGROUND_FINALIZE,
+        JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_FOREGROUND_FINALIZE,
     &classOps_, &classSpec_};
 
 const JSClass FinalizationGroupObject::protoClass_ = {

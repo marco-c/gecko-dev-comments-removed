@@ -1,0 +1,23 @@
+
+
+gczeal(0);
+newGlobal();
+nukeAllCCWs();
+function f() {
+    global = newGlobal({
+        newCompartment: true
+    });
+    try {
+        return global.eval("new FinalizationGroup(function(){})");
+    } catch (e) {
+        if (e instanceof TypeError && e.message.includes('dead')) {
+            
+            
+            quit();
+        }
+        throw e;
+    }
+}
+g = f();
+g.register({}, {}, {});
+startgc();
