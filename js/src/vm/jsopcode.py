@@ -87,8 +87,6 @@ def parse_index(comment):
 
 
 
-
-
 class CommentInfo:
     def __init__(self):
         self.desc = ''
@@ -98,8 +96,6 @@ class CommentInfo:
         self.stack_uses = ''
         self.stack_defs = ''
         self.length_override = ''
-        self.nuses_override = ''
-        self.ndefs_override = ''
 
 
 
@@ -131,8 +127,6 @@ class OpcodeInfo:
         self.stack_defs = comment_info.stack_defs
         self.stack_defs_array = comment_info.stack_defs_array
         self.length_override = comment_info.length_override
-        self.nuses_override = comment_info.nuses_override
-        self.ndefs_override = comment_info.ndefs_override
 
         
         
@@ -243,12 +237,6 @@ def get_opcodes(dir):
                 elif line.startswith('  len:'):
                     state = 'len'
                     comment_info.length_override = get_tag_value(line)
-                elif line.startswith('  nuses:'):
-                    state = 'nuses'
-                    comment_info.nuses_override = get_tag_value(line)
-                elif line.startswith('  ndefs:'):
-                    state = 'ndefs'
-                    comment_info.ndefs_override = get_tag_value(line)
                 elif state == 'desc':
                     desc += line + "\n"
                 elif line.startswith('  '):
@@ -258,10 +246,6 @@ def get_opcodes(dir):
                         stack += line.strip()
                     elif state == 'len':
                         comment_info.length_override += line.strip()
-                    elif state == 'nuses':
-                        comment_info.nuses_override += line.strip()
-                    elif state == 'ndefs':
-                        comment_info.ndefs_override += line.strip()
 
             comment_info.desc = desc
 

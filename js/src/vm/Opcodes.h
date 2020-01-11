@@ -1715,7 +1715,6 @@
 
 
 
-
  \
     MACRO(JSOP_CALL, "call", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     MACRO(JSOP_CALLITER, "calliter", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
@@ -1779,7 +1778,6 @@
 
 
 
-
  \
     MACRO(JSOP_EVAL, "eval", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
     
@@ -1794,7 +1792,6 @@
  \
     MACRO(JSOP_SPREADEVAL, "spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
     
-
 
 
 
@@ -1892,7 +1889,6 @@
  \
     MACRO(JSOP_IS_CONSTRUCTING, "is-constructing", NULL, 1, 0, 1, JOF_BYTE) \
     
-
 
 
 
@@ -3366,7 +3362,6 @@
  \
     MACRO(JSOP_POP, "pop", NULL, 1, 1, 0, JOF_BYTE) \
     
-
 
 
 
