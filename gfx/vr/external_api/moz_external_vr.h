@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.4"
-static const int32_t kVRExternalVersion = 11;
+#define SHMEM_VERSION "0.0.5"
+static const int32_t kVRExternalVersion = 12;
 
 
 
@@ -63,6 +63,7 @@ static const uint32_t kVRGroupAll = 0xffffffff;
 
 static const int kVRDisplayNameMaxLen = 256;
 static const int kVRControllerNameMaxLen = 256;
+static const int kProfileNameListMaxLen = 256;
 static const int kVRControllerMaxCount = 16;
 static const int kVRControllerMaxButtons = 64;
 static const int kVRControllerMaxAxis = 16;
@@ -121,10 +122,18 @@ enum class ControllerCapabilityFlags : uint16_t {
   
 
 
-  Cap_All = (1 << 5) - 1
+  Cap_GripSpacePosition = 1 << 5,
+  
+
+
+  Cap_All = (1 << 6) - 1
 };
 
 #endif  
+
+enum class TargetRayMode : uint8_t { Gaze, TrackedPointer, Screen };
+
+enum class GamepadMappingType : uint8_t { _empty, Standard, XRStandard };
 
 enum class VRDisplayBlendMode : uint8_t { Opaque, Additive, AlphaBlend };
 
@@ -332,6 +341,37 @@ struct VRControllerState {
 #else
   ControllerHand hand;
 #endif
+  
+  TargetRayMode targetRayMode;
+
+  
+  
+  
+  char profiles[kProfileNameListMaxLen];
+
+  
+  GamepadMappingType mappingType;
+
+  
+  
+  uint64_t selectActionStartFrameId;
+  
+  
+  
+  
+  
+  uint64_t selectActionStopFrameId;
+
+  
+  
+  uint64_t squeezeActionStartFrameId;
+  
+  
+  
+  
+  
+  uint64_t squeezeActionEndFrameId;
+
   uint32_t numButtons;
   uint32_t numAxes;
   uint32_t numHaptics;
@@ -347,9 +387,20 @@ struct VRControllerState {
 #else
   ControllerCapabilityFlags flags;
 #endif
+
+  
+  
+  
   VRPose pose;
+
+  
+  
+  
+  VRPose gripPose;
+
   bool isPositionValid;
   bool isOrientationValid;
+
 #ifdef MOZILLA_INTERNAL_API
   void Clear() { memset(this, 0, sizeof(VRControllerState)); }
 #endif
@@ -421,6 +472,23 @@ struct VRBrowserState {
 #if defined(__ANDROID__)
   bool shutdown;
 #endif  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool detectRuntimesOnly;
   bool presentationActive;
   bool navigationTransitionActive;
   VRLayerState layerState[kVRLayerMaxCount];

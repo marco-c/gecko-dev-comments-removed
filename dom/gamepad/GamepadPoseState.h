@@ -34,7 +34,11 @@ enum class GamepadCapabilityFlags : uint16_t {
   
 
 
-  Cap_All = (1 << 5) - 1
+  Cap_GripSpacePosition = 1 << 5,
+  
+
+
+  Cap_All = (1 << 6) - 1
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(GamepadCapabilityFlags)
