@@ -66,6 +66,93 @@ ChromeUtils.defineModuleGetter(
 
 
 
+const kIdSubRegex =
+  "\\([" +
+  "\\\\" + 
+  "\\w .{}@-]+\\)";
+
+
+
+
+
+const kIsMultipleIds = new RegExp(
+  
+  
+  "^/\\^\\(?" +
+    
+    kIdSubRegex +
+    
+    
+    "(?:\\|" + kIdSubRegex + ")*" +
+  
+  
+  "\\)?\\$/$"
+);
+
+
+const kEscapeSequences = /\\[^.{}]/;
+
+
+
+
+
+
+
+const kRegExpRemovalRegExp = /^\/\^\(\(?|\\|\)\)?\$\/$/g;
+
+
+
+function processMatcher(str) {
+  if (!str.startsWith("/")) {
+    return str;
+  }
+  
+  if (kIsMultipleIds.test(str) && !kEscapeSequences.test(str)) {
+    
+    
+    return new Set(str.replace(kRegExpRemovalRegExp, "").split(")|("));
+  }
+  let lastSlash = str.lastIndexOf("/");
+  let pattern = str.slice(1, lastSlash);
+  let flags = str.slice(lastSlash + 1);
+  return new RegExp(pattern, flags);
+}
+
+
+
+
+function doesAddonEntryMatch(matches, addonProps) {
+  for (let [key, value] of Object.entries(matches)) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+    if (addonProps[key]) {
+      
+      
+      
+      
+      if (value.has && value.has(addonProps[key])) {
+        continue;
+      }
+      if (value.test && value.test(addonProps[key])) {
+        continue;
+      }
+      if (typeof value == "string" && value === addonProps[key]) {
+        continue;
+      }
+    }
+    
+    return false;
+  }
+  
+  return true;
+}
+
+
+
+
+
+
 
 
 
@@ -1152,24 +1239,15 @@ this.ExtensionBlocklistRS = {
       return;
     }
     this._entries.forEach(entry => {
-      function getCriteria(str) {
-        if (!str.startsWith("/")) {
-          return str;
-        }
-        let lastSlash = str.lastIndexOf("/");
-        let pattern = str.slice(1, lastSlash);
-        let flags = str.slice(lastSlash + 1);
-        return new RegExp(pattern, flags);
-      }
       entry.matches = {};
       if (entry.guid) {
-        entry.matches.id = getCriteria(entry.guid);
+        entry.matches.id = processMatcher(entry.guid);
       }
       for (let key of EXTENSION_BLOCK_FILTERS) {
         if (key == "id" || !entry[key]) {
           continue;
         }
-        entry.matches[key] = getCriteria(entry[key]);
+        entry.matches[key] = processMatcher(entry[key]);
       }
       Utils.ensureVersionRangeIsSane(entry);
     });
@@ -1335,16 +1413,9 @@ this.ExtensionBlocklistRS = {
       addonProps.creator = addonProps.creator.name;
     }
 
-    let propMatches = ([k, v]) => {
-      return (
-        !v ||
-        addonProps[k] == v ||
-        (v instanceof RegExp && v.test(addonProps[k]))
-      );
-    };
     for (let entry of addonEntries) {
       
-      if (!Object.entries(entry.matches).every(propMatches)) {
+      if (!doesAddonEntryMatch(entry.matches, addonProps)) {
         continue;
       }
       
@@ -1770,38 +1841,16 @@ var BlocklistXML = {
     if (!aAddon) {
       return null;
     }
-    
-    
-    
-    function checkEntry(entry, params) {
-      for (let [key, value] of Object.entries(entry)) {
-        if (value === null || value === undefined) {
-          continue;
-        }
-        if (params[key]) {
-          if (value instanceof RegExp) {
-            if (!value.test(params[key])) {
-              return false;
-            }
-          } else if (value !== params[key]) {
-            return false;
-          }
-        } else {
-          return false;
-        }
-      }
-      return true;
-    }
 
-    let params = {};
+    let addonProps = {};
     for (let filter of EXTENSION_BLOCK_FILTERS) {
-      params[filter] = aAddon[filter];
+      addonProps[filter] = aAddon[filter];
     }
-    if (params.creator) {
-      params.creator = params.creator.name;
+    if (addonProps.creator) {
+      addonProps.creator = addonProps.creator.name;
     }
     for (let entry of aAddonEntries) {
-      if (checkEntry(entry.attributes, params)) {
+      if (doesAddonEntryMatch(entry.attributes, addonProps)) {
         return entry;
       }
     }
@@ -2310,16 +2359,7 @@ var BlocklistXML = {
     for (let filter of EXTENSION_BLOCK_FILTERS) {
       let attr = blocklistElement.getAttribute(filter);
       if (attr) {
-        
-        
-        if (attr.startsWith("/")) {
-          let lastSlash = attr.lastIndexOf("/");
-          let pattern = attr.slice(1, lastSlash);
-          let flags = attr.slice(lastSlash + 1);
-          blockEntry.attributes[filter] = new RegExp(pattern, flags);
-        } else {
-          blockEntry.attributes[filter] = attr;
-        }
+        blockEntry.attributes[filter] = processMatcher(attr);
       }
     }
 
