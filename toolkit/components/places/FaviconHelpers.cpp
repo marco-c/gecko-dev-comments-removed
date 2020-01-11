@@ -634,6 +634,15 @@ AsyncFetchAndSetIconForPage::OnStartRequest(nsIRequest* aRequest) {
   if (mCanceled) {
     mRequest->Cancel(NS_BINDING_ABORTED);
   }
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
+  if (httpChannel) {
+    bool isNoStore;
+    if (NS_SUCCEEDED(httpChannel->IsNoStoreResponse(&isNoStore)) && isNoStore) {
+      
+      mRequest->Cancel(NS_BINDING_ABORTED);
+    }
+  }
   return NS_OK;
 }
 

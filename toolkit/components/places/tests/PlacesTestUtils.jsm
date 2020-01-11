@@ -157,6 +157,19 @@ var PlacesTestUtils = Object.freeze({
   
 
 
+  async clearFavicons() {
+    return new Promise(resolve => {
+      Services.obs.addObserver(function observer() {
+        Services.obs.removeObserver(observer, "places-favicons-expired");
+        resolve();
+      }, "places-favicons-expired");
+      PlacesUtils.favicons.expireAllFavicons();
+    });
+  },
+
+  
+
+
 
 
 
