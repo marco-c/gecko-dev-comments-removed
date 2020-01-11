@@ -94,20 +94,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
       
       ({ registrations } = await this.listServiceWorkerRegistrations());
 
-      
-      ({ workers } = await this.listWorkers());
-
-      
-      const { processes } = await this.listProcesses();
-      for (const processDescriptorFront of processes) {
-        
-        if (processDescriptorFront.isParent) {
-          continue;
-        }
-        const front = await processDescriptorFront.getTarget();
-        const response = await front.listWorkers();
-        workers = workers.concat(response.workers);
-      }
+      workers = await this.listAllWorkerTargets();
     } catch (e) {
       
     }
@@ -212,6 +199,28 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     });
 
     return result;
+  }
+
+  
+  async listAllWorkerTargets() {
+    
+    let { workers } = await this.listWorkers();
+
+    
+    const { processes } = await this.listProcesses();
+    for (const processDescriptorFront of processes) {
+      
+      if (processDescriptorFront.isParent) {
+        continue;
+      }
+      const front = await processDescriptorFront.getTarget();
+      if (front) {
+        const response = await front.listWorkers();
+        workers = workers.concat(response.workers);
+      }
+    }
+
+    return workers;
   }
 
   async listProcesses() {

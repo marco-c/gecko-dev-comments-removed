@@ -47,6 +47,10 @@ class WorkerTargetFront extends TargetMixin(
     return this.url.split("/").pop();
   }
 
+  get isServiceWorker() {
+    return this.type === Ci.nsIWorkerDebugger.TYPE_SERVICE;
+  }
+
   async attach() {
     if (this._attach) {
       return this._attach;
@@ -54,8 +58,7 @@ class WorkerTargetFront extends TargetMixin(
     this._attach = (async () => {
       const response = await super.attach();
 
-      const isServiceWorker = this.type === Ci.nsIWorkerDebugger.TYPE_SERVICE;
-      if (isServiceWorker && this.getTrait("isParentInterceptEnabled")) {
+      if (this.isServiceWorker && this.getTrait("isParentInterceptEnabled")) {
         
         
         

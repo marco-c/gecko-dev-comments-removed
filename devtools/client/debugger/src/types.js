@@ -66,6 +66,7 @@ export type OriginalSourceData = {|
 export type GeneratedSourceData = {
   thread: ThreadId,
   source: SourcePayload,
+  isServiceWorker: boolean,
 
   
   
@@ -488,6 +489,7 @@ export type Thread = {
   +url: string,
   +type: ThreadType,
   +name: string,
+  serviceWorkerStatus?: string,
 };
 
 export type Worker = Thread;

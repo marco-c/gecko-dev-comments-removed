@@ -10,6 +10,8 @@ async function checkWorkerThreads(dbg, count) {
 
 
 add_task(async function() {
+  info("Subtest #1");
+
   await pushPref("devtools.debugger.features.windowless-service-workers", true);
   await pushPref("devtools.debugger.workers-visible", true);
   await pushPref("dom.serviceWorkers.enabled", true);
@@ -36,6 +38,8 @@ add_task(async function() {
 
 
 add_task(async function() {
+  info("Subtest #2");
+
   const toolbox = await openNewTabAndToolbox(EXAMPLE_URL + "doc-service-workers.html", "jsdebugger");
   const dbg = createDebuggerContext(toolbox);
 
@@ -57,5 +61,53 @@ add_task(async function() {
   invokeInTab("unregisterWorker");
 
   await checkWorkerThreads(dbg, 0);
+  await removeTab(gBrowser.selectedTab);
+});
+
+
+add_task(async function() {
+  info("Subtest #3");
+
+  const toolbox = await openNewTabAndToolbox(EXAMPLE_URL + "doc-service-workers.html", "jsdebugger");
+  const dbg = createDebuggerContext(toolbox);
+
+  invokeInTab("registerWorker");
+  await checkWorkerThreads(dbg, 1);
+
+  const firstTab = gBrowser.selectedTab;
+
+  await addTab(EXAMPLE_URL + "service-worker.sjs?setStatus=newServiceWorker");
+  await removeTab(gBrowser.selectedTab);
+
+  const secondTab = await addTab(EXAMPLE_URL + "doc-service-workers.html");
+
+  await gBrowser.selectTabAtIndex(gBrowser.tabs.indexOf(firstTab));
+  await checkWorkerThreads(dbg, 2);
+
+  const sources = await waitUntilPredicate(() => {
+    const list = dbg.selectors.getSourceList().filter(s => s.url.includes("service-worker.sjs"));
+    return list.length == 2 ? list : null;
+  });
+  ok(true, "Found two different sources for service worker");
+
+  await selectSource(dbg, sources[0]);
+  await waitForLoadedSource(dbg, sources[0]);
+  const content0 = findSourceContent(dbg, sources[0]);
+
+  await selectSource(dbg, sources[1]);
+  await waitForLoadedSource(dbg, sources[1]);
+  const content1 = findSourceContent(dbg, sources[1]);
+
+  ok(content0.value.includes("newServiceWorker") != content1.value.includes("newServiceWorker"),
+     "Got two different sources for service worker");
+
+  invokeInTab("unregisterWorker");
+
+  await checkWorkerThreads(dbg, 0);
+  await removeTab(firstTab);
+  await removeTab(secondTab);
+
+  
+  await addTab(EXAMPLE_URL + "service-worker.sjs?setStatus=");
   await removeTab(gBrowser.selectedTab);
 });

@@ -17,16 +17,21 @@ import type {
 import { clientCommands } from "./commands";
 
 export function prepareSourcePayload(
-  client: ThreadFront,
+  threadFront: ThreadFront,
   source: SourcePayload
 ): GeneratedSourceData {
-  
-  
-  
-  
-  clientCommands.registerSourceActor(source.actor, makeSourceId(source));
+  const { isServiceWorker } = threadFront.parentFront;
 
-  return { thread: client.actor, source };
+  
+  
+  
+  
+  clientCommands.registerSourceActor(
+    source.actor,
+    makeSourceId(source, isServiceWorker)
+  );
+
+  return { thread: threadFront.actor, isServiceWorker, source };
 }
 
 export function createFrame(
@@ -56,8 +61,15 @@ export function createFrame(
   };
 }
 
-export function makeSourceId(source: SourcePayload) {
-  return source.url ? `sourceURL-${source.url}` : `source-${source.actor}`;
+export function makeSourceId(source: SourcePayload, isServiceWorker: boolean) {
+  
+  
+  
+  
+  
+  return source.url && !isServiceWorker
+    ? `sourceURL-${source.url}`
+    : `source-${source.actor}`;
 }
 
 export function createPause(thread: string, packet: PausedPacket): any {

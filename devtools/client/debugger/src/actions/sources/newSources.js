@@ -315,8 +315,8 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
     const newSourcesObj = {};
     const newSourceActors: Array<SourceActor> = [];
 
-    for (const { thread, source, id } of sourceInfo) {
-      const newId = id || makeSourceId(source);
+    for (const { thread, isServiceWorker, source, id } of sourceInfo) {
+      const newId = id || makeSourceId(source, isServiceWorker);
 
       if (!getSource(getState(), newId) && !newSourcesObj[newId]) {
         newSourcesObj[newId] = {
@@ -336,8 +336,8 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
 
       const actorId = stringToSourceActorId(source.actor);
 
-      
-      
+      // We are sometimes notified about a new source multiple times if we
+      // request a new source list and also get a source event from the server.
       if (!hasSourceActor(getState(), actorId)) {
         newSourceActors.push({
           id: actorId,
@@ -411,13 +411,13 @@ function checkNewSources(cx, sources: Source[]) {
 }
 
 export function ensureSourceActor(thread: string, sourceActor: SourceActorId) {
-  return async function({ getState, client }: ThunkArgs) {
+  return async function({ dispatch, getState, client }: ThunkArgs) {
     await sourceQueue.flush();
     if (hasSourceActor(getState(), sourceActor)) {
       return Promise.resolve();
     }
 
-    await client.waitForSourceActor(thread, sourceActor);
-    return sourceQueue.flush();
+    const sources = await client.fetchThreadSources(thread);
+    await dispatch(newGeneratedSources(sources));
   };
 }
