@@ -89,6 +89,12 @@ add_task(async function test_common_initialize() {
 
   
   await Services.logins.initializationPromise;
+
+  
+  LoginTestUtils.clearData();
+
+  
+  registerCleanupFunction(() => LoginTestUtils.clearData());
 });
 
 
