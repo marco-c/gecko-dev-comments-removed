@@ -286,9 +286,17 @@ function bindEvents2(resolveObject, resolveEventName, rejectObject, rejectEventN
 function createElement(tagName, attrs, parentNode, doBindEvents) {
   var element = document.createElement(tagName);
 
-  if (doBindEvents)
+  if (doBindEvents) {
     bindEvents(element);
-
+    if (element.tagName == "IFRAME" && !('srcdoc' in attrs || 'src' in attrs)) {
+      
+      
+      
+      element.eventPromise = element.eventPromise.then(() => {
+        return new Promise(resolve => setTimeout(resolve, 0))
+      });
+    }
+  }
   
   
   
