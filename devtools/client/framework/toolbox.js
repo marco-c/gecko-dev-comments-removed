@@ -649,11 +649,12 @@ Toolbox.prototype = {
       targetFront.watchFronts("inspector", async inspectorFront => {
         registerWalkerListeners(this.store, inspectorFront.walker);
       });
+    }
 
-      this._threadFront = await this._attachTarget(targetFront);
+    await this._attachTarget({ type, targetFront, isTopLevel });
+
+    if (isTopLevel) {
       this.emit("top-target-attached");
-    } else {
-      return this._attachTarget(targetFront);
     }
   },
 
@@ -670,16 +671,24 @@ Toolbox.prototype = {
 
 
 
-  async _attachTarget(target) {
-    await target.attach();
+  async _attachTarget({ type, targetFront, isTopLevel }) {
+    await targetFront.attach();
 
     
-    const webConsoleFront = await target.getFront("console");
+    const webConsoleFront = await targetFront.getFront("console");
     await webConsoleFront.startListeners(["NetworkActivity"]);
 
-    const threadFront = await this._attachAndResumeThread(target);
-    this._startThreadFrontListeners(threadFront);
-    return threadFront;
+    
+    
+    
+    
+    if (isTopLevel || type != TargetList.TYPES.FRAME) {
+      const threadFront = await this._attachAndResumeThread(targetFront);
+      this._startThreadFrontListeners(threadFront);
+      if (isTopLevel) {
+        this._threadFront = threadFront;
+      }
+    }
   },
 
   _startThreadFrontListeners: function(threadFront) {
