@@ -26,18 +26,9 @@ class PromiseObject;
 
 
 
-
-
-
-
-
-
-
-
-
-
-enum class ResumeMode {
+enum class NativeResumeMode {
   
+
 
 
 
@@ -49,7 +40,10 @@ enum class ResumeMode {
 
 
 
-  Throw,
+
+
+
+  Override,
 
   
 
@@ -57,14 +51,10 @@ enum class ResumeMode {
 
 
 
-  Terminate,
-
-  
 
 
 
-
-  Return,
+  Abort,
 };
 
 class DebugScript;
@@ -225,8 +215,9 @@ class DebugAPI {
   static inline MOZ_MUST_USE bool onResumeFrame(JSContext* cx,
                                                 AbstractFramePtr frame);
 
-  static inline ResumeMode onNativeCall(JSContext* cx, const CallArgs& args,
-                                        CallReason reason);
+  static inline NativeResumeMode onNativeCall(JSContext* cx,
+                                              const CallArgs& args,
+                                              CallReason reason);
 
   
 
@@ -379,8 +370,9 @@ class DebugAPI {
                                                 AbstractFramePtr frame);
   static MOZ_MUST_USE bool slowPathOnResumeFrame(JSContext* cx,
                                                  AbstractFramePtr frame);
-  static ResumeMode slowPathOnNativeCall(JSContext* cx, const CallArgs& args,
-                                         CallReason reason);
+  static NativeResumeMode slowPathOnNativeCall(JSContext* cx,
+                                               const CallArgs& args,
+                                               CallReason reason);
   static MOZ_MUST_USE bool slowPathOnDebuggerStatement(JSContext* cx,
                                                        AbstractFramePtr frame);
   static MOZ_MUST_USE bool slowPathOnExceptionUnwind(JSContext* cx,
