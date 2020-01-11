@@ -18,7 +18,7 @@ class CompositorThreadHolder;
 
 class VideoBridgeParent final : public PVideoBridgeParent,
                                 public HostIPCAllocator,
-                                public ShmemAllocator {
+                                public mozilla::ipc::IShmemAllocator {
  public:
   ~VideoBridgeParent();
 
@@ -46,7 +46,7 @@ class VideoBridgeParent final : public PVideoBridgeParent,
       const nsTArray<AsyncParentMessageData>& aMessage) override;
 
   
-  ShmemAllocator* AsShmemAllocator() override { return this; }
+  IShmemAllocator* AsShmemAllocator() override { return this; }
   bool IsSameProcess() const override;
   bool IPCOpen() const override { return !mClosed; }
 
@@ -57,7 +57,7 @@ class VideoBridgeParent final : public PVideoBridgeParent,
   bool AllocUnsafeShmem(size_t aSize, ipc::SharedMemory::SharedMemoryType aType,
                         ipc::Shmem* aShmem) override;
 
-  void DeallocShmem(ipc::Shmem& aShmem) override;
+  bool DeallocShmem(ipc::Shmem& aShmem) override;
 
  private:
   explicit VideoBridgeParent(VideoBridgeSource aSource);
