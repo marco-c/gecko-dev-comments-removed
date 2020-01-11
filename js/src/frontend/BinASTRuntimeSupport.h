@@ -170,8 +170,21 @@ class BinASTSourceMetadataMultipart : public BinASTSourceMetadata {
   friend class js::ScriptSource;
 
  public:
+  
+  
+  
+  
+  
   static BinASTSourceMetadataMultipart* create(
       const Vector<BinASTKind>& binASTKinds, uint32_t numStrings);
+
+  
+  
+  
+  
+  
+  static BinASTSourceMetadataMultipart* create(uint32_t numBinASTKinds,
+                                               uint32_t numStrings);
 
   inline uint32_t numBinASTKinds() { return numBinASTKinds_; }
 
@@ -222,6 +235,8 @@ class BinASTSourceMetadataContext : public BinASTSourceMetadata {
   friend class js::ScriptSource;
 
  public:
+  
+  
   static BinASTSourceMetadataContext* create(uint32_t numStrings);
 
   HuffmanDictionaryForMetadata* dictionary() { return dictionary_; }

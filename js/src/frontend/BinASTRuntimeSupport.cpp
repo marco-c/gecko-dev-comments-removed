@@ -53,6 +53,24 @@ BinASTSourceMetadataMultipart* BinASTSourceMetadataMultipart::create(
   return data;
 }
 
+
+BinASTSourceMetadataMultipart* BinASTSourceMetadataMultipart::create(
+    uint32_t numBinASTKinds, uint32_t numStrings) {
+  
+  
+  BinASTSourceMetadataMultipart* data =
+      static_cast<BinASTSourceMetadataMultipart*>(
+          js_calloc(BinASTSourceMetadataMultipart::totalSize(numBinASTKinds,
+                                                             numStrings)));
+  if (MOZ_UNLIKELY(!data)) {
+    return nullptr;
+  }
+
+  new (data) BinASTSourceMetadataMultipart(numBinASTKinds, numStrings);
+
+  return data;
+}
+
 void BinASTSourceMetadataMultipart::trace(JSTracer* tracer) {
   JSAtom** base = atomsBase();
   for (uint32_t i = 0; i < numStrings_; i++) {
