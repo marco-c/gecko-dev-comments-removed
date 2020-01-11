@@ -36,6 +36,23 @@ class IO extends Domain {
 
 
 
+  async close(options) {
+    const { handle } = options;
+
+    if (typeof handle != "string") {
+      throw new TypeError(`handle: string value expected`);
+    }
+
+    await streamRegistry.remove(handle);
+  }
+
+  
+
+
+
+
+
+
 
 
 
