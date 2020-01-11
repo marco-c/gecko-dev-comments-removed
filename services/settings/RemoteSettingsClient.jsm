@@ -60,11 +60,6 @@ const DB_NAME = "remote-settings";
 const TELEMETRY_COMPONENT = "remotesettings";
 
 XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gServerURL",
-  "services.settings.server"
-);
 
 
 
@@ -277,7 +272,7 @@ class RemoteSettingsClient extends EventEmitter {
   }
 
   httpClient() {
-    const api = new KintoHttpClient(gServerURL);
+    const api = new KintoHttpClient(Utils.SERVER_URL);
     return api.bucket(this.bucketName).collection(this.collectionName);
   }
 
@@ -398,7 +393,7 @@ class RemoteSettingsClient extends EventEmitter {
   async sync(options) {
     
     
-    const { changes } = await Utils.fetchLatestChanges(gServerURL, {
+    const { changes } = await Utils.fetchLatestChanges(Utils.SERVER_URL, {
       filters: {
         collection: this.collectionName,
         bucket: this.bucketName,
@@ -547,7 +542,7 @@ class RemoteSettingsClient extends EventEmitter {
           
           const strategy = Kinto.syncStrategy.PULL_ONLY;
           syncResult = await kintoCollection.sync({
-            remote: gServerURL,
+            remote: Utils.SERVER_URL,
             strategy,
             expectedTimestamp,
           });
