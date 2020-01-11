@@ -74,7 +74,11 @@ describe("ASRTargeting docs", () => {
     
     
     
-    const whitelist = ["personalizedCfrThreshold", "personalizedCfrScores"];
+    const whitelist = [
+      "personalizedCfrThreshold",
+      "personalizedCfrScores",
+      "messageImpressions",
+    ];
     for (const targetingParam of DOCS_TARGETING_HEADINGS.filter(
       doc => !whitelist.includes(doc)
     )) {

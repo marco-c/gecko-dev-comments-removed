@@ -265,6 +265,11 @@ class _ToolbarBadgeHub {
       toolbarbutton.addEventListener("keypress", this.removeAllNotifications);
       this.state = { notification: { id: message.id } };
 
+      
+      this._addImpression(message);
+      
+      this.sendUserEventTelemetry("IMPRESSION", message);
+
       return toolbarbutton;
     }
 
@@ -277,11 +282,6 @@ class _ToolbarBadgeHub {
       
       return;
     }
-
-    
-    this._addImpression(message);
-    
-    this.sendUserEventTelemetry("IMPRESSION", message);
 
     EveryWindow.registerCallback(
       this.id,
