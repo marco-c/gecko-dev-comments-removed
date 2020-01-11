@@ -173,6 +173,11 @@ impl WritingMode {
         self.intersects(WritingMode::VERTICAL)
     }
 
+    #[inline]
+    pub fn is_horizontal(&self) -> bool {
+        !self.is_vertical()
+    }
+
     
     #[inline]
     pub fn is_vertical_lr(&self) -> bool {
@@ -199,6 +204,20 @@ impl WritingMode {
     #[inline]
     pub fn is_upright(&self) -> bool {
         self.intersects(WritingMode::UPRIGHT)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn line_left_is_inline_start(&self) -> bool {
+        
+        
+        
+        self.is_bidi_ltr()
     }
 
     #[inline]

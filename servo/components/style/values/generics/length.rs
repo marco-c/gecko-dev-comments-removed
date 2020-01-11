@@ -92,7 +92,7 @@ where
     }
 
     
-    pub fn map(&self, f: impl FnOnce(LengthPercentage) -> LengthPercentage) -> Self {
+    pub fn map<T>(&self, f: impl FnOnce(LengthPercentage) -> T) -> LengthPercentageOrAuto<T> {
         match self {
             LengthPercentageOrAuto::LengthPercentage(l) => {
                 LengthPercentageOrAuto::LengthPercentage(f(l.clone()))

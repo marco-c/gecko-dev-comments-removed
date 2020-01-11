@@ -170,6 +170,12 @@ impl LengthPercentage {
 
     
     #[inline]
+    pub fn percentage_component(&self) -> Percentage {
+        Percentage(self.clamping_mode.clamp(self.percentage.0))
+    }
+
+    
+    #[inline]
     pub fn percentage(&self) -> CSSFloat {
         self.percentage.0
     }
@@ -179,6 +185,16 @@ impl LengthPercentage {
     pub fn specified_percentage(&self) -> Option<Percentage> {
         if self.has_percentage {
             Some(self.percentage)
+        } else {
+            None
+        }
+    }
+
+    
+    
+    pub fn as_length(&self) -> Option<Length> {
+        if !self.has_percentage {
+            Some(self.length_component())
         } else {
             None
         }
@@ -639,14 +655,14 @@ impl CSSPixelLength {
 
     
     #[inline]
-    pub fn px(&self) -> CSSFloat {
+    pub fn px(self) -> CSSFloat {
         self.0
     }
 
     
     #[inline]
-    pub fn to_i32_au(&self) -> i32 {
-        Au::from(*self).0
+    pub fn to_i32_au(self) -> i32 {
+        Au::from(self).0
     }
 
     
@@ -674,8 +690,28 @@ impl CSSPixelLength {
     }
 
     
+    #[inline]
     pub fn max_assign(&mut self, other: Self) {
         *self = self.max(other);
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn clamp_between_extremums(self, min_size: Self, max_size: Option<Self>) -> Self {
+        self.clamp_below_max(max_size).max(min_size)
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn clamp_below_max(self, max_size: Option<Self>) -> Self {
+        match max_size {
+            None => self,
+            Some(max_size) => self.min(max_size),
+        }
     }
 }
 
