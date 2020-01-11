@@ -777,6 +777,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void move16To64SignExtend(Register src, Register64 dest) PER_ARCH;
   inline void move32To64SignExtend(Register src, Register64 dest) PER_ARCH;
 
+  inline void move32ZeroExtendToPtr(Register src, Register dest) PER_ARCH;
+
   
   
   inline void moveValue(const ConstantOrRegister& src,

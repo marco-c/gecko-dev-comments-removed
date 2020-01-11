@@ -4360,9 +4360,15 @@ bool CacheIRCompiler::emitCompareBigIntInt32ResultShared(
     masm.branch32(Assembler::LessThan, int32, Imm32(0), greaterThan);
     masm.jump(&doCompare);
 
+    
+    
     masm.bind(&isNegative);
     masm.branch32(Assembler::GreaterThanOrEqual, int32, Imm32(0), lessThan);
     masm.neg32(scratch2);
+
+    
+    
+    masm.move32ZeroExtendToPtr(scratch2, scratch2);
 
     
     
