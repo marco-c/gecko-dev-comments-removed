@@ -735,6 +735,23 @@ nsresult EditorEventListener::DragOver(DragEvent* aDragEvent) {
   if (dropParent->IsEditable() && CanDrop(aDragEvent)) {
     aDragEvent->PreventDefault();  
 
+    
+    
+    
+    
+    DataTransfer* dataTransfer = aDragEvent->GetDataTransfer();
+    MOZ_ASSERT(dataTransfer);
+    if (dataTransfer->DropEffectInt() == nsIDragService::DRAGDROP_ACTION_MOVE) {
+      nsCOMPtr<nsINode> dragSource = dataTransfer->GetMozSourceNode();
+      if (dragSource && !dragSource->IsEditable()) {
+        
+        
+        dataTransfer->SetDropEffectInt(nsContentUtils::FilterDropEffect(
+            nsIDragService::DRAGDROP_ACTION_COPY,
+            dataTransfer->EffectAllowedInt()));
+      }
+    }
+
     if (!mCaret) {
       return NS_OK;
     }
@@ -751,6 +768,9 @@ nsresult EditorEventListener::DragOver(DragEvent* aDragEvent) {
     
     
     aDragEvent->StopPropagation();
+    DataTransfer* dataTransfer = aDragEvent->GetDataTransfer();
+    MOZ_ASSERT(dataTransfer);
+    dataTransfer->SetDropEffectInt(nsIDragService::DRAGDROP_ACTION_NONE);
   }
 
   if (mCaret) {

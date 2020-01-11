@@ -210,7 +210,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   
   bool deleteSelection = false;
-  if (!SelectionRefPtr()->IsCollapsed() && srcdoc == destdoc) {
+  if (!SelectionRefPtr()->IsCollapsed() && sourceNode &&
+      sourceNode->IsEditable() && srcdoc == destdoc) {
     uint32_t rangeCount = SelectionRefPtr()->RangeCount();
     for (uint32_t j = 0; j < rangeCount; j++) {
       nsRange* range = SelectionRefPtr()->GetRangeAt(j);
@@ -234,13 +235,25 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
 
     
     
-    
-    
-    
-    
-    
-    uint32_t dropEffect = dataTransfer->DropEffectInt();
-    deleteSelection = !(dropEffect & nsIDragService::DRAGDROP_ACTION_COPY);
+    if ((dataTransfer->DropEffectInt() &
+         nsIDragService::DRAGDROP_ACTION_MOVE) &&
+        !(dataTransfer->DropEffectInt() &
+          nsIDragService::DRAGDROP_ACTION_COPY)) {
+      if (AsHTMLEditor()) {
+        
+        
+        
+        deleteSelection = !sourceNode->IsInNativeAnonymousSubtree();
+      } else if (sourceNode->IsInNativeAnonymousSubtree()) {
+        
+        
+        
+        
+        Element* rootElement = GetRoot();
+        deleteSelection =
+            rootElement && sourceNode->IsInclusiveDescendantOf(rootElement);
+      }
+    }
   }
 
   if (IsPlaintextEditor()) {
