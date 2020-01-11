@@ -216,13 +216,14 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  IterationResult OneIteration(GraphTime aStateEnd,
+  IterationResult OneIteration(GraphTime aStateEnd, GraphTime aIterationEnd,
                                AudioMixer* aMixer) override;
 
   
 
 
-  IterationResult OneIterationImpl(GraphTime aStateEnd, AudioMixer* aMixer);
+  IterationResult OneIterationImpl(GraphTime aStateEnd, GraphTime aIterationEnd,
+                                   AudioMixer* aMixer);
 
   
 
@@ -725,6 +726,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   GraphTime mProcessedTime = 0;
+  
+
+
+  GraphTime mIterationEndTime = 0;
   
 
 

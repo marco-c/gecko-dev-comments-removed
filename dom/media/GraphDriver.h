@@ -178,7 +178,8 @@ struct GraphInterface {
   virtual void DeviceChanged() = 0;
   
 
-  virtual IterationResult OneIteration(GraphTime aStateEnd,
+  virtual IterationResult OneIteration(GraphTime aStateComputedEnd,
+                                       GraphTime aIterationEnd,
                                        AudioMixer* aMixer) = 0;
 #ifdef DEBUG
   
@@ -271,8 +272,6 @@ class GraphDriver {
   GraphDriver* PreviousDriver();
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
-  GraphTime IterationEnd() { return mIterationEnd; }
-
   virtual AudioCallbackDriver* AsAudioCallbackDriver() { return nullptr; }
 
   virtual OfflineClockDriver* AsOfflineClockDriver() { return nullptr; }
@@ -315,9 +314,7 @@ class GraphDriver {
 
  protected:
   
-  
   GraphTime mIterationStart = 0;
-  
   
   GraphTime mIterationEnd = 0;
   

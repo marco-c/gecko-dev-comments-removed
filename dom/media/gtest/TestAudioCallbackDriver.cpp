@@ -30,7 +30,7 @@ class MockGraphInterface : public GraphInterface {
   MOCK_METHOD0(DeviceChanged, void());
   
 
-  IterationResult OneIteration(GraphTime, AudioMixer*) {
+  IterationResult OneIteration(GraphTime, GraphTime, AudioMixer*) {
     return mKeepProcessing ? IterationResult::CreateStillProcessing()
                            : IterationResult::CreateStop(
                                  NS_NewRunnableFunction(__func__, [] {}));

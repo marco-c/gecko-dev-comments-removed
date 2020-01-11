@@ -35,7 +35,8 @@ class GraphRunner final : public Runnable {
 
 
 
-  IterationResult OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
+  IterationResult OneIteration(GraphTime aStateEnd, GraphTime aIterationEnd,
+                               AudioMixer* aMixer);
 
   
 
@@ -62,17 +63,21 @@ class GraphRunner final : public Runnable {
 
   class IterationState {
     GraphTime mStateEnd;
+    GraphTime mIterationEnd;
     AudioMixer* MOZ_NON_OWNING_REF mMixer;
 
    public:
-    IterationState(GraphTime aStateEnd, AudioMixer* aMixer)
-        : mStateEnd(aStateEnd), mMixer(aMixer) {}
+    IterationState(GraphTime aStateEnd, GraphTime aIterationEnd,
+                   AudioMixer* aMixer)
+        : mStateEnd(aStateEnd), mIterationEnd(aIterationEnd), mMixer(aMixer) {}
     IterationState& operator=(const IterationState& aOther) {
       mStateEnd = aOther.mStateEnd;
+      mIterationEnd = aOther.mIterationEnd;
       mMixer = aOther.mMixer;
       return *this;
     }
     GraphTime StateEnd() const { return mStateEnd; }
+    GraphTime IterationEnd() const { return mIterationEnd; }
     AudioMixer* Mixer() const { return mMixer; }
   };
 
