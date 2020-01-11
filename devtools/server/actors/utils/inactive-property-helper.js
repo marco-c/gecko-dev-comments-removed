@@ -119,7 +119,7 @@ class InactivePropertyHelper {
           "grid-row-start",
           "justify-self",
         ],
-        when: () => !this.gridItem,
+        when: () => !this.gridItem && !this.isAbsPosGridElement(),
         fixId: "inactive-css-not-grid-item-fix-2",
         msgId: "inactive-css-not-grid-item",
         numFixProps: 2,
@@ -127,7 +127,8 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: ["align-self", "place-self"],
-        when: () => !this.gridItem && !this.flexItem,
+        when: () =>
+          !this.gridItem && !this.flexItem && !this.isAbsPosGridElement(),
         fixId: "inactive-css-not-grid-or-flex-item-fix-2",
         msgId: "inactive-css-not-grid-or-flex-item",
         numFixProps: 4,
@@ -547,6 +548,13 @@ class InactivePropertyHelper {
   
 
 
+  get isAbsolutelyPositioned() {
+    return this.checkComputedStyle("position", ["absolute", "fixed"]);
+  }
+
+  
+
+
   get isFloated() {
     return this.style && this.style.cssFloat !== "none";
   }
@@ -636,6 +644,23 @@ class InactivePropertyHelper {
 
 
 
+
+  isAbsPosGridElement() {
+    if (!this.isAbsolutelyPositioned) {
+      return false;
+    }
+
+    const containingBlock = this.getContainingBlock();
+
+    return containingBlock !== null && this.isGridContainer(containingBlock);
+  }
+
+  
+
+
+
+
+
   isFlexItem(node) {
     return !!node.parentFlexElement;
   }
@@ -657,7 +682,7 @@ class InactivePropertyHelper {
 
 
   isGridContainer(node) {
-    return !!node.getGridFragments().length > 0;
+    return node.getGridFragments().length > 0;
   }
 
   
@@ -703,6 +728,13 @@ class InactivePropertyHelper {
     return true;
   }
 
+  
+
+
+  getContainingBlock() {
+    return this.node ? InspectorUtils.containingBlockOf(this.node) : null;
+  }
+
   getParentGridElement(node) {
     
     if (node.flattenedTreeParentNode === node.ownerDocument) {
@@ -716,9 +748,7 @@ class InactivePropertyHelper {
         
         return null;
       }
-      const position = this.style ? this.style.position : null;
-      const cssFloat = this.style ? this.style.cssFloat : null;
-      if (position === "fixed" || cssFloat !== "none") {
+      if (this.isAbsolutelyPositioned || this.isFloated) {
         
         return null;
       }
@@ -731,13 +761,14 @@ class InactivePropertyHelper {
       p;
       p = p.flattenedTreeParentNode
     ) {
-      const style = node.ownerGlobal.getComputedStyle(p);
-      const display = style.display;
-
-      if (display.includes("grid") && !!p.getGridFragments().length > 0) {
+      if (this.isGridContainer(p)) {
         
         return p;
       }
+
+      const style = node.ownerGlobal.getComputedStyle(p);
+      const display = style.display;
+
       if (display !== "contents") {
         return null; 
       }
