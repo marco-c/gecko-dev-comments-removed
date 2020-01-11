@@ -43,6 +43,13 @@ Menu.prototype.append = function(menuItem) {
 
 
 
+Menu.prototype.clear = function() {
+  this.menuitems = [];
+};
+
+
+
+
 
 
 

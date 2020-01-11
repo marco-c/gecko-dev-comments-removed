@@ -4,7 +4,7 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "Menu", "devtools/client/framework/menu");
+const Menu = require("devtools/client/framework/menu");
 loader.lazyRequireGetter(
   this,
   "MenuItem",
@@ -16,24 +16,16 @@ const { getStr } = require("./utils/l10n");
 
 
 
-class ChangesContextMenu {
-  
-
-
-  constructor(view) {
-    this.view = view;
-    this.inspector = this.view.inspector;
-    
-    this.document = this.view.document;
-    
-    this.panel = this.document.getElementById("sidebar-panel-changes");
-    
-    this.window = this.document.defaultView;
-
-    this._onCopyDeclaration = this.view.copyDeclaration.bind(this.view);
-    this._onCopyRule = this.view.copyRule.bind(this.view);
-    this._onCopySelection = this.view.copySelection.bind(this.view);
-    this._onSelectAll = this._onSelectAll.bind(this);
+class ChangesContextMenu extends Menu {
+  constructor(config = {}) {
+    super(config);
+    this.onCopy = config.onCopy;
+    this.onCopyAllChanges = config.onCopyAllChanges;
+    this.onCopyDeclaration = config.onCopyDeclaration;
+    this.onCopyRule = config.onCopyRule;
+    this.onSelectAll = config.onSelectAll;
+    this.toolboxDocument = config.toolboxDocument;
+    this.window = config.window;
   }
 
   show(event) {
@@ -46,17 +38,18 @@ class ChangesContextMenu {
 
   _openMenu({ target, screenX = 0, screenY = 0 } = {}) {
     this.window.focus();
-
-    const menu = new Menu();
+    
+    this.clear();
 
     
     const menuitemCopy = new MenuItem({
+      id: "changes-contextmenu-copy",
       label: getStr("changes.contextmenu.copy"),
       accesskey: getStr("changes.contextmenu.copy.accessKey"),
-      click: this._onCopySelection,
+      click: this.onCopy,
       disabled: !this._hasTextSelected(),
     });
-    menu.append(menuitemCopy);
+    this.append(menuitemCopy);
 
     const declEl = target.closest(".changes__declaration");
     const ruleEl = target.closest("[data-rule-id]");
@@ -64,23 +57,25 @@ class ChangesContextMenu {
 
     if (ruleId || declEl) {
       
-      menu.append(
+      this.append(
         new MenuItem({
+          id: "changes-contextmenu-copy-rule",
           label: getStr("changes.contextmenu.copyRule"),
-          click: () => this._onCopyRule(ruleId, true),
+          click: () => this.onCopyRule(ruleId, true),
         })
       );
 
       
-      menu.append(
+      this.append(
         new MenuItem({
+          id: "changes-contextmenu-copy-declaration",
           label: getStr("changes.contextmenu.copyDeclaration"),
-          click: () => this._onCopyDeclaration(declEl),
+          click: () => this.onCopyDeclaration(declEl),
           visible: !!declEl,
         })
       );
 
-      menu.append(
+      this.append(
         new MenuItem({
           type: "separator",
         })
@@ -89,14 +84,14 @@ class ChangesContextMenu {
 
     
     const menuitemSelectAll = new MenuItem({
+      id: "changes-contextmenu-select-all",
       label: getStr("changes.contextmenu.selectAll"),
       accesskey: getStr("changes.contextmenu.selectAll.accessKey"),
-      click: this._onSelectAll,
+      click: this.onSelectAll,
     });
-    menu.append(menuitemSelectAll);
+    this.append(menuitemSelectAll);
 
-    menu.popup(screenX, screenY, this.inspector.toolbox.doc);
-    return menu;
+    this.popup(screenX, screenY, this.toolboxDocument);
   }
 
   _hasTextSelected() {
@@ -104,19 +99,9 @@ class ChangesContextMenu {
     return selection.toString() && !selection.isCollapsed;
   }
 
-  
-
-
-  _onSelectAll() {
-    const selection = this.window.getSelection();
-    selection.selectAllChildren(this.panel);
-  }
-
   destroy() {
-    this.inspector = null;
-    this.panel = null;
-    this.view = null;
     this.window = null;
+    this.toolboxDocument = null;
   }
 }
 
