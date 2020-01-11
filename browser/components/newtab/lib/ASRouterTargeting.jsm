@@ -119,6 +119,9 @@ const FRECENT_SITES_IGNORE_BLOCKED = false;
 const FRECENT_SITES_NUM_ITEMS = 25;
 const FRECENT_SITES_MIN_FRECENCY = 100;
 
+const CACHE_EXPIRATION = 60 * 1000;
+const jexlEvaluationCache = new Map();
+
 
 
 
@@ -568,16 +571,47 @@ this.ASRouterTargeting = {
 
 
 
+  getCachedEvaluation(targeting) {
+    if (jexlEvaluationCache.has(targeting)) {
+      const { timestamp, value } = jexlEvaluationCache.get(targeting);
+      if (Date.now() - timestamp <= CACHE_EXPIRATION) {
+        return { value };
+      }
+      jexlEvaluationCache.delete(targeting);
+    }
+
+    return null;
+  },
+
+  
 
 
-  async checkMessageTargeting(message, context, onError) {
+
+
+
+
+
+
+  async checkMessageTargeting(message, context, onError, shouldCache) {
     
     if (!message.targeting) {
       return true;
     }
     let result;
     try {
+      if (shouldCache) {
+        result = this.getCachedEvaluation(message.targeting);
+        if (result) {
+          return result.value;
+        }
+      }
       result = await this.isMatch(message.targeting, context);
+      if (shouldCache) {
+        jexlEvaluationCache.set(message.targeting, {
+          timestamp: Date.now(),
+          value: result,
+        });
+      }
     } catch (error) {
       Cu.reportError(error);
       if (onError) {
@@ -604,7 +638,7 @@ this.ASRouterTargeting = {
     return this.combineContexts(context, triggerContext);
   },
 
-  _isMessageMatch(message, trigger, context, onError) {
+  _isMessageMatch(message, trigger, context, onError, shouldCache = false) {
     return (
       message &&
       (trigger
@@ -612,11 +646,12 @@ this.ASRouterTargeting = {
         : !message.trigger) &&
       
       
-      this.checkMessageTargeting(message, context, onError)
+      this.checkMessageTargeting(message, context, onError, shouldCache)
     );
   },
 
   
+
 
 
 
@@ -633,13 +668,20 @@ this.ASRouterTargeting = {
     context,
     onError,
     ordered = false,
+    shouldCache = false,
   }) {
     const sortedMessages = this._getSortedMessages(messages, ordered);
     const combinedContext = this._getCombinedContext(trigger, context);
 
     for (const candidate of sortedMessages) {
       if (
-        await this._isMessageMatch(candidate, trigger, combinedContext, onError)
+        await this._isMessageMatch(
+          candidate,
+          trigger,
+          combinedContext,
+          onError,
+          shouldCache
+        )
       ) {
         return candidate;
       }
