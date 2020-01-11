@@ -9,13 +9,10 @@
 
 
 
-import { getSourcesByURL } from "./sources";
-
 import {
   createPendingBreakpoint,
   makePendingLocationId,
 } from "../utils/breakpoint";
-import { isGenerated } from "../utils/source";
 
 import type { SourcesState } from "./sources";
 import type { PendingBreakpoint, Source } from "../types";
@@ -86,12 +83,6 @@ export function getPendingBreakpointsForSource(
   state: OuterState,
   source: Source
 ): PendingBreakpoint[] {
-  const sources = getSourcesByURL(state, source.url);
-  if (sources.length > 1 && isGenerated(source)) {
-    
-    return [];
-  }
-
   return getPendingBreakpointList(state).filter(pendingBreakpoint => {
     return (
       pendingBreakpoint.location.sourceUrl === source.url ||
