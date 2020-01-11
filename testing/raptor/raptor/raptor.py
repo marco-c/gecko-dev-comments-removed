@@ -142,10 +142,13 @@ either Raptor or browsertime."""
         self.firefox_android_apps = FIREFOX_ANDROID_APPS
         
         
+        
         self.no_condprof = ((self.config['platform'] == 'win'
                              and self.config['processor'] == 'aarch64') or
                             self.config['binary'] == 'org.mozilla.fennec_aurora' or
+                            self.config['binary'] == 'org.mozilla.reference.browser.raptor' or
                             self.config['no_conditioned_profile'])
+        LOG.info("self.no_condprof is: {}".format(self.no_condprof))
 
         
         if self.config['app'] == 'fennec':
