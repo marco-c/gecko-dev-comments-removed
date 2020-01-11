@@ -2179,7 +2179,7 @@ class Document : public nsINode,
   
   
   
-  bool FullscreenElementReadyCheck(const FullscreenRequest&);
+  bool FullscreenElementReadyCheck(FullscreenRequest&);
 
   
   
