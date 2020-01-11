@@ -28,6 +28,10 @@ function toMojoNDEFRecord(record) {
   nfcRecord.recordType = record.recordType;
   nfcRecord.mediaType = record.mediaType;
   nfcRecord.data = toByteArray(record.data);
+  if (record.data != null && record.data.records !== undefined) {
+    
+    nfcRecord.payloadMessage = toMojoNDEFMessage(record.data);
+  }
   return nfcRecord;
 }
 
