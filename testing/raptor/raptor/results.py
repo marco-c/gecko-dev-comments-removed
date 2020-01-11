@@ -562,6 +562,17 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     new_result['extra_options'] = []
                     if self.no_conditioned_profile:
                         new_result['extra_options'].append('nocondprof')
+                    if self.fission_enabled:
+                        new_result['extra_options'].append('fission')
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    if self.app != "firefox":
+                        new_result['extra_options'].append(self.app)
 
                     return new_result
 
