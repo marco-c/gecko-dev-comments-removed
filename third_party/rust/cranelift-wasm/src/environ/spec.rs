@@ -104,11 +104,7 @@ pub enum ReturnMode {
 }
 
 
-
-
-
-
-pub trait FuncEnvironment {
+pub trait TargetEnvironment {
     
     fn target_config(&self) -> TargetFrontendConfig;
 
@@ -127,19 +123,26 @@ pub trait FuncEnvironment {
     
     
     
-    fn return_mode(&self) -> ReturnMode {
-        ReturnMode::NormalReturns
-    }
-
-    
-    
-    
     fn reference_type(&self) -> ir::Type {
         match self.pointer_type() {
             ir::types::I32 => ir::types::R32,
             ir::types::I64 => ir::types::R64,
             _ => panic!("unsupported pointer type"),
         }
+    }
+}
+
+
+
+
+
+
+pub trait FuncEnvironment: TargetEnvironment {
+    
+    
+    
+    fn return_mode(&self) -> ReturnMode {
+        ReturnMode::NormalReturns
     }
 
     
@@ -270,6 +273,89 @@ pub trait FuncEnvironment {
     
     
     
+    fn translate_memory_copy(
+        &mut self,
+        pos: FuncCursor,
+        index: MemoryIndex,
+        heap: ir::Heap,
+        dst: ir::Value,
+        src: ir::Value,
+        len: ir::Value,
+    ) -> WasmResult<()>;
+
+    
+    
+    
+    
+    fn translate_memory_fill(
+        &mut self,
+        pos: FuncCursor,
+        index: MemoryIndex,
+        heap: ir::Heap,
+        dst: ir::Value,
+        val: ir::Value,
+        len: ir::Value,
+    ) -> WasmResult<()>;
+
+    
+    
+    
+    
+    
+    fn translate_memory_init(
+        &mut self,
+        pos: FuncCursor,
+        index: MemoryIndex,
+        heap: ir::Heap,
+        seg_index: u32,
+        dst: ir::Value,
+        src: ir::Value,
+        len: ir::Value,
+    ) -> WasmResult<()>;
+
+    
+    fn translate_data_drop(&mut self, pos: FuncCursor, seg_index: u32) -> WasmResult<()>;
+
+    
+    fn translate_table_size(
+        &mut self,
+        pos: FuncCursor,
+        index: TableIndex,
+        table: ir::Table,
+    ) -> WasmResult<ir::Value>;
+
+    
+    fn translate_table_copy(
+        &mut self,
+        pos: FuncCursor,
+        dst_table_index: TableIndex,
+        dst_table: ir::Table,
+        src_table_index: TableIndex,
+        src_table: ir::Table,
+        dst: ir::Value,
+        src: ir::Value,
+        len: ir::Value,
+    ) -> WasmResult<()>;
+
+    
+    fn translate_table_init(
+        &mut self,
+        pos: FuncCursor,
+        seg_index: u32,
+        table_index: TableIndex,
+        table: ir::Table,
+        dst: ir::Value,
+        src: ir::Value,
+        len: ir::Value,
+    ) -> WasmResult<()>;
+
+    
+    fn translate_elem_drop(&mut self, pos: FuncCursor, seg_index: u32) -> WasmResult<()>;
+
+    
+    
+    
+    
     fn translate_loop_header(&mut self, _pos: FuncCursor) -> WasmResult<()> {
         
         Ok(())
@@ -301,10 +387,7 @@ pub trait FuncEnvironment {
 
 
 
-pub trait ModuleEnvironment<'data> {
-    
-    fn target_config(&self) -> TargetFrontendConfig;
-
+pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     
     fn reserve_signatures(&mut self, _num: u32) -> WasmResult<()> {

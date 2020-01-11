@@ -48,6 +48,8 @@ impl<'a> MemoryCodeSink<'a> {
     
     
     
+    
+    
     pub unsafe fn new(
         data: *mut u8,
         relocs: &'a mut dyn RelocSink,
