@@ -44,32 +44,6 @@ LoopControl::LoopControl(BytecodeEmitter* bce, StatementKind loopKind)
 
   stackDepth_ = bce->bytecodeSection().stackDepth();
   loopDepth_ = enclosingLoop ? enclosingLoop->loopDepth_ + 1 : 1;
-
-  int loopSlots;
-  if (loopKind == StatementKind::Spread) {
-    
-    
-    loopSlots = 4;
-  } else if (loopKind == StatementKind::ForOfLoop) {
-    
-    
-    loopSlots = 3;
-  } else if (loopKind == StatementKind::ForInLoop) {
-    
-    loopSlots = 1;
-  } else {
-    
-    loopSlots = 0;
-  }
-
-  MOZ_ASSERT(loopSlots <= stackDepth_);
-
-  if (enclosingLoop) {
-    canIonOsr_ = (enclosingLoop->canIonOsr_ &&
-                  stackDepth_ == enclosingLoop->stackDepth_ + loopSlots);
-  } else {
-    canIonOsr_ = stackDepth_ == loopSlots;
-  }
 }
 
 bool LoopControl::emitContinueTarget(BytecodeEmitter* bce) {
@@ -120,8 +94,7 @@ bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
   if (!bce->emitJumpTargetOp(JSOP_LOOPHEAD, &off)) {
     return false;
   }
-  SetLoopHeadDepthHintAndFlags(bce->bytecodeSection().code(off), loopDepth_,
-                               canIonOsr_);
+  SetLoopHeadDepthHint(bce->bytecodeSection().code(off), loopDepth_);
 
   return true;
 }

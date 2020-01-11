@@ -118,10 +118,6 @@ class LoopControl : public BreakableControl {
   
   uint32_t loopDepth_;
 
-  
-  
-  bool canIonOsr_;
-
  public:
   
   JumpList continues;

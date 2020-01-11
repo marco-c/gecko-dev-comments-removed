@@ -1121,9 +1121,6 @@
 
 
 
-
-
-
  \
     MACRO(JSOP_LOOPHEAD, 109, "loophead", NULL, 6, 0, 0, JOF_LOOPHEAD) \
     
