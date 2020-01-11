@@ -33,6 +33,7 @@ namespace mozilla {
 namespace net {
 
 extern LazyLogModule gHttpLog;
+class HttpTransactionChild;
 
 class nsHttpConnectionInfo final : public ARefBase {
  public:
@@ -197,6 +198,8 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool IsHttp3() const { return mIsHttp3; }
 
  private:
+  friend class HttpTransactionChild;
+  
   
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
                        const nsACString& npnToken, const nsACString& username,

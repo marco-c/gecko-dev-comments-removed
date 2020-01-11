@@ -303,6 +303,9 @@ void nsHttpConnectionInfo::SetOriginServer(const nsACString& host,
   BuildHashKey();
 }
 
+
+
+
 already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   RefPtr<nsHttpConnectionInfo> clone;
   if (mRoutedHost.IsEmpty()) {

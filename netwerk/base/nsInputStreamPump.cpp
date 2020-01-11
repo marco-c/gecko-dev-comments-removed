@@ -143,8 +143,16 @@ nsresult nsInputStreamPump::EnsureWaiting() {
 
 
 
-NS_IMPL_ISUPPORTS(nsInputStreamPump, nsIRequest, nsIThreadRetargetableRequest,
-                  nsIInputStreamCallback, nsIInputStreamPump)
+NS_IMPL_ADDREF(nsInputStreamPump)
+NS_IMPL_RELEASE(nsInputStreamPump)
+NS_INTERFACE_MAP_BEGIN(nsInputStreamPump)
+  NS_INTERFACE_MAP_ENTRY(nsIRequest)
+  NS_INTERFACE_MAP_ENTRY(nsIThreadRetargetableRequest)
+  NS_INTERFACE_MAP_ENTRY(nsIInputStreamCallback)
+  NS_INTERFACE_MAP_ENTRY(nsIInputStreamPump)
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(nsInputStreamPump)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStreamPump)
+NS_INTERFACE_MAP_END
 
 
 

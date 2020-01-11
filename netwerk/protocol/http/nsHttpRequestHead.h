@@ -13,6 +13,13 @@
 
 class nsIHttpHeaderVisitor;
 
+
+
+namespace IPC {
+template <typename>
+struct ParamTraits;
+}  
+
 namespace mozilla {
 namespace net {
 
@@ -24,7 +31,10 @@ namespace net {
 class nsHttpRequestHead {
  public:
   nsHttpRequestHead();
+  explicit nsHttpRequestHead(const nsHttpRequestHead& aRequestHead);
   ~nsHttpRequestHead();
+
+  nsHttpRequestHead& operator=(const nsHttpRequestHead& aRequestHead);
 
   
   
@@ -124,6 +134,8 @@ class nsHttpRequestHead {
 
   
   bool mInVisitHeaders;
+
+  friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };
 
 }  

@@ -5,9 +5,14 @@
 
 
 #include "QuicSocketControl.h"
+
+#include "Http3Session.h"
 #include "SharedCertVerifier.h"
+#include "nsIWebProgressListener.h"
 #include "nsNSSComponent.h"
 #include "nsWeakReference.h"
+#include "nsSocketTransportService2.h"
+#include "nsThreadUtils.h"
 #include "sslt.h"
 #include "ssl.h"
 
