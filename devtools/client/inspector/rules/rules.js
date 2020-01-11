@@ -288,10 +288,6 @@ CssRuleView.prototype = {
     return this._dummyElement;
   },
 
-  get emulationFront() {
-    return this._emulationFront;
-  },
-
   
   get highlighters() {
     if (!this._highlighters) {
@@ -413,7 +409,20 @@ CssRuleView.prototype = {
     
     
     
-    this._emulationFront = await this.currentTarget.getFront("emulation");
+    try {
+      this.contentViewerFront = await this.currentTarget.getFront(
+        "contentViewer"
+      );
+    } catch (e) {
+      console.error(e);
+    }
+
+    
+    
+    
+    if (!this.contentViewerFront) {
+      this.contentViewerFront = await this.currentTarget.getFront("emulation");
+    }
 
     if (!this.currentTarget.chrome) {
       this.printSimulationButton.removeAttribute("hidden");
@@ -426,14 +435,22 @@ CssRuleView.prototype = {
     
     
     
+    const isEmulateColorSchemeSupported =
+      (await this.currentTarget.actorHasMethod(
+        "contentViewer",
+        "getEmulatedColorScheme"
+      )) ||
+      
+      (await this.currentTarget.actorHasMethod(
+        "emulation",
+        "getEmulatedColorScheme"
+      ));
+
     if (
       Services.prefs.getBoolPref(
         "devtools.inspector.color-scheme-simulation.enabled"
       ) &&
-      (await this.currentTarget.actorHasMethod(
-        "emulation",
-        "getEmulatedColorScheme"
-      ))
+      isEmulateColorSchemeSupported
     ) {
       this.colorSchemeSimulationButton.removeAttribute("hidden");
       this.colorSchemeSimulationButton.addEventListener(
@@ -847,7 +864,7 @@ CssRuleView.prototype = {
     }
 
     
-    if (this._emulationFront) {
+    if (this.contentViewerFront) {
       this.colorSchemeSimulationButton.removeEventListener(
         "click",
         this._onToggleColorSchemeSimulation
@@ -857,11 +874,11 @@ CssRuleView.prototype = {
         this._onTogglePrintSimulation
       );
 
-      this._emulationFront.destroy();
+      this.contentViewerFront.destroy();
 
       this.colorSchemeSimulationButton = null;
       this.printSimulationButton = null;
-      this._emulationFront = null;
+      this.contentViewerFront = null;
     }
 
     this.tooltips.destroy();
@@ -1739,7 +1756,7 @@ CssRuleView.prototype = {
   },
 
   async _onToggleColorSchemeSimulation() {
-    const currentState = await this.emulationFront.getEmulatedColorScheme();
+    const currentState = await this.contentViewerFront.getEmulatedColorScheme();
     const index = COLOR_SCHEMES.indexOf(currentState);
     const nextState = COLOR_SCHEMES[(index + 1) % COLOR_SCHEMES.length];
 
@@ -1749,19 +1766,19 @@ CssRuleView.prototype = {
       this.colorSchemeSimulationButton.removeAttribute("state");
     }
 
-    await this.emulationFront.setEmulatedColorScheme(nextState);
+    await this.contentViewerFront.setEmulatedColorScheme(nextState);
     this.refreshPanel();
   },
 
   async _onTogglePrintSimulation() {
-    const enabled = await this.emulationFront.getIsPrintSimulationEnabled();
+    const enabled = await this.contentViewerFront.getIsPrintSimulationEnabled();
 
     if (!enabled) {
       this.printSimulationButton.classList.add("checked");
-      await this.emulationFront.startPrintMediaSimulation();
+      await this.contentViewerFront.startPrintMediaSimulation();
     } else {
       this.printSimulationButton.classList.remove("checked");
-      await this.emulationFront.stopPrintMediaSimulation(false);
+      await this.contentViewerFront.stopPrintMediaSimulation(false);
     }
 
     

@@ -6,7 +6,7 @@
 
 const { Ci } = require("chrome");
 const protocol = require("devtools/shared/protocol");
-const { emulationSpec } = require("devtools/shared/specs/emulation");
+const { responsiveSpec } = require("devtools/shared/specs/responsive");
 
 loader.lazyRequireGetter(
   this,
@@ -34,35 +34,19 @@ loader.lazyRequireGetter(
 
 
 
-
-
-const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
+const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
   initialize(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
     this.docShell = targetActor.docShell;
-
-    this.onWillNavigate = this.onWillNavigate.bind(this);
-    this.onWindowReady = this.onWindowReady.bind(this);
-
-    this.targetActor.on("will-navigate", this.onWillNavigate);
-    this.targetActor.on("window-ready", this.onWindowReady);
   },
 
   destroy() {
-    if (this._printSimulationEnabled) {
-      this.stopPrintMediaSimulation();
-    }
-
-    this.setEmulatedColorScheme();
     this.clearDPPXOverride();
     this.clearNetworkThrottling();
     this.clearTouchEventsOverride();
     this.clearMetaViewportOverride();
     this.clearUserAgentOverride();
-
-    this.targetActor.off("will-navigate", this.onWillNavigate);
-    this.targetActor.off("window-ready", this.onWindowReady);
 
     this.targetActor = null;
     this.docShell = null;
@@ -108,25 +92,6 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     return this.docShell.chromeEventHandler.ownerGlobal;
   },
 
-  onWillNavigate({ isTopLevel }) {
-    
-    
-    
-    if (this._printSimulationEnabled && isTopLevel) {
-      this.stopPrintMediaSimulation(true);
-    }
-  },
-
-  onWindowReady({ isTopLevel }) {
-    
-    
-    
-    
-    if (this._printSimulationEnabled && isTopLevel) {
-      this.startPrintMediaSimulation();
-    }
-  },
-
   
 
   _previousDPPXOverride: undefined,
@@ -156,48 +121,6 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
     return false;
   },
-
-  
-
-  
-
-
-  getEmulatedColorScheme() {
-    return this._emulatedColorScheme;
-  },
-
-  
-
-
-
-  setEmulatedColorScheme(scheme = null) {
-    if (this._emulatedColorScheme === scheme) {
-      return;
-    }
-
-    let internalColorScheme;
-    switch (scheme) {
-      case "light":
-        internalColorScheme = Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_LIGHT;
-        break;
-      case "dark":
-        internalColorScheme = Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_DARK;
-        break;
-      case "no-preference":
-        internalColorScheme =
-          Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_NO_PREFERENCE;
-        break;
-      default:
-        internalColorScheme = Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_NONE;
-    }
-
-    this._emulatedColorScheme = scheme;
-    this.docShell.contentViewer.emulatePrefersColorScheme(internalColorScheme);
-  },
-
-  
-  
-  _emulatedColorScheme: null,
 
   
 
@@ -391,35 +314,6 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     return false;
   },
 
-  
-
-  _printSimulationEnabled: false,
-
-  getIsPrintSimulationEnabled() {
-    return this._printSimulationEnabled;
-  },
-
-  async startPrintMediaSimulation() {
-    this._printSimulationEnabled = true;
-    this.targetActor.docShell.contentViewer.emulateMedium("print");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  async stopPrintMediaSimulation(state = false) {
-    this._printSimulationEnabled = state;
-    this.targetActor.docShell.contentViewer.stopEmulatingMedium();
-  },
-
   setScreenOrientation(type, angle) {
     if (
       this.win.screen.orientation.angle !== angle ||
@@ -470,4 +364,4 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
   },
 });
 
-exports.EmulationActor = EmulationActor;
+exports.ResponsiveActor = ResponsiveActor;

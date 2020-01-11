@@ -151,17 +151,17 @@ exports.menuitems = [
       
       if (
         ResponsiveUIManager.isActiveForTab(target.localTab) &&
-        target.actorHasMethod("emulation", "setElementPickerState")
+        target.actorHasMethod("responsive", "setElementPickerState")
       ) {
         const ui = ResponsiveUIManager.getResponsiveUIForTab(target.localTab);
-        await ui.emulationFront.setElementPickerState(true);
+        await ui.responsiveFront.setElementPickerState(true);
 
         inspectorFront.once("color-picked", async () => {
-          await ui.emulationFront.setElementPickerState(false);
+          await ui.responsiveFront.setElementPickerState(false);
         });
 
         inspectorFront.once("color-pick-canceled", async () => {
-          await ui.emulationFront.setElementPickerState(false);
+          await ui.responsiveFront.setElementPickerState(false);
         });
       }
 

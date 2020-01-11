@@ -168,11 +168,29 @@ class RulesView {
     this.provider = provider;
   }
 
+  
+
+
+
   async initSimulationFeatures() {
     
     
     
-    this.emulationFront = await this.currentTarget.getFront("emulation");
+    
+    try {
+      this.contentViewerFront = await this.currentTarget.getFront(
+        "contentViewer"
+      );
+    } catch (e) {
+      console.error(e);
+    }
+
+    
+    
+    
+    if (!this.contentViewerFront) {
+      this.contentViewerFront = await this.currentTarget.getFront("emulation");
+    }
 
     if (!this.currentTarget.chrome) {
       this.store.dispatch(updatePrintSimulationHidden(false));
@@ -183,14 +201,22 @@ class RulesView {
     
     
     
+    const isEmulateColorSchemeSupported =
+      (await this.currentTarget.actorHasMethod(
+        "contentViewer",
+        "getEmulatedColorScheme"
+      )) ||
+      
+      (await this.currentTarget.actorHasMethod(
+        "emulation",
+        "getEmulatedColorScheme"
+      ));
+
     if (
       Services.prefs.getBoolPref(
         "devtools.inspector.color-scheme-simulation.enabled"
       ) &&
-      (await this.currentTarget.actorHasMethod(
-        "emulation",
-        "getEmulatedColorScheme"
-      ))
+      isEmulateColorSchemeSupported
     ) {
       this.store.dispatch(updateColorSchemeSimulationHidden(false));
     } else {
@@ -226,9 +252,9 @@ class RulesView {
       this.elementStyle = null;
     }
 
-    if (this.emulationFront) {
-      this.emulationFront.destroy();
-      this.emulationFront = null;
+    if (this.contentViewerFront) {
+      this.contentViewerFront.destroy();
+      this.contentViewerFront = null;
     }
 
     this._dummyElement = null;
@@ -491,10 +517,10 @@ class RulesView {
 
 
   async onToggleColorSchemeSimulation() {
-    const currentState = await this.emulationFront.getEmulatedColorScheme();
+    const currentState = await this.contentViewerFront.getEmulatedColorScheme();
     const index = COLOR_SCHEMES.indexOf(currentState);
     const nextState = COLOR_SCHEMES[(index + 1) % COLOR_SCHEMES.length];
-    await this.emulationFront.setEmulatedColorScheme(nextState);
+    await this.contentViewerFront.setEmulatedColorScheme(nextState);
     await this.updateElementStyle();
   }
 
@@ -502,12 +528,12 @@ class RulesView {
 
 
   async onTogglePrintSimulation() {
-    const enabled = await this.emulationFront.getIsPrintSimulationEnabled();
+    const enabled = await this.contentViewerFront.getIsPrintSimulationEnabled();
 
     if (!enabled) {
-      await this.emulationFront.startPrintMediaSimulation();
+      await this.contentViewerFront.startPrintMediaSimulation();
     } else {
-      await this.emulationFront.stopPrintMediaSimulation(false);
+      await this.contentViewerFront.stopPrintMediaSimulation(false);
     }
 
     await this.updateElementStyle();

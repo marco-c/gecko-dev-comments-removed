@@ -84,7 +84,18 @@ class FirefoxConnector {
       this.tabTarget.on("navigate", this.navigate);
 
       
-      this.emulationFront = await this.tabTarget.getFront("emulation");
+      try {
+        this.responsiveFront = await this.tabTarget.getFront("responsive");
+      } catch (e) {
+        console.error(e);
+      }
+
+      
+      
+      
+      if (!this.responsiveFront) {
+        this.responsiveFront = await this.tabTarget.getFront("emulation");
+      }
     }
 
     
@@ -100,9 +111,9 @@ class FirefoxConnector {
 
     this.removeListeners();
 
-    if (this.emulationFront) {
-      this.emulationFront.destroy();
-      this.emulationFront = null;
+    if (this.responsiveFront) {
+      this.responsiveFront.destroy();
+      this.responsiveFront = null;
     }
 
     if (this.webSocketFront) {
@@ -474,11 +485,11 @@ class FirefoxConnector {
 
   async updateNetworkThrottling(enabled, profile) {
     if (!enabled) {
-      await this.emulationFront.clearNetworkThrottling();
+      await this.responsiveFront.clearNetworkThrottling();
     } else {
       const data = throttlingProfiles.find(({ id }) => id == profile);
       const { download, upload, latency } = data;
-      await this.emulationFront.setNetworkThrottling({
+      await this.responsiveFront.setNetworkThrottling({
         downloadThroughput: download,
         uploadThroughput: upload,
         latency,

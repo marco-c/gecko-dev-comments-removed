@@ -13,6 +13,8 @@ const { emulationSpec } = require("devtools/shared/specs/emulation");
 
 
 
+
+
 class EmulationFront extends FrontClassWithSpec(emulationSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
