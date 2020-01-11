@@ -44,13 +44,10 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
 
   
   
-  static nsresult AddDataEntry(mozilla::dom::BlobImpl* aBlobImpl,
-                               nsIPrincipal* aPrincipal, nsACString& aUri);
-  static nsresult AddDataEntry(mozilla::dom::MediaSource* aMediaSource,
-                               nsIPrincipal* aPrincipal, nsACString& aUri);
+  static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*, nsACString& aUri);
+  static nsresult AddDataEntry(MediaSource*, nsIPrincipal*, nsACString& aUri);
   
-  static nsresult AddDataEntry(const nsACString& aURI, nsIPrincipal* aPrincipal,
-                               mozilla::dom::BlobImpl* aBlobImpl);
+  static void AddDataEntry(const nsACString& aURI, nsIPrincipal*, BlobImpl*);
 
   
   
@@ -67,8 +64,7 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                        nsCycleCollectionTraversalCallback& aCallback);
 
   static bool GetAllBlobURLEntries(
-      nsTArray<mozilla::dom::BlobURLRegistrationData>& aRegistrations,
-      mozilla::dom::ContentParent* aCP);
+      nsTArray<BlobURLRegistrationData>& aRegistrations, ContentParent*);
 
   
   
