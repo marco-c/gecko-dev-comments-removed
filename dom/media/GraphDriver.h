@@ -168,12 +168,6 @@ class GraphDriver {
   void SetGraphTime(GraphDriver* aPreviousDriver,
                     GraphTime aLastSwitchNextIterationStart,
                     GraphTime aLastSwitchNextIterationEnd);
-  
-
-
-
-
-  void EnsureNextIteration();
 
   MediaTrackGraphImpl* GraphImpl() const { return mGraphImpl; }
 

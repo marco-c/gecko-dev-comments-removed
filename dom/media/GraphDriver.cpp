@@ -85,8 +85,6 @@ GraphTime GraphDriver::StateComputedTime() const {
   return GraphImpl()->mStateComputedTime;
 }
 
-void GraphDriver::EnsureNextIteration() { GraphImpl()->EnsureNextIteration(); }
-
 #ifdef DEBUG
 bool GraphDriver::OnGraphThread() {
   return GraphImpl()->RunByGraphDriver(this);
