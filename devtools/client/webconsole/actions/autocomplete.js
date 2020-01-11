@@ -19,7 +19,8 @@ const {
 
 
 
-function autocompleteUpdate(force, getterPath) {
+
+function autocompleteUpdate(force, getterPath, expressionVars) {
   return async ({ dispatch, getState, webConsoleUI, hud }) => {
     if (hud.inputHasSelection()) {
       return dispatch(autocompleteClear());
@@ -82,6 +83,7 @@ function autocompleteUpdate(force, getterPath) {
         webConsoleFront,
         authorizedEvaluations,
         force,
+        expressionVars,
       })
     );
   };
@@ -133,6 +135,7 @@ function autocompleteDataFetch({
   force,
   webConsoleFront,
   authorizedEvaluations,
+  expressionVars,
 }) {
   return ({ dispatch, webConsoleUI }) => {
     const selectedNodeActor = webConsoleUI.getSelectedNodeActor();
@@ -144,7 +147,8 @@ function autocompleteDataFetch({
         undefined,
         frameActorId,
         selectedNodeActor,
-        authorizedEvaluations
+        authorizedEvaluations,
+        expressionVars
       )
       .then(data => {
         dispatch(
@@ -155,6 +159,7 @@ function autocompleteDataFetch({
             frameActorId,
             data,
             authorizedEvaluations,
+            expressionVars,
           })
         );
       })

@@ -80,6 +80,9 @@ const MAX_AUTOCOMPLETIONS = (exports.MAX_AUTOCOMPLETIONS = 1500);
 
 
 
+
+
+
 function JSPropertyProvider({
   dbgObject,
   environment,
@@ -88,6 +91,7 @@ function JSPropertyProvider({
   authorizedEvaluations = [],
   webconsoleActor,
   selectedNodeActor,
+  expressionVars = [],
 }) {
   if (cursor === undefined) {
     cursor = inputValue.length;
@@ -242,10 +246,19 @@ function JSPropertyProvider({
 
   let obj = dbgObject;
   if (properties.length === 0) {
+    const environmentProperties = getMatchedPropsInEnvironment(env, search);
+    const expressionVariables = new Set(
+      expressionVars.filter(variableName => variableName.startsWith(matchProp))
+    );
+
+    for (const prop of environmentProperties) {
+      expressionVariables.add(prop);
+    }
+
     return {
       isElementAccess,
       matchProp,
-      matches: getMatchedPropsInEnvironment(env, search),
+      matches: expressionVariables,
     };
   }
 
