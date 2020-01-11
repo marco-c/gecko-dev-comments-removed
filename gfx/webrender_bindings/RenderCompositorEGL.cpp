@@ -122,6 +122,7 @@ bool RenderCompositorEGL::Resume() {
     
     const auto& gle = gl::GLContextEGL::Cast(gl());
     const auto& egl = gle->mEgl;
+    MakeCurrent();
     
     egl->fSwapInterval(egl->Display(), 0);
   } else {
