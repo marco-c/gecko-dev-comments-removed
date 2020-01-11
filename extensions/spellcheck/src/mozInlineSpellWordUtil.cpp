@@ -28,6 +28,10 @@ using namespace mozilla;
 
 
 
+inline bool IsIgnorableCharacter(char ch) {
+  return (ch == static_cast<char>(0xAD));  
+}
+
 inline bool IsIgnorableCharacter(char16_t ch) {
   return (ch == 0xAD ||   
           ch == 0x1806);  
@@ -37,6 +41,11 @@ inline bool IsIgnorableCharacter(char16_t ch) {
 
 
 
+
+inline bool IsConditionalPunctuation(char ch) {
+  return (ch == '\'' ||       
+          ch == static_cast<char>(0xB7));  
+}
 
 inline bool IsConditionalPunctuation(char16_t ch) {
   return (ch == '\'' || ch == 0x2019 ||  
@@ -49,6 +58,10 @@ static bool IsAmbiguousDOMWordSeprator(char16_t ch) {
           IsConditionalPunctuation(ch));
 }
 
+static bool IsAmbiguousDOMWordSeprator(char ch) {
+  
+  return IsAmbiguousDOMWordSeprator(static_cast<char16_t>(ch));
+}
 
 
 
@@ -57,6 +70,13 @@ static bool IsAmbiguousDOMWordSeprator(char16_t ch) {
 
 
 
+
+
+static bool IsDOMWordSeparator(char ch) {
+  
+  return (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' ||
+          ch == static_cast<char>(0xA0));
+}
 
 static bool IsDOMWordSeparator(char16_t ch) {
   
@@ -414,6 +434,8 @@ struct MOZ_STACK_CLASS WordSplitState {
   
   bool GetDOMWordSeparatorOffset(int32_t aOffset,
                                  int32_t* aSeparatorOffset) const;
+
+  char16_t GetUnicharAt(int32_t aIndex) const;
 };
 
 
@@ -427,7 +449,7 @@ CharClass WordSplitState<T>::ClassifyCharacter(int32_t aIndex,
   
   
   nsUGenCategory charCategory =
-      mozilla::unicode::GetGenCategory(mDOMWordText[aIndex]);
+      mozilla::unicode::GetGenCategory(GetUnicharAt(aIndex));
   if (charCategory == nsUGenCategory::kLetter ||
       IsIgnorableCharacter(mDOMWordText[aIndex]) ||
       mDOMWordText[aIndex] == 0x200C  ||
@@ -588,7 +610,7 @@ bool WordSplitState<T>::ShouldSkipWord(int32_t aStart, int32_t aLength) const {
 
   
   for (int32_t i = aStart; i < last; i++) {
-    if (unicode::GetGenCategory(mDOMWordText[i]) == nsUGenCategory::kNumber) {
+    if (mozilla::unicode::GetGenCategory(GetUnicharAt(i)) == nsUGenCategory::kNumber) {
       return true;
     }
   }
@@ -619,6 +641,18 @@ bool WordSplitState<T>::GetDOMWordSeparatorOffset(
     }
   }
   return false;
+}
+
+template <>
+char16_t WordSplitState<nsDependentSubstring>::GetUnicharAt(
+    int32_t aIndex) const {
+  return mDOMWordText[aIndex];
+}
+
+template <>
+char16_t WordSplitState<nsDependentCSubstring>::GetUnicharAt(
+    int32_t aIndex) const {
+  return static_cast<char16_t>(static_cast<uint8_t>(mDOMWordText[aIndex]));
 }
 
 static inline bool IsBRElement(nsINode* aNode) {
