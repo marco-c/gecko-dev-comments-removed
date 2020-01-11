@@ -856,34 +856,8 @@ JSObject* WrapObjectPure(JSContext* cx, JSObject* obj) {
   return nullptr;
 }
 
-static bool HandlePrologueResumeMode(JSContext* cx, BaselineFrame* frame,
-                                     jsbytecode* pc, bool* mustReturn,
-                                     ResumeMode resumeMode) {
-  *mustReturn = false;
-  switch (resumeMode) {
-    case ResumeMode::Continue:
-      return true;
-
-    case ResumeMode::Return:
-      
-      
-      MOZ_ASSERT(frame->hasReturnValue());
-      *mustReturn = true;
-      return jit::DebugEpilogue(cx, frame, pc, true);
-
-    case ResumeMode::Throw:
-    case ResumeMode::Terminate:
-      return false;
-
-    default:
-      MOZ_CRASH("bad DebugAPI::onEnterFrame resume mode");
-  }
-}
-
-bool DebugPrologue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
-                   bool* mustReturn) {
-  ResumeMode resumeMode = DebugAPI::onEnterFrame(cx, frame);
-  return HandlePrologueResumeMode(cx, frame, pc, mustReturn, resumeMode);
+bool DebugPrologue(JSContext* cx, BaselineFrame* frame) {
+  return DebugAPI::onEnterFrame(cx, frame);
 }
 
 bool DebugEpilogueOnBaselineReturn(JSContext* cx, BaselineFrame* frame,
@@ -984,8 +958,7 @@ bool InterpretResume(JSContext* cx, HandleObject obj, HandleValue val,
                                 UndefinedHandleValue, args, rval);
 }
 
-bool DebugAfterYield(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
-                     bool* mustReturn) {
+bool DebugAfterYield(JSContext* cx, BaselineFrame* frame) {
   
   
   
@@ -993,11 +966,9 @@ bool DebugAfterYield(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
   
   if (frame->script()->isDebuggee() && !frame->isDebuggee()) {
     frame->setIsDebuggee();
-    ResumeMode resumeMode = DebugAPI::onResumeFrame(cx, frame);
-    return HandlePrologueResumeMode(cx, frame, pc, mustReturn, resumeMode);
+    return DebugAPI::onResumeFrame(cx, frame);
   }
 
-  *mustReturn = false;
   return true;
 }
 
@@ -1018,18 +989,11 @@ bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
   
   genObj->setRunning();
 
-  bool mustReturn = false;
-  if (!DebugAfterYield(cx, frame, pc, &mustReturn)) {
+  if (!DebugAfterYield(cx, frame)) {
     return false;
   }
 
   GeneratorResumeKind resumeKind = GeneratorResumeKind(resumeKindArg);
-  if (mustReturn) {
-    
-    
-    
-    return true;
-  }
 
   MOZ_ALWAYS_FALSE(
       js::GeneratorThrowOrReturn(cx, frame, genObj, arg, resumeKind));
@@ -1102,10 +1066,7 @@ JSObject* InitRestParameter(JSContext* cx, uint32_t length, Value* rest,
   return arrRes;
 }
 
-bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr,
-                     bool* mustReturn) {
-  *mustReturn = false;
-
+bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr) {
   RootedScript script(cx, frame->script());
   jsbytecode* pc;
   if (frame->runningInInterpreter()) {
@@ -1131,11 +1092,8 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr,
     
     MOZ_ASSERT(!frame->isDebuggee());
 
-    if (!DebugAfterYield(cx, frame, pc, mustReturn)) {
+    if (!DebugAfterYield(cx, frame)) {
       return false;
-    }
-    if (*mustReturn) {
-      return true;
     }
 
     

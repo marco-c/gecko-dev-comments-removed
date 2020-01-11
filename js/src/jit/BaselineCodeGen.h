@@ -279,9 +279,6 @@ class BaselineCodeGen {
   
   NonAssertingLabel return_;
 
-  
-  NonAssertingLabel returnNoDebugEpilogue_;
-
   NonAssertingLabel postBarrierSlot_;
 
   

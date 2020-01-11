@@ -312,15 +312,18 @@ static bool WasmHandleDebugTrap() {
     }
     debugFrame->setIsDebuggee();
     debugFrame->observe(cx);
-    ResumeMode mode = DebugAPI::onEnterFrame(cx, debugFrame);
-    if (mode == ResumeMode::Return) {
-      
-      
-      
-      JS_ReportErrorASCII(cx, "Unexpected resumption value from onEnterFrame");
+    if (!DebugAPI::onEnterFrame(cx, debugFrame)) {
+      if (cx->isPropagatingForcedReturn()) {
+        cx->clearPropagatingForcedReturn();
+        
+        
+        
+        JS_ReportErrorASCII(cx,
+                            "Unexpected resumption value from onEnterFrame");
+      }
       return false;
     }
-    return mode == ResumeMode::Continue;
+    return true;
   }
   if (site->kind() == CallSite::LeaveFrame) {
     if (!debugFrame->updateReturnJSValue()) {

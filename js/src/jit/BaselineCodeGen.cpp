@@ -1062,25 +1062,15 @@ bool BaselineCodeGen<Handler>::emitDebugPrologue() {
     masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
 
     prepareVMCall();
-    pushBytecodePCArg();
     pushArg(R0.scratchReg());
 
     const RetAddrEntry::Kind kind = RetAddrEntry::Kind::DebugPrologue;
 
-    using Fn = bool (*)(JSContext*, BaselineFrame*, jsbytecode*, bool*);
+    using Fn = bool (*)(JSContext*, BaselineFrame*);
     if (!callVM<Fn, jit::DebugPrologue>(kind)) {
       return false;
     }
 
-    
-    
-    Label done;
-    masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, &done);
-    {
-      masm.loadValue(frame.addressOfReturnValue(), JSReturnOperand);
-      masm.jump(&returnNoDebugEpilogue_);
-    }
-    masm.bind(&done);
     return true;
   };
   return emitDebugInstrumentation(ifDebuggee);
@@ -5969,23 +5959,15 @@ bool BaselineCodeGen<Handler>::emit_JSOP_AFTERYIELD() {
     frame.assertSyncedStack();
     masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
     prepareVMCall();
-    pushBytecodePCArg();
     pushArg(R0.scratchReg());
 
     const RetAddrEntry::Kind kind = RetAddrEntry::Kind::DebugAfterYield;
 
-    using Fn = bool (*)(JSContext*, BaselineFrame*, jsbytecode*, bool*);
+    using Fn = bool (*)(JSContext*, BaselineFrame*);
     if (!callVM<Fn, jit::DebugAfterYield>(kind)) {
       return false;
     }
 
-    Label done;
-    masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, &done);
-    {
-      masm.loadValue(frame.addressOfReturnValue(), JSReturnOperand);
-      masm.jump(&returnNoDebugEpilogue_);
-    }
-    masm.bind(&done);
     return true;
   };
   return emitAfterYieldDebugInstrumentation(ifDebuggee, R0.scratchReg());
@@ -6020,20 +6002,6 @@ bool BaselineInterpreterCodeGen::emitGeneratorThrowOrReturnCallVM() {
   if (!callVM<Fn, jit::GeneratorThrowOrReturn>()) {
     return false;
   }
-
-  
-  
-  
-  
-
-  
-  masm.loadValue(frame.addressOfReturnValue(), JSReturnOperand);
-
-  
-  masm.moveToStackPtr(BaselineFrameReg);
-  masm.pop(BaselineFrameReg);
-
-  masm.ret();
 
   return true;
 }
@@ -6840,7 +6808,6 @@ bool BaselineCodeGen<Handler>::emitEpilogue() {
       return false;
     }
   }
-  masm.bind(&returnNoDebugEpilogue_);
 
 #ifdef JS_TRACE_LOGGING
   if (JS::TraceLoggerSupported() && !emitTraceLoggerExit()) {
@@ -7289,7 +7256,7 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
   masm.movePtr(ImmPtr(nullptr), ICStubReg);
   EmitBaselineEnterStubFrame(masm, scratch3);
 
-  using Fn = bool (*)(JSContext*, BaselineFrame*, uint8_t*, bool*);
+  using Fn = bool (*)(JSContext*, BaselineFrame*, uint8_t*);
   VMFunctionId id = VMFunctionToId<Fn, jit::HandleDebugTrap>::id;
   TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
 
@@ -7299,12 +7266,6 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
 
   EmitBaselineLeaveStubFrame(masm);
 
-  
-  
-  
-  Label forcedReturn;
-  masm.branchIfTrueBool(ReturnReg, &forcedReturn);
-
   if (kind == DebugTrapHandlerKind::Interpreter) {
     
     Address pcAddr(BaselineFrameReg,
@@ -7312,27 +7273,6 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
     masm.loadPtr(pcAddr, InterpreterPCRegAtDispatch);
   }
   masm.abiret();
-
-  masm.bind(&forcedReturn);
-  masm.loadValue(
-      Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfReturnValue()),
-      JSReturnOperand);
-  masm.moveToStackPtr(BaselineFrameReg);
-  masm.pop(BaselineFrameReg);
-
-  
-  
-  {
-    Label skipProfilingInstrumentation;
-    AbsoluteAddress addressOfEnabled(
-        cx->runtime()->geckoProfiler().addressOfEnabled());
-    masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
-                  &skipProfilingInstrumentation);
-    masm.profilerExitFrame();
-    masm.bind(&skipProfilingInstrumentation);
-  }
-
-  masm.ret();
 
   Linker linker(masm);
   JitCode* handlerCode = linker.newCode(cx, CodeKind::Other);

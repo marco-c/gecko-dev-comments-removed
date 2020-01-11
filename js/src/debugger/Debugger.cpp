@@ -714,8 +714,7 @@ bool Debugger::hasAnyLiveHooks() const {
 }
 
 
-ResumeMode DebugAPI::slowPathOnEnterFrame(JSContext* cx,
-                                          AbstractFramePtr frame) {
+bool DebugAPI::slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame) {
   RootedValue rval(cx);
   ResumeMode resumeMode = Debugger::dispatchHook(
       cx,
@@ -732,26 +731,25 @@ ResumeMode DebugAPI::slowPathOnEnterFrame(JSContext* cx,
 
     case ResumeMode::Throw:
       cx->setPendingExceptionAndCaptureStack(rval);
-      break;
+      return false;
 
     case ResumeMode::Terminate:
       cx->clearPendingException();
-      break;
+      return false;
 
     case ResumeMode::Return:
-      frame.setReturnValue(rval);
-      break;
+      DebugAPI::propagateForcedReturn(cx, frame, rval);
+      return false;
 
     default:
       MOZ_CRASH("bad Debugger::onEnterFrame resume mode");
   }
 
-  return resumeMode;
+  return true;
 }
 
 
-ResumeMode DebugAPI::slowPathOnResumeFrame(JSContext* cx,
-                                           AbstractFramePtr frame) {
+bool DebugAPI::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame) {
   
   
   
@@ -773,16 +771,16 @@ ResumeMode DebugAPI::slowPathOnResumeFrame(JSContext* cx,
       MOZ_ASSERT(&frameObj->unwrappedGenerator() == genObj);
       if (!dbg->frames.putNew(frame, frameObj)) {
         ReportOutOfMemory(cx);
-        return ResumeMode::Throw;
+        return false;
       }
 
       FrameIter iter(cx);
       MOZ_ASSERT(iter.abstractFramePtr() == frame);
       if (!frameObj->resume(iter)) {
-        return ResumeMode::Throw;
+        return false;
       }
       if (!Debugger::ensureExecutionObservabilityOfFrame(cx, frame)) {
-        return ResumeMode::Throw;
+        return false;
       }
     }
   }
