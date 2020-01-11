@@ -184,27 +184,30 @@ const augmentVanillaLoginObject = login => {
   });
 };
 
-var AboutLoginsParent = {
-  _l10n: null,
-  _subscribers: new WeakSet(),
-  _observersAdded: false,
-
-  
+class AboutLoginsParent extends JSWindowActorParent {
   async receiveMessage(message) {
+    if (!this.browsingContext.embedderElement) {
+      return;
+    }
     
     
     
-    if (message.target.remoteType != EXPECTED_ABOUTLOGINS_REMOTE_TYPE) {
+    if (
+      this.browsingContext.embedderElement.remoteType !=
+      EXPECTED_ABOUTLOGINS_REMOTE_TYPE
+    ) {
       throw new Error(
         `AboutLoginsParent: Received ${
           message.name
         } message the remote type didn't match expectations: ${
-          message.target.remoteType
+          this.browsingContext.embedderElement.remoteType
         } == ${EXPECTED_ABOUTLOGINS_REMOTE_TYPE}`
       );
     }
 
-    this._subscribers.add(message.target);
+    AboutLogins._subscribers.add(this.browsingContext);
+
+    let ownerGlobal = this.browsingContext.embedderElement.ownerGlobal;
     switch (message.name) {
       case "AboutLogins:CreateLogin": {
         let newLogin = message.data.login;
@@ -239,15 +242,11 @@ var AboutLoginsParent = {
         const login = message.data.login;
 
         await LoginBreaches.recordDismissal(login.guid);
-        const logins = await this.getAllLogins();
+        const logins = await AboutLogins.getAllLogins();
         const breachesByLoginGUID = await LoginBreaches.getPotentialBreachesByLoginGUID(
           logins
         );
-        const messageManager = message.target.messageManager;
-        messageManager.sendAsyncMessage(
-          "AboutLogins:SetBreaches",
-          breachesByLoginGUID
-        );
+        this.sendAsyncMessage("AboutLogins:SetBreaches", breachesByLoginGUID);
         break;
       }
       case "AboutLogins:HideFooter": {
@@ -259,18 +258,16 @@ var AboutLoginsParent = {
         break;
       }
       case "AboutLogins:SyncEnable": {
-        message.target.ownerGlobal.gSync.openFxAEmailFirstPage(
-          "password-manager"
-        );
+        ownerGlobal.gSync.openFxAEmailFirstPage("password-manager");
         break;
       }
       case "AboutLogins:SyncOptions": {
-        message.target.ownerGlobal.gSync.openFxAManagePage("password-manager");
+        ownerGlobal.gSync.openFxAManagePage("password-manager");
         break;
       }
       case "AboutLogins:Import": {
         try {
-          MigrationUtils.showMigrationWizard(message.target.ownerGlobal, [
+          MigrationUtils.showMigrationWizard(ownerGlobal, [
             MigrationUtils.MIGRATION_ENTRYPOINT_PASSWORDS,
           ]);
         } catch (ex) {
@@ -282,7 +279,7 @@ var AboutLoginsParent = {
         const SUPPORT_URL =
           Services.urlFormatter.formatURLPref("app.support.baseURL") +
           "firefox-lockwise";
-        message.target.ownerGlobal.openWebLinkIn(SUPPORT_URL, "tab", {
+        ownerGlobal.openWebLinkIn(SUPPORT_URL, "tab", {
           relatedToCurrent: true,
         });
         break;
@@ -296,7 +293,7 @@ var AboutLoginsParent = {
         );
         
         MOBILE_ANDROID_URL += linkTrackingSource;
-        message.target.ownerGlobal.openWebLinkIn(MOBILE_ANDROID_URL, "tab", {
+        ownerGlobal.openWebLinkIn(MOBILE_ANDROID_URL, "tab", {
           relatedToCurrent: true,
         });
         break;
@@ -307,13 +304,13 @@ var AboutLoginsParent = {
         let MOBILE_IOS_URL = Services.prefs.getStringPref(MOBILE_IOS_URL_PREF);
         
         MOBILE_IOS_URL += linkTrackingSource;
-        message.target.ownerGlobal.openWebLinkIn(MOBILE_IOS_URL, "tab", {
+        ownerGlobal.openWebLinkIn(MOBILE_IOS_URL, "tab", {
           relatedToCurrent: true,
         });
         break;
       }
       case "AboutLogins:OpenPreferences": {
-        message.target.ownerGlobal.openPreferences("privacy-logins");
+        ownerGlobal.openPreferences("privacy-logins");
         break;
       }
       case "AboutLogins:OpenSite": {
@@ -328,7 +325,7 @@ var AboutLoginsParent = {
           return;
         }
 
-        message.target.ownerGlobal.openWebLinkIn(logins[0].origin, "tab", {
+        ownerGlobal.openWebLinkIn(logins[0].origin, "tab", {
           relatedToCurrent: true,
         });
         break;
@@ -340,24 +337,16 @@ var AboutLoginsParent = {
         );
         let token = tokendb.getInternalKeyToken();
 
-        let messageManager = message.target.messageManager;
-
         
         if (token.checkPassword("")) {
-          messageManager.sendAsyncMessage(
-            "AboutLogins:MasterPasswordResponse",
-            true
-          );
+          this.sendAsyncMessage("AboutLogins:MasterPasswordResponse", true);
           return;
         }
 
         
         
         if (Services.logins.uiBusy) {
-          messageManager.sendAsyncMessage(
-            "AboutLogins:MasterPasswordResponse",
-            false
-          );
+          this.sendAsyncMessage("AboutLogins:MasterPasswordResponse", false);
           return;
         }
 
@@ -371,27 +360,29 @@ var AboutLoginsParent = {
           
         }
 
-        messageManager.sendAsyncMessage(
+        this.sendAsyncMessage(
           "AboutLogins:MasterPasswordResponse",
           token.isLoggedIn()
         );
         break;
       }
       case "AboutLogins:Subscribe": {
-        if (!this._observersAdded) {
-          Services.obs.addObserver(this, "passwordmgr-crypto-login");
-          Services.obs.addObserver(this, "passwordmgr-crypto-loginCanceled");
-          Services.obs.addObserver(this, "passwordmgr-storage-changed");
-          Services.obs.addObserver(this, UIState.ON_UPDATE);
-          this._observersAdded = true;
+        if (!AboutLogins._observersAdded) {
+          Services.obs.addObserver(AboutLogins, "passwordmgr-crypto-login");
+          Services.obs.addObserver(
+            AboutLogins,
+            "passwordmgr-crypto-loginCanceled"
+          );
+          Services.obs.addObserver(AboutLogins, "passwordmgr-storage-changed");
+          Services.obs.addObserver(AboutLogins, UIState.ON_UPDATE);
+          AboutLogins._observersAdded = true;
         }
-        let messageManager = message.target.messageManager;
 
-        const logins = await this.getAllLogins();
+        const logins = await AboutLogins.getAllLogins();
         try {
-          let syncState = this.getSyncState();
+          let syncState = AboutLogins.getSyncState();
           if (FXA_ENABLED) {
-            this.updatePasswordSyncNotificationState(syncState);
+            AboutLogins.updatePasswordSyncNotificationState(syncState);
           }
 
           const playStoreBadgeLanguage = Services.locale.negotiateLanguages(
@@ -413,7 +404,7 @@ var AboutLoginsParent = {
             playStoreBadgeLanguage,
           };
 
-          messageManager.sendAsyncMessage("AboutLogins:Setup", {
+          this.sendAsyncMessage("AboutLogins:Setup", {
             logins,
             selectedSort: Services.prefs.getCharPref(
               "signon.management.page.sort",
@@ -430,7 +421,10 @@ var AboutLoginsParent = {
               AppConstants.platform != "linux",
           });
 
-          await this._sendAllLoginRelatedObjects(logins, messageManager);
+          await AboutLogins._sendAllLoginRelatedObjects(
+            logins,
+            this.browsingContext
+          );
         } catch (ex) {
           if (ex.result != Cr.NS_ERROR_NOT_INITIALIZED) {
             throw ex;
@@ -473,9 +467,9 @@ var AboutLoginsParent = {
         break;
       }
     }
-  },
+  }
 
-  handleLoginStorageErrors(login, error, message) {
+  handleLoginStorageErrors(login, error) {
     let messageObject = {
       login: augmentVanillaLoginObject(LoginHelper.loginToVanillaObject(login)),
       errorMessage: error.message,
@@ -487,12 +481,13 @@ var AboutLoginsParent = {
       messageObject.existingLoginGuid = error.data.toString();
     }
 
-    const messageManager = message.target.messageManager;
-    messageManager.sendAsyncMessage(
-      "AboutLogins:ShowLoginItemError",
-      messageObject
-    );
-  },
+    this.sendAsyncMessage("AboutLogins:ShowLoginItemError", messageObject);
+  }
+}
+
+var AboutLogins = {
+  _subscribers: new WeakSet(),
+  _observersAdded: false,
 
   async observe(subject, topic, type) {
     if (!ChromeUtils.nondeterministicGetWeakSetKeys(this._subscribers).length) {
@@ -651,15 +646,15 @@ var AboutLoginsParent = {
     extraFtl = [],
   } = {}) {
     for (let subscriber of this._subscriberIterator()) {
-      let MozXULElement = subscriber.ownerGlobal.MozXULElement;
+      let browser = subscriber.embedderElement;
+      let MozXULElement = browser.ownerGlobal.MozXULElement;
       MozXULElement.insertFTLIfNeeded("browser/aboutLogins.ftl");
       for (let ftl of extraFtl) {
         MozXULElement.insertFTLIfNeeded(ftl);
       }
 
       
-      let { gBrowser } = subscriber.ownerGlobal;
-      let browser = subscriber;
+      let { gBrowser } = browser.ownerGlobal;
       let notificationBox = gBrowser.getNotificationBox(browser);
       let notification = notificationBox.getNotificationWithValue(id);
       if (notification) {
@@ -667,7 +662,7 @@ var AboutLoginsParent = {
       }
 
       
-      let doc = subscriber.ownerDocument;
+      let doc = browser.ownerDocument;
       let messageFragment = doc.createDocumentFragment();
       let message = doc.createElement("span");
       doc.l10n.setAttributes(message, messageId);
@@ -696,8 +691,8 @@ var AboutLoginsParent = {
 
   removeNotifications(notificationId) {
     for (let subscriber of this._subscriberIterator()) {
-      let { gBrowser } = subscriber.ownerGlobal;
-      let browser = subscriber;
+      let browser = subscriber.embedderElement;
+      let { gBrowser } = browser.ownerGlobal;
       let notificationBox = gBrowser.getNotificationBox(browser);
       let notification = notificationBox.getNotificationWithValue(
         notificationId
@@ -714,10 +709,12 @@ var AboutLoginsParent = {
       this._subscribers
     );
     for (let subscriber of subscribers) {
+      let browser = subscriber.embedderElement;
       if (
-        subscriber.remoteType != EXPECTED_ABOUTLOGINS_REMOTE_TYPE ||
-        !subscriber.contentPrincipal ||
-        subscriber.contentPrincipal.originNoSuffix != ABOUT_LOGINS_ORIGIN
+        !browser ||
+        browser.remoteType != EXPECTED_ABOUTLOGINS_REMOTE_TYPE ||
+        !browser.contentPrincipal ||
+        browser.contentPrincipal.originNoSuffix != ABOUT_LOGINS_ORIGIN
       ) {
         this._subscribers.delete(subscriber);
         continue;
@@ -729,7 +726,10 @@ var AboutLoginsParent = {
   messageSubscribers(name, details) {
     for (let subscriber of this._subscriberIterator()) {
       try {
-        subscriber.messageManager.sendAsyncMessage(name, details);
+        if (subscriber.currentWindowGlobal) {
+          let actor = subscriber.currentWindowGlobal.getActor("AboutLogins");
+          actor.sendAsyncMessage(name, details);
+        }
       } catch (ex) {
         if (ex.result != Cr.NS_ERROR_NOT_INITIALIZED) {
           throw ex;
@@ -759,14 +759,16 @@ var AboutLoginsParent = {
     }
   },
 
-  async _sendAllLoginRelatedObjects(logins, messageManager) {
+  async _sendAllLoginRelatedObjects(logins, browsingContext) {
     let sendMessageFn = (name, details) => {
-      if (messageManager) {
-        messageManager.sendAsyncMessage(name, details);
+      if (browsingContext && browsingContext.currentWindowGlobal) {
+        let actor = browsingContext.currentWindowGlobal.getActor("AboutLogins");
+        actor.sendAsyncMessage(name, details);
       } else {
         this.messageSubscribers(name, details);
       }
     };
+
     if (BREACH_ALERTS_ENABLED) {
       sendMessageFn(
         "AboutLogins:SetBreaches",
@@ -776,7 +778,7 @@ var AboutLoginsParent = {
 
     sendMessageFn(
       "AboutLogins:SendFavicons",
-      await this.getAllFavicons(logins)
+      await AboutLogins.getAllFavicons(logins)
     );
   },
 
@@ -825,7 +827,5 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "PASSWORD_SYNC_ENABLED",
   "services.sync.engine.passwords",
   false,
-  AboutLoginsParent.onPasswordSyncEnabledPreferenceChange.bind(
-    AboutLoginsParent
-  )
+  AboutLogins.onPasswordSyncEnabledPreferenceChange.bind(AboutLogins)
 );
