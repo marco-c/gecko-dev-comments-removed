@@ -9,42 +9,22 @@
 #include "mozilla/Assertions.h"  
 
 #include "frontend/BytecodeEmitter.h"  
-#include "vm/BytecodeUtil.h"           
-#include "vm/Opcodes.h"                
 
 using namespace js;
 using namespace js::frontend;
 
-bool LabelEmitter::emitLabel(HandleAtom name) {
+void LabelEmitter::emitLabel(HandleAtom name) {
   MOZ_ASSERT(state_ == State::Start);
-
-  
-  
-  uint32_t index;
-  if (!bce_->makeAtomIndex(name, &index)) {
-    return false;
-  }
-  if (!bce_->emitN(JSOP_LABEL, 4, &top_)) {
-    return false;
-  }
 
   controlInfo_.emplace(bce_, name, bce_->bytecodeSection().offset());
 
 #ifdef DEBUG
   state_ = State::Label;
 #endif
-  return true;
 }
 
 bool LabelEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::Label);
-
-  
-  jsbytecode* labelpc = bce_->bytecodeSection().code(top_);
-  BytecodeOffsetDiff offset =
-      bce_->bytecodeSection().lastNonJumpTargetOffset() - top_;
-  MOZ_ASSERT(*labelpc == JSOP_LABEL);
-  SET_CODE_OFFSET(labelpc, offset.value());
 
   
   if (!controlInfo_->patchBreaks(bce_)) {
