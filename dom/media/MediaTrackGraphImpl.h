@@ -283,7 +283,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mFrontMessageQueue.SwapElements(mBackMessageQueue);
     if (!mFrontMessageQueue.IsEmpty()) {
-      EnsureNextIterationLocked();
+      EnsureNextIteration();
     }
   }
   
@@ -598,25 +598,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   Monitor& GetMonitor() { return mMonitor; }
 
-  void EnsureNextIteration() {
-    mNeedAnotherIteration = true;  
-    
-    
-    
-    if (mGraphDriverAsleep) {  
-      MonitorAutoLock mon(mMonitor);
-      CurrentDriver()
-          ->WakeUp();  
-    }
-  }
-
-  void EnsureNextIterationLocked() {
-    mNeedAnotherIteration = true;  
-    if (mGraphDriverAsleep) {      
-      CurrentDriver()
-          ->WakeUp();  
-    }
-  }
+  void EnsureNextIteration() { CurrentDriver()->EnsureNextIteration(); }
 
   
   void RegisterCaptureTrackForWindow(uint64_t aWindowId,
@@ -778,11 +760,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   nsDataHashtable<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
       mInputDeviceUsers;
-
-  
-  Atomic<bool> mNeedAnotherIteration;
-  
-  Atomic<bool> mGraphDriverAsleep;
 
   
   

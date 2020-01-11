@@ -285,8 +285,8 @@ void ThreadedDriver::RunThread() {
       break;
     }
     mStateComputedTime = nextStateComputedTime;
-    MonitorAutoLock lock(GraphImpl()->GetMonitor());
     WaitForNextIteration();
+    MonitorAutoLock lock(GraphImpl()->GetMonitor());
     if (NextDriver()) {
       LOG(LogLevel::Debug,
           ("%p: Switching to AudioCallbackDriver", GraphImpl()));
@@ -313,47 +313,19 @@ MediaTime SystemClockDriver::GetIntervalForIteration() {
   return interval;
 }
 
-void ThreadedDriver::WaitForNextIteration() {
-  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-
-  TimeDuration timeout = TimeDuration::Forever();
-
-  
-  bool another = GraphImpl()->mNeedAnotherIteration;  
-  if (!another) {
-    GraphImpl()->mGraphDriverAsleep = true;  
-  }
-  
-  
-  
-  
-  if (another || GraphImpl()->mNeedAnotherIteration) {  
-    timeout = WaitInterval();
-    if (!another) {
-      GraphImpl()->mGraphDriverAsleep = false;  
-      another = true;
-    }
-  }
-  if (!timeout.IsZero()) {
-    CVStatus status = GraphImpl()->GetMonitor().Wait(timeout);
-    LOG(LogLevel::Verbose,
-        ("%p: Resuming after %s", GraphImpl(),
-         status == CVStatus::Timeout ? "timeout" : "wake-up"));
-  }
-
-  if (!another) {
-    GraphImpl()->mGraphDriverAsleep = false;  
-  }
-  GraphImpl()->mNeedAnotherIteration = false;  
+void ThreadedDriver::EnsureNextIteration() {
+  mWaitHelper.EnsureNextIteration();
 }
 
-void ThreadedDriver::WakeUp() {
-  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-  GraphImpl()->mGraphDriverAsleep = false;  
-  GraphImpl()->GetMonitor().Notify();
+void ThreadedDriver::WaitForNextIteration() {
+  MOZ_ASSERT(mThread);
+  MOZ_ASSERT(OnThread());
+  mWaitHelper.WaitForNextIterationAtLeast(WaitInterval());
 }
 
 TimeDuration SystemClockDriver::WaitInterval() {
+  MOZ_ASSERT(mThread);
+  MOZ_ASSERT(OnThread());
   TimeStamp now = TimeStamp::Now();
   int64_t timeoutMS = MEDIA_GRAPH_TARGET_PERIOD_MS -
                       int64_t((now - mCurrentTimeStamp).ToMilliseconds());
@@ -375,11 +347,6 @@ OfflineClockDriver::~OfflineClockDriver() {}
 
 MediaTime OfflineClockDriver::GetIntervalForIteration() {
   return GraphImpl()->MillisecondsToMediaTime(mSlice);
-}
-
-TimeDuration OfflineClockDriver::WaitInterval() {
-  
-  return 0;
 }
 
 AsyncCubebTask::AsyncCubebTask(AudioCallbackDriver* aDriver,
@@ -718,8 +685,6 @@ void AudioCallbackDriver::AddMixerCallback() {
     mAddedMixer = true;
   }
 }
-
-void AudioCallbackDriver::WakeUp() {}
 
 void AudioCallbackDriver::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());

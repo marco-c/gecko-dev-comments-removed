@@ -121,8 +121,6 @@ class GraphDriver {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
   
-  virtual void WakeUp() = 0;
-  
 
 
   virtual void Start() = 0;
@@ -135,6 +133,12 @@ class GraphDriver {
 
 
   virtual uint32_t IterationDuration() = 0;
+  
+
+
+
+
+  virtual void EnsureNextIteration() {}
 
   
   bool Switching();
@@ -159,7 +163,7 @@ class GraphDriver {
 
 
 
-  virtual void SwitchAtNextIteration(GraphDriver* aDriver);
+  void SwitchAtNextIteration(GraphDriver* aDriver);
 
   
 
@@ -217,14 +221,55 @@ class MediaTrackGraphInitThreadRunnable;
 
 
 class ThreadedDriver : public GraphDriver {
+  class IterationWaitHelper {
+    Monitor mMonitor;
+    
+    bool mNeedAnotherIteration = false;
+    TimeStamp mWakeTime;
+
+   public:
+    IterationWaitHelper() : mMonitor("IterationWaitHelper::mMonitor") {}
+
+    
+
+
+
+
+    void WaitForNextIterationAtLeast(TimeDuration aDuration) {
+      MonitorAutoLock lock(mMonitor);
+      TimeStamp now = TimeStamp::Now();
+      mWakeTime = now + aDuration;
+      while (true) {
+        if (mNeedAnotherIteration && now >= mWakeTime) {
+          break;
+        }
+        if (mNeedAnotherIteration) {
+          lock.Wait(mWakeTime - now);
+        } else {
+          lock.Wait(TimeDuration::Forever());
+        }
+        now = TimeStamp::Now();
+      }
+      mWakeTime = TimeStamp();
+      mNeedAnotherIteration = false;
+    }
+
+    
+
+
+
+    void EnsureNextIteration() {
+      MonitorAutoLock lock(mMonitor);
+      mNeedAnotherIteration = true;
+      lock.Notify();
+    }
+  };
+
  public:
   explicit ThreadedDriver(MediaTrackGraphImpl* aGraphImpl);
   virtual ~ThreadedDriver();
-  
 
-
-  void WaitForNextIteration();
-  void WakeUp() override;
+  void EnsureNextIteration() override;
   void Start() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
   
@@ -242,8 +287,11 @@ class ThreadedDriver : public GraphDriver {
   }
 
   bool ThreadRunning() override { return mThreadRunning; }
-  
 
+ protected:
+  
+  void WaitForNextIteration();
+  
 
   virtual TimeDuration WaitInterval() = 0;
   
@@ -252,13 +300,15 @@ class ThreadedDriver : public GraphDriver {
 
   virtual MediaTime GetIntervalForIteration() = 0;
 
- protected:
   nsCOMPtr<nsIThread> mThread;
 
  private:
   
   
   Atomic<bool> mThreadRunning;
+
+  
+  IterationWaitHelper mWaitHelper;
 };
 
 
@@ -271,10 +321,13 @@ class SystemClockDriver : public ThreadedDriver {
   explicit SystemClockDriver(MediaTrackGraphImpl* aGraphImpl,
                              FallbackMode aFallback = FallbackMode::Regular);
   virtual ~SystemClockDriver();
-  TimeDuration WaitInterval() override;
-  MediaTime GetIntervalForIteration() override;
   bool IsFallback();
   SystemClockDriver* AsSystemClockDriver() override { return this; }
+
+ protected:
+  
+  TimeDuration WaitInterval() override;
+  MediaTime GetIntervalForIteration() override;
 
  private:
   
@@ -296,9 +349,11 @@ class OfflineClockDriver : public ThreadedDriver {
  public:
   OfflineClockDriver(MediaTrackGraphImpl* aGraphImpl, GraphTime aSlice);
   virtual ~OfflineClockDriver();
-  TimeDuration WaitInterval() override;
-  MediaTime GetIntervalForIteration() override;
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
+
+ protected:
+  TimeDuration WaitInterval() override { return 0; }
+  MediaTime GetIntervalForIteration() override;
 
  private:
   
@@ -353,7 +408,6 @@ class AudioCallbackDriver : public GraphDriver,
   virtual ~AudioCallbackDriver();
 
   void Start() override;
-  void WakeUp() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
 #if defined(XP_WIN)
   void ResetDefaultDevice() override;
