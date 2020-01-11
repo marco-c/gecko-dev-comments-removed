@@ -1111,7 +1111,6 @@ static void TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame) {
   if (frame.isExitFrameLayout<DirectWasmJitCallFrameLayout>()) {
     
     
-    
     return;
   }
 

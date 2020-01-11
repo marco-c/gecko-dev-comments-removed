@@ -4253,8 +4253,7 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
   
   
   
-  if (sig.hasI64ArgOrRet() ||
-      sig.temporarilyUnsupportedReftypeForInlineEntry() ||
+  if (sig.hasI64ArgOrRet() || sig.temporarilyUnsupportedAnyRef() ||
       !JitOptions.enableWasmIonFastCalls) {
     return InliningStatus_NotInlined;
   }
@@ -4273,10 +4272,6 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
     return abort(AbortReason::Alloc);
   }
 
-  
-  
-  
-  
   Maybe<MDefinition*> undefined;
   for (size_t i = 0; i < sig.args().length(); i++) {
     if (!alloc().ensureBallast()) {
@@ -4301,24 +4296,8 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
       case wasm::ValType::F64:
         conversion = MToDouble::New(alloc(), arg);
         break;
-      case wasm::ValType::AnyRef:
-        
-        
-        
-        switch (arg->type()) {
-          case MIRType::Object:
-          case MIRType::ObjectOrNull:
-            conversion = MWasmAnyRefFromJSObject::New(alloc(), arg);
-            break;
-          case MIRType::Null:
-            conversion = MWasmNullConstant::New(alloc());
-            break;
-          default:
-            conversion = MWasmBoxValue::New(alloc(), arg);
-            break;
-        }
-        break;
       case wasm::ValType::I64:
+      case wasm::ValType::AnyRef:
       case wasm::ValType::FuncRef:
       case wasm::ValType::Ref:
         MOZ_CRASH("impossible per above check");

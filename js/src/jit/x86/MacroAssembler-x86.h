@@ -763,12 +763,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
   }
   template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    
-    
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-  }
-  template <typename T>
   void unboxDouble(const T& src, FloatRegister dest) {
     loadDouble(Operand(src), dest);
   }

@@ -613,7 +613,7 @@ bool LazyStubSegment::addStubs(size_t codeLength,
 
     if (funcExports[funcExportIndex]
             .funcType()
-            .temporarilyUnsupportedReftypeForEntry()) {
+            .temporarilyUnsupportedAnyRef()) {
       continue;
     }
 
@@ -670,8 +670,7 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
   DebugOnly<uint32_t> numExpectedRanges = 0;
   for (uint32_t funcExportIndex : funcExportIndices) {
     const FuncExport& fe = funcExports[funcExportIndex];
-    numExpectedRanges +=
-        fe.funcType().temporarilyUnsupportedReftypeForEntry() ? 1 : 2;
+    numExpectedRanges += fe.funcType().temporarilyUnsupportedAnyRef() ? 1 : 2;
     void* calleePtr =
         moduleSegmentBase + metadata.codeRange(fe).funcNormalEntry();
     Maybe<ImmPtr> callee;
@@ -755,8 +754,7 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
 
     
     
-    interpRangeIndex +=
-        fe.funcType().temporarilyUnsupportedReftypeForEntry() ? 1 : 2;
+    interpRangeIndex += fe.funcType().temporarilyUnsupportedAnyRef() ? 1 : 2;
   }
 
   return true;
@@ -778,11 +776,10 @@ bool LazyStubTier::createOne(uint32_t funcExportIndex,
   const CodeRangeVector& codeRanges = segment->codeRanges();
 
   
-  
   if (codeTier.metadata()
           .funcExports[funcExportIndex]
           .funcType()
-          .temporarilyUnsupportedReftypeForEntry()) {
+          .temporarilyUnsupportedAnyRef()) {
     MOZ_ASSERT(codeRanges.length() >= 1);
     MOZ_ASSERT(codeRanges.back().isInterpEntry());
     return true;

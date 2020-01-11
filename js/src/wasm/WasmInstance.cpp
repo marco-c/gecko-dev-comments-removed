@@ -135,11 +135,10 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
         args[i].set(JS::CanonicalizedDoubleValue(*(double*)&argv[i]));
         break;
       case ValType::FuncRef:
-        args[i].set(UnboxFuncRef(FuncRef::fromCompiledCode(*(void**)&argv[i])));
-        break;
-      case ValType::AnyRef:
+      case ValType::AnyRef: {
         args[i].set(UnboxAnyRef(AnyRef::fromCompiledCode(*(void**)&argv[i])));
         break;
+      }
       case ValType::Ref:
         MOZ_CRASH("temporarily unsupported Ref type in callImport");
       case ValType::I64:
@@ -196,8 +195,7 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
   }
 
   
-  
-  if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
+  if (fi.funcType().temporarilyUnsupportedAnyRef()) {
     return true;
   }
 
@@ -205,43 +203,30 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
   size_t numKnownArgs = std::min(importArgs.length(), importFun->nargs());
   for (uint32_t i = 0; i < numKnownArgs; i++) {
-    StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
+    TypeSet::Type type = TypeSet::UnknownType();
     switch (importArgs[i].code()) {
       case ValType::I32:
-        if (!argTypes->hasType(TypeSet::Int32Type())) {
-          return true;
-        }
+        type = TypeSet::Int32Type();
         break;
       case ValType::F32:
-        if (!argTypes->hasType(TypeSet::DoubleType())) {
-          return true;
-        }
+        type = TypeSet::DoubleType();
         break;
       case ValType::F64:
-        if (!argTypes->hasType(TypeSet::DoubleType())) {
-          return true;
-        }
-        break;
-      case ValType::AnyRef:
-        
-        
-        
-        
-        
-        
-        
-        break;
-      case ValType::FuncRef:
-        
-        
-        
+        type = TypeSet::DoubleType();
         break;
       case ValType::Ref:
+      case ValType::FuncRef:
+      case ValType::AnyRef:
         MOZ_CRASH("case guarded above");
       case ValType::I64:
         MOZ_CRASH("NYI");
       case ValType::NullRef:
         MOZ_CRASH("NullRef not expressible");
+    }
+
+    StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
+    if (!argTypes->hasType(type)) {
+      return true;
     }
   }
 
@@ -838,12 +823,14 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     return -1;
   }
 
+  AnyRef ref = AnyRef::fromCompiledCode(value);
+
   switch (table.kind()) {
     case TableKind::AnyRef:
-      table.fillAnyRef(start, len, AnyRef::fromCompiledCode(value));
+      table.fillAnyRef(start, len, ref);
       break;
     case TableKind::FuncRef:
-      table.fillFuncRef(start, len, FuncRef::fromCompiledCode(value), cx);
+      table.fillFuncRef(start, len, ref, cx);
       break;
     case TableKind::AsmJS:
       MOZ_CRASH("not asm.js");
@@ -875,7 +862,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     return AnyRef::invalid().forCompiledCode();
   }
 
-  return FuncRef::fromJSFunction(fun).forCompiledCode();
+  return AnyRef::fromJSObject(fun).forCompiledCode();
 }
 
  uint32_t Instance::tableGrow(Instance* instance, void* initValue,
@@ -893,8 +880,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
         table.fillAnyRef(oldSize, delta, ref);
         break;
       case TableKind::FuncRef:
-        table.fillFuncRef(oldSize, delta, FuncRef::fromAnyRefUnchecked(ref),
-                          TlsContext.get());
+        table.fillFuncRef(oldSize, delta, ref, TlsContext.get());
         break;
       case TableKind::AsmJS:
         MOZ_CRASH("not asm.js");
@@ -915,13 +901,14 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     return -1;
   }
 
+  AnyRef ref = AnyRef::fromCompiledCode(value);
+
   switch (table.kind()) {
     case TableKind::AnyRef:
-      table.fillAnyRef(index, 1, AnyRef::fromCompiledCode(value));
+      table.fillAnyRef(index, 1, ref);
       break;
     case TableKind::FuncRef:
-      table.fillFuncRef(index, 1, FuncRef::fromCompiledCode(value),
-                        TlsContext.get());
+      table.fillFuncRef(index, 1, ref, TlsContext.get());
       break;
     case TableKind::AsmJS:
       MOZ_CRASH("not asm.js");
@@ -949,14 +936,9 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   
   
   
-  
-  
-  
   if (funcIndex < funcImports.length()) {
     FuncImportTls& import = instance->funcImportTls(funcImports[funcIndex]);
-    if (IsWasmExportedFunction(import.fun)) {
-      return FuncRef::fromJSFunction(import.fun).forCompiledCode();
-    }
+    return AnyRef::fromJSObject(import.fun).forCompiledCode();
   }
 
   RootedFunction fun(cx);
@@ -969,7 +951,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     return AnyRef::invalid().forCompiledCode();
   }
 
-  return FuncRef::fromJSFunction(fun).forCompiledCode();
+  return AnyRef::fromJSObject(fun).forCompiledCode();
 }
 
  void Instance::postBarrier(Instance* instance,
@@ -1171,7 +1153,6 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
   tlsData()->instance = this;
   tlsData()->realm = realm_;
   tlsData()->cx = cx;
-  tlsData()->valueBoxClass = &WasmValueBox::class_;
   tlsData()->resetInterrupt(cx);
   tlsData()->jumpTable = code_->tieringJumpTable();
   tlsData()->addressOfNeedsIncrementalBarrier =
@@ -1810,10 +1791,6 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
       case ValType::Ref:
         MOZ_CRASH("temporarily unsupported Ref type in callExport");
       case ValType::FuncRef:
-        args.rval().set(
-            UnboxFuncRef(FuncRef::fromCompiledCode(*(void**)retAddr)));
-        DebugCodegen(DebugChannel::Function, "funcptr(%p)", *(void**)retAddr);
-        break;
       case ValType::AnyRef:
         args.rval().set(
             UnboxAnyRef(AnyRef::fromCompiledCode(*(void**)retAddr)));

@@ -37,9 +37,7 @@
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
-#include "vm/JSFunction.h"
 #include "vm/MallocProvider.h"
-#include "vm/NativeObject.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmUtility.h"
 
@@ -444,14 +442,6 @@ class ValType {
 
   bool isReference() const { return IsReferenceType(tc_); }
 
-  
-  
-  
-  
-  bool isEncodedAsJSValueOnEscape() const {
-    return code() == Code::AnyRef || code() == Code::FuncRef;
-  }
-
   bool operator==(const ValType& that) const { return tc_ == that.tc_; }
   bool operator!=(const ValType& that) const { return tc_ != that.tc_; }
   bool operator==(Code that) const {
@@ -484,11 +474,6 @@ static inline unsigned SizeOf(ValType vt) {
   }
   MOZ_CRASH("Invalid ValType");
 }
-
-
-
-
-
 
 static inline jit::MIRType ToMIRType(ValType vt) {
   switch (vt.code()) {
@@ -589,8 +574,6 @@ static inline const char* ToCString(ExprType type) {
 
 
 
-
-
 class AnyRef {
   JSObject* value_;
 
@@ -648,106 +631,7 @@ bool BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef result);
 
 
 
-
-
-JSObject* BoxBoxableValue(JSContext* cx, HandleValue val);
-
-
-
-
-
 Value UnboxAnyRef(AnyRef val);
-
-class WasmValueBox : public NativeObject {
-  static const unsigned VALUE_SLOT = 0;
-
- public:
-  static const unsigned RESERVED_SLOTS = 1;
-  static const JSClass class_;
-
-  static WasmValueBox* create(JSContext* cx, HandleValue val);
-  Value value() const { return getFixedSlot(VALUE_SLOT); }
-  static size_t offsetOfValue() {
-    return NativeObject::getFixedSlotOffset(VALUE_SLOT);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class FuncRef {
-  JSFunction* value_;
-
-  explicit FuncRef() : value_((JSFunction*)-1) {}
-  explicit FuncRef(JSFunction* p) : value_(p) {
-    MOZ_ASSERT(((uintptr_t)p & 0x03) == 0);
-  }
-
- public:
-  
-  static FuncRef fromCompiledCode(void* p) { return FuncRef((JSFunction*)p); }
-
-  
-  static FuncRef fromJSFunction(JSFunction* p) { return FuncRef(p); }
-
-  
-  
-  static FuncRef fromAnyRefUnchecked(AnyRef p) {
-#ifdef DEBUG
-    Value v = UnboxAnyRef(p);
-    if (v.isNull()) {
-      return FuncRef(nullptr);
-    }
-    if (v.toObject().is<JSFunction>()) {
-      return FuncRef(&v.toObject().as<JSFunction>());
-    }
-    MOZ_CRASH("Bad value");
-#else
-    return FuncRef(&p.asJSObject()->as<JSFunction>());
-#endif
-  }
-
-  AnyRef asAnyRef() { return AnyRef::fromJSObject((JSObject*)value_); }
-
-  void* forCompiledCode() const { return value_; }
-
-  JSFunction* asJSFunction() { return value_; }
-
-  bool isNull() { return value_ == nullptr; }
-};
-
-typedef Rooted<FuncRef> RootedFuncRef;
-typedef Handle<FuncRef> HandleFuncRef;
-typedef MutableHandle<FuncRef> MutableHandleFuncRef;
-
-
-
-Value UnboxFuncRef(FuncRef val);
 
 
 
@@ -890,10 +774,6 @@ class MOZ_NON_PARAM Val : public LitVal {
     MOZ_ASSERT(type.isReference());
     u.ref_ = val;
   }
-  explicit Val(ValType type, FuncRef val) : LitVal(type, AnyRef::null()) {
-    MOZ_ASSERT(type == ValType::FuncRef);
-    u.ref_ = val.asAnyRef();
-  }
   void trace(JSTracer* trc);
 };
 
@@ -974,57 +854,14 @@ class FuncType {
     }
     return false;
   }
-  
-  
-  bool temporarilyUnsupportedReftypeForEntry() const {
+  bool temporarilyUnsupportedAnyRef() const {
     for (ValType arg : args()) {
-      if (arg.isReference() && arg.code() != ValType::AnyRef) {
+      if (arg.isReference()) {
         return true;
       }
     }
     for (ValType result : results()) {
-      if (result.isReference() && result.code() != ValType::AnyRef &&
-          result.code() != ValType::FuncRef) {
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  
-  bool temporarilyUnsupportedReftypeForInlineEntry() const {
-    for (ValType arg : args()) {
-      if (arg.isReference() && arg.code() != ValType::AnyRef) {
-        return true;
-      }
-    }
-    for (ValType result : results()) {
-      if (result.isReference() && result.code() != ValType::AnyRef &&
-          result.code() != ValType::FuncRef) {
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  
-  bool temporarilyUnsupportedReftypeForExit() const {
-    for (ValType arg : args()) {
-      if (arg.isReference() && arg.code() != ValType::AnyRef &&
-          arg.code() != ValType::FuncRef) {
-        return true;
-      }
-    }
-    for (ValType result : results()) {
-      if (result.isReference() && result.code() != ValType::AnyRef) {
-        return true;
-      }
-    }
-    return false;
-  }
-  bool jitExitRequiresArgCheck() const {
-    for (ValType arg : args()) {
-      if (arg.isEncodedAsJSValueOnEscape()) {
+      if (result.isReference()) {
         return true;
       }
     }
@@ -2068,7 +1905,6 @@ enum class SymbolicAddress {
   CoerceInPlace_ToInt32,
   CoerceInPlace_ToNumber,
   CoerceInPlace_JitEntry,
-  BoxValue_Anyref,
   DivI64,
   UDivI64,
   ModI64,
@@ -2251,9 +2087,6 @@ struct TlsData {
   JSContext* cx;
 
   
-  const JSClass* valueBoxClass;
-
-  
   
   
   Atomic<uintptr_t, mozilla::Relaxed> stackLimit;
@@ -2342,7 +2175,6 @@ struct TableTls {
   
   void* functionBase;
 };
-
 
 
 
