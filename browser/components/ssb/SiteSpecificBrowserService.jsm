@@ -38,6 +38,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ManifestProcessor: "resource://gre/modules/ManifestProcessor.jsm",
   KeyValueService: "resource://gre/modules/kvstore.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  ImageTools: "resource:///modules/ssb/ImageTools.jsm",
 });
 
 
@@ -112,6 +113,36 @@ function manifestForURI(uri) {
 
 
 
+async function getIconResource(iconData) {
+  
+  let imageData = await ImageTools.loadImage(
+    Services.io.newURI(iconData.iconURL)
+  );
+  if (imageData.container.type == Ci.imgIContainer.TYPE_VECTOR) {
+    return {
+      src: iconData.iconURL,
+      purpose: ["any"],
+      type: imageData.type,
+      sizes: ["any"],
+    };
+  }
+
+  
+
+  return {
+    src: iconData.iconURL,
+    purpose: ["any"],
+    type: imageData.type,
+    sizes: [`${imageData.container.width}x${imageData.container.height}`],
+  };
+}
+
+
+
+
+
+
+
 async function buildManifestForBrowser(browser) {
   let manifest = null;
   try {
@@ -150,6 +181,25 @@ async function buildManifestForBrowser(browser) {
       return icon;
     })
   )).filter(icon => icon);
+
+  
+  if (!manifest.icons.length) {
+    let linkHandler = browser.browsingContext.currentWindowGlobal.getActor(
+      "LinkHandler"
+    );
+
+    for (let icon of [linkHandler.icon, linkHandler.richIcon]) {
+      if (!icon) {
+        continue;
+      }
+
+      try {
+        manifest.icons.push(await getIconResource(icon));
+      } catch (e) {
+        console.warn(`Failed to load icon resource ${icon.originalURL}`, e);
+      }
+    }
+  }
 
   return manifest;
 }
