@@ -4432,7 +4432,19 @@ void nsWindow::HideWaylandWindow() {
     
     
     
-    DestroyLayerManager();
+    MOZ_ASSERT(GetRemoteRenderer());
+    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+      
+      remoteRenderer->SendPause();
+      
+      RefPtr<nsWindow> self(this);
+      moz_container_add_initial_draw_callback(mContainer, [self]() -> void {
+        self->mNeedsCompositorResume = true;
+        self->MaybeResumeCompositor();
+      });
+    } else {
+      DestroyLayerManager();
+    }
   }
 #endif
   gtk_widget_hide(mShell);
@@ -7333,8 +7345,8 @@ void nsWindow::GetCompositorWidgetInitData(
 #ifdef MOZ_WAYLAND
 wl_surface* nsWindow::GetWaylandSurface() {
   if (mContainer) {
-    struct wl_surface* surface = moz_container_get_wl_surface(
-        MOZ_CONTAINER(mContainer));
+    struct wl_surface* surface =
+        moz_container_get_wl_surface(MOZ_CONTAINER(mContainer));
     if (surface != NULL) {
       wl_surface_set_buffer_scale(surface, GdkScaleFactor());
     }
