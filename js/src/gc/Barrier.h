@@ -415,6 +415,8 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
   T value;
 
  public:
+  using ElementType = T;
+
   
   
   
@@ -433,8 +435,6 @@ class WriteBarriered : public BarrieredBase<T>,
   explicit WriteBarriered(const T& v) : BarrieredBase<T>(v) {}
 
  public:
-  using ElementType = T;
-
   DECLARE_POINTER_CONSTREF_OPS(T);
 
   
@@ -676,7 +676,6 @@ class ReadBarriered : public BarrieredBase<T> {
   
   explicit ReadBarriered(const T& v) : BarrieredBase<T>(v) {}
 
- protected:
   void read() const { InternalBarrierMethods<T>::readBarrier(this->value); }
   void post(const T& prev, const T& next) {
     InternalBarrierMethods<T>::postBarrier(&this->value, prev, next);

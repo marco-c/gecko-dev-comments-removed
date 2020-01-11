@@ -4673,21 +4673,6 @@ static T* findDebuggerInVector(Debugger* dbg, Vector<T, 0, AP>* vec) {
   return p;
 }
 
-
-
-template <typename AP>
-static WeakHeapPtr<Debugger*>* findDebuggerInVector(
-    Debugger* dbg, Vector<WeakHeapPtr<Debugger*>, 0, AP>& vec) {
-  WeakHeapPtr<Debugger*>* p;
-  for (p = vec.begin(); p != vec.end(); p++) {
-    if (p->unbarrieredGet() == dbg) {
-      break;
-    }
-  }
-  MOZ_ASSERT(p != vec.end());
-  return p;
-}
-
 void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
                                     WeakGlobalObjectSet::Enum* debugEnum,
                                     FromSweep fromSweep) {
@@ -4749,7 +4734,7 @@ void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
   
   
   globalDebuggersVector.erase(
-      findDebuggerInVector(this, globalDebuggersVector));
+      findDebuggerInVector(this, &globalDebuggersVector));
 
   if (debugEnum) {
     debugEnum->removeFront();
