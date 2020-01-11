@@ -74,29 +74,6 @@ using namespace js;
 
 
 
-bool js::ToClampedIndex(JSContext* cx, HandleValue v, uint32_t length,
-                        uint32_t* out) {
-  int32_t result;
-  if (!ToInt32(cx, v, &result)) {
-    return false;
-  }
-  if (result < 0) {
-    result += length;
-    if (result < 0) {
-      result = 0;
-    }
-  } else if (uint32_t(result) > length) {
-    result = length;
-  }
-  *out = uint32_t(result);
-  return true;
-}
-
-
-
-
-
-
 
 
 
@@ -341,16 +318,7 @@ bool js::IsArrayBuffer(HandleValue v) {
   return v.isObject() && v.toObject().is<ArrayBufferObject>();
 }
 
-bool js::IsArrayBuffer(HandleObject obj) {
-  return obj->is<ArrayBufferObject>();
-}
-
 bool js::IsArrayBuffer(JSObject* obj) { return obj->is<ArrayBufferObject>(); }
-
-ArrayBufferObject& js::AsArrayBuffer(HandleObject obj) {
-  MOZ_ASSERT(IsArrayBuffer(obj));
-  return obj->as<ArrayBufferObject>();
-}
 
 ArrayBufferObject& js::AsArrayBuffer(JSObject* obj) {
   MOZ_ASSERT(IsArrayBuffer(obj));
@@ -361,17 +329,8 @@ bool js::IsArrayBufferMaybeShared(HandleValue v) {
   return v.isObject() && v.toObject().is<ArrayBufferObjectMaybeShared>();
 }
 
-bool js::IsArrayBufferMaybeShared(HandleObject obj) {
-  return obj->is<ArrayBufferObjectMaybeShared>();
-}
-
 bool js::IsArrayBufferMaybeShared(JSObject* obj) {
   return obj->is<ArrayBufferObjectMaybeShared>();
-}
-
-ArrayBufferObjectMaybeShared& js::AsArrayBufferMaybeShared(HandleObject obj) {
-  MOZ_ASSERT(IsArrayBufferMaybeShared(obj));
-  return obj->as<ArrayBufferObjectMaybeShared>();
 }
 
 ArrayBufferObjectMaybeShared& js::AsArrayBufferMaybeShared(JSObject* obj) {
