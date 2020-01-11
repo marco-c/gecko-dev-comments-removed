@@ -262,9 +262,15 @@ class MachCommands(MachCommandBase):
             _log(line)
 
         _log(test['path'])
-        cmd = [self.virtualenv_manager.python_path, test['path']]
+        python = self.virtualenv_manager.python_path
+        cmd = [python, test['path']]
         env = os.environ.copy()
         env[b'PYTHONDONTWRITEBYTECODE'] = b'1'
+
+        
+        
+        
+        env[b'PYTHONEXECUTABLE'] = python.encode('utf-8')
 
         proc = ProcessHandler(cmd, env=env, processOutputLine=_line_handler, storeOutput=False)
         proc.run()
