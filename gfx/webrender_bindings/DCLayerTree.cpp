@@ -228,8 +228,7 @@ void DCLayerTree::Unbind() {
 void DCLayerTree::CreateSurface(wr::NativeSurfaceId aId,
                                 wr::DeviceIntSize aSize, bool aIsOpaque) {
   auto it = mDCLayers.find(wr::AsUint64(aId));
-  
-  
+  MOZ_RELEASE_ASSERT(it == mDCLayers.end());
   MOZ_ASSERT(it == mDCLayers.end());
   if (it != mDCLayers.end()) {
     
