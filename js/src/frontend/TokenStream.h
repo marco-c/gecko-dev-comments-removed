@@ -623,24 +623,42 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
   InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
- public:
+  
+  
+  
+
+  
   SourceCoords srcCoords;
 
- protected:
-  Token tokens[ntokens] = {};  
+  
+  Token tokens[ntokens] = {};
 
- private:
-  unsigned cursor_ = 0;  
- protected:
-  unsigned lookahead = 0;  
-  unsigned lineno;         
-  TokenStreamFlags flags;  
-  size_t linebase = 0;     
-  size_t prevLinebase =
-      size_t(-1);  
-  UniqueTwoByteChars displayURL_ =
-      nullptr;  
-  UniqueTwoByteChars sourceMapURL_ = nullptr;  
+  
+  unsigned cursor_ = 0;
+
+  
+  unsigned lookahead = 0;
+
+  
+  unsigned lineno;
+
+  
+  TokenStreamFlags flags = {};
+
+  
+  size_t linebase = 0;
+
+  
+  size_t prevLinebase = size_t(-1);
+
+  
+  UniqueTwoByteChars displayURL_ = nullptr;
+
+  
+  UniqueTwoByteChars sourceMapURL_ = nullptr;
+
+  
+  
 
   
 
