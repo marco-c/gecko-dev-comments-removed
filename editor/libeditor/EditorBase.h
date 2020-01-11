@@ -630,7 +630,10 @@ class EditorBase : public nsIEditor,
     
     
     
-    AutoStyleCacheArray mCachedInlineStyles;
+    
+    
+    
+    Maybe<AutoStyleCacheArray> mCachedInlineStyles;
 
     
     bool mDidDeleteSelection;
@@ -698,7 +701,9 @@ class EditorBase : public nsIEditor,
       mNewBlockElement = nullptr;
       mSelectedRange->Clear();
       mChangedRange->Reset();
-      mCachedInlineStyles.Clear();
+      if (mCachedInlineStyles.isSome()) {
+        mCachedInlineStyles->Clear();
+      }
       mDidDeleteSelection = false;
       mDidDeleteNonCollapsedRange = false;
       mDidDeleteEmptyParentBlocks = false;
