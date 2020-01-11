@@ -5,13 +5,51 @@
 
 const TEST_FILE = "test-network-request.html";
 const TEST_PATH =
-  "https://example.com/browser/devtools/client/webconsole/test/browser/";
+  "https://example.com/browser/devtools/client/webconsole/" + "test/browser/";
 const TEST_URI = TEST_PATH + TEST_FILE;
 
 requestLongerTimeout(2);
 
 pushPref("devtools.webconsole.filter.net", false);
 pushPref("devtools.webconsole.filter.netxhr", true);
+
+const tabs = [
+  {
+    id: "headers",
+    testEmpty: testEmptyHeaders,
+    testContent: testHeaders,
+  },
+  {
+    id: "cookies",
+    testEmpty: testEmptyCookies,
+    testContent: testCookies,
+  },
+  {
+    id: "params",
+    testEmpty: testEmptyParams,
+    testContent: testParams,
+  },
+  {
+    id: "response",
+    testEmpty: testEmptyResponse,
+    testContent: testResponse,
+  },
+  {
+    id: "timings",
+    testEmpty: testEmptyTimings,
+    testContent: testTimings,
+  },
+  {
+    id: "stack-trace",
+    testEmpty: testEmptyStackTrace,
+    testContent: testStackTrace,
+  },
+  {
+    id: "security",
+    testEmpty: testEmptySecurity,
+    testContent: testSecurity,
+  },
+];
 
 
 
@@ -25,6 +63,21 @@ add_task(async function task() {
   
   
   
+  await openRequestAfterUpdates(target, hud);
+
+  
+  
+  
+  
+  
+  
+  
+  for (const tab of tabs) {
+    await openRequestBeforeUpdates(target, hud, tab);
+  }
+});
+
+async function openRequestAfterUpdates(target, hud) {
   const toolbox = gDevTools.getToolbox(target);
 
   const xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
@@ -50,7 +103,58 @@ add_task(async function task() {
 
   await onPayloadReady;
   await testNetworkMessage(toolbox, messageNode);
-});
+}
+
+async function openRequestBeforeUpdates(target, hud, tab) {
+  const toolbox = gDevTools.getToolbox(target);
+
+  await clearOutput(hud);
+
+  const xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
+  const onMessage = waitForMessage(hud, xhrUrl);
+  const onRequestUpdates = waitForRequestUpdates(hud);
+  const onPayloadReady = waitForPayloadReady(hud);
+
+  
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+    content.wrappedJSObject.testXhrPostSlowResponse();
+  });
+  const { node: messageNode } = await onMessage;
+  ok(messageNode, "Network message found.");
+
+  
+  const state = hud.ui.wrapper.getStore().getState();
+  state.ui.networkMessageActiveTabId = tab.id;
+
+  
+  await expandXhrMessage(messageNode);
+
+  
+  
+  
+  if (tab.id != "security") {
+    
+    const currentTab = messageNode.querySelector(`#${tab.id}-tab`);
+    is(
+      currentTab.getAttribute("aria-selected"),
+      "true",
+      "The correct tab is selected"
+    );
+
+    
+    tab.testEmpty(messageNode);
+  }
+
+  
+  await onRequestUpdates;
+  await onPayloadReady;
+
+  
+  await tab.testContent(messageNode);
+
+  
+  await testNetworkMessage(toolbox, messageNode);
+}
 
 
 
@@ -74,18 +178,29 @@ function testStatusInfo(messageNode) {
 }
 
 
+
+function testEmptyHeaders(messageNode) {
+  const emptyNotice = messageNode.querySelector("#headers-panel .empty-notice");
+  ok(emptyNotice, "Headers tab is empty");
+}
+
 async function testHeaders(messageNode) {
   const headersTab = messageNode.querySelector("#headers-tab");
   ok(headersTab, "Headers tab is available");
 
   
   headersTab.click();
-  await waitFor(
-    () => messageNode.querySelector("#headers-panel .headers-overview"),
-    "Wait for .header-overview to be rendered"
+  await waitFor(() =>
+    messageNode.querySelector("#headers-panel .headers-overview")
   );
 }
 
+
+
+function testEmptyCookies(messageNode) {
+  const emptyNotice = messageNode.querySelector("#cookies-panel .empty-notice");
+  ok(emptyNotice, "Cookies tab is empty");
+}
 
 async function testCookies(messageNode) {
   const cookiesTab = messageNode.querySelector("#cookies-tab");
@@ -93,12 +208,17 @@ async function testCookies(messageNode) {
 
   
   cookiesTab.click();
-  await waitFor(
-    () => messageNode.querySelector("#cookies-panel .treeValueCell"),
-    "Wait for .treeValueCell to be rendered"
+  await waitFor(() =>
+    messageNode.querySelector("#cookies-panel .treeValueCell")
   );
 }
 
+
+
+function testEmptyParams(messageNode) {
+  const emptyNotice = messageNode.querySelector("#params-panel .empty-notice");
+  ok(emptyNotice, "Params tab is empty");
+}
 
 async function testParams(messageNode) {
   const paramsTab = messageNode.querySelector("#params-tab");
@@ -120,6 +240,12 @@ async function testParams(messageNode) {
 }
 
 
+
+function testEmptyResponse(messageNode) {
+  const panel = messageNode.querySelector("#response-panel .tab-panel");
+  is(panel.textContent, "", "Cookies tab is empty");
+}
+
 async function testResponse(messageNode) {
   const responseTab = messageNode.querySelector("#response-tab");
   ok(responseTab, "Response tab is available");
@@ -137,22 +263,36 @@ async function testResponse(messageNode) {
 }
 
 
+
+function testEmptyTimings(messageNode) {
+  const panel = messageNode.querySelector("#timings-panel .tab-panel");
+  is(panel.textContent, "", "Timings tab is empty");
+}
+
 async function testTimings(messageNode) {
   const timingsTab = messageNode.querySelector("#timings-tab");
   ok(timingsTab, "Timings tab is available");
 
   
   timingsTab.click();
-  const timingsContent = await waitFor(() =>
+  await waitFor(() =>
     messageNode.querySelector(
-      "#timings-panel .timings-container .timings-label",
-      "Wait for .timings-label to be rendered"
+      "#timings-panel .timings-container .timings-label"
     )
+  );
+  const timingsContent = messageNode.querySelector(
+    "#timings-panel .timings-container .timings-label"
   );
   ok(timingsContent, "Timings content is available");
   ok(timingsContent.textContent, "Timings text is available");
 }
 
+
+
+function testEmptyStackTrace(messageNode) {
+  const panel = messageNode.querySelector("#stack-trace-panel .stack-trace");
+  is(panel.textContent, "", "StackTrace tab is empty");
+}
 
 async function testStackTrace(messageNode) {
   const stackTraceTab = messageNode.querySelector("#stack-trace-tab");
@@ -160,12 +300,17 @@ async function testStackTrace(messageNode) {
 
   
   stackTraceTab.click();
-  await waitFor(
-    () => messageNode.querySelector("#stack-trace-panel .frame-link"),
-    "Wait for .frame-link to be rendered"
+  await waitFor(() =>
+    messageNode.querySelector("#stack-trace-panel .frame-link")
   );
 }
 
+
+
+function testEmptySecurity(messageNode) {
+  const panel = messageNode.querySelector("#security-panel .tab-panel");
+  is(panel.textContent, "", "Security tab is empty");
+}
 
 async function testSecurity(messageNode) {
   const securityTab = messageNode.querySelector("#security-tab");
@@ -173,9 +318,8 @@ async function testSecurity(messageNode) {
 
   
   securityTab.click();
-  await waitFor(
-    () => messageNode.querySelector("#security-panel .treeTable .treeRow"),
-    "Wait for #security-panel .treeTable .treeRow to be rendered"
+  await waitFor(() =>
+    messageNode.querySelector("#security-panel .treeTable .treeRow")
   );
 }
 
@@ -200,8 +344,5 @@ function expandXhrMessage(node) {
     "Click on XHR message and wait for the network detail panel to be displayed"
   );
   node.querySelector(".url").click();
-  return waitFor(
-    () => node.querySelector(".network-info"),
-    "Wait for .network-info to be rendered"
-  );
+  return waitFor(() => node.querySelector(".network-info"));
 }
