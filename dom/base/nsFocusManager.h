@@ -102,16 +102,6 @@ class nsFocusManager final : public nsIFocusManager,
 
   nsresult ContentRemoved(Document* aDocument, nsIContent* aContent);
 
-  
-
-
-  already_AddRefed<Document> SetMouseButtonHandlingDocument(
-      Document* aDocument) {
-    RefPtr<Document> handlingDocument = mMouseButtonEventHandlingDocument;
-    mMouseButtonEventHandlingDocument = aDocument;
-    return handlingDocument.forget();
-  }
-
   void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement) {
     if (mFocusedElement == aElement) {
       mEventHandlingNeedsFlush = true;
@@ -665,16 +655,6 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   nsTArray<nsDelayedBlurOrFocusEvent> mDelayedBlurFocusEvents;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Document> mMouseButtonEventHandlingDocument;
 
   
   

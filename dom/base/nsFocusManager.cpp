@@ -155,8 +155,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFocusManager)
 
 NS_IMPL_CYCLE_COLLECTION(nsFocusManager, mActiveWindow, mFocusedWindow,
                          mFocusedElement, mFirstBlurEvent, mFirstFocusEvent,
-                         mWindowBeingLowered, mDelayedBlurFocusEvents,
-                         mMouseButtonEventHandlingDocument)
+                         mWindowBeingLowered, mDelayedBlurFocusEvents)
 
 nsFocusManager* nsFocusManager::sInstance = nullptr;
 bool nsFocusManager::sMouseFocusesFormControl = false;
@@ -240,7 +239,6 @@ nsFocusManager::Observe(nsISupports* aSubject, const char* aTopic,
     mFirstFocusEvent = nullptr;
     mWindowBeingLowered = nullptr;
     mDelayedBlurFocusEvents.Clear();
-    mMouseButtonEventHandlingDocument = nullptr;
   }
 
   return NS_OK;
@@ -1253,22 +1251,12 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
 
   
   
-  
-  
-  
   if (sendFocusEvent && mFocusedElement &&
+      mFocusedElement->OwnerDoc() != aNewContent->OwnerDoc() &&
+      mFocusedElement->NodePrincipal()->IsSystemPrincipal() &&
       !nsContentUtils::LegacyIsCallerNativeCode() &&
-      mFocusedElement->OwnerDoc() != aNewContent->OwnerDoc()) {
-    
-    
-    
-    sendFocusEvent = nsContentUtils::CanCallerAccess(mFocusedElement);
-    if (!sendFocusEvent && mMouseButtonEventHandlingDocument) {
-      
-      
-      sendFocusEvent =
-          nsContentUtils::CanCallerAccess(mMouseButtonEventHandlingDocument);
-    }
+      !nsContentUtils::CanCallerAccess(mFocusedElement)) {
+    sendFocusEvent = false;
   }
 
   LOGCONTENT("Shift Focus: %s", elementToFocus.get());
@@ -4049,10 +4037,6 @@ void nsFocusManager::MarkUncollectableForCCGeneration(uint32_t aGeneration) {
   if (sInstance->mFirstFocusEvent) {
     sInstance->mFirstFocusEvent->OwnerDoc()->MarkUncollectableForCCGeneration(
         aGeneration);
-  }
-  if (sInstance->mMouseButtonEventHandlingDocument) {
-    sInstance->mMouseButtonEventHandlingDocument
-        ->MarkUncollectableForCCGeneration(aGeneration);
   }
 }
 
