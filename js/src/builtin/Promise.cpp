@@ -20,8 +20,10 @@
 #include "js/ForOfIterator.h"  
 #include "js/PropertySpec.h"
 #include "util/Poison.h"
+#include "vm/ArrayObject.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
+#include "vm/ErrorObject.h"
 #include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
@@ -30,6 +32,7 @@
 
 #include "debugger/DebugAPI-inl.h"
 #include "vm/Compartment-inl.h"
+#include "vm/ErrorObject-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
@@ -2389,11 +2392,16 @@ static MOZ_MUST_USE bool PerformPromiseAllSettled(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done);
 
+static MOZ_MUST_USE bool PerformPromiseAny(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, bool* done);
+
 static MOZ_MUST_USE bool PerformPromiseRace(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done);
 
-enum class CombinatorKind { All, AllSettled, Race };
+enum class CombinatorKind { All, AllSettled, Any, Race };
+
 
 
 
@@ -2419,6 +2427,9 @@ static MOZ_MUST_USE bool CommonPromiseCombinator(JSContext* cx, CallArgs& args,
         break;
       case CombinatorKind::AllSettled:
         message = "Receiver of Promise.allSettled call";
+        break;
+      case CombinatorKind::Any:
+        message = "Receiver of Promise.any call";
         break;
       case CombinatorKind::Race:
         message = "Receiver of Promise.race call";
@@ -2453,6 +2464,9 @@ static MOZ_MUST_USE bool CommonPromiseCombinator(JSContext* cx, CallArgs& args,
       case CombinatorKind::AllSettled:
         message = "Argument of Promise.allSettled";
         break;
+      case CombinatorKind::Any:
+        message = "Argument of Promise.any";
+        break;
       case CombinatorKind::Race:
         message = "Argument of Promise.race";
         break;
@@ -2470,6 +2484,9 @@ static MOZ_MUST_USE bool CommonPromiseCombinator(JSContext* cx, CallArgs& args,
       break;
     case CombinatorKind::AllSettled:
       result = PerformPromiseAllSettled(cx, iter, C, promiseCapability, &done);
+      break;
+    case CombinatorKind::Any:
+      result = PerformPromiseAny(cx, iter, C, promiseCapability, &done);
       break;
     case CombinatorKind::Race:
       result = PerformPromiseRace(cx, iter, C, promiseCapability, &done);
@@ -2705,6 +2722,7 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
     ResolutionMode mode);
 
 static bool IsPromiseSpecies(JSContext* cx, JSFunction* species);
+
 
 
 
@@ -3519,6 +3537,224 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   
   args.rval().setUndefined();
   return true;
+}
+
+
+
+
+
+static bool Promise_static_any(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CommonPromiseCombinator(cx, args, CombinatorKind::Any);
+}
+
+
+
+
+
+static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
+                                            Value* vp);
+
+
+
+
+
+static void ThrowAggregateError(JSContext* cx,
+                                Handle<PromiseCombinatorElements> errors,
+                                HandleObject promise);
+
+
+
+
+
+static MOZ_MUST_USE bool PerformPromiseAny(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, bool* done) {
+  *done = false;
+
+  
+  MOZ_ASSERT(C->isConstructor());
+
+  
+
+  
+  Rooted<PromiseCombinatorElements> errors(cx);
+  if (!NewPromiseCombinatorElements(cx, resultCapability, &errors)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
+  dataHolder = PromiseCombinatorDataHolder::New(
+      cx, resultCapability.promise(), errors, resultCapability.reject());
+  if (!dataHolder) {
+    return false;
+  }
+
+  
+  uint32_t index = 0;
+
+  auto getResolveAndReject = [cx, &resultCapability, &errors, &dataHolder,
+                              &index](MutableHandleValue resolveFunVal,
+                                      MutableHandleValue rejectFunVal) {
+    
+    if (!errors.pushUndefined(cx)) {
+      return false;
+    }
+
+    
+    JSFunction* rejectFunc = NewPromiseCombinatorElementFunction(
+        cx, PromiseAnyRejectElementFunction, dataHolder, index);
+    if (!rejectFunc) {
+      return false;
+    }
+
+    
+    dataHolder->increaseRemainingCount();
+
+    
+    index++;
+    MOZ_ASSERT(index > 0);
+
+    resolveFunVal.setObject(*resultCapability.resolve());
+    rejectFunVal.setObject(*rejectFunc);
+    return true;
+  };
+
+  
+  
+  
+  bool isDefaultResolveFn =
+      IsNativeFunction(resultCapability.resolve(), ResolvePromiseFunction);
+
+  
+  if (!CommonPerformPromiseCombinator(
+          cx, iterator, C, resultCapability.promise(), done, isDefaultResolveFn,
+          getResolveAndReject)) {
+    return false;
+  }
+
+  
+  int32_t remainingCount = dataHolder->decreaseRemainingCount();
+
+  
+  if (remainingCount == 0) {
+    ThrowAggregateError(cx, errors, resultCapability.promise());
+    return false;
+  }
+
+  
+  return true;
+}
+
+
+
+
+
+static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
+                                            Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  HandleValue xVal = args.get(0);
+
+  
+  Rooted<PromiseCombinatorDataHolder*> data(cx);
+  uint32_t index;
+  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  
+  Rooted<PromiseCombinatorElements> errors(cx);
+  if (!GetPromiseCombinatorElements(cx, data, &errors)) {
+    return false;
+  }
+
+  
+  if (!errors.setElement(cx, index, xVal)) {
+    return false;
+  }
+
+  
+  uint32_t remainingCount = data->decreaseRemainingCount();
+
+  
+  if (remainingCount == 0) {
+    
+    RootedObject rejectFun(cx, data->resolveOrRejectObj());
+    RootedObject promiseObj(cx, data->promiseObj());
+
+    ThrowAggregateError(cx, errors, promiseObj);
+
+    RootedValue reason(cx);
+    if (!MaybeGetAndClearException(cx, &reason)) {
+      return false;
+    }
+
+    if (!RunResolutionFunction(cx, rejectFun, reason, RejectMode, promiseObj)) {
+      return false;
+    }
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+static void ThrowAggregateError(JSContext* cx,
+                                Handle<PromiseCombinatorElements> errors,
+                                HandleObject promise) {
+  MOZ_ASSERT(!cx->isExceptionPending());
+
+  
+  AutoRealm ar(cx, errors.unwrappedArray());
+
+  RootedObject allocationSite(cx);
+  mozilla::Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStack;
+
+  
+  
+  
+  
+  
+  
+  if (promise->is<PromiseObject>()) {
+    allocationSite = promise->as<PromiseObject>().allocationSite();
+    if (allocationSite) {
+      asyncStack.emplace(
+          cx, allocationSite, "Promise.any",
+          JS::AutoSetAsyncStackForNewCalls::AsyncCallKind::IMPLICIT);
+    }
+  }
+
+  
+  
+  RootedValue error(cx);
+  if (!GetAggregateError(cx, JSMSG_PROMISE_ANY_REJECTION, &error)) {
+    return;
+  }
+
+  
+  RootedSavedFrame stack(cx);
+  if (error.isObject() && error.toObject().is<AggregateErrorObject>()) {
+    auto* aggregateError = &error.toObject().as<AggregateErrorObject>();
+    aggregateError->setAggregateErrors(errors.unwrappedArray());
+
+    
+    if (JSObject* errorStack = aggregateError->stack()) {
+      stack = &errorStack->as<SavedFrame>();
+    }
+  }
+
+  cx->setPendingException(error, stack);
 }
 
 
@@ -5866,6 +6102,9 @@ static const JSPropertySpec promise_properties[] = {
 static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("all", Promise_static_all, 1, 0),
     JS_FN("allSettled", Promise_static_allSettled, 1, 0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("any", Promise_static_any, 1, 0),
+#endif
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),
     JS_FN("resolve", Promise_static_resolve, 1, 0),
