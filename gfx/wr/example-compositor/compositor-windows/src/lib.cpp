@@ -27,6 +27,9 @@
 
 #define NUM_QUERIES 2
 
+#define USE_VIRTUAL_SURFACES
+#define VIRTUAL_OFFSET 512 * 1024
+
 enum SyncMode {
     None = 0,
     Swap = 1,
@@ -37,10 +40,12 @@ enum SyncMode {
 
 
 struct Tile {
+#ifndef USE_VIRTUAL_SURFACES
     
     IDCompositionSurface *pSurface;
     
     IDCompositionVisual2 *pVisual;
+#endif
 };
 
 struct TileKey {
@@ -66,6 +71,9 @@ struct Surface {
     bool is_opaque;
     std::unordered_map<TileKey, Tile, TileKeyHasher> tiles;
     IDCompositionVisual2 *pVisual;
+#ifdef USE_VIRTUAL_SURFACES
+    IDCompositionVirtualSurface *pVirtualSurface;
+#endif
 };
 
 struct CachedFrameBuffer {
@@ -216,7 +224,8 @@ extern "C" {
             name = L"example-compositor (Simple)";
         }
 
-        window->hWnd = CreateWindow(
+        window->hWnd = CreateWindowEx(
+            WS_EX_NOREDIRECTIONBITMAP,
             CLASS_NAME,
             name,
             WS_OVERLAPPEDWINDOW,
@@ -379,10 +388,12 @@ extern "C" {
         for (auto surface_it=window->surfaces.begin() ; surface_it != window->surfaces.end() ; ++surface_it) {
             Surface &surface = surface_it->second;
 
+#ifndef USE_VIRTUAL_SURFACES
             for (auto tile_it=surface.tiles.begin() ; tile_it != surface.tiles.end() ; ++tile_it) {
                 tile_it->second.pSurface->Release();
                 tile_it->second.pVisual->Release();
             }
+#endif
 
             surface.pVisual->Release();
         }
@@ -480,6 +491,23 @@ extern "C" {
         HRESULT hr = window->pDCompDevice->CreateVisual(&surface.pVisual);
         assert(SUCCEEDED(hr));
 
+#ifdef USE_VIRTUAL_SURFACES
+        DXGI_ALPHA_MODE alpha_mode = surface.is_opaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+
+        hr = window->pDCompDevice->CreateVirtualSurface(
+            VIRTUAL_OFFSET * 2,
+            VIRTUAL_OFFSET * 2,
+            DXGI_FORMAT_B8G8R8A8_UNORM,
+            alpha_mode,
+            &surface.pVirtualSurface
+        );
+        assert(SUCCEEDED(hr));
+
+        
+        hr = surface.pVisual->SetContent(surface.pVirtualSurface);
+        assert(SUCCEEDED(hr));
+#endif
+
         window->surfaces[id] = surface;
     }
 
@@ -497,6 +525,7 @@ extern "C" {
 
         Tile tile;
 
+#ifndef USE_VIRTUAL_SURFACES
         
         DXGI_ALPHA_MODE alpha_mode = surface.is_opaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         HRESULT hr = window->pDCompDevice->CreateSurface(
@@ -527,6 +556,7 @@ extern "C" {
             FALSE,
             NULL
         );
+#endif
 
         surface.tiles[key] = tile;
     }
@@ -544,10 +574,12 @@ extern "C" {
         assert(surface.tiles.count(key) == 1);
         Tile &tile = surface.tiles[key];
 
+#ifndef USE_VIRTUAL_SURFACES
         surface.pVisual->RemoveVisual(tile.pVisual);
 
         tile.pVisual->Release();
         tile.pSurface->Release();
+#endif
 
         surface.tiles.erase(key);
     }
@@ -561,11 +593,15 @@ extern "C" {
 
         window->pRoot->RemoveVisual(surface.pVisual);
 
+#ifdef USE_VIRTUAL_SURFACES
+        surface.pVirtualSurface->Release();
+#else
         
         for (auto tile_it=surface.tiles.begin() ; tile_it != surface.tiles.end() ; ++tile_it) {
             tile_it->second.pSurface->Release();
             tile_it->second.pVisual->Release();
         }
+#endif
 
         surface.pVisual->Release();
         window->surfaces.erase(id);
@@ -592,9 +628,6 @@ extern "C" {
         Tile &tile = surface.tiles[key];
 
         
-        window->pCurrentSurface = tile.pSurface;
-
-        
         
         
         RECT update_rect;
@@ -605,17 +638,40 @@ extern "C" {
         POINT offset;
         D3D11_TEXTURE2D_DESC desc;
         ID3D11Texture2D *pTexture;
-        HRESULT hr = tile.pSurface->BeginDraw(
+        HRESULT hr;
+
+        
+#ifdef USE_VIRTUAL_SURFACES
+        LONG tile_offset_x = VIRTUAL_OFFSET + tile_x * surface.tile_width;
+        LONG tile_offset_y = VIRTUAL_OFFSET + tile_y * surface.tile_height;
+
+        update_rect.left += tile_offset_x;
+        update_rect.top += tile_offset_y;
+        update_rect.right += tile_offset_x;
+        update_rect.bottom += tile_offset_y;
+
+        hr = surface.pVirtualSurface->BeginDraw(
             &update_rect,
             __uuidof(ID3D11Texture2D),
             (void **) &pTexture,
             &offset
         );
+        window->pCurrentSurface = surface.pVirtualSurface;
+#else
+        hr = tile.pSurface->BeginDraw(
+            &update_rect,
+            __uuidof(ID3D11Texture2D),
+            (void **) &pTexture,
+            &offset
+        );
+        window->pCurrentSurface = tile.pSurface;
+#endif
+
         
         
+        assert(SUCCEEDED(hr));
         offset.x -= dirty_x0;
         offset.y -= dirty_y0;
-        assert(SUCCEEDED(hr));
         pTexture->GetDesc(&desc);
         *x_offset = offset.x;
         *y_offset = offset.y;
@@ -690,6 +746,10 @@ extern "C" {
         
         float offset_x = (float) (x + window->client_rect.left);
         float offset_y = (float) (y + window->client_rect.top);
+#ifdef USE_VIRTUAL_SURFACES
+        offset_x -= VIRTUAL_OFFSET;
+        offset_y -= VIRTUAL_OFFSET;
+#endif
         surface.pVisual->SetOffsetX(offset_x);
         surface.pVisual->SetOffsetY(offset_y);
 
