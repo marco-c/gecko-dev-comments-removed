@@ -25,7 +25,7 @@ namespace dom {
 class MediaList;
 
 class MediaQueryList final : public DOMEventTargetHelper,
-                             public mozilla::LinkedListElement<MediaQueryList> {
+                             public LinkedListElement<MediaQueryList> {
  public:
   
   

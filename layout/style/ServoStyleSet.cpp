@@ -39,7 +39,6 @@
 #include "nsWindowSizes.h"
 #include "GeckoProfiler.h"
 
-using namespace mozilla;
 using namespace mozilla::dom;
 
 #ifdef DEBUG
@@ -312,7 +311,7 @@ void ServoStyleSet::PreTraverseSync() {
   
   
   
-  mozilla::Unused << mDocument->GetRootElement();
+  Unused << mDocument->GetRootElement();
 
   
   
@@ -892,7 +891,7 @@ bool ServoStyleSet::GetKeyframesForName(const Element& aElement,
 
 nsTArray<ComputedKeyframeValues> ServoStyleSet::GetComputedKeyframeValuesFor(
     const nsTArray<Keyframe>& aKeyframes, Element* aElement,
-    const mozilla::ComputedStyle* aStyle) {
+    const ComputedStyle* aStyle) {
   nsTArray<ComputedKeyframeValues> result(aKeyframes.Length());
 
   
@@ -932,7 +931,7 @@ ServoStyleSet::ResolveServoStyleByAddingAnimation(
 
 already_AddRefed<RawServoAnimationValue> ServoStyleSet::ComputeAnimationValue(
     Element* aElement, RawServoDeclarationBlock* aDeclarations,
-    const mozilla::ComputedStyle* aStyle) {
+    const ComputedStyle* aStyle) {
   return Servo_AnimationValue_Compute(aElement, aDeclarations, aStyle,
                                       mRawSet.get())
       .Consume();

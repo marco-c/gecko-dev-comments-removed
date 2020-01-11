@@ -140,7 +140,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   ServoCSSRuleList* GetCssRulesInternal();
 
   
-  mozilla::StyleOrigin GetOrigin() const;
+  StyleOrigin GetOrigin() const;
 
   
 
@@ -160,7 +160,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void SetOwningNode(nsINode* aOwningNode) { mOwningNode = aOwningNode; }
 
   css::SheetParsingMode ParsingMode() const { return mParsingMode; }
-  mozilla::dom::CSSStyleSheetParsingMode ParsingModeDOM();
+  dom::CSSStyleSheetParsingMode ParsingModeDOM();
 
   
 
@@ -520,7 +520,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
-  friend struct mozilla::StyleSheetInfo;
+  friend struct StyleSheetInfo;
 };
 
 }  

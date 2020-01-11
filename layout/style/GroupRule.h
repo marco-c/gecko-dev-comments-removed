@@ -64,9 +64,8 @@ class GroupRule : public Rule {
   }
 
   
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-  virtual size_t SizeOfIncludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const override = 0;
+  size_t SizeOfExcludingThis(MallocSizeOf) const;
+  size_t SizeOfIncludingThis(MallocSizeOf) const override = 0;
 
   
   dom::CSSRuleList* CssRules() { return mRuleList; }

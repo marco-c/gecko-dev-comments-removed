@@ -86,7 +86,7 @@ class MOZ_RAII LoaderReusableStyleSheets {
 };
 
 class Loader final {
-  typedef mozilla::dom::ReferrerPolicy ReferrerPolicy;
+  using ReferrerPolicy = dom::ReferrerPolicy;
 
  public:
   typedef nsIStyleSheetLinkingElement::Completed Completed;
@@ -102,8 +102,8 @@ class Loader final {
   
   
   
-  explicit Loader(mozilla::dom::DocGroup*);
-  explicit Loader(mozilla::dom::Document*);
+  explicit Loader(dom::DocGroup*);
+  explicit Loader(dom::Document*);
 
  private:
   
@@ -274,7 +274,7 @@ class Loader final {
   
 
 
-  mozilla::dom::Document* GetDocument() const { return mDocument; }
+  dom::Document* GetDocument() const { return mDocument; }
 
   
 
@@ -314,7 +314,7 @@ class Loader final {
   typedef nsTArray<RefPtr<SheetLoadData>> LoadDataArray;
 
   
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
  private:
   friend class SheetLoadData;
@@ -439,11 +439,10 @@ class Loader final {
 
   
   
-  mozilla::dom::Document* MOZ_NON_OWNING_REF
-      mDocument;  
+  dom::Document* MOZ_NON_OWNING_REF mDocument;  
 
   
-  RefPtr<mozilla::dom::DocGroup> mDocGroup;
+  RefPtr<dom::DocGroup> mDocGroup;
 
   
   

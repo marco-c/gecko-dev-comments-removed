@@ -94,8 +94,7 @@ class Rule : public nsISupports, public nsWrapperCache {
 
   
   
-  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-      MOZ_MUST_OVERRIDE = 0;
+  virtual size_t SizeOfIncludingThis(MallocSizeOf) const MOZ_MUST_OVERRIDE = 0;
 
   
   virtual uint16_t Type() const = 0;

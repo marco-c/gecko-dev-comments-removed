@@ -39,7 +39,7 @@ namespace dom {
 
 class FontFace final : public nsISupports, public nsWrapperCache {
   friend class mozilla::PostTraversalTask;
-  friend class mozilla::dom::FontFaceBufferSource;
+  friend class FontFaceBufferSource;
   friend class Entry;
 
  public:
@@ -152,31 +152,31 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   
   static already_AddRefed<FontFace> Constructor(
       const GlobalObject& aGlobal, const nsAString& aFamily,
-      const mozilla::dom::StringOrArrayBufferOrArrayBufferView& aSource,
-      const mozilla::dom::FontFaceDescriptors& aDescriptors, ErrorResult& aRV);
+      const StringOrArrayBufferOrArrayBufferView& aSource,
+      const FontFaceDescriptors& aDescriptors, ErrorResult& aRV);
 
   void GetFamily(nsString& aResult);
-  void SetFamily(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetFamily(const nsAString& aValue, ErrorResult& aRv);
   void GetStyle(nsString& aResult);
-  void SetStyle(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetStyle(const nsAString& aValue, ErrorResult& aRv);
   void GetWeight(nsString& aResult);
-  void SetWeight(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetWeight(const nsAString& aValue, ErrorResult& aRv);
   void GetStretch(nsString& aResult);
-  void SetStretch(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetStretch(const nsAString& aValue, ErrorResult& aRv);
   void GetUnicodeRange(nsString& aResult);
-  void SetUnicodeRange(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetUnicodeRange(const nsAString& aValue, ErrorResult& aRv);
   void GetVariant(nsString& aResult);
-  void SetVariant(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetVariant(const nsAString& aValue, ErrorResult& aRv);
   void GetFeatureSettings(nsString& aResult);
-  void SetFeatureSettings(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetFeatureSettings(const nsAString& aValue, ErrorResult& aRv);
   void GetVariationSettings(nsString& aResult);
-  void SetVariationSettings(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetVariationSettings(const nsAString& aValue, ErrorResult& aRv);
   void GetDisplay(nsString& aResult);
-  void SetDisplay(const nsAString& aValue, mozilla::ErrorResult& aRv);
+  void SetDisplay(const nsAString& aValue, ErrorResult& aRv);
 
-  mozilla::dom::FontFaceLoadStatus Status();
-  mozilla::dom::Promise* Load(mozilla::ErrorResult& aRv);
-  mozilla::dom::Promise* GetLoaded(mozilla::ErrorResult& aRv);
+  FontFaceLoadStatus Status();
+  Promise* Load(ErrorResult& aRv);
+  Promise* GetLoaded(ErrorResult& aRv);
 
  private:
   FontFace(nsISupports* aParent, FontFaceSet* aFontFaceSet);
@@ -191,7 +191,7 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   
   
   bool SetDescriptor(nsCSSFontDesc aFontDesc, const nsAString& aValue,
-                     mozilla::ErrorResult& aRv);
+                     ErrorResult& aRv);
 
   
 
@@ -210,7 +210,7 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   
 
 
-  void SetStatus(mozilla::dom::FontFaceLoadStatus aStatus);
+  void SetStatus(FontFaceLoadStatus aStatus);
 
   void GetDesc(nsCSSFontDesc aDescID, nsString& aResult) const;
 
@@ -241,7 +241,7 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   
   
   
-  RefPtr<mozilla::dom::Promise> mLoaded;
+  RefPtr<Promise> mLoaded;
 
   
   nsresult mLoadedRejection;
@@ -258,7 +258,7 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   
   
   
-  mozilla::dom::FontFaceLoadStatus mStatus;
+  FontFaceLoadStatus mStatus;
 
   
   enum SourceType {
