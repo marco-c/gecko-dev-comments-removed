@@ -112,55 +112,66 @@ impl GlyphRasterizer {
         let font_contexts = Arc::clone(&self.font_contexts);
         let glyph_tx = self.glyph_tx.clone();
 
-        
-        
-        
-        self.workers.spawn(move || {
-            let jobs = glyphs
-                .par_iter()
-                .map(|key: &GlyphKey| {
-                    profile_scope!("glyph-raster");
-                    let mut context = font_contexts.lock_current_context();
-                    let mut job = GlyphRasterJob {
-                        key: key.clone(),
-                        result: context.rasterize_glyph(&font, key),
-                    };
+        fn process_glyph(key: &GlyphKey, font_contexts: &FontContexts, font: &FontInstance) -> GlyphRasterJob {
+            profile_scope!("glyph-raster");
+            let mut context = font_contexts.lock_current_context();
+            let mut job = GlyphRasterJob {
+                key: key.clone(),
+                result: context.rasterize_glyph(&font, key),
+            };
 
-                    if let Ok(ref mut glyph) = job.result {
-                        
-                        let bpp = 4; 
-                        assert_eq!(
-                            glyph.bytes.len(),
-                            bpp * (glyph.width * glyph.height) as usize
-                        );
+            if let Ok(ref mut glyph) = job.result {
+                
+                let bpp = 4; 
+                assert_eq!(
+                    glyph.bytes.len(),
+                    bpp * (glyph.width * glyph.height) as usize
+                );
 
-                        
-                        fn over(dst: u8, src: u8) -> u8 {
-                            let a = src as u32;
-                            let a = 256 - a;
-                            let dst = ((dst as u32 * a) >> 8) as u8;
-                            src + dst
-                        }
+                
+                fn over(dst: u8, src: u8) -> u8 {
+                    let a = src as u32;
+                    let a = 256 - a;
+                    let dst = ((dst as u32 * a) >> 8) as u8;
+                    src + dst
+                }
 
-                        if GLYPH_FLASHING.load(Ordering::Relaxed) {
-                            let color = (random() & 0xff) as u8;
-                            for i in &mut glyph.bytes {
-                                *i = over(*i, color);
-                            }
-                        }
-
-                        assert_eq!((glyph.left.fract(), glyph.top.fract()), (0.0, 0.0));
-
-                        
-                        glyph.downscale_bitmap_if_required(&font);
+                if GLYPH_FLASHING.load(Ordering::Relaxed) {
+                    let color = (random() & 0xff) as u8;
+                    for i in &mut glyph.bytes {
+                        *i = over(*i, color);
                     }
+                }
 
-                    job
-                })
-                .collect();
+                assert_eq!((glyph.left.fract(), glyph.top.fract()), (0.0, 0.0));
 
+                
+                glyph.downscale_bitmap_if_required(&font);
+            }
+
+            job
+        }
+
+        
+        
+        if glyphs.len() < 8 {
+            let jobs = glyphs.iter()
+                             .map(|key: &GlyphKey| process_glyph(key, &font_contexts, &font))
+                             .collect();
             glyph_tx.send(GlyphRasterJobs { font, jobs }).unwrap();
-        });
+        } else {
+            
+            
+            
+            self.workers.spawn(move || {
+                let jobs = glyphs
+                    .par_iter()
+                    .map(|key: &GlyphKey| process_glyph(key, &font_contexts, &font))
+                    .collect();
+
+                glyph_tx.send(GlyphRasterJobs { font, jobs }).unwrap();
+            });
+        }
     }
 
     pub fn resolve_glyphs(
