@@ -10,6 +10,7 @@
 
 
 
+
 importScripts(
   "resource://gre/modules/subprocess/subprocess_shared.js",
   "resource://gre/modules/subprocess/subprocess_shared_unix.js",
@@ -398,9 +399,11 @@ class Process extends BaseProcess {
         libc.getcwd(cwd, cwd.length);
 
         if (libc.chdir(options.workdir) < 0) {
-          throw new Error(
-            `Unable to change working directory to ${options.workdir}`
-          );
+          if (OS.Constants.Sys.Name !== "OpenBSD") {
+            throw new Error(
+              `Unable to change working directory to ${options.workdir}`
+            );
+          }
         }
       }
 
