@@ -99,6 +99,7 @@ extern "C" const char* __lsan_default_suppressions() {
 
          
          "leak:libfontconfig.so\n"
+         "leak:libfreetype.so\n"
          "leak:GI___strdup\n"
          
          
