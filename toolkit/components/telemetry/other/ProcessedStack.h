@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/Vector.h"
 #include "nsString.h"
 #if defined(MOZ_GECKO_PROFILER)
@@ -82,6 +83,56 @@ class BatchProcessedStackGenerator {
 };
 
 }  
+}  
+
+namespace IPC {
+
+template <>
+struct ParamTraits<mozilla::Telemetry::ProcessedStack::Module> {
+  typedef mozilla::Telemetry::ProcessedStack::Module paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam) {
+    WriteParam(aMsg, aParam.mName);
+    WriteParam(aMsg, aParam.mBreakpadId);
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    if (!ReadParam(aMsg, aIter, &aResult->mName)) {
+      return false;
+    }
+
+    if (!ReadParam(aMsg, aIter, &aResult->mBreakpadId)) {
+      return false;
+    }
+
+    return true;
+  }
+};
+
+template <>
+struct ParamTraits<mozilla::Telemetry::ProcessedStack::Frame> {
+  typedef mozilla::Telemetry::ProcessedStack::Frame paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam) {
+    WriteParam(aMsg, aParam.mOffset);
+    WriteParam(aMsg, aParam.mModIndex);
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    if (!ReadParam(aMsg, aIter, &aResult->mOffset)) {
+      return false;
+    }
+
+    if (!ReadParam(aMsg, aIter, &aResult->mModIndex)) {
+      return false;
+    }
+
+    return true;
+  }
+};
+
 }  
 
 #endif  
