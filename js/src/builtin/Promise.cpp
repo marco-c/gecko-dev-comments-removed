@@ -581,10 +581,13 @@ static bool MaybeGetAndClearException(JSContext* cx, MutableHandleValue rval) {
   return GetAndClearException(cx, rval);
 }
 
+enum class UnhandledRejectionBehavior { Ignore, Report };
+
 static MOZ_MUST_USE bool RunRejectFunction(JSContext* cx,
                                            HandleObject onRejectedFunc,
                                            HandleValue result,
-                                           HandleObject promiseObj);
+                                           HandleObject promiseObj,
+                                           UnhandledRejectionBehavior behavior);
 
 
 
@@ -598,7 +601,8 @@ static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
     return false;
   }
 
-  if (!RunRejectFunction(cx, reject, reason, promiseObj)) {
+  if (!RunRejectFunction(cx, reject, reason, promiseObj,
+                         UnhandledRejectionBehavior::Report)) {
     return false;
   }
 
@@ -614,6 +618,11 @@ static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
 }
 
 enum ReactionRecordSlots {
+  
+  
+  
+  
+  
   
   
   
@@ -697,6 +706,7 @@ class PromiseReactionRecord : public NativeObject {
   static constexpr uint32_t REACTION_FLAG_ASYNC_FUNCTION = 0x8;
   static constexpr uint32_t REACTION_FLAG_ASYNC_GENERATOR = 0x10;
   static constexpr uint32_t REACTION_FLAG_DEBUGGER_DUMMY = 0x20;
+  static constexpr uint32_t REACTION_FLAG_IGNORE_UNHANDLED_REJECTION = 0x40;
 
   void setFlagOnInitialState(uint32_t flag) {
     int32_t flags = this->flags();
@@ -725,7 +735,9 @@ class PromiseReactionRecord : public NativeObject {
   JSObject* promise() {
     return getFixedSlot(ReactionRecordSlot_Promise).toObjectOrNull();
   }
-  int32_t flags() { return getFixedSlot(ReactionRecordSlot_Flags).toInt32(); }
+  int32_t flags() const {
+    return getFixedSlot(ReactionRecordSlot_Flags).toInt32();
+  }
   JS::PromiseState targetState() {
     int32_t flags = this->flags();
     if (!(flags & REACTION_FLAG_RESOLVED)) {
@@ -748,6 +760,17 @@ class PromiseReactionRecord : public NativeObject {
     setFixedSlot(ReactionRecordSlot_Flags, Int32Value(flags));
     setFixedSlot(handlerArgSlot(), arg);
   }
+
+  void setShouldIgnoreUnhandledRejection() {
+    setFlagOnInitialState(REACTION_FLAG_IGNORE_UNHANDLED_REJECTION);
+  }
+  UnhandledRejectionBehavior unhandledRejectionBehavior() const {
+    int32_t flags = this->flags();
+    return (flags & REACTION_FLAG_IGNORE_UNHANDLED_REJECTION)
+               ? UnhandledRejectionBehavior::Ignore
+               : UnhandledRejectionBehavior::Report;
+  }
+
   void setIsDefaultResolvingHandler(PromiseObject* promiseToResolve) {
     setFlagOnInitialState(REACTION_FLAG_DEFAULT_RESOLVING_HANDLER);
     setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
@@ -1586,11 +1609,10 @@ static MOZ_MUST_USE bool TriggerPromiseReactions(JSContext* cx,
   });
 }
 
-static MOZ_MUST_USE bool RunSettlingFunction(JSContext* cx,
-                                             HandleObject settlingFun,
-                                             HandleValue result,
-                                             ResolutionMode mode,
-                                             HandleObject promiseObj);
+static MOZ_MUST_USE bool RunFulfillFunction(JSContext* cx,
+                                            HandleObject onFulfilledFunc,
+                                            HandleValue result,
+                                            HandleObject promiseObj);
 
 
 
@@ -1629,12 +1651,19 @@ static MOZ_MUST_USE bool DefaultResolvingPromiseReactionJob(
   }
 
   
-  uint32_t hookSlot = resolutionMode == RejectMode ? ReactionRecordSlot_Reject
-                                                   : ReactionRecordSlot_Resolve;
-  RootedObject callee(cx, reaction->getFixedSlot(hookSlot).toObjectOrNull());
   RootedObject promiseObj(cx, reaction->promise());
-  return RunSettlingFunction(cx, callee, handlerResult, resolutionMode,
-                             promiseObj);
+  RootedObject callee(cx);
+  if (resolutionMode == ResolveMode) {
+    callee =
+        reaction->getFixedSlot(ReactionRecordSlot_Resolve).toObjectOrNull();
+
+    return RunFulfillFunction(cx, callee, handlerResult, promiseObj);
+  }
+
+  callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
+
+  return RunRejectFunction(cx, callee, handlerResult, promiseObj,
+                           reaction->unhandledRejectionBehavior());
 }
 
 static MOZ_MUST_USE bool AsyncFunctionPromiseReactionJob(
@@ -1865,12 +1894,19 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  uint32_t hookSlot = resolutionMode == RejectMode ? ReactionRecordSlot_Reject
-                                                   : ReactionRecordSlot_Resolve;
-  RootedObject callee(cx, reaction->getFixedSlot(hookSlot).toObjectOrNull());
   RootedObject promiseObj(cx, reaction->promise());
-  return RunSettlingFunction(cx, callee, handlerResult, resolutionMode,
-                             promiseObj);
+  RootedObject callee(cx);
+  if (resolutionMode == ResolveMode) {
+    callee =
+        reaction->getFixedSlot(ReactionRecordSlot_Resolve).toObjectOrNull();
+
+    return RunFulfillFunction(cx, callee, handlerResult, promiseObj);
+  }
+
+  callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
+
+  return RunRejectFunction(cx, callee, handlerResult, promiseObj,
+                           reaction->unhandledRejectionBehavior());
 }
 
 
@@ -2739,10 +2775,9 @@ static MOZ_MUST_USE bool RunFulfillFunction(JSContext* cx,
   return true;
 }
 
-static MOZ_MUST_USE bool RunRejectFunction(JSContext* cx,
-                                           HandleObject onRejectedFunc,
-                                           HandleValue result,
-                                           HandleObject promiseObj) {
+static MOZ_MUST_USE bool RunRejectFunction(
+    JSContext* cx, HandleObject onRejectedFunc, HandleValue result,
+    HandleObject promiseObj, UnhandledRejectionBehavior behavior) {
   cx->check(onRejectedFunc);
   cx->check(result);
   cx->check(promiseObj);
@@ -2754,9 +2789,14 @@ static MOZ_MUST_USE bool RunRejectFunction(JSContext* cx,
   }
 
   
-  
-  
   if (!promiseObj) {
+    
+    if (behavior == UnhandledRejectionBehavior::Ignore) {
+      return true;
+    }
+
+    
+    
     Rooted<PromiseObject*> temporaryPromise(
         cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
     if (!temporaryPromise) {
@@ -2780,15 +2820,6 @@ static MOZ_MUST_USE bool RunRejectFunction(JSContext* cx,
 
   
   return true;
-}
-
-static MOZ_MUST_USE bool RunSettlingFunction(JSContext* cx,
-                                             HandleObject settlingFun,
-                                             HandleValue result,
-                                             ResolutionMode mode,
-                                             HandleObject promiseObj) {
-  auto func = mode == ResolveMode ? RunFulfillFunction : RunRejectFunction;
-  return func(cx, settlingFun, result, promiseObj);
 }
 
 static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
@@ -3768,7 +3799,8 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
       return false;
     }
 
-    if (!RunRejectFunction(cx, rejectFun, reason, promiseObj)) {
+    if (!RunRejectFunction(cx, rejectFun, reason, promiseObj,
+                           UnhandledRejectionBehavior::Report)) {
       return false;
     }
   }
@@ -3900,7 +3932,8 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
   HandleObject promise = capability.promise();
   if (!(mode == ResolveMode
             ? RunFulfillFunction(cx, capability.resolve(), argVal, promise)
-            : RunRejectFunction(cx, capability.reject(), argVal, promise))) {
+            : RunRejectFunction(cx, capability.reject(), argVal, promise,
+                                UnhandledRejectionBehavior::Report))) {
     return nullptr;
   }
 
@@ -4102,34 +4135,36 @@ static bool PromiseThenNewPromiseCapability(
     JSContext* cx, HandleObject promiseObj,
     CreateDependentPromise createDependent,
     MutableHandle<PromiseCapability> resultCapability) {
-  if (createDependent != CreateDependentPromise::Never) {
+  if (createDependent == CreateDependentPromise::Never) {
+    return true;
+  }
+
+  
+  RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise,
+                                        IsPromiseSpecies));
+  if (!C) {
+    return false;
+  }
+
+  if (createDependent == CreateDependentPromise::Always ||
+      !IsNativeFunction(C, PromiseConstructor)) {
     
-    RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise,
-                                          IsPromiseSpecies));
-    if (!C) {
+    if (!NewPromiseCapability(cx, C, resultCapability, true)) {
       return false;
     }
 
-    if (createDependent == CreateDependentPromise::Always ||
-        !IsNativeFunction(C, PromiseConstructor)) {
-      
-      if (!NewPromiseCapability(cx, C, resultCapability, true)) {
-        return false;
-      }
-
-      RootedObject unwrappedPromise(cx, promiseObj);
-      if (IsWrapper(promiseObj)) {
-        unwrappedPromise = UncheckedUnwrap(promiseObj);
-      }
-      RootedObject unwrappedNewPromise(cx, resultCapability.promise());
-      if (IsWrapper(resultCapability.promise())) {
-        unwrappedNewPromise = UncheckedUnwrap(resultCapability.promise());
-      }
-      if (unwrappedPromise->is<PromiseObject>() &&
-          unwrappedNewPromise->is<PromiseObject>()) {
-        unwrappedNewPromise->as<PromiseObject>().copyUserInteractionFlagsFrom(
-            *unwrappedPromise.as<PromiseObject>());
-      }
+    RootedObject unwrappedPromise(cx, promiseObj);
+    if (IsWrapper(promiseObj)) {
+      unwrappedPromise = UncheckedUnwrap(promiseObj);
+    }
+    RootedObject unwrappedNewPromise(cx, resultCapability.promise());
+    if (IsWrapper(resultCapability.promise())) {
+      unwrappedNewPromise = UncheckedUnwrap(resultCapability.promise());
+    }
+    if (unwrappedPromise->is<PromiseObject>() &&
+        unwrappedNewPromise->is<PromiseObject>()) {
+      unwrappedNewPromise->as<PromiseObject>().copyUserInteractionFlagsFrom(
+          *unwrappedPromise.as<PromiseObject>());
     }
   }
 
@@ -4186,6 +4221,38 @@ static MOZ_MUST_USE bool OriginalPromiseThenWithoutSettleHandlers(
   
   return PerformPromiseThenWithoutSettleHandlers(cx, promise, promiseToResolve,
                                                  resultCapability);
+}
+
+static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
+    JSContext* cx, Handle<PromiseObject*> promise,
+    Handle<PromiseReactionRecord*> reaction);
+
+MOZ_MUST_USE bool js::ReactIgnoringUnhandledRejection(
+    JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
+    HandleObject onFulfilled_, HandleObject onRejected_) {
+  MOZ_ASSERT_IF(onFulfilled_, IsCallable(onFulfilled_));
+  MOZ_ASSERT_IF(onRejected_, IsCallable(onRejected_));
+
+  RootedValue onFulfilled(cx, onFulfilled_
+                                  ? ObjectValue(*onFulfilled_)
+                                  : Int32Value(PromiseHandlerIdentity));
+
+  RootedValue onRejected(cx, onRejected_ ? ObjectValue(*onRejected_)
+                                         : Int32Value(PromiseHandlerThrower));
+
+  Rooted<PromiseCapability> resultCapability(cx);
+  MOZ_ASSERT(!resultCapability.promise());
+
+  Rooted<PromiseReactionRecord*> reaction(
+      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
+                            IncumbentGlobalObject::Yes));
+  if (!reaction) {
+    return false;
+  }
+
+  reaction->setShouldIgnoreUnhandledRejection();
+
+  return PerformPromiseThenWithReaction(cx, unwrappedPromise, reaction);
 }
 
 static bool CanCallOriginalPromiseThenBuiltin(JSContext* cx,
@@ -4248,10 +4315,6 @@ MOZ_MUST_USE bool js::RejectPromiseWithPendingError(
   }
   return PromiseObject::reject(cx, promise, exn);
 }
-
-static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
-    JSContext* cx, Handle<PromiseObject*> promise,
-    Handle<PromiseReactionRecord*> reaction);
 
 
 

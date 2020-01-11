@@ -246,6 +246,25 @@ MOZ_MUST_USE bool OriginalPromiseThen(JSContext* cx, HandleObject promiseObj,
 
 
 
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool ReactIgnoringUnhandledRejection(
+    JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
+    HandleObject onFulfilled_, HandleObject onRejected_);
+
+
+
+
+
+
+
 MOZ_MUST_USE JSObject* PromiseResolve(JSContext* cx, HandleObject constructor,
                                       HandleValue value);
 

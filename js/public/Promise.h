@@ -431,13 +431,27 @@ extern JS_PUBLIC_API JSObject* CallOriginalPromiseThen(
 
 
 
-
-
-
 extern JS_PUBLIC_API bool AddPromiseReactions(JSContext* cx,
                                               JS::HandleObject promise,
                                               JS::HandleObject onFulfilled,
                                               JS::HandleObject onRejected);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool AddPromiseReactionsIgnoringUnhandledRejection(
+    JSContext* cx, JS::HandleObject promise, JS::HandleObject onFulfilled,
+    JS::HandleObject onRejected);
 
 
 
