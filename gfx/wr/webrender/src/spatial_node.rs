@@ -67,7 +67,7 @@ pub struct SpatialNode {
 
     
     
-    pub is_pinch_zooming: bool,
+    pub is_async_zooming: bool,
 
     
     
@@ -140,7 +140,7 @@ impl SpatialNode {
             pipeline_id,
             node_type,
             invertible: true,
-            is_pinch_zooming: false,
+            is_async_zooming: false,
             is_ancestor_or_self_zooming: false,
         }
     }
@@ -288,7 +288,7 @@ impl SpatialNode {
             Some(parent) => previous_spatial_nodes[parent.0 as usize].is_ancestor_or_self_zooming,
             _ => false,
         };
-        self.is_ancestor_or_self_zooming = self.is_pinch_zooming | is_parent_zooming;
+        self.is_ancestor_or_self_zooming = self.is_async_zooming | is_parent_zooming;
 
         
         
