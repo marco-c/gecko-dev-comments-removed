@@ -5,9 +5,8 @@
 "use strict";
 
 
+
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
-ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm", this);
 
 var { EventManager, EventEmitter } = ExtensionCommon;
 const {
@@ -21,7 +20,6 @@ ChromeUtils.defineModuleGetter(
   "BrowserWindowTracker",
   "resource:///modules/BrowserWindowTracker.jsm"
 );
-
 
 
 
@@ -92,7 +90,7 @@ class DoorhangerEventEmitter extends EventEmitter {
   }
 }
 
-var doorhanger = class doorhanger extends ExtensionAPI {
+this.doorhanger = class doorhanger extends ExtensionAPI {
   getAPI(context) {
     const doorhangerEventEmitter = new DoorhangerEventEmitter();
     return {
