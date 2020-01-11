@@ -175,6 +175,16 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
 
 
+
+
+
+
+  void RemoveTrackInternal(MediaStreamTrack* aTrack);
+
+  
+
+
+
   void AddConsumerToKeepAlive(nsISupports* aConsumer) {
     mConsumersToKeepAlive.AppendElement(aConsumer);
   }

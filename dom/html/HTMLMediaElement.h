@@ -123,6 +123,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     ~OutputMediaStream();
 
     RefPtr<DOMMediaStream> mStream;
+    nsTArray<RefPtr<MediaStreamTrack>> mLiveTracks;
     const bool mCapturingAudioOnly;
     const bool mFinishWhenEnded;
     
