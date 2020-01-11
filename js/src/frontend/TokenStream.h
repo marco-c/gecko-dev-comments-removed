@@ -322,12 +322,6 @@ class MOZ_STACK_CLASS TokenStreamPosition final {
 template <typename Unit>
 class SourceUnits;
 
-
-
-
-
-#define JS_COLUMN_DIMENSION_IS_CODE_POINTS() 1
-
 class TokenStreamAnyChars : public TokenStreamShared {
  public:
   TokenStreamAnyChars(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
@@ -645,7 +639,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   MOZ_ALWAYS_INLINE void updateFlagsForEOL() { flags.isDirtyLine = false; }
 
  private:
-#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
   
 
 
@@ -697,7 +690,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   uint32_t computePartialColumn(const LineToken lineToken,
                                 const uint32_t offset,
                                 const SourceUnits<Unit>& sourceUnits) const;
-#endif  
 
   
 
@@ -751,7 +743,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   const char* getFilename() const { return filename_; }
 
  private:
-#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
   static constexpr uint32_t ColumnChunkLength = 128;
 
   enum class UnitsType : unsigned char{
@@ -800,7 +791,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
   mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
-#endif  
 
  protected:
   
@@ -847,7 +837,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   bool mutedErrors;
   StrictModeGetter* strictModeGetter;  
 
-#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
   
   
   
@@ -868,7 +857,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
   mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
   mutable uint32_t lastComputedColumn_ = 0;
-#endif  
 };
 
 constexpr char16_t CodeUnitValue(char16_t unit) { return unit; }
