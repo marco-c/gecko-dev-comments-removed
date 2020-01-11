@@ -1,3 +1,5 @@
+from six.moves import xrange
+
 class NodeVisitor(object):
     def visit(self, node):
         
