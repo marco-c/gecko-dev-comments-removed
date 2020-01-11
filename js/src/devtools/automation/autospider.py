@@ -189,9 +189,6 @@ if opt is not None:
     CONFIGURE_ARGS += (" --enable-optimize" if opt else " --disable-optimize")
 
 opt = args.debug
-if opt is None and args.platform:
-    
-    opt = ('-debug' in args.platform)
 if opt is None:
     opt = variant.get('debug')
 if opt is not None:

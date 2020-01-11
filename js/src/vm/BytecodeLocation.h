@@ -67,7 +67,7 @@ class BytecodeLocation {
 
   
   
-  bool isValid(const JSScript* script) const;
+  JS_PUBLIC_API bool isValid(const JSScript* script) const;
 
   
   

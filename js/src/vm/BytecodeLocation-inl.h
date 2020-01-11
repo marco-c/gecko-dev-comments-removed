@@ -14,7 +14,7 @@
 
 namespace js {
 
-inline bool BytecodeLocation::isValid(const JSScript* script) const {
+inline JS_PUBLIC_API bool BytecodeLocation::isValid(const JSScript* script) const {
   
   
   return script->contains(*this) || toRawBytecode() == script->codeEnd();
