@@ -500,6 +500,16 @@ FT_Vector gfxFT2FontBase::GetEmboldenStrength(FT_Face aFace) {
   if (!mEmbolden) {
     return strength;
   }
+
+  
+  
+  if (aFace->glyph->format == FT_GLYPH_FORMAT_OUTLINE) {
+    strength.x =
+        FT_MulFix(aFace->units_per_EM, aFace->size->metrics.y_scale) / 48;
+    strength.y = strength.x;
+    return strength;
+  }
+
   
   strength.x =
       FT_MulFix(aFace->units_per_EM, aFace->size->metrics.y_scale) / 24;
