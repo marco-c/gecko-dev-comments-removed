@@ -5,7 +5,6 @@
 
 #include "LocaleService.h"
 
-#include <algorithm>  
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Omnijar.h"
@@ -32,6 +31,7 @@
 static const char* kObservedPrefs[] = {REQUESTED_LOCALES_PREF,
                                        WEB_EXPOSED_LOCALES_PREF, nullptr};
 
+using namespace mozilla::intl::ffi;
 using namespace mozilla::intl;
 using namespace mozilla;
 
@@ -269,149 +269,6 @@ void LocaleService::LocalesChanged() {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->NotifyObservers(nullptr, "intl:app-locales-changed", nullptr);
-    }
-  }
-}
-
-
-
-
-
-#define HANDLE_STRATEGY             \
-  switch (aStrategy) {              \
-    case kLangNegStrategyLookup:    \
-      return;                       \
-    case kLangNegStrategyMatching:  \
-      continue;                     \
-    case kLangNegStrategyFiltering: \
-      break;                        \
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
-                                  const nsTArray<nsCString>& aAvailable,
-                                  int32_t aStrategy,
-                                  nsTArray<nsCString>& aRetVal) {
-  
-  
-  
-  
-  AutoTArray<Locale, 100> availLocales;
-  for (auto& avail : aAvailable) {
-    availLocales.AppendElement(Locale(avail));
-  }
-
-  for (auto& requested : aRequested) {
-    if (requested.IsEmpty()) {
-      continue;
-    }
-
-    
-    auto matchesExactly = [&](Locale& aLoc) {
-      return requested.Equals(aLoc.AsString(),
-                              nsCaseInsensitiveCStringComparator());
-    };
-    auto match =
-        std::find_if(availLocales.begin(), availLocales.end(), matchesExactly);
-    if (match != availLocales.end()) {
-      aRetVal.AppendElement(aAvailable[match - availLocales.begin()]);
-      match->Invalidate();
-    }
-
-    if (!aRetVal.IsEmpty()) {
-      HANDLE_STRATEGY;
-    }
-
-    
-    auto findRangeMatches = [&](Locale& aReq, bool aAvailRange,
-                                bool aReqRange) {
-      auto matchesRange = [&](Locale& aLoc) {
-        return aLoc.Matches(aReq, aAvailRange, aReqRange);
-      };
-      bool foundMatch = false;
-      auto match = availLocales.begin();
-      while ((match = std::find_if(match, availLocales.end(), matchesRange)) !=
-             availLocales.end()) {
-        aRetVal.AppendElement(aAvailable[match - availLocales.begin()]);
-        match->Invalidate();
-        foundMatch = true;
-        if (aStrategy != kLangNegStrategyFiltering) {
-          return true;  
-        }
-      }
-      return foundMatch;
-    };
-
-    Locale requestedLocale(requested);
-    if (findRangeMatches(requestedLocale, true, false)) {
-      HANDLE_STRATEGY;
-    }
-
-    
-    if (requestedLocale.AddLikelySubtags()) {
-      if (findRangeMatches(requestedLocale, true, false)) {
-        HANDLE_STRATEGY;
-      }
-    }
-
-    
-    requestedLocale.ClearVariants();
-    if (findRangeMatches(requestedLocale, true, true)) {
-      HANDLE_STRATEGY;
-    }
-
-    
-    requestedLocale.ClearRegion();
-    if (requestedLocale.AddLikelySubtags()) {
-      if (findRangeMatches(requestedLocale, true, false)) {
-        HANDLE_STRATEGY;
-      }
-    }
-
-    
-    requestedLocale.ClearRegion();
-    if (findRangeMatches(requestedLocale, true, true)) {
-      HANDLE_STRATEGY;
     }
   }
 }
@@ -696,27 +553,22 @@ LocaleService::NegotiateLanguages(const nsTArray<nsCString>& aRequested,
         "Default locale should be specified when using lookup strategy.");
   }
 
-  FilterMatches(aRequested, aAvailable, aStrategy, aRetVal);
-
-  if (aStrategy == kLangNegStrategyLookup) {
-    
-    
-    if (aRetVal.Length() == 0) {
-      
-      
-      if (aDefaultLocale.IsEmpty()) {
-        nsAutoCString defaultLocale;
-        GetDefaultLocale(defaultLocale);
-        aRetVal.AppendElement(defaultLocale);
-      } else {
-        aRetVal.AppendElement(aDefaultLocale);
-      }
-    }
-  } else if (!aDefaultLocale.IsEmpty() && !aRetVal.Contains(aDefaultLocale)) {
-    
-    
-    aRetVal.AppendElement(aDefaultLocale);
+  NegotiationStrategy strategy;
+  switch (aStrategy) {
+    case kLangNegStrategyFiltering:
+      strategy = NegotiationStrategy::Filtering;
+      break;
+    case kLangNegStrategyMatching:
+      strategy = NegotiationStrategy::Matching;
+      break;
+    case kLangNegStrategyLookup:
+      strategy = NegotiationStrategy::Lookup;
+      break;
   }
+
+  fluent_langneg_negotiate_languages(&aRequested, &aAvailable, &aDefaultLocale,
+                                     strategy, &aRetVal);
+
   return NS_OK;
 }
 
