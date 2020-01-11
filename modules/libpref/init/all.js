@@ -4272,7 +4272,8 @@ pref("network.trr.mode", 0);
 
 pref("network.trr.uri", "https://mozilla.cloudflare-dns.com/dns-query");
 
-pref("network.trr.resolvers", "[{ \"name\": \"Cloudflare\", \"url\": \"https://mozilla.cloudflare-dns.com/dns-query\" }]");
+
+pref("network.trr.resolvers", "[{ \"name\": \"Cloudflare\", \"url\": \"https://mozilla.cloudflare-dns.com/dns-query\" },{ \"name\": \"NextDNS\", \"url\": \"https://trr.dns.nextdns.io/\" }]");
 
 pref("network.trr.credentials", "");
 pref("network.trr.custom_uri", "");
