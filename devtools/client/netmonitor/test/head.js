@@ -363,15 +363,18 @@ function initNetMonitor(url, enableCache) {
       info(
         "Cache disabled when the current and all future toolboxes are open."
       );
+
+      const consoleFront = await target.getFront("console");
+
       
       
       isnot(
-        [...target.activeConsole.getNetworkEvents()].length,
+        [...consoleFront.getNetworkEvents()].length,
         0,
         "Request to reconfigure the tab was recorded."
       );
       info("Clearing requests in the console client.");
-      target.activeConsole.clearNetworkRequests();
+      await consoleFront.clearNetworkRequests();
       info("Clearing requests in the UI.");
 
       store.dispatch(Actions.clearRequests());
