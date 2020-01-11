@@ -40,6 +40,11 @@ class SHistoryChild final : public PSHistoryChild,
   }
 
  private:
+  bool RecvReloadCurrentEntryFromChild() {
+    ReloadCurrentEntry();
+    return true;
+  }
+
   
   class HistoryTracker final
       : public nsExpirationTracker<SHEntryChildShared, 3> {
