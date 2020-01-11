@@ -36,7 +36,7 @@ try:
 except ImportError:
     fast_json = json  
 
-CURRENT_VERSION = 6
+CURRENT_VERSION = 7
 
 
 class ManifestError(Exception):
@@ -471,14 +471,6 @@ class Manifest(object):
         self._path_hash = {to_os_path(k): v for k, v in iteritems(obj["paths"])}
 
         for test_type, type_paths in iteritems(obj["items"]):
-            
-            
-            
-            
-            
-            if test_type == "stub":
-                continue
-
             if test_type not in item_classes:
                 raise ManifestError
 
