@@ -170,6 +170,25 @@ struct TypedArray
     return CreateCommon(cx, length, data);
   }
 
+  static inline JSObject* Create(JSContext* cx, nsWrapperCache* creator,
+                                 Span<const T> data) {
+    
+    if (MOZ_UNLIKELY(data.Length() > UINT32_MAX)) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    return Create(cx, creator, data.Length(), data.Elements());
+  }
+
+  static inline JSObject* Create(JSContext* cx, Span<const T> data) {
+    
+    if (MOZ_UNLIKELY(data.Length() > UINT32_MAX)) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    return CreateCommon(cx, data.Length(), data.Elements());
+  }
+
  private:
   static inline JSObject* CreateCommon(JSContext* cx, uint32_t length,
                                        const T* data) {
