@@ -4,7 +4,6 @@
 
 
 
-#include "nsIServiceManager.h"
 #include "nsNamedPipeIOLayer.h"
 #include "nsSOCKSSocketProvider.h"
 #include "nsSOCKSIOLayer.h"

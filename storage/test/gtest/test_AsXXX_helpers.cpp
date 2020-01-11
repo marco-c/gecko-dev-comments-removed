@@ -6,6 +6,7 @@
 #include "storage_test_harness.h"
 #include "mozIStorageRow.h"
 #include "mozIStorageResultSet.h"
+#include "nsComponentManagerUtils.h"
 
 
 

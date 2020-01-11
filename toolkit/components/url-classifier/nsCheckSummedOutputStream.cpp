@@ -4,7 +4,6 @@
 
 
 #include "nsCRT.h"
-#include "nsIFile.h"
 #include "nsISupportsImpl.h"
 #include "nsCheckSummedOutputStream.h"
 #include "crc32c.h"

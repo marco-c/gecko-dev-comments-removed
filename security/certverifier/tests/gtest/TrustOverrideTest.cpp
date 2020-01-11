@@ -1,22 +1,23 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
 #include "nsCOMPtr.h"
 #include "nsIPrefService.h"
 #include "nsIX509Cert.h"
+#include "nsIX509CertDB.h"
 #include "nsServiceManagerUtils.h"
 #include "TrustOverrideUtils.h"
 
-
-
-
-
-
-
-
+// certspec (for pycert.py)
+//
+// issuer:ca
+// subject:ca
+// extension:basicConstraints:cA,
+// extension:keyUsage:cRLSign,keyCertSign
+// serialNumber:1
 const char* kOverrideCaPem =
     "-----BEGIN CERTIFICATE-----\n"
     "MIICsjCCAZygAwIBAgIBATALBgkqhkiG9w0BAQswDTELMAkGA1UEAwwCY2EwIhgP\n"
@@ -36,14 +37,14 @@ const char* kOverrideCaPem =
     "JFPl8kW42VoxXL11PP5NX2ylTsJ//g==\n"
     "-----END CERTIFICATE-----";
 
-
-
-
-
-
-
-
-
+// certspec (for pycert.py)
+//
+// issuer:ca
+// subject:ca-intermediate
+// extension:basicConstraints:cA,
+// extension:keyUsage:cRLSign,keyCertSign
+// subjectKey:secp384r1
+// serialNumber:2
 const char* kOverrideCaIntermediatePem =
     "-----BEGIN CERTIFICATE-----\n"
     "MIICFDCB/aADAgECAgECMA0GCSqGSIb3DQEBCwUAMA0xCzAJBgNVBAMMAmNhMCIY\n"
@@ -60,24 +61,24 @@ const char* kOverrideCaIntermediatePem =
     "+mbXPBnW8ao=\n"
     "-----END CERTIFICATE-----";
 
+// /CN=ca
+// SHA256 Fingerprint: A3:05:0C:44:CD:6D:1E:BE:A2:18:80:09:93:69:90:7F
+//                     8C:E3:9F:A4:33:CB:E3:E9:3C:D1:8E:8C:89:23:1B:4A
 
-
-
-
-
-
+// clang-format off
+// Invocation: security/manager/tools/crtshToIdentifyingStruct/crtshToIdentifyingStruct.py -listname OverrideCaDNs -dn /tmp/overrideCa.pem
 static const uint8_t CAcaDN[15] = {
   0x30, 0x0D, 0x31, 0x0B, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0C, 0x02,
   0x63, 0x61,
 };
-
+// clang-format on
 
 static const DataAndLength OverrideCaDNs[] = {
     {CAcaDN, sizeof(CAcaDN)},
 };
 
-
-
+// clang-format off
+// Invocation: security/manager/tools/crtshToIdentifyingStruct/crtshToIdentifyingStruct.py -listname OverrideCaSPKIs -spki /tmp/overrideCa.pem
 static const uint8_t CAcaSPKI[294] = {
   0x30, 0x82, 0x01, 0x22, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7,
   0x0D, 0x01, 0x01, 0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0F, 0x00, 0x30, 0x82,
@@ -103,7 +104,7 @@ static const uint8_t CAcaSPKI[294] = {
   0x49, 0x23, 0xFA, 0x72, 0x51, 0xC4, 0x31, 0xD5, 0x03, 0xAC, 0xDA, 0x18, 0x0A,
   0x35, 0xED, 0x8D, 0x02, 0x03, 0x01, 0x00, 0x01,
 };
-
+// clang-format on
 
 static const DataAndLength OverrideCaSPKIs[] = {
     {CAcaSPKI, sizeof(CAcaSPKI)},
@@ -127,8 +128,8 @@ class psm_TrustOverrideTest : public ::testing::Test {
     ASSERT_TRUE(prefs != nullptr)
     << "couldn't get nsIPrefBranch";
 
-    
-    
+    // When PSM initializes, it attempts to get some localized strings.
+    // As a result, Android flips out if this isn't set.
     nsresult rv = prefs->SetBoolPref("intl.locale.matchOS", true);
     ASSERT_TRUE(NS_SUCCEEDED(rv))
     << "couldn't set pref 'intl.locale.matchOS'";

@@ -4,6 +4,7 @@
 
 
 #include "nsParentalControlsService.h"
+#include "nsComponentManagerUtils.h"
 #include "nsString.h"
 #include "nsIArray.h"
 #include "nsIWidget.h"

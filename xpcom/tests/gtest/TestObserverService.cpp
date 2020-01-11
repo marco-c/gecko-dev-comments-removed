@@ -4,7 +4,6 @@
 
 
 #include "nsISupports.h"
-#include "nsIComponentManager.h"
 #include "nsIObserverService.h"
 #include "nsIObserver.h"
 #include "nsISimpleEnumerator.h"

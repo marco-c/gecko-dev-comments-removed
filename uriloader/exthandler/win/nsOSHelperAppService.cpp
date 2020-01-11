@@ -5,14 +5,13 @@
 
 
 
+#include "nsComponentManagerUtils.h"
 #include "nsOSHelperAppService.h"
 #include "nsISupports.h"
 #include "nsString.h"
-#include "nsIURL.h"
 #include "nsIMIMEInfo.h"
 #include "nsMIMEInfoWin.h"
 #include "nsMimeTypes.h"
-#include "nsIProcess.h"
 #include "plstr.h"
 #include "nsAutoPtr.h"
 #include "nsNativeCharsetUtils.h"

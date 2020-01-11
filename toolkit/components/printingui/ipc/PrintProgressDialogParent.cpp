@@ -3,7 +3,6 @@
 
 
 #include "mozilla/Unused.h"
-#include "nsIPrintProgressParams.h"
 #include "nsIWebProgressListener.h"
 #include "PrintProgressDialogParent.h"
 

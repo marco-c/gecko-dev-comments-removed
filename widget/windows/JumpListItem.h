@@ -14,7 +14,6 @@
 #include "nsIJumpListItem.h"  
 #include "nsIMIMEInfo.h"      
 #include "nsTArray.h"
-#include "nsIMutableArray.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
 #include "nsICryptoHash.h"

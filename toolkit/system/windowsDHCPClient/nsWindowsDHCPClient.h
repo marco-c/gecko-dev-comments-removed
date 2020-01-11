@@ -5,7 +5,6 @@
 
 
 #include "nsIDHCPClient.h"
-#include "nsIServiceManager.h"
 #include "nsNetCID.h"
 #include "WindowsNetworkFunctionsWrapper.h"
 

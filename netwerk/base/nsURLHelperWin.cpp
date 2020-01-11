@@ -5,6 +5,7 @@
 
 
 
+#include "nsComponentManagerUtils.h"
 #include "nsURLHelper.h"
 #include "nsEscape.h"
 #include "nsIFile.h"

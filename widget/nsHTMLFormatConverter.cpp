@@ -7,12 +7,9 @@
 
 #include "nsArray.h"
 #include "nsCRT.h"
-#include "nsIComponentManager.h"
 #include "nsCOMPtr.h"
 #include "nsXPCOM.h"
 #include "nsISupportsPrimitives.h"
-
-#include "nsITransferable.h"  
 
 
 #include "nsPrimitiveHelpers.h"

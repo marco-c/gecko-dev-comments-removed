@@ -30,16 +30,12 @@
 #include "mozilla/BackgroundHangMonitor.h"
 #include "nsIWebBrowserPrint.h"
 #include "nsString.h"
-#include "nsIServiceManager.h"
 #include "nsReadableUtils.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsWin.h"
 #include "nsIPrinterEnumerator.h"
 
 #include "nsRect.h"
-
-#include "nsIPrefService.h"
-#include "nsIPrefBranch.h"
 
 #include "nsCRT.h"
 #include "prenv.h" 
@@ -48,7 +44,6 @@
 #include <winspool.h>
 
 
-#include "nsIStringBundle.h"
 
 
 #include "nsNativeCharsetUtils.h"

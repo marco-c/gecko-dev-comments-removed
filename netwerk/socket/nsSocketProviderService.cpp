@@ -4,7 +4,6 @@
 
 
 #include "nsString.h"
-#include "nsIServiceManager.h"
 #include "nsISocketProvider.h"
 #include "nsError.h"
 #include "nsNSSComponent.h"

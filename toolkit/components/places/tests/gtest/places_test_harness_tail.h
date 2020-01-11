@@ -5,8 +5,6 @@
 
 
 #include "nsWidgetsCID.h"
-#include "nsIComponentRegistrar.h"
-#include "nsICrashReporter.h"
 #include "nsIIdleService.h"
 
 #ifndef TEST_NAME

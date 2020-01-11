@@ -4,8 +4,6 @@
 
 
 #include "IOActivityMonitor.h"
-#include "nsIObserverService.h"
-#include "nsPISocketTransportService.h"
 #include "nsPrintfCString.h"
 #include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"

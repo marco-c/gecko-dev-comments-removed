@@ -3,12 +3,11 @@
 
 
 
+#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#include "nsIServiceManager.h"
 #include "nsICategoryManager.h"
 #include "nsXPCOM.h"
-#include "nsISupportsPrimitives.h"
 #include "nsAppStartupNotifier.h"
 #include "mozilla/SimpleEnumerator.h"
 

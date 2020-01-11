@@ -13,8 +13,6 @@
 #include "mozilla/Encoding.h"
 #include "nsDebug.h"
 #include "nsReadableUtils.h"
-#include "nsIInputStream.h"
-#include "nsIFile.h"
 #include "nsUTF8Utils.h"  
 #include "nsCRT.h"
 #include "nsParser.h"

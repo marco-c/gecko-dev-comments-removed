@@ -3,7 +3,6 @@
 
 
 
-#include "nsIServiceManager.h"
 #include "nsIStringBundle.h"
 #include "nsString.h"
 #include "nsParserMsgUtils.h"

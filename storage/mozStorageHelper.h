@@ -9,15 +9,11 @@
 #include "nsAutoPtr.h"
 #include "nsString.h"
 #include "mozilla/DebugOnly.h"
-#include "nsIConsoleService.h"
-#include "nsIScriptError.h"
 
-#include "mozIStorageAsyncConnection.h"
 #include "mozIStorageConnection.h"
 #include "mozIStorageStatement.h"
 #include "mozIStoragePendingStatement.h"
 #include "nsError.h"
-#include "nsIXPConnect.h"
 
 
 

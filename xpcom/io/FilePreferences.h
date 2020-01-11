@@ -4,7 +4,7 @@
 
 
 
-#include "nsIObserver.h"
+#include "nsAString.h"
 
 namespace mozilla {
 namespace FilePreferences {

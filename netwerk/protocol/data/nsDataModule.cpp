@@ -3,7 +3,6 @@
 
 
 
-#include "nsIModule.h"
 #include "nsIGenericFactory.h"
 #include "nsDataHandler.h"
 

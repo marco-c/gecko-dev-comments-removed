@@ -6,7 +6,6 @@
 
 
 #include "nsIdleServiceAndroid.h"
-#include "nsIServiceManager.h"
 
 bool nsIdleServiceAndroid::PollIdleTime(uint32_t* aIdleTime) { return false; }
 

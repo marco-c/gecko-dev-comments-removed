@@ -10,12 +10,9 @@
 
 #include "nsFind.h"
 
-#include "nsIComponentManager.h"
-#include "nsIScriptSecurityManager.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"
-#include "nsIURI.h"
 #include "nsIDocShell.h"
 #include "nsPresContext.h"
 #include "mozilla/dom/Document.h"
@@ -25,7 +22,6 @@
 #include "nsReadableUtils.h"
 #include "nsIContent.h"
 #include "nsContentCID.h"
-#include "nsIServiceManager.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsFind.h"

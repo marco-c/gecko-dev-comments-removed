@@ -4,8 +4,6 @@
 
 
 
-#include "nsIServiceManager.h"
-
 #include "nsLocalFile.h"  
 
 #include "nsString.h"

@@ -5,7 +5,6 @@
 
 
 #include "RemoteSandboxBrokerProcessParent.h"
-#include "nsIRunnable.h"
 #include <windows.h>
 
 using mozilla::ipc::GeckoChildProcessHost;

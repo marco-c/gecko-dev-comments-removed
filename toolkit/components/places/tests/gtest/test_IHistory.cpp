@@ -5,7 +5,6 @@
 
 
 #include "places_test_harness.h"
-#include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
 #include "nsString.h"
 #include "mozilla/Attributes.h"

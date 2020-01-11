@@ -4,7 +4,6 @@
 
 
 
-#include "nsIThreadManager.h"
 #include "nsCOMPtr.h"
 #include "nsIRunnable.h"
 #include "nsXPCOM.h"

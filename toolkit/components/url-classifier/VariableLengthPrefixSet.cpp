@@ -5,6 +5,7 @@
 
 
 #include "VariableLengthPrefixSet.h"
+#include "nsIInputStream.h"
 #include "nsUrlClassifierPrefixSet.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"

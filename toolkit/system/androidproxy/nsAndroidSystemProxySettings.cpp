@@ -3,16 +3,11 @@
 
 
 
-#include "nsIURI.h"
-
 #include "nsISystemProxySettings.h"
-#include "nsIServiceManager.h"
 #include "mozilla/Components.h"
 #include "nsPrintfCString.h"
 #include "nsNetCID.h"
 #include "nsISupports.h"
-#include "nsISupportsPrimitives.h"
-#include "nsIURI.h"
 
 #include "AndroidBridge.h"
 

@@ -3,9 +3,6 @@
 
 
 
-#include "nsIConsoleService.h"
-#include "nsIScriptError.h"
-
 
 
 #define NOTIFY_OBSERVERS(canFire, array, type, method) \
