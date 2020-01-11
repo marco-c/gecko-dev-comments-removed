@@ -7440,8 +7440,9 @@ nsresult nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch() {
     return NS_ERROR_BLOCKED_BY_POLICY;
   }
 
+  
   if (!ctx->Canonical()->GetCurrentWindowGlobal()) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_OK;
   }
 
   
