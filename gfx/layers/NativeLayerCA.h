@@ -51,6 +51,11 @@ class SurfacePoolHandleCA;
 
 
 
+
+
+
+
+
 class NativeLayerRootCA : public NativeLayerRoot {
  public:
   static already_AddRefed<NativeLayerRootCA> CreateForCALayer(CALayer* aLayer);
@@ -71,6 +76,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
 
   bool AreOffMainThreadCommitsSuspended();
 
+  enum class WhichRepresentation : uint8_t { ONSCREEN, OFFSCREEN };
+
   
   already_AddRefed<NativeLayer> CreateLayer(
       const gfx::IntSize& aSize, bool aIsOpaque,
@@ -86,9 +93,22 @@ class NativeLayerRootCA : public NativeLayerRoot {
   explicit NativeLayerRootCA(CALayer* aLayer);
   ~NativeLayerRootCA() override;
 
-  Mutex mMutex;                                
+  struct Representation {
+    explicit Representation(CALayer* aRootCALayer);
+    ~Representation();
+    void Commit(WhichRepresentation aRepresentation,
+                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers);
+    CALayer* mRootCALayer = nullptr;  
+    bool mMutated = false;
+  };
+
+  template <typename F>
+  void ForAllRepresentations(F aFn);
+
+  Mutex mMutex;  
+  Representation mOnscreenRepresentation;
+  Representation mOffscreenRepresentation;
   nsTArray<RefPtr<NativeLayerCA>> mSublayers;  
-  CALayer* mRootCALayer = nullptr;             
   float mBackingScale = 1.0f;
   bool mMutated = false;
 
@@ -156,8 +176,9 @@ class NativeLayerCA : public NativeLayer {
   bool NextSurface(const MutexAutoLock&);
 
   
-  CALayer* UnderlyingCALayer();
-  void ApplyChanges();
+  typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
+  CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
+  void ApplyChanges(WhichRepresentation aRepresentation);
   void SetBackingScale(float aBackingScale);
 
   
@@ -223,6 +244,10 @@ class NativeLayerCA : public NativeLayer {
     bool mMutatedFrontSurface = true;
   };
 
+  Representation& GetRepresentation(WhichRepresentation aRepresentation);
+  template <typename F>
+  void ForAllRepresentations(F aFn);
+
   
   Mutex mMutex;
 
@@ -274,7 +299,8 @@ class NativeLayerCA : public NativeLayer {
 
   RefPtr<SurfacePoolHandleCA> mSurfacePoolHandle;
 
-  Representation mRepresentation;
+  Representation mOnscreenRepresentation;
+  Representation mOffscreenRepresentation;
 
   gfx::IntPoint mPosition;
   const gfx::IntSize mSize;
