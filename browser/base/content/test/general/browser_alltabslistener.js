@@ -193,7 +193,14 @@ function setExpectationForCrossDomainFrontBrowserLoad() {
   
   
   if (gFissionBrowser) {
-    gFrontNotifications = ["onSecurityChange"].concat(gAllNotifications);
+    gFrontNotifications = [
+      "onStateChange",
+      "onSecurityChange",
+      "onStateChange",
+      "onLocationChange",
+      "onSecurityChange",
+      "onStateChange",
+    ];
   } else {
     gFrontNotifications = gAllNotifications;
   }
