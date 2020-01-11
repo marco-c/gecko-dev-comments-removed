@@ -81,24 +81,17 @@ class FunctionTree {
 
 
 class FunctionTreeHolder {
- public:
-  enum Mode { Eager, Deferred };
-
  private:
   FunctionTree treeRoot_;
   FunctionTree* currentParent_;
-  Mode mode_;
 
  public:
-  explicit FunctionTreeHolder(JSContext* cx, Mode mode = Mode::Eager)
-      : treeRoot_(cx), currentParent_(&treeRoot_), mode_(mode) {}
+  explicit FunctionTreeHolder(JSContext* cx)
+      : treeRoot_(cx), currentParent_(&treeRoot_) {}
 
   FunctionTree* getFunctionTree() { return &treeRoot_; }
   FunctionTree* getCurrentParent() { return currentParent_; }
   void setCurrentParent(FunctionTree* parent) { currentParent_ = parent; }
-
-  bool isEager() { return mode_ == Mode::Eager; }
-  bool isDeferred() { return mode_ == Mode::Deferred; }
 
   
   
