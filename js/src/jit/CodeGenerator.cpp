@@ -5263,7 +5263,7 @@ void CodeGenerator::emitCallInvokeFunction(T* apply, Register extraStackSize) {
 
   pushArg(objreg);                            
   pushArg(ToRegister(apply->getArgc()));      
-  pushArg(Imm32(false));                      
+  pushArg(Imm32(apply->mir()->ignoresReturnValue()));  
   pushArg(Imm32(false));                      
   pushArg(ToRegister(apply->getFunction()));  
 
