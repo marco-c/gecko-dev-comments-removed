@@ -22,8 +22,10 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
+#include "builtin/streams/WritableStream.h"        
 #include "js/CallArgs.h"  
 #include "js/Class.h"  
+#include "js/Conversions.h"  
 #include "js/PropertySpec.h"  
 #include "js/RootingAPI.h"        
 #include "js/Stream.h"            
@@ -35,11 +37,12 @@
 #include "vm/Runtime.h"           
 #include "vm/StringType.h"        
 
-#include "vm/Compartment-inl.h"   
+#include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 
 using js::CanGC;
+using js::ClassSpec;
 using js::CreateReadableStreamDefaultReader;
 using js::EqualStrings;
 using js::ForAuthorCodeBool;
@@ -49,10 +52,13 @@ using js::NewBuiltinClassInstance;
 using js::NewDenseFullyAllocatedArray;
 using js::PlainObject;
 using js::ReadableStream;
+using js::ReadableStreamPipeTo;
 using js::ReadableStreamTee;
 using js::ReturnPromiseRejectedWithPendingError;
 using js::ToString;
+using js::UnwrapAndTypeCheckArgument;
 using js::UnwrapAndTypeCheckThis;
+using js::WritableStream;
 
 using JS::CallArgs;
 using JS::CallArgsFromVp;
@@ -345,6 +351,102 @@ static MOZ_MUST_USE bool ReadableStream_getReader(JSContext* cx, unsigned argc,
 
 
 
+static bool ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Rooted<Value> options(cx, args.get(1));
+  if (options.isUndefined()) {
+    JSObject* emptyObj = NewBuiltinClassInstance<PlainObject>(cx);
+    if (!emptyObj) {
+      return false;
+    }
+    options.setObject(*emptyObj);
+  }
+  
+  
+  
+  
+  bool preventClose, preventAbort, preventCancel;
+  Rooted<Value> signal(cx);
+  {
+    
+    auto& v = signal;
+
+    if (!GetProperty(cx, options, cx->names().preventClose, &v)) {
+      return false;
+    }
+    preventClose = JS::ToBoolean(v);
+
+    if (!GetProperty(cx, options, cx->names().preventAbort, &v)) {
+      return false;
+    }
+    preventAbort = JS::ToBoolean(v);
+
+    if (!GetProperty(cx, options, cx->names().preventCancel, &v)) {
+      return false;
+    }
+    preventCancel = JS::ToBoolean(v);
+  }
+  if (!GetProperty(cx, options, cx->names().signal, &signal)) {
+    return false;
+  }
+
+  
+  
+  Rooted<ReadableStream*> unwrappedThis(
+      cx, UnwrapAndTypeCheckThis<ReadableStream>(cx, args, "pipeTo"));
+  if (!unwrappedThis) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  
+  Rooted<WritableStream*> unwrappedDest(
+      cx, UnwrapAndTypeCheckArgument<WritableStream>(cx, args, "pipeTo", 0));
+  if (!unwrappedDest) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  if (unwrappedThis->locked()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAM_LOCKED_METHOD, "pipeTo");
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  
+  if (unwrappedDest->isLocked()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAM_ALREADY_LOCKED);
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  
+  
+  JSObject* promise =
+      ReadableStreamPipeTo(cx, unwrappedThis, unwrappedDest, preventClose,
+                           preventAbort, preventCancel, signal);
+  if (!promise) {
+    return false;
+  }
+
+  args.rval().setObject(*promise);
+  return true;
+}
 
 
 
@@ -387,11 +489,53 @@ static bool ReadableStream_tee(JSContext* cx, unsigned argc, Value* vp) {
 static const JSFunctionSpec ReadableStream_methods[] = {
     JS_FN("cancel", ReadableStream_cancel, 1, 0),
     JS_FN("getReader", ReadableStream_getReader, 0, 0),
+    
+    
     JS_FN("tee", ReadableStream_tee, 0, 0), JS_FS_END};
 
 static const JSPropertySpec ReadableStream_properties[] = {
     JS_PSG("locked", ReadableStream_locked, 0), JS_PS_END};
 
-JS_STREAMS_CLASS_SPEC(ReadableStream, 0, SlotCount, 0,
-                      JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE,
-                      JS_NULL_CLASS_OPS);
+static bool FinishReadableStreamClassInit(JSContext* cx, Handle<JSObject*> ctor,
+                                          Handle<JSObject*> proto) {
+  
+  
+  
+  
+  
+  
+  
+  const auto& rco = cx->realm()->creationOptions();
+  if (rco.getStreamsEnabled() && rco.getWritableStreamsEnabled() &&
+      rco.getReadableStreamPipeToEnabled()) {
+    Rooted<jsid> pipeTo(cx, NameToId(cx->names().pipeTo));
+    if (!DefineFunction(cx, proto, pipeTo, ReadableStream_pipeTo, 2,
+                        JSPROP_RESOLVING)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const ClassSpec ReadableStream::classSpec_ = {
+    js::GenericCreateConstructor<ReadableStream::constructor, 2,
+                                 js::gc::AllocKind::FUNCTION>,
+    js::GenericCreatePrototype<ReadableStream>,
+    nullptr,
+    nullptr,
+    ReadableStream_methods,
+    ReadableStream_properties,
+    FinishReadableStreamClassInit,
+    0};
+
+const JSClass ReadableStream::class_ = {
+    "ReadableStream",
+    JSCLASS_HAS_RESERVED_SLOTS(ReadableStream::SlotCount) |
+        JSCLASS_HAS_CACHED_PROTO(JSProto_ReadableStream) |
+        JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE,
+    JS_NULL_CLASS_OPS, &ReadableStream::classSpec_};
+
+const JSClass ReadableStream::protoClass_ = {
+    "object", JSCLASS_HAS_CACHED_PROTO(JSProto_ReadableStream),
+    JS_NULL_CLASS_OPS, &ReadableStream::classSpec_};
