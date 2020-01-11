@@ -2076,7 +2076,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   uint8_t mForceBrokenImageIcon;  
   uint8_t mIMEMode;
   mozilla::StyleWindowDragging mWindowDragging;
-  uint8_t mWindowShadow;
+  mozilla::StyleWindowShadow mWindowShadow;
   float mWindowOpacity;
   mozilla::StyleTransform mMozWindowTransform;
   mozilla::StyleTransformOrigin mWindowTransformOrigin;
