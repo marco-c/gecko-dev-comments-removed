@@ -26,9 +26,9 @@ impl WasiCtxBuilder {
             args: vec![],
             env: HashMap::new(),
         }
-        .fd_dup(0, &null)
-        .fd_dup(1, &null)
-        .fd_dup(2, &null)
+        .fd_dup_for_io_desc(0, &null, false )
+        .fd_dup_for_io_desc(1, &null, true  )
+        .fd_dup_for_io_desc(2, &null, true  )
     }
 
     pub fn args(mut self, args: &[&str]) -> Self {
@@ -62,6 +62,12 @@ impl WasiCtxBuilder {
         self.fd_dup(0, &stdin())
             .fd_dup(1, &stdout())
             .fd_dup(2, &stderr())
+    }
+
+    pub fn inherit_stdio_no_syscall(self) -> Self {
+        self.fd_dup_for_io_desc(0, &stdin(),  false )
+            .fd_dup_for_io_desc(1, &stdout(), true  )
+            .fd_dup_for_io_desc(2, &stderr(), true  )
     }
 
     pub fn inherit_env(mut self) -> Self {
@@ -116,12 +122,22 @@ impl WasiCtxBuilder {
         unsafe { self.raw_fd(wasm_fd, dup(fd.as_raw_fd()).unwrap()) }
     }
 
+    pub fn fd_dup_for_io_desc<F: AsRawFd>(self, wasm_fd: host::__wasi_fd_t, fd: &F, writable : bool) -> Self {
+        
+        unsafe { self.raw_fd_for_io_desc(wasm_fd, dup(fd.as_raw_fd()).unwrap(), writable) }
+    }
+
     
     
     
     
     pub unsafe fn raw_fd(mut self, wasm_fd: host::__wasi_fd_t, fd: RawFd) -> Self {
         self.fds.insert(wasm_fd, FdEntry::from_raw_fd(fd));
+        self
+    }
+
+    pub unsafe fn raw_fd_for_io_desc(mut self, wasm_fd: host::__wasi_fd_t, fd: RawFd, writable : bool) -> Self {
+        self.fds.insert(wasm_fd, FdEntry::from_raw_fd_for_io_desc(fd, writable));
         self
     }
 

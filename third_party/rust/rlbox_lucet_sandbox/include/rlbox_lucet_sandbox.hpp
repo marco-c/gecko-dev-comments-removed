@@ -475,10 +475,11 @@ protected:
   
   
   inline void impl_create_sandbox(const char* lucet_module_path,
-                                  bool external_loads_exist)
+                                  bool external_loads_exist,
+                                  bool allow_stdio)
   {
     detail::dynamic_check(sandbox == nullptr, "Sandbox already initialized");
-    sandbox = lucet_load_module(lucet_module_path);
+    sandbox = lucet_load_module(lucet_module_path, allow_stdio);
     detail::dynamic_check(sandbox != nullptr, "Sandbox could not be created");
 
     heap_base = reinterpret_cast<uintptr_t>(impl_get_memory_location());
@@ -505,7 +506,8 @@ protected:
     
     
     const bool external_loads_exist = false;
-    impl_create_sandbox(lucet_module_path, external_loads_exist);
+    const bool allow_stdio = true;
+    impl_create_sandbox(lucet_module_path, external_loads_exist, allow_stdio);
   }
 
   inline void impl_destroy_sandbox() { lucet_drop_module(sandbox); }
