@@ -208,8 +208,7 @@ class WasmGlobalObject : public NativeObject {
   wasm::ValType type() const;
   void val(wasm::MutableHandleVal outval) const;
   bool isMutable() const;
-  
-  Value value(JSContext* cx) const;
+  bool value(JSContext* cx, MutableHandleValue out);
   Cell* cell() const;
 };
 
