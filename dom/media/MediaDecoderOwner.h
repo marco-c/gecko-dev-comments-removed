@@ -180,6 +180,11 @@ class MediaDecoderOwner {
       const PrincipalHandle& aNewPrincipalHandle) {}
 
   
+  
+  virtual void OnSecondaryVideoContainerInstalled(
+      const RefPtr<VideoFrameContainer>& aSecondaryContainer) {}
+
+  
 
 
 

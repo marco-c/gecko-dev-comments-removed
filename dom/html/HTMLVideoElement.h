@@ -21,6 +21,8 @@ class WakeLock;
 class VideoPlaybackQuality;
 
 class HTMLVideoElement final : public HTMLMediaElement {
+  class SecondaryVideoOutput;
+
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLVideoElement, HTMLMediaElement)
@@ -140,11 +142,15 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   void SetMozIsOrientationLocked(bool aLock) { mIsOrientationLocked = aLock; }
 
-  void CloneElementVisually(HTMLVideoElement& aTarget, ErrorResult& rv);
+  already_AddRefed<Promise> CloneElementVisually(HTMLVideoElement& aTarget,
+                                                 ErrorResult& rv);
 
   void StopCloningElementVisually();
 
   bool IsCloningElementVisually() const { return !!mVisualCloneTarget; }
+
+  void OnSecondaryVideoContainerInstalled(
+      const RefPtr<VideoFrameContainer>& aSecondaryContainer) override;
 
  protected:
   virtual ~HTMLVideoElement();
@@ -170,8 +176,10 @@ class HTMLVideoElement final : public HTMLMediaElement {
   bool mIsOrientationLocked;
 
  private:
-  bool SetVisualCloneTarget(HTMLVideoElement* aCloneTarget);
-  bool SetVisualCloneSource(HTMLVideoElement* aCloneSource);
+  bool SetVisualCloneTarget(
+      RefPtr<HTMLVideoElement> aVisualCloneTarget,
+      RefPtr<Promise> aVisualCloneTargetPromise = nullptr);
+  bool SetVisualCloneSource(RefPtr<HTMLVideoElement> aVisualCloneSource);
 
   
   
@@ -181,6 +189,14 @@ class HTMLVideoElement final : public HTMLMediaElement {
   
   
   RefPtr<HTMLVideoElement> mVisualCloneTarget;
+  
+  
+  RefPtr<Promise> mVisualCloneTargetPromise;
+  
+  
+  
+  
+  RefPtr<SecondaryVideoOutput> mSecondaryVideoOutput;
   
   
   
