@@ -22,13 +22,13 @@ pub enum NativeSurfaceOperationDetails {
     CreateSurface {
         id: NativeSurfaceId,
         tile_size: DeviceIntSize,
+        is_opaque: bool,
     },
     DestroySurface {
         id: NativeSurfaceId,
     },
     CreateTile {
         id: NativeTileId,
-        is_opaque: bool,
     },
     DestroyTile {
         id: NativeTileId,
@@ -433,6 +433,7 @@ pub trait Compositor {
         &mut self,
         id: NativeSurfaceId,
         tile_size: DeviceIntSize,
+        is_opaque: bool,
     );
 
     
@@ -450,7 +451,6 @@ pub trait Compositor {
     fn create_tile(
         &mut self,
         id: NativeTileId,
-        is_opaque: bool,
     );
 
     

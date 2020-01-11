@@ -204,6 +204,8 @@ pub struct PictureCacheState {
     allocations: PictureCacheRecycledAllocations,
     
     pub native_surface_id: Option<NativeSurfaceId>,
+    
+    is_opaque: bool,
 }
 
 pub struct PictureCacheRecycledAllocations {
@@ -898,9 +900,7 @@ impl Tile {
         
         
         
-        let tile_is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
-        let opacity_changed = tile_is_opaque != self.is_opaque;
-        self.is_opaque = tile_is_opaque;
+        self.is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
 
         
         
@@ -978,27 +978,7 @@ impl Tile {
             
             
             match self.surface.take() {
-                Some(TileSurface::Texture { mut descriptor, visibility_mask }) => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    if opacity_changed {
-                        if let SurfaceTextureDescriptor::Native { ref mut id, .. } = descriptor {
-                            
-                            
-                            self.invalidate(None, InvalidationReason::SurfaceOpacityChanged);
-
-                            
-                            
-                            if let Some(id) = id.take() {
-                                state.resource_cache.destroy_compositor_tile(id);
-                            }
-                        }
-                    }
-
+                Some(TileSurface::Texture { descriptor, visibility_mask }) => {
                     
                     TileSurface::Texture {
                         descriptor,
@@ -1530,6 +1510,8 @@ pub struct TileCacheInstance {
     
     
     pub device_position: DevicePoint,
+    
+    is_opaque: bool,
 }
 
 impl TileCacheInstance {
@@ -1579,6 +1561,7 @@ impl TileCacheInstance {
             compare_cache: FastHashMap::default(),
             native_surface_id: None,
             device_position: DevicePoint::zero(),
+            is_opaque: true,
         }
     }
 
@@ -1700,6 +1683,7 @@ impl TileCacheInstance {
             self.opacity_bindings = prev_state.opacity_bindings;
             self.current_tile_size = prev_state.current_tile_size;
             self.native_surface_id = prev_state.native_surface_id;
+            self.is_opaque = prev_state.is_opaque;
 
             fn recycle_map<K: std::cmp::Eq + std::hash::Hash, V>(
                 ideal_len: usize,
@@ -2356,10 +2340,39 @@ impl TileCacheInstance {
         };
 
         
+        
+        let mut tile_cache_is_opaque = true;
         for (key, tile) in self.tiles.iter_mut() {
             if tile.post_update(&ctx, &mut state) {
                 self.tiles_to_draw.push(*key);
+                tile_cache_is_opaque &= tile.is_opaque;
             }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if self.is_opaque != tile_cache_is_opaque {
+            if let Some(native_surface_id) = self.native_surface_id.take() {
+                
+                
+                
+                for tile in self.tiles.values_mut() {
+                    if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
+                        *id = None;
+                    }
+                    
+                    tile.invalidate(None, InvalidationReason::SurfaceOpacityChanged);
+                }
+                
+                
+                frame_state.resource_cache.destroy_compositor_surface(native_surface_id);
+            }
+            self.is_opaque = tile_cache_is_opaque;
         }
 
         
@@ -3183,6 +3196,7 @@ impl PicturePrimitive {
                         root_transform: tile_cache.root_transform,
                         current_tile_size: tile_cache.current_tile_size,
                         native_surface_id: tile_cache.native_surface_id.take(),
+                        is_opaque: tile_cache.is_opaque,
                         allocations: PictureCacheRecycledAllocations {
                             old_tiles: tile_cache.old_tiles,
                             old_opacity_bindings: tile_cache.old_opacity_bindings,
@@ -3720,7 +3734,10 @@ impl PicturePrimitive {
                                             if tile_cache.native_surface_id.is_none() {
                                                 let surface_id = frame_state
                                                     .resource_cache
-                                                    .create_compositor_surface(tile_cache.current_tile_size);
+                                                    .create_compositor_surface(
+                                                        tile_cache.current_tile_size,
+                                                        tile_cache.is_opaque,
+                                                    );
 
                                                 tile_cache.native_surface_id = Some(surface_id);
                                             }
@@ -3732,10 +3749,7 @@ impl PicturePrimitive {
                                                 y: key.y,
                                             };
 
-                                            frame_state.resource_cache.create_compositor_tile(
-                                                tile_id,
-                                                tile.is_opaque,
-                                            );
+                                            frame_state.resource_cache.create_compositor_tile(tile_id);
 
                                             *id = Some(tile_id);
                                         }
