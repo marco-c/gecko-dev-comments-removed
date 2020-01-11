@@ -5215,11 +5215,11 @@ void CodeGenerator::emitCallInvokeFunction(T* apply, Register extraStackSize) {
   masm.moveStackPtrTo(objreg);
   masm.Push(extraStackSize);
 
-  pushArg(objreg);                                     
-  pushArg(ToRegister(apply->getArgc()));               
+  pushArg(objreg);                            
+  pushArg(ToRegister(apply->getArgc()));      
   pushArg(Imm32(apply->mir()->ignoresReturnValue()));  
-  pushArg(Imm32(false));                               
-  pushArg(ToRegister(apply->getFunction()));           
+  pushArg(Imm32(false));                      
+  pushArg(ToRegister(apply->getFunction()));  
 
   
   using Fn = bool (*)(JSContext*, HandleObject, bool, bool, uint32_t, Value*,
@@ -13920,26 +13920,20 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
   ABIArgGenerator abi;
   for (size_t i = 0; i < lir->numOperands(); i++) {
     MIRType argMir;
-    switch (sig.args()[i].kind()) {
+    switch (sig.args()[i].code()) {
       case wasm::ValType::I32:
       case wasm::ValType::F32:
       case wasm::ValType::F64:
+      case wasm::ValType::AnyRef:
+        
         argMir = ToMIRType(sig.args()[i]);
         break;
       case wasm::ValType::I64:
-        MOZ_CRASH("unexpected argument type when calling from ion to wasm");
       case wasm::ValType::Ref:
-        switch (sig.args()[i].refTypeKind()) {
-          case wasm::RefType::Any:
-            
-            argMir = ToMIRType(sig.args()[i]);
-            break;
-          case wasm::RefType::Null:
-          case wasm::RefType::Func:
-          case wasm::RefType::TypeIndex:
-            MOZ_CRASH("unexpected argument type when calling from ion to wasm");
-        }
-        break;
+      case wasm::ValType::FuncRef:
+        MOZ_CRASH("unexpected argument type when calling from ion to wasm");
+      case wasm::ValType::NullRef:
+        MOZ_CRASH("NullRef not expressible");
     }
 
     ABIArg arg = abi.next(argMir);
@@ -13980,7 +13974,7 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
     MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
   } else {
     MOZ_ASSERT(results.length() == 1, "multi-value return unimplemented");
-    switch (results[0].kind()) {
+    switch (results[0].code()) {
       case wasm::ValType::I32:
         MOZ_ASSERT(lir->mir()->type() == MIRType::Int32);
         MOZ_ASSERT(ToRegister(lir->output()) == ReturnReg);
@@ -13993,23 +13987,18 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
         MOZ_ASSERT(lir->mir()->type() == MIRType::Double);
         MOZ_ASSERT(ToFloatRegister(lir->output()) == ReturnDoubleReg);
         break;
+      case wasm::ValType::AnyRef:
+      case wasm::ValType::FuncRef:
+        
+        
+        
+        MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
+        break;
+      case wasm::ValType::Ref:
       case wasm::ValType::I64:
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
-      case wasm::ValType::Ref:
-        switch (results[0].refTypeKind()) {
-          case wasm::RefType::Any:
-          case wasm::RefType::Func:
-          case wasm::RefType::Null:
-            
-            
-            
-            
-            MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
-            break;
-          case wasm::RefType::TypeIndex:
-            MOZ_CRASH("unexpected return type when calling from ion to wasm");
-        }
-        break;
+      case wasm::ValType::NullRef:
+        MOZ_CRASH("NullRef not expressible");
     }
   }
 
