@@ -108,7 +108,7 @@ function WorkerTest(worker, name, test) {
     this.startTime = new Date();
 
     
-    worker.postMessage(test.toSource());
+    worker.postMessage(test.toString());
 
     
     worker.onmessage = e => this.complete(e.data);
