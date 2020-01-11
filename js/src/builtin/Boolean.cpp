@@ -36,12 +36,23 @@ MOZ_ALWAYS_INLINE bool IsBoolean(HandleValue v) {
   return v.isBoolean() || (v.isObject() && v.toObject().is<BooleanObject>());
 }
 
-MOZ_ALWAYS_INLINE bool bool_toSource_impl(JSContext* cx, const CallArgs& args) {
-  HandleValue thisv = args.thisv();
-  MOZ_ASSERT(IsBoolean(thisv));
 
-  bool b = thisv.isBoolean() ? thisv.toBoolean()
-                             : thisv.toObject().as<BooleanObject>().unbox();
+
+static MOZ_ALWAYS_INLINE bool ThisBooleanValue(HandleValue val) {
+  
+  MOZ_ASSERT(IsBoolean(val));
+
+  
+  if (val.isBoolean()) {
+    return val.toBoolean();
+  }
+
+  
+  return val.toObject().as<BooleanObject>().unbox();
+}
+
+MOZ_ALWAYS_INLINE bool bool_toSource_impl(JSContext* cx, const CallArgs& args) {
+  bool b = ThisBooleanValue(args.thisv());
 
   JSStringBuilder sb(cx);
   if (!sb.append("(new Boolean(") || !BooleanToStringBuffer(b, sb) ||
@@ -62,12 +73,13 @@ static bool bool_toSource(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsBoolean, bool_toSource_impl>(cx, args);
 }
 
-MOZ_ALWAYS_INLINE bool bool_toString_impl(JSContext* cx, const CallArgs& args) {
-  HandleValue thisv = args.thisv();
-  MOZ_ASSERT(IsBoolean(thisv));
 
-  bool b = thisv.isBoolean() ? thisv.toBoolean()
-                             : thisv.toObject().as<BooleanObject>().unbox();
+
+MOZ_ALWAYS_INLINE bool bool_toString_impl(JSContext* cx, const CallArgs& args) {
+  
+  bool b = ThisBooleanValue(args.thisv());
+
+  
   args.rval().setString(BooleanToString(cx, b));
   return true;
 }
@@ -77,13 +89,11 @@ static bool bool_toString(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsBoolean, bool_toString_impl>(cx, args);
 }
 
-MOZ_ALWAYS_INLINE bool bool_valueOf_impl(JSContext* cx, const CallArgs& args) {
-  HandleValue thisv = args.thisv();
-  MOZ_ASSERT(IsBoolean(thisv));
 
-  bool b = thisv.isBoolean() ? thisv.toBoolean()
-                             : thisv.toObject().as<BooleanObject>().unbox();
-  args.rval().setBoolean(b);
+
+MOZ_ALWAYS_INLINE bool bool_valueOf_impl(JSContext* cx, const CallArgs& args) {
+  
+  args.rval().setBoolean(ThisBooleanValue(args.thisv()));
   return true;
 }
 
@@ -97,12 +107,16 @@ static const JSFunctionSpec boolean_methods[] = {
     JS_FN(js_toString_str, bool_toString, 0, 0),
     JS_FN(js_valueOf_str, bool_valueOf, 0, 0), JS_FS_END};
 
+
+
 static bool Boolean(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   bool b = args.length() != 0 ? JS::ToBoolean(args[0]) : false;
 
   if (args.isConstructing()) {
+    
     RootedObject proto(cx);
     if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Boolean,
                                             &proto)) {
@@ -113,8 +127,11 @@ static bool Boolean(JSContext* cx, unsigned argc, Value* vp) {
     if (!obj) {
       return false;
     }
+
+    
     args.rval().setObject(*obj);
   } else {
+    
     args.rval().setBoolean(b);
   }
   return true;
