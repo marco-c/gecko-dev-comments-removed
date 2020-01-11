@@ -37,7 +37,7 @@ class AudioWorkletImpl final : public WorkletImpl {
   }
 
   
-  AudioNodeTrack* DestinationTrack() { return mDestinationTrack; }
+  AudioNodeTrack* DestinationTrack() const { return mDestinationTrack; }
 
  protected:
   
