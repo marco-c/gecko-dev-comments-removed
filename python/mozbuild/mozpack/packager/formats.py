@@ -283,11 +283,6 @@ class OmniJarFormatter(JarFormatter):
                 return
             JarFormatter._add_base(self, base, addon)
         else:
-            
-            
-            path = mozpath.normpath(mozpath.join(base, 'chrome.manifest'))
-            if not self.copier.contains(path):
-                self.copier.add(path, ManifestFile(''))
             self._sub_formatter[base] = OmniJarSubFormatter(
                 FileRegistrySubtree(base, self.copier), self._omnijar_name,
                 self._compress, self._non_resources)
