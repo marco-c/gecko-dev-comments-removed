@@ -3152,6 +3152,17 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtNullOrUndefinedCompare(
   return replaceTypeSet(subject, type, test);
 }
 
+AbortReasonOr<Ok> IonBuilder::improveTypesAtTestSuccessor(
+    MTest* test, MBasicBlock* successor) {
+  MOZ_ASSERT(successor->numPredecessors() == 1);
+  MOZ_ASSERT(test->block() == successor->getPredecessor(0));
+
+  MOZ_ASSERT(test->ifTrue() == successor || test->ifFalse() == successor);
+  bool trueBranch = test->ifTrue() == successor;
+
+  return improveTypesAtTest(test->getOperand(0), trueBranch, test);
+}
+
 AbortReasonOr<Ok> IonBuilder::improveTypesAtTest(MDefinition* ins,
                                                  bool trueBranch, MTest* test) {
   
@@ -3361,6 +3372,25 @@ AbortReasonOr<Ok> IonBuilder::visitTestBackedge(JSOp op, bool* restarted) {
   return Ok();
 }
 
+
+
+static bool TestTrueTargetIsJoinPoint(JSOp op) {
+  switch (op) {
+    case JSOP_IFNE:
+    case JSOP_OR:
+    case JSOP_CASE:
+      return true;
+
+    case JSOP_IFEQ:
+    case JSOP_AND:
+    case JSOP_COALESCE:
+      return false;
+
+    default:
+      MOZ_CRASH("Unexpected op");
+  }
+}
+
 AbortReasonOr<Ok> IonBuilder::visitTest(JSOp op, bool* restarted) {
   MOZ_ASSERT(op == JSOP_IFEQ || op == JSOP_IFNE || op == JSOP_AND ||
              op == JSOP_OR || op == JSOP_CASE);
@@ -3384,7 +3414,7 @@ AbortReasonOr<Ok> IonBuilder::visitTest(JSOp op, bool* restarted) {
   MTest* mir = newTest(ins, nullptr, nullptr);
   current->end(mir);
 
-  if (op == JSOP_OR || op == JSOP_CASE || op == JSOP_IFNE) {
+  if (TestTrueTargetIsJoinPoint(op)) {
     mozilla::Swap(target1, target2);
   }
 
@@ -3516,52 +3546,81 @@ AbortReasonOr<Ok> IonBuilder::visitJumpTarget(JSOp op) {
   
   
   
-  auto createBlockForShortCircuit =
-      [&](MBasicBlock* pred) -> AbortReasonOr<MBasicBlock*> {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto createEmptyBlockForTest =
+      [&](MBasicBlock* pred, size_t successor) -> AbortReasonOr<MBasicBlock*> {
     MOZ_ASSERT(joinBlock);
 
-    MBasicBlock* trueBlock;
-    MOZ_TRY_VAR(trueBlock, newBlock(pred, pc));
-    graph().addBlock(trueBlock);
+    MBasicBlock* emptyBlock;
+    MOZ_TRY_VAR(emptyBlock, newBlock(pred, pc));
 
-    trueBlock->end(MGoto::New(alloc(), joinBlock));
-    if (!joinBlock->addPredecessor(alloc(), trueBlock)) {
-      return abort(AbortReason::Alloc);
-    }
+    MTest* test = pred->lastIns()->toTest();
+    test->initSuccessor(successor, emptyBlock);
 
-    return trueBlock;
+    MOZ_TRY(startTraversingBlock(emptyBlock));
+    MOZ_TRY(improveTypesAtTestSuccessor(test, emptyBlock));
+
+    emptyBlock->end(MGoto::New(alloc(), joinBlock));
+    setTerminatedBlock();
+
+    return emptyBlock;
   };
-
-  MTest* predecessorTest = nullptr;
 
   for (const PendingEdge& edge : edges) {
     MBasicBlock* source = edge.block();
     MControlInstruction* lastIns = source->lastIns();
     switch (edge.kind()) {
       case PendingEdge::Kind::TestTrue: {
-        MBasicBlock* successorBlock = nullptr;
-        if (edge.testOp() == JSOP_OR) {
-          MOZ_TRY_VAR(successorBlock, createBlockForShortCircuit(source));
+        
+        size_t numPopped = (edge.testOp() == JSOP_CASE) ? 1 : 0;
+
+        if (joinBlock && TestTrueTargetIsJoinPoint(edge.testOp())) {
+          MBasicBlock* pred;
+          MOZ_TRY_VAR(pred,
+                      createEmptyBlockForTest(source,  0));
+          MOZ_TRY(addEdge(pred, numPopped));
         } else {
-          
-          MOZ_TRY(addEdge(source, (edge.testOp() == JSOP_CASE) ? 1 : 0));
-          successorBlock = joinBlock;
+          MOZ_TRY(addEdge(source, numPopped));
+          lastIns->toTest()->initSuccessor(0, joinBlock);
         }
-        predecessorTest = lastIns->toTest();
-        predecessorTest->initSuccessor(0, successorBlock);
         continue;
       }
 
       case PendingEdge::Kind::TestFalse: {
-        MBasicBlock* successorBlock = nullptr;
-        if (edge.testOp() == JSOP_AND || edge.testOp() == JSOP_COALESCE) {
-          MOZ_TRY_VAR(successorBlock, createBlockForShortCircuit(source));
+        if (joinBlock && !TestTrueTargetIsJoinPoint(edge.testOp())) {
+          MBasicBlock* pred;
+          MOZ_TRY_VAR(pred,
+                      createEmptyBlockForTest(source,  1));
+          MOZ_TRY(addEdge(pred, 0));
         } else {
           MOZ_TRY(addEdge(source, 0));
-          successorBlock = joinBlock;
+          lastIns->toTest()->initSuccessor(1, joinBlock);
         }
-        predecessorTest = lastIns->toTest();
-        predecessorTest->initSuccessor(1, successorBlock);
         continue;
       }
 
@@ -3583,15 +3642,12 @@ AbortReasonOr<Ok> IonBuilder::visitJumpTarget(JSOp op) {
 
   
   
-  if (predecessorTest && joinBlock->numPredecessors() == 1) {
-    MOZ_ASSERT(predecessorTest->block() == joinBlock->getPredecessor(0));
-
-    MOZ_ASSERT(predecessorTest->ifTrue() == joinBlock ||
-               predecessorTest->ifFalse() == joinBlock);
-    bool trueBranch = predecessorTest->ifTrue() == joinBlock;
-
-    MOZ_TRY(improveTypesAtTest(predecessorTest->getOperand(0), trueBranch,
-                               predecessorTest));
+  if (joinBlock->numPredecessors() == 1) {
+    MBasicBlock* pred = joinBlock->getPredecessor(0);
+    if (pred->lastIns()->isTest()) {
+      MTest* test = pred->lastIns()->toTest();
+      MOZ_TRY(improveTypesAtTestSuccessor(test, joinBlock));
+    }
   }
 
   return Ok();
