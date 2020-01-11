@@ -410,16 +410,19 @@ XRE_API(bool, XRE_SetRemoteExceptionHandler,
 XRE_API(bool, XRE_SetRemoteExceptionHandler, (const char* aPipe))
 #endif
 
-namespace mozilla {
-namespace gmp {
-class GMPLoader;
-}  
-}  
-
 XRE_API(nsresult, XRE_InitChildProcess,
         (int aArgc, char* aArgv[], const XREChildData* aChildData))
 
+
+
+
 XRE_API(GeckoProcessType, XRE_GetProcessType, ())
+
+
+
+
+
+XRE_API(const char*, XRE_GetProcessTypeString, ())
 
 
 
