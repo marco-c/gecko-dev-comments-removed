@@ -233,6 +233,10 @@ void nsGIFDecoder2::EndImageFrame() {
   mGIFStruct.images_decoded++;
 
   
+  
+  mGIFStruct.delay_time = 0;
+
+  
   PostFrameStop(opacity);
 
   
@@ -649,7 +653,7 @@ nsGIFDecoder2::ReadGraphicControlExtension(const char* aData) {
   }
 
   mGIFStruct.delay_time = LittleEndian::readUint16(aData + 1) * 10;
-  if (mGIFStruct.delay_time > 0) {
+  if (!HasAnimation() && mGIFStruct.delay_time > 0) {
     PostIsAnimated(FrameTimeout::FromRawMilliseconds(mGIFStruct.delay_time));
   }
 
