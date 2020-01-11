@@ -349,6 +349,12 @@ class MozconfigLoader(object):
 
             if name == 'MOZ_OBJDIR':
                 result['topobjdir'] = value
+                if parsed['env_before'].get('MOZ_PROFILE_GENERATE') == '1':
+                    
+                    
+                    
+                    
+                    result['topobjdir'] = mozpath.join(result['topobjdir'], 'instrumented')
                 continue
 
             result['make_extra'].append(o)
