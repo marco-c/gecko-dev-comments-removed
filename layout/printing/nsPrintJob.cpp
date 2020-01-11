@@ -922,8 +922,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         
         
         
-        nsCOMPtr<nsIWebBrowserPrint> wbp(do_QueryInterface(mDocViewerPrint));
-        rv = printPromptService->ShowPrintDialog(domWin, wbp,
+        rv = printPromptService->ShowPrintDialog(domWin,
                                                  printData->mPrintSettings);
         
         

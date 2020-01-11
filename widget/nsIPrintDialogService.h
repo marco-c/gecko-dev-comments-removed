@@ -10,7 +10,6 @@
 
 class nsPIDOMWindowOuter;
 class nsIPrintSettings;
-class nsIWebBrowserPrint;
 
 
 
@@ -47,10 +46,7 @@ class nsIPrintDialogService : public nsISupports {
 
 
 
-
-
-  NS_IMETHOD Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSettings,
-                  nsIWebBrowserPrint* aWebBrowserPrint) = 0;
+  NS_IMETHOD Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSettings) = 0;
 
   
 
