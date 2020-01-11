@@ -1182,6 +1182,13 @@ Range* Range::ceil(TempAllocator& alloc, const Range* op) {
     copy->max_exponent_++;
   }
 
+  
+  
+
+  copy->canBeNegativeZero_ = ((copy->lower_ > 0) || (copy->upper_ <= -1))
+                                 ? copy->canBeNegativeZero_
+                                 : IncludesNegativeZero;
+
   copy->canHaveFractionalPart_ = ExcludesFractionalParts;
   copy->assertInvariants();
   return copy;
