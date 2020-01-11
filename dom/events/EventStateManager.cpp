@@ -1237,7 +1237,7 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
       AccessKeyInfo accessKeyInfo(aEvent, aAccessCharCodes);
       nsContentUtils::CallOnAllRemoteChildren(
           mDocument->GetWindow(),
-          [&accessKeyInfo](BrowserParent* aBrowserParent) -> bool {
+          [&accessKeyInfo](BrowserParent* aBrowserParent) -> CallState {
             
             if (aBrowserParent->GetDocShellIsActive()) {
               
@@ -1249,10 +1249,10 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
               accessKeyInfo.event->MarkAsWaitingReplyFromRemoteProcess();
               aBrowserParent->HandleAccessKey(*accessKeyInfo.event,
                                               accessKeyInfo.charCodes);
-              return true;
+              return CallState::Stop;
             }
 
-            return false;
+            return CallState::Continue;
           });
     }
   }
