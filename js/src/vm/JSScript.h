@@ -1511,6 +1511,108 @@ class ScriptWarmUpData {
 static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
               "JIT code depends on ScriptWarmUpData being pointer-sized");
 
+struct FieldInitializers {
+#ifdef DEBUG
+  bool valid;
+#endif
+  
+  
+  size_t numFieldInitializers;
+
+  explicit FieldInitializers(size_t numFieldInitializers)
+      :
+#ifdef DEBUG
+        valid(true),
+#endif
+        numFieldInitializers(numFieldInitializers) {
+  }
+
+  static FieldInitializers Invalid() { return FieldInitializers(); }
+
+ private:
+  FieldInitializers()
+      :
+#ifdef DEBUG
+        valid(false),
+#endif
+        numFieldInitializers(0) {
+  }
+};
+
+
+
+
+
+
+
+
+
+
+class alignas(uintptr_t) PrivateScriptData final {
+  uint32_t ngcthings = 0;
+
+  js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
+
+  
+  template <typename T>
+  T* offsetToPointer(size_t offset) {
+    uintptr_t base = reinterpret_cast<uintptr_t>(this);
+    uintptr_t elem = base + offset;
+    return reinterpret_cast<T*>(elem);
+  }
+
+  
+  template <typename T>
+  void initElements(size_t offset, size_t length);
+
+  
+  static size_t AllocationSize(uint32_t ngcthings);
+
+  
+  explicit PrivateScriptData(uint32_t ngcthings);
+
+ public:
+  static constexpr size_t offsetOfGCThings() {
+    return sizeof(PrivateScriptData);
+  }
+
+  
+  mozilla::Span<JS::GCCellPtr> gcthings() {
+    size_t offset = offsetOfGCThings();
+    return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
+  }
+
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    fieldInitializers_ = fieldInitializers;
+  }
+  const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
+
+  
+  static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings);
+
+  template <XDRMode mode>
+  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
+                                    js::HandleScript script,
+                                    js::HandleScriptSourceObject sourceObject,
+                                    js::HandleScope scriptEnclosingScope,
+                                    js::HandleFunction fun);
+
+  
+  static bool Clone(JSContext* cx, js::HandleScript src, js::HandleScript dst,
+                    js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
+
+  static bool InitFromEmitter(JSContext* cx, js::HandleScript script,
+                              js::frontend::BytecodeEmitter* bce);
+
+  void trace(JSTracer* trc);
+
+  size_t allocationSize() const;
+
+  
+  PrivateScriptData(const PrivateScriptData&) = delete;
+  PrivateScriptData& operator=(const PrivateScriptData&) = delete;
+};
+
 
 
 
@@ -1998,34 +2100,6 @@ setterLevel:                                                                  \
   }
 };
 
-struct FieldInitializers {
-#ifdef DEBUG
-  bool valid;
-#endif
-  
-  
-  size_t numFieldInitializers;
-
-  explicit FieldInitializers(size_t numFieldInitializers)
-      :
-#ifdef DEBUG
-        valid(true),
-#endif
-        numFieldInitializers(numFieldInitializers) {
-  }
-
-  static FieldInitializers Invalid() { return FieldInitializers(); }
-
- private:
-  FieldInitializers()
-      :
-#ifdef DEBUG
-        valid(false),
-#endif
-        numFieldInitializers(0) {
-  }
-};
-
 
 
 
@@ -2046,80 +2120,6 @@ XDRResult XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
 
 template <XDRMode mode>
 XDRResult XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
-
-
-
-
-
-
-
-
-
-
-class alignas(uintptr_t) PrivateScriptData final {
-  uint32_t ngcthings = 0;
-
-  js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
-
-  
-  template <typename T>
-  T* offsetToPointer(size_t offset) {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    uintptr_t elem = base + offset;
-    return reinterpret_cast<T*>(elem);
-  }
-
-  
-  template <typename T>
-  void initElements(size_t offset, size_t length);
-
-  
-  static size_t AllocationSize(uint32_t ngcthings);
-
-  
-  explicit PrivateScriptData(uint32_t ngcthings);
-
- public:
-  static constexpr size_t offsetOfGCThings() {
-    return sizeof(PrivateScriptData);
-  }
-
-  
-  mozilla::Span<JS::GCCellPtr> gcthings() {
-    size_t offset = offsetOfGCThings();
-    return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
-  }
-
-  void setFieldInitializers(FieldInitializers fieldInitializers) {
-    fieldInitializers_ = fieldInitializers;
-  }
-  const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
-
-  
-  static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings);
-
-  template <XDRMode mode>
-  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
-                                    js::HandleScript script,
-                                    js::HandleScriptSourceObject sourceObject,
-                                    js::HandleScope scriptEnclosingScope,
-                                    js::HandleFunction fun);
-
-  
-  static bool Clone(JSContext* cx, js::HandleScript src, js::HandleScript dst,
-                    js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
-
-  static bool InitFromEmitter(JSContext* cx, js::HandleScript script,
-                              js::frontend::BytecodeEmitter* bce);
-
-  void trace(JSTracer* trc);
-
-  size_t allocationSize() const;
-
-  
-  PrivateScriptData(const PrivateScriptData&) = delete;
-  PrivateScriptData& operator=(const PrivateScriptData&) = delete;
-};
 
 
 
