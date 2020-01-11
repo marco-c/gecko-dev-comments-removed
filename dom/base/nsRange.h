@@ -330,6 +330,8 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
+
+
   static bool IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
                              uint32_t aEndOffset);
 
