@@ -13,27 +13,14 @@ const {
   testTeardown,
   SIMPLE_URL,
 } = require("../head");
+const { waitForConsoleOutputChildListChange } = require("./webconsole-helpers");
 
 module.exports = async function() {
   let TOTAL_MESSAGES = 10;
   let tab = await testSetup(SIMPLE_URL);
   let messageManager = tab.linkedBrowser.messageManager;
   let toolbox = await openToolbox("webconsole");
-  let webconsole = toolbox.getPanel("webconsole");
-
-  
-  let allMessagesReceived = new Promise(resolve => {
-    function receiveMessages(messages) {
-      for (let m of messages) {
-        if (m.node.textContent.includes("damp " + TOTAL_MESSAGES)) {
-          webconsole.hud.ui.off("new-messages", receiveMessages);
-          
-          getBrowserWindow().requestAnimationFrame(resolve);
-        }
-      }
-    }
-    webconsole.hud.ui.on("new-messages", receiveMessages);
-  });
+  let { hud } = toolbox.getPanel("webconsole");
 
   
   
@@ -53,10 +40,22 @@ module.exports = async function() {
   );
 
   let test = runTest("console.bulklog");
+
+  const allMessagesreceived = waitForConsoleOutputChildListChange(
+    hud,
+    consoleOutput =>
+      consoleOutput.textContent.includes("damp " + TOTAL_MESSAGES)
+  );
+
   
   messageManager.sendAsyncMessage("do-logs");
 
-  await allMessagesReceived;
+  await allMessagesreceived;
+  
+  await new Promise(resolve =>
+    getBrowserWindow().requestAnimationFrame(resolve)
+  );
+
   test.done();
 
   await closeToolbox();
