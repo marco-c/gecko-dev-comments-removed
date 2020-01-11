@@ -110,11 +110,15 @@
 }
 
 .urlbarView:not(.megabar) .urlbarView-row[type=tip] {
-  padding-block: 24px;
+  padding-block-start: 24px;
+  
+  padding-block-end: calc(24px - 16px);
 }
 
 .urlbarView.megabar .urlbarView-row[type=tip] {
-  padding-block: 18px;
+  padding-block-start: 18px;
+  
+  padding-block-end: calc(18px - 16px);
   
   padding-inline-end: calc(@urlbarViewItemInlinePadding@ + 4px);
 }
@@ -159,12 +163,12 @@
   }
 }
 
-.urlbarView-title[overflow],
+.urlbarView-row:not([type=tip]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title[overflow],
 .urlbarView-url[overflow] {
   mask-image: linear-gradient(to left, transparent, black 2em);
 }
 
-.urlbarView-title[overflow]:not([isurl]):-moz-locale-dir(rtl) {
+.urlbarView-row:not([type=tip]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title[overflow]:not([isurl]):-moz-locale-dir(rtl) {
   mask-image: linear-gradient(to right, transparent, black 2em);
 }
 
@@ -212,6 +216,9 @@
   min-width: 24px;
   height: 24px;
   margin-inline-end: 12px;
+  flex-basis: 24px;
+  flex-grow:  0;
+  flex-shrink: 0;
 }
 
 .urlbarView:not(.megabar) .urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-favicon {
@@ -301,6 +308,24 @@
 }
 
 
+@media screen and (max-width: 800px) {
+  .urlbarView:not(.megabar) .urlbarView-row[type=tip] > .urlbarView-row-inner {
+    flex-wrap: wrap;
+  }
+}
+
+
+
+
+
+.urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-favicon,
+.urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-title,
+.urlbarView-tip-button,
+.urlbarView-tip-help {
+  margin-block-end: 16px;
+}
+
+
 
 .urlbarView-tip-button {
   min-height: 16px;
@@ -312,6 +337,7 @@
   background-color: var(--in-content-button-background);
   min-width: 8.75em;
   text-align: center;
+  flex-basis: initial;
   flex-shrink: 0;
 }
 
@@ -331,8 +357,9 @@
 }
 
 .urlbarView-tip-button-spacer {
-  flex: 1;
-  min-width: 75px;
+  flex-basis: 48px;
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
 .urlbarView-title {
@@ -341,8 +368,18 @@
 }
 
 .urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-title {
-   white-space: normal;
-   flex: auto;
+  white-space: normal;
+  
+
+
+
+  flex-basis: calc(100% -  6px -  24px -  12px);
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.urlbarView:not(.megabar) .urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-title {
+  flex-basis: calc(100% -  (12px + @urlbarViewIconMarginEnd@) -  24px -  12px);
 }
 
 .urlbarView-title-separator::before {
