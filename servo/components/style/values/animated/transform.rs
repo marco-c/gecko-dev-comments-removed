@@ -1250,6 +1250,10 @@ impl Animate for ComputedRotate {
             (&Rotate::None, &Rotate::None) => Ok(Rotate::None),
             (&Rotate::Rotate3D(fx, fy, fz, fa), &Rotate::None) => {
                 
+                
+                
+                
+                let (fx, fy, fz, fa) = transform::get_normalized_vector_and_angle(fx, fy, fz, fa);
                 Ok(Rotate::Rotate3D(
                     fx,
                     fy,
@@ -1259,6 +1263,7 @@ impl Animate for ComputedRotate {
             }
             (&Rotate::None, &Rotate::Rotate3D(tx, ty, tz, ta)) => {
                 
+                let (tx, ty, tz, ta) = transform::get_normalized_vector_and_angle(tx, ty, tz, ta);
                 Ok(Rotate::Rotate3D(
                     tx,
                     ty,
